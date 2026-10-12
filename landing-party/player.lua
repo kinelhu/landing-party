@@ -12,6 +12,16 @@ barracks.fixed_recipe = "lp-trooper-order"
 barracks.module_slots = 0
 barracks.allowed_effects = nil
 
+-- The command relay: a radar's body; each powered relay carries shared.RELAY_CAPACITY units of command
+-- bandwidth, as many relays counting as the research allows (scripts/command.lua).
+local relay = table.deepcopy(data.raw.radar.radar)
+relay.name = "lp-command-relay"
+relay.minable = {mining_time = 0.5, result = "lp-command-relay"}
+relay.next_upgrade = nil
+relay.energy_usage = "2MW"
+relay.max_distance_of_sector_revealed = 0
+relay.max_distance_of_nearby_sector_revealed = 3
+
 local beacon = table.deepcopy(data.raw.lamp["small-lamp"])
 beacon.name = "lp-rally-beacon"
 beacon.minable = {mining_time = 0.2, result = "lp-rally-beacon"}
@@ -24,23 +34,53 @@ local function item(name, icon, place)
 end
 
 data:extend({
-  barracks, beacon,
+  barracks, beacon, relay,
+  item("lp-command-relay", "__base__/graphics/icons/radar.png", "lp-command-relay"),
+  -- Salvaged from the faction (a depot destroyed, an outpost captured, a lander destroyed) or granted once by
+  -- research: what a barracks is built around. Not craftable.
+  {type = "item", name = "lp-command-core", icon = "__base__/graphics/icons/processing-unit.png", stack_size = 10,
+    subgroup = "intermediate-product", order = "z[landing-party]-core"},
   {type = "recipe-category", name = "lp-training"},
   item("lp-barracks", "__base__/graphics/icons/assembling-machine-2.png", "lp-barracks"),
   item("lp-rally-beacon", "__base__/graphics/icons/small-lamp.png", "lp-rally-beacon"),
   {type = "item", name = "lp-trooper-order", icon = "__base__/graphics/icons/firearm-magazine.png", hidden = true,
     stack_size = 10, subgroup = "other"},
-  {type = "recipe", name = "lp-barracks", enabled = true, energy_required = 5,
+  {type = "recipe", name = "lp-barracks", enabled = false, energy_required = 5,
     ingredients = {{type = "item", name = "assembling-machine-2", amount = 1}, {type = "item", name = "steel-plate", amount = 20},
-      {type = "item", name = "electronic-circuit", amount = 10}},
+      {type = "item", name = "electronic-circuit", amount = 10}, {type = "item", name = "lp-command-core", amount = 1}},
     results = {{type = "item", name = "lp-barracks", amount = 1}}},
-  {type = "recipe", name = "lp-rally-beacon", enabled = true, energy_required = 2,
+  {type = "recipe", name = "lp-command-relay", enabled = false, energy_required = 10,
+    ingredients = {{type = "item", name = "radar", amount = 1}, {type = "item", name = "electronic-circuit", amount = 20},
+      {type = "item", name = "steel-plate", amount = 10}},
+    results = {{type = "item", name = "lp-command-relay", amount = 1}}},
+  {type = "recipe", name = "lp-rally-beacon", enabled = false, energy_required = 2,
     ingredients = {{type = "item", name = "small-lamp", amount = 1}, {type = "item", name = "electronic-circuit", amount = 2}},
     results = {{type = "item", name = "lp-rally-beacon", amount = 1}}},
   -- A trooper: ammunition, plates and circuits; the barracks turns the order into a unit.
   {type = "recipe", name = "lp-trooper-order", category = "lp-training", enabled = true, hidden_in_factoriopedia = true,
-    energy_required = 8,
+    -- 30 s a trooper: even at the cap, a lost army takes time to replace.
+    energy_required = 30,
     ingredients = {{type = "item", name = "firearm-magazine", amount = 5}, {type = "item", name = "iron-plate", amount = 10},
       {type = "item", name = "electronic-circuit", amount = 2}},
     results = {{type = "item", name = "lp-trooper-order", amount = 1}}},
+})
+
+-- Command bandwidth: how many relays count. Level 1 unlocks the army and grants the first command core.
+local function tech(level, prereq, packs, count, effects, extra)
+  local t = {type = "technology", name = "lp-command-bandwidth-" .. level, icon = "__base__/graphics/technology/radar.png",
+    icon_size = 256, prerequisites = prereq, effects = effects or {},
+    unit = {count = count, time = 30, ingredients = packs}, upgrade = level > 1}
+  for k, v in pairs(extra or {}) do t[k] = v end
+  return t
+end
+local red, green = {"automation-science-pack", 1}, {"logistic-science-pack", 1}
+local blue, grey = {"chemical-science-pack", 1}, {"military-science-pack", 1}
+data:extend({
+  tech(1, {"military-2"}, {red, green}, 100, {
+    {type = "unlock-recipe", recipe = "lp-barracks"}, {type = "unlock-recipe", recipe = "lp-command-relay"},
+    {type = "unlock-recipe", recipe = "lp-rally-beacon"}, {type = "give-item", item = "lp-command-core", count = 1}}),
+  tech(2, {"lp-command-bandwidth-1", "chemical-science-pack"}, {red, green, blue}, 200),
+  tech(3, {"lp-command-bandwidth-2", "military-3"}, {red, green, blue, grey}, 300),
+  tech(4, {"lp-command-bandwidth-3"}, {red, green, blue, grey}, nil, nil,
+    {max_level = "infinite", unit = {count_formula = "150*L", time = 30, ingredients = {red, green, blue, grey}}}),
 })

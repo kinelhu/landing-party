@@ -636,12 +636,21 @@ scenarios.army = function()
     put("electric-energy-interface", 4, 1)
     put("medium-electric-pole", 2.5, 2.5)
     S.beacon = put("lp-rally-beacon", -3.5, 0.5)
+    -- Bandwidth: research level 1 (four relays count) and two powered relays: room for 20.
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("lp-command-relay", 0.5, 6.5)
+    put("lp-command-relay", 4.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
     S.cc = put("constant-combinator", -5.5, 0.5)
     S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
-    local input = S.barracks.get_inventory(defines.inventory.crafter_input)
-    for _, it in ipairs({{"firearm-magazine", 60}, {"iron-plate", 120}, {"electronic-circuit", 24}}) do
-      input.insert{name = it[1], count = it[2]}
+    -- Finished orders handed to the barracks (30 s a trooper would take most of the run): this tests the
+    -- army, not the recipe (the caps scenario checks the recipe in the prototypes).
+    S.orders = 0
+    S.feed = function()
+      local out = S.barracks.get_inventory(defines.inventory.crafter_output)
+      if S.orders < 12 then S.orders = S.orders + out.insert{name = "lp-trooper-order", count = math.min(10, 12 - S.orders)} end
     end
+    S.feed()
     info(string.format("army: barracks at %.0f,%.0f, outpost at %.0f,%.0f, %.0f tiles from the nearest faction turret",
       a[1], a[2], S.target[1], S.target[2], S.clearance))
   end)
@@ -664,6 +673,7 @@ scenarios.army = function()
     local sec = S.cc.get_or_create_control_behavior().get_section(1) or S.cc.get_or_create_control_behavior().add_section()
     sec.filters = {{value = {type = "virtual", name = "signal-O", quality = "normal"}, min = 1}}
   end)
+  for t = STRIKE + 600, STRIKE + 4 * 3600, 600 do schedule(t, function() if S.feed then S.feed() end end) end
   S.reached = 0
   for t = STRIKE + 4 * 3600, STRIKE + 10 * 3600, 600 do
     schedule(t, function()
@@ -690,6 +700,69 @@ scenarios.army = function()
   end)
 end
 
+-- Caps: command bandwidth. Level 1 and two powered relays give room for 20; orders beyond wait in the
+-- barracks. A relay lost puts 10 units offline. Level 2 and three more relays bring them back and make room
+-- for more. A destroyed depot drops a command core.
+scenarios.caps = function()
+  schedule(60, function()
+    flatten(-150, -150, -90, -90)
+    local function put(name, x, y)
+      return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    end
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", -120.5, -120.5)
+    put("electric-energy-interface", -116, -120)
+    S.relays = {put("lp-command-relay", -125.5, -114.5), put("lp-command-relay", -121.5, -114.5)}
+    for _, p in ipairs({{-118.5, -117.5}, {-123.5, -117.5}, {-113.5, -117.5}}) do put("medium-electric-pole", p[1], p[2]) end
+    put("lp-rally-beacon", -110.5, -125.5)
+    S.put = put
+    S.orders = 0
+  end)
+  -- Orders handed in 10 at a time (the output holds one stack), 40 in all.
+  for t = 120, 9 * 3600, 300 do
+    schedule(t, function()
+      if not S.barracks then return end
+      local out = S.barracks.get_inventory(defines.inventory.crafter_output)
+      if S.orders < 40 then S.orders = S.orders + out.insert{name = "lp-trooper-order", count = math.min(10, 40 - S.orders)} end
+    end)
+  end
+  schedule(4 * 3600, function()
+    local a = lp("army")
+    check("caps: training stops at the cap", a.alive == 20 and a.capacity == 20, a.alive .. " troopers, capacity " .. a.capacity)
+    local waiting = S.barracks.get_inventory(defines.inventory.crafter_output).get_item_count("lp-trooper-order")
+    check("caps: orders wait in the barracks", waiting > 0, waiting .. " waiting")
+    S.relays[1].destroy()
+  end)
+  schedule(4 * 3600 + 300, function()
+    local a = lp("army")
+    check("caps: a relay lost puts units offline", a.capacity == 10 and a.offline == 10,
+      "capacity " .. a.capacity .. ", " .. a.offline .. " offline")
+    game.forces.player.technologies["lp-command-bandwidth-2"].researched = true
+    for _, x in ipairs({-125.5, -129.5, -133.5}) do S.put("lp-command-relay", x, -110.5) end
+    S.put("medium-electric-pole", -127.5, -113.5)
+    S.put("medium-electric-pole", -131.5, -113.5)
+  end)
+  schedule(7 * 3600, function()
+    local a = lp("army")
+    check("caps: research and relays bring them back", a.offline == 0 and a.capacity == 40,
+      "capacity " .. a.capacity .. ", " .. a.offline .. " offline, level " .. a.level)
+    check("caps: and make room for more", a.alive > 20, a.alive .. " troopers")
+    lp("debug_depot", storage.id, 0)
+    local d = surface().find_entities_filtered{name = "lp-depot", force = FORCE}[1]
+    if d then d.die("player") end
+  end)
+  schedule(7 * 3600 + 60, function()
+    local a = lp("army")
+    local on_ground = surface().count_entities_filtered{name = "item-on-ground"}
+    check("caps: a destroyed depot drops a command core", a.cores_dropped >= 1, a.cores_dropped .. " dropped, "
+      .. on_ground .. " items on the ground")
+    local r = prototypes.recipe["lp-trooper-order"]
+    local core = false
+    for _, i in pairs(prototypes.recipe["lp-barracks"].ingredients) do if i.name == "lp-command-core" then core = true end end
+    check("caps: a trooper takes 30 s, a barracks a core", r.energy == 30 and core, r.energy .. " s, core " .. tostring(core))
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
@@ -698,6 +771,7 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 -- the strike at 30 failed for lack of time, not of mechanics).
 local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
+if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end
 if AFTER[params.scenario] and END < STRIKE + AFTER[params.scenario] * 3600 then
   error(string.format("lp-sim: %s strikes at minute %d; run at least %d minutes", params.scenario, STRIKE / 3600,
     STRIKE / 3600 + AFTER[params.scenario]))

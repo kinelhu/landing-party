@@ -20,7 +20,8 @@ script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e) base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick) end)
 
-local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"}}
+local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
+  {filter = "name", name = "lp-command-relay"}}
 for _, ev in ipairs({defines.events.on_built_entity, defines.events.on_robot_built_entity,
   defines.events.script_raised_built}) do
   script.on_event(ev, command.on_built, PLAYER_BUILT)
@@ -41,6 +42,9 @@ end, BUILDINGS)
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
   if ent.name == "lp-uplink" then faction.uplink_lost(ent) end
+  -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
+  if ent.name == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
+  if ent.name == "lp-lander" then command.drop_cores(ent.surface, ent.position, 3) end
   if ent.force.name == shared.FORCE then
     local id = storage.unit_owner[ent.unit_number]
     if id then
@@ -117,7 +121,7 @@ remote.add_interface("landing-party", {
     return b and b.id
   end,
   faction = function() return faction.state() end,
-  army = function() return command.stats() end,
+  army = function() local st = command.stats(); st.cores_dropped = storage.cmd.cores_dropped or 0; return st end,
   -- Tests only: shorten the faction's clocks and thresholds.
   debug_export = function(id, parts) faction.export(storage.bases[id], parts) end,
   debug_tune = function(t)

@@ -37,6 +37,13 @@ shared.units = {
   ["lp-harrier"] = {health = 150, cost = 40},
 }
 
+-- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by
+-- research level (0: before any; then levels 1-3; level 4 and beyond add RELAYS_PER_EXTRA_LEVEL each).
+shared.POPULATION = {["lp-trooper"] = 1}
+shared.RELAY_CAPACITY = 10
+shared.RELAYS_BY_LEVEL = {[0] = 2, 4, 8, 15}
+shared.RELAYS_PER_EXTRA_LEVEL = 2
+
 -- Faction tier needed to build each unit (the tier rises with parts exported, scripts/faction.lua).
 shared.UNLOCK = {["lp-infantry"] = 0, ["lp-tank"] = 0, ["lp-harrier"] = 1, ["lp-walker"] = 2}
 

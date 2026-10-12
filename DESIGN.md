@@ -18,6 +18,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Capture of mining outposts by holding | built | `army` |
+| Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | not yet | (needs a game session) |
@@ -198,6 +199,22 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   separate occupy order); occupy re-chosen each time took outpost after outpost down to the lander (hence
   the lock); idle units attack whatever enemy they see (hence arrive, then wander in place, fighting back
   only when hit).
+
+- **Command bandwidth (built; decided with the user).** Item costs cannot limit an army in Factorio: a
+  mid-game factory makes magazines by the thousand. So units are limited by what production cannot buy.
+  Lore: troopers are remotely commanded rigs, each needing a share of a limited command link, as the
+  faction's strength runs through its uplink.
+  - **Capacity**: each powered command relay (a radar's body, 2 MW) carries 10 units of bandwidth (a trooper
+    takes 1; tanks 4 and walkers 8 when they come). Research sets how many relays count: 2 before any, then
+    4, 8 and 15 at command bandwidth 1-3, and 2 more for each level of the endless fourth. Relays are
+    buildings, so they can be raided: units beyond capacity go offline (newest first; they stop and only
+    fight back) until it returns. Orders beyond capacity wait in the barracks.
+  - **Barracks** each need a **command core**, which cannot be crafted: a destroyed depot drops one, a
+    captured outpost one, a destroyed lander three; the first bandwidth research grants one. The army
+    grows with the war.
+  - **Pace**: a trooper takes 30 s to train.
+  - Caps scenario: 20 trained against capacity 20 with orders waiting; a relay destroyed puts 10 offline;
+    level 2 and three relays bring them back and allow 40; a destroyed depot drops a core.
 
 The aim: the player answers the faction with factory output, not clicks.
 - **Barracks**: an assembler-like building that turns ammunition, armour plates and parts the player makes

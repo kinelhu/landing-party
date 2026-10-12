@@ -20,6 +20,44 @@ local SIGNAL_OCCUPY = {type = "virtual", name = "signal-O"}
 
 function command.init()
   storage.cmd = storage.cmd or {barracks = {}, beacons = {}, troopers = {}}
+  storage.cmd.relays = storage.cmd.relays or {}
+end
+
+-- Command bandwidth. Capacity: RELAY_CAPACITY for each working relay, as many relays as research allows.
+local function research_level(force)
+  local level = 0
+  for k = 1, 3 do
+    local t = force.technologies["lp-command-bandwidth-" .. k]
+    if t and t.researched then level = k end
+  end
+  local inf = force.technologies["lp-command-bandwidth-4"]
+  if inf and level == 3 then
+    level = 3 + (inf.researched and inf.level or inf.level - 1)
+  end
+  return level
+end
+
+function command.capacity(force)
+  local level = research_level(force)
+  local allowed = shared.RELAYS_BY_LEVEL[math.min(level, 3)]
+  if level > 3 then allowed = allowed + (level - 3) * shared.RELAYS_PER_EXTRA_LEVEL end
+  local working = 0
+  for k, r in pairs(storage.cmd.relays) do
+    if not r.valid then
+      storage.cmd.relays[k] = nil
+    elseif r.force == force and r.status == defines.entity_status.working then
+      working = working + 1
+    end
+  end
+  return math.min(working, allowed) * shared.RELAY_CAPACITY
+end
+
+local function population(force)
+  local p = 0
+  for _, t in pairs(storage.cmd.troopers) do
+    if t.unit.valid and t.unit.force == force then p = p + (shared.POPULATION[t.unit.name] or 1) end
+  end
+  return p
 end
 
 function command.on_built(e)
@@ -27,6 +65,7 @@ function command.on_built(e)
   if not (ent and ent.valid) then return end
   if ent.name == "lp-barracks" then storage.cmd.barracks[ent.unit_number] = ent end
   if ent.name == "lp-rally-beacon" then storage.cmd.beacons[ent.unit_number] = ent end
+  if ent.name == "lp-command-relay" then storage.cmd.relays[ent.unit_number] = ent end
 end
 
 local function nearest(list, pos, force, range)
@@ -43,17 +82,24 @@ local function nearest(list, pos, force, range)
 end
 
 -- Finished orders become troopers beside the barracks, assigned to the nearest beacon.
+-- A finished order waits in the barracks while bandwidth is full; with its output full, the barracks stops.
 local function train()
+  local room = {}
   for k, b in pairs(storage.cmd.barracks) do
     if not b.valid then
       storage.cmd.barracks[k] = nil
     else
+      local f = b.force
+      if room[f.index] == nil then room[f.index] = command.capacity(f) - population(f) end
       local out = b.get_inventory(defines.inventory.crafter_output)
       local n = out.get_item_count("lp-trooper-order")
       for _ = 1, n do
+        local need = shared.POPULATION["lp-trooper"]
+        if room[f.index] < need then break end
         local p = b.surface.find_non_colliding_position("lp-trooper", {b.position.x, b.position.y + 3}, 10, 0.5)
         local u = p and b.surface.create_entity{name = "lp-trooper", position = p, force = b.force}
         if u then
+          room[f.index] = room[f.index] - need
           out.remove{name = "lp-trooper-order", count = 1}
           local beacon = nearest(storage.cmd.beacons, b.position, b.force, ASSIGN_RANGE)
           storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
@@ -111,13 +157,41 @@ local function order(t, cmd, key)
   t.key, t.at = key, game.tick
 end
 
+-- Units beyond capacity (a relay lost or unpowered) go offline, newest first, until bandwidth returns:
+-- they stop where they are and only fight back.
+local function offline_set()
+  local by_force = {}
+  local keys = {}
+  for k, t in pairs(storage.cmd.troopers) do
+    if t.unit.valid then table.insert(keys, k) else storage.cmd.troopers[k] = nil end
+  end
+  table.sort(keys)
+  local out, used, cap = {}, {}, {}
+  for _, k in ipairs(keys) do
+    local u = storage.cmd.troopers[k].unit
+    local f = u.force.index
+    if cap[f] == nil then cap[f] = command.capacity(u.force); used[f] = 0 end
+    used[f] = used[f] + (shared.POPULATION[u.name] or 1)
+    if used[f] > cap[f] then out[k] = true end
+  end
+  return out
+end
+
 local function lead()
   local objectives = {}
+  local offline = offline_set()
   for k, t in pairs(storage.cmd.troopers) do
     local u = t.unit
     if not u.valid then
       storage.cmd.troopers[k] = nil
+    elseif offline[k] then
+      if not t.offline then
+        t.offline = true
+        u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
+        t.key = "offline"
+      end
     else
+      t.offline = nil
       local beacon = t.beacon and storage.cmd.beacons[t.beacon]
       if not (beacon and beacon.valid) then
         beacon = nearest(storage.cmd.beacons, u.position, u.force, ASSIGN_RANGE)
@@ -170,9 +244,24 @@ function command.tick(tick)
 end
 
 function command.stats()
-  local alive = 0
-  for _, t in pairs(storage.cmd.troopers) do if t.unit.valid then alive = alive + 1 end end
-  return {trained = storage.cmd.trained or 0, alive = alive}
+  local alive, offline = 0, 0
+  for _, t in pairs(storage.cmd.troopers) do
+    if t.unit.valid then alive = alive + 1; if t.offline then offline = offline + 1 end end
+  end
+  local f = game.forces.player
+  return {trained = storage.cmd.trained or 0, alive = alive, offline = offline, capacity = command.capacity(f),
+    level = research_level(f)}
+end
+
+-- Command cores dropped by the faction's wreckage, lootable.
+function command.drop_cores(surface, pos, count)
+  surface.spill_item_stack{position = pos, stack = {name = "lp-command-core", count = count}, enable_looted = true}
+  storage.cmd.cores_dropped = (storage.cmd.cores_dropped or 0) + count
+end
+
+-- A captured outpost yields a core (base.lua cannot require this module's caller chain; it calls the hook).
+require("__landing-party__.scripts.base").on_capture = function(surface, pos)
+  command.drop_cores(surface, {x = pos[1], y = pos[2]}, 1)
 end
 
 return command

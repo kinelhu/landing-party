@@ -160,6 +160,7 @@ local function capture(b)
             end
           end
           b.captured = (b.captured or 0) + 1
+          if base.on_capture then base.on_capture(surface, m.center) end
           trace(b, string.format("captured by %s: mining at %.0f,%.0f (%d entities)", by.name, m.center[1], m.center[2], n))
         end
       else
