@@ -19,6 +19,9 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Capture of mining outposts by holding | built | `army` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
+| Patrols through settlements | built | `lively` (life animation) |
+| Convoys carrying exports to the uplink | built | `convoy` (life animation) |
+| Interceptors against player trains | built | `train` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | not yet | (needs a game session) |
@@ -162,6 +165,17 @@ Built in `units.lua`, `scripts/army.lua`.
 - **Raids.** With the garrison 70% full (at least 6), a raid leaves for the nearest player structure within
   400 tiles; 2 units stay home; survivors come home when the group finishes or after five minutes. At most
   one raid per 5 minutes.
+- **Patrols.** A few units leave the garrison (bastion 2, sprawl 4, picket and fortress 3) and loop a route of
+  up to five stops (outposts, pickets, compounds, the pad), fighting what they meet; the route is redrawn as
+  the settlement grows. The settlement looks alive and its soft outposts are visited.
+- **Convoys (exports travel).** While the uplink stands, a mature settlement's exports go to it as a hauler
+  (the car's hull, 1,500 health, slow, lightly armed) with up to two escorts, in legs of about 100 tiles,
+  docking 6 tiles outside the fortress on the side they come from (sent into the inner yard, haulers circled
+  the outer ring). Delivered cargo raises the tier; a destroyed hauler loses it. Convoys cross the map,
+  likely the player's ground: intercepting them is counterplay against the tier, as their raids are against
+  the player's supply. Without an uplink, exports leave from the settlement's own pad.
+- **Interceptors.** A hostile train within 150 tiles of a settlement draws up to 4 garrison units (harriers
+  first) at its nearest carriage, at most every 2 minutes; they come home as a raid does.
 - **Responses.** A faction building damaged or destroyed calls garrison units from the nearest depot within
   300 tiles, at most once a minute per settlement, sized to the threat: six for each hostile turret, unit,
   vehicle or character within 30 tiles, at least six, as many as the garrison can spare above its home
@@ -180,6 +194,8 @@ Built in `units.lua`, `scripts/army.lua`.
 - **Turret creep** (built): trades with an outpost's turrets and draws a response sized to it (defend:
   three upgraded gun turrets lose to a response of 8, which loses 5-8 units).
 - **Hit the launch pad** (built as a target): exports stop, tier growth slows.
+- **Intercept convoys** (built): a destroyed hauler's cargo never reaches the uplink.
+- **Protect rail lines** near their ground (built as a threat): interceptors go for trains.
 - **Field an army** (built, first pass): barracks and rally beacons; **capture** an outpost by holding it.
 - Open: capturing power; the uplink assault with an army.
 
@@ -291,6 +307,11 @@ scenario with assertions first; the window is for art, feel and GUI.
   states how long it needs after its strike.
 
 ## Engine notes
+- Pathfinding is the engine's (the biters' pathfinder): units route around whatever their collision mask
+  hits; with no way round, ground units shoot through; groups arrive as blobs; spider-units step over;
+  air units fly straight. Long trips go in ~100-tile legs.
+- An idle unit attacks any enemy in sight: give units a lasting order (arrive, then wander in place).
+- Commands: `wander` takes no destination and lasts forever by default (`ticks_to_wait`).
 - Player turrets fire only at military targets (`is_military_target`): ordinary enemy buildings are ignored.
 - `auto_connect` on a scripted pylon does not reliably rejoin a cut line: wire explicitly
   (`get_wire_connector(pole_copper).connect_to`).
@@ -329,3 +350,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   runs too short for their checks; a defend test that passed without damage.
 - Measurement mistakes: parallel load read as mod cost (profile alone); smoothed rates aliasing against
   crafting cycles (count over a window).
+- Haulers sent to the uplink in the fortress's inner yard circled the outer ring (dock at the gate).
+- A regression "hung": the simulations had finished, the animation renderer redrew a whole settlement for
+  each of ~1,750 frames (now drawn once, at most 240 frames: 83 s for a 60-minute run).
+- Tests that read too little: a train check blind to a wagon at 49 of 600 health; a barracks destroyed by
+  the faction's raids crashing the army test (now guarded, the mechanism test runs with the army off).
+- Player army: an advance at the nearest military target walked troopers into a hub's lasers (occupy
+  order); occupy re-chosen each time rolled outpost after outpost to the lander (lock); idle troopers
+  attacked what they saw (arrive, then wander in place, fight back only).

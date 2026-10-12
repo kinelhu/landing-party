@@ -375,7 +375,54 @@ local function travel(b, trace)
   end
 end
 
+-- Interceptors: trains of a hostile force passing within INTERCEPT_RANGE of a settlement draw up to
+-- INTERCEPT_SIZE units from its garrison, harriers first, at the nearest carriage. They come home as a
+-- raid does. Rail lines near their ground become a liability.
+local INTERCEPT_RANGE = 150
+local INTERCEPT_SIZE = 4
+local INTERCEPT_COOLDOWN = 2 * 3600
+
+local function intercept(b, trace)
+  if storage.army_off or game.tick < (b.next_intercept or 0) or #b.depots == 0 then return end
+  prune(b.garrison)
+  if #b.garrison <= HOME_GUARD then return end
+  local f = b.lander.force
+  local lp = b.lander.position
+  local best, bd
+  for _, other in pairs(game.forces) do
+    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other) then
+      for _, train in pairs(game.train_manager.get_trains{surface = b.lander.surface, force = other}) do
+        for _, car in pairs(train.carriages) do
+          local d = (car.position.x - lp.x) ^ 2 + (car.position.y - lp.y) ^ 2
+          if d < INTERCEPT_RANGE ^ 2 and (not bd or d < bd) then best, bd = car, d end
+        end
+      end
+    end
+  end
+  if not best then return end
+  b.next_intercept = game.tick + INTERCEPT_COOLDOWN
+  local members = {}
+  table.sort(b.garrison, function(x, y)
+    local hx, hy = x.name == "lp-harrier" and 0 or 1, y.name == "lp-harrier" and 0 or 1
+    if hx ~= hy then return hx > hy end
+    return x.unit_number < y.unit_number
+  end)
+  for i = #b.garrison, HOME_GUARD + 1, -1 do
+    if #members >= INTERCEPT_SIZE then break end
+    local u = table.remove(b.garrison, i)
+    u.commandable.set_command{type = defines.command.attack, target = best, distraction = defines.distraction.by_enemy}
+    table.insert(members, u)
+  end
+  local group = b.lander.surface.create_unit_group{position = b.lander.position, force = f}
+  table.insert(b.raids, {group = group, members = members, target = {best.position.x, best.position.y},
+    started = game.tick, home = b.depots[1], kind = "intercept"})
+  b.intercepts = (b.intercepts or 0) + 1
+  trace(b, string.format("intercept %d: %d units at a %s at %.0f,%.0f", b.intercepts, #members, best.name,
+    best.position.x, best.position.y))
+end
+
 function army.tick(b, tick, trace)
+  if tick % 600 == 300 then intercept(b, trace) end
   if tick % 600 == 450 then travel(b, trace) end
   if tick % 300 == 0 then settle(b, trace); launch(b, trace) end
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end

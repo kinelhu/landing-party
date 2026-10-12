@@ -636,6 +636,8 @@ scenarios.army = function()
     put("electric-energy-interface", 4, 1)
     put("medium-electric-pole", 2.5, 2.5)
     S.beacon = put("lp-rally-beacon", -3.5, 0.5)
+    -- The mechanism alone, from the start: at a 30-minute strike the faction's raids destroyed the barracks.
+    lp("debug_tune", {army_off = true})
     -- Bandwidth: research level 1 (four relays count) and two powered relays: room for 20.
     game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
     put("lp-command-relay", 0.5, 6.5)
@@ -647,6 +649,7 @@ scenarios.army = function()
     -- army, not the recipe (the caps scenario checks the recipe in the prototypes).
     S.orders = 0
     S.feed = function()
+      if not S.barracks.valid then return end
       local out = S.barracks.get_inventory(defines.inventory.crafter_output)
       if S.orders < 12 then S.orders = S.orders + out.insert{name = "lp-trooper-order", count = math.min(10, 12 - S.orders)} end
     end
@@ -839,13 +842,60 @@ scenarios.convoy = function()
   end)
 end
 
+-- Train: a player rail line with a locomotive and a wagon 110 tiles from the lander; the settlement (a depot
+-- and parts granted) must send interceptors that damage or destroy the train.
+scenarios.train = function()
+  schedule(200, function() lp("debug_depot", storage.id, 3000) end)
+  schedule(STRIKE, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local dx, dy = -lander.position.x, -lander.position.y
+    local len = math.sqrt(dx * dx + dy * dy)
+    local c = {math.floor(lander.position.x + dx / len * 110), math.floor(lander.position.y + dy / len * 110)}
+    flatten(c[1] - 40, c[2] - 6, c[1] + 40, c[2] + 6)
+    c[1], c[2] = c[1] - c[1] % 2, c[2] - c[2] % 2
+    for x = c[1] - 36, c[1] + 36, 2 do
+      surface().create_entity{name = "straight-rail", position = {x + 1, c[2] + 1}, direction = defines.direction.east,
+        force = "player"}
+    end
+    S.loco = surface().create_entity{name = "locomotive", position = {c[1] + 1, c[2] + 1}, direction = defines.direction.east,
+      force = "player"}
+    S.wagon = surface().create_entity{name = "cargo-wagon", position = {c[1] - 6, c[2] + 1}, direction = defines.direction.east,
+      force = "player"}
+    S.hp = S.loco and S.loco.health or 0
+    info(string.format("train: locomotive %s, wagon %s at %d,%d", tostring(S.loco ~= nil), tostring(S.wagon ~= nil), c[1], c[2]))
+  end)
+  S.closest = math.huge
+  for t = STRIKE + 60, STRIKE + 5 * 3600, 60 do
+    schedule(t, function()
+      if not (S.wagon and S.wagon.valid) then return end
+      for _, u in pairs(surface().find_entities_filtered{force = FORCE, type = {"unit", "spider-unit"},
+        position = S.wagon.position, radius = 200}) do
+        S.closest = math.min(S.closest, math.sqrt((u.position.x - S.wagon.position.x) ^ 2 + (u.position.y - S.wagon.position.y) ^ 2))
+      end
+    end)
+  end
+  schedule(STRIKE + 5 * 3600, function()
+    info(string.format("train: closest faction unit came within %.0f tiles of the wagon (%.0f health left)", S.closest,
+      S.wagon and S.wagon.valid and S.wagon.health or 0))
+    local st = lp("stats", storage.id)
+    -- Damage to any carriage counts (a wagon at 49 of 600 health once read as "not hit").
+    local hurt = not (S.loco and S.loco.valid) or S.loco.health < S.hp or not (S.wagon and S.wagon.valid)
+      or S.wagon.health < S.wagon.max_health
+    check("train: there was a train", S.loco ~= nil, tostring(S.loco ~= nil))
+    check("train: interceptors were sent", st.intercepts > 0, st.intercepts)
+    check("train: they hit it", hurt, string.format("locomotive %s, wagon %s",
+      (S.loco and S.loco.valid) and string.format("%.0f/%.0f", S.loco.health, S.hp) or "destroyed",
+      (S.wagon and S.wagon.valid) and string.format("%.0f/%.0f", S.wagon.health, S.wagon.max_health) or "destroyed"))
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
 -- the strike at 30 failed for lack of time, not of mechanics).
-local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11}
+local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if params.scenario == "convoy" and END < 10 * 3600 then error("lp-sim: convoy needs at least 10 minutes") end
 if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end
