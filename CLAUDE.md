@@ -22,7 +22,9 @@ at milestones, asked for.
   any run fails. Timings from a batch are inflated by contention: measure performance with one `sim.sh`.
 - `scripts/sheet.py out.png <run dirs>` (via `uv run --with matplotlib`): many settlements at one scale with
   shape metrics. Judge variety there.
-- Scenarios live in `tests/lp-sim/control.lua` (grow, cut, raid, occupy, probe). A new mechanic adds one.
+- Scenarios live in `tests/lp-sim/control.lua` (grow, cut, raid, occupy, probe; unit spikes air, path, cost
+  with `LP_UNITS`/`LP_MOVE`/`LP_TAG`). A new mechanic adds one.
+- The shell is zsh: it does not word-split `$var` in loops. Write loops over parameter sets in `bash -c`.
 - `scripts/check.sh`: load check beside Space Age and Quality (the sims run the base game alone).
 - Seeds: use the five standard ones (12345 777 4242 101 31337) for regressions, a dozen for variety.
   Very small map seeds (2, 3) gave identical results once: avoid them.

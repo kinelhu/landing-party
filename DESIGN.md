@@ -192,8 +192,24 @@ headless too, so most of the spikes below can be scenarios.
 - Biters only attack polluters: a scripted faction is ignored by them unless its buildings emit.
 - Entities cannot be placed in ungenerated chunks: request chunks ahead of expansion.
 
+## Unit spikes (headless, 2026-10-12; scenarios air, path, cost in tests/lp-sim)
+- **Air works as designed.** A unit on its own collision layer (`lp-air`, mask `{layers = {lp-air}},
+  not_colliding_with_itself`) with its own trigger target type (`lp-air-unit`) flies into a closed wall box
+  with every wall standing, crosses 45 armed mines without setting one off, and is ignored by a
+  flamethrower (which needs `ignore_target_mask = {"lp-air-unit"}`, added to every fluid and artillery
+  turret in data-final-fixes). Gun turrets still hit it (default `attack_target_mask` is all masks).
+- **Ground units breach.** Infantry ordered into a closed wall box shot a wall out and walked in: the
+  engine's units attack what blocks their path. Walls delay ground units; they do not stop them.
+- **Flamethrowers fire only within their arc**: a turret facing away never fires (a test error once).
+- **Pathing through a settlement is fine.** 25 infantry as a group and 10 singly crossed a sprawl
+  settlement (204 tiles) in under a minute, no command failing. A group arrives as a blob 10-30 tiles
+  across round its destination and reports finished: arrival radii must allow for it.
+- **Units are cheap.** Over a 10-minute run (seed 12345, alone): 500 idle +0.04 ms/tick, 500 wandering
+  +0.02, 1000 wandering +0.17 (baseline 0.275).
+- Harriers stop scattered 5-10 tiles round a go-to point (separation): fine for raids, not for formations.
+
 ## Spikes outstanding
-- Air units against walls, mines, flamers (`attack_target_mask`, `trigger_target_mask`).
-- 20 to 30 unit groups pathing through a dense base.
 - Cost of 5,000 inert faction entities; the materialise/dematerialise boundary of a two-level simulation.
+- Groups fighting through a defended player base (turrets, walls, the breach); walkers (spider-unit) and
+  tanks; whether units on the faction's force pick sensible targets when not commanded.
 - Roboport `disabled_by_script`; spidertron automatic targeting without a driver.

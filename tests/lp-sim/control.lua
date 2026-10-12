@@ -20,6 +20,7 @@ local function check(name, ok, detail)
   if not ok then failed = failed + 1 end
   table.insert(lines, (ok and "PASS " or "FAIL ") .. name .. "  " .. tostring(detail or ""))
 end
+local function info(text) table.insert(lines, "INFO " .. text) end
 local function metric(name, value) table.insert(lines, "METRIC " .. name .. " " .. tostring(value)) end
 
 -- One handler per tick: the scenario's schedule is a table of tick -> function.
@@ -166,6 +167,220 @@ scenarios.occupy = function()
   end)
 end
 
+-- ---------------------------------------------------------------------------------------------------
+-- Unit spikes. A flat test range near spawn: grass, nothing on it, so lanes differ only in what is tested.
+local function flatten(x0, y0, x1, y1)
+  local tiles = {}
+  for x = x0, x1 - 1 do for y = y0, y1 - 1 do table.insert(tiles, {name = "grass-1", position = {x, y}}) end end
+  surface().set_tiles(tiles, true, true, true, false)
+  for _, e in pairs(surface().find_entities_filtered{area = {{x0, y0}, {x1, y1}}}) do
+    if e.valid and e.type ~= "character" then e.destroy() end
+  end
+end
+
+local function spawn(name, pos, n, force)
+  local out = {}
+  for k = 1, n do
+    local p = surface().find_non_colliding_position(name, {pos[1], pos[2] + (k - (n + 1) / 2) * 1.5}, 6, 0.5)
+    local u = p and surface().create_entity{name = name, position = p, force = force or FORCE}
+    if u then table.insert(out, u) end
+  end
+  return out
+end
+
+local function go(units, dest)
+  for _, u in ipairs(units) do
+    u.commandable.set_command{type = defines.command.go_to_location, destination = dest, radius = 2,
+      distraction = defines.distraction.none}
+  end
+end
+
+-- Damage taken by a set of units (the dead count their full health).
+local function harm(units, max)
+  local d = 0
+  for _, u in ipairs(units) do d = d + (u.valid and (max - u.health) or max) end
+  return d
+end
+local function name_of(defs, v)
+  for k, x in pairs(defs) do if x == v then return k end end
+  return tostring(v)
+end
+local function inside(units, c, half)
+  local n = 0
+  for _, u in ipairs(units) do
+    if u.valid and math.abs(u.position.x - c[1]) < half and math.abs(u.position.y - c[2]) < half then n = n + 1 end
+  end
+  return n
+end
+local function near(units, pos, r)
+  local n = 0
+  for _, u in ipairs(units) do
+    if u.valid and (u.position.x - pos[1]) ^ 2 + (u.position.y - pos[2]) ^ 2 <= r * r then n = n + 1 end
+  end
+  return n
+end
+
+-- Air: harriers against walls, mines, a flamethrower and a gun turret, beside infantry as the control.
+scenarios.air = function()
+  local L = {}
+  local function lane(name, y) L[name] = {y = y, from = {-60, y}, to = {40, y}} end
+  lane("wall_h", -60); lane("wall_i", -40); lane("mine_h", -20); lane("mine_i", 0)
+  lane("flame_h", 60); lane("flame_i", 120); lane("gun_h", 180); lane("gun_i", 240)
+  schedule(60, function()
+    flatten(-80, -80, 70, 270)
+    for _, k in ipairs({"wall_h", "wall_i"}) do
+      local t = L[k].to
+      for x = -6, 6 do for y = -6, 6 do
+        if math.abs(x) == 6 or math.abs(y) == 6 then
+          surface().create_entity{name = "stone-wall", position = {t[1] + x, t[2] + y}, force = "player"}
+        end
+      end end
+    end
+    for _, k in ipairs({"mine_h", "mine_i"}) do
+      L[k].mines = {}
+      for x = -12, -8 do for y = -4, 4 do
+        table.insert(L[k].mines, surface().create_entity{name = "land-mine", position = {x, L[k].y + y}, force = "player"})
+      end end
+    end
+    for _, k in ipairs({"flame_h", "flame_i"}) do
+      -- Facing the lane: a flamethrower only fires within an arc in front of it.
+      local t = surface().create_entity{name = "flamethrower-turret", position = {-10, L[k].y + 8}, force = "player",
+        direction = defines.direction.north}
+      t.insert_fluid{name = "light-oil", amount = 100}
+      L[k].turret = t
+    end
+    for _, k in ipairs({"gun_h", "gun_i"}) do
+      local t = surface().create_entity{name = "gun-turret", position = {-10, L[k].y + 8}, force = "player"}
+      t.insert{name = "firearm-magazine", count = 200}
+      L[k].turret = t
+    end
+  end)
+  schedule(400, function()  -- mines arm after 120 ticks
+    S.results = {}
+    for k, l in pairs(L) do
+      local unit = k:sub(-1) == "h" and "lp-harrier" or "lp-infantry"
+      l.units = spawn(unit, l.from, 3)
+      l.max = prototypes.entity[unit].get_max_health()
+      go(l.units, l.to)
+    end
+  end)
+  schedule(400 + 1800, function()
+    for _, k in ipairs({"flame_h", "flame_i"}) do
+      local t = L[k].turret
+      info(string.format("%s turret fluid %s", k, t.valid and tostring(t.get_fluid_count()) or "dead"))
+    end
+    -- Ground units shoot through what blocks their path (the engine's obstacle attack): infantry gets in
+    -- only by breaching. Harriers fly over with every wall standing.
+    local function walls(t) return surface().count_entities_filtered{name = "stone-wall", force = "player",
+      area = {{t[1] - 7, t[2] - 7}, {t[1] + 7, t[2] + 7}}} end
+    check("air: harriers cross a closed wall box, walls intact",
+      inside(L.wall_h.units, L.wall_h.to, 6) >= 2 and walls(L.wall_h.to) == 48,
+      inside(L.wall_h.units, L.wall_h.to, 6) .. "/" .. #L.wall_h.units .. " inside, " .. walls(L.wall_h.to) .. "/48 walls")
+    check("air: infantry gets in only through a breach", inside(L.wall_i.units, L.wall_i.to, 6) == 0 or walls(L.wall_i.to) < 48,
+      inside(L.wall_i.units, L.wall_i.to, 6) .. " inside, " .. walls(L.wall_i.to) .. "/48 walls")
+    local function left(m) local n = 0 for _, e in ipairs(m) do if e.valid then n = n + 1 end end return n end
+    check("air: harriers do not set off mines", left(L.mine_h.mines) == #L.mine_h.mines,
+      left(L.mine_h.mines) .. "/" .. #L.mine_h.mines .. " mines left; harm " .. harm(L.mine_h.units, L.mine_h.max))
+    check("air: infantry does", left(L.mine_i.mines) < #L.mine_i.mines,
+      left(L.mine_i.mines) .. "/" .. #L.mine_i.mines .. " mines left; harm " .. harm(L.mine_i.units, L.mine_i.max))
+    check("air: the flamethrower ignores harriers", harm(L.flame_h.units, L.flame_h.max) == 0,
+      "harm " .. harm(L.flame_h.units, L.flame_h.max))
+    check("air: the flamethrower burns infantry", harm(L.flame_i.units, L.flame_i.max) > 0,
+      "harm " .. harm(L.flame_i.units, L.flame_i.max))
+    check("air: gun turrets hit harriers", harm(L.gun_h.units, L.gun_h.max) > 0, "harm " .. harm(L.gun_h.units, L.gun_h.max))
+    check("air: and infantry", harm(L.gun_i.units, L.gun_i.max) > 0, "harm " .. harm(L.gun_i.units, L.gun_i.max))
+    local walls = surface().count_entities_filtered{name = "stone-wall", force = "player"}
+    info("walls standing: " .. walls .. " of " .. 2 * 48)
+    for k, l in pairs(L) do
+      local arrived = near(l.units, l.to, 4)
+      local xs, res = {}, {}
+      for _, u in ipairs(l.units) do
+        if u.valid then
+          table.insert(xs, string.format("%.0f,%.0f", u.position.x, u.position.y))
+          local r = S.results[u.unit_number]
+          table.insert(res, r and name_of(defines.behavior_result, r) or "-")
+        end
+      end
+      info(string.format("%s: %d units, %d at the target, harm %d, at %s, results %s", k, #l.units, arrived,
+        harm(l.units, l.max), table.concat(xs, " "), table.concat(res, ",")))
+    end
+  end)
+end
+
+-- Path: a group of 25 infantry and 10 single units cross a 30-minute settlement to its farthest outpost.
+scenarios.path = function()
+  schedule(STRIKE, function()
+    local st = lp("stats", storage.id)
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local far, fd
+    for _, bin in pairs(lp_entities("lp-bin")) do
+      local d = (bin.position.x - lander.position.x) ^ 2 + (bin.position.y - lander.position.y) ^ 2
+      if not fd or d > fd then far, fd = bin, d end
+    end
+    -- Open ground beyond the outpost: room for 25 to stand (a spot beside the drills held only singles).
+    local open = surface().find_non_colliding_position("lp-lander", {far.position.x + 12, far.position.y + 12}, 40, 1)
+    S.dest = open and {open.x, open.y} or {far.position.x + 12, far.position.y + 12}
+    S.dist = math.sqrt(fd)
+    local start = {lander.position.x, lander.position.y + 12}
+    S.group_units = spawn("lp-infantry", start, 25)
+    S.group = surface().create_unit_group{position = start, force = FORCE}
+    for _, u in ipairs(S.group_units) do S.group.add_member(u) end
+    S.group.set_command{type = defines.command.go_to_location, destination = S.dest, radius = 8,
+      distraction = defines.distraction.none}
+    S.singles = spawn("lp-infantry", {start[1] + 6, start[2]}, 10)
+    go(S.singles, S.dest)
+    S.results = {}
+    info(string.format("path: %d in the group, %d single, %.0f tiles to %s (%s, %d blocks)", #S.group_units,
+      #S.singles, S.dist, serpent.line(S.dest), st.doctrine, st.blocks))
+  end)
+  for m = 1, 5 do
+    schedule(STRIKE + m * 3600, function()
+      local g = S.group.valid and S.group or nil
+      info(string.format("path +%d min: group %d/%d arrived, singles %d/%d arrived; group %s, state %s, %d members, at %s",
+        m, near(S.group_units, S.dest, 15), #S.group_units, near(S.singles, S.dest, 15), #S.singles,
+        g and "valid" or "gone", g and name_of(defines.group_state, g.state) or "-", g and #g.members or 0,
+        g and string.format("%.0f,%.0f", g.position.x, g.position.y) or "-"))
+      local ds = {}
+      for _, u in ipairs(S.group_units) do
+        if u.valid then table.insert(ds, math.floor(math.sqrt((u.position.x - S.dest[1]) ^ 2 + (u.position.y - S.dest[2]) ^ 2))) end
+      end
+      table.sort(ds)
+      info("  member distances to the destination: " .. table.concat(ds, " "))
+    end)
+  end
+  schedule(STRIKE + 5 * 3600, function()
+    local fails = 0
+    for _, r in pairs(S.results) do if r ~= defines.behavior_result.success then fails = fails + 1 end end
+    -- A group of 25 stands as a blob 10-30 tiles across round its destination (seed 12345: every member
+    -- within 30 a minute in, the group "finished"); a 15-tile radius read that as a stall.
+    check("path: the group arrives", near(S.group_units, S.dest, 32) >= 0.8 * #S.group_units,
+      near(S.group_units, S.dest, 32) .. "/" .. #S.group_units)
+    check("path: single units arrive", near(S.singles, S.dest, 15) >= 0.8 * #S.singles,
+      near(S.singles, S.dest, 15) .. "/" .. #S.singles .. ", " .. fails .. " commands failed")
+  end)
+end
+
+-- Cost: params.units infantry, idle or wandering (params.move), far from everything.
+scenarios.cost = function()
+  schedule(600, function()
+    flatten(-150, -150, -50, -50)
+    S.units = {}
+    local n = params.units or 0
+    local side = math.ceil(math.sqrt(n))
+    for k = 0, n - 1 do
+      local u = surface().create_entity{name = "lp-infantry", force = FORCE,
+        position = {-145 + (k % side) * 90 / side, -145 + math.floor(k / side) * 90 / side}}
+      if u then
+        table.insert(S.units, u)
+        if params.move then
+          u.commandable.set_command{type = defines.command.wander, radius = 30, distraction = defines.distraction.none}
+        end
+      end
+    end
+    info("cost: " .. #S.units .. " units, " .. (params.move and "wandering" or "idle"))
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 
@@ -199,6 +414,10 @@ schedule(END, function()
   table.insert(lines, "INFO " .. helpers.table_to_json(s))
   table.insert(lines, failed == 0 and "DONE ALL PASSED" or ("DONE " .. failed .. " FAILED"))
   helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")
+end)
+
+script.on_event(defines.events.on_ai_command_completed, function(e)
+  if S.results then S.results[e.unit_number] = e.result end
 end)
 
 script.on_event(defines.events.on_tick, function(e)

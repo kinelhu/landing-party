@@ -113,3 +113,5 @@ data:extend({
     ingredients = {{type = "item", name = "lp-feedstock", amount = shared.FEEDSTOCK_PER_PART}},
     results = {{type = "item", name = "lp-part", amount = 1}}},
 })
+
+require("units")
