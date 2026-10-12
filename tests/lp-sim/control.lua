@@ -403,6 +403,17 @@ for _, m in ipairs({10, 20, 40, 60, 90, 120}) do
 end
 schedule(END, function()
   local s = lp("stats", storage.id)
+  -- A run that ends before its scenario's checks fire must not pass (path once "passed" at 32 minutes with
+  -- its checks due at 35).
+  local CHECKLESS = {grow = true, probe = true, cost = true}
+  if not CHECKLESS[params.scenario] then
+    local ran = 0
+    for _, l in ipairs(lines) do
+      local is_check = l:sub(1, 5) == "PASS " or l:sub(1, 5) == "FAIL "
+      if is_check and l:find(params.scenario .. ":", 1, true) then ran = ran + 1 end
+    end
+    check("the scenario's checks ran", ran > 0, ran .. " checks; is the run long enough?")
+  end
   check("lander alive", s.lander)
   check("mined", s.mined > 0, s.mined)
   check("made parts", s.made > 0, s.made)
