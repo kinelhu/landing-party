@@ -763,6 +763,37 @@ scenarios.caps = function()
   end)
 end
 
+-- Lively: a settlement with a depot from the start; its patrols must walk their routes. Unit positions are
+-- recorded every 2 s for the life animation (scripts/life.py).
+scenarios.lively = function()
+  schedule(200, function() lp("debug_depot", storage.id, 2000) end)
+  S.visited = {}
+  for t = 600, END, 120 do
+    schedule(t, function()
+      local st = lp("stats", storage.id)
+      local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+      if not lander then return end
+      local units = surface().find_entities_filtered{position = lander.position, radius = 220, type = {"unit", "spider-unit"}}
+      local frame = {tick = game.tick, units = {}}
+      for _, u in pairs(units) do
+        table.insert(frame.units, {u.name, u.position.x, u.position.y, u.force.name})
+        for k, p in ipairs(st.route or {}) do
+          if (u.position.x - p[1]) ^ 2 + (u.position.y - p[2]) ^ 2 < 100 then S.visited[k] = true end
+        end
+      end
+      helpers.write_file("landing-party/life.jsonl", helpers.table_to_json(frame) .. "\n", true)
+    end)
+  end
+  schedule(END, function()
+    local st = lp("stats", storage.id)
+    local v = 0
+    for _ in pairs(S.visited) do v = v + 1 end
+    check("lively: patrols are out", st.patrol > 0, st.patrol .. " patrolling")
+    check("lively: they walk their route", st.route and v >= math.min(3, #st.route), v .. " of " .. (st.route and #st.route or 0)
+      .. " stops visited")
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading

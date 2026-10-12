@@ -598,6 +598,7 @@ function base.stats(b)
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false,
     turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0,
+    patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
     fortress_box = b.blocks[1] and b.blocks[1].kind == "fortress" and
       {b.blocks[1].x0, b.blocks[1].y0, b.blocks[1].x0 + b.blocks[1].w, b.blocks[1].y0 + b.blocks[1].h} or nil,
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do

@@ -42,6 +42,7 @@ end
 local GARRISON_PER_TIER = 5     -- per depot
 local function tier() return storage.faction and storage.faction.tier or 0 end
 local function cap(b) return #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * tier()) end
+local function strength(b) return #b.garrison + #(b.patrol or {}) end
 
 -- The doctrine's mix, restricted to what the faction's tier has unlocked.
 local function mix(b)
@@ -56,7 +57,7 @@ end
 local function produce(b, trace)
   if storage.army_off then return end
   prune(b.garrison)
-  if #b.garrison >= cap(b) then return end
+  if strength(b) >= cap(b) then return end
   local name = b.next_unit or rng.weighted(b.rng, mix(b))
   b.next_unit = name
   local cost = shared.units[name].cost
@@ -219,8 +220,56 @@ local function settle(b, trace)
   end
 end
 
+-- Patrols: a few units taken from the garrison walk a loop through the settlement (pickets, compounds,
+-- outposts), fighting what they meet. The settlement looks alive, and soft outposts are visited.
+army.PATROL = {bastion = 2, sprawl = 4, picket = 3, fortress = 3}
+local function waypoints(b)
+  local pts = {}
+  for _, m in ipairs(b.modules) do
+    if m.built and not m.captured and (m.kind == "mining" or m.kind == "picket" or m.kind == "compound"
+      or m.kind == "pad") then table.insert(pts, m.center) end
+  end
+  return pts
+end
+
+local function patrol(b, trace)
+  b.patrol = b.patrol or {}
+  prune(b.patrol)
+  local want = army.PATROL[b.doctrine] or 2
+  while #b.patrol < want and #b.garrison > HOME_GUARD do table.insert(b.patrol, table.remove(b.garrison)) end
+  if #b.patrol == 0 then return end
+  -- A route of up to five stops, drawn once and redrawn when the settlement changes much.
+  local pts = waypoints(b)
+  if #pts < 2 then return end
+  if not b.route or b.route_n ~= #pts then
+    local route, used = {}, {}
+    for _ = 1, math.min(5, #pts) do
+      local k
+      repeat k = rng.int(b.rng, 1, #pts) until not used[k]
+      used[k] = true
+      table.insert(route, {pts[k][1], pts[k][2]})
+    end
+    b.route, b.route_n = route, #pts
+    trace(b, string.format("patrol route of %d stops for %d units", #route, #b.patrol))
+  end
+  for i, u in ipairs(b.patrol) do
+    if not u.commandable.has_command then
+      local cmds = {}
+      for k = 0, #b.route - 1 do
+        local p = b.route[(i + k - 1) % #b.route + 1]
+        table.insert(cmds, {type = defines.command.go_to_location, destination = p, radius = 6,
+          distraction = defines.distraction.by_enemy})
+      end
+      u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = cmds}
+      b.patrol_legs = (b.patrol_legs or 0) + 1
+    end
+  end
+end
+
 function army.tick(b, tick, trace)
   if tick % 300 == 0 then settle(b, trace); launch(b, trace) end
+  if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end
 end
 
