@@ -381,8 +381,86 @@ scenarios.cost = function()
   end)
 end
 
+-- Assault: a walled player outpost 150 tiles from the lander towards spawn, four gun turrets, machines
+-- inside. The player is armed as at a first rocket launch, when the faction arrives: piercing rounds and
+-- several levels of physical damage and shooting speed research (yellow ammo and no research made any
+-- raid a walkover). The settlement must build a depot and a garrison, and raid it.
+scenarios.assault = function()
+  if params.fast then
+    schedule(200, function() lp("debug_depot", storage.id, 3000) end)
+  end
+  schedule(120, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local lx, ly = lander.position.x, lander.position.y
+    local len = math.sqrt(lx * lx + ly * ly)
+    local c = {math.floor(lx - lx / len * 150), math.floor(ly - ly / len * 150)}
+    flatten(c[1] - 20, c[2] - 20, c[1] + 20, c[2] + 20)
+    local pf = game.forces.player
+    pf.set_ammo_damage_modifier("bullet", 0.8)
+    pf.set_gun_speed_modifier("bullet", 0.6)
+    S.outpost = {}
+    local function put(name, x, y, extra)
+      local e = surface().create_entity{name = name, position = {c[1] + x, c[2] + y}, force = "player"}
+      if e then table.insert(S.outpost, e); if extra then extra(e) end end
+      return e
+    end
+    for x = -12, 12 do for y = -12, 12 do
+      if math.abs(x) == 12 or math.abs(y) == 12 then put("stone-wall", x, y) end
+    end end
+    for _, p in ipairs({{-9, -9}, {9, -9}, {-9, 9}, {9, 9}}) do
+      put("gun-turret", p[1], p[2], function(e) e.insert{name = "piercing-rounds-magazine", count = 100} end)
+    end
+    for _, p in ipairs({{-3, -3}, {3, -3}, {-3, 3}, {3, 3}}) do put("assembling-machine-1", p[1] + 0.5, p[2] + 0.5) end
+    for _, p in ipairs({{0, -7}, {0, 7}, {-7, 0}, {7, 0}}) do put("iron-chest", p[1] + 0.5, p[2] + 0.5) end
+    S.center = c
+    S.count = #S.outpost
+    S.frames = 0
+    info(string.format("assault: outpost of %d entities at %d,%d", S.count, c[1], c[2]))
+  end)
+  -- Replay: while any faction unit is within 120 tiles of the outpost, every 2 s, one JSON line of the
+  -- units, the outpost and the faction buildings near it (scripts/replay.py draws them).
+  for t = 600, END, 120 do
+    schedule(t, function()
+      if not S.center or S.frames > 600 then return end
+      local c = S.center
+      local area = {{c[1] - 120, c[2] - 120}, {c[1] + 120, c[2] + 120}}
+      local units = surface().find_entities_filtered{area = area, force = FORCE, type = {"unit", "spider-unit"}}
+      if #units == 0 then return end
+      S.frames = S.frames + 1
+      local frame = {tick = game.tick, center = c, units = {}, outpost = {}}
+      for _, u in pairs(units) do
+        table.insert(frame.units, {u.name, u.position.x, u.position.y, u.health / u.max_health})
+      end
+      for _, e in ipairs(S.outpost) do
+        if e.valid then table.insert(frame.outpost, {e.name, e.position.x, e.position.y, e.health / e.max_health}) end
+      end
+      helpers.write_file("landing-party/replay.jsonl", helpers.table_to_json(frame) .. "\n", true)
+    end)
+  end
+  schedule(END, function()
+    local st = lp("stats", storage.id)
+    local left, turrets = 0, 0
+    for _, e in ipairs(S.outpost) do
+      if e.valid then left = left + 1; if e.type == "ammo-turret" then turrets = turrets + 1 end end
+    end
+    check("assault: a depot was built", st.depots > 0, st.depots)
+    check("assault: units were built", st.units_built > 0, st.units_built .. " built, garrison " .. st.garrison)
+    check("assault: a raid was launched", st.raids_sent > 0, st.raids_sent)
+    check("assault: the raid hit the outpost", left < S.count, (S.count - left) .. " of " .. S.count .. " destroyed, "
+      .. turrets .. "/4 turrets standing, razed " .. st.razed)
+    check("assault: the outpost fought back", st.units_lost > 0, st.units_lost .. " units lost")
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
+-- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
+-- state its strike at 30 never made).
+local STRIKES = {cut = true, raid = true, occupy = true, path = true}
+if STRIKES[params.scenario] and END <= STRIKE + 5 * 3600 then
+  error(string.format("lp-sim: %s strikes at minute %d; run at least %d minutes", params.scenario, STRIKE / 3600,
+    STRIKE / 3600 + 6))
+end
 
 script.on_init(function()
   helpers.remove_path("landing-party")
@@ -422,6 +500,8 @@ schedule(END, function()
   check("power covers demand", s.demand <= s.supply, string.format("%.1f/%.1f MW", s.demand / 1e6, s.supply / 1e6))
   metric("parts", s.parts); metric("drills", s.drills); metric("fabs", s.fabs); metric("pylons", s.pylons)
   metric("lost", s.lost); metric("rebuilt", s.rebuilt)
+  metric("units", s.units_built); metric("units_lost", s.units_lost); metric("raids", s.raids_sent)
+  metric("razed", s.razed)
   table.insert(lines, "INFO " .. helpers.table_to_json(s))
   table.insert(lines, failed == 0 and "DONE ALL PASSED" or ("DONE " .. failed .. " FAILED"))
   helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")

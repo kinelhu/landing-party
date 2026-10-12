@@ -8,6 +8,7 @@ local function init()
   storage.bases = storage.bases or {}
   storage.next_id = storage.next_id or 1
   storage.owner = storage.owner or {}
+  storage.unit_owner = storage.unit_owner or {}
   if storage.trace == nil then storage.trace = false end
   if not game.forces[shared.FORCE] then game.create_force(shared.FORCE) end
 end
@@ -17,12 +18,27 @@ script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e) base.tick(e.tick) end)
 
-local DIES = {}
-for _, n in ipairs({"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret",
-  "lp-wall", "lp-radar", "lp-depot"}) do
-  table.insert(DIES, {filter = "name", name = n})
-end
-script.on_event(defines.events.on_entity_died, function(e) base.on_died(e.entity) end, DIES)
+-- Deaths: the faction's buildings are queued for rebuild, its units counted lost, and what its units
+-- destroy is counted razed (attributed through the unit that did it).
+script.on_event(defines.events.on_entity_died, function(e)
+  local ent = e.entity
+  if ent.force.name == shared.FORCE then
+    local id = storage.unit_owner[ent.unit_number]
+    if id then
+      storage.unit_owner[ent.unit_number] = nil
+      local b = storage.bases[id]
+      if b then b.units_lost = b.units_lost + 1 end
+    else
+      base.on_died(ent)
+    end
+  elseif e.force and e.force.name == shared.FORCE and e.cause and e.cause.valid
+    and ent.force.name ~= "neutral" and ent.force.name ~= "enemy" then
+    -- Razed counts the player's structures only (trees felled by shells once inflated it by half).
+    local id = storage.unit_owner[e.cause.unit_number]
+    local b = id and storage.bases[id]
+    if b then b.razed = b.razed + 1 end
+  end
+end)
 
 -- A landing site about `distance` from `from`: in the first of eight directions (seeded order) with a
 -- rich enough patch within SITE_SEARCH tiles of the ring, the richest chunk of ore there. A single point
@@ -134,6 +150,16 @@ remote.add_interface("landing-party", {
     return b and b.id
   end,
   set_trace = function(on) storage.trace = on end,
+  -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
+  debug_depot = function(id, parts)
+    local b = storage.bases[id]
+    local s = b.lander.surface
+    local p = s.find_non_colliding_position("lp-depot", {b.lander.position.x, b.lander.position.y + 16}, 30, 1)
+    local d = p and s.create_entity{name = "lp-depot", position = p, force = b.lander.force}
+    if d then table.insert(b.depots, d) end
+    b.parts = b.parts + (parts or 0)
+    return d ~= nil
+  end,
   snapshot = snapshot,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
 })

@@ -208,6 +208,33 @@ headless too, so most of the spikes below can be scenarios.
   +0.02, 1000 wandering +0.17 (baseline 0.275).
 - Harriers stop scattered 5-10 tiles round a go-to point (separation): fine for raids, not for formations.
 
+## The army (built, 2026-10-12)
+`scripts/army.lua`, `units.lua`. Roster on vanilla bones, tinted: infantry (the engineer's body),
+tank (the tank's hull as a unit), walker (a spider-unit on the spidertron, own tinted legs), harrier (the
+destroyer robot, air layer). Depots build one unit per 10 s from parts, up to 10 per depot, in the
+doctrine's mix (bastion: infantry and tanks; sprawl: harriers; picket: balanced). When the garrison is 70%
+full (at least 6) a raid leaves for the nearest player structure within 400 tiles, two units stay home,
+survivors return after the group finishes or five minutes.
+
+Balance, from the assault scenario (fast mode: a depot and parts granted at the start; replay GIF and
+stills per run):
+- **Calibrate against the player at arrival time**, not a fresh one: the faction comes at the first
+  launch, when the player has piercing rounds and damage research (the test gives +80% bullet damage, +60%
+  shooting speed). Against yellow ammo and no research every raid was a walkover.
+- **Armour must not make a tier immune**: a flat 10 physical reduction on the tank turned a gun turret's
+  5-damage rounds into nothing (seed 4242: seven raids, no unit lost). Now 3 and 20%.
+- **Unit range at most turret range less the wall's depth** (15 against a gun turret's 18): at 17 to 22,
+  tanks shelled walls from outside the turrets' reach.
+- With those, the curve has the intended shape (seed 12345, all three doctrines): raids of 5 and 8 die on
+  the approach; the third (12) takes the outpost's turrets, walkers stepping over the wall and harriers
+  flying in while infantry and tanks never got through.
+- Cost (verbose benchmark, seed 12345, 30 min with the army): the mod's script averages 0.003-0.019 ms a
+  tick of ~0.3 ms. Readings of 0.49-0.77 ms were machine load (parallel runs), not the mod: profile with
+  `--benchmark-verbose all` before blaming code. The raid target search (a wide area query) now runs every
+  30 s, every 2 min when nothing is in reach.
+- **To fix: planner spikes.** Single ticks of 20-60 ms when the planner searches for sites (a 200-tile ore
+  query at once): a visible stutter in a real game. Spread the search over ticks or cache the ore found.
+
 ## Spikes outstanding
 - Cost of 5,000 inert faction entities; the materialise/dematerialise boundary of a two-level simulation.
 - Groups fighting through a defended player base (turrets, walls, the breach); walkers (spider-unit) and

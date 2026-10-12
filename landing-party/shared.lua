@@ -26,6 +26,14 @@ shared.cost = {
   ["lp-depot"] = 40,
 }
 
+-- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.
+shared.units = {
+  ["lp-infantry"] = {health = 120, cost = 10},
+  ["lp-tank"] = {health = 900, cost = 60},
+  ["lp-walker"] = {health = 1600, cost = 120},
+  ["lp-harrier"] = {health = 150, cost = 40},
+}
+
 -- Fabrication: FEEDSTOCK_PER_PART feedstock make one part in PART_SECONDS (before crafting speed).
 shared.FEEDSTOCK_PER_PART = 5
 shared.PART_SECONDS = 2

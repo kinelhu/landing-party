@@ -19,8 +19,8 @@ ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
 # The test mod is copied, not linked: each run writes its own params.lua into it.
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 DOCTRINE="nil"; [ -n "${LP_DOCTRINE:-}" ] && DOCTRINE="\"$LP_DOCTRINE\""
-printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance = %s, radius = %s, doctrine = %s, units = %s, move = %s}\n' \
-  "$SCENARIO" "$MINUTES" "$EVERY" "$STRIKE" "$DISTANCE" "$RADIUS" "$DOCTRINE" "${LP_UNITS:-0}" "${LP_MOVE:-false}" \
+printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance = %s, radius = %s, doctrine = %s, units = %s, move = %s, fast = %s}\n' \
+  "$SCENARIO" "$MINUTES" "$EVERY" "$STRIKE" "$DISTANCE" "$RADIUS" "$DOCTRINE" "${LP_UNITS:-0}" "${LP_MOVE:-false}" "${LP_FAST:-false}" \
   > "$SIM/mods/lp-sim/params.lua"
 cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
@@ -42,5 +42,9 @@ dest="$REPO/docs/sim/$RUN"
 mkdir -p "$dest"
 cp "$out/decisions.txt" "$out/sim.jsonl" "$out/results.txt" "$dest/"
 uv run --quiet --with matplotlib python3 "$REPO/scripts/plot.py" "$dest/sim.jsonl" "$dest" > /dev/null
+if [ -s "$out/replay.jsonl" ]; then
+  cp "$out/replay.jsonl" "$dest/"
+  uv run --quiet --with matplotlib --with pillow python3 "$REPO/scripts/replay.py" "$dest/replay.jsonl" "$dest/raid.gif" > /dev/null
+fi
 grep -E "^(PASS|FAIL|DONE)" "$out/results.txt" | sed "s/^/[$RUN] /"
 grep -q "^DONE ALL PASSED" "$out/results.txt"

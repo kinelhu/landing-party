@@ -7,7 +7,8 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$DIR/.." && pwd)"
 SCENARIOS="${1:-grow cut raid occupy}"; SEEDS="${2:-12345 777 4242 101 31337}"
 MINUTES="${3:-60}"; STRIKE="${4:-30}"
-JOBS="${LP_JOBS:-6}"
+# Runs share the machine badly: eight at once took ~6 min each against ~1 min alone. Keep it low.
+JOBS="${LP_JOBS:-3}"
 logs="$(mktemp -d)"
 pids=(); names=()
 for sc in $SCENARIOS; do

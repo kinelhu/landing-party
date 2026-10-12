@@ -4,6 +4,7 @@ local shared = require("__landing-party__.shared")
 local modules = require("__landing-party__.scripts.modules")
 local site = require("__landing-party__.scripts.site")
 local layout = require("__landing-party__.scripts.layout")
+local army = require("__landing-party__.scripts.army")
 
 local base = {}
 
@@ -79,6 +80,7 @@ function base.land(surface, pos, opts)
     rule = "landed", log = {}, waiting = nil}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
   layout.init(b, seed, opts.doctrine)
+  army.init(b)
   local at = layout.land(b, surface, pos)
   if not at then return nil end
   clear_area(surface, "lp-lander", at)
@@ -434,6 +436,7 @@ function base.tick(tick)
     if b.lander.valid then
       if tick % ECONOMY_TICKS == 0 then economy(b) end
       if tick % BUILD_TICKS == 0 then build(b) end
+      army.tick(b, tick, trace)
       if tick % PLAN_TICKS == 0 then
         local pending = false
         for _, job in ipairs(b.rebuild) do
@@ -454,7 +457,8 @@ function base.stats(b)
     gens = #b.gens, turrets = #b.turrets, pylons = #b.pylons, modules = #b.modules, queue = #b.queue,
     lost = b.lost, rebuilt = b.rebuilt, rebuild_pending = #b.rebuild,
     doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, walls = #b.walls, road_tiles = b.road_tiles,
-    radars = #b.radars, archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
+    radars = #b.radars, depots = #b.depots, garrison = #b.garrison, units_built = b.units_built,
+    units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid}
 end
