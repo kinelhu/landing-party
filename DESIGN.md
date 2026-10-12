@@ -16,8 +16,8 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
-| Player army, rally beacons | open | |
-| Capture of nodes | open | |
+| Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
+| Capture of mining outposts by holding | built | `army` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | not yet | (needs a game session) |
@@ -179,11 +179,27 @@ Built in `units.lua`, `scripts/army.lua`.
 - **Turret creep** (built): trades with an outpost's turrets and draws a response sized to it (defend:
   three upgraded gun turrets lose to a response of 8, which loses 5-8 units).
 - **Hit the launch pad** (built as a target): exports stop, tier growth slows.
-- Open: capture of mining and power nodes by holding them; a player army commanded through rally beacons;
-  the uplink assault.
+- **Field an army** (built, first pass): barracks and rally beacons; **capture** an outpost by holding it.
+- Open: capturing power; the uplink assault with an army.
 
-## The player's army (proposed, for review)
-Nothing built yet. The aim: the player answers the faction with factory output, not clicks.
+## The player's army
+Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this section is still a proposal.
+- **Built:** a barracks (recipe: 5 magazines, 10 iron plates, 2 circuits a trooper, 8 s) turns orders into
+  troopers (the engineer's body in warm colours); each follows the nearest rally beacon. The beacon's
+  circuit signals: **A** advance (attack the nearest faction military target within 200 tiles), **O** occupy
+  (go to the nearest outpost and stay, fighting back only when hit), **R** retreat (to the barracks),
+  nothing: hold by the beacon. Occupy locks onto its outpost until the order changes.
+- **Capture (built):** a mining outpost with player military within 12 tiles of its centre and none of the
+  faction's (units, turrets) within 20 for a minute becomes the player's: drills, bin and pylon change
+  force, the faction stops counting and rebuilding them. Army scenario (seeds 777, 12345, 4242): 10 troopers
+  trained, all reach the outpost, 1-2 outposts captured, none lost, with the faction's defences around the
+  target removed and its responses off (the mechanism alone; a fought capture is next).
+- Lessons: an advance at the nearest military target walked ten troopers into a hub's lasers (hence a
+  separate occupy order); occupy re-chosen each time took outpost after outpost down to the lander (hence
+  the lock); idle units attack whatever enemy they see (hence arrive, then wander in place, fighting back
+  only when hit).
+
+The aim: the player answers the faction with factory output, not clicks.
 - **Barracks**: an assembler-like building that turns ammunition, armour plates and parts the player makes
   into the player's own units (the same bones as the faction's, the player's colours): infantry first,
   then tanks and walkers. Units cost real items, so an army is a production line like any other.
@@ -197,8 +213,8 @@ Nothing built yet. The aim: the player answers the faction with factory output, 
 - **Capture by holding**: a faction mining or power node with player units on its ground and none of the
   faction's for a minute becomes the player's (its drills mine for the player, its generators feed the
   player's grid). No capture by damage threshold (that is Proliferation's).
-- Tests first, headless: a barracks fed by infinity chests builds a squad; a beacon set to advance takes
-  it to a faction outpost; it holds the ground (no rebuild), then captures the node.
+- Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
+  blocks; a fought capture (army scenario without the isolation).
 
 ## Balance
 Measured in the `assault` scenario (fast mode: a depot and parts granted at the start; replay GIF and

@@ -156,3 +156,4 @@ data:extend({
 })
 
 require("units")
+require("player")

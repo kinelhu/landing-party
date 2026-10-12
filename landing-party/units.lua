@@ -7,13 +7,13 @@
 --                (lp-air-unit) is what turrets ignore when they cannot shoot up (data-final-fixes.lua).
 local shared = require("shared")
 
-local function tint(t, seen)
+local function tint(t, seen, color)
   if type(t) ~= "table" or seen[t] then return end
   seen[t] = true
   if (t.filename or t.filenames or t.stripes) and not (t.draw_as_shadow or t.draw_as_light or t.draw_as_glow) then
-    t.tint = shared.TINT
+    t.tint = color or shared.TINT
   end
-  for _, v in pairs(t) do tint(v, seen) end
+  for _, v in pairs(t) do tint(v, seen, color) end
 end
 
 local function gun(damage, range, cooldown, category)
@@ -47,26 +47,32 @@ data:extend({
   {type = "trigger-target-type", name = "lp-air-unit"},
 })
 
--- Drone infantry: the engineer's body, as ERM's RedArmy does. Runs with its gun; fires from the idle pose.
+-- Infantry: the engineer's body, as ERM's RedArmy does. Runs with its gun; fires from the idle pose. The
+-- faction's drones in cold blue; the player's troopers (player.lua) in their own colour.
 local character = data.raw.character.character.animations[1]
-local infantry = base_unit("lp-infantry")
-infantry.max_health = shared.units["lp-infantry"].health
-infantry.movement_speed = 0.12
-infantry.distance_per_frame = 0.13
-infantry.vision_distance = 30
-infantry.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
-infantry.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
-infantry.run_animation = table.deepcopy(character.running_with_gun)
--- Ranges stay at most a turret's 18 less the wall in front of it (~3): anything shooting a wall stands in
--- turret range. A tank at 22, then 17, shelled walls from outside the turrets' reach.
-local ia = gun(6, 15, 20)
-ia.animation = table.deepcopy(character.idle_with_gun)
-infantry.attack_parameters = ia
-infantry.dying_explosion = "explosion"
-infantry.corpse = nil
-infantry.resistances = {{type = "physical", decrease = 2, percent = 10}}
-tint(infantry.run_animation, {})
-tint(infantry.attack_parameters.animation, {})
+local function make_infantry(name, color)
+  local u = base_unit(name)
+  u.max_health = shared.units["lp-infantry"].health
+  u.movement_speed = 0.12
+  u.distance_per_frame = 0.13
+  u.vision_distance = 30
+  u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
+  u.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
+  u.run_animation = table.deepcopy(character.running_with_gun)
+  -- Ranges stay at most a turret's 18 less the wall in front of it (~3): anything shooting a wall stands
+  -- in turret range. A tank at 22, then 17, shelled walls from outside the turrets' reach.
+  local a = gun(6, 15, 20)
+  a.animation = table.deepcopy(character.idle_with_gun)
+  u.attack_parameters = a
+  u.dying_explosion = "explosion"
+  u.corpse = nil
+  u.resistances = {{type = "physical", decrease = 2, percent = 10}}
+  tint(u.run_animation, {}, color)
+  tint(u.attack_parameters.animation, {}, color)
+  return u
+end
+local infantry = make_infantry("lp-infantry")
+local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1})
 
 -- Tank: the tank's hull as a unit (its turret does not turn on its own). A square box: units rotate.
 local tank_car = data.raw.car.tank
@@ -144,4 +150,4 @@ harrier.resistances = {{type = "fire", percent = 100}}
 tint(harrier.run_animation, {})
 tint(harrier.attack_parameters.animation, {})
 
-data:extend({infantry, tank, walker, harrier})
+data:extend({infantry, tank, walker, harrier, trooper})

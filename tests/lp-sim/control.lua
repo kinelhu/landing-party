@@ -597,13 +597,106 @@ scenarios.uplink = function()
   end)
 end
 
+-- Army: the player's side, the mechanism alone. A powered barracks fed for 12 troopers, a rally beacon and a
+-- constant combinator wired to it, beyond a faction outpost. At minute 8 the combinator sends O (occupy);
+-- turrets near the target are removed and the faction's responses and raids are off, so this tests
+-- training, orders, holding and capture, not a fight.
+scenarios.army = function()
+  local red = defines.wire_connector_id.circuit_red
+  schedule(STRIKE, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    -- The outpost farthest from any faction turret (one 29 tiles from a hub drew the squad onto its lasers).
+    local far, fd
+    for _, bin in pairs(lp_entities("lp-bin")) do
+      local t = surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = bin.position, radius = 200}
+      local d = 200
+      for _, x in pairs(t) do
+        d = math.min(d, math.sqrt((x.position.x - bin.position.x) ^ 2 + (x.position.y - bin.position.y) ^ 2))
+      end
+      if not fd or d > fd then far, fd = bin, d end
+    end
+    S.target = {far.position.x, far.position.y}
+    S.clearance = fd
+    -- Beyond the outpost, away from the lander: placed towards spawn it once sat beside the landing pad,
+    -- inside its turrets' range, and every trooper died before the advance.
+    local dx, dy = far.position.x - lander.position.x, far.position.y - lander.position.y
+    local len = math.sqrt(dx * dx + dy * dy)
+    local a
+    -- With room to spare: turrets built later beside it killed the waiting squad (seed 777).
+    for _, d in ipairs({60, 90, 120, 150}) do
+      a = {far.position.x + dx / len * d, far.position.y + dy / len * d}
+      if surface().count_entities_filtered{force = FORCE, position = a, radius = 60} == 0 then break end
+    end
+    S.base_at = a
+    flatten(math.floor(a[1]) - 10, math.floor(a[2]) - 10, math.floor(a[1]) + 10, math.floor(a[2]) + 10)
+    local function put(name, dx, dy)
+      return surface().create_entity{name = name, position = {a[1] + dx, a[2] + dy}, force = "player", raise_built = true}
+    end
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    S.beacon = put("lp-rally-beacon", -3.5, 0.5)
+    S.cc = put("constant-combinator", -5.5, 0.5)
+    S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
+    local input = S.barracks.get_inventory(defines.inventory.crafter_input)
+    for _, it in ipairs({{"firearm-magazine", 60}, {"iron-plate", 120}, {"electronic-circuit", 24}}) do
+      input.insert{name = it[1], count = it[2]}
+    end
+    info(string.format("army: barracks at %.0f,%.0f, outpost at %.0f,%.0f, %.0f tiles from the nearest faction turret",
+      a[1], a[2], S.target[1], S.target[2], S.clearance))
+  end)
+  schedule(STRIKE + 4 * 3600, function()
+    S.trained = lp("army").trained
+    -- The mechanism alone, as occupy tests it: turrets near the target are removed (as if an earlier assault
+    -- had won) and the faction's responses and raids are off. Compact settlements cover every outpost with
+    -- a hub's turrets (seeds 12345 and 777), so a target "out of range" was a property of the map.
+    -- Lasers reach 24 tiles: clear 45 round the target (30 left turrets covering the approach). The idle
+    -- garrison fights what comes near: remove units within 80 (they killed the squad on seed 12345).
+    -- Along the whole approach, not only round the target.
+    for k = 0, 10 do
+      local p = {S.target[1] + (S.base_at[1] - S.target[1]) * k / 10, S.target[2] + (S.base_at[2] - S.target[2]) * k / 10}
+      for _, x in pairs(surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = p,
+        radius = 45}) do x.destroy() end
+    end
+    for _, x in pairs(surface().find_entities_filtered{type = {"unit", "spider-unit"}, force = FORCE,
+      position = S.target, radius = 80}) do x.destroy() end
+    lp("debug_tune", {army_off = true})
+    local sec = S.cc.get_or_create_control_behavior().get_section(1) or S.cc.get_or_create_control_behavior().add_section()
+    sec.filters = {{value = {type = "virtual", name = "signal-O", quality = "normal"}, min = 1}}
+  end)
+  S.reached = 0
+  for t = STRIKE + 4 * 3600, STRIKE + 10 * 3600, 600 do
+    schedule(t, function()
+      if not S.target then return end
+      -- Troopers standing at any outpost (the beacon picks its own, seed 777).
+      local n = 0
+      for _, u in pairs(surface().find_entities_filtered{name = "lp-trooper", force = "player"}) do
+        if surface().count_entities_filtered{name = "lp-bin", position = u.position, radius = 10, limit = 1} > 0 then
+          n = n + 1
+        end
+      end
+      S.reached = math.max(S.reached, n)
+    end)
+  end
+  schedule(STRIKE + 10 * 3600, function()
+    local st = lp("stats", storage.id)
+    -- Any outpost: the beacon picks the one nearest to itself, not necessarily the test's (seed 777).
+    local mine = surface().count_entities_filtered{name = "lp-drill", force = "player"}
+    check("army: troopers were trained", (S.trained or 0) >= 10, tostring(S.trained) .. " by the advance")
+    check("army: the beacon took them to the outpost", S.reached >= 5, S.reached .. " at the outpost at most")
+    check("army: holding it captured it", mine > 0 and st.captured > 0, mine .. " drills now the player's, " ..
+      st.captured .. " outposts captured")
+    info("army: " .. serpent.line(lp("army")) .. ", killed by " .. serpent.line(S.killers or {}))
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
 -- the strike at 30 failed for lack of time, not of mechanics).
-local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18}
+local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if AFTER[params.scenario] and END < STRIKE + AFTER[params.scenario] * 3600 then
   error(string.format("lp-sim: %s strikes at minute %d; run at least %d minutes", params.scenario, STRIKE / 3600,
@@ -615,7 +708,8 @@ script.on_init(function()
   lp("set_trace", true)
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
-    {doctrine = params.doctrine or (params.scenario == "defend" and "bastion" or nil),
+    {doctrine = params.doctrine or (params.scenario == "defend" and "bastion")
+      or (params.scenario == "army" and "sprawl") or nil,
      uplink = params.scenario == "uplink" or nil})
   if not storage.id then error("lp-sim: landing failed") end
 end)
@@ -656,6 +750,18 @@ schedule(END, function()
   table.insert(lines, failed == 0 and "DONE ALL PASSED" or ("DONE " .. failed .. " FAILED"))
   helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")
 end)
+
+-- What kills the player's troopers, and the lander (army scenario diagnostics).
+script.on_event(defines.events.on_entity_died, function(e)
+  local by = e.cause and e.cause.valid and e.cause.name or "no cause"
+  if e.entity.name == "lp-trooper" then
+    S.killers = S.killers or {}
+    S.killers[by] = (S.killers[by] or 0) + 1
+  else
+    table.insert(lines, string.format("INFO lander killed at tick %d by %s (%s)", e.tick, by,
+      e.force and e.force.name or "?"))
+  end
+end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-lander"}})
 
 script.on_event(defines.events.on_ai_command_completed, function(e)
   if S.results then S.results[e.unit_number] = e.result end

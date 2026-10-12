@@ -55,10 +55,11 @@ local function register(b, e, module)
   storage.owner[e.unit_number] = {base = b.id, module = module}
 end
 
+-- Drop what is gone or no longer the faction's (a captured drill stays valid, on another force).
 local function prune(list)
   local j = 0
   for i = 1, #list do
-    if list[i].valid then j = j + 1; list[j] = list[i] end
+    if list[i].valid and list[i].force.name == shared.FORCE then j = j + 1; list[j] = list[i] end
   end
   for i = #list, j + 1, -1 do list[i] = nil end
 end
@@ -121,6 +122,53 @@ function base.land(surface, pos, opts)
 end
 
 -- The base's network is the lander's: whatever is cut off from it stops counting.
+-- Capture by holding: a mining outpost with hostile military on its ground (within OCCUPY_RADIUS of its
+-- centre) and none of the faction's within CAPTURE_CLEAR for CAPTURE_TICKS changes hands, drills, bin and
+-- pylon. No capture by damage (that is Proliferation's).
+local CAPTURE_CLEAR = 20
+local CAPTURE_TICKS = 60 * 60
+local function holder(surface, pos)
+  local f = force()
+  for _, other in pairs(game.forces) do
+    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other) then
+      local e = surface.find_entities_filtered{position = pos, radius = OCCUPY_RADIUS, force = other, type = OCCUPIERS,
+        limit = 1}[1]
+      if e then return other end
+    end
+  end
+end
+local function capture(b)
+  local surface = game.surfaces[b.surface]
+  for _, m in ipairs(b.modules) do
+    local left = 0
+    for _, e in ipairs(m.entities) do if e.valid and e.force.name == shared.FORCE then left = left + 1 end end
+    -- Something must be left to take (a module with nothing standing was once "captured").
+    if m.kind == "mining" and m.built and not m.captured and left > 0 then
+      local by = holder(surface, m.center)
+      local defended = surface.count_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(),
+        type = {"unit", "spider-unit", "electric-turret"}, limit = 1} > 0
+      if by and not defended then
+        m.held_since = m.held_since or game.tick
+        if game.tick - m.held_since >= CAPTURE_TICKS then
+          m.captured = by.name
+          local n = 0
+          for _, e in ipairs(m.entities) do
+            if e.valid and e.force.name == shared.FORCE then
+              storage.owner[e.unit_number] = nil
+              e.force = by
+              n = n + 1
+            end
+          end
+          b.captured = (b.captured or 0) + 1
+          trace(b, string.format("captured by %s: mining at %.0f,%.0f (%d entities)", by.name, m.center[1], m.center[2], n))
+        end
+      else
+        m.held_since = nil
+      end
+    end
+  end
+end
+
 -- A faction building under fire: the depot answers (throttled in army.alarm).
 function base.on_damaged(e)
   local own = storage.owner[e.unit_number]
@@ -523,6 +571,7 @@ function base.tick(tick)
       end
       army.tick(b, tick, trace)
       if tick % EXPORT_TICKS == 0 then export(b) end
+      if tick % 600 == 300 then capture(b) end
       if tick % PLAN_TICKS == 0 then
         local pending = false
         for _, job in ipairs(b.rebuild) do
@@ -547,7 +596,7 @@ function base.stats(b)
     units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false,
-    turrets_n = #b.turrets, fortress_planned = b.fortress_planned,
+    turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0,
     fortress_box = b.blocks[1] and b.blocks[1].kind == "fortress" and
       {b.blocks[1].x0, b.blocks[1].y0, b.blocks[1].x0 + b.blocks[1].w, b.blocks[1].y0 + b.blocks[1].h} or nil,
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do

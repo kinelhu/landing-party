@@ -54,6 +54,7 @@ end
 
 -- One unit from the first depot with room, if parts allow; the doctrine weighs which.
 local function produce(b, trace)
+  if storage.army_off then return end
   prune(b.garrison)
   if #b.garrison >= cap(b) then return end
   local name = b.next_unit or rng.weighted(b.rng, mix(b))
@@ -99,6 +100,7 @@ local SEARCH_TICKS = 30 * 60      -- a wide area query: not every few seconds (i
 local IDLE_SEARCH_TICKS = 120 * 60
 
 local function launch(b, trace)
+  if storage.army_off then return end
   prune(b.garrison)
   if #b.depots == 0 or game.tick < b.next_raid or game.tick < (b.next_search or 0) then return end
   if #b.garrison < math.max(6, RAID_SHARE * cap(b)) then return end
@@ -159,7 +161,7 @@ end
 local RESPONSE_COOLDOWN = 60 * 60
 
 function army.alarm(b, pos, trace)
-  if game.tick < (b.next_response or 0) then return end
+  if storage.army_off or game.tick < (b.next_response or 0) then return end
   prune(b.garrison)
   local home, hd
   for _, d in ipairs(b.depots) do

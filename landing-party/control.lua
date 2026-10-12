@@ -2,6 +2,7 @@ local shared = require("shared")
 local base = require("scripts.base")
 local site = require("scripts.site")
 local faction = require("scripts.faction")
+local command = require("scripts.command")
 
 
 local function init()
@@ -11,12 +12,19 @@ local function init()
   storage.unit_owner = storage.unit_owner or {}
   if storage.trace == nil then storage.trace = false end
   if not game.forces[shared.FORCE] then game.create_force(shared.FORCE) end
+  command.init()
 end
 
 script.on_init(init)
 script.on_configuration_changed(init)
 
-script.on_event(defines.events.on_tick, function(e) base.tick(e.tick); faction.tick(e.tick) end)
+script.on_event(defines.events.on_tick, function(e) base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick) end)
+
+local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"}}
+for _, ev in ipairs({defines.events.on_built_entity, defines.events.on_robot_built_entity,
+  defines.events.script_raised_built}) do
+  script.on_event(ev, command.on_built, PLAYER_BUILT)
+end
 
 -- Damage to the faction's buildings calls a response (filtered to them; army.alarm throttles).
 local BUILDINGS = {}
@@ -109,6 +117,7 @@ remote.add_interface("landing-party", {
     return b and b.id
   end,
   faction = function() return faction.state() end,
+  army = function() return command.stats() end,
   -- Tests only: shorten the faction's clocks and thresholds.
   debug_export = function(id, parts) faction.export(storage.bases[id], parts) end,
   debug_tune = function(t)
@@ -117,6 +126,7 @@ remote.add_interface("landing-party", {
     if t.tiers then f.tiers = t.tiers end
     if t.quiet ~= nil then storage.quiet = t.quiet end
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
+    if t.army_off ~= nil then storage.army_off = t.army_off end
   end,
   set_trace = function(on) storage.trace = on end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
