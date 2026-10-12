@@ -232,8 +232,10 @@ stills per run):
   tick of ~0.3 ms. Readings of 0.49-0.77 ms were machine load (parallel runs), not the mod: profile with
   `--benchmark-verbose all` before blaming code. The raid target search (a wide area query) now runs every
   30 s, every 2 min when nothing is in reach.
-- **To fix: planner spikes.** Single ticks of 20-60 ms when the planner searches for sites (a 200-tile ore
-  query at once): a visible stutter in a real game. Spread the search over ticks or cache the ore found.
+- **Planner spikes, fixed.** Planning ticks cost 5.5-5.8 ms (measured alone; 20-60 ms read under load):
+  each plan queried every ore tile within 200 tiles. Ore is now scanned once, a chunk per tick, into cached
+  lattice cells, and a plan tests at most 12 sites: worst planning tick 1.5 ms (`scripts/profile.sh`).
+  Side effect: growth a little slower (19 modules at 20 min against 24).
 
 ## Spikes outstanding
 - Cost of 5,000 inert faction entities; the materialise/dematerialise boundary of a two-level simulation.

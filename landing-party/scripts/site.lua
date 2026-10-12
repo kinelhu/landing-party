@@ -81,32 +81,59 @@ end
 
 -- The best mining origin: on the lattice, over ore, nearest to the base's network, within reach.
 -- Returns origin and its distance to the network.
-function site.mining(surface, base, reach, radius)
-  local m = modules.mining
+-- Ore near the lander is scanned once, one chunk per call, into lattice cells kept in storage. The planner
+-- then reads the cells instead of querying every ore tile within 200 tiles each time it plans (a 5-6 ms
+-- stutter every planning tick, seed 12345).
+function site.scan_init(base, radius)
+  local cx0, cy0 = math.floor(base.origin.x / 32), math.floor(base.origin.y / 32)
+  local r = math.ceil(radius / 32)
+  local queue = {}
+  for x = cx0 - r, cx0 + r do
+    for y = cy0 - r, cy0 + r do table.insert(queue, {x, y, (x - cx0) ^ 2 + (y - cy0) ^ 2}) end
+  end
+  table.sort(queue, function(a, b) if a[3] ~= b[3] then return a[3] < b[3] end
+    if a[1] ~= b[1] then return a[1] < b[1] end return a[2] < b[2] end)
+  base.ore_scan = {queue = queue, i = 1}
+  base.ore_cells = base.ore_cells or {}
+end
+
+function site.scan_step(surface, base)
+  local scan = base.ore_scan
+  local c = scan and scan.queue[scan.i]
+  if not c then return end
+  scan.i = scan.i + 1
+  if not surface.is_chunk_generated({c[1], c[2]}) then return end
   local L = modules.MINING_LATTICE
   local ax, ay = base.origin.x, base.origin.y
-  local cells, list = {}, {}
-  for _, r in pairs(surface.find_entities_filtered{area = {{ax - radius, ay - radius}, {ax + radius, ay + radius}},
+  for _, r in pairs(surface.find_entities_filtered{area = {{c[1] * 32, c[2] * 32}, {c[1] * 32 + 32, c[2] * 32 + 32}},
     type = "resource", name = site.ORES}) do
     local cx = math.floor((r.position.x - ax) / L.x)
     local cy = math.floor((r.position.y - ay) / L.y)
     local key = cx .. ":" .. cy
     -- Every fourth lattice column is left empty: a road spine through the patch.
-    if cx % 4 ~= 3 and not cells[key] and not base.cells[key] then
-      cells[key] = true
-      table.insert(list, {ax + cx * L.x + 1, ay + cy * L.y + 3, key, cx, cy})
+    if cx % 4 ~= 3 and not base.ore_cells[key] then
+      base.ore_cells[key] = {ax + cx * L.x + 1, ay + cy * L.y + 3, key, cx, cy}
     end
   end
+end
+
+-- The best mining origin: on the lattice, over ore, nearest to the network, within reach. At most `budget.n`
+-- candidates are tested per plan (shared across reach steps); the rest wait for the next plan.
+function site.mining(surface, base, reach, budget)
+  local m = modules.mining
   local scored = {}
-  for _, o in ipairs(list) do
-    local _, d = nearest_pylon(base, o[1], o[2])
-    if d <= reach then table.insert(scored, {o = o, d = d}) end
+  for key, o in pairs(base.ore_cells) do
+    if not base.cells[key] then
+      local _, d = nearest_pylon(base, o[1], o[2])
+      if d <= reach then table.insert(scored, {o = o, d = d}) end
+    end
   end
   table.sort(scored, function(a, b) if a.d ~= b.d then return a.d < b.d end
     if a.o[1] ~= b.o[1] then return a.o[1] < b.o[1] end return a.o[2] < b.o[2] end)
-  -- A cell is judged once: taken when chosen, bad when it does not fit (cells are skipped above).
-  for i, c in ipairs(scored) do
-    if i > 60 then break end
+  -- A cell is judged once: taken when chosen, bad when it does not fit.
+  for _, c in ipairs(scored) do
+    if budget.n <= 0 then return end
+    budget.n = budget.n - 1
     if site.fits(surface, base, m, c.o[1], c.o[2]) then base.cells[c.o[3]] = "taken"; return c.o, c.d, c.o[4], c.o[5] end
     -- Held or reserved ground may free up later: only a cell that does not fit physically is dropped.
     if not reserved(base, box_at(m, c.o[1], c.o[2], 1)) then base.cells[c.o[3]] = "bad" end

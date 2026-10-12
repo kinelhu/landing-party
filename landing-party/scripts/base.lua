@@ -16,6 +16,7 @@ local START_PARTS = 150
 -- fits (a long pylon line out to a distant patch is how it sprawls).
 local REACHES = {40, 90, 160}
 local SEARCH = 200           -- ore search radius around the lander
+local SITE_BUDGET = 12       -- candidate mining sites tested per plan
 local DEFENCE_RADIUS = 14
 -- A destroyed node is rebuilt unless a hostile turret, unit, vehicle, wall or character stands this close.
 -- Walls do not count: occupation needs a military presence, not a cheap barrier.
@@ -90,6 +91,7 @@ function base.land(surface, pos, opts)
   b.lander = lander
   b.origin = {x = math.floor(lander.position.x), y = math.floor(lander.position.y)}
   storage.bases[id] = b
+  site.scan_init(b, SEARCH)
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
     color = {0.7, 0.9, 1}, scale = 1.4, alignment = "center"}.id
   trace(b, string.format("landed at %.0f,%.0f: doctrine %s, first hub %s", at[1], at[2], b.doctrine,
@@ -365,8 +367,9 @@ local function plan(b)
   local fab_cap = (#b.fabs + (owed["lp-fabricator"] or 0)) * FAB_FEED_PER_MIN
   supply = supply - (owed["lp-generator"] or 0) * shared.power["lp-generator"]
   local function mining()
+    local budget = {n = SITE_BUDGET}
     for _, reach in ipairs(REACHES) do
-      local o, _, cx, cy = site.mining(surface, b, reach, SEARCH)
+      local o, _, cx, cy = site.mining(surface, b, reach, budget)
       if o then
         enqueue(b, modules.mining, o, cx, cy)
         return string.format("mining at %d,%d", o[1], o[2])
@@ -434,6 +437,7 @@ end
 function base.tick(tick)
   for _, b in pairs(storage.bases) do
     if b.lander.valid then
+      site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
       if tick % BUILD_TICKS == 0 then build(b) end
       army.tick(b, tick, trace)
