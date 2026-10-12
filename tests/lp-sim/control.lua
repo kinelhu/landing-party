@@ -467,7 +467,7 @@ scenarios.defend = function()
       if not fd or d > fd then far, fd = bin, d end
     end
     for _, t in pairs(surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = far.position,
-      radius = 40}) do t.die("player") end
+      radius = 40}) do t.destroy() end  -- silently: a scripted kill raised the alarm before the creep stood
     local at = {far.position.x, far.position.y}  -- the bin itself may die
     S.near = function() return surface().count_entities_filtered{force = FORCE, position = at, radius = 12,
       name = {"lp-drill", "lp-bin", "lp-pylon"}} end

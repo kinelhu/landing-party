@@ -161,8 +161,11 @@ Built in `units.lua`, `scripts/army.lua`.
 - **Raids.** With the garrison 70% full (at least 6), a raid leaves for the nearest player structure within
   400 tiles; 2 units stay home; survivors come home when the group finishes or after five minutes. At most
   one raid per 5 minutes.
-- **Responses.** A faction building damaged or destroyed calls up to 8 garrison units from the nearest
-  depot within 300 tiles, at most once a minute per settlement.
+- **Responses.** A faction building damaged or destroyed calls garrison units from the nearest depot within
+  300 tiles, at most once a minute per settlement, sized to the threat: six for each hostile turret, unit,
+  vehicle or character within 30 tiles, at least six, as many as the garrison can spare above its home
+  guard. Against two upgraded gun turrets (defend, seeds 12345, 777, 4242) a response of 8 destroys them
+  and loses about half.
 - Faction buildings are military targets, as nests are, so player turrets engage them.
 
 ## What the player can do
@@ -173,6 +176,24 @@ Built in `units.lua`, `scripts/army.lua`.
 - **Hit the launch pad** (built as a target): exports stop, tier growth slows.
 - Open: capture of mining and power nodes by holding them; a player army commanded through rally beacons;
   the uplink assault.
+
+## The player's army (proposed, for review)
+Nothing built yet. The aim: the player answers the faction with factory output, not clicks.
+- **Barracks**: an assembler-like building that turns ammunition, armour plates and parts the player makes
+  into the player's own units (the same bones as the faction's, the player's colours): infantry first,
+  then tanks and walkers. Units cost real items, so an army is a production line like any other.
+- **Rally beacon**: a placeable beacon (circuit-connected) that gathers the units a barracks makes. Its
+  signals set the stance: hold (guard the beacon, the default), advance (go to a second beacon or a map
+  ping, fight on the way), retreat (back to the barracks). A beacon placed beside a faction node and set to
+  hold is how a player occupies ground; capture follows from holding.
+- **Supply**: units out of range of a powered beacon (or a forward depot fed by logistics) stop healing and
+  slowly lose effectiveness; holding ground far from home needs a supply line, as the faction's does.
+- **Selection tool** as the override, through ERM Unit Control (optional dependency) or our own minimal one.
+- **Capture by holding**: a faction mining or power node with player units on its ground and none of the
+  faction's for a minute becomes the player's (its drills mine for the player, its generators feed the
+  player's grid). No capture by damage threshold (that is Proliferation's).
+- Tests first, headless: a barracks fed by infinity chests builds a squad; a beacon set to advance takes
+  it to a faction outpost; it holds the ground (no rebuild), then captures the node.
 
 ## Balance
 Measured in the `assault` scenario (fast mode: a depot and parts granted at the start; replay GIF and
@@ -185,8 +206,10 @@ stills per run) and `defend`.
   shelled walls from outside turret reach.
 - Current curve (seed 12345, three doctrines): raids of 5 and 8 die on the approach; the third (12) takes a
   four-turret outpost, walkers stepping over the wall and harriers flying in.
-- Open: responses are too small against prepared turrets (8 died to two); tier thresholds and export rates
-  are untuned (the `faction` test runs them at a tenth).
+- Responses: a fixed 8 died to the last unit against two turrets; sized to the threat they win at a cost.
+- Confirmed on seeds 777, 4242, 101 (assault, defend, faction, uplink: 12 of 12).
+- Open: tier thresholds and export rates are untuned (the `faction` test runs them at a tenth); garrison
+  caps limit responses (10 a depot at tier 0).
 
 ## Where Landing Party differs from Proliferation
 Proliferation (MIT, no public source, 2026) is a machine faction in the mould of Stargate's Replicators:

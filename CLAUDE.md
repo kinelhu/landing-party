@@ -24,6 +24,8 @@ at milestones, asked for.
   shape metrics. Judge variety there. `replay.py` (raid GIF and stills), `overview.py` (all settlements).
 - `scripts/profile.sh [scenario] [seed] [minutes]`: per-tick engine timings. Profile before blaming code.
 - Iterate on single short runs (`LP_FAST=true` grants a depot and parts); batch only to confirm.
+- Do not edit `landing-party/` while a batch runs: the mod is linked, not copied, so runs that start later
+  load the edited code and the batch confirms a mix.
 - Scenarios live in `tests/lp-sim/control.lua` (grow, cut, raid, occupy, probe; unit spikes air, path, cost
   with `LP_UNITS`/`LP_MOVE`/`LP_TAG`). A new mechanic adds one.
 - The shell is zsh: it does not word-split `$var` in loops. Write loops over parameter sets in `bash -c`.

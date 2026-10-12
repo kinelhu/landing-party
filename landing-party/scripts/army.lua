@@ -139,7 +139,23 @@ end
 -- Response: a building hit within reach of a depot calls out a squad from the garrison (the home guard
 -- stays), at most once a minute per settlement. It goes as a raid does and comes home the same way.
 local RESPONSE_RANGE = 300
-local RESPONSE_SIZE = 8
+-- Sized to the threat: three units for each hostile turret, unit, vehicle or character near the alarm, at
+-- least four. A fixed eight died to the last unit against two gun turrets (defend, seed 12345).
+local RESPONSE_PER_THREAT = 6       -- three per turret still died to the last unit against upgraded turrets
+local RESPONSE_MIN = 6
+local THREAT_RADIUS = 30
+local THREATS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "unit", "car", "spider-vehicle",
+  "character"}
+
+local function threat_count(surface, pos, f)
+  local n = 0
+  for _, other in pairs(game.forces) do
+    if other ~= f and other.name ~= "neutral" and not f.get_cease_fire(other) then
+      n = n + surface.count_entities_filtered{position = pos, radius = THREAT_RADIUS, force = other, type = THREATS}
+    end
+  end
+  return n
+end
 local RESPONSE_COOLDOWN = 60 * 60
 
 function army.alarm(b, pos, trace)
@@ -154,6 +170,7 @@ function army.alarm(b, pos, trace)
   end
   if not home or #b.garrison <= HOME_GUARD then return end
   b.next_response = game.tick + RESPONSE_COOLDOWN
+  local size = math.max(RESPONSE_MIN, RESPONSE_PER_THREAT * threat_count(home.surface, pos, home.force))
   local group = home.surface.create_unit_group{position = home.position, force = home.force}
   local members = {}
   local dest = {pos.x, pos.y}
@@ -162,7 +179,7 @@ function army.alarm(b, pos, trace)
     {type = defines.command.attack_area, destination = dest, radius = 30, distraction = defines.distraction.by_anything},
   }}
   for i = #b.garrison, HOME_GUARD + 1, -1 do
-    if #members >= RESPONSE_SIZE then break end
+    if #members >= size then break end
     local u = table.remove(b.garrison, i)
     if u.type == "unit" then group.add_member(u) else u.commandable.set_command(cmd) end
     table.insert(members, u)
@@ -171,7 +188,7 @@ function army.alarm(b, pos, trace)
   table.insert(b.raids, {group = group, members = members, target = dest, started = game.tick, home = home,
     kind = "response"})
   b.responses = (b.responses or 0) + 1
-  trace(b, string.format("response %d: %d units to %.0f,%.0f", b.responses, #members, pos.x, pos.y))
+  trace(b, string.format("response %d: %d units (wanted %d) to %.0f,%.0f", b.responses, #members, size, pos.x, pos.y))
 end
 
 -- A raid is over when its group has finished or broken up, or after five minutes: survivors go home.
