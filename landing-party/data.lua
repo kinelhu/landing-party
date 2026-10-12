@@ -17,7 +17,10 @@ local function tint(t, seen)
 end
 
 -- A faction copy of a vanilla prototype: renamed, retinted, not minable, not blueprintable.
+local MILITARY = {["lp-turret"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-lander"] = true,
+  ["lp-uplink"] = true, ["lp-launchpad"] = true}
 local function copy(type, name, new)
+  local name_new = new
   local p = table.deepcopy(data.raw[type][name])
   p.name = new
   p.minable = nil
@@ -26,9 +29,11 @@ local function copy(type, name, new)
   p.placeable_by = nil
   p.flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"}
   p.hidden = true
-  -- Player turrets only fire at military targets: without this, turret creep against a settlement does
-  -- nothing (two gun turrets beside an outpost never fired), unlike against biter nests.
-  p.is_military_target = true
+  -- Player turrets and units fire on their own only at military targets. Military: what fights or
+  -- commands (turrets, depots, radars, lander, uplink, launch pad). Not military: production and walls,
+  -- so an outpost can be captured intact (a squad would otherwise shoot the drills it came to take) or
+  -- destroyed on purpose. (All military once, so turret creep would hit drills; capture won.)
+  p.is_military_target = MILITARY[name_new] or false
   p.icons = {{icon = p.icon or (p.icons and p.icons[1].icon), tint = shared.TINT}}
   p.icon = nil
   tint(p, {})

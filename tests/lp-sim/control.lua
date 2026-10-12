@@ -452,51 +452,60 @@ scenarios.assault = function()
   end)
 end
 
--- Defend: turret creep against the farthest mining outpost. Its own turrets are knocked out first (as a
--- creeping player would; left standing, they killed the creep before it fired, so nothing was tested),
--- then two player gun turrets (armed as at arrival) shoot it. The creep must do damage, the depot must
--- send a response that destroys it, and what the outpost lost must be rebuilt.
--- A depot and parts are granted at the start so a garrison exists by the strike.
+-- Defend: turret creep against an outpost's turrets (a bastion settlement, so outposts are turreted).
+-- Three player gun turrets, armed as at arrival, set up 16 tiles from the turret pair of the outpost
+-- farthest from the lander, inside both sides' range. Only military targets draw fire (production does
+-- not), so the creep trades with the outpost's turrets. It must do damage, the depot must answer and
+-- destroy it, and the outpost must stand again. A depot and parts are granted at the start.
 scenarios.defend = function()
   schedule(200, function() lp("debug_depot", storage.id, 3000) end)
   schedule(STRIKE, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local far, fd
-    for _, bin in pairs(lp_entities("lp-bin")) do
-      local d = (bin.position.x - lander.position.x) ^ 2 + (bin.position.y - lander.position.y) ^ 2
-      if not fd or d > fd then far, fd = bin, d end
+    for _, t in pairs(lp_entities("lp-turret")) do
+      local near_bin = surface().count_entities_filtered{name = "lp-bin", force = FORCE, position = t.position, radius = 14}
+      local d = (t.position.x - lander.position.x) ^ 2 + (t.position.y - lander.position.y) ^ 2
+      if near_bin > 0 and (not fd or d > fd) then far, fd = t, d end
     end
-    for _, t in pairs(surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = far.position,
-      radius = 40}) do t.destroy() end  -- silently: a scripted kill raised the alarm before the creep stood
-    local at = {far.position.x, far.position.y}  -- the bin itself may die
-    S.near = function() return surface().count_entities_filtered{force = FORCE, position = at, radius = 12,
-      name = {"lp-drill", "lp-bin", "lp-pylon"}} end
-    S.before = S.near()
-    S.lost0 = lp("stats", storage.id).lost
+    if not far then info("defend: no turreted outpost"); return end
+    local at = {far.position.x, far.position.y}
+    S.near = function() return surface().count_entities_filtered{force = FORCE, position = at, radius = 14,
+      name = {"lp-drill", "lp-bin", "lp-pylon", "lp-turret"}} end
+    S.health = function()
+      local h = 0
+      for _, t in pairs(surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = at, radius = 8}) do
+        h = h + t.health end
+      return h
+    end
+    S.before, S.hp0 = S.near(), S.health()
     S.garrison = lp("stats", storage.id).garrison
     local pf = game.forces.player
     pf.set_ammo_damage_modifier("bullet", 0.8)
     pf.set_gun_speed_modifier("bullet", 0.6)
+    local dx, dy = lander.position.x - at[1], lander.position.y - at[2]
+    local len = math.sqrt(dx * dx + dy * dy)
     S.creep = {}
-    for _, off in ipairs({{9, -2}, {9, 3}}) do
-      local p = surface().find_non_colliding_position("gun-turret", {far.position.x + off[1], far.position.y + off[2]}, 6, 1)
+    for k = -1, 1 do
+      local p = {at[1] - dx / len * 16 + k * 3 * dy / len, at[2] - dy / len * 16 - k * 3 * dx / len}
+      p = surface().find_non_colliding_position("gun-turret", p, 6, 1)
       local t = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
       if t then t.insert{name = "piercing-rounds-magazine", count = 200}; table.insert(S.creep, t) end
     end
-    info(string.format("defend: %d turrets beside the outpost at %.0f,%.0f, %.0f tiles out; garrison %d, drills %d",
-      #S.creep, far.position.x, far.position.y, math.sqrt(fd), S.garrison, S.before))
+    info(string.format("defend: %d turrets 16 tiles from the outpost turrets at %.0f,%.0f; garrison %d",
+      #S.creep, at[1], at[2], S.garrison))
   end)
-  schedule(STRIKE + 90, function() S.mid = S.near() end)
+  schedule(STRIKE + 60, function() S.mid, S.hp_mid = S.near(), S.health() end)
   schedule(STRIKE + 6 * 3600, function()
     local st = lp("stats", storage.id)
     local alive = 0
-    for _, t in ipairs(S.creep) do if t.valid then alive = alive + 1 end end
-    check("defend: there was a garrison to send", S.garrison > 2, S.garrison)
-    check("defend: the creep did damage", S.mid < S.before, S.before .. " -> " .. S.mid .. " outpost entities")
+    for _, t in ipairs(S.creep or {}) do if t.valid then alive = alive + 1 end end
+    check("defend: there was a garrison to send", (S.garrison or 0) > 2, S.garrison)
+    check("defend: the creep did damage", S.mid and (S.mid < S.before or S.hp_mid < S.hp0),
+      string.format("%s -> %s entities, turret health %.0f -> %.0f", S.before, S.mid, S.hp0 or 0, S.hp_mid or 0))
     check("defend: a response was sent", st.responses > 0, st.responses)
-    check("defend: the creeping turrets were destroyed", alive == 0, alive .. "/" .. #S.creep .. " standing")
-    check("defend: the outpost was rebuilt", S.near() >= S.before,
-      S.near() .. "/" .. S.before .. " outpost entities, rebuilt " .. st.rebuilt)
+    check("defend: the creeping turrets were destroyed", S.creep and alive == 0, alive .. " standing")
+    check("defend: the outpost stands again", S.near and S.near() >= S.before,
+      (S.near and S.near() or 0) .. "/" .. tostring(S.before) .. " outpost entities, rebuilt " .. st.rebuilt)
   end)
 end
 
@@ -606,7 +615,8 @@ script.on_init(function()
   lp("set_trace", true)
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
-    {doctrine = params.doctrine, uplink = params.scenario == "uplink" or nil})
+    {doctrine = params.doctrine or (params.scenario == "defend" and "bastion" or nil),
+     uplink = params.scenario == "uplink" or nil})
   if not storage.id then error("lp-sim: landing failed") end
 end)
 

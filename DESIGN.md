@@ -166,13 +166,18 @@ Built in `units.lua`, `scripts/army.lua`.
   vehicle or character within 30 tiles, at least six, as many as the garrison can spare above its home
   guard. Against two upgraded gun turrets (defend, seeds 12345, 777, 4242) a response of 8 destroys them
   and loses about half.
-- Faction buildings are military targets, as nests are, so player turrets engage them.
+- **Military targets** (what player turrets and units fire on by themselves): turrets, depots, radars, the
+  lander, the uplink, the launch pad. Production (drills, bins, pylons, fabricators, generators) and walls
+  are not, so an outpost can be captured intact or destroyed on purpose. Revised: everything was military
+  for a while so turret creep would hit drills, but a squad sent to capture would then shoot what it came
+  to take. Turret creep now works against an outpost's turrets, which draws the response.
 
 ## What the player can do
 - **Cut lines** (built): the supply graph loses income downstream until rebuilt.
 - **Raid** (built): destroyed nodes are rebuilt after a delay; the planner does not duplicate them.
 - **Occupy** (built): military presence within 12 tiles stops rebuilding.
-- **Turret creep** (built): works once outpost turrets fall; it draws a response, then raids.
+- **Turret creep** (built): trades with an outpost's turrets and draws a response sized to it (defend:
+  three upgraded gun turrets lose to a response of 8, which loses 5-8 units).
 - **Hit the launch pad** (built as a target): exports stop, tier growth slows.
 - Open: capture of mining and power nodes by holding them; a player army commanded through rally beacons;
   the uplink assault.
@@ -278,7 +283,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - One landing site per direction found no ore at 300 tiles (band search, further rings, best-seen
   fallback); walls bought before the first fabricator starved a settlement.
 - Tanks immune to yellow ammo; tanks outranging turrets over walls (armour and range rules).
-- Player turrets ignored faction buildings (military targets).
+- Player turrets ignored faction buildings (military targets), then a blanket fix made production a target
+  too, which capture cannot live with: only what fights or commands is military now.
 - Planning ticks of 5.5 ms (cached ore cells): worst now 1.5 ms.
 - Settlements matured at two blocks (idle plans counted waiting for parts).
 - The third landing failed silently every 10 s: two settlements blocked their neighbouring directions and
