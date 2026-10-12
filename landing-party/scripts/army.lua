@@ -285,14 +285,29 @@ function army.convoy(b, cargo, trace)
   if not dest or dest == b then return false end
   local surface = b.lander.surface
   local home = (b.depots[1] and b.depots[1].valid and b.depots[1]) or b.lander
-  local p = surface.find_non_colliding_position("lp-hauler", {home.position.x, home.position.y + 6}, 20, 0.5)
+  -- Form up outside the hub, on the side facing the uplink: haulers and escorts made beside a walled depot
+  -- stalled there, and the engine dropped the stuck escorts from the group (seed 4242).
+  local ux, uy = dest.uplink.position.x - home.position.x, dest.uplink.position.y - home.position.y
+  local ul = math.max(1, math.sqrt(ux * ux + uy * uy))
+  local p
+  for _, r in ipairs({25, 35, 45}) do
+    local q = {home.position.x + ux / ul * r, home.position.y + uy / ul * r}
+    p = surface.find_non_colliding_position("lp-hauler", q, 8, 0.5)
+    if p and surface.count_entities_filtered{position = p, radius = 6, force = home.force, type = {"wall", "assembling-machine",
+      "electric-turret", "container"}} == 0 then break end
+  end
   local hauler = p and surface.create_entity{name = "lp-hauler", position = p, force = home.force}
   if not hauler then return false end
   local escorts = {}
   prune(b.garrison)
+  -- Escorts from units at home only: the last convoy's escorts, back in the garrison but still at the
+  -- uplink's gate 210 tiles away, were drafted at once and the group waited for them.
   for i = #b.garrison, HOME_GUARD + 1, -1 do
     if #escorts >= CONVOY_ESCORT then break end
-    if b.garrison[i].type == "unit" then table.insert(escorts, table.remove(b.garrison, i)) end
+    local u = b.garrison[i]
+    if u.type == "unit" and (u.position.x - home.position.x) ^ 2 + (u.position.y - home.position.y) ^ 2 < 30 * 30 then
+      table.insert(escorts, table.remove(b.garrison, i))
+    end
   end
   -- Dock outside the fortress, on the side the convoy comes from: sent to the uplink in the inner yard,
   -- haulers circled the outer ring (seed 12345), the offset openings being no road for a vehicle.
@@ -316,7 +331,13 @@ function army.convoy(b, cargo, trace)
   return true
 end
 
-function army.route_convoy(c)
+-- Convoy discipline, kept by the script: the hauler waits until its escorts are close (forming), escorts
+-- follow it, and it halts while any escort is more than CONVOY_SLACK behind. (One engine unit group was
+-- tried: stuck escorts were dropped from it and the hauler went on alone, seeds 4242, 777.)
+local CONVOY_CLOSE = 8
+local CONVOY_SLACK = 12
+
+local function hauler_route(c)
   local from = c.hauler.position
   local dx, dy = c.dest[1] - from.x, c.dest[2] - from.y
   local len = math.sqrt(dx * dx + dy * dy)
@@ -324,19 +345,97 @@ function army.route_convoy(c)
   local cmds = {}
   for k = 1, legs do
     table.insert(cmds, {type = defines.command.go_to_location, destination = {from.x + dx * k / legs, from.y + dy * k / legs},
-      radius = k == legs and 6 or 12, distraction = defines.distraction.none})
+      radius = k == legs and 6 or 12, distraction = defines.distraction.by_damage})
   end
-  local cmd = {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
-  c.hauler.commandable.set_command(cmd)
-  for _, e in ipairs(c.escorts) do
+  c.hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = cmds}
+  c.moving = true
+end
+
+local function hold(c)
+  c.hauler.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
+  c.moving = false
+end
+
+function army.route_convoy(c)
+  hold(c)
+  c.formed = false
+end
+
+-- One step of discipline, every few seconds.
+local RELEASE_STEPS = 60          -- an escort behind for this many steps (a minute) is let go
+
+local function escort_step(c, b)
+  local hp = c.hauler.position
+  local worst = 0
+  c.behind = c.behind or {}
+  for i = #c.escorts, 1, -1 do
+    local e = c.escorts[i]
     if e.valid then
-      local ecmds = {}
-      for _, x in ipairs(cmds) do table.insert(ecmds, {type = x.type, destination = x.destination, radius = x.radius + 4,
-        distraction = defines.distraction.by_enemy}) end
-      e.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
-        commands = ecmds}
+      local d = math.sqrt((e.position.x - hp.x) ^ 2 + (e.position.y - hp.y) ^ 2)
+      c.behind[e.unit_number] = d > CONVOY_SLACK and (c.behind[e.unit_number] or 0) + 1 or 0
+      if c.behind[e.unit_number] >= RELEASE_STEPS then
+        -- Stuck for good: back to the garrison, so one wedged escort does not hold the convoy forever.
+        table.remove(c.escorts, i)
+        table.insert(b.garrison, e)
+        c.released = (c.released or 0) + 1
+        d = 0
+      end
+      worst = math.max(worst, d)
+      -- Keep station on a flank, a little ahead in the direction of travel: chasing where the hauler was a
+      -- second ago, escorts trailed 8-10 tiles behind.
+      local dx, dy = c.dest[1] - hp.x, c.dest[2] - hp.y
+      local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+      local side = (i % 2 == 0) and 1 or -1
+      local station = {hp.x + dx / len * 3 - dy / len * 3 * side, hp.y + dy / len * 3 + dx / len * 3 * side}
+      -- Re-ordered only when off station by 3 tiles: each new order is a fresh path, and units hesitate on one.
+      if (e.position.x - station[1]) ^ 2 + (e.position.y - station[2]) ^ 2 > 9 or not e.commandable.has_command then
+        e.commandable.set_command{type = defines.command.go_to_location, destination = station, radius = 1.5,
+          distraction = defines.distraction.by_damage}
+      end
     end
   end
+  if not c.formed then
+    if worst <= CONVOY_CLOSE then c.formed = true; hauler_route(c) end
+  elseif c.moving and worst > CONVOY_SLACK then
+    hold(c)
+  elseif not c.moving and worst <= CONVOY_CLOSE then
+    hauler_route(c)
+  end
+end
+
+-- Diagnostics for the convoy scenario: each travelling convoy's group and escorts.
+function army.convoy_debug(b)
+  local out = {}
+  for _, c in ipairs(b.convoys or {}) do
+    if c.hauler.valid then
+      local e = {}
+      for _, x in ipairs(c.escorts) do
+        if x.valid then
+          table.insert(e, string.format("%s@%.0f,%.0f", x.name, x.position.x, x.position.y))
+        end
+      end
+      table.insert(out, string.format("hauler@%.0f,%.0f formed=%s moving=%s [%s]", c.hauler.position.x, c.hauler.position.y,
+        tostring(c.formed), tostring(c.moving), table.concat(e, "; ")))
+    end
+  end
+  return table.concat(out, " | ")
+end
+
+-- How far the escorts are from their hauler (the largest distance), for the convoy scenario.
+function army.convoy_spread(b)
+  local worst = 0
+  for _, c in ipairs(b.convoys or {}) do
+    -- Once formed (before, escorts are still walking in).
+    if c.hauler.valid and c.formed then
+      for _, e in ipairs(c.escorts) do
+        if e.valid then
+          worst = math.max(worst, math.sqrt((e.position.x - c.hauler.position.x) ^ 2 + (e.position.y - c.hauler.position.y) ^ 2))
+        end
+      end
+    end
+  end
+  return worst
 end
 
 local function travel(b, trace)
@@ -355,9 +454,10 @@ local function travel(b, trace)
       c.hauler.destroy()
       done = true
     else
-      -- Stalled (no progress since the last look): fresh orders from where it stands.
+      escort_step(c, b)
+      -- Stalled while meant to move (no progress since the last look): fresh orders from where it stands.
       local p = c.hauler.position
-      if (p.x - c.last[1]) ^ 2 + (p.y - c.last[2]) ^ 2 < 4 then army.route_convoy(c) end
+      if c.moving and (p.x - c.last[1]) ^ 2 + (p.y - c.last[2]) ^ 2 < 1 then hauler_route(c) end
       c.last = {p.x, p.y}
     end
     if done then
@@ -423,7 +523,7 @@ end
 
 function army.tick(b, tick, trace)
   if tick % 600 == 300 then intercept(b, trace) end
-  if tick % 600 == 450 then travel(b, trace) end
+  if tick % 60 == 45 then travel(b, trace) end
   if tick % 300 == 0 then settle(b, trace); launch(b, trace) end
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end

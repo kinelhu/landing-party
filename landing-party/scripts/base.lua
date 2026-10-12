@@ -608,6 +608,7 @@ function base.stats(b)
     patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
     convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0,
     convoys_lost = b.convoys_lost or 0, cargo_lost = b.cargo_lost or 0, intercepts = b.intercepts or 0,
+    convoy_spread = army.convoy_spread(b), convoy_debug = army.convoy_debug(b),
     fortress_box = b.blocks[1] and b.blocks[1].kind == "fortress" and
       {b.blocks[1].x0, b.blocks[1].y0, b.blocks[1].x0 + b.blocks[1].w, b.blocks[1].y0 + b.blocks[1].h} or nil,
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do

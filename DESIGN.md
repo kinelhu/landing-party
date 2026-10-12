@@ -169,7 +169,12 @@ Built in `units.lua`, `scripts/army.lua`.
   up to five stops (outposts, pickets, compounds, the pad), fighting what they meet; the route is redrawn as
   the settlement grows. The settlement looks alive and its soft outposts are visited.
 - **Convoys (exports travel).** While the uplink stands, a mature settlement's exports go to it as a hauler
-  (the car's hull, 1,500 health, slow, lightly armed) with up to two escorts, in legs of about 100 tiles,
+  (the car's hull, 1,500 health, 0.065 tiles a tick, slower than any escort, lightly armed) with up to two
+  escorts from the units at home. Convoy discipline is kept by the script: the hauler forms up 25-45 tiles
+  out from the depot towards the uplink, waits until its escorts are within 8 tiles, escorts keep station on
+  its flanks (3 tiles aside, 3 ahead), it halts while any is more than 12 behind, and an escort stuck behind
+  for a minute is released. Measured (convoy, seeds 12345, 777, 4242): escorts at most 7-13 tiles from the
+  hauler, 4.6-6.6 on average. It travels in legs of about 100 tiles,
   docking 6 tiles outside the fortress on the side they come from (sent into the inner yard, haulers circled
   the outer ring). Delivered cargo raises the tier; a destroyed hauler loses it. Convoys cross the map,
   likely the player's ground: intercepting them is counterplay against the tier, as their raids are against
@@ -351,6 +356,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - Measurement mistakes: parallel load read as mod cost (profile alone); smoothed rates aliasing against
   crafting cycles (count over a window).
 - Haulers sent to the uplink in the fortress's inner yard circled the outer ring (dock at the gate).
+- Convoy escorts strayed (seen by the user in the animation). Same waypoints as the hauler: they ran ahead.
+  One engine unit group: stuck escorts were dropped and the hauler went on alone (486 tiles apart); escorts
+  drafted from the last convoy were still at the uplink. Now script-kept discipline (formation, flank
+  stations, halts, release), a hauler slower than its escorts, and a check on the spread.
 - A regression "hung": the simulations had finished, the animation renderer redrew a whole settlement for
   each of ~1,750 frames (now drawn once, at most 240 frames: 83 s for a 60-minute run).
 - Tests that read too little: a train check blind to a wagon at 49 of 600 health; a barracks destroyed by

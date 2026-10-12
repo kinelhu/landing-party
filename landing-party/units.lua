@@ -154,7 +154,8 @@ tint(harrier.attack_parameters.animation, {})
 local car = data.raw.car.car
 local hauler = base_unit("lp-hauler")
 hauler.max_health = shared.units["lp-hauler"].health
-hauler.movement_speed = 0.08
+-- Slower than every escort with a margin (tanks 0.09): at 0.08, tank escorts could not regain their station.
+hauler.movement_speed = 0.065
 hauler.distance_per_frame = 0.5
 hauler.vision_distance = 20
 hauler.collision_box = {{-0.8, -0.8}, {0.8, 0.8}}

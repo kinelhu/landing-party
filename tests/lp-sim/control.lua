@@ -813,6 +813,18 @@ scenarios.convoy = function()
   for t = 600, END, 120 do
     schedule(t, function()
       local haulers = surface().find_entities_filtered{name = "lp-hauler", force = FORCE}
+      -- Escorts stay with their hauler: the largest distance seen while convoys travel.
+      local cst = lp("stats", storage.id)
+      local spread = cst.convoy_spread
+      S.spread = math.max(S.spread or 0, spread)
+      if spread > 0 then S.spread_sum, S.spread_n = (S.spread_sum or 0) + spread, (S.spread_n or 0) + 1 end
+      if spread > 15 and (S.logged or 0) < 40 and game.tick % 600 == 0 then
+        S.logged = (S.logged or 0) + 1
+        local names = {}
+        for k, v in pairs(defines.group_state) do names[v] = k end
+        local dbg = cst.convoy_debug:gsub("state=(%d+)", function(d) return "state=" .. tostring(names[tonumber(d)]) end)
+        table.insert(lines, string.format("INFO spread %.0f at %.1f min: %s", spread, game.tick / 3600, dbg))
+      end
       if not S.killed then
         for _, h in pairs(haulers) do
           S.seen = S.seen or {}
@@ -835,6 +847,10 @@ scenarios.convoy = function()
     check("convoy: the destroyed one lost its cargo", a.convoys_lost >= 1 and a.cargo_lost > 0,
       a.convoys_lost .. " lost, " .. a.cargo_lost .. " parts")
     check("convoy: later ones arrived", a.convoys_delivered >= 1, a.convoys_delivered .. " delivered")
+    -- The hauler halts at 12 tiles of slack and moves up to a second before the next look: 18 at worst.
+    local mean = S.spread_n and S.spread_sum / S.spread_n or 0
+    check("convoy: escorts stay with the hauler", (S.spread or 0) <= 18 and mean <= 8,
+      string.format("at most %.0f tiles apart, %.1f on average", S.spread or 0, mean))
     check("convoy: exports count only what arrived", f.exported == a.exported + (u and u.exported or 0),
       string.format("faction %d = settlement %d + uplink %d", f.exported, a.exported, u and u.exported or 0))
     lp("snapshot", storage.id, "landing-party/faction.jsonl", 200)
