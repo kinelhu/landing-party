@@ -48,6 +48,11 @@ blocks.picket = {
   {fixed = {{"lp-pylon", 3.5, 8.5}, {"lp-radar", 6.5, 5.5}, {"lp-turret", 3, 3}, {"lp-turret", 9, 9}}, slots = {}},
 }
 
+-- The launch pad of a mature settlement: surplus parts leave from here, raising the faction's tier.
+blocks.launch = {
+  {fixed = {{"lp-pylon", 2.5, 9.5}, {"lp-launchpad", 9.5, 9.5}}, slots = {}},
+}
+
 blocks.TURRETS = {{2, 2}, {16, 2}, {2, 16}, {16, 16}}
 
 -- A layout seen through a mirror and/or a transpose (square blocks only): position (x, y) -> new position.

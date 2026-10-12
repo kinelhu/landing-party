@@ -18,11 +18,11 @@ local S, R, PITCH = blocks.SIZE, blocks.ROAD, blocks.PITCH
 --   pickets        walled radar pickets per hub, on the side facing the threat
 --   reach          how far (tiles) a new hub may be founded from the last
 layout.DOCTRINES = {
-  bastion = {hub_cap = 7, walls = {pad = true, compound = true, fab = true, gen = true, depot = true, picket = true},
+  bastion = {hub_cap = 7, mature = 10, walls = {pad = true, compound = true, fab = true, gen = true, depot = true, picket = true},
     outpost_turrets = true, pickets = 0, reach = 70},
-  sprawl = {hub_cap = 4, walls = {pad = true, compound = true, picket = true}, outpost_turrets = false, pickets = 0,
+  sprawl = {hub_cap = 4, mature = 8, walls = {pad = true, compound = true, picket = true}, outpost_turrets = false, pickets = 0,
     reach = 110},
-  picket = {hub_cap = 5, walls = {pad = true, compound = true, picket = true}, outpost_turrets = true, pickets = 2,
+  picket = {hub_cap = 5, mature = 8, walls = {pad = true, compound = true, picket = true}, outpost_turrets = true, pickets = 2,
     reach = 90},
 }
 layout.ARCHETYPES = {grid = 3, street = 2, cross = 2}
@@ -274,6 +274,33 @@ function layout.fortify(b)
         local corners = {{2, 2}, {block.w - 2, 2}, {2, block.h - 2}, {block.w - 2, block.h - 2}}
         for _, c in ipairs(corners) do
           push(b, {name = "lp-turret", pos = {block.x0 + c[1], block.y0 + c[2]}, module = block})
+        end
+      end
+      return block
+    end
+  end
+end
+
+-- Maturity on a hard point (pad, compound): lamps inside the walls, the yard paved, mines on the road
+-- outside each opening. Once per block, after its walls.
+function layout.embellish(b)
+  for _, block in ipairs(b.blocks) do
+    if (block.kind == "pad" or block.kind == "compound") and block.walled and not block.embellished then
+      block.embellished = true
+      local x0, y0, w, h = block.x0, block.y0, block.w, block.h
+      local paving = {}
+      for x = x0 + 1, x0 + w - 2 do for y = y0 + 1, y0 + h - 2 do table.insert(paving, {x, y}) end end
+      push(b, {tiles = paving, module = block})
+      for _, p in ipairs({{4.5, 1.5}, {w - 4.5, 1.5}, {4.5, h - 1.5}, {w - 4.5, h - 1.5}}) do
+        push(b, {name = "lp-lamp", pos = {x0 + p[1], y0 + p[2]}, module = block})
+      end
+      local mx, my = x0 + math.floor(w / 2), y0 + math.floor(h / 2)
+      for _, d in ipairs({-1.5, 0.5}) do
+        for _, out in ipairs({1.5, 3.5}) do
+          push(b, {name = "lp-mine", pos = {mx + d + 0.5, y0 - out}, module = block})
+          push(b, {name = "lp-mine", pos = {mx + d + 0.5, y0 + h + out - 1}, module = block})
+          push(b, {name = "lp-mine", pos = {x0 - out, my + d + 0.5}, module = block})
+          push(b, {name = "lp-mine", pos = {x0 + w + out - 1, my + d + 0.5}, module = block})
         end
       end
       return block

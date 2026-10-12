@@ -1,256 +1,254 @@
-# Landing Party: design notes
+# Landing Party: design
 
-Living document: what is decided, what is built, what is deferred, and what the engine allows.
-Prototype stage. Prefix `lp-`. Mod folder `landing-party/`.
+Living document, organised for design reviews: what is decided, what is built and how it was tested, what
+is open. Prototype stage, Factorio 2.0 (2.1 is experimental only). Prefix `lp-`, mod folder `landing-party/`.
+Numbers quoted here are the code's at the time of writing; the code is the authority.
+
+## Status at a glance
+| Area | State | Tested by (headless scenario) |
+|---|---|---|
+| Arrival on first launch, repeated landings, sites apart | built | `faction` |
+| Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
+| Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
+| Rebuild unless occupied | built | `raid`, `occupy` |
+| Maturity, launch pad, exports, faction tier | built (first pass) | `faction` |
+| Army: roster, depots, garrison, raids | built (first pass) | `assault` (with replay) |
+| Response forces | built (first pass) | `defend` |
+| Air units ignoring walls, mines, flamethrowers | built | `air` |
+| Uplink (optional boss) | open | |
+| Player army, rally beacons | open | |
+| Capture of nodes | open | |
+| Shields, jammers, gates, anti-air turret | open | |
+| Depletion and relocation | open | |
+| Art beyond tinted vanilla; seen in game | not yet | (needs a game session) |
 
 ## Premise
-A rival machine faction lands on Nauvis and builds a factory of its own. Its army is the output of its
-economy, so the war is economy against economy, fought along supply lines. Biters punish pollution; the
-Landing Party punishes predictability.
+A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and
+builds settlements that read as engineering. Its army is the output of its economy, so the war is economy
+against economy, fought along supply lines. Biters punish pollution; the Landing Party punishes
+predictability.
 
-## Principles (decided)
-- **Same rules as the player.** Their strength comes from what they mine, power and build, never from a
-  timer. Scouting their economy tells you how strong they are; striking it changes the next fight.
-- **Arrival, not awakening.** The player's first rocket launch is heard. A lander comes down at a visible
-  distance, small, and grows. Strike early or come back from another planet to a competitor. (Space Age has
-  no satellite; the first launch is when the player leaves Nauvis, so a strong faction waking then would
-  be a base loss with no answer.)
-- **A readable base.** Bases are a graph: nodes (lander, generators, mining, fabricators, turrets, depots)
-  joined by power. Cutting an edge darkens what lies downstream. The player should be able to read the
-  base and find its weak point.
+## Principles
+- **Same rules as the player.** Strength comes from what they mine, power and build, never from a timer.
+  Scouting their economy tells you how strong they are; striking it changes the next fight.
+- **They arrive because of you.** The first launch is heard; later launches bring the next landing sooner.
+  A landing starts small at a visible distance. (Space Age has no satellite, and the first launch is when
+  the player leaves Nauvis: a strong faction waking then would be a base loss with no answer.)
+- **A constant, growing threat, not one base.** A single base is steamrolled by a fast player. Clearing a
+  settlement is a win, not the end; the faction keeps landing and its tier keeps rising.
+- **A readable base.** Settlements are graphs: nodes joined by power and roads. Cutting an edge darkens what
+  lies downstream. The player should be able to read a settlement and find its weak point.
+- **Architecture, not Biters+.** Planned like engineering: block grids, roads left open for vehicles,
+  walled hard points, open outposts, and at the end a fortress core.
 - **Few, visible planner rules.** Every planner bug reads as a stupid enemy. The planner applies a short
-  list of priorities and says which one it chose (debug overlay, log). Layouts are hand-designed modules,
-  never procedural.
+  list of priorities and logs which one acted. Layouts are hand-made templates, never free-form.
 - **Killing is cheap, holding is hard.** Artillery and nukes will always kill a node. A destroyed node is
-  rebuilt from its depot unless the player's forces occupy the ground. Artillery kills, infantry holds.
-- **They compete for ore.** Their drills deplete real patches: the pressure is felt before any attack.
-- **Capture and an ending.** Captured mining and power nodes work for the player. The faction has a core;
-  when it falls, the war ends.
-- **Orders through entities.** The player's army is commanded mostly by rally beacons (circuit stance and
-  target), the selection tool being the manual override.
-- **Art is retinted vanilla** (cold blue-white) until the mechanics are proven.
+  rebuilt unless the player's forces occupy the ground.
+- **Ore is contested, not stripped.** They sit on real patches and skim them; the player cannot use a patch
+  while they hold it. What they take is justified: mature settlements export it off-world.
+- **Orders through entities** for the player's future army (rally beacons with circuit stance), the
+  selection tool as override.
+- **Art is tinted vanilla** (cold blue-white) until the mechanics are proven.
 
-## The faction over a game (decided with the user, 2026-10-12)
-- **Not one base: a constant, growing threat.** A single base is steamrolled by a fast player. The faction
-  lands repeatedly: each landing grows into a settlement of its own, and the faction's tier (better turrets,
-  shields, units) rises with what all its settlements build. Clearing a settlement is a win, not the end.
-- **An optional boss.** One landing is different: the uplink, a fortress core that calls the next landings
-  and holds the faction's research. Taking it is optional and hard; it neutralises the faction or at least
-  gives a definite upper hand (no more landings, tier frozen). Exact terms open.
-- **They gravitate to ore and drain it.** Landings seek rich patches; their drills strip a patch faster than
-  the player's would. Waiting costs the player the patches they will need next: an incentive to clear early.
-- **Hubs, not a single core.** A settlement is a graph of hubs, each with its own fabricators and depot.
-  Losing a hub costs a region, never the faction.
-- **Architecture, not Biters+.** Settlements are laid out like engineering, not grown like nests:
-  - a block grid with roads left open (vehicles, theirs and the player's, can drive through);
-  - hard points are walled: pockets of walled defence at hubs and approaches, with gates on the roads;
-  - outposts stay open (soft, covered by the depot's response);
-  - the uplink is a fortress core: concentric walls, shields, many turrets.
+## The faction over a game
+Built in `scripts/faction.lua`.
+- **Landings.** The first answers the first rocket launch on a surface, 350 tiles from the silo. Then one
+  every 90 minutes; each later launch brings the next one 15 minutes sooner; at most 4 settlements stand at
+  once. A landing keeps 200 tiles from every standing lander, turns its search direction with the landing
+  count, and tries rings at 350, 470 and 590 tiles. A site is the richest chunk of ore within 120 tiles of
+  the ring, the lander set a third of the way back towards the ring.
+- **Doctrine per settlement**, drawn from its seed: bastion, sprawl or picket (see Architecture).
+- **Tier.** Parts exported by mature settlements, counted faction-wide, raise the tier at 3,000, 8,000,
+  20,000 and 45,000 parts. Each tier adds 15% damage to the faction's weapons and 5 garrison places per
+  depot, and unlocks units: harriers at tier 1, walkers at tier 2.
+- **The uplink (open).** One landing is different: a fortress core that calls the next landings and holds
+  the faction's research. Taking it is optional and hard and gives a definite upper hand (no more landings,
+  tier frozen) or neutralises the faction; exact terms open. Proposed: the third landing.
 
-## Economy over a settlement's life (decided, 2026-10-12)
-- **Growth, maturity, export.** A settlement grows to its doctrine's size, then stops claiming patches.
-  Mature, it spends first on defences and a garrison (up to a cap), then exports the rest off-world from a
-  launch block: a visible pad sending cargo up. Exports raise the faction's tier. This is what justifies
-  a steady draw on the patches, and the launch pad is an objective worth raiding.
-- **Patches are skimmed, not stripped.** Drills run at a moderate rate: a patch lasts hours. The pressure
-  is that the player cannot use a patch while they hold it. Relocation is a rare event, not growth.
-- **Maturity shows.** Camp (bare), settlement (roads, walled compounds, pickets), mature (a second ring of
-  staggered walls before hard points, minefields on the approach roads, paved blocks, lamps that glow cold
-  blue at night, decorations).
+## A settlement's life
+1. **Camp.** The lander (crash-site spaceship, its own power), a pad, the first drills and fabricators.
+   Nothing walled yet. The window for a cheap early strike.
+2. **Settlement.** Hubs grow block by block; walls come once the economy runs (fortify rule); pickets face
+   the threat; a depot opens once a hub has three blocks and starts a garrison.
+3. **Mature.** At the doctrine's size (bastion 10 blocks, sprawl and picket 8) or after 12 plans in a row
+   where growth wanted ore and found none. It stops claiming new ore (mining only replaces lost income),
+   opens a launch block, and dresses its hard points: lamps, paved yards, mines on the roads outside each
+   opening.
+4. **Export.** Once a minute a mature settlement sends its parts above a reserve of 300 (at most 1,000)
+   off-world from the launch pad (a visible beam), raising the faction's tier. The pad is an objective
+   worth raiding.
 
-## Units (decided, 2026-10-12)
-Roster on vanilla bones, own tint and stats: drone infantry (the character, as ERM RedArmy does), walker
-(spider-unit from the spidertron), tank (a tank-shaped unit), harrier (air: a custom collision layer and
-trigger target type that walls, mines and flamethrowers ignore; scarce and costly). Optional dependency:
-ERM Unit Control (LGPL, works with any unit) for selection-tool commands. Learn from ERM RedArmy (LGPL),
-Robot Army and Commander (MIT); read Nullius: Hostile Incursion (GPL), do not copy. Never ERM's StarCraft
-or Metal Slug art. Target Factorio 2.0 (2.1 is on the experimental branch only). Closest prior art:
-Proliferation (MIT, no public source): study it to differentiate.
+Proposed, not built: a second ring of staggered walls before hard points; relocation when a patch runs dry.
 
-## Proliferation, and how Landing Party differs (read 2026-10-12, v0.35.0)
-Proliferation (Cody T. Newman, MIT, no public source, first release 2026-08-08) is a machine faction in the
-mould of Stargate's Replicators. Bases are placed at map generation on custom "matter nodes" and run a real
-chain (pumpjack, alloy, components, their own science and research) through four build stages to a walled
-compound. Its one unit is the walker: garrisons fill a deployer, then go as a wave to found a base, hit the
-nearest player structure or the nearest nest. Waves eat belts and items to grow, buildings below 30% health
-are captured, dead walkers leave fragments that grow into new bases. Later: ships boarding platforms, a
-planet (Hala) with cities. Hostile to biters too. Its character is a swarm, an infection.
-
-Where Landing Party stands apart, and should stay apart:
-- **They arrive because of you.** Landings follow the player's launches, repeatedly, not bases scattered at
-  map generation.
-- **Real ore, contested.** Settlements sit on the player's own patches, skim them and export the take, rather
-  than mining a node of their own.
-- **Planned settlements, readable as architecture.** Hubs, roads, walled hard points, doctrines and pickets;
-  a supply graph the player can read and cut. Proliferation grows bases through fixed stages.
-- **Combined arms.** Infantry, walkers, tanks and aircraft that ignore walls, against one walker type.
-- **An economy war with an RTS layer.** Cut lines, raid launch pads, occupy ground so it is not rebuilt, and
-  field an army of your own commanded through rally beacons. Proliferation gives the player no army.
-- **A strategic arc with an end.** Tier rises with exports; the uplink is an optional boss that stops the
-  landings. Proliferation states no end condition.
-
-Avoid converging on its signatures: no capture at a damage threshold (ours, if any, is capture by holding a
-node), no units growing from eaten items, no fragments. Both use their own force; with prefixes `lp-` and
-`proliferation-` they should coexist, and a three-way war with Replicators would be a compatibility test.
-
-## Release plan
-1. **Rival factory**: landing, the node economy on Nauvis, power as the graph, defences (turrets, powered
-   shields, jammers), depot response and rebuild-unless-occupied, ore competition, air raiders with one
-   anti-air counter, capture of mining and power nodes, a core that ends the war. Rally beacon and one
-   infantry type (occupation needs a holder).
-2. More player unit types, forward depots and supply.
-3. Selection-tool control, biter interplay (robot buildings pollute, biters raid them), adaptation.
-
-## Prototype 0: the base builder (current)
-Goal: work out the mechanics of base building, watched headless, before any combat design.
-- A force `landing-party`. A lander (`lp-lander`, the crash-site spaceship as a power source) is placed at
-  a site with ore within reach.
-- Economy: drills (real `mining-drill`, they deplete real ore) drop into bins; the script collects bins on a
-  powered network into the base's feedstock; fabricators (real assemblers, so the engine handles power and
-  speed) turn feedstock into parts; parts pay for construction.
-- Power is real engine electricity on the faction's force: generators and pylons. A node off the network
-  stops.
-- Construction: a build queue places one entity at a time, paid in parts, from the nearest powered node.
-- Planner: every few seconds, per base, pick the first rule that applies and queue a module:
-  1. **Power**: demand (with the next module) exceeds supply -> generator module.
-  2. **Fabricate**: feedstock piles up beyond what fabricators use -> fabricator module.
-  3. **Mine**: fabricators starve -> mining module on the nearest unclaimed ore.
-  4. **Defend**: a node lacks turret cover -> turret pair beside it.
-  5. **Grow**: parts pile up -> mining module further out (sprawl).
-- Losses: a destroyed entity is rebuilt at its spot after a delay (1 min plus 1 s per tile from the
-  lander), before any new growth, unless a hostile turret, unit, vehicle or character stands within 12
-  tiles (walls do not count). The planner counts what it owes as still there and builds nothing on held
-  or reserved ground.
-
-## Architecture (built, 2026-10-12)
-`scripts/layout.lua`, `scripts/blocks.lua`, `scripts/rng.lua`.
-- **Hubs on a grid.** A hub is a grid of 18-tile blocks with 4-tile roads (`lp-road`, tinted concrete). One
-  pylon powers a block (supply 9). The first hub starts with the landing pad (two cells, walled, the
-  lander at its centre); later hubs start with a walled compound holding its own generators (cut its
-  lines and its turrets still fire).
-- **Blocks by role, filled on demand.** Fabricator, generator and depot blocks open when the planner
-  needs a slot and none is free; slots fill one machine at a time. Each role has 2-3 hand-made variants,
+## Settlement architecture
+Built in `scripts/layout.lua`, `scripts/blocks.lua`, `scripts/rng.lua`.
+- **Hubs on a grid.** A hub is a grid of 18-tile blocks with 4-tile roads (`lp-road`, tinted concrete).
+  One pylon powers a block. The first hub starts with the landing pad (two cells, walled, the lander at its
+  centre); later hubs with a walled compound holding its own generators (cut its lines and its turrets
+  still fire).
+- **Blocks by role, filled on demand.** Fabricator, generator, depot and launch blocks open when the planner
+  needs a slot and none is free; slots fill one machine at a time. Each role has 1-3 hand-made variants,
   mirrored and transposed by the seed.
 - **Growth order by archetype**, drawn per hub: grid (compact), street (two rows along an axis), cross (four
   arms). Cells that fail the terrain (water, cliffs, ore, roads, buildings) drop out, so outlines follow the
-  ground. A hub that is full (doctrine cap) or boxed in founds the next hub, near the outpost furthest from
-  every hub.
-- **Doctrine per settlement**, drawn from its seed: bastion (every block walled, corner turrets, outposts
-  turreted, 7 blocks a hub), sprawl (only pad and compounds walled, open outposts, 4 blocks a hub, hubs
-  founded further out), picket (two walled radar pickets per hub between it and the threat).
-- **Walls come with maturity**: the fortify rule walls blocks once the economy runs (a camp first, then a
-  walled settlement). Walls have an opening in the middle of each side, on the roads (gates later).
-- **Roads**: round every block, along long pylon lines (supply routes), and as spines through mining
-  outposts (every fourth lattice column is left empty).
-- **Variety is measured, not assumed**: `scripts/sheet.py` draws a contact sheet of many runs at one
-  scale and prints shape metrics (hubs, blocks, walls, footprint, aspect, fill) with their spread.
+  ground. A full or boxed-in hub founds the next hub near the outpost furthest from every hub.
+- **Doctrines.**
+  | | blocks a hub | walled | outposts | pickets | mature at | army mix |
+  |---|---|---|---|---|---|---|
+  | bastion | 7 | every block, corner turrets | turreted | 0 | 10 blocks | infantry, tanks |
+  | sprawl | 4 | pad and compounds | open | 0 | 8 | harriers |
+  | picket | 5 | pad and compounds | turreted | 2 a hub | 8 | balanced |
+- **Roads** round every block, along long pylon lines (supply routes), and as spines through mining
+  outposts (every fourth lattice column is left empty). Walls have an opening in the middle of each side,
+  on the roads (gates later).
+- **Mining outposts** tile a lattice anchored on the lander, two drills facing a shared bin, over ore only;
+  reach widens in steps (40, 90, 160 tiles) when nothing nearer fits, which is how a settlement sprawls.
+- **Variety is measured**: `scripts/sheet.py` draws many settlements at one scale with shape metrics. Twelve
+  seeds at 60 minutes: all doctrines and archetypes; 1-2 hubs, 1-11 blocks, aspect 1.0-5.9, fill 0.13-0.75.
+  Techniques are simple and standard: a seeded Lehmer generator, frontier growth on a grid scored by
+  archetype, rejection sampling against the terrain, templates with symmetry transforms, ring searches.
+
+## Economy and the planner
+Built in `scripts/base.lua`, `scripts/site.lua`.
+- **Economy.** Real drills deplete real ore into bins. A bin counts only while its pylon shares the lander's
+  network: cut the line, lose the income. Fabricators (real assemblers, so the engine handles power and
+  speed) turn feedstock into parts. Parts pay for building, units and exports. Power is real engine
+  electricity on the faction's force.
+- **Building.** A queue places one entity every 1.5 s, paid in parts. Pylons are wired explicitly to every
+  network in reach.
+- **Losses.** A destroyed entity is rebuilt at its spot after a delay (1 minute plus 1 s per tile from the
+  lander), before any new growth, unless a hostile turret, unit, vehicle or character stands within 12
+  tiles (walls do not count). The planner counts what it owes as still there and builds nothing on held or
+  reserved ground.
+- **Planner.** Every 5 s, when the queue is empty, the first rule that applies and finds a place acts:
+  1. power: demand (and what is owed) above 90% of supply: a generator;
+  2. fabricate: ore flowing in faster than fabricators use it: a fabricator (the flow, never the stock);
+  3. mine: fabricators starving (young) or income below half of capacity (mature): a mining module;
+  4. fortify: parts to spare and a fabricator running: walls and corner turrets for the next block that
+     should have them;
+  5. defend: an outpost without turrets, where the doctrine wants them;
+  6. picket: a hub short of its pickets;
+  7. depot: a hub of three blocks without one;
+  8. launch, embellish: mature settlements only;
+  9. grow: young settlements with parts to spare: more mining.
+  Ore near the lander is scanned once, a chunk per tick, into cached lattice cells; a plan tests at most
+  12 sites.
+
+## The army
+Built in `units.lua`, `scripts/army.lua`.
+- **Roster** on vanilla bones, tinted:
+  | Unit | Bones | Health | Cost | Tier | Role |
+  |---|---|---|---|---|---|
+  | infantry | the engineer's body | 120 | 10 | 0 | holds ground, breaches walls |
+  | tank | the tank's hull as a unit | 900 | 60 | 0 | armour, explosive shells |
+  | harrier | the destroyer robot, air layer | 150 | 40 | 1 | ignores walls, mines, flamethrowers |
+  | walker | a spider-unit on the spidertron | 1600 | 120 | 2 | steps over walls, rockets |
+  Ranges are 15 tiles at most (see Balance).
+- **Air.** Harriers fly on their own collision layer (`lp-air`) with their own target type (`lp-air-unit`):
+  walls do not block them, mines never see them, flamethrowers ignore them (artillery is set to, untested);
+  gun turrets hit them (laser turrets should, untested). A dedicated anti-air turret is open.
+- **Production.** Depots build one unit per 10 s from parts, up to 10 per depot (plus 5 a tier), in the
+  doctrine's mix restricted to unlocked units.
+- **Raids.** With the garrison 70% full (at least 6), a raid leaves for the nearest player structure within
+  400 tiles; 2 units stay home; survivors come home when the group finishes or after five minutes. At most
+  one raid per 5 minutes.
+- **Responses.** A faction building damaged or destroyed calls up to 8 garrison units from the nearest
+  depot within 300 tiles, at most once a minute per settlement.
+- Faction buildings are military targets, as nests are, so player turrets engage them.
+
+## What the player can do
+- **Cut lines** (built): the supply graph loses income downstream until rebuilt.
+- **Raid** (built): destroyed nodes are rebuilt after a delay; the planner does not duplicate them.
+- **Occupy** (built): military presence within 12 tiles stops rebuilding.
+- **Turret creep** (built): works once outpost turrets fall; it draws a response, then raids.
+- **Hit the launch pad** (built as a target): exports stop, tier growth slows.
+- Open: capture of mining and power nodes by holding them; a player army commanded through rally beacons;
+  the uplink assault.
+
+## Balance
+Measured in the `assault` scenario (fast mode: a depot and parts granted at the start; replay GIF and
+stills per run) and `defend`.
+- **Calibrate against the player at arrival time**: piercing rounds, +80% bullet damage, +60% shooting
+  speed. Against yellow ammo and no research every raid was a walkover.
+- **No armour that makes a tier immune**: a flat 10 physical reduction made gun turrets useless. Now 3 and
+  20%.
+- **Unit range at most turret range less the wall's depth** (15 against a gun turret's 18): longer, tanks
+  shelled walls from outside turret reach.
+- Current curve (seed 12345, three doctrines): raids of 5 and 8 die on the approach; the third (12) takes a
+  four-turret outpost, walkers stepping over the wall and harriers flying in.
+- Open: responses are too small against prepared turrets (8 died to two); tier thresholds and export rates
+  are untuned (the `faction` test runs them at a tenth).
+
+## Where Landing Party differs from Proliferation
+Proliferation (MIT, no public source, 2026) is a machine faction in the mould of Stargate's Replicators:
+bases placed at map generation on their own matter nodes, four fixed build stages, one unit (the walker)
+sent in waves, waves that eat items to grow, capture below 30% health, fragments that grow into bases,
+later ships and a planet. Its character is an infection. Ours is a rival economy:
+- they arrive because of the player's launches, repeatedly;
+- they sit on the player's real ore and export it;
+- planned, readable settlements with a supply graph to cut;
+- combined arms (infantry, tanks, harriers, walkers);
+- an economy war with an RTS layer (the player's own army, to come);
+- an arc with an end (tiers, the uplink).
+Avoid its signatures: no capture at a damage threshold, no units grown from eaten items, no fragments.
+
+Prior art for units: ERM RedArmy (LGPL) builds infantry on the engineer's body; Robot Army and Commander
+(MIT) for squad AI and HQ-driven orders; ERM Unit Control (LGPL) as an optional selection-tool dependency.
+Never ERM's StarCraft or Metal Slug art (ripped).
+
+## Open questions and next
+- The uplink: when it lands, what taking it does, how the fortress is laid out.
+- The player's army and rally beacons; capture by holding a node.
+- Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret.
+- Depletion and relocation; the second wall ring.
+- Response sizing; tier and export tuning at real clocks.
+- Biter interplay: settlements emit no pollution, so biters ignore them unless they do.
+- A game session to judge the art and the scale (the only step needing the user's time).
 
 ## Testing: headless first
-Launching the game costs the user's time; the headless run costs none. Every mechanic gets a scripted
-scenario with assertions before anyone plays it; the window is for art, feel and GUI only. Combat runs
-headless too, so most of the spikes below can be scenarios.
+The user's time in game is the scarce resource; a headless run costs none. Every mechanic gets a scripted
+scenario with assertions first; the window is for art, feel and GUI.
 - `scripts/sim.sh <scenario> [seed] [minutes] [every] [strike]`: one run in its own profile, base game
-  only, no biters. Plots (`growth.png`, `final.png`), the planner's `decisions.txt` and results go to
-  `docs/sim/<scenario>-<seed>/`.
-- `scripts/batch.sh [scenarios] [seeds] [minutes] [strike]`: runs in parallel and prints one table of
-  metrics (modules over time, parts, losses, rebuilds, ms per tick). Timings from a parallel batch are
-  inflated by contention (0.28 ms alone read 1.6 ms with eight at once): measure performance alone.
-- Scenarios (`tests/lp-sim/control.lua`): `grow`; `cut` (every pylon line dies: income falls within a
-  minute, lines and income come back); `raid` (every fabricator dies: rebuilt, not duplicated, production
-  recovers); `occupy` (fabricators and nearby turrets die, an indestructible player turret holds each spot:
-  nothing is rebuilt there until they leave, then everything is).
-
-## Findings from the prototype (2026-10-12)
-- The rules give a readable base unaided: a core of fabricators and generators round the lander, a drill
-  grid on each patch, one turret pair per node, and long unguarded pylon lines to outposts up to ~200
-  tiles away (seed 777: a hub and six outposts).
-- Growth was too fast and then stopped: the starting area is claimed in ~20 minutes, after which parts pile
-  up unspent (15,000-19,000 by minute 60). Parts need sinks (units, response forces) and growth a slower
-  pace; the reach steps (40, 90, 160 tiles) bound the sprawl.
-- Bugs the scenarios caught, each now a test: instant rebuilds made cutting a line meaningless; the planner
-  built new fabricators while the old were owed, and on the very spots the player held; a stockpile left
-  by a raid made it double its fabricators (fabrication now follows the flow of ore, never the stock).
-- Engine: `auto_connect` on a scripted pylon does not reliably rejoin a cut line (seed 34: three rebuilt line
-  pylons joined nothing and income stayed at zero). Every new pylon is now wired explicitly to each other
-  network in reach.
-- Cost: 0.29 ms per tick for a 60-minute base (seed 12345, measured alone).
-- Variety, 12 seeds at 60 min: all three doctrines and archetypes; 1-2 hubs, 1-11 blocks, aspect
-  1.0-5.9, fill 0.13-0.75. Settlements stay small (footprint median ~110 tiles) because growth stops when
-  the ore within reach is claimed.
-- Bugs found by the sheet: Park-Miller's first draws from nearby seeds are nearly linear (8 of 12 landings
-  drew one doctrine, none another): seeds are scrambled and the first draws discarded. The landing site
-  tested one point per direction and found no ore at 300 tiles on most maps: it now searches the band for
-  the richest chunk, else the best seen. Walls bought before the first fabricator starved a settlement.
-- Depletion is not handled yet: drills on an empty patch stay where they are.
+  only, no biters; plots, the planner's `decisions.txt`, results, and for some scenarios a replay GIF or an
+  overview map, in `docs/sim/<scenario>-<seed>/`. `LP_FAST`, `LP_DOCTRINE`, `LP_TAG` adjust a run.
+- `scripts/batch.sh`: several runs, one table of metrics; 3 at a time by default (eight at once took six
+  times as long each). Batches confirm what works; single short runs find what does not.
+- `scripts/profile.sh`: per-tick engine timings; profile before blaming code.
+- `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
+- Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, and the
+  spikes air, path, cost, probe. A run that ends before its scenario's checks fails, and each scenario
+  states how long it needs after its strike.
 
 ## Engine notes
-- `LuaSurface.create_entity` takes `auto_connect` for electric poles, but it does not reliably rejoin a cut
-  line: wire pylons explicitly (`get_wire_connector(pole_copper).connect_to`).
-- `LuaEntity.disabled_by_script` (2.0) replaces writing `active`; roboports ignore it (spike needed for
-  jammers; fallback: kill construction robots inside the field).
-- `LuaEntity.destructible = false` is the cheap shield.
-- Biters only attack polluters: a scripted faction is ignored by them unless its buildings emit.
-- Entities cannot be placed in ungenerated chunks: request chunks ahead of expansion.
+- Player turrets fire only at military targets (`is_military_target`): ordinary enemy buildings are ignored.
+- `auto_connect` on a scripted pylon does not reliably rejoin a cut line: wire explicitly
+  (`get_wire_connector(pole_copper).connect_to`).
+- Air: a custom collision layer and trigger target type; `ignore_target_mask` on turrets that cannot shoot
+  up (turrets attack all masks by default); mines trigger on building layers only.
+- Ground units shoot through what blocks their path: walls delay them, never stop them.
+- Flamethrowers fire only within their arc.
+- A unit group arrives as a blob 10-30 tiles across and reports finished.
+- Units are cheap: 1,000 wandering add 0.17 ms a tick.
+- Assumed, not tested: spider-units cannot join unit groups (the army gives them the group's orders
+  separately).
+- `LuaEntity.disabled_by_script` replaces writing `active`; roboports ignore it (jammer fallback: kill
+  construction robots in the field). `destructible = false` is the cheap shield.
+- Biters attack polluters only. Entities cannot be placed in ungenerated chunks.
+- Park-Miller's first draws from nearby seeds are nearly linear: scramble seeds, discard the first draws.
 
-## Unit spikes (headless, 2026-10-12; scenarios air, path, cost in tests/lp-sim)
-- **Air works as designed.** A unit on its own collision layer (`lp-air`, mask `{layers = {lp-air}},
-  not_colliding_with_itself`) with its own trigger target type (`lp-air-unit`) flies into a closed wall box
-  with every wall standing, crosses 45 armed mines without setting one off, and is ignored by a
-  flamethrower (which needs `ignore_target_mask = {"lp-air-unit"}`, added to every fluid and artillery
-  turret in data-final-fixes). Gun turrets still hit it (default `attack_target_mask` is all masks).
-- **Ground units breach.** Infantry ordered into a closed wall box shot a wall out and walked in: the
-  engine's units attack what blocks their path. Walls delay ground units; they do not stop them.
-- **Flamethrowers fire only within their arc**: a turret facing away never fires (a test error once).
-- **Pathing through a settlement is fine.** 25 infantry as a group and 10 singly crossed a sprawl
-  settlement (204 tiles) in under a minute, no command failing. A group arrives as a blob 10-30 tiles
-  across round its destination and reports finished: arrival radii must allow for it.
-- **Units are cheap.** Over a 10-minute run (seed 12345, alone): 500 idle +0.04 ms/tick, 500 wandering
-  +0.02, 1000 wandering +0.17 (baseline 0.275).
-- Harriers stop scattered 5-10 tiles round a go-to point (separation): fine for raids, not for formations.
-
-## The army (built, 2026-10-12)
-`scripts/army.lua`, `units.lua`. Roster on vanilla bones, tinted: infantry (the engineer's body),
-tank (the tank's hull as a unit), walker (a spider-unit on the spidertron, own tinted legs), harrier (the
-destroyer robot, air layer). Depots build one unit per 10 s from parts, up to 10 per depot, in the
-doctrine's mix (bastion: infantry and tanks; sprawl: harriers; picket: balanced). When the garrison is 70%
-full (at least 6) a raid leaves for the nearest player structure within 400 tiles, two units stay home,
-survivors return after the group finishes or five minutes.
-
-Balance, from the assault scenario (fast mode: a depot and parts granted at the start; replay GIF and
-stills per run):
-- **Calibrate against the player at arrival time**, not a fresh one: the faction comes at the first
-  launch, when the player has piercing rounds and damage research (the test gives +80% bullet damage, +60%
-  shooting speed). Against yellow ammo and no research every raid was a walkover.
-- **Armour must not make a tier immune**: a flat 10 physical reduction on the tank turned a gun turret's
-  5-damage rounds into nothing (seed 4242: seven raids, no unit lost). Now 3 and 20%.
-- **Unit range at most turret range less the wall's depth** (15 against a gun turret's 18): at 17 to 22,
-  tanks shelled walls from outside the turrets' reach.
-- With those, the curve has the intended shape (seed 12345, all three doctrines): raids of 5 and 8 die on
-  the approach; the third (12) takes the outpost's turrets, walkers stepping over the wall and harriers
-  flying in while infantry and tanks never got through.
-- Cost (verbose benchmark, seed 12345, 30 min with the army): the mod's script averages 0.003-0.019 ms a
-  tick of ~0.3 ms. Readings of 0.49-0.77 ms were machine load (parallel runs), not the mod: profile with
-  `--benchmark-verbose all` before blaming code. The raid target search (a wide area query) now runs every
-  30 s, every 2 min when nothing is in reach.
-- **Planner spikes, fixed.** Planning ticks cost 5.5-5.8 ms (measured alone; 20-60 ms read under load):
-  each plan queried every ore tile within 200 tiles. Ore is now scanned once, a chunk per tick, into cached
-  lattice cells, and a plan tests at most 12 sites: worst planning tick 1.5 ms (`scripts/profile.sh`).
-  Side effect: growth a little slower (19 modules at 20 min against 24).
-
-## Response forces (built, 2026-10-12)
-A faction building damaged or destroyed alerts the nearest depot within 300 tiles: up to 8 garrison units
-go (home guard stays), at most once a minute per settlement, and come home like a raid.
-- **Engine: player turrets fire only at military targets.** Drills, pylons and bins are not by default, so
-  turret creep against a settlement did nothing (two gun turrets beside an outpost never fired; they died
-  to the next raid as the nearest player structures). Every faction building now has
-  `is_military_target = true`, as nests do.
-- Defend scenario (seed 12345): the creep (two piercing-ammo turrets, outpost turrets knocked out first)
-  destroyed 3 of 8 outpost entities; a response of 8 died to the last unit; the next raid (12, walkers and
-  harriers) destroyed the turrets; the outpost was rebuilt. Responses are too small against prepared
-  turrets: size them to the threat.
-
-## Spikes outstanding
-- Cost of 5,000 inert faction entities; the materialise/dematerialise boundary of a two-level simulation.
-- Groups fighting through a defended player base (turrets, walls, the breach); walkers (spider-unit) and
-  tanks; whether units on the faction's force pick sensible targets when not commanded.
-- Roboport `disabled_by_script`; spidertron automatic targeting without a driver.
+## Findings log
+Bugs and surprises the headless runs caught, each kept as a check:
+- Instant rebuilds made cutting a line meaningless (rebuild delay).
+- The planner built new fabricators while old ones were owed, on spots the player held, and doubled them
+  after a raid's stockpile (counts what it owes; follows flow, not stock; avoids held ground).
+- Rebuilt line pylons joined nothing (explicit wiring).
+- One landing site per direction found no ore at 300 tiles (band search, further rings, best-seen
+  fallback); walls bought before the first fabricator starved a settlement.
+- Tanks immune to yellow ammo; tanks outranging turrets over walls (armour and range rules).
+- Player turrets ignored faction buildings (military targets).
+- Planning ticks of 5.5 ms (cached ore cells): worst now 1.5 ms.
+- Settlements matured at two blocks (idle plans counted waiting for parts).
+- Test mistakes, now guarded: radii too tight for a blob or a drifting harrier; a flamethrower facing away;
+  runs too short for their checks; a defend test that passed without damage.
+- Measurement mistakes: parallel load read as mod cost (profile alone); smoothed rates aliasing against
+  crafting cycles (count over a window).

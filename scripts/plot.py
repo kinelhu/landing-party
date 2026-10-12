@@ -17,8 +17,11 @@ ORE = {"iron-ore": "#8fa3b8", "copper-ore": "#d08a5c", "coal": "#555555", "stone
 ENT = {"lp-lander": ((15.6, 7.8), "#1f4e79"), "lp-generator": ((2, 2), "#e6b800"),
        "lp-fabricator": ((3, 3), "#2e8b57"), "lp-drill": ((3, 3), "#4a90d9"), "lp-bin": ((1, 1), "#222222"),
        "lp-turret": ((2, 2), "#c0392b"), "lp-pylon": ((0.6, 0.6), "#7f3fbf"), "lp-wall": ((1, 1), "#333333"),
-       "lp-radar": ((3, 3), "#16a085"), "lp-depot": ((4, 4), "#8e44ad")}
+       "lp-radar": ((3, 3), "#16a085"), "lp-depot": ((4, 4), "#8e44ad"), "lp-launchpad": ((9, 9), "#ff7f0e"),
+       "lp-lamp": ((1, 1), "#ffe680"), "lp-mine": ((0.8, 0.8), "#b03060")}
 ROAD = "#d9d4c7"
+UNITS = {"lp-infantry": ("o", 6, "#1f77b4"), "lp-tank": ("s", 14, "#0b3d91"), "lp-walker": ("^", 20, "#6a3d9a"),
+         "lp-harrier": ("D", 8, "#17becf")}
 
 
 def draw(ax, s, title=True):
@@ -31,11 +34,15 @@ def draw(ax, s, title=True):
     main = s.get("network")
     pylons = [(x, y) for n, x, y, *_ in s["entities"] if n == "lp-pylon"]
     for n, x, y, net, status in s["entities"]:
+        if n in UNITS:
+            m, size, c = UNITS[n]
+            ax.scatter([x], [y], marker=m, s=size, color=c, edgecolors="white", linewidths=0.3, zorder=3)
+            continue
         (w, h), c = ENT.get(n, ((1, 1), "#999"))
         if n == "lp-lander":
             ax.add_patch(Rectangle((x - 8.7, y - 3.3), w, h, color=c, lw=0))
             continue
-        off = n not in ("lp-bin", "lp-pylon", "lp-wall", "lp-depot") and net != main
+        off = n not in ("lp-bin", "lp-pylon", "lp-wall", "lp-depot", "lp-launchpad", "lp-mine") and net != main
         ax.add_patch(Rectangle((x - w / 2, y - h / 2), w, h, facecolor="#bbbbbb" if off else c,
                                edgecolor="red" if off else "none", lw=0.8))
     # wires are not exported: draw each pylon to its nearest neighbour within reach as a hint of the graph

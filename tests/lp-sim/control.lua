@@ -500,6 +500,51 @@ scenarios.defend = function()
   end)
 end
 
+-- Faction: several landings, maturity, exports and tiers in one hour, on shortened clocks (a landing every
+-- 12 minutes, maturity at 4 blocks, tier thresholds a tenth of the real ones).
+scenarios.faction = function()
+  schedule(30, function()
+    lp("debug_tune", {cadence_minutes = 12, tiers = {300, 800, 2000, 4500}, mature_blocks = 4, quiet = true})
+  end)
+  -- No unit before its tier: sampled every 10 s across the map.
+  S.early = 0
+  for t = 600, END, 600 do
+    schedule(t, function()
+      local tier = lp("faction").tier
+      for name, need in pairs({["lp-harrier"] = 1, ["lp-walker"] = 2}) do
+        if tier < need then S.early = S.early + surface().count_entities_filtered{name = name, force = FORCE} end
+      end
+    end)
+  end
+  schedule(END, function()
+    local f = lp("faction")
+    local landers = surface().find_entities_filtered{name = "lp-lander", force = FORCE}
+    local closest = math.huge
+    for i = 1, #landers do for j = i + 1, #landers do
+      local a, b = landers[i].position, landers[j].position
+      closest = math.min(closest, math.sqrt((a.x - b.x) ^ 2 + (a.y - b.y) ^ 2))
+    end end
+    local mature, pads, lamps, mines = 0, 0, 0, 0
+    for id = 1, f.landings do
+      local st = lp("stats", id)
+      if st then
+        if st.mature then mature = mature + 1 end
+        pads, lamps, mines = pads + st.launchpads, lamps + st.lamps, mines + st.mines
+        info(string.format("settlement %d: %s, %d hubs %d blocks, mature %s, exported %d, units %d (%s)", id, st.doctrine,
+          st.hubs, st.blocks, tostring(st.mature), st.exported, st.units_built, serpent.line(st.built_by or {})))
+        lp("snapshot", id, "landing-party/faction.jsonl", 200)
+      end
+    end
+    check("faction: settlements keep landing", f.landings >= 4, f.landings .. " landings")
+    check("faction: landings keep apart", closest >= 200, string.format("closest %.0f tiles", closest))
+    check("faction: a settlement matured", mature > 0, mature)
+    check("faction: a launch pad was built", pads > 0, pads)
+    check("faction: mature hard points have lamps and mines", lamps > 0 and mines > 0, lamps .. " lamps, " .. mines .. " mines")
+    check("faction: exports raised the tier", f.tier >= 1, "tier " .. f.tier .. ", " .. f.exported .. " exported")
+    check("faction: no unit before its tier", S.early == 0, S.early .. " seen early")
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading

@@ -21,7 +21,9 @@ at milestones, asked for.
 - `scripts/batch.sh [scenarios] [seeds] [minutes] [strike]`: runs in parallel, one table of metrics. Fails if
   any run fails. Timings from a batch are inflated by contention: measure performance with one `sim.sh`.
 - `scripts/sheet.py out.png <run dirs>` (via `uv run --with matplotlib`): many settlements at one scale with
-  shape metrics. Judge variety there.
+  shape metrics. Judge variety there. `replay.py` (raid GIF and stills), `overview.py` (all settlements).
+- `scripts/profile.sh [scenario] [seed] [minutes]`: per-tick engine timings. Profile before blaming code.
+- Iterate on single short runs (`LP_FAST=true` grants a depot and parts); batch only to confirm.
 - Scenarios live in `tests/lp-sim/control.lua` (grow, cut, raid, occupy, probe; unit spikes air, path, cost
   with `LP_UNITS`/`LP_MOVE`/`LP_TAG`). A new mechanic adds one.
 - The shell is zsh: it does not word-split `$var` in loops. Write loops over parameter sets in `bash -c`.
@@ -31,6 +33,9 @@ at milestones, asked for.
 - Engine questions: answer them with a scenario (see `probe`) or a throwaway spike, never from memory.
 
 ## Rules
+- **Keep `DESIGN.md` current**: it is what design reviews read. Update the status table and the section
+  concerned with every mechanic built, every decision, and every finding (bugs caught go in the findings
+  log). Mark what is assumed, not tested.
 - Determinism: per-settlement randomness comes from `scripts/rng.lua`, seeded and kept in `storage`; never
   `math.random`, never randomness in the data stage.
 - Numbers shared by data and control live in `landing-party/shared.lua`; never type one twice.

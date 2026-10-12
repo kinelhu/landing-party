@@ -97,6 +97,20 @@ tint(depot.picture, {})
 depot.inventory_size = 48
 depot.max_health = 1000
 
+-- The launch pad: the rocket silo's base as a container.
+local silo = data.raw["rocket-silo"]["rocket-silo"]
+local launchpad = copy("container", "iron-chest", "lp-launchpad")
+launchpad.collision_box = silo.collision_box
+launchpad.selection_box = silo.selection_box
+launchpad.picture = table.deepcopy(silo.base_day_sprite)
+tint(launchpad.picture, {})
+launchpad.inventory_size = 10
+launchpad.max_health = 2000
+
+local lamp = copy("lamp", "small-lamp", "lp-lamp")
+lamp.light = {intensity = 0.9, size = 40, color = {0.6, 0.8, 1}}
+local mine = copy("land-mine", "land-mine", "lp-mine")
+
 local road = table.deepcopy(data.raw.tile["refined-concrete"])
 road.name = "lp-road"
 road.minable = nil
@@ -105,7 +119,7 @@ road.tint = shared.TINT
 road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
-  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, depot, road,
+  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, depot, road, launchpad, lamp, mine,
   {type = "recipe-category", name = "lp-fabrication"},
   {type = "item", name = "lp-feedstock", icon = "__base__/graphics/icons/stone.png", hidden = true,
     stack_size = 200, subgroup = "other"},

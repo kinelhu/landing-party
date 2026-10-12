@@ -43,7 +43,8 @@ base.trace = trace
 
 local LISTS = {["lp-pylon"] = "pylons", ["lp-bin"] = "bins", ["lp-drill"] = "drills",
   ["lp-fabricator"] = "fabs", ["lp-generator"] = "gens", ["lp-turret"] = "turrets", ["lp-radar"] = "radars",
-  ["lp-wall"] = "walls", ["lp-depot"] = "depots"}
+  ["lp-wall"] = "walls", ["lp-depot"] = "depots", ["lp-launchpad"] = "launchpads", ["lp-lamp"] = "lamps",
+  ["lp-mine"] = "mines"}
 
 local function register(b, e, module)
   local list = LISTS[e.name]
@@ -76,7 +77,7 @@ function base.land(surface, pos, opts)
   local id = storage.next_id
   local b = {id = id, surface = surface.index, parts = START_PARTS, feedstock = 0, made = 0, mined = 0,
     rate_in = 0, rate_parts = 0, pylons = {}, bins = {}, drills = {}, fabs = {}, gens = {}, turrets = {},
-    radars = {}, walls = {}, depots = {}, pylon_spots = {}, road_tiles = 0,
+    radars = {}, walls = {}, depots = {}, launchpads = {}, lamps = {}, mines = {}, pylon_spots = {}, road_tiles = 0,
     modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0,
     rule = "landed", log = {}, waiting = nil}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
@@ -384,6 +385,17 @@ local function plan(b)
       end
     end
   end
+  -- Maturity: enough blocks for the doctrine, or two minutes with nothing left to claim. A mature
+  -- settlement stops expanding; its surplus is exported from a launch pad.
+  if not b.mature then
+    local mb = storage.mature_blocks or doc.mature
+    -- Only plans where growth wanted ore and found no site count: counting every idle plan (waiting for
+    -- parts included) matured settlements of two blocks after five minutes.
+    if #b.blocks >= mb or ((b.grow_failed or 0) >= 12 and #b.fabs > 0) then
+      b.mature = game.tick
+      trace(b, string.format("mature: %d blocks, %d hubs", #b.blocks, #b.hubs))
+    end
+  end
   local function hub_needing(pred)
     for _, h in ipairs(b.hubs) do if pred(h) then return h end end
   end
@@ -393,7 +405,10 @@ local function plan(b)
     -- fabricators the base has, not answered with more (a raid once doubled them).
     {"fabricate", function() return b.rate_in > fab_cap * 1.1 and b.rate_in > 0 end,
       function() return fill(b, "fab", "lp-fabricator") end},
-    {"mine", function() return b.rate_in < fab_cap * 0.8 or #b.drills + (owed["lp-drill"] or 0) == 0 end, mining},
+    -- Mature, it only replaces lost income; young, it keeps the fabricators fed.
+    {"mine", function()
+      local floor = b.mature and 0.5 or 0.8
+      return b.rate_in < fab_cap * floor or #b.drills + (owed["lp-drill"] or 0) == 0 end, mining},
     -- Walls wait for a working economy: spent first, they starved a settlement that had no fabricator yet.
     {"fortify", function() return b.parts > 80 and #b.fabs > 0 end, function()
       local block = layout.fortify(b)
@@ -416,18 +431,28 @@ local function plan(b)
         b.target.depot = true
         local block = layout.open_role(b, "depot")
         return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
-    {"grow", function() return b.parts > 100 end, mining},
+    {"launch", function() return b.mature and not b.launch_opened end, function()
+      local block = layout.open_role(b, "launch")
+      if block and block.kind == "launch" then b.launch_opened = true end
+      return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
+    {"embellish", function() return b.mature and b.parts > 60 end, function()
+      local block = layout.embellish(b)
+      return block and string.format("lamps, paving and mines at %s %.0f,%.0f", block.kind, block.center[1],
+        block.center[2]) end},
+    {"grow", function() return not b.mature and b.parts > 100 end, mining},
   }
   for _, r in ipairs(rules) do
     if r[2]() then
       local did = r[3]()
       if did then
         b.rule = r[1]
+        if r[1] == "grow" then b.grow_failed = 0 end
         trace(b, string.format("rule %s -> %s (parts %d, feed %d, in %.0f/min, fab cap %.0f, power %.1f/%.1f MW)",
           r[1], did, b.parts, b.feedstock, b.rate_in, fab_cap, demand / 1e6, supply / 1e6))
         return
       end
       if r[1] ~= "fortify" then trace(b, "rule " .. r[1] .. " applies but no site fits") end
+      if r[1] == "grow" then b.grow_failed = (b.grow_failed or 0) + 1 end
     end
   end
   b.rule = "idle"
@@ -442,6 +467,25 @@ local function label(b)
     b.rate_parts, #b.fabs, #b.drills, demand / 1e6, supply / 1e6)
 end
 
+-- A mature settlement sends its surplus off-world once a minute, keeping a reserve for repairs and units.
+local EXPORT_TICKS = 3600
+local EXPORT_RESERVE = 300
+local EXPORT_MAX = 1000
+local function export(b)
+  if not b.mature then return end
+  prune(b.launchpads)
+  local pad = b.launchpads[1]
+  if not pad then return end
+  local surplus = math.floor(b.parts - EXPORT_RESERVE)
+  if surplus < 100 then return end
+  local amount = math.min(surplus, EXPORT_MAX)
+  b.parts = b.parts - amount
+  if base.on_export then base.on_export(b, amount) end
+  rendering.draw_line{from = pad, to = {pad.position.x, pad.position.y - 60}, surface = pad.surface,
+    color = {0.6, 0.85, 1, 0.8}, width = 6, time_to_live = 90}
+  trace(b, string.format("exported %d parts", amount))
+end
+
 function base.tick(tick)
   for _, b in pairs(storage.bases) do
     if b.lander.valid then
@@ -449,6 +493,7 @@ function base.tick(tick)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
       if tick % BUILD_TICKS == 0 then build(b) end
       army.tick(b, tick, trace)
+      if tick % EXPORT_TICKS == 0 then export(b) end
       if tick % PLAN_TICKS == 0 then
         local pending = false
         for _, job in ipairs(b.rebuild) do
@@ -470,7 +515,9 @@ function base.stats(b)
     lost = b.lost, rebuilt = b.rebuilt, rebuild_pending = #b.rebuild,
     doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, walls = #b.walls, road_tiles = b.road_tiles,
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, units_built = b.units_built,
-    units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0, archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
+    units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
+    mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
+    launchpads = #b.launchpads, built_by = b.built_by, archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid}
 end

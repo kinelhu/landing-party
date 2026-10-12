@@ -42,6 +42,10 @@ dest="$REPO/docs/sim/$RUN"
 mkdir -p "$dest"
 cp "$out/decisions.txt" "$out/sim.jsonl" "$out/results.txt" "$dest/"
 uv run --quiet --with matplotlib python3 "$REPO/scripts/plot.py" "$dest/sim.jsonl" "$dest" > /dev/null
+if [ -s "$out/faction.jsonl" ]; then
+  cp "$out/faction.jsonl" "$dest/"
+  uv run --quiet --with matplotlib python3 "$REPO/scripts/overview.py" "$dest/faction.jsonl" "$dest/overview.png" > /dev/null
+fi
 if [ -s "$out/replay.jsonl" ]; then
   cp "$out/replay.jsonl" "$dest/"
   uv run --quiet --with matplotlib --with pillow python3 "$REPO/scripts/replay.py" "$dest/replay.jsonl" "$dest/raid.gif" > /dev/null

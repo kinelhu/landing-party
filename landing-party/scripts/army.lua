@@ -38,13 +38,24 @@ function army.init(b)
   b.next_raid = b.next_raid or 0
 end
 
-local function cap(b) return #b.depots * CAP_PER_DEPOT end
+local GARRISON_PER_TIER = 5     -- per depot
+local function tier() return storage.faction and storage.faction.tier or 0 end
+local function cap(b) return #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * tier()) end
+
+-- The doctrine's mix, restricted to what the faction's tier has unlocked.
+local function mix(b)
+  local out = {}
+  for name, w in pairs(army.MIX[b.doctrine]) do
+    if tier() >= (shared.UNLOCK[name] or 0) then out[name] = w end
+  end
+  return out
+end
 
 -- One unit from the first depot with room, if parts allow; the doctrine weighs which.
 local function produce(b, trace)
   prune(b.garrison)
   if #b.garrison >= cap(b) then return end
-  local name = b.next_unit or rng.weighted(b.rng, army.MIX[b.doctrine])
+  local name = b.next_unit or rng.weighted(b.rng, mix(b))
   b.next_unit = name
   local cost = shared.units[name].cost
   if b.parts < cost then return end
@@ -57,6 +68,8 @@ local function produce(b, trace)
         b.parts = b.parts - cost
         b.next_unit = nil
         b.units_built = b.units_built + 1
+        b.built_by = b.built_by or {}
+        b.built_by[name] = (b.built_by[name] or 0) + 1
         table.insert(b.garrison, u)
         storage.unit_owner[u.unit_number] = b.id
         return u

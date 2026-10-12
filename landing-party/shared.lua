@@ -24,6 +24,9 @@ shared.cost = {
   ["lp-wall"] = 1,
   ["lp-radar"] = 20,
   ["lp-depot"] = 40,
+  ["lp-launchpad"] = 150,
+  ["lp-lamp"] = 1,
+  ["lp-mine"] = 2,
 }
 
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.
@@ -33,6 +36,9 @@ shared.units = {
   ["lp-walker"] = {health = 1600, cost = 120},
   ["lp-harrier"] = {health = 150, cost = 40},
 }
+
+-- Faction tier needed to build each unit (the tier rises with parts exported, scripts/faction.lua).
+shared.UNLOCK = {["lp-infantry"] = 0, ["lp-tank"] = 0, ["lp-harrier"] = 1, ["lp-walker"] = 2}
 
 -- Fabrication: FEEDSTOCK_PER_PART feedstock make one part in PART_SECONDS (before crafting speed).
 shared.FEEDSTOCK_PER_PART = 5
