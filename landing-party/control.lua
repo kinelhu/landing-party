@@ -32,6 +32,7 @@ end, BUILDINGS)
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
+  if ent.name == "lp-uplink" then faction.uplink_lost(ent) end
   if ent.force.name == shared.FORCE then
     local id = storage.unit_owner[ent.unit_number]
     if id then
@@ -109,6 +110,7 @@ remote.add_interface("landing-party", {
   end,
   faction = function() return faction.state() end,
   -- Tests only: shorten the faction's clocks and thresholds.
+  debug_export = function(id, parts) faction.export(storage.bases[id], parts) end,
   debug_tune = function(t)
     local f = faction.state()
     if t.cadence_minutes then f.cadence = t.cadence_minutes * 3600; if f.next then f.next = game.tick + f.cadence end end

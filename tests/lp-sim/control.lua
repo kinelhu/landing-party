@@ -545,6 +545,49 @@ scenarios.faction = function()
   end)
 end
 
+-- Uplink: the fortress lands first (with the parts it brings) and builds its rings; landings continue while
+-- it stands (clock shortened to 3 minutes); at minute 12 it is destroyed: no landing may follow, and
+-- exports may no longer raise the tier.
+scenarios.uplink = function()
+  schedule(60, function() lp("debug_tune", {cadence_minutes = 3, quiet = true}) end)
+  schedule(11 * 3600, function()
+    local st = lp("stats", storage.id)
+    local plan = st.fortress_planned or {}
+    local box = st.fortress_box
+    local function inside(name)
+      return box and surface().count_entities_filtered{name = name, force = FORCE,
+        area = {{box[1], box[2]}, {box[3], box[4]}}} or 0
+    end
+    st.walls, st.turrets_n = inside("lp-wall"), inside("lp-turret")
+    check("uplink: the fortress stands", st.uplink and st.doctrine == "fortress", st.doctrine)
+    -- Against what the layout plans: a few may be blocked by terrain.
+    check("uplink: its rings are built", st.walls >= 0.95 * (plan["lp-wall"] or 1),
+      st.walls .. " of " .. tostring(plan["lp-wall"]) .. " walls")
+    check("uplink: its turret belts are built", st.turrets_n >= 0.95 * (plan["lp-turret"] or 1),
+      st.turrets_n .. " of " .. tostring(plan["lp-turret"]) .. " turrets")
+    check("uplink: its generators are built", inside("lp-generator") >= (plan["lp-generator"] or 1),
+      inside("lp-generator") .. " of " .. tostring(plan["lp-generator"]))
+    info(string.format("uplink: fortress of %d walls, %d turrets, %d blocks; garrison %d", st.walls, st.turrets_n,
+      st.blocks, st.garrison))
+  end)
+  schedule(12 * 3600, function()
+    S.landings = lp("faction").landings
+    S.tier = lp("faction").tier
+    local u = surface().find_entities_filtered{name = "lp-uplink", force = FORCE}[1]
+    if u then u.die("player") end
+  end)
+  schedule(18 * 3600, function()
+    local f = lp("faction")
+    check("uplink: landings came while it stood", S.landings >= 3, S.landings .. " landings")
+    check("uplink: its fall is registered", f.uplink_down ~= nil, tostring(f.uplink_down))
+    check("uplink: no landing after its fall", f.landings == S.landings, S.landings .. " -> " .. f.landings)
+    lp("debug_export", storage.id, 100000)
+    check("uplink: the tier is frozen", lp("faction").tier == S.tier, "tier " .. S.tier .. " -> " .. lp("faction").tier)
+    lp("snapshot", storage.id, "landing-party/faction.jsonl", 200)
+    for id = 2, f.landings do lp("snapshot", id, "landing-party/faction.jsonl", 200) end
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
@@ -552,6 +595,7 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
 -- the strike at 30 failed for lack of time, not of mechanics).
 local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18}
+if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if AFTER[params.scenario] and END < STRIKE + AFTER[params.scenario] * 3600 then
   error(string.format("lp-sim: %s strikes at minute %d; run at least %d minutes", params.scenario, STRIKE / 3600,
     STRIKE / 3600 + AFTER[params.scenario]))
@@ -561,7 +605,8 @@ script.on_init(function()
   helpers.remove_path("landing-party")
   lp("set_trace", true)
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
-  storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {doctrine = params.doctrine})
+  storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
+    {doctrine = params.doctrine, uplink = params.scenario == "uplink" or nil})
   if not storage.id then error("lp-sim: landing failed") end
 end)
 

@@ -16,6 +16,7 @@ local DISTANCE = 350
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
 local SITE_MIN_ORE = 300
+local UPLINK_LANDING = 3
 
 faction.TIERS = {3000, 8000, 20000, 45000}           -- parts exported to reach tiers 1..4
 faction.DAMAGE_PER_TIER = 0.15
@@ -94,6 +95,11 @@ function faction.arrive(surface, from, opts, quiet)
     pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
     if pos then break end
   end
+  -- The third landing is the uplink (unless one already stands or has fallen).
+  if f.landings == UPLINK_LANDING - 1 and not f.uplink_landed then
+    opts = opts or {}
+    opts.uplink, opts.doctrine = true, "fortress"
+  end
   local b = pos and base.land(surface, pos, opts)
   if not b then
     -- Try again later, and say why: a failed landing retried silently every 10 s once.
@@ -105,6 +111,7 @@ function faction.arrive(surface, from, opts, quiet)
     return nil
   end
   f.landings = f.landings + 1
+  if opts and opts.uplink then f.uplink_landed = b.id end
   f.surface, f.from = surface.index, {x = from.x, y = from.y}
   f.next = game.tick + f.cadence
   base.trace(b, string.format("landing %d of the faction (tier %d)", f.landings, f.tier))
@@ -131,7 +138,7 @@ end
 function faction.tick(tick)
   if tick % 600 ~= 0 then return end
   local f = faction.state()
-  if f.next and tick >= f.next and f.surface then
+  if f.next and tick >= f.next and f.surface and not f.uplink_down then
     if alive() < MAX_ALIVE then
       faction.arrive(game.surfaces[f.surface], f.from, nil, storage.quiet)
     else
@@ -152,10 +159,27 @@ function faction.export(b, parts)
   local f = faction.state()
   f.exported = f.exported + parts
   b.exported = (b.exported or 0) + parts
+  -- With the uplink down, exports go nowhere: the tier is frozen.
+  if f.uplink_down then return end
   while f.tiers[f.tier + 1] and f.exported >= f.tiers[f.tier + 1] do
     f.tier = f.tier + 1
     apply_tier(f)
     base.trace(b, string.format("faction tier %d (%d parts exported)", f.tier, f.exported))
+  end
+end
+
+-- The uplink falls: no more landings, the tier frozen. The settlements already down stay.
+function faction.uplink_lost(entity)
+  local f = faction.state()
+  if f.uplink_down then return end
+  f.uplink_down = game.tick
+  f.next = nil
+  for _, force in pairs(game.forces) do
+    if #force.players > 0 then force.print({"lp.uplink-down"}) end
+  end
+  if storage.trace then
+    helpers.write_file("landing-party/decisions.txt", string.format("%8d faction  uplink destroyed: no more landings, tier %d frozen\n",
+      game.tick, f.tier), true)
   end
 end
 

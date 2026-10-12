@@ -15,7 +15,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Army: roster, depots, garrison, raids | built (first pass) | `assault` (with replay) |
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
-| Uplink (optional boss) | open | |
+| Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
 | Player army, rally beacons | open | |
 | Capture of nodes | open | |
 | Shields, jammers, gates, anti-air turret | open | |
@@ -61,9 +61,18 @@ Built in `scripts/faction.lua`.
 - **Tier.** Parts exported by mature settlements, counted faction-wide, raise the tier at 3,000, 8,000,
   20,000 and 45,000 parts. Each tier adds 15% damage to the faction's weapons and 5 garrison places per
   depot, and unlocks units: harriers at tier 1, walkers at tier 2.
-- **The uplink (open).** One landing is different: a fortress core that calls the next landings and holds
-  the faction's research. Taking it is optional and hard and gives a definite upper hand (no more landings,
-  tier frozen) or neutralises the faction; exact terms open. Proposed: the third landing.
+- **The uplink.** The third landing is different: the uplink, under the fortress doctrine. It lands with
+  3,000 extra parts and builds its fortress at once (six entities per build step for the fortress's own
+  jobs; one at a time, its fortress of about 650 entities took 16 minutes). Destroying the uplink (a radar
+  dish at twice the size, 6,000 health) stops all further landings and freezes the tier; the settlements
+  already down remain, and so does the uplink's own settlement around its lander. Taking it is optional.
+  Defaults chosen without the user, to review: the third landing; "upper hand", not full neutralisation.
+- **The fortress.** Three hub cells by three (62 tiles) as one block: three concentric wall rings, each
+  opened on a different side (north, east, south) so there is no straight path in; a belt of turrets two
+  tiles inside each ring, every six tiles (52 turrets, 528 walls); six generators between the outer rings;
+  16 pylons; the lander and the uplink in the inner yard. The rest of the settlement grows around it as a
+  fortress-doctrine settlement (everything walled, turreted outposts, two pickets a hub, an army mix rich in
+  walkers).
 
 ## A settlement's life
 1. **Camp.** The lander (crash-site spaceship, its own power), a pad, the first drills and fabricators.
@@ -197,7 +206,8 @@ Prior art for units: ERM RedArmy (LGPL) builds infantry on the engineer's body; 
 Never ERM's StarCraft or Metal Slug art (ripped).
 
 ## Open questions and next
-- The uplink: when it lands, what taking it does, how the fortress is laid out.
+- The uplink: whether the third landing is right, whether its fall should also wind the settlements down,
+  shields on its rings, and a fortress that varies (it is one fixed template now).
 - The player's army and rally beacons; capture by holding a node.
 - Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret.
 - Depletion and relocation; the second wall ring.
@@ -215,8 +225,8 @@ scenario with assertions first; the window is for art, feel and GUI.
   times as long each). Batches confirm what works; single short runs find what does not.
 - `scripts/profile.sh`: per-tick engine timings; profile before blaming code.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
-- Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, and the
-  spikes air, path, cost, probe. A run that ends before its scenario's checks fails, and each scenario
+- Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, and
+  the spikes air, path, cost, probe. A run that ends before its scenario's checks fails, and each scenario
   states how long it needs after its strike.
 
 ## Engine notes
@@ -248,6 +258,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - Player turrets ignored faction buildings (military targets).
 - Planning ticks of 5.5 ms (cached ore cells): worst now 1.5 ms.
 - Settlements matured at two blocks (idle plans counted waiting for parts).
+- The third landing failed silently every 10 s: two settlements blocked their neighbouring directions and
+  the rest were barren at 350 tiles (further rings, failures logged).
+- The fortress template put a turret twice on every ring corner and two generators among turrets (a check
+  now requires every planned fortress entity built); a construction burst meant for the fortress sped up the
+  whole settlement (12 blocks in 11 minutes; now fortress jobs only).
 - Test mistakes, now guarded: radii too tight for a blob or a drifting harrier; a flamethrower facing away;
   runs too short for their checks; a defend test that passed without damage.
 - Measurement mistakes: parallel load read as mod cost (profile alone); smoothed rates aliasing against

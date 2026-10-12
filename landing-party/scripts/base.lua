@@ -17,6 +17,8 @@ local START_PARTS = 150
 local REACHES = {40, 90, 160}
 local SEARCH = 200           -- ore search radius around the lander
 local SITE_BUDGET = 12       -- candidate mining sites tested per plan
+local UPLINK_PARTS = 3000    -- the uplink lands with these: its fortress is built at once
+local UPLINK_BURST = 6       -- entities placed per build step while the uplink stands
 local DEFENCE_RADIUS = 14
 -- A destroyed node is rebuilt unless a hostile turret, unit, vehicle, wall or character stands this close.
 -- Walls do not count: occupation needs a military presence, not a cheap barrier.
@@ -81,15 +83,33 @@ function base.land(surface, pos, opts)
     modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0,
     rule = "landed", log = {}, waiting = nil}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
-  layout.init(b, seed, opts.doctrine)
+  layout.init(b, seed, opts.uplink and "fortress" or opts.doctrine)
   army.init(b)
-  local at = layout.land(b, surface, pos)
+  local at, _, uplink_at
+  if opts.uplink then
+    at, _, uplink_at = layout.land_fortress(b, surface, pos)
+    b.parts = b.parts + UPLINK_PARTS
+    -- The uplink brings construction capacity: its fortress (~650 entities) took 16 minutes one at a time.
+    b.burst = UPLINK_BURST
+    b.fortress_planned = {}
+    if at then
+      for _, e in ipairs(layout.fortress_entities(b.blocks[1].x0, b.blocks[1].y0)) do
+        b.fortress_planned[e[1]] = (b.fortress_planned[e[1]] or 0) + 1
+      end
+    end
+  else
+    at = layout.land(b, surface, pos)
+  end
   if not at then return nil end
   clear_area(surface, "lp-lander", at)
   local lander = surface.create_entity{name = "lp-lander", position = at, force = f}
   if not lander then return nil end
   storage.next_id = id + 1
   b.lander = lander
+  if uplink_at then
+    clear_area(surface, "lp-uplink", uplink_at)
+    b.uplink = surface.create_entity{name = "lp-uplink", position = uplink_at, force = f}
+  end
   b.origin = {x = math.floor(lander.position.x), y = math.floor(lander.position.y)}
   storage.bases[id] = b
   site.scan_init(b, SEARCH)
@@ -281,7 +301,7 @@ function base.on_died(e)
   if not own then return end
   storage.owner[e.unit_number] = nil
   local b = storage.bases[own.base]
-  if not b or e.name == "lp-lander" then return end
+  if not b or e.name == "lp-lander" or e.name == "lp-uplink" then return end
   b.lost = b.lost + 1
   army.alarm(b, e.position, trace)
   local d = 0
@@ -491,7 +511,16 @@ function base.tick(tick)
     if b.lander.valid then
       site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
-      if tick % BUILD_TICKS == 0 then build(b) end
+      if tick % BUILD_TICKS == 0 then
+        build(b)
+        -- The fortress's own jobs go faster; everything else at the usual pace (a burst for all once
+        -- grew the uplink's settlement to 12 blocks in 11 minutes).
+        for _ = 2, b.burst or 1 do
+          local job = b.queue[1]
+          if not (job and job.module and job.module.kind == "fortress") then break end
+          build(b)
+        end
+      end
       army.tick(b, tick, trace)
       if tick % EXPORT_TICKS == 0 then export(b) end
       if tick % PLAN_TICKS == 0 then
@@ -517,7 +546,11 @@ function base.stats(b)
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, units_built = b.units_built,
     units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
-    launchpads = #b.launchpads, built_by = b.built_by, archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
+    launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false,
+    turrets_n = #b.turrets, fortress_planned = b.fortress_planned,
+    fortress_box = b.blocks[1] and b.blocks[1].kind == "fortress" and
+      {b.blocks[1].x0, b.blocks[1].y0, b.blocks[1].x0 + b.blocks[1].w, b.blocks[1].y0 + b.blocks[1].h} or nil,
+    archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid}
 end

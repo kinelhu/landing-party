@@ -22,6 +22,9 @@ layout.DOCTRINES = {
     outpost_turrets = true, pickets = 0, reach = 70},
   sprawl = {hub_cap = 4, mature = 8, walls = {pad = true, compound = true, picket = true}, outpost_turrets = false, pickets = 0,
     reach = 110},
+  -- The uplink's settlement: everything walled, turreted outposts, pickets, a fortress at its heart.
+  fortress = {hub_cap = 5, mature = 9, walls = {pad = true, compound = true, fab = true, gen = true, depot = true,
+    picket = true}, outpost_turrets = true, pickets = 2, reach = 70},
   picket = {hub_cap = 5, mature = 8, walls = {pad = true, compound = true, picket = true}, outpost_turrets = true, pickets = 2,
     reach = 90},
 }
@@ -257,6 +260,80 @@ function layout.land(b, surface, pos)
         local pad = open(b, hub, "pad", x0, y0, blocks.PAD_W, S, {{0, 0}, {1, 0}})
         -- The lander's box is off-centre ({-8.7, -3.3} to {6.9, 4.5}): shift it to sit mid-pad.
         return {x0 + blocks.PAD_W / 2 + 0.9, y0 + S / 2 - 0.6}, pad
+      end
+    end
+  end
+end
+
+-- The uplink's fortress: three hub cells by three (FORT tiles square) as one block. Three concentric wall
+-- rings, each opened on a different side so there is no straight path in, a belt of turrets inside each
+-- ring, generators between the rings, the lander and the uplink in the inner yard. Built at once, from
+-- the parts the uplink lands with.
+local FORT = 3 * PITCH - R
+local RINGS = {0, 8, 16}
+local OPENINGS = {"north", "east", "south"}
+function layout.fortress_entities(x0, y0)
+  local out = {}
+  for _, p in ipairs({4.5, 22.5, 39.5, 57.5}) do
+    for _, q in ipairs({4.5, 22.5, 39.5, 57.5}) do table.insert(out, {"lp-pylon", x0 + p, y0 + q}) end
+  end
+  for k, r in ipairs(RINGS) do
+    local lo, hi = r, FORT - 1 - r
+    local mid = math.floor(FORT / 2)
+    local function opening(side, t) return OPENINGS[k] == side and t >= mid - 2 and t < mid + 2 end
+    for t = lo, hi do
+      if not opening("north", t) then table.insert(out, {"lp-wall", x0 + t + 0.5, y0 + lo + 0.5}) end
+      if not opening("south", t) then table.insert(out, {"lp-wall", x0 + t + 0.5, y0 + hi + 0.5}) end
+      if t > lo and t < hi then
+        if not opening("west", t) then table.insert(out, {"lp-wall", x0 + lo + 0.5, y0 + t + 0.5}) end
+        if not opening("east", t) then table.insert(out, {"lp-wall", x0 + hi + 0.5, y0 + t + 0.5}) end
+      end
+    end
+    -- Turrets two tiles inside the ring, every six tiles, clear of the opening. The top and bottom rows
+    -- take the corners; the sides start one step in (both once placed a turret on each corner, and one of
+    -- each pair was blocked).
+    for t = lo + 3, hi - 3, 6 do
+      if math.abs(t - mid) > 4 then
+        table.insert(out, {"lp-turret", x0 + t + 1, y0 + lo + 3})
+        table.insert(out, {"lp-turret", x0 + t + 1, y0 + hi - 2})
+        if t > lo + 3 and t < hi - 8 then
+          table.insert(out, {"lp-turret", x0 + lo + 3, y0 + t + 1})
+          table.insert(out, {"lp-turret", x0 + hi - 2, y0 + t + 1})
+        end
+      end
+    end
+  end
+  -- Generators in the band between the outer two rings (two placed among turrets were blocked).
+  for _, g in ipairs({{13, 5}, {48, 5}, {13, 57}, {48, 57}, {5, 31}, {57, 31}}) do
+    table.insert(out, {"lp-generator", x0 + g[1], y0 + g[2]})
+  end
+  return out
+end
+
+function layout.land_fortress(b, surface, pos)
+  for r = 0, 100, 4 do
+    local steps = math.max(1, math.floor(2 * math.pi * r / 8))
+    for k = 0, steps - 1 do
+      local a = 2 * math.pi * k / steps
+      local x0, y0 = math.floor(pos[1] + r * math.cos(a)) - FORT / 2, math.floor(pos[2] + r * math.sin(a)) - FORT / 2
+      if layout.area_free(surface, x0, y0, FORT, FORT, 40) then
+        local hub = new_hub(b, x0, y0)
+        local cells = {}
+        for i = 0, 2 do for j = 0, 2 do table.insert(cells, {i, j}) end end
+        local block = {kind = "fortress", hub = hub.id, x0 = x0, y0 = y0, w = FORT, h = FORT,
+          center = {x0 + FORT / 2, y0 + FORT / 2}, entities = {}, slots = {}, opened = game.tick, walls = false,
+          walled = true}
+        table.insert(b.blocks, block)
+        table.insert(b.modules, block)
+        for _, c in ipairs(cells) do hub.cells[c[1] .. ":" .. c[2]] = block end
+        hub.count = hub.count + 1
+        push(b, {tiles = road_ring(x0, y0, FORT, FORT), module = block})
+        for _, e in ipairs(layout.fortress_entities(x0, y0)) do
+          if e[1] == "lp-pylon" then layout.connect(b, e[2], e[3], block) end
+          push(b, {name = e[1], pos = {e[2], e[3]}, module = block})
+        end
+        -- The lander sits mid-yard (its box is off-centre), the uplink above it.
+        return {x0 + FORT / 2 + 0.9, y0 + FORT / 2 - 0.6 + 2}, block, {x0 + FORT / 2, y0 + 21}
       end
     end
   end

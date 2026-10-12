@@ -111,6 +111,25 @@ local lamp = copy("lamp", "small-lamp", "lp-lamp")
 lamp.light = {intensity = 0.9, size = 40, color = {0.6, 0.8, 1}}
 local mine = copy("land-mine", "land-mine", "lp-mine")
 
+-- The uplink: a radar dish at twice the size, the faction's link home. Destroying it ends the landings.
+local uplink = copy("radar", "radar", "lp-uplink")
+uplink.max_health = 6000
+uplink.collision_box = {{-2.9, -2.9}, {2.9, 2.9}}
+uplink.selection_box = {{-3, -3}, {3, 3}}
+uplink.energy_source = {type = "void"}
+uplink.max_distance_of_sector_revealed = 0
+uplink.max_distance_of_nearby_sector_revealed = 6
+local function double(t, seen)
+  if type(t) ~= "table" or seen[t] then return end
+  seen[t] = true
+  if t.filename or t.filenames or t.stripes then
+    t.scale = (t.scale or 1) * 2
+    if t.shift then t.shift = {t.shift[1] * 2, t.shift[2] * 2} end
+  end
+  for _, v in pairs(t) do double(v, seen) end
+end
+double(uplink.pictures, {})
+
 local road = table.deepcopy(data.raw.tile["refined-concrete"])
 road.name = "lp-road"
 road.minable = nil
@@ -119,7 +138,7 @@ road.tint = shared.TINT
 road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
-  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, depot, road, launchpad, lamp, mine,
+  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, depot, road, launchpad, lamp, mine, uplink,
   {type = "recipe-category", name = "lp-fabrication"},
   {type = "item", name = "lp-feedstock", icon = "__base__/graphics/icons/stone.png", hidden = true,
     stack_size = 200, subgroup = "other"},
