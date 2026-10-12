@@ -452,14 +452,64 @@ scenarios.assault = function()
   end)
 end
 
+-- Defend: turret creep against the farthest mining outpost. Its own turrets are knocked out first (as a
+-- creeping player would; left standing, they killed the creep before it fired, so nothing was tested),
+-- then two player gun turrets (armed as at arrival) shoot it. The creep must do damage, the depot must
+-- send a response that destroys it, and what the outpost lost must be rebuilt.
+-- A depot and parts are granted at the start so a garrison exists by the strike.
+scenarios.defend = function()
+  schedule(200, function() lp("debug_depot", storage.id, 3000) end)
+  schedule(STRIKE, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local far, fd
+    for _, bin in pairs(lp_entities("lp-bin")) do
+      local d = (bin.position.x - lander.position.x) ^ 2 + (bin.position.y - lander.position.y) ^ 2
+      if not fd or d > fd then far, fd = bin, d end
+    end
+    for _, t in pairs(surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = far.position,
+      radius = 40}) do t.die("player") end
+    local at = {far.position.x, far.position.y}  -- the bin itself may die
+    S.near = function() return surface().count_entities_filtered{force = FORCE, position = at, radius = 12,
+      name = {"lp-drill", "lp-bin", "lp-pylon"}} end
+    S.before = S.near()
+    S.lost0 = lp("stats", storage.id).lost
+    S.garrison = lp("stats", storage.id).garrison
+    local pf = game.forces.player
+    pf.set_ammo_damage_modifier("bullet", 0.8)
+    pf.set_gun_speed_modifier("bullet", 0.6)
+    S.creep = {}
+    for _, off in ipairs({{9, -2}, {9, 3}}) do
+      local p = surface().find_non_colliding_position("gun-turret", {far.position.x + off[1], far.position.y + off[2]}, 6, 1)
+      local t = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
+      if t then t.insert{name = "piercing-rounds-magazine", count = 200}; table.insert(S.creep, t) end
+    end
+    info(string.format("defend: %d turrets beside the outpost at %.0f,%.0f, %.0f tiles out; garrison %d, drills %d",
+      #S.creep, far.position.x, far.position.y, math.sqrt(fd), S.garrison, S.before))
+  end)
+  schedule(STRIKE + 90, function() S.mid = S.near() end)
+  schedule(STRIKE + 6 * 3600, function()
+    local st = lp("stats", storage.id)
+    local alive = 0
+    for _, t in ipairs(S.creep) do if t.valid then alive = alive + 1 end end
+    check("defend: there was a garrison to send", S.garrison > 2, S.garrison)
+    check("defend: the creep did damage", S.mid < S.before, S.before .. " -> " .. S.mid .. " outpost entities")
+    check("defend: a response was sent", st.responses > 0, st.responses)
+    check("defend: the creeping turrets were destroyed", alive == 0, alive .. "/" .. #S.creep .. " standing")
+    check("defend: the outpost was rebuilt", S.near() >= S.before,
+      S.near() .. "/" .. S.before .. " outpost entities, rebuilt " .. st.rebuilt)
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
 -- state its strike at 30 never made).
-local STRIKES = {cut = true, raid = true, occupy = true, path = true}
-if STRIKES[params.scenario] and END <= STRIKE + 5 * 3600 then
+-- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
+-- the strike at 30 failed for lack of time, not of mechanics).
+local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18}
+if AFTER[params.scenario] and END < STRIKE + AFTER[params.scenario] * 3600 then
   error(string.format("lp-sim: %s strikes at minute %d; run at least %d minutes", params.scenario, STRIKE / 3600,
-    STRIKE / 3600 + 6))
+    STRIKE / 3600 + AFTER[params.scenario]))
 end
 
 script.on_init(function()
@@ -501,7 +551,7 @@ schedule(END, function()
   metric("parts", s.parts); metric("drills", s.drills); metric("fabs", s.fabs); metric("pylons", s.pylons)
   metric("lost", s.lost); metric("rebuilt", s.rebuilt)
   metric("units", s.units_built); metric("units_lost", s.units_lost); metric("raids", s.raids_sent)
-  metric("razed", s.razed)
+  metric("razed", s.razed); metric("responses", s.responses)
   table.insert(lines, "INFO " .. helpers.table_to_json(s))
   table.insert(lines, failed == 0 and "DONE ALL PASSED" or ("DONE " .. failed .. " FAILED"))
   helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")

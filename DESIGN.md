@@ -237,6 +237,18 @@ stills per run):
   lattice cells, and a plan tests at most 12 sites: worst planning tick 1.5 ms (`scripts/profile.sh`).
   Side effect: growth a little slower (19 modules at 20 min against 24).
 
+## Response forces (built, 2026-10-12)
+A faction building damaged or destroyed alerts the nearest depot within 300 tiles: up to 8 garrison units
+go (home guard stays), at most once a minute per settlement, and come home like a raid.
+- **Engine: player turrets fire only at military targets.** Drills, pylons and bins are not by default, so
+  turret creep against a settlement did nothing (two gun turrets beside an outpost never fired; they died
+  to the next raid as the nearest player structures). Every faction building now has
+  `is_military_target = true`, as nests do.
+- Defend scenario (seed 12345): the creep (two piercing-ammo turrets, outpost turrets knocked out first)
+  destroyed 3 of 8 outpost entities; a response of 8 died to the last unit; the next raid (12, walkers and
+  harriers) destroyed the turrets; the outpost was rebuilt. Responses are too small against prepared
+  turrets: size them to the threat.
+
 ## Spikes outstanding
 - Cost of 5,000 inert faction entities; the materialise/dematerialise boundary of a two-level simulation.
 - Groups fighting through a defended player base (turrets, walls, the breach); walkers (spider-unit) and

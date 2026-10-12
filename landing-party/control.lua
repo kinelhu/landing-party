@@ -18,6 +18,14 @@ script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e) base.tick(e.tick) end)
 
+-- Damage to the faction's buildings calls a response (filtered to them; army.alarm throttles).
+local BUILDINGS = {}
+for _, n in ipairs({"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret",
+  "lp-wall", "lp-radar", "lp-depot"}) do table.insert(BUILDINGS, {filter = "name", name = n}) end
+script.on_event(defines.events.on_entity_damaged, function(e)
+  if e.force and e.force.name ~= shared.FORCE then base.on_damaged(e.entity) end
+end, BUILDINGS)
+
 -- Deaths: the faction's buildings are queued for rebuild, its units counted lost, and what its units
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)

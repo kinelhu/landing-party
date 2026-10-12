@@ -122,6 +122,44 @@ local function launch(b, trace)
     dest[1], dest[2]))
 end
 
+-- Response: a building hit within reach of a depot calls out a squad from the garrison (the home guard
+-- stays), at most once a minute per settlement. It goes as a raid does and comes home the same way.
+local RESPONSE_RANGE = 300
+local RESPONSE_SIZE = 8
+local RESPONSE_COOLDOWN = 60 * 60
+
+function army.alarm(b, pos, trace)
+  if game.tick < (b.next_response or 0) then return end
+  prune(b.garrison)
+  local home, hd
+  for _, d in ipairs(b.depots) do
+    if d.valid then
+      local dist = math.sqrt((d.position.x - pos.x) ^ 2 + (d.position.y - pos.y) ^ 2)
+      if dist <= RESPONSE_RANGE and (not hd or dist < hd) then home, hd = d, dist end
+    end
+  end
+  if not home or #b.garrison <= HOME_GUARD then return end
+  b.next_response = game.tick + RESPONSE_COOLDOWN
+  local group = home.surface.create_unit_group{position = home.position, force = home.force}
+  local members = {}
+  local dest = {pos.x, pos.y}
+  local cmd = {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
+    {type = defines.command.go_to_location, destination = dest, radius = 16, distraction = defines.distraction.by_enemy},
+    {type = defines.command.attack_area, destination = dest, radius = 30, distraction = defines.distraction.by_anything},
+  }}
+  for i = #b.garrison, HOME_GUARD + 1, -1 do
+    if #members >= RESPONSE_SIZE then break end
+    local u = table.remove(b.garrison, i)
+    if u.type == "unit" then group.add_member(u) else u.commandable.set_command(cmd) end
+    table.insert(members, u)
+  end
+  group.set_command(cmd)
+  table.insert(b.raids, {group = group, members = members, target = dest, started = game.tick, home = home,
+    kind = "response"})
+  b.responses = (b.responses or 0) + 1
+  trace(b, string.format("response %d: %d units to %.0f,%.0f", b.responses, #members, pos.x, pos.y))
+end
+
 -- A raid is over when its group has finished or broken up, or after five minutes: survivors go home.
 local function settle(b, trace)
   for i = #b.raids, 1, -1 do
@@ -141,7 +179,8 @@ local function settle(b, trace)
         end
       end
       if r.group.valid then r.group.destroy() end
-      trace(b, string.format("raid over after %ds: %d of %d came back", (game.tick - r.started) / 60, alive, #r.members))
+      trace(b, string.format("%s over after %ds: %d of %d came back", r.kind or "raid", (game.tick - r.started) / 60,
+        alive, #r.members))
       table.remove(b.raids, i)
     end
   end

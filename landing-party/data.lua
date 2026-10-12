@@ -26,6 +26,9 @@ local function copy(type, name, new)
   p.placeable_by = nil
   p.flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"}
   p.hidden = true
+  -- Player turrets only fire at military targets: without this, turret creep against a settlement does
+  -- nothing (two gun turrets beside an outpost never fired), unlike against biter nests.
+  p.is_military_target = true
   p.icons = {{icon = p.icon or (p.icons and p.icons[1].icon), tint = shared.TINT}}
   p.icon = nil
   tint(p, {})

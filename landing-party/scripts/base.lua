@@ -100,6 +100,13 @@ function base.land(surface, pos, opts)
 end
 
 -- The base's network is the lander's: whatever is cut off from it stops counting.
+-- A faction building under fire: the depot answers (throttled in army.alarm).
+function base.on_damaged(e)
+  local own = storage.owner[e.unit_number]
+  local b = own and storage.bases[own.base]
+  if b then army.alarm(b, e.position, trace) end
+end
+
 function base.network(b)
   return b.lander.valid and b.lander.electric_network_id or nil
 end
@@ -275,6 +282,7 @@ function base.on_died(e)
   local b = storage.bases[own.base]
   if not b or e.name == "lp-lander" then return end
   b.lost = b.lost + 1
+  army.alarm(b, e.position, trace)
   local d = 0
   if b.lander.valid then
     d = math.sqrt((e.position.x - b.lander.position.x) ^ 2 + (e.position.y - b.lander.position.y) ^ 2)
@@ -462,7 +470,7 @@ function base.stats(b)
     lost = b.lost, rebuilt = b.rebuilt, rebuild_pending = #b.rebuild,
     doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, walls = #b.walls, road_tiles = b.road_tiles,
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, units_built = b.units_built,
-    units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
+    units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0, archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid}
 end
