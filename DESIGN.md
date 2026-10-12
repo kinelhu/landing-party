@@ -67,6 +67,32 @@ Robot Army and Commander (MIT); read Nullius: Hostile Incursion (GPL), do not co
 or Metal Slug art. Target Factorio 2.0 (2.1 is on the experimental branch only). Closest prior art:
 Proliferation (MIT, no public source): study it to differentiate.
 
+## Proliferation, and how Landing Party differs (read 2026-10-12, v0.35.0)
+Proliferation (Cody T. Newman, MIT, no public source, first release 2026-08-08) is a machine faction in the
+mould of Stargate's Replicators. Bases are placed at map generation on custom "matter nodes" and run a real
+chain (pumpjack, alloy, components, their own science and research) through four build stages to a walled
+compound. Its one unit is the walker: garrisons fill a deployer, then go as a wave to found a base, hit the
+nearest player structure or the nearest nest. Waves eat belts and items to grow, buildings below 30% health
+are captured, dead walkers leave fragments that grow into new bases. Later: ships boarding platforms, a
+planet (Hala) with cities. Hostile to biters too. Its character is a swarm, an infection.
+
+Where Landing Party stands apart, and should stay apart:
+- **They arrive because of you.** Landings follow the player's launches, repeatedly, not bases scattered at
+  map generation.
+- **Real ore, contested.** Settlements sit on the player's own patches, skim them and export the take, rather
+  than mining a node of their own.
+- **Planned settlements, readable as architecture.** Hubs, roads, walled hard points, doctrines and pickets;
+  a supply graph the player can read and cut. Proliferation grows bases through fixed stages.
+- **Combined arms.** Infantry, walkers, tanks and aircraft that ignore walls, against one walker type.
+- **An economy war with an RTS layer.** Cut lines, raid launch pads, occupy ground so it is not rebuilt, and
+  field an army of your own commanded through rally beacons. Proliferation gives the player no army.
+- **A strategic arc with an end.** Tier rises with exports; the uplink is an optional boss that stops the
+  landings. Proliferation states no end condition.
+
+Avoid converging on its signatures: no capture at a damage threshold (ours, if any, is capture by holding a
+node), no units growing from eaten items, no fragments. Both use their own force; with prefixes `lp-` and
+`proliferation-` they should coexist, and a three-way war with Replicators would be a compatibility test.
+
 ## Release plan
 1. **Rival factory**: landing, the node economy on Nauvis, power as the graph, defences (turrets, powered
    shields, jammers), depot response and rebuild-unless-occupied, ore competition, air raiders with one
