@@ -35,6 +35,7 @@ shared.units = {
   ["lp-tank"] = {health = 900, cost = 60},
   ["lp-walker"] = {health = 1600, cost = 120},
   ["lp-harrier"] = {health = 150, cost = 40},
+  ["lp-hauler"] = {health = 1500, cost = 30},
 }
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by

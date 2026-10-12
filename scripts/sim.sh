@@ -48,7 +48,8 @@ if [ -s "$out/faction.jsonl" ]; then
 fi
 if [ -s "$out/life.jsonl" ]; then
   cp "$out/life.jsonl" "$dest/"
-  uv run --quiet --with matplotlib --with pillow python3 "$REPO/scripts/life.py" "$dest/sim.jsonl" "$dest/life.jsonl" "$dest/life.gif" > /dev/null
+  bg="$dest/sim.jsonl"; [ -s "$out/faction.jsonl" ] && bg="$out/faction.jsonl"
+  uv run --quiet --with matplotlib --with pillow python3 "$REPO/scripts/life.py" "$bg" "$dest/life.jsonl" "$dest/life.gif" > /dev/null
 fi
 if [ -s "$out/replay.jsonl" ]; then
   cp "$out/replay.jsonl" "$dest/"

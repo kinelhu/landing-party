@@ -267,7 +267,116 @@ local function patrol(b, trace)
   end
 end
 
+-- Convoys: while the uplink stands, a mature settlement's exports travel to it as a hauler with up to two
+-- escorts, in legs of about 100 tiles (long single paths are where the pathfinder gives up). Arrival exports
+-- the cargo (army.on_deliver, set by base); a destroyed hauler loses it.
+local CONVOY_LEG = 100
+local CONVOY_ESCORT = 2
+
+local function uplink_settlement()
+  local f = storage.faction
+  local id = f and f.uplink_landed
+  local u = id and storage.bases[id]
+  if u and u.uplink and u.uplink.valid then return u end
+end
+
+function army.convoy(b, cargo, trace)
+  local dest = uplink_settlement()
+  if not dest or dest == b then return false end
+  local surface = b.lander.surface
+  local home = (b.depots[1] and b.depots[1].valid and b.depots[1]) or b.lander
+  local p = surface.find_non_colliding_position("lp-hauler", {home.position.x, home.position.y + 6}, 20, 0.5)
+  local hauler = p and surface.create_entity{name = "lp-hauler", position = p, force = home.force}
+  if not hauler then return false end
+  local escorts = {}
+  prune(b.garrison)
+  for i = #b.garrison, HOME_GUARD + 1, -1 do
+    if #escorts >= CONVOY_ESCORT then break end
+    if b.garrison[i].type == "unit" then table.insert(escorts, table.remove(b.garrison, i)) end
+  end
+  -- Dock outside the fortress, on the side the convoy comes from: sent to the uplink in the inner yard,
+  -- haulers circled the outer ring (seed 12345), the offset openings being no road for a vehicle.
+  local target = {dest.uplink.position.x, dest.uplink.position.y}
+  local fort = dest.blocks[1]
+  if fort and fort.kind == "fortress" then
+    local cx, cy = fort.center[1], fort.center[2]
+    local dx, dy = home.position.x - cx, home.position.y - cy
+    local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+    local r = fort.w / 2 + 6
+    target = {cx + dx / len * r, cy + dy / len * r}
+  end
+  local c = {hauler = hauler, escorts = escorts, cargo = cargo, dest = target, dest_id = dest.id, started = game.tick,
+    last = {hauler.position.x, hauler.position.y}, home = home}
+  b.convoys = b.convoys or {}
+  table.insert(b.convoys, c)
+  army.route_convoy(c)
+  b.convoys_sent = (b.convoys_sent or 0) + 1
+  trace(b, string.format("convoy %d: %d parts to the uplink at %.0f,%.0f, %d escorts", b.convoys_sent, cargo,
+    target[1], target[2], #escorts))
+  return true
+end
+
+function army.route_convoy(c)
+  local from = c.hauler.position
+  local dx, dy = c.dest[1] - from.x, c.dest[2] - from.y
+  local len = math.sqrt(dx * dx + dy * dy)
+  local legs = math.max(1, math.ceil(len / CONVOY_LEG))
+  local cmds = {}
+  for k = 1, legs do
+    table.insert(cmds, {type = defines.command.go_to_location, destination = {from.x + dx * k / legs, from.y + dy * k / legs},
+      radius = k == legs and 6 or 12, distraction = defines.distraction.none})
+  end
+  local cmd = {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
+  c.hauler.commandable.set_command(cmd)
+  for _, e in ipairs(c.escorts) do
+    if e.valid then
+      local ecmds = {}
+      for _, x in ipairs(cmds) do table.insert(ecmds, {type = x.type, destination = x.destination, radius = x.radius + 4,
+        distraction = defines.distraction.by_enemy}) end
+      e.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = ecmds}
+    end
+  end
+end
+
+local function travel(b, trace)
+  for i = #(b.convoys or {}), 1, -1 do
+    local c = b.convoys[i]
+    local done
+    if not c.hauler.valid then
+      b.convoys_lost = (b.convoys_lost or 0) + 1
+      b.cargo_lost = (b.cargo_lost or 0) + c.cargo
+      trace(b, string.format("convoy lost with %d parts", c.cargo))
+      done = true
+    elseif (c.hauler.position.x - c.dest[1]) ^ 2 + (c.hauler.position.y - c.dest[2]) ^ 2 < 20 * 20 then
+      if army.on_deliver then army.on_deliver(b, c.cargo) end
+      b.convoys_delivered = (b.convoys_delivered or 0) + 1
+      trace(b, string.format("convoy delivered %d parts after %ds", c.cargo, (game.tick - c.started) / 60))
+      c.hauler.destroy()
+      done = true
+    else
+      -- Stalled (no progress since the last look): fresh orders from where it stands.
+      local p = c.hauler.position
+      if (p.x - c.last[1]) ^ 2 + (p.y - c.last[2]) ^ 2 < 4 then army.route_convoy(c) end
+      c.last = {p.x, p.y}
+    end
+    if done then
+      for _, e in ipairs(c.escorts) do
+        if e.valid then
+          table.insert(b.garrison, e)
+          if c.home.valid then
+            e.commandable.set_command{type = defines.command.go_to_location, destination = c.home.position, radius = 8,
+              distraction = defines.distraction.by_enemy}
+          end
+        end
+      end
+      table.remove(b.convoys, i)
+    end
+  end
+end
+
 function army.tick(b, tick, trace)
+  if tick % 600 == 450 then travel(b, trace) end
   if tick % 300 == 0 then settle(b, trace); launch(b, trace) end
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end

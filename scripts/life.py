@@ -19,18 +19,20 @@ MARK = {"lp-infantry": ("o", 14, "#1f77b4"), "lp-tank": ("s", 30, "#0b3d91"), "l
 
 
 def main(snaps, life, out):
-    base = [json.loads(l) for l in open(snaps) if l.strip()][-1]
+    lines = [json.loads(l) for l in open(snaps) if l.strip()]
+    # A faction file holds one snapshot per settlement (all drawn); a sim file one per time (the last drawn).
+    bases = lines if "id" in lines[0] and len({s["id"] for s in lines}) == len(lines) else [lines[-1]]
     frames = [json.loads(l) for l in open(life) if l.strip()]
     fig, ax = plt.subplots(figsize=(8, 8))
-    xs = [e[1] for e in base["entities"]]
-    ys = [e[2] for e in base["entities"]]
+    xs = [e[1] for b in bases for e in b["entities"]] + [u[1] for f in frames for u in f["units"]]
+    ys = [e[2] for b in bases for e in b["entities"]] + [u[2] for f in frames for u in f["units"]]
     lim = (min(xs) - 20, max(xs) + 20, max(ys) + 20, min(ys) - 20)
-    still = {e[0] for e in base["entities"]} - set(MARK)
-    base = dict(base, entities=[e for e in base["entities"] if e[0] in still])
+    bases = [dict(b, entities=[e for e in b["entities"] if e[0] not in MARK]) for b in bases]
 
     def frame(i):
         ax.clear()
-        draw(ax, base, title=False)
+        for b in bases:
+            draw(ax, b, title=False)
         f = frames[i]
         for name, x, y, force in f["units"]:
             m, s, c = MARK.get(name, ("x", 12, "k"))

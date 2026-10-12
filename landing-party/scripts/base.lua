@@ -170,6 +170,8 @@ local function capture(b)
   end
 end
 
+army.on_deliver = function(b, cargo) if base.on_export then base.on_export(b, cargo) end end
+
 -- A faction building under fire: the depot answers (throttled in army.alarm).
 function base.on_damaged(e)
   local own = storage.owner[e.unit_number]
@@ -542,12 +544,17 @@ local EXPORT_RESERVE = 300
 local EXPORT_MAX = 1000
 local function export(b)
   if not b.mature then return end
-  prune(b.launchpads)
-  local pad = b.launchpads[1]
-  if not pad then return end
   local surplus = math.floor(b.parts - EXPORT_RESERVE)
   if surplus < 100 then return end
   local amount = math.min(surplus, EXPORT_MAX)
+  -- While the uplink stands, exports travel to it by convoy (no pad needed); otherwise they leave from the pad.
+  if army.convoy(b, amount, trace) then
+    b.parts = b.parts - amount
+    return
+  end
+  prune(b.launchpads)
+  local pad = b.launchpads[1]
+  if not pad then return end
   b.parts = b.parts - amount
   if base.on_export then base.on_export(b, amount) end
   rendering.draw_line{from = pad, to = {pad.position.x, pad.position.y - 60}, surface = pad.surface,
@@ -599,6 +606,8 @@ function base.stats(b)
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false,
     turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0,
     patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
+    convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0,
+    convoys_lost = b.convoys_lost or 0, cargo_lost = b.cargo_lost or 0,
     fortress_box = b.blocks[1] and b.blocks[1].kind == "fortress" and
       {b.blocks[1].x0, b.blocks[1].y0, b.blocks[1].x0 + b.blocks[1].w, b.blocks[1].y0 + b.blocks[1].h} or nil,
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do

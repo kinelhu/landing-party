@@ -794,6 +794,51 @@ scenarios.lively = function()
   end)
 end
 
+-- Convoy: an ordinary settlement (matured at once, a depot and parts granted) and an uplink landed beside
+-- it. While the uplink stands the settlement's exports travel to it by convoy. The first hauler is
+-- destroyed on the way: its cargo must be lost, later convoys must arrive, and the faction's exports must
+-- equal what arrived. All units on the map are recorded for the life animation.
+scenarios.convoy = function()
+  schedule(60, function()
+    lp("debug_tune", {mature_blocks = 2, quiet = true})
+    lp("debug_depot", storage.id, 4000)
+  end)
+  schedule(120, function()
+    S.uplink = lp("arrive", 1, {x = 0, y = 0}, params.distance, {uplink = true})
+    info("convoy: uplink settlement " .. tostring(S.uplink))
+  end)
+  for t = 600, END, 120 do
+    schedule(t, function()
+      local haulers = surface().find_entities_filtered{name = "lp-hauler", force = FORCE}
+      if not S.killed then
+        for _, h in pairs(haulers) do
+          S.seen = S.seen or {}
+          if S.seen[h.unit_number] then h.die("player"); S.killed = true; break end
+          S.seen[h.unit_number] = true
+        end
+      end
+      local frame = {tick = game.tick, units = {}}
+      for _, u in pairs(surface().find_entities_filtered{type = {"unit", "spider-unit"}}) do
+        table.insert(frame.units, {u.name, u.position.x, u.position.y, u.force.name})
+      end
+      helpers.write_file("landing-party/life.jsonl", helpers.table_to_json(frame) .. "\n", true)
+    end)
+  end
+  schedule(END, function()
+    local a, f = lp("stats", storage.id), lp("faction")
+    local u = S.uplink and lp("stats", S.uplink)
+    check("convoy: the uplink landed", u ~= nil and u.uplink, tostring(S.uplink))
+    check("convoy: convoys left", a.convoys_sent >= 2, a.convoys_sent .. " sent")
+    check("convoy: the destroyed one lost its cargo", a.convoys_lost >= 1 and a.cargo_lost > 0,
+      a.convoys_lost .. " lost, " .. a.cargo_lost .. " parts")
+    check("convoy: later ones arrived", a.convoys_delivered >= 1, a.convoys_delivered .. " delivered")
+    check("convoy: exports count only what arrived", f.exported == a.exported + (u and u.exported or 0),
+      string.format("faction %d = settlement %d + uplink %d", f.exported, a.exported, u and u.exported or 0))
+    lp("snapshot", storage.id, "landing-party/faction.jsonl", 200)
+    if S.uplink then lp("snapshot", S.uplink, "landing-party/faction.jsonl", 200) end
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
@@ -802,6 +847,7 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 -- the strike at 30 failed for lack of time, not of mechanics).
 local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
+if params.scenario == "convoy" and END < 10 * 3600 then error("lp-sim: convoy needs at least 10 minutes") end
 if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end
 if AFTER[params.scenario] and END < STRIKE + AFTER[params.scenario] * 3600 then
   error(string.format("lp-sim: %s strikes at minute %d; run at least %d minutes", params.scenario, STRIKE / 3600,

@@ -150,4 +150,24 @@ harrier.resistances = {{type = "fire", percent = 100}}
 tint(harrier.run_animation, {})
 tint(harrier.attack_parameters.animation, {})
 
-data:extend({infantry, tank, walker, harrier, trooper})
+-- Hauler: the car's hull, slow and armoured, lightly armed: it carries a settlement's exports to the uplink.
+local car = data.raw.car.car
+local hauler = base_unit("lp-hauler")
+hauler.max_health = shared.units["lp-hauler"].health
+hauler.movement_speed = 0.08
+hauler.distance_per_frame = 0.5
+hauler.vision_distance = 20
+hauler.collision_box = {{-0.8, -0.8}, {0.8, 0.8}}
+hauler.selection_box = {{-1, -1.2}, {1, 1.2}}
+hauler.run_animation = table.deepcopy(car.animation)
+local hla = gun(4, 10, 30)
+hla.animation = table.deepcopy(car.animation)
+hauler.attack_parameters = hla
+hauler.dying_explosion = "medium-explosion"
+hauler.corpse = nil
+hauler.resistances = {{type = "physical", decrease = 4, percent = 30}, {type = "fire", percent = 50},
+  {type = "explosion", percent = 20}}
+tint(hauler.run_animation, {}, {r = 1, g = 0.75, b = 0.45, a = 1})
+tint(hauler.attack_parameters.animation, {}, {r = 1, g = 0.75, b = 0.45, a = 1})
+
+data:extend({infantry, tank, walker, harrier, trooper, hauler})
