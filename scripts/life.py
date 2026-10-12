@@ -1,6 +1,8 @@
 """Animate the units of a settlement over its last snapshot: patrols, raids, convoys.
 
-    life.py sim.jsonl life.jsonl out.gif
+    life.py sim.jsonl life.jsonl out.gif [follow-unit-name]
+With a unit name, the view follows the first unit of that name in a 70-tile window (frames without one are
+skipped): a convoy close up.
 """
 import json
 import sys
@@ -19,7 +21,7 @@ MARK = {"lp-infantry": ("o", 14, "#1f77b4"), "lp-tank": ("s", 30, "#0b3d91"), "l
         "lp-harrier": ("D", 18, "#17becf"), "lp-hauler": ("P", 50, "#d35400"), "lp-trooper": ("o", 14, "#e67e22")}
 
 
-def main(snaps, life, out):
+def main(snaps, life, out, follow=None):
     lines = [json.loads(l) for l in open(snaps) if l.strip()]
     # A faction file holds one snapshot per settlement (all drawn); a sim file one per time (the last drawn).
     bases = lines if "id" in lines[0] and len({s["id"] for s in lines}) == len(lines) else [lines[-1]]
@@ -37,6 +39,8 @@ def main(snaps, life, out):
     ax.set_xlim(lim[0], lim[1])
     ax.set_ylim(lim[2], lim[3])
     ax.set_xticks([]); ax.set_yticks([])
+    if follow:
+        frames = [f for f in frames if any(u[0] == follow for u in f["units"])]
     step = max(1, len(frames) // MAX_FRAMES)
     frames = frames[::step]
     live = []
@@ -53,6 +57,10 @@ def main(snaps, life, out):
         for name, (px, py) in by.items():
             m, s, c = MARK.get(name, ("x", 12, "k"))
             live.append(ax.scatter(px, py, marker=m, s=s, color=c, edgecolors="white", linewidths=0.4, zorder=4))
+        if follow:
+            fx, fy = next((u[1], u[2]) for u in f["units"] if u[0] == follow)
+            ax.set_xlim(fx - 35, fx + 35)
+            ax.set_ylim(fy + 35, fy - 35)
         ax.set_title(f"{f['tick'] / 3600:.1f} min, {len(f['units'])} units", fontsize=9)
 
     anim = FuncAnimation(fig, frame, frames=len(frames))
@@ -61,4 +69,4 @@ def main(snaps, life, out):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:5])
