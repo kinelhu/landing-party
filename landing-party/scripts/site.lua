@@ -1,0 +1,130 @@
+-- Where a module fits. Trees and rocks count as clearable; anything else built, cliffs and water do not.
+local shared = require("__landing-party__.shared")
+local modules = require("__landing-party__.scripts.modules")
+
+local site = {}
+
+site.ORES = {"iron-ore", "copper-ore", "coal", "stone"}
+local CLEARABLE = {tree = true, ["simple-entity"] = true, resource = true, corpse = true,
+  ["rail-remnants"] = true, fish = true}
+
+local function box_at(m, ox, oy, margin)
+  return {{ox + m.box[1] - margin, oy + m.box[2] - margin}, {ox + m.box[3] + margin, oy + m.box[4] + margin}}
+end
+
+local function generated(surface, area)
+  for _, c in ipairs({area[1], area[2], {area[1][1], area[2][2]}, {area[2][1], area[1][2]}}) do
+    if not surface.is_chunk_generated({math.floor(c[1] / 32), math.floor(c[2] / 32)}) then return false end
+  end
+  return true
+end
+
+-- Does module m fit with its origin at (ox, oy)? Ore modules need ore under both drills; the others
+-- must not sit on ore (they would block the patch).
+-- Set by the base module: true where hostile forces occupy the ground.
+site.occupied = function() return false end
+
+-- Ground the base must leave free: spots awaiting a rebuild, and ground the enemy occupies.
+local function reserved(b, area)
+  for _, job in ipairs(b.rebuild) do
+    local x, y = job.pos[1], job.pos[2]
+    if x >= area[1][1] - 2 and x <= area[2][1] + 2 and y >= area[1][2] - 2 and y <= area[2][2] + 2 then return true end
+  end
+  return site.occupied(game.surfaces[b.surface], {(area[1][1] + area[2][1]) / 2, (area[1][2] + area[2][2]) / 2})
+end
+
+function site.fits(surface, b, m, ox, oy)
+  local area = box_at(m, ox, oy, 1)
+  if not generated(surface, area) then return false end
+  if reserved(b, area) then return false end
+  for _, e in pairs(surface.find_entities_filtered{area = area}) do
+    if not CLEARABLE[e.type] then return false end
+  end
+  if surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = 1} > 0 then return false end
+  local inner = box_at(m, ox, oy, 0)
+  local ore = surface.count_entities_filtered{area = inner, type = "resource", name = site.ORES}
+  if m.ore then
+    for _, spec in ipairs(m.entities) do
+      if spec[1] == "lp-drill" then
+        local x, y = ox + spec[2], oy + spec[3]
+        if surface.count_entities_filtered{area = {{x - 1.5, y - 1.5}, {x + 1.5, y + 1.5}}, type = "resource",
+          name = site.ORES} < 6 then return false end
+      end
+    end
+    return true
+  end
+  return m.on_ore or ore == 0
+end
+
+-- Nearest pylon spot, built or queued (a queued block's pylon counts, or its neighbour would chain past it).
+local function nearest_pylon(base, x, y)
+  local best, bd = nil, math.huge
+  for _, p in ipairs(base.pylon_spots) do
+    local d = (p[1] - x) ^ 2 + (p[2] - y) ^ 2
+    if d < bd then best, bd = p, d end
+  end
+  return best, math.sqrt(bd)
+end
+site.nearest_pylon = nearest_pylon
+
+-- First fitting origin on rings around (cx, cy), nearest first. Deterministic: no randomness.
+function site.near(surface, b, m, cx, cy, rmin, rmax)
+  for r = rmin, rmax, 2 do
+    local steps = math.max(8, math.floor(2 * math.pi * r / 3))
+    for i = 0, steps - 1 do
+      local a = 2 * math.pi * i / steps
+      local ox, oy = math.floor(cx + r * math.cos(a)), math.floor(cy + r * math.sin(a))
+      if site.fits(surface, b, m, ox, oy) then return {ox, oy} end
+    end
+  end
+end
+
+-- The best mining origin: on the lattice, over ore, nearest to the base's network, within reach.
+-- Returns origin and its distance to the network.
+function site.mining(surface, base, reach, radius)
+  local m = modules.mining
+  local L = modules.MINING_LATTICE
+  local ax, ay = base.origin.x, base.origin.y
+  local cells, list = {}, {}
+  for _, r in pairs(surface.find_entities_filtered{area = {{ax - radius, ay - radius}, {ax + radius, ay + radius}},
+    type = "resource", name = site.ORES}) do
+    local cx = math.floor((r.position.x - ax) / L.x)
+    local cy = math.floor((r.position.y - ay) / L.y)
+    local key = cx .. ":" .. cy
+    -- Every fourth lattice column is left empty: a road spine through the patch.
+    if cx % 4 ~= 3 and not cells[key] and not base.cells[key] then
+      cells[key] = true
+      table.insert(list, {ax + cx * L.x + 1, ay + cy * L.y + 3, key, cx, cy})
+    end
+  end
+  local scored = {}
+  for _, o in ipairs(list) do
+    local _, d = nearest_pylon(base, o[1], o[2])
+    if d <= reach then table.insert(scored, {o = o, d = d}) end
+  end
+  table.sort(scored, function(a, b) if a.d ~= b.d then return a.d < b.d end
+    if a.o[1] ~= b.o[1] then return a.o[1] < b.o[1] end return a.o[2] < b.o[2] end)
+  -- A cell is judged once: taken when chosen, bad when it does not fit (cells are skipped above).
+  for i, c in ipairs(scored) do
+    if i > 60 then break end
+    if site.fits(surface, base, m, c.o[1], c.o[2]) then base.cells[c.o[3]] = "taken"; return c.o, c.d, c.o[4], c.o[5] end
+    -- Held or reserved ground may free up later: only a cell that does not fit physically is dropped.
+    if not reserved(base, box_at(m, c.o[1], c.o[2], 1)) then base.cells[c.o[3]] = "bad" end
+  end
+end
+
+-- Intermediate pylon points joining a module's pylon at (x, y) to the network.
+function site.chain(base, x, y)
+  local p, d = nearest_pylon(base, x, y)
+  if not p or d <= shared.PYLON_REACH - 0.2 then return {}, p end
+  local step = shared.PYLON_REACH - 5
+  local n = math.ceil(d / step) - 1
+  local pts = {}
+  for i = 1, n do
+    local t = i / (n + 1)
+    table.insert(pts, {p[1] + (x - p[1]) * t, p[2] + (y - p[2]) * t})
+  end
+  return pts, p
+end
+
+return site

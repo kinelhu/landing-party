@@ -1,0 +1,6 @@
+.DS_Store
+*.zip
+__pycache__/
+docs/sim/
+# written by scripts/sim.sh into each run profile's copy of the test mod
+tests/lp-sim/params.lua

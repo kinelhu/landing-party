@@ -1,0 +1,9 @@
+{
+  "name": "landing-party",
+  "version": "0.1.0",
+  "title": "Landing Party",
+  "author": "kinelhu",
+  "description": "A rival machine faction lands and builds a factory of its own. Prototype.",
+  "factorio_version": "2.0",
+  "dependencies": ["base >= 2.0"]
+}
