@@ -438,6 +438,16 @@ local function alert(b, t, key, at)
 end
 ops.alert = alert
 
+-- A notice to the players at war with this corporation, with a map link.
+local function notify(b, key, at)
+  local s = game.surfaces[b.surface]
+  for _, f in ipairs(enemies(game.forces[b.force])) do
+    if #f.players > 0 and not shared.is_corp(f.name) then
+      f.print({key, shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at[1], at[2], s.name)})
+    end
+  end
+end
+
 local function order_all(members, cmd)
   for _, u in ipairs(members) do if u.valid then u.commandable.set_command(cmd) end end
 end
@@ -492,9 +502,9 @@ local function finish(b, outcome, trace, army)
       t.defence = math.max(t.defence or 0, seen)
     end
   end
-  if outcome == "done" or outcome == "spent" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
+  if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
   local lost = op.launched - alive(op)
-  b.next_op = game.tick + ((outcome == "done" or outcome == "spent") and GAP_DONE or GAP_ABORTED)
+  b.next_op = game.tick + ((outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE or GAP_ABORTED)
     + math.floor(lost / 5) * GAP_PER_5_LOST
   -- What it saw there at the end is the record: destroyed targets are forgotten (a raid set out again for
   -- creep it had already destroyed).
@@ -738,7 +748,9 @@ local function choose_strip(b, army)
       local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
       if not bd or d < bd then
         local p = strip_site(b, t)
-        if p then best, bd, site = key, d, p end
+        -- A patch it already holds (a camp kept there) is not stripped again.
+        local held = p and (b.claims or {})[math.floor(p[1] / 64) .. "," .. math.floor(p[2] / 64)] or 0
+        if p and held < 2 then best, bd, site = key, d, p end
       end
     end
   end
@@ -823,6 +835,8 @@ local function strip_step(b, trace, army)
           if bin then table.insert(op.camp, bin); table.insert(op.bins, bin) end
         end
       end
+      op.drills = 0
+      for _, e in ipairs(op.camp) do if e and e.valid and e.type == "mining-drill" then op.drills = op.drills + 1 end end
       op.phase, op.phase_at = "mine", game.tick
       alert(b, b.intel.targets[op.target], "lp.alert-strip", op.site)
       trace(b, string.format("strip-mining: camp up at %.0f,%.0f with %d bins", op.site[1], op.site[2], #op.bins))
@@ -831,6 +845,22 @@ local function strip_step(b, trace, army)
     local working = 0
     for _, e in ipairs(op.camp) do if e and e.valid and e.type == "mining-drill" then working = working + 1 end end
     local done = game.tick - op.phase_at >= (storage.strip_fast and 3 * 3600 or STRIP_TICKS)
+    -- Unanswered (every drill standing, nobody lost): the patch is claimed; the second time, the camp stays as a
+    -- Grubstake outpost on the player's ore (late pressure: ignoring two camps leaves a patch to assault).
+    if done and working == (op.drills or working) and n >= op.launched then
+      b.claims = b.claims or {}
+      -- By patch (64-tile squares round the camp), not by target cell: the next camp may aim at another drill.
+      local patch = math.floor(op.site[1] / 64) .. "," .. math.floor(op.site[2] / 64)
+      local times = (b.claims[patch] or 0) + 1
+      b.claims[patch] = times
+      notify(b, times >= 2 and "lp.claim-outpost" or "lp.claim", op.site)
+      if times >= 2 and ops.settle then
+        ops.settle(b, op.site, op.camp)
+        op.camp = nil
+        trace(b, string.format("strip-mining: the camp at %.0f,%.0f stays as an outpost", op.site[1], op.site[2]))
+        return finish(b, "claimed", trace, army)
+      end
+    end
     if working == 0 or n < 0.5 * op.launched or done then
       local cargo = 0
       for _, bin in ipairs(op.bins or {}) do if bin.valid then cargo = cargo + bin.get_inventory(defines.inventory.chest).get_item_count() end end

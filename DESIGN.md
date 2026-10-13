@@ -639,7 +639,15 @@ player of the force, on any surface (absence is not a truce). Needs a game sessi
   origin and short of another corporation's claim. Enclosing a structure is encroachment, so it provokes.
   `line` (relays at 185 tiles; a step a minute in the test): grows, names a relay, provoked only after the
   warning, no operation before; `line` with `LP_MIX=back` (the relays removed on the warning): never provoked.
-- Not built yet: an unanswered strip camp claiming the patch, and a second becoming a Grubstake outpost.
+- **Claims.** A strip camp that mines its full time unanswered (every drill standing, every guard back) registers a
+  claim on the patch (a notice); the second unanswered camp on the same patch (64-tile squares) stays: a mining
+  module of the settlement, rebuilt and capturable like any outpost, its ore hauled (no line home), marked on the
+  map with its own small disc ("a permanent recovery site", a notice). A held patch is not stripped again.
+  `strip` with `LP_MIX=claim` (40 minutes, in `--full`; Serenity and the biters at peace with Grubstake, whose
+  guards they had killed): one settled, three drills standing.
+- **Measured, the late base (contact, seed 12345, 2 hours):** 8 operations (was 2), 3 of them landing: raids on
+  far substations (line cells) and a siege at 117 minutes; nothing behind the walls lost. Spread: 13 operations, 5
+  turned back. Fable's bar (at least 4 operations, at least 2 landing) is met.
 
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet

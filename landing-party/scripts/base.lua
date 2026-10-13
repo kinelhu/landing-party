@@ -201,7 +201,10 @@ local function economy(b)
     local inv = bin.get_inventory(defines.inventory.chest)
     local n = inv.get_item_count()
     -- A bin counts only while its drills share the lander's network (cut the line, lose the income).
-    if n > 0 and net then
+    local own = storage.owner[bin.unit_number]
+    if n > 0 and own and own.module and own.module.claim then
+      inv.clear(); gained = gained + n
+    elseif n > 0 and net then
       local p = bin.surface.find_entities_filtered{name = shared.variants("lp-pylon"), position = bin.position, radius = 5,
         limit = 1}[1]
       if p and p.electric_network_id == net then inv.clear(); gained = gained + n end
@@ -614,8 +617,9 @@ function base.claim_map(b)
   local surface = game.surfaces[b.surface]
   local r = 60
   for _, m in ipairs(b.modules) do
+    -- A claim (a strip camp kept on the player's ore) is far out: it has its own mark, not the disc.
     local d = math.sqrt((m.center[1] - b.origin.x) ^ 2 + (m.center[2] - b.origin.y) ^ 2) + CLAIM_MARGIN
-    if d > r then r = d end
+    if d > r and not m.claim then r = d end
   end
   -- A perimeter that grows on its own (Serenity's moving line, ops.perimeter) claims at least that far.
   if b.perimeter and b.perimeter > r then r = b.perimeter end
@@ -636,6 +640,21 @@ function base.claim_map(b)
 end
 
 ops.claim_map = base.claim_map
+
+-- A strip camp left alone twice on one patch stays (ops, strip_step): a mining module of the settlement,
+-- rebuilt and capturable like any outpost. Its ore is hauled (no line home), marked on the map with its own disc.
+function ops.settle(b, site, camp)
+  local m = {kind = "mining", center = {site[1], site[2]}, entities = {}, built = true, claim = true}
+  table.insert(b.modules, m)
+  for _, e in ipairs(camp or {}) do if e and e.valid then register(b, e, m) end end
+  local surface = game.surfaces[b.surface]
+  local c = shared.CORPS[b.corp].color
+  rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = CLAIM_MARGIN,
+    filled = true, target = m.center, surface = surface, render_mode = "chart"}
+  rendering.draw_circle{color = {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}, radius = CLAIM_MARGIN, width = 3,
+    filled = false, target = m.center, surface = surface, render_mode = "chart"}
+  b.claims_settled = (b.claims_settled or 0) + 1
+end
 
 -- The fall: a settlement whose lander is destroyed collapses. Its generators fail one by one (every
 -- CASCADE_TICKS), so its turrets go dark; its units evacuate (army.disband). When the last generator is gone,
@@ -781,7 +800,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned}
 end
 
 return base

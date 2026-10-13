@@ -18,7 +18,7 @@ RUNS=(
 FORKED=" cut raid occupy defend army train siege "
 if [ "$FULL" = "--full" ]; then
   RUNS+=("grow||60|10|30" "assault||60|10|30" "faction||60|10|30" "uplink||60|10|30" "lively||60|10|30"
-    "convoy||60|10|30" "fall||15|5|10")
+    "convoy||60|10|30" "fall||15|5|10" "strip|LP_MIX=claim|40|40|1")
 fi
 names=()
 for r in "${RUNS[@]}"; do

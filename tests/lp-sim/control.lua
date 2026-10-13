@@ -1990,6 +1990,14 @@ scenarios.strip = function()
   schedule(120, function()
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     if S.g then lp("debug_depot", S.g, 3000) end
+    -- The claim run isolates the camp: Serenity and the biters at peace with Grubstake (a second camp's guards
+    -- were all killed by them, so nothing was left unanswered).
+    if params.mix == "claim" then
+      for _, pair in ipairs({{"lp-serenity", "lp-grubstake"}, {"enemy", "lp-grubstake"}}) do
+        game.forces[pair[1]].set_cease_fire(pair[2], true)
+        game.forces[pair[2]].set_cease_fire(pair[1], true)
+      end
+    end
   end)
   schedule(3 * 3600, function()
     local o = lp("stats", S.g).origin
@@ -2016,6 +2024,13 @@ scenarios.strip = function()
     check("strip: Grubstake mounted a strip-mining operation", st.ops.strips > 0, st.ops.strips .. " strips")
     check("strip: it mined the player's patch", sum < S.ore0, S.ore0 - sum .. " ore taken")
     check("strip: and brought it home", st.ops.stripped > 0, st.ops.stripped .. " ore delivered")
+    -- LP_MIX=claim (a longer run, nobody answers): the second camp on the patch stays as an outpost.
+    if params.mix == "claim" then
+      local kept = surface().count_entities_filtered{position = S.patch, radius = 60, force = "lp-grubstake",
+        type = "mining-drill"}
+      check("strip: left alone twice, the camp stays as an outpost", (st.claims_settled or 0) > 0 and kept > 0,
+        tostring(st.claims_settled) .. " settled, " .. kept .. " drills standing on the patch")
+    end
   end)
 end
 
