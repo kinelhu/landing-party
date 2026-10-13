@@ -140,10 +140,12 @@ function faction.arrive(surface, from, opts, quiet)
 end
 
 -- The first launch is heard; each later one brings the next landing sooner.
+-- The first launch triggers the arrival (scripts/phases.lua, which may delay it); later ones bring the next
+-- landing sooner.
 function faction.on_launch(silo)
   local f = faction.state()
   if not f.surface then
-    faction.arrive(silo.surface, silo.position)
+    if faction.on_trigger then faction.on_trigger(silo.surface, silo.position) end
   elseif f.next then
     f.next = math.max(game.tick, f.next - HASTE)
   end

@@ -115,6 +115,7 @@ function base.land(surface, pos, opts)
     b.uplink = surface.create_entity{name = shared.variant(corp, "lp-uplink"), position = uplink_at, force = f}
   end
   b.origin = {x = math.floor(lander.position.x), y = math.floor(lander.position.y)}
+  base.claim_map(b)
   storage.bases[id] = b
   site.scan_init(b, SEARCH)
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
@@ -593,6 +594,33 @@ local function export(b)
   trace(b, string.format("exported %d parts", amount))
 end
 
+-- Territory on the map (map view only): a translucent disc in the corporation's colour over everything the
+-- settlement has built, with an outline, grown as it expands; grey once it falls. The player sees the
+-- corporate map before a building (docs/campaign.md, readability).
+local CLAIM_MARGIN = 24
+function base.claim_map(b)
+  local surface = game.surfaces[b.surface]
+  local r = 60
+  for _, m in ipairs(b.modules) do
+    local d = math.sqrt((m.center[1] - b.origin.x) ^ 2 + (m.center[2] - b.origin.y) ^ 2) + CLAIM_MARGIN
+    if d > r then r = d end
+  end
+  b.claim_radius = r
+  local c = shared.CORPS[b.corp].color
+  local fill = b.fallen and {r = 0.08, g = 0.08, b = 0.08, a = 0.12} or {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}
+  local edge = b.fallen and {r = 0.4, g = 0.4, b = 0.4, a = 0.6} or {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}
+  local centre = {b.origin.x, b.origin.y}
+  if b.claim_fill and b.claim_fill.valid then
+    b.claim_fill.radius, b.claim_fill.color = r, fill
+    b.claim_edge.radius, b.claim_edge.color = r, edge
+  else
+    b.claim_fill = rendering.draw_circle{color = fill, radius = r, filled = true, target = centre, surface = surface,
+      render_mode = "chart"}
+    b.claim_edge = rendering.draw_circle{color = edge, radius = r, width = 4, filled = false, target = centre,
+      surface = surface, render_mode = "chart"}
+  end
+end
+
 -- The fall: a settlement whose lander is destroyed collapses. Its generators fail one by one (every
 -- CASCADE_TICKS), so its turrets go dark; its units evacuate (army.disband). When the last generator is gone,
 -- what stands becomes ruins: neutral and minable for salvage (the prototypes' results), except the mining
@@ -619,6 +647,7 @@ function base.fall(lander)
       for _, t in pairs(b.tags or {}) do
         if t.valid then t.text = shared.CORPS[b.corp].name .. " (fallen)" end
       end
+      base.claim_map(b)
       if base.on_fall then base.on_fall(b) end
       return b
     end
@@ -664,6 +693,7 @@ function base.tick(tick)
       collapse(b)
       if tick % 600 == 300 then capture(b) end
     elseif b.lander.valid then
+      if tick % 7200 == (b.id * 61) % 7200 then base.claim_map(b) end
       site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
       if tick % BUILD_TICKS == 0 then
@@ -733,7 +763,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius}
 end
 
 return base

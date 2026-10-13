@@ -12,6 +12,8 @@ document describes the parts as built; the campaign document describes the game 
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
+| Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
+| Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
 | Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
 | Rebuild unless occupied | built | `raid`, `occupy` |
@@ -492,6 +494,18 @@ gun turrets (its own `lp-grubstake-turret` is a gun turret) kept in piercing rou
 a wall's health; infantry, buggies (the car's hull, fast and light) and harriers. `rivals`: 144 Serenity gates,
 10 Grubstake gun turrets all fed, 49 buggies built; five operations between them, 33 and 66 units lost.
 Accepted by the user in game ("nothing glaring"). Left for later: flamethrowers at Serenity's gates (fuel).
+
+**Built: territory and the opening** (docs/campaign.md section 3). Each settlement's territory is drawn in map
+view only: a translucent disc in its corporation's colour over everything it has built (plus 24 tiles),
+re-measured every two minutes, grey after a fall. The opening, `scripts/phases.lua`, checked once a minute:
+**signs** (a player force owns a radar: an unknown craft's wreck 180 tiles from it, 30 salvage inside, a notice);
+**survey** (oil processing researched: a survey party of the first corporation, chosen from the map seed, lands
+about 450 tiles out on ore: a radar mast, two drills, a lamp, four guards, a map tag; destroyed, it drops a
+command core and the arrival waits 20 minutes after its trigger; left alone, it departs after an hour and the
+corporation arrives 30 minutes later, trigger or not); **arrival** (Space Age: the first rocket launch, through
+the phases now; base game: the first chemical science pack). `phases` (radar, oil, survey destroyed, chemical
+pack: wreck with 30 salvage, 8 survey entities, the core dropped, no settlement 12 minutes after the trigger,
+one at 24) and `phases` with LP_MIX=left (the party departs, the corporation comes with no trigger).
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

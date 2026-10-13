@@ -3,6 +3,8 @@ local base = require("scripts.base")
 local site = require("scripts.site")
 local faction = require("scripts.faction")
 local command = require("scripts.command")
+local phases = require("__landing-party__.scripts.phases")
+faction.on_trigger = phases.trigger
 local ops = require("__landing-party__.scripts.ops")
 
 
@@ -22,7 +24,9 @@ end
 script.on_init(init)
 script.on_configuration_changed(init)
 
-script.on_event(defines.events.on_tick, function(e) base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick) end)
+script.on_event(defines.events.on_tick, function(e)
+  base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick)
+end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
   {filter = "name", name = "lp-command-relay"}}
@@ -152,6 +156,11 @@ remote.add_interface("landing-party", {
     return b and b.id
   end,
   faction = function() return faction.state() end,
+  phases = function()
+    local s = phases.state()
+    return {signs = s.signs ~= nil, survey = s.survey and {done = s.survey.done, pos = s.survey.pos, corp = s.survey.corp},
+      triggered = s.triggered and s.triggered.tick, delay = s.delay, early = s.early, arrived = s.arrived, corp = s.corp}
+  end,
   army = function() local st = command.stats(); st.cores_dropped = storage.cmd.cores_dropped or 0; return st end,
   -- Tests only: shorten the faction's clocks and thresholds.
   debug_export = function(id, parts) faction.export(storage.bases[id], parts) end,
@@ -164,6 +173,7 @@ remote.add_interface("landing-party", {
     if t.army_off ~= nil then storage.army_off = t.army_off end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
+    if t.phases_fast ~= nil then storage.phases_fast = t.phases_fast end
   end,
   set_trace = function(on) storage.trace = on end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,

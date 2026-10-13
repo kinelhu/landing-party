@@ -1597,6 +1597,8 @@ scenarios.rivals = function()
     check("rivals: Grubstake's turrets are fed gun turrets", guns > 0 and fed == guns, fed .. " of " .. guns .. " fed")
     check("rivals: Grubstake fields buggies", (b and b.built_by and (b.built_by["lp-buggy"] or 0) or 0) > 0,
       serpent.line(b and b.built_by))
+    check("rivals: each holds a territory on the map", (a.claim_radius or 0) > 60 and b and (b.claim_radius or 0) > 60,
+      string.format("radius %.0f and %.0f", a.claim_radius or 0, b and b.claim_radius or 0))
     check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
       a.force .. " and " .. (b and b.force or "none"))
     check("rivals: they raided each other", against > 0, against .. " operations against a rival")
@@ -1604,6 +1606,75 @@ scenarios.rivals = function()
     local lost = a.units_lost + (b and b.units_lost or 0) + a.lost + (b and b.lost or 0)
     check("rivals: they fought", lost > 0, string.format("%d and %d units lost, %d and %d buildings",
       a.units_lost, b and b.units_lost or 0, a.lost, b and b.lost or 0))
+  end)
+end
+
+-- Phases: the campaign's opening (docs/campaign.md section 3), base game. No landing at the start. A player
+-- radar brings the signs (wreckage with salvage); oil processing brings a survey party; destroying it drops a
+-- command core and delays the arrival; the first chemical science pack triggers the arrival, which must wait
+-- out the delay and then come.
+-- Phases, left alone (LP_MIX=left): the survey party is not touched; with its clocks shortened (3 minutes to
+-- leave, 3 more to come) it must depart and the corporation arrive with no trigger at all.
+local function phases_left()
+  schedule(30, function() lp("debug_tune", {phases_fast = true}) end)
+  schedule(60, function() game.forces.player.technologies["oil-processing"].researched = true end)
+  schedule(14 * 3600, function()
+    local p = lp("phases")
+    storage.id = lp("bases")[1]
+    check("phases: left alone, the survey party departed", p.survey and p.survey.done == "left",
+      tostring(p.survey and p.survey.done))
+    check("phases: and the corporation came without a trigger", storage.id ~= nil and not p.triggered,
+      tostring(storage.id) .. ", trigger " .. tostring(p.triggered))
+  end)
+end
+
+scenarios.phases = function()
+  if params.mix == "left" then return phases_left() end
+  local pf = game and nil
+  schedule(60, function()
+    flatten(-10, -10, 10, 10)
+    surface().create_entity{name = "radar", position = {0, 0}, force = "player"}
+  end)
+  schedule(3 * 3600, function()
+    local p = lp("phases")
+    local wreck = surface().find_entities_filtered{name = "crash-site-spaceship-wreck-big-1", position = {0, 0}, radius = 260}[1]
+    S.signs = p.signs and wreck and wreck.get_inventory(defines.inventory.chest).get_item_count("lp-salvage") or 0
+    game.forces.player.technologies["oil-processing"].researched = true
+  end)
+  schedule(6 * 3600, function()
+    local p = lp("phases")
+    S.survey = p.survey
+    S.survey_entities = p.survey and surface().count_entities_filtered{position = p.survey.pos, radius = 20,
+      force = "lp-" .. p.survey.corp} or 0
+    if p.survey then
+      local radar = surface().find_entities_filtered{position = p.survey.pos, radius = 3, type = "radar"}[1]
+      if radar then radar.die("player") end
+    end
+  end)
+  schedule(9 * 3600, function()
+    local p = lp("phases")
+    S.destroyed = p.survey and p.survey.done
+    S.core = p.survey and surface().count_entities_filtered{name = "item-on-ground", position = p.survey.pos, radius = 8} or 0
+    game.forces.player.get_item_production_statistics(surface()).on_flow("chemical-science-pack", 1)
+    S.trigger_at = game.tick
+  end)
+  schedule(9 * 3600 + 12 * 3600, function() S.early = #lp("bases") end)
+  schedule(9 * 3600 + 24 * 3600, function()
+    local ids = lp("bases")
+    S.late = #ids
+    storage.id = ids[1]
+  end)
+  schedule(END - 60, function()
+    local p = lp("phases")
+    if not storage.id then storage.id = lp("bases")[1] end
+    check("phases: a radar brought the signs, salvage in the wreck", (S.signs or 0) > 0, tostring(S.signs) .. " salvage")
+    check("phases: oil processing brought a survey party", S.survey ~= nil and S.survey_entities >= 4,
+      tostring(S.survey_entities) .. " entities at the survey site")
+    check("phases: destroyed, it dropped a command core", S.destroyed == "destroyed" and S.core > 0,
+      tostring(S.destroyed) .. ", " .. tostring(S.core) .. " items on the ground")
+    check("phases: the arrival waited out the delay", S.early == 0, S.early .. " settlements 12 minutes after the trigger")
+    check("phases: then it came", (S.late or 0) > 0, tostring(S.late) .. " settlements 24 minutes after")
+    info("phases: " .. serpent.line(p))
   end)
 end
 
@@ -1844,7 +1915,7 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
 -- the strike at 30 failed for lack of time, not of mechanics).
-local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6, siege = 13, fall = 5}
+local AFTER = {phases = 0, cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6, siege = 13, fall = 5}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if params.scenario == "convoy" and END < 10 * 3600 then error("lp-sim: convoy needs at least 10 minutes") end
 if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end
@@ -1857,6 +1928,8 @@ script.on_init(function()
   helpers.remove_path("landing-party")
   lp("set_trace", true)
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
+  -- Phases plays the opening itself: no landing at the start.
+  if params.scenario == "phases" then return end
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
     {doctrine = params.doctrine or (params.scenario == "defend" and "bastion")
       or ((params.scenario == "army" or params.scenario == "siege") and "sprawl") or nil,
@@ -1877,14 +1950,21 @@ if params.save_at then
   end)
 end
 for m = params.every, params.minutes, params.every do
-  schedule(m * 3600, function() lp("snapshot", storage.id, OUT, params.radius) end)
+  schedule(m * 3600, function() if storage.id then lp("snapshot", storage.id, OUT, params.radius) end end)
 end
 for _, m in ipairs({10, 20, 40, 60, 90, 120}) do
   if m <= params.minutes then
-    schedule(m * 3600, function() metric("modules_" .. m, lp("stats", storage.id).modules) end)
+    schedule(m * 3600, function() if storage.id then metric("modules_" .. m, lp("stats", storage.id).modules) end end)
   end
 end
 schedule(END, function()
+  -- No settlement at all (a scenario that lands later and never did): its own checks say why.
+  if not storage.id then
+    check("a settlement exists", false, "none landed")
+    table.insert(lines, "DONE " .. failed .. " FAILED")
+    helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")
+    return
+  end
   local s = lp("stats", storage.id)
   -- A run that ends before its scenario's checks fire must not pass (path once "passed" at 32 minutes with
   -- its checks due at 35).
