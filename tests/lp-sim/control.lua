@@ -1576,11 +1576,11 @@ scenarios.rivals = function()
     end
     check("rivals: Grubstake builds its own prototypes", own > 20 and plain == 0, own .. " its own, " .. plain .. " plain")
     local gravel = surface().count_tiles_filtered{name = "lp-grubstake-road"}
-    -- Logos are concrete mosaics: Grubstake's yellow pick, Serenity's cyan shield.
-    local picks = surface().count_tiles_filtered{name = "lp-mosaic-Y"}
-    local shields = surface().count_tiles_filtered{name = "lp-mosaic-C"}
-    check("rivals: their own floors and logos", gravel > 50 and picks > 0 and shields > 0,
-      gravel .. " gravel tiles, logo tiles " .. picks .. " pick and " .. shields .. " shield")
+    -- Floor livery: each corporation's trim round its paved yards and depots (Serenity black, Grubstake hazard).
+    local s_trim = surface().count_tiles_filtered{name = "lp-trim"}
+    local g_trim = surface().count_tiles_filtered{name = "lp-grubstake-trim"}
+    check("rivals: their own floors and livery", gravel > 50 and s_trim > 0 and g_trim > 0,
+      gravel .. " gravel tiles, trim " .. s_trim .. " Serenity and " .. g_trim .. " Grubstake")
     check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
       a.force .. " and " .. (b and b.force or "none"))
     check("rivals: they raided each other", against > 0, against .. " operations against a rival")

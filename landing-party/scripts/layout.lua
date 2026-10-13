@@ -139,14 +139,11 @@ local function open(b, hub, role, x0, y0, w, h, cells)
     hub.count = hub.count + 1
   end
   push(b, {tiles = road_ring(x0, y0, w, h), module = block})
+  if role == "depot" then layout.livery(b, block) end
   for _, e in ipairs(v.fixed) do
     local pos = at(e)
     if e[1] == "lp-pylon" then layout.connect(b, pos[1], pos[2], block) end
-    if e[1] == "logo" then
-      push(b, {logo = true, pos = pos, module = block})
-    else
-      push(b, {name = e[1], pos = pos, module = block})
-    end
+    push(b, {name = e[1], pos = pos, module = block})
   end
   return block
 end
@@ -362,6 +359,22 @@ function layout.fortify(b)
   end
 end
 
+-- A block's floor livery: its yard paved in the corporation's pad floor, inside a one-tile border of its trim
+-- (Serenity black concrete, Grubstake hazard stripes): large plain areas and straight edges, which tiles draw
+-- well.
+function layout.livery(b, block)
+  local x0, y0, w, h = block.x0, block.y0, block.w, block.h
+  local pad, trim = {}, {}
+  for x = x0 + 1, x0 + w - 2 do
+    for y = y0 + 1, y0 + h - 2 do
+      local edge = x == x0 + 1 or x == x0 + w - 2 or y == y0 + 1 or y == y0 + h - 2
+      table.insert(edge and trim or pad, {x, y})
+    end
+  end
+  push(b, {tiles = pad, floor = "pad", module = block})
+  push(b, {tiles = trim, floor = "trim", module = block})
+end
+
 -- Maturity on a hard point (pad, compound): lamps inside the walls, the yard paved, mines on the road
 -- outside each opening. Once per block, after its walls.
 function layout.embellish(b)
@@ -369,9 +382,7 @@ function layout.embellish(b)
     if (block.kind == "pad" or block.kind == "compound") and block.walled and not block.embellished then
       block.embellished = true
       local x0, y0, w, h = block.x0, block.y0, block.w, block.h
-      local paving = {}
-      for x = x0 + 1, x0 + w - 2 do for y = y0 + 1, y0 + h - 2 do table.insert(paving, {x, y}) end end
-      push(b, {tiles = paving, floor = "pad", module = block})
+      layout.livery(b, block)
       for _, p in ipairs({{4.5, 1.5}, {w - 4.5, 1.5}, {4.5, h - 1.5}, {w - 4.5, h - 1.5}}) do
         push(b, {name = "lp-lamp", pos = {x0 + p[1], y0 + p[2]}, module = block})
       end

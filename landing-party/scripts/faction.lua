@@ -75,13 +75,33 @@ function faction.site(surface, from, distance, count)
   return fallback
 end
 
+-- Map tags: each settlement marked for the player's forces with its corporation's icon and name. A tag needs
+-- charted ground, and charting takes a few ticks after the landing: missing tags are retried (faction.tick).
+function faction.tag(b)
+  if b.tags_done then return end
+  local surface = game.surfaces[b.surface]
+  local c = shared.CORPS[b.corp]
+  b.tags = b.tags or {}
+  local all = true
+  for _, f in pairs(game.forces) do
+    if #f.players > 0 and not b.tags[f.name] then
+      local t = f.add_chart_tag(surface, {position = {b.origin.x, b.origin.y}, icon = {type = "virtual", name = c.icon},
+        text = c.name})
+      if t then b.tags[f.name] = t else all = false end
+    end
+  end
+  b.tags_done = all and next(b.tags) ~= nil
+end
+
 local function announce(b, surface)
   for _, f in pairs(game.forces) do
     if #f.players > 0 then
       f.chart(surface, {{b.origin.x - 48, b.origin.y - 48}, {b.origin.x + 48, b.origin.y + 48}})
-      f.print({"lp.landed", string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name)})
+      f.print({"lp.landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name),
+        shared.CORPS[b.corp].motto})
     end
   end
+  faction.tag(b)
 end
 
 -- A landing now, `distance` from `from` (a table with x, y). opts as for base.land.
@@ -137,6 +157,9 @@ end
 
 function faction.tick(tick)
   if tick % 600 ~= 0 then return end
+  for _, b in pairs(storage.bases) do
+    if b.lander.valid and not b.tags_done then faction.tag(b) end
+  end
   local f = faction.state()
   if f.next and tick >= f.next and f.surface and not f.uplink_down then
     if alive() < MAX_ALIVE then

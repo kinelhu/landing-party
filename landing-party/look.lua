@@ -1,10 +1,10 @@
 -- Each corporation's look beyond colour (docs/corporations.md): its floors (road and pad tiles, vanilla tiles
--- copied and tinted) and the tiles of its logo mosaic (vanilla coloured concrete, unminable copies).
+-- copied and tinted): road, pad and trim (the border of its paved yards).
 local shared = require("shared")
 
 local out = {}
 for corp, c in pairs(shared.CORPS) do
-  for _, floor in ipairs({"road", "pad"}) do
+  for _, floor in ipairs({"road", "pad", "trim"}) do
     local name = shared.variant(corp, "lp-" .. floor)
     if data.raw.tile[name] then
       data.raw.tile[name].tint = c[floor].tint
@@ -18,12 +18,5 @@ for corp, c in pairs(shared.CORPS) do
       table.insert(out, t)
     end
   end
-end
-for letter, tile in pairs(shared.MOSAIC) do
-  local t = table.deepcopy(data.raw.tile[tile])
-  t.name = "lp-mosaic-" .. letter
-  t.minable = nil
-  t.placeable_by = nil
-  table.insert(out, t)
 end
 data:extend(out)

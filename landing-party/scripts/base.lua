@@ -252,8 +252,7 @@ local function pave(b, tiles, floor)
   local out = {}
   for _, t in ipairs(tiles) do
     local tile = surface.get_tile(t[1], t[2])
-    -- Never over a logo (a matured yard's paving erased the mosaics laid when the block opened).
-    if tile.valid and tile.name ~= name and tile.name:sub(1, 10) ~= "lp-mosaic-" and not tile.collides_with("water_tile") then
+    if tile.valid and tile.name ~= name and not tile.collides_with("water_tile") then
       table.insert(out, {name = name, position = t})
     end
   end
@@ -261,25 +260,6 @@ local function pave(b, tiles, floor)
   b.road_tiles = b.road_tiles + #out
 end
 
--- The corporation's logo laid in the floor, centred on pos (a spot the block template reserves): a mosaic of
--- coloured concrete (shared.CORPS logo). Tiles outlast the buildings: a fallen settlement's logos stay.
-local function stamp(b, surface, pos)
-  local rows = shared.CORPS[b.corp].logo
-  local n = #rows
-  local x0, y0 = math.floor(pos[1] - n / 2), math.floor(pos[2] - n / 2)
-  local tiles = {}
-  for r, row in ipairs(rows) do
-    for c = 1, #row do
-      local t = surface.get_tile(x0 + c - 1, y0 + r - 1)
-      if t.valid and not t.collides_with("water_tile") then
-        table.insert(tiles, {name = "lp-mosaic-" .. row:sub(c, c), position = {x0 + c - 1, y0 + r - 1}})
-      end
-    end
-  end
-  surface.set_tiles(tiles, true, false, true, false)
-  b.logos = (b.logos or 0) + 1
-end
-base.stamp = stamp
 
 -- Place one entity for a job. Returns the entity, or nil when the spot is blocked.
 local function place(b, job)
@@ -350,10 +330,10 @@ end
 local function build(b)
   if rebuild(b) then return end
   -- Road tiles cost nothing and take no build step.
-  -- Floors and logos cost nothing and take no build step.
-  while b.queue[1] and (b.queue[1].tiles or b.queue[1].logo) do
+  -- Floors cost nothing and take no build step.
+  while b.queue[1] and b.queue[1].tiles do
     local job = table.remove(b.queue, 1)
-    if job.logo then stamp(b, game.surfaces[b.surface], job.pos) else pave(b, job.tiles, job.floor) end
+    pave(b, job.tiles, job.floor)
   end
   local job = b.queue[1]
   if not job then return end
@@ -381,7 +361,7 @@ local function build(b)
   -- last job was paving was never marked, so it could never be captured, siege seed 777).
   local more = false
   for _, q in ipairs(b.queue) do
-    if q.module == job.module and not q.tiles and not q.logo then more = true; break end
+    if q.module == job.module and not q.tiles then more = true; break end
   end
   if not more and not job.module.built then
     job.module.built = true
@@ -626,7 +606,11 @@ function base.fall(lander)
       trace(b, string.format("lander destroyed: the settlement falls (%d generators to fail)", #b.cascade))
       local f = game.forces.player
       if f and #f.players > 0 then
-        f.print({"lp.fallen", string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, lander.surface.name)})
+        f.print({"lp.fallen", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,
+          lander.surface.name)})
+      end
+      for _, t in pairs(b.tags or {}) do
+        if t.valid then t.text = shared.CORPS[b.corp].name .. " (fallen)" end
       end
       if base.on_fall then base.on_fall(b) end
       return b
@@ -742,7 +726,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, logos = b.logos or 0}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force}
 end
 
 return base

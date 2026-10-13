@@ -5,14 +5,15 @@ local shared = {}
 -- (biters included) unless a cease-fire says otherwise. A settlement belongs to one.
 -- tint: the colour their buildings and units are drawn in (docs/corporations.md); lamp: their lamps' light.
 -- tints: a colour per kind where it differs from tint. road, pad: the vanilla tiles their floors are made of
--- (and a tint). logo: a mosaic of coloured concrete, rows of letters (shared.MOSAIC), laid as floor tiles
--- (icons scaled up looked blurry and pasted on, user 2026-10-13).
+-- (and a tint); trim: the border of its paved yards and pads (its floor livery). icon: the virtual signal that
+-- stands for it on map tags and in notices, with its motto. (Logos on the ground were dropped: scaled icons
+-- looked pasted on, concrete pixel art merged into blobs; user 2026-10-13.)
 shared.CORPS = {
   grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     road = {tile = "stone-path", tint = {r = 0.95, g = 0.78, b = 0.5}}, pad = {tile = "brown-refined-concrete"},
-    -- A pick: yellow head, orange handle, on brown, a black border (7x7; brown on brown did not read).
-    logo = {"KKKKKKK", "KYYYYYK", "KYBOBYK", "KBBOBBK", "KBBOBBK", "KBBOBBK", "KKKKKKK"}},
+    trim = {tile = "refined-hazard-concrete-left"},
+    icon = "signal-mining", motto = "Resources in the right hands."},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -21,14 +22,11 @@ shared.CORPS = {
       ["lp-pylon"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-lamp"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
       ["lp-mine"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}},
     road = {tile = "refined-concrete"}, pad = {tile = "refined-concrete"},
-    -- A shield with a white cross, cyan, on black.
-    logo = {"KKKKKKK", "KCCCCCK", "KCCWCCK", "KCWWWCK", "KCCWCCK", "KKCCCKK", "KKKCKKK"}},
+    trim = {tile = "black-refined-concrete"},
+    icon = "signal-heart", motto = "Please remain behind the line."},
 }
--- Mosaic colours: letter -> vanilla tile copied (unminable) as lp-mosaic-<letter>; W is plain refined concrete.
-shared.MOSAIC = {B = "brown-refined-concrete", Y = "yellow-refined-concrete", O = "orange-refined-concrete",
-  K = "black-refined-concrete", C = "cyan-refined-concrete", W = "refined-concrete"}
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
-shared.FLOORS = {"lp-road", "lp-pad"}
+shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}
 shared.DEFAULT_CORP = "serenity"
 
 -- The faction's kinds of building and unit. The default corporation's prototypes carry the plain names
@@ -58,6 +56,11 @@ function shared.variants(kinds)
   return out
 end
 function shared.is_corp(force_name) return force_name ~= nil and force_name:sub(1, 3) == "lp-" end
+-- A corporation's name with its icon, as rich text (notices, map tags).
+function shared.corp_label(corp)
+  local c = shared.CORPS[corp]
+  return string.format("[virtual-signal=%s] %s", c.icon, c.name)
+end
 -- The corporations' force names, for queries over all of them.
 function shared.corp_forces()
   local out = {}
