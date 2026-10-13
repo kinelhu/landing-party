@@ -651,6 +651,16 @@ player of the force, on any surface (absence is not a truce). Needs a game sessi
   the fork: its line grew 4 steps (to 285 tiles) and its first raid went out at 36.5 minutes, so the moving line is
   what brought a careful late player into its war (Fable's bar: provoked within 90 minutes of landing).
 
+### Next slice (Fable, `docs/reviews/2026-10-14-next-slice-consult.md`)
+The campaign instrument first: a reactive scripted player (answer, strike, era) over hours at real clocks, measuring
+cost to each side, not launches; the loop must close (a lander falls to the player) before it widens. Two bugs
+fixed on the way:
+- **Resistance.** A raid that attacked and razed nothing raises the target's known defence by one (`t.resist`,
+  kept apart from turrets seen, which the staging look overwrites): robots out-repairing four infantry read as a
+  turret, so the next raid comes bigger or not at all (five identical raids on one substation came home untouched).
+- **Staging outside the walls.** A raid stages on the line home at the first point beyond every turret's reach with
+  no player wall between it and home (a point at a fixed offset fell inside a walled base and timed out there).
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,

@@ -376,8 +376,10 @@ end
 ops.temper_allows = temper_allows
 
 -- Known defence of a target: turrets seen by it, and deaths there (a turret per three markers).
+-- Seen turrets, death markers, and resistance learned the hard way: a raid that attacked and razed nothing
+-- (robots out-repairing four infantry, five raids on one substation) counts one turret more each time.
 local function defence(b, t)
-  return (t.defence or 0) + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
+  return (t.defence or 0) + (t.resist or 0) + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
 end
 
 local function needed(d) return PER_TURRET * d + BASE_FORCE end
@@ -487,6 +489,10 @@ local function finish(b, outcome, trace, army)
     end
   end
   local t = b.intel.targets[op.target]
+  if t and op.kind == "raid" and op.razed0 and op.attacked and b.razed == op.razed0 then
+    t.resist = (t.resist or 0) + 1
+    trace(b, string.format("raid razed nothing at %.0f,%.0f: resistance there now %d", t.pos[1], t.pos[2], t.resist))
+  end
   if t then
     t.cool = game.tick + (t.line and COOL_TICKS / 2 or COOL_TICKS)
     -- The whole position cools after an abort, not the one cell: an area, so cells first seen later inherit
@@ -526,6 +532,29 @@ local function finish(b, outcome, trace, army)
   b.op = nil
 end
 
+-- A staging point on the line home from the target, at least `off` out: beyond every turret's reach and outside
+-- the player's walls (no wall between it and home). Staged at a fixed offset, a raid's point fell inside a walled
+-- base (-56,31 behind a wall at 70): it timed out there and attacked from outside, unhurt and harmless.
+local function outside(b, t, ux, uy, off, len)
+  local s = game.surfaces[b.surface]
+  local foes = enemies(game.forces[b.force])
+  local function walled(p)
+    for k = 4, math.min(160, len - 1), 4 do
+      if s.count_entities_filtered{position = {p[1] + ux * k, p[2] + uy * k}, radius = 2.5, type = {"wall", "gate"},
+        force = foes, limit = 1} > 0 then return true end
+    end
+    return false
+  end
+  for d = off, math.min(len, off + 160), 4 do
+    local p = {t.pos[1] + ux * d, t.pos[2] + uy * d}
+    if s.count_entities_filtered{position = p, radius = STAND_OFF, type = TURRETS, force = foes, limit = 1} == 0
+      and not walled(p) then
+      return p
+    end
+  end
+  return {t.pos[1] + ux * off, t.pos[2] + uy * off}
+end
+
 local function launch(b, key, trace, army)
   local t = b.intel.targets[key]
   local h = home(b)
@@ -551,9 +580,9 @@ local function launch(b, key, trace, army)
     spread = math.max(spread, math.sqrt((e.position.x - t.pos[1]) ^ 2 + (e.position.y - t.pos[2]) ^ 2))
   end
   local off = math.min(STAND_OFF + spread, len)
-  local stage = {t.pos[1] + dx / len * off, t.pos[2] + dy / len * off}
+  local stage = outside(b, t, dx / len, dy / len, off, len)
   b.op = {kind = "raid", target = key, phase = "stage", members = members, launched = #members, staging = stage,
-    started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick}
+    started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
   order_all(members, {type = defines.command.go_to_location, destination = stage, radius = 6,
     distraction = defines.distraction.by_enemy})
   b.ops_launched = b.ops_launched + 1
@@ -898,13 +927,14 @@ local function step(b, trace, army)
         -- What it sees now is the freshest word (a raid that had cleared the target on its way turned back
         -- on the defence it believed before).
         t.defence = seen
-        if needed(t.defence) > n then
+        if needed(t.defence + (t.resist or 0)) > n then
           trace(b, string.format("raid sees %d turrets at the target, needs %d, has %d: turns back", seen,
-            needed(t.defence), n))
+            needed(t.defence + (t.resist or 0)), n))
           return finish(b, "aborted", trace, army)
         end
       end
       op.phase, op.phase_at, op.last_kill = "attack", game.tick, game.tick
+      op.attacked = true
       alert(b, t, "lp.alert-raid")
       local pos = t and t.pos or op.staging
       order_all(op.members, {type = defines.command.attack_area, destination = pos, radius = 12,
