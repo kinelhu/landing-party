@@ -647,7 +647,9 @@ player of the force, on any surface (absence is not a truce). Needs a game sessi
   guards they had killed): one settled, three drills standing.
 - **Measured, the late base (contact, seed 12345, 2 hours):** 8 operations (was 2), 3 of them landing: raids on
   far substations (line cells) and a siege at 117 minutes; nothing behind the walls lost. Spread: 13 operations, 5
-  turned back. Fable's bar (at least 4 operations, at least 2 landing) is met.
+  turned back. Fable's bar (at least 4 operations, at least 2 landing) is met. The settlement was Serenity, unprovoked at
+  the fork: its line grew 4 steps (to 285 tiles) and its first raid went out at 36.5 minutes, so the moving line is
+  what brought a careful late player into its war (Fable's bar: provoked within 90 minutes of landing).
 
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
