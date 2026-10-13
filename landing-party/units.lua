@@ -85,10 +85,11 @@ local infantry = make_infantry("lp-infantry")
 local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1})
 
 -- Breacher: the player's infantry with demolition charges. Bullets barely scratch walls (2.4 of 6 damage), so
--- troopers alone died in front of walled lasers (siege). A charge thrown 8 tiles bursts over 2.5 (enemies
--- only): walls take 63 of 100 (a segment in 8 throws, several at once), a turret 100.
+-- troopers alone died in front of walled lasers (siege). A charge bursts over 2.5 (enemies
+-- only), thrown 12 tiles: walls take 63 of 100 (a segment in 8 throws, several at once), a turret 100.
 local breacher = make_infantry("lp-breacher", {r = 0.75, g = 0.9, b = 0.45, a = 1})
-breacher.attack_parameters.range = 8
+-- Thrown from 12: from 8 they crossed 16 tiles of laser fire to reach a wall.
+breacher.attack_parameters.range = 12
 breacher.attack_parameters.cooldown = 180
 breacher.attack_parameters.ammo_category = "grenade"
 breacher.attack_parameters.sound = nil
@@ -126,6 +127,10 @@ return tank
 end
 local tank = make_tank("lp-tank")
 local battle_tank = make_tank("lp-battle-tank", {r = 1, g = 0.82, b = 0.55, a = 1})
+-- The player's siege weapon: heavier shells, a little more reach than its armour's 15. With the faction's
+-- 35, five tanks did 2,100 damage to turrets over a whole assault (siege).
+battle_tank.attack_parameters.range = 18
+battle_tank.attack_parameters.ammo_type.action.action_delivery.target_effects[2].damage.amount = 100
 
 -- Walker: a spider-unit on the spidertron's body and legs (own copies of the legs, tinted). Steps over walls.
 local spidertron = data.raw["spider-vehicle"].spidertron

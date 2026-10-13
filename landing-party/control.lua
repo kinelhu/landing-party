@@ -134,6 +134,7 @@ remote.add_interface("landing-party", {
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
   end,
   set_trace = function(on) storage.trace = on end,
+  debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.

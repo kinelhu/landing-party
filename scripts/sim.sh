@@ -32,8 +32,16 @@ rm -rf "$out" "$SIM/saves/sim.zip"
 
 run() { "$FACTORIO" --config "$SIM/config/config.ini" "$@" > "$SIM/sim.out" 2>&1 || {
   echo "SIM FAILED ($RUN): factorio exited non-zero"; grep -hnE -A8 "Error" "$SIM/factorio-current.log" "$SIM/sim.out" | head -40; exit 1; }; }
-run --create "$SIM/saves/sim.zip" --map-gen-seed "$SEED" --map-gen-settings "$REPO/scripts/map-gen.json"
-run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $((MINUTES * 3600 + 60)) --benchmark-runs 1
+if [ -n "${LP_FORK:-}" ]; then
+  # From the scenario's fork at its strike (scripts/fork.sh, made once): only what follows the strike runs.
+  fork="$HOME/Library/Application Support/factorio-lp-sim/forks/$SCENARIO-$SEED-$STRIKE.zip"
+  [ -f "$fork" ] || "$(dirname "$0")/fork.sh" "$SCENARIO" "$SEED" "$STRIKE" > /dev/null
+  cp "$fork" "$SIM/saves/sim.zip"
+  run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $(((MINUTES - STRIKE) * 3600 + 61)) --benchmark-runs 1
+else
+  run --create "$SIM/saves/sim.zip" --map-gen-seed "$SEED" --map-gen-settings "$REPO/scripts/map-gen.json"
+  run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $((MINUTES * 3600 + 60)) --benchmark-runs 1
+fi
 
 [ -f "$out/results.txt" ] || { echo "SIM FAILED ($RUN): no results written"; tail -20 "$SIM/sim.out"; exit 1; }
 avg=$(grep -oE "avg: [0-9.]+ ms" "$SIM/sim.out" | head -1 | grep -oE "[0-9.]+" || echo "?")
@@ -46,8 +54,9 @@ if [ -s "$out/faction.jsonl" ]; then
   cp "$out/faction.jsonl" "$dest/"
   uv run --quiet --with matplotlib python3 "$REPO/scripts/overview.py" "$dest/faction.jsonl" "$dest/overview.png" > /dev/null
 fi
-if [ -s "$out/life.jsonl" ]; then
-  cp "$out/life.jsonl" "$dest/"
+# The animation took two minutes of a siege run whose game ran 15 s: on request only (the positions are kept).
+if [ -s "$out/life.jsonl" ]; then cp "$out/life.jsonl" "$dest/"; fi
+if [ -s "$out/life.jsonl" ] && [ -n "${LP_GIF:-}" ]; then
   bg="$dest/sim.jsonl"; [ -s "$out/faction.jsonl" ] && bg="$out/faction.jsonl"
   uv run --quiet --with matplotlib --with pillow python3 "$REPO/scripts/life.py" "$bg" "$dest/life.jsonl" "$dest/life.gif" > /dev/null
 fi

@@ -365,6 +365,12 @@ scenario with assertions first; the window is for art, feel and GUI.
 - `scripts/batch.sh`: several runs, one table of metrics; 3 at a time by default (eight at once took six
   times as long each). Batches confirm what works; single short runs find what does not.
 - `scripts/profile.sh`: per-tick engine timings; profile before blaming code.
+- **Run time.** A siege run took 2.5 minutes: 15 s of game, the rest rendering its animation. The life
+  GIF is now on request (`LP_GIF=1`; positions are always kept). `scripts/fork.sh <scenario> <seed>
+  <strike>` grows a scenario to its strike once (headless server, fast, saved a second before the strike;
+  saved a tick before, the loaded game never ran the strike) and `LP_FORK=1 scripts/sim.sh ...` runs only
+  what follows: 19 s a siege run. A fork holds the settlement as the code grew it then: iterate on forks,
+  confirm with full runs.
 - `scripts/showcase.sh [seed] [minute]`: a save to look at in game, built with no clicks: the `showcase`
   scenario on a headless server (fast, back to normal speed before `server_save`), copied to the play
   profile (base, Landing Party, Editor Extensions and flib copied from the real profile).

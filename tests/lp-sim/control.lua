@@ -1084,7 +1084,7 @@ scenarios.siege = function()
     local stage
     for d = 20, 120, 4 do
       stage = {S.target[1] + dx / len * d, S.target[2] + dy / len * d}
-      if surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 30} == 0 then
+      if surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 40} == 0 then
         S.stage_d = d
         break
       end
@@ -1131,34 +1131,49 @@ scenarios.siege = function()
     info(string.format("siege: %s; outpost at %.0f,%.0f; staging %d tiles out; %d faction turrets within 60; garrison %d",
       MIX, S.target[1], S.target[2], S.stage_d or -1, S.turrets0, S.st0.garrison or -1))
   end)
+  -- A careful player: the squad gathers at the staging point (holding), then the rally point is steered by X
+  -- and Y onto the defending turret nearest our side, on A, one turret at a time; with no turret left within
+  -- 60 of the outpost, onto the outpost, on O. (Moving the beacon itself with a 50-tile ring that overlapped
+  -- a compound's laser cover lost every squad.)
+  local function signals(list)
+    local f = {}
+    for name, v in pairs(list) do
+      table.insert(f, {value = {type = "virtual", name = name, quality = "normal"}, min = v})
+    end
+    local cb = S.cc.get_or_create_control_behavior()
+    local sec = cb.get_section(1) or cb.add_section()
+    sec.filters = f
+  end
   schedule(STRIKE + 2 * 3600, function()
     S.trained = lp("army").trained
-    local sec = S.cc.get_or_create_control_behavior().get_section(1) or S.cc.get_or_create_control_behavior().add_section()
-    sec.filters = {{value = {type = "virtual", name = "signal-A", quality = "normal"}, min = 1}}
     S.go = game.tick
   end)
-  for t = STRIKE + 300, STRIKE + 2 * 3600, 300 do schedule(t, function() if S.feed then S.feed() end end) end
-  -- The player moves the beacon forward once its ground is clear (an advance holds at its beacon): onto the
-  -- target outpost, still on A: whatever defends it within reach (a walled compound 33 tiles away on seed
-  -- 12345) falls first, then the squad occupies it. Troopers alone died there, on A or on O.
-  for t = STRIKE + 3 * 3600, STRIKE + 8 * 3600, 600 do
+  for t = STRIKE + 2 * 3600, END, 300 do
     schedule(t, function()
-      if S.moved or not (S.beacon and S.beacon.valid) then return end
-      local left = surface().count_entities_filtered{force = FORCE, name = "lp-turret", position = S.beacon.position,
-        radius = 50}
-      if left > 0 then return end
-      S.moved = game.tick
-      local p = S.target
-      S.target_turrets0 = surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = p, radius = 50}
-      S.beacon.destroy(); S.cc.destroy()
-      S.beacon = surface().create_entity{name = "lp-rally-beacon", position = {p[1] + 3, p[2] + 3}, force = "player", raise_built = true}
-      S.cc = surface().create_entity{name = "constant-combinator", position = {p[1] + 1, p[2] + 3}, force = "player"}
-      S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
-      S.cc.get_or_create_control_behavior().add_section().filters =
-        {{value = {type = "virtual", name = "signal-A", quality = "normal"}, min = 1}}
-      info(string.format("siege: staging cleared at t+%ds; beacon moved onto the outpost", (game.tick - S.go) / 60))
+      if not S.go or not S.beacon.valid or not S.cc.valid then return end
+      local b = S.beacon.position
+      if S.aim and S.aim.valid then return end
+      local best, bd
+      for _, x in pairs(surface().find_entities_filtered{name = "lp-turret", force = FORCE, position = S.target, radius = 60}) do
+        local d = (x.position.x - b.x) ^ 2 + (x.position.y - b.y) ^ 2
+        if not bd or d < bd then best, bd = x, d end
+      end
+      if best then
+        S.aim = best
+        S.aims = (S.aims or 0) + 1
+        signals({["signal-A"] = 1, ["signal-X"] = math.floor(best.position.x - b.x), ["signal-Y"] = math.floor(best.position.y - b.y)})
+        info(string.format("siege t+%ds: aim %d at the turret at %.0f,%.0f (%d units left)", (game.tick - S.go) / 60,
+          S.aims, best.position.x, best.position.y, alive_troopers()))
+      elseif not S.moved then
+        S.moved = game.tick
+        S.target_turrets0 = 0
+        signals({["signal-O"] = 1, ["signal-X"] = math.floor(S.target[1] - b.x), ["signal-Y"] = math.floor(S.target[2] - b.y)})
+        info(string.format("siege t+%ds: no turret within 60 of the outpost; occupy (%d units left)",
+          (game.tick - S.go) / 60, alive_troopers()))
+      end
     end)
   end
+  for t = STRIKE + 300, STRIKE + 2 * 3600, 300 do schedule(t, function() if S.feed then S.feed() end end) end
   -- Every 2 s: the troopers and the faction's units near the fight, for the animation.
   for t = STRIKE + 60, END, 120 do
     schedule(t, function()
@@ -1182,6 +1197,15 @@ scenarios.siege = function()
       metric("siege_target_turrets_after", surface().count_entities_filtered{name = "lp-turret", force = FORCE,
         position = S.target, radius = 50})
     end
+    local there = {}
+    for _, e in pairs(surface().find_entities_filtered{position = S.target, radius = 20}) do
+      if e.force.name ~= "neutral" then
+        local k = e.force.name:sub(1, 4) .. ":" .. e.name
+        there[k] = (there[k] or 0) + 1
+      end
+    end
+    info("siege: at the outpost at the end " .. serpent.line(there))
+    for _, l in ipairs(lp("debug_modules", storage.id, S.target, 30)) do info("siege: module " .. l) end
     metric("siege_squad", SQUAD)
     metric("siege_trained", S.trained)
     metric("siege_alive", alive)
@@ -1190,10 +1214,11 @@ scenarios.siege = function()
     metric("siege_responses", st.responses - S.st0.responses)
     metric("siege_units_lost", st.units_lost - S.st0.units_lost)
     metric("siege_captured", (st.captured or 0) - (S.st0.captured or 0))
+    metric("siege_lander_killed", st.lander and 0 or 1)
     check("siege: the squad was trained", S.trained >= SQUAD, S.trained .. " of " .. SQUAD)
     check("siege: the faction answered", st.responses > S.st0.responses, (st.responses - S.st0.responses) .. " responses")
     info("siege: " .. MIX .. "; " .. serpent.line(lp("army")) .. ", player units lost " .. serpent.line(S.killers or {})
-      .. ", faction units lost: " .. serpent.line(S.fallen or {}))
+      .. ", faction units lost: " .. serpent.line(S.fallen or {}) .. ", damage dealt " .. serpent.line(S.dealt or {}))
   end)
 end
 
@@ -1207,7 +1232,7 @@ local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, 
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if params.scenario == "convoy" and END < 10 * 3600 then error("lp-sim: convoy needs at least 10 minutes") end
 if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end
-if AFTER[params.scenario] and END < STRIKE + AFTER[params.scenario] * 3600 then
+if AFTER[params.scenario] and not params.save_at and END < STRIKE + AFTER[params.scenario] * 3600 then
   error(string.format("lp-sim: %s strikes at minute %d; run at least %d minutes", params.scenario, STRIKE / 3600,
     STRIKE / 3600 + AFTER[params.scenario]))
 end
@@ -1224,6 +1249,17 @@ script.on_init(function()
 end)
 
 scenario()
+-- Forks (scripts/fork.sh): run fast on a headless server up to the strike and save there; scripts/sim.sh
+-- with LP_FORK=1 then runs only what follows the strike, from that save.
+if params.save_at then
+  schedule(30, function() game.speed = 64 end)
+  -- A second before the strike: saved one tick before, the loaded game never ran the strike.
+  schedule(params.save_at * 3600 - 60, function()
+    game.speed = 1
+    game.server_save("fork")
+    helpers.write_file("landing-party/saved.txt", tostring(game.tick))
+  end)
+end
 for m = params.every, params.minutes, params.every do
   schedule(m * 3600, function() lp("snapshot", storage.id, OUT, params.radius) end)
 end
@@ -1245,7 +1281,8 @@ schedule(END, function()
     end
     check("the scenario's checks ran", ran > 0, ran .. " checks; is the run long enough?")
   end
-  check("lander alive", s.lander)
+  -- A siege may win outright by destroying the lander.
+  if params.scenario ~= "siege" then check("lander alive", s.lander) end
   check("mined", s.mined > 0, s.mined)
   check("made parts", s.made > 0, s.made)
   metric("doctrine", s.doctrine); metric("hubs", s.hubs); metric("archetypes", s.archetypes)
@@ -1285,6 +1322,18 @@ script.on_event(defines.events.on_entity_died, function(e)
 end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "type", type = "unit"},
   {filter = "type", type = "spider-unit"}})
+
+-- Siege diagnostics: damage the player's units deal, by unit and target.
+if params.scenario == "siege" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    local c = e.cause
+    if not (c and c.valid and c.force.name == "player") then return end
+    S.dealt = S.dealt or {}
+    local k = c.name:sub(4) .. ">" .. e.entity.name:sub(4)
+    S.dealt[k] = (S.dealt[k] or 0) + math.floor(e.final_damage_amount)
+  end, {{filter = "type", type = "electric-turret"}, {filter = "type", type = "wall"}, {filter = "type", type = "unit"},
+    {filter = "type", type = "land-mine"}, {filter = "type", type = "container"}})
+end
 
 script.on_event(defines.events.on_ai_command_completed, function(e)
   if S.results then S.results[e.unit_number] = e.result end

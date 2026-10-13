@@ -237,6 +237,8 @@ local function patrol(b, trace)
   b.patrol = b.patrol or {}
   prune(b.patrol)
   local want = army.PATROL[b.doctrine] or 2
+  -- The garrison pruned first: a dead unit moved to the patrol crashed the order loop (siege, seed 4242).
+  prune(b.garrison)
   while #b.patrol < want and #b.garrison > HOME_GUARD do table.insert(b.patrol, table.remove(b.garrison)) end
   if #b.patrol == 0 then return end
   -- A route of up to five stops, drawn once and redrawn when the settlement changes much.

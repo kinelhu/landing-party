@@ -340,7 +340,13 @@ local function build(b)
     end
     return
   end
-  if #b.queue == 0 or b.queue[1].module ~= job.module then
+  -- Built when no entity job of the module is left (road tiles queued after it do not count: a module whose
+  -- last job was paving was never marked, so it could never be captured, siege seed 777).
+  local more = false
+  for _, q in ipairs(b.queue) do
+    if q.module == job.module and not q.tiles then more = true; break end
+  end
+  if not more and not job.module.built then
     job.module.built = true
     trace(b, string.format("built %s at %.0f,%.0f", job.module.kind, job.module.center[1], job.module.center[2]))
   end
@@ -590,6 +596,26 @@ function base.tick(tick)
       end
     end
   end
+end
+
+-- Tests only: the mining modules near a point and what capture sees there.
+function base.debug_modules(b, pos, r)
+  local out = {}
+  local surface = game.surfaces[b.surface]
+  for _, m in ipairs(b.modules) do
+    if m.kind == "mining" and (m.center[1] - pos[1]) ^ 2 + (m.center[2] - pos[2]) ^ 2 <= r * r then
+      local left = 0
+      for _, e in ipairs(m.entities) do if e.valid and e.force.name == shared.FORCE then left = left + 1 end end
+      local by = holder(surface, m.center)
+      local def = surface.find_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(),
+        type = {"unit", "spider-unit", "electric-turret"}, limit = 1}[1]
+      table.insert(out, string.format("%.0f,%.0f built=%s captured=%s left=%d held=%s holder=%s defended=%s", m.center[1],
+        m.center[2], tostring(m.built), tostring(m.captured), left,
+        m.held_since and tostring(game.tick - m.held_since) or "-", by and by.name or "-",
+        def and (def.name .. "@" .. math.floor(def.position.x) .. "," .. math.floor(def.position.y)) or "-"))
+    end
+  end
+  return out
 end
 
 function base.stats(b)
