@@ -367,7 +367,30 @@ Prior art for units: ERM RedArmy (LGPL) builds infantry on the engineer's body; 
 (MIT) for squad AI and HQ-driven orders; ERM Unit Control (LGPL) as an optional selection-tool dependency.
 Never ERM's StarCraft or Metal Slug art (ripped).
 
-## Design review 2026-10-13 (pending decisions)
+## Operations: the faction's military with intent (decided 2026-10-13, to build)
+The user agreed with the review and widened it: the faction gets a **repertoire of operations**, capabilities
+and plans rather than unit types alone ("a siege could play like Rimworld's: stop to regroup, build a small
+mortar position, harass from afar to draw you out of your walls"). Every operation has an objective,
+preconditions (what the faction must know and have), phases, and an abort rule. They rest on **intel** (what
+radars, pickets, patrols and its own losses have shown it: nothing unseen can be targeted) and **target
+values** (relay 10, barracks 8, power cut point 6, rail 5, drill 4, assembler 3, turret 1, lamps and pipes 0;
+divided by known defence).
+- **Raid**: hit-and-run on a valuable, lightly defended target; force sized to known defence; staged out of
+  range; abort at half strength or after 90 s without a kill; remembered.
+- **Siege**: a force stages out of range and builds a **mortar emplacement** (walls, a few guards) that
+  shells the player's walls from about 36 tiles, beyond gun (18) and laser (24) turrets: the player sallies or
+  answers with artillery. The first capability the faction builds in the field.
+- **Sabotage**: harriers at power cut points and the player's relay chain.
+- **Probe**: scouts test a sector and report.
+- **Retake**: counter-attack an outpost the player captured.
+- **Feint** (later): a loud attack on one side to draw the player's army, the main blow on the other.
+Order: intel and the operation framework with Raid (and abort) first, then Siege; the rest after a first-hour
+playthrough baseline. Also adopted from the review: garrison roles and escalating alarms; tier as capability
+(the +15% damage goes); relay and barracks control radius with R always obeyed; jamming instead of satellites
+as targets; the landing as an event; the settlement readable in game. Parked: the uplink fight, rival
+corporations, more convoy and interceptor work.
+
+## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
 decided: the faction's military is the biter attack-group loop with a cooldown (nearest target, no sizing,
 no abort, no memory); it needs intel, objectives by value, sizing, staging and abort rules. Garrisons need
@@ -375,6 +398,7 @@ roles (reserve, reaction, field); alarms need escalation; pickets should see. Co
 barracks (cores stay the barracks key), a satellite lifting the radius, faction jammers as the ground answer;
 satellites as targets judged scope creep. Tier as capability, not +15% damage. The landing as a contestable
 event. The loop needs the settlement readable in game. Park the uplink fight and rival corporations.
+Decisions: see "Operations" above.
 
 ## Open questions and next
 - **Rival corporations (idea, user 2026-10-13, for later):** several landing parties at once, each a
