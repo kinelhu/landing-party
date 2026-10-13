@@ -315,9 +315,19 @@ onto the outpost and sets O.
   leash and cover rules. Death logs and frame stills show why: the test's beacon stands 30 tiles out of
   turret range, so its 50-tile ring overlaps a compound's laser cover by about 20 tiles, and every fight in
   the ring is partly under those lasers. The test places beacons as a careless player would.
-- Next: a test that places the beacon as a careful player would (ring clear of turrets it is not meant to
-  attack; a second beacon at the compound for the breach), then tune breacher and tank numbers against it.
-  Also open: whether the reach should be smaller, or the ring should show turret cover.
+- **A careful player (now the test):** a forward base 15 tiles behind a staging point out of turret reach;
+  the squad gathers there, then X/Y steer the rally point onto the defending turret nearest our side, on
+  A, one at a time; with no turret within 60 of the outpost, onto the outpost on O. Damage logs showed
+  the battle tank was mostly armour (5 tanks, 2,100 to turrets in a whole assault) and breachers crossed 16
+  tiles of laser fire: the battle tank now fires 100 at 18 tiles (the faction's keeps 35 at 15), the
+  breacher throws from 12.
+- **The curve (fork at minute 15, seeds 12345 / 777 / 4242):** 60 troopers lose everywhere; 30/10/5
+  (troopers/breachers/tanks) wins once (777, lander destroyed); 20/10/10 wins twice (12345: three outposts
+  captured; 777: lander); 4242's outpost (7 turrets near it) falls to 30/20/20 (130 bandwidth, research
+  level 3), 16 of 70 left, lander destroyed. Infantry alone never takes a defended position; tanks decide.
+- **A destroyed lander ends its settlement** (nothing runs on: no capture, no rebuild); what its remains
+  become is open (ruins to salvage, capturable, or decay).
+- Also open: whether the reach should be smaller, or the ring should show turret cover.
 
 ## Where Landing Party differs from Proliferation
 Proliferation (MIT, no public source, 2026) is a machine faction in the mould of Stargate's Replicators:

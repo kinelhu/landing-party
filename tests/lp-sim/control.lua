@@ -1078,20 +1078,25 @@ scenarios.siege = function()
       if not td or d < td then target, td = bin, d end
     end
     S.target = {target.position.x, target.position.y}
-    -- Staging: on the line from the outpost to the base, the first point no faction turret reaches.
+    -- Staging: on the line from the outpost towards the player's side, the first point no faction turret
+    -- reaches; a forward base 15 tiles behind it, on ground the faction has not built. (With the barracks far
+    -- off, a squad walking to a staging point inside the settlement lost 33 of 40 before the assault, 4242.)
     local dx, dy = a[1] - S.target[1], a[2] - S.target[2]
     local len = math.sqrt(dx * dx + dy * dy)
     local stage
-    for d = 20, 120, 4 do
+    for d = 30, 200, 5 do
       stage = {S.target[1] + dx / len * d, S.target[2] + dy / len * d}
-      if surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 40} == 0 then
+      local fwd = {S.target[1] + dx / len * (d + 15), S.target[2] + dy / len * (d + 15)}
+      if surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 40} == 0
+        and surface().count_entities_filtered{force = FORCE, position = fwd, radius = 30} == 0 then
         S.stage_d = d
+        a = {math.floor(fwd[1]), math.floor(fwd[2])}
         break
       end
     end
     S.base_at = a
     S.stage = stage
-    flatten(math.floor(a[1]) - 12, math.floor(a[2]) - 12, math.floor(a[1]) + 12, math.floor(a[2]) + 12)
+    flatten(math.floor(a[1]) - 28, math.floor(a[2]) - 6, math.floor(a[1]) + 42, math.floor(a[2]) + 12)
     local function put(name, x, y)
       return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
     end

@@ -18,6 +18,9 @@ at milestones, asked for.
   no biters; the settlement arrives as the real one does, `LP_DISTANCE` tiles from spawn). Plots
   (`growth.png`, `final.png`), the planner's `decisions.txt` and results go to `docs/sim/<scenario>-<seed>/`
   (gitignored). Look at the plots before claiming anything about layout.
+- Forks: `scripts/fork.sh <scenario> <seed> <strike>` saves a scenario at its strike once; `LP_FORK=1
+  scripts/sim.sh ...` runs only the rest from it (a siege run: 19 s instead of 2.5 min). Iterate on forks,
+  confirm with full runs. The life GIF renders only with `LP_GIF=1` (it was most of a run's time).
 - `scripts/batch.sh [scenarios] [seeds] [minutes] [strike]`: runs in parallel, one table of metrics. Fails if
   any run fails. Timings from a batch are inflated by contention: measure performance with one `sim.sh`.
 - `scripts/sheet.py out.png <run dirs>` (via `uv run --with matplotlib`): many settlements at one scale with
