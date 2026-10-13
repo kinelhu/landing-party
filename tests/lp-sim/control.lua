@@ -1423,7 +1423,11 @@ end
 -- first launch at spawn (production, power, labs, 16 laser turrets in four corner clusters, laser research)
 -- and a mining outpost 130 tiles towards the faction with a power line home. The faction lands as it does in
 -- a game and lands again on its own clock. Every 5 minutes one line of timeline.jsonl (scripts/timeline.py).
+-- Variants (LP_MIX): "" a passive player; "robots" a careful one: losses leave ghosts that construction robots
+-- rebuild from a storage of spares (nine roboports cover the base, not the outpost); "walled" the same with a
+-- wall and laser perimeter round the base.
 scenarios.contact = function()
+  local careful = params.mix == "robots" or params.mix == "walled"
   local CATEGORY = {["assembling-machine"] = "production", furnace = "production", lab = "production",
     ["mining-drill"] = "outpost", ["electric-pole"] = "power", roboport = "logistics", radar = "logistics",
     ["electric-turret"] = "turrets", ["ammo-turret"] = "turrets", wall = "walls"}
@@ -1440,7 +1444,7 @@ scenarios.contact = function()
     return out
   end
   schedule(30, function()
-    flatten(-70, -70, 70, 70)
+    flatten(-78, -78, 78, 78)
     local pf = game.forces.player
     pf.set_ammo_damage_modifier("laser", 0.4)
     pf.set_gun_speed_modifier("laser", 0.4)
@@ -1455,6 +1459,31 @@ scenarios.contact = function()
       for _, d in ipairs({{-3, -3}, {3, -3}, {-3, 3}, {3, 3}}) do put("laser-turret", c[1] + d[1], c[2] + d[2]) end
     end
     for x = -60, 60, 18 do put("substation", x, -60); put("substation", x, 60); put("substation", -60, x); put("substation", 60, x) end
+    if careful then
+      pf.create_ghost_on_entity_death = true
+      for _, x in ipairs({-45, 0, 45}) do for _, y in ipairs({-45, 0, 45}) do
+        local r = put("roboport", x, y)
+        if r then
+          r.insert{name = "construction-robot", count = 30}
+          r.insert{name = "repair-pack", count = 100}
+        end
+      end end
+      local store = put("storage-chest", 6, 6)
+      for name, n in pairs({["substation"] = 60, ["assembling-machine-2"] = 40, ["electric-furnace"] = 20, ["lab"] = 10,
+        ["laser-turret"] = 40, ["stone-wall"] = 400, ["big-electric-pole"] = 10, ["roboport"] = 5, ["radar"] = 2}) do
+        store.insert{name = name, count = n}
+      end
+    end
+    if params.mix == "walled" then
+      for k = -70, 70 do
+        for _, p in ipairs({{k, -70}, {k, 70}, {-70, k}, {70, k}}) do
+          surface().create_entity{name = "stone-wall", position = p, force = "player"}
+        end
+      end
+      for k = -60, 60, 12 do
+        for _, p in ipairs({{k, -66}, {k, 66}, {-66, k}, {66, k}}) do put("laser-turret", p[1], p[2]) end
+      end
+    end
   end)
   schedule(150, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]

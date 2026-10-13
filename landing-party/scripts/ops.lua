@@ -30,6 +30,12 @@ local STAGE_TICKS = 90 * 60
 local NO_KILL_TICKS = 90 * 60
 local COOL_TICKS = 10 * 60 * 60
 local MAX_TICKS = 6 * 60 * 60
+-- Cadence: after an operation a settlement waits before the next, longer after a failure and after losses.
+-- Without it, raids came a minute apart, four units each, and stripped an undefended base in 35 minutes
+-- (contact, the first-contact baseline): biter pacing, not a rival's.
+local GAP_DONE = 5 * 60 * 60
+local GAP_ABORTED = 10 * 60 * 60
+local GAP_PER_5_LOST = 60 * 60
 -- Siege: when no raid is affordable, a hauler carries a mortar and its shells to a site beyond the player's
 -- turrets (31 tiles: a flamethrower's 30) and within its own reach (35) of one; guards ring it while it
 -- deploys and shells; it packs up when the shells are spent or the guards are halved.
@@ -274,6 +280,9 @@ local function finish(b, outcome, trace, army)
     end
   end
   if outcome == "done" or outcome == "spent" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
+  local lost = op.launched - alive(op)
+  b.next_op = game.tick + ((outcome == "done" or outcome == "spent") and GAP_DONE or GAP_ABORTED)
+    + math.floor(lost / 5) * GAP_PER_5_LOST
   -- What it saw there at the end is the record: destroyed targets are forgotten (a raid set out again for
   -- creep it had already destroyed).
   if t then
@@ -548,7 +557,7 @@ function ops.tick(b, tick, trace, army)
   if tick % 600 == 200 then field_sight(b) end
   if b.op then
     if tick % 300 == 100 then step(b, trace, army) end
-  elseif tick % DECIDE_TICKS == 0 and not storage.raids_off and not storage.army_off then
+  elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off then
     if not home(b) then return end
     local key = choose(b, army)
     if key then

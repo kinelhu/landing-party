@@ -473,6 +473,20 @@ rival's. Questions for the next pass: a cadence (a settlement launches at most o
 minutes, longer after losses); a reserve that grows with the settlement rather than a fixed share; a
 scripted player that rebuilds with robots and answers with turrets, and one with a walled perimeter.
 
+### With the cadence and a careful player
+A settlement now waits after an operation: 5 minutes after a success, 10 after an abort, a minute more for
+every 5 units lost. `contact` again, three players (seed 12345, 3 hours):
+| player | operations | production standing at 3 h | turrets standing |
+|---|---|---|---|
+| passive | 21 (26 in 35 minutes before the cadence) | 8 of 94 | 8 of 18 |
+| robots (losses leave ghosts, nine roboports rebuild from spares) | 17, 4 turned back | 64 of 94 | 12 of 18 |
+| walled (robots and a wall and laser perimeter) | 12, 8 turned back on sight, 1 siege | 94 of 94 | 35 of 62 |
+The outpost falls in all three (no robot coverage there). Raids come about every 8 to 10 minutes. A careful
+player holds; the faction reads walls and turns back or besieges; turret attrition grows with each landing,
+so a player who only defends bleeds slowly, which is where the army (destroying landers) has to come in.
+Cost: the robots run took nearly 8 minutes alone (hundreds of construction robots); timelines are to run 2
+hours and from a shared growth fork from now on.
+
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
 decided: the faction's military is the biter attack-group loop with a cooldown (nearest target, no sizing,
