@@ -474,6 +474,17 @@ buildings and units) for every corporation but the default, renamed `lp-<corp>-<
 `shared.variants(kind)`, recognition `shared.kind_of(name)`. The default corporation keeps the plain names,
 so every existing test stands. `rivals`: Grubstake built 383 entities, all its own.
 
+**Step 3, built: look beyond colour** (three looks by the user, 2026-10-13). Grubstake ochre ("feels dirty",
+kept); Serenity two-coloured: charcoal walls, turrets, poles, lamps and mines on pale concrete, slate-teal
+machines and units (all slate-teal "felt strange", untinted walls read as vanilla). Floors per corporation:
+roads (Grubstake gravel, Serenity plain refined concrete), pads, and a trim: depot blocks and mature walled
+blocks are paved edge to edge in the corporation's pad floor with a trim one tile inside (Serenity black
+concrete, Grubstake hazard stripes). Logos are not on the ground: scaled icons looked pasted on, painted icons
+blurry, concrete pixel art merged into blobs (Factorio bevels every tile edge); they appear where icons render
+at their size: map tags at each settlement (corporation icon and name, "(fallen)" after a fall) and the
+landing and fall notices (icon, name, motto). Every corporation's buildings and units are labelled with its
+name. Tint can only darken a sprite: "whiter than vanilla" walls would need other source art.
+
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a
 player base at spawn as of the first launch (64 assemblers, 20 furnaces, 10 labs, substations, 2 roboports,

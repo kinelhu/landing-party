@@ -24,6 +24,11 @@ Each corporation is defined by the same eight things:
 
 ## 2. Logos
 
+**Revised after three looks (2026-10-13): no logos on the ground.** Built instead: map tags and notices with
+the corporation's icon (a vanilla signal at its own size: Grubstake the mining pick, Serenity the heart), and
+floor livery (pad floor and trim) carrying identity on the ground. The section below is the original
+proposal, kept for the record.
+
 A logo is a decorative ground entity (no collision, drawn on the floor layer, under everything), one per
 corporation, built in the data stage from layered icon sprites at about 4x4 tiles. Stamped:
 - at the centre of each hub's plaza, on its concrete;

@@ -45,8 +45,13 @@ for corp, c in pairs(shared.CORPS) do
     end
   end
 end
--- The default corporation's own prototypes take its per-kind colours too (after the copies were made).
+-- The default corporation's own prototypes take its per-kind colours too (after the copies were made), and its
+-- name (only the copies were labelled: Grubstake's units said whose they were, Serenity's did not).
 local d = shared.CORPS[shared.DEFAULT_CORP]
+for _, kind in ipairs(shared.KINDS) do
+  local p = find(kind)
+  if p then p.localised_name = {"", {"entity-name." .. kind}, " (", d.name, ")"} end
+end
 for kind, color in pairs(d.tints or {}) do
   local p = find(kind)
   if p then retint(p, color, {}) end
