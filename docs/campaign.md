@@ -37,7 +37,12 @@ follows the player's whole campaign, and a way to stay relevant at the endgame.
 
 ## 3. The arc
 
-Space Age is the primary target; the base game is supported with different triggers. In Space Age the first
+Space Age is the primary target; the base game is supported with different triggers. **Absence is not a
+truce** (user, 2026-10-13, rejecting the review's "absence costs territory, never the base"): remote view
+lets the player watch, rebuild with robots and command units on Nauvis from anywhere (the command tool works
+on the surface being viewed), and vanilla Space Age does not spare an empty base from biters either. What
+absence needs instead: alerts that reach the player on any surface, naming the corporation and the place,
+and defences that can be automated (a beacon that answers T > 0 by itself). In Space Age the first
 rocket is mid-game (it builds the first platform); in the base game the first launch is the end, so the reveal
 moves earlier.
 
@@ -59,12 +64,19 @@ A corporation is a faction with an identity, a doctrine, a signature and a tempe
 tone, dry rather than loud (deadpan corporate notices, not jokes): "Mineral rights for this region have been
 reassigned. Thank you for your cooperation."
 
-| Corporation (working names) | Doctrine | Architecture | Signature | Temper |
-|---|---|---|---|---|
-| **Halvorsen Extraction** | sprawl | spread outposts, light walls, long roads | strip-mining drones; convoys | greedy, avoids fights it cannot win cheaply |
-| **Aegis Perimeter Solutions** | fortress | walled compounds, turret rings, mines | sieges with mortars; bombardment later | defensive, relentless once provoked |
-| **Kessler Orbital** | picket | radar pickets, jammers, few big hubs | harriers; orbital strikes late | opportunist, hits logistics and power |
-| **Marrow & Vane Arms** | bastion | dense hubs, big garrisons | tanks and walkers; sells to others (section 7) | aggressive, raids often |
+Names (decided by the user, 2026-10-13): **the corporate euphemism**, a polite word for the ugly thing each
+one does. Profiles (adopted from the campaign review): each differs by what it attacks with, how it defends,
+where it breaks, and what ground it wants; doctrine and colour alone made recoloured variants.
+
+| Corporation | Role | Offence | Defence | Weak point | Wants | Biters | Temper |
+|---|---|---|---|---|---|---|---|
+| **Grubstake Mineral Recovery** | the thief (sprawl) | strip-mines the player's own patches at the edge of their coverage, convoys the ore out; never raids the base | redundancy: many small outposts, rebuilt fast and cheap | everything is in transit: convoys and depots | ore volume | avoids them, never clears a nest | buys the player off; the first to offer a truce |
+| **Serenity Perimeter Group** | the wall (fortress) | sieges with mortars, later bombardment; never raids first, retaliates in proportion and never forgets | walls, mines, gates, shields | static and power-hungry: cut points | defensible ground: cliffs, shores, chokepoints | clears them (announced) | defensive, relentless once provoked |
+| **Lumen Transparency** | the eye (picket) | harriers at relays, rails and power; jams the player's radars and control; orbital marks late (a warning on the ground, then a strike) | sees everything, aborts early, evacuates | blind it: without pickets it cannot operate (its operations need intel) | coverage: pickets spread thin | uses them: jammed radars let biter attacks arrive unseen | opportunist; truces freely, breaks them |
+| **Concord Munitions** | the dealer (bastion) | tanks and walkers, big garrisons, raids the weakest neighbour, corporations included | garrison, not walls | burns parts; its depots are its economy | customers: it claims beside whoever is fighting | indifferent | aggressive; sells units to the others (its level gates their walkers) and to the player at good standing |
+
+A fallen headquarters leaves a prize particular to its corporation (Serenity's mortars, Lumen's jamming,
+Grubstake's strip drills, Concord's unit designs for the barracks).
 
 - Each corporation is its own Factorio force (`lp-<name>`), with its own colour (the tint today), its own
   research-like development, its own intel.
