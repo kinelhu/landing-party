@@ -19,8 +19,6 @@ local SITE_MIN_ORE = 300
 local UPLINK_LANDING = 3
 
 faction.TIERS = {3000, 8000, 20000, 45000}           -- parts exported to reach tiers 1..4
-faction.DAMAGE_PER_TIER = 0.15
-local CATEGORIES = {"bullet", "cannon-shell", "rocket", "laser"}
 
 function faction.state()
   storage.faction = storage.faction or {tier = 0, exported = 0, landings = 0, cadence = CADENCE,
@@ -147,12 +145,9 @@ function faction.tick(tick)
   end
 end
 
-local function apply_tier(f)
-  local force = game.forces[shared.FORCE]
-  for _, c in ipairs(CATEGORIES) do
-    force.set_ammo_damage_modifier(c, faction.DAMAGE_PER_TIER * f.tier)
-  end
-end
+-- Tiers no longer add damage (a hidden evolution factor by another name, design review 2026-10-13); they will
+-- buy capabilities per corporation (docs/campaign.md, development).
+local function apply_tier(f) end
 
 -- Parts sent off-world by a mature settlement.
 function faction.export(b, parts)

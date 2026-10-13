@@ -79,7 +79,7 @@ end
 
 -- Record what a sensor at pos sees within r: per cell, the most valuable structure and the turrets by it.
 local function sense(b, surface, pos, r)
-  local f = game.forces[shared.FORCE]
+  local f = game.forces[b.force]
   for _, other in ipairs(enemies(f)) do
     local cells = {}
     for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r, force = other, type = TYPES}) do
@@ -87,12 +87,14 @@ local function sense(b, surface, pos, r)
       if v > 0 then
         local key = math.floor(e.position.x / CELL) .. "," .. math.floor(e.position.y / CELL)
         local c = cells[key]
-        if not c or v > c.value then cells[key] = {pos = {e.position.x, e.position.y}, kind = e.name, value = v} end
+        if not c or v > c.value then
+          cells[key] = {pos = {e.position.x, e.position.y}, kind = e.name, value = v, owner = e.force.name}
+        end
       end
     end
     for key, c in pairs(cells) do
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
-      t.pos, t.kind, t.value, t.seen = c.pos, c.kind, c.value, game.tick
+      t.pos, t.kind, t.value, t.seen, t.owner = c.pos, c.kind, c.value, game.tick, c.owner
       t.defence = surface.count_entities_filtered{position = c.pos, radius = DEFENCE_RADIUS, force = other, type = TURRETS}
       b.intel.targets[key] = t
     end
@@ -294,7 +296,8 @@ local function finish(b, outcome, trace, army)
     end
   end
   b.ops_log = b.ops_log or {}
-  table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", outcome = outcome, launched = op.launched,
+  table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner, outcome = outcome,
+    launched = op.launched,
     back = alive(op), shells = op.shells_fired, site = op.site})
   if #b.ops_log > 10 then table.remove(b.ops_log, 1) end
   trace(b, string.format("%s %s: %d of %d came back (target %s)", op.kind, outcome, alive(op), op.launched,

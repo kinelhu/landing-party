@@ -13,7 +13,7 @@ local STRIKE = (params.strike or 20) * 3600
 local HOLD = 10 * 3600
 local OUT = "landing-party/sim.jsonl"
 local lp = function(fn, ...) return remote.call("landing-party", fn, ...) end
-local FORCE = "landing-party"
+local FORCE = "lp-serenity"     -- the default corporation (shared.DEFAULT_CORP)
 
 local lines, failed = {}, 0
 local function check(name, ok, detail)
@@ -1534,6 +1534,35 @@ scenarios.contact = function()
     local now = census()
     info("contact: player at the end " .. serpent.line(now))
     check("contact: a timeline was written", true, "")
+  end)
+end
+
+-- Rivals: two corporations side by side. Serenity lands as usual; Grubstake lands as the next settlement
+-- (its own force). Both get a depot; nothing else is scripted. They must be different forces, and at least one
+-- of them must mount an operation against the other's buildings and do damage.
+scenarios.rivals = function()
+  schedule(60, function() lp("debug_depot", storage.id, 3000) end)
+  schedule(120, function()
+    S.other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    if S.other then lp("debug_depot", S.other, 3000) end
+  end)
+  schedule(END - 60, function()
+    local a, b = lp("stats", storage.id), S.other and lp("stats", S.other)
+    local against = 0
+    local lines_ = {}
+    for _, st in ipairs({a, b}) do
+      for _, l in ipairs(st and st.ops.log or {}) do
+        table.insert(lines_, string.format("%s: %s %s on %s of %s, %d/%d back", st.corp, l.op, l.outcome, l.kind,
+          tostring(l.owner), l.back, l.launched))
+        if l.owner and l.owner ~= st.force and l.owner:sub(1, 3) == "lp-" then against = against + 1 end
+      end
+    end
+    info("rivals: " .. table.concat(lines_, "; "))
+    check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
+      a.force .. " and " .. (b and b.force or "none"))
+    check("rivals: they raided each other", against > 0, against .. " operations against a rival")
+    check("rivals: and did damage", (a.razed or 0) + (b and b.razed or 0) > 0 or a.lost + (b and b.lost or 0) > 0,
+      string.format("razed %d and %d", a.razed or 0, b and b.razed or 0))
   end)
 end
 

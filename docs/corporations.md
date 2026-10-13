@@ -40,8 +40,9 @@ its logos stay as part of the ruins (a scorch tint), so the map remembers who he
 | **Lumen Transparency** | backing disc; sun signal; info signal ("i") at its centre | white and violet on black |
 | **Concord Munitions** | backing disc; white-flag signal; weapon signal across it | brass and red on olive |
 
-Mottos, for notices and the settlement panel later: Grubstake "Your ore, recovered."; Serenity "Peace,
-maintained."; Lumen "Nothing to hide."; Concord "Supplying both sides of every lasting peace."
+Mottos (chosen by the user, 2026-10-13: deadpan corporate copy, the menace implied): Grubstake "Resources in
+the right hands."; Serenity "Please remain behind the line."; Lumen "Total illumination."; Concord "Trusted
+by all parties."
 
 ## 3. The four corporations
 

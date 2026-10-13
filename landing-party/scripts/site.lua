@@ -30,7 +30,7 @@ local function reserved(b, area)
     local x, y = job.pos[1], job.pos[2]
     if x >= area[1][1] - 2 and x <= area[2][1] + 2 and y >= area[1][2] - 2 and y <= area[2][2] + 2 then return true end
   end
-  return site.occupied(game.surfaces[b.surface], {(area[1][1] + area[2][1]) / 2, (area[1][2] + area[2][2]) / 2})
+  return site.occupied(b, game.surfaces[b.surface], {(area[1][1] + area[2][1]) / 2, (area[1][2] + area[2][2]) / 2})
 end
 
 function site.fits(surface, b, m, ox, oy)

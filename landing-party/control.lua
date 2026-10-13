@@ -12,7 +12,10 @@ local function init()
   storage.owner = storage.owner or {}
   storage.unit_owner = storage.unit_owner or {}
   if storage.trace == nil then storage.trace = false end
-  if not game.forces[shared.FORCE] then game.create_force(shared.FORCE) end
+  for _, c in pairs(shared.CORPS) do
+    local f = game.forces[c.force] or game.create_force(c.force)
+    f.custom_color = c.color
+  end
   command.init()
 end
 
@@ -35,7 +38,8 @@ for _, n in ipairs({"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin
   table.insert(BUILDINGS, {filter = "name", name = n})
 end
 script.on_event(defines.events.on_entity_damaged, function(e)
-  if e.force and e.force.name ~= shared.FORCE then base.on_damaged(e.entity) end
+  -- Any other force: a rival corporation's fire raises the alarm as the player's does.
+  if e.force and e.force ~= e.entity.force then base.on_damaged(e.entity) end
 end, BUILDINGS)
 
 -- The command tool: select (drag), release (shift-drag), order (right-click or right-drag; shift: attack-move).
@@ -68,7 +72,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     command.drop_cores(ent.surface, ent.position, 3)
     base.fall(ent)
   end
-  if ent.force.name == shared.FORCE then
+  if shared.is_corp(ent.force.name) then
     local id = storage.unit_owner[ent.unit_number]
     if id then
       storage.unit_owner[ent.unit_number] = nil
@@ -80,7 +84,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     else
       base.on_died(ent)
     end
-  elseif e.force and e.force.name == shared.FORCE and e.cause and e.cause.valid
+  elseif e.force and shared.is_corp(e.force.name) and e.cause and e.cause.valid
     and ent.force.name ~= "neutral" and ent.force.name ~= "enemy" then
     -- Razed counts the player's structures only (trees felled by shells once inflated it by half).
     local id = storage.unit_owner[e.cause.unit_number]
@@ -120,7 +124,7 @@ local function snapshot(id, file, radius)
   local ax, ay = b.origin.x, b.origin.y
   local area = {{ax - radius, ay - radius}, {ax + radius, ay + radius}}
   local ents = {}
-  for _, e in pairs(surface.find_entities_filtered{area = area, force = shared.FORCE}) do
+  for _, e in pairs(surface.find_entities_filtered{area = area, force = b.force}) do
     table.insert(ents, {e.name, e.position.x, e.position.y, e.electric_network_id or 0, e.status or 0})
   end
   local ore = {}

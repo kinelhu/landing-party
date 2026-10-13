@@ -167,7 +167,7 @@ end
 -- nearest outpost bin.
 local function objective(p, occupy)
   local s, at = p.surface, p.pos
-  local f = game.forces[shared.FORCE]
+  local f = shared.corp_forces()
   local best, bd, kind
   if not occupy then
     -- Turrets first: sent at the nearest military building, a squad of 60 shot a depot between two turret
@@ -238,7 +238,7 @@ end
 local ENGAGE = 18
 local function threat(u, p)
   local best, bd
-  for _, e in pairs(u.surface.find_entities_filtered{position = u.position, radius = ENGAGE, force = shared.FORCE,
+  for _, e in pairs(u.surface.find_entities_filtered{position = u.position, radius = ENGAGE, force = shared.corp_forces(),
     type = {"unit", "spider-unit"}}) do
     local d = (e.position.x - u.position.x) ^ 2 + (e.position.y - u.position.y) ^ 2
     local leash = (e.position.x - p.pos.x) ^ 2 + (e.position.y - p.pos.y) ^ 2 <= ATTACK_REACH * ATTACK_REACH
@@ -287,9 +287,9 @@ local function report(beacon, p, squad)
   local function v(name, n) return {value = {type = "virtual", name = name, quality = "normal"}, min = n} end
   sec.filters = {
     v("signal-S", squad),
-    v("signal-E", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.FORCE,
+    v("signal-E", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.corp_forces(),
       type = {"unit", "spider-unit"}}),
-    v("signal-T", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.FORCE,
+    v("signal-T", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.corp_forces(),
       name = "lp-turret"}),
   }
 end
@@ -481,7 +481,7 @@ function command.order(player_index, surface, area, attackmove)
   local lt, rb = area.left_top or area[1], area.right_bottom or area[2]
   local pos = {x = ((lt.x or lt[1]) + (rb.x or rb[1])) / 2, y = ((lt.y or lt[2]) + (rb.y or rb[2])) / 2}
   local target = surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
-    force = shared.FORCE, type = {"unit", "spider-unit", "electric-turret", "artillery-turret", "container",
+    force = shared.corp_forces(), type = {"unit", "spider-unit", "electric-turret", "artillery-turret", "container",
       "electric-energy-interface", "radar", "assembling-machine", "mining-drill", "generator"}, limit = 1}[1]
   storage.cmd.seq = (storage.cmd.seq or 0) + 1
   local n = 0

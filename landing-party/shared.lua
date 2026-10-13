@@ -1,7 +1,21 @@
 -- Numbers shared by the data and control stages: one source for every value both read.
 local shared = {}
 
-shared.FORCE = "landing-party"
+-- Corporations (docs/campaign.md, docs/corporations.md): each its own force, at war with every other force
+-- (biters included) unless a cease-fire says otherwise. A settlement belongs to one.
+shared.CORPS = {
+  grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2}},
+  serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85}},
+}
+shared.DEFAULT_CORP = "serenity"
+function shared.is_corp(force_name) return force_name ~= nil and force_name:sub(1, 3) == "lp-" end
+-- The corporations' force names, for queries over all of them.
+function shared.corp_forces()
+  local out = {}
+  for _, c in pairs(shared.CORPS) do table.insert(out, c.force) end
+  table.sort(out)
+  return out
+end
 
 -- Nominal power in watts. Data sets the prototypes from these; the planner budgets with them.
 shared.power = {

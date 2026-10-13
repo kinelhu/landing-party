@@ -35,7 +35,7 @@ local EMA = 0.1              -- smoothing of the per-minute rates, per economy t
 -- Feedstock one fabricator consumes per minute.
 local FAB_FEED_PER_MIN = 60 * shared.FABRICATOR_SPEED / shared.PART_SECONDS * shared.FEEDSTOCK_PER_PART
 
-local function force() return game.forces[shared.FORCE] end
+local function force(b) return game.forces[b.force] end
 
 local function trace(b, text)
   local line = string.format("%8d base %d  %s", game.tick, b.id, text)
@@ -61,7 +61,7 @@ end
 local function prune(list)
   local j = 0
   for i = 1, #list do
-    if list[i].valid and list[i].force.name == shared.FORCE then j = j + 1; list[j] = list[i] end
+    if list[i].valid and shared.is_corp(list[i].force.name) then j = j + 1; list[j] = list[i] end
   end
   for i = #list, j + 1, -1 do list[i] = nil end
 end
@@ -76,14 +76,15 @@ end
 -- Land a settlement near pos. opts: seed, doctrine (else drawn from the seed).
 function base.land(surface, pos, opts)
   opts = opts or {}
-  local f = force()
+  local corp = opts.corp or shared.DEFAULT_CORP
+  local f = game.forces[shared.CORPS[corp].force]
   surface.request_to_generate_chunks(pos, 7)
   surface.force_generate_chunk_requests()
   local id = storage.next_id
   local b = {id = id, surface = surface.index, parts = START_PARTS, feedstock = 0, made = 0, mined = 0,
     rate_in = 0, rate_parts = 0, pylons = {}, bins = {}, drills = {}, fabs = {}, gens = {}, turrets = {},
     radars = {}, walls = {}, depots = {}, launchpads = {}, lamps = {}, mines = {}, pylon_spots = {}, road_tiles = 0,
-    modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0,
+    modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0, corp = corp, force = f.name,
     rule = "landed", log = {}, waiting = nil}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
   layout.init(b, seed, opts.uplink and "fortress" or opts.doctrine)
@@ -129,10 +130,12 @@ end
 -- pylon. No capture by damage (that is Proliferation's).
 local CAPTURE_CLEAR = 20
 local CAPTURE_TICKS = 60 * 60
-local function holder(surface, pos)
-  local f = force()
+-- Only the player's forces capture: a corporation's raid passing through a rival's outpost does not take it.
+local function holder(b, surface, pos)
+  local f = force(b)
   for _, other in pairs(game.forces) do
-    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other) then
+    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not shared.is_corp(other.name)
+      and not f.get_cease_fire(other) then
       local e = surface.find_entities_filtered{position = pos, radius = OCCUPY_RADIUS, force = other, type = OCCUPIERS,
         limit = 1}[1]
       if e then return other end
@@ -143,11 +146,11 @@ local function capture(b)
   local surface = game.surfaces[b.surface]
   for _, m in ipairs(b.modules) do
     local left = 0
-    for _, e in ipairs(m.entities) do if e.valid and e.force.name == shared.FORCE then left = left + 1 end end
+    for _, e in ipairs(m.entities) do if e.valid and e.force.name == b.force then left = left + 1 end end
     -- Something must be left to take (a module with nothing standing was once "captured").
     if m.kind == "mining" and m.built and not m.captured and left > 0 then
-      local by = holder(surface, m.center)
-      local defended = surface.count_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(),
+      local by = holder(b, surface, m.center)
+      local defended = surface.count_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(b),
         type = {"unit", "spider-unit", "electric-turret"}, limit = 1} > 0
       if by and not defended then
         m.held_since = m.held_since or game.tick
@@ -155,7 +158,7 @@ local function capture(b)
           m.captured = by.name
           local n = 0
           for _, e in ipairs(m.entities) do
-            if e.valid and e.force.name == shared.FORCE then
+            if e.valid and e.force.name == b.force then
               storage.owner[e.unit_number] = nil
               e.force = by
               n = n + 1
@@ -258,8 +261,8 @@ local function place(b, job)
   local pos = job.pos
   clear_area(surface, job.name, pos)
   if job.loose then pos = surface.find_non_colliding_position(job.name, pos, 4, 0.5) or pos end
-  local ok = surface.can_place_entity{name = job.name, position = pos, direction = job.dir, force = force()}
-  local e = ok and surface.create_entity{name = job.name, position = pos, direction = job.dir, force = force(),
+  local ok = surface.can_place_entity{name = job.name, position = pos, direction = job.dir, force = force(b)}
+  local e = ok and surface.create_entity{name = job.name, position = pos, direction = job.dir, force = force(b),
     auto_connect = (job.name == "lp-pylon") or nil}
   if not e then return nil end
   b.parts = b.parts - (shared.cost[job.name] or 0)
@@ -276,8 +279,8 @@ local function place(b, job)
 end
 
 -- Forces whose presence occupies ground: every force the faction is at war with, biters excepted.
-local function occupied(surface, pos)
-  local f = force()
+local function occupied(b, surface, pos)
+  local f = force(b)
   for _, other in pairs(game.forces) do
     if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other)
       and surface.count_entities_filtered{position = pos, radius = OCCUPY_RADIUS, force = other,
@@ -296,7 +299,7 @@ local function rebuild(b)
   for i, job in ipairs(b.rebuild) do
     if game.tick < job.due then
       -- still on its way
-    elseif occupied(surface, job.pos) then
+    elseif occupied(b, surface, job.pos) then
       if not job.occupied then job.occupied = true; trace(b, string.format("cannot rebuild %s at %.0f,%.0f: occupied",
         job.name, job.pos[1], job.pos[2])) end
     else
@@ -437,7 +440,7 @@ end
 local function threat(b)
   local surface = game.surfaces[b.surface]
   local p = game.forces.player
-  local e = surface.find_nearest_enemy{position = b.lander.position, max_distance = 400, force = force()}
+  local e = surface.find_nearest_enemy{position = b.lander.position, max_distance = 400, force = force(b)}
   if e then return {e.position.x, e.position.y} end
   local s = p.get_spawn_position(surface)
   return {s.x, s.y}
@@ -606,7 +609,7 @@ local function ruin(b)
   end
   local n = 0
   local surface = game.surfaces[b.surface]
-  for _, e in pairs(surface.find_entities_filtered{force = force(), position = {b.origin.x, b.origin.y}, radius = 400}) do
+  for _, e in pairs(surface.find_entities_filtered{force = force(b), position = {b.origin.x, b.origin.y}, radius = 400}) do
     local own = e.unit_number and storage.owner[e.unit_number]
     if own and own.base == b.id and not mining[e.unit_number] and e.name ~= "lp-mine" then
       storage.owner[e.unit_number] = nil
@@ -671,9 +674,9 @@ function base.debug_modules(b, pos, r)
   for _, m in ipairs(b.modules) do
     if m.kind == "mining" and (m.center[1] - pos[1]) ^ 2 + (m.center[2] - pos[2]) ^ 2 <= r * r then
       local left = 0
-      for _, e in ipairs(m.entities) do if e.valid and e.force.name == shared.FORCE then left = left + 1 end end
-      local by = holder(surface, m.center)
-      local def = surface.find_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(),
+      for _, e in ipairs(m.entities) do if e.valid and e.force.name == b.force then left = left + 1 end end
+      local by = holder(b, surface, m.center)
+      local def = surface.find_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(b),
         type = {"unit", "spider-unit", "electric-turret"}, limit = 1}[1]
       table.insert(out, string.format("%.0f,%.0f built=%s captured=%s left=%d held=%s holder=%s defended=%s", m.center[1],
         m.center[2], tostring(m.built), tostring(m.captured), left,
@@ -706,7 +709,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b)}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force}
 end
 
 return base
