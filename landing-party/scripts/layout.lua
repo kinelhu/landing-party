@@ -364,11 +364,14 @@ end
 -- well.
 function layout.livery(b, block)
   local x0, y0, w, h = block.x0, block.y0, block.w, block.h
+  -- The whole block, the walls' own row included (left bare, it showed as a line of sand between the road and
+  -- the trim, user 2026-10-13); the trim one tile inside.
   local pad, trim = {}, {}
-  for x = x0 + 1, x0 + w - 2 do
-    for y = y0 + 1, y0 + h - 2 do
-      local edge = x == x0 + 1 or x == x0 + w - 2 or y == y0 + 1 or y == y0 + h - 2
-      table.insert(edge and trim or pad, {x, y})
+  for x = x0, x0 + w - 1 do
+    for y = y0, y0 + h - 1 do
+      local ring = (x == x0 + 1 or x == x0 + w - 2) and y >= y0 + 1 and y <= y0 + h - 2
+        or (y == y0 + 1 or y == y0 + h - 2) and x >= x0 + 1 and x <= x0 + w - 2
+      table.insert(ring and trim or pad, {x, y})
     end
   end
   push(b, {tiles = pad, floor = "pad", module = block})
