@@ -651,6 +651,17 @@ player of the force, on any surface (absence is not a truce). Needs a game sessi
   the fork: its line grew 4 steps (to 285 tiles) and its first raid went out at 36.5 minutes, so the moving line is
   what brought a careful late player into its war (Fable's bar: provoked within 90 minutes of landing).
 
+### Cost with six settlements (2026-10-14)
+`six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
+benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,
+8 over 16 ms. The stutters were the landings: 0.4 to 1.4 s each, from generating the site search's area round
+up to eight ring points. The search now reads ore from the map generator's noise (`calculate_tile_properties`,
+every 8 tiles: about 2 ms, and in a spike it matched the generated ore point for point), generates only each
+candidate's ground (5x5 chunks, for nests and the ore count) and the settlement's reach (15x15, as before: queued
+instead of forced, the planner laid out other outposts and three scenarios failed). Same six sites; landings
+0.28 to 0.56 s. A landing comes once an hour or so; making it asynchronous (land when the chunks are ready) is the
+remaining fix if it shows in play. Ore the player mined out is checked in generated chunks.
+
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
 decided: the faction's military is the biter attack-group loop with a cooldown (nearest target, no sizing,

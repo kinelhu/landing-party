@@ -1937,6 +1937,35 @@ scenarios.temper = function()
   end)
 end
 
+-- Six: the corporations' caps standing at once (three each), grown with parts, operations against each other, for
+-- scripts/profile.sh (campaign.md: a budget of 1 ms of script a tick with 6 settlements).
+scenarios.six = function()
+  schedule(60, function() lp("debug_depot", storage.id, 3000) end)
+  S.six = {}
+  local froms = {{x = 900, y = 0}, {x = 0, y = 900}, {x = -900, y = 0}, {x = 0, y = -900}, {x = 900, y = 900}}
+  for k, from in ipairs(froms) do
+    schedule(60 + 60 * k, function()
+      local id = lp("arrive", 1, from, params.distance, {corp = (k % 2 == 1) and "grubstake" or "serenity"})
+      if id then
+        lp("debug_depot", id, 3000)
+        table.insert(S.six, id)
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local standing, modules = 0, 0
+    -- The first settlement's id is set after the scenario is laid out: counted here.
+    table.insert(S.six, 1, storage.id)
+    for _, id in ipairs(S.six) do
+      local st = lp("stats", id)
+      if st and st.lander then standing = standing + 1; modules = modules + st.modules end
+      info(string.format("six: %s %s lander %s modules %s", tostring(id), st and st.corp or "?", tostring(st and st.lander),
+        tostring(st and st.modules)))
+    end
+    check("six: six settlements standing", standing == 6, standing .. " standing of " .. #S.six .. ", " .. modules .. " modules")
+  end)
+end
+
 -- Line: Serenity's perimeter moves (perimeter_fast: a step a minute from a minute after landing). Three relays
 -- 185 tiles out, never a shot: the line must grow, name a relay one step before enclosing it, then enclose it and
 -- be provoked, with no operation before that. LP_MIX=back: the player removes the relays on the warning; then

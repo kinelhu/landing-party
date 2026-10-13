@@ -79,6 +79,8 @@ function base.land(surface, pos, opts)
   opts = opts or {}
   local corp = opts.corp or shared.DEFAULT_CORP
   local f = game.forces[shared.CORPS[corp].force]
+  -- The settlement's whole reach, generated now: the planner's scan reads ore and terrain from it (generating
+  -- only the core and queueing the rest changed where outposts went, and three outpost scenarios failed).
   surface.request_to_generate_chunks(pos, 7)
   surface.force_generate_chunk_requests()
   local id = storage.next_id

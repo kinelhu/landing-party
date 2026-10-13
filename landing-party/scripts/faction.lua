@@ -55,13 +55,36 @@ function faction.site(surface, from, distance, count)
   for i = 0, 7 do
     local a = 2 * math.pi * ((start + i) % 8) / 8
     local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
-    surface.request_to_generate_chunks(p, math.ceil(SITE_SEARCH / 32) + 1)
-    surface.force_generate_chunk_requests()
+    -- Ore from the map generator's noise, sampled every 8 tiles: generating the search area round up to eight
+    -- ring points stalled each landing for up to 1.4 s; the noise costs about 2 ms and matched the generated
+    -- ore point for point (a spike, 625 of 625). Only the chosen ground is generated (base.land).
+    local pts = {}
+    for x = -SITE_SEARCH, SITE_SEARCH, 8 do
+      for y = -SITE_SEARCH, SITE_SEARCH, 8 do
+        if x * x + y * y <= SITE_SEARCH * SITE_SEARCH then table.insert(pts, {p[1] + x, p[2] + y}) end
+      end
+    end
+    local names = {}
+    for _, ore in ipairs(site.ORES) do table.insert(names, "entity:" .. ore .. ":probability") end
+    local props = surface.calculate_tile_properties(names, pts)
     local per = {}
-    for _, r in pairs(surface.find_entities_filtered{position = p, radius = SITE_SEARCH, type = "resource",
-      name = site.ORES}) do
-      local k = math.floor(r.position.x / 32) .. ":" .. math.floor(r.position.y / 32)
-      per[k] = (per[k] or 0) + 1
+    for i, q in ipairs(pts) do
+      for _, v in pairs(props) do
+        if v[i] > 0 then
+          local k = math.floor(q[1] / 32) .. ":" .. math.floor(q[2] / 32)
+          per[k] = (per[k] or 0) + 1
+          break
+        end
+      end
+    end
+    -- A chunk already generated holds what is really there (the player may have mined it out).
+    for k in pairs(per) do
+      local cx, cy = k:match("(-?%d+):(-?%d+)")
+      cx, cy = tonumber(cx), tonumber(cy)
+      if surface.is_chunk_generated{cx, cy} and surface.count_entities_filtered{area = {{cx * 32, cy * 32},
+        {cx * 32 + 32, cy * 32 + 32}}, type = "resource", name = site.ORES, limit = 1} == 0 then
+        per[k] = nil
+      end
     end
     local best, bn = nil, 0
     for k, n in pairs(per) do
@@ -86,6 +109,11 @@ function faction.site(surface, from, distance, count)
             clear = false
           end
         end
+      end
+      -- The candidate's own ground, generated now: nests and the ore count below need real entities.
+      if clear then
+        surface.request_to_generate_chunks(spot, 2)
+        surface.force_generate_chunk_requests()
       end
       -- Not on biters: a settlement landed among nests could not build there (docs/campaign.md, biters).
       if clear and surface.count_entities_filtered{position = spot, radius = 60, type = "unit-spawner", limit = 1} > 0 then

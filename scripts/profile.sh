@@ -5,11 +5,11 @@
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SCENARIO="${1:-grow}"; SEED="${2:-12345}"; MINUTES="${3:-30}"
-"$REPO/scripts/sim.sh" "$SCENARIO" "$SEED" "$MINUTES" 10 > /dev/null 2>&1 || true
+"$REPO/scripts/sim.sh" "$SCENARIO" "$SEED" "$MINUTES" 10 > "$REPO/docs/sim/profile-$SCENARIO.log" 2>&1 || true
 SIM="$HOME/Library/Application Support/factorio-lp-sim/$SCENARIO-$SEED"
 csv="$SIM/profile.csv"
 "$FACTORIO" --config "$SIM/config/config.ini" --benchmark "$SIM/saves/sim.zip" \
-  --benchmark-ticks $((MINUTES * 3600)) --benchmark-runs 1 --benchmark-verbose wholeUpdate,scriptUpdate > "$csv" 2>&1
+  --benchmark-ticks $((${LP_BENCH:-$MINUTES} * 3600)) --benchmark-runs 1 --benchmark-verbose wholeUpdate,scriptUpdate > "$csv" 2>&1
 python3 - "$csv" <<'PY'
 import sys
 lines = open(sys.argv[1]).read().splitlines()
