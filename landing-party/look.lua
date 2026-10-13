@@ -1,5 +1,5 @@
 -- Each corporation's look beyond colour (docs/corporations.md): its floors (road and pad tiles, vanilla tiles
--- copied and tinted) and its logo (a decal on the ground: vanilla icons layered on a disc, tinted).
+-- copied and tinted) and the tiles of its logo mosaic (vanilla coloured concrete, unminable copies).
 local shared = require("shared")
 
 local out = {}
@@ -18,25 +18,12 @@ for corp, c in pairs(shared.CORPS) do
       table.insert(out, t)
     end
   end
-  local layers = {}
-  -- Painted, not stuck on: translucent (premultiplied alpha, colour scaled with it), flat glyphs only.
-  for _, l in ipairs(c.logo) do
-    local a = l[4] or 1
-    table.insert(layers, {filename = l[1], size = 64, scale = l[2],
-      tint = {r = l[3].r * a, g = l[3].g * a, b = l[3].b * a, a = a}})
-  end
-  table.insert(out, {
-    type = "simple-entity-with-owner", name = shared.variant(corp, "lp-logo"), hidden = true,
-    localised_name = c.name,
-    icon = c.logo[2][1], icon_size = 64,
-    flags = {"placeable-neutral", "placeable-off-grid", "not-on-map", "not-blueprintable", "not-deconstructable",
-      "not-flammable"},
-    selectable_in_game = false,
-    collision_mask = {layers = {}},
-    collision_box = {{-0.4, -0.4}, {0.4, 0.4}},
-    max_health = 1000,
-    render_layer = "decals",
-    picture = {layers = layers},
-  })
+end
+for letter, tile in pairs(shared.MOSAIC) do
+  local t = table.deepcopy(data.raw.tile[tile])
+  t.name = "lp-mosaic-" .. letter
+  t.minable = nil
+  t.placeable_by = nil
+  table.insert(out, t)
 end
 data:extend(out)

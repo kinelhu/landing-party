@@ -114,7 +114,8 @@ local function forget(b, pos, r)
 end
 
 local function scan(b)
-  local surface = b.lander.surface
+  local surface = game.surfaces[b.surface]
+  if not b.lander.valid then return end
   local sensors = {b.lander}
   for _, d in ipairs(b.depots) do if d.valid then table.insert(sensors, d) end end
   for _, r in ipairs(b.radars or {}) do if r.valid then table.insert(sensors, r) end end
@@ -140,12 +141,12 @@ end
 -- sensor was never raided until alarms fed the intel).
 function ops.sense_at(b, pos, r)
   ops.init(b)
-  sense(b, b.lander.surface, {x = pos.x or pos[1], y = pos.y or pos[2]}, r or FIELD_SIGHT)
+  sense(b, game.surfaces[b.surface], {x = pos.x or pos[1], y = pos.y or pos[2]}, r or FIELD_SIGHT)
 end
 
 -- Units in the field see around them (patrols, responses, the operation's own force).
 local function field_sight(b)
-  local surface = b.lander.surface
+  local surface = game.surfaces[b.surface]
   local seen = 0
   local lists = {b.patrol or {}, b.op and b.op.members or {}}
   for _, r in ipairs(b.raids or {}) do table.insert(lists, r.members) end
@@ -290,8 +291,8 @@ local function finish(b, outcome, trace, army)
     end
     if outcome == "aborted" then
       t.tried = (t.tried or 0) + 1
-      local seen = b.lander.surface.count_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS,
-        type = TURRETS, force = enemies(b.lander.force)}
+      local seen = game.surfaces[b.surface].count_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS,
+        type = TURRETS, force = enemies(game.forces[b.force])}
       t.defence = math.max(t.defence or 0, seen)
     end
   end
@@ -304,7 +305,7 @@ local function finish(b, outcome, trace, army)
   if t then
     local pos = {x = t.pos[1], y = t.pos[2]}
     local tick = game.tick
-    sense(b, b.lander.surface, pos, 40)
+    sense(b, game.surfaces[b.surface], pos, 40)
     for key, o in pairs(b.intel.targets) do
       if (o.pos[1] - pos.x) ^ 2 + (o.pos[2] - pos.y) ^ 2 <= 40 * 40 and o.seen < tick then b.intel.targets[key] = nil end
     end
@@ -339,8 +340,8 @@ local function launch(b, key, trace, army)
   -- Out of reach of the outermost turret, not of the target's centre (staged 34 from an assembler, a raid
   -- stood inside the range of the turrets on the walls 12 tiles out and lost 15 of 34 before attacking).
   local spread = 0
-  for _, e in pairs(b.lander.surface.find_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS, type = TURRETS,
-    force = enemies(b.lander.force)}) do
+  for _, e in pairs(game.surfaces[b.surface].find_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS, type = TURRETS,
+    force = enemies(game.forces[b.force])}) do
     spread = math.max(spread, math.sqrt((e.position.x - t.pos[1]) ^ 2 + (e.position.y - t.pos[2]) ^ 2))
   end
   local off = math.min(STAND_OFF + spread, len)
@@ -359,9 +360,9 @@ end
 -- A site for the mortar: from the target towards home (then at angles off that line), the first point beyond
 -- every known player turret's reach with one of them within the mortar's, on dry land.
 local function siege_site(b, t)
-  local s = b.lander.surface
+  local s = game.surfaces[b.surface]
   local h = home(b)
-  local foes = enemies(b.lander.force)
+  local foes = enemies(game.forces[b.force])
   local base = math.atan2(h.position.y - t.pos[2], h.position.x - t.pos[1])
   for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
     local a = base + turn
@@ -400,7 +401,7 @@ end
 local function launch_siege(b, key, site, trace, army)
   local t = b.intel.targets[key]
   local h = home(b)
-  local s = b.lander.surface
+  local s = game.surfaces[b.surface]
   local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {h.position.x + (site[1] - h.position.x) * 0.1,
     h.position.y + (site[2] - h.position.y) * 0.1}, 20, 0.5)
   local hauler = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
@@ -511,8 +512,8 @@ local function step(b, trace, army)
       -- A look from the staging point first: more turrets than the force can take, and it turns back before
       -- a shot is fired (four raiders sent at a target armed after they left all died attacking it).
       if t then
-        local seen = b.lander.surface.count_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS, type = TURRETS,
-          force = enemies(b.lander.force)}
+        local seen = game.surfaces[b.surface].count_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS, type = TURRETS,
+          force = enemies(game.forces[b.force])}
         -- What it sees now is the freshest word (a raid that had cleared the target on its way turned back
         -- on the defence it believed before).
         t.defence = seen
@@ -531,11 +532,11 @@ local function step(b, trace, army)
   elseif op.phase == "attack" then
     if b.razed > op.kills_at then op.kills_at, op.last_kill = b.razed, game.tick end
     local pos = t and t.pos or op.staging
-    local surface = b.lander.surface
+    local surface = game.surfaces[b.surface]
     local turrets = surface.count_entities_filtered{position = pos, radius = DEFENCE_RADIUS, type = TURRETS,
-      force = enemies(b.lander.force)}
+      force = enemies(game.forces[b.force])}
     local left = surface.count_entities_filtered{position = pos, radius = 16, type = TYPES,
-      force = enemies(b.lander.force)}
+      force = enemies(game.forces[b.force])}
     if n < 0.5 * op.launched and turrets > 0 then return finish(b, "aborted", trace, army) end
     if game.tick - op.last_kill > NO_KILL_TICKS then return finish(b, "aborted", trace, army) end
     if left == 0 then

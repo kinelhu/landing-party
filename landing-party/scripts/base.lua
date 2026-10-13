@@ -183,7 +183,9 @@ army.on_deliver = function(b, cargo) if base.on_export then base.on_export(b, ca
 function base.on_damaged(e)
   local own = storage.owner[e.unit_number]
   local b = own and storage.bases[own.base]
-  if b then army.alarm(b, e.position, trace) end
+  -- A fallen settlement raises no alarm (damage in the tick its lander died crashed the intel, which read the
+  -- surface through the dead lander).
+  if b and not b.fallen and b.lander.valid then army.alarm(b, e.position, trace) end
 end
 
 function base.network(b)
@@ -260,27 +262,26 @@ local function pave(b, tiles, floor)
   b.road_tiles = b.road_tiles + #out
 end
 
--- The corporation's logo stamped on the ground, on clear ground near pos (a decal: nothing collides with it,
--- buildings hide it). It cannot be destroyed: when a settlement falls, its logos stay with the ruins.
+-- The corporation's logo laid in the floor near pos: a mosaic of coloured concrete tiles (shared.CORPS logo),
+-- on clear ground (nothing collides with tiles; buildings would hide it). Tiles outlast the buildings: when a
+-- settlement falls, its logos stay with the ruins.
 local function stamp(b, surface, pos)
-  local probe = shared.variant(b.corp, "lp-depot")
-  local p = surface.find_non_colliding_position(probe, pos, 10, 1)
+  local rows = shared.CORPS[b.corp].logo
+  local n = #rows
+  local p = surface.find_non_colliding_position(shared.variant(b.corp, "lp-depot"), pos, 12, 1)
   if not p then return end
-  -- On its own square of the corporation's pad concrete: stamped on a floor, never floating on sand.
+  local x0, y0 = math.floor(p.x - n / 2), math.floor(p.y - n / 2)
   local tiles = {}
-  local pad = shared.variant(b.corp, "lp-pad")
-  for x = math.floor(p.x) - 3, math.floor(p.x) + 2 do
-    for y = math.floor(p.y) - 3, math.floor(p.y) + 2 do
-      local t = surface.get_tile(x, y)
-      if t.valid and not t.collides_with("water_tile") then table.insert(tiles, {name = pad, position = {x, y}}) end
+  for r, row in ipairs(rows) do
+    for c = 1, #row do
+      local t = surface.get_tile(x0 + c - 1, y0 + r - 1)
+      if t.valid and not t.collides_with("water_tile") then
+        table.insert(tiles, {name = "lp-mosaic-" .. row:sub(c, c), position = {x0 + c - 1, y0 + r - 1}})
+      end
     end
   end
   surface.set_tiles(tiles, true, false, true, false)
-  local logo = surface.create_entity{name = shared.variant(b.corp, "lp-logo"), position = p, force = force(b)}
-  if logo then
-    logo.destructible = false
-    b.logos = (b.logos or 0) + 1
-  end
+  b.logos = (b.logos or 0) + 1
 end
 base.stamp = stamp
 

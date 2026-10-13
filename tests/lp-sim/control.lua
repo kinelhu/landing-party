@@ -1074,6 +1074,11 @@ scenarios.fall = function()
       storage.id, lander.position.x, lander.position.y, st.gens, st.turrets, st.garrison, st.patrol, tostring(S.other),
       S.other_before))
     lander.die("player")
+    -- A building of the fallen settlement hit in the same tick (it crashed the intel, user 2026-10-13).
+    local hit = surface().find_entities_filtered{force = FORCE, type = {"electric-turret", "assembling-machine"},
+      position = S.lander_at, radius = 60, limit = 1}[1]
+    if hit then hit.damage(10, "player", "physical") end
+    S.hit = hit ~= nil
   end)
   schedule(STRIKE + 90 * 60, function()
     local st = lp("stats", storage.id)
@@ -1571,9 +1576,11 @@ scenarios.rivals = function()
     end
     check("rivals: Grubstake builds its own prototypes", own > 20 and plain == 0, own .. " its own, " .. plain .. " plain")
     local gravel = surface().count_tiles_filtered{name = "lp-grubstake-road"}
-    local logos = surface().count_entities_filtered{name = {"lp-logo", "lp-grubstake-logo"}}
-    check("rivals: their own floors and logos", gravel > 50 and surface().count_entities_filtered{name = "lp-grubstake-logo"} > 0
-      and surface().count_entities_filtered{name = "lp-logo"} > 0, gravel .. " gravel tiles, " .. logos .. " logos")
+    -- Logos are concrete mosaics: Grubstake's yellow pick, Serenity's cyan shield.
+    local picks = surface().count_tiles_filtered{name = "lp-mosaic-Y"}
+    local shields = surface().count_tiles_filtered{name = "lp-mosaic-C"}
+    check("rivals: their own floors and logos", gravel > 50 and picks > 0 and shields > 0,
+      gravel .. " gravel tiles, logo tiles " .. picks .. " pick and " .. shields .. " shield")
     check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
       a.force .. " and " .. (b and b.force or "none"))
     check("rivals: they raided each other", against > 0, against .. " operations against a rival")

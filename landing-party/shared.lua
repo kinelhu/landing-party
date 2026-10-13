@@ -5,25 +5,30 @@ local shared = {}
 -- (biters included) unless a cease-fire says otherwise. A settlement belongs to one.
 -- tint: the colour their buildings and units are drawn in (docs/corporations.md); lamp: their lamps' light.
 -- tints: a colour per kind where it differs from tint. road, pad: the vanilla tiles their floors are made of
--- (and a tint). logo: flat glyphs layered on a disc, bottom first, each {sprite file, scale, colour, opacity}:
--- painted on its own square of pad concrete (docs/corporations.md section 2).
+-- (and a tint). logo: a mosaic of coloured concrete, rows of letters (shared.MOSAIC), laid as floor tiles
+-- (icons scaled up looked blurry and pasted on, user 2026-10-13).
 shared.CORPS = {
   grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     road = {tile = "stone-path", tint = {r = 0.95, g = 0.78, b = 0.5}}, pad = {tile = "brown-refined-concrete"},
-    logo = {{"__base__/graphics/icons/shapes/shape-circle.png", 2.2, {r = 0.3, g = 0.17, b = 0.08}, 0.8},
-      {"__base__/graphics/icons/signal/signal-mining.png", 1.4, {r = 1, g = 0.82, b = 0.5}, 0.85}}},
+    -- A pick: yellow head, orange handle, on brown.
+    logo = {"BBBBBBBBB", "BYYYYYYYB", "BYBBOBBYB", "BBBBOBBBB", "BBBBOBBBB", "BBBBOBBBB", "BBBBOBBBB", "BBBBOBBBB",
+      "BBBBBBBBB"}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
-    -- Two colours (user, 2026-10-13: the uniform blue-grey "feels strange"): clean pale grey for what is built
-    -- to stand (walls, turrets, poles, lamps, mines, roads), slate-teal for machines, vehicles and units.
-    tints = {["lp-wall"] = {r = 0.93, g = 0.96, b = 1, a = 1}, ["lp-turret"] = {r = 0.93, g = 0.96, b = 1, a = 1},
-      ["lp-pylon"] = {r = 0.93, g = 0.96, b = 1, a = 1}, ["lp-lamp"] = {r = 0.93, g = 0.96, b = 1, a = 1},
-      ["lp-mine"] = {r = 0.93, g = 0.96, b = 1, a = 1}},
+    -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
+    -- they read as vanilla; all slate-teal felt uniform); slate-teal for machines, vehicles and units.
+    tints = {["lp-wall"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-turret"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
+      ["lp-pylon"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-lamp"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
+      ["lp-mine"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}},
     road = {tile = "refined-concrete"}, pad = {tile = "refined-concrete"},
-    logo = {{"__base__/graphics/icons/shapes/shape-circle.png", 2.2, {r = 0.9, g = 0.93, b = 0.95}, 0.8},
-      {"__base__/graphics/icons/signal/signal-heart.png", 1.2, {r = 0.3, g = 0.7, b = 0.8}, 0.9}}},
+    -- A shield with a cross: cyan and white, a black border.
+    logo = {"KKKKKKKKK", "KWWWWWWWK", "KWCCCCCWK", "KWCCWCCWK", "KWCWWWCWK", "KWCCWCCWK", "KWWCCCWWK", "KWWWCWWWK",
+      "KKKKKKKKK"}},
 }
+-- Mosaic colours: letter -> vanilla tile copied (unminable) as lp-mosaic-<letter>; W is plain refined concrete.
+shared.MOSAIC = {B = "brown-refined-concrete", Y = "yellow-refined-concrete", O = "orange-refined-concrete",
+  K = "black-refined-concrete", C = "cyan-refined-concrete", W = "refined-concrete"}
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad"}
 shared.DEFAULT_CORP = "serenity"
@@ -44,7 +49,6 @@ function shared.kind_of(name)
   end
   return name
 end
--- Logos: "lp-logo" is the default corporation's; shared.variant names the others'.
 -- Every corporation's prototype of a kind (or of each kind in a list), for queries over all of them.
 function shared.variants(kinds)
   if type(kinds) == "string" then kinds = {kinds} end
