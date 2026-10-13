@@ -135,10 +135,23 @@ local function sense_nests(b, surface)
   end
 end
 
+-- Encroachment (Serenity's temper, "Please remain behind the line"): a player building inside its territory
+-- provokes it as an attack does.
+local function encroachment(b, surface)
+  if not (shared.CORPS[b.corp].temper or {}).provoked_only or not b.claim_radius then return end
+  for _, f in ipairs(enemies(game.forces[b.force])) do
+    if not shared.is_corp(f.name) and surface.count_entities_filtered{position = {b.origin.x, b.origin.y},
+      radius = b.claim_radius, force = f, type = TYPES, limit = 1} > 0 then
+      ops.provoke(b.force, f.name)
+    end
+  end
+end
+
 local function scan(b)
   local surface = game.surfaces[b.surface]
   if not b.lander.valid then return end
   sense_nests(b, surface)
+  encroachment(b, surface)
   local sensors = {b.lander}
   for _, d in ipairs(b.depots) do if d.valid then table.insert(sensors, d) end end
   for _, r in ipairs(b.radars or {}) do if r.valid then table.insert(sensors, r) end end
@@ -402,7 +415,7 @@ local function finish(b, outcome, trace, army)
   end
   b.ops_log = b.ops_log or {}
   table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner, outcome = outcome,
-    launched = op.launched,
+    launched = op.launched, started = op.started,
     back = alive(op), shells = op.shells_fired, site = op.site})
   if #b.ops_log > 10 then table.remove(b.ops_log, 1) end
   trace(b, string.format("%s %s: %d of %d came back (target %s)", op.kind, outcome, alive(op), op.launched,

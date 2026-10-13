@@ -1870,15 +1870,16 @@ scenarios.hq = function()
   end)
 end
 
--- Temper: Serenity never strikes the player first. With a depot and undefended relays and a barracks within its
--- sight, it raids nothing of the player's while unprovoked; one shot at one of its buildings provokes it, and it
--- comes.
+-- Temper: Serenity never strikes the player first. With a depot and undefended relays within its sight but
+-- outside its territory, it raids nothing of the player's while unprovoked; one shot at one of its buildings
+-- provokes it, and it comes.
 scenarios.temper = function()
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
   schedule(120, function()
     local o = lp("stats", storage.id).origin
     local len = math.sqrt(o.x * o.x + o.y * o.y)
-    local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+    -- Within its sight (200) but outside its territory: inside it, encroachment provokes it (by design).
+    local c = {math.floor(o.x - o.x / len * 185), math.floor(o.y - o.y / len * 185)}
     flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
     for k = -1, 1 do surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"} end
   end)
@@ -1889,10 +1890,19 @@ scenarios.temper = function()
   end)
   schedule(END - 60, function()
     local st = lp("stats", storage.id)
-    local after = 0
-    for _, l in ipairs(st.ops.log) do if l.owner == "player" then after = after + 1 end end
-    check("temper: unprovoked, Serenity left the player alone", S.before == 0, S.before .. " operations in 15 minutes")
-    check("temper: provoked, it came", after > 0 or (st.ops.op ~= nil), after .. " operations against the player after")
+    local provoked = (lp("corp", "serenity").provoked or {}).player
+    local early, against = 0, 0
+    for _, l in ipairs(st.ops.log) do
+      if l.owner == "player" then
+        against = against + 1
+        if not provoked or l.started < provoked then early = early + 1 end
+      end
+    end
+    -- Never first: every operation against the player started after it was provoked (by encroachment on its
+    -- territory or by the shot), and once provoked it came.
+    check("temper: no operation against the player before it was provoked", early == 0,
+      early .. " early of " .. against .. "; provoked at " .. tostring(provoked))
+    check("temper: provoked, it came", against > 0 or st.ops.op ~= nil, against .. " operations against the player")
   end)
 end
 
@@ -2191,7 +2201,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true}
+  local TEMPERS = {temper = true, strip = true, contact = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 

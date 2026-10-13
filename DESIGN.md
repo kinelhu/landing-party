@@ -560,9 +560,12 @@ feedstock (lost if it dies on the way). `temper` (unprovoked, no operation again
 minutes; one shot at a pylon, then one came) and `strip` (two camps, 440 ore taken from the patch, 408 delivered).
 Two lessons: the thief first raided the drills and had nothing to strip (drills are now off its raid list);
 strips came after raids in the choice and never happened (a thief now strips first). Tests of operations'
-mechanics run with every corporation provoked from the start; `temper` and `strip` without. Consequence for
-pacing, still to measure with the timelines: a region whose first corporation is Serenity stays quiet until the
-player strikes it; Grubstake's pressure is economic (stripped ore, soft targets).
+mechanics run with every corporation provoked from the start; `temper` and `strip` without. A region whose first
+corporation is Serenity would stay quiet until the player struck it, so encroachment provokes too ("Please remain
+behind the line"): a player building inside its territory counts as an attack. The first-contact timelines, with
+no provocation scripted, still see Serenity come (the player's outpost lies inside its growing territory): 12, 11
+and 9 operations for the passive, robots and walled players in 2 hours, production 16, 93 and 94 of 94 standing.
+`temper` checks that no operation against the player starts before the provocation, whatever caused it.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a
