@@ -294,6 +294,32 @@ local function report(beacon, p, squad)
   }
 end
 
+-- Hand orders (the command tool). A unit picked by hand obeys its order over its beacon until released.
+--   move        go there ignoring fire, then hold there
+--   attackmove  go there fighting anything on the way, then hold
+--   attack      attack a faction entity; when it falls, hold where it stood
+local function manual(t)
+  local m = t.manual
+  local key = "m" .. m.seq
+  if m.kind == "attack" then
+    if m.target and m.target.valid then
+      return order(t, {type = defines.command.attack, target = m.target, distraction = defines.distraction.by_enemy}, key)
+    end
+    m.kind = "hold"
+  end
+  if m.kind == "move" then
+    order(t, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
+      {type = defines.command.go_to_location, destination = m.pos, radius = 3, distraction = defines.distraction.none},
+      {type = defines.command.wander, radius = 5, distraction = defines.distraction.by_enemy}}}, key)
+  elseif m.kind == "attackmove" then
+    order(t, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
+      {type = defines.command.go_to_location, destination = m.pos, radius = 3, distraction = defines.distraction.by_anything},
+      {type = defines.command.wander, radius = 6, distraction = defines.distraction.by_enemy}}}, key)
+  else
+    order(t, stay(m.pos, 5, defines.distraction.by_enemy), key .. "h")
+  end
+end
+
 local function lead()
   local objectives = {}
   local plans = {}
@@ -324,6 +350,9 @@ local function lead()
         u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
         t.key = "offline"
       end
+    elseif t.manual then
+      t.offline = nil
+      manual(t)
     else
       t.offline = nil
       local beacon = t.beacon and storage.cmd.beacons[t.beacon]
@@ -403,6 +432,77 @@ local function repair()
       end
     end
   end
+end
+
+-- The command tool's actions (control.lua passes the selection events; tests call these directly).
+local function rings(player_index)
+  storage.cmd.rings = storage.cmd.rings or {}
+  for _, r in ipairs(storage.cmd.rings[player_index] or {}) do r.destroy() end
+  local out = {}
+  storage.cmd.rings[player_index] = out
+  if not game.get_player(player_index) then return end
+  for un in pairs(storage.cmd.selected[player_index] or {}) do
+    local t = storage.cmd.troopers[un]
+    if t and t.unit.valid then
+      table.insert(out, rendering.draw_circle{color = {0.4, 1, 0.4, 0.8}, radius = t.unit.name == "lp-battle-tank" and 1.6 or 0.7,
+        width = 2, filled = false, target = t.unit, surface = t.unit.surface, players = {player_index}, draw_on_ground = true})
+    end
+  end
+end
+
+function command.select(player_index, units)
+  storage.cmd.selected = storage.cmd.selected or {}
+  local sel, n = {}, 0
+  for _, u in pairs(units) do
+    if u.valid and storage.cmd.troopers[u.unit_number] then sel[u.unit_number] = true; n = n + 1 end
+  end
+  storage.cmd.selected[player_index] = sel
+  rings(player_index)
+  return n
+end
+
+function command.release(player_index, units)
+  storage.cmd.selected = storage.cmd.selected or {}
+  local sel = storage.cmd.selected[player_index] or {}
+  local n = 0
+  for _, u in pairs(units) do
+    local t = u.valid and storage.cmd.troopers[u.unit_number]
+    if t then t.manual, t.key = nil, nil; sel[u.unit_number] = nil; n = n + 1 end
+  end
+  rings(player_index)
+  return n
+end
+
+-- An order for the selection: on a faction entity, attack it; elsewhere, move (or attack-move) to the middle
+-- of the area clicked or dragged.
+function command.order(player_index, surface, area, attackmove)
+  storage.cmd.selected = storage.cmd.selected or {}
+  local sel = storage.cmd.selected[player_index] or {}
+  local lt, rb = area.left_top or area[1], area.right_bottom or area[2]
+  local pos = {x = ((lt.x or lt[1]) + (rb.x or rb[1])) / 2, y = ((lt.y or lt[2]) + (rb.y or rb[2])) / 2}
+  local target = surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
+    force = shared.FORCE, type = {"unit", "spider-unit", "electric-turret", "artillery-turret", "container",
+      "electric-energy-interface", "radar", "assembling-machine", "mining-drill", "generator"}, limit = 1}[1]
+  storage.cmd.seq = (storage.cmd.seq or 0) + 1
+  local n = 0
+  for un in pairs(sel) do
+    local t = storage.cmd.troopers[un]
+    if t and t.unit.valid then
+      t.manual = {kind = target and "attack" or (attackmove and "attackmove" or "move"), pos = pos, target = target,
+        seq = storage.cmd.seq}
+      t.key = nil
+      manual(t)
+      n = n + 1
+    else
+      sel[un] = nil
+    end
+  end
+  if n > 0 and game.get_player(player_index) then
+    rendering.draw_circle{color = target and {1, 0.3, 0.2} or (attackmove and {1, 0.6, 0.2} or {0.4, 0.7, 1}),
+      radius = 1.5, width = 3, filled = false, target = target or pos, surface = surface, players = {player_index},
+      time_to_live = 45, draw_on_ground = true}
+  end
+  return n, target and "attack" or (attackmove and "attackmove" or "move")
 end
 
 function command.tick(tick)

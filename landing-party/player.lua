@@ -92,6 +92,30 @@ data:extend({
     results = {{type = "item", name = "lp-battle-tank-order", amount = 1}}},
 })
 
+-- The command tool (scripts/command.lua): drag over your units to select them (shift: release them to their
+-- beacons); right-click or right-drag on the ground to move them, on a faction building to attack it (shift:
+-- attack-move). For players who would rather not wire a beacon; beacons keep every unit not picked by hand.
+local UNIT_NAMES = {}
+for _, name in pairs(shared.ORDERS) do table.insert(UNIT_NAMES, name) end
+table.sort(UNIT_NAMES)
+data:extend({
+  {type = "selection-tool", name = "lp-command-tool", icon = "__base__/graphics/icons/spidertron-remote.png",
+    flags = {"only-in-cursor", "not-stackable", "spawnable"}, hidden = true, stack_size = 1, subgroup = "other",
+    select = {border_color = {0.4, 1, 0.4}, cursor_box_type = "copy", mode = {"same-force", "any-entity"},
+      entity_filters = UNIT_NAMES},
+    alt_select = {border_color = {1, 0.8, 0.3}, cursor_box_type = "copy", mode = {"same-force", "any-entity"},
+      entity_filters = UNIT_NAMES},
+    reverse_select = {border_color = {0.4, 0.7, 1}, cursor_box_type = "not-allowed", mode = {"nothing"}},
+    alt_reverse_select = {border_color = {1, 0.4, 0.3}, cursor_box_type = "not-allowed", mode = {"nothing"}}},
+  {type = "shortcut", name = "lp-command-tool", order = "z[landing-party]", action = "spawn-item",
+    item_to_spawn = "lp-command-tool", associated_control_input = "lp-command-tool",
+    technology_to_unlock = "lp-command-bandwidth-1", unavailable_until_unlocked = true,
+    icon = "__base__/graphics/icons/shortcut-toolbar/mip/new-rts-tool-x56.png", icon_size = 56,
+    small_icon = "__base__/graphics/icons/shortcut-toolbar/mip/new-rts-tool-x24.png", small_icon_size = 24},
+  {type = "custom-input", name = "lp-command-tool", key_sequence = "ALT + C", action = "spawn-item",
+    item_to_spawn = "lp-command-tool", consuming = "game-only"},
+})
+
 -- Command bandwidth: how many relays count. Level 1 unlocks the army and grants the first command core.
 local function tech(level, prereq, packs, count, effects, extra)
   local t = {type = "technology", name = "lp-command-bandwidth-" .. level, icon = "__base__/graphics/technology/radar.png",

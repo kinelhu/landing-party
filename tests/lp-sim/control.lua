@@ -1364,6 +1364,61 @@ scenarios.bombard = function()
   end)
 end
 
+-- Control: the command tool's orders, without a mouse. Six troopers hold at their beacon. Picked by hand and
+-- ordered 60 tiles east they go there, and the beacon's A (with a faction turret in its reach) does not pull
+-- them; clicked on that turret they destroy it; released, they return to the beacon's command.
+scenarios.control = function()
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  local function near(x, y, r)
+    return surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {x, y}, radius = r}
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -60, 110, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.beacon = put("lp-rally-beacon", 10.5, -15.5)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 6}
+    -- A faction turret 45 tiles from the beacon, powered on its own: in the beacon's reach.
+    S.turret = put("lp-turret", 55.5, -15.5, FORCE)
+    S.turret_max = S.turret.max_health
+    put("electric-energy-interface", 59, -15, FORCE)
+    put("medium-electric-pole", 57.5, -13.5, FORCE)
+  end)
+  schedule(60 + 30 * 60, function()
+    S.picked = lp("debug_select", {{-10, -30}, {30, 10}})
+    lp("debug_order", {{10, 14}, {12, 16}}, false)      -- move: to 11,15, south, away from the turret
+    -- The beacon says A meanwhile: hand-picked units must not answer it.
+    S.beacon.get_or_create_control_behavior().get_section(1).filters =
+      {{value = {type = "virtual", name = "signal-A", quality = "normal"}, min = 1}}
+  end)
+  schedule(60 + 60 * 60, function()
+    S.moved = near(11, 15, 8)
+    S.turret_hp = S.turret.valid and S.turret.health or 0
+    lp("debug_order", {{55, -16}, {56, -15}}, false)    -- a click on the turret: attack it
+  end)
+  schedule(60 + 120 * 60, function()
+    S.destroyed = not S.turret.valid
+    S.released = lp("debug_release", {{-50, -60}, {120, 40}})
+    S.beacon.get_or_create_control_behavior().get_section(1).filters = {}
+  end)
+  schedule(60 + 160 * 60, function()
+    check("control: six picked", S.picked == 6, tostring(S.picked))
+    check("control: they moved where clicked", S.moved >= 5, S.moved .. " of 6 there")
+    check("control: the beacon's A did not pull them", S.turret_hp == S.turret_max,
+      string.format("turret at %.0f before the attack order", S.turret_hp))
+    check("control: a click on the turret destroyed it", S.destroyed, tostring(S.destroyed))
+    check("control: released, they returned to the beacon", S.released == near(10.5, -15.5, 14) and S.released > 0,
+      S.released .. " released, " .. near(10.5, -15.5, 14) .. " at the beacon")
+  end)
+end
+
 -- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
 -- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
 scenarios.duel = function()

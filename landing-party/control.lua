@@ -38,6 +38,21 @@ script.on_event(defines.events.on_entity_damaged, function(e)
   if e.force and e.force.name ~= shared.FORCE then base.on_damaged(e.entity) end
 end, BUILDINGS)
 
+-- The command tool: select (drag), release (shift-drag), order (right-click or right-drag; shift: attack-move).
+local TOOL = "lp-command-tool"
+script.on_event(defines.events.on_player_selected_area, function(e)
+  if e.item == TOOL then command.select(e.player_index, e.entities) end
+end)
+script.on_event(defines.events.on_player_alt_selected_area, function(e)
+  if e.item == TOOL then command.release(e.player_index, e.entities) end
+end)
+script.on_event(defines.events.on_player_reverse_selected_area, function(e)
+  if e.item == TOOL then command.order(e.player_index, e.surface, e.area, false) end
+end)
+script.on_event(defines.events.on_player_alt_reverse_selected_area, function(e)
+  if e.item == TOOL then command.order(e.player_index, e.surface, e.area, true) end
+end)
+
 -- Deaths: the faction's buildings are queued for rebuild, its units counted lost, and what its units
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
@@ -148,6 +163,15 @@ remote.add_interface("landing-party", {
   set_trace = function(on) storage.trace = on end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
+  -- Tests only: the command tool without a mouse (player index 1 need not exist).
+  debug_select = function(area)
+    local s = game.surfaces[1]
+    return command.select(1, s.find_entities_filtered{area = area, force = "player", type = "unit"})
+  end,
+  debug_release = function(area)
+    return command.release(1, game.surfaces[1].find_entities_filtered{area = area, force = "player", type = "unit"})
+  end,
+  debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
   debug_depot = function(id, parts)

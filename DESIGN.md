@@ -22,6 +22,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
 | Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
 | Field repair: 2% health a second within 30 tiles of a powered barracks | built | `circuit` |
+| Command tool: box-select, move, attack, attack-move, release to beacons | built (headless) | `control` |
 | Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Capture of mining outposts by holding | built | `army` |
@@ -288,6 +289,12 @@ The aim: the player answers the faction with factory output, not clicks.
   drags a box over the player's units, also in map view; a right-drag or click on ground moves them there,
   shift attack-moves, a click on a faction building attacks it. Selected units obey the direct order over
   their beacon until released back, re-attaching to the nearest beacon. Bandwidth and leashes still apply.
+  **Built:** the command tool (shortcut with the vanilla RTS icon, unlocked with bandwidth 1; ALT+C). Drag:
+  select (green rings, seen by that player only); shift-drag: release; right-click or right-drag: move (go
+  there ignoring fire, then hold), or attack a faction entity clicked (then hold where it stood); shift-right:
+  attack-move. A marker flashes where the order went. `control`: six picked, moved where clicked while the
+  beacon said A with a turret in reach (ignored), destroyed the turret clicked, returned to the beacon when
+  released (both key checks seen failing with hand orders off). Not yet tried with a real mouse.
 - **Capture by holding**: a faction mining or power node with player units on its ground and none of the
   faction's for a minute becomes the player's (its drills mine for the player, its generators feed the
   player's grid). No capture by damage threshold (that is Proliferation's).
