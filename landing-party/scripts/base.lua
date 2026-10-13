@@ -115,8 +115,6 @@ function base.land(surface, pos, opts)
     b.uplink = surface.create_entity{name = shared.variant(corp, "lp-uplink"), position = uplink_at, force = f}
   end
   b.origin = {x = math.floor(lander.position.x), y = math.floor(lander.position.y)}
-  base.stamp(b, surface, {lander.position.x, lander.position.y + 6})
-  if b.uplink then base.stamp(b, surface, {b.uplink.position.x, b.uplink.position.y + 6}) end
   storage.bases[id] = b
   site.scan_init(b, SEARCH)
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
@@ -254,7 +252,8 @@ local function pave(b, tiles, floor)
   local out = {}
   for _, t in ipairs(tiles) do
     local tile = surface.get_tile(t[1], t[2])
-    if tile.valid and tile.name ~= name and not tile.collides_with("water_tile") then
+    -- Never over a logo (a matured yard's paving erased the mosaics laid when the block opened).
+    if tile.valid and tile.name ~= name and tile.name:sub(1, 10) ~= "lp-mosaic-" and not tile.collides_with("water_tile") then
       table.insert(out, {name = name, position = t})
     end
   end
@@ -262,15 +261,12 @@ local function pave(b, tiles, floor)
   b.road_tiles = b.road_tiles + #out
 end
 
--- The corporation's logo laid in the floor near pos: a mosaic of coloured concrete tiles (shared.CORPS logo),
--- on clear ground (nothing collides with tiles; buildings would hide it). Tiles outlast the buildings: when a
--- settlement falls, its logos stay with the ruins.
+-- The corporation's logo laid in the floor, centred on pos (a spot the block template reserves): a mosaic of
+-- coloured concrete (shared.CORPS logo). Tiles outlast the buildings: a fallen settlement's logos stay.
 local function stamp(b, surface, pos)
   local rows = shared.CORPS[b.corp].logo
   local n = #rows
-  local p = surface.find_non_colliding_position(shared.variant(b.corp, "lp-depot"), pos, 12, 1)
-  if not p then return end
-  local x0, y0 = math.floor(p.x - n / 2), math.floor(p.y - n / 2)
+  local x0, y0 = math.floor(pos[1] - n / 2), math.floor(pos[2] - n / 2)
   local tiles = {}
   for r, row in ipairs(rows) do
     for c = 1, #row do
@@ -304,7 +300,6 @@ local function place(b, job)
       time_to_live = BUILD_TICKS}
   end
   if job.name == "lp-pylon" then join(e) end
-  if job.name == "lp-depot" or job.name == "lp-launchpad" then stamp(b, surface, {e.position.x, e.position.y + 4}) end
   if job.name == "lp-pylon" and base.network(b) and e.electric_network_id ~= base.network(b) then
     trace(b, string.format("pylon at %.1f,%.1f did not join the network", e.position.x, e.position.y))
   end
@@ -355,9 +350,10 @@ end
 local function build(b)
   if rebuild(b) then return end
   -- Road tiles cost nothing and take no build step.
-  while b.queue[1] and b.queue[1].tiles do
+  -- Floors and logos cost nothing and take no build step.
+  while b.queue[1] and (b.queue[1].tiles or b.queue[1].logo) do
     local job = table.remove(b.queue, 1)
-    pave(b, job.tiles, job.floor)
+    if job.logo then stamp(b, game.surfaces[b.surface], job.pos) else pave(b, job.tiles, job.floor) end
   end
   local job = b.queue[1]
   if not job then return end
@@ -385,7 +381,7 @@ local function build(b)
   -- last job was paving was never marked, so it could never be captured, siege seed 777).
   local more = false
   for _, q in ipairs(b.queue) do
-    if q.module == job.module and not q.tiles then more = true; break end
+    if q.module == job.module and not q.tiles and not q.logo then more = true; break end
   end
   if not more and not job.module.built then
     job.module.built = true

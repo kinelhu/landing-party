@@ -25,9 +25,13 @@ blocks.gen = {
   {fixed = {P}, slots = {gen(5, 4), gen(14, 4), gen(5, 7), gen(14, 7), gen(5, 12), gen(14, 12), gen(5, 15), gen(14, 15)}},
 }
 
+-- "logo": where the corporation's mosaic is laid (7x7, centred there, always upright), in the block's open yard;
+-- the pylon moves to the edge so it does not stand on it.
 blocks.depot = {
-  {fixed = {P, {"lp-depot", 9, 5}, {"lp-turret", 5, 14}, {"lp-turret", 14, 14}}, slots = {}},
-  {fixed = {P, {"lp-depot", 5, 13}, {"lp-turret", 14, 5}, {"lp-turret", 14, 14}}, slots = {}},
+  {fixed = {{"lp-pylon", 2.5, 9.5}, {"lp-depot", 9, 5}, {"logo", 9.5, 12.5}, {"lp-turret", 5, 14}, {"lp-turret", 14, 14}},
+    slots = {}},
+  {fixed = {{"lp-pylon", 2.5, 9.5}, {"lp-depot", 5, 13}, {"logo", 9.5, 6.5}, {"lp-turret", 14, 5}, {"lp-turret", 14, 14}},
+    slots = {}},
 }
 
 -- A hub's hard point: its own generators, so cutting its lines does not silence its turrets.
@@ -36,10 +40,12 @@ blocks.compound = {
   {fixed = {P, gen(5, 9), gen(14, 9), gen(9, 5), gen(9, 14)}, slots = {}},
 }
 
--- The landing pad: two cells and the road between them (W x SIZE), the lander at its centre.
+-- The landing pad: two cells and the road between them (W x SIZE), the lander at its centre (its box spans
+-- about x 12 to 28), a logo on either side of it.
 blocks.PAD_W = 2 * blocks.SIZE + blocks.ROAD
 blocks.pad = {
-  {fixed = {{"lp-pylon", 20.5, 15.5}, {"lp-pylon", 5.5, 9.5}, {"lp-pylon", 34.5, 9.5}}, slots = {}},
+  {fixed = {{"lp-pylon", 20.5, 15.5}, {"lp-pylon", 2.5, 9.5}, {"lp-pylon", 37.5, 9.5}, {"logo", 7.5, 9.5},
+    {"logo", 33.5, 9.5}}, slots = {}},
 }
 
 -- A picket: radar and two turrets in a small walled square, off the grid, facing the threat.

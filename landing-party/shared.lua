@@ -11,9 +11,8 @@ shared.CORPS = {
   grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     road = {tile = "stone-path", tint = {r = 0.95, g = 0.78, b = 0.5}}, pad = {tile = "brown-refined-concrete"},
-    -- A pick: yellow head, orange handle, on brown.
-    logo = {"BBBBBBBBB", "BYYYYYYYB", "BYBBOBBYB", "BBBBOBBBB", "BBBBOBBBB", "BBBBOBBBB", "BBBBOBBBB", "BBBBOBBBB",
-      "BBBBBBBBB"}},
+    -- A pick: yellow head, orange handle, on brown, a black border (7x7; brown on brown did not read).
+    logo = {"KKKKKKK", "KYYYYYK", "KYBOBYK", "KBBOBBK", "KBBOBBK", "KBBOBBK", "KKKKKKK"}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -22,9 +21,8 @@ shared.CORPS = {
       ["lp-pylon"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-lamp"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
       ["lp-mine"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}},
     road = {tile = "refined-concrete"}, pad = {tile = "refined-concrete"},
-    -- A shield with a cross: cyan and white, a black border.
-    logo = {"KKKKKKKKK", "KWWWWWWWK", "KWCCCCCWK", "KWCCWCCWK", "KWCWWWCWK", "KWCCWCCWK", "KWWCCCWWK", "KWWWCWWWK",
-      "KKKKKKKKK"}},
+    -- A shield with a white cross, cyan, on black.
+    logo = {"KKKKKKK", "KCCCCCK", "KCCWCCK", "KCWWWCK", "KCCWCCK", "KKCCCKK", "KKKCKKK"}},
 }
 -- Mosaic colours: letter -> vanilla tile copied (unminable) as lp-mosaic-<letter>; W is plain refined concrete.
 shared.MOSAIC = {B = "brown-refined-concrete", Y = "yellow-refined-concrete", O = "orange-refined-concrete",

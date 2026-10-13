@@ -142,7 +142,11 @@ local function open(b, hub, role, x0, y0, w, h, cells)
   for _, e in ipairs(v.fixed) do
     local pos = at(e)
     if e[1] == "lp-pylon" then layout.connect(b, pos[1], pos[2], block) end
-    push(b, {name = e[1], pos = pos, module = block})
+    if e[1] == "logo" then
+      push(b, {logo = true, pos = pos, module = block})
+    else
+      push(b, {name = e[1], pos = pos, module = block})
+    end
   end
   return block
 end
