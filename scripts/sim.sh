@@ -49,6 +49,10 @@ echo "METRIC ms_per_tick $avg" >> "$out/results.txt"
 dest="$REPO/docs/sim/$RUN"
 mkdir -p "$dest"
 cp "$out/decisions.txt" "$out/sim.jsonl" "$out/results.txt" "$dest/"
+if [ -s "$out/timeline.jsonl" ]; then
+  cp "$out/timeline.jsonl" "$dest/"
+  uv run --quiet --with matplotlib python3 "$REPO/scripts/timeline.py" "$dest" > /dev/null
+fi
 uv run --quiet --with matplotlib python3 "$REPO/scripts/plot.py" "$dest/sim.jsonl" "$dest" > /dev/null
 if [ -s "$out/faction.jsonl" ]; then
   cp "$out/faction.jsonl" "$dest/"

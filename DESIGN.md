@@ -450,6 +450,25 @@ playthrough baseline. Also adopted from the review: garrison roles and escalatin
 as targets; the landing as an event; the settlement readable in game. Parked: the uplink fight, rival
 corporations, more convoy and interceptor work.
 
+## First contact: the baseline (2026-10-13)
+`contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a
+player base at spawn as of the first launch (64 assemblers, 20 furnaces, 10 labs, substations, 2 roboports,
+a radar; 16 laser turrets in four corner clusters, laser research) and a mining outpost 130 tiles towards
+the faction (8 drills, 2 lasers, big poles home). The scripted player is passive: it neither rebuilds nor
+answers. The faction lands 339 tiles out and on its own clock after that.
+- The first raid comes at minute 38 (the garrison full enough and the outpost in sight). The outpost falls
+  at once.
+- Then a raid a minute: 4 units each, at substations the faction has just seen (value 6, defence 0). Each
+  raid's sight and each alarm reveal the next substation, so it eats through the power grid; the lasers,
+  unpowered, fall with it. By minute 75 nothing of the base stands: 26 raids, 1 siege, few faction losses.
+- The faction's income is 200 parts a minute from minute 20, 300 with the second landing at 90.
+Reading: the operations work as written and are too relentless: no pause between successful raids, so
+four units at a time strip an undefended interior. A real player rebuilds with robots and walls a
+perimeter, so the passive player overstates the damage, but a raid every minute is biter pacing, not a
+rival's. Questions for the next pass: a cadence (a settlement launches at most one operation every few
+minutes, longer after losses); a reserve that grows with the settlement rather than a fixed share; a
+scripted player that rebuilds with robots and answers with turrets, and one with a walled perimeter.
+
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
 decided: the faction's military is the biter attack-group loop with a cooldown (nearest target, no sizing,
@@ -495,7 +514,8 @@ scenario with assertions first; the window is for art, feel and GUI.
   saved a tick before, the loaded game never ran the strike) and `LP_FORK=1 scripts/sim.sh ...` runs only
   what follows: 19 s a siege run. A fork holds the settlement as the code grew it then: iterate on forks,
   confirm with full runs.
-- Scenarios added: `fall` (a lander destroyed with a second settlement standing).
+- Scenarios added: `fall` (a lander destroyed with a second settlement standing); `contact` (first contact
+  at real clocks, a timeline: `scripts/timeline.py` writes timeline.png and timeline.md).
 - **Quick regression** (user 2026-10-13: "regressions are super long; do we need to run them this often?"):
   `scripts/regress.sh` runs 13 scenarios in about 3 minutes, those that strike from forks saved 6 minutes
   before the strike (raid measures the minutes before it) and keyed by the code that runs before a strike;

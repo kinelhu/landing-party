@@ -1419,6 +1419,92 @@ scenarios.control = function()
   end)
 end
 
+-- Contact: first contact at real clocks, a timeline to read rather than a verdict. A player base as of the
+-- first launch at spawn (production, power, labs, 16 laser turrets in four corner clusters, laser research)
+-- and a mining outpost 130 tiles towards the faction with a power line home. The faction lands as it does in
+-- a game and lands again on its own clock. Every 5 minutes one line of timeline.jsonl (scripts/timeline.py).
+scenarios.contact = function()
+  local CATEGORY = {["assembling-machine"] = "production", furnace = "production", lab = "production",
+    ["mining-drill"] = "outpost", ["electric-pole"] = "power", roboport = "logistics", radar = "logistics",
+    ["electric-turret"] = "turrets", ["ammo-turret"] = "turrets", wall = "walls"}
+  local function put(name, x, y)
+    local p = surface().find_non_colliding_position(name, {x, y}, 4, 0.5)
+    return p and surface().create_entity{name = name, position = p, force = "player"}
+  end
+  local function census()
+    local out = {}
+    for _, e in pairs(surface().find_entities_filtered{force = "player"}) do
+      local c = CATEGORY[e.type]
+      if c then out[c] = (out[c] or 0) + 1 end
+    end
+    return out
+  end
+  schedule(30, function()
+    flatten(-70, -70, 70, 70)
+    local pf = game.forces.player
+    pf.set_ammo_damage_modifier("laser", 0.4)
+    pf.set_gun_speed_modifier("laser", 0.4)
+    put("electric-energy-interface", 0, 0); put("electric-energy-interface", 4, 0)
+    for gx = 0, 7 do for gy = 0, 7 do put("assembling-machine-2", -40 + gx * 5, -40 + gy * 5) end end
+    for k = 0, 19 do put("electric-furnace", -40 + k * 4, 5) end
+    for k = 0, 9 do put("lab", 5 + k * 4, -40) end
+    for x = -40, 40, 18 do for y = -40, 40, 18 do put("substation", x, y) end end
+    put("roboport", 20, 20); put("roboport", 30, 20); put("radar", 20, 30)
+    for _, c in ipairs({{-60, -60}, {60, -60}, {-60, 60}, {60, 60}}) do
+      put("substation", c[1], c[2])
+      for _, d in ipairs({{-3, -3}, {3, -3}, {-3, 3}, {3, 3}}) do put("laser-turret", c[1] + d[1], c[2] + d[2]) end
+    end
+    for x = -60, 60, 18 do put("substation", x, -60); put("substation", x, 60); put("substation", -60, x); put("substation", 60, x) end
+  end)
+  schedule(150, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local L = lander.position
+    local len = math.sqrt(L.x * L.x + L.y * L.y)
+    local ux, uy = L.x / len, L.y / len
+    local o = {ux * 130, uy * 130}
+    flatten(math.floor(o[1]) - 16, math.floor(o[2]) - 16, math.floor(o[1]) + 16, math.floor(o[2]) + 16)
+    for k = 0, 7 do put("electric-mining-drill", o[1] - 9 + (k % 4) * 5, o[2] - 4 + math.floor(k / 4) * 6) end
+    put("substation", o[1], o[2] + 1); put("substation", o[1] - 9, o[2] + 1); put("substation", o[1] + 9, o[2] + 1)
+    put("laser-turret", o[1] - 12, o[2] - 10); put("laser-turret", o[1] + 12, o[2] - 10)
+    for d = 66, 124, 28 do put("big-electric-pole", ux * d, uy * d) end
+    S.outpost = o
+    S.start = census()
+    info(string.format("contact: base at spawn, outpost at %.0f,%.0f, faction lander at %.0f,%.0f (%.0f tiles out)",
+      o[1], o[2], L.x, L.y, len))
+    info("contact: player at start " .. serpent.line(S.start))
+  end)
+  for t = 300 * 60, END, 300 * 60 do
+    schedule(t, function()
+      local f = lp("faction")
+      local row = {minute = game.tick / 3600, landings = f.landings, tier = f.tier, exported = f.exported,
+        settlements = 0, garrison = 0, turrets = 0, parts_rate = 0, raids = 0, sieges = 0, done = 0, aborted = 0,
+        known = 0, player = census()}
+      for _, id in ipairs(lp("bases")) do
+        local st = lp("stats", id)
+        if st and st.lander then
+          row.settlements = row.settlements + 1
+          row.garrison = row.garrison + st.garrison + (st.patrol or 0)
+          row.turrets = row.turrets + st.turrets
+          row.parts_rate = row.parts_rate + (st.rate_parts or 0)
+        end
+        if st and st.ops then
+          row.raids = row.raids + st.ops.launched - st.ops.sieges
+          row.sieges = row.sieges + st.ops.sieges
+          row.done = row.done + st.ops.done
+          row.aborted = row.aborted + st.ops.aborted
+          row.known = row.known + st.ops.known
+        end
+      end
+      helpers.write_file("landing-party/timeline.jsonl", helpers.table_to_json(row) .. "\n", true)
+    end)
+  end
+  schedule(END - 60, function()
+    local now = census()
+    info("contact: player at the end " .. serpent.line(now))
+    check("contact: a timeline was written", true, "")
+  end)
+end
+
 -- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
 -- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
 scenarios.duel = function()

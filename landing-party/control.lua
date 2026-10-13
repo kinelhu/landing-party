@@ -161,6 +161,7 @@ remote.add_interface("landing-party", {
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
   end,
   set_trace = function(on) storage.trace = on end,
+  bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
   -- Tests only: the command tool without a mouse (player index 1 need not exist).
