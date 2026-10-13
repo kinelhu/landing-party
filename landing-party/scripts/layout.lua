@@ -348,10 +348,42 @@ function layout.fortify(b)
       for _, w in ipairs(wall_ring(block.x0, block.y0, block.w, block.h)) do
         push(b, {name = w[1], pos = {w[2], w[3]}, module = block})
       end
+      local arch = shared.CORPS[b.corp].arch or {}
+      local x0, y0, w, h = block.x0, block.y0, block.w, block.h
+      local ox, oy = math.floor(w / 2) - blocks.OPENING / 2, math.floor(h / 2) - blocks.OPENING / 2
+      if arch.gates then
+        -- Gates in every opening: horizontal in the top and bottom walls, vertical in the sides.
+        for k = 0, blocks.OPENING - 1 do
+          for _, y in ipairs({0, h - 1}) do
+            push(b, {name = "lp-gate", pos = {x0 + ox + k + 0.5, y0 + y + 0.5}, dir = defines.direction.east, module = block})
+          end
+          for _, x in ipairs({0, w - 1}) do
+            push(b, {name = "lp-gate", pos = {x0 + x + 0.5, y0 + oy + k + 0.5}, dir = defines.direction.north, module = block})
+          end
+        end
+      end
+      if arch.baffles and block.kind ~= "picket" then
+        -- A baffle wall two tiles inside each opening, wider than it: entry zigzags (the staggered double wall).
+        for k = -1, blocks.OPENING do
+          push(b, {name = "lp-wall", pos = {x0 + ox + k + 0.5, y0 + 2.5}, module = block})
+          push(b, {name = "lp-wall", pos = {x0 + ox + k + 0.5, y0 + h - 2.5}, module = block})
+          push(b, {name = "lp-wall", pos = {x0 + 2.5, y0 + oy + k + 0.5}, module = block})
+          push(b, {name = "lp-wall", pos = {x0 + w - 2.5, y0 + oy + k + 0.5}, module = block})
+        end
+      end
       if block.kind ~= "picket" and block.kind ~= "depot" then
-        local corners = {{2, 2}, {block.w - 2, 2}, {2, block.h - 2}, {block.w - 2, block.h - 2}}
+        local corners = {{2, 2}, {w - 2, 2}, {2, h - 2}, {w - 2, h - 2}}
         for _, c in ipairs(corners) do
-          push(b, {name = "lp-turret", pos = {block.x0 + c[1], block.y0 + c[2]}, module = block})
+          push(b, {name = "lp-turret", pos = {x0 + c[1], y0 + c[2]}, module = block})
+          if arch.pillboxes then
+            -- The corner pocket walled off from the yard: the turret in a pillbox, reachable over the wall only.
+            local sx = c[1] < w / 2 and 1 or -1
+            local sy = c[2] < h / 2 and 1 or -1
+            local cx, cy = x0 + c[1], y0 + c[2]
+            for _, p in ipairs({{sx * 1.5, -sy * 0.5}, {sx * 1.5, sy * 0.5}, {-sx * 0.5, sy * 1.5}, {sx * 0.5, sy * 1.5}}) do
+              push(b, {name = "lp-wall", pos = {cx + p[1], cy + p[2]}, module = block})
+            end
+          end
         end
       end
       return block
@@ -427,9 +459,9 @@ function layout.picket(b, hub, threat)
 end
 
 -- Seed a settlement's character.
-function layout.init(b, seed, doctrine)
+function layout.init(b, seed, doctrine, weights)
   b.rng = rng.new(seed)
-  b.doctrine = doctrine or rng.weighted(b.rng, {bastion = 1, sprawl = 1, picket = 1})
+  b.doctrine = doctrine or rng.weighted(b.rng, weights or {bastion = 1, sprawl = 1, picket = 1})
   b.hubs, b.blocks = {}, {}
 end
 

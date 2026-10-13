@@ -206,4 +206,22 @@ hauler.resistances = {{type = "physical", decrease = 4, percent = 30}, {type = "
 tint(hauler.run_animation, {}, {r = 1, g = 0.75, b = 0.45, a = 1})
 tint(hauler.attack_parameters.animation, {}, {r = 1, g = 0.75, b = 0.45, a = 1})
 
-data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler})
+-- Buggy: the car's hull, fast and light, a machine gun (Grubstake's raider and convoy escort).
+local buggy = base_unit("lp-buggy")
+buggy.max_health = shared.units["lp-buggy"].health
+buggy.movement_speed = 0.2
+buggy.distance_per_frame = 0.5
+buggy.vision_distance = 30
+buggy.collision_box = {{-0.7, -0.7}, {0.7, 0.7}}
+buggy.selection_box = {{-0.9, -1.1}, {0.9, 1.1}}
+buggy.run_animation = table.deepcopy(car.animation)
+local ba = gun(5, 13, 10)
+ba.animation = table.deepcopy(car.animation)
+buggy.attack_parameters = ba
+buggy.dying_explosion = "medium-explosion"
+buggy.corpse = nil
+buggy.resistances = {{type = "physical", decrease = 2, percent = 15}}
+tint(buggy.run_animation, {})
+tint(buggy.attack_parameters.animation, {})
+
+data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy})

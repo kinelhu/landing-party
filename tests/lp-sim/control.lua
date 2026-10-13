@@ -1584,6 +1584,19 @@ scenarios.rivals = function()
     local g_trim = surface().count_tiles_filtered{name = "lp-grubstake-trim"}
     check("rivals: their own floors and livery", gravel > 50 and s_trim > 0 and g_trim > 0,
       gravel .. " gravel tiles, trim " .. s_trim .. " Serenity and " .. g_trim .. " Grubstake")
+    -- Architecture (docs/corporations.md): Serenity gates its walls; Grubstake fields gun turrets (kept in
+    -- ammunition) and buggies.
+    local gates = surface().count_entities_filtered{name = "lp-gate", force = "lp-serenity"}
+    local guns, fed = 0, 0
+    for _, t in pairs(surface().find_entities_filtered{name = "lp-grubstake-turret"}) do
+      guns = guns + 1
+      if t.get_inventory(defines.inventory.turret_ammo).get_item_count() > 0 then fed = fed + 1 end
+    end
+    local buggies = surface().count_entities_filtered{name = "lp-grubstake-buggy"}
+    check("rivals: Serenity gates its walls", gates > 0, gates .. " gates")
+    check("rivals: Grubstake's turrets are fed gun turrets", guns > 0 and fed == guns, fed .. " of " .. guns .. " fed")
+    check("rivals: Grubstake fields buggies", (b and b.built_by and (b.built_by["lp-buggy"] or 0) or 0) > 0,
+      serpent.line(b and b.built_by))
     check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
       a.force .. " and " .. (b and b.force or "none"))
     check("rivals: they raided each other", against > 0, against .. " operations against a rival")

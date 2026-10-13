@@ -485,7 +485,7 @@ function command.order(player_index, surface, area, attackmove)
   local lt, rb = area.left_top or area[1], area.right_bottom or area[2]
   local pos = {x = ((lt.x or lt[1]) + (rb.x or rb[1])) / 2, y = ((lt.y or lt[2]) + (rb.y or rb[2])) / 2}
   local target = surface.find_entities_filtered{area = {{pos.x - 1.5, pos.y - 1.5}, {pos.x + 1.5, pos.y + 1.5}},
-    force = shared.corp_forces(), type = {"unit", "spider-unit", "electric-turret", "artillery-turret", "container",
+    force = shared.corp_forces(), type = {"unit", "spider-unit", "electric-turret", "ammo-turret", "artillery-turret", "container",
       "electric-energy-interface", "radar", "assembling-machine", "mining-drill", "generator"}, limit = 1}[1]
   storage.cmd.seq = (storage.cmd.seq or 0) + 1
   local n = 0

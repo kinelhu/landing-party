@@ -24,9 +24,10 @@ local out = {}
 for corp, c in pairs(shared.CORPS) do
   if corp ~= shared.DEFAULT_CORP then
     for _, kind in ipairs(shared.KINDS) do
-      local base = find(kind)
+      local base = find((c.bases and c.bases[kind]) or kind)
       if base then
         local p = table.deepcopy(base)
+        for k, v in pairs((c.props and c.props[kind]) or {}) do p[k] = v end
         p.name = shared.variant(corp, kind)
         p.localised_name = {"", {"entity-name." .. kind}, " (", c.name, ")"}
         retint(p, (c.tints and c.tints[kind]) or c.tint, {})

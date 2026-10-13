@@ -13,7 +13,11 @@ shared.CORPS = {
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     road = {tile = "stone-path", tint = {r = 0.95, g = 0.78, b = 0.5}}, pad = {tile = "brown-refined-concrete"},
     trim = {tile = "refined-hazard-concrete-left"},
-    icon = "signal-mining", motto = "Resources in the right hands."},
+    icon = "signal-mining", motto = "Resources in the right hands.",
+    -- Architecture (docs/corporations.md): sprawl, gun turrets fed with ammunition instead of lasers, walls
+    -- that are fences (half health); infantry, buggies and harriers, no tanks.
+    doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret"}, props = {["lp-wall"] = {max_health = 225}},
+    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -23,7 +27,11 @@ shared.CORPS = {
       ["lp-mine"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}},
     road = {tile = "refined-concrete"}, pad = {tile = "refined-concrete"},
     trim = {tile = "black-refined-concrete"},
-    icon = "signal-heart", motto = "Please remain behind the line."},
+    icon = "signal-heart", motto = "Please remain behind the line.",
+    -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
+    -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
+    doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
+    arch = {gates = true, baffles = true, pillboxes = true}},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}
@@ -33,7 +41,7 @@ shared.DEFAULT_CORP = "serenity"
 -- ("lp-turret"); another's are "lp-<corp>-turret". Logic speaks in kinds; creation and queries translate.
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
   "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
-  "lp-walker", "lp-harrier", "lp-hauler"}
+  "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate"}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
@@ -94,6 +102,7 @@ shared.cost = {
   ["lp-lamp"] = 1,
   ["lp-mine"] = 2,
   ["lp-mortar"] = 60,            -- a siege emplacement (scripts/ops.lua), carried by a hauler
+  ["lp-gate"] = 3,
 }
 
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.
@@ -103,6 +112,7 @@ shared.units = {
   ["lp-walker"] = {health = 1600, cost = 120},
   ["lp-harrier"] = {health = 150, cost = 40},
   ["lp-hauler"] = {health = 1500, cost = 30},
+  ["lp-buggy"] = {health = 220, cost = 15},      -- Grubstake's raider and escort (docs/corporations.md)
 }
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by
@@ -116,7 +126,7 @@ shared.RELAYS_BY_LEVEL = {[0] = 2, 4, 8, 15}
 shared.RELAYS_PER_EXTRA_LEVEL = 2
 
 -- Faction tier needed to build each unit (the tier rises with parts exported, scripts/faction.lua).
-shared.UNLOCK = {["lp-infantry"] = 0, ["lp-tank"] = 0, ["lp-harrier"] = 1, ["lp-walker"] = 2}
+shared.UNLOCK = {["lp-infantry"] = 0, ["lp-tank"] = 0, ["lp-buggy"] = 0, ["lp-harrier"] = 1, ["lp-walker"] = 2}
 
 -- Fabrication: FEEDSTOCK_PER_PART feedstock make one part in PART_SECONDS (before crafting speed).
 shared.FEEDSTOCK_PER_PART = 5

@@ -87,7 +87,7 @@ function base.land(surface, pos, opts)
     modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0, corp = corp, force = f.name,
     rule = "landed", log = {}, waiting = nil}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
-  layout.init(b, seed, opts.uplink and "fortress" or opts.doctrine)
+  layout.init(b, seed, opts.uplink and "fortress" or opts.doctrine, shared.CORPS[corp].doctrines)
   army.init(b)
   local at, _, uplink_at
   if opts.uplink then
@@ -151,7 +151,7 @@ local function capture(b)
     if m.kind == "mining" and m.built and not m.captured and left > 0 then
       local by = holder(b, surface, m.center)
       local defended = surface.count_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(b),
-        type = {"unit", "spider-unit", "electric-turret"}, limit = 1} > 0
+        type = {"unit", "spider-unit", "electric-turret", "ammo-turret"}, limit = 1} > 0
       if by and not defended then
         m.held_since = m.held_since or game.tick
         if game.tick - m.held_since >= CAPTURE_TICKS then
@@ -219,6 +219,13 @@ local function economy(b)
   end
   b.parts = b.parts + made
   b.made = b.made + made
+  -- Gun turrets (a corporation's choice instead of lasers) are kept in ammunition.
+  for _, t in ipairs(b.turrets) do
+    if t.valid and t.type == "ammo-turret" then
+      local inv = t.get_inventory(defines.inventory.turret_ammo)
+      if inv and inv.get_item_count() < 20 then inv.insert{name = "piercing-rounds-magazine", count = 20} end
+    end
+  end
   local k = 3600 / ECONOMY_TICKS
   b.rate_in = (1 - EMA) * b.rate_in + EMA * gained * k
   b.rate_parts = (1 - EMA) * b.rate_parts + EMA * made * k
@@ -694,7 +701,7 @@ function base.debug_modules(b, pos, r)
       for _, e in ipairs(m.entities) do if e.valid and e.force.name == b.force then left = left + 1 end end
       local by = holder(b, surface, m.center)
       local def = surface.find_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(b),
-        type = {"unit", "spider-unit", "electric-turret"}, limit = 1}[1]
+        type = {"unit", "spider-unit", "electric-turret", "ammo-turret"}, limit = 1}[1]
       table.insert(out, string.format("%.0f,%.0f built=%s captured=%s left=%d held=%s holder=%s defended=%s", m.center[1],
         m.center[2], tostring(m.built), tostring(m.captured), left,
         m.held_since and tostring(game.tick - m.held_since) or "-", by and by.name or "-",

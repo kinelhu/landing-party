@@ -42,7 +42,8 @@ local function strength(b) return #b.garrison + #(b.patrol or {}) end
 -- The doctrine's mix, restricted to what the faction's tier has unlocked.
 local function mix(b)
   local out = {}
-  for name, w in pairs(army.MIX[b.doctrine]) do
+  -- The corporation's own mix where it has one (docs/corporations.md), else the doctrine's.
+  for name, w in pairs((b.corp and shared.CORPS[b.corp].mix) or army.MIX[b.doctrine]) do
     if tier() >= (shared.UNLOCK[name] or 0) then out[name] = w end
   end
   return out
