@@ -367,6 +367,15 @@ Prior art for units: ERM RedArmy (LGPL) builds infantry on the engineer's body; 
 (MIT) for squad AI and HQ-driven orders; ERM Unit Control (LGPL) as an optional selection-tool dependency.
 Never ERM's StarCraft or Metal Slug art (ripped).
 
+## Design review 2026-10-13 (pending decisions)
+Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
+decided: the faction's military is the biter attack-group loop with a cooldown (nearest target, no sizing,
+no abort, no memory); it needs intel, objectives by value, sizing, staging and abort rules. Garrisons need
+roles (reserve, reaction, field); alarms need escalation; pickets should see. Control radius on relays and
+barracks (cores stay the barracks key), a satellite lifting the radius, faction jammers as the ground answer;
+satellites as targets judged scope creep. Tier as capability, not +15% damage. The landing as a contestable
+event. The loop needs the settlement readable in game. Park the uplink fight and rival corporations.
+
 ## Open questions and next
 - **Rival corporations (idea, user 2026-10-13, for later):** several landing parties at once, each a
   corporation with a humorous dystopian name, at war with each other as well as the player, for the same
