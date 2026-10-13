@@ -228,7 +228,8 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   a charge thrown 8 tiles every 3 s bursts over 2.5 tiles (enemies only) for 100 explosive damage: 63 to a
   wall, 100 to a turret; bullets do 2.4 to a wall. **Battle tank** (40 steel, 10 engines, 10 circuits, 120 s;
   population 4): the faction tank's hull and stats in the player's colours. Infantry alone should not take a
-  walled position; a mixed force should.
+  walled position; a mixed force should. Unlocks: troopers and breachers with command bandwidth 1 (after
+  military 2, which brings grenades), battle tanks with bandwidth 2 (after the vanilla tank research).
 - **Leash and cover (built):** a squad fights units only inside its beacon's reach; under A it skips a
   military building that a faction turret covers (turrets in reach fall first, so the cover is outside).
   Tried and reverted: not fighting units under turret cover (two tanks parked at a compound's cover edge

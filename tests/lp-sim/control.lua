@@ -774,6 +774,14 @@ scenarios.caps = function()
     local core = false
     for _, i in pairs(prototypes.recipe["lp-barracks"].ingredients) do if i.name == "lp-command-core" then core = true end end
     check("caps: a trooper takes 30 s, a barracks a core", r.energy == 30 and core, r.energy .. " s, core " .. tostring(core))
+    local rec = game.forces.player.recipes
+    check("caps: troopers and breachers at level 1, battle tanks at 2", S.gate1 == "true true false"
+      and rec["lp-battle-tank-order"].enabled, (S.gate1 or "?") .. " at level 1; tanks now " .. tostring(rec["lp-battle-tank-order"].enabled))
+  end)
+  schedule(90, function()
+    local rec = game.forces.player.recipes
+    S.gate1 = string.format("%s %s %s", tostring(rec["lp-trooper-order"].enabled), tostring(rec["lp-breacher-order"].enabled),
+      tostring(rec["lp-battle-tank-order"].enabled))
   end)
 end
 
