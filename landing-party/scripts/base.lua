@@ -5,6 +5,7 @@ local modules = require("__landing-party__.scripts.modules")
 local site = require("__landing-party__.scripts.site")
 local layout = require("__landing-party__.scripts.layout")
 local army = require("__landing-party__.scripts.army")
+local rng = require("__landing-party__.scripts.rng")
 
 local base = {}
 
@@ -352,13 +353,13 @@ local function build(b)
   end
 end
 
--- A faction entity died: queue its rebuild at the same spot.
+-- A faction entity died: queue its rebuild at the same spot (nothing is rebuilt once the settlement fell).
 function base.on_died(e)
   local own = storage.owner[e.unit_number]
   if not own then return end
   storage.owner[e.unit_number] = nil
   local b = storage.bases[own.base]
-  if not b or e.name == "lp-lander" or e.name == "lp-uplink" then return end
+  if not b or b.fallen or e.name == "lp-lander" or e.name == "lp-uplink" then return end
   b.lost = b.lost + 1
   army.alarm(b, e.position, trace)
   local d = 0
@@ -568,9 +569,73 @@ local function export(b)
   trace(b, string.format("exported %d parts", amount))
 end
 
+-- The fall: a settlement whose lander is destroyed collapses. Its generators fail one by one (every
+-- CASCADE_TICKS), so its turrets go dark; its units evacuate (army.disband). When the last generator is gone,
+-- what stands becomes ruins: neutral and minable for salvage (the prototypes' results), except the mining
+-- outposts, left to be taken by holding them with no one to stop it, and the mines, still live.
+local CASCADE_TICKS = 90
+function base.fall(lander)
+  for _, b in pairs(storage.bases) do
+    if b.lander == lander and not b.fallen then
+      b.fallen = game.tick
+      b.queue, b.rebuild = {}, {}
+      prune(b.gens)
+      b.cascade = {}
+      for _, g in ipairs(b.gens) do table.insert(b.cascade, g) end
+      rng.shuffle(b.rng, b.cascade)
+      b.next_cascade = game.tick + CASCADE_TICKS
+      local evacuated = army.disband(b, trace)
+      b.evacuated = evacuated
+      trace(b, string.format("lander destroyed: the settlement falls (%d generators to fail)", #b.cascade))
+      local f = game.forces.player
+      if f and #f.players > 0 then
+        f.print({"lp.fallen", string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, lander.surface.name)})
+      end
+      if base.on_fall then base.on_fall(b) end
+      return b
+    end
+  end
+end
+
+local function ruin(b)
+  local mining = {}
+  for _, m in ipairs(b.modules) do
+    -- By unit number: entity references are not stable table keys (keyed by them, outposts were ruined too).
+    if m.kind == "mining" then for _, e in ipairs(m.entities) do if e.valid then mining[e.unit_number] = true end end end
+  end
+  local n = 0
+  local surface = game.surfaces[b.surface]
+  for _, e in pairs(surface.find_entities_filtered{force = force(), position = {b.origin.x, b.origin.y}, radius = 400}) do
+    local own = e.unit_number and storage.owner[e.unit_number]
+    if own and own.base == b.id and not mining[e.unit_number] and e.name ~= "lp-mine" then
+      storage.owner[e.unit_number] = nil
+      e.force = "neutral"
+      n = n + 1
+    end
+  end
+  b.ruins = n
+  trace(b, string.format("%d buildings are ruins now", n))
+end
+
+local function collapse(b)
+  if not b.cascade or game.tick < b.next_cascade then return end
+  local g = table.remove(b.cascade)
+  while g and not g.valid do g = table.remove(b.cascade) end
+  if g then
+    g.die()
+    b.next_cascade = game.tick + CASCADE_TICKS
+  else
+    b.cascade = nil
+    ruin(b)
+  end
+end
+
 function base.tick(tick)
   for _, b in pairs(storage.bases) do
-    if b.lander.valid then
+    if b.fallen then
+      collapse(b)
+      if tick % 600 == 300 then capture(b) end
+    elseif b.lander.valid then
       site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
       if tick % BUILD_TICKS == 0 then
@@ -639,7 +704,8 @@ function base.stats(b)
       {b.blocks[1].x0, b.blocks[1].y0, b.blocks[1].x0 + b.blocks[1].w, b.blocks[1].y0 + b.blocks[1].h} or nil,
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
-    supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid}
+    supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin}
 end
 
 return base

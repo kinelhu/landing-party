@@ -16,18 +16,22 @@ local function tint(t, seen)
   end
 end
 
--- A faction copy of a vanilla prototype: renamed, retinted, not minable, not blueprintable.
+-- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Minable for salvage (half its
+-- cost in parts): nothing the faction owns can be mined, only its ruins once a settlement falls, or what the
+-- player captured.
 local MILITARY = {["lp-turret"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true}
 local function copy(type, name, new)
   local name_new = new
   local p = table.deepcopy(data.raw[type][name])
   p.name = new
-  p.minable = nil
+  local cost = shared.cost[new]
+  p.minable = cost and {mining_time = 1, results = {{type = "item", name = "lp-salvage",
+    amount = math.max(1, math.floor(cost / 2))}}} or nil
   p.next_upgrade = nil
   p.fast_replaceable_group = nil
   p.placeable_by = nil
-  p.flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"}
+  p.flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable"}
   p.hidden = true
   -- Player turrets and units fire on their own only at military targets. Military: what fights or
   -- commands (turrets, depots, radars, lander, uplink, launch pad). Not military: production and walls,

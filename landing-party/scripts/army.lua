@@ -532,6 +532,50 @@ function army.tick(b, tick, trace)
   if tick % BUILD_TICKS == 0 then produce(b, trace) end
 end
 
+-- A fallen settlement's units: the garrison, patrols, raids and convoys go to the nearest standing
+-- settlement with a depot within EVACUATE_RANGE and join its garrison (cargo is lost); with none, they stay
+-- among the ruins and fight what comes.
+local EVACUATE_RANGE = 1500
+function army.disband(b, trace)
+  local units = {}
+  for _, u in ipairs(b.garrison or {}) do table.insert(units, u) end
+  for _, u in ipairs(b.patrol or {}) do table.insert(units, u) end
+  for _, r in ipairs(b.raids or {}) do
+    for _, u in ipairs(r.members) do table.insert(units, u) end
+    if r.group.valid then r.group.destroy() end
+  end
+  for _, c in ipairs(b.convoys or {}) do
+    for _, u in ipairs(c.escorts) do table.insert(units, u) end
+    if c.hauler.valid then table.insert(units, c.hauler) end
+  end
+  b.garrison, b.patrol, b.raids, b.convoys = {}, {}, {}, {}
+  local from = b.lander.valid and b.lander.position or (b.origin and {x = b.origin.x, y = b.origin.y})
+  local dest, dd
+  for _, o in pairs(storage.bases) do
+    if o ~= b and o.lander.valid and o.depots[1] and o.depots[1].valid then
+      local d = math.sqrt((o.lander.position.x - from.x) ^ 2 + (o.lander.position.y - from.y) ^ 2)
+      if d <= EVACUATE_RANGE and (not dd or d < dd) then dest, dd = o, d end
+    end
+  end
+  local n = 0
+  for _, u in ipairs(units) do
+    if u.valid then
+      n = n + 1
+      if dest then
+        storage.unit_owner[u.unit_number] = dest.id
+        table.insert(dest.garrison, u)
+        u.commandable.set_command{type = defines.command.go_to_location, destination = dest.depots[1].position,
+          radius = 8, distraction = defines.distraction.by_enemy}
+      else
+        u.commandable.set_command{type = defines.command.wander, radius = 20, distraction = defines.distraction.by_anything}
+      end
+    end
+  end
+  trace(b, dest and string.format("%d units evacuate to settlement %d, %.0f tiles", n, dest.id, dd)
+    or string.format("%d units stay among the ruins", n))
+  return n, dest
+end
+
 army.UNITS = {"lp-infantry", "lp-tank", "lp-walker", "lp-harrier"}
 
 return army

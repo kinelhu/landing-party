@@ -1008,6 +1008,75 @@ scenarios.orders = function()
   end)
 end
 
+-- Fall: two settlements with garrisons; at the strike the first one's lander is destroyed. Its generators
+-- must fail, its turrets go dark (none of the faction's left there), its units evacuate to the second, its
+-- ruins yield salvage, an outpost be taken by holding it, and nothing be rebuilt.
+scenarios.fall = function()
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    lp("debug_depot", storage.id, 2000)
+  end)
+  schedule(120, function()
+    S.other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {})
+    if S.other then lp("debug_depot", S.other, 2000) end
+  end)
+  schedule(STRIKE, function()
+    local st = lp("stats", storage.id)
+    S.before = st
+    S.other_before = S.other and lp("stats", S.other).garrison or 0
+    S.origin = {st.origin and st.origin.x or 0, st.origin and st.origin.y or 0}
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE, position = S.origin, radius = 30}[1]
+    S.lander_at = {lander.position.x, lander.position.y}
+    info(string.format("fall: settlement %d at %.0f,%.0f, %d generators, %d turrets, garrison %d, patrol %d; settlement %s garrison %d",
+      storage.id, lander.position.x, lander.position.y, st.gens, st.turrets, st.garrison, st.patrol, tostring(S.other),
+      S.other_before))
+    lander.die("player")
+  end)
+  schedule(STRIKE + 90 * 60, function()
+    local st = lp("stats", storage.id)
+    local live = surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = S.lander_at, radius = 150}
+    local ruins = surface().count_entities_filtered{force = "neutral", position = S.lander_at, radius = 250,
+      name = {"lp-turret", "lp-fabricator", "lp-pylon", "lp-wall"}}
+    check("fall: the settlement fell", st.fallen ~= nil, tostring(st.fallen))
+    check("fall: its generators failed", st.gens == 0, st.gens .. " of " .. S.before.gens .. " left")
+    check("fall: no live turret is left there", live == 0, live .. " of the faction's within 150")
+    check("fall: what stood is ruins", ruins > 0 and (st.ruins or 0) > 0, ruins .. " neutral, " .. tostring(st.ruins) .. " ruined")
+    local other = S.other and lp("stats", S.other)
+    check("fall: its units evacuated", (st.evacuated or 0) > 0 and other and other.garrison > S.other_before,
+      string.format("%s evacuated; the other garrison %d -> %d", tostring(st.evacuated), S.other_before, other and other.garrison or -1))
+    -- Salvage: a ruined fabricator mined into a script inventory.
+    local fab = surface().find_entities_filtered{name = "lp-fabricator", force = "neutral", position = S.lander_at, radius = 250}[1]
+    local inv = game.create_inventory(10)
+    local mined = fab and fab.mine{inventory = inv}
+    check("fall: ruins yield salvage", mined and inv.get_item_count("lp-salvage") > 0,
+      inv.get_item_count("lp-salvage") .. " salvage from a fabricator")
+    inv.destroy()
+    -- Holding an outpost: a player turret on the fallen settlement's nearest bin (the farthest within 250 was
+    -- the other settlement's, whose turrets destroyed the holder).
+    local far, fd
+    for _, bin in pairs(surface().find_entities_filtered{name = "lp-bin", force = FORCE, position = S.lander_at, radius = 250}) do
+      local d = (bin.position.x - S.lander_at[1]) ^ 2 + (bin.position.y - S.lander_at[2]) ^ 2
+      if not fd or d < fd then far, fd = bin, d end
+    end
+    if far then
+      local p = surface().find_non_colliding_position("gun-turret", far.position, 8, 1)
+      S.holder = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
+    end
+    S.captured0 = st.captured
+    S.lost0 = st.lost
+  end)
+  schedule(STRIKE + 4 * 3600, function()
+    local st = lp("stats", storage.id)
+    if S.holder and S.holder.valid then
+      for _, l in ipairs(lp("debug_modules", storage.id, {S.holder.position.x, S.holder.position.y}, 15)) do info("fall: module " .. l) end
+    end
+    check("fall: an outpost is taken by holding it", st.captured > (S.captured0 or 0),
+      string.format("%d captured (a holder %s)", st.captured - (S.captured0 or 0), S.holder and "placed" or "not placed"))
+    check("fall: nothing is rebuilt", st.rebuild_pending == 0 and st.queue == 0,
+      st.rebuild_pending .. " rebuilds pending, " .. st.queue .. " queued")
+  end)
+end
+
 -- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
 -- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
 scenarios.duel = function()
@@ -1245,7 +1314,7 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
 -- the strike at 30 failed for lack of time, not of mechanics).
-local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6, siege = 13}
+local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6, siege = 13, fall = 5}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if params.scenario == "convoy" and END < 10 * 3600 then error("lp-sim: convoy needs at least 10 minutes") end
 if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end
@@ -1299,12 +1368,13 @@ schedule(END, function()
     check("the scenario's checks ran", ran > 0, ran .. " checks; is the run long enough?")
   end
   -- A siege may win outright by destroying the lander.
-  if params.scenario ~= "siege" then check("lander alive", s.lander) end
+  if params.scenario ~= "siege" and params.scenario ~= "fall" then check("lander alive", s.lander) end
   check("mined", s.mined > 0, s.mined)
   check("made parts", s.made > 0, s.made)
   metric("doctrine", s.doctrine); metric("hubs", s.hubs); metric("archetypes", s.archetypes)
   metric("blocks", s.blocks); metric("walls", s.walls); metric("roads", s.road_tiles)
-  check("power covers demand", s.demand <= s.supply, string.format("%.1f/%.1f MW", s.demand / 1e6, s.supply / 1e6))
+  -- A fallen settlement has no power left to cover anything.
+  if not s.fallen then check("power covers demand", s.demand <= s.supply, string.format("%.1f/%.1f MW", s.demand / 1e6, s.supply / 1e6)) end
   metric("parts", s.parts); metric("drills", s.drills); metric("fabs", s.fabs); metric("pylons", s.pylons)
   metric("lost", s.lost); metric("rebuilt", s.rebuilt)
   metric("units", s.units_built); metric("units_lost", s.units_lost); metric("raids", s.raids_sent)
@@ -1317,7 +1387,10 @@ end)
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
-  if e.entity.force.name == "player" then
+  if e.entity.name == "gun-turret" then
+    table.insert(lines, string.format("INFO gun turret at %.0f,%.0f destroyed by %s (%s)", e.entity.position.x,
+      e.entity.position.y, by, e.force and e.force.name or "?"))
+  elseif e.entity.force.name == "player" then
     S.killers = S.killers or {}
     local k = e.entity.name == "lp-trooper" and by or (e.entity.name .. " by " .. by)
     S.killers[k] = (S.killers[k] or 0) + 1
@@ -1337,7 +1410,7 @@ script.on_event(defines.events.on_entity_died, function(e)
       e.force and e.force.name or "?"))
   end
 end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
-  {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "type", type = "unit"},
+  {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"}, {filter = "type", type = "unit"},
   {filter = "type", type = "spider-unit"}})
 
 -- Siege diagnostics: damage the player's units deal, by unit and target.

@@ -27,6 +27,14 @@ function rng.int(r, lo, hi)
   return lo + math.floor(rng.next(r) * (hi - lo + 1))
 end
 
+-- A list shuffled in place (Fisher-Yates).
+function rng.shuffle(r, list)
+  for i = #list, 2, -1 do
+    local j = rng.int(r, 1, i)
+    list[i], list[j] = list[j], list[i]
+  end
+end
+
 -- One entry of a list.
 function rng.pick(r, list)
   return list[rng.int(r, 1, #list)]

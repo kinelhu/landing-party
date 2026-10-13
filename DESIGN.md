@@ -21,6 +21,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Capture of mining outposts by holding | built | `army` |
+| The fall: a destroyed lander collapses its settlement (cascade, evacuation, ruins, salvage) | built | `fall` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
 | Patrols through settlements | built | `lively` (life animation) |
 | Convoys carrying exports to the uplink | built | `convoy` (life animation) |
@@ -325,8 +326,18 @@ onto the outpost and sets O.
   (troopers/breachers/tanks) wins once (777, lander destroyed); 20/10/10 wins twice (12345: three outposts
   captured; 777: lander); 4242's outpost (7 turrets near it) falls to 30/20/20 (130 bandwidth, research
   level 3), 16 of 70 left, lander destroyed. Infantry alone never takes a defended position; tanks decide.
-- **A destroyed lander ends its settlement** (nothing runs on: no capture, no rebuild); what its remains
-  become is open (ruins to salvage, capturable, or decay).
+- **The fall (built):** a destroyed lander collapses its settlement. Its generators fail one by one (one
+  every 1.5 s, in random order), so its turrets go dark. Its units (garrison, patrols, raids, convoys)
+  evacuate to the nearest standing settlement with a depot within 1,500 tiles and join its garrison; with
+  none, they stay among the ruins and fight. When the last generator is gone, what stood becomes ruins:
+  neutral, minable by hand or robots for salvage (half the building's cost in parts; a fabricator gives
+  12); salvage reclaims in an assembler to 4 iron, 2 copper and 1 circuit. The mining outposts stay the
+  faction's, unpowered and unguarded, to be taken by holding them; the mines stay live. Nothing is rebuilt.
+  The player is told ("A settlement has fallen at ...").
+  `fall` (seeds 12345, 777): 7 generators fail, no live turret within 150, 187 ruins, 22 units evacuate (the
+  other garrison 18 -> 40), a fabricator mines into 12 salvage, a held outpost is captured (4 modules).
+  A bug it found: entity references are not stable Lua table keys (keyed by them, outposts were ruined
+  too); unit numbers are.
 - Also open: whether the reach should be smaller, or the ring should show turret cover.
 
 ## Where Landing Party differs from Proliferation
@@ -381,6 +392,7 @@ scenario with assertions first; the window is for art, feel and GUI.
   saved a tick before, the loaded game never ran the strike) and `LP_FORK=1 scripts/sim.sh ...` runs only
   what follows: 19 s a siege run. A fork holds the settlement as the code grew it then: iterate on forks,
   confirm with full runs.
+- Scenarios added: `fall` (a lander destroyed with a second settlement standing).
 - `scripts/showcase.sh [seed] [minute]`: a save to look at in game, built with no clicks: the `showcase`
   scenario on a headless server (fast, back to normal speed before `server_save`), copied to the play
   profile (base, Landing Party, Editor Extensions and flib copied from the real profile).
