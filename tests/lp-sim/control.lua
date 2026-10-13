@@ -155,7 +155,10 @@ scenarios.occupy = function()
   schedule(STRIKE + HOLD, function()
     local rebuilt = 0
     for _, p in ipairs(S.spots) do
-      rebuilt = rebuilt + surface().count_entities_filtered{position = p, radius = 1, force = FORCE}
+      -- Buildings only: a faction unit walking past once counted as a rebuild.
+      -- (`invert` would invert the whole filter, position and force included.)
+      rebuilt = rebuilt + surface().count_entities_filtered{position = p, radius = 1, force = FORCE,
+        name = {"lp-turret", "lp-fabricator", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-radar", "lp-depot"}}
     end
     check("occupy: nothing rebuilt on held ground", rebuilt == 0, rebuilt .. " rebuilt")
     for _, t in pairs(S.holders) do if t.valid then t.destroy() end end
@@ -389,6 +392,9 @@ scenarios.assault = function()
   if params.fast then
     schedule(200, function() lp("debug_depot", storage.id, 3000) end)
   end
+  -- Raids are sized to known defence now (5 a turret, plus 4): four turrets need 24, more than two depots'
+  -- garrison can spare. Three more depots: the test is whether a raid sized to the outpost takes it.
+  schedule(300, function() for _ = 1, 3 do lp("debug_depot", storage.id, 1000) end end)
   schedule(120, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local lx, ly = lander.position.x, lander.position.y
@@ -458,6 +464,7 @@ end
 -- not), so the creep trades with the outpost's turrets. It must do damage, the depot must answer and
 -- destroy it, and the outpost must stand again. A depot and parts are granted at the start.
 scenarios.defend = function()
+  if params.mix == "noops" then schedule(STRIKE - 30, function() lp("debug_tune", {ops_off = true}) end) end
   schedule(200, function() lp("debug_depot", storage.id, 3000) end)
   schedule(STRIKE, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
@@ -502,7 +509,9 @@ scenarios.defend = function()
     check("defend: there was a garrison to send", (S.garrison or 0) > 2, S.garrison)
     check("defend: the creep did damage", S.mid and (S.mid < S.before or S.hp_mid < S.hp0),
       string.format("%s -> %s entities, turret health %.0f -> %.0f", S.before, S.mid, S.hp0 or 0, S.hp_mid or 0))
-    check("defend: a response was sent", st.responses > 0, st.responses)
+    -- A response to units, a raid sized to turret creep (static threats get no piecemeal answer).
+    check("defend: the faction answered", st.responses + st.ops.launched > 0,
+      st.responses .. " responses, " .. st.ops.launched .. " raids")
     check("defend: the creeping turrets were destroyed", S.creep and alive == 0, alive .. " standing")
     check("defend: the outpost stands again", S.near and S.near() >= S.before,
       (S.near and S.near() or 0) .. "/" .. tostring(S.before) .. " outpost entities, rebuilt " .. st.rebuilt)
@@ -774,6 +783,10 @@ scenarios.caps = function()
     local core = false
     for _, i in pairs(prototypes.recipe["lp-barracks"].ingredients) do if i.name == "lp-command-core" then core = true end end
     check("caps: a trooper takes 30 s, a barracks a core", r.energy == 30 and core, r.energy .. " s, core " .. tostring(core))
+    local kit = {}
+    for _, i in pairs(r.ingredients) do kit[i.name] = true end
+    check("caps: a trooper is made of the engineer's kit", kit["heavy-armor"] and kit["submachine-gun"],
+      serpent.line(kit))
     local rec = game.forces.player.recipes
     check("caps: troopers and breachers at level 1, battle tanks at 2", S.gate1 == "true true false"
       and rec["lp-battle-tank-order"].enabled, (S.gate1 or "?") .. " at level 1; tanks now " .. tostring(rec["lp-battle-tank-order"].enabled))
@@ -1171,6 +1184,95 @@ scenarios.circuit = function()
     check("circuit: nothing attacked before the squad was 8", not S.early, tostring(S.early))
     check("circuit: the decider sent A at 8", S.attack_at ~= nil and S.attack_at >= 8, tostring(S.attack_at))
     check("circuit: the turret fell", not S.turret.valid, S.turret.valid and "standing" or "destroyed")
+  end)
+end
+
+-- Ops: the faction raids by value, not by distance. Near the settlement, on the player's side: a defended
+-- cluster (4 armed gun turrets, 2 assemblers) 110 tiles out and a valuable undefended one (2 command relays,
+-- a barracks) 170 out. The first raid must go for the valuable one and destroy it; a raid on the defended one
+-- (once the garrison can afford it) must be sized to its four turrets (16).
+-- Abort: the valuable cluster only; once the raid is under way, 6 armed gun turrets go up round it: the raid
+-- must abort, bring survivors home and remember the target as defended.
+local function ops_setup(with_defended)
+  schedule(60, function()
+    lp("debug_depot", storage.id, 4000)
+    lp("debug_depot", storage.id, 0)
+  end)
+  schedule(120, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local L = lander.position
+    local len = math.sqrt(L.x * L.x + L.y * L.y)
+    local ux, uy = -L.x / len, -L.y / len
+    local px, py = -uy, ux
+    local function cluster(d, side)
+      local c = {math.floor(L.x + ux * d + px * side), math.floor(L.y + uy * d + py * side)}
+      flatten(c[1] - 14, c[2] - 14, c[1] + 14, c[2] + 14)
+      return c
+    end
+    local function put(name, c, x, y, ammo)
+      local e = surface().create_entity{name = name, position = {c[1] + x, c[2] + y}, force = "player"}
+      if e and ammo then e.insert{name = "piercing-rounds-magazine", count = 200} end
+      return e
+    end
+    S.A = cluster(170, 40)
+    S.valuable = {put("lp-command-relay", S.A, -3.5, 0.5), put("lp-command-relay", S.A, 3.5, 0.5),
+      put("lp-barracks", S.A, 0.5, 6.5)}
+    if with_defended then
+      S.B = cluster(110, -40)
+      S.defended = {}
+      for _, p in ipairs({{-6, -6}, {6, -6}, {-6, 6}, {6, 6}}) do put("gun-turret", S.B, p[1], p[2], true) end
+      for _, p in ipairs({{-2, 0}, {2, 0}}) do table.insert(S.defended, put("assembling-machine-1", S.B, p[1] + 0.5, p[2] + 0.5)) end
+    end
+    info(string.format("ops: valuable cluster at %d,%d%s", S.A[1], S.A[2],
+      S.B and string.format(", defended cluster at %d,%d", S.B[1], S.B[2]) or ""))
+  end)
+end
+
+scenarios.ops = function()
+  ops_setup(true)
+  schedule(END - 60, function()
+    local o = lp("stats", storage.id).ops
+    local left = 0
+    for _, e in ipairs(S.valuable) do if e.valid then left = left + 1 end end
+    local spared = 0
+    for _, e in ipairs(S.defended) do if e.valid and e.health == e.max_health then spared = spared + 1 end end
+    local kinds = {}
+    for _, l in ipairs(o.log) do table.insert(kinds, l.kind .. " " .. l.outcome .. " " .. l.back .. "/" .. l.launched) end
+    info("ops: " .. table.concat(kinds, "; ") .. "; known " .. o.known)
+    check("ops: a raid was launched", o.launched > 0, o.launched)
+    check("ops: it went for the valuable target", o.log[1] and (o.log[1].kind == "lp-command-relay" or o.log[1].kind == "lp-barracks"),
+      o.log[1] and o.log[1].kind or "none finished")
+    check("ops: it destroyed it", left <= 1, (3 - left) .. " of 3 destroyed")
+    local second = o.log[2]
+    check("ops: a raid on the defended cluster was sized to it", not second or second.launched >= 16,
+      second and (second.kind .. " with " .. second.launched) or "none")
+  end)
+end
+
+scenarios.abort = function()
+  ops_setup(false)
+  for t = 600, END - 3600, 60 do
+    schedule(t, function()
+      if S.armed then return end
+      local o = lp("stats", storage.id).ops
+      if o.op then
+        S.armed = game.tick
+        S.garrison_at = lp("stats", storage.id).garrison
+        for _, p in ipairs({{-9, -9}, {9, -9}, {-9, 9}, {9, 9}, {0, -11}, {0, 11}}) do
+          local e = surface().create_entity{name = "gun-turret", position = {S.A[1] + p[1], S.A[2] + p[2]}, force = "player"}
+          if e then e.insert{name = "piercing-rounds-magazine", count = 200} end
+        end
+        info(string.format("abort: raid under way (%s), six turrets up at tick %d", o.op, game.tick))
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local o = lp("stats", storage.id).ops
+    local l = o.log[1]
+    check("abort: a raid was launched", o.launched > 0, o.launched)
+    check("abort: it aborted", o.aborted > 0, o.aborted .. " aborted, " .. o.done .. " done")
+    check("abort: it turned back unhurt", l and l.back == l.launched, l and (l.back .. " of " .. l.launched) or "none")
+    check("abort: it did not go straight back", o.launched == 1, o.launched .. " raids launched")
   end)
 end
 

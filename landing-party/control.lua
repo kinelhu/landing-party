@@ -3,6 +3,7 @@ local base = require("scripts.base")
 local site = require("scripts.site")
 local faction = require("scripts.faction")
 local command = require("scripts.command")
+local ops = require("__landing-party__.scripts.ops")
 
 
 local function init()
@@ -53,7 +54,10 @@ script.on_event(defines.events.on_entity_died, function(e)
     if id then
       storage.unit_owner[ent.unit_number] = nil
       local b = storage.bases[id]
-      if b then b.units_lost = b.units_lost + 1 end
+      if b then
+        b.units_lost = b.units_lost + 1
+        ops.on_unit_killed(b, e.cause)
+      end
     else
       base.on_died(ent)
     end
@@ -135,6 +139,7 @@ remote.add_interface("landing-party", {
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
     if t.army_off ~= nil then storage.army_off = t.army_off end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
+    if t.ops_off ~= nil then storage.ops_off = t.ops_off end
   end,
   set_trace = function(on) storage.trace = on end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,

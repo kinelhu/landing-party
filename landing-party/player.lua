@@ -60,12 +60,13 @@ data:extend({
   {type = "recipe", name = "lp-rally-beacon", enabled = false, energy_required = 2,
     ingredients = {{type = "item", name = "small-lamp", amount = 1}, {type = "item", name = "electronic-circuit", amount = 2}},
     results = {{type = "item", name = "lp-rally-beacon", amount = 1}}},
-  -- A trooper: ammunition, plates and circuits; the barracks turns the order into a unit.
+  -- Units are made of the engineer's own kit (personal equipment, rarely automated: a fresh logistics chain,
+  -- user 2026-10-13): a trooper is heavy armour, a submachine gun and magazines.
   {type = "recipe", name = "lp-trooper-order", category = "lp-training", enabled = false, hidden_in_factoriopedia = true,
     -- 30 s a trooper: even at the cap, a lost army takes time to replace.
     energy_required = 30,
-    ingredients = {{type = "item", name = "firearm-magazine", amount = 5}, {type = "item", name = "iron-plate", amount = 10},
-      {type = "item", name = "electronic-circuit", amount = 2}},
+    ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "submachine-gun", amount = 1},
+      {type = "item", name = "firearm-magazine", amount = 10}},
     results = {{type = "item", name = "lp-trooper-order", amount = 1}}},
   -- Salvage from a fallen settlement's ruins, reclaimed in any assembler.
   {type = "item", name = "lp-salvage", icon = "__base__/graphics/icons/iron-gear-wheel.png", stack_size = 100,
@@ -79,15 +80,15 @@ data:extend({
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-breacher-order", category = "lp-training", enabled = false, hidden_in_factoriopedia = true,
     icon = "__base__/graphics/icons/grenade.png", energy_required = 30,
-    ingredients = {{type = "item", name = "grenade", amount = 5}, {type = "item", name = "iron-plate", amount = 10},
-      {type = "item", name = "electronic-circuit", amount = 2}},
+    ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "grenade", amount = 10},
+      {type = "item", name = "electronic-circuit", amount = 5}},
     results = {{type = "item", name = "lp-breacher-order", amount = 1}}},
   {type = "item", name = "lp-battle-tank-order", icon = "__base__/graphics/icons/tank.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-battle-tank-order", category = "lp-training", enabled = false, hidden_in_factoriopedia = true,
     icon = "__base__/graphics/icons/tank.png", energy_required = 120,
-    ingredients = {{type = "item", name = "steel-plate", amount = 40}, {type = "item", name = "engine-unit", amount = 10},
-      {type = "item", name = "electronic-circuit", amount = 10}},
+    ingredients = {{type = "item", name = "tank", amount = 1}, {type = "item", name = "cannon-shell", amount = 20},
+      {type = "item", name = "battery-equipment", amount = 2}},
     results = {{type = "item", name = "lp-battle-tank-order", amount = 1}}},
 })
 
@@ -102,12 +103,12 @@ end
 local red, green = {"automation-science-pack", 1}, {"logistic-science-pack", 1}
 local blue, grey = {"chemical-science-pack", 1}, {"military-science-pack", 1}
 data:extend({
-  tech(1, {"military-2"}, {red, green}, 100, {
+  tech(1, {"military-2", "heavy-armor"}, {red, green}, 100, {
     {type = "unlock-recipe", recipe = "lp-barracks"}, {type = "unlock-recipe", recipe = "lp-command-relay"},
     {type = "unlock-recipe", recipe = "lp-rally-beacon"}, {type = "unlock-recipe", recipe = "lp-trooper-order"},
     {type = "unlock-recipe", recipe = "lp-breacher-order"}, {type = "give-item", item = "lp-command-core", count = 1}}),
   -- Battle tanks with the second level, once the player has tanks of their own.
-  tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank"}, {red, green, blue}, 200, {
+  tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank", "battery-equipment"}, {red, green, blue}, 200, {
     {type = "unlock-recipe", recipe = "lp-battle-tank-order"}}),
   tech(3, {"lp-command-bandwidth-2", "military-3"}, {red, green, blue, grey}, 300),
   tech(4, {"lp-command-bandwidth-3"}, {red, green, blue, grey}, nil, nil,

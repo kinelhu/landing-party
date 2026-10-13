@@ -1,20 +1,14 @@
--- The army: depots build units from parts up to a garrison cap, in the mix the doctrine prefers; a full
--- enough garrison raids the nearest player structure, and the survivors come home.
+-- The army: depots build units from parts up to a garrison cap, in the mix the doctrine prefers. Raids are
+-- operations (scripts/ops.lua); this module answers alarms, patrols, escorts convoys and intercepts trains.
 local shared = require("__landing-party__.shared")
 local rng = require("__landing-party__.scripts.rng")
+local ops = require("__landing-party__.scripts.ops")
 
 local army = {}
 
 local BUILD_TICKS = 600          -- a depot turns out at most one unit per 10 s
 local CAP_PER_DEPOT = 10
-local RAID_SHARE = 0.7           -- a raid leaves when the garrison is this full
 local HOME_GUARD = 2             -- units that stay home
-local RAID_RANGE = 400           -- how far a settlement looks for a target
-local RAID_COOLDOWN = 5 * 3600
-local TARGET_TYPES = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "wall", "gate",
-  "assembling-machine", "furnace", "mining-drill", "electric-pole", "container", "logistic-container", "lab",
-  "radar", "solar-panel", "accumulator", "generator", "boiler", "roboport", "inserter", "transport-belt",
-  "rocket-silo", "reactor", "pipe", "storage-tank", "pumpjack", "oil-refinery", "chemical-plant", "lamp"}
 
 army.MIX = {
   bastion = {["lp-infantry"] = 5, ["lp-tank"] = 3, ["lp-walker"] = 1, ["lp-harrier"] = 1},
@@ -42,6 +36,7 @@ end
 local GARRISON_PER_TIER = 5     -- per depot
 local function tier() return storage.faction and storage.faction.tier or 0 end
 local function cap(b) return #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * tier()) end
+army.cap = cap
 local function strength(b) return #b.garrison + #(b.patrol or {}) end
 
 -- The doctrine's mix, restricted to what the faction's tier has unlocked.
@@ -81,64 +76,6 @@ local function produce(b, trace)
   end
 end
 
--- The nearest player structure within reach of the lander, of any force at war with the faction.
-local function target(b)
-  local f = b.lander.force
-  local best, bd
-  for _, other in pairs(game.forces) do
-    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other) then
-      for _, e in pairs(b.lander.surface.find_entities_filtered{position = b.lander.position, radius = RAID_RANGE,
-        force = other, type = TARGET_TYPES}) do
-        local d = (e.position.x - b.lander.position.x) ^ 2 + (e.position.y - b.lander.position.y) ^ 2
-        if not bd or d < bd then best, bd = e, d end
-      end
-    end
-  end
-  return best
-end
-
-local SEARCH_TICKS = 30 * 60      -- a wide area query: not every few seconds (it tripled the run's cost)
-local IDLE_SEARCH_TICKS = 120 * 60
-
-local function launch(b, trace)
-  if storage.army_off or storage.raids_off then return end
-  prune(b.garrison)
-  if #b.depots == 0 or game.tick < b.next_raid or game.tick < (b.next_search or 0) then return end
-  if #b.garrison < math.max(6, RAID_SHARE * cap(b)) then return end
-  local t = target(b)
-  b.next_search = game.tick + (t and SEARCH_TICKS or IDLE_SEARCH_TICKS)
-  if not t then return end
-  local home = b.depots[1]
-  if not (home and home.valid) then return end
-  local surface = home.surface
-  local group = surface.create_unit_group{position = home.position, force = home.force}
-  local members = {}
-  for i = #b.garrison, HOME_GUARD + 1, -1 do
-    local u = table.remove(b.garrison, i)
-    -- Spider-units do not join unit groups: they get the same orders on their own.
-    if u.type == "unit" then group.add_member(u) end
-    table.insert(members, u)
-  end
-  local dest = {t.position.x, t.position.y}
-  local cmd = {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
-    {type = defines.command.go_to_location, destination = dest, radius = 20, distraction = defines.distraction.by_enemy},
-    {type = defines.command.attack_area, destination = dest, radius = 24, distraction = defines.distraction.by_anything},
-  }}
-  group.set_command(cmd)
-  for _, u in ipairs(members) do
-    if u.type ~= "unit" then u.commandable.set_command(cmd) end
-  end
-  table.insert(b.raids, {group = group, members = members, target = dest, started = game.tick, home = home})
-  b.raids_sent = b.raids_sent + 1
-  b.next_raid = game.tick + RAID_COOLDOWN
-  local mix = {}
-  for _, u in ipairs(members) do mix[u.name] = (mix[u.name] or 0) + 1 end
-  local parts = {}
-  for _, name in ipairs(army.UNITS) do if mix[name] then table.insert(parts, mix[name] .. " " .. name:sub(4)) end end
-  trace(b, string.format("raid %d: %s against %s at %.0f,%.0f", b.raids_sent, table.concat(parts, ", "), t.name,
-    dest[1], dest[2]))
-end
-
 -- Response: a building hit within reach of a depot calls out a squad from the garrison (the home guard
 -- stays), at most once a minute per settlement. It goes as a raid does and comes home the same way.
 local RESPONSE_RANGE = 300
@@ -151,11 +88,12 @@ local THREAT_RADIUS = 30
 local THREATS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "unit", "car", "spider-vehicle",
   "character"}
 
-local function threat_count(surface, pos, f)
+local MOBILE = {"unit", "car", "spider-vehicle", "character"}
+local function threat_count(surface, pos, f, types)
   local n = 0
   for _, other in pairs(game.forces) do
     if other ~= f and other.name ~= "neutral" and not f.get_cease_fire(other) then
-      n = n + surface.count_entities_filtered{position = pos, radius = THREAT_RADIUS, force = other, type = THREATS}
+      n = n + surface.count_entities_filtered{position = pos, radius = THREAT_RADIUS, force = other, type = types or THREATS}
     end
   end
   return n
@@ -163,7 +101,15 @@ end
 local RESPONSE_COOLDOWN = 60 * 60
 
 function army.alarm(b, pos, trace)
+  if not storage.ops_off then ops.sense_at(b, pos, 40) end
   if storage.army_off or game.tick < (b.next_response or 0) then return end
+  -- Static threats (turret creep) get no piecemeal answer: fed one squad at a time into three turrets, the
+  -- garrison bled out (defend). They become a priority target for a raid sized to them (scripts/ops.lua).
+  local d0 = b.depots[1]
+  if d0 and d0.valid and not storage.ops_off and threat_count(d0.surface, pos, d0.force, MOBILE) == 0 then
+    ops.threatened(b, pos)
+    return
+  end
   prune(b.garrison)
   local home, hd
   for _, d in ipairs(b.depots) do
@@ -527,7 +473,9 @@ end
 function army.tick(b, tick, trace)
   if tick % 600 == 300 then intercept(b, trace) end
   if tick % 60 == 45 then travel(b, trace) end
-  if tick % 300 == 0 then settle(b, trace); launch(b, trace) end
+  if tick % 300 == 0 then settle(b, trace) end
+  -- Raids are operations now (scripts/ops.lua): chosen from intel, sized, staged, aborted when losing.
+  ops.tick(b, tick, trace, army)
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end
 end

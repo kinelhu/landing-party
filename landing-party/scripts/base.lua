@@ -6,6 +6,7 @@ local site = require("__landing-party__.scripts.site")
 local layout = require("__landing-party__.scripts.layout")
 local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
+local ops = require("__landing-party__.scripts.ops")
 
 local base = {}
 
@@ -705,7 +706,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b)}
 end
 
 return base

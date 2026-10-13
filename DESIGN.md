@@ -13,6 +13,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Rebuild unless occupied | built | `raid`, `occupy` |
 | Maturity, launch pad, exports, faction tier | built (first pass) | `faction` |
 | Army: roster, depots, garrison, raids | built (first pass) | `assault` (with replay) |
+| Operations: intel, raids by value, sizing, staging, abort | built (first pass) | `ops`, `abort` |
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
@@ -228,7 +229,12 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   a charge thrown 8 tiles every 3 s bursts over 2.5 tiles (enemies only) for 100 explosive damage: 63 to a
   wall, 100 to a turret; bullets do 2.4 to a wall. **Battle tank** (40 steel, 10 engines, 10 circuits, 120 s;
   population 4): the faction tank's hull and stats in the player's colours. Infantry alone should not take a
-  walled position; a mixed force should. Unlocks: troopers and breachers with command bandwidth 1 (after
+  walled position; a mixed force should. **Equipment as ingredients (user 2026-10-13):** personal equipment is
+  made by hand in small numbers and rarely automated, so unit recipes take it, a fresh logistics chain:
+  trooper = heavy armor, submachine gun, 10 magazines; breacher = heavy armor, 10 grenades, 5 circuits;
+  battle tank = a tank, 20 cannon shells, 2 battery equipment (built). Later, veterans on modular armor with
+  energy shields and exoskeletons. Bandwidth 1 now also needs heavy armor; bandwidth 2 battery equipment.
+  Unlocks: troopers and breachers with command bandwidth 1 (after
   military 2, which brings grenades), battle tanks with bandwidth 2 (after the vanilla tank research).
 - **Leash and cover (built):** a squad fights units only inside its beacon's reach; under A it skips a
   military building that a faction turret covers (turrets in reach fall first, so the cover is outside).
@@ -384,6 +390,32 @@ divided by known defence).
 - **Probe**: scouts test a sector and report.
 - **Retake**: counter-attack an outpost the player captured.
 - **Feint** (later): a loud attack on one side to draw the player's army, the main blow on the other.
+- **Bombardment** (later; user 2026-10-13): long-range threats, an artillery or missile position that
+  outranges everything but the player's artillery, built and guarded far out. The player's counter-build:
+  anti-missile interceptors that need radar coverage (radars earn their keep, a mirror of the faction's
+  jammers), or a strike on the position. The late, expensive end of the same framework, after raid and siege.
+**Built (first pass), `scripts/ops.lua`: intel and the Raid.** Sensors: the lander (200 tiles), depots (150),
+radars (250), units in the field (40); a scan every 2 minutes forgets what is gone. Intel is kept per 32-tile
+cell (the most valuable structure, turrets within 30); faction deaths leave markers (a turret's worth per
+three). A raid needs 3 units a known turret plus 4 and leaves from what is above a reserve of 30% of the
+garrison cap; it stages 34 tiles short of the target on the line from home, attacks the target's cell
+(radius 12), and aborts below half strength with a turret still there, after 90 s without a kill, or, looking
+from the staging point, when it sees more turrets than it can take (it turns back unhurt). An abort cools the
+position (48 tiles) for 10 minutes and is remembered. Replaced: the nearest-entity raid and its 28-type list.
+`ops` (seed 12345): with a defended cluster 110 tiles out and a valuable undefended one 170 out, the first
+raid (4 units) went for the command relays and destroyed all three buildings; a later one at the defended
+cluster came with 16, sized to its four turrets. `abort`: the target armed with six turrets after the raid
+left; it saw them from staging and came home 4 of 4, and did not come back within the cooldown. Lessons: the
+cooldown on a cell missed the cell next door (now an area); attacking blind lost every raider (now a look
+from staging, and what it sees there replaces what it believed).
+**Alarms feed the intel; static threats get a raid, not a response.** A building under fire records what is
+around it (40 tiles); responses see as patrols do. A threat with no mobile part (turret creep) draws no
+piecemeal response: fed squads of 18 one at a time into three upgraded gun turrets, a garrison bled out and
+never mustered a raid (`defend`, after the nearest-entity raid that used to clear creep by accident was
+removed). Instead the spot is a priority for 10 minutes (+10 value) and a raid sized to it goes when the force
+exists: one raid of 19 against three turrets, 11 lost, creep destroyed, the outpost rebuilt. Force sizing is
+now 5 a turret plus 4 (3 lost to upgraded ammunition). After a raid, the faction records what it saw at the
+target: destroyed targets are forgotten (one raid set out again for creep it had destroyed).
 Order: intel and the operation framework with Raid (and abort) first, then Siege; the rest after a first-hour
 playthrough baseline. Also adopted from the review: garrison roles and escalating alarms; tier as capability
 (the +15% damage goes); relay and barracks control radius with R always obeyed; jamming instead of satellites
