@@ -11,7 +11,7 @@ JOBS="${LP_JOBS:-4}"
 logs="$(mktemp -d)"
 # name | env | minutes | every | strike
 RUNS=(
-  "cut||36|36|30" "raid||36|36|30" "occupy||48|48|30" "defend||37|37|30" "army||41|41|30" "train||36|36|30"
+  "cut||50|50|30" "raid||50|50|30" "occupy||48|48|30" "defend||37|37|30" "army||41|41|30" "train||36|36|30"
   "siege|LP_MIX=20,10,10|28|28|15"
   "orders||3|1|1" "circuit||5|1|1" "ops||12|12|1" "abort||12|12|1" "bombard||20|20|1" "caps||10|10|1"
 )

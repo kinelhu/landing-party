@@ -488,6 +488,10 @@ scenario with assertions first; the window is for art, feel and GUI.
   what follows: 19 s a siege run. A fork holds the settlement as the code grew it then: iterate on forks,
   confirm with full runs.
 - Scenarios added: `fall` (a lander destroyed with a second settlement standing).
+- **Quick regression** (user 2026-10-13: "regressions are super long; do we need to run them this often?"):
+  `scripts/regress.sh` runs 13 scenarios in about 3 minutes, those that strike from forks saved 6 minutes
+  before the strike (raid measures the minutes before it) and keyed by the code that runs before a strike;
+  `--full` adds the long growth scenarios for milestones. The full batch took about 10 minutes for 8.
 - `scripts/showcase.sh [seed] [minute]`: a save to look at in game, built with no clicks: the `showcase`
   scenario on a headless server (fast, back to normal speed before `server_save`), copied to the play
   profile (base, Landing Party, Editor Extensions and flib copied from the real profile).
