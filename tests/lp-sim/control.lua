@@ -949,7 +949,13 @@ scenarios.showcase = function()
     lp("debug_depot", storage.id, 4000)
   end)
   schedule(120, function()
-    lp("arrive", 1, {x = 0, y = 0}, params.distance, {uplink = true})
+    -- LP_MIX=rivals: Grubstake lands beside Serenity instead of the uplink (identity look).
+    if params.mix == "rivals" then
+      local other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      if other then lp("debug_depot", other, 4000) end
+    else
+      lp("arrive", 1, {x = 0, y = 0}, params.distance, {uplink = true})
+    end
     flatten(-6, -34, 36, 0)
     local function put(name, x, y)
       return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
@@ -1564,6 +1570,10 @@ scenarios.rivals = function()
       if e.name:sub(1, 13) == "lp-grubstake-" then own = own + 1 elseif e.name:sub(1, 3) == "lp-" then plain = plain + 1 end
     end
     check("rivals: Grubstake builds its own prototypes", own > 20 and plain == 0, own .. " its own, " .. plain .. " plain")
+    local gravel = surface().count_tiles_filtered{name = "lp-grubstake-road"}
+    local logos = surface().count_entities_filtered{name = {"lp-logo", "lp-grubstake-logo"}}
+    check("rivals: their own floors and logos", gravel > 50 and surface().count_entities_filtered{name = "lp-grubstake-logo"} > 0
+      and surface().count_entities_filtered{name = "lp-logo"} > 0, gravel .. " gravel tiles, " .. logos .. " logos")
     check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
       a.force .. " and " .. (b and b.force or "none"))
     check("rivals: they raided each other", against > 0, against .. " operations against a rival")

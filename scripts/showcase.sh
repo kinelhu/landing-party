@@ -13,8 +13,8 @@ printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$PLAY" >
 ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
 ln -sfn "$REPO/landing-party" "$PLAY/mods/landing-party"
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
-printf 'return {scenario = "showcase", minutes = %s, every = %s, strike = %s, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false}\n' \
-  "$((MINUTE + 1))" "$((MINUTE + 1))" "$MINUTE" > "$SIM/mods/lp-sim/params.lua"
+printf 'return {scenario = "showcase", minutes = %s, every = %s, strike = %s, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s"}\n' \
+  "$((MINUTE + 1))" "$((MINUTE + 1))" "$MINUTE" "${LP_MIX:-}" > "$SIM/mods/lp-sim/params.lua"
 mods='{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "space-age", "enabled": false}, {"name": "quality", "enabled": false}, {"name": "elevated-rails", "enabled": false}'
 echo "{\"mods\": [$mods, {\"name\": \"lp-sim\", \"enabled\": true}]}" > "$SIM/mods/mod-list.json"
 # Editor Extensions (and flib) for flying round without pausing: copied from the real profile, never linked.

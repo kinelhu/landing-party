@@ -133,7 +133,7 @@ local function snapshot(id, file, radius)
     table.insert(ore, {r.name, r.position.x, r.position.y, r.amount})
   end
   local roads = {}
-  for _, t in pairs(surface.find_tiles_filtered{area = area, name = "lp-road"}) do
+  for _, t in pairs(surface.find_tiles_filtered{area = area, name = shared.variants(shared.FLOORS)}) do
     table.insert(roads, {t.position.x, t.position.y})
   end
   local s = base.stats(b)

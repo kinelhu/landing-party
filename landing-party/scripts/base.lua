@@ -115,6 +115,8 @@ function base.land(surface, pos, opts)
     b.uplink = surface.create_entity{name = shared.variant(corp, "lp-uplink"), position = uplink_at, force = f}
   end
   b.origin = {x = math.floor(lander.position.x), y = math.floor(lander.position.y)}
+  base.stamp(b, surface, {lander.position.x, lander.position.y + 6})
+  if b.uplink then base.stamp(b, surface, {b.uplink.position.x, b.uplink.position.y + 6}) end
   storage.bases[id] = b
   site.scan_init(b, SEARCH)
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
@@ -243,18 +245,34 @@ local function join(e)
 end
 
 -- Lay road tiles, never over water or an existing road.
-local function pave(b, tiles)
+-- Floors in the corporation's own tiles: roads, and pads (paved yards, docs/corporations.md).
+local function pave(b, tiles, floor)
   local surface = game.surfaces[b.surface]
+  local name = shared.variant(b.corp, "lp-" .. (floor or "road"))
   local out = {}
   for _, t in ipairs(tiles) do
     local tile = surface.get_tile(t[1], t[2])
-    if tile.valid and tile.name ~= "lp-road" and not tile.collides_with("water_tile") then
-      table.insert(out, {name = "lp-road", position = t})
+    if tile.valid and tile.name ~= name and not tile.collides_with("water_tile") then
+      table.insert(out, {name = name, position = t})
     end
   end
   if #out > 0 then surface.set_tiles(out, true, false, true, false) end
   b.road_tiles = b.road_tiles + #out
 end
+
+-- The corporation's logo stamped on the ground, on clear ground near pos (a decal: nothing collides with it,
+-- buildings hide it). It cannot be destroyed: when a settlement falls, its logos stay with the ruins.
+local function stamp(b, surface, pos)
+  local probe = shared.variant(b.corp, "lp-depot")
+  local p = surface.find_non_colliding_position(probe, pos, 10, 1)
+  if not p then return end
+  local logo = surface.create_entity{name = shared.variant(b.corp, "lp-logo"), position = p, force = force(b)}
+  if logo then
+    logo.destructible = false
+    b.logos = (b.logos or 0) + 1
+  end
+end
+base.stamp = stamp
 
 -- Place one entity for a job. Returns the entity, or nil when the spot is blocked.
 local function place(b, job)
@@ -275,6 +293,7 @@ local function place(b, job)
       time_to_live = BUILD_TICKS}
   end
   if job.name == "lp-pylon" then join(e) end
+  if job.name == "lp-depot" or job.name == "lp-launchpad" then stamp(b, surface, {e.position.x, e.position.y + 4}) end
   if job.name == "lp-pylon" and base.network(b) and e.electric_network_id ~= base.network(b) then
     trace(b, string.format("pylon at %.1f,%.1f did not join the network", e.position.x, e.position.y))
   end
@@ -325,7 +344,10 @@ end
 local function build(b)
   if rebuild(b) then return end
   -- Road tiles cost nothing and take no build step.
-  while b.queue[1] and b.queue[1].tiles do pave(b, table.remove(b.queue, 1).tiles) end
+  while b.queue[1] and b.queue[1].tiles do
+    local job = table.remove(b.queue, 1)
+    pave(b, job.tiles, job.floor)
+  end
   local job = b.queue[1]
   if not job then return end
   local cost = shared.cost[job.name] or 0
@@ -713,7 +735,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, logos = b.logos or 0}
 end
 
 return base

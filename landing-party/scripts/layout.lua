@@ -50,7 +50,7 @@ function layout.area_free(surface, x0, y0, w, h, ore)
   end
   local inner = {{x0, y0}, {x0 + w, y0 + h}}
   if surface.count_tiles_filtered{area = inner, collision_mask = "water_tile", limit = 1} > 0 then return false end
-  if surface.count_tiles_filtered{area = inner, name = "lp-road", limit = 1} > 0 then return false end
+  if surface.count_tiles_filtered{area = inner, name = shared.variants(shared.FLOORS), limit = 1} > 0 then return false end
   if surface.count_entities_filtered{area = inner, type = "resource"} > (ore or 6) then return false end
   return true
 end
@@ -367,7 +367,7 @@ function layout.embellish(b)
       local x0, y0, w, h = block.x0, block.y0, block.w, block.h
       local paving = {}
       for x = x0 + 1, x0 + w - 2 do for y = y0 + 1, y0 + h - 2 do table.insert(paving, {x, y}) end end
-      push(b, {tiles = paving, module = block})
+      push(b, {tiles = paving, floor = "pad", module = block})
       for _, p in ipairs({{4.5, 1.5}, {w - 4.5, 1.5}, {4.5, h - 1.5}, {w - 4.5, h - 1.5}}) do
         push(b, {name = "lp-lamp", pos = {x0 + p[1], y0 + p[2]}, module = block})
       end

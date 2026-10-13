@@ -221,3 +221,4 @@ data:extend({
 require("units")
 require("player")
 require("corps")
+require("look")
