@@ -18,6 +18,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
+| Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
 | Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Capture of mining outposts by holding | built | `army` |
@@ -276,9 +277,13 @@ The aim: the player answers the faction with factory output, not clicks.
   player's grid). No capture by damage threshold (that is Proliferation's).
 - **Circuits as the player's command language (direction, user 2026-10-13):** automate patrols and
   attacks with the circuit network rather than a selection tool. Built: stance and rally point by signal.
-  Next candidates: the barracks reporting its troopers and orders as signals; a beacon reporting what its
-  squad sees (enemies in reach, troopers alive), so a circuit can retreat a beaten squad or launch an
-  attack when a squad is full.
+  **Built: the beacon reports** on its own output, in a section it writes every 2 s (the first section
+  holding only report signals; made when missing): **S** its squad, **E** faction units and **T** faction
+  turrets within reach of the rally point. One decider wired to a beacon (S >= 8 -> A) holds a squad until
+  it has eight, then attacks (`circuit`: no shot before, A at 8, the turret falls). The barracks needs
+  nothing: an assembler already reports its contents and takes its recipe from the circuit network.
+  Next candidates: a squad's losses (D), ammunition or health; beacons that report the rally point's
+  ground (captured, contested).
 - Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
   blocks; a fought capture that a sensible army wins.
 

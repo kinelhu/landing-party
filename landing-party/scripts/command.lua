@@ -8,6 +8,8 @@
 --                  capture), fighting only what engages (an advance sent ten troopers at a hub's lasers)
 --   signal R > 0   retreat to the nearest barracks
 --   otherwise      hold: stay at the rally point
+-- It reports on its own output: S its squad, E faction units and T faction turrets within reach of the
+-- rally point.
 local shared = require("__landing-party__.shared")
 
 local command = {}
@@ -265,13 +267,45 @@ local function mark(k, beacon, p)
   m.line.color = COLOR[p.stance]
 end
 
+-- The beacon's report, written into a section of its own (the first holding only report signals; made when
+-- missing): S its squad, E faction units and T faction turrets within reach of the rally point. A decider
+-- reading S can send A when the squad is full, or R when it is beaten.
+local REPORTED = {["signal-S"] = true, ["signal-E"] = true, ["signal-T"] = true}
+local function report(beacon, p, squad)
+  local cb = beacon.get_or_create_control_behavior()
+  local sec
+  for _, s in pairs(cb.sections) do
+    if s.is_manual and s.group == "" and #s.filters > 0 then
+      local only = true
+      for _, f in pairs(s.filters) do if not (f.value and REPORTED[f.value.name]) then only = false end end
+      if only then sec = s; break end
+    end
+  end
+  sec = sec or cb.add_section()
+  if not sec then return end
+  local s = p.surface
+  local function v(name, n) return {value = {type = "virtual", name = name, quality = "normal"}, min = n} end
+  sec.filters = {
+    v("signal-S", squad),
+    v("signal-E", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.FORCE,
+      type = {"unit", "spider-unit"}}),
+    v("signal-T", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.FORCE,
+      name = "lp-turret"}),
+  }
+end
+
 local function lead()
   local objectives = {}
   local plans = {}
+  local squads = {}
+  for _, t in pairs(storage.cmd.troopers) do
+    if t.unit.valid and t.beacon then squads[t.beacon] = (squads[t.beacon] or 0) + 1 end
+  end
   for k, b in pairs(storage.cmd.beacons) do
     if b.valid then
       plans[k] = plan(b)
       mark(k, b, plans[k])
+      report(b, plans[k], squads[k] or 0)
     else
       storage.cmd.beacons[k] = nil
     end

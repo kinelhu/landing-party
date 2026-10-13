@@ -1077,6 +1077,70 @@ scenarios.fall = function()
   end)
 end
 
+-- Circuit: an attack automated by one decider. Troopers come two at a time; a faction laser turret stands 40
+-- tiles from the beacon; a decider wired to the beacon sends A while S (the squad, on the beacon's report) is
+-- at least 8. The turret must be untouched while the squad is smaller, A appear only at 8, and the turret fall.
+scenarios.circuit = function()
+  local red = defines.wire_connector_id.circuit_red
+  local function sig(name) return {type = "virtual", name = name} end
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -60, 90, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.beacon = put("lp-rally-beacon", 10.5, -15.5)
+    -- A decider needs power: poles out to it.
+    put("medium-electric-pole", 6.5, -5.5); put("medium-electric-pole", 9.5, -12.5); put("medium-electric-pole", 12.5, -19.5)
+    S.decider = put("decider-combinator", 10.5, -19)
+    S.decider.get_wire_connector(defines.wire_connector_id.combinator_input_red, true).connect_to(
+      S.beacon.get_wire_connector(red, true))
+    S.decider.get_wire_connector(defines.wire_connector_id.combinator_output_red, true).connect_to(
+      S.beacon.get_wire_connector(red, true))
+    S.decider.get_or_create_control_behavior().parameters = {
+      conditions = {{first_signal = sig("signal-S"), constant = 8, comparator = "≥"}},
+      outputs = {{signal = sig("signal-A"), constant = 1, copy_count_from_input = false}}}
+    -- The faction's turret, powered on its own.
+    S.turret = put("lp-turret", 50.5, -15.5, FORCE)
+    put("electric-energy-interface", 54, -15, FORCE)
+    put("medium-electric-pole", 52.5, -13.5, FORCE)
+    S.orders = 0
+    S.log = {}
+  end)
+  for t = 120, 120 + 150 * 60, 20 * 60 do
+    schedule(t, function()
+      if S.orders < 10 then
+        S.orders = S.orders + S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 2}
+      end
+    end)
+  end
+  for t = 300, 120 + 240 * 60, 60 do
+    schedule(t, function()
+      local function net(name) return S.beacon.get_signal(sig(name), red) or 0 end
+      local s, a, tt = net("signal-S"), net("signal-A"), net("signal-T")
+      local hurt = S.turret.valid and S.turret.health < S.turret.max_health
+      if a > 0 and not S.attack_at then S.attack_at = s end
+      -- Before the first A only: losses in the fight take S below 8 again.
+      if not S.attack_at and (hurt or not S.turret.valid) then S.early = true end
+      if tt > 0 then S.saw_turret = true end
+      if game.tick % 1200 == 300 then table.insert(S.log, string.format("t%d S=%d A=%d T=%d", game.tick / 60, s, a, tt)) end
+    end)
+  end
+  schedule(120 + 240 * 60, function()
+    info("circuit: " .. table.concat(S.log, ", "))
+    check("circuit: the report showed the turret in reach", S.saw_turret == true, tostring(S.saw_turret))
+    check("circuit: nothing attacked before the squad was 8", not S.early, tostring(S.early))
+    check("circuit: the decider sent A at 8", S.attack_at ~= nil and S.attack_at >= 8, tostring(S.attack_at))
+    check("circuit: the turret fell", not S.turret.valid, S.turret.valid and "standing" or "destroyed")
+  end)
+end
+
 -- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
 -- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
 scenarios.duel = function()
