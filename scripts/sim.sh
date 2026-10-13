@@ -35,7 +35,8 @@ run() { "$FACTORIO" --config "$SIM/config/config.ini" "$@" > "$SIM/sim.out" 2>&1
 if [ -n "${LP_FORK:-}" ]; then
   # From the scenario's fork at its strike (scripts/fork.sh, made once): only what follows the strike runs.
   fork="$FORKS/$SCENARIO-$SEED-$STRIKE-$FORK_HASH.zip"
-  [ -f "$fork" ] || "$(dirname "$0")/fork.sh" "$SCENARIO" "$SEED" "$STRIKE" > /dev/null
+  # A fork that fails to build says so (its output once went to /dev/null and the run ended silently).
+  [ -f "$fork" ] || "$(dirname "$0")/fork.sh" "$SCENARIO" "$SEED" "$STRIKE" || { echo "SIM FAILED ($RUN): fork"; exit 1; }
   cp "$fork" "$SIM/saves/sim.zip"
   run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $(((MINUTES - STRIKE + FORK_LEAD) * 3600 + 61)) --benchmark-runs 1
 else

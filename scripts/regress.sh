@@ -32,6 +32,6 @@ wait
 fail=0
 for n in "${names[@]}"; do
   line=$(grep -hE "DONE|SIM FAILED" "$logs/$n.log" | tail -1)
-  case "$line" in *"ALL PASSED"*) printf "  pass  %s\n" "$n";; *) printf "  FAIL  %s  %s\n" "$n" "$line"; grep -hE "FAIL " "$logs/$n.log" | sed "s/^/        /"; fail=1;; esac
+  case "$line" in *"ALL PASSED"*) printf "  pass  %s\n" "$n";; *) printf "  FAIL  %s  %s\n" "$n" "$line"; grep -hE "FAIL " "$logs/$n.log" | sed "s/^/        /"; [ -n "$line" ] || tail -5 "$logs/$n.log" | sed "s/^/        /"; fail=1;; esac
 done
 exit $fail

@@ -32,7 +32,7 @@ rm -rf "$out" "$SIM/saves/"*.zip
   --map-gen-settings "$REPO/scripts/map-gen.json" > "$SIM/create.out" 2>&1 || {
   echo "FORK FAILED: map creation"; grep -A6 Error "$SIM/create.out" | head -12; exit 1; }
 "$FACTORIO" --config "$SIM/config/config.ini" --start-server "$SIM/saves/sim.zip" \
-  --server-settings "$SIM/server-settings.json" --port $((34300 + RANDOM % 500)) > "$SIM/server.out" 2>&1 &
+  --server-settings "$SIM/server-settings.json" --port $((34300 + $$ % 3000)) > "$SIM/server.out" 2>&1 &
 pid=$!
 trap 'kill $pid 2>/dev/null || true' EXIT
 for _ in $(seq 1 600); do
