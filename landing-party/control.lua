@@ -185,6 +185,7 @@ remote.add_interface("landing-party", {
     if t.era ~= nil then storage.era_override = t.era end
     if t.hq_fast ~= nil then storage.hq_fast = t.hq_fast end
     if t.strip_fast ~= nil then storage.strip_fast = t.strip_fast end
+    if t.perimeter_fast ~= nil then storage.perimeter_fast = t.perimeter_fast end
     -- Tests of operations' mechanics (not of tempers): every corporation already provoked by the player.
     if t.provoke then for _, c in pairs(shared.CORPS) do ops.provoke(c.force, "player") end end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end

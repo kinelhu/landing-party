@@ -86,7 +86,7 @@ function base.land(surface, pos, opts)
     rate_in = 0, rate_parts = 0, pylons = {}, bins = {}, drills = {}, fabs = {}, gens = {}, turrets = {},
     radars = {}, walls = {}, depots = {}, launchpads = {}, lamps = {}, mines = {}, flamers = {}, pylon_spots = {}, road_tiles = 0,
     modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0, corp = corp, force = f.name,
-    rule = "landed", log = {}, waiting = nil}
+    rule = "landed", log = {}, waiting = nil, landed = game.tick}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
   layout.init(b, seed, opts.uplink and "fortress" or opts.doctrine, shared.CORPS[corp].doctrines)
   army.init(b)
@@ -617,6 +617,8 @@ function base.claim_map(b)
     local d = math.sqrt((m.center[1] - b.origin.x) ^ 2 + (m.center[2] - b.origin.y) ^ 2) + CLAIM_MARGIN
     if d > r then r = d end
   end
+  -- A perimeter that grows on its own (Serenity's moving line, ops.perimeter) claims at least that far.
+  if b.perimeter and b.perimeter > r then r = b.perimeter end
   b.claim_radius = r
   local c = shared.CORPS[b.corp].color
   local fill = b.fallen and {r = 0.08, g = 0.08, b = 0.08, a = 0.12} or {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}
@@ -632,6 +634,8 @@ function base.claim_map(b)
       surface = surface, render_mode = "chart"}
   end
 end
+
+ops.claim_map = base.claim_map
 
 -- The fall: a settlement whose lander is destroyed collapses. Its generators fail one by one (every
 -- CASCADE_TICKS), so its turrets go dark; its units evacuate (army.disband). When the last generator is gone,
@@ -777,7 +781,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned}
 end
 
 return base

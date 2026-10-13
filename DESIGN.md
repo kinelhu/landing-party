@@ -17,6 +17,7 @@ document describes the parts as built; the campaign document describes the game 
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
 | Tempers: Serenity strikes only once provoked; Grubstake raids soft targets and strip-mines the player's ore | built | `temper`, `strip` |
+| Serenity's line moves: its perimeter grows towards the player, a named warning a step ahead | built | `line` (two) |
 | Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
 | Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
 | Rebuild unless occupied | built | `raid`, `occupy` |
@@ -622,6 +623,23 @@ hours, seed 12345: spread 12 operations (4 turned back), 12 of its 24 outpost dr
 **Built: alerts.** An operation going in against a player (a raid attacking, a siege's mortar up, a strip camp
 mining) puts a custom alert with the corporation's icon on the nearest of that player's buildings, for every
 player of the force, on any surface (absence is not a truce). Needs a game session to see (no players headless).
+
+### Late pressure and the moving line (Fable's consult, `docs/reviews/2026-10-13-late-pressure-consult.md`)
+**Built.**
+- **Strips of guarded outposts.** `choose_strip` required the target drill to be undefended though `strip_site`
+  already keeps the camp out of turret reach: a careful player's outposts (two lasers each) were never stripped.
+  Now any outpost with a camp site beyond turret reach can be stripped.
+- **Transit is a target.** Rails (value 3) and signals (2) are sensed. A line cell (a pole or rail with no player
+  turret within 60 tiles) scores double, ignores past attempts and cools in half the time (5 minutes): cutting a
+  far line is cheap and repeated.
+- **Serenity's line moves.** From 30 minutes after landing, a Serenity settlement's perimeter grows 30 tiles every
+  10 minutes (at once when 20 minutes passed with no operation against a player), announced every third step,
+  with a named warning ("will extend its perimeter past your Roboport at [gps] within ten minutes") one step
+  before it encloses a player structure. It stops at the nearest player structure + 40, at 450 tiles from its
+  origin and short of another corporation's claim. Enclosing a structure is encroachment, so it provokes.
+  `line` (relays at 185 tiles; a step a minute in the test): grows, names a relay, provoked only after the
+  warning, no operation before; `line` with `LP_MIX=back` (the relays removed on the warning): never provoked.
+- Not built yet: an unanswered strip camp claiming the patch, and a second becoming a Grubstake outpost.
 
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet

@@ -63,10 +63,14 @@ ops.VALUE = {["lp-command-relay"] = 10, ["lp-barracks"] = 8, ["substation"] = 6,
   ["train-stop"] = 5, ["locomotive"] = 5, ["roboport"] = 5, ["mining-drill"] = 4, ["assembling-machine"] = 3,
   ["furnace"] = 3, ["lab"] = 3, ["radar"] = 3, ["ammo-turret"] = 1, ["electric-turret"] = 1,
   -- A rival corporation's buildings: its command (lander, uplink), its depots and its power first.
-  ["lp-uplink"] = 10, ["lp-lander"] = 8, ["lp-depot"] = 6, ["lp-generator"] = 5, ["lp-launchpad"] = 5}
+  ["lp-uplink"] = 10, ["lp-lander"] = 8, ["lp-depot"] = 6, ["lp-generator"] = 5, ["lp-launchpad"] = 5,
+  -- Transit (late pressure, docs/reviews/2026-10-13-late-pressure-consult.md): rails and their signals.
+  ["straight-rail"] = 3, ["half-diagonal-rail"] = 3, ["curved-rail-a"] = 3, ["curved-rail-b"] = 3,
+  ["rail-signal"] = 2, ["rail-chain-signal"] = 2}
 local TYPES = {"mining-drill", "assembling-machine", "furnace", "lab", "radar", "roboport", "train-stop",
   "locomotive", "electric-pole", "ammo-turret", "electric-turret", "fluid-turret", "electric-energy-interface",
-  "container"}
+  "container", "straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b", "rail-signal",
+  "rail-chain-signal"}
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
 
 local function value_of(e)
@@ -99,7 +103,7 @@ local function sense(b, surface, pos, r)
         local key = math.floor(e.position.x / CELL) .. "," .. math.floor(e.position.y / CELL)
         local c = cells[key]
         if not c or v > c.value then
-          cells[key] = {pos = {e.position.x, e.position.y}, kind = e.name, value = v, owner = e.force.name}
+          cells[key] = {pos = {e.position.x, e.position.y}, kind = e.name, value = v, owner = e.force.name, type = e.type}
         end
       end
     end
@@ -107,6 +111,9 @@ local function sense(b, surface, pos, r)
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
       t.pos, t.kind, t.value, t.seen, t.owner = c.pos, c.kind, c.value, game.tick, c.owner
       t.defence = surface.count_entities_filtered{position = c.pos, radius = DEFENCE_RADIUS, force = other, type = TURRETS}
+      -- A line cell: a pole or rail with no turret within 60 tiles (transit far from defences: cheap to cut).
+      t.line = (c.type == "electric-pole" or (c.type or ""):find("rail") ~= nil)
+        and surface.count_entities_filtered{position = c.pos, radius = 60, force = other, type = TURRETS, limit = 1} == 0
       b.intel.targets[key] = t
     end
   end
@@ -143,6 +150,74 @@ local function encroachment(b, surface)
     if not shared.is_corp(f.name) and surface.count_entities_filtered{position = {b.origin.x, b.origin.y},
       radius = b.claim_radius, force = f, type = TYPES, limit = 1} > 0 then
       ops.provoke(b.force, f.name)
+    end
+  end
+end
+
+-- Serenity's line moves (docs/reviews/2026-10-13-late-pressure-consult.md): a careful player could leave a
+-- provoked-only corporation alone for ever. From PERIMETER_START after landing its perimeter grows PERIMETER_STEP
+-- tiles every PERIMETER_TICKS (at once after FLOOR_TICKS with no operation against a player), announced every
+-- third step, with a named warning one step before it encloses a player structure; it stops at the nearest
+-- player structure + 40, at PERIMETER_MAX from its origin, and short of another corporation's claim. Enclosing
+-- a structure provokes it (encroachment).
+local FLOOR_TICKS = 20 * 60 * 60
+local PERIMETER_START = 30 * 3600
+local PERIMETER_TICKS = 10 * 3600
+local PERIMETER_STEP = 30
+local PERIMETER_MAX = 450
+local function nearest_player(b, surface, r)
+  local best, bd
+  for _, f in ipairs(enemies(game.forces[b.force])) do
+    if not shared.is_corp(f.name) then
+      for _, e in pairs(surface.find_entities_filtered{position = {b.origin.x, b.origin.y}, radius = r, force = f,
+        type = TYPES}) do
+        local d = math.sqrt((e.position.x - b.origin.x) ^ 2 + (e.position.y - b.origin.y) ^ 2)
+        if not bd or d < bd then best, bd = e, d end
+      end
+    end
+  end
+  return best, bd
+end
+
+function ops.perimeter(b, tick)
+  if not (shared.CORPS[b.corp].temper or {}).provoked_only or not b.claim_radius then return end
+  b.landed = b.landed or tick
+  local fast = storage.perimeter_fast
+  local start, every = fast and 3600 or PERIMETER_START, fast and 3600 or PERIMETER_TICKS
+  if tick - b.landed < start then return end
+  local quiet = tick - (storage.threat_last or 0) > FLOOR_TICKS and tick - (b.perimeter_floor or 0) > FLOOR_TICKS
+  if tick < (b.perimeter_next or 0) and not quiet then return end
+  if quiet and tick < (b.perimeter_next or 0) then b.perimeter_floor = tick end
+  b.perimeter_next = tick + every
+  local surface = game.surfaces[b.surface]
+  local cur = b.claim_radius
+  local cap = PERIMETER_MAX
+  local near, nd = nearest_player(b, surface, PERIMETER_MAX + PERIMETER_STEP)
+  if nd then cap = math.min(cap, nd + 40) end
+  for _, o in pairs(storage.bases) do
+    if o ~= b and not o.fallen and o.corp ~= b.corp and o.surface == b.surface and o.claim_radius then
+      local d = math.sqrt((o.origin.x - b.origin.x) ^ 2 + (o.origin.y - b.origin.y) ^ 2)
+      cap = math.min(cap, d - o.claim_radius)
+    end
+  end
+  local new = math.min(cur + PERIMETER_STEP, cap)
+  if new <= cur then return end
+  b.perimeter = new
+  b.perimeter_steps = (b.perimeter_steps or 0) + 1
+  if ops.claim_map then ops.claim_map(b) end
+  local where = string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name)
+  -- One step ahead: the structure the next step will enclose, named.
+  local warn = near and near.valid and nd > new and nd <= new + PERIMETER_STEP and b.warned ~= near.unit_number
+  if warn then b.warned = near.unit_number end
+  for _, f in ipairs(enemies(game.forces[b.force])) do
+    if #f.players > 0 and not shared.is_corp(f.name) then
+      if b.perimeter_steps % 3 == 1 then
+        f.print({"lp.perimeter", shared.corp_label(b.corp), where, math.floor(new)})
+      end
+      if warn then
+        f.print({"lp.perimeter-warning", shared.corp_label(b.corp), near.localised_name,
+          string.format("[gps=%d,%d,%s]", near.position.x, near.position.y, surface.name)})
+      end
     end
   end
 end
@@ -249,7 +324,6 @@ end
 -- corporation, are capped by that player's era (1 + era; era 0-4 from research done), so corporations do not
 -- stack into a flood; corporations' operations against each other are not counted. The floor: when no
 -- operation has gone against a player for FLOOR_TICKS, player targets weigh triple in every choice.
-local FLOOR_TICKS = 20 * 60 * 60
 local ERA_TECHS = {25, 60, 100, 150}
 function ops.era(force)
   local n = 0
@@ -336,7 +410,8 @@ local function choose(b, army)
       local d = defence(b, t)
       if needed(d) <= max_field then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
-        local s = (t.value + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300) / (1 + t.tried)
+        local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
+          / (1 + (t.line and 0 or t.tried))
           * ((player and floor) and 3 or 1)
         if not bs or s > bs then best, bs = key, s end
       end
@@ -403,7 +478,7 @@ local function finish(b, outcome, trace, army)
   end
   local t = b.intel.targets[op.target]
   if t then
-    t.cool = game.tick + COOL_TICKS
+    t.cool = game.tick + (t.line and COOL_TICKS / 2 or COOL_TICKS)
     -- The whole position cools after an abort, not the one cell: an area, so cells first seen later inherit
     -- it (the turret's cell next door, scanned a minute after, was raided nine minutes later).
     if outcome == "aborted" then
@@ -657,8 +732,9 @@ local function choose_strip(b, army)
   local in_flight = ops.player_ops()
   local best, bd, site
   for key, t in pairs(b.intel.targets) do
-    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner)
-      and (t.defence or 0) == 0 then
+    -- Any outpost with a camp site beyond turret reach (strip_site checks it): requiring an undefended drill as
+    -- well left a careful player's outposts, each with two lasers, never stripped.
+    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner) then
       local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
       if not bd or d < bd then
         local p = strip_site(b, t)
@@ -861,6 +937,7 @@ function ops.tick(b, tick, trace, army)
   ops.init(b)
   if tick % 600 == 300 then stand_down(b) end
   if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) end
+  if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
   if tick % 600 == 200 then field_sight(b) end
   if b.op then
     if tick % 300 == 100 then step(b, trace, army) end

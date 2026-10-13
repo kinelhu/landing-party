@@ -1937,6 +1937,52 @@ scenarios.temper = function()
   end)
 end
 
+-- Line: Serenity's perimeter moves (perimeter_fast: a step a minute from a minute after landing). Three relays
+-- 185 tiles out, never a shot: the line must grow, name a relay one step before enclosing it, then enclose it and
+-- be provoked, with no operation before that. LP_MIX=back: the player removes the relays on the warning; then
+-- nothing provokes it.
+scenarios.line = function()
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
+  schedule(120, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 185), math.floor(o.y - o.y / len * 185)}
+    flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
+    S.relays = {}
+    for k = -1, 1 do
+      table.insert(S.relays, surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"})
+    end
+  end)
+  for m = 2, params.minutes - 1 do
+    schedule(m * 3600 + 600, function()
+      local st = lp("stats", storage.id)
+      if st.warned and not S.warned_at then
+        S.warned_at = game.tick
+        if params.mix == "back" then for _, r in ipairs(S.relays) do if r.valid then r.destroy() end end end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local provoked = (lp("corp", "serenity").provoked or {}).player
+    local early = 0
+    for _, l in ipairs(st.ops.log) do
+      if l.owner == "player" and (not provoked or l.started < provoked) then early = early + 1 end
+    end
+    check("line: the perimeter grew", (st.perimeter_steps or 0) > 0,
+      tostring(st.perimeter_steps) .. " steps, radius " .. string.format("%.0f", st.claim_radius))
+    check("line: a relay was named one step ahead", S.warned_at ~= nil, "warned at " .. tostring(S.warned_at))
+    check("line: no operation against the player before it was provoked", early == 0, early .. " early")
+    if params.mix == "back" then
+      check("line: pulled back, never provoked", provoked == nil, "provoked at " .. tostring(provoked))
+    else
+      check("line: enclosed, provoked after the warning", provoked ~= nil and S.warned_at and provoked > S.warned_at,
+        "provoked at " .. tostring(provoked))
+    end
+  end)
+end
+
 -- Strip: Grubstake strips the player's ore. A patch of iron near it, two of the player's drills on one side, no
 -- turrets: a camp must go up beside them, mine the real patch (its ore less), and the ore must reach home.
 scenarios.strip = function()
@@ -2247,7 +2293,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true}
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 
