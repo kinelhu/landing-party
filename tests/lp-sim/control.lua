@@ -1558,6 +1558,12 @@ scenarios.rivals = function()
       end
     end
     info("rivals: " .. table.concat(lines_, "; "))
+    -- Each builds its own prototypes (its colour): Grubstake's are lp-grubstake-*.
+    local own, plain = 0, 0
+    for _, e in pairs(surface().find_entities_filtered{force = "lp-grubstake"}) do
+      if e.name:sub(1, 13) == "lp-grubstake-" then own = own + 1 elseif e.name:sub(1, 3) == "lp-" then plain = plain + 1 end
+    end
+    check("rivals: Grubstake builds its own prototypes", own > 20 and plain == 0, own .. " its own, " .. plain .. " plain")
     check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
       a.force .. " and " .. (b and b.force or "none"))
     check("rivals: they raided each other", against > 0, against .. " operations against a rival")

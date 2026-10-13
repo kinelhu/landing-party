@@ -21,7 +21,11 @@ local ADVANCE_RANGE = 200          -- outposts an occupy order looks for
 local ATTACK_REACH = 50
 local TURRET_COVER = 25            -- a laser's 24 and a little
 local REISSUE_TICKS = 600          -- an idle trooper is given its orders again after this long
-local MILITARY = {"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad"}
+-- Every corporation's prototypes of these kinds.
+local MILITARY = shared.variants({"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad"})
+local TURRETS = shared.variants({"lp-turret", "lp-mortar"})
+local LASERS = shared.variants("lp-turret")
+local BINS = shared.variants("lp-bin")
 local SIGNAL_ADVANCE = {type = "virtual", name = "signal-A"}
 local SIGNAL_RETREAT = {type = "virtual", name = "signal-R"}
 local SIGNAL_OCCUPY = {type = "virtual", name = "signal-O"}
@@ -174,11 +178,11 @@ local function objective(p, occupy)
     -- groups and died to them (siege, seed 12345).
     -- Then what no turret covers: those in reach are gone by now, so a cover is outside it (a depot in reach
     -- covered by a compound's turret beyond it drew the squad into that turret's fire, siege seed 12345).
-    for _, names in ipairs({{"lp-turret", "lp-mortar"}, MILITARY}) do
+    for _, names in ipairs({TURRETS, MILITARY}) do
       for _, e in pairs(s.find_entities_filtered{position = at, radius = ATTACK_REACH, force = f, name = names}) do
         local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
-        local covered = e.name ~= "lp-turret" and s.count_entities_filtered{position = e.position, radius = TURRET_COVER,
-          force = f, name = "lp-turret", limit = 1} > 0
+        local covered = shared.kind_of(e.name) ~= "lp-turret" and s.count_entities_filtered{position = e.position,
+          radius = TURRET_COVER, force = f, name = LASERS, limit = 1} > 0
         if not covered and (not bd or d < bd) then best, bd, kind = e, d, "attack" end
       end
       if best then return best, kind end
@@ -187,7 +191,7 @@ local function objective(p, occupy)
   -- An advance occupies only on the beacon's own ground: reaching beyond, a squad that had cleared its ground
   -- walked past a walled turret compound to an outpost 60 tiles on, and died (siege, seed 12345).
   for _, e in pairs(s.find_entities_filtered{position = at, radius = occupy and ADVANCE_RANGE or ATTACK_REACH,
-    force = f, name = "lp-bin"}) do
+    force = f, name = BINS}) do
     local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
     if not bd or d < bd then best, bd, kind = e, d, "occupy" end
   end
@@ -290,7 +294,7 @@ local function report(beacon, p, squad)
     v("signal-E", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.corp_forces(),
       type = {"unit", "spider-unit"}}),
     v("signal-T", s.count_entities_filtered{position = p.pos, radius = ATTACK_REACH, force = shared.corp_forces(),
-      name = "lp-turret"}),
+      name = LASERS}),
   }
 end
 

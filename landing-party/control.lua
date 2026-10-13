@@ -33,8 +33,8 @@ end
 
 -- Damage to the faction's buildings calls a response (filtered to them; army.alarm throttles).
 local BUILDINGS = {}
-for _, n in ipairs({"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret",
-  "lp-wall", "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp"}) do
+for _, n in ipairs(shared.variants({"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator",
+  "lp-turret", "lp-wall", "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp"})) do
   table.insert(BUILDINGS, {filter = "name", name = n})
 end
 script.on_event(defines.events.on_entity_damaged, function(e)
@@ -61,14 +61,15 @@ end)
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
-  if ent.name == "lp-uplink" then faction.uplink_lost(ent) end
+  local kind = shared.kind_of(ent.name)
+  if kind == "lp-uplink" then faction.uplink_lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
-  if ent.name == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
+  if kind == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
   -- A mortar destroyed in the field leaves its wreck's salvage.
-  if ent.name == "lp-mortar" then
+  if kind == "lp-mortar" then
     ent.surface.spill_item_stack{position = ent.position, stack = {name = "lp-salvage", count = 15}, enable_looted = true}
   end
-  if ent.name == "lp-lander" then
+  if kind == "lp-lander" then
     command.drop_cores(ent.surface, ent.position, 3)
     base.fall(ent)
   end
@@ -182,8 +183,8 @@ remote.add_interface("landing-party", {
   debug_depot = function(id, parts)
     local b = storage.bases[id]
     local s = b.lander.surface
-    local p = s.find_non_colliding_position("lp-depot", {b.lander.position.x, b.lander.position.y + 16}, 30, 1)
-    local d = p and s.create_entity{name = "lp-depot", position = p, force = b.lander.force}
+    local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-depot"), {b.lander.position.x, b.lander.position.y + 16}, 30, 1)
+    local d = p and s.create_entity{name = shared.variant(b.corp, "lp-depot"), position = p, force = b.lander.force}
     if d then table.insert(b.depots, d) end
     b.parts = b.parts + (parts or 0)
     return d ~= nil

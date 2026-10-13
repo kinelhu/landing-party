@@ -60,8 +60,9 @@ local function produce(b, trace)
   for _, depot in ipairs(b.depots) do
     if depot.valid then
       local surface = depot.surface
-      local p = surface.find_non_colliding_position(name, {depot.position.x, depot.position.y + 4}, 12, 0.5)
-      local u = p and surface.create_entity{name = name, position = p, force = depot.force}
+      local proto = shared.variant(b.corp, name)
+      local p = surface.find_non_colliding_position(proto, {depot.position.x, depot.position.y + 4}, 12, 0.5)
+      local u = p and surface.create_entity{name = proto, position = p, force = depot.force}
       if u then
         b.parts = b.parts - cost
         b.next_unit = nil
@@ -241,11 +242,11 @@ function army.convoy(b, cargo, trace)
   local p
   for _, r in ipairs({25, 35, 45}) do
     local q = {home.position.x + ux / ul * r, home.position.y + uy / ul * r}
-    p = surface.find_non_colliding_position("lp-hauler", q, 8, 0.5)
+    p = surface.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), q, 8, 0.5)
     if p and surface.count_entities_filtered{position = p, radius = 6, force = home.force, type = {"wall", "assembling-machine",
       "electric-turret", "container"}} == 0 then break end
   end
-  local hauler = p and surface.create_entity{name = "lp-hauler", position = p, force = home.force}
+  local hauler = p and surface.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = home.force}
   if not hauler then return false end
   local escorts = {}
   prune(b.garrison)
@@ -452,7 +453,7 @@ local function intercept(b, trace)
   b.next_intercept = game.tick + INTERCEPT_COOLDOWN
   local members = {}
   table.sort(b.garrison, function(x, y)
-    local hx, hy = x.name == "lp-harrier" and 0 or 1, y.name == "lp-harrier" and 0 or 1
+    local hx, hy = shared.kind_of(x.name) == "lp-harrier" and 0 or 1, shared.kind_of(y.name) == "lp-harrier" and 0 or 1
     if hx ~= hy then return hx > hy end
     return x.unit_number < y.unit_number
   end)

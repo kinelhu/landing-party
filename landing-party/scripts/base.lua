@@ -51,7 +51,7 @@ local LISTS = {["lp-pylon"] = "pylons", ["lp-bin"] = "bins", ["lp-drill"] = "dri
   ["lp-mine"] = "mines"}
 
 local function register(b, e, module)
-  local list = LISTS[e.name]
+  local list = LISTS[shared.kind_of(e.name)]
   if list then table.insert(b[list], e) end
   if module then table.insert(module.entities, e) end
   storage.owner[e.unit_number] = {base = b.id, module = module}
@@ -105,14 +105,14 @@ function base.land(surface, pos, opts)
     at = layout.land(b, surface, pos)
   end
   if not at then return nil end
-  clear_area(surface, "lp-lander", at)
-  local lander = surface.create_entity{name = "lp-lander", position = at, force = f}
+  clear_area(surface, shared.variant(corp, "lp-lander"), at)
+  local lander = surface.create_entity{name = shared.variant(corp, "lp-lander"), position = at, force = f}
   if not lander then return nil end
   storage.next_id = id + 1
   b.lander = lander
   if uplink_at then
-    clear_area(surface, "lp-uplink", uplink_at)
-    b.uplink = surface.create_entity{name = "lp-uplink", position = uplink_at, force = f}
+    clear_area(surface, shared.variant(corp, "lp-uplink"), uplink_at)
+    b.uplink = surface.create_entity{name = shared.variant(corp, "lp-uplink"), position = uplink_at, force = f}
   end
   b.origin = {x = math.floor(lander.position.x), y = math.floor(lander.position.y)}
   storage.bases[id] = b
@@ -198,7 +198,8 @@ local function economy(b)
     local n = inv.get_item_count()
     -- A bin counts only while its drills share the lander's network (cut the line, lose the income).
     if n > 0 and net then
-      local p = bin.surface.find_entities_filtered{name = "lp-pylon", position = bin.position, radius = 5, limit = 1}[1]
+      local p = bin.surface.find_entities_filtered{name = shared.variants("lp-pylon"), position = bin.position, radius = 5,
+        limit = 1}[1]
       if p and p.electric_network_id == net then inv.clear(); gained = gained + n end
     end
   end
@@ -226,7 +227,7 @@ end
 local function join(e)
   local copper = defines.wire_connector_id.pole_copper
   local mine = e.get_wire_connector(copper, true)
-  local near = e.surface.find_entities_filtered{name = "lp-pylon", force = e.force, position = e.position,
+  local near = e.surface.find_entities_filtered{name = shared.variants("lp-pylon"), force = e.force, position = e.position,
     radius = shared.PYLON_REACH}
   table.sort(near, function(a, c)
     local da = (a.position.x - e.position.x) ^ 2 + (a.position.y - e.position.y) ^ 2
@@ -259,10 +260,12 @@ end
 local function place(b, job)
   local surface = game.surfaces[b.surface]
   local pos = job.pos
-  clear_area(surface, job.name, pos)
-  if job.loose then pos = surface.find_non_colliding_position(job.name, pos, 4, 0.5) or pos end
-  local ok = surface.can_place_entity{name = job.name, position = pos, direction = job.dir, force = force(b)}
-  local e = ok and surface.create_entity{name = job.name, position = pos, direction = job.dir, force = force(b),
+  -- Jobs name kinds; the corporation's own prototype is what is built.
+  local name = shared.variant(b.corp, job.name)
+  clear_area(surface, name, pos)
+  if job.loose then pos = surface.find_non_colliding_position(name, pos, 4, 0.5) or pos end
+  local ok = surface.can_place_entity{name = name, position = pos, direction = job.dir, force = force(b)}
+  local e = ok and surface.create_entity{name = name, position = pos, direction = job.dir, force = force(b),
     auto_connect = (job.name == "lp-pylon") or nil}
   if not e then return nil end
   b.parts = b.parts - (shared.cost[job.name] or 0)
@@ -363,7 +366,8 @@ function base.on_died(e)
   if not own then return end
   storage.owner[e.unit_number] = nil
   local b = storage.bases[own.base]
-  if not b or b.fallen or e.name == "lp-lander" or e.name == "lp-uplink" then return end
+  local kind = shared.kind_of(e.name)
+  if not b or b.fallen or kind == "lp-lander" or kind == "lp-uplink" then return end
   b.lost = b.lost + 1
   army.alarm(b, e.position, trace)
   local d = 0
@@ -371,7 +375,7 @@ function base.on_died(e)
     d = math.sqrt((e.position.x - b.lander.position.x) ^ 2 + (e.position.y - b.lander.position.y) ^ 2)
   end
   local due = game.tick + REBUILD_DELAY + math.floor(d / REBUILD_TILES_PER_SECOND * 60)
-  table.insert(b.rebuild, {name = e.name, pos = {e.position.x, e.position.y}, dir = e.direction, module = own.module,
+  table.insert(b.rebuild, {name = kind, pos = {e.position.x, e.position.y}, dir = e.direction, module = own.module,
     due = due})
   trace(b, string.format("lost %s at %.0f,%.0f: rebuild due at %d", e.name, e.position.x, e.position.y, due))
 end
@@ -416,7 +420,7 @@ local function undefended(b)
   local surface = game.surfaces[b.surface]
   for _, m in ipairs(b.modules) do
     if m.built and m.kind == "mining" and not m.defended then
-      if surface.count_entities_filtered{name = "lp-turret", position = m.center, radius = DEFENCE_RADIUS} > 0 then
+      if surface.count_entities_filtered{name = shared.variants("lp-turret"), position = m.center, radius = DEFENCE_RADIUS} > 0 then
         m.defended = true
       else
         return m
@@ -611,7 +615,7 @@ local function ruin(b)
   local surface = game.surfaces[b.surface]
   for _, e in pairs(surface.find_entities_filtered{force = force(b), position = {b.origin.x, b.origin.y}, radius = 400}) do
     local own = e.unit_number and storage.owner[e.unit_number]
-    if own and own.base == b.id and not mining[e.unit_number] and e.name ~= "lp-mine" then
+    if own and own.base == b.id and not mining[e.unit_number] and shared.kind_of(e.name) ~= "lp-mine" then
       storage.owner[e.unit_number] = nil
       e.force = "neutral"
       n = n + 1

@@ -467,6 +467,13 @@ every time to Grubstake's 11 turrets (0 of 4, then 5 of 24 came back; the siege'
 Grubstake never struck back (Serenity too well defended for what it could field). Before the landing was
 heard, two settlements 249 tiles apart never knew of each other and never fought.
 
+**Step 2, built: each corporation's own prototypes.** `corps.lua` copies the faction's kinds (`shared.KINDS`:
+buildings and units) for every corporation but the default, renamed `lp-<corp>-<kind>` and re-tinted
+(Grubstake ochre, lamps amber; the walker's legs copied with it). The logic speaks in kinds; creation
+(`place`, units, haulers, mortars, landers) uses `shared.variant(corp, kind)`, queries and event filters
+`shared.variants(kind)`, recognition `shared.kind_of(name)`. The default corporation keeps the plain names,
+so every existing test stands. `rivals`: Grubstake built 383 entities, all its own.
+
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a
 player base at spawn as of the first launch (64 assemblers, 20 furnaces, 10 labs, substations, 2 roboports,

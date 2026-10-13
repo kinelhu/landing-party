@@ -62,7 +62,7 @@ local TYPES = {"mining-drill", "assembling-machine", "furnace", "lab", "radar", 
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
 
 local function value_of(e)
-  return ops.VALUE[e.name] or ops.VALUE[e.type] or 0
+  return ops.VALUE[shared.kind_of(e.name)] or ops.VALUE[e.type] or 0
 end
 
 local function enemies(f)
@@ -119,7 +119,7 @@ local function scan(b)
   for _, d in ipairs(b.depots) do if d.valid then table.insert(sensors, d) end end
   for _, r in ipairs(b.radars or {}) do if r.valid then table.insert(sensors, r) end end
   for _, s in ipairs(sensors) do
-    local r = SENSORS[s.name] or 100
+    local r = SENSORS[shared.kind_of(s.name)] or 100
     sense(b, surface, s.position, r)
     forget(b, s.position, r)
   end
@@ -330,7 +330,7 @@ local function launch(b, key, trace, army)
   for i = #b.garrison, 1, -1 do
     if #members >= want then break end
     local u = b.garrison[i]
-    if u.valid and (u.type == "unit" or u.type == "spider-unit") and u.name ~= "lp-hauler" then
+    if u.valid and (u.type == "unit" or u.type == "spider-unit") and shared.kind_of(u.name) ~= "lp-hauler" then
       table.insert(members, table.remove(b.garrison, i))
     end
   end
@@ -401,9 +401,9 @@ local function launch_siege(b, key, site, trace, army)
   local t = b.intel.targets[key]
   local h = home(b)
   local s = b.lander.surface
-  local p = s.find_non_colliding_position("lp-hauler", {h.position.x + (site[1] - h.position.x) * 0.1,
+  local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {h.position.x + (site[1] - h.position.x) * 0.1,
     h.position.y + (site[2] - h.position.y) * 0.1}, 20, 0.5)
-  local hauler = p and s.create_entity{name = "lp-hauler", position = p, force = h.force}
+  local hauler = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
   if not hauler then return false end
   local guards = {}
   for i = #b.garrison, 1, -1 do
@@ -461,8 +461,8 @@ local function siege_step(b, trace, army)
     if op.label and op.label.valid then op.label.text = string.format("Deploying %d%%", math.min(100, share * 100)) end
     if share >= 1 then
       local s = op.hauler.surface
-      local p = s.find_non_colliding_position("lp-mortar", op.site, 8, 0.5)
-      op.mortar = p and s.create_entity{name = "lp-mortar", position = p, force = op.hauler.force}
+      local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-mortar"), op.site, 8, 0.5)
+      op.mortar = p and s.create_entity{name = shared.variant(b.corp, "lp-mortar"), position = p, force = op.hauler.force}
       if not op.mortar then return finish(b, "aborted", trace, army) end
       op.mortar.insert{name = "lp-mortar-shell", count = SIEGE_SHELLS}
       if op.label and op.label.valid then op.label.destroy() end

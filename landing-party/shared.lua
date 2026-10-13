@@ -3,11 +3,41 @@ local shared = {}
 
 -- Corporations (docs/campaign.md, docs/corporations.md): each its own force, at war with every other force
 -- (biters included) unless a cease-fire says otherwise. A settlement belongs to one.
+-- tint: the colour their buildings and units are drawn in (docs/corporations.md); lamp: their lamps' light.
 shared.CORPS = {
-  grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2}},
-  serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85}},
+  grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
+    tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4}},
+  serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
+    tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1}},
 }
 shared.DEFAULT_CORP = "serenity"
+
+-- The faction's kinds of building and unit. The default corporation's prototypes carry the plain names
+-- ("lp-turret"); another's are "lp-<corp>-turret". Logic speaks in kinds; creation and queries translate.
+shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
+  "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
+  "lp-walker", "lp-harrier", "lp-hauler"}
+function shared.variant(corp, kind)
+  if corp == nil or corp == shared.DEFAULT_CORP then return kind end
+  return "lp-" .. corp .. "-" .. kind:sub(4)
+end
+function shared.kind_of(name)
+  for corp in pairs(shared.CORPS) do
+    local pre = "lp-" .. corp .. "-"
+    if name:sub(1, #pre) == pre then return "lp-" .. name:sub(#pre + 1) end
+  end
+  return name
+end
+-- Every corporation's prototype of a kind (or of each kind in a list), for queries over all of them.
+function shared.variants(kinds)
+  if type(kinds) == "string" then kinds = {kinds} end
+  local out = {}
+  for _, kind in ipairs(kinds) do
+    for corp in pairs(shared.CORPS) do table.insert(out, shared.variant(corp, kind)) end
+  end
+  table.sort(out)
+  return out
+end
 function shared.is_corp(force_name) return force_name ~= nil and force_name:sub(1, 3) == "lp-" end
 -- The corporations' force names, for queries over all of them.
 function shared.corp_forces()
