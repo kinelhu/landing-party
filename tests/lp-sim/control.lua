@@ -622,10 +622,21 @@ scenarios.army = function()
     local dx, dy = far.position.x - lander.position.x, far.position.y - lander.position.y
     local len = math.sqrt(dx * dx + dy * dy)
     local a
-    -- With room to spare: turrets built later beside it killed the waiting squad (seed 777).
-    for _, d in ipairs({60, 90, 120, 150}) do
-      a = {far.position.x + dx / len * d, far.position.y + dy / len * d}
-      if surface().count_entities_filtered{force = FORCE, position = a, radius = 60} == 0 then break end
+    -- With room to spare: turrets built later beside it killed the waiting squad (seed 777). On dry land: the
+    -- flattening once made an island in a lake and no path left it (seed 12345, strike 30). Other angles
+    -- when straight beyond fails.
+    local ok
+    for _, turn in ipairs({0, 0.5, -0.5, 1, -1}) do
+      local c, sn = math.cos(turn), math.sin(turn)
+      local ux, uy = (dx * c - dy * sn) / len, (dx * sn + dy * c) / len
+      for _, d in ipairs({60, 90, 120, 150}) do
+        a = {far.position.x + ux * d, far.position.y + uy * d}
+        if surface().count_entities_filtered{force = FORCE, position = a, radius = 60} == 0
+          and surface().count_tiles_filtered{position = a, radius = 25, collision_mask = "water_tile"} == 0 then
+          ok = true; break
+        end
+      end
+      if ok then break end
     end
     S.base_at = a
     flatten(math.floor(a[1]) - 10, math.floor(a[2]) - 10, math.floor(a[1]) + 10, math.floor(a[2]) + 10)
@@ -1088,7 +1099,8 @@ scenarios.siege = function()
       stage = {S.target[1] + dx / len * d, S.target[2] + dy / len * d}
       local fwd = {S.target[1] + dx / len * (d + 15), S.target[2] + dy / len * (d + 15)}
       if surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 40} == 0
-        and surface().count_entities_filtered{force = FORCE, position = fwd, radius = 30} == 0 then
+        and surface().count_entities_filtered{force = FORCE, position = fwd, radius = 30} == 0
+        and surface().count_tiles_filtered{position = fwd, radius = 30, collision_mask = "water_tile"} == 0 then
         S.stage_d = d
         a = {math.floor(fwd[1]), math.floor(fwd[2])}
         break

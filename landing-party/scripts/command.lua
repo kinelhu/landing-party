@@ -373,7 +373,7 @@ function command.stats()
     end
   end
   return {trained = storage.cmd.trained or 0, alive = alive, offline = offline, capacity = command.capacity(f),
-    level = research_level(f), orders = orders}
+    level = research_level(f), orders = orders, locks = storage.cmd.locks}
 end
 
 -- Command cores dropped by the faction's wreckage, lootable.

@@ -441,6 +441,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   One engine unit group: stuck escorts were dropped and the hauler went on alone (486 tiles apart); escorts
   drafted from the last convoy were still at the uplink. Now script-kept discipline (formation, flank
   stations, halts, release), a hauler slower than its escorts, and a check on the spread.
+- The army test "regressed" after a planner fix: the settlement grew differently, the test's base landed in
+  a lake and its flattening made an island no path left. Base placement now avoids water. Found with six
+  full 3-minute probes in a row; a fork made each 15-40 s (fork first when a probe repeats).
 - A regression "hung": the simulations had finished, the animation renderer redrew a whole settlement for
   each of ~1,750 frames (now drawn once, at most 240 frames: 83 s for a 60-minute run).
 - Tests that read too little: a train check blind to a wagon at 49 of 600 health; a barracks destroyed by
