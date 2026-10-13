@@ -1870,6 +1870,68 @@ scenarios.hq = function()
   end)
 end
 
+-- Temper: Serenity never strikes the player first. With a depot and undefended relays and a barracks within its
+-- sight, it raids nothing of the player's while unprovoked; one shot at one of its buildings provokes it, and it
+-- comes.
+scenarios.temper = function()
+  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
+  schedule(120, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+    flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
+    for k = -1, 1 do surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"} end
+  end)
+  schedule(15 * 3600, function()
+    S.before = lp("stats", storage.id).ops.launched
+    local t = surface().find_entities_filtered{force = FORCE, name = "lp-pylon", limit = 1}[1]
+    if t then t.damage(5, "player") end
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local after = 0
+    for _, l in ipairs(st.ops.log) do if l.owner == "player" then after = after + 1 end end
+    check("temper: unprovoked, Serenity left the player alone", S.before == 0, S.before .. " operations in 15 minutes")
+    check("temper: provoked, it came", after > 0 or (st.ops.op ~= nil), after .. " operations against the player after")
+  end)
+end
+
+-- Strip: Grubstake strips the player's ore. A patch of iron near it, two of the player's drills on one side, no
+-- turrets: a camp must go up beside them, mine the real patch (its ore less), and the ore must reach home.
+scenarios.strip = function()
+  schedule(30, function() lp("debug_tune", {strip_fast = true}) end)
+  schedule(120, function()
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    if S.g then lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(3 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 130), math.floor(o.y - o.y / len * 130)}
+    flatten(c[1] - 25, c[2] - 25, c[1] + 25, c[2] + 25)
+    for x = c[1] - 20, c[1] + 19 do
+      for y = c[2] - 20, c[2] + 19 do
+        surface().create_entity{name = "iron-ore", position = {x + 0.5, y + 0.5}, amount = 2000}
+      end
+    end
+    S.patch = c
+    for _, dx in ipairs({-18, -13}) do
+      surface().create_entity{name = "electric-mining-drill", position = {c[1] + dx, c[2] - 17}, force = "player"}
+    end
+    local sum = 0
+    for _, r in pairs(surface().find_entities_filtered{position = c, radius = 30, name = "iron-ore"}) do sum = sum + r.amount end
+    S.ore0 = sum
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local sum = 0
+    for _, r in pairs(surface().find_entities_filtered{position = S.patch, radius = 30, name = "iron-ore"}) do sum = sum + r.amount end
+    check("strip: Grubstake mounted a strip-mining operation", st.ops.strips > 0, st.ops.strips .. " strips")
+    check("strip: it mined the player's patch", sum < S.ore0, S.ore0 - sum .. " ore taken")
+    check("strip: and brought it home", st.ops.stripped > 0, st.ops.stripped .. " ore delivered")
+  end)
+end
+
 -- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
 -- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
 scenarios.duel = function()
@@ -2127,6 +2189,10 @@ script.on_init(function()
       or ((params.scenario == "army" or params.scenario == "siege") and "sprawl") or nil,
      uplink = params.scenario == "uplink" or nil})
   if not storage.id then error("lp-sim: landing failed") end
+  -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
+  -- start, except where tempers are the subject.
+  local TEMPERS = {temper = true, strip = true}
+  if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 
 scenario()

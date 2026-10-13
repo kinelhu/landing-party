@@ -48,6 +48,14 @@ local PACK_TICKS = 10 * 60
 local PLAYER_REACH = 31
 local MORTAR_REACH = 35
 local SIEGE_MAX_TICKS = 15 * 60 * 60
+-- Strip-mining (Grubstake's temper): a hauler and guards set up a camp on ore beside the player's drills, out of
+-- their turrets' reach (a generator, a pylon, drills over bins), mine the real patch for STRIP_TICKS, pack up,
+-- and the hauler carries the ore home as feedstock (lost if it dies on the way).
+local STRIP_GUARDS = 4
+local STRIP_TICKS = 10 * 60 * 60
+local STRIP_COOL = 15 * 60 * 60
+local STRIP_DRILLS = 3
+local STRIP_COST = 40
 
 -- What a player structure is worth to the faction, mirroring what hurts the faction most: command, then
 -- power and logistics, then production. Lamps, pipes, belts and walls are worth nothing.
@@ -251,6 +259,35 @@ local function budget(owner)
   return 1 + (f and (storage.era_override or ops.era(f)) or 0)
 end
 
+-- Provocation (tempers): a player force that hurts a corporation's buildings or units is remembered for good.
+function ops.provoke(corp_force, by)
+  if not shared.is_corp(corp_force) or by == nil or shared.is_corp(by) or by == "enemy" or by == "neutral" then return end
+  for corp, c in pairs(shared.CORPS) do
+    if c.force == corp_force then
+      storage.corps = storage.corps or {}
+      storage.corps[corp] = storage.corps[corp] or {level = 0, exported = 0}
+      local d = storage.corps[corp]
+      d.provoked = d.provoked or {}
+      d.provoked[by] = d.provoked[by] or game.tick
+    end
+  end
+end
+-- Whether a corporation's temper lets it go for this target at all.
+local function temper_allows(b, t)
+  if not against_player(t.owner) then return true end
+  local temper = shared.CORPS[b.corp].temper or {}
+  if temper.provoked_only then
+    local d = storage.corps and storage.corps[b.corp]
+    if not (d and d.provoked and d.provoked[t.owner]) then return false end
+  end
+  if temper.soft_only and (t.defence or 0) > 0 then return false end
+  -- A thief does not break the drills that show it where the ore is: those are for strip-mining (it raided them
+  -- instead, and had nothing left to strip).
+  if temper.strips and t.value == ops.VALUE["mining-drill"] then return false end
+  return true
+end
+ops.temper_allows = temper_allows
+
 -- Known defence of a target: turrets seen by it, and deaths there (a turret per three markers).
 local function defence(b, t)
   return (t.defence or 0) + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
@@ -281,6 +318,7 @@ local function choose(b, army)
     local player = against_player(t.owner)
     local held = player and in_flight >= budget(t.owner)
     if held and game.tick >= (t.cool or 0) then storage.budget_holds = (storage.budget_holds or 0) + 1 end
+    if not temper_allows(b, t) then held = true end
     if game.tick >= (t.cool or 0) and not cooling(t) and not held then
       local d = defence(b, t)
       if needed(d) <= max_field then
@@ -311,7 +349,7 @@ local function finish(b, outcome, trace, army)
   if op.hauler and op.hauler.valid then
     -- The hauler drives home and is stood down there (it joins no garrison).
     b.haulers_home = b.haulers_home or {}
-    table.insert(b.haulers_home, {unit = op.hauler, till = game.tick + 3 * 3600})
+    table.insert(b.haulers_home, {unit = op.hauler, till = game.tick + 3 * 3600, cargo = op.cargo})
     if h then
       op.hauler.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 12,
         distraction = defines.distraction.none}
@@ -319,6 +357,10 @@ local function finish(b, outcome, trace, army)
   end
   if op.label and op.label.valid then op.label.destroy() end
   if op.kind == "siege" then b.next_siege = game.tick + SIEGE_COOL end
+  if op.kind == "strip" then
+    b.next_strip = game.tick + (storage.strip_fast and 2 * 3600 or STRIP_COOL)
+    for _, e in ipairs(op.camp or {}) do if e.valid then e.destroy() end end
+  end
   for _, u in ipairs(op.members) do
     if u.valid then
       table.insert(b.garrison, u)
@@ -446,7 +488,9 @@ local function choose_siege(b, army)
   local h = home(b)
   local best, bs, site
   for key, t in pairs(b.intel.targets) do
-    if (t.defence or 0) >= 2 and not (against_player(t.owner) and in_flight >= budget(t.owner)) then
+    if (t.defence or 0) >= 2 and not (against_player(t.owner) and in_flight >= budget(t.owner))
+      and (not against_player(t.owner) or not (shared.CORPS[b.corp].temper or {}).provoked_only
+        or (storage.corps[b.corp].provoked or {})[t.owner]) then
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300)
       if not bs or s > bs then
@@ -555,9 +599,146 @@ local function siege_step(b, trace, army)
   end
 end
 
+-- A camp site: ore within 45 tiles of a player's drill, 15 or more from it, beyond every player turret's reach
+-- and clear of the player's buildings.
+local function strip_site(b, t)
+  local s = game.surfaces[b.surface]
+  local foes = enemies(game.forces[b.force])
+  for _, r in pairs(s.find_entities_filtered{position = t.pos, radius = 45, type = "resource", limit = 600}) do
+    if r.prototype.resource_category == "basic-solid" then
+      local p = r.position
+      local d2 = (p.x - t.pos[1]) ^ 2 + (p.y - t.pos[2]) ^ 2
+      if d2 >= 15 * 15 and s.count_entities_filtered{position = p, radius = PLAYER_REACH, type = TURRETS, force = foes} == 0
+        and s.count_entities_filtered{position = p, radius = 10, force = foes, limit = 1} == 0
+        and s.count_entities_filtered{position = p, radius = 6, type = "resource"} >= 25 then
+        return {p.x, p.y}
+      end
+    end
+  end
+end
+
+local function choose_strip(b, army)
+  local temper = shared.CORPS[b.corp].temper or {}
+  if not temper.strips or (b.parts or 0) < STRIP_COST or game.tick < (b.next_strip or 0) then return end
+  if field(b, army) < STRIP_GUARDS then return end
+  local h = home(b)
+  local in_flight = ops.player_ops()
+  local best, bd, site
+  for key, t in pairs(b.intel.targets) do
+    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner)
+      and (t.defence or 0) == 0 then
+      local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
+      if not bd or d < bd then
+        local p = strip_site(b, t)
+        if p then best, bd, site = key, d, p end
+      end
+    end
+  end
+  return best, site
+end
+
+local function launch_strip(b, key, site, trace, army)
+  local t = b.intel.targets[key]
+  local h = home(b)
+  local s = game.surfaces[b.surface]
+  local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {h.position.x + (site[1] - h.position.x) * 0.1,
+    h.position.y + (site[2] - h.position.y) * 0.1}, 20, 0.5)
+  local hauler = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
+  if not hauler then return false end
+  local guards = {}
+  for i = #b.garrison, 1, -1 do
+    if #guards >= STRIP_GUARDS then break end
+    local u = b.garrison[i]
+    if u.valid and u.type == "unit" then table.insert(guards, table.remove(b.garrison, i)) end
+  end
+  b.parts = b.parts - STRIP_COST
+  b.op = {kind = "strip", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
+    site = site, started = game.tick, phase_at = game.tick, cargo = 0}
+  hauler.commandable.set_command{type = defines.command.go_to_location, destination = site, radius = 2,
+    distraction = defines.distraction.none}
+  order_all(guards, {type = defines.command.go_to_location, destination = hauler.position, radius = 6,
+    distraction = defines.distraction.by_enemy})
+  b.ops_launched = b.ops_launched + 1
+  b.strips = (b.strips or 0) + 1
+  storage.threat_last = game.tick
+  trace(b, string.format("strip-mining beside %s at %.0f,%.0f: a camp to %.0f,%.0f, %d guards", t.kind, t.pos[1],
+    t.pos[2], site[1], site[2], #guards))
+  return true
+end
+
+local function strip_step(b, trace, army)
+  local op = b.op
+  local n = alive(op)
+  if game.tick - op.started > STRIP_TICKS + 8 * 3600 then return finish(b, "aborted", trace, army) end
+  if (op.phase == "march" or op.phase == "deploy") and not op.hauler.valid then
+    trace(b, "strip-mining: the hauler was destroyed on the way")
+    return finish(b, "intercepted", trace, army)
+  end
+  local s = game.surfaces[b.surface]
+  if op.phase == "march" then
+    local hp = op.hauler.position
+    if not op.hauler.commandable.has_command then
+      op.hauler.commandable.set_command{type = defines.command.go_to_location, destination = op.site, radius = 2,
+        distraction = defines.distraction.none}
+    end
+    order_all(op.members, {type = defines.command.go_to_location, destination = hp, radius = 6,
+      distraction = defines.distraction.by_enemy})
+    if (hp.x - op.site[1]) ^ 2 + (hp.y - op.site[2]) ^ 2 < 6 * 6 then
+      op.phase, op.phase_at = "deploy", game.tick
+      op.hauler.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
+      order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = {{type = defines.command.go_to_location, destination = op.site, radius = 8,
+          distraction = defines.distraction.by_damage},
+          {type = defines.command.wander, radius = 8, distraction = defines.distraction.by_damage}}})
+    end
+  elseif op.phase == "deploy" then
+    if game.tick - op.phase_at >= 20 * 60 then
+      local f = game.forces[b.force]
+      local function put(kind, x, y)
+        local name = shared.variant(b.corp, kind)
+        local p = s.find_non_colliding_position(name, {op.site[1] + x, op.site[2] + y}, 6, 0.5)
+        return p and s.create_entity{name = name, position = p, force = f}
+      end
+      op.camp = {}
+      local pylon = put("lp-pylon", 0, 0)
+      table.insert(op.camp, pylon)
+      table.insert(op.camp, put("lp-generator", -5, 0))
+      op.bins = {}
+      for k = 1, STRIP_DRILLS do
+        local dx = (k - 2) * 4
+        local pos = s.find_non_colliding_position(shared.variant(b.corp, "lp-drill"), {op.site[1] + dx, op.site[2] + 4}, 6, 1)
+        local drill = pos and s.create_entity{name = shared.variant(b.corp, "lp-drill"), position = pos, force = f,
+          direction = defines.direction.south}
+        if drill then
+          table.insert(op.camp, drill)
+          local bin = s.create_entity{name = shared.variant(b.corp, "lp-bin"), position = drill.drop_position, force = f}
+          if bin then table.insert(op.camp, bin); table.insert(op.bins, bin) end
+        end
+      end
+      op.phase, op.phase_at = "mine", game.tick
+      trace(b, string.format("strip-mining: camp up at %.0f,%.0f with %d bins", op.site[1], op.site[2], #op.bins))
+    end
+  elseif op.phase == "mine" then
+    local working = 0
+    for _, e in ipairs(op.camp) do if e and e.valid and e.type == "mining-drill" then working = working + 1 end end
+    local done = game.tick - op.phase_at >= (storage.strip_fast and 3 * 3600 or STRIP_TICKS)
+    if working == 0 or n < 0.5 * op.launched or done then
+      local cargo = 0
+      for _, bin in ipairs(op.bins or {}) do if bin.valid then cargo = cargo + bin.get_inventory(defines.inventory.chest).get_item_count() end end
+      op.cargo = cargo
+      op.packing_because = done and "done" or "aborted"
+      op.phase, op.phase_at = "pack", game.tick
+      trace(b, string.format("strip-mining: packing up with %d ore (%s)", cargo, op.packing_because))
+    end
+  elseif op.phase == "pack" then
+    if game.tick - op.phase_at >= 10 * 60 then return finish(b, op.packing_because, trace, army) end
+  end
+end
+
 local function step(b, trace, army)
   local op = b.op
   if op.kind == "siege" then return siege_step(b, trace, army) end
+  if op.kind == "strip" then return strip_step(b, trace, army) end
   local t = b.intel.targets[op.target]
   local n = alive(op)
   if n == 0 then return finish(b, "aborted", trace, army) end
@@ -629,6 +810,12 @@ local function stand_down(b)
     if not r.unit.valid then
       table.remove(b.haulers_home, i)
     elseif game.tick >= r.till or (h and (r.unit.position.x - h.position.x) ^ 2 + (r.unit.position.y - h.position.y) ^ 2 < 15 * 15) then
+      -- Home: what it carries becomes the settlement's feedstock (stripped ore).
+      if r.cargo and r.cargo > 0 then
+        b.feedstock = b.feedstock + r.cargo
+        b.mined = b.mined + r.cargo
+        b.stripped = (b.stripped or 0) + r.cargo
+      end
       r.unit.destroy()
       table.remove(b.haulers_home, i)
     end
@@ -646,12 +833,22 @@ function ops.tick(b, tick, trace, army)
   elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off
     and not army.withdrawing(b) then
     if not home(b) then return end
+    -- A thief strips first: a raid was always available before and the camp never went up.
+    if (shared.CORPS[b.corp].temper or {}).strips then
+      local tkey, tsite = choose_strip(b, army)
+      if tkey then return launch_strip(b, tkey, tsite, trace, army) end
+    end
     local key = choose(b, army)
     if key then
       launch(b, key, trace, army)
     else
       local skey, site = choose_siege(b, army)
-      if skey then launch_siege(b, skey, site, trace, army) end
+      if skey then
+        launch_siege(b, skey, site, trace, army)
+      else
+        local tkey, tsite = choose_strip(b, army)
+        if tkey then launch_strip(b, tkey, tsite, trace, army) end
+      end
     end
   end
 end
@@ -663,7 +860,7 @@ function ops.summary(b)
   local t = b.op and b.intel.targets[b.op.target]
   return {known = n, op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
-    sieges = b.sieges or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and
+    sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and
       {b.op.mortar.position.x, b.op.mortar.position.y} or nil}
 end
 

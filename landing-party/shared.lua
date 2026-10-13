@@ -19,7 +19,10 @@ shared.CORPS = {
     doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret"}, props = {["lp-wall"] = {max_health = 225}},
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
-    caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3}},
+    caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
+    -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
+    -- defence only), and it strips the player's ore instead.
+    temper = {soft_only = true, strips = true}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -34,7 +37,10 @@ shared.CORPS = {
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
     doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
     arch = {gates = true, baffles = true, pillboxes = true}, clears_nests = true,
-    caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3}},
+    caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
+    -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
+    -- does not forget.
+    temper = {provoked_only = true}},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}

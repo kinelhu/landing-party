@@ -16,6 +16,7 @@ document describes the parts as built; the campaign document describes the game 
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
+| Tempers: Serenity strikes only once provoked; Grubstake raids soft targets and strip-mines the player's ore | built | `temper`, `strip` |
 | Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
 | Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
 | Rebuild unless occupied | built | `raid`, `occupy` |
@@ -548,6 +549,20 @@ corporation (HQ counted) and 6 in all. Not built: a new corporation after both a
 for old saves (no saves to migrate yet). `hq` (fast clocks): Serenity at level 3 landed its HQ, the lander held
 while the uplink stood, the uplink's fall brought it down, Serenity withdrew, the player's mortar recipe was
 enabled, its first settlement fell on the withdrawal clock.
+
+**Built: tempers** (the corporations' profiles in their operations). Serenity never strikes a player first: it
+targets a player force only once provoked (that force damaged or destroyed its buildings or units), and the
+provocation is permanent ("never forgets"). Grubstake raids only unguarded player targets (known defence 0), never
+breaks the player's drills (they show it where the ore is), and strips first: a hauler and four guards set up a
+camp on ore beside the player's drills, out of turret reach and clear of the player's buildings (a generator, a
+pylon, three drills over bins), mine the real patch for 10 minutes, pack up, and the hauler carries the ore home as
+feedstock (lost if it dies on the way). `temper` (unprovoked, no operation against undefended relays in 15
+minutes; one shot at a pylon, then one came) and `strip` (two camps, 440 ore taken from the patch, 408 delivered).
+Two lessons: the thief first raided the drills and had nothing to strip (drills are now off its raid list);
+strips came after raids in the choice and never happened (a thief now strips first). Tests of operations'
+mechanics run with every corporation provoked from the start; `temper` and `strip` without. Consequence for
+pacing, still to measure with the timelines: a region whose first corporation is Serenity stays quiet until the
+player strikes it; Grubstake's pressure is economic (stripped ore, soft targets).
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a
