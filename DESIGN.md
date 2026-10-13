@@ -17,6 +17,8 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
+| Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
+| Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Capture of mining outposts by holding | built | `army` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
 | Patrols through settlements | built | `lively` (life animation) |
@@ -24,7 +26,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Interceptors against player trains | built | `train` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
-| Art beyond tinted vanilla; seen in game | not yet | (needs a game session) |
+| Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and
@@ -207,10 +209,18 @@ Built in `units.lua`, `scripts/army.lua`.
 ## The player's army
 Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this section is still a proposal.
 - **Built:** a barracks (recipe: 5 magazines, 10 iron plates, 2 circuits a trooper, 8 s) turns orders into
-  troopers (the engineer's body in warm colours); each follows the nearest rally beacon. The beacon's
-  circuit signals: **A** advance (attack the nearest faction military target within 200 tiles), **O** occupy
-  (go to the nearest outpost and stay, fighting back only when hit), **R** retreat (to the barracks),
-  nothing: hold by the beacon. Occupy locks onto its outpost until the order changes.
+  troopers (the engineer's body in warm colours); each follows the nearest rally beacon.
+- **Rally beacon (built):** a constant combinator. Its own signals give orders when unwired; wired, it reads
+  its networks (which carry its own signals too). **A** advance: the nearest faction turret within 50 tiles
+  of the rally point, then any other military building there, then occupy an outpost in that reach, else
+  hold. **O** occupy: the nearest outpost within 200, stay, fight back only when hit; locked until the order
+  or the rally point changes. **R** retreat to the barracks. Nothing: hold at the rally point. **X** and **Y**
+  move the rally point that many tiles from the beacon (at most 300): a clock wired to a beacon walks a
+  patrol, a decider sends an attack. The force sees a ring of the reach at the rally point, coloured by
+  stance, and a dashed line from the beacon.
+- **Units before buildings (built):** a trooper (not retreating) with a faction unit within 18 tiles fights
+  the nearest one. Ordered at a depot, a squad of 20 kept shooting it while the garrison killed every
+  trooper and lost none.
 - **Capture (built):** a mining outpost with player military within 12 tiles of its centre and none of the
   faction's (units, turrets) within 20 for a minute becomes the player's: drills, bin and pylon change
   force, the faction stops counting and rebuilding them. Army scenario (seeds 777, 12345, 4242): 10 troopers
@@ -251,8 +261,13 @@ The aim: the player answers the faction with factory output, not clicks.
 - **Capture by holding**: a faction mining or power node with player units on its ground and none of the
   faction's for a minute becomes the player's (its drills mine for the player, its generators feed the
   player's grid). No capture by damage threshold (that is Proliferation's).
+- **Circuits as the player's command language (direction, user 2026-10-13):** automate patrols and
+  attacks with the circuit network rather than a selection tool. Built: stance and rally point by signal.
+  Next candidates: the barracks reporting its troopers and orders as signals; a beacon reporting what its
+  squad sees (enemies in reach, troopers alive), so a circuit can retreat a beaten squad or launch an
+  attack when a squad is full.
 - Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
-  blocks; a fought capture (army scenario without the isolation).
+  blocks; a fought capture that a sensible army wins.
 
 ## Balance
 Measured in the `assault` scenario (fast mode: a depot and parts granted at the start; replay GIF and
@@ -269,6 +284,22 @@ stills per run) and `defend`.
 - Confirmed on seeds 777, 4242, 101 (assault, defend, faction, uplink: 12 of 12).
 - Open: tier thresholds and export rates are untuned (the `faction` test runs them at a tenth); garrison
   caps limit responses (10 a depot at tier 0).
+
+### Fought capture (in progress)
+`siege`: a sprawl settlement at 15 minutes (depot, garrison 16 of infantry and tanks, raids off, responses
+and patrols on); troopers by the dozen from a barracks beyond it; the beacon at the first point out of laser
+reach on the line to the nearest outpost, set to A; once that ground is clear, the test moves the beacon
+onto the outpost and sets O.
+- `duel` (open ground, three seeds): 10 troopers against 10 drone infantry trade evenly (either side wins
+  with 1-5 left); 10 troopers kill one of two tanks. A tank is worth about seven troopers, near its cost.
+- Seed 12345, troopers lost / faction units killed: 20 -> 20/3; 40 -> 40/10; 60 -> 60/14. With 60 the
+  staging ground (two turrets, a depot, the garrison's sally) falls in a minute with 25 left; those die on
+  the way to the outpost, which lies beside a walled four-turret compound with mines (31 killed by turrets,
+  6 by mines).
+- Reading: bullets barely scratch walls (2.4 of 6 damage), so troopers alone cannot breach a walled laser
+  position; in vanilla terms they need artillery, tanks or explosives. Whether that is the design (walls
+  call for heavier arms) or troopers need a breaching tool is open. The approach path matters as much as
+  the target.
 
 ## Where Landing Party differs from Proliferation
 Proliferation (MIT, no public source, 2026) is a machine faction in the mould of Stargate's Replicators:
@@ -295,7 +326,11 @@ Never ERM's StarCraft or Metal Slug art (ripped).
 - Depletion and relocation; the second wall ring.
 - Response sizing; tier and export tuning at real clocks.
 - Biter interplay: settlements emit no pollution, so biters ignore them unless they do.
-- A game session to judge the art and the scale (the only step needing the user's time).
+- In game, 2026-10-13 (showcase save): patrols "extremely cool"; troopers made biter noises (fixed:
+  machine units carry weapon sounds and no growls); the beacon with a separate combinator did not read as
+  an order (A reached nothing near a beacon at spawn; moving the beacon dropped the wire): now the beacon is
+  the combinator and its reach is drawn. Architecture not yet seen properly (Editor Extensions added to the
+  play profile).
 
 ## Testing: headless first
 The user's time in game is the scarce resource; a headless run costs none. Every mechanic gets a scripted
@@ -306,9 +341,15 @@ scenario with assertions first; the window is for art, feel and GUI.
 - `scripts/batch.sh`: several runs, one table of metrics; 3 at a time by default (eight at once took six
   times as long each). Batches confirm what works; single short runs find what does not.
 - `scripts/profile.sh`: per-tick engine timings; profile before blaming code.
+- `scripts/showcase.sh [seed] [minute]`: a save to look at in game, built with no clicks: the `showcase`
+  scenario on a headless server (fast, back to normal speed before `server_save`), copied to the play
+  profile (base, Landing Party, Editor Extensions and flib copied from the real profile).
+  `scripts/play-showcase.sh` opens it (from a folder with `steam_appid.txt`, so Steam does not relaunch).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
-- Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, and
-  the spikes air, path, cost, probe. A run that ends before its scenario's checks fails, and each scenario
+- Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
+  caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each
+  needs its own length: a regression at 30 minutes with the strike at 10 failed raid, occupy, defend and
+  faction for lack of time (all pass at 60/30). A run that ends before its scenario's checks fails, and each scenario
   states how long it needs after its strike.
 
 ## Engine notes

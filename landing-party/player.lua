@@ -22,11 +22,15 @@ relay.energy_usage = "2MW"
 relay.max_distance_of_sector_revealed = 0
 relay.max_distance_of_nearby_sector_revealed = 3
 
-local beacon = table.deepcopy(data.raw.lamp["small-lamp"])
+-- The rally beacon: a constant combinator. Its own signals give orders (opened like any combinator); wired, it
+-- reads its network as well, for automation. A small lamp with a combinator wired to it once confused the
+-- first player to try it.
+local beacon = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
 beacon.name = "lp-rally-beacon"
+beacon.icon = "__base__/graphics/icons/small-lamp.png"
 beacon.minable = {mining_time = 0.2, result = "lp-rally-beacon"}
 beacon.next_upgrade = nil
-beacon.light = {intensity = 0.8, size = 12, color = {1, 0.7, 0.3}}
+beacon.fast_replaceable_group = nil
 
 local function item(name, icon, place)
   return {type = "item", name = name, icon = icon, stack_size = 10, place_result = place, subgroup = "defensive-structure",

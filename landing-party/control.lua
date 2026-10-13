@@ -131,6 +131,7 @@ remote.add_interface("landing-party", {
     if t.quiet ~= nil then storage.quiet = t.quiet end
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
     if t.army_off ~= nil then storage.army_off = t.army_off end
+    if t.raids_off ~= nil then storage.raids_off = t.raids_off end
   end,
   set_trace = function(on) storage.trace = on end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.

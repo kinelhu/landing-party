@@ -101,7 +101,7 @@ local SEARCH_TICKS = 30 * 60      -- a wide area query: not every few seconds (i
 local IDLE_SEARCH_TICKS = 120 * 60
 
 local function launch(b, trace)
-  if storage.army_off then return end
+  if storage.army_off or storage.raids_off then return end
   prune(b.garrison)
   if #b.depots == 0 or game.tick < b.next_raid or game.tick < (b.next_search or 0) then return end
   if #b.garrison < math.max(6, RAID_SHARE * cap(b)) then return end
@@ -142,9 +142,10 @@ end
 -- Response: a building hit within reach of a depot calls out a squad from the garrison (the home guard
 -- stays), at most once a minute per settlement. It goes as a raid does and comes home the same way.
 local RESPONSE_RANGE = 300
--- Sized to the threat: three units for each hostile turret, unit, vehicle or character near the alarm, at
--- least four. A fixed eight died to the last unit against two gun turrets (defend, seed 12345).
-local RESPONSE_PER_THREAT = 6       -- three per turret still died to the last unit against upgraded turrets
+-- Sized to the threat: six units for each hostile turret, unit, vehicle or character near the alarm, at
+-- least six. A fixed eight died to the last unit against two gun turrets (defend, seed 12345); three per
+-- threat still died to the last unit against upgraded turrets.
+local RESPONSE_PER_THREAT = 6
 local RESPONSE_MIN = 6
 local THREAT_RADIUS = 30
 local THREATS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "unit", "car", "spider-vehicle",

@@ -1,17 +1,21 @@
 -- The player's army: barracks turn trooper orders (crafted from items) into troopers; each trooper follows
--- the nearest rally beacon of its force. A beacon's circuit signals set the stance:
---   signal A > 0   advance: attack the nearest faction military target within reach of the beacon; with
---                  none left, occupy the nearest faction outpost
+-- the nearest rally beacon of its force. A beacon is a constant combinator: its signals (its own, or its
+-- networks' when wired) set the stance, and X and Y move its rally point that many tiles from it:
+--   signal A > 0   advance: attack the nearest faction turret, then military target, within ATTACK_REACH of
+--                  the rally point; with none left, occupy the nearest faction outpost in that reach, else hold
 --   signal O > 0   occupy: go to the nearest faction outpost and stand on it (no rebuild there, then
 --                  capture), fighting only what engages (an advance sent ten troopers at a hub's lasers)
 --   signal R > 0   retreat to the nearest barracks
---   otherwise      hold: stay by the beacon
+--   otherwise      hold: stay at the rally point
 local shared = require("__landing-party__.shared")
 
 local command = {}
 
 local ASSIGN_RANGE = 200
-local ADVANCE_RANGE = 200
+local ADVANCE_RANGE = 200          -- outposts an occupy order looks for
+-- What an advance attacks: the beacon's own ground. At 200 one beacon sent its squad at a whole settlement,
+-- lander included; the player steers an assault by where the beacon stands.
+local ATTACK_REACH = 50
 local REISSUE_TICKS = 600          -- an idle trooper is given its orders again after this long
 local MILITARY = {"lp-turret", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad"}
 local SIGNAL_ADVANCE = {type = "virtual", name = "signal-A"}
@@ -110,32 +114,67 @@ local function train()
   end
 end
 
-local function stance(beacon)
-  local function sig(s)
-    return beacon.get_signal(s, defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green) or 0
+-- What a beacon says, by virtual signal name: its own signals unwired; wired, its networks (which carry its
+-- own signals too, so they are not added twice).
+local function signals(beacon)
+  local red, green = defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green
+  local out = {}
+  if beacon.get_circuit_network(red) or beacon.get_circuit_network(green) then
+    for _, x in pairs(beacon.get_signals(red, green) or {}) do
+      if x.signal.type == "virtual" then out[x.signal.name] = x.count end
+    end
+  else
+    local cb = beacon.get_control_behavior()
+    if cb and cb.enabled then
+      for _, section in pairs(cb.sections) do
+        if section.active then
+          for _, f in pairs(section.filters) do
+            if f.value and f.value.type == "virtual" then out[f.value.name] = (out[f.value.name] or 0) + (f.min or 0) end
+          end
+        end
+      end
+    end
   end
-  if sig(SIGNAL_RETREAT) > 0 then return "retreat" end
-  if sig(SIGNAL_ADVANCE) > 0 then return "advance" end
-  if sig(SIGNAL_OCCUPY) > 0 then return "occupy" end
-  return "hold"
+  return out
 end
 
--- What an advancing beacon goes for: the nearest faction military target, else the nearest outpost bin.
-local function objective(beacon, occupy)
-  local s = beacon.surface
+-- A beacon's orders: the stance, and the rally point, the beacon moved by signals X and Y (tiles, capped):
+-- a clock wired to it walks a patrol, a decider sends an attack.
+local MAX_OFFSET = 300
+local function plan(beacon)
+  local sig = signals(beacon)
+  local function v(name) return sig[name] or 0 end
+  local st = "hold"
+  if v(SIGNAL_RETREAT.name) > 0 then st = "retreat"
+  elseif v(SIGNAL_ADVANCE.name) > 0 then st = "advance"
+  elseif v(SIGNAL_OCCUPY.name) > 0 then st = "occupy" end
+  local dx = math.max(-MAX_OFFSET, math.min(MAX_OFFSET, v("signal-X")))
+  local dy = math.max(-MAX_OFFSET, math.min(MAX_OFFSET, v("signal-Y")))
+  return {stance = st, pos = {x = beacon.position.x + dx, y = beacon.position.y + dy}, surface = beacon.surface}
+end
+
+-- What an advancing beacon goes for: the nearest faction turret, else the nearest military target, else the
+-- nearest outpost bin.
+local function objective(p, occupy)
+  local s, at = p.surface, p.pos
   local f = game.forces[shared.FORCE]
   local best, bd, kind
   if not occupy then
-    for _, e in pairs(s.find_entities_filtered{position = beacon.position, radius = ADVANCE_RANGE, force = f,
-      name = MILITARY}) do
-      local d = (e.position.x - beacon.position.x) ^ 2 + (e.position.y - beacon.position.y) ^ 2
-      if not bd or d < bd then best, bd, kind = e, d, "attack" end
+    -- Turrets first: sent at the nearest military building, a squad of 60 shot a depot between two turret
+    -- groups and died to them (siege, seed 12345).
+    for _, names in ipairs({{"lp-turret"}, MILITARY}) do
+      for _, e in pairs(s.find_entities_filtered{position = at, radius = ATTACK_REACH, force = f, name = names}) do
+        local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
+        if not bd or d < bd then best, bd, kind = e, d, "attack" end
+      end
+      if best then return best, kind end
     end
-    if best then return best, kind end
   end
-  for _, e in pairs(s.find_entities_filtered{position = beacon.position, radius = ADVANCE_RANGE, force = f,
-    name = "lp-bin"}) do
-    local d = (e.position.x - beacon.position.x) ^ 2 + (e.position.y - beacon.position.y) ^ 2
+  -- An advance occupies only on the beacon's own ground: reaching beyond, a squad that had cleared its ground
+  -- walked past a walled turret compound to an outpost 60 tiles on, and died (siege, seed 12345).
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = occupy and ADVANCE_RANGE or ATTACK_REACH,
+    force = f, name = "lp-bin"}) do
+    local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
     if not bd or d < bd then best, bd, kind = e, d, "occupy" end
   end
   return best, kind
@@ -177,8 +216,53 @@ local function offline_set()
   return out
 end
 
+-- Units before buildings: a trooper with a faction unit near fights it. Ordered to attack a depot, a squad
+-- of 20 kept shooting it while the depot's garrison killed every one and lost none (siege, seed 12345).
+local ENGAGE = 18
+local function threat(u)
+  local best, bd
+  for _, e in pairs(u.surface.find_entities_filtered{position = u.position, radius = ENGAGE, force = shared.FORCE,
+    type = {"unit", "spider-unit"}}) do
+    local d = (e.position.x - u.position.x) ^ 2 + (e.position.y - u.position.y) ^ 2
+    if not bd or d < bd then best, bd = e, d end
+  end
+  return best
+end
+
+-- The beacon's orders drawn for its force: a ring of its reach at the rally point, coloured by stance, and a
+-- line from the beacon when signals move the point.
+local COLOR = {hold = {0.8, 0.8, 0.8, 0.4}, advance = {1, 0.25, 0.1, 0.6}, occupy = {1, 0.8, 0.1, 0.6},
+  retreat = {0.3, 0.5, 1, 0.6}}
+local function mark(k, beacon, p)
+  storage.cmd.marks = storage.cmd.marks or {}
+  local m = storage.cmd.marks[k]
+  if not (m and m.ring.valid and m.line.valid) then
+    m = {ring = rendering.draw_circle{color = COLOR.hold, radius = ATTACK_REACH, width = 2, filled = false,
+           target = p.pos, surface = beacon.surface, forces = {beacon.force}, draw_on_ground = true},
+         line = rendering.draw_line{color = COLOR.hold, width = 2, dash_length = 1, gap_length = 1, from = beacon,
+           to = p.pos, surface = beacon.surface, forces = {beacon.force}, draw_on_ground = true}}
+    storage.cmd.marks[k] = m
+  end
+  m.ring.target = p.pos
+  m.ring.color = COLOR[p.stance]
+  m.line.to = p.pos
+  m.line.color = COLOR[p.stance]
+end
+
 local function lead()
   local objectives = {}
+  local plans = {}
+  for k, b in pairs(storage.cmd.beacons) do
+    if b.valid then
+      plans[k] = plan(b)
+      mark(k, b, plans[k])
+    else
+      storage.cmd.beacons[k] = nil
+    end
+  end
+  for k, m in pairs(storage.cmd.marks or {}) do
+    if not plans[k] then m.ring.destroy(); m.line.destroy(); storage.cmd.marks[k] = nil end
+  end
   local offline = offline_set()
   for k, t in pairs(storage.cmd.troopers) do
     local u = t.unit
@@ -197,13 +281,21 @@ local function lead()
         beacon = nearest(storage.cmd.beacons, u.position, u.force, ASSIGN_RANGE)
         t.beacon = beacon and beacon.unit_number
       end
-      if beacon then
-        local st = stance(beacon)
+      local p = beacon and plans[beacon.unit_number]
+      local st = p and p.stance
+      local foe = p and st ~= "retreat" and threat(u)
+      -- Holding at the rally point; the key carries the point, so a moved point is a new order.
+      local function hold()
+        if (u.position.x - p.pos.x) ^ 2 + (u.position.y - p.pos.y) ^ 2 > 12 * 12 then
+          order(t, stay(p.pos, 6, defines.distraction.by_enemy), string.format("hold:%d,%d", p.pos.x, p.pos.y))
+        end
+      end
+      if foe then
+        order(t, {type = defines.command.attack, target = foe, distraction = defines.distraction.by_enemy},
+          "fight:" .. foe.unit_number)
+      elseif p then
         if st == "hold" then
-          local d = (u.position.x - beacon.position.x) ^ 2 + (u.position.y - beacon.position.y) ^ 2
-          if d > 12 * 12 then
-            order(t, stay(beacon.position, 6, defines.distraction.by_enemy), "hold")
-          end
+          hold()
         elseif st == "retreat" then
           local home = nearest(storage.cmd.barracks, u.position, u.force, 1000)
           if home then
@@ -211,19 +303,24 @@ local function lead()
               distraction = defines.distraction.none}, "retreat")
           end
         else
-          -- Occupy locks onto its first outpost until the order changes: re-chosen each time, a squad took
-          -- one outpost after another down to the lander. Advance re-targets as targets fall.
+          -- Occupy locks onto its first outpost until the order or the rally point changes: re-chosen each
+          -- time, a squad took one outpost after another down to the lander. Advance re-targets as targets fall.
           storage.cmd.locks = storage.cmd.locks or {}
+          local here = string.format("%d,%d", p.pos.x, p.pos.y)
           local lock = storage.cmd.locks[beacon.unit_number]
-          if st ~= "occupy" or (lock and lock.stance ~= "occupy") then storage.cmd.locks[beacon.unit_number] = nil; lock = nil end
+          if st ~= "occupy" or (lock and (lock.stance ~= "occupy" or lock.at ~= here)) then
+            storage.cmd.locks[beacon.unit_number] = nil; lock = nil
+          end
           local o = objectives[beacon.unit_number]
           if st == "occupy" and lock then o = {pos = lock.pos, kind = "occupy", key = lock.key} end
           if o == nil then
-            local target, kind = objective(beacon, st == "occupy")
+            local target, kind = objective(p, st == "occupy")
             o = target and {target = target, pos = {target.position.x, target.position.y}, kind = kind,
               key = kind .. ":" .. target.unit_number} or false
             objectives[beacon.unit_number] = o
-            if o and st == "occupy" then storage.cmd.locks[beacon.unit_number] = {stance = "occupy", pos = o.pos, key = o.key} end
+            if o and st == "occupy" then
+              storage.cmd.locks[beacon.unit_number] = {stance = "occupy", pos = o.pos, key = o.key, at = here}
+            end
           end
           if o and o.kind == "attack" then
             order(t, {type = defines.command.attack, target = o.target, distraction = defines.distraction.by_enemy}, o.key)
@@ -231,6 +328,9 @@ local function lead()
             -- Occupying troopers fight back only when hit (attacking what they saw, they went on to destroy
             -- the lander of an undefended settlement).
             order(t, stay(o.pos, 4, defines.distraction.by_damage), o.key)
+          else
+            -- Nothing left in reach: to the rally point, to hold.
+            hold()
           end
         end
       end
@@ -249,8 +349,15 @@ function command.stats()
     if t.unit.valid then alive = alive + 1; if t.offline then offline = offline + 1 end end
   end
   local f = game.forces.player
+  local orders = {}
+  for _, t in pairs(storage.cmd.troopers) do
+    if t.unit.valid then
+      local k = (t.key or "none"):gsub(":%d+", "")
+      orders[k] = (orders[k] or 0) + 1
+    end
+  end
   return {trained = storage.cmd.trained or 0, alive = alive, offline = offline, capacity = command.capacity(f),
-    level = research_level(f)}
+    level = research_level(f), orders = orders}
 end
 
 -- Command cores dropped by the faction's wreckage, lootable.

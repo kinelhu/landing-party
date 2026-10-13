@@ -905,13 +905,268 @@ scenarios.train = function()
   end)
 end
 
+-- Showcase: a save to look at in game (scripts/showcase.sh runs it on a headless server, which saves at the
+-- strike). A settlement matured at once with a garrison, an uplink landed beside it (convoys), raids off;
+-- by spawn the player's barracks with 20 troopers' orders, relays, power and a rally beacon (no signal: hold;
+-- A advance, O occupy, R retreat; X and Y move the rally point).
+scenarios.showcase = function()
+  -- A server runs in real time: fast until the save, normal speed in it.
+  schedule(30, function() game.speed = 64 end)
+  schedule(60, function()
+    lp("debug_tune", {mature_blocks = 2, quiet = true, raids_off = true})
+    lp("debug_depot", storage.id, 4000)
+  end)
+  schedule(120, function()
+    lp("arrive", 1, {x = 0, y = 0}, params.distance, {uplink = true})
+    flatten(-6, -30, 30, 0)
+    local function put(name, x, y)
+      return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    end
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 10.5, -15.5)
+    put("electric-energy-interface", 15, -15)
+    put("medium-electric-pole", 13.5, -12.5)
+    put("lp-command-relay", 6.5, -9.5)
+    put("lp-command-relay", 10.5, -9.5)
+    put("medium-electric-pole", 8.5, -11.5)
+    put("lp-rally-beacon", 20.5, -24.5)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 10}
+  end)
+  schedule(1200, function()
+    if S.barracks and S.barracks.valid then
+      S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 10}
+    end
+  end)
+  schedule(STRIKE, function()
+    game.forces.player.chart(surface(), {{-600, -600}, {600, 600}})
+  end)
+  schedule(STRIKE + 300, function()
+    game.speed = 1
+    game.server_save("lp-showcase")
+    helpers.write_file("landing-party/saved.txt", tostring(game.tick))
+  end)
+end
+
+-- Orders: the beacon's own signals, unwired, and its network's when wired. Ten troopers by spawn; the beacon
+-- sets X = 40 itself: they hold 40 tiles east of it. A combinator wired to it adds Y = -30: they move there.
+scenarios.orders = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local function at(dx, dy)
+    local n = 0
+    for _, u in pairs(surface().find_entities_filtered{name = "lp-trooper", force = "player"}) do
+      if (u.position.x - (S.b.position.x + dx)) ^ 2 + (u.position.y - (S.b.position.y + dy)) ^ 2 < 15 * 15 then n = n + 1 end
+    end
+    return n
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-20, -80, 80, 20)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.b = put("lp-rally-beacon", 10.5, -10.5)
+    S.b.get_or_create_control_behavior().add_section().filters =
+      {{value = {type = "virtual", name = "signal-X", quality = "normal"}, min = 40}}
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 10}
+  end)
+  schedule(60 + 40 * 60, function()
+    S.first = at(40, 0)
+    local cc = put("constant-combinator", 8.5, -10.5)
+    local red = defines.wire_connector_id.circuit_red
+    cc.get_wire_connector(red, true).connect_to(S.b.get_wire_connector(red, true))
+    cc.get_or_create_control_behavior().add_section().filters =
+      {{value = {type = "virtual", name = "signal-Y", quality = "normal"}, min = -30}}
+  end)
+  schedule(60 + 80 * 60, function()
+    check("orders: the beacon's own X moved the rally point", S.first >= 8, S.first .. " of 10 at +40,0")
+    check("orders: a wired Y added to it", at(40, -30) >= 8, at(40, -30) .. " of 10 at +40,-30")
+  end)
+end
+
+-- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
+-- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
+scenarios.duel = function()
+  S.duels = {}
+  local function spawn(name, force, n, at)
+    local out = {}
+    for k = 1, n do
+      local p = surface().find_non_colliding_position(name, {at[1] + (k % 5) * 2, at[2] + math.floor(k / 5) * 2}, 10, 0.5)
+      table.insert(out, surface().create_entity{name = name, position = p, force = force})
+    end
+    return out
+  end
+  local function fight(us, them, at)
+    for _, u in ipairs(us) do
+      u.commandable.set_command{type = defines.command.attack_area, destination = at, radius = 30,
+        distraction = defines.distraction.by_anything}
+    end
+  end
+  schedule(120, function()
+    for i, foe in ipairs({{"lp-infantry", 10}, {"lp-tank", 2}}) do
+      local x, y = 200, -200 + i * 120
+      flatten(x - 30, y - 30, x + 60, y + 30)
+      local a = spawn("lp-trooper", "player", 10, {x, y})
+      local b = spawn(foe[1], FORCE, foe[2], {x + 30, y})
+      fight(a, b, {x + 30, y}); fight(b, a, {x, y})
+      S.duels[i] = {foe = foe[1], a = a, b = b}
+    end
+  end)
+  schedule(120 + 90 * 60, function()
+    for _, d in ipairs(S.duels) do
+      local la, lb, hb = 0, 0, 0
+      for _, u in ipairs(d.a) do if u.valid then la = la + 1 end end
+      for _, u in ipairs(d.b) do if u.valid then lb = lb + 1; hb = hb + u.health / u.max_health end end
+      info(string.format("duel: 10 troopers vs %d %s: %d troopers and %d %s left (%.0f%% of their health)", #d.b,
+        d.foe, la, lb, d.foe, 100 * hb / #d.b))
+    end
+    check("duel: ran", #S.duels == 2, #S.duels)
+  end)
+end
+
+-- Siege: a fought capture. The settlement grows with its whole army, except raids (the test's base has no
+-- defences); responses, patrols and interceptors stay on. At the strike a barracks beyond the settlement
+-- trains params.units troopers (default 20) at once. A beacon at a staging point out of laser reach of the
+-- outpost nearest the barracks is set to A a minute later: the squad clears what fights within the
+-- beacon's reach, then stands on the nearest outpost. Measures what a squad of that size achieves.
+scenarios.siege = function()
+  local function alive_troopers() return surface().count_entities_filtered{name = "lp-trooper", force = "player"} end
+  local red = defines.wire_connector_id.circuit_red
+  local SQUAD = params.units > 0 and params.units or 20
+  schedule(60, function() lp("debug_tune", {raids_off = true}) end)
+  -- A depot and parts from the start, as in lively: a garrison stands by the strike.
+  schedule(200, function() lp("debug_depot", storage.id, 2000) end)
+  schedule(STRIKE, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    -- The base: away from the settlement, on the side of spawn (the player's side).
+    local away = {-lander.position.x, -lander.position.y}
+    local len0 = math.sqrt(away[1] ^ 2 + away[2] ^ 2)
+    local a
+    for d = 120, 400, 20 do
+      a = {lander.position.x + away[1] / len0 * d, lander.position.y + away[2] / len0 * d}
+      if surface().count_entities_filtered{force = FORCE, position = a, radius = 80} == 0 then break end
+    end
+    -- The target: the outpost nearest the base, defended or not (the player's first move).
+    local target, td
+    for _, bin in pairs(lp_entities("lp-bin")) do
+      local d = (bin.position.x - a[1]) ^ 2 + (bin.position.y - a[2]) ^ 2
+      if not td or d < td then target, td = bin, d end
+    end
+    S.target = {target.position.x, target.position.y}
+    -- Staging: on the line from the outpost to the base, the first point no faction turret reaches.
+    local dx, dy = a[1] - S.target[1], a[2] - S.target[2]
+    local len = math.sqrt(dx * dx + dy * dy)
+    local stage
+    for d = 20, 120, 4 do
+      stage = {S.target[1] + dx / len * d, S.target[2] + dy / len * d}
+      if surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 30} == 0 then
+        S.stage_d = d
+        break
+      end
+    end
+    S.base_at = a
+    S.stage = stage
+    flatten(math.floor(a[1]) - 12, math.floor(a[2]) - 12, math.floor(a[1]) + 12, math.floor(a[2]) + 12)
+    local function put(name, x, y)
+      return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    end
+    S.barracks = put("lp-barracks", a[1] + 0.5, a[2] + 0.5)
+    put("electric-energy-interface", a[1] + 4, a[2] + 1)
+    put("medium-electric-pole", a[1] + 2.5, a[2] + 2.5)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    game.forces.player.technologies["lp-command-bandwidth-2"].researched = true
+    for k = 1, math.ceil(SQUAD / 10) do
+      put("lp-command-relay", a[1] - 9.5 + 4 * k, a[2] + 7.5)
+    end
+    put("medium-electric-pole", a[1] - 1.5, a[2] + 5.5)
+    put("medium-electric-pole", a[1] + 6.5, a[2] + 5.5)
+    put("medium-electric-pole", a[1] + 14.5, a[2] + 5.5)
+    S.beacon = put("lp-rally-beacon", stage[1], stage[2])
+    S.cc = put("constant-combinator", stage[1] - 2, stage[2])
+    S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
+    -- Finished orders, ten at a time (a stack): this tests the fight, not the recipe.
+    S.orders = 0
+    S.feed = function()
+      if not S.barracks.valid or S.orders >= SQUAD then return end
+      local out = S.barracks.get_inventory(defines.inventory.crafter_output)
+      S.orders = S.orders + out.insert{name = "lp-trooper-order", count = math.min(10, SQUAD - S.orders)}
+    end
+    S.feed()
+    S.turrets0 = surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 60}
+    S.st0 = lp("stats", storage.id)
+    info(string.format("siege: %d troopers; outpost at %.0f,%.0f; staging %d tiles out; %d faction turrets within 60; garrison %d",
+      SQUAD, S.target[1], S.target[2], S.stage_d or -1, S.turrets0, S.st0.garrison or -1))
+  end)
+  schedule(STRIKE + 2 * 3600, function()
+    S.trained = lp("army").trained
+    local sec = S.cc.get_or_create_control_behavior().get_section(1) or S.cc.get_or_create_control_behavior().add_section()
+    sec.filters = {{value = {type = "virtual", name = "signal-A", quality = "normal"}, min = 1}}
+    S.go = game.tick
+  end)
+  for t = STRIKE + 300, STRIKE + 2 * 3600, 300 do schedule(t, function() if S.feed then S.feed() end end) end
+  -- The player moves the beacon forward once its ground is clear (an advance holds at its beacon): onto the
+  -- target outpost, set to O. On A there the squad went for a walled turret compound 33 tiles away and died.
+  for t = STRIKE + 3 * 3600, STRIKE + 8 * 3600, 600 do
+    schedule(t, function()
+      if S.moved or not (S.beacon and S.beacon.valid) then return end
+      local left = surface().count_entities_filtered{force = FORCE, name = {"lp-turret", "lp-depot", "lp-radar"},
+        position = S.beacon.position, radius = 50}
+      if left > 0 then return end
+      S.moved = game.tick
+      local p = S.target
+      S.beacon.destroy(); S.cc.destroy()
+      S.beacon = surface().create_entity{name = "lp-rally-beacon", position = {p[1] + 3, p[2] + 3}, force = "player", raise_built = true}
+      S.cc = surface().create_entity{name = "constant-combinator", position = {p[1] + 1, p[2] + 3}, force = "player"}
+      S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
+      S.cc.get_or_create_control_behavior().add_section().filters =
+        {{value = {type = "virtual", name = "signal-O", quality = "normal"}, min = 1}}
+      info(string.format("siege: staging cleared at t+%ds; beacon moved onto the outpost", (game.tick - S.go) / 60))
+    end)
+  end
+  -- Every 2 s: the troopers and the faction's units near the fight, for the animation.
+  for t = STRIKE + 60, END, 120 do
+    schedule(t, function()
+      if not S.target then return end
+      local c = S.target
+      local units = surface().find_entities_filtered{position = c, radius = 200, type = {"unit", "spider-unit"}}
+      local frame = {tick = game.tick, units = {}}
+      for _, u in pairs(units) do table.insert(frame.units, {u.name, u.position.x, u.position.y, u.force.name}) end
+      if S.go and game.tick % 600 < 120 and alive_troopers() > 0 then
+        info(string.format("siege t+%ds orders %s", (game.tick - S.go) / 60, serpent.line(lp("army").orders)))
+      end
+      helpers.write_file("landing-party/life.jsonl", helpers.table_to_json(frame) .. "\n", true)
+    end)
+  end
+  schedule(STRIKE + 12 * 3600, function()
+    local st = lp("stats", storage.id)
+    local alive = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    local turrets = surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = S.stage, radius = 60}
+    metric("siege_squad", SQUAD)
+    metric("siege_trained", S.trained)
+    metric("siege_alive", alive)
+    metric("siege_turrets_before", S.turrets0)
+    metric("siege_turrets_after", turrets)
+    metric("siege_responses", st.responses - S.st0.responses)
+    metric("siege_units_lost", st.units_lost - S.st0.units_lost)
+    metric("siege_captured", (st.captured or 0) - (S.st0.captured or 0))
+    check("siege: the squad was trained", S.trained >= SQUAD, S.trained .. " of " .. SQUAD)
+    check("siege: the faction answered", st.responses > S.st0.responses, (st.responses - S.st0.responses) .. " responses")
+    info("siege: " .. serpent.line(lp("army")) .. ", troopers killed by " .. serpent.line(S.killers or {})
+      .. ", faction units lost: " .. serpent.line(S.fallen or {}))
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
 -- the strike at 30 failed for lack of time, not of mechanics).
-local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6}
+local AFTER = {cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6, siege = 13}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if params.scenario == "convoy" and END < 10 * 3600 then error("lp-sim: convoy needs at least 10 minutes") end
 if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end
@@ -926,7 +1181,7 @@ script.on_init(function()
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
     {doctrine = params.doctrine or (params.scenario == "defend" and "bastion")
-      or (params.scenario == "army" and "sprawl") or nil,
+      or ((params.scenario == "army" or params.scenario == "siege") and "sprawl") or nil,
      uplink = params.scenario == "uplink" or nil})
   if not storage.id then error("lp-sim: landing failed") end
 end)
@@ -944,7 +1199,7 @@ schedule(END, function()
   local s = lp("stats", storage.id)
   -- A run that ends before its scenario's checks fire must not pass (path once "passed" at 32 minutes with
   -- its checks due at 35).
-  local CHECKLESS = {grow = true, probe = true, cost = true}
+  local CHECKLESS = {grow = true, probe = true, cost = true, showcase = true}
   if not CHECKLESS[params.scenario] then
     local ran = 0
     for _, l in ipairs(lines) do
@@ -974,11 +1229,16 @@ script.on_event(defines.events.on_entity_died, function(e)
   if e.entity.name == "lp-trooper" then
     S.killers = S.killers or {}
     S.killers[by] = (S.killers[by] or 0) + 1
+  elseif e.entity.name ~= "lp-lander" then
+    S.fallen = S.fallen or {}
+    local k = e.entity.name .. " by " .. by
+    S.fallen[k] = (S.fallen[k] or 0) + 1
   else
     table.insert(lines, string.format("INFO lander killed at tick %d by %s (%s)", e.tick, by,
       e.force and e.force.name or "?"))
   end
-end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-lander"}})
+end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-lander"}, {filter = "type", type = "unit"},
+  {filter = "type", type = "spider-unit"}})
 
 script.on_event(defines.events.on_ai_command_completed, function(e)
   if S.results then S.results[e.unit_number] = e.result end

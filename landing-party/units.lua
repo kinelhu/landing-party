@@ -16,8 +16,13 @@ local function tint(t, seen, color)
   for _, v in pairs(t) do tint(v, seen, color) end
 end
 
+-- Weapon sounds by ammunition: units on a biter's bones otherwise growl and fire silently.
+local SOUND = {bullet = data.raw.gun["submachine-gun"].attack_parameters.sound,
+  ["cannon-shell"] = data.raw.gun["tank-cannon"].attack_parameters.sound,
+  rocket = data.raw.gun["rocket-launcher"].attack_parameters.sound}
 local function gun(damage, range, cooldown, category)
   return {
+    sound = table.deepcopy(SOUND[category or "bullet"]),
     type = "projectile", ammo_category = category or "bullet", range = range, cooldown = cooldown,
     cooldown_deviation = 0.15, range_mode = "bounding-box-to-bounding-box",
     ammo_type = {action = {type = "direct", action_delivery = {type = "instant",
@@ -39,6 +44,11 @@ local function base_unit(name)
   u.ai_settings = {destroy_when_commands_fail = false, allow_try_return_to_spawner = false, do_separation = true}
   u.absorptions_to_join_attack = nil
   u.healing_per_tick = 0
+  -- Machines, not biters: no growls, no hisses.
+  u.working_sound = nil
+  u.dying_sound = nil
+  u.walking_sound = nil
+  u.running_sound_animation_positions = nil
   return u
 end
 
