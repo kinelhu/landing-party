@@ -29,6 +29,7 @@ local DISTANCE = 350
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
 local SITE_MIN_ORE = 300
+local ARTILLERY_REACH = 300      -- vanilla artillery's 224 and a margin for range research
 
 faction.TIERS = {3000, 8000, 20000, 45000}           -- parts exported to reach tiers 1..4
 
@@ -74,6 +75,17 @@ function faction.site(surface, from, distance, count)
       local clear = true
       for _, l in ipairs(avoid) do
         if (l.x - spot[1]) ^ 2 + (l.y - spot[2]) ^ 2 < APART * APART then clear = false end
+      end
+      -- Not under the player's artillery (it fires on military targets by itself, about 224 tiles, more with
+      -- research): a settlement landed there would die unseen. Against a megabase they ring it, just outside.
+      if clear then
+        for _, pf in pairs(game.forces) do
+          if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
+            and surface.count_entities_filtered{position = spot, radius = ARTILLERY_REACH, force = pf,
+              type = {"artillery-turret", "artillery-wagon"}, limit = 1} > 0 then
+            clear = false
+          end
+        end
       end
       -- Not on biters: a settlement landed among nests could not build there (docs/campaign.md, biters).
       if clear and surface.count_entities_filtered{position = spot, radius = 60, type = "unit-spawner", limit = 1} > 0 then

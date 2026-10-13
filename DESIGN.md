@@ -602,6 +602,22 @@ the three players, 2 hours each, from one shared fork (the player's base goes do
 faction can see it), about 5 minutes a round. At 2 hours: passive 10 operations, production 20 of 94; robots
 12, all production standing, turrets 15 of 18; walled 8 (4 turned back), turrets 53 of 62.
 
+### Era bases (the review's instrument, first pass)
+`scripts/contact.sh [seed] [minutes] [variants]`: besides passive, robots and walled (first contact), "spread"
+(era 2: three outposts, robots) and "late" (era 4: walled, robots, upgraded lasers, an artillery turret). At 2
+hours, seed 12345: spread 12 operations (4 turned back), 12 of its 24 outpost drills lost, production whole; late
+2 operations, both turned back, nothing lost. Findings for review:
+- **The late base is untouchable.** The review's warning holds: pressure on a late player must come from transit
+  and expansion denial (stripping, far pole and rail lines, claims round it), not walls; today nothing reaches it.
+- **Tempers can leave a careful player alone.** Serenity strikes only once provoked; a player who never encroaches
+  on its territory sees no raid from it, and Grubstake enters only at the third landing (hours in). The threat
+  floor weighs player targets but cannot override a temper. Options: the first corporation is always the active
+  one (Grubstake), or the floor provokes, or Serenity's territory grows towards the player.
+- Corporations now land outside the player's artillery (300 tiles), so a late player is ringed, not shelled at.
+**Built: alerts.** An operation going in against a player (a raid attacking, a siege's mortar up, a strip camp
+mining) puts a custom alert with the corporation's icon on the nearest of that player's buildings, for every
+player of the force, on any surface (absence is not a truce). Needs a game session to see (no players headless).
+
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
 decided: the faction's military is the biter attack-group loop with a cooldown (nearest target, no sizing,

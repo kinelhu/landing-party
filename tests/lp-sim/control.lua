@@ -1448,7 +1448,11 @@ end
 -- rebuild from a storage of spares (nine roboports cover the base, not the outpost); "walled" the same with a
 -- wall and laser perimeter round the base.
 scenarios.contact = function()
-  local careful = params.mix == "robots" or params.mix == "walled"
+  -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),
+  -- "late" (era 4: walled, robots, lasers, an artillery turret with shells at the centre).
+  local careful = params.mix == "robots" or params.mix == "walled" or params.mix == "spread" or params.mix == "late"
+  local walled = params.mix == "walled" or params.mix == "late"
+  local era = ({spread = 2, late = 4})[params.mix] or 0
   -- The player's base goes down at the strike (minute 20 by default), before the faction can have seen it
   -- (the first raid came at minute 38): every variant then shares one fork of the faction's growth.
   local AT = params.strike > 0 and STRIKE or 30
@@ -1498,7 +1502,14 @@ scenarios.contact = function()
         store.insert{name = name, count = n}
       end
     end
-    if params.mix == "walled" then
+    lp("debug_tune", {era = era})
+    if params.mix == "late" then
+      local art = put("artillery-turret", 10, 10)
+      if art then art.insert{name = "artillery-shell", count = 30} end
+      pf.set_ammo_damage_modifier("laser", 1.0)
+      pf.set_gun_speed_modifier("laser", 0.8)
+    end
+    if walled then
       for k = -70, 70 do
         for _, p in ipairs({{k, -70}, {k, 70}, {-70, k}, {70, k}}) do
           surface().create_entity{name = "stone-wall", position = p, force = "player"}
@@ -1521,6 +1532,18 @@ scenarios.contact = function()
     put("laser-turret", o[1] - 12, o[2] - 10); put("laser-turret", o[1] + 12, o[2] - 10)
     for d = 66, 124, 28 do put("big-electric-pole", ux * d, uy * d) end
     S.outpost = o
+    if params.mix == "spread" then
+      -- Two more outposts, to either side, with their own pole lines home.
+      for _, side in ipairs({1, -1}) do
+        local px, py = -uy * side, ux * side
+        local q = {px * 140, py * 140}
+        flatten(math.floor(q[1]) - 16, math.floor(q[2]) - 16, math.floor(q[1]) + 16, math.floor(q[2]) + 16)
+        for k = 0, 7 do put("electric-mining-drill", q[1] - 9 + (k % 4) * 5, q[2] - 4 + math.floor(k / 4) * 6) end
+        put("substation", q[1], q[2] + 1)
+        put("laser-turret", q[1] - 12, q[2] - 10); put("laser-turret", q[1] + 12, q[2] - 10)
+        for d = 66, 124, 28 do put("big-electric-pole", px * d, py * d) end
+      end
+    end
     S.start = census()
     info(string.format("contact: base at spawn, outpost at %.0f,%.0f, faction lander at %.0f,%.0f (%.0f tiles out)",
       o[1], o[2], L.x, L.y, len))
@@ -1939,6 +1962,21 @@ scenarios.strip = function()
     check("strip: Grubstake mounted a strip-mining operation", st.ops.strips > 0, st.ops.strips .. " strips")
     check("strip: it mined the player's patch", sum < S.ore0, S.ore0 - sum .. " ore taken")
     check("strip: and brought it home", st.ops.stripped > 0, st.ops.stripped .. " ore delivered")
+  end)
+end
+
+-- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
+-- reach (300 tiles), landing just outside instead.
+scenarios.artillery = function()
+  schedule(60, function()
+    flatten(-5, -5, 5, 5)
+    surface().create_entity{name = "artillery-turret", position = {0.5, 0.5}, force = "player"}
+    S.id = lp("arrive", 1, {x = 0, y = 0}, 150, {corp = "grubstake"})
+  end)
+  schedule(120, function()
+    local st = S.id and lp("stats", S.id)
+    local d = st and math.sqrt(st.origin.x ^ 2 + st.origin.y ^ 2) or 0
+    check("artillery: the landing kept out of the artillery's reach", st ~= nil and d > 300, string.format("%.0f tiles from it", d))
   end)
 end
 

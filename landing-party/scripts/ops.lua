@@ -345,6 +345,24 @@ local function choose(b, army)
   return best
 end
 
+-- Alerts (readability): an operation going in against a player puts a custom alert, with the corporation's icon,
+-- on the nearest of that player's buildings, for every player of that force, on any surface they are on.
+local function alert(b, t, key, at)
+  if not (t and against_player(t.owner)) then return end
+  local f = game.forces[t.owner]
+  if not f or #f.players == 0 then return end
+  local s = game.surfaces[b.surface]
+  local p = at or t.pos
+  local e = s.find_entities_filtered{position = p, radius = 40, force = f, limit = 1}[1]
+  if not e then return end
+  local c = shared.CORPS[b.corp]
+  for _, player in pairs(f.players) do
+    player.add_custom_alert(e, {type = "virtual", name = c.icon}, {key, c.name}, true)
+  end
+  storage.alerts = (storage.alerts or 0) + 1
+end
+ops.alert = alert
+
 local function order_all(members, cmd)
   for _, u in ipairs(members) do if u.valid then u.commandable.set_command(cmd) end end
 end
@@ -586,6 +604,7 @@ local function siege_step(b, trace, army)
       op.mortar.insert{name = "lp-mortar-shell", count = SIEGE_SHELLS}
       if op.label and op.label.valid then op.label.destroy() end
       op.phase, op.phase_at = "bombard", game.tick
+      alert(b, b.intel.targets[op.target], "lp.alert-siege", op.site)
       trace(b, string.format("siege: the mortar is up with %d shells", SIEGE_SHELLS))
     end
   elseif op.phase == "bombard" then
@@ -729,6 +748,7 @@ local function strip_step(b, trace, army)
         end
       end
       op.phase, op.phase_at = "mine", game.tick
+      alert(b, b.intel.targets[op.target], "lp.alert-strip", op.site)
       trace(b, string.format("strip-mining: camp up at %.0f,%.0f with %d bins", op.site[1], op.site[2], #op.bins))
     end
   elseif op.phase == "mine" then
@@ -779,6 +799,7 @@ local function step(b, trace, army)
         end
       end
       op.phase, op.phase_at, op.last_kill = "attack", game.tick, game.tick
+      alert(b, t, "lp.alert-raid")
       local pos = t and t.pos or op.staging
       order_all(op.members, {type = defines.command.attack_area, destination = pos, radius = 12,
         distraction = defines.distraction.by_anything})
