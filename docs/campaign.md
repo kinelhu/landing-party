@@ -75,6 +75,8 @@ where it breaks, and what ground it wants; doctrine and colour alone made recolo
 | **Lumen Transparency** | the eye (picket) | harriers at relays, rails and power; jams the player's radars and control; orbital marks late (a warning on the ground, then a strike) | sees everything, aborts early, evacuates | blind it: without pickets it cannot operate (its operations need intel) | coverage: pickets spread thin | uses them: jammed radars let biter attacks arrive unseen | opportunist; truces freely, breaks them |
 | **Concord Munitions** | the dealer (bastion) | tanks and walkers, big garrisons, raids the weakest neighbour, corporations included | garrison, not walls | burns parts; its depots are its economy | customers: it claims beside whoever is fighting | indifferent | aggressive; sells units to the others (its level gates their walkers) and to the player at good standing |
 
+Their look, architecture, units and logos: `docs/corporations.md` (identity design pass).
+
 A fallen headquarters leaves a prize particular to its corporation (Serenity's mortars, Lumen's jamming,
 Grubstake's strip drills, Concord's unit designs for the barracks).
 
