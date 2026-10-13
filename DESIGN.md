@@ -25,7 +25,7 @@ document describes the parts as built; the campaign document describes the game 
 | Siege: a hauler carries a mortar beyond the player's turrets; deploy, shell, pack up | built (first pass) | `bombard`, `mortar` |
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
-| Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
+| Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
 | Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
@@ -531,6 +531,23 @@ claim are targets of value 3, worms their defence; raids on them announced, not 
 Grubstake never does. `evolution` (a corporation's kill leaves evolution where it was, from 0 and from 0.5; a
 player's raises it) and `nests` (three spawners on Serenity's territory raided and destroyed, evolution unchanged,
 five biters at a building drew 3 units).
+
+**Built: headquarters per corporation** (consulted with Fable, `docs/reviews/2026-10-13-headquarters-consult.md`).
+The faction-wide uplink is gone. A corporation consolidates (announced) at level 3, or after 5 hours standing with
+two or more settlements (an announced floor, so starving its exports cannot freeze the arc), and lands its
+headquarters 10 minutes later, off the landing clock, about 250 tiles from its richest settlement: the fortress
+with its uplink. The HQ's lander cannot be destroyed while the uplink stands. The uplink's fall brings the HQ down;
+the corporation withdraws (no building, rebuilding, exports, unit production or operations; its weakest
+settlement falls every 15 minutes, each with a notice in its voice); the rival's next landing comes 30 minutes
+sooner and starts from the vacancy; the player gains the corporation's prize, a recipe unlocked by a hidden
+technology: Serenity's mortar (20 salvage, 10 steel) and its shells (2 salvage, 1 explosives), Grubstake's strip
+drill (an electric drill at twice the speed and half the ore drain; 15 salvage, 10 steel, 5 circuits). Convoys go
+to their own corporation's headquarters only. One landing clock (90 minutes, launches hasten it) lands the
+corporation with fewer settlements standing; the second corporation enters at the third landing; at most 3 per
+corporation (HQ counted) and 6 in all. Not built: a new corporation after both are gone (post-MVP), a migration
+for old saves (no saves to migrate yet). `hq` (fast clocks): Serenity at level 3 landed its HQ, the lander held
+while the uplink stood, the uplink's fall brought it down, Serenity withdrew, the player's mortar recipe was
+enabled, its first settlement fell on the withdrawal clock.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

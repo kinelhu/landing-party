@@ -590,17 +590,22 @@ scenarios.uplink = function()
   end)
   schedule(12 * 3600, function()
     S.landings = lp("faction").landings
-    S.tier = lp("faction").tier
     local u = surface().find_entities_filtered{name = "lp-uplink", force = FORCE}[1]
     if u then u.die("player") end
   end)
   schedule(18 * 3600, function()
     local f = lp("faction")
+    local d = lp("corp", "serenity")
+    -- Per corporation now: the headquarters' fall makes Serenity withdraw (no landing of its own after it);
+    -- the other corporation may still land (docs/reviews/2026-10-13-headquarters-consult.md).
+    local serenity_after = 0
+    for _, id in ipairs(lp("bases")) do
+      local st = lp("stats", id)
+      if st.corp == "serenity" and st.lander and id > S.landings then serenity_after = serenity_after + 1 end
+    end
     check("uplink: landings came while it stood", S.landings >= 3, S.landings .. " landings")
-    check("uplink: its fall is registered", f.uplink_down ~= nil, tostring(f.uplink_down))
-    check("uplink: no landing after its fall", f.landings == S.landings, S.landings .. " -> " .. f.landings)
-    lp("debug_export", storage.id, 100000)
-    check("uplink: the tier is frozen", lp("faction").tier == S.tier, "tier " .. S.tier .. " -> " .. lp("faction").tier)
+    check("uplink: its fall is registered", d.hq_down ~= nil and d.withdrawing ~= nil, tostring(d.hq_down))
+    check("uplink: Serenity landed nothing after its fall", serenity_after == 0, serenity_after .. " Serenity landings after")
     lp("snapshot", storage.id, "landing-party/faction.jsonl", 200)
     for id = 2, f.landings do lp("snapshot", id, "landing-party/faction.jsonl", 200) end
   end)
@@ -1830,6 +1835,41 @@ scenarios.nests = function()
   end)
 end
 
+-- Headquarters: Serenity (level 3, fast clocks) consolidates and lands its headquarters near its settlement; the
+-- HQ's lander cannot be destroyed while the uplink stands; the uplink's fall brings the HQ down, starts the
+-- withdrawal (the other settlement falls on the withdrawal clock) and gives the player Serenity's prize.
+scenarios.hq = function()
+  schedule(30, function() lp("debug_tune", {hq_fast = true, corp_level = {serenity = 3}}) end)
+  schedule(60, function() lp("debug_depot", storage.id, 2000) end)
+  schedule(8 * 3600, function()
+    local d = lp("corp", "serenity")
+    S.hq = d.hq
+    local st = S.hq and lp("stats", S.hq)
+    S.hq_ok = st and st.hq and st.uplink
+    local lander = S.hq and surface().find_entities_filtered{name = "lp-lander", force = FORCE, position = st.origin, radius = 12}[1]
+    S.protected = lander and not lander.destructible
+    local u = surface().find_entities_filtered{name = "lp-uplink", force = FORCE}[1]
+    if u then u.die("player") end
+  end)
+  schedule(9 * 3600, function()
+    local d = lp("corp", "serenity")
+    S.withdrawing = d.withdrawing ~= nil
+    S.hq_fallen = S.hq and lp("stats", S.hq).fallen ~= nil
+    S.prize = game.forces.player.recipes["lp-player-mortar"].enabled
+  end)
+  schedule(16 * 3600, function()
+    S.first_fallen = lp("stats", storage.id).fallen ~= nil
+  end)
+  schedule(END - 60, function()
+    check("hq: Serenity landed a headquarters", S.hq_ok == true, tostring(S.hq))
+    check("hq: its lander is protected while the uplink stands", S.protected == true, tostring(S.protected))
+    check("hq: the uplink's fall brought it down", S.hq_fallen == true, tostring(S.hq_fallen))
+    check("hq: Serenity withdraws", S.withdrawing == true, tostring(S.withdrawing))
+    check("hq: the player gained its mortar", S.prize == true, tostring(S.prize))
+    check("hq: its other settlement fell on the withdrawal clock", S.first_fallen == true, tostring(S.first_fallen))
+  end)
+end
+
 -- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
 -- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
 scenarios.duel = function()
@@ -2130,7 +2170,8 @@ schedule(END, function()
     check("the scenario's checks ran", ran > 0, ran .. " checks; is the run long enough?")
   end
   -- A siege may win outright by destroying the lander.
-  if params.scenario ~= "siege" and params.scenario ~= "fall" then check("lander alive", s.lander) end
+  local MAY_FALL = {siege = true, fall = true, hq = true, uplink = true}
+  if not MAY_FALL[params.scenario] then check("lander alive", s.lander) end
   check("mined", s.mined > 0, s.mined)
   check("made parts", s.made > 0, s.made)
   metric("doctrine", s.doctrine); metric("hubs", s.hubs); metric("archetypes", s.archetypes)

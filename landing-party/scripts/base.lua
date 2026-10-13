@@ -696,7 +696,9 @@ function base.tick(tick)
       if tick % 7200 == (b.id * 61) % 7200 then base.claim_map(b) end
       site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
-      if tick % BUILD_TICKS == 0 then
+      -- A withdrawing corporation builds nothing more (its headquarters fell).
+      local withdrawing = storage.corps and storage.corps[b.corp] and storage.corps[b.corp].withdrawing
+      if tick % BUILD_TICKS == 0 and not withdrawing then
         build(b)
         -- The fortress's own jobs go faster; everything else at the usual pace (a burst for all once
         -- grew the uplink's settlement to 12 blocks in 11 minutes).
@@ -707,14 +709,14 @@ function base.tick(tick)
         end
       end
       army.tick(b, tick, trace)
-      if tick % EXPORT_TICKS == 0 then export(b) end
+      if tick % EXPORT_TICKS == 0 and not withdrawing then export(b) end
       if tick % 600 == 300 then capture(b) end
       if tick % PLAN_TICKS == 0 then
         local pending = false
         for _, job in ipairs(b.rebuild) do
           if not job.occupied and game.tick >= job.due then pending = true end
         end
-        if #b.queue == 0 and not pending then plan(b) end
+        if #b.queue == 0 and not pending and not withdrawing then plan(b) end
         label(b)
       end
     end
@@ -752,7 +754,7 @@ function base.stats(b)
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, units_built = b.units_built,
     units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
-    launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false,
+    launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false, hq = b.hq,
     turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0,
     patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
     convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0,

@@ -12,12 +12,23 @@ local faction = {}
 
 local CADENCE = 90 * 3600
 local HASTE = 15 * 3600
-local MAX_ALIVE = 4
+local MAX_ALIVE = 6              -- standing settlements, all corporations
+local MAX_PER_CORP = 3           -- per corporation, its headquarters counted
+local SECOND_CORP_LANDING = 2    -- the second corporation enters at the third landing
+-- Headquarters (docs/reviews/2026-10-13-headquarters-consult.md): at level 3, or after HQ_FLOOR standing with two
+-- settlements (an announced floor: a player who starves its exports must not freeze the arc), a corporation
+-- consolidates and lands its headquarters CONSOLIDATE later, off the clock, HQ_DISTANCE from its richest
+-- settlement. Its lander cannot be destroyed while the uplink stands; the uplink's fall brings it down and the
+-- corporation withdraws: no building, rebuilding or operations; its weakest settlement falls every WITHDRAW.
+local HQ_FLOOR = 5 * 3600 * 60
+local CONSOLIDATE = 10 * 3600
+local HQ_DISTANCE = 250
+local WITHDRAW = 15 * 3600
+local VACANCY_HASTE = 30 * 3600
 local DISTANCE = 350
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
 local SITE_MIN_ORE = 300
-local UPLINK_LANDING = 3
 
 faction.TIERS = {3000, 8000, 20000, 45000}           -- parts exported to reach tiers 1..4
 
@@ -118,11 +129,6 @@ function faction.arrive(surface, from, opts, quiet)
     pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
     if pos then break end
   end
-  -- The third landing is the uplink (unless one already stands or has fallen).
-  if f.landings == UPLINK_LANDING - 1 and not f.uplink_landed then
-    opts = opts or {}
-    opts.uplink, opts.doctrine = true, "fortress"
-  end
   local b = pos and base.land(surface, pos, opts)
   if not b then
     -- Try again later, and say why: a failed landing retried silently every 10 s once.
@@ -135,9 +141,19 @@ function faction.arrive(surface, from, opts, quiet)
   end
   f.landings = f.landings + 1
   ops.heard_landing(b)
-  if opts and opts.uplink then f.uplink_landed = b.id end
-  f.surface, f.from = surface.index, {x = from.x, y = from.y}
-  f.next = game.tick + f.cadence
+  local d = faction.corp(b.corp)
+  d.landed = d.landed or game.tick
+  if opts and opts.uplink then
+    -- A landing with an uplink is its corporation's headquarters.
+    d.hq = b.id
+    b.hq = true
+    b.lander.destructible = false
+  end
+  -- A headquarters lands off the clock: the faction's origin and next landing stay as they were.
+  if not (opts and opts.hq) then
+    f.surface, f.from = surface.index, {x = from.x, y = from.y}
+    f.next = game.tick + f.cadence
+  end
   base.trace(b, string.format("landing %d of the faction (tier %d)", f.landings, f.tier))
   if not quiet then announce(b, surface) end
   return b
@@ -155,10 +171,38 @@ function faction.on_launch(silo)
   end
 end
 
-local function alive()
+local function alive(corp)
   local n = 0
-  for _, b in pairs(storage.bases) do if b.lander.valid then n = n + 1 end end
+  for _, b in pairs(storage.bases) do
+    if b.lander.valid and (not corp or b.corp == corp) then n = n + 1 end
+  end
   return n
+end
+faction.alive = alive
+
+-- Which corporation the clock lands: of those in the region (the first; the second from the third landing),
+-- not withdrawn, under its cap, the one with fewer settlements standing (ties: the one that landed longer ago).
+local function next_corp(f)
+  local names = {}
+  for corp in pairs(shared.CORPS) do table.insert(names, corp) end
+  table.sort(names)
+  local first = storage.phases and storage.phases.corp
+  if not first then
+    local lowest
+    for _, b in pairs(storage.bases) do if not lowest or b.id < lowest.id then lowest = b end end
+    first = lowest and lowest.corp or shared.DEFAULT_CORP
+  end
+  local best, bn, bt
+  for _, corp in ipairs(names) do
+    local d = faction.corp(corp)
+    local entered = corp == first or f.landings >= SECOND_CORP_LANDING
+    local n = alive(corp)
+    if entered and not d.withdrawing and n < MAX_PER_CORP then
+      local t = d.landed or -1
+      if not best or n < bn or (n == bn and t < bt) then best, bn, bt = corp, n, t end
+    end
+  end
+  return best
 end
 
 function faction.tick(tick)
@@ -167,11 +211,76 @@ function faction.tick(tick)
     if b.lander.valid and not b.tags_done then faction.tag(b) end
   end
   local f = faction.state()
-  if f.next and tick >= f.next and f.surface and not f.uplink_down then
-    if alive() < MAX_ALIVE then
-      faction.arrive(game.surfaces[f.surface], f.from, nil, storage.quiet)
+  if f.next and tick >= f.next and f.surface then
+    local corp = alive() < MAX_ALIVE and next_corp(f)
+    if corp then
+      -- After a corporation withdrew, the survivor's next landing starts from the vacancy it left.
+      local origin = f.from
+      local from = origin
+      if f.vacancy and f.vacancy.corp ~= corp then from = f.vacancy.pos; f.vacancy = nil end
+      faction.arrive(game.surfaces[f.surface], from, {corp = corp}, storage.quiet)
+      f.from = origin
     else
       f.next = tick + f.cadence
+    end
+  end
+  faction.headquarters(tick)
+end
+
+-- Headquarters: consolidation, the landing, withdrawal (see the constants above).
+local function tell(key, ...)
+  for _, force in pairs(game.forces) do
+    if #force.players > 0 then force.print({key, ...}) end
+  end
+end
+
+function faction.headquarters(tick)
+  local f = faction.state()
+  if not f.surface then return end
+  local fast = storage.hq_fast
+  for corp in pairs(shared.CORPS) do
+    local d = faction.corp(corp)
+    local standing = alive(corp)
+    if not d.hq and not d.withdrawing and standing > 0 then
+      local floor = d.landed and tick - d.landed >= (fast and 2 * 3600 or HQ_FLOOR) and standing >= 2
+      if not d.consolidating and (shared.capable(corp, "headquarters", d.level) or floor) then
+        d.consolidating = tick + (fast and 3600 or CONSOLIDATE)
+        tell("lp.consolidating", shared.corp_label(corp))
+      elseif d.consolidating and tick >= d.consolidating then
+        local richest
+        for _, b in pairs(storage.bases) do
+          if b.corp == corp and b.lander.valid and (not richest or (b.exported or 0) > (richest.exported or 0)) then
+            richest = b
+          end
+        end
+        if richest then
+          local hq = faction.arrive(game.surfaces[richest.surface], richest.origin,
+            {corp = corp, uplink = true, hq = true, distance = HQ_DISTANCE}, storage.quiet)
+          if hq then
+            d.consolidating = nil
+            tell("lp.headquarters", shared.corp_label(corp), string.format("[gps=%d,%d,%s]", hq.origin.x, hq.origin.y,
+              game.surfaces[hq.surface].name))
+          else
+            d.consolidating = tick + 5 * 3600
+          end
+        end
+      end
+    end
+    -- Withdrawal: the weakest settlement falls every WITHDRAW until none stands.
+    if d.withdrawing and standing > 0 and tick >= (d.next_withdraw or 0) then
+      local weakest
+      for _, b in pairs(storage.bases) do
+        if b.corp == corp and b.lander.valid and (not weakest or (b.exported or 0) < (weakest.exported or 0)) then
+          weakest = b
+        end
+      end
+      if weakest then
+        weakest.lander.destructible = true
+        tell("lp.withdrawing-" .. corp, string.format("[gps=%d,%d,%s]", weakest.origin.x, weakest.origin.y,
+          game.surfaces[weakest.surface].name))
+        weakest.lander.die()
+      end
+      d.next_withdraw = tick + (fast and 2 * 3600 or WITHDRAW)
     end
   end
 end
@@ -214,8 +323,6 @@ function faction.export(b, parts)
   f.exported = f.exported + parts
   b.exported = (b.exported or 0) + parts
   faction.develop(b, parts)
-  -- With the uplink down, exports go nowhere: the tier is frozen.
-  if f.uplink_down then return end
   while f.tiers[f.tier + 1] and f.exported >= f.tiers[f.tier + 1] do
     f.tier = f.tier + 1
     apply_tier(f)
@@ -223,18 +330,32 @@ function faction.export(b, parts)
   end
 end
 
--- The uplink falls: no more landings, the tier frozen. The settlements already down stay.
+-- A headquarters' uplink falls: the headquarters falls with it, its corporation withdraws, the rival's next landing
+-- comes sooner (from the vacancy), and the player gains the corporation's prize (a recipe).
 function faction.uplink_lost(entity)
   local f = faction.state()
-  if f.uplink_down then return end
-  f.uplink_down = game.tick
-  f.next = nil
-  for _, force in pairs(game.forces) do
-    if #force.players > 0 then force.print({"lp.uplink-down"}) end
+  local hq
+  for _, b in pairs(storage.bases) do
+    if b.uplink == entity or (b.hq and b.uplink and not b.uplink.valid and not b.fallen) then hq = b end
   end
-  if storage.trace then
-    helpers.write_file("landing-party/decisions.txt", string.format("%8d faction  uplink destroyed: no more landings, tier %d frozen\n",
-      game.tick, f.tier), true)
+  if not hq then return end
+  local d = faction.corp(hq.corp)
+  if d.withdrawing then return end
+  d.withdrawing, d.hq_down = game.tick, game.tick
+  d.next_withdraw = game.tick + (storage.hq_fast and 2 * 3600 or WITHDRAW)
+  f.vacancy = {corp = hq.corp, pos = {x = hq.origin.x, y = hq.origin.y}}
+  if f.next then f.next = math.max(game.tick, f.next - VACANCY_HASTE) end
+  tell("lp.hq-down-" .. hq.corp, string.format("[gps=%d,%d,%s]", hq.origin.x, hq.origin.y, game.surfaces[hq.surface].name))
+  for _, force in pairs(game.forces) do
+    if not shared.is_corp(force.name) and force.name ~= "enemy" and force.name ~= "neutral" then
+      local t = force.technologies["lp-prize-" .. hq.corp]
+      if t then t.researched = true end
+    end
+  end
+  base.trace(hq, string.format("%s headquarters destroyed: withdrawing", hq.corp))
+  if hq.lander.valid then
+    hq.lander.destructible = true
+    hq.lander.die()
   end
 end
 

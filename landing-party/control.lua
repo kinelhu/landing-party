@@ -179,6 +179,7 @@ remote.add_interface("landing-party", {
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
     if t.phases_fast ~= nil then storage.phases_fast = t.phases_fast end
     if t.era ~= nil then storage.era_override = t.era end
+    if t.hq_fast ~= nil then storage.hq_fast = t.hq_fast end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
   set_trace = function(on) storage.trace = on end,

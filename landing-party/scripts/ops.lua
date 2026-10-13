@@ -643,7 +643,8 @@ function ops.tick(b, tick, trace, army)
   if tick % 600 == 200 then field_sight(b) end
   if b.op then
     if tick % 300 == 100 then step(b, trace, army) end
-  elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off then
+  elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off
+    and not army.withdrawing(b) then
     if not home(b) then return end
     local key = choose(b, army)
     if key then

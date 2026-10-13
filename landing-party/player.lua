@@ -138,3 +138,46 @@ data:extend({
   tech(4, {"lp-command-bandwidth-3"}, {red, green, blue, grey}, nil, nil,
     {max_level = "infinite", unit = {count_formula = "150*L", time = 30, ingredients = {red, green, blue, grey}}}),
 })
+
+-- Prizes (docs/reviews/2026-10-13-headquarters-consult.md): a corporation whose headquarters falls leaves the player
+-- one recipe, unlocked by a hidden technology the fall marks researched. Serenity: its mortar (and shells), the
+-- wall's own weapon. Grubstake: its strip drill, twice an electric drill's speed at half the ore drain.
+local mortar = table.deepcopy(data.raw["artillery-turret"]["lp-mortar"])
+mortar.name = "lp-player-mortar"
+mortar.flags = {"placeable-neutral", "placeable-player", "player-creation"}
+mortar.minable = {mining_time = 0.5, result = "lp-player-mortar"}
+mortar.hidden = false
+data.raw.ammo["lp-mortar-shell"].hidden = false
+data.raw.ammo["lp-mortar-shell"].subgroup = "ammo"
+local strip = table.deepcopy(data.raw["mining-drill"]["electric-mining-drill"])
+strip.name = "lp-strip-drill"
+strip.minable = {mining_time = 0.5, result = "lp-strip-drill"}
+strip.mining_speed = 1
+strip.resource_drain_rate_percent = 50
+strip.next_upgrade = nil
+strip.fast_replaceable_group = nil
+local function prize(corp, recipes)
+  local effects = {}
+  for _, r in ipairs(recipes) do table.insert(effects, {type = "unlock-recipe", recipe = r}) end
+  return {type = "technology", name = "lp-prize-" .. corp, hidden = true, icon = "__base__/graphics/technology/military.png",
+    icon_size = 256, effects = effects, unit = {count = 1, time = 1, ingredients = {{"automation-science-pack", 1}}}}
+end
+data:extend({
+  mortar, strip,
+  {type = "item", name = "lp-player-mortar", icon = "__base__/graphics/icons/artillery-turret.png", stack_size = 10,
+    place_result = "lp-player-mortar", subgroup = "defensive-structure", order = "z[landing-party]-mortar"},
+  {type = "item", name = "lp-strip-drill", icon = "__base__/graphics/icons/electric-mining-drill.png", stack_size = 50,
+    place_result = "lp-strip-drill", subgroup = "extraction-machine", order = "z[landing-party]-strip-drill"},
+  {type = "recipe", name = "lp-player-mortar", enabled = false, energy_required = 10,
+    ingredients = {{type = "item", name = "lp-salvage", amount = 20}, {type = "item", name = "steel-plate", amount = 10}},
+    results = {{type = "item", name = "lp-player-mortar", amount = 1}}},
+  {type = "recipe", name = "lp-mortar-shell", enabled = false, energy_required = 4,
+    ingredients = {{type = "item", name = "lp-salvage", amount = 2}, {type = "item", name = "explosives", amount = 1}},
+    results = {{type = "item", name = "lp-mortar-shell", amount = 1}}},
+  {type = "recipe", name = "lp-strip-drill", enabled = false, energy_required = 4,
+    ingredients = {{type = "item", name = "lp-salvage", amount = 15}, {type = "item", name = "steel-plate", amount = 10},
+      {type = "item", name = "electronic-circuit", amount = 5}},
+    results = {{type = "item", name = "lp-strip-drill", amount = 1}}},
+  prize("serenity", {"lp-player-mortar", "lp-mortar-shell"}),
+  prize("grubstake", {"lp-strip-drill"}),
+})

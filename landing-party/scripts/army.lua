@@ -52,8 +52,10 @@ local function mix(b)
 end
 
 -- One unit from the first depot with room, if parts allow; the doctrine weighs which.
+local function withdrawing(b) return storage.corps and storage.corps[b.corp] and storage.corps[b.corp].withdrawing end
+army.withdrawing = withdrawing
 local function produce(b, trace)
-  if storage.army_off then return end
+  if storage.army_off or withdrawing(b) then return end
   prune(b.garrison)
   if strength(b) >= cap(b) then return end
   local name = b.next_unit or rng.weighted(b.rng, mix(b))
@@ -229,15 +231,15 @@ end
 local CONVOY_LEG = 100
 local CONVOY_ESCORT = 2
 
-local function uplink_settlement()
-  local f = storage.faction
-  local id = f and f.uplink_landed
-  local u = id and storage.bases[id]
+-- The corporation's own headquarters (its uplink standing): convoys go there only.
+local function uplink_settlement(b)
+  local d = storage.corps and storage.corps[b.corp]
+  local u = d and d.hq and storage.bases[d.hq]
   if u and u.uplink and u.uplink.valid then return u end
 end
 
 function army.convoy(b, cargo, trace)
-  local dest = uplink_settlement()
+  local dest = uplink_settlement(b)
   if not dest or dest == b then return false end
   local surface = b.lander.surface
   local home = (b.depots[1] and b.depots[1].valid and b.depots[1]) or b.lander
@@ -507,7 +509,9 @@ function army.disband(b, trace)
   local from = b.lander.valid and b.lander.position or (b.origin and {x = b.origin.x, y = b.origin.y})
   local dest, dd
   for _, o in pairs(storage.bases) do
-    if o ~= b and o.lander.valid and o.depots[1] and o.depots[1].valid then
+    -- Its own corporation's only (evacuees joined a rival's garrison once, and its next response crashed
+    -- putting them in a squad of another force).
+    if o ~= b and o.corp == b.corp and o.lander.valid and o.depots[1] and o.depots[1].valid then
       local d = math.sqrt((o.lander.position.x - from.x) ^ 2 + (o.lander.position.y - from.y) ^ 2)
       if d <= EVACUATE_RANGE and (not dd or d < dd) then dest, dd = o, d end
     end
