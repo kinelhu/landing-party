@@ -17,7 +17,9 @@ shared.CORPS = {
     -- Architecture (docs/corporations.md): sprawl, gun turrets fed with ammunition instead of lasers, walls
     -- that are fences (half health); infantry, buggies and harriers, no tanks.
     doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret"}, props = {["lp-wall"] = {max_health = 225}},
-    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {}},
+    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {},
+    -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
+    caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -31,7 +33,8 @@ shared.CORPS = {
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
     doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
-    arch = {gates = true, baffles = true, pillboxes = true}},
+    arch = {gates = true, baffles = true, pillboxes = true},
+    caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3}},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}
@@ -64,6 +67,18 @@ function shared.variants(kinds)
   return out
 end
 function shared.is_corp(force_name) return force_name ~= nil and force_name:sub(1, 3) == "lp-" end
+-- Development: a corporation's level rises with the parts its settlements export (thresholds), and each level
+-- brings capabilities (CORPS caps), never a hidden bonus. Units with no entry in caps come at level 0.
+shared.LEVELS = {3000, 8000, 20000, 45000}
+function shared.capable(corp, cap, level)
+  local c = shared.CORPS[corp]
+  local need = c and c.caps and c.caps[cap]
+  if need == nil then
+    -- A unit kind not listed is there from the start; any other capability not listed, never.
+    return cap:sub(1, 3) == "lp-" and (shared.UNLOCK[cap] or 0) == 0 or false
+  end
+  return (level or 0) >= need
+end
 -- A corporation's name with its icon, as rich text (notices, map tags).
 function shared.corp_label(corp)
   local c = shared.CORPS[corp]

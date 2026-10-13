@@ -34,8 +34,10 @@ function army.init(b)
 end
 
 local GARRISON_PER_TIER = 5     -- per depot
-local function tier() return storage.faction and storage.faction.tier or 0 end
-local function cap(b) return #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * tier()) end
+-- The corporation's development level (storage.corps, faction.develop).
+local function level(b) return storage.corps and b.corp and storage.corps[b.corp] and storage.corps[b.corp].level or 0 end
+army.level = level
+local function cap(b) return #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b)) end
 army.cap = cap
 local function strength(b) return #b.garrison + #(b.patrol or {}) end
 
@@ -44,7 +46,7 @@ local function mix(b)
   local out = {}
   -- The corporation's own mix where it has one (docs/corporations.md), else the doctrine's.
   for name, w in pairs((b.corp and shared.CORPS[b.corp].mix) or army.MIX[b.doctrine]) do
-    if tier() >= (shared.UNLOCK[name] or 0) then out[name] = w end
+    if shared.capable(b.corp, name, level(b)) then out[name] = w end
   end
   return out
 end

@@ -1320,6 +1320,8 @@ end
 -- siege. A hauler must carry a mortar out, deploy it beyond every player turret's reach, shell the position,
 -- and pack up when the shells are spent; no mortar is left behind.
 scenarios.bombard = function()
+  -- Sieges are a capability from level 1 (Serenity).
+  schedule(30, function() lp("debug_tune", {corp_level = {serenity = 1}}) end)
   schedule(60, function()
     lp("debug_depot", storage.id, 4000)
     lp("debug_depot", storage.id, 0)
@@ -1675,6 +1677,72 @@ scenarios.phases = function()
     check("phases: the arrival waited out the delay", S.early == 0, S.early .. " settlements 12 minutes after the trigger")
     check("phases: then it came", (S.late or 0) > 0, tostring(S.late) .. " settlements 24 minutes after")
     info("phases: " .. serpent.line(p))
+  end)
+end
+
+-- Budget: the threat budget and development. Serenity and Grubstake land; each gets undefended relays and a
+-- barracks (valuable) 120 tiles towards spawn, within its sight. Era 0: one operation against the player at a
+-- time, across both. Both must still attack the player, by turns; Grubstake builds no harriers before level 1.
+scenarios.budget = function()
+  -- LP_MIX=free lifts the budget (era 10: eleven at once), to see the cap matter.
+  schedule(30, function() lp("debug_tune", {era = params.mix == "free" and 10 or 0}) end)
+  schedule(60, function() for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end end)
+  schedule(120, function()
+    S.other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    if S.other then for _ = 1, 3 do lp("debug_depot", S.other, 3000) end end
+    for _, id in ipairs({storage.id, S.other}) do
+      local st = lp("stats", id)
+      local o = st.origin
+      local len = math.sqrt(o.x * o.x + o.y * o.y)
+      local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+      flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
+      for k = -1, 1 do
+        surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"}
+      end
+      surface().create_entity{name = "lp-barracks", position = {c[1], c[2] + 6}, force = "player"}
+    end
+    S.max = 0
+  end)
+  for t = 300, END - 120, 60 do
+    schedule(t, function()
+      local th = lp("threat")
+      S.max = math.max(S.max or 0, th.player_ops)
+      local g = S.other and lp("stats", S.other)
+      if g and lp("corp", "grubstake").level == 0 and g.built_by and (g.built_by["lp-harrier"] or 0) > 0 then
+        S.early_harriers = true
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local a, b = lp("stats", storage.id), S.other and lp("stats", S.other)
+    local function vs_player(st)
+      local n = 0
+      for _, l in ipairs(st and st.ops.log or {}) do if l.owner == "player" then n = n + 1 end end
+      return n
+    end
+    local holds = lp("threat").holds
+    info("budget: at most " .. tostring(S.max) .. " at once; the budget held a player target back " .. holds .. " times")
+    check("budget: never more than one operation against the player at once", (S.max or 0) <= 1, tostring(S.max))
+    if params.mix ~= "free" then check("budget: it held some back", holds > 0, holds .. " holds") end
+    check("budget: both still attacked the player", vs_player(a) > 0 and vs_player(b) > 0,
+      vs_player(a) .. " by Serenity, " .. vs_player(b) .. " by Grubstake")
+    local g = lp("corp", "grubstake")
+    check("budget: no harriers before level 1", not S.early_harriers, "level now " .. g.level .. ", " ..
+      serpent.line(b and b.built_by))
+  end)
+end
+
+-- Develop: a corporation's level and its capabilities. Serenity exports past the first threshold (3000):
+-- level 1 must come, and with it sieges (the capability), announced.
+scenarios.develop = function()
+  schedule(120, function()
+    S.before = lp("corp", "serenity").level
+    lp("debug_export", storage.id, 3500)
+    S.after = lp("corp", "serenity").level
+  end)
+  schedule(END - 60, function()
+    check("develop: exports raised Serenity a level", S.before == 0 and S.after == 1, S.before .. " -> " .. S.after)
+    check("develop: the faction tier still counts too", lp("faction").tier >= 1, lp("faction").tier)
   end)
 end
 

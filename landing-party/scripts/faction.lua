@@ -177,10 +177,39 @@ end
 local function apply_tier(f) end
 
 -- Parts sent off-world by a mature settlement.
+-- A corporation's development (per corporation, from its own exports).
+function faction.corp(corp)
+  storage.corps = storage.corps or {}
+  storage.corps[corp] = storage.corps[corp] or {level = 0, exported = 0}
+  return storage.corps[corp]
+end
+
+local CAP_NOTICE = {["lp-harrier"] = "harriers", ["lp-walker"] = "walkers", siege = "siege operations",
+  pickets_see = "pickets that report what they see", headquarters = "a headquarters"}
+function faction.develop(b, parts)
+  local d = faction.corp(b.corp)
+  d.exported = d.exported + parts
+  while shared.LEVELS[d.level + 1] and d.exported >= shared.LEVELS[d.level + 1] do
+    d.level = d.level + 1
+    local gained = {}
+    for cap, lvl in pairs(shared.CORPS[b.corp].caps or {}) do
+      if lvl == d.level and CAP_NOTICE[cap] then table.insert(gained, CAP_NOTICE[cap]) end
+    end
+    table.sort(gained)
+    base.trace(b, string.format("%s reaches level %d: %s", b.corp, d.level, table.concat(gained, ", ")))
+    for _, f in pairs(game.forces) do
+      if #f.players > 0 and #gained > 0 then
+        f.print({"lp.develop", shared.corp_label(b.corp), table.concat(gained, ", ")})
+      end
+    end
+  end
+end
+
 function faction.export(b, parts)
   local f = faction.state()
   f.exported = f.exported + parts
   b.exported = (b.exported or 0) + parts
+  faction.develop(b, parts)
   -- With the uplink down, exports go nowhere: the tier is frozen.
   if f.uplink_down then return end
   while f.tiers[f.tier + 1] and f.exported >= f.tiers[f.tier + 1] do

@@ -156,6 +156,8 @@ remote.add_interface("landing-party", {
     return b and b.id
   end,
   faction = function() return faction.state() end,
+  threat = function() return {player_ops = ops.player_ops(), last = storage.threat_last, holds = storage.budget_holds or 0} end,
+  corp = function(corp) return faction.corp(corp) end,
   phases = function()
     local s = phases.state()
     return {signs = s.signs ~= nil, survey = s.survey and {done = s.survey.done, pos = s.survey.pos, corp = s.survey.corp},
@@ -174,6 +176,8 @@ remote.add_interface("landing-party", {
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
     if t.phases_fast ~= nil then storage.phases_fast = t.phases_fast end
+    if t.era ~= nil then storage.era_override = t.era end
+    for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
   set_trace = function(on) storage.trace = on end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,

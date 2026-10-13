@@ -14,6 +14,7 @@ document describes the parts as built; the campaign document describes the game 
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
+| Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
 | Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
 | Rebuild unless occupied | built | `raid`, `occupy` |
@@ -506,6 +507,18 @@ corporation arrives 30 minutes later, trigger or not); **arrival** (Space Age: t
 the phases now; base game: the first chemical science pack). `phases` (radar, oil, survey destroyed, chemical
 pack: wreck with 30 salvage, 8 survey entities, the core dropped, no settlement 12 minutes after the trigger,
 one at 24) and `phases` with LP_MIX=left (the party departs, the corporation comes with no trigger).
+
+**Built: development and the threat budget** (docs/campaign.md section 6). Each corporation has a level from
+its own exports (3,000, 8,000, 20,000, 45,000 parts; `storage.corps`), and each level brings capabilities, never
+a hidden bonus, announced to the player ("... has expanded its capabilities: siege operations"). Grubstake:
+harriers at 1, pickets that see at 2, a headquarters at 3; never sieges. Serenity: sieges at 1, walkers and
+pickets that see at 2, a headquarters at 3. Garrison caps grow with the corporation's level. The faction-wide
+tier remains for the uplink and exports. The threat budget: operations against a player force at once,
+across every corporation, at most 1 + its era (era 0-4 from research done: 25, 60, 100, 150 technologies);
+operations between corporations are not counted. The floor: after 20 minutes with no operation against a
+player, player targets weigh triple. `budget` (both corporations, era 0, an hour, sampled every second): at most
+one at once, the budget holding a target back 4 times; lifted (era 10), two ran at once (the check seen
+failing). `develop`: exports past 3,000 raise Serenity to level 1.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

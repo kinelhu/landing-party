@@ -209,6 +209,33 @@ local function field(b, army)
   return math.max(0, n - reserve), reserve
 end
 
+-- The threat budget (docs/campaign.md section 6): operations against a player force at once, across every
+-- corporation, are capped by that player's era (1 + era; era 0-4 from research done), so corporations do not
+-- stack into a flood; corporations' operations against each other are not counted. The floor: when no
+-- operation has gone against a player for FLOOR_TICKS, player targets weigh triple in every choice.
+local FLOOR_TICKS = 20 * 60 * 60
+local ERA_TECHS = {25, 60, 100, 150}
+function ops.era(force)
+  local n = 0
+  for _, t in pairs(force.technologies) do if t.researched then n = n + 1 end end
+  local era = 0
+  for i, k in ipairs(ERA_TECHS) do if n >= k then era = i end end
+  return era
+end
+local function against_player(owner) return owner ~= nil and not shared.is_corp(owner) end
+function ops.player_ops()
+  local n = 0
+  for _, o in pairs(storage.bases) do
+    local t = o.op and o.intel and o.intel.targets[o.op.target]
+    if t and against_player(t.owner) then n = n + 1 end
+  end
+  return n
+end
+local function budget(owner)
+  local f = game.forces[owner]
+  return 1 + (f and (storage.era_override or ops.era(f)) or 0)
+end
+
 -- Known defence of a target: turrets seen by it, and deaths there (a turret per three markers).
 local function defence(b, t)
   return (t.defence or 0) + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
@@ -233,12 +260,18 @@ local function choose(b, army)
       if (z.pos[1] - t.pos[1]) ^ 2 + (z.pos[2] - t.pos[2]) ^ 2 <= 48 * 48 then return true end
     end
   end
+  local in_flight = ops.player_ops()
+  local floor = game.tick - (storage.threat_last or 0) > FLOOR_TICKS
   for key, t in pairs(b.intel.targets) do
-    if game.tick >= (t.cool or 0) and not cooling(t) then
+    local player = against_player(t.owner)
+    local held = player and in_flight >= budget(t.owner)
+    if held and game.tick >= (t.cool or 0) then storage.budget_holds = (storage.budget_holds or 0) + 1 end
+    if game.tick >= (t.cool or 0) and not cooling(t) and not held then
       local d = defence(b, t)
       if needed(d) <= max_field then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local s = (t.value + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300) / (1 + t.tried)
+          * ((player and floor) and 3 or 1)
         if not bs or s > bs then best, bs = key, s end
       end
     end
@@ -352,6 +385,7 @@ local function launch(b, key, trace, army)
     distraction = defines.distraction.by_enemy})
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
+  if against_player(t.owner) then storage.threat_last = game.tick end
   trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %d): %d units stage at %.0f,%.0f", t.kind,
     t.pos[1], t.pos[2], t.value, d, #members, stage[1], stage[2]))
   return true
@@ -381,12 +415,15 @@ end
 
 local function choose_siege(b, army)
   if (b.parts or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
+  -- A capability, not every corporation's (Serenity's from level 1; Grubstake never besieges).
+  if not shared.capable(b.corp, "siege", army.level(b)) then return end
+  local in_flight = ops.player_ops()
   local n = field(b, army)
   if n < SIEGE_GUARDS then return end
   local h = home(b)
   local best, bs, site
   for key, t in pairs(b.intel.targets) do
-    if (t.defence or 0) >= 2 then
+    if (t.defence or 0) >= 2 and not (against_player(t.owner) and in_flight >= budget(t.owner)) then
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300)
       if not bs or s > bs then
@@ -421,6 +458,7 @@ local function launch_siege(b, key, site, trace, army)
     distraction = defines.distraction.by_enemy})
   b.ops_launched = b.ops_launched + 1
   b.sieges = (b.sieges or 0) + 1
+  if against_player(t.owner) then storage.threat_last = game.tick end
   trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %d): a mortar to %.0f,%.0f, %d guards", t.kind,
     t.pos[1], t.pos[2], t.value, t.defence or 0, site[1], site[2], #guards))
   return true
