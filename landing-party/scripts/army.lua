@@ -93,16 +93,17 @@ local THREATS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-tu
   "character"}
 
 local MOBILE = {"unit", "car", "spider-vehicle", "character"}
-local function threat_count(surface, pos, f, types)
+local function threat_count(surface, pos, f, types, no_biters)
   local n = 0
   for _, other in pairs(game.forces) do
-    if other ~= f and other.name ~= "neutral" and not f.get_cease_fire(other) then
+    if other ~= f and other.name ~= "neutral" and not f.get_cease_fire(other) and not (no_biters and other.name == "enemy") then
       n = n + surface.count_entities_filtered{position = pos, radius = THREAT_RADIUS, force = other, type = types or THREATS}
     end
   end
   return n
 end
 local RESPONSE_COOLDOWN = 60 * 60
+local BITER_RESPONSE = 3
 
 function army.alarm(b, pos, trace)
   if not storage.ops_off then ops.sense_at(b, pos, 40) end
@@ -125,6 +126,8 @@ function army.alarm(b, pos, trace)
   if not home or #b.garrison <= HOME_GUARD then return end
   b.next_response = game.tick + RESPONSE_COOLDOWN
   local size = math.max(RESPONSE_MIN, RESPONSE_PER_THREAT * threat_count(home.surface, pos, home.force))
+  -- Biters alone get a small answer (sized to every biter, responses bled garrisons on nests nobody chose).
+  if threat_count(home.surface, pos, home.force, nil, true) == 0 then size = BITER_RESPONSE end
   local group = home.surface.create_unit_group{position = home.position, force = home.force}
   local members = {}
   local dest = {pos.x, pos.y}

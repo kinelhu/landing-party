@@ -15,6 +15,7 @@ document describes the parts as built; the campaign document describes the game 
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
+| Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
 | Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
 | Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
 | Rebuild unless occupied | built | `raid`, `occupy` |
@@ -519,6 +520,17 @@ operations between corporations are not counted. The floor: after 20 minutes wit
 player, player targets weigh triple. `budget` (both corporations, era 0, an hour, sampled every second): at most
 one at once, the budget holding a target back 4 times; lifted (era 10), two ran at once (the check seen
 failing). `develop`: exports past 3,000 raise Serenity to level 1.
+
+**Built: corporations and biters.** Clean by default (settlements emit no pollution). Measured first: a
+corporation destroying a spawner raised the biters' spawner-kill evolution exactly as a player's kill does (a
+flat +0.002, destroy_factor, per spawner, at evolution 0 and at 0.5). So `scripts/biters.lua` gives it back a tick
+later for every spawner a corporation destroys (a first refund inverting destroy_factor * (1 - e) left a residue
+at 0.5; the component is flat). Landings avoid sites within 60 tiles of a spawner. An alarm raised by biters alone
+draws 3 units, not a squad sized to every biter. Serenity clears nests on its own territory (spawners in its
+claim are targets of value 3, worms their defence; raids on them announced, not counted in the threat budget);
+Grubstake never does. `evolution` (a corporation's kill leaves evolution where it was, from 0 and from 0.5; a
+player's raises it) and `nests` (three spawners on Serenity's territory raided and destroyed, evolution unchanged,
+five biters at a building drew 3 units).
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

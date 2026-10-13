@@ -113,9 +113,24 @@ local function forget(b, pos, r)
   end
 end
 
+-- Nests on its own territory, for a corporation that clears them (Serenity; Grubstake routes round them):
+-- spawners within its claim are targets (value 3), worms by them their defence. Announced when raided.
+local function sense_nests(b, surface)
+  if not shared.CORPS[b.corp].clears_nests or not b.claim_radius then return end
+  for _, sp in pairs(surface.find_entities_filtered{position = {b.origin.x, b.origin.y}, radius = b.claim_radius,
+    force = "enemy", type = "unit-spawner"}) do
+    local key = "nest:" .. math.floor(sp.position.x / CELL) .. "," .. math.floor(sp.position.y / CELL)
+    local t = b.intel.targets[key] or {tried = 0, cool = 0}
+    t.pos, t.kind, t.value, t.seen, t.owner = {sp.position.x, sp.position.y}, sp.name, 3, game.tick, "enemy"
+    t.defence = surface.count_entities_filtered{position = sp.position, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+    b.intel.targets[key] = t
+  end
+end
+
 local function scan(b)
   local surface = game.surfaces[b.surface]
   if not b.lander.valid then return end
+  sense_nests(b, surface)
   local sensors = {b.lander}
   for _, d in ipairs(b.depots) do if d.valid then table.insert(sensors, d) end end
   for _, r in ipairs(b.radars or {}) do if r.valid then table.insert(sensors, r) end end
@@ -222,7 +237,7 @@ function ops.era(force)
   for i, k in ipairs(ERA_TECHS) do if n >= k then era = i end end
   return era
 end
-local function against_player(owner) return owner ~= nil and not shared.is_corp(owner) end
+local function against_player(owner) return owner ~= nil and owner ~= "enemy" and not shared.is_corp(owner) end
 function ops.player_ops()
   local n = 0
   for _, o in pairs(storage.bases) do
@@ -386,6 +401,14 @@ local function launch(b, key, trace, army)
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
+  if t.owner == "enemy" then
+    for _, f in pairs(game.forces) do
+      if #f.players > 0 then
+        f.print({"lp.clearing", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", t.pos[1], t.pos[2],
+          game.surfaces[b.surface].name)})
+      end
+    end
+  end
   trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %d): %d units stage at %.0f,%.0f", t.kind,
     t.pos[1], t.pos[2], t.value, d, #members, stage[1], stage[2]))
   return true
@@ -571,10 +594,17 @@ local function step(b, trace, army)
     if b.razed > op.kills_at then op.kills_at, op.last_kill = b.razed, game.tick end
     local pos = t and t.pos or op.staging
     local surface = game.surfaces[b.surface]
-    local turrets = surface.count_entities_filtered{position = pos, radius = DEFENCE_RADIUS, type = TURRETS,
-      force = enemies(game.forces[b.force])}
-    local left = surface.count_entities_filtered{position = pos, radius = 16, type = TYPES,
-      force = enemies(game.forces[b.force])}
+    local turrets, left
+    if t and t.owner == "enemy" then
+      -- A nest: its spawners, and the worms by them.
+      turrets = surface.count_entities_filtered{position = pos, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+      left = surface.count_entities_filtered{position = pos, radius = 16, force = "enemy", type = "unit-spawner"}
+    else
+      turrets = surface.count_entities_filtered{position = pos, radius = DEFENCE_RADIUS, type = TURRETS,
+        force = enemies(game.forces[b.force])}
+      left = surface.count_entities_filtered{position = pos, radius = 16, type = TYPES,
+        force = enemies(game.forces[b.force])}
+    end
     if n < 0.5 * op.launched and turrets > 0 then return finish(b, "aborted", trace, army) end
     if game.tick - op.last_kill > NO_KILL_TICKS then return finish(b, "aborted", trace, army) end
     if left == 0 then

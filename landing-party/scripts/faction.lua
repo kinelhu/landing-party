@@ -64,6 +64,10 @@ function faction.site(surface, from, distance, count)
       for _, l in ipairs(avoid) do
         if (l.x - spot[1]) ^ 2 + (l.y - spot[2]) ^ 2 < APART * APART then clear = false end
       end
+      -- Not on biters: a settlement landed among nests could not build there (docs/campaign.md, biters).
+      if clear and surface.count_entities_filtered{position = spot, radius = 60, type = "unit-spawner", limit = 1} > 0 then
+        clear = false
+      end
       if clear then
         local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
         if n > SITE_MIN_ORE then return spot end

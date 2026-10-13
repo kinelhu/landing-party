@@ -33,7 +33,7 @@ shared.CORPS = {
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
     doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
-    arch = {gates = true, baffles = true, pillboxes = true},
+    arch = {gates = true, baffles = true, pillboxes = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3}},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.

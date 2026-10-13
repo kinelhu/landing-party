@@ -4,6 +4,7 @@ local site = require("scripts.site")
 local faction = require("scripts.faction")
 local command = require("scripts.command")
 local phases = require("__landing-party__.scripts.phases")
+local biters = require("__landing-party__.scripts.biters")
 faction.on_trigger = phases.trigger
 local ops = require("__landing-party__.scripts.ops")
 
@@ -25,7 +26,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -65,6 +66,7 @@ end)
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
+  biters.on_died(e)
   local kind = shared.kind_of(ent.name)
   if kind == "lp-uplink" then faction.uplink_lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).

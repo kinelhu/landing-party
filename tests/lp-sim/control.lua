@@ -1746,6 +1746,90 @@ scenarios.develop = function()
   end)
 end
 
+-- Evolution (spike): does a spawner destroyed by a corporation raise the biters' spawner-kill evolution?
+scenarios.evolution = function()
+  schedule(50, function()
+    game.map_settings.enemy_evolution.enabled = true
+    S.enabled = game.map_settings.enemy_evolution.enabled
+    S.factor = game.map_settings.enemy_evolution.destroy_factor
+  end)
+  local enemy
+  local function spawn(by, x)
+    local sp = surface().create_entity{name = "biter-spawner", position = {x, 0}, force = "enemy"}
+    local u = surface().create_entity{name = by == "player" and "lp-trooper" or "lp-infantry", position = {x, 10},
+      force = by == "player" and "player" or FORCE}
+    return sp, u
+  end
+  schedule(60, function()
+    flatten(150, -30, 230, 30)
+    enemy = game.forces.enemy
+    -- From half-way too (an earlier refund assumed destroy_factor * (1 - e) and left a residue there).
+    enemy.set_evolution_factor_by_killing_spawners(0.5, surface())
+    S.b1 = enemy.get_evolution_factor_by_killing_spawners(surface())
+    local sp, u = spawn("corp", 170)
+    sp.die(u.force, u)
+  end)
+  schedule(62, function()
+    S.a1 = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
+    local sp, u = spawn("player", 200)
+    sp.die(u.force, u)
+  end)
+  schedule(64, function()
+    S.a2 = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
+    info(string.format("evolution: enabled %s, destroy_factor %s; corporation kill %.5f -> %.5f; player kill -> %.5f",
+      tostring(S.enabled), tostring(S.factor), S.b1, S.a1, S.a2))
+    S.corp_delta, S.player_delta = S.a1 - S.b1, S.a2 - S.a1
+  end)
+  schedule(120, function()
+    check("evolution: a player's kill raises it", S.player_delta > 0, string.format("%.5f", S.player_delta))
+    check("evolution: a corporation's kill does not", math.abs(S.corp_delta) < 1e-6, string.format("%.7f", S.corp_delta))
+  end)
+end
+
+-- Nests: corporations and biters. Serenity (it clears nests on its territory) with a depot; three spawners
+-- placed inside its territory, evolution on. It must raid and destroy them, the biters' evolution from spawner
+-- kills must stay where it was (the refund), and a small biter attack on a building draws a small answer.
+scenarios.nests = function()
+  schedule(30, function() game.map_settings.enemy_evolution.enabled = true end)
+  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
+  schedule(5 * 3600, function()
+    local st = lp("stats", storage.id)
+    local o = st.origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    -- Inside the territory, on the side away from the player's spawn.
+    local c = {math.floor(o.x + o.x / len * 70), math.floor(o.y + o.y / len * 70)}
+    S.nest = c
+    S.evo0 = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
+    for k = -1, 1 do
+      local p = surface().find_non_colliding_position("biter-spawner", {c[1] + 8 * k, c[2]}, 10, 1)
+      if p then surface().create_entity{name = "biter-spawner", position = p, force = "enemy"} end
+    end
+    S.placed = surface().count_entities_filtered{name = "biter-spawner", position = c, radius = 20}
+    info(string.format("nests: %d spawners at %d,%d (territory radius %.0f)", S.placed, c[1], c[2], st.claim_radius or 0))
+  end)
+  -- A few biters at one of its buildings.
+  schedule(8 * 3600, function()
+    local t = surface().find_entities_filtered{force = FORCE, name = "lp-fabricator", limit = 1}[1]
+      or surface().find_entities_filtered{force = FORCE, name = "lp-pylon", limit = 1}[1]
+    S.bit_at = t and {t.position.x, t.position.y}
+    for k = 1, 5 do
+      local p = t and surface().find_non_colliding_position("small-biter", {t.position.x + 6, t.position.y + k}, 6, 0.5)
+      local u = p and surface().create_entity{name = "small-biter", position = p, force = "enemy"}
+      if u then u.commandable.set_command{type = defines.command.attack, target = t} end
+    end
+  end)
+  schedule(END - 60, function()
+    local left = surface().count_entities_filtered{name = "biter-spawner", position = S.nest, radius = 20}
+    local evo = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
+    local st = lp("stats", storage.id)
+    local raided = 0
+    for _, l in ipairs(st.ops.log) do if l.owner == "enemy" then raided = raided + 1 end end
+    check("nests: Serenity raided the nests on its territory", raided > 0, raided .. " raids on nests")
+    check("nests: and destroyed them", left < S.placed, (S.placed - left) .. " of " .. S.placed .. " destroyed")
+    check("nests: the biters did not evolve from it", math.abs(evo - S.evo0) < 1e-6, string.format("%.5f -> %.5f", S.evo0, evo))
+  end)
+end
+
 -- Duel: raw exchange rates in open ground, away from the settlement. Ten troopers against ten drone
 -- infantry, and ten troopers against two tanks, each pair 30 tiles apart and ordered at each other.
 scenarios.duel = function()
