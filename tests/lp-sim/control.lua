@@ -939,6 +939,8 @@ scenarios.showcase = function()
   end)
   schedule(STRIKE, function()
     game.forces.player.chart(surface(), {{-600, -600}, {600, 600}})
+    -- Exports for half an hour of convoys (one of 1,000 parts a minute): the granted stock ran out in three.
+    lp("debug_parts", storage.id, 30000)
   end)
   schedule(STRIKE + 300, function()
     game.speed = 1
