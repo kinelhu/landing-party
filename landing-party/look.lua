@@ -6,7 +6,9 @@ local out = {}
 for corp, c in pairs(shared.CORPS) do
   for _, floor in ipairs({"road", "pad"}) do
     local name = shared.variant(corp, "lp-" .. floor)
-    if not data.raw.tile[name] then
+    if data.raw.tile[name] then
+      data.raw.tile[name].tint = c[floor].tint
+    else
       local t = table.deepcopy(data.raw.tile[c[floor].tile])
       t.name = name
       t.minable = nil
@@ -17,8 +19,11 @@ for corp, c in pairs(shared.CORPS) do
     end
   end
   local layers = {}
+  -- Painted, not stuck on: translucent (premultiplied alpha, colour scaled with it), flat glyphs only.
   for _, l in ipairs(c.logo) do
-    table.insert(layers, {filename = l[1], size = 64, scale = l[2], tint = l[3]})
+    local a = l[4] or 1
+    table.insert(layers, {filename = l[1], size = 64, scale = l[2],
+      tint = {r = l[3].r * a, g = l[3].g * a, b = l[3].b * a, a = a}})
   end
   table.insert(out, {
     type = "simple-entity-with-owner", name = shared.variant(corp, "lp-logo"), hidden = true,

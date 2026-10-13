@@ -4,21 +4,25 @@ local shared = {}
 -- Corporations (docs/campaign.md, docs/corporations.md): each its own force, at war with every other force
 -- (biters included) unless a cease-fire says otherwise. A settlement belongs to one.
 -- tint: the colour their buildings and units are drawn in (docs/corporations.md); lamp: their lamps' light.
--- road, pad: the vanilla tiles their floors are made of (and a tint); logo: icons layered on a disc, bottom
--- first, each {sprite file, scale, tint} (docs/corporations.md section 2).
+-- tints: a colour per kind where it differs from tint. road, pad: the vanilla tiles their floors are made of
+-- (and a tint). logo: flat glyphs layered on a disc, bottom first, each {sprite file, scale, colour, opacity}:
+-- painted on its own square of pad concrete (docs/corporations.md section 2).
 shared.CORPS = {
   grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     road = {tile = "stone-path", tint = {r = 0.95, g = 0.78, b = 0.5}}, pad = {tile = "brown-refined-concrete"},
-    logo = {{"__base__/graphics/icons/shapes/shape-circle.png", 2.2, {r = 0.35, g = 0.2, b = 0.1}},
-      {"__base__/graphics/icons/iron-ore.png", 1.3, {r = 1, g = 0.8, b = 0.45}},
-      {"__base__/graphics/icons/signal/signal-mining.png", 0.9, {r = 1, g = 0.9, b = 0.6}}}},
+    logo = {{"__base__/graphics/icons/shapes/shape-circle.png", 2.2, {r = 0.3, g = 0.17, b = 0.08}, 0.8},
+      {"__base__/graphics/icons/signal/signal-mining.png", 1.4, {r = 1, g = 0.82, b = 0.5}, 0.85}}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
-    road = {tile = "refined-concrete", tint = {r = 0.62, g = 0.8, b = 1}}, pad = {tile = "refined-concrete"},
-    logo = {{"__base__/graphics/icons/shapes/shape-circle.png", 2.2, {r = 0.25, g = 0.3, b = 0.35}},
-      {"__base__/graphics/icons/energy-shield-equipment.png", 1.4, {r = 0.6, g = 0.95, b = 1}},
-      {"__base__/graphics/icons/signal/signal-heart.png", 0.7, {r = 1, g = 1, b = 1}}}},
+    -- Two colours (user, 2026-10-13: the uniform blue-grey "feels strange"): clean pale grey for what is built
+    -- to stand (walls, turrets, poles, lamps, mines, roads), slate-teal for machines, vehicles and units.
+    tints = {["lp-wall"] = {r = 0.93, g = 0.96, b = 1, a = 1}, ["lp-turret"] = {r = 0.93, g = 0.96, b = 1, a = 1},
+      ["lp-pylon"] = {r = 0.93, g = 0.96, b = 1, a = 1}, ["lp-lamp"] = {r = 0.93, g = 0.96, b = 1, a = 1},
+      ["lp-mine"] = {r = 0.93, g = 0.96, b = 1, a = 1}},
+    road = {tile = "refined-concrete"}, pad = {tile = "refined-concrete"},
+    logo = {{"__base__/graphics/icons/shapes/shape-circle.png", 2.2, {r = 0.9, g = 0.93, b = 0.95}, 0.8},
+      {"__base__/graphics/icons/signal/signal-heart.png", 1.2, {r = 0.3, g = 0.7, b = 0.8}, 0.9}}},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad"}

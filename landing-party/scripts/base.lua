@@ -266,6 +266,16 @@ local function stamp(b, surface, pos)
   local probe = shared.variant(b.corp, "lp-depot")
   local p = surface.find_non_colliding_position(probe, pos, 10, 1)
   if not p then return end
+  -- On its own square of the corporation's pad concrete: stamped on a floor, never floating on sand.
+  local tiles = {}
+  local pad = shared.variant(b.corp, "lp-pad")
+  for x = math.floor(p.x) - 3, math.floor(p.x) + 2 do
+    for y = math.floor(p.y) - 3, math.floor(p.y) + 2 do
+      local t = surface.get_tile(x, y)
+      if t.valid and not t.collides_with("water_tile") then table.insert(tiles, {name = pad, position = {x, y}}) end
+    end
+  end
+  surface.set_tiles(tiles, true, false, true, false)
   local logo = surface.create_entity{name = shared.variant(b.corp, "lp-logo"), position = p, force = force(b)}
   if logo then
     logo.destructible = false

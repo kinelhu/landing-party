@@ -29,7 +29,7 @@ for corp, c in pairs(shared.CORPS) do
         local p = table.deepcopy(base)
         p.name = shared.variant(corp, kind)
         p.localised_name = {"", {"entity-name." .. kind}, " (", c.name, ")"}
-        retint(p, c.tint, {})
+        retint(p, (c.tints and c.tints[kind]) or c.tint, {})
         if kind == "lp-lamp" and p.light then p.light.color = c.lamp end
         if p.type == "spider-unit" and p.spider_engine then
           for _, leg in ipairs(p.spider_engine.legs) do
@@ -44,5 +44,11 @@ for corp, c in pairs(shared.CORPS) do
       end
     end
   end
+end
+-- The default corporation's own prototypes take its per-kind colours too (after the copies were made).
+local d = shared.CORPS[shared.DEFAULT_CORP]
+for kind, color in pairs(d.tints or {}) do
+  local p = find(kind)
+  if p then retint(p, color, {}) end
 end
 data:extend(out)
