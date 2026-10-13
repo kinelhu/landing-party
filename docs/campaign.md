@@ -5,6 +5,8 @@ after the user judged the first frame too small ("3 bases, uplink, boss seems ex
 asked for a mid-game revealed, endgame-compatible threat with scaling, rival factions and interesting
 mechanics, and for as much of the design and its verification as possible to happen without them.
 
+Reviewed by Fable the same day: `docs/reviews/2026-10-13-campaign-review.md` (decisions pending the user).
+
 Status words: **built** (exists and is tested), **adapt** (exists, changes), **new** (to build),
 **verify** (an engine question to settle with a spike first).
 
