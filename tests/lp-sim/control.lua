@@ -1148,7 +1148,16 @@ scenarios.circuit = function()
       if game.tick % 1200 == 300 then table.insert(S.log, string.format("t%d S=%d A=%d T=%d", game.tick / 60, s, a, tt)) end
     end)
   end
+  -- Field repair: a trooper hurt by the barracks is whole again 30 s later (2% a second).
+  schedule(120 + 30 * 60, function()
+    S.patient = surface().find_entities_filtered{name = "lp-trooper", force = "player", position = {0.5, 0.5}, radius = 30}[1]
+    if S.patient then S.patient.health = 30 end
+  end)
+  schedule(120 + 60 * 60, function()
+    S.healed = S.patient and S.patient.valid and S.patient.health
+  end)
   schedule(120 + 240 * 60, function()
+    check("circuit: a hurt trooper by the barracks was mended", S.healed and S.healed >= 100, tostring(S.healed) .. " of 120")
     info("circuit: " .. table.concat(S.log, ", "))
     check("circuit: the report showed the turret in reach", S.saw_turret == true, tostring(S.saw_turret))
     check("circuit: nothing attacked before the squad was 8", not S.early, tostring(S.early))

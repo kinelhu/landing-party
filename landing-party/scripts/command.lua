@@ -388,8 +388,25 @@ local function lead()
   end
 end
 
+-- Field repair: the player's units near a powered barracks recover REPAIR_SHARE of their health a second, so
+-- a squad pulled back (R) comes back whole; out in the field nothing mends them.
+local REPAIR_RANGE = 30
+local REPAIR_SHARE = 0.02
+local UNIT_NAMES = {}
+for _, name in pairs(shared.ORDERS) do table.insert(UNIT_NAMES, name) end
+local function repair()
+  for _, b in pairs(storage.cmd.barracks) do
+    if b.valid and b.energy > 0 then
+      for _, u in pairs(b.surface.find_entities_filtered{position = b.position, radius = REPAIR_RANGE, force = b.force,
+        name = UNIT_NAMES}) do
+        if u.health < u.max_health then u.health = math.min(u.max_health, u.health + u.max_health * REPAIR_SHARE) end
+      end
+    end
+  end
+end
+
 function command.tick(tick)
-  if tick % 60 == 0 then train() end
+  if tick % 60 == 0 then train(); repair() end
   if tick % 120 == 30 then lead() end
 end
 

@@ -19,6 +19,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
 | Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
+| Field repair: 2% health a second within 30 tiles of a powered barracks | built | `circuit` |
 | Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Capture of mining outposts by holding | built | `army` |
@@ -271,6 +272,9 @@ The aim: the player answers the faction with factory output, not clicks.
   hold is how a player occupies ground; capture follows from holding.
 - **Supply**: units out of range of a powered beacon (or a forward depot fed by logistics) stop healing and
   slowly lose effectiveness; holding ground far from home needs a supply line, as the faction's does.
+  **Built, first step: field repair.** The player's units within 30 tiles of a powered barracks recover 2%
+  of their health a second (a trooper from 30 to 102 in 30 s); nowhere else. Retreating (R) mends a squad,
+  and a circuit can do it (S or losses low -> R; whole again -> A). A forward barracks is a forward base.
 - **Selection tool** as the override, through ERM Unit Control (optional dependency) or our own minimal one.
 - **Capture by holding**: a faction mining or power node with player units on its ground and none of the
   faction's for a minute becomes the player's (its drills mine for the player, its generators feed the
