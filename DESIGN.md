@@ -22,7 +22,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
 | Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
 | Field repair: 2% health a second within 30 tiles of a powered barracks | built | `circuit` |
-| Command tool: box-select, move, attack, attack-move, release to beacons | built (headless) | `control` |
+| Command tool: box-select, move, attack, attack-move, release to beacons | built, tried in game | `control` |
 | Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Capture of mining outposts by holding | built | `army` |
@@ -294,7 +294,8 @@ The aim: the player answers the faction with factory output, not clicks.
   there ignoring fire, then hold), or attack a faction entity clicked (then hold where it stood); shift-right:
   attack-move. A marker flashes where the order went. `control`: six picked, moved where clicked while the
   beacon said A with a turret in reach (ignored), destroyed the turret clicked, returned to the beacon when
-  released (both key checks seen failing with hand orders off). Not yet tried with a real mouse.
+  released (both key checks seen failing with hand orders off). Tried in game by the user (2026-10-13):
+  "everything seems in order".
 - **Capture by holding**: a faction mining or power node with player units on its ground and none of the
   faction's for a minute becomes the player's (its drills mine for the player, its generators feed the
   player's grid). No capture by damage threshold (that is Proliferation's).
