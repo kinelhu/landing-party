@@ -1,8 +1,9 @@
 -- The player's army: barracks turn trooper orders (crafted from items) into troopers; each trooper follows
 -- the nearest rally beacon of its force. A beacon is a constant combinator: its signals (its own, or its
 -- networks' when wired) set the stance, and X and Y move its rally point that many tiles from it:
---   signal A > 0   advance: attack the nearest faction turret, then military target, within ATTACK_REACH of
---                  the rally point; with none left, occupy the nearest faction outpost in that reach, else hold
+--   signal A > 0   advance: attack the nearest faction turret within ATTACK_REACH of the rally point, then
+--                  the military targets there no turret covers; with none left, occupy the nearest faction
+--                  outpost in that reach, else hold
 --   signal O > 0   occupy: go to the nearest faction outpost and stand on it (no rebuild there, then
 --                  capture), fighting only what engages (an advance sent ten troopers at a hub's lasers)
 --   signal R > 0   retreat to the nearest barracks
@@ -16,6 +17,7 @@ local ADVANCE_RANGE = 200          -- outposts an occupy order looks for
 -- What an advance attacks: the beacon's own ground. At 200 one beacon sent its squad at a whole settlement,
 -- lander included; the player steers an assault by where the beacon stands.
 local ATTACK_REACH = 50
+local TURRET_COVER = 25            -- a laser's 24 and a little
 local REISSUE_TICKS = 600          -- an idle trooper is given its orders again after this long
 local MILITARY = {"lp-turret", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad"}
 local SIGNAL_ADVANCE = {type = "virtual", name = "signal-A"}
@@ -34,9 +36,11 @@ local function research_level(force)
     local t = force.technologies["lp-command-bandwidth-" .. k]
     if t and t.researched then level = k end
   end
+  -- The endless fourth: its level is the next one to research (4 before any), so 3 + done levels. Read as
+  -- levels done, an unresearched fourth counted 3 extra levels (siege runs showed level 6).
   local inf = force.technologies["lp-command-bandwidth-4"]
   if inf and level == 3 then
-    level = 3 + (inf.researched and inf.level or inf.level - 1)
+    level = 3 + (inf.level - 4) + (inf.researched and 1 or 0)
   end
   return level
 end
@@ -67,7 +71,10 @@ end
 function command.on_built(e)
   local ent = e.entity
   if not (ent and ent.valid) then return end
-  if ent.name == "lp-barracks" then storage.cmd.barracks[ent.unit_number] = ent end
+  if ent.name == "lp-barracks" then
+    storage.cmd.barracks[ent.unit_number] = ent
+    if not ent.get_recipe() then ent.set_recipe("lp-trooper-order") end
+  end
   if ent.name == "lp-rally-beacon" then storage.cmd.beacons[ent.unit_number] = ent end
   if ent.name == "lp-command-relay" then storage.cmd.relays[ent.unit_number] = ent end
 end
@@ -85,7 +92,7 @@ local function nearest(list, pos, force, range)
   return best
 end
 
--- Finished orders become troopers beside the barracks, assigned to the nearest beacon.
+-- Finished orders become units beside the barracks, assigned to the nearest beacon.
 -- A finished order waits in the barracks while bandwidth is full; with its output full, the barracks stops.
 local function train()
   local room = {}
@@ -96,18 +103,19 @@ local function train()
       local f = b.force
       if room[f.index] == nil then room[f.index] = command.capacity(f) - population(f) end
       local out = b.get_inventory(defines.inventory.crafter_output)
-      local n = out.get_item_count("lp-trooper-order")
-      for _ = 1, n do
-        local need = shared.POPULATION["lp-trooper"]
-        if room[f.index] < need then break end
-        local p = b.surface.find_non_colliding_position("lp-trooper", {b.position.x, b.position.y + 3}, 10, 0.5)
-        local u = p and b.surface.create_entity{name = "lp-trooper", position = p, force = b.force}
-        if u then
-          room[f.index] = room[f.index] - need
-          out.remove{name = "lp-trooper-order", count = 1}
-          local beacon = nearest(storage.cmd.beacons, b.position, b.force, ASSIGN_RANGE)
-          storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
-          storage.cmd.trained = (storage.cmd.trained or 0) + 1
+      for item, name in pairs(shared.ORDERS) do
+        for _ = 1, out and out.get_item_count(item) or 0 do
+          local need = shared.POPULATION[name]
+          if room[f.index] < need then break end
+          local p = b.surface.find_non_colliding_position(name, {b.position.x, b.position.y + 3}, 10, 0.5)
+          local u = p and b.surface.create_entity{name = name, position = p, force = b.force}
+          if u then
+            room[f.index] = room[f.index] - need
+            out.remove{name = item, count = 1}
+            local beacon = nearest(storage.cmd.beacons, b.position, b.force, ASSIGN_RANGE)
+            storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
+            storage.cmd.trained = (storage.cmd.trained or 0) + 1
+          end
         end
       end
     end
@@ -162,10 +170,14 @@ local function objective(p, occupy)
   if not occupy then
     -- Turrets first: sent at the nearest military building, a squad of 60 shot a depot between two turret
     -- groups and died to them (siege, seed 12345).
+    -- Then what no turret covers: those in reach are gone by now, so a cover is outside it (a depot in reach
+    -- covered by a compound's turret beyond it drew the squad into that turret's fire, siege seed 12345).
     for _, names in ipairs({{"lp-turret"}, MILITARY}) do
       for _, e in pairs(s.find_entities_filtered{position = at, radius = ATTACK_REACH, force = f, name = names}) do
         local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
-        if not bd or d < bd then best, bd, kind = e, d, "attack" end
+        local covered = e.name ~= "lp-turret" and s.count_entities_filtered{position = e.position, radius = TURRET_COVER,
+          force = f, name = "lp-turret", limit = 1} > 0
+        if not covered and (not bd or d < bd) then best, bd, kind = e, d, "attack" end
       end
       if best then return best, kind end
     end
@@ -218,13 +230,17 @@ end
 
 -- Units before buildings: a trooper with a faction unit near fights it. Ordered to attack a depot, a squad
 -- of 20 kept shooting it while the depot's garrison killed every one and lost none (siege, seed 12345).
+-- Leashed to the beacon's reach (not out of turret cover too: two tanks parked at a compound's cover edge then
+-- shot a holding squad unanswered for half a minute): chasing a garrison as it fell back, troopers followed it into a walled
+-- compound's lasers and mines and 33 of 45 died while their beacon said hold (siege, seed 12345).
 local ENGAGE = 18
-local function threat(u)
+local function threat(u, p)
   local best, bd
   for _, e in pairs(u.surface.find_entities_filtered{position = u.position, radius = ENGAGE, force = shared.FORCE,
     type = {"unit", "spider-unit"}}) do
     local d = (e.position.x - u.position.x) ^ 2 + (e.position.y - u.position.y) ^ 2
-    if not bd or d < bd then best, bd = e, d end
+    local leash = (e.position.x - p.pos.x) ^ 2 + (e.position.y - p.pos.y) ^ 2 <= ATTACK_REACH * ATTACK_REACH
+    if leash and (not bd or d < bd) then best, bd = e, d end
   end
   return best
 end
@@ -283,7 +299,7 @@ local function lead()
       end
       local p = beacon and plans[beacon.unit_number]
       local st = p and p.stance
-      local foe = p and st ~= "retreat" and threat(u)
+      local foe = p and st ~= "retreat" and threat(u, p)
       -- Holding at the rally point; the key carries the point, so a moved point is a new order.
       local function hold()
         if (u.position.x - p.pos.x) ^ 2 + (u.position.y - p.pos.y) ^ 2 > 12 * 12 then

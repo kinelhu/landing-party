@@ -8,7 +8,7 @@ barracks.minable = {mining_time = 0.5, result = "lp-barracks"}
 barracks.next_upgrade = nil
 barracks.fast_replaceable_group = nil
 barracks.crafting_categories = {"lp-training"}
-barracks.fixed_recipe = "lp-trooper-order"
+-- No fixed recipe: troopers, breachers or battle tanks (a new barracks starts on troopers).
 barracks.module_slots = 0
 barracks.allowed_effects = nil
 
@@ -67,6 +67,20 @@ data:extend({
     ingredients = {{type = "item", name = "firearm-magazine", amount = 5}, {type = "item", name = "iron-plate", amount = 10},
       {type = "item", name = "electronic-circuit", amount = 2}},
     results = {{type = "item", name = "lp-trooper-order", amount = 1}}},
+  {type = "item", name = "lp-breacher-order", icon = "__base__/graphics/icons/grenade.png", hidden = true,
+    stack_size = 10, subgroup = "other"},
+  {type = "recipe", name = "lp-breacher-order", category = "lp-training", enabled = true, hidden_in_factoriopedia = true,
+    icon = "__base__/graphics/icons/grenade.png", energy_required = 30,
+    ingredients = {{type = "item", name = "grenade", amount = 5}, {type = "item", name = "iron-plate", amount = 10},
+      {type = "item", name = "electronic-circuit", amount = 2}},
+    results = {{type = "item", name = "lp-breacher-order", amount = 1}}},
+  {type = "item", name = "lp-battle-tank-order", icon = "__base__/graphics/icons/tank.png", hidden = true,
+    stack_size = 10, subgroup = "other"},
+  {type = "recipe", name = "lp-battle-tank-order", category = "lp-training", enabled = true, hidden_in_factoriopedia = true,
+    icon = "__base__/graphics/icons/tank.png", energy_required = 120,
+    ingredients = {{type = "item", name = "steel-plate", amount = 40}, {type = "item", name = "engine-unit", amount = 10},
+      {type = "item", name = "electronic-circuit", amount = 10}},
+    results = {{type = "item", name = "lp-battle-tank-order", amount = 1}}},
 })
 
 -- Command bandwidth: how many relays count. Level 1 unlocks the army and grants the first command core.

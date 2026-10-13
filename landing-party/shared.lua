@@ -40,7 +40,10 @@ shared.units = {
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by
 -- research level (0: before any; then levels 1-3; level 4 and beyond add RELAYS_PER_EXTRA_LEVEL each).
-shared.POPULATION = {["lp-trooper"] = 1}
+shared.POPULATION = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-battle-tank"] = 4}
+-- What a barracks trains: each order item becomes its unit.
+shared.ORDERS = {["lp-trooper-order"] = "lp-trooper", ["lp-breacher-order"] = "lp-breacher",
+  ["lp-battle-tank-order"] = "lp-battle-tank"}
 shared.RELAY_CAPACITY = 10
 shared.RELAYS_BY_LEVEL = {[0] = 2, 4, 8, 15}
 shared.RELAYS_PER_EXTRA_LEVEL = 2

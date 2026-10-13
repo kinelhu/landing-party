@@ -18,6 +18,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
+| Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Capture of mining outposts by holding | built | `army` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
@@ -218,6 +219,17 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   move the rally point that many tiles from the beacon (at most 300): a clock wired to a beacon walks a
   patrol, a decider sends an attack. The force sees a ring of the reach at the rally point, coloured by
   stance, and a dashed line from the beacon.
+- **Combined arms (built; user 2026-10-13: "rebuilding the RTS formula a la Factorio"):** the barracks has
+  no fixed recipe (a new one starts on troopers). **Trooper** (5 magazines, 10 iron, 2 circuits, 30 s;
+  population 1): rifles, fights units. **Breacher** (5 grenades, 10 iron, 2 circuits, 30 s; population 1):
+  a charge thrown 8 tiles every 3 s bursts over 2.5 tiles (enemies only) for 100 explosive damage: 63 to a
+  wall, 100 to a turret; bullets do 2.4 to a wall. **Battle tank** (40 steel, 10 engines, 10 circuits, 120 s;
+  population 4): the faction tank's hull and stats in the player's colours. Infantry alone should not take a
+  walled position; a mixed force should.
+- **Leash and cover (built):** a squad fights units only inside its beacon's reach; under A it skips a
+  military building that a faction turret covers (turrets in reach fall first, so the cover is outside).
+  Tried and reverted: not fighting units under turret cover (two tanks parked at a compound's cover edge
+  shot a holding squad unanswered).
 - **Units before buildings (built):** a trooper (not retreating) with a faction unit within 18 tiles fights
   the nearest one. Ordered at a depot, a squad of 20 kept shooting it while the garrison killed every
   trooper and lost none.
@@ -297,9 +309,15 @@ onto the outpost and sets O.
   the way to the outpost, which lies beside a walled four-turret compound with mines (31 killed by turrets,
   6 by mines).
 - Reading: bullets barely scratch walls (2.4 of 6 damage), so troopers alone cannot breach a walled laser
-  position; in vanilla terms they need artillery, tanks or explosives. Whether that is the design (walls
-  call for heavier arms) or troopers need a breaching tool is open. The approach path matters as much as
-  the target.
+  position. Decided (user): add breachers and battle tanks, combined arms.
+- With mixes (troopers, breachers, tanks; seeds 12345 and 777): 60/0/0, 40/20/0 and 30/10/5 all lose
+  everything, 28-60 of them in the first minute. One early 30/10/5 run captured the outpost before the
+  leash and cover rules. Death logs and frame stills show why: the test's beacon stands 30 tiles out of
+  turret range, so its 50-tile ring overlaps a compound's laser cover by about 20 tiles, and every fight in
+  the ring is partly under those lasers. The test places beacons as a careless player would.
+- Next: a test that places the beacon as a careful player would (ring clear of turrets it is not meant to
+  attack; a second beacon at the compound for the breach), then tune breacher and tank numbers against it.
+  Also open: whether the reach should be smaller, or the ring should show turret cover.
 
 ## Where Landing Party differs from Proliferation
 Proliferation (MIT, no public source, 2026) is a machine faction in the mould of Stargate's Replicators:
@@ -319,6 +337,12 @@ Prior art for units: ERM RedArmy (LGPL) builds infantry on the engineer's body; 
 Never ERM's StarCraft or Metal Slug art (ripped).
 
 ## Open questions and next
+- **Rival corporations (idea, user 2026-10-13, for later):** several landing parties at once, each a
+  corporation with a humorous dystopian name, at war with each other as well as the player, for the same
+  resources (in the spirit of Borderlands or Cyberpunk, but not childish). Each its own architecture,
+  units, defences and strategy: the doctrines and archetypes are the start of that. Questions: do they
+  fight each other on sight or only over ore; can the player play them off; one uplink each or a shared
+  one.
 - The uplink: whether the third landing is right, whether its fall should also wind the settlements down,
   shields on its rings, and a fortress that varies (it is one fixed template now).
 - The player's army and rally beacons; capture by holding a node.

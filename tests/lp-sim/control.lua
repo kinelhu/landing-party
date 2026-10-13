@@ -987,6 +987,13 @@ scenarios.orders = function()
   schedule(60 + 80 * 60, function()
     check("orders: the beacon's own X moved the rally point", S.first >= 8, S.first .. " of 10 at +40,0")
     check("orders: a wired Y added to it", at(40, -30) >= 8, at(40, -30) .. " of 10 at +40,-30")
+    -- Research levels: the endless fourth counts only levels done (it once counted 3 before any).
+    local tech = game.forces.player.technologies
+    for k = 1, 3 do tech["lp-command-bandwidth-" .. k].researched = true end
+    local l3 = lp("army").level
+    tech["lp-command-bandwidth-4"].level = 6
+    local l5 = lp("army").level
+    check("orders: research levels count what is done", l3 == 3 and l5 == 5, l3 .. " after three, " .. l5 .. " after two endless")
   end)
 end
 
@@ -1036,9 +1043,21 @@ end
 -- outpost nearest the barracks is set to A a minute later: the squad clears what fights within the
 -- beacon's reach, then stands on the nearest outpost. Measures what a squad of that size achieves.
 scenarios.siege = function()
-  local function alive_troopers() return surface().count_entities_filtered{name = "lp-trooper", force = "player"} end
+  local ARMY = {"lp-trooper", "lp-breacher", "lp-battle-tank"}
+  local ORDER = {["lp-trooper"] = "lp-trooper-order", ["lp-breacher"] = "lp-breacher-order",
+    ["lp-battle-tank"] = "lp-battle-tank-order"}
+  local POP = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-battle-tank"] = 4}
+  local function alive_troopers() return surface().count_entities_filtered{name = ARMY, force = "player"} end
   local red = defines.wire_connector_id.circuit_red
-  local SQUAD = params.units > 0 and params.units or 20
+  -- The squad: LP_MIX "troopers,breachers,tanks" (default: LP_UNITS troopers, else 20).
+  local want = {}
+  local k = 0
+  for n in (params.mix or ""):gmatch("%d+") do k = k + 1; want[ARMY[k]] = tonumber(n) end
+  if k == 0 then want["lp-trooper"] = params.units > 0 and params.units or 20 end
+  local SQUAD, POPULATION = 0, 0
+  for name, n in pairs(want) do SQUAD = SQUAD + n; POPULATION = POPULATION + n * POP[name] end
+  local MIX = string.format("%d troopers, %d breachers, %d tanks", want["lp-trooper"] or 0, want["lp-breacher"] or 0,
+    want["lp-battle-tank"] or 0)
   schedule(60, function() lp("debug_tune", {raids_off = true}) end)
   -- A depot and parts from the start, as in lively: a garrison stands by the strike.
   schedule(200, function() lp("debug_depot", storage.id, 2000) end)
@@ -1076,32 +1095,41 @@ scenarios.siege = function()
     local function put(name, x, y)
       return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
     end
-    S.barracks = put("lp-barracks", a[1] + 0.5, a[2] + 0.5)
-    put("electric-energy-interface", a[1] + 4, a[2] + 1)
-    put("medium-electric-pole", a[1] + 2.5, a[2] + 2.5)
-    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
-    game.forces.player.technologies["lp-command-bandwidth-2"].researched = true
-    for k = 1, math.ceil(SQUAD / 10) do
-      put("lp-command-relay", a[1] - 9.5 + 4 * k, a[2] + 7.5)
+    -- One barracks a unit type, side by side; relays for the whole squad below them.
+    S.barracks = {}
+    for i, name in ipairs(ARMY) do
+      local x = a[1] - 8.5 + 6 * i
+      local b = put("lp-barracks", x, a[2] + 0.5)
+      b.set_recipe(ORDER[name])
+      S.barracks[name] = b
+      put("medium-electric-pole", x + 2, a[2] + 2.5)
     end
-    put("medium-electric-pole", a[1] - 1.5, a[2] + 5.5)
-    put("medium-electric-pole", a[1] + 6.5, a[2] + 5.5)
-    put("medium-electric-pole", a[1] + 14.5, a[2] + 5.5)
+    put("electric-energy-interface", a[1] + 14, a[2] + 1)
+    for k = 1, 3 do game.forces.player.technologies["lp-command-bandwidth-" .. k].researched = true end
+    for k = 1, math.ceil(POPULATION / 10) do
+      put("lp-command-relay", a[1] - 25.5 + 4 * k, a[2] + 7.5)
+    end
+    for x = -23.5, 40, 7 do put("medium-electric-pole", a[1] + x, a[2] + 5.5) end
     S.beacon = put("lp-rally-beacon", stage[1], stage[2])
     S.cc = put("constant-combinator", stage[1] - 2, stage[2])
     S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
     -- Finished orders, ten at a time (a stack): this tests the fight, not the recipe.
-    S.orders = 0
+    S.orders = {}
     S.feed = function()
-      if not S.barracks.valid or S.orders >= SQUAD then return end
-      local out = S.barracks.get_inventory(defines.inventory.crafter_output)
-      S.orders = S.orders + out.insert{name = "lp-trooper-order", count = math.min(10, SQUAD - S.orders)}
+      for name, n in pairs(want) do
+        local b = S.barracks[name]
+        local done = S.orders[name] or 0
+        if b.valid and done < n then
+          local out = b.get_inventory(defines.inventory.crafter_output)
+          S.orders[name] = done + out.insert{name = ORDER[name], count = math.min(10, n - done)}
+        end
+      end
     end
     S.feed()
     S.turrets0 = surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = stage, radius = 60}
     S.st0 = lp("stats", storage.id)
-    info(string.format("siege: %d troopers; outpost at %.0f,%.0f; staging %d tiles out; %d faction turrets within 60; garrison %d",
-      SQUAD, S.target[1], S.target[2], S.stage_d or -1, S.turrets0, S.st0.garrison or -1))
+    info(string.format("siege: %s; outpost at %.0f,%.0f; staging %d tiles out; %d faction turrets within 60; garrison %d",
+      MIX, S.target[1], S.target[2], S.stage_d or -1, S.turrets0, S.st0.garrison or -1))
   end)
   schedule(STRIKE + 2 * 3600, function()
     S.trained = lp("army").trained
@@ -1111,21 +1139,23 @@ scenarios.siege = function()
   end)
   for t = STRIKE + 300, STRIKE + 2 * 3600, 300 do schedule(t, function() if S.feed then S.feed() end end) end
   -- The player moves the beacon forward once its ground is clear (an advance holds at its beacon): onto the
-  -- target outpost, set to O. On A there the squad went for a walled turret compound 33 tiles away and died.
+  -- target outpost, still on A: whatever defends it within reach (a walled compound 33 tiles away on seed
+  -- 12345) falls first, then the squad occupies it. Troopers alone died there, on A or on O.
   for t = STRIKE + 3 * 3600, STRIKE + 8 * 3600, 600 do
     schedule(t, function()
       if S.moved or not (S.beacon and S.beacon.valid) then return end
-      local left = surface().count_entities_filtered{force = FORCE, name = {"lp-turret", "lp-depot", "lp-radar"},
-        position = S.beacon.position, radius = 50}
+      local left = surface().count_entities_filtered{force = FORCE, name = "lp-turret", position = S.beacon.position,
+        radius = 50}
       if left > 0 then return end
       S.moved = game.tick
       local p = S.target
+      S.target_turrets0 = surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = p, radius = 50}
       S.beacon.destroy(); S.cc.destroy()
       S.beacon = surface().create_entity{name = "lp-rally-beacon", position = {p[1] + 3, p[2] + 3}, force = "player", raise_built = true}
       S.cc = surface().create_entity{name = "constant-combinator", position = {p[1] + 1, p[2] + 3}, force = "player"}
       S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
       S.cc.get_or_create_control_behavior().add_section().filters =
-        {{value = {type = "virtual", name = "signal-O", quality = "normal"}, min = 1}}
+        {{value = {type = "virtual", name = "signal-A", quality = "normal"}, min = 1}}
       info(string.format("siege: staging cleared at t+%ds; beacon moved onto the outpost", (game.tick - S.go) / 60))
     end)
   end
@@ -1145,8 +1175,13 @@ scenarios.siege = function()
   end
   schedule(STRIKE + 12 * 3600, function()
     local st = lp("stats", storage.id)
-    local alive = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    local alive = alive_troopers()
     local turrets = surface().count_entities_filtered{name = "lp-turret", force = FORCE, position = S.stage, radius = 60}
+    if S.moved then
+      metric("siege_target_turrets_before", S.target_turrets0)
+      metric("siege_target_turrets_after", surface().count_entities_filtered{name = "lp-turret", force = FORCE,
+        position = S.target, radius = 50})
+    end
     metric("siege_squad", SQUAD)
     metric("siege_trained", S.trained)
     metric("siege_alive", alive)
@@ -1157,7 +1192,7 @@ scenarios.siege = function()
     metric("siege_captured", (st.captured or 0) - (S.st0.captured or 0))
     check("siege: the squad was trained", S.trained >= SQUAD, S.trained .. " of " .. SQUAD)
     check("siege: the faction answered", st.responses > S.st0.responses, (st.responses - S.st0.responses) .. " responses")
-    info("siege: " .. serpent.line(lp("army")) .. ", troopers killed by " .. serpent.line(S.killers or {})
+    info("siege: " .. MIX .. "; " .. serpent.line(lp("army")) .. ", player units lost " .. serpent.line(S.killers or {})
       .. ", faction units lost: " .. serpent.line(S.fallen or {}))
   end)
 end
@@ -1228,9 +1263,17 @@ end)
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
-  if e.entity.name == "lp-trooper" then
+  if e.entity.force.name == "player" then
     S.killers = S.killers or {}
-    S.killers[by] = (S.killers[by] or 0) + 1
+    local k = e.entity.name == "lp-trooper" and by or (e.entity.name .. " by " .. by)
+    S.killers[k] = (S.killers[k] or 0) + 1
+    if S.go and (S.deaths or 0) < 80 then
+      S.deaths = (S.deaths or 0) + 1
+      local c = e.cause and e.cause.valid and e.cause.position
+      table.insert(lines, string.format("INFO death t+%ds %s at %.0f,%.0f by %s %s", (e.tick - S.go) / 60, e.entity.name,
+        e.entity.position.x, e.entity.position.y, by,
+        c and string.format("from %.0f tiles", math.sqrt((c.x - e.entity.position.x) ^ 2 + (c.y - e.entity.position.y) ^ 2)) or ""))
+    end
   elseif e.entity.name ~= "lp-lander" then
     S.fallen = S.fallen or {}
     local k = e.entity.name .. " by " .. by
@@ -1239,7 +1282,8 @@ script.on_event(defines.events.on_entity_died, function(e)
     table.insert(lines, string.format("INFO lander killed at tick %d by %s (%s)", e.tick, by,
       e.force and e.force.name or "?"))
   end
-end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-lander"}, {filter = "type", type = "unit"},
+end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
+  {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "type", type = "unit"},
   {filter = "type", type = "spider-unit"}})
 
 script.on_event(defines.events.on_ai_command_completed, function(e)

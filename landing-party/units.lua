@@ -84,9 +84,25 @@ end
 local infantry = make_infantry("lp-infantry")
 local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1})
 
--- Tank: the tank's hull as a unit (its turret does not turn on its own). A square box: units rotate.
+-- Breacher: the player's infantry with demolition charges. Bullets barely scratch walls (2.4 of 6 damage), so
+-- troopers alone died in front of walled lasers (siege). A charge thrown 8 tiles bursts over 2.5 (enemies
+-- only): walls take 63 of 100 (a segment in 8 throws, several at once), a turret 100.
+local breacher = make_infantry("lp-breacher", {r = 0.75, g = 0.9, b = 0.45, a = 1})
+breacher.attack_parameters.range = 8
+breacher.attack_parameters.cooldown = 180
+breacher.attack_parameters.ammo_category = "grenade"
+breacher.attack_parameters.sound = nil
+breacher.attack_parameters.ammo_type.action.action_delivery.target_effects = {
+  {type = "create-entity", entity_name = "grenade-explosion"},
+  {type = "nested-result", action = {type = "area", radius = 2.5, force = "enemy", action_delivery = {
+    type = "instant", target_effects = {{type = "damage", damage = {amount = 100, type = "explosion"}}}}}},
+}
+
+-- Tank: the tank's hull as a unit (its turret does not turn on its own). A square box: units rotate. The
+-- faction's in cold blue; the player's battle tank (4 of command bandwidth) in its own colour.
 local tank_car = data.raw.car.tank
-local tank = base_unit("lp-tank")
+local function make_tank(name, color)
+local tank = base_unit(name)
 tank.max_health = shared.units["lp-tank"].health
 tank.movement_speed = 0.09
 tank.distance_per_frame = 0.5
@@ -104,8 +120,12 @@ tank.corpse = nil
 -- seven raids, no unit lost).
 tank.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "fire", percent = 60},
   {type = "explosion", decrease = 5, percent = 30}}
-tint(tank.run_animation, {})
-tint(tank.attack_parameters.animation, {})
+tint(tank.run_animation, {}, color)
+tint(tank.attack_parameters.animation, {}, color)
+return tank
+end
+local tank = make_tank("lp-tank")
+local battle_tank = make_tank("lp-battle-tank", {r = 1, g = 0.82, b = 0.55, a = 1})
 
 -- Walker: a spider-unit on the spidertron's body and legs (own copies of the legs, tinted). Steps over walls.
 local spidertron = data.raw["spider-vehicle"].spidertron
@@ -181,4 +201,4 @@ hauler.resistances = {{type = "physical", decrease = 4, percent = 30}, {type = "
 tint(hauler.run_animation, {}, {r = 1, g = 0.75, b = 0.45, a = 1})
 tint(hauler.attack_parameters.animation, {}, {r = 1, g = 0.75, b = 0.45, a = 1})
 
-data:extend({infantry, tank, walker, harrier, trooper, hauler})
+data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler})
