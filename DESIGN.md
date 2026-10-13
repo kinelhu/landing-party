@@ -496,7 +496,9 @@ staggered double wall), corner lasers walled into pillboxes; infantry, tanks, wa
 gun turrets (its own `lp-grubstake-turret` is a gun turret) kept in piercing rounds by the economy, fences at half
 a wall's health; infantry, buggies (the car's hull, fast and light) and harriers. `rivals`: 144 Serenity gates,
 10 Grubstake gun turrets all fed, 49 buggies built; five operations between them, 33 and 66 units lost.
-Accepted by the user in game ("nothing glaring"). Left for later: flamethrowers at Serenity's gates (fuel).
+Accepted by the user in game ("nothing glaring"). Since built: flamethrowers at Serenity's gated blocks, one
+outside each opening beside it on the road (inside, every tile is taken), kept in light oil by the economy step
+(`rivals`: 4 of 4 fuelled).
 
 **Built: territory and the opening** (docs/campaign.md section 3). Each settlement's territory is drawn in map
 view only: a translucent disc in its corporation's colour over everything it has built (plus 24 tiles),

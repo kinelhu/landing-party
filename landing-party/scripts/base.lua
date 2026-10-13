@@ -48,11 +48,12 @@ base.trace = trace
 local LISTS = {["lp-pylon"] = "pylons", ["lp-bin"] = "bins", ["lp-drill"] = "drills",
   ["lp-fabricator"] = "fabs", ["lp-generator"] = "gens", ["lp-turret"] = "turrets", ["lp-radar"] = "radars",
   ["lp-wall"] = "walls", ["lp-depot"] = "depots", ["lp-launchpad"] = "launchpads", ["lp-lamp"] = "lamps",
-  ["lp-mine"] = "mines"}
+  ["lp-mine"] = "mines", ["lp-flamer"] = "flamers"}
 
 local function register(b, e, module)
   local list = LISTS[shared.kind_of(e.name)]
-  if list then table.insert(b[list], e) end
+  -- Lists added after a settlement was saved are made on first use.
+  if list then b[list] = b[list] or {}; table.insert(b[list], e) end
   if module then table.insert(module.entities, e) end
   storage.owner[e.unit_number] = {base = b.id, module = module}
 end
@@ -83,7 +84,7 @@ function base.land(surface, pos, opts)
   local id = storage.next_id
   local b = {id = id, surface = surface.index, parts = START_PARTS, feedstock = 0, made = 0, mined = 0,
     rate_in = 0, rate_parts = 0, pylons = {}, bins = {}, drills = {}, fabs = {}, gens = {}, turrets = {},
-    radars = {}, walls = {}, depots = {}, launchpads = {}, lamps = {}, mines = {}, pylon_spots = {}, road_tiles = 0,
+    radars = {}, walls = {}, depots = {}, launchpads = {}, lamps = {}, mines = {}, flamers = {}, pylon_spots = {}, road_tiles = 0,
     modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0, corp = corp, force = f.name,
     rule = "landed", log = {}, waiting = nil}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
@@ -220,6 +221,10 @@ local function economy(b)
   end
   b.parts = b.parts + made
   b.made = b.made + made
+  -- Flamethrowers (Serenity's gates) are kept in light oil.
+  for _, t in ipairs(b.flamers or {}) do
+    if t.valid and t.get_fluid_count() < 50 then t.insert_fluid{name = "light-oil", amount = 100} end
+  end
   -- Gun turrets (a corporation's choice instead of lasers) are kept in ammunition.
   for _, t in ipairs(b.turrets) do
     if t.valid and t.type == "ammo-turret" then

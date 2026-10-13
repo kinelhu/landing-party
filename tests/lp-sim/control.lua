@@ -1624,6 +1624,12 @@ scenarios.rivals = function()
     end
     local buggies = surface().count_entities_filtered{name = "lp-grubstake-buggy"}
     check("rivals: Serenity gates its walls", gates > 0, gates .. " gates")
+    local flamers, oiled = 0, 0
+    for _, t in pairs(surface().find_entities_filtered{name = "lp-flamer", force = "lp-serenity"}) do
+      flamers = flamers + 1
+      if t.get_fluid_count() > 0 then oiled = oiled + 1 end
+    end
+    check("rivals: Serenity's gates have fuelled flamethrowers", flamers > 0 and oiled == flamers, oiled .. " of " .. flamers)
     check("rivals: Grubstake's turrets are fed gun turrets", guns > 0 and fed == guns, fed .. " of " .. guns .. " fed")
     check("rivals: Grubstake fields buggies", (b and b.built_by and (b.built_by["lp-buggy"] or 0) or 0) > 0,
       serpent.line(b and b.built_by))

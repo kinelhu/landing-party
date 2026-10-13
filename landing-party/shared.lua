@@ -36,7 +36,7 @@ shared.CORPS = {
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
     doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
-    arch = {gates = true, baffles = true, pillboxes = true}, clears_nests = true,
+    arch = {gates = true, baffles = true, pillboxes = true, flamers = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
@@ -50,7 +50,7 @@ shared.DEFAULT_CORP = "serenity"
 -- ("lp-turret"); another's are "lp-<corp>-turret". Logic speaks in kinds; creation and queries translate.
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
   "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
-  "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate"}
+  "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer"}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
@@ -124,6 +124,7 @@ shared.cost = {
   ["lp-mine"] = 2,
   ["lp-mortar"] = 60,            -- a siege emplacement (scripts/ops.lua), carried by a hauler
   ["lp-gate"] = 3,
+  ["lp-flamer"] = 20,
 }
 
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.

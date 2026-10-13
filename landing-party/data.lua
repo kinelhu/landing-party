@@ -19,7 +19,7 @@ end
 -- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Minable for salvage (half its
 -- cost in parts): nothing the faction owns can be mined, only its ruins once a settlement falls, or what the
 -- player captured.
-local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-lander"] = true,
+local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true}
 local function copy(type, name, new)
   local name_new = new
@@ -151,6 +151,8 @@ projectile.final_action = nil
 -- A gun turret (a corporation may build these instead of lasers: shared.CORPS bases; fed by script) and a gate.
 local gun_turret = copy("ammo-turret", "gun-turret", "lp-gun-turret")
 local gate = copy("gate", "gate", "lp-gate")
+-- A flamethrower turret covering a gate (Serenity), kept in light oil by script.
+local flamer = copy("fluid-turret", "flamethrower-turret", "lp-flamer")
 
 local wall = copy("wall", "stone-wall", "lp-wall")
 wall.max_health = 450
@@ -210,7 +212,7 @@ road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
   lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, depot, road, launchpad, lamp, mine, uplink,
-  gun_turret, gate,
+  gun_turret, gate, flamer,
   mortar, mortar_gun, mortar_shell, projectile, {type = "ammo-category", name = "lp-mortar", hidden = true},
   {type = "recipe-category", name = "lp-fabrication"},
   {type = "item", name = "lp-feedstock", icon = "__base__/graphics/icons/stone.png", hidden = true,
