@@ -4,6 +4,10 @@ Living document, organised for design reviews: what is decided, what is built an
 is open. Prototype stage, Factorio 2.0 (2.1 is experimental only). Prefix `lp-`, mod folder `landing-party/`.
 Numbers quoted here are the code's at the time of writing; the code is the authority.
 
+**The campaign frame (proposed 2026-10-13): `docs/campaign.md`.** Rival corporations across a world, revealed
+mid-game, scaling to the endgame, with biters in a three-way war and a player agent measuring the loop. This
+document describes the parts as built; the campaign document describes the game they serve.
+
 ## Status at a glance
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
