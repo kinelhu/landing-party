@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # Grow a scenario to its strike once, on a headless server, and keep the save: scripts/sim.sh with LP_FORK=1
 # then runs only what follows the strike, from it (the growth was half of every siege run).
-#   scripts/fork.sh <scenario> <seed> <strike minute>
+#   scripts/fork.sh <scenario> <seed> <strike minute>     (saved FORK_LEAD minutes before the strike)
 # The fork holds the settlement as the mod's code grew it then: confirm with full runs (no LP_FORK).
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SCENARIO="$1"; SEED="$2"; STRIKE="$3"
-FORKS="$HOME/Library/Application Support/factorio-lp-sim/forks"
 SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-$SCENARIO-$SEED-$STRIKE"
 mkdir -p "$FORKS" "$SIM/config" "$SIM/mods" "$SIM/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
@@ -14,7 +13,7 @@ ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 DOCTRINE="nil"; [ -n "${LP_DOCTRINE:-}" ] && DOCTRINE="\"$LP_DOCTRINE\""
 printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance = 300, radius = 220, doctrine = %s, units = 0, move = false, fast = %s, mix = "", save_at = %s}\n' \
-  "$SCENARIO" "$((STRIKE + 1))" "$((STRIKE + 1))" "$STRIKE" "$DOCTRINE" "${LP_FAST:-false}" "$STRIKE" > "$SIM/mods/lp-sim/params.lua"
+  "$SCENARIO" "$((STRIKE + 1))" "$((STRIKE + 1))" "$STRIKE" "$DOCTRINE" "${LP_FAST:-false}" "$((STRIKE - FORK_LEAD))" > "$SIM/mods/lp-sim/params.lua"
 cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
   {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": false},
@@ -43,5 +42,5 @@ for _ in $(seq 1 600); do
 done
 sleep 3
 [ -f "$SIM/saves/fork.zip" ] || { echo "FORK FAILED: no save"; exit 1; }
-cp "$SIM/saves/fork.zip" "$FORKS/$SCENARIO-$SEED-$STRIKE.zip"
-echo "fork at tick $(cat "$out/saved.txt"): $FORKS/$SCENARIO-$SEED-$STRIKE.zip"
+cp "$SIM/saves/fork.zip" "$FORKS/$SCENARIO-$SEED-$STRIKE-$FORK_HASH.zip"
+echo "fork at tick $(cat "$out/saved.txt"): $FORKS/$SCENARIO-$SEED-$STRIKE-$FORK_HASH.zip"

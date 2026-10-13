@@ -45,6 +45,10 @@ script.on_event(defines.events.on_entity_died, function(e)
   if ent.name == "lp-uplink" then faction.uplink_lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
   if ent.name == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
+  -- A mortar destroyed in the field leaves its wreck's salvage.
+  if ent.name == "lp-mortar" then
+    ent.surface.spill_item_stack{position = ent.position, stack = {name = "lp-salvage", count = 15}, enable_looted = true}
+  end
   if ent.name == "lp-lander" then
     command.drop_cores(ent.surface, ent.position, 3)
     base.fall(ent)

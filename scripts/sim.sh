@@ -34,10 +34,10 @@ run() { "$FACTORIO" --config "$SIM/config/config.ini" "$@" > "$SIM/sim.out" 2>&1
   echo "SIM FAILED ($RUN): factorio exited non-zero"; grep -hnE -A8 "Error" "$SIM/factorio-current.log" "$SIM/sim.out" | head -40; exit 1; }; }
 if [ -n "${LP_FORK:-}" ]; then
   # From the scenario's fork at its strike (scripts/fork.sh, made once): only what follows the strike runs.
-  fork="$HOME/Library/Application Support/factorio-lp-sim/forks/$SCENARIO-$SEED-$STRIKE.zip"
+  fork="$FORKS/$SCENARIO-$SEED-$STRIKE-$FORK_HASH.zip"
   [ -f "$fork" ] || "$(dirname "$0")/fork.sh" "$SCENARIO" "$SEED" "$STRIKE" > /dev/null
   cp "$fork" "$SIM/saves/sim.zip"
-  run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $(((MINUTES - STRIKE) * 3600 + 61)) --benchmark-runs 1
+  run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $(((MINUTES - STRIKE + FORK_LEAD) * 3600 + 61)) --benchmark-runs 1
 else
   run --create "$SIM/saves/sim.zip" --map-gen-seed "$SEED" --map-gen-settings "$REPO/scripts/map-gen.json"
   run --benchmark "$SIM/saves/sim.zip" --benchmark-ticks $((MINUTES * 3600 + 60)) --benchmark-runs 1

@@ -14,6 +14,7 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 | Maturity, launch pad, exports, faction tier | built (first pass) | `faction` |
 | Army: roster, depots, garrison, raids | built (first pass) | `assault` (with replay) |
 | Operations: intel, raids by value, sizing, staging, abort | built (first pass) | `ops`, `abort` |
+| Siege: a hauler carries a mortar beyond the player's turrets; deploy, shell, pack up | built (first pass) | `bombard`, `mortar` |
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Uplink (optional boss): fortress, landings stop and tier freezes when it falls | built (first pass) | `uplink` |
@@ -282,7 +283,11 @@ The aim: the player answers the faction with factory output, not clicks.
   **Built, first step: field repair.** The player's units within 30 tiles of a powered barracks recover 2%
   of their health a second (a trooper from 30 to 102 in 30 s); nowhere else. Retreating (R) mends a squad,
   and a circuit can do it (S or losses low -> R; whole again -> A). A forward barracks is a forward base.
-- **Selection tool** as the override, through ERM Unit Control (optional dependency) or our own minimal one.
+- **Selection tool** as the override (user 2026-10-13: "intuitive RTS unit selection and ordering ... for
+  players who are not heavy tinkerers"; circuits stay). Proposed, our own: a command tool (shortcut and key)
+  drags a box over the player's units, also in map view; a right-drag or click on ground moves them there,
+  shift attack-moves, a click on a faction building attacks it. Selected units obey the direct order over
+  their beacon until released back, re-attaching to the nearest beacon. Bandwidth and leashes still apply.
 - **Capture by holding**: a faction mining or power node with player units on its ground and none of the
   faction's for a minute becomes the player's (its drills mine for the player, its generators feed the
   player's grid). No capture by damage threshold (that is Proliferation's).
@@ -416,6 +421,21 @@ removed). Instead the spot is a priority for 10 minutes (+10 value) and a raid s
 exists: one raid of 19 against three turrets, 11 lost, creep destroyed, the outpost rebuilt. Force sizing is
 now 5 a turret plus 4 (3 lost to upgraded ammunition). After a raid, the faction records what it saw at the
 target: destroyed targets are forgotten (one raid set out again for creep it had destroyed).
+**Built (first pass): the Siege.** When no raid is affordable and the settlement has 100 parts and 6 units
+to spare, it picks a fortified target (2 or more known turrets) and a site: from the target towards home, or
+at angles off that line, the first point beyond 31 tiles of every player turret (a flamethrower's 30) with
+one within 35, on dry land. A hauler carries the **mortar** (the artillery turret's body at 60%, tinted; its
+own gun: 36 tiles, minimum 6, a shell every 4 s; the shell bursts over 2.5 tiles for 90 explosive and 30
+physical, hitting the player only; it fires at military targets by itself) with 30 shells, escorted by the
+guards. At the site: 30 s of deploying (a label counts up), then it shells until the shells are spent,
+nothing is left in reach for a minute, or the guards are halved; it packs up in 10 s and the column goes
+home, where the hauler stands down. A destroyed mortar leaves 15 salvage; a destroyed hauler on the way
+ends the siege. Guards fight only what hits them (engaging what they saw, they walked into turret range).
+Sieges cool for 15 minutes. `bombard` (seed 12345): eight armed gun turrets behind walls (a raid would need
+44): a mortar deployed 32 tiles from the nearest turret, hit all eight, packed up when nothing was left in
+reach; a raid of 34 then took the softened position. Nobody scripted that sequence. Staging is now measured
+from the outermost turret (staged from the target's centre, a raid lost 15 of 34 before attacking).
+Next for sieges: moving the mortar up when its reach is cleared, resupply convoys.
 Order: intel and the operation framework with Raid (and abort) first, then Siege; the rest after a first-hour
 playthrough baseline. Also adopted from the review: garrison roles and escalating alarms; tier as capability
 (the +15% damage goes); relay and barracks control radius with R always obeyed; jamming instead of satellites

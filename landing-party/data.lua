@@ -19,7 +19,7 @@ end
 -- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Minable for salvage (half its
 -- cost in parts): nothing the faction owns can be mined, only its ruins once a settlement falls, or what the
 -- player captured.
-local MILITARY = {["lp-turret"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-lander"] = true,
+local MILITARY = {["lp-turret"] = true, ["lp-mortar"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true}
 local function copy(type, name, new)
   local name_new = new
@@ -90,6 +90,64 @@ fabricator.allowed_effects = nil
 
 local turret = copy("electric-turret", "laser-turret", "lp-turret")
 
+-- The mortar: a siege emplacement (scripts/ops.lua), the artillery turret's body at 60%, its own short gun
+-- (36 tiles, beyond gun 18, laser 24 and flamethrower 30 turrets) and a light shell, hitting the player only.
+local MORTAR_SCALE = 0.6
+local function shrink(t, seen)
+  if type(t) ~= "table" or seen[t] then return end
+  seen[t] = true
+  if t.filename or t.filenames or t.stripes then
+    t.scale = (t.scale or 1) * MORTAR_SCALE
+    if t.shift then t.shift = {t.shift[1] * MORTAR_SCALE, t.shift[2] * MORTAR_SCALE} end
+  end
+  for _, v in pairs(t) do shrink(v, seen) end
+end
+local mortar = copy("artillery-turret", "artillery-turret", "lp-mortar")
+for _, k in ipairs({"base_picture", "cannon_base_pictures", "cannon_barrel_pictures"}) do shrink(mortar[k], {}) end
+mortar.water_reflection = nil
+mortar.collision_box = {{-0.8, -0.8}, {0.8, 0.8}}
+mortar.selection_box = {{-1, -1}, {1, 1}}
+mortar.drawing_box_vertical_extension = 2
+mortar.max_health = 800
+mortar.turret_rotation_speed = 0.004
+mortar.cannon_base_shift = {0, 0, mortar.cannon_base_shift[3] * MORTAR_SCALE}
+mortar.gun = "lp-mortar-gun"
+mortar.inventory_size = 1
+mortar.ammo_stack_limit = 100
+mortar.automated_ammo_count = 1
+mortar.circuit_connector = nil
+mortar.corpse = nil
+mortar.resistances = {{type = "physical", decrease = 5, percent = 20}, {type = "explosion", decrease = 10, percent = 30},
+  {type = "fire", percent = 50}}
+local mortar_gun = table.deepcopy(data.raw.gun["artillery-wagon-cannon"])
+mortar_gun.name = "lp-mortar-gun"
+mortar_gun.hidden = true
+mortar_gun.attack_parameters.ammo_category = "lp-mortar"
+mortar_gun.attack_parameters.range = 36
+mortar_gun.attack_parameters.min_range = 6
+mortar_gun.attack_parameters.cooldown = 240
+for _, p in ipairs(mortar_gun.attack_parameters.projectile_creation_parameters or {}) do
+  p[2] = {p[2][1] * MORTAR_SCALE, p[2][2] * MORTAR_SCALE}
+end
+local mortar_shell = table.deepcopy(data.raw.ammo["artillery-shell"])
+mortar_shell.name = "lp-mortar-shell"
+mortar_shell.hidden = true
+mortar_shell.ammo_category = "lp-mortar"
+mortar_shell.ammo_type.action.action_delivery.projectile = "lp-mortar-projectile"
+mortar_shell.ammo_type.action.action_delivery.starting_speed = 0.6
+local projectile = table.deepcopy(data.raw["artillery-projectile"]["artillery-projectile"])
+projectile.name = "lp-mortar-projectile"
+projectile.reveal_map = false
+shrink(projectile.picture, {})
+shrink(projectile.shadow, {})
+projectile.chart_picture = nil
+projectile.action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+  {type = "nested-result", action = {type = "area", radius = 2.5, force = "enemy", action_delivery = {type = "instant",
+    target_effects = {{type = "damage", damage = {amount = 30, type = "physical"}},
+      {type = "damage", damage = {amount = 90, type = "explosion"}}}}}},
+  {type = "create-entity", entity_name = "big-explosion"}}}}
+projectile.final_action = nil
+
 local wall = copy("wall", "stone-wall", "lp-wall")
 wall.max_health = 450
 
@@ -148,6 +206,7 @@ road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
   lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, depot, road, launchpad, lamp, mine, uplink,
+  mortar, mortar_gun, mortar_shell, projectile, {type = "ammo-category", name = "lp-mortar", hidden = true},
   {type = "recipe-category", name = "lp-fabrication"},
   {type = "item", name = "lp-feedstock", icon = "__base__/graphics/icons/stone.png", hidden = true,
     stack_size = 200, subgroup = "other"},

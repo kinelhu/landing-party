@@ -1243,7 +1243,9 @@ scenarios.ops = function()
     check("ops: it went for the valuable target", o.log[1] and (o.log[1].kind == "lp-command-relay" or o.log[1].kind == "lp-barracks"),
       o.log[1] and o.log[1].kind or "none finished")
     check("ops: it destroyed it", left <= 1, (3 - left) .. " of 3 destroyed")
-    local second = o.log[2]
+    local raids = {}
+    for _, l in ipairs(o.log) do if l.op == "raid" then table.insert(raids, l) end end
+    local second = raids[2]
     check("ops: a raid on the defended cluster was sized to it", not second or second.launched >= 16,
       second and (second.kind .. " with " .. second.launched) or "none")
   end)
@@ -1272,7 +1274,93 @@ scenarios.abort = function()
     check("abort: a raid was launched", o.launched > 0, o.launched)
     check("abort: it aborted", o.aborted > 0, o.aborted .. " aborted, " .. o.done .. " done")
     check("abort: it turned back unhurt", l and l.back == l.launched, l and (l.back .. " of " .. l.launched) or "none")
-    check("abort: it did not go straight back", o.launched == 1, o.launched .. " raids launched")
+    -- A siege may follow (too strong to raid is what sieges are for); another raid may not.
+    check("abort: it did not raid again within the cooldown", o.launched - o.sieges == 1,
+      (o.launched - o.sieges) .. " raids, " .. o.sieges .. " sieges")
+  end)
+end
+
+-- Mortar (spike): does a faction mortar with shells find and shell a player turret 30 tiles away on its own?
+scenarios.mortar = function()
+  schedule(60, function()
+    flatten(150, -40, 230, 40)
+    S.m = surface().create_entity{name = "lp-mortar", position = {160, 0}, force = FORCE}
+    S.m.insert{name = "lp-mortar-shell", count = 20}
+    S.t = surface().create_entity{name = "gun-turret", position = {190, 0}, force = "player"}
+    S.far = surface().create_entity{name = "gun-turret", position = {205, 0}, force = "player"}
+    S.wall = surface().create_entity{name = "stone-wall", position = {188, 4}, force = "player"}
+  end)
+  schedule(60 + 60 * 60, function()
+    local shells = S.m.valid and S.m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell") or -1
+    info(string.format("mortar: %d shells left; turret at 30: %s; turret at 45: %s; wall: %s", shells,
+      S.t.valid and string.format("%.0f/%.0f", S.t.health, S.t.max_health) or "destroyed",
+      S.far.valid and string.format("%.0f/%.0f", S.far.health, S.far.max_health) or "destroyed",
+      S.wall.valid and string.format("%.0f/%.0f", S.wall.health, S.wall.max_health) or "destroyed"))
+    check("mortar: it fired on its own", shells < 20, shells .. " of 20 left")
+    check("mortar: the turret in range was hit", not S.t.valid or S.t.health < S.t.max_health, "")
+    check("mortar: the one out of range was not", S.far.valid and S.far.health == S.far.max_health, "")
+  end)
+end
+
+-- Bombard: a fortified player position the faction cannot raid (8 armed gun turrets need 44 units) draws a
+-- siege. A hauler must carry a mortar out, deploy it beyond every player turret's reach, shell the position,
+-- and pack up when the shells are spent; no mortar is left behind.
+scenarios.bombard = function()
+  schedule(60, function()
+    lp("debug_depot", storage.id, 4000)
+    lp("debug_depot", storage.id, 0)
+  end)
+  schedule(120, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local L = lander.position
+    local len = math.sqrt(L.x * L.x + L.y * L.y)
+    local c = {math.floor(L.x - L.x / len * 150), math.floor(L.y - L.y / len * 150)}
+    flatten(c[1] - 20, c[2] - 20, c[1] + 20, c[2] + 20)
+    S.c = c
+    S.turrets = {}
+    for x = -12, 12 do for y = -12, 12 do
+      if math.abs(x) == 12 or math.abs(y) == 12 then
+        surface().create_entity{name = "stone-wall", position = {c[1] + x, c[2] + y}, force = "player"}
+      end
+    end end
+    for _, p in ipairs({{-9, -9}, {9, -9}, {-9, 9}, {9, 9}, {0, -9}, {0, 9}, {-9, 0}, {9, 0}}) do
+      local t = surface().create_entity{name = "gun-turret", position = {c[1] + p[1], c[2] + p[2]}, force = "player"}
+      t.insert{name = "piercing-rounds-magazine", count = 200}
+      table.insert(S.turrets, t)
+    end
+    for _, p in ipairs({{-3, -3}, {3, 3}}) do
+      surface().create_entity{name = "assembling-machine-1", position = {c[1] + p[1] + 0.5, c[2] + p[2] + 0.5}, force = "player"}
+    end
+    info(string.format("bombard: walled position with 8 turrets at %d,%d", c[1], c[2]))
+  end)
+  for t = 600, END, 300 do
+    schedule(t, function()
+      local o = lp("stats", storage.id).ops
+      if o.mortar then
+        S.mortar_at = o.mortar
+        local nearest = math.huge
+        for _, tt in pairs(surface().find_entities_filtered{force = "player", type = "ammo-turret",
+          position = o.mortar, radius = 80}) do
+          nearest = math.min(nearest, math.sqrt((tt.position.x - o.mortar[1]) ^ 2 + (tt.position.y - o.mortar[2]) ^ 2))
+        end
+        S.mortar_gap = math.min(S.mortar_gap or math.huge, nearest)
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local o = lp("stats", storage.id).ops
+    local hurt = 0
+    for _, t in ipairs(S.turrets) do if not t.valid or t.health < t.max_health then hurt = hurt + 1 end end
+    local siege
+    for _, l in ipairs(o.log) do if l.op == "siege" then siege = l end end
+    info("bombard: " .. serpent.line(o.log))
+    check("bombard: a siege was mounted", o.sieges > 0, o.sieges .. " sieges, " .. o.launched .. " operations")
+    check("bombard: the mortar stood beyond the turrets' reach", S.mortar_gap and S.mortar_gap > 18,
+      S.mortar_gap and string.format("%.1f tiles from the nearest turret", S.mortar_gap) or "never deployed")
+    check("bombard: it hit the position", hurt > 0, hurt .. " of 8 turrets hurt or destroyed")
+    check("bombard: it packed up when spent or done", siege and (siege.outcome == "spent" or siege.outcome == "done")
+      and surface().count_entities_filtered{name = "lp-mortar"} == 0,
+      siege and (siege.outcome .. ", " .. tostring(siege.shells) .. " shells") or "not finished")
   end)
 end
 

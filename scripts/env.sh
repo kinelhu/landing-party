@@ -6,3 +6,10 @@ FACTORIO="$APP/MacOS/factorio"
 # mod into it, so both can be played together. The real profile (…/factorio/) is never written to.
 DEV="$HOME/Library/Application Support/factorio-dev"
 CONFIG="$DEV/config/config.ini"
+# Forks (scripts/fork.sh) save FORK_LEAD minutes before a scenario's strike (some measure the minutes before
+# it, raid's income window), keyed by FORK_HASH: the mod's code that runs before a strike. Changing what only
+# acts after it (operations, the player's army) keeps the forks; changing growth rebuilds them.
+FORK_LEAD=6
+FORK_HASH="$(cd "$REPO/landing-party" && find . -type f \( -name '*.lua' -o -name '*.json' -o -name '*.cfg' \) \
+  ! -name ops.lua ! -name command.lua ! -name player.lua | sort | xargs cat | shasum | cut -c1-8)"
+FORKS="$HOME/Library/Application Support/factorio-lp-sim/forks"

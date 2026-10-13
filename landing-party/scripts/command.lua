@@ -21,7 +21,7 @@ local ADVANCE_RANGE = 200          -- outposts an occupy order looks for
 local ATTACK_REACH = 50
 local TURRET_COVER = 25            -- a laser's 24 and a little
 local REISSUE_TICKS = 600          -- an idle trooper is given its orders again after this long
-local MILITARY = {"lp-turret", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad"}
+local MILITARY = {"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad"}
 local SIGNAL_ADVANCE = {type = "virtual", name = "signal-A"}
 local SIGNAL_RETREAT = {type = "virtual", name = "signal-R"}
 local SIGNAL_OCCUPY = {type = "virtual", name = "signal-O"}
@@ -174,7 +174,7 @@ local function objective(p, occupy)
     -- groups and died to them (siege, seed 12345).
     -- Then what no turret covers: those in reach are gone by now, so a cover is outside it (a depot in reach
     -- covered by a compound's turret beyond it drew the squad into that turret's fire, siege seed 12345).
-    for _, names in ipairs({{"lp-turret"}, MILITARY}) do
+    for _, names in ipairs({{"lp-turret", "lp-mortar"}, MILITARY}) do
       for _, e in pairs(s.find_entities_filtered{position = at, radius = ATTACK_REACH, force = f, name = names}) do
         local d = (e.position.x - at.x) ^ 2 + (e.position.y - at.y) ^ 2
         local covered = e.name ~= "lp-turret" and s.count_entities_filtered{position = e.position, radius = TURRET_COVER,
