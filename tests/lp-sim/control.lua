@@ -929,25 +929,39 @@ scenarios.showcase = function()
   end)
   schedule(120, function()
     lp("arrive", 1, {x = 0, y = 0}, params.distance, {uplink = true})
-    flatten(-6, -30, 30, 0)
+    flatten(-6, -34, 36, 0)
     local function put(name, x, y)
       return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
     end
-    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
-    S.barracks = put("lp-barracks", 10.5, -15.5)
-    put("electric-energy-interface", 15, -15)
-    put("medium-electric-pole", 13.5, -12.5)
-    put("lp-command-relay", 6.5, -9.5)
-    put("lp-command-relay", 10.5, -9.5)
-    put("medium-electric-pole", 8.5, -11.5)
-    put("lp-rally-beacon", 20.5, -24.5)
-    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 10}
-  end)
-  schedule(1200, function()
-    if S.barracks and S.barracks.valid then
-      S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 10}
+    for k = 1, 2 do game.forces.player.technologies["lp-command-bandwidth-" .. k].researched = true end
+    -- Barracks for each unit type, with finished orders: 20 troopers, 10 breachers, 5 battle tanks (50 of
+    -- bandwidth: five relays at research level 2).
+    S.army = {{"lp-trooper-order", 20}, {"lp-breacher-order", 10}, {"lp-battle-tank-order", 5}}
+    S.barracks = {}
+    for i, o in ipairs(S.army) do
+      local b = put("lp-barracks", 4.5 + 6 * i, -15.5)
+      b.set_recipe(o[1])
+      S.barracks[i] = b
+      put("medium-electric-pole", 6.5 + 6 * i, -12.5)
     end
+    put("electric-energy-interface", 31, -11)
+    for k = 1, 5 do put("lp-command-relay", 2.5 + 4 * k, -7.5) end
+    for x = 4.5, 28.5, 6 do put("medium-electric-pole", x, -10.5) end
+    put("lp-rally-beacon", 20.5, -26.5)
+    S.feed = function()
+      for i, o in ipairs(S.army) do
+        local b = S.barracks[i]
+        local out = b.valid and b.get_inventory(defines.inventory.crafter_output)
+        local have = (S.fed or {})[i] or 0
+        if out and have < o[2] then
+          S.fed = S.fed or {}
+          S.fed[i] = have + out.insert{name = o[1], count = math.min(10, o[2] - have)}
+        end
+      end
+    end
+    S.feed()
   end)
+  for t = 1200, 6000, 600 do schedule(t, function() if S.feed then S.feed() end end) end
   schedule(STRIKE, function()
     game.forces.player.chart(surface(), {{-600, -600}, {600, 600}})
     -- Exports for half an hour of convoys (one of 1,000 parts a minute): the granted stock ran out in three.
@@ -956,7 +970,9 @@ scenarios.showcase = function()
   schedule(STRIKE + 300, function()
     game.speed = 1
     game.server_save("lp-showcase")
-    helpers.write_file("landing-party/saved.txt", tostring(game.tick))
+    local army = lp("army")
+    helpers.write_file("landing-party/saved.txt", string.format("%d (%d units, capacity %d)", game.tick, army.alive,
+      army.capacity))
   end)
 end
 
