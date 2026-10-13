@@ -1428,6 +1428,9 @@ end
 -- wall and laser perimeter round the base.
 scenarios.contact = function()
   local careful = params.mix == "robots" or params.mix == "walled"
+  -- The player's base goes down at the strike (minute 20 by default), before the faction can have seen it
+  -- (the first raid came at minute 38): every variant then shares one fork of the faction's growth.
+  local AT = params.strike > 0 and STRIKE or 30
   local CATEGORY = {["assembling-machine"] = "production", furnace = "production", lab = "production",
     ["mining-drill"] = "outpost", ["electric-pole"] = "power", roboport = "logistics", radar = "logistics",
     ["electric-turret"] = "turrets", ["ammo-turret"] = "turrets", wall = "walls"}
@@ -1443,7 +1446,7 @@ scenarios.contact = function()
     end
     return out
   end
-  schedule(30, function()
+  schedule(AT, function()
     flatten(-78, -78, 78, 78)
     local pf = game.forces.player
     pf.set_ammo_damage_modifier("laser", 0.4)
@@ -1485,7 +1488,7 @@ scenarios.contact = function()
       end
     end
   end)
-  schedule(150, function()
+  schedule(AT + 120, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local L = lander.position
     local len = math.sqrt(L.x * L.x + L.y * L.y)

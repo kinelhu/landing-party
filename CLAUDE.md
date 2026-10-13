@@ -21,6 +21,10 @@ at milestones, asked for.
 - **Regression: `scripts/regress.sh [seed]`** (about 3 minutes): scenarios that strike run from forks, short
   ones in full. `--full` adds the long growth scenarios (about 10 more minutes): at milestones and before
   commits that touch growth, not after every change. After a change, run the scenarios that exercise it.
+- First-contact timelines: `scripts/contact.sh [seed]` (three player variants, 2 hours, about 5 minutes;
+  plots and event lists in `docs/sim/contact-<seed>-v<variant>/`). A design instrument, not a regression.
+- Waiting on background runs: never `pgrep -f` a pattern that appears in the waiting command itself (it
+  matches its own shell and never ends); wait on the run's process or its output file.
 - Forks: `scripts/fork.sh <scenario> <seed> <strike>` saves a scenario 6 minutes before its strike once
   (keyed by a hash of the code that runs before a strike: changing operations or the player's army keeps
   them, changing growth rebuilds them); `LP_FORK=1

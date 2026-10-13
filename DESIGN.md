@@ -484,8 +484,10 @@ every 5 units lost. `contact` again, three players (seed 12345, 3 hours):
 The outpost falls in all three (no robot coverage there). Raids come about every 8 to 10 minutes. A careful
 player holds; the faction reads walls and turns back or besieges; turret attrition grows with each landing,
 so a player who only defends bleeds slowly, which is where the army (destroying landers) has to come in.
-Cost: the robots run took nearly 8 minutes alone (hundreds of construction robots); timelines are to run 2
-hours and from a shared growth fork from now on.
+Cost: the robots run took nearly 8 minutes alone (hundreds of construction robots). Now `scripts/contact.sh`:
+the three players, 2 hours each, from one shared fork (the player's base goes down at minute 20, before the
+faction can see it), about 5 minutes a round. At 2 hours: passive 10 operations, production 20 of 94; robots
+12, all production standing, turrets 15 of 18; walled 8 (4 turned back), turrets 53 of 62.
 
 ## Design review 2026-10-13
 Fable's review on the user's agenda, in full: `docs/reviews/2026-10-13-design-review.md`. Headlines, not yet
