@@ -124,7 +124,7 @@ shared.cost = {
   ["lp-mine"] = 2,
   ["lp-mortar"] = 60,            -- a siege emplacement (scripts/ops.lua), carried by a hauler
   ["lp-gate"] = 3,
-  ["lp-flamer"] = 20,
+  ["lp-flamer"] = 8,
 }
 
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.

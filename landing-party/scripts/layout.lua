@@ -362,8 +362,9 @@ function layout.fortify(b)
           end
         end
       end
-      if arch.flamers and arch.gates and block.kind ~= "picket" and block.kind ~= "depot" then
-        -- A flamethrower outside each gated opening, beside it on the road (inside, every tile is taken).
+      if arch.flamers and arch.gates and (block.kind == "compound" or block.kind == "pad") then
+        -- A flamethrower outside each gated opening of a hard point, beside it on the road (inside, every tile is
+        -- taken). Hard points only: four on every walled block starved a bastion of parts (occupy, defend).
         push(b, {name = "lp-flamer", pos = {x0 + ox - 1, y0 - 2.5}, dir = defines.direction.north, module = block})
         push(b, {name = "lp-flamer", pos = {x0 + ox + blocks.OPENING + 1, y0 + h + 1.5}, dir = defines.direction.south, module = block})
         push(b, {name = "lp-flamer", pos = {x0 - 2.5, y0 + oy + blocks.OPENING + 1}, dir = defines.direction.west, module = block})

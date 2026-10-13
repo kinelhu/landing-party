@@ -330,6 +330,13 @@ local function rebuild(b)
       if place(b, job) then
         b.rebuilt = b.rebuilt + 1
         trace(b, string.format("rebuilt %s at %.0f,%.0f", job.name, job.pos[1], job.pos[2]))
+      elseif (job.tries or 0) < 5 then
+        -- Blocked (often a unit standing there): tried again in 30 s, five times (dropped at once, an outpost
+        -- turret was never rebuilt, occupy).
+        job.tries = (job.tries or 0) + 1
+        job.due = game.tick + 30 * 60
+        table.insert(b.rebuild, job)
+        trace(b, string.format("cannot rebuild %s at %.0f,%.0f: blocked, again in 30 s", job.name, job.pos[1], job.pos[2]))
       else
         trace(b, string.format("cannot rebuild %s at %.0f,%.0f: blocked", job.name, job.pos[1], job.pos[2]))
       end

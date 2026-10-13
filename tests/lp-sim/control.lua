@@ -502,7 +502,9 @@ scenarios.defend = function()
       #S.creep, at[1], at[2], S.garrison))
   end)
   schedule(STRIKE + 60, function() S.mid, S.hp_mid = S.near(), S.health() end)
-  schedule(STRIKE + 6 * 3600, function()
+  -- Ten minutes after the strike: the claim is that the outpost stands again, not how fast (at six, a raid that
+  -- came a little later left two turrets' rebuild just past the check).
+  schedule(STRIKE + 10 * 3600, function()
     local st = lp("stats", storage.id)
     local alive = 0
     for _, t in ipairs(S.creep or {}) do if t.valid then alive = alive + 1 end end
@@ -2223,7 +2225,7 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
 -- the strike at 30 failed for lack of time, not of mechanics).
-local AFTER = {phases = 0, cut = 6, raid = 6, path = 6, defend = 7, occupy = 18, army = 11, train = 6, siege = 13, fall = 5}
+local AFTER = {phases = 0, cut = 6, raid = 6, path = 6, defend = 11, occupy = 18, army = 11, train = 6, siege = 13, fall = 5}
 if params.scenario == "uplink" and END < 18 * 3600 then error("lp-sim: uplink needs at least 18 minutes") end
 if params.scenario == "convoy" and END < 10 * 3600 then error("lp-sim: convoy needs at least 10 minutes") end
 if params.scenario == "caps" and END < 8 * 3600 then error("lp-sim: caps needs at least 8 minutes") end

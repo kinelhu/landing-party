@@ -498,7 +498,10 @@ a wall's health; infantry, buggies (the car's hull, fast and light) and harriers
 10 Grubstake gun turrets all fed, 49 buggies built; five operations between them, 33 and 66 units lost.
 Accepted by the user in game ("nothing glaring"). Since built: flamethrowers at Serenity's gated blocks, one
 outside each opening beside it on the road (inside, every tile is taken), kept in light oil by the economy step
-(`rivals`: 4 of 4 fuelled).
+(`rivals`: 4 of 4 fuelled). On hard points only (compounds, pads), 8 parts each: four on every walled block
+starved a bastion of parts, and the regression caught it (occupy rebuilt 0 of 9, defend left the creep standing).
+A rebuild found blocked (often by a unit standing on the spot) is tried again every 30 s, five times; dropped at
+once, an outpost turret was never rebuilt.
 
 **Built: territory and the opening** (docs/campaign.md section 3). Each settlement's territory is drawn in map
 view only: a translucent disc in its corporation's colour over everything it has built (plus 24 tiles),
