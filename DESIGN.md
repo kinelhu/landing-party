@@ -485,6 +485,14 @@ at their size: map tags at each settlement (corporation icon and name, "(fallen)
 landing and fall notices (icon, name, motto). Every corporation's buildings and units are labelled with its
 name. Tint can only darken a sprite: "whiter than vanilla" walls would need other source art.
 
+**Step 4, built: architecture.** Corporations carry doctrine weights, a unit mix and architecture flags. Serenity:
+bastion and picket; gates in every opening, a baffle wall two tiles inside each opening (entry zigzags: the
+staggered double wall), corner lasers walled into pillboxes; infantry, tanks, walkers, no air. Grubstake: sprawl;
+gun turrets (its own `lp-grubstake-turret` is a gun turret) kept in piercing rounds by the economy, fences at half
+a wall's health; infantry, buggies (the car's hull, fast and light) and harriers. `rivals`: 144 Serenity gates,
+10 Grubstake gun turrets all fed, 49 buggies built; five operations between them, 33 and 66 units lost.
+Accepted by the user in game ("nothing glaring"). Left for later: flamethrowers at Serenity's gates (fuel).
+
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a
 player base at spawn as of the first launch (64 assemblers, 20 furnaces, 10 labs, substations, 2 roboports,
