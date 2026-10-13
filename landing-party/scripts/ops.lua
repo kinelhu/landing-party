@@ -53,9 +53,12 @@ local SIEGE_MAX_TICKS = 15 * 60 * 60
 -- power and logistics, then production. Lamps, pipes, belts and walls are worth nothing.
 ops.VALUE = {["lp-command-relay"] = 10, ["lp-barracks"] = 8, ["substation"] = 6, ["big-electric-pole"] = 5,
   ["train-stop"] = 5, ["locomotive"] = 5, ["roboport"] = 5, ["mining-drill"] = 4, ["assembling-machine"] = 3,
-  ["furnace"] = 3, ["lab"] = 3, ["radar"] = 3, ["ammo-turret"] = 1, ["electric-turret"] = 1}
+  ["furnace"] = 3, ["lab"] = 3, ["radar"] = 3, ["ammo-turret"] = 1, ["electric-turret"] = 1,
+  -- A rival corporation's buildings: its command (lander, uplink), its depots and its power first.
+  ["lp-uplink"] = 10, ["lp-lander"] = 8, ["lp-depot"] = 6, ["lp-generator"] = 5, ["lp-launchpad"] = 5}
 local TYPES = {"mining-drill", "assembling-machine", "furnace", "lab", "radar", "roboport", "train-stop",
-  "locomotive", "electric-pole", "ammo-turret", "electric-turret", "fluid-turret"}
+  "locomotive", "electric-pole", "ammo-turret", "electric-turret", "fluid-turret", "electric-energy-interface",
+  "container"}
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
 
 local function value_of(e)
@@ -119,6 +122,17 @@ local function scan(b)
     local r = SENSORS[s.name] or 100
     sense(b, surface, s.position, r)
     forget(b, s.position, r)
+  end
+end
+
+-- A landing is heard: every other corporation learns where a newcomer came down (as the player is told), and
+-- sight, alarms and raids do the rest (two corporations 249 tiles apart, beyond each other's sensors, never
+-- fought).
+function ops.heard_landing(newcomer)
+  for _, o in pairs(storage.bases) do
+    if o ~= newcomer and o.force ~= newcomer.force and o.lander.valid then
+      ops.sense_at(o, newcomer.lander.position, 60)
+    end
   end
 end
 

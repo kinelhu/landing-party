@@ -29,6 +29,7 @@ document describes the parts as built; the campaign document describes the game 
 | Command tool: box-select, move, attack, attack-move, release to beacons | built, tried in game | `control` |
 | Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
+| Corporations as forces (Grubstake, Serenity): own force, colour, intel; they raid each other | built (first step) | `rivals` |
 | Capture of mining outposts by holding | built | `army` |
 | The fall: a destroyed lander collapses its settlement (cascade, evacuation, ruins, salvage) | built | `fall` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
@@ -453,6 +454,18 @@ playthrough baseline. Also adopted from the review: garrison roles and escalatin
 (the +15% damage goes); relay and barracks control radius with R always obeyed; jamming instead of satellites
 as targets; the landing as an event; the settlement readable in game. Parked: the uplink fight, rival
 corporations, more convoy and interceptor work.
+
+## Corporations (building, from docs/campaign.md and docs/corporations.md)
+**Step 1, built: corporations as forces.** `shared.CORPS` names them (Grubstake Mineral Recovery `lp-grubstake`,
+Serenity Perimeter Group `lp-serenity`, the default); each settlement belongs to one (`b.corp`, `b.force`) and
+every force check asks the settlement's force or "any corporation". Only the player's forces capture outposts
+(a rival's raid passing through does not). The tier damage bonus is gone (tiers will buy capabilities).
+Corporations are at war with each other and with biters. A landing is heard by every other corporation (its
+site enters their intel); their buildings have target values (uplink 10, lander 8, depot 6, generator 5,
+launch pad 5). `rivals` (seed 12345, 40 minutes): Serenity raided Grubstake twice and besieged it once, losing
+every time to Grubstake's 11 turrets (0 of 4, then 5 of 24 came back; the siege's hauler was destroyed);
+Grubstake never struck back (Serenity too well defended for what it could field). Before the landing was
+heard, two settlements 249 tiles apart never knew of each other and never fought.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

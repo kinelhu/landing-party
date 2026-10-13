@@ -6,6 +6,7 @@
 local shared = require("__landing-party__.shared")
 local site = require("__landing-party__.scripts.site")
 local base = require("__landing-party__.scripts.base")
+local ops = require("__landing-party__.scripts.ops")
 
 local faction = {}
 
@@ -109,6 +110,7 @@ function faction.arrive(surface, from, opts, quiet)
     return nil
   end
   f.landings = f.landings + 1
+  ops.heard_landing(b)
   if opts and opts.uplink then f.uplink_landed = b.id end
   f.surface, f.from = surface.index, {x = from.x, y = from.y}
   f.next = game.tick + f.cadence

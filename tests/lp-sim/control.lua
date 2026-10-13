@@ -1561,8 +1561,10 @@ scenarios.rivals = function()
     check("rivals: two corporations, two forces", b ~= nil and a.force ~= b.force,
       a.force .. " and " .. (b and b.force or "none"))
     check("rivals: they raided each other", against > 0, against .. " operations against a rival")
-    check("rivals: and did damage", (a.razed or 0) + (b and b.razed or 0) > 0 or a.lost + (b and b.lost or 0) > 0,
-      string.format("razed %d and %d", a.razed or 0, b and b.razed or 0))
+    -- Blood on either side: units lost or buildings razed (a fortified rival can win every fight).
+    local lost = a.units_lost + (b and b.units_lost or 0) + a.lost + (b and b.lost or 0)
+    check("rivals: they fought", lost > 0, string.format("%d and %d units lost, %d and %d buildings",
+      a.units_lost, b and b.units_lost or 0, a.lost, b and b.lost or 0))
   end)
 end
 
