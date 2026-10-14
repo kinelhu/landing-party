@@ -48,6 +48,7 @@ document describes the parts as built; the campaign document describes the game 
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
+| Identity: Line troopers (beams) and Shotgun hands (pellets); trees next | built (slice 1) | `arms` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -840,6 +841,26 @@ if their units are upgraded also." `scripts/rd.lua`.
   "now fields reflective infantry"). A plate answering what a target's turrets mostly deal (`ops.weigh` returns it)
   makes the corporation read that defence 1.4 times weaker, any plate 1.15. Scenario `plate`: fifteen infantry die
   to a laser turret; the laser plate for infantry is bought; 8 reflective infantry built; the 4 plain ones kept.
+
+### Identity trees (the user; Fable: `docs/reviews/2026-10-14-identity-trees-consult.md`)
+The user, on the generic research: "Do we have interesting research? With actual faction identity? Do the troopers
+differentiate between factions? I was thinking range, rate of fire, even main weapon (Grubstake could use shotguns,
+Serenity could have some special 'laser troopers'... and climb their tech tree up to tesla shock troops..)". The
+generic weapons and plates become each corporation's own named nodes (the fund, ledger, era cap and sizing stay).
+Serenity, "the line": Line troopers (beams); Optics (Lance, then Shock troops: chain lightning), Line (Warden, Aegis
+tank), Siege (Hardened siege, Counter-battery). Grubstake, "resources in the right hands": Shotgun hands; Scrap arms
+(Slug buggy, then **dynamite sappers**: the user chose them over Fable's flamethrower Burner, which borrowed
+Serenity's flame), Wheels (Scavenger harriers, the Dozer), Loot (Salvage rights, Prospector's eye). The ledger picks
+the node that answers what has been killing it. Raids to differ on arrival too (Serenity destroys military targets
+and withdraws in order; Grubstake empties chests first: the user's heists, folded into its identity).
+- **Slice 1, starting infantry (built).** Serenity's **Line trooper** (`lp-infantry`): a laser beam (the laser turret's,
+  scaled to about 7 a shot), every 25 ticks, range 15, ammunition category laser (its research covers its laser
+  turrets too), laser 20% resisted. Grubstake's **Shotgun hand** (`lp-grubstake-infantry`, built from `lp-shotgun-hand`
+  through its CORPS.bases): four pellets of 4 (`lp-pellet`), every 30 ticks, range 9, speed 0.13. Pellets pass
+  through their own side (`force_condition = "not-same"`: by default they hit everything, and six Shotgun hands lost
+  555 of 720 health to each other). Research follows the weapons (`rd.CORP_CATEGORY`: Serenity's main category is now
+  laser, Grubstake's shotgun shells). Scenario `arms`: six of each against four radars, 780 and 630 ticks (within 20%:
+  eight pellets took 420, five 540), no wounds to their own side.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

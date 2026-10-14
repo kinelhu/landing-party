@@ -469,11 +469,11 @@ end
 scenarios.defend = function()
   if params.mix == "noops" then schedule(STRIKE - 30, function() lp("debug_tune", {ops_off = true}) end) end
   schedule(200, function() lp("debug_depot", storage.id, 3000) end)
-  -- A corporation that has met this player before (bullet damage +0.8, shooting speed +0.6: era 2): small arms level
-  -- 2 and armoured infantry from the start, its garrison built under them (scripts/rd.lua). From nothing, the
+  -- A corporation that has met this player before (bullet damage +0.8, shooting speed +0.6: era 2): its lasers at level
+  -- 2 (its Line troopers' weapon) and armoured infantry from the start, its garrison built under them (scripts/rd.lua). From nothing, the
   -- research loop answered only at minute 70 (a raid of 26 lost at 40, the physical plate at 70).
   schedule(100, function()
-    lp("debug_tune", {era = 2, rd_tech = {serenity = {weapons = {bullet = 2}, plate = {["lp-infantry"] = "physical"}}}})
+    lp("debug_tune", {era = 2, rd_tech = {serenity = {weapons = {laser = 2}, plate = {["lp-infantry"] = "physical"}}}})
   end)
   schedule(STRIKE, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
@@ -2682,7 +2682,7 @@ end
 
 -- Techup: corporate research (docs/reviews/2026-10-14-corporate-rd-consult.md). The player has bullet damage +0.8 and
 -- three gun turrets 120 tiles towards spawn; Serenity's fund is granted, choices every minute. Within six minutes it
--- buys small arms to level 2 or more, and the raid it would need there falls (23 unresearched). LP_MIX=era0: the
+-- buys lasers (its Line troopers' weapon) to level 2 or more, and the raid it would need there falls (23 unresearched). LP_MIX=era0: the
 -- player at era 0, a fund of 20,000: nothing beyond level 1.
 scenarios.techup = function()
   local era = params.mix == "era0" and 0 or 4
@@ -2705,16 +2705,17 @@ scenarios.techup = function()
     local r = lp("rd", "serenity")
     local after = lp("debug_needed", storage.id, S.guns)
     info("techup: " .. serpent.line({rd = r, before = S.before, after = after}))
-    local lvl = (r.weapons or {}).bullet or 0
+    -- Serenity's Line troopers fire lasers: its main category.
+    local lvl = (r.weapons or {}).laser or 0
     check("techup: the raid it needed unresearched", S.before and S.before.needed == 23, serpent.line(S.before))
     if params.mix == "era0" then
       check("techup: an era-0 player holds it to level 1", lvl == 1, tostring(lvl))
     else
-      check("techup: it bought small arms to level 2 or more", lvl >= 2, tostring(lvl))
+      check("techup: it bought lasers to level 2 or more", lvl >= 2, tostring(lvl))
       check("techup: the raid it needs fell", after and after.needed < S.before.needed,
         string.format("%s -> %s", S.before and S.before.needed, after and after.needed))
-      check("techup: the corporation's force carries it", game.forces["lp-serenity"].get_ammo_damage_modifier("bullet") >= 0.4,
-        tostring(game.forces["lp-serenity"].get_ammo_damage_modifier("bullet")))
+      check("techup: the corporation's force carries it", game.forces["lp-serenity"].get_ammo_damage_modifier("laser") >= 0.4,
+        tostring(game.forces["lp-serenity"].get_ammo_damage_modifier("laser")))
     end
   end)
 end
@@ -2749,6 +2750,59 @@ scenarios.plate = function()
     check("plate: the depots build reflective infantry", plated > 0, plated .. " plated")
     check("plate: the plain infantry standing were kept", plain > 0 and plain <= S.plain,
       string.format("%d before, %d after", S.plain, plain))
+  end)
+end
+
+-- Arms: each corporation's own infantry (Serenity's Line troopers, beams; Grubstake's Shotgun hands, pellets). Six of
+-- each against four player radars, 160 tiles apart: both destroy them, in times within 20% of each other (DPS
+-- parity, docs/reviews/2026-10-14-identity-trees-consult.md); the pellets do not wound their own side.
+scenarios.arms = function()
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true}) end)
+  schedule(120, function()
+    S.sides = {}
+    for i, side in ipairs({{corp = "serenity", name = "lp-infantry", force = "lp-serenity", y = -80},
+                           {corp = "grubstake", name = "lp-grubstake-infantry", force = "lp-grubstake", y = 80}}) do
+      flatten(-30, side.y - 20, 30, side.y + 20)
+      local targets = {}
+      for k = 0, 3 do
+        table.insert(targets, surface().create_entity{name = "radar", position = {-6 + 4 * k, side.y}, force = "player"})
+      end
+      local units = {}
+      for k = 1, 6 do
+        local u = surface().create_entity{name = side.name, position = {-25 + (k % 3) * 2, side.y + math.floor(k / 3) * 2},
+          force = side.force}
+        u.commandable.set_command{type = defines.command.attack_area, destination = {0, side.y}, radius = 12,
+          distraction = defines.distraction.by_anything}
+        table.insert(units, u)
+      end
+      S.sides[i] = {corp = side.corp, targets = targets, units = units, hp = 6 * units[1].max_health}
+    end
+  end)
+  for t = 180, END - 120, 30 do
+    schedule(t, function()
+      for _, sd in ipairs(S.sides or {}) do
+        if not sd.done then
+          local left = 0
+          for _, e in ipairs(sd.targets) do if e.valid then left = left + 1 end end
+          if left == 0 then sd.done = game.tick - 120 end
+        end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local a, g = S.sides[1], S.sides[2]
+    local function health(sd)
+      local h = 0
+      for _, u in ipairs(sd.units) do if u.valid then h = h + u.health end end
+      return h
+    end
+    info(string.format("arms: Serenity %s ticks, Grubstake %s ticks; own health %d/%d and %d/%d", tostring(a.done),
+      tostring(g.done), health(a), a.hp, health(g), g.hp))
+    check("arms: the Line troopers destroyed their radars", a.done ~= nil, tostring(a.done))
+    check("arms: the Shotgun hands destroyed theirs", g.done ~= nil, tostring(g.done))
+    check("arms: within 20% of each other", a.done and g.done and math.abs(a.done - g.done) <= 0.2 * math.max(a.done, g.done),
+      string.format("%s vs %s", tostring(a.done), tostring(g.done)))
+    check("arms: the pellets did not wound their own side", health(g) == g.hp, health(g) .. " of " .. g.hp)
   end)
 end
 

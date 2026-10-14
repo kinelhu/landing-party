@@ -84,6 +84,39 @@ end
 local infantry = make_infantry("lp-infantry")
 local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1})
 
+-- Each corporation's own infantry (docs/reviews/2026-10-14-identity-trees-consult.md): you know who attacks by ear.
+-- Serenity's Line trooper fires a laser beam: about 7 laser a shot every 25 ticks (the laser turret's beam, 10 a hit,
+-- scaled), range 15, ammunition category laser (its research covers its laser turrets too), laser 20% resisted.
+infantry.attack_parameters = {
+  type = "beam", ammo_category = "laser", cooldown = 25, range = 15, range_mode = "bounding-box-to-bounding-box",
+  damage_modifier = 0.7, source_direction_count = 8, source_offset = {0, -0.6},
+  animation = infantry.attack_parameters.animation,
+  ammo_type = {action = {type = "direct", action_delivery = {type = "beam", beam = "laser-beam", max_length = 16,
+    duration = 20, source_offset = {0, -1}}}},
+}
+table.insert(infantry.resistances, {type = "laser", percent = 20})
+-- Grubstake's Shotgun hand: four pellets of 4 (lp-pellet), range 9, every 30 ticks, a little quicker on its feet
+-- (eight, once its pellets stopped hitting its own side, destroyed the parity targets in 420 ticks to the beam's 780;
+-- five in 540).
+-- Deadly at the fence, useless against a turret line (which its temper never attacks). Built as its infantry
+-- through its CORPS.bases (corps.lua renames it lp-grubstake-infantry).
+local shotgun_hand = make_infantry("lp-shotgun-hand")
+shotgun_hand.movement_speed = 0.13
+shotgun_hand.attack_parameters = {
+  type = "projectile", ammo_category = "shotgun-shell", cooldown = 30, range = 9, min_range = 0,
+  range_mode = "bounding-box-to-bounding-box", cooldown_deviation = 0.15,
+  sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound),
+  animation = shotgun_hand.attack_parameters.animation,
+  ammo_type = {action = {type = "direct", repeat_count = 4, action_delivery = {type = "projectile",
+    projectile = "lp-pellet", starting_speed = 1, starting_speed_deviation = 0.1, direction_deviation = 0.3,
+    range_deviation = 0.3, max_range = 11}}},
+}
+local pellet = table.deepcopy(data.raw.projectile["shotgun-pellet"])
+pellet.name = "lp-pellet"
+pellet.action.action_delivery.target_effects.damage.amount = 4
+-- Through its own side (force_condition defaults to all: six Shotgun hands lost 555 of 720 health to each other).
+pellet.force_condition = "not-same"
+
 -- Breacher: the player's infantry with demolition charges. Bullets barely scratch walls (2.4 of 6 damage), so
 -- troopers alone died in front of walled lasers (siege). A charge bursts over 2.5 (enemies
 -- only), thrown 12 tiles: walls take 63 of 100 (a segment in 8 throws, several at once), a turret 100.
@@ -224,4 +257,4 @@ buggy.resistances = {{type = "physical", decrease = 2, percent = 15}}
 tint(buggy.run_animation, {})
 tint(buggy.attack_parameters.animation, {})
 
-data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy})
+data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet})

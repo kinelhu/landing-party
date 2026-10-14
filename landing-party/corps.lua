@@ -29,7 +29,7 @@ for corp, c in pairs(shared.CORPS) do
         local p = table.deepcopy(base)
         for k, v in pairs((c.props and c.props[kind]) or {}) do p[k] = v end
         p.name = shared.variant(corp, kind)
-        p.localised_name = {"", {"entity-name." .. kind}, " (", c.name, ")"}
+        p.localised_name = {"", {"entity-name." .. ((c.names or {})[kind] or kind)}, " (", c.name, ")"}
         retint(p, (c.tints and c.tints[kind]) or c.tint, {})
         if kind == "lp-lamp" and p.light then p.light.color = c.lamp end
         if p.type == "spider-unit" and p.spider_engine then
@@ -51,7 +51,7 @@ end
 local d = shared.CORPS[shared.DEFAULT_CORP]
 for _, kind in ipairs(shared.KINDS) do
   local p = find(kind)
-  if p then p.localised_name = {"", {"entity-name." .. kind}, " (", d.name, ")"} end
+  if p then p.localised_name = {"", {"entity-name." .. ((d.names or {})[kind] or kind)}, " (", d.name, ")"} end
 end
 for kind, color in pairs(d.tints or {}) do
   local p = find(kind)

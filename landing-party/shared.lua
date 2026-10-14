@@ -16,7 +16,10 @@ shared.CORPS = {
     icon = "signal-mining", motto = "Resources in the right hands.",
     -- Architecture (docs/corporations.md): sprawl, gun turrets fed with ammunition instead of lasers, walls
     -- that are fences (half health); infantry, buggies and harriers, no tanks.
-    doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret"}, props = {["lp-wall"] = {max_health = 225}},
+    doctrines = {sprawl = 1}, bases = {["lp-turret"] = "lp-gun-turret", ["lp-infantry"] = "lp-shotgun-hand"},
+    props = {["lp-wall"] = {max_health = 225}},
+    -- Its own names for kinds (entity-name.<name>): the Shotgun hand.
+    names = {["lp-infantry"] = "lp-shotgun-hand"},
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
@@ -36,6 +39,7 @@ shared.CORPS = {
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
     doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
+    names = {["lp-infantry"] = "lp-line-trooper"},
     arch = {gates = true, baffles = true, pillboxes = true, flamers = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it

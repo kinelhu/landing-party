@@ -25,6 +25,8 @@ local WINDOW_TICKS = 30 * 3600
 -- What each unit kind fires (units.lua).
 rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier"] = "bullet",
   ["lp-tank"] = "cannon-shell", ["lp-walker"] = "rocket"}
+-- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
+rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser"}, grubstake = {["lp-infantry"] = "shotgun-shell"}}
 -- What a killer deals, by its type or name: the plate that would answer it (biters are not counted).
 local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "physical", ["electric-turret"] = "laser",
   ["fluid-turret"] = "fire", ["artillery-turret"] = "explosion", ["artillery-wagon"] = "explosion"}
@@ -70,7 +72,7 @@ end
 local function categories(corp)
   local w = {}
   for name, k in pairs(shared.CORPS[corp].mix or {}) do
-    local c = rd.CATEGORY[name]
+    local c = (rd.CORP_CATEGORY[corp] or {})[name] or rd.CATEGORY[name]
     if c then w[c] = (w[c] or 0) + k end
   end
   local out = {}
