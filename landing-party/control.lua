@@ -209,6 +209,7 @@ remote.add_interface("landing-party", {
     if t.perimeter_fast ~= nil then storage.perimeter_fast = t.perimeter_fast end
     if t.grudge_fast ~= nil then storage.grudge_fast = t.grudge_fast end
     if t.siege_tier ~= nil then storage.siege_tier = t.siege_tier end
+    if t.sneak_off ~= nil then storage.sneak_off = t.sneak_off end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     for corp, tech in pairs(t.rd_tech or {}) do rd.set(corp, tech) end

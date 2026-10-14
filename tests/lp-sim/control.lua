@@ -3076,6 +3076,89 @@ scenarios.visit = function()
   end)
 end
 
+-- Sneak: Grubstake's approach (sneaking round known turrets, breaching the wall the fewest turrets reach). The player's
+-- assembler inside a 40-tile square of stone wall, five laser turrets covering the side towards Grubstake and both
+-- flanks, the far side bare. A forced raid sneaks round the lasers' reach, breaches the far side (no turret reaches
+-- it) and razes the assembler. LP_MIX=direct: sneaking off, the same raid straight in (losses to compare).
+scenarios.sneak = function()
+  local direct = params.mix == "direct"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, raids_off = true, sneak_off = direct})
+    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
+  end)
+  schedule(3 * 3600, function()
+    local o = lp("stats", S.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 140), math.floor(o.y - uy * 140)}
+    flatten(c[1] - 45, c[2] - 45, c[1] + 45, c[2] + 45)
+    S.c = c
+    for x = -20, 20 do for y = -20, 20 do
+      if math.abs(x) == 20 or math.abs(y) == 20 then
+        surface().create_entity{name = "stone-wall", position = {c[1] + x + 0.5, c[2] + y + 0.5}, force = "player"}
+      end
+    end end
+    S.target = surface().create_entity{name = "assembling-machine-2", position = {c[1] + 0.5, c[2] + 0.5}, force = "player"}
+    -- Lasers inside the wall: the side towards Grubstake (+u) and both flanks; the far side (-u) bare.
+    local px, py = -uy, ux
+    for _, p in ipairs({{ux * 16, uy * 16}, {ux * 16 + px * 12, uy * 16 + py * 12}, {ux * 16 - px * 12, uy * 16 - py * 12},
+      {px * 16, py * 16}, {-px * 16, -py * 16}}) do
+      local tr = surface().create_entity{name = "laser-turret", position = {c[1] + p[1], c[2] + p[2]}, force = "player"}
+      -- Powered: an interface and a pole between them (without the pole the lasers never fired, and the raid razed them
+      -- on its way to its staging point).
+      if tr then
+        surface().create_entity{name = "electric-energy-interface", position = {c[1] + p[1] - 3 * ux, c[2] + p[2] - 3 * uy}, force = "player"}
+        surface().create_entity{name = "medium-electric-pole", position = {c[1] + p[1] - 1.5 * ux + 1.5, c[2] + p[2] - 1.5 * uy}, force = "player"}
+      end
+      S.lasers = (S.lasers or 0) + (tr and 1 or 0)
+    end
+    S.far = {c[1] - ux * 20, c[2] - uy * 20}
+    lp("dev", {"raid", tostring(S.id)}, c)
+    S.lost0 = lp("stats", S.id).units_lost or 0
+  end)
+  schedule(3 * 3600 + 120, function()
+    local powered = 0
+    for _, e in pairs(surface().find_entities_filtered{position = S.c, radius = 25, name = "laser-turret"}) do
+      if e.energy > 0 then powered = powered + 1 end
+    end
+    check("sneak: the lasers are powered", powered == S.lasers and powered > 0, powered .. " of " .. tostring(S.lasers))
+    local where = {}
+    for _, e in pairs(surface().find_entities_filtered{position = S.c, radius = 25, name = "laser-turret"}) do
+      table.insert(where, string.format("%.0f,%.0f", e.position.x, e.position.y))
+    end
+    info("sneak: lasers at " .. table.concat(where, " ") .. string.format("; target %d,%d", S.c[1], S.c[2]))
+  end)
+  for t = 3 * 3600 + 300, END - 120, 300 do
+    schedule(t, function()
+      local st = lp("stats", S.id)
+      if st.ops.breach_at then S.breach_at = st.ops.breach_at end
+      if st.ops.route then S.route = st.ops.route end
+      if st.ops.breached then S.breached = true end
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.id)
+    local lost = (st.units_lost or 0) - S.lost0
+    local reach = 0
+    if S.breach_at then
+      reach = surface().count_entities_filtered{position = S.breach_at, radius = 24, type = "electric-turret", force = "player"}
+    end
+    local last = st.ops.log[#st.ops.log]
+    info(string.format("sneak%s: target %s, %d units lost, route %s waypoints, breach at %s (%d lasers within 24), last %s",
+      direct and " (direct)" or "", S.target.valid and "standing" or "razed", lost, tostring(S.route),
+      S.breach_at and string.format("%.0f,%.0f", S.breach_at[1], S.breach_at[2]) or "none", reach, serpent.line(last)))
+    if direct then
+      check("sneak: the direct raid ran", last ~= nil, serpent.line(last))
+    else
+      check("sneak: it planned a route", (S.route or 0) > 0, tostring(S.route))
+      check("sneak: it breached where no laser reaches", S.breach_at ~= nil and reach == 0,
+        S.breach_at and (reach .. " lasers reach it") or "no breach")
+      check("sneak: the target was razed", not S.target.valid, "")
+    end
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()

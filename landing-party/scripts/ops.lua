@@ -674,6 +674,127 @@ local function outside(b, t, ux, uy, off, len)
   return {t.pos[1] + ux * off, t.pos[2] + uy * off}
 end
 
+-- Sneaking and breaching (Grubstake's temper; the user: "do they try to avoid turrets? And perhaps make holes in
+-- undefended sections of the wall?"). From its staging point a sneaking raid plans its approach on a SNEAK_CELL grid
+-- (A*), round every cell within a known turret's reach (REACH by type, plus SNEAK_MARGIN) and water, exposed only in
+-- the last SNEAK_OPEN tiles to the target; it walks the route as waypoints. Walls round the target (within
+-- BREACH_RADIUS): it picks the wall piece the fewest turrets can reach, knocks it and its neighbour out (a two-tile gap,
+-- buggies fit), and goes through. Serenity keeps its straight, disciplined approach.
+local SNEAK_CELL, SNEAK_MARGIN, SNEAK_OPEN, SNEAK_BOX = 6, 3, 16, 60
+local BREACH_RADIUS = 30
+local REACH = {["ammo-turret"] = 18, ["electric-turret"] = 24, ["fluid-turret"] = 30}
+
+local function sneak_route(b, from, to)
+  local s = game.surfaces[b.surface]
+  local foes = enemies(game.forces[b.force])
+  local x0 = math.min(from[1], to[1]) - SNEAK_BOX
+  local y0 = math.min(from[2], to[2]) - SNEAK_BOX
+  local w = math.ceil((math.max(from[1], to[1]) + SNEAK_BOX - x0) / SNEAK_CELL)
+  local h = math.ceil((math.max(from[2], to[2]) + SNEAK_BOX - y0) / SNEAK_CELL)
+  local turrets = s.find_entities_filtered{area = {{x0 - 30, y0 - 30}, {x0 + w * SNEAK_CELL + 30, y0 + h * SNEAK_CELL + 30}},
+    type = {"ammo-turret", "electric-turret", "fluid-turret"}, force = foes}
+  local function centre(i, j) return x0 + (i + 0.5) * SNEAK_CELL, y0 + (j + 0.5) * SNEAK_CELL end
+  local blocked = {}
+  local function open(i, j)
+    if i < 0 or j < 0 or i >= w or j >= h then return false end
+    local k = i * h + j
+    if blocked[k] == nil then
+      local cx, cy = centre(i, j)
+      local bad = false
+      if (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then
+        for _, e in ipairs(turrets) do
+          local r = (REACH[e.type] or 20) + SNEAK_MARGIN
+          if (e.position.x - cx) ^ 2 + (e.position.y - cy) ^ 2 <= r * r then bad = true; break end
+        end
+      end
+      if not bad and s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0 then
+        bad = true
+      end
+      blocked[k] = bad
+    end
+    return not blocked[k]
+  end
+  local function cell(p) return math.floor((p[1] - x0) / SNEAK_CELL), math.floor((p[2] - y0) / SNEAK_CELL) end
+  local si, sj = cell(from)
+  local ti, tj = cell(to)
+  -- A* over the grid, eight neighbours.
+  local key = function(i, j) return i * h + j end
+  local g, came, openset = {[key(si, sj)] = 0}, {}, {{si, sj}}
+  local function hdist(i, j) return math.sqrt((i - ti) ^ 2 + (j - tj) ^ 2) end
+  local closed = {}
+  local found = false
+  local steps = 0
+  while #openset > 0 and steps < 4000 do
+    steps = steps + 1
+    local bi, bf = 1
+    for n, c in ipairs(openset) do
+      local f = g[key(c[1], c[2])] + hdist(c[1], c[2])
+      if not bf or f < bf then bi, bf = n, f end
+    end
+    local c = table.remove(openset, bi)
+    local ck = key(c[1], c[2])
+    if c[1] == ti and c[2] == tj then found = true; break end
+    closed[ck] = true
+    for _, d in ipairs({{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}) do
+      local ni, nj = c[1] + d[1], c[2] + d[2]
+      local nk = key(ni, nj)
+      if not closed[nk] and ((ni == ti and nj == tj) or open(ni, nj)) then
+        local ng = g[ck] + ((d[1] ~= 0 and d[2] ~= 0) and 1.414 or 1)
+        if not g[nk] or ng < g[nk] then
+          if not g[nk] then table.insert(openset, {ni, nj}) end
+          g[nk], came[nk] = ng, ck
+        end
+      end
+    end
+  end
+  if not found then return nil end
+  -- Back from the target, every third cell a waypoint (the engine's pathfinder walks between them).
+  local cells = {}
+  local k = key(ti, tj)
+  while k do
+    table.insert(cells, 1, k)
+    k = came[k]
+  end
+  local route = {}
+  for n = 2, #cells - 1 do
+    if n % 3 == 0 then
+      local i, j = math.floor(cells[n] / h), cells[n] % h
+      local cx, cy = centre(i, j)
+      table.insert(route, {cx, cy})
+    end
+  end
+  return route
+end
+
+-- The wall piece by the target the fewest turrets can reach (ties: nearest the staging point), and its neighbour.
+local function breach_point(b, t, from)
+  local s = game.surfaces[b.surface]
+  local foes = enemies(game.forces[b.force])
+  local walls = s.find_entities_filtered{position = t.pos, radius = BREACH_RADIUS, type = {"wall", "gate"}, force = foes}
+  if #walls == 0 then return end
+  local turrets = s.find_entities_filtered{position = t.pos, radius = BREACH_RADIUS + 30,
+    type = {"ammo-turret", "electric-turret", "fluid-turret"}, force = foes}
+  local best, bc, bd
+  for n, wl in ipairs(walls) do
+    if n % 2 == 1 or #walls < 200 then
+      local c = 0
+      for _, e in ipairs(turrets) do
+        local r = REACH[e.type] or 20
+        if (e.position.x - wl.position.x) ^ 2 + (e.position.y - wl.position.y) ^ 2 <= r * r then c = c + 1 end
+      end
+      local d = (wl.position.x - from[1]) ^ 2 + (wl.position.y - from[2]) ^ 2
+      if not bc or c < bc or (c == bc and d < bd) then best, bc, bd = wl, c, d end
+    end
+  end
+  if not best then return end
+  local pieces = {best}
+  local near = s.find_entities_filtered{position = best.position, radius = 1.5, type = {"wall", "gate"}, force = foes}
+  for _, e in ipairs(near) do
+    if e ~= best and #pieces < 2 then table.insert(pieces, e) end
+  end
+  return pieces, bc
+end
+
 -- Looting (Grubstake's temper: the user's heists, folded into its identity, docs/reviews/2026-10-14-identity-trees-consult
 -- .md): a raid at the target first empties the player's chests within 16 tiles that one of its units stands by (6
 -- tiles), valuable items first, up to LOOT_ITEMS a raid; what survivors carry home becomes parts (finish), by LOOT.
@@ -742,8 +863,22 @@ local function launch(b, key, trace, army)
   local stage = outside(b, t, dx / len, dy / len, off, len)
   b.op = {kind = "raid", target = key, phase = "stage", members = members, launched = #members, staging = stage,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
-  order_all(members, {type = defines.command.go_to_location, destination = stage, radius = 6,
-    distraction = defines.distraction.by_enemy})
+  -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
+  -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).
+  if (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner) then
+    local cmds = {}
+    for _, w in ipairs(sneak_route(b, {h.position.x, h.position.y}, stage) or {}) do
+      table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4,
+        distraction = defines.distraction.by_damage})
+    end
+    table.insert(cmds, {type = defines.command.go_to_location, destination = stage, radius = 6,
+      distraction = defines.distraction.by_damage})
+    order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+      commands = cmds})
+  else
+    order_all(members, {type = defines.command.go_to_location, destination = stage, radius = 6,
+      distraction = defines.distraction.by_enemy})
+  end
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
@@ -1295,9 +1430,55 @@ local function step(b, trace, army)
       op.attacked = true
       alert(b, t, "lp.alert-raid")
       local pos = t and t.pos or op.staging
-      order_all(op.members, {type = defines.command.attack_area, destination = pos, radius = 12,
-        distraction = defines.distraction.by_anything})
-      trace(b, string.format("raid attacks with %d of %d", n, op.launched))
+      if t and (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner) then
+        local pieces, cover = breach_point(b, t, op.staging)
+        op.route = sneak_route(b, op.staging, pieces and {pieces[1].position.x, pieces[1].position.y} or pos) or {}
+        local cmds = {}
+        for _, w in ipairs(op.route) do
+          table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4,
+            distraction = defines.distraction.by_damage})
+        end
+        if pieces then
+          op.breach = pieces
+          op.breach_at = {pieces[1].position.x, pieces[1].position.y}
+          op.phase = "breach"
+          table.insert(cmds, {type = defines.command.attack, target = pieces[1], distraction = defines.distraction.by_damage})
+          trace(b, string.format("raid sneaks in by %d waypoints to breach the wall at %.0f,%.0f (%d turrets reach it)",
+            #op.route, op.breach_at[1], op.breach_at[2], cover))
+        else
+          table.insert(cmds, {type = defines.command.attack_area, destination = pos, radius = 12,
+            distraction = defines.distraction.by_anything})
+          trace(b, string.format("raid sneaks in by %d waypoints with %d of %d", #op.route, n, op.launched))
+        end
+        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+          commands = cmds})
+      else
+        order_all(op.members, {type = defines.command.attack_area, destination = pos, radius = 12,
+          distraction = defines.distraction.by_anything})
+        trace(b, string.format("raid attacks with %d of %d", n, op.launched))
+      end
+    end
+  elseif op.phase == "breach" then
+    -- Through the gap once its pieces are down; given up (and in) after STAGE_TICKS at the wall.
+    local standing
+    for _, w in ipairs(op.breach or {}) do if w.valid then standing = w end end
+    local pos = t and t.pos or op.staging
+    if n < 0.5 * op.launched then return finish(b, "aborted", trace, army) end
+    if not standing or game.tick - op.phase_at > 2 * STAGE_TICKS then
+      op.phase, op.phase_at, op.last_kill = "attack", game.tick, game.tick
+      op.breached = not standing
+      order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = {{type = defines.command.go_to_location, destination = op.breach_at, radius = 3,
+          distraction = defines.distraction.by_damage},
+          {type = defines.command.attack_area, destination = pos, radius = 12, distraction = defines.distraction.by_anything}}})
+      trace(b, string.format("raid %s the wall at %.0f,%.0f and goes in with %d of %d",
+        standing and "gave up on" or "breached", op.breach_at[1], op.breach_at[2], n, op.launched))
+    else
+      for _, u in ipairs(op.members) do
+        if u.valid and not u.commandable.has_command then
+          u.commandable.set_command{type = defines.command.attack, target = standing, distraction = defines.distraction.by_damage}
+        end
+      end
     end
   elseif op.phase == "attack" then
     if b.razed > op.kills_at then op.kills_at, op.last_kill = b.razed, game.tick end
@@ -1469,6 +1650,8 @@ function ops.summary(b)
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0,
+    route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at,
+    breached = b.op and b.op.breached,
     sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and
       {b.op.mortar.position.x, b.op.mortar.position.y} or nil}
 end

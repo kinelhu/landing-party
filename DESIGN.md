@@ -933,6 +933,18 @@ and withdraws in order; Grubstake empties chests first: the user's heists, folde
 | Walls | sieges (mortars, tiers) | Dozers, harriers over them |
 | Raids turned back | its Optics climb | Salvage rights, then Prospector's eye |
 
+- **Sneaking and breaching (built; the user: "do they try to avoid turrets? And perhaps make holes in undefended
+  sections of the wall?").** Grubstake's temper (`sneaks`): a raid marches to its staging point and then to the target
+  along a route planned on a 6-tile grid (A*) round every cell within a known turret's reach (gun 18, laser 24,
+  flamethrower 30, plus 3) and water, exposed only in the last 16 tiles; it fights only what hits it on the way (it
+  had engaged on sight, walked into five lasers on the march and lost 25 of 31 before attacking). Walls within 30
+  tiles of the target: it breaches the wall piece the fewest turrets reach, with its neighbour, then goes through.
+  Serenity keeps its straight approach. Scenario `sneak`: an assembler in a 40-tile wall square, five powered lasers
+  on the near side and flanks: the raid took 6 waypoints round them, breached the far wall (no laser reaches it),
+  razed the target, 15 of 31 lost; `sneak direct` (sneaking off), 25 lost. Shotgun hands barely scratch stone walls:
+  the breach was given up after 3 minutes and the raid went in anyway; breaching is the sappers' and the Dozer's work.
+  `scripts/play-visit.sh` opens a copy of a visited save in a window with the mod, to watch (and drive with `/lp`).
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,
