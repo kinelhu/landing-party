@@ -944,6 +944,51 @@ scenarios.train = function()
   end)
 end
 
+-- The tour (showcase, LP_MIX=tour): what the /lp dev tools act on. Between spawn and Serenity, 110 tiles from it,
+-- an outpost (a loaded gun turret, an assembler, a radar, powered); between spawn and Grubstake, 130 from it, iron
+-- with two powered drills and no turret (a strip camp's site); 200 tiles from Serenity's lander, inside an
+-- artillery turret's reach of it, the turret, empty, with shells in a chest beside it (load it to start the
+-- counter-battery and the hull).
+function tour_outposts()
+  local function toward(id, d)
+    local o = lp("stats", id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    return {math.floor(o.x - o.x / len * d), math.floor(o.y - o.y / len * d)}
+  end
+  local function put(name, x, y, items)
+    local e = surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    if e and items then e.insert(items) end
+    return e
+  end
+  local c = toward(S.tour.s, 110)
+  flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
+  put("gun-turret", c[1], c[2], {name = "firearm-magazine", count = 100})
+  put("assembling-machine-2", c[1] + 5.5, c[2] + 0.5)
+  put("radar", c[1] - 5, c[2] + 1)
+  put("medium-electric-pole", c[1] + 1.5, c[2] + 3.5)
+  put("electric-energy-interface", c[1] + 3, c[2] + 6)
+  info(string.format("tour: outpost at %d,%d", c[1], c[2]))
+  local a = toward(S.tour.s, 200)
+  flatten(a[1] - 6, a[2] - 6, a[1] + 6, a[2] + 6)
+  put("artillery-turret", a[1], a[2])
+  put("wooden-chest", a[1] + 3.5, a[2] + 0.5, {name = "artillery-shell", count = 50})
+  info(string.format("tour: artillery at %d,%d", a[1], a[2]))
+  if S.tour.g then
+    local p = toward(S.tour.g, 130)
+    flatten(p[1] - 25, p[2] - 25, p[1] + 25, p[2] + 25)
+    for x = p[1] - 20, p[1] + 19 do
+      for y = p[2] - 20, p[2] + 19 do
+        surface().create_entity{name = "iron-ore", position = {x + 0.5, y + 0.5}, amount = 2000}
+      end
+    end
+    for _, dx in ipairs({-18, -13}) do put("electric-mining-drill", p[1] + dx, p[2] - 17) end
+    put("medium-electric-pole", p[1] - 15.5, p[2] - 20.5)
+    put("electric-energy-interface", p[1] - 15, p[2] - 23)
+    info(string.format("tour: drills at %d,%d", p[1], p[2]))
+  end
+  game.forces.player.chart(surface(), {{-800, -800}, {800, 800}})
+end
+
 -- Showcase: a save to look at in game (scripts/showcase.sh runs it on a headless server, which saves at the
 -- strike). A settlement matured at once with a garrison, an uplink landed beside it (convoys), raids off;
 -- by spawn the player's barracks with 20 troopers' orders, relays, power and a rally beacon (no signal: hold;
@@ -960,6 +1005,10 @@ scenarios.showcase = function()
     if params.mix == "rivals" then
       local other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
       if other then lp("debug_depot", other, 4000) end
+    elseif params.mix == "tour" then
+      -- LP_MIX=tour: Grubstake as well, both grown; your outposts by each (tour_outposts below).
+      S.tour = {s = storage.id, g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})}
+      if S.tour.g then lp("debug_depot", S.tour.g, 4000) end
     else
       lp("arrive", 1, {x = 0, y = 0}, params.distance, {uplink = true})
     end
@@ -996,7 +1045,9 @@ scenarios.showcase = function()
     S.feed()
   end)
   for t = 1200, 6000, 600 do schedule(t, function() if S.feed then S.feed() end end) end
+  if params.mix == "tour" then schedule(STRIKE - 120, tour_outposts) end
   schedule(STRIKE, function()
+    if params.mix == "tour" then lp("debug_tune", {raids_off = false}) end
     game.forces.player.chart(surface(), {{-600, -600}, {600, 600}})
     -- Exports for half an hour of convoys (one of 1,000 parts a minute): the granted stock ran out in three.
     lp("debug_parts", storage.id, 30000)
@@ -2334,6 +2385,69 @@ scenarios.strip = function()
       check("strip: left alone twice, the camp stays as an outpost", (st.claims_settled or 0) > 0 and kept > 0,
         tostring(st.claims_settled) .. " settled, " .. kept .. " drills standing on the patch")
     end
+  end)
+end
+
+-- Dev: the /lp tools (landing-party/scripts/dev.lua) through the remote hook, as a player standing there. Serenity
+-- and Grubstake arrive; /lp land brings a second Grubstake; an outpost (a gun turret, an assembler) between spawn
+-- and Serenity, and two drills on iron towards Grubstake. Forced at once, whatever tempers and clocks say:
+-- a siege and a perimeter step from Serenity, a raid from the first Grubstake, a strip from the second.
+scenarios.dev = function()
+  schedule(120, function()
+    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    local before = lp("bases")
+    lp("dev", {"land", "grubstake", tostring(params.distance)}, {0, 0})
+    for _, id in ipairs(lp("bases")) do
+      local new = true
+      for _, o in ipairs(before) do if o == id then new = false end end
+      if new then S.g2 = id end
+    end
+  end)
+  local function toward(id, d)
+    local o = lp("stats", id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    return {math.floor(o.x - o.x / len * d), math.floor(o.y - o.y / len * d)}
+  end
+  schedule(2 * 3600, function()
+    check("dev: /lp land brought a second Grubstake", S.g2 ~= nil, tostring(S.g2))
+    local c = toward(S.s, 120)
+    flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
+    surface().create_entity{name = "gun-turret", position = {c[1], c[2]}, force = "player"}
+    surface().create_entity{name = "assembling-machine-1", position = {c[1] + 4.5, c[2] + 0.5}, force = "player"}
+    S.outpost = c
+    if S.g2 then
+      local p = toward(S.g2, 130)
+      flatten(p[1] - 25, p[2] - 25, p[1] + 25, p[2] + 25)
+      for x = p[1] - 20, p[1] + 19 do
+        for y = p[2] - 20, p[2] + 19 do
+          surface().create_entity{name = "iron-ore", position = {x + 0.5, y + 0.5}, amount = 2000}
+        end
+      end
+      for _, dx in ipairs({-18, -13}) do
+        surface().create_entity{name = "electric-mining-drill", position = {p[1] + dx, p[2] - 17}, force = "player"}
+      end
+      S.patch = p
+    end
+  end)
+  schedule(2 * 3600 + 120, function()
+    lp("dev", {"siege", tostring(S.s)}, S.outpost)
+    lp("dev", {"perimeter", tostring(S.s)}, S.outpost)
+    lp("dev", {"raid", tostring(S.g)}, S.outpost)
+    if S.g2 then lp("dev", {"strip", tostring(S.g2)}, S.patch) end
+    lp("dev", {"list"}, {0, 0})
+    local s, g, g2 = lp("stats", S.s), lp("stats", S.g), S.g2 and lp("stats", S.g2)
+    check("dev: /lp siege launched a siege", s.ops.sieges > 0, s.ops.sieges .. " sieges, " .. tostring(s.ops.op))
+    check("dev: /lp perimeter stepped the line", (s.perimeter_steps or 0) > 0, tostring(s.perimeter))
+    check("dev: /lp raid launched a raid", g.ops.launched > 0, tostring(g.ops.op))
+    check("dev: /lp strip launched a strip", g2 ~= nil and g2.ops.strips > 0, g2 and tostring(g2.ops.op) or "no base")
+  end)
+  schedule(END - 60, function()
+    local s, g2 = lp("stats", S.s), S.g2 and lp("stats", S.g2)
+    check("dev: the forced siege got to its site", s.ops.mortar ~= nil or s.ops.done + s.ops.aborted > 0,
+      tostring(s.ops.op))
+    check("dev: the forced strip put up its camp", g2 ~= nil and (g2.ops.op == "strip:mine" or g2.ops.done > 0),
+      g2 and tostring(g2.ops.op) or "no base")
   end)
 end
 

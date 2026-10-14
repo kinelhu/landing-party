@@ -2,6 +2,7 @@
 # Build a save to look at in game: the showcase scenario (tests/lp-sim) run on a headless server, which saves
 # at the strike minute; then copy it to the play profile (base game and Landing Party only).
 #   scripts/showcase.sh [seed] [minute]      then: scripts/play-showcase.sh
+#   LP_MIX=tour scripts/showcase.sh 12345 20  then: scripts/play-showcase.sh tour   (/lp dev tools' playground)
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SEED="${1:-12345}"; MINUTE="${2:-15}"
@@ -48,5 +49,6 @@ for _ in $(seq 1 600); do
 done
 sleep 5
 [ -f "$SIM/saves/lp-showcase.zip" ] || { echo "no save written"; tail -30 "$SIM/server.out"; exit 1; }
-cp "$SIM/saves/lp-showcase.zip" "$PLAY/saves/lp-showcase.zip"
-echo "saved at tick $(cat "$out/saved.txt"): $PLAY/saves/lp-showcase.zip"
+NAME="lp-${LP_MIX:-showcase}"; [ -n "${LP_MIX:-}" ] || NAME=lp-showcase
+cp "$SIM/saves/lp-showcase.zip" "$PLAY/saves/$NAME.zip"
+echo "saved at tick $(cat "$out/saved.txt"): $PLAY/saves/$NAME.zip"

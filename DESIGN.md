@@ -785,6 +785,17 @@ scenario with assertions first; the window is for art, feel and GUI.
   scenario on a headless server (fast, back to normal speed before `server_save`), copied to the play
   profile (base, Landing Party, Editor Extensions and flib copied from the real profile).
   `scripts/play-showcase.sh` opens it (from a folder with `steam_appid.txt`, so Steam does not relaunch).
+- **Dev tools** (user 2026-10-14: "dev tools to force raids and sieges instead of preparing saves that rely on
+  randomness"): `/lp` in game (admins; `scripts/dev.lua`). `list` shows every settlement (id, where, garrison,
+  parts, operation, perimeter, hull); `raid`, `siege`, `strip [id]` launch that operation now at your structure
+  nearest you (`ops.force`: temper, threat budget, cadence and stock waived; a depot, parts and the infantry it
+  lacks are given; otherwise the operation runs as a real one); `perimeter [id]` steps Serenity's line;
+  `land <corp> [tiles]` is the real arrival at that distance; `parts`, `fast` (short clocks for perimeter,
+  strip camps, phases and HQ), `provoke`, `era`, `trace`. The remote `dev(args, pos)` is the same for a player
+  that need not exist; scenario `dev` (quick regression) drives each.
+  `LP_MIX=tour scripts/showcase.sh 12345 20` then `scripts/play-showcase.sh tour`: both corporations grown, your
+  army, an outpost with a turret by Serenity, drills on iron by Grubstake, an empty artillery turret within reach
+  of Serenity's lander with shells beside it; raids on from the save.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

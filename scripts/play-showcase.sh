@@ -6,4 +6,5 @@ source "$(dirname "$0")/env.sh"
 PLAY="$HOME/Library/Application Support/factorio-lp-play"
 L="$PLAY/launch"; mkdir -p "$L"; echo 427520 > "$L/steam_appid.txt"
 cd "$L"
-exec "$FACTORIO" --config "$PLAY/config/config.ini" --load-game "$PLAY/saves/lp-showcase.zip"
+# scripts/play-showcase.sh [tour]: the save LP_MIX=tour built instead.
+exec "$FACTORIO" --config "$PLAY/config/config.ini" --load-game "$PLAY/saves/lp-${1:-showcase}.zip"

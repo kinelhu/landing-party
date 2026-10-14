@@ -7,6 +7,7 @@ local phases = require("__landing-party__.scripts.phases")
 local biters = require("__landing-party__.scripts.biters")
 faction.on_trigger = phases.trigger
 local ops = require("__landing-party__.scripts.ops")
+local dev = require("__landing-party__.scripts.dev")
 
 
 local function init()
@@ -127,6 +128,8 @@ commands.add_command("lp-land", {"lp.command-land"}, function(cmd)
   if b then faction.state() end
 end)
 
+commands.add_command("lp", {"lp.command-dev"}, dev.command)
+
 commands.add_command("lp-trace", {"lp.command-trace"}, function(cmd)
   storage.trace = not storage.trace
   game.print("landing-party trace: " .. tostring(storage.trace))
@@ -210,15 +213,9 @@ remote.add_interface("landing-party", {
   debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
-  debug_depot = function(id, parts)
-    local b = storage.bases[id]
-    local s = b.lander.surface
-    local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-depot"), {b.lander.position.x, b.lander.position.y + 16}, 30, 1)
-    local d = p and s.create_entity{name = shared.variant(b.corp, "lp-depot"), position = p, force = b.lander.force}
-    if d then table.insert(b.depots, d) end
-    b.parts = b.parts + (parts or 0)
-    return d ~= nil
-  end,
+  debug_depot = function(id, parts) return dev.depot(storage.bases[id], parts) end,
   snapshot = snapshot,
+  -- Tests: the /lp dev tools (scripts/dev.lua) at a position, as a player standing there would use them.
+  dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
 })

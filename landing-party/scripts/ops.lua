@@ -1063,6 +1063,61 @@ function ops.tick(b, tick, trace, army)
   end
 end
 
+-- Dev tools (/lp, scripts/dev.lua): an operation of this kind now, at the player structure nearest pos, whatever
+-- the settlement's temper, budget, cadence and stock. Parts and the infantry it lacks are given at its depot.
+-- Returns nil when launched, else why not (shown to the player).
+function ops.force(b, kind, pos, trace, army)
+  ops.init(b)
+  if b.op then return "busy with a " .. b.op.kind end
+  local h = home(b)
+  if not h then return "no depot" end
+  local s = game.surfaces[b.surface]
+  sense(b, s, pos, 60)
+  local best, bd
+  for key, t in pairs(b.intel.targets) do
+    if against_player(t.owner) and (kind ~= "strip" or t.value == ops.VALUE["mining-drill"]) then
+      local d = (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2
+      if d <= 60 * 60 and (not bd or d < bd) then best, bd = key, d end
+    end
+  end
+  if not best then
+    return kind == "strip" and "no drill of yours within 60 tiles" or "no structure of yours within 60 tiles"
+  end
+  local t = b.intel.targets[best]
+  t.cool, b.next_op = 0, 0
+  local site
+  if kind == "siege" then
+    site = siege_site(b, t)
+    if not site then return "no mortar site: it needs a turret of yours and ground beyond every turret's reach" end
+  elseif kind == "strip" then
+    site = strip_site(b, t)
+    if not site then return "no camp site: ore 15-45 tiles from the drill, beyond your turrets' reach" end
+  end
+  b.parts = math.max(b.parts or 0, SIEGE_COST)
+  local want = (kind == "raid" and needed(defence(b, t)) or SIEGE_GUARDS) + math.ceil(RESERVE * cap(b, army))
+  local n = 0
+  for _, u in ipairs(b.garrison) do if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then n = n + 1 end end
+  local proto = shared.variant(b.corp, "lp-infantry")
+  for _ = n + 1, want do
+    local p = s.find_non_colliding_position(proto, {h.position.x, h.position.y + 4}, 20, 0.5)
+    local u = p and s.create_entity{name = proto, position = p, force = h.force}
+    if u then
+      table.insert(b.garrison, u)
+      storage.unit_owner[u.unit_number] = b.id
+    end
+  end
+  local ok
+  if kind == "raid" then
+    -- Its reserve goes too: a forced raid is sized to the target, not to what the settlement can spare.
+    ok = launch(b, best, trace, army)
+  elseif kind == "siege" then
+    ok = launch_siege(b, best, site, trace, army)
+  else
+    ok = launch_strip(b, best, site, trace, army)
+  end
+  if not ok then return "launch failed (no room for a hauler, or too few units)" end
+end
+
 -- For stats: what the settlement knows and is doing.
 function ops.summary(b)
   local n = 0
