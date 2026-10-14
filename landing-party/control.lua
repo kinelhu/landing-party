@@ -199,6 +199,7 @@ remote.add_interface("landing-party", {
     if t.strip_fast ~= nil then storage.strip_fast = t.strip_fast end
     if t.perimeter_fast ~= nil then storage.perimeter_fast = t.perimeter_fast end
     if t.grudge_fast ~= nil then storage.grudge_fast = t.grudge_fast end
+    if t.siege_tier ~= nil then storage.siege_tier = t.siege_tier end
     -- Tests of operations' mechanics (not of tempers): every corporation already provoked by the player.
     if t.provoke then for _, c in pairs(shared.CORPS) do ops.provoke(c.force, "player") end end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end

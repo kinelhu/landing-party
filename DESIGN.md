@@ -46,6 +46,7 @@ document describes the parts as built; the campaign document describes the game 
 | Drop escort: a landing brings units and four corner turrets (20 minutes) | built | `grudge`, `rivals` |
 | Dev tools: `/lp` forces operations, perimeter steps, landings, grudges | built | `dev` |
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
+| Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -759,7 +760,7 @@ corporations could steal what is valuable (a chest of circuits, fuel cells, a Ko
 should come for destruction, several mortars late. Fable's build order: weighted defence, siege tiers, heists.
 - **Weighted defence (built).** A target's defence is the sum of its turrets' weights within 30 tiles (`ops.weigh`):
   gun 1, laser 1.5, flamethrower 2.5, artillery 0, each times (1 + its force's ammo damage modifier for bullets,
-  lasers or flamethrowers); `needed(d) = ceil(5d) + 4`. Units count at the staging look only (they move): characters
+  lasers or flamethrowers); `needed(d) = ceil(3.5d) + 4`. Units count at the staging look only (they move): characters
   and units 0.5, cars and tanks 1.5, spidertrons 3, within 40 tiles, remembered 5 minutes; the turn-back test and the
   next sizing include them. Grubstake's soft-only temper still reads turrets alone. Scenario `weigh`: three guns need
   19, three flamethrowers 42, guns with bullet damage +0.7 need 30; a spidertron parked at an undefended relay turns
@@ -768,8 +769,33 @@ should come for destruction, several mortars late. Fable's build order: weighted
   turrets with bullet damage +0.8 (`defend`): with research now in the weight (x1.8) it counted twice, and the
   raid needed 31. At 3 it needs 21, and self-defence (a battery, or a static threat on the settlement's ground:
   turret creep) now takes the reserve too (a garrison of 28 kept 9 home and fielded 19). Measured: 21 sent, the
-  three turrets destroyed, 7 back, the losses that set the old calibration. `weigh` now expects 13, 27 and 20.
-- **Siege tiers** and **heists**: next (see the consult).
+  three turrets destroyed, 7 back, the losses that set the old calibration. `weigh` expected 13, 27 and 20; at 3.5 (below) 15, 31 and 22.
+- **Siege tiers (built).** A siege's tier is the corporation's level, held to the target player's era + 1, one up for
+  a grudge, then down to what its parts and field afford (`SIEGE_TIERS`): 1 mortar, 30 shells, 6 guards, 100
+  parts; 2 mortars x 40, 10 guards, 220, a convoy; 3 x 40, 16 guards, 400, a convoy, an assault; 4 x 30, 24 guards,
+  600, a convoy. At most 160 shells a siege and one siege against a player force at a time across corporations (a
+  battery excepted). **Resupply:** when the first mortar is spent and a turret is still in reach, a hauler sets out
+  with 40 shells for the spent mortars; a dead convoy ends resupply. **Moving up** (two mortars and more, once):
+  nothing in reach for 30 s with shells left, the mortars pack and the hauler carries them to a new site in reach of
+  what still stands (two mortars had spent 12 of 80 shells on the near side of a square and packed up).
+  **Assault** (tier 3 and up): after that, nothing in reach for 30 s, the guards and what the garrison can add,
+  sized to the target's remaining defence, attack from the site (a phase of the same operation, so it counts once
+  against the budget); it ends when nothing is left within 16 tiles, after 90 s without a kill, or at half strength.
+  A tank sally still kills a mortar in seconds. Scenario `siegetier` (four variants, quick regression), on bombard's
+  walled square of 8 gun turrets, forced with `/lp siege` (weighted, those 8 turrets now need a raid of 28, which a
+  grown garrison affords, so it raids instead): tier 2 two mortars, the player rebuilding turrets, a convoy
+  resupplies; tier 3 three mortars, then the assault razes; a sally of two battle tanks kills a tier-1 mortar and
+  the siege aborts; a killed convoy, nothing more loaded (80).
+- **Open, found while calibrating (`defend`).** Three gun turrets with bullet damage +0.8 and shooting speed +0.6:
+  at 3 a unit of defence the raid of 21 won once and lost once, at 3.5 the raid of 23 lost (seven back) and the
+  outpost's own turrets finished the creep. With shooting speed in the weight (x2.88, true firepower) they need 35,
+  more than the garrison, and the siege that follows sends its hauler to a site inside the settlement's own walls,
+  where it never deploys. Weight kept on damage alone, 3.5 a unit, until corporation research (the user's idea, next)
+  lets the corporation's units answer the player's research instead of raids growing without bound.
+- **Placement makes way.** A building the settlement plans packs up a drop turret standing where it goes and moves
+  its own units aside (the corner turrets had made the pad's walls, turrets and flamer be skipped for good). Three pad
+  walls are still skipped on seed 12345, blocked by the settlement's own pylons: a layout overlap, older than this.
+- **Heists**: next (see the consult).
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

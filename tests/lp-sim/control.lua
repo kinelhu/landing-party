@@ -1354,6 +1354,100 @@ scenarios.abort = function()
   end)
 end
 
+-- Siege tiers (docs/reviews/2026-10-14-operations-depth-consult.md), on bombard's walled position of 8 gun turrets.
+-- LP_MIX=2: two mortars, more than one mortar's 30 shells fired. LP_MIX=3: three mortars, then the assault goes in
+-- from the site and razes something. LP_MIX=sally: a tier-1 mortar killed by two battle tanks 20 tiles off, and the
+-- siege aborts. LP_MIX=convoy: tier 2, the shell convoy is killed on the way, and nothing more is loaded.
+scenarios.siegetier = function()
+  local tier = ({["2"] = 2, ["3"] = 3, sally = 1, convoy = 2})[params.mix] or 2
+  -- Forced (/lp siege) with raids off: weighted, eight gun turrets need a raid of 28, which a grown garrison affords.
+  schedule(30, function() lp("debug_tune", {corp_level = {serenity = 3}, siege_tier = tier, era = 4, raids_off = true}) end)
+  schedule(60, function()
+    for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+  end)
+  schedule(5 * 3600, function() lp("dev", {"siege", tostring(storage.id)}, S.c) end)
+  schedule(120, function()
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local L = lander.position
+    local len = math.sqrt(L.x * L.x + L.y * L.y)
+    local c = {math.floor(L.x - L.x / len * 150), math.floor(L.y - L.y / len * 150)}
+    flatten(c[1] - 20, c[2] - 20, c[1] + 20, c[2] + 20)
+    S.c = c
+    for x = -12, 12 do for y = -12, 12 do
+      if math.abs(x) == 12 or math.abs(y) == 12 then
+        surface().create_entity{name = "stone-wall", position = {c[1] + x, c[2] + y}, force = "player"}
+      end
+    end end
+    S.put = function()
+      for _, p in ipairs({{-9, -9}, {9, -9}, {-9, 9}, {9, 9}, {0, -9}, {0, 9}, {-9, 0}, {9, 0}}) do
+        if surface().count_entities_filtered{position = {c[1] + p[1], c[2] + p[2]}, radius = 0.5, name = "gun-turret"} == 0 then
+          local t = surface().create_entity{name = "gun-turret", position = {c[1] + p[1], c[2] + p[2]}, force = "player"}
+          if t then t.insert{name = "piercing-rounds-magazine", count = 200} end
+        end
+      end
+    end
+    S.put()
+    for _, p in ipairs({{-3, -3}, {3, 3}}) do
+      surface().create_entity{name = "assembling-machine-1", position = {c[1] + p[1] + 0.5, c[2] + p[2] + 0.5}, force = "player"}
+    end
+  end)
+  for t = 600, END - 120, 60 do
+    schedule(t, function()
+      -- Tiers 2 and the convoy: the player rebuilds lost turrets each minute (robots), so the mortars run dry.
+      if (params.mix == "2" or params.mix == "convoy") and S.put then S.put() end
+      local o = lp("stats", storage.id).ops
+      S.max_mortars = math.max(S.max_mortars or 0, o.mortars or 0)
+      S.max_fired = math.max(S.max_fired or 0, o.shells_fired or 0)
+      S.max_loaded = math.max(S.max_loaded or 0, o.loaded or 0)
+      if o.siege_tier then S.tier = o.siege_tier end
+      if params.mix == "sally" and o.mortar and not S.sallied then
+        S.sallied = true
+        local m = o.mortar
+        local len = math.sqrt((m[1] - S.c[1]) ^ 2 + (m[2] - S.c[2]) ^ 2)
+        local from = {m[1] + (S.c[1] - m[1]) / len * 20, m[2] + (S.c[2] - m[2]) / len * 20}
+        for _, u in ipairs(spawn("lp-battle-tank", from, 2, "player")) do
+          local target = surface().find_entities_filtered{position = m, radius = 3, type = "artillery-turret", limit = 1}[1]
+          if target then u.commandable.set_command{type = defines.command.attack, target = target} end
+        end
+        S.sally_at = game.tick
+      end
+      if params.mix == "convoy" and o.mortar then
+        for _, h in pairs(surface().find_entities_filtered{force = FORCE, name = "lp-hauler"}) do
+          local d = math.sqrt((h.position.x - o.mortar[1]) ^ 2 + (h.position.y - o.mortar[2]) ^ 2)
+          if d > 25 and (o.convoys_left or 1) == 0 and not S.convoy_killed then
+            h.die("player")
+            S.convoy_killed = game.tick
+          end
+        end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local o = st.ops
+    local siege
+    for _, l in ipairs(o.log) do if l.op == "siege" then siege = l end end
+    info("siegetier: " .. serpent.line({tier = S.tier, mortars = S.max_mortars, fired = S.max_fired, loaded = S.max_loaded,
+      assaults = o.assaults, razed = o.assault_razed, siege = siege}))
+    check("siegetier: a siege of the tier asked for", S.tier == tier, tostring(S.tier))
+    if params.mix == "2" or params.mix == "" then
+      check("siegetier: two mortars", S.max_mortars == 2, tostring(S.max_mortars))
+      check("siegetier: more than one mortar's shells fired", (S.max_fired or 0) > 40, tostring(S.max_fired))
+    elseif params.mix == "3" then
+      check("siegetier: three mortars", S.max_mortars == 3, tostring(S.max_mortars))
+      check("siegetier: the assault went in", (o.assaults or 0) > 0, tostring(o.assaults))
+      check("siegetier: the assault razed something", (o.assault_razed or 0) > 0, tostring(o.assault_razed))
+    elseif params.mix == "sally" then
+      check("siegetier: the sally killed the mortar and the siege aborted", siege and siege.outcome == "aborted"
+        and surface().count_entities_filtered{type = "artillery-turret", force = FORCE} == 0,
+        siege and siege.outcome or "not finished")
+    elseif params.mix == "convoy" then
+      check("siegetier: the convoy was killed", S.convoy_killed ~= nil, tostring(S.convoy_killed))
+      check("siegetier: nothing more was loaded", (S.max_loaded or 0) == 80, tostring(S.max_loaded))
+    end
+  end)
+end
+
 -- Mortar (spike): does a faction mortar with shells find and shell a player turret 30 tiles away on its own?
 scenarios.mortar = function()
   schedule(60, function()
@@ -2533,7 +2627,8 @@ scenarios.grudge = function()
 end
 
 -- Weigh: raids sized by weighted defence (docs/reviews/2026-10-14-operations-depth-consult.md). Three gun turrets need
--- 13 (3 x 3 + 4), three flamethrowers 27 (3 x 7.5 + 4); bullet damage +0.7 makes the guns' 13 into 20. A spidertron
+-- 15 (3.5 x 3 + 4, rounded up), three flamethrowers 31 (3.5 x 7.5 + 4); bullet damage +0.7 makes the guns' 15 into 22.
+-- A spidertron
 -- parked at an undefended relay turns a forced raid back at its staging look, unhurt.
 scenarios.weigh = function()
   schedule(600, function()
@@ -2556,11 +2651,11 @@ scenarios.weigh = function()
   end)
   schedule(700, function()
     local g, f = lp("debug_needed", storage.id, S.guns), lp("debug_needed", storage.id, S.flames)
-    check("weigh: three gun turrets need 13", g and g.needed == 13, serpent.line(g))
-    check("weigh: three flamethrowers need 27", f and f.needed == 27, serpent.line(f))
+    check("weigh: three gun turrets need 15", g and g.needed == 15, serpent.line(g))
+    check("weigh: three flamethrowers need 31", f and f.needed == 31, serpent.line(f))
     game.forces.player.set_ammo_damage_modifier("bullet", 0.7)
     local g2 = lp("debug_needed", storage.id, S.guns)
-    check("weigh: bullet damage +0.7 makes it 20", g2 and g2.needed == 20, serpent.line(g2))
+    check("weigh: bullet damage +0.7 makes it 22", g2 and g2.needed == 22, serpent.line(g2))
     lp("dev", {"raid", tostring(storage.id)}, S.relay)
     S.launched = lp("stats", storage.id).ops.launched
   end)

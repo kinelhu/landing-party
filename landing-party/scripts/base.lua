@@ -316,12 +316,38 @@ end
 
 
 -- Place one entity for a job. Returns the entity, or nil when the spot is blocked.
+-- The drop's turrets and the settlement's own units give way to what it builds: a corner turret where the pad's wall
+-- goes is packed up, units standing there step aside (with a drop escort, the pad's walls, turrets and flamer were
+-- skipped for good: siegetier).
+local function make_way(b, surface, name, pos)
+  local cb = prototypes.entity[name].collision_box
+  -- Two tiles of margin: a tank's box reaches past its position.
+  local area = {{pos[1] + cb.left_top.x - 2, pos[2] + cb.left_top.y - 2},
+    {pos[1] + cb.right_bottom.x + 2, pos[2] + cb.right_bottom.y + 2}}
+  for _, e in pairs(surface.find_entities_filtered{area = area, force = force(b)}) do
+    if e.type == "unit" or e.type == "spider-unit" then
+      local p = surface.find_non_colliding_position(e.name, {pos[1], pos[2] + 10}, 16, 1)
+      if p then e.teleport(p) end
+    else
+      for i, t in ipairs(b.camp_turrets or {}) do
+        if t == e then
+          table.remove(b.camp_turrets, i)
+          for j = #b.turrets, 1, -1 do if b.turrets[j] == e then table.remove(b.turrets, j) end end
+          e.destroy()
+          break
+        end
+      end
+    end
+  end
+end
+
 local function place(b, job)
   local surface = game.surfaces[b.surface]
   local pos = job.pos
   -- Jobs name kinds; the corporation's own prototype is what is built.
   local name = shared.variant(b.corp, job.name)
   clear_area(surface, name, pos)
+  make_way(b, surface, name, pos)
   if job.loose then pos = surface.find_non_colliding_position(name, pos, 4, 0.5) or pos end
   local ok = surface.can_place_entity{name = name, position = pos, direction = job.dir, force = force(b)}
   local e = ok and surface.create_entity{name = name, position = pos, direction = job.dir, force = force(b),

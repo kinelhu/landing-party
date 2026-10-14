@@ -21,10 +21,11 @@ local DEFENCE_RADIUS = 30             -- turrets this close to a target defend i
 local MARKER_TICKS = 20 * 60 * 60     -- a death marker counts this long
 local DECIDE_TICKS = 30 * 60
 local RESERVE = 0.3                   -- share of the garrison cap that never leaves on an operation
--- Force needed: 3 a unit of weighted defence (ops.weigh), plus 4. Three a turret (assault: 12 took four); 5 once
+-- Force needed: 3.5 a unit of weighted defence (ops.weigh), plus 4. Three a turret (assault: 12 took four); 5 once
 -- lost to upgraded ammunition (18 units against three creeping turrets with bullet damage +0.8 lost two thirds,
--- defend), and with research now in the weight (x1.8 there) 5 counted it twice: back to 3.
-local PER_TURRET, BASE_FORCE = 3, 4
+-- defend), and with research now in the weight (x1.8 there) 5 counted it twice. At 3, the 21 sent there won once
+-- and lost once (two thirds dead either way): 3.5 sends 23.
+local PER_TURRET, BASE_FORCE = 3.5, 4
 local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground stays a priority this long
 local THREAT_BONUS = 10               -- value added to targets by it
 local STAND_OFF = 34                  -- staging this far from the target: a laser's 24 and 10 to spare
@@ -50,6 +51,19 @@ local PACK_TICKS = 10 * 60
 local PLAYER_REACH = 31
 local MORTAR_REACH = 35
 local SIEGE_MAX_TICKS = 15 * 60 * 60
+-- Siege tiers (docs/reviews/2026-10-14-operations-depth-consult.md): by the corporation's level, held to the target
+-- player's era + 1, one up for a grudge. Mortars, shells each, guards, parts; resupply convoys (a hauler with
+-- RESUPPLY shells when the mortars are spent and a turret is still in reach; a dead convoy ends resupply); an
+-- assault from the site once nothing is in reach for ASSAULT_IDLE (a phase of the same operation). Shells per siege
+-- at most SHELLS_CAP. A tank sally still kills a mortar in seconds.
+local SIEGE_TIERS = {
+  {mortars = 1, shells = 30, guards = 6, cost = 100},
+  {mortars = 2, shells = 40, guards = 10, cost = 220, convoys = 1},
+  {mortars = 3, shells = 40, guards = 16, cost = 400, convoys = 1, assault = true},
+  {mortars = 4, shells = 30, guards = 24, cost = 600, convoys = 1, assault = true},
+}
+local RESUPPLY, SHELLS_CAP = 40, 160
+local ASSAULT_IDLE = 30 * 60
 -- Strip-mining (Grubstake's temper): a hauler and guards set up a camp on ore beside the player's drills, out of
 -- their turrets' reach (a generator, a pylon, drills over bins), mine the real patch for STRIP_TICKS, pack up,
 -- and the hauler carries the ore home as feedstock (lost if it dies on the way).
@@ -87,6 +101,8 @@ function ops.weigh(surface, pos, forces, r)
   local w = 0
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r or DEFENCE_RADIUS, force = forces, type = TURRETS}) do
     local k = WEIGHT[e.type]
+    -- Damage research only: with shooting speed as well (x2.88 for defend's guns) a mature garrison could raid nothing
+    -- and its siege never deployed; corporation research (to come) is to answer the player's, not raid size alone.
     if k and k[1] > 0 then w = w + k[1] * (1 + (k[2] and e.force.get_ammo_damage_modifier(k[2]) or 0)) end
   end
   return w
@@ -533,6 +549,15 @@ local function finish(b, outcome, trace, army)
   local op = b.op
   local h = home(b)
   if op.mortar and op.mortar.valid then op.mortar.destroy() end
+  for _, m in ipairs(op.mortars or {}) do if m.valid then m.destroy() end end
+  if op.convoy and op.convoy.valid then
+    b.haulers_home = b.haulers_home or {}
+    table.insert(b.haulers_home, {unit = op.convoy, till = game.tick + 3 * 3600})
+    if h then
+      op.convoy.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 12,
+        distraction = defines.distraction.none}
+    end
+  end
   if op.hauler and op.hauler.valid then
     -- The hauler drives home and is stood down there (it joins no garrison).
     b.haulers_home = b.haulers_home or {}
@@ -692,6 +717,14 @@ local function siege_site(b, t)
   end
 end
 
+-- At most one siege against a player force at a time, across corporations (a battery excepted).
+local function besieged(owner)
+  for _, o in pairs(storage.bases) do
+    local t = o.op and o.op.kind == "siege" and o.intel and o.intel.targets[o.op.target]
+    if t and t.owner == owner then return true end
+  end
+end
+
 local function choose_siege(b, army, only_battery)
   if (b.parts or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
   -- A capability, not every corporation's (Serenity's from level 1; Grubstake never besieges).
@@ -707,6 +740,7 @@ local function choose_siege(b, army, only_battery)
   for key, t in pairs(b.intel.targets) do
     if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))
       and not (against_player(t.owner) and in_flight >= budget(t.owner) and not battery(t))
+      and not (against_player(t.owner) and not battery(t) and besieged(t.owner))
       and (not against_player(t.owner) or not (shared.CORPS[b.corp].temper or {}).provoked_only
         or (storage.corps[b.corp].provoked or {})[t.owner]) then
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
@@ -720,8 +754,24 @@ local function choose_siege(b, army, only_battery)
   return best, site
 end
 
+-- The tier this settlement can mount against t now: its level, held to a player's era + 1, a grudge one up, then down
+-- to what its parts and field afford.
+local function siege_tier(b, t, army)
+  local k = math.max(1, army.level(b))
+  if against_player(t.owner) then k = math.min(k, budget(t.owner)) end
+  if b.grudge then k = k + 1 end
+  k = math.min(k, #SIEGE_TIERS)
+  local n, reserve = field(b, army)
+  if battery(t) then n = n + reserve end
+  while k > 1 and ((b.parts or 0) < SIEGE_TIERS[k].cost or n < SIEGE_TIERS[k].guards) do k = k - 1 end
+  return k
+end
+ops.siege_tier = siege_tier
+
 local function launch_siege(b, key, site, trace, army)
   local t = b.intel.targets[key]
+  local tier = storage.siege_tier or siege_tier(b, t, army)
+  local spec = SIEGE_TIERS[tier]
   local h = home(b)
   local s = game.surfaces[b.surface]
   local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {h.position.x + (site[1] - h.position.x) * 0.1,
@@ -730,13 +780,14 @@ local function launch_siege(b, key, site, trace, army)
   if not hauler then return false end
   local guards = {}
   for i = #b.garrison, 1, -1 do
-    if #guards >= SIEGE_GUARDS then break end
+    if #guards >= spec.guards then break end
     local u = b.garrison[i]
     if u.valid and u.type == "unit" then table.insert(guards, table.remove(b.garrison, i)) end
   end
-  b.parts = b.parts - SIEGE_COST
+  b.parts = math.max(0, b.parts - spec.cost)
   b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
-    site = site, started = game.tick, phase_at = game.tick, shells_fired = 0}
+    site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
+    convoys_left = spec.convoys or 0}
   hauler.commandable.set_command{type = defines.command.go_to_location, destination = site, radius = 2,
     distraction = defines.distraction.none}
   order_all(guards, {type = defines.command.go_to_location, destination = hauler.position, radius = 6,
@@ -744,8 +795,8 @@ local function launch_siege(b, key, site, trace, army)
   b.ops_launched = b.ops_launched + 1
   b.sieges = (b.sieges or 0) + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
-  trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f): a mortar to %.0f,%.0f, %d guards", t.kind,
-    t.pos[1], t.pos[2], t.value, t.defence or 0, site[1], site[2], #guards))
+  trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f): tier %d, %d mortars to %.0f,%.0f, %d guards",
+    t.kind, t.pos[1], t.pos[2], t.value, t.defence or 0, tier, spec.mortars, site[1], site[2], #guards))
   return true
 end
 
@@ -785,33 +836,162 @@ local function siege_step(b, trace, army)
     if op.label and op.label.valid then op.label.text = string.format("Deploying %d%%", math.min(100, share * 100)) end
     if share >= 1 then
       local s = op.hauler.surface
-      local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-mortar"), op.site, 8, 0.5)
-      op.mortar = p and s.create_entity{name = shared.variant(b.corp, "lp-mortar"), position = p, force = op.hauler.force}
+      local spec = SIEGE_TIERS[op.tier or 1]
+      local name = shared.variant(b.corp, "lp-mortar")
+      local carry = op.carry
+      op.mortars, op.carry = {}, nil
+      if not carry then op.loaded = 0 end
+      for k = 1, (carry and #carry or spec.mortars) do
+        local a = 2 * math.pi * k / spec.mortars
+        local off = spec.mortars > 1 and 4 or 0
+        local p = s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
+        local m = p and s.create_entity{name = name, position = p, force = op.hauler.force}
+        if m then
+          local shells = carry and carry[k] or spec.shells
+          if shells > 0 then m.insert{name = "lp-mortar-shell", count = shells} end
+          if not carry then op.loaded = op.loaded + shells end
+          table.insert(op.mortars, m)
+        end
+      end
+      op.mortar = op.mortars[1]
       if not op.mortar then return finish(b, "aborted", trace, army) end
-      op.mortar.insert{name = "lp-mortar-shell", count = SIEGE_SHELLS}
       if op.label and op.label.valid then op.label.destroy() end
       op.phase, op.phase_at = "bombard", game.tick
       alert(b, b.intel.targets[op.target], "lp.alert-siege", op.site)
-      trace(b, string.format("siege: the mortar is up with %d shells", SIEGE_SHELLS))
+      trace(b, string.format("siege: %d mortars up with %d shells", #op.mortars, op.loaded - op.shells_fired))
     end
-  elseif op.phase == "bombard" then
-    if not op.mortar.valid then
-      trace(b, "siege: the mortar was destroyed")
+  elseif op.phase == "bombard" or op.phase == "assault" then
+    local live = {}
+    for _, m in ipairs(op.mortars or {op.mortar}) do if m.valid then table.insert(live, m) end end
+    op.mortars, op.mortar = live, live[1]
+    if not op.mortar and op.phase == "bombard" then
+      trace(b, "siege: the mortars were destroyed")
       return finish(b, "aborted", trace, army)
     end
-    local left = op.mortar.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell")
-    op.shells_fired = SIEGE_SHELLS - left
+    local left, empty = 0, {}
+    for _, m in ipairs(live) do
+      local k = m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell")
+      left = left + k
+      if k == 0 then table.insert(empty, m) end
+    end
+    op.shells_fired = (op.loaded or SIEGE_SHELLS) - left
+    local s = game.surfaces[b.surface]
+    local foes = enemies(game.forces[b.force])
     -- Nothing left in reach for a minute: done (with eight shells fired and every turret in reach destroyed,
     -- a mortar sat idle until the siege timed out).
-    local in_reach = op.mortar.surface.count_entities_filtered{position = op.mortar.position, radius = MORTAR_REACH,
-      type = TURRETS, force = enemies(op.mortar.force)}
+    local in_reach = 0
+    for _, m in ipairs(live) do
+      in_reach = in_reach + s.count_entities_filtered{position = m.position, radius = MORTAR_REACH, type = TURRETS, force = foes}
+    end
     if in_reach > 0 then op.last_target = game.tick end
-    local idle = game.tick - (op.last_target or op.phase_at) > 60 * 60
-    if left == 0 or idle or n < 0.5 * op.launched then
-      op.phase, op.phase_at = "pack", game.tick
-      op.packing_because = left == 0 and "spent" or (idle and "done" or "aborted")
-      trace(b, string.format("siege: packing up (%s; %d shells fired, %d of %d guards)", op.packing_because,
-        op.shells_fired, n, op.launched))
+    -- Resupply: a convoy of shells when the mortars are spent and a turret is still in reach.
+    if op.convoy and not op.convoy.valid then
+      trace(b, "siege: the shell convoy was destroyed; no more resupply")
+      op.convoy, op.convoys_left = nil, 0
+    elseif op.convoy then
+      local cp = op.convoy.position
+      if not op.convoy.commandable.has_command then
+        op.convoy.commandable.set_command{type = defines.command.go_to_location, destination = op.site, radius = 2,
+          distraction = defines.distraction.none}
+      end
+      if (cp.x - op.site[1]) ^ 2 + (cp.y - op.site[2]) ^ 2 < 8 * 8 and op.mortar then
+        -- To the spent mortars (every one, if none is spent by now).
+        local to = #empty > 0 and empty or live
+        local each = math.floor(RESUPPLY / #to)
+        for _, m in ipairs(to) do m.insert{name = "lp-mortar-shell", count = each} end
+        op.loaded = op.loaded + each * #to
+        left = left + each * #to
+        b.haulers_home = b.haulers_home or {}
+        table.insert(b.haulers_home, {unit = op.convoy, till = game.tick + 3 * 3600})
+        local h = home(b)
+        if h then
+          op.convoy.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 12,
+            distraction = defines.distraction.none}
+        end
+        op.convoy = nil
+        trace(b, string.format("siege: resupplied, %d shells", each * #to))
+      end
+    elseif #empty > 0 and in_reach > 0 and (op.convoys_left or 0) > 0 and (op.loaded or 0) + RESUPPLY <= SHELLS_CAP then
+      local h = home(b)
+      local p = h and s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), h.position, 20, 0.5)
+      op.convoy = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
+      if op.convoy then
+        op.convoys_left = op.convoys_left - 1
+        op.convoy.commandable.set_command{type = defines.command.go_to_location, destination = op.site, radius = 2,
+          distraction = defines.distraction.none}
+        trace(b, "siege: a shell convoy sets out")
+      end
+    end
+    local spec = SIEGE_TIERS[op.tier or 1]
+    local t = b.intel.targets[op.target]
+    if op.phase == "bombard" then
+      -- Moving up (tier 2 and up, once): nothing in reach for ASSAULT_IDLE with shells left, the mortars pack and the
+      -- hauler takes them to a site in reach of what still stands (two mortars spent 12 of 80 shells on the near
+      -- side of a square and packed up).
+      if spec.mortars > 1 and not op.moved and left > 0 and op.hauler and op.hauler.valid and t
+        and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE then
+        local site = siege_site(b, t)
+        op.moved = true
+        if site and (site[1] - op.site[1]) ^ 2 + (site[2] - op.site[2]) ^ 2 > 8 * 8 then
+          op.carry = {}
+          for _, m in ipairs(live) do
+            table.insert(op.carry, m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell"))
+            m.destroy()
+          end
+          op.mortars, op.mortar, op.site = {}, nil, site
+          op.phase, op.phase_at, op.last_target = "march", game.tick, nil
+          op.hauler.commandable.set_command{type = defines.command.go_to_location, destination = site, radius = 2,
+            distraction = defines.distraction.none}
+          trace(b, string.format("siege: moving up to %.0f,%.0f with %d shells", site[1], site[2], left))
+          return
+        end
+      end
+      -- The assault (tier 3 and up): nothing in reach for ASSAULT_IDLE after the mortars had targets, and the guards
+      -- go in with what the garrison can add, sized to what is left at the target.
+      if spec.assault and op.last_target and in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE and t then
+        local want = needed(defence(b, t))
+        for i = #b.garrison, 1, -1 do
+          if #op.members >= want then break end
+          local u = b.garrison[i]
+          if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then
+            table.insert(op.members, table.remove(b.garrison, i))
+          end
+        end
+        op.launched = #op.members
+        op.phase, op.phase_at, op.last_kill, op.kills_at, op.razed_before = "assault", game.tick, game.tick, b.razed, b.razed
+        b.assaults = (b.assaults or 0) + 1
+        order_all(op.members, {type = defines.command.attack_area, destination = t.pos, radius = 16,
+          distraction = defines.distraction.by_anything})
+        alert(b, t, "lp.alert-raid")
+        trace(b, string.format("siege: the assault goes in with %d units", #op.members))
+        return
+      end
+      local idle = game.tick - (op.last_target or op.phase_at) > 60 * 60
+      local waiting = op.convoy ~= nil
+      if (left == 0 and not waiting) or idle or n < 0.5 * op.launched then
+        op.phase, op.phase_at = "pack", game.tick
+        op.packing_because = left == 0 and "spent" or (idle and "done" or "aborted")
+        trace(b, string.format("siege: packing up (%s; %d shells fired, %d of %d guards)", op.packing_because,
+          op.shells_fired, n, op.launched))
+      end
+    else
+      if b.razed > op.kills_at then op.kills_at, op.last_kill = b.razed, game.tick end
+      local remaining = t and s.count_entities_filtered{position = t.pos, radius = 16, type = TYPES, force = foes} or 0
+      local done = remaining == 0 or game.tick - op.last_kill > NO_KILL_TICKS
+      if done or n < 0.5 * op.launched then
+        op.phase, op.phase_at = "pack", game.tick
+        op.packing_because = done and "done" or "aborted"
+        b.assault_razed = (b.assault_razed or 0) + b.razed - op.razed_before
+        trace(b, string.format("siege: the assault ends (%s; %d of %d left, %d left standing at the target)",
+          op.packing_because, n, op.launched, remaining))
+        return
+      end
+      for _, u in ipairs(op.members) do
+        if u.valid and not u.commandable.has_command and t then
+          u.commandable.set_command{type = defines.command.attack_area, destination = t.pos, radius = 16,
+            distraction = defines.distraction.by_anything}
+        end
+      end
     end
   elseif op.phase == "pack" then
     if game.tick - op.phase_at >= PACK_TICKS then return finish(b, op.packing_because, trace, army) end
@@ -1180,6 +1360,9 @@ function ops.summary(b)
   local t = b.op and b.intel.targets[b.op.target]
   return {known = n, op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
+    siege_tier = b.op and b.op.tier, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
+    convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
+    shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and
       {b.op.mortar.position.x, b.op.mortar.position.y} or nil}
 end
