@@ -27,6 +27,8 @@ at milestones, asked for.
   perimeter steps and landings on demand. Prefer them to saves timed so an event happens after loading. The
   playground: `LP_MIX=tour scripts/showcase.sh 12345 20`, then `scripts/play-showcase.sh tour`. A new mechanic
   worth looking at gets a `/lp` verb, and a check in scenario `dev`.
+- **Real factories: `scripts/visit.sh <save.zip> [minutes]`** runs the corporations against a copy of a real save in
+  its own profile (never the real profile or the original file; ask the user before copying one of theirs).
 - Waiting on background runs: never `pgrep -f` a pattern that appears in the waiting command itself (it
   matches its own shell and never ends); wait on the run's process or its output file.
 - Forks: `scripts/fork.sh <scenario> <seed> <strike>` saves a scenario 6 minutes before its strike once

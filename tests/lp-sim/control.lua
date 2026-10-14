@@ -3007,6 +3007,75 @@ scenarios.arc = function()
   end)
 end
 
+-- Visit: the corporations against a real player's factory (scripts/visit.sh loads a copy of a real save, adds the mod).
+-- No live player: only the factory's own turrets and robots answer. Serenity lands beyond the factory (its spawn,
+-- out past the 95th percentile of its drills, machines and poles, plus 150), Grubstake 20 minutes later; the
+-- faction's own cadence lands more. Every 10 minutes a line of timeline.jsonl (operations, razed, looted, the
+-- player's buildings); at the end, each settlement's story in results.txt.
+scenarios.visit = function()
+  local KEY = {"mining-drill", "assembling-machine", "furnace", "lab", "electric-pole", "ammo-turret", "electric-turret",
+    "fluid-turret", "artillery-turret", "roboport", "container", "logistic-container", "wall"}
+  local function census()
+    local c = {}
+    for _, t in ipairs(KEY) do c[t] = surface().count_entities_filtered{force = "player", type = t} end
+    return c
+  end
+  schedule(60, function()
+    local f = game.forces.player
+    local sp = f.get_spawn_position(surface())
+    local d = {}
+    for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"mining-drill", "assembling-machine",
+      "furnace", "electric-pole"}}) do
+      table.insert(d, math.sqrt((e.position.x - sp.x) ^ 2 + (e.position.y - sp.y) ^ 2))
+    end
+    table.sort(d)
+    local p95 = #d > 0 and d[math.max(1, math.floor(0.95 * #d))] or 0
+    S.dist = math.floor(p95 + 150)
+    S.start = census()
+    local researched = 0
+    for _, t in pairs(f.technologies) do if t.researched then researched = researched + 1 end end
+    info(string.format("visit: factory at %.0f,%.0f, %d buildings counted, 95%% within %.0f tiles; %d technologies; landing at %d",
+      sp.x, sp.y, #d, p95, researched, S.dist))
+    info("visit: player at start " .. serpent.line(S.start))
+    storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
+    if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
+    S.sp = sp
+  end)
+  schedule(20 * 3600, function()
+    S.g = lp("arrive", 1, S.sp, S.dist, {corp = "grubstake"})
+    info("visit: Grubstake " .. (S.g and ("landed, settlement " .. S.g) or "found no site"))
+  end)
+  for t = 600 * 60, END - 60, 600 * 60 do
+    schedule(t, function()
+      local row = {minute = (game.tick - storage.t0) / 3600, player = census(), bases = {}}
+      for _, id in ipairs(lp("bases")) do
+        local st = lp("stats", id)
+        if st then
+          table.insert(row.bases, {id = id, corp = st.corp, fallen = st.fallen and true or false, garrison = st.garrison,
+            razed = st.razed, looted = st.ops.looted, launched = st.ops.launched, done = st.ops.done,
+            aborted = st.ops.aborted, sieges = st.ops.sieges, strips = st.ops.strips, op = st.ops.op,
+            units_lost = st.units_lost, known = st.ops.known})
+        end
+      end
+      helpers.write_file("landing-party/timeline.jsonl", helpers.table_to_json(row) .. "\n", true)
+    end)
+  end
+  schedule(END - 60, function()
+    info("visit: player at the end " .. serpent.line(census()))
+    for _, id in ipairs(lp("bases")) do
+      local st = lp("stats", id)
+      info(string.format("visit: %s %d%s: garrison %d, razed %d, looted %d, units lost %d, %d operations (%d done, %d aborted, %d sieges, %d strips)",
+        st.corp, id, st.fallen and " (fallen)" or "", st.garrison, st.razed, st.ops.looted or 0, st.units_lost or 0,
+        st.ops.launched, st.ops.done, st.ops.aborted, st.ops.sieges, st.ops.strips))
+      for _, l in ipairs(st.ops.log or {}) do
+        info(string.format("visit:   %s %s on %s (%s), %d of %d back", l.op, l.outcome, l.kind, tostring(l.owner), l.back, l.launched))
+      end
+    end
+    for _, c in ipairs({"serenity", "grubstake"}) do info("visit: research " .. c .. " " .. serpent.line(lp("rd", c))) end
+    check("visit: a corporation landed by the factory", storage.id ~= nil, tostring(S.dist))
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()
@@ -3269,11 +3338,14 @@ if AFTER[params.scenario] and not params.save_at and END < STRIKE + AFTER[params
 end
 
 script.on_init(function()
+  storage.t0 = game.tick
   helpers.remove_path("landing-party")
   lp("set_trace", true)
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
   -- Phases plays the opening itself: no landing at the start.
   if params.scenario == "phases" then return end
+  -- A real factory (scripts/visit.sh) is loaded, not created: its arrival is placed by the scenario.
+  if params.scenario == "visit" then return end
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
     {doctrine = params.doctrine or (params.scenario == "defend" and "bastion")
       or ((params.scenario == "army" or params.scenario == "siege") and "sprawl") or nil,
@@ -3281,7 +3353,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true}
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 
@@ -3390,7 +3462,9 @@ script.on_event(defines.events.on_ai_command_completed, function(e)
   if S.results then S.results[e.unit_number] = e.result end
 end)
 
+-- Ticks are counted from the tick the test mod was added (storage.t0): 0 on a new map, hours into a real save
+-- (scripts/visit.sh; scheduled by absolute tick, nothing ever ran on one).
 script.on_event(defines.events.on_tick, function(e)
-  local f = at[e.tick]
+  local f = at[e.tick - (storage.t0 or 0)]
   if f then f() end
 end)

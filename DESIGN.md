@@ -1010,6 +1010,18 @@ scenario with assertions first; the window is for art, feel and GUI.
   `LP_MIX=tour scripts/showcase.sh 12345 20` then `scripts/play-showcase.sh tour`: both corporations grown, your
   army, an outpost with a turret by Serenity, drills on iron by Grubstake, an empty artillery turret within reach
   of Serenity's lander with shells beside it; raids on from the save.
+- **Real factories** (the user, 2026-10-14: "a save game ... to test a real player factory against our rival
+  factions"): `scripts/visit.sh <save.zip> [minutes]` copies the save into its own profile (`factorio-lp-visit/<name>`,
+  never a real profile; it refuses one), benchmarks it as it is (base, Space Age, Quality, Elevated Rails), then
+  adds Landing Party and the test mod (scenario `visit`) and runs it at real clocks: Serenity lands past the
+  factory's 95th-percentile building plus 150, Grubstake 20 minutes later, the faction's own cadence (and the save's
+  rocket launches) bring more; a timeline every 10 minutes and each settlement's story at the end, in
+  `docs/sim/visit-<name>/`. No live player: the factory's turrets and robots are all that answer. Mods the save used
+  beyond those four are left out (their state drops from the copy). The test mod counts ticks from the tick it was
+  added (`storage.t0`): scheduled by absolute tick, nothing ran in a save hours old.
+  First save (the user's own `nwa`, April 2026): 210 technologies, 2,302 laser turrets, 278 flamethrowers, 59
+  artillery turrets, 17,744 walls, 1,379 roboports, 95% of its buildings within 1,600 tiles. Ten minutes: 2.07 ms a
+  tick alone, 2.23 with the mod; its own rocket launches brought a second Serenity landing.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each
