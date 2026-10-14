@@ -661,6 +661,39 @@ fixed on the way:
 - **Staging outside the walls.** A raid stages on the line home at the first point beyond every turret's reach with
   no player wall between it and home (a point at a fixed offset fell inside a walled base and timed out there).
 
+### The campaign instrument (built 2026-10-14)
+`scripts/campaign.sh [seed] [minutes]`: contact's spread base (era 2, three outposts, robots) and a reactive player,
+6 hours at real clocks, unprovoked, from contact's fork. Its rules, every 5 minutes, through what a player has:
+**answer** (two lasers where it lost something, at most 6 + 4 per era), **strike** (every 45 minutes from minute 80:
+troopers, breachers and battle tanks by era at the nearest settlement's lander when what stands round it is weaker
+than the squad, else at the corporation drill with the fewest turrets near), **era** (up every 90 minutes), and from
+era 3 a **forward battery** (an artillery turret 200 tiles from the target lander, four lasers, kept at 20 shells,
+aimed at the lander with a flare as the artillery remote does). The timeline gains cost columns (corporation units
+lost, player buildings razed, settlements fallen, landers the player killed, strikes, corporations standing).
+Findings (seed 12345):
+- **Squads never win.** Seven strikes of 27 to 53 units (four battle tanks at most) all died within 10 minutes, at
+  an outpost with four turrets as at a lander: flamethrowers and lasers kill most, tanks the rest. The 5-hour
+  contact runs say the same from the other side: the corporations bleed the player slowly and nothing the player
+  fields with the mod's units takes a settlement. **For the user: is that intended (artillery is the answer, units
+  are for outposts and defence), or should squads be able to take a camp-stage settlement?**
+- **Artillery closes the loop, aimed.** Left to itself a battery shelled the nearer defences (rebuilt as fast:
+  563 shells in four hours, the lander untouched). Aimed with a flare, it killed the lander within 5 minutes, twice
+  in a 3-hour run. The corporations do not answer a battery yet (no operation went against it).
+- Fixed on the way: a substation inside the base counted as an isolated line cell (66 tiles from the corner turrets)
+  and four raiders died on the way to it every ten minutes: line cells must now be isolated, and a raid that lost
+  raiders and razed nothing also raises the target's resistance. A headquarters whose fortress found no free square
+  near its site failed 25 times running: a landing whose pad does not fit now moves to the next ring.
+- Grubstake enters at the third landing (about 3 hours); a corporation consolidated by hour 6.
+- **Counter-battery (built).** A corporation building or unit killed by artillery tells every settlement of that
+  corporation where the battery stands (seen, a threat zone) and provokes. A known battery comes first in the
+  decision: a corporation that ever besieges sends a siege at it whatever its level (counter-battery is not an
+  operation of choice); one that never besieges raids it, with its reserve, past its temper and the threat budget.
+  Measured: Serenity's settlement 2 besieged the battery that killed settlement 1, twice (18 and 30 mortar shells,
+  two of its four lasers).
+- **Then the opposite extreme.** With batteries aimed, both seeds (12345, 777) lose a lander 35 minutes after every
+  landing, four in six hours; no corporation lives to consolidate. A lander has 3000 health and no resistances: two
+  artillery shells. Counter-battery comes after the lander is dead. Taken to Fable (the next section).
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,

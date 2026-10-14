@@ -1454,6 +1454,22 @@ function campaign_player(AT, put)
   local era = 2
   for t = AT + 600, END - 600, 300 do
     schedule(t, function()
+      -- Batteries are kept fed (a player supplies them by train): topped up to 20 shells every 5 minutes.
+      for _, bat in pairs(S.batteries or {}) do
+        if bat.valid then
+          local inv = bat.get_inventory(defines.inventory.artillery_turret_ammo)
+          local have = inv.get_item_count()
+          if have < 20 then inv.insert{name = "artillery-shell", count = 20 - have} end
+          S.shells = (S.shells or 0) + 20 - have
+          -- Aimed, as with the artillery remote: a flare on the lander it was placed for (left to itself it shelled
+          -- the nearer defences, rebuilt as fast, 563 shells in four hours, the lander untouched).
+          local aim = S.aims and S.aims[bat.unit_number]
+          if aim then
+            surface().create_entity{name = "artillery-flare", position = aim, force = "player", movement = {0, 0},
+              height = 0, vertical_speed = 0, frame_speed = 1}
+          end
+        end
+      end
       local cap = 6 + 4 * era
       for _, g in pairs(surface().find_entities_filtered{type = "entity-ghost", force = "player"}) do
         local k = math.floor(g.position.x / 24) .. "," .. math.floor(g.position.y / 24)
@@ -1536,10 +1552,16 @@ function campaign_player(AT, put)
             if tr then put("electric-energy-interface", tr.position.x, tr.position.y + 3) end
           end
           S.batteries[best] = bat
+          S.aims = S.aims or {}
+          if bat then S.aims[bat.unit_number] = {o[1], o[2]} end
         end
+        local left = bat and bat.valid and bat.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count() or -1
         if bat and bat.valid then bat.insert{name = "artillery-shell", count = 20} end
-        info(string.format("campaign t%.0f: forward battery at %.0f,%.0f for %s %d (%s)", game.tick / 3600, bp[1], bp[2],
-          bst.corp, best, bat and bat.valid and "standing" or "not placed"))
+        -- Scouted: artillery fires only on what the force has charted.
+        game.forces.player.chart(surface(), {{o[1] - 64, o[2] - 64}, {o[1] + 64, o[2] + 64}})
+        info(string.format("campaign t%.0f: forward battery at %.0f,%.0f for %s %d (%s, %d shells left before resupply, %.0f tiles from the lander)",
+          game.tick / 3600, bp[1], bp[2], bst.corp, best, bat and bat.valid and "standing" or "not placed", left,
+          bat and bat.valid and math.sqrt((bat.position.x - o[1]) ^ 2 + (bat.position.y - o[2]) ^ 2) or -1))
       end
       local len = math.sqrt(target[1] ^ 2 + target[2] ^ 2)
       local from = {target[1] / len * 85, target[2] / len * 85}
@@ -1582,6 +1604,7 @@ function campaign_checks()
   end
   info("campaign: " .. serpent.line({strikes = S.strikes, answered = S.answered_n, lander_kills = S.lander_kills,
     corps = corps, consolidated = consolidated}))
+  info("campaign: artillery shells supplied " .. tostring(S.shells or 0))
   check("campaign: the player destroyed a lander", (S.lander_kills or 0) > 0, tostring(S.lander_kills or 0))
   if END >= 300 * 3600 then
     check("campaign: the second corporation came", n >= 2, n .. " corporations")

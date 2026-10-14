@@ -642,6 +642,7 @@ function base.claim_map(b)
 end
 
 ops.claim_map = base.claim_map
+ops.trace = trace
 
 -- A strip camp left alone twice on one patch stays (ops, strip_step): a mining module of the settlement,
 -- rebuilt and capturable like any outpost. Its ore is hauled (no line home), marked on the map with its own disc.

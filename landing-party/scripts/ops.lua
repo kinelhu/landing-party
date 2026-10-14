@@ -66,11 +66,14 @@ ops.VALUE = {["lp-command-relay"] = 10, ["lp-barracks"] = 8, ["substation"] = 6,
   ["lp-uplink"] = 10, ["lp-lander"] = 8, ["lp-depot"] = 6, ["lp-generator"] = 5, ["lp-launchpad"] = 5,
   -- Transit (late pressure, docs/reviews/2026-10-13-late-pressure-consult.md): rails and their signals.
   ["straight-rail"] = 3, ["half-diagonal-rail"] = 3, ["curved-rail-a"] = 3, ["curved-rail-b"] = 3,
-  ["rail-signal"] = 2, ["rail-chain-signal"] = 2}
+  ["rail-signal"] = 2, ["rail-chain-signal"] = 2,
+  -- The player's artillery: the one thing that kills a lander from out of reach (campaign runs: four landers in
+  -- six hours, 35 minutes after each landing). Found when it fires (ops.counter_battery).
+  ["artillery-turret"] = 12, ["artillery-wagon"] = 8}
 local TYPES = {"mining-drill", "assembling-machine", "furnace", "lab", "radar", "roboport", "train-stop",
   "locomotive", "electric-pole", "ammo-turret", "electric-turret", "fluid-turret", "electric-energy-interface",
   "container", "straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b", "rail-signal",
-  "rail-chain-signal"}
+  "rail-chain-signal", "artillery-turret", "artillery-wagon"}
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
 
 local function value_of(e)
@@ -272,6 +275,22 @@ local function field_sight(b)
 end
 
 -- A static threat on the faction's ground (turret creep): targets near it are a priority for a while.
+-- Counter-battery: a corporation building or unit killed by artillery tells every settlement of that corporation
+-- on the surface where the battery stands (seen, and a threat there for THREAT_TICKS), and shelling provokes.
+function ops.counter_battery(force, surface, battery, by)
+  for _, b in pairs(storage.bases) do
+    if b.force == force and not b.fallen and b.surface == surface.index and b.lander.valid then
+      ops.sense_at(b, battery.position, 30)
+      ops.threatened(b, battery.position)
+      if by then ops.provoke(b.force, by) end
+      if not b.battery_seen or game.tick - b.battery_seen > 3600 then
+        b.battery_seen = game.tick
+        if ops.trace then ops.trace(b, string.format("shelled: a battery at %.0f,%.0f", battery.position.x, battery.position.y)) end
+      end
+    end
+  end
+end
+
 function ops.threatened(b, pos)
   ops.init(b)
   b.intel.threats = b.intel.threats or {}
@@ -316,6 +335,10 @@ local function home(b)
 end
 
 local function cap(b, army) return army.cap(b) end
+-- A battery shelling it: self-defence, not an operation of choice. The reserve goes too, the threat budget does
+-- not hold it, and it can be besieged before the siege capability (campaign runs: a settlement that knew where
+-- the battery was raided substations for 45 minutes until its lander died).
+local function battery(t) return t.kind == "artillery-turret" or t.kind == "artillery-wagon" end
 local function field(b, army)
   local reserve = math.ceil(RESERVE * cap(b, army))
   local n = 0
@@ -365,6 +388,7 @@ end
 -- Whether a corporation's temper lets it go for this target at all.
 local function temper_allows(b, t)
   if not against_player(t.owner) then return true end
+  if battery(t) then return true end
   local temper = shared.CORPS[b.corp].temper or {}
   if temper.provoked_only then
     local d = storage.corps and storage.corps[b.corp]
@@ -408,16 +432,16 @@ local function choose(b, army)
   local floor = game.tick - (storage.threat_last or 0) > FLOOR_TICKS
   for key, t in pairs(b.intel.targets) do
     local player = against_player(t.owner)
-    local held = player and in_flight >= budget(t.owner)
+    local held = player and in_flight >= budget(t.owner) and not battery(t)
     if held and game.tick >= (t.cool or 0) then storage.budget_holds = (storage.budget_holds or 0) + 1 end
     if not temper_allows(b, t) then held = true end
     if game.tick >= (t.cool or 0) and not cooling(t) and not held then
       local d = defence(b, t)
-      if needed(d) <= max_field then
+      if needed(d) <= (battery(t) and cap(b, army) or max_field) then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
-          * ((player and floor) and 3 or 1)
+          * ((player and floor) and 3 or 1) * (battery(t) and 10 or 1)
         if not bs or s > bs then best, bs = key, s end
       end
     end
@@ -565,6 +589,7 @@ local function launch(b, key, trace, army)
   local d = defence(b, t)
   local want = needed(d)
   local n, reserve = field(b, army)
+  if battery(t) then n = n + reserve end
   if n < want then return false end
   local members = {}
   for i = #b.garrison, 1, -1 do
@@ -627,21 +652,24 @@ local function siege_site(b, t)
   end
 end
 
-local function choose_siege(b, army)
+local function choose_siege(b, army, only_battery)
   if (b.parts or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
   -- A capability, not every corporation's (Serenity's from level 1; Grubstake never besieges).
-  if not shared.capable(b.corp, "siege", army.level(b)) then return end
+  local capable = shared.capable(b.corp, "siege", army.level(b))
+  -- Against a battery, a corporation that ever besieges does so now (Grubstake never does: it raids).
+  local counter = shared.capable(b.corp, "siege", 99)
   local in_flight = ops.player_ops()
   local n = field(b, army)
   if n < SIEGE_GUARDS then return end
   local h = home(b)
   local best, bs, site
   for key, t in pairs(b.intel.targets) do
-    if (t.defence or 0) >= 2 and not (against_player(t.owner) and in_flight >= budget(t.owner))
+    if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))
+      and not (against_player(t.owner) and in_flight >= budget(t.owner) and not battery(t))
       and (not against_player(t.owner) or not (shared.CORPS[b.corp].temper or {}).provoked_only
         or (storage.corps[b.corp].provoked or {})[t.owner]) then
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
-      local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300)
+      local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
       if not bs or s > bs then
         local p = siege_site(b, t)
         if p then best, bs, site = key, s, p end
@@ -1008,12 +1036,18 @@ function ops.tick(b, tick, trace, army)
   elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off
     and not army.withdrawing(b) then
     if not home(b) then return end
+    -- Counter-battery first: a battery it knows is besieged before anything else (a raid on a substation was
+    -- always available, so the siege was never considered); one that never besieges raids it (choose weighs
+    -- it by its value and threat).
+    local bkey, bsite = choose_siege(b, army, true)
+    if bkey then return launch_siege(b, bkey, bsite, trace, army) end
+    local key = choose(b, army)
+    if key and battery(b.intel.targets[key]) then return launch(b, key, trace, army) end
     -- A thief strips first: a raid was always available before and the camp never went up.
     if (shared.CORPS[b.corp].temper or {}).strips then
       local tkey, tsite = choose_strip(b, army)
       if tkey then return launch_strip(b, tkey, tsite, trace, army) end
     end
-    local key = choose(b, army)
     if key then
       launch(b, key, trace, army)
     else

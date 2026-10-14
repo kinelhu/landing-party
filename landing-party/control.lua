@@ -82,6 +82,11 @@ script.on_event(defines.events.on_entity_died, function(e)
     command.drop_cores(ent.surface, ent.position, 3)
     base.fall(ent)
   end
+  -- Shelled: the corporation learns where the battery is (ops.counter_battery) before the owner records go.
+  if shared.is_corp(ent.force.name) and e.cause and e.cause.valid
+    and (e.cause.type == "artillery-turret" or e.cause.type == "artillery-wagon") then
+    ops.counter_battery(ent.force.name, ent.surface, e.cause, e.force and e.force.name)
+  end
   if shared.is_corp(ent.force.name) then
     local id = storage.unit_owner[ent.unit_number]
     if id then
