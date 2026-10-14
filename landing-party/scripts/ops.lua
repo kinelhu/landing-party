@@ -816,6 +816,39 @@ end
 
 ops.route = sneak_route
 
+-- Pushing through biter country (the megabase consult): with no way round, an operation still goes when its target is
+-- worth it (effective value PUSH_VALUE, the line and the ladder's triple counted) or the ladder has reached its second
+-- rung, through at most PUSH_CROSSINGS nests: an escort of 4 a spawner and 2 a worm near the straight path, times
+-- (1 + evolution), fights the way through. Returns the escort's size, or nil (not sent).
+local PUSH_VALUE, PUSH_CROSSINGS = 6, 6
+local function crossings(b, from, to)
+  local s = game.surfaces[b.surface]
+  local len = math.sqrt((to[1] - from[1]) ^ 2 + (to[2] - from[2]) ^ 2)
+  local seen, sp, worms = {}, 0, 0
+  for k = 0, math.max(1, math.floor(len / 20)) do
+    local f = k / math.max(1, math.floor(len / 20))
+    local p = {from[1] + (to[1] - from[1]) * f, from[2] + (to[2] - from[2]) * f}
+    for _, e in pairs(s.find_entities_filtered{position = p, radius = 40, type = {"unit-spawner", "turret"}, force = "enemy"}) do
+      if not seen[e.unit_number] then
+        seen[e.unit_number] = true
+        if e.type == "unit-spawner" then sp = sp + 1 else worms = worms + 1 end
+      end
+    end
+  end
+  return sp, worms
+end
+local function push_escort(b, t, from, to)
+  local sp, worms = crossings(b, from, to)
+  -- Cost no object (the ladder's top rung): through whatever is in the way, with all it has.
+  if t.owner and ladder(t.owner) >= 3 then return 1000, sp, worms end
+  if sp + worms > PUSH_CROSSINGS then return nil, sp, worms end
+  local worth = (t.value or 0) * (t.line and 2 or 1) * ((t.owner and ladder(t.owner) >= 1) and 3 or 1)
+  if worth < PUSH_VALUE and not (t.owner and ladder(t.owner) >= 2) then return nil, sp, worms end
+  local evo = game.forces.enemy.get_evolution_factor(game.surfaces[b.surface])
+  return math.ceil((4 * sp + 2 * worms) * (1 + evo)), sp, worms
+end
+ops.push_escort = push_escort
+
 -- The wall piece by the target the fewest turrets can reach (ties: nearest the staging point), and its neighbour.
 local function breach_point(b, t, from)
   local s = game.surfaces[b.surface]
@@ -939,11 +972,58 @@ local function launch(b, key, trace, army)
   local sneaks = (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner)
   -- Round biter country, whoever marches (a nest as the target excepted: Serenity clears its ground).
   local route = sneak_route(b, {h.position.x, h.position.y}, stage, {turrets = sneaks, nests = t.owner ~= "enemy"})
+  -- The whole way, the attack leg too (staged short of a wall of nests, four raiders went straight through it, push).
+  if route and t.owner ~= "enemy" and not sneak_route(b, stage, {t.pos[1], t.pos[2]}, {turrets = false, nests = true}) then
+    route = nil
+  end
+  if not route then
+    local escort, sp, worms = push_escort(b, t, {h.position.x, h.position.y}, {t.pos[1], t.pos[2]})
+    -- Too many nests to push through, for a target the ladder or its worth says to go for: clear a way first, a raid
+    -- on the nearest spawner by the straight path (the evolution refund stands, biters.lua).
+    local worth = (t.value or 0) * (t.line and 2 or 1) * (ladder(t.owner) >= 1 and 3 or 1)
+    if not escort and sp + worms > PUSH_CROSSINGS and (worth >= PUSH_VALUE or ladder(t.owner) >= 2) then
+      local s = game.surfaces[b.surface]
+      local near, nd
+      for _, e in pairs(s.find_entities_filtered{position = {h.position.x, h.position.y},
+        radius = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2), type = "unit-spawner", force = "enemy"}) do
+        local d = (e.position.x - h.position.x) ^ 2 + (e.position.y - h.position.y) ^ 2
+        if not nd or d < nd then near, nd = e, d end
+      end
+      if near then
+        b.op = nil
+        for _, u in ipairs(members) do table.insert(b.garrison, u) end
+        local key = "nest:" .. math.floor(near.position.x / CELL) .. "," .. math.floor(near.position.y / CELL)
+        b.intel.targets[key] = b.intel.targets[key] or {tried = 0, cool = 0}
+        local nt = b.intel.targets[key]
+        nt.pos, nt.kind, nt.value, nt.seen, nt.owner = {near.position.x, near.position.y}, near.name, 3, game.tick, "enemy"
+        nt.defence = s.count_entities_filtered{position = near.position, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+        trace(b, string.format("raid on %s at %.0f,%.0f: %d nests in the way; clears a way first, at %.0f,%.0f", t.kind,
+          t.pos[1], t.pos[2], sp + worms, near.position.x, near.position.y))
+        t.cool = game.tick + 2 * 3600
+        return launch(b, key, trace, army)
+      end
+    end
+    if escort then
+      for i = #b.garrison, 1, -1 do
+        if escort <= 0 then break end
+        local u = b.garrison[i]
+        if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then
+          table.insert(members, table.remove(b.garrison, i))
+          escort = escort - 1
+        end
+      end
+      b.op.launched, b.op.pushed = #members, true
+      route = {}
+      trace(b, string.format("raid on %s pushes through biter country (%d spawners, %d worms): %d units", t.kind, sp,
+        worms, #members))
+    end
+  end
   if not route then
     -- Registered above: undone, or it went ahead anyway (four raiders attacked through the nests and died, country).
     b.op = nil
     for _, u in ipairs(members) do table.insert(b.garrison, u) end
-    t.cool = game.tick + COOL_TICKS
+    -- Briefly: it cost nothing, and the ladder may send it soon (cooled ten minutes, it was never tried again, push).
+    t.cool = game.tick + 2 * 3600
     trace(b, string.format("raid on %s at %.0f,%.0f: no way round biter country; not sent", t.kind, t.pos[1], t.pos[2]))
     return false
   end
@@ -1075,6 +1155,11 @@ local function launch_siege(b, key, site, trace, army)
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
   local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
     {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
+  if not hroute and b.intel.targets[key] and push_escort(b, b.intel.targets[key], {hauler.position.x, hauler.position.y}, site) then
+    hroute = {}
+    b.op.pushed = true
+    trace(b, string.format("hauler pushes through biter country to %.0f,%.0f", site[1], site[2]))
+  end
   if not hroute then
     for _, u in ipairs(guards) do table.insert(b.garrison, u) end
     b.op = nil
@@ -1391,6 +1476,11 @@ local function launch_strip(b, key, site, trace, army)
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
   local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
     {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
+  if not hroute and b.intel.targets[key] and push_escort(b, b.intel.targets[key], {hauler.position.x, hauler.position.y}, site) then
+    hroute = {}
+    b.op.pushed = true
+    trace(b, string.format("hauler pushes through biter country to %.0f,%.0f", site[1], site[2]))
+  end
   if not hroute then
     for _, u in ipairs(guards) do table.insert(b.garrison, u) end
     b.op = nil

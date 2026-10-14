@@ -1106,6 +1106,23 @@ scenario with assertions first; the window is for art, feel and GUI.
   whole. Review sheets go to the user before anything is wired.
 - Also: a container its raiders destroy is looted from the wreck (the raid razed the chest before its looting step came
   round); a breach is chosen by turret reach plus 6 tiles of crowd room (sneak: target razed, 17 of 31 lost: marginal).
+- **The ladder (built; the megabase consult, `docs/reviews/2026-10-14-megabase-pressure-consult.md`).** Minutes since a
+  corporation last razed a building of a player force (`storage.last_raze`, any cause), from first sight: at 20 soft
+  relaxes (Grubstake goes for weighted defence up to 3) and Serenity's targets on that player weigh triple; at 40
+  operations push through biter country; at 60 cost no object (the target with the best value for its defence gets the
+  whole garrison, reserve included, and does not turn back). Razes are tallied by type (remote `pressure`, the visit's
+  timeline). Scenario `ladder` (two, ten times fast): a provoked Serenity facing six lasers it could not afford sent
+  what it had at the top rung and razed 14 (six lasers among them); Grubstake held off a turreted assembler and razed
+  it at the top rung (relaxing soft alone did not bring it there).
+- **Pushing through biter country (built, not yet effective).** With no way round (the whole way: the attack leg as
+  well as the march), a raid goes anyway when its target is worth 6 (line and ladder counted) or the ladder is on its
+  second rung, through at most 6 nests, with an escort of 4 a spawner and 2 a worm times (1 + evolution); hauled
+  operations likewise. More nests: a clearing raid on the nearest spawner first. At the top rung: through whatever is
+  there, with all it has. A raid not sent cools 2 minutes, not 10 (it was never tried again). Scenario `push` (not in
+  the regression): a wall of 22 spawners and 22 worms across the way (unevolved biters): not sent, then a clearing
+  that the young garrison could not field (the nest's worms need 18), then at the top rung 27 units pushed through
+  and 26 died in the wall. Corporation units do not get through dense nests; a Serenity raid on one spawner lost all
+  18. Open: what a corporation fields against nests (the identity trees have nothing against biters as such).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

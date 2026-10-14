@@ -3460,6 +3460,44 @@ scenarios.ladder = function()
   end)
 end
 
+-- Push: no way round biter country (a wall of spawners and worms across the whole approach to an undefended
+-- assembler), the ladder ten times fast: not sent at first (worth 3, under PUSH_VALUE), then at the second rung the raid
+-- pushes through with an escort and razes it.
+scenarios.push = function()
+  schedule(60, function()
+    lp("debug_tune", {ladder_fast = true, raids_off = false})
+    lp("debug_depot", storage.id, 3000); lp("debug_depot", storage.id, 3000)
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 170), math.floor(o.y - uy * 170)}
+    flatten(c[1] - 8, c[2] - 8, c[1] + 8, c[2] + 8)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    S.c = c
+    -- The wall: across the line 90 tiles out, 300 tiles wide, a spawner every 14 tiles, worms behind.
+    local n = 0
+    for k = -150, 150, 14 do
+      local p = {o.x - ux * 90 - uy * k, o.y - uy * 90 + ux * k}
+      local q = surface().find_non_colliding_position("biter-spawner", p, 6, 1)
+      if q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"} then n = n + 1 end
+      local w = surface().find_non_colliding_position("medium-worm-turret", {p[1] - ux * 10, p[2] - uy * 10}, 6, 1)
+      if w then surface().create_entity{name = "medium-worm-turret", position = w, force = "enemy"} end
+    end
+    S.spawners = n
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local razed = 0
+    for _, v in pairs(lp("pressure").razed or {}) do razed = razed + v end
+    local target = surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"}
+    info(string.format("push: %d spawners in the wall; %d of the player's razed; target %s; %s", S.spawners, razed,
+      target > 0 and "standing" or "razed", serpent.line(st.ops.log[#st.ops.log])))
+    check("push: the raid pushed through and razed the target", target == 0 and razed > 0, tostring(razed))
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()
