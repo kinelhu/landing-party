@@ -1603,6 +1603,8 @@ function campaign_player(AT, put)
         era = era + 1
         lp("debug_tune", {era = era})
         game.forces.player.set_ammo_damage_modifier("laser", 0.4 + 0.3 * (era - 2))
+        -- Era 4: artillery range 1 (x1.3, 291 tiles), as the hull consult has it.
+        if era >= 4 then game.forces.player.technologies["artillery-shell-range-1"].researched = true end
         info(string.format("campaign t%.0f: era %d", game.tick / 3600, era))
       end
     end)
@@ -1647,23 +1649,45 @@ function campaign_player(AT, put)
       -- tiles towards home, four lasers round it), resupplied at each strike; the squad goes in as well.
       if era >= 3 then
         local ol = math.sqrt(o[1] ^ 2 + o[2] ^ 2)
-        -- A clear site in reach: on the line home (then at angles off it), 220 down to 150 tiles from the lander, the
-        -- first point with no corporation turret within 50 (at a fixed 200 it stood in Serenity's outer works).
-        local bp
-        local home = math.atan2(-o[2], -o[1])
-        for _, turn in ipairs({0, 0.3, -0.3, 0.6, -0.6}) do
-          for d = 220, 150, -10 do
-            local p = {o[1] + math.cos(home + turn) * d, o[2] + math.sin(home + turn) * d}
-            local hot = false
-            for _, f in pairs(game.forces) do
-              if f.name:sub(1, 3) == "lp-" and surface().count_entities_filtered{position = p, radius = 50, force = f,
-                type = {"electric-turret", "ammo-turret", "fluid-turret", "artillery-turret"}, limit = 1} > 0 then
-                hot = true
+        -- A clear site in reach, on the hub's side (Fable's hull consult): around the lander, 220 down to 150 tiles out,
+        -- the site with no corporation turret within 50 that has the most of the hull's generators (within 80 of the
+        -- lander) in a gun's reach (224), taken at once when it reaches 60% of them; failing any clear at 50, clear at 30.
+        local gens = surface().find_entities_filtered{position = {o[1], o[2]}, radius = 80, force = bst.force,
+          type = "electric-energy-interface"}
+        local counted = {}
+        for _, g in pairs(gens) do if g.name:find("generator", 1, true) then table.insert(counted, g.position) end end
+        local function hot(p, r)
+          for _, f in pairs(game.forces) do
+            if f.name:sub(1, 3) == "lp-" and surface().count_entities_filtered{position = p, radius = r, force = f,
+              type = {"electric-turret", "ammo-turret", "fluid-turret", "artillery-turret"}, limit = 1} > 0 then
+              return true
+            end
+          end
+        end
+        local function reach(p)
+          local n = 0
+          local r = era >= 4 and 291 or 224
+          for _, g in ipairs(counted) do if (g.x - p[1]) ^ 2 + (g.y - p[2]) ^ 2 <= r * r then n = n + 1 end end
+          return n
+        end
+        local bp, bn
+        for _, clear in ipairs({50, 30}) do
+          for k = 0, 15 do
+            local a = 2 * math.pi * k / 16
+            for d = 220, 150, -10 do
+              local p = {o[1] + math.cos(a) * d, o[2] + math.sin(a) * d}
+              if not hot(p, clear) then
+                local n = reach(p)
+                if not bn or n > bn then bp, bn = p, n end
+                break
               end
             end
-            if not hot then bp = p; break end
+            if bn and #counted > 0 and bn >= 0.6 * #counted then break end
           end
           if bp then break end
+        end
+        if bp then
+          info(string.format("campaign t%.0f: battery site reaches %d of %d hull generators", game.tick / 3600, bn, #counted))
         end
         S.batteries = S.batteries or {}
         local bat = S.batteries[best]
@@ -2505,6 +2529,47 @@ scenarios.grudge = function()
     local st = S.g2 and lp("stats", S.g2)
     check("grudge: the cap was doubled, then not", st and S.cap and st.cap * 2 == S.cap,
       tostring(S.cap) .. " then " .. tostring(st and st.cap))
+  end)
+end
+
+-- Weigh: raids sized by weighted defence (docs/reviews/2026-10-14-operations-depth-consult.md). Three gun turrets need
+-- 13 (3 x 3 + 4), three flamethrowers 27 (3 x 7.5 + 4); bullet damage +0.7 makes the guns' 13 into 20. A spidertron
+-- parked at an undefended relay turns a forced raid back at its staging look, unhurt.
+scenarios.weigh = function()
+  schedule(600, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local function at(d, side)
+      return {math.floor(o.x - o.x / len * d - o.y / len * side), math.floor(o.y - o.y / len * d + o.x / len * side)}
+    end
+    local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
+    S.guns, S.flames, S.relay = at(120, -60), at(120, 0), at(120, 60)
+    for _, c in ipairs({S.guns, S.flames, S.relay}) do flatten(c[1] - 12, c[2] - 12, c[1] + 12, c[2] + 12) end
+    for k = -1, 1 do
+      put("gun-turret", {S.guns[1] + 4 * k, S.guns[2] - 5})
+      put("flamethrower-turret", {S.flames[1] + 4 * k, S.flames[2] - 5})
+    end
+    put("assembling-machine-1", S.guns)
+    put("assembling-machine-1", S.flames)
+    put("lp-command-relay", S.relay)
+    put("spidertron", {S.relay[1] + 3, S.relay[2] + 3})
+  end)
+  schedule(700, function()
+    local g, f = lp("debug_needed", storage.id, S.guns), lp("debug_needed", storage.id, S.flames)
+    check("weigh: three gun turrets need 13", g and g.needed == 13, serpent.line(g))
+    check("weigh: three flamethrowers need 27", f and f.needed == 27, serpent.line(f))
+    game.forces.player.set_ammo_damage_modifier("bullet", 0.7)
+    local g2 = lp("debug_needed", storage.id, S.guns)
+    check("weigh: bullet damage +0.7 makes it 20", g2 and g2.needed == 20, serpent.line(g2))
+    lp("dev", {"raid", tostring(storage.id)}, S.relay)
+    S.launched = lp("stats", storage.id).ops.launched
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local last = st.ops.log[#st.ops.log]
+    check("weigh: a forced raid at the relay was launched", (S.launched or 0) > 0, tostring(S.launched))
+    check("weigh: the spidertron turned it back unhurt", last and last.outcome == "aborted" and last.back == last.launched,
+      serpent.line(last))
   end)
 end
 

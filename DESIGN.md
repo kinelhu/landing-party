@@ -45,6 +45,7 @@ document describes the parts as built; the campaign document describes the game 
 | Grudge: a lander the player kills provokes its corporation; the next landing comes angry | built | `grudge` |
 | Drop escort: a landing brings units and four corner turrets (20 minutes) | built | `grudge`, `rivals` |
 | Dev tools: `/lp` forces operations, perimeter steps, landings, grudges | built | `dev` |
+| Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -742,6 +743,24 @@ the generators within 300 tiles of the lander, or a smaller share, or let the pl
   drop escort is doubled, and its garrison cap is doubled for 30 minutes from its first depot (from the landing,
   the window ran out as the depot opened). Only the next landing carries it. Scenario `grudge`.
 - Not yet measured in a campaign: lander kills with the 80-tile hull, camp strikes against the escort.
+
+### Operations in depth (the user's ideas, Fable: `docs/reviews/2026-10-14-operations-depth-consult.md`)
+The user (2026-10-14), on hearing how raids are sized: turrets should weigh by type and tech, and units should count;
+corporations could steal what is valuable (a chest of circuits, fuel cells, a Kovarex line, a cargo bay); sieges
+should come for destruction, several mortars late. Fable's build order: weighted defence, siege tiers, heists.
+- **Weighted defence (built).** A target's defence is the sum of its turrets' weights within 30 tiles (`ops.weigh`):
+  gun 1, laser 1.5, flamethrower 2.5, artillery 0, each times (1 + its force's ammo damage modifier for bullets,
+  lasers or flamethrowers); `needed(d) = ceil(5d) + 4`. Units count at the staging look only (they move): characters
+  and units 0.5, cars and tanks 1.5, spidertrons 3, within 40 tiles, remembered 5 minutes; the turn-back test and the
+  next sizing include them. Grubstake's soft-only temper still reads turrets alone. Scenario `weigh`: three guns need
+  19, three flamethrowers 42, guns with bullet damage +0.7 need 30; a spidertron parked at an undefended relay turns
+  a forced raid back unhurt ("defence 0.0 and units 3.0, needs 19, has 4").
+  Calibration: the force per unit of defence went back from 5 to 3. Five had been set against three creeping gun
+  turrets with bullet damage +0.8 (`defend`): with research now in the weight (x1.8) it counted twice, and the
+  raid needed 31. At 3 it needs 21, and self-defence (a battery, or a static threat on the settlement's ground:
+  turret creep) now takes the reserve too (a garrison of 28 kept 9 home and fielded 19). Measured: 21 sent, the
+  three turrets destroyed, 7 back, the losses that set the old calibration. `weigh` now expects 13, 27 and 20.
+- **Siege tiers** and **heists**: next (see the consult).
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

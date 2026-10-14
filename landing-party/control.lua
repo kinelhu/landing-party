@@ -220,6 +220,7 @@ remote.add_interface("landing-party", {
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
   debug_depot = function(id, parts) return dev.depot(storage.bases[id], parts) end,
   snapshot = snapshot,
+  debug_needed = function(id, pos) return ops.debug_needed(storage.bases[id], {x = pos[1], y = pos[2]}) end,
   -- Tests: the /lp dev tools (scripts/dev.lua) at a position, as a player standing there would use them.
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,

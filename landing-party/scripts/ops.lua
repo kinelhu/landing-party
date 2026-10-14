@@ -21,9 +21,10 @@ local DEFENCE_RADIUS = 30             -- turrets this close to a target defend i
 local MARKER_TICKS = 20 * 60 * 60     -- a death marker counts this long
 local DECIDE_TICKS = 30 * 60
 local RESERVE = 0.3                   -- share of the garrison cap that never leaves on an operation
--- Force needed: 5 a known turret, plus 4. Three a turret (assault: 12 took four) lost to upgraded ammunition:
--- 18 units against three creeping turrets with piercing rounds lost two thirds (defend).
-local PER_TURRET, BASE_FORCE = 5, 4
+-- Force needed: 3 a unit of weighted defence (ops.weigh), plus 4. Three a turret (assault: 12 took four); 5 once
+-- lost to upgraded ammunition (18 units against three creeping turrets with bullet damage +0.8 lost two thirds,
+-- defend), and with research now in the weight (x1.8 there) 5 counted it twice: back to 3.
+local PER_TURRET, BASE_FORCE = 3, 4
 local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground stays a priority this long
 local THREAT_BONUS = 10               -- value added to targets by it
 local STAND_OFF = 34                  -- staging this far from the target: a laser's 24 and 10 to spare
@@ -77,6 +78,32 @@ local TYPES = {"mining-drill", "assembling-machine", "furnace", "lab", "radar", 
   "rail-chain-signal", "artillery-turret", "artillery-wagon"}
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
 
+-- Weighted defence (docs/reviews/2026-10-14-operations-depth-consult.md): a turret weighs by its kind, scaled by its
+-- force's damage research for that kind (all turrets weighed 1, and raids sized for four turrets died to four
+-- upgraded lasers; flamethrowers killed most of every campaign squad). Artillery cannot fire up close: 0.
+local WEIGHT = {["ammo-turret"] = {1, "bullet"}, ["electric-turret"] = {1.5, "laser"}, ["fluid-turret"] = {2.5, "flamethrower"},
+  ["artillery-turret"] = {0}}
+function ops.weigh(surface, pos, forces, r)
+  local w = 0
+  for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r or DEFENCE_RADIUS, force = forces, type = TURRETS}) do
+    local k = WEIGHT[e.type]
+    if k and k[1] > 0 then w = w + k[1] * (1 + (k[2] and e.force.get_ammo_damage_modifier(k[2]) or 0)) end
+  end
+  return w
+end
+-- Who stands by a target, at the staging look only (units move; the two-minute scan would be stale): characters 0.5,
+-- units 0.5, cars and tanks 1.5, spidertrons 3, within 40 tiles.
+local MOBILE = {character = 0.5, unit = 0.5, car = 1.5, ["spider-vehicle"] = 3}
+local function mobile(surface, pos, forces)
+  local w = 0
+  for _, e in pairs(surface.find_entities_filtered{position = pos, radius = 40, force = forces,
+    type = {"character", "unit", "car", "spider-vehicle"}}) do
+    w = w + (MOBILE[e.type] or 0)
+  end
+  return w
+end
+local UNITS_TICKS = 5 * 3600
+
 local function value_of(e)
   return ops.VALUE[shared.kind_of(e.name)] or ops.VALUE[e.type] or 0
 end
@@ -114,7 +141,7 @@ local function sense(b, surface, pos, r)
     for key, c in pairs(cells) do
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
       t.pos, t.kind, t.value, t.seen, t.owner = c.pos, c.kind, c.value, game.tick, c.owner
-      t.defence = surface.count_entities_filtered{position = c.pos, radius = DEFENCE_RADIUS, force = other, type = TURRETS}
+      t.defence = ops.weigh(surface, c.pos, other)
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
       -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was
       -- raided every ten minutes and its raiders died on the way.
@@ -418,10 +445,11 @@ ops.temper_allows = temper_allows
 -- Seen turrets, death markers, and resistance learned the hard way: a raid that attacked and razed nothing
 -- (robots out-repairing four infantry, five raids on one substation) counts one turret more each time.
 local function defence(b, t)
-  return (t.defence or 0) + (t.resist or 0) + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
+  local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
+  return (t.defence or 0) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
 end
 
-local function needed(d) return PER_TURRET * d + BASE_FORCE end
+local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE end
 
 -- The best target worth the force the settlement can field: value over defence, nearer preferred, tried
 -- targets less, cooling targets not at all.
@@ -449,7 +477,9 @@ local function choose(b, army)
     if not temper_allows(b, t) then held = true end
     if game.tick >= (t.cool or 0) and not cooling(t) and not held then
       local d = defence(b, t)
-      if needed(d) <= (battery(t) and cap(b, army) or max_field) then
+      -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
+      -- three upgraded creeping turrets needed 21 and a garrison of 28 kept 9 home (defend).
+      if needed(d) <= ((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field) then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
@@ -543,9 +573,7 @@ local function finish(b, outcome, trace, army)
     end
     if outcome == "aborted" then
       t.tried = (t.tried or 0) + 1
-      local seen = game.surfaces[b.surface].count_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS,
-        type = TURRETS, force = enemies(game.forces[b.force])}
-      t.defence = math.max(t.defence or 0, seen)
+      t.defence = math.max(t.defence or 0, ops.weigh(game.surfaces[b.surface], t.pos, enemies(game.forces[b.force])))
     end
   end
   if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
@@ -601,7 +629,7 @@ local function launch(b, key, trace, army)
   local d = defence(b, t)
   local want = needed(d)
   local n, reserve = field(b, army)
-  if battery(t) then n = n + reserve end
+  if battery(t) or threat_bonus(b, t) > 0 then n = n + reserve end
   if n < want then return false end
   local members = {}
   for i = #b.garrison, 1, -1 do
@@ -637,7 +665,7 @@ local function launch(b, key, trace, army)
       end
     end
   end
-  trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %d): %d units stage at %.0f,%.0f", t.kind,
+  trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %.1f): %d units stage at %.0f,%.0f", t.kind,
     t.pos[1], t.pos[2], t.value, d, #members, stage[1], stage[2]))
   return true
 end
@@ -716,7 +744,7 @@ local function launch_siege(b, key, site, trace, army)
   b.ops_launched = b.ops_launched + 1
   b.sieges = (b.sieges or 0) + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
-  trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %d): a mortar to %.0f,%.0f, %d guards", t.kind,
+  trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f): a mortar to %.0f,%.0f, %d guards", t.kind,
     t.pos[1], t.pos[2], t.value, t.defence or 0, site[1], site[2], #guards))
   return true
 end
@@ -967,14 +995,17 @@ local function step(b, trace, army)
       -- A look from the staging point first: more turrets than the force can take, and it turns back before
       -- a shot is fired (four raiders sent at a target armed after they left all died attacking it).
       if t then
-        local seen = game.surfaces[b.surface].count_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS, type = TURRETS,
-          force = enemies(game.forces[b.force])}
+        local s = game.surfaces[b.surface]
+        local foes = enemies(game.forces[b.force])
+        local seen = ops.weigh(s, t.pos, foes)
         -- What it sees now is the freshest word (a raid that had cleared the target on its way turned back
-        -- on the defence it believed before).
+        -- on the defence it believed before); who stands there counts too, for a while.
         t.defence = seen
-        if needed(t.defence + (t.resist or 0)) > n then
-          trace(b, string.format("raid sees %d turrets at the target, needs %d, has %d: turns back", seen,
-            needed(t.defence + (t.resist or 0)), n))
+        t.units, t.units_at = mobile(s, t.pos, foes), game.tick
+        local want = needed(t.defence + (t.resist or 0) + t.units)
+        if want > n then
+          trace(b, string.format("raid sees defence %.1f and units %.1f at the target, needs %d, has %d: turns back", seen,
+            t.units, want, n))
           return finish(b, "aborted", trace, army)
         end
       end
@@ -1073,6 +1104,18 @@ function ops.tick(b, tick, trace, army)
       end
     end
   end
+end
+
+-- Tests: the force a raid would need for the target nearest pos (sensed now), and that target's weighted defence.
+function ops.debug_needed(b, pos)
+  ops.init(b)
+  sense(b, game.surfaces[b.surface], pos, 40)
+  local best, bd
+  for _, t in pairs(b.intel.targets) do
+    local d = (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2
+    if not bd or d < bd then best, bd = t, d end
+  end
+  return best and {needed = needed(defence(b, best)), defence = best.defence, kind = best.kind}
 end
 
 -- Dev tools (/lp, scripts/dev.lua): an operation of this kind now, at the player structure nearest pos, whatever
