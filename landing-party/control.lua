@@ -119,6 +119,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     if b then
       b.razed = b.razed + 1
       rd.salvage(b.corp, ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type])
+      if ent.type == "container" or ent.type == "logistic-container" then ops.loot_wreck(b, ent) end
     end
   end
 end)
@@ -211,6 +212,7 @@ remote.add_interface("landing-party", {
     if t.siege_tier ~= nil then storage.siege_tier = t.siege_tier end
     if t.sneak_off ~= nil then storage.sneak_off = t.sneak_off end
     if t.history_off ~= nil then storage.history_off = t.history_off end
+    if t.rings ~= nil then storage.rings = t.rings end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     for corp, tech in pairs(t.rd_tech or {}) do rd.set(corp, tech) end

@@ -2,6 +2,7 @@
 # The corporations against a real factory: a COPY of a save (never the original, never a real profile) in its own
 # profile, with Landing Party and the test mod added (scenario visit, tests/lp-sim), run headless at real clocks.
 #   scripts/visit.sh <save.zip> [minutes]      e.g. scripts/visit.sh ~/Library/.../factorio/saves/nwa.zip 180
+#   LP_MIX=provoked: an hour in, both corporations count the factory as having attacked them.
 # First a baseline benchmark of the save as it is (base, Space Age, Quality, Elevated Rails), then the visit; reports
 # both ms a tick, the visit's story (results.txt) and its timeline, in docs/sim/visit-<save>/.
 # Mods the save used beyond those (quality-of-life, GUI) are left out: their entities and state drop from the copy.
@@ -9,7 +10,7 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SAVE="${1:?usage: scripts/visit.sh <save.zip> [minutes]}"; MINUTES="${2:-180}"
 NAME="$(basename "$SAVE" .zip)"
-V="$HOME/Library/Application Support/factorio-lp-visit/$NAME"
+V="$HOME/Library/Application Support/factorio-lp-visit/$NAME${LP_MIX:+-$LP_MIX}"
 case "$V" in *"/factorio/"*) echo "refusing: $V is inside the real profile"; exit 1;; esac
 mkdir -p "$V/config" "$V/mods" "$V/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$V" > "$V/config/config.ini"
@@ -28,8 +29,8 @@ b_avg=$(grep -oE "avg: [0-9.]+ ms" "$V/run.out" | head -1 | grep -oE "[0-9.]+" |
 # The visit.
 ln -sfn "$REPO/landing-party" "$V/mods/landing-party"
 rm -rf "$V/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$V/mods/lp-sim"
-printf 'return {scenario = "visit", minutes = %s, every = %s, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = ""}\n' \
-  "$MINUTES" "$MINUTES" > "$V/mods/lp-sim/params.lua"
+printf 'return {scenario = "visit", minutes = %s, every = %s, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s"}\n' \
+  "$MINUTES" "$MINUTES" "${LP_MIX:-}" > "$V/mods/lp-sim/params.lua"
 echo "{\"mods\": [$base, {\"name\": \"landing-party\", \"enabled\": true}, {\"name\": \"lp-sim\", \"enabled\": true}]}" > "$V/mods/mod-list.json"
 out="$V/script-output/landing-party"
 rm -rf "$out"
@@ -39,7 +40,7 @@ v_avg=$(grep -oE "avg: [0-9.]+ ms" "$V/run.out" | head -1 | grep -oE "[0-9.]+" |
 [ -f "$out/results.txt" ] || { echo "VISIT FAILED ($NAME): no results written"; tail -20 "$V/run.out"; exit 1; }
 echo "METRIC ms_per_tick_baseline $b_avg" >> "$out/results.txt"
 echo "METRIC ms_per_tick_visit $v_avg" >> "$out/results.txt"
-dest="$REPO/docs/sim/visit-$NAME"
+dest="$REPO/docs/sim/visit-$NAME${LP_MIX:+-$LP_MIX}"
 mkdir -p "$dest"
 cp "$out/results.txt" "$out/decisions.txt" "$dest/" 2>/dev/null || true
 [ -s "$out/timeline.jsonl" ] && cp "$out/timeline.jsonl" "$dest/"

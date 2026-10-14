@@ -3045,6 +3045,23 @@ scenarios.visit = function()
     S.g = lp("arrive", 1, S.sp, S.dist, {corp = "grubstake"})
     info("visit: Grubstake " .. (S.g and ("landed, settlement " .. S.g) or "found no site"))
   end)
+  -- Grubstake is the corporation that hits a player unprovoked: if none of its settlements stands at 30 minutes, it
+  -- lands again, further out.
+  schedule(30 * 3600, function()
+    for _, id in ipairs(lp("bases")) do
+      local st = lp("stats", id)
+      if st.corp == "grubstake" and not st.fallen then return end
+    end
+    S.g2 = lp("arrive", 1, S.sp, S.dist + 300, {corp = "grubstake"})
+    info("visit: Grubstake again at 30 minutes " .. (S.g2 and ("landed, settlement " .. S.g2) or "found no site"))
+  end)
+  -- LP_MIX=provoked: an hour in, the factory counts as having attacked both corporations (no live player can).
+  if params.mix == "provoked" then
+    schedule(60 * 3600, function()
+      lp("debug_tune", {provoke = true})
+      info("visit: both corporations provoked by the player")
+    end)
+  end
   for t = 600 * 60, END - 60, 600 * 60 do
     schedule(t, function()
       local row = {minute = (game.tick - storage.t0) / 3600, player = census(), bases = {}}
@@ -3083,7 +3100,9 @@ end
 scenarios.sneak = function()
   local direct = params.mix == "direct"
   schedule(60, function()
-    lp("debug_tune", {era = 2, raids_off = true, sneak_off = direct})
+    -- No arrival history: this tests the approach, not research (with it, the strength credit read five lasers as
+    -- 4.7 and sent 21, which lost).
+    lp("debug_tune", {era = 2, raids_off = true, sneak_off = direct, history_off = true})
     S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
   end)
@@ -3302,6 +3321,69 @@ scenarios.country = function()
       near, lost, serpent.line(st.ops.log[#st.ops.log])))
     check("country: the raid routed round the nests", S.route and #S.route > 0 and near > 30, string.format("%.0f", near))
     check("country: and lost nothing to them", lost == 0, tostring(lost))
+  end)
+end
+
+-- Clearing: in a world thick with nests (spawners every 70 tiles from 250 to 700 out, evolution 1), every site the
+-- first pass tries has a nest near it; Grubstake lands on the second pass, and its landing burns a clearing (no spawner
+-- or worm left within 80 tiles), without raising the biters' evolution from spawner kills.
+scenarios.clearing = function()
+  schedule(30, function() game.forces.enemy.set_evolution_factor(1, surface()) end)
+  schedule(60, function()
+    local n = 0
+    for x = -700, 700, 70 do for y = -700, 700, 70 do
+      local d = math.sqrt(x * x + y * y)
+      if d >= 250 and d <= 700 then
+        local p = surface().find_non_colliding_position("biter-spawner", {x, y}, 8, 1)
+        if p and surface().create_entity{name = "biter-spawner", position = p, force = "enemy"} then n = n + 1 end
+      end
+    end end
+    S.spawners = n
+    S.evo0 = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
+    -- One ring only (350 tiles out, inside the nests): the further rings are clear of them and the first pass would
+    -- land there.
+    lp("debug_tune", {rings = {0}})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, 350, {corp = "grubstake"})
+  end)
+  schedule(300, function()
+    local st = S.g and lp("stats", S.g)
+    local left = st and surface().count_entities_filtered{position = st.origin, radius = 80, type = {"unit-spawner", "turret"},
+      force = "enemy"} or -1
+    local evo = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
+    info(string.format("clearing: %d spawners placed; Grubstake %s, cleared %s, %d left within 80; spawner evolution %.4f -> %.4f",
+      S.spawners, tostring(S.g), st and tostring(st.cleared) or "-", left, S.evo0, evo))
+    check("clearing: Grubstake landed among the nests", S.g ~= nil, "")
+    check("clearing: its landing burned a clearing", st and (st.cleared or 0) > 0 and left == 0,
+      st and (tostring(st.cleared) .. " cleared, " .. left .. " left") or "no landing")
+    check("clearing: without evolving the biters", math.abs(evo - S.evo0) < 1e-6, string.format("%.4f -> %.4f", S.evo0, evo))
+  end)
+end
+
+-- Pads: each corporation's landing pad in its own shape (layout pad_shape), drawn as text in results.txt: '#' its floor,
+-- '+' its trim, '.' anything else, 'L' the lander. Serenity's is an octagon with a trim ring, Grubstake's ragged.
+scenarios.pads = function()
+  schedule(60, function()
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+  end)
+  schedule(2 * 3600, function()
+    for _, id in ipairs({storage.id, S.g}) do
+      local st = lp("stats", id)
+      local o = st.origin
+      local floor = {["lp-pad"] = "#", ["lp-trim"] = "+", ["lp-grubstake-pad"] = "#", ["lp-grubstake-trim"] = "+"}
+      local rows, pad, trim = {}, 0, 0
+      for y = o.y - 14, o.y + 14 do
+        local r = {}
+        for x = o.x - 26, o.x + 26 do
+          local c = floor[surface().get_tile(x, y).name] or "."
+          if math.abs(x - o.x) < 1 and math.abs(y - o.y) < 1 then c = "L" end
+          if c == "#" then pad = pad + 1 elseif c == "+" then trim = trim + 1 end
+          table.insert(r, c)
+        end
+        table.insert(rows, table.concat(r))
+      end
+      info(string.format("pads: %s %d (%d floor, %d trim)\n%s", st.corp, id, pad, trim, table.concat(rows, "\n")))
+      check("pads: " .. st.corp .. " laid its pad at landing", pad > 100, pad .. " floor tiles")
+    end
   end)
 end
 

@@ -129,6 +129,37 @@ function base.land(surface, pos, opts)
   return b
 end
 
+-- The landing burns a clearing (the user: "a landing could significantly damage/destroy nests and biters in a
+-- radius"): spawners, worms and biters within CLEAR_RADIUS of a new lander are destroyed, the corporation's kills (so
+-- the spawners' evolution is refunded, biters.lua), with explosions where they stood; the players are told.
+local CLEAR_RADIUS = 80
+function base.clear_landing(b)
+  local s = b.lander.surface
+  local c = b.lander.position
+  local f = b.lander.force
+  local nests = 0
+  for _, e in pairs(s.find_entities_filtered{position = c, radius = CLEAR_RADIUS, force = "enemy",
+    type = {"unit-spawner", "turret", "unit"}}) do
+    if e.valid then
+      if e.type ~= "unit" then
+        nests = nests + 1
+        s.create_entity{name = "big-explosion", position = e.position}
+      end
+      e.die(f, b.lander)
+    end
+  end
+  s.create_entity{name = "massive-explosion", position = c}
+  b.cleared = nests
+  if nests > 0 then
+    trace(b, string.format("the landing burned a clearing: %d nests and worms destroyed", nests))
+    for _, pf in pairs(game.forces) do
+      if #pf.players > 0 and not shared.is_corp(pf.name) then
+        pf.print({"lp.landing-cleared", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", c.x, c.y, s.name), nests})
+      end
+    end
+  end
+end
+
 -- The drop escort's turrets (docs/reviews/2026-10-14-hull-consult.md): four gun turrets at the pad's corners,
 -- fed from the settlement's stock (they are in b.turrets), so a camp is not bare for its first twenty minutes.
 -- They are the drop's, not the settlement's: never rebuilt, and packed up CAMP_TICKS after landing (kept, they
@@ -906,7 +937,8 @@ function base.stats(b)
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
     fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
-    grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted}
+    grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
+    cleared = b.cleared}
 end
 
 return base

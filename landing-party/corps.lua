@@ -58,3 +58,26 @@ for kind, color in pairs(d.tints or {}) do
   if p then retint(p, color, {}) end
 end
 data:extend(out)
+
+-- Each corporation's own recoloured art (scripts/make_sprites.py; the user, 2026-10-14: "more refined recolored
+-- sprites ... instead of just tinting the full thing"): every layer of its prototypes whose vanilla file has a recolour
+-- in graphics/manifest.lua points at it and drops its whole-sprite tint. What has none keeps the tint.
+local manifest = require("graphics.manifest")
+local function repoint(t, files, seen)
+  if type(t) ~= "table" or seen[t] then return end
+  seen[t] = true
+  if type(t.filename) == "string" and files[t.filename] then
+    t.filename = files[t.filename]
+    t.tint = nil
+  end
+  for _, v in pairs(t) do repoint(v, files, seen) end
+end
+for corp in pairs(shared.CORPS) do
+  local files = manifest[corp]
+  if files then
+    for _, kind in ipairs(shared.KINDS) do
+      local p = find(shared.variant(corp, kind))
+      if p and p.type ~= "unit" and p.type ~= "spider-unit" then repoint(p, files, {}) end
+    end
+  end
+end

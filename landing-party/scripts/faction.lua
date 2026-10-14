@@ -144,9 +144,11 @@ function faction.site(surface, from, distance, count)
         surface.force_generate_chunk_requests()
       end
       -- Not on biters: a settlement landed among nests could not build there (docs/campaign.md, biters).
-      -- Further from them as they evolve: 60 tiles, 200 at full evolution.
+      -- Further from them as they evolve: 60 tiles, 100 at full evolution (200 left a maximum-evolution world no site
+      -- at all, visit). On a second pass (faction.arrive) nests do not refuse a site: the lander clears its ground.
       local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
-      if clear and surface.count_entities_filtered{position = spot, radius = 60 + 140 * evo, type = "unit-spawner", limit = 1} > 0 then
+      if clear and not faction.ignore_nests
+        and surface.count_entities_filtered{position = spot, radius = 60 + 40 * evo, type = "unit-spawner", limit = 1} > 0 then
         clear = false
       end
       if clear then
@@ -198,11 +200,19 @@ function faction.arrive(surface, from, opts, quiet)
   -- 25 times running, every 5 minutes, a 6-hour campaign) also moves on to the next ring.
   local pos, b
   -- Further rings out to a megabase's edge: clear of the factory (CLEAR_OF_FACTORY), the near rings were all refused.
-  for _, extra in ipairs({0, 120, 240, 480, 800, 1200, 1800}) do
-    pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
-    b = pos and base.land(surface, pos, opts)
+  -- A second pass with nests allowed (the lander burns its clearing, base.clear_landing): in a maximum-evolution
+  -- world every ring had nests near it, and Grubstake never landed.
+  for pass = 1, 2 do
+    faction.ignore_nests = pass == 2
+    for _, extra in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do
+      pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
+      b = pos and base.land(surface, pos, opts)
+      if b then break end
+    end
     if b then break end
   end
+  faction.ignore_nests = false
+  if b then base.clear_landing(b) end
   if not b then
     -- Try again later, and say why: a failed landing retried silently every 10 s once.
     f.next = game.tick + 5 * 3600

@@ -808,9 +808,11 @@ local function breach_point(b, t, from)
   local best, bc, bd
   for n, wl in ipairs(walls) do
     if n % 2 == 1 or #walls < 200 then
+      -- Reach plus the room a crowd at the wall takes (a piece just out of reach left the raiders gathered round it
+      -- inside the flank lasers' reach: 16 of 31 lost and the raid aborted, sneak).
       local c = 0
       for _, e in ipairs(turrets) do
-        local r = REACH[e.type] or 20
+        local r = (REACH[e.type] or 20) + 6
         if (e.position.x - wl.position.x) ^ 2 + (e.position.y - wl.position.y) ^ 2 <= r * r then c = c + 1 end
       end
       local d = (wl.position.x - from[1]) ^ 2 + (wl.position.y - from[2]) ^ 2
@@ -862,6 +864,22 @@ local function loot(b, op, t, pos, surface, trace)
       trace(b, string.format("looting a %s at %.0f,%.0f: %d items carried (worth %.0f)", c.name, c.position.x,
         c.position.y, op.loot.items, op.loot.value))
     end
+  end
+end
+
+-- A container its raiders destroyed is looted from the wreck (the raid razed a chest before its looting step came
+-- round, every 5 seconds, and took nothing: ability).
+function ops.loot_wreck(b, ent)
+  local op = b.op
+  if not (op and op.kind == "raid" and (shared.CORPS[b.corp].temper or {}).loots) then return end
+  op.loot = op.loot or {items = 0, value = 0, looted = {}}
+  if op.loot.looted[ent.unit_number] or op.loot.items >= LOOT_ITEMS then return end
+  op.loot.looted[ent.unit_number] = true
+  local inv = ent.get_inventory(defines.inventory.chest)
+  for _, it in pairs(inv and inv.get_contents() or {}) do
+    local took = math.min(it.count, LOOT_ITEMS - op.loot.items)
+    op.loot.items = op.loot.items + took
+    op.loot.value = op.loot.value + took * (LOOT[it.name] or 0.1)
   end
 end
 

@@ -81,6 +81,12 @@ predictability.
   selection tool as override.
 - **Art is tinted vanilla** (cold blue-white) until the mechanics are proven.
 
+- **A corporation at war with the player destroys something** (the user, 2026-10-14: "even if they don't punch
+  through, they should at least destroy some buildings, or else it makes no sense"). A megabase stays impregnable to
+  frontal raids (else it is tower defence again), but a provoked corporation, and Grubstake unprovoked, must take
+  player buildings regularly, through what a megabase cares about: ore it will need, exposed rails and lines,
+  remote outposts, long-range artillery. Measured on real saves (`scripts/visit.sh`).
+
 ## The faction over a game
 Built in `scripts/faction.lua`.
 - **Landings.** The first answers the first rocket launch on a surface, 350 tiles from the silo. Then one
@@ -1069,6 +1075,37 @@ scenario with assertions first; the window is for art, feel and GUI.
   buildings destroyed by them, rebuilt; its raids on nests in its claim aborted); a second Serenity landing fell;
   Grubstake found no site (200 tiles from every spawner at full evolution, 150 from the factory, out of artillery
   reach: nowhere on rings to 1,800 tiles). No operation went against the player (Serenity unprovoked).
+- **Fourth visit (nwa; clearing landings, research history, biter routing): plain and provoked identical.** Both
+  corporations now land and live (Grubstake: 3 of 4 settlements standing at the end, Hand-loads 5, Salvage rights,
+  Scrap plating; Serenity: 5 of 8), at war with the biters (5,227 of their buildings destroyed) and each other, never
+  with the player: no building of its was destroyed in three hours, provoked at the hour or not. Grubstake's temper
+  finds nothing soft at a factory whose every edge is under upgraded lasers; Serenity, provoked, can afford no raid
+  against them; most operations were "no way round biter country". Script 2.98 -> 3.10 ms a tick (a loaded machine).
+  Not acceptable (the user): the principle above; a consult with Fable on pressure against a megabase (next).
+- **Landings burn a clearing (the user: "a landing could significantly damage/destroy nests and biters in a radius").**
+  Spawners, worms and biters within 80 tiles of a new lander are destroyed, the corporation's kills (their evolution
+  refunded), with explosions, and the player told (`lp.landing-cleared`). Sites keep 60 + 40 x evolution tiles from
+  spawners; when no ring has one, a second pass allows nests (the lander clears them). Scenario `clearing`: spawners
+  every 70 tiles at evolution 1, one ring allowed: Grubstake landed on the second pass, cleared 4, none left within 80,
+  evolution unmoved. The visit forces Grubstake again at 30 minutes if none stands, and `LP_MIX=provoked` provokes both
+  corporations at the hour.
+- **Pads in each corporation's shape (the user: "the landing sites could perhaps vary a little more between factions.
+  Right now it's rectangles for everyone").** Laid at landing (a camp's pad had been bare ground until maturity):
+  Serenity's landing ring, an octagon of its floor inside a ring of its trim, the rectangle's corners bare; Grubstake's
+  drop site, ragged patches of its floor broken by a tile hash, scraps of hazard stripe. The block stays a rectangle
+  for the planner. Scenario `pads` draws both as text.
+- **Recoloured sprites (the user: "more refined recolored sprites. Like we did in empirical science ... instead of just
+  tinting the full thing"; "the lander should also get a nicer recolor"; "you threw out the bicolor idea for
+  Serenity?").** `scripts/make_sprites.py --write` writes each corporation's own files (216, about 37 MB) and
+  `graphics/manifest.lua`; `corps.lua` points each corporation's buildings at them and drops their whole-sprite tint.
+  The user chose a mixed treatment: Serenity's steel colourised at its own luminance (highlights and shadows kept),
+  slate-teal machines and charcoal defences (walls, turrets, poles, lamps, gates darkened to 55%); Grubstake's rusty
+  body under a warm wash with its blue paint repainted amber; the lander (the crash site's spaceship) has its yellow
+  paint repainted, slate-teal or a deeper amber. Units keep their art: only the engine's colour masks (the character's,
+  tank's and car's player-colour layers) take the corporation's colour; a sprite without masks (the harrier) is tinted
+  whole. Review sheets go to the user before anything is wired.
+- Also: a container its raiders destroy is looted from the wreck (the raid razed the chest before its looting step came
+  round); a breach is chosen by turret reach plus 6 tiles of crowd room (sneak: target razed, 17 of 31 lost: marginal).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

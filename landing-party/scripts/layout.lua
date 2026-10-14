@@ -259,6 +259,7 @@ function layout.land(b, surface, pos)
       if layout.area_free(surface, x0, y0, blocks.PAD_W, S, 12) then
         local hub = new_hub(b, x0, y0)
         local pad = open(b, hub, "pad", x0, y0, blocks.PAD_W, S, {{0, 0}, {1, 0}})
+        if (shared.CORPS[b.corp].arch or {}).pad then layout.pad_shape(b, pad) end
         -- The lander's box is off-centre ({-8.7, -3.3} to {6.9, 4.5}): shift it to sit mid-pad.
         return {x0 + blocks.PAD_W / 2 + 0.9, y0 + S / 2 - 0.6}, pad
       end
@@ -402,7 +403,46 @@ end
 -- A block's floor livery: its yard paved in the corporation's pad floor, inside a one-tile border of its trim
 -- (Serenity black concrete, Grubstake hazard stripes): large plain areas and straight edges, which tiles draw
 -- well.
+-- The landing pad in each corporation's own shape (the user: "the landing sites could perhaps vary a little more
+-- between factions. Right now it's rectangles for everyone"), laid at landing, not at maturity: Serenity's landing
+-- ring (an octagon of its floor inside a ring of its trim, the rectangle's corners bare ground), Grubstake's drop
+-- site (rough patches of its floor round the lander, ragged at the edge, scraps of hazard stripe in it). The block
+-- stays a rectangle for the planner.
+local function pad_shape(b, block)
+  local x0, y0, w, h = block.x0, block.y0, block.w, block.h
+  local cx, cy = x0 + w / 2, y0 + h / 2
+  local shape = (shared.CORPS[b.corp].arch or {}).pad
+  local pad, trim = {}, {}
+  for x = x0, x0 + w - 1 do
+    for y = y0, y0 + h - 1 do
+      local dx, dy = math.abs(x + 0.5 - cx) / (w / 2), math.abs(y + 0.5 - cy) / (h / 2)
+      if shape == "ring" then
+        -- An octagon: inside |dx| <= 1, |dy| <= 1 and |dx| + |dy| <= 1.45; a one-tile trim along its edge.
+        local d = math.max(dx, dy, (dx + dy) / 1.45)
+        local edge = 1 - 1.5 / math.min(w / 2, h / 2)
+        if d <= 1 then table.insert(d > edge and trim or pad, {x, y}) end
+      else
+        -- Rough ground: an ellipse broken at the edge by a tile hash, hazard scraps inside.
+        local n = ((x * 73 + y * 151 + (x * y) % 29 + b.id * 17) % 100) / 100
+        local d = math.sqrt(dx * dx + dy * dy)
+        if d + 0.35 * n < 1.05 then
+          table.insert(((x * 31 + y * 57) % 23 == 0) and trim or pad, {x, y})
+        end
+      end
+    end
+  end
+  push(b, {tiles = pad, floor = "pad", module = block})
+  push(b, {tiles = trim, floor = "trim", module = block})
+  block.liveried = true
+end
+layout.pad_shape = pad_shape
+
 function layout.livery(b, block)
+  -- A pad with its corporation's own shape keeps it (laid at landing).
+  if block.kind == "pad" and (shared.CORPS[b.corp].arch or {}).pad then
+    if not block.liveried then pad_shape(b, block) end
+    return
+  end
   local x0, y0, w, h = block.x0, block.y0, block.w, block.h
   -- The whole block, the walls' own row included (left bare, it showed as a line of sand between the road and
   -- the trim, user 2026-10-13); the trim one tile inside.

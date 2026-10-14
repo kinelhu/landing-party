@@ -7,9 +7,25 @@
 --                (lp-air-unit) is what turrets ignore when they cannot shoot up (data-final-fixes.lua).
 local shared = require("shared")
 
+-- Where a sprite carries the engine's colour masks (the character's, the tank's and the car's player-colour layers),
+-- only the masks take the colour and the art underneath stays natural (the user, 2026-10-14: refined colours, not
+-- the whole thing tinted); a sprite without masks (the harrier) is tinted whole, as before.
 local function tint(t, seen, color)
   if type(t) ~= "table" or seen[t] then return end
   seen[t] = true
+  if type(t.layers) == "table" then
+    local masked = false
+    for _, l in ipairs(t.layers) do if type(l) == "table" and l.apply_runtime_tint then masked = true end end
+    if masked then
+      for _, l in ipairs(t.layers) do
+        if type(l) == "table" and l.apply_runtime_tint then
+          l.apply_runtime_tint = false
+          l.tint = color or shared.TINT
+        end
+      end
+      return
+    end
+  end
   if (t.filename or t.filenames or t.stripes) and not (t.draw_as_shadow or t.draw_as_light or t.draw_as_glow) then
     t.tint = color or shared.TINT
   end
@@ -95,7 +111,7 @@ infantry.attack_parameters = {
     duration = 20, source_offset = {0, -1}}}},
 }
 table.insert(infantry.resistances, {type = "laser", percent = 20})
--- Grubstake's Shotgun hand: three heavy pellets of 9 (lp-pellet), range 9, every 55 ticks (45: 570 ticks), a little quicker on its feet
+-- Grubstake's Shotgun hand: three heavy pellets of 9 (lp-pellet), range 9, every 60 ticks (45: 570 ticks; 55: 600 to 660), a little quicker on its feet
 -- (four of 4 every 30 ticks held parity with the beam but barely scratched a biter: its armour takes 4 to 12 a hit;
 -- eight light ones destroyed the parity targets in 420 ticks to the beam's 780, five in 540, four in 630).
 -- Deadly at the fence, useless against a turret line (which its temper never attacks). Built as its infantry
@@ -103,7 +119,7 @@ table.insert(infantry.resistances, {type = "laser", percent = 20})
 local shotgun_hand = make_infantry("lp-shotgun-hand")
 shotgun_hand.movement_speed = 0.13
 shotgun_hand.attack_parameters = {
-  type = "projectile", ammo_category = "shotgun-shell", cooldown = 55, range = 9, min_range = 0,
+  type = "projectile", ammo_category = "shotgun-shell", cooldown = 60, range = 9, min_range = 0,
   range_mode = "bounding-box-to-bounding-box", cooldown_deviation = 0.15,
   sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound),
   animation = shotgun_hand.attack_parameters.animation,

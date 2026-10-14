@@ -43,7 +43,7 @@ shared.CORPS = {
       {id = "dozer", branch = "wheels", era = 3, requires = "slug", cost = 2500, unit = {kind = "lp-dozer", weight = 1},
         trigger = {walls_met = 2}},
     },
-    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {},
+    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {pad = "drop"},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
@@ -82,7 +82,7 @@ shared.CORPS = {
       {id = "aegis", branch = "line", era = 2, requires = "warden", cost = 2000, unit = {kind = "lp-aegis", weight = 1},
         trigger = {killer = {"vehicle", "lp-battle-tank"}, min = 5}},
     },
-    arch = {gates = true, baffles = true, pillboxes = true, flamers = true}, clears_nests = true,
+    arch = {gates = true, baffles = true, pillboxes = true, flamers = true, pad = "ring"}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
