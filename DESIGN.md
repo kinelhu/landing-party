@@ -742,7 +742,16 @@ the generators within 300 tiles of the lander, or a smaller share, or let the pl
   told: `lp.grudge-landed`): it besieges whatever its level or temper (Grubstake, which never besieges, does), its
   drop escort is doubled, and its garrison cap is doubled for 30 minutes from its first depot (from the landing,
   the window ran out as the depot opened). Only the next landing carries it. Scenario `grudge`.
-- Not yet measured in a campaign: lander kills with the 80-tile hull, camp strikes against the escort.
+- **Measured (campaign 777, 6 h, before weighted defence).** Two artillery lander kills, at hours 2.1 and 5.1
+  (target: 1 to 2, two hours apart: met), each preceded by the hull going down, but each within one to three
+  minutes of the battery being placed: the battery site now reaches every counted generator (3 of 3, 7 of 7), two
+  guns break three 400-health generators before any rebuild, and the corporation never gets a turn (target: the
+  battery attacked within 10 minutes, before its first shell; batteries lost 0 of 2; 44,964 shells supplied). The
+  scripted player places a battery charted, flared and firing in one tick, which a player cannot. Camp strikes won
+  2 of 3 against the escort (target at most 1): 27 units took Serenity's second camp (losing 14), 40 took
+  Grubstake's (losing 14); 53 died at Serenity's fourth (a level-2 escort). No corporation consolidated (three of four
+  landings fell). Open: the battery's setup time in the instrument (a build delay before it fires), and whether the
+  hull should need its generators down longer than their 90-second rebuild.
 
 ### Operations in depth (the user's ideas, Fable: `docs/reviews/2026-10-14-operations-depth-consult.md`)
 The user (2026-10-14), on hearing how raids are sized: turrets should weigh by type and tech, and units should count;
