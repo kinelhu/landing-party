@@ -285,5 +285,47 @@ local slug_round = table.deepcopy(pellet)
 slug_round.name = "lp-slug-round"
 slug_round.action.action_delivery.target_effects.damage.amount = 14
 
+-- Shock trooper (Serenity's Optics, after Lances): an electric beam that arcs to the next target and the next (a chain
+-- on the destroyer's electric beam, base game: spiked 2026-10-14), a brief stun on the one it hits; 12 electric a hit,
+-- every 45 ticks, range 12, 160 health. The answer to massed troopers.
+local arc_bounce = table.deepcopy(data.raw.beam["electric-beam-no-sound"])
+arc_bounce.name = "lp-arc-bounce"
+local arc_chain = {type = "chain-active-trigger", name = "lp-arc-chain", max_jumps = 4, max_range_per_jump = 6,
+  jump_delay_ticks = 6, fork_chance = 0,
+  action = {type = "direct", action_delivery = {type = "beam", beam = "lp-arc-bounce", max_length = 6.5, duration = 20,
+    add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, 0}}}}
+local shock = make_infantry("lp-shock")
+shock.max_health = shared.units["lp-shock"].health
+shock.attack_parameters = {
+  type = "beam", ammo_category = "electric", cooldown = 45, range = 12, range_mode = "bounding-box-to-bounding-box",
+  damage_modifier = 1.2, source_direction_count = 8, source_offset = {0, -0.6},
+  animation = infantry.attack_parameters.animation,
+  ammo_type = {action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+    -- The chain first, in case the beam kills the target (as Space Age's tesla turret does).
+    {type = "nested-result", action = {type = "direct", action_delivery = {type = "chain", chain = "lp-arc-chain"}}},
+    {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "electric-beam",
+      max_length = 13, duration = 20, add_to_shooter = false, destroy_with_source_or_target = false,
+      source_offset = {0, -1}}}},
+    {type = "create-sticker", sticker = "electric-mini-stun"},
+  }}}},
+}
+shock.resistances = table.deepcopy(infantry.resistances)
+table.insert(shock.resistances, {type = "electric", percent = 50})
+-- Dynamite sapper (Grubstake's Scrap arms; the user chose it over a flamethrower buggy): a Shotgun hand's body that
+-- throws dynamite, 80 explosion over 3 tiles, enemies only (the breacher's charge), from 11 tiles every 3 seconds.
+-- Against a blob of troopers, and against the fence or wall in the way.
+local sapper = make_infantry("lp-sapper")
+sapper.max_health = shared.units["lp-sapper"].health
+sapper.movement_speed = 0.13
+sapper.attack_parameters.range = 11
+sapper.attack_parameters.cooldown = 180
+sapper.attack_parameters.ammo_category = "grenade"
+sapper.attack_parameters.sound = nil
+sapper.attack_parameters.ammo_type.action.action_delivery.target_effects = {
+  {type = "create-entity", entity_name = "grenade-explosion"},
+  {type = "nested-result", action = {type = "area", radius = 3, force = "enemy", action_delivery = {
+    type = "instant", target_effects = {{type = "damage", damage = {amount = 80, type = "explosion"}}}}}},
+}
+
 data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
-  lance, slug, slug_round})
+  lance, slug, slug_round, arc_bounce, arc_chain, shock, sapper})

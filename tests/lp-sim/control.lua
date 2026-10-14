@@ -2823,15 +2823,21 @@ end
 -- Unit nodes: a corporation's tree adds units to its mix against the killers it meets. LP_MIX=lance: eight Line troopers
 -- killed by the player's troopers, and Serenity deploys Lances (its depots build them). LP_MIX=slug: six Grubstake
 -- buggies killed by a player tank, and Grubstake builds Slug buggies.
+-- LP_MIX=shock: Lances already deployed, the player at era 3, twelve Line troopers killed by troopers: Shock troopers.
+-- LP_MIX=sapper: ten Shotgun hands killed by troopers (era 2): dynamite sappers.
 scenarios.unitnode = function()
-  local slug = params.mix == "slug"
-  local corp, node = slug and "grubstake" or "serenity", slug and "slug" or "lance"
-  local force = slug and "lp-grubstake" or FORCE
-  local victim = slug and "lp-grubstake-buggy" or "lp-infantry"
-  local made = slug and "lp-grubstake-slug" or "lp-lance"
+  local mix = params.mix ~= "" and params.mix or "lance"
+  local g = mix == "slug" or mix == "sapper"
+  local slug = mix == "slug"
+  local corp, node = g and "grubstake" or "serenity", mix
+  local force = g and "lp-grubstake" or FORCE
+  local victim = slug and "lp-grubstake-buggy" or (g and "lp-grubstake-infantry" or "lp-infantry")
+  local made = ({lance = "lp-lance", slug = "lp-grubstake-slug", shock = "lp-shock", sapper = "lp-grubstake-sapper"})[mix]
+  local kills = ({lance = 8, slug = 6, shock = 12, sapper = 10})[mix]
   schedule(60, function()
-    lp("debug_tune", {era = 2, rd_fund = {[corp] = 5000}})
-    if slug then
+    lp("debug_tune", {era = mix == "shock" and 3 or 2, rd_fund = {[corp] = 5000}})
+    if mix == "shock" then lp("debug_tune", {rd_tech = {serenity = {nodes = {lance = 1}}}}) end
+    if g then
       S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
       for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
     else
@@ -2844,18 +2850,59 @@ scenarios.unitnode = function()
       or spawn("lp-trooper", {0, 0}, 1, "player")[1]
     local n = 0
     for _, u in pairs(surface().find_entities_filtered{force = force, name = victim}) do
-      if n < (slug and 6 or 8) then u.die("player", cause); n = n + 1 end
+      if n < kills then u.die("player", cause); n = n + 1 end
     end
     S.killed = n
     lp("debug_tune", {rd_fast = true})
+  end)
+  -- Room in the garrison once the node is bought (it refilled with the old mix meanwhile): ten more die, causeless.
+  schedule(13 * 3600, function()
+    local n = 0
+    for _, u in pairs(surface().find_entities_filtered{force = force, type = "unit"}) do
+      if n < 10 and not u.name:find("hauler", 1, true) then u.die(); n = n + 1 end
+    end
   end)
   schedule(END - 60, function()
     local r = lp("rd", corp)
     local built = surface().count_entities_filtered{force = force, name = made}
     info("unitnode: " .. serpent.line({rd = r, killed = S.killed, built = built}))
-    check("unitnode: the killers were the trigger's", S.killed == (slug and 6 or 8), tostring(S.killed))
+    check("unitnode: the killers were the trigger's", S.killed == kills, tostring(S.killed))
     check("unitnode: it bought the node", (r.nodes or {})[node] ~= nil, serpent.line(r.nodes))
     check("unitnode: the depots build the new unit", built > 0, built .. " " .. made)
+  end)
+end
+
+-- Arc: the tree's area weapons hit more than one and spare their own side. One Shock trooper (Serenity) at five player
+-- cars three tiles apart, Serenity's own car beside them: its lightning must reach three or more, never its own. One
+-- dynamite sapper (Grubstake) at a block of four player walls, its own fence beside them: two or more walls hurt,
+-- the fence whole.
+scenarios.arc = function()
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true}) end)
+  schedule(120, function()
+    flatten(-40, -40, 40, 40)
+    S.cars = {}
+    for k = 0, 4 do table.insert(S.cars, surface().create_entity{name = "car", position = {8 + 3 * k, -20}, force = "player"}) end
+    S.own_car = surface().create_entity{name = "car", position = {11, -17.5}, force = FORCE}
+    local sh = surface().create_entity{name = "lp-shock", position = {0, -20}, force = FORCE}
+    sh.commandable.set_command{type = defines.command.attack, target = S.cars[1], distraction = defines.distraction.none}
+    S.walls = {}
+    for x = 0, 1 do for y = 0, 1 do
+      table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {10.5 + x, 20.5 + y}, force = "player"})
+    end end
+    S.fence = surface().create_entity{name = "lp-grubstake-wall", position = {10.5, 23.5}, force = "lp-grubstake"}
+    local sp = surface().create_entity{name = "lp-grubstake-sapper", position = {0, 21}, force = "lp-grubstake"}
+    sp.commandable.set_command{type = defines.command.attack, target = S.walls[1], distraction = defines.distraction.none}
+  end)
+  schedule(120 + 5 * 60, function()
+    local hit, walls = 0, 0
+    for _, c in ipairs(S.cars) do if not c.valid or c.health < c.max_health then hit = hit + 1 end end
+    for _, w in ipairs(S.walls) do if not w.valid or w.health < w.max_health then walls = walls + 1 end end
+    info(string.format("arc: %d of 5 cars hit, own car %.0f/%.0f; %d of 4 walls hurt, own fence %.0f/%.0f", hit,
+      S.own_car.health, S.own_car.max_health, walls, S.fence.health, S.fence.max_health))
+    check("arc: the lightning reached three cars or more", hit >= 3, hit .. " of 5")
+    check("arc: and spared its own side", S.own_car.health == S.own_car.max_health, "")
+    check("arc: the dynamite hurt two walls or more", walls >= 2, walls .. " of 4")
+    check("arc: and spared its own fence", S.fence.health == S.fence.max_health, "")
   end)
 end
 

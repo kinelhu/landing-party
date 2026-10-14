@@ -31,6 +31,9 @@ shared.CORPS = {
       -- Against the player's vehicles: slugs.
       {id = "slug", branch = "scrap-arms", era = 1, cost = 900, unit = {kind = "lp-slug", weight = 2},
         trigger = {killer = {"vehicle", "lp-battle-tank"}, min = 5}},
+      -- Against massed troopers (and the fence in the way): dynamite.
+      {id = "sapper", branch = "scrap-arms", era = 2, cost = 1500, unit = {kind = "lp-sapper", weight = 2},
+        trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 10}},
     },
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
@@ -61,6 +64,9 @@ shared.CORPS = {
       -- Against massed troopers: reach.
       {id = "lance", branch = "optics", era = 1, cost = 900, unit = {kind = "lp-lance", weight = 2},
         trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 6}},
+      -- Against blobs: lightning that arcs from one trooper to the next.
+      {id = "shock", branch = "optics", era = 3, requires = "lance", cost = 2500, unit = {kind = "lp-shock", weight = 2},
+        trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 12}},
     },
     arch = {gates = true, baffles = true, pillboxes = true, flamers = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
@@ -76,7 +82,8 @@ shared.DEFAULT_CORP = "serenity"
 -- ("lp-turret"); another's are "lp-<corp>-turret". Logic speaks in kinds; creation and queries translate.
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
   "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
-  "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug"}
+  "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
+  "lp-sapper"}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
@@ -178,6 +185,8 @@ shared.units = {
   -- Tree units (scripts/rd.lua): bought into a corporation's mix.
   ["lp-lance"] = {health = 110, cost = 14},
   ["lp-slug"] = {health = 240, cost = 25},
+  ["lp-shock"] = {health = 160, cost = 30},
+  ["lp-sapper"] = {health = 120, cost = 16},
 }
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by

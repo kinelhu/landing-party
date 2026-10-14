@@ -48,7 +48,7 @@ document describes the parts as built; the campaign document describes the game 
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
-| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden, Lance; Hand-loads, Scrap plating, Asbestos, Slug buggy) | built (slices 1-3) | `arms`, `plate` (two), `techup` (two), `unitnode` (two) |
+| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden, Lance, Shock troops; Hand-loads, Scrap plating, Asbestos, Slug buggy, Dynamite sappers) | built (slices 1-4) | `arms`, `arc`, `plate` (two), `techup` (two), `unitnode` (four) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -887,6 +887,17 @@ and withdraws in order; Grubstake empties chests first: the user's heists, folde
   Space Age's tesla turret does), jumped from one player car to the next through all five (3 tiles apart, 4 jumps
   allowed, 20 damage each) and left the shooter's own car beside them untouched. Shock troops can be built.
   Dynamite sappers need no spike: the player's breacher already throws enemies-only charges.
+
+- **Slice 4, area weapons (built).** Serenity's **Shock trooper** (Optics, era 3, after Lances, 2,500 parts): an
+  electric beam that arcs on to the next target (`lp-arc-chain`, 4 jumps of up to 6 tiles, the destroyer's beam), a
+  brief stun on the one it hits (`electric-mini-stun`), 12 electric every 45 ticks, range 12, 160 health, electric
+  50% resisted; bought on twelve losses to troopers, breachers or the character. Grubstake's **Dynamite sapper**
+  (Scrap arms, era 2, 1,500): a Shotgun hand's body throwing dynamite, 80 explosion over 3 tiles, enemies only (the
+  breacher's charge), from 11 tiles every 3 seconds; bought on ten losses to troopers. Nodes may require another
+  (`requires`). Scenario `arc`: one Shock trooper hit all five player cars and spared its own car beside them; one
+  sapper hurt all four walls of a block and spared its own fence. `unitnode` (four variants): each unit node bought
+  on its killers and built by the depots. Found on the way: a node set outright for a test must take effect as bought
+  (Lances marked researched but absent from the mix were bought again, and Shock troopers were saved for).
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

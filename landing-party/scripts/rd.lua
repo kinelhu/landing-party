@@ -17,8 +17,8 @@ local WINDOW_TICKS = 30 * 3600
 rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier"] = "bullet",
   ["lp-tank"] = "cannon-shell", ["lp-walker"] = "rocket"}
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
-rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser"},
-  grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell"}}
+rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric"},
+  grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade"}}
 -- What a killer deals, by its type or name: the plate that would answer it (biters are not counted).
 local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "physical", ["electric-turret"] = "laser",
   ["fluid-turret"] = "fire", ["artillery-turret"] = "explosion", ["artillery-wagon"] = "explosion"}
@@ -137,6 +137,7 @@ local function owned(t, node)
 end
 local function allowed(t, node, era)
   if owned(t, node) then return false end
+  if node.requires and not t.nodes[node.requires] then return false end
   if node.track then return level_of(t, node) + 1 <= era + 1 end
   return era >= (node.era or 0)
 end
@@ -228,7 +229,16 @@ end
 -- Tests: a research history set outright ({weapons = {cat = level}, plate = {kind = plate}}).
 function rd.set(corp, tech)
   local t = rd.state(corp)
-  for id, k in pairs(tech.nodes or {}) do t.nodes[id] = k end
+  -- A node set outright takes effect as if bought (its units join the mix, its plates are worn).
+  for id, k in pairs(tech.nodes or {}) do
+    t.nodes[id] = k
+    for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+      if node.id == id then
+        if node.unit then t.units[node.unit.kind] = node.unit.weight end
+        for kind, p in pairs(node.plates or {}) do t.plate[kind] = p end
+      end
+    end
+  end
   local f = game.forces[shared.CORPS[corp].force]
   for c, k in pairs(tech.weapons or {}) do
     t.weapons[c] = k
