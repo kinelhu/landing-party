@@ -122,6 +122,7 @@ function base.land(surface, pos, opts)
   base.claim_map(b)
   storage.bases[id] = b
   site.scan_init(b, SEARCH)
+  if not opts.uplink then base.drop_power(b) end
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
     color = {0.7, 0.9, 1}, scale = 1.4, alignment = "center"}.id
   trace(b, string.format("landed at %.0f,%.0f: doctrine %s, first hub %s", at[1], at[2], b.doctrine,
@@ -165,6 +166,25 @@ end
 -- They are the drop's, not the settlement's: never rebuilt, and packed up CAMP_TICKS after landing (kept, they
 -- made every young settlement too strong for a rival's raids, and two corporations never fought: rivals).
 local CAMP_TICKS = 20 * 3600
+-- The drop's power: two generators beside the lander from the moment it lands, so its hull holds (half its counted
+-- generators standing; the player's artillery does not fire at generators by itself). Landed under a megabase's guns,
+-- camps with none were shelled to death in 25 seconds, five of five (visit). The planner's own come later; these give
+-- way to what it builds (make_way).
+function base.drop_power(b)
+  local s = b.lander.surface
+  local name = shared.variant(b.corp, "lp-generator")
+  local x, y = b.lander.position.x, b.lander.position.y
+  b.drop_gens = {}
+  for _, dx in ipairs({-6, 6}) do
+    local p = s.find_non_colliding_position(name, {x + dx, y + blocks.SIZE / 2 + 4}, 8, 1)
+    local g = p and s.create_entity{name = name, position = p, force = b.lander.force}
+    if g then
+      register(b, g, nil)
+      table.insert(b.drop_gens, g)
+    end
+  end
+end
+
 function base.corner_turrets(b)
   local s = b.lander.surface
   -- The corporation's own turret where it is a gun turret (Grubstake's), else the default gun turret.
@@ -224,6 +244,9 @@ local function capture(b)
       local defended = surface.count_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(b),
         type = {"unit", "spider-unit", "electric-turret", "ammo-turret"}, limit = 1} > 0
       if by and not defended then
+        -- Occupied: it calls for help as a building under fire does (an undefended outpost was taken by holding it,
+        -- and the corporation never knew, siege).
+        if not m.held_since then army.alarm(b, {x = m.center[1], y = m.center[2]}, trace) end
         m.held_since = m.held_since or game.tick
         if game.tick - m.held_since >= CAPTURE_TICKS then
           m.captured = by.name
@@ -360,8 +383,17 @@ local function make_way(b, surface, name, pos)
       local p = surface.find_non_colliding_position(e.name, {pos[1], pos[2] + 10}, 16, 1)
       if p then e.teleport(p) end
     else
+      for i, g in ipairs(b.drop_gens or {}) do
+        if g == e then
+          table.remove(b.drop_gens, i)
+          for j = #b.gens, 1, -1 do if b.gens[j] == e then table.remove(b.gens, j) end end
+          storage.owner[e.unit_number] = nil
+          e.destroy()
+          break
+        end
+      end
       for i, t in ipairs(b.camp_turrets or {}) do
-        if t == e then
+        if e.valid and t == e then
           table.remove(b.camp_turrets, i)
           for j = #b.turrets, 1, -1 do if b.turrets[j] == e then table.remove(b.turrets, j) end end
           e.destroy()

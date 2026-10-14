@@ -228,7 +228,7 @@ remote.add_interface("landing-party", {
     if t.siege_tier ~= nil then storage.siege_tier = t.siege_tier end
     if t.sneak_off ~= nil then storage.sneak_off = t.sneak_off end
     if t.history_off ~= nil then storage.history_off = t.history_off end
-    if t.rings ~= nil then storage.rings = t.rings end
+    if t.rings ~= nil then storage.rings = t.rings or nil end
     if t.ladder_fast ~= nil then storage.ladder_fast = t.ladder_fast end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end

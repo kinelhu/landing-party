@@ -1162,6 +1162,15 @@ scenario with assertions first; the window is for art, feel and GUI.
      clear of nests, so on a megabase that band is the one approach. There the corporation's turrets are shelled by the
      player's artillery (on its own), its lander holds on its hull (artillery does not fire on its own at generators or
      units), and counter-battery has the player's artillery in reach. Third pass: nests allowed.
+  5. Landed under the guns, every camp's lander died within 25 seconds (no generators yet, so no hull): **the drop's
+     power** (built): two generators beside the lander from the moment it lands (the planner's own come later; these
+     give way to what it builds). Scenario `guns`: Serenity called 200 tiles from a loaded artillery turret at era 3
+     landed 146 out on the second pass, its hull held under the shells, and it destroyed the turret within 5 minutes.
+     On the save all six settlements lived the first hour. An outpost occupied now calls for help as one under fire
+     does (an undefended one was taken by holding, and its corporation never knew: siege).
+  6. Under the guns, camps never keep a depot (the player's artillery fires on them by itself) and operations left only
+     from depots: their escorts stood idle at the player's edge. Operations now leave from the lander when there is
+     no depot, and a siege or strip not sent also holds its settlement 2 minutes.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each
