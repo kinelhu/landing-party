@@ -1034,6 +1034,15 @@ scenario with assertions first; the window is for art, feel and GUI.
   First save (the user's own `nwa`, April 2026): 210 technologies, 2,302 laser turrets, 278 flamethrowers, 59
   artillery turrets, 17,744 walls, 1,379 roboports, 95% of its buildings within 1,600 tiles. Ten minutes: 2.07 ms a
   tick alone, 2.23 with the mod; its own rocket launches brought a second Serenity landing.
+  First three-hour visit (nwa): the faction's own landings (brought forward by the save's rocket launches) used their
+  default 350 tiles from spawn and came down inside the 1,600-tile factory; the site rules only refused turrets and
+  units within 100 tiles and artillery within 300, so the open ground between its lasers counted as clear, and
+  artillery range research (210 technologies) outranged 300. Eleven Grubstake landings died within 25 seconds;
+  Serenity's first settlement lived (garrison 169, Optics maxed), its five sieges at the player's artillery all
+  intercepted (defence read 687 at one battery). Fixed: no landing within 150 tiles of the player's buildings, the
+  artillery margin times the force's range research, and rings tried out to 1,800 tiles. In game the user found the
+  rest: "a single biter will even clear out turrets and 10 units with vehicles", at maximum evolution. The
+  corporations are built for an early or middle world (next).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

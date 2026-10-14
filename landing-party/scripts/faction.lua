@@ -28,6 +28,9 @@ local HQ_DISTANCE = 250
 local WITHDRAW = 15 * 3600
 local VACANCY_HASTE = 30 * 3600
 local DISTANCE = 350
+local CLEAR_OF_FACTORY = 150
+local FACTORY = {"assembling-machine", "furnace", "mining-drill", "lab", "roboport", "electric-pole", "container",
+  "logistic-container", "rocket-silo", "beacon", "storage-tank", "train-stop", "radar", "wall"}
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
 local SITE_MIN_ORE = 300
@@ -106,8 +109,10 @@ function faction.site(surface, from, distance, count)
       if clear then
         for _, pf in pairs(game.forces) do
           if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
-            and surface.count_entities_filtered{position = spot, radius = ARTILLERY_REACH, force = pf,
-              type = {"artillery-turret", "artillery-wagon"}, limit = 1} > 0 then
+            -- Its range research too (a factory with 210 technologies outranged 224 tiles: eleven landings in three
+            -- hours died within 25 seconds, visit).
+            and surface.count_entities_filtered{position = spot, radius = ARTILLERY_REACH * (1 + pf.artillery_range_modifier),
+              force = pf, type = {"artillery-turret", "artillery-wagon"}, limit = 1} > 0 then
             clear = false
           end
         end
@@ -118,6 +123,17 @@ function faction.site(surface, from, distance, count)
           if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
             and surface.count_entities_filtered{position = spot, radius = 100, force = pf,
               type = {"unit", "electric-turret", "ammo-turret", "fluid-turret", "car", "spider-vehicle"}, limit = 1} > 0 then
+            clear = false
+          end
+        end
+      end
+      -- Not in the player's factory: none of its buildings within CLEAR_OF_FACTORY (the open ground between a
+      -- megabase's lasers counted as clear, and landings came down inside a 1,600-tile factory, visit).
+      if clear then
+        for _, pf in pairs(game.forces) do
+          if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
+            and surface.count_entities_filtered{position = spot, radius = CLEAR_OF_FACTORY, force = pf,
+              type = FACTORY, limit = 1} > 0 then
             clear = false
           end
         end
@@ -179,7 +195,8 @@ function faction.arrive(surface, from, opts, quiet)
   -- A site whose pad does not fit (a headquarters' fortress found no free square within 100 tiles of its site
   -- 25 times running, every 5 minutes, a 6-hour campaign) also moves on to the next ring.
   local pos, b
-  for _, extra in ipairs({0, 120, 240}) do
+  -- Further rings out to a megabase's edge: clear of the factory (CLEAR_OF_FACTORY), the near rings were all refused.
+  for _, extra in ipairs({0, 120, 240, 480, 800, 1200, 1800}) do
     pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
     b = pos and base.land(surface, pos, opts)
     if b then break end
