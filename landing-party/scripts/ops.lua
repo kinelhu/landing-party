@@ -335,6 +335,36 @@ function ops.sense_at(b, pos, r)
   sense(b, game.surfaces[b.surface], {x = pos.x or pos[1], y = pos.y or pos[2]}, r or FIELD_SIGHT)
 end
 
+-- The survey: a settlement always knows where its rivals' factories are (a factory that size cannot hide). Every
+-- SURVEY_TICKS it looks along the line to each player force's spawn, in SURVEY_STEP steps up to SURVEY_RANGE, and
+-- senses what stands within SURVEY_SIGHT of the first point where that force's buildings are (landings kept out of a
+-- megabase's researched artillery reach stood far beyond their sensors and knew none of its buildings, visit).
+local SURVEY_TICKS, SURVEY_STEP, SURVEY_RANGE, SURVEY_SIGHT = 10 * 3600, 50, 2500, 150
+local SURVEY_TYPES = {"mining-drill", "assembling-machine", "furnace", "electric-pole", "straight-rail", "train-stop",
+  "ammo-turret", "electric-turret", "radar", "roboport", "container", "lab"}
+local function survey(b)
+  local s = game.surfaces[b.surface]
+  for _, f in pairs(game.forces) do
+    if (#f.players > 0 or f.name == "player") and not shared.is_corp(f.name) and f.name ~= "enemy"
+      and f.name ~= "neutral" and not f.get_cease_fire(b.force) then
+      local sp = f.get_spawn_position(s)
+      local dx, dy = sp.x - b.origin.x, sp.y - b.origin.y
+      local len = math.sqrt(dx * dx + dy * dy)
+      if len > 1 then
+        for d = SURVEY_STEP, math.min(SURVEY_RANGE, len), SURVEY_STEP do
+          local p = {b.origin.x + dx / len * d, b.origin.y + dy / len * d}
+          if s.count_entities_filtered{position = p, radius = SURVEY_STEP, force = f, type = SURVEY_TYPES, limit = 1} > 0 then
+            sense(b, s, {x = p[1], y = p[2]}, SURVEY_SIGHT)
+            b.front = b.front or {}
+            b.front[f.name] = p
+            break
+          end
+        end
+      end
+    end
+  end
+end
+
 -- Units in the field see around them (patrols, responses, the operation's own force).
 local function field_sight(b)
   local surface = game.surfaces[b.surface]
@@ -1896,6 +1926,7 @@ function ops.tick(b, tick, trace, army)
   if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) end
   if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
   if tick % 600 == 200 then field_sight(b) end
+  if tick % SURVEY_TICKS == (b.id * 131 + 7) % SURVEY_TICKS then survey(b) end
   if b.op then
     if tick % 300 == 100 then step(b, trace, army) end
   elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off
