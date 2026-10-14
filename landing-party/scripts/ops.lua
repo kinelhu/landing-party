@@ -600,6 +600,11 @@ local function finish(b, outcome, trace, army)
   -- Razed nothing and attacked, or razed nothing and lost raiders on the way: resistance there.
   if t and op.kind == "raid" and op.razed0 and b.razed == op.razed0 and (op.attacked or alive(op) < op.launched) then
     t.resist = (t.resist or 0) + 1
+    -- Walls round it: the ledger notes them (a Dozer's trigger, scripts/rd.lua).
+    if op.attacked and game.surfaces[b.surface].count_entities_filtered{position = t.pos, radius = 20, type = "wall",
+      force = enemies(game.forces[b.force]), limit = 1} > 0 then
+      rd.walls_met(b)
+    end
     trace(b, string.format("raid razed nothing at %.0f,%.0f: resistance there now %d", t.pos[1], t.pos[2], t.resist))
   end
   if t then
@@ -839,6 +844,13 @@ local function launch_siege(b, key, site, trace, army)
   local hauler = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
   if not hauler then return false end
   local guards = {}
+  -- Counter-battery (Serenity): against the player's artillery, its Shock troopers go first (up to six).
+  if battery(t) and rd.has(b.corp, "counter") then
+    for i = #b.garrison, 1, -1 do
+      local u = b.garrison[i]
+      if #guards < 6 and u.valid and shared.kind_of(u.name) == "lp-shock" then table.insert(guards, table.remove(b.garrison, i)) end
+    end
+  end
   for i = #b.garrison, 1, -1 do
     if #guards >= spec.guards then break end
     local u = b.garrison[i]

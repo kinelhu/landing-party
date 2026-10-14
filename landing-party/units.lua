@@ -327,5 +327,35 @@ sapper.attack_parameters.ammo_type.action.action_delivery.target_effects = {
     type = "instant", target_effects = {{type = "damage", damage = {amount = 80, type = "explosion"}}}}}},
 }
 
+-- Aegis tank (Serenity's Line, after Warden armour): the tank's hull with a laser cannon, 45 laser a shot every 60 ticks,
+-- range 15, 1,100 health, physical 30% and 5, explosion 40%. The answer to the player's battle tanks.
+local aegis = make_tank("lp-aegis")
+aegis.max_health = shared.units["lp-aegis"].health
+aegis.attack_parameters = table.deepcopy(infantry.attack_parameters)
+aegis.attack_parameters.damage_modifier = 4.5
+aegis.attack_parameters.cooldown = 60
+aegis.attack_parameters.animation = table.deepcopy(tank.attack_parameters.animation)
+aegis.resistances = {{type = "physical", decrease = 5, percent = 30}, {type = "explosion", percent = 40}}
+-- Dozer (Grubstake's Wheels, after Slug buggies): the hauler's hull, 1,800 health, physical 40% and 5, a ram (60
+-- physical at 2 tiles, every 60 ticks), slow. Its one heavy: it pushes a fence or wall open for the shotguns.
+local dozer = table.deepcopy(hauler)
+dozer.name = "lp-dozer"
+dozer.max_health = shared.units["lp-dozer"].health
+dozer.movement_speed = 0.07
+dozer.resistances = {{type = "physical", decrease = 5, percent = 40}, {type = "fire", percent = 50},
+  {type = "explosion", percent = 20}}
+dozer.attack_parameters = gun(60, 2, 60, "melee")
+dozer.attack_parameters.sound = nil
+dozer.attack_parameters.animation = table.deepcopy(hauler.attack_parameters.animation)
+-- Scavenger harrier (Grubstake's Wheels): a harrier with rockets, 18 explosion every 40 ticks, range 14, 180 health.
+-- It flies over walls to the player's artillery, mortars and radars.
+local scavenger = table.deepcopy(harrier)
+scavenger.name = "lp-scavenger"
+scavenger.max_health = shared.units["lp-scavenger"].health
+local sa = gun(18, 14, 40, "rocket")
+sa.ammo_type.action.action_delivery.target_effects[2].damage.type = "explosion"
+sa.animation = table.deepcopy(harrier.attack_parameters.animation)
+scavenger.attack_parameters = sa
+
 data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
-  lance, slug, slug_round, arc_bounce, arc_chain, shock, sapper})
+  lance, slug, slug_round, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger})

@@ -37,6 +37,11 @@ shared.CORPS = {
       -- Against massed troopers (and the fence in the way): dynamite.
       {id = "sapper", branch = "scrap-arms", era = 2, cost = 1500, unit = {kind = "lp-sapper", weight = 2},
         trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 10}},
+      -- Wheels: over the walls (against artillery and mortars), and through them.
+      {id = "scavenger", branch = "wheels", era = 2, cost = 1800, unit = {kind = "lp-scavenger", weight = 1},
+        trigger = {damage = "explosion", min = 5}},
+      {id = "dozer", branch = "wheels", era = 3, requires = "slug", cost = 2500, unit = {kind = "lp-dozer", weight = 1},
+        trigger = {walls_met = 2}},
     },
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
@@ -63,6 +68,8 @@ shared.CORPS = {
       {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400},
       -- Siege: its mortars dig in (against sallies and the player's artillery).
       {id = "hardened", branch = "siege", era = 2, cost = 1200, ability = true, trigger = {damage = "explosion", min = 5}},
+      {id = "counter", branch = "siege", era = 3, requires = "hardened", cost = 1000, ability = true,
+        trigger = {killer = {"artillery-turret", "artillery-wagon"}, min = 3}},
       {id = "warden", branch = "line", era = 1, cost = 1500, plates = {["lp-infantry"] = "physical"},
         trigger = {damage = "physical", min = 10}},
       -- Against massed troopers: reach.
@@ -71,6 +78,9 @@ shared.CORPS = {
       -- Against blobs: lightning that arcs from one trooper to the next.
       {id = "shock", branch = "optics", era = 3, requires = "lance", cost = 2500, unit = {kind = "lp-shock", weight = 2},
         trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 12}},
+      -- Against the player's tanks: a laser cannon on an armoured hull.
+      {id = "aegis", branch = "line", era = 2, requires = "warden", cost = 2000, unit = {kind = "lp-aegis", weight = 1},
+        trigger = {killer = {"vehicle", "lp-battle-tank"}, min = 5}},
     },
     arch = {gates = true, baffles = true, pillboxes = true, flamers = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
@@ -87,7 +97,7 @@ shared.DEFAULT_CORP = "serenity"
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
   "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
-  "lp-sapper"}
+  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger"}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
@@ -191,6 +201,9 @@ shared.units = {
   ["lp-slug"] = {health = 240, cost = 25},
   ["lp-shock"] = {health = 160, cost = 30},
   ["lp-sapper"] = {health = 120, cost = 16},
+  ["lp-aegis"] = {health = 1100, cost = 80},
+  ["lp-dozer"] = {health = 1800, cost = 90},
+  ["lp-scavenger"] = {health = 180, cost = 50},
 }
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by

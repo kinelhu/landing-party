@@ -48,7 +48,7 @@ document describes the parts as built; the campaign document describes the game 
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
-| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden, Lance, Shock troops, Hardened siege; Hand-loads, Scrap plating, Asbestos, Slug buggy, Dynamite sappers, Salvage rights, Prospector's eye); Grubstake loots | built (slices 1-5) | `arms`, `arc`, `plate` (two), `techup` (two), `unitnode` (four), `ability` (three) |
+| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Serenity: Optics, Warden, Lance, Shock troops, Aegis, Hardened siege, Counter-battery; Grubstake: Hand-loads, Scrap plating, Asbestos, Slug buggy, Dynamite sappers, Scavenger harriers, Dozer, Salvage rights, Prospector's eye); Grubstake loots | built (slices 1-6) | `arms`, `arc`, `plate` (two), `techup` (two), `unitnode` (eight), `ability` (three) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -912,6 +912,26 @@ and withdraws in order; Grubstake empties chests first: the user's heists, folde
   `ability` (three): a raid on an assembler beside a chest of 100 processing units took all 100 home, razed both,
   and paid 35 into the fund; a hardened siege dug in with 32 pieces and cleared them after; ore 55 tiles out was out
   of reach without the eye and stripped with it.
+
+- **Slice 6, the trees complete (built).** Serenity's **Aegis tank** (Line, after Warden, era 2, 2,000): the tank hull
+  with a laser cannon, 45 laser every 60 ticks, 1,100 health, physical 30% and 5, explosion 40%; on five losses to
+  vehicles or battle tanks. **Counter-battery** (Siege, after Hardened siege, era 3, 1,000): a siege at the player's
+  artillery takes up to six Shock troopers as its first guards; on three losses to artillery. Grubstake's **Scavenger
+  harrier** (Wheels, era 2, 1,800): a harrier with rockets, 18 explosion every 40 ticks, range 14, 180 health; on
+  five explosion losses. **Dozer** (Wheels, after Slug buggies, era 3, 2,500): the hauler's hull, 1,800 health,
+  physical 40% and 5, a ram of 60 at 2 tiles; on two raids that met walls (a raid that attacked, razed nothing and
+  had walls within 20 tiles of its target: the ledger's new `walls_met`). Scenario `unitnode` is now a table, one
+  row a node (eight); each node bought on its trigger and its unit built.
+
+| Threat | Serenity answers | Grubstake answers |
+|---|---|---|
+| Gun turrets (physical) | Warden armour | Scrap plating, or strips elsewhere |
+| Flamethrowers (fire) | (nothing of its own: it holds its line) | Asbestos suits |
+| Massed troopers | Lances, then Shock troopers | Dynamite sappers |
+| Vehicles and battle tanks | Aegis tanks | Slug buggies |
+| Artillery | Hardened siege, then Counter-battery | Scavenger harriers |
+| Walls | sieges (mortars, tiers) | Dozers, harriers over them |
+| Raids turned back | its Optics climb | Salvage rights, then Prospector's eye |
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

@@ -212,6 +212,7 @@ remote.add_interface("landing-party", {
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     for corp, tech in pairs(t.rd_tech or {}) do rd.set(corp, tech) end
+    for corp, n in pairs(t.rd_walls or {}) do for _ = 1, n do rd.walls_met({corp = corp}) end end
     -- Tests of operations' mechanics (not of tempers): every corporation already provoked by the player.
     if t.provoke then for _, c in pairs(shared.CORPS) do ops.provoke(c.force, "player") end end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end

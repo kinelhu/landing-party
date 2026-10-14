@@ -17,7 +17,8 @@ local WINDOW_TICKS = 30 * 3600
 rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier"] = "bullet",
   ["lp-tank"] = "cannon-shell", ["lp-walker"] = "rocket"}
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
-rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric"},
+rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric",
+  ["lp-aegis"] = "laser"},
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade"}}
 -- What a killer deals, by its type or name: the plate that would answer it (biters are not counted).
 local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "physical", ["electric-turret"] = "laser",
@@ -32,6 +33,7 @@ function rd.state(corp)
   d.tech.plate = d.tech.plate or {}
   d.tech.nodes = d.tech.nodes or {}
   d.tech.units = d.tech.units or {}
+  d.tech.walls_met = d.tech.walls_met or {}
   return d.tech
 end
 
@@ -56,6 +58,11 @@ function rd.tally(b, cause, dead)
   local killer = cause.type == "character" and "character" or (cause.type == "car" and "vehicle") or kind
   table.insert(t.losses, {tick = game.tick, damage = dmg, kind = shared.kind_of(dead), killer = killer})
   if #t.losses > 200 then table.remove(t.losses, 1) end
+end
+
+-- A raid that attacked a target behind walls and razed nothing (ops).
+function rd.walls_met(b)
+  table.insert(rd.state(b.corp).walls_met, {tick = game.tick})
 end
 
 -- A raid that turned back for want of force (ops).
@@ -175,6 +182,7 @@ local function score(t, node)
     if n >= (tr.min or 1) then return n end
   end
   if tr.turned_back and #t.turned_back >= tr.turned_back then return 5 * #t.turned_back end
+  if tr.walls_met and #t.walls_met >= tr.walls_met then return 5 * #t.walls_met end
   return 0
 end
 
@@ -216,6 +224,7 @@ function rd.choose(corp)
   local t = rd.state(corp)
   prune(t.losses)
   prune(t.turned_back)
+  prune(t.walls_met)
   local node, called = pick(corp, t, player_era())
   if not node then return end
   local cost = cost_of(t, node)
@@ -269,7 +278,7 @@ function rd.summary(corp)
   prune(t.losses)
   for _, l in ipairs(t.losses) do by[l.damage] = (by[l.damage] or 0) + 1 end
   return {fund = t.fund, salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
-    turned_back = #t.turned_back, bought = t.bought, strength = rd.strength(corp)}
+    turned_back = #t.turned_back, walls_met = #t.walls_met, bought = t.bought, strength = rd.strength(corp)}
 end
 
 return rd
