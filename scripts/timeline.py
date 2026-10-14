@@ -57,11 +57,17 @@ fig.suptitle(f"First contact: {run.name}")
 fig.tight_layout()
 fig.savefig(run / "timeline.png", dpi=90)
 
+# Cost to each side (rows written since 2026-10-14; older runs lack them): units the corporations lost, player
+# buildings razed, settlements fallen, landers the player destroyed, the player's strikes; corporations standing.
+cost = "corp_units_lost" in rows[0]
+extra = ["units lost", "razed", "fallen", "landers killed", "strikes", "corporations"] if cost else []
 out = [f"# First contact: {run.name}", "", "| minute | settlements | garrison | faction turrets | parts/min | raids | sieges | "
-       + " | ".join(cats) + " |", "|" + "---|" * (7 + len(cats))]
+       + " | ".join(cats + extra) + " |", "|" + "---|" * (7 + len(cats) + len(extra))]
 for r in rows:
+    more = [r["corp_units_lost"], r["razed"], r["fallen"], r["lander_kills"], r["strikes"],
+            " ".join(f"{k} {v}" for k, v in sorted((r.get("corps") or {}).items()))] if cost else []
     out.append(f"| {r['minute']:.0f} | {r['settlements']} | {r['garrison']} | {r['turrets']} | {r['parts_rate']:.0f} | "
-               f"{r['raids']} | {r['sieges']} | " + " | ".join(str(r['player'].get(c, 0)) for c in cats) + " |")
+               f"{r['raids']} | {r['sieges']} | " + " | ".join([str(r['player'].get(c, 0)) for c in cats] + [str(x) for x in more]) + " |")
 out += ["", "## Events", ""]
 out += [f"- {t:5.1f} min, settlement {b}: {text}" for t, b, text in events]
 (run / "timeline.md").write_text("\n".join(out) + "\n")

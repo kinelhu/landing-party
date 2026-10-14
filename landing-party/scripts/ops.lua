@@ -111,9 +111,12 @@ local function sense(b, surface, pos, r)
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
       t.pos, t.kind, t.value, t.seen, t.owner = c.pos, c.kind, c.value, game.tick, c.owner
       t.defence = surface.count_entities_filtered{position = c.pos, radius = DEFENCE_RADIUS, force = other, type = TURRETS}
-      -- A line cell: a pole or rail with no turret within 60 tiles (transit far from defences: cheap to cut).
+      -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
+      -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was
+      -- raided every ten minutes and its raiders died on the way.
       t.line = (c.type == "electric-pole" or (c.type or ""):find("rail") ~= nil)
         and surface.count_entities_filtered{position = c.pos, radius = 60, force = other, type = TURRETS, limit = 1} == 0
+        and surface.count_entities_filtered{position = c.pos, radius = 30, force = other, type = TYPES, limit = 8} < 8
       b.intel.targets[key] = t
     end
   end
@@ -489,7 +492,8 @@ local function finish(b, outcome, trace, army)
     end
   end
   local t = b.intel.targets[op.target]
-  if t and op.kind == "raid" and op.razed0 and op.attacked and b.razed == op.razed0 then
+  -- Razed nothing and attacked, or razed nothing and lost raiders on the way: resistance there.
+  if t and op.kind == "raid" and op.razed0 and b.razed == op.razed0 and (op.attacked or alive(op) < op.launched) then
     t.resist = (t.resist or 0) + 1
     trace(b, string.format("raid razed nothing at %.0f,%.0f: resistance there now %d", t.pos[1], t.pos[2], t.resist))
   end

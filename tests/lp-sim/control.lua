@@ -1442,6 +1442,155 @@ scenarios.control = function()
   end)
 end
 
+-- The campaign's player (contact, LP_MIX=campaign): three rules, every 5 minutes, through what a player has.
+--   answer  each place it lost something (a ghost its robots have not rebuilt, or anything outside their reach,
+--           seen as a ghost) gets two laser turrets once, at most 6 + 4 per era in all
+--   strike  every 45 minutes from an hour after the base: a squad (troopers, breachers, battle tanks by era) at
+--           the nearest standing settlement's lander when its garrison and turrets are below the squad's size,
+--           else at that settlement's nearest drill (the outposts the review says it should take first)
+--   era     up one every 90 minutes, to 4 (the corporations' market and the player's laser research)
+function campaign_player(AT, put)
+  S.answered, S.answered_n, S.strikes = {}, 0, 0
+  local era = 2
+  for t = AT + 600, END - 600, 300 do
+    schedule(t, function()
+      local cap = 6 + 4 * era
+      for _, g in pairs(surface().find_entities_filtered{type = "entity-ghost", force = "player"}) do
+        local k = math.floor(g.position.x / 24) .. "," .. math.floor(g.position.y / 24)
+        if not S.answered[k] and S.answered_n < cap then
+          S.answered[k] = true
+          S.answered_n = S.answered_n + 1
+          local placed = 0
+          for _, d in ipairs({-4, 4}) do
+            local tr = put("laser-turret", g.position.x + d, g.position.y - 6)
+            if tr then
+              placed = placed + 1
+              -- Powered by the nearest network: an interface beside it (the base's grid is interfaces too).
+              put("electric-energy-interface", tr.position.x, tr.position.y + 3)
+            end
+          end
+          info(string.format("campaign t%.0f: answer at %.0f,%.0f, %d lasers (%d answered)", game.tick / 3600,
+            g.position.x, g.position.y, placed, S.answered_n))
+        end
+      end
+    end)
+  end
+  for t = AT + 90 * 3600, END, 90 * 3600 do
+    schedule(t, function()
+      if era < 4 then
+        era = era + 1
+        lp("debug_tune", {era = era})
+        game.forces.player.set_ammo_damage_modifier("laser", 0.4 + 0.3 * (era - 2))
+        info(string.format("campaign t%.0f: era %d", game.tick / 3600, era))
+      end
+    end)
+  end
+  for t = AT + 60 * 3600, END - 600, 45 * 3600 do
+    schedule(t, function()
+      local best, bd, bst
+      for _, id in ipairs(lp("bases")) do
+        local st = lp("stats", id)
+        if st and st.lander and not st.fallen then
+          local d = st.origin.x ^ 2 + st.origin.y ^ 2
+          if not bd or d < bd then best, bd, bst = id, d, st end
+        end
+      end
+      if not best then return end
+      local troopers, breachers, tanks = 20 + 10 * (era - 2), 6 + 2 * (era - 2), era - 1
+      local size = troopers + 2 * breachers + 4 * tanks
+      -- What stands round the lander: its turrets (3 each) and every unit of the corporation within 60.
+      local o = {bst.origin.x, bst.origin.y}
+      local strength = 3 * surface().count_entities_filtered{position = o, radius = 40, force = bst.force,
+        type = {"electric-turret", "ammo-turret", "fluid-turret"}}
+        + surface().count_entities_filtered{position = o, radius = 60, force = bst.force, type = {"unit", "car", "spider-vehicle"}}
+      local target = {bst.origin.x, bst.origin.y}
+      local what = "lander"
+      if strength > size then
+        -- Scouted, as a player would: any corporation's drill within 600 tiles, the fewest turrets within 30
+        -- first, then the nearest (the drill nearest spawn sat in a block of 96 entities and ate every squad).
+        local nd
+        for _, f in pairs(game.forces) do
+          if f.name:sub(1, 3) == "lp-" then
+            for _, e in pairs(surface().find_entities_filtered{force = f, type = "mining-drill", position = {0, 0}, radius = 600}) do
+              local guns = surface().count_entities_filtered{position = e.position, radius = 30, force = f,
+                type = {"electric-turret", "ammo-turret", "fluid-turret"}}
+              local d = guns * 1e6 + e.position.x ^ 2 + e.position.y ^ 2
+              if not nd or d < nd then nd, target = d, {e.position.x, e.position.y} end
+            end
+          end
+        end
+        what = string.format("outpost (%d turrets near)", math.floor((nd or 0) / 1e6))
+      end
+      -- From era 3, the way a player takes a fortress: a forward battery in artillery range of the lander (200
+      -- tiles towards home, four lasers round it), resupplied at each strike; the squad goes in as well.
+      if era >= 3 then
+        local ol = math.sqrt(o[1] ^ 2 + o[2] ^ 2)
+        local bp = {o[1] - o[1] / ol * 200, o[2] - o[2] / ol * 200}
+        S.batteries = S.batteries or {}
+        local bat = S.batteries[best]
+        if not (bat and bat.valid) then
+          flatten(math.floor(bp[1]) - 8, math.floor(bp[2]) - 8, math.floor(bp[1]) + 8, math.floor(bp[2]) + 8)
+          bat = put("artillery-turret", bp[1], bp[2])
+          for _, d in ipairs({{-5, -5}, {5, -5}, {-5, 5}, {5, 5}}) do
+            local tr = put("laser-turret", bp[1] + d[1], bp[2] + d[2])
+            if tr then put("electric-energy-interface", tr.position.x, tr.position.y + 3) end
+          end
+          S.batteries[best] = bat
+        end
+        if bat and bat.valid then bat.insert{name = "artillery-shell", count = 20} end
+        info(string.format("campaign t%.0f: forward battery at %.0f,%.0f for %s %d (%s)", game.tick / 3600, bp[1], bp[2],
+          bst.corp, best, bat and bat.valid and "standing" or "not placed"))
+      end
+      local len = math.sqrt(target[1] ^ 2 + target[2] ^ 2)
+      local from = {target[1] / len * 85, target[2] / len * 85}
+      local squad = {}
+      for _, g in ipairs({{"lp-trooper", troopers}, {"lp-breacher", breachers}, {"lp-battle-tank", tanks}}) do
+        for _, u in ipairs(spawn(g[1], from, g[2], "player")) do table.insert(squad, u) end
+      end
+      for _, u in ipairs(squad) do
+        u.commandable.set_command{type = defines.command.attack_area, destination = target, radius = 30,
+          distraction = defines.distraction.by_anything}
+      end
+      S.strikes = S.strikes + 1
+      local n0, at, kind = #squad, target, what
+      schedule(game.tick + 600 * 60 - (game.tick % 60), function()
+        local alive = 0
+        for _, u in ipairs(squad) do if u.valid then alive = alive + 1 end end
+        local left = surface().count_entities_filtered{position = at, radius = 30, force = bst.force}
+        info(string.format("campaign t%.0f: strike %d at the %s, 10 minutes on: %d of %d alive, %d corporation entities within 30; killed by %s",
+          game.tick / 3600, S.strikes, kind, alive, n0, left, serpent.line(S.killers or {})))
+        S.killers = {}
+      end)
+      info(string.format("campaign t%.0f: strike %d at the %s of %s %d (%.0f,%.0f): %d units against strength %d",
+        game.tick / 3600, S.strikes, what, bst.corp, best, target[1], target[2], #squad, strength))
+    end)
+  end
+end
+
+function campaign_checks()
+  local corps = {}
+  for _, id in ipairs(lp("bases")) do
+    local st = lp("stats", id)
+    if st then corps[st.corp] = true end
+  end
+  local n = 0
+  for _ in pairs(corps) do n = n + 1 end
+  local consolidated = false
+  for c in pairs(corps) do
+    local d = lp("corp", c)
+    if d and (d.hq or d.consolidating) then consolidated = true end
+  end
+  info("campaign: " .. serpent.line({strikes = S.strikes, answered = S.answered_n, lander_kills = S.lander_kills,
+    corps = corps, consolidated = consolidated}))
+  check("campaign: the player destroyed a lander", (S.lander_kills or 0) > 0, tostring(S.lander_kills or 0))
+  if END >= 300 * 3600 then
+    check("campaign: the second corporation came", n >= 2, n .. " corporations")
+  end
+  if END >= 360 * 3600 then
+    check("campaign: a corporation consolidated", consolidated, tostring(consolidated))
+  end
+end
+
 -- Contact: first contact at real clocks, a timeline to read rather than a verdict. A player base as of the
 -- first launch at spawn (production, power, labs, 16 laser turrets in four corner clusters, laser research)
 -- and a mining outpost 130 tiles towards the faction with a power line home. The faction lands as it does in
@@ -1452,9 +1601,13 @@ end
 scenarios.contact = function()
   -- Era bases (docs/reviews/2026-10-13-campaign-review.md section 6): "spread" (era 2: three outposts, robots),
   -- "late" (era 4: walled, robots, lasers, an artillery turret with shells at the centre).
+  -- "campaign" (docs/reviews/2026-10-14-next-slice-consult.md): the spread base and a reactive player that answers,
+  -- strikes and rises in era (campaign_player below); a milestone run (scripts/campaign.sh), hours long.
+  local campaign = params.mix == "campaign"
   local careful = params.mix == "robots" or params.mix == "walled" or params.mix == "spread" or params.mix == "late"
+    or campaign
   local walled = params.mix == "walled" or params.mix == "late"
-  local era = ({spread = 2, late = 4})[params.mix] or 0
+  local era = ({spread = 2, late = 4, campaign = 2})[params.mix] or 0
   -- The player's base goes down at the strike (minute 20 by default), before the faction can have seen it
   -- (the first raid came at minute 38): every variant then shares one fork of the faction's growth.
   local AT = params.strike > 0 and STRIKE or 30
@@ -1534,7 +1687,7 @@ scenarios.contact = function()
     put("laser-turret", o[1] - 12, o[2] - 10); put("laser-turret", o[1] + 12, o[2] - 10)
     for d = 66, 124, 28 do put("big-electric-pole", ux * d, uy * d) end
     S.outpost = o
-    if params.mix == "spread" then
+    if params.mix == "spread" or campaign then
       -- Two more outposts, to either side, with their own pole lines home.
       for _, side in ipairs({1, -1}) do
         local px, py = -uy * side, ux * side
@@ -1556,9 +1709,16 @@ scenarios.contact = function()
       local f = lp("faction")
       local row = {minute = game.tick / 3600, landings = f.landings, tier = f.tier, exported = f.exported,
         settlements = 0, garrison = 0, turrets = 0, parts_rate = 0, raids = 0, sieges = 0, done = 0, aborted = 0,
-        known = 0, player = census()}
+        known = 0, player = census(), corp_units_lost = 0, razed = 0, fallen = 0, corps = {},
+        lander_kills = S.lander_kills or 0, strikes = S.strikes or 0, answered = S.answered_n or 0}
       for _, id in ipairs(lp("bases")) do
         local st = lp("stats", id)
+        if st then
+          row.corp_units_lost = row.corp_units_lost + (st.units_lost or 0)
+          row.razed = row.razed + (st.razed or 0)
+          if st.fallen then row.fallen = row.fallen + 1 end
+        end
+        if st and st.lander and not st.fallen then row.corps[st.corp] = (row.corps[st.corp] or 0) + 1 end
         if st and st.lander then
           row.settlements = row.settlements + 1
           row.garrison = row.garrison + st.garrison + (st.patrol or 0)
@@ -1576,10 +1736,12 @@ scenarios.contact = function()
       helpers.write_file("landing-party/timeline.jsonl", helpers.table_to_json(row) .. "\n", true)
     end)
   end
+  if campaign then campaign_player(AT, put) end
   schedule(END - 60, function()
     local now = census()
     info("contact: player at the end " .. serpent.line(now))
     check("contact: a timeline was written", true, "")
+    if campaign then campaign_checks() end
   end)
 end
 
@@ -2421,6 +2583,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     local k = e.entity.name .. " by " .. by
     S.fallen[k] = (S.fallen[k] or 0) + 1
   else
+    if e.force and e.force.name == "player" then S.lander_kills = (S.lander_kills or 0) + 1 end
     table.insert(lines, string.format("INFO lander killed at tick %d by %s (%s)", e.tick, by,
       e.force and e.force.name or "?"))
   end

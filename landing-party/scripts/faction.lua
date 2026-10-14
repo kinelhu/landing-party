@@ -164,12 +164,14 @@ function faction.arrive(surface, from, opts, quiet)
   local f = faction.state()
   -- Further rings when the first has no clear, ore-bearing site (seed 12345: two landings blocked their
   -- neighbours at 350 tiles and the other directions were barren).
-  local pos
+  -- A site whose pad does not fit (a headquarters' fortress found no free square within 100 tiles of its site
+  -- 25 times running, every 5 minutes, a 6-hour campaign) also moves on to the next ring.
+  local pos, b
   for _, extra in ipairs({0, 120, 240}) do
     pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
-    if pos then break end
+    b = pos and base.land(surface, pos, opts)
+    if b then break end
   end
-  local b = pos and base.land(surface, pos, opts)
   if not b then
     -- Try again later, and say why: a failed landing retried silently every 10 s once.
     f.next = game.tick + 5 * 3600
