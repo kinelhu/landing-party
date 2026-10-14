@@ -17,7 +17,8 @@ local WINDOW_TICKS = 30 * 3600
 rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier"] = "bullet",
   ["lp-tank"] = "cannon-shell", ["lp-walker"] = "rocket"}
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
-rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser"}, grubstake = {["lp-infantry"] = "shotgun-shell"}}
+rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser"},
+  grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell"}}
 -- What a killer deals, by its type or name: the plate that would answer it (biters are not counted).
 local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "physical", ["electric-turret"] = "laser",
   ["fluid-turret"] = "fire", ["artillery-turret"] = "explosion", ["artillery-wagon"] = "explosion"}
@@ -30,6 +31,7 @@ function rd.state(corp)
   d.tech = d.tech or {fund = 0, weapons = {}, losses = {}, turned_back = {}, bought = 0}
   d.tech.plate = d.tech.plate or {}
   d.tech.nodes = d.tech.nodes or {}
+  d.tech.units = d.tech.units or {}
   return d.tech
 end
 
@@ -50,7 +52,9 @@ function rd.tally(b, cause, dead)
   local dmg = DAMAGE_BY_NAME[kind] or DAMAGE[cause.type]
   if not dmg then return end
   local t = rd.state(b.corp)
-  table.insert(t.losses, {tick = game.tick, damage = dmg, kind = shared.kind_of(dead)})
+  -- Who killed it, for triggers on the killer: a character, a vehicle (cars and tanks), else its kind.
+  local killer = cause.type == "character" and "character" or (cause.type == "car" and "vehicle") or kind
+  table.insert(t.losses, {tick = game.tick, damage = dmg, kind = shared.kind_of(dead), killer = killer})
   if #t.losses > 200 then table.remove(t.losses, 1) end
 end
 
@@ -73,6 +77,12 @@ local function categories(corp)
   return out
 end
 rd.categories = categories
+
+-- Units its tree has added to its mix, with their weights (army: mix).
+function rd.mix(corp)
+  local d = storage.corps and storage.corps[corp]
+  return d and d.tech and d.tech.units or {}
+end
 
 -- The prototype a depot builds for a kind: plated once its corporation bought the plate.
 function rd.unit(corp, kind)
@@ -121,6 +131,7 @@ end
 local function level_of(t, node) return (t.nodes[node.id] or 0) end
 local function owned(t, node)
   if node.track then return level_of(t, node) >= (node.levels or MAX_LEVEL) end
+  if node.unit then return t.units[node.unit.kind] ~= nil end
   for kind, p in pairs(node.plates or {}) do if t.plate[kind] ~= p then return false end end
   return true
 end
@@ -140,6 +151,13 @@ local function score(t, node)
     for _, l in ipairs(t.losses) do if l.damage == tr.damage then n = n + 1 end end
     if n >= (tr.min or 1) then return n end
   end
+  if tr.killer then
+    local n = 0
+    for _, l in ipairs(t.losses) do
+      for _, k in ipairs(tr.killer) do if l.killer == k then n = n + 1 end end
+    end
+    if n >= (tr.min or 1) then return n end
+  end
   if tr.turned_back and #t.turned_back >= tr.turned_back then return 5 * #t.turned_back end
   return 0
 end
@@ -157,6 +175,7 @@ local function apply(corp, t, node)
   else
     t.nodes[node.id] = 1
     for kind, p in pairs(node.plates or {}) do t.plate[kind] = p end
+    if node.unit then t.units[node.unit.kind] = node.unit.weight end
     notify(corp, "lp.node-" .. node.id)
   end
   t.bought = t.bought + 1
@@ -224,7 +243,7 @@ function rd.summary(corp)
   local by = {}
   prune(t.losses)
   for _, l in ipairs(t.losses) do by[l.damage] = (by[l.damage] or 0) + 1 end
-  return {fund = t.fund, weapons = t.weapons, plate = t.plate, nodes = t.nodes, saving = t.saving, lost_by = by,
+  return {fund = t.fund, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
     turned_back = #t.turned_back, bought = t.bought, strength = rd.strength(corp)}
 end
 

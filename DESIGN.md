@@ -48,7 +48,7 @@ document describes the parts as built; the campaign document describes the game 
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
-| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden; Hand-loads, Scrap plating, Asbestos) | built (slices 1-2) | `arms`, `plate` (two), `techup` (two) |
+| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden, Lance; Hand-loads, Scrap plating, Asbestos, Slug buggy) | built (slices 1-3) | `arms`, `plate` (two), `techup` (two), `unitnode` (two) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -873,6 +873,20 @@ and withdraws in order; Grubstake empties chests first: the user's heists, folde
   Shotgun hands and buggies. Each answers only with its own: Serenity has no fire or laser plate. Scenario `plate`
   (two): fifteen Line troopers killed by a gun turret, Warden armour, 8 armoured troopers built, the 4 standing kept;
   fifteen Shotgun hands and buggies killed by a flamethrower, asbestos suits, 12 fireproofed built, 15 standing kept.
+
+- **Slice 3, the first tree units (built).** A unit node adds a unit to its corporation's mix (`army` mix reads
+  `rd.mix`), its trigger on the killers in the ledger (now kept per loss: a character, a vehicle, else the killer's
+  kind). Serenity's **Lance** (Optics, era 1, 900 parts): a heavier, slower beam, 12 laser every 45 ticks, range 17
+  (beyond the player's troopers, inside a gun turret), 110 health; bought on six losses to troopers, breachers or
+  the character. Grubstake's **Slug buggy** (Scrap arms, era 1, 900): three slugs of 14 every 40 ticks, range 12, 240
+  health, shotgun shells (its Hand-loads cover it); bought on five losses to vehicles or battle tanks. Both are unit
+  kinds, so each corporation also gets an unused copy of the other's (harmless). Scenario `unitnode` (two): eight
+  Line troopers killed by a trooper, Lances bought and built; six buggies killed by a tank, Slug buggies built.
+- **Chain lightning works in the base game** (spike, 2026-10-14, deleted after): a `chain-active-trigger` on the
+  destroyer's electric beam (no Space Age), started by a nested `chain` delivery placed before the unit's own beam (as
+  Space Age's tesla turret does), jumped from one player car to the next through all five (3 tiles apart, 4 jumps
+  allowed, 20 damage each) and left the shooter's own car beside them untouched. Shock troops can be built.
+  Dynamite sappers need no spike: the player's breacher already throws enemies-only charges.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

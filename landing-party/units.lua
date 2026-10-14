@@ -257,4 +257,33 @@ buggy.resistances = {{type = "physical", decrease = 2, percent = 15}}
 tint(buggy.run_animation, {})
 tint(buggy.attack_parameters.animation, {})
 
-data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet})
+-- Tree units (docs/reviews/2026-10-14-identity-trees-consult.md; scripts/rd.lua buys them into a corporation's mix).
+-- Lance (Serenity's Optics): a heavier, slower beam that outranges the player's troopers (15): 12 laser a shot every 45
+-- ticks, range 17 (still inside a gun turret's 18), 110 health.
+local lance = make_infantry("lp-lance")
+lance.max_health = shared.units["lp-lance"].health
+lance.attack_parameters = table.deepcopy(infantry.attack_parameters)
+lance.attack_parameters.damage_modifier = 1.2
+lance.attack_parameters.range = 17
+lance.attack_parameters.cooldown = 45
+lance.attack_parameters.ammo_type.action.action_delivery.max_length = 18
+lance.resistances = table.deepcopy(infantry.resistances)
+-- Slug buggy (Grubstake's Scrap arms): three slugs of 14 a shot every 40 ticks, range 12, 240 health; shotgun shells,
+-- so its Hand-loads cover it. The answer to the player's vehicles.
+local slug = table.deepcopy(buggy)
+slug.name = "lp-slug"
+slug.max_health = shared.units["lp-slug"].health
+slug.attack_parameters = {
+  type = "projectile", ammo_category = "shotgun-shell", cooldown = 40, range = 12, min_range = 0,
+  range_mode = "bounding-box-to-bounding-box", cooldown_deviation = 0.15,
+  sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound),
+  animation = table.deepcopy(buggy.attack_parameters.animation),
+  ammo_type = {action = {type = "direct", repeat_count = 3, action_delivery = {type = "projectile",
+    projectile = "lp-slug-round", starting_speed = 1, direction_deviation = 0.08, range_deviation = 0.1, max_range = 14}}},
+}
+local slug_round = table.deepcopy(pellet)
+slug_round.name = "lp-slug-round"
+slug_round.action.action_delivery.target_effects.damage.amount = 14
+
+data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
+  lance, slug, slug_round})

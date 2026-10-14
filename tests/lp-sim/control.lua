@@ -2820,6 +2820,45 @@ scenarios.arms = function()
   end)
 end
 
+-- Unit nodes: a corporation's tree adds units to its mix against the killers it meets. LP_MIX=lance: eight Line troopers
+-- killed by the player's troopers, and Serenity deploys Lances (its depots build them). LP_MIX=slug: six Grubstake
+-- buggies killed by a player tank, and Grubstake builds Slug buggies.
+scenarios.unitnode = function()
+  local slug = params.mix == "slug"
+  local corp, node = slug and "grubstake" or "serenity", slug and "slug" or "lance"
+  local force = slug and "lp-grubstake" or FORCE
+  local victim = slug and "lp-grubstake-buggy" or "lp-infantry"
+  local made = slug and "lp-grubstake-slug" or "lp-lance"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, rd_fund = {[corp] = 5000}})
+    if slug then
+      S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
+    else
+      for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+    end
+  end)
+  schedule(10 * 3600, function()
+    flatten(-5, -5, 5, 5)
+    local cause = slug and surface().create_entity{name = "tank", position = {0, 0}, force = "player"}
+      or spawn("lp-trooper", {0, 0}, 1, "player")[1]
+    local n = 0
+    for _, u in pairs(surface().find_entities_filtered{force = force, name = victim}) do
+      if n < (slug and 6 or 8) then u.die("player", cause); n = n + 1 end
+    end
+    S.killed = n
+    lp("debug_tune", {rd_fast = true})
+  end)
+  schedule(END - 60, function()
+    local r = lp("rd", corp)
+    local built = surface().count_entities_filtered{force = force, name = made}
+    info("unitnode: " .. serpent.line({rd = r, killed = S.killed, built = built}))
+    check("unitnode: the killers were the trigger's", S.killed == (slug and 6 or 8), tostring(S.killed))
+    check("unitnode: it bought the node", (r.nodes or {})[node] ~= nil, serpent.line(r.nodes))
+    check("unitnode: the depots build the new unit", built > 0, built .. " " .. made)
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()

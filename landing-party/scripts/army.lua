@@ -55,6 +55,8 @@ local function mix(b)
   for name, w in pairs((b.corp and shared.CORPS[b.corp].mix) or army.MIX[b.doctrine]) do
     if shared.capable(b.corp, name, level(b)) then out[name] = w end
   end
+  -- What its tree has added (scripts/rd.lua): Lances, Slug buggies.
+  if b.corp then for name, w in pairs(rd.mix(b.corp)) do out[name] = w end end
   return out
 end
 
