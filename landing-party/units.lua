@@ -95,25 +95,26 @@ infantry.attack_parameters = {
     duration = 20, source_offset = {0, -1}}}},
 }
 table.insert(infantry.resistances, {type = "laser", percent = 20})
--- Grubstake's Shotgun hand: four pellets of 4 (lp-pellet), range 9, every 30 ticks, a little quicker on its feet
--- (eight, once its pellets stopped hitting its own side, destroyed the parity targets in 420 ticks to the beam's 780;
--- five in 540).
+-- Grubstake's Shotgun hand: three heavy pellets of 9 (lp-pellet), range 9, every 55 ticks (45: 570 ticks), a little quicker on its feet
+-- (four of 4 every 30 ticks held parity with the beam but barely scratched a biter: its armour takes 4 to 12 a hit;
+-- eight light ones destroyed the parity targets in 420 ticks to the beam's 780, five in 540, four in 630).
 -- Deadly at the fence, useless against a turret line (which its temper never attacks). Built as its infantry
 -- through its CORPS.bases (corps.lua renames it lp-grubstake-infantry).
 local shotgun_hand = make_infantry("lp-shotgun-hand")
 shotgun_hand.movement_speed = 0.13
 shotgun_hand.attack_parameters = {
-  type = "projectile", ammo_category = "shotgun-shell", cooldown = 30, range = 9, min_range = 0,
+  type = "projectile", ammo_category = "shotgun-shell", cooldown = 55, range = 9, min_range = 0,
   range_mode = "bounding-box-to-bounding-box", cooldown_deviation = 0.15,
   sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound),
   animation = shotgun_hand.attack_parameters.animation,
-  ammo_type = {action = {type = "direct", repeat_count = 4, action_delivery = {type = "projectile",
+  ammo_type = {action = {type = "direct", repeat_count = 3, action_delivery = {type = "projectile",
     projectile = "lp-pellet", starting_speed = 1, starting_speed_deviation = 0.1, direction_deviation = 0.3,
     range_deviation = 0.3, max_range = 11}}},
 }
 local pellet = table.deepcopy(data.raw.projectile["shotgun-pellet"])
 pellet.name = "lp-pellet"
-pellet.action.action_delivery.target_effects.damage.amount = 4
+-- Heavy shot: a biter's armour takes 4 (medium) to 12 (behemoth) off every hit, and pellets of 4 did next to nothing.
+pellet.action.action_delivery.target_effects.damage.amount = 9
 -- Through its own side (force_condition defaults to all: six Shotgun hands lost 555 of 720 health to each other).
 pellet.force_condition = "not-same"
 

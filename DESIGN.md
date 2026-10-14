@@ -1043,6 +1043,20 @@ scenario with assertions first; the window is for art, feel and GUI.
   artillery margin times the force's range research, and rings tried out to 1,800 tiles. In game the user found the
   rest: "a single biter will even clear out turrets and 10 units with vehicles", at maximum evolution. The
   corporations are built for an early or middle world (next).
+- **Late worlds (the user, in game on nwa: "a single biter will even clear out turrets and 10 units with vehicles";
+  "evolution is maxed out. It's a late game factory").** The corporations were built for an early or middle world:
+  infantry of 120 health doing 4 to 7 a hit, against big biters (375, 8 flat armour) and behemoths (3,000, 12 flat);
+  a pellet of 4 did about 0.45 to a medium biter. Built: biters count in the research ledger (jaws physical, spitters
+  and worms acid; killer "biter"); a corporation's first landing arrives with history (a fund of 1,500 a player era
+  and 4,000 at full evolution, spent at once on its track to the era cap and, past half evolution, its physical
+  armour: `rd.history`); the drop escort grows by up to 10 with evolution; landings keep 60 + 140 x evolution tiles
+  from spawners; Grubstake's pellets are three of 9 every 55 ticks (parity with the beam held, 660 to 780 ticks);
+  a camp's escort answers from the lander; an outpost attacked earns a turret pair whatever the doctrine (Grubstake's
+  sprawl never built any); losses are traced with their killer's force. Scenarios `biters` (two: an attacked outpost
+  rebuilt with its turret pair; a camp kills two medium biters) and `maxevo` (evolution 1, era 4: with history,
+  Hand-loads 5, Scrap plating and 16 escorts, the camp killed two big biters and a behemoth; without, `bare`, they
+  destroyed its lander). The second visit (site fix only, before these): every landing outside the factory now, and
+  every one fell in maximum-evolution biter country.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

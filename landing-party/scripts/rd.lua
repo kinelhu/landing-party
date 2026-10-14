@@ -48,14 +48,18 @@ local function prune(list)
 end
 
 -- A unit of b's lost to cause (control.lua, on_entity_died).
+-- Biters count (at maximum evolution a single biter cleared turrets and ten units, the user in game): biters'
+-- jaws as physical, spitters' and worms' acid as acid; their killer is "biter".
 function rd.tally(b, cause, dead)
-  if not (cause and cause.valid) or cause.force.name == "enemy" then return end
+  if not (cause and cause.valid) then return end
   local kind = shared.kind_of(cause.name)
   local dmg = DAMAGE_BY_NAME[kind] or DAMAGE[cause.type]
+  local biter = cause.force.name == "enemy"
+  if biter then dmg = (cause.type == "turret" or cause.name:find("spitter", 1, true)) and "acid" or "physical" end
   if not dmg then return end
   local t = rd.state(b.corp)
   -- Who killed it, for triggers on the killer: a character, a vehicle (cars and tanks), else its kind.
-  local killer = cause.type == "character" and "character" or (cause.type == "car" and "vehicle") or kind
+  local killer = biter and "biter" or cause.type == "character" and "character" or (cause.type == "car" and "vehicle") or kind
   table.insert(t.losses, {tick = game.tick, damage = dmg, kind = shared.kind_of(dead), killer = killer})
   if #t.losses > 200 then table.remove(t.losses, 1) end
 end
@@ -269,6 +273,39 @@ function rd.set(corp, tech)
     f.set_ammo_damage_modifier(c, LEVEL_DAMAGE * k)
   end
   for kind, p in pairs(tech.plate or {}) do t.plate[kind] = p end
+end
+
+-- A corporation arriving in a world already far along (the player's era, the biters' evolution) comes with the
+-- research such a world would have pushed it to: a fund of HISTORY_ERA a player era and HISTORY_EVO at full
+-- evolution, spent at once on its tracks (to the era cap) and, past half evolution, on its armour against physical
+-- damage (biters' jaws). Once, at its first landing (faction.arrive).
+local HISTORY_ERA, HISTORY_EVO = 1500, 4000
+function rd.history(corp, surface)
+  local t = rd.state(corp)
+  if t.history or storage.history_off then return end
+  t.history = true
+  local era = player_era()
+  local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
+  t.fund = math.min(FUND_CAP, t.fund + HISTORY_ERA * era + HISTORY_EVO * evo)
+  local bought = {}
+  for _ = 1, 12 do
+    local pickd
+    for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+      if not pickd and allowed(t, node, era) and t.fund >= cost_of(t, node) then
+        local wanted = node.track or (evo >= 0.5 and node.plates and node.trigger and node.trigger.damage == "physical")
+        if wanted then pickd = node end
+      end
+    end
+    if not pickd then break end
+    t.fund = t.fund - cost_of(t, pickd)
+    apply(corp, t, pickd)
+    table.insert(bought, pickd.id)
+  end
+  if rd.trace and #bought > 0 then
+    rd.trace(corp, string.format("arrives with history (era %d, evolution %.2f): %s; fund %d", era, evo,
+      table.concat(bought, ", "), t.fund))
+  end
+  return bought
 end
 
 -- For stats and tests.

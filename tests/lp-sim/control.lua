@@ -3159,6 +3159,111 @@ scenarios.sneak = function()
   end)
 end
 
+-- Biters (the user, in game: "a single medium biter can clear an entire outpost"). LP_MIX=outpost: Grubstake (sprawl,
+-- no outpost turrets by doctrine), grown; two medium biters attack a mining outpost: it answers, the outpost stands
+-- again and has earned a turret pair. LP_MIX=camp: a fresh Grubstake camp (no depot), two medium biters at its
+-- nearest drill: the camp kills them and the lander stands (its escort answers from the lander if hurt: army.alarm).
+scenarios.biters = function()
+  local camp = params.mix == "camp"
+  schedule(60, function()
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    if not camp then lp("debug_depot", S.g, 3000) end
+    lp("debug_tune", {raids_off = true})
+  end)
+  schedule((camp and 1 or 8) * 3600, function()
+    local st = lp("stats", S.g)
+    local at
+    if camp then
+      -- Its nearest drill, beyond the corner turrets' reach (at the pad, they killed both biters before anything
+      -- was hurt, and nothing called the escort).
+      local near, nd
+      for _, d in pairs(surface().find_entities_filtered{force = "lp-grubstake", name = "lp-grubstake-drill"}) do
+        local dd = (d.position.x - st.origin.x) ^ 2 + (d.position.y - st.origin.y) ^ 2
+        if dd > 26 * 26 and (not nd or dd < nd) then near, nd = d, dd end
+      end
+      at = near and {near.position.x, near.position.y} or {st.origin.x + 30, st.origin.y}
+    else
+      -- The mining outpost farthest from its lander.
+      local far, fd
+      for _, d in pairs(surface().find_entities_filtered{force = "lp-grubstake", name = "lp-grubstake-drill"}) do
+        local dd = (d.position.x - st.origin.x) ^ 2 + (d.position.y - st.origin.y) ^ 2
+        if not fd or dd > fd then far, fd = d, dd end
+      end
+      if not far then return info("biters: no outpost") end
+      at = {far.position.x, far.position.y}
+      S.drills0 = surface().count_entities_filtered{force = "lp-grubstake", name = "lp-grubstake-drill", position = at, radius = 20}
+    end
+    S.at = at
+    S.responses0 = st.responses or 0
+    for k = 1, 2 do
+      local p = surface().find_non_colliding_position("medium-biter", {at[1] + 8 + k, at[2] + 8}, 10, 0.5)
+      local u = surface().create_entity{name = "medium-biter", position = p, force = "enemy"}
+      u.commandable.set_command{type = defines.command.attack_area, destination = at, radius = 15,
+        distraction = defines.distraction.by_anything}
+    end
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local biters = surface().count_entities_filtered{position = S.at, radius = 60, name = "medium-biter"}
+    info(string.format("biters: %d biters left, responses %d -> %d, lander %s", biters, S.responses0 or 0,
+      st.responses or 0, tostring(st.lander)))
+    if camp then
+      -- Its escort engages what it sees before anything is hurt (no alarm, no response needed): the outcome is checked.
+      check("biters: the camp killed them", biters == 0, tostring(biters))
+      check("biters: and the lander stands", st.lander and not st.fallen, tostring(st.fallen))
+    else
+      local drills = surface().count_entities_filtered{force = "lp-grubstake", name = "lp-grubstake-drill", position = S.at, radius = 20}
+      local turrets = surface().count_entities_filtered{force = "lp-grubstake", name = "lp-grubstake-turret", position = S.at, radius = 30}
+      check("biters: the biters are dead", biters == 0, tostring(biters))
+      check("biters: the outpost stands again", drills >= (S.drills0 or 1), string.format("%d of %d drills", drills, S.drills0 or 0))
+      check("biters: it earned a turret pair", turrets > 0, turrets .. " turrets")
+    end
+  end)
+end
+
+-- Maxevo: a corporation landing in a late world (evolution 1, the player at era 4) comes with its history (research
+-- bought at once, a larger escort) and a camp holds against two big biters and a behemoth sent at it once its pad is
+-- laid. LP_MIX=bare: no history (the camp as it landed before), for comparison.
+scenarios.maxevo = function()
+  local bare = params.mix == "bare"
+  schedule(30, function()
+    game.forces.enemy.set_evolution_factor(1, surface())
+    lp("debug_tune", {era = 4, raids_off = true, history_off = bare})
+  end)
+  schedule(60, function()
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+  end)
+  schedule(2 * 3600, function()
+    local st = lp("stats", S.g)
+    S.at = {st.origin.x, st.origin.y}
+    S.rd = lp("rd", "grubstake")
+    S.escort = st.escort
+    for k, name in ipairs({"big-biter", "big-biter", "behemoth-biter"}) do
+      local p = surface().find_non_colliding_position(name, {S.at[1] + 40, S.at[2] + 4 * k}, 10, 0.5)
+      local u = surface().create_entity{name = name, position = p, force = "enemy"}
+      u.commandable.set_command{type = defines.command.attack_area, destination = S.at, radius = 25,
+        distraction = defines.distraction.by_anything}
+    end
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local left = surface().count_entities_filtered{position = S.at, radius = 80, name = {"big-biter", "behemoth-biter"}}
+    info(string.format("maxevo%s: escort %s, research %s; %d biters left, lander %s, lost %d",
+      bare and " (bare)" or "", tostring(S.escort), serpent.line({nodes = S.rd.nodes, fund = S.rd.fund}), left,
+      tostring(st.lander and not st.fallen), st.lost or 0))
+    if bare then
+      -- The comparison: the camp as it landed before history (it lost its lander to the same three).
+      check("maxevo: the bare camp was tested", S.at ~= nil, "")
+    else
+      check("maxevo: it arrived with research", (S.rd.nodes.handloads or 0) >= 4 and S.rd.nodes["scrap-plating"] ~= nil,
+        serpent.line(S.rd.nodes))
+      check("maxevo: and a larger escort", (S.escort or 0) >= 15, tostring(S.escort))
+      check("maxevo: the camp killed the biters", left == 0, tostring(left))
+      check("maxevo: and the lander stands", st.lander and not st.fallen, tostring(st.fallen))
+    end
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()

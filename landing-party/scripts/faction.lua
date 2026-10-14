@@ -144,7 +144,9 @@ function faction.site(surface, from, distance, count)
         surface.force_generate_chunk_requests()
       end
       -- Not on biters: a settlement landed among nests could not build there (docs/campaign.md, biters).
-      if clear and surface.count_entities_filtered{position = spot, radius = 60, type = "unit-spawner", limit = 1} > 0 then
+      -- Further from them as they evolve: 60 tiles, 200 at full evolution.
+      local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
+      if clear and surface.count_entities_filtered{position = spot, radius = 60 + 140 * evo, type = "unit-spawner", limit = 1} > 0 then
         clear = false
       end
       if clear then
@@ -212,10 +214,14 @@ function faction.arrive(surface, from, opts, quiet)
   end
   f.landings = f.landings + 1
   faction.angry(b)
+  -- A world already far along: the corporation arrives with the research it would have pushed it to (rd.history).
+  rd.history(b.corp, surface)
   -- The drop escort: 6 + 4 a level, doubled by a grudge, and four corner turrets, once the pad is laid
   -- (army.escort, base.corner_turrets); a headquarters lands with its fortress.
   if not (opts and opts.uplink) then
-    local n = 6 + 4 * (faction.corp(b.corp).level or 0)
+    -- Evolution: up to ten more at full (at maximum evolution, a biter or two ate the camps).
+    local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
+    local n = 6 + 4 * (faction.corp(b.corp).level or 0) + math.floor(10 * evo)
     b.escort_due = b.grudge and 2 * n or n
   end
   ops.heard_landing(b)

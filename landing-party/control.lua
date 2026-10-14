@@ -109,7 +109,7 @@ script.on_event(defines.events.on_entity_died, function(e)
         if e.force then ops.provoke(b.force, e.force.name) end
       end
     else
-      base.on_died(ent)
+      base.on_died(ent, e.force and e.force.name)
     end
   elseif e.force and shared.is_corp(e.force.name) and e.cause and e.cause.valid
     and ent.force.name ~= "neutral" and ent.force.name ~= "enemy" then
@@ -210,6 +210,7 @@ remote.add_interface("landing-party", {
     if t.grudge_fast ~= nil then storage.grudge_fast = t.grudge_fast end
     if t.siege_tier ~= nil then storage.siege_tier = t.siege_tier end
     if t.sneak_off ~= nil then storage.sneak_off = t.sneak_off end
+    if t.history_off ~= nil then storage.history_off = t.history_off end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     for corp, tech in pairs(t.rd_tech or {}) do rd.set(corp, tech) end

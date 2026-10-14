@@ -157,6 +157,12 @@ function army.alarm(b, pos, trace)
       if dist <= RESPONSE_RANGE and (not hd or dist < hd) then home, hd = d, dist end
     end
   end
+  -- A camp has no depot for its first twenty minutes or so: its drop escort answers from the lander (a biter ate
+  -- whole camps while the escort stood by, the user in game).
+  if not home and b.lander and b.lander.valid then
+    local dist = math.sqrt((b.lander.position.x - pos.x) ^ 2 + (b.lander.position.y - pos.y) ^ 2)
+    if dist <= RESPONSE_RANGE then home = b.lander end
+  end
   if not home or #b.garrison <= HOME_GUARD then return end
   b.next_response = game.tick + RESPONSE_COOLDOWN
   local size = math.max(RESPONSE_MIN, RESPONSE_PER_THREAT * threat_count(home.surface, pos, home.force))

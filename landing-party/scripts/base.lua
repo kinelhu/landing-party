@@ -463,7 +463,7 @@ local function build(b)
 end
 
 -- A faction entity died: queue its rebuild at the same spot (nothing is rebuilt once the settlement fell).
-function base.on_died(e)
+function base.on_died(e, by)
   local own = storage.owner[e.unit_number]
   if not own then return end
   storage.owner[e.unit_number] = nil
@@ -481,7 +481,11 @@ function base.on_died(e)
   if kind == "lp-generator" then due = game.tick + 90 * 60 end
   table.insert(b.rebuild, {name = kind, pos = {e.position.x, e.position.y}, dir = e.direction, module = own.module,
     due = due})
-  trace(b, string.format("lost %s at %.0f,%.0f: rebuild due at %d", e.name, e.position.x, e.position.y, due))
+  -- An outpost attacked earns a turret pair whatever the doctrine (the "defend" rule): a single medium biter cleared
+  -- whole Grubstake outposts, whose sprawl doctrine never builds them (the user, in game, 2026-10-14).
+  if own.module and own.module.kind == "mining" then own.module.attacked = true end
+  trace(b, string.format("lost %s at %.0f,%.0f to %s: rebuild due at %d", e.name, e.position.x, e.position.y,
+    by or "nothing", due))
 end
 
 -- Queue a free-standing module (mining, outpost turrets). Mining modules lay the road spine beside them.
@@ -520,10 +524,10 @@ local function power(b)
 end
 
 -- A node (lander, generator, fabricator, mining) with no turret near it.
-local function undefended(b)
+local function undefended(b, attacked_only)
   local surface = game.surfaces[b.surface]
   for _, m in ipairs(b.modules) do
-    if m.built and m.kind == "mining" and not m.defended then
+    if m.built and m.kind == "mining" and not m.defended and (not attacked_only or m.attacked) then
       if surface.count_entities_filtered{name = shared.variants("lp-turret"), position = m.center, radius = DEFENCE_RADIUS} > 0 then
         m.defended = true
       else
@@ -603,7 +607,9 @@ local function plan(b)
     {"fortify", function() return b.parts > 80 and #b.fabs > 0 end, function()
       local block = layout.fortify(b)
       return block and string.format("walls round %s at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
-    {"defend", function() b.target = doc.outpost_turrets and undefended(b); return b.target ~= nil and b.target ~= false end,
+    {"defend", function()
+      b.target = (doc.outpost_turrets and undefended(b)) or undefended(b, true)
+      return b.target ~= nil and b.target ~= false end,
       function()
         local o = site.near(surface, b, modules.turrets, b.target.center[1], b.target.center[2], 3, 12)
         if not o then b.target.defended = "no site"; return end
