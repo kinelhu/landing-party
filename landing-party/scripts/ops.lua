@@ -14,7 +14,8 @@ local ops = {}
 
 local CELL = 32
 local SENSE_TICKS = 2 * 3600          -- a full scan of the static sensors
-local SENSORS = {["lp-lander"] = 200, ["lp-depot"] = 150, ["lp-radar"] = 250}
+-- The lander sees as far as the player's artillery reaches: a battery is seen when it is built, not when it fires.
+local SENSORS = {["lp-lander"] = 300, ["lp-depot"] = 150, ["lp-radar"] = 250}
 local FIELD_SIGHT = 40                -- what a unit away from home sees
 local DEFENCE_RADIUS = 30             -- turrets this close to a target defend it
 local MARKER_TICKS = 20 * 60 * 60     -- a death marker counts this long

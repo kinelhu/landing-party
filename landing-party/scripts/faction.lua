@@ -110,6 +110,16 @@ function faction.site(surface, from, distance, count)
           end
         end
       end
+      -- Not on the player's army: units or turrets within 100 tiles, as it keeps out of the player's artillery.
+      if clear then
+        for _, pf in pairs(game.forces) do
+          if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
+            and surface.count_entities_filtered{position = spot, radius = 100, force = pf,
+              type = {"unit", "electric-turret", "ammo-turret", "fluid-turret", "car", "spider-vehicle"}, limit = 1} > 0 then
+            clear = false
+          end
+        end
+      end
       -- The candidate's own ground, generated now: nests and the ore count below need real entities.
       if clear then
         surface.request_to_generate_chunks(spot, 2)

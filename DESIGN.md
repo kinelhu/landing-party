@@ -694,6 +694,31 @@ Findings (seed 12345):
   landing, four in six hours; no corporation lives to consolidate. A lander has 3000 health and no resistances: two
   artillery shells. Counter-battery comes after the lander is dead. Taken to Fable (the next section).
 
+### Artillery, landers and squads (Fable, `docs/reviews/2026-10-14-artillery-consult.md`)
+Roles: artillery ends a settlement, squads take camps and hold ground; a lander kill is the campaign's milestone
+(once or twice in six hours), costing a forward position that is usually lost. **Built:**
+- **Armour.** Lander 12000 health, 50% physical and explosion resistance (about 12 shells, was 2).
+- **The powered hull.** A lander cannot be destroyed while at least half the most generators its settlement has
+  had still stand (`base.lua` hull, checked every second; a headquarters answers to its uplink instead).
+  Generators are not military targets (never auto-targeted) and come back 90 s after they fall.
+- **Seen when built.** The lander's sensor reaches 300 tiles (the player's artillery reach), and counter-battery
+  runs on any battery in intel, not only after it fires.
+- **Landings avoid the player's army** (units or turrets within 100 tiles), as they avoid its artillery. (Built on
+  a misreading: three landings on seed 777 fell within four minutes, which were the campaign player's own camp
+  strikes, not a squad left on the ruins. Kept as a rule; not shown to matter.)
+- The campaign's player now places its battery at a clear site in reach (no corporation turret within 50; at a
+  fixed 200 tiles it stood inside Serenity's outer works), with 2 guns at era 3 and 4 at era 4, flares every
+  generator in reach then the lander, and its squad guards the battery; it strikes each new settlement once,
+  3 to 20 minutes after landing, from 60 tiles out.
+**Measured (6 hours, seeds 12345 and 777).** 12345: three batteries placed, all three lost (tanks, and a mortar:
+six counter-battery sieges); camp strikes won 2 of 4 (both Grubstake camps; Serenity's held); no lander killed by
+artillery; a corporation consolidated by hour 6. 777: the battery stood all game (31,714 shells) and the hull never
+went down: most of a mature settlement's generators are beyond one battery's reach, so its lander cannot be
+reached; every new settlement (three) fell to a camp strike 3 to 4 minutes after it landed, Serenity's as well as
+Grubstake's, so no corporation grew past its first. **Open (for the user and Fable):** the hull makes a mature lander proof against a
+battery from one side; Fable's target of one or two artillery kills in six hours is not met. Options: count only
+the generators within 300 tiles of the lander, or a smaller share, or let the player bring more guns.
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,

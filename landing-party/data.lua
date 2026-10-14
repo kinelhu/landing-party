@@ -52,7 +52,10 @@ lander.selection_box = ship.selection_box
 lander.picture = table.deepcopy(ship.picture)
 tint(lander.picture, {})
 lander.integration_patch = nil
-lander.max_health = 3000
+-- Armoured (docs/reviews/2026-10-14-artillery-consult.md): about 12 artillery shells, not 2; and indestructible while
+-- half its settlement's generators stand (base.lua, hull).
+lander.max_health = 12000
+lander.resistances = {{type = "physical", percent = 50}, {type = "explosion", percent = 50}}
 lander.gui_mode = "none"
 lander.energy_source = {type = "electric", usage_priority = "primary-output",
   buffer_capacity = one_second(shared.power["lp-lander"])}

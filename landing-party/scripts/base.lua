@@ -409,6 +409,8 @@ function base.on_died(e)
     d = math.sqrt((e.position.x - b.lander.position.x) ^ 2 + (e.position.y - b.lander.position.y) ^ 2)
   end
   local due = game.tick + REBUILD_DELAY + math.floor(d / REBUILD_TILES_PER_SECOND * 60)
+  -- Generators come back in 90 s wherever they stand: a lander's hull holds while half of them do (hull).
+  if kind == "lp-generator" then due = game.tick + 90 * 60 end
   table.insert(b.rebuild, {name = kind, pos = {e.position.x, e.position.y}, dir = e.direction, module = own.module,
     due = due})
   trace(b, string.format("lost %s at %.0f,%.0f: rebuild due at %d", e.name, e.position.x, e.position.y, due))
@@ -692,6 +694,21 @@ function base.fall(lander)
   end
 end
 
+-- The powered hull (docs/reviews/2026-10-14-artillery-consult.md): a lander cannot be destroyed while at least half
+-- the most generators its settlement has had still stand. A headquarters' lander answers to its uplink instead.
+local function hull(b)
+  if b.hq then return end
+  local n = 0
+  for _, g in ipairs(b.gens) do if g.valid and g.force.name == b.force then n = n + 1 end end
+  b.gens_max = math.max(b.gens_max or 0, n)
+  local held = b.gens_max > 0 and 2 * n >= b.gens_max
+  if b.lander.destructible == held then
+    b.lander.destructible = not held
+    b.hull_down = (b.hull_down or 0) + (held and 0 or 1)
+    trace(b, string.format("hull %s: %d of %d generators standing", held and "up" or "down", n, b.gens_max))
+  end
+end
+
 local function ruin(b)
   local mining = {}
   for _, m in ipairs(b.modules) do
@@ -731,6 +748,7 @@ function base.tick(tick)
       collapse(b)
       if tick % 600 == 300 then capture(b) end
     elseif b.lander.valid then
+      if tick % 60 == 0 then hull(b) end
       if tick % 7200 == (b.id * 61) % 7200 then base.claim_map(b) end
       site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
@@ -803,7 +821,7 @@ function base.stats(b)
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
-    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned}
+    fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned}
 end
 
 return base

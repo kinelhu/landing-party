@@ -1080,6 +1080,8 @@ scenarios.fall = function()
     info(string.format("fall: settlement %d at %.0f,%.0f, %d generators, %d turrets, garrison %d, patrol %d; settlement %s garrison %d",
       storage.id, lander.position.x, lander.position.y, st.gens, st.turrets, st.garrison, st.patrol, tostring(S.other),
       S.other_before))
+    -- The fall as if its hull were down (the hull and the armour have their own measure: the campaign).
+    lander.destructible = true
     lander.die("player")
     -- A building of the fallen settlement hit in the same tick (it crashed the intel, user 2026-10-13).
     local hit = surface().find_entities_filtered{force = FORCE, type = {"electric-turret", "assembling-machine"},
@@ -1454,26 +1456,79 @@ function campaign_player(AT, put)
   local era = 2
   for t = AT + 600, END - 600, 300 do
     schedule(t, function()
-      -- Batteries are kept fed (a player supplies them by train): topped up to 20 shells every 5 minutes.
+      -- Batteries are kept fed (a player supplies them by train): each gun topped up to 20 shells every 5 minutes.
+      -- Aimed, as with the artillery remote (left to itself a battery shelled the nearer defences, rebuilt as fast,
+      -- 563 shells in four hours, the lander untouched): a flare on every generator of the settlement in reach
+      -- (the hull holds while half of them stand), then on the lander.
       for _, bat in pairs(S.batteries or {}) do
-        if bat.valid then
-          local inv = bat.get_inventory(defines.inventory.artillery_turret_ammo)
-          local have = inv.get_item_count()
-          if have < 20 then inv.insert{name = "artillery-shell", count = 20 - have} end
-          S.shells = (S.shells or 0) + 20 - have
-          -- Aimed, as with the artillery remote: a flare on the lander it was placed for (left to itself it shelled
-          -- the nearer defences, rebuilt as fast, 563 shells in four hours, the lander untouched).
-          local aim = S.aims and S.aims[bat.unit_number]
-          if aim then
-            surface().create_entity{name = "artillery-flare", position = aim, force = "player", movement = {0, 0},
+        local live = 0
+        for _, g in ipairs(bat.guns) do
+          if g.valid then
+            live = live + 1
+            local inv = g.get_inventory(defines.inventory.artillery_turret_ammo)
+            local have = inv.get_item_count()
+            if have < 20 then inv.insert{name = "artillery-shell", count = 20 - have} end
+            S.shells = (S.shells or 0) + 20 - have
+          end
+        end
+        if live > 0 and not bat.done then
+          local function flare(p)
+            surface().create_entity{name = "artillery-flare", position = p, force = "player", movement = {0, 0},
               height = 0, vertical_speed = 0, frame_speed = 1}
           end
+          for _, g in pairs(surface().find_entities_filtered{force = bat.force, name = {"lp-generator", "lp-grubstake-generator"},
+            position = bat.pos, radius = 220}) do
+            flare(g.position)
+          end
+          flare(bat.aim)
+        elseif live == 0 and not bat.lost then
+          bat.lost = game.tick
+          S.batteries_lost = (S.batteries_lost or 0) + 1
+          local by = {}
+          for k, v in pairs(S.killers or {}) do if k:find("artillery") then by[k] = v end end
+          info(string.format("campaign t%.0f: battery at %.0f,%.0f lost (%s)", game.tick / 3600, bat.pos[1], bat.pos[2],
+            serpent.line(by)))
+        end
+      end
+      -- A camp struck young (Fable: squads take camps, before walls and corner turrets): a settlement under 20
+      -- minutes old, once, by a squad staged 60 tiles out on the side towards home.
+      S.struck = S.struck or {}
+      for _, id in ipairs(lp("bases")) do
+        local st = lp("stats", id)
+        if st and st.lander and not st.fallen and st.landed and game.tick - st.landed < 20 * 3600 and not S.struck[id]
+          and game.tick - st.landed > 3 * 3600 then
+          S.struck[id] = game.tick
+          local o = {st.origin.x, st.origin.y}
+          local ol = math.max(1, math.sqrt(o[1] ^ 2 + o[2] ^ 2))
+          local from = {o[1] - o[1] / ol * 60, o[2] - o[2] / ol * 60}
+          local squad = {}
+          for _, g in ipairs({{"lp-trooper", 20 + 10 * (era - 2)}, {"lp-breacher", 6 + 2 * (era - 2)}, {"lp-battle-tank", era - 1}}) do
+            for _, u in ipairs(spawn(g[1], from, g[2], "player")) do table.insert(squad, u) end
+          end
+          for _, u in ipairs(squad) do
+            u.commandable.set_command{type = defines.command.attack_area, destination = o, radius = 30,
+              distraction = defines.distraction.by_anything}
+          end
+          S.camp_strikes = (S.camp_strikes or 0) + 1
+          info(string.format("campaign t%.0f: camp strike at %s %d (%.0f minutes old), %d units", game.tick / 3600, st.corp, id,
+            (game.tick - st.landed) / 3600, #squad))
+          local n0 = #squad
+          schedule(game.tick + 600 * 60, function()
+            local alive = 0
+            for _, u in ipairs(squad) do if u.valid then alive = alive + 1 end end
+            local after = lp("stats", id)
+            local won = after and (after.fallen or not after.lander)
+            if won then S.camp_wins = (S.camp_wins or 0) + 1 end
+            info(string.format("campaign t%.0f: camp strike at %d, 10 minutes on: %d of %d alive, settlement %s", game.tick / 3600,
+              id, alive, n0, won and "fallen" or "standing"))
+          end)
         end
       end
       local cap = 6 + 4 * era
       for _, g in pairs(surface().find_entities_filtered{type = "entity-ghost", force = "player"}) do
-        local k = math.floor(g.position.x / 24) .. "," .. math.floor(g.position.y / 24)
-        if not S.answered[k] and S.answered_n < cap then
+        -- Placing lasers for one ghost can remove the next (a crash at minute 160).
+        local k = g.valid and (math.floor(g.position.x / 24) .. "," .. math.floor(g.position.y / 24))
+        if k and not S.answered[k] and S.answered_n < cap then
           S.answered[k] = true
           S.answered_n = S.answered_n + 1
           local placed = 0
@@ -1541,27 +1596,50 @@ function campaign_player(AT, put)
       -- tiles towards home, four lasers round it), resupplied at each strike; the squad goes in as well.
       if era >= 3 then
         local ol = math.sqrt(o[1] ^ 2 + o[2] ^ 2)
-        local bp = {o[1] - o[1] / ol * 200, o[2] - o[2] / ol * 200}
+        -- A clear site in reach: on the line home (then at angles off it), 220 down to 150 tiles from the lander, the
+        -- first point with no corporation turret within 50 (at a fixed 200 it stood in Serenity's outer works).
+        local bp
+        local home = math.atan2(-o[2], -o[1])
+        for _, turn in ipairs({0, 0.3, -0.3, 0.6, -0.6}) do
+          for d = 220, 150, -10 do
+            local p = {o[1] + math.cos(home + turn) * d, o[2] + math.sin(home + turn) * d}
+            local hot = false
+            for _, f in pairs(game.forces) do
+              if f.name:sub(1, 3) == "lp-" and surface().count_entities_filtered{position = p, radius = 50, force = f,
+                type = {"electric-turret", "ammo-turret", "fluid-turret", "artillery-turret"}, limit = 1} > 0 then
+                hot = true
+              end
+            end
+            if not hot then bp = p; break end
+          end
+          if bp then break end
+        end
         S.batteries = S.batteries or {}
         local bat = S.batteries[best]
-        if not (bat and bat.valid) then
-          flatten(math.floor(bp[1]) - 8, math.floor(bp[2]) - 8, math.floor(bp[1]) + 8, math.floor(bp[2]) + 8)
-          bat = put("artillery-turret", bp[1], bp[2])
-          for _, d in ipairs({{-5, -5}, {5, -5}, {-5, 5}, {5, 5}}) do
+        if not bp then
+          S.no_site = (S.no_site or 0) + 1
+          info(string.format("campaign t%.0f: no clear battery site within reach of %s %d", game.tick / 3600, bst.corp, best))
+        elseif not bat or bat.lost then
+          flatten(math.floor(bp[1]) - 10, math.floor(bp[2]) - 10, math.floor(bp[1]) + 10, math.floor(bp[2]) + 10)
+          -- More guns by era (the hull needs half the generators down within 90 s): 2 at era 3, 4 at era 4.
+          bat = {guns = {}, pos = bp, aim = {o[1], o[2]}, force = bst.force, placed = game.tick}
+          for k = 1, (era >= 4 and 4 or 2) do
+            local g = put("artillery-turret", bp[1] + ((k % 2 == 0) and 4 or -4), bp[2] + ((k > 2) and 4 or -4))
+            if g then table.insert(bat.guns, g) end
+          end
+          for _, d in ipairs({{-8, -8}, {8, -8}, {-8, 8}, {8, 8}}) do
             local tr = put("laser-turret", bp[1] + d[1], bp[2] + d[2])
             if tr then put("electric-energy-interface", tr.position.x, tr.position.y + 3) end
           end
           S.batteries[best] = bat
-          S.aims = S.aims or {}
-          if bat then S.aims[bat.unit_number] = {o[1], o[2]} end
+          S.batteries_placed = (S.batteries_placed or 0) + 1
         end
-        local left = bat and bat.valid and bat.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count() or -1
-        if bat and bat.valid then bat.insert{name = "artillery-shell", count = 20} end
         -- Scouted: artillery fires only on what the force has charted.
-        game.forces.player.chart(surface(), {{o[1] - 64, o[2] - 64}, {o[1] + 64, o[2] + 64}})
-        info(string.format("campaign t%.0f: forward battery at %.0f,%.0f for %s %d (%s, %d shells left before resupply, %.0f tiles from the lander)",
-          game.tick / 3600, bp[1], bp[2], bst.corp, best, bat and bat.valid and "standing" or "not placed", left,
-          bat and bat.valid and math.sqrt((bat.position.x - o[1]) ^ 2 + (bat.position.y - o[2]) ^ 2) or -1))
+        game.forces.player.chart(surface(), {{o[1] - 96, o[2] - 96}, {o[1] + 96, o[2] + 96}})
+        if bp and bat then
+          info(string.format("campaign t%.0f: forward battery at %.0f,%.0f for %s %d, %d guns", game.tick / 3600, bat.pos[1],
+            bat.pos[2], bst.corp, best, #bat.guns))
+        end
       end
       local len = math.sqrt(target[1] ^ 2 + target[2] ^ 2)
       local from = {target[1] / len * 85, target[2] / len * 85}
@@ -1569,10 +1647,19 @@ function campaign_player(AT, put)
       for _, g in ipairs({{"lp-trooper", troopers}, {"lp-breacher", breachers}, {"lp-battle-tank", tanks}}) do
         for _, u in ipairs(spawn(g[1], from, g[2], "player")) do table.insert(squad, u) end
       end
+      -- With a battery up, the squad holds it (Fable: the player sallies to keep the battery alive; a response of
+      -- seven with tanks killed an unguarded battery in five minutes while the squad died at the lander).
+      local guard = era >= 3 and S.batteries and S.batteries[best] and not S.batteries[best].lost and S.batteries[best].pos or nil
       for _, u in ipairs(squad) do
-        u.commandable.set_command{type = defines.command.attack_area, destination = target, radius = 30,
-          distraction = defines.distraction.by_anything}
+        if guard then
+          u.teleport(u.surface.find_non_colliding_position(u.name, guard, 20, 1) or guard)
+          u.commandable.set_command{type = defines.command.wander, radius = 8, distraction = defines.distraction.by_damage}
+        else
+          u.commandable.set_command{type = defines.command.attack_area, destination = target, radius = 30,
+            distraction = defines.distraction.by_anything}
+        end
       end
+      if guard then what = "battery (guarding it)"; target = guard end
       S.strikes = S.strikes + 1
       local n0, at, kind = #squad, target, what
       schedule(game.tick + 600 * 60 - (game.tick % 60), function()
@@ -1604,7 +1691,9 @@ function campaign_checks()
   end
   info("campaign: " .. serpent.line({strikes = S.strikes, answered = S.answered_n, lander_kills = S.lander_kills,
     corps = corps, consolidated = consolidated}))
-  info("campaign: artillery shells supplied " .. tostring(S.shells or 0))
+  info("campaign: artillery shells supplied " .. tostring(S.shells or 0) .. ", batteries placed " .. tostring(S.batteries_placed or 0)
+    .. ", lost " .. tostring(S.batteries_lost or 0) .. ", camp strikes " .. tostring(S.camp_strikes or 0) .. ", won "
+    .. tostring(S.camp_wins or 0))
   check("campaign: the player destroyed a lander", (S.lander_kills or 0) > 0, tostring(S.lander_kills or 0))
   if END >= 300 * 3600 then
     check("campaign: the second corporation came", n >= 2, n .. " corporations")
@@ -2611,7 +2700,8 @@ script.on_event(defines.events.on_entity_died, function(e)
       e.force and e.force.name or "?"))
   end
 end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
-  {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"}, {filter = "type", type = "unit"},
+  {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
+  {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"},
   {filter = "type", type = "spider-unit"}})
 
 -- Siege diagnostics: damage the player's units deal, by unit and target.
