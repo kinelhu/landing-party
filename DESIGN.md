@@ -48,7 +48,7 @@ document describes the parts as built; the campaign document describes the game 
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
-| Identity: Line troopers (beams) and Shotgun hands (pellets); trees next | built (slice 1) | `arms` |
+| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden; Hand-loads, Scrap plating, Asbestos) | built (slices 1-2) | `arms`, `plate` (two), `techup` (two) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -861,6 +861,18 @@ and withdraws in order; Grubstake empties chests first: the user's heists, folde
   555 of 720 health to each other). Research follows the weapons (`rd.CORP_CATEGORY`: Serenity's main category is now
   laser, Grubstake's shotgun shells). Scenario `arms`: six of each against four radars, 780 and 630 ticks (within 20%:
   eight pellets took 420, five 540), no wounds to their own side.
+
+- **Slice 2, the tree engine (built).** Each corporation's tree is a table in `shared.CORPS[corp].tree`: track nodes
+  (damage for its ammunition categories, a level at a time, 400 x k parts, +20% each, at most the player's era + 1)
+  and plate nodes (plates on unit kinds, from an era), each with a trigger on the ledger (`{damage = d, min = n}`:
+  n of its units killed by damage d in 30 minutes; `{turned_back = n}`). The node whose trigger fires hardest wins,
+  tree order breaking ties; with none, its first track climbs; a winner it cannot afford is saved for (nothing else
+  bought meanwhile). Announced per node in its voice (`lp.node-<id>`). First nodes, the generic system renamed and
+  divided: Serenity **Optics** (lasers and electric) and **Warden armour** (physical, Line troopers); Grubstake
+  **Hand-loads** (shotgun shells and bullets), **Scrap plating** (physical) and **Asbestos suits** (fire), both on
+  Shotgun hands and buggies. Each answers only with its own: Serenity has no fire or laser plate. Scenario `plate`
+  (two): fifteen Line troopers killed by a gun turret, Warden armour, 8 armoured troopers built, the 4 standing kept;
+  fifteen Shotgun hands and buggies killed by a flamethrower, asbestos suits, 12 fireproofed built, 15 standing kept.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

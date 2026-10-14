@@ -20,6 +20,15 @@ shared.CORPS = {
     props = {["lp-wall"] = {max_health = 225}},
     -- Its own names for kinds (entity-name.<name>): the Shotgun hand.
     names = {["lp-infantry"] = "lp-shotgun-hand"},
+    -- Its tech tree (scripts/rd.lua; docs/reviews/2026-10-14-identity-trees-consult.md): never a fair fight.
+    tree = {
+      {id = "handloads", branch = "scrap-arms", track = {"shotgun-shell", "bullet"}, levels = 5, cost = 400,
+        trigger = {turned_back = 2}},
+      {id = "scrap-plating", branch = "scrap-arms", era = 1, cost = 900,
+        plates = {["lp-infantry"] = "physical", ["lp-buggy"] = "physical"}, trigger = {damage = "physical", min = 10}},
+      {id = "asbestos", branch = "scrap-arms", era = 1, cost = 900,
+        plates = {["lp-infantry"] = "fire", ["lp-buggy"] = "fire"}, trigger = {damage = "fire", min = 10}},
+    },
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
@@ -40,6 +49,13 @@ shared.CORPS = {
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
     doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
     names = {["lp-infantry"] = "lp-line-trooper"},
+    -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.
+    tree = {
+      {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400,
+        trigger = {turned_back = 2}},
+      {id = "warden", branch = "line", era = 1, cost = 1500, plates = {["lp-infantry"] = "physical"},
+        trigger = {damage = "physical", min = 10}},
+    },
     arch = {gates = true, baffles = true, pillboxes = true, flamers = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it

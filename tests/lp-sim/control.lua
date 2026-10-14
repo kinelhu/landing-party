@@ -2720,36 +2720,50 @@ scenarios.techup = function()
   end)
 end
 
--- Plate: corporate research answers what kills its units. Fifteen of Serenity's infantry die to a laser turret (the
--- player at era 2, a fund granted, choices every minute): the next purchase is the laser plate for infantry, the
--- depots then build reflective infantry, and the plain infantry still standing are not replaced.
+-- Plate: each corporation answers what kills its units from its own tree (shared.CORPS.tree). Fifteen of Serenity's
+-- Line troopers die to a gun turret (the player at era 2, a fund granted, choices every minute): it issues Warden
+-- armour (physical) and its depots build armoured Line troopers; the plain ones standing are kept. LP_MIX=grubstake:
+-- fifteen Shotgun hands die to a flamethrower turret, and Grubstake buys asbestos suits (fire) for its infantry.
 scenarios.plate = function()
+  local g = params.mix == "grubstake"
+  local force = g and "lp-grubstake" or FORCE
+  local name = g and "lp-grubstake-infantry" or "lp-infantry"
+  local killer = g and "flamethrower-turret" or "gun-turret"
+  local corp, plate = g and "grubstake" or "serenity", g and "fire" or "physical"
   schedule(60, function()
-    lp("debug_tune", {era = 2, rd_fund = {serenity = 5000}})
-    for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+    lp("debug_tune", {era = 2, rd_fund = {[corp] = 5000}})
+    if g then
+      S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+    else
+      for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+    end
   end)
   schedule(10 * 3600, function()
     flatten(-5, -5, 5, 5)
-    local laser = surface().create_entity{name = "laser-turret", position = {0, 0}, force = "player"}
+    local cause = surface().create_entity{name = killer, position = {0, 0}, force = "player"}
+    -- Grubstake's mix is mostly buggies: its buggies count towards the fifteen.
+    local names = g and {name, "lp-grubstake-buggy"} or {name}
     local n = 0
-    for _, u in pairs(surface().find_entities_filtered{force = FORCE, name = "lp-infantry"}) do
-      if n < 15 then u.die("player", laser); n = n + 1 end
+    for _, u in pairs(surface().find_entities_filtered{force = force, name = names}) do
+      if n < 15 then u.die("player", cause); n = n + 1 end
     end
     S.killed = n
-    S.plain = surface().count_entities_filtered{force = FORCE, name = "lp-infantry"}
-    S.bought0 = lp("rd", "serenity").bought
+    S.kept = surface().find_entities_filtered{force = force, name = names}
     lp("debug_tune", {rd_fast = true})
   end)
   schedule(END - 60, function()
-    local r = lp("rd", "serenity")
-    local plated = surface().count_entities_filtered{force = FORCE, name = "lp-infantry-laser"}
-    local plain = surface().count_entities_filtered{force = FORCE, name = "lp-infantry"}
-    info("plate: " .. serpent.line({rd = r, killed = S.killed, plain_before = S.plain, plain_after = plain, plated = plated}))
-    check("plate: fifteen infantry died to lasers", S.killed == 15, tostring(S.killed))
-    check("plate: it bought the laser plate for infantry", (r.plate or {})["lp-infantry"] == "laser", serpent.line(r.plate))
-    check("plate: the depots build reflective infantry", plated > 0, plated .. " plated")
-    check("plate: the plain infantry standing were kept", plain > 0 and plain <= S.plain,
-      string.format("%d before, %d after", S.plain, plain))
+    local r = lp("rd", corp)
+    local plated = surface().count_entities_filtered{force = force, name = name .. "-" .. plate}
+    local kept = 0
+    for _, u in ipairs(S.kept) do if u.valid then kept = kept + 1 end end
+    info("plate: " .. serpent.line({rd = r, killed = S.killed, survivors = #S.kept, kept = kept, plated = plated}))
+    check("plate: fifteen infantry died", S.killed == 15, tostring(S.killed))
+    check("plate: it bought its own answer", (r.plate or {})["lp-infantry"] == plate and (r.nodes or {})[g and "asbestos" or "warden"] ~= nil,
+      serpent.line({plate = r.plate, nodes = r.nodes}))
+    check("plate: the depots build the plated infantry", plated > 0, plated .. " plated")
+    check("plate: the units standing were kept, not replaced", #S.kept > 0 and kept == #S.kept,
+      string.format("%d of %d", kept, #S.kept))
   end)
 end
 

@@ -1,18 +1,10 @@
--- Corporate research (docs/reviews/2026-10-14-corporate-rd-consult.md; the user: "a 'smart' parallel to biter
--- evolution", so raids need not grow a hundredfold against a researched player). A share of each corporation's
--- exports goes to a fund (FUND_SHARE, capped at FUND_CAP); every CHOICE_TICKS it buys at most one thing, its choice
--- read from what it has been losing to:
---   weapons  a damage level for one of the ammunition categories its units fire (LEVEL_COST x k parts for level k,
---            +LEVEL_DAMAGE each, on the corporation's force: units and turrets alike), at most the player's era + 1
---   plate    when ten or more of its units died in the window and one damage type killed half of them, a plate
---            against it for the kind that died most (PLATE_COST, PLATE_SWITCH to change one); from the player's era 1.
---            A plate is a prototype (shared.PLATES): the depots build the plated kind from then on (rd.unit); units
---            already in the field keep what they have.
--- Order: two raids turned back for want of force in the window buy weapons; else a plate if one is called for; else
--- weapons.
--- Its own units' upgrades divide the defence it reads at a target (ops: rd.strength), so raids stay a size a
--- garrison can field. The ledger: units lost in the last WINDOW_TICKS by the damage the killer deals, and raids
--- turned back for want of force.
+-- Corporate research (docs/reviews/2026-10-14-corporate-rd-consult.md, made each corporation's own in
+-- docs/reviews/2026-10-14-identity-trees-consult.md; the user: "a 'smart' parallel to biter evolution", and "actual
+-- faction identity"). A share of each corporation's exports goes to a fund (FUND_SHARE, capped at FUND_CAP); every
+-- CHOICE_TICKS it buys at most one node of its own tree (shared.CORPS[corp].tree), read from what it has been
+-- losing to (rd.choose). Its own units' upgrades divide the defence it reads at a target (ops: rd.strength), so raids
+-- stay a size a garrison can field. The ledger: units lost in the last WINDOW_TICKS by the damage the killer deals,
+-- and raids turned back for want of force.
 local shared = require("__landing-party__.shared")
 
 local rd = {}
@@ -20,7 +12,6 @@ local rd = {}
 local FUND_SHARE, FUND_CAP = 0.3, 10000
 local LEVEL_COST, LEVEL_DAMAGE, MAX_LEVEL = 400, 0.2, 5
 local CHOICE_TICKS = 10 * 3600
-local PLATE_COST, PLATE_SWITCH, PLATE_LOSSES = 1500, 1000, 10
 local WINDOW_TICKS = 30 * 3600
 -- What each unit kind fires (units.lua).
 rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier"] = "bullet",
@@ -38,6 +29,7 @@ function rd.state(corp)
   local d = storage.corps[corp]
   d.tech = d.tech or {fund = 0, weapons = {}, losses = {}, turned_back = {}, bought = 0}
   d.tech.plate = d.tech.plate or {}
+  d.tech.nodes = d.tech.nodes or {}
   return d.tech
 end
 
@@ -120,52 +112,67 @@ local function notify(corp, key, ...)
   end
 end
 
--- One purchase, if the fund affords it and the cap allows: the main category's next level, or, once it is at the
--- cap, the next category's.
-local function buy_weapons(corp, t, cap)
+-- The tree (shared.CORPS[corp].tree): nodes in the corporation's voice. A track node raises the damage of its
+-- ammunition categories a level at a time (LEVEL_COST x k for level k, +LEVEL_DAMAGE each, at most the player's
+-- era + 1); a plate node sets plates on unit kinds (rd.unit builds them), from its era. A trigger reads the ledger:
+-- {damage = d, min = n} (n or more of its units killed by damage d in the window), {turned_back = n} (raids turned
+-- back for want of force). The node whose trigger fires hardest wins (tree order breaks ties); with none, the first
+-- track climbs. A winner it cannot yet afford is saved for: nothing else is bought meanwhile.
+local function level_of(t, node) return (t.nodes[node.id] or 0) end
+local function owned(t, node)
+  if node.track then return level_of(t, node) >= (node.levels or MAX_LEVEL) end
+  for kind, p in pairs(node.plates or {}) do if t.plate[kind] ~= p then return false end end
+  return true
+end
+local function allowed(t, node, era)
+  if owned(t, node) then return false end
+  if node.track then return level_of(t, node) + 1 <= era + 1 end
+  return era >= (node.era or 0)
+end
+local function cost_of(t, node)
+  if node.track then return node.cost * (level_of(t, node) + 1) end
+  return node.cost
+end
+local function score(t, node)
+  local tr = node.trigger or {}
+  if tr.damage then
+    local n = 0
+    for _, l in ipairs(t.losses) do if l.damage == tr.damage then n = n + 1 end end
+    if n >= (tr.min or 1) then return n end
+  end
+  if tr.turned_back and #t.turned_back >= tr.turned_back then return 5 * #t.turned_back end
+  return 0
+end
+
+local function apply(corp, t, node)
   local f = game.forces[shared.CORPS[corp].force]
-  for _, c in ipairs(categories(corp)) do
-    local k = (t.weapons[c] or 0) + 1
-    if k <= math.min(cap, MAX_LEVEL) then
-      if t.fund < LEVEL_COST * k then return false end
-      t.fund = t.fund - LEVEL_COST * k
+  if node.track then
+    local k = level_of(t, node) + 1
+    t.nodes[node.id] = k
+    for _, c in ipairs(node.track) do
       t.weapons[c] = k
       f.set_ammo_damage_modifier(c, LEVEL_DAMAGE * k)
-      t.bought = t.bought + 1
-      notify(corp, "lp.rd-weapons", {"lp.ammo-" .. c}, k)
-      if rd.trace then rd.trace(corp, string.format("research: %s level %d (fund %d)", c, k, t.fund)) end
-      return true
+    end
+    notify(corp, "lp.node-" .. node.id, k)
+  else
+    t.nodes[node.id] = 1
+    for kind, p in pairs(node.plates or {}) do t.plate[kind] = p end
+    notify(corp, "lp.node-" .. node.id)
+  end
+  t.bought = t.bought + 1
+end
+
+-- The node it would buy now, and whether a trigger called for it.
+local function pick(corp, t, era)
+  local best, bs, fallback
+  for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+    if allowed(t, node, era) then
+      local s = score(t, node)
+      if s > 0 and (not bs or s > bs) then best, bs = node, s end
+      if node.track and not fallback then fallback = node end
     end
   end
-  return false
-end
-
--- The plate its losses call for: the damage type behind half of PLATE_LOSSES or more deaths (explosion has no plate:
--- artillery and battle tanks stay the player's trump), for the plated kind that died most.
-local function plate_called(t)
-  if #t.losses < PLATE_LOSSES then return end
-  local by, kinds = {}, {}
-  for _, l in ipairs(t.losses) do by[l.damage] = (by[l.damage] or 0) + 1 end
-  local top, tn
-  for dmg, n in pairs(by) do if not tn or n > tn or (n == tn and dmg < top) then top, tn = dmg, n end end
-  if not shared.PLATES[top] or 2 * tn < #t.losses then return end
-  for _, l in ipairs(t.losses) do if l.damage == top then kinds[l.kind] = (kinds[l.kind] or 0) + 1 end end
-  local kind, kn
-  for _, k in ipairs(shared.PLATED) do
-    if (kinds[k] or 0) > 0 and (not kn or kinds[k] > kn) then kind, kn = k, kinds[k] end
-  end
-  if kind and t.plate[kind] ~= top then return kind, top end
-end
-
-local function buy_plate(corp, t, kind, dmg)
-  local cost = t.plate[kind] and PLATE_SWITCH or PLATE_COST
-  if t.fund < cost then return false end
-  t.fund = t.fund - cost
-  t.plate[kind] = dmg
-  t.bought = t.bought + 1
-  notify(corp, "lp.rd-plate", {"lp.plate-" .. dmg}, {"entity-name." .. kind})
-  if rd.trace then rd.trace(corp, string.format("research: %s plate for %s (fund %d)", dmg, kind, t.fund)) end
-  return true
+  return best or fallback, best ~= nil
 end
 
 function rd.choose(corp)
@@ -174,12 +181,21 @@ function rd.choose(corp)
   local t = rd.state(corp)
   prune(t.losses)
   prune(t.turned_back)
-  local era = player_era()
-  if #t.turned_back < 2 and era >= 1 then
-    local kind, dmg = plate_called(t)
-    if kind then return buy_plate(corp, t, kind, dmg) end
+  local node, called = pick(corp, t, player_era())
+  if not node then return end
+  local cost = cost_of(t, node)
+  if t.fund < cost then
+    t.saving = node.id
+    return
   end
-  buy_weapons(corp, t, era + 1)
+  t.fund = t.fund - cost
+  t.saving = nil
+  apply(corp, t, node)
+  if rd.trace then
+    rd.trace(corp, string.format("research: %s%s (%s, fund %d)", node.id,
+      node.track and (" level " .. t.nodes[node.id]) or "", called and "called for" or "climbing", t.fund))
+  end
+  return node.id
 end
 
 function rd.tick(tick)
@@ -193,6 +209,7 @@ end
 -- Tests: a research history set outright ({weapons = {cat = level}, plate = {kind = plate}}).
 function rd.set(corp, tech)
   local t = rd.state(corp)
+  for id, k in pairs(tech.nodes or {}) do t.nodes[id] = k end
   local f = game.forces[shared.CORPS[corp].force]
   for c, k in pairs(tech.weapons or {}) do
     t.weapons[c] = k
@@ -207,8 +224,8 @@ function rd.summary(corp)
   local by = {}
   prune(t.losses)
   for _, l in ipairs(t.losses) do by[l.damage] = (by[l.damage] or 0) + 1 end
-  return {fund = t.fund, weapons = t.weapons, plate = t.plate, lost_by = by, turned_back = #t.turned_back,
-    bought = t.bought, strength = rd.strength(corp)}
+  return {fund = t.fund, weapons = t.weapons, plate = t.plate, nodes = t.nodes, saving = t.saving, lost_by = by,
+    turned_back = #t.turned_back, bought = t.bought, strength = rd.strength(corp)}
 end
 
 return rd
