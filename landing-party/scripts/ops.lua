@@ -292,6 +292,17 @@ function ops.counter_battery(force, surface, battery, by)
   end
 end
 
+-- Another corporation's lander destroyed by a player (faction.grudge): this settlement sees where the killer stood,
+-- marks a threat there, and counts the defences round it one turret stronger. No provocation.
+function ops.alarmed(b, pos)
+  pos = {pos.x or pos[1], pos.y or pos[2]}
+  ops.sense_at(b, pos, FIELD_SIGHT)
+  ops.threatened(b, pos)
+  for _, t in pairs(b.intel.targets) do
+    if (t.pos[1] - pos[1]) ^ 2 + (t.pos[2] - pos[2]) ^ 2 <= 48 * 48 then t.resist = (t.resist or 0) + 1 end
+  end
+end
+
 function ops.threatened(b, pos)
   ops.init(b)
   b.intel.threats = b.intel.threats or {}

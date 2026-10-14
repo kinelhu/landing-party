@@ -37,7 +37,9 @@ local GARRISON_PER_TIER = 5     -- per depot
 -- The corporation's development level (storage.corps, faction.develop).
 local function level(b) return storage.corps and b.corp and storage.corps[b.corp] and storage.corps[b.corp].level or 0 end
 army.level = level
--- Doubled while a grudge is fresh (faction.grudge).
+-- Doubled while a grudge is fresh (faction.grudge): for GRUDGE_TICKS from its first depot (a camp has none for
+-- its first twenty minutes or so, and a clock from the landing ran out as the depot opened).
+army.GRUDGE_TICKS = 30 * 3600
 local function cap(b)
   local n = #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b))
   return (b.grudge_till and game.tick < b.grudge_till) and 2 * n or n
@@ -53,6 +55,29 @@ local function mix(b)
     if shared.capable(b.corp, name, level(b)) then out[name] = w end
   end
   return out
+end
+
+army.mix = mix
+
+-- The drop escort (docs/reviews/2026-10-14-hull-consult.md): a landing comes down with units, n of the
+-- corporation's mix, at no cost. A camp has no depot (its cap is nought) and no walls for its first twenty
+-- minutes: without them, every new settlement fell to the first squad sent at it (campaign, seed 777).
+function army.escort(b, n)
+  local s = b.lander.surface
+  local m = mix(b)
+  local made = 0
+  for _ = 1, n do
+    local proto = shared.variant(b.corp, rng.weighted(b.rng, m))
+    local p = s.find_non_colliding_position(proto, {b.lander.position.x, b.lander.position.y + 8}, 20, 0.5)
+    local u = p and s.create_entity{name = proto, position = p, force = b.lander.force}
+    if u then
+      table.insert(b.garrison, u)
+      storage.unit_owner[u.unit_number] = b.id
+      made = made + 1
+    end
+  end
+  b.escort = (b.escort or 0) + made
+  return made
 end
 
 -- One unit from the first depot with room, if parts allow; the doctrine weighs which.
@@ -484,6 +509,9 @@ local function intercept(b, trace)
 end
 
 function army.tick(b, tick, trace)
+  if b.grudge and not b.grudge_till and #b.depots > 0 then
+    b.grudge_till = tick + (storage.grudge_fast and 2 * 3600 or army.GRUDGE_TICKS)
+  end
   if tick % 600 == 300 then intercept(b, trace) end
   if tick % 60 == 45 then travel(b, trace) end
   if tick % 300 == 0 then settle(b, trace) end

@@ -84,7 +84,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     local b = base.fall(ent)
     -- The grudge: a lander the player destroyed is answered by every corporation (faction.grudge).
     if b and e.force and not shared.is_corp(e.force.name) and e.force.name ~= "enemy" and e.force.name ~= "neutral" then
-      faction.grudge(b, e.force.name)
+      faction.grudge(b, e.force.name, e.cause and e.cause.valid and e.cause.position or nil)
     end
   end
   -- Shelled: the corporation learns where the battery is (ops.counter_battery) before the owner records go.

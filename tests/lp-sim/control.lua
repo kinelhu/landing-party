@@ -1912,10 +1912,12 @@ end
 -- (its own force). Both get a depot; nothing else is scripted. They must be different forces, and at least one
 -- of them must mount an operation against the other's buildings and do damage.
 scenarios.rivals = function()
-  schedule(60, function() lp("debug_depot", storage.id, 3000) end)
+  -- Three depots each (a field of 21): a drop's escort and corner turrets turned back the one-depot raids (a field
+  -- of 7) that were the only fighting in 40 minutes.
+  schedule(60, function() for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end end)
   schedule(120, function()
     S.other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
-    if S.other then lp("debug_depot", S.other, 3000) end
+    if S.other then for _ = 1, 3 do lp("debug_depot", S.other, 3000) end end
   end)
   schedule(END - 60, function()
     local a, b = lp("stats", storage.id), S.other and lp("stats", S.other)
@@ -2057,13 +2059,27 @@ scenarios.budget = function()
       local len = math.sqrt(o.x * o.x + o.y * o.y)
       local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
       flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
-      for k = -1, 1 do
-        surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"}
-      end
-      surface().create_entity{name = "lp-barracks", position = {c[1], c[2] + 6}, force = "player"}
+      S.groups = S.groups or {}
+      table.insert(S.groups, c)
     end
+    -- Rebuilt every 5 minutes, as a player's robots would: with drop escorts Grubstake razed both groups before
+    -- Serenity turned to the player, and "both attacked the player" failed on a race, not on the budget.
+    S.rebuild = function()
+      for _, c in ipairs(S.groups) do
+        for k = -1, 1 do
+          if surface().count_entities_filtered{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, radius = 1} == 0 then
+            surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"}
+          end
+        end
+        if surface().count_entities_filtered{name = "lp-barracks", position = {c[1], c[2] + 6}, radius = 1} == 0 then
+          surface().create_entity{name = "lp-barracks", position = {c[1], c[2] + 6}, force = "player"}
+        end
+      end
+    end
+    S.rebuild()
     S.max = 0
   end)
+  for t = 5 * 3600, END - 120, 5 * 3600 do schedule(t, function() S.rebuild() end) end
   for t = 300, END - 120, 60 do
     schedule(t, function()
       local th = lp("threat")
@@ -2451,9 +2467,9 @@ scenarios.dev = function()
   end)
 end
 
--- Grudge: the player destroys Grubstake's lander. Every corporation must count the player hostile (Serenity too,
--- unprovoked till then), and Grubstake's next landing come angry: the grudge, double the garrison cap for 30
--- minutes, then the cap as before.
+-- Grudge: the player destroys Grubstake's lander. Grubstake must count the player hostile and Serenity must not
+-- (it takes note, unprovoked); Grubstake's next landing comes angry: the grudge, a doubled drop escort, double the
+-- garrison cap for 30 minutes from its first depot, then the cap as before.
 scenarios.grudge = function()
   schedule(60, function() lp("debug_tune", {grudge_fast = true}) end)
   schedule(120, function()
@@ -2468,18 +2484,24 @@ scenarios.grudge = function()
     l.die("player")
   end)
   schedule(3700, function()
-    check("grudge: every corporation now counts the player hostile",
-      (lp("corp", "serenity").provoked or {}).player ~= nil and (lp("corp", "grubstake").provoked or {}).player ~= nil, "")
+    check("grudge: Grubstake counts the player hostile, Serenity does not",
+      (lp("corp", "serenity").provoked or {}).player == nil and (lp("corp", "grubstake").provoked or {}).player ~= nil, "")
     S.g2 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     lp("debug_depot", S.g2, 0)
     local st = S.g2 and lp("stats", S.g2)
     check("grudge: the next Grubstake landing came angry", st and st.grudge == "player", st and tostring(st.grudge) or "no landing")
-    S.cap = st and st.cap
     S.g3 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     local st3 = S.g3 and lp("stats", S.g3)
     check("grudge: only the next one", st3 and st3.grudge == nil, st3 and tostring(st3.grudge) or "no landing")
   end)
-  schedule(3700 + 2 * 3600 + 60, function()
+  schedule(3700 + 600, function()
+    S.cap = S.g2 and lp("stats", S.g2).cap
+    -- The escort steps off once each pad is laid.
+    local st, st3 = S.g2 and lp("stats", S.g2), S.g3 and lp("stats", S.g3)
+    check("grudge: its drop escort was doubled", st and st3 and (st3.escort or 0) > 0 and st.escort == 2 * st3.escort,
+      string.format("%s against %s", st and tostring(st.escort), st3 and tostring(st3.escort)))
+  end)
+  schedule(3700 + 2 * 3600 + 900, function()
     local st = S.g2 and lp("stats", S.g2)
     check("grudge: the cap was doubled, then not", st and S.cap and st.cap * 2 == S.cap,
       tostring(S.cap) .. " then " .. tostring(st and st.cap))

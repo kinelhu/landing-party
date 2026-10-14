@@ -4,6 +4,7 @@ local shared = require("__landing-party__.shared")
 local modules = require("__landing-party__.scripts.modules")
 local site = require("__landing-party__.scripts.site")
 local layout = require("__landing-party__.scripts.layout")
+local blocks = require("__landing-party__.scripts.blocks")
 local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
 local ops = require("__landing-party__.scripts.ops")
@@ -126,6 +127,41 @@ function base.land(surface, pos, opts)
   trace(b, string.format("landed at %.0f,%.0f: doctrine %s, first hub %s", at[1], at[2], b.doctrine,
     b.hubs[1].archetype))
   return b
+end
+
+-- The drop escort's turrets (docs/reviews/2026-10-14-hull-consult.md): four gun turrets at the pad's corners,
+-- fed from the settlement's stock (they are in b.turrets), so a camp is not bare for its first twenty minutes.
+-- They are the drop's, not the settlement's: never rebuilt, and packed up CAMP_TICKS after landing (kept, they
+-- made every young settlement too strong for a rival's raids, and two corporations never fought: rivals).
+local CAMP_TICKS = 20 * 3600
+function base.corner_turrets(b)
+  local s = b.lander.surface
+  -- The corporation's own turret where it is a gun turret (Grubstake's), else the default gun turret.
+  local name = shared.variant(b.corp, "lp-turret")
+  if prototypes.entity[name].type ~= "ammo-turret" then name = "lp-gun-turret" end
+  local x, y = b.lander.position.x, b.lander.position.y
+  for _, c in ipairs({{-1, -1}, {1, -1}, {-1, 1}, {1, 1}}) do
+    local p = s.find_non_colliding_position(name, {x + c[1] * (blocks.PAD_W / 2 - 3), y + c[2] * (blocks.SIZE / 2 - 2)}, 4, 1)
+    local t = p and s.create_entity{name = name, position = p, force = b.lander.force}
+    if t then
+      t.insert{name = "piercing-rounds-magazine", count = 20}
+      table.insert(b.turrets, t)
+      b.camp_turrets = b.camp_turrets or {}
+      table.insert(b.camp_turrets, t)
+    end
+  end
+end
+
+local function pack_camp(b)
+  if not b.camp_turrets or game.tick - (b.landed or 0) < CAMP_TICKS then return end
+  for _, t in ipairs(b.camp_turrets) do
+    if t.valid then
+      for i = #b.turrets, 1, -1 do if b.turrets[i] == t then table.remove(b.turrets, i) end end
+      t.destroy()
+    end
+  end
+  b.camp_turrets = nil
+  trace(b, "the drop's turrets packed up")
 end
 
 -- The base's network is the lander's: whatever is cut off from it stops counting.
@@ -391,6 +427,12 @@ local function build(b)
   if not more and not job.module.built then
     job.module.built = true
     trace(b, string.format("built %s at %.0f,%.0f", job.module.kind, job.module.center[1], job.module.center[2]))
+    -- The drop escort steps off once the pad is laid (spawned on landing, it stood where the pad's pylon goes).
+    if job.module.kind == "pad" and b.escort_due then
+      army.escort(b, b.escort_due)
+      b.escort_due = nil
+      base.corner_turrets(b)
+    end
   end
 end
 
@@ -696,12 +738,22 @@ end
 
 -- The powered hull (docs/reviews/2026-10-14-artillery-consult.md): a lander cannot be destroyed while at least half
 -- the most generators its settlement has had still stand. A headquarters' lander answers to its uplink instead.
+-- Only the generators within HULL_RADIUS of the lander count (the hull consult): a mature settlement's later hubs
+-- lie 90-160 tiles out, and a battery in reach of the lander reached almost none of them (seed 777: 31,714 shells,
+-- the hull never down). Fewer than two counted, and the hull is down.
+local HULL_RADIUS = 80
 local function hull(b)
   if b.hq then return end
   local n = 0
-  for _, g in ipairs(b.gens) do if g.valid and g.force.name == b.force then n = n + 1 end end
+  local lx, ly = b.lander.position.x, b.lander.position.y
+  for _, g in ipairs(b.gens) do
+    if g.valid and g.force.name == b.force and (g.position.x - lx) ^ 2 + (g.position.y - ly) ^ 2 <= HULL_RADIUS ^ 2 then
+      n = n + 1
+    end
+  end
   b.gens_max = math.max(b.gens_max or 0, n)
-  local held = b.gens_max > 0 and 2 * n >= b.gens_max
+  b.gens_counted = n
+  local held = n >= 2 and 2 * n >= b.gens_max
   if b.lander.destructible == held then
     b.lander.destructible = not held
     b.hull_down = (b.hull_down or 0) + (held and 0 or 1)
@@ -748,7 +800,7 @@ function base.tick(tick)
       collapse(b)
       if tick % 600 == 300 then capture(b) end
     elseif b.lander.valid then
-      if tick % 60 == 0 then hull(b) end
+      if tick % 60 == 0 then hull(b); pack_camp(b) end
       if tick % 7200 == (b.id * 61) % 7200 then base.claim_map(b) end
       site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
@@ -822,7 +874,7 @@ function base.stats(b)
       table.insert(t, h.archetype) end return table.concat(t, ",") end)(),
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
     fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
-    grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b)}
+    grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted}
 end
 
 return base

@@ -7,6 +7,7 @@ local shared = require("__landing-party__.shared")
 local site = require("__landing-party__.scripts.site")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
+local army = require("__landing-party__.scripts.army")
 
 local faction = {}
 
@@ -193,6 +194,12 @@ function faction.arrive(surface, from, opts, quiet)
   end
   f.landings = f.landings + 1
   faction.angry(b)
+  -- The drop escort: 6 + 4 a level, doubled by a grudge, and four corner turrets, once the pad is laid
+  -- (army.escort, base.corner_turrets); a headquarters lands with its fortress.
+  if not (opts and opts.uplink) then
+    local n = 6 + 4 * (faction.corp(b.corp).level or 0)
+    b.escort_due = b.grudge and 2 * n or n
+  end
   ops.heard_landing(b)
   local d = faction.corp(b.corp)
   d.landed = d.landed or game.tick
@@ -344,12 +351,18 @@ local function apply_tier(f) end
 
 -- Parts sent off-world by a mature settlement.
 -- A corporation's development (per corporation, from its own exports).
--- The grudge (docs/reviews/2026-10-14-artillery-consult.md): a lander destroyed by a player force provokes every
--- corporation against it, and the fallen settlement's corporation lands its next settlement angry: able to besiege
--- for good, with double the garrison cap for its first GRUDGE_TICKS (army.cap).
-local GRUDGE_TICKS = 30 * 3600
-function faction.grudge(b, by)
-  for _, c in pairs(shared.CORPS) do ops.provoke(c.force, by) end
+-- The grudge (docs/reviews/2026-10-14-artillery-consult.md, revised in the hull consult): a lander destroyed by a
+-- player force provokes its own corporation against that force for good; the others take note (a threat where the
+-- killer stood, its defences counted stronger) without being provoked, so a player fighting the thief does not make
+-- the wall-builder an enemy. The fallen settlement's corporation lands its next settlement angry: able to besiege
+-- whatever its level, a doubled escort, and double the garrison cap for 30 minutes from its first depot (army.cap).
+function faction.grudge(b, by, at)
+  ops.provoke(b.force, by)
+  for _, o in pairs(storage.bases) do
+    if o.force ~= b.force and not o.fallen and o.surface == b.surface and o.lander.valid then
+      ops.alarmed(o, at or b.origin)
+    end
+  end
   local d = faction.corp(b.corp)
   d.grudge = by
   d.grudges = (d.grudges or 0) + 1
@@ -362,9 +375,14 @@ end
 function faction.angry(b)
   local d = faction.corp(b.corp)
   if not d.grudge then return end
-  b.grudge, b.grudge_till = d.grudge, game.tick + (storage.grudge_fast and 2 * 3600 or GRUDGE_TICKS)
+  b.grudge = d.grudge
   d.grudge = nil
   base.trace(b, "landed with a grudge against " .. b.grudge)
+  local f = game.forces[b.grudge]
+  if f and #f.players > 0 then
+    f.print({"lp.grudge-landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,
+      game.surfaces[b.surface].name)})
+  end
 end
 
 function faction.corp(corp)

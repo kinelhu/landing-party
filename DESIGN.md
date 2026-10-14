@@ -42,7 +42,8 @@ document describes the parts as built; the campaign document describes the game 
 | Patrols through settlements | built | `lively` (life animation) |
 | Convoys carrying exports to the uplink | built | `convoy` (life animation) |
 | Interceptors against player trains | built | `train` |
-| Grudge: a lander the player kills provokes every corporation; the next landing comes angry | built | `grudge` |
+| Grudge: a lander the player kills provokes its corporation; the next landing comes angry | built | `grudge` |
+| Drop escort: a landing brings units and four corner turrets (20 minutes) | built | `grudge`, `rivals` |
 | Dev tools: `/lp` forces operations, perimeter steps, landings, grudges | built | `dev` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
@@ -721,14 +722,26 @@ Grubstake's, so no corporation grew past its first. **Open (for the user and Fab
 battery from one side; Fable's target of one or two artillery kills in six hours is not met. Options: count only
 the generators within 300 tiles of the lander, or a smaller share, or let the player bring more guns.
 
-### The grudge (built 2026-10-14, from the artillery consult)
-A lander a player force destroys (any cause: shells, a squad) is answered: every corporation counts that force
-provoked for good (Serenity's temper no longer holds it back), the player is told
-(`lp.grudge`), and the fallen settlement's corporation lands its next settlement angry (`b.grudge`): it can besiege
-whatever its level or temper (Grubstake, which never besieges, does), and its garrison cap is doubled for its first
-30 minutes (`army.cap`). Only the next landing carries it. Scenario `grudge` (quick regression): Serenity unprovoked
-before, provoked after; the next Grubstake landing angry, the one after not; cap 20 then 10. Not yet measured in
-a campaign: whether an angry landing survives the camp strike that kills fresh ones on seed 777.
+### Hull, drop escort and grudge (Fable, `docs/reviews/2026-10-14-hull-consult.md`; built 2026-10-14)
+- **The hull counts the core.** Only generators within 80 tiles of the lander count (`HULL_RADIUS`), half of the most
+  ever counted must stand, and fewer than two counted is a hull down. Later hubs lie 90-160 tiles out, so a battery in
+  reach of the lander reached almost none of a mature settlement's generators (777: 31,714 shells, never down).
+- **The drop escort.** A landing (not a headquarters) brings 6 + 4 a level units of its corporation's mix, free, and
+  four gun turrets at its pad's corners, both placed once the pad is laid (spawned at landing, the escort stood where
+  the pad's pylon goes and the first mine never powered). The turrets are the drop's: never rebuilt, packed up 20
+  minutes after landing. A camp had no depot (cap 0) and no walls for its first twenty minutes, and every one fell
+  to the first squad (777). Side effects, tests adjusted: one-depot rivals no longer fight in 40 minutes (the only
+  fighting was a minute-1 raid on a bare camp; `rivals` now grants three depots each), and in `budget` Serenity, with
+  its escort, raids Grubstake first and Grubstake razed both relay groups before Serenity turned to the player
+  (the groups are now rebuilt every 5 minutes, as robots would).
+- **The grudge.** A lander a player force destroys provokes its own corporation for good; the other corporations take
+  note without provocation (`ops.alarmed`: they see where the killer stood, mark a threat there, and count the
+  defences round it one turret stronger), so a player fighting the thief does not make the wall-builder an enemy.
+  The player is told (`lp.grudge`). The fallen settlement's corporation lands its next settlement angry (`b.grudge`,
+  told: `lp.grudge-landed`): it besieges whatever its level or temper (Grubstake, which never besieges, does), its
+  drop escort is doubled, and its garrison cap is doubled for 30 minutes from its first depot (from the landing,
+  the window ran out as the depot opened). Only the next landing carries it. Scenario `grudge`.
+- Not yet measured in a campaign: lander kills with the 80-tile hull, camp strikes against the escort.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
