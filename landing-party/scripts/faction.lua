@@ -106,7 +106,7 @@ function faction.site(surface, from, distance, count)
       end
       -- Not under the player's artillery (it fires on military targets by itself, about 224 tiles, more with
       -- research): a settlement landed there would die unseen. Against a megabase they ring it, just outside.
-      if clear then
+      if clear and not faction.under_guns then
         for _, pf in pairs(game.forces) do
           if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
             -- Its range research too (a factory with 210 technologies outranged 224 tiles: eleven landings in three
@@ -202,16 +202,34 @@ function faction.arrive(surface, from, opts, quiet)
   -- Further rings out to a megabase's edge: clear of the factory (CLEAR_OF_FACTORY), the near rings were all refused.
   -- A second pass with nests allowed (the lander burns its clearing, base.clear_landing): in a maximum-evolution
   -- world every ring had nests near it, and Grubstake never landed.
-  for pass = 1, 2 do
-    faction.ignore_nests = pass == 2
+  -- Pass 2, against a late player (era 3 and up): under its guns. Its artillery keeps its own range clear of nests, so on
+  -- a megabase in biter country the band between its factory (CLEAR_OF_FACTORY) and its artillery's reach is the one
+  -- nest-free approach (landed beyond it, settlements had 18 to 101 nests between them and the player, and a clearance's
+  -- hauler died deploying every time, visit). There the corporation's turrets are shelled; its lander holds on its hull
+  -- (artillery fires on its own at military targets, not at generators or units), and it can reach the player.
+  -- Pass 3: nests allowed, the landing burns its clearing.
+  local late = false
+  for _, pf in pairs(game.forces) do
+    if (#pf.players > 0 or pf.name == "player") and not shared.is_corp(pf.name) and ops.era(pf) >= 3 then late = true end
+  end
+  if storage.era_override then late = storage.era_override >= 3 end
+  for pass = 1, 3 do
+    if pass == 2 and not late then goto next_pass end
+    faction.under_guns = pass == 2
+    faction.ignore_nests = pass == 3
     for _, extra in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do
       pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
       b = pos and base.land(surface, pos, opts)
-      if b then break end
+      if b then
+        if pass == 2 then b.under_guns = true; base.trace(b, "landed under the player's guns (inside its artillery's reach)") end
+        break
+      end
     end
     if b then break end
+    ::next_pass::
   end
   faction.ignore_nests = false
+  faction.under_guns = false
   if b then base.clear_landing(b) end
   if not b then
     -- Try again later, and say why: a failed landing retried silently every 10 s once.

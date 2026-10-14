@@ -3537,6 +3537,61 @@ scenarios.heist = function()
   end)
 end
 
+-- Overflight (the biter-country consult): Grubstake, which never clears nests, behind a wall of spawners and worms with
+-- six harriers in its garrison: no way round on the ground, so they fly over (round the worms), raze the player's
+-- undefended assembler beyond, and most come home.
+scenarios.overflight = function()
+  schedule(60, function()
+    lp("debug_tune", {history_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    lp("debug_depot", S.g, 3000)
+  end)
+  schedule(2 * 3600, function()
+    lp("debug_units", S.g, "lp-harrier", 6)
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 170), math.floor(o.y - uy * 170)}
+    flatten(c[1] - 8, c[2] - 8, c[1] + 8, c[2] + 8)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    S.c = c
+    schedule(game.tick + 60, function()
+      local r = lp("debug_route", S.g, c)
+      local near = {}
+      for _, w in ipairs(r.route or {}) do
+        local m = math.huge
+        for _, e in pairs(surface().find_entities_filtered{position = w, radius = 60, type = "unit-spawner"}) do
+          m = math.min(m, math.sqrt((e.position.x - w[1]) ^ 2 + (e.position.y - w[2]) ^ 2))
+        end
+        table.insert(near, string.format("(%.0f,%.0f):%.0f", w[1], w[2], m))
+      end
+      info("overflight: route from " .. serpent.line(r.from) .. " to " .. serpent.line(c) .. ": " .. table.concat(near, " "))
+      local sp = surface().find_entities_filtered{type = "unit-spawner", limit = 3}
+      info("overflight: spawners e.g. " .. serpent.line({sp[1] and sp[1].position, sp[2] and sp[2].position}))
+    end)
+    for k = -300, 300, 14 do
+      -- 130 tiles out: at 90 it crossed Grubstake's own outposts, no spawner could stand there, and the gap was the way.
+      local p = {o.x - ux * 130 - uy * k, o.y - uy * 130 + ux * k}
+      local q = surface().find_non_colliding_position("biter-spawner", p, 6, 1)
+      if q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"} then S.sp = (S.sp or 0) + 1 end
+      if k % 42 == 0 then
+        local w = surface().find_non_colliding_position("medium-worm-turret", {p[1] - ux * 10, p[2] - uy * 10}, 6, 1)
+        if w then surface().create_entity{name = "medium-worm-turret", position = w, force = "enemy"} end
+      end
+    end
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local target = surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"}
+    local log = st.ops.log[#st.ops.log]
+    info("overflight: losses by killer " .. serpent.line(lp("rd", "grubstake").lost_by))
+    info(string.format("overflight: %s spawners; %d flights; target %s; %s", tostring(S.sp), st.ops.overflights or 0,
+      target > 0 and "standing" or "razed", serpent.line(log)))
+    check("overflight: the harriers flew over", (st.ops.overflights or 0) > 0, tostring(st.ops.overflights))
+    check("overflight: and razed the target", target == 0, "")
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()

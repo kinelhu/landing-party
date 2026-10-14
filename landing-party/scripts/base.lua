@@ -938,7 +938,7 @@ function base.stats(b)
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
     fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
-    cleared = b.cleared}
+    cleared = b.cleared, under_guns = b.under_guns}
 end
 
 return base

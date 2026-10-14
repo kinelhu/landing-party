@@ -675,7 +675,8 @@ local function finish(b, outcome, trace, army)
   for _, u in ipairs(op.members) do
     if u.valid and h and not back then
       back = {}
-      for _, w in ipairs(ops.route(b, {u.position.x, u.position.y}, {h.position.x, h.position.y}, {turrets = false, nests = true}) or {}) do
+      for _, w in ipairs(ops.route(b, {u.position.x, u.position.y}, {h.position.x, h.position.y},
+        op.overflight and {turrets = false, worms = true} or {turrets = false, nests = true}) or {}) do
         table.insert(back, {type = defines.command.go_to_location, destination = w, radius = 4,
           distraction = defines.distraction.by_damage})
       end
@@ -817,7 +818,9 @@ local function sneak_route(b, from, to, opts)
   local box = {{x0 - 60, y0 - 60}, {x0 + w * SNEAK_CELL + 60, y0 + h * SNEAK_CELL + 60}}
   local turrets = opts.turrets and s.find_entities_filtered{area = box, type = {"ammo-turret", "electric-turret",
     "fluid-turret"}, force = foes} or {}
-  local nests = opts.nests and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"} or {}
+  -- Air units (opts.worms) keep clear of worms only: spawners do not shoot.
+  local nests = (opts.nests and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"})
+    or (opts.worms and s.find_entities_filtered{area = box, type = "turret", force = "enemy"}) or {}
   local function centre(i, j) return x0 + (i + 0.5) * SNEAK_CELL, y0 + (j + 0.5) * SNEAK_CELL end
   local blocked = {}
   local function open(i, j)
@@ -878,6 +881,9 @@ local function sneak_route(b, from, to, opts)
       end
     end
   end
+  local nb = 0
+  for _, v in pairs(blocked) do if v then nb = nb + 1 end end
+  ops.last_route = {nests = #nests, turrets = #turrets, blocked = nb, cells = w * h, found = found, steps = steps}
   if not found then return nil end
   -- Back from the target, every third cell a waypoint (the engine's pathfinder walks between them).
   local cells = {}
@@ -1062,6 +1068,42 @@ local function launch(b, key, trace, army)
   if route and t.owner ~= "enemy" and not sneak_route(b, stage, {t.pos[1], t.pos[2]}, {turrets = false, nests = true}) then
     route = nil
   end
+  -- Overflight (Grubstake, the biter-country consult: "We don't fight bugs"): no way round on the ground, and air
+  -- units at home: up to six fly over the nests (round the worms, which shoot at them), take the target, and fly home.
+  -- Only at the ladder's top rung (cost no object): spawners' defenders bite harriers out of the air (six of six over a
+  -- wall of nests, overflight), and a trigger target mask on the biters' bite did not stop it.
+  if not route and not shared.capable(b.corp, "siege", 99) and against_player(t.owner) and ladder(t.owner) >= 3 then
+    -- From the raid as picked, then the garrison.
+    local air = {}
+    for _, list in ipairs({members, b.garrison}) do
+      for i = #list, 1, -1 do
+        local u = list[i]
+        local k = u.valid and shared.kind_of(u.name)
+        if #air < 6 and (k == "lp-harrier" or k == "lp-scavenger") then table.insert(air, table.remove(list, i)) end
+      end
+    end
+    local aroute = #air >= 3 and sneak_route(b, {h.position.x, h.position.y}, {t.pos[1], t.pos[2]}, {turrets = false, worms = true})
+    if aroute then
+      for _, u in ipairs(members) do table.insert(b.garrison, u) end
+      local cmds = {}
+      for _, w in ipairs(aroute) do
+        table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = defines.distraction.none})
+      end
+      table.insert(cmds, {type = defines.command.attack_area, destination = {t.pos[1], t.pos[2]}, radius = 12,
+        distraction = defines.distraction.by_anything})
+      order_all(air, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds})
+      b.op.members, b.op.launched, b.op.phase, b.op.phase_at = air, #air, "attack", game.tick
+      b.op.attacked, b.op.overflight, b.op.last_kill, b.op.kills_at = true, true, game.tick, b.razed
+      b.overflights = (b.overflights or 0) + 1
+      b.ops_launched = b.ops_launched + 1
+      b.raids_sent = b.raids_sent + 1
+      storage.threat_last = game.tick
+      trace(b, string.format("overflight on %s at %.0f,%.0f: %d air units over biter country (%d waypoints)", t.kind,
+        t.pos[1], t.pos[2], #air, #aroute))
+      return true
+    end
+    for _, u in ipairs(air) do table.insert(b.garrison, u) end
+  end
   if not route then
     local escort, sp, worms = push_escort(b, t, {h.position.x, h.position.y}, {t.pos[1], t.pos[2]})
     -- Too many nests to push through, for a target the ladder or its worth says to go for: clear a way first, a raid
@@ -1126,7 +1168,9 @@ local function launch(b, key, trace, army)
     b.op = nil
     for _, u in ipairs(members) do table.insert(b.garrison, u) end
     -- Briefly: it cost nothing, and the ladder may send it soon (cooled ten minutes, it was never tried again, push).
+    -- The settlement waits too: one target after another refused every 30 s re-planned routes all night (visit).
     t.cool = game.tick + 2 * 3600
+    b.next_op = game.tick + 2 * 3600
     trace(b, string.format("raid on %s at %.0f,%.0f: no way round biter country; not sent", t.kind, t.pos[1], t.pos[2]))
     return false
   end
@@ -2039,6 +2083,7 @@ function ops.summary(b)
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
+    overflights = b.overflights or 0,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,
     sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and

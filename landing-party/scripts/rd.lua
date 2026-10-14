@@ -313,7 +313,7 @@ function rd.summary(corp)
   local t = rd.state(corp)
   local by = {}
   prune(t.losses)
-  for _, l in ipairs(t.losses) do by[l.damage] = (by[l.damage] or 0) + 1 end
+  for _, l in ipairs(t.losses) do by[l.damage .. ":" .. tostring(l.killer)] = (by[l.damage .. ":" .. tostring(l.killer)] or 0) + 1 end
   return {fund = t.fund, salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
     turned_back = #t.turned_back, walls_met = #t.walls_met, bought = t.bought, strength = rd.strength(corp)}
 end

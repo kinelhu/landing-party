@@ -7,3 +7,4 @@ for _, type in ipairs({"fluid-turret", "artillery-turret"}) do
     t.ignore_target_mask = mask
   end
 end
+

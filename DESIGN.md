@@ -1145,6 +1145,23 @@ scenario with assertions first; the window is for art, feel and GUI.
   `push` (22 spawners and 22 worms across the way, unevolved): clearances moved nest to nest, the nests in the way fell
   from 11 to 2, and a raid of four routed through the corridor and razed the target, about 37 minutes after the first
   refusal (before: 26 of 27 died pushing through).
+- **Night of 2026-10-14/15 on the user's save (visits), what kept the player untouched, in order found:**
+  1. Settlements knew none of the player's buildings: landings kept outside the player's researched artillery reach stand
+     hundreds of tiles beyond its factory, past every sensor. **The survey** (built): every 10 minutes a settlement
+     senses the first stretch of each rival player's factory on the line to its spawn (33 to 42 targets each, 10 minutes
+     in).
+  2. A rival's lander (worth 8) won every choice over the player's buildings even at the top rung, and Grubstake's soft
+     held at the top rung: once the ladder presses (second rung), only that player's targets; the top rung overrides soft.
+  3. With the player's buildings known and chosen, every way to them crossed 18 to 101 nests (maximum evolution);
+     Serenity's clearance hauler died deploying, every two minutes, to the nests' defenders; Grubstake's six harriers
+     flying over were bitten out of the air (spawners' defenders; a trigger target mask on the biters' bite did not stop
+     it, reverted): overflight only at the top rung. A raid not sent now also holds its settlement 2 minutes (one
+     refusal every 30 s re-planned routes).
+  4. **Under the guns (built, for review):** against a late player (era 3 and up) a landing's second pass is inside its
+     artillery's reach, still 150 tiles from its buildings and clear of nests: the player's artillery keeps its own range
+     clear of nests, so on a megabase that band is the one approach. There the corporation's turrets are shelled by the
+     player's artillery (on its own), its lander holds on its hull (artillery does not fire on its own at generators or
+     units), and counter-battery has the player's artillery in reach. Third pass: nests allowed.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

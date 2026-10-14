@@ -251,6 +251,24 @@ remote.add_interface("landing-party", {
     return command.release(1, game.surfaces[1].find_entities_filtered{area = area, force = "player", type = "unit"})
   end,
   debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
+  -- Tests only: the route planner from a settlement's home to pos (nests and turrets as for a sneaking march).
+  debug_route = function(id, to)
+    local b = storage.bases[id]
+    local r = ops.route(b, {b.origin.x, b.origin.y}, to, {turrets = true, nests = true})
+    return {found = r ~= nil, waypoints = r and #r or 0, corridors = #(storage.corridors or {}), last = ops.last_route,
+      route = r, from = {b.origin.x, b.origin.y}}
+  end,
+  -- Tests only: units of a kind straight into a settlement's garrison.
+  debug_units = function(id, kind, n)
+    local b = storage.bases[id]
+    local s = b.lander.surface
+    local name = shared.variant(b.corp, kind)
+    for _ = 1, n do
+      local p = s.find_non_colliding_position(name, {b.lander.position.x, b.lander.position.y + 10}, 20, 0.5)
+      local u = p and s.create_entity{name = name, position = p, force = b.lander.force}
+      if u then table.insert(b.garrison, u); storage.unit_owner[u.unit_number] = b.id end
+    end
+  end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
   debug_depot = function(id, parts) return dev.depot(storage.bases[id], parts) end,
