@@ -404,6 +404,9 @@ scenarios.assault = function()
     local pf = game.forces.player
     pf.set_ammo_damage_modifier("bullet", 0.8)
     pf.set_gun_speed_modifier("bullet", 0.6)
+    -- A player with these upgrades has the research of era 2 (set directly, they count none): the cap on the
+    -- corporations' own research (scripts/rd.lua) follows it.
+    lp("debug_tune", {era = 2})
     S.outpost = {}
     local function put(name, x, y, extra)
       local e = surface().create_entity{name = name, position = {c[1] + x, c[2] + y}, force = "player"}
@@ -489,6 +492,9 @@ scenarios.defend = function()
     local pf = game.forces.player
     pf.set_ammo_damage_modifier("bullet", 0.8)
     pf.set_gun_speed_modifier("bullet", 0.6)
+    -- A player with these upgrades has the research of era 2 (set directly, they count none): the cap on the
+    -- corporations' own research (scripts/rd.lua) follows it.
+    lp("debug_tune", {era = 2})
     local dx, dy = lander.position.x - at[1], lander.position.y - at[2]
     local len = math.sqrt(dx * dx + dy * dy)
     S.creep = {}
@@ -2665,6 +2671,45 @@ scenarios.weigh = function()
     check("weigh: a forced raid at the relay was launched", (S.launched or 0) > 0, tostring(S.launched))
     check("weigh: the spidertron turned it back unhurt", last and last.outcome == "aborted" and last.back == last.launched,
       serpent.line(last))
+  end)
+end
+
+-- Techup: corporate research (docs/reviews/2026-10-14-corporate-rd-consult.md). The player has bullet damage +0.8 and
+-- three gun turrets 120 tiles towards spawn; Serenity's fund is granted, choices every minute. Within six minutes it
+-- buys small arms to level 2 or more, and the raid it would need there falls (23 unresearched). LP_MIX=era0: the
+-- player at era 0, a fund of 20,000: nothing beyond level 1.
+scenarios.techup = function()
+  local era = params.mix == "era0" and 0 or 4
+  schedule(60, function() lp("debug_tune", {rd_fast = true, rd_fund = {serenity = 20000}, era = era}) end)
+  schedule(600, function()
+    game.forces.player.set_ammo_damage_modifier("bullet", 0.8)
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    S.guns = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+    flatten(S.guns[1] - 12, S.guns[2] - 12, S.guns[1] + 12, S.guns[2] + 12)
+    for k = -1, 1 do
+      surface().create_entity{name = "gun-turret", position = {S.guns[1] + 4 * k, S.guns[2] - 5}, force = "player"}
+    end
+    surface().create_entity{name = "assembling-machine-1", position = S.guns, force = "player"}
+  end)
+  schedule(700, function()
+    S.before = lp("debug_needed", storage.id, S.guns)
+  end)
+  schedule(END - 60, function()
+    local r = lp("rd", "serenity")
+    local after = lp("debug_needed", storage.id, S.guns)
+    info("techup: " .. serpent.line({rd = r, before = S.before, after = after}))
+    local lvl = (r.weapons or {}).bullet or 0
+    check("techup: the raid it needed unresearched", S.before and S.before.needed == 23, serpent.line(S.before))
+    if params.mix == "era0" then
+      check("techup: an era-0 player holds it to level 1", lvl == 1, tostring(lvl))
+    else
+      check("techup: it bought small arms to level 2 or more", lvl >= 2, tostring(lvl))
+      check("techup: the raid it needs fell", after and after.needed < S.before.needed,
+        string.format("%s -> %s", S.before and S.before.needed, after and after.needed))
+      check("techup: the corporation's force carries it", game.forces["lp-serenity"].get_ammo_damage_modifier("bullet") >= 0.4,
+        tostring(game.forces["lp-serenity"].get_ammo_damage_modifier("bullet")))
+    end
   end)
 end
 

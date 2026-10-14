@@ -8,6 +8,11 @@ local biters = require("__landing-party__.scripts.biters")
 faction.on_trigger = phases.trigger
 local ops = require("__landing-party__.scripts.ops")
 local dev = require("__landing-party__.scripts.dev")
+local rd = require("__landing-party__.scripts.rd")
+rd.era = ops.era
+rd.trace = function(corp, text)
+  if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
+end
 
 
 local function init()
@@ -27,7 +32,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -100,6 +105,7 @@ script.on_event(defines.events.on_entity_died, function(e)
       if b then
         b.units_lost = b.units_lost + 1
         ops.on_unit_killed(b, e.cause)
+        rd.tally(b, e.cause, ent.name)
         if e.force then ops.provoke(b.force, e.force.name) end
       end
     else
@@ -200,6 +206,8 @@ remote.add_interface("landing-party", {
     if t.perimeter_fast ~= nil then storage.perimeter_fast = t.perimeter_fast end
     if t.grudge_fast ~= nil then storage.grudge_fast = t.grudge_fast end
     if t.siege_tier ~= nil then storage.siege_tier = t.siege_tier end
+    if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
+    for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     -- Tests of operations' mechanics (not of tempers): every corporation already provoked by the player.
     if t.provoke then for _, c in pairs(shared.CORPS) do ops.provoke(c.force, "player") end end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
@@ -221,6 +229,7 @@ remote.add_interface("landing-party", {
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
   debug_depot = function(id, parts) return dev.depot(storage.bases[id], parts) end,
   snapshot = snapshot,
+  rd = function(corp) return rd.summary(corp) end,
   debug_needed = function(id, pos) return ops.debug_needed(storage.bases[id], {x = pos[1], y = pos[2]}) end,
   -- Tests: the /lp dev tools (scripts/dev.lua) at a position, as a player standing there would use them.
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,

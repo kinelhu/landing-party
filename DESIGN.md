@@ -47,6 +47,7 @@ document describes the parts as built; the campaign document describes the game 
 | Dev tools: `/lp` forces operations, perimeter steps, landings, grudges | built | `dev` |
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
+| Corporate research: a fund from exports, weapons levels capped by the player's era | built (weapons) | `techup` (two) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -796,6 +797,32 @@ should come for destruction, several mortars late. Fable's build order: weighted
   its own units aside (the corner turrets had made the pad's walls, turrets and flamer be skipped for good). Three pad
   walls are still skipped on seed 12345, blocked by the settlement's own pylons: a layout overlap, older than this.
 - **Heists**: next (see the consult).
+
+### Corporate research (the user's idea; Fable: `docs/reviews/2026-10-14-corporate-rd-consult.md`)
+The user (2026-10-14): "Corporations should probably also be able to invest in their own tech trees to better answer
+the threats they face. A sort of 'smart' parallel to biter evolution. This makes it so we don't need 100x sized raids
+if their units are upgraded also." `scripts/rd.lua`.
+- **Fund and ledger (built).** 30% of each corporation's exports go to a research fund (capped at 10,000), apart from
+  the level the exports raise. The ledger: its units lost in the last 30 minutes by the damage the killer deals
+  (gun turrets, characters, cars and troopers physical; lasers laser; flamethrowers fire; artillery, breachers and
+  battle tanks explosion; biters not counted), and raids turned back for want of force.
+- **Weapons (built).** Every 10 minutes a corporation buys at most one level of damage (+20% each, 400 x k parts for
+  level k, at most 5) for the ammunition its units fire, its main category first (Serenity: small arms, then cannons,
+  then rockets; Grubstake: small arms), on its force (units and turrets alike), never beyond the player's era + 1;
+  a withdrawing corporation buys nothing. Announced (`lp.rd-weapons`). Scenario `techup` (two): a fund of 20,000 and
+  choices every minute: small arms to level 5 in six minutes, the raid against three upgraded guns from 23 to 14; an
+  era-0 player holds it to level 1.
+- **Sizing.** The defence it reads is divided by its strength, 1 + its damage modifier for its main category: a
+  researched army sends a raid a garrison can field.
+- **Weight now includes shooting speed** (true firepower: damage x rate). In `defend` three gun turrets with bullet
+  damage +0.8 and speed +0.6 kill about 15 units whatever the raid (21, 23 and 26 sent, each lost); weighted 8.6 they
+  need 34, beyond a garrison of 28, until research. Measured: with the fund from exports, small arms level 2 at
+  minute 40, then a raid of 26 (defence read 6.2): it lost, 18 dead in ten seconds. Damage does not keep infantry
+  alive: the plate (next) is the answer, and `defend` fails until it is built and the force per unit recalibrated
+  from measured losses (Fable's step 4). `defend` and `assault` now declare era 2 (their player's upgrades are set
+  directly and count no research).
+- **Plates** (next): a plated prototype per unit kind and damage type, bought for the kind that died most when one
+  damage type caused half of ten or more losses.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

@@ -9,6 +9,7 @@
 --            no kill for 90 s while attacking; or, from the staging point, more turrets seen than the force
 --            can take (it turns back unhurt). An aborted target is remembered (tried, defence seen, cool).
 local shared = require("__landing-party__.shared")
+local rd = require("__landing-party__.scripts.rd")
 
 local ops = {}
 
@@ -93,7 +94,7 @@ local TYPES = {"mining-drill", "assembling-machine", "furnace", "lab", "radar", 
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
 
 -- Weighted defence (docs/reviews/2026-10-14-operations-depth-consult.md): a turret weighs by its kind, scaled by its
--- force's damage research for that kind (all turrets weighed 1, and raids sized for four turrets died to four
+-- force's damage and shooting-speed research for that kind (all turrets weighed 1, and raids sized for four turrets died to four
 -- upgraded lasers; flamethrowers killed most of every campaign squad). Artillery cannot fire up close: 0.
 local WEIGHT = {["ammo-turret"] = {1, "bullet"}, ["electric-turret"] = {1.5, "laser"}, ["fluid-turret"] = {2.5, "flamethrower"},
   ["artillery-turret"] = {0}}
@@ -101,9 +102,13 @@ function ops.weigh(surface, pos, forces, r)
   local w = 0
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r or DEFENCE_RADIUS, force = forces, type = TURRETS}) do
     local k = WEIGHT[e.type]
-    -- Damage research only: with shooting speed as well (x2.88 for defend's guns) a mature garrison could raid nothing
-    -- and its siege never deployed; corporation research (to come) is to answer the player's, not raid size alone.
-    if k and k[1] > 0 then w = w + k[1] * (1 + (k[2] and e.force.get_ammo_damage_modifier(k[2]) or 0)) end
+    -- Firepower: damage times rate of fire (defend's guns, bullet damage +0.8 and shooting speed +0.6: 2.88 each; three
+    -- of them killed about 15 units whatever the raid's size, so 21 and 23 lost and 30 is what wins). Corporate
+    -- research (rd.strength) is what keeps the raid a size a garrison can field.
+    if k and k[1] > 0 then
+      local f = e.force
+      w = w + k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
+    end
   end
   return w
 end
@@ -460,9 +465,11 @@ ops.temper_allows = temper_allows
 -- Known defence of a target: turrets seen by it, and deaths there (a turret per three markers).
 -- Seen turrets, death markers, and resistance learned the hard way: a raid that attacked and razed nothing
 -- (robots out-repairing four infantry, five raids on one substation) counts one turret more each time.
+-- Divided by what its own research gives its units (rd.strength): a researched army reads the same turrets as less.
 local function defence(b, t)
   local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
-  return (t.defence or 0) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
+  return ((t.defence or 0) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3))
+    / rd.strength(b.corp)
 end
 
 local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE end
@@ -1182,8 +1189,9 @@ local function step(b, trace, army)
         -- on the defence it believed before); who stands there counts too, for a while.
         t.defence = seen
         t.units, t.units_at = mobile(s, t.pos, foes), game.tick
-        local want = needed(t.defence + (t.resist or 0) + t.units)
+        local want = needed((t.defence + (t.resist or 0) + t.units) / rd.strength(b.corp))
         if want > n then
+          rd.turned_back(b)
           trace(b, string.format("raid sees defence %.1f and units %.1f at the target, needs %d, has %d: turns back", seen,
             t.units, want, n))
           return finish(b, "aborted", trace, army)
