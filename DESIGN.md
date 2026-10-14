@@ -1132,6 +1132,19 @@ scenario with assertions first; the window is for art, feel and GUI.
   pieces to 3). Once the ladder reaches its second rung against a player force, that player's targets come before rivals
   and nests (weight 0.2 on the others): on the user's save a rival lander, worth 8, was always chosen first, and the top
   rung now overrides Grubstake's soft as well (every exposed spot at the megabase was over 3).
+- **Corporations against biter country (Fable, `docs/reviews/2026-10-14-biter-country-consult.md`; built: corridors and
+  Serenity's Clearance).** Units of 7 to 12 a hit cannot clear a nest at any evolution; mortars can (about 109 to a
+  spawner a shell, 36 tiles against a medium worm's 30). **Corridors:** every spawner's death (any force) is cleared
+  ground for 30 minutes, and within 30 tiles of one nests do not block the route planner (Grubstake follows Serenity's
+  crews). **Clearance** (Serenity, any corporation that ever besieges): a raid with nests in its way, worth sending (6,
+  or the ladder's second rung), gets a clearance siege instead of a push: tier 2 (two mortars, a convoy), from a site 33
+  tiles off the nest nearest home within 40 tiles of the way (out of every worm's 31), always dug in (wall ring and
+  pillboxes); its mortars fire on the nests themselves; when nothing is left in reach it moves on to the next nest on
+  the way while shells last (up to 8 steps), and the next operation follows a minute after. A corporation that besieges
+  never pushes through nests; one that does not (Grubstake), at the ladder's top rung, goes with all it has. Scenario
+  `push` (22 spawners and 22 worms across the way, unevolved): clearances moved nest to nest, the nests in the way fell
+  from 11 to 2, and a raid of four routed through the corridor and razed the target, about 37 minutes after the first
+  refusal (before: 26 of 27 died pushing through).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

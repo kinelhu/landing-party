@@ -3076,7 +3076,7 @@ scenarios.visit = function()
           table.insert(row.bases, {id = id, corp = st.corp, fallen = st.fallen and true or false, garrison = st.garrison,
             razed = st.razed, looted = st.ops.looted, launched = st.ops.launched, done = st.ops.done,
             aborted = st.ops.aborted, sieges = st.ops.sieges, strips = st.ops.strips, op = st.ops.op,
-            units_lost = st.units_lost, known = st.ops.known})
+            units_lost = st.units_lost, known = st.ops.known, known_player = st.ops.known_player})
         end
       end
       helpers.write_file("landing-party/timeline.jsonl", helpers.table_to_json(row) .. "\n", true)

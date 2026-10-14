@@ -552,6 +552,10 @@ local function choose(b, army)
     local held = player and in_flight >= budget(t.owner) and not battery(t)
     if held and game.tick >= (t.cool or 0) then storage.budget_holds = (storage.budget_holds or 0) + 1 end
     if not temper_allows(b, t) then held = true end
+    -- Pressed (the ladder's second rung against a player it is at war with): that player's targets only, self-defence
+    -- excepted (weighted 0.2, a rival's lander still won every choice on the user's save: 48 raids on landers, none on
+    -- the player, visit).
+    if pressed and not player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
     if game.tick >= (t.cool or 0) and not cooling(t) and not held then
       local d = defence(b, t)
       -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
@@ -631,7 +635,7 @@ local function finish(b, outcome, trace, army)
     end
   end
   if op.label and op.label.valid then op.label.destroy() end
-  if op.kind == "siege" then b.next_siege = game.tick + SIEGE_COOL end
+  if op.kind == "siege" then b.next_siege = game.tick + (op.clearance and 2 * 3600 or SIEGE_COOL) end
   if op.kind == "strip" then
     b.next_strip = game.tick + (storage.strip_fast and 2 * 3600 or STRIP_COOL)
     for _, e in ipairs(op.camp or {}) do if e.valid then e.destroy() end end
@@ -693,6 +697,7 @@ local function finish(b, outcome, trace, army)
   local lost = op.launched - alive(op)
   b.next_op = game.tick + ((outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE or GAP_ABORTED)
     + math.floor(lost / 5) * GAP_PER_5_LOST
+  if op.clearance then b.next_op = game.tick + 3600 end
   -- What it saw there at the end is the record: destroyed targets are forgotten (a raid set out again for
   -- creep it had already destroyed).
   if t then
@@ -753,6 +758,24 @@ local REACH = {["ammo-turret"] = 18, ["electric-turret"] = 24, ["fluid-turret"] 
 -- corporation's marches route round spawners (NEST_KEEP.spawner) and worms (NEST_KEEP.worm: a behemoth worm's reach
 -- and a margin); only Grubstake also keeps out of turret reach. opts: {turrets = bool, nests = bool}.
 local NEST_KEEP = {spawner = 30, worm = 50}
+-- Corridors: where spawners died lately (any force: a clearance, the player's artillery, a landing's burn); within
+-- CORRIDOR_RADIUS of one, nests do not block a cell (Grubstake follows Serenity's survey crews).
+local CORRIDOR_TICKS, CORRIDOR_RADIUS = 30 * 3600, 30
+function ops.cleared(surface, pos)
+  storage.corridors = storage.corridors or {}
+  table.insert(storage.corridors, {surface = surface.index, pos = {pos.x, pos.y}, tick = game.tick})
+  if #storage.corridors > 400 then table.remove(storage.corridors, 1) end
+end
+local function corridor_near(surface_index, cx, cy)
+  for i = #(storage.corridors or {}), 1, -1 do
+    local c = storage.corridors[i]
+    if game.tick - c.tick > CORRIDOR_TICKS then
+      table.remove(storage.corridors, i)
+    elseif c.surface == surface_index and (c.pos[1] - cx) ^ 2 + (c.pos[2] - cy) ^ 2 <= CORRIDOR_RADIUS ^ 2 then
+      return true
+    end
+  end
+end
 local function sneak_route(b, from, to, opts)
   opts = opts or {turrets = true, nests = true}
   local s = game.surfaces[b.surface]
@@ -779,7 +802,7 @@ local function sneak_route(b, from, to, opts)
           if (e.position.x - cx) ^ 2 + (e.position.y - cy) ^ 2 <= r * r then bad = true; break end
         end
       end
-      if not bad then
+      if not bad and not (#nests > 0 and corridor_near(b.surface, cx, cy)) then
         for _, e in ipairs(nests) do
           local r = e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm
           if (e.position.x - cx) ^ 2 + (e.position.y - cy) ^ 2 <= r * r then bad = true; break end
@@ -869,7 +892,9 @@ local function crossings(b, from, to)
 end
 local function push_escort(b, t, from, to)
   local sp, worms = crossings(b, from, to)
-  -- Cost no object (the ladder's top rung): through whatever is in the way, with all it has.
+  -- A corporation that besieges clears its way instead of pushing (ops.clearance, the biter-country consult: 27 units
+  -- pushed through a wall of worms and 25 died); one that never does, at the top rung, goes through with all it has.
+  if (sp + worms) > 0 and shared.capable(b.corp, "siege", 99) then return nil, sp, worms end
   if t.owner and ladder(t.owner) >= 3 then return 1000, sp, worms end
   if sp + worms > PUSH_CROSSINGS then return nil, sp, worms end
   local worth = (t.value or 0) * (t.line and 2 or 1) * ((t.owner and ladder(t.owner) >= 1) and 3 or 1)
@@ -1012,15 +1037,32 @@ local function launch(b, key, trace, army)
     -- Too many nests to push through, for a target the ladder or its worth says to go for: clear a way first, a raid
     -- on the nearest spawner by the straight path (the evolution refund stands, biters.lua).
     local worth = (t.value or 0) * (t.line and 2 or 1) * (ladder(t.owner) >= 1 and 3 or 1)
-    if not escort and sp + worms > PUSH_CROSSINGS and (worth >= PUSH_VALUE or ladder(t.owner) >= 2) then
+    local clears = shared.capable(b.corp, "siege", 99)
+    if not escort and (clears or sp + worms > PUSH_CROSSINGS) and sp + worms > 0
+      and (worth >= PUSH_VALUE or ladder(t.owner) >= 2) then
+      -- The nest nearest home within 40 tiles of the straight way, worms as well as spawners (one clearance 33 tiles
+      -- from the first spawner left the worms behind it in reach of the next raid).
       local s = game.surfaces[b.surface]
+      local hx, hy = h.position.x, h.position.y
+      local dx, dy = t.pos[1] - hx, t.pos[2] - hy
+      local len2 = math.max(1, dx * dx + dy * dy)
       local near, nd
-      for _, e in pairs(s.find_entities_filtered{position = {h.position.x, h.position.y},
-        radius = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2), type = "unit-spawner", force = "enemy"}) do
-        local d = (e.position.x - h.position.x) ^ 2 + (e.position.y - h.position.y) ^ 2
-        if not nd or d < nd then near, nd = e, d end
+      for _, e in pairs(s.find_entities_filtered{position = {hx, hy}, radius = math.sqrt(len2), type = {"unit-spawner", "turret"},
+        force = "enemy"}) do
+        local f = math.max(0, math.min(1, ((e.position.x - hx) * dx + (e.position.y - hy) * dy) / len2))
+        local off = (hx + dx * f - e.position.x) ^ 2 + (hy + dy * f - e.position.y) ^ 2
+        local d = (e.position.x - hx) ^ 2 + (e.position.y - hy) ^ 2
+        if off <= 40 * 40 and (not nd or d < nd) then near, nd = e, d end
       end
-      if near then
+      if near and shared.capable(b.corp, "siege", 99) then
+        -- Serenity extends its line through them: a clearance siege (ops.clearance), not a raid on a nest (18 of 18 lost).
+        b.op = nil
+        for _, u in ipairs(members) do table.insert(b.garrison, u) end
+        t.cool = game.tick + 2 * 3600
+        trace(b, string.format("raid on %s at %.0f,%.0f: %d nests in the way; a clearance first", t.kind, t.pos[1], t.pos[2],
+          sp + worms))
+        return ops.clearance(b, near, trace, army, {t.pos[1], t.pos[2]})
+      elseif near and false then
         b.op = nil
         for _, u in ipairs(members) do table.insert(b.garrison, u) end
         local key = "nest:" .. math.floor(near.position.x / CELL) .. "," .. math.floor(near.position.y / CELL)
@@ -1156,9 +1198,9 @@ local function siege_tier(b, t, army)
 end
 ops.siege_tier = siege_tier
 
-local function launch_siege(b, key, site, trace, army)
+local function launch_siege(b, key, site, trace, army, tier_override, clearance)
   local t = b.intel.targets[key]
-  local tier = storage.siege_tier or siege_tier(b, t, army)
+  local tier = tier_override or storage.siege_tier or siege_tier(b, t, army)
   local spec = SIEGE_TIERS[tier]
   local h = home(b)
   local s = game.surfaces[b.surface]
@@ -1183,6 +1225,7 @@ local function launch_siege(b, key, site, trace, army)
   b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
     convoys_left = spec.convoys or 0}
+  b.op.clearance = clearance
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
   local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
     {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
@@ -1218,6 +1261,58 @@ local function launch_siege(b, key, site, trace, army)
   trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f): tier %d, %d mortars to %.0f,%.0f, %d guards",
     t.kind, t.pos[1], t.pos[2], t.value, t.defence or 0, tier, spec.mortars, site[1], site[2], #guards))
   return true
+end
+
+-- Clearance (Serenity, the biter-country consult): a siege on the nest nearest its way, from a site 33 tiles off
+-- (beyond a medium worm's 30), always dug in, tier 2 (two mortars, a resupply convoy). Its mortars fire on the nests by
+-- themselves; it packs up when nothing is left in reach, and the corridor it leaves (ops.cleared) lets marches through.
+-- The site 33 tiles from a nest, towards `from` (then at angles off that line), out of every worm's 31.
+local function clearance_site(s, nest, from)
+  local base = math.atan2(from[2] - nest.position.y, from[1] - nest.position.x)
+  for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
+    local p = {nest.position.x + math.cos(base + turn) * 33, nest.position.y + math.sin(base + turn) * 33}
+    if s.count_entities_filtered{position = p, radius = 31, type = "turret", force = "enemy", limit = 1} == 0
+      and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
+      return p
+    end
+  end
+end
+-- The next nest on the way from `from` to `to` (within 40 tiles of the straight line, nearest `from`).
+local function nest_on_way(s, from, to)
+  local dx, dy = to[1] - from[1], to[2] - from[2]
+  local len2 = math.max(1, dx * dx + dy * dy)
+  local near, nd
+  for _, e in pairs(s.find_entities_filtered{position = from, radius = math.sqrt(len2), type = {"unit-spawner", "turret"},
+    force = "enemy"}) do
+    local f = math.max(0, math.min(1, ((e.position.x - from[1]) * dx + (e.position.y - from[2]) * dy) / len2))
+    local off = (from[1] + dx * f - e.position.x) ^ 2 + (from[2] + dy * f - e.position.y) ^ 2
+    local d = (e.position.x - from[1]) ^ 2 + (e.position.y - from[2]) ^ 2
+    if off <= 40 * 40 and (not nd or d < nd) then near, nd = e, d end
+  end
+  return near
+end
+
+function ops.clearance(b, near, trace, army, toward)
+  if not shared.capable(b.corp, "siege", 99) or b.op then return false end
+  local h = home(b)
+  if not h then return false end
+  local s = game.surfaces[b.surface]
+  local key = "nest:" .. math.floor(near.position.x / CELL) .. "," .. math.floor(near.position.y / CELL)
+  b.intel.targets[key] = b.intel.targets[key] or {tried = 0, cool = 0}
+  local t = b.intel.targets[key]
+  t.pos, t.kind, t.value, t.seen, t.owner = {near.position.x, near.position.y}, near.name, 3, game.tick, "enemy"
+  t.defence = s.count_entities_filtered{position = near.position, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+  local site = clearance_site(s, near, {h.position.x, h.position.y})
+  if not site then return false end
+  if (b.parts or 0) < SIEGE_TIERS[2].cost then return false end
+  local ok = launch_siege(b, key, site, trace, army, 2, true)
+  if ok then
+    b.op.clear_for = toward
+    b.clearances = (b.clearances or 0) + 1
+    trace(b, string.format("clearance: a siege on the nest at %.0f,%.0f from %.0f,%.0f", near.position.x, near.position.y,
+      site[1], site[2]))
+  end
+  return ok
 end
 
 local function siege_step(b, trace, army)
@@ -1281,7 +1376,7 @@ local function siege_step(b, trace, army)
       trace(b, string.format("siege: %d mortars up with %d shells", #op.mortars, op.loaded - op.shells_fired))
       -- Hardened siege (Serenity): the site digs in, a ring of wall open towards home and two gun pillboxes, cleared
       -- when the siege ends (op.works).
-      if rd.has(b.corp, "hardened") and not op.works then
+      if (rd.has(b.corp, "hardened") or op.clearance) and not op.works then
         op.works = {}
         local h = home(b)
         local away = h and math.atan2(h.position.y - op.site[2], h.position.x - op.site[1]) or 0
@@ -1327,7 +1422,10 @@ local function siege_step(b, trace, army)
     -- a mortar sat idle until the siege timed out).
     local in_reach = 0
     for _, m in ipairs(live) do
-      in_reach = in_reach + s.count_entities_filtered{position = m.position, radius = MORTAR_REACH, type = TURRETS, force = foes}
+      -- A clearance's targets are the nests (the player's turrets for any other siege).
+      in_reach = in_reach + (op.clearance
+        and s.count_entities_filtered{position = m.position, radius = MORTAR_REACH, type = {"unit-spawner", "turret"}, force = "enemy"}
+        or s.count_entities_filtered{position = m.position, radius = MORTAR_REACH, type = TURRETS, force = foes})
     end
     if in_reach > 0 then op.last_target = game.tick end
     -- Resupply: a convoy of shells when the mortars are spent and a turret is still in reach.
@@ -1374,9 +1472,19 @@ local function siege_step(b, trace, army)
       -- Moving up (tier 2 and up, once): nothing in reach for ASSAULT_IDLE with shells left, the mortars pack and the
       -- hauler takes them to a site in reach of what still stands (two mortars spent 12 of 80 shells on the near
       -- side of a square and packed up).
-      if spec.mortars > 1 and not op.moved and left > 0 and op.hauler and op.hauler.valid and t
+      -- A clearance moves on along its way, nest after nest, while its shells last (one clearance per nest, each
+      -- home and back, took 40 minutes for seven nests, push); any other siege moves up once.
+      if spec.mortars > 1 and (op.clearance or not op.moved) and left > 0 and op.hauler and op.hauler.valid and t
         and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE then
-        local site = siege_site(b, t)
+        local site
+        if op.clearance then
+          local nxt = op.clear_for and nest_on_way(s, op.site, op.clear_for)
+          site = nxt and clearance_site(s, nxt, op.site)
+          op.steps = (op.steps or 0) + 1
+          if op.steps > 8 then site = nil end
+        else
+          site = siege_site(b, t)
+        end
         op.moved = true
         if site and (site[1] - op.site[1]) ^ 2 + (site[2] - op.site[2]) ^ 2 > 8 * 8 then
           op.carry = {}
@@ -1888,15 +1996,18 @@ end
 
 -- For stats: what the settlement knows and is doing.
 function ops.summary(b)
-  local n = 0
-  for _ in pairs(b.intel and b.intel.targets or {}) do n = n + 1 end
+  local n, np = 0, 0
+  for _, t in pairs(b.intel and b.intel.targets or {}) do
+    n = n + 1
+    if against_player(t.owner) then np = np + 1 end
+  end
   local t = b.op and b.intel.targets[b.op.target]
-  return {known = n, op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
+  return {known = n, known_player = np, op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
     siege_tier = b.op and b.op.tier, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
-    looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0,
+    looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,
     sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and

@@ -76,6 +76,9 @@ end)
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
   biters.on_died(e)
+  -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
+  -- corridor for 30 minutes (ops.route lets marches through it).
+  if ent.type == "unit-spawner" then ops.cleared(ent.surface, ent.position) end
   local kind = shared.kind_of(ent.name)
   if kind == "lp-uplink" then faction.uplink_lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
