@@ -47,7 +47,7 @@ document describes the parts as built; the campaign document describes the game 
 | Dev tools: `/lp` forces operations, perimeter steps, landings, grudges | built | `dev` |
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
-| Corporate research: a fund from exports, weapons levels capped by the player's era | built (weapons) | `techup` (two) |
+| Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -821,8 +821,25 @@ if their units are upgraded also." `scripts/rd.lua`.
   alive: the plate (next) is the answer, and `defend` fails until it is built and the force per unit recalibrated
   from measured losses (Fable's step 4). `defend` and `assault` now declare era 2 (their player's upgrades are set
   directly and count no research).
-- **Plates** (next): a plated prototype per unit kind and damage type, bought for the kind that died most when one
-  damage type caused half of ten or more losses.
+- **Measured against `defend`'s three gun turrets (bullet damage +0.8, speed +0.6, weighted 8.6).** From nothing the
+  loop answered slowly: small arms 1 at minute 30, 2 at minute 40, a raid of 26 that lost (18 dead in ten seconds),
+  the physical plate at minute 70 (its fund is 30% of exports). Given a history to match its opponent (small arms 2,
+  armoured infantry, as `defend` now sets), it read the defence as 4.4 and sent 20: it lost 14 and turned back, about
+  what every unresearched raid of 21 to 26 lost there. The strength credit overstates research: these turrets kill
+  about fifteen infantry before they fall, plated or not, and a raid must keep half to finish (the abort rule), so it
+  needs about 30 whatever its research, beyond a garrison of 28. `defend` passes because the outpost's own turrets
+  finish the creep. Next: composition (tanks, not infantry, at turret clusters), then the force per unit and the
+  strength credit recalibrated from campaign losses (Fable's step 4).
+- **Plates (built).** A plated prototype for every corporation, unit kind (infantry, tank, walker, harrier, buggy) and
+  plate (`plates.lua`, 30 prototypes, named "<unit>-<plate>"; `shared.kind_of` strips it): +15% health and its
+  resistance, armoured (physical +25% and 2), fireproofed (fire +70%), reflective (laser +40%). No explosion plate:
+  artillery and battle tanks stay the player's trump. Bought (1,500 parts, 1,000 to switch one, from the player's
+  era 1) when ten or more of its units died in the window and one damage type killed half of them, for the kind
+  that died most; unless two raids turned back for want of force, which buys weapons. The depots and the drop escort
+  build the plated kind from then on (`rd.unit`); units already out keep what they have. Announced (`lp.rd-plate`:
+  "now fields reflective infantry"). A plate answering what a target's turrets mostly deal (`ops.weigh` returns it)
+  makes the corporation read that defence 1.4 times weaker, any plate 1.15. Scenario `plate`: fifteen infantry die
+  to a laser turret; the laser plate for infantry is bought; 8 reflective infantry built; the 4 plain ones kept.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

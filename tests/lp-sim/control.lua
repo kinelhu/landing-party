@@ -469,6 +469,12 @@ end
 scenarios.defend = function()
   if params.mix == "noops" then schedule(STRIKE - 30, function() lp("debug_tune", {ops_off = true}) end) end
   schedule(200, function() lp("debug_depot", storage.id, 3000) end)
+  -- A corporation that has met this player before (bullet damage +0.8, shooting speed +0.6: era 2): small arms level
+  -- 2 and armoured infantry from the start, its garrison built under them (scripts/rd.lua). From nothing, the
+  -- research loop answered only at minute 70 (a raid of 26 lost at 40, the physical plate at 70).
+  schedule(100, function()
+    lp("debug_tune", {era = 2, rd_tech = {serenity = {weapons = {bullet = 2}, plate = {["lp-infantry"] = "physical"}}}})
+  end)
   schedule(STRIKE, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local far, fd
@@ -2710,6 +2716,39 @@ scenarios.techup = function()
       check("techup: the corporation's force carries it", game.forces["lp-serenity"].get_ammo_damage_modifier("bullet") >= 0.4,
         tostring(game.forces["lp-serenity"].get_ammo_damage_modifier("bullet")))
     end
+  end)
+end
+
+-- Plate: corporate research answers what kills its units. Fifteen of Serenity's infantry die to a laser turret (the
+-- player at era 2, a fund granted, choices every minute): the next purchase is the laser plate for infantry, the
+-- depots then build reflective infantry, and the plain infantry still standing are not replaced.
+scenarios.plate = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 2, rd_fund = {serenity = 5000}})
+    for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+  end)
+  schedule(10 * 3600, function()
+    flatten(-5, -5, 5, 5)
+    local laser = surface().create_entity{name = "laser-turret", position = {0, 0}, force = "player"}
+    local n = 0
+    for _, u in pairs(surface().find_entities_filtered{force = FORCE, name = "lp-infantry"}) do
+      if n < 15 then u.die("player", laser); n = n + 1 end
+    end
+    S.killed = n
+    S.plain = surface().count_entities_filtered{force = FORCE, name = "lp-infantry"}
+    S.bought0 = lp("rd", "serenity").bought
+    lp("debug_tune", {rd_fast = true})
+  end)
+  schedule(END - 60, function()
+    local r = lp("rd", "serenity")
+    local plated = surface().count_entities_filtered{force = FORCE, name = "lp-infantry-laser"}
+    local plain = surface().count_entities_filtered{force = FORCE, name = "lp-infantry"}
+    info("plate: " .. serpent.line({rd = r, killed = S.killed, plain_before = S.plain, plain_after = plain, plated = plated}))
+    check("plate: fifteen infantry died to lasers", S.killed == 15, tostring(S.killed))
+    check("plate: it bought the laser plate for infantry", (r.plate or {})["lp-infantry"] == "laser", serpent.line(r.plate))
+    check("plate: the depots build reflective infantry", plated > 0, plated .. " plated")
+    check("plate: the plain infantry standing were kept", plain > 0 and plain <= S.plain,
+      string.format("%d before, %d after", S.plain, plain))
   end)
 end
 

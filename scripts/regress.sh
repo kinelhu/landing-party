@@ -13,7 +13,7 @@ logs="$(mktemp -d)"
 RUNS=(
   "cut||50|50|30" "raid||50|50|30" "occupy||48|48|30" "defend||41|41|30" "army||41|41|30" "train||36|36|30"
   "siege|LP_MIX=20,10,10|28|28|15"
-  "orders||3|1|1" "control||4|1|1" "rivals||40|40|1" "phases||36|36|1" "phases|LP_MIX=left|16|16|1" "budget||60|60|1" "develop||3|1|1" "evolution||3|1|1" "nests||30|30|1" "hq||18|18|1" "temper||25|25|1" "line||12|12|1" "line|LP_MIX=back|12|12|1" "strip||25|25|1" "artillery||3|1|1" "circuit||5|1|1" "ops||12|12|1" "abort||12|12|1" "bombard||20|20|1" "caps||10|10|1" "dev||6|6|3" "grudge||6|6|1" "weigh||8|8|1" "siegetier|LP_MIX=2|30|30|1" "siegetier|LP_MIX=3|30|30|1" "siegetier|LP_MIX=sally|30|30|1" "siegetier|LP_MIX=convoy|30|30|1" "techup||7|7|1" "techup|LP_MIX=era0|7|7|1"
+  "orders||3|1|1" "control||4|1|1" "rivals||40|40|1" "phases||36|36|1" "phases|LP_MIX=left|16|16|1" "budget||60|60|1" "develop||3|1|1" "evolution||3|1|1" "nests||30|30|1" "hq||18|18|1" "temper||25|25|1" "line||12|12|1" "line|LP_MIX=back|12|12|1" "strip||25|25|1" "artillery||3|1|1" "circuit||5|1|1" "ops||12|12|1" "abort||12|12|1" "bombard||20|20|1" "caps||10|10|1" "dev||6|6|3" "grudge||6|6|1" "weigh||8|8|1" "siegetier|LP_MIX=2|30|30|1" "siegetier|LP_MIX=3|30|30|1" "siegetier|LP_MIX=sally|30|30|1" "siegetier|LP_MIX=convoy|30|30|1" "techup||7|7|1" "techup|LP_MIX=era0|7|7|1" "plate||16|16|1"
 )
 FORKED=" cut raid occupy defend army train siege "
 if [ "$FULL" = "--full" ]; then

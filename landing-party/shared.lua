@@ -55,7 +55,21 @@ function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
 end
+-- Plates (corporate research, scripts/rd.lua): a plated copy of each unit kind per damage type it answers, more
+-- health (PLATE_HEALTH) and that resistance. Named "<variant>-<plate>"; kind_of strips it.
+shared.PLATED = {"lp-infantry", "lp-tank", "lp-walker", "lp-harrier", "lp-buggy"}
+shared.PLATES = {physical = {type = "physical", percent = 25, decrease = 2}, fire = {type = "fire", percent = 70},
+  laser = {type = "laser", percent = 40}}
+shared.PLATE_HEALTH = 1.15
+function shared.plated(corp, kind, plate)
+  local n = shared.variant(corp, kind)
+  return plate and (n .. "-" .. plate) or n
+end
 function shared.kind_of(name)
+  for p in pairs(shared.PLATES) do
+    local suf = "-" .. p
+    if name:sub(1, 3) == "lp-" and name:sub(-#suf) == suf then name = name:sub(1, -#suf - 1); break end
+  end
   for corp in pairs(shared.CORPS) do
     local pre = "lp-" .. corp .. "-"
     if name:sub(1, #pre) == pre then return "lp-" .. name:sub(#pre + 1) end

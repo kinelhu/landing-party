@@ -3,6 +3,7 @@
 local shared = require("__landing-party__.shared")
 local rng = require("__landing-party__.scripts.rng")
 local ops = require("__landing-party__.scripts.ops")
+local rd = require("__landing-party__.scripts.rd")
 
 local army = {}
 
@@ -67,7 +68,7 @@ function army.escort(b, n)
   local m = mix(b)
   local made = 0
   for _ = 1, n do
-    local proto = shared.variant(b.corp, rng.weighted(b.rng, m))
+    local proto = rd.unit(b.corp, rng.weighted(b.rng, m))
     local p = s.find_non_colliding_position(proto, {b.lander.position.x, b.lander.position.y + 8}, 20, 0.5)
     local u = p and s.create_entity{name = proto, position = p, force = b.lander.force}
     if u then
@@ -94,7 +95,7 @@ local function produce(b, trace)
   for _, depot in ipairs(b.depots) do
     if depot.valid then
       local surface = depot.surface
-      local proto = shared.variant(b.corp, name)
+      local proto = rd.unit(b.corp, name)
       local p = surface.find_non_colliding_position(proto, {depot.position.x, depot.position.y + 4}, 12, 0.5)
       local u = p and surface.create_entity{name = proto, position = p, force = depot.force}
       if u then

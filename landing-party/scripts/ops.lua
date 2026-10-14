@@ -98,8 +98,10 @@ local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-tu
 -- upgraded lasers; flamethrowers killed most of every campaign squad). Artillery cannot fire up close: 0.
 local WEIGHT = {["ammo-turret"] = {1, "bullet"}, ["electric-turret"] = {1.5, "laser"}, ["fluid-turret"] = {2.5, "flamethrower"},
   ["artillery-turret"] = {0}}
+local DEALS = {["ammo-turret"] = "physical", ["electric-turret"] = "laser", ["fluid-turret"] = "fire"}
+-- Returns the weight and the damage the turrets mostly deal (for a plate that answers it: rd.strength).
 function ops.weigh(surface, pos, forces, r)
-  local w = 0
+  local w, by = 0, {}
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r or DEFENCE_RADIUS, force = forces, type = TURRETS}) do
     local k = WEIGHT[e.type]
     -- Firepower: damage times rate of fire (defend's guns, bullet damage +0.8 and shooting speed +0.6: 2.88 each; three
@@ -107,10 +109,15 @@ function ops.weigh(surface, pos, forces, r)
     -- research (rd.strength) is what keeps the raid a size a garrison can field.
     if k and k[1] > 0 then
       local f = e.force
-      w = w + k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
+      local x = k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
+      w = w + x
+      local dmg = DEALS[e.type]
+      if dmg then by[dmg] = (by[dmg] or 0) + x end
     end
   end
-  return w
+  local top, tw
+  for dmg, x in pairs(by) do if not tw or x > tw then top, tw = dmg, x end end
+  return w, top
 end
 -- Who stands by a target, at the staging look only (units move; the two-minute scan would be stale): characters 0.5,
 -- units 0.5, cars and tanks 1.5, spidertrons 3, within 40 tiles.
@@ -162,7 +169,7 @@ local function sense(b, surface, pos, r)
     for key, c in pairs(cells) do
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
       t.pos, t.kind, t.value, t.seen, t.owner = c.pos, c.kind, c.value, game.tick, c.owner
-      t.defence = ops.weigh(surface, c.pos, other)
+      t.defence, t.dmg = ops.weigh(surface, c.pos, other)
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
       -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was
       -- raided every ten minutes and its raiders died on the way.
@@ -469,7 +476,7 @@ ops.temper_allows = temper_allows
 local function defence(b, t)
   local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
   return ((t.defence or 0) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3))
-    / rd.strength(b.corp)
+    / rd.strength(b.corp, t.dmg)
 end
 
 local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE end
@@ -605,7 +612,7 @@ local function finish(b, outcome, trace, army)
     end
     if outcome == "aborted" then
       t.tried = (t.tried or 0) + 1
-      t.defence = math.max(t.defence or 0, ops.weigh(game.surfaces[b.surface], t.pos, enemies(game.forces[b.force])))
+      t.defence = math.max(t.defence or 0, (ops.weigh(game.surfaces[b.surface], t.pos, enemies(game.forces[b.force]))))
     end
   end
   if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
@@ -1184,12 +1191,13 @@ local function step(b, trace, army)
       if t then
         local s = game.surfaces[b.surface]
         local foes = enemies(game.forces[b.force])
-        local seen = ops.weigh(s, t.pos, foes)
+        local seen, dmg = ops.weigh(s, t.pos, foes)
+        t.dmg = dmg or t.dmg
         -- What it sees now is the freshest word (a raid that had cleared the target on its way turned back
         -- on the defence it believed before); who stands there counts too, for a while.
         t.defence = seen
         t.units, t.units_at = mobile(s, t.pos, foes), game.tick
-        local want = needed((t.defence + (t.resist or 0) + t.units) / rd.strength(b.corp))
+        local want = needed((t.defence + (t.resist or 0) + t.units) / rd.strength(b.corp, t.dmg))
         if want > n then
           rd.turned_back(b)
           trace(b, string.format("raid sees defence %.1f and units %.1f at the target, needs %d, has %d: turns back", seen,
