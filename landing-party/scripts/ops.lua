@@ -587,12 +587,25 @@ local function finish(b, outcome, trace, army)
     b.next_strip = game.tick + (storage.strip_fast and 2 * 3600 or STRIP_COOL)
     for _, e in ipairs(op.camp or {}) do if e.valid then e.destroy() end end
   end
+  -- Home round biter country too (four raiders came back from the target and died on the straight way home, country).
+  local back
+  for _, u in ipairs(op.members) do
+    if u.valid and h and not back then
+      back = {}
+      for _, w in ipairs(ops.route(b, {u.position.x, u.position.y}, {h.position.x, h.position.y}, {turrets = false, nests = true}) or {}) do
+        table.insert(back, {type = defines.command.go_to_location, destination = w, radius = 4,
+          distraction = defines.distraction.by_damage})
+      end
+      table.insert(back, {type = defines.command.go_to_location, destination = h.position, radius = 10,
+        distraction = defines.distraction.by_damage})
+    end
+  end
   for _, u in ipairs(op.members) do
     if u.valid then
       table.insert(b.garrison, u)
       if h then
-        u.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 10,
-          distraction = defines.distraction.by_damage}
+        u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+          commands = back}
       end
     end
   end
@@ -666,7 +679,10 @@ local function outside(b, t, ux, uy, off, len)
   end
   for d = off, math.min(len, off + 160), 4 do
     local p = {t.pos[1] + ux * d, t.pos[2] + uy * d}
+    -- Not among nests either (a staging point 35 tiles from a worm could never be reached round biter country).
     if s.count_entities_filtered{position = p, radius = STAND_OFF, type = TURRETS, force = foes, limit = 1} == 0
+      and (t.owner == "enemy" or s.count_entities_filtered{position = p, radius = 50, type = {"unit-spawner", "turret"},
+        force = "enemy", limit = 1} == 0)
       and not walled(p) then
       return p
     end
@@ -680,19 +696,26 @@ end
 -- the last SNEAK_OPEN tiles to the target; it walks the route as waypoints. Walls round the target (within
 -- BREACH_RADIUS): it picks the wall piece the fewest turrets can reach, knocks it and its neighbour out (a two-tile gap,
 -- buggies fit), and goes through. Serenity keeps its straight, disciplined approach.
-local SNEAK_CELL, SNEAK_MARGIN, SNEAK_OPEN, SNEAK_BOX = 6, 3, 16, 60
+local SNEAK_CELL, SNEAK_MARGIN, SNEAK_OPEN, SNEAK_BOX = 6, 3, 16, 120
 local BREACH_RADIUS = 30
 local REACH = {["ammo-turret"] = 18, ["electric-turret"] = 24, ["fluid-turret"] = 30}
 
-local function sneak_route(b, from, to)
+-- Biter country (the user: "raids and sieges will also need to cross biter country to reach us sometimes"): every
+-- corporation's marches route round spawners (NEST_KEEP.spawner) and worms (NEST_KEEP.worm: a behemoth worm's reach
+-- and a margin); only Grubstake also keeps out of turret reach. opts: {turrets = bool, nests = bool}.
+local NEST_KEEP = {spawner = 30, worm = 50}
+local function sneak_route(b, from, to, opts)
+  opts = opts or {turrets = true, nests = true}
   local s = game.surfaces[b.surface]
   local foes = enemies(game.forces[b.force])
   local x0 = math.min(from[1], to[1]) - SNEAK_BOX
   local y0 = math.min(from[2], to[2]) - SNEAK_BOX
   local w = math.ceil((math.max(from[1], to[1]) + SNEAK_BOX - x0) / SNEAK_CELL)
   local h = math.ceil((math.max(from[2], to[2]) + SNEAK_BOX - y0) / SNEAK_CELL)
-  local turrets = s.find_entities_filtered{area = {{x0 - 30, y0 - 30}, {x0 + w * SNEAK_CELL + 30, y0 + h * SNEAK_CELL + 30}},
-    type = {"ammo-turret", "electric-turret", "fluid-turret"}, force = foes}
+  local box = {{x0 - 60, y0 - 60}, {x0 + w * SNEAK_CELL + 60, y0 + h * SNEAK_CELL + 60}}
+  local turrets = opts.turrets and s.find_entities_filtered{area = box, type = {"ammo-turret", "electric-turret",
+    "fluid-turret"}, force = foes} or {}
+  local nests = opts.nests and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"} or {}
   local function centre(i, j) return x0 + (i + 0.5) * SNEAK_CELL, y0 + (j + 0.5) * SNEAK_CELL end
   local blocked = {}
   local function open(i, j)
@@ -704,6 +727,12 @@ local function sneak_route(b, from, to)
       if (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then
         for _, e in ipairs(turrets) do
           local r = (REACH[e.type] or 20) + SNEAK_MARGIN
+          if (e.position.x - cx) ^ 2 + (e.position.y - cy) ^ 2 <= r * r then bad = true; break end
+        end
+      end
+      if not bad then
+        for _, e in ipairs(nests) do
+          local r = e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm
           if (e.position.x - cx) ^ 2 + (e.position.y - cy) ^ 2 <= r * r then bad = true; break end
         end
       end
@@ -765,6 +794,8 @@ local function sneak_route(b, from, to)
   end
   return route
 end
+
+ops.route = sneak_route
 
 -- The wall piece by the target the fewest turrets can reach (ties: nearest the staging point), and its neighbour.
 local function breach_point(b, t, from)
@@ -865,20 +896,26 @@ local function launch(b, key, trace, army)
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
   -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
   -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).
-  if (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner) then
-    local cmds = {}
-    for _, w in ipairs(sneak_route(b, {h.position.x, h.position.y}, stage) or {}) do
-      table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4,
-        distraction = defines.distraction.by_damage})
-    end
-    table.insert(cmds, {type = defines.command.go_to_location, destination = stage, radius = 6,
-      distraction = defines.distraction.by_damage})
-    order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-      commands = cmds})
-  else
-    order_all(members, {type = defines.command.go_to_location, destination = stage, radius = 6,
-      distraction = defines.distraction.by_enemy})
+  local sneaks = (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner)
+  -- Round biter country, whoever marches (a nest as the target excepted: Serenity clears its ground).
+  local route = sneak_route(b, {h.position.x, h.position.y}, stage, {turrets = sneaks, nests = t.owner ~= "enemy"})
+  if not route then
+    -- Registered above: undone, or it went ahead anyway (four raiders attacked through the nests and died, country).
+    b.op = nil
+    for _, u in ipairs(members) do table.insert(b.garrison, u) end
+    t.cool = game.tick + COOL_TICKS
+    trace(b, string.format("raid on %s at %.0f,%.0f: no way round biter country; not sent", t.kind, t.pos[1], t.pos[2]))
+    return false
   end
+  local how = sneaks and defines.distraction.by_damage or defines.distraction.by_enemy
+  local cmds = {}
+  for _, w in ipairs(route) do
+    table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = how})
+  end
+  table.insert(cmds, {type = defines.command.go_to_location, destination = stage, radius = 6, distraction = how})
+  order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = cmds})
+  b.op_route = route
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
@@ -995,8 +1032,28 @@ local function launch_siege(b, key, site, trace, army)
   b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
     convoys_left = spec.convoys or 0}
-  hauler.commandable.set_command{type = defines.command.go_to_location, destination = site, radius = 2,
-    distraction = defines.distraction.none}
+  -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
+  local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
+    {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
+  if not hroute then
+    for _, u in ipairs(guards) do table.insert(b.garrison, u) end
+    b.op = nil
+    b.parts = b.parts + spec.cost
+    hauler.destroy()
+    local tt = b.intel.targets[key]
+    if tt then tt.cool = game.tick + COOL_TICKS end
+    trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "siege", site[1], site[2]))
+    return false
+  end
+  local hcmds = {}
+  for _, w in ipairs(hroute) do
+    table.insert(hcmds, {type = defines.command.go_to_location, destination = w, radius = 4,
+      distraction = defines.distraction.none})
+  end
+  table.insert(hcmds, {type = defines.command.go_to_location, destination = site, radius = 2,
+    distraction = defines.distraction.none})
+  hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = hcmds}
   order_all(guards, {type = defines.command.go_to_location, destination = hauler.position, radius = 6,
     distraction = defines.distraction.by_enemy})
   b.ops_launched = b.ops_launched + 1
@@ -1291,8 +1348,28 @@ local function launch_strip(b, key, site, trace, army)
   b.parts = b.parts - STRIP_COST
   b.op = {kind = "strip", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
     site = site, started = game.tick, phase_at = game.tick, cargo = 0}
-  hauler.commandable.set_command{type = defines.command.go_to_location, destination = site, radius = 2,
-    distraction = defines.distraction.none}
+  -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
+  local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
+    {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
+  if not hroute then
+    for _, u in ipairs(guards) do table.insert(b.garrison, u) end
+    b.op = nil
+    b.parts = b.parts + STRIP_COST
+    hauler.destroy()
+    local tt = b.intel.targets[key]
+    if tt then tt.cool = game.tick + COOL_TICKS end
+    trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "strip camp", site[1], site[2]))
+    return false
+  end
+  local hcmds = {}
+  for _, w in ipairs(hroute) do
+    table.insert(hcmds, {type = defines.command.go_to_location, destination = w, radius = 4,
+      distraction = defines.distraction.none})
+  end
+  table.insert(hcmds, {type = defines.command.go_to_location, destination = site, radius = 2,
+    distraction = defines.distraction.none})
+  hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = hcmds}
   order_all(guards, {type = defines.command.go_to_location, destination = hauler.position, radius = 6,
     distraction = defines.distraction.by_enemy})
   b.ops_launched = b.ops_launched + 1
@@ -1453,9 +1530,18 @@ local function step(b, trace, army)
         order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
           commands = cmds})
       else
-        order_all(op.members, {type = defines.command.attack_area, destination = pos, radius = 12,
+        -- The attack leg round biter country too (staged short of a nest field, four raiders went straight through
+        -- it and died, country); a nest as the target excepted.
+        local cmds = {}
+        for _, w in ipairs((t and t.owner ~= "enemy" and sneak_route(b, op.staging, pos, {turrets = false, nests = true})) or {}) do
+          table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4,
+            distraction = defines.distraction.by_enemy})
+        end
+        table.insert(cmds, {type = defines.command.attack_area, destination = pos, radius = 12,
           distraction = defines.distraction.by_anything})
-        trace(b, string.format("raid attacks with %d of %d", n, op.launched))
+        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+          commands = cmds})
+        trace(b, string.format("raid attacks with %d of %d (%d waypoints)", n, op.launched, #cmds - 1))
       end
     end
   elseif op.phase == "breach" then
@@ -1650,7 +1736,7 @@ function ops.summary(b)
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0,
-    route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at,
+    route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,
     sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and
       {b.op.mortar.position.x, b.op.mortar.position.y} or nil}

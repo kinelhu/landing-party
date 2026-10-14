@@ -1057,6 +1057,18 @@ scenario with assertions first; the window is for art, feel and GUI.
   Hand-loads 5, Scrap plating and 16 escorts, the camp killed two big biters and a behemoth; without, `bare`, they
   destroyed its lander). The second visit (site fix only, before these): every landing outside the factory now, and
   every one fell in maximum-evolution biter country.
+- **Biter country (the user: "raids and sieges will also need to cross biter country to reach us sometimes").** Every
+  corporation's marches route round spawners (30 tiles) and worms (50) on the route planner (Grubstake also round
+  turret reach): the march to staging, the attack leg and the way home; staging points keep 50 tiles from nests; a
+  siege or strip camp that finds no way round is not sent (its parts given back), nor a raid (the target cools). A
+  nest as the target (Serenity clearing its ground) is excepted. Scenario `country`: three spawners and a worm on the
+  line to an undefended assembler: the raid's route kept 65 tiles from them, it razed the target, and lost nothing
+  (before: 4 of 4 dead, first through the nests to the target, then on the straight way home).
+  Third visit (nwa, everything in): Serenity's first settlement lived the three hours (arrived with Optics 5 and Warden
+  at era 4, evolution 0.99; mined 160,697, made 32,035 parts), at war with the biters throughout (4,558 of its
+  buildings destroyed by them, rebuilt; its raids on nests in its claim aborted); a second Serenity landing fell;
+  Grubstake found no site (200 tiles from every spawner at full evolution, 150 from the factory, out of artillery
+  reach: nowhere on rings to 1,800 tiles). No operation went against the player (Serenity unprovoked).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

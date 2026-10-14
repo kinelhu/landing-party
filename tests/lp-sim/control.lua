@@ -3264,6 +3264,47 @@ scenarios.maxevo = function()
   end)
 end
 
+-- Country: raids cross biter country round it (the user). Three spawners and a worm on the line between Serenity and
+-- the player's undefended assembler, open ground to either side: a forced raid routes round them (no waypoint within
+-- 30 of a spawner) and loses nothing to biters.
+scenarios.country = function()
+  schedule(60, function() lp("debug_tune", {raids_off = true}); lp("debug_depot", storage.id, 3000) end)
+  schedule(3 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 160), math.floor(o.y - uy * 160)}
+    flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    S.nests = {}
+    for k = -1, 1 do
+      local p = {o.x - ux * 80 - uy * 8 * k, o.y - uy * 80 + ux * 8 * k}
+      local sp = surface().create_entity{name = "biter-spawner", position = surface().find_non_colliding_position("biter-spawner", p, 10, 1), force = "enemy"}
+      if sp then table.insert(S.nests, sp.position) end
+    end
+    local wp = {o.x - ux * 90, o.y - uy * 90}
+    surface().create_entity{name = "medium-worm-turret", position = surface().find_non_colliding_position("medium-worm-turret", wp, 10, 1), force = "enemy"}
+    S.lost0 = lp("stats", storage.id).units_lost or 0
+    lp("dev", {"raid", tostring(storage.id)}, c)
+  end)
+  schedule(3 * 3600 + 120, function()
+    local st = lp("stats", storage.id)
+    S.route = st.ops.route_points
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local near = math.huge
+    for _, w in ipairs(S.route or {}) do
+      for _, n in ipairs(S.nests) do near = math.min(near, math.sqrt((w[1] - n.x) ^ 2 + (w[2] - n.y) ^ 2)) end
+    end
+    local lost = (st.units_lost or 0) - S.lost0
+    info(string.format("country: %d waypoints, nearest %.0f tiles from a spawner; %d units lost; %s", #(S.route or {}),
+      near, lost, serpent.line(st.ops.log[#st.ops.log])))
+    check("country: the raid routed round the nests", S.route and #S.route > 0 and near > 30, string.format("%.0f", near))
+    check("country: and lost nothing to them", lost == 0, tostring(lost))
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()
