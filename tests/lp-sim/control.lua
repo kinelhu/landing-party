@@ -2906,6 +2906,92 @@ scenarios.arc = function()
   end)
 end
 
+-- Ability: the trees' abilities. LP_MIX=loot: Grubstake, with Salvage rights, raids an undefended assembler beside a chest
+-- of 100 processing units: the chest is emptied, the loot reaches home as parts, and what it razed paid its fund.
+-- LP_MIX=hardened: Serenity, Hardened siege bought, a forced siege digs in (walls and pillboxes) and clears them when
+-- it ends. LP_MIX=prospector: ore 55 tiles from the player's drill is out of a strip camp's reach (45) until Grubstake
+-- has Prospector's eye (68).
+scenarios.ability = function()
+  local mix = params.mix ~= "" and params.mix or "loot"
+  local g = mix ~= "hardened"
+  local function toward(id, d)
+    local o = lp("stats", id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    return {math.floor(o.x - o.x / len * d), math.floor(o.y - o.y / len * d)}
+  end
+  schedule(60, function()
+    lp("debug_tune", {era = 2, ops_off = false})
+    if g then
+      S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
+      if mix == "loot" then lp("debug_tune", {rd_tech = {grubstake = {nodes = {salvage = 1}}}}) end
+    else
+      S.id = storage.id
+      for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
+      lp("debug_tune", {corp_level = {serenity = 1}, rd_tech = {serenity = {nodes = {hardened = 1}}}})
+    end
+  end)
+  schedule(3 * 3600, function()
+    lp("debug_tune", {raids_off = true})
+    local c = toward(S.id, 120)
+    flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
+    S.c = c
+    if mix == "loot" then
+      surface().create_entity{name = "assembling-machine-1", position = {c[1] + 0.5, c[2] + 0.5}, force = "player"}
+      S.chest = surface().create_entity{name = "steel-chest", position = {c[1] + 3.5, c[2] + 0.5}, force = "player"}
+      S.chest.insert{name = "processing-unit", count = 100}
+      S.parts0 = lp("stats", S.id).parts
+      lp("dev", {"raid", tostring(S.id)}, c)
+    elseif mix == "hardened" then
+      for k = -1, 1 do
+        local t = surface().create_entity{name = "gun-turret", position = {c[1] + 4 * k, c[2] - 5}, force = "player"}
+        t.insert{name = "firearm-magazine", count = 50}
+      end
+      surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+      lp("dev", {"siege", tostring(S.id)}, c)
+    else
+      -- A drill, and iron 55 tiles from it on the far side from Grubstake.
+      surface().create_entity{name = "electric-mining-drill", position = c, force = "player"}
+      local o = lp("stats", S.id).origin
+      local len = math.sqrt((c[1] - o.x) ^ 2 + (c[2] - o.y) ^ 2)
+      local p = {math.floor(c[1] + (c[1] - o.x) / len * 55), math.floor(c[2] + (c[2] - o.y) / len * 55)}
+      for x = p[1] - 6, p[1] + 6 do for y = p[2] - 6, p[2] + 6 do
+        surface().create_entity{name = "iron-ore", position = {x + 0.5, y + 0.5}, amount = 2000}
+      end end
+      lp("dev", {"strip", tostring(S.id)}, c)
+      S.before = lp("stats", S.id).ops.strips
+      lp("debug_tune", {rd_tech = {grubstake = {nodes = {prospector = 1, salvage = 1}}}})
+      lp("dev", {"strip", tostring(S.id)}, c)
+      S.after = lp("stats", S.id).ops.strips
+    end
+  end)
+  for t = 3 * 3600 + 600, END - 120, 300 do
+    schedule(t, function()
+      local st = lp("stats", S.id)
+      S.works = math.max(S.works or 0, st.ops.works or 0)
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.id)
+    if mix == "loot" then
+      local left = S.chest.valid and S.chest.get_item_count("processing-unit") or -1
+      local r = lp("rd", "grubstake")
+      info(string.format("ability loot: chest %s, looted %d, parts %d -> %d, salvaged %d", tostring(left), st.ops.looted,
+        S.parts0, st.parts, r.salvaged))
+      check("ability: the chest was emptied", left <= 0, tostring(left))
+      check("ability: the loot reached home", (st.ops.looted or 0) >= 100, tostring(st.ops.looted))
+      check("ability: what it razed paid its fund", (r.salvaged or 0) > 0, tostring(r.salvaged))
+    elseif mix == "hardened" then
+      local left = surface().count_entities_filtered{position = S.c, radius = 80, name = "lp-gun-turret", force = FORCE}
+      check("ability: the siege dug in", (S.works or 0) >= 10, tostring(S.works))
+      check("ability: and cleared its works after", st.ops.op ~= nil or left == 0, tostring(st.ops.op) .. ", " .. left .. " pillboxes")
+    else
+      check("ability: out of reach without the eye", S.before == 0, tostring(S.before))
+      check("ability: in reach with it", S.after == 1, tostring(S.after))
+    end
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()

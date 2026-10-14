@@ -116,7 +116,10 @@ script.on_event(defines.events.on_entity_died, function(e)
     -- Razed counts the player's structures only (trees felled by shells once inflated it by half).
     local id = storage.unit_owner[e.cause.unit_number]
     local b = id and storage.bases[id]
-    if b then b.razed = b.razed + 1 end
+    if b then
+      b.razed = b.razed + 1
+      rd.salvage(b.corp, ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type])
+    end
   end
 end)
 

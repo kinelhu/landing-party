@@ -78,6 +78,20 @@ local function categories(corp)
 end
 rd.categories = categories
 
+-- Whether a corporation has bought a node (abilities: ops and control read them).
+function rd.has(corp, id)
+  local d = storage.corps and storage.corps[corp]
+  return d and d.tech and d.tech.nodes and d.tech.nodes[id] ~= nil or false
+end
+
+-- Salvage rights (Grubstake): a player building its raid destroyed pays into its fund, by what it was worth.
+function rd.salvage(corp, value)
+  if not rd.has(corp, "salvage") then return end
+  local t = rd.state(corp)
+  t.fund = math.min(FUND_CAP, t.fund + 10 + 5 * (value or 0))
+  t.salvaged = (t.salvaged or 0) + 10 + 5 * (value or 0)
+end
+
 -- Units its tree has added to its mix, with their weights (army: mix).
 function rd.mix(corp)
   local d = storage.corps and storage.corps[corp]
@@ -132,6 +146,7 @@ local function level_of(t, node) return (t.nodes[node.id] or 0) end
 local function owned(t, node)
   if node.track then return level_of(t, node) >= (node.levels or MAX_LEVEL) end
   if node.unit then return t.units[node.unit.kind] ~= nil end
+  if node.ability then return t.nodes[node.id] ~= nil end
   for kind, p in pairs(node.plates or {}) do if t.plate[kind] ~= p then return false end end
   return true
 end
@@ -253,7 +268,7 @@ function rd.summary(corp)
   local by = {}
   prune(t.losses)
   for _, l in ipairs(t.losses) do by[l.damage] = (by[l.damage] or 0) + 1 end
-  return {fund = t.fund, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
+  return {fund = t.fund, salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
     turned_back = #t.turned_back, bought = t.bought, strength = rd.strength(corp)}
 end
 

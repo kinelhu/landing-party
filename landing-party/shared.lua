@@ -22,8 +22,11 @@ shared.CORPS = {
     names = {["lp-infantry"] = "lp-shotgun-hand"},
     -- Its tech tree (scripts/rd.lua; docs/reviews/2026-10-14-identity-trees-consult.md): never a fair fight.
     tree = {
-      {id = "handloads", branch = "scrap-arms", track = {"shotgun-shell", "bullet"}, levels = 5, cost = 400,
-        trigger = {turned_back = 2}},
+      {id = "handloads", branch = "scrap-arms", track = {"shotgun-shell", "bullet"}, levels = 5, cost = 400},
+      -- Loot: the thief funds itself from its victim, then picks its fights.
+      {id = "salvage", branch = "loot", era = 1, cost = 800, ability = true, trigger = {turned_back = 2}},
+      {id = "prospector", branch = "loot", era = 2, requires = "salvage", cost = 1000, ability = true,
+        trigger = {turned_back = 3}},
       {id = "scrap-plating", branch = "scrap-arms", era = 1, cost = 900,
         plates = {["lp-infantry"] = "physical", ["lp-buggy"] = "physical"}, trigger = {damage = "physical", min = 10}},
       {id = "asbestos", branch = "scrap-arms", era = 1, cost = 900,
@@ -40,7 +43,7 @@ shared.CORPS = {
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
-    temper = {soft_only = true, strips = true}},
+    temper = {soft_only = true, strips = true, loots = true}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -57,8 +60,9 @@ shared.CORPS = {
     names = {["lp-infantry"] = "lp-line-trooper"},
     -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.
     tree = {
-      {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400,
-        trigger = {turned_back = 2}},
+      {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400},
+      -- Siege: its mortars dig in (against sallies and the player's artillery).
+      {id = "hardened", branch = "siege", era = 2, cost = 1200, ability = true, trigger = {damage = "explosion", min = 5}},
       {id = "warden", branch = "line", era = 1, cost = 1500, plates = {["lp-infantry"] = "physical"},
         trigger = {damage = "physical", min = 10}},
       -- Against massed troopers: reach.

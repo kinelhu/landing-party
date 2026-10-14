@@ -48,7 +48,7 @@ document describes the parts as built; the campaign document describes the game 
 | Weighted defence: turrets by kind and research, units at the staging look | built | `weigh` |
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
-| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden, Lance, Shock troops; Hand-loads, Scrap plating, Asbestos, Slug buggy, Dynamite sappers) | built (slices 1-4) | `arms`, `arc`, `plate` (two), `techup` (two), `unitnode` (four) |
+| Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Optics, Warden, Lance, Shock troops, Hardened siege; Hand-loads, Scrap plating, Asbestos, Slug buggy, Dynamite sappers, Salvage rights, Prospector's eye); Grubstake loots | built (slices 1-5) | `arms`, `arc`, `plate` (two), `techup` (two), `unitnode` (four), `ability` (three) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -898,6 +898,20 @@ and withdraws in order; Grubstake empties chests first: the user's heists, folde
   sapper hurt all four walls of a block and spared its own fence. `unitnode` (four variants): each unit node bought
   on its killers and built by the depots. Found on the way: a node set outright for a test must take effect as bought
   (Lances marked researched but absent from the mix were bought again, and Shock troopers were saved for).
+
+- **Slice 5, abilities and looting (built).** Ability nodes change how a corporation operates (`rd.has`):
+  Grubstake's **Salvage rights** (Loot, era 1, 800; on two raids turned back): each player building its units raze
+  pays 10 + 5 x its value into its fund. **Prospector's eye** (Loot, era 2, after Salvage, 1,000; three turned back):
+  its raids leave at 70% strength, not half (cowardice as doctrine), and its strip camps look for ore 68 tiles from
+  the player's drill, not 45. Serenity's **Hardened siege** (Siege, era 2, 1,200; on five explosion losses): the
+  mortar site digs in, a ring of wall open towards home and two gun pillboxes, cleared when the siege ends. The damage
+  tracks now only climb (no trigger), so the abilities take "turned back". **Looting** (Grubstake's temper, the
+  user's heists folded into its identity): a raid at its target first empties the player's chests within 16 tiles
+  that one of its units stands by, valuable items first (processing units 8, modules 10 to 40, U-235 20...), up to
+  400 items; survivors carry it home as parts, none and it is lost; a custom alert (`lp.alert-loot`). Scenario
+  `ability` (three): a raid on an assembler beside a chest of 100 processing units took all 100 home, razed both,
+  and paid 35 into the fund; a hardened siege dug in with 32 pieces and cleared them after; ore 55 tiles out was out
+  of reach without the eye and stripped with it.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

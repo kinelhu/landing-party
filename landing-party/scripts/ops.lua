@@ -615,6 +615,13 @@ local function finish(b, outcome, trace, army)
       t.defence = math.max(t.defence or 0, (ops.weigh(game.surfaces[b.surface], t.pos, enemies(game.forces[b.force]))))
     end
   end
+  -- Loot reaches home with whoever survives (none, and it is lost).
+  if op.loot and op.loot.value > 0 and alive(op) > 0 then
+    b.parts = b.parts + math.floor(op.loot.value)
+    b.looted = (b.looted or 0) + op.loot.items
+    trace(b, string.format("raid home with %d items of loot: %d parts", op.loot.items, math.floor(op.loot.value)))
+  end
+  for _, e in ipairs(op.works or {}) do if e.valid then e.destroy() end end
   if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
   local lost = op.launched - alive(op)
   b.next_op = game.tick + ((outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE or GAP_ABORTED)
@@ -660,6 +667,45 @@ local function outside(b, t, ux, uy, off, len)
     end
   end
   return {t.pos[1] + ux * off, t.pos[2] + uy * off}
+end
+
+-- Looting (Grubstake's temper: the user's heists, folded into its identity, docs/reviews/2026-10-14-identity-trees-consult
+-- .md): a raid at the target first empties the player's chests within 16 tiles that one of its units stands by (6
+-- tiles), valuable items first, up to LOOT_ITEMS a raid; what survivors carry home becomes parts (finish), by LOOT.
+local LOOT = {["uranium-235"] = 20, ["uranium-fuel-cell"] = 10, ["processing-unit"] = 8, ["low-density-structure"] = 4,
+  ["rocket-fuel"] = 3, ["advanced-circuit"] = 3, ["electronic-circuit"] = 1, ["engine-unit"] = 1,
+  ["electric-engine-unit"] = 2, ["flying-robot-frame"] = 3, ["speed-module"] = 10, ["efficiency-module"] = 10,
+  ["productivity-module"] = 10, ["speed-module-2"] = 20, ["efficiency-module-2"] = 20, ["productivity-module-2"] = 20,
+  ["speed-module-3"] = 40, ["efficiency-module-3"] = 40, ["productivity-module-3"] = 40, ["steel-plate"] = 0.3}
+local LOOT_ITEMS = 400
+local function loot(b, op, t, pos, surface, trace)
+  if not (shared.CORPS[b.corp].temper or {}).loots or not (t and against_player(t.owner)) then return end
+  op.loot = op.loot or {items = 0, value = 0, looted = {}}
+  if op.loot.items >= LOOT_ITEMS then return end
+  for _, c in pairs(surface.find_entities_filtered{position = pos, radius = 16, type = {"container", "logistic-container"},
+    force = t.owner}) do
+    if not op.loot.looted[c.unit_number] and surface.count_entities_filtered{position = c.position, radius = 6,
+      force = b.force, type = "unit", limit = 1} > 0 then
+      op.loot.looted[c.unit_number] = true
+      local inv = c.get_inventory(defines.inventory.chest)
+      local items = {}
+      for _, it in pairs(inv and inv.get_contents() or {}) do table.insert(items, it) end
+      table.sort(items, function(x, y) return (LOOT[x.name] or 0.1) > (LOOT[y.name] or 0.1) end)
+      for _, it in ipairs(items) do
+        local want = math.min(it.count, LOOT_ITEMS - op.loot.items)
+        if want <= 0 then break end
+        local took = inv.remove{name = it.name, count = want, quality = it.quality}
+        op.loot.items = op.loot.items + took
+        op.loot.value = op.loot.value + took * (LOOT[it.name] or 0.1)
+      end
+      if not op.loot.alerted then
+        op.loot.alerted = true
+        alert(b, t, "lp.alert-loot", {c.position.x, c.position.y})
+      end
+      trace(b, string.format("looting a %s at %.0f,%.0f: %d items carried (worth %.0f)", c.name, c.position.x,
+        c.position.y, op.loot.items, op.loot.value))
+    end
+  end
 end
 
 local function launch(b, key, trace, army)
@@ -873,6 +919,32 @@ local function siege_step(b, trace, army)
       op.phase, op.phase_at = "bombard", game.tick
       alert(b, b.intel.targets[op.target], "lp.alert-siege", op.site)
       trace(b, string.format("siege: %d mortars up with %d shells", #op.mortars, op.loaded - op.shells_fired))
+      -- Hardened siege (Serenity): the site digs in, a ring of wall open towards home and two gun pillboxes, cleared
+      -- when the siege ends (op.works).
+      if rd.has(b.corp, "hardened") and not op.works then
+        op.works = {}
+        local h = home(b)
+        local away = h and math.atan2(h.position.y - op.site[2], h.position.x - op.site[1]) or 0
+        for k = 0, 35 do
+          local a = 2 * math.pi * k / 36
+          local d = math.abs(((a - away + math.pi) % (2 * math.pi)) - math.pi)
+          if d > 0.5 then
+            local p = {op.site[1] + math.cos(a) * 7, op.site[2] + math.sin(a) * 7}
+            local w = s.can_place_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = op.hauler.force}
+              and s.create_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = op.hauler.force}
+            if w then table.insert(op.works, w) end
+          end
+        end
+        for _, dx in ipairs({-3, 3}) do
+          local p = s.find_non_colliding_position("lp-gun-turret", {op.site[1] + dx, op.site[2] + 3}, 4, 0.5)
+          local g = p and s.create_entity{name = "lp-gun-turret", position = p, force = op.hauler.force}
+          if g then
+            g.insert{name = "piercing-rounds-magazine", count = 50}
+            table.insert(op.works, g)
+          end
+        end
+        trace(b, string.format("siege: the site dug in (%d pieces)", #op.works))
+      end
     end
   elseif op.phase == "bombard" or op.phase == "assault" then
     local live = {}
@@ -1017,7 +1089,9 @@ end
 local function strip_site(b, t)
   local s = game.surfaces[b.surface]
   local foes = enemies(game.forces[b.force])
-  for _, r in pairs(s.find_entities_filtered{position = t.pos, radius = 45, type = "resource", limit = 600}) do
+  -- Prospector's eye (Grubstake) looks half as far again for ore by the player's drills.
+  local reach = rd.has(b.corp, "prospector") and 68 or 45
+  for _, r in pairs(s.find_entities_filtered{position = t.pos, radius = reach, type = "resource", limit = 900}) do
     if r.prototype.resource_category == "basic-solid" then
       local p = r.position
       local d2 = (p.x - t.pos[1]) ^ 2 + (p.y - t.pos[2]) ^ 2
@@ -1228,7 +1302,10 @@ local function step(b, trace, army)
       left = surface.count_entities_filtered{position = pos, radius = 16, type = TYPES,
         force = enemies(game.forces[b.force])}
     end
-    if n < 0.5 * op.launched and turrets > 0 then return finish(b, "aborted", trace, army) end
+    -- Prospector's eye (Grubstake): cowardice as doctrine, it leaves at 70% strength.
+    local share = rd.has(b.corp, "prospector") and 0.7 or 0.5
+    if n < share * op.launched and turrets > 0 then return finish(b, "aborted", trace, army) end
+    loot(b, op, t, pos, surface, trace)
     if game.tick - op.last_kill > NO_KILL_TICKS then return finish(b, "aborted", trace, army) end
     if left == 0 then
       trace(b, string.format("raid finds nothing left within 16 of %.0f,%.0f (%d turrets within %d)", pos[1], pos[2],
@@ -1379,6 +1456,7 @@ function ops.summary(b)
     siege_tier = b.op and b.op.tier, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
+    looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0,
     sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and
       {b.op.mortar.position.x, b.op.mortar.position.y} or nil}
 end
