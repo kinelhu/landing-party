@@ -192,6 +192,7 @@ function faction.arrive(surface, from, opts, quiet)
     return nil
   end
   f.landings = f.landings + 1
+  faction.angry(b)
   ops.heard_landing(b)
   local d = faction.corp(b.corp)
   d.landed = d.landed or game.tick
@@ -343,6 +344,29 @@ local function apply_tier(f) end
 
 -- Parts sent off-world by a mature settlement.
 -- A corporation's development (per corporation, from its own exports).
+-- The grudge (docs/reviews/2026-10-14-artillery-consult.md): a lander destroyed by a player force provokes every
+-- corporation against it, and the fallen settlement's corporation lands its next settlement angry: able to besiege
+-- for good, with double the garrison cap for its first GRUDGE_TICKS (army.cap).
+local GRUDGE_TICKS = 30 * 3600
+function faction.grudge(b, by)
+  for _, c in pairs(shared.CORPS) do ops.provoke(c.force, by) end
+  local d = faction.corp(b.corp)
+  d.grudge = by
+  d.grudges = (d.grudges or 0) + 1
+  base.trace(b, "grudge: every corporation provoked by " .. by .. "; the next landing comes angry")
+  local f = game.forces[by]
+  if f and #f.players > 0 then f.print({"lp.grudge", shared.corp_label(b.corp)}) end
+end
+
+-- The next landing after a grudge carries it (called by arrive).
+function faction.angry(b)
+  local d = faction.corp(b.corp)
+  if not d.grudge then return end
+  b.grudge, b.grudge_till = d.grudge, game.tick + (storage.grudge_fast and 2 * 3600 or GRUDGE_TICKS)
+  d.grudge = nil
+  base.trace(b, "landed with a grudge against " .. b.grudge)
+end
+
 function faction.corp(corp)
   storage.corps = storage.corps or {}
   storage.corps[corp] = storage.corps[corp] or {level = 0, exported = 0}

@@ -656,7 +656,8 @@ end
 local function choose_siege(b, army, only_battery)
   if (b.parts or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
   -- A capability, not every corporation's (Serenity's from level 1; Grubstake never besieges).
-  local capable = shared.capable(b.corp, "siege", army.level(b))
+  -- A settlement landed with a grudge besieges whatever its corporation's level or temper (faction.grudge).
+  local capable = shared.capable(b.corp, "siege", army.level(b)) or b.grudge ~= nil
   -- Against a battery, a corporation that ever besieges does so now (Grubstake never does: it raids).
   local counter = shared.capable(b.corp, "siege", 99)
   local in_flight = ops.player_ops()

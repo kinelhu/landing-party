@@ -2451,6 +2451,41 @@ scenarios.dev = function()
   end)
 end
 
+-- Grudge: the player destroys Grubstake's lander. Every corporation must count the player hostile (Serenity too,
+-- unprovoked till then), and Grubstake's next landing come angry: the grudge, double the garrison cap for 30
+-- minutes, then the cap as before.
+scenarios.grudge = function()
+  schedule(60, function() lp("debug_tune", {grudge_fast = true}) end)
+  schedule(120, function()
+    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    lp("debug_depot", S.g, 0)
+  end)
+  schedule(3600, function()
+    check("grudge: Serenity was not provoked before", not ((lp("corp", "serenity").provoked or {}).player), tostring((lp("corp", "serenity").provoked or {}).player))
+    local l = surface().find_entities_filtered{force = "lp-grubstake", name = "lp-grubstake-lander", limit = 1}[1]
+    l.destructible = true
+    l.die("player")
+  end)
+  schedule(3700, function()
+    check("grudge: every corporation now counts the player hostile",
+      (lp("corp", "serenity").provoked or {}).player ~= nil and (lp("corp", "grubstake").provoked or {}).player ~= nil, "")
+    S.g2 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    lp("debug_depot", S.g2, 0)
+    local st = S.g2 and lp("stats", S.g2)
+    check("grudge: the next Grubstake landing came angry", st and st.grudge == "player", st and tostring(st.grudge) or "no landing")
+    S.cap = st and st.cap
+    S.g3 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    local st3 = S.g3 and lp("stats", S.g3)
+    check("grudge: only the next one", st3 and st3.grudge == nil, st3 and tostring(st3.grudge) or "no landing")
+  end)
+  schedule(3700 + 2 * 3600 + 60, function()
+    local st = S.g2 and lp("stats", S.g2)
+    check("grudge: the cap was doubled, then not", st and S.cap and st.cap * 2 == S.cap,
+      tostring(S.cap) .. " then " .. tostring(st and st.cap))
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()
@@ -2725,7 +2760,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true, line = true}
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 

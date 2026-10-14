@@ -81,7 +81,11 @@ script.on_event(defines.events.on_entity_died, function(e)
   end
   if kind == "lp-lander" then
     command.drop_cores(ent.surface, ent.position, 3)
-    base.fall(ent)
+    local b = base.fall(ent)
+    -- The grudge: a lander the player destroyed is answered by every corporation (faction.grudge).
+    if b and e.force and not shared.is_corp(e.force.name) and e.force.name ~= "enemy" and e.force.name ~= "neutral" then
+      faction.grudge(b, e.force.name)
+    end
   end
   -- Shelled: the corporation learns where the battery is (ops.counter_battery) before the owner records go.
   if shared.is_corp(ent.force.name) and e.cause and e.cause.valid
@@ -194,6 +198,7 @@ remote.add_interface("landing-party", {
     if t.hq_fast ~= nil then storage.hq_fast = t.hq_fast end
     if t.strip_fast ~= nil then storage.strip_fast = t.strip_fast end
     if t.perimeter_fast ~= nil then storage.perimeter_fast = t.perimeter_fast end
+    if t.grudge_fast ~= nil then storage.grudge_fast = t.grudge_fast end
     -- Tests of operations' mechanics (not of tempers): every corporation already provoked by the player.
     if t.provoke then for _, c in pairs(shared.CORPS) do ops.provoke(c.force, "player") end end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end

@@ -37,7 +37,11 @@ local GARRISON_PER_TIER = 5     -- per depot
 -- The corporation's development level (storage.corps, faction.develop).
 local function level(b) return storage.corps and b.corp and storage.corps[b.corp] and storage.corps[b.corp].level or 0 end
 army.level = level
-local function cap(b) return #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b)) end
+-- Doubled while a grudge is fresh (faction.grudge).
+local function cap(b)
+  local n = #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b))
+  return (b.grudge_till and game.tick < b.grudge_till) and 2 * n or n
+end
 army.cap = cap
 local function strength(b) return #b.garrison + #(b.patrol or {}) end
 

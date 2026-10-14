@@ -42,6 +42,8 @@ document describes the parts as built; the campaign document describes the game 
 | Patrols through settlements | built | `lively` (life animation) |
 | Convoys carrying exports to the uplink | built | `convoy` (life animation) |
 | Interceptors against player trains | built | `train` |
+| Grudge: a lander the player kills provokes every corporation; the next landing comes angry | built | `grudge` |
+| Dev tools: `/lp` forces operations, perimeter steps, landings, grudges | built | `dev` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
@@ -718,6 +720,15 @@ reached; every new settlement (three) fell to a camp strike 3 to 4 minutes after
 Grubstake's, so no corporation grew past its first. **Open (for the user and Fable):** the hull makes a mature lander proof against a
 battery from one side; Fable's target of one or two artillery kills in six hours is not met. Options: count only
 the generators within 300 tiles of the lander, or a smaller share, or let the player bring more guns.
+
+### The grudge (built 2026-10-14, from the artillery consult)
+A lander a player force destroys (any cause: shells, a squad) is answered: every corporation counts that force
+provoked for good (Serenity's temper no longer holds it back), the player is told
+(`lp.grudge`), and the fallen settlement's corporation lands its next settlement angry (`b.grudge`): it can besiege
+whatever its level or temper (Grubstake, which never besieges, does), and its garrison cap is doubled for its first
+30 minutes (`army.cap`). Only the next landing carries it. Scenario `grudge` (quick regression): Serenity unprovoked
+before, provoked after; the next Grubstake landing angry, the one after not; cap 20 then 10. Not yet measured in
+a campaign: whether an angry landing survives the camp strike that kills fresh ones on seed 777.
 
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`

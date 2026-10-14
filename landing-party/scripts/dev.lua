@@ -8,6 +8,7 @@
 --   land <corp> [tiles]      a corporation arrives this far from you (default 200), with 2000 parts
 --   parts <n> [id]           parts for a settlement (growth, units, operations)
 --   fast                     short clocks on or off: perimeter, strip camps, phases, headquarters
+--   grudge [id]              as if you had destroyed that settlement's lander: the grudge without the fall
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
 local ops = require("__landing-party__.scripts.ops")
@@ -115,6 +116,11 @@ function dev.run(player, args)
     local on = not storage.perimeter_fast
     storage.perimeter_fast, storage.strip_fast, storage.phases_fast, storage.hq_fast = on, on, on, on
     player.print("short clocks " .. (on and "on" or "off"))
+  elseif what == "grudge" then
+    local b = pick(player, id)
+    if not b then return player.print("no settlement for that") end
+    faction.grudge(b, player.force.name)
+    player.print(string.format("grudge: %s's next landing comes angry", shared.CORPS[b.corp].name))
   elseif what == "provoke" then
     for _, c in pairs(shared.CORPS) do ops.provoke(c.force, player.force.name) end
     player.print("every corporation is now provoked by " .. player.force.name)
@@ -125,7 +131,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | perimeter [id] | land <corp> [tiles] | parts <n> [id] | fast | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | perimeter [id] | land <corp> [tiles] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace")
   end
 end
 
