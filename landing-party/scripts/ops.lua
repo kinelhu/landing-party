@@ -452,6 +452,23 @@ function ops.provoke(corp_force, by)
     end
   end
 end
+-- The ladder (docs/reviews/2026-10-14-megabase-pressure-consult.md; the user: "even if they don't punch through, they
+-- should at least destroy some buildings, or else it makes no sense"): minutes since a corporation last razed a
+-- building of this player force (storage.last_raze, control.lua), its clock started at first sight. 20 minutes: soft
+-- relaxes (Grubstake goes for weighted defence up to LADDER_SOFT) and Serenity's targets on that player weigh triple;
+-- 40: operations cross biter country (to come); 60: cost no object, the target with the best value for its defence
+-- gets the whole garrison, the reserve with it, and the raid does not turn back.
+local LADDER_SOFT = 3
+local function ladder(owner)
+  if not against_player(owner) then return 0 end
+  storage.last_raze = storage.last_raze or {}
+  local t0 = storage.last_raze[owner]
+  if not t0 then storage.last_raze[owner] = game.tick; return 0 end
+  local m = (game.tick - t0) / 3600 * (storage.ladder_fast and 10 or 1)
+  return m >= 60 and 3 or m >= 40 and 2 or m >= 20 and 1 or 0
+end
+ops.ladder = ladder
+
 -- Whether a corporation's temper lets it go for this target at all.
 local function temper_allows(b, t)
   if not against_player(t.owner) then return true end
@@ -461,7 +478,7 @@ local function temper_allows(b, t)
     local d = storage.corps and storage.corps[b.corp]
     if not (d and d.provoked and d.provoked[t.owner]) then return false end
   end
-  if temper.soft_only and (t.defence or 0) > 0 then return false end
+  if temper.soft_only and (t.defence or 0) > (ladder(t.owner) >= 1 and LADDER_SOFT or 0) then return false end
   -- A thief does not break the drills that show it where the ore is: those are for strip-mining (it raided them
   -- instead, and had nothing left to strip).
   if temper.strips and t.value == ops.VALUE["mining-drill"] then return false end
@@ -509,11 +526,13 @@ local function choose(b, army)
       local d = defence(b, t)
       -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
       -- three upgraded creeping turrets needed 21 and a garrison of 28 kept 9 home (defend).
-      if needed(d) <= ((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field) then
+      local desperate = player and ladder(t.owner) >= 3
+      if desperate or needed(d) <= ((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field) then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
-          * ((player and floor) and 3 or 1) * (battery(t) and 10 or 1)
+          * ((player and (floor or ladder(t.owner) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)
+          * (desperate and 10 or 1)
         if not bs or s > bs then best, bs = key, s end
       end
     end
@@ -889,8 +908,11 @@ local function launch(b, key, trace, army)
   local d = defence(b, t)
   local want = needed(d)
   local n, reserve = field(b, army)
-  if battery(t) or threat_bonus(b, t) > 0 then n = n + reserve end
-  if n < want then return false end
+  local desperate = against_player(t.owner) and ladder(t.owner) >= 3
+  if battery(t) or threat_bonus(b, t) > 0 or desperate then n = n + reserve end
+  -- Cost no object (the ladder): what the garrison has goes, however few.
+  if desperate then want = math.min(want, n) end
+  if n < want or n == 0 then return false end
   local members = {}
   for i = #b.garrison, 1, -1 do
     if #members >= want then break end
@@ -1514,7 +1536,7 @@ local function step(b, trace, army)
         t.defence = seen
         t.units, t.units_at = mobile(s, t.pos, foes), game.tick
         local want = needed((t.defence + (t.resist or 0) + t.units) / rd.strength(b.corp, t.dmg))
-        if want > n then
+        if want > n and not (t.owner and against_player(t.owner) and ladder(t.owner) >= 3) then
           rd.turned_back(b)
           trace(b, string.format("raid sees defence %.1f and units %.1f at the target, needs %d, has %d: turns back", seen,
             t.units, want, n))

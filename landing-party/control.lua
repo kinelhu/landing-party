@@ -113,6 +113,14 @@ script.on_event(defines.events.on_entity_died, function(e)
     end
   elseif e.force and shared.is_corp(e.force.name) and e.cause and e.cause.valid
     and ent.force.name ~= "neutral" and ent.force.name ~= "enemy" then
+    -- A player building razed by a corporation, whatever did it: the ladder's clock (ops.ladder) and the tally.
+    if not shared.is_corp(ent.force.name) then
+      storage.last_raze = storage.last_raze or {}
+      storage.last_raze[ent.force.name] = e.tick
+      storage.player_razed = storage.player_razed or {}
+      local k = ent.force.name .. ":" .. ent.type
+      storage.player_razed[k] = (storage.player_razed[k] or 0) + 1
+    end
     -- Razed counts the player's structures only (trees felled by shells once inflated it by half).
     local id = storage.unit_owner[e.cause.unit_number]
     local b = id and storage.bases[id]
@@ -185,6 +193,11 @@ remote.add_interface("landing-party", {
   end,
   faction = function() return faction.state() end,
   threat = function() return {player_ops = ops.player_ops(), last = storage.threat_last, holds = storage.budget_holds or 0} end,
+  -- The ladder's state: the last raze per player force, its rung, and the player's buildings razed by type.
+  pressure = function(force)
+    local f = force or "player"
+    return {last_raze = (storage.last_raze or {})[f], ladder = ops.ladder(f), razed = storage.player_razed or {}}
+  end,
   corp = function(corp) return faction.corp(corp) end,
   phases = function()
     local s = phases.state()
@@ -213,6 +226,7 @@ remote.add_interface("landing-party", {
     if t.sneak_off ~= nil then storage.sneak_off = t.sneak_off end
     if t.history_off ~= nil then storage.history_off = t.history_off end
     if t.rings ~= nil then storage.rings = t.rings end
+    if t.ladder_fast ~= nil then storage.ladder_fast = t.ladder_fast end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     for corp, tech in pairs(t.rd_tech or {}) do rd.set(corp, tech) end

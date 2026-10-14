@@ -3064,7 +3064,12 @@ scenarios.visit = function()
   end
   for t = 600 * 60, END - 60, 600 * 60 do
     schedule(t, function()
-      local row = {minute = (game.tick - storage.t0) / 3600, player = census(), bases = {}}
+      local pr = lp("pressure")
+      local razed = 0
+      for _, n in pairs(pr.razed or {}) do razed = razed + n end
+      local row = {minute = (game.tick - storage.t0) / 3600, player = census(), bases = {}, razed = razed,
+        razed_by_type = pr.razed, ladder = pr.ladder,
+        since_raze = pr.last_raze and (game.tick - pr.last_raze) / 3600 or nil}
       for _, id in ipairs(lp("bases")) do
         local st = lp("stats", id)
         if st then
@@ -3079,6 +3084,7 @@ scenarios.visit = function()
   end
   schedule(END - 60, function()
     info("visit: player at the end " .. serpent.line(census()))
+    info("visit: the player's buildings razed by the corporations " .. serpent.line(lp("pressure").razed))
     for _, id in ipairs(lp("bases")) do
       local st = lp("stats", id)
       info(string.format("visit: %s %d%s: garrison %d, razed %d, looted %d, units lost %d, %d operations (%d done, %d aborted, %d sieges, %d strips)",
@@ -3383,6 +3389,73 @@ scenarios.pads = function()
       end
       info(string.format("pads: %s %d (%d floor, %d trim)\n%s", st.corp, id, pad, trim, table.concat(rows, "\n")))
       check("pads: " .. st.corp .. " laid its pad at landing", pad > 100, pad .. " floor tiles")
+    end
+  end)
+end
+
+-- Ladder (docs/reviews/2026-10-14-megabase-pressure-consult.md): minutes since a corporation last razed a player
+-- building, ten times fast. LP_MIX=soft: Grubstake's only target is an assembler behind two gun turrets (not soft):
+-- nothing before 20 ladder-minutes; then soft relaxes, it raids, and a raze resets the clock. LP_MIX=desperate: a
+-- provoked Serenity facing six lasers it cannot afford sends what it has at 60.
+scenarios.ladder = function()
+  local desperate = params.mix == "desperate"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true})
+    if desperate then
+      S.id = storage.id
+      lp("debug_tune", {provoke = true})
+    else
+      S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    end
+    for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 120), math.floor(o.y - uy * 120)}
+    flatten(c[1] - 14, c[2] - 14, c[1] + 14, c[2] + 14)
+    S.c = c
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    if desperate then
+      for k = -2, 3 do
+        local tr = surface().create_entity{name = "laser-turret", position = {c[1] + 3 * k, c[2] + 5}, force = "player"}
+        surface().create_entity{name = "electric-energy-interface", position = {c[1] + 3 * k, c[2] + 8}, force = "player"}
+      end
+      surface().create_entity{name = "medium-electric-pole", position = {c[1] + 0.5, c[2] + 6.5}, force = "player"}
+    else
+      for k = -1, 1, 2 do
+        local tr = surface().create_entity{name = "gun-turret", position = {c[1] + 4 * k, c[2] + 4}, force = "player"}
+        tr.insert{name = "firearm-magazine", count = 50}
+      end
+    end
+    S.l0 = lp("pressure").ladder
+  end)
+  for t = 2 * 3600 + 600, END - 120, 600 do
+    schedule(t, function()
+      local p = lp("pressure")
+      S.max_rung = math.max(S.max_rung or 0, p.ladder)
+      if p.last_raze and p.last_raze > 2 * 3600 and not S.first_raze then S.first_raze = game.tick end
+      -- The highest rung reached before the player lost anything (a raze resets the clock).
+      if not S.first_raze then S.rung_before = math.max(S.rung_before or 0, p.ladder) end
+      local o = lp("stats", S.id).ops
+      if o.op and not S.op_at then S.op_at = game.tick; S.op_rung = p.ladder end
+    end)
+  end
+  schedule(END - 60, function()
+    local p = lp("pressure")
+    local razed = 0
+    for _, n in pairs(p.razed or {}) do razed = razed + n end
+    local o = lp("stats", S.id).ops
+    info(string.format("ladder (%s): first operation at %s on rung %s; first raze at %s; %d razed %s; rung now %d; %s",
+      params.mix, tostring(S.op_at), tostring(S.op_rung), tostring(S.first_raze), razed, serpent.line(p.razed), p.ladder,
+      serpent.line(o.log[#o.log])))
+    if desperate then
+      check("ladder: it went at the lasers at the top rung", S.op_at ~= nil and (S.op_rung or 0) >= 3,
+        tostring(S.op_rung))
+    else
+      check("ladder: nothing razed on the bottom rung", (S.rung_before or 0) >= 1, tostring(S.rung_before))
+      check("ladder: it razed a building once soft relaxed", razed > 0, tostring(razed))
     end
   end)
 end
