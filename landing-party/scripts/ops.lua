@@ -445,8 +445,11 @@ local function markers_near(b, pos, r)
   return n
 end
 
+-- Operations leave from a depot; with none, from the lander (a camp under a megabase's guns never kept a depot, the
+-- player's artillery fires on them by itself, and its escort of sixteen stood idle at the player's edge, visit).
 local function home(b)
   for _, d in ipairs(b.depots) do if d.valid then return d end end
+  if b.lander and b.lander.valid then return b.lander end
 end
 
 local function cap(b, army) return army.cap(b) end
@@ -1316,6 +1319,9 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance)
     local tt = b.intel.targets[key]
     if tt then tt.cool = game.tick + COOL_TICKS end
     trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "siege", site[1], site[2]))
+    -- The settlement waits too (re-planned every 30 s, all night, visit).
+    b.next_siege = game.tick + 2 * 3600
+    b.next_op = game.tick + 2 * 3600
     return false
   end
   local hcmds = {}
@@ -1702,6 +1708,8 @@ local function launch_strip(b, key, site, trace, army)
     local tt = b.intel.targets[key]
     if tt then tt.cool = game.tick + COOL_TICKS end
     trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "strip camp", site[1], site[2]))
+    b.next_strip = game.tick + 2 * 3600
+    b.next_op = game.tick + 2 * 3600
     return false
   end
   local hcmds = {}
