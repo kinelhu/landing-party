@@ -3498,6 +3498,45 @@ scenarios.push = function()
   end)
 end
 
+-- Heist (the megabase consult): an outpost station towards Grubstake (straight rail, a stop, a big pole, a cargo wagon
+-- of 400 copper plate), one laser 40 tiles off (beyond reach: exposure 0, soft). Grubstake raids it on its own, empties
+-- the wagon and carries the plate home, and the line is cut.
+scenarios.heist = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 110), math.floor(o.y - o.y / len * 110)}
+    flatten(c[1] - 30, c[2] - 10, c[1] + 30, c[2] + 10)
+    S.c = c
+    for x = -24, 24, 2 do
+      surface().create_entity{name = "straight-rail", position = {c[1] + x + 1, c[2] + 1}, direction = defines.direction.east, force = "player"}
+    end
+    surface().create_entity{name = "train-stop", position = {c[1] + 1, c[2] - 1}, direction = defines.direction.east, force = "player"}
+    S.wagon = surface().create_entity{name = "cargo-wagon", position = {c[1] - 6, c[2] + 1}, direction = defines.direction.east, force = "player"}
+    if S.wagon then S.wagon.insert{name = "copper-plate", count = 400} end
+    surface().create_entity{name = "big-electric-pole", position = {c[1] + 6, c[2] - 4}, force = "player"}
+    local tr = surface().create_entity{name = "laser-turret", position = {c[1] + 40, c[2] - 6}, force = "player"}
+    S.rails0 = surface().count_entities_filtered{position = c, radius = 30, name = "straight-rail"}
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local copper = S.wagon and S.wagon.valid and S.wagon.get_item_count("copper-plate") or -1
+    local rails = surface().count_entities_filtered{position = S.c, radius = 30, name = "straight-rail"}
+    local razed = 0
+    for _, v in pairs(lp("pressure").razed or {}) do razed = razed + v end
+    info(string.format("heist: wagon copper %s, looted %d, rails %d -> %d, razed %d %s", tostring(copper), st.ops.looted or 0,
+      S.rails0 or 0, rails, razed, serpent.line(lp("pressure").razed)))
+    check("heist: the wagon was emptied", copper <= 0, tostring(copper))
+    check("heist: and the plate reached home", (st.ops.looted or 0) >= 100, tostring(st.ops.looted))
+    check("heist: the line was cut", rails < (S.rails0 or 0), string.format("%d -> %d", S.rails0 or 0, rails))
+  end)
+end
+
 -- Artillery: a player artillery turret at spawn; the second landing (forced near spawn) must keep out of its
 -- reach (300 tiles), landing just outside instead.
 scenarios.artillery = function()

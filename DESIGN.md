@@ -1123,6 +1123,15 @@ scenario with assertions first; the window is for art, feel and GUI.
   that the young garrison could not field (the nest's worms need 18), then at the top rung 27 units pushed through
   and 26 died in the wall. Corporation units do not get through dense nests; a Serenity raid on one spawner lost all
   18. Open: what a corporation fields against nests (the identity trees have nothing against biters as such).
+- **Grubstake against a megabase (built: exposure, the Cut, the wagon heist).** Its soft is exposure: the weighted
+  turrets whose own reach covers the target (gun 20, laser 26, flamethrower 32), up to 1.0, 3.0 once the ladder relaxes
+  it, anything at the top rung; a megabase's rails, big poles and far substations sit just beyond its turrets and had all
+  counted as defended (any turret within 30 tiles). Rails and signals are line targets (worth double), so a raid on them
+  is the Cut; looting takes cargo wagons within 16 tiles, and their wrecks. Scenario `heist`: an outpost station with a
+  laser 40 tiles off: four raiders took the station, emptied the wagon (400 copper plate home) and cut the line (25 rail
+  pieces to 3). Once the ladder reaches its second rung against a player force, that player's targets come before rivals
+  and nests (weight 0.2 on the others): on the user's save a rival lander, worth 8, was always chosen first, and the top
+  rung now overrides Grubstake's soft as well (every exposed spot at the megabase was over 3).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

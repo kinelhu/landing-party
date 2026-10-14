@@ -119,6 +119,23 @@ function ops.weigh(surface, pos, forces, r)
   for dmg, x in pairs(by) do if not tw or x > tw then top, tw = dmg, x end end
   return w, top
 end
+-- Exposure (the megabase consult): the weighted turrets whose own reach covers pos (gun 18, laser 24, flamethrower 30,
+-- plus 2). Grubstake's soft is exposure, not any turret within 30 tiles: a megabase's rails, big poles and far
+-- substations sit just beyond its turrets' reach, and every one of them had counted as defended.
+local EXPOSE = {["ammo-turret"] = 20, ["electric-turret"] = 26, ["fluid-turret"] = 32}
+function ops.exposure(surface, pos, forces)
+  local w = 0
+  for _, e in pairs(surface.find_entities_filtered{position = pos, radius = 32, force = forces,
+    type = {"ammo-turret", "electric-turret", "fluid-turret"}}) do
+    local r = EXPOSE[e.type]
+    if (e.position.x - pos[1]) ^ 2 + (e.position.y - pos[2]) ^ 2 <= r * r then
+      local k = WEIGHT[e.type]
+      local f = e.force
+      w = w + k[1] * (1 + f.get_ammo_damage_modifier(k[2])) * (1 + f.get_gun_speed_modifier(k[2]))
+    end
+  end
+  return w
+end
 -- Who stands by a target, at the staging look only (units move; the two-minute scan would be stale): characters 0.5,
 -- units 0.5, cars and tanks 1.5, spidertrons 3, within 40 tiles.
 local MOBILE = {character = 0.5, unit = 0.5, car = 1.5, ["spider-vehicle"] = 3}
@@ -170,6 +187,7 @@ local function sense(b, surface, pos, r)
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
       t.pos, t.kind, t.value, t.seen, t.owner = c.pos, c.kind, c.value, game.tick, c.owner
       t.defence, t.dmg = ops.weigh(surface, c.pos, other)
+      t.exposure = ops.exposure(surface, c.pos, other)
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
       -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was
       -- raided every ten minutes and its raiders died on the way.
@@ -478,7 +496,10 @@ local function temper_allows(b, t)
     local d = storage.corps and storage.corps[b.corp]
     if not (d and d.provoked and d.provoked[t.owner]) then return false end
   end
-  if temper.soft_only and (t.defence or 0) > (ladder(t.owner) >= 1 and LADDER_SOFT or 0) then return false end
+  -- Soft: what the player's turrets reach (exposure), up to 1.0 and LADDER_SOFT once the ladder relaxes it; at its top
+  -- rung (cost no object) nothing (at a megabase every exposed spot was over 3, and nothing was ever razed, visit).
+  local rung = ladder(t.owner)
+  if temper.soft_only and rung < 3 and (t.exposure or t.defence or 0) > (rung >= 1 and LADDER_SOFT or 1.0) then return false end
   -- A thief does not break the drills that show it where the ore is: those are for strip-mining (it raided them
   -- instead, and had nothing left to strip).
   if temper.strips and t.value == ops.VALUE["mining-drill"] then return false end
@@ -517,6 +538,15 @@ local function choose(b, army)
   end
   local in_flight = ops.player_ops()
   local floor = game.tick - (storage.threat_last or 0) > FLOOR_TICKS
+  -- A player force it is at war with and has not hurt for 40 minutes comes before rivals and nests (a rival's lander,
+  -- worth 8, was always chosen over the player's buildings, and the ladder never applied, visit).
+  local pressed = false
+  for _, f in pairs(game.forces) do
+    if (#f.players > 0 or f.name == "player") and against_player(f.name) and ladder(f.name) >= 2
+      and temper_allows(b, {owner = f.name, defence = 0, exposure = 0}) then
+      pressed = true
+    end
+  end
   for key, t in pairs(b.intel.targets) do
     local player = against_player(t.owner)
     local held = player and in_flight >= budget(t.owner) and not battery(t)
@@ -532,7 +562,7 @@ local function choose(b, army)
         local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
           * ((player and (floor or ladder(t.owner) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)
-          * (desperate and 10 or 1)
+          * (desperate and 10 or 1) * ((not player and pressed) and 0.2 or 1)
         if not bs or s > bs then best, bs = key, s end
       end
     end
@@ -893,12 +923,13 @@ local function loot(b, op, t, pos, surface, trace)
   if not (shared.CORPS[b.corp].temper or {}).loots or not (t and against_player(t.owner)) then return end
   op.loot = op.loot or {items = 0, value = 0, looted = {}}
   if op.loot.items >= LOOT_ITEMS then return end
-  for _, c in pairs(surface.find_entities_filtered{position = pos, radius = 16, type = {"container", "logistic-container"},
+  -- Wagons too (the megabase consult's heist: a train at an outpost station emptied).
+  for _, c in pairs(surface.find_entities_filtered{position = pos, radius = 16, type = {"container", "logistic-container", "cargo-wagon"},
     force = t.owner}) do
     if not op.loot.looted[c.unit_number] and surface.count_entities_filtered{position = c.position, radius = 6,
       force = b.force, type = "unit", limit = 1} > 0 then
       op.loot.looted[c.unit_number] = true
-      local inv = c.get_inventory(defines.inventory.chest)
+      local inv = c.get_inventory(c.type == "cargo-wagon" and defines.inventory.cargo_wagon or defines.inventory.chest)
       local items = {}
       for _, it in pairs(inv and inv.get_contents() or {}) do table.insert(items, it) end
       table.sort(items, function(x, y) return (LOOT[x.name] or 0.1) > (LOOT[y.name] or 0.1) end)
@@ -927,7 +958,7 @@ function ops.loot_wreck(b, ent)
   op.loot = op.loot or {items = 0, value = 0, looted = {}}
   if op.loot.looted[ent.unit_number] or op.loot.items >= LOOT_ITEMS then return end
   op.loot.looted[ent.unit_number] = true
-  local inv = ent.get_inventory(defines.inventory.chest)
+  local inv = ent.get_inventory(ent.type == "cargo-wagon" and defines.inventory.cargo_wagon or defines.inventory.chest)
   for _, it in pairs(inv and inv.get_contents() or {}) do
     local took = math.min(it.count, LOOT_ITEMS - op.loot.items)
     op.loot.items = op.loot.items + took

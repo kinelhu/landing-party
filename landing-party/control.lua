@@ -127,7 +127,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     if b then
       b.razed = b.razed + 1
       rd.salvage(b.corp, ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type])
-      if ent.type == "container" or ent.type == "logistic-container" then ops.loot_wreck(b, ent) end
+      if ent.type == "container" or ent.type == "logistic-container" or ent.type == "cargo-wagon" then ops.loot_wreck(b, ent) end
     end
   end
 end)
