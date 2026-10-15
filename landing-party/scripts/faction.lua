@@ -10,6 +10,7 @@ local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local rd = require("__landing-party__.scripts.rd")
 local war = require("__landing-party__.scripts.war")
+local pact = require("__landing-party__.scripts.pact")
 
 local faction = {}
 
@@ -70,6 +71,25 @@ local function wait_for(surface, pos, r)
   return true
 end
 
+-- Spawners within APPROACH_WIDTH of the straight way from a site to `from` (the player's ground), less those the
+-- landing burns (base.clear_landing, 80 tiles).
+local APPROACH_WIDTH, APPROACH_BURN, APPROACH_MAX = 40, 80, 6
+local function approach(surface, spot, from)
+  local ax, ay, bx, by = spot[1], spot[2], from.x, from.y
+  local dx, dy = bx - ax, by - ay
+  local len2 = math.max(1, dx * dx + dy * dy)
+  local n = 0
+  for _, e in pairs(surface.find_entities_filtered{area = {{math.min(ax, bx) - APPROACH_WIDTH, math.min(ay, by) - APPROACH_WIDTH},
+    {math.max(ax, bx) + APPROACH_WIDTH, math.max(ay, by) + APPROACH_WIDTH}}, type = "unit-spawner", force = "enemy"}) do
+    local p = e.position
+    local f = math.max(0, math.min(1, ((p.x - ax) * dx + (p.y - ay) * dy) / len2))
+    local qx, qy = ax + dx * f - p.x, ay + dy * f - p.y
+    if qx * qx + qy * qy <= APPROACH_WIDTH ^ 2 and (p.x - ax) ^ 2 + (p.y - ay) ^ 2 > APPROACH_BURN ^ 2 then n = n + 1 end
+  end
+  return n
+end
+faction.approach = approach
+
 -- A landing site about `distance` from `from`: in the first of eight directions (seeded order, turned by
 -- the landing count) with a rich enough patch within SITE_SEARCH tiles of the ring and no lander within
 -- APART. A single point per direction found no ore at 300 tiles on most maps (seed 2: 7 of 8 empty).
@@ -77,6 +97,7 @@ function faction.site(surface, from, distance, count)
   local start = (surface.map_gen_settings.seed + 3 * (count or 0)) % 8
   local avoid = landers()
   local fallback, fallback_n = nil, -1
+  local among
   for i = 0, 7 do
     local a = 2 * math.pi * ((start + i) % 8) / 8
     local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
@@ -172,8 +193,19 @@ function faction.site(surface, from, distance, count)
       -- Further from them as they evolve: 60 tiles, 100 at full evolution (200 left a maximum-evolution world no site
       -- at all, visit). On a second pass (faction.arrive) nests do not refuse a site: the lander clears its ground.
       local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
-      if clear and not faction.ignore_nests
-        and surface.count_entities_filtered{position = spot, radius = 60 + 40 * evo, type = "unit-spawner", limit = 1} > 0 then
+      local nested = surface.count_entities_filtered{position = spot, radius = 60 + 40 * evo, type = "unit-spawner",
+        limit = 1} > 0
+      -- By approach (docs/reviews/2026-10-15-biter-country-consult.md): what decides a settlement's war is the nests
+      -- between it and the player, not those beside it (camps landed nest-free 1,000 to 2,100 tiles out had 130 nests
+      -- on the way and razed nothing in three hours, visit). Too many on the way refuse the site; nests beside it are
+      -- allowed (its landing burns them), a nest-free site in the same ring preferred.
+      if clear and faction.approach_max and approach(surface, spot, from) > faction.approach_max then clear = false end
+      -- A corporation with a pact with the biters (Grubstake) lands among them: they let it be.
+      if clear and nested and not faction.ignore_nests and not faction.pact_site then
+        if faction.approach_max then
+          local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
+          if n > SITE_MIN_ORE / 2 and not among then among = spot end
+        end
         clear = false
       end
       if clear then
@@ -183,8 +215,9 @@ function faction.site(surface, from, distance, count)
       end
     end
   end
-  -- No direction rich and clear: the best clear one seen (seed 2024 once landed blind on two drills' worth).
-  return fallback
+  -- No direction rich and clear: the best clear one seen (seed 2024 once landed blind on two drills' worth); by
+  -- approach, a site among nests next.
+  return fallback or among
 end
 
 -- Map tags: each settlement marked for the player's forces with its corporation's icon and name. A tag needs
@@ -233,6 +266,9 @@ function faction.arrive(surface, from, opts, quiet)
   -- hauler died deploying every time, visit). There the corporation's turrets are shelled; its lander holds on its hull
   -- (artillery fires on its own at military targets, not at generators or units), and it can reach the player.
   -- Pass 3: nests allowed, the landing burns its clearing.
+  -- Pass 0, first (the biter-country consult): by approach, near rings first, nests beside the site allowed and at most
+  -- APPROACH_MAX on the way to the player (Serenity's clearances reach about that many). Not for a corporation with a
+  -- pact: the biters let it through.
   local late = false
   for _, pf in pairs(game.forces) do
     if (#pf.players > 0 or pf.name == "player") and not shared.is_corp(pf.name) and ops.era(pf) >= 3 then late = true end
@@ -240,8 +276,11 @@ function faction.arrive(surface, from, opts, quiet)
   if storage.era_override then late = storage.era_override >= 3 end
   faction.generated, faction.candidates = 0, 0
   faction.pending = false
-  for pass = 1, 3 do
+  faction.pact_site = opts and opts.corp and pact.has(opts.corp) or false
+  for pass = 0, 3 do
     if pass == 2 and not late then goto next_pass end
+    if pass == 0 and (faction.pact_site or storage.approach_off) then goto next_pass end
+    faction.approach_max = pass == 0 and APPROACH_MAX or nil
     faction.under_guns = pass == 2
     faction.ignore_nests = pass == 3
     for _, extra in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do
@@ -249,11 +288,12 @@ function faction.arrive(surface, from, opts, quiet)
       -- Dry: the settlement's reach (base.land's 15x15 chunks) made by the engine first.
       if pos and faction.dry and wait_for(surface, pos, 7) then pos = nil end
       if faction.pending then
-        faction.ignore_nests, faction.under_guns = false, false
+        faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
         return nil, "pending"
       end
       b = pos and base.land(surface, pos, opts)
       if b then
+        if pass == 0 then b.approach = approach(surface, pos, from) end
         if pass == 2 then b.under_guns = true; base.trace(b, "landed under the player's guns (inside its artillery's reach)") end
         break
       end
@@ -263,7 +303,11 @@ function faction.arrive(surface, from, opts, quiet)
   end
   faction.ignore_nests = false
   faction.under_guns = false
-  if b then base.clear_landing(b) end
+  faction.pact_site = false
+  faction.approach_max = nil
+  -- No clearing burned by a corporation at peace with the biters.
+  if b and not pact.has(b.corp) then base.clear_landing(b) end
+  if b then pact.place(b) end
   if not b then
     -- Try again later, and say why: a failed landing retried silently every 10 s once.
     f.next = game.tick + 5 * 3600
@@ -299,8 +343,9 @@ function faction.arrive(surface, from, opts, quiet)
     f.surface, f.from = surface.index, {x = from.x, y = from.y}
     f.next = game.tick + f.cadence
   end
-  base.trace(b, string.format("landing %d of the faction (tier %d): %d candidate sites, %d on new ground", f.landings,
-    f.tier, faction.candidates, faction.generated))
+  base.trace(b, string.format("landing %d of the faction (tier %d): %d candidate sites, %d on new ground; %s", f.landings,
+    f.tier, faction.candidates, faction.generated, b.approach and (b.approach .. " nests on the way to the player")
+    or "by the older passes"))
   if not quiet then announce(b, surface) end
   return b
 end

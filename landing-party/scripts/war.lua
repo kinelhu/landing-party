@@ -24,7 +24,10 @@ local RELIEF_MIN = 4
 local RELIEF_MARKUP = 1.5
 local POD_DISTANCE = 40
 local COLUMN_PATIENCE = 10 * 3600
-local ESSENTIAL = {["lp-generator"] = true, ["lp-depot"] = true}
+-- What makes parts too: a settlement whose fabricators were destroyed while at war rebuilt nothing, made no parts and
+-- no units, for good (scenario occupy).
+local ESSENTIAL = {["lp-generator"] = true, ["lp-depot"] = true, ["lp-fabricator"] = true, ["lp-drill"] = true,
+  ["lp-pylon"] = true}
 
 local function corp_state(corp)
   storage.corps = storage.corps or {}
@@ -46,7 +49,7 @@ local function at_war(b)
     local o = t.owner
     if o and not seen[o] and o ~= "enemy" and not shared.is_corp(o) and game.forces[o] then
       seen[o] = true
-      if not temper.provoked_only or (d.provoked or {})[o] then return o, ops.ladder(o) end
+      if not temper.provoked_only or (d.provoked or {})[o] then return o, ops.ladder(o, b.force) end
     end
   end
 end

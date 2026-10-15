@@ -31,6 +31,7 @@ local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground
 local THREAT_BONUS = 10               -- value added to targets by it
 local STAND_OFF = 34                  -- staging this far from the target: a laser's 24 and 10 to spare
 local STAGE_TICKS = 90 * 60
+local MARCH_SPEED = 0.08          -- tiles a tick, a slow column's pace
 local NO_KILL_TICKS = 90 * 60
 local COOL_TICKS = 10 * 60 * 60
 local MAX_TICKS = 6 * 60 * 60
@@ -80,7 +81,7 @@ ops.VALUE = {["lp-command-relay"] = 10, ["lp-barracks"] = 8, ["substation"] = 6,
   ["train-stop"] = 5, ["locomotive"] = 5, ["roboport"] = 5, ["mining-drill"] = 4, ["assembling-machine"] = 3,
   ["furnace"] = 3, ["lab"] = 3, ["radar"] = 3, ["ammo-turret"] = 1, ["electric-turret"] = 1,
   -- A rival corporation's buildings: its command (lander, uplink), its depots and its power first.
-  ["lp-uplink"] = 10, ["lp-lander"] = 8, ["lp-depot"] = 6, ["lp-generator"] = 5, ["lp-launchpad"] = 5,
+  ["lp-uplink"] = 10, ["lp-pacifier"] = 8, ["lp-lander"] = 8, ["lp-depot"] = 6, ["lp-generator"] = 5, ["lp-launchpad"] = 5,
   -- Transit (late pressure, docs/reviews/2026-10-13-late-pressure-consult.md): rails and their signals.
   ["straight-rail"] = 3, ["half-diagonal-rail"] = 3, ["curved-rail-a"] = 3, ["curved-rail-b"] = 3,
   ["rail-signal"] = 2, ["rail-chain-signal"] = 2,
@@ -505,18 +506,22 @@ function ops.provoke(corp_force, by)
 end
 -- The ladder (docs/reviews/2026-10-14-megabase-pressure-consult.md; the user: "even if they don't punch through, they
 -- should at least destroy some buildings, or else it makes no sense"): minutes since a corporation last razed a
--- building of this player force (storage.last_raze, control.lua), its clock started at first sight. 20 minutes: soft
+-- building of this player force (storage.last_raze, control.lua), its clock started at first sight. 10 minutes: soft
 -- relaxes (Grubstake goes for weighted defence up to LADDER_SOFT) and Serenity's targets on that player weigh triple;
--- 40: operations cross biter country (to come); 60: cost no object, the target with the best value for its defence
--- gets the whole garrison, the reserve with it, and the raid does not turn back.
+-- 20: operations cross biter country; 30: cost no object, the target with the best value for its defence gets the whole
+-- garrison, the reserve with it, and the raid does not turn back. (20, 40 and 60 minutes at first: against a deathworld
+-- base walled with gun turrets Grubstake did nothing for its first hour, visit.)
 local LADDER_SOFT = 3
-local function ladder(owner)
+-- Each corporation keeps its own clock (corp, its force's name): Serenity's razes reset Grubstake's too, and Grubstake,
+-- knowing only a turret-lined power line, stayed at rung 1 and razed nothing in an hour (visit deathworld).
+local function ladder(owner, corp)
   if not against_player(owner) then return 0 end
   storage.last_raze = storage.last_raze or {}
-  local t0 = storage.last_raze[owner]
-  if not t0 then storage.last_raze[owner] = game.tick; return 0 end
+  local key = corp and (owner .. "|" .. corp) or owner
+  local t0 = storage.last_raze[key]
+  if not t0 then storage.last_raze[key] = game.tick; return 0 end
   local m = (game.tick - t0) / 3600 * (storage.ladder_fast and 10 or 1)
-  return m >= 60 and 3 or m >= 40 and 2 or m >= 20 and 1 or 0
+  return m >= 30 and 3 or m >= 20 and 2 or m >= 10 and 1 or 0
 end
 ops.ladder = ladder
 
@@ -531,7 +536,7 @@ local function temper_allows(b, t)
   end
   -- Soft: what the player's turrets reach (exposure), up to 1.0 and LADDER_SOFT once the ladder relaxes it; at its top
   -- rung (cost no object) nothing (at a megabase every exposed spot was over 3, and nothing was ever razed, visit).
-  local rung = ladder(t.owner)
+  local rung = ladder(t.owner, b.force)
   if temper.soft_only and rung < 3 and (t.exposure or t.defence or 0) > (rung >= 1 and LADDER_SOFT or 1.0) then return false end
   -- A thief does not break the drills that show it where the ore is: those are for strip-mining (it raided them
   -- instead, and had nothing left to strip).
@@ -577,7 +582,7 @@ local function choose(b, army)
   -- worth 8, was always chosen over the player's buildings, and the ladder never applied, visit).
   local pressed = false
   for _, f in pairs(game.forces) do
-    if (#f.players > 0 or f.name == "player") and against_player(f.name) and ladder(f.name) >= 2
+    if (#f.players > 0 or f.name == "player") and against_player(f.name) and ladder(f.name, b.force) >= 2
       and temper_allows(b, {owner = f.name, defence = 0, exposure = 0}) then
       pressed = true
     end
@@ -595,12 +600,12 @@ local function choose(b, army)
       local d = defence(b, t)
       -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
       -- three upgraded creeping turrets needed 21 and a garrison of 28 kept 9 home (defend).
-      local desperate = player and ladder(t.owner) >= 3
+      local desperate = player and ladder(t.owner, b.force) >= 3
       if desperate or needed(d) <= ((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field) then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
-          * ((player and (floor or ladder(t.owner) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)
+          * ((player and (floor or ladder(t.owner, b.force) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)
           * (desperate and 10 or 1) * ((not player and pressed) and 0.2 or 1)
         if not bs or s > bs then best, bs = key, s end
       end
@@ -707,7 +712,12 @@ local function finish(b, outcome, trace, army)
       force = enemies(game.forces[b.force]), limit = 1} > 0 then
       rd.walls_met(b)
     end
-    trace(b, string.format("raid razed nothing at %.0f,%.0f: resistance there now %d", t.pos[1], t.pos[2], t.resist))
+    local closest = math.huge
+    for _, u in ipairs(op.members) do
+      if u.valid then closest = math.min(closest, math.sqrt((u.position.x - t.pos[1]) ^ 2 + (u.position.y - t.pos[2]) ^ 2)) end
+    end
+    trace(b, string.format("raid razed nothing at %.0f,%.0f: resistance there now %d (nearest raider %.0f tiles off)",
+      t.pos[1], t.pos[2], t.resist, closest))
   end
   if t then
     -- The longer rest stands (a clearance's failed nest, siege_step).
@@ -740,9 +750,18 @@ local function finish(b, outcome, trace, army)
   if t then
     local pos = {x = t.pos[1], y = t.pos[2]}
     local tick = game.tick
-    sense(b, game.surfaces[b.surface], pos, 40)
+    local s = game.surfaces[b.surface]
+    sense(b, s, pos, 40)
     for key, o in pairs(b.intel.targets) do
-      if (o.pos[1] - pos.x) ^ 2 + (o.pos[2] - pos.y) ^ 2 <= 40 * 40 and o.seen < tick then b.intel.targets[key] = nil end
+      if (o.pos[1] - pos.x) ^ 2 + (o.pos[2] - pos.y) ^ 2 <= 40 * 40 and o.seen < tick then
+        -- A nest still standing is kept with what it taught (sense sees no spawners: its resistance and tries were
+        -- wiped, and four raiders went for one spawner six times, razing nothing, visit deathworld).
+        if o.owner == "enemy" and s.count_entities_filtered{position = o.pos, radius = 3, type = "unit-spawner", limit = 1} > 0 then
+          o.seen = tick
+        else
+          b.intel.targets[key] = nil
+        end
+      end
     end
   end
   b.ops_log = b.ops_log or {}
@@ -807,8 +826,14 @@ function ops.cleared(surface, pos)
     table.remove(storage.corridors, 1)
   end
 end
-local function sneak_route(b, from, to, opts)
+-- A corporation at cease-fire with the biters, both ways (shared.CORPS temper.pact, control.lua).
+function ops.pact(force)
+  local f = game.forces[force]
+  return f and game.forces.enemy and f.get_cease_fire("enemy") and game.forces.enemy.get_cease_fire(f) or false
+end
+local function sneak_route(b, from, to, opts, wide)
   opts = opts or {turrets = true, nests = true}
+  local SNEAK_BOX = wide and 3 * SNEAK_BOX or SNEAK_BOX
   local s = game.surfaces[b.surface]
   local foes = enemies(game.forces[b.force])
   local x0 = math.min(from[1], to[1]) - SNEAK_BOX
@@ -819,7 +844,8 @@ local function sneak_route(b, from, to, opts)
   local turrets = opts.turrets and s.find_entities_filtered{area = box, type = {"ammo-turret", "electric-turret",
     "fluid-turret"}, force = foes} or {}
   -- Air units (opts.worms) keep clear of worms only: spawners do not shoot.
-  local nests = (opts.nests and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"})
+  -- A pact with the biters (Grubstake: "We don't fight bugs"): nests and worms let it pass (a cease-fire, both ways).
+  local nests = (opts.nests and not ops.pact(b.force) and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"})
     or (opts.worms and s.find_entities_filtered{area = box, type = "turret", force = "enemy"}) or {}
   local function centre(i, j) return x0 + (i + 0.5) * SNEAK_CELL, y0 + (j + 0.5) * SNEAK_CELL end
   -- Buckets of BUCKET tiles, so a cell tests only the turrets and nests near it (a megabase has thousands of
@@ -926,7 +952,7 @@ local function sneak_route(b, from, to, opts)
   local closed = {}
   local found = false
   local steps = 0
-  while #heap > 0 and steps < 4000 do
+  while #heap > 0 and steps < (wide and 16000 or 4000) do
     local _, ci, cj = table.unpack(pop())
     local ck = key(ci, cj)
     if closed[ck] then goto next end
@@ -949,6 +975,9 @@ local function sneak_route(b, from, to, opts)
   local nb = 0
   for _, v in pairs(blocked) do if v then nb = nb + 1 end end
   ops.last_route = {nests = #nests, turrets = #turrets, blocked = nb, cells = w * h, found = found, steps = steps}
+  -- Water the box could not get round: once more over a box three times as wide (a lake 100 tiles across kept Grubstake's
+  -- raids home for 40 minutes, visit nw; left to the engine, the raiders stood at home: its pathfinder gave up the detour).
+  if not found and not wide and steps < 4000 then return sneak_route(b, from, to, opts, true) end
   if not found then return nil end
   -- Back from the target, every third cell a waypoint (the engine's pathfinder walks between them).
   local cells = {}
@@ -996,10 +1025,10 @@ local function push_escort(b, t, from, to)
   -- A corporation that besieges clears its way instead of pushing (ops.clearance, the biter-country consult: 27 units
   -- pushed through a wall of worms and 25 died); one that never does, at the top rung, goes through with all it has.
   if (sp + worms) > 0 and shared.capable(b.corp, "siege", 99) then return nil, sp, worms end
-  if t.owner and ladder(t.owner) >= 3 then return 1000, sp, worms end
+  if t.owner and ladder(t.owner, b.force) >= 3 then return 1000, sp, worms end
   if sp + worms > PUSH_CROSSINGS then return nil, sp, worms end
-  local worth = (t.value or 0) * (t.line and 2 or 1) * ((t.owner and ladder(t.owner) >= 1) and 3 or 1)
-  if worth < PUSH_VALUE and not (t.owner and ladder(t.owner) >= 2) then return nil, sp, worms end
+  local worth = (t.value or 0) * (t.line and 2 or 1) * ((t.owner and ladder(t.owner, b.force) >= 1) and 3 or 1)
+  if worth < PUSH_VALUE and not (t.owner and ladder(t.owner, b.force) >= 2) then return nil, sp, worms end
   local evo = game.forces.enemy.get_evolution_factor(game.surfaces[b.surface])
   return math.ceil((4 * sp + 2 * worms) * (1 + evo)), sp, worms
 end
@@ -1098,7 +1127,7 @@ local function launch(b, key, trace, army)
   local d = defence(b, t)
   local want = needed(d)
   local n, reserve = field(b, army)
-  local desperate = against_player(t.owner) and ladder(t.owner) >= 3
+  local desperate = against_player(t.owner) and ladder(t.owner, b.force) >= 3
   if battery(t) or threat_bonus(b, t) > 0 or desperate then n = n + reserve end
   -- Cost no object (the ladder): what the garrison has goes, however few.
   if desperate then want = math.min(want, n) end
@@ -1131,15 +1160,17 @@ local function launch(b, key, trace, army)
   local sneaks = (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner)
   -- Round biter country, whoever marches (a nest as the target excepted: Serenity clears its ground).
   local route = sneak_route(b, {h.position.x, h.position.y}, stage, {turrets = sneaks, nests = t.owner ~= "enemy"})
+  local why = route and "" or string.format("to staging %.0f,%.0f (%s)", stage[1], stage[2], serpent.line(ops.last_route))
   -- The whole way, the attack leg too (staged short of a wall of nests, four raiders went straight through it, push).
   if route and t.owner ~= "enemy" and not sneak_route(b, stage, {t.pos[1], t.pos[2]}, {turrets = false, nests = true}) then
     route = nil
+    why = "the attack leg " .. serpent.line(ops.last_route)
   end
   -- Overflight (Grubstake, the biter-country consult: "We don't fight bugs"): no way round on the ground, and air
   -- units at home: up to six fly over the nests (round the worms, which shoot at them), take the target, and fly home.
   -- Only at the ladder's top rung (cost no object): spawners' defenders bite harriers out of the air (six of six over a
   -- wall of nests, overflight), and a trigger target mask on the biters' bite did not stop it.
-  if not route and not shared.capable(b.corp, "siege", 99) and against_player(t.owner) and ladder(t.owner) >= 3 then
+  if not route and not shared.capable(b.corp, "siege", 99) and against_player(t.owner) and ladder(t.owner, b.force) >= 3 then
     -- From the raid as picked, then the garrison.
     local air = {}
     for _, list in ipairs({members, b.garrison}) do
@@ -1175,10 +1206,10 @@ local function launch(b, key, trace, army)
     local escort, sp, worms = push_escort(b, t, {h.position.x, h.position.y}, {t.pos[1], t.pos[2]})
     -- Too many nests to push through, for a target the ladder or its worth says to go for: clear a way first, a raid
     -- on the nearest spawner by the straight path (the evolution refund stands, biters.lua).
-    local worth = (t.value or 0) * (t.line and 2 or 1) * (ladder(t.owner) >= 1 and 3 or 1)
+    local worth = (t.value or 0) * (t.line and 2 or 1) * (ladder(t.owner, b.force) >= 1 and 3 or 1)
     local clears = shared.capable(b.corp, "siege", 99)
     if not escort and (clears or sp + worms > PUSH_CROSSINGS) and sp + worms > 0
-      and (worth >= PUSH_VALUE or ladder(t.owner) >= 2) then
+      and (worth >= PUSH_VALUE or ladder(t.owner, b.force) >= 2) then
       -- The nest nearest home within 40 tiles of the straight way, worms as well as spawners (one clearance 33 tiles
       -- from the first spawner left the worms behind it in reach of the next raid).
       local s = game.surfaces[b.surface]
@@ -1236,9 +1267,12 @@ local function launch(b, key, trace, army)
     for _, u in ipairs(members) do table.insert(b.garrison, u) end
     -- Briefly: it cost nothing, and the ladder may send it soon (cooled ten minutes, it was never tried again, push).
     -- The settlement waits too: one target after another refused every 30 s re-planned routes all night (visit).
-    t.cool = game.tick + 2 * 3600
+    -- Longer when the march itself is the problem (water and turrets): the same unreachable substation was chosen every
+    -- two minutes for half an hour while the factory had hundreds of others (visit nw).
+    t.cool = game.tick + ((t.owner ~= "enemy" and not why:find("nests = [1-9]")) and 15 or 2) * 3600
     b.next_op = game.tick + 2 * 3600
-    trace(b, string.format("raid on %s at %.0f,%.0f: no way round biter country; not sent", t.kind, t.pos[1], t.pos[2]))
+    trace(b, string.format("raid on %s at %.0f,%.0f: no way round biter country; not sent (%s)", t.kind, t.pos[1], t.pos[2],
+      why or ""))
     return false
   end
   local how = sneaks and defines.distraction.by_damage or defines.distraction.by_enemy
@@ -1250,6 +1284,13 @@ local function launch(b, key, trace, army)
   order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
     commands = cmds})
   b.op_route = route
+  -- Time to reach the staging point: by the march's length, more where the engine finds its own way round water (a
+  -- fixed 90 s sent a raid in while its raiders were still 237 tiles off, walking round a lake, visit nw).
+  local march, px, py = 0, h.position.x, h.position.y
+  for _, w in ipairs(route) do march = march + math.sqrt((w[1] - px) ^ 2 + (w[2] - py) ^ 2); px, py = w[1], w[2] end
+  march = march + math.sqrt((stage[1] - px) ^ 2 + (stage[2] - py) ^ 2)
+  if #route == 0 then march = march * 1.6 end
+  b.op.stage_ticks = STAGE_TICKS + math.floor(march / MARCH_SPEED)
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
@@ -1916,7 +1957,7 @@ local function step(b, trace, army)
         near = near + 1
       end
     end
-    if near >= 0.8 * n or game.tick - op.phase_at > STAGE_TICKS then
+    if near >= 0.8 * n or game.tick - op.phase_at > (op.stage_ticks or STAGE_TICKS) then
       -- A look from the staging point first: more turrets than the force can take, and it turns back before
       -- a shot is fired (four raiders sent at a target armed after they left all died attacking it).
       if t then
@@ -1929,7 +1970,7 @@ local function step(b, trace, army)
         t.defence = seen
         t.units, t.units_at = mobile(s, t.pos, foes), game.tick
         local want = needed((t.defence + (t.resist or 0) + t.units) / rd.strength(b.corp, t.dmg))
-        if want > n and not (t.owner and against_player(t.owner) and ladder(t.owner) >= 3) then
+        if want > n and not (t.owner and against_player(t.owner) and ladder(t.owner, b.force) >= 3) then
           rd.turned_back(b)
           trace(b, string.format("raid sees defence %.1f and units %.1f at the target, needs %d, has %d: turns back", seen,
             t.units, want, n))
@@ -2167,7 +2208,16 @@ function ops.summary(b)
     if against_player(t.owner) then np = np + 1 end
   end
   local t = b.op and b.intel.targets[b.op.target]
-  return {known = n, known_player = np, op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
+  -- What it knows of the players' (for the visits): kind, exposure, defence, rest left, whether its temper allows it.
+  local pt = {}
+  for _, o in pairs(b.intel and b.intel.targets or {}) do
+    if against_player(o.owner) and #pt < 12 then
+      table.insert(pt, string.format("%s@%.0f,%.0f e%.1f d%.1f r%.0f%s%s", o.kind, o.pos[1], o.pos[2], o.exposure or -1,
+        o.defence or -1, o.resist or 0, game.tick < (o.cool or 0) and " cool" or "", temper_allows(b, o) and "" or " held"))
+    end
+  end
+  return {known = n, known_player = np, player_targets = pt, ladder = (function()
+    for _, f in pairs(game.forces) do if #f.players > 0 or f.name == "player" then return ladder(f.name, b.force) end end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
     siege_tier = b.op and b.op.tier, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,

@@ -445,8 +445,22 @@ base.occupied = occupied
 site.occupied = occupied
 
 -- Rebuild first: the first lost entity whose ground is free. Occupied ground waits.
+local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"] = true, ["lp-pylon"] = true}
+-- What makes parts comes first: with its fabricators destroyed, a settlement spent its last 646 parts on new blocks,
+-- units and two turrets while their ground was held, and once it was free had nothing to rebuild them with, nor ever
+-- again (scenario occupy). Parts kept back for every pending rebuild of what makes them.
+function base.reserve(b)
+  local reserve = 0
+  for _, job in ipairs(b.rebuild) do
+    if ECONOMY[shared.kind_of(job.name)] then reserve = reserve + (shared.cost[job.name] or 0) end
+  end
+  return reserve
+end
+army.reserve = base.reserve
+
 local function rebuild(b)
   local surface = game.surfaces[b.surface]
+  local reserve = base.reserve(b)
   for i, job in ipairs(b.rebuild) do
     if game.tick < job.due then
       -- still on its way
@@ -457,7 +471,12 @@ local function rebuild(b)
         job.name, job.pos[1], job.pos[2])) end
     else
       job.occupied = nil
-      if b.parts < (shared.cost[job.name] or 0) then b.waiting = job.name; return true end
+      local economy = ECONOMY[shared.kind_of(job.name)]
+      local need = (shared.cost[job.name] or 0) + (economy and 0 or reserve)
+      -- Held back for the reserve: it steps aside, the rebuilds of what makes parts behind it go first.
+      if b.parts < need and not economy and reserve > 0 then goto continue end
+      if b.parts < need then b.waiting = job.name; return true end
+      b.waiting = nil
       table.remove(b.rebuild, i)
       if place(b, job) then
         b.rebuilt = b.rebuilt + 1
@@ -474,6 +493,7 @@ local function rebuild(b)
       end
       return true
     end
+    ::continue::
   end
   return false
 end
@@ -490,7 +510,7 @@ local function build(b)
   local job = b.queue[1]
   if not job then return end
   local cost = shared.cost[job.name] or 0
-  if b.parts < cost then b.waiting = job.name; return end
+  if b.parts < cost + base.reserve(b) then b.waiting = job.name; return end
   b.waiting = nil
   table.remove(b.queue, 1)
   local e = place(b, job)

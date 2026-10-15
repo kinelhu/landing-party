@@ -3045,6 +3045,32 @@ scenarios.visit = function()
   end)
   schedule(20 * 3600, function()
     S.g = lp("arrive", 1, S.sp, S.dist, {corp = "grubstake"})
+    -- Water round its lander: the first water tile in 16 directions (diagnostic).
+    if S.g then
+      local o = lp("stats", S.g).origin
+      local out = {}
+      for k = 0, 15 do
+        local a = 2 * math.pi * k / 16
+        local hit = "-"
+        for d = 10, 600, 4 do
+          local p = {o.x + d * math.cos(a), o.y + d * math.sin(a)}
+          if not surface().is_chunk_generated{math.floor(p[1] / 32), math.floor(p[2] / 32)} then hit = "?" .. d; break end
+          if surface().get_tile(p[1], p[2]).collides_with("water_tile") then hit = d; break end
+        end
+        table.insert(out, tostring(hit))
+      end
+      info("visit: Grubstake's lander at " .. o.x .. "," .. o.y .. ", first water by direction (E clockwise): " .. table.concat(out, " "))
+    end
+    -- What Grubstake knows of the player every 10 minutes (diagnostic).
+    for m = 10, 170, 10 do
+      schedule((20 + m) * 3600, function()
+        local st = S.g and lp("stats", S.g)
+        if st and not st.fallen then
+          info(string.format("visit: Grubstake at +%d min, rung %s, garrison %d, knows %s", m, tostring(st.ops.ladder),
+            st.garrison, table.concat(st.ops.player_targets or {}, "; ")))
+        end
+      end)
+    end
     info("visit: Grubstake " .. (S.g and ("landed, settlement " .. S.g) or "found no site"))
   end)
   -- Grubstake is the corporation that hits a player unprovoked: if none of its settlements stands at 30 minutes, it
@@ -3155,9 +3181,13 @@ scenarios.visit = function()
           table.insert(row.bases, {id = id, corp = st.corp, fallen = st.fallen and true or false, garrison = st.garrison,
             razed = st.razed, looted = st.ops.looted, launched = st.ops.launched, done = st.ops.done,
             aborted = st.ops.aborted, sieges = st.ops.sieges, strips = st.ops.strips, op = st.ops.op,
-            units_lost = st.units_lost, known = st.ops.known, known_player = st.ops.known_player})
+            units_lost = st.units_lost, known = st.ops.known, known_player = st.ops.known_player,
+            reinforced = st.reinforced, parts = st.parts, cap = st.cap, on_footing = st.on_footing})
         end
       end
+      local ok, chests = pcall(function()
+        return {serenity = lp("war", "serenity").chest, grubstake = lp("war", "grubstake").chest} end)
+      row.chest = ok and chests or nil
       helpers.write_file("landing-party/timeline.jsonl", helpers.table_to_json(row) .. "\n", true)
     end)
   end
@@ -3274,7 +3304,8 @@ scenarios.biters = function()
   schedule(60, function()
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     if not camp then lp("debug_depot", S.g, 3000) end
-    lp("debug_tune", {raids_off = true})
+    -- Its pact off: how a camp answers biters (Grubstake's, once its pacifiers are down; Serenity's always).
+    lp("debug_tune", {raids_off = true, pact_off = true})
   end)
   schedule((camp and 1 or 8) * 3600, function()
     local st = lp("stats", S.g)
@@ -3334,7 +3365,8 @@ scenarios.maxevo = function()
   local bare = params.mix == "bare"
   schedule(30, function()
     game.forces.enemy.set_evolution_factor(1, surface())
-    lp("debug_tune", {era = 4, raids_off = true, history_off = bare})
+    -- Its pact off: how a camp holds against maximum-evolution biters (Grubstake's once its pacifiers are down).
+    lp("debug_tune", {era = 4, raids_off = true, history_off = bare, pact_off = true})
   end)
   schedule(60, function()
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
@@ -3430,16 +3462,17 @@ scenarios.clearing = function()
     -- One ring only (350 tiles out, inside the nests): the further rings are clear of them and the first pass would
     -- land there.
     lp("debug_tune", {rings = {0}})
-    S.g = lp("arrive", 1, {x = 0, y = 0}, 350, {corp = "grubstake"})
+    -- Serenity: Grubstake, at peace with the biters, lands among them and burns nothing (scenario pact).
+    S.g = lp("arrive", 1, {x = 0, y = 0}, 350, {corp = "serenity"})
   end)
   schedule(300, function()
     local st = S.g and lp("stats", S.g)
     local left = st and surface().count_entities_filtered{position = st.origin, radius = 80, type = {"unit-spawner", "turret"},
       force = "enemy"} or -1
     local evo = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
-    info(string.format("clearing: %d spawners placed; Grubstake %s, cleared %s, %d left within 80; spawner evolution %.4f -> %.4f",
+    info(string.format("clearing: %d spawners placed; Serenity %s, cleared %s, %d left within 80; spawner evolution %.4f -> %.4f",
       S.spawners, tostring(S.g), st and tostring(st.cleared) or "-", left, S.evo0, evo))
-    check("clearing: Grubstake landed among the nests", S.g ~= nil, "")
+    check("clearing: Serenity landed among the nests", S.g ~= nil, "")
     check("clearing: its landing burned a clearing", st and (st.cleared or 0) > 0 and left == 0,
       st and (tostring(st.cleared) .. " cleared, " .. left .. " left") or "no landing")
     check("clearing: without evolving the biters", math.abs(evo - S.evo0) < 1e-6, string.format("%.4f -> %.4f", S.evo0, evo))
@@ -3701,12 +3734,113 @@ scenarios.heist = function()
   end)
 end
 
+-- Pact (docs/reviews/2026-10-15-biter-country-consult.md): Grubstake at cease-fire with the biters. Eight behemoths
+-- sent at its lander leave it be, and its raid on the player's assembler goes straight through a wall of spawners and
+-- worms, which it leaves standing. At 8 minutes its pacifier is destroyed: the pact breaks and biters sent at the camp
+-- bite; 5 minutes on the pacifier is rebuilt and the pact holds again. LP_MIX=nopact: the pact off, the same biters
+-- cost it units (the control).
+scenarios.pact = function()
+  local off = params.mix == "nopact"
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, pact_off = off})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 170), math.floor(o.y - uy * 170)}
+    flatten(c[1] - 8, c[2] - 8, c[1] + 8, c[2] + 8)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    S.c = c
+    local n = 0
+    for k = -150, 150, 14 do
+      local p = {o.x - ux * 90 - uy * k, o.y - uy * 90 + ux * k}
+      local q = surface().find_non_colliding_position("biter-spawner", p, 6, 1)
+      if q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"} then n = n + 1 end
+      local w = surface().find_non_colliding_position("medium-worm-turret", {p[1] - ux * 10, p[2] - uy * 10}, 6, 1)
+      if w then surface().create_entity{name = "medium-worm-turret", position = w, force = "enemy"} end
+    end
+    S.spawners = n
+    S.lost0 = lp("stats", S.g).units_lost or 0
+    S.lander = surface().find_entities_filtered{position = o, radius = 20, name = "lp-grubstake-lander", limit = 1}[1]
+    local at = {o.x + ux * 60, o.y + uy * 60}
+    local g = surface().create_unit_group{position = at, force = "enemy"}
+    for _ = 1, 8 do
+      local u = surface().create_entity{name = "behemoth-biter", force = "enemy",
+        position = surface().find_non_colliding_position("behemoth-biter", at, 12, 1)}
+      if u then g.add_member(u) end
+    end
+    g.set_command{type = defines.command.attack_area, destination = o, radius = 30}
+  end)
+  local function cf() return game.forces["lp-grubstake"].get_cease_fire("enemy") end
+  schedule(8 * 3600, function()
+    if off then return end
+    local st = lp("stats", S.g)
+    S.lost8 = (st.units_lost or 0) - S.lost0
+    S.spawners8 = surface().count_entities_filtered{type = "unit-spawner", force = "enemy"}
+    S.cf0 = cf()
+    local o = st.origin
+    local pac = surface().find_entities_filtered{position = o, radius = 30, name = "lp-grubstake-pacifier", limit = 1}[1]
+    S.had_pacifier = pac ~= nil
+    -- The first wave still loiters by the camp at peace: gone before the break (else eight behemoths take the lander).
+    for _, u in pairs(surface().find_entities_filtered{position = o, radius = 120, type = "unit", force = "enemy"}) do u.destroy() end
+    if pac then pac.die("player") end
+    S.cf1 = cf()
+    S.hp8 = S.lander and S.lander.valid and S.lander.get_health_ratio() or 0
+    local at = {o.x + 40, o.y}
+    local g = surface().create_unit_group{position = at, force = "enemy"}
+    S.biters = {}
+    for _ = 1, 3 do
+      local u = surface().create_entity{name = "big-biter", force = "enemy",
+        position = surface().find_non_colliding_position("big-biter", at, 12, 1)}
+      if u then g.add_member(u); table.insert(S.biters, u) end
+    end
+    g.set_command{type = defines.command.attack_area, destination = o, radius = 30}
+  end)
+  schedule(10 * 3600, function()
+    if off then return end
+    local st = lp("stats", S.g)
+    S.bitten = ((st.units_lost or 0) - S.lost0) - S.lost8
+    S.hp10 = S.lander and S.lander.valid and S.lander.get_health_ratio() or 0
+    S.biters_alive = 0
+    for _, u in ipairs(S.biters or {}) do if u.valid then S.biters_alive = S.biters_alive + 1 end end
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local lost = (S.lost8 or (st.units_lost or 0) - S.lost0)
+    local spawners = S.spawners8 or surface().count_entities_filtered{type = "unit-spawner", force = "enemy"}
+    local target = surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"}
+    local hp = S.hp8 or (S.lander and S.lander.valid and S.lander.get_health_ratio()) or 0
+    info(string.format("pact: %s; %d units lost, lander health %.2f, spawners %d of %d, target %s; %s",
+      off and "off" or "on", lost, hp, spawners, S.spawners, target > 0 and "standing" or "razed",
+      serpent.line(st.ops.log[#st.ops.log])))
+    if off then
+      check("nopact: the biters cost the camp", lost > 0 or hp < 1, string.format("%d lost, %.2f", lost, hp))
+    else
+      check("pact: no units lost to the biters", lost == 0, tostring(lost))
+      check("pact: the lander untouched", hp == 1, string.format("%.2f", hp))
+      check("pact: the raid went through and razed the target", target == 0, target > 0 and "standing" or "razed")
+      check("pact: the nests left standing", spawners == S.spawners, string.format("%d of %d", spawners, S.spawners))
+      check("pact: a pacifier stood, and its loss broke the pact", S.had_pacifier and S.cf0 and not S.cf1,
+        string.format("%s %s %s", tostring(S.had_pacifier), tostring(S.cf0), tostring(S.cf1)))
+      -- Broken, it is war again: the camp and the biters fight (the three sent died to its turrets, or bit).
+      check("pact: broken, the camp and the biters fought", (S.bitten or 0) > 0 or (S.hp10 or 1) < (S.hp8 or 1)
+        or S.biters_alive == 0, string.format("%d lost, lander %.2f -> %.2f, %d of 3 biters alive", S.bitten or 0,
+        S.hp8 or 0, S.hp10 or 0, S.biters_alive or -1))
+      local back = surface().count_entities_filtered{position = st.origin, radius = 30, name = "lp-grubstake-pacifier"}
+      check("pact: the pacifier rebuilt and the pact back", back > 0 and cf(), string.format("%d, %s", back, tostring(cf())))
+    end
+  end)
+end
+
 -- Overflight (the biter-country consult): Grubstake, which never clears nests, behind a wall of spawners and worms with
 -- six harriers in its garrison: no way round on the ground, so they fly over (round the worms), raze the player's
 -- undefended assembler beyond, and most come home.
 scenarios.overflight = function()
   schedule(60, function()
-    lp("debug_tune", {history_off = true})
+    lp("debug_tune", {history_off = true, pact_off = true})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     lp("debug_depot", S.g, 3000)
   end)

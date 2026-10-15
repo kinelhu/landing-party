@@ -19,7 +19,7 @@ end
 -- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Minable for salvage (half its
 -- cost in parts): nothing the faction owns can be mined, only its ruins once a settlement falls, or what the
 -- player captured.
-local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-lander"] = true,
+local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true}
 local function copy(type, name, new)
   local name_new = new
@@ -163,6 +163,15 @@ wall.max_health = 450
 local radar = copy("radar", "radar", "lp-radar")
 radar.energy_usage = watts(shared.power["lp-radar"])
 
+-- The pacifier (scripts/pact.lua): a radar dish broadcasting to the biters; while one stands, its corporation and they
+-- hold fire on each other. Self-powered, reveals nothing.
+local pacifier = copy("radar", "radar", "lp-pacifier")
+pacifier.max_health = 1500
+pacifier.energy_source = {type = "void"}
+pacifier.max_distance_of_sector_revealed = 0
+pacifier.max_distance_of_nearby_sector_revealed = 0
+pacifier.rotation_speed = 0.03
+
 -- The depot: a roboport's body as a container (it holds no robots yet).
 local roboport = data.raw.roboport.roboport
 local depot = copy("container", "iron-chest", "lp-depot")
@@ -214,7 +223,7 @@ road.tint = shared.TINT
 road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
-  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, depot, road, launchpad, lamp, mine, uplink,
+  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, pacifier, depot, road, launchpad, lamp, mine, uplink,
   gun_turret, gate, flamer,
   mortar, mortar_gun, mortar_shell, projectile, {type = "ammo-category", name = "lp-mortar", hidden = true},
   {type = "recipe-category", name = "lp-fabrication"},

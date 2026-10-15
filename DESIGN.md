@@ -985,6 +985,62 @@ the artillery broke, their drills kept dying); four of seven fell; the far ones 
   rocket` (174 technologies, 5,638 buildings, 790 lasers, 28 artillery: about a first rocket), `nw` (190, 5,433, 671
   lasers, no artillery), `deathworld10x` (34 technologies, 1,574 buildings, 205 gun turrets: early, a deathworld).
 
+### Biter country: Grubstake's pact (Fable: `docs/reviews/2026-10-15-biter-country-consult.md`; built 2026-10-15)
+Baseline visits (three hours, before the war chest; razing is the player's buildings, a 10-minute row):
+- `deathworld10x` (the early save, the one landings are meant for): 32 razed, a zero stretch of 50 minutes. Grubstake
+  landed 110 tiles from a nest field and fed 3-unit biter responses into it for three hours: 266 units lost, nothing of
+  the player's razed, though it knew 7 targets. Serenity (not provoked) hit one spawner six times with four units: the
+  raid's end forgot the nest with what it learned (resistance, tries), since `sense` sees no spawners. Fixed: a nest
+  still standing is kept.
+- `nw`, `b - rocket` with its artillery removed (670-790 lasers): nothing razed in three hours. Pass 1 of the landing
+  search refuses any site with a spawner within 60 + 40 x evolution, over every ring to 1,800 before nests are allowed, so
+  camps landed 1,000-2,100 tiles out with 130 nests between them and the player; raids died within 12 s of leaving.
+- `nwa` with its artillery removed (the ground it cleared still clear): camps in the cleared band, 770 razed, a curve that
+  ramps (0, 93, 0, 1, 30, 20, 30, 74, 72, 76 ...). Where the approach is clean, the machinery ramps.
+Fable: razing depends on the approach, never on the site. Built first, its item 1:
+- **The pact** (`temper.pact`, Grubstake; `pacts()` in control.lua): a cease-fire both ways with the enemy force. Spike
+  first (a throwaway mod, Factorio 2.0.77): five worms held fire on its gun turret 12 tiles away, eight behemoths sent at
+  its radar by `attack_area` left it, its turret did not fire, a biter on its force walked through the nest; the same
+  group sent at a player radar destroyed it. Its marches no longer route round nests (`ops.pact` in `sneak_route`), it
+  lands among nests (no refusal, no clearing burned), and biters become a shield against Serenity and none against it.
+  `debug_tune{pact_off}`.
+- **The pacifier antenna** (the user: the pact needs a lore reason, "a biter pacifier antenna in their outposts";
+  `scripts/pact.lua`, `lp-pacifier`, a self-powered radar dish, 1,500 health, a military target worth 8): each Grubstake
+  landing puts one beside its lander. The engine's cease-fire is per force, so the pact is the corporation's: it holds
+  while any of its pacifiers stands; the last one destroyed breaks it (notice `lp.pact-broken`), and a pacifier is rebuilt 5 minutes after its loss while its lander stands (`lp.pact-restored`).
+  The player's counter. Seen: biters that loitered at peace by a camp turned on it the moment the pact broke (eight
+  behemoths took the lander).
+- Scenario `pact`: eight behemoths sent at its lander, a wall of 17 spawners and worms between it and an assembler: 0
+  units lost, the lander untouched, the assembler razed, every spawner standing; at 8 minutes the pacifier destroyed:
+  the pact breaks, the camp and three big biters fight; rebuilt 5 minutes later, the pact holds again. `nopact` (the control): 43 lost, the
+  lander destroyed.
+- **Landing by approach** (pass 0 of `faction.arrive`, for a corporation without the pact): near rings first, a site
+  refused only when more than `APPROACH_MAX` (6) spawners lie within 40 tiles of the straight way to the player (less those
+  its landing burns within 80); nests beside it allowed, a nest-free site in the same ring preferred. The landing's trace
+  says how many lay on the way. The older passes follow when none qualifies.
+- **No squads into biters where turrets reach**: a biter-only alarm within 20 tiles of two of its turrets gets no response
+  (the turrets answer); outposts out of their reach still get three.
+- **Each corporation's own ladder clock** (`ladder(owner, corp)`, `storage.last_raze[owner|corp]`): Serenity's razes had
+  reset Grubstake's clock, and Grubstake, knowing only a power line with 5.5 turrets on each pole, stayed at rung 1.
+- **The ladder at 10, 20 and 30 minutes** (was 20, 40, 60): Grubstake's first hour on deathworld was empty.
+- **Marches round water**: a sneak route that the 120-tile box cannot find is tried once over a box three times as wide; a
+  target it still cannot reach rests 15 minutes (the same unreachable substation behind a lake was chosen every two
+  minutes for half an hour). A raid waits for its column at the staging point by the march's length (`MARCH_SPEED`), not
+  a fixed 90 s. Left to the engine (an empty route), raiders 240 tiles from a target round a lake never moved.
+- Diagnostics: a raid that razes nothing says how near its nearest raider got; `ops.summary` lists what a settlement knows
+  of the players (`player_targets`: kind, exposure, defence, resting, held by its temper) and its rung; the visit logs
+  Grubstake's every 10 minutes and the first water round its lander.
+- deathworld10x, 2 hours, with all of it: 37 razed (0 0 0 0 0 2 0 0 5 19 11), Grubstake raiding every 10 to 20 minutes
+  from 30 minutes after it landed with 18 units (pods of 8 to 24 between), breaching the wall, 18 razed, 53 units lost
+  (266 in three hours before, nothing razed). nw (a lake and 671 lasers): its known targets all behind both; nothing.
+- **Parts for what makes parts** (`base.reserve`, from the regression's `occupy`): with its fabricators destroyed and
+  their ground held, a settlement spent its last 646 parts on new blocks, units and turrets and never made a part again.
+  The cost of every pending rebuild of a generator, fabricator, drill or pylon is now held back from new building, unit
+  production and other rebuilds (which step aside in the queue); war footing keeps those rebuilds too.
+- Still to build: Serenity's nests as clearances toward a known player target, write-off and relanding.
+- Seen, not mine: `overflight` fails on the last commit too (a ground way round appears two minutes after the first
+  refusal, no spawner having died); to look at.
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,
@@ -1277,6 +1333,8 @@ scenario with assertions first; the window is for art, feel and GUI.
 - `LuaEntity.disabled_by_script` replaces writing `active`; roboports ignore it (jammer fallback: kill
   construction robots in the field). `destructible = false` is the cheap shield.
 - Biters attack polluters only. Entities cannot be placed in ungenerated chunks.
+- A cease-fire both ways with the enemy force holds: worms hold fire, attack groups ignore the force's buildings, its
+  turrets hold fire on biters (spike, 2026-10-15).
 - Park-Miller's first draws from nearby seeds are nearly linear: scramble seeds, discard the first draws.
 
 ## Findings log

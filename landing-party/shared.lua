@@ -48,7 +48,8 @@ shared.CORPS = {
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
-    temper = {soft_only = true, strips = true, loots = true, sneaks = true}},
+    -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
+    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true}},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -95,7 +96,7 @@ shared.DEFAULT_CORP = "serenity"
 -- The faction's kinds of building and unit. The default corporation's prototypes carry the plain names
 -- ("lp-turret"); another's are "lp-<corp>-turret". Logic speaks in kinds; creation and queries translate.
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
-  "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
+  "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
   "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger"}
 function shared.variant(corp, kind)
@@ -179,6 +180,7 @@ shared.cost = {
   ["lp-turret"] = 15,
   ["lp-wall"] = 1,
   ["lp-radar"] = 20,
+  ["lp-pacifier"] = 40,
   ["lp-depot"] = 40,
   ["lp-launchpad"] = 150,
   ["lp-lamp"] = 1,

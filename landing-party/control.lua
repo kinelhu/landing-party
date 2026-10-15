@@ -10,6 +10,7 @@ local ops = require("__landing-party__.scripts.ops")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
 local war = require("__landing-party__.scripts.war")
+local pact = require("__landing-party__.scripts.pact")
 rd.era = ops.era
 rd.trace = function(corp, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
@@ -26,6 +27,7 @@ local function init()
     local f = game.forces[c.force] or game.create_force(c.force)
     f.custom_color = c.color
   end
+  pact.apply()
   command.init()
 end
 
@@ -33,7 +35,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -82,6 +84,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   if ent.type == "unit-spawner" then ops.cleared(ent.surface, ent.position) end
   local kind = shared.kind_of(ent.name)
   if kind == "lp-uplink" then faction.uplink_lost(ent) end
+  if kind == "lp-pacifier" then pact.lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
   if kind == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
   -- A mortar destroyed in the field leaves its wreck's salvage.
@@ -121,6 +124,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     if not shared.is_corp(ent.force.name) then
       storage.last_raze = storage.last_raze or {}
       storage.last_raze[ent.force.name] = e.tick
+      storage.last_raze[ent.force.name .. "|" .. e.force.name] = e.tick
       storage.player_razed = storage.player_razed or {}
       local k = ent.force.name .. ":" .. ent.type
       storage.player_razed[k] = (storage.player_razed[k] or 0) + 1
@@ -209,7 +213,10 @@ remote.add_interface("landing-party", {
   -- The ladder's state: the last raze per player force, its rung, and the player's buildings razed by type.
   pressure = function(force)
     local f = force or "player"
-    return {last_raze = (storage.last_raze or {})[f], ladder = ops.ladder(f), razed = storage.player_razed or {}}
+    -- The highest rung any corporation stands on against it (each keeps its own clock, ops.ladder).
+    local rung = ops.ladder(f)
+    for _, c in pairs(shared.CORPS) do rung = math.max(rung, ops.ladder(f, c.force)) end
+    return {last_raze = (storage.last_raze or {})[f], ladder = rung, razed = storage.player_razed or {}}
   end,
   corp = function(corp) return faction.corp(corp) end,
   war = function(corp) return war.summary(corp) end,
@@ -251,6 +258,7 @@ remote.add_interface("landing-party", {
     for corp, n in pairs(t.chest or {}) do faction.corp(corp).chest = n end
     if t.relief_minutes ~= nil then storage.relief_ticks = t.relief_minutes * 3600 end
     if t.relief_off ~= nil then storage.relief_off = t.relief_off end
+    if t.pact_off ~= nil then storage.pact_off = t.pact_off; pact.apply() end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
   set_trace = function(on) storage.trace = on end,

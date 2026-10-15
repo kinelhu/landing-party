@@ -94,10 +94,11 @@ local function produce(b, trace)
   if storage.army_off or withdrawing(b) then return end
   prune(b.garrison)
   if strength(b) >= cap(b) then return end
+  -- A rebuild that makes parts is paid first (base.reserve; scenario occupy).
   local name = b.next_unit or rng.weighted(b.rng, mix(b))
   b.next_unit = name
   local cost = shared.units[name].cost
-  if b.parts < cost then return end
+  if b.parts < cost + (army.reserve and army.reserve(b) or 0) then return end
   local yards = {}
   for _, d in ipairs(b.depots) do if d.valid then table.insert(yards, d) end end
   if #yards == 0 and b.lander and b.lander.valid then yards = {b.lander} end
@@ -145,6 +146,7 @@ local function threat_count(surface, pos, f, types, no_biters)
 end
 local RESPONSE_COOLDOWN = 60 * 60
 local BITER_RESPONSE = 3
+local BITER_GUNS, BITER_COVER = 2, 20
 
 function army.alarm(b, pos, trace)
   if not storage.ops_off then ops.sense_at(b, pos, 40) end
@@ -174,7 +176,16 @@ function army.alarm(b, pos, trace)
   b.next_response = game.tick + RESPONSE_COOLDOWN
   local size = math.max(RESPONSE_MIN, RESPONSE_PER_THREAT * threat_count(home.surface, pos, home.force))
   -- Biters alone get a small answer (sized to every biter, responses bled garrisons on nests nobody chose).
-  if threat_count(home.surface, pos, home.force, nil, true) == 0 then size = BITER_RESPONSE end
+  if threat_count(home.surface, pos, home.force, nil, true) == 0 then
+    -- None where its turrets reach: three at a time into a nest field's attacks on its wall bled a camp of 266 units
+    -- in three hours (visit deathworld). There its turrets answer; an outpost they do not reach still gets a squad.
+    local guns = 0
+    for _, t in ipairs(b.turrets or {}) do
+      if t.valid and (t.position.x - pos.x) ^ 2 + (t.position.y - pos.y) ^ 2 <= BITER_COVER ^ 2 then guns = guns + 1 end
+    end
+    if guns >= BITER_GUNS then b.next_response = 0; return end
+    size = BITER_RESPONSE
+  end
   local group = home.surface.create_unit_group{position = home.position, force = home.force}
   local members = {}
   local dest = {pos.x, pos.y}
