@@ -745,7 +745,8 @@ local function finish(b, outcome, trace, army)
     end
   end
   b.ops_log = b.ops_log or {}
-  table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner, outcome = outcome,
+  -- The owner as at launch (a target destroyed is forgotten, and its raid read as at nobody: nests).
+  table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner or op.owner, outcome = outcome,
     launched = op.launched, started = op.started,
     back = alive(op), shells = op.shells_fired, site = op.site})
   if #b.ops_log > 10 then table.remove(b.ops_log, 1) end
@@ -1062,7 +1063,7 @@ local function launch(b, key, trace, army)
   end
   local off = math.min(STAND_OFF + spread, len)
   local stage = outside(b, t, dx / len, dy / len, off, len)
-  b.op = {kind = "raid", target = key, phase = "stage", members = members, launched = #members, staging = stage,
+  b.op = {kind = "raid", target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
   -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
   -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).

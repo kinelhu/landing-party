@@ -42,7 +42,11 @@ army.level = level
 -- its first twenty minutes or so, and a clock from the landing ran out as the depot opened).
 army.GRUDGE_TICKS = 30 * 3600
 local function cap(b)
-  local n = #b.depots * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b))
+  -- With no depot standing, the lander counts as one (camps under a megabase's guns never kept a depot, and with a cap
+  -- of nought made no units at all, visit).
+  local depots = 0
+  for _, d in ipairs(b.depots) do if d.valid then depots = depots + 1 end end
+  local n = math.max(depots, (b.lander and b.lander.valid) and 1 or 0) * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b))
   return (b.grudge_till and game.tick < b.grudge_till) and 2 * n or n
 end
 army.cap = cap
@@ -94,7 +98,10 @@ local function produce(b, trace)
   b.next_unit = name
   local cost = shared.units[name].cost
   if b.parts < cost then return end
-  for _, depot in ipairs(b.depots) do
+  local yards = {}
+  for _, d in ipairs(b.depots) do if d.valid then table.insert(yards, d) end end
+  if #yards == 0 and b.lander and b.lander.valid then yards = {b.lander} end
+  for _, depot in ipairs(yards) do
     if depot.valid then
       local surface = depot.surface
       local proto = rd.unit(b.corp, name)

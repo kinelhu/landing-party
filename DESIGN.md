@@ -1171,6 +1171,15 @@ scenario with assertions first; the window is for art, feel and GUI.
   6. Under the guns, camps never keep a depot (the player's artillery fires on them by itself) and operations left only
      from depots: their escorts stood idle at the player's edge. Operations now leave from the lander when there is
      no depot, and a siege or strip not sent also holds its settlement 2 minutes.
+  7. Under the guns, camps' depots are shelled, units were built only at depots, and the cap came from depots: camps had
+     no units at all. With no depot standing, the lander builds units and counts as one depot (every young camp now
+     builds from its first minutes, not only under guns); a raid's affordable size is at least the units at home. A
+     raid's log keeps its target's owner as at launch.
+     **Visit with all of it (first hour, plain and provoked identical again): 473 of the player's buildings razed**
+     (rails, signals and poles first, then 150 lasers, 110 walls, 4 artillery turrets, 4 flamethrowers), two settlements
+     doing nearly all of it, from one long raid each (Grubstake under the guns 166, Serenity 307). The player's census at
+     the hour: lasers 2,302 to 2,182, artillery 59 to 55. Far past the consult's target (one a 10 minutes a corporation):
+     a rate to tune, with the user.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

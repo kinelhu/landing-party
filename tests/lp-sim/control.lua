@@ -2540,6 +2540,8 @@ end
 -- a siege and a perimeter step from Serenity, a raid from the first Grubstake, a strip from the second.
 scenarios.dev = function()
   schedule(120, function()
+    -- The tools force operations: none of the corporations' own in the way (camps raid from their landers now).
+    lp("debug_tune", {raids_off = true})
     S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     local before = lp("bases")
