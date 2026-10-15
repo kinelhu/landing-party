@@ -1094,6 +1094,43 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
 - The bursts in the raze curve are not a problem (the user): the 80 at deathworld's minute 170 were 52 belts, 12 poles,
   10 walls; a raid is an event. Count by cost, not entities, in later reports.
 
+### Next design topics (the user, 2026-10-15; not built)
+- **Grubstake's flavour pass** (Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`): "felt before it is seen".
+  Scrap cannon, "a sort of dirty flak" (the user): an airburst of many soft hits, Grubstake's signature against the
+  railgun; pheromone flares (biters pulled onto a canister past turret reach, no pacifier no flares); claim jumpers (a rig
+  digs in outside the wall, a mound inside, Shotgun hands emerge a minute later; replaces the sappers); grapple as
+  looting's animation. Not: boobytrapped claims (the user), scrap to pick up (the user).
+- **Loot instead of salvage; faction tech for the player** (the user: "regular Factorio loot ... faction-specific loot
+  which could be used to research faction-specific tech"; Fable: `docs/reviews/2026-10-15-faction-loot-consult.md`):
+  ordinary items on death by cost (nothing from walls and cheap pieces), rare components per corporation (Grubstake:
+  pheromone gland, pacifier crystal, drill head; Serenity: rail coil, cluster fuze, orbital beacon), six player
+  technologies (bait, pact breaker, claim marker; cluster shells, rail rifle, orbital strike). Command cores stay apart.
+
+### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
+The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
+Serenity has become the high-tech faction (railgunners, cluster shells, the orbital barrage), Grubstake the cheap swarm.
+- Grubstake is always the first corporation (`phases.EARLY_CORP`): its survey party at oil processing, its arrival at the
+  first chemical science pack, Space Age or not (the gun-turret era: soft outposts, rails and poles, young biters).
+- Serenity (`phases.LATE_CORP`) lands only once its gate opens (`phases.gate_open`, asked by `next_corp`): the first
+  rocket launch (Space Age) or the first utility science pack (base game, where a launch ends the game). Its first
+  landing is then due within 5 minutes (notice `lp.late-gate`), whatever the landing count (the second-corporation rule
+  sent the second landing to Grubstake again). `debug_tune{gates_off}` for scenarios not about the opening.
+- Scenario `phases` (44 minutes): Grubstake came first; no Serenity before the gate; a utility science pack, and
+  Serenity's first settlement about 5 minutes later.
+
+### Standing down (the user: a hopeless camp goes quiet instead of lifting off; built 2026-10-15)
+Fable had proposed write-off and relanding. The user asked why not keep the camp and land elsewhere; quiet is better:
+the camp keeps mining and exporting (its parts fund the war chest and research for the camps that can reach), it stays
+a target for the player (salvage, command cores), and it is simpler. Lift-off may come back as Grubstake's flavour when a
+camp is being shelled apart.
+- A settlement at war that has razed nothing of the player's for an hour (`QUIET_TICKS`; failed or not tried: a camp
+  facing ten lasers launched one raid in 30 minutes) stands down (`war.lua`): no operation against the player but
+  self-defence, no relief; it leaves its place in the settlement limit (`faction.alive`), the next landing comes within
+  5 minutes and keeps away from its site (`storage.failed_sites`). After an hour it tries again. Notice `lp.stood-down`.
+- Scenario `quiet` (provoked Serenity, an assembler ringed by twelve indestructible gun turrets, the hour at 6 minutes):
+  stood down after 6 quiet minutes, nothing launched while down, a new settlement 5 minutes later, then it woke and tried
+  again.
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,

@@ -56,17 +56,18 @@ local function signs(f, radar)
   tell("lp.signs", gps(surface, p))
 end
 
--- The first corporation: chosen once, from the map seed.
+-- Staggered arrival (the user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much
+-- more firepower"): Grubstake, the cheap swarm, first, its survey party at oil processing and its arrival at the first
+-- chemical science pack; Serenity, the high-tech one, only once its gate opens: the first rocket launch (Space Age), the
+-- first utility science pack (base game, where a launch ends the game). Its first landing then comes within LATE_HASTE.
+local EARLY_CORP, LATE_CORP = "grubstake", "serenity"
+local LATE_HASTE = 5 * 3600
 local function first_corp(surface)
   local s = state()
-  if not s.corp then
-    local names = {}
-    for corp in pairs(shared.CORPS) do table.insert(names, corp) end
-    table.sort(names)
-    s.corp = names[(surface.map_gen_settings.seed % #names) + 1]
-  end
+  s.corp = s.corp or EARLY_CORP
   return s.corp
 end
+phases.EARLY_CORP, phases.LATE_CORP = EARLY_CORP, LATE_CORP
 
 local function survey(f, surface, from)
   local s = state()
@@ -124,17 +125,44 @@ local function survey_step(s)
   end
 end
 
--- The trigger: called on a rocket launch (Space Age) or found in the production statistics (base game).
+-- The early corporation's trigger: the first chemical science pack (found in the production statistics).
 function phases.trigger(surface, from)
   local s = state()
   if s.triggered then return end
   s.triggered = {tick = game.tick, surface = surface.index, from = {x = from.x or from[1], y = from.y or from[2]}}
 end
 
+-- The late corporation's gate: the first rocket launch (Space Age, faction.on_launch) or utility science pack (base).
+function phases.late(surface, from)
+  local s = state()
+  if s.late then return end
+  if not s.triggered then phases.trigger(surface, from) end
+  s.late = game.tick
+  local f = faction.state()
+  if f.next then f.next = math.min(f.next, game.tick + LATE_HASTE) end
+  tell("lp.late-gate", shared.corp_label(LATE_CORP))
+end
+
+-- Whether a corporation may land yet (faction's choice of the next one).
+function phases.gate_open(corp)
+  return corp ~= LATE_CORP or state().late ~= nil or storage.gates_off
+end
+faction.gate_open = phases.gate_open
+faction.late_corp = LATE_CORP
+
 local function arrived() return faction.state().surface ~= nil end
 
 function phases.tick(tick)
   if tick % 3600 ~= 1800 then return end
+  -- The late gate in the base game, after the first arrival too.
+  local st = state()
+  if not st.late and not script.active_mods["space-age"] then
+    for _, f in ipairs(players()) do
+      if not st.late and f.get_item_production_statistics(game.surfaces[1]).get_input_count("utility-science-pack") > 0 then
+        phases.late(game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
+      end
+    end
+  end
   if arrived() then return end
   local s = state()
   for _, f in ipairs(players()) do
@@ -145,12 +173,11 @@ function phases.tick(tick)
     if not s.survey and f.technologies["oil-processing"] and f.technologies["oil-processing"].researched then
       survey(f, game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
     end
-    if not s.triggered and not script.active_mods["space-age"] then
-      local stats = f.get_item_production_statistics(game.surfaces[1])
-      if stats.get_input_count("chemical-science-pack") > 0 then
-        phases.trigger(game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
-      end
+    local stats = f.get_item_production_statistics(game.surfaces[1])
+    if not s.triggered and stats.get_input_count("chemical-science-pack") > 0 then
+      phases.trigger(game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
     end
+
   end
   if s.survey then survey_step(s) end
   local due

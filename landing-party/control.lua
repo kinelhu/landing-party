@@ -5,7 +5,7 @@ local faction = require("scripts.faction")
 local command = require("scripts.command")
 local phases = require("__landing-party__.scripts.phases")
 local biters = require("__landing-party__.scripts.biters")
-faction.on_trigger = phases.trigger
+faction.on_trigger = phases.late
 local ops = require("__landing-party__.scripts.ops")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
@@ -151,6 +151,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     local b = id and storage.bases[id]
     if b then
       b.razed = b.razed + 1
+      b.razed_at = e.tick
       rd.salvage(b.corp, ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type])
       -- Grubstake's razing pays its next pod too (scripts/war.lua).
       if b.corp == "grubstake" then war.fund(b.corp, 50 + 25 * (ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type] or 0)) end
@@ -276,6 +277,8 @@ remote.add_interface("landing-party", {
     if t.relief_minutes ~= nil then storage.relief_ticks = t.relief_minutes * 3600 end
     if t.relief_off ~= nil then storage.relief_off = t.relief_off end
     if t.pact_off ~= nil then storage.pact_off = t.pact_off; pact.apply() end
+    if t.quiet_minutes then storage.quiet_ticks = t.quiet_minutes * 3600 end
+    if t.gates_off ~= nil then storage.gates_off = t.gates_off end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
   set_trace = function(on) storage.trace = on end,

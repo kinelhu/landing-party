@@ -2158,6 +2158,13 @@ scenarios.phases = function()
     local ids = lp("bases")
     S.late = #ids
     storage.id = ids[1]
+    S.first_corp = ids[1] and lp("stats", ids[1]).corp
+    -- Serenity's gate (staggered arrival): none of its settlements yet; a utility science pack opens it.
+    for _, id in ipairs(ids) do if lp("stats", id).corp == "serenity" then S.serenity_early = true end end
+    game.forces.player.get_item_production_statistics(surface()).on_flow("utility-science-pack", 1)
+  end)
+  schedule(9 * 3600 + 32 * 3600, function()
+    for _, id in ipairs(lp("bases")) do if lp("stats", id).corp == "serenity" then S.serenity = true end end
   end)
   schedule(END - 60, function()
     local p = lp("phases")
@@ -2169,6 +2176,9 @@ scenarios.phases = function()
       tostring(S.destroyed) .. ", " .. tostring(S.core) .. " items on the ground")
     check("phases: the arrival waited out the delay", S.early == 0, S.early .. " settlements 12 minutes after the trigger")
     check("phases: then it came", (S.late or 0) > 0, tostring(S.late) .. " settlements 24 minutes after")
+    check("phases: Grubstake came first", S.first_corp == "grubstake", tostring(S.first_corp))
+    check("phases: Serenity not before its gate", not S.serenity_early, tostring(S.serenity_early))
+    check("phases: and soon after it opened", S.serenity == true, tostring(S.serenity))
     info("phases: " .. serpent.line(p))
   end)
 end
@@ -3010,6 +3020,54 @@ scenarios.arc = function()
     check("arc: and spared its own side", S.own_car.health == S.own_car.max_health, "")
     check("arc: the dynamite hurt two walls or more", walls >= 2, walls .. " of 4")
     check("arc: and spared its own fence", S.fence.health == S.fence.max_health, "")
+  end)
+end
+
+-- Quiet: provoked Serenity whose only player target is an assembler ringed by twelve indestructible gun turrets (the ladder ten
+-- times fast, a stand-down after 6 minutes instead of 60). It stands down (war.lua): no operation against the player
+-- after that, and the faction's next landing comes within 6 minutes.
+scenarios.quiet = function()
+  schedule(60, function()
+    -- The gates open (not about the opening: its settlement is Serenity, whose gate would keep any landing away).
+    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true, quiet_minutes = 6, gates_off = true})
+    for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 120), math.floor(o.y - uy * 120)}
+    flatten(c[1] - 16, c[2] - 16, c[1] + 16, c[2] + 16)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    -- Twelve gun turrets with uranium rounds, indestructible: nothing there can be razed but the assembler they guard.
+    for k = 0, 11 do
+      local a = 2 * math.pi * k / 12
+      local t = surface().create_entity{name = "gun-turret", position = {c[1] + 6 * math.cos(a), c[2] + 6 * math.sin(a)}, force = "player"}
+      if t then t.insert{name = "uranium-rounds-magazine", count = 200}; t.destructible = false end
+    end
+    S.bases0 = #lp("bases")
+  end)
+  for t = 3 * 3600, END - 120, 600 do
+    schedule(t, function()
+      local st = lp("stats", storage.id)
+      if st.quiescent and not S.down then
+        S.down, S.launched_down = game.tick, st.ops.launched
+      end
+      -- What it launched while stood down (until it woke).
+      if S.down and not S.woke then
+        if st.quiescent then S.launched_quiet = st.ops.launched else S.woke = game.tick end
+      end
+      if S.down and not S.landed and #lp("bases") > (S.bases0 or 0) then S.landed = game.tick end
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    info(string.format("quiet: stood down at %s (%d times), operations %s then %d now, a new landing at %s", tostring(S.down),
+      st.stood_down or 0, tostring(S.launched_down), st.ops.launched, tostring(S.landed)))
+    check("quiet: it stood down", S.down ~= nil, tostring(S.down))
+    check("quiet: and launched nothing against the player while stood down", S.down and S.launched_quiet == S.launched_down,
+      string.format("%s -> %s", tostring(S.launched_down), tostring(S.launched_quiet)))
+    check("quiet: a new landing within 6 minutes", S.landed and S.landed - S.down <= 6 * 3600 + 600, tostring(S.landed))
   end)
 end
 

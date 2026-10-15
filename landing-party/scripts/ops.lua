@@ -600,6 +600,8 @@ local function choose(b, army)
     -- excepted (weighted 0.2, a rival's lander still won every choice on the user's save: 48 raids on landers, none on
     -- the player, visit).
     if pressed and not player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
+    -- Stood down (war.lua): nothing against a player but self-defence.
+    if b.quiescent and player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
     if game.tick >= (t.cool or 0) and not cooling(t) and not held then
       local d = defence(b, t)
       -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
@@ -1355,6 +1357,7 @@ local function choose_siege(b, army, only_battery)
   local best, bs, site
   for key, t in pairs(b.intel.targets) do
     if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))
+      and not (b.quiescent and against_player(t.owner) and not battery(t))
       and not (against_player(t.owner) and in_flight >= budget(t.owner) and not battery(t))
       and not (against_player(t.owner) and not battery(t) and besieged(t.owner))
       and (not against_player(t.owner) or not (shared.CORPS[b.corp].temper or {}).provoked_only

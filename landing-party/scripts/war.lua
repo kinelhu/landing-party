@@ -281,9 +281,47 @@ local function orbitals(tick)
   end
 end
 
+-- Standing down (the user: a hopeless camp goes quiet rather than lifting off): a settlement at war that has razed
+-- nothing for QUIET_TICKS (failed or not tried: a camp facing ten lasers launched one raid in 30 minutes) launches
+-- nothing more against the player
+-- (self-defence excepted) and gets no relief, keeps mining and exporting (its parts fund the others), and leaves its
+-- place to a new landing, due within QUIET_HASTE and away from its site. After QUIET_TICKS it tries again.
+local QUIET_TICKS, QUIET_HASTE = 60 * 3600, 5 * 3600
+local function quiet(tick)
+  local span = storage.quiet_ticks or QUIET_TICKS
+  for _, b in pairs(storage.bases) do
+    if not b.fallen and b.lander.valid then
+      if b.quiescent then
+        if tick - b.quiescent >= span then
+          b.quiescent, b.woke_at, b.aborted_mark = nil, tick, b.ops_aborted or 0
+          base.trace(b, "stood down long enough: it tries again")
+        end
+      elseif at_war(b) then
+        b.war_since = b.war_since or tick
+        local since = math.max(b.razed_at or 0, b.war_since, b.woke_at or 0)
+        local aborted = (b.ops_aborted or 0) - (b.aborted_mark or 0)
+        if tick - since >= span then
+          b.quiescent = tick
+          b.stood_down = (b.stood_down or 0) + 1
+          storage.failed_sites = storage.failed_sites or {}
+          table.insert(storage.failed_sites, {x = b.origin.x, y = b.origin.y})
+          local f = storage.faction
+          if f and f.next then f.next = math.min(f.next, tick + QUIET_HASTE) end
+          base.trace(b, string.format("stands down: nothing razed in %d minutes, %d operations failed; a new landing within %d",
+            (tick - since) / 3600, aborted, QUIET_HASTE / 3600))
+          tell("lp.stood-down", b.corp, b)
+        end
+      else
+        b.war_since = nil
+      end
+    end
+  end
+end
+
 function war.tick(tick)
   if storage.orbitals and #storage.orbitals > 0 and tick % ORBITAL_EVERY == 0 then orbitals(tick) end
   if tick % 600 ~= 300 then return end
+  quiet(tick)
   columns()
   if storage.relief_off then return end
   local period = storage.relief_ticks or RELIEF_TICKS
@@ -293,7 +331,7 @@ function war.tick(tick)
       -- The settlement at war on the highest rung, the most short of its cap.
       local pick, prung, powner, short
       for _, b in pairs(storage.bases) do
-        if b.corp == corp and not b.fallen and b.lander.valid then
+        if b.corp == corp and not b.fallen and b.lander.valid and not b.quiescent then
           local owner, rung = at_war(b)
           local s = owner and army.cap(b) - strength(b)
           if owner and rung >= 1 and s > 0 and (not pick or rung > prung or (rung == prung and s > short)) then

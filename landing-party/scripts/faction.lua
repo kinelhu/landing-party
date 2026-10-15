@@ -50,6 +50,8 @@ end
 local function landers()
   local out = {}
   for _, b in pairs(storage.bases) do if b.lander.valid then table.insert(out, b.lander.position) end end
+  -- And the sites of settlements that stood down (war.lua): a new landing goes elsewhere.
+  for _, p in ipairs(storage.failed_sites or {}) do table.insert(out, p) end
   return out
 end
 
@@ -370,7 +372,8 @@ end
 local function alive(corp)
   local n = 0
   for _, b in pairs(storage.bases) do
-    if b.lander.valid and (not corp or b.corp == corp) then n = n + 1 end
+    -- A settlement stood down (war.lua) leaves its place to a new landing.
+    if b.lander.valid and not b.quiescent and (not corp or b.corp == corp) then n = n + 1 end
   end
   return n
 end
@@ -391,7 +394,12 @@ local function next_corp(f)
   local best, bn, bt
   for _, corp in ipairs(names) do
     local d = faction.corp(corp)
-    local entered = corp == first or f.landings >= SECOND_CORP_LANDING
+    -- The late corporation as soon as its gate is open (phases.gate_open), whatever the count; the others from the
+    -- second landing (with the gate open, the second landing went to Grubstake again, and Serenity waited a third).
+    local gated = faction.gate_open and faction.late_corp == corp
+    local entered
+    if gated then entered = faction.gate_open(corp)
+    else entered = (corp == first or f.landings >= SECOND_CORP_LANDING) and (not faction.gate_open or faction.gate_open(corp)) end
     local n = alive(corp)
     if entered and not d.withdrawing and n < MAX_PER_CORP then
       local t = d.landed or -1

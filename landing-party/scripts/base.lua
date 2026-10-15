@@ -993,7 +993,7 @@ function base.stats(b)
     fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
-    columns_arrived = b.columns_arrived or 0}
+    columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0}
 end
 
 return base
