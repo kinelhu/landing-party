@@ -3068,20 +3068,38 @@ scenarios.visit = function()
         local sp = S.sp
         if not sp then return end
         local placed
-        for k = 0, 47 do
+        -- Ore from the map generator's noise, every 16 tiles across the band (as the corporations' site search does):
+        -- 48 points round a 1,700-tile circle missed every patch; the chosen spot's chunk is generated afterwards.
+        local pts = {}
+        for r = S.dist - 100, S.dist + 300, 16 do
+          local n = math.floor(2 * math.pi * r / 16)
+          for k = 0, n - 1 do
+            local a = 2 * math.pi * k / n
+            table.insert(pts, {sp.x + math.cos(a) * r, sp.y + math.sin(a) * r})
+          end
+        end
+        local names = {"entity:iron-ore:probability", "entity:copper-ore:probability", "entity:coal:probability",
+          "entity:stone:probability"}
+        local props = surface().calculate_tile_properties(names, pts)
+        S.tried = S.tried or {}
+        for idx, p in ipairs(pts) do
           if placed then break end
-          local a = 2 * math.pi * k / 48
-          for r = S.dist - 100, S.dist + 300, 40 do
-            local p = {sp.x + math.cos(a) * r, sp.y + math.sin(a) * r}
-            if surface().count_entities_filtered{position = p, radius = 12, type = "resource", name = {"iron-ore", "copper-ore",
-              "coal", "stone"}} >= 30 and surface().count_entities_filtered{position = p, radius = 60, force = "player", limit = 1} == 0
-              and surface().count_entities_filtered{position = p, radius = 60, type = {"unit-spawner", "turret"}, force = "enemy", limit = 1} == 0 then
+          local ore = false
+          for _, v in pairs(props) do if v[idx] > 0 then ore = true end end
+          local key = math.floor(p[1] / 64) .. "," .. math.floor(p[2] / 64)
+          if ore and not S.tried[key] then
+            S.tried[key] = true
+            surface().request_to_generate_chunks(p, 1)
+            surface().force_generate_chunk_requests()
+            if surface().count_entities_filtered{position = p, radius = 12, type = "resource"} >= 30
+              and surface().count_entities_filtered{position = p, radius = 60, force = "player", limit = 1} == 0
+              and surface().count_entities_filtered{position = p, radius = 30, type = {"unit-spawner", "turret"}, force = "enemy", limit = 1} == 0 then
               local put = function(name, x, y)
                 local q = surface().find_non_colliding_position(name, {x, y}, 6, 1)
                 return q and surface().create_entity{name = name, position = q, force = "player", raise_built = true}
               end
               local ents = {}
-              for i = 0, 7 do table.insert(ents, put("electric-mining-drill", p[1] - 6 + (i % 4) * 4, p[2] - 3 + math.floor(i / 4) * 6)) end
+              for i2 = 0, 7 do table.insert(ents, put("electric-mining-drill", p[1] - 6 + (i2 % 4) * 4, p[2] - 3 + math.floor(i2 / 4) * 6)) end
               for _, dx in ipairs({-10, 10}) do
                 table.insert(ents, put("laser-turret", p[1] + dx, p[2] - 8))
                 put("electric-energy-interface", p[1] + dx, p[2] - 12)
@@ -3092,7 +3110,6 @@ scenarios.visit = function()
               put("medium-electric-pole", p[1] + 2, p[2] + 6)
               table.insert(S.outposts, {pos = p, ents = ents, at = game.tick})
               placed = p
-              break
             end
           end
         end
