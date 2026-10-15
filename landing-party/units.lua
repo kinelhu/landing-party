@@ -383,7 +383,19 @@ scavenger.attack_parameters = sa
 local rail_beam = table.deepcopy(data.raw.beam["laser-beam"])
 rail_beam.name = "lp-rail-beam"
 rail_beam.action = nil
-local railgunner = make_infantry("lp-railgunner")
+-- Its look: Serenity's charcoal (its walls' and turrets'), not the Line trooper's slate-teal, and a size larger, so it
+-- reads as the heavy one at a glance.
+local railgunner = make_infantry("lp-railgunner", {r = 0.32, g = 0.35, b = 0.38, a = 1})
+local function grow(t, k, seen)
+  if type(t) ~= "table" or seen[t] then return end
+  seen[t] = true
+  if t.filename or t.filenames or t.stripes then
+    t.scale = (t.scale or 1) * k
+    if t.shift then t.shift = {t.shift[1] * k, t.shift[2] * k} end
+  end
+  for _, v in pairs(t) do grow(v, k, seen) end
+end
+grow(railgunner.run_animation, 1.15, {})
 railgunner.max_health = shared.units["lp-railgunner"].health
 railgunner.movement_speed = 0.1
 railgunner.vision_distance = 34
@@ -396,7 +408,8 @@ railgunner.attack_parameters = {
   type = "projectile", ammo_category = "laser", cooldown = 90, cooldown_deviation = 0.1, range = 30,
   range_mode = "bounding-box-to-bounding-box",
   sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound),
-  animation = table.deepcopy(infantry.attack_parameters.animation),
+  animation = (function() local a = table.deepcopy(infantry.attack_parameters.animation)
+    tint(a, {}, {r = 0.32, g = 0.35, b = 0.38, a = 1}); grow(a, 1.15, {}); return a end)(),
   ammo_type = {action = {
     {type = "direct", action_delivery = {type = "beam", beam = "lp-rail-beam", max_length = 31, duration = 8,
       source_offset = {0, -1}}},

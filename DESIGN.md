@@ -1083,6 +1083,14 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
 - **Known limit**: on `b - rocket` (evolution 0.9, 790 lasers), landed among nests by approach, Serenity is worn down at
   home (1,300 to 2,600 buildings lost in two hours, mostly turrets and walls, rebuilt) and razes nothing of the player's;
   each clearance draws the nests' waves. Parked: the user, landings are for earlier games.
+- **Looks**: the railgunner in Serenity's charcoal (not the Line trooper's slate-teal), 15% larger; the pacifier's dish 40%
+  larger than a radar's, so the player's target is told apart. Not yet seen in game.
+- **Grubstake squats nearer**: its landing keeps 60 tiles from the player's turrets and units (100 for the others), the
+  biter-country consult. On deathworld its first site was the same (the nearer ground was refused for other reasons):
+  its effect is unmeasured.
+- deathworld10x provoked, 3 hours, by value (a belt tile 1, a turret 20; `razed_by_type`): 783 (349 before the pact,
+  863 the pact batch unprovoked); rows from minute 80: 23, 226, 101, 4, 130, 149, 51; Grubstake 128 entities, Serenity
+  42; three orbital barrages on landing (9, 15 and 43 shells).
 - The bursts in the raze curve are not a problem (the user): the 80 at deathworld's minute 170 were 52 belts, 12 poles,
   10 walls; a raid is an event. Count by cost, not entities, in later reports.
 

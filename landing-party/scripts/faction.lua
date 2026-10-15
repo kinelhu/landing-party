@@ -35,6 +35,7 @@ local FACTORY = {"assembling-machine", "furnace", "mining-drill", "lab", "robopo
   "logistic-container", "rocket-silo", "beacon", "storage-tank", "train-stop", "radar", "wall"}
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
+local SQUAT_DISTANCE = 60         -- Grubstake's distance from the player's turrets and units
 local SITE_MIN_ORE = 300
 local ARTILLERY_REACH = 300      -- vanilla artillery's 224 and a margin for range research
 
@@ -158,11 +159,14 @@ function faction.site(surface, from, distance, count)
           end
         end
       end
-      -- Not on the player's army: units or turrets within 100 tiles, as it keeps out of the player's artillery.
+      -- Not on the player's army: units or turrets within 100 tiles, as it keeps out of the player's artillery. A
+      -- corporation with the pact (Grubstake, the thief) squats nearer: 60, beyond a gun turret's reach by 40, in sight of
+      -- the soft targets (the biter-country consult).
       if clear then
+        local keep = faction.pact_site and SQUAT_DISTANCE or 100
         for _, pf in pairs(game.forces) do
           if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
-            and surface.count_entities_filtered{position = spot, radius = 100, force = pf,
+            and surface.count_entities_filtered{position = spot, radius = keep, force = pf,
               type = {"unit", "electric-turret", "ammo-turret", "fluid-turret", "car", "spider-vehicle"}, limit = 1} > 0 then
             clear = false
           end

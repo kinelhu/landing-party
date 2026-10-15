@@ -234,6 +234,19 @@ pacifier.energy_source = {type = "void"}
 pacifier.max_distance_of_sector_revealed = 0
 pacifier.max_distance_of_nearby_sector_revealed = 0
 pacifier.rotation_speed = 0.03
+-- A size larger than a radar (and slow-turning), so it is not taken for one: the player's target.
+pacifier.collision_box = {{-1.9, -1.9}, {1.9, 1.9}}
+pacifier.selection_box = {{-2, -2}, {2, 2}}
+local function grow(t, k, seen)
+  if type(t) ~= "table" or seen[t] then return end
+  seen[t] = true
+  if t.filename or t.filenames or t.stripes then
+    t.scale = (t.scale or 1) * k
+    if t.shift then t.shift = {t.shift[1] * k, t.shift[2] * k} end
+  end
+  for _, v in pairs(t) do grow(v, k, seen) end
+end
+grow(pacifier.pictures, 1.4, {})
 
 -- The depot: a roboport's body as a container (it holds no robots yet).
 local roboport = data.raw.roboport.roboport
