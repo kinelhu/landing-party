@@ -3117,6 +3117,17 @@ scenarios.visit = function()
       end)
     end
   end
+  -- LP_MIX=noart: the player's artillery removed at the start (turrets and wagons): a megabase's artillery denies a huge
+  -- area by itself, as it should; without it, what the corporations do against the rest of the defence.
+  if params.mix:find("noart", 1, true) then
+    schedule(30, function()
+      local n = 0
+      for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"artillery-turret", "artillery-wagon"}}) do
+        e.destroy(); n = n + 1
+      end
+      info("visit: removed the player's artillery, " .. n .. " pieces")
+    end)
+  end
   if params.mix:find("provoked", 1, true) then
     schedule(60 * 3600, function()
       lp("debug_tune", {provoke = true})
@@ -3432,6 +3443,64 @@ scenarios.clearing = function()
     check("clearing: its landing burned a clearing", st and (st.cleared or 0) > 0 and left == 0,
       st and (tostring(st.cleared) .. " cleared, " .. left .. " left") or "no landing")
     check("clearing: without evolving the biters", math.abs(evo - S.evo0) < 1e-6, string.format("%.4f -> %.4f", S.evo0, evo))
+  end)
+end
+
+-- Reinforce (scripts/war.lua, the pressure-ramp consult): the ladder's desperate setup (a provoked Serenity facing six
+-- lasers it cannot afford, ladder ten times fast) with a war chest of 3,000 and a relief every 2 minutes. Serenity has no
+-- other settlement: its reliefs drop at the lander. Its garrison goes past its cap, the chest pays, and the raid razes
+-- the lasers. LP_MIX=starved: the chest empty and no exports: nothing comes.
+scenarios.reinforce = function()
+  local starved = params.mix == "starved"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true, relief_minutes = 2,
+      chest = {serenity = starved and 0 or 3000}})
+    S.id = storage.id
+    if not starved then for _ = 1, 2 do lp("debug_depot", S.id, 3000) end end
+    -- LP_MIX=column: a sister settlement, so reliefs march from it.
+    if params.mix == "column" then S.sister = lp("arrive", 1, {x = 0, y = 0}, 350, {corp = "serenity"}) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 120), math.floor(o.y - uy * 120)}
+    flatten(c[1] - 14, c[2] - 14, c[1] + 14, c[2] + 14)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    for k = -2, 3 do
+      surface().create_entity{name = "laser-turret", position = {c[1] + 3 * k, c[2] + 5}, force = "player"}
+      surface().create_entity{name = "electric-energy-interface", position = {c[1] + 3 * k, c[2] + 8}, force = "player"}
+    end
+    surface().create_entity{name = "medium-electric-pole", position = {c[1] + 0.5, c[2] + 6.5}, force = "player"}
+    if starved then lp("debug_tune", {chest = {serenity = 0}}) end
+  end)
+  for t = 2 * 3600 + 600, END - 120, 600 do
+    schedule(t, function()
+      local st = lp("stats", S.id)
+      S.over = math.max(S.over or -99, st.garrison + st.patrol - st.cap)
+      if st.columns_arrived > 0 or (S.sister and lp("stats", S.sister).columns_arrived > 0) then S.column_arrived = true end
+      S.footing = S.footing or st.on_footing
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.id)
+    local w = lp("war", "serenity")
+    info(string.format("reinforce (%s): reinforced %d, chest %.0f, most over cap %s, launched %d, razed %d, footing %s",
+      params.mix, st.reinforced, w.chest, tostring(S.over), st.ops.launched, st.razed, tostring(S.footing)))
+    if starved then
+      check("reinforce: an empty chest sends nothing", st.reinforced == 0, tostring(st.reinforced))
+    elseif params.mix == "column" then
+      local total = st.reinforced + (S.sister and lp("stats", S.sister).reinforced or 0)
+      check("reinforce: a sister settlement stood", S.sister ~= nil, tostring(S.sister))
+      check("reinforce: relief columns arrived", total >= 8 and S.column_arrived == true, total .. " reinforced, arrived " ..
+        tostring(S.column_arrived))
+    else
+      check("reinforce: reliefs came", st.reinforced >= 8, tostring(st.reinforced))
+      check("reinforce: the chest paid", w.chest < 3000, string.format("%.0f", w.chest))
+      check("reinforce: the garrison went past its cap", (S.over or -1) > 0, tostring(S.over))
+      -- One target here: the raid that razed it all is the last (more targets: the visits).
+      check("reinforce: and razed the lasers", st.razed >= 6, tostring(st.razed))
+    end
   end)
 end
 

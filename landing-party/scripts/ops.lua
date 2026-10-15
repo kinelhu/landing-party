@@ -710,7 +710,8 @@ local function finish(b, outcome, trace, army)
     trace(b, string.format("raid razed nothing at %.0f,%.0f: resistance there now %d", t.pos[1], t.pos[2], t.resist))
   end
   if t then
-    t.cool = game.tick + (t.line and COOL_TICKS / 2 or COOL_TICKS)
+    -- The longer rest stands (a clearance's failed nest, siege_step).
+    t.cool = math.max(t.cool or 0, game.tick + (t.line and COOL_TICKS / 2 or COOL_TICKS))
     -- The whole position cools after an abort, not the one cell: an area, so cells first seen later inherit
     -- it (the turret's cell next door, scanned a minute after, was raided nine minutes later).
     if outcome == "aborted" then
@@ -1110,6 +1111,8 @@ local function launch(b, key, trace, army)
       table.insert(members, table.remove(b.garrison, i))
     end
   end
+  -- What field() counted may not be there to send (haulers, the dead): no raid of nought (a camp launched four, visit).
+  if #members == 0 then return false end
   local dx, dy = h.position.x - t.pos[1], h.position.y - t.pos[2]
   local len = math.max(1, math.sqrt(dx * dx + dy * dy))
   -- Out of reach of the outermost turret, not of the target's centre (staged 34 from an assembler, a raid
@@ -1407,13 +1410,22 @@ end
 -- Clearance (Serenity, the biter-country consult): a siege on the nest nearest its way, from a site 33 tiles off
 -- (beyond a medium worm's 30), always dug in, tier 2 (two mortars, a resupply convoy). Its mortars fire on the nests by
 -- themselves; it packs up when nothing is left in reach, and the corridor it leaves (ops.cleared) lets marches through.
--- The site 33 tiles from a nest, towards `from` (then at angles off that line), out of every worm's 31.
+-- The site 33 tiles from a nest, towards `from` (then at angles off that line), out of every worm's own reach plus 2
+-- (its prototype's range: a big worm's 38 and a behemoth's 48 outrange the mortars' 35, and at maximum evolution the
+-- hauler died on the way every two minutes all night, visit). None: mortars cannot clear it.
+local function out_of_worms(s, p)
+  for _, w in pairs(s.find_entities_filtered{position = p, radius = 52, type = "turret", force = "enemy"}) do
+    local ap = w.prototype.attack_parameters
+    local r = (ap and ap.range or 30) + 2
+    if (w.position.x - p[1]) ^ 2 + (w.position.y - p[2]) ^ 2 <= r * r then return false end
+  end
+  return true
+end
 local function clearance_site(s, nest, from)
   local base = math.atan2(from[2] - nest.position.y, from[1] - nest.position.x)
   for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
     local p = {nest.position.x + math.cos(base + turn) * 33, nest.position.y + math.sin(base + turn) * 33}
-    if s.count_entities_filtered{position = p, radius = 31, type = "turret", force = "enemy", limit = 1} == 0
-      and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
+    if out_of_worms(s, p) and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
       return p
     end
   end
@@ -1443,8 +1455,14 @@ function ops.clearance(b, near, trace, army, toward)
   local t = b.intel.targets[key]
   t.pos, t.kind, t.value, t.seen, t.owner = {near.position.x, near.position.y}, near.name, 3, game.tick, "enemy"
   t.defence = s.count_entities_filtered{position = near.position, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+  -- A nest whose clearance failed rests (t.cool, siege_step).
+  if (t.cool or 0) > game.tick then return false end
   local site = clearance_site(s, near, {h.position.x, h.position.y})
-  if not site then return false end
+  if not site then
+    t.cool = game.tick + 15 * 3600
+    trace(b, string.format("clearance: the nest at %.0f,%.0f outranges the mortars", near.position.x, near.position.y))
+    return false
+  end
   if (b.parts or 0) < SIEGE_TIERS[2].cost then return false end
   local ok = launch_siege(b, key, site, trace, army, 2, true)
   if ok then
@@ -1463,6 +1481,9 @@ local function siege_step(b, trace, army)
   if op.phase == "march" or op.phase == "deploy" then
     if not op.hauler.valid then
       trace(b, "siege: the hauler was destroyed on the way")
+      -- A clearance's nest rests 15 minutes (retried every two, it lost a hauler each time, visit).
+      local t = op.clearance and b.intel.targets[op.target]
+      if t then t.cool = game.tick + 15 * 3600 end
       return finish(b, "intercepted", trace, army)
     end
   end

@@ -951,6 +951,40 @@ and withdraws in order; Grubstake empties chests first: the user's heists, folde
   the breach was given up after 3 minutes and the raid went in anyway; breaching is the sappers' and the Dozer's work.
   `scripts/play-visit.sh` opens a copy of a visited save in a window with the mod, to watch (and drive with `/lp`).
 
+### Pressure that ramps: war footing and the war chest (the user; Fable: `docs/reviews/2026-10-15-pressure-ramp-consult.md`; built 2026-10-15)
+The user, on the visits: "it's not good that only the first raid does anything; ... raids should be able to ramp up with
+the logic you built, supposedly?" They should not, as built: a settlement's units came only from its drop escort and its
+own parts, and the ladder raised its willingness, never its capacity. On nwa's expansion visit the camps that reached the
+player razed in their first 30 to 40 minutes and then sat at a garrison of nought (their parts went on rebuilding what
+the artillery broke, their drills kept dying); four of seven fell; the far ones survived and could not reach.
+- **War footing** (`scripts/war.lua`): a settlement at war (it knows a player force's buildings and its temper lets it go
+  for them: Grubstake always, Serenity once provoked) and short of its unit cap holds every rebuild but its generators and
+  depots (`base.footing`, asked by `rebuild`): its parts go to units first.
+- **The war chest**: 20% of each corporation's exports (the research fund keeps its 30%), capped at 6,000, and every
+  player building a Grubstake unit razes pays it (10 + 5 x its value, as salvage rights pay research). Every 10 minutes a
+  corporation sends one settlement at war on rung 1 or more (the highest rung, then the most short of its cap) 8 units a
+  rung, at 1.5 times their cost, fewer if the chest is short (at least 4). They count above the cap.
+  - Grubstake: a pod, 40 tiles behind the lander (away from the player's buildings it knows), the units walking in.
+  - Serenity: a relief column from its nearest other settlement, along a route clear of turrets and nests
+    (`ops.route`); no route, no relief. It joins on arrival (or after 10 minutes, wherever it is); killed on the way, it
+    is lost. With no other settlement, a drop at the lander at half strength (my addition to the consult: a lone camp
+    under the guns would otherwise get nothing; to review).
+  - Notices: `lp.relief-pod`, `lp.relief-column`, `lp.relief-drop`, with the settlement's map position.
+- Not built yet from the consult: the write-off and relanding of a hopeless camp, the ladder buying capacity (rung 2
+  doubling the cap, rung 3 a siege tier), entities written off after two artillery kills.
+- Scenario `reinforce` (the ladder's desperate setup, a chest of 3,000, a relief every 2 minutes): drops of 4 then 12, the
+  garrison 15 past its cap, the chest down to 2,610, the lasers razed. `starved` (chest empty): nothing comes. `column`
+  (a sister settlement): columns of 8 and 24 from the sister along 13 waypoints, arrived in 50 s; 32 reinforced in all.
+- Two bugs from the visits, fixed with it: a clearance site 33 tiles from a big worm (range 38) or a behemoth (48) sat
+  inside its reach, and Serenity paid for a siege and lost its hauler every two minutes all night (the site now keeps out
+  of each worm's prototype range plus 2; a nest that outranges the mortars, or whose clearance lost its hauler, rests 15
+  minutes; `ops.clearance` never read the target's rest before). And a raid of nought was launched when the units
+  `field` counted were haulers or dead.
+- Visits: `LP_MIX=noart` removes the player's artillery (turrets and wagons) at the start (the user: artillery's area
+  denial at a megabase is expected; without it, what the corporations do against the rest). Saves besides nwa: `b -
+  rocket` (174 technologies, 5,638 buildings, 790 lasers, 28 artillery: about a first rocket), `nw` (190, 5,433, 671
+  lasers, no artillery), `deathworld10x` (34 technologies, 1,574 buildings, 205 gun turrets: early, a deathworld).
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,

@@ -450,6 +450,8 @@ local function rebuild(b)
   for i, job in ipairs(b.rebuild) do
     if game.tick < job.due then
       -- still on its way
+    elseif base.footing and not base.footing(b, job) then
+      -- At war and short of units: parts go to units first (scripts/war.lua).
     elseif occupied(b, surface, job.pos) then
       if not job.occupied then job.occupied = true; trace(b, string.format("cannot rebuild %s at %.0f,%.0f: occupied",
         job.name, job.pos[1], job.pos[2])) end
@@ -970,7 +972,8 @@ function base.stats(b)
     supply = supply, demand = demand, network = base.network(b), lander = b.lander.valid,
     fallen = b.fallen, ruins = b.ruins, evacuated = b.evacuated, origin = b.origin, ops = ops.summary(b), corp = b.corp, force = b.force, claim_radius = b.claim_radius, claims_settled = b.claims_settled, landed = b.landed, gens_max = b.gens_max, hull_down = b.hull_down, perimeter = b.perimeter, perimeter_steps = b.perimeter_steps, warned = b.warned,
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
-    cleared = b.cleared, under_guns = b.under_guns}
+    cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
+    columns_arrived = b.columns_arrived or 0}
 end
 
 return base

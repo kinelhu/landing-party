@@ -9,6 +9,7 @@ local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local rd = require("__landing-party__.scripts.rd")
+local war = require("__landing-party__.scripts.war")
 
 local faction = {}
 
@@ -520,6 +521,7 @@ function faction.develop(b, parts)
   local d = faction.corp(b.corp)
   d.exported = d.exported + parts
   rd.fund(b.corp, parts)
+  war.fund(b.corp, parts)
   while shared.LEVELS[d.level + 1] and d.exported >= shared.LEVELS[d.level + 1] do
     d.level = d.level + 1
     local gained = {}

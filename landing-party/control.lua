@@ -9,6 +9,7 @@ faction.on_trigger = phases.trigger
 local ops = require("__landing-party__.scripts.ops")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
+local war = require("__landing-party__.scripts.war")
 rd.era = ops.era
 rd.trace = function(corp, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
@@ -32,7 +33,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -130,6 +131,8 @@ script.on_event(defines.events.on_entity_died, function(e)
     if b then
       b.razed = b.razed + 1
       rd.salvage(b.corp, ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type])
+      -- Grubstake's razing pays its next pod too (scripts/war.lua).
+      if b.corp == "grubstake" then war.fund(b.corp, 50 + 25 * (ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type] or 0)) end
       if ent.type == "container" or ent.type == "logistic-container" or ent.type == "cargo-wagon" then ops.loot_wreck(b, ent) end
     end
   end
@@ -209,6 +212,7 @@ remote.add_interface("landing-party", {
     return {last_raze = (storage.last_raze or {})[f], ladder = ops.ladder(f), razed = storage.player_razed or {}}
   end,
   corp = function(corp) return faction.corp(corp) end,
+  war = function(corp) return war.summary(corp) end,
   phases = function()
     local s = phases.state()
     return {signs = s.signs ~= nil, survey = s.survey and {done = s.survey.done, pos = s.survey.pos, corp = s.survey.corp},
@@ -243,6 +247,10 @@ remote.add_interface("landing-party", {
     for corp, n in pairs(t.rd_walls or {}) do for _ = 1, n do rd.walls_met({corp = corp}) end end
     -- Tests of operations' mechanics (not of tempers): every corporation already provoked by the player.
     if t.provoke then for _, c in pairs(shared.CORPS) do ops.provoke(c.force, "player") end end
+    -- The war chest (scripts/war.lua): its contents per corporation, the relief period, relief off.
+    for corp, n in pairs(t.chest or {}) do faction.corp(corp).chest = n end
+    if t.relief_minutes ~= nil then storage.relief_ticks = t.relief_minutes * 3600 end
+    if t.relief_off ~= nil then storage.relief_off = t.relief_off end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
   set_trace = function(on) storage.trace = on end,
