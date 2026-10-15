@@ -140,6 +140,10 @@ function faction.site(surface, from, distance, count)
       end
       -- The candidate's own ground, generated now: nests and the ore count below need real entities.
       if clear then
+        -- Counted for the landing's trace (each is up to 25 chunks generated within the tick).
+        faction.generated = (faction.generated or 0) + (surface.is_chunk_generated{math.floor(spot[1] / 32),
+          math.floor(spot[2] / 32)} and 0 or 1)
+        faction.candidates = (faction.candidates or 0) + 1
         surface.request_to_generate_chunks(spot, 2)
         surface.force_generate_chunk_requests()
       end
@@ -213,6 +217,7 @@ function faction.arrive(surface, from, opts, quiet)
     if (#pf.players > 0 or pf.name == "player") and not shared.is_corp(pf.name) and ops.era(pf) >= 3 then late = true end
   end
   if storage.era_override then late = storage.era_override >= 3 end
+  faction.generated, faction.candidates = 0, 0
   for pass = 1, 3 do
     if pass == 2 and not late then goto next_pass end
     faction.under_guns = pass == 2
@@ -266,7 +271,8 @@ function faction.arrive(surface, from, opts, quiet)
     f.surface, f.from = surface.index, {x = from.x, y = from.y}
     f.next = game.tick + f.cadence
   end
-  base.trace(b, string.format("landing %d of the faction (tier %d)", f.landings, f.tier))
+  base.trace(b, string.format("landing %d of the faction (tier %d): %d candidate sites, %d on new ground", f.landings,
+    f.tier, faction.candidates, faction.generated))
   if not quiet then announce(b, surface) end
   return b
 end
