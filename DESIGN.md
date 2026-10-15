@@ -1189,6 +1189,13 @@ scenario with assertions first; the window is for art, feel and GUI.
 - The visit's **expansion** variant (`LP_MIX=expansion`, or `provoked-expansion`): every 20 minutes the scripted player
   places an outpost on the nearest unmined ore beyond its edge (8 drills, 2 powered lasers at its research, a radar); the
   timeline counts the outposts standing.
+- **Expansion visit (nwa, three hours, an outpost beyond the edge every 20 minutes, found by the map generator's
+  noise).** 8 outposts placed, 6 standing at the end; 343 of the player's buildings razed, almost all in the first 50
+  minutes, then one more in two hours while the ladder climbed to its top rung: the pressure is a burst, then the camps'
+  garrisons bleed and nothing replaces them. Script: 1.42 ms a tick alone, 2.09 with the mod (+0.66 ms; the evening's
+  first visits measured +0.1): to profile (the survey, route planning, clearances' re-tries are the suspects).
+  Campaigns on both seeds (6 hours, all of today's work): much as the evening's: three landers killed, two of three
+  camp strikes won, no consolidation, batteries never lost, 9 and 11 operations.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each
