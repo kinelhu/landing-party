@@ -62,7 +62,7 @@ shared.CORPS = {
     icon = "signal-heart", motto = "Please remain behind the line.",
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
-    doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1},
+    doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1, ["lp-railgunner"] = 2},
     names = {["lp-infantry"] = "lp-line-trooper"},
     -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.
     tree = {
@@ -98,7 +98,7 @@ shared.DEFAULT_CORP = "serenity"
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
   "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
-  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger"}
+  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer"}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
@@ -186,6 +186,7 @@ shared.cost = {
   ["lp-lamp"] = 1,
   ["lp-mine"] = 2,
   ["lp-mortar"] = 60,            -- a siege emplacement (scripts/ops.lua), carried by a hauler
+  ["lp-howitzer"] = 120,         -- a clearance's long gun, where worms outrange the mortar
   ["lp-gate"] = 3,
   ["lp-flamer"] = 8,
 }
@@ -202,6 +203,7 @@ shared.units = {
   ["lp-lance"] = {health = 110, cost = 14},
   ["lp-slug"] = {health = 240, cost = 25},
   ["lp-shock"] = {health = 160, cost = 30},
+  ["lp-railgunner"] = {health = 140, cost = 22},
   ["lp-sapper"] = {health = 120, cost = 16},
   ["lp-aegis"] = {health = 1100, cost = 80},
   ["lp-dozer"] = {health = 1800, cost = 90},

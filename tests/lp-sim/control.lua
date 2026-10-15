@@ -2739,6 +2739,8 @@ scenarios.plate = function()
       for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
     else
       for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+      -- Line troopers enough for the kills whatever else its mix builds (railgunners took two in ten: 14 died).
+      lp("debug_units", storage.id, "lp-infantry", 10)
     end
   end)
   schedule(10 * 3600, function()
@@ -2853,6 +2855,8 @@ scenarios.unitnode = function()
       for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
     else
       for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
+      -- Line troopers enough for the kills whatever else its mix builds (railgunners took two in ten: 14 died).
+      lp("debug_units", storage.id, "lp-infantry", 10)
     end
   end)
   schedule(10 * 3600, function()
@@ -3006,6 +3010,105 @@ scenarios.arc = function()
     check("arc: and spared its own side", S.own_car.health == S.own_car.max_health, "")
     check("arc: the dynamite hurt two walls or more", walls >= 2, walls .. " of 4")
     check("arc: and spared its own fence", S.fence.health == S.fence.max_health, "")
+  end)
+end
+
+-- Clear: Serenity at war with a player whose assembler lies past a wall of nests (49 spawners 14 apart, 670 tiles wide,
+-- and medium worms, 90 tiles out across the line, evolution 0.6 so big biters defend them). It has six railgunners. It clears the field
+-- with mortar sieges (ops.clearance) and goes on to raze the assembler. LP_MIX=worms: behemoth worms (48), which outrange
+-- the mortar: a howitzer clears them. Short, for debugging the clearance (a visit
+-- takes 80 minutes to reach one).
+scenarios.clear = function()
+  schedule(30, function() game.forces.enemy.set_evolution_factor(0.6, surface()) end)
+  schedule(60, function()
+    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true})
+    for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+    lp("debug_units", storage.id, "lp-railgunner", 6)
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 170), math.floor(o.y - uy * 170)}
+    flatten(c[1] - 8, c[2] - 8, c[1] + 8, c[2] + 8)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    S.c = c
+    S.nests = {}
+    for k = -24, 24 do
+      local p = {o.x - ux * 90 - uy * 14 * k, o.y - uy * 90 + ux * 14 * k}
+      local q = surface().find_non_colliding_position("biter-spawner", p, 6, 1)
+      local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+      if e then table.insert(S.nests, e) end
+    end
+    for k = -24, 24, 3 do
+      local p = {o.x - ux * 100 - uy * 14 * k, o.y - uy * 100 + ux * 14 * k}
+      local worm = params.mix == "worms" and "behemoth-worm-turret" or "medium-worm-turret"
+      local q = surface().find_non_colliding_position(worm, p, 6, 1)
+      if q then surface().create_entity{name = worm, position = q, force = "enemy"} end
+    end
+    S.lost0 = lp("stats", storage.id).units_lost or 0
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local left = 0
+    for _, e in ipairs(S.nests) do if e.valid then left = left + 1 end end
+    local target = surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"}
+    info("clear: losses by killer " .. serpent.line(lp("rd", "serenity").lost_by))
+    info(string.format("clear: %d of %d spawners left, %d units lost, %d clearances, target %s", left, #S.nests,
+      (st.units_lost or 0) - S.lost0, st.ops.clearances or 0, target > 0 and "standing" or "razed"))
+    check("clear: a way cleared through the nests", left < #S.nests and (st.ops.clearances or 0) > 0, tostring(left))
+    check("clear: the assembler razed", target == 0, target > 0 and "standing" or "razed")
+  end)
+end
+
+-- Rail: Serenity's railgunner against biters (the user: a biter-clearing unit, "a hand mounted railgun that's at its
+-- best against biters"). Four railgunners (88 parts) and, LP_MIX=line, nine Line troopers (90) meet 16 big biters, then
+-- what is left fires on a player wall for 20 s: the railgunners win against biters and do a trooper's damage to a wall.
+scenarios.rail = function()
+  local line = params.mix == "line"
+  local name, n = line and "lp-infantry" or "lp-railgunner", line and 9 or 4
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true}) end)
+  schedule(120, function()
+    flatten(-60, -40, 60, 40)
+    S.own = {}
+    for k = 1, n do
+      table.insert(S.own, surface().create_entity{name = name, position = {-30, (k - (n + 1) / 2) * 1.5}, force = FORCE})
+    end
+    S.biters = {}
+    local g = surface().create_unit_group{position = {30, 0}, force = "enemy"}
+    for k = 1, 16 do
+      local u = surface().create_entity{name = "big-biter", force = "enemy",
+        position = surface().find_non_colliding_position("big-biter", {30 + (k % 4) * 2, math.floor(k / 4) * 2 - 3}, 6, 0.5)}
+      if u then g.add_member(u); table.insert(S.biters, u) end
+    end
+    g.set_command{type = defines.command.attack_area, destination = {-30, 0}, radius = 10}
+  end)
+  schedule(120 + 60 * 60, function()
+    local b, o = 0, 0
+    for _, u in ipairs(S.biters) do if u.valid then b = b + 1 end end
+    for _, u in ipairs(S.own) do if u.valid then o = o + 1 end end
+    S.b, S.o = b, o
+    S.walls = {}
+    for y = -6, 6 do
+      table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {-30.5 + 14, y + 0.5}, force = "player"})
+    end
+    for _, u in ipairs(S.own) do
+      if u.valid then u.commandable.set_command{type = defines.command.attack, target = S.walls[7], distraction = defines.distraction.none} end
+    end
+  end)
+  schedule(120 + 80 * 60, function()
+    local hurt = 0
+    for _, w in ipairs(S.walls) do hurt = hurt + (w.valid and (w.max_health - w.health) or 350) end
+    info(string.format("rail (%s x%d): %d of 16 big biters left, %d of %d own standing; walls lost %d health in 20 s",
+      name, n, S.b, S.o, n, hurt))
+    if line then
+      check("rail: the troopers did worse", S.b > 0 or S.o < n, string.format("%d left, %d standing", S.b, S.o))
+    else
+      check("rail: the railgunners killed the big biters", S.b == 0, tostring(S.b))
+      check("rail: and half stood", S.o >= 2, tostring(S.o))
+      -- Against buildings no better than Line troopers (about 17 a second each, 1,000 from three in 20 s) at twice the cost.
+      check("rail: the wall no worse off than from troopers", hurt < 1000, string.format("%.0f", hurt))
+    end
   end)
 end
 

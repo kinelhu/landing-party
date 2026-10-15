@@ -96,6 +96,10 @@ local function produce(b, trace)
   if strength(b) >= cap(b) then return end
   -- A rebuild that makes parts is paid first (base.reserve; scenario occupy).
   local name = b.next_unit or rng.weighted(b.rng, mix(b))
+  -- A clearance waiting for railgunners (ops.clearance) gets them first.
+  if b.want_rails and not b.next_unit and shared.units["lp-railgunner"] and (mix(b)["lp-railgunner"] or 0) > 0 then
+    name = "lp-railgunner"
+  end
   b.next_unit = name
   local cost = shared.units[name].cost
   if b.parts < cost + (army.reserve and army.reserve(b) or 0) then return end
@@ -176,7 +180,8 @@ function army.alarm(b, pos, trace)
   b.next_response = game.tick + RESPONSE_COOLDOWN
   local size = math.max(RESPONSE_MIN, RESPONSE_PER_THREAT * threat_count(home.surface, pos, home.force))
   -- Biters alone get a small answer (sized to every biter, responses bled garrisons on nests nobody chose).
-  if threat_count(home.surface, pos, home.force, nil, true) == 0 then
+  local biters_only = threat_count(home.surface, pos, home.force, nil, true) == 0
+  if biters_only then
     -- None where its turrets reach: three at a time into a nest field's attacks on its wall bled a camp of 266 units
     -- in three hours (visit deathworld). There its turrets answer; an outpost they do not reach still gets a squad.
     local guns = 0
@@ -193,6 +198,17 @@ function army.alarm(b, pos, trace)
     {type = defines.command.go_to_location, destination = dest, radius = 16, distraction = defines.distraction.by_enemy},
     {type = defines.command.attack_area, destination = dest, radius = 30, distraction = defines.distraction.by_anything},
   }}
+  -- Against biters alone, its railgunners first (the biter-clearing unit).
+  if biters_only then
+    for i = #b.garrison, HOME_GUARD + 1, -1 do
+      local u = b.garrison[i]
+      if #members < size and u.valid and shared.kind_of(u.name) == "lp-railgunner" then
+        table.remove(b.garrison, i)
+        group.add_member(u)
+        table.insert(members, u)
+      end
+    end
+  end
   for i = #b.garrison, HOME_GUARD + 1, -1 do
     if #members >= size then break end
     local u = table.remove(b.garrison, i)
@@ -535,6 +551,26 @@ local function intercept(b, trace)
     best.position.x, best.position.y))
 end
 
+-- The leash: a garrison unit beyond its settlement's claim (and LEASH more) is called back. Idle, it attacks whatever it
+-- sees; biters drawn to a clearance pulled infantry and tanks after them into behemoth worms' reach, 28 to 56 tiles
+-- beyond the site (scenario clear). Not within the claim: leashed at 35 tiles from its first depot, the far side of a
+-- settlement went undefended and biters took 497 of its buildings (visit b - rocket).
+local LEASH = 15
+local function leash(b)
+  local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
+  if not h then return end
+  local hp = h.position
+  local r = (b.claim_radius or 60) + LEASH
+  for _, u in ipairs(b.garrison) do
+    -- Idle ones only: re-ordered straight home, raiders coming back round a nest field walked through it (country).
+    if u.valid and not u.commandable.has_command
+      and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then
+      u.commandable.set_command{type = defines.command.go_to_location, destination = hp, radius = 10,
+        distraction = defines.distraction.by_damage}
+    end
+  end
+end
+
 function army.tick(b, tick, trace)
   if b.grudge and not b.grudge_till and #b.depots > 0 then
     b.grudge_till = tick + (storage.grudge_fast and 2 * 3600 or army.GRUDGE_TICKS)
@@ -545,6 +581,7 @@ function army.tick(b, tick, trace)
   -- Raids are operations now (scripts/ops.lua): chosen from intel, sized, staged, aborted when losing.
   ops.tick(b, tick, trace, army)
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
+  if tick % 300 == 250 and not storage.army_off then leash(b) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end
 end
 

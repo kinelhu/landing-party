@@ -69,6 +69,7 @@ local function base_unit(name)
 end
 
 data:extend({
+  {type = "trigger-target-type", name = "lp-biter"},
   {type = "collision-layer", name = "lp-air"},
   {type = "trigger-target-type", name = "lp-air-unit"},
 })
@@ -374,5 +375,36 @@ sa.ammo_type.action.action_delivery.target_effects[2].damage.type = "explosion"
 sa.animation = table.deepcopy(harrier.attack_parameters.animation)
 scavenger.attack_parameters = sa
 
+-- Railgunner (Serenity; the user: "a biter clearing unit like a hand mounted railgun that's at its best against biters"):
+-- a slug that pierces everything on a line 30 tiles long (out of a medium worm's reach), 250 to what carries the lp-biter
+-- trigger target (biters, spawners, worms: data-final-fixes.lua; two kill a big biter), 10 to anything else, every 90 ticks; laser, so
+-- Serenity's research covers it. 140 health. A packed biter attack dies in a row; a wall barely notices it.
+-- Its tracer: the laser turret's beam without the beam's own damage (it did most of the harm to walls).
+local rail_beam = table.deepcopy(data.raw.beam["laser-beam"])
+rail_beam.name = "lp-rail-beam"
+rail_beam.action = nil
+local railgunner = make_infantry("lp-railgunner")
+railgunner.max_health = shared.units["lp-railgunner"].health
+railgunner.movement_speed = 0.1
+railgunner.vision_distance = 34
+local function rail(amount, mask)
+  return {type = "line", range = 30, width = 1.5, force = "enemy", trigger_target_mask = mask,
+    action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = amount, type = "physical"}},
+      {type = "create-entity", entity_name = "explosion-hit"}}}}
+end
+railgunner.attack_parameters = {
+  type = "projectile", ammo_category = "laser", cooldown = 90, cooldown_deviation = 0.1, range = 30,
+  range_mode = "bounding-box-to-bounding-box",
+  sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound),
+  animation = table.deepcopy(infantry.attack_parameters.animation),
+  ammo_type = {action = {
+    {type = "direct", action_delivery = {type = "beam", beam = "lp-rail-beam", max_length = 31, duration = 8,
+      source_offset = {0, -1}}},
+    rail(250, {"lp-biter"}),
+    rail(10, {"common"}),
+  }},
+}
+railgunner.resistances = table.deepcopy(infantry.resistances)
+
 data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
-  lance, slug, slug_round, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger})
+  lance, slug, slug_round, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger, rail_beam, railgunner})

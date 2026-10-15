@@ -90,6 +90,16 @@ script.on_event(defines.events.on_entity_died, function(e)
   -- A mortar destroyed in the field leaves its wreck's salvage.
   if kind == "lp-mortar" then
     ent.surface.spill_item_stack{position = ent.position, stack = {name = "lp-salvage", count = 15}, enable_looted = true}
+    local ob = storage.bases[storage.owner[ent.unit_number] or 0]
+    for _, o in pairs(storage.bases) do if o.op and o.op.mortars then for _, m in ipairs(o.op.mortars) do if m == ent then ob = o end end end end
+    if ob then
+      local near = math.huge
+      for _, u in ipairs(ob.op and ob.op.members or {}) do
+        if u.valid then near = math.min(near, math.sqrt((u.position.x - ent.position.x) ^ 2 + (u.position.y - ent.position.y) ^ 2)) end
+      end
+      base.trace(ob, string.format("mortar at %.0f,%.0f destroyed by %s (%s); nearest guard %.0f tiles off", ent.position.x,
+        ent.position.y, e.cause and e.cause.valid and e.cause.name or "?", e.force and e.force.name or "?", near))
+    end
   end
   if kind == "lp-lander" then
     command.drop_cores(ent.surface, ent.position, 3)
@@ -112,6 +122,13 @@ script.on_event(defines.events.on_entity_died, function(e)
       if b then
         b.units_lost = b.units_lost + 1
         ops.on_unit_killed(b, e.cause)
+        -- A clearance's losses: what killed them, and how far from the site (diagnostic, first ten an operation).
+        if b.op and b.op.clearance and (b.op.deaths_traced or 0) < 10 then
+          b.op.deaths_traced = (b.op.deaths_traced or 0) + 1
+          base.trace(b, string.format("clearance: %s killed by %s at %.0f tiles from the site", shared.kind_of(ent.name),
+            e.cause and e.cause.valid and e.cause.name or "?", math.sqrt((ent.position.x - b.op.site[1]) ^ 2
+            + (ent.position.y - b.op.site[2]) ^ 2)))
+        end
         rd.tally(b, e.cause, ent.name)
         if e.force then ops.provoke(b.force, e.force.name) end
       end

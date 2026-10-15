@@ -1041,6 +1041,44 @@ Fable: razing depends on the approach, never on the site. Built first, its item 
 - Seen, not mine: `overflight` fails on the last commit too (a ground way round appears two minutes after the first
   refusal, no spawner having died); to look at.
 
+### Serenity against nests: railgunners, the howitzer, clearances that work (the user; built 2026-10-15)
+The user: "take the easy way out and give Serenity a biter clearing unit like a hand mounted railgun". Then, watching
+the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cluster shells.
+- **Railgunner** (`lp-railgunner`, Serenity's mix 2 of 10, cost 22, 140 health): a slug down a 30-tile line, 250 to
+  what carries the `lp-biter` trigger target (enemy units, spawners and worms, tagged in data-final-fixes.lua), 10 to
+  anything else, every 90 ticks; a harmless copy of the laser beam as its tracer (the borrowed beam did its own damage).
+  Scenario `rail`: four (88 parts) kill sixteen big biters and two stand; nine Line troopers (90) kill one and all die.
+- **Howitzer** (`lp-howitzer`, the artillery turret at full size): range 100, 8x the mortar shell's damage (the user:
+  twenty shells a nest at 1x, three at 5x, "one too many"), the mortar's shells. A clearance takes it when the nest's
+  worms outrange the mortar, standing 53 tiles out (a behemoth worm reaches 48).
+- **Cluster munitions** (the user: Serenity's signature): every mortar and howitzer shell throws six bomblets round the
+  blast (12 explosion over 1.5 tiles each, its enemies only), as the base cluster grenade does.
+- **Clearances that work**, each found by a trace or by the user watching:
+  - The hauler was made beside a depot inside a gated block (gates open for no unit) and drove at its own wall for 15
+    minutes: it now starts past the outermost wall on the way to the site; the guards ride out with it.
+  - A hauler no nearer its site for a minute is stuck: a clearance deploys there if the nest is in reach, else stops.
+  - Railgunners only as guards, eight waited for (`CLEAR_RAILS`); the settlement builds them first while one waits.
+  - Guard duty: every siege step, the guards attack biters within 24 tiles of the site (12 at a howitzer's) and walk
+    back; the step runs every 300 ticks, and a `tick % 60` test had kept it from ever running.
+  - A code review (agent) found the rest: the march and moving-up orders engaged on sight (railgunners walked up to the
+    worms they saw), the hauler's route ignored worms, and nothing held the guards between steps. Marches now answer only
+    what hits them and route round worms; a siege leash calls guards back every second.
+- **The garrison leash**: a garrison unit beyond its settlement's claim plus 15 is called home (idle, units attack what
+  they see, and followed biters into worms; leashed at 35 tiles from a depot instead, a settlement's far side went
+  undefended and biters took 497 buildings).
+- **Flamer friendly fire**: the base stream's splash hit every force (8 to 11 of Serenity's units a run); its own stream's
+  splash spares its side. The burning ground stays (without it biters took a settlement apart); it still burns anyone.
+- **The landing barrage**: Serenity landing with spawners within 110 puts a howitzer with 60 shells beside its lander for
+  10 minutes and eight railgunners into its garrison.
+- Scenario `clear` (a wall of 49 spawners 90 tiles out, evolution 0.6, the assembler beyond): a way cleared and the
+  assembler razed, 27 to 38 units lost (67 before); `worms` (behemoth worms): the howitzer cleared 14 spawners in one
+  siege with 33 shells, 64 lost (about 100 before).
+- **Known limit**: on `b - rocket` (evolution 0.9, 790 lasers), landed among nests by approach, Serenity is worn down at
+  home (1,300 to 2,600 buildings lost in two hours, mostly turrets and walls, rebuilt) and razes nothing of the player's;
+  each clearance draws the nests' waves. Parked: the user, landings are for earlier games.
+- The bursts in the raze curve are not a problem (the user): the 80 at deathworld's minute 170 were 52 belts, 12 poles,
+  10 walls; a raid is an event. Count by cost, not entities, in later reports.
+
 ### Cost with six settlements (2026-10-14)
 `six` lands the corporations' caps (three each, 900 tiles apart, parts granted) and `scripts/profile.sh six 12345 40`
 benchmarks it: mean script 0.07 ms a tick over 40 minutes (campaign.md's budget: 1 ms), 158 ticks over 5 ms,

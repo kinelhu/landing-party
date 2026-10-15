@@ -223,8 +223,49 @@ local function columns()
   end
 end
 
+-- The landing barrage (the user: Serenity lands with a howitzer, and railgunners): a corporation that clears nests,
+-- landing with spawners within BARRAGE_RADIUS, puts a howitzer beside its lander that shells everything in its reach
+-- for BARRAGE_TICKS (or until its shells are spent), and BARRAGE_RAILS railgunners join its garrison. At evolution 0.9,
+-- landed among nests, Serenity lost 1,300 buildings to biter attacks in two hours and never got through (visit).
+local BARRAGE_RADIUS, BARRAGE_TICKS, BARRAGE_SHELLS, BARRAGE_RAILS = 110, 10 * 3600, 60, 8
+function war.barrage(b)
+  if not shared.CORPS[b.corp].clears_nests or not (b.lander and b.lander.valid) then return end
+  local s = b.lander.surface
+  local c = b.lander.position
+  local nests = s.count_entities_filtered{position = c, radius = BARRAGE_RADIUS, type = "unit-spawner", force = "enemy"}
+  if nests == 0 then return end
+  local name = shared.variant(b.corp, "lp-howitzer")
+  local p = s.find_non_colliding_position(name, {c.x - 8, c.y + 8}, 16, 1)
+  local gun = p and s.create_entity{name = name, position = p, force = b.lander.force}
+  if gun then
+    gun.insert{name = "lp-mortar-shell", count = BARRAGE_SHELLS}
+    b.barrage = {gun = gun, till = game.tick + BARRAGE_TICKS}
+  end
+  local rails = {}
+  for _ = 1, BARRAGE_RAILS do table.insert(rails, "lp-railgunner") end
+  local units = spawn(b, rails, {c.x + 6, c.y + 6}, b)
+  join(b, units)
+  base.trace(b, string.format("landing barrage: %s, %d railgunners, %d spawners within %d", gun and "a howitzer" or "no room for the howitzer",
+    #units, nests, BARRAGE_RADIUS))
+end
+
+local function barrages()
+  for _, b in pairs(storage.bases) do
+    local r = b.barrage
+    if r then
+      local left = r.gun.valid and r.gun.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell") or 0
+      if not r.gun.valid or left == 0 or game.tick >= r.till then
+        if r.gun.valid then r.gun.destroy() end
+        b.barrage = nil
+        base.trace(b, string.format("landing barrage over (%d shells left)", left))
+      end
+    end
+  end
+end
+
 function war.tick(tick)
   if tick % 600 ~= 300 then return end
+  barrages()
   columns()
   if storage.relief_off then return end
   local period = storage.relief_ticks or RELIEF_TICKS

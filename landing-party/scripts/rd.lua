@@ -18,6 +18,7 @@ rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier
   ["lp-tank"] = "cannon-shell", ["lp-walker"] = "rocket"}
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
 rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric",
+  ["lp-railgunner"] = "laser",
   ["lp-aegis"] = "laser"},
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade"}}
 -- What a killer deals, by its type or name: the plate that would answer it (biters are not counted).

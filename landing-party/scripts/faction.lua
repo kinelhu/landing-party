@@ -308,6 +308,7 @@ function faction.arrive(surface, from, opts, quiet)
   -- No clearing burned by a corporation at peace with the biters.
   if b and not pact.has(b.corp) then base.clear_landing(b) end
   if b then pact.place(b) end
+  if b then war.barrage(b) end
   if not b then
     -- Try again later, and say why: a failed landing retried silently every 10 s once.
     f.next = game.tick + 5 * 3600

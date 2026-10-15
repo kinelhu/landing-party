@@ -19,7 +19,7 @@ end
 -- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Minable for salvage (half its
 -- cost in parts): nothing the faction owns can be mined, only its ruins once a settlement falls, or what the
 -- player captured.
-local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
+local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true}
 local function copy(type, name, new)
   local name_new = new
@@ -150,12 +150,61 @@ projectile.action = {type = "direct", action_delivery = {type = "instant", targe
       {type = "damage", damage = {amount = 90, type = "explosion"}}}}}},
   {type = "create-entity", entity_name = "big-explosion"}}}}
 projectile.final_action = nil
+-- Cluster munitions (the user: "multiple small explosions around the main blast", Serenity's signature): each shell
+-- throws six bomblets that burst round the impact, as the base game's cluster grenade does, small each (12 explosion
+-- over 1.5 tiles, its enemies only).
+local bomblet = table.deepcopy(data.raw.projectile["grenade"])
+bomblet.name = "lp-bomblet"
+bomblet.action = {{type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "create-entity", entity_name = "grenade-explosion"},
+    {type = "create-entity", entity_name = "small-scorchmark-tintable", check_buildability = true}}}},
+  {type = "area", radius = 1.5, force = "enemy", action_delivery = {type = "instant", target_effects = {
+    {type = "damage", damage = {amount = 12, type = "explosion"}}}}}}
+bomblet.light = nil
+projectile.action = {projectile.action, {type = "cluster", cluster_count = 6, distance = 4, distance_deviation = 2.5,
+  action_delivery = {type = "projectile", projectile = "lp-bomblet", direction_deviation = 0.6, starting_speed = 0.25,
+    starting_speed_deviation = 0.3}}}
+
+-- The howitzer (Serenity's clearances; the user, 2026-10-15): the artillery turret's body at full size and a long gun,
+-- 100 tiles, standing out of a behemoth worm's 48, slow (360 ticks), for the nests whose worms outrange the mortar. It fires the
+-- mortar's shells (one supply).
+local howitzer = copy("artillery-turret", "artillery-turret", "lp-howitzer")
+howitzer.water_reflection = nil
+howitzer.max_health = 1200
+howitzer.gun = "lp-howitzer-gun"
+howitzer.inventory_size = 1
+howitzer.ammo_stack_limit = 100
+howitzer.automated_ammo_count = 1
+howitzer.circuit_connector = nil
+howitzer.corpse = nil
+howitzer.resistances = table.deepcopy(mortar.resistances)
+local howitzer_gun = table.deepcopy(data.raw.gun["artillery-wagon-cannon"])
+howitzer_gun.name = "lp-howitzer-gun"
+howitzer_gun.hidden = true
+howitzer_gun.attack_parameters.ammo_category = "lp-mortar"
+-- 100: at 60, standing out of a behemoth worm's reach, it reached two nests of a line (the user: "don't know if it'll
+-- cover a real biter city").
+howitzer_gun.attack_parameters.range = 100
+howitzer_gun.attack_parameters.min_range = 12
+howitzer_gun.attack_parameters.cooldown = 360
+-- Eight times the mortar shell's blow (the user, watching: twenty shells for one nest at 1x, three at 5x, "one too
+-- many"): two a spawner.
+howitzer_gun.attack_parameters.damage_modifier = 8
 
 -- A gun turret (a corporation may build these instead of lasers: shared.CORPS bases; fed by script) and a gate.
 local gun_turret = copy("ammo-turret", "gun-turret", "lp-gun-turret")
 local gate = copy("gate", "gate", "lp-gate")
 -- A flamethrower turret covering a gate (Serenity), kept in light oil by script.
 local flamer = copy("fluid-turret", "flamethrower-turret", "lp-flamer")
+-- Its own stream: the base one's splash hurt every force, and the flamers beside the gates burned 8 to 11 of Serenity's
+-- own units a run (review). The splash spares its own side; the burning ground stays (without it biters took a
+-- settlement apart, visit b - rocket), and still burns whoever stands in it.
+local flamer_stream = table.deepcopy(data.raw.stream["flamethrower-fire-stream"])
+flamer_stream.name = "lp-flamer-stream"
+for _, a in ipairs(flamer_stream.action) do
+  if a.type == "area" then a.force = "not-same" end
+end
+flamer.attack_parameters.ammo_type.action.action_delivery.stream = "lp-flamer-stream"
 
 local wall = copy("wall", "stone-wall", "lp-wall")
 wall.max_health = 450
@@ -224,8 +273,8 @@ road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
   lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, pacifier, depot, road, launchpad, lamp, mine, uplink,
-  gun_turret, gate, flamer,
-  mortar, mortar_gun, mortar_shell, projectile, {type = "ammo-category", name = "lp-mortar", hidden = true},
+  gun_turret, gate, flamer, flamer_stream,
+  mortar, mortar_gun, mortar_shell, projectile, bomblet, howitzer, howitzer_gun, {type = "ammo-category", name = "lp-mortar", hidden = true},
   {type = "recipe-category", name = "lp-fabrication"},
   {type = "item", name = "lp-feedstock", icon = "__base__/graphics/icons/stone.png", hidden = true,
     stack_size = 200, subgroup = "other"},
