@@ -194,6 +194,13 @@ remote.add_interface("landing-party", {
     local b = faction.arrive(game.surfaces[surface_index], from, opts, true)
     return b and b.id
   end,
+  -- The same, asynchronous (faction.request): the landing waits for its ground; landing_jobs counts those queued.
+  arrive_async = function(surface_index, from, distance, opts)
+    opts = opts or {}
+    opts.distance = distance
+    faction.request(game.surfaces[surface_index], from, opts, true, "remote")
+  end,
+  landing_jobs = function() return {queued = #(storage.landing_jobs or {}), last = storage.last_landing} end,
   faction = function() return faction.state() end,
   threat = function() return {player_ops = ops.player_ops(), last = storage.threat_last, holds = storage.budget_holds or 0} end,
   -- The ladder's state: the last raze per player force, its rung, and the player's buildings razed by type.

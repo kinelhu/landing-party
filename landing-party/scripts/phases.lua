@@ -156,14 +156,15 @@ function phases.tick(tick)
   local due
   if s.triggered then due = s.triggered.tick + (s.delay or 0) end
   if s.early and (not due or s.early < due) then due = s.early end
-  if due and tick >= due then
+  if due and tick >= due and not faction.pending_kind("phases") then
     local t = s.triggered or {surface = s.survey.surface, from = {x = 0, y = 0}}
     if not s.triggered then
       local spawn = game.forces.player.get_spawn_position(game.surfaces[t.surface])
       t.from = {x = spawn.x, y = spawn.y}
     end
-    faction.arrive(game.surfaces[t.surface], t.from, {corp = s.corp or first_corp(game.surfaces[t.surface])})
-    s.arrived = game.tick
+    -- Asynchronous (faction.request): s.arrived is set when it lands.
+    faction.request(game.surfaces[t.surface], t.from, {corp = s.corp or first_corp(game.surfaces[t.surface])}, false,
+      "phases")
   end
 end
 

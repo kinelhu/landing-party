@@ -1204,9 +1204,16 @@ scenario with assertions first; the window is for art, feel and GUI.
   on new ground (5x5 chunks generated each): 1/2, 3/6, 1/7, 0/8, 0/8, 10/16, against stalls of 1.1, 0.9, 0.4, 0.4,
   0.4 and 2.6 s. Most of it is the landing, not the search: `base.land` forces the settlement's reach (15x15 chunks;
   queued instead, the planner laid out on missing ground and three scenarios failed), about 0.4 s on ground the
-  player's game already made and a second on new; each new candidate adds about 0.15 s. Asynchronous landing (pick
-  the site, request its reach, land when on_chunk_generated has it all) is the fix, to decide with the user: a
-  landing an hour freezing the game for a second or two.
+  player's game already made and a second on new; each new candidate adds about 0.15 s.
+- **Asynchronous landings (the user, 2026-10-15).** The faction's own landings (the first, the cadence, a headquarters)
+  are queued (`faction.request`, `storage.landing_jobs`); every second the queued landing runs its search dry: a
+  candidate or the chosen site's reach (15x15 chunks) not yet made is requested from the engine, not forced, and the
+  search stops there. Once everything it reads exists it lands as before, on the site the synchronous search would
+  have chosen (the same search over the same ground). Past five minutes it lands the old way. What follows a landing
+  (the cadence's origin, a headquarters' notice, the phases' arrival) runs by the job's kind. The remote `arrive` and
+  `/lp land` stay synchronous (the scenarios and the developer want the settlement at once); `arrive_async` is the
+  queued one. Scenario `async`: a landing 900 tiles out on a fresh map waited twice for its ground and landed 3 s
+  after it was called, unforced.
   Campaigns on both seeds (6 hours, all of today's work): much as the evening's: three landers killed, two of three
   camp strikes won, no consolidation, batteries never lost, 9 and 11 operations.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.

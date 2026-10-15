@@ -50,6 +50,25 @@ local function landers()
   return out
 end
 
+-- Ground generated round pos, r chunks each way. An asynchronous landing (faction.request) runs its search "dry":
+-- ground not yet made is requested, not forced, and the search stops there until the engine has made it.
+local function ground_ready(surface, pos, r)
+  local cx, cy = math.floor(pos[1] / 32), math.floor(pos[2] / 32)
+  for x = cx - r, cx + r do
+    for y = cy - r, cy + r do
+      if not surface.is_chunk_generated{x, y} then return false end
+    end
+  end
+  return true
+end
+
+local function wait_for(surface, pos, r)
+  if ground_ready(surface, pos, r) then return false end
+  surface.request_to_generate_chunks(pos, r)
+  faction.pending = true
+  return true
+end
+
 -- A landing site about `distance` from `from`: in the first of eight directions (seeded order, turned by
 -- the landing count) with a rich enough patch within SITE_SEARCH tiles of the ring and no lander within
 -- APART. A single point per direction found no ore at 300 tiles on most maps (seed 2: 7 of 8 empty).
@@ -139,6 +158,7 @@ function faction.site(surface, from, distance, count)
         end
       end
       -- The candidate's own ground, generated now: nests and the ore count below need real entities.
+      if clear and faction.dry and wait_for(surface, spot, 2) then return nil end
       if clear then
         -- Counted for the landing's trace (each is up to 25 chunks generated within the tick).
         faction.generated = (faction.generated or 0) + (surface.is_chunk_generated{math.floor(spot[1] / 32),
@@ -218,12 +238,19 @@ function faction.arrive(surface, from, opts, quiet)
   end
   if storage.era_override then late = storage.era_override >= 3 end
   faction.generated, faction.candidates = 0, 0
+  faction.pending = false
   for pass = 1, 3 do
     if pass == 2 and not late then goto next_pass end
     faction.under_guns = pass == 2
     faction.ignore_nests = pass == 3
     for _, extra in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do
       pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
+      -- Dry: the settlement's reach (base.land's 15x15 chunks) made by the engine first.
+      if pos and faction.dry and wait_for(surface, pos, 7) then pos = nil end
+      if faction.pending then
+        faction.ignore_nests, faction.under_guns = false, false
+        return nil, "pending"
+      end
       b = pos and base.land(surface, pos, opts)
       if b then
         if pass == 2 then b.under_guns = true; base.trace(b, "landed under the player's guns (inside its artillery's reach)") end
@@ -323,7 +350,50 @@ local function next_corp(f)
   return best
 end
 
+-- Asynchronous landings: a landing generating its ground within one tick froze a megabase's game for 0.4 to 2.6 s
+-- (visit). faction.request queues it; every second the search runs dry (ground missing is requested, not forced) until
+-- the site and its reach are made, then lands as faction.arrive does, on the same site. Past LANDING_PATIENCE it lands
+-- the old way. kind says what follows the landing: "cadence", "hq" (corp), "phases", "remote".
+local LANDING_PATIENCE = 5 * 3600
+function faction.request(surface, from, opts, quiet, kind, extra)
+  storage.landing_jobs = storage.landing_jobs or {}
+  local job = {surface = surface.index, from = {x = from.x, y = from.y}, opts = opts, quiet = quiet, kind = kind,
+    since = game.tick, waits = 0}
+  for k, v in pairs(extra or {}) do job[k] = v end
+  table.insert(storage.landing_jobs, job)
+end
+
+function faction.pending_kind(kind)
+  for _, job in ipairs(storage.landing_jobs or {}) do
+    if job.kind == kind then return job end
+  end
+end
+
+local after = {}
+
+local function landing_jobs()
+  local jobs = storage.landing_jobs
+  if not (jobs and jobs[1]) then return end
+  -- One at a time, oldest first: two searches would not see each other's lander.
+  local job = jobs[1]
+  local surface = game.surfaces[job.surface]
+  if not surface then table.remove(jobs, 1); return end
+  local late = game.tick - job.since > LANDING_PATIENCE
+  faction.dry = not late
+  local b, why = faction.arrive(surface, job.from, job.opts, job.quiet)
+  faction.dry = false
+  if why == "pending" then job.waits = job.waits + 1; return end
+  table.remove(jobs, 1)
+  storage.last_landing = {id = b and b.id, waits = job.waits, ticks = game.tick - job.since, forced = late}
+  if b then
+    base.trace(b, string.format("landed %d s after it was called (%d waits for ground)%s",
+      math.floor((game.tick - job.since) / 60), job.waits, late and ", the last forced" or ""))
+  end
+  if after[job.kind] then after[job.kind](job, b) end
+end
+
 function faction.tick(tick)
+  if tick % 60 == 0 then landing_jobs() end
   if tick % 600 ~= 0 then return end
   for _, b in pairs(storage.bases) do
     if b.lander.valid and not b.tags_done then faction.tag(b) end
@@ -331,13 +401,14 @@ function faction.tick(tick)
   local f = faction.state()
   if f.next and tick >= f.next and f.surface then
     local corp = alive() < MAX_ALIVE and next_corp(f)
-    if corp then
+    if faction.pending_kind("cadence") then
+      -- Its ground is being made (faction.request).
+    elseif corp then
       -- After a corporation withdrew, the survivor's next landing starts from the vacancy it left.
       local origin = f.from
       local from = origin
       if f.vacancy and f.vacancy.corp ~= corp then from = f.vacancy.pos; f.vacancy = nil end
-      faction.arrive(game.surfaces[f.surface], from, {corp = corp}, storage.quiet)
-      f.from = origin
+      faction.request(game.surfaces[f.surface], from, {corp = corp}, storage.quiet, "cadence", {origin = origin})
     else
       f.next = tick + f.cadence
     end
@@ -371,16 +442,10 @@ function faction.headquarters(tick)
             richest = b
           end
         end
-        if richest then
-          local hq = faction.arrive(game.surfaces[richest.surface], richest.origin,
-            {corp = corp, uplink = true, hq = true, distance = HQ_DISTANCE}, storage.quiet)
-          if hq then
-            d.consolidating = nil
-            tell("lp.headquarters", shared.corp_label(corp), string.format("[gps=%d,%d,%s]", hq.origin.x, hq.origin.y,
-              game.surfaces[hq.surface].name))
-          else
-            d.consolidating = tick + 5 * 3600
-          end
+        if richest and not d.hq_pending then
+          d.hq_pending = true
+          faction.request(game.surfaces[richest.surface], richest.origin,
+            {corp = corp, uplink = true, hq = true, distance = HQ_DISTANCE}, storage.quiet, "hq", {corp = corp})
         end
       end
     end
@@ -514,5 +579,26 @@ end
 
 -- Base reports exports through this hook (base cannot require this module: it is required by it).
 base.on_export = faction.export
+
+-- What follows an asynchronous landing (faction.request), by kind.
+after.cadence = function(job, b)
+  -- The cadence's origin stays where it was (a landing from a vacancy does not move it).
+  faction.state().from = job.origin
+end
+after.hq = function(job, hq)
+  local d = faction.corp(job.corp)
+  d.hq_pending = nil
+  if hq then
+    d.consolidating = nil
+    tell("lp.headquarters", shared.corp_label(job.corp), string.format("[gps=%d,%d,%s]", hq.origin.x, hq.origin.y,
+      game.surfaces[hq.surface].name))
+  else
+    d.consolidating = game.tick + 5 * 3600
+  end
+end
+after.phases = function(job, b)
+  local phases = storage.phases
+  if phases then phases.arrived = game.tick end
+end
 
 return faction

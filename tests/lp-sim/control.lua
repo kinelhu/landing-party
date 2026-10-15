@@ -3435,6 +3435,26 @@ scenarios.clearing = function()
   end)
 end
 
+-- Async: a landing called on ground not yet made (900 tiles out on a fresh map) is queued (faction.request), waits while
+-- the engine makes its candidates' ground and its reach, and lands within a few minutes, before its patience runs out.
+scenarios.async = function()
+  schedule(60, function()
+    S.fresh = not surface().is_chunk_generated{math.floor(900 / 32), 0}
+    S.before = #lp("bases")
+    lp("arrive_async", 1, {x = 0, y = 0}, 900, {corp = "grubstake"})
+    S.queued = lp("landing_jobs").queued
+  end)
+  schedule(4 * 3600, function()
+    local j = lp("landing_jobs")
+    local last = j.last or {}
+    info("async: " .. serpent.line({fresh = S.fresh, queued = S.queued, now = j.queued, last = last, bases = #lp("bases")}))
+    check("async: the landing was queued", S.queued == 1, tostring(S.queued))
+    check("async: it waited for its ground", (last.waits or 0) > 0, tostring(last.waits))
+    check("async: and landed, unforced", last.id ~= nil and not last.forced and #lp("bases") == S.before + 1,
+      string.format("id %s, %s s", tostring(last.id), tostring(last.ticks and last.ticks / 60)))
+  end)
+end
+
 -- Pads: each corporation's landing pad in its own shape (layout pad_shape), drawn as text in results.txt: '#' its floor,
 -- '+' its trim, '.' anything else, 'L' the lander. Serenity's is an octagon with a trim ring, Grubstake's ragged.
 scenarios.pads = function()
