@@ -1068,8 +1068,15 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   undefended and biters took 497 buildings).
 - **Flamer friendly fire**: the base stream's splash hit every force (8 to 11 of Serenity's units a run); its own stream's
   splash spares its side. The burning ground stays (without it biters took a settlement apart); it still burns anyone.
-- **The landing barrage**: Serenity landing with spawners within 110 puts a howitzer with 60 shells beside its lander for
-  10 minutes and eight railgunners into its garrison.
+- **The orbital barrage** (the user: "shells from above, before landing ... a very dramatic entrance"; `war.barrage`):
+  Serenity landing with spawners within 120 has every spawner and worm there shelled from the sky, nearest first, a
+  shell every 15 ticks, as many as each one's health takes (a spawner has 3,500: one shell each left all five standing),
+  each the howitzer's blow with ten bomblets (`lp-orbital-projectile`); eight railgunners join its garrison; notice
+  `lp.orbital`. Its kills (no evolution). A howitzer by the lander (the first try) fired 10 of its 60 shells: the nests
+  were out of its line and reach. Scenario `clearing`: 25 shells, the five spawners within 120 gone in six seconds;
+  `LP_MIX=watch` lands 30 s in, to watch it (`scripts/watch-sim.sh clearing`).
+- Engine: a script-made artillery projectile works with `target` an entity and `force`; spawners have 3,500 health
+  (the howitzer's "three shells a nest" is that).
 - Scenario `clear` (a wall of 49 spawners 90 tiles out, evolution 0.6, the assembler beyond): a way cleared and the
   assembler razed, 27 to 38 units lost (67 before); `worms` (behemoth worms): the howitzer cleared 14 spawners in one
   siege with 33 shells, 64 lost (about 100 before).

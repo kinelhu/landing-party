@@ -164,6 +164,20 @@ bomblet.light = nil
 projectile.action = {projectile.action, {type = "cluster", cluster_count = 6, distance = 4, distance_deviation = 2.5,
   action_delivery = {type = "projectile", projectile = "lp-bomblet", direction_deviation = 0.6, starting_speed = 0.25,
     starting_speed_deviation = 0.3}}}
+-- The orbital shell (the user: Serenity "shells from above, before landing ... a very dramatic entrance"): the shell at
+-- eight times its blow (as the howitzer's), more bomblets, a bigger burst; fired by script from the sky (war.lua).
+local orbital = table.deepcopy(projectile)
+orbital.name = "lp-orbital-projectile"
+local blast = orbital.action[1].action_delivery.target_effects
+for _, e in ipairs(blast) do
+  if e.type == "nested-result" then
+    for _, d in ipairs(e.action.action_delivery.target_effects) do d.damage.amount = d.damage.amount * 8 end
+  elseif e.type == "create-entity" then
+    e.entity_name = "massive-explosion"
+  end
+end
+orbital.action[2].cluster_count = 10
+orbital.action[2].distance = 6
 
 -- The howitzer (Serenity's clearances; the user, 2026-10-15): the artillery turret's body at full size and a long gun,
 -- 100 tiles, standing out of a behemoth worm's 48, slow (360 ticks), for the nests whose worms outrange the mortar. It fires the
@@ -274,7 +288,7 @@ road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 data:extend({
   lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, pacifier, depot, road, launchpad, lamp, mine, uplink,
   gun_turret, gate, flamer, flamer_stream,
-  mortar, mortar_gun, mortar_shell, projectile, bomblet, howitzer, howitzer_gun, {type = "ammo-category", name = "lp-mortar", hidden = true},
+  mortar, mortar_gun, mortar_shell, projectile, bomblet, orbital, howitzer, howitzer_gun, {type = "ammo-category", name = "lp-mortar", hidden = true},
   {type = "recipe-category", name = "lp-fabrication"},
   {type = "item", name = "lp-feedstock", icon = "__base__/graphics/icons/stone.png", hidden = true,
     stack_size = 200, subgroup = "other"},

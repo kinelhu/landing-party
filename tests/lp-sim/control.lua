@@ -3550,8 +3550,10 @@ end
 -- first pass tries has a nest near it; Grubstake lands on the second pass, and its landing burns a clearing (no spawner
 -- or worm left within 80 tiles), without raising the biters' evolution from spawner kills.
 scenarios.clearing = function()
-  schedule(30, function() game.forces.enemy.set_evolution_factor(1, surface()) end)
-  schedule(60, function()
+  -- LP_MIX=watch: everything 30 s later, to watch the landing (scripts/watch-sim.sh clearing).
+  local d = params.mix == "watch" and 1800 or 0
+  schedule(d + 30, function() game.forces.enemy.set_evolution_factor(1, surface()) end)
+  schedule(d + 60, function()
     local n = 0
     for x = -700, 700, 70 do for y = -700, 700, 70 do
       local d = math.sqrt(x * x + y * y)
@@ -3568,7 +3570,7 @@ scenarios.clearing = function()
     -- Serenity: Grubstake, at peace with the biters, lands among them and burns nothing (scenario pact).
     S.g = lp("arrive", 1, {x = 0, y = 0}, 350, {corp = "serenity"})
   end)
-  schedule(300, function()
+  schedule(d + 300, function()
     local st = S.g and lp("stats", S.g)
     local left = st and surface().count_entities_filtered{position = st.origin, radius = 80, type = {"unit-spawner", "turret"},
       force = "enemy"} or -1
@@ -3579,6 +3581,16 @@ scenarios.clearing = function()
     check("clearing: its landing burned a clearing", st and (st.cleared or 0) > 0 and left == 0,
       st and (tostring(st.cleared) .. " cleared, " .. left .. " left") or "no landing")
     check("clearing: without evolving the biters", math.abs(evo - S.evo0) < 1e-6, string.format("%.4f -> %.4f", S.evo0, evo))
+  end)
+  -- The orbital barrage (war.barrage): a minute and a half on, no spawner within 120, evolution not raised by it.
+  schedule(d + 60 + 90 * 60, function()
+    local st = S.g and lp("stats", S.g)
+    local left = st and surface().count_entities_filtered{position = st.origin, radius = 120, type = "unit-spawner",
+      force = "enemy"} or -1
+    local evo = game.forces.enemy.get_evolution_factor_by_killing_spawners(surface())
+    info(string.format("clearing: orbital barrage, %d spawners left within 120; spawner evolution %.4f", left, evo))
+    check("clearing: the orbital barrage cleared 120 tiles", left == 0, tostring(left))
+    check("clearing: without evolving the biters (orbital)", evo <= (S.evo0 or 0) + 1e-6, string.format("%.4f", evo))
   end)
 end
 

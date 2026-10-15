@@ -223,49 +223,67 @@ local function columns()
   end
 end
 
--- The landing barrage (the user: Serenity lands with a howitzer, and railgunners): a corporation that clears nests,
--- landing with spawners within BARRAGE_RADIUS, puts a howitzer beside its lander that shells everything in its reach
--- for BARRAGE_TICKS (or until its shells are spent), and BARRAGE_RAILS railgunners join its garrison. At evolution 0.9,
--- landed among nests, Serenity lost 1,300 buildings to biter attacks in two hours and never got through (visit).
-local BARRAGE_RADIUS, BARRAGE_TICKS, BARRAGE_SHELLS, BARRAGE_RAILS = 110, 10 * 3600, 60, 8
+-- The orbital barrage (the user: Serenity "shells from above, before landing ... a very dramatic entrance, with tons of
+-- cluster ammo pummeling the nests"): a corporation that clears nests, landing with spawners within ORBITAL_RADIUS,
+-- has every spawner and worm there shelled from the sky, nearest first, a shell every ORBITAL_EVERY ticks (as many as
+-- its health takes),
+-- each the howitzer's blow with ten bomblets; BARRAGE_RAILS railgunners join its garrison. Its kills (spawners' evolution
+-- refunded, biters.lua). A howitzer by the lander fired 10 of its 60 shells: its nests were out of its line and reach.
+local ORBITAL_RADIUS, ORBITAL_EVERY, ORBITAL_FALL, BARRAGE_RAILS = 120, 15, 30, 8
+local ORBITAL_BLOW = 800          -- what a shell does to a spawner or a worm, about (resistances off its 960)
 function war.barrage(b)
   if not shared.CORPS[b.corp].clears_nests or not (b.lander and b.lander.valid) then return end
   local s = b.lander.surface
   local c = b.lander.position
-  local nests = s.count_entities_filtered{position = c, radius = BARRAGE_RADIUS, type = "unit-spawner", force = "enemy"}
-  if nests == 0 then return end
-  local name = shared.variant(b.corp, "lp-howitzer")
-  local p = s.find_non_colliding_position(name, {c.x - 8, c.y + 8}, 16, 1)
-  local gun = p and s.create_entity{name = name, position = p, force = b.lander.force}
-  if gun then
-    gun.insert{name = "lp-mortar-shell", count = BARRAGE_SHELLS}
-    b.barrage = {gun = gun, till = game.tick + BARRAGE_TICKS}
+  local found = s.find_entities_filtered{position = c, radius = ORBITAL_RADIUS, type = {"unit-spawner", "turret"},
+    force = "enemy"}
+  if #found == 0 then return end
+  table.sort(found, function(x, y)
+    return (x.position.x - c.x) ^ 2 + (x.position.y - c.y) ^ 2 < (y.position.x - c.x) ^ 2 + (y.position.y - c.y) ^ 2
+  end)
+  -- As many shells as its health takes (a spawner has 3,500: one shell each left all five standing).
+  local queue = {}
+  for _, e in ipairs(found) do
+    for _ = 1, math.max(1, math.ceil(e.health / ORBITAL_BLOW)) do table.insert(queue, e) end
   end
+  storage.orbitals = storage.orbitals or {}
+  table.insert(storage.orbitals, {base = b.id, surface = s.index, force = b.force, queue = queue, i = 1})
   local rails = {}
   for _ = 1, BARRAGE_RAILS do table.insert(rails, "lp-railgunner") end
   local units = spawn(b, rails, {c.x + 6, c.y + 6}, b)
   join(b, units)
-  base.trace(b, string.format("landing barrage: %s, %d railgunners, %d spawners within %d", gun and "a howitzer" or "no room for the howitzer",
-    #units, nests, BARRAGE_RADIUS))
+  local spawners = 0
+  for _, e in ipairs(found) do if e.type == "unit-spawner" then spawners = spawners + 1 end end
+  base.trace(b, string.format("orbital barrage: %d spawners and %d worms within %d, %d shells; %d railgunners", spawners,
+    #found - spawners, ORBITAL_RADIUS, #queue, #units))
+  tell("lp.orbital", b.corp, b)
 end
 
-local function barrages()
-  for _, b in pairs(storage.bases) do
-    local r = b.barrage
-    if r then
-      local left = r.gun.valid and r.gun.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell") or 0
-      if not r.gun.valid or left == 0 or game.tick >= r.till then
-        if r.gun.valid then r.gun.destroy() end
-        b.barrage = nil
-        base.trace(b, string.format("landing barrage over (%d shells left)", left))
-      end
+local function orbitals(tick)
+  for k = #(storage.orbitals or {}), 1, -1 do
+    local o = storage.orbitals[k]
+    local s = game.surfaces[o.surface]
+    -- The next target still standing (an earlier shell or its bomblets may have done for it).
+    while o.queue[o.i] and not o.queue[o.i].valid do o.i = o.i + 1 end
+    local e = o.queue[o.i]
+    if not e or not s then
+      local b = storage.bases[o.base]
+      if b then base.trace(b, "orbital barrage over") end
+      table.remove(storage.orbitals, k)
+    else
+      o.i = o.i + 1
+      local p = e.position
+      -- Its force and cause given (given the force alone, its blast, "enemy" of nobody, hurt nothing).
+      local b = storage.bases[o.base]
+      local shell = s.create_entity{name = "lp-orbital-projectile", position = {p.x - 10, p.y - ORBITAL_FALL}, target = e,
+        speed = 1, force = o.force, cause = game.forces[o.force], source = b and b.lander.valid and b.lander or nil}
     end
   end
 end
 
 function war.tick(tick)
+  if storage.orbitals and #storage.orbitals > 0 and tick % ORBITAL_EVERY == 0 then orbitals(tick) end
   if tick % 600 ~= 300 then return end
-  barrages()
   columns()
   if storage.relief_off then return end
   local period = storage.relief_ticks or RELIEF_TICKS
