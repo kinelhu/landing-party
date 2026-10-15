@@ -801,16 +801,9 @@ local CORRIDOR_TICKS, CORRIDOR_RADIUS = 30 * 3600, 30
 function ops.cleared(surface, pos)
   storage.corridors = storage.corridors or {}
   table.insert(storage.corridors, {surface = surface.index, pos = {pos.x, pos.y}, tick = game.tick})
-  if #storage.corridors > 400 then table.remove(storage.corridors, 1) end
-end
-local function corridor_near(surface_index, cx, cy)
-  for i = #(storage.corridors or {}), 1, -1 do
-    local c = storage.corridors[i]
-    if game.tick - c.tick > CORRIDOR_TICKS then
-      table.remove(storage.corridors, i)
-    elseif c.surface == surface_index and (c.pos[1] - cx) ^ 2 + (c.pos[2] - cy) ^ 2 <= CORRIDOR_RADIUS ^ 2 then
-      return true
-    end
+  -- Oldest first: drop the expired from the front.
+  while storage.corridors[1] and (game.tick - storage.corridors[1].tick > CORRIDOR_TICKS or #storage.corridors > 400) do
+    table.remove(storage.corridors, 1)
   end
 end
 local function sneak_route(b, from, to, opts)
@@ -828,6 +821,45 @@ local function sneak_route(b, from, to, opts)
   local nests = (opts.nests and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"})
     or (opts.worms and s.find_entities_filtered{area = box, type = "turret", force = "enemy"}) or {}
   local function centre(i, j) return x0 + (i + 0.5) * SNEAK_CELL, y0 + (j + 0.5) * SNEAK_CELL end
+  -- Buckets of BUCKET tiles, so a cell tests only the turrets and nests near it (a megabase has thousands of
+  -- turrets in the box: testing each per cell stalled a tick for seconds).
+  local BUCKET = 32
+  local function bucket(list)
+    local out = {}
+    for _, e in ipairs(list) do
+      local k = math.floor(e.position.x / BUCKET) .. "," .. math.floor(e.position.y / BUCKET)
+      out[k] = out[k] or {}
+      table.insert(out[k], {x = e.position.x, y = e.position.y, type = e.type})
+    end
+    return out
+  end
+  local function near(buckets, cx, cy, r, fn)
+    for bx = math.floor((cx - r) / BUCKET), math.floor((cx + r) / BUCKET) do
+      for by = math.floor((cy - r) / BUCKET), math.floor((cy + r) / BUCKET) do
+        for _, e in ipairs(buckets[bx .. "," .. by] or {}) do
+          if fn(e) then return true end
+        end
+      end
+    end
+    return false
+  end
+  local tb, nb_ = bucket(turrets), bucket(nests)
+  local TREACH = math.max(REACH["ammo-turret"], REACH["electric-turret"], REACH["fluid-turret"]) + SNEAK_MARGIN
+  local NREACH = math.max(NEST_KEEP.spawner, NEST_KEEP.worm)
+  -- Corridors on this surface within the box, once per route.
+  local corr = {}
+  for _, c in ipairs(storage.corridors or {}) do
+    if c.surface == b.surface and game.tick - c.tick <= CORRIDOR_TICKS
+      and c.pos[1] >= box[1][1] and c.pos[1] <= box[2][1] and c.pos[2] >= box[1][2] and c.pos[2] <= box[2][2] then
+      table.insert(corr, c.pos)
+    end
+  end
+  local function in_corridor(cx, cy)
+    for _, c in ipairs(corr) do
+      if (c[1] - cx) ^ 2 + (c[2] - cy) ^ 2 <= CORRIDOR_RADIUS ^ 2 then return true end
+    end
+    return false
+  end
   local blocked = {}
   local function open(i, j)
     if i < 0 or j < 0 or i >= w or j >= h then return false end
@@ -836,16 +868,16 @@ local function sneak_route(b, from, to, opts)
       local cx, cy = centre(i, j)
       local bad = false
       if (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then
-        for _, e in ipairs(turrets) do
+        bad = near(tb, cx, cy, TREACH, function(e)
           local r = (REACH[e.type] or 20) + SNEAK_MARGIN
-          if (e.position.x - cx) ^ 2 + (e.position.y - cy) ^ 2 <= r * r then bad = true; break end
-        end
+          return (e.x - cx) ^ 2 + (e.y - cy) ^ 2 <= r * r
+        end)
       end
-      if not bad and not (#nests > 0 and corridor_near(b.surface, cx, cy)) then
-        for _, e in ipairs(nests) do
+      if not bad and #nests > 0 and not in_corridor(cx, cy) then
+        bad = near(nb_, cx, cy, NREACH, function(e)
           local r = e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm
-          if (e.position.x - cx) ^ 2 + (e.position.y - cy) ^ 2 <= r * r then bad = true; break end
-        end
+          return (e.x - cx) ^ 2 + (e.y - cy) ^ 2 <= r * r
+        end)
       end
       if not bad and s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0 then
         bad = true
@@ -859,33 +891,59 @@ local function sneak_route(b, from, to, opts)
   local ti, tj = cell(to)
   -- A* over the grid, eight neighbours.
   local key = function(i, j) return i * h + j end
-  local g, came, openset = {[key(si, sj)] = 0}, {}, {{si, sj}}
   local function hdist(i, j) return math.sqrt((i - ti) ^ 2 + (j - tj) ^ 2) end
+  -- Open set as a binary heap on f (stale entries are skipped when popped).
+  local heap = {}
+  local function push(f, i, j)
+    local n = #heap + 1
+    heap[n] = {f, i, j}
+    while n > 1 do
+      local p = math.floor(n / 2)
+      if heap[p][1] <= heap[n][1] then break end
+      heap[p], heap[n] = heap[n], heap[p]
+      n = p
+    end
+  end
+  local function pop()
+    local top, last = heap[1], table.remove(heap)
+    if #heap > 0 then
+      heap[1] = last
+      local n = 1
+      while true do
+        local l, r, m = 2 * n, 2 * n + 1, n
+        if heap[l] and heap[l][1] < heap[m][1] then m = l end
+        if heap[r] and heap[r][1] < heap[m][1] then m = r end
+        if m == n then break end
+        heap[m], heap[n] = heap[n], heap[m]
+        n = m
+      end
+    end
+    return top
+  end
+  local g, came = {[key(si, sj)] = 0}, {}
+  push(hdist(si, sj), si, sj)
   local closed = {}
   local found = false
   local steps = 0
-  while #openset > 0 and steps < 4000 do
+  while #heap > 0 and steps < 4000 do
+    local _, ci, cj = table.unpack(pop())
+    local ck = key(ci, cj)
+    if closed[ck] then goto next end
     steps = steps + 1
-    local bi, bf = 1
-    for n, c in ipairs(openset) do
-      local f = g[key(c[1], c[2])] + hdist(c[1], c[2])
-      if not bf or f < bf then bi, bf = n, f end
-    end
-    local c = table.remove(openset, bi)
-    local ck = key(c[1], c[2])
-    if c[1] == ti and c[2] == tj then found = true; break end
+    if ci == ti and cj == tj then found = true; break end
     closed[ck] = true
     for _, d in ipairs({{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}) do
-      local ni, nj = c[1] + d[1], c[2] + d[2]
+      local ni, nj = ci + d[1], cj + d[2]
       local nk = key(ni, nj)
       if not closed[nk] and ((ni == ti and nj == tj) or open(ni, nj)) then
         local ng = g[ck] + ((d[1] ~= 0 and d[2] ~= 0) and 1.414 or 1)
         if not g[nk] or ng < g[nk] then
-          if not g[nk] then table.insert(openset, {ni, nj}) end
           g[nk], came[nk] = ng, ck
+          push(ng + hdist(ni, nj), ni, nj)
         end
       end
     end
+    ::next::
   end
   local nb = 0
   for _, v in pairs(blocked) do if v then nb = nb + 1 end end

@@ -1194,6 +1194,16 @@ scenario with assertions first; the window is for art, feel and GUI.
   minutes, then one more in two hours while the ladder climbed to its top rung: the pressure is a burst, then the camps'
   garrisons bleed and nothing replaces them. Script: 1.42 ms a tick alone, 2.09 with the mod (+0.66 ms; the evening's
   first visits measured +0.1): to profile (the survey, route planning, clearances' re-tries are the suspects).
+- **Profiled (2026-10-15, `LP_PROFILE=1 scripts/visit.sh`, the engine's per-tick timings, run alone).** The route
+  planner was the cost: each grid cell tested every turret in its box (a megabase: 2,300 lasers), and the A* open set
+  was scanned whole each step. Now turrets and nests sit in 32-tile buckets (a cell tests those near it), the open set
+  is a heap, corridors are read once a route. Mean script on nwa's hour: 0.71 -> 0.10 ms a tick; the hour's razing
+  unchanged (473, settlements 5 and 7 as before). The profile's units are nanoseconds: the "worst ticks" read as
+  seconds were 7-8 ms. What remains is the landings, one tick each: 1.1 s, 0.86 s, 2.6 s (the forced Grubstake
+  landing at 20 minutes, which ended at -16,3042), 0.4 s. The site search generates 5x5 chunks for every clear
+  candidate (faction.site) and a max-evolution world refuses most of them for nests, over up to three passes of seven
+  rings of eight directions. Asynchronous landing (request the candidates' chunks, land when on_chunk_generated has
+  them) is the fix, to decide with the user: a landing an hour that freezes the game for a second or two.
   Campaigns on both seeds (6 hours, all of today's work): much as the evening's: three landers killed, two of three
   camp strikes won, no consolidation, batteries never lost, 9 and 11 operations.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
