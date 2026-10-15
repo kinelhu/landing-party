@@ -114,9 +114,9 @@ script.on_event(defines.events.on_entity_died, function(e)
     else
       base.on_died(ent, e.force and e.force.name)
     end
-  elseif e.force and shared.is_corp(e.force.name) and e.cause and e.cause.valid
-    and ent.force.name ~= "neutral" and ent.force.name ~= "enemy" then
-    -- A player building razed by a corporation, whatever did it: the ladder's clock (ops.ladder) and the tally.
+  elseif e.force and shared.is_corp(e.force.name) and ent.force.name ~= "neutral" and ent.force.name ~= "enemy" then
+    -- A player building razed by a corporation, whatever did it, its killer dead or alive: the ladder's clock
+    -- (ops.ladder) and the tally (lasers and artillery kept falling on the user's save with the tally still).
     if not shared.is_corp(ent.force.name) then
       storage.last_raze = storage.last_raze or {}
       storage.last_raze[ent.force.name] = e.tick
@@ -125,7 +125,7 @@ script.on_event(defines.events.on_entity_died, function(e)
       storage.player_razed[k] = (storage.player_razed[k] or 0) + 1
     end
     -- Razed counts the player's structures only (trees felled by shells once inflated it by half).
-    local id = storage.unit_owner[e.cause.unit_number]
+    local id = e.cause and e.cause.valid and storage.unit_owner[e.cause.unit_number]
     local b = id and storage.bases[id]
     if b then
       b.razed = b.razed + 1

@@ -3058,7 +3058,49 @@ scenarios.visit = function()
     info("visit: Grubstake again at 30 minutes " .. (S.g2 and ("landed, settlement " .. S.g2) or "found no site"))
   end)
   -- LP_MIX=provoked: an hour in, the factory counts as having attacked both corporations (no live player can).
-  if params.mix == "provoked" then
+  -- LP_MIX=expansion: every 20 minutes the player places an outpost on the nearest unmined ore beyond its edge (8 drills,
+  -- 2 powered lasers at its research, a radar), as a growing factory does (the megabase consult's test plan); the
+  -- timeline counts how many still stand. Both: LP_MIX=provoked-expansion.
+  if params.mix:find("expansion", 1, true) then
+    S.outposts = {}
+    for t = 20 * 3600, END - 600, 20 * 3600 do
+      schedule(t, function()
+        local sp = S.sp
+        if not sp then return end
+        local placed
+        for k = 0, 47 do
+          if placed then break end
+          local a = 2 * math.pi * k / 48
+          for r = S.dist - 100, S.dist + 300, 40 do
+            local p = {sp.x + math.cos(a) * r, sp.y + math.sin(a) * r}
+            if surface().count_entities_filtered{position = p, radius = 12, type = "resource", name = {"iron-ore", "copper-ore",
+              "coal", "stone"}} >= 30 and surface().count_entities_filtered{position = p, radius = 60, force = "player", limit = 1} == 0
+              and surface().count_entities_filtered{position = p, radius = 60, type = {"unit-spawner", "turret"}, force = "enemy", limit = 1} == 0 then
+              local put = function(name, x, y)
+                local q = surface().find_non_colliding_position(name, {x, y}, 6, 1)
+                return q and surface().create_entity{name = name, position = q, force = "player", raise_built = true}
+              end
+              local ents = {}
+              for i = 0, 7 do table.insert(ents, put("electric-mining-drill", p[1] - 6 + (i % 4) * 4, p[2] - 3 + math.floor(i / 4) * 6)) end
+              for _, dx in ipairs({-10, 10}) do
+                table.insert(ents, put("laser-turret", p[1] + dx, p[2] - 8))
+                put("electric-energy-interface", p[1] + dx, p[2] - 12)
+                put("medium-electric-pole", p[1] + dx + 2, p[2] - 10)
+              end
+              table.insert(ents, put("radar", p[1], p[2] + 9))
+              put("electric-energy-interface", p[1] + 4, p[2] + 9)
+              put("medium-electric-pole", p[1] + 2, p[2] + 6)
+              table.insert(S.outposts, {pos = p, ents = ents, at = game.tick})
+              placed = p
+              break
+            end
+          end
+        end
+        info("visit: outpost " .. (placed and string.format("placed at %.0f,%.0f", placed[1], placed[2]) or "found no ore"))
+      end)
+    end
+  end
+  if params.mix:find("provoked", 1, true) then
     schedule(60 * 3600, function()
       lp("debug_tune", {provoke = true})
       info("visit: both corporations provoked by the player")
@@ -3069,7 +3111,14 @@ scenarios.visit = function()
       local pr = lp("pressure")
       local razed = 0
       for _, n in pairs(pr.razed or {}) do razed = razed + n end
+      local standing = 0
+      for _, o in ipairs(S.outposts or {}) do
+        local n = 0
+        for _, e in ipairs(o.ents) do if e and e.valid then n = n + 1 end end
+        if n >= #o.ents / 2 then standing = standing + 1 end
+      end
       local row = {minute = (game.tick - storage.t0) / 3600, player = census(), bases = {}, razed = razed,
+        outposts = S.outposts and #S.outposts or nil, outposts_standing = S.outposts and standing or nil,
         razed_by_type = pr.razed, ladder = pr.ladder,
         since_raze = pr.last_raze and (game.tick - pr.last_raze) / 3600 or nil}
       for _, id in ipairs(lp("bases")) do
