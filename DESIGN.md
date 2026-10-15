@@ -1180,6 +1180,15 @@ scenario with assertions first; the window is for art, feel and GUI.
      doing nearly all of it, from one long raid each (Grubstake under the guns 166, Serenity 307). The player's census at
      the hour: lasers 2,302 to 2,182, artillery 59 to 55. Far past the consult's target (one a 10 minutes a corporation):
      a rate to tune, with the user.
+  8. Over the whole three hours: 506 razed (rails 120-odd, signals, poles, 150 lasers, 4 artillery turrets, walls),
+     nearly all in the first hour, then quiet as the camps' garrisons bled. Plain and provoked identical again: landed
+     under the guns, the player's buildings stand inside Serenity's claim, which provokes it at once (encroachment). The
+     raze tally now counts a corporation's kill whether or not its killer survived the exchange (lasers kept falling
+     with the tally still). Script cost unclear: 5.65 ms a tick alone against 7.46 with the mod, both on a machine running
+     three games at once; to be measured on its own.
+- The visit's **expansion** variant (`LP_MIX=expansion`, or `provoked-expansion`): every 20 minutes the scripted player
+  places an outpost on the nearest unmined ore beyond its edge (8 drills, 2 powered lasers at its research, a radar); the
+  timeline counts the outposts standing.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each
