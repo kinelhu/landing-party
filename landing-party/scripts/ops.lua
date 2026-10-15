@@ -557,7 +557,9 @@ local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE en
 local function choose(b, army)
   local h = home(b)
   if not h then return end
-  local max_field = math.max(0, cap(b, army) - math.ceil(RESERVE * cap(b, army)))
+  -- At least what stands at home beyond the reserve: a camp with no depot has a cap of nought, and its escort of sixteen
+  -- could afford nothing (visit, under the guns).
+  local max_field = math.max(0, cap(b, army) - math.ceil(RESERVE * cap(b, army)), (field(b, army)))
   local best, bs
   local zones = {}
   for i = #(b.intel.cool or {}), 1, -1 do
