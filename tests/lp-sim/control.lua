@@ -476,6 +476,9 @@ scenarios.defend = function()
     lp("debug_tune", {era = 2, rd_tech = {serenity = {weapons = {laser = 2}, plate = {["lp-infantry"] = "physical"}}}})
   end)
   schedule(STRIKE, function()
+    -- Capture off (at the strike: forked runs start after tick 200): the response is tested here, capture in fall (the
+    -- creeping turrets, the outpost's turrets dead, held it a minute and took four pieces before its rebuild came).
+    lp("debug_tune", {capture_off = true})
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local far, fd
     for _, t in pairs(lp_entities("lp-turret")) do
@@ -494,6 +497,16 @@ scenarios.defend = function()
       return h
     end
     S.before, S.hp0 = S.near(), S.health()
+    S.names = function()
+      local c = {}
+      for _, e in pairs(surface().find_entities_filtered{position = at, radius = 14,
+        name = {"lp-drill", "lp-bin", "lp-pylon", "lp-turret"}}) do
+        local k = e.name .. (e.force.name == FORCE and "" or "@" .. e.force.name)
+        c[k] = (c[k] or 0) + 1
+      end
+      return serpent.line(c)
+    end
+    S.names0 = S.names()
     S.garrison = lp("stats", storage.id).garrison
     local pf = game.forces.player
     pf.set_ammo_damage_modifier("bullet", 0.8)
@@ -527,6 +540,7 @@ scenarios.defend = function()
     check("defend: the faction answered", st.responses + st.ops.launched > 0,
       st.responses .. " responses, " .. st.ops.launched .. " raids")
     check("defend: the creeping turrets were destroyed", S.creep and alive == 0, alive .. " standing")
+    if S.names then info("defend: outpost before " .. S.names0 .. ", after " .. S.names()) end
     check("defend: the outpost stands again", S.near and S.near() >= S.before,
       (S.near and S.near() or 0) .. "/" .. tostring(S.before) .. " outpost entities, rebuilt " .. st.rebuilt)
   end)
@@ -3189,6 +3203,110 @@ scenarios.rail = function()
   end)
 end
 
+-- Pace (the builders consult's gate): a Grubstake camp grows 30 minutes on its own; its counts at the end (blocks,
+-- modules, drills, fabricators, turrets, parts made), compared between versions on several seeds (within 15%).
+scenarios.pace = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    -- LP_MIX=serenity: a Serenity camp (its drones).
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = params.mix == "serenity" and "serenity" or "grubstake"})
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    info(string.format("pace: blocks %d modules %d drills %d fabs %d turrets %d pylons %d made %d mature %s", st.blocks,
+      st.modules, st.drills, st.fabs, st.turrets, st.pylons, st.made, tostring(st.mature)))
+  end)
+end
+
+-- Crew (the builders consult, slice 1): a Grubstake camp; an outpost of five (a pylon, two turrets, two walls) queued
+-- first, 90 tiles out, beyond every yard (debug_crew): a truck takes it, builds all five within 10 tiles of the site,
+-- within 90 s of the queuing, and goes home; none stuck. Within its yard the camp builds as before.
+-- LP_MIX=killed: the truck killed at mid-road spills its bill (34 parts: 17 iron), and a second truck builds the outpost
+-- within 3 minutes of the loss.
+-- LP_MIX=grown: a Grubstake camp landed as a bastion (walls round every block) grows 20 minutes before the outpost is
+-- queued 150 tiles out: the truck forms past the outermost wall and builds it; none stuck.
+scenarios.crew = function()
+  -- LP_MIX=drone: the same with a Serenity camp, its constructor drone flying out.
+  -- LP_MIX=rebuild: two of the built outpost's five destroyed; a crew rebuilds them (no yard beam), all five again within
+  -- the rebuild delay and 90 s.
+  local killed, grown, drone, again = params.mix == "killed", params.mix == "grown", params.mix == "drone", params.mix == "rebuild"
+  local corp = drone and "serenity" or "grubstake"
+  local at = (grown and 20 or 3) * 3600
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = corp, doctrine = grown and "bastion" or nil})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(at, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local out = grown and 150 or 90
+    S.site = {math.floor(o.x - o.x / len * out), math.floor(o.y - o.y / len * out)}
+    if grown then S.walls = lp("stats", S.g).walls end
+    flatten(S.site[1] - 8, S.site[2] - 8, S.site[1] + 8, S.site[2] + 8)
+    S.queued = game.tick
+    if killed then
+      local mid = {(o.x + S.site[1]) / 2, (o.y + S.site[2]) / 2}
+      S.mid = mid
+    end
+    S.n = lp("debug_crew", S.g, S.site, {"lp-pylon", "lp-turret", "lp-turret", "lp-wall", "lp-wall"})
+  end)
+  for t = at + 30, END - 120, 30 do
+    schedule(t, function()
+      -- Killed at mid-road, as the player would (four gun turrets beside the road did not stop it: the hauler's hull,
+      -- 1,500 health and armour, crossed their reach in about 9 s).
+      if killed and not S.shot then
+        local t = surface().find_entities_filtered{name = "lp-grubstake-hauler", position = S.mid, radius = 15, limit = 1}[1]
+        if t then t.die("player"); S.shot = true end
+      end
+      if killed and not S.lost_at and (lp("crew_stats", S.g).lost or 0) > 0 then
+        S.lost_at = game.tick
+        S.iron = 0
+        for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.mid, radius = 40}) do
+          if it.stack.name == "iron-plate" then S.iron = S.iron + it.stack.count end
+        end
+      end
+      if S.built_at then return end
+      local n = surface().count_entities_filtered{force = "lp-" .. corp, position = S.site, radius = 10,
+        type = {"electric-pole", "ammo-turret", "electric-turret", "wall"}}
+      if n >= 5 then S.built_at = game.tick end
+      S.placed = n
+      if again and S.built_at and not S.broke then
+        S.broke = game.tick
+        local es = surface().find_entities_filtered{force = "lp-" .. corp, position = S.site, radius = 10,
+          type = {"ammo-turret", "electric-turret"}}
+        for k = 1, math.min(2, #es) do es[k].die("player") end
+        S.built_at = nil
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local c = lp("crew_stats", S.g)
+    info(string.format("crew: %s; placed %s of 5 at the site, built %s s after queuing; stats %s", tostring(S.n), tostring(S.placed),
+      S.built_at and string.format("%.0f", (S.built_at - S.queued) / 60) or "never", serpent.line(c)))
+    if again then
+      check("crew: the outpost rebuilt by a crew", S.built_at and S.broke and c.sent >= 2, string.format("%s sent; rebuilt %s s after",
+        tostring(c.sent), tostring(S.built_at and S.broke and (S.built_at - S.broke) / 60)))
+      check("crew: within the rebuild delay and 90 s", S.built_at and S.broke and S.built_at - S.broke <= 150 * 60,
+        tostring(S.built_at and S.broke and (S.built_at - S.broke) / 60))
+      return
+    end
+    if killed then
+      info(string.format("crew: lost at %s, %s iron spilled", tostring(S.lost_at), tostring(S.iron)))
+      check("crew: the truck was lost on the road", (c.lost or 0) >= 1, tostring(c.lost))
+      check("crew: it spilled its bill", (S.iron or 0) >= 15, tostring(S.iron))
+      check("crew: a second truck built it within 3 minutes", S.built_at and S.lost_at and S.built_at - S.lost_at <= 180 * 60,
+        tostring(S.built_at and S.lost_at and (S.built_at - S.lost_at) / 60))
+      return
+    end
+    if grown then info("crew: the camp had " .. tostring(S.walls) .. " walls when the outpost was queued") end
+    check("crew: a crew took the outpost", c.sent >= 1, tostring(c.sent))
+    check("crew: all five built at the site", (S.placed or 0) >= 5, tostring(S.placed))
+    check("crew: within 90 s", S.built_at and S.built_at - S.queued <= 90 * 60, tostring(S.built_at and (S.built_at - S.queued) / 60))
+    check("crew: done, home, none stuck", c.done >= 1 and c.out == 0 and c.stuck == 0, serpent.line(c))
+  end)
+end
+
 -- Crystal (the faction loot consult, technologies 2 and 3): two pacifier crystals taken apart research Pact breaker and
 -- Claim marker. A breaker placed (raise_built) inside a Grubstake camp's claim: the cease-fire with the biters drops at
 -- once, and comes back when it burns out 3 minutes later. LP_MIX=marker: a soft player outpost 120 tiles from the camp
@@ -4394,7 +4512,9 @@ scenarios.reinforce = function()
         tostring(S.column_arrived))
     else
       check("reinforce: reliefs came", st.reinforced >= 8, tostring(st.reinforced))
-      check("reinforce: the chest paid", w.chest < 3000, string.format("%.0f", w.chest))
+      -- What it spent (its closing balance once read below 3,000: a camp that grows faster refills it from its exports,
+      -- 3,037 after paying 363).
+      check("reinforce: the chest paid", (w.spent or 0) > 0, string.format("%.0f spent, %.0f left", w.spent or 0, w.chest))
       check("reinforce: the garrison went past its cap", (S.over or -1) > 0, tostring(S.over))
       -- One target here: the raid that razed it all is the last (more targets: the visits).
       check("reinforce: and razed the lasers", st.razed >= 6, tostring(st.razed))

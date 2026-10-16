@@ -185,8 +185,13 @@ end
 function layout.open_role(b, role)
   local surface = game.surfaces[b.surface]
   local hub = b.hubs[#b.hubs]
-  if hub.count < layout.DOCTRINES[b.doctrine].hub_cap then
-    for _, c in ipairs(candidates(b, hub)) do
+  -- A settlement with no fabricator yet opens its first block by its hub whatever the doctrine's cap: sprawl's first hub
+  -- is full with its pad, and its first fabricator went to a new hub 120 tiles out, beyond what its 90 parts could reach;
+  -- it never made another part (Grubstake, seed 4242).
+  local first = #(b.fabs or {}) == 0
+  if hub.count < layout.DOCTRINES[b.doctrine].hub_cap or first then
+    local cands = candidates(b, hub)
+    for _, c in ipairs(cands) do
       local x0, y0 = hub.x + c.i * PITCH, hub.y + c.j * PITCH
       if layout.area_free(surface, x0, y0, S, S) then
         return open(b, hub, role, x0, y0, S, S, {{c.i, c.j}}), hub
@@ -194,7 +199,10 @@ function layout.open_role(b, role)
       hub.bad[c.k] = true
     end
   end
-  return layout.found(b)
+  -- No fabricator yet and no free cell by its hub (its own drop generators, pacifier, first outpost and cliffs took the
+  -- four a street hub allows, seed 4242): its new hub goes near, not at the doctrine's reach, and opens as the block
+  -- asked for (a walled compound first spent its last parts on walls: 4 left for a fabricator of 25).
+  return layout.found(b, first and role)
 end
 
 -- A hub's open slot for `role` (fabricator, generator), opening a block if every one is taken.
@@ -211,7 +219,8 @@ function layout.slot(b, role, entity)
 end
 
 -- Found a hub: near the outpost furthest from every hub when one is far, else a step from the newest hub.
-function layout.found(b)
+function layout.found(b, near)
+  -- near: the role of a block to open by the newest hub (a first fabricator's), not a compound at the doctrine's reach.
   local surface = game.surfaces[b.surface]
   local doc = layout.DOCTRINES[b.doctrine]
   local last = b.hubs[#b.hubs]
@@ -226,7 +235,10 @@ function layout.found(b)
     end
   end
   local tx, ty
-  if far then
+  if near then
+    local a = 2 * math.pi * rng.next(b.rng)
+    tx, ty = last.x + 2 * PITCH * math.cos(a), last.y + 2 * PITCH * math.sin(a)
+  elseif far then
     -- Between the outpost and the network: a third of the way back towards the lander.
     tx = far.center[1] + (b.origin.x - far.center[1]) / 3
     ty = far.center[2] + (b.origin.y - far.center[2]) / 3
@@ -241,7 +253,7 @@ function layout.found(b)
       local x0, y0 = math.floor(tx + r * math.cos(a)), math.floor(ty + r * math.sin(a))
       if layout.area_free(surface, x0, y0, S, S) then
         local hub = new_hub(b, x0, y0)
-        local block = open(b, hub, "compound", x0, y0, S, S, {{0, 0}})
+        local block = open(b, hub, near or "compound", x0, y0, S, S, {{0, 0}})
         return block, hub
       end
     end

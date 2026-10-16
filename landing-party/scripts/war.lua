@@ -192,6 +192,7 @@ local function send(b, owner, rung)
     tell(b.corp == "grubstake" and "lp.relief-pod" or "lp.relief-drop", b.corp, b)
   end
   d.chest = d.chest - cost
+  d.chest_spent = (d.chest_spent or 0) + cost
   b.reinforced = (b.reinforced or 0) + #names
   return true
 end
@@ -350,7 +351,7 @@ end
 
 function war.summary(corp)
   local d = corp_state(corp)
-  return {chest = d.chest or 0, next_relief = d.next_relief, columns = #(storage.reliefs or {})}
+  return {chest = d.chest or 0, spent = d.chest_spent or 0, next_relief = d.next_relief, columns = #(storage.reliefs or {})}
 end
 
 return war

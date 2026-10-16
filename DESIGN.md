@@ -1154,7 +1154,77 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   same 1.5 s, goes home. Serenity: a flying constructor drone; Grubstake: a builder truck with a crew. One codepath
   (`crew.lua`, the tap's runner lifted out), two bodies. A killed crew drops its remaining bill as items; the module is
   requeued; a crew whose site is occupied turns back. Pace held: `grow`'s counts within 15%. Real construction robots
-  for Serenity kept as a later form (the planner's synchronous guarantees go through `place()`). Not built yet.
+  for Serenity kept as a later form (the planner's synchronous guarantees go through `place()`). Slice 1 built
+  2026-10-16 (Grubstake's truck), below.
+
+### Next design topic: Serenity's walled advance (the user, 2026-10-16; not built)
+"Should serenity camps grow into ever larger fortified areas? feels like it would fit the theme of progressive
+asphyxiation by a high tech opponent, although large walled areas also need to survive biters." Today the moving line is
+a claim radius (30 tiles every 10 minutes toward the player, a named warning a step before it encloses a structure), not
+a wall. First thoughts: a physical line in an arc facing the player (a full ring at 450 tiles is some 2,800 walls),
+laser towers along it, gates where its roads cross, built and repaired by its drones; nests on the way cleared first
+(clearances, the barrage), so it clears then walls; the player's counter a breach and the drones sent to mend it.
+Fable (`docs/reviews/2026-10-16-walled-advance-consult.md`): physical, not a ring (a ring at 450 is some 2,800 walls and
+470 lasers, 10,000 parts facing biters): a cordon of posts (a pad, a short wall, two lasers, a lamp, a pylon) every 60
+tiles on an arc of ±60 degrees facing the player, a step of 30 tiles every 10 minutes built by drones; the claim may not
+run ahead of the posts (80% standing); a long wall only at contact, two steps from a player structure; the leading arc and
+one behind kept, older posts recovered (parts back). Ore the arc crosses unclaimed becomes a recovery site; a player
+route it crosses gets a gate post. No post within 100 of a living spawner (a clearance first); a bearing that loses a
+post to biters three times stops. Counters: breach, outflank (the bearing follows the nearest structure), starve (posts
+cost parts), overextend. First slice: posts on the arc (`cordon`), then breach and mend, biters, contact wall and
+recovery, routes and ore.
+
+### Builders, slice 1: Grubstake's truck (the user; Fable: `docs/reviews/2026-10-16-builders-consult.md`; built 2026-10-16)
+`scripts/crew.lua`. A yard builds what it can reach; crews build the rest. `base.build` offers each next job to
+`crew.take`: a module whose centre is beyond 40 tiles of the lander and of every depot goes to a crew. The crew takes all
+the module's jobs off the queue and pays its whole bill at once (or waits for the parts, holding the queue as the yard
+does). A truck (the hauler's hull for now) forms past the camp's outermost wall on its line, drives to the site, builds
+one job each 90 ticks (the camp's own pace; `place` told the parts are paid, an orange spark from the truck), marks the
+module built and goes home, where it is parked (taken off the map). At most two crews out. Killed, it spills the parts
+it still carried as plates and circuits (iron half, copper a quarter, circuits a tenth) and its jobs wait 60 s before
+another crew; not nearer its site for a minute, or its site occupied, it turns home with its parts. Grubstake's yard
+builds with sparks, no beam; Serenity keeps its beam until the drone.
+- Serenity's constructor drone (slice 4): the same codepath with a flying body (`shared.CORPS.serenity.crews = "drone"`,
+  the harrier's airframe for now): it lifts off from home, flies straight over its walls, builds with Serenity's beam
+  drawn from itself. Serenity's yard keeps the beam, now from its nearest depot or the lander. Scenario `crew drone`: the
+  outpost 90 out built 15 s after queuing (the truck: 34 s); the camp sent drones to two pickets on its own.
+- A builder grown in a walled camp (slice 3, `crew grown`): Grubstake landed as a bastion, 196 walls after 20 minutes;
+  the truck formed past them and built an outpost 150 tiles out in 53 s; none stuck.
+- Rebuilds by crew: a due rebuild beyond the yards goes out with every other due rebuild within 30 tiles of it on one
+  crew, paid at once; the invisible constructor's second a tile is dropped there (the crew travels instead). Lost, its
+  jobs go back on the rebuild list, due a minute later. Scenario `crew rebuild`: two of the outpost's five destroyed, a
+  truck took both when due and the outpost stood whole 82 s after the damage.
+- What the builders broke, found by the regression (Serenity's camps now send drones, so most scenarios changed):
+  - The planner budgets power by the jobs still queued; a crew takes its module's off the queue, and they were planned
+    again (demand 2.9 MW on 2.0, `loot`). A crew's unbuilt jobs now count as owed.
+  - Rebuilds go in list order, a piece every 90 ticks: behind 20 walls, a camp's two generators were still waiting at
+    the end, its hull down (`loot`; the old timing hid it). What makes parts and power now goes to the front.
+  - Rebuild crews were held behind building crews (two at most for both): an outpost's turrets came 50 s late. Each has
+    its own two now.
+  - `defend` met capture: the player's creeping turrets killed the outpost's turrets and held it a minute before its
+    rebuild came (war footing holds the rebuild while the camp is short of units, as before), and four pieces were
+    captured, then razed by the camp's own raid. Capture is the player's win, tested in `fall`; `defend` tests the
+    response and turns capture off (`debug_tune capture_off`).
+  - `reinforce` read the war chest's closing balance (under 3,000 after paying): a camp growing faster refills it from
+    its exports (363 paid, 3,037 left). It reads what was spent now (`war.summary` spent).
+- Not yet: the truck's own body with its crew, the drone's own body.
+- Scenario `crew`: an outpost of five 90 tiles out queued first: the truck builds all five there 34 s after queuing and
+  comes home; the camp sent two more on its own (its launch pad and a depot beyond 40: built in 10 and 15 s); none stuck.
+  `killed` (the truck killed at mid-road): 17 iron spilled where it died (its 34 parts' half), the outpost waited a minute,
+  a second truck built it 94 s after the loss. Four gun turrets beside the road did not stop the truck: the hauler's hull
+  (1,500 health, armour 4 and 30%) took about 2.8 a piercing round and crossed their reach in about 9 s. Too tough for a
+  builder; to be settled with its own body.
+- Pace (scenario `pace`, a Grubstake camp 30 minutes on its own, before and after, four seeds): parts made 9,109 ->
+  8,757 (-4%), drills 68 -> 64 (-6%); seed 1 alone drills 22 -> 18 (-18%: its outposts lie far, and wait for a truck);
+  seeds 777 and 12345 as before or better.
+- A camp that never made a part (Grubstake, seed 4242, in every version before): its own drop generators, pacifier,
+  first outpost and cliffs took the four cells its street hub allows, so its first fabricator block went to a new hub at
+  the doctrine's reach (120 tiles), as a walled compound first; the walls spent its 90 parts and the fabricator (25)
+  never came, and nothing makes parts without one. Now, with no fabricator yet: the hub's cap does not hold it, a new
+  hub goes near (two cells) and opens as the block asked for, and the first fabricator goes first in the queue. Seed
+  4242: mature at 30 minutes, 3 fabricators, 1,708 parts made (none before); seed 1 unchanged. Serenity had it too:
+  its camps 30 minutes on their own (`pace serenity`, with its drones), parts made 3,761 -> 6,717 over four seeds (777:
+  652 -> 2,033; 4242: 0 -> 1,577; 1 and 12345 unchanged).
 
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";

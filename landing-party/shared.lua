@@ -51,7 +51,9 @@ shared.CORPS = {
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
     temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true},
     -- Every flak-th turret it builds is a scrap cannon (dirty flak).
-    flak = 2},
+    flak = 2,
+    -- Crews build beyond the yards (scripts/crew.lua; the builders consult): a truck.
+    crews = "truck"},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -89,7 +91,9 @@ shared.CORPS = {
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
-    temper = {provoked_only = true}},
+    temper = {provoked_only = true},
+    -- Crews (scripts/crew.lua): a constructor drone, flying over its walls, building with its beam.
+    crews = "drone"},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}

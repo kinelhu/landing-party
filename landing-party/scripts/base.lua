@@ -236,6 +236,7 @@ local function holder(b, surface, pos)
   end
 end
 local function capture(b)
+  if storage.capture_off then return end
   local surface = game.surfaces[b.surface]
   for _, m in ipairs(b.modules) do
     local left = 0
@@ -419,7 +420,8 @@ local function make_way(b, surface, name, pos)
   end
 end
 
-local function place(b, job)
+-- by_crew: a crew builds it (crew.lua), its parts paid when it left, its own effect drawn.
+local function place(b, job, by_crew)
   local surface = game.surfaces[b.surface]
   local pos = job.pos
   -- Jobs name kinds; the corporation's own prototype is what is built. A corporation with flak builds every flak-th turret
@@ -437,9 +439,28 @@ local function place(b, job)
   local e = ok and surface.create_entity{name = name, position = pos, direction = job.dir, force = force(b),
     auto_connect = (job.name == "lp-pylon") or nil}
   if not e then return nil end
-  b.parts = b.parts - (shared.cost[job.name] or 0)
+  if not by_crew then b.parts = b.parts - (shared.cost[job.name] or 0) end
   register(b, e, job.module)
-  if b.lander.valid then
+  if by_crew then
+    -- the crew draws its own
+  elseif shared.CORPS[b.corp].crews == "truck" then
+    -- A yard with crews builds with a crane's sparks, no beam (the builders consult: the beam was "decorporealized").
+    surface.create_entity{name = "explosion-hit", position = e.position}
+  elseif shared.CORPS[b.corp].crews == "drone" then
+    -- Serenity's yard: a short beam from its nearest depot or the lander (a warp-in), not always from the lander.
+    local from, fd = b.lander.valid and b.lander or nil, math.huge
+    if from then fd = (from.position.x - e.position.x) ^ 2 + (from.position.y - e.position.y) ^ 2 end
+    for _, d in ipairs(b.depots or {}) do
+      if d.valid then
+        local dd = (d.position.x - e.position.x) ^ 2 + (d.position.y - e.position.y) ^ 2
+        if dd < fd then from, fd = d, dd end
+      end
+    end
+    if from then
+      rendering.draw_line{from = from, to = e, surface = surface, color = {0.5, 0.8, 1, 0.6}, width = 1,
+        time_to_live = BUILD_TICKS}
+    end
+  elseif b.lander.valid then
     rendering.draw_line{from = b.lander, to = e, surface = surface, color = {0.5, 0.8, 1, 0.6}, width = 1,
       time_to_live = BUILD_TICKS}
   end
@@ -449,6 +470,9 @@ local function place(b, job)
   end
   return e
 end
+
+function base.place_job(b, job, by_crew) return place(b, job, by_crew) end
+function base.pave_job(b, job) return pave(b, job.tiles, job.floor) end
 
 -- Forces whose presence occupies ground: every force the faction is at war with, biters excepted.
 local function occupied(b, surface, pos)
@@ -462,6 +486,7 @@ local function occupied(b, surface, pos)
   end
   return false
 end
+base.occupied = occupied
 base.occupied = occupied
 site.occupied = occupied
 
@@ -487,6 +512,9 @@ local function rebuild(b)
       -- still on its way
     elseif base.footing and not base.footing(b, job) then
       -- At war and short of units: parts go to units first (scripts/war.lua).
+    elseif base.crew_rebuild and base.crew_rebuild(b, job) then
+      -- Beyond the yards: a crew's (crew.lua), out or waiting for one; taken, the list changed: next build step.
+      if not job.crew_wait then return true end
     elseif occupied(b, surface, job.pos) then
       if not job.occupied then job.occupied = true; trace(b, string.format("cannot rebuild %s at %.0f,%.0f: occupied",
         job.name, job.pos[1], job.pos[2])) end
@@ -530,6 +558,8 @@ local function build(b)
   end
   local job = b.queue[1]
   if not job then return end
+  -- A module beyond every yard goes to a crew (crew.lua), which takes its jobs off the queue or holds them for one.
+  if base.crew_take and base.crew_take(b, job) then return end
   local cost = shared.cost[job.name] or 0
   if b.parts < cost + base.reserve(b) then b.waiting = job.name; return end
   b.waiting = nil
@@ -582,11 +612,15 @@ function base.on_died(e, by)
   if b.lander.valid then
     d = math.sqrt((e.position.x - b.lander.position.x) ^ 2 + (e.position.y - b.lander.position.y) ^ 2)
   end
-  local due = game.tick + REBUILD_DELAY + math.floor(d / REBUILD_TILES_PER_SECOND * 60)
+  -- The invisible constructor's travel (a second a tile); where a crew goes (crew.lua), the crew travels instead.
+  local far = base.crew_far and base.crew_far(b, {e.position.x, e.position.y})
+  local due = game.tick + REBUILD_DELAY + (far and 0 or math.floor(d / REBUILD_TILES_PER_SECOND * 60))
   -- Generators come back in 90 s wherever they stand: a lander's hull holds while half of them do (hull).
   if kind == "lp-generator" then due = game.tick + 90 * 60 end
-  table.insert(b.rebuild, {name = kind, pos = {e.position.x, e.position.y}, dir = e.direction, module = own.module,
-    due = due})
+  -- What makes parts and power (generators, fabricators, drills, pylons) goes to the front: queued behind 20 walls, a
+  -- camp's two generators were still waiting at the end, its hull down (loot).
+  table.insert(b.rebuild, ECONOMY[kind] and 1 or #b.rebuild + 1, {name = kind, pos = {e.position.x, e.position.y},
+    dir = e.direction, module = own.module, due = due})
   -- An outpost attacked earns a turret pair whatever the doctrine (the "defend" rule): a single medium biter cleared
   -- whole Grubstake outposts, whose sprawl doctrine never builds them (the user, in game, 2026-10-14).
   if own.module and own.module.kind == "mining" then own.module.attacked = true end
@@ -650,7 +684,10 @@ local function fill(b, role, entity)
   local slot, block = layout.slot(b, role, entity)
   if slot then
     slot.queued = true
-    table.insert(b.queue, {name = entity, pos = slot.pos, slot = slot, module = block})
+    -- A settlement's first fabricator goes first: nothing makes parts without one (seed 4242's camp spent its last on
+    -- other jobs and never had one).
+    local first = entity == "lp-fabricator" and #b.fabs == 0
+    table.insert(b.queue, first and 1 or #b.queue + 1, {name = entity, pos = slot.pos, slot = slot, module = block})
     return string.format("%s in %s block at %.0f,%.0f", entity, role, block.center[1], block.center[2])
   end
   if block then return string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end
@@ -675,6 +712,13 @@ local function plan(b)
   local owed = {}
   for _, job in ipairs(b.rebuild) do owed[job.name] = (owed[job.name] or 0) + 1 end
   for _, job in ipairs(b.queue) do if job.name then owed[job.name] = (owed[job.name] or 0) + 1 end end
+  -- And what its crews carry, not yet built (taken off the queue, they were planned again: demand 2.8 MW on 2.0, loot).
+  for _, c in ipairs(b.crews or {}) do
+    for i = c.k, #c.jobs do
+      local job = c.jobs[i]
+      if job.name and not c.rebuild then owed[job.name] = (owed[job.name] or 0) + 1 end
+    end
+  end
   local fab_cap = (#b.fabs + (owed["lp-fabricator"] or 0)) * FAB_FEED_PER_MIN
   supply = supply - (owed["lp-generator"] or 0) * shared.power["lp-generator"]
   local function mining()
