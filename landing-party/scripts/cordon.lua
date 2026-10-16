@@ -15,6 +15,7 @@ local ARC = math.pi / 3           -- either side of the bearing
 local SPACING = 60
 local HOLD = 0.8
 local WALL = 8                    -- wall pieces in a post's front
+local KEEP = 2                    -- arcs kept standing: the leading one and one behind
 
 local function bearing(b, near)
   if near and near.valid then
@@ -48,8 +49,30 @@ function cordon.step(b, new, near)
     local built, n = 0, #c.posts
     for _, m in ipairs(c.posts) do if m.built then built = built + 1 end end
     if built < HOLD * n then return true end
-    -- The arc stands: the claim steps out to it.
+    -- The arc stands: the claim steps out to it, and the arc two behind is recovered (Fable: keep the leading arc and
+    -- one behind; older posts come down, half their parts back: 38 posts and 80 turrets by 275 tiles otherwise).
     b.cordon = nil
+    b.cordon_history = b.cordon_history or {}
+    table.insert(b.cordon_history, c)
+    while #b.cordon_history > KEEP do
+      local old = table.remove(b.cordon_history, 1)
+      local back, gone = 0, 0
+      for _, m in ipairs(old.posts) do
+        for _, e in ipairs(m.entities or {}) do
+          if e.valid then
+            back = back + math.floor((shared.cost[shared.kind_of(e.name)] or 0) / 2)
+            e.surface.create_entity{name = "explosion-hit", position = e.position}
+            storage.owner[e.unit_number] = nil
+            e.destroy()
+            gone = gone + 1
+          end
+        end
+        m.recovered = true
+      end
+      b.parts = b.parts + back
+      b.cordon_recovered = (b.cordon_recovered or 0) + gone
+      base.trace(b, string.format("cordon: the arc at %.0f recovered (%d pieces, %d parts back)", old.radius, gone, back))
+    end
     b.cordon_arcs = (b.cordon_arcs or 0) + 1
     b.cordon_posts = (b.cordon_posts or 0) + built
     ops.perimeter_advance(b, c.radius, near, near and near.valid and math.sqrt((near.position.x - b.origin.x) ^ 2
@@ -89,7 +112,7 @@ function cordon.stats(b)
   local built = 0
   for _, m in ipairs(c and c.posts or {}) do if m.built then built = built + 1 end end
   return {arcs = b.cordon_arcs or 0, posts = b.cordon_posts or 0, pending = c and #c.posts or 0, pending_built = built,
-    radius = c and c.radius, perimeter = b.perimeter, bearings = b.cordon_bearings or {}}
+    radius = c and c.radius, perimeter = b.perimeter, bearings = b.cordon_bearings or {}, recovered = b.cordon_recovered or 0}
 end
 
 ops.cordon_step = cordon.step

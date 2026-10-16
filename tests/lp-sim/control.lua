@@ -3211,7 +3211,7 @@ end
 -- turrets beside it (its road cut: it becomes an enemy), a border stake set when Serenity's line comes within 80 of a
 -- player drill. Measured at the end: patches the player works, its ore mined, its buildings lost, Grubstake's claims.
 scenarios.gate = function()
-  local engage = params.mix == "engage"
+  local engage = params.mix:find("engage", 1, true) ~= nil
   S.patches, S.free, S.answered, S.lost = {}, {}, {}, 0
   local function patch(c)
     flatten(c[1] - 9, c[2] - 9, c[1] + 9, c[2] + 9)
@@ -3231,8 +3231,9 @@ scenarios.gate = function()
     end
   end
   schedule(60, function()
+    -- The line at its own pace unless LP_MIX contains "fast" (a step a minute brought it onto the base in 13 minutes).
     lp("debug_tune", {era = 1, history_off = true, prospect_window = 5 * 3600, prospect_pace = 3 * 3600,
-      prospect_uncharted = true, perimeter_fast = true})
+      prospect_uncharted = true, perimeter_fast = params.mix:find("fast", 1, true) ~= nil})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
     lp("debug_depot", storage.id, 3000)
@@ -3690,8 +3691,10 @@ scenarios.cordon = function()
     end
     info(string.format("cordon: %s; crews %s; %d post turrets, %d off the arc", serpent.line(cs), serpent.line(cr), turrets, off))
     check("cordon: two arcs stood", (cs.arcs or 0) >= 2, tostring(cs.arcs))
-    check("cordon: their posts were built", (cs.posts or 0) >= 6 and turrets >= 12, string.format("%s posts, %d turrets",
-      tostring(cs.posts), turrets))
+    check("cordon: their posts were built", (cs.posts or 0) >= 6, string.format("%s posts, %d turrets standing", tostring(cs.posts), turrets))
+    -- Arcs behind the leading two recovered: the posts standing are about two arcs' worth, not all of them.
+    check("cordon: old arcs recovered", (cs.recovered or 0) > 0 and turrets < 2 * (cs.posts or 0),
+      string.format("%s pieces recovered, %d turrets standing of %s posts built", tostring(cs.recovered), turrets, tostring(cs.posts)))
     check("cordon: all on the arc facing the relay", off == 0, tostring(off))
     check("cordon: drones built them, none stuck", cr.done >= 6 and cr.stuck == 0, serpent.line(cr))
     check("cordon: the claim is no further than its last standing arc", cs.perimeter and (not cs.radius or cs.perimeter < cs.radius),
@@ -5782,6 +5785,10 @@ script.on_event(defines.events.on_entity_died, function(e)
     S.killers = S.killers or {}
     local k = e.entity.name == "lp-trooper" and by or (e.entity.name .. " by " .. by)
     S.killers[k] = (S.killers[k] or 0) + 1
+    if e.entity.type == "mining-drill" and params.scenario == "gate" then
+      table.insert(lines, string.format("INFO gate: a player drill at %.0f,%.0f died at %.1f min to %s (%s)", e.entity.position.x,
+        e.entity.position.y, game.tick / 3600, by, e.force and e.force.name or "?"))
+    end
     if S.go and (S.deaths or 0) < 80 then
       S.deaths = (S.deaths or 0) + 1
       local c = e.cause and e.cause.valid and e.cause.position
@@ -5800,7 +5807,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   end
 end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
-  {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"},
+  {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"}, {filter = "type", type = "mining-drill"},
   {filter = "type", type = "spider-unit"}})
 
 -- Flak: what the cannons do to the wall.

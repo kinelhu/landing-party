@@ -1269,8 +1269,10 @@ warning) only once 80% of its posts stand; until then the line waits. With no pl
 - Scenario `cordon` (the line a step a minute, an indestructible player relay 300 out; 20 minutes): six arcs, 90 to 275
   tiles, 38 posts and 80 gun turrets, none off the arc facing the relay, all built by drones (64 runs, none stuck); the
   claim never beyond its last standing arc.
-- Not yet (the consult's next slices): recovery of arcs behind the leading two (posts accumulate: 38 by 275 tiles),
-  breach and mend tested, nests (no post within 100 of a living spawner; a bearing that keeps losing posts to biters
+- Recovery (built overnight): when an arc stands, the arc two behind comes down, half its parts back (Fable: keep the
+  leading arc and one behind). `cordon`: 210 pieces recovered in 20 minutes; 38 post turrets standing at the end
+  where 80 stood before.
+- Not yet (the consult's next slices): breach and mend tested, nests (no post within 100 of a living spawner; a bearing that keeps losing posts to biters
   stops), the wall at contact, gate posts on the player's routes, ore the arc crosses.
 
 ### Builders, slice 1: Grubstake's truck (the user; Fable: `docs/reviews/2026-10-16-builders-consult.md`; built 2026-10-16)
