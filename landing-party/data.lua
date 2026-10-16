@@ -20,7 +20,7 @@ end
 -- cost in parts): nothing the faction owns can be mined, only its ruins once a settlement falls, or what the
 -- player captured.
 local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
-  ["lp-uplink"] = true, ["lp-launchpad"] = true}
+  ["lp-uplink"] = true, ["lp-launchpad"] = true, ["lp-scrap-cannon"] = true}
 local function copy(type, name, new)
   local name_new = new
   local p = table.deepcopy(data.raw[type][name])
@@ -96,6 +96,8 @@ local turret = copy("electric-turret", "laser-turret", "lp-turret")
 -- The mortar: a siege emplacement (scripts/ops.lua), the artillery turret's body at 60%, its own short gun
 -- (36 tiles, beyond gun 18, laser 24 and flamethrower 30 turrets) and a light shell, hitting the player only.
 local MORTAR_SCALE = 0.6
+-- The scrap cannon's burst and each of its six fragments (physical).
+local SCRAP_BURST, SCRAP_FRAGMENT = 12, 6
 local function shrink(t, seen)
   if type(t) ~= "table" or seen[t] then return end
   seen[t] = true
@@ -248,6 +250,40 @@ local function grow(t, k, seen)
 end
 grow(pacifier.pictures, 1.4, {})
 
+-- The scrap cannon (Grubstake's "dirty flak": the user; docs/reviews/2026-10-15-grubstake-flavour-consult.md): a gun
+-- turret's body a size up, lobbing a shell that bursts over the target. Many soft hits over an area (the railgun's
+-- answer is one hard hit along a line): deadly to a blob of troopers or biters, next to nothing against walls and
+-- turrets. Short (16: past a Line trooper's 15, which stood off and shot a cannon of 14 unanswered; inside a gun turret's 18), slow, its enemies only. Fed by script (base.lua), as the gun turrets are.
+local cannon = copy("ammo-turret", "gun-turret", "lp-scrap-cannon")
+grow(cannon.graphics_set, 1.25, {})
+cannon.max_health = 500
+cannon.attack_parameters = {type = "projectile", ammo_categories = {"lp-scrap"}, cooldown = 40, range = 16,
+  projectile_creation_distance = 1.4, turn_range = 1, sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound)}
+local scrap_frag = table.deepcopy(data.raw.projectile["grenade"])
+scrap_frag.name = "lp-scrap-fragment"
+scrap_frag.action = {{type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "create-entity", entity_name = "explosion-hit"}}}},
+  {type = "area", radius = 1.2, force = "enemy", action_delivery = {type = "instant", target_effects = {
+    {type = "damage", damage = {amount = SCRAP_FRAGMENT, type = "physical"}}}}}}
+scrap_frag.light = nil
+grow(scrap_frag.animation, 0.5, {})
+local scrap_burst = table.deepcopy(data.raw.projectile["grenade"])
+scrap_burst.name = "lp-scrap-burst"
+scrap_burst.light = nil
+scrap_burst.action = {{type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "create-entity", entity_name = "explosion"}}}},
+  {type = "area", radius = 2.5, force = "enemy", action_delivery = {type = "instant", target_effects = {
+    {type = "damage", damage = {amount = SCRAP_BURST, type = "physical"}}}}},
+  {type = "cluster", cluster_count = 6, distance = 3, distance_deviation = 1.5, action_delivery = {type = "projectile",
+    projectile = "lp-scrap-fragment", direction_deviation = 0.6, starting_speed = 0.25, starting_speed_deviation = 0.3}}}
+local scrap_shell = table.deepcopy(data.raw.ammo["firearm-magazine"])
+scrap_shell.name = "lp-scrap-shell"
+scrap_shell.hidden = true
+scrap_shell.ammo_category = "lp-scrap"
+scrap_shell.magazine_size = 1
+scrap_shell.ammo_type = {target_type = "position", clamp_position = true, action = {type = "direct", action_delivery = {
+  type = "projectile", projectile = "lp-scrap-burst", starting_speed = 0.5}}}
+
 -- The depot: a roboport's body as a container (it holds no robots yet).
 local roboport = data.raw.roboport.roboport
 local depot = copy("container", "iron-chest", "lp-depot")
@@ -300,7 +336,8 @@ road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
   lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, pacifier, depot, road, launchpad, lamp, mine, uplink,
-  gun_turret, gate, flamer, flamer_stream,
+  gun_turret, gate, flamer, flamer_stream, cannon, scrap_frag, scrap_burst, scrap_shell,
+  {type = "ammo-category", name = "lp-scrap", hidden = true},
   mortar, mortar_gun, mortar_shell, projectile, bomblet, orbital, howitzer, howitzer_gun, {type = "ammo-category", name = "lp-mortar", hidden = true},
   {type = "recipe-category", name = "lp-fabrication"},
   {type = "item", name = "lp-feedstock", icon = "__base__/graphics/icons/stone.png", hidden = true,

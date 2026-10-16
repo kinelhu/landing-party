@@ -1137,6 +1137,24 @@ Serenity has become the high-tech faction (railgunners, cluster shells, the orbi
 - Scenario `phases` (44 minutes): Grubstake came first; no Serenity before the gate; a utility science pack, and
   Serenity's first settlement about 5 minutes later.
 
+### Grubstake's scrap cannon: dirty flak (the user; Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`; built 2026-10-16)
+The first piece of Grubstake's flavour pass. A gun turret's body a size up (`lp-scrap-cannon`, 500 health, cost 15),
+lobbing a shell that bursts over its target: 12 physical over 2.5 tiles and six fragments of 6 over 1.2, its enemies
+only, every 40 ticks, range 16. Many soft hits over an area, against Serenity's railgun (one hard hit along a line):
+deadly to a blob, next to nothing against walls. Grubstake builds every second turret it places as one
+(`shared.CORPS.grubstake.flak`); a lost one is rebuilt as one; fed with `lp-scrap-shell` by the loop that feeds its gun
+turrets.
+- Departures from the consult: range 16, not 14 (Serenity's Line trooper reaches 15 and shot a cannon of 14 unanswered;
+  still inside a gun turret's 18, so the player outranges it). No scrap on the ground for haulers to bring home (the user
+  rejected scrap to gather). Placed in the camp's hard points, not at strip camps and claim rigs (neither builds turrets
+  yet).
+- Scenario `flak` (LP_MIX=gun: Grubstake's gun turret instead, for comparison): a cannon against 20 small biters, and
+  apart a second, made to last, against 10 Line troopers held in a blob before a player wall. Cannon: 20 biters dead in
+  20 s, standing at 374 of 500 (the gun turret: 20, at 8 of 500, or 11 before it fell); the troopers lost 1,125 of 1,200
+  in 20 s (gun turret 998; at 8 a burst and 50 ticks the cannon dealt 760 and was raised); the wall lost 1.9% to it.
+- Measuring it: a lone turret before ten troopers dies in 3 s (about 170 a second) whatever it is, and troopers with
+  nothing they can hurt walk off; the trial holds them and makes the turret last, to measure what it deals.
+
 ### Standing down (the user: a hopeless camp goes quiet instead of lifting off; built 2026-10-15)
 Fable had proposed write-off and relanding. The user asked why not keep the camp and land elsewhere; quiet is better:
 the camp keeps mining and exporting (its parts fund the war chest and research for the camps that can reach), it stays

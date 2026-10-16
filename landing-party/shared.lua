@@ -49,7 +49,9 @@ shared.CORPS = {
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
-    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true}},
+    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true},
+    -- Every flak-th turret it builds is a scrap cannon (dirty flak).
+    flak = 2},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
@@ -98,7 +100,7 @@ shared.DEFAULT_CORP = "serenity"
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
   "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
-  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer"}
+  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer", "lp-scrap-cannon"}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
@@ -178,6 +180,7 @@ shared.cost = {
   ["lp-generator"] = 20,
   ["lp-fabricator"] = 25,
   ["lp-turret"] = 15,
+  ["lp-scrap-cannon"] = 15,      -- Grubstake's flak, every second turret it builds (base.lua)
   ["lp-wall"] = 1,
   ["lp-radar"] = 20,
   ["lp-pacifier"] = 40,

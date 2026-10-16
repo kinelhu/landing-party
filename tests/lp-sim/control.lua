@@ -3175,6 +3175,81 @@ scenarios.rail = function()
   end)
 end
 
+-- Flak (Grubstake's scrap cannon, "dirty flak"; the grubstake flavour consult): a cannon against a blob of 20 small
+-- biters, and apart (so neither side's fire is counted for the other), a second against 10 Line troopers before a player
+-- wall. 15 dead to them in 20 s; the wall loses under 5% to them in a minute (their own hits only, on_entity_damaged).
+-- LP_MIX=gun: Grubstake's gun turrets in their place, for comparison.
+scenarios.flak = function()
+  local gun = params.mix == "gun"
+  local name = gun and "lp-grubstake-turret" or "lp-grubstake-scrap-cannon"
+  S.flak_name = name
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true, pact_off = true}) end)
+  schedule(120, function()
+    flatten(-40, -30, 40, 130)
+    S.cannons, S.biters, S.troopers, S.walls = {}, {}, {}, {}
+    for _, y in ipairs({0, 100}) do
+      local c = surface().create_entity{name = name, position = {0, y}, force = "lp-grubstake"}
+      c.insert{name = gun and "piercing-rounds-magazine" or "lp-scrap-shell", count = 200}
+      -- Against the troopers it is made to last: alone before ten (about 170 a second) it fell in 3 s, after three shells,
+      -- and the gun turret too; what is measured is what each deals to a blob.
+      if y == 100 then c.destructible = false end
+      table.insert(S.cannons, c)
+    end
+    for k = 0, 19 do
+      local p = surface().find_non_colliding_position("small-biter", {9 + (k % 5), -6 - math.floor(k / 5)}, 4, 0.5)
+      table.insert(S.biters, surface().create_entity{name = "small-biter", position = p, force = "enemy"})
+    end
+    for k = 0, 9 do
+      local u = surface().create_entity{name = "lp-infantry", position = {-11 - (k % 2), 96 + k}, force = FORCE}
+      -- Held where they stand (with nothing they could hurt, they walked 25 to 90 tiles off): a blob under fire.
+      u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none, ticks_to_wait = 3600}
+      table.insert(S.troopers, u)
+    end
+    for y = 92, 108 do
+      table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {-15.5, y + 0.5}, force = "player"})
+    end
+  end)
+  local function by_cannon(what)
+    local n = 0
+    for k, v in pairs(S.fallen or {}) do if k:find(what .. " by " .. name, 1, true) then n = n + v end end
+    return n
+  end
+  schedule(120 + 20 * 60, function()
+    S.b20, S.t20 = by_cannon("small-biter"), by_cannon("lp-infantry")
+    S.th20 = 0
+    for _, u in ipairs(S.troopers) do if u.valid then S.th20 = S.th20 + u.health end end
+    local at = {}
+    for _, u in ipairs(S.troopers) do if u.valid then table.insert(at, string.format("%.0f,%.0f", u.position.x, u.position.y)) end end
+    info("flak: troopers at 20 s " .. table.concat(at, " "))
+  end)
+  schedule(120 + 60 * 60, function()
+    local full = 350 * #S.walls
+    local hurt = S.wall_hits or 0
+    local standing = 0
+    for _, c in ipairs(S.cannons) do if c.valid then standing = standing + 1 end end
+    local th, ammo = 0, {}
+    for _, u in ipairs(S.troopers) do if u.valid then th = th + u.health end end
+    for _, c in ipairs(S.cannons) do
+      table.insert(ammo, c.valid and (c.get_inventory(defines.inventory.turret_ammo).get_item_count() .. " ammo, "
+        .. math.floor(c.health) .. " hp") or "dead")
+    end
+    info("flak: hits on troopers by damage " .. serpent.line(S.thits or {}))
+    info(string.format("flak: troopers' health %d of 1200 at 20 s; %d at 60 s; cannons %s; cease-fire grubstake>serenity %s, serenity>grubstake %s",
+      S.th20, th, table.concat(ammo, " / "), tostring(game.forces["lp-grubstake"].get_cease_fire(FORCE)),
+      tostring(game.forces[FORCE].get_cease_fire("lp-grubstake"))))
+    info(string.format("flak (%s): in 20 s %d of 20 biters and %d of 10 troopers dead to it (%d and %d in 60 s); "
+      .. "the wall lost %.1f%% to it; %d of 2 stand; deaths %s", name, S.b20, S.t20, by_cannon("small-biter"),
+      by_cannon("lp-infantry"), 100 * hurt / full, standing, serpent.line(S.fallen or {})))
+    if not gun then
+      check("flak: 15 dead to the cannons in 20 s", S.b20 + S.t20 >= 15, string.format("%d + %d", S.b20, S.t20))
+      check("flak: the wall lost under 5% to them in a minute", hurt < 0.05 * full, string.format("%.1f%%", 100 * hurt / full))
+      -- Area against a blob: more than Grubstake's gun turret deals (998 of 1,200 in 20 s, LP_MIX=gun; at 8 a burst and a
+      -- shot each 50 ticks the cannon dealt 760, under the gun turret, and was raised).
+      check("flak: the trooper blob lost more than to a gun turret", 1200 - S.th20 > 1000, string.format("%d", 1200 - S.th20))
+    end
+  end)
+end
+
 -- Visit: the corporations against a real player's factory (scripts/visit.sh loads a copy of a real save, adds the mod).
 -- No live player: only the factory's own turrets and robots answer. Serenity lands beyond the factory (its spawn,
 -- out past the 95th percentile of its drills, machines and poles, plus 150), Grubstake 20 minutes later; the
@@ -4478,6 +4553,19 @@ end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breac
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
   {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"},
   {filter = "type", type = "spider-unit"}})
+
+-- Flak: what the cannons do to the wall.
+if params.scenario == "flak" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    if not (e.cause and e.cause.valid and e.cause.name == S.flak_name) then return end
+    if e.entity.type == "wall" then S.wall_hits = (S.wall_hits or 0) + e.final_damage_amount; return end
+    if e.entity.name == "lp-infantry" then
+      S.thits = S.thits or {}
+      local k = string.format("%.1f", e.final_damage_amount)
+      S.thits[k] = (S.thits[k] or 0) + 1
+    end
+  end, {{filter = "type", type = "wall"}, {filter = "name", name = "lp-infantry"}})
+end
 
 -- Siege diagnostics: damage the player's units deal, by unit and target.
 if params.scenario == "siege" then

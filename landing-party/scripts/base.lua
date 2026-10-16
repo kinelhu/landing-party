@@ -49,7 +49,7 @@ base.trace = trace
 local LISTS = {["lp-pylon"] = "pylons", ["lp-bin"] = "bins", ["lp-drill"] = "drills",
   ["lp-fabricator"] = "fabs", ["lp-generator"] = "gens", ["lp-turret"] = "turrets", ["lp-radar"] = "radars",
   ["lp-wall"] = "walls", ["lp-depot"] = "depots", ["lp-launchpad"] = "launchpads", ["lp-lamp"] = "lamps",
-  ["lp-mine"] = "mines", ["lp-flamer"] = "flamers"}
+  ["lp-mine"] = "mines", ["lp-flamer"] = "flamers", ["lp-scrap-cannon"] = "turrets"}
 
 local function register(b, e, module)
   local list = LISTS[shared.kind_of(e.name)]
@@ -324,7 +324,8 @@ local function economy(b)
   for _, t in ipairs(b.turrets) do
     if t.valid and t.type == "ammo-turret" then
       local inv = t.get_inventory(defines.inventory.turret_ammo)
-      if inv and inv.get_item_count() < 20 then inv.insert{name = "piercing-rounds-magazine", count = 20} end
+      local ammo = shared.kind_of(t.name) == "lp-scrap-cannon" and "lp-scrap-shell" or "piercing-rounds-magazine"
+      if inv and inv.get_item_count() < 20 then inv.insert{name = ammo, count = 20} end
     end
   end
   local k = 3600 / ECONOMY_TICKS
@@ -407,7 +408,13 @@ end
 local function place(b, job)
   local surface = game.surfaces[b.surface]
   local pos = job.pos
-  -- Jobs name kinds; the corporation's own prototype is what is built.
+  -- Jobs name kinds; the corporation's own prototype is what is built. A corporation with flak builds every flak-th turret
+  -- as a scrap cannon (Grubstake); a lost one is rebuilt as one (its kind is what is queued).
+  local flak = shared.CORPS[b.corp].flak
+  if job.name == "lp-turret" and flak then
+    b.turrets_placed = (b.turrets_placed or 0) + 1
+    if b.turrets_placed % flak == 0 then job.name = "lp-scrap-cannon" end
+  end
   local name = shared.variant(b.corp, job.name)
   clear_area(surface, name, pos)
   make_way(b, surface, name, pos)
