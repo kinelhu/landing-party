@@ -1379,6 +1379,8 @@ local function siege_tier(b, t, army)
   local k = math.max(1, army.level(b))
   if against_player(t.owner) then k = math.min(k, budget(t.owner)) end
   if b.grudge then k = k + 1 end
+  -- The ladder's top rung against that player: a tier more, past the budget (b.war_rung, war.lua).
+  if against_player(t.owner) and (b.war_rung or 0) >= 3 then k = k + 1 end
   k = math.min(k, #SIEGE_TIERS)
   local n, reserve = field(b, army)
   if battery(t) then n = n + reserve end

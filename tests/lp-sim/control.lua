@@ -3800,6 +3800,7 @@ scenarios.ladder = function()
       end
     end
     S.l0 = lp("pressure").ladder
+    S.cap0 = lp("stats", S.id).cap
   end)
   for t = 2 * 3600 + 600, END - 120, 600 do
     schedule(t, function()
@@ -3808,7 +3809,9 @@ scenarios.ladder = function()
       if p.last_raze and p.last_raze > 2 * 3600 and not S.first_raze then S.first_raze = game.tick end
       -- The highest rung reached before the player lost anything (a raze resets the clock).
       if not S.first_raze then S.rung_before = math.max(S.rung_before or 0, p.ladder) end
-      local o = lp("stats", S.id).ops
+      local st = lp("stats", S.id)
+      if (st.war_rung or 0) >= 2 then S.cap2 = math.max(S.cap2 or 0, st.cap) end
+      local o = st.ops
       if o.op and not S.op_at then S.op_at = game.tick; S.op_rung = p.ladder end
     end)
   end
@@ -3823,6 +3826,9 @@ scenarios.ladder = function()
     if desperate then
       check("ladder: it went at the lasers at the top rung", S.op_at ~= nil and (S.op_rung or 0) >= 3,
         tostring(S.op_rung))
+      -- The ladder buys capacity: from the second rung, its cap half as many again.
+      check("ladder: the second rung raised the cap", S.cap2 and S.cap0 and S.cap2 >= math.floor(S.cap0 * 1.5),
+        string.format("%s -> %s", tostring(S.cap0), tostring(S.cap2)))
     else
       check("ladder: nothing razed on the bottom rung", (S.rung_before or 0) >= 1, tostring(S.rung_before))
       check("ladder: it razed a building once soft relaxed", razed > 0, tostring(razed))

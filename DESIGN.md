@@ -970,8 +970,14 @@ the artillery broke, their drills kept dying); four of seven fell; the far ones 
     is lost. With no other settlement, a drop at the lander at half strength (my addition to the consult: a lone camp
     under the guns would otherwise get nothing; to review).
   - Notices: `lp.relief-pod`, `lp.relief-column`, `lp.relief-drop`, with the settlement's map position.
-- Not built yet from the consult: the write-off and relanding of a hopeless camp, the ladder buying capacity (rung 2
-  doubling the cap, rung 3 a siege tier), entities written off after two artillery kills.
+- **The ladder buys capacity** (built 2026-10-16): a settlement's rung against the player it is at war with
+  (`b.war_rung`, set each minute in `war.lua`) raises its unit cap by half from rung 2 (`army.cap`; the consult said
+  double, half is the first step) and adds a siege tier from rung 3, past the budget (`ops.siege_tier`). Scenario
+  `ladder desperate`: the cap went from 20 to 30 at the second rung.
+- Not built yet from the consult: entities written off after two artillery kills. (The write-off and relanding became
+  standing down, below.)
+- Parked: moving Serenity's flamers off its gate roads. It would not stop them burning their own units: the burning
+  ground lands where the enemies are, and vanilla fire cannot be told to spare a force.
 - Scenario `reinforce` (the ladder's desperate setup, a chest of 3,000, a relief every 2 minutes): drops of 4 then 12, the
   garrison 15 past its cap, the chest down to 2,610, the lasers razed. `starved` (chest empty): nothing comes. `column`
   (a sister settlement): columns of 8 and 24 from the sister along 13 waypoints, arrived in 50 s; 32 reinforced in all.

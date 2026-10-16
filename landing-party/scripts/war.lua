@@ -290,6 +290,9 @@ local QUIET_TICKS, QUIET_HASTE = 60 * 3600, 5 * 3600
 local function quiet(tick)
   local span = storage.quiet_ticks or QUIET_TICKS
   for _, b in pairs(storage.bases) do
+    -- Its rung against the player it is at war with, for the cap and the siege tier (army.cap, ops.siege_tier).
+    local _, rung = at_war(b)
+    b.war_rung = rung or 0
     if not b.fallen and b.lander.valid then
       if b.quiescent then
         if tick - b.quiescent >= span then

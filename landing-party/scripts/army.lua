@@ -47,6 +47,9 @@ local function cap(b)
   local depots = 0
   for _, d in ipairs(b.depots) do if d.valid then depots = depots + 1 end end
   local n = math.max(depots, (b.lander and b.lander.valid) and 1 or 0) * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b))
+  -- The ladder buys capacity (Fable's pressure-ramp consult, item 4): from its second rung against a player, half as many
+  -- again (b.war_rung, war.lua). It had only lowered the price of using what the settlement had.
+  if (b.war_rung or 0) >= 2 then n = math.floor(n * 1.5) end
   return (b.grudge_till and game.tick < b.grudge_till) and 2 * n or n
 end
 army.cap = cap
