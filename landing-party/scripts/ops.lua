@@ -1111,6 +1111,8 @@ local function loot(b, op, t, pos, surface, trace)
   end
 end
 
+ops.loot = loot
+
 -- A container its raiders destroyed is looted from the wreck (the raid razed a chest before its looting step came
 -- round, every 5 seconds, and took nothing: ability).
 function ops.loot_wreck(b, ent)

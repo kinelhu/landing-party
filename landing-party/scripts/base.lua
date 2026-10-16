@@ -1001,7 +1001,7 @@ function base.stats(b)
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
-    war_rung = b.war_rung or 0, flares = b.flares or 0}
+    war_rung = b.war_rung or 0, flares = b.flares or 0, jumps = b.jumps or 0, looted = b.looted or 0}
 end
 
 return base

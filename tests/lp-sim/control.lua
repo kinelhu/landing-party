@@ -3175,6 +3175,74 @@ scenarios.rail = function()
   end)
 end
 
+-- Jumper (Grubstake's claim jumper; the grubstake flavour consult): a walled square 60 tiles across, 150 tiles from a
+-- Grubstake camp, a gun turret at each wall's middle facing out (27 from the centre: the middle is out of their reach, as
+-- in a big walled base; a small square whose turrets cover its chests is no heist), a chest of 200 iron plates and 50
+-- circuits in the middle. debug_jumper (the rig and mound the camp's
+-- own choice uses): the rig digs in 40 to 60 out of the turrets' reach; at 60 s hands are up within 10 of the mound,
+-- inside the wall; the chest is emptied; the loot comes home as parts. LP_MIX=rigkill: the rig killed at 30 s, nothing
+-- comes up.
+scenarios.jumper = function()
+  local kill = params.mix == "rigkill"
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 150) + 0.5, math.floor(o.y - uy * 150) + 0.5}
+    flatten(c[1] - 34, c[2] - 34, c[1] + 34, c[2] + 34)
+    S.c = c
+    for k = -30, 30 do
+      for _, p in ipairs({{c[1] + k, c[2] - 30}, {c[1] + k, c[2] + 30}, {c[1] - 30, c[2] + k}, {c[1] + 30, c[2] + k}}) do
+        surface().create_entity{name = "stone-wall", position = p, force = "player"}
+      end
+    end
+    for _, d in ipairs({{-27, 0}, {27, 0}, {0, -27}, {0, 27}}) do
+      local t = surface().create_entity{name = "gun-turret", position = {c[1] + d[1], c[2] + d[2]}, force = "player"}
+      t.insert{name = "firearm-magazine", count = 50}
+    end
+    S.chest = surface().create_entity{name = "iron-chest", position = c, force = "player"}
+    S.chest.insert{name = "iron-plate", count = 200}
+    S.chest.insert{name = "electronic-circuit", count = 50}
+    S.parts0 = lp("stats", S.g).parts
+    S.fired = lp("debug_jumper", S.g, c)
+    S.t0 = game.tick
+    S.rig = surface().find_entities_filtered{name = "lp-claim-rig", limit = 1}[1]
+    if S.rig then
+      S.rig_d = math.sqrt((S.rig.position.x - c[1]) ^ 2 + (S.rig.position.y - c[2]) ^ 2)
+      S.rig_reach = surface().count_entities_filtered{position = S.rig.position, radius = 18, type = "ammo-turret", force = "player"}
+    end
+  end)
+  local hand = "lp-grubstake-infantry"
+  local function hands_near(r)
+    return surface().count_entities_filtered{name = hand, position = S.c, radius = r}
+  end
+  schedule(2 * 3600 + 30 * 60, function() if kill and S.rig and S.rig.valid then S.rig.die("player") end end)
+  schedule(2 * 3600 + 62 * 60, function() S.up = hands_near(10) end)
+  schedule(END - 60, function()
+    local left = S.chest and S.chest.valid and S.chest.get_item_count() or -1
+    local st = lp("stats", S.g)
+    info(string.format("jumper: %s; the rig %.0f from the square, %s turrets in reach; %s hands up at 62 s; the chest holds "
+      .. "%d of 250; parts %d -> %d, looted %s", tostring(S.fired), S.rig_d or -1, tostring(S.rig_reach), tostring(S.up),
+      left, S.parts0 or 0, st.parts, tostring(st.looted)))
+    if kill then
+      check("jumper: the rig killed, nothing came up", S.up == 0, tostring(S.up))
+      check("jumper: the chest untouched", left == 250, tostring(left))
+      return
+    end
+    check("jumper: the rig dug in 40 to 60 out", S.rig_d and S.rig_d >= 40 and S.rig_d <= 62, string.format("%.0f", S.rig_d or -1))
+    check("jumper: out of the turrets' reach", S.rig_reach == 0, tostring(S.rig_reach))
+    check("jumper: four to six hands up inside the wall", (S.up or 0) >= 4 and S.up <= 6, tostring(S.up))
+    -- Emptied, or razed once empty (-1).
+    check("jumper: the chest emptied", left <= 0, tostring(left))
+    check("jumper: the loot came home", (st.looted or 0) >= 250, tostring(st.looted))
+  end)
+end
+
 -- Flare (Grubstake's pheromone flare; the grubstake flavour consult): a player outpost guarded by two gun turrets 150
 -- tiles from a Grubstake camp, 40 idle biters 60 tiles to its side. A flare is fired at it (debug_flare: the drop point
 -- and launch the camp's own choice would use): the buggy drops the canister out of the turrets' reach, within 40 of the

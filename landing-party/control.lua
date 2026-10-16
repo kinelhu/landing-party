@@ -12,6 +12,7 @@ local rd = require("__landing-party__.scripts.rd")
 local war = require("__landing-party__.scripts.war")
 local pact = require("__landing-party__.scripts.pact")
 local flare = require("__landing-party__.scripts.flare")
+local jumper = require("__landing-party__.scripts.jumper")
 rd.era = ops.era
 rd.trace = function(corp, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
@@ -36,7 +37,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -323,5 +324,6 @@ remote.add_interface("landing-party", {
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   pact_state = function() return storage.pact_state end,
+  debug_jumper = function(id, pos) return storage.bases[id] and jumper.launch(storage.bases[id], pos) end,
   debug_flare = function(id, pos) return storage.bases[id] and flare.debug(storage.bases[id], pos) end,
 })

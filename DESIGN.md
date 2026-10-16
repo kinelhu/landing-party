@@ -1177,6 +1177,25 @@ is told to wander (idle). One a settlement per 10 minutes; a buggy that does not
   `nopact`: no flare. `natural` (no debug_flare, the ladder ten times fast, 25 minutes): the camp flares the outpost
   itself at 5.7 minutes, the same results, and the biters raze it.
 
+### Grubstake's claim jumper (the user; Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`; built 2026-10-16)
+A heist, never an assault. `scripts/jumper.lua`. A settlement on its ladder's second rung against the player, mature and
+not standing down, picks the guarded player target nearest home that has chests within 16 tiles. A drill rig
+(`lp-claim-rig`: an electric drill's body 1.3 times, Grubstake's colour, 1,200 health, a military target) digs in on the
+line from the target home, 40 to 60 tiles out, past every turret's reach (19); a mound grows by the chests for a minute
+(sand rocks, then a dune, dust; a tell, not a target); the alert and notice (`lp.rig`) name the rig. Rig alive at the
+minute: four to six Shotgun hands come up at the mound, loot the chests within 16 as a raid does (`ops.loot`, the same
+values and cap), break what is near for 30 s, and go back down; what the ones who reach the mound carry becomes parts.
+Rig killed before: nothing comes up (`lp.rig-down`). Killed after: the tunnel caves in and the hands stay to fight. One
+rig a settlement at a time, 15 minutes between.
+- Not yet: the rig is set down where it digs (no hauler brings it); the consult's dynamite in the squad and the sappers
+  folding into it; rung 3's flare and rig together.
+- The target it suits is a big walled base whose turrets stand on the perimeter: hands coming up among turrets that
+  cover the chests die in seconds (four gun turrets: about a hand a second), which is the player's answer.
+- Scenario `jumper`: a walled square 60 tiles across, 150 from a Grubstake camp, a gun turret at each wall's middle (27
+  from the centre), a chest of 200 plates and 50 circuits in the middle; `debug_jumper`. The rig at 42 out of reach; 6
+  hands up at 60 s; the chest emptied (then razed); 250 items home with 1 hand of 6. `rigkill` (the rig killed at 30 s):
+  nothing comes up, the chest untouched.
+
 ### Standing down (the user: a hopeless camp goes quiet instead of lifting off; built 2026-10-15)
 Fable had proposed write-off and relanding. The user asked why not keep the camp and land elsewhere; quiet is better:
 the camp keeps mining and exporting (its parts fund the war chest and research for the camps that can reach), it stays

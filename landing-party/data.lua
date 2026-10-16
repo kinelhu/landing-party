@@ -371,6 +371,29 @@ flare_smoke.movement_slow_down_factor = 0
 flare_smoke.cyclic = true
 data:extend({flare_canister, flare_smoke})
 
+-- The claim jumper's rig (scripts/jumper.lua): an electric drill's body a size up, in Grubstake's colour, 1,200 health,
+-- a military target; dust puffs from it and from the mound it digs toward while it works.
+local rig_anim = table.deepcopy(data.raw["mining-drill"]["electric-mining-drill"].graphics_set.animation.north)
+grow(rig_anim, 1.3, {})
+for _, l in ipairs(rig_anim.layers) do
+  if not l.draw_as_shadow then l.tint = shared.CORPS.grubstake.tint end
+end
+local claim_rig = {type = "simple-entity-with-force", name = "lp-claim-rig", hidden = true,
+  icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64,
+  flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"},
+  max_health = 1200, is_military_target = true, collision_box = {{-1.9, -1.9}, {1.9, 1.9}},
+  selection_box = {{-2, -2}, {2, 2}}, dying_explosion = "big-explosion",
+  resistances = {{type = "physical", decrease = 4, percent = 20}},
+  animations = rig_anim, map_color = {r = 0.8, g = 0.55, b = 0.2}}
+local dust_smoke = table.deepcopy(data.raw["trivial-smoke"]["smoke"])
+dust_smoke.name = "lp-dust-smoke"
+dust_smoke.color = {r = 0.55, g = 0.42, b = 0.28, a = 0.6}
+dust_smoke.duration = 180
+dust_smoke.fade_away_duration = 90
+dust_smoke.start_scale = 0.5
+dust_smoke.end_scale = 2
+data:extend({claim_rig, dust_smoke})
+
 require("units")
 require("player")
 require("corps")
