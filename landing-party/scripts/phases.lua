@@ -90,7 +90,32 @@ local function survey(f, surface, from)
   end
   local radar = put("lp-radar", 0, 0)
   if not radar then return end
-  local party = {radar, put("lp-drill", -6, 4), put("lp-drill", 6, 4), put("lp-lamp", 0, 4)}
+  -- Its drills on the ore the site was chosen for (the user, in game: at fixed offsets they stood on grass beside the
+  -- coal): the two nearest ore tiles within 20, at least 5 apart; the offsets only where there is none.
+  local drills = {}
+  local ores = surface.find_entities_filtered{type = "resource", position = site, radius = 20}
+  table.sort(ores, function(a, c)
+    return (a.position.x - site[1]) ^ 2 + (a.position.y - site[2]) ^ 2 < (c.position.x - site[1]) ^ 2 + (c.position.y - site[2]) ^ 2
+  end)
+  local dname = shared.variant(corp, "lp-drill")
+  for _, ore in ipairs(ores) do
+    if #drills >= 2 then break end
+    local far = true
+    for _, d in ipairs(drills) do
+      if (d.position.x - ore.position.x) ^ 2 + (d.position.y - ore.position.y) ^ 2 < 25 then far = false end
+    end
+    if far and ore.prototype.resource_category == "basic-solid" then
+      local p = surface.find_non_colliding_position(dname, ore.position, 3, 0.5)
+      local d = p and surface.create_entity{name = dname, position = p, force = force}
+      if d then table.insert(drills, d) end
+    end
+  end
+  while #drills < 2 do
+    local d = put("lp-drill", #drills == 0 and -6 or 6, 4)
+    if not d then break end
+    table.insert(drills, d)
+  end
+  local party = {radar, drills[1], drills[2], put("lp-lamp", 0, 4)}
   for k = 1, 4 do
     local u = put("lp-infantry", -3 + 2 * k, -4)
     if u then

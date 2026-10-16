@@ -2148,6 +2148,13 @@ scenarios.phases = function()
     S.survey = p.survey
     S.survey_entities = p.survey and surface().count_entities_filtered{position = p.survey.pos, radius = 20,
       force = "lp-" .. p.survey.corp} or 0
+    -- Its drills on ore (the user saw them on grass beside the coal).
+    S.survey_drills, S.survey_on_ore = 0, 0
+    for _, d in pairs(p.survey and surface().find_entities_filtered{position = p.survey.pos, radius = 30, type = "mining-drill",
+      force = "lp-" .. p.survey.corp} or {}) do
+      S.survey_drills = S.survey_drills + 1
+      if surface().count_entities_filtered{type = "resource", area = d.bounding_box} > 0 then S.survey_on_ore = S.survey_on_ore + 1 end
+    end
     if p.survey then
       local radar = surface().find_entities_filtered{position = p.survey.pos, radius = 3, type = "radar"}[1]
       if radar then radar.die("player") end
@@ -2177,6 +2184,8 @@ scenarios.phases = function()
     local p = lp("phases")
     if not storage.id then storage.id = lp("bases")[1] end
     check("phases: a radar brought the signs, parts in the wreck", (S.signs or 0) > 0, tostring(S.signs) .. " circuits")
+    check("phases: the survey party's drills stand on ore", (S.survey_drills or 0) >= 2 and S.survey_on_ore == S.survey_drills,
+      string.format("%s of %s", tostring(S.survey_on_ore), tostring(S.survey_drills)))
     check("phases: oil processing brought a survey party", S.survey ~= nil and S.survey_entities >= 4,
       tostring(S.survey_entities) .. " entities at the survey site")
     check("phases: destroyed, it dropped a command core", S.destroyed == "destroyed" and S.core > 0,

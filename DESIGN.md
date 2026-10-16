@@ -1240,6 +1240,8 @@ faction components the player researches faction technology with. This is the co
 - The loot rolls move the game's random numbers, and `clear` (30 minutes) went from 5 of 5 seeds razing the target to
   4 of 6 (12345 and 777 short); given 40 minutes seed 12345 razes it after 5 clearances. Its window was a knife edge: the
   regression runs it 40 minutes.
+- The survey party's drills stand on the ore its site was chosen for (the user, in game: at fixed offsets they stood on
+  grass beside the coal): the two nearest ore tiles within 20, at least 5 apart. `phases` checks it (1 of 2 on ore before).
 - Open, older than this work: `fall`'s "an outpost is taken by holding it" fails back to 5281d15 at least (the player's
   holding turret is destroyed by Serenity infantry before the hold completes); the scenario is in the full list only.
 - Components and the first technology: built (below).
