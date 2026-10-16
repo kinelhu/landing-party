@@ -1124,6 +1124,11 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   ordinary items on death by cost (nothing from walls and cheap pieces), rare components per corporation (Grubstake:
   pheromone gland, pacifier crystal, drill head; Serenity: rail coil, cluster fuze, orbital beacon), six player
   technologies (bait, pact breaker, claim marker; cluster shells, rail rifle, orbital strike). Command cores stay apart.
+- **Grubstake's power tap** (the user, 2026-10-16: "steal power from unprotected lines? Unassumingly, with a
+  progressively increasing draw"): a small Grubstake device set by a player pole no turret covers (a long line to an
+  outpost), a Grubstake-force energy interface drawing from the player's network (the engine allows it, above), not a
+  military target (turrets ignore it), its draw raised step by step; what it takes becomes Grubstake's parts. Tells: a
+  consumer in the power statistics, brownouts at the far end. Counter: find it and break it (a component drops).
 
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
@@ -1195,6 +1200,34 @@ rig a settlement at a time, 15 minutes between.
   from the centre), a chest of 200 plates and 50 circuits in the middle; `debug_jumper`. The rig at 42 out of reach; 6
   hands up at 60 s; the chest emptied (then razed); 250 items home with 1 hand of 6. `rigkill` (the rig killed at 30 s):
   nothing comes up, the chest untouched.
+
+### Loot: Factorio's own items, salvage gone (the user; Fable: `docs/reviews/2026-10-15-faction-loot-consult.md`; built 2026-10-16)
+The user dropped the salvage currency: the corporations' buildings and units drop ordinary items, and (later) rare
+faction components the player researches faction technology with. This is the consult's first slice, ordinary loot.
+- A faction building is made of what its cost says (`data.lua` `made_of`): iron cost/2, copper cost/4, circuits cost/10,
+  and its kind's own (turrets 2 to 5 magazines, a generator an engine, a drill 2 gears, a depot 10 steel, a lander 20,
+  an uplink 40). Under 8 parts (walls, gates, pylons, bins, lamps, mines, flamers) nothing, or every wall is a mine.
+  Killed, it drops each at 80%, half to all (the engine's `loot`); its ruins and what the player captures mine to all of
+  it (`minable.results`).
+- Units drop a little of their own kit half the time (`units.lua` `UNIT_LOOT`): a Line trooper a circuit, a Shotgun hand
+  1 to 3 shells, a buggy an engine, a tank 4 steel and an engine, a hauler 8 steel, a railgunner 2 steel and an advanced
+  circuit, and so on. The player's own units drop nothing.
+- `lp-salvage` is gone (a migration turns any left in a save into gears): the crash-site wreck of the signs holds 20 circuits
+  and 20 gears (it has two slots); a mortar's wreck drops its loot; the prizes cost ordinary items until components
+  exist (the mortar 20 steel, 10 explosives, 10 circuits; its shell 1 steel and 2 explosives; the strip drill an electric
+  drill, 10 steel, 5 circuits).
+- Scenario `loot`: twenty buildings, twenty walls and ten units of a settlement killed by the player leave 79 iron, 23
+  copper, 17 circuits, 26 magazines, 10 gears, 3 engines, 8 steel and an advanced circuit on the ground; no salvage item
+  exists. `fall`: a ruined fabricator mines to 12 iron and 2 circuits.
+- Wrecks' loot lies where they stood and blocked their rebuild (occupy, defend: nothing rebuilt): a rebuild now clears
+  items on the ground from its footprint (the corporation reclaims what the player left).
+- The loot rolls move the game's random numbers, and `clear` (30 minutes) went from 5 of 5 seeds razing the target to
+  4 of 6 (12345 and 777 short); given 40 minutes seed 12345 razes it after 5 clearances. Its window was a knife edge: the
+  regression runs it 40 minutes.
+- Open, older than this work: `fall`'s "an outpost is taken by holding it" fails back to 5281d15 at least (the player's
+  holding turret is destroyed by Serenity infantry before the hold completes); the scenario is in the full list only.
+- Next from the consult: components (Grubstake's pheromone gland, pacifier crystal, drill head; Serenity's rail coil,
+  cluster fuze, orbital beacon), then the six technologies.
 
 ### Standing down (the user: a hopeless camp goes quiet instead of lifting off; built 2026-10-15)
 Fable had proposed write-off and relanding. The user asked why not keep the camp and land elsewhere; quiet is better:
@@ -1488,6 +1521,9 @@ scenario with assertions first; the window is for art, feel and GUI.
 - An idle unit attacks any enemy in sight: give units a lasting order (arrive, then wander in place).
 - Commands: `wander` takes no destination and lasts forever by default (`ticks_to_wait`).
 - Player turrets fire only at military targets (`is_military_target`): ordinary enemy buildings are ignored.
+- Power crosses forces (spike, 2026-10-16): an entity of any force inside a player pole's supply area is powered by the
+  player's network (a radar of a new force ran on a player pole, same network id). A corporation building standing in
+  the player's supply areas draws the player's power; the power tap (below) is built on it.
 - `auto_connect` on a scripted pylon does not reliably rejoin a cut line: wire explicitly
   (`get_wire_connector(pole_copper).connect_to`).
 - Air: a custom collision layer and trigger target type; `ignore_target_mask` on turrets that cannot shoot

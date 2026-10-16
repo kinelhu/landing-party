@@ -68,14 +68,6 @@ data:extend({
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "submachine-gun", amount = 1},
       {type = "item", name = "firearm-magazine", amount = 10}},
     results = {{type = "item", name = "lp-trooper-order", amount = 1}}},
-  -- Salvage from a fallen settlement's ruins, reclaimed in any assembler.
-  {type = "item", name = "lp-salvage", icon = "__base__/graphics/icons/iron-gear-wheel.png", stack_size = 100,
-    subgroup = "intermediate-product", order = "z[landing-party]-salvage"},
-  {type = "recipe", name = "lp-salvage", enabled = true, energy_required = 2,
-    icon = "__base__/graphics/icons/iron-gear-wheel.png", subgroup = "intermediate-product",
-    ingredients = {{type = "item", name = "lp-salvage", amount = 1}},
-    results = {{type = "item", name = "iron-plate", amount = 4}, {type = "item", name = "copper-plate", amount = 2},
-      {type = "item", name = "electronic-circuit", amount = 1}}},
   {type = "item", name = "lp-breacher-order", icon = "__base__/graphics/icons/grenade.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-breacher-order", category = "lp-training", enabled = false, hidden_in_factoriopedia = true,
@@ -147,6 +139,7 @@ mortar.name = "lp-player-mortar"
 mortar.flags = {"placeable-neutral", "placeable-player", "player-creation"}
 mortar.minable = {mining_time = 0.5, result = "lp-player-mortar"}
 mortar.hidden = false
+mortar.loot = nil
 data.raw.ammo["lp-mortar-shell"].hidden = false
 data.raw.ammo["lp-mortar-shell"].subgroup = "ammo"
 local strip = table.deepcopy(data.raw["mining-drill"]["electric-mining-drill"])
@@ -169,13 +162,14 @@ data:extend({
   {type = "item", name = "lp-strip-drill", icon = "__base__/graphics/icons/electric-mining-drill.png", stack_size = 50,
     place_result = "lp-strip-drill", subgroup = "extraction-machine", order = "z[landing-party]-strip-drill"},
   {type = "recipe", name = "lp-player-mortar", enabled = false, energy_required = 10,
-    ingredients = {{type = "item", name = "lp-salvage", amount = 20}, {type = "item", name = "steel-plate", amount = 10}},
+    ingredients = {{type = "item", name = "steel-plate", amount = 20}, {type = "item", name = "explosives", amount = 10},
+      {type = "item", name = "electronic-circuit", amount = 10}},
     results = {{type = "item", name = "lp-player-mortar", amount = 1}}},
   {type = "recipe", name = "lp-mortar-shell", enabled = false, energy_required = 4,
-    ingredients = {{type = "item", name = "lp-salvage", amount = 2}, {type = "item", name = "explosives", amount = 1}},
+    ingredients = {{type = "item", name = "steel-plate", amount = 1}, {type = "item", name = "explosives", amount = 2}},
     results = {{type = "item", name = "lp-mortar-shell", amount = 1}}},
   {type = "recipe", name = "lp-strip-drill", enabled = false, energy_required = 4,
-    ingredients = {{type = "item", name = "lp-salvage", amount = 15}, {type = "item", name = "steel-plate", amount = 10},
+    ingredients = {{type = "item", name = "electric-mining-drill", amount = 1}, {type = "item", name = "steel-plate", amount = 10},
       {type = "item", name = "electronic-circuit", amount = 5}},
     results = {{type = "item", name = "lp-strip-drill", amount = 1}}},
   prize("serenity", {"lp-player-mortar", "lp-mortar-shell"}),

@@ -1169,12 +1169,14 @@ scenarios.fall = function()
     local other = S.other and lp("stats", S.other)
     check("fall: its units evacuated", (st.evacuated or 0) > 0 and other and other.garrison > S.other_before,
       string.format("%s evacuated; the other garrison %d -> %d", tostring(st.evacuated), S.other_before, other and other.garrison or -1))
-    -- Salvage: a ruined fabricator mined into a script inventory.
+    -- Loot: a ruined fabricator mined into a script inventory, to what it is made of (25 parts: 12 iron, 6 copper, 2
+    -- circuits).
     local fab = surface().find_entities_filtered{name = "lp-fabricator", force = "neutral", position = S.lander_at, radius = 250}[1]
     local inv = game.create_inventory(10)
     local mined = fab and fab.mine{inventory = inv}
-    check("fall: ruins yield salvage", mined and inv.get_item_count("lp-salvage") > 0,
-      inv.get_item_count("lp-salvage") .. " salvage from a fabricator")
+    check("fall: ruins yield what they are made of", mined and inv.get_item_count("iron-plate") > 0
+      and inv.get_item_count("electronic-circuit") > 0,
+      string.format("%d iron, %d circuits from a fabricator", inv.get_item_count("iron-plate"), inv.get_item_count("electronic-circuit")))
     inv.destroy()
     -- Holding an outpost: a player turret on the fallen settlement's nearest bin (the farthest within 250 was
     -- the other settlement's, whose turrets destroyed the holder).
@@ -2138,7 +2140,7 @@ scenarios.phases = function()
   schedule(3 * 3600, function()
     local p = lp("phases")
     local wreck = surface().find_entities_filtered{name = "crash-site-spaceship-wreck-big-1", position = {0, 0}, radius = 260}[1]
-    S.signs = p.signs and wreck and wreck.get_inventory(defines.inventory.chest).get_item_count("lp-salvage") or 0
+    S.signs = p.signs and wreck and wreck.get_inventory(defines.inventory.chest).get_item_count("electronic-circuit") or 0
     game.forces.player.technologies["oil-processing"].researched = true
   end)
   schedule(6 * 3600, function()
@@ -2174,7 +2176,7 @@ scenarios.phases = function()
   schedule(END - 60, function()
     local p = lp("phases")
     if not storage.id then storage.id = lp("bases")[1] end
-    check("phases: a radar brought the signs, salvage in the wreck", (S.signs or 0) > 0, tostring(S.signs) .. " salvage")
+    check("phases: a radar brought the signs, parts in the wreck", (S.signs or 0) > 0, tostring(S.signs) .. " circuits")
     check("phases: oil processing brought a survey party", S.survey ~= nil and S.survey_entities >= 4,
       tostring(S.survey_entities) .. " entities at the survey site")
     check("phases: destroyed, it dropped a command core", S.destroyed == "destroyed" and S.core > 0,
@@ -3172,6 +3174,58 @@ scenarios.rail = function()
       -- Against buildings no better than Line troopers (about 17 a second each, 1,000 from three in 20 s) at twice the cost.
       check("rail: the wall no worse off than from troopers", hurt < 1000, string.format("%.0f", hurt))
     end
+  end)
+end
+
+-- Loot (the faction loot consult; the user: Factorio's own items, no salvage currency): a settlement's buildings and
+-- units destroyed by the player drop what they are made of. Twenty of its buildings of 8 parts or more and ten units
+-- killed: items on the ground (plates, circuits, the kinds' own); walls, worth under 8, drop nothing; no salvage exists.
+scenarios.loot = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    lp("debug_depot", storage.id, 4000)
+  end)
+  schedule(6 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    S.o = o
+    local function ground() return surface().count_entities_filtered{type = "item-entity", position = o, radius = 200} end
+    S.g0 = ground()
+    local big, walls, units = 0, 0, 0
+    local own = surface().find_entities_filtered{force = FORCE, position = o, radius = 200}
+    S.items = {}
+    for _, e in ipairs(own) do
+      if e.valid then
+        local k = e.name
+        if big < 20 and (k == "lp-fabricator" or k == "lp-generator" or k == "lp-drill" or k == "lp-turret" or k == "lp-radar") then
+          e.die("player"); big = big + 1
+        elseif walls < 20 and k == "lp-wall" then
+          local at = e.position
+          e.die("player"); walls = walls + 1
+          S.wall_at = S.wall_at or at
+        elseif units < 10 and e.type == "unit" then
+          e.die("player"); units = units + 1
+        end
+      end
+    end
+    S.big, S.walls, S.units = big, walls, units
+  end)
+  schedule(6 * 3600 + 60, function()
+    local counts = {}
+    for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.o, radius = 200}) do
+      counts[it.stack.name] = (counts[it.stack.name] or 0) + it.stack.count
+    end
+    S.counts = counts
+    S.salvage = prototypes.item["lp-salvage"] ~= nil
+  end)
+  schedule(END - 60, function()
+    local c = S.counts or {}
+    info(string.format("loot: %d buildings, %d walls and %d units killed; on the ground %s", S.big or 0, S.walls or 0,
+      S.units or 0, serpent.line(c)))
+    check("loot: plates and circuits dropped", (c["iron-plate"] or 0) > 0 and (c["electronic-circuit"] or 0) > 0,
+      string.format("%d iron, %d circuits", c["iron-plate"] or 0, c["electronic-circuit"] or 0))
+    check("loot: kinds' own (magazines, engines or gears)", (c["firearm-magazine"] or 0) + (c["engine-unit"] or 0)
+      + (c["iron-gear-wheel"] or 0) > 0, serpent.line(c))
+    check("loot: no salvage item exists", not S.salvage, tostring(S.salvage))
   end)
 end
 

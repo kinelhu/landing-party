@@ -16,9 +16,37 @@ local function tint(t, seen)
   end
 end
 
--- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Minable for salvage (half its
--- cost in parts): nothing the faction owns can be mined, only its ruins once a settlement falls, or what the
--- player captured.
+-- Ordinary loot (docs/reviews/2026-10-15-faction-loot-consult.md; the user: no salvage currency, Factorio's own items):
+-- what a faction building of this cost is made of, iron cost/2, copper cost/4, circuits cost/10, and its kind's own.
+-- Under 8 parts (walls, gates, pylons, bins, lamps, mines, flamers) nothing, or every wall would be a mine. Dropped on
+-- death at 80%, half to all of each (the engine's loot); its ruins and captures mine to all of it.
+local FLAVOUR = {["lp-turret"] = {{"firearm-magazine", 2, 5}}, ["lp-gun-turret"] = {{"firearm-magazine", 2, 5}},
+  ["lp-scrap-cannon"] = {{"firearm-magazine", 2, 5}}, ["lp-generator"] = {{"engine-unit", 1, 1}},
+  ["lp-drill"] = {{"iron-gear-wheel", 2, 2}}, ["lp-depot"] = {{"steel-plate", 10, 10}},
+  ["lp-lander"] = {{"steel-plate", 20, 20}}, ["lp-uplink"] = {{"steel-plate", 40, 40}}}
+local function made_of(name, cost)
+  local out = {}
+  if cost and cost >= 8 then
+    for _, m in ipairs({{"iron-plate", cost / 2}, {"copper-plate", cost / 4}, {"electronic-circuit", cost / 10}}) do
+      if m[2] >= 1 then table.insert(out, {m[1], math.max(1, math.floor(m[2] / 2)), math.floor(m[2])}) end
+    end
+  end
+  for _, f in ipairs(FLAVOUR[name] or {}) do table.insert(out, f) end
+  return out
+end
+local function loot_of(list)
+  local loot = {}
+  for _, m in ipairs(list) do table.insert(loot, {item = m[1], probability = 0.8, count_min = m[2], count_max = m[3]}) end
+  return #loot > 0 and loot or nil
+end
+local function mined_of(list)
+  local results = {}
+  for _, m in ipairs(list) do table.insert(results, {type = "item", name = m[1], amount = m[3]}) end
+  return results
+end
+
+-- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Nothing the faction owns can be mined,
+-- only its ruins once a settlement falls, or what the player captured: to what it is made of (made_of).
 local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true, ["lp-scrap-cannon"] = true}
 local function copy(type, name, new)
@@ -26,8 +54,9 @@ local function copy(type, name, new)
   local p = table.deepcopy(data.raw[type][name])
   p.name = new
   local cost = shared.cost[new]
-  p.minable = cost and {mining_time = 1, results = {{type = "item", name = "lp-salvage",
-    amount = math.max(1, math.floor(cost / 2))}}} or nil
+  local stuff = made_of(new, cost)
+  p.minable = cost and {mining_time = 1, results = mined_of(stuff)} or nil
+  p.loot = loot_of(stuff)
   p.next_upgrade = nil
   p.fast_replaceable_group = nil
   p.placeable_by = nil

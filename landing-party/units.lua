@@ -419,5 +419,18 @@ railgunner.attack_parameters = {
 }
 railgunner.resistances = table.deepcopy(infantry.resistances)
 
+-- Loot (the faction loot consult): a unit drops a little of its own kit, half the time. The player's units (trooper,
+-- breacher, battle tank) drop nothing: they are the player's.
+local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},
+  [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"engine-unit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},
+  [walker] = {{"steel-plate", 8, 8}, {"advanced-circuit", 2, 2}}, [hauler] = {{"steel-plate", 8, 8}},
+  [lance] = {{"electronic-circuit", 2, 2}}, [slug] = {{"piercing-shotgun-shell", 2, 4}}, [shock] = {{"battery", 1, 1}},
+  [sapper] = {{"explosives", 1, 2}}, [aegis] = {{"steel-plate", 4, 4}}, [dozer] = {{"steel-plate", 6, 6}, {"engine-unit", 1, 1}},
+  [scavenger] = {{"rocket", 1, 2}}, [railgunner] = {{"steel-plate", 2, 2}, {"advanced-circuit", 1, 1}}}
+for u, list in pairs(UNIT_LOOT) do
+  u.loot = {}
+  for _, m in ipairs(list) do table.insert(u.loot, {item = m[1], probability = 0.5, count_min = m[2], count_max = m[3]}) end
+end
+
 data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
   lance, slug, slug_round, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger, rail_beam, railgunner})

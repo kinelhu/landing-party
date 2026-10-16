@@ -46,7 +46,13 @@ local function signs(f, radar)
   local p = surface.find_non_colliding_position("crash-site-spaceship-wreck-big-1", at, 40, 1)
   if not p then return end
   local wreck = surface.create_entity{name = "crash-site-spaceship-wreck-big-1", position = p, force = "neutral"}
-  if wreck then wreck.insert{name = "lp-salvage", count = 30} end
+  -- Its cargo: ordinary parts (salvage, a currency of its own, was dropped: the faction loot consult). Two slots: four
+  -- stacks left the circuits out.
+  if wreck then
+    for _, it in ipairs({{"electronic-circuit", 20}, {"iron-gear-wheel", 20}}) do
+      wreck.insert{name = it[1], count = it[2]}
+    end
+  end
   for k = 1, 3 do
     local q = surface.find_non_colliding_position("crash-site-spaceship-wreck-small-" .. k, {p.x + 4 * k - 8, p.y + 3}, 8, 1)
     if q then surface.create_entity{name = "crash-site-spaceship-wreck-small-" .. k, position = q, force = "neutral"} end

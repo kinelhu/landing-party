@@ -72,7 +72,9 @@ local function clear_area(surface, name, pos)
   local cb = prototypes.entity[name].collision_box
   local area = {{pos[1] + cb.left_top.x - 0.5, pos[2] + cb.left_top.y - 0.5},
     {pos[1] + cb.right_bottom.x + 0.5, pos[2] + cb.right_bottom.y + 0.5}}
-  for _, e in pairs(surface.find_entities_filtered{area = area, type = {"tree", "simple-entity"}}) do e.destroy() end
+  -- Items on the ground too: a wreck's loot lies where it stood, and a rebuild could not be placed over it (occupy, defend).
+  -- What the player has not picked up by then, the corporation reclaims.
+  for _, e in pairs(surface.find_entities_filtered{area = area, type = {"tree", "simple-entity", "item-entity"}}) do e.destroy() end
 end
 
 -- Land a settlement near pos. opts: seed, doctrine (else drawn from the seed).

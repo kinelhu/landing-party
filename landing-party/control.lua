@@ -89,9 +89,8 @@ script.on_event(defines.events.on_entity_died, function(e)
   if kind == "lp-pacifier" then pact.lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
   if kind == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
-  -- A mortar destroyed in the field leaves its wreck's salvage.
+  -- A mortar destroyed in the field (its loot is the prototype's: data.lua made_of).
   if kind == "lp-mortar" then
-    ent.surface.spill_item_stack{position = ent.position, stack = {name = "lp-salvage", count = 15}, enable_looted = true}
     local ob = storage.bases[storage.owner[ent.unit_number] or 0]
     for _, o in pairs(storage.bases) do if o.op and o.op.mortars then for _, m in ipairs(o.op.mortars) do if m == ent then ob = o end end end end
     if ob then
