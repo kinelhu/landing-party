@@ -215,6 +215,7 @@ local function consider(b)
   if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_jump or 0) then return end
   local owner, rung = war.at_war(b)
   if not owner then return end
+  if ops.truce and ops.truce(b, owner) then return end
   if (rung or 0) < RUNG then
     -- Its ladder resets with every raze: a camp that keeps razing never needs the rig (traced once in a while).
     if game.tick >= (b.jump_said or 0) then

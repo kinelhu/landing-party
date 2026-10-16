@@ -3203,6 +3203,233 @@ scenarios.rail = function()
   end)
 end
 
+-- Gate (the rivals consult, the gate of decision 3: engaging must pay better than turtling). A player base at the spawn
+-- (a chest-fed drill pair on each of two iron patches), four free iron patches 120 to 200 tiles out (its frontier), a
+-- Grubstake camp and the usual Serenity camp, both rivals (unprovoked); hours at real clocks. LP_MIX=turtle: each loss
+-- answered with two gun turrets on the spot, nothing more. LP_MIX=engage: the same, and the rivals answered as the plan
+-- says: a patch Grubstake tags is drilled inside the window (the player expands there), a claim that stands gets two gun
+-- turrets beside it (its road cut: it becomes an enemy), a border stake set when Serenity's line comes within 80 of a
+-- player drill. Measured at the end: patches the player works, its ore mined, its buildings lost, Grubstake's claims.
+scenarios.gate = function()
+  local engage = params.mix == "engage"
+  S.patches, S.free, S.answered, S.lost = {}, {}, {}, 0
+  local function patch(c)
+    flatten(c[1] - 9, c[2] - 9, c[1] + 9, c[2] + 9)
+    for x = -7, 7 do for y = -7, 7 do surface().create_entity{name = "iron-ore", position = {c[1] + x, c[2] + y}, amount = 5000} end end
+  end
+  local function work(c)
+    -- A player drill pair with a chest each, on a patch (burner drills: no power to model).
+    for _, dx in ipairs({-3, 3}) do
+      local d = surface().create_entity{name = "burner-mining-drill", position = {c[1] + dx, c[2]}, force = "player"}
+      if d then
+        d.insert{name = "coal", count = 50}
+        surface().create_entity{name = "wooden-chest", position = d.drop_position, force = "player"}
+        table.insert(S.drills, d)
+        S.drill_at = S.drill_at or {}
+        S.drill_at[#S.drills] = {d.position.x, d.position.y}
+      end
+    end
+  end
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, prospect_window = 5 * 3600, prospect_pace = 3 * 3600,
+      prospect_uncharted = true, perimeter_fast = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+    lp("debug_depot", storage.id, 3000)
+    S.drills = {}
+    for _, c in ipairs({{-40, 0}, {40, 0}}) do patch(c); work(c); table.insert(S.patches, c) end
+    for k = 0, 3 do
+      local a = k * math.pi / 2 + math.pi / 4
+      local r = 120 + 25 * k
+      local c = {math.floor(math.cos(a) * r), math.floor(math.sin(a) * r)}
+      patch(c)
+      table.insert(S.free, c)
+    end
+  end)
+  -- Keep the burners fed (a player's belts would).
+  for t = 600, END - 60, 1800 do
+    schedule(t, function()
+      for _, d in ipairs(S.drills or {}) do
+        if d.valid and d.get_item_count("coal") < 20 then d.insert{name = "coal", count = 30} end
+      end
+    end)
+  end
+  for t = 2 * 3600, END - 600, 300 do
+    schedule(t, function()
+      -- Losses (its drills, polled: the test's death handler does not watch them), answered with two gun turrets.
+      S.dead = S.dead or {}
+      for i, d in ipairs(S.drills or {}) do
+        if not d.valid and not S.dead[i] then
+          S.dead[i] = S.drill_at[i]
+          S.lost = (S.lost or 0) + 1
+        end
+      end
+      for k, d in pairs(S.dead or {}) do
+        if not S.answered[k] then
+          S.answered[k] = true
+          for _, dx in ipairs({-4, 4}) do
+            local p = surface().find_non_colliding_position("gun-turret", {d[1] + dx, d[2] - 5}, 6, 1)
+            local t2 = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
+            if t2 then t2.insert{name = "piercing-rounds-magazine", count = 100} end
+          end
+        end
+      end
+      if not engage then return end
+      -- A tagged patch: drill it now (expand there).
+      local ps = lp("prospect_stats", S.g)
+      if ps.phase == "tagged" and ps.at then
+        local k = ps.at[1] .. "," .. ps.at[2]
+        S.drilled = S.drilled or {}
+        if not S.drilled[k] then
+          S.drilled[k] = true
+          local ore = surface().find_entities_filtered{type = "resource", position = ps.at, radius = 16, limit = 1}[1]
+          if ore then work({ore.position.x + 3, ore.position.y}); table.insert(S.patches, {ore.position.x, ore.position.y}) end
+          S.expanded = (S.expanded or 0) + 1
+        end
+      end
+      -- Standing claims: two gun turrets beside each (its road cut).
+      for _, c in ipairs(lp("road_stats", S.g).centers or {}) do
+        local k = c[1] .. "," .. c[2]
+        S.sieged = S.sieged or {}
+        if not S.sieged[k] then
+          S.sieged[k] = true
+          for _, dx in ipairs({-12, 12}) do
+            local p = surface().find_non_colliding_position("gun-turret", {c[1] + dx, c[2] + 12}, 6, 1)
+            local t2 = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
+            if t2 then t2.insert{name = "piercing-rounds-magazine", count = 200} end
+          end
+        end
+      end
+      -- Serenity's line near a player drill: a border stake 60 out from the drill toward the camp, once.
+      if not S.staked then
+        local st = lp("stats", storage.id)
+        for _, d in ipairs(S.drills) do
+          if d.valid and st.perimeter then
+            local dd = math.sqrt((d.position.x - st.origin.x) ^ 2 + (d.position.y - st.origin.y) ^ 2)
+            if dd - st.perimeter < 80 then
+              local ux, uy = (st.origin.x - d.position.x) / dd, (st.origin.y - d.position.y) / dd
+              local p = surface().find_non_colliding_position("lp-border-stake", {d.position.x + ux * 60, d.position.y + uy * 60}, 8, 1)
+              if p then
+                surface().create_entity{name = "lp-border-stake", position = p, force = "player", raise_built = true}
+                S.staked = game.tick
+              end
+              break
+            end
+          end
+        end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local worked, mined = 0, 0
+    for _, c in ipairs(S.patches) do
+      if surface().count_entities_filtered{type = "mining-drill", force = "player", position = c, radius = 16} > 0 then worked = worked + 1 end
+    end
+    for _, ch in pairs(surface().find_entities_filtered{name = "wooden-chest", force = "player"}) do mined = mined + ch.get_item_count("iron-ore") end
+    local rs = lp("road_stats", S.g)
+    info(string.format("gate (%s): patches worked %d, iron mined %d (in chests), player buildings lost %d; Grubstake claims %d (%d lapsed); "
+      .. "expanded %s, staked %s; standing grubstake %s, serenity %s", engage and "engage" or "turtle", worked, mined, S.lost or 0,
+      rs.claims or 0, rs.lapsed or 0, tostring(S.expanded), tostring(S.staked), lp("standing", "grubstake"), lp("standing", "serenity")))
+    metric("gate_patches", worked); metric("gate_mined", mined); metric("gate_lost", S.lost or 0)
+    check("gate: it ran", true, "")
+  end)
+end
+
+-- Bend (the rivals consult, slice 6): Serenity's line bears on the player's nearest building. A relay 300 out toward the
+-- spawn; at 6 minutes a second relay 90 degrees off and nearer (200 out): the next arcs bear on it (within two arcs,
+-- a bearing at least 45 degrees from the first).
+scenarios.bend = function()
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 4000) end end)
+  schedule(90, function()
+    local o = lp("stats", storage.id).origin
+    S.o = o
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    S.u = {-o.x / len, -o.y / len}
+    local c = {math.floor(o.x + S.u[1] * 300), math.floor(o.y + S.u[2] * 300)}
+    flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
+    local r = surface().create_entity{name = "lp-command-relay", position = c, force = "player"}
+    r.destructible = false
+  end)
+  schedule(6 * 3600, function()
+    S.n0 = #(lp("cordon_stats", storage.id).bearings or {})
+    local v = {-S.u[2], S.u[1]}
+    local c = {math.floor(S.o.x + v[1] * 200), math.floor(S.o.y + v[2] * 200)}
+    flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
+    local r = surface().create_entity{name = "lp-command-relay", position = c, force = "player"}
+    r.destructible = false
+  end)
+  schedule(END - 60, function()
+    local cs = lp("cordon_stats", storage.id)
+    local bs = cs.bearings or {}
+    local first = bs[1]
+    local swung = false
+    for k = (S.n0 or 0) + 1, math.min(#bs, (S.n0 or 0) + 2) do
+      local d = math.abs(((bs[k] - first + 180) % 360) - 180)
+      if d >= 45 then swung = true end
+    end
+    info(string.format("bend: bearings %s (decoy after arc %s)", serpent.line(bs), tostring(S.n0)))
+    check("bend: the line re-bore on the decoy within two arcs", swung, serpent.line(bs))
+  end)
+end
+
+-- Tribute (the rivals consult, slice 5): an enemy Grubstake camp (provoked at the start), three undefended player
+-- assemblers 100 tiles out; at 4 minutes a trade post 50 out with 500 iron (worth 5 minutes of truce). The post emptied,
+-- a truce; no raid on the player starts while it lasts; afterwards an enemy again, and raids on the player resume.
+scenarios.tribute = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.g).origin
+    S.o = o
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = -o.x / len, -o.y / len
+    for k = -1, 1 do
+      local p = surface().find_non_colliding_position("assembling-machine-1", {o.x + ux * 100 - uy * 12 * k, o.y + uy * 100 + ux * 12 * k}, 8, 1)
+      surface().create_entity{name = "assembling-machine-1", position = p, force = "player"}
+    end
+  end)
+  schedule(4 * 3600, function()
+    local p = surface().find_non_colliding_position("lp-trade-post", {S.o.x + 50, S.o.y}, 10, 1)
+    S.post = surface().create_entity{name = "lp-trade-post", position = p, force = "player", raise_built = true}
+    S.post.insert{name = "iron-plate", count = 500}
+  end)
+  -- Raids on the player, by the tick each started (the operations log).
+  local seen = {}
+  S.raids = {}
+  for t = 2 * 3600, END - 120, 300 do
+    schedule(t, function()
+      for _, o in ipairs(lp("stats", S.g).ops.log or {}) do
+        local k = tostring(o.started) .. o.kind
+        if o.owner == "player" and not seen[k] then seen[k] = true; table.insert(S.raids, o.started) end
+      end
+      local st = lp("standing", "grubstake")
+      if st == "truce" then
+        S.truce_from = S.truce_from or game.tick
+        S.truce_to = game.tick
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local during, after = 0, 0
+    for _, t in ipairs(S.raids) do
+      if S.truce_from and t >= S.truce_from and t <= S.truce_to then during = during + 1 end
+      if S.truce_to and t > S.truce_to then after = after + 1 end
+    end
+    local left = S.post and S.post.valid and S.post.get_item_count() or -1
+    info(string.format("tribute: %s; truce %s to %s; raids on the player %s (during %d, after %d); the post holds %d; standing %s",
+      serpent.line(lp("trade_stats")), tostring(S.truce_from), tostring(S.truce_to), serpent.line(S.raids), during, after, left,
+      lp("standing", "grubstake")))
+    check("tribute: the post was emptied, a truce", left == 0 and S.truce_from ~= nil, tostring(left))
+    check("tribute: no raid on the player during the truce", during == 0, tostring(during))
+    check("tribute: an enemy again after it", lp("standing", "grubstake") == "enemy", lp("standing", "grubstake"))
+    check("tribute: raids on the player resumed", after >= 1, tostring(after))
+  end)
+end
+
 -- Road (the rivals consult, slice 4): the prospect setup (three iron patches, the nearest drilled by the player); a haul
 -- every 2 minutes, a claim lapsing after 6 without ore home. Uncut: ore goes home from the claims. LP_MIX=cut: once a
 -- claim stands every Grubstake truck near it is destroyed: ore spilled, the delay told, the claim lapses.
@@ -3338,6 +3565,7 @@ scenarios.standing = function()
   end)
   schedule(4 * 3600, function()
     S.st0, S.rung0 = lp("standing", "grubstake"), lp("stats", S.g).ops.ladder
+    S.label0 = lp("stats", S.g).map_text
     local o = lp("stats", S.g).origin
     local p = surface().find_non_colliding_position("gun-turret", {o.x + 14, o.y + 14}, 10, 1)
     S.turret = surface().create_entity{name = "gun-turret", position = p, force = "player"}
@@ -3350,6 +3578,7 @@ scenarios.standing = function()
   end)
   schedule(7 * 3600, function()
     S.st1 = lp("standing", "grubstake")
+    S.label1 = lp("stats", S.g).map_text
     if S.turret and S.turret.valid then S.turret.destroy() end
     lp("debug_tune", {quiet_minutes = 4})
   end)
@@ -3365,6 +3594,9 @@ scenarios.standing = function()
     check("standing: listed (a turret incident, a standing change)", (kinds.turret or 0) >= 1 and (kinds["standing-enemy"] or 0) >= 1,
       serpent.line(kinds))
     check("standing: stood down, a rival again", S.st2 == "rival", tostring(S.st2))
+    -- The map label follows (map.lua).
+    check("standing: the map label says so", S.label0 and S.label0:find("rival") and S.label1 and S.label1:find("enemy"),
+      tostring(S.label0) .. " / " .. tostring(S.label1))
   end)
 end
 
@@ -5478,7 +5710,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true}
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 

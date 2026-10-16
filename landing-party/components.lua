@@ -119,6 +119,25 @@ data:extend({
     results = {{type = "item", name = "lp-border-stake", amount = 1}}},
 })
 
+-- The trade post (trade.lua): a steel chest in Grubstake's colour, from the start; what it holds buys a truce.
+local post = table.deepcopy(data.raw.container["steel-chest"])
+post.name = "lp-trade-post"
+post.minable = {mining_time = 0.5, result = "lp-trade-post"}
+post.icons = {{icon = post.icon or post.icons[1].icon, icon_size = post.icon_size, tint = G}}
+post.icon = nil
+post.next_upgrade = nil
+post.fast_replaceable_group = nil
+if post.picture and post.picture.layers then
+  for _, l in ipairs(post.picture.layers) do if not l.draw_as_shadow then l.tint = G end end
+end
+data:extend({post,
+  {type = "item", name = "lp-trade-post", icons = {{icon = "__base__/graphics/icons/steel-chest.png", tint = G}}, stack_size = 10,
+    place_result = "lp-trade-post", subgroup = "lp-components", order = "y-trade"},
+  {type = "recipe", name = "lp-trade-post", enabled = true, energy_required = 2,
+    ingredients = {{type = "item", name = "steel-chest", amount = 1}, {type = "item", name = "electronic-circuit", amount = 5}},
+    results = {{type = "item", name = "lp-trade-post", amount = 1}}},
+})
+
 -- Rail rifle (Serenity, two coils; after Military 3): the railgunner's weapon in the engineer's hands, a slug that
 -- pierces a 30-tile line for 150 physical, every 90 ticks, its enemies only (the consult). Paid once in coils (the
 -- research); the rifle and its slugs are ordinary crafts (a coil a slug would starve it: coils come from 1 railgunner

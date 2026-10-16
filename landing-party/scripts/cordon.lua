@@ -78,6 +78,8 @@ function cordon.step(b, new, near)
   end
   for i = #jobs, 1, -1 do table.insert(b.queue, 1, jobs[i]) end
   b.cordon = c
+  b.cordon_bearings = b.cordon_bearings or {}
+  table.insert(b.cordon_bearings, math.floor(math.deg(a0) + 0.5))
   base.trace(b, string.format("cordon: an arc of %d posts at %.0f, bearing %.0f degrees", n, new, math.deg(a0)))
   return true
 end
@@ -87,7 +89,7 @@ function cordon.stats(b)
   local built = 0
   for _, m in ipairs(c and c.posts or {}) do if m.built then built = built + 1 end end
   return {arcs = b.cordon_arcs or 0, posts = b.cordon_posts or 0, pending = c and #c.posts or 0, pending_built = built,
-    radius = c and c.radius, perimeter = b.perimeter}
+    radius = c and c.radius, perimeter = b.perimeter, bearings = b.cordon_bearings or {}}
 end
 
 ops.cordon_step = cordon.step

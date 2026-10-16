@@ -1197,6 +1197,27 @@ minutes is abandoned (its truck turned back each time). Headless runs chart noth
 - Not yet: answering inside the window tested (a drill placed after the tag), the claim lapsing when its road is cut,
   strip drills draining faster, the "expansion delayed" notice.
 
+### Rivals, slices 5 and 6, and the corporate map (built 2026-10-16, overnight)
+**The trade post** (`scripts/trade.lua`; pay the thief). A steel chest in Grubstake's colour, from the start. Filled
+(worth 50 or more, valued as loot is: `ops.LOOT_VALUE`), the nearest Grubstake camp sends a truck to empty it; the
+goods buy a truce, a minute for each 10 of value (5 to 120 minutes): no raid (`temper_allows`), flare or heist on that
+player while it lasts; prospecting and the tap go on (it still takes what you are not using). Standing reads "truce".
+The truck can be ambushed (by Serenity too, crossing its ground): no truce, the goods spilled. Scenario `tribute` (an
+enemy camp, three undefended assemblers 100 out, 500 iron in a post at 4 minutes): emptied, a 5-minute truce; raids on
+the player at 9,000 and 34,200 ticks, none within the truce (15,600 to 33,300); an enemy again after.
+
+**Bending the line** (slice 6): the cordon already bears on the player's nearest building, so a decoy relay swings it.
+Scenario `bend` (a relay 300 out, at 6 minutes a second 90 degrees off at 200): bearings 0, 0, 0, then 90 and 90.
+
+**The corporate map** (`scripts/map.lua`; Fable: without it none of the rest reads). In map view each camp carries its
+corporation and its standing toward the player ("Grubstake Mineral Recovery: rival"), kept current; Serenity's next arc
+(the posts being built) is marked, with an arrow on its bearing. Claims, prospects, borders draw their own marks.
+`standing` checks the label follows (rival, then enemy).
+
+**A call against the consult's pruning:** the claim jumper and the tap stay separate. Standing gives them distinct
+places: the tap takes idle power (a rival's theft), the rig breaks into chests (an enemy's heist, from the ladder's
+second rung). Both rarely fired on deathworld because that base offered no target, not because they overlap.
+
 ### Rivals, slices 3 and 4: the border stake and the road (built 2026-10-16, overnight)
 **The border stake** (`scripts/border.lua`; Serenity takes a direction, the player may concede it). A separate item from
 the claim marker (the call: two names read better than one entity with two meanings, and conceding must be possible

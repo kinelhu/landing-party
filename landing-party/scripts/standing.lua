@@ -20,6 +20,7 @@ local function corp_state(corp)
 end
 
 function standing.get(corp, owner)
+  if standing.truce and standing.truce(corp, owner) then return "truce" end
   local d = corp_state(corp)
   if d.provoked and d.provoked[owner] then return "enemy" end
   return "rival"

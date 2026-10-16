@@ -173,6 +173,7 @@ local function consider(b)
   if not (pact.has(b.corp) and storage.pact_state and storage.pact_state[b.corp]) then return end
   local owner, rung = war.at_war(b)
   if not owner or (rung or 0) < RUNG then return end
+  if ops.truce and ops.truce(b, owner) then return end
   local h = home(b)
   if not h then return end
   local t = pick(b, owner, h.position)

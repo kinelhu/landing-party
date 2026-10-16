@@ -572,6 +572,8 @@ end
 local function temper_allows(b, t)
   if not against_player(t.owner) then return true end
   if t.pos and ops.marked(b, t.pos) then return false end
+  -- A paid truce (trade.lua): no raid on that player while it lasts.
+  if ops.truce and ops.truce(b, t.owner) then return false end
   if battery(t) then return true end
   local temper = shared.CORPS[b.corp].temper or {}
   if temper.provoked_only then
@@ -1120,6 +1122,7 @@ local LOOT = {["uranium-235"] = 20, ["uranium-fuel-cell"] = 10, ["processing-uni
   ["productivity-module"] = 10, ["speed-module-2"] = 20, ["efficiency-module-2"] = 20, ["productivity-module-2"] = 20,
   ["speed-module-3"] = 40, ["efficiency-module-3"] = 40, ["productivity-module-3"] = 40, ["steel-plate"] = 0.3}
 local LOOT_ITEMS = 400
+ops.LOOT_VALUE = LOOT
 local function loot(b, op, t, pos, surface, trace)
   if not (shared.CORPS[b.corp].temper or {}).loots or not (t and against_player(t.owner)) then return end
   op.loot = op.loot or {items = 0, value = 0, looted = {}}
