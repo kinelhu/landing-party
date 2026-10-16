@@ -1097,6 +1097,11 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
 - deathworld10x provoked, 3 hours, by value (a belt tile 1, a turret 20; `razed_by_type`): 783 (349 before the pact,
   863 the pact batch unprovoked); rows from minute 80: 23, 226, 101, 4, 130, 149, 51; Grubstake 128 entities, Serenity
   42; three orbital barrages on landing (9, 15 and 43 shells).
+- With the ladder buying capacity (2026-10-16, same visit): 1,537; rows from minute 50: 123, 56, 180, 1, 229, 89, 2,
+  220, 521, 55, 3, 58; 354 entities (61 gun turrets, 194 belts, 83 walls); Grubstake 371 (three camps), Serenity 103.
+  The longest quiet stretch is still the first 50 minutes (Grubstake lands at 20 on visits).
+- Open bug, on every deathworld visit since before the pact: Serenity's first settlement sends some 65 export convoys
+  and delivers none; the haulers pile up formed and "moving" beside its lander (nwa delivers 87 of 89). Not looked into.
 - The bursts in the raze curve are not a problem (the user): the 80 at deathworld's minute 170 were 52 belts, 12 poles,
   10 walls; a raid is an event. Count by cost, not entities, in later reports.
 
