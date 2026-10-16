@@ -529,9 +529,24 @@ local function ladder(owner, corp)
 end
 ops.ladder = ladder
 
+-- The player's claim markers (marker.lua): Grubstake reads the player's buildings within MARK_RADIUS of one as its own
+-- claim, and leaves them alone (raids, strips, flares, rigs, taps).
+local MARK_RADIUS = 40
+function ops.marked(b, pos)
+  if not (shared.CORPS[b.corp].temper or {}).pact or not storage.claim_markers then return false end
+  local x, y = pos[1] or pos.x, pos[2] or pos.y
+  for _, m in ipairs(storage.claim_markers) do
+    if m.valid and m.surface.index == b.surface and (m.position.x - x) ^ 2 + (m.position.y - y) ^ 2 <= MARK_RADIUS ^ 2 then
+      return true
+    end
+  end
+  return false
+end
+
 -- Whether a corporation's temper lets it go for this target at all.
 local function temper_allows(b, t)
   if not against_player(t.owner) then return true end
+  if t.pos and ops.marked(b, t.pos) then return false end
   if battery(t) then return true end
   local temper = shared.CORPS[b.corp].temper or {}
   if temper.provoked_only then
@@ -1912,7 +1927,8 @@ local function choose_strip(b, army)
   for key, t in pairs(b.intel.targets) do
     -- Any outpost with a camp site beyond turret reach (strip_site checks it): requiring an undefended drill as
     -- well left a careful player's outposts, each with two lasers, never stripped.
-    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner) then
+    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner)
+      and not ops.marked(b, t.pos) then
       local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
       if not bd or d < bd then
         local p = strip_site(b, t)

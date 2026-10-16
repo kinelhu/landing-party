@@ -268,7 +268,7 @@ local function consider(b)
   local cands = {}
   for _, t in pairs(b.intel and b.intel.targets or {}) do
     local proto = t.kind and prototypes.entity[t.kind]
-    if t.owner == owner and t.line and t.pos and proto and proto.type == "electric-pole" then
+    if t.owner == owner and t.line and t.pos and proto and proto.type == "electric-pole" and not ops.marked(b, t.pos) then
       local pole = s.find_entities_filtered{type = "electric-pole", force = owner, position = t.pos, radius = 1, limit = 1}[1]
       local d
       if pole then _, d = nearest(b.pylons, pole.position) end

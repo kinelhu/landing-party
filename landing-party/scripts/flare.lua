@@ -7,6 +7,7 @@
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local war = require("__landing-party__.scripts.war")
+local ops = require("__landing-party__.scripts.ops")
 local pact = require("__landing-party__.scripts.pact")
 
 local flare = {}
@@ -54,7 +55,7 @@ end
 local function pick(b, owner, hpos)
   local best, bd
   for _, t in pairs(b.intel and b.intel.targets or {}) do
-    if t.owner == owner and t.pos and (t.exposure or t.defence or 0) > 0 then
+    if t.owner == owner and t.pos and (t.exposure or t.defence or 0) > 0 and not ops.marked(b, t.pos) then
       local d = (t.pos[1] - hpos.x) ^ 2 + (t.pos[2] - hpos.y) ^ 2
       if not bd or d < bd then best, bd = t, d end
     end

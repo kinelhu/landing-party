@@ -3177,6 +3177,124 @@ scenarios.rail = function()
   end)
 end
 
+-- Crystal (the faction loot consult, technologies 2 and 3): two pacifier crystals taken apart research Pact breaker and
+-- Claim marker. A breaker placed (raise_built) inside a Grubstake camp's claim: the cease-fire with the biters drops at
+-- once, and comes back when it burns out 3 minutes later. LP_MIX=marker: a soft player outpost 120 tiles from the camp
+-- with a claim marker beside it is held from Grubstake's targets (temper_allows), and stands.
+scenarios.crystal = function()
+  local mark = params.mix == "marker"
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+    flatten(-20, -20, 20, 20)
+    for _, t in ipairs({"military", "lp-pheromone-bait"}) do game.forces.player.technologies[t].researched = true end
+    local src = surface().create_entity{name = "electric-energy-interface", position = {0, 8}, force = "player"}
+    src.power_production = 1000000; src.electric_buffer_size = 1e7
+    surface().create_entity{name = "medium-electric-pole", position = {3, 8}, force = "player"}
+    local asm = surface().create_entity{name = "assembling-machine-2", position = {6, 8}, force = "player",
+      recipe = "lp-crystal-schematic"}
+    asm.insert{name = "lp-pacifier-crystal", count = 2}
+  end)
+  local function cf() return game.forces["lp-grubstake"].get_cease_fire("enemy") end
+  schedule(2 * 3600, function()
+    S.r_breaker = game.forces.player.technologies["lp-pact-breaker"].researched
+    S.r_marker = game.forces.player.technologies["lp-claim-marker"].researched
+    if not mark then return end
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+    flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
+    S.asm = surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    surface().create_entity{name = "lp-claim-marker", position = {c[1] + 4, c[2]}, force = "player", raise_built = true}
+    S.c = c
+  end)
+  schedule(4 * 3600, function()
+    if mark then return end
+    S.cf0 = cf()
+    local o = lp("stats", S.g).origin
+    local p = surface().find_non_colliding_position("lp-pact-breaker", {o.x + 12, o.y + 12}, 10, 0.5)
+    S.breaker = surface().create_entity{name = "lp-pact-breaker", position = p, force = "player", raise_built = true}
+  end)
+  schedule(4 * 3600 + 120, function() if not mark then S.cf1 = cf() end end)
+  schedule(4 * 3600 + 3 * 3600 + 180, function()
+    if mark then return end
+    S.cf2 = cf()
+    S.gone = not (S.breaker and S.breaker.valid)
+  end)
+  schedule(END - 60, function()
+    info(string.format("crystal: researched breaker %s, marker %s", tostring(S.r_breaker), tostring(S.r_marker)))
+    check("crystal: the teardowns researched both", S.r_breaker == true and S.r_marker == true,
+      tostring(S.r_breaker) .. ", " .. tostring(S.r_marker))
+    if mark then
+      local st = lp("stats", S.g)
+      local held
+      for _, line in ipairs(st.ops.player_targets or {}) do
+        if line:find(string.format("@%d,%d", S.c[1], S.c[2]), 1, true) then held = line:find(" held") ~= nil end
+      end
+      info(string.format("crystal: the marked outpost: known %s, held %s, standing %s", tostring(held ~= nil), tostring(held),
+        tostring(S.asm and S.asm.valid)))
+      -- Known and held (unmarked, it was razed and forgotten: held nil, which this once let through).
+      check("crystal: the marked outpost is held from its targets", held == true, tostring(held))
+      check("crystal: and stands", S.asm and S.asm.valid, "")
+      return
+    end
+    info(string.format("crystal: cease-fire before %s, with the breaker %s, after %s; the breaker gone %s", tostring(S.cf0),
+      tostring(S.cf1), tostring(S.cf2), tostring(S.gone)))
+    check("crystal: the pact held before", S.cf0 == true, tostring(S.cf0))
+    check("crystal: the breaker jammed it", S.cf1 == false, tostring(S.cf1))
+    check("crystal: burnt out, the pact is back", S.cf2 == true and S.gone, tostring(S.cf2) .. ", " .. tostring(S.gone))
+  end)
+end
+
+-- Strike (the faction loot consult, technology 6): an orbital beacon taken apart researches Orbital strike; a strike
+-- beacon placed (raise_built) 45 tiles out from a Serenity camp, on a player power source: charged, it fires, Serenity
+-- loses buildings within 60 of it, and the beacon is gone.
+scenarios.strike = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    lp("debug_depot", storage.id, 3000)
+    flatten(-20, -20, 20, 20)
+    game.forces.player.technologies["rocket-silo"].researched = true
+    local src = surface().create_entity{name = "electric-energy-interface", position = {0, 8}, force = "player"}
+    src.power_production = 1000000; src.electric_buffer_size = 1e7
+    surface().create_entity{name = "medium-electric-pole", position = {3, 8}, force = "player"}
+    local asm = surface().create_entity{name = "assembling-machine-2", position = {6, 8}, force = "player",
+      recipe = "lp-beacon-schematic"}
+    asm.insert{name = "lp-orbital-beacon", count = 1}
+  end)
+  schedule(6 * 3600, function()
+    S.researched = game.forces.player.technologies["lp-orbital-strike"].researched
+    S.unlocked = game.forces.player.recipes["lp-strike-beacon"].enabled
+    local st = lp("stats", storage.id)
+    local o = st.origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local vx, vy = o.x / len, o.y / len
+    local at = {o.x - vx * 45, o.y - vy * 45}
+    flatten(at[1] - 6, at[2] - 6, at[1] + 6, at[2] + 6)
+    local src = surface().create_entity{name = "electric-energy-interface", position = {at[1] - 4, at[2]}, force = "player"}
+    src.power_production = 10000000 / 60; src.electric_buffer_size = 1e8; src.energy = 1e8
+    surface().create_entity{name = "medium-electric-pole", position = {at[1] - 2, at[2] + 2}, force = "player"}
+    S.at = at
+    -- Its own count of buildings lost (it keeps building: entities within 60 went from 148 to 211 over the strike).
+    S.before = st.lost or 0
+    S.beacon = surface().create_entity{name = "lp-strike-beacon", position = {at[1] + 1, at[2]}, force = "player",
+      raise_built = true}
+  end)
+  schedule(END - 60, function()
+    local after = lp("stats", storage.id).lost or 0
+    local fired = lp("strikes")
+    info(string.format("strike: researched %s, unlocked %s; fired %s at %s targets; Serenity's buildings lost %d -> %d; beacon %s",
+      tostring(S.researched), tostring(S.unlocked), tostring(fired.fired), tostring(fired.targets), S.before or -1, after,
+      S.beacon and S.beacon.valid and "standing" or "gone"))
+    check("strike: the teardown researched it", S.researched == true, tostring(S.researched))
+    check("strike: the beacon's recipe unlocked", S.unlocked == true, tostring(S.unlocked))
+    check("strike: it fired once charged", (fired.fired or 0) == 1, tostring(fired.fired))
+    check("strike: Serenity lost buildings", after > (S.before or 0), string.format("%d -> %d", S.before or -1, after))
+    check("strike: the beacon is used up", not (S.beacon and S.beacon.valid), "")
+  end)
+end
+
 -- Rifle (the faction loot consult, technology 5): two rail coils taken apart research Rail rifle and unlock it and its
 -- slug; a character (no player) with the rifle, set shooting along a line of six held medium biters 8 to 23 tiles out:
 -- a slug pierces the line.

@@ -63,8 +63,7 @@ document describes the parts as built; the campaign document describes the game 
 | Grubstake's power tap: a buggy lays a pylon line along the heist's route to an exposed pole and clamps a tap; the camp runs on the stolen power; grids never wired together | built | `tap` (three) |
 | Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
-| Faction technologies: Pheromone bait, Rail rifle | built | `bait`, `rifle` |
-| Faction technologies: pact breaker, claim marker, orbital strike | open | |
+| Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
 | `/lp flare`, `/lp rig`, `/lp tap` on demand | built | `flare`, `jumper`, `tap` (`cmd`) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
@@ -1145,7 +1144,7 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   pheromone gland, pacifier crystal, drill head; Serenity: rail coil, cluster fuze, orbital beacon), six player
   technologies (bait, pact breaker, claim marker; cluster shells, rail rifle, orbital strike). Command cores stay apart.
   Built 2026-10-16: ordinary loot (salvage gone), the six components and their drops, Cluster shells. Left: bait, pact
-  breaker, claim marker, orbital strike (bait and rail rifle built since).
+  breaker, claim marker, orbital strike (all built since).
 
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
@@ -1272,7 +1271,22 @@ product is what the technology's research trigger asks for, craft-item); consuma
   railgun). Paid once in coils; the rifle (10 steel, 5 advanced circuits, 20 cable) and its slugs (a steel plate and 3
   cable) are ordinary crafts: a coil a slug would starve it, coils come from 1 railgunner in 5. Scenario `rifle`: a
   character with no player, set shooting along six held medium biters 8 to 23 tiles out: 3 slugs, none left standing.
-- Not yet: pact breaker, claim marker, orbital strike.
+- **Orbital strike** (Serenity, one beacon; after the rocket silo): a strike beacon the player places on power (an
+  orbital beacon, 10 processing units, 20 steel each), charging 50 MJ at up to 5 MW; charged, it queues Serenity's own
+  orbital shells (`storage.orbitals`, war.lua's barrage; as many a target as its health takes) on every nest, worm and
+  corporation building within 60, walls, gates and pylons spared, and burns out (`scripts/strike.lua`; notice
+  `lp.strike`). Striking a corporation provokes it. Scenario `strike`: 45 tiles out from a Serenity camp, 12 targets,
+  43 of its buildings lost (the bomblets' splash counts). Its entity count within 60 rose meanwhile (it builds): its
+  own count of losses is the measure.
+- **Pact breaker** (Grubstake, one crystal; after Pheromone bait) and **Claim marker** (two crystals), both from one
+  teardown, "Pacifier crystal, disassembled" (`scripts/marker.lua`). The breaker, set inside a Grubstake camp's claim,
+  jams the pact for 3 minutes (`storage.pact_suspended_till`, read by `pact.apply`), then burns out; outside every
+  claim it waits and says so. The marker: Grubstake reads the player's buildings within 40 of it as its own claim and
+  leaves them alone (`ops.marked`: raids through `temper_allows`, strips, flares, rigs, taps). A real player pacifier
+  is not possible (the cease-fire is per force: it would end the biters map-wide). Scenario `crystal`: both researched;
+  the cease-fire true, false with the breaker, true when it burns out. `marker`: a soft outpost 120 tiles from the camp,
+  marked, known and held and standing; unmarked, Grubstake razed it.
+- All six faction technologies of the consult are built.
 
 ### Grubstake's power tap (the user, 2026-10-16; built 2026-10-16)
 The user: "steal power from unprotected lines? Unassumingly, with a progressively increasing draw", then "Don't think it

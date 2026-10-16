@@ -36,7 +36,9 @@ function pact.apply()
   for corp, c in pairs(shared.CORPS) do
     local f = game.forces[c.force]
     if f then
-      local on = has_pact(corp) and standing(corp) or false
+      -- Suspended by the player's pact breaker (breaker.lua) while it lasts.
+      local on = has_pact(corp) and standing(corp) and not (storage.pact_suspended_till
+        and game.tick < storage.pact_suspended_till) or false
       local was = f.get_cease_fire(enemy)
       f.set_cease_fire(enemy, on)
       enemy.set_cease_fire(f, on)

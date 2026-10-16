@@ -52,7 +52,10 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    your power statistics, or brownouts. Cut the line and it stops; break the clamp and you are told what it took.
 9. **Loot**: what you destroy of theirs drops plates, circuits, magazines, engines; the rare components (pheromone
    gland, pacifier crystal, drill head; rail coil, cluster fuze, orbital beacon). Three cluster fuzes taken apart in an
-   assembler ("Cluster fuze, disassembled") research Cluster shells, for your artillery.
+   assembler ("Cluster fuze, disassembled") research Cluster shells, for your artillery. The other five work the same
+   way: glands for Pheromone bait (set it by a Serenity camp), crystals for the Pact breaker (set it inside a Grubstake
+   claim) and the Claim marker (Grubstake leaves what is near it alone), coils for the Rail rifle, an orbital beacon for
+   the Orbital strike (a beacon on your power that calls Serenity's barrage within 60 tiles).
 10. **Notices**: are they readable, too many, too few? (Pacifier down and back, orbital barrage, Serenity's gate, a camp
    standing down, reliefs, flares, rigs, a tap broken.)
 11. **Anything that feels wrong**: units stuck, wandering into worms, friendly fire (Serenity's flamers still burn its own

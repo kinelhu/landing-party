@@ -68,6 +68,42 @@ data:extend({
     effects = {{type = "unlock-recipe", recipe = "lp-bait"}}},
 })
 
+-- Pact breaker (Grubstake, one crystal; after Pheromone bait) and claim marker (two crystals): devices the player places
+-- (scripts/marker.lua). The breaker suspends Grubstake's pact for 3 minutes where it stands in a Grubstake claim (a
+-- crystal each); the marker makes Grubstake leave the player's buildings within 40 alone (two crystals each).
+data:extend(teardown("lp-pacifier-crystal", 1, "lp-crystal-schematic", "__base__/graphics/icons/advanced-circuit.png",
+  {r = 1, g = 0.85, b = 0.6, a = 1}))
+local function device(name, icon, health, extra)
+  local d = {type = "simple-entity-with-owner", name = name, icons = {{icon = icon, tint = G}},
+    flags = {"placeable-neutral", "placeable-player", "player-creation"}, max_health = health,
+    minable = {mining_time = 0.5, result = name}, is_military_target = false,
+    collision_box = {{-0.4, -0.4}, {0.4, 0.4}}, selection_box = {{-0.5, -0.5}, {0.5, 0.5}}, dying_explosion = "explosion",
+    picture = {filename = icon, size = 64, scale = 0.5, tint = G}}
+  for k, v in pairs(extra or {}) do d[k] = v end
+  return d
+end
+data:extend({
+  device("lp-pact-breaker", "__base__/graphics/icons/radar.png", 200, {minable = nil}),
+  device("lp-claim-marker", "__base__/graphics/icons/small-lamp.png", 300),
+  {type = "item", name = "lp-pact-breaker", icons = {{icon = "__base__/graphics/icons/radar.png", tint = G}}, stack_size = 10,
+    place_result = "lp-pact-breaker", subgroup = "lp-components", order = "y-breaker"},
+  {type = "item", name = "lp-claim-marker", icons = {{icon = "__base__/graphics/icons/small-lamp.png", tint = G}},
+    stack_size = 10, place_result = "lp-claim-marker", subgroup = "lp-components", order = "y-marker"},
+  {type = "recipe", name = "lp-pact-breaker", enabled = false, energy_required = 10,
+    ingredients = {{type = "item", name = "lp-pacifier-crystal", amount = 1}, {type = "item", name = "electronic-circuit", amount = 10},
+      {type = "item", name = "steel-plate", amount = 5}},
+    results = {{type = "item", name = "lp-pact-breaker", amount = 1}}},
+  {type = "recipe", name = "lp-claim-marker", enabled = false, energy_required = 10,
+    ingredients = {{type = "item", name = "lp-pacifier-crystal", amount = 2}, {type = "item", name = "steel-plate", amount = 5}},
+    results = {{type = "item", name = "lp-claim-marker", amount = 1}}},
+  {type = "technology", name = "lp-pact-breaker", icon = "__base__/graphics/technology/military.png", icon_size = 256,
+    prerequisites = {"lp-pheromone-bait"}, research_trigger = {type = "craft-item", item = "lp-crystal-schematic"},
+    effects = {{type = "unlock-recipe", recipe = "lp-pact-breaker"}}},
+  {type = "technology", name = "lp-claim-marker", icon = "__base__/graphics/technology/military.png", icon_size = 256,
+    prerequisites = {"military"}, research_trigger = {type = "craft-item", item = "lp-crystal-schematic", count = 2},
+    effects = {{type = "unlock-recipe", recipe = "lp-claim-marker"}}},
+})
+
 -- Rail rifle (Serenity, two coils; after Military 3): the railgunner's weapon in the engineer's hands, a slug that
 -- pierces a 30-tile line for 150 physical, every 90 ticks, its enemies only (the consult). Paid once in coils (the
 -- research); the rifle and its slugs are ordinary crafts (a coil a slug would starve it: coils come from 1 railgunner
@@ -97,6 +133,29 @@ data:extend({
   {type = "technology", name = "lp-rail-rifle", icon = "__base__/graphics/technology/military.png", icon_size = 256,
     prerequisites = {"military-3"}, research_trigger = {type = "craft-item", item = "lp-coil-schematic"},
     effects = {{type = "unlock-recipe", recipe = "lp-rail-rifle"}, {type = "unlock-recipe", recipe = "lp-rail-slug"}}},
+})
+
+-- Orbital strike (Serenity, one beacon; after the rocket silo): a strike beacon the player places on power, charging
+-- 50 MJ at up to 5 MW, then calling the orbital barrage within 60 tiles (scripts/strike.lua). One orbital beacon each.
+data:extend(teardown("lp-orbital-beacon", 1, "lp-beacon-schematic", "__base__/graphics/icons/beacon.png",
+  {r = 0.9, g = 0.95, b = 1, a = 1}))
+data:extend({
+  {type = "electric-energy-interface", name = "lp-strike-beacon", icons = {{icon = "__base__/graphics/icons/beacon.png", tint = S}},
+    flags = {"placeable-neutral", "placeable-player", "player-creation"}, max_health = 300,
+    collision_box = {{-0.7, -0.7}, {0.7, 0.7}}, selection_box = {{-1, -1}, {1, 1}}, dying_explosion = "medium-explosion",
+    picture = {filename = "__base__/graphics/icons/beacon.png", size = 64, scale = 0.9, tint = S}, gui_mode = "none",
+    energy_source = {type = "electric", usage_priority = "secondary-input", buffer_capacity = "50MJ",
+      input_flow_limit = "5MW", output_flow_limit = "0W"},
+    energy_production = "0W", energy_usage = "0W"},
+  {type = "item", name = "lp-strike-beacon", icons = {{icon = "__base__/graphics/icons/beacon.png", tint = S}},
+    stack_size = 5, place_result = "lp-strike-beacon", subgroup = "lp-components", order = "y-strike"},
+  {type = "recipe", name = "lp-strike-beacon", enabled = false, energy_required = 30,
+    ingredients = {{type = "item", name = "lp-orbital-beacon", amount = 1}, {type = "item", name = "processing-unit", amount = 10},
+      {type = "item", name = "steel-plate", amount = 20}},
+    results = {{type = "item", name = "lp-strike-beacon", amount = 1}}},
+  {type = "technology", name = "lp-orbital-strike", icon = "__base__/graphics/technology/military.png", icon_size = 256,
+    prerequisites = {"rocket-silo"}, research_trigger = {type = "craft-item", item = "lp-beacon-schematic"},
+    effects = {{type = "unlock-recipe", recipe = "lp-strike-beacon"}}},
 })
 
 -- Cluster shells (Serenity, three fuzes): the player's artillery shell with a fuze, bursting into ten bomblets of its own

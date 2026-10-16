@@ -220,7 +220,7 @@ local function consider(b)
   local s = game.surfaces[b.surface]
   local best, bd
   for _, t in pairs(b.intel and b.intel.targets or {}) do
-    if t.owner == owner and t.pos and (t.exposure or t.defence or 0) > 0 then
+    if t.owner == owner and t.pos and (t.exposure or t.defence or 0) > 0 and not ops.marked(b, t.pos) then
       local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
       if (not bd or d < bd) and #chests(s, owner, t.pos) > 0 then best, bd = t, d end
     end
