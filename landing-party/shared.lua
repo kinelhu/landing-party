@@ -49,7 +49,7 @@ shared.CORPS = {
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
-    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true},
+    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true},
     -- Every flak-th turret it builds is a scrap cannon (dirty flak).
     flak = 2},
   serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},

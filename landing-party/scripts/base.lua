@@ -612,6 +612,8 @@ local function power(b)
   if b.lander.valid then supply = supply - shared.power["lp-lander"] end
   prune(b.gens); prune(b.drills); prune(b.turrets); prune(b.radars)
   supply = supply - #b.gens * shared.power["lp-generator"]
+  -- What its power tap steals from a player's line counts as supply (scripts/tap.lua): it grows on the player's power.
+  supply = supply + (b.tap_watts or 0)
   demand = #b.drills * shared.power["lp-drill"] + #b.fabs * shared.power["lp-fabricator"]
     + #b.turrets * shared.power["lp-turret"] + #b.radars * shared.power["lp-radar"]
   return supply, demand
@@ -1003,7 +1005,7 @@ function base.stats(b)
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
-    war_rung = b.war_rung or 0, flares = b.flares or 0, jumps = b.jumps or 0, looted = b.looted or 0}
+    war_rung = b.war_rung or 0, flares = b.flares or 0, jumps = b.jumps or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0}
 end
 
 return base

@@ -3177,6 +3177,65 @@ scenarios.rail = function()
   end)
 end
 
+-- Tap (Grubstake's power tap; the user: "steal power from unprotected lines ... progressively increasing draw",
+-- "connected to their camp through pylons"): a player power source with a line of big poles running toward a Grubstake
+-- camp, ending 80 tiles from it, a radar at the source using some. debug_tap on the line's nearest pole: the camp lays a
+-- pylon line, clamps the tap, its draw rises (a step each 30 s here) and reaches the camp; a line pylon cut, the theft
+-- stops; the tap broken, it is over. LP_MIX=natural: no debug_tap, the camp's own choice.
+scenarios.tap = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true, tap_step = 30 * 60})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(3 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local src = {o.x - ux * 220, o.y - uy * 220}
+    flatten(src[1] - 6, src[2] - 6, src[1] + 6, src[2] + 6)
+    local e = surface().create_entity{name = "electric-energy-interface", position = src, force = "player"}
+    e.power_production = 20000000 / 60; e.power_usage = 0; e.electric_buffer_size = 1e8
+    surface().create_entity{name = "radar", position = {src[1] + 4, src[2]}, force = "player"}
+    S.poles = {}
+    for d = 3, 140, 26 do
+      local p = surface().find_non_colliding_position("big-electric-pole", {src[1] + ux * d, src[2] + uy * d}, 4, 1)
+      table.insert(S.poles, surface().create_entity{name = "big-electric-pole", position = p, force = "player"})
+    end
+    local last = S.poles[#S.poles]
+    S.pole_at = {last.position.x, last.position.y}
+    -- LP_MIX=natural: the camp finds the pole itself.
+    if params.mix ~= "natural" then S.fired = lp("debug_tap", S.g, S.pole_at) end
+  end)
+  local function st() return lp("tap_state", S.g) end
+  schedule(9 * 3600, function()
+    S.mid = st()
+    -- Cut the line: its pylon nearest the camp's end of the line.
+    local line = surface().find_entities_filtered{name = "lp-grubstake-pylon", position = S.pole_at, radius = 60}
+    table.sort(line, function(a, b) return (a.position.x - S.pole_at[1]) ^ 2 + (a.position.y - S.pole_at[2]) ^ 2
+      < (b.position.x - S.pole_at[1]) ^ 2 + (b.position.y - S.pole_at[2]) ^ 2 end)
+    if line[2] then line[2].die("player"); S.cut = true end
+  end)
+  schedule(9 * 3600 + 3 * 60, function() S.after_cut = st() end)
+  schedule(12 * 3600, function()
+    S.healed = st()
+    local t = surface().find_entities_filtered{name = "lp-power-tap", limit = 1}[1]
+    if t then t.die("player") end
+  end)
+  schedule(12 * 3600 + 3 * 60, function() S.broken = st() end)
+  schedule(END - 60, function()
+    info(string.format("tap: %s; at 9 min %s; cut %s: %s; at 12 min %s; broken: %s", tostring(S.fired),
+      serpent.line(S.mid), tostring(S.cut), serpent.line(S.after_cut), serpent.line(S.healed), serpent.line(S.broken)))
+    check("tap: the line was laid and the tap clamped", S.mid and S.mid.phase == "draw", serpent.line(S.mid))
+    check("tap: its draw rose", S.mid and (S.mid.draw or 0) > 100000, tostring(S.mid and S.mid.draw))
+    check("tap: the camp got power", S.mid and (S.mid.watts or 0) > 0 and (S.mid.taken or 0) > 0, tostring(S.mid and S.mid.taken))
+    check("tap: cut, it stops", S.after_cut and S.after_cut.watts == 0, tostring(S.after_cut and S.after_cut.watts))
+    check("tap: the camp mends its line and draws again", S.healed and (S.healed.watts or 0) > 0,
+      tostring(S.healed and S.healed.watts))
+    check("tap: broken, it is over", S.broken and S.broken.phase == nil, serpent.line(S.broken))
+  end)
+end
+
 -- Loot (the faction loot consult; the user: Factorio's own items, no salvage currency): a settlement's buildings and
 -- units destroyed by the player drop what they are made of. Twenty of its buildings of 8 parts or more and ten units
 -- killed: items on the ground (plates, circuits, the kinds' own); walls, worth under 8, drop nothing; no salvage exists.

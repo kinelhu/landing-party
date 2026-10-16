@@ -1124,11 +1124,6 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   ordinary items on death by cost (nothing from walls and cheap pieces), rare components per corporation (Grubstake:
   pheromone gland, pacifier crystal, drill head; Serenity: rail coil, cluster fuze, orbital beacon), six player
   technologies (bait, pact breaker, claim marker; cluster shells, rail rifle, orbital strike). Command cores stay apart.
-- **Grubstake's power tap** (the user, 2026-10-16: "steal power from unprotected lines? Unassumingly, with a
-  progressively increasing draw"): a small Grubstake device set by a player pole no turret covers (a long line to an
-  outpost), a Grubstake-force energy interface drawing from the player's network (the engine allows it, above), not a
-  military target (turrets ignore it), its draw raised step by step; what it takes becomes Grubstake's parts. Tells: a
-  consumer in the power statistics, brownouts at the far end. Counter: find it and break it (a component drops).
 
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
@@ -1228,6 +1223,26 @@ faction components the player researches faction technology with. This is the co
   holding turret is destroyed by Serenity infantry before the hold completes); the scenario is in the full list only.
 - Next from the consult: components (Grubstake's pheromone gland, pacifier crystal, drill head; Serenity's rail coil,
   cluster fuze, orbital beacon), then the six technologies.
+
+### Grubstake's power tap (the user, 2026-10-16; built 2026-10-16)
+The user: "steal power from unprotected lines? Unassumingly, with a progressively increasing draw", then "Don't think it
+should be hidden. It should be connected to their camp through pylons, no?" `scripts/tap.lua`. A Grubstake settlement
+at war with the player, mature, not standing down, finds the player pole nearest its own pylons (within 160 of one) that
+no player turret covers within 30, and lays a line of its own pylons to 12 tiles short of it (a module of its own,
+`tapline`: built through the queue, paid in parts, rebuilt when lost, never captured). Once the line's end is on the
+camp's network it clamps a tap by the pole (`lp-power-tap`: a small lamp's body in its colour, 150 health, not a military
+target, so turrets pass it by), and a cable is drawn from it to the line's end. The tap draws from the player's network
+(power crosses forces: Engine notes); what it gets arrives at the line's end on the camp's network (`lp-power-receiver`,
+unseen and indestructible) and counts as supply in the camp's planning, so the camp grows on the player's power. Its
+draw starts at 100 kW and rises by half every 5 minutes to 4 MW. Cut the line anywhere and the theft stops (the end is
+off the camp's network) until the camp rebuilds the gap; break the tap and it is over (copper cable drops; the notice
+says how many MJ it took), and 20 minutes later it may try again. Notices `lp.tap` (the clamp) and `lp.tap-cut`.
+- Scenario `tap` (a player power source and a line of big poles toward a Grubstake camp; `tap_step` 30 s): a line of 3
+  pylons, the tap clamped 39 s after; 4 MW by minute 9, 424 MJ taken; a line pylon cut, the draw falls to 0 within 3 s;
+  rebuilt, it draws again; the tap broken at 12 minutes, it is over at 680 MJ. `natural`: the camp chooses the pole
+  itself at 5.6 minutes, the same results.
+- Not yet: the pole's choice ignores how much the player's network has to spare; a tap on a starved network takes
+  little. Its stealing is not yet in the corporation's ladder (it razes nothing).
 
 ### Standing down (the user: a hopeless camp goes quiet instead of lifting off; built 2026-10-15)
 Fable had proposed write-off and relanding. The user asked why not keep the camp and land elsewhere; quiet is better:

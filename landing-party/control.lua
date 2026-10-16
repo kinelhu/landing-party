@@ -13,6 +13,7 @@ local war = require("__landing-party__.scripts.war")
 local pact = require("__landing-party__.scripts.pact")
 local flare = require("__landing-party__.scripts.flare")
 local jumper = require("__landing-party__.scripts.jumper")
+local tap = require("__landing-party__.scripts.tap")
 rd.era = ops.era
 rd.trace = function(corp, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
@@ -37,7 +38,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -253,6 +254,7 @@ remote.add_interface("landing-party", {
     if t.tiers then f.tiers = t.tiers end
     if t.quiet ~= nil then storage.quiet = t.quiet end
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
+    if t.tap_step ~= nil then storage.tap_step = t.tap_step end
     if t.army_off ~= nil then storage.army_off = t.army_off end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
@@ -323,6 +325,8 @@ remote.add_interface("landing-party", {
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   pact_state = function() return storage.pact_state end,
+  debug_tap = function(id, pos) return storage.bases[id] and tap.debug(storage.bases[id], pos) end,
+  tap_state = function(id) return storage.bases[id] and tap.state(storage.bases[id]) end,
   debug_jumper = function(id, pos) return storage.bases[id] and jumper.launch(storage.bases[id], pos) end,
   debug_flare = function(id, pos) return storage.bases[id] and flare.debug(storage.bases[id], pos) end,
 })

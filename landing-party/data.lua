@@ -423,6 +423,30 @@ dust_smoke.start_scale = 0.5
 dust_smoke.end_scale = 2
 data:extend({claim_rig, dust_smoke})
 
+-- The power tap (scripts/tap.lua): a small lamp's body as a clamp on the player's line, in Grubstake's colour; an energy
+-- interface drawing what the script sets. Not a military target (turrets pass it by). Its receiver at the end of the
+-- camp's line gives the camp what it draws: unseen, untouchable.
+local lamp_pic = table.deepcopy(data.raw.lamp["small-lamp"].picture_off)
+for _, l in ipairs(lamp_pic.layers or {lamp_pic}) do
+  if not l.draw_as_shadow then l.tint = shared.CORPS.grubstake.tint end
+end
+local power_tap = {type = "electric-energy-interface", name = "lp-power-tap", hidden = true,
+  icon = "__base__/graphics/icons/small-lamp.png", icon_size = 64,
+  flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"},
+  max_health = 150, is_military_target = false, collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
+  selection_box = {{-0.5, -0.5}, {0.5, 0.5}}, dying_explosion = "explosion", picture = lamp_pic, gui_mode = "none",
+  energy_source = {type = "electric", usage_priority = "secondary-input", buffer_capacity = "1MJ"},
+  energy_production = "0W", energy_usage = "0W",
+  loot = {{item = "copper-cable", probability = 1, count_min = 5, count_max = 10}}}
+local power_receiver = {type = "electric-energy-interface", name = "lp-power-receiver", hidden = true,
+  icon = "__base__/graphics/icons/small-lamp.png", icon_size = 64,
+  flags = {"placeable-neutral", "placeable-off-grid", "not-on-map", "not-blueprintable", "not-deconstructable"},
+  selectable_in_game = false, max_health = 1, collision_box = {{-0.1, -0.1}, {0.1, 0.1}}, collision_mask = {layers = {}},
+  picture = {filename = "__core__/graphics/empty.png", size = 1}, gui_mode = "none",
+  energy_source = {type = "electric", usage_priority = "primary-output", buffer_capacity = "1MJ"},
+  energy_production = "0W", energy_usage = "0W"}
+data:extend({power_tap, power_receiver})
+
 require("units")
 require("player")
 require("corps")
