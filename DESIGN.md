@@ -63,7 +63,8 @@ document describes the parts as built; the campaign document describes the game 
 | Grubstake's power tap: a buggy lays a pylon line along the heist's route to an exposed pole and clamps a tap; the camp runs on the stolen power; grids never wired together | built | `tap` (three) |
 | Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
-| Faction technologies: bait, pact breaker, claim marker, rail rifle, orbital strike | open | |
+| Faction technologies: Pheromone bait, Rail rifle | built | `bait`, `rifle` |
+| Faction technologies: pact breaker, claim marker, orbital strike | open | |
 | `/lp flare`, `/lp rig`, `/lp tap` on demand | built | `flare`, `jumper`, `tap` (`cmd`) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
@@ -1144,7 +1145,7 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   pheromone gland, pacifier crystal, drill head; Serenity: rail coil, cluster fuze, orbital beacon), six player
   technologies (bait, pact breaker, claim marker; cluster shells, rail rifle, orbital strike). Command cores stay apart.
   Built 2026-10-16: ordinary loot (salvage gone), the six components and their drops, Cluster shells. Left: bait, pact
-  breaker, claim marker, rail rifle, orbital strike.
+  breaker, claim marker, orbital strike (bait and rail rifle built since).
 
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
@@ -1260,7 +1261,18 @@ product is what the technology's research trigger asks for, craft-item); consuma
   shell; one fired at a point ringed by 12 small biters 7 tiles out leaves 4 (`plain`: an ordinary shell leaves 12).
   Fired by an artillery turret at a spawner ringed by worms the comparison said nothing: the turret aims at the worms
   themselves, one a shell either way.
-- Not yet: the other five technologies (bait, pact breaker, claim marker, rail rifle, orbital strike).
+- **Pheromone bait** (Grubstake, three glands; after Military): a canister the player places (one gland and 5 iron a
+  bait), calling the idle biters round it as Grubstake's flare does (`flare.call`, shared; `scripts/bait.lua`): it burns
+  3 minutes, then they wander. The pact keeps the biters off Grubstake: it is how the player sets them on Serenity, or on
+  Grubstake once its antennas are down. Not a military target (the corporations' turrets do not shoot it on sight).
+  Scenario `bait`: the teardown researches it; placed 25 tiles out from a Serenity camp, 30 idle small biters 70 out: 12
+  called, 2 of Serenity's buildings lost to them. A research trigger counts only once its prerequisites are researched.
+- **Rail rifle** (Serenity, two coils; after Military 3): the railgunner's weapon for the engineer, a slug piercing a
+  30-tile line for 150 physical every 90 ticks, its enemies only (a `line` action aimed by direction, as Space Age's
+  railgun). Paid once in coils; the rifle (10 steel, 5 advanced circuits, 20 cable) and its slugs (a steel plate and 3
+  cable) are ordinary crafts: a coil a slug would starve it, coils come from 1 railgunner in 5. Scenario `rifle`: a
+  character with no player, set shooting along six held medium biters 8 to 23 tiles out: 3 slugs, none left standing.
+- Not yet: pact breaker, claim marker, orbital strike.
 
 ### Grubstake's power tap (the user, 2026-10-16; built 2026-10-16)
 The user: "steal power from unprotected lines? Unassumingly, with a progressively increasing draw", then "Don't think it

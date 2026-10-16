@@ -3177,6 +3177,104 @@ scenarios.rail = function()
   end)
 end
 
+-- Rifle (the faction loot consult, technology 5): two rail coils taken apart research Rail rifle and unlock it and its
+-- slug; a character (no player) with the rifle, set shooting along a line of six held medium biters 8 to 23 tiles out:
+-- a slug pierces the line.
+scenarios.rifle = function()
+  schedule(60, function()
+    lp("debug_tune", {ops_off = true, army_off = true})
+    flatten(-30, -20, 40, 20)
+    game.forces.player.technologies["military-3"].researched = true
+    local src = surface().create_entity{name = "electric-energy-interface", position = {-20, 8}, force = "player"}
+    src.power_production = 1000000; src.electric_buffer_size = 1e7
+    surface().create_entity{name = "medium-electric-pole", position = {-17, 8}, force = "player"}
+    local asm = surface().create_entity{name = "assembling-machine-2", position = {-14, 8}, force = "player",
+      recipe = "lp-coil-schematic"}
+    asm.insert{name = "lp-rail-coil", count = 2}
+  end)
+  schedule(30 * 60, function()
+    S.researched = game.forces.player.technologies["lp-rail-rifle"].researched
+    S.unlocked = game.forces.player.recipes["lp-rail-rifle"].enabled and game.forces.player.recipes["lp-rail-slug"].enabled
+    S.biters = {}
+    for k = 0, 5 do
+      local u = surface().create_entity{name = "medium-biter", position = {8 + 3 * k, 0}, force = "enemy"}
+      u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none, ticks_to_wait = 3600}
+      table.insert(S.biters, u)
+    end
+    S.ch = surface().create_entity{name = "character", position = {0, 0}, force = "player"}
+    S.ch.insert{name = "lp-rail-rifle", count = 1}
+    S.ch.insert{name = "lp-rail-slug", count = 3}
+    S.ch.destructible = false
+  end)
+  for t = 30 * 60 + 2, 30 * 60 + 300, 2 do
+    schedule(t, function()
+      if S.ch and S.ch.valid then S.ch.shooting_state = {state = defines.shooting.shooting_selected, position = {30, 0}} end
+    end)
+  end
+  schedule(END - 60, function()
+    local left = 0
+    for _, u in ipairs(S.biters or {}) do if u.valid then left = left + 1 end end
+    local slugs = S.ch and S.ch.valid and S.ch.get_item_count("lp-rail-slug") or -1
+    info(string.format("rifle: researched %s, unlocked %s; %d of 6 biters left, %d slugs left", tostring(S.researched),
+      tostring(S.unlocked), left, slugs))
+    check("rifle: the teardown researched it", S.researched == true, tostring(S.researched))
+    check("rifle: the rifle and slugs unlocked", S.unlocked == true, tostring(S.unlocked))
+    check("rifle: a slug pierces the line", left <= 6 - 2 * (3 - math.max(0, slugs)) or left == 0,
+      string.format("%d left after %d slugs", left, 3 - math.max(0, slugs)))
+  end)
+end
+
+-- Bait (the faction loot consult, technology 1): three pheromone glands taken apart in an assembler research Pheromone
+-- bait and unlock its recipe; a bait placed (raise_built, as a player builds it) 25 tiles out from a Serenity camp, 30
+-- idle small biters 70 tiles out: at least 10 are called, and Serenity loses buildings or units to them.
+scenarios.bait = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    lp("debug_depot", storage.id, 3000)
+    flatten(-20, -20, 20, 20)
+    local src = surface().create_entity{name = "electric-energy-interface", position = {0, 8}, force = "player"}
+    src.power_production = 1000000; src.electric_buffer_size = 1e7
+    surface().create_entity{name = "medium-electric-pole", position = {3, 8}, force = "player"}
+    local asm = surface().create_entity{name = "assembling-machine-2", position = {6, 8}, force = "player",
+      recipe = "lp-gland-schematic"}
+    -- A research trigger counts only once its prerequisites are researched (Military, which every game has early).
+    game.forces.player.technologies["military"].researched = true
+    asm.insert{name = "lp-pheromone-gland", count = 3}
+  end)
+  schedule(6 * 3600, function()
+    S.researched = game.forces.player.technologies["lp-pheromone-bait"].researched
+    S.unlocked = game.forces.player.recipes["lp-bait"].enabled
+    local st = lp("stats", storage.id)
+    local o = st.origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local vx, vy = o.x / len, o.y / len
+    S.lost0 = st.lost or 0
+    local r = (st.claim_radius or 60) * 0.5
+    local nest = {o.x + vx * (r + 70), o.y + vy * (r + 70)}
+    for k = 1, 30 do
+      local p = surface().find_non_colliding_position("small-biter", {nest[1] + (k % 6) * 2, nest[2] + math.floor(k / 6) * 2}, 8, 0.5)
+      surface().create_entity{name = "small-biter", position = p, force = "enemy"}
+    end
+    local at = surface().find_non_colliding_position("lp-player-bait", {o.x + vx * (r + 25), o.y + vy * (r + 25)}, 10, 0.5)
+    S.bait = surface().create_entity{name = "lp-player-bait", position = at, force = "player", raise_built = true}
+  end)
+  schedule(6 * 3600 + 60, function() S.called = lp("baits").called end)
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local bitten = 0
+    for k, v in pairs(S.fallen or {}) do
+      if not k:find("^lp%-grubstake") and k:find("^lp%-") and k:find("by small%-biter") then bitten = bitten + v end
+    end
+    local lost = (st.lost or 0) - (S.lost0 or 0)
+    info(string.format("bait: researched %s, recipe %s; %s biters called; Serenity lost %d buildings and %d units to them",
+      tostring(S.researched), tostring(S.unlocked), tostring(S.called), lost, bitten))
+    check("bait: the teardown researched it", S.researched == true, tostring(S.researched))
+    check("bait: the recipe unlocked", S.unlocked == true, tostring(S.unlocked))
+    check("bait: 10 biters called", (S.called or 0) >= 10, tostring(S.called))
+    check("bait: Serenity lost buildings or units to them", lost + bitten > 0, string.format("%d + %d", lost, bitten))
+  end)
+end
+
 -- Fuze (the faction loot consult, components and the first technology): a Serenity mortar destroyed drops a cluster
 -- fuze; three taken apart in an assembler (the teardown) research Cluster shells, which unlocks the cluster artillery
 -- shell; one fired at a point ringed by twelve small biters 7 tiles out kills biters an ordinary shell (LP_MIX=plain,

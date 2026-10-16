@@ -79,23 +79,31 @@ function flare.launch(b, at, tpos)
   return true
 end
 
-local function pull(b, s, f)
+-- The call: the idle biters (in no group) within PULL_RADIUS of `at`, the nearest 12 + 24 x evolution, as one group told
+-- to attack whatever it meets within AREA of it. Returns the group (nil: none) and how many. The player's pheromone bait
+-- (bait.lua) calls the same way.
+function flare.call(s, at)
   local evo = game.forces.enemy.get_evolution_factor(s)
   local n = math.floor(PULL_BASE + PULL_EVO * evo)
   local found = {}
-  for _, u in pairs(s.find_entities_filtered{type = "unit", force = "enemy", position = f.canister.position,
+  for _, u in pairs(s.find_entities_filtered{type = "unit", force = "enemy", position = at,
     radius = storage.flare_radius or PULL_RADIUS}) do
     if not u.commandable.parent_group then
-      table.insert(found, {u, (u.position.x - f.at.x) ^ 2 + (u.position.y - f.at.y) ^ 2})
+      table.insert(found, {u, (u.position.x - at.x) ^ 2 + (u.position.y - at.y) ^ 2})
     end
   end
   table.sort(found, function(x, y) return x[2] < y[2] end)
-  if #found == 0 then return 0 end
+  if #found == 0 then return nil, 0 end
   local group = s.create_unit_group{position = found[1][1].position, force = "enemy"}
   local k = 0
   for i = 1, math.min(n, #found) do group.add_member(found[i][1]); k = k + 1 end
-  group.set_command{type = defines.command.attack_area, destination = f.at, radius = AREA,
+  group.set_command{type = defines.command.attack_area, destination = at, radius = AREA,
     distraction = defines.distraction.by_enemy}
+  return group, k
+end
+
+local function pull(b, s, f)
+  local group, k = flare.call(s, f.at)
   f.group = group
   return k
 end

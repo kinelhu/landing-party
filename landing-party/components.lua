@@ -48,6 +48,57 @@ local function teardown(component, n, schematic, icon, tint)
   }
 end
 
+-- Pheromone bait (Grubstake, three glands): a canister the player places, one gland each, calling the idle biters round
+-- it (scripts/bait.lua). Not a military target: the corporations' turrets do not shoot it on sight.
+data:extend(teardown("lp-pheromone-gland", 3, "lp-gland-schematic", "__base__/graphics/icons/poison-capsule.png",
+  {r = 1, g = 0.85, b = 0.6, a = 1}))
+data:extend({
+  {type = "simple-entity-with-owner", name = "lp-player-bait", icon = "__base__/graphics/icons/poison-capsule.png",
+    icon_size = 64, flags = {"placeable-neutral", "placeable-player", "player-creation", "placeable-off-grid"},
+    max_health = 100, is_military_target = false, collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
+    selection_box = {{-0.5, -0.7}, {0.5, 0.4}}, dying_explosion = "explosion",
+    picture = {filename = "__base__/graphics/icons/fluid/barreling/barrel-empty.png", size = 64, scale = 0.5, tint = G}},
+  {type = "item", name = "lp-bait", icons = {{icon = "__base__/graphics/icons/poison-capsule.png", tint = G}}, stack_size = 20,
+    place_result = "lp-player-bait", subgroup = "lp-components", order = "y-bait"},
+  {type = "recipe", name = "lp-bait", enabled = false, energy_required = 5,
+    ingredients = {{type = "item", name = "lp-pheromone-gland", amount = 1}, {type = "item", name = "iron-plate", amount = 5}},
+    results = {{type = "item", name = "lp-bait", amount = 1}}},
+  {type = "technology", name = "lp-pheromone-bait", icon = "__base__/graphics/technology/military.png", icon_size = 256,
+    prerequisites = {"military"}, research_trigger = {type = "craft-item", item = "lp-gland-schematic"},
+    effects = {{type = "unlock-recipe", recipe = "lp-bait"}}},
+})
+
+-- Rail rifle (Serenity, two coils; after Military 3): the railgunner's weapon in the engineer's hands, a slug that
+-- pierces a 30-tile line for 150 physical, every 90 ticks, its enemies only (the consult). Paid once in coils (the
+-- research); the rifle and its slugs are ordinary crafts (a coil a slug would starve it: coils come from 1 railgunner
+-- in 5).
+data:extend(teardown("lp-rail-coil", 2, "lp-coil-schematic", "__base__/graphics/icons/copper-cable.png",
+  {r = 0.9, g = 0.95, b = 1, a = 1}))
+data:extend({
+  {type = "ammo-category", name = "lp-rail"},
+  {type = "gun", name = "lp-rail-rifle", icons = {{icon = "__base__/graphics/icons/submachine-gun.png", tint = S}},
+    subgroup = "gun", order = "z[landing-party]-rail-rifle", stack_size = 5,
+    attack_parameters = {type = "projectile", ammo_category = "lp-rail", cooldown = 90, movement_slow_down_factor = 0.5,
+      range = 30, sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound)}},
+  {type = "ammo", name = "lp-rail-slug", icons = {{icon = "__base__/graphics/icons/piercing-rounds-magazine.png", tint = S}},
+    ammo_category = "lp-rail", magazine_size = 1, stack_size = 50, subgroup = "ammo", order = "z[landing-party]-rail-slug",
+    ammo_type = {target_type = "direction", clamp_position = true, action = {type = "line", range = 30, width = 1.5,
+      force = "enemy", action_delivery = {type = "instant",
+        target_effects = {{type = "damage", damage = {amount = 150, type = "physical"}},
+          {type = "create-entity", entity_name = "explosion-hit"}},
+        source_effects = {type = "create-explosion", entity_name = "explosion-gunshot"}}}}},
+  {type = "recipe", name = "lp-rail-rifle", enabled = false, energy_required = 10,
+    ingredients = {{type = "item", name = "steel-plate", amount = 10}, {type = "item", name = "advanced-circuit", amount = 5},
+      {type = "item", name = "copper-cable", amount = 20}},
+    results = {{type = "item", name = "lp-rail-rifle", amount = 1}}},
+  {type = "recipe", name = "lp-rail-slug", enabled = false, energy_required = 2,
+    ingredients = {{type = "item", name = "steel-plate", amount = 1}, {type = "item", name = "copper-cable", amount = 3}},
+    results = {{type = "item", name = "lp-rail-slug", amount = 1}}},
+  {type = "technology", name = "lp-rail-rifle", icon = "__base__/graphics/technology/military.png", icon_size = 256,
+    prerequisites = {"military-3"}, research_trigger = {type = "craft-item", item = "lp-coil-schematic"},
+    effects = {{type = "unlock-recipe", recipe = "lp-rail-rifle"}, {type = "unlock-recipe", recipe = "lp-rail-slug"}}},
+})
+
 -- Cluster shells (Serenity, three fuzes): the player's artillery shell with a fuze, bursting into ten bomblets of its own
 -- (Serenity's, 12 over 1.5 tiles, six of them, killed none of a ring of small biters at 7: 15 health). Its enemies only.
 local player_bomblet = table.deepcopy(data.raw.projectile["lp-bomblet"])
