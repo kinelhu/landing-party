@@ -1100,8 +1100,16 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
 - With the ladder buying capacity (2026-10-16, same visit): 1,537; rows from minute 50: 123, 56, 180, 1, 229, 89, 2,
   220, 521, 55, 3, 58; 354 entities (61 gun turrets, 194 belts, 83 walls); Grubstake 371 (three camps), Serenity 103.
   The longest quiet stretch is still the first 50 minutes (Grubstake lands at 20 on visits).
-- Open bug, on every deathworld visit since before the pact: Serenity's first settlement sends some 65 export convoys
-  and delivers none; the haulers pile up formed and "moving" beside its lander (nwa delivers 87 of 89). Not looked into.
+- Convoys that never delivered (fixed 2026-10-16): on every deathworld visit since before the pact, Serenity's first
+  settlement sent some 65 export convoys and delivered none (nwa delivered 87 of 89). The hauler formed 25 to 45 tiles
+  toward the uplink and, when every spot there was walled, took the last one anyway: inside a walled fab compound of a
+  nine-block bastion (gates open for no unit). Its escorts, outside, never closed up; let go after a minute, the hauler
+  "moved" alone and stayed; one a minute piled up. Now, as a siege's hauler: it forms past the settlement's own
+  outermost wall on that line (the near half only: walked the whole way, the uplink's walls, the same force, set it down
+  beside the uplink, delivered in 0 s), its escorts are teleported beside it, it is delivered at its dock or within 30
+  tiles of the uplink (a young headquarters walls its dock in), and a hauler that has not moved for two minutes is
+  called off with its cargo back in stock (`convoys_stuck`). Visit: 17 of 18 delivered in about 42 s, none stuck.
+  Scenario `convoy LP_MIX=grown` (a bastion grown to full size before the uplink lands; in the full regression).
 - The bursts in the raze curve are not a problem (the user): the 80 at deathworld's minute 170 were 52 belts, 12 poles,
   10 walls; a raid is an event. Count by cost, not entities, in later reports.
 

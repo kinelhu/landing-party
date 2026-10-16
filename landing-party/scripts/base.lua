@@ -982,7 +982,7 @@ function base.stats(b)
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false, hq = b.hq,
     turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0,
     patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
-    convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0,
+    convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0, convoys_stuck = b.convoys_stuck or 0,
     convoys_lost = b.convoys_lost or 0, cargo_lost = b.cargo_lost or 0, intercepts = b.intercepts or 0,
     convoy_spread = army.convoy_spread(b), convoy_debug = army.convoy_debug(b),
     fortress_box = b.blocks[1] and b.blocks[1].kind == "fortress" and

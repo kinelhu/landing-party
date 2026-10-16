@@ -318,17 +318,21 @@ function army.convoy(b, cargo, trace)
   if not dest or dest == b then return false end
   local surface = b.lander.surface
   local home = (b.depots[1] and b.depots[1].valid and b.depots[1]) or b.lander
-  -- Form up outside the hub, on the side facing the uplink: haulers and escorts made beside a walled depot
-  -- stalled there, and the engine dropped the stuck escorts from the group (seed 4242).
-  local ux, uy = dest.uplink.position.x - home.position.x, dest.uplink.position.y - home.position.y
+  -- Form up outside the settlement, on the side facing the uplink: past its outermost wall or gate on that line (gates open
+  -- for no unit). Formed 25 to 45 tiles out, a nine-block bastion's haulers were made inside a walled fab compound and
+  -- never left: 68 sent, none delivered (visit deathworld10x). Beside a walled depot, escorts stalled (seed 4242).
+  local hx, hy = home.position.x, home.position.y
+  local ux, uy = dest.uplink.position.x - hx, dest.uplink.position.y - hy
   local ul = math.max(1, math.sqrt(ux * ux + uy * uy))
-  local p
-  for _, r in ipairs({25, 35, 45}) do
-    local q = {home.position.x + ux / ul * r, home.position.y + uy / ul * r}
-    p = surface.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), q, 8, 0.5)
-    if p and surface.count_entities_filtered{position = p, radius = 6, force = home.force, type = {"wall", "assembling-machine",
-      "electric-turret", "container"}} == 0 then break end
+  -- Its own walls only: walked the whole way, the uplink's (the same force) set the hauler down beside it, delivered in 0 s.
+  local out = 25
+  for d = 0, ul / 2, 2 do
+    if surface.count_entities_filtered{position = {hx + ux / ul * d, hy + uy / ul * d}, radius = 2.5, force = home.force,
+      type = {"wall", "gate"}, limit = 1} > 0 then out = math.max(out, d + 5) end
   end
+  out = math.min(out, ul)
+  local p = surface.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {hx + ux / ul * out, hy + uy / ul * out},
+    20, 0.5)
   local hauler = p and surface.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = home.force}
   if not hauler then return false end
   local escorts = {}
@@ -342,6 +346,12 @@ function army.convoy(b, cargo, trace)
       table.insert(escorts, table.remove(b.garrison, i))
     end
   end
+  -- The escorts ride out on the hauler, as a siege's guards do: drafted inside the walls, they could not reach it past them
+  -- and were let go after a minute, the hauler leaving alone.
+  for _, u in ipairs(escorts) do
+    local q = u.valid and surface.find_non_colliding_position(u.name, hauler.position, 12, 0.5)
+    if q then u.teleport(q) end
+  end
   -- Dock outside the fortress, on the side the convoy comes from: sent to the uplink in the inner yard,
   -- haulers circled the outer ring (seed 12345), the offset openings being no road for a vehicle.
   local target = {dest.uplink.position.x, dest.uplink.position.y}
@@ -353,7 +363,8 @@ function army.convoy(b, cargo, trace)
     local r = fort.w / 2 + 6
     target = {cx + dx / len * r, cy + dy / len * r}
   end
-  local c = {hauler = hauler, escorts = escorts, cargo = cargo, dest = target, dest_id = dest.id, started = game.tick,
+  local c = {hauler = hauler, escorts = escorts, cargo = cargo, dest = target, dest_id = dest.id, uplink = dest.uplink,
+    started = game.tick,
     last = {hauler.position.x, hauler.position.y}, home = home}
   b.convoys = b.convoys or {}
   table.insert(b.convoys, c)
@@ -397,6 +408,8 @@ end
 
 -- One step of discipline, every few seconds.
 local RELEASE_STEPS = 60          -- an escort behind for this many steps (a minute) is let go
+local CONVOY_DOCK = 30            -- a hauler this near the uplink has arrived
+local CONVOY_STUCK = 120          -- a hauler that has not moved for this many steps (two minutes) is called off
 
 local function escort_step(c, b)
   local hp = c.hauler.position
@@ -480,7 +493,11 @@ local function travel(b, trace)
       b.cargo_lost = (b.cargo_lost or 0) + c.cargo
       trace(b, string.format("convoy lost with %d parts", c.cargo))
       done = true
-    elseif (c.hauler.position.x - c.dest[1]) ^ 2 + (c.hauler.position.y - c.dest[2]) ^ 2 < 20 * 20 then
+    -- At its dock, or near the uplink however it came: a young headquarters walls its dock in, and haulers stopped 10 to 26
+    -- tiles from the uplink, 28 from the dock (visit deathworld10x, scenario convoy grown).
+    elseif (c.hauler.position.x - c.dest[1]) ^ 2 + (c.hauler.position.y - c.dest[2]) ^ 2 < 20 * 20
+      or (c.uplink and c.uplink.valid and (c.hauler.position.x - c.uplink.position.x) ^ 2
+        + (c.hauler.position.y - c.uplink.position.y) ^ 2 < CONVOY_DOCK ^ 2) then
       if army.on_deliver then army.on_deliver(b, c.cargo) end
       b.convoys_delivered = (b.convoys_delivered or 0) + 1
       trace(b, string.format("convoy delivered %d parts after %ds", c.cargo, (game.tick - c.started) / 60))
@@ -490,8 +507,25 @@ local function travel(b, trace)
       escort_step(c, b)
       -- Stalled while meant to move (no progress since the last look): fresh orders from where it stands.
       local p = c.hauler.position
-      if c.moving and (p.x - c.last[1]) ^ 2 + (p.y - c.last[2]) ^ 2 < 1 then hauler_route(c) end
-      c.last = {p.x, p.y}
+      local still = (p.x - c.last[1]) ^ 2 + (p.y - c.last[2]) ^ 2 < 1
+      c.still = still and (c.still or 0) + 1 or 0
+      if c.still >= CONVOY_STUCK then
+        -- No progress for two minutes, formed or not: called off, its cargo back in stock. Whatever stops a convoy, the
+        -- next one must not pile up behind it.
+        local near = {}
+        for _, e in pairs(c.hauler.surface.find_entities_filtered{position = p, radius = 4, limit = 8}) do
+          if e ~= c.hauler then table.insert(near, e.name) end
+        end
+        trace(b, string.format("convoy called off, stuck at %.0f,%.0f (formed %s, %d escorts, near %s): %d parts back",
+          p.x, p.y, tostring(c.formed), #c.escorts, table.concat(near, ", "), c.cargo))
+        b.parts = b.parts + c.cargo
+        b.convoys_stuck = (b.convoys_stuck or 0) + 1
+        c.hauler.destroy()
+        done = true
+      else
+        if c.moving and still then hauler_route(c) end
+        c.last = {p.x, p.y}
+      end
     end
     if done then
       for _, e in ipairs(c.escorts) do

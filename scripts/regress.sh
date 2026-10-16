@@ -18,7 +18,7 @@ RUNS=(
 FORKED=" cut raid occupy defend army train siege "
 if [ "$FULL" = "--full" ]; then
   RUNS+=("grow||60|10|30" "assault||60|10|30" "faction||60|10|30" "uplink||60|10|30" "lively||60|10|30"
-    "convoy||60|10|30" "fall||15|5|10" "strip|LP_MIX=claim|40|40|1")
+    "convoy||60|10|30" "convoy|LP_MIX=grown|45|45|1" "fall||15|5|10" "strip|LP_MIX=claim|40|40|1")
 fi
 # Every scenario listed must exist in the test mod (twice a scenario was cut by an edit to its neighbour, and the run
 # failed only once the game reported "unknown scenario").

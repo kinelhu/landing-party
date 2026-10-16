@@ -852,12 +852,17 @@ end
 -- it. While the uplink stands the settlement's exports travel to it by convoy. The first hauler is
 -- destroyed on the way: its cargo must be lost, later convoys must arrive, and the faction's exports must
 -- equal what arrived. All units on the map are recorded for the life animation.
+-- LP_MIX=grown: a bastion, grown to its doctrine's full size first, and the uplink lands only then (the deathworld
+-- visit: a nine-block bastion's convoys never left, 68 sent, none delivered).
 scenarios.convoy = function()
+  local grown = params.mix == "grown"
   schedule(60, function()
-    lp("debug_tune", {mature_blocks = 2, quiet = true})
+    lp("debug_tune", grown and {quiet = true} or {mature_blocks = 2, quiet = true})
     lp("debug_depot", storage.id, 4000)
   end)
-  schedule(120, function()
+  schedule(grown and 20 * 3600 or 120, function()
+    if grown then info("convoy: settlement before the uplink " .. serpent.line({blocks = lp("stats", storage.id).blocks,
+      walls = lp("stats", storage.id).walls, mature = lp("stats", storage.id).mature})) end
     S.uplink = lp("arrive", 1, {x = 0, y = 0}, params.distance, {uplink = true})
     info("convoy: uplink settlement " .. tostring(S.uplink))
   end)
@@ -4375,6 +4380,7 @@ script.on_init(function()
   if params.scenario == "visit" then return end
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
     {doctrine = params.doctrine or (params.scenario == "defend" and "bastion")
+      or (params.scenario == "convoy" and params.mix == "grown" and "bastion")
       or ((params.scenario == "army" or params.scenario == "siege") and "sprawl") or nil,
      uplink = params.scenario == "uplink" or nil})
   if not storage.id then error("lp-sim: landing failed") end
