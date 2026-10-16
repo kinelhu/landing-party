@@ -1189,8 +1189,53 @@ minutes is abandoned (its truck turned back each time). Headless runs chart noth
 - Scenario `prospect` (three iron patches 150 to 250 out, the nearest with a player drill; windows of 2 minutes): the
   drilled patch left alone; the two others tagged and claimed, nearest first, each built by a truck (72 s); `stake` (a
   claim marker by the second): it is never tagged, the third is claimed.
+- On deathworld10x it prospected nothing in 3 hours, and rightly: within 500 tiles of its camp lie 2,380 ore tiles, 9
+  charted chunks with ore, all its own patch (its first exclusion, "beyond its own claim", hid even those: a sprawl's
+  claim covered 123 of 278 chunks; now only ground within 40 of one of its modules is its own). The map is ore-poor
+  where it landed. Open (to the user): prospect the unworked patches nearest the player's base, within a long reach of
+  the camp, the player's expansion frontier, rather than those nearest the camp.
 - Not yet: answering inside the window tested (a drill placed after the tag), the claim lapsing when its road is cut,
   strip drills draining faster, the "expansion delayed" notice.
+
+### Rivals, slices 3 and 4: the border stake and the road (built 2026-10-16, overnight)
+**The border stake** (`scripts/border.lua`; Serenity takes a direction, the player may concede it). A separate item from
+the claim marker (the call: two names read better than one entity with two meanings, and conceding must be possible
+early: 10 stone bricks and 5 iron, from the start). Set toward a Serenity camp that holds the player a rival, outside its
+claim: the camp acknowledges a border at the stake's distance, drawn on the map, and its line (`ops.perimeter`, the
+cordon) holds short of it. Anything of the player's built on Serenity's side breaks the treaty: provoked, an enemy, the
+border void. An enemy does not treat; a stake inside the claim is encroachment, not a border. Scenario `border`
+(the line a step a minute, a relay 300 out, the stake at 200): the line held at 180, still a rival; `breach` (an
+assembler at 160 at minute 10): an enemy, the treaty void (the line itself goes no further: it stops 40 past the
+player's nearest building, the intruder already inside; the enemy raids instead).
+
+**The road** (`scripts/road.lua`; Grubstake's economy is the road). A Grubstake claim has no line home: every 5 minutes
+its camp sends a truck to empty the claim's bins and bring the ore home as feedstock (the economy step no longer counts
+a claim's bins at once where the corporation has a road). A truck killed on its way back spills its ore and the player
+is told "expansion delayed N minutes" (the cargo against the camp's intake a minute); a claim with no ore home for 20
+minutes lapses (its mark gone, no rebuilds: its drills there to take). Scenario `road` (hauls every 2 minutes, lapse
+after 6): 933 ore home from the claims in 25 minutes; `cut` (trucks killed leaving the claims loaded): four lost with
+106 to 346 ore, each told, two claims lapsed.
+- Found on the way: the claim's drills stood 14 tiles out, beyond its pylon's supply (unpowered); now within 8, the
+  pylon at the centre. The bins were emptied at once by the economy step (an abstract haul), so the trucks carried 2 ore.
+- Prospecting now goes for the player's frontier (the call, the user leaving the calls to me): within 700 of the camp,
+  the unworked patch nearest the player's spawn first. On deathworld10x (3 hours, unprovoked): three claims, one standing
+  (an iron patch), the other two the same coal patch by the player's base, abandoned by one camp and retried by
+  another (abandoned patches are now remembered by every camp). Its value razed there fell from 1,043 to 342: a rival
+  Grubstake (standing) steals and does not escalate. A large drop in pressure on a player who never provokes it: to judge.
+
+### Rivals, slice 2: standing and incidents (built 2026-10-16)
+`scripts/standing.lua`. Toward each player force a corporation is a rival or an enemy (a truce comes with the trade
+post): an enemy once provoked (`ops.provoke`, as Serenity always was: its buildings or units hurt, its claim encroached)
+and, the user: "even a tolerant rival should not accept turrets in firing range. That's an aggression": a player turret
+within 26 tiles of a camp's lander or one of its modules provokes it (checked once a minute). A rival Grubstake steals
+(soft raids, prospects, taps) but its ladder stays at the foot (`ops.ladder` via `ops.rival_holds`): no flares, rigs,
+reliefs or larger army until provoked; standing down after a quiet hour makes it a rival again (Serenity never forgets).
+A change of standing is a notice (`lp.standing-enemy`, `lp.standing-rival`). Incidents: the last 20 things the
+corporations did to the player (razes, merged per raid; turrets on their ground; prospects and claims; standing
+changes), `/lp incidents`. The sim provokes every corporation at start except in the temper scenarios and visits, so
+visits now meet Grubstake as a rival, as a real game does.
+- Scenario `standing`: a rival with its ladder at 0 although ten times fast; a turret by its lander: an enemy within
+  the minute, a turret incident and a standing change listed; it stands down (4 minutes quiet, nothing razed): a rival.
 
 ### The cordon, slice 1: posts on the arc (the user; Fable: `docs/reviews/2026-10-16-walled-advance-consult.md`; built 2026-10-16)
 `scripts/cordon.lua`. Serenity's moving line made physical. Each step of its perimeter (`ops.perimeter`, unchanged in

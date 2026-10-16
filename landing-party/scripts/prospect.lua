@@ -1,6 +1,7 @@
 -- Prospecting (the rivals consult, docs/reviews/2026-10-16-rivals-consult.md; the user took the plan, 2026-10-16):
--- Grubstake takes what you are not using. A camp picks the nearest charted ore patch within RADIUS that no player drill
--- works, tags it on the player's map ("Mineral rights reassigned") and says so; WINDOW later, unless the player has
+-- Grubstake takes what you are not using. A camp picks, within its reach (RADIUS), the charted ore patch nearest the
+-- player's base that no player drill works: the player's expansion frontier (the nearest to the camp once: on
+-- deathworld10x the camp had landed where the only ore was its own, 2,380 tiles within 500, and took nothing). It tags it on the player's map ("Mineral rights reassigned") and says so; WINDOW later, unless the player has
 -- drilled it or staked it (a claim marker, ops.marked), its truck builds a claim there: a generator, a pylon, three
 -- drills with their bins, a mining module of the camp (rebuilt, capturable), marked on the map. One patch at a time,
 -- the nearest first, PACE between (tagging everything undrilled at chemical science would be harsh).
@@ -11,7 +12,7 @@ local standing = require("__landing-party__.scripts.standing")
 
 local prospect = {}
 
-local RADIUS = 300
+local RADIUS = 700               -- its reach; among what is in reach, the patch nearest the player's base first
 local WINDOW = 10 * 3600
 local PACE = 10 * 3600
 local CHUNK = 32
@@ -67,12 +68,15 @@ local function find(b)
   local best, bd
   local why = {inside = 0, uncharted = 0, ore = 0, fluid = 0, worked = 0, staked = 0, taken = 0}
   local radius = storage.prospect_radius or RADIUS
+  -- The player's base: their spawn (the first player force's).
+  local home = storage.prospect_home or (players[1] and players[1].get_spawn_position(s)) or {x = 0, y = 0}
   local n = math.ceil(radius / CHUNK)
   for i = -n, n do
     for j = -n, n do
       local cx, cy = math.floor(ox / CHUNK) + i, math.floor(oy / CHUNK) + j
       local x, y = cx * CHUNK + CHUNK / 2, cy * CHUNK + CHUNK / 2
       local d = (x - ox) ^ 2 + (y - oy) ^ 2
+      local dp = (x - home.x) ^ 2 + (y - home.y) ^ 2
       local key = cx .. "," .. cy
       -- Not where it already mines (a module of its own within CLEAR). Not "beyond its claim": a sprawl's claim covered
       -- 123 of the 278 chunks within 300 on deathworld10x, and it prospected nothing in 3 hours.
@@ -83,7 +87,8 @@ local function find(b)
         end
         if own then why.inside = why.inside + 1 end
       end
-      if d <= radius * radius and not own and (not bd or d < bd) and not (b.prospected or {})[key] then
+      if d <= radius * radius and not own and (not bd or dp < bd) and not (b.prospected or {})[key]
+        and not (storage.prospect_failed or {})[key] then
         -- Charted by the player (a patch they know of). Headless runs chart nothing (force.chart never lands there):
         -- tests waive it (debug_tune prospect_uncharted).
         local charted = storage.prospect_uncharted or false
@@ -99,7 +104,7 @@ local function find(b)
           elseif worked(s, {x, y}) then why.worked = why.worked + 1
           elseif ops.marked(b, {x, y}) then why.staked = why.staked + 1
           elseif taken(b, s, {x, y}) then why.taken = why.taken + 1
-          else best, bd = {x = x, y = y, key = key, ore = ore.name}, d end
+          else best, bd = {x = x, y = y, key = key, ore = ore.name}, dp end
         end
       end
     end
@@ -127,7 +132,8 @@ local function claim(b, p)
   local s = game.surfaces[b.surface]
   local m = {kind = "mining", center = {p.x, p.y}, entities = {}, claim = true, prospect = true}
   table.insert(b.modules, m)
-  local ores = s.find_entities_filtered{position = {p.x, p.y}, radius = 14, type = "resource"}
+  -- Within the pylon's supply (9 a side): drills 14 out stood unpowered and mined 2 ore in 15 minutes.
+  local ores = s.find_entities_filtered{position = {p.x, p.y}, radius = 8, type = "resource"}
   table.sort(ores, function(a, c)
     return (a.position.x - p.x) ^ 2 + (a.position.y - p.y) ^ 2 < (c.position.x - p.x) ^ 2 + (c.position.y - p.y) ^ 2
   end)
@@ -136,10 +142,11 @@ local function claim(b, p)
     if #spots >= DRILLS then break end
     local far = true
     for _, q in ipairs(spots) do if math.abs(q[1] - o.position.x) < 4 and math.abs(q[2] - o.position.y) < 4 then far = false end end
-    if far then table.insert(spots, {math.floor(o.position.x) + 0.5, math.floor(o.position.y) + 0.5}) end
+    local clear = math.abs(o.position.x - p.x) > 2.5 or math.abs(o.position.y - p.y) > 2.5
+    if far and clear then table.insert(spots, {math.floor(o.position.x) + 0.5, math.floor(o.position.y) + 0.5}) end
   end
-  local jobs = {{name = "lp-pylon", pos = {p.x - 6.5, p.y + 0.5}, module = m}, {name = "lp-generator", pos = {p.x - 9, p.y + 4},
-    module = m, loose = true}}
+  local jobs = {{name = "lp-pylon", pos = {math.floor(p.x) + 0.5, math.floor(p.y) + 0.5}, module = m},
+    {name = "lp-generator", pos = {p.x - 5, p.y + 6}, module = m, loose = true}}
   for _, q in ipairs(spots) do
     table.insert(jobs, {name = "lp-drill", pos = q, module = m})
     table.insert(jobs, {name = "lp-bin", pos = {q[1], q[2] - 2}, module = m, loose = true})
@@ -147,10 +154,10 @@ local function claim(b, p)
   -- First in the queue: its truck (crew.lua) takes them out.
   for i = #jobs, 1, -1 do table.insert(b.queue, 1, jobs[i]) end
   local c = shared.CORPS[b.corp].color
-  rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = 24, filled = true,
-    target = m.center, surface = s, render_mode = "chart"}
+  m.marks = {rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = 24, filled = true,
+    target = m.center, surface = s, render_mode = "chart"},
   rendering.draw_circle{color = {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}, radius = 24, width = 3, filled = false,
-    target = m.center, surface = s, render_mode = "chart"}
+    target = m.center, surface = s, render_mode = "chart"}}
   b.claims_settled = (b.claims_settled or 0) + 1
   return m
 end
@@ -182,6 +189,9 @@ local function step(b)
       while b.queue[j] do if b.queue[j].module == p.module then table.remove(b.queue, j) else j = j + 1 end end
       p.module.failed = true
       untag(p)
+      -- Remembered by every camp: two camps tried the same patch by the player's base, one after the other (visit).
+      storage.prospect_failed = storage.prospect_failed or {}
+      storage.prospect_failed[p.key] = true
       b.prospects_abandoned = (b.prospects_abandoned or 0) + 1
       base.trace(b, string.format("prospect: the claim at %.0f,%.0f is abandoned (not built in %d s)", p.x, p.y, GIVE_UP / 60))
       b.prospect = nil

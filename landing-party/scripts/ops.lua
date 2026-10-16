@@ -279,6 +279,9 @@ function ops.perimeter(b, tick)
   local cap = PERIMETER_MAX
   local near, nd = nearest_player(b, surface, PERIMETER_MAX + PERIMETER_STEP)
   if nd then cap = math.min(cap, nd + 40) end
+  -- A border the player set and keeps (border.lua): the line holds short of it.
+  local bc = ops.border_cap and ops.border_cap(b)
+  if bc then cap = math.min(cap, bc) end
   for _, o in pairs(storage.bases) do
     if o ~= b and not o.fallen and o.corp ~= b.corp and o.surface == b.surface and o.claim_radius then
       local d = math.sqrt((o.origin.x - b.origin.x) ^ 2 + (o.origin.y - b.origin.y) ^ 2)

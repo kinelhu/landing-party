@@ -3203,6 +3203,129 @@ scenarios.rail = function()
   end)
 end
 
+-- Road (the rivals consult, slice 4): the prospect setup (three iron patches, the nearest drilled by the player); a haul
+-- every 2 minutes, a claim lapsing after 6 without ore home. Uncut: ore goes home from the claims. LP_MIX=cut: once a
+-- claim stands every Grubstake truck near it is destroyed: ore spilled, the delay told, the claim lapses.
+scenarios.road = function()
+  local cut = params.mix == "cut"
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true, prospect_window = 2 * 3600, prospect_pace = 3600,
+      prospect_uncharted = true, road_haul = 2 * 3600, road_lapse = 6 * 3600})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = -o.x / len, -o.y / len
+    local vx, vy = -uy, ux
+    S.patches = {}
+    for _, d in ipairs({{150, 0}, {200, 60}, {250, -60}}) do
+      local c = {math.floor(o.x + ux * d[1] + vx * d[2]), math.floor(o.y + uy * d[1] + vy * d[2])}
+      flatten(c[1] - 8, c[2] - 8, c[1] + 8, c[2] + 8)
+      for x = -6, 6 do for y = -6, 6 do surface().create_entity{name = "iron-ore", position = {c[1] + x, c[2] + y}, amount = 2000} end end
+      table.insert(S.patches, c)
+    end
+    surface().create_entity{name = "burner-mining-drill", position = S.patches[1], force = "player"}
+  end)
+  if cut then
+    for t = 3 * 3600, END - 120, 60 do
+      schedule(t, function()
+        -- Every built claim the camp holds (prospecting goes for the patches nearest the player's base: not only ours),
+        -- its trucks killed leaving it loaded (30 to 60 tiles out: killed on the way in they carried nothing).
+        for _, c in ipairs(S.g and lp("road_stats", S.g).centers or {}) do
+          for _, t2 in pairs(surface().find_entities_filtered{name = "lp-grubstake-hauler", position = c, radius = 60}) do
+            local d = math.sqrt((t2.position.x - c[1]) ^ 2 + (t2.position.y - c[2]) ^ 2)
+            S.seen_near = S.seen_near or {}
+            if d < 14 then S.seen_near[t2.unit_number] = true
+            elseif d > 25 and S.seen_near[t2.unit_number] then t2.die("player") end
+          end
+        end
+      end)
+    end
+  end
+  schedule(END - 60, function()
+    local rs = lp("road_stats", S.g)
+    local kinds = {}
+    for _, e in ipairs(lp("incidents")) do kinds[e.kind] = (kinds[e.kind] or 0) + 1 end
+    info(string.format("road: %s; incidents %s", serpent.line(rs), serpent.line(kinds)))
+    local ST = {}
+    for k, v in pairs(defines.entity_status) do ST[v] = k end
+    for _, c in ipairs(rs.centers or {}) do
+      local st, ore = {}, 0
+      for _, d in pairs(surface().find_entities_filtered{name = "lp-grubstake-drill", position = c, radius = 12}) do
+        st[#st + 1] = ST[d.status] or tostring(d.status)
+      end
+      for _, bn in pairs(surface().find_entities_filtered{name = "lp-grubstake-bin", position = c, radius = 12}) do
+        ore = ore + bn.get_item_count()
+      end
+      local ground = surface().count_entities_filtered{type = "item-entity", position = c, radius = 12}
+      info(string.format("road: claim %d,%d drills %s; bins hold %d; %d items on the ground", c[1], c[2], serpent.line(st), ore, ground))
+    end
+    if cut then
+      check("road: a loaded truck was lost and the delay told", (kinds["hauler lost"] or 0) >= 1, serpent.line(kinds))
+      check("road: the claim lapsed", (rs.lapsed or 0) >= 1, serpent.line(rs))
+      return
+    end
+    check("road: ore went home from the claims", (rs.hauls or 0) >= 1 and (rs.hauled or 0) > 0, serpent.line(rs))
+    check("road: nothing lapsed", (rs.lapsed or 0) == 0, serpent.line(rs))
+  end)
+end
+
+-- Border (the rivals consult, slice 3): an unprovoked Serenity camp, its line a step a minute, a player relay 300 out
+-- (lasting); a border stake 200 out toward it at 2 minutes: accepted (a rival), the line never past it in 20 minutes.
+-- LP_MIX=breach: at 10 minutes an assembler of the player's at 160, on Serenity's side: the treaty broken, Serenity an
+-- enemy, the treaty void.
+scenarios.border = function()
+  local breach = params.mix == "breach"
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 4000) end end)
+  schedule(90, function()
+    local o = lp("stats", storage.id).origin
+    S.o = o
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    S.u = {-o.x / len, -o.y / len}
+    local c = {math.floor(o.x + S.u[1] * 300), math.floor(o.y + S.u[2] * 300)}
+    flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
+    S.relay = surface().create_entity{name = "lp-command-relay", position = c, force = "player"}
+    S.relay.destructible = false
+  end)
+  schedule(2 * 3600, function()
+    local p = {S.o.x + S.u[1] * 200, S.o.y + S.u[2] * 200}
+    flatten(p[1] - 3, p[2] - 3, p[1] + 3, p[2] + 3)
+    S.stake = surface().create_entity{name = "lp-border-stake", position = p, force = "player", raise_built = true}
+    S.stake.destructible = false
+    S.held0 = lp("borders").held
+  end)
+  if breach then
+    schedule(10 * 3600, function()
+      local p = surface().find_non_colliding_position("assembling-machine-1", {S.o.x + S.u[1] * 160, S.o.y + S.u[2] * 160}, 10, 1)
+      S.intruder = surface().create_entity{name = "assembling-machine-1", position = p, force = "player"}
+      S.intruder.destructible = false
+    end)
+  end
+  local maxp = 0
+  for t = 2 * 3600 + 600, END - 120, 600 do
+    schedule(t, function() maxp = math.max(maxp, lp("stats", storage.id).perimeter or 0); S.maxp = maxp end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local standing_now = lp("standing", "serenity")
+    info(string.format("border: accepted %s; perimeter at most %.0f (now %.0f); standing %s; borders %s", tostring(S.held0),
+      S.maxp or -1, st.perimeter or -1, standing_now, serpent.line(lp("borders"))))
+    check("border: accepted", S.held0 == 1, tostring(S.held0))
+    if breach then
+      check("border: built on its side, the treaty broke and it is an enemy", standing_now == "enemy", standing_now)
+      -- The treaty void (the line itself has nowhere to go: it stops 40 past the player's nearest building, the
+      -- intruder inside its claim; the enemy raids it instead).
+      check("border: the treaty is void", lp("borders").held == 0, serpent.line(lp("borders")))
+      return
+    end
+    check("border: the line held short of the stake", (S.maxp or 999) <= 200, string.format("%.0f", S.maxp or -1))
+    check("border: still a rival", standing_now == "rival", standing_now)
+  end)
+end
+
 -- Standing (the rivals consult, slice 2): a Grubstake camp starts a rival (no provocation): its ladder held at the foot
 -- although ten times fast. A player gun turret set beside its lander: within a minute or two it is an enemy, a turret
 -- incident and a standing change listed, and its ladder climbs. Then it stands down (quiet in 4 minutes, nothing razed):
@@ -3272,6 +3395,8 @@ scenarios.prospect = function()
       game.forces.player.chart(surface(), {{c[1] - 20, c[2] - 20}, {c[1] + 20, c[2] + 20}})
       table.insert(S.patches, c)
     end
+    -- The player's base, for prospecting, by the second patch (the map's own ore by the spawn otherwise comes first).
+    lp("debug_tune", {prospect_home = {x = S.patches[2][1], y = S.patches[2][2]}})
     -- The first (nearest) is the player's: a drill on it.
     local p1 = S.patches[1]
     surface().create_entity{name = "burner-mining-drill", position = {p1[1], p1[2]}, force = "player"}
@@ -5353,7 +5478,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true}
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 

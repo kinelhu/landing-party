@@ -104,6 +104,21 @@ data:extend({
     effects = {{type = "unlock-recipe", recipe = "lp-claim-marker"}}},
 })
 
+-- The border stake (border.lua): ordinary items, from the start (conceding ground must be possible early): a signal post
+-- in Serenity's colour.
+data:extend({
+  {type = "simple-entity-with-owner", name = "lp-border-stake", icons = {{icon = "__base__/graphics/icons/rail-signal.png", tint = S}},
+    flags = {"placeable-neutral", "placeable-player", "player-creation"}, max_health = 200,
+    minable = {mining_time = 0.5, result = "lp-border-stake"}, is_military_target = false,
+    collision_box = {{-0.3, -0.3}, {0.3, 0.3}}, selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    picture = {filename = "__base__/graphics/icons/rail-signal.png", size = 64, scale = 0.5, tint = S}},
+  {type = "item", name = "lp-border-stake", icons = {{icon = "__base__/graphics/icons/rail-signal.png", tint = S}},
+    stack_size = 10, place_result = "lp-border-stake", subgroup = "lp-components", order = "y-border"},
+  {type = "recipe", name = "lp-border-stake", enabled = true, energy_required = 2,
+    ingredients = {{type = "item", name = "stone-brick", amount = 10}, {type = "item", name = "iron-plate", amount = 5}},
+    results = {{type = "item", name = "lp-border-stake", amount = 1}}},
+})
+
 -- Rail rifle (Serenity, two coils; after Military 3): the railgunner's weapon in the engineer's hands, a slug that
 -- pierces a 30-tile line for 150 physical, every 90 ticks, its enemies only (the consult). Paid once in coils (the
 -- research); the rifle and its slugs are ordinary crafts (a coil a slug would starve it: coils come from 1 railgunner

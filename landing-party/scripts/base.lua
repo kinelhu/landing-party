@@ -298,7 +298,8 @@ local function economy(b)
     -- A bin counts only while its drills share the lander's network (cut the line, lose the income).
     local own = storage.owner[bin.unit_number]
     if n > 0 and own and own.module and own.module.claim then
-      inv.clear(); gained = gained + n
+      -- A claim's ore: carried home by its trucks where the corporation has a road (road.lua), else counted at once.
+      if not (shared.CORPS[b.corp].temper or {}).prospects then inv.clear(); gained = gained + n end
     elseif n > 0 and net then
       local p = bin.surface.find_entities_filtered{name = shared.variants("lp-pylon"), position = bin.position, radius = 5,
         limit = 1}[1]
@@ -607,6 +608,8 @@ function base.on_died(e, by)
   local kind = shared.kind_of(e.name)
   if not b or b.fallen or kind == "lp-lander" or kind == "lp-uplink" then return end
   b.lost = b.lost + 1
+  -- A lapsed claim (road.lua) is not rebuilt: it is there to take.
+  if own.module and own.module.lapsed then return end
   army.alarm(b, e.position, trace)
   local d = 0
   if b.lander.valid then
@@ -880,10 +883,10 @@ function ops.settle(b, site, camp)
   for _, e in ipairs(camp or {}) do if e and e.valid then register(b, e, m) end end
   local surface = game.surfaces[b.surface]
   local c = shared.CORPS[b.corp].color
-  rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = CLAIM_MARGIN,
-    filled = true, target = m.center, surface = surface, render_mode = "chart"}
+  m.marks = {rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = CLAIM_MARGIN,
+    filled = true, target = m.center, surface = surface, render_mode = "chart"},
   rendering.draw_circle{color = {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}, radius = CLAIM_MARGIN, width = 3,
-    filled = false, target = m.center, surface = surface, render_mode = "chart"}
+    filled = false, target = m.center, surface = surface, render_mode = "chart"}}
   b.claims_settled = (b.claims_settled or 0) + 1
 end
 
