@@ -1176,6 +1176,22 @@ post to biters three times stops. Counters: breach, outflank (the bearing follow
 cost parts), overextend. First slice: posts on the arc (`cordon`), then breach and mend, biters, contact wall and
 recovery, routes and ore.
 
+### Rivals, slice 1: Grubstake prospects (the user took the plan; Fable: `docs/reviews/2026-10-16-rivals-consult.md`; built 2026-10-16)
+The frame (`docs/arc.md`): the corporations are rivals who become enemies; each takes one thing turrets do not stand on,
+and its economy is one thing the player can reach. Grubstake takes what you are not using. `scripts/prospect.lua`: a
+mature camp picks the nearest charted ore patch within 300 tiles (chunk by chunk, a capped count of 20 ore tiles) that no
+player drill works within 40, no claim marker stakes, and no other corporation claims or holds; it tags it on the
+player's map ("Mineral rights reassigned") with a notice; ten minutes later, unless the player has drilled or staked it,
+its truck builds a claim there (a generator, a pylon, three drills with bins: a mining module of the camp, rebuilt and
+capturable, its disc on the map). One patch at a time, nearest first, ten minutes between; a claim not built in ten
+minutes is abandoned (its truck turned back each time). Headless runs chart nothing, so tests waive the charting
+(`debug_tune prospect_uncharted`).
+- Scenario `prospect` (three iron patches 150 to 250 out, the nearest with a player drill; windows of 2 minutes): the
+  drilled patch left alone; the two others tagged and claimed, nearest first, each built by a truck (72 s); `stake` (a
+  claim marker by the second): it is never tagged, the third is claimed.
+- Not yet: answering inside the window tested (a drill placed after the tag), the claim lapsing when its road is cut,
+  strip drills draining faster, the "expansion delayed" notice.
+
 ### The cordon, slice 1: posts on the arc (the user; Fable: `docs/reviews/2026-10-16-walled-advance-consult.md`; built 2026-10-16)
 `scripts/cordon.lua`. Serenity's moving line made physical. Each step of its perimeter (`ops.perimeter`, unchanged in
 its timing and caps) is an arc of posts at the new radius, within 60 degrees either side of the bearing to the player's

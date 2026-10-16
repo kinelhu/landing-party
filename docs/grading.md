@@ -38,3 +38,15 @@ at minute 0 and Grubstake at 20, so the arrival gates are not in it):
 - Grubstake's identity rests on stripping and stealing; if those never fire on a real base, what does the player meet?
 - Half the raids turn back unseen. Should the player see a raid that turned back (it read their defence and left)?
 - Convoys and reliefs are the "economy you can strike" pillar, yet nothing points the player at them. What would?
+
+## Measured with the builders and the cordon (2026-10-16 evening; 3 hours each, four visits run at once)
+| Save (mode) | Value razed | Raids (aborted) | Strips | Loot | Flares | Rigs | Taps | Crew runs | Cordon arcs (stood) | Reliefs | Convoys |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| deathworld10x (unprovoked) | 1,043 | 59 (24) | 0 | 0 | 9 | 0 | 0 | 396 | 5 (4) | 13 | 93 |
+| deathworld10x (provoked) | 1,322 | 42 (26) | 0 | 0 | 7 | 0 | 0 | 567 | 5 (4) | 10 | 91 |
+| nwa (megabase, artillery) | 1,542 | 248 (26) | 0 | 0 | 8 | 6 | 0 | 424 | 0 | 7 | 118 |
+| nw (megabase, lasers) | 74 | 175 (16) | 0 | 1 | 3 | 2 | 0 | 498 | 2 (1) | 9 | 23 |
+
+- Strips still 0 everywhere (before prospecting). The claim jumper fires only on the megabases; the tap nowhere.
+- Tick cost: run four at once, even the baselines doubled (deathworld 0.31 -> 0.59 ms), so the numbers are inflated;
+  the visit over its baseline went from 1.63 (morning) to 1.72. To measure alone before reading anything into it.

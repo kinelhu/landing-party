@@ -45,3 +45,43 @@ learn to read, an economy you can strike, and a way of taking things from you th
    that answer a corporation the player has met.
 4. **Then the missing pillar that changes most decisions**: leverage (standing and one contract: a bought cease-fire),
    or the player's army taking a camp. Lumen and Concord after, once two rivals play well.
+
+## The essential questions (in order: each constrains the next)
+1. **What are the corporations to the player: enemies, rivals, or neighbours?** Enemies make the mod a smarter biter (the
+   answer is always more turrets); rivals for the same planet give a strategic layer (they want things, you deny them,
+   trade with them, set them on each other). The campaign said rivals ("leverage, not just firepower"); most of what is
+   built since treats them as enemies.
+2. **What does the player do about each corporation, other than turrets?** At least one non-defensive answer each, and a
+   different one: Grubstake perhaps by its supply lines and components, Serenity by breaking or outflanking its line.
+3. **Does engaging pay better than turtling?** If walling up is optimal the corporations are a tax on the factory. On
+   deathworld10x the best play was probably to sit behind 205 turrets.
+4. **Can the player read what is happening and why?** Half the raids turn back unseen; the tap is silent by design; the
+   reasons live in our trace logs.
+5. **Does it hold across games** (a compact deathworld, a sprawling megabase, an early base)? Grubstake's thieving never
+   fired on deathworld: a failure of identity, not of balance.
+Less urgent: how many corporations (two that play well beat four that do not), the end state (it follows from 1).
+
+## Decisions (the user, 2026-10-16)
+1. **Rivals**, who can become enemies and often do. We lost sight of this; the tactical depth built meanwhile stays.
+   There must be incentives not to solve everything with stacked turrets, and the enemy side must stay compelling and
+   force varied defences, at least until very late.
+2. **The non-turret answer per corporation: open** (no answer yet; to be argued).
+3. **Engaging must pay better than turtling.** The faction technologies were the user's first, partial answer.
+4. **Readability matters**, as stated.
+5. **Not built for megabases.** At megabase production every enemy is insignificant; the target is the mid game (from
+   chemical science to the first rockets and the planets after). Megabase saves (nwa, nw) stay as a check that nothing
+   breaks there, not as a design target.
+
+## The plan (the user took it, 2026-10-16; Fable: `docs/reviews/2026-10-16-rivals-consult.md`)
+Each corporation takes one thing turrets do not stand on, and its economy is one thing the player can reach. Grubstake
+takes what you are not using (prospecting: undrilled patches near its camp, tagged, then claimed; answers: stake it, rob
+its road, pay it at a trade post); its economy is the road. Serenity takes a direction (the cordon's sector; answers:
+concede a border, bend the line with a relay, break its posts and convoys); its economy is the line. New systems, the
+fewest: standing as three labels (rival, enemy, truce), one stake entity (mineral rights to Grubstake, a border to
+Serenity), Grubstake's trade post, and the corporate map with a last-incidents list. The claim jumper and the tap fold
+into one heist. Slices: prospecting, standing and incidents, border stake, lapse and the road, trade post, bend, and the
+gate: a scripted player that engages ends with more patches and production than one that turtles. Prospecting paced:
+one patch at a time, the nearest to the camp first (tagging everything undrilled at chemical science would be harsh).
+- Standing (the user, 2026-10-16): even a tolerant rival does not accept the player's turrets within firing range of its
+  ground: that is aggression, and makes it an enemy. (Grubstake enclaves can end up inside the player's walls, where the
+  player left ore undrilled; a rival tolerated there becomes an enemy the moment a turret covers it.)

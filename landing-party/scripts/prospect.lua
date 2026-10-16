@@ -1,0 +1,216 @@
+-- Prospecting (the rivals consult, docs/reviews/2026-10-16-rivals-consult.md; the user took the plan, 2026-10-16):
+-- Grubstake takes what you are not using. A camp picks the nearest charted ore patch within RADIUS that no player drill
+-- works, tags it on the player's map ("Mineral rights reassigned") and says so; WINDOW later, unless the player has
+-- drilled it or staked it (a claim marker, ops.marked), its truck builds a claim there: a generator, a pylon, three
+-- drills with their bins, a mining module of the camp (rebuilt, capturable), marked on the map. One patch at a time,
+-- the nearest first, PACE between (tagging everything undrilled at chemical science would be harsh).
+local shared = require("__landing-party__.shared")
+local base = require("__landing-party__.scripts.base")
+local ops = require("__landing-party__.scripts.ops")
+
+local prospect = {}
+
+local RADIUS = 300
+local WINDOW = 10 * 3600
+local PACE = 10 * 3600
+local CHUNK = 32
+local MIN_ORE = 20                -- ore tiles a chunk needs (a count capped here) to be a patch (at 40 a 13 x 13 patch
+                                  -- across chunk borders counted in none)
+local CLEAR = 40                  -- no player drill, nor camp module, this near
+local DRILLS = 3
+local GIVE_UP = 10 * 3600         -- a claim not built by then is abandoned (its truck turned back each time)
+
+-- Inside another corporation's claim, or held by a force at war with the camp: not a candidate (the second pick once
+-- fell inside Serenity's camp, and its truck turned back "occupied" for the rest of the run).
+local function taken(b, s, pos)
+  for _, o in pairs(storage.bases or {}) do
+    if o ~= b and not o.fallen and o.surface == b.surface and o.origin
+      and (o.origin.x - pos[1]) ^ 2 + (o.origin.y - pos[2]) ^ 2 <= (o.claim_radius or 60) ^ 2 then
+      return true
+    end
+  end
+  return base.occupied(b, s, pos)
+end
+
+local function tell(b, key, at)
+  local s = game.surfaces[b.surface]
+  for _, f in pairs(game.forces) do
+    if #f.players > 0 and not shared.is_corp(f.name) then
+      f.print({key, shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at[1], at[2], s.name)})
+    end
+  end
+end
+
+local function player_forces()
+  local out = {}
+  for _, f in pairs(game.forces) do
+    if f.name == "player" or (#f.players > 0 and not shared.is_corp(f.name)) then table.insert(out, f) end
+  end
+  return out
+end
+
+local function worked(s, pos)
+  for _, f in ipairs(player_forces()) do
+    if s.count_entities_filtered{position = pos, radius = CLEAR, type = "mining-drill", force = f, limit = 1} > 0 then
+      return true
+    end
+  end
+  return false
+end
+
+-- The nearest charted, unworked patch: chunk by chunk, a capped count each.
+local function find(b)
+  local s = game.surfaces[b.surface]
+  local ox, oy = b.origin.x, b.origin.y
+  local players = player_forces()
+  local best, bd
+  local n = math.ceil(RADIUS / CHUNK)
+  for i = -n, n do
+    for j = -n, n do
+      local cx, cy = math.floor(ox / CHUNK) + i, math.floor(oy / CHUNK) + j
+      local x, y = cx * CHUNK + CHUNK / 2, cy * CHUNK + CHUNK / 2
+      local d = (x - ox) ^ 2 + (y - oy) ^ 2
+      local key = cx .. "," .. cy
+      if d <= RADIUS * RADIUS and d > (b.claim_radius or 60) ^ 2 and (not bd or d < bd) and not (b.prospected or {})[key] then
+        -- Charted by the player (a patch they know of). Headless runs chart nothing (force.chart never lands there):
+        -- tests waive it (debug_tune prospect_uncharted).
+        local charted = storage.prospect_uncharted or false
+        for _, f in ipairs(players) do if f.is_chunk_charted(s, {cx, cy}) then charted = true end end
+        if charted and s.count_entities_filtered{area = {{cx * CHUNK, cy * CHUNK}, {cx * CHUNK + CHUNK, cy * CHUNK + CHUNK}},
+          type = "resource", limit = MIN_ORE} >= MIN_ORE then
+          local ore = s.find_entities_filtered{area = {{cx * CHUNK, cy * CHUNK}, {cx * CHUNK + CHUNK, cy * CHUNK + CHUNK}},
+            type = "resource", limit = 1}[1]
+          if ore and ore.prototype.resource_category == "basic-solid" and not worked(s, {x, y})
+            and not ops.marked(b, {x, y}) and not taken(b, s, {x, y}) then
+            best, bd = {x = x, y = y, key = key, ore = ore.name}, d
+          end
+        end
+      end
+    end
+  end
+  return best
+end
+
+local function tag(b, p)
+  local s = game.surfaces[b.surface]
+  local tags = {}
+  for _, f in ipairs(player_forces()) do
+    local t = f.add_chart_tag(s, {position = {p.x, p.y}, icon = {type = "virtual", name = shared.CORPS[b.corp].icon},
+      text = "Mineral rights reassigned"})
+    if t then table.insert(tags, t) end
+  end
+  return tags
+end
+
+local function untag(p) for _, t in ipairs(p.tags or {}) do if t.valid then t.destroy() end end end
+
+-- The claim's jobs, a module of the camp: drills on the patch's ore tiles (spaced), their bins north of them, a
+-- generator and a pylon beside.
+local function claim(b, p)
+  local s = game.surfaces[b.surface]
+  local m = {kind = "mining", center = {p.x, p.y}, entities = {}, claim = true, prospect = true}
+  table.insert(b.modules, m)
+  local ores = s.find_entities_filtered{position = {p.x, p.y}, radius = 14, type = "resource"}
+  table.sort(ores, function(a, c)
+    return (a.position.x - p.x) ^ 2 + (a.position.y - p.y) ^ 2 < (c.position.x - p.x) ^ 2 + (c.position.y - p.y) ^ 2
+  end)
+  local spots = {}
+  for _, o in ipairs(ores) do
+    if #spots >= DRILLS then break end
+    local far = true
+    for _, q in ipairs(spots) do if math.abs(q[1] - o.position.x) < 4 and math.abs(q[2] - o.position.y) < 4 then far = false end end
+    if far then table.insert(spots, {math.floor(o.position.x) + 0.5, math.floor(o.position.y) + 0.5}) end
+  end
+  local jobs = {{name = "lp-pylon", pos = {p.x - 6.5, p.y + 0.5}, module = m}, {name = "lp-generator", pos = {p.x - 9, p.y + 4},
+    module = m, loose = true}}
+  for _, q in ipairs(spots) do
+    table.insert(jobs, {name = "lp-drill", pos = q, module = m})
+    table.insert(jobs, {name = "lp-bin", pos = {q[1], q[2] - 2}, module = m, loose = true})
+  end
+  -- First in the queue: its truck (crew.lua) takes them out.
+  for i = #jobs, 1, -1 do table.insert(b.queue, 1, jobs[i]) end
+  local c = shared.CORPS[b.corp].color
+  rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = 24, filled = true,
+    target = m.center, surface = s, render_mode = "chart"}
+  rendering.draw_circle{color = {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}, radius = 24, width = 3, filled = false,
+    target = m.center, surface = s, render_mode = "chart"}
+  b.claims_settled = (b.claims_settled or 0) + 1
+  return m
+end
+
+local function step(b)
+  local p = b.prospect
+  local s = game.surfaces[b.surface]
+  if p.phase == "tagged" then
+    -- Answered: drilled or staked within the window. The claim is called off and the camp looks elsewhere.
+    if worked(s, {p.x, p.y}) or ops.marked(b, {p.x, p.y}) then
+      untag(p)
+      b.prospects_answered = (b.prospects_answered or 0) + 1
+      base.trace(b, string.format("prospect: the patch at %.0f,%.0f was answered (drilled or staked)", p.x, p.y))
+      b.prospect = nil
+      return
+    end
+    if game.tick - p.tagged >= (storage.prospect_window or WINDOW) then
+      p.module = claim(b, p)
+      p.phase, p.claimed_at = "claimed", game.tick
+      b.prospects_claimed = (b.prospects_claimed or 0) + 1
+      tell(b, "lp.prospect-claimed", {p.x, p.y})
+      base.trace(b, string.format("prospect: claiming the %s at %.0f,%.0f", p.ore, p.x, p.y))
+    end
+  elseif p.phase == "claimed" then
+    if not p.module.built and game.tick - p.claimed_at > GIVE_UP then
+      -- Abandoned: its jobs dropped, its tag gone, the camp looks elsewhere after its pace.
+      local j = 1
+      while b.queue[j] do if b.queue[j].module == p.module then table.remove(b.queue, j) else j = j + 1 end end
+      p.module.failed = true
+      untag(p)
+      b.prospects_abandoned = (b.prospects_abandoned or 0) + 1
+      base.trace(b, string.format("prospect: the claim at %.0f,%.0f is abandoned (not built in %d s)", p.x, p.y, GIVE_UP / 60))
+      b.prospect = nil
+      b.next_prospect = game.tick + (storage.prospect_pace or PACE)
+      return
+    end
+    if p.module.built then
+      base.trace(b, string.format("prospect: the claim at %.0f,%.0f stands", p.x, p.y))
+      b.prospect = nil
+      b.next_prospect = game.tick + (storage.prospect_pace or PACE)
+    end
+  end
+end
+
+local function consider(b)
+  if storage.prospect_off or not (shared.CORPS[b.corp].temper or {}).prospects then return end
+  if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_prospect or 0) then return end
+  local p = find(b)
+  if not p then
+    if game.tick >= (b.prospect_said or 0) then
+      b.prospect_said = game.tick + 30 * 3600
+      base.trace(b, string.format("prospect: no unworked patch charted within %d", RADIUS))
+    end
+    b.next_prospect = game.tick + 5 * 3600
+    return
+  end
+  b.prospected = b.prospected or {}
+  b.prospected[p.key] = true
+  p.phase, p.tagged, p.tags = "tagged", game.tick, tag(b, p)
+  b.prospect = p
+  b.prospects = (b.prospects or 0) + 1
+  tell(b, "lp.prospect", {p.x, p.y})
+  base.trace(b, string.format("prospect: mineral rights to the %s at %.0f,%.0f reassigned (claim in %d s unless answered)",
+    p.ore, p.x, p.y, (storage.prospect_window or WINDOW) / 60))
+end
+
+function prospect.tick(tick)
+  if tick % 60 ~= 29 then return end
+  for _, b in pairs(storage.bases or {}) do
+    if b.prospect then step(b)
+    elseif tick % 3600 == 29 + 60 * 17 then consider(b) end
+  end
+end
+
+function prospect.stats(b)
+  return {prospects = b.prospects or 0, claimed = b.prospects_claimed or 0, answered = b.prospects_answered or 0,
+    phase = b.prospect and b.prospect.phase, at = b.prospect and {b.prospect.x, b.prospect.y}}
+end
+
+return prospect

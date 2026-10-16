@@ -3203,6 +3203,64 @@ scenarios.rail = function()
   end)
 end
 
+-- Prospect (the rivals consult, slice 1): a Grubstake camp and three iron patches laid 150 to 250 tiles out, charted,
+-- one with a player drill on it. Windows of 2 minutes, a minute between claims (here): the two undrilled patches are
+-- tagged and claimed, nearest first, each claim built by a truck; the drilled one never. LP_MIX=stake: a claim marker
+-- beside the second patch from the start: it is never tagged.
+scenarios.prospect = function()
+  local stake = params.mix == "stake"
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true, prospect_window = 2 * 3600, prospect_pace = 3600,
+      prospect_uncharted = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _, k in ipairs({1, 2}) do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = -o.x / len, -o.y / len
+    local vx, vy = -uy, ux
+    S.patches = {}
+    for k, d in ipairs({{150, 0}, {200, 60}, {250, -60}}) do
+      local c = {math.floor(o.x + ux * d[1] + vx * d[2]), math.floor(o.y + uy * d[1] + vy * d[2])}
+      flatten(c[1] - 8, c[2] - 8, c[1] + 8, c[2] + 8)
+      for x = -6, 6 do for y = -6, 6 do
+        surface().create_entity{name = "iron-ore", position = {c[1] + x, c[2] + y}, amount = 2000}
+      end end
+      game.forces.player.chart(surface(), {{c[1] - 20, c[2] - 20}, {c[1] + 20, c[2] + 20}})
+      table.insert(S.patches, c)
+    end
+    -- The first (nearest) is the player's: a drill on it.
+    local p1 = S.patches[1]
+    surface().create_entity{name = "burner-mining-drill", position = {p1[1], p1[2]}, force = "player"}
+    if stake then
+      local p2 = S.patches[2]
+      surface().create_entity{name = "lp-claim-marker", position = {p2[1] + 8, p2[2]}, force = "player", raise_built = true}
+    end
+  end)
+  schedule(END - 60, function()
+    local ps = lp("prospect_stats", S.g)
+    local drills = {}
+    for k, c in ipairs(S.patches or {}) do
+      drills[k] = surface().count_entities_filtered{name = "lp-grubstake-drill", position = c, radius = 16}
+    end
+    local charted = {}
+    for k, c in ipairs(S.patches or {}) do
+      charted[k] = game.forces.player.is_chunk_charted(surface(), {math.floor(c[1] / 32), math.floor(c[2] / 32)})
+    end
+    info(string.format("prospect: %s; Grubstake drills on the patches %s; charted %s", serpent.line(ps), serpent.line(drills),
+      serpent.line(charted)))
+    check("prospect: the drilled patch was left alone", drills[1] == 0, tostring(drills[1]))
+    if stake then
+      check("prospect: the staked patch was left alone", drills[2] == 0, tostring(drills[2]))
+      check("prospect: the free one was claimed", drills[3] >= 1, tostring(drills[3]))
+      return
+    end
+    check("prospect: both undrilled patches claimed", drills[2] >= 1 and drills[3] >= 1, serpent.line(drills))
+    check("prospect: tagged before claimed (two at least)", ps.prospects >= 2 and ps.claimed >= 2, serpent.line(ps))
+  end)
+end
+
 -- Cordon (the walled-advance consult, slice 1): a Serenity camp's line, sped to a step a minute, with a player relay 300
 -- tiles out: arcs of posts (a pad, a short wall, two gun turrets) at each step's radius, within 60 degrees of the bearing
 -- to the relay, built by drones; the claim steps out to an arc only once 80% of its posts stand; none stuck.
