@@ -12,8 +12,11 @@ Close your own game first (Steam allows one copy). Then, in a terminal:
 It opens a fresh copy of the deathworld save the visits used (never the real file), with Landing Party, Editor
 Extensions and flib. No test mod: the mod runs as a player would meet it.
 
-- Grubstake comes first: the save has made chemical science, so its arrival is due at the first minute's check, with its
-  survey party if oil processing is researched. If nothing has landed after 3 minutes: `/lp land grubstake 300`.
+- Grubstake comes first. This save has oil processing but has never made a chemical science pack (checked headless,
+  2026-10-16), so only its survey party lands at first (a radar, two drills, a lamp, four guards, about 450 tiles out).
+  The lander follows the first chemical science pack, or 30 minutes after the survey party leaves (it stays an hour):
+  90 minutes. Not to wait: `/lp land grubstake 300` lands it now; `/lp fast` shortens the survey to 3 minutes and the
+  wait after it to 3.
 - Serenity's gate is the first rocket launch (Space Age): on this save, call it with `/lp land serenity 300`.
 - `/lp list` shows the settlements; `/lp fast` speeds their clocks; `/lp provoke` makes Serenity count you as having
   attacked it; `/lp trace` writes their decisions to `script-output/landing-party/decisions.txt` in the visit profile.
