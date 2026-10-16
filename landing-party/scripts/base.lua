@@ -49,7 +49,7 @@ base.trace = trace
 local LISTS = {["lp-pylon"] = "pylons", ["lp-bin"] = "bins", ["lp-drill"] = "drills",
   ["lp-fabricator"] = "fabs", ["lp-generator"] = "gens", ["lp-turret"] = "turrets", ["lp-radar"] = "radars",
   ["lp-wall"] = "walls", ["lp-depot"] = "depots", ["lp-launchpad"] = "launchpads", ["lp-lamp"] = "lamps",
-  ["lp-mine"] = "mines", ["lp-flamer"] = "flamers", ["lp-scrap-cannon"] = "turrets"}
+  ["lp-mine"] = "mines", ["lp-flamer"] = "flamers", ["lp-scrap-cannon"] = "turrets", ["lp-gun-turret"] = "turrets"}
 
 local function register(b, e, module)
   local list = LISTS[shared.kind_of(e.name)]

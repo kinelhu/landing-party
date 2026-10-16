@@ -65,6 +65,8 @@ document describes the parts as built; the campaign document describes the game 
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
 | `/lp flare`, `/lp rig`, `/lp tap` on demand | built | `flare`, `jumper`, `tap` (`cmd`) |
+| Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
+| Serenity's cordon: its line an arc of posts built by drones, the claim behind them | built (slice 1) | `cordon` |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
@@ -1173,6 +1175,21 @@ route it crosses gets a gate post. No post within 100 of a living spawner (a cle
 post to biters three times stops. Counters: breach, outflank (the bearing follows the nearest structure), starve (posts
 cost parts), overextend. First slice: posts on the arc (`cordon`), then breach and mend, biters, contact wall and
 recovery, routes and ore.
+
+### The cordon, slice 1: posts on the arc (the user; Fable: `docs/reviews/2026-10-16-walled-advance-consult.md`; built 2026-10-16)
+`scripts/cordon.lua`. Serenity's moving line made physical. Each step of its perimeter (`ops.perimeter`, unchanged in
+its timing and caps) is an arc of posts at the new radius, within 60 degrees either side of the bearing to the player's
+nearest structure, one every 60 tiles: a 5 x 5 concrete pad, a wall of eight facing the player, two gun turrets (fed by
+the camp; lasers 60 tiles apart would want power lines). They go first in the build queue and stand beyond every yard,
+so its drones build them. The claim steps out to the arc (`ops.perimeter_advance`: the map, the notices, the named
+warning) only once 80% of its posts stand; until then the line waits. With no player structure in reach the line holds
+(stepping out on its own, the claim ran to 450 once the relay it faced was razed).
+- Scenario `cordon` (the line a step a minute, an indestructible player relay 300 out; 20 minutes): six arcs, 90 to 275
+  tiles, 38 posts and 80 gun turrets, none off the arc facing the relay, all built by drones (64 runs, none stuck); the
+  claim never beyond its last standing arc.
+- Not yet (the consult's next slices): recovery of arcs behind the leading two (posts accumulate: 38 by 275 tiles),
+  breach and mend tested, nests (no post within 100 of a living spawner; a bearing that keeps losing posts to biters
+  stops), the wall at contact, gate posts on the player's routes, ore the arc crosses.
 
 ### Builders, slice 1: Grubstake's truck (the user; Fable: `docs/reviews/2026-10-16-builders-consult.md`; built 2026-10-16)
 `scripts/crew.lua`. A yard builds what it can reach; crews build the rest. `base.build` offers each next job to

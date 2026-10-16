@@ -18,6 +18,7 @@ local bait = require("__landing-party__.scripts.bait")
 local strike = require("__landing-party__.scripts.strike")
 local marker = require("__landing-party__.scripts.marker")
 local crew = require("__landing-party__.scripts.crew")
+local cordon = require("__landing-party__.scripts.cordon")
 rd.era = ops.era
 rd.trace = function(corp, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
@@ -347,6 +348,7 @@ remote.add_interface("landing-party", {
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   pact_state = function() return storage.pact_state end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
+  cordon_stats = function(id) return storage.bases[id] and cordon.stats(storage.bases[id]) end,
   crew_stats = function(id) return storage.bases[id] and crew.stats(storage.bases[id]) end,
   breaks = function() return {breaks = storage.pact_breaks or 0, till = storage.pact_suspended_till} end,
   strikes = function() return {fired = storage.strikes_fired or 0, targets = storage.strike_targets or 0} end,

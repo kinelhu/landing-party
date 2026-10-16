@@ -93,7 +93,9 @@ shared.CORPS = {
     -- does not forget.
     temper = {provoked_only = true},
     -- Crews (scripts/crew.lua): a constructor drone, flying over its walls, building with its beam.
-    crews = "drone"},
+    crews = "drone",
+    -- Its moving line is a cordon of posts (scripts/cordon.lua).
+    cordon = true},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}
@@ -196,6 +198,7 @@ shared.cost = {
   ["lp-howitzer"] = 120,         -- a clearance's long gun, where worms outrange the mortar
   ["lp-gate"] = 3,
   ["lp-flamer"] = 8,
+  ["lp-gun-turret"] = 15,        -- a cordon post's (cordon.lua), fed by the camp
 }
 
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.

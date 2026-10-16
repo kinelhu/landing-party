@@ -119,7 +119,11 @@ function dev.run(player, args)
     if not b then return player.print("no settlement that keeps a perimeter") end
     local landed, steps = b.landed, b.perimeter_steps or 0
     b.landed, b.perimeter_next = -10 ^ 9, 0
+    -- At once, its cordon's posts skipped for this step (cordon.lua: a step otherwise waits for them).
+    local was = storage.cordon_off
+    storage.cordon_off = true
     ops.perimeter(b, game.tick)
+    storage.cordon_off = was
     b.landed = landed or game.tick
     player.print(string.format("perimeter of %d: %s", b.id, (b.perimeter_steps or 0) > steps
       and string.format("%.0f tiles (step %d)", b.perimeter, b.perimeter_steps)

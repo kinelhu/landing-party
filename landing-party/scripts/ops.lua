@@ -287,12 +287,20 @@ function ops.perimeter(b, tick)
   end
   local new = math.min(cur + PERIMETER_STEP, cap)
   if new <= cur then return end
+  -- The cordon (cordon.lua): the step is an arc of posts its drones build; the claim follows once they stand.
+  if ops.cordon_step and ops.cordon_step(b, new, near) then return end
+  ops.perimeter_advance(b, new, near, nd)
+end
+
+-- The claim steps out to `new` (at once, or once its cordon's arc stands): the map, the notices, the named warning.
+function ops.perimeter_advance(b, new, near, nd)
+  local surface = game.surfaces[b.surface]
   b.perimeter = new
   b.perimeter_steps = (b.perimeter_steps or 0) + 1
   if ops.claim_map then ops.claim_map(b) end
   local where = string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name)
   -- One step ahead: the structure the next step will enclose, named.
-  local warn = near and near.valid and nd > new and nd <= new + PERIMETER_STEP and b.warned ~= near.unit_number
+  local warn = near and near.valid and nd and nd > new and nd <= new + PERIMETER_STEP and b.warned ~= near.unit_number
   if warn then b.warned = near.unit_number end
   for _, f in ipairs(enemies(game.forces[b.force])) do
     if #f.players > 0 and not shared.is_corp(f.name) then

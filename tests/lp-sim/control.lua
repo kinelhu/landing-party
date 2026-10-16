@@ -3203,6 +3203,45 @@ scenarios.rail = function()
   end)
 end
 
+-- Cordon (the walled-advance consult, slice 1): a Serenity camp's line, sped to a step a minute, with a player relay 300
+-- tiles out: arcs of posts (a pad, a short wall, two gun turrets) at each step's radius, within 60 degrees of the bearing
+-- to the relay, built by drones; the claim steps out to an arc only once 80% of its posts stand; none stuck.
+scenarios.cordon = function()
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 4000) end end)
+  schedule(120, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    S.c = {math.floor(o.x - o.x / len * 300), math.floor(o.y - o.y / len * 300)}
+    flatten(S.c[1] - 6, S.c[2] - 6, S.c[1] + 6, S.c[2] + 6)
+    S.relay = surface().create_entity{name = "lp-command-relay", position = S.c, force = "player"}
+    -- Lasting: razed (encroachment provokes), the line had nothing to face.
+    S.relay.destructible = false
+    S.o = o
+  end)
+  schedule(END - 60, function()
+    local cs = lp("cordon_stats", storage.id)
+    local cr = lp("crew_stats", storage.id)
+    -- The posts standing: Serenity's gun turrets, by their angle from the camp to the relay.
+    local a0 = math.atan2(S.c[2] - S.o.y, S.c[1] - S.o.x)
+    local turrets, off = 0, 0
+    for _, t in pairs(surface().find_entities_filtered{name = "lp-gun-turret", force = FORCE}) do
+      local a = math.atan2(t.position.y - S.o.y, t.position.x - S.o.x)
+      local d = math.abs(((a - a0 + math.pi) % (2 * math.pi)) - math.pi)
+      turrets = turrets + 1
+      if d > math.pi / 3 + 0.15 then off = off + 1 end
+    end
+    info(string.format("cordon: %s; crews %s; %d post turrets, %d off the arc", serpent.line(cs), serpent.line(cr), turrets, off))
+    check("cordon: two arcs stood", (cs.arcs or 0) >= 2, tostring(cs.arcs))
+    check("cordon: their posts were built", (cs.posts or 0) >= 6 and turrets >= 12, string.format("%s posts, %d turrets",
+      tostring(cs.posts), turrets))
+    check("cordon: all on the arc facing the relay", off == 0, tostring(off))
+    check("cordon: drones built them, none stuck", cr.done >= 6 and cr.stuck == 0, serpent.line(cr))
+    check("cordon: the claim is no further than its last standing arc", cs.perimeter and (not cs.radius or cs.perimeter < cs.radius),
+      string.format("perimeter %s, pending arc %s", tostring(cs.perimeter), tostring(cs.radius)))
+  end)
+end
+
 -- Pace (the builders consult's gate): a Grubstake camp grows 30 minutes on its own; its counts at the end (blocks,
 -- modules, drills, fabricators, turrets, parts made), compared between versions on several seeds (within 15%).
 scenarios.pace = function()
