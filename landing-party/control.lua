@@ -43,9 +43,20 @@ end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
   {filter = "name", name = "lp-command-relay"}}
+-- The player's poles too: one built by a corporation's pylon is not wired to it (base.unwire).
+local BUILT = {{filter = "type", type = "electric-pole"}}
+for _, f in ipairs(PLAYER_BUILT) do table.insert(BUILT, f) end
+local function on_built(e)
+  local ent = e.entity
+  if ent and ent.valid and ent.type == "electric-pole" then
+    if not shared.is_corp(ent.force.name) then base.unwire(ent) end
+    return
+  end
+  command.on_built(e)
+end
 for _, ev in ipairs({defines.events.on_built_entity, defines.events.on_robot_built_entity,
   defines.events.script_raised_built}) do
-  script.on_event(ev, command.on_built, PLAYER_BUILT)
+  script.on_event(ev, on_built, BUILT)
 end
 
 -- Damage to the faction's buildings calls a response (filtered to them; army.alarm throttles).

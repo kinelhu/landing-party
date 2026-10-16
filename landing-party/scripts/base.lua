@@ -353,6 +353,18 @@ local function join(e)
       mine.connect_to(p.get_wire_connector(copper, true), true, defines.wire_origin.script)
     end
   end
+  base.unwire(e)
+end
+
+-- Never wired to another force's pole: placed with auto_connect, a pylon was wired to a player pole within reach and the
+-- two grids became one (the power tap's line ends 12 tiles from the player's pole: the camp ran on the player's power,
+-- the user saw its drills in the player's network). Also called on the player's poles as they are built (control.lua).
+function base.unwire(e)
+  local mine = e.get_wire_connector(defines.wire_connector_id.pole_copper, false)
+  if not mine then return end
+  for _, c in ipairs(mine.connections) do
+    if c.target.owner.force ~= e.force then mine.disconnect_from(c.target, c.origin) end
+  end
 end
 
 -- Lay road tiles, never over water or an existing road.

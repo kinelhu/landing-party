@@ -2,7 +2,8 @@
 
 What changed since the last time the mod was seen in game: Grubstake's pact and pacifier antennas, Serenity's
 railgunners, howitzer, cluster shells and orbital barrage, clearances, the staggered arrival, standing down, and the
-ladder buying capacity. All checked headless; none of it played.
+ladder buying capacity; since then (2026-10-16) Grubstake's scrap cannon, pheromone flare, claim jumper and power tap,
+loot in place of salvage, faction components and Cluster shells. All checked headless; none of it played.
 
 ## Start
 Close your own game first (Steam allows one copy). Then, in a terminal:
@@ -21,6 +22,10 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 - `/lp list` shows the settlements; `/lp fast` speeds their clocks; `/lp provoke` makes Serenity count you as having
   attacked it; `/lp trace` writes their decisions to `script-output/landing-party/decisions.txt` in the visit profile.
 - `/editor` (Editor Extensions) to watch untouchable.
+- Grubstake's discreet operations on demand (their own triggers wait on its ladder, the pact and what it has seen), from
+  the nearest Grubstake camp: `/lp flare` (a pheromone flare at where you stand, its canister out of your turrets'
+  reach), `/lp rig` (a claim jumper at the chests nearest you), `/lp tap` (a power tap on the pole nearest you: stand by
+  a pole no turret covers). Add a camp's id to pick one (`/lp list`).
 
 ## Look for
 1. **Grubstake's camp and its pacifier antenna** beside the lander: a radar dish a size larger than a radar. Biters walk
@@ -34,9 +39,23 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 4. **A Serenity clearance** (provoked, with nests between it and you): a hauler drives out past its wall, mortars (or the
    howitzer, full-size artillery, when worms outrange the mortars) shell a nest, railgunners hold the ring. Three shells
    or so a nest from the howitzer; it moves up to the next.
-5. **Notices**: are they readable, too many, too few? (Pacifier down and back, orbital barrage, Serenity's gate, a camp
-   standing down, reliefs.)
-6. **Anything that feels wrong**: units stuck, wandering into worms, friendly fire (Serenity's flamers still burn its own
+5. **Grubstake's scrap cannons** (every second turret of its camps, a gun turret's body a size up): bursts of small
+   hits over a crowd. Deadly to biters and troopers in a blob, next to nothing to walls.
+6. **A pheromone flare** (once its ladder against you is on the first rung, the pact holding): a buggy drops an orange
+   canister just out of your turrets' reach by a guarded spot; the nearby idle biters come for whatever is near it.
+   Shoot the canister and they lose interest.
+7. **A claim jumper** (second rung): a drill rig digs in 40 to 60 tiles outside your wall, dust and an alert; a mound
+   grows by your chests inside; a minute later Shotgun hands come up, take what is in the chests and go back down.
+   Kill the rig within the minute and nothing comes up. Best seen against chests your turrets do not cover.
+8. **A power tap**: a line of Grubstake pylons creeps out of turret reach to a pole of yours that no turret covers (a
+   long line to an outpost), and a small orange clamp sits by the pole. No notice: look for a "Power tap" consumer in
+   your power statistics, or brownouts. Cut the line and it stops; break the clamp and you are told what it took.
+9. **Loot**: what you destroy of theirs drops plates, circuits, magazines, engines; the rare components (pheromone
+   gland, pacifier crystal, drill head; rail coil, cluster fuze, orbital beacon). Three cluster fuzes taken apart in an
+   assembler ("Cluster fuze, disassembled") research Cluster shells, for your artillery.
+10. **Notices**: are they readable, too many, too few? (Pacifier down and back, orbital barrage, Serenity's gate, a camp
+   standing down, reliefs, flares, rigs, a tap broken.)
+11. **Anything that feels wrong**: units stuck, wandering into worms, friendly fire (Serenity's flamers still burn its own
    units at the gates: known), looks that read as vanilla.
 
 ## Tell me

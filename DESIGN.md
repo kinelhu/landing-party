@@ -37,7 +37,7 @@ document describes the parts as built; the campaign document describes the game 
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Corporations as forces (Grubstake, Serenity): own force, colour, intel; they raid each other | built (first step) | `rivals` |
 | Capture of mining outposts by holding | built | `army` |
-| The fall: a destroyed lander collapses its settlement (cascade, evacuation, ruins, salvage) | built | `fall` |
+| The fall: a destroyed lander collapses its settlement (cascade, evacuation, ruins that mine to their loot) | built; capture by holding there fails since before 5281d15 (open) | `fall` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
 | Patrols through settlements | built | `lively` (life animation) |
 | Convoys carrying exports to the uplink | built | `convoy` (life animation) |
@@ -49,9 +49,25 @@ document describes the parts as built; the campaign document describes the game 
 | Siege tiers: mortars, resupply convoys, moving up, assault | built | `siegetier` (four) |
 | Corporate research: a fund from exports, weapons levels capped by the player's era, plates against what kills it | built | `techup` (two), `plate` |
 | Identity: Line troopers (beams) and Shotgun hands (pellets); each corporation's own tree (Serenity: Optics, Warden, Lance, Shock troops, Aegis, Hardened siege, Counter-battery; Grubstake: Hand-loads, Scrap plating, Asbestos, Slug buggy, Dynamite sappers, Scavenger harriers, Dozer, Salvage rights, Prospector's eye); Grubstake loots | built (slices 1-6) | `arms`, `arc`, `plate` (two), `techup` (two), `unitnode` (eight), `ability` (three) |
+| Staggered arrival: Grubstake at chemical science, Serenity at the first rocket (base: utility science) | built | `phases` |
+| Landing by approach (at most 6 spawners on the way), Grubstake 60 tiles from turrets | built | `country` |
+| Each corporation's own ladder (rungs at 10/20/30 min without a raze); rung 2 raises the unit cap by half, rung 3 a siege tier | built | `ladder` (two) |
+| War footing and the war chest: units before rebuilds at war; reliefs (Grubstake's pods, Serenity's columns or drops) | built | `reinforce` (three) |
+| Standing down: an hour at war razing nothing, a camp goes quiet and a new landing comes | built | `quiet` |
+| Grubstake's pact with the biters through pacifier antennas (cease-fire both ways; break it by destroying them) | built | `pact` (two) |
+| Serenity against nests: railgunners, the howitzer with cluster shells, clearances that hold their site, the orbital barrage on landing | built | `rail` (two), `clear` (two), `clearing` |
+| Convoys leave walled camps (formed past the outermost wall, escorts ride out, stuck ones called off) | built | `convoy` (two, full list) |
+| Grubstake's scrap cannon (dirty flak), every second turret | built | `flak` |
+| Grubstake's pheromone flare (biters pulled onto a canister out of turret reach) | built | `flare` (four) |
+| Grubstake's claim jumper (a rig outside the wall, hands up through a mound, a heist) | built | `jumper` (three) |
+| Grubstake's power tap: a buggy lays a pylon line along the heist's route to an exposed pole and clamps a tap; the camp runs on the stolen power; grids never wired together | built | `tap` (three) |
+| Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
+| Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
+| Faction technologies: bait, pact breaker, claim marker, rail rifle, orbital strike | open | |
+| `/lp flare`, `/lp rig`, `/lp tap` on demand | built | `flare`, `jumper`, `tap` (`cmd`) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
-| Art beyond tinted vanilla; seen in game | first session 2026-10-13 | `scripts/showcase.sh` save |
+| Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and
@@ -1113,17 +1129,22 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
 - The bursts in the raze curve are not a problem (the user): the 80 at deathworld's minute 170 were 52 belts, 12 poles,
   10 walls; a raid is an event. Count by cost, not entities, in later reports.
 
-### Next design topics (the user, 2026-10-15; not built)
+### Next design topics (the user, 2026-10-15; status 2026-10-16)
 - **Grubstake's flavour pass** (Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`): "felt before it is seen".
   Scrap cannon, "a sort of dirty flak" (the user): an airburst of many soft hits, Grubstake's signature against the
   railgun; pheromone flares (biters pulled onto a canister past turret reach, no pacifier no flares); claim jumpers (a rig
   digs in outside the wall, a mound inside, Shotgun hands emerge a minute later; replaces the sappers); grapple as
   looting's animation. Not: boobytrapped claims (the user), scrap to pick up (the user).
+  Built 2026-10-16: the scrap cannon, the pheromone flare, the claim jumper, and the user's power tap (sections below).
+  Left: grapple as looting's animation; dynamite in the jumper's squad and the sappers folded into it; the ladder's
+  rung 2 and 3 combinations (two nests a flare; flare and rig together).
 - **Loot instead of salvage; faction tech for the player** (the user: "regular Factorio loot ... faction-specific loot
   which could be used to research faction-specific tech"; Fable: `docs/reviews/2026-10-15-faction-loot-consult.md`):
   ordinary items on death by cost (nothing from walls and cheap pieces), rare components per corporation (Grubstake:
   pheromone gland, pacifier crystal, drill head; Serenity: rail coil, cluster fuze, orbital beacon), six player
   technologies (bait, pact breaker, claim marker; cluster shells, rail rifle, orbital strike). Command cores stay apart.
+  Built 2026-10-16: ordinary loot (salvage gone), the six components and their drops, Cluster shells. Left: bait, pact
+  breaker, claim marker, rail rifle, orbital strike.
 
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
@@ -1243,21 +1264,42 @@ product is what the technology's research trigger asks for, craft-item); consuma
 
 ### Grubstake's power tap (the user, 2026-10-16; built 2026-10-16)
 The user: "steal power from unprotected lines? Unassumingly, with a progressively increasing draw", then "Don't think it
-should be hidden. It should be connected to their camp through pylons, no?" `scripts/tap.lua`. A Grubstake settlement
-at war with the player, mature, not standing down, finds the player pole nearest its own pylons (within 160 of one) that
-no player turret covers within 30, and lays a line of its own pylons to 12 tiles short of it (a module of its own,
+should be hidden. It should be connected to their camp through pylons, no?", and "Does grubstake detect exposed poles?
+is it able to sneak path to them? the idea is that this is a discreet operation, kind of like the heist". `scripts/tap.lua`.
+A Grubstake settlement at war with the player, mature, not standing down, taps only a pole its own sensors have seen
+exposed (intel's line cells: no player turret within 60), within 160 of one of its pylons and still with no turret
+within 30, nearest first. It lays a line of its own pylons to 12 tiles short of it along the heist's route, out of every
+turret's reach (`ops.route`; no route, no tap), a pylon every 20 tiles. It is an operation (the user: "strange that
+the tap is built directly from the lander ... a hauler buggy building the pylon line"): the camp pays for the line and a
+buggy from its garrison drives the route planting each pylon, sets the tap at the end and goes home; killed on the way,
+the operation is over and the half-laid line stands. A cut line is mended by a buggy driven to the missing pylons
+(another after 2 minutes if it is killed); the line's pylons are the operation's, never the camp's rebuilding (a module of its own,
 `tapline`: built through the queue, paid in parts, rebuilt when lost, never captured). Once the line's end is on the
 camp's network it clamps a tap by the pole (`lp-power-tap`: a small lamp's body in its colour, 150 health, not a military
 target, so turrets pass it by), and a cable is drawn from it to the line's end. The tap draws from the player's network
-(power crosses forces: Engine notes); what it gets arrives at the line's end on the camp's network (`lp-power-receiver`,
+(power crosses forces: Engine notes), and nothing is announced: the player finds it in the power statistics, in
+brownouts, or by its line. What it gets arrives at the line's end on the camp's network (`lp-power-receiver`,
 unseen and indestructible) and counts as supply in the camp's planning, so the camp grows on the player's power. Its
 draw starts at 100 kW and rises by half every 5 minutes to 4 MW. Cut the line anywhere and the theft stops (the end is
 off the camp's network) until the camp rebuilds the gap; break the tap and it is over (copper cable drops; the notice
-says how many MJ it took), and 20 minutes later it may try again. Notices `lp.tap` (the clamp) and `lp.tap-cut`.
-- Scenario `tap` (a player power source and a line of big poles toward a Grubstake camp; `tap_step` 30 s): a line of 3
-  pylons, the tap clamped 39 s after; 4 MW by minute 9, 424 MJ taken; a line pylon cut, the draw falls to 0 within 3 s;
-  rebuilt, it draws again; the tap broken at 12 minutes, it is over at 680 MJ. `natural`: the camp chooses the pole
-  itself at 5.6 minutes, the same results.
+says how many MJ it took, `lp.tap-cut`), and 20 minutes later it may try again.
+- Scenario `tap` (a player power source and a line of big poles toward a Grubstake camp; `tap_step` 30 s; an unarmed,
+  indestructible gun turret on the straight way, 35 tiles from the pole: armed, it fought the camp's units and the pole
+  went down in the fight): a line of 4 pylons round the turret (none within 20 of it), the tap clamped; 4 MW by minute 9,
+  416 MJ taken; the pylon next to the line's end cut, the draw falls to 0; rebuilt, it draws again; the tap broken, it is
+  over. `natural` (no turret: one within 60 of the pole marks it guarded): the camp taps the pole its intel saw, at 5.6
+  minutes, the same results. As an operation: the buggy laid 4 pylons and clamped the tap 26 s after leaving; cut, a
+  buggy mended the gap in 9 s; 1,156 MJ taken before the tap was broken.
+- The grids stay apart (the user, in game: the camp's drills and fabricators showed in the player's network): a pylon
+  placed with auto_connect was wired by the engine to a player pole within reach, and the two grids became one, the
+  camp running on the player's power outright. `base.unwire` cuts any copper wire between a corporation's pylon and
+  another force's pole as it is placed, and the player's own poles as they are built. Scenario `tap`: the camp's grid and
+  the player's apart, and a player pole built by the line not wired to it (both seen failing before the fix).
+- `/lp flare`, `/lp rig`, `/lp tap` (dev.lua): the three on demand from the nearest Grubstake camp, at where the player
+  stands; `LP_MIX=cmd` runs each scenario through the command.
+- The line's end: the walk along the route once added a goal pylon 2 tiles past the last spaced one; cutting the next
+  pylon left the end within wire reach of the one beyond. The last pylon now moves onto the goal when it falls short by
+  under half a span.
 - Not yet: the pole's choice ignores how much the player's network has to spare; a tap on a starved network takes
   little. Its stealing is not yet in the corporation's ladder (it razes nothing).
 

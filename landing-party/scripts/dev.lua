@@ -9,12 +9,18 @@
 --   parts <n> [id]           parts for a settlement (growth, units, operations)
 --   fast                     short clocks on or off: perimeter, strip camps, phases, headquarters
 --   grudge [id]              as if you had destroyed that settlement's lander: the grudge without the fall
+--   flare [id]               Grubstake fires a pheromone flare at you: its canister out of your turrets' reach
+--   rig [id]                 a claim jumper at the chests nearest you (a rig 40 to 60 out, hands up in a minute)
+--   tap [id]                 a power tap on the pole nearest you (a pylon line out of turret reach, then the clamp)
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
 local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local base = require("__landing-party__.scripts.base")
 local faction = require("__landing-party__.scripts.faction")
+local flare = require("__landing-party__.scripts.flare")
+local jumper = require("__landing-party__.scripts.jumper")
+local tap = require("__landing-party__.scripts.tap")
 
 local dev = {}
 
@@ -82,6 +88,32 @@ function dev.run(player, args)
     local why = ops.force(b, what, player.position, base.trace, army)
     player.print(why and string.format("%s from %d: %s", what, b.id, why)
       or string.format("%s launched from %d %s (%s)", what, b.id, shared.CORPS[b.corp].name, gps(b)))
+  elseif what == "flare" or what == "rig" or what == "tap" then
+    -- Grubstake's discreet operations on demand (their own triggers wait on the ladder, the pact and intel).
+    local temper = ({flare = "flares", rig = "jumps", tap = "taps"})[what]
+    local b = pick(player, id, function(b) return (shared.CORPS[b.corp].temper or {})[temper] end)
+    if not b then return player.print("no settlement that does that (Grubstake: /lp land grubstake)") end
+    local busy = ({flare = b.flare, rig = b.jump, tap = b.tap})[what]
+    if busy then return player.print(string.format("%d already has a %s under way", b.id, what)) end
+    local pos = {player.position.x, player.position.y}
+    local why
+    if what == "flare" then
+      local has
+      for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-buggy" then has = true end end
+      if not has and b.lander.valid then
+        local s = b.lander.surface
+        local name = shared.variant(b.corp, "lp-buggy")
+        local p = s.find_non_colliding_position(name, b.lander.position, 20, 1)
+        local u = p and s.create_entity{name = name, position = p, force = b.lander.force}
+        if u then table.insert(b.garrison, u) end
+      end
+      why = flare.debug(b, pos)
+    elseif what == "rig" then
+      why = jumper.launch(b, pos)
+    else
+      why = tap.debug(b, pos)
+    end
+    player.print(string.format("%s from %d (%s): %s", what, b.id, gps(b), why))
   elseif what == "perimeter" then
     local b = pick(player, id, function(b) return (shared.CORPS[b.corp].temper or {}).provoked_only end)
     if not b then return player.print("no settlement that keeps a perimeter") end

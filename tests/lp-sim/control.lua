@@ -3237,7 +3237,8 @@ end
 -- "connected to their camp through pylons"): a player power source with a line of big poles running toward a Grubstake
 -- camp, ending 80 tiles from it, a radar at the source using some. debug_tap on the line's nearest pole: the camp lays a
 -- pylon line, clamps the tap, its draw rises (a step each 30 s here) and reaches the camp; a line pylon cut, the theft
--- stops; the tap broken, it is over. LP_MIX=natural: no debug_tap, the camp's own choice.
+-- stops; the tap broken, it is over. A gun turret stands on the straight way: the line goes round it (the heist's
+-- route). LP_MIX=natural: no debug_tap, the camp's own choice (a pole its sensors have seen exposed).
 scenarios.tap = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true, tap_step = 30 * 60})
@@ -3260,17 +3261,52 @@ scenarios.tap = function()
     end
     local last = S.poles[#S.poles]
     S.pole_at = {last.position.x, last.position.y}
+    -- A gun turret on the straight way from the camp (35 tiles from the pole, toward it; debug only: in the natural run a turret within 60 of the pole
+    -- rightly marks it guarded): the line must go round it, out of its reach.
+    if params.mix ~= "natural" then
+      S.guard = surface().create_entity{name = "gun-turret", position = surface().find_non_colliding_position("gun-turret",
+        {S.pole_at[1] + ux * 35, S.pole_at[2] + uy * 35}, 4, 1), force = "player"}
+      -- Unarmed and lasting: armed, it fought the camp's units and the pole went down with it in 15 s.
+      S.guard.destructible = false
+    end
     -- LP_MIX=natural: the camp finds the pole itself.
-    if params.mix ~= "natural" then S.fired = lp("debug_tap", S.g, S.pole_at) end
+    -- LP_MIX=cmd: through /lp tap (dev.remote), standing at the pole.
+    if params.mix == "cmd" then lp("dev", {"tap"}, S.pole_at); S.fired = "cmd"
+    elseif params.mix ~= "natural" then S.fired = lp("debug_tap", S.g, S.pole_at) end
   end)
   local function st() return lp("tap_state", S.g) end
   schedule(9 * 3600, function()
     S.mid = st()
+    -- The camp's grid apart from the player's: the tap draws across, the wires never do (the user saw the camp's drills
+    -- and fabricators in the player's network: a pylon auto-connected to a player pole within reach).
+    local lander = surface().find_entities_filtered{name = "lp-grubstake-lander", limit = 1}[1]
+    local pole = surface().find_entities_filtered{type = "electric-pole", force = "player", position = S.pole_at, radius = 2,
+      limit = 1}[1]
+    S.grids = lander and pole and {lander.electric_network_id, pole.electric_network_id}
+    -- A player pole built (raise_built, auto_connect) beside the line's end pylon: not wired to it either.
+    local line_end = surface().find_entities_filtered{name = "lp-grubstake-pylon", position = S.pole_at, radius = 14, limit = 1}[1]
+    if line_end then
+      local q = surface().find_non_colliding_position("medium-electric-pole", line_end.position, 6, 1)
+      local mine = q and surface().create_entity{name = "medium-electric-pole", position = q, force = "player",
+        auto_connect = true, raise_built = true}
+      S.player_pole = mine and {mine.electric_network_id, line_end.electric_network_id}
+    end
+    S.near_guard = S.guard and S.guard.valid and surface().count_entities_filtered{name = "lp-grubstake-pylon",
+      position = S.guard.position, radius = 20} or -1
     -- Cut the line: its pylon nearest the camp's end of the line.
     local line = surface().find_entities_filtered{name = "lp-grubstake-pylon", position = S.pole_at, radius = 60}
     table.sort(line, function(a, b) return (a.position.x - S.pole_at[1]) ^ 2 + (a.position.y - S.pole_at[2]) ^ 2
       < (b.position.x - S.pole_at[1]) ^ 2 + (b.position.y - S.pole_at[2]) ^ 2 end)
-    if line[2] then line[2].die("player"); S.cut = true end
+    -- The line's pylon next to its end (once, two pylons 2 tiles apart at the end bridged the gap: tap.lua lay).
+    local ds = {}
+    for k = 1, #line do
+      local d = math.sqrt((line[k].position.x - S.pole_at[1]) ^ 2 + (line[k].position.y - S.pole_at[2]) ^ 2)
+      table.insert(ds, string.format("%.0f", d))
+      if k == 2 then
+        line[k].die("player"); S.cut = (S.cut or 0) + 1
+      end
+    end
+    info("tap: line pylons from the pole " .. table.concat(ds, " ") .. "; cut " .. tostring(S.cut))
   end)
   schedule(9 * 3600 + 3 * 60, function() S.after_cut = st() end)
   schedule(12 * 3600, function()
@@ -3283,12 +3319,20 @@ scenarios.tap = function()
     info(string.format("tap: %s; at 9 min %s; cut %s: %s; at 12 min %s; broken: %s", tostring(S.fired),
       serpent.line(S.mid), tostring(S.cut), serpent.line(S.after_cut), serpent.line(S.healed), serpent.line(S.broken)))
     check("tap: the line was laid and the tap clamped", S.mid and S.mid.phase == "draw", serpent.line(S.mid))
+    check("tap: a buggy planted a pylon at every spot", S.mid and S.mid.spots and S.mid.pylons == S.mid.spots,
+      string.format("%s of %s", tostring(S.mid and S.mid.pylons), tostring(S.mid and S.mid.spots)))
     check("tap: its draw rose", S.mid and (S.mid.draw or 0) > 100000, tostring(S.mid and S.mid.draw))
     check("tap: the camp got power", S.mid and (S.mid.watts or 0) > 0 and (S.mid.taken or 0) > 0, tostring(S.mid and S.mid.taken))
     check("tap: cut, it stops", S.after_cut and S.after_cut.watts == 0, tostring(S.after_cut and S.after_cut.watts))
-    check("tap: the camp mends its line and draws again", S.healed and (S.healed.watts or 0) > 0,
+    check("tap: a buggy mends the line and it draws again", S.healed and (S.healed.watts or 0) > 0,
       tostring(S.healed and S.healed.watts))
     check("tap: broken, it is over", S.broken and S.broken.phase == nil, serpent.line(S.broken))
+    check("tap: the camp's grid stays apart from the player's", S.grids and S.grids[1] ~= S.grids[2], serpent.line(S.grids))
+    check("tap: a pole the player builds by its line is not wired to it", S.player_pole
+      and S.player_pole[1] ~= S.player_pole[2], serpent.line(S.player_pole))
+    if params.mix ~= "natural" then
+      check("tap: the line kept out of the turret's reach", (S.near_guard or 0) == 0, tostring(S.near_guard))
+    end
   end)
 end
 
@@ -3378,7 +3422,8 @@ scenarios.jumper = function()
     S.chest.insert{name = "iron-plate", count = 200}
     S.chest.insert{name = "electronic-circuit", count = 50}
     S.parts0 = lp("stats", S.g).parts
-    S.fired = lp("debug_jumper", S.g, c)
+    -- LP_MIX=cmd: through /lp rig (dev.remote), standing at the chest.
+    if params.mix == "cmd" then lp("dev", {"rig"}, c); S.fired = "cmd" else S.fired = lp("debug_jumper", S.g, c) end
     S.t0 = game.tick
     S.rig = surface().find_entities_filtered{name = "lp-claim-rig", limit = 1}[1]
     if S.rig then
@@ -3448,7 +3493,9 @@ scenarios.flare = function()
     end
     S.lost0 = lp("stats", S.g).units_lost or 0
     -- LP_MIX=natural: the camp's own choice (it must learn the outpost and climb its ladder: sped tenfold).
-    if not natural then S.fired = lp("debug_flare", S.g, c) end
+    -- LP_MIX=cmd: through the /lp command a player would type (dev.remote), at the outpost.
+    if params.mix == "cmd" then lp("dev", {"flare"}, c); S.fired = "cmd"
+    elseif not natural then S.fired = lp("debug_flare", S.g, c) end
     S.t0 = game.tick
   end)
   local function canister() return surface().find_entities_filtered{name = "lp-flare", limit = 1}[1] end
