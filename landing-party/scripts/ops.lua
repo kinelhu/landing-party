@@ -528,6 +528,8 @@ local LADDER_SOFT = 3
 -- knowing only a turret-lined power line, stayed at rung 1 and razed nothing in an hour (visit deathworld).
 local function ladder(owner, corp)
   if not against_player(owner) then return 0 end
+  -- A rival Grubstake steals but does not escalate (standing.lua): its ladder stays at the foot until provoked.
+  if corp and ops.rival_holds and ops.rival_holds(owner, corp) then return 0 end
   storage.last_raze = storage.last_raze or {}
   local key = corp and (owner .. "|" .. corp) or owner
   local t0 = storage.last_raze[key]
@@ -536,6 +538,18 @@ local function ladder(owner, corp)
   return m >= 30 and 3 or m >= 20 and 2 or m >= 10 and 1 or 0
 end
 ops.ladder = ladder
+
+-- Whether `corp_force` is a rival of `owner` whose temper holds its ladder (Grubstake: soft_only).
+function ops.rival_holds(owner, corp_force)
+  for corp, c in pairs(shared.CORPS) do
+    if c.force == corp_force then
+      if not (c.temper or {}).soft_only then return false end
+      local d = storage.corps and storage.corps[corp]
+      return not (d and d.provoked and d.provoked[owner])
+    end
+  end
+  return false
+end
 
 -- The player's claim markers (marker.lua): Grubstake reads the player's buildings within MARK_RADIUS of one as its own
 -- claim, and leaves them alone (raids, strips, flares, rigs, taps).

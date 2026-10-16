@@ -3203,6 +3203,48 @@ scenarios.rail = function()
   end)
 end
 
+-- Standing (the rivals consult, slice 2): a Grubstake camp starts a rival (no provocation): its ladder held at the foot
+-- although ten times fast. A player gun turret set beside its lander: within a minute or two it is an enemy, a turret
+-- incident and a standing change listed, and its ladder climbs. Then it stands down (quiet in 4 minutes, nothing razed):
+-- a rival again.
+scenarios.standing = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true, ladder_fast = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    lp("debug_depot", S.g, 3000)
+  end)
+  schedule(4 * 3600, function()
+    S.st0, S.rung0 = lp("standing", "grubstake"), lp("stats", S.g).ops.ladder
+    local o = lp("stats", S.g).origin
+    local p = surface().find_non_colliding_position("gun-turret", {o.x + 14, o.y + 14}, 10, 1)
+    S.turret = surface().create_entity{name = "gun-turret", position = p, force = "player"}
+    S.turret.destructible = false
+    S.at = game.tick
+    -- Something of the player's in its sight, lasting: at war it can stand down (with nothing to fight it never did).
+    local q = surface().find_non_colliding_position("assembling-machine-1", {o.x - 60, o.y}, 10, 1)
+    local a = surface().create_entity{name = "assembling-machine-1", position = q, force = "player"}
+    a.destructible = false
+  end)
+  schedule(7 * 3600, function()
+    S.st1 = lp("standing", "grubstake")
+    if S.turret and S.turret.valid then S.turret.destroy() end
+    lp("debug_tune", {quiet_minutes = 4})
+  end)
+  schedule(9 * 3600, function() S.rung1 = lp("stats", S.g).ops.ladder end)
+  schedule(END - 60, function()
+    S.st2 = lp("standing", "grubstake")
+    local kinds = {}
+    for _, e in ipairs(lp("incidents")) do kinds[e.kind] = (kinds[e.kind] or 0) + 1 end
+    info(string.format("standing: %s (ladder %s) -> %s -> %s (ladder at 9 min %s); incidents %s", tostring(S.st0), tostring(S.rung0),
+      tostring(S.st1), tostring(S.st2), tostring(S.rung1), serpent.line(kinds)))
+    check("standing: a rival at first, its ladder held", S.st0 == "rival" and S.rung0 == 0, tostring(S.st0) .. " " .. tostring(S.rung0))
+    check("standing: a turret on its ground made it an enemy", S.st1 == "enemy", tostring(S.st1))
+    check("standing: listed (a turret incident, a standing change)", (kinds.turret or 0) >= 1 and (kinds["standing-enemy"] or 0) >= 1,
+      serpent.line(kinds))
+    check("standing: stood down, a rival again", S.st2 == "rival", tostring(S.st2))
+  end)
+end
+
 -- Prospect (the rivals consult, slice 1): a Grubstake camp and three iron patches laid 150 to 250 tiles out, charted,
 -- one with a player drill on it. Windows of 2 minutes, a minute between claims (here): the two undrilled patches are
 -- tagged and claimed, nearest first, each claim built by a truck; the drilled one never. LP_MIX=stake: a claim marker
@@ -4213,6 +4255,27 @@ scenarios.visit = function()
   end
   -- LP_MIX=noart: the player's artillery removed at the start (turrets and wagons): a megabase's artillery denies a huge
   -- area by itself, as it should; without it, what the corporations do against the rest of the defence.
+  -- LP_MIX=reach500 (any mix containing it): Grubstake prospects within 500 tiles, not 300.
+  if params.mix:find("reach500", 1, true) then schedule(20, function() lp("debug_tune", {prospect_radius = 500}) end) end
+  -- LP_MIX=orecount: how much ore lies round where Grubstake lands, charted or not (prospecting found none).
+  if params.mix:find("orecount", 1, true) then
+    schedule(30, function()
+      for _, at in ipairs({{-394, 457}, {355, 372}}) do
+        local n = surface().count_entities_filtered{position = at, radius = 500, type = "resource"}
+        local charted, with = 0, 0
+        for i = -15, 15 do for j = -15, 15 do
+          local c = {math.floor(at[1] / 32) + i, math.floor(at[2] / 32) + j}
+          if game.forces.player.is_chunk_charted(surface(), c) then
+            charted = charted + 1
+            if surface().count_entities_filtered{area = {{c[1] * 32, c[2] * 32}, {c[1] * 32 + 32, c[2] * 32 + 32}}, type = "resource",
+              limit = 20} >= 20 then with = with + 1 end
+          end
+        end end
+        info(string.format("visit: ore within 500 of %d,%d: %d resource entities; %d charted chunks, %d of them with ore", at[1], at[2],
+          n, charted, with))
+      end
+    end)
+  end
   if params.mix:find("noart", 1, true) then
     schedule(30, function()
       local n = 0
@@ -5290,7 +5353,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true}
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 

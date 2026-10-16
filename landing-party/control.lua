@@ -20,6 +20,8 @@ local marker = require("__landing-party__.scripts.marker")
 local crew = require("__landing-party__.scripts.crew")
 local cordon = require("__landing-party__.scripts.cordon")
 local prospect = require("__landing-party__.scripts.prospect")
+local standing = require("__landing-party__.scripts.standing")
+war.forgive = standing.forgive
 rd.era = ops.era
 rd.trace = function(corp, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
@@ -44,7 +46,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -169,6 +171,8 @@ script.on_event(defines.events.on_entity_died, function(e)
       storage.player_razed = storage.player_razed or {}
       local k = ent.force.name .. ":" .. ent.type
       storage.player_razed[k] = (storage.player_razed[k] or 0) + 1
+      local corp = standing.corp_of_force(e.force.name)
+      if corp then standing.incident(corp, "razed", ent.position, ent.name) end
     end
     -- Razed counts the player's structures only (trees felled by shells once inflated it by half).
     local id = e.cause and e.cause.valid and storage.unit_owner[e.cause.unit_number]
@@ -281,6 +285,7 @@ remote.add_interface("landing-party", {
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
     if t.prospect_pace ~= nil then storage.prospect_pace = t.prospect_pace end
     if t.prospect_uncharted ~= nil then storage.prospect_uncharted = t.prospect_uncharted end
+    if t.prospect_radius ~= nil then storage.prospect_radius = t.prospect_radius end
     if t.army_off ~= nil then storage.army_off = t.army_off end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
@@ -352,6 +357,8 @@ remote.add_interface("landing-party", {
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   pact_state = function() return storage.pact_state end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
+  standing = function(corp, owner) return standing.get(corp, owner or "player") end,
+  incidents = function() return storage.incidents or {} end,
   prospect_stats = function(id) return storage.bases[id] and prospect.stats(storage.bases[id]) end,
   cordon_stats = function(id) return storage.bases[id] and cordon.stats(storage.bases[id]) end,
   crew_stats = function(id) return storage.bases[id] and crew.stats(storage.bases[id]) end,

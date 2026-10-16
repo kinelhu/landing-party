@@ -7,6 +7,7 @@
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
+local standing = require("__landing-party__.scripts.standing")
 
 local prospect = {}
 
@@ -64,30 +65,46 @@ local function find(b)
   local ox, oy = b.origin.x, b.origin.y
   local players = player_forces()
   local best, bd
-  local n = math.ceil(RADIUS / CHUNK)
+  local why = {inside = 0, uncharted = 0, ore = 0, fluid = 0, worked = 0, staked = 0, taken = 0}
+  local radius = storage.prospect_radius or RADIUS
+  local n = math.ceil(radius / CHUNK)
   for i = -n, n do
     for j = -n, n do
       local cx, cy = math.floor(ox / CHUNK) + i, math.floor(oy / CHUNK) + j
       local x, y = cx * CHUNK + CHUNK / 2, cy * CHUNK + CHUNK / 2
       local d = (x - ox) ^ 2 + (y - oy) ^ 2
       local key = cx .. "," .. cy
-      if d <= RADIUS * RADIUS and d > (b.claim_radius or 60) ^ 2 and (not bd or d < bd) and not (b.prospected or {})[key] then
+      -- Not where it already mines (a module of its own within CLEAR). Not "beyond its claim": a sprawl's claim covered
+      -- 123 of the 278 chunks within 300 on deathworld10x, and it prospected nothing in 3 hours.
+      local own = false
+      if d <= radius * radius then
+        for _, m in ipairs(b.modules or {}) do
+          if m.center and (m.center[1] - x) ^ 2 + (m.center[2] - y) ^ 2 <= CLEAR * CLEAR then own = true; break end
+        end
+        if own then why.inside = why.inside + 1 end
+      end
+      if d <= radius * radius and not own and (not bd or d < bd) and not (b.prospected or {})[key] then
         -- Charted by the player (a patch they know of). Headless runs chart nothing (force.chart never lands there):
         -- tests waive it (debug_tune prospect_uncharted).
         local charted = storage.prospect_uncharted or false
         for _, f in ipairs(players) do if f.is_chunk_charted(s, {cx, cy}) then charted = true end end
-        if charted and s.count_entities_filtered{area = {{cx * CHUNK, cy * CHUNK}, {cx * CHUNK + CHUNK, cy * CHUNK + CHUNK}},
-          type = "resource", limit = MIN_ORE} >= MIN_ORE then
+        if not charted then why.uncharted = why.uncharted + 1 end
+        local n_ore = charted and s.count_entities_filtered{area = {{cx * CHUNK, cy * CHUNK}, {cx * CHUNK + CHUNK, cy * CHUNK + CHUNK}},
+          type = "resource", limit = MIN_ORE} or 0
+        if charted and n_ore < MIN_ORE then why.ore = why.ore + 1 end
+        if charted and n_ore >= MIN_ORE then
           local ore = s.find_entities_filtered{area = {{cx * CHUNK, cy * CHUNK}, {cx * CHUNK + CHUNK, cy * CHUNK + CHUNK}},
             type = "resource", limit = 1}[1]
-          if ore and ore.prototype.resource_category == "basic-solid" and not worked(s, {x, y})
-            and not ops.marked(b, {x, y}) and not taken(b, s, {x, y}) then
-            best, bd = {x = x, y = y, key = key, ore = ore.name}, d
-          end
+          if not (ore and ore.prototype.resource_category == "basic-solid") then why.fluid = why.fluid + 1
+          elseif worked(s, {x, y}) then why.worked = why.worked + 1
+          elseif ops.marked(b, {x, y}) then why.staked = why.staked + 1
+          elseif taken(b, s, {x, y}) then why.taken = why.taken + 1
+          else best, bd = {x = x, y = y, key = key, ore = ore.name}, d end
         end
       end
     end
   end
+  b.prospect_why = why
   return best
 end
 
@@ -155,6 +172,7 @@ local function step(b)
       p.phase, p.claimed_at = "claimed", game.tick
       b.prospects_claimed = (b.prospects_claimed or 0) + 1
       tell(b, "lp.prospect-claimed", {p.x, p.y})
+      standing.incident(b.corp, "claim", {p.x, p.y}, p.ore)
       base.trace(b, string.format("prospect: claiming the %s at %.0f,%.0f", p.ore, p.x, p.y))
     end
   elseif p.phase == "claimed" then
@@ -185,7 +203,8 @@ local function consider(b)
   if not p then
     if game.tick >= (b.prospect_said or 0) then
       b.prospect_said = game.tick + 30 * 3600
-      base.trace(b, string.format("prospect: no unworked patch charted within %d", RADIUS))
+      base.trace(b, string.format("prospect: no unworked patch charted within %d (chunks: %s)", storage.prospect_radius or RADIUS,
+        serpent.line(b.prospect_why or {})))
     end
     b.next_prospect = game.tick + 5 * 3600
     return
@@ -196,6 +215,7 @@ local function consider(b)
   b.prospect = p
   b.prospects = (b.prospects or 0) + 1
   tell(b, "lp.prospect", {p.x, p.y})
+  standing.incident(b.corp, "prospect", {p.x, p.y}, p.ore)
   base.trace(b, string.format("prospect: mineral rights to the %s at %.0f,%.0f reassigned (claim in %d s unless answered)",
     p.ore, p.x, p.y, (storage.prospect_window or WINDOW) / 60))
 end

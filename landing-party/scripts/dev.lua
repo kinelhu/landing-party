@@ -21,6 +21,7 @@ local faction = require("__landing-party__.scripts.faction")
 local flare = require("__landing-party__.scripts.flare")
 local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
+local standing = require("__landing-party__.scripts.standing")
 
 local dev = {}
 
@@ -88,6 +89,8 @@ function dev.run(player, args)
     local why = ops.force(b, what, player.position, base.trace, army)
     player.print(why and string.format("%s from %d: %s", what, b.id, why)
       or string.format("%s launched from %d %s (%s)", what, b.id, shared.CORPS[b.corp].name, gps(b)))
+  elseif what == "incidents" then
+    standing.list(player)
   elseif what == "flare" or what == "rig" or what == "tap" then
     -- Grubstake's discreet operations on demand (their own triggers wait on the ladder, the pact and intel).
     local temper = ({flare = "flares", rig = "jumps", tap = "taps"})[what]

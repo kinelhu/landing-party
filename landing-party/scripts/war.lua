@@ -307,6 +307,8 @@ local function quiet(tick)
         if tick - since >= span then
           b.quiescent = tick
           b.stood_down = (b.stood_down or 0) + 1
+          -- A rival again (Grubstake; Serenity never forgets): standing.lua.
+          if war.forgive then war.forgive(b.corp) end
           storage.failed_sites = storage.failed_sites or {}
           table.insert(storage.failed_sites, {x = b.origin.x, y = b.origin.y})
           local f = storage.faction
