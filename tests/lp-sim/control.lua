@@ -3177,6 +3177,62 @@ scenarios.rail = function()
   end)
 end
 
+-- Fuze (the faction loot consult, components and the first technology): a Serenity mortar destroyed drops a cluster
+-- fuze; three taken apart in an assembler (the teardown) research Cluster shells, which unlocks the cluster artillery
+-- shell; one fired at a point ringed by twelve small biters 7 tiles out kills biters an ordinary shell (LP_MIX=plain,
+-- its blast 4 tiles) leaves.
+scenarios.fuze = function()
+  local plain = params.mix == "plain"
+  schedule(60, function()
+    lp("debug_tune", {ops_off = true, army_off = true})
+    flatten(-80, -20, 80, 20)
+    local m = surface().create_entity{name = "lp-mortar", position = {-60, 0}, force = FORCE}
+    m.die("player")
+    game.forces.player.technologies["artillery"].researched = true
+  end)
+  schedule(120, function()
+    S.fuzes = 0
+    for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = {-60, 0}, radius = 6}) do
+      if it.stack.name == "lp-cluster-fuze" then S.fuzes = S.fuzes + it.stack.count end
+    end
+    local src = surface().create_entity{name = "electric-energy-interface", position = {-50, 8}, force = "player"}
+    src.power_production = 1000000; src.electric_buffer_size = 1e7
+    surface().create_entity{name = "medium-electric-pole", position = {-47, 8}, force = "player"}
+    S.asm = surface().create_entity{name = "assembling-machine-2", position = {-44, 8}, force = "player",
+      recipe = "lp-fuze-schematic"}
+    S.asm.insert{name = "lp-cluster-fuze", count = 3}
+  end)
+  schedule(30 * 60, function()
+    S.researched = game.forces.player.technologies["lp-cluster-shells"].researched
+    S.unlocked = game.forces.player.recipes["lp-cluster-artillery-shell"].enabled
+    -- One shell fired straight at a point ringed by twelve small biters 7 tiles out (the turret, aiming at worms itself,
+    -- killed one a shell either way: the bomblets are against biters).
+    S.worms = {}
+    for k = 0, 11 do
+      local a = k * math.pi / 6
+      local u = surface().create_entity{name = "small-biter", position = {40 + 7 * math.cos(a), 7 * math.sin(a)}, force = "enemy"}
+      u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none, ticks_to_wait = 3600}
+      table.insert(S.worms, u)
+    end
+    surface().create_entity{name = plain and "artillery-projectile" or "lp-cluster-artillery-projectile", position = {-20, 0},
+      target = {40, 0}, force = "player", speed = 1}
+  end)
+  schedule(END - 60, function()
+    local left = 0
+    for _, w in ipairs(S.worms or {}) do if w.valid then left = left + 1 end end
+    info(string.format("fuze (%s): %d fuzes dropped; researched %s, recipe %s; %d of 12 biters left", plain and "plain" or "cluster",
+      S.fuzes or 0, tostring(S.researched), tostring(S.unlocked), left))
+    if plain then
+      check("fuze: an ordinary shell leaves the ring", left == 12, tostring(left))
+      return
+    end
+    check("fuze: a mortar drops a fuze", (S.fuzes or 0) >= 1, tostring(S.fuzes))
+    check("fuze: the teardown researched cluster shells", S.researched == true, tostring(S.researched))
+    check("fuze: the shell's recipe unlocked", S.unlocked == true, tostring(S.unlocked))
+    check("fuze: the bomblets killed biters round the impact", left <= 9, tostring(left))
+  end)
+end
+
 -- Tap (Grubstake's power tap; the user: "steal power from unprotected lines ... progressively increasing draw",
 -- "connected to their camp through pylons"): a player power source with a line of big poles running toward a Grubstake
 -- camp, ending 80 tiles from it, a radar at the source using some. debug_tap on the line's nearest pole: the camp lays a

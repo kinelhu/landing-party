@@ -69,6 +69,12 @@ end
 function pact.lost(ent)
   for _, b in pairs(storage.bases or {}) do
     if b.pacifier == ent then
+      -- Its crystal (the faction loot consult): the landing's own pacifier always, a rebuilt one a quarter of the time.
+      if (b.pacifiers_lost or 0) == 0 or math.random() < 0.25 then
+        ent.surface.spill_item_stack{position = ent.position, stack = {name = "lp-pacifier-crystal", count = 1},
+          enable_looted = true}
+      end
+      b.pacifiers_lost = (b.pacifiers_lost or 0) + 1
       b.pacifier = nil
       b.pacifier_due = game.tick + REBUILD_TICKS
       local was = storage.pact_state and storage.pact_state[b.corp]

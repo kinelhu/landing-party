@@ -1221,8 +1221,25 @@ faction components the player researches faction technology with. This is the co
   regression runs it 40 minutes.
 - Open, older than this work: `fall`'s "an outpost is taken by holding it" fails back to 5281d15 at least (the player's
   holding turret is destroyed by Serenity infantry before the hold completes); the scenario is in the full list only.
-- Next from the consult: components (Grubstake's pheromone gland, pacifier crystal, drill head; Serenity's rail coil,
-  cluster fuze, orbital beacon), then the six technologies.
+- Components and the first technology: built (below).
+
+### Faction components and Cluster shells (Fable: the faction loot consult, parts B and C; built 2026-10-16)
+Six components, items of stack 10 with no recipe, taken only from the corporations' wrecks (`components.lua`, loaded
+after `corps.lua` so each corporation's own prototypes carry its own): Grubstake's pheromone gland (a pacifier 3 to 5, a
+flare canister 1), pacifier crystal (scripted in `pact.lua`: the landing's own pacifier always, a rebuilt one a quarter
+of the time, so rebuilds are no farm), drill head (a claim rig 2); Serenity's rail coil (a railgunner, 20%), cluster
+fuze (a mortar 1, a howitzer 6), orbital beacon (a lander 1, an uplink 2). What the player keeps is paid once: a
+technology takes components only through a teardown ("Cluster fuze, disassembled", a recipe from the start whose
+product is what the technology's research trigger asks for, craft-item); consumables take one each.
+- **Cluster shells** (Serenity, three fuzes; after Artillery): the artillery shell plus a fuze makes a cluster artillery
+  shell, bursting into ten bomblets of its own round the impact (25 explosion over 2 tiles each, the firing force's
+  enemies only). Serenity's own bomblets (12 over 1.5, six) killed none of a ring of small biters 7 tiles out (15
+  health); these kill 8 of 12. An ordinary shell (its blast 4 tiles) kills none.
+- Scenario `fuze`: a Serenity mortar destroyed drops a fuze; three in an assembler research Cluster shells and unlock the
+  shell; one fired at a point ringed by 12 small biters 7 tiles out leaves 4 (`plain`: an ordinary shell leaves 12).
+  Fired by an artillery turret at a spawner ringed by worms the comparison said nothing: the turret aims at the worms
+  themselves, one a shell either way.
+- Not yet: the other five technologies (bait, pact breaker, claim marker, rail rifle, orbital strike).
 
 ### Grubstake's power tap (the user, 2026-10-16; built 2026-10-16)
 The user: "steal power from unprotected lines? Unassumingly, with a progressively increasing draw", then "Don't think it
