@@ -11,6 +11,7 @@ local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
 local war = require("__landing-party__.scripts.war")
 local pact = require("__landing-party__.scripts.pact")
+local flare = require("__landing-party__.scripts.flare")
 rd.era = ops.era
 rd.trace = function(corp, text)
   if storage.trace then helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  %s\n", game.tick, corp, text), true) end
@@ -35,7 +36,7 @@ script.on_init(init)
 script.on_configuration_changed(init)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -48,7 +49,7 @@ end
 -- Damage to the faction's buildings calls a response (filtered to them; army.alarm throttles).
 local BUILDINGS = {}
 for _, n in ipairs(shared.variants({"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator",
-  "lp-turret", "lp-wall", "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp"})) do
+  "lp-turret", "lp-wall", "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-scrap-cannon"})) do
   table.insert(BUILDINGS, {filter = "name", name = n})
 end
 script.on_event(defines.events.on_entity_damaged, function(e)
@@ -321,4 +322,6 @@ remote.add_interface("landing-party", {
   -- Tests: the /lp dev tools (scripts/dev.lua) at a position, as a player standing there would use them.
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
+  pact_state = function() return storage.pact_state end,
+  debug_flare = function(id, pos) return storage.bases[id] and flare.debug(storage.bases[id], pos) end,
 })

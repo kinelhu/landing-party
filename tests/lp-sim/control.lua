@@ -3175,6 +3175,106 @@ scenarios.rail = function()
   end)
 end
 
+-- Flare (Grubstake's pheromone flare; the grubstake flavour consult): a player outpost guarded by two gun turrets 150
+-- tiles from a Grubstake camp, 40 idle biters 60 tiles to its side. A flare is fired at it (debug_flare: the drop point
+-- and launch the camp's own choice would use): the buggy drops the canister out of the turrets' reach, within 40 of the
+-- outpost; at least 10 biters are called within 30 s; the turrets spend ammunition; the canister shot at 60 s, the group
+-- goes idle within 30 s; no biter harms Grubstake. LP_MIX=nopact: no pact, no flare. LP_MIX=natural: no debug_flare,
+-- the camp fires it itself.
+scenarios.flare = function()
+  local off, natural = params.mix == "nopact", params.mix == "natural"
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, pact_off = off, raids_off = true, ladder_fast = natural or nil})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 150), math.floor(o.y - uy * 150)}
+    flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
+    S.c = c
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    S.turrets = {}
+    for _, d in ipairs({{-4, 0}, {4, 0}}) do
+      local t = surface().create_entity{name = "gun-turret", position = {c[1] + d[1], c[2] + d[2]}, force = "player"}
+      t.insert{name = "firearm-magazine", count = 200}
+      table.insert(S.turrets, t)
+    end
+    S.biters = {}
+    local side = {c[1] - uy * 60, c[2] + ux * 60}
+    for k = 1, 40 do
+      local name = k % 4 == 0 and "medium-biter" or "small-biter"
+      local p = surface().find_non_colliding_position(name, {side[1] + (k % 8) * 2, side[2] + math.floor(k / 8) * 2}, 8, 0.5)
+      table.insert(S.biters, surface().create_entity{name = name, position = p, force = "enemy"})
+    end
+    S.lost0 = lp("stats", S.g).units_lost or 0
+    -- LP_MIX=natural: the camp's own choice (it must learn the outpost and climb its ladder: sped tenfold).
+    if not natural then S.fired = lp("debug_flare", S.g, c) end
+    S.t0 = game.tick
+  end)
+  local function canister() return surface().find_entities_filtered{name = "lp-flare", limit = 1}[1] end
+  -- Called: every biter seen in a group, alive or since killed by the turrets (12 called, 5 left at 30 s).
+  local function grouped()
+    S.called = S.called or {}
+    for i, u in ipairs(S.biters or {}) do if u.valid and u.commandable.parent_group then S.called[i] = true end end
+    return table_size(S.called)
+  end
+  for t = 2 * 3600 + 20, END - 120, 20 do
+    schedule(t, function()
+      local cn = canister()
+      if cn and not S.lit then
+        S.lit, S.at = game.tick, {cn.position.x, cn.position.y}
+        S.near = math.sqrt((cn.position.x - S.c[1]) ^ 2 + (cn.position.y - S.c[2]) ^ 2)
+        S.reach = surface().count_entities_filtered{position = cn.position, radius = 18, type = "ammo-turret", force = "player"}
+      end
+      if S.lit and not S.g30 then
+        local n = grouped()
+        if game.tick - S.lit >= 30 * 60 then S.g30 = n end
+      end
+      if S.lit and not S.shot and game.tick - S.lit >= 60 * 60 and cn then
+        cn.die("player")
+        S.shot = game.tick
+      end
+      if S.shot and not S.idle and game.tick - S.shot >= 30 * 60 then
+        local g
+        for _, u in ipairs(S.biters) do if u.valid and u.commandable.parent_group then g = u.commandable.parent_group break end end
+        S.idle = not g or not g.valid or (g.command and g.command.type == defines.command.wander) or false
+        S.idle_cmd = g and g.valid and g.command and g.command.type
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local ammo = 0
+    for _, t in ipairs(S.turrets or {}) do if t.valid then ammo = ammo + t.get_item_count("firearm-magazine") end end
+    -- Grubstake's losses to biters only (the outpost's turrets may kill its buggy: fair).
+    local lost = 0
+    for k, v in pairs(S.fallen or {}) do
+      if k:find("^lp%-grubstake") and (k:find("biter") or k:find("spitter") or k:find("worm")) then lost = lost + v end
+    end
+    local st = lp("stats", S.g)
+    info(string.format("flare: the camp: mature %s, knows %d player targets %s, ladder %s, pact %s, flares %s",
+      tostring(st.mature), st.ops.known_player, serpent.line(st.ops.player_targets), tostring(st.ops.ladder),
+      serpent.line(lp("pact_state")), tostring(st.flares)))
+    info("flare: deaths " .. serpent.line(S.fallen or {}))
+    info(string.format("flare: fired %s, lit %s at %s, %.0f from the outpost, turrets in reach %s; %s biters grouped at 30 s; "
+      .. "turrets' ammunition %d of 400; shot %s, idle %s (%s); Grubstake units lost to biters %d", tostring(S.fired), tostring(S.lit),
+      serpent.line(S.at), S.near or -1, tostring(S.reach), tostring(S.g30), ammo, tostring(S.shot), tostring(S.idle),
+      tostring(S.idle_cmd), lost))
+    if off then
+      check("flare: no pact, no flare", not S.lit, tostring(S.lit))
+      return
+    end
+    check("flare: the canister was dropped out of the turrets' reach", S.lit and S.reach == 0, tostring(S.reach))
+    check("flare: within 40 of the outpost", S.near and S.near <= 40, string.format("%.0f", S.near or -1))
+    check("flare: 10 biters called within 30 s", (S.g30 or 0) >= 10, tostring(S.g30))
+    check("flare: the turrets fired", ammo < 400, tostring(ammo))
+    check("flare: shot, the group goes idle within 30 s", S.idle == true, tostring(S.idle_cmd))
+    check("flare: no biter harmed Grubstake", lost == 0, tostring(lost))
+  end)
+end
+
 -- Flak (Grubstake's scrap cannon, "dirty flak"; the grubstake flavour consult): a cannon against a blob of 20 small
 -- biters, and apart (so neither side's fire is counted for the other), a second against 10 Line troopers before a player
 -- wall. 15 dead to them in 20 s; the wall loses under 5% to them in a minute (their own hits only, on_entity_damaged).

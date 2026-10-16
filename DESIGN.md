@@ -1155,6 +1155,28 @@ turrets.
 - Measuring it: a lone turret before ten troopers dies in 3 s (about 170 a second) whatever it is, and troopers with
   nothing they can hurt walk off; the trial holds them and makes the turret last, to measure what it deals.
 
+### Grubstake's pheromone flare (the user; Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`; built 2026-10-16)
+Grubstake is felt before it is seen (the consult's frame): things go wrong near the player's stuff and the cause is found
+a minute later, outside the wall. `scripts/flare.lua`. A settlement whose pact holds and whose ladder against the player
+is on rung 1 or more, mature, not standing down, picks the guarded player target it knows nearest home (turrets reach
+it: exposure or defence above 0), and sends a buggy from its garrison to drop a canister (`lp-flare`, 200 health, a
+military target) on the line from the target home, 20 to 40 tiles out, at the first spot no player turret reaches within
+19 (a gun turret's 18). The buggy leaves without stopping to fight (free to engage on its way home, it drove at the
+outpost's turrets and died). The canister calls the idle biters within 150 tiles that are in no group, the nearest
+12 + 24 x evolution, as one group told to attack whatever it meets within 30 tiles of the canister. Tell: an orange smoke
+puffed while it burns, a custom alert, a map tag, a notice (`lp.flare`). It burns 3 minutes; shot, it ends, and the group
+is told to wander (idle). One a settlement per 10 minutes; a buggy that does not arrive in 2 minutes turns back.
+- The choice is "guarded", not "what its raids would not take" (`ops.temper_allows`): at its top rung Grubstake raids
+  anything, and the consult's ladder fires the flare first there; the first version found no target at rung 3.
+- Not yet: rung 2's two nests a flare, rung 3's flare with a claim rig. Razing by the called biters does not count as
+  Grubstake's (it is the biters' kill: the ladder's clock and the tally miss it). The smoke is a cloud, not a column.
+- Scenario `flare`: a player outpost with two gun turrets 150 tiles from a Grubstake camp, 40 idle biters 60 tiles to
+  its side; `debug_flare` (the drop point and launch the camp's own choice uses). The canister lands 27 tiles from the
+  outpost, out of the turrets' reach; 12 biters called (7 of them dead to the turrets within 30 s: count every biter ever
+  called); the turrets emptied their 400 rounds; shot at 60 s, the group wanders; no Grubstake unit killed by biters.
+  `nopact`: no flare. `natural` (no debug_flare, the ladder ten times fast, 25 minutes): the camp flares the outpost
+  itself at 5.7 minutes, the same results, and the biters raze it.
+
 ### Standing down (the user: a hopeless camp goes quiet instead of lifting off; built 2026-10-15)
 Fable had proposed write-off and relanding. The user asked why not keep the camp and land elsewhere; quiet is better:
 the camp keeps mining and exporting (its parts fund the war chest and research for the camps that can reach), it stays
