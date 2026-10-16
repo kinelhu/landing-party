@@ -214,7 +214,15 @@ local function consider(b)
   if storage.jump_off or not (shared.CORPS[b.corp].temper or {}).jumps then return end
   if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_jump or 0) then return end
   local owner, rung = war.at_war(b)
-  if not owner or (rung or 0) < RUNG then return end
+  if not owner then return end
+  if (rung or 0) < RUNG then
+    -- Its ladder resets with every raze: a camp that keeps razing never needs the rig (traced once in a while).
+    if game.tick >= (b.jump_said or 0) then
+      b.jump_said = game.tick + 30 * 3600
+      base.trace(b, string.format("claim jump: waits for rung %d (at %d)", RUNG, rung or 0))
+    end
+    return
+  end
   local h = home(b)
   if not h then return end
   local s = game.surfaces[b.surface]
@@ -225,7 +233,18 @@ local function consider(b)
       if (not bd or d < bd) and #chests(s, owner, t.pos) > 0 then best, bd = t, d end
     end
   end
-  if not best then b.next_jump = game.tick + 3600; return end
+  if not best then
+    if game.tick >= (b.jump_said or 0) then
+      b.jump_said = game.tick + 30 * 3600
+      local guarded = 0
+      for _, t in pairs(b.intel and b.intel.targets or {}) do
+        if t.owner == owner and (t.exposure or t.defence or 0) > 0 then guarded = guarded + 1 end
+      end
+      base.trace(b, string.format("claim jump: none (%d guarded targets known, none with chests within 16)", guarded))
+    end
+    b.next_jump = game.tick + 3600
+    return
+  end
   if jumper.launch(b, best.pos) ~= "launched" then b.next_jump = game.tick + 3600 end
 end
 

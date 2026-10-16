@@ -1188,6 +1188,9 @@ scenarios.fall = function()
     if far then
       local p = surface().find_non_colliding_position("gun-turret", far.position, 8, 1)
       S.holder = p and surface().create_entity{name = "gun-turret", position = p, force = "player"}
+      -- Lasting: the fall is the player's kill, so the grudge and the evacuation march past it, and Serenity's infantry
+      -- destroyed it before the hold completed (failing since 5281d15 at least). Capture by holding is what is tested.
+      if S.holder then S.holder.destructible = false end
     end
     S.captured0 = st.captured
     S.lost0 = st.lost

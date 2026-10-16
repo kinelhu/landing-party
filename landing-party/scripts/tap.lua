@@ -6,7 +6,7 @@
 -- while the line stands unbroken to the camp's network; the draw rises step by step. Cut the line anywhere and the theft
 -- stops until the camp rebuilds the gap; break the tap and it is over.
 -- A discreet operation, as the heist is (the user: "does grubstake detect exposed poles? is it able to sneak path to
--- them?"): it taps only a pole its own sensors have seen exposed (intel's line cells: no turret within 60), lays the line
+-- them?"): it taps only a pole its own sensors have seen exposed (no turret reaches it: intel's exposure), lays the line
 -- along a route clear of every turret's reach (ops.route, the heist's), and says nothing when it clamps: the player finds
 -- it in the power statistics, in brownouts, or by the line. The notice comes only when the tap is broken.
 -- An operation, not construction (the user: "strange that the tap is built directly from the lander ... a hauler buggy
@@ -268,7 +268,10 @@ local function consider(b)
   local cands = {}
   for _, t in pairs(b.intel and b.intel.targets or {}) do
     local proto = t.kind and prototypes.entity[t.kind]
-    if t.owner == owner and t.line and t.pos and proto and proto.type == "electric-pole" and not ops.marked(b, t.pos) then
+    -- Exposed: no turret reaches it (intel's exposure). Intel's line cells (no turret within 60) were too strict: on a
+    -- deathworld base of 205 gun turrets the camps knew 0 to 2 such poles in 3 hours, and tapped none.
+    local exposed = t.line or (t.exposure or 1) == 0
+    if t.owner == owner and exposed and t.pos and proto and proto.type == "electric-pole" and not ops.marked(b, t.pos) then
       local pole = s.find_entities_filtered{type = "electric-pole", force = owner, position = t.pos, radius = 1, limit = 1}[1]
       local d
       if pole then _, d = nearest(b.pylons, pole.position) end
@@ -280,8 +283,23 @@ local function consider(b)
     end
   end
   table.sort(cands, function(x, y) return x[2] < y[2] end)
+  local why
   for k = 1, math.min(3, #cands) do
-    if tap.launch(b, cands[k][1]) == "launched" then return end
+    why = tap.launch(b, cands[k][1])
+    if why == "launched" then return end
+  end
+  -- Why not (traced once in a while): how many exposed poles it knows, how many in reach.
+  if game.tick >= (b.tap_said or 0) then
+    b.tap_said = game.tick + 30 * 3600
+    local lines = 0
+    for _, t in pairs(b.intel and b.intel.targets or {}) do
+      local proto = t.kind and prototypes.entity[t.kind]
+      if t.owner == owner and (t.line or (t.exposure or 1) == 0) and proto and proto.type == "electric-pole" then
+        lines = lines + 1
+      end
+    end
+    base.trace(b, string.format("tap: none (%d exposed poles known, %d in reach and unguarded%s)", lines, #cands,
+      why and (", the last: " .. why) or ""))
   end
   b.next_tap = game.tick + 5 * 3600
 end

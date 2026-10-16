@@ -1146,6 +1146,16 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   Built 2026-10-16: ordinary loot (salvage gone), the six components and their drops, Cluster shells. Left: bait, pact
   breaker, claim marker, orbital strike (all built since).
 
+- **Builders instead of the blue beam** (the user, 2026-10-16: "landers build things around them using a weird blue
+  laser, which feels weirdly decorporealized ... have a builder unit leave the base with parts to build a set of
+  buildings?"; Fable: `docs/reviews/2026-10-16-builders-consult.md`). A yard builds what it can reach (within 40 of the
+  lander or a depot, as now: Serenity's beam short and from its nearest depot, Grubstake a crane's sparks and dust);
+  crews build the rest: a unit leaves carrying a module's whole bill of parts, builds each entity at the site at the
+  same 1.5 s, goes home. Serenity: a flying constructor drone; Grubstake: a builder truck with a crew. One codepath
+  (`crew.lua`, the tap's runner lifted out), two bodies. A killed crew drops its remaining bill as items; the module is
+  requeued; a crew whose site is occupied turns back. Pace held: `grow`'s counts within 15%. Real construction robots
+  for Serenity kept as a later form (the planner's synchronous guarantees go through `place()`). Not built yet.
+
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
 Serenity has become the high-tech faction (railgunners, cluster shells, the orbital barrage), Grubstake the cheap swarm.
@@ -1242,8 +1252,9 @@ faction components the player researches faction technology with. This is the co
   regression runs it 40 minutes.
 - The survey party's drills stand on the ore its site was chosen for (the user, in game: at fixed offsets they stood on
   grass beside the coal): the two nearest ore tiles within 20, at least 5 apart. `phases` checks it (1 of 2 on ore before).
-- Open, older than this work: `fall`'s "an outpost is taken by holding it" fails back to 5281d15 at least (the player's
-  holding turret is destroyed by Serenity infantry before the hold completes); the scenario is in the full list only.
+- `fall`'s "an outpost is taken by holding it" failed back to 5281d15 at least: the fall is the player's kill, so the
+  grudge and the evacuation march past the player's holding turret, and Serenity's infantry destroyed it before the hold
+  completed. Capture itself works: the holder made to last, three outpost modules are captured.
 - Components and the first technology: built (below).
 
 ### Faction components and Cluster shells (Fable: the faction loot consult, parts B and C; built 2026-10-16)
@@ -1325,6 +1336,11 @@ says how many MJ it took, `lp.tap-cut`), and 20 minutes later it may try again.
   the player's apart, and a player pole built by the line not wired to it (both seen failing before the fix).
 - `/lp flare`, `/lp rig`, `/lp tap` (dev.lua): the three on demand from the nearest Grubstake camp, at where the player
   stands; `LP_MIX=cmd` runs each scenario through the command.
+- On deathworld10x (3 hours provoked; 205 gun turrets, a compact base) no tap was laid: the camps knew 0 to 5 exposed
+  poles (no turret reaching them; intel's stricter line cells, no turret within 60, gave 0 to 2), none within 160 of their
+  pylons and 30 from every turret. Nor a claim jump: 9 guarded targets known, none with chests within 16, and the ladder
+  at rung 0 (Grubstake razes often enough that it never climbs). Flares did fire on their own: 5, calling 0 to 11 biters.
+  The camps trace why they pass (once in 30 minutes each).
 - The line's end: the walk along the route once added a goal pylon 2 tiles past the last spaced one; cutting the next
   pylon left the end within wire reach of the one beyond. The last pylon now moves onto the goal when it falls short by
   under half a span.
