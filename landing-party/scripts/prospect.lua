@@ -6,6 +6,7 @@
 -- drills with their bins, a mining module of the camp (rebuilt, capturable), marked on the map. One patch at a time,
 -- the nearest first, PACE between (tagging everything undrilled at chemical science would be harsh).
 local shared = require("__landing-party__.shared")
+local chart = require("__landing-party__.scripts.chart")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
 local standing = require("__landing-party__.scripts.standing")
@@ -154,10 +155,8 @@ local function claim(b, p)
   -- First in the queue: its truck (crew.lua) takes them out.
   for i = #jobs, 1, -1 do table.insert(b.queue, 1, jobs[i]) end
   local c = shared.CORPS[b.corp].color
-  m.marks = {rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = 24, filled = true,
-    target = m.center, surface = s, render_mode = "chart"},
-  rendering.draw_circle{color = {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}, radius = 24, width = 3, filled = false,
-    target = m.center, surface = s, render_mode = "chart"}}
+  -- The claimed patch's chunks, dashed: held, not settled ground (scripts/chart.lua).
+  m.marks = chart.territory(s, m.center, 24, c, {dashed = true})
   b.claims_settled = (b.claims_settled or 0) + 1
   return m
 end

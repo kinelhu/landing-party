@@ -5156,6 +5156,38 @@ scenarios.sneak = function()
   end)
 end
 
+-- Chart (the user, 2026-10-17: names for the camps, territory drawn sleeker): Grubstake and Serenity camps land; each
+-- has a name in its corporation's voice, no two alike, on its map label; its territory is drawn as chunks (a few
+-- dozen objects, no disc). LP_MIX: none.
+scenarios.chart = function()
+  schedule(60, function()
+    S.ids = {storage.id}
+    for k = 1, 3 do
+      local id = lp("arrive", 1, {x = 600 * k, y = 0}, 100, {corp = k % 2 == 1 and "serenity" or "grubstake"})
+      if id then table.insert(S.ids, id) end
+    end
+  end)
+  schedule(END - 60, function()
+    local seen, dup, ok_voice, drawn, n = {}, 0, 0, 0, 0
+    for _, id in ipairs(S.ids or {}) do
+      local st = lp("stats", id)
+      n = n + 1
+      info(string.format("chart: %d %s %q, label %q, %d territory marks", id, st.corp, tostring(st.name), tostring(st.map_text),
+        st.claim_marks or 0))
+      if st.name then
+        if seen[st.name] then dup = dup + 1 end
+        seen[st.name] = true
+        local serene = st.name:find("%d$") or st.name:find("^Regional Office")
+        if (st.corp == "serenity") == (serene ~= nil) then ok_voice = ok_voice + 1 end
+      end
+      if (st.claim_marks or 0) >= 5 and st.map_text and st.name and st.map_text:find(st.name, 1, true) then drawn = drawn + 1 end
+    end
+    check("chart: every camp named, in its corporation's voice", ok_voice == n and n >= 3, ok_voice .. " of " .. n)
+    check("chart: no two camps share a name", dup == 0, tostring(dup))
+    check("chart: territory as chunks, the name on the label", drawn == n, drawn .. " of " .. n)
+  end)
+end
+
 -- Pool (docs/ai.md: the unit pool): a Grubstake camp grown to its cap, then a raid forced on a player assembler 150
 -- tiles out. While the raid is out the camp makes no units (its strength counts the raiders: before, it counted only
 -- the garrison and remade them); done, the raiders are on their way back (b.returning) before they rejoin the

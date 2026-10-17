@@ -4,6 +4,7 @@
 --   Tier: parts exported by mature settlements, faction-wide. Each tier unlocks units, adds damage and
 --   garrison room (army.lua reads it).
 local shared = require("__landing-party__.shared")
+local names = require("__landing-party__.scripts.names")
 local site = require("__landing-party__.scripts.site")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
@@ -237,7 +238,7 @@ function faction.tag(b)
   for _, f in pairs(game.forces) do
     if #f.players > 0 and not b.tags[f.name] then
       local t = f.add_chart_tag(surface, {position = {b.origin.x, b.origin.y}, icon = {type = "virtual", name = c.icon},
-        text = c.name})
+        text = names.of(b)})
       if t then b.tags[f.name] = t else all = false end
     end
   end

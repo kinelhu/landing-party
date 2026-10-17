@@ -4,6 +4,8 @@ local shared = require("__landing-party__.shared")
 local modules = require("__landing-party__.scripts.modules")
 local site = require("__landing-party__.scripts.site")
 local layout = require("__landing-party__.scripts.layout")
+local chart = require("__landing-party__.scripts.chart")
+local names = require("__landing-party__.scripts.names")
 local blocks = require("__landing-party__.scripts.blocks")
 local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
@@ -907,9 +909,9 @@ local function export(b)
   trace(b, string.format("exported %d parts", amount))
 end
 
--- Territory on the map (map view only): a translucent disc in the corporation's colour over everything the
--- settlement has built, with an outline, grown as it expands; grey once it falls. The player sees the
--- corporate map before a building (docs/campaign.md, readability).
+-- Territory on the map (map view only): the chunks it holds (scripts/chart.lua: a faint wash in the corporation's colour
+-- and a hairline on the outer edge, as radar coverage is drawn), grown as it expands; grey once it falls. The player
+-- sees the corporate map before a building (docs/campaign.md, readability). The claim stays a radius for the game.
 local CLAIM_MARGIN = 24
 function base.claim_map(b)
   local surface = game.surfaces[b.surface]
@@ -922,19 +924,15 @@ function base.claim_map(b)
   -- A perimeter that grows on its own (Serenity's moving line, ops.perimeter) claims at least that far.
   if b.perimeter and b.perimeter > r then r = b.perimeter end
   b.claim_radius = r
-  local c = shared.CORPS[b.corp].color
-  local fill = b.fallen and {r = 0.08, g = 0.08, b = 0.08, a = 0.12} or {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}
-  local edge = b.fallen and {r = 0.4, g = 0.4, b = 0.4, a = 0.6} or {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}
-  local centre = {b.origin.x, b.origin.y}
-  if b.claim_fill and b.claim_fill.valid then
-    b.claim_fill.radius, b.claim_fill.color = r, fill
-    b.claim_edge.radius, b.claim_edge.color = r, edge
-  else
-    b.claim_fill = rendering.draw_circle{color = fill, radius = r, filled = true, target = centre, surface = surface,
-      render_mode = "chart"}
-    b.claim_edge = rendering.draw_circle{color = edge, radius = r, width = 4, filled = false, target = centre,
-      surface = surface, render_mode = "chart"}
-  end
+  -- Redrawn only when what it holds changes (a chunk is 32 tiles: the radius in whole tiles, and the fall).
+  local key = string.format("%d|%s", math.floor(r), tostring(b.fallen or false))
+  if b.claim_key == key and b.claim_marks then return end
+  b.claim_key = key
+  for _, o in ipairs({b.claim_fill, b.claim_edge}) do if o and o.valid then o.destroy() end end
+  b.claim_fill, b.claim_edge = nil, nil
+  chart.clear(b.claim_marks)
+  local colour = b.fallen and {r = 0.45, g = 0.45, b = 0.45} or shared.CORPS[b.corp].color
+  b.claim_marks = chart.territory(surface, {b.origin.x, b.origin.y}, r, colour)
 end
 
 ops.claim_map = base.claim_map
@@ -948,10 +946,8 @@ function ops.settle(b, site, camp)
   for _, e in ipairs(camp or {}) do if e and e.valid then register(b, e, m) end end
   local surface = game.surfaces[b.surface]
   local c = shared.CORPS[b.corp].color
-  m.marks = {rendering.draw_circle{color = {r = c.r * 0.15, g = c.g * 0.15, b = c.b * 0.15, a = 0.15}, radius = CLAIM_MARGIN,
-    filled = true, target = m.center, surface = surface, render_mode = "chart"},
-  rendering.draw_circle{color = {r = c.r * 0.8, g = c.g * 0.8, b = c.b * 0.8, a = 0.8}, radius = CLAIM_MARGIN, width = 3,
-    filled = false, target = m.center, surface = surface, render_mode = "chart"}}
+  -- Its chunks, dashed: held, not settled ground (scripts/chart.lua).
+  m.marks = chart.territory(surface, m.center, CLAIM_MARGIN, c, {dashed = true})
   b.claims_settled = (b.claims_settled or 0) + 1
 end
 
@@ -976,10 +972,10 @@ function base.fall(lander)
       local f = game.forces.player
       if f and #f.players > 0 then
         shared.notice(f, {"lp.fallen", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,
-          lander.surface.name)})
+          lander.surface.name), names.of(b)})
       end
       for _, t in pairs(b.tags or {}) do
-        if t.valid then t.text = shared.CORPS[b.corp].name .. " (fallen)" end
+        if t.valid then t.text = names.of(b) .. " (fallen)" end
       end
       base.claim_map(b)
       if base.on_fall then base.on_fall(b) end
@@ -1130,7 +1126,8 @@ function base.stats(b)
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
-    war_rung = b.war_rung or 0, map_text = b.map_text, flares = b.flares or 0, jumps = b.jumps or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0}
+    war_rung = b.war_rung or 0, map_text = b.map_text, name = b.name,
+    claim_marks = #(b.claim_marks or {}), flares = b.flares or 0, jumps = b.jumps or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0}
 end
 
 return base

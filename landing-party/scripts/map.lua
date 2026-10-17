@@ -4,46 +4,57 @@
 -- draw their own marks (prospect.lua, base.lua, border.lua).
 local shared = require("__landing-party__.shared")
 local standing = require("__landing-party__.scripts.standing")
+local chart = require("__landing-party__.scripts.chart")
+local names = require("__landing-party__.scripts.names")
 
 local map = {}
 
 local function label(b)
-  local corp = shared.CORPS[b.corp]
-  local st = standing.get(b.corp, "player")
-  return corp.name .. ": " .. st
+  return standing.get(b.corp, "player")
 end
 
+-- Serenity's next arc: a dashed hairline through its posts, in angle order (scripts/chart.lua), where it was a ring of
+-- circles and an arrow.
 local function draw_arc(b, c)
   local s = game.surfaces[b.surface]
   local col = shared.CORPS[b.corp].color
-  local marks = {}
+  local pts = {}
   for _, m in ipairs(c.posts) do
-    table.insert(marks, rendering.draw_circle{color = {r = col.r, g = col.g, b = col.b, a = 0.9}, radius = 5, width = 2,
-      filled = false, target = m.center, surface = s, render_mode = "chart"})
+    if m.center then
+      pts[#pts + 1] = {m.center[1], m.center[2], math.atan2(m.center[2] - b.origin.y, m.center[1] - b.origin.x)}
+    end
   end
-  local a = c.bearing
-  local from = {b.origin.x + math.cos(a) * (c.radius - 40), b.origin.y + math.sin(a) * (c.radius - 40)}
-  local to = {b.origin.x + math.cos(a) * (c.radius + 20), b.origin.y + math.sin(a) * (c.radius + 20)}
-  table.insert(marks, rendering.draw_line{color = {r = col.r, g = col.g, b = col.b, a = 0.9}, width = 4, from = from, to = to,
-    surface = s, render_mode = "chart"})
-  c.marks = marks
+  table.sort(pts, function(p, q) return p[3] < q[3] end)
+  c.marks = #pts >= 2 and chart.path(s, pts, col, {width = 2, edge = 0.9}) or {}
+end
+
+-- The camp's name over its standing, on the map (names.lua; the user: "actual names for the camps too").
+local function draw_label(b, s, col)
+  local name = rendering.draw_text{text = names.of(b), surface = s, target = {b.origin.x, b.origin.y - 34},
+    color = {r = col.r, g = col.g, b = col.b, a = 1}, scale = 2, alignment = "center", render_mode = "chart"}
+  local st = rendering.draw_text{text = label(b), surface = s, target = {b.origin.x, b.origin.y - 22},
+    color = {r = 0.75, g = 0.75, b = 0.75, a = 0.9}, scale = 1.2, alignment = "center", render_mode = "chart"}
+  b.map_label, b.map_label2 = name.id, st.id
+  return st
 end
 
 function map.tick(tick)
   if tick % 600 ~= 211 then return end
   for _, b in pairs(storage.bases or {}) do
+    -- A fallen camp keeps its name on the map, its standing line saying so.
+    local o2 = b.fallen and b.map_label2 and rendering.get_object_by_id(b.map_label2)
+    if o2 and o2.valid and o2.text ~= "fallen" then o2.text = "fallen" end
     if not b.fallen and b.lander and b.lander.valid and b.origin then
       local text = label(b)
-      local o = b.map_label and rendering.get_object_by_id(b.map_label)
+      local o = b.map_label2 and rendering.get_object_by_id(b.map_label2)
       if not (o and o.valid) then
-        local col = shared.CORPS[b.corp].color
-        o = rendering.draw_text{text = text, surface = game.surfaces[b.surface], target = {b.origin.x, b.origin.y - 30},
-          color = {r = col.r, g = col.g, b = col.b, a = 1}, scale = 3, alignment = "center", render_mode = "chart"}
-        b.map_label = o.id
+        local old = b.map_label and rendering.get_object_by_id(b.map_label)
+        if old and old.valid then old.destroy() end
+        o = draw_label(b, game.surfaces[b.surface], shared.CORPS[b.corp].color)
       elseif o.text ~= text then
         o.text = text
       end
-      b.map_text = text
+      b.map_text = names.of(b) .. " (" .. shared.CORPS[b.corp].name .. "): " .. text
       local c = b.cordon
       if c and not c.marks then draw_arc(b, c) end
     end

@@ -1568,6 +1568,20 @@ forced open).
   enclosing a structure that stood before the arc should not provoke Serenity (the line moving onto the player is the
   corporation's act), or the warning stays a notice; a design call for the user.
 
+### The map redrawn, and camp names (the user, 2026-10-17)
+The user: "I'm not a huge fan of how we represent territory on the map. The big circles and lines feel childish and
+improvised. Could we achieve something more sleek looking?", then "Think we could have actual names for the camps too.
+More flavor." No dependency: `scripts/chart.lua` draws in the game's own idiom.
+- Territory is the 32-tile chunks whose centres lie within the claim, as radar coverage: a faint wash in the
+  corporation's colour (rows merged into one rectangle each) and a hairline on the outer edge only (runs merged), redrawn
+  only when the claim changes. The claim stays a radius for the game.
+- Claims (a kept strip camp, a prospect) are their chunks dashed: held, not settled. A border is a dashed arc of its
+  circle either side of the stake. Serenity's next arc is a dashed hairline through its posts.
+- Names (`scripts/names.lua`, drawn from the map seed and the settlement's id, none twice): Grubstake's a prospector's
+  claim ("Tin Cup Strike", "Last Chance Diggings"), Serenity's a calm designation and a number ("Halcyon Post 7"), a
+  headquarters "Regional Office: Haven". On the map label (the name over its standing, which reads "fallen" after),
+  the chart tag, `/lp list` and the fall's notice. Scenario `chart`.
+
 ### The unit pool (2026-10-17; `docs/ai.md`)
 A settlement counted only its units at home against its cap, so the ones out on a raid, a heist or a response were made
 again, and units were put back into the garrison while still in the field, to be drafted again from where they stood.

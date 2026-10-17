@@ -5,6 +5,7 @@
 -- again. An enemy Serenity does not treat. A stake removed lets the line resume. Ordinary items, from the start: the
 -- player must be able to concede early.
 local shared = require("__landing-party__.shared")
+local chart = require("__landing-party__.scripts.chart")
 local ops = require("__landing-party__.scripts.ops")
 local standing = require("__landing-party__.scripts.standing")
 
@@ -44,8 +45,11 @@ function border.placed(ent)
   local s = ent.surface
   local c = shared.CORPS[b.corp].color
   local br = {entity = ent, owner = f.name, base = b.id, radius = d, placed = game.tick}
-  br.marks = {rendering.draw_circle{color = {r = c.r, g = c.g, b = c.b, a = 0.9}, radius = d, width = 3, filled = false,
-    target = {b.origin.x, b.origin.y}, surface = s, render_mode = "chart"}}
+  -- The treaty line on the map: a dashed arc of the border's circle either side of the stake (scripts/chart.lua), not
+  -- the whole circle (the territory's edge already stops there).
+  local a = math.atan2(ent.position.y - b.origin.y, ent.position.x - b.origin.x)
+  local span = math.min(0.6, 90 / d)
+  br.marks = chart.path(s, chart.arc_points({b.origin.x, b.origin.y}, d, a - span, a + span), c, {width = 2})
   table.insert(storage.borders, br)
   standing.incident(b.corp, "border", ent.position, string.format("a border at %d tiles", math.floor(d)))
   shared.reply(f, ent.position, {"lp.border-accepted", shared.corp_label(b.corp), gps(ent)})

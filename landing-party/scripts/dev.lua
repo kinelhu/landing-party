@@ -14,6 +14,7 @@
 --   tap [id]                 a power tap on the pole nearest you (a pylon line out of turret reach, then the clamp)
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
+local names = require("__landing-party__.scripts.names")
 local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local base = require("__landing-party__.scripts.base")
@@ -55,8 +56,8 @@ local function list(player)
     local b = storage.bases[id]
     local n = 0
     for _, u in ipairs(b.garrison or {}) do if u.valid then n = n + 1 end end
-    player.print(string.format("%d  %s %s  %s  garrison %d, parts %d, %s, perimeter %s, hull %s", id,
-      shared.CORPS[b.corp].name, b.hq and "(HQ)" or "", gps(b), n, b.parts or 0,
+    player.print(string.format("%d  %s, %s %s  %s  garrison %d, parts %d, %s, perimeter %s, hull %s", id,
+      names.of(b), shared.CORPS[b.corp].name, b.hq and "(HQ)" or "", gps(b), n, b.parts or 0,
       b.fallen and "fallen" or (b.op and (b.op.kind .. ":" .. b.op.phase) or "idle"),
       b.perimeter and string.format("%.0f", b.perimeter) or "-",
       (b.lander and b.lander.valid) and (b.lander.destructible and "down" or "up") or "-"))
