@@ -3690,8 +3690,36 @@ scenarios.cordon = function()
   -- LP_MIX=rail: a player rail along the bearing, 100 to 260 out, crossed by the arcs: gate posts on it, and a train
   -- driven toward the camp from 240 out at 14 minutes stops at the outermost gate.
   -- LP_MIX=ore: an iron patch on the arcs' path (150 out, 20 degrees off the bearing): Serenity claims it.
+  -- LP_MIX=held: from 6 minutes every drone flying beyond the claim is shot down (the player's guns at the line): the
+  -- posts of the arc ahead are given up after three crews each, the player is told the line is held, and the claim
+  -- steps out no further.
   local breach, contact, rail, oremix = params.mix == "breach", params.mix == "contact", params.mix == "rail", params.mix == "ore"
+  local held = params.mix == "held"
   schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  if held then
+    schedule(6 * 3600, function() S.held_at = lp("cordon_stats", storage.id).perimeter end)
+    for t = 6 * 3600 + 20, END - 120, 20 do
+      schedule(t, function()
+        local o = lp("stats", storage.id).origin
+        local r = (lp("cordon_stats", storage.id).perimeter or 0) + 8
+        for _, u in pairs(surface().find_entities_filtered{name = "lp-harrier", force = FORCE}) do
+          if (u.position.x - o.x) ^ 2 + (u.position.y - o.y) ^ 2 > r * r then u.die("player"); S.shot = (S.shot or 0) + 1 end
+        end
+      end)
+    end
+    schedule(END - 60, function()
+      local cs, c = lp("cordon_stats", storage.id), lp("crew_stats", storage.id)
+      local kinds = {}
+      for _, e in ipairs(lp("incidents")) do kinds[e.kind] = (kinds[e.kind] or 0) + 1 end
+      info(string.format("cordon held: %s drones shot; claim %s at 6 min, %s at the end; crews %s; incidents %s",
+        tostring(S.shot), tostring(S.held_at), tostring(cs.perimeter), serpent.line(c), serpent.line(kinds)))
+      check("cordon: posts given up under fire", (c.gave_up or 0) >= 1 and (kinds["line held"] or 0) >= 1,
+        string.format("gave up %s, line held %s", tostring(c.gave_up), tostring(kinds["line held"])))
+      check("cordon: the claim stepped out no further", S.held_at and cs.perimeter and cs.perimeter <= S.held_at + 30,
+        string.format("%s -> %s", tostring(S.held_at), tostring(cs.perimeter)))
+      check("cordon: drones lost, no more than three a post", c.lost <= 3 * (c.gave_up or 0) + 2 * 2, serpent.line(c))
+    end)
+  end
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 4000) end end)
   schedule(120, function()
     local o = lp("stats", storage.id).origin
@@ -3764,6 +3792,7 @@ scenarios.cordon = function()
     end)
   end
   schedule(END - 60, function()
+    if held then return end
     if oremix then
       local n = surface().count_entities_filtered{name = "lp-drill", force = FORCE, position = S.ore, radius = 14}
       info(string.format("cordon: %d Serenity drills on the patch the arc crossed; stats ore %s", n,
@@ -3936,6 +3965,9 @@ scenarios.crew = function()
       -- came home in 10 minutes).
       check("crew: the camp's other work went on", c.done >= 1 and (S.placed or 0) == 0,
         string.format("%s, placed %s", serpent.line(c), tostring(S.placed)))
+      local kinds = {}
+      for _, e in ipairs(lp("incidents")) do kinds[e.kind] = (kinds[e.kind] or 0) + 1 end
+      check("crew: the player told (an incident)", (kinds["site given up"] or 0) == 1, serpent.line(kinds))
       return
     end
     if killed then

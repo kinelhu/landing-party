@@ -1317,6 +1317,16 @@ builds with sparks, no beam; Serenity keeps its beam until the drone.
   crew, paid at once; the invisible constructor's second a tile is dropped there (the crew travels instead). Lost, its
   jobs go back on the rebuild list, due a minute later. Scenario `crew rebuild`: two of the outpost's five destroyed, a
   truck took both when due and the outpost stood whole 82 s after the damage.
+- Giving up (2026-10-17, the deathworld10x visit): three crews lost on one module (or one rebuild) and the camp gives it
+  up. Serenity's cordon had reached the player's factory: 168 drones flew to two posts under its turrets in two hours,
+  one a minute, and Grubstake sent 42 trucks to a claim inside it. Posts and modules go to the front of the queue, so a
+  doomed one also held up everything behind it (`crew doomed` with no limit: the camp's own crews finished nothing in 10
+  minutes). An abandoned post never stands, so its arc never reaches HOLD: the player's guns hold the line there. Visit:
+  crews lost 181 -> 41, four modules given up, three crews each; the value razed rose 568 -> 738 (parts no longer burnt
+  on doomed sites). Scenario `crew doomed`: every truck killed on the road; three lost, the outpost given up, the camp's
+  other crews came home. The player is told (`lp.line-held` for a post: "Serenity's line is held at ..."; `lp.crew-gave-up`
+  otherwise) and it is an incident (`/lp incidents`). `cordon held`: from 6 minutes every drone beyond the claim shot
+  down; 25 lost, 7 posts and rebuilds given up, the claim held at 120 (it steps a minute otherwise).
 - What the builders broke, found by the regression (Serenity's camps now send drones, so most scenarios changed):
   - The planner budgets power by the jobs still queued; a crew takes its module's off the queue, and they were planned
     again (demand 2.9 MW on 2.0, `loot`). A crew's unbuilt jobs now count as owed.
@@ -1818,6 +1828,17 @@ scenario with assertions first; the window is for art, feel and GUI.
   after it was called, unforced.
   Campaigns on both seeds (6 hours, all of today's work): much as the evening's: three landers killed, two of three
   camp strikes won, no consolidation, batteries never lost, 9 and 11 operations.
+- **Profiled again (2026-10-17, deathworld10x, 3 hours, run alone).** Mean tick 0.25 ms without the mod, 0.48 with it;
+  the mod's script 0.04 ms of that (the rest is the engine running the camps). But one tick every two minutes from the
+  49th minute took 300 to 415 ms: Serenity chose the same raid on a Grubstake generator through biter country, the
+  route failed (12,000 cells searched, twice), and the target cooled two minutes. Two fixes, the visit's decisions and
+  razing unchanged (value 568 before and after):
+  - A raid whose route nests alone blocked is not planned again from the same home until a spawner dies somewhere
+    (`ops.cleared_since`: any spawner's death opens a corridor). A turret in the way (Grubstake's sneaking leg) is not
+    remembered: it can fall without a corridor.
+  - The route planner marks each turret's and nest's reach on its grid once, and a cell looks itself up (was: each cell
+    probed 16 buckets by string key). A failed route: 345 -> 100 ms. Water tests were 5% of it.
+  Worst tick after both: 118 ms (was 415); two failed routes in three hours (the first, and one after a corridor opened).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

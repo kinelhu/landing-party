@@ -9,6 +9,7 @@
 -- constructor drone (the harrier's airframe for now), flying straight over its walls, building with its beam.
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
+local standing = require("__landing-party__.scripts.standing")
 
 local crew = {}
 
@@ -170,6 +171,17 @@ local function step(b, i)
     table.remove(b.crews, i)
     if given then
       b.crews_gave_up = (b.crews_gave_up or 0) + 1
+      -- Told: a post given up is the line held (the cordon's arc never stands), anything else a site given up.
+      local where = string.format("[gps=%d,%d,%s]", c.site[1], c.site[2], s.name)
+      local post = not c.rebuild and c.module.kind == "post"
+      for _, f in pairs(game.forces) do
+        if #f.players > 0 and not shared.is_corp(f.name) then
+          f.print(post and {"lp.line-held", shared.corp_label(b.corp), where, tostring(GIVE_UP)}
+            or {"lp.crew-gave-up", shared.corp_label(b.corp), where, tostring(GIVE_UP)})
+        end
+      end
+      standing.incident(b.corp, post and "line held" or "site given up", {c.site[1], c.site[2]},
+        string.format("%d crews lost", GIVE_UP))
       base.trace(b, string.format("crew lost with %d parts at %.0f,%.0f: %d crews lost there, %s at %.0f,%.0f given up", left,
         at[1], at[2], GIVE_UP, given, c.site[1], c.site[2]))
     else
