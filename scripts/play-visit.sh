@@ -7,6 +7,11 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 NAME="${1:-visit}"
 V="$HOME/Library/Application Support/factorio-lp-visit/$NAME"
+# A game already on this profile (a play-visit.sh window, another visit): touching its mods and saves under it
+# unlinked Landing Party from a game being played (2026-10-17).
+if pgrep -f -- "--config $V/config/config.ini" > /dev/null; then
+  echo "refusing: a game is running on $V (close it, or use another LP_MIX)"; exit 1
+fi
 [ -f "$V/saves/original.zip" ] || { echo "no $V/saves/original.zip: run scripts/visit.sh on a save first"; exit 1; }
 cp "$V/saves/original.zip" "$V/saves/watch.zip"
 rm -rf "$V/mods/lp-sim"

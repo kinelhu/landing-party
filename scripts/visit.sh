@@ -14,6 +14,11 @@ SAVE="${1:?usage: scripts/visit.sh <save.zip> [minutes]}"; MINUTES="${2:-180}"
 NAME="$(basename "$SAVE" .zip)"
 V="$HOME/Library/Application Support/factorio-lp-visit/$NAME${LP_MIX:+-$LP_MIX}"
 case "$V" in *"/factorio/"*) echo "refusing: $V is inside the real profile"; exit 1;; esac
+# A game already on this profile (a play-visit.sh window, another visit): touching its mods and saves under it
+# unlinked Landing Party from a game being played (2026-10-17).
+if pgrep -f -- "--config $V/config/config.ini" > /dev/null; then
+  echo "refusing: a game is running on $V (close it, or use another LP_MIX)"; exit 1
+fi
 mkdir -p "$V/config" "$V/mods" "$V/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$V" > "$V/config/config.ini"
 cp "$SAVE" "$V/saves/original.zip"
