@@ -47,7 +47,7 @@ local function init()
 end
 
 script.on_init(init)
-script.on_configuration_changed(init)
+script.on_configuration_changed(function() init(); base.heal_lines() end)
 
 script.on_event(defines.events.on_tick, function(e)
   biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick)
@@ -148,6 +148,13 @@ script.on_event(defines.events.on_entity_died, function(e)
     ops.counter_battery(ent.force.name, ent.surface, e.cause, e.force and e.force.name)
   end
   if shared.is_corp(ent.force.name) then
+    -- A crew's truck or drone killed is an attack on the corporation, as on its garrison (the user, 2026-10-17: "it
+    -- gets multiple haulers destroyed and doesn't turn hostile").
+    local cid = storage.crew_owner and storage.crew_owner[ent.unit_number]
+    if cid then
+      storage.crew_owner[ent.unit_number] = nil
+      if e.force then ops.provoke(ent.force.name, e.force.name) end
+    end
     local id = storage.unit_owner[ent.unit_number]
     if id then
       storage.unit_owner[ent.unit_number] = nil
@@ -310,6 +317,7 @@ remote.add_interface("landing-party", {
     if t.history_off ~= nil then storage.history_off = t.history_off end
     if t.rings ~= nil then storage.rings = t.rings or nil end
     if t.ladder_fast ~= nil then storage.ladder_fast = t.ladder_fast end
+    if t.flare_burn ~= nil then storage.flare_burn = t.flare_burn end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     for corp, tech in pairs(t.rd_tech or {}) do rd.set(corp, tech) end

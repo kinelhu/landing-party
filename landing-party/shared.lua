@@ -50,6 +50,10 @@ shared.CORPS = {
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
     temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true, prospects = true},
+    -- Its drills pollute, half again an electric drill's 10 a minute (the user, 2026-10-17). Under the pact the biters'
+    -- waves skip its camp and come at the player's polluters near its cloud (spike: a 200-biter wave on two player
+    -- drills that drew none alone).
+    drill_pollution = 15,
     -- Every flak-th turret it builds is a scrap cannon (dirty flak).
     flak = 2,
     -- Crews build beyond the yards (scripts/crew.lua; the builders consult): a truck.
@@ -92,6 +96,8 @@ shared.CORPS = {
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
     temper = {provoked_only = true},
+    -- Clean: its drills emit nothing (Grubstake's pollute).
+    drill_pollution = 0,
     -- Crews (scripts/crew.lua): a constructor drone, flying over its walls, building with its beam.
     crews = "drone",
     -- Its moving line is a cordon of posts (scripts/cordon.lua).

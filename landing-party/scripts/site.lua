@@ -60,8 +60,10 @@ end
 local function nearest_pylon(base, x, y)
   local best, bd = nil, math.huge
   for _, p in ipairs(base.pylon_spots) do
-    local d = (p[1] - x) ^ 2 + (p[2] - y) ^ 2
-    if d < bd then best, bd = p, d end
+    if not (p.m and (p.m.abandoned or p.m.failed)) then
+      local d = (p[1] - x) ^ 2 + (p[2] - y) ^ 2
+      if d < bd then best, bd = p, d end
+    end
   end
   return best, math.sqrt(bd)
 end

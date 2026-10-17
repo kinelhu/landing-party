@@ -1941,10 +1941,19 @@ local function siege_step(b, trace, army)
           return
         end
       end
-      -- The assault (tier 3 and up): nothing in reach for ASSAULT_IDLE after the mortars had targets, and the guards
-      -- go in with what the garrison can add, sized to what is left at the target.
-      if spec.assault and op.last_target and in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE and t then
-        local want = needed(defence(b, t))
+      -- The assault: the barrage over (nothing in reach for ASSAULT_IDLE after the mortars had targets, or the shells
+      -- spent with no convoy coming), the guards go in with what the garrison can add, sized to what is left at the
+      -- target. Tier 3 and up always; below, only when the guards and the garrison's spare units make the force a raid
+      -- there would need (the user, 2026-10-17: "destroys turrets, then nothing happens. The whole group ends up packing
+      -- up and leaving home").
+      local over = op.last_target and ((in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE)
+        or (left == 0 and not op.convoy))
+      local want = over and t and not op.clearance and needed(defence(b, t))
+      if want and not spec.assault and n + field(b, army) < want and not op.told_short then
+        op.told_short = true
+        trace(b, string.format("siege: no assault (%d needed, %d guards and %d spare at home)", want, n, field(b, army)))
+      end
+      if want and (spec.assault or n + field(b, army) >= want) then
         for i = #b.garrison, 1, -1 do
           if #op.members >= want then break end
           local u = b.garrison[i]

@@ -631,6 +631,68 @@ function base.on_died(e, by)
     by or "nothing", due))
 end
 
+-- Saves from before pylon spots knew their module (layout.connect): spots with no pylon and no pylon job at them are
+-- dropped (a module given up left its spots as anchors), and a mining module whose pylon stands off the lander's
+-- network is wired to the nearest pylon on it (the user's copper mine, chained to a coal mine never built).
+function base.heal_lines()
+  for _, b in pairs(storage.bases or {}) do
+    if not b.fallen and b.lander and b.lander.valid and b.pylon_spots then
+      local s, pylons = b.lander.surface, shared.variants("lp-pylon")
+      local queued = {}
+      for _, list in ipairs({b.queue, b.rebuild or {}}) do
+        for _, j in ipairs(list) do
+          if j.name == "lp-pylon" and j.pos then queued[string.format("%.1f,%.1f", j.pos[1], j.pos[2])] = true end
+        end
+      end
+      local kept, dropped = {}, 0
+      for _, p in ipairs(b.pylon_spots) do
+        if p.m or queued[string.format("%.1f,%.1f", p[1], p[2])]
+          or s.count_entities_filtered{name = pylons, position = {p[1], p[2]}, radius = 0.6, limit = 1} > 0 then
+          kept[#kept + 1] = p
+        else
+          dropped = dropped + 1
+        end
+      end
+      b.pylon_spots = kept
+      local net, healed, fixing = base.network(b), 0, {}
+      for _, m in ipairs(b.modules or {}) do
+        local pylon
+        if net and m.kind == "mining" and not (m.abandoned or m.failed) then
+          for _, e in ipairs(m.entities or {}) do
+            if e.valid and e.type == "electric-pole" then pylon = e; break end
+          end
+        end
+        if pylon and pylon.electric_network_id ~= net and not fixing[pylon.electric_network_id] then
+          fixing[pylon.electric_network_id] = true
+          local best, bd
+          for _, p in pairs(s.find_entities_filtered{name = pylons, force = pylon.force, position = pylon.position,
+            radius = 400}) do
+            if p.electric_network_id == net then
+              local d = (p.position.x - pylon.position.x) ^ 2 + (p.position.y - pylon.position.y) ^ 2
+              if not bd or d < bd then best, bd = p, d end
+            end
+          end
+          if best then
+            local a, x, y = best.position, pylon.position.x, pylon.position.y
+            local n = math.ceil(math.sqrt(bd) / (shared.PYLON_REACH - 5)) - 1
+            for i = 1, n do
+              local t = i / (n + 1)
+              local pt = {a.x + (x - a.x) * t, a.y + (y - a.y) * t}
+              table.insert(b.queue, {name = "lp-pylon", pos = pt, loose = true, module = m})
+              table.insert(b.pylon_spots, {pt[1], pt[2], m = m})
+            end
+            m.crew_ok, m.crew_route = nil, nil
+            healed = healed + 1
+          end
+        end
+      end
+      if dropped > 0 or healed > 0 then
+        trace(b, string.format("lines healed: %d stale pylon spots dropped, %d stranded mines rewired", dropped, healed))
+      end
+    end
+  end
+end
+
 -- Queue a free-standing module (mining, outpost turrets). Mining modules lay the road spine beside them.
 local function enqueue(b, m, origin, cx, cy)
   local ox, oy = origin[1], origin[2]

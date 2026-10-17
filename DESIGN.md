@@ -563,7 +563,8 @@ player, player targets weigh triple. `budget` (both corporations, era 0, an hour
 one at once, the budget holding a target back 4 times; lifted (era 10), two ran at once (the check seen
 failing). `develop`: exports past 3,000 raise Serenity to level 1.
 
-**Built: corporations and biters.** Clean by default (settlements emit no pollution). Measured first: a
+**Built: corporations and biters.** Serenity is clean (its drills emit nothing); Grubstake's drills pollute (its own
+section). Measured first: a
 corporation destroying a spawner raised the biters' spawner-kill evolution exactly as a player's kill does (a
 flat +0.002, destroy_factor, per spawner, at evolution 0 and at 0.5). So `scripts/biters.lua` gives it back a tick
 later for every spawner a corporation destroys (a first refund inverting destroy_factor * (1 - e) left a residue
@@ -816,6 +817,15 @@ should come for destruction, several mortars late. Fable's build order: weighted
   grown garrison affords, so it raids instead): tier 2 two mortars, the player rebuilding turrets, a convoy
   resupplies; tier 3 three mortars, then the assault razes; a sally of two battle tanks kills a tier-1 mortar and
   the siege aborts; a killed convoy, nothing more loaded (80).
+- **Every tier pushes in (2026-10-17).** The user, after `/lp siege`: "a group comes in, deploys a howitzer,
+  successfully destroys turrets, then nothing happens. The whole group ends up packing up and leaving home. I would
+  think once the barrage ends (be it because no target or no ammo) they try to push in?" Tiers 1 and 2 had no assault.
+  Now the barrage is over when nothing is in reach for 30 s after the mortars had targets, or when the shells are spent
+  with no convoy coming; tier 3 and up assault as before, and below that the guards go in when they and the garrison's
+  spare units make the force a raid there would need (`needed(defence)`); short, "siege: no assault (N needed, ...)" and
+  it waits or packs up. Not for a clearance. `bombard` (tier 1, 8 turrets): no assault at first (22 needed, 6 guards
+  and 15 spare), 10 s later 22 went in and razed the position (16 back); the new check failed on the old code (0
+  assaults). `siegetier` 2, 3, sally and convoy and `clear` pass unchanged.
 - **Open, found while calibrating (`defend`).** Three gun turrets with bullet damage +0.8 and shooting speed +0.6:
   at 3 a unit of defence the raid of 21 won once and lost once, at 3.5 the raid of 23 lost (seven back) and the
   outpost's own turrets finished the creep. With shooting speed in the weight (x2.88, true firepower) they need 35,
@@ -1361,6 +1371,20 @@ builds with sparks, no beam; Serenity keeps its beam until the drone.
   4242: mature at 30 minutes, 3 fabricators, 1,708 parts made (none before); seed 1 unchanged. Serenity had it too:
   its camps 30 minutes on their own (`pace serenity`, with its drones), parts made 3,761 -> 6,717 over four seeds (777:
   652 -> 2,033; 4242: 0 -> 1,577; 1 and 12345 unchanged).
+- Routed round the player's guns (the user, deathworld10x, 2026-10-17: "the hauler gets stuck on the wall and the turrets
+  shred it", and "it gets multiple haulers destroyed and doesn't turn hostile"). A truck drives `ops.route` (turrets and
+  nests avoided) as go_to waypoints, planned once a module (`m.crew_route`); a drone flies straight. With no route (the
+  site in a pocket the player's guns close: the router's pocket probe), the module is given up before a truck is sent
+  ("crew: no way to the ... out of the player's guns: given up", `crews_unrouted`), and so are rebuilds there. Stuck means
+  standing still on a routed drive (4 tiles of movement resets it). A crew truck killed by a player provokes Grubstake
+  (`storage.crew_owner`, `ops.provoke`): it turns enemy. Scenarios `crew walled` (a ring of 30 turrets round the site:
+  given up, none lost) and `crew around` (3 armed turrets mid-road: built, none lost, routed round them)); `crew island` (the site ringed by water) is now given up before a truck leaves, where three trucks were stuck first.
+- Pylon spots remember their module (`layout.connect`; `site.nearest_pylon` skips one given up or failed). Before, a
+  copper mine chained to the planned pylon of coal mines given up by the player's wall: its line ran toward them and
+  ended in nothing, its drills unpowered (the user's screenshot). `base.heal_lines` (on a version change) drops old
+  untagged spots with no pylon or pylon job at them and wires each mining module stranded off the lander's network to
+  its nearest pylon on it; on a copy of the user's save the copper mine was on the camp's network 157 s later (88 drills
+  on it, from 72).
 
 ### Staggered arrival: Grubstake early, Serenity late (the user; built 2026-10-15)
 The user: "Grubstake coming earlier with its sneaky raids, and Serenity coming in later with much more firepower";
@@ -1399,10 +1423,21 @@ is on rung 1 or more, mature, not standing down, picks the guarded player target
 it: exposure or defence above 0), and sends a buggy from its garrison to drop a canister (`lp-flare`, 200 health, a
 military target) on the line from the target home, 20 to 40 tiles out, at the first spot no player turret reaches within
 19 (a gun turret's 18). The buggy leaves without stopping to fight (free to engage on its way home, it drove at the
-outpost's turrets and died). The canister calls the idle biters within 150 tiles that are in no group, the nearest
-12 + 24 x evolution, as one group told to attack whatever it meets within 30 tiles of the canister. Tell: an orange smoke
-puffed while it burns, a custom alert, a map tag, a notice (`lp.flare`). It burns 3 minutes; shot, it ends, and the group
-is told to wander (idle). One a settlement per 10 minutes; a buggy that does not arrive in 2 minutes turns back.
+outpost's turrets and died). The canister calls a wave of 20 + 40 x evolution: the idle biters within 400 tiles that are
+in no group first, nearest first, then the three nearest nests within 600 spawn the rest in equal shares (what each
+would spawn at that evolution, `result_units`), each share its own group; every group is told to attack whatever it
+meets within 30 tiles of the canister. It is fired only where something would answer (of the five nearest guarded
+targets, the first whose drop has a nest or an idle biter in reach; else "nothing would answer ... not sent" and a
+minute's wait). Each group gathers at the canister, then attacks the target it was dropped for (told only to attack within 30 of the canister, a wave waited outside the wall). Tell, in the world only: an orange smoke puffed while it burns, then the wave (no alert, map tag or
+notice: the user, 2026-10-17, "nothing is communicated through notices in factorio"). It burns 3 minutes; shot, it
+ends, and every group is told to wander (idle); burned out, the wave goes on (stood down then, a wave from nests 250 to
+400 tiles off arrived after the burn and wandered by the user's wall: their autosave, four groups of 39 wandering). One a settlement per 10 minutes; a buggy that does not arrive in 2
+minutes turns back.
+- Played (deathworld10x, 2026-10-17): "Flares don't seem to do anything? Watching one dropped in front of my walls, no
+  biter ever comes." Every flare had lit with 0 biters called: the player had cleared 150 tiles round the base (the
+  nearest nests 250 to 400 out). Then: "Calling idle biters has as much chance of generating a big attack as a trickle
+  ... Perhaps the flare should generate a combined attack from multiple nests, with cheaty biter spawning to make sure
+  the resulting wave is significant." Hence the wave. The player's bait (`flare.call`) still calls idle biters only.
 - The choice is "guarded", not "what its raids would not take" (`ops.temper_allows`): at its top rung Grubstake raids
   anything, and the consult's ladder fires the flare first there; the first version found no target at rung 3.
 - Not yet: rung 2's two nests a flare, rung 3's flare with a claim rig. Razing by the called biters does not count as
@@ -1412,7 +1447,13 @@ is told to wander (idle). One a settlement per 10 minutes; a buggy that does not
   outpost, out of the turrets' reach; 12 biters called (7 of them dead to the turrets within 30 s: count every biter ever
   called); the turrets emptied their 400 rounds; shot at 60 s, the group wanders; no Grubstake unit killed by biters.
   `nopact`: no flare. `natural` (no debug_flare, the ladder ten times fast, 25 minutes): the camp flares the outpost
-  itself at 5.7 minutes, the same results, and the biters raze it.
+  itself at 5.7 minutes, the same results, and the biters raze it. With the wave (2026-10-17): 20 called of the 40.
+  `nests` (no idle biters placed; three nests about 270 tiles from the canister): 21 called (9 idle the nests had
+  spawned, 4 from each nest), 17 reached the canister before it was shot at 60 s.
+  `walled` (a wall ring at 10 round the outpost, its two turrets behind it, the canister 26 out): the wave went on into
+  the wall (20 pieces hit); the old order (attack within 30 of the canister) hit it as well (18), so walls in reach were
+  not the user's case. `burnout` (walled, a 1-second burn, never shot): 24 wall pieces hit; with the stand-down at the
+  burn, 0 (the check seen failing).
 
 ### Grubstake's claim jumper (the user; Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`; built 2026-10-16)
 A heist, never an assault. `scripts/jumper.lua`. A settlement on its ladder's second rung against the player, mature and
@@ -1507,6 +1548,23 @@ product is what the technology's research trigger asks for, craft-item); consuma
   marked, known and held and standing; unmarked, Grubstake razed it.
 - All six faction technologies of the consult are built.
 
+### Grubstake's pollution (the user, 2026-10-17)
+The docs said settlements were clean; Grubstake's drill was a copy of the electric drill with its 10 a minute kept. On
+the user's deathworld save its 90 drills put out 7,200 in 10 minutes, as much as the player's 236 drills (7,115), more
+than their boilers (2,282). The user: "they probably generate a lot of pollution. That in itself could be a motivator
+for the player to silence them", then "verify that grubstake pollution triggers attacks on the player ... we might need
+to bump up said pollution a little". Pollution is the surface's, not a force's: it feeds the same evolution and the same
+attack waves as the player's. A spike (own profile, deleted after; 16 drills at 400 a minute, four nests 130 tiles off,
+the player's walls and chests 45 tiles from the camp, 40 minutes): with no cease-fire a 200-biter wave razed the camp
+and spilled onto the walls; under the cease-fire no wave was ever sent (228 biters waited at the nests); under the
+cease-fire with two ordinary player drills by the walls, the wave came at the player's drills and razed the walls and
+chests, and with the camp's drills off nothing came (the player's two drills alone never reached the nests). So under
+the pact the camp's pollution is sent at the player's polluters near its cloud, and the camp is never the target. Its
+drills now emit 15 a minute (`drill_pollution`), Serenity's 0. It reads in the player's pollution statistics by name
+("lp-grubstake-drill"); nothing announces it.
+- Not yet: whether to show it more (the player sees it only in statistics and in the waves); a camp's share of the
+  cloud as a measure.
+
 ### Grubstake's power tap (the user, 2026-10-16; built 2026-10-16)
 The user: "steal power from unprotected lines? Unassumingly, with a progressively increasing draw", then "Don't think it
 should be hidden. It should be connected to their camp through pylons, no?", and "Does grubstake detect exposed poles?
@@ -1600,7 +1658,7 @@ Decisions: see "Operations" above.
 - Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret.
 - Depletion and relocation; the second wall ring.
 - Response sizing; tier and export tuning at real clocks.
-- Biter interplay: settlements emit no pollution, so biters ignore them unless they do.
+- Biter interplay: Serenity emits no pollution; Grubstake's drills do, and under its pact the waves fall on the player.
 - In game, 2026-10-13 (showcase save): patrols "extremely cool"; troopers made biter noises (fixed:
   machine units carry weapon sounds and no growls); the beacon with a separate combinator did not read as
   an order (A reached nothing near a beacon at spawn; moving the beacon dropped the wire): now the beacon is
@@ -1876,6 +1934,9 @@ scenario with assertions first; the window is for art, feel and GUI.
   air units fly straight. Long trips go in ~100-tile legs.
 - An idle unit attacks any enemy in sight: give units a lasting order (arrive, then wander in place).
 - Commands: `wander` takes no destination and lasts forever by default (`ticks_to_wait`).
+- Pollution attacks pick polluters the biters may attack (spike, 2026-10-17): a polluter under cease-fire with the biters
+  is never a target, and its pollution sends waves at other forces' polluters instead; with no other polluter, none is
+  sent at all.
 - Player turrets fire only at military targets (`is_military_target`): ordinary enemy buildings are ignored.
 - A gate of another force across a player's straight rail blocks the player's trains (spike, 2026-10-17): two gates
   placed by script on an east-west rail (direction north), a player locomotive at speed 0.5 stopped at 37.6, the gate at

@@ -10,6 +10,7 @@
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local standing = require("__landing-party__.scripts.standing")
+local ops = require("__landing-party__.scripts.ops")
 
 local crew = {}
 
@@ -70,6 +71,24 @@ local function formation(b, site)
   return s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {hx + ux / ul * out, hy + uy / ul * out}, 20, 0.5)
 end
 
+-- A truck's way (the user, 2026-10-17: "keeps sending slow haulers to my walls ... the turrets shred it"): planned as
+-- a sneaking raid's is (ops.route: out of every known turret's reach, round nests and water), followed as waypoints.
+-- No way: nil, and nothing is sent. A drone flies straight: {}.
+local function way(b, from, to)
+  if corp_crews(b) == "drone" then return {} end
+  return ops.route(b, from, to, {turrets = true, nests = true})
+end
+
+local function order(u, route, dest)
+  local cmds = {}
+  for _, w in ipairs(route) do
+    table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = defines.distraction.none})
+  end
+  table.insert(cmds, {type = defines.command.go_to_location, destination = dest, radius = 4, distraction = defines.distraction.none})
+  u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = cmds}
+end
+
 -- base.build asks with its next job: true when a crew takes (or waits for) the job's module.
 function crew.take(b, job)
   if not corp_crews(b) or storage.crews_off or not job.module or job.module.crew_ok then return false end
@@ -94,17 +113,35 @@ function crew.take(b, job)
   else
     p = formation(b, m.center)
   end
-  local u = p and game.surfaces[b.surface].create_entity{name = body(b), position = p, force = b.lander.force}
+  if not p then return true end
+  -- Planned once a module (the crews after the first take the same way).
+  local route = m.crew_route
+  if not route then
+    route = way(b, {p.x, p.y}, m.center)
+    if not route then
+      -- Under the player's guns all the way: given up before a truck is lost to it.
+      m.abandoned = true
+      local j = 1
+      while b.queue[j] do if b.queue[j].module == m then table.remove(b.queue, j) else j = j + 1 end end
+      b.crews_unrouted = (b.crews_unrouted or 0) + 1
+      base.trace(b, string.format("crew: no way to the %s at %.0f,%.0f out of the player's guns: given up (%s)", m.kind,
+        m.center[1], m.center[2], serpent.line(ops.last_route)))
+      return true
+    end
+    m.crew_route = route
+  end
+  local u = game.surfaces[b.surface].create_entity{name = body(b), position = p, force = b.lander.force}
   if not u then return true end
+  storage.crew_owner = storage.crew_owner or {}
+  storage.crew_owner[u.unit_number] = b.id
   local j = 1
   while b.queue[j] do if b.queue[j].module == m then table.remove(b.queue, j) else j = j + 1 end end
   b.parts = b.parts - bill
   b.crews = b.crews or {}
   local c = {unit = u, module = m, site = m.center, jobs = jobs, k = 1, bill = bill, spent = 0, phase = "drive",
-    started = game.tick, best = math.huge, best_at = game.tick}
+    started = game.tick, best = math.huge, best_at = game.tick, routed = #route > 0}
   table.insert(b.crews, c)
-  u.commandable.set_command{type = defines.command.go_to_location, destination = m.center, radius = 4,
-    distraction = defines.distraction.none}
+  order(u, route, m.center)
   b.crews_sent = (b.crews_sent or 0) + 1
   base.trace(b, string.format("crew %d: a %s takes %d jobs (%d parts) to the %s at %.0f,%.0f", b.crews_sent, corp_crews(b), #jobs, bill,
     m.kind, m.center[1], m.center[2]))
@@ -195,6 +232,11 @@ local function step(b, i)
   if c.phase == "drive" then
     local d = (p.x - c.site[1]) ^ 2 + (p.y - c.site[2]) ^ 2
     if d < c.best - 1 then c.best, c.best_at = d, game.tick end
+    -- On a planned way, a detour may lead away from the site a while: stuck is standing still.
+    if c.routed then
+      local a = c.anchor
+      if not a or (p.x - a[1]) ^ 2 + (p.y - a[2]) ^ 2 > 16 then c.anchor, c.best_at = {p.x, p.y}, game.tick end
+    end
     if game.tick - c.best_at > STUCK then
       b.parts = b.parts + (c.bill - c.spent)
       local given = requeue(b, c, true)
@@ -255,6 +297,7 @@ function crew.tick(tick)
       local h = home(b)
       if not u.valid then table.remove(b.crews_home, i)
       elseif h and h.valid and (u.position.x - h.position.x) ^ 2 + (u.position.y - h.position.y) ^ 2 < 16 * 16 then
+        if storage.crew_owner then storage.crew_owner[u.unit_number] = nil end
         u.destroy(); table.remove(b.crews_home, i)
       end
     end
@@ -274,7 +317,7 @@ end
 
 function crew.stats(b)
   return {sent = b.crews_sent or 0, done = b.crews_done or 0, lost = b.crews_lost or 0, stuck = b.crews_stuck or 0,
-    gave_up = b.crews_gave_up or 0,
+    gave_up = b.crews_gave_up or 0, unrouted = b.crews_unrouted or 0,
     out = #(b.crews or {})}
 end
 
@@ -307,8 +350,22 @@ function crew.rebuild(b, job)
   else
     p = formation(b, job.pos)
   end
-  local u = p and s.create_entity{name = body(b), position = p, force = b.lander.force}
+  if not p then return true end
+  local route = way(b, {p.x, p.y}, job.pos)
+  if not route then
+    local taken = {}
+    for _, r in ipairs(jobs) do taken[r] = true end
+    local j = 1
+    while b.rebuild[j] do if taken[b.rebuild[j]] then table.remove(b.rebuild, j) else j = j + 1 end end
+    b.crews_unrouted = (b.crews_unrouted or 0) + 1
+    base.trace(b, string.format("crew: no way to %.0f,%.0f out of the player's guns: %d rebuilds given up", job.pos[1],
+      job.pos[2], #jobs))
+    return true
+  end
+  local u = s.create_entity{name = body(b), position = p, force = b.lander.force}
   if not u then return true end
+  storage.crew_owner = storage.crew_owner or {}
+  storage.crew_owner[u.unit_number] = b.id
   local taken = {}
   for _, r in ipairs(jobs) do taken[r] = true; r.crew_wait = nil end
   local j = 1
@@ -316,9 +373,8 @@ function crew.rebuild(b, job)
   b.parts = b.parts - bill
   b.crews = b.crews or {}
   table.insert(b.crews, {unit = u, rebuild = true, site = {job.pos[1], job.pos[2]}, jobs = jobs, k = 1, bill = bill, spent = 0,
-    phase = "drive", started = game.tick, best = math.huge, best_at = game.tick})
-  u.commandable.set_command{type = defines.command.go_to_location, destination = job.pos, radius = 4,
-    distraction = defines.distraction.none}
+    phase = "drive", started = game.tick, best = math.huge, best_at = game.tick, routed = #route > 0})
+  order(u, route, job.pos)
   b.crews_sent = (b.crews_sent or 0) + 1
   base.trace(b, string.format("crew %d: a %s takes %d rebuilds (%d parts) to %.0f,%.0f", b.crews_sent, corp_crews(b), #jobs,
     bill, job.pos[1], job.pos[2]))

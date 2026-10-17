@@ -1508,7 +1508,8 @@ end
 
 -- Bombard: a fortified player position the faction cannot raid (8 armed gun turrets need 44 units) draws a
 -- siege. A hauler must carry a mortar out, deploy it beyond every player turret's reach, shell the position,
--- and pack up when the shells are spent; no mortar is left behind.
+-- and pack up when the shells are spent; no mortar is left behind. The barrage over, its guards and the garrison's spare
+-- units go in (a tier-1 siege, once its force suffices).
 scenarios.bombard = function()
   -- Sieges are a capability from level 1 (Serenity).
   schedule(30, function() lp("debug_tune", {corp_level = {serenity = 1}}) end)
@@ -1567,6 +1568,8 @@ scenarios.bombard = function()
     check("bombard: it packed up when spent or done", siege and (siege.outcome == "spent" or siege.outcome == "done")
       and surface().count_entities_filtered{name = "lp-mortar"} == 0,
       siege and (siege.outcome .. ", " .. tostring(siege.shells) .. " shells") or "not finished")
+    -- A tier-1 siege pushes in once the barrage is over, when its force suffices (it packed up and went home, the user).
+    check("bombard: the siege's own assault went in", (o.assaults or 0) >= 1, tostring(o.assaults))
   end)
 end
 
@@ -3896,8 +3899,11 @@ scenarios.crew = function()
   -- LP_MIX=rebuild: two of the built outpost's five destroyed; a crew rebuilds them (no yard beam), all five again within
   -- the rebuild delay and 90 s.
   -- LP_MIX=doomed: every truck killed at mid-road: after three the camp gives the outpost up, and its other work goes on.
-  -- LP_MIX=island: the site ringed by water: three trucks stuck, the outpost given up.
+  -- LP_MIX=island: the site ringed by water: no route to it, the outpost given up before a truck is sent.
+  -- LP_MIX=walled: the site ringed by the player's gun turrets: no way out of their reach, so no truck goes; given up.
+  -- LP_MIX=around: three armed gun turrets on the straight road: the truck drives round them and builds.
   local doomed, island = params.mix == "doomed", params.mix == "island"
+  local walled, around = params.mix == "walled", params.mix == "around"
   local killed, grown, drone, again = params.mix == "killed" or doomed, params.mix == "grown", params.mix == "drone", params.mix == "rebuild"
   local corp = drone and "serenity" or "grubstake"
   local at = (grown and 20 or 3) * 3600
@@ -3920,6 +3926,24 @@ scenarios.crew = function()
         if r2 >= 11 * 11 and r2 <= 17 * 17 then table.insert(tiles, {name = "deepwater", position = {S.site[1] + x, S.site[2] + y}}) end
       end end
       surface().set_tiles(tiles)
+    end
+    if walled then
+      flatten(S.site[1] - 40, S.site[2] - 40, S.site[1] + 40, S.site[2] + 40)
+      S.ring = 0
+      for k = 0, 29 do
+        local a = 2 * math.pi * k / 30
+        if surface().create_entity{name = "gun-turret", position = {S.site[1] + 34 * math.cos(a), S.site[2] + 34 * math.sin(a)},
+          force = "player"} then S.ring = S.ring + 1 end
+      end
+    end
+    if around then
+      local mid = {(o.x + S.site[1]) / 2, (o.y + S.site[2]) / 2}
+      flatten(mid[1] - 6, mid[2] - 6, mid[1] + 6, mid[2] + 6)
+      S.guns = 0
+      for _, d in ipairs({{0, 0}, {3, 3}, {-3, -3}}) do
+        local g = surface().create_entity{name = "gun-turret", position = {mid[1] + d[1], mid[2] + d[2]}, force = "player"}
+        if g then g.insert{name = "firearm-magazine", count = 50}; S.guns = S.guns + 1 end
+      end
     end
     S.queued = game.tick
     if killed then
@@ -3968,8 +3992,21 @@ scenarios.crew = function()
         tostring(S.built_at and S.broke and (S.built_at - S.broke) / 60))
       return
     end
+    if walled then
+      check("crew: no truck under the ring's guns, the outpost given up", c.unrouted == 1 and c.lost == 0 and (S.placed or 0) == 0,
+        string.format("%s, ring of %s, placed %s", serpent.line(c), tostring(S.ring), tostring(S.placed)))
+      check("crew: the camp's other work went on", c.done >= 1, serpent.line(c))
+      return
+    end
+    if around then
+      check("crew: round the guns, all five built", (S.placed or 0) >= 5 and c.lost == 0 and c.unrouted == 0,
+        string.format("%s, %s guns, placed %s", serpent.line(c), tostring(S.guns), tostring(S.placed)))
+      return
+    end
     if island then
-      check("crew: three trucks stuck, the outpost given up", c.stuck == 3 and c.gave_up == 1 and c.lost == 0, serpent.line(c))
+      -- Routed (2026-10-17): no way to the island, so it is given up before a truck leaves (three trucks were stuck first).
+      check("crew: no way to the island, the outpost given up unsent", c.unrouted == 1 and c.stuck == 0 and c.lost == 0,
+        serpent.line(c))
       check("crew: none built on the island, the camp's other work went on", (S.placed or 0) == 0 and c.done >= 1,
         string.format("%s, placed %s", serpent.line(c), tostring(S.placed)))
       return
@@ -3983,6 +4020,8 @@ scenarios.crew = function()
       local kinds = {}
       for _, e in ipairs(lp("incidents")) do kinds[e.kind] = (kinds[e.kind] or 0) + 1 end
       check("crew: the player told (an incident)", (kinds["site given up"] or 0) == 1, serpent.line(kinds))
+      -- Its trucks shot: an attack, as on its garrison.
+      check("crew: the trucks' killer is its enemy", lp("standing", "grubstake") == "enemy", lp("standing", "grubstake"))
       return
     end
     if killed then
@@ -3997,7 +4036,8 @@ scenarios.crew = function()
     check("crew: a crew took the outpost", c.sent >= 1, tostring(c.sent))
     check("crew: all five built at the site", (S.placed or 0) >= 5, tostring(S.placed))
     check("crew: within 90 s", S.built_at and S.built_at - S.queued <= 90 * 60, tostring(S.built_at and (S.built_at - S.queued) / 60))
-    check("crew: done, home, none stuck", c.done >= 1 and c.out == 0 and c.stuck == 0, serpent.line(c))
+    -- Not every crew home: one sent in the last minute is still building when the run stops.
+    check("crew: done, none stuck", c.done >= 1 and c.stuck == 0, serpent.line(c))
   end)
 end
 
@@ -4502,11 +4542,18 @@ end
 -- and launch the camp's own choice would use): the buggy drops the canister out of the turrets' reach, within 40 of the
 -- outpost; at least 10 biters are called within 30 s; the turrets spend ammunition; the canister shot at 60 s, the group
 -- goes idle within 30 s; no biter harms Grubstake. LP_MIX=nopact: no pact, no flare. LP_MIX=natural: no debug_flare,
--- the camp fires it itself.
+-- the camp fires it itself. LP_MIX=nests: no idle biters, three nests 250 tiles past the outpost: they spawn the wave
+-- (20 at evolution 0) and it reaches the canister before it is shot. LP_MIX=walled: a wall ring at 10 round the outpost,
+-- its two turrets behind it (away from the camp), so no turret is within 30 of the canister, only walls: the wave goes on
+-- from the canister and hits the wall (it waited outside it, the user's /lp flare). LP_MIX=burnout: walled, the canister
+-- burns 1 s and is never shot: the wave goes on all the same (stood down at the burn, it wandered by the user's wall).
 scenarios.flare = function()
-  local off, natural = params.mix == "nopact", params.mix == "natural"
+  local off, natural, nests = params.mix == "nopact", params.mix == "natural", params.mix == "nests"
+  local burnout = params.mix == "burnout"
+  local walled = params.mix == "walled" or burnout
   schedule(60, function()
-    lp("debug_tune", {era = 1, history_off = true, pact_off = off, raids_off = true, ladder_fast = natural or nil})
+    lp("debug_tune", {era = 1, history_off = true, pact_off = off, raids_off = true, ladder_fast = natural or nil,
+      flare_burn = burnout and 60 or nil})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
   end)
@@ -4518,15 +4565,34 @@ scenarios.flare = function()
     flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
     S.c = c
     surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
-    S.turrets = {}
-    for _, d in ipairs({{-4, 0}, {4, 0}}) do
+    S.turrets, S.walls = {}, {}
+    if walled then
+      flatten(c[1] - 20, c[2] - 20, c[1] + 20, c[2] + 20)
+      for x = -10, 10 do for y = -10, 10 do
+        if math.max(math.abs(x), math.abs(y)) == 10 and (x ~= 0 or y ~= 0) then
+          table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {c[1] + x, c[2] + y}, force = "player"})
+        end
+      end end
+    end
+    -- Walled: the turrets behind the outpost (away from the camp), so none is within 30 of the canister; only walls are.
+    local behind = {math.floor(-ux * 8 - uy * 3), math.floor(-uy * 8 + ux * 3)}
+    local behind2 = {math.floor(-ux * 8 + uy * 3), math.floor(-uy * 8 - ux * 3)}
+    for _, d in ipairs(walled and {behind, behind2} or {{-4, 0}, {4, 0}}) do
       local t = surface().create_entity{name = "gun-turret", position = {c[1] + d[1], c[2] + d[2]}, force = "player"}
       t.insert{name = "firearm-magazine", count = 200}
       table.insert(S.turrets, t)
     end
     S.biters = {}
+    if nests then
+      local nc = {c[1] - ux * 250, c[2] - uy * 250}
+      surface().request_to_generate_chunks(nc, 2); surface().force_generate_chunk_requests()
+      flatten(nc[1] - 20, nc[2] - 20, nc[1] + 20, nc[2] + 20)
+      for k = -1, 1 do
+        surface().create_entity{name = "biter-spawner", position = {nc[1] - uy * 12 * k, nc[2] + ux * 12 * k}, force = "enemy"}
+      end
+    end
     local side = {c[1] - uy * 60, c[2] + ux * 60}
-    for k = 1, 40 do
+    for k = 1, nests and 0 or 40 do
       local name = k % 4 == 0 and "medium-biter" or "small-biter"
       local p = surface().find_non_colliding_position(name, {side[1] + (k % 8) * 2, side[2] + math.floor(k / 8) * 2}, 8, 0.5)
       table.insert(S.biters, surface().create_entity{name = name, position = p, force = "enemy"})
@@ -4539,10 +4605,18 @@ scenarios.flare = function()
     S.t0 = game.tick
   end)
   local function canister() return surface().find_entities_filtered{name = "lp-flare", limit = 1}[1] end
-  -- Called: every biter seen in a group, alive or since killed by the turrets (12 called, 5 left at 30 s).
-  local function grouped()
-    S.called = S.called or {}
-    for i, u in ipairs(S.biters or {}) do if u.valid and u.commandable.parent_group then S.called[i] = true end end
+  -- Called: every biter seen in a group, alive or since killed by the turrets (12 called, 5 left at 30 s), the nests'
+  -- spawned ones too; arrived: seen in a group within 40 of the canister.
+  local function grouped(cn)
+    S.called, S.arrived, S.groups = S.called or {}, S.arrived or {}, S.groups or {}
+    for _, u in pairs(surface().find_entities_filtered{type = "unit", force = "enemy", position = S.at, radius = 700}) do
+      local g = u.commandable.parent_group
+      if g then
+        S.called[u.unit_number] = true
+        S.groups[g.unique_id] = g
+        if (u.position.x - S.at[1]) ^ 2 + (u.position.y - S.at[2]) ^ 2 < 40 * 40 then S.arrived[u.unit_number] = true end
+      end
+    end
     return table_size(S.called)
   end
   for t = 2 * 3600 + 20, END - 120, 20 do
@@ -4553,25 +4627,29 @@ scenarios.flare = function()
         S.near = math.sqrt((cn.position.x - S.c[1]) ^ 2 + (cn.position.y - S.c[2]) ^ 2)
         S.reach = surface().count_entities_filtered{position = cn.position, radius = 18, type = "ammo-turret", force = "player"}
       end
-      if S.lit and not S.g30 then
+      if S.lit and not S.shot then
         local n = grouped()
-        if game.tick - S.lit >= 30 * 60 then S.g30 = n end
+        if game.tick - S.lit >= 30 * 60 and not S.g30 then S.g30 = n end
       end
-      if S.lit and not S.shot and game.tick - S.lit >= 60 * 60 and cn then
+      if S.lit and not S.shot and not burnout and game.tick - S.lit >= 60 * 60 and cn then
         cn.die("player")
         S.shot = game.tick
       end
       if S.shot and not S.idle and game.tick - S.shot >= 30 * 60 then
-        local g
-        for _, u in ipairs(S.biters) do if u.valid and u.commandable.parent_group then g = u.commandable.parent_group break end end
-        S.idle = not g or not g.valid or (g.command and g.command.type == defines.command.wander) or false
-        S.idle_cmd = g and g.valid and g.command and g.command.type
+        S.idle = true
+        for _, g in pairs(S.groups or {}) do
+          if g.valid and not (g.command and g.command.type == defines.command.wander) then
+            S.idle, S.idle_cmd = false, g.command and g.command.type
+          end
+        end
       end
     end)
   end
   schedule(END - 60, function()
     local ammo = 0
     for _, t in ipairs(S.turrets or {}) do if t.valid then ammo = ammo + t.get_item_count("firearm-magazine") end end
+    local hurt = 0
+    for _, w in ipairs(S.walls or {}) do if not w.valid or w.health < w.max_health then hurt = hurt + 1 end end
     -- Grubstake's losses to biters only (the outpost's turrets may kill its buggy: fair).
     local lost = 0
     for k, v in pairs(S.fallen or {}) do
@@ -4583,18 +4661,28 @@ scenarios.flare = function()
       serpent.line(lp("pact_state")), tostring(st.flares)))
     info("flare: deaths " .. serpent.line(S.fallen or {}))
     info(string.format("flare: fired %s, lit %s at %s, %.0f from the outpost, turrets in reach %s; %s biters grouped at 30 s; "
-      .. "turrets' ammunition %d of 400; shot %s, idle %s (%s); Grubstake units lost to biters %d", tostring(S.fired), tostring(S.lit),
-      serpent.line(S.at), S.near or -1, tostring(S.reach), tostring(S.g30), ammo, tostring(S.shot), tostring(S.idle),
-      tostring(S.idle_cmd), lost))
+      .. "turrets' ammunition %d of 400; shot %s, idle %s (%s); Grubstake units lost to biters %d; arrived %d", tostring(S.fired),
+      tostring(S.lit), serpent.line(S.at), S.near or -1, tostring(S.reach), tostring(S.g30), ammo, tostring(S.shot),
+      tostring(S.idle), tostring(S.idle_cmd), lost, table_size(S.arrived or {})))
     if off then
       check("flare: no pact, no flare", not S.lit, tostring(S.lit))
       return
     end
     check("flare: the canister was dropped out of the turrets' reach", S.lit and S.reach == 0, tostring(S.reach))
     check("flare: within 40 of the outpost", S.near and S.near <= 40, string.format("%.0f", S.near or -1))
-    check("flare: 10 biters called within 30 s", (S.g30 or 0) >= 10, tostring(S.g30))
+    if nests then
+      check("flare: the nests spawned a wave of 20 within 30 s", (S.g30 or 0) >= 20, tostring(S.g30))
+      check("flare: 15 of it reached the canister before it was shot", table_size(S.arrived or {}) >= 15,
+        tostring(table_size(S.arrived or {})))
+    else
+      check("flare: 10 biters called within 30 s", (S.g30 or 0) >= 10, tostring(S.g30))
+    end
     check("flare: the turrets fired", ammo < 400, tostring(ammo))
-    check("flare: shot, the group goes idle within 30 s", S.idle == true, tostring(S.idle_cmd))
+    if walled then
+      info(string.format("flare: canister %.0f from the outpost; %d wall pieces hit", S.near or -1, hurt))
+      check("flare: the wave went on to the walls", hurt >= 3, tostring(hurt))
+    end
+    if not burnout then check("flare: shot, the group goes idle within 30 s", S.idle == true, tostring(S.idle_cmd)) end
     check("flare: no biter harmed Grubstake", lost == 0, tostring(lost))
   end)
 end

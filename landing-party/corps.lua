@@ -32,6 +32,7 @@ for corp, c in pairs(shared.CORPS) do
         p.localised_name = {"", {"entity-name." .. ((c.names or {})[kind] or kind)}, " (", c.name, ")"}
         retint(p, (c.tints and c.tints[kind]) or c.tint, {})
         if kind == "lp-lamp" and p.light then p.light.color = c.lamp end
+        if kind == "lp-drill" and p.energy_source then p.energy_source.emissions_per_minute = {pollution = c.drill_pollution or 0} end
         if p.type == "spider-unit" and p.spider_engine then
           for _, leg in ipairs(p.spider_engine.legs) do
             local lp = table.deepcopy(data.raw["spider-leg"][leg.leg])
@@ -51,6 +52,7 @@ end
 local d = shared.CORPS[shared.DEFAULT_CORP]
 for _, kind in ipairs(shared.KINDS) do
   local p = find(kind)
+  if p and kind == "lp-drill" and p.energy_source then p.energy_source.emissions_per_minute = {pollution = d.drill_pollution or 0} end
   if p then p.localised_name = {"", {"entity-name." .. ((d.names or {})[kind] or kind)}, " (", d.name, ")"} end
 end
 for kind, color in pairs(d.tints or {}) do

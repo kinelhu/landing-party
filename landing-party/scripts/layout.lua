@@ -60,13 +60,15 @@ local function push(b, job) table.insert(b.queue, job) end
 -- Join a pylon to come at (x, y) to the network: a chain of pylons and a road along it when it is far.
 function layout.connect(b, x, y, module)
   local pts, anchor = site.chain(b, x, y)
+  -- Each spot remembers its module: one given up is no anchor (site.nearest_pylon). Untagged, a copper mine chained to
+  -- the pylon of a coal mine given up by the player's wall, and stood unpowered (the user, deathworld10x, 2026-10-17).
   for _, pt in ipairs(pts) do
     push(b, {name = "lp-pylon", pos = pt, loose = true, module = module})
-    table.insert(b.pylon_spots, pt)
+    table.insert(b.pylon_spots, {pt[1], pt[2], m = module})
   end
   -- Only long links get a road: a supply route worth driving, not a strip across a neighbouring block.
   if anchor and #pts > 1 then push(b, {tiles = layout.road_line(anchor, {x, y}, 1.5), module = module}) end
-  table.insert(b.pylon_spots, {x, y})
+  table.insert(b.pylon_spots, {x, y, m = module})
 end
 
 -- Road tiles round a w x h area.
