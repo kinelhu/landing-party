@@ -4645,11 +4645,15 @@ scenarios.jumper = function()
     check("jumper: the rig dug in 40 to 60 out", S.rig_d and S.rig_d >= 40 and S.rig_d <= 62, string.format("%.0f", S.rig_d or -1))
     check("jumper: out of the turrets' reach", S.rig_reach == 0, tostring(S.rig_reach))
     info("jumper: deaths " .. serpent.line(S.fallen or {}))
+    info("jumper: killed by turrets at " .. table.concat(S.turret_kills or {}, "; ") .. string.format("; mound %s, chest %s",
+      serpent.line(S.mound), S.chest and S.chest.valid and string.format("%.0f,%.0f", S.chest.position.x, S.chest.position.y) or "gone"))
     check("jumper: none up before the dig's 2.5 minutes", S.up_early == 0, tostring(S.up_early))
     check("jumper: four to six hands up inside the wall", (S.up or 0) >= 4 and S.up <= 6, tostring(S.up))
     -- Emptied, or razed once empty (-1).
     check("jumper: the chest emptied", left <= 0, tostring(left))
     check("jumper: the loot came home", (st.looted or 0) >= 250, tostring(st.looted))
+    -- Each hand on a building out of the turrets' reach (told to attack the area, five of six walked into it).
+    check("jumper: most hands back", (st.hands_back or 0) >= 3, tostring(st.hands_back))
   end)
 end
 
@@ -6337,6 +6341,12 @@ end)
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
+  -- Where a corporation's unit fell to a turret, and how far from it (the claim rig's hands fell to turrets out of reach).
+  if e.cause and e.cause.valid and e.cause.type == "ammo-turret" and e.entity.type == "unit" and e.entity.force.name:sub(1, 3) == "lp-" then
+    S.turret_kills = S.turret_kills or {}
+    local d = math.sqrt((e.entity.position.x - e.cause.position.x) ^ 2 + (e.entity.position.y - e.cause.position.y) ^ 2)
+    table.insert(S.turret_kills, string.format("%.0f,%.0f d%.1f", e.entity.position.x, e.entity.position.y, d))
+  end
   -- The player's buildings the biters destroyed (the visit's report: Grubstake's pollution draws them).
   if e.entity.force.name == "player" and e.force and e.force.name == "enemy" and e.entity.type ~= "character" then
     S.biter_razed = S.biter_razed or {}

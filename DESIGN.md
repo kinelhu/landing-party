@@ -1574,8 +1574,11 @@ tell in the world, and none stays on but a lost settlement's:
 - **The claim rig:** its dig is 2.5 minutes, not one (the rig is charted in Grubstake's colour), and dust puffs creep
   from the rig toward the mound at the dig's pace. Its hands now get an order the moment they come up (idle, they
   charged the wall's turrets), and break what is near the mound answering only what hits them (told to engage
-  anything, all six fell to turrets out of reach). Scenario `jumper`: none up at 62 s, up at 152 s, the loot home. Five
-  of six hands still fall to turrets that should be out of reach, as before: open.
+  anything, all six fell to turrets out of reach). Scenario `jumper`: none up at 62 s, up at 152 s, the loot home.
+  The five of six that fell: each 10 tiles from the turret that killed it, 15 to 21 from the mound. Told to attack the
+  area round the mound, they took targets beyond it. Now each hand is set on a building within 10 of the mound that no
+  turret reaches, the nearest, told again when it falls: 4 of 6 home (a check, "most hands back"). Two still walk east
+  into a turret's reach: open. The end's log said "every hand fell" with hands home: fixed.
 - **The trade post's lamp:** an amber pip on the post (seen by day) and a glow (by night) while a truce it bought holds;
   dark after. `tribute`: lit in 60 of 60 samples during the truce, none after.
 - **Grubstake's claim stake** (`lp-claim-stake`): planted with a puff in the middle of a prospected patch, a lamp

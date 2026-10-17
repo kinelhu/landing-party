@@ -112,6 +112,7 @@ local function finish(b, j, why)
   end
   base.trace(b, string.format("claim jump over: %s (%d items carried home, %d of %d hands back)", why,
     j.loot and j.home_with and j.home_with > 0 and j.loot.items or 0, j.home_with or 0, #(j.hands or {})))
+  b.hands_back = (b.hands_back or 0) + (j.home_with or 0)
   b.jump = nil
   b.next_jump = game.tick + (storage.jump_cooldown or COOLDOWN)
 end
@@ -172,7 +173,10 @@ local function step(b, j)
     if game.tick - j.started >= DIG then emerge(b, j) end
     return
   end
-  if alive(j) == 0 then return finish(b, j, "every hand fell") end
+  -- None left above: fallen, or all gone back down (the log said "every hand fell" with four of six home).
+  if alive(j) == 0 then
+    return finish(b, j, (j.home_with or 0) > 0 and "back down the tunnel" or "every hand fell")
+  end
   if not rig_up and not j.caved then
     j.caved = true
     cave_in(b, j)
@@ -196,16 +200,29 @@ local function step(b, j)
     for _, c in ipairs(cs) do if not j.loot.looted[c.unit_number] then left = left + 1 end end
     if left == 0 or game.tick - j.phase_at > LOOT_TICKS then
       j.phase, j.phase_at = "raze", game.tick
-      for _, u in ipairs(j.hands) do
-        if u.valid then
-          -- What is near the mound, answering only what hits them: told to engage anything, they charged turrets out of
-          -- reach and all fell (a 2.5-minute dig, jumper).
-          u.commandable.set_command{type = defines.command.attack_area, destination = j.mound, radius = 10,
-            distraction = defines.distraction.by_damage}
+    end
+  elseif j.phase == "raze" then
+    -- Each hand on a building within 10 of the mound that no turret of the player's reaches (REACH), the nearest, told
+    -- again when it falls; none left, back to the mound. Told to attack the area, they went for turrets beyond it and
+    -- five of six fell 10 tiles from the turret that killed them, 15 to 21 from the mound (jumper).
+    local ents = {}
+    for _, e in pairs(s.find_entities_filtered{position = j.mound, radius = 10, force = j.owner}) do
+      if e.type ~= "character" and e.type ~= "unit" and not e.type:find("turret") and s.count_entities_filtered{position = e.position,
+        radius = REACH, force = j.owner, type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} == 0 then
+        ents[#ents + 1] = e
+      end
+    end
+    for _, u in ipairs(j.hands) do
+      if u.valid then
+        local c = u.commandable.command
+        local busy = c and c.type == defines.command.attack and c.target and c.target.valid
+        if not busy then
+          local e = #ents > 0 and s.get_closest(u.position, ents)
+          u.commandable.set_command(e and {type = defines.command.attack, target = e, distraction = defines.distraction.by_damage}
+            or {type = defines.command.go_to_location, destination = j.mound, radius = 2, distraction = defines.distraction.by_damage})
         end
       end
     end
-  elseif j.phase == "raze" then
     if game.tick - j.phase_at > RAZE_TICKS then
       j.phase, j.phase_at = "leave", game.tick
       for _, u in ipairs(j.hands) do
