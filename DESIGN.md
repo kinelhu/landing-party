@@ -1548,6 +1548,49 @@ product is what the technology's research trigger asks for, craft-item); consuma
   marked, known and held and standing; unmarked, Grubstake razed it.
 - All six faction technologies of the consult are built.
 
+### Chat notices off by default (the user, 2026-10-17; Fable: `docs/reviews/2026-10-17-notices-consult.md`)
+The user: "Your reliance on notices in general is something I feel is not 'Factorio'. I'm OK with notices for
+debugging, or as an ultimate resort (like pointing the first landing of a faction), but in general nothing is
+communicated through notices in factorio." Every chat notice goes through `shared.notice`, told only when the map
+setting "Chat notices" (`lp-chat-notices`, runtime, off) is on; the mod's custom alerts (raid, siege, strip, loot, rig)
+too (the engine's own alerts fire when they hit). Always told: a corporation's first landing (later landings as any
+notice), a lost settlement, and until the world shows them the three warnings that are the only fair notice before an
+unseen loss (the prospect's ten minutes, the perimeter's ten, the claim rig's one). Replies to the player's own act (a
+border stake, the pact breaker, the strike beacon, a tribute collected) are floating text at the spot
+(`shared.reply`), as Factorio says "cannot build here". Guards: `scripts/lint_notices.sh` (in `check.sh` and
+`regress.sh`) fails on a print or custom alert outside the gate, the dev commands and lines marked `notice-ok` (seen
+failing on a planted print); `prospect` checks the gate itself (a headless run has no players, so the corporations'
+notices never reach it: `debug_notice`): held by default, a fall told, all told when on (seen failing with the gate
+forced open).
+- Next, from the consult: a stake entity (Grubstake's claim stake on a prospected patch, its lamp red in the last
+  minutes; Serenity's survey stakes on the next arc), a lamp on the trade post while a truce holds, the rig's dig
+  lengthened to 2 to 3 minutes with a dust line toward the chests. The consult's fairness point on the perimeter:
+  enclosing a structure that stood before the arc should not provoke Serenity (the line moving onto the player is the
+  corporation's act), or the warning stays a notice; a design call for the user.
+
+### Crews: floors wait for them; killing one provokes, tested unprovoked (the user, 2026-10-17)
+The user, watching Serenity's line with `/lp perimeter`: "concrete pads appear before the drone flies in to build the
+turrets and walls" and "destroying the drones doesn't appear to anger the faction?". The pads: `base.build` paved every
+floor job at the head of the queue before asking whether a crew takes its module; now a module's floor goes to
+`crew.take` like its entities (a cordon post's pad, a mining module's road). The drones: `crew dronekill` (Serenity,
+unprovoked; the player kills the drone at mid-road): a rival before, an enemy after. The harness had provoked every
+corporation from the start, so `crew doomed`'s check that the trucks' killer is Grubstake's enemy proved nothing; it and
+`dronekill` now start unprovoked (doomed passes so). The pad check (`debug_crew` queues a pad first): the pad not laid
+before a crew is at the site; on the old build step the pad came 5.5 s before the drone (seen failing), and in game
+much earlier (the yard's turn comes long before a far crew arrives).
+
+### Encroachment judged when the player builds (the user, 2026-10-17, on Fable's notices consult)
+Serenity was provoked for good by any player building inside its claim, the line's own advance included: an outpost
+beyond radar cover was enclosed unseen, and with chat notices off nothing warned of it. Now what a player builds inside
+its territory provokes it, judged at the build (`ops.encroached`, from control.lua's `on_built` on the encroachment
+types: built by hand, by robot or raised by a script); what stood there before the line moved onto it does not. The
+perimeter's warning then guards no loss and is an ordinary notice. Scenario `line`: the relays enclosed, Serenity not
+provoked (old: provoked at enclosure, minute 12, and its raids razed the relays); `line built`: an assembler raised
+beside the enclosed relays, provoked that tick (old: provoked before); `line back` as before.
+- The visit's report adds the player's buildings razed by biters and the corporations' share of the pollution put out
+  over the run (from the run's start: the save's history is subtracted). Deathworld, an hour, unprovoked: no building
+  razed by biters, the corporations 21% of 81,939.
+
 ### Raids that finish, and a provoked Grubstake's size (the user, 2026-10-17)
 The user: "Grubstake destroyed my whole base on game speed 20 but I had to launch the sieges and raids myself (as even
 provoked, it took no hostile action)". On their save (20 minutes run on, decisions traced) it was an enemy and did raid,

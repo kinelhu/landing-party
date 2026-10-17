@@ -34,11 +34,11 @@ function border.placed(ent)
   storage.borders = storage.borders or {}
   local b, d = serenity_near(ent)
   local f = ent.force
-  if not b then f.print({"lp.border-none"}); return end
-  if standing.get(b.corp, f.name) ~= "rival" then f.print({"lp.border-refused", shared.corp_label(b.corp)}); return end
+  if not b then shared.reply(f, ent.position, {"lp.border-none"}); return end
+  if standing.get(b.corp, f.name) ~= "rival" then shared.reply(f, ent.position, {"lp.border-refused", shared.corp_label(b.corp)}); return end
   if d <= (b.perimeter or b.claim_radius or 0) then
     -- Inside its claim already: encroachment, not a treaty (ops.encroachment provokes).
-    f.print({"lp.border-inside", shared.corp_label(b.corp)})
+    shared.reply(f, ent.position, {"lp.border-inside", shared.corp_label(b.corp)})
     return
   end
   local s = ent.surface
@@ -48,7 +48,7 @@ function border.placed(ent)
     target = {b.origin.x, b.origin.y}, surface = s, render_mode = "chart"}}
   table.insert(storage.borders, br)
   standing.incident(b.corp, "border", ent.position, string.format("a border at %d tiles", math.floor(d)))
-  f.print({"lp.border-accepted", shared.corp_label(b.corp), gps(ent)})
+  shared.reply(f, ent.position, {"lp.border-accepted", shared.corp_label(b.corp), gps(ent)})
 end
 
 -- The nearest border any player holds with this camp: its line stops short of it.
@@ -82,7 +82,7 @@ function border.tick(tick)
       if inside then
         ops.provoke(b.lander.force.name, br.owner)
         standing.incident(b.corp, "border broken", inside.position, inside.name)
-        game.forces[br.owner].print({"lp.border-broken", shared.corp_label(b.corp), gps(inside)})
+        shared.notice(game.forces[br.owner], {"lp.border-broken", shared.corp_label(b.corp), gps(inside)})
         void(br)
       end
     end

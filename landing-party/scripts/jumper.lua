@@ -28,7 +28,7 @@ local function tell(b, key, at)
   local s = game.surfaces[b.surface]
   for _, f in pairs(game.forces) do
     if #f.players > 0 and not shared.is_corp(f.name) then
-      f.print({key, shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at.x, at.y, s.name)})
+      shared.notice(f, {key, shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at.x, at.y, s.name)})
     end
   end
 end
@@ -83,7 +83,9 @@ function jumper.launch(b, tpos)
   for _, pf in pairs(game.forces) do
     if #pf.players > 0 and not shared.is_corp(pf.name) then
       for _, pl in pairs(pf.connected_players) do
-        pl.add_custom_alert(rig, {type = "virtual", name = shared.CORPS[b.corp].icon}, {"lp.alert-rig"}, true)
+        if shared.notices_on() then
+          pl.add_custom_alert(rig, {type = "virtual", name = shared.CORPS[b.corp].icon}, {"lp.alert-rig"}, true) -- notice-ok: gated above
+        end
       end
     end
   end

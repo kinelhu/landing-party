@@ -72,7 +72,7 @@ local function tell(key, corp, b)
   local s = game.surfaces[b.surface]
   for _, f in pairs(game.forces) do
     if #f.players > 0 and not shared.is_corp(f.name) then
-      f.print({key, shared.corp_label(corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, s.name)})
+      shared.notice(f, {key, shared.corp_label(corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, s.name)})
     end
   end
 end

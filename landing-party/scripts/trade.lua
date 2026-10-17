@@ -103,7 +103,7 @@ local function step(post)
     storage.truces[k] = math.max(storage.truces[k] or 0, tick) + minutes * 3600
     storage.tributes = (storage.tributes or 0) + 1
     standing.incident(b.corp, "tribute", post.entity.position, string.format("%d minutes of truce", minutes))
-    game.forces[post.owner].print({"lp.tribute", shared.corp_label(b.corp), tostring(minutes)})
+    shared.reply(game.forces[post.owner], post.entity.position, {"lp.tribute", shared.corp_label(b.corp), tostring(minutes)})
     local h = home(b)
     r.unit.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 10,
       distraction = defines.distraction.none}

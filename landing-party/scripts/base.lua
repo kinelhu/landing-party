@@ -157,7 +157,7 @@ function base.clear_landing(b)
     trace(b, string.format("the landing burned a clearing: %d nests and worms destroyed", nests))
     for _, pf in pairs(game.forces) do
       if #pf.players > 0 and not shared.is_corp(pf.name) then
-        pf.print({"lp.landing-cleared", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", c.x, c.y, s.name), nests})
+        shared.notice(pf, {"lp.landing-cleared", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", c.x, c.y, s.name), nests})
       end
     end
   end
@@ -553,7 +553,10 @@ local function build(b)
   if rebuild(b) then return end
   -- Road tiles cost nothing and take no build step.
   -- Floors cost nothing and take no build step.
+  -- A crew's module's floor waits for the crew (crew.take takes it with the rest): paved at once, a cordon post's pad
+  -- lay out on the ground before its drone came (the user, 2026-10-17).
   while b.queue[1] and b.queue[1].tiles do
+    if b.queue[1].module and base.crew_take and base.crew_take(b, b.queue[1]) then return end
     local job = table.remove(b.queue, 1)
     pave(b, job.tiles, job.floor)
   end
@@ -972,7 +975,7 @@ function base.fall(lander)
       trace(b, string.format("lander destroyed: the settlement falls (%d generators to fail)", #b.cascade))
       local f = game.forces.player
       if f and #f.players > 0 then
-        f.print({"lp.fallen", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,
+        shared.notice(f, {"lp.fallen", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,
           lander.surface.name)})
       end
       for _, t in pairs(b.tags or {}) do

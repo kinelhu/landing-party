@@ -26,7 +26,7 @@ function marker.placed(ent)
   else
     storage.breakers = storage.breakers or {}
     table.insert(storage.breakers, {entity = ent})
-    if not in_claim(ent) then ent.force.print({"lp.breaker-outside"}) end
+    if not in_claim(ent) then shared.reply(ent.force, ent.position, {"lp.breaker-outside"}) end
   end
 end
 
@@ -52,7 +52,7 @@ function marker.tick(tick)
       storage.pact_suspended_till = tick + BREAK
       storage.pact_breaks = (storage.pact_breaks or 0) + 1
       pact.apply()
-      br.entity.force.print({"lp.breaker-lit", string.format("[gps=%d,%d,%s]", br.entity.position.x, br.entity.position.y,
+      shared.reply(br.entity.force, br.entity.position, {"lp.breaker-lit", string.format("[gps=%d,%d,%s]", br.entity.position.x, br.entity.position.y,
         br.entity.surface.name)})
     end
   end

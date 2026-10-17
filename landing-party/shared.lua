@@ -249,4 +249,34 @@ shared.PYLON_SUPPLY = 9          -- supply area half-width: one pylon powers a w
 
 shared.TINT = {r = 0.62, g = 0.8, b = 1, a = 1}
 
+-- Chat notices (the user, 2026-10-17: "nothing is communicated through notices in factorio ... OK for debugging, or as
+-- an ultimate resort"): told only when the map setting "lp-chat-notices" is on (or a test's storage.notices), but for
+-- KEEP. A corporation's first landing is told by faction.lua whatever the setting.
+-- Also kept until the world shows them (docs/reviews/2026-10-17-notices-consult.md): the warnings that are the only fair
+-- notice before a loss the player cannot see coming (the prospect's ten minutes, the rig's one). The perimeter's warning
+-- guards none since enclosure no longer provokes (ops.encroached).
+local KEEP = {["lp.fallen"] = true, ["lp.prospect"] = true, ["lp.rig"] = true}
+function shared.notices_on()
+  if storage.notices ~= nil then return storage.notices end
+  local s = settings.global["lp-chat-notices"]
+  return s and s.value or false
+end
+function shared.notice(target, msg)
+  storage.notice_counts = storage.notice_counts or {told = 0, held = 0}
+  if (type(msg) == "table" and KEEP[msg[1]]) or shared.notices_on() then
+    target.print(msg)
+    storage.notice_counts.told = storage.notice_counts.told + 1
+  else
+    storage.notice_counts.held = storage.notice_counts.held + 1
+  end
+end
+-- A reply to the player's own act (a stake, a breaker, a beacon, a tribute): floating text at the spot, as Factorio says
+-- "cannot build here", to each of the force's connected players; in chat too when notices are on.
+function shared.reply(force, pos, msg)
+  for _, p in pairs(force.connected_players) do
+    p.create_local_flying_text{text = msg, position = pos, time_to_live = 300, speed = 0.5}
+  end
+  if shared.notices_on() then force.print(msg) end
+end
+
 return shared

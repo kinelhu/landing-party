@@ -248,10 +248,16 @@ local function announce(b, surface)
   for _, f in pairs(game.forces) do
     if #f.players > 0 then
       f.chart(surface, {{b.origin.x - 48, b.origin.y - 48}, {b.origin.x + 48, b.origin.y + 48}})
-      f.print({"lp.landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name),
-        shared.CORPS[b.corp].motto})
+      -- A corporation's first landing is told whatever the setting (the user: the ultimate resort, "pointing the first
+      -- landing of a faction"); later ones as any notice.
+      storage.landing_told = storage.landing_told or {}
+      local msg = {"lp.landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name),
+        shared.CORPS[b.corp].motto}
+      if not storage.landing_told[b.corp] then f.print(msg) else shared.notice(f, msg) end -- notice-ok: first landing
     end
   end
+  storage.landing_told = storage.landing_told or {}
+  storage.landing_told[b.corp] = true
   faction.tag(b)
 end
 
@@ -478,7 +484,7 @@ end
 -- Headquarters: consolidation, the landing, withdrawal (see the constants above).
 local function tell(key, ...)
   for _, force in pairs(game.forces) do
-    if #force.players > 0 then force.print({key, ...}) end
+    if #force.players > 0 then shared.notice(force, {key, ...}) end
   end
 end
 
@@ -550,7 +556,7 @@ function faction.grudge(b, by, at)
   d.grudges = (d.grudges or 0) + 1
   base.trace(b, "grudge: every corporation provoked by " .. by .. "; the next landing comes angry")
   local f = game.forces[by]
-  if f and #f.players > 0 then f.print({"lp.grudge", shared.corp_label(b.corp)}) end
+  if f and #f.players > 0 then shared.notice(f, {"lp.grudge", shared.corp_label(b.corp)}) end
 end
 
 -- The next landing after a grudge carries it (called by arrive).
@@ -562,7 +568,7 @@ function faction.angry(b)
   base.trace(b, "landed with a grudge against " .. b.grudge)
   local f = game.forces[b.grudge]
   if f and #f.players > 0 then
-    f.print({"lp.grudge-landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,
+    shared.notice(f, {"lp.grudge-landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y,
       game.surfaces[b.surface].name)})
   end
 end
@@ -590,7 +596,7 @@ function faction.develop(b, parts)
     base.trace(b, string.format("%s reaches level %d: %s", b.corp, d.level, table.concat(gained, ", ")))
     for _, f in pairs(game.forces) do
       if #f.players > 0 and #gained > 0 then
-        f.print({"lp.develop", shared.corp_label(b.corp), table.concat(gained, ", ")})
+        shared.notice(f, {"lp.develop", shared.corp_label(b.corp), table.concat(gained, ", ")})
       end
     end
   end

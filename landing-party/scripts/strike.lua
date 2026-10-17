@@ -46,7 +46,7 @@ local function fire(st)
   end
   storage.strikes_fired = (storage.strikes_fired or 0) + 1
   storage.strike_targets = (storage.strike_targets or 0) + #found
-  e.force.print({"lp.strike", #found, #queue, string.format("[gps=%d,%d,%s]", c.x, c.y, s.name)})
+  shared.reply(e.force, c, {"lp.strike", #found, #queue, string.format("[gps=%d,%d,%s]", c.x, c.y, s.name)})
   s.create_entity{name = "big-explosion", position = c}
   e.destroy()
 end

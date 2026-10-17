@@ -4,6 +4,7 @@
 # this is the run that sees the mod beside Space Age.
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
+"$(dirname "$0")/lint_notices.sh"
 P="$HOME/Library/Application Support/factorio-lp-check"
 mkdir -p "$P/config" "$P/mods" "$P/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$P" > "$P/config/config.ini"

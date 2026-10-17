@@ -228,14 +228,22 @@ local function sense_nests(b, surface)
   end
 end
 
--- Encroachment (Serenity's temper, "Please remain behind the line"): a player building inside its territory
--- provokes it as an attack does.
-local function encroachment(b, surface)
-  if not (shared.CORPS[b.corp].temper or {}).provoked_only or not b.claim_radius then return end
-  for _, f in ipairs(enemies(game.forces[b.force])) do
-    if not shared.is_corp(f.name) and surface.count_entities_filtered{position = {b.origin.x, b.origin.y},
-      radius = b.claim_radius, force = f, type = TYPES, limit = 1} > 0 then
-      ops.provoke(b.force, f.name)
+-- Encroachment (Serenity's temper, "Please remain behind the line"): a player building put up inside its territory
+-- provokes it as an attack does. Judged when it is built (control.lua's on_built): what stood there before the line
+-- moved onto it does not (the user, 2026-10-17, on Fable's notices consult: the line moving onto the player is the
+-- corporation's act; enclosed unseen beyond radar, an outpost made Serenity an enemy for good).
+local ENCROACH = {}
+for _, t in ipairs(TYPES) do ENCROACH[t] = true end
+ops.ENCROACH_TYPES = TYPES
+function ops.encroached(ent)
+  if not (ent and ent.valid) or not ENCROACH[ent.type] or ent.name:sub(1, 3) == "lp-" then return end
+  local by = ent.force.name
+  if shared.is_corp(by) or by == "enemy" or by == "neutral" then return end
+  for _, b in pairs(storage.bases or {}) do
+    if not b.fallen and b.claim_radius and b.surface == ent.surface.index
+      and (shared.CORPS[b.corp].temper or {}).provoked_only
+      and (ent.position.x - b.origin.x) ^ 2 + (ent.position.y - b.origin.y) ^ 2 <= b.claim_radius ^ 2 then
+      ops.provoke(b.force, by)
     end
   end
 end
@@ -309,10 +317,10 @@ function ops.perimeter_advance(b, new, near, nd)
   for _, f in ipairs(enemies(game.forces[b.force])) do
     if #f.players > 0 and not shared.is_corp(f.name) then
       if b.perimeter_steps % 3 == 1 then
-        f.print({"lp.perimeter", shared.corp_label(b.corp), where, math.floor(new)})
+        shared.notice(f, {"lp.perimeter", shared.corp_label(b.corp), where, math.floor(new)})
       end
       if warn then
-        f.print({"lp.perimeter-warning", shared.corp_label(b.corp), near.localised_name,
+        shared.notice(f, {"lp.perimeter-warning", shared.corp_label(b.corp), near.localised_name,
           string.format("[gps=%d,%d,%s]", near.position.x, near.position.y, surface.name)})
       end
     end
@@ -323,7 +331,6 @@ local function scan(b)
   local surface = game.surfaces[b.surface]
   if not b.lander.valid then return end
   sense_nests(b, surface)
-  encroachment(b, surface)
   local sensors = {b.lander}
   for _, d in ipairs(b.depots) do if d.valid then table.insert(sensors, d) end end
   for _, r in ipairs(b.radars or {}) do if r.valid then table.insert(sensors, r) end end
@@ -666,7 +673,8 @@ end
 -- Alerts (readability): an operation going in against a player puts a custom alert, with the corporation's icon,
 -- on the nearest of that player's buildings, for every player of that force, on any surface they are on.
 local function alert(b, t, key, at)
-  if not (t and against_player(t.owner)) then return end
+  -- A notice too (shared.notice): the engine's own alerts fire when the operation hits.
+  if not (t and against_player(t.owner)) or not shared.notices_on() then return end
   local f = game.forces[t.owner]
   if not f or #f.players == 0 then return end
   local s = game.surfaces[b.surface]
@@ -675,7 +683,7 @@ local function alert(b, t, key, at)
   if not e then return end
   local c = shared.CORPS[b.corp]
   for _, player in pairs(f.players) do
-    player.add_custom_alert(e, {type = "virtual", name = c.icon}, {key, c.name}, true)
+    player.add_custom_alert(e, {type = "virtual", name = c.icon}, {key, c.name}, true) -- notice-ok: gated above
   end
   storage.alerts = (storage.alerts or 0) + 1
 end
@@ -686,7 +694,7 @@ local function notify(b, key, at)
   local s = game.surfaces[b.surface]
   for _, f in ipairs(enemies(game.forces[b.force])) do
     if #f.players > 0 and not shared.is_corp(f.name) then
-      f.print({key, shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at[1], at[2], s.name)})
+      shared.notice(f, {key, shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at[1], at[2], s.name)})
     end
   end
 end
@@ -1435,7 +1443,7 @@ local function launch(b, key, trace, army)
   if t.owner == "enemy" then
     for _, f in pairs(game.forces) do
       if #f.players > 0 then
-        f.print({"lp.clearing", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", t.pos[1], t.pos[2],
+        shared.notice(f, {"lp.clearing", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", t.pos[1], t.pos[2],
           game.surfaces[b.surface].name)})
       end
     end

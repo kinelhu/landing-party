@@ -2484,9 +2484,10 @@ scenarios.six = function()
 end
 
 -- Line: Serenity's perimeter moves (perimeter_fast: a step a minute from a minute after landing). Three relays
--- 185 tiles out, never a shot: the line must grow, name a relay one step before enclosing it, then enclose it and
--- be provoked, with no operation before that. LP_MIX=back: the player removes the relays on the warning; then
--- nothing provokes it.
+-- 185 tiles out, never a shot: the line must grow, name a relay one step before enclosing it, then enclose it, and
+-- not be provoked by that (the user, 2026-10-17: the line moving onto what stood there first is Serenity's act; it was
+-- provoked before). LP_MIX=back: the player removes the relays on the warning; never provoked. LP_MIX=built: once the
+-- relays are enclosed, the player builds an assembler beside them (raise_built, as a player's build): provoked then.
 scenarios.line = function()
   schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
@@ -2507,6 +2508,20 @@ scenarios.line = function()
         S.warned_at = game.tick
         if params.mix == "back" then for _, r in ipairs(S.relays) do if r.valid then r.destroy() end end end
       end
+      -- Enclosed: the claim reaches the relays.
+      local r = S.relays[2]
+      if r and r.valid and not S.enclosed_at then
+        local d = math.sqrt((r.position.x - st.origin.x) ^ 2 + (r.position.y - st.origin.y) ^ 2)
+        if (st.claim_radius or 0) >= d + 3 then
+          S.enclosed_at = game.tick
+          S.provoked_at_enclosure = (lp("corp", "serenity").provoked or {}).player
+          if params.mix == "built" then
+            local p = surface().find_non_colliding_position("assembling-machine-1", {r.position.x, r.position.y + 6}, 10, 1)
+            S.built = surface().create_entity{name = "assembling-machine-1", position = p, force = "player", raise_built = true}
+            S.built_at = game.tick
+          end
+        end
+      end
     end)
   end
   schedule(END - 60, function()
@@ -2522,9 +2537,12 @@ scenarios.line = function()
     check("line: no operation against the player before it was provoked", early == 0, early .. " early")
     if params.mix == "back" then
       check("line: pulled back, never provoked", provoked == nil, "provoked at " .. tostring(provoked))
+    elseif params.mix == "built" then
+      check("line: built inside the line, provoked then", S.built_at and provoked ~= nil and provoked >= S.built_at,
+        string.format("built at %s, provoked at %s", tostring(S.built_at), tostring(provoked)))
     else
-      check("line: enclosed, provoked after the warning", provoked ~= nil and S.warned_at and provoked > S.warned_at,
-        "provoked at " .. tostring(provoked))
+      check("line: the relays enclosed", S.enclosed_at ~= nil, "radius " .. string.format("%.0f", st.claim_radius))
+      check("line: enclosed, not provoked", provoked == nil, "provoked at " .. tostring(provoked))
     end
   end)
 end
@@ -3679,6 +3697,23 @@ scenarios.prospect = function()
       return
     end
     check("prospect: both undrilled patches claimed", drills[2] >= 1 and drills[3] >= 1, serpent.line(drills))
+    -- The notice gate (shared.notice; the user: "nothing is communicated through notices in factorio"). A headless run
+    -- has no players, so the corporations' own notices never reach it: it is called directly. Off by default, a notice
+    -- is held; a lost settlement is told whatever the setting; on (as the setting would), told.
+    local function delta(key, on)
+      if on ~= nil then lp("debug_tune", {notices = on}) end
+      local a = lp("notice_counts")
+      lp("debug_notice", key)
+      local z = lp("notice_counts")
+      return z.told - a.told, z.held - a.held
+    end
+    local t1, h1 = delta("lp.claim")
+    local t2, h2 = delta("lp.fallen")
+    local t3, h3 = delta("lp.claim", true)
+    lp("debug_tune", {notices = false})
+    info(string.format("prospect: notices default %d told %d held; fallen %d told; on %d told", t1, h1, t2, t3))
+    check("prospect: a notice is held by default, a fall told, all told when on", t1 == 0 and h1 == 1 and t2 == 1 and t3 == 1,
+      string.format("%d/%d %d/%d %d/%d", t1, h1, t2, h2, t3, h3))
     check("prospect: tagged before claimed (two at least)", ps.prospects >= 2 and ps.claimed >= 2, serpent.line(ps))
   end)
 end
@@ -3902,9 +3937,13 @@ scenarios.crew = function()
   -- LP_MIX=island: the site ringed by water: no route to it, the outpost given up before a truck is sent.
   -- LP_MIX=walled: the site ringed by the player's gun turrets: no way out of their reach, so no truck goes; given up.
   -- LP_MIX=around: three armed gun turrets on the straight road: the truck drives round them and builds.
+  -- LP_MIX=dronekill: Serenity, unprovoked; the player kills its drone at mid-road: Serenity is its enemy then.
+  -- Every mix: the outpost's pad (debug_crew queues one first) is not laid before the crew gets there.
   local doomed, island = params.mix == "doomed", params.mix == "island"
   local walled, around = params.mix == "walled", params.mix == "around"
-  local killed, grown, drone, again = params.mix == "killed" or doomed, params.mix == "grown", params.mix == "drone", params.mix == "rebuild"
+  local dronekill = params.mix == "dronekill"
+  local killed, grown, drone, again = params.mix == "killed" or doomed, params.mix == "grown", params.mix == "drone" or dronekill,
+    params.mix == "rebuild"
   local corp = drone and "serenity" or "grubstake"
   local at = (grown and 20 or 3) * 3600
   schedule(60, function()
@@ -3946,7 +3985,7 @@ scenarios.crew = function()
       end
     end
     S.queued = game.tick
-    if killed then
+    if killed or dronekill then
       local mid = {(o.x + S.site[1]) / 2, (o.y + S.site[2]) / 2}
       S.mid = mid
     end
@@ -3956,6 +3995,15 @@ scenarios.crew = function()
     schedule(t, function()
       -- Killed at mid-road, as the player would (four gun turrets beside the road did not stop it: the hauler's hull,
       -- 1,500 health and armour, crossed their reach in about 9 s).
+      -- The pad: not laid before a crew is at the site (when each first happened).
+      if not S.pad_at and surface().count_tiles_filtered{position = {S.site[1], S.site[2] - 8}, radius = 3,
+        name = corp == "serenity" and "lp-pad" or "lp-" .. corp .. "-pad"} > 0 then S.pad_at = game.tick end
+      if not S.crew_at and surface().count_entities_filtered{position = S.site, radius = 15, force = "lp-" .. corp,
+        name = corp == "serenity" and "lp-harrier" or "lp-" .. corp .. "-hauler"} > 0 then S.crew_at = game.tick end
+      if dronekill and not S.shot then
+        local d = surface().find_entities_filtered{name = "lp-harrier", force = "lp-serenity", position = S.mid, radius = 25, limit = 1}[1]
+        if d then S.before = lp("standing", "serenity"); d.die("player"); S.shot = game.tick end
+      end
       if killed and (doomed or not S.shot) then
         local t = surface().find_entities_filtered{name = "lp-grubstake-hauler", position = S.mid, radius = 15, limit = 1}[1]
         if t then t.die("player"); S.shot = true end
@@ -4001,6 +4049,14 @@ scenarios.crew = function()
     if around then
       check("crew: round the guns, all five built", (S.placed or 0) >= 5 and c.lost == 0 and c.unrouted == 0,
         string.format("%s, %s guns, placed %s", serpent.line(c), tostring(S.guns), tostring(S.placed)))
+      return
+    end
+    check("crew: the pad not laid before the crew came", not S.pad_at or (S.crew_at and S.pad_at >= S.crew_at),
+      string.format("pad at %s, crew at %s", tostring(S.pad_at), tostring(S.crew_at)))
+    if dronekill then
+      check("crew: its drone killed, Serenity an enemy (a rival before)", S.shot and S.before == "rival"
+        and lp("standing", "serenity") == "enemy", string.format("shot %s, before %s, now %s", tostring(S.shot),
+        tostring(S.before), lp("standing", "serenity")))
       return
     end
     if island then
@@ -4792,6 +4848,8 @@ scenarios.visit = function()
     info(string.format("visit: factory at %.0f,%.0f, %d buildings counted, 95%% within %.0f tiles; %d technologies; landing at %d",
       sp.x, sp.y, #d, p95, researched, S.dist))
     info("visit: player at start " .. serpent.line(S.start))
+    S.poll0 = {}
+    for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do S.poll0[name] = v end
     storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
     if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
     S.sp = sp
@@ -4968,6 +5026,17 @@ scenarios.visit = function()
   schedule(END - 60, function()
     info("visit: player at the end " .. serpent.line(census()))
     info("visit: the player's buildings razed by the corporations " .. serpent.line(lp("pressure").razed))
+    info("visit: the player's buildings razed by biters " .. serpent.line(S.biter_razed or {}))
+    -- Pollution put out over the run, by source: the corporations' share (Grubstake's drills pollute).
+    local corp, all = 0, 0
+    for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do
+      v = v - ((S.poll0 or {})[name] or 0)
+      all = all + v
+      if name:sub(1, 3) == "lp-" then corp = corp + v end
+    end
+    info(string.format("visit: pollution put out %.0f, the corporations' %.0f (%.0f%%)", all, corp, all > 0 and 100 * corp / all or 0))
+    metric("biter_razed", table_size(S.biter_razed or {}) > 0 and (function() local n = 0 for _, v in pairs(S.biter_razed) do n = n + v end return n end)() or 0)
+    metric("corp_pollution_pct", all > 0 and math.floor(100 * corp / all + 0.5) or 0)
     for _, id in ipairs(lp("bases")) do
       local st = lp("stats", id)
       info(string.format("visit: %s %d%s: garrison %d, razed %d, looted %d, units lost %d, %d operations (%d done, %d aborted, %d sieges, %d strips)",
@@ -6063,7 +6132,9 @@ script.on_init(function()
   -- start, except where tempers are the subject.
   local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true,
     mended = true}
-  if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
+  -- Crews killed provoke (the user, 2026-10-17): those mixes start unprovoked, or the check proves nothing.
+  local unprovoked = params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill")
+  if not TEMPERS[params.scenario] and not unprovoked then lp("debug_tune", {provoke = true}) end
 end)
 
 scenario()
@@ -6127,6 +6198,11 @@ end)
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
+  -- The player's buildings the biters destroyed (the visit's report: Grubstake's pollution draws them).
+  if e.entity.force.name == "player" and e.force and e.force.name == "enemy" and e.entity.type ~= "character" then
+    S.biter_razed = S.biter_razed or {}
+    S.biter_razed[e.entity.type] = (S.biter_razed[e.entity.type] or 0) + 1
+  end
   if e.entity.name == "gun-turret" then
     table.insert(lines, string.format("INFO gun turret at %.0f,%.0f destroyed by %s (%s)", e.entity.position.x,
       e.entity.position.y, by, e.force and e.force.name or "?"))

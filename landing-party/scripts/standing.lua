@@ -61,7 +61,7 @@ function standing.forgive(corp)
 end
 
 local function tell(f, key, corp, detail)
-  f.print({key, shared.corp_label(corp), detail or ""})
+  shared.notice(f, {key, shared.corp_label(corp), detail or ""})
 end
 
 -- Once a minute: turrets in reach of a rival's ground provoke it; a change of standing is told.
@@ -105,9 +105,10 @@ end
 -- What /lp incidents prints: newest first.
 function standing.list(player)
   local list = storage.incidents or {}
-  if #list == 0 then return player.print("no incidents") end
+  if #list == 0 then return player.print("no incidents") end -- notice-ok: /lp incidents
   for i = #list, math.max(1, #list - 9), -1 do
     local e = list[i]
+    -- notice-ok: /lp incidents (the reply to a command, below)
     player.print(string.format("%d min ago  %s  %s%s  %s  [gps=%d,%d]", math.floor((game.tick - e.tick) / 3600),
       shared.CORPS[e.corp] and shared.CORPS[e.corp].name or e.corp, e.kind, e.count > 1 and (" x" .. e.count) or "",
       e.detail or "", e.x, e.y))

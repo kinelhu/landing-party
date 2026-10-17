@@ -61,8 +61,11 @@ local BUILT = {{filter = "type", type = "electric-pole"}, {filter = "name", name
   {filter = "name", name = "lp-claim-marker"}, {filter = "name", name = "lp-border-stake"},
   {filter = "name", name = "lp-trade-post"}}
 for _, f in ipairs(PLAYER_BUILT) do table.insert(BUILT, f) end
+-- What a player builds inside Serenity's territory provokes it (ops.encroached).
+for _, t in ipairs(ops.ENCROACH_TYPES) do table.insert(BUILT, {filter = "type", type = t}) end
 local function on_built(e)
   local ent = e.entity
+  ops.encroached(ent)
   if ent and ent.valid and ent.name == "lp-player-bait" then return bait.placed(ent) end
   if ent and ent.valid and ent.name == "lp-strike-beacon" then return strike.placed(ent) end
   if ent and ent.valid and (ent.name == "lp-pact-breaker" or ent.name == "lp-claim-marker") then return marker.placed(ent) end
@@ -224,7 +227,7 @@ commands.add_command("lp", {"lp.command-dev"}, dev.command)
 
 commands.add_command("lp-trace", {"lp.command-trace"}, function(cmd)
   storage.trace = not storage.trace
-  game.print("landing-party trace: " .. tostring(storage.trace))
+  game.print("landing-party trace: " .. tostring(storage.trace)) -- notice-ok: the /lp-trace command
 end)
 
 -- Snapshot of a base for the sim plots: its entities, the ore around it, and its stats, as one JSON line.
@@ -318,6 +321,7 @@ remote.add_interface("landing-party", {
     if t.rings ~= nil then storage.rings = t.rings or nil end
     if t.ladder_fast ~= nil then storage.ladder_fast = t.ladder_fast end
     if t.flare_burn ~= nil then storage.flare_burn = t.flare_burn end
+    if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
     for corp, tech in pairs(t.rd_tech or {}) do rd.set(corp, tech) end
@@ -374,6 +378,8 @@ remote.add_interface("landing-party", {
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   pact_state = function() return storage.pact_state end,
+  notice_counts = function() return storage.notice_counts or {told = 0, held = 0} end,
+  debug_notice = function(key) shared.notice(game.forces.player, {key, "test", "test"}) end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,

@@ -214,7 +214,7 @@ local function step(b, i)
       local post = not c.rebuild and c.module.kind == "post"
       for _, f in pairs(game.forces) do
         if #f.players > 0 and not shared.is_corp(f.name) then
-          f.print(post and {"lp.line-held", shared.corp_label(b.corp), where, tostring(GIVE_UP)}
+          shared.notice(f, post and {"lp.line-held", shared.corp_label(b.corp), where, tostring(GIVE_UP)}
             or {"lp.crew-gave-up", shared.corp_label(b.corp), where, tostring(GIVE_UP)})
         end
       end
@@ -308,8 +308,12 @@ end
 function crew.debug_module(b, pos, names)
   local m = {kind = "outpost", center = {pos[1], pos[2]}, entities = {}}
   table.insert(b.modules, m)
+  -- A pad under it first, as a cordon post has (its floor must wait for the crew).
+  local tiles = {}
+  for i = -1, 1 do for j = -1, 1 do table.insert(tiles, {math.floor(pos[1]) + i, math.floor(pos[2]) + j - 8}) end end
+  table.insert(b.queue, 1, {tiles = tiles, floor = "pad", module = m})
   for k, name in ipairs(names) do
-    table.insert(b.queue, k, {name = name, pos = {pos[1] + ((k - 1) % 3) * 3 - 3, pos[2] + math.floor((k - 1) / 3) * 3},
+    table.insert(b.queue, k + 1, {name = name, pos = {pos[1] + ((k - 1) % 3) * 3 - 3, pos[2] + math.floor((k - 1) / 3) * 3},
       module = m})
   end
   return #names
