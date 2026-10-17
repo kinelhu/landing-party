@@ -11,6 +11,7 @@
 local shared = require("__landing-party__.shared")
 local rd = require("__landing-party__.scripts.rd")
 local stance = require("__landing-party__.scripts.stance")
+local pool = require("__landing-party__.scripts.pool")
 
 local ops = {}
 
@@ -777,7 +778,7 @@ local function finish(b, outcome, trace, army)
   end
   for _, u in ipairs(op.members) do
     if u.valid then
-      table.insert(b.garrison, u)
+      pool.give_one(b, u)
       if h then
         u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
           commands = back}
@@ -1986,17 +1987,20 @@ local function siege_step(b, trace, army)
       end
       -- The assault: the barrage over (nothing in reach for ASSAULT_IDLE after the mortars had targets, or the shells
       -- spent with no convoy coming), the guards go in with what the garrison can add, sized to what is left at the
-      -- target. Tier 3 and up always; below, only when the guards and the garrison's spare units make the force a raid
+      -- target. Tier 3 and up always; below, only when the guards and the garrison (its reserve too) make the force a raid
       -- there would need (the user, 2026-10-17: "destroys turrets, then nothing happens. The whole group ends up packing
       -- up and leaving home").
       local over = op.last_target and ((in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE)
         or (left == 0 and not op.convoy))
       local want = over and t and not op.clearance and needed(defence(b, t))
-      if want and not spec.assault and n + field(b, army) < want and not op.told_short then
+      -- Its reserve too: the barrage paid for and won, the camp commits (with the pool counting the guards out against
+      -- the cap, a tier-1 siege's guards and spare came to 21 of the 22 needed, and it went home, bombard).
+      local home_n = (function() local f, r = field(b, army) return f + r end)()
+      if want and not spec.assault and n + home_n < want and not op.told_short then
         op.told_short = true
-        trace(b, string.format("siege: no assault (%d needed, %d guards and %d spare at home)", want, n, field(b, army)))
+        trace(b, string.format("siege: no assault (%d needed, %d guards and %d at home)", want, n, home_n))
       end
-      if want and (spec.assault or n + field(b, army) >= want) then
+      if want and (spec.assault or n + home_n >= want) then
         for i = #b.garrison, 1, -1 do
           if #op.members >= want then break end
           local u = b.garrison[i]
@@ -2545,7 +2549,7 @@ function ops.force(b, kind, pos, trace, army)
     local u = p and s.create_entity{name = proto, position = p, force = h.force}
     if u then
       table.insert(b.garrison, u)
-      storage.unit_owner[u.unit_number] = b.id
+      pool.enlist(b, u)
     end
   end
   local ok

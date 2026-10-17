@@ -5156,6 +5156,52 @@ scenarios.sneak = function()
   end)
 end
 
+-- Pool (docs/ai.md: the unit pool): a Grubstake camp grown to its cap, then a raid forced on a player assembler 150
+-- tiles out. While the raid is out the camp makes no units (its strength counts the raiders: before, it counted only
+-- the garrison and remade them); done, the raiders are on their way back (b.returning) before they rejoin the
+-- garrison, and none is drafted from the field.
+scenarios.pool = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    lp("debug_depot", S.id, 6000)
+  end)
+  schedule(18 * 3600, function()
+    local o = lp("stats", S.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 150), math.floor(o.y - o.y / len * 150)}
+    flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
+    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+    local st = lp("stats", S.id)
+    S.built0, S.cap, S.roster0 = st.units_built, st.cap, st.roster
+    lp("dev", {"raid", tostring(S.id)}, c)
+    S.out_at = game.tick
+  end)
+  for t = 18 * 3600 + 300, END - 120, 300 do
+    schedule(t, function()
+      local st = lp("stats", S.id)
+      if st.ops.op and not S.done_at then
+        S.built_out = st.units_built - S.built0
+        S.roster_max = math.max(S.roster_max or 0, st.roster or 0)
+      end
+      if not st.ops.op and S.out_at and not S.done_at and (st.ops.done + st.ops.aborted) > 0 then S.done_at = game.tick end
+      if S.done_at and (st.returning or 0) > 0 then S.seen_returning = math.max(S.seen_returning or 0, st.returning) end
+      S.last_returning = st.returning
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.id)
+    info(string.format("pool: cap %s, roster %s at the raid; units made while it was out %s; returning seen %s, at the end %s; "
+      .. "last op %s", tostring(S.cap), tostring(S.roster0), tostring(S.built_out), tostring(S.seen_returning),
+      tostring(S.last_returning), serpent.line(st.ops.log[#st.ops.log])))
+    check("pool: the raid ran", S.done_at ~= nil, tostring(S.done_at))
+    check("pool: the camp was full when the raid left", S.roster0 and S.roster0 >= S.cap, tostring(S.roster0) .. " of " .. tostring(S.cap))
+    check("pool: no unit made while the raid was out", S.built_out == 0, tostring(S.built_out))
+    check("pool: the raiders came back through the returning list", (S.seen_returning or 0) > 0 and S.last_returning == 0,
+      string.format("seen %s, end %s", tostring(S.seen_returning), tostring(S.last_returning)))
+  end)
+end
+
 -- Mended: the user's save (2026-10-17), Grubstake raids on poles behind a wall the player's robots rebuild. The player's
 -- assembler and three poles inside a square of stone wall (12 from it), no turret; a destroyed wall piece comes back 5 s
 -- later (robots). A forced raid breaches, keeps breaking the rebuilt pieces (it wandered by the first one for 3 minutes),
@@ -6149,7 +6195,7 @@ script.on_init(function()
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
   local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true,
-    mended = true}
+    mended = true, pool = true}
   -- Crews killed provoke (the user, 2026-10-17): those mixes start unprovoked, or the check proves nothing.
   local unprovoked = params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill"
     or params.mix == "answered")

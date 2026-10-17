@@ -118,7 +118,13 @@ Built (2026-10-17):
   - It waits while an operation runs.
   - A truce stops it.
   - Scenario `crew answered`: three turrets shoot Serenity's drone down; 2 s later a squad of 8 goes, razes them and comes home whole. On the old code no answer came.
-- **Not yet:** the unit pool; a `react` table per temper (today every provoking act asks for the same answer).
+- **The unit pool** (`scripts/pool.lua`):
+  - a settlement's roster is every unit it owns, out or home (`pool.enlist` at every place one is made or handed over), and its strength, what the cap holds, is the roster's live count;
+  - units done with a job go through `pool.give`: into the garrison when within 40 of the lander or a depot, else onto `b.returning` until they get home (at most 5 minutes);
+  - old saves rebuild the roster once from `storage.unit_owner`.
+
+  Scenario `pool`: a full camp (30 of 30) makes no unit while 4 raiders are out, and they come back through the returning list. On the old code it made 3 while they were out.
+- **Not yet:** a `react` table per temper (today every provoking act asks for the same answer); one floor for what stays home (`HOME_GUARD` against ops' 30% reserve).
 
 Order (as planned):
 1. `stance` and `react`, with the answer as their first user (tested: a turret kills a drone, a squad comes at that turret within two minutes, a rival before and an enemy after).

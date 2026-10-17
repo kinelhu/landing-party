@@ -4,6 +4,7 @@ local shared = require("__landing-party__.shared")
 local rng = require("__landing-party__.scripts.rng")
 local ops = require("__landing-party__.scripts.ops")
 local rd = require("__landing-party__.scripts.rd")
+local pool = require("__landing-party__.scripts.pool")
 
 local army = {}
 
@@ -53,7 +54,8 @@ local function cap(b)
   return (b.grudge_till and game.tick < b.grudge_till) and 2 * n or n
 end
 army.cap = cap
-local function strength(b) return #b.garrison + #(b.patrol or {}) end
+-- Every unit it owns, out or home (pool.strength): the cap holds them all.
+local function strength(b) return pool.strength(b) end
 
 -- The doctrine's mix, restricted to what the faction's tier has unlocked.
 local function mix(b)
@@ -82,7 +84,7 @@ function army.escort(b, n)
     local u = p and s.create_entity{name = proto, position = p, force = b.lander.force}
     if u then
       table.insert(b.garrison, u)
-      storage.unit_owner[u.unit_number] = b.id
+      pool.enlist(b, u)
       made = made + 1
     end
   end
@@ -122,7 +124,7 @@ local function produce(b, trace)
         b.built_by = b.built_by or {}
         b.built_by[name] = (b.built_by[name] or 0) + 1
         table.insert(b.garrison, u)
-        storage.unit_owner[u.unit_number] = b.id
+        pool.enlist(b, u)
         return u
       end
     end
@@ -236,7 +238,7 @@ local function settle(b, trace)
       for _, u in ipairs(r.members) do
         if u.valid then
           alive = alive + 1
-          table.insert(b.garrison, u)
+          pool.give_one(b, u)
           if r.home.valid then
             u.commandable.set_command{type = defines.command.go_to_location, destination = r.home.position, radius = 8,
               distraction = defines.distraction.by_enemy}
@@ -423,7 +425,7 @@ local function escort_step(c, b)
       if c.behind[e.unit_number] >= RELEASE_STEPS then
         -- Stuck for good: back to the garrison, so one wedged escort does not hold the convoy forever.
         table.remove(c.escorts, i)
-        table.insert(b.garrison, e)
+        pool.give_one(b, e)
         c.released = (c.released or 0) + 1
         d = 0
       end
@@ -530,7 +532,7 @@ local function travel(b, trace)
     if done then
       for _, e in ipairs(c.escorts) do
         if e.valid then
-          table.insert(b.garrison, e)
+          pool.give_one(b, e)
           if c.home.valid then
             e.commandable.set_command{type = defines.command.go_to_location, destination = c.home.position, radius = 8,
               distraction = defines.distraction.by_enemy}
@@ -615,6 +617,7 @@ function army.tick(b, tick, trace)
   if tick % 600 == 300 then intercept(b, trace) end
   if tick % 60 == 45 then travel(b, trace) end
   if tick % 300 == 0 then settle(b, trace) end
+  if tick % 300 == 75 then pool.tick(b) end
   -- Raids are operations now (scripts/ops.lua): chosen from intel, sized, staged, aborted when losing.
   ops.tick(b, tick, trace, army)
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
@@ -654,7 +657,7 @@ function army.disband(b, trace)
     if u.valid then
       n = n + 1
       if dest then
-        storage.unit_owner[u.unit_number] = dest.id
+        pool.enlist(dest, u)
         table.insert(dest.garrison, u)
         u.commandable.set_command{type = defines.command.go_to_location, destination = dest.depots[1].position,
           radius = 8, distraction = defines.distraction.by_enemy}

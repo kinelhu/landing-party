@@ -11,6 +11,7 @@ local base = require("__landing-party__.scripts.base")
 local war = require("__landing-party__.scripts.war")
 local ops = require("__landing-party__.scripts.ops")
 local pact = require("__landing-party__.scripts.pact")
+local pool = require("__landing-party__.scripts.pool")
 
 local flare = {}
 
@@ -212,7 +213,7 @@ local function release(b, f, why, keep)
     f.canister.surface.create_entity{name = "explosion", position = f.canister.position}
     f.canister.destroy()
   end
-  if f.buggy and f.buggy.valid then table.insert(b.garrison, f.buggy) end
+  if f.buggy and f.buggy.valid then pool.give_one(b, f.buggy) end
   base.trace(b, "flare over: " .. why)
   b.flare = nil
   b.next_flare = game.tick + (storage.flare_cooldown or COOLDOWN)
@@ -230,7 +231,7 @@ local function drop(b, f)
     f.buggy.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 8,
       distraction = defines.distraction.none}
   end
-  table.insert(b.garrison, f.buggy)
+  pool.give_one(b, f.buggy)
   f.buggy = nil
   local from
   f.groups, f.pulled, from = wave(s, f.canister.position, f.target)

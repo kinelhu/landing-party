@@ -15,6 +15,7 @@ local rng = require("__landing-party__.scripts.rng")
 local base = require("__landing-party__.scripts.base")
 local rd = require("__landing-party__.scripts.rd")
 local stance = require("__landing-party__.scripts.stance")
+local pool = require("__landing-party__.scripts.pool")
 
 local war = {}
 
@@ -56,7 +57,7 @@ local function at_war(b, act)
 end
 war.at_war = at_war
 
-local function strength(b) return #b.garrison + #(b.patrol or {}) end
+local function strength(b) return pool.strength(b) end
 
 -- base.rebuild asks before each job: false holds it (base.footing).
 function war.footing(b, job)
@@ -101,7 +102,7 @@ local function spawn(b, names, at, to)
     local u = p and s.create_entity{name = proto, position = p, force = b.force}
     if u then
       table.insert(out, u)
-      storage.unit_owner[u.unit_number] = to.id
+      pool.enlist(to, u)
     end
   end
   return out
@@ -111,7 +112,7 @@ local function join(b, units)
   for _, u in ipairs(units) do
     if u.valid then
       table.insert(b.garrison, u)
-      storage.unit_owner[u.unit_number] = b.id
+      pool.enlist(b, u)
     end
   end
 end

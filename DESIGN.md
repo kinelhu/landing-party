@@ -1568,6 +1568,15 @@ forced open).
   enclosing a structure that stood before the arc should not provoke Serenity (the line moving onto the player is the
   corporation's act), or the warning stays a notice; a design call for the user.
 
+### The unit pool (2026-10-17; `docs/ai.md`)
+A settlement counted only its units at home against its cap, so the ones out on a raid, a heist or a response were made
+again, and units were put back into the garrison while still in the field, to be drafted again from where they stood.
+Now its roster holds every unit it owns (`scripts/pool.lua`) and the cap counts them all; units done with a job wait on
+`b.returning` until they are home. Scenario `pool` (a full camp: no unit made while 4 are out; old code: 3).
+`bombard` then failed: its tier-1 siege's guards (out, now counted) and the spare at home came to 21 of the 22 its
+assault needed, where the garrison had grown past the cap before. A siege whose barrage won now commits its reserve
+too (guards plus everything at home): 22 went in at once and razed the position.
+
 ### Stance and the answer (the user, 2026-10-17; `docs/ai.md`)
 The user, on Serenity turning enemy and doing nothing visible: "we need to be quite flexible with our coding. It turns
 out we've started a real RTS AI system here, with none of the storyboarding upfront". `docs/ai.md` maps every decision

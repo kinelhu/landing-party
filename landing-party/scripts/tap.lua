@@ -18,6 +18,7 @@ local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local war = require("__landing-party__.scripts.war")
 local ops = require("__landing-party__.scripts.ops")
+local pool = require("__landing-party__.scripts.pool")
 
 local tap = {}
 
@@ -98,7 +99,7 @@ end
 local function run_over(b, t)
   local r = t.run
   if r and r.buggy.valid then
-    table.insert(b.garrison, r.buggy)
+    pool.give_one(b, r.buggy)
     local h = home_of(b)
     if h and h.valid then
       r.buggy.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 8,

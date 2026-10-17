@@ -7,6 +7,7 @@ local phases = require("__landing-party__.scripts.phases")
 local biters = require("__landing-party__.scripts.biters")
 faction.on_trigger = phases.late
 local ops = require("__landing-party__.scripts.ops")
+local pool = require("__landing-party__.scripts.pool")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
 local war = require("__landing-party__.scripts.war")
@@ -162,6 +163,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     if id then
       storage.unit_owner[ent.unit_number] = nil
       local b = storage.bases[id]
+      pool.discharge(b, ent.unit_number)
       if b then
         b.units_lost = b.units_lost + 1
         ops.on_unit_killed(b, e.cause)
@@ -365,7 +367,7 @@ remote.add_interface("landing-party", {
     for _ = 1, n do
       local p = s.find_non_colliding_position(name, {b.lander.position.x, b.lander.position.y + 10}, 20, 0.5)
       local u = p and s.create_entity{name = name, position = p, force = b.lander.force}
-      if u then table.insert(b.garrison, u); storage.unit_owner[u.unit_number] = b.id end
+      if u then table.insert(b.garrison, u); pool.enlist(b, u) end
     end
   end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
