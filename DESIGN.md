@@ -1327,6 +1327,9 @@ builds with sparks, no beam; Serenity keeps its beam until the drone.
   other crews came home. The player is told (`lp.line-held` for a post: "Serenity's line is held at ..."; `lp.crew-gave-up`
   otherwise) and it is an incident (`/lp incidents`). `cordon held`: from 6 minutes every drone beyond the claim shot
   down; 25 lost, 7 posts and rebuilds given up, the claim held at 120 (it steps a minute otherwise).
+  A crew stuck on its way (no nearer its site for a minute) counts the same: a camp sent 24 trucks to two sites it could
+  not reach (visit deathworld10x). No notice for that one: the player did nothing. `crew island` (the site ringed by
+  deep water): three stuck, the outpost given up, the camp's other crews came home.
 - What the builders broke, found by the regression (Serenity's camps now send drones, so most scenarios changed):
   - The planner budgets power by the jobs still queued; a crew takes its module's off the queue, and they were planned
     again (demand 2.9 MW on 2.0, `loot`). A crew's unbuilt jobs now count as owed.

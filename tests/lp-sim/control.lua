@@ -3896,7 +3896,8 @@ scenarios.crew = function()
   -- LP_MIX=rebuild: two of the built outpost's five destroyed; a crew rebuilds them (no yard beam), all five again within
   -- the rebuild delay and 90 s.
   -- LP_MIX=doomed: every truck killed at mid-road: after three the camp gives the outpost up, and its other work goes on.
-  local doomed = params.mix == "doomed"
+  -- LP_MIX=island: the site ringed by water: three trucks stuck, the outpost given up.
+  local doomed, island = params.mix == "doomed", params.mix == "island"
   local killed, grown, drone, again = params.mix == "killed" or doomed, params.mix == "grown", params.mix == "drone", params.mix == "rebuild"
   local corp = drone and "serenity" or "grubstake"
   local at = (grown and 20 or 3) * 3600
@@ -3912,6 +3913,14 @@ scenarios.crew = function()
     S.site = {math.floor(o.x - o.x / len * out), math.floor(o.y - o.y / len * out)}
     if grown then S.walls = lp("stats", S.g).walls end
     flatten(S.site[1] - 8, S.site[2] - 8, S.site[1] + 8, S.site[2] + 8)
+    if island then
+      local tiles = {}
+      for x = -18, 18 do for y = -18, 18 do
+        local r2 = x * x + y * y
+        if r2 >= 11 * 11 and r2 <= 17 * 17 then table.insert(tiles, {name = "deepwater", position = {S.site[1] + x, S.site[2] + y}}) end
+      end end
+      surface().set_tiles(tiles)
+    end
     S.queued = game.tick
     if killed then
       local mid = {(o.x + S.site[1]) / 2, (o.y + S.site[2]) / 2}
@@ -3957,6 +3966,12 @@ scenarios.crew = function()
         tostring(c.sent), tostring(S.built_at and S.broke and (S.built_at - S.broke) / 60)))
       check("crew: within the rebuild delay and 90 s", S.built_at and S.broke and S.built_at - S.broke <= 150 * 60,
         tostring(S.built_at and S.broke and (S.built_at - S.broke) / 60))
+      return
+    end
+    if island then
+      check("crew: three trucks stuck, the outpost given up", c.stuck == 3 and c.gave_up == 1 and c.lost == 0, serpent.line(c))
+      check("crew: none built on the island, the camp's other work went on", (S.placed or 0) == 0 and c.done >= 1,
+        string.format("%s, placed %s", serpent.line(c), tostring(S.placed)))
       return
     end
     if doomed then

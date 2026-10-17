@@ -119,15 +119,16 @@ local function spill(s, pos, parts)
   end
 end
 
--- lost: the crew was killed (counts toward GIVE_UP); returns what was given up, if anything.
-local function requeue(b, c, lost)
+-- failed: the crew was killed or stuck (counts toward GIVE_UP: a camp sent 24 crews to two sites they could not reach,
+-- visit deathworld10x); returns what was given up, if anything.
+local function requeue(b, c, failed)
   if c.rebuild then
     -- Back on the rebuild list, due again after REQUEUE.
     local dropped = 0
     for i = c.k, #c.jobs do
       local r = c.jobs[i]
-      r.crews_lost = (r.crews_lost or 0) + (lost and 1 or 0)
-      if r.crews_lost >= GIVE_UP then
+      r.crew_fails = (r.crew_fails or 0) + (failed and 1 or 0)
+      if r.crew_fails >= GIVE_UP then
         dropped = dropped + 1
       else
         r.due = game.tick + (storage.crew_requeue or REQUEUE)
@@ -137,8 +138,8 @@ local function requeue(b, c, lost)
     return dropped > 0 and string.format("%d rebuilds", dropped) or nil
   end
   local m = c.module
-  m.crews_lost = (m.crews_lost or 0) + (lost and 1 or 0)
-  if m.crews_lost >= GIVE_UP then
+  m.crew_fails = (m.crew_fails or 0) + (failed and 1 or 0)
+  if m.crew_fails >= GIVE_UP then
     m.abandoned = true
     return "the " .. m.kind
   end
@@ -196,9 +197,11 @@ local function step(b, i)
     if d < c.best - 1 then c.best, c.best_at = d, game.tick end
     if game.tick - c.best_at > STUCK then
       b.parts = b.parts + (c.bill - c.spent)
-      requeue(b, c)
+      local given = requeue(b, c, true)
       b.crews_stuck = (b.crews_stuck or 0) + 1
-      return done(b, i, string.format("stuck on the way to %.0f,%.0f, home with its parts", c.site[1], c.site[2]))
+      if given then b.crews_gave_up = (b.crews_gave_up or 0) + 1 end
+      return done(b, i, string.format("stuck on the way to %.0f,%.0f, home with its parts%s", c.site[1], c.site[2],
+        given and string.format("; %d crews failed there, %s given up", GIVE_UP, given) or ""))
     end
     if base.occupied(b, s, c.site) then
       b.parts = b.parts + (c.bill - c.spent)
