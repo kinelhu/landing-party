@@ -5069,6 +5069,71 @@ scenarios.sneak = function()
   end)
 end
 
+-- Mended: the user's save (2026-10-17), Grubstake raids on poles behind a wall the player's robots rebuild. The player's
+-- assembler and three poles inside a square of stone wall (12 from it), no turret; a destroyed wall piece comes back 5 s
+-- later (robots). A forced raid breaches, keeps breaking the rebuilt pieces (it wandered by the first one for 3 minutes),
+-- and razes the assembler. LP_MIX=provoked: Grubstake provoked: the raid takes half what the camp can field (raids of 4
+-- at the user's poles from camps of 30 to 50).
+scenarios.mended = function()
+  local provoked = params.mix == "provoked"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = provoked or nil})
+    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
+  end)
+  schedule(10 * 3600, function()
+    local o = lp("stats", S.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 140), math.floor(o.y - uy * 140)}
+    flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
+    S.c, S.walls, S.gone, S.rebuilt = c, {}, {}, 0
+    for x = -12, 12 do for y = -12, 12 do
+      if math.abs(x) == 12 or math.abs(y) == 12 then
+        local p = {c[1] + x + 0.5, c[2] + y + 0.5}
+        surface().create_entity{name = "stone-wall", position = p, force = "player"}
+        table.insert(S.walls, p)
+      end
+    end end
+    S.target = surface().create_entity{name = "assembling-machine-2", position = {c[1] + 0.5, c[2] + 0.5}, force = "player"}
+    for _, d in ipairs({{-6, -6}, {6, 6}, {-6, 6}}) do
+      surface().create_entity{name = "medium-electric-pole", position = {c[1] + d[1] + 0.5, c[2] + d[2] + 0.5}, force = "player"}
+    end
+    S.garrison0 = lp("stats", S.id).garrison
+    S.standing0 = lp("standing", "grubstake")
+    lp("dev", {"raid", tostring(S.id)}, c)
+  end)
+  -- The robots: a missing piece is put back 5 s after it went.
+  for t = 10 * 3600 + 60, END - 120, 60 do
+    schedule(t, function()
+      for i, p in ipairs(S.walls or {}) do
+        if surface().count_entities_filtered{name = "stone-wall", position = p, radius = 0.4} == 0 then
+          S.gone[i] = S.gone[i] or game.tick
+          if game.tick - S.gone[i] >= 300 and surface().can_place_entity{name = "stone-wall", position = p, force = "player"} then
+            surface().create_entity{name = "stone-wall", position = p, force = "player"}
+            S.gone[i], S.rebuilt = nil, S.rebuilt + 1
+          end
+        end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.id)
+    local first = st.ops.log[1]
+    info(string.format("mended%s: target %s, walls rebuilt %d, garrison %s at the raid, first raid %s",
+      provoked and " (provoked)" or "", S.target.valid and "standing" or "razed", S.rebuilt, tostring(S.garrison0),
+      serpent.line(first)))
+    info("mended: Grubstake's standing at the raid " .. tostring(S.standing0))
+    info("mended: provoked at " .. serpent.line((lp("corp", "grubstake") or {}).provoked))
+    if provoked then
+      check("mended: a provoked Grubstake raids with 10 or more", first and first.launched >= 10, serpent.line(first))
+    else
+      check("mended: it kept breaking the rebuilt wall", S.rebuilt >= 3, tostring(S.rebuilt))
+      check("mended: it razed the assembler", not S.target.valid, "")
+    end
+  end)
+end
+
 -- Biters (the user, in game: "a single medium biter can clear an entire outpost"). LP_MIX=outpost: Grubstake (sprawl,
 -- no outpost turrets by doctrine), grown; two medium biters attack a mining outpost: it answers, the outpost stands
 -- again and has earned a turret pair. LP_MIX=camp: a fresh Grubstake camp (no depot), two medium biters at its
@@ -5996,7 +6061,8 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true}
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true,
+    mended = true}
   if not TEMPERS[params.scenario] then lp("debug_tune", {provoke = true}) end
 end)
 

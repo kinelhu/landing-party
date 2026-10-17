@@ -70,6 +70,7 @@ local SIEGE_TIERS = {
 }
 local RESUPPLY, SHELLS_CAP = 40, 160
 local ASSAULT_IDLE = 30 * 60
+local ENEMY_SHARE = 0.5          -- a provoked Grubstake's raids: this share of what it can field, at least
 -- Strip-mining (Grubstake's temper): a hauler and guards set up a camp on ore beside the player's drills, out of
 -- their turrets' reach (a generator, a pylon, drills over bins), mine the real patch for STRIP_TICKS, pack up,
 -- and the hauler carries the ore home as feedstock (lost if it dies on the way).
@@ -694,6 +695,16 @@ local function order_all(members, cmd)
   for _, u in ipairs(members) do if u.valid then u.commandable.set_command(cmd) end end
 end
 
+-- Whether a unit is still about an order worth keeping: on its way in (a compound), or attacking something that stands.
+-- Idle or wandering (what a finished order leaves), it is free for a new one.
+local function busy(u)
+  local c = u.commandable.command
+  if not c then return false end
+  if c.type == defines.command.compound or c.type == defines.command.go_to_location then return true end
+  if c.type == defines.command.attack then return c.target ~= nil and c.target.valid end
+  return c.type == defines.command.attack_area
+end
+
 local function alive(op)
   local n = 0
   for _, u in ipairs(op.members) do if u.valid then n = n + 1 end end
@@ -1214,6 +1225,14 @@ local function launch(b, key, trace, army)
   -- Cost no object (the ladder): what the garrison has goes, however few.
   if desperate then want = math.min(want, n) end
   if n < want or n == 0 then return false end
+  -- Grubstake provoked (an enemy of that player, standing.lua) raids with half what it can field, not what the target's
+  -- known defence calls for: its camps of 31 to 54 sent raids of 4 at the user's poles, and the user saw "no hostile
+  -- action" (2026-10-17).
+  local cd = storage.corps and storage.corps[b.corp]
+  if (shared.CORPS[b.corp].temper or {}).soft_only and against_player(t.owner) and cd and cd.provoked
+    and cd.provoked[t.owner] then
+    want = math.max(want, math.min(n, math.ceil(ENEMY_SHARE * n)))
+  end
   local members = {}
   for i = #b.garrison, 1, -1 do
     if #members >= want then break end
@@ -2228,7 +2247,10 @@ local function step(b, trace, army)
       op.phase, op.phase_at, op.last_kill = "attack", game.tick, game.tick
       op.attacked = true
       alert(b, t, "lp.alert-raid")
-      local pos = t and t.pos or op.staging
+      -- The aim is fixed as it goes in: the target's record follows the newest building seen in its cell, and a raid's
+      -- point moved 16 tiles off the pole it had hit, where it found nothing and gave up (the user's save, 2026-10-17).
+      op.pos = t and {t.pos[1], t.pos[2]} or nil
+      local pos = op.pos or op.staging
       if t and (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner) then
         local pieces, cover = breach_point(b, t, op.staging)
         op.route = sneak_route(b, op.staging, pieces and {pieces[1].position.x, pieces[1].position.y} or pos) or {}
@@ -2268,9 +2290,19 @@ local function step(b, trace, army)
     end
   elseif op.phase == "breach" then
     -- Through the gap once its pieces are down; given up (and in) after STAGE_TICKS at the wall.
-    local standing
-    for _, w in ipairs(op.breach or {}) do if w.valid then standing = w end end
-    local pos = t and t.pos or op.staging
+    local standing, fell
+    for _, w in ipairs(op.breach or {}) do if w.valid then standing = w else fell = true end end
+    -- A piece that fell is the breach, even if the player's robots put it back before this step looked (5 s later, it
+    -- never saw the gap): through it now.
+    if fell then standing = nil end
+    -- A wall the player's robots put back is breached again (one rebuilt in 5 s left the breach order done and the
+    -- raiders wandering by it for 3 minutes, the user's save).
+    if not standing and not fell and op.breach_at then
+      local again = game.surfaces[b.surface].find_entities_filtered{position = op.breach_at, radius = 2.5,
+        type = {"wall", "gate"}, force = enemies(game.forces[b.force])}
+      if #again > 0 then op.breach, standing = again, again[1] end
+    end
+    local pos = op.pos or (t and t.pos) or op.staging
     if n < 0.5 * op.launched then return finish(b, "aborted", trace, army) end
     if not standing or game.tick - op.phase_at > 2 * STAGE_TICKS then
       op.phase, op.phase_at, op.last_kill = "attack", game.tick, game.tick
@@ -2282,15 +2314,16 @@ local function step(b, trace, army)
       trace(b, string.format("raid %s the wall at %.0f,%.0f and goes in with %d of %d",
         standing and "gave up on" or "breached", op.breach_at[1], op.breach_at[2], n, op.launched))
     else
+      -- Each raider on a piece still standing: idle, wandering or its piece gone, it is told again.
       for _, u in ipairs(op.members) do
-        if u.valid and not u.commandable.has_command then
+        if u.valid and not busy(u) then
           u.commandable.set_command{type = defines.command.attack, target = standing, distraction = defines.distraction.by_damage}
         end
       end
     end
   elseif op.phase == "attack" then
     if b.razed > op.kills_at then op.kills_at, op.last_kill = b.razed, game.tick end
-    local pos = t and t.pos or op.staging
+    local pos = op.pos or (t and t.pos) or op.staging
     local surface = game.surfaces[b.surface]
     local turrets, left
     if t and t.owner == "enemy" then
@@ -2313,11 +2346,17 @@ local function step(b, trace, army)
         turrets, DEFENCE_RADIUS))
       return finish(b, "done", trace, army)
     end
-    -- Units that finished their attack command and stand idle are sent again.
+    -- Raiders done with their order (idle, wandering, their target gone) are each set on a building within 16 of the
+    -- point, the nearest: told to attack the area again, they found nothing there they would attack and stood idle
+    -- until the raid gave up (the user's save).
+    local ents
     for _, u in ipairs(op.members) do
-      if u.valid and not u.commandable.has_command then
-        u.commandable.set_command{type = defines.command.attack_area, destination = pos, radius = 12,
-          distraction = defines.distraction.by_anything}
+      if u.valid and not busy(u) then
+        ents = ents or surface.find_entities_filtered{position = pos, radius = 16, type = TYPES,
+          force = enemies(game.forces[b.force])}
+        local e = #ents > 0 and surface.get_closest(u.position, ents)
+        u.commandable.set_command(e and {type = defines.command.attack, target = e, distraction = defines.distraction.by_damage}
+          or {type = defines.command.attack_area, destination = pos, radius = 12, distraction = defines.distraction.by_anything})
       end
     end
   end

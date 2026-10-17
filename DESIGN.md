@@ -1548,6 +1548,27 @@ product is what the technology's research trigger asks for, craft-item); consuma
   marked, known and held and standing; unmarked, Grubstake razed it.
 - All six faction technologies of the consult are built.
 
+### Raids that finish, and a provoked Grubstake's size (the user, 2026-10-17)
+The user: "Grubstake destroyed my whole base on game speed 20 but I had to launch the sieges and raids myself (as even
+provoked, it took no hostile action)". On their save (20 minutes run on, decisions traced) it was an enemy and did raid,
+four units at a time at big poles behind the wall, and every raid aborted unhurt. Three causes:
+- The breach: a wall piece brought down was put back by the player's robots within 5 s; the order to attack it was then
+  done, the raiders wandered by it (wandering is an order, and only units with none were told again) for 3 minutes, and
+  the raid went in on its give-up. Now a piece that fell is the breach even if it stands again when the step looks, a
+  rebuilt piece is breached again, and a raider idle, wandering or with its target gone is told again (`busy`).
+- The aim: a target's record follows the newest building seen in its cell, and the raid's point moved 16 tiles off the
+  pole it had hit; told to attack the area there, the raiders found nothing they would attack and stood idle until the
+  90 s without a kill ended it. Now the point is fixed as it goes in (`op.pos`) and each free raider is set on the
+  nearest building within 16 of it (`attack`, not `attack_area`).
+- The size: a raid is sized to the defence the camp knows at the target, 0 at an unguarded pole, so 4 went from camps of
+  31 to 54. A provoked Grubstake (an enemy of that player) now raids with half what it can field at least
+  (`ENEMY_SHARE`). The ladder's clock still resets on every raze, the user's forced operations included.
+On the save, the same 20 minutes: 8 raids of 11 to 28 done (razing their poles), where all had aborted. Scenario
+`mended` (the player's assembler and poles in a wall square, a fallen piece rebuilt 5 s later, unprovoked: a temper
+scenario, no provocation from the start): 4 raiders breach, keep breaking the rebuilt pieces and raze it (old code:
+aborted, the assembler standing). `mended provoked`: 15 of a garrison of 48 (old code: 4). Every other Grubstake
+scenario is provoked from the start (the harness: operations' mechanics, not tempers), so its raids grew with this.
+
 ### Grubstake's pollution (the user, 2026-10-17)
 The docs said settlements were clean; Grubstake's drill was a copy of the electric drill with its 10 a minute kept. On
 the user's deathworld save its 90 drills put out 7,200 in 10 minutes, as much as the player's 236 drills (7,115), more
