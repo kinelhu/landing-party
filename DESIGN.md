@@ -1839,6 +1839,13 @@ scenario with assertions first; the window is for art, feel and GUI.
   - The route planner marks each turret's and nest's reach on its grid once, and a cell looks itself up (was: each cell
     probed 16 buckets by string key). A failed route: 345 -> 100 ms. Water tests were 5% of it.
   Worst tick after both: 118 ms (was 415); two failed routes in three hours (the first, and one after a corridor opened).
+  The other two saves (3 hours each, alone): nw 0.52 -> 0.63 ms a tick (script 0.04), nwa 1.50 -> 1.70 (script 0.09).
+  On nw, two more repeated searches ran dry, each 100 to 200 ms: Grubstake's sneaking raids staged inside the factory's
+  turrets (one substation after another in the same enclosure), and its power tap trying three unreachable poles every
+  five minutes. Now a staging point within 64 tiles of one that failed for turrets in the last 30 minutes, from the same
+  home, is taken to fail; a pole with no route waits 30 minutes (`b.tap_no_route`). nw: about 45 such searches in three
+  hours -> 15, the tap's series gone, its razing unchanged (112). nwa's 350 ms every ten minutes is the test harness's
+  census of its factory, not the mod.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

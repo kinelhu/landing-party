@@ -29,6 +29,7 @@ local START, GROW, MAX = 100000, 1.5, 4000000   -- watts: the first draw, its ri
 local STEP = 5 * 3600
 local DRIVE = 60 * 60             -- a buggy no nearer its next spot for this long is stuck: the run is given up
 local REPAIR_WAIT = 2 * 3600      -- after a repair buggy is lost
+local NO_ROUTE = 30 * 3600         -- a pole with no route to it, before it is tried again
 
 local function tell(b, key, at, extra)
   local s = game.surfaces[b.surface]
@@ -145,8 +146,15 @@ function tap.launch(b, pole)
   local len = math.max(1, math.sqrt(dx * dx + dy * dy))
   local goal = {x = pole.position.x + dx / len * GAP, y = pole.position.y + dy / len * GAP}
   -- Out of every turret's reach (the heist's route); no way round, no tap.
+  -- A pole with no way to it is not tried again for NO_ROUTE: three such poles cost 200 ms every five minutes (visit nw).
+  b.tap_no_route = b.tap_no_route or {}
+  if game.tick < (b.tap_no_route[pole.unit_number] or 0) then return "no route (lately)" end
   local route = ops.route(b, {from.position.x, from.position.y}, {goal.x, goal.y}, {turrets = true})
-  if not route then return "no route" end
+  if not route then
+    for k, till in pairs(b.tap_no_route) do if till <= game.tick then b.tap_no_route[k] = nil end end
+    b.tap_no_route[pole.unit_number] = game.tick + NO_ROUTE
+    return "no route"
+  end
   local points = {{x = from.position.x, y = from.position.y}}
   for _, w in ipairs(route) do table.insert(points, {x = w[1], y = w[2]}) end
   table.insert(points, goal)

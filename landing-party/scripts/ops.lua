@@ -1164,6 +1164,7 @@ function ops.loot_wreck(b, ent)
   end
 end
 
+local DEAD_END_RADIUS, DEAD_END_TICKS = 64, 30 * 3600
 local function launch(b, key, trace, army)
   local t = b.intel.targets[key]
   local h = home(b)
@@ -1205,10 +1206,21 @@ local function launch(b, key, trace, army)
   -- Nests that blocked this march still block it until a spawner dies (a corridor, ops.cleared): not planned again
   -- (Serenity re-planned the same failed raid on a Grubstake generator every two minutes, 300 ms each time, visit
   -- deathworld10x).
+  -- Staging inside a factory's turrets (Grubstake's sneaking leg): one substation after another in the same enclosure,
+  -- each search running dry over 20,000 cells, 100 ms each (visit nw). A staging point near one that failed for turrets
+  -- lately, from the same home, is taken to fail too.
   local route, why
   local u = t.unrouted
+  b.dead_ends = b.dead_ends or {}
+  while b.dead_ends[1] and game.tick - b.dead_ends[1].tick > DEAD_END_TICKS do table.remove(b.dead_ends, 1) end
+  local dead
+  for _, d in ipairs(b.dead_ends) do
+    if d.home == h.unit_number and (d.pos[1] - stage[1]) ^ 2 + (d.pos[2] - stage[2]) ^ 2 <= DEAD_END_RADIUS ^ 2 then dead = d end
+  end
   if u and u.home == h.unit_number and not ops.cleared_since(b.surface, u.tick) then
     why = u.why
+  elseif dead then
+    why = "near a staging point that failed lately: " .. dead.why
   else
     route = sneak_route(b, {h.position.x, h.position.y}, stage, {turrets = sneaks, nests = t.owner ~= "enemy"})
     why = route and "" or string.format("to staging %.0f,%.0f (%s)", stage[1], stage[2], serpent.line(ops.last_route))
@@ -1220,6 +1232,9 @@ local function launch(b, key, trace, army)
     -- Nests alone: turrets (Grubstake's sneaking leg) can fall without a corridor opening.
     t.unrouted = not route and why:find("nests = [1-9]") and why:find("turrets = 0[,}]")
       and {home = h.unit_number, tick = game.tick, why = why} or nil
+    if not route and not why:find("turrets = 0[,}]") then
+      table.insert(b.dead_ends, {pos = {stage[1], stage[2]}, home = h.unit_number, tick = game.tick, why = why})
+    end
   end
   -- Overflight (Grubstake, the biter-country consult: "We don't fight bugs"): no way round on the ground, and air
   -- units at home: up to six fly over the nests (round the worms, which shoot at them), take the target, and fly home.
