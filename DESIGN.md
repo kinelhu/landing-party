@@ -1849,6 +1849,20 @@ scenario with assertions first; the window is for art, feel and GUI.
   home, is taken to fail; a pole with no route waits 30 minutes (`b.tap_no_route`). nw: about 45 such searches in three
   hours -> 15, the tap's series gone, its razing unchanged (112). nwa's 350 ms every ten minutes is the test harness's
   census of its factory, not the mod.
+- **nw again (2026-10-17, later, 3 hours, alone).** The ticks left over 100 ms, one every two minutes from the 20th
+  minute, were Grubstake's raids on substations on a solar pier out in a lake: the staging point fell back to a point in
+  deep water (`outside` had found no dry one and returned the stand-off anyway), and each search flooded the land round
+  it, 21,000 cells and 80 ms, before failing. Serenity's nest-blocked raid was planned again on every spawner death
+  anywhere (the factory's artillery kills them all the time). Three fixes:
+  - The route planner floods from the target first (up to 3,000 cells, the same cells and moves as the search, on
+    each box's own grid): a pocket sealed all round fails at once (80 -> 1.5 ms). A pocket that reaches the box's edge
+    is not sealed (the wide box may get round).
+  - No staging point in water: a candidate with water within 8 tiles is passed over, and a stand-off fallback in water
+    means the raid is not sent ("no staging point on dry land", the target cooled 15 minutes).
+  - A raid remembered as blocked by nests is planned again only when a spawner dies inside the box its searches covered.
+  nw, the mod's own ticks (the harness's apart): over 50 ms 71 -> 25, over 100 ms 48 -> 1 (205 ms, once). Mean script
+  0.042 ms a tick. `scripts/visit.sh` (LP_PROFILE) now reports the harness's ticks (setup, the census every 10 minutes,
+  the end) apart from the mod's.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each

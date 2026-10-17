@@ -842,11 +842,18 @@ local function outside(b, t, ux, uy, off, len)
     if s.count_entities_filtered{position = p, radius = STAND_OFF, type = TURRETS, force = foes, limit = 1} == 0
       and (t.owner == "enemy" or s.count_entities_filtered{position = p, radius = 50, type = {"unit-spawner", "turret"},
         force = "enemy", limit = 1} == 0)
+      -- Nor by water: staged on a lake shore, a raid on a substation found no way to its staging point, the same six
+      -- points one after another for three hours (visit nw).
+      and s.count_tiles_filtered{position = p, radius = 8, collision_mask = "water_tile", limit = 1} == 0
       and not walled(p) then
       return p
     end
   end
-  return {t.pos[1] + ux * off, t.pos[2] + uy * off}
+  -- Nowhere better: at the stand-off, unless that is water (nil: no staging point; a substation on a pier out in a
+  -- lake was staged for in deep water, every few minutes for three hours, visit nw).
+  local p = {t.pos[1] + ux * off, t.pos[2] + uy * off}
+  if s.count_tiles_filtered{position = p, radius = 2, collision_mask = "water_tile", limit = 1} > 0 then return nil end
+  return p
 end
 
 -- Sneaking and breaching (Grubstake's temper; the user: "do they try to avoid turrets? And perhaps make holes in
@@ -874,11 +881,14 @@ function ops.cleared(surface, pos)
     table.remove(storage.corridors, 1)
   end
 end
-function ops.cleared_since(surface, tick)
+-- Within box ({{x1, y1}, {x2, y2}}) when given: a megabase's artillery kills spawners all the time, far from any route
+-- (a raid that failed for nests was planned again every two minutes on that, visit nw).
+function ops.cleared_since(surface, tick, box)
   for i = #(storage.corridors or {}), 1, -1 do
     local c = storage.corridors[i]
     if c.tick <= tick then return false end
-    if c.surface == surface then return true end
+    if c.surface == surface and (not box or (c.pos[1] >= box[1][1] and c.pos[1] <= box[2][1] and c.pos[2] >= box[1][2]
+      and c.pos[2] <= box[2][2])) then return true end
   end
   return false
 end
@@ -887,6 +897,8 @@ function ops.pact(force)
   local f = game.forces[force]
   return f and game.forces.enemy and f.get_cease_fire("enemy") and game.forces.enemy.get_cease_fire(f) or false
 end
+local ENCLOSED_PROBE = 3000
+local NEIGHBOURS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
 local function sneak_route(b, from, to, opts, wide)
   opts = opts or {turrets = true, nests = true}
   local SNEAK_BOX = wide and 3 * SNEAK_BOX or SNEAK_BOX
@@ -956,6 +968,32 @@ local function sneak_route(b, from, to, opts, wide)
   local function cell(p) return math.floor((p[1] - x0) / SNEAK_CELL), math.floor((p[2] - y0) / SNEAK_CELL) end
   local si, sj = cell(from)
   local ti, tj = cell(to)
+  -- A staging point sealed in by turrets (Grubstake's sneaking leg inside a factory's ring): the search from home
+  -- flooded the open country outside, 21,000 cells and 80 ms, before it failed, 43 times in three hours (visit nw).
+  -- The pocket round the target is small: flooded first from there, within ENCLOSED_PROBE cells, it fails at once
+  -- (the same cells and moves as the search, so it fails only where the search would). Bounded by the box's edge is
+  -- not sealed: only a pocket walled in all round counts. The wide box has its own grid, so its own probe.
+  do
+    local seen, queue, qi, escapes = {[ti * h + tj] = true}, {{ti, tj}}, 1, false
+    while queue[qi] and #queue <= ENCLOSED_PROBE and not escapes do
+      local ci, cj = queue[qi][1], queue[qi][2]
+      qi = qi + 1
+      for _, d in ipairs(NEIGHBOURS) do
+        local ni, nj = ci + d[1], cj + d[2]
+        if (ni == si and nj == sj) or ni < 0 or nj < 0 or ni >= w or nj >= h then escapes = true; break end
+        local nk = ni * h + nj
+        if not seen[nk] and open(ni, nj) then seen[nk] = true; queue[#queue + 1] = {ni, nj} end
+      end
+    end
+    if not escapes and not queue[qi] then
+      local nb = 0
+      for _, v in pairs(blocked) do if v then nb = nb + 1 end end
+      ops.last_route = {nests = #nests, turrets = #turrets, blocked = nb, cells = w * h, found = false, steps = 0,
+        enclosed = #queue}
+      if not wide then return sneak_route(b, from, to, opts, true) end
+      return nil
+    end
+  end
   -- A* over the grid, eight neighbours.
   local key = function(i, j) return i * h + j end
   local function hdist(i, j) return math.sqrt((i - ti) ^ 2 + (j - tj) ^ 2) end
@@ -1197,6 +1235,13 @@ local function launch(b, key, trace, army)
   end
   local off = math.min(STAND_OFF + spread, len)
   local stage = outside(b, t, dx / len, dy / len, off, len)
+  if not stage then
+    for _, u in ipairs(members) do table.insert(b.garrison, u) end
+    t.cool = game.tick + 15 * 3600
+    b.next_op = game.tick + 2 * 3600
+    trace(b, string.format("raid on %s at %.0f,%.0f: no staging point on dry land; not sent", t.kind, t.pos[1], t.pos[2]))
+    return false
+  end
   b.op = {kind = "raid", target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
   -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
@@ -1217,7 +1262,7 @@ local function launch(b, key, trace, army)
   for _, d in ipairs(b.dead_ends) do
     if d.home == h.unit_number and (d.pos[1] - stage[1]) ^ 2 + (d.pos[2] - stage[2]) ^ 2 <= DEAD_END_RADIUS ^ 2 then dead = d end
   end
-  if u and u.home == h.unit_number and not ops.cleared_since(b.surface, u.tick) then
+  if u and u.home == h.unit_number and not ops.cleared_since(b.surface, u.tick, u.box) then
     why = u.why
   elseif dead then
     why = "near a staging point that failed lately: " .. dead.why
@@ -1230,8 +1275,12 @@ local function launch(b, key, trace, army)
       why = "the attack leg " .. serpent.line(ops.last_route)
     end
     -- Nests alone: turrets (Grubstake's sneaking leg) can fall without a corridor opening.
+    -- Every box the searches covered (the wide one, round both legs): a spawner killed in it may open a way.
+    local m = 3 * SNEAK_BOX + 60
+    local ubox = {{math.min(h.position.x, stage[1], t.pos[1]) - m, math.min(h.position.y, stage[2], t.pos[2]) - m},
+      {math.max(h.position.x, stage[1], t.pos[1]) + m, math.max(h.position.y, stage[2], t.pos[2]) + m}}
     t.unrouted = not route and why:find("nests = [1-9]") and why:find("turrets = 0[,}]")
-      and {home = h.unit_number, tick = game.tick, why = why} or nil
+      and {home = h.unit_number, tick = game.tick, why = why, box = ubox} or nil
     if not route and not why:find("turrets = 0[,}]") then
       table.insert(b.dead_ends, {pos = {stage[1], stage[2]}, home = h.unit_number, tick = game.tick, why = why})
     end

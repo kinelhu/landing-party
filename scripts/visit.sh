@@ -36,9 +36,17 @@ rows = [l.split(",") for l in lines[heads[0] + 1:] if l.startswith("t") and l[1:
 ix = {h: j for j, h in enumerate(hdr)}
 script = [float(r[ix["scriptUpdate"]]) / 1e6 for r in rows]
 whole = [float(r[ix["wholeUpdate"]]) / 1e6 for r in rows]
-worst = sorted(((s, int(r[0][1:])) for s, r in zip(script, rows)), reverse=True)[:6]
+# The harness's own ticks (tests/lp-sim visit: the setup at 60, a census of the player's buildings every 10 minutes and
+# at the end) are told apart: on a large factory they are the biggest ticks, and none of them is the mod's.
+n = len(rows)
+harness = lambda t: n > 3600 and (t == 60 or t % 36000 == 0 or t == n - 120)
+ticks = [int(r[0][1:]) for r in rows]
+mod = [(s, t) for s, t in zip(script, ticks) if not harness(t)]
+worst = sorted(mod, reverse=True)[:6]
+hw = max((s for s, t in zip(script, ticks) if harness(t)), default=0)
 print(f"PROFILE {len(rows)} ticks: mean tick {sum(whole)/len(whole):.3f} ms, mean script {sum(script)/len(script):.4f} ms; "
-      f"over 5 ms: {sum(1 for s in script if s > 5)}; worst: " + ", ".join(f"{s:.1f}@{t}" for s, t in worst))
+      f"over 5 ms: {sum(1 for s, t in mod if s > 5)}, over 50: {sum(1 for s, t in mod if s > 50)}; worst: "
+      + ", ".join(f"{s:.1f}@{t}" for s, t in worst) + f"; harness ticks apart (worst {hw:.1f})")
 PY
 }
 run --benchmark "$V/saves/baseline.zip" --benchmark-ticks 3600 --benchmark-runs 1 $VERB
