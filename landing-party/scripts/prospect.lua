@@ -125,7 +125,35 @@ local function tag(b, p)
   return tags
 end
 
-local function untag(p) for _, t in ipairs(p.tags or {}) do if t.valid then t.destroy() end end end
+-- The claim stake (Fable's notices consult: the ten-minute window had nothing in the world to show it): a stake in the
+-- patch's middle with a lamp, amber, red and blinking in its last two minutes; pulled down, the claim is off. The map
+-- shows it in Grubstake's colour where the player has nothing.
+local RED_AT = 2 * 3600
+local AMBER, RED = {r = 1, g = 0.62, b = 0.15}, {r = 1, g = 0.15, b = 0.1}
+local function plant(b, p)
+  local s = game.surfaces[b.surface]
+  local at = s.find_non_colliding_position("lp-claim-stake", {p.x, p.y}, 8, 0.5)
+  local e = at and s.create_entity{name = "lp-claim-stake", position = at, force = b.lander.force}
+  if not e then return end
+  s.create_entity{name = "explosion", position = at}
+  p.stake = e
+  p.lamp = {rendering.draw_circle{surface = s, target = {entity = e, offset = {0, -0.6}}, radius = 0.15, filled = true,
+      color = AMBER},
+    rendering.draw_light{surface = s, target = e, sprite = "utility/light_small", scale = 0.8, intensity = 0.7, color = AMBER}}
+end
+
+local function lamp(p, window)
+  if p.red or not p.lamp or game.tick - p.tagged < window - RED_AT then return end
+  p.red = true
+  for _, o in ipairs(p.lamp) do if o.valid then o.color = RED end end
+  if p.lamp[1] and p.lamp[1].valid then p.lamp[1].blink_interval = 30 end
+end
+
+local function untag(p)
+  for _, t in ipairs(p.tags or {}) do if t.valid then t.destroy() end end
+  for _, o in ipairs(p.lamp or {}) do if o.valid then o.destroy() end end
+  if p.stake and p.stake.valid then p.stake.destroy() end
+end
 
 -- The claim's jobs, a module of the camp: drills on the patch's ore tiles (spaced), their bins north of them, a
 -- generator and a pylon beside.
@@ -166,6 +194,18 @@ local function step(b)
   local s = game.surfaces[b.surface]
   if p.phase == "tagged" then
     -- Answered: drilled or staked within the window. The claim is called off and the camp looks elsewhere.
+    -- Its stake pulled down: the claim is off, as when answered.
+    if p.stake and not p.stake.valid then
+      untag(p)
+      b.prospects_answered = (b.prospects_answered or 0) + 1
+      b.stakes_pulled = (b.stakes_pulled or 0) + 1
+      standing.incident(b.corp, "stake pulled", {p.x, p.y}, p.ore)
+      base.trace(b, string.format("prospect: the stake at %.0f,%.0f was pulled down; the claim is off", p.x, p.y))
+      b.prospect = nil
+      b.next_prospect = game.tick + (storage.prospect_pace or PACE)
+      return
+    end
+    lamp(p, storage.prospect_window or WINDOW)
     if worked(s, {p.x, p.y}) or ops.marked(b, {p.x, p.y}) then
       untag(p)
       b.prospects_answered = (b.prospects_answered or 0) + 1
@@ -174,6 +214,10 @@ local function step(b)
       return
     end
     if game.tick - p.tagged >= (storage.prospect_window or WINDOW) then
+      -- The stake gives way to the claim's own works.
+      for _, o in ipairs(p.lamp or {}) do if o.valid then o.destroy() end end
+      if p.stake and p.stake.valid then p.stake.destroy() end
+      p.lamp, p.stake = nil, nil
       p.module = claim(b, p)
       p.phase, p.claimed_at = "claimed", game.tick
       b.prospects_claimed = (b.prospects_claimed or 0) + 1
@@ -221,6 +265,7 @@ local function consider(b)
   b.prospected = b.prospected or {}
   b.prospected[p.key] = true
   p.phase, p.tagged, p.tags = "tagged", game.tick, tag(b, p)
+  plant(b, p)
   b.prospect = p
   b.prospects = (b.prospects or 0) + 1
   tell(b, "lp.prospect", {p.x, p.y})
@@ -242,6 +287,8 @@ prospect.worked = worked
 
 function prospect.stats(b)
   return {prospects = b.prospects or 0, claimed = b.prospects_claimed or 0, answered = b.prospects_answered or 0,
+    pulled = b.stakes_pulled or 0, stake = b.prospect and b.prospect.stake and b.prospect.stake.valid or false,
+    red = b.prospect and b.prospect.red and b.prospect.stake and b.prospect.stake.valid or false,
     phase = b.prospect and b.prospect.phase, at = b.prospect and {b.prospect.x, b.prospect.y}}
 end
 

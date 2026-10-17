@@ -117,15 +117,39 @@ local function step(post)
   end
 end
 
+-- The post's lamp (Fable's notices consult: the end of a truce was silent): an amber pip on the post while a truce it
+-- bought holds (seen by day), and a glow round it (seen by night); dark, the next raid may come.
+local AMBER = {r = 1, g = 0.62, b = 0.15}
+local function lamp(post)
+  local t = storage.truces and storage.truces["grubstake|" .. post.owner]
+  local lit = t and game.tick < t
+  local on = post.lamp and post.lamp[1] and post.lamp[1].valid
+  if lit and not on then
+    local e = post.entity
+    post.lamp = {
+      rendering.draw_circle{surface = e.surface, target = {entity = e, offset = {0.3, -0.55}}, radius = 0.14, filled = true,
+        color = AMBER},
+      rendering.draw_light{surface = e.surface, target = e, sprite = "utility/light_small", scale = 0.9, intensity = 0.7,
+        color = AMBER},
+    }
+  elseif not lit and on then
+    for _, o in ipairs(post.lamp) do if o.valid then o.destroy() end end
+    post.lamp = nil
+  end
+  post.lit = lit or false
+end
+
 function trade.tick(tick)
   if tick % 60 ~= 53 or not storage.posts then return end
   for i = #storage.posts, 1, -1 do
     local post = storage.posts[i]
     if not post.entity.valid then
       if post.run and post.run.unit.valid then post.run.unit.destroy() end
+      for _, o in ipairs(post.lamp or {}) do if o.valid then o.destroy() end end
       table.remove(storage.posts, i)
     else
       step(post)
+      lamp(post)
     end
   end
 end
@@ -133,7 +157,9 @@ end
 function trade.stats()
   local truces = {}
   for k, t in pairs(storage.truces or {}) do truces[k] = math.max(0, math.floor((t - game.tick) / 60)) end
-  return {tributes = storage.tributes or 0, truces = truces}
+  local lit = 0
+  for _, p in ipairs(storage.posts or {}) do if p.lit then lit = lit + 1 end end
+  return {tributes = storage.tributes or 0, truces = truces, lit = lit}
 end
 
 return trade

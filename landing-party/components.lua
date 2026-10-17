@@ -119,6 +119,15 @@ data:extend({
     results = {{type = "item", name = "lp-border-stake", amount = 1}}},
 })
 
+-- Grubstake's claim stake (prospect.lua; Fable's notices consult): planted on a prospected patch, a signal post in its
+-- colour with a lamp (drawn: amber, red in the last minutes); pulled down, the claim is off.
+data:extend({
+  {type = "simple-entity-with-force", name = "lp-claim-stake", icons = {{icon = "__base__/graphics/icons/rail-signal.png", tint = G}},
+    flags = {"placeable-neutral", "placeable-off-grid"}, max_health = 150, is_military_target = false,
+    collision_box = {{-0.3, -0.3}, {0.3, 0.3}}, selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    picture = {filename = "__base__/graphics/icons/rail-signal.png", size = 64, scale = 0.5, tint = G}},
+})
+
 -- The trade post (trade.lua): a steel chest in Grubstake's colour, from the start; what it holds buys a truce.
 local post = table.deepcopy(data.raw.container["steel-chest"])
 post.name = "lp-trade-post"

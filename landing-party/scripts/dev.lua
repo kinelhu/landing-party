@@ -10,7 +10,7 @@
 --   fast                     short clocks on or off: perimeter, strip camps, phases, headquarters
 --   grudge [id]              as if you had destroyed that settlement's lander: the grudge without the fall
 --   flare [id]               Grubstake fires a pheromone flare at you: its canister out of your turrets' reach
---   rig [id]                 a claim jumper at the chests nearest you (a rig 40 to 60 out, hands up in a minute)
+--   rig [id]                 a claim jumper at the chests nearest you (a rig 40 to 60 out, hands up in 2.5 minutes)
 --   tap [id]                 a power tap on the pole nearest you (a pylon line out of turret reach, then the clamp)
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")

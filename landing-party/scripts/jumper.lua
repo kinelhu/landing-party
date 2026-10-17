@@ -13,7 +13,9 @@ local war = require("__landing-party__.scripts.war")
 local jumper = {}
 
 local COOLDOWN = 15 * 3600
-local DIG = 60 * 60               -- the mound grows this long before the hands come up
+-- The mound grows this long before the hands come up: 2.5 minutes, so the chart (the rig, a Grubstake structure that was
+-- not there) and the dust line are a fair warning with no notice (Fable's notices consult: a minute was not).
+local DIG = 150 * 60
 local LOOT_TICKS = 60 * 60        -- they look for chests this long
 local RAZE_TICKS = 30 * 60        -- then break what is near this long
 local LEAVE_TICKS = 45 * 60       -- then go back down; who is not at the mound by then stays
@@ -123,7 +125,11 @@ local function emerge(b, j)
   for _ = 1, n do
     local p = s.find_non_colliding_position(name, j.mound, 4, 0.5)
     local u = p and s.create_entity{name = name, position = p, force = b.lander.force}
-    if u then table.insert(j.hands, u) end
+    if u then
+      -- An order at once: idle, a unit attacks whatever it sees, and the hands charged the wall's turrets 20 tiles off.
+      u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage, ticks_to_wait = 120}
+      table.insert(j.hands, u)
+    end
   end
   j.phase, j.phase_at = "loot", game.tick
   j.loot = {items = 0, value = 0, looted = {}}
@@ -154,6 +160,15 @@ local function step(b, j)
     end
     s.create_trivial_smoke{name = "lp-dust-smoke", position = j.mound}
     s.create_trivial_smoke{name = "lp-dust-smoke", position = j.rig.position}
+    -- The tunnel's line: dust puffs creeping from the rig toward the mound at the dig's pace, so a player who sees the
+    -- mound can trace it back to the rig, and one who sees the rig can see where it goes.
+    local f = math.min(1, (game.tick - j.started) / DIG)
+    local r = j.rig.position
+    for _, g in ipairs({f, f - 0.06, f - 0.12}) do
+      if g > 0 then
+        s.create_trivial_smoke{name = "lp-dust-smoke", position = {r.x + (j.mound.x - r.x) * g, r.y + (j.mound.y - r.y) * g}}
+      end
+    end
     if game.tick - j.started >= DIG then emerge(b, j) end
     return
   end
@@ -183,8 +198,10 @@ local function step(b, j)
       j.phase, j.phase_at = "raze", game.tick
       for _, u in ipairs(j.hands) do
         if u.valid then
+          -- What is near the mound, answering only what hits them: told to engage anything, they charged turrets out of
+          -- reach and all fell (a 2.5-minute dig, jumper).
           u.commandable.set_command{type = defines.command.attack_area, destination = j.mound, radius = 10,
-            distraction = defines.distraction.by_anything}
+            distraction = defines.distraction.by_damage}
         end
       end
     end

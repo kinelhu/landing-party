@@ -1568,6 +1568,22 @@ forced open).
   enclosing a structure that stood before the arc should not provoke Serenity (the line moving onto the player is the
   corporation's act), or the warning stays a notice; a design call for the user.
 
+### World tells for the last warnings (Fable: `docs/reviews/2026-10-17-notices-consult.md`; 2026-10-17)
+With chat notices off, three warnings stayed always on as the only fair notice before an unseen loss. Each now has a
+tell in the world, and none stays on but a lost settlement's:
+- **The claim rig:** its dig is 2.5 minutes, not one (the rig is charted in Grubstake's colour), and dust puffs creep
+  from the rig toward the mound at the dig's pace. Its hands now get an order the moment they come up (idle, they
+  charged the wall's turrets), and break what is near the mound answering only what hits them (told to engage
+  anything, all six fell to turrets out of reach). Scenario `jumper`: none up at 62 s, up at 152 s, the loot home. Five
+  of six hands still fall to turrets that should be out of reach, as before: open.
+- **The trade post's lamp:** an amber pip on the post (seen by day) and a glow (by night) while a truce it bought holds;
+  dark after. `tribute`: lit in 60 of 60 samples during the truce, none after.
+- **Grubstake's claim stake** (`lp-claim-stake`): planted with a puff in the middle of a prospected patch, a lamp
+  amber, then red and blinking in the window's last two minutes; pulled down, the claim is off (an incident); it gives
+  way to the claim's works. Its description says what it means. `prospect`: a stake on every tagged patch, red near
+  the end; `prospect pulled`: the first stake pulled, that patch left alone, the camp on to the next. Not yet: a truck
+  that drives the stake out (the consult's "the road is the clock").
+
 ### The map redrawn, and camp names (the user, 2026-10-17)
 The user: "I'm not a huge fan of how we represent territory on the map. The big circles and lines feel childish and
 improvised. Could we achieve something more sleek looking?", then "Think we could have actual names for the camps too.

@@ -3448,9 +3448,14 @@ scenarios.tribute = function()
         if o.owner == "player" and not seen[k] then seen[k] = true; table.insert(S.raids, o.started) end
       end
       local st = lp("standing", "grubstake")
+      local lit = (lp("trade_stats").lit or 0) > 0
       if st == "truce" then
         S.truce_from = S.truce_from or game.tick
         S.truce_to = game.tick
+        S.lit_during = (S.lit_during or 0) + (lit and 1 or 0)
+        S.samples_during = (S.samples_during or 0) + 1
+      elseif S.truce_to then
+        S.lit_after = (S.lit_after or 0) + (lit and 1 or 0)
       end
     end)
   end
@@ -3467,6 +3472,10 @@ scenarios.tribute = function()
     check("tribute: the post was emptied, a truce", left == 0 and S.truce_from ~= nil, tostring(left))
     check("tribute: no raid on the player during the truce", during == 0, tostring(during))
     check("tribute: an enemy again after it", lp("standing", "grubstake") == "enemy", lp("standing", "grubstake"))
+    -- The post's lamp (Fable's notices consult): lit while the truce holds, dark after (a sample may straddle the edge).
+    check("tribute: the post lit during the truce, dark after", S.samples_during and S.lit_during >= S.samples_during - 1
+      and (S.lit_after or 0) <= 1, string.format("lit %s of %s during, %s after", tostring(S.lit_during),
+      tostring(S.samples_during), tostring(S.lit_after)))
     check("tribute: raids on the player resumed", after >= 1, tostring(after))
   end)
 end
@@ -3644,9 +3653,11 @@ end
 -- Prospect (the rivals consult, slice 1): a Grubstake camp and three iron patches laid 150 to 250 tiles out, charted,
 -- one with a player drill on it. Windows of 2 minutes, a minute between claims (here): the two undrilled patches are
 -- tagged and claimed, nearest first, each claim built by a truck; the drilled one never. LP_MIX=stake: a claim marker
--- beside the second patch from the start: it is never tagged.
+-- beside the second patch from the start: it is never tagged. Every tagged patch gets a lit stake (Fable's notices
+-- consult), red in its last two minutes. LP_MIX=pulled: the first stake is pulled down: that claim is off, the patch
+-- left alone, and the camp goes on to the next.
 scenarios.prospect = function()
-  local stake = params.mix == "stake"
+  local stake, pulled = params.mix == "stake", params.mix == "pulled"
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true, prospect_window = 2 * 3600, prospect_pace = 3600,
       prospect_uncharted = true})
@@ -3678,6 +3689,23 @@ scenarios.prospect = function()
       surface().create_entity{name = "lp-claim-marker", position = {p2[1] + 8, p2[2]}, force = "player", raise_built = true}
     end
   end)
+  for t = 2 * 3600 + 300, END - 120, 300 do
+    schedule(t, function()
+      local ps = lp("prospect_stats", S.g)
+      if ps.stake then S.stake_seen = (S.stake_seen or 0) + 1 end
+      if ps.red then S.red_seen = (S.red_seen or 0) + 1 end
+      if pulled and ps.stake and not S.pulled_at then
+        local e = surface().find_entities_filtered{name = "lp-claim-stake", limit = 1}[1]
+        if e then
+          for k, c in ipairs(S.patches) do
+            if (e.position.x - c[1]) ^ 2 + (e.position.y - c[2]) ^ 2 < 20 * 20 then S.pulled_patch = k end
+          end
+          e.die("player")
+          S.pulled_at = game.tick
+        end
+      end
+    end)
+  end
   schedule(END - 60, function()
     local ps = lp("prospect_stats", S.g)
     local drills = {}
@@ -3691,6 +3719,16 @@ scenarios.prospect = function()
     info(string.format("prospect: %s; Grubstake drills on the patches %s; charted %s", serpent.line(ps), serpent.line(drills),
       serpent.line(charted)))
     check("prospect: the drilled patch was left alone", drills[1] == 0, tostring(drills[1]))
+    if pulled then
+      check("prospect: the stake pulled, that patch left alone", S.pulled_patch and drills[S.pulled_patch] == 0
+        and ps.pulled >= 1, string.format("patch %s, drills %s, %s", tostring(S.pulled_patch), serpent.line(drills),
+        serpent.line(ps)))
+      return
+    end
+    if not stake then
+      check("prospect: a lit stake on the tagged patch, red near the end", (S.stake_seen or 0) > 0 and (S.red_seen or 0) > 0,
+        string.format("seen %s, red %s", tostring(S.stake_seen), tostring(S.red_seen)))
+    end
     if stake then
       check("prospect: the staked patch was left alone", drills[2] == 0, tostring(drills[2]))
       check("prospect: the free one was claimed", drills[3] >= 1, tostring(drills[3]))
@@ -4546,7 +4584,8 @@ end
 -- Grubstake camp, a gun turret at each wall's middle facing out (27 from the centre: the middle is out of their reach, as
 -- in a big walled base; a small square whose turrets cover its chests is no heist), a chest of 200 iron plates and 50
 -- circuits in the middle. debug_jumper (the rig and mound the camp's
--- own choice uses): the rig digs in 40 to 60 out of the turrets' reach; at 60 s hands are up within 10 of the mound,
+-- own choice uses): the rig digs in 40 to 60 out of the turrets' reach; none up at 62 s, at 152 s hands are up within 10
+-- of the mound (the dig is 2.5 minutes, a fair warning with no notice),
 -- inside the wall; the chest is emptied; the loot comes home as parts. LP_MIX=rigkill: the rig killed at 30 s, nothing
 -- comes up.
 scenarios.jumper = function()
@@ -4590,7 +4629,8 @@ scenarios.jumper = function()
     return surface().count_entities_filtered{name = hand, position = S.c, radius = r}
   end
   schedule(2 * 3600 + 30 * 60, function() if kill and S.rig and S.rig.valid then S.rig.die("player") end end)
-  schedule(2 * 3600 + 62 * 60, function() S.up = hands_near(10) end)
+  schedule(2 * 3600 + 62 * 60, function() S.up_early = hands_near(10) end)
+  schedule(2 * 3600 + 152 * 60, function() S.up = hands_near(10) end)
   schedule(END - 60, function()
     local left = S.chest and S.chest.valid and S.chest.get_item_count() or -1
     local st = lp("stats", S.g)
@@ -4604,6 +4644,8 @@ scenarios.jumper = function()
     end
     check("jumper: the rig dug in 40 to 60 out", S.rig_d and S.rig_d >= 40 and S.rig_d <= 62, string.format("%.0f", S.rig_d or -1))
     check("jumper: out of the turrets' reach", S.rig_reach == 0, tostring(S.rig_reach))
+    info("jumper: deaths " .. serpent.line(S.fallen or {}))
+    check("jumper: none up before the dig's 2.5 minutes", S.up_early == 0, tostring(S.up_early))
     check("jumper: four to six hands up inside the wall", (S.up or 0) >= 4 and S.up <= 6, tostring(S.up))
     -- Emptied, or razed once empty (-1).
     check("jumper: the chest emptied", left <= 0, tostring(left))
