@@ -215,7 +215,7 @@ end
 local function consider(b)
   if storage.jump_off or not (shared.CORPS[b.corp].temper or {}).jumps then return end
   if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_jump or 0) then return end
-  local owner, rung = war.at_war(b)
+  local owner, rung = war.at_war(b, "jump")
   if not owner then return end
   if ops.truce and ops.truce(b, owner) then return end
   if (rung or 0) < RUNG then

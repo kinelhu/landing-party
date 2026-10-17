@@ -3938,16 +3938,18 @@ scenarios.crew = function()
   -- LP_MIX=walled: the site ringed by the player's gun turrets: no way out of their reach, so no truck goes; given up.
   -- LP_MIX=around: three armed gun turrets on the straight road: the truck drives round them and builds.
   -- LP_MIX=dronekill: Serenity, unprovoked; the player kills its drone at mid-road: Serenity is its enemy then.
+  -- LP_MIX=answered: Serenity, unprovoked, raids on; three armed gun turrets at mid-road shoot its drone down: it answers
+  -- (docs/ai.md: the answer) within three minutes, a squad at the turrets.
   -- Every mix: the outpost's pad (debug_crew queues one first) is not laid before the crew gets there.
   local doomed, island = params.mix == "doomed", params.mix == "island"
   local walled, around = params.mix == "walled", params.mix == "around"
-  local dronekill = params.mix == "dronekill"
-  local killed, grown, drone, again = params.mix == "killed" or doomed, params.mix == "grown", params.mix == "drone" or dronekill,
+  local dronekill, answered = params.mix == "dronekill", params.mix == "answered"
+  local killed, grown, drone, again = params.mix == "killed" or doomed, params.mix == "grown", params.mix == "drone" or dronekill or answered,
     params.mix == "rebuild"
   local corp = drone and "serenity" or "grubstake"
   local at = (grown and 20 or 3) * 3600
   schedule(60, function()
-    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    lp("debug_tune", {era = 1, history_off = true, raids_off = not answered})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = corp, doctrine = grown and "bastion" or nil})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
   end)
@@ -3975,7 +3977,7 @@ scenarios.crew = function()
           force = "player"} then S.ring = S.ring + 1 end
       end
     end
-    if around then
+    if around or answered then
       local mid = {(o.x + S.site[1]) / 2, (o.y + S.site[2]) / 2}
       flatten(mid[1] - 6, mid[2] - 6, mid[1] + 6, mid[2] + 6)
       S.guns = 0
@@ -4000,6 +4002,10 @@ scenarios.crew = function()
         name = corp == "serenity" and "lp-pad" or "lp-" .. corp .. "-pad"} > 0 then S.pad_at = game.tick end
       if not S.crew_at and surface().count_entities_filtered{position = S.site, radius = 15, force = "lp-" .. corp,
         name = corp == "serenity" and "lp-harrier" or "lp-" .. corp .. "-hauler"} > 0 then S.crew_at = game.tick end
+      if answered then
+        if not S.lost_at and (lp("crew_stats", S.g).lost or 0) > 0 then S.lost_at = game.tick; S.before = S.before or "rival" end
+        if not S.answer_at and (lp("stats", S.g).ops.answers or 0) > 0 then S.answer_at = game.tick end
+      end
       if dronekill and not S.shot then
         local d = surface().find_entities_filtered{name = "lp-harrier", force = "lp-serenity", position = S.mid, radius = 25, limit = 1}[1]
         if d then S.before = lp("standing", "serenity"); d.die("player"); S.shot = game.tick end
@@ -4053,6 +4059,18 @@ scenarios.crew = function()
     end
     check("crew: the pad not laid before the crew came", not S.pad_at or (S.crew_at and S.pad_at >= S.crew_at),
       string.format("pad at %s, crew at %s", tostring(S.pad_at), tostring(S.crew_at)))
+    if answered then
+      local st = lp("stats", S.g)
+      local left = surface().count_entities_filtered{name = "gun-turret", force = "player", position = S.mid, radius = 8}
+      info(string.format("crew answered: drone lost at %s, answer at %s, %s; turrets %d of %d left", tostring(S.lost_at),
+        tostring(S.answer_at), serpent.line(st.ops.log[1]), left, S.guns or 0))
+      check("crew: the answer razed the turrets", left < (S.guns or 0), left .. " of " .. tostring(S.guns))
+      check("crew: the drone shot down by the turrets", S.lost_at ~= nil, tostring(S.lost_at))
+      check("crew: an answer within three minutes", S.answer_at and S.answer_at - S.lost_at <= 3 * 3600,
+        string.format("lost %s, answer %s", tostring(S.lost_at), tostring(S.answer_at)))
+      check("crew: Serenity an enemy", lp("standing", "serenity") == "enemy", lp("standing", "serenity"))
+      return
+    end
     if dronekill then
       check("crew: its drone killed, Serenity an enemy (a rival before)", S.shot and S.before == "rival"
         and lp("standing", "serenity") == "enemy", string.format("shot %s, before %s, now %s", tostring(S.shot),
@@ -6133,7 +6151,8 @@ script.on_init(function()
   local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true,
     mended = true}
   -- Crews killed provoke (the user, 2026-10-17): those mixes start unprovoked, or the check proves nothing.
-  local unprovoked = params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill")
+  local unprovoked = params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill"
+    or params.mix == "answered")
   if not TEMPERS[params.scenario] and not unprovoked then lp("debug_tune", {provoke = true}) end
 end)
 

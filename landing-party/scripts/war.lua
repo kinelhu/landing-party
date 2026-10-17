@@ -14,6 +14,7 @@ local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
 local base = require("__landing-party__.scripts.base")
 local rd = require("__landing-party__.scripts.rd")
+local stance = require("__landing-party__.scripts.stance")
 
 local war = {}
 
@@ -40,16 +41,16 @@ function war.fund(corp, parts)
   d.chest = math.min(CHEST_CAP, (d.chest or 0) + CHEST_SHARE * parts)
 end
 
--- The player force this settlement is at war with, and its rung; nil when at peace.
-local function at_war(b)
-  local temper = shared.CORPS[b.corp].temper or {}
-  local d = corp_state(b.corp)
+-- The player force this settlement may act against (stance.may: `act`, default "war": an enemy, not under a truce),
+-- and its rung; nil when there is none. Before the stance it ignored truces and Grubstake's temper: an unprovoked rival
+-- was "at war", held its rebuilds on a war footing and tapped under a paid truce (docs/ai.md).
+local function at_war(b, act)
   local seen = {}
   for _, t in pairs(b.intel and b.intel.targets or {}) do
     local o = t.owner
     if o and not seen[o] and o ~= "enemy" and not shared.is_corp(o) and game.forces[o] then
       seen[o] = true
-      if not temper.provoked_only or (d.provoked or {})[o] then return o, ops.ladder(o, b.force) end
+      if stance.may(b.corp, o, act or "war") then return o, ops.ladder(o, b.force) end
     end
   end
 end

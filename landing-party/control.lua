@@ -91,7 +91,7 @@ end
 script.on_event(defines.events.on_entity_damaged, function(e)
   -- Any other force: a rival corporation's fire raises the alarm as the player's does.
   if e.force and e.force ~= e.entity.force then
-    ops.provoke(e.entity.force.name, e.force.name)
+    ops.provoke(e.entity.force.name, e.force.name, e.cause and e.cause.valid and e.cause or e.entity)
     base.on_damaged(e.entity)
   end
 end, BUILDINGS)
@@ -156,7 +156,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     local cid = storage.crew_owner and storage.crew_owner[ent.unit_number]
     if cid then
       storage.crew_owner[ent.unit_number] = nil
-      if e.force then ops.provoke(ent.force.name, e.force.name) end
+      if e.force then ops.provoke(ent.force.name, e.force.name, e.cause and e.cause.valid and e.cause or ent.position) end
     end
     local id = storage.unit_owner[ent.unit_number]
     if id then
@@ -173,7 +173,7 @@ script.on_event(defines.events.on_entity_died, function(e)
             + (ent.position.y - b.op.site[2]) ^ 2)))
         end
         rd.tally(b, e.cause, ent.name)
-        if e.force then ops.provoke(b.force, e.force.name) end
+        if e.force then ops.provoke(b.force, e.force.name, e.cause and e.cause.valid and e.cause or ent.position) end
       end
     else
       base.on_died(ent, e.force and e.force.name)

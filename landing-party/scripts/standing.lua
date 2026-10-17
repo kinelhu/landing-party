@@ -79,7 +79,7 @@ function standing.tick(tick)
             local t = s.find_entities_filtered{position = p, radius = RANGE, force = f,
               type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1}[1]
             if t then
-              ops.provoke(b.lander.force.name, f.name)
+              ops.provoke(b.lander.force.name, f.name, t)
               standing.incident(b.corp, "turret", t.position, "a turret on its ground")
               b.provoked_by_turret = true
               break

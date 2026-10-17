@@ -1568,6 +1568,15 @@ forced open).
   enclosing a structure that stood before the arc should not provoke Serenity (the line moving onto the player is the
   corporation's act), or the warning stays a notice; a design call for the user.
 
+### Stance and the answer (the user, 2026-10-17; `docs/ai.md`)
+The user, on Serenity turning enemy and doing nothing visible: "we need to be quite flexible with our coding. It turns
+out we've started a real RTS AI system here, with none of the storyboarding upfront". `docs/ai.md` maps every decision
+point and proposes three seams (stance, reactions, a unit pool). Built: the stance (`scripts/stance.lua`; one answer
+to "how does this corporation treat that player", where `temper_allows`, `at_war` and `choose_siege` disagreed) and the
+answer (a provoked corporation's nearest settlement sends a squad at the culprit within a minute or two). Calls taken
+for the user: a truce stops taps and strips; an unprovoked rival is not at war (no war footing); the answer is what
+the player sees first. Scenario `crew answered` (old code: no answer).
+
 ### Crews: floors wait for them; killing one provokes, tested unprovoked (the user, 2026-10-17)
 The user, watching Serenity's line with `/lp perimeter`: "concrete pads appear before the drone flies in to build the
 turrets and walls" and "destroying the drones doesn't appear to anger the faction?". The pads: `base.build` paved every

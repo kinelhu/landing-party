@@ -10,6 +10,7 @@
 --            can take (it turns back unhurt). An aborted target is remembered (tried, defence seen, cool).
 local shared = require("__landing-party__.shared")
 local rd = require("__landing-party__.scripts.rd")
+local stance = require("__landing-party__.scripts.stance")
 
 local ops = {}
 
@@ -243,7 +244,7 @@ function ops.encroached(ent)
     if not b.fallen and b.claim_radius and b.surface == ent.surface.index
       and (shared.CORPS[b.corp].temper or {}).provoked_only
       and (ent.position.x - b.origin.x) ^ 2 + (ent.position.y - b.origin.y) ^ 2 <= b.claim_radius ^ 2 then
-      ops.provoke(b.force, by)
+      ops.provoke(b.force, by, ent)
     end
   end
 end
@@ -410,7 +411,7 @@ function ops.counter_battery(force, surface, battery, by)
     if b.force == force and not b.fallen and b.surface == surface.index and b.lander.valid then
       ops.sense_at(b, battery.position, 30)
       ops.threatened(b, battery.position)
-      if by then ops.provoke(b.force, by) end
+      if by then ops.provoke(b.force, by, battery) end
       if not b.battery_seen or game.tick - b.battery_seen > 3600 then
         b.battery_seen = game.tick
         if ops.trace then ops.trace(b, string.format("shelled: a battery at %.0f,%.0f", battery.position.x, battery.position.y)) end
@@ -514,8 +515,10 @@ local function budget(owner)
   return 1 + (f and (storage.era_override or ops.era(f)) or 0)
 end
 
--- Provocation (tempers): a player force that hurts a corporation's buildings or units is remembered for good.
-function ops.provoke(corp_force, by)
+-- Provocation (tempers): a player force that hurts a corporation's buildings or units is remembered for good. The one
+-- entry for every provoking act (docs/ai.md, section 4: reactions): `at`, the culprit (an entity, or a position), asks
+-- the corporation's settlement nearest it for an answer.
+function ops.provoke(corp_force, by, at)
   if not shared.is_corp(corp_force) or by == nil or shared.is_corp(by) or by == "enemy" or by == "neutral" then return end
   for corp, c in pairs(shared.CORPS) do
     if c.force == corp_force then
@@ -526,7 +529,40 @@ function ops.provoke(corp_force, by)
       d.provoked[by] = d.provoked[by] or game.tick
     end
   end
+  if at then ops.request_answer(corp_force, by, at) end
 end
+
+-- The answer (docs/ai.md, section 4; the user, 2026-10-17: their turrets killed Serenity's drones, it turned enemy and
+-- did nothing they could see for the rest of the session). Provoked, the corporation's settlement nearest the culprit
+-- (within ANSWER_RANGE of its home) sends a squad at it within a minute or two: a raid on the player's building nearest
+-- the spot, its reserve with it, at least ANSWER_MIN. At most one an ANSWER_COOLDOWN a settlement; it waits while an
+-- operation runs; a truce stops it (stance.may).
+local ANSWER_COOLDOWN = 5 * 3600
+local ANSWER_RANGE = 500
+local ANSWER_MIN = 6
+function ops.request_answer(corp_force, by, at)
+  if not against_player(by) then return end
+  local p = at
+  if type(at) == "userdata" then
+    if not at.valid then return end
+    p = at.position
+  end
+  local x, y = p.x or p[1], p.y or p[2]
+  if not x then return end
+  local best, bd
+  for _, b in pairs(storage.bases or {}) do
+    if b.force == corp_force and not b.fallen and b.lander and b.lander.valid then
+      local h = home(b)
+      if h then
+        local d = (h.position.x - x) ^ 2 + (h.position.y - y) ^ 2
+        if d <= ANSWER_RANGE ^ 2 and (not bd or d < bd) then best, bd = b, d end
+      end
+    end
+  end
+  if not best or best.answer or game.tick < (best.next_answer or 0) then return end
+  best.answer = {owner = by, pos = {x, y}, tick = game.tick}
+end
+
 -- The ladder (docs/reviews/2026-10-14-megabase-pressure-consult.md; the user: "even if they don't punch through, they
 -- should at least destroy some buildings, or else it makes no sense"): minutes since a corporation last razed a
 -- building of this player force (storage.last_raze, control.lua), its clock started at first sight. 10 minutes: soft
@@ -537,30 +573,10 @@ end
 local LADDER_SOFT = 3
 -- Each corporation keeps its own clock (corp, its force's name): Serenity's razes reset Grubstake's too, and Grubstake,
 -- knowing only a turret-lined power line, stayed at rung 1 and razed nothing in an hour (visit deathworld).
-local function ladder(owner, corp)
-  if not against_player(owner) then return 0 end
-  -- A rival Grubstake steals but does not escalate (standing.lua): its ladder stays at the foot until provoked.
-  if corp and ops.rival_holds and ops.rival_holds(owner, corp) then return 0 end
-  storage.last_raze = storage.last_raze or {}
-  local key = corp and (owner .. "|" .. corp) or owner
-  local t0 = storage.last_raze[key]
-  if not t0 then storage.last_raze[key] = game.tick; return 0 end
-  local m = (game.tick - t0) / 3600 * (storage.ladder_fast and 10 or 1)
-  return m >= 30 and 3 or m >= 20 and 2 or m >= 10 and 1 or 0
-end
+-- The ladder and the rival's hold live in the stance (scripts/stance.lua); the names stay for the callers.
+local ladder = stance.rung
 ops.ladder = ladder
-
--- Whether `corp_force` is a rival of `owner` whose temper holds its ladder (Grubstake: soft_only).
-function ops.rival_holds(owner, corp_force)
-  for corp, c in pairs(shared.CORPS) do
-    if c.force == corp_force then
-      if not (c.temper or {}).soft_only then return false end
-      local d = storage.corps and storage.corps[corp]
-      return not (d and d.provoked and d.provoked[owner])
-    end
-  end
-  return false
-end
+ops.rival_holds = stance.rival_holds
 
 -- The player's claim markers (marker.lua): Grubstake reads the player's buildings within MARK_RADIUS of one as its own
 -- claim, and leaves them alone (raids, strips, flares, rigs, taps).
@@ -580,14 +596,12 @@ end
 local function temper_allows(b, t)
   if not against_player(t.owner) then return true end
   if t.pos and ops.marked(b, t.pos) then return false end
-  -- A paid truce (trade.lua): no raid on that player while it lasts.
-  if ops.truce and ops.truce(b, t.owner) then return false end
+  -- A paid truce (trade.lua): no raid on that player while it lasts; a battery shelling it is answered regardless of
+  -- temper (counter-battery provokes anyway); else the stance (a provoked_only corporation once provoked).
+  if stance.standing(b.corp, t.owner) == "truce" then return false end
   if battery(t) then return true end
+  if not stance.may(b.corp, t.owner, "raid") then return false end
   local temper = shared.CORPS[b.corp].temper or {}
-  if temper.provoked_only then
-    local d = storage.corps and storage.corps[b.corp]
-    if not (d and d.provoked and d.provoked[t.owner]) then return false end
-  end
   -- Soft: what the player's turrets reach (exposure), up to 1.0 and LADDER_SOFT once the ladder relaxes it; at its top
   -- rung (cost no object) nothing (at a megabase every exposed spot was over 3, and nothing was ever razed, visit).
   local rung = ladder(t.owner, b.force)
@@ -1222,16 +1236,19 @@ function ops.loot_wreck(b, ent)
 end
 
 local DEAD_END_RADIUS, DEAD_END_TICKS = 64, 30 * 3600
-local function launch(b, key, trace, army)
+local function launch(b, key, trace, army, opts)
   local t = b.intel.targets[key]
   local h = home(b)
   local d = defence(b, t)
   local want = needed(d)
   local n, reserve = field(b, army)
   local desperate = against_player(t.owner) and ladder(t.owner, b.force) >= 3
-  if battery(t) or threat_bonus(b, t) > 0 or desperate then n = n + reserve end
+  local is_answer = opts and opts.answer
+  if battery(t) or threat_bonus(b, t) > 0 or desperate or is_answer then n = n + reserve end
   -- Cost no object (the ladder): what the garrison has goes, however few.
   if desperate then want = math.min(want, n) end
+  -- An answer (ops.request_answer): at least ANSWER_MIN, what it has if fewer.
+  if is_answer then want = math.min(math.max(want, ANSWER_MIN), n) end
   if n < want or n == 0 then return false end
   -- Grubstake provoked (an enemy of that player, standing.lua) raids with half what it can field, not what the target's
   -- known defence calls for: its camps of 31 to 54 sent raids of 4 at the user's poles, and the user saw "no hostile
@@ -1269,7 +1286,7 @@ local function launch(b, key, trace, army)
     trace(b, string.format("raid on %s at %.0f,%.0f: no staging point on dry land; not sent", t.kind, t.pos[1], t.pos[2]))
     return false
   end
-  b.op = {kind = "raid", target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
+  b.op = {kind = "raid", answer = is_answer or nil, target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
   -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
   -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).
@@ -1500,8 +1517,7 @@ local function choose_siege(b, army, only_battery)
       and not (b.quiescent and against_player(t.owner) and not battery(t))
       and not (against_player(t.owner) and in_flight >= budget(t.owner) and not battery(t))
       and not (against_player(t.owner) and not battery(t) and besieged(t.owner))
-      and (not against_player(t.owner) or not (shared.CORPS[b.corp].temper or {}).provoked_only
-        or (storage.corps[b.corp].provoked or {})[t.owner]) then
+      and stance.may(b.corp, t.owner, "siege") then
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
       if not bs or s > bs then
@@ -2060,7 +2076,7 @@ local function choose_strip(b, army)
     -- Any outpost with a camp site beyond turret reach (strip_site checks it): requiring an undefended drill as
     -- well left a careful player's outposts, each with two lasers, never stripped.
     if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner)
-      and not ops.marked(b, t.pos) then
+      and not ops.marked(b, t.pos) and stance.may(b.corp, t.owner, "strip") then
       local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
       if not bd or d < bd then
         local p = strip_site(b, t)
@@ -2404,6 +2420,34 @@ local function siege_leash(b)
     end
   end
 end
+local function answer(b, trace, army)
+  local a = b.answer
+  b.answer = nil
+  if not stance.may(b.corp, a.owner, "answer") then return end
+  local s = game.surfaces[b.surface]
+  sense(b, s, {x = a.pos[1], y = a.pos[2]}, 30)
+  local key, bd
+  for k, t in pairs(b.intel.targets) do
+    if t.owner == a.owner then
+      local d = (t.pos[1] - a.pos[1]) ^ 2 + (t.pos[2] - a.pos[2]) ^ 2
+      if d <= 40 * 40 and (not bd or d < bd) then key, bd = k, d end
+    end
+  end
+  b.next_answer = game.tick + ANSWER_COOLDOWN
+  if not key then
+    trace(b, string.format("answer: nothing of %s's to hit near %.0f,%.0f", a.owner, a.pos[1], a.pos[2]))
+    return
+  end
+  b.intel.targets[key].cool = 0
+  trace(b, string.format("answer: provoked by %s at %.0f,%.0f, %ds ago: a squad goes", a.owner, a.pos[1], a.pos[2],
+    math.floor((game.tick - a.tick) / 60)))
+  if launch(b, key, trace, army, {answer = true}) then
+    b.answers = (b.answers or 0) + 1
+  else
+    trace(b, "answer: no squad to send")
+  end
+end
+
 function ops.tick(b, tick, trace, army)
   if storage.ops_off then return end
   ops.init(b)
@@ -2413,6 +2457,11 @@ function ops.tick(b, tick, trace, army)
   if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
   if tick % 600 == 200 then field_sight(b) end
   if tick % SURVEY_TICKS == (b.id * 131 + 7) % SURVEY_TICKS then survey(b) end
+  -- An answer goes before anything the decider would choose, and does not wait on its clock (b.next_op).
+  if not b.op and b.answer and tick % 300 == 150 and not storage.raids_off and not storage.army_off
+    and not army.withdrawing(b) and home(b) then
+    return answer(b, trace, army)
+  end
   if b.op then
     if tick % 300 == 100 then step(b, trace, army) end
   elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off
@@ -2530,7 +2579,7 @@ function ops.summary(b)
   return {known = n, known_player = np, player_targets = pt, ladder = (function()
     for _, f in pairs(game.forces) do if #f.players > 0 or f.name == "player" then return ladder(f.name, b.force) end end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
-    siege_tier = b.op and b.op.tier, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
+    siege_tier = b.op and b.op.tier, answers = b.answers or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,

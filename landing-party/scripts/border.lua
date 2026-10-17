@@ -80,7 +80,7 @@ function border.tick(tick)
       local inside = s.find_entities_filtered{position = {b.origin.x, b.origin.y}, radius = br.radius - 3, force = br.owner,
         limit = 1}[1]
       if inside then
-        ops.provoke(b.lander.force.name, br.owner)
+        ops.provoke(b.lander.force.name, br.owner, inside)
         standing.incident(b.corp, "border broken", inside.position, inside.name)
         shared.notice(game.forces[br.owner], {"lp.border-broken", shared.corp_label(b.corp), gps(inside)})
         void(br)

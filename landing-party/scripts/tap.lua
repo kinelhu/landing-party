@@ -270,7 +270,7 @@ end
 local function consider(b)
   if storage.tap_off or not (shared.CORPS[b.corp].temper or {}).taps then return end
   if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_tap or 0) then return end
-  local owner = war.at_war(b)
+  local owner = war.at_war(b, "tap")
   if not owner then return end
   local s = game.surfaces[b.surface]
   local cands = {}
