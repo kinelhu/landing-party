@@ -3265,6 +3265,24 @@ scenarios.gate = function()
           S.lost = (S.lost or 0) + 1
         end
       end
+      -- Both policies rebuild a lost drill where it stood, once the ground is clear of corporation units (a turtle that
+      -- never rebuilt mined nothing once raided: too weak a model to measure against).
+      for i, at in pairs(S.dead) do
+        if not (S.drills[i] and S.drills[i].valid) and not (S.rebuilt or {})[i]
+          and surface().count_entities_filtered{position = at, radius = 20, type = "unit", force = {"lp-grubstake", "lp-serenity"},
+            limit = 1} == 0 then
+          local d = surface().create_entity{name = "burner-mining-drill", position = at, force = "player"}
+          if d then
+            d.insert{name = "coal", count = 50}
+            if surface().count_entities_filtered{name = "wooden-chest", position = d.drop_position, radius = 0.6} == 0 then
+              surface().create_entity{name = "wooden-chest", position = d.drop_position, force = "player"}
+            end
+            S.drills[i] = d
+            S.dead[i] = nil
+            S.rebuilt_n = (S.rebuilt_n or 0) + 1
+          end
+        end
+      end
       for k, d in pairs(S.dead or {}) do
         if not S.answered[k] then
           S.answered[k] = true
@@ -3329,8 +3347,9 @@ scenarios.gate = function()
     for _, ch in pairs(surface().find_entities_filtered{name = "wooden-chest", force = "player"}) do mined = mined + ch.get_item_count("iron-ore") end
     local rs = lp("road_stats", S.g)
     info(string.format("gate (%s): patches worked %d, iron mined %d (in chests), player buildings lost %d; Grubstake claims %d (%d lapsed); "
-      .. "expanded %s, staked %s; standing grubstake %s, serenity %s", engage and "engage" or "turtle", worked, mined, S.lost or 0,
-      rs.claims or 0, rs.lapsed or 0, tostring(S.expanded), tostring(S.staked), lp("standing", "grubstake"), lp("standing", "serenity")))
+      .. "expanded %s, staked %s, rebuilt %s; standing grubstake %s, serenity %s", engage and "engage" or "turtle", worked, mined, S.lost or 0,
+      rs.claims or 0, rs.lapsed or 0, tostring(S.expanded), tostring(S.staked), tostring(S.rebuilt_n), lp("standing", "grubstake"),
+      lp("standing", "serenity")))
     metric("gate_patches", worked); metric("gate_mined", mined); metric("gate_lost", S.lost or 0)
     check("gate: it ran", true, "")
   end)
@@ -3664,20 +3683,139 @@ end
 -- Cordon (the walled-advance consult, slice 1): a Serenity camp's line, sped to a step a minute, with a player relay 300
 -- tiles out: arcs of posts (a pad, a short wall, two gun turrets) at each step's radius, within 60 degrees of the bearing
 -- to the relay, built by drones; the claim steps out to an arc only once 80% of its posts stand; none stuck.
+-- LP_MIX=breach: at 12 minutes three post turrets of the standing line killed by the player: drones mend them within 3
+-- minutes, and Serenity is an enemy. LP_MIX=contact: the relay 200 out: an arc within 60 of it closes its middle with
+-- wall (40 pieces at least on that arc, near the bearing).
 scenarios.cordon = function()
+  -- LP_MIX=rail: a player rail along the bearing, 100 to 260 out, crossed by the arcs: gate posts on it, and a train
+  -- driven toward the camp from 240 out at 14 minutes stops at the outermost gate.
+  -- LP_MIX=ore: an iron patch on the arcs' path (150 out, 20 degrees off the bearing): Serenity claims it.
+  local breach, contact, rail, oremix = params.mix == "breach", params.mix == "contact", params.mix == "rail", params.mix == "ore"
   schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 4000) end end)
   schedule(120, function()
     local o = lp("stats", storage.id).origin
     local len = math.sqrt(o.x * o.x + o.y * o.y)
-    S.c = {math.floor(o.x - o.x / len * 300), math.floor(o.y - o.y / len * 300)}
+    local out = contact and 200 or 300
+    S.c = {math.floor(o.x - o.x / len * out), math.floor(o.y - o.y / len * out)}
     flatten(S.c[1] - 6, S.c[2] - 6, S.c[1] + 6, S.c[2] + 6)
     S.relay = surface().create_entity{name = "lp-command-relay", position = S.c, force = "player"}
+    if oremix then
+      local a = math.atan2(S.c[2] - o.y, S.c[1] - o.x) + math.rad(20)
+      S.ore = {math.floor(o.x + math.cos(a) * 150), math.floor(o.y + math.sin(a) * 150)}
+      flatten(S.ore[1] - 10, S.ore[2] - 10, S.ore[1] + 10, S.ore[2] + 10)
+      for x = -8, 8 do for y = -8, 8 do
+        surface().create_entity{name = "iron-ore", position = {S.ore[1] + x, S.ore[2] + y}, amount = 3000}
+      end end
+    end
+    if rail then
+      -- East-west (the bearing is east here: the camp lies west of the spawn): rail centres on odd tiles.
+      S.ry = math.floor(o.y / 2) * 2 + 1
+      flatten(o.x + 98, S.ry - 3, o.x + 262, S.ry + 3)
+      for x = math.floor((o.x + 100) / 2) * 2, o.x + 260, 2 do
+        surface().create_entity{name = "straight-rail", position = {x + 1, S.ry}, direction = defines.direction.east, force = "player"}
+      end
+    end
     -- Lasting: razed (encroachment provokes), the line had nothing to face.
     S.relay.destructible = false
     S.o = o
   end)
+  if rail then
+    schedule(14 * 3600, function()
+      -- 40 tiles out from the outermost gate: from a fixed start it coasted to a stop short of a line that stood farther
+      -- back (the train has no driver, so friction stops it).
+      local sx = S.o.x + 240
+      local outer
+      for _, g in ipairs(surface().find_entities_filtered{name = "lp-gate", force = FORCE, area = {{S.o.x + 90, S.ry - 2}, {S.o.x + 230, S.ry + 2}}}) do
+        if not outer or g.position.x > outer then outer = g.position.x end
+      end
+      if outer then sx = math.min(S.o.x + 240, outer + 40) end
+      local l = surface().create_entity{name = "locomotive", position = {math.floor(sx / 2) * 2 + 1, S.ry},
+        direction = defines.direction.west, force = "player"}
+      if l then
+        l.insert{name = "coal", count = 50}
+        l.train.manual_mode = true
+        -- Forward (its front faces west, toward the camp): a negative speed ran it backwards to the rail's end, and the
+        -- first check passed on that.
+        l.train.speed = 0.3
+        S.loco = l
+      end
+    end)
+  end
+  if breach then
+    schedule(12 * 3600, function()
+      -- On the leading arc (the farthest out): an older arc is recovered on its own (the first try broke the oldest).
+      local ts = surface().find_entities_filtered{name = "lp-gun-turret", force = FORCE}
+      local o = lp("stats", storage.id).origin
+      table.sort(ts, function(a, c)
+        return (a.position.x - o.x) ^ 2 + (a.position.y - o.y) ^ 2 > (c.position.x - o.x) ^ 2 + (c.position.y - o.y) ^ 2
+      end)
+      S.broke = {}
+      for k = 1, math.min(3, #ts) do
+        table.insert(S.broke, {ts[k].position.x, ts[k].position.y})
+        ts[k].die("player")
+      end
+    end)
+    schedule(15 * 3600, function()
+      S.mended = 0
+      for _, p in ipairs(S.broke or {}) do
+        if surface().count_entities_filtered{name = "lp-gun-turret", force = FORCE, position = p, radius = 1} > 0 then S.mended = S.mended + 1 end
+      end
+    end)
+  end
   schedule(END - 60, function()
+    if oremix then
+      local n = surface().count_entities_filtered{name = "lp-drill", force = FORCE, position = S.ore, radius = 14}
+      info(string.format("cordon: %d Serenity drills on the patch the arc crossed; stats ore %s", n,
+        tostring(lp("cordon_stats", storage.id).ore)))
+      check("cordon: the line claimed the ore it crossed", n >= 1, tostring(n))
+      return
+    end
+    if rail then
+      local gates = surface().find_entities_filtered{name = "lp-gate", force = FORCE, area = {{S.o.x + 90, S.ry - 2}, {S.o.x + 270, S.ry + 2}}}
+      local outer
+      for _, g in ipairs(gates) do if not outer or g.position.x > outer then outer = g.position.x end end
+      local lx = S.loco and S.loco.valid and S.loco.position.x
+      if lx then
+        local around = {}
+        for _, e in pairs(surface().find_entities_filtered{area = {{lx - 16, S.ry - 2}, {lx - 3, S.ry + 2}}}) do
+          if e.type ~= "straight-rail" then table.insert(around, string.format("%s@%.1f/%s", e.name, e.position.x, e.force.name)) end
+        end
+        info("cordon: ahead of the train " .. table.concat(around, ", "))
+      end
+      info(string.format("cordon: %d gates on the rail (outermost at %s), the train at %s (speed %s); stats %s", #gates, tostring(outer),
+        tostring(lx), tostring(S.loco and S.loco.valid and S.loco.train.speed), serpent.line(lp("cordon_stats", storage.id).gates)))
+      check("cordon: gate posts on the player's rail", #gates >= 2, tostring(#gates))
+      -- At the line: the gate, or a post's wall across the track before it (a post beside the crossing put its front on
+      -- the rail, 7 tiles out from the gate).
+      local stopped = S.loco and S.loco.valid and S.loco.train.speed == 0
+      check("cordon: the train stopped at the line", stopped and lx and outer and lx > outer and lx - outer < 20,
+        string.format("the train at %s, the gate at %s", tostring(lx), tostring(outer)))
+      return
+    end
+    if contact then
+      local cs = lp("cordon_stats", storage.id)
+      local a0 = math.atan2(S.c[2] - S.o.y, S.c[1] - S.o.x)
+      local walls = 0
+      for _, w in pairs(surface().find_entities_filtered{name = "lp-wall", force = FORCE, position = {S.o.x, S.o.y}, radius = 260}) do
+        local d = math.sqrt((w.position.x - S.o.x) ^ 2 + (w.position.y - S.o.y) ^ 2)
+        local a = math.atan2(w.position.y - S.o.y, w.position.x - S.o.x)
+        local da = math.abs(((a - a0 + math.pi) % (2 * math.pi)) - math.pi)
+        if d > 130 and da < math.rad(30) then walls = walls + 1 end
+      end
+      info(string.format("cordon: contact %s; %d walls on the line near the bearing", tostring(cs.contact), walls))
+      check("cordon: contact walled the line's middle", (cs.contact or 0) >= 1 and walls >= 40, string.format("%s, %d walls",
+        tostring(cs.contact), walls))
+      return
+    end
+    if breach then
+      info(string.format("cordon: %s of %d broken posts mended in 3 minutes; standing %s", tostring(S.mended), #(S.broke or {}),
+        lp("standing", "serenity")))
+      check("cordon: the drones mended the breach", (S.mended or 0) == #(S.broke or {}) and #(S.broke or {}) > 0,
+        tostring(S.mended) .. " of " .. #(S.broke or {}))
+      check("cordon: and Serenity is an enemy", lp("standing", "serenity") == "enemy", lp("standing", "serenity"))
+      return
+    end
     local cs = lp("cordon_stats", storage.id)
     local cr = lp("crew_stats", storage.id)
     -- The posts standing: Serenity's gun turrets, by their angle from the camp to the relay.

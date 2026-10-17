@@ -50,3 +50,33 @@ at minute 0 and Grubstake at 20, so the arrival gates are not in it):
 - Strips still 0 everywhere (before prospecting). The claim jumper fires only on the megabases; the tap nowhere.
 - Tick cost: run four at once, even the baselines doubled (deathworld 0.31 -> 0.59 ms), so the numbers are inflated;
   the visit over its baseline went from 1.63 (morning) to 1.72. To measure alone before reading anything into it.
+
+## The gate: engaging against turtling (2026-10-17, overnight; scenario `gate`, 3 hours, the line at its own pace)
+A base at the spawn (two patches, two burner drills each, chests), four free patches on its frontier, both rivals
+unprovoked. Turtle: each loss answered with two gun turrets, nothing more. Engage: also drills a patch Grubstake tags,
+sets gun turrets beside a standing claim (its road cut; it becomes an enemy), a border stake when Serenity's line nears.
+
+| Seed | Patches worked (turtle, engage) | Iron mined | Player buildings lost | Grubstake claims standing | Standing at the end (engage) |
+|---|---|---|---|---|---|
+| 1 | 0, 7 | 0, 3,178 | 4, 22 | 9, 2 | both enemies |
+| 777 | 0, 8 | 0, 4,800 | 4, 16 | 12, 3 | both enemies |
+| 4242 | 0, 8 | 0, 5,456 | 4, 12 | 6, 1 | both enemies |
+
+- Engaging pays on every seed: seven or eight patches worked against none, a few thousand iron against none, Grubstake's
+  claims cut from 6 to 12 down to 1 to 3. It costs: three to five times the buildings lost, and both rivals enemies
+  (turrets beside a claim are aggression).
+- The turtle is a weak model: it answers with turrets but never rebuilds its drills, so once raided it mines nothing.
+  The gap shows what passivity costs while the rivals take ground; against a turtle that rebuilds it would be smaller.
+- At a step a minute (the line's test speed) the comparison was noisy (one seed of three the other way on iron): the
+  line reached the base in 13 minutes and provoked Serenity in both policies.
+
+### The gate again, with a fairer turtle (both policies rebuild a lost drill where it stood)
+| Seed | Patches worked (turtle, engage) | Iron mined | Player buildings lost | Grubstake claims standing | Standing at the end (turtle; engage) |
+|---|---|---|---|---|---|
+| 1 | 2, 16 | 1,796, 6,388 | 41, 89 | 10, 2 | both rivals; both enemies |
+| 777 | 2, 15 | 2,400, 9,935 | 14, 35 | 12, 3 | both rivals; both enemies |
+| 4242 | 2, 8 | 2,490, 5,550 | 19, 39 | 5, 2 | Grubstake a rival, Serenity an enemy; both enemies |
+
+- Engaging mines 2.2 to 4.1 times the iron and holds the frontier (Grubstake's claims down to 2 or 3 from 5 to 12), at
+  about twice the buildings lost, and ends with both rivals as enemies. The turtle mostly keeps the peace (rebuilding
+  its own drills is no aggression) and is out-expanded: decision 3 holds, with a real price.

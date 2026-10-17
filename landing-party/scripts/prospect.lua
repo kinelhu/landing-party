@@ -238,6 +238,9 @@ function prospect.tick(tick)
   end
 end
 
+prospect.claim = claim
+prospect.worked = worked
+
 function prospect.stats(b)
   return {prospects = b.prospects or 0, claimed = b.prospects_claimed or 0, answered = b.prospects_answered or 0,
     phase = b.prospect and b.prospect.phase, at = b.prospect and {b.prospect.x, b.prospect.y}}

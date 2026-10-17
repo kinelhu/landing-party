@@ -66,7 +66,11 @@ document describes the parts as built; the campaign document describes the game 
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
 | `/lp flare`, `/lp rig`, `/lp tap` on demand | built | `flare`, `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
-| Serenity's cordon: its line an arc of posts built by drones, the claim behind them | built (slice 1) | `cordon` |
+| Serenity's cordon: arcs of posts built by drones, the claim behind them; old arcs recovered; mended when breached; a contact wall near the player; gate posts across the player's rails; ore it crosses claimed | built | `cordon` (six) |
+| Rivals: standing (rival, enemy, truce), incidents, map labels | built | `standing` |
+| Grubstake prospects the player's frontier; its road (claim trucks, lapse) | built | `prospect` (two), `road` (two) |
+| Serenity's border stake; Grubstake's trade post (truce); bending the line with a decoy | built | `border` (two), `tribute`, `bend` |
+| The gate (decision 3): a scripted player that engages against one that turtles | instrument built, measuring | `gate` (LP_MIX=turtle, engage) |
 | Shields, jammers, gates, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
@@ -1272,7 +1276,25 @@ warning) only once 80% of its posts stand; until then the line waits. With no pl
 - Recovery (built overnight): when an arc stands, the arc two behind comes down, half its parts back (Fable: keep the
   leading arc and one behind). `cordon`: 210 pieces recovered in 20 minutes; 38 post turrets standing at the end
   where 80 stood before.
-- Not yet (the consult's next slices): breach and mend tested, nests (no post within 100 of a living spawner; a bearing that keeps losing posts to biters
+- Breach and mend (tested overnight): posts are buildings like any other; a lost one is rebuilt by a drone (crew.lua).
+  `cordon breach`: three turrets of the leading arc killed by the player, mended within 3 minutes, Serenity an enemy.
+  (The first try broke posts of the oldest arc, which its recovery then took down as designed.)
+- The contact wall (built overnight; Fable: "the asphyxiation moment"): an arc queued within 60 tiles of the player's
+  nearest building closes its middle, the posts within 25 degrees of the bearing joined by wall, side-joined tiles only
+  (a diagonal leaves corner gaps), an opening of 3 left mid-span for its own ground units; recovered with the arc.
+  `cordon contact` (the relay 200 out): contact on four arcs, 233 walls standing on the line near the bearing. The line
+  stops 40 past the player's nearest building, so it encloses the relay and is provoked by it (encroachment).
+- Gate posts (built overnight): where an arc crosses a player's straight rail (east-west or north-south; a diagonal
+  takes no gate), two of its gates across the track and two gun turrets beside, up to three a step. A gate of another
+  force stops the player's trains (Engine notes). `cordon rail` (a player rail along the bearing 100 to 260 out, a train
+  driven toward the camp at 14 minutes): gates on the rail at two arcs, the train stopped at the line (here at a post's
+  wall across the track, 7 tiles before the gate). Its line severs the player's rail; the player breaches or goes round.
+- Ore the arc crosses (built overnight; Fable: the line pays for the line): at most one patch a step, an ore patch
+  within 10 of the arc (sampled every 5 degrees: beside the posts only, it missed a patch between posts 60 apart) that
+  no player drill works becomes a claim of the camp (prospecting's builder: a generator, a pylon, three drills), built
+  by its drones; Serenity has no road, so its claims count their ore at once. `cordon ore` (a patch 150 out, 20 degrees
+  off the bearing): claimed with three drills (the arc at 120 had first crossed and claimed the map's own coal).
+- Not yet (the consult's next slices): nests (no post within 100 of a living spawner; a bearing that keeps losing posts to biters
   stops), the wall at contact, gate posts on the player's routes, ore the arc crosses.
 
 ### Builders, slice 1: Grubstake's truck (the user; Fable: `docs/reviews/2026-10-16-builders-consult.md`; built 2026-10-16)
@@ -1810,6 +1832,9 @@ scenario with assertions first; the window is for art, feel and GUI.
 - An idle unit attacks any enemy in sight: give units a lasting order (arrive, then wander in place).
 - Commands: `wander` takes no destination and lasts forever by default (`ticks_to_wait`).
 - Player turrets fire only at military targets (`is_military_target`): ordinary enemy buildings are ignored.
+- A gate of another force across a player's straight rail blocks the player's trains (spike, 2026-10-17): two gates
+  placed by script on an east-west rail (direction north), a player locomotive at speed 0.5 stopped at 37.6, the gate at
+  40.5. Serenity's cordon uses it (gate posts).
 - Power crosses forces (spike, 2026-10-16): an entity of any force inside a player pole's supply area is powered by the
   player's network (a radar of a new force ran on a player pole, same network id). A corporation building standing in
   the player's supply areas draws the player's power; the power tap (below) is built on it.
