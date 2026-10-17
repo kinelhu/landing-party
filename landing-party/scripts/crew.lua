@@ -26,6 +26,10 @@ local BUILD_TICKS = 90
 local STUCK = 60 * 60
 local REQUEUE = 60 * 60
 local ARRIVE = 8
+-- Crews lost on one module (or one rebuild) before the camp gives it up: a cordon's posts under a factory's turrets took
+-- 168 drones in two hours, one a minute (visit deathworld10x). An abandoned post never stands, so its arc holds: the
+-- player's guns held the line.
+local GIVE_UP = 3
 
 local function corp_crews(b) return shared.CORPS[b.corp].crews end
 local function body(b) return shared.variant(b.corp, corp_crews(b) == "drone" and "lp-harrier" or "lp-hauler") end
@@ -114,17 +118,31 @@ local function spill(s, pos, parts)
   end
 end
 
-local function requeue(b, c)
+-- lost: the crew was killed (counts toward GIVE_UP); returns what was given up, if anything.
+local function requeue(b, c, lost)
   if c.rebuild then
     -- Back on the rebuild list, due again after REQUEUE.
+    local dropped = 0
     for i = c.k, #c.jobs do
-      c.jobs[i].due = game.tick + (storage.crew_requeue or REQUEUE)
-      table.insert(b.rebuild, c.jobs[i])
+      local r = c.jobs[i]
+      r.crews_lost = (r.crews_lost or 0) + (lost and 1 or 0)
+      if r.crews_lost >= GIVE_UP then
+        dropped = dropped + 1
+      else
+        r.due = game.tick + (storage.crew_requeue or REQUEUE)
+        table.insert(b.rebuild, r)
+      end
     end
-    return
+    return dropped > 0 and string.format("%d rebuilds", dropped) or nil
+  end
+  local m = c.module
+  m.crews_lost = (m.crews_lost or 0) + (lost and 1 or 0)
+  if m.crews_lost >= GIVE_UP then
+    m.abandoned = true
+    return "the " .. m.kind
   end
   for i = #c.jobs, c.k, -1 do table.insert(b.queue, 1, c.jobs[i]) end
-  c.module.crew_retry = game.tick + (storage.crew_requeue or REQUEUE)
+  m.crew_retry = game.tick + (storage.crew_requeue or REQUEUE)
 end
 
 local function done(b, i, why)
@@ -147,10 +165,16 @@ local function step(b, i)
     local left = c.bill - c.spent
     local at = c.last or c.site
     spill(s, {at[1], at[2]}, left)
-    requeue(b, c)
+    local given = requeue(b, c, true)
     b.crews_lost = (b.crews_lost or 0) + 1
     table.remove(b.crews, i)
-    base.trace(b, string.format("crew lost with %d parts: spilled at %.0f,%.0f, its jobs wait", left, at[1], at[2]))
+    if given then
+      b.crews_gave_up = (b.crews_gave_up or 0) + 1
+      base.trace(b, string.format("crew lost with %d parts at %.0f,%.0f: %d crews lost there, %s at %.0f,%.0f given up", left,
+        at[1], at[2], GIVE_UP, given, c.site[1], c.site[2]))
+    else
+      base.trace(b, string.format("crew lost with %d parts: spilled at %.0f,%.0f, its jobs wait", left, at[1], at[2]))
+    end
     return
   end
   local p = c.unit.position
@@ -235,6 +259,7 @@ end
 
 function crew.stats(b)
   return {sent = b.crews_sent or 0, done = b.crews_done or 0, lost = b.crews_lost or 0, stuck = b.crews_stuck or 0,
+    gave_up = b.crews_gave_up or 0,
     out = #(b.crews or {})}
 end
 

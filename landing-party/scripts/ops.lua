@@ -874,6 +874,14 @@ function ops.cleared(surface, pos)
     table.remove(storage.corridors, 1)
   end
 end
+function ops.cleared_since(surface, tick)
+  for i = #(storage.corridors or {}), 1, -1 do
+    local c = storage.corridors[i]
+    if c.tick <= tick then return false end
+    if c.surface == surface then return true end
+  end
+  return false
+end
 -- A corporation at cease-fire with the biters, both ways (shared.CORPS temper.pact, control.lua).
 function ops.pact(force)
   local f = game.forces[force]
@@ -896,31 +904,25 @@ local function sneak_route(b, from, to, opts, wide)
   local nests = (opts.nests and not ops.pact(b.force) and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"})
     or (opts.worms and s.find_entities_filtered{area = box, type = "turret", force = "enemy"}) or {}
   local function centre(i, j) return x0 + (i + 0.5) * SNEAK_CELL, y0 + (j + 0.5) * SNEAK_CELL end
-  -- Buckets of BUCKET tiles, so a cell tests only the turrets and nests near it (a megabase has thousands of
-  -- turrets in the box: testing each per cell stalled a tick for seconds).
-  local BUCKET = 32
-  local function bucket(list)
+  -- Each turret's and nest's reach marked on the grid once (a cell then looks itself up): testing buckets of them per
+  -- cell took 300 ms on a failed route through a deathworld (12,000 cells), and before the buckets, seconds against a
+  -- megabase's thousands of turrets.
+  local function mark(list, reach)
     local out = {}
     for _, e in ipairs(list) do
-      local k = math.floor(e.position.x / BUCKET) .. "," .. math.floor(e.position.y / BUCKET)
-      out[k] = out[k] or {}
-      table.insert(out[k], {x = e.position.x, y = e.position.y, type = e.type})
-    end
-    return out
-  end
-  local function near(buckets, cx, cy, r, fn)
-    for bx = math.floor((cx - r) / BUCKET), math.floor((cx + r) / BUCKET) do
-      for by = math.floor((cy - r) / BUCKET), math.floor((cy + r) / BUCKET) do
-        for _, e in ipairs(buckets[bx .. "," .. by] or {}) do
-          if fn(e) then return true end
+      local r = reach(e)
+      local ex, ey = e.position.x, e.position.y
+      for i = math.max(0, math.floor((ex - r - x0) / SNEAK_CELL)), math.min(w - 1, math.floor((ex + r - x0) / SNEAK_CELL)) do
+        for j = math.max(0, math.floor((ey - r - y0) / SNEAK_CELL)), math.min(h - 1, math.floor((ey + r - y0) / SNEAK_CELL)) do
+          local cx, cy = centre(i, j)
+          if (ex - cx) ^ 2 + (ey - cy) ^ 2 <= r * r then out[i * h + j] = true end
         end
       end
     end
-    return false
+    return out
   end
-  local tb, nb_ = bucket(turrets), bucket(nests)
-  local TREACH = math.max(REACH["ammo-turret"], REACH["electric-turret"], REACH["fluid-turret"]) + SNEAK_MARGIN
-  local NREACH = math.max(NEST_KEEP.spawner, NEST_KEEP.worm)
+  local tmark = mark(turrets, function(e) return (REACH[e.type] or 20) + SNEAK_MARGIN end)
+  local nmark = mark(nests, function(e) return e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm end)
   -- Corridors on this surface within the box, once per route.
   local corr = {}
   for _, c in ipairs(storage.corridors or {}) do
@@ -942,18 +944,8 @@ local function sneak_route(b, from, to, opts, wide)
     if blocked[k] == nil then
       local cx, cy = centre(i, j)
       local bad = false
-      if (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then
-        bad = near(tb, cx, cy, TREACH, function(e)
-          local r = (REACH[e.type] or 20) + SNEAK_MARGIN
-          return (e.x - cx) ^ 2 + (e.y - cy) ^ 2 <= r * r
-        end)
-      end
-      if not bad and #nests > 0 and not in_corridor(cx, cy) then
-        bad = near(nb_, cx, cy, NREACH, function(e)
-          local r = e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm
-          return (e.x - cx) ^ 2 + (e.y - cy) ^ 2 <= r * r
-        end)
-      end
+      if tmark[k] and (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then bad = true end
+      if not bad and nmark[k] and not in_corridor(cx, cy) then bad = true end
       if not bad and s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0 then
         bad = true
       end
@@ -1210,12 +1202,24 @@ local function launch(b, key, trace, army)
   -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).
   local sneaks = (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner)
   -- Round biter country, whoever marches (a nest as the target excepted: Serenity clears its ground).
-  local route = sneak_route(b, {h.position.x, h.position.y}, stage, {turrets = sneaks, nests = t.owner ~= "enemy"})
-  local why = route and "" or string.format("to staging %.0f,%.0f (%s)", stage[1], stage[2], serpent.line(ops.last_route))
-  -- The whole way, the attack leg too (staged short of a wall of nests, four raiders went straight through it, push).
-  if route and t.owner ~= "enemy" and not sneak_route(b, stage, {t.pos[1], t.pos[2]}, {turrets = false, nests = true}) then
-    route = nil
-    why = "the attack leg " .. serpent.line(ops.last_route)
+  -- Nests that blocked this march still block it until a spawner dies (a corridor, ops.cleared): not planned again
+  -- (Serenity re-planned the same failed raid on a Grubstake generator every two minutes, 300 ms each time, visit
+  -- deathworld10x).
+  local route, why
+  local u = t.unrouted
+  if u and u.home == h.unit_number and not ops.cleared_since(b.surface, u.tick) then
+    why = u.why
+  else
+    route = sneak_route(b, {h.position.x, h.position.y}, stage, {turrets = sneaks, nests = t.owner ~= "enemy"})
+    why = route and "" or string.format("to staging %.0f,%.0f (%s)", stage[1], stage[2], serpent.line(ops.last_route))
+    -- The whole way, the attack leg too (staged short of a wall of nests, four raiders went straight through it, push).
+    if route and t.owner ~= "enemy" and not sneak_route(b, stage, {t.pos[1], t.pos[2]}, {turrets = false, nests = true}) then
+      route = nil
+      why = "the attack leg " .. serpent.line(ops.last_route)
+    end
+    -- Nests alone: turrets (Grubstake's sneaking leg) can fall without a corridor opening.
+    t.unrouted = not route and why:find("nests = [1-9]") and why:find("turrets = 0[,}]")
+      and {home = h.unit_number, tick = game.tick, why = why} or nil
   end
   -- Overflight (Grubstake, the biter-country consult: "We don't fight bugs"): no way round on the ground, and air
   -- units at home: up to six fly over the nests (round the worms, which shoot at them), take the target, and fly home.

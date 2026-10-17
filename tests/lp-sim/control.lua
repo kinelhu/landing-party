@@ -3866,7 +3866,9 @@ scenarios.crew = function()
   -- LP_MIX=drone: the same with a Serenity camp, its constructor drone flying out.
   -- LP_MIX=rebuild: two of the built outpost's five destroyed; a crew rebuilds them (no yard beam), all five again within
   -- the rebuild delay and 90 s.
-  local killed, grown, drone, again = params.mix == "killed", params.mix == "grown", params.mix == "drone", params.mix == "rebuild"
+  -- LP_MIX=doomed: every truck killed at mid-road: after three the camp gives the outpost up, and its other work goes on.
+  local doomed = params.mix == "doomed"
+  local killed, grown, drone, again = params.mix == "killed" or doomed, params.mix == "grown", params.mix == "drone", params.mix == "rebuild"
   local corp = drone and "serenity" or "grubstake"
   local at = (grown and 20 or 3) * 3600
   schedule(60, function()
@@ -3892,7 +3894,7 @@ scenarios.crew = function()
     schedule(t, function()
       -- Killed at mid-road, as the player would (four gun turrets beside the road did not stop it: the hauler's hull,
       -- 1,500 health and armour, crossed their reach in about 9 s).
-      if killed and not S.shot then
+      if killed and (doomed or not S.shot) then
         local t = surface().find_entities_filtered{name = "lp-grubstake-hauler", position = S.mid, radius = 15, limit = 1}[1]
         if t then t.die("player"); S.shot = true end
       end
@@ -3926,6 +3928,14 @@ scenarios.crew = function()
         tostring(c.sent), tostring(S.built_at and S.broke and (S.built_at - S.broke) / 60)))
       check("crew: within the rebuild delay and 90 s", S.built_at and S.broke and S.built_at - S.broke <= 150 * 60,
         tostring(S.built_at and S.broke and (S.built_at - S.broke) / 60))
+      return
+    end
+    if doomed then
+      check("crew: three trucks lost, the outpost given up", c.lost == 3 and c.gave_up == 1, serpent.line(c))
+      -- The doomed outpost leads the queue: retried for ever, it held up everything behind it (no crew of the camp's own
+      -- came home in 10 minutes).
+      check("crew: the camp's other work went on", c.done >= 1 and (S.placed or 0) == 0,
+        string.format("%s, placed %s", serpent.line(c), tostring(S.placed)))
       return
     end
     if killed then
