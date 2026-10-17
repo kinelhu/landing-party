@@ -1,4 +1,4 @@
-# Playtest kit (2026-10-15)
+# Playtest kit (2026-10-15, rivals added 2026-10-17)
 
 What changed since the last time the mod was seen in game: Grubstake's pact and pacifier antennas, Serenity's
 railgunners, howitzer, cluster shells and orbital barrage, clearances, the staggered arrival, standing down, and the
@@ -60,6 +60,27 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    standing down, reliefs, flares, rigs, a tap broken.)
 11. **Anything that feels wrong**: units stuck, wandering into worms, friendly fire (Serenity's flamers still burn its own
    units at the gates: known), looks that read as vanilla.
+
+## Since the night of 16 to 17 October: rivals (`docs/night-2026-10-17.md`)
+Start the same way. Each camp is now labelled on the map with its standing toward you ("Grubstake: rival"); turrets
+within 26 tiles of a camp make it an enemy. `/lp incidents` lists the last twenty things they did and where.
+12. **Grubstake's crews**: modules beyond 40 tiles of its lander are built by a truck that drives out with the parts
+   (orange sparks). Kill one: it spills plates. Kill three on one site and the camp gives it up (a notice).
+13. **Prospecting**: within its reach, the undrilled ore patch nearest your base is tagged ("has reassigned the mineral
+   rights..."). Ten minutes later a truck builds a claim there, unless you drilled it or set a **border stake** on it
+   (crafted from the start: 10 stone bricks, 5 iron plates).
+14. **The road**: a truck carries each claim's ore home every few minutes. Kill it on the way back: the ore spills and
+   you are told how late its expansion runs. A claim with no ore home for 20 minutes lapses; its drills are yours.
+15. **Pay the thief**: a **trade post** (a steel chest and 5 circuits) by its camp; what it empties buys a truce (a minute
+   for each 10 of value): no raids, flares or heists while it lasts.
+16. **Serenity's cordon** (30 minutes after it lands; `/lp fast` to hurry): drones fly out and build posts (a pad, walls,
+   two gun turrets) on an arc toward your nearest building; its claim follows once the arc stands, its next arc drawn
+   on the map. Near you it closes the arc with wall; across your straight rails it puts a gate (your trains stop);
+   ore it crosses it claims. Shoot the drones at your line: three lost on a post and "its line is held".
+17. **A border stake** facing Serenity, outside its claim and while it is a rival: its line holds short of it. Build on its
+   side and the treaty breaks for good.
+18. **Bend the line**: it bears on your building nearest its camp, so a decoy (any building, set nearer than the rest
+   and off to one side) swings its next arcs toward it, toward Grubstake's camp if you place it well.
 
 ## Tell me
 What you saw for each, and what you'd change. Screenshots welcome.
