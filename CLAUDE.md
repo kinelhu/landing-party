@@ -18,6 +18,10 @@ at milestones, asked for.
   no biters; the settlement arrives as the real one does, `LP_DISTANCE` tiles from spawn). Plots
   (`growth.png`, `final.png`), the planner's `decisions.txt` and results go to `docs/sim/<scenario>-<seed>/`
   (gitignored). Look at the plots before claiming anything about layout.
+- **Quick regression: `scripts/regress.sh 12345 --quick`** (31 scenarios, one or two a layer of the AI graph, about 7
+  minutes) while iterating; the whole list before committing a batch. A scenario whose outcome is settled ends early
+  (`finish_early`, `settle_when` in `tests/lp-sim/control.lua`): its final checks run then, and the benchmark's
+  remaining ticks cost almost nothing.
 - **Regression: `scripts/regress.sh [seed]`** (about 3 minutes): scenarios that strike run from forks, short
   ones in full. `--full` adds the long growth scenarios (about 10 more minutes): at milestones and before
   commits that touch growth, not after every change. After a change, run the scenarios that exercise it.

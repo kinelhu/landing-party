@@ -237,6 +237,19 @@ local function holder(b, surface, pos)
     end
   end
 end
+-- What holds a module's ground: a turret there, or a unit of this settlement's own. Another camp's unit there does not
+-- (an evacuee of the fallen camp, now its neighbour's, wandered by the ruins and kept every outpost from being taken,
+-- fall).
+local function defender(b, surface, center)
+  local t = surface.find_entities_filtered{position = center, radius = CAPTURE_CLEAR, force = force(b),
+    type = {"electric-turret", "ammo-turret"}, limit = 1}[1]
+  if t then return t end
+  for _, u in pairs(surface.find_entities_filtered{position = center, radius = CAPTURE_CLEAR, force = force(b),
+    type = {"unit", "spider-unit"}, limit = 20}) do
+    if not u.unit_number or (storage.unit_owner or {})[u.unit_number] == b.id then return u end
+  end
+end
+
 local function capture(b)
   if storage.capture_off then return end
   local surface = game.surfaces[b.surface]
@@ -246,8 +259,7 @@ local function capture(b)
     -- Something must be left to take (a module with nothing standing was once "captured").
     if m.kind == "mining" and m.built and not m.captured and left > 0 then
       local by = holder(b, surface, m.center)
-      local defended = surface.count_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(b),
-        type = {"unit", "spider-unit", "electric-turret", "ammo-turret"}, limit = 1} > 0
+      local defended = defender(b, surface, m.center) ~= nil
       if by and not defended then
         -- Occupied: it calls for help as a building under fire does (an undefended outpost was taken by holding it,
         -- and the corporation never knew, siege).
@@ -596,12 +608,18 @@ function base.debug_modules(b, pos, r)
       local left = 0
       for _, e in ipairs(m.entities) do if e.valid and e.force.name == b.force then left = left + 1 end end
       local by = holder(b, surface, m.center)
-      local def = surface.find_entities_filtered{position = m.center, radius = CAPTURE_CLEAR, force = force(b),
-        type = {"unit", "spider-unit", "electric-turret", "ammo-turret"}, limit = 1}[1]
+      local def = defender(b, surface, m.center)
+      local c = def and def.commandable and def.commandable.command
+      local cname = c and tostring(c.type)
+      for k, v in pairs(defines.command) do if c and v == c.type then cname = k end end
+      local own = def and def.unit_number and storage.unit_owner and storage.unit_owner[def.unit_number]
+      cname = (cname or "-") .. " owner " .. tostring(own)
+      local order = c and string.format(" (order %s%s)", cname,
+        c.destination and string.format(" to %.0f,%.0f", c.destination.x, c.destination.y) or "") or ""
       table.insert(out, string.format("%.0f,%.0f built=%s captured=%s left=%d held=%s holder=%s defended=%s", m.center[1],
         m.center[2], tostring(m.built), tostring(m.captured), left,
         m.held_since and tostring(game.tick - m.held_since) or "-", by and by.name or "-",
-        def and (def.name .. "@" .. math.floor(def.position.x) .. "," .. math.floor(def.position.y)) or "-"))
+        def and (def.name .. "@" .. math.floor(def.position.x) .. "," .. math.floor(def.position.y) .. order) or "-"))
     end
   end
   return out

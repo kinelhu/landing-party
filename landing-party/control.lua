@@ -415,6 +415,8 @@ remote.add_interface("landing-party", {
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,
   jammer_stats = function() return {jammed = storage.jammed or 0, masts = #(storage.jammers or {})} end,
+  -- Tests only: the unit numbers of the crews out (a Serenity drone flies on a harrier's body).
+  crew_units = function() local out = {} for n in pairs(storage.crew_owner or {}) do out[n] = true end return out end,
   road_stats = function(id) return storage.bases[id] and road.stats(storage.bases[id]) end,
   borders = function() return border.stats() end,
   incidents = function() return storage.incidents or {} end,

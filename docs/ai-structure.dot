@@ -11,7 +11,7 @@ digraph ai {
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n717 lines", width=1.60, fillcolor="#eef2f7"];
+    "faction" [label="faction\n726 lines", width=1.61, fillcolor="#eef2f7"];
     "war" [label="war\n363 lines", width=1.20, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n108 lines", width=0.92, fillcolor="#eef2f7"];
@@ -22,7 +22,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_2 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n641 lines", width=1.51, fillcolor="#eef2f7"];
+    "base" [label="base\n659 lines", width=1.53, fillcolor="#eef2f7"];
     "construction" [label="construction\n352 lines", width=1.19, fillcolor="#d9f0d9"];
     "planner" [label="planner\n200 lines", width=1.02, fillcolor="#d9f0d9"];
     "layout" [label="layout\n530 lines", width=1.39, fillcolor="#eef2f7"];
@@ -36,7 +36,7 @@ digraph ai {
     "prospect" [label="prospect\n344 lines", width=1.18, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "army" [label="army\n694 lines", width=1.57, fillcolor="#eef2f7"];
+    "army" [label="army\n701 lines", width=1.58, fillcolor="#eef2f7"];
     "ops" [label="ops\n1341 lines", width=2.29, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n225 lines", width=1.05, fillcolor="#d9f0d9"];
@@ -62,7 +62,7 @@ digraph ai {
     "command" [label="command\n545 lines", width=1.41, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n431 lines", width=1.28, fillcolor="#eef2f7"];
+    "control" [label="control\n433 lines", width=1.28, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

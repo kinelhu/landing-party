@@ -459,6 +459,15 @@ local function next_corp(f)
       if not best or n < bn or (n == bn and t < bt) then best, bn, bt = corp, n, t end
     end
   end
+  -- None: the first landing was the late corporation, its gate shut, and the other waited for a second landing that
+  -- could never come (no one landed again in an hour, faction). A corporation that is not gated comes then.
+  if not best and f.landings >= 1 then
+    for _, corp in ipairs(names) do
+      local d = faction.corp(corp)
+      local gated = faction.gate_open and faction.late_corp == corp
+      if not gated and not d.withdrawing and alive(corp) < MAX_PER_CORP then return corp end
+    end
+  end
   return best
 end
 

@@ -28,6 +28,29 @@ local at = {}
 local function schedule(tick, f)
   if at[tick] then local g = at[tick]; at[tick] = function() g(); f() end else at[tick] = f end
 end
+-- A scenario whose outcome is settled ends now: its final checks (END - 60) and the results (END) run in the next
+-- ticks, then the game is finished, and the benchmark's remaining ticks cost almost nothing (blackout ended at minute
+-- 20 of 40: 37 s against 57 s). Call it only once nothing later could change a check.
+local finished_early = false
+local finish_early
+-- Checked once a minute from minute 3: when `settled()` holds, the scenario finishes early.
+local function settle_when(settled)
+  for t = 3 * 3600, END - 180, 3600 do
+    schedule(t, function() if not finished_early and settled() then finish_early() end end)
+  end
+end
+finish_early = function()
+  if finished_early then return end
+  finished_early = true
+  local now = game.tick - (storage.t0 or 0)
+  local last, final = at[END - 60], at[END]
+  at[END - 60], at[END] = nil, nil
+  if last then schedule(now + 1, last) end
+  schedule(now + 2, function()
+    if final then final() end
+    game.set_game_state{game_finished = true, player_won = false, can_continue = false}
+  end)
+end
 
 local function surface() return game.surfaces[1] end
 local function lp_entities(name, area)
@@ -557,8 +580,14 @@ scenarios.faction = function()
   for t = 600, END, 600 do
     schedule(t, function()
       local tier = lp("faction").tier
+      -- Not the crews: Serenity's constructor drone flies on a harrier's body (20 "early harriers" since crews came).
+      local crews = lp("crew_units")
       for name, need in pairs({["lp-harrier"] = 1, ["lp-walker"] = 2}) do
-        if tier < need then S.early = S.early + surface().count_entities_filtered{name = name, force = FORCE} end
+        if tier < need then
+          for _, u in pairs(surface().find_entities_filtered{name = name, force = FORCE}) do
+            if not crews[u.unit_number] then S.early = S.early + 1 end
+          end
+        end
       end
     end)
   end
@@ -581,6 +610,8 @@ scenarios.faction = function()
         lp("snapshot", id, "landing-party/faction.jsonl", 200)
       end
     end
+    info("faction: landing jobs " .. serpent.line(lp("landing_jobs")) .. ", next " .. tostring(f.next) .. ", cadence "
+      .. tostring(f.cadence) .. ", surface " .. tostring(f.surface))
     check("faction: settlements keep landing", f.landings >= 4, f.landings .. " landings")
     check("faction: landings keep apart", closest >= 200, string.format("closest %.0f tiles", closest))
     check("faction: a settlement matured", mature > 0, mature)
@@ -1395,6 +1426,13 @@ end
 -- from the site and razes something. LP_MIX=sally: a tier-1 mortar killed by two battle tanks 20 tiles off, and the
 -- siege aborts. LP_MIX=convoy: tier 2, the shell convoy is killed on the way, and nothing more is loaded.
 scenarios.siegetier = function()
+  -- Settled: the siege forced at 5 minutes is over (its log entry written, no operation running).
+  settle_when(function()
+    if game.tick - storage.t0 < 6 * 3600 then return false end
+    local st = lp("stats", storage.id)
+    for _, l in ipairs(st.ops.log or {}) do if l.op == "siege" and not st.ops.op then return true end end
+    return false
+  end)
   local tier = ({["2"] = 2, ["3"] = 3, sally = 1, convoy = 2})[params.mix] or 2
   -- Forced (/lp siege) with raids off: weighted, eight gun turrets need a raid of 28, which a grown garrison affords.
   schedule(30, function() lp("debug_tune", {corp_level = {serenity = 3}, siege_tier = tier, era = 4, raids_off = true}) end)
@@ -3144,6 +3182,10 @@ end
 -- the mortar: a howitzer clears them. Short, for debugging the clearance (a visit
 -- takes 80 minutes to reach one).
 scenarios.clear = function()
+  -- Settled: the target razed.
+  settle_when(function()
+    return S.c ~= nil and surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"} == 0
+  end)
   schedule(30, function() game.forces.enemy.set_evolution_factor(0.6, surface()) end)
   schedule(60, function()
     lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true})
@@ -5464,6 +5506,9 @@ scenarios.fortress = function()
       end
       local mortars = surface().count_entities_filtered{name = "lp-mortar", force = "lp-serenity"}
       S.masts = math.max(S.masts or 0, surface().count_entities_filtered{name = "lp-jammer"})
+      -- Settled: the siege is over (its log entry written).
+      local st0 = lp("stats", S.s)
+      if S.why and #(st0.ops.log or {}) > 0 and not st0.ops.op then finish_early() end
       if mortars > 0 then
         S.peak = math.max(S.peak or 0, held)
         S.fired = math.max(S.fired or 0, (S.peak or 0) - held)
@@ -5561,6 +5606,10 @@ scenarios.blackout = function()
       local chain = 0
       for _, p in ipairs(S.chain or {}) do if p.valid then chain = chain + 1 end end
       S.chain_min = math.min(S.chain_min or 99, chain)
+      -- Settled: dark, and half the lasers taken; with a second feed, two surveys made and still lit.
+      local left = 0
+      for _, l in ipairs(S.lasers or {}) do if l.valid then left = left + 1 end end
+      if (S.dark_at and left <= 5) or (fed and game.tick - storage.t0 > 20 * 3600) then finish_early() end
     end)
   end
   schedule(END - 60, function()
@@ -5596,6 +5645,12 @@ scenarios.strangle = function()
   local off = params.mix == "off"
   schedule(30, function() lp("debug_tune", {perimeter_fast = true, strangle_off = off or nil, corp_level = {serenity = 1}}) end)
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 5000) end end)
+  -- Settled: two arcs on record (the check reads the first).
+  for t = 3 * 3600, END - 120, 3600 do
+    schedule(t, function()
+      if #(lp("cordon_stats", storage.id).bearings or {}) >= 2 then finish_early() end
+    end)
+  end
   schedule(120, function()
     local o = lp("stats", storage.id).origin
     local len = math.sqrt(o.x * o.x + o.y * o.y)
@@ -6218,6 +6273,10 @@ end
 -- assembler), the ladder ten times fast: not sent at first (worth 3, under PUSH_VALUE), then at the second rung the raid
 -- pushes through with an escort and razes it.
 scenarios.push = function()
+  -- Settled: the target razed.
+  settle_when(function()
+    return S.c ~= nil and surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"} == 0
+  end)
   schedule(60, function()
     lp("debug_tune", {ladder_fast = true, raids_off = false})
     lp("debug_depot", storage.id, 3000); lp("debug_depot", storage.id, 3000)

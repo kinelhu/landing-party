@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Quick regression: scenarios that strike run from forks (only the minutes around the strike; forks are made
 # once per growth code, scripts/fork.sh), short ones run in full. About 2-3 minutes on one seed.
-#   scripts/regress.sh [seed] [--full]      --full adds the long growth scenarios (grow, assault, faction,
+#   scripts/regress.sh [seed] [--full|--quick]      --full adds the long growth scenarios (grow, assault, faction,
 #                                           uplink, lively, convoy, fall): confirmation at milestones.
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -9,7 +9,7 @@ source "$DIR/env.sh"
 "$DIR/lint_notices.sh" || exit 1
 SEED="${1:-12345}"; FULL="${2:-}"
 # A seed is a number: "scripts/regress.sh --full" once ran every scenario on seed "--full", all failing at once.
-case "$SEED" in ''|*[!0-9]*) echo "usage: scripts/regress.sh [seed] [--full]  (seed a number, got '$SEED')"; exit 2;; esac
+case "$SEED" in ''|*[!0-9]*) echo "usage: scripts/regress.sh [seed] [--full|--quick]  (seed a number, got '$SEED')"; exit 2;; esac
 JOBS="${LP_JOBS:-4}"
 logs="$(mktemp -d)"
 # name | env | minutes | every | strike
@@ -19,6 +19,21 @@ RUNS=(
   "orders||3|1|1" "control||4|1|1" "rivals||40|40|1" "phases||44|44|1" "phases|LP_MIX=left|16|16|1" "budget||60|60|1" "develop||3|1|1" "evolution||3|1|1" "nests||30|30|1" "hq||18|18|1" "temper||25|25|1" "line||18|18|1" "line|LP_MIX=back|18|18|1" "line|LP_MIX=built|18|18|1" "line|LP_MIX=turret|18|18|1" "flare|LP_MIX=answer|8|8|1" "strip||25|25|1" "artillery||3|1|1" "circuit||5|1|1" "ops||12|12|1" "abort||12|12|1" "bombard||20|20|1" "caps||10|10|1" "dev||6|6|3" "grudge||6|6|1" "weigh||8|8|1" "siegetier|LP_MIX=2|30|30|1" "siegetier|LP_MIX=3|30|30|1" "siegetier|LP_MIX=sally|30|30|1" "siegetier|LP_MIX=convoy|30|30|1" "techup||7|7|1" "techup|LP_MIX=era0|7|7|1" "plate||16|16|1" "plate|LP_MIX=grubstake|16|16|1" "arms||5|5|1" "unitnode|LP_MIX=lance|16|16|1" "unitnode|LP_MIX=slug|16|16|1" "unitnode|LP_MIX=shock|16|16|1" "unitnode|LP_MIX=sapper|16|16|1" "unitnode|LP_MIX=aegis|16|16|1" "unitnode|LP_MIX=counter|16|16|1" "unitnode|LP_MIX=scavenger|16|16|1" "unitnode|LP_MIX=dozer|16|16|1" "arc||3|3|1" "ability|LP_MIX=loot|14|14|1" "ability|LP_MIX=hardened|14|14|1" "ability|LP_MIX=prospector|14|14|1" "sneak||12|12|1" "mended||18|18|1" "pool||26|26|1" "chart||4|4|1" "levers||9|9|1" "remembered||16|16|1" "gates||20|20|1" "gates|LP_MIX=shut|20|20|1" "fortress||30|30|1" "fortress|LP_MIX=old|30|30|1" "fortress|LP_MIX=jammer|30|30|1" "blackout||40|40|1" "blackout|LP_MIX=fed|40|40|1" "strangle||30|30|1" "strangle|LP_MIX=off|30|30|1" "mended|LP_MIX=provoked|18|18|1" "mended|LP_MIX=serenity|18|18|1" "biters|LP_MIX=outpost|14|14|1" "biters|LP_MIX=camp|6|6|1" "maxevo||8|8|1" "maxevo|LP_MIX=bare|8|8|1" "country||8|8|1" "clearing||3|3|1" "pads||3|3|1" "ladder|LP_MIX=soft|12|12|1" "ladder|LP_MIX=desperate|12|12|1" "heist||20|20|1" "push||40|40|1" "guns||7|7|1" "async||5|5|1" "reinforce||16|16|1" "reinforce|LP_MIX=starved|16|16|1" "reinforce|LP_MIX=column|16|16|1" "pact||14|14|1" "pact|LP_MIX=nopact|14|14|1" "rail||3|3|1" "rail|LP_MIX=line|3|3|1" "clear||40|40|1" "clear|LP_MIX=worms|30|30|1" "quiet||30|30|1" "flak||3|3|1" "flare||8|8|1" "flare|LP_MIX=nopact|8|8|1" "flare|LP_MIX=natural|25|25|1" "jumper||10|10|1" "jumper|LP_MIX=rigkill|10|10|1" "loot||8|8|1" "tap||14|14|1" "tap|LP_MIX=natural|14|14|1" "fuze||3|3|1" "fuze|LP_MIX=plain|3|3|1" "flare|LP_MIX=cmd|8|8|1" "flare|LP_MIX=nests|8|8|1" "flare|LP_MIX=walled|8|8|1" "flare|LP_MIX=burnout|8|8|1" "jumper|LP_MIX=cmd|10|10|1" "tap|LP_MIX=cmd|14|14|1" "bait||10|10|1" "rifle||3|3|1" "crew||8|8|1" "crew|LP_MIX=killed|10|10|1" "crew|LP_MIX=grown|25|25|1" "crew|LP_MIX=drone|8|8|1" "crew|LP_MIX=rebuild|10|10|1" "crew|LP_MIX=doomed|10|10|1" "crew|LP_MIX=island|14|14|1" "crew|LP_MIX=walled|10|10|1" "crew|LP_MIX=around|10|10|1" "crew|LP_MIX=dronekill|8|8|1" "crew|LP_MIX=answered|10|10|1" "cordon||20|20|1" "cordon|LP_MIX=breach|20|20|1" "cordon|LP_MIX=contact|20|20|1" "cordon|LP_MIX=rail|20|20|1" "cordon|LP_MIX=ore|20|20|1" "cordon|LP_MIX=held|20|20|1" "prospect||25|25|1" "prospect|LP_MIX=stake|25|25|1" "prospect|LP_MIX=pulled|25|25|1" "prospect|LP_MIX=truck|25|25|1" "standing||20|20|1" "border||25|25|1" "border|LP_MIX=breach|25|25|1" "road||25|25|1" "road|LP_MIX=cut|25|25|1" "tribute||30|30|1" "bend||20|20|1" "strike||10|10|1" "crystal||10|10|1" "crystal|LP_MIX=marker|14|14|1"
 )
 FORKED=" cut raid occupy defend army train siege "
+# --quick: one or two a layer of the AI graph (docs/ai-graph.md) and the day's mechanics, for iterating (a few minutes);
+# the whole list before committing a batch, --full before one that touches growth, landings or the fall.
+QUICK=" ops| mended| mended|LP_MIX=serenity sneak| crew|LP_MIX=answered flare|LP_MIX=answer line|LP_MIX=turret remembered|
+  gates| fortress| blackout| strangle| pool| levers| jumper| tap| prospect|LP_MIX=truck strip| cordon| border| tribute|
+  standing| temper| nests| country| bombard| siegetier|LP_MIX=2 arms| dev| chart| heist| "
+if [ "$FULL" = "--quick" ]; then
+  QUICK=" $(echo $QUICK) "
+  kept=()
+  for r in "${RUNS[@]}"; do
+    IFS='|' read -r sc envs _ <<< "$r"
+    case "$QUICK" in *" $sc|$envs "*) kept+=("$r");; esac
+  done
+  RUNS=("${kept[@]}")
+  echo "quick: ${#RUNS[@]} scenarios"
+fi
 if [ "$FULL" = "--full" ]; then
   RUNS+=("grow||60|10|30" "assault||60|10|30" "faction||60|10|30" "uplink||60|10|30" "lively||60|10|30"
     "convoy||60|10|30" "convoy|LP_MIX=grown|45|45|1" "fall||15|5|10" "strip|LP_MIX=claim|40|40|1")

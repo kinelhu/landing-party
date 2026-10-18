@@ -659,7 +659,14 @@ function army.disband(b, trace)
     for _, u in ipairs(c.escorts) do table.insert(units, u) end
     if c.hauler.valid then table.insert(units, c.hauler) end
   end
-  b.garrison, b.patrol, b.raids, b.convoys = {}, {}, {}, {}
+  -- And every other unit it owns (its roster, pool.lua): an operation's (a siege's guards wander at their site) and those
+  -- on their way home were left behind; one wandering by its outposts held them, and they could never be taken (fall).
+  local seen = {}
+  for _, u in ipairs(units) do if u.valid and u.unit_number then seen[u.unit_number] = true end end
+  for _, u in pairs(b.roster or {}) do
+    if u.valid and u.unit_number and not seen[u.unit_number] then seen[u.unit_number] = true; table.insert(units, u) end
+  end
+  b.garrison, b.patrol, b.raids, b.convoys, b.returning = {}, {}, {}, {}, {}
   local from = b.lander.valid and b.lander.position or (b.origin and {x = b.origin.x, y = b.origin.y})
   local dest, dd
   for _, o in pairs(storage.bases) do

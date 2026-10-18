@@ -2339,3 +2339,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - A unit's order ends when its target falls, and the unit stands idle until script orders it again: idle, it attacks
   what it sees. The claim rig's hands walked into turrets that way, and a walk to where a unit already stands ends at
   once (end every order with a stop; "no hand fell to a turret").
+- Three `--full` scenarios had failed unseen for a day or two (the full set not run since; bisected 2026-10-18):
+  `fall` from 36c8f09: an evacuee of the fallen camp, now its neighbour's, wandered by the ruins and counted as the
+  outposts' defence (only a settlement's own units and its turrets defend now; the evacuation takes its whole roster,
+  an operation's units and those on their way home were left behind). `faction` and `uplink` from 3a5a8c4: the first
+  landing was the late corporation, its gate shut, and the other waited for a second landing that could never come
+  (a corporation not gated comes then); and Serenity's constructor drones fly on a harrier's body, counted as harriers
+  before their tier (crews excluded). Run `--full` before a batch that touches growth, landings or the fall.
