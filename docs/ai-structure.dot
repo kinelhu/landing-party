@@ -32,7 +32,7 @@ digraph ai {
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n393 lines", width=1.24, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n233 lines", width=1.06, fillcolor="#eef2f7"];
-    "perimeter" [label="perimeter\n156 lines", width=0.97, fillcolor="#d9f0d9"];
+    "perimeter" [label="perimeter\n221 lines", width=1.05, fillcolor="#d9f0d9"];
     "road" [label="road\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n344 lines", width=1.18, fillcolor="#eef2f7"];
   }
@@ -65,7 +65,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n460 lines", width=1.31, fillcolor="#eef2f7"];
+    "control" [label="control\n462 lines", width=1.31, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

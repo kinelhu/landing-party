@@ -23,7 +23,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `base` | 659 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, flare, jumper, pact, prospect, road, tap, trade, war | crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 60, 600, 7200 |  | next_id |
 | `command` | 575 | (leaf) | control |  | 60, 120 |  | cmd |
 | `layout` | 544 | blocks, rng, site | base, faction |  |  |  |  |
-| `control` | 460 | army, bait, base, biters, border, command, cordon, crew, dev, faction, flare, jammer, jumper, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, site, stance, standing, strike, tap, trade, tune, war |  |  |  | built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, tick, script_raised_built | army_off, bases, capture_off, choice_off, cmd, cuts_off, era_override, flare_burn, focus_off, gates_off, grudge_fast, history_off, hq_fast, ladder_fast, last_raze, mature_blocks, next_id, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, siege_tier, sneak_off, strangle_off, strip_fast, tap_step, trace, tune_levers, unit_owner |
+| `control` | 462 | army, bait, base, biters, border, command, cordon, crew, dev, faction, flare, jammer, jumper, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, site, stance, standing, strike, tap, trade, tune, war |  |  |  | built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, tick, script_raised_built | army_off, bases, capture_off, choice_off, cmd, cuts_off, era_override, flare_burn, focus_off, gates_off, grudge_fast, history_off, hq_fast, ladder_fast, last_raze, mature_blocks, next_id, next_ore_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, siege_tier, sneak_off, strangle_off, strip_fast, tap_step, trace, tune_levers, unit_owner |
 | `crew` | 393 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `war` | 392 | army, base, ops, pods, pool, rd, rng, stance, tune | control, faction, flare, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `routing` | 374 | (leaf) | ops |  |  |  | corridors |
@@ -36,13 +36,13 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `cordon` | 233 | base, ops, prospect | control |  |  |  |  |
 | `phases` | 227 | faction | control |  | 360, 3600 |  | phases |
 | `intel` | 225 | (leaf) | ops |  |  |  |  |
+| `perimeter` | 221 | (leaf) | ops |  |  |  |  |
 | `strip` | 217 | (leaf) | ops |  |  |  | threat_last |
 | `planner` | 200 | (leaf) | base |  |  |  |  |
 | `dev` | 194 | army, base, faction, flare, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `power` | 171 | (leaf) | ops |  |  |  |  |
 | `trade` | 165 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 159 | modules | base, control, faction, layout |  |  |  |  |
-| `perimeter` | 156 | (leaf) | ops |  |  |  |  |
 | `road` | 142 | base, standing | control |  | 60 |  |  |
 | `pool` | 140 | (leaf) | army, control, cuts, flare, ops, prospect, tap, war |  |  |  |  |
 | `answers` | 132 | (leaf) | ops |  |  |  |  |

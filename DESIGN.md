@@ -509,8 +509,17 @@ strangling (the line walls off outposts and ore).
   to its raids and sieges while at war (`choose`). Scenario `strangle`: the main position (a relay, two gun turrets)
   200 out toward spawn, a guarded outpost (six drills, two gun turrets) 230 out at 90 degrees: every arc at 92 degrees
   (the outpost at 91); `strangle off`: the first arcs at the main position. This camp was strong enough to raid both
-  either way: what strangling changes here is where the wall goes. Not yet: the next ore the player will need as a
-  target, belts and pipes cut where the line crosses them.
+  either way: what strangling changes here is where the wall goes.
+  **The next ore (2026-10-19).** At war with no outpost in reach, the line goes for the field the player will want
+  next, so that growing means trespass: the ores the player mines (its drills' targets; iron and copper before any),
+  in 48-tile cells beyond the claim with 150 tiles or more and none of the player's drills, on Serenity's side of the
+  player's front (no further out than its nearest building and 60), the richest (counted to 600) nearest that
+  building. Kept until the claim covers it or a drill stands on it; the cordon builds its arcs toward it, with no named
+  warning (a field is not the player's yet). The front rule was the call: with richness capped, a field by the
+  player's spawn 411 out won, and the line walked at the main position as if strangling were off. `strangle ore`: a
+  placed field at 96 degrees, the arcs at 101 (seed 12345); on 777 a field of the map's own nearer the front, the
+  arcs within 2 degrees of it; `strangle oreoff`: the main position. Not yet: belts and pipes cut where the line
+  crosses them.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its
 parts")

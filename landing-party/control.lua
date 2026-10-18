@@ -341,6 +341,7 @@ remote.add_interface("landing-party", {
     if t.cuts_off ~= nil then storage.cuts_off = t.cuts_off end
     if t.pods_off ~= nil then storage.pods_off = t.pods_off end
     if t.strangle_off ~= nil then storage.strangle_off = t.strangle_off end
+    if t.next_ore_off ~= nil then storage.next_ore_off = t.next_ore_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
@@ -449,6 +450,7 @@ remote.add_interface("landing-party", {
   incidents = function() return storage.incidents or {} end,
   prospect_stats = function(id) return storage.bases[id] and prospect.stats(storage.bases[id]) end,
   cordon_stats = function(id) return storage.bases[id] and cordon.stats(storage.bases[id]) end,
+  next_ore = function(id) local b = storage.bases[id]; return b and {at = b.next_ore, targets = b.ore_targets or 0} end,
   crew_stats = function(id) return storage.bases[id] and crew.stats(storage.bases[id]) end,
   breaks = function() return {breaks = storage.pact_breaks or 0, till = storage.pact_suspended_till} end,
   strikes = function() return {fired = storage.strikes_fired or 0, targets = storage.strike_targets or 0} end,

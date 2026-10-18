@@ -5647,9 +5647,14 @@ end
 -- at 90 degrees to it. At war the line's first arcs go for the outpost (within 35 degrees of it). Unguarded, the outpost
 -- was raided either way and the line swung back once it was gone: guarded, it is what the line is for.
 -- LP_MIX=off (strangle_off): the line goes for the nearest building, the main position (the case).
+-- LP_MIX=ore: no outpost, a rich iron field (32 by 32, one cell) 230 out at 90 degrees: the line goes for an ore field
+-- (that one, or one of the map's on its side of the player's front).
+-- LP_MIX=oreoff: the same with the next ore off: the line goes for the main position.
 scenarios.strangle = function()
-  local off = params.mix == "off"
-  schedule(30, function() lp("debug_tune", {perimeter_fast = true, strangle_off = off or nil, corp_level = {serenity = 1}}) end)
+  local ore, oreoff = params.mix == "ore", params.mix == "oreoff"
+  local off = params.mix == "off" or oreoff
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true, strangle_off = (params.mix == "off") or nil,
+    next_ore_off = oreoff or nil, corp_level = {serenity = 1}}) end)
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 5000) end end)
   -- Settled: two arcs on record (the check reads the first).
   for t = 3 * 3600, END - 120, 3600 do
@@ -5670,6 +5675,15 @@ scenarios.strangle = function()
       t.insert{name = "firearm-magazine", count = 50}
     end
     local p = {math.floor(o.x + vx * 230), math.floor(o.y + vy * 230)}
+    if ore or oreoff then
+      local x0, y0 = math.floor(p[1] / 48) * 48 + 8, math.floor(p[2] / 48) * 48 + 8
+      flatten(x0 - 2, y0 - 2, x0 + 34, y0 + 34)
+      for x = 0, 31 do for y = 0, 31 do surface().create_entity{name = "iron-ore", position = {x0 + x, y0 + y}, amount = 5000} end end
+      S.drills = {}
+      S.out_bearing = math.deg(math.atan2(y0 + 16 - o.y, x0 + 16 - o.x))
+      S.main_bearing = math.deg(math.atan2(m[2] - o.y, m[1] - o.x))
+      return
+    end
     flatten(p[1] - 10, p[2] - 10, p[1] + 10, p[2] + 10)
     for x = -6, 6 do for y = -6, 6 do surface().create_entity{name = "iron-ore", position = {p[1] + x, p[2] + y}, amount = 5000} end end
     S.drills = {}
@@ -5696,6 +5710,16 @@ scenarios.strangle = function()
       serpent.line(cs.bearings), S.out_bearing, S.main_bearing, left, tostring(cs.perimeter)))
     if off then
       check("strangle: off, the line goes for the nearest (the case)", last and off_by(last, S.main_bearing) <= 35, tostring(last))
+      return
+    end
+    if ore then
+      -- The field it picked (the one placed, or a richer one of the map's own nearer the player's front).
+      local no = lp("next_ore", storage.id)
+      local o = lp("stats", storage.id).origin
+      local ob = no.at and math.deg(math.atan2(no.at.y - o.y, no.at.x - o.x))
+      info("strangle: next ore " .. serpent.line(no) .. string.format(", at %.0f degrees", ob or 0))
+      check("strangle: no outpost, the line went for an ore field", last and ob and off_by(last, ob) <= 35 and no.targets >= 1,
+        tostring(last) .. " against " .. string.format("%.0f", ob or 0))
       return
     end
     check("strangle: the line went for the outpost", last and off_by(last, S.out_bearing) <= 35, tostring(last))
