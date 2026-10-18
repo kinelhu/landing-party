@@ -5255,9 +5255,12 @@ scenarios.sneak = function()
       S.lasers = (S.lasers or 0) + (tr and 1 or 0)
     end
     S.far = {c[1] - ux * 20, c[2] - uy * 20}
-    lp("dev", {"raid", tostring(S.id)}, c)
+    S.c_raid = c
     S.lost0 = lp("stats", S.id).units_lost or 0
   end)
+  -- The raid a second after the base stands: forced in the tick it was built, its lasers read as unpowered (the engine
+  -- powers them from the next tick), and dark turrets weigh nothing.
+  schedule(3 * 3600 + 60, function() lp("dev", {"raid", tostring(S.id)}, S.c_raid) end)
   schedule(3 * 3600 + 120, function()
     local powered = 0
     for _, e in pairs(surface().find_entities_filtered{position = S.c, radius = 25, name = "laser-turret"}) do
@@ -5490,6 +5493,148 @@ scenarios.fortress = function()
       check("fortress: half the lasers down", lasers <= 5, tostring(lasers))
       check("fortress: the roboports down", ports == 0, tostring(ports))
     end
+  end)
+end
+
+-- Blackout (the power strike; Fable's fortress consult): ten lasers behind a wall 150 tiles from a provoked Serenity camp,
+-- fed only by a chain of big poles from a power source 120 tiles off to the side, beyond every turret's reach; and a
+-- decoy nearer the camp: a line of big poles feeding a radar, as exposed, darkening nothing. Its survey finds the pole
+-- whose loss darkens the lasers, its next raid goes for it (worth 14), the lasers go dark, and its raids then take
+-- them. Without the survey it found the feed line too, by luck (its first raid took the decoy's substation and cooled
+-- the decoy's poles; the next nearest was on the feed): on a small base exposed poles are few; the survey is what picks
+-- the one that matters among many. LP_MIX=fed: a second source inside the wall too: no single cut.
+scenarios.blackout = function()
+  local fed, off = params.mix == "fed", params.mix == "off"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, history_off = true, corp_level = {serenity = 1}, cuts_off = off or nil})
+    S.s = storage.id
+    for _ = 1, 2 do lp("debug_depot", S.s, 5000) end
+  end)
+  schedule(6 * 3600, function()
+    local o = lp("stats", S.s).origin
+    local ux, uy = 0, 0
+    if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and 1 or -1 else uy = o.y > 0 and 1 or -1 end
+    local vx, vy = -uy, ux
+    local c = {math.floor(o.x - ux * 150) + 0.5, math.floor(o.y - uy * 150) + 0.5}
+    local function at(du, dv) return {c[1] + ux * du + vx * dv, c[2] + uy * du + vy * dv} end
+    local lo, hi = at(-12, -24), at(4, 130)
+    flatten(math.min(lo[1], hi[1]) - 4, math.min(lo[2], hi[2]) - 4, math.max(lo[1], hi[1]) + 4, math.max(lo[2], hi[2]) + 4)
+    local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
+    S.c, S.lasers = c, {}
+    for k = -20, 20 do put("stone-wall", at(0, k)) end
+    for k = -18, 18, 4 do table.insert(S.lasers, put("laser-turret", at(-3, k))) end
+    for k = -21, 21, 14 do put("substation", at(-7, k)) end
+    -- The line out: big poles every 28 tiles to the source at 120 to the side (the chain beyond the lasers' reach).
+    S.chain = {}
+    for d = 34, 118, 28 do table.insert(S.chain, put("big-electric-pole", at(-7, d))) end
+    -- Its end a plain big pole (worth what the decoy's are): a substation there, worth more, was every raid's first pick.
+    local src = put("big-electric-pole", at(-7, 126))
+    -- The source on a medium pole beside it (a big pole supplies only 2 tiles round it: the lasers never had power).
+    put("medium-electric-pole", at(-7, 130))
+    local eei = put("electric-energy-interface", at(-7, 133))
+    eei.power_production, eei.electric_buffer_size = 1e9 / 60, 1e9
+    -- The decoy: nearer the camp (60 to the other side, 30 closer), a radar on its own line from its own source.
+    for d = -40, -96, -28 do put("big-electric-pole", at(30, d)) end
+    put("radar", at(30, -104))
+    local e3 = put("electric-energy-interface", at(34, -104))
+    e3.power_production, e3.electric_buffer_size = 1e7 / 60, 1e7
+    put("substation", at(30, -112))
+    if fed then
+      local e2 = put("electric-energy-interface", at(-10, 0))
+      e2.power_production, e2.electric_buffer_size = 1e9 / 60, 1e9
+    end
+    S.src = src
+  end)
+  for t = 6 * 3600 + 600, END - 120, 600 do
+    schedule(t, function()
+      local dark = 0
+      for _, l in ipairs(S.lasers or {}) do if l.valid and l.energy <= 0 then dark = dark + 1 end end
+      S.dark = math.max(S.dark or 0, dark)
+      local lit = 0
+      for _, l in ipairs(S.lasers or {}) do if l.valid and l.energy > 0 then lit = lit + 1 end end
+      if lit >= 5 then S.lit_seen = true end
+      if dark >= 5 and S.lit_seen and not S.dark_at then S.dark_at = math.floor((game.tick - 6 * 3600) / 60) end
+      local chain = 0
+      for _, p in ipairs(S.chain or {}) do if p.valid then chain = chain + 1 end end
+      S.chain_min = math.min(S.chain_min or 99, chain)
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.s)
+    local left = 0
+    for _, l in ipairs(S.lasers) do if l.valid then left = left + 1 end end
+    info("blackout: lasers dark " .. tostring(S.dark_at) .. " s after the base stood")
+    info(string.format("blackout: cuts found %s; chain poles left at least %s of 4; lasers dark at most %s; lasers left %d of 10; "
+      .. "log %s", tostring(st.ops.cuts_found), tostring(S.chain_min), tostring(S.dark), left, serpent.line(st.ops.log)))
+    if fed then
+      check("blackout: no cut with a second feed", (st.ops.cuts_found or 0) == 0 and (S.dark or 0) == 0,
+        string.format("cuts %s, dark %s", tostring(st.ops.cuts_found), tostring(S.dark)))
+      return
+    end
+    check("blackout: dark within 10 minutes", S.dark_at and S.dark_at < 600, tostring(S.dark_at))
+    check("blackout: the lasers had power first (the case)", S.lit_seen == true, tostring(S.lit_seen))
+    check("blackout: the survey found the cut", (st.ops.cuts_found or 0) >= 1, tostring(st.ops.cuts_found))
+    local cut_raid = false
+    for _, l in ipairs(st.ops.log or {}) do if l.cut then cut_raid = true end end
+    check("blackout: a raid went for the cut", cut_raid, serpent.line(st.ops.log))
+    check("blackout: the line was cut", (S.chain_min or 4) < 4, tostring(S.chain_min))
+    check("blackout: the lasers went dark", (S.dark or 0) >= 5, tostring(S.dark))
+    check("blackout: then half the lasers were taken", left <= 5, tostring(left))
+  end)
+end
+
+-- Strangle (Fable's fortress consult): a provoked Serenity, its line a step a minute. The player's main position (a
+-- relay, two gun turrets) 200 tiles out toward spawn; an outpost (six drills on iron, a pole, two gun turrets) 230 out
+-- at 90 degrees to it. At war the line's first arcs go for the outpost (within 35 degrees of it). Unguarded, the outpost
+-- was raided either way and the line swung back once it was gone: guarded, it is what the line is for.
+-- LP_MIX=off (strangle_off): the line goes for the nearest building, the main position (the case).
+scenarios.strangle = function()
+  local off = params.mix == "off"
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true, strangle_off = off or nil, corp_level = {serenity = 1}}) end)
+  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 5000) end end)
+  schedule(120, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = -o.x / len, -o.y / len
+    local vx, vy = -uy, ux
+    local m = {math.floor(o.x + ux * 200), math.floor(o.y + uy * 200)}
+    flatten(m[1] - 8, m[2] - 8, m[1] + 8, m[2] + 8)
+    surface().create_entity{name = "lp-command-relay", position = m, force = "player"}
+    for _, d in ipairs({-4, 4}) do
+      local t = surface().create_entity{name = "gun-turret", position = {m[1] + d, m[2] - 4}, force = "player"}
+      t.insert{name = "firearm-magazine", count = 50}
+    end
+    local p = {math.floor(o.x + vx * 230), math.floor(o.y + vy * 230)}
+    flatten(p[1] - 10, p[2] - 10, p[1] + 10, p[2] + 10)
+    for x = -6, 6 do for y = -6, 6 do surface().create_entity{name = "iron-ore", position = {p[1] + x, p[2] + y}, amount = 5000} end end
+    S.drills = {}
+    for k = 0, 5 do
+      table.insert(S.drills, surface().create_entity{name = "burner-mining-drill", position = {p[1] - 5 + (k % 3) * 4, p[2] - 2 + math.floor(k / 3) * 4},
+        force = "player"})
+    end
+    surface().create_entity{name = "small-electric-pole", position = {p[1], p[2] + 6}, force = "player"}
+    for _, d in ipairs({-7, 7}) do
+      local t = surface().create_entity{name = "gun-turret", position = {p[1] + d, p[2] + 6}, force = "player"}
+      t.insert{name = "firearm-magazine", count = 100}
+    end
+    S.out_bearing = math.deg(math.atan2(p[2] - o.y, p[1] - o.x))
+    S.main_bearing = math.deg(math.atan2(m[2] - o.y, m[1] - o.x))
+  end)
+  schedule(END - 60, function()
+    local cs = lp("cordon_stats", storage.id)
+    local left = 0
+    for _, d in ipairs(S.drills) do if d.valid then left = left + 1 end end
+    local function off_by(a, bb) local d = math.abs((a - bb + 180) % 360 - 180) return d end
+    local first = cs.bearings and cs.bearings[1]
+    local last = first
+    info(string.format("strangle: bearings %s; outpost at %.0f, main at %.0f; drills left %d of 6; perimeter %s",
+      serpent.line(cs.bearings), S.out_bearing, S.main_bearing, left, tostring(cs.perimeter)))
+    if off then
+      check("strangle: off, the line goes for the nearest (the case)", last and off_by(last, S.main_bearing) <= 35, tostring(last))
+      return
+    end
+    check("strangle: the line went for the outpost", last and off_by(last, S.out_bearing) <= 35, tostring(last))
+    info("strangle: drills left " .. left .. " (off: compare)")
   end)
 end
 

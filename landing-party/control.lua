@@ -333,6 +333,8 @@ remote.add_interface("landing-party", {
     if t.choice_off ~= nil then storage.choice_off = t.choice_off end
     if t.gates_off ~= nil then storage.gates_off = t.gates_off end
     if t.focus_off ~= nil then storage.focus_off = t.focus_off end
+    if t.cuts_off ~= nil then storage.cuts_off = t.cuts_off end
+    if t.strangle_off ~= nil then storage.strangle_off = t.strangle_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end

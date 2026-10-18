@@ -14,6 +14,7 @@ local rd = require("__landing-party__.scripts.rd")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
 local jammer = require("__landing-party__.scripts.jammer")
+local power = require("__landing-party__.scripts.power")
 
 local ops = {}
 
@@ -117,7 +118,8 @@ function ops.weigh(surface, pos, forces, r)
     -- Firepower: damage times rate of fire (defend's guns, bullet damage +0.8 and shooting speed +0.6: 2.88 each; three
     -- of them killed about 15 units whatever the raid's size, so 21 and 23 lost and 30 is what wins). Corporate
     -- research (rd.strength) is what keeps the raid a size a garrison can field.
-    if k and k[1] > 0 then
+    -- A dark turret (no power) is no defence: the Line goes through the dark stretch (the power strike).
+    if k and k[1] > 0 and not power.dark(e) then
       local f = e.force
       local x = k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
       w = w + x
@@ -137,8 +139,8 @@ function ops.exposure(surface, pos, forces)
   local w = 0
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = 32, force = forces,
     type = {"ammo-turret", "electric-turret", "fluid-turret"}}) do
-    local r = EXPOSE[e.type]
-    if (e.position.x - pos[1]) ^ 2 + (e.position.y - pos[2]) ^ 2 <= r * r then
+    local r = not power.dark(e) and EXPOSE[e.type]
+    if r and (e.position.x - pos[1]) ^ 2 + (e.position.y - pos[2]) ^ 2 <= r * r then
       local k = WEIGHT[e.type]
       local f = e.force
       w = w + k[1] * (1 + f.get_ammo_damage_modifier(k[2])) * (1 + f.get_gun_speed_modifier(k[2]))
@@ -212,7 +214,8 @@ end
 -- A sensor sweep over the cells it covers: what is gone is forgotten.
 local function forget(b, pos, r)
   for key, t in pairs(b.intel.targets) do
-    if (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2 <= r * r and t.seen < game.tick then
+    -- A cut (the power survey) is kept until the next survey says otherwise.
+    if (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2 <= r * r and t.seen < game.tick and not t.cut then
       b.intel.targets[key] = nil
     end
   end
@@ -277,6 +280,31 @@ local function nearest_player(b, surface, r)
   return best, bd
 end
 
+-- Strangling (Fable's fortress consult: "the most Serenity of the four"): at war with a player, its line goes not for
+-- the nearest of the player's buildings but for the outpost easiest to cut off: the player's drills within reach,
+-- grouped by OUTPOST_CELL, the most drills to the least turret weight (and the nearest). Enclosed, they are worth double
+-- to its raids and sieges (choose): what it has surrounded, it takes.
+local OUTPOST_CELL = 48
+local function outpost(b, surface, r, f)
+  local cells = {}
+  for _, d in pairs(surface.find_entities_filtered{position = {b.origin.x, b.origin.y}, radius = r, force = f,
+    type = "mining-drill"}) do
+    local k = math.floor(d.position.x / OUTPOST_CELL) .. "," .. math.floor(d.position.y / OUTPOST_CELL)
+    local c = cells[k] or {n = 0, x = 0, y = 0, drill = d}
+    c.n, c.x, c.y = c.n + 1, c.x + d.position.x, c.y + d.position.y
+    cells[k] = c
+  end
+  local best, bs, bd
+  for _, c in pairs(cells) do
+    local cx, cy = c.x / c.n, c.y / c.n
+    local w = ops.weigh(surface, {cx, cy}, f)
+    local d = math.sqrt((cx - b.origin.x) ^ 2 + (cy - b.origin.y) ^ 2)
+    local sc = c.n / (1 + w) ^ 1.5 / (1 + d / 300)
+    if not bs or sc > bs then best, bs, bd = c.drill, sc, d end
+  end
+  return best, bd
+end
+
 function ops.perimeter(b, tick)
   if not (shared.CORPS[b.corp].temper or {}).provoked_only or not b.claim_radius then return end
   b.landed = b.landed or tick
@@ -291,6 +319,23 @@ function ops.perimeter(b, tick)
   local cur = b.claim_radius
   local cap = PERIMETER_MAX
   local near, nd = nearest_player(b, surface, PERIMETER_MAX + PERIMETER_STEP)
+  -- At war: toward the outpost easiest to cut off (strangling), not the nearest building.
+  if not storage.strangle_off then
+    for _, f in ipairs(shared.player_forces()) do
+      if stance.standing(b.corp, f.name) == "enemy" then
+        local o, od = outpost(b, surface, PERIMETER_MAX + PERIMETER_STEP, f)
+        if o then
+          if b.strangling ~= o.unit_number then
+            b.strangling = o.unit_number
+            if ops.trace then ops.trace(b, string.format("perimeter: at war, the line goes for the outpost at %.0f,%.0f (%.0f out)",
+              o.position.x, o.position.y, od)) end
+          end
+          near, nd = o, od
+          break
+        end
+      end
+    end
+  end
   if nd then cap = math.min(cap, nd + 40) end
   -- A border the player set and keeps (border.lua): the line holds short of it.
   local bc = ops.border_cap and ops.border_cap(b)
@@ -684,6 +729,8 @@ local function choose(b, army)
           / (1 + (t.line and 0 or t.tried))
           * ((player and (floor or ladder(t.owner, b.force) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)
           * (desperate and 10 or 1) * ((not player and pressed) and 0.2 or 1)
+          * ((player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
+            and (t.pos[1] - b.origin.x) ^ 2 + (t.pos[2] - b.origin.y) ^ 2 <= b.claim_radius ^ 2) and 2 or 1)
         if not bs or s > bs then best, bs = key, s end
       end
     end
@@ -866,7 +913,7 @@ local function finish(b, outcome, trace, army)
   -- The owner as at launch (a target destroyed is forgotten, and its raid read as at nobody: nests).
   table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner or op.owner, outcome = outcome,
     launched = op.launched, started = op.started,
-    back = alive(op), shells = op.shells_fired, site = op.site})
+    back = alive(op), shells = op.shells_fired, site = op.site, cut = op.cut})
   if #b.ops_log > 10 then table.remove(b.ops_log, 1) end
   trace(b, string.format("%s %s: %d of %d came back (target %s)", op.kind, outcome, alive(op), op.launched,
     t and t.kind or "gone"))
@@ -1334,7 +1381,7 @@ local function launch(b, key, trace, army, opts)
     trace(b, string.format("raid on %s at %.0f,%.0f: no staging point on dry land; not sent", t.kind, t.pos[1], t.pos[2]))
     return false
   end
-  b.op = {kind = "raid", answer = is_answer or nil, target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
+  b.op = {kind = "raid", answer = is_answer or nil, cut = t.cut, target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
   -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
   -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).
@@ -2628,6 +2675,47 @@ local ANSWER_AGAIN = 30 * 3600
 --   raid    a raid on the player's building nearest the spot; one it would lose: a siege if provoked again within
 --           ANSWER_AGAIN, else nothing yet
 --   siege   mortars on the nearest of the player's turrets there (or what is there); none possible: the raid
+-- The power survey (Serenity's temper "cuts"; Fable's fortress consult): every CUT_TICKS while at war with a player,
+-- the lasers of that player nearest its home (CUT_LASERS within CUT_RANGE) and the network behind them; the pole whose
+-- loss darkens the most of them becomes a target worth CUT_VALUE (a relay is 10), sized as any other.
+local CUT_TICKS, CUT_RANGE, CUT_LASERS, CUT_VALUE, CUT_AREA = 5 * 3600, 450, 40, 14, 350
+local function survey_power(b, trace)
+  if not (shared.CORPS[b.corp].temper or {}).cuts or storage.cuts_off then return end
+  local h = home(b)
+  if not h then return end
+  local s = game.surfaces[b.surface]
+  for _, f in ipairs(shared.player_forces()) do
+    if stance.may(b.corp, f.name, "war") then
+      local lasers = s.find_entities_filtered{position = h.position, radius = CUT_RANGE, force = f, type = "electric-turret"}
+      table.sort(lasers, function(x, y)
+        return (x.position.x - h.position.x) ^ 2 + (x.position.y - h.position.y) ^ 2
+          < (y.position.x - h.position.x) ^ 2 + (y.position.y - h.position.y) ^ 2
+      end)
+      for k = #lasers, CUT_LASERS + 1, -1 do lasers[k] = nil end
+      local cut, why = power.cut(s, f, lasers, CUT_AREA)
+      if cut then
+        local p = cut.pole
+        local key = "cut:" .. p.unit_number
+        local t = b.intel.targets[key] or {tried = 0, cool = 0}
+        t.pos, t.kind, t.value, t.seen, t.owner = {p.position.x, p.position.y}, p.name, CUT_VALUE, game.tick, f.name
+        t.defence, t.dmg = ops.weigh(s, t.pos, f)
+        t.exposure = ops.exposure(s, t.pos, f)
+        t.cut = cut.dark
+        b.intel.targets[key] = t
+        if b.cut_said ~= key then
+          b.cut_said = key
+          b.cuts_found = (b.cuts_found or 0) + 1
+          trace(b, string.format("power survey: the %s at %.0f,%.0f feeds %d of %s's lasers alone (%d poles); a target",
+            p.name, p.position.x, p.position.y, cut.dark, f.name, cut.poles))
+        end
+      elseif #lasers > 0 and game.tick >= (b.cut_quiet or 0) then
+        b.cut_quiet = game.tick + 30 * 3600
+        trace(b, "power survey: " .. why)
+      end
+    end
+  end
+end
+
 local function answer(b, trace, army)
   local a = b.answer
   b.answer = nil
@@ -2730,6 +2818,7 @@ function ops.tick(b, tick, trace, army)
   if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
   if tick % 600 == 200 then field_sight(b) end
   if tick % SURVEY_TICKS == (b.id * 131 + 7) % SURVEY_TICKS then survey(b) end
+  if tick % CUT_TICKS == (b.id * 173 + 11) % CUT_TICKS then survey_power(b, trace) end
   -- An answer goes before anything the decider would choose, and does not wait on its clock (b.next_op).
   if not b.op and b.answer and tick % 300 == 150 and not storage.raids_off and not storage.army_off
     and not army.withdrawing(b) and home(b) then
@@ -2853,7 +2942,7 @@ function ops.summary(b)
   return {known = n, known_player = np, player_targets = pt, ladder = (function()
     for _, f in ipairs(shared.player_forces()) do return ladder(f.name, b.force) end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
-    siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
+    siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,

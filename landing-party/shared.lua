@@ -105,7 +105,8 @@ shared.CORPS = {
     -- Answers: a loss gets a raid in formation; trespass (its ground, its border, a turret by its camp) the siege, its
     -- masonry, what never forgives. A raid it would lose becomes a siege only on a second provocation (a drone shot
     -- down where the player never saw it is not worth mortars).
-    temper = {provoked_only = true, answers = {loss = "raid", trespass = "siege"}},
+    -- Cuts: it surveys the power behind the turrets facing it and strikes the line (scripts/power.lua).
+    temper = {provoked_only = true, cuts = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).
     drill_pollution = 0,
     -- Crews (scripts/crew.lua): a constructor drone, flying over its walls, building with its beam.

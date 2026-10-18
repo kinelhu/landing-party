@@ -273,6 +273,16 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   move the rally point that many tiles from the beacon (at most 300): a clock wired to a beacon walks a
   patrol, a decider sends an attack. The force sees a ring of the reach at the rally point, coloured by
   stance, and a dashed line from the beacon.
+- **Threat scanner (planned; the user, 2026-10-18: "a building that scans for enemy units in a radius and gives signals
+  for each unit type with a number depending on units present in the radius of the scanner would probably be super
+  useful for circuit engineering").** The beacon's missing input half: the army takes orders from circuits, nothing
+  gives circuits eyes. A building (a radar's body, a combinator's output) that every second or so counts the
+  corporations' units within its radius and outputs one signal per unit kind (Line troopers, Shotgun hands, buggies,
+  railgunners, haulers...), the count as its value; perhaps a total per corporation, and the biters apart. Wired to a
+  rally beacon through deciders: "ten troopers or more by the east gate: advance the squad there", gates shut, lamps
+  lit, trains held. Open: its radius and cost, whether it sees through the corporations' jammer, and whether it counts
+  a hauler (a siege coming) as its own signal. With the response army and its transport (trains, concrete roads for
+  speed: the user, same day) as one thread, after the fortress work.
 - **Combined arms (built; user 2026-10-13: "rebuilding the RTS formula a la Factorio"):** the barracks has
   no fixed recipe (a new one starts on troopers). **Trooper** (5 magazines, 10 iron, 2 circuits, 30 s;
   population 1): rifles, fights units. **Breacher** (5 grenades, 10 iron, 2 circuits, 30 s; population 1):
@@ -443,7 +453,31 @@ strangling (the line walls off outposts and ore).
 - nw after these (provoked, x1): Serenity never faced the player. Its camp landed inside a nest field and spent the
   three hours at war with biters: 369 turrets, 340 wall pieces and 227 units lost to them, 115 responses, 539 rebuild
   drones. Where Serenity lands on a biter-heavy map is its own problem: open.
-- Next: the power strike (transmission), strangling.
+- **The power strike** (built; `scripts/power.lua`, a leaf; Serenity's temper `cuts`). Every 5 minutes at war, the
+  survey takes the player's 40 lasers nearest its home, the network behind them, and its poles within 350 tiles as a
+  graph by their copper wires (a wire to a pole beyond that counts as a source). The cut is a pole no turret reaches
+  whose loss leaves turrets with no source on their side; the one darkening the most becomes a target worth 14 (a
+  relay is 10). A dark turret (no energy) weighs nothing in the defence a raid is sized to (`ops.weigh`,
+  `ops.exposure`): the Line goes through the dark stretch. Scenario `blackout`: ten lasers fed by a chain of big poles
+  from a source 120 tiles off, a decoy line to a radar nearer the camp: the survey names the chain's end, the next raid
+  cuts it, the lasers go dark 500 s after the base stood, seven of ten are taken. `blackout fed` (a second source
+  inside the wall): no cut, the lasers stay lit. Without the survey the camp found the feed too, by luck (its first
+  raid took the decoy's substation and cooled the decoy's poles): Serenity already raids exposed lines; the survey is
+  what picks the one that matters among many. Not yet: the reconnaissance tell (a picket walks the line first).
+  Cost: on nw (949 poles in the area, a meshed network: "no single cut", rightly) a search from every candidate pole
+  took 270 to 320 ms every 5 minutes; one depth-first pass (articulation points, the turrets and sources on each side
+  summed on the way) with turret reach from a grid: no spike left at the survey (worst tick 124 ms, elsewhere; mean
+  0.61 ms against the save's 0.52). A turret is dark when its status is no power, not when its buffer is empty: a
+  laser just built read as dark and a raid was sized against nothing (`sneak`, whose raid now comes a second after
+  its base stands).
+- **Strangling** (built, first slice). At war, the line's step goes not for the player's nearest building but for the
+  outpost easiest to cut off: the player's drills within reach grouped by 48-tile cells, the most drills to the least
+  turret weight, then the nearest (`ops.perimeter`, `outpost`). Inside its claim, a player's building is worth double
+  to its raids and sieges while at war (`choose`). Scenario `strangle`: the main position (a relay, two gun turrets)
+  200 out toward spawn, a guarded outpost (six drills, two gun turrets) 230 out at 90 degrees: every arc at 92 degrees
+  (the outpost at 91); `strangle off`: the first arcs at the main position. This camp was strong enough to raid both
+  either way: what strangling changes here is where the wall goes. Not yet: the next ore the player will need as a
+  target, belts and pipes cut where the line crosses them.
 
 ### The levers: strength and aggression (the user, 2026-10-18)
 The user: "once we are [confident in the mechanics], I think we could simply implement scaling variables for strength
