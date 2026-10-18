@@ -78,8 +78,9 @@ def structure(mods):
 LAYERS = {
     "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart"],
     "Corporation": ["faction", "war", "standing", "pact", "trade", "border", "rd", "phases", "biters"],
-    "Settlement": ["base", "layout", "site", "blocks", "modules", "crew", "cordon", "road", "prospect"],
-    "Army and operations": ["army", "ops", "strike", "jammer", "power"],
+    "Settlement": ["base", "layout", "site", "blocks", "modules", "crew", "cordon", "perimeter", "road", "prospect"],
+    "Army and operations": ["army", "ops", "routing", "intel", "siege", "strip", "answers", "cuts", "strike", "jammer",
+                            "power"],
     "Heists (Grubstake)": ["flare", "jumper", "tap", "bait", "marker"],
     "The map": ["map"],
     "The player's army": ["command"],
@@ -93,7 +94,7 @@ def dot(info):
     for n, i in info.items():
         for r in i["requires"]:
             req_by[r].add(n)
-    out = ["digraph ai {", '  graph [rankdir=TB, compound=true, fontname="Helvetica", fontsize=11, nodesep=0.25, ranksep=0.6];',
+    out = ["digraph ai {", '  graph [rankdir=TB, newrank=true, compound=true, fontname="Helvetica", fontsize=11, nodesep=0.25, ranksep=0.6];',
            '  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#eef2f7"];',
            '  edge [color="#8899aa", arrowsize=0.6];']
     for k, (layer, names) in enumerate(LAYERS.items()):

@@ -133,6 +133,10 @@ Built (2026-10-17):
   - one floor for what stays home (`pool.take`, `pool.floor`: the guard of 2, or the 30% reserve);
   - one definition of a player's force (`shared.is_player_force`), and the claim rig's owner from its target.
 - **Not yet:** one target picker (2.4: the pickers still score in their own ways); the ladder's thresholds (2.5).
+- **Split (2026-10-18), along the graph's seams:** `ops.lua` (2,961 lines) into routing, intel, perimeter, siege, strip,
+  answers and cuts (ops keeps the decider, raids and the shared helpers: 1,341). Each module's code moved verbatim inside
+  `install(ops, K)`, which binds the helpers it reads from ops and returns what ops calls; `scripts/lint_globals.sh`
+  (in `check.sh`) fails on any global a script reads that is not the engine's, where a lost local would show.
 
 Order (as planned):
 1. `stance` and `react`, with the answer as their first user (tested: a turret kills a drone, a squad comes at that turret within two minutes, a rival before and an enemy after).

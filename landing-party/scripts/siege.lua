@@ -1,0 +1,697 @@
+-- Sieges and clearances (split from ops.lua, 2026-10-18, along the AI graph's seams: docs/ai-graph.md): where the mortars
+-- stand, which tier a settlement can mount, the fire plan (one point at a time, roboports first), the howitzer and the
+-- jammer for a wall kept by robots, the march, deployment, bombardment, resupply, moving up, the assault and packing up;
+-- and clearances, sieges on nests (Serenity's own ground). The code is as it was in ops; install runs it with ops'
+-- helpers bound (K) and returns what ops calls.
+local shared = require("__landing-party__.shared")
+
+local siege = {}
+
+function siege.install(ops, K)
+local ASSAULT_IDLE = K.ASSAULT_IDLE
+local CELL = K.CELL
+local CLEAR_GUARD = K.CLEAR_GUARD
+local CLEAR_RAILS = K.CLEAR_RAILS
+local COOL_TICKS = K.COOL_TICKS
+local DEFENCE_RADIUS = K.DEFENCE_RADIUS
+local DEPLOY_TICKS = K.DEPLOY_TICKS
+local FOOT = K.FOOT
+local HOWITZER_REACH = K.HOWITZER_REACH
+local HOWITZER_STAND = K.HOWITZER_STAND
+local MORTAR_REACH = K.MORTAR_REACH
+local NO_KILL_TICKS = K.NO_KILL_TICKS
+local PACK_TICKS = K.PACK_TICKS
+local PLAYER_REACH = K.PLAYER_REACH
+local RESUPPLY = K.RESUPPLY
+local SHELLS_CAP = K.SHELLS_CAP
+local SIEGE_COST = K.SIEGE_COST
+local SIEGE_GUARDS = K.SIEGE_GUARDS
+local SIEGE_MAX_TICKS = K.SIEGE_MAX_TICKS
+local SIEGE_SHELLS = K.SIEGE_SHELLS
+local SIEGE_TIERS = K.SIEGE_TIERS
+local STUCK_TICKS = K.STUCK_TICKS
+local TURRETS = K.TURRETS
+local TYPES = K.TYPES
+local against_player = K.against_player
+local alert = K.alert
+local alive = K.alive
+local battery = K.battery
+local budget = K.budget
+local defence = K.defence
+local enemies = K.enemies
+local field = K.field
+local finish = K.finish
+local floor_of = K.floor_of
+local home = K.home
+local jammer = K.jammer
+local needed = K.needed
+local order_all = K.order_all
+local pool = K.pool
+local push_escort = K.push_escort
+local rd = K.rd
+local sneak_route = K.sneak_route
+local stance = K.stance
+local threat_bonus = K.threat_bonus
+-- A site for the mortar: from the target towards home (then at angles off that line), the first point beyond
+-- every known player turret's reach with one of them within the mortar's, on dry land.
+local function siege_site(b, t)
+  local s = game.surfaces[b.surface]
+  local h = home(b)
+  local foes = enemies(game.forces[b.force])
+  local base = math.atan2(h.position.y - t.pos[2], h.position.x - t.pos[1])
+  for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
+    local a = base + turn
+    for d = 20, 70, 2 do
+      local p = {t.pos[1] + math.cos(a) * d, t.pos[2] + math.sin(a) * d}
+      if s.count_entities_filtered{position = p, radius = PLAYER_REACH, type = TURRETS, force = foes} == 0 then
+        if s.count_entities_filtered{position = p, radius = MORTAR_REACH, type = TURRETS, force = foes} > 0
+          and s.count_tiles_filtered{position = p, radius = 4, collision_mask = "water_tile"} == 0 then
+          return p
+        end
+        break
+      end
+    end
+  end
+end
+
+-- At most one siege against a player force at a time, across corporations (a battery excepted).
+local function besieged(owner)
+  for _, o in pairs(storage.bases) do
+    local t = o.op and o.op.kind == "siege" and o.intel and o.intel.targets[o.op.target]
+    if t and t.owner == owner then return true end
+  end
+end
+
+local function choose_siege(b, army, only_battery)
+  if (b.parts or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
+  -- A capability, not every corporation's (Serenity's from level 1; Grubstake never besieges).
+  -- A settlement landed with a grudge besieges whatever its corporation's level or temper (faction.grudge).
+  local capable = shared.capable(b.corp, "siege", army.level(b)) or b.grudge ~= nil
+  -- Against a battery, a corporation that ever besieges does so now (Grubstake never does: it raids).
+  local counter = shared.capable(b.corp, "siege", 99)
+  local in_flight = ops.player_ops()
+  local n = field(b, army)
+  if n < SIEGE_GUARDS then return end
+  local h = home(b)
+  local best, bs, site
+  for key, t in pairs(b.intel.targets) do
+    if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))
+      and not (b.quiescent and against_player(t.owner) and not battery(t))
+      and not (against_player(t.owner) and in_flight >= budget(t.owner) and not battery(t))
+      and not (against_player(t.owner) and not battery(t) and besieged(t.owner))
+      and stance.may(b.corp, t.owner, "siege") then
+      local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
+      local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
+      if not bs or s > bs then
+        local p = siege_site(b, t)
+        if p then best, bs, site = key, s, p end
+      end
+    end
+  end
+  return best, site
+end
+
+-- The tier this settlement can mount against t now: its level, held to a player's era + 1, a grudge one up, then down
+-- to what its parts and field afford.
+local function siege_tier(b, t, army)
+  local k = math.max(1, army.level(b))
+  if against_player(t.owner) then k = math.min(k, budget(t.owner)) end
+  if b.grudge then k = k + 1 end
+  -- The ladder's top rung against that player: a tier more, past the budget (b.war_rung, war.lua).
+  if against_player(t.owner) and (b.war_rung or 0) >= 3 then k = k + 1 end
+  k = math.min(k, #SIEGE_TIERS)
+  local n, reserve = field(b, army)
+  if battery(t) then n = n + reserve end
+  while k > 1 and ((b.parts or 0) < SIEGE_TIERS[k].cost or n < SIEGE_TIERS[k].guards) do k = k - 1 end
+  return k
+end
+ops.siege_tier = siege_tier
+
+-- Whether a siege is against a player (its target's owner).
+local function t_owner_player(b, op)
+  local t = op.target and b.intel.targets[op.target]
+  return t and against_player(t.owner)
+end
+
+-- The mortars' point: the one already chosen while it stands and is in reach; else a roboport in reach of any mortar,
+-- the nearest; else the turret in reach with the least health.
+local function reach_of(m) return m.name:find("howitzer", 1, true) and HOWITZER_REACH or MORTAR_REACH end
+local function focus(s, live, foes, current)
+  local function reach(e)
+    for _, m in ipairs(live) do
+      if (m.position.x - e.position.x) ^ 2 + (m.position.y - e.position.y) ^ 2 <= reach_of(m) ^ 2 then return true end
+    end
+  end
+  if current and current.valid and reach(current) then return current end
+  local best, bd
+  for _, m in ipairs(live) do
+    for _, r in pairs(s.find_entities_filtered{position = m.position, radius = reach_of(m), type = "roboport", force = foes}) do
+      local d = (r.position.x - m.position.x) ^ 2 + (r.position.y - m.position.y) ^ 2
+      if not bd or d < bd then best, bd = r, d end
+    end
+  end
+  if best then return best end
+  for _, m in ipairs(live) do
+    for _, e in pairs(s.find_entities_filtered{position = m.position, radius = MORTAR_REACH, type = TURRETS, force = foes}) do
+      if not bd or e.health < bd then best, bd = e, e.health end
+    end
+  end
+  return best
+end
+
+local function launch_siege(b, key, site, trace, army, tier_override, clearance)
+  local t = b.intel.targets[key]
+  local tier = tier_override or storage.siege_tier or siege_tier(b, t, army)
+  local spec = SIEGE_TIERS[tier]
+  local h = home(b)
+  local s = game.surfaces[b.surface]
+  -- Out past its own outermost wall on the way to the site: gates open for no unit, and a hauler made beside a depot in a
+  -- gated block drove at its wall, 21 to 31 tiles short of its site, siege after siege (visit b - rocket).
+  local hx, hy = h.position.x, h.position.y
+  local dist = math.max(1, math.sqrt((site[1] - hx) ^ 2 + (site[2] - hy) ^ 2))
+  local out = 0.1 * dist
+  for d = 0, dist, 2 do
+    local q = {hx + (site[1] - hx) * d / dist, hy + (site[2] - hy) * d / dist}
+    if s.count_entities_filtered{position = q, radius = 2.5, force = h.force, type = {"wall", "gate"}, limit = 1} > 0 then
+      out = math.min(d + 5, dist)
+    end
+  end
+  local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {hx + (site[1] - hx) * out / dist,
+    hy + (site[2] - hy) * out / dist}, 20, 0.5)
+  local hauler = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
+  if not hauler then return false end
+  local guards = {}
+  -- Counter-battery (Serenity): against the player's artillery, its Shock troopers go first (up to six).
+  local floor = floor_of(b, army, battery(t))
+  if battery(t) and rd.has(b.corp, "counter") then
+    guards = pool.take(b, 6, floor, function(u) return shared.kind_of(u.name) == "lp-shock" end)
+  end
+  -- A clearance (nests): its railgunners go first, the biter-clearing unit.
+  if clearance or t.owner == "enemy" then
+    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, function(u) return shared.kind_of(u.name) == "lp-railgunner" end)) do
+      table.insert(guards, u)
+    end
+  end
+  -- A clearance takes railgunners only: Line troopers next to them died to the nest's big biters and killed next to
+  -- none (nine of them killed one of sixteen, scenario rail).
+  if not (clearance or t.owner == "enemy") then
+    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, function(u) return u.type == "unit" end)) do
+      table.insert(guards, u)
+    end
+  end
+  b.parts = math.max(0, b.parts - spec.cost)
+  -- The guards ride out on the hauler: gates open for no unit, and guards walking from home were 33 to 49 tiles off when
+  -- the biters broke the mortars (visit b - rocket).
+  for _, u in ipairs(guards) do
+    local q = u.valid and s.find_non_colliding_position(u.name, hauler.position, 12, 0.5)
+    if q then u.teleport(q) end
+  end
+  b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
+    site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
+    convoys_left = spec.convoys or 0}
+  b.op.clearance = clearance
+  -- A wall kept by robots: a howitzer comes too, for the roboports behind it (98 tiles; the mortars' 35 reached the
+  -- lasers but not the roboports 13 tiles behind them, and the robots mended or rebuilt all they hit, fortress).
+  if not clearance and not storage.focus_off and against_player(t.owner) and (tier >= 2 or army.level(b) >= 2)
+    and s.count_entities_filtered{position = t.pos, radius = 60, type = "roboport", force = enemies(game.forces[b.force]),
+      limit = 1} > 0 then
+    b.op.with_howitzer = true
+  end
+  -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
+  -- A clearance's march keeps out of its worms' reach (straight on, its guards walked into a behemoth's, review).
+  local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
+    clearance and {turrets = false, worms = true} or {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
+  if not hroute and clearance then hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site, {turrets = false}) end
+  if not hroute and b.intel.targets[key] and push_escort(b, b.intel.targets[key], {hauler.position.x, hauler.position.y}, site) then
+    hroute = {}
+    b.op.pushed = true
+    trace(b, string.format("hauler pushes through biter country to %.0f,%.0f", site[1], site[2]))
+  end
+  if not hroute then
+    for _, u in ipairs(guards) do table.insert(b.garrison, u) end
+    b.op = nil
+    b.parts = b.parts + spec.cost
+    hauler.destroy()
+    local tt = b.intel.targets[key]
+    if tt then tt.cool = game.tick + COOL_TICKS end
+    trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "siege", site[1], site[2]))
+    -- The settlement waits too (re-planned every 30 s, all night, visit).
+    b.next_siege = game.tick + 2 * 3600
+    b.next_op = game.tick + 2 * 3600
+    return false
+  end
+  local hcmds = {}
+  for _, w in ipairs(hroute) do
+    table.insert(hcmds, {type = defines.command.go_to_location, destination = w, radius = 4,
+      distraction = defines.distraction.none})
+  end
+  table.insert(hcmds, {type = defines.command.go_to_location, destination = site, radius = 2,
+    distraction = defines.distraction.none})
+  hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = hcmds}
+  -- A clearance's guards answer only what hits them on the march: on sight, railgunners (vision 34, range 30) walked up
+  -- to the worms they saw, into a behemoth's 48 (review of scenario clear).
+  order_all(guards, {type = defines.command.go_to_location, destination = hauler.position, radius = 6,
+    distraction = clearance and defines.distraction.by_damage or defines.distraction.by_enemy})
+  b.ops_launched = b.ops_launched + 1
+  b.sieges = (b.sieges or 0) + 1
+  if against_player(t.owner) then storage.threat_last = game.tick end
+  trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f): tier %d, %d mortars to %.0f,%.0f, %d guards",
+    t.kind, t.pos[1], t.pos[2], t.value, t.defence or 0, tier, spec.mortars, site[1], site[2], #guards))
+  return true
+end
+
+-- Clearance (Serenity, the biter-country consult): a siege on the nest nearest its way, from a site 33 tiles off
+-- (beyond a medium worm's 30), always dug in, tier 2 (two mortars, a resupply convoy). Its mortars fire on the nests by
+-- themselves; it packs up when nothing is left in reach, and the corridor it leaves (ops.cleared) lets marches through.
+-- The site 33 tiles from a nest, towards `from` (then at angles off that line), out of every worm's own reach plus 2
+-- (its prototype's range: a big worm's 38 and a behemoth's 48 outrange the mortars' 35, and at maximum evolution the
+-- hauler died on the way every two minutes all night, visit). None: mortars cannot clear it.
+-- Out of every worm's reach, by `margin` more (the guards' ring: the site was out of reach, its railgunners guarding
+-- 24 tiles round it were not, and six died to big worms 5 to 10 tiles from it, visit nw).
+local function out_of_worms(s, p, margin)
+  margin = margin or 2
+  for _, w in pairs(s.find_entities_filtered{position = p, radius = 52 + margin, type = "turret", force = "enemy"}) do
+    local ap = w.prototype.attack_parameters
+    local r = (ap and ap.range or 30) + margin
+    if (w.position.x - p[1]) ^ 2 + (w.position.y - p[2]) ^ 2 <= r * r then return false end
+  end
+  return true
+end
+local function clearance_site(s, nest, from, stand)
+  stand = stand or 33
+  local base = math.atan2(from[2] - nest.position.y, from[1] - nest.position.x)
+  for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
+    local p = {nest.position.x + math.cos(base + turn) * stand, nest.position.y + math.sin(base + turn) * stand}
+    if out_of_worms(s, p, CLEAR_GUARD + 2) and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
+      return p
+    end
+  end
+end
+-- The next nest on the way from `from` to `to` (within 40 tiles of the straight line, nearest `from`).
+local function nest_on_way(s, from, to)
+  local dx, dy = to[1] - from[1], to[2] - from[2]
+  local len2 = math.max(1, dx * dx + dy * dy)
+  local near, nd
+  for _, e in pairs(s.find_entities_filtered{position = from, radius = math.sqrt(len2), type = {"unit-spawner", "turret"},
+    force = "enemy"}) do
+    local f = math.max(0, math.min(1, ((e.position.x - from[1]) * dx + (e.position.y - from[2]) * dy) / len2))
+    local off = (from[1] + dx * f - e.position.x) ^ 2 + (from[2] + dy * f - e.position.y) ^ 2
+    local d = (e.position.x - from[1]) ^ 2 + (e.position.y - from[2]) ^ 2
+    if off <= 40 * 40 and (not nd or d < nd) then near, nd = e, d end
+  end
+  return near
+end
+
+function ops.clearance(b, near, trace, army, toward)
+  if not shared.capable(b.corp, "siege", 99) or b.op then return false end
+  local h = home(b)
+  if not h then return false end
+  local s = game.surfaces[b.surface]
+  local key = "nest:" .. math.floor(near.position.x / CELL) .. "," .. math.floor(near.position.y / CELL)
+  b.intel.targets[key] = b.intel.targets[key] or {tried = 0, cool = 0}
+  local t = b.intel.targets[key]
+  t.pos, t.kind, t.value, t.seen, t.owner = {near.position.x, near.position.y}, near.name, 3, game.tick, "enemy"
+  t.defence = s.count_entities_filtered{position = near.position, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+  -- A nest whose clearance failed rests (t.cool, siege_step; b.nest_rest outlives the intel, which forgets nests off
+  -- its claim: the same refusal was traced every two minutes).
+  b.nest_rest = b.nest_rest or {}
+  if (t.cool or 0) > game.tick or (b.nest_rest[key] or 0) > game.tick then return false end
+  local piece, reach = "lp-mortar", MORTAR_REACH
+  local site = clearance_site(s, near, {h.position.x, h.position.y})
+  if not site then
+    -- Worms that outrange the mortar: the howitzer, from beyond a behemoth worm's reach.
+    site = clearance_site(s, near, {h.position.x, h.position.y}, HOWITZER_STAND)
+    piece, reach = "lp-howitzer", HOWITZER_REACH
+  end
+  if not site then
+    t.cool = game.tick + 15 * 3600
+    b.nest_rest[key] = t.cool
+    trace(b, string.format("clearance: the nest at %.0f,%.0f outranges even the howitzer", near.position.x, near.position.y))
+    return false
+  end
+  if (b.parts or 0) < SIEGE_TIERS[2].cost then return false end
+  -- Railgunners to hold the site: the nest's defenders came out at the first shells and broke the mortars of eight Line
+  -- troopers in 35 s (visit b - rocket). Until it has CLEAR_RAILS at home, it asks for them (army.produce) and waits.
+  local rails = 0
+  for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then rails = rails + 1 end end
+  b.want_rails = rails < CLEAR_RAILS * 2
+  if rails < CLEAR_RAILS then
+    if not b.rails_traced then
+      b.rails_traced = true
+      trace(b, string.format("clearance: waits for railgunners (%d of %d)", rails, CLEAR_RAILS))
+    end
+    return false
+  end
+  b.rails_traced = nil
+  local ok = launch_siege(b, key, site, trace, army, 2, true)
+  if ok then
+    b.op.piece, b.op.reach = piece, reach
+    b.op.clear_for = toward
+    b.clearances = (b.clearances or 0) + 1
+    trace(b, string.format("clearance: a siege on the nest at %.0f,%.0f from %.0f,%.0f%s", near.position.x, near.position.y,
+      site[1], site[2], piece == "lp-howitzer" and ", a howitzer (its worms outrange the mortars)" or ""))
+  end
+  return ok
+end
+
+local function siege_step(b, trace, army)
+  local op = b.op
+  local n = alive(op)
+  if game.tick - op.started > SIEGE_MAX_TICKS then
+    if op.hauler and op.hauler.valid then
+      local hp = op.hauler.position
+      trace(b, string.format("siege: out of time in %s, the hauler at %.0f,%.0f, %.0f tiles from the site (%s)", op.phase, hp.x, hp.y,
+        math.sqrt((hp.x - op.site[1]) ^ 2 + (hp.y - op.site[2]) ^ 2), op.hauler.commandable.has_command and "moving" or "no order"))
+    end
+    return finish(b, "aborted", trace, army)
+  end
+  if op.phase == "march" or op.phase == "deploy" then
+    if not op.hauler.valid then
+      trace(b, "siege: the hauler was destroyed on the way")
+      -- A clearance's nest rests 15 minutes (retried every two, it lost a hauler each time, visit).
+      local t = op.clearance and b.intel.targets[op.target]
+      if t then t.cool = game.tick + 15 * 3600 end
+      return finish(b, "intercepted", trace, army)
+    end
+  end
+  if op.phase == "march" then
+    local hp = op.hauler.position
+    if not op.hauler.commandable.has_command then
+      op.hauler.commandable.set_command{type = defines.command.go_to_location, destination = op.site, radius = 2,
+        distraction = defines.distraction.none}
+    end
+    order_all(op.members, {type = defines.command.go_to_location, destination = hp, radius = 6,
+      distraction = op.clearance and defines.distraction.by_damage or defines.distraction.by_enemy})
+    -- Stuck (a hauler drove at the same spot 21 tiles short of its site for 15 minutes, visit b - rocket): no nearer for a
+    -- minute, a clearance deploys where it stands if the nest is in the mortars' reach and it is out of the worms'; else
+    -- the siege is called off now.
+    local d2 = (hp.x - op.site[1]) ^ 2 + (hp.y - op.site[2]) ^ 2
+    if not op.best_d2 or d2 < op.best_d2 - 4 then op.best_d2, op.best_at = d2, game.tick end
+    if game.tick - op.best_at > STUCK_TICKS and d2 >= 5 * 5 then
+      local t = b.intel.targets[op.target]
+      local s = op.hauler.surface
+      if op.clearance and t and (hp.x - t.pos[1]) ^ 2 + (hp.y - t.pos[2]) ^ 2 <= (op.reach or MORTAR_REACH) ^ 2
+        and out_of_worms(s, {hp.x, hp.y}) then
+        trace(b, string.format("siege: the hauler is stuck %.0f tiles short; it deploys where it stands", math.sqrt(d2)))
+        op.site = {hp.x, hp.y}
+        d2 = 0
+      else
+        trace(b, string.format("siege: the hauler is stuck %.0f tiles short of its site; called off", math.sqrt(d2)))
+        if t then t.cool = math.max(t.cool or 0, game.tick + 15 * 3600) end
+        return finish(b, "aborted", trace, army)
+      end
+    end
+    if d2 < 5 * 5 then
+      op.phase, op.phase_at = "deploy", game.tick
+      op.hauler.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
+      -- Guards fight only what hits them: engaging what they saw, they walked from the site into turret range
+      -- and four of six died (abort).
+      -- A clearance's guards are on guard duty instead (bombard).
+      local guard_eye = defines.distraction.by_damage
+      order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = {{type = defines.command.go_to_location, destination = op.site, radius = 8,
+          distraction = guard_eye},
+          {type = defines.command.wander, radius = 8, distraction = guard_eye}}})
+      op.label = rendering.draw_text{text = "Deploying", surface = op.hauler.surface,
+        target = {entity = op.hauler, offset = {0, -2}}, color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
+      trace(b, string.format("siege: deploying at %.0f,%.0f", op.site[1], op.site[2]))
+    end
+  elseif op.phase == "deploy" then
+    local share = (game.tick - op.phase_at) / DEPLOY_TICKS
+    if op.label and op.label.valid then op.label.text = string.format("Deploying %d%%", math.min(100, share * 100)) end
+    if share >= 1 then
+      local s = op.hauler.surface
+      local spec = SIEGE_TIERS[op.tier or 1]
+      local name = shared.variant(b.corp, op.piece or "lp-mortar")
+      local guns = op.piece == "lp-howitzer" and 1 or spec.mortars
+      local carry = op.carry
+      op.mortars, op.carry = {}, nil
+      if not carry then op.loaded = 0 end
+      for k = 1, (carry and #carry or guns) do
+        local a = 2 * math.pi * k / spec.mortars
+        local off = spec.mortars > 1 and 4 or 0
+        local p = s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
+        local m = p and s.create_entity{name = name, position = p, force = op.hauler.force}
+        if m then
+          local shells = carry and carry[k] or spec.shells * (op.piece == "lp-howitzer" and 2 or 1)
+          if shells > 0 then m.insert{name = "lp-mortar-shell", count = shells} end
+          if not carry then op.loaded = op.loaded + shells end
+          table.insert(op.mortars, m)
+        end
+      end
+      op.mortar = op.mortars[1]
+      if not op.mortar then return finish(b, "aborted", trace, army) end
+      if op.with_howitzer and not op.howitzer then
+        local hn = shared.variant(b.corp, "lp-howitzer")
+        local p = s.find_non_colliding_position(hn, {op.site[1], op.site[2]}, 12, 1)
+        op.howitzer = p and s.create_entity{name = hn, position = p, force = op.hauler.force}
+        if op.howitzer then
+          op.howitzer.insert{name = "lp-mortar-shell", count = spec.shells}
+          trace(b, "siege: a howitzer for the roboports")
+        end
+        if rd.has(b.corp, "jammer") and not op.jammer then
+          op.jammer = jammer.raise(s, {op.site[1], op.site[2]}, op.hauler.force)
+          if op.jammer then trace(b, "siege: a jamming mast for their robots") end
+        end
+      end
+      if op.label and op.label.valid then op.label.destroy() end
+      op.phase, op.phase_at = "bombard", game.tick
+      alert(b, b.intel.targets[op.target], "lp.alert-siege", op.site)
+      trace(b, string.format("siege: %d mortars up with %d shells", #op.mortars, op.loaded - op.shells_fired))
+      -- Hardened siege (Serenity): the site digs in, a ring of wall open towards home and two gun pillboxes, cleared
+      -- when the siege ends (op.works).
+      if (rd.has(b.corp, "hardened") or op.clearance) and not op.works then
+        op.works = {}
+        local h = home(b)
+        local away = h and math.atan2(h.position.y - op.site[2], h.position.x - op.site[1]) or 0
+        for k = 0, 35 do
+          local a = 2 * math.pi * k / 36
+          local d = math.abs(((a - away + math.pi) % (2 * math.pi)) - math.pi)
+          if d > 0.5 then
+            local p = {op.site[1] + math.cos(a) * 7, op.site[2] + math.sin(a) * 7}
+            local w = s.can_place_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = op.hauler.force}
+              and s.create_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = op.hauler.force}
+            if w then table.insert(op.works, w) end
+          end
+        end
+        for _, dx in ipairs({-3, 3}) do
+          local p = s.find_non_colliding_position("lp-gun-turret", {op.site[1] + dx, op.site[2] + 3}, 4, 0.5)
+          local g = p and s.create_entity{name = "lp-gun-turret", position = p, force = op.hauler.force}
+          if g then
+            g.insert{name = "piercing-rounds-magazine", count = 50}
+            table.insert(op.works, g)
+          end
+        end
+        trace(b, string.format("siege: the site dug in (%d pieces)", #op.works))
+      end
+    end
+  elseif op.phase == "bombard" or op.phase == "assault" then
+    -- Guard duty (a clearance): biters that come for the mortars are shot, and the guards go back to the site. Told to
+    -- engage on sight they charged the spawner 32 tiles off and died; told to answer only what hit them, they let the
+    -- biters break the mortars (scenario clear, visit b - rocket).
+    -- (siege_step runs every 300 ticks.)
+    if op.clearance then
+      local s = game.surfaces[b.surface]
+      -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
+      local guard_r = CLEAR_GUARD
+      local foes = s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = "enemy"}
+      if #foes > 0 then
+        -- Within the ring only, undistracted: chasing biters, they followed them into the worms (scenario clear: railgunners
+        -- killed by behemoth worms 26 to 31 tiles out).
+        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+          commands = {{type = defines.command.attack_area, destination = op.site, radius = guard_r,
+            distraction = defines.distraction.none},
+            {type = defines.command.go_to_location, destination = op.site, radius = 6, distraction = defines.distraction.none},
+            -- A lasting order at the end: idle, a unit attacks whatever it sees, and guards walked into the worms.
+            {type = defines.command.wander, radius = 5, distraction = defines.distraction.by_damage}}})
+      end
+    end
+    local live = {}
+    for _, m in ipairs(op.mortars or {op.mortar}) do if m.valid then table.insert(live, m) end end
+    op.mortars, op.mortar = live, live[1]
+    if not op.mortar and op.phase == "bombard" then
+      trace(b, "siege: the mortars were destroyed")
+      return finish(b, "aborted", trace, army)
+    end
+    local left, empty = 0, {}
+    for _, m in ipairs(live) do
+      local k = m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell")
+      left = left + k
+      if k == 0 then table.insert(empty, m) end
+    end
+    op.shells_fired = (op.loaded or SIEGE_SHELLS) - left
+    local s = game.surfaces[b.surface]
+    local foes = enemies(game.forces[b.force])
+    -- Nothing left in reach for a minute: done (with eight shells fired and every turret in reach destroyed,
+    -- a mortar sat idle until the siege timed out).
+    local in_reach = 0
+    for _, m in ipairs(live) do
+      -- A clearance's targets are the nests (the player's turrets for any other siege).
+      in_reach = in_reach + (op.clearance
+        and s.count_entities_filtered{position = m.position, radius = op.reach or MORTAR_REACH, type = {"unit-spawner", "turret"}, force = "enemy"}
+        or s.count_entities_filtered{position = m.position, radius = op.reach or MORTAR_REACH, type = TURRETS, force = foes})
+    end
+    if in_reach > 0 then op.last_target = game.tick end
+    -- The fire plan (Fable's fortress consult): against a player, every mortar on one point at a time. Roboports in
+    -- reach first (what keeps the wall up), then the weakest turret in reach: left to themselves the mortars spread 117
+    -- shells along a laser wall and its robots mended every one, ten lasers at full health and 32 repair packs spent
+    -- (fortress). A flare on the point is how a mortar is told (an artillery remote's flare; a turret's shooting
+    -- target cannot be set from script).
+    if not op.clearance and op.phase == "bombard" and not storage.focus_off and t_owner_player(b, op) then
+      local pieces = {}
+      for _, m in ipairs(live) do pieces[#pieces + 1] = m end
+      if op.howitzer and op.howitzer.valid then pieces[#pieces + 1] = op.howitzer end
+      op.focus = focus(s, pieces, foes, op.focus)
+      if op.focus then
+        for _ = 1, #pieces do
+          s.create_entity{name = "artillery-flare", position = op.focus.position, force = b.force, movement = {0, 0},
+            height = 0, vertical_speed = 0, frame_speed = 0}
+        end
+        op.flares = (op.flares or 0) + #pieces
+      end
+    end
+    -- Resupply: a convoy of shells when the mortars are spent and a turret is still in reach.
+    if op.convoy and not op.convoy.valid then
+      trace(b, "siege: the shell convoy was destroyed; no more resupply")
+      op.convoy, op.convoys_left = nil, 0
+    elseif op.convoy then
+      local cp = op.convoy.position
+      if not op.convoy.commandable.has_command then
+        op.convoy.commandable.set_command{type = defines.command.go_to_location, destination = op.site, radius = 2,
+          distraction = defines.distraction.none}
+      end
+      if (cp.x - op.site[1]) ^ 2 + (cp.y - op.site[2]) ^ 2 < 8 * 8 and op.mortar then
+        -- To the spent mortars (every one, if none is spent by now).
+        local to = #empty > 0 and empty or live
+        local each = math.floor(RESUPPLY / #to)
+        for _, m in ipairs(to) do m.insert{name = "lp-mortar-shell", count = each} end
+        op.loaded = op.loaded + each * #to
+        left = left + each * #to
+        b.haulers_home = b.haulers_home or {}
+        table.insert(b.haulers_home, {unit = op.convoy, till = game.tick + 3 * 3600})
+        local h = home(b)
+        if h then
+          op.convoy.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 12,
+            distraction = defines.distraction.none}
+        end
+        op.convoy = nil
+        trace(b, string.format("siege: resupplied, %d shells", each * #to))
+      end
+    elseif #empty > 0 and in_reach > 0 and (op.convoys_left or 0) > 0 and (op.loaded or 0) + RESUPPLY <= SHELLS_CAP then
+      local h = home(b)
+      local p = h and s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), h.position, 20, 0.5)
+      op.convoy = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
+      if op.convoy then
+        op.convoys_left = op.convoys_left - 1
+        op.convoy.commandable.set_command{type = defines.command.go_to_location, destination = op.site, radius = 2,
+          distraction = defines.distraction.none}
+        trace(b, "siege: a shell convoy sets out")
+      end
+    end
+    local spec = SIEGE_TIERS[op.tier or 1]
+    local t = b.intel.targets[op.target]
+    if op.phase == "bombard" then
+      -- Moving up (tier 2 and up, once): nothing in reach for ASSAULT_IDLE with shells left, the mortars pack and the
+      -- hauler takes them to a site in reach of what still stands (two mortars spent 12 of 80 shells on the near
+      -- side of a square and packed up).
+      -- A clearance moves on along its way, nest after nest, while its shells last (one clearance per nest, each
+      -- home and back, took 40 minutes for seven nests, push); any other siege moves up once.
+      if spec.mortars > 1 and (op.clearance or not op.moved) and left > 0 and op.hauler and op.hauler.valid and t
+        and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE then
+        local site
+        if op.clearance then
+          local nxt = op.clear_for and nest_on_way(s, op.site, op.clear_for)
+          site = nxt and clearance_site(s, nxt, op.site, op.piece == "lp-howitzer" and HOWITZER_STAND or nil)
+          op.steps = (op.steps or 0) + 1
+          if op.steps > 8 then site = nil end
+        else
+          site = siege_site(b, t)
+        end
+        op.moved = true
+        if site and (site[1] - op.site[1]) ^ 2 + (site[2] - op.site[2]) ^ 2 > 8 * 8 then
+          op.carry = {}
+          for _, m in ipairs(live) do
+            table.insert(op.carry, m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell"))
+            m.destroy()
+          end
+          op.mortars, op.mortar, op.site = {}, nil, site
+          op.phase, op.phase_at, op.last_target = "march", game.tick, nil
+          op.best_d2, op.best_at = nil, nil
+          -- Round the worms too (a bare straight move led the march past them, review).
+          local hp = op.hauler.position
+          local mroute = op.clearance and sneak_route(b, {hp.x, hp.y}, site, {turrets = false, worms = true}) or {}
+          local mcmds = {}
+          for _, w in ipairs(mroute) do
+            table.insert(mcmds, {type = defines.command.go_to_location, destination = w, radius = 3,
+              distraction = defines.distraction.none})
+          end
+          table.insert(mcmds, {type = defines.command.go_to_location, destination = site, radius = 2,
+            distraction = defines.distraction.none})
+          op.hauler.commandable.set_command{type = defines.command.compound,
+            structure_type = defines.compound_command.return_last, commands = mcmds}
+          trace(b, string.format("siege: moving up to %.0f,%.0f with %d shells", site[1], site[2], left))
+          return
+        end
+      end
+      -- The assault: the barrage over (nothing in reach for ASSAULT_IDLE after the mortars had targets, or the shells
+      -- spent with no convoy coming), the guards go in with what the garrison can add, sized to what is left at the
+      -- target. Tier 3 and up always; below, only when the guards and the garrison (its reserve too) make the force a raid
+      -- there would need (the user, 2026-10-17: "destroys turrets, then nothing happens. The whole group ends up packing
+      -- up and leaving home").
+      local over = op.last_target and ((in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE)
+        or (left == 0 and not op.convoy))
+      local want = over and t and not op.clearance and needed(defence(b, t))
+      -- Its reserve too: the barrage paid for and won, the camp commits (with the pool counting the guards out against
+      -- the cap, a tier-1 siege's guards and spare came to 21 of the 22 needed, and it went home, bombard).
+      local home_n = (function() local f, r = field(b, army) return f + r end)()
+      if want and not spec.assault and n + home_n < want and not op.told_short then
+        op.told_short = true
+        trace(b, string.format("siege: no assault (%d needed, %d guards and %d at home)", want, n, home_n))
+      end
+      if want and (spec.assault or n + home_n >= want) then
+        for _, u in ipairs(pool.take(b, want - #op.members, pool.GUARD, FOOT)) do table.insert(op.members, u) end
+        op.launched = #op.members
+        op.phase, op.phase_at, op.last_kill, op.kills_at, op.razed_before = "assault", game.tick, game.tick, b.razed, b.razed
+        b.assaults = (b.assaults or 0) + 1
+        order_all(op.members, {type = defines.command.attack_area, destination = t.pos, radius = 16,
+          distraction = defines.distraction.by_anything})
+        alert(b, t, "lp.alert-raid")
+        trace(b, string.format("siege: the assault goes in with %d units", #op.members))
+        return
+      end
+      local idle = game.tick - (op.last_target or op.phase_at) > 60 * 60
+      local waiting = op.convoy ~= nil
+      if (left == 0 and not waiting) or idle or n < 0.5 * op.launched then
+        op.phase, op.phase_at = "pack", game.tick
+        op.packing_because = left == 0 and "spent" or (idle and "done" or "aborted")
+        trace(b, string.format("siege: packing up (%s; %d shells fired, %d of %d guards)", op.packing_because,
+          op.shells_fired, n, op.launched))
+      end
+    else
+      if b.razed > op.kills_at then op.kills_at, op.last_kill = b.razed, game.tick end
+      local remaining = t and s.count_entities_filtered{position = t.pos, radius = 16, type = TYPES, force = foes} or 0
+      local done = remaining == 0 or game.tick - op.last_kill > NO_KILL_TICKS
+      if done or n < 0.5 * op.launched then
+        op.phase, op.phase_at = "pack", game.tick
+        op.packing_because = done and "done" or "aborted"
+        b.assault_razed = (b.assault_razed or 0) + b.razed - op.razed_before
+        trace(b, string.format("siege: the assault ends (%s; %d of %d left, %d left standing at the target)",
+          op.packing_because, n, op.launched, remaining))
+        return
+      end
+      for _, u in ipairs(op.members) do
+        if u.valid and not u.commandable.has_command and t then
+          u.commandable.set_command{type = defines.command.attack_area, destination = t.pos, radius = 16,
+            distraction = defines.distraction.by_anything}
+        end
+      end
+    end
+  elseif op.phase == "pack" then
+    if game.tick - op.phase_at >= PACK_TICKS then return finish(b, op.packing_because, trace, army) end
+  end
+end
+return {choose_siege = choose_siege, launch_siege = launch_siege, siege_site = siege_site, siege_step = siege_step, siege_tier = siege_tier}
+end
+
+return siege

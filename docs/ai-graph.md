@@ -16,14 +16,16 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `ops` | 2961 | jammer, pool, power, rd, stance, tune | army, base, border, control, cordon, crew, dev, faction, flare, jumper, prospect, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_step, flare.answer_flare, trade.truce | 60, 300, 600, 3600 |  | alerts, budget_holds, corps, corridors, threat_last |
+| `ops` | 1341 | answers, cuts, intel, jammer, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, flare, jumper, prospect, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_step, flare.answer_flare, trade.truce | 60, 300, 600, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `base` | 1133 | army, blocks, chart, layout, modules, names, ops, rng, site | control, cordon, crew, dev, faction, flare, jumper, pact, prospect, road, tap, trade, war | crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 60, 600, 7200 |  | next_id |
 | `faction` | 704 | army, base, names, ops, pact, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
+| `siege` | 697 | (leaf) | ops |  |  |  | threat_last |
 | `army` | 694 | ops, pool, rd, rng, tune | base, control, dev, faction, war | base.reserve | 60, 300, 600 |  |  |
 | `command` | 545 | (leaf) | control |  | 60, 120 |  | cmd |
 | `layout` | 530 | blocks, rng, site | base |  |  |  |  |
 | `control` | 431 | army, bait, base, biters, border, command, cordon, crew, dev, faction, flare, jammer, jumper, map, marker, ops, pact, phases, pool, prospect, rd, road, site, stance, standing, strike, tap, trade, tune, war |  |  |  | built_entity, entity_damaged, entity_died, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, tick, script_raised_built | army_off, bases, capture_off, choice_off, cuts_off, era_override, flare_burn, focus_off, gates_off, grudge_fast, history_off, hq_fast, ladder_fast, last_raze, mature_blocks, next_id, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, siege_tier, sneak_off, strangle_off, strip_fast, tap_step, trace, tune_levers, unit_owner |
 | `crew` | 393 | base, ops, standing | control |  | 30 |  | crew_owner |
+| `routing` | 374 | (leaf) | ops |  |  |  | corridors |
 | `war` | 363 | army, base, ops, pool, rd, rng, stance, tune | control, faction, flare, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `tap` | 353 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `prospect` | 344 | base, chart, ops, pool, standing | control, cordon |  | 60, 3600 |  | prospect_failed |
@@ -32,12 +34,16 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `jumper` | 314 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
 | `cordon` | 233 | base, ops, prospect | control |  |  |  |  |
 | `phases` | 227 | faction | control |  | 360, 3600 |  | phases |
+| `intel` | 225 | (leaf) | ops |  |  |  |  |
+| `strip` | 217 | (leaf) | ops |  |  |  | threat_last |
 | `dev` | 194 | army, base, faction, flare, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `power` | 171 | (leaf) | ops |  |  |  |  |
 | `trade` | 165 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 159 | modules | base, control, faction, layout |  |  |  |  |
+| `perimeter` | 156 | (leaf) | ops |  |  |  |  |
 | `road` | 142 | base, standing | control |  | 60 |  |  |
 | `pool` | 140 | (leaf) | army, control, flare, ops, prospect, tap, war |  |  |  |  |
+| `answers` | 132 | (leaf) | ops |  |  |  |  |
 | `chart` | 114 | (leaf) | base, border, map, prospect |  |  |  |  |
 | `standing` | 114 | ops | border, control, crew, dev, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |
 | `pact` | 108 | base | control, faction, flare, marker |  | 600 |  | pact_broken, pact_state |
@@ -48,6 +54,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `strike` | 67 | (leaf) | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `jammer` | 62 | (leaf) | control, ops |  |  |  | jammed, jammers |
 | `marker` | 61 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
+| `cuts` | 56 | (leaf) | ops |  |  |  |  |
 | `rng` | 56 | (leaf) | army, base, layout, names, war |  |  |  |  |
 | `names` | 54 | rng | base, dev, faction, map |  |  |  | camp_names |
 | `biters` | 36 | (leaf) | control |  |  |  | evo_refunds, nests_cleared |
@@ -88,28 +95,28 @@ From `stance.may`, run on the mod's own tables. Yes: allowed. No: forbidden. A d
 | `ops` | 2 | `if shared.is_player_force(f) and ladder(f.name, b.force) >= 2` |
 | `ops` | 3 | `local desperate = player and ladder(t.owner, b.force) >= 3` |
 | `ops` | 1 | `* ((player and (floor or ladder(t.owner, b.force) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)` |
-| `ops` | 3 | `if t.owner and ladder(t.owner, b.force) >= 3 then return 1000, sp, worms end` |
-| `ops` | 1 | `local worth = (t.value or 0) * (t.line and 2 or 1) * ((t.owner and ladder(t.owner, b.force) >= 1) and 3 or 1)` |
-| `ops` | 2 | `if worth < PUSH_VALUE and not (t.owner and ladder(t.owner, b.force) >= 2) then return nil, sp, worms end` |
 | `ops` | 3 | `local desperate = against_player(t.owner) and ladder(t.owner, b.force) >= 3` |
 | `ops` | 3 | `if not route and not shared.capable(b.corp, "siege", 99) and against_player(t.owner) and ladder(t.owner, b.for` |
 | `ops` | 1 | `local worth = (t.value or 0) * (t.line and 2 or 1) * (ladder(t.owner, b.force) >= 1 and 3 or 1)` |
 | `ops` | 2 | `and (worth >= PUSH_VALUE or ladder(t.owner, b.force) >= 2) then` |
-| `ops` | 3 | `if against_player(t.owner) and (b.war_rung or 0) >= 3 then k = k + 1 end` |
 | `ops` | 3 | `if want > n and not (t.owner and against_player(t.owner) and ladder(t.owner, b.force) >= 3) then` |
+| `routing` | 3 | `if t.owner and ladder(t.owner, b.force) >= 3 then return 1000, sp, worms end` |
+| `routing` | 1 | `local worth = (t.value or 0) * (t.line and 2 or 1) * ((t.owner and ladder(t.owner, b.force) >= 1) and 3 or 1)` |
+| `routing` | 2 | `if worth < PUSH_VALUE and not (t.owner and ladder(t.owner, b.force) >= 2) then return nil, sp, worms end` |
+| `siege` | 3 | `if against_player(t.owner) and (b.war_rung or 0) >= 3 then k = k + 1 end` |
 | `war` | 1 | `if owner and rung >= 1 and s > 0 and (not pick or rung > prung or (rung == prung and s > short)) then` |
 
 ### The levers: what each drives
 
 | Lever | Module | Line |
 |---|---|---|
+| aggression | `answers` | `b.next_answer = game.tick + tune.sooner(b.corp, ANSWER_COOLDOWN)` |
 | strength | `army` | `n = math.max(1, math.floor(n * tune.strength(b.corp) + 0.5))` |
 | strength | `flare` | `local want = math.floor(((storage.flare_wave or WAVE_BASE) + WAVE_EVO * evo) * tune.strength(corp))` |
 | aggression | `flare` | `b.next_flare = game.tick + (storage.flare_cooldown or tune.sooner(b.corp, COOLDOWN))` |
 | aggression | `flare` | `b.next_flare = math.max(b.next_flare or 0, game.tick + tune.sooner(b.corp, COOLDOWN))` |
 | aggression | `jumper` | `b.next_jump = game.tick + (storage.jump_cooldown or tune.sooner(b.corp, COOLDOWN))` |
 | aggression | `ops` | `b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") ` |
-| aggression | `ops` | `b.next_answer = game.tick + tune.sooner(b.corp, ANSWER_COOLDOWN)` |
 | aggression | `stance` | `local m = (game.tick - t0) / 3600 * (storage.ladder_fast and 10 or 1) * (corp and tune.aggression(corp) or 1)` |
 | aggression | `tap` | `b.next_tap = game.tick + (storage.tap_cooldown or tune.sooner(b.corp, COOLDOWN))` |
 | aggression | `war` | `if tick - since >= span * tune.aggression(b.corp) then` |

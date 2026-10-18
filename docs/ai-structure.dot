@@ -1,5 +1,5 @@
 digraph ai {
-  graph [rankdir=TB, compound=true, fontname="Helvetica", fontsize=11, nodesep=0.25, ranksep=0.6];
+  graph [rankdir=TB, newrank=true, compound=true, fontname="Helvetica", fontsize=11, nodesep=0.25, ranksep=0.6];
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10, fillcolor="#eef2f7"];
   edge [color="#8899aa", arrowsize=0.6];
   subgraph cluster_0 { label="Seams (leaves)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -29,12 +29,19 @@ digraph ai {
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n393 lines", width=1.24, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n233 lines", width=1.06, fillcolor="#eef2f7"];
+    "perimeter" [label="perimeter\n156 lines", width=0.97, fillcolor="#d9f0d9"];
     "road" [label="road\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n344 lines", width=1.18, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n694 lines", width=1.57, fillcolor="#eef2f7"];
-    "ops" [label="ops\n2961 lines", width=3.80, fillcolor="#f7dede"];
+    "ops" [label="ops\n1341 lines", width=2.29, fillcolor="#f7dede"];
+    "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
+    "intel" [label="intel\n225 lines", width=1.05, fillcolor="#d9f0d9"];
+    "siege" [label="siege\n697 lines", width=1.57, fillcolor="#d9f0d9"];
+    "strip" [label="strip\n217 lines", width=1.04, fillcolor="#d9f0d9"];
+    "answers" [label="answers\n132 lines", width=0.95, fillcolor="#d9f0d9"];
+    "cuts" [label="cuts\n56 lines", width=0.86, fillcolor="#d9f0d9"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
     "jammer" [label="jammer\n62 lines", width=0.87, fillcolor="#d9f0d9"];
     "power" [label="power\n171 lines", width=0.99, fillcolor="#d9f0d9"];
@@ -106,11 +113,18 @@ digraph ai {
   "map" -> "standing";
   "marker" -> "pact";
   "names" -> "rng";
+  "ops" -> "answers";
+  "ops" -> "cuts";
+  "ops" -> "intel";
   "ops" -> "jammer";
+  "ops" -> "perimeter";
   "ops" -> "pool";
   "ops" -> "power";
   "ops" -> "rd";
+  "ops" -> "routing";
+  "ops" -> "siege";
   "ops" -> "stance";
+  "ops" -> "strip";
   "ops" -> "tune";
   "pact" -> "base";
   "phases" -> "faction";
