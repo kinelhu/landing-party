@@ -421,6 +421,11 @@ corporations, 24 to biters; 69 before). Grubstake answers with flares now, not s
 raids, more turrets under biters. Mean tick 0.49 ms against the save's 0.30 (alone), script 0.04 ms. The worst ticks,
 100 to 150 ms once a second for three seconds, are a sixth landing's site search ("2 waits for ground"): existing,
 not the day's; open.
+  Measured (a visit queueing a landing as the faction does, `LP_MIX=async`; engine profilers): each try of an
+  asynchronous landing, waiting for its ground, ran the whole site search again: 22 to 25 ms a try even with no
+  candidate, all of it the ore noise sampled round 8 ring points (about 2 ms each; the approach count and the build
+  were 0 and 1 ms). The noise is the map's: cached per ring point, a try costs 3 to 6 ms after the first (22 ms, once a
+  landing). The cache changes no result, so it is no state to keep in step.
 Robots rebuilt all that was razed (666 entities, 378 of them land mines, no ghost left): against a robot base, pressure
 is materials, not ruins. What would hurt is the robots' own network (roboports, power), which the siege went for.
 

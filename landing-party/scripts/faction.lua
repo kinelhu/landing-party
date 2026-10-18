@@ -99,6 +99,7 @@ faction.approach = approach
 -- A landing site about `distance` from `from`: in the first of eight directions (seeded order, turned by
 -- the landing count) with a rich enough patch within SITE_SEARCH tiles of the ring and no lander within
 -- APART. A single point per direction found no ore at 300 tiles on most maps (seed 2: 7 of 8 empty).
+local ORE_CACHE, ORE_CACHE_N = {}, 0
 function faction.site(surface, from, distance, count)
   local start = (surface.map_gen_settings.seed + 3 * (count or 0)) % 8
   local avoid = landers()
@@ -110,25 +111,37 @@ function faction.site(surface, from, distance, count)
     -- Ore from the map generator's noise, sampled every 8 tiles: generating the search area round up to eight
     -- ring points stalled each landing for up to 1.4 s; the noise costs about 2 ms and matched the generated
     -- ore point for point (a spike, 625 of 625). Only the chosen ground is generated (base.land).
-    local pts = {}
-    for x = -SITE_SEARCH, SITE_SEARCH, 8 do
-      for y = -SITE_SEARCH, SITE_SEARCH, 8 do
-        if x * x + y * y <= SITE_SEARCH * SITE_SEARCH then table.insert(pts, {p[1] + x, p[2] + y}) end
-      end
-    end
-    local names = {}
-    for _, ore in ipairs(site.ORES) do table.insert(names, "entity:" .. ore .. ":probability") end
-    local props = surface.calculate_tile_properties(names, pts)
-    local per = {}
-    for i, q in ipairs(pts) do
-      for _, v in pairs(props) do
-        if v[i] > 0 then
-          local k = math.floor(q[1] / 32) .. ":" .. math.floor(q[2] / 32)
-          per[k] = (per[k] or 0) + 1
-          break
+    -- The noise is the map's, the same every time: kept per ring point (ORE_CACHE). A landing waiting for its ground
+    -- ran this whole search again every second, 8 directions at about 2 ms each, and stalled 100 to 150 ms a try on a
+    -- deathworld visit. The cache changes no result (only the time), so it is no state to keep in step.
+    local ck = surface.index .. ":" .. math.floor(p[1]) .. ":" .. math.floor(p[2])
+    local noise = ORE_CACHE[ck]
+    if not noise then
+      local pts = {}
+      for x = -SITE_SEARCH, SITE_SEARCH, 8 do
+        for y = -SITE_SEARCH, SITE_SEARCH, 8 do
+          if x * x + y * y <= SITE_SEARCH * SITE_SEARCH then table.insert(pts, {p[1] + x, p[2] + y}) end
         end
       end
+      local names = {}
+      for _, ore in ipairs(site.ORES) do table.insert(names, "entity:" .. ore .. ":probability") end
+      local props = surface.calculate_tile_properties(names, pts)
+      noise = {}
+      for i, q in ipairs(pts) do
+        for _, v in pairs(props) do
+          if v[i] > 0 then
+            local k = math.floor(q[1] / 32) .. ":" .. math.floor(q[2] / 32)
+            noise[k] = (noise[k] or 0) + 1
+            break
+          end
+        end
+      end
+      ORE_CACHE_N = ORE_CACHE_N + 1
+      if ORE_CACHE_N > 400 then ORE_CACHE, ORE_CACHE_N = {}, 1 end
+      ORE_CACHE[ck] = noise
     end
+    local per = {}
+    for k, n in pairs(noise) do per[k] = n end
     -- A chunk already generated holds what is really there (the player may have mined it out).
     for k in pairs(per) do
       local cx, cy = k:match("(-?%d+):(-?%d+)")

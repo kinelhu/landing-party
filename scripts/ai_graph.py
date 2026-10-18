@@ -78,7 +78,8 @@ def structure(mods):
 LAYERS = {
     "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart"],
     "Corporation": ["faction", "war", "standing", "pact", "trade", "border", "rd", "phases", "biters"],
-    "Settlement": ["base", "layout", "site", "blocks", "modules", "crew", "cordon", "perimeter", "road", "prospect"],
+    "Settlement": ["base", "construction", "planner", "layout", "site", "blocks", "modules", "crew", "cordon", "perimeter",
+                   "road", "prospect"],
     "Army and operations": ["army", "ops", "routing", "intel", "siege", "strip", "answers", "cuts", "strike", "jammer",
                             "power"],
     "Heists (Grubstake)": ["flare", "jumper", "tap", "bait", "marker"],

@@ -5126,6 +5126,10 @@ scenarios.visit = function()
       info(string.format("visit: map dumped (%d walls, %d turrets, %d water samples)", #out.walls, #out.turrets, #out.water))
     end)
   end
+  -- LP_MIX=async (any mix containing it): at 30 minutes, a landing queued as the faction's own are (asynchronous).
+  if params.mix:find("async", 1, true) then
+    schedule(30 * 3600, function() lp("arrive_async", 1, S.sp, S.dist + 400, {corp = "grubstake"}) end)
+  end
   if params.mix:find("noart", 1, true) then
     schedule(30, function()
       local n = 0
