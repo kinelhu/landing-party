@@ -479,6 +479,22 @@ strangling (the line walls off outposts and ore).
   either way: what strangling changes here is where the wall goes. Not yet: the next ore the player will need as a
   target, belts and pipes cut where the line crosses them.
 
+### Reference factories (2026-10-18; the user: "Can you look online for better control saves?")
+Online, the 2.0 saves are benchmark megabases (factoriobench.com): no biters, no defence, built for speed. So the
+controls are built: `scripts/make_reference.sh <kind>` (`tests/lp-ref`, without Landing Party) on seed 1234 with
+default biters, one working core for all (126 assemblers making gears from infinity chests, so they pollute; labs,
+belts, solar, accumulators, substations; two mining outposts outside the wall wired home by big poles), and its
+defence by kind. First visits (provoked at an hour, three hours, x1):
+
+| Kind | Defence | Razed by the corporations | What stuck |
+|---|---|---|---|
+| belt | 88 gun turrets, no robots | 17 turrets, 29 walls, a few others | 70 turrets of 88 left; biters took both outposts' drills |
+| laser | 116 lasers, 25 roboports | 15 roboports, 5 lasers, 20 walls (Serenity's 5 sieges) | robots rebuilt 41, 32 ghosts unbuilt at the end |
+| artillery | the same and 6 artillery turrets | an outpost (8 drills, 17 poles), 2 lasers, 12 walls | Serenity's 10 sieges razed nothing: the artillery outranges them; Grubstake looted 800 |
+
+At x1 the defence holds everywhere; the laser base is the one where the fortress work shows (roboports shelled, and
+the robots fall behind). The artillery base answers Serenity's sieges as the consult said it should (counter-battery).
+
 ### Landing in nest country (2026-10-18; the user: "On some maps you will only get dense fields of nests you know")
 On nw Serenity landed with no spawner within 100 tiles and 132 nests and worms within 250, and spent three hours at war
 with biters (369 turrets, 227 units lost). A site's density now counts: more than 30 nests and worms within 150 (the

@@ -29,6 +29,11 @@ at milestones, asked for.
   worth looking at gets a `/lp` verb, and a check in scenario `dev`.
 - **Real factories: `scripts/visit.sh <save.zip> [minutes]`** runs the corporations against a copy of a real save in
   its own profile (never the real profile or the original file; ask the user before copying one of theirs).
+- **Reference factories: `scripts/make_reference.sh <belt|laser|artillery> [seed] [evolution]`** builds a control base
+  (`tests/lp-ref`, without Landing Party) on a map with default biters and saves it to
+  `~/Library/Application Support/factorio-lp-ref/<kind>.zip`, for `scripts/visit.sh` as any save: the same working,
+  polluting core for all, defended by gun turrets (no robots), lasers and roboports, or lasers, roboports and artillery.
+  The user's own saves stay the real-world check.
 - Waiting on background runs: never `pgrep -f` a pattern that appears in the waiting command itself (it
   matches its own shell and never ends); wait on the run's process or its output file.
 - Forks: `scripts/fork.sh <scenario> <seed> <strike>` saves a scenario 6 minutes before its strike once
