@@ -601,7 +601,34 @@ local function leash(b)
   end
 end
 
+-- Its own gates open for its own units (no gate opens for a unit by itself): Serenity's camps put a gate in every
+-- opening of every walled block, and on nw its raiders stood at the lander behind 29 to 107 pieces of its own wall, raid
+-- after raid, for three hours. Once a second, each gate with one of its units within GATE_REACH is asked open.
+local GATE_REACH = 5
+local function gates(b, tick)
+  if tick % 600 == 31 or not b.gate_list then
+    b.gate_list = {}
+    if b.lander and b.lander.valid then
+      b.gate_list = b.lander.surface.find_entities_filtered{position = b.lander.position, radius = (b.claim_radius or 150) + 60,
+        type = "gate", force = b.lander.force}
+    end
+  end
+  -- Only while the camp has units out or leaving (an operation, units on their way back, a departure in the last two
+  -- minutes): its idle garrison by a gate held it open 3,460 times in six minutes, and an open gate is open to the
+  -- player too. Opened only for units under orders, a raid stayed in: a unit plans its path when ordered, gates shut.
+  local busy = b.op or (b.returning and #b.returning > 0) or game.tick < (b.gates_until or 0)
+  if not busy then return end
+  for _, g in ipairs(b.gate_list) do
+    if g.valid and g.surface.count_entities_filtered{position = g.position, radius = GATE_REACH, force = g.force,
+      type = {"unit", "spider-unit"}, limit = 1} > 0 then
+      g.request_to_open(g.force, 90)
+      b.gate_opens = (b.gate_opens or 0) + 1
+    end
+  end
+end
+
 function army.tick(b, tick, trace)
+  if tick % 60 == 31 and not storage.gates_off then gates(b, tick) end
   if b.grudge and not b.grudge_till and #b.depots > 0 then
     b.grudge_till = tick + (storage.grudge_fast and 2 * 3600 or army.GRUDGE_TICKS)
   end

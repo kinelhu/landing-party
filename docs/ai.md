@@ -5,6 +5,10 @@ here, with none of the storyboarding upfront." This page maps what exists (from 
 point, checked against the code where it matters), names where the pieces disagree, and proposes the layer new
 behaviour plugs into. DESIGN.md keeps the history of each mechanic; this page is the shape.
 
+**At a glance:** `docs/ai-graph.md` (generated from the code by `scripts/ai_graph.py`, checked by `check.sh`): the layers
+and every module with their requires and plug-ins, each corporation's answers and what each standing allows, which
+module reads which rung of the ladder, and what each lever drives.
+
 ## 1. What exists
 
 Every tick `control.lua` runs about twenty systems in a fixed order, each on its own cadence. Per settlement, `base.tick`

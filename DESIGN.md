@@ -375,6 +375,45 @@ stills per run) and `defend`.
 - Open: tier thresholds and export rates are untuned (the `faction` test runs them at a tenth); garrison
   caps limit responses (10 a depot at tier 0).
 
+### A sealed fortress: nw (the user, 2026-10-18: "Pretty sure lasers + robots negating them completely is not good")
+Plotted (a `dumpmap` visit: walls, turrets, water and nests round the camps), nw is a walled rectangle lined with
+lasers on three sides and closed by lakes north and east. What kept the corporations out was mostly ours, not the lasers:
+- **Staging across a lake.** Grubstake's second camp sits north of the big lake; every substation it chose lies across
+  the water, so the line from target to home ended in it: "no staging point on dry land", every 2 minutes for three
+  hours. Now the staging point is sought on lines turned up to 90 degrees either side (`outside`, `TURNS`): its 26-unit
+  raid got in and razed 275 solar panels and accumulators.
+- **Marches that broke off.** Raids marched engaging any enemy in sight, and Serenity's crossed nest country: every
+  passing biter pulled them away. Every march now answers only what hits it.
+- **Serenity never breaches.** Its raids on substations behind the wall walked its length looking for a way in and gave
+  up 270 to 360 tiles off. Now a raid that does not sneak goes straight at the first wall piece on its line
+  (`wall_on_line`) and through; through the gap it takes the nearest building (told to attack the area, inside the
+  wall it ate the wall from within). A breach walled up again by robots before any raider got in is broken again.
+  Scenario `mended serenity` (a wall rebuilt 5 s after it falls): the assembler razed in 40 s; on the old code the raid
+  gave up.
+- **The answer's siege before its level.** An answer is self-defence: Serenity may siege as one before level 1 brings
+  sieges (it sent nothing at the laser wall for three hours). But a tier-1 siege, one mortar, fired 30 shells at a
+  laser wall its robots repaired and razed nothing: open (the answer's siege sized to the wall).
+- **Guarded behind a wall.** A target it cannot get round turrets to is guarded, whatever stands by it, so Grubstake's
+  flares see it. On nw none flew: no nest within 600 nor idle biter within 400 of the north shore (the factory had
+  cleared it): right.
+- **Serenity walled its own army in.** Its camps put a gate in every opening of every walled block, and no gate
+  opens for a unit: on nw its raiders stood at the lander behind 29 to 107 pieces of its own wall, raid after raid.
+  Now a camp holds its gates open for its units nearby while it has units out or leaving (an operation, units on their
+  way back, a departure in the last two minutes; `army.gates`), and opens them all as units leave (`pool.take`): a
+  unit plans its path when it is ordered, so a gate opened only once a unit stood by it stayed in its way. An idle
+  camp's gates stay shut (its garrison by a gate had held it open 3,460 times in six minutes). Scenario `gates`: the
+  garrison in a gated pad's yard, a raid 140 tiles off razes its target; `gates shut` (`gates_off`, the old code): the
+  raid never leaves the yard.
+- **Raids sent in from afar.** Past its staging time a raid went in wherever its raiders were (181 tiles off). Now it
+  waits while they are still closing in (up to three times its time) and is called off if they stall far off.
+After these (deathworld10x, provoked, x1): about 380 razed (650 before the day's answers), turrets lost 78 (54 to the
+corporations, 24 to biters; 69 before). Grubstake answers with flares now, not squads: fewer belts chewed by its own
+raids, more turrets under biters. Mean tick 0.49 ms against the save's 0.30 (alone), script 0.04 ms. The worst ticks,
+100 to 150 ms once a second for three seconds, are a sixth landing's site search ("2 waits for ground"): existing,
+not the day's; open.
+Robots rebuilt all that was razed (666 entities, 378 of them land mines, no ghost left): against a robot base, pressure
+is materials, not ruins. What would hurt is the robots' own network (roboports, power), which the siege went for.
+
 ### The levers: strength and aggression (the user, 2026-10-18)
 The user: "once we are [confident in the mechanics], I think we could simply implement scaling variables for strength
 and agression sort of like what biters have at world gen, and balance through those". Four runtime-global settings,

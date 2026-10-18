@@ -1,0 +1,30 @@
+digraph layers {
+  graph [rankdir=TB, fontname="Helvetica", nodesep=0.5, ranksep=0.7];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
+  edge [color="#8899aa", fontname="Helvetica", fontsize=9];
+  "Seams (leaves)" [label="Seams (leaves)\n6 modules, 470 lines", fillcolor="#d9f0d9"];
+  "Corporation" [label="Corporation\n9 modules, 2111 lines", fillcolor="#eef2f7"];
+  "Settlement" [label="Settlement\n9 modules, 3023 lines\nbase 1133", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n3 modules, 3535 lines\nops 2774", fillcolor="#f7dede"];
+  "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1086 lines", fillcolor="#eef2f7"];
+  "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
+  "The player's army" [label="The player's army\n1 module, 545 lines", fillcolor="#eef2f7"];
+  "Army and operations" -> "Corporation" [label="2", penwidth=1.5];
+  "Army and operations" -> "Seams (leaves)" [label="6", penwidth=2.5];
+  "Corporation" -> "Army and operations" [label="7", penwidth=2.8];
+  "Corporation" -> "Seams (leaves)" [label="6", penwidth=2.5];
+  "Corporation" -> "Settlement" [label="5", penwidth=2.2];
+  "Heists (Grubstake)" -> "Army and operations" [label="3", penwidth=1.8];
+  "Heists (Grubstake)" -> "Corporation" [label="5", penwidth=2.2];
+  "Heists (Grubstake)" -> "Seams (leaves)" [label="5", penwidth=2.2];
+  "Heists (Grubstake)" -> "Settlement" [label="3", penwidth=1.8];
+  "Settlement" -> "Army and operations" [label="5", penwidth=2.2];
+  "Settlement" -> "Corporation" [label="3", penwidth=1.8];
+  "Settlement" -> "Seams (leaves)" [label="6", penwidth=2.5];
+  "The map" -> "Corporation" [label="1", penwidth=1.2];
+  "The map" -> "Seams (leaves)" [label="2", penwidth=1.5];
+  "Army and operations" -> "Corporation" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="2 plug-in"];
+  "Army and operations" -> "Heists (Grubstake)" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="1 plug-in"];
+  "Army and operations" -> "Settlement" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="3 plug-in"];
+  "Settlement" -> "Corporation" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="2 plug-in"];
+}

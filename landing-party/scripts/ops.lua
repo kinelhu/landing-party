@@ -866,7 +866,21 @@ end
 -- A staging point on the line home from the target, at least `off` out: beyond every turret's reach and outside
 -- the player's walls (no wall between it and home). Staged at a fixed offset, a raid's point fell inside a walled
 -- base (-56,31 behind a wall at 70): it timed out there and attacked from outside, unhurt and harmless.
+local outside_ray
+-- The staging point: on the line from the target toward home, else (water, walls) on lines turned up to 90 degrees
+-- either side: across a lake from home, every substation's line ended in the water, and a camp sent nothing in three
+-- hours (visit nw).
+local TURNS = {0, 20, -20, 40, -40, 60, -60, 80, -80}
 local function outside(b, t, ux, uy, off, len)
+  for _, deg in ipairs(TURNS) do
+    local a = math.rad(deg)
+    local vx, vy = ux * math.cos(a) - uy * math.sin(a), ux * math.sin(a) + uy * math.cos(a)
+    local p = outside_ray(b, t, vx, vy, off, len, true)
+    if p then return p end
+  end
+  return outside_ray(b, t, ux, uy, off, len, false)
+end
+outside_ray = function(b, t, ux, uy, off, len, strict)
   local s = game.surfaces[b.surface]
   local foes = enemies(game.forces[b.force])
   local function walled(p)
@@ -890,7 +904,9 @@ local function outside(b, t, ux, uy, off, len)
     end
   end
   -- Nowhere better: at the stand-off, unless that is water (nil: no staging point; a substation on a pier out in a
-  -- lake was staged for in deep water, every few minutes for three hours, visit nw).
+  -- lake was staged for in deep water, every few minutes for three hours, visit nw). A turned line takes only a clean
+  -- point.
+  if strict then return nil end
   local p = {t.pos[1] + ux * off, t.pos[2] + uy * off}
   if s.count_tiles_filtered{position = p, radius = 2, collision_mask = "water_tile", limit = 1} > 0 then return nil end
   return p
@@ -1183,6 +1199,27 @@ local function breach_point(b, t, from)
   return pieces, bc
 end
 
+-- The first wall piece (and its neighbour) on the straight line from `from` to `to`, for a raid that does not sneak:
+-- Serenity's raids on substations behind a wall walked its length looking for a way in and gave up 360 tiles off
+-- (visit nw).
+local function wall_on_line(b, from, to)
+  local s = game.surfaces[b.surface]
+  local foes = enemies(game.forces[b.force])
+  local dx, dy = to[1] - from[1], to[2] - from[2]
+  local len = math.sqrt(dx * dx + dy * dy)
+  for d = 2, len - 2, 2 do
+    local q = {from[1] + dx / len * d, from[2] + dy / len * d}
+    local w = s.find_entities_filtered{position = q, radius = 1.5, type = {"wall", "gate"}, force = foes, limit = 1}[1]
+    if w then
+      local pieces = {w}
+      for _, e in ipairs(s.find_entities_filtered{position = w.position, radius = 1.5, type = {"wall", "gate"}, force = foes}) do
+        if e ~= w and #pieces < 2 then table.insert(pieces, e) end
+      end
+      return pieces
+    end
+  end
+end
+
 -- Looting (Grubstake's temper: the user's heists, folded into its identity, docs/reviews/2026-10-14-identity-trees-consult
 -- .md): a raid at the target first empties the player's chests within 16 tiles that one of its units stands by (6
 -- tiles), valuable items first, up to LOOT_ITEMS a raid; what survivors carry home becomes parts (finish), by LOOT.
@@ -1427,12 +1464,17 @@ local function launch(b, key, trace, army, opts)
     -- Longer when the march itself is the problem (water and turrets): the same unreachable substation was chosen every
     -- two minutes for half an hour while the factory had hundreds of others (visit nw).
     t.cool = game.tick + ((t.owner ~= "enemy" and not why:find("nests = [1-9]")) and 15 or 2) * 3600
+    -- Behind turrets it cannot get round: guarded, whatever stands by it (a substation inside a laser wall counted as
+    -- undefended, and Grubstake's flares, which go at guarded targets, never knew of one, visit nw).
+    if why and not why:find("turrets = 0[,}]") then t.exposure = math.max(t.exposure or 0, 1) end
     b.next_op = game.tick + 2 * 3600
     trace(b, string.format("raid on %s at %.0f,%.0f: no way round biter country; not sent (%s)", t.kind, t.pos[1], t.pos[2],
       why or ""))
     return false
   end
-  local how = sneaks and defines.distraction.by_damage or defines.distraction.by_enemy
+  -- Every march answers only what hits it: engaging what it saw, Serenity's raids through nest country broke off at every
+  -- passing biter and were 270 to 350 tiles from their targets when they gave up (visit nw, 85 units lost for nothing).
+  local how = defines.distraction.by_damage
   local cmds = {}
   for _, w in ipairs(route) do
     table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = how})
@@ -2229,7 +2271,42 @@ local function step(b, trace, army)
         near = near + 1
       end
     end
-    if near >= 0.8 * n or game.tick - op.phase_at > (op.stage_ticks or STAGE_TICKS) then
+    -- Past its time and still closing in: it waits (up to three times its time). Stalled far off: called off, not sent
+    -- in piecemeal (Serenity's raids went in with raiders still 181 tiles off, walking the engine's way round lakes and
+    -- nests, and razed nothing, visit nw).
+    local over = game.tick - op.phase_at > (op.stage_ticks or STAGE_TICKS)
+    if over and near < 0.8 * n then
+      local sum, k = 0, 0
+      for _, u in ipairs(op.members) do
+        if u.valid then
+          sum = sum + math.sqrt((u.position.x - op.staging[1]) ^ 2 + (u.position.y - op.staging[2]) ^ 2); k = k + 1
+        end
+      end
+      local mean = k > 0 and sum / k or 0
+      local closing = op.stage_dist and mean < op.stage_dist - 5
+      op.stage_dist = mean
+      if mean > 40 then
+        if closing and game.tick - op.phase_at < 3 * (op.stage_ticks or STAGE_TICKS) then return end
+        -- No longer closing: it goes in from where it is, as it always did (called off at 60 tiles while fighting on the
+        -- way, Serenity's raids razed a third of what they had on deathworld); only one stuck far off (walled in, lost
+        -- round a lake) is called off.
+        if not closing and op.stage_waited and mean > 150 then
+          local cx, cy, m = 0, 0, 0
+          for _, u in ipairs(op.members) do if u.valid then cx, cy, m = cx + u.position.x, cy + u.position.y, m + 1 end end
+          cx, cy = cx / math.max(1, m), cy / math.max(1, m)
+          local own = wall_on_line and game.surfaces[b.surface].count_entities_filtered{area = {{math.min(cx, op.staging[1]),
+            math.min(cy, op.staging[2])}, {math.max(cx, op.staging[1]), math.max(cy, op.staging[2])}}, force = b.force,
+            type = {"wall", "gate"}} or -1
+          trace(b, string.format("raid never reached its staging point (its raiders %.0f off on average, about %.0f,%.0f; %d "
+            .. "of its own wall pieces between): called off", mean, cx, cy, own))
+          return finish(b, "aborted", trace, army)
+        end
+        local first = not op.stage_waited
+        op.stage_waited = true
+        if first and not closing then return end
+      end
+    end
+    if near >= 0.8 * n or over then
       -- A look from the staging point first: more turrets than the force can take, and it turns back before
       -- a shot is fired (four raiders sent at a target armed after they left all died attacking it).
       if t then
@@ -2286,11 +2363,30 @@ local function step(b, trace, army)
           table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4,
             distraction = defines.distraction.by_enemy})
         end
-        table.insert(cmds, {type = defines.command.attack_area, destination = pos, radius = 12,
-          distraction = defines.distraction.by_anything})
-        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-          commands = cmds})
-        trace(b, string.format("raid attacks with %d of %d (%d waypoints)", n, op.launched, #cmds - 1))
+        -- A wall across the way: straight at it, through it, then in (the breach phase).
+        local last = #cmds > 0 and cmds[#cmds].destination or op.staging
+        local pieces = t and t.owner ~= "enemy" and wall_on_line(b, last, pos)
+        if pieces then
+          op.breach = pieces
+          op.breach_at = {pieces[1].position.x, pieces[1].position.y}
+          op.phase = "breach"
+          table.insert(cmds, {type = defines.command.attack, target = pieces[1], distraction = defines.distraction.by_enemy})
+          order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+            commands = cmds})
+          trace(b, string.format("raid goes straight at the wall at %.0f,%.0f with %d of %d", op.breach_at[1],
+            op.breach_at[2], n, op.launched))
+        else
+          table.insert(cmds, {type = defines.command.attack_area, destination = pos, radius = 12,
+            distraction = defines.distraction.by_anything})
+          order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+            commands = cmds})
+          local far = 0
+          for _, u in ipairs(op.members) do
+            if u.valid then far = math.max(far, math.sqrt((u.position.x - op.staging[1]) ^ 2 + (u.position.y - op.staging[2]) ^ 2)) end
+          end
+          trace(b, string.format("raid attacks with %d of %d (%d waypoints; the furthest raider %.0f from staging)", n,
+            op.launched, #cmds - 1, far))
+        end
       end
     end
   elseif op.phase == "breach" then
@@ -2312,10 +2408,16 @@ local function step(b, trace, army)
     if not standing or game.tick - op.phase_at > 2 * STAGE_TICKS then
       op.phase, op.phase_at, op.last_kill = "attack", game.tick, game.tick
       op.breached = not standing
+      -- Through the gap and at the nearest building: told to attack the area, inside the wall they took the wall itself,
+      -- piece after piece from within, and the robots put each back (mended serenity).
+      local inside = game.surfaces[b.surface].find_entities_filtered{position = pos, radius = 16, type = TYPES,
+        force = enemies(game.forces[b.force])}
+      local e = #inside > 0 and game.surfaces[b.surface].get_closest(op.breach_at, inside)
       order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
         commands = {{type = defines.command.go_to_location, destination = op.breach_at, radius = 3,
           distraction = defines.distraction.by_damage},
-          {type = defines.command.attack_area, destination = pos, radius = 12, distraction = defines.distraction.by_anything}}})
+          e and {type = defines.command.attack, target = e, distraction = defines.distraction.by_damage}
+            or {type = defines.command.attack_area, destination = pos, radius = 12, distraction = defines.distraction.by_anything}}})
       trace(b, string.format("raid %s the wall at %.0f,%.0f and goes in with %d of %d",
         standing and "gave up on" or "breached", op.breach_at[1], op.breach_at[2], n, op.launched))
     else
@@ -2345,6 +2447,37 @@ local function step(b, trace, army)
     local share = rd.has(b.corp, "prospector") and 0.7 or 0.5
     if n < share * op.launched and turrets > 0 then return finish(b, "aborted", trace, army) end
     loot(b, op, t, pos, surface, trace)
+    -- The breach walled up again behind them before they were through, and nothing has fallen since: back at it (the
+    -- player's robots put a piece back in 5 s, and Serenity's raiders stood at the rebuilt wall until the raid gave up,
+    -- mended serenity).
+    local got_in = false
+    for _, u in ipairs(op.members) do
+      if u.valid and (u.position.x - pos[1]) ^ 2 + (u.position.y - pos[2]) ^ 2 < 10 * 10 then got_in = true end
+    end
+    if op.breach_at and not got_in and game.tick - op.last_kill > 20 * 60 then
+      local again = surface.find_entities_filtered{position = op.breach_at, radius = 2.5, type = {"wall", "gate"},
+        force = enemies(game.forces[b.force])}
+      if #again > 0 then
+        op.breach, op.phase, op.phase_at = again, "breach", game.tick
+        op.rebreached = (op.rebreached or 0) + 1
+        for _, u in ipairs(op.members) do
+          if u.valid then
+            u.commandable.set_command{type = defines.command.attack, target = again[1], distraction = defines.distraction.by_damage}
+          end
+        end
+        local near, inside = 1e9, 0
+        for _, u in ipairs(op.members) do
+          if u.valid then
+            local d = math.sqrt((u.position.x - pos[1]) ^ 2 + (u.position.y - pos[2]) ^ 2)
+            near = math.min(near, d)
+            if d < 10 then inside = inside + 1 end
+          end
+        end
+        trace(b, string.format("raid: the breach at %.0f,%.0f walled up again; at it again (nearest raider %.0f from the "
+          .. "target, %d within 10)", op.breach_at[1], op.breach_at[2], near, inside))
+        return
+      end
+    end
     if game.tick - op.last_kill > NO_KILL_TICKS then return finish(b, "aborted", trace, army) end
     if left == 0 then
       trace(b, string.format("raid finds nothing left within 16 of %.0f,%.0f (%d turrets within %d)", pos[1], pos[2],
@@ -2447,7 +2580,9 @@ local function answer(b, trace, army)
     return true
   end
   local function siege()
-    if not (shared.capable(b.corp, "siege", army.level(b)) or b.grudge) or not stance.may(b.corp, a.owner, "siege") then
+    -- An answer is self-defence, as the counter-battery is: a corporation that sieges at all may answer with one before
+    -- its level brings them (Serenity at level 0 sent nothing at a laser wall for three hours, visit nw).
+    if not (shared.capable(b.corp, "siege", 99) or b.grudge) or not stance.may(b.corp, a.owner, "siege") then
       trace(b, said .. string.format("no siege (capable %s, may %s)", tostring(shared.capable(b.corp, "siege", army.level(b))),
         tostring(stance.may(b.corp, a.owner, "siege"))))
       return false

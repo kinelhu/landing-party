@@ -49,6 +49,13 @@ function pool.take(b, n, floor, fit)
       if counts(u) then home = home - 1 end
     end
   end
+  -- Out through its own gates: they open as units leave (army.gates holds them open while units on the way pass). A
+  -- unit plans its path when it gets its order, and opened only once a unit was by it, a gate stayed in its way: the
+  -- raid stood in the yard (gates).
+  if #taken > 0 and not storage.gates_off then
+    b.gates_until = game.tick + 2 * 3600
+    for _, g in ipairs(b.gate_list or {}) do if g.valid then g.request_to_open(g.force, 15 * 60) end end
+  end
   return taken
 end
 

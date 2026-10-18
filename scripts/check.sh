@@ -5,6 +5,8 @@
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 "$(dirname "$0")/lint_notices.sh"
+# The AI's generated graph (docs/ai-graph.md) must match the code: regenerate with scripts/ai_graph.py.
+python3 -I "$(dirname "$0")/ai_graph.py" --check
 P="$HOME/Library/Application Support/factorio-lp-check"
 mkdir -p "$P/config" "$P/mods" "$P/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$P" > "$P/config/config.ini"

@@ -1127,7 +1127,7 @@ function base.stats(b)
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
     war_rung = b.war_rung or 0, map_text = b.map_text, name = b.name,
-    claim_marks = #(b.claim_marks or {}), flares = b.flares or 0, jumps = b.jumps or 0, hands_back = b.hands_back or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0}
+    claim_marks = #(b.claim_marks or {}), flares = b.flares or 0, jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0}
 end
 
 return base
