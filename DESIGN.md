@@ -490,7 +490,15 @@ six railgunners guarding 24 tiles round a site just out of reach died to big wor
 Found: Serenity's losses to biters on nw all came from the side facing the player's factory (W 140, NW 152, SW 108,
 N 42, none east, nests all round): the waves the player's pollution draws, or fights its turrets start with them, in a
 corporation that landed between the nests and the player. The buffer stays (a neighbour in the lane takes the waves;
-Grubstake's pact spares it). Next: under that pressure, its clearances go first at the nests in that lane.
+Grubstake's pact spares it).
+Tried and withdrawn (same day): the lane. Its losses to biters in 10 minutes, 10 or more, gave a bearing; its decider
+went first for a clearance of the nest nearest home on that side, and when none could go (no railgunners left, 0 of 8;
+worms beyond the howitzer) bought an orbital strike there (12 parts a shell). Three hours on nw, losses to biters a
+10 minutes: with it 0 0 0 39 123 98 64 122 143 164 186 171 65 22 69 16 6 19 (about 1,300); without (`laneoff`) 0 0 0
+39 49 45 49 78 82 104 72 109 33 62 75 38 2 3 (about 840). It lost more: the strikes spent 60 to 432 parts it then
+lacked for rebuilding, and shelling the field seemed to stir it; both quiet down in the last hour. The clearance itself
+never launched. Open: how Serenity holds a lane of nests between it and a polluting player (its railgunners, its
+economy under attrition), or whether it should.
 
 ### The levers: strength and aggression (the user, 2026-10-18)
 The user: "once we are [confident in the mechanics], I think we could simply implement scaling variables for strength
