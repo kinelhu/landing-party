@@ -23,7 +23,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `base` | 659 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, flare, jumper, pact, prospect, road, tap, trade, war | crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 60, 600, 7200 |  | next_id |
 | `command` | 575 | (leaf) | control |  | 60, 120 |  | cmd |
 | `layout` | 544 | blocks, rng, site | base, faction |  |  |  |  |
-| `control` | 458 | army, bait, base, biters, border, command, cordon, crew, dev, faction, flare, jammer, jumper, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, site, stance, standing, strike, tap, trade, tune, war |  |  |  | built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, tick, script_raised_built | army_off, bases, capture_off, choice_off, cmd, cuts_off, era_override, flare_burn, focus_off, gates_off, grudge_fast, history_off, hq_fast, ladder_fast, last_raze, mature_blocks, next_id, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, siege_tier, sneak_off, strangle_off, strip_fast, tap_step, trace, tune_levers, unit_owner |
+| `control` | 460 | army, bait, base, biters, border, command, cordon, crew, dev, faction, flare, jammer, jumper, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, site, stance, standing, strike, tap, trade, tune, war |  |  |  | built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, tick, script_raised_built | army_off, bases, capture_off, choice_off, cmd, cuts_off, era_override, flare_burn, focus_off, gates_off, grudge_fast, history_off, hq_fast, ladder_fast, last_raze, mature_blocks, next_id, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, siege_tier, sneak_off, strangle_off, strip_fast, tap_step, trace, tune_levers, unit_owner |
 | `crew` | 393 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `war` | 392 | army, base, ops, pods, pool, rd, rng, stance, tune | control, faction, flare, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `routing` | 374 | (leaf) | ops |  |  |  | corridors |
@@ -50,12 +50,12 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `standing` | 114 | ops | border, control, crew, dev, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |
 | `pact` | 108 | base | control, faction, flare, marker |  | 600 |  | pact_broken, pact_state |
 | `border` | 105 | chart, ops, standing | control |  | 600 |  | borders |
-| `scanner` | 76 | (leaf) | control |  |  |  | scanners |
+| `scanner` | 90 | (leaf) | control |  |  |  | scanners |
 | `stance` | 75 | tune | control, ops, war |  |  |  | last_raze |
 | `cuts` | 74 | pool | ops |  |  |  |  |
+| `jammer` | 73 | (leaf) | control, ops |  |  |  | jam_beams, jammed, jammers |
 | `map` | 71 | chart, names, standing | control |  | 600 |  |  |
 | `blocks` | 70 | (leaf) | base, layout |  |  |  |  |
-| `jammer` | 70 | (leaf) | control, ops |  |  |  | jam_beams, jammed, jammers |
 | `strike` | 67 | (leaf) | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `pods` | 64 | (leaf) | control, faction, war |  | 60 |  | pods |
 | `marker` | 61 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |

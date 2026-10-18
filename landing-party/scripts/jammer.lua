@@ -2,10 +2,13 @@
 -- the emplacement once its research has it (rd node "jammer", bought after a siege whose hits the player's robots
 -- mended). Its arcs strike the player's construction and logistic robots flying within RADIUS, a few a moment, so a
 -- breach stays open. Its tell is the mast itself, its lamp ring and the arcs; its counters: destroy the mast (1,500
--- health, a military target), keep roboports beyond its reach. A leaf: ops raises and lowers it.
+-- health, a military target), keep roboports beyond its reach. It also blinds the player's threat scanners within its
+-- reach (scripts/scanner.lua): they read lp-scan-jammed and nothing else. A leaf: ops raises and lowers it.
+local shared = require("__landing-party__.shared")
+
 local jammer = {}
 
-local RADIUS = 50
+local RADIUS = shared.JAM_RADIUS
 local PER_BEAT = 3               -- robots struck each beat
 local BEAT = 30                  -- ticks
 local CYAN = {r = 0.45, g = 0.85, b = 1, a = 1}

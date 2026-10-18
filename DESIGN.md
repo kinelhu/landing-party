@@ -279,6 +279,11 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   siege or a strip camp coming, buggies), the building crews apart, a total a corporation, and the biters. Scenario
   `scanner`: five troopers and a hauler, three buggies, two biters within, four troopers beyond: counted exactly; two
   troopers killed, the count follows within 2 s.
+  **Jammed (2026-10-19):** a hostile jammer mast within 50 tiles (the reach of its robot arcs) blinds it: it outputs
+  `lp-scan-jammed` = 1 and nothing else. The call: Serenity's eyes against the player's (a siege under its jammer comes
+  unseen), but a blinded scanner still says so, so a circuit can answer "jammed" as a threat of its own, and the player
+  learns a mast stands near (the counter is the same as for the arcs: destroy the mast, or a second scanner further
+  out). `scanner`: under a mast 36 tiles off, `{lp-scan-jammed = 1}`; the mast down, the count is back within 2 s.
   Scenario `scanresponse`, the loop end to end: a scanner at an outpost 60 tiles out, a decider by it (three Serenity
   units or more: X = 60), its output carried home on a red wire over medium poles to a rally beacon with six troopers.
   The squad stays home until four Line troopers come to the outpost; then it marches, kills all four (losing two) and
@@ -301,8 +306,8 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   corporations' units within its radius and outputs one signal per unit kind (Line troopers, Shotgun hands, buggies,
   railgunners, haulers...), the count as its value; perhaps a total per corporation, and the biters apart. Wired to a
   rally beacon through deciders: "ten troopers or more by the east gate: advance the squad there", gates shut, lamps
-  lit, trains held. Open: its radius and cost, whether it sees through the corporations' jammer, and whether it counts
-  a hauler (a siege coming) as its own signal. With the response army and its transport (trains, concrete roads for
+  lit, trains held. Open: its radius and cost (64 tiles, steel and circuits as built). Settled: the jammer blinds it;
+  haulers have their own signal. With the response army and its transport (trains, concrete roads for
   speed: the user, same day) as one thread, after the fortress work.
 - **Combined arms (built; user 2026-10-13: "rebuilding the RTS formula a la Factorio"):** the barracks has
   no fixed recipe (a new one starts on troopers). **Trooper** (5 magazines, 10 iron, 2 circuits, 30 s;

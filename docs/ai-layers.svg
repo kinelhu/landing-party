@@ -49,7 +49,7 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M230.24,-235.5C230.24,-235.5 127.99,-235.5 127.99,-235.5 121.99,-235.5 115.99,-229.5 115.99,-223.5 115.99,-223.5 115.99,-203.5 115.99,-203.5 115.99,-197.5 121.99,-191.5 127.99,-191.5 127.99,-191.5 230.24,-191.5 230.24,-191.5 236.24,-191.5 242.24,-197.5 242.24,-203.5 242.24,-203.5 242.24,-223.5 242.24,-223.5 242.24,-229.5 236.24,-235.5 230.24,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4069 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4072 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1341</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->
@@ -190,7 +190,7 @@
 <title>The player&#39;s army</title>
 <path fill="#eef2f7" stroke="black" d="M577.24,-522.75C577.24,-522.75 486.99,-522.75 486.99,-522.75 480.99,-522.75 474.99,-516.75 474.99,-510.75 474.99,-510.75 474.99,-498.75 474.99,-498.75 474.99,-492.75 480.99,-486.75 486.99,-486.75 486.99,-486.75 577.24,-486.75 577.24,-486.75 583.24,-486.75 589.24,-492.75 589.24,-498.75 589.24,-498.75 589.24,-510.75 589.24,-510.75 589.24,-516.75 583.24,-522.75 577.24,-522.75"/>
 <text xml:space="preserve" text-anchor="middle" x="532.12" y="-506.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="532.12" y="-494.3" font-family="Helvetica,sans-Serif" font-size="11.00">3 modules, 679 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="532.12" y="-494.3" font-family="Helvetica,sans-Serif" font-size="11.00">3 modules, 693 lines</text>
 </g>
 </g>
 </svg>

@@ -52,6 +52,7 @@ signal("lp-scan-crew", "__base__/graphics/icons/construction-robot.png", {r = 1,
 signal("lp-scan-serenity", "__base__/graphics/icons/signal/signal_S.png", S_TINT, "c")
 signal("lp-scan-grubstake", "__base__/graphics/icons/signal/signal_G.png", G_TINT, "d")
 signal("lp-scan-biters", "__base__/graphics/icons/small-biter.png", nil, "e")
+signal("lp-scan-jammed", "__space-age__/graphics/icons/tesla-turret.png", S_TINT, "f")
 data:extend(signals)
 
 -- The muster point (scripts/command.lua; the user, 2026-10-18: "Trains could even play into the mix"): a steel chest's

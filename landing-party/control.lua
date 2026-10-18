@@ -420,6 +420,8 @@ remote.add_interface("landing-party", {
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,
+  -- Tests only: a mast of `corp` raised at `pos`, as a siege raises it.
+  debug_jammer = function(corp, pos) local m = jammer.raise(game.surfaces[1], pos, game.forces[shared.CORPS[corp].force]); return m and m.unit_number end,
   jammer_stats = function() return {jammed = storage.jammed or 0, masts = #(storage.jammers or {}), beams = storage.jam_beams or 0} end,
   -- Tests only: the late corporation's gate opened as the first rocket launch opens it with Space Age.
   debug_late_gate = function() phases.late(game.surfaces[1], {x = 0, y = 0}) end,

@@ -5735,7 +5735,18 @@ scenarios.scanner = function()
   schedule(300, function() S.first = read(S.sc) end)
   schedule(320, function() for k = 1, 2 do if S.troopers[k].valid then S.troopers[k].destroy() end end end)
   schedule(460, function() S.after = read(S.sc) end)
+  -- A Serenity jammer 30 tiles off: the scanner reads jammed and nothing else; the mast down, it sees again.
+  schedule(480, function() S.mast = lp("debug_jammer", "serenity", {-30, 20}) end)
+  schedule(620, function() S.jam = read(S.sc) end)
+  schedule(640, function()
+    for _, m in pairs(surface().find_entities_filtered{name = "lp-jammer"}) do m.destroy() end
+  end)
+  schedule(780, function() S.clear = read(S.sc) end)
   schedule(END - 60, function()
+    local j, c = S.jam or {}, S.clear or {}
+    info("scanner: under a jammer " .. serpent.line(j) .. "; mast down " .. serpent.line(c))
+    check("scanner: a jammer blinds it", S.mast and j["lp-scan-jammed"] == 1 and table_size(j) == 1, serpent.line(j))
+    check("scanner: it sees again with the mast down", c["lp-scan-jammed"] == nil and c["lp-scan-infantry"] == 3, serpent.line(c))
     local f, a = S.first or {}, S.after or {}
     info("scanner: first " .. serpent.line(f) .. "; after two troopers died " .. serpent.line(a))
     check("scanner: each kind counted", f["lp-scan-infantry"] == 5 and f["lp-scan-hauler"] == 1 and f["lp-scan-buggy"] == 3

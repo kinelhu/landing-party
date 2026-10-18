@@ -46,7 +46,7 @@ digraph ai {
     "answers" [label="answers\n132 lines", width=0.95, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n74 lines", width=0.88, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
-    "jammer" [label="jammer\n70 lines", width=0.88, fillcolor="#d9f0d9"];
+    "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
     "power" [label="power\n171 lines", width=0.99, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -61,11 +61,11 @@ digraph ai {
   }
   subgraph cluster_6 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "command" [label="command\n575 lines", width=1.44, fillcolor="#d9f0d9"];
-    "scanner" [label="scanner\n76 lines", width=0.88, fillcolor="#d9f0d9"];
+    "scanner" [label="scanner\n90 lines", width=0.90, fillcolor="#d9f0d9"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n458 lines", width=1.31, fillcolor="#eef2f7"];
+    "control" [label="control\n460 lines", width=1.31, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

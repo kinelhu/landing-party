@@ -841,7 +841,7 @@
 <title>jammer</title>
 <path fill="#d9f0d9" stroke="black" d="M962.77,-509.5C962.77,-509.5 923.41,-509.5 923.41,-509.5 917.41,-509.5 911.41,-503.5 911.41,-497.5 911.41,-497.5 911.41,-485.5 911.41,-485.5 911.41,-479.5 917.41,-473.5 923.41,-473.5 923.41,-473.5 962.77,-473.5 962.77,-473.5 968.77,-473.5 974.77,-479.5 974.77,-485.5 974.77,-485.5 974.77,-497.5 974.77,-497.5 974.77,-503.5 968.77,-509.5 962.77,-509.5"/>
 <text xml:space="preserve" text-anchor="middle" x="943.09" y="-493.25" font-family="Helvetica,sans-Serif" font-size="10.00">jammer</text>
-<text xml:space="preserve" text-anchor="middle" x="943.09" y="-482" font-family="Helvetica,sans-Serif" font-size="10.00">70 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="943.09" y="-482" font-family="Helvetica,sans-Serif" font-size="10.00">73 lines</text>
 </g>
 <!-- ops&#45;&gt;jammer -->
 <g id="edge59" class="edge">
@@ -1054,9 +1054,9 @@
 <!-- scanner -->
 <g id="node47" class="node">
 <title>scanner</title>
-<path fill="#d9f0d9" stroke="black" d="M2827.77,-887.75C2827.77,-887.75 2788.41,-887.75 2788.41,-887.75 2782.41,-887.75 2776.41,-881.75 2776.41,-875.75 2776.41,-875.75 2776.41,-863.75 2776.41,-863.75 2776.41,-857.75 2782.41,-851.75 2788.41,-851.75 2788.41,-851.75 2827.77,-851.75 2827.77,-851.75 2833.77,-851.75 2839.77,-857.75 2839.77,-863.75 2839.77,-863.75 2839.77,-875.75 2839.77,-875.75 2839.77,-881.75 2833.77,-887.75 2827.77,-887.75"/>
+<path fill="#d9f0d9" stroke="black" d="M2828.49,-887.75C2828.49,-887.75 2787.69,-887.75 2787.69,-887.75 2781.69,-887.75 2775.69,-881.75 2775.69,-875.75 2775.69,-875.75 2775.69,-863.75 2775.69,-863.75 2775.69,-857.75 2781.69,-851.75 2787.69,-851.75 2787.69,-851.75 2828.49,-851.75 2828.49,-851.75 2834.49,-851.75 2840.49,-857.75 2840.49,-863.75 2840.49,-863.75 2840.49,-875.75 2840.49,-875.75 2840.49,-881.75 2834.49,-887.75 2828.49,-887.75"/>
 <text xml:space="preserve" text-anchor="middle" x="2808.09" y="-871.5" font-family="Helvetica,sans-Serif" font-size="10.00">scanner</text>
-<text xml:space="preserve" text-anchor="middle" x="2808.09" y="-860.25" font-family="Helvetica,sans-Serif" font-size="10.00">76 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="2808.09" y="-860.25" font-family="Helvetica,sans-Serif" font-size="10.00">90 lines</text>
 </g>
 <!-- roads -->
 <g id="node48" class="node">
@@ -1070,7 +1070,7 @@
 <title>control</title>
 <path fill="#eef2f7" stroke="black" d="M3024.25,-887.75C3024.25,-887.75 2953.93,-887.75 2953.93,-887.75 2947.93,-887.75 2941.93,-881.75 2941.93,-875.75 2941.93,-875.75 2941.93,-863.75 2941.93,-863.75 2941.93,-857.75 2947.93,-851.75 2953.93,-851.75 2953.93,-851.75 3024.25,-851.75 3024.25,-851.75 3030.25,-851.75 3036.25,-857.75 3036.25,-863.75 3036.25,-863.75 3036.25,-875.75 3036.25,-875.75 3036.25,-881.75 3030.25,-887.75 3024.25,-887.75"/>
 <text xml:space="preserve" text-anchor="middle" x="2989.09" y="-871.5" font-family="Helvetica,sans-Serif" font-size="10.00">control</text>
-<text xml:space="preserve" text-anchor="middle" x="2989.09" y="-860.25" font-family="Helvetica,sans-Serif" font-size="10.00">458 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="2989.09" y="-860.25" font-family="Helvetica,sans-Serif" font-size="10.00">460 lines</text>
 </g>
 <!-- dev -->
 <g id="node50" class="node">

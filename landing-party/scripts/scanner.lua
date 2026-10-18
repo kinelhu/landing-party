@@ -26,9 +26,23 @@ local function corp_of(force_name)
   for corp, c in pairs(shared.CORPS) do if c.force == force_name then return corp end end
 end
 
+-- A hostile jammer mast within shared.JAM_RADIUS: the scanner is blinded. It says so (lp-scan-jammed = 1) and counts
+-- nothing, so a circuit can still answer it, and the player learns a mast stands near (Serenity's eyes against the
+-- player's: a raid under a jammer comes unseen).
+local function jammed(ent)
+  for _, j in ipairs(storage.jammers or {}) do
+    local m = j.mast
+    if m.valid and m.surface == ent.surface and m.force ~= ent.force and not m.force.get_cease_fire(ent.force)
+      and (m.position.x - ent.position.x) ^ 2 + (m.position.y - ent.position.y) ^ 2 <= shared.JAM_RADIUS ^ 2 then
+      return true
+    end
+  end
+end
+
 -- What one scanner sees: {signal name = count}.
 function scanner.count(ent)
   local s = ent.surface
+  if jammed(ent) then return {["lp-scan-jammed"] = 1} end
   local out = {}
   local forces = {"enemy"}
   for _, c in pairs(shared.CORPS) do if game.forces[c.force] then forces[#forces + 1] = c.force end end

@@ -172,6 +172,7 @@ shared.SCAN_GROUPS = {
   {signal = "lp-scan-buggy", icon = "__base__/graphics/icons/car.png", kinds = {"lp-buggy"}},
 }
 shared.SCAN_RADIUS = 64
+shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat scanners within this
 
 -- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.
 shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-high"] = 2}
