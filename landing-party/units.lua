@@ -77,7 +77,15 @@ data:extend({
 -- Infantry: the engineer's body, as ERM's RedArmy does. Runs with its gun; fires from the idle pose. The
 -- faction's drones in cold blue; the player's troopers (player.lua) in their own colour.
 local character = data.raw.character.character.animations[1]
-local function make_infantry(name, color)
+-- The engineer's animation set for an armour (Space Age's mech armour, base's heavy armour...); the plain one without.
+local function wearing(armor)
+  for _, a in ipairs(data.raw.character.character.animations) do
+    for _, n in ipairs(a.armors or {}) do if n == armor then return a end end
+  end
+  return character
+end
+local function make_infantry(name, color, armor)
+  local look = armor and wearing(armor) or character
   local u = base_unit(name)
   u.max_health = shared.units["lp-infantry"].health
   u.movement_speed = 0.12
@@ -85,11 +93,11 @@ local function make_infantry(name, color)
   u.vision_distance = 30
   u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
   u.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
-  u.run_animation = table.deepcopy(character.running_with_gun)
+  u.run_animation = table.deepcopy(look.running_with_gun)
   -- Ranges stay at most a turret's 18 less the wall in front of it (~3): anything shooting a wall stands
   -- in turret range. A tank at 22, then 17, shelled walls from outside the turrets' reach.
   local a = gun(6, 15, 20)
-  a.animation = table.deepcopy(character.idle_with_gun)
+  a.animation = table.deepcopy(look.idle_with_gun)
   u.attack_parameters = a
   u.dying_explosion = "explosion"
   u.corpse = nil
@@ -98,8 +106,10 @@ local function make_infantry(name, color)
   tint(u.attack_parameters.animation, {}, color)
   return u
 end
-local infantry = make_infantry("lp-infantry")
-local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1})
+-- Who wears what (Space Age): Serenity's Line troopers and railgunners the mech armour, the player's troopers the heavy
+-- armour their recipe takes, Grubstake's Shotgun hands heavy armour too, in its colours.
+local infantry = make_infantry("lp-infantry", nil, "mech-armor")
+local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1}, "heavy-armor")
 
 -- Each corporation's own infantry (docs/reviews/2026-10-14-identity-trees-consult.md): you know who attacks by ear.
 -- Serenity's Line trooper fires a laser beam: about 7 laser a shot every 25 ticks (the laser turret's beam, 10 a hit,
@@ -117,10 +127,11 @@ table.insert(infantry.resistances, {type = "laser", percent = 20})
 -- eight light ones destroyed the parity targets in 420 ticks to the beam's 780, five in 540, four in 630).
 -- Deadly at the fence, useless against a turret line (which its temper never attacks). Built as its infantry
 -- through its CORPS.bases (corps.lua renames it lp-grubstake-infantry).
-local shotgun_hand = make_infantry("lp-shotgun-hand")
+local shotgun_hand = make_infantry("lp-shotgun-hand", nil, "heavy-armor")
 shotgun_hand.movement_speed = 0.13
 shotgun_hand.attack_parameters = {
-  type = "projectile", ammo_category = "shotgun-shell", cooldown = 60, range = 9, min_range = 0,
+  -- 64 with Space Age loaded (60 gave 630 ticks against the Line troopers' 810, out of parity; base alone 690).
+  type = "projectile", ammo_category = "shotgun-shell", cooldown = 64, range = 9, min_range = 0,
   range_mode = "bounding-box-to-bounding-box", cooldown_deviation = 0.15,
   sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound),
   animation = shotgun_hand.attack_parameters.animation,
@@ -138,7 +149,7 @@ pellet.force_condition = "not-same"
 -- Breacher: the player's infantry with demolition charges. Bullets barely scratch walls (2.4 of 6 damage), so
 -- troopers alone died in front of walled lasers (siege). A charge bursts over 2.5 (enemies
 -- only), thrown 12 tiles: walls take 63 of 100 (a segment in 8 throws, several at once), a turret 100.
-local breacher = make_infantry("lp-breacher", {r = 0.75, g = 0.9, b = 0.45, a = 1})
+local breacher = make_infantry("lp-breacher", {r = 0.75, g = 0.9, b = 0.45, a = 1}, "heavy-armor")
 -- Thrown from 12: from 8 they crossed 16 tiles of laser fire to reach a wall.
 breacher.attack_parameters.range = 12
 breacher.attack_parameters.cooldown = 180
@@ -278,7 +289,7 @@ tint(buggy.attack_parameters.animation, {})
 -- Tree units (docs/reviews/2026-10-14-identity-trees-consult.md; scripts/rd.lua buys them into a corporation's mix).
 -- Lance (Serenity's Optics): a heavier, slower beam that outranges the player's troopers (15): 12 laser a shot every 45
 -- ticks, range 17 (still inside a gun turret's 18), 110 health.
-local lance = make_infantry("lp-lance")
+local lance = make_infantry("lp-lance", nil, "mech-armor")
 lance.max_health = shared.units["lp-lance"].health
 lance.attack_parameters = table.deepcopy(infantry.attack_parameters)
 lance.attack_parameters.damage_modifier = 1.2
@@ -312,7 +323,7 @@ local arc_chain = {type = "chain-active-trigger", name = "lp-arc-chain", max_jum
   jump_delay_ticks = 6, fork_chance = 0,
   action = {type = "direct", action_delivery = {type = "beam", beam = "lp-arc-bounce", max_length = 6.5, duration = 20,
     add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, 0}}}}
-local shock = make_infantry("lp-shock")
+local shock = make_infantry("lp-shock", nil, "mech-armor")
 shock.max_health = shared.units["lp-shock"].health
 shock.attack_parameters = {
   type = "beam", ammo_category = "electric", cooldown = 45, range = 12, range_mode = "bounding-box-to-bounding-box",
@@ -332,7 +343,7 @@ table.insert(shock.resistances, {type = "electric", percent = 50})
 -- Dynamite sapper (Grubstake's Scrap arms; the user chose it over a flamethrower buggy): a Shotgun hand's body that
 -- throws dynamite, 80 explosion over 3 tiles, enemies only (the breacher's charge), from 11 tiles every 3 seconds.
 -- Against a blob of troopers, and against the fence or wall in the way.
-local sapper = make_infantry("lp-sapper")
+local sapper = make_infantry("lp-sapper", nil, "heavy-armor")
 sapper.max_health = shared.units["lp-sapper"].health
 sapper.movement_speed = 0.13
 sapper.attack_parameters.range = 11
@@ -385,7 +396,7 @@ rail_beam.name = "lp-rail-beam"
 rail_beam.action = nil
 -- Its look: Serenity's charcoal (its walls' and turrets'), not the Line trooper's slate-teal, and a size larger, so it
 -- reads as the heavy one at a glance.
-local railgunner = make_infantry("lp-railgunner", {r = 0.32, g = 0.35, b = 0.38, a = 1})
+local railgunner = make_infantry("lp-railgunner", {r = 0.32, g = 0.35, b = 0.38, a = 1}, "mech-armor")
 local function grow(t, k, seen)
   if type(t) ~= "table" or seen[t] then return end
   seen[t] = true
@@ -407,7 +418,11 @@ end
 railgunner.attack_parameters = {
   type = "projectile", ammo_category = "laser", cooldown = 90, cooldown_deviation = 0.1, range = 30,
   range_mode = "bounding-box-to-bounding-box",
-  sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound),
+  -- Space Age's railgun gunshot (the tank cannon's without it). Its beam drawn along the shot's line (range_effects
+  -- on the line) was tried and withdrawn: with it the railgunners' shots fared worse in a siege's assault, which then
+  -- failed (bombard, seed 12345: 10 of 22 back and aborted, against 17 of 22 and done without it; reverting that line
+  -- alone restored it).
+  sound = table.deepcopy((data.raw.gun["railgun"] or data.raw.gun["tank-cannon"]).attack_parameters.sound),
   animation = (function() local a = table.deepcopy(infantry.attack_parameters.animation)
     tint(a, {}, {r = 0.32, g = 0.35, b = 0.38, a = 1}); grow(a, 1.15, {}); return a end)(),
   ammo_type = {action = {

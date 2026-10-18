@@ -24,8 +24,8 @@ for m in EditorExtensions flib; do
 done
 cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
-  {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": false},
-  {"name": "quality", "enabled": false}, {"name": "elevated-rails", "enabled": false}$extra]}
+  {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": true},
+  {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}$extra]}
 JSON
 rm -f "$SIM/saves/watch.zip"
 "$FACTORIO" --config "$SIM/config/config.ini" --create "$SIM/saves/watch.zip" --map-gen-seed "$SEED" \

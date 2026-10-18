@@ -13,6 +13,8 @@ local tune = require("__landing-party__.scripts.tune")
 local jammer = require("__landing-party__.scripts.jammer")
 local scanner = require("__landing-party__.scripts.scanner")
 local roads = require("__landing-party__.scripts.roads")
+local pods = require("__landing-party__.scripts.pods")
+script.on_event(defines.events.on_cargo_pod_finished_descending, pods.on_landed)
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
@@ -57,11 +59,11 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
-  {filter = "name", name = "lp-command-relay"}}
+  {filter = "name", name = "lp-command-relay"}, {filter = "name", name = "lp-muster-point"}}
 -- The player's poles too: one built by a corporation's pylon is not wired to it (base.unwire).
 local BUILT = {{filter = "type", type = "electric-pole"}, {filter = "name", name = "lp-player-bait"},
   {filter = "name", name = "lp-strike-beacon"}, {filter = "name", name = "lp-pact-breaker"},
@@ -337,6 +339,7 @@ remote.add_interface("landing-party", {
     if t.gates_off ~= nil then storage.gates_off = t.gates_off end
     if t.focus_off ~= nil then storage.focus_off = t.focus_off end
     if t.cuts_off ~= nil then storage.cuts_off = t.cuts_off end
+    if t.pods_off ~= nil then storage.pods_off = t.pods_off end
     if t.strangle_off ~= nil then storage.strangle_off = t.strangle_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
@@ -417,13 +420,23 @@ remote.add_interface("landing-party", {
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,
-  jammer_stats = function() return {jammed = storage.jammed or 0, masts = #(storage.jammers or {})} end,
-  -- Tests only: one of the player's army, made and registered as a barracks does (no beacon).
+  jammer_stats = function() return {jammed = storage.jammed or 0, masts = #(storage.jammers or {}), beams = storage.jam_beams or 0} end,
+  -- Tests only: the late corporation's gate opened as the first rocket launch opens it with Space Age.
+  debug_late_gate = function() phases.late(game.surfaces[1], {x = 0, y = 0}) end,
+  -- Tests only: one of the player's army, made and registered as a barracks does (its nearest beacon).
   debug_trooper = function(name, pos)
     local u = game.surfaces[1].create_entity{name = name, position = pos, force = "player"}
     if u then
       storage.cmd = storage.cmd or {barracks = {}, beacons = {}, troopers = {}}
-      storage.cmd.troopers[u.unit_number] = {unit = u}
+      -- The nearest beacon within 100, as a barracks assigns it.
+      local best, bd
+      for k, bc in pairs(storage.cmd.beacons or {}) do
+        if bc.valid then
+          local d = (bc.position.x - pos[1]) ^ 2 + (bc.position.y - pos[2]) ^ 2
+          if d <= 100 * 100 and (not bd or d < bd) then best, bd = k, d end
+        end
+      end
+      storage.cmd.troopers[u.unit_number] = {unit = u, beacon = best}
     end
     return u and u.unit_number
   end,

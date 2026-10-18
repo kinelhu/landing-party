@@ -24,8 +24,8 @@ printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance
   > "$SIM/mods/lp-sim/params.lua"
 cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
-  {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": false},
-  {"name": "quality", "enabled": false}, {"name": "elevated-rails", "enabled": false}]}
+  {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": true},
+  {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}]}
 JSON
 out="$SIM/script-output/landing-party"
 rm -rf "$out" "$SIM/saves/sim.zip"

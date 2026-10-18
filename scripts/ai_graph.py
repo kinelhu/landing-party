@@ -77,7 +77,7 @@ def structure(mods):
 # The layers the picture groups modules into. A module missing here fails --check: place it when you add it.
 LAYERS = {
     "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart"],
-    "Corporation": ["faction", "war", "standing", "pact", "trade", "border", "rd", "phases", "biters"],
+    "Corporation": ["faction", "pods", "war", "standing", "pact", "trade", "border", "rd", "phases", "biters"],
     "Settlement": ["base", "construction", "planner", "layout", "site", "blocks", "modules", "crew", "cordon", "perimeter",
                    "road", "prospect"],
     "Army and operations": ["army", "ops", "routing", "intel", "siege", "strip", "answers", "cuts", "strike", "jammer",

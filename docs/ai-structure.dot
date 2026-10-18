@@ -11,8 +11,9 @@ digraph ai {
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n726 lines", width=1.61, fillcolor="#eef2f7"];
-    "war" [label="war\n363 lines", width=1.20, fillcolor="#eef2f7"];
+    "faction" [label="faction\n769 lines", width=1.65, fillcolor="#eef2f7"];
+    "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
+    "war" [label="war\n392 lines", width=1.24, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n108 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n165 lines", width=0.98, fillcolor="#eef2f7"];
@@ -25,7 +26,7 @@ digraph ai {
     "base" [label="base\n659 lines", width=1.53, fillcolor="#eef2f7"];
     "construction" [label="construction\n352 lines", width=1.19, fillcolor="#d9f0d9"];
     "planner" [label="planner\n200 lines", width=1.02, fillcolor="#d9f0d9"];
-    "layout" [label="layout\n530 lines", width=1.39, fillcolor="#eef2f7"];
+    "layout" [label="layout\n544 lines", width=1.40, fillcolor="#eef2f7"];
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
@@ -43,9 +44,9 @@ digraph ai {
     "siege" [label="siege\n697 lines", width=1.57, fillcolor="#d9f0d9"];
     "strip" [label="strip\n217 lines", width=1.04, fillcolor="#d9f0d9"];
     "answers" [label="answers\n132 lines", width=0.95, fillcolor="#d9f0d9"];
-    "cuts" [label="cuts\n56 lines", width=0.86, fillcolor="#d9f0d9"];
+    "cuts" [label="cuts\n74 lines", width=0.88, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
-    "jammer" [label="jammer\n62 lines", width=0.87, fillcolor="#d9f0d9"];
+    "jammer" [label="jammer\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "power" [label="power\n171 lines", width=0.99, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -59,12 +60,12 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n545 lines", width=1.41, fillcolor="#d9f0d9"];
+    "command" [label="command\n575 lines", width=1.44, fillcolor="#d9f0d9"];
     "scanner" [label="scanner\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n445 lines", width=1.29, fillcolor="#eef2f7"];
+    "control" [label="control\n458 lines", width=1.31, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";
@@ -93,11 +94,14 @@ digraph ai {
   "crew" -> "base";
   "crew" -> "ops";
   "crew" -> "standing";
+  "cuts" -> "pool";
   "faction" -> "army";
   "faction" -> "base";
+  "faction" -> "layout";
   "faction" -> "names";
   "faction" -> "ops";
   "faction" -> "pact";
+  "faction" -> "pods";
   "faction" -> "rd";
   "faction" -> "site";
   "faction" -> "war";
@@ -155,6 +159,7 @@ digraph ai {
   "war" -> "army";
   "war" -> "base";
   "war" -> "ops";
+  "war" -> "pods";
   "war" -> "pool";
   "war" -> "rd";
   "war" -> "rng";

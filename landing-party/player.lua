@@ -54,6 +54,18 @@ signal("lp-scan-grubstake", "__base__/graphics/icons/signal/signal_G.png", G_TIN
 signal("lp-scan-biters", "__base__/graphics/icons/small-biter.png", nil, "e")
 data:extend(signals)
 
+-- The muster point (scripts/command.lua; the user, 2026-10-18: "Trains could even play into the mix"): a steel chest's
+-- body; orders put in it (carried from a packing barracks by train, belt or robot) become units beside it, assigned to
+-- its nearest rally beacon, while the force's bandwidth has room.
+local muster = table.deepcopy(data.raw.container["steel-chest"])
+muster.name = "lp-muster-point"
+muster.icon = "__base__/graphics/icons/steel-chest.png"
+muster.minable = {mining_time = 0.3, result = "lp-muster-point"}
+muster.inventory_size = 16
+muster.next_upgrade = nil
+muster.fast_replaceable_group = nil
+muster.picture.layers[1].tint = {r = 0.75, g = 0.9, b = 0.75, a = 1}
+
 -- Roads (scripts/roads.lua; the user, 2026-10-18: "player constructed concrete surfaces that speed up army traversal"):
 -- units walk at one speed whatever the floor (a spike: 33.8 tiles in 5 s on concrete, 33.9 on grass), so the floor's
 -- bonus for the engineer is lent to the player's army by an invisible sticker, renewed while it walks on it.
@@ -68,7 +80,12 @@ local function item(name, icon, place)
 end
 
 data:extend({
-  barracks, beacon, relay, scanner,
+  barracks, beacon, relay, scanner, muster,
+  item("lp-muster-point", "__base__/graphics/icons/steel-chest.png", "lp-muster-point"),
+  {type = "recipe", name = "lp-muster-point", enabled = false, energy_required = 5,
+    ingredients = {{type = "item", name = "steel-chest", amount = 1}, {type = "item", name = "radar", amount = 1},
+      {type = "item", name = "electronic-circuit", amount = 10}},
+    results = {{type = "item", name = "lp-muster-point", amount = 1}}},
   item("lp-threat-scanner", "__base__/graphics/icons/radar.png", "lp-threat-scanner"),
   {type = "recipe", name = "lp-threat-scanner", enabled = false, energy_required = 5,
     ingredients = {{type = "item", name = "radar", amount = 1}, {type = "item", name = "constant-combinator", amount = 1},
@@ -158,6 +175,7 @@ data:extend({
     {type = "unlock-recipe", recipe = "lp-barracks"}, {type = "unlock-recipe", recipe = "lp-command-relay"},
     {type = "unlock-recipe", recipe = "lp-rally-beacon"}, {type = "unlock-recipe", recipe = "lp-trooper-order"},
     {type = "unlock-recipe", recipe = "lp-breacher-order"}, {type = "unlock-recipe", recipe = "lp-threat-scanner"},
+    {type = "unlock-recipe", recipe = "lp-muster-point"},
     {type = "give-item", item = "lp-command-core", count = 1}}),
   -- Battle tanks with the second level, once the player has tanks of their own.
   tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank", "battery-equipment"}, {red, green, blue}, 200, {

@@ -9,6 +9,7 @@
 --   column from its nearest other settlement along a planned route (none: no relief), or, with no other settlement,
 --   drop at the lander at half strength.
 local shared = require("__landing-party__.shared")
+local pods = require("__landing-party__.scripts.pods")
 local tune = require("__landing-party__.scripts.tune")
 local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
@@ -145,6 +146,7 @@ local function nearest_sister(b)
   return best
 end
 
+local POD_LOAD = 4                -- units a relief pod carries
 local function send(b, owner, rung)
   local d = corp_state(b.corp)
   local n = RELIEF_PER_RUNG * rung
@@ -182,6 +184,20 @@ local function send(b, owner, rung)
     base.trace(b, string.format("relief: a column of %d from settlement %d (%d waypoints), %.0f from the chest",
       #units, sister.id, #route, cost))
     tell("lp.relief-column", b.corp, b)
+  elseif not storage.pods_off then
+    -- By cargo pod (Space Age): four units a pod, landing behind the camp; they come out where it touches down
+    -- (pods.handlers.relief).
+    local at = behind(b, owner)
+    local sent = 0
+    for k = 1, #names, POD_LOAD do
+      local load = {}
+      for i = k, math.min(#names, k + POD_LOAD - 1) do load[#load + 1] = names[i] end
+      local o = 3 * (sent - 1)
+      if pods.send(game.surfaces[b.surface], {at[1] + o, at[2] + (sent % 2) * 3}, b.force,
+        {kind = "relief", base = b.id, names = load}) then sent = sent + 1 end
+    end
+    base.trace(b, string.format("relief: %d pods of %d units to %.0f,%.0f, %.0f from the chest", sent, #names, at[1], at[2], cost))
+    tell(b.corp == "grubstake" and "lp.relief-pod" or "lp.relief-drop", b.corp, b)
   else
     local at = behind(b, owner)
     local units = spawn(b, names, at, b)
@@ -198,6 +214,19 @@ local function send(b, owner, rung)
   d.chest_spent = (d.chest_spent or 0) + cost
   b.reinforced = (b.reinforced or 0) + #names
   return true
+end
+
+-- A relief pod's units come out where it touched down and make for the camp.
+pods.handlers.relief = function(p, surface, pos)
+  local b = storage.bases[p.base]
+  if not (b and not b.fallen and b.lander and b.lander.valid) then return end
+  local units = spawn(b, p.names, {pos.x, pos.y}, b)
+  for _, u in ipairs(units) do
+    u.commandable.set_command{type = defines.command.go_to_location, destination = b.lander.position, radius = 12,
+      distraction = defines.distraction.by_enemy}
+  end
+  join(b, units)
+  b.pod_reliefs = (b.pod_reliefs or 0) + #units
 end
 
 -- Columns on the way join their settlement when they reach it (or after COLUMN_PATIENCE, wherever they are).

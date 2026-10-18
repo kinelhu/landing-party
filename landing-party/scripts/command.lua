@@ -83,6 +83,10 @@ function command.on_built(e)
   end
   if ent.name == "lp-rally-beacon" then storage.cmd.beacons[ent.unit_number] = ent end
   if ent.name == "lp-command-relay" then storage.cmd.relays[ent.unit_number] = ent end
+  if ent.name == "lp-muster-point" then
+    storage.cmd.musters = storage.cmd.musters or {}
+    storage.cmd.musters[ent.unit_number] = ent
+  end
 end
 
 local function nearest(list, pos, force, range)
@@ -98,32 +102,58 @@ local function nearest(list, pos, force, range)
   return best
 end
 
--- Finished orders become units beside the barracks, assigned to the nearest beacon.
+-- Orders in `inv` become units beside `at` (a barracks or a muster point), assigned to the nearest beacon, while the
+-- force's bandwidth has room.
+local function deploy(at, inv, room)
+  local f = at.force
+  for item, name in pairs(shared.ORDERS) do
+    for _ = 1, inv and inv.get_item_count(item) or 0 do
+      local need = shared.POPULATION[name]
+      if room[f.index] < need then break end
+      local p = at.surface.find_non_colliding_position(name, {at.position.x, at.position.y + 3}, 10, 0.5)
+      local u = p and at.surface.create_entity{name = name, position = p, force = f}
+      if u then
+        room[f.index] = room[f.index] - need
+        inv.remove{name = item, count = 1}
+        local beacon = nearest(storage.cmd.beacons, at.position, f, ASSIGN_RANGE)
+        storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
+        storage.cmd.trained = (storage.cmd.trained or 0) + 1
+      end
+    end
+  end
+end
+
+-- Packing (the user, 2026-10-18: "Trains could even play into the mix"): a barracks wired with P > 0 keeps its finished
+-- orders as items in its output, for inserters to take and the player's logistics (trains, belts, robots) to carry to
+-- a muster point near the front, which turns them into units there.
+local PACK = {type = "virtual", name = "signal-P"}
+local function packing(b)
+  local red, green = defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green
+  if not (b.get_circuit_network(red) or b.get_circuit_network(green)) then return false end
+  return (b.get_signal(PACK, red, green) or 0) > 0
+end
+
+-- Finished orders become units beside the barracks (unless it packs) and from what a muster point holds.
 -- A finished order waits in the barracks while bandwidth is full; with its output full, the barracks stops.
 local function train()
   local room = {}
+  local function has_room(f)
+    if room[f.index] == nil then room[f.index] = command.capacity(f) - population(f) end
+  end
   for k, b in pairs(storage.cmd.barracks) do
     if not b.valid then
       storage.cmd.barracks[k] = nil
+    elseif not packing(b) then
+      has_room(b.force)
+      deploy(b, b.get_inventory(defines.inventory.crafter_output), room)
+    end
+  end
+  for k, m in pairs(storage.cmd.musters or {}) do
+    if not m.valid then
+      storage.cmd.musters[k] = nil
     else
-      local f = b.force
-      if room[f.index] == nil then room[f.index] = command.capacity(f) - population(f) end
-      local out = b.get_inventory(defines.inventory.crafter_output)
-      for item, name in pairs(shared.ORDERS) do
-        for _ = 1, out and out.get_item_count(item) or 0 do
-          local need = shared.POPULATION[name]
-          if room[f.index] < need then break end
-          local p = b.surface.find_non_colliding_position(name, {b.position.x, b.position.y + 3}, 10, 0.5)
-          local u = p and b.surface.create_entity{name = name, position = p, force = b.force}
-          if u then
-            room[f.index] = room[f.index] - need
-            out.remove{name = item, count = 1}
-            local beacon = nearest(storage.cmd.beacons, b.position, b.force, ASSIGN_RANGE)
-            storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
-            storage.cmd.trained = (storage.cmd.trained or 0) + 1
-          end
-        end
-      end
+      has_room(m.force)
+      deploy(m, m.get_inventory(defines.inventory.chest), room)
     end
   end
 end

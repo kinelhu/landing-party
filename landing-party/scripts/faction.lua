@@ -7,6 +7,8 @@ local shared = require("__landing-party__.shared")
 local names = require("__landing-party__.scripts.names")
 local site = require("__landing-party__.scripts.site")
 local base = require("__landing-party__.scripts.base")
+local layout = require("__landing-party__.scripts.layout")
+local pods = require("__landing-party__.scripts.pods")
 local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local rd = require("__landing-party__.scripts.rd")
@@ -36,6 +38,7 @@ local FACTORY = {"assembling-machine", "furnace", "mining-drill", "lab", "robopo
   "logistic-container", "rocket-silo", "beacon", "storage-tank", "train-stop", "radar", "wall"}
 -- A nest field: more than DENSE_MAX nests and worms within DENSE_RADIUS of a site (faction.site).
 local DENSE_RADIUS, DENSE_MAX, DENSE_SEARCH = 150, 30, 480
+local POD_WAIT = 20 * 60          -- a landing's pod takes 6.65 s to come down; past this, it lands without it
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
 local SQUAT_DISTANCE = 60         -- Grubstake's distance from the player's turrets and units
@@ -323,7 +326,13 @@ function faction.arrive(surface, from, opts, quiet)
   faction.generated, faction.candidates = 0, 0
   faction.pending = false
   faction.pact_site = opts and opts.corp and pact.has(opts.corp) or false
+  -- Here (its pod touched down at this site): no search; failing that (built over meanwhile), the search as ever.
+  if opts and opts.at then
+    b = base.land(surface, opts.at, opts)
+    if b then b.approach = approach(surface, opts.at, from) end
+  end
   for pass = 0, 3 do
+    if b then break end
     if pass == 2 and not late then goto next_pass end
     if pass == 0 and (faction.pact_site or storage.approach_off) then goto next_pass end
     faction.approach_max = pass == 0 and APPROACH_MAX or nil
@@ -348,6 +357,16 @@ function faction.arrive(surface, from, opts, quiet)
         faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
         faction.dense_ok = false
         return nil, "pending"
+      end
+      -- Site only (a landing that comes by cargo pod): where it would land, nothing placed.
+      if pos and faction.site_only then
+        local at = layout.find_pad(surface, pos)
+        if at then
+          faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
+          faction.dense_ok = false
+          return nil, "site", pos, at
+        end
+        pos = nil
       end
       b = pos and base.land(surface, pos, opts)
       if b then
@@ -499,10 +518,34 @@ local function landing_jobs()
   local job = jobs[1]
   local surface = game.surfaces[job.surface]
   if not surface then table.remove(jobs, 1); return end
+  job.opts = job.opts or {}
   local late = game.tick - job.since > LANDING_PATIENCE
-  faction.dry = not late
+  -- By cargo pod (Space Age): the site first, a pod sent down to it, and the landing where it touches down (a pod lost
+  -- or late by POD_WAIT, it lands all the same).
+  if job.pod then
+    if not pods.down(surface, job.pod) and game.tick - job.pod_at < POD_WAIT then return end
+    job.opts.at, job.pod = job.site, nil
+  elseif not storage.pods_off then
+    faction.dry, faction.site_only = not late, true
+    local _, why, pos, at = faction.arrive(surface, job.from, job.opts, job.quiet)
+    faction.dry, faction.site_only = false, false
+    if why == "pending" then job.waits = job.waits + 1; return end
+    if why == "site" then
+      local corp = (job.opts and job.opts.corp) or shared.DEFAULT_CORP
+      job.pod = pods.send(surface, at, shared.CORPS[corp].force)
+      if job.pod then
+        job.site, job.pod_at = pos, game.tick
+        -- Escorts beside it, for the look (a landing party, not a crate).
+        for _, d in ipairs({{-9, 6}, {9, 6}}) do pods.send(surface, {at[1] + d[1], at[2] + d[2]}, shared.CORPS[corp].force) end
+        return
+      end
+      job.opts.at = pos
+    end
+  end
+  faction.dry = not late and not job.opts.at
   local b, why = faction.arrive(surface, job.from, job.opts, job.quiet)
   faction.dry = false
+  job.opts.at = nil
   if why == "pending" then job.waits = job.waits + 1; return end
   table.remove(jobs, 1)
   storage.last_landing = {id = b and b.id, waits = job.waits, ticks = game.tick - job.since, forced = late}

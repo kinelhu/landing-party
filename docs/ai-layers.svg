@@ -19,14 +19,14 @@
 <!-- Corporation -->
 <g id="node2" class="node">
 <title>Corporation</title>
-<path fill="#eef2f7" stroke="black" d="M283.24,-427C283.24,-427 186.99,-427 186.99,-427 180.99,-427 174.99,-421 174.99,-415 174.99,-415 174.99,-403 174.99,-403 174.99,-397 180.99,-391 186.99,-391 186.99,-391 283.24,-391 283.24,-391 289.24,-391 295.24,-397 295.24,-403 295.24,-403 295.24,-415 295.24,-415 295.24,-421 289.24,-427 283.24,-427"/>
+<path fill="#eef2f7" stroke="black" d="M286.24,-427C286.24,-427 183.99,-427 183.99,-427 177.99,-427 171.99,-421 171.99,-415 171.99,-415 171.99,-403 171.99,-403 171.99,-397 177.99,-391 183.99,-391 183.99,-391 286.24,-391 286.24,-391 292.24,-391 298.24,-397 298.24,-403 298.24,-403 298.24,-415 298.24,-415 298.24,-421 292.24,-427 286.24,-427"/>
 <text xml:space="preserve" text-anchor="middle" x="235.12" y="-410.55" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="235.12" y="-398.55" font-family="Helvetica,sans-Serif" font-size="11.00">9 modules, 2174 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="235.12" y="-398.55" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 2310 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge5" class="edge">
 <title>Corporation&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.5" d="M295.55,-408.19C363.69,-404.84 465.12,-387.55 465.12,-314.25 465.12,-314.25 465.12,-314.25 465.12,-112.75 465.12,-83.64 442.25,-60.16 419.45,-43.98"/>
+<path fill="none" stroke="#8899aa" stroke-width="2.5" d="M298.57,-408.03C366.65,-404.32 465.12,-386.48 465.12,-314.25 465.12,-314.25 465.12,-314.25 465.12,-112.75 465.12,-83.64 442.25,-60.16 419.45,-43.98"/>
 <polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.5" points="421.43,-41.09 411.16,-38.5 417.57,-46.93 421.43,-41.09"/>
 <text xml:space="preserve" text-anchor="middle" x="467.74" y="-209.82" font-family="Helvetica,sans-Serif" font-size="9.00">6</text>
 </g>
@@ -35,21 +35,21 @@
 <title>Settlement</title>
 <path fill="#eef2f7" stroke="black" d="M331.24,-331.25C331.24,-331.25 228.99,-331.25 228.99,-331.25 222.99,-331.25 216.99,-325.25 216.99,-319.25 216.99,-319.25 216.99,-307.25 216.99,-307.25 216.99,-301.25 222.99,-295.25 228.99,-295.25 228.99,-295.25 331.24,-295.25 331.24,-295.25 337.24,-295.25 343.24,-301.25 343.24,-307.25 343.24,-307.25 343.24,-319.25 343.24,-319.25 343.24,-325.25 337.24,-331.25 331.24,-331.25"/>
 <text xml:space="preserve" text-anchor="middle" x="280.12" y="-314.8" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="280.12" y="-302.8" font-family="Helvetica,sans-Serif" font-size="11.00">12 modules, 3257 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="280.12" y="-302.8" font-family="Helvetica,sans-Serif" font-size="11.00">12 modules, 3271 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Settlement -->
 <g id="edge6" class="edge">
 <title>Corporation&#45;&gt;Settlement</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.2" d="M233.9,-390.96C233.82,-380.51 234.93,-367.09 239.87,-356.25 242.34,-350.83 245.81,-345.68 249.68,-340.96"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.2" points="252.07,-343.53 256.32,-333.82 246.95,-338.76 252.07,-343.53"/>
-<text xml:space="preserve" text-anchor="middle" x="242.49" y="-357.45" font-family="Helvetica,sans-Serif" font-size="9.00">5</text>
+<path fill="none" stroke="#8899aa" stroke-width="2.5" d="M233.9,-390.96C233.82,-380.51 234.93,-367.09 239.87,-356.25 242.27,-350.98 245.62,-345.96 249.37,-341.35"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.5" points="251.79,-343.88 256.02,-334.16 246.65,-339.12 251.79,-343.88"/>
+<text xml:space="preserve" text-anchor="middle" x="242.49" y="-357.45" font-family="Helvetica,sans-Serif" font-size="9.00">6</text>
 </g>
 <!-- Army and operations -->
 <g id="node4" class="node">
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M230.24,-235.5C230.24,-235.5 127.99,-235.5 127.99,-235.5 121.99,-235.5 115.99,-229.5 115.99,-223.5 115.99,-223.5 115.99,-203.5 115.99,-203.5 115.99,-197.5 121.99,-191.5 127.99,-191.5 127.99,-191.5 230.24,-191.5 230.24,-191.5 236.24,-191.5 242.24,-197.5 242.24,-203.5 242.24,-203.5 242.24,-223.5 242.24,-223.5 242.24,-229.5 236.24,-235.5 230.24,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4043 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4069 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1341</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->
@@ -90,15 +90,15 @@
 <!-- Army and operations&#45;&gt;Seams (leaves) -->
 <g id="edge2" class="edge">
 <title>Army and operations&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.5" d="M171.45,-191.3C163.78,-166.04 155.75,-123.74 175.87,-95.75 205.15,-55.01 259.24,-35.9 303.52,-26.93"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.5" points="304,-30.4 313.2,-25.14 302.73,-23.52 304,-30.4"/>
-<text xml:space="preserve" text-anchor="middle" x="178.49" y="-110.08" font-family="Helvetica,sans-Serif" font-size="9.00">6</text>
+<path fill="none" stroke="#8899aa" stroke-width="2.8" d="M171.45,-191.3C163.78,-166.04 155.75,-123.74 175.87,-95.75 205.02,-55.19 258.77,-36.06 302.95,-27.04"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.8" points="303.55,-30.49 312.75,-25.23 302.28,-23.61 303.55,-30.49"/>
+<text xml:space="preserve" text-anchor="middle" x="178.49" y="-110.08" font-family="Helvetica,sans-Serif" font-size="9.00">7</text>
 </g>
 <!-- Army and operations&#45;&gt;Corporation -->
 <g id="edge1" class="edge">
 <title>Army and operations&#45;&gt;Corporation</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M115.8,-225.59C90.07,-232.44 61.26,-243.34 39.12,-260.5 13.06,-280.69 7.61,-299.61 16.87,-331.25 22.02,-348.85 24.05,-355.55 39.12,-366 75.14,-390.98 123.17,-401.54 162.67,-405.83"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="162.08,-409.29 172.37,-406.75 162.75,-402.32 162.08,-409.29"/>
+<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M115.8,-225.59C90.07,-232.44 61.26,-243.34 39.12,-260.5 13.06,-280.69 7.61,-299.61 16.87,-331.25 22.02,-348.85 24.05,-355.55 39.12,-366 74.29,-390.38 120.9,-401.03 159.85,-405.52"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="159.37,-408.99 169.67,-406.51 160.08,-402.02 159.37,-408.99"/>
 <text xml:space="preserve" text-anchor="middle" x="19.49" y="-309.57" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
 </g>
 <!-- Army and operations&#45;&gt;Corporation -->
@@ -146,8 +146,8 @@
 <!-- Heists (Grubstake)&#45;&gt;Corporation -->
 <g id="edge8" class="edge">
 <title>Heists (Grubstake)&#45;&gt;Corporation</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.2" d="M215.25,-132.25C182,-146.31 135.76,-167.61 98.12,-191.5 45.58,-224.84 12.6,-233.61 4.12,-295.25 -0.26,-327.09 -5.92,-345.85 19.12,-366 40.84,-383.48 108.01,-394.68 161.74,-401.08"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.2" points="161.09,-404.53 171.42,-402.19 161.88,-397.57 161.09,-404.53"/>
+<path fill="none" stroke="#8899aa" stroke-width="2.2" d="M215.25,-132.25C182,-146.31 135.76,-167.61 98.12,-191.5 45.58,-224.84 12.6,-233.61 4.12,-295.25 -0.26,-327.09 -5.92,-345.85 19.12,-366 40.38,-383.11 105.2,-394.21 158.33,-400.67"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.2" points="157.91,-404.14 168.25,-401.83 158.72,-397.19 157.91,-404.14"/>
 <text xml:space="preserve" text-anchor="middle" x="16.02" y="-261.7" font-family="Helvetica,sans-Serif" font-size="9.00">5</text>
 </g>
 <!-- Heists (Grubstake)&#45;&gt;Settlement -->
@@ -190,7 +190,7 @@
 <title>The player&#39;s army</title>
 <path fill="#eef2f7" stroke="black" d="M577.24,-522.75C577.24,-522.75 486.99,-522.75 486.99,-522.75 480.99,-522.75 474.99,-516.75 474.99,-510.75 474.99,-510.75 474.99,-498.75 474.99,-498.75 474.99,-492.75 480.99,-486.75 486.99,-486.75 486.99,-486.75 577.24,-486.75 577.24,-486.75 583.24,-486.75 589.24,-492.75 589.24,-498.75 589.24,-498.75 589.24,-510.75 589.24,-510.75 589.24,-516.75 583.24,-522.75 577.24,-522.75"/>
 <text xml:space="preserve" text-anchor="middle" x="532.12" y="-506.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="532.12" y="-494.3" font-family="Helvetica,sans-Serif" font-size="11.00">3 modules, 649 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="532.12" y="-494.3" font-family="Helvetica,sans-Serif" font-size="11.00">3 modules, 679 lines</text>
 </g>
 </g>
 </svg>

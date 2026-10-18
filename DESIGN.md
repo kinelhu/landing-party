@@ -279,11 +279,21 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   siege or a strip camp coming, buggies), the building crews apart, a total a corporation, and the biters. Scenario
   `scanner`: five troopers and a hauler, three buggies, two biters within, four troopers beyond: counted exactly; two
   troopers killed, the count follows within 2 s.
+  Scenario `scanresponse`, the loop end to end: a scanner at an outpost 60 tiles out, a decider by it (three Serenity
+  units or more: X = 60), its output carried home on a red wire over medium poles to a rally beacon with six troopers.
+  The squad stays home until four Line troopers come to the outpost; then it marches, kills all four (losing two) and
+  goes home when the scanner reads clear.
 - **Roads (built 2026-10-18; `scripts/roads.lua`; the user: "player constructed concrete surfaces that speed up army
   traversal"):** units walk at one speed on any floor (a spike: 33.8 tiles in 5 s on refined concrete, 33.9 on grass),
   so the floor's bonus for the engineer (stone path 1.3, concrete 1.4, refined concrete 1.5) is lent to the player's
   army by an invisible sticker, renewed twice a second while it walks on it. Scenario `roads`: 47.2 tiles on refined
   concrete against 30.8 on grass in 5 s. The player's army only: the roads are the player's.
+- **Packing and the muster point (built 2026-10-18; the user: "Trains could even play into the mix"):** the army is
+  cargo. A barracks wired with P > 0 keeps its finished orders (trooper, breacher, battle tank) as items in its output;
+  inserters take them, and the player's own logistics (trains, belts, robots) carry them. A muster point (a steel
+  chest's body, tinted; steel chest, radar, 10 circuits; with the army's research) turns orders put in it into units
+  beside it, sent to its nearest rally beacon, within the force's bandwidth. Scenario `muster`: packing, none deploy
+  and an inserter takes them out; carried, five troopers stand at the muster point 150 tiles off within 3 s.
 - **Threat scanner (the idea; the user, 2026-10-18: "a building that scans for enemy units in a radius and gives signals
   for each unit type with a number depending on units present in the radius of the scanner would probably be super
   useful for circuit engineering").** The beacon's missing input half: the army takes orders from circuits, nothing
@@ -479,7 +489,9 @@ strangling (the line walls off outposts and ore).
   cuts it, the lasers go dark 500 s after the base stood, seven of ten are taken. `blackout fed` (a second source
   inside the wall): no cut, the lasers stay lit. Without the survey the camp found the feed too, by luck (its first
   raid took the decoy's substation and cooled the decoy's poles): Serenity already raids exposed lines; the survey is
-  what picks the one that matters among many. Not yet: the reconnaissance tell (a picket walks the line first).
+  what picks the one that matters among many. The reconnaissance tell (built, same night): when the survey first names
+  a cut, two units walk out to the pole and back, and the target waits 2 minutes before a raid may go for it: Serenity
+  seen surveying first, the player's warning (`blackout`: "scouts walked the line first").
   Cost: on nw (949 poles in the area, a meshed network: "no single cut", rightly) a search from every candidate pole
   took 270 to 320 ms every 5 minutes; one depth-first pass (articulation points, the turrets and sources on each side
   summed on the way) with turret reach from a grid: no spike left at the survey (worst tick 124 ms, elsewhere; mean
@@ -494,6 +506,35 @@ strangling (the line walls off outposts and ore).
   (the outpost at 91); `strangle off`: the first arcs at the main position. This camp was strong enough to raid both
   either way: what strangling changes here is where the wall goes. Not yet: the next ore the player will need as a
   target, belts and pipes cut where the line crosses them.
+
+### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its
+parts")
+Space Age is a dependency now (`info.json`), and the simulations load it with Quality and Elevated Rails (they had run
+the base game alone). What it brings so far:
+- **Landings by cargo pod** (`scripts/pods.lua`). A pod made by script descends to a spot exactly (a spike: 399 ticks,
+  6.65 s, leaving its remnants). A landing queued as the faction's own are (the asynchronous landing jobs) finds its
+  site first (`faction.arrive` site only, `layout.find_pad`: where the lander would stand, nothing placed), sends a pod
+  there and two escorts beside it, and lands where they touch down (`opts.at`); a pod lost or later than 20 s, it
+  lands all the same. The remnants are cleared 3 s after each touchdown. Scenario `podland`: three pods, the landing
+  420 ticks after them, no remnants; `podland off` (`pods_off`): at once, as before. Direct landings (the tests',
+  `/lp land`) stay immediate.
+- **Relief by cargo pod**: a relief with no sister settlement to march from (the drop behind the camp) comes down in
+  pods, four units a pod; its units come out where each touches down (`pods.handlers.relief`). `pods_off`: dropped at
+  once, as before.
+- **The jammer's arcs are tesla beams** (`chain-tesla-turret-beam-start`, whose own damage fires only from a turret's
+  chain: light alone), to where each robot was. `fortress jammer`: 60 of 60 arcs beams.
+- **The railgunner sounds like a railgun** (its gunshot). Its beam drawn along the shot's line was tried and withdrawn:
+  with it a siege's assault failed (`bombard`, seed 12345: 10 of 22 back and aborted, against 17 of 22 and done;
+  reverting that line alone restored it).
+- **Retuned for Space Age**: the Shotgun hand fires every 64 ticks, not 60 (`arms`: 630 against the Line troopers'
+  810 with Space Age, out of parity; 690 with 64, as in the base game). Serenity's gate opens at the first rocket
+  launch with Space Age (`phases` opens it so: `debug_late_gate`). `crystal marker` starts unprovoked (provoked,
+  Serenity, whom claim markers do not hold, raided the outpost it watches).
+- **Armour you can read**: Serenity's Line troopers, lance and shock troopers and railgunners wear the mech armour;
+  Grubstake's Shotgun hands and sappers, and the player's troopers and breachers (whose recipe takes a heavy armour),
+  heavy armour.
+`rail`'s "half stood" became "one stood at least": survivors on three seeds were 2, 0, 3 on main and 1, 2, 2 with the
+railgun, so the old line failed one seed or another by chance.
 
 ### Reference factories (2026-10-18; the user: "Can you look online for better control saves?")
 Online, the 2.0 saves are benchmark megabases (factoriobench.com): no biters, no defence, built for speed. So the

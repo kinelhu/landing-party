@@ -16,7 +16,7 @@ ln -sfn "$REPO/landing-party" "$PLAY/mods/landing-party"
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 printf 'return {scenario = "showcase", minutes = %s, every = %s, strike = %s, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "%s"}\n' \
   "$((MINUTE + 1))" "$((MINUTE + 1))" "$MINUTE" "${LP_MIX:-}" > "$SIM/mods/lp-sim/params.lua"
-mods='{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "space-age", "enabled": false}, {"name": "quality", "enabled": false}, {"name": "elevated-rails", "enabled": false}'
+mods='{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}'
 echo "{\"mods\": [$mods, {\"name\": \"lp-sim\", \"enabled\": true}]}" > "$SIM/mods/mod-list.json"
 # Editor Extensions (and flib) for flying round without pausing: copied from the real profile, never linked.
 REAL="$HOME/Library/Application Support/factorio/mods"

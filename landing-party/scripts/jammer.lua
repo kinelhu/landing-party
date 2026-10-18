@@ -48,9 +48,17 @@ function jammer.tick(tick)
       local bots = m.surface.find_entities_filtered{position = m.position, radius = RADIUS,
         type = {"construction-robot", "logistic-robot"}, force = foes_of(m.force), limit = PER_BEAT}
       for _, r in ipairs(bots) do
-        -- To where it was: drawn to the robot itself, the line went with it as it died.
-        rendering.draw_line{surface = m.surface, from = {entity = m, offset = {0, -4}}, to = {r.position.x, r.position.y},
-          color = CYAN, width = 2, time_to_live = 8}
+        -- A tesla arc (Space Age's beam: its own damage fires only from a turret's chain, so this one is light alone),
+        -- to where the robot was (aimed at the robot, it went with it as it died); a drawn line if that fails.
+        local ok = pcall(function()
+          m.surface.create_entity{name = "chain-tesla-turret-beam-start", position = m.position, source = m,
+            source_offset = {0, -4}, target_position = {r.position.x, r.position.y}, duration = 12}
+        end)
+        if ok then storage.jam_beams = (storage.jam_beams or 0) + 1 end
+        if not ok then
+          rendering.draw_line{surface = m.surface, from = {entity = m, offset = {0, -4}}, to = {r.position.x, r.position.y},
+            color = CYAN, width = 2, time_to_live = 8}
+        end
         r.die(m.force, m)
         j.struck = j.struck + 1
         storage.jammed = (storage.jammed or 0) + 1

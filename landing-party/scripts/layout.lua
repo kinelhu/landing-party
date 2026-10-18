@@ -264,6 +264,20 @@ end
 
 -- The landing pad: the first hub's two cells (0,0) and (1,0) as one walled area, the lander at its centre.
 -- Returns the lander's position and the pad, or nil when nothing fits near pos.
+-- Where a landing at pos would set its lander (layout.land's search, nothing placed): a cargo pod is sent there first.
+function layout.find_pad(surface, pos)
+  for r = 0, 80, 3 do
+    local steps = math.max(1, math.floor(2 * math.pi * r / 6))
+    for k = 0, steps - 1 do
+      local a = 2 * math.pi * k / steps
+      local x0, y0 = math.floor(pos[1] + r * math.cos(a)) - 20, math.floor(pos[2] + r * math.sin(a)) - 9
+      if layout.area_free(surface, x0, y0, blocks.PAD_W, S, 12) then
+        return {x0 + blocks.PAD_W / 2 + 0.9, y0 + S / 2 - 0.6}
+      end
+    end
+  end
+end
+
 function layout.land(b, surface, pos)
   for r = 0, 80, 3 do
     local steps = math.max(1, math.floor(2 * math.pi * r / 6))

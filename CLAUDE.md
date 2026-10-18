@@ -14,8 +14,8 @@ Sister project: `~/Dev/factorio-mods` (Empirical Science); the two share the dev
 The user's time in game is the scarce resource; a headless run costs none. Every mechanic gets a scripted
 scenario with assertions before anyone plays it. The game window is for art, feel and GUI only, and only
 at milestones, asked for.
-- `scripts/sim.sh <scenario> [seed] [minutes] [every] [strike]`: one run in its own profile (base game only,
-  no biters; the settlement arrives as the real one does, `LP_DISTANCE` tiles from spawn). Plots
+- `scripts/sim.sh <scenario> [seed] [minutes] [every] [strike]`: one run in its own profile (with Space Age, Quality
+  and Elevated Rails, a dependency since 2026-10-18; no biters; the settlement arrives as the real one does, `LP_DISTANCE` tiles from spawn). Plots
   (`growth.png`, `final.png`), the planner's `decisions.txt` and results go to `docs/sim/<scenario>-<seed>/`
   (gitignored). Look at the plots before claiming anything about layout.
 - **Quick regression: `scripts/regress.sh 12345 --quick`** (31 scenarios, one or two a layer of the AI graph, about 7
