@@ -60,7 +60,9 @@ local MORTAR_REACH = 35
 local HOWITZER_REACH, HOWITZER_STAND = 98, 53   -- its reach, and how far from the nest it stands
 local STUCK_TICKS = 60 * 60       -- a siege's hauler no nearer its site for this long is stuck
 local CLEAR_RAILS = 8             -- railgunners a clearance waits for (its only guards; six could not hold, the user)
-local GUARD_RADIUS = 24            -- a clearance's guards shoot biters this near its mortars
+-- A clearance's guards shoot biters this near its pieces, and its site is out of every worm's reach by this more (at 24
+-- round a site just out of reach, guards met the worms).
+local CLEAR_GUARD = 12
 local SIEGE_MAX_TICKS = 15 * 60 * 60
 -- Siege tiers (docs/reviews/2026-10-14-operations-depth-consult.md): by the corporation's level, held to the target
 -- player's era + 1, one up for a grudge. Mortars, shells each, guards, parts; resupply convoys (a hauler with
@@ -1778,10 +1780,13 @@ end
 -- The site 33 tiles from a nest, towards `from` (then at angles off that line), out of every worm's own reach plus 2
 -- (its prototype's range: a big worm's 38 and a behemoth's 48 outrange the mortars' 35, and at maximum evolution the
 -- hauler died on the way every two minutes all night, visit). None: mortars cannot clear it.
-local function out_of_worms(s, p)
-  for _, w in pairs(s.find_entities_filtered{position = p, radius = 52, type = "turret", force = "enemy"}) do
+-- Out of every worm's reach, by `margin` more (the guards' ring: the site was out of reach, its railgunners guarding
+-- 24 tiles round it were not, and six died to big worms 5 to 10 tiles from it, visit nw).
+local function out_of_worms(s, p, margin)
+  margin = margin or 2
+  for _, w in pairs(s.find_entities_filtered{position = p, radius = 52 + margin, type = "turret", force = "enemy"}) do
     local ap = w.prototype.attack_parameters
-    local r = (ap and ap.range or 30) + 2
+    local r = (ap and ap.range or 30) + margin
     if (w.position.x - p[1]) ^ 2 + (w.position.y - p[2]) ^ 2 <= r * r then return false end
   end
   return true
@@ -1791,7 +1796,7 @@ local function clearance_site(s, nest, from, stand)
   local base = math.atan2(from[2] - nest.position.y, from[1] - nest.position.x)
   for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
     local p = {nest.position.x + math.cos(base + turn) * stand, nest.position.y + math.sin(base + turn) * stand}
-    if out_of_worms(s, p) and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
+    if out_of_worms(s, p, CLEAR_GUARD + 2) and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
       return p
     end
   end
@@ -2002,7 +2007,7 @@ local function siege_step(b, trace, army)
     if op.clearance then
       local s = game.surfaces[b.surface]
       -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
-      local guard_r = op.piece == "lp-howitzer" and GUARD_RADIUS / 2 or GUARD_RADIUS
+      local guard_r = CLEAR_GUARD
       local foes = s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = "enemy"}
       if #foes > 0 then
         -- Within the ring only, undistracted: chasing biters, they followed them into the worms (scenario clear: railgunners
@@ -2651,7 +2656,7 @@ end
 local function siege_leash(b)
   local op = b.op
   if not (op and op.kind == "siege" and op.clearance and op.phase ~= "march") then return end
-  local r = (op.piece == "lp-howitzer" and GUARD_RADIUS / 2 or GUARD_RADIUS) + 6
+  local r = CLEAR_GUARD + 6
   for _, u in ipairs(op.members) do
     if u.valid and (u.position.x - op.site[1]) ^ 2 + (u.position.y - op.site[2]) ^ 2 > r * r then
       u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,

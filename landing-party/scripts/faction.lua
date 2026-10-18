@@ -34,6 +34,8 @@ local DISTANCE = 350
 local CLEAR_OF_FACTORY = 150
 local FACTORY = {"assembling-machine", "furnace", "mining-drill", "lab", "roboport", "electric-pole", "container",
   "logistic-container", "rocket-silo", "beacon", "storage-tank", "train-stop", "radar", "wall"}
+-- A nest field: more than DENSE_MAX nests and worms within DENSE_RADIUS of a site (faction.site).
+local DENSE_RADIUS, DENSE_MAX, DENSE_SEARCH = 150, 30, 480
 local APART = 200                -- a new landing keeps this far from every standing lander
 local SITE_SEARCH = 120
 local SQUAT_DISTANCE = 60         -- Grubstake's distance from the player's turrets and units
@@ -101,7 +103,7 @@ function faction.site(surface, from, distance, count)
   local start = (surface.map_gen_settings.seed + 3 * (count or 0)) % 8
   local avoid = landers()
   local fallback, fallback_n = nil, -1
-  local among
+  local among, among_density, dense, dense_density
   for i = 0, 7 do
     local a = 2 * math.pi * ((start + i) % 8) / 8
     local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
@@ -202,17 +204,35 @@ function faction.site(surface, from, distance, count)
       local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
       local nested = surface.count_entities_filtered{position = spot, radius = 60 + 40 * evo, type = "unit-spawner",
         limit = 1} > 0
+      -- And not in a nest field: nests and worms within DENSE_RADIUS (the ground generated round a candidate). Serenity
+      -- landed on nw with none within 100 and 132 within 250, and spent three hours at war with biters: 369 turrets
+      -- and 227 units lost, nothing left for the player. Too many and the site is "among nests", where the least dense
+      -- such site wins (the first found won).
+      local density = 0
+      if clear and not faction.pact_site then
+        density = surface.count_entities_filtered{position = spot, radius = DENSE_RADIUS, force = "enemy",
+          type = {"unit-spawner", "turret"}}
+        if density > DENSE_MAX and not faction.dense_ok then nested = true end
+      end
       -- By approach (docs/reviews/2026-10-15-biter-country-consult.md): what decides a settlement's war is the nests
       -- between it and the player, not those beside it (camps landed nest-free 1,000 to 2,100 tiles out had 130 nests
       -- on the way and razed nothing in three hours, visit). Too many on the way refuse the site; nests beside it are
       -- allowed (its landing burns them), a nest-free site in the same ring preferred.
       if clear and faction.approach_max and approach(surface, spot, from) > faction.approach_max then clear = false end
       -- A corporation with a pact with the biters (Grubstake) lands among them: they let it be.
-      if clear and nested and not faction.ignore_nests and not faction.pact_site then
+      if clear and nested and not (faction.ignore_nests or faction.dense_ok) and not faction.pact_site then
         if faction.approach_max then
           local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
-          if n > SITE_MIN_ORE / 2 and not among then among = spot end
+          -- Nests beside it, not a field round it: a field waits for the further rings, then the last pass.
+          if n > SITE_MIN_ORE / 2 and density <= DENSE_MAX and (not among or density < among_density) then
+            among, among_density = spot, density
+          end
         end
+        clear = false
+      end
+      -- Nests allowed (the last pass): a nest field is still the last choice, the least dense of them.
+      if clear and (faction.ignore_nests or faction.dense_ok) and density > DENSE_MAX then
+        if not dense or density < dense_density then dense, dense_density = spot, density end
         clear = false
       end
       if clear then
@@ -224,7 +244,7 @@ function faction.site(surface, from, distance, count)
   end
   -- No direction rich and clear: the best clear one seen (seed 2024 once landed blind on two drills' worth); by
   -- approach, a site among nests next.
-  return fallback or among
+  return fallback or among or dense
 end
 
 -- Map tags: each settlement marked for the player's forces with its corporation's icon and name. A tag needs
@@ -296,12 +316,24 @@ function faction.arrive(surface, from, opts, quiet)
     faction.approach_max = pass == 0 and APPROACH_MAX or nil
     faction.under_guns = pass == 2
     faction.ignore_nests = pass == 3
-    for _, extra in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do
+    -- Nest fields (the user: "on some maps you will only get dense fields of nests"): the near rings (to DENSE_SEARCH)
+    -- refusing them first; then the same rings again, the least dense site of a ring taken; only then further out
+    -- (avoiding them everywhere, nw's landing went 900 tiles further out, away from the player). In a field it holds
+    -- its ground by clearing it.
+    local schedule = {}
+    local rings = storage.rings or {0, 120, 240, 480, 800, 1200, 1800}
+    for _, e in ipairs(rings) do if e <= DENSE_SEARCH then schedule[#schedule + 1] = {e, false} end end
+    for _, e in ipairs(rings) do if e <= DENSE_SEARCH then schedule[#schedule + 1] = {e, true} end end
+    for _, e in ipairs(rings) do if e > DENSE_SEARCH then schedule[#schedule + 1] = {e, true} end end
+    for _, ring in ipairs(schedule) do
+      local extra = ring[1]
+      faction.dense_ok = ring[2]
       pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
       -- Dry: the settlement's reach (base.land's 15x15 chunks) made by the engine first.
       if pos and faction.dry and wait_for(surface, pos, 7) then pos = nil end
       if faction.pending then
         faction.ignore_nests, faction.under_guns, faction.pact_site, faction.approach_max = false, false, false, nil
+        faction.dense_ok = false
         return nil, "pending"
       end
       b = pos and base.land(surface, pos, opts)
@@ -317,6 +349,7 @@ function faction.arrive(surface, from, opts, quiet)
   faction.ignore_nests = false
   faction.under_guns = false
   faction.pact_site = false
+  faction.dense_ok = false
   faction.approach_max = nil
   -- No clearing burned by a corporation at peace with the biters.
   if b and not pact.has(b.corp) then base.clear_landing(b) end

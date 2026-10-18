@@ -11,7 +11,7 @@ digraph ai {
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n671 lines", width=1.55, fillcolor="#eef2f7"];
+    "faction" [label="faction\n704 lines", width=1.58, fillcolor="#eef2f7"];
     "war" [label="war\n363 lines", width=1.20, fillcolor="#eef2f7"];
     "standing" [label="standing\n114 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n108 lines", width=0.92, fillcolor="#eef2f7"];
@@ -34,7 +34,7 @@ digraph ai {
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n694 lines", width=1.57, fillcolor="#eef2f7"];
-    "ops" [label="ops\n2956 lines", width=3.80, fillcolor="#f7dede"];
+    "ops" [label="ops\n2961 lines", width=3.80, fillcolor="#f7dede"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
     "jammer" [label="jammer\n62 lines", width=0.87, fillcolor="#d9f0d9"];
     "power" [label="power\n171 lines", width=0.99, fillcolor="#d9f0d9"];

@@ -479,6 +479,19 @@ strangling (the line walls off outposts and ore).
   either way: what strangling changes here is where the wall goes. Not yet: the next ore the player will need as a
   target, belts and pipes cut where the line crosses them.
 
+### Landing in nest country (2026-10-18; the user: "On some maps you will only get dense fields of nests you know")
+On nw Serenity landed with no spawner within 100 tiles and 132 nests and worms within 250, and spent three hours at war
+with biters (369 turrets, 227 units lost). A site's density now counts: more than 30 nests and worms within 150 (the
+ground generated round a candidate) is a nest field. The near rings (to 480 tiles out) are searched refusing fields
+first, then searched again taking the least dense site of a ring; only then further out (avoiding fields everywhere,
+the landing went 900 tiles further out, away from the player). On nw: the same site, the least dense near, its landing
+barrage 8 spawners and 12 worms. A clearance's site is out of every worm's reach by its guards' ring (12) and more:
+six railgunners guarding 24 tiles round a site just out of reach died to big worms 5 to 10 tiles from it.
+Found: Serenity's losses to biters on nw all came from the side facing the player's factory (W 140, NW 152, SW 108,
+N 42, none east, nests all round): the waves the player's pollution draws, or fights its turrets start with them, in a
+corporation that landed between the nests and the player. The buffer stays (a neighbour in the lane takes the waves;
+Grubstake's pact spares it). Next: under that pressure, its clearances go first at the nests in that lane.
+
 ### The levers: strength and aggression (the user, 2026-10-18)
 The user: "once we are [confident in the mechanics], I think we could simply implement scaling variables for strength
 and agression sort of like what biters have at world gen, and balance through those". Four runtime-global settings,
