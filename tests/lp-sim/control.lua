@@ -4960,6 +4960,11 @@ scenarios.visit = function()
     info("visit: player at start " .. serpent.line(S.start))
     S.poll0 = {}
     for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do S.poll0[name] = v end
+    -- The absent player's character cannot die: in a single-player save its death ends the game, and the visit at
+    -- strength 2 stopped at minute 108 (a Grubstake raid by it), its last 72 minutes empty updates and no results.
+    local chars = 0
+    for _, c in pairs(surface().find_entities_filtered{type = "character"}) do c.destructible = false; chars = chars + 1 end
+    info("visit: " .. chars .. " character(s) made indestructible")
     storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
     if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
     S.sp = sp
@@ -6583,7 +6588,14 @@ end)
 
 -- Ticks are counted from the tick the test mod was added (storage.t0): 0 on a new map, hours into a real save
 -- (scripts/visit.sh; scheduled by absolute tick, nothing ever ran on one).
+-- A step that errors is a failed check, and the results are written all the same: a visit at strength 2 ran its three
+-- hours and wrote nothing, no error in its log (2026-10-18).
 script.on_event(defines.events.on_tick, function(e)
   local f = at[e.tick - (storage.t0 or 0)]
-  if f then f() end
+  if not f then return end
+  local ok, err = pcall(f)
+  if not ok then
+    check("a scheduled step ran without error (tick " .. (e.tick - (storage.t0 or 0)) .. ")", false, tostring(err))
+    helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\nDONE " .. failed .. " FAILED\n")
+  end
 end)

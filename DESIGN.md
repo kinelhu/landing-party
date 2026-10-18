@@ -388,7 +388,30 @@ two a corporation (`lp-<corp>-strength`, `lp-<corp>-aggression`), each a preset 
 Runtime-global so an admin can change them in a running game (only the owning mod may write a setting from script:
 `debug_setting`). Scenario `levers`: Grubstake's settings to very high at 2 minutes: its cap 10 to 20, an hour-long span
 30 minutes, its ladder at rung 1 at 8 minutes where Serenity's, normal, is at 0. Sweeps: `LP_MIX=...-S2-A0.5` sets every
-corporation's levers in any scenario or visit (`debug_tune levers`). Not yet: the presets calibrated against visits.
+corporation's levers in any scenario or visit (`debug_tune levers`).
+
+The first sweep (2026-10-18; deathworld10x, provoked at an hour, 3 hours, no robots in that save, both levers moved
+together on both corporations):
+
+| Levers | The player's buildings razed by the corporations | Gun turrets left (205 at the start) | Lost to biters |
+|---|---|---|---|
+| x0.5 | about 90 | 189 | 0 |
+| x1 | about 650 | 136 | 26 |
+| x2 | about 1,650 (Grubstake's first camp 1,056) | 66 | 75 |
+
+The response is monotone and steep at the low end: very low reads as a quiet neighbour, very high takes two thirds of the
+turrets in three hours. Mean tick at x2 0.46 ms against the save's 0.28 (alone on the machine). Outcomes do not
+depend on load (three visits run together gave identical results). Each lever alone (x2, the other at x1): strength about 1,100
+razed and 77 turrets left (it takes turrets); aggression about 1,350 and 102 left (it spreads: more assemblers, chests and
+loot). Both carry their weight.
+The factory that fights back: nw (lasers, 671; 577 roboports; land mines; no artillery), provoked, at x1: the
+corporations razed 30 things in three hours, its robots rebuilt every one (and 329 mines), no ghost left; Serenity lost
+85 units in six operations, all aborted. Against a robot-kept laser base the default is no threat. Not yet: the presets
+calibrated (whether normal should scratch nw, and very low stay this quiet on deathworld).
+Two harness faults the sweep found: a visit's levers were set after `on_init`'s early return (all three runs came out
+identical), and in a single-player save the absent player's character, killed by a Grubstake raid at minute 108, ended
+the game: the benchmark ran its last 72 minutes as empty updates and wrote no results. The character is now
+indestructible on visits, and a scheduled step that errors is a failed check with the results written.
 
 ### Fought capture (in progress)
 `siege`: a sprawl settlement at 15 minutes (depot, garrison 16 of infantry and tanks, raids off, responses
