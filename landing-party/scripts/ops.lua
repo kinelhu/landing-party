@@ -13,6 +13,7 @@ local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
+local jammer = require("__landing-party__.scripts.jammer")
 
 local ops = {}
 
@@ -744,6 +745,15 @@ local function finish(b, outcome, trace, army)
   local h = home(b)
   if op.mortar and op.mortar.valid then op.mortar.destroy() end
   for _, m in ipairs(op.mortars or {}) do if m.valid then m.destroy() end end
+  if op.howitzer and op.howitzer.valid then op.howitzer.destroy() end
+  jammer.lower(op.jammer)
+  -- Its hits mended: a siege on a wall kept by robots that ends with their roboports still standing teaches it the
+  -- jammer (rd).
+  local tt = op.target and b.intel.targets[op.target]
+  if op.with_howitzer and tt and game.surfaces[b.surface].count_entities_filtered{position = tt.pos, radius = 60,
+    type = "roboport", force = enemies(game.forces[b.force]), limit = 1} > 0 then
+    rd.mended(b)
+  end
   if op.convoy and op.convoy.valid then
     b.haulers_home = b.haulers_home or {}
     table.insert(b.haulers_home, {unit = op.convoy, till = game.tick + 3 * 3600})
@@ -1581,6 +1591,38 @@ local function siege_tier(b, t, army)
 end
 ops.siege_tier = siege_tier
 
+-- Whether a siege is against a player (its target's owner).
+local function t_owner_player(b, op)
+  local t = op.target and b.intel.targets[op.target]
+  return t and against_player(t.owner)
+end
+
+-- The mortars' point: the one already chosen while it stands and is in reach; else a roboport in reach of any mortar,
+-- the nearest; else the turret in reach with the least health.
+local function reach_of(m) return m.name:find("howitzer", 1, true) and HOWITZER_REACH or MORTAR_REACH end
+local function focus(s, live, foes, current)
+  local function reach(e)
+    for _, m in ipairs(live) do
+      if (m.position.x - e.position.x) ^ 2 + (m.position.y - e.position.y) ^ 2 <= reach_of(m) ^ 2 then return true end
+    end
+  end
+  if current and current.valid and reach(current) then return current end
+  local best, bd
+  for _, m in ipairs(live) do
+    for _, r in pairs(s.find_entities_filtered{position = m.position, radius = reach_of(m), type = "roboport", force = foes}) do
+      local d = (r.position.x - m.position.x) ^ 2 + (r.position.y - m.position.y) ^ 2
+      if not bd or d < bd then best, bd = r, d end
+    end
+  end
+  if best then return best end
+  for _, m in ipairs(live) do
+    for _, e in pairs(s.find_entities_filtered{position = m.position, radius = MORTAR_REACH, type = TURRETS, force = foes}) do
+      if not bd or e.health < bd then best, bd = e, e.health end
+    end
+  end
+  return best
+end
+
 local function launch_siege(b, key, site, trace, army, tier_override, clearance)
   local t = b.intel.targets[key]
   local tier = tier_override or storage.siege_tier or siege_tier(b, t, army)
@@ -1632,6 +1674,13 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance)
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
     convoys_left = spec.convoys or 0}
   b.op.clearance = clearance
+  -- A wall kept by robots: a howitzer comes too, for the roboports behind it (98 tiles; the mortars' 35 reached the
+  -- lasers but not the roboports 13 tiles behind them, and the robots mended or rebuilt all they hit, fortress).
+  if not clearance and not storage.focus_off and against_player(t.owner) and (tier >= 2 or army.level(b) >= 2)
+    and s.count_entities_filtered{position = t.pos, radius = 60, type = "roboport", force = enemies(game.forces[b.force]),
+      limit = 1} > 0 then
+    b.op.with_howitzer = true
+  end
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
   -- A clearance's march keeps out of its worms' reach (straight on, its guards walked into a behemoth's, review).
   local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
@@ -1854,6 +1903,19 @@ local function siege_step(b, trace, army)
       end
       op.mortar = op.mortars[1]
       if not op.mortar then return finish(b, "aborted", trace, army) end
+      if op.with_howitzer and not op.howitzer then
+        local hn = shared.variant(b.corp, "lp-howitzer")
+        local p = s.find_non_colliding_position(hn, {op.site[1], op.site[2]}, 12, 1)
+        op.howitzer = p and s.create_entity{name = hn, position = p, force = op.hauler.force}
+        if op.howitzer then
+          op.howitzer.insert{name = "lp-mortar-shell", count = spec.shells}
+          trace(b, "siege: a howitzer for the roboports")
+        end
+        if rd.has(b.corp, "jammer") and not op.jammer then
+          op.jammer = jammer.raise(s, {op.site[1], op.site[2]}, op.hauler.force)
+          if op.jammer then trace(b, "siege: a jamming mast for their robots") end
+        end
+      end
       if op.label and op.label.valid then op.label.destroy() end
       op.phase, op.phase_at = "bombard", game.tick
       alert(b, b.intel.targets[op.target], "lp.alert-siege", op.site)
@@ -1932,6 +1994,24 @@ local function siege_step(b, trace, army)
         or s.count_entities_filtered{position = m.position, radius = op.reach or MORTAR_REACH, type = TURRETS, force = foes})
     end
     if in_reach > 0 then op.last_target = game.tick end
+    -- The fire plan (Fable's fortress consult): against a player, every mortar on one point at a time. Roboports in
+    -- reach first (what keeps the wall up), then the weakest turret in reach: left to themselves the mortars spread 117
+    -- shells along a laser wall and its robots mended every one, ten lasers at full health and 32 repair packs spent
+    -- (fortress). A flare on the point is how a mortar is told (an artillery remote's flare; a turret's shooting
+    -- target cannot be set from script).
+    if not op.clearance and op.phase == "bombard" and not storage.focus_off and t_owner_player(b, op) then
+      local pieces = {}
+      for _, m in ipairs(live) do pieces[#pieces + 1] = m end
+      if op.howitzer and op.howitzer.valid then pieces[#pieces + 1] = op.howitzer end
+      op.focus = focus(s, pieces, foes, op.focus)
+      if op.focus then
+        for _ = 1, #pieces do
+          s.create_entity{name = "artillery-flare", position = op.focus.position, force = b.force, movement = {0, 0},
+            height = 0, vertical_speed = 0, frame_speed = 0}
+        end
+        op.flares = (op.flares or 0) + #pieces
+      end
+    end
     -- Resupply: a convoy of shells when the mortars are spent and a turret is still in reach.
     if op.convoy and not op.convoy.valid then
       trace(b, "siege: the shell convoy was destroyed; no more resupply")
@@ -2600,7 +2680,20 @@ local function answer(b, trace, army)
       trace(b, said .. (tkey and "no siege (no mortar site)" or "no siege (no turret of theirs known there)"))
       return false
     end
-    if launch_siege(b, tkey, site, trace, army) then return done("a siege") end
+    -- Each answer siege soon after the last comes a tier heavier (one mortar more, trucked in with the rest; Fable's
+    -- fortress consult: escalation physical and countable), as far as its parts and field reach.
+    local again = b.last_siege_answer and game.tick - b.last_siege_answer < ANSWER_AGAIN
+    b.siege_step = again and math.min((b.siege_step or 0) + 1, #SIEGE_TIERS) or 0
+    local tier = siege_tier(b, b.intel.targets[tkey], army)
+    local up = tier
+    for k = tier + 1, math.min(#SIEGE_TIERS, tier + b.siege_step) do
+      local n, reserve = field(b, army)
+      if (b.parts or 0) >= SIEGE_TIERS[k].cost and n + reserve >= SIEGE_TIERS[k].guards then up = k end
+    end
+    if launch_siege(b, tkey, site, trace, army, up) then
+      b.last_siege_answer = game.tick
+      return done(up > tier and string.format("a siege, a tier heavier (%d)", up) or "a siege")
+    end
     trace(b, said .. "no siege (could not launch)")
     return false
   end

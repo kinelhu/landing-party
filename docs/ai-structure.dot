@@ -17,7 +17,7 @@ digraph ai {
     "pact" [label="pact\n108 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n165 lines", width=0.98, fillcolor="#eef2f7"];
     "border" [label="border\n105 lines", width=0.92, fillcolor="#eef2f7"];
-    "rd" [label="rd\n322 lines", width=1.16, fillcolor="#d9f0d9"];
+    "rd" [label="rd\n330 lines", width=1.17, fillcolor="#d9f0d9"];
     "phases" [label="phases\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
@@ -34,8 +34,9 @@ digraph ai {
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n694 lines", width=1.57, fillcolor="#eef2f7"];
-    "ops" [label="ops\n2774 lines", width=3.80, fillcolor="#f7dede"];
+    "ops" [label="ops\n2867 lines", width=3.80, fillcolor="#f7dede"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
+    "jammer" [label="jammer\n62 lines", width=0.87, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "flare" [label="flare\n323 lines", width=1.16, fillcolor="#eef2f7"];
@@ -51,7 +52,7 @@ digraph ai {
     "command" [label="command\n545 lines", width=1.41, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n427 lines", width=1.27, fillcolor="#eef2f7"];
+    "control" [label="control\n429 lines", width=1.28, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";
@@ -104,6 +105,7 @@ digraph ai {
   "map" -> "standing";
   "marker" -> "pact";
   "names" -> "rng";
+  "ops" -> "jammer";
   "ops" -> "pool";
   "ops" -> "rd";
   "ops" -> "stance";

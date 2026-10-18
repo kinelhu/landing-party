@@ -10,6 +10,7 @@ local ops = require("__landing-party__.scripts.ops")
 local pool = require("__landing-party__.scripts.pool")
 local army = require("__landing-party__.scripts.army")
 local tune = require("__landing-party__.scripts.tune")
+local jammer = require("__landing-party__.scripts.jammer")
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
@@ -54,7 +55,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -331,6 +332,7 @@ remote.add_interface("landing-party", {
     -- Tests: no operation of choice (the decider), answers still on.
     if t.choice_off ~= nil then storage.choice_off = t.choice_off end
     if t.gates_off ~= nil then storage.gates_off = t.gates_off end
+    if t.focus_off ~= nil then storage.focus_off = t.focus_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
@@ -344,7 +346,6 @@ remote.add_interface("landing-party", {
     if t.relief_off ~= nil then storage.relief_off = t.relief_off end
     if t.pact_off ~= nil then storage.pact_off = t.pact_off; pact.apply() end
     if t.quiet_minutes then storage.quiet_ticks = t.quiet_minutes * 3600 end
-    if t.gates_off ~= nil then storage.gates_off = t.gates_off end
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
   set_trace = function(on) storage.trace = on end,
@@ -411,6 +412,7 @@ remote.add_interface("landing-party", {
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,
+  jammer_stats = function() return {jammed = storage.jammed or 0, masts = #(storage.jammers or {})} end,
   road_stats = function(id) return storage.bases[id] and road.stats(storage.bases[id]) end,
   borders = function() return border.stats() end,
   incidents = function() return storage.incidents or {} end,

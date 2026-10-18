@@ -81,6 +81,9 @@ shared.CORPS = {
       {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400},
       -- Siege: its mortars dig in (against sallies and the player's artillery).
       {id = "hardened", branch = "siege", era = 2, cost = 1200, ability = true, trigger = {damage = "explosion", min = 5}},
+      -- The jammer (scripts/jammer.lua): a mast in the emplacement whose arcs down the player's robots, once a siege's
+      -- hits were mended by them.
+      {id = "jammer", branch = "siege", era = 2, cost = 1500, ability = true, trigger = {mended = 1}},
       {id = "counter", branch = "siege", era = 3, requires = "hardened", cost = 1000, ability = true,
         trigger = {killer = {"artillery-turret", "artillery-wagon"}, min = 3}},
       {id = "warden", branch = "line", era = 1, cost = 1500, plates = {["lp-infantry"] = "physical"},

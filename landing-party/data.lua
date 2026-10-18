@@ -423,6 +423,22 @@ dust_smoke.start_scale = 0.5
 dust_smoke.end_scale = 2
 data:extend({claim_rig, dust_smoke})
 
+-- Serenity's jammer (scripts/jammer.lua; Fable's fortress consult: "an entity in the emplacement, a tall mast, a lamp
+-- ring, arcs that strike robots entering the radius, visibly"): a big pole's mast in Serenity's colour, 1,500 health, a
+-- military target (the player's turrets and artillery go for it). The arcs and the lamp ring are drawn by script.
+local mast_layers = {}
+for _, l in ipairs(data.raw["electric-pole"]["big-electric-pole"].pictures.layers) do
+  table.insert(mast_layers, {filename = l.filename, width = l.width, height = l.height, shift = l.shift, scale = (l.scale or 1) * 1.15,
+    x = 0, y = 0, draw_as_shadow = l.draw_as_shadow, tint = (not l.draw_as_shadow) and {r = 0.62, g = 0.8, b = 1, a = 1} or nil})
+end
+data:extend({{type = "simple-entity-with-force", name = "lp-jammer", hidden = true,
+  icon = "__base__/graphics/icons/big-electric-pole.png", icon_size = 64,
+  flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"},
+  max_health = 1500, is_military_target = true, collision_box = {{-0.65, -0.65}, {0.65, 0.65}},
+  selection_box = {{-1, -1}, {1, 1}}, dying_explosion = "big-explosion",
+  resistances = {{type = "physical", decrease = 4, percent = 20}, {type = "laser", percent = 20}},
+  picture = {layers = mast_layers}, map_color = {r = 0.5, g = 0.75, b = 1}}})
+
 -- The power tap (scripts/tap.lua): a small lamp's body as a clamp on the player's line, in Grubstake's colour; an energy
 -- interface drawing what the script sets. Not a military target (turrets pass it by). Its receiver at the end of the
 -- camp's line gives the camp what it draws: unseen, untouchable.

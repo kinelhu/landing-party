@@ -414,6 +414,37 @@ not the day's; open.
 Robots rebuilt all that was razed (666 entities, 378 of them land mines, no ghost left): against a robot base, pressure
 is materials, not ruins. What would hurt is the robots' own network (roboports, power), which the siege went for.
 
+### Serenity against a fortress (the user, 2026-10-18; Fable: `docs/reviews/2026-10-18-fortress-consult.md`)
+The user: "that's hardly better than a biter mod. Why shouldn't Serenity be able to do more than that?", then "The
+idea of treating factions as intelligent adversaries is key. A wall of lasers should not be an impregnable fortress by
+itself with this mod, no?" Four capabilities, in Fable's order: sieges sized to win, a robot jammer (a mast in the
+emplacement), the power strike (transmission: the first stretch of poles beyond turret reach with no second feed),
+strangling (the line walls off outposts and ore).
+- **Sieges that win** (built). Scenario `fortress`: 40 tiles of wall, ten lasers, infinite power, two roboports with
+  30 construction robots and 100 repair packs each, spares in storage, ghosts on death; Serenity at level 3, a siege
+  forced on it. As it was (`fortress old`): three mortars fired 117 shells along the wall and the robots mended every
+  hit, 32 repair packs, nothing destroyed. Now:
+  - **A fire plan.** Every piece on one point at a time, roboports first, then the weakest turret in reach. A mortar is
+    told by an artillery flare on the point (a turret's shooting target cannot be set from script: a spike, flare 144
+    damage to a roboport, set target an error).
+  - **A howitzer for a wall kept by robots** (roboports within 60 of the target, tier 2 or level 2 up): the mortars'
+    35 tiles reached the lasers, not the roboports 13 behind them; the howitzer's 98 does.
+  - **Escalation**: an answer siege within 30 minutes of the last comes a tier heavier, as far as parts and field reach.
+  `fortress`: every laser and roboport destroyed (and four spare roboports the robots put back), 30 of 41 wall pieces,
+  the 200 repair packs spent; the assault of 16 came home whole. Counters left to the player: artillery outranges the
+  howitzer (counter-battery), a sortie, roboports deeper than 98 tiles.
+- **The jammer** (built; `scripts/jammer.lua`, a leaf the siege raises and lowers). A Serenity research (`jammer`,
+  era 2, its trigger a siege whose hits the player's robots mended: roboports still standing by its target at its end,
+  `rd.mended`). With it, a siege on a wall kept by robots raises a mast in the emplacement: a big pole's mast in
+  Serenity's colour, a blinking lamp ring and a glow, 1,500 health, a military target. Every half second its arcs
+  (drawn lines) strike up to three of the player's construction or logistic robots within 50 tiles. `fortress jammer`:
+  the mast up with the guns, 60 robots downed (all of them), nothing rebuilt, the wall down sooner on fewer shells
+  (64 against 78). Counters: destroy the mast, keep roboports beyond its reach.
+- nw after these (provoked, x1): Serenity never faced the player. Its camp landed inside a nest field and spent the
+  three hours at war with biters: 369 turrets, 340 wall pieces and 227 units lost to them, 115 responses, 539 rebuild
+  drones. Where Serenity lands on a biter-heavy map is its own problem: open.
+- Next: the power strike (transmission), strangling.
+
 ### The levers: strength and aggression (the user, 2026-10-18)
 The user: "once we are [confident in the mechanics], I think we could simply implement scaling variables for strength
 and agression sort of like what biters have at world gen, and balance through those". Four runtime-global settings,

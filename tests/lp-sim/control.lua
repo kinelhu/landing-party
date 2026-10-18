@@ -5397,6 +5397,102 @@ scenarios.gates = function()
   end)
 end
 
+-- Fortress (Fable's fortress consult; the user: "that's hardly better than a biter mod"): a player laser wall facing a
+-- Serenity camp 150 tiles off, as on nw: 40 tiles of stone wall, ten lasers behind it, substations, an infinite power
+-- source behind, two roboports with construction robots and repair packs, spares in storage (walls, lasers,
+-- roboports), ghosts on death: the robots rebuild. Serenity at level 3, provoked; a siege forced on the wall at 14
+-- minutes. Its fire plan (every mortar on one point, roboports first) and a howitzer for the roboports behind the wall:
+-- half the lasers and every roboport down, and the robots' repair packs spent. LP_MIX=old (focus_off: the siege as it
+-- was, its mortars left to choose): 117 shells, ten lasers at full health, 32 repair packs spent, nothing destroyed.
+-- LP_MIX=jammer: Serenity has its jammer (rd): a mast goes up in the emplacement and its arcs down the robots.
+scenarios.fortress = function()
+  local old, jam = params.mix == "old", params.mix == "jammer"
+  schedule(60, function()
+    lp("debug_tune", {era = 3, history_off = true, raids_off = true, corp_level = {serenity = 3}, focus_off = old or nil,
+      rd_tech = jam and {serenity = {nodes = {jammer = 1}}} or nil})
+    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    for _ = 1, 3 do lp("debug_depot", S.s, 6000) end
+    game.forces.player.create_ghost_on_entity_death = true
+  end)
+  schedule(10 * 3600, function()
+    local o = lp("stats", S.s).origin
+    -- Axis-aligned: u points from the wall toward the camp, v along the wall.
+    local ux, uy = 0, 0
+    if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and 1 or -1 else uy = o.y > 0 and 1 or -1 end
+    local vx, vy = -uy, ux
+    local c = {math.floor(o.x - ux * 150) + 0.5, math.floor(o.y - uy * 150) + 0.5}
+    local function at(du, dv) return {c[1] + ux * du + vx * dv, c[2] + uy * du + vy * dv} end
+    flatten(math.min(at(-30, -30)[1], at(10, 30)[1]) - 4, math.min(at(-30, -30)[2], at(10, 30)[2]) - 4,
+      math.max(at(-30, -30)[1], at(10, 30)[1]) + 4, math.max(at(-30, -30)[2], at(10, 30)[2]) + 4)
+    local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
+    S.c, S.lasers, S.ports = c, {}, {}
+    for k = -20, 20 do put("stone-wall", at(0, k)) end
+    for k = -18, 18, 4 do table.insert(S.lasers, put("laser-turret", at(-3, k))) end
+    for k = -21, 21, 14 do put("substation", at(-7, k)) end
+    for k = -21, 21, 14 do put("substation", at(-20, k)) end
+    local eei = put("electric-energy-interface", at(-24, 0))
+    eei.power_production = 1e9 / 60
+    eei.electric_buffer_size = 1e9
+    for _, k in ipairs({-10, 10}) do
+      local r = put("roboport", at(-13, k))
+      r.insert{name = "construction-robot", count = 30}
+      r.insert{name = "repair-pack", count = 100}
+      table.insert(S.ports, r)
+    end
+    local chest = put("storage-chest", at(-17, 0))
+    chest.insert{name = "stone-wall", count = 200}
+    chest.insert{name = "laser-turret", count = 20}
+    chest.insert{name = "roboport", count = 4}
+    S.built0 = 0
+  end)
+  schedule(14 * 3600, function()
+    S.why = lp("dev", {"siege", tostring(S.s)}, {S.lasers[5].position.x, S.lasers[5].position.y}) or "launched"
+  end)
+  -- Shells fired: what the siege's mortars hold, sampled (loaded minus held at the lowest).
+  for t = 14 * 3600 + 600, END - 120, 300 do
+    schedule(t, function()
+      local held = 0
+      for _, m in pairs(surface().find_entities_filtered{name = "lp-mortar", force = "lp-serenity"}) do
+        held = held + m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell")
+      end
+      local mortars = surface().count_entities_filtered{name = "lp-mortar", force = "lp-serenity"}
+      S.masts = math.max(S.masts or 0, surface().count_entities_filtered{name = "lp-jammer"})
+      if mortars > 0 then
+        S.peak = math.max(S.peak or 0, held)
+        S.fired = math.max(S.fired or 0, (S.peak or 0) - held)
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local lasers = surface().count_entities_filtered{name = "laser-turret", position = S.c, radius = 40, force = "player"}
+    local ports = surface().count_entities_filtered{name = "roboport", position = S.c, radius = 40, force = "player"}
+    local walls = surface().count_entities_filtered{name = "stone-wall", position = S.c, radius = 40, force = "player"}
+    local st = lp("stats", S.s)
+    info(string.format("fortress: siege %s; at the end %d lasers of 10, %d roboports of 2, %d walls of 41; robots rebuilt %s; "
+      .. "log %s", tostring(S.why), lasers, ports, walls, serpent.line(S.robot_built or {}), serpent.line(st.ops.log)))
+    local packs, hp, hpmax = 0, 0, 0
+    for _, r in ipairs(S.ports) do if r.valid then packs = packs + r.get_item_count("repair-pack") end end
+    for _, l in pairs(surface().find_entities_filtered{name = "laser-turret", position = S.c, radius = 40, force = "player"}) do
+      hp, hpmax = hp + l.health, hpmax + l.max_health
+    end
+    info(string.format("fortress: repair packs left %d of 200; lasers' health %.0f of %.0f; shells fired %s", packs, hp, hpmax,
+      tostring(S.fired)))
+    S.fortress = {lasers = lasers, ports = ports, walls = walls}
+    local js = lp("jammer_stats")
+    info("fortress: jammer " .. serpent.line(js) .. ", masts seen " .. tostring(S.masts))
+    if jam then
+      check("fortress: a jamming mast went up", (S.masts or 0) > 0, tostring(S.masts))
+      check("fortress: its arcs downed robots", js.jammed >= 5, tostring(js.jammed))
+    end
+    if old then
+      check("fortress: the old siege breaks nothing (the case)", lasers == 10 and ports == 2, string.format("%d lasers, %d ports", lasers, ports))
+    else
+      check("fortress: half the lasers down", lasers <= 5, tostring(lasers))
+      check("fortress: the roboports down", ports == 0, tostring(ports))
+    end
+  end)
+end
+
 scenarios.levers = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})

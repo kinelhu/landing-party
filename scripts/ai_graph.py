@@ -79,7 +79,7 @@ LAYERS = {
     "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart"],
     "Corporation": ["faction", "war", "standing", "pact", "trade", "border", "rd", "phases", "biters"],
     "Settlement": ["base", "layout", "site", "blocks", "modules", "crew", "cordon", "road", "prospect"],
-    "Army and operations": ["army", "ops", "strike"],
+    "Army and operations": ["army", "ops", "strike", "jammer"],
     "Heists (Grubstake)": ["flare", "jumper", "tap", "bait", "marker"],
     "The map": ["map"],
     "The player's army": ["command"],

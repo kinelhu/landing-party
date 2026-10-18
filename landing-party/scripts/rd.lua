@@ -70,6 +70,13 @@ function rd.walls_met(b)
   table.insert(rd.state(b.corp).walls_met, {tick = game.tick})
 end
 
+-- A siege whose hits the player's robots mended: roboports still stood by its target when it ended (ops).
+function rd.mended(b)
+  local t = rd.state(b.corp)
+  t.mended = t.mended or {}
+  table.insert(t.mended, {tick = game.tick})
+end
+
 -- A raid that turned back for want of force (ops).
 function rd.turned_back(b)
   local t = rd.state(b.corp)
@@ -188,6 +195,7 @@ local function score(t, node)
   end
   if tr.turned_back and #t.turned_back >= tr.turned_back then return 5 * #t.turned_back end
   if tr.walls_met and #t.walls_met >= tr.walls_met then return 5 * #t.walls_met end
+  if tr.mended and #(t.mended or {}) >= tr.mended then return 5 * #t.mended end
   return 0
 end
 
