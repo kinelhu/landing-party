@@ -84,7 +84,7 @@ LAYERS = {
                             "power"],
     "Heists (Grubstake)": ["flare", "jumper", "tap", "bait", "marker"],
     "The map": ["map"],
-    "The player's army": ["command"],
+    "The player's army": ["command", "scanner", "roads"],
     "Wiring (edges not drawn)": ["control", "dev"],
 }
 WIRING = set(LAYERS["Wiring (edges not drawn)"])

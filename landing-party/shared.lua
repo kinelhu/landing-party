@@ -159,6 +159,20 @@ function shared.variants(kinds)
   table.sort(out)
   return out
 end
+-- The threat scanner's signals (player.lua, scripts/scanner.lua; the user, 2026-10-18): the corporations' unit kinds by
+-- role, one virtual signal each, and its icon.
+shared.SCAN_GROUPS = {
+  {signal = "lp-scan-infantry", icon = "__base__/graphics/icons/heavy-armor.png",
+    kinds = {"lp-infantry", "lp-lance", "lp-shock", "lp-sapper", "lp-slug"}},
+  {signal = "lp-scan-armour", icon = "__base__/graphics/icons/tank.png", kinds = {"lp-tank", "lp-aegis", "lp-dozer"}},
+  {signal = "lp-scan-walker", icon = "__base__/graphics/icons/spidertron.png", kinds = {"lp-walker"}},
+  {signal = "lp-scan-air", icon = "__base__/graphics/icons/destroyer.png", kinds = {"lp-harrier", "lp-scavenger"}},
+  {signal = "lp-scan-railgunner", icon = "__base__/graphics/icons/rocket-launcher.png", kinds = {"lp-railgunner"}},
+  {signal = "lp-scan-hauler", icon = "__base__/graphics/icons/car.png", kinds = {"lp-hauler"}},
+  {signal = "lp-scan-buggy", icon = "__base__/graphics/icons/car.png", kinds = {"lp-buggy"}},
+}
+shared.SCAN_RADIUS = 64
+
 -- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.
 shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-high"] = 2}
 function shared.is_corp(force_name) return force_name ~= nil and force_name:sub(1, 3) == "lp-" end

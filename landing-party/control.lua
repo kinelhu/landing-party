@@ -11,6 +11,8 @@ local pool = require("__landing-party__.scripts.pool")
 local army = require("__landing-party__.scripts.army")
 local tune = require("__landing-party__.scripts.tune")
 local jammer = require("__landing-party__.scripts.jammer")
+local scanner = require("__landing-party__.scripts.scanner")
+local roads = require("__landing-party__.scripts.roads")
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
@@ -55,7 +57,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -64,7 +66,7 @@ local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name",
 local BUILT = {{filter = "type", type = "electric-pole"}, {filter = "name", name = "lp-player-bait"},
   {filter = "name", name = "lp-strike-beacon"}, {filter = "name", name = "lp-pact-breaker"},
   {filter = "name", name = "lp-claim-marker"}, {filter = "name", name = "lp-border-stake"},
-  {filter = "name", name = "lp-trade-post"}}
+  {filter = "name", name = "lp-trade-post"}, {filter = "name", name = "lp-threat-scanner"}}
 for _, f in ipairs(PLAYER_BUILT) do table.insert(BUILT, f) end
 -- What a player builds inside Serenity's territory provokes it (ops.encroached).
 for _, t in ipairs(ops.ENCROACH_TYPES) do table.insert(BUILT, {filter = "type", type = t}) end
@@ -76,6 +78,7 @@ local function on_built(e)
   if ent and ent.valid and (ent.name == "lp-pact-breaker" or ent.name == "lp-claim-marker") then return marker.placed(ent) end
   if ent and ent.valid and ent.name == "lp-border-stake" then return border.placed(ent) end
   if ent and ent.valid and ent.name == "lp-trade-post" then return trade.placed(ent) end
+  if ent and ent.valid and ent.name == "lp-threat-scanner" then return scanner.placed(ent) end
   if ent and ent.valid and ent.type == "electric-pole" then
     if not shared.is_corp(ent.force.name) then base.unwire(ent) end
     return
@@ -415,6 +418,15 @@ remote.add_interface("landing-party", {
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,
   jammer_stats = function() return {jammed = storage.jammed or 0, masts = #(storage.jammers or {})} end,
+  -- Tests only: one of the player's army, made and registered as a barracks does (no beacon).
+  debug_trooper = function(name, pos)
+    local u = game.surfaces[1].create_entity{name = name, position = pos, force = "player"}
+    if u then
+      storage.cmd = storage.cmd or {barracks = {}, beacons = {}, troopers = {}}
+      storage.cmd.troopers[u.unit_number] = {unit = u}
+    end
+    return u and u.unit_number
+  end,
   -- Tests only: the unit numbers of the crews out (a Serenity drone flies on a harrier's body).
   crew_units = function() local out = {} for n in pairs(storage.crew_owner or {}) do out[n] = true end return out end,
   road_stats = function(id) return storage.bases[id] and road.stats(storage.bases[id]) end,

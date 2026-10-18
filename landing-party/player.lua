@@ -32,13 +32,48 @@ beacon.minable = {mining_time = 0.2, result = "lp-rally-beacon"}
 beacon.next_upgrade = nil
 beacon.fast_replaceable_group = nil
 
+-- The threat scanner (scripts/scanner.lua; the user, 2026-10-18: "a building that scans for enemy units in a radius and
+-- gives signals for each unit type"): a constant combinator the mod writes, a radar's icon; one virtual signal a role,
+-- a total a corporation, the crews (builders, apart from the army) and the biters.
+local scanner = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
+scanner.name = "lp-threat-scanner"
+scanner.icon = "__base__/graphics/icons/radar.png"
+scanner.minable = {mining_time = 0.2, result = "lp-threat-scanner"}
+scanner.next_upgrade = nil
+scanner.fast_replaceable_group = nil
+local signals = {}
+local function signal(name, icon, tint, order)
+  table.insert(signals, {type = "virtual-signal", name = name, icons = {{icon = icon, tint = tint}},
+    subgroup = "virtual-signal", order = "z[landing-party]-" .. order})
+end
+local S_TINT, G_TINT = {r = 0.62, g = 0.8, b = 1, a = 1}, {r = 1, g = 0.75, b = 0.35, a = 1}
+for k, g in ipairs(shared.SCAN_GROUPS) do signal(g.signal, g.icon, {r = 1, g = 0.45, b = 0.4, a = 1}, string.format("a%02d", k)) end
+signal("lp-scan-crew", "__base__/graphics/icons/construction-robot.png", {r = 1, g = 0.45, b = 0.4, a = 1}, "b")
+signal("lp-scan-serenity", "__base__/graphics/icons/signal/signal_S.png", S_TINT, "c")
+signal("lp-scan-grubstake", "__base__/graphics/icons/signal/signal_G.png", G_TINT, "d")
+signal("lp-scan-biters", "__base__/graphics/icons/small-biter.png", nil, "e")
+data:extend(signals)
+
+-- Roads (scripts/roads.lua; the user, 2026-10-18: "player constructed concrete surfaces that speed up army traversal"):
+-- units walk at one speed whatever the floor (a spike: 33.8 tiles in 5 s on concrete, 33.9 on grass), so the floor's
+-- bonus for the engineer is lent to the player's army by an invisible sticker, renewed while it walks on it.
+for _, m in ipairs({13, 14, 15}) do
+  data:extend({{type = "sticker", name = "lp-road-" .. m, hidden = true, duration_in_ticks = 45,
+    target_movement_modifier = m / 10, flags = {"not-on-map"}}})
+end
+
 local function item(name, icon, place)
   return {type = "item", name = name, icon = icon, stack_size = 10, place_result = place, subgroup = "defensive-structure",
     order = "z[landing-party]-" .. name}
 end
 
 data:extend({
-  barracks, beacon, relay,
+  barracks, beacon, relay, scanner,
+  item("lp-threat-scanner", "__base__/graphics/icons/radar.png", "lp-threat-scanner"),
+  {type = "recipe", name = "lp-threat-scanner", enabled = false, energy_required = 5,
+    ingredients = {{type = "item", name = "radar", amount = 1}, {type = "item", name = "constant-combinator", amount = 1},
+      {type = "item", name = "electronic-circuit", amount = 10}},
+    results = {{type = "item", name = "lp-threat-scanner", amount = 1}}},
   item("lp-command-relay", "__base__/graphics/icons/radar.png", "lp-command-relay"),
   -- Salvaged from the faction (a depot destroyed, an outpost captured, a lander destroyed) or granted once by
   -- research: what a barracks is built around. Not craftable.
@@ -122,7 +157,8 @@ data:extend({
   tech(1, {"military-2", "heavy-armor"}, {red, green}, 100, {
     {type = "unlock-recipe", recipe = "lp-barracks"}, {type = "unlock-recipe", recipe = "lp-command-relay"},
     {type = "unlock-recipe", recipe = "lp-rally-beacon"}, {type = "unlock-recipe", recipe = "lp-trooper-order"},
-    {type = "unlock-recipe", recipe = "lp-breacher-order"}, {type = "give-item", item = "lp-command-core", count = 1}}),
+    {type = "unlock-recipe", recipe = "lp-breacher-order"}, {type = "unlock-recipe", recipe = "lp-threat-scanner"},
+    {type = "give-item", item = "lp-command-core", count = 1}}),
   -- Battle tanks with the second level, once the player has tanks of their own.
   tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank", "battery-equipment"}, {red, green, blue}, 200, {
     {type = "unlock-recipe", recipe = "lp-battle-tank-order"}}),

@@ -273,7 +273,18 @@ Built (first pass) in `player.lua`, `scripts/command.lua`; the rest of this sect
   move the rally point that many tiles from the beacon (at most 300): a clock wired to a beacon walks a
   patrol, a decider sends an attack. The force sees a ring of the reach at the rally point, coloured by
   stance, and a dashed line from the beacon.
-- **Threat scanner (planned; the user, 2026-10-18: "a building that scans for enemy units in a radius and gives signals
+- **Threat scanner (built 2026-10-18; `scripts/scanner.lua`):** a constant combinator the mod writes once a second
+  (its window does not open), a radar's icon, unlocked with the army (command bandwidth 1). Within 64 tiles it counts
+  the corporations' units by role, one virtual signal each (infantry, armour, walkers, aircraft, railgunners, haulers: a
+  siege or a strip camp coming, buggies), the building crews apart, a total a corporation, and the biters. Scenario
+  `scanner`: five troopers and a hauler, three buggies, two biters within, four troopers beyond: counted exactly; two
+  troopers killed, the count follows within 2 s.
+- **Roads (built 2026-10-18; `scripts/roads.lua`; the user: "player constructed concrete surfaces that speed up army
+  traversal"):** units walk at one speed on any floor (a spike: 33.8 tiles in 5 s on refined concrete, 33.9 on grass),
+  so the floor's bonus for the engineer (stone path 1.3, concrete 1.4, refined concrete 1.5) is lent to the player's
+  army by an invisible sticker, renewed twice a second while it walks on it. Scenario `roads`: 47.2 tiles on refined
+  concrete against 30.8 on grass in 5 s. The player's army only: the roads are the player's.
+- **Threat scanner (the idea; the user, 2026-10-18: "a building that scans for enemy units in a radius and gives signals
   for each unit type with a number depending on units present in the radius of the scanner would probably be super
   useful for circuit engineering").** The beacon's missing input half: the army takes orders from circuits, nothing
   gives circuits eyes. A building (a radar's body, a combinator's output) that every second or so counts the

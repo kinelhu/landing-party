@@ -60,9 +60,11 @@ digraph ai {
   }
   subgraph cluster_6 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "command" [label="command\n545 lines", width=1.41, fillcolor="#d9f0d9"];
+    "scanner" [label="scanner\n76 lines", width=0.88, fillcolor="#d9f0d9"];
+    "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n433 lines", width=1.28, fillcolor="#eef2f7"];
+    "control" [label="control\n445 lines", width=1.29, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

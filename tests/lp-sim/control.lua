@@ -5697,6 +5697,85 @@ scenarios.strangle = function()
   end)
 end
 
+-- Scanner (the user's threat scanner): a scanner built as a player builds it, with five Serenity troopers and a hauler,
+-- three Grubstake buggies and two biters within its radius, held still; four troopers 80 tiles off. Its output: each
+-- kind counted, a total a corporation, nothing for those beyond; two troopers killed, the count follows within 2 s.
+scenarios.scanner = function()
+  schedule(30, function() lp("debug_tune", {ops_off = true, army_off = true, raids_off = true}) end)
+  local function read(e)
+    local out = {}
+    local cb = e.get_control_behavior()
+    local sec = cb and cb.get_section(1)
+    for _, f in ipairs(sec and sec.filters or {}) do if f.value then out[f.value.name] = f.min end end
+    return out
+  end
+  local function hold(u) u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none, ticks_to_wait = 36000} end
+  schedule(120, function()
+    flatten(-100, -40, 100, 40)
+    S.sc = surface().create_entity{name = "lp-threat-scanner", position = {0.5, 0.5}, force = "player", raise_built = true}
+    S.troopers = {}
+    local function add(name, force, x, y, list)
+      local p = surface().find_non_colliding_position(name, {x, y}, 4, 0.5)
+      local u = p and surface().create_entity{name = name, position = p, force = force}
+      if u then hold(u); if list then table.insert(list, u) end end
+      return u
+    end
+    for k = 1, 5 do add("lp-infantry", "lp-serenity", 10 + 2 * k, 10, S.troopers) end
+    add("lp-hauler", "lp-serenity", 20, -10)
+    for k = 1, 3 do add("lp-grubstake-buggy", "lp-grubstake", -20 - 4 * k, 10) end
+    for k = 1, 2 do add("small-biter", "enemy", -10, -30 - 2 * k) end
+    for k = 1, 4 do add("lp-infantry", "lp-serenity", 80 + 2 * k, 0) end
+  end)
+  schedule(300, function() S.first = read(S.sc) end)
+  schedule(320, function() for k = 1, 2 do if S.troopers[k].valid then S.troopers[k].destroy() end end end)
+  schedule(460, function() S.after = read(S.sc) end)
+  schedule(END - 60, function()
+    local f, a = S.first or {}, S.after or {}
+    info("scanner: first " .. serpent.line(f) .. "; after two troopers died " .. serpent.line(a))
+    check("scanner: each kind counted", f["lp-scan-infantry"] == 5 and f["lp-scan-hauler"] == 1 and f["lp-scan-buggy"] == 3
+      and f["lp-scan-biters"] == 2, serpent.line(f))
+    check("scanner: a total a corporation", f["lp-scan-serenity"] == 6 and f["lp-scan-grubstake"] == 3, serpent.line(f))
+    check("scanner: the count follows", a["lp-scan-infantry"] == 3 and a["lp-scan-serenity"] == 4, serpent.line(a))
+    check("scanner: its window does not open", S.sc.operable == false, tostring(S.sc.operable))
+  end)
+end
+
+-- Roads (the user: "player constructed concrete surfaces that speed up army traversal"; units walk at one speed on any
+-- floor, a spike showed): two of the player's troopers walk east 5 s, one on grass, one on refined concrete (1.5 to the
+-- engineer): the one on concrete goes at least 30% further.
+scenarios.roads = function()
+  schedule(30, function() lp("debug_tune", {ops_off = true, army_off = true}) end)
+  schedule(120, function()
+    flatten(-10, -20, 80, 20)
+    local tiles = {}
+    for x = -5, 75 do for y = 6, 10 do tiles[#tiles + 1] = {name = "refined-concrete", position = {x, y}} end end
+    surface().set_tiles(tiles)
+    local a, b = lp("debug_trooper", "lp-trooper", {0, -8}), lp("debug_trooper", "lp-trooper", {0, 8})
+    for _, u in pairs(surface().find_entities_filtered{name = "lp-trooper", force = "player"}) do
+      if u.unit_number == a then S.a = u elseif u.unit_number == b then S.b = u end
+    end
+    S.a.commandable.set_command{type = defines.command.go_to_location, destination = {70, -8}, distraction = defines.distraction.none}
+    S.b.commandable.set_command{type = defines.command.go_to_location, destination = {70, 8}, distraction = defines.distraction.none}
+  end)
+  -- The walk renewed every 20 ticks: a registered trooper with no beacon is held by the army's own step (2.4 tiles in
+  -- 5 s, where a free one walked 34).
+  for t = 140, 120 + 5 * 60, 20 do
+    schedule(t, function()
+      for _, p in ipairs({{S.a, -8}, {S.b, 8}}) do
+        p[1].commandable.set_command{type = defines.command.go_to_location, destination = {70, p[2]},
+          distraction = defines.distraction.none}
+      end
+    end)
+  end
+  schedule(120 + 5 * 60, function()
+    S.ga, S.gb = S.a.position.x, S.b.position.x
+  end)
+  schedule(END - 60, function()
+    info(string.format("roads: after 5 s, grass %.1f tiles, refined concrete %.1f", S.ga or -1, S.gb or -1))
+    check("roads: faster on concrete", S.ga and S.gb and S.gb >= 1.3 * S.ga, string.format("%.1f against %.1f", S.gb or -1, S.ga or -1))
+  end)
+end
+
 scenarios.levers = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})
