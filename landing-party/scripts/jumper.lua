@@ -6,6 +6,7 @@
 -- the minute and nothing comes up; killed after, the tunnel caves in and the hands are left inside. One rig a settlement
 -- at a time, from its ladder's second rung against the player.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
 local war = require("__landing-party__.scripts.war")
@@ -67,11 +68,13 @@ local function mound_point(s, owner, tpos)
   return s.find_non_colliding_position(shared.variant("grubstake", "lp-infantry"), {c.x + 3, c.y + 3}, 6, 0.5)
 end
 
-function jumper.launch(b, tpos)
+-- owner: the target's force name (the player's force nearest the target when not given: /lp rig, debug_jumper).
+function jumper.launch(b, tpos, owner)
   local s = game.surfaces[b.surface]
   local h = home(b)
   if not h then return "no home" end
-  local owner = "player"
+  owner = owner or shared.owner_at(s, tpos)
+  if not owner then return "no owner" end
   local at = rig_point(s, owner, tpos, h.position)
   if not at then return "no rig point" end
   local m = mound_point(s, owner, tpos)
@@ -114,7 +117,7 @@ local function finish(b, j, why)
     j.loot and j.home_with and j.home_with > 0 and j.loot.items or 0, j.home_with or 0, #(j.hands or {})))
   b.hands_back = (b.hands_back or 0) + (j.home_with or 0)
   b.jump = nil
-  b.next_jump = game.tick + (storage.jump_cooldown or COOLDOWN)
+  b.next_jump = game.tick + (storage.jump_cooldown or tune.sooner(b.corp, COOLDOWN))
 end
 
 local function emerge(b, j)
@@ -142,6 +145,15 @@ local function alive(j)
   local n = 0
   for _, u in ipairs(j.hands or {}) do if u.valid then n = n + 1 end end
   return n
+end
+
+-- Every order ends with standing still: a hand whose order is done is idle until the next step, and idle, a unit
+-- attacks whatever it sees. When the chest they broke fell, two of six went for the wall's turrets 27 tiles off, unhurt,
+-- and died to them (jumper).
+local function order(u, cmd)
+  u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = {cmd, {type = defines.command.stop, distraction = defines.distraction.by_damage, ticks_to_wait = 600}},
+    distraction = defines.distraction.by_damage}
 end
 
 local function step(b, j)
@@ -191,8 +203,8 @@ local function step(b, j)
       if u.valid then
         local c = cs[(i - 1) % math.max(1, #cs) + 1]
         if c and not j.loot.looted[c.unit_number] then
-          u.commandable.set_command{type = defines.command.go_to_location, destination = c.position, radius = 2,
-            distraction = defines.distraction.by_damage}
+          order(u, {type = defines.command.go_to_location, destination = c.position, radius = 2,
+            distraction = defines.distraction.by_damage})
         end
       end
     end
@@ -212,25 +224,28 @@ local function step(b, j)
         ents[#ents + 1] = e
       end
     end
-    for _, u in ipairs(j.hands) do
+    j.aims = j.aims or {}
+    for i, u in ipairs(j.hands) do
       if u.valid then
-        local c = u.commandable.command
-        local busy = c and c.type == defines.command.attack and c.target and c.target.valid
-        if not busy then
+        local aim = j.aims[i]
+        if not (aim and aim.valid and u.commandable.has_command) then
           local e = #ents > 0 and s.get_closest(u.position, ents)
-          u.commandable.set_command(e and {type = defines.command.attack, target = e, distraction = defines.distraction.by_damage}
+          j.aims[i] = e or nil
+          order(u, e and {type = defines.command.attack, target = e, distraction = defines.distraction.by_damage}
             or {type = defines.command.go_to_location, destination = j.mound, radius = 2, distraction = defines.distraction.by_damage})
         end
       end
     end
     if game.tick - j.phase_at > RAZE_TICKS then
       j.phase, j.phase_at = "leave", game.tick
+      -- Told to walk to the mound they stood on, their order was done at once, and idle they went for the turrets.
       for _, u in ipairs(j.hands) do
         if u.valid then
-          u.commandable.set_command{type = defines.command.go_to_location, destination = j.mound, radius = 1.5,
-            distraction = defines.distraction.none}
+          order(u, {type = defines.command.go_to_location, destination = j.mound, radius = 1.5,
+            distraction = defines.distraction.none})
         end
       end
+      return step(b, j)
     end
   elseif j.phase == "leave" then
     if j.caved then return finish(b, j, "the tunnel caved in: the hands are left inside") end
@@ -282,7 +297,7 @@ local function consider(b)
     b.next_jump = game.tick + 3600
     return
   end
-  if jumper.launch(b, best.pos) ~= "launched" then b.next_jump = game.tick + 3600 end
+  if jumper.launch(b, best.pos, owner) ~= "launched" then b.next_jump = game.tick + 3600 end
 end
 
 function jumper.tick(tick)

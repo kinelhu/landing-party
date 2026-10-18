@@ -49,7 +49,11 @@ shared.CORPS = {
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
-    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true, prospects = true},
+    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true, prospects = true,
+      -- How it answers a provocation (ops.answer), by kind: a loss (its unit, drone or building) or trespass (a turret
+      -- covering its camp). The thief never fights fair: biters on the culprit, a snatch raid only where no turret covers
+      -- it (Fable, docs/reviews/2026-10-18-answers-consult.md).
+      answers = {loss = "flare", trespass = "flare"}},
     -- Its drills pollute, half again an electric drill's 10 a minute (the user, 2026-10-17). Under the pact the biters'
     -- waves skip its camp and come at the player's polluters near its cloud (spike: a 200-biter wave on two player
     -- drills that drew none alone).
@@ -95,7 +99,10 @@ shared.CORPS = {
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
-    temper = {provoked_only = true},
+    -- Answers: a loss gets a raid in formation; trespass (its ground, its border, a turret by its camp) the siege, its
+    -- masonry, what never forgives. A raid it would lose becomes a siege only on a second provocation (a drone shot
+    -- down where the player never saw it is not worth mortars).
+    temper = {provoked_only = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).
     drill_pollution = 0,
     -- Crews (scripts/crew.lua): a constructor drone, flying over its walls, building with its beam.
@@ -148,7 +155,28 @@ function shared.variants(kinds)
   table.sort(out)
   return out
 end
+-- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.
+shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-high"] = 2}
 function shared.is_corp(force_name) return force_name ~= nil and force_name:sub(1, 3) == "lp-" end
+-- A player's force: one with players, or the default "player" force (saves where nobody is connected), never a
+-- corporation's, the biters' or neutral. One definition (docs/ai.md 2.4: seven copies, two of which disagreed on neutral).
+function shared.is_player_force(f)
+  local n = f.name
+  if shared.is_corp(n) or n == "enemy" or n == "neutral" then return false end
+  return n == "player" or #f.players > 0
+end
+function shared.player_forces()
+  local out = {}
+  for _, f in pairs(game.forces) do if shared.is_player_force(f) then table.insert(out, f) end end
+  return out
+end
+-- The player's force whose building is nearest pos (within 32), for the dev tools and tests that name a spot only.
+function shared.owner_at(surface, pos)
+  local fs = shared.player_forces()
+  if #fs == 0 then return nil end
+  local e = surface.find_entities_filtered{position = pos, radius = 32, force = fs, limit = 1}[1]
+  return e and e.force.name or fs[1].name
+end
 -- Development: a corporation's level rises with the parts its settlements export (thresholds), and each level
 -- brings capabilities (CORPS caps), never a hidden bonus. Units with no entry in caps come at level 0.
 shared.LEVELS = {3000, 8000, 20000, 45000}

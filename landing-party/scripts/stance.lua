@@ -7,6 +7,7 @@
 --   may(act)   whether its temper lets it do that act to that force now
 -- A leaf: it reads storage only, so ops, war, flare and the rest can all ask it without a require loop.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 
 local stance = {}
 
@@ -46,7 +47,9 @@ function stance.rung(owner, corp_force)
   local key = corp_force and (owner .. "|" .. corp_force) or owner
   local t0 = storage.last_raze[key]
   if not t0 then storage.last_raze[key] = game.tick; return 0 end
-  local m = (game.tick - t0) / 3600 * (storage.ladder_fast and 10 or 1)
+  -- Its aggression lever runs the clock faster (tune.lua).
+  local corp = corp_force and tune.corp_of_force(corp_force)
+  local m = (game.tick - t0) / 3600 * (storage.ladder_fast and 10 or 1) * (corp and tune.aggression(corp) or 1)
   return m >= 30 and 3 or m >= 20 and 2 or m >= 10 and 1 or 0
 end
 

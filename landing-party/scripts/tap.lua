@@ -15,6 +15,7 @@
 -- the half-laid line left standing. A cut line is mended the same way: a buggy drives out to the missing pylons. The
 -- line's pylons are the operation's: the camp's own rebuilding never touches them.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 local base = require("__landing-party__.scripts.base")
 local war = require("__landing-party__.scripts.war")
 local ops = require("__landing-party__.scripts.ops")
@@ -183,7 +184,7 @@ local function over(b, t, why)
   b.tap_watts = 0
   base.trace(b, string.format("tap over: %s (%.0f MJ taken)", why, (t.taken or 0) / 1e6))
   b.tap = nil
-  b.next_tap = game.tick + (storage.tap_cooldown or COOLDOWN)
+  b.next_tap = game.tick + (storage.tap_cooldown or tune.sooner(b.corp, COOLDOWN))
 end
 
 local function clamp(b, t)
@@ -315,7 +316,7 @@ end
 
 -- debug_tap: a tap from settlement b on the player pole nearest pos.
 function tap.debug(b, pos)
-  local pole = game.surfaces[b.surface].find_entities_filtered{type = "electric-pole", force = "player", position = pos,
+  local pole = game.surfaces[b.surface].find_entities_filtered{type = "electric-pole", force = shared.player_forces(), position = pos,
     radius = 10, limit = 1}[1]
   -- A buggy if none is at home (a young camp), as /lp flare does.
   local has

@@ -5,10 +5,52 @@
 --   roster      every unit the settlement owns (storage.unit_owner points the other way), out or home
 --   strength    the roster's live count: what the cap holds
 --   give        units done with a job: into the garrison when home, else on their way back (b.returning) until they are
+--   take        units for a job, from the garrison, never below a floor
 -- A leaf: it reads storage and the settlement only.
+local shared = require("__landing-party__.shared")
 local pool = {}
 
 local HOME = 40                    -- a unit within this of the lander or a depot is home
+
+-- What stays home (docs/ai.md 2.3: each taker had its own floor, 2, 30% of the cap or none). One rule now:
+--   guard    pool.GUARD units always stay: what defends the camp itself (responses, intercepts) and its own small
+--            details (patrols, escorts) take down to it, and so does an operation that commits the reserve (a battery
+--            shelling it, a threat, the ladder's top rung, an answer, a siege's assault)
+--   reserve  pool.RESERVE of the cap, at least the guard: what an operation of choice leaves home
+-- A heist's buggy (flare, tap) is taken without a floor: one, and the heist is its whole job.
+pool.GUARD = 2
+pool.RESERVE = 0.3
+
+function pool.floor(cap, kind)
+  if kind == "reserve" then return math.max(pool.GUARD, math.ceil(pool.RESERVE * cap)) end
+  return pool.GUARD
+end
+
+-- Haulers are not counted (they carry, they do not fight). Buggies are: most of Grubstake's army (a camp of 27 had 20).
+local function counts(u) return u.valid and shared.kind_of(u.name) ~= "lp-hauler" end
+
+-- Units at home that count against a floor.
+function pool.home(b)
+  local n = 0
+  for _, u in ipairs(b.garrison) do if counts(u) then n = n + 1 end end
+  return n
+end
+
+-- Up to n units from the garrison (the last first, as every taker did) that pass `fit`, leaving at least `floor` units
+-- home. Removed from the garrison and returned; the caller gives them their orders.
+function pool.take(b, n, floor, fit)
+  local home = pool.home(b)
+  local taken = {}
+  for i = #b.garrison, 1, -1 do
+    if #taken >= n or home <= floor then break end
+    local u = b.garrison[i]
+    if u.valid and (not fit or fit(u)) then
+      table.insert(taken, table.remove(b.garrison, i))
+      if counts(u) then home = home - 1 end
+    end
+  end
+  return taken
+end
 
 -- Every unit the settlement owns joins the roster here (and storage.unit_owner).
 function pool.enlist(b, u)

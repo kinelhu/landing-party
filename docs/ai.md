@@ -124,7 +124,11 @@ Built (2026-10-17):
   - old saves rebuild the roster once from `storage.unit_owner`.
 
   Scenario `pool`: a full camp (30 of 30) makes no unit while 4 raiders are out, and they come back through the returning list. On the old code it made 3 while they were out.
-- **Not yet:** a `react` table per temper (today every provoking act asks for the same answer); one floor for what stays home (`HOME_GUARD` against ops' 30% reserve).
+- **Built 2026-10-18:**
+  - a reaction table per corporation (`temper.answers`, by the provocation's kind, loss or trespass): Grubstake answers with a flare on the culprit, a raid only where no turret covers it; Serenity raids a loss it can win, sieges trespass (`docs/reviews/2026-10-18-answers-consult.md`);
+  - one floor for what stays home (`pool.take`, `pool.floor`: the guard of 2, or the 30% reserve);
+  - one definition of a player's force (`shared.is_player_force`), and the claim rig's owner from its target.
+- **Not yet:** one target picker (2.4: the pickers still score in their own ways); the ladder's thresholds (2.5).
 
 Order (as planned):
 1. `stance` and `react`, with the answer as their first user (tested: a turret kills a drone, a squad comes at that turret within two minutes, a rival before and an enemy after).

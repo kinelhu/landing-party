@@ -1,6 +1,7 @@
 -- The army: depots build units from parts up to a garrison cap, in the mix the doctrine prefers. Raids are
 -- operations (scripts/ops.lua); this module answers alarms, patrols, escorts convoys and intercepts trains.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 local rng = require("__landing-party__.scripts.rng")
 local ops = require("__landing-party__.scripts.ops")
 local rd = require("__landing-party__.scripts.rd")
@@ -10,7 +11,7 @@ local army = {}
 
 local BUILD_TICKS = 600          -- a depot turns out at most one unit per 10 s
 local CAP_PER_DEPOT = 10
-local HOME_GUARD = 2             -- units that stay home
+local HOME_GUARD = pool.GUARD    -- units that stay home (pool.floor)
 
 army.MIX = {
   bastion = {["lp-infantry"] = 5, ["lp-tank"] = 3, ["lp-walker"] = 1, ["lp-harrier"] = 1},
@@ -48,6 +49,8 @@ local function cap(b)
   local depots = 0
   for _, d in ipairs(b.depots) do if d.valid then depots = depots + 1 end end
   local n = math.max(depots, (b.lander and b.lander.valid) and 1 or 0) * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b))
+  -- Its strength lever (tune.lua).
+  n = math.max(1, math.floor(n * tune.strength(b.corp) + 0.5))
   -- The ladder buys capacity (Fable's pressure-ramp consult, item 4): from its second rung against a player, half as many
   -- again (b.war_rung, war.lua). It had only lowered the price of using what the settlement had.
   if (b.war_rung or 0) >= 2 then n = math.floor(n * 1.5) end
@@ -205,18 +208,12 @@ function army.alarm(b, pos, trace)
   }}
   -- Against biters alone, its railgunners first (the biter-clearing unit).
   if biters_only then
-    for i = #b.garrison, HOME_GUARD + 1, -1 do
-      local u = b.garrison[i]
-      if #members < size and u.valid and shared.kind_of(u.name) == "lp-railgunner" then
-        table.remove(b.garrison, i)
-        group.add_member(u)
-        table.insert(members, u)
-      end
+    for _, u in ipairs(pool.take(b, size, HOME_GUARD, function(u) return shared.kind_of(u.name) == "lp-railgunner" end)) do
+      group.add_member(u)
+      table.insert(members, u)
     end
   end
-  for i = #b.garrison, HOME_GUARD + 1, -1 do
-    if #members >= size then break end
-    local u = table.remove(b.garrison, i)
+  for _, u in ipairs(pool.take(b, size - #members, HOME_GUARD)) do
     if u.type == "unit" then group.add_member(u) else u.commandable.set_command(cmd) end
     table.insert(members, u)
   end
@@ -271,7 +268,7 @@ local function patrol(b, trace)
   local want = army.PATROL[b.doctrine] or 2
   -- The garrison pruned first: a dead unit moved to the patrol crashed the order loop (siege, seed 4242).
   prune(b.garrison)
-  while #b.patrol < want and #b.garrison > HOME_GUARD do table.insert(b.patrol, table.remove(b.garrison)) end
+  for _, u in ipairs(pool.take(b, want - #b.patrol, HOME_GUARD)) do table.insert(b.patrol, u) end
   if #b.patrol == 0 then return end
   -- A route of up to five stops, drawn once and redrawn when the settlement changes much.
   local pts = waypoints(b)
@@ -341,13 +338,9 @@ function army.convoy(b, cargo, trace)
   prune(b.garrison)
   -- Escorts from units at home only: the last convoy's escorts, back in the garrison but still at the
   -- uplink's gate 210 tiles away, were drafted at once and the group waited for them.
-  for i = #b.garrison, HOME_GUARD + 1, -1 do
-    if #escorts >= CONVOY_ESCORT then break end
-    local u = b.garrison[i]
-    if u.type == "unit" and (u.position.x - home.position.x) ^ 2 + (u.position.y - home.position.y) ^ 2 < 30 * 30 then
-      table.insert(escorts, table.remove(b.garrison, i))
-    end
-  end
+  escorts = pool.take(b, CONVOY_ESCORT, HOME_GUARD, function(u)
+    return u.type == "unit" and (u.position.x - home.position.x) ^ 2 + (u.position.y - home.position.y) ^ 2 < 30 * 30
+  end)
   -- The escorts ride out on the hauler, as a siege's guards do: drafted inside the walls, they could not reach it past them
   -- and were let go after a minute, the hauler leaving alone.
   for _, u in ipairs(escorts) do
@@ -576,9 +569,7 @@ local function intercept(b, trace)
     if hx ~= hy then return hx > hy end
     return x.unit_number < y.unit_number
   end)
-  for i = #b.garrison, HOME_GUARD + 1, -1 do
-    if #members >= INTERCEPT_SIZE then break end
-    local u = table.remove(b.garrison, i)
+  for _, u in ipairs(pool.take(b, INTERCEPT_SIZE, HOME_GUARD)) do
     u.commandable.set_command{type = defines.command.attack, target = best, distraction = defines.distraction.by_enemy}
     table.insert(members, u)
   end

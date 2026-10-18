@@ -9,6 +9,7 @@
 --            no kill for 90 s while attacking; or, from the staging point, more turrets seen than the force
 --            can take (it turns back unhurt). An aborted target is remembered (tried, defence seen, cool).
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
@@ -23,7 +24,7 @@ local FIELD_SIGHT = 40                -- what a unit away from home sees
 local DEFENCE_RADIUS = 30             -- turrets this close to a target defend it
 local MARKER_TICKS = 20 * 60 * 60     -- a death marker counts this long
 local DECIDE_TICKS = 30 * 60
-local RESERVE = 0.3                   -- share of the garrison cap that never leaves on an operation
+local RESERVE = pool.RESERVE           -- share of the garrison cap that never leaves on an operation (pool.floor)
 -- Force needed: 3.5 a unit of weighted defence (ops.weigh), plus 4. Three a turret (assault: 12 took four); 5 once
 -- lost to upgraded ammunition (18 units against three creeping turrets with bullet damage +0.8 lost two thirds,
 -- defend), and with research now in the weight (x1.8 there) 5 counted it twice. At 3, the 21 sent there won once
@@ -245,7 +246,7 @@ function ops.encroached(ent)
     if not b.fallen and b.claim_radius and b.surface == ent.surface.index
       and (shared.CORPS[b.corp].temper or {}).provoked_only
       and (ent.position.x - b.origin.x) ^ 2 + (ent.position.y - b.origin.y) ^ 2 <= b.claim_radius ^ 2 then
-      ops.provoke(b.force, by, ent)
+      ops.provoke(b.force, by, ent, "trespass")
     end
   end
 end
@@ -371,8 +372,7 @@ local SURVEY_TYPES = {"mining-drill", "assembling-machine", "furnace", "electric
 local function survey(b)
   local s = game.surfaces[b.surface]
   for _, f in pairs(game.forces) do
-    if (#f.players > 0 or f.name == "player") and not shared.is_corp(f.name) and f.name ~= "enemy"
-      and f.name ~= "neutral" and not f.get_cease_fire(b.force) then
+    if shared.is_player_force(f) and not f.get_cease_fire(b.force) then
       local sp = f.get_spawn_position(s)
       local dx, dy = sp.x - b.origin.x, sp.y - b.origin.y
       local len = math.sqrt(dx * dx + dy * dy)
@@ -483,12 +483,15 @@ local function cap(b, army) return army.cap(b) end
 -- not hold it, and it can be besieged before the siege capability (campaign runs: a settlement that knew where
 -- the battery was raided substations for 45 minutes until its lander died).
 local function battery(t) return t.kind == "artillery-turret" or t.kind == "artillery-wagon" end
+-- What an operation of choice can send, and the reserve it leaves home (pool.floor). Committing the reserve keeps the
+-- guard home (GUARD), as every taker does.
 local function field(b, army)
-  local reserve = math.ceil(RESERVE * cap(b, army))
-  local n = 0
-  for _, u in ipairs(b.garrison) do if u.valid then n = n + 1 end end
-  return math.max(0, n - reserve), reserve
+  local floor = pool.floor(cap(b, army), "reserve")
+  return math.max(0, pool.home(b) - floor), floor - pool.GUARD
 end
+local SOLDIER = function(u) return (u.type == "unit" or u.type == "spider-unit") and shared.kind_of(u.name) ~= "lp-hauler" end
+local FOOT = function(u) return u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" end
+local function floor_of(b, army, committed) return pool.floor(cap(b, army), committed and "guard" or "reserve") end
 
 -- The threat budget (docs/campaign.md section 6): operations against a player force at once, across every
 -- corporation, are capped by that player's era (1 + era; era 0-4 from research done), so corporations do not
@@ -502,7 +505,7 @@ function ops.era(force)
   for i, k in ipairs(ERA_TECHS) do if n >= k then era = i end end
   return era
 end
-local function against_player(owner) return owner ~= nil and owner ~= "enemy" and not shared.is_corp(owner) end
+local against_player = stance.against_player
 function ops.player_ops()
   local n = 0
   for _, o in pairs(storage.bases) do
@@ -519,7 +522,9 @@ end
 -- Provocation (tempers): a player force that hurts a corporation's buildings or units is remembered for good. The one
 -- entry for every provoking act (docs/ai.md, section 4: reactions): `at`, the culprit (an entity, or a position), asks
 -- the corporation's settlement nearest it for an answer.
-function ops.provoke(corp_force, by, at)
+-- kind: "loss" (a unit, drone or building hurt; the default) or "trespass" (its ground, its border, a turret covering its
+-- camp): each corporation answers each its own way (shared.CORPS temper.answers, ops.answer).
+function ops.provoke(corp_force, by, at, kind)
   if not shared.is_corp(corp_force) or by == nil or shared.is_corp(by) or by == "enemy" or by == "neutral" then return end
   for corp, c in pairs(shared.CORPS) do
     if c.force == corp_force then
@@ -530,7 +535,7 @@ function ops.provoke(corp_force, by, at)
       d.provoked[by] = d.provoked[by] or game.tick
     end
   end
-  if at then ops.request_answer(corp_force, by, at) end
+  if at then ops.request_answer(corp_force, by, at, kind) end
 end
 
 -- The answer (docs/ai.md, section 4; the user, 2026-10-17: their turrets killed Serenity's drones, it turned enemy and
@@ -541,7 +546,7 @@ end
 local ANSWER_COOLDOWN = 5 * 3600
 local ANSWER_RANGE = 500
 local ANSWER_MIN = 6
-function ops.request_answer(corp_force, by, at)
+function ops.request_answer(corp_force, by, at, kind)
   if not against_player(by) then return end
   local p = at
   if type(at) == "userdata" then
@@ -561,7 +566,7 @@ function ops.request_answer(corp_force, by, at)
     end
   end
   if not best or best.answer or game.tick < (best.next_answer or 0) then return end
-  best.answer = {owner = by, pos = {x, y}, tick = game.tick}
+  best.answer = {owner = by, pos = {x, y}, tick = game.tick, kind = kind or "loss"}
 end
 
 -- The ladder (docs/reviews/2026-10-14-megabase-pressure-consult.md; the user: "even if they don't punch through, they
@@ -651,7 +656,7 @@ local function choose(b, army)
   -- worth 8, was always chosen over the player's buildings, and the ladder never applied, visit).
   local pressed = false
   for _, f in pairs(game.forces) do
-    if (#f.players > 0 or f.name == "player") and against_player(f.name) and ladder(f.name, b.force) >= 2
+    if shared.is_player_force(f) and ladder(f.name, b.force) >= 2
       and temper_allows(b, {owner = f.name, defence = 0, exposure = 0}) then
       pressed = true
     end
@@ -824,7 +829,8 @@ local function finish(b, outcome, trace, army)
   for _, e in ipairs(op.works or {}) do if e.valid then e.destroy() end end
   if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
   local lost = op.launched - alive(op)
-  b.next_op = game.tick + ((outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE or GAP_ABORTED)
+  b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE
+    or GAP_ABORTED)
     + math.floor(lost / 5) * GAP_PER_5_LOST
   if op.clearance then b.next_op = game.tick + 3600 end
   -- What it saw there at the end is the record: destroyed targets are forgotten (a raid set out again for
@@ -1259,14 +1265,8 @@ local function launch(b, key, trace, army, opts)
     and cd.provoked[t.owner] then
     want = math.max(want, math.min(n, math.ceil(ENEMY_SHARE * n)))
   end
-  local members = {}
-  for i = #b.garrison, 1, -1 do
-    if #members >= want then break end
-    local u = b.garrison[i]
-    if u.valid and (u.type == "unit" or u.type == "spider-unit") and shared.kind_of(u.name) ~= "lp-hauler" then
-      table.insert(members, table.remove(b.garrison, i))
-    end
-  end
+  local committed = battery(t) or threat_bonus(b, t) > 0 or desperate or is_answer
+  local members = pool.take(b, want, floor_of(b, army, committed), SOLDIER)
   -- What field() counted may not be there to send (haulers, the dead): no raid of nought (a camp launched four, visit).
   if #members == 0 then return false end
   local dx, dy = h.position.x - t.pos[1], h.position.y - t.pos[2]
@@ -1411,14 +1411,7 @@ local function launch(b, key, trace, army, opts)
       end
     end
     if escort then
-      for i = #b.garrison, 1, -1 do
-        if escort <= 0 then break end
-        local u = b.garrison[i]
-        if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then
-          table.insert(members, table.remove(b.garrison, i))
-          escort = escort - 1
-        end
-      end
+      for _, u in ipairs(pool.take(b, escort, floor_of(b, army, committed), FOOT)) do table.insert(members, u) end
       b.op.launched, b.op.pushed = #members, true
       route = {}
       trace(b, string.format("raid on %s pushes through biter country (%d spawners, %d worms): %d units", t.kind, sp,
@@ -1569,27 +1562,22 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance)
   if not hauler then return false end
   local guards = {}
   -- Counter-battery (Serenity): against the player's artillery, its Shock troopers go first (up to six).
+  local floor = floor_of(b, army, battery(t))
   if battery(t) and rd.has(b.corp, "counter") then
-    for i = #b.garrison, 1, -1 do
-      local u = b.garrison[i]
-      if #guards < 6 and u.valid and shared.kind_of(u.name) == "lp-shock" then table.insert(guards, table.remove(b.garrison, i)) end
-    end
+    guards = pool.take(b, 6, floor, function(u) return shared.kind_of(u.name) == "lp-shock" end)
   end
   -- A clearance (nests): its railgunners go first, the biter-clearing unit.
   if clearance or t.owner == "enemy" then
-    for i = #b.garrison, 1, -1 do
-      local u = b.garrison[i]
-      if #guards < spec.guards and u.valid and shared.kind_of(u.name) == "lp-railgunner" then
-        table.insert(guards, table.remove(b.garrison, i))
-      end
+    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, function(u) return shared.kind_of(u.name) == "lp-railgunner" end)) do
+      table.insert(guards, u)
     end
   end
   -- A clearance takes railgunners only: Line troopers next to them died to the nest's big biters and killed next to
   -- none (nine of them killed one of sixteen, scenario rail).
-  for i = #b.garrison, 1, -1 do
-    if #guards >= spec.guards or clearance or t.owner == "enemy" then break end
-    local u = b.garrison[i]
-    if u.valid and u.type == "unit" then table.insert(guards, table.remove(b.garrison, i)) end
+  if not (clearance or t.owner == "enemy") then
+    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, function(u) return u.type == "unit" end)) do
+      table.insert(guards, u)
+    end
   end
   b.parts = math.max(0, b.parts - spec.cost)
   -- The guards ride out on the hauler: gates open for no unit, and guards walking from home were 33 to 49 tiles off when
@@ -2001,13 +1989,7 @@ local function siege_step(b, trace, army)
         trace(b, string.format("siege: no assault (%d needed, %d guards and %d at home)", want, n, home_n))
       end
       if want and (spec.assault or n + home_n >= want) then
-        for i = #b.garrison, 1, -1 do
-          if #op.members >= want then break end
-          local u = b.garrison[i]
-          if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then
-            table.insert(op.members, table.remove(b.garrison, i))
-          end
-        end
+        for _, u in ipairs(pool.take(b, want - #op.members, pool.GUARD, FOOT)) do table.insert(op.members, u) end
         op.launched = #op.members
         op.phase, op.phase_at, op.last_kill, op.kills_at, op.razed_before = "assault", game.tick, game.tick, b.razed, b.razed
         b.assaults = (b.assaults or 0) + 1
@@ -2101,12 +2083,7 @@ local function launch_strip(b, key, site, trace, army)
     h.position.y + (site[2] - h.position.y) * 0.1}, 20, 0.5)
   local hauler = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
   if not hauler then return false end
-  local guards = {}
-  for i = #b.garrison, 1, -1 do
-    if #guards >= STRIP_GUARDS then break end
-    local u = b.garrison[i]
-    if u.valid and u.type == "unit" then table.insert(guards, table.remove(b.garrison, i)) end
-  end
+  local guards = pool.take(b, STRIP_GUARDS, floor_of(b, army), function(u) return u.type == "unit" end)
   b.parts = b.parts - STRIP_COST
   b.op = {kind = "strip", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
     site = site, started = game.tick, phase_at = game.tick, cargo = 0}
@@ -2424,10 +2401,25 @@ local function siege_leash(b)
     end
   end
 end
+-- Turrets of the owner's that cover a spot (a gun turret's 18, and a margin).
+local ANSWER_COVER = 24
+local function covered(s, owner, pos)
+  return s.count_entities_filtered{position = pos, radius = ANSWER_COVER, force = owner,
+    type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} > 0
+end
+-- A second provocation this soon after an answer: Serenity's raid it would lose becomes a siege.
+local ANSWER_AGAIN = 30 * 3600
+
+-- The answer, by the corporation's reaction table (temper.answers) and the kind of provocation:
+--   flare   Grubstake: biters on the culprit (flare.answer); where no turret covers it, a snatch raid instead
+--   raid    a raid on the player's building nearest the spot; one it would lose: a siege if provoked again within
+--           ANSWER_AGAIN, else nothing yet
+--   siege   mortars on the nearest of the player's turrets there (or what is there); none possible: the raid
 local function answer(b, trace, army)
   local a = b.answer
   b.answer = nil
   if not stance.may(b.corp, a.owner, "answer") then return end
+  local how = ((shared.CORPS[b.corp].temper or {}).answers or {})[a.kind or "loss"] or "raid"
   local s = game.surfaces[b.surface]
   sense(b, s, {x = a.pos[1], y = a.pos[2]}, 30)
   local key, bd
@@ -2437,19 +2429,68 @@ local function answer(b, trace, army)
       if d <= 40 * 40 and (not bd or d < bd) then key, bd = k, d end
     end
   end
-  b.next_answer = game.tick + ANSWER_COOLDOWN
+  b.next_answer = game.tick + tune.sooner(b.corp, ANSWER_COOLDOWN)
   if not key then
     trace(b, string.format("answer: nothing of %s's to hit near %.0f,%.0f", a.owner, a.pos[1], a.pos[2]))
     return
   end
-  b.intel.targets[key].cool = 0
-  trace(b, string.format("answer: provoked by %s at %.0f,%.0f, %ds ago: a squad goes", a.owner, a.pos[1], a.pos[2],
-    math.floor((game.tick - a.tick) / 60)))
-  if launch(b, key, trace, army, {answer = true}) then
+  local t = b.intel.targets[key]
+  t.cool = 0
+  local said = string.format("answer (%s, %s): provoked by %s at %.0f,%.0f, %ds ago: ", a.kind or "loss", how, a.owner,
+    a.pos[1], a.pos[2], math.floor((game.tick - a.tick) / 60))
+  local function done(what)
     b.answers = (b.answers or 0) + 1
-  else
-    trace(b, "answer: no squad to send")
+    b.answered = b.answered or {}
+    b.answered[what] = (b.answered[what] or 0) + 1
+    b.last_answer = game.tick
+    trace(b, said .. what)
+    return true
   end
+  local function siege()
+    if not (shared.capable(b.corp, "siege", army.level(b)) or b.grudge) or not stance.may(b.corp, a.owner, "siege") then
+      trace(b, said .. string.format("no siege (capable %s, may %s)", tostring(shared.capable(b.corp, "siege", army.level(b))),
+        tostring(stance.may(b.corp, a.owner, "siege"))))
+      return false
+    end
+    -- At the turret nearest the spot: the siege's target is a turret of its (siege_site).
+    local tkey, td
+    for k, x in pairs(b.intel.targets) do
+      if x.owner == a.owner and prototypes.entity[x.kind] and prototypes.entity[x.kind].type:find("turret") then
+        local d = (x.pos[1] - a.pos[1]) ^ 2 + (x.pos[2] - a.pos[2]) ^ 2
+        if d <= 40 * 40 and (not td or d < td) then tkey, td = k, d end
+      end
+    end
+    local site = tkey and siege_site(b, b.intel.targets[tkey])
+    if not site then
+      trace(b, said .. (tkey and "no siege (no mortar site)" or "no siege (no turret of theirs known there)"))
+      return false
+    end
+    if launch_siege(b, tkey, site, trace, army) then return done("a siege") end
+    trace(b, said .. "no siege (could not launch)")
+    return false
+  end
+  local function raid() return launch(b, key, trace, army, {answer = true}) and done("a squad goes") or false end
+  if how == "flare" then
+    if not covered(s, a.owner, t.pos) and raid() then return end
+    local why = ops.answer_flare and ops.answer_flare(b, t.pos, a.owner) or "no flares"
+    if why == "launched" then return done("a flare on it") end
+    trace(b, said .. "no flare (" .. why .. ")")
+    return
+  end
+  if how == "siege" and siege() then return end
+  -- A raid it can win (the defence there, against all it could send), else a siege when provoked again soon.
+  local n, reserve = field(b, army)
+  if needed(defence(b, t)) <= n + reserve then
+    if raid() then return end
+  elseif how ~= "siege" and b.last_answer and game.tick - b.last_answer < ANSWER_AGAIN and siege() then
+    return
+  elseif how ~= "siege" then
+    b.last_answer = game.tick
+    trace(b, said .. string.format("too strong for a raid (%d needed, %d to send); remembered", needed(defence(b, t)),
+      n + reserve))
+    return
+  end
+  trace(b, said .. "nothing to send")
 end
 
 function ops.tick(b, tick, trace, army)
@@ -2581,9 +2622,9 @@ function ops.summary(b)
     end
   end
   return {known = n, known_player = np, player_targets = pt, ladder = (function()
-    for _, f in pairs(game.forces) do if #f.players > 0 or f.name == "player" then return ladder(f.name, b.force) end end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
+    for _, f in ipairs(shared.player_forces()) do return ladder(f.name, b.force) end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
-    siege_tier = b.op and b.op.tier, answers = b.answers or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
+    siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,

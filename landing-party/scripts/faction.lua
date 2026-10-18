@@ -284,7 +284,7 @@ function faction.arrive(surface, from, opts, quiet)
   -- pact: the biters let it through.
   local late = false
   for _, pf in pairs(game.forces) do
-    if (#pf.players > 0 or pf.name == "player") and not shared.is_corp(pf.name) and ops.era(pf) >= 3 then late = true end
+    if shared.is_player_force(pf) and ops.era(pf) >= 3 then late = true end
   end
   if storage.era_override then late = storage.era_override >= 3 end
   faction.generated, faction.candidates = 0, 0

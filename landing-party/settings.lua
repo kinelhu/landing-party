@@ -3,3 +3,16 @@
 data:extend{
   {type = "bool-setting", name = "lp-chat-notices", setting_type = "runtime-global", default_value = false, order = "a"},
 }
+
+-- The corporations' strength and aggression (scripts/tune.lua), each set for each corporation, as the biters' settings
+-- are: one lever drives many numbers, and balance is made through them. Runtime-global: an admin can change them in a
+-- running game. The presets' multipliers live in shared.TUNE.
+local levels = {"very-low", "low", "normal", "high", "very-high"}
+local order = 0
+for _, corp in ipairs({"grubstake", "serenity"}) do
+  for _, lever in ipairs({"strength", "aggression"}) do
+    order = order + 1
+    data:extend{{type = "string-setting", name = "lp-" .. corp .. "-" .. lever, setting_type = "runtime-global",
+      default_value = "normal", allowed_values = levels, order = "b" .. order}}
+  end
+end

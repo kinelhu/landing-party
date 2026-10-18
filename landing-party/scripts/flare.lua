@@ -7,6 +7,7 @@
 -- while the pact holds (the biters listen to Grubstake's chemistry because of it), and once its ladder against the
 -- player has reached the first rung: against guarded ground, where its own raids would not go (soft_only) or not alone.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 local base = require("__landing-party__.scripts.base")
 local war = require("__landing-party__.scripts.war")
 local ops = require("__landing-party__.scripts.ops")
@@ -153,9 +154,10 @@ end
 
 -- The wave: idle biters near the canister first (flare.call's), then the nearest nests, each spawning an equal share of
 -- what is missing, as its own group sent at the canister. Returns the groups and how many biters in all, and from where.
-local function wave(s, at, target)
+local function wave(s, at, target, corp)
   local evo = game.forces.enemy.get_evolution_factor(s)
-  local want = math.floor((storage.flare_wave or WAVE_BASE) + WAVE_EVO * evo)
+  -- Grubstake's strength lever (tune.lua): its chemistry calls more.
+  local want = math.floor(((storage.flare_wave or WAVE_BASE) + WAVE_EVO * evo) * tune.strength(corp))
   local groups, k, from = {}, 0, {}
   local found = {}
   for _, u in pairs(s.find_entities_filtered{type = "unit", force = "enemy", position = at,
@@ -216,7 +218,7 @@ local function release(b, f, why, keep)
   if f.buggy and f.buggy.valid then pool.give_one(b, f.buggy) end
   base.trace(b, "flare over: " .. why)
   b.flare = nil
-  b.next_flare = game.tick + (storage.flare_cooldown or COOLDOWN)
+  b.next_flare = game.tick + (storage.flare_cooldown or tune.sooner(b.corp, COOLDOWN))
 end
 
 local function drop(b, f)
@@ -234,7 +236,7 @@ local function drop(b, f)
   pool.give_one(b, f.buggy)
   f.buggy = nil
   local from
-  f.groups, f.pulled, from = wave(s, f.canister.position, f.target)
+  f.groups, f.pulled, from = wave(s, f.canister.position, f.target, b.corp)
   base.trace(b, string.format("flare lit at %.0f,%.0f: %d biters called (%s)", f.canister.position.x, f.canister.position.y,
     f.pulled, from))
 end
@@ -280,12 +282,29 @@ local function consider(b)
   b.next_flare = game.tick + 3600
 end
 
+-- An answer (ops' reaction table, Grubstake's "flare"): a canister by the culprit, now, if the pact holds and something
+-- would answer it there. Its ladder and cooldown do not apply: the answer has its own. "launched", or why not.
+function flare.answer(b, tpos, owner)
+  if storage.flare_off or not (shared.CORPS[b.corp].temper or {}).flares then return "no flares" end
+  if b.flare then return "a flare already out" end
+  if not (pact.has(b.corp) and storage.pact_state and storage.pact_state[b.corp]) then return "no pact" end
+  local h = home(b)
+  local s = game.surfaces[b.surface]
+  local at = h and drop_point(b, s, owner, tpos, h.position)
+  if not at then return "no drop point" end
+  if not answered(s, at) then return "nothing would answer it" end
+  if not flare.launch(b, at, tpos) then return "no buggy" end
+  b.next_flare = math.max(b.next_flare or 0, game.tick + tune.sooner(b.corp, COOLDOWN))
+  return "launched"
+end
+ops.answer_flare = flare.answer
+
 -- debug_flare: a flare from settlement b at a target position, chosen and dropped as consider() would (pact included).
 function flare.debug(b, tpos)
   if not (pact.has(b.corp) and storage.pact_state and storage.pact_state[b.corp]) then return "no pact" end
   local h = home(b)
-  local owner = "player"
-  local at = h and drop_point(b, game.surfaces[b.surface], owner, tpos, h.position)
+  local owner = shared.owner_at(game.surfaces[b.surface], tpos)
+  local at = h and owner and drop_point(b, game.surfaces[b.surface], owner, tpos, h.position)
   if not at then return "no drop point" end
   return flare.launch(b, at, tpos) and "launched" or "no buggy"
 end

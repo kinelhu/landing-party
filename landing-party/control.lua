@@ -8,6 +8,9 @@ local biters = require("__landing-party__.scripts.biters")
 faction.on_trigger = phases.late
 local ops = require("__landing-party__.scripts.ops")
 local pool = require("__landing-party__.scripts.pool")
+local army = require("__landing-party__.scripts.army")
+local tune = require("__landing-party__.scripts.tune")
+local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
 local war = require("__landing-party__.scripts.war")
@@ -323,6 +326,8 @@ remote.add_interface("landing-party", {
     if t.rings ~= nil then storage.rings = t.rings or nil end
     if t.ladder_fast ~= nil then storage.ladder_fast = t.ladder_fast end
     if t.flare_burn ~= nil then storage.flare_burn = t.flare_burn end
+    -- The levers (tune.lua) over the settings: {grubstake = {strength = 2, aggression = 0.5}, ...}.
+    if t.levers ~= nil then storage.tune_levers = t.levers end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
@@ -369,6 +374,24 @@ remote.add_interface("landing-party", {
       local u = p and s.create_entity{name = name, position = p, force = b.lander.force}
       if u then table.insert(b.garrison, u); pool.enlist(b, u) end
     end
+  end,
+  -- Tests only: take every unit a floor allows (pool.floor's kind), report what was left home, and give them back.
+  debug_take = function(id, kind)
+    local b = storage.bases[id]
+    local before = pool.home(b)
+    local floor = pool.floor(army.cap(b), kind)
+    local taken = pool.take(b, 999, floor)
+    local left = pool.home(b)
+    for _, u in ipairs(taken) do table.insert(b.garrison, u) end
+    return {before = before, floor = floor, taken = #taken, left = left}
+  end,
+  -- Tests only: a runtime-global setting changed as an admin would (only the owning mod may write it).
+  debug_setting = function(name, value) settings.global[name] = {value = value} end,
+  -- Tests only: what the levers read and drive for a settlement (tune.lua).
+  debug_levers = function(id)
+    local b = storage.bases[id]
+    return {strength = tune.strength(b.corp), aggression = tune.aggression(b.corp), cap = army.cap(b),
+      hour = tune.sooner(b.corp, 3600 * 60), rung = stance.rung("player", b.force)}
   end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.

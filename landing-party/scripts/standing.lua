@@ -32,11 +32,7 @@ end
 standing.corp_of_force = corp_of_force
 
 local function players()
-  local out = {}
-  for _, f in pairs(game.forces) do
-    if f.name == "player" or (#f.players > 0 and not shared.is_corp(f.name)) then table.insert(out, f) end
-  end
-  return out
+  return shared.player_forces()
 end
 
 -- An incident; merged into the last one when it is the same corporation and kind, near, within a minute (a raid's
@@ -79,7 +75,7 @@ function standing.tick(tick)
             local t = s.find_entities_filtered{position = p, radius = RANGE, force = f,
               type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1}[1]
             if t then
-              ops.provoke(b.lander.force.name, f.name, t)
+              ops.provoke(b.lander.force.name, f.name, t, "trespass")
               standing.incident(b.corp, "turret", t.position, "a turret on its ground")
               b.provoked_by_turret = true
               break

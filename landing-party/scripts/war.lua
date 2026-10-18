@@ -9,6 +9,7 @@
 --   column from its nearest other settlement along a planned route (none: no relief), or, with no other settlement,
 --   drop at the lander at half strength.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
@@ -49,7 +50,7 @@ local function at_war(b, act)
   local seen = {}
   for _, t in pairs(b.intel and b.intel.targets or {}) do
     local o = t.owner
-    if o and not seen[o] and o ~= "enemy" and not shared.is_corp(o) and game.forces[o] then
+    if o and not seen[o] and game.forces[o] and shared.is_player_force(game.forces[o]) then
       seen[o] = true
       if stance.may(b.corp, o, act or "war") then return o, ops.ladder(o, b.force) end
     end
@@ -306,7 +307,8 @@ local function quiet(tick)
         b.war_since = b.war_since or tick
         local since = math.max(b.razed_at or 0, b.war_since, b.woke_at or 0)
         local aborted = (b.ops_aborted or 0) - (b.aborted_mark or 0)
-        if tick - since >= span then
+        -- An aggressive corporation keeps at it longer before it stands down (tune.lua).
+        if tick - since >= span * tune.aggression(b.corp) then
           b.quiescent = tick
           b.stood_down = (b.stood_down or 0) + 1
           -- A rival again (Grubstake; Serenity never forgets): standing.lua.

@@ -45,11 +45,7 @@ local function tell(b, key, at)
 end
 
 local function player_forces()
-  local out = {}
-  for _, f in pairs(game.forces) do
-    if f.name == "player" or (#f.players > 0 and not shared.is_corp(f.name)) then table.insert(out, f) end
-  end
-  return out
+  return shared.player_forces()
 end
 
 local function worked(s, pos)

@@ -137,7 +137,7 @@ local function player_era()
   if storage.era_override then return storage.era_override end
   local e = 0
   for _, f in pairs(game.forces) do
-    if #f.players > 0 or f.name == "player" then e = math.max(e, rd.era and rd.era(f) or 0) end
+    if shared.is_player_force(f) then e = math.max(e, rd.era and rd.era(f) or 0) end
   end
   return e
 end

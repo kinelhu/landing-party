@@ -2488,8 +2488,12 @@ end
 -- not be provoked by that (the user, 2026-10-17: the line moving onto what stood there first is Serenity's act; it was
 -- provoked before). LP_MIX=back: the player removes the relays on the warning; never provoked. LP_MIX=built: once the
 -- relays are enclosed, the player builds an assembler beside them (raise_built, as a player's build): provoked then.
+-- LP_MIX=turret: a gun turret built there instead: trespass, and Serenity answers it with a siege on the turret (its
+-- reaction table: masonry and mortars for trespass, a raid for a loss).
 scenarios.line = function()
-  schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  local turret = params.mix == "turret"
+  -- Turret: at level 1, where its sieges begin (shared.CORPS caps); a younger Serenity answers with a raid.
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true, corp_level = turret and {serenity = 1} or nil}) end)
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
   schedule(120, function()
     local o = lp("stats", storage.id).origin
@@ -2515,9 +2519,11 @@ scenarios.line = function()
         if (st.claim_radius or 0) >= d + 3 then
           S.enclosed_at = game.tick
           S.provoked_at_enclosure = (lp("corp", "serenity").provoked or {}).player
-          if params.mix == "built" then
-            local p = surface().find_non_colliding_position("assembling-machine-1", {r.position.x, r.position.y + 6}, 10, 1)
-            S.built = surface().create_entity{name = "assembling-machine-1", position = p, force = "player", raise_built = true}
+          if params.mix == "built" or turret then
+            local name = turret and "gun-turret" or "assembling-machine-1"
+            local p = surface().find_non_colliding_position(name, {r.position.x, r.position.y + 6}, 10, 1)
+            S.built = surface().create_entity{name = name, position = p, force = "player", raise_built = true}
+            if turret then S.built.insert{name = "firearm-magazine", count = 50} end
             S.built_at = game.tick
           end
         end
@@ -2537,6 +2543,13 @@ scenarios.line = function()
     check("line: no operation against the player before it was provoked", early == 0, early .. " early")
     if params.mix == "back" then
       check("line: pulled back, never provoked", provoked == nil, "provoked at " .. tostring(provoked))
+    elseif turret then
+      local log = st.ops.answered or {}
+      info("line turret: answered " .. serpent.line(log) .. ", sieges " .. tostring(st.ops.sieges) .. ", turret "
+        .. tostring(S.built and S.built.valid))
+      check("line: a turret inside the line, provoked then", S.built_at and provoked ~= nil and provoked >= S.built_at,
+        string.format("built at %s, provoked at %s", tostring(S.built_at), tostring(provoked)))
+      check("line: trespass answered with a siege", (log["a siege"] or 0) >= 1, serpent.line(log))
     elseif params.mix == "built" then
       check("line: built inside the line, provoked then", S.built_at and provoked ~= nil and provoked >= S.built_at,
         string.format("built at %s, provoked at %s", tostring(S.built_at), tostring(provoked)))
@@ -4642,7 +4655,8 @@ scenarios.jumper = function()
       check("jumper: the chest untouched", left == 250, tostring(left))
       return
     end
-    check("jumper: the rig dug in 40 to 60 out", S.rig_d and S.rig_d >= 40 and S.rig_d <= 62, string.format("%.0f", S.rig_d or -1))
+    -- 40 to 60, give or take the 6 the rig may be moved to find room (39 on seed 4242).
+    check("jumper: the rig dug in 40 to 60 out", S.rig_d and S.rig_d >= 34 and S.rig_d <= 66, string.format("%.0f", S.rig_d or -1))
     check("jumper: out of the turrets' reach", S.rig_reach == 0, tostring(S.rig_reach))
     info("jumper: deaths " .. serpent.line(S.fallen or {}))
     info("jumper: killed by turrets at " .. table.concat(S.turret_kills or {}, "; ") .. string.format("; mound %s, chest %s",
@@ -4653,7 +4667,10 @@ scenarios.jumper = function()
     check("jumper: the chest emptied", left <= 0, tostring(left))
     check("jumper: the loot came home", (st.looted or 0) >= 250, tostring(st.looted))
     -- Each hand on a building out of the turrets' reach (told to attack the area, five of six walked into it).
-    check("jumper: most hands back", (st.hands_back or 0) >= 3, tostring(st.hands_back))
+    check("jumper: most hands back", (st.hands_back or 0) >= 4, tostring(st.hands_back))
+    -- Their orders done, idle hands went for the wall's turrets 27 tiles off: two of six fell, then all six once the
+    -- leave order (to the mound they stood on) was done at once. Every order now ends with standing still.
+    check("jumper: no hand fell to a turret", #(S.turret_kills or {}) == 0, tostring(#(S.turret_kills or {})))
   end)
 end
 
@@ -4667,12 +4684,15 @@ end
 -- its two turrets behind it (away from the camp), so no turret is within 30 of the canister, only walls: the wave goes on
 -- from the canister and hits the wall (it waited outside it, the user's /lp flare). LP_MIX=burnout: walled, the canister
 -- burns 1 s and is never shot: the wave goes on all the same (stood down at the burn, it wandered by the user's wall).
+-- LP_MIX=answer: no debug_flare; one of the camp's units is killed by an outpost turret, and Grubstake answers the loss
+-- with a flare on it (its reaction table: biters on a turret, never its own squad), within two minutes.
 scenarios.flare = function()
   local off, natural, nests = params.mix == "nopact", params.mix == "natural", params.mix == "nests"
+  local answer = params.mix == "answer"
   local burnout = params.mix == "burnout"
   local walled = params.mix == "walled" or burnout
   schedule(60, function()
-    lp("debug_tune", {era = 1, history_off = true, pact_off = off, raids_off = true, ladder_fast = natural or nil,
+    lp("debug_tune", {era = 1, history_off = true, pact_off = off, raids_off = not answer, ladder_fast = natural or nil,
       flare_burn = burnout and 60 or nil})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
@@ -4721,6 +4741,10 @@ scenarios.flare = function()
     -- LP_MIX=natural: the camp's own choice (it must learn the outpost and climb its ladder: sped tenfold).
     -- LP_MIX=cmd: through the /lp command a player would type (dev.remote), at the outpost.
     if params.mix == "cmd" then lp("dev", {"flare"}, c); S.fired = "cmd"
+    elseif answer then
+      local o2 = lp("stats", S.g).origin
+      local u = surface().find_entities_filtered{name = "lp-grubstake-infantry", position = o2, radius = 60, limit = 1}[1]
+      if u then u.die("player", S.turrets[1]); S.fired = "answer" end
     elseif not natural then S.fired = lp("debug_flare", S.g, c) end
     S.t0 = game.tick
   end)
@@ -4787,6 +4811,14 @@ scenarios.flare = function()
     if off then
       check("flare: no pact, no flare", not S.lit, tostring(S.lit))
       return
+    end
+    if answer then
+      local log = lp("stats", S.g).ops.answered or {}
+      info("flare answer: " .. serpent.line(log))
+      check("flare: a unit killed by the turret", S.fired == "answer", tostring(S.fired))
+      check("flare: the loss answered with a flare within two minutes", S.lit and S.lit - S.t0 <= 2 * 3600 and
+        (log["a flare on it"] or 0) >= 1, string.format("lit %s", S.lit and tostring(S.lit - S.t0) or "never"))
+      check("flare: no squad sent at the turret", (log["a squad goes"] or 0) == 0, serpent.line(log))
     end
     check("flare: the canister was dropped out of the turrets' reach", S.lit and S.reach == 0, tostring(S.reach))
     check("flare: within 40 of the outpost", S.near and S.near <= 40, string.format("%.0f", S.near or -1))
@@ -5091,6 +5123,21 @@ scenarios.visit = function()
     info("visit: player at the end " .. serpent.line(census()))
     info("visit: the player's buildings razed by the corporations " .. serpent.line(lp("pressure").razed))
     info("visit: the player's buildings razed by biters " .. serpent.line(S.biter_razed or {}))
+    -- What fought back without a player: robots rebuilding, and turrets still armed.
+    local rebuilt = 0
+    for _, v in pairs(S.robot_built or {}) do rebuilt = rebuilt + v end
+    local ghosts = surface().count_entities_filtered{force = "player", type = "entity-ghost"}
+    local guns, dry = 0, 0
+    for _, t in pairs(surface().find_entities_filtered{force = "player", type = "ammo-turret"}) do
+      guns = guns + 1
+      local inv = t.get_inventory(defines.inventory.turret_ammo)
+      if inv and inv.is_empty() then dry = dry + 1 end
+    end
+    info(string.format("visit: robots rebuilt %d %s; %d ghosts left; %d of %d gun turrets empty", rebuilt,
+      serpent.line(S.robot_built or {}), ghosts, dry, guns))
+    metric("robot_rebuilt", rebuilt)
+    metric("ghosts_left", ghosts)
+    metric("dry_turrets", dry)
     -- Pollution put out over the run, by source: the corporations' share (Grubstake's drills pollute).
     local corp, all = 0, 0
     for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do
@@ -5205,6 +5252,43 @@ end
 -- Chart (the user, 2026-10-17: names for the camps, territory drawn sleeker): Grubstake and Serenity camps land; each
 -- has a name in its corporation's voice, no two alike, on its map label; its territory is drawn as chunks (a few
 -- dozen objects, no disc). LP_MIX: none.
+-- Levers (tune.lua; the user, 2026-10-18: "scaling variables for strength and aggression sort of like what biters have
+-- at world gen"): a Grubstake and a Serenity camp, both normal. At 2 minutes Grubstake's settings go to very high
+-- as an admin would (debug_setting): its cap doubles, its hour-long spans halve; Serenity's stay. At 8 minutes
+-- Grubstake's ladder (its clock at double speed, started with Serenity's at landing) is at rung 1, Serenity's at 0.
+scenarios.levers = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    lp("debug_depot", S.g, 3000); lp("debug_depot", S.s, 3000)
+    S.g0, S.s0 = lp("debug_levers", S.g), lp("debug_levers", S.s)
+  end)
+  schedule(2 * 3600, function()
+    S.g1 = lp("debug_levers", S.g)
+    lp("debug_setting", "lp-grubstake-strength", "very-high")
+    lp("debug_setting", "lp-grubstake-aggression", "very-high")
+    S.g2, S.s2 = lp("debug_levers", S.g), lp("debug_levers", S.s)
+  end)
+  schedule(8 * 3600, function()
+    S.g3, S.s3 = lp("debug_levers", S.g), lp("debug_levers", S.s)
+    lp("debug_setting", "lp-grubstake-strength", "normal")
+    lp("debug_setting", "lp-grubstake-aggression", "normal")
+  end)
+  schedule(END - 60, function()
+    info("levers: grubstake " .. serpent.line({S.g1, S.g2, S.g3}) .. "; serenity " .. serpent.line({S.s0, S.s2, S.s3}))
+    local g1, g2, g3, s2, s3 = S.g1 or {}, S.g2 or {}, S.g3 or {}, S.s2 or {}, S.s3 or {}
+    check("levers: normal reads 1", g1.strength == 1 and g1.aggression == 1, serpent.line(g1))
+    check("levers: very high strength doubles the cap", g2.strength == 2 and g2.cap == 2 * g1.cap,
+      string.format("%s -> %s", tostring(g1.cap), tostring(g2.cap)))
+    check("levers: very high aggression halves an hour", g2.hour == 30 * 3600, tostring(g2.hour))
+    check("levers: the other corporation untouched", s2.strength == 1 and s2.aggression == 1 and s2.hour == 3600 * 60,
+      serpent.line(s2))
+    check("levers: the aggressive ladder climbs first", g3.rung == 1 and s3.rung == 0,
+      string.format("grubstake %s, serenity %s", tostring(g3.rung), tostring(s3.rung)))
+  end)
+end
+
 scenarios.chart = function()
   schedule(60, function()
     S.ids = {storage.id}
@@ -5252,6 +5336,9 @@ scenarios.pool = function()
     surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
     local st = lp("stats", S.id)
     S.built0, S.cap, S.roster0 = st.units_built, st.cap, st.roster
+    -- One floor for what stays home (pool.floor): an operation of choice leaves 30% of the cap, a committed one or a
+    -- defence the guard of 2 (each taker had its own, 2, 30% or none).
+    S.take_reserve, S.take_guard = lp("debug_take", S.id, "reserve"), lp("debug_take", S.id, "guard")
     lp("dev", {"raid", tostring(S.id)}, c)
     S.out_at = game.tick
   end)
@@ -5272,6 +5359,11 @@ scenarios.pool = function()
     info(string.format("pool: cap %s, roster %s at the raid; units made while it was out %s; returning seen %s, at the end %s; "
       .. "last op %s", tostring(S.cap), tostring(S.roster0), tostring(S.built_out), tostring(S.seen_returning),
       tostring(S.last_returning), serpent.line(st.ops.log[#st.ops.log])))
+    local r, g = S.take_reserve or {}, S.take_guard or {}
+    info("pool: take " .. serpent.line(r) .. " / " .. serpent.line(g))
+    check("pool: an operation of choice leaves 30% of the cap home", r.left == math.ceil(0.3 * S.cap) and r.taken > 0,
+      serpent.line(r))
+    check("pool: a defence leaves the guard of 2", g.left == 2 and g.floor == 2, serpent.line(g))
     check("pool: the raid ran", S.done_at ~= nil, tostring(S.done_at))
     check("pool: the camp was full when the raid left", S.roster0 and S.roster0 >= S.cap, tostring(S.roster0) .. " of " .. tostring(S.cap))
     check("pool: no unit made while the raid was out", S.built_out == 0, tostring(S.built_out))
@@ -6278,6 +6370,15 @@ script.on_init(function()
   local unprovoked = params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill"
     or params.mix == "answered")
   if not TEMPERS[params.scenario] and not unprovoked then lp("debug_tune", {provoke = true}) end
+  -- Levers from the mix (sweeps: LP_MIX=provoked-S2-A0.5): S<x> every corporation's strength, A<x> its aggression.
+  local mix = params.mix or ""
+  local st, ag = tonumber(mix:match("S([%d%.]+)")), tonumber(mix:match("A([%d%.]+)"))
+  if st or ag then
+    local levers = {}
+    for _, corp in ipairs({"grubstake", "serenity"}) do levers[corp] = {strength = st, aggression = ag} end
+    lp("debug_tune", {levers = levers})
+    table.insert(lines, string.format("INFO levers: strength %s, aggression %s", tostring(st or 1), tostring(ag or 1)))
+  end
 end)
 
 scenario()
@@ -6345,7 +6446,8 @@ script.on_event(defines.events.on_entity_died, function(e)
   if e.cause and e.cause.valid and e.cause.type == "ammo-turret" and e.entity.type == "unit" and e.entity.force.name:sub(1, 3) == "lp-" then
     S.turret_kills = S.turret_kills or {}
     local d = math.sqrt((e.entity.position.x - e.cause.position.x) ^ 2 + (e.entity.position.y - e.cause.position.y) ^ 2)
-    table.insert(S.turret_kills, string.format("%.0f,%.0f d%.1f", e.entity.position.x, e.entity.position.y, d))
+    table.insert(S.turret_kills, string.format("%.0f,%.0f d%.1f t+%ds", e.entity.position.x, e.entity.position.y, d,
+      math.floor((game.tick - (S.t0 or 0)) / 60)))
   end
   -- The player's buildings the biters destroyed (the visit's report: Grubstake's pollution draws them).
   if e.entity.force.name == "player" and e.force and e.force.name == "enemy" and e.entity.type ~= "character" then
@@ -6408,6 +6510,14 @@ if params.scenario == "siege" then
   end, {{filter = "type", type = "electric-turret"}, {filter = "type", type = "wall"}, {filter = "type", type = "unit"},
     {filter = "type", type = "land-mine"}, {filter = "type", type = "container"}})
 end
+
+-- The player's robots rebuilding (the visit: does the factory fight back on its own, or only lose?).
+script.on_event(defines.events.on_robot_built_entity, function(e)
+  if e.entity.valid and e.entity.force.name == "player" then
+    S.robot_built = S.robot_built or {}
+    S.robot_built[e.entity.type] = (S.robot_built[e.entity.type] or 0) + 1
+  end
+end)
 
 script.on_event(defines.events.on_ai_command_completed, function(e)
   if S.results then S.results[e.unit_number] = e.result end

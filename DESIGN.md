@@ -14,6 +14,8 @@ document describes the parts as built; the campaign document describes the game 
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
+| Levers: strength and aggression per corporation (settings) | built, uncalibrated | `levers` |
+| Answers by corporation: Grubstake a flare, Serenity a raid or (trespass) a siege | built | `flare answer`, `line turret`, `crew answered` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
 | Tempers: Serenity strikes only once provoked; Grubstake raids soft targets and strip-mines the player's ore | built | `temper`, `strip` |
@@ -372,6 +374,21 @@ stills per run) and `defend`.
 - Confirmed on seeds 777, 4242, 101 (assault, defend, faction, uplink: 12 of 12).
 - Open: tier thresholds and export rates are untuned (the `faction` test runs them at a tenth); garrison
   caps limit responses (10 a depot at tier 0).
+
+### The levers: strength and aggression (the user, 2026-10-18)
+The user: "once we are [confident in the mechanics], I think we could simply implement scaling variables for strength
+and agression sort of like what biters have at world gen, and balance through those". Four runtime-global settings,
+two a corporation (`lp-<corp>-strength`, `lp-<corp>-aggression`), each a preset (very low 0.5, low 0.75, normal 1, high
+1.5, very high 2; `shared.TUNE`), read by `scripts/tune.lua`. Each drives a set, so a preset reads as one thing:
+- **Strength**, how much it fields: a camp's unit cap (`army.cap`, before the ladder's and the grudge's multipliers),
+  and the biters a Grubstake flare calls. The economy is not scaled: a strong camp at a poor site fills its cap slowly.
+- **Aggression**, how soon it acts: its ladder's clock runs faster (`stance.rung`); the gaps after an operation, between
+  answers and between heists (flare, claim rig, tap) are shorter (`tune.sooner`); and it keeps at a front where it razes
+  nothing longer before standing down (`war.quiet`: the hour times aggression).
+Runtime-global so an admin can change them in a running game (only the owning mod may write a setting from script:
+`debug_setting`). Scenario `levers`: Grubstake's settings to very high at 2 minutes: its cap 10 to 20, an hour-long span
+30 minutes, its ladder at rung 1 at 8 minutes where Serenity's, normal, is at 0. Sweeps: `LP_MIX=...-S2-A0.5` sets every
+corporation's levers in any scenario or visit (`debug_tune levers`). Not yet: the presets calibrated against visits.
 
 ### Fought capture (in progress)
 `siege`: a sprawl settlement at 15 minutes (depot, garrison 16 of infantry and tanks, raids off, responses
@@ -1577,8 +1594,13 @@ tell in the world, and none stays on but a lost settlement's:
   anything, all six fell to turrets out of reach). Scenario `jumper`: none up at 62 s, up at 152 s, the loot home.
   The five of six that fell: each 10 tiles from the turret that killed it, 15 to 21 from the mound. Told to attack the
   area round the mound, they took targets beyond it. Now each hand is set on a building within 10 of the mound that no
-  turret reaches, the nearest, told again when it falls: 4 of 6 home (a check, "most hands back"). Two still walk east
-  into a turret's reach: open. The end's log said "every hand fell" with hands home: fixed.
+  turret reaches, the nearest, told again when it falls: 4 of 6 home (a check, "most hands back"). The end's log said "every hand fell" with hands home: fixed.
+  The last two (2026-10-18): not shot, not distracted by damage. A hand whose order was done (its target fell) stood
+  idle until the next step a second later, and idle, a unit attacks whatever it sees: it went for a turret 27 tiles
+  off, unhurt, and died to it. The leave order, a walk to the mound they already stood on, was done at once, and all
+  six went. Now every order is a compound that ends with standing still (`order`), and the leave phase takes home at
+  once those already at the mound. Seeds 12345, 777, 4242: no hand falls, 4 to 6 home (a check, "no hand fell to a
+  turret").
 - **The trade post's lamp:** an amber pip on the post (seen by day) and a glow (by night) while a truce it bought holds;
   dark after. `tribute`: lit in 60 of 60 samples during the truce, none after.
 - **Grubstake's claim stake** (`lp-claim-stake`): planted with a puff in the middle of a prospected patch, a lamp
@@ -1609,6 +1631,34 @@ Now its roster holds every unit it owns (`scripts/pool.lua`) and the cap counts 
 `bombard` then failed: its tier-1 siege's guards (out, now counted) and the spare at home came to 21 of the 22 its
 assault needed, where the garrison had grown past the cap before. A siege whose barrage won now commits its reserve
 too (guards plus everything at home): 22 went in at once and razed the position.
+
+### One floor for what stays home; one "player" (2026-10-18; `docs/ai.md` 2.3, 2.4)
+Every taker from a garrison had its own floor: 2 for responses, patrols, escorts and intercepts, 30% of the cap for
+operations, none for a committed operation, a siege's guards or a strip's. Now `pool.take(b, n, floor, fit)` is the
+only way units leave, with two floors (`pool.floor`): the guard (`pool.GUARD`, 2), kept by defence, the camp's own
+details and an operation that commits its reserve; the reserve (`pool.RESERVE` of the cap, 30%, at least the guard),
+kept by an operation of choice. Haulers do not count; Grubstake's buggies do (20 of a camp's 27 units: counting them
+out left a full camp unable to raid). A heist's single buggy goes without a floor. Scenario `pool`: a reserve take
+leaves 9 of a cap of 30, a guard take 2. A committed operation now keeps 2 home where it kept none.
+"Is this a player's force" was written seven ways, two disagreeing on neutral: `shared.is_player_force` and
+`shared.player_forces` now. The claim rig's owner was "player" by name: it is the target's owner.
+
+### Each corporation answers its own way (2026-10-18; Fable: `docs/reviews/2026-10-18-answers-consult.md`)
+Both answered every provocation with the same raid. Each provocation now has a kind, a loss (its unit, drone or
+building) or trespass (its ground, its border, a turret covering its camp), and each corporation a reaction table
+(`temper.answers`, `ops.answer`):
+- **Grubstake** never fights fair: biters on the culprit (a buggy drives a flare there, `flare.answer`); a raid only
+  where no turret covers it. Scenario `flare answer`: an outpost turret kills one of its units; 2 s later a buggy goes,
+  16 s after that 20 biters are on the turret, no squad sent (old code: a squad).
+- **Serenity**: a loss gets a raid it can win; one it would lose, nothing the first time (remembered), a siege on a
+  second provocation within 30 minutes (Fable: a drone shot down unseen is not worth mortars). Trespass gets the siege
+  on the turret there, the raid where it cannot siege (none before level 1). Scenario `line turret`: a turret built
+  inside its line, at level 1: a siege (old code: a raid); `crew answered` still a raid of 8 that razes the three
+  turrets that shot its drone.
+- A call against Fable: a turret covering Grubstake's camp still provokes it (an act on the camp, not an unseen
+  border), answered by a flare on that turret. Not built: the line stepping over the offending building before the
+  mortar; Grubstake's snatch raid at the nearest lootable thing (its raid takes the nearest building, soft there).
+Not tested: Serenity's "remembered, then a siege" path.
 
 ### Stance and the answer (the user, 2026-10-17; `docs/ai.md`)
 The user, on Serenity turning enemy and doing nothing visible: "we need to be quite flexible with our coding. It turns
@@ -2113,3 +2163,6 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - Player army: an advance at the nearest military target walked troopers into a hub's lasers (occupy
   order); occupy re-chosen each time rolled outpost after outpost to the lander (lock); idle troopers
   attacked what they saw (arrive, then wander in place, fight back only).
+- A unit's order ends when its target falls, and the unit stands idle until script orders it again: idle, it attacks
+  what it sees. The claim rig's hands walked into turrets that way, and a walk to where a unit already stands ends at
+  once (end every order with a stop; "no hand fell to a turret").

@@ -133,7 +133,7 @@ function cordon.step(b, new, near)
   local s = game.surfaces[b.surface]
   local seen = {}
   for _, f in pairs(game.forces) do
-    if (f.name == "player" or (#f.players > 0 and not shared.is_corp(f.name))) and #c.gates < GATES then
+    if shared.is_player_force(f) and #c.gates < GATES then
       for _, r in pairs(s.find_entities_filtered{type = "straight-rail", force = f, position = {b.origin.x, b.origin.y},
         radius = new + 3}) do
         local rx, ry = r.position.x, r.position.y
