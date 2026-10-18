@@ -3670,7 +3670,8 @@ end
 -- consult), red in its last two minutes. LP_MIX=pulled: the first stake is pulled down: that claim is off, the patch
 -- left alone, and the camp goes on to the next.
 scenarios.prospect = function()
-  local stake, pulled = params.mix == "stake", params.mix == "pulled"
+  -- LP_MIX=truck: the stake truck destroyed on its way (the buggy nearest the tagged patch): the claim is off.
+  local stake, pulled, truck = params.mix == "stake", params.mix == "pulled", params.mix == "truck"
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true, prospect_window = 2 * 3600, prospect_pace = 3600,
       prospect_uncharted = true})
@@ -3706,6 +3707,13 @@ scenarios.prospect = function()
     schedule(t, function()
       local ps = lp("prospect_stats", S.g)
       if ps.stake then S.stake_seen = (S.stake_seen or 0) + 1 end
+      if ps.phase == "staking" then S.staking_seen = true end
+      if truck and ps.phase == "staking" and not S.truck_killed and ps.at then
+        local u = surface().find_entities_filtered{name = "lp-grubstake-buggy", position = ps.at, radius = 400, limit = 1}[1]
+        local all = surface().find_entities_filtered{name = "lp-grubstake-buggy"}
+        u = #all > 0 and surface().get_closest({ps.at[1], ps.at[2]}, all) or u
+        if u then u.die("player"); S.truck_killed = game.tick; S.truck_at = ps.at end
+      end
       if ps.red then S.red_seen = (S.red_seen or 0) + 1 end
       if pulled and ps.stake and not S.pulled_at then
         local e = surface().find_entities_filtered{name = "lp-claim-stake", limit = 1}[1]
@@ -3732,6 +3740,12 @@ scenarios.prospect = function()
     info(string.format("prospect: %s; Grubstake drills on the patches %s; charted %s", serpent.line(ps), serpent.line(drills),
       serpent.line(charted)))
     check("prospect: the drilled patch was left alone", drills[1] == 0, tostring(drills[1]))
+    if truck then
+      check("prospect: the stake truck killed, the claim off", S.truck_killed and ps.trucks_lost >= 1,
+        string.format("killed %s, %s", tostring(S.truck_killed), serpent.line(ps)))
+      return
+    end
+    check("prospect: a truck drove the stake out", S.staking_seen and ps.driven >= 1, serpent.line(ps))
     if pulled then
       check("prospect: the stake pulled, that patch left alone", S.pulled_patch and drills[S.pulled_patch] == 0
         and ps.pulled >= 1, string.format("patch %s, drills %s, %s", tostring(S.pulled_patch), serpent.line(drills),
@@ -5256,6 +5270,48 @@ end
 -- at world gen"): a Grubstake and a Serenity camp, both normal. At 2 minutes Grubstake's settings go to very high
 -- as an admin would (debug_setting): its cap doubles, its hour-long spans halve; Serenity's stay. At 8 minutes
 -- Grubstake's ladder (its clock at double speed, started with Serenity's at landing) is at rung 1, Serenity's at 0.
+-- Remembered (Serenity's reaction table): a block of eight gun turrets 150 tiles from a Serenity camp at level 1, more
+-- than a raid of its could take. One of its units killed by them at 3 minutes: no raid into them, the provocation
+-- remembered; another at 10 minutes (within 30): a siege on them.
+scenarios.remembered = function()
+  schedule(60, function()
+    -- Unprovoked at the start (the harness provokes; here the first kill does), and no operation of choice: provoked,
+    -- it besieged the turrets on its own before any answer.
+    lp("debug_tune", {era = 1, history_off = true, choice_off = true, corp_level = {serenity = 1}})
+    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    lp("debug_depot", S.s, 3000)
+  end)
+  local function kill()
+    local o = lp("stats", S.s).origin
+    local u = surface().find_entities_filtered{type = "unit", force = "lp-serenity", position = o, radius = 300, limit = 1}[1]
+    if u and S.turrets[1].valid then u.die("player", S.turrets[1]); return true end
+  end
+  schedule(2 * 3600, function()
+    local o = lp("stats", S.s).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 150), math.floor(o.y - o.y / len * 150)}
+    flatten(c[1] - 14, c[2] - 14, c[1] + 14, c[2] + 14)
+    S.turrets = {}
+    for i = 0, 7 do
+      local t = surface().create_entity{name = "gun-turret", position = {c[1] - 7 + (i % 4) * 4, c[2] - 2 + math.floor(i / 4) * 4},
+        force = "player"}
+      t.insert{name = "piercing-rounds-magazine", count = 100}
+      table.insert(S.turrets, t)
+    end
+  end)
+  schedule(3 * 3600, function() S.k1 = kill() end)
+  schedule(9 * 3600, function() S.first = lp("stats", S.s).ops.answered or {} end)
+  schedule(10 * 3600, function() S.k2 = kill() end)
+  schedule(END - 60, function()
+    local log = lp("stats", S.s).ops.answered or {}
+    info("remembered: after the first " .. serpent.line(S.first) .. ", at the end " .. serpent.line(log))
+    check("remembered: both kills made", S.k1 and S.k2, string.format("%s %s", tostring(S.k1), tostring(S.k2)))
+    check("remembered: no raid into the turrets", (log["a squad goes"] or 0) == 0, serpent.line(log))
+    check("remembered: the first only remembered", S.first and next(S.first) == nil, serpent.line(S.first))
+    check("remembered: the second answered with a siege", (log["a siege"] or 0) >= 1, serpent.line(log))
+  end)
+end
+
 scenarios.levers = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})
@@ -6351,6 +6407,16 @@ script.on_init(function()
   storage.t0 = game.tick
   helpers.remove_path("landing-party")
   lp("set_trace", true)
+  -- Levers from the mix, before any early return (a visit's levers were never set; sweeps: LP_MIX=provoked-S2-A0.5): S<x> every corporation's strength, A<x> its aggression.
+  local mix = params.mix or ""
+  local st, ag = tonumber(mix:match("S([%d%.]+)")), tonumber(mix:match("A([%d%.]+)"))
+  if st or ag then
+    local levers = {}
+    for _, corp in ipairs({"grubstake", "serenity"}) do levers[corp] = {strength = st, aggression = ag} end
+    lp("debug_tune", {levers = levers})
+    -- Kept in storage: the run is saved after on_init and loaded, which resets the lines.
+    storage.levers_note = string.format("levers: strength %s, aggression %s", tostring(st or 1), tostring(ag or 1))
+  end
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
   -- Phases plays the opening itself: no landing at the start.
   if params.scenario == "phases" then return end
@@ -6365,20 +6431,11 @@ script.on_init(function()
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
   local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true,
-    mended = true, pool = true}
+    mended = true, pool = true, remembered = true}
   -- Crews killed provoke (the user, 2026-10-17): those mixes start unprovoked, or the check proves nothing.
   local unprovoked = params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill"
     or params.mix == "answered")
   if not TEMPERS[params.scenario] and not unprovoked then lp("debug_tune", {provoke = true}) end
-  -- Levers from the mix (sweeps: LP_MIX=provoked-S2-A0.5): S<x> every corporation's strength, A<x> its aggression.
-  local mix = params.mix or ""
-  local st, ag = tonumber(mix:match("S([%d%.]+)")), tonumber(mix:match("A([%d%.]+)"))
-  if st or ag then
-    local levers = {}
-    for _, corp in ipairs({"grubstake", "serenity"}) do levers[corp] = {strength = st, aggression = ag} end
-    lp("debug_tune", {levers = levers})
-    table.insert(lines, string.format("INFO levers: strength %s, aggression %s", tostring(st or 1), tostring(ag or 1)))
-  end
 end)
 
 scenario()
@@ -6402,6 +6459,7 @@ for _, m in ipairs({10, 20, 40, 60, 90, 120}) do
   end
 end
 schedule(END, function()
+  if storage.levers_note then table.insert(lines, 1, "INFO " .. storage.levers_note) end
   -- No settlement at all (a scenario that lands later and never did): its own checks say why.
   if not storage.id then
     check("a settlement exists", false, "none landed")

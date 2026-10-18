@@ -10,6 +10,7 @@ local chart = require("__landing-party__.scripts.chart")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
 local standing = require("__landing-party__.scripts.standing")
+local pool = require("__landing-party__.scripts.pool")
 
 local prospect = {}
 
@@ -138,6 +139,36 @@ local function plant(b, p)
     rendering.draw_light{surface = s, target = e, sprite = "utility/light_small", scale = 0.8, intensity = 0.7, color = AMBER}}
 end
 
+-- The stake truck (the notices consult: "a truck drives out and plants a claim stake"): a buggy from the camp drives the
+-- stake to the patch and comes home; the window runs from the planting. Killed on the way, the claim is off (and the
+-- loss is Grubstake's to answer). None at home (a young camp): planted at once, as before.
+local DRIVE = 3 * 3600
+local function send_stake(b, p)
+  for i = #b.garrison, 1, -1 do
+    local u = b.garrison[i]
+    if u.valid and shared.kind_of(u.name) == "lp-buggy" then
+      table.remove(b.garrison, i)
+      u.commandable.set_command{type = defines.command.go_to_location, destination = {p.x, p.y}, radius = 4,
+        distraction = defines.distraction.none}
+      p.truck, p.sent = u, game.tick
+      return true
+    end
+  end
+end
+
+local function truck_home(b, p)
+  local u = p.truck
+  p.truck = nil
+  if not (u and u.valid) then return end
+  local h = (b.depots or {})[1]
+  h = (h and h.valid) and h or b.lander
+  if h and h.valid then
+    u.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 8,
+      distraction = defines.distraction.none}
+  end
+  pool.give_one(b, u)
+end
+
 local function lamp(p, window)
   if p.red or not p.lamp or game.tick - p.tagged < window - RED_AT then return end
   p.red = true
@@ -188,6 +219,28 @@ end
 local function step(b)
   local p = b.prospect
   local s = game.surfaces[b.surface]
+  if p.phase == "staking" then
+    local u = p.truck
+    if not (u and u.valid) or game.tick - p.sent > DRIVE then
+      truck_home(b, p)
+      untag(p)
+      b.stake_trucks_lost = (b.stake_trucks_lost or 0) + ((u and u.valid) and 0 or 1)
+      base.trace(b, string.format("prospect: the stake truck to %.0f,%.0f %s; the claim is off", p.x, p.y,
+        (u and u.valid) and "never got there" or "was destroyed"))
+      b.prospect = nil
+      b.next_prospect = game.tick + (storage.prospect_pace or PACE)
+      return
+    end
+    if (u.position.x - p.x) ^ 2 + (u.position.y - p.y) ^ 2 < 6 * 6 then
+      plant(b, p)
+      truck_home(b, p)
+      p.phase, p.tagged = "tagged", game.tick
+      b.stakes_driven = (b.stakes_driven or 0) + 1
+      base.trace(b, string.format("prospect: the truck planted the stake at %.0f,%.0f after %d s", p.x, p.y,
+        (game.tick - p.sent) / 60))
+    end
+    return
+  end
   if p.phase == "tagged" then
     -- Answered: drilled or staked within the window. The claim is called off and the camp looks elsewhere.
     -- Its stake pulled down: the claim is off, as when answered.
@@ -261,7 +314,7 @@ local function consider(b)
   b.prospected = b.prospected or {}
   b.prospected[p.key] = true
   p.phase, p.tagged, p.tags = "tagged", game.tick, tag(b, p)
-  plant(b, p)
+  if send_stake(b, p) then p.phase = "staking" else plant(b, p) end
   b.prospect = p
   b.prospects = (b.prospects or 0) + 1
   tell(b, "lp.prospect", {p.x, p.y})
@@ -283,7 +336,7 @@ prospect.worked = worked
 
 function prospect.stats(b)
   return {prospects = b.prospects or 0, claimed = b.prospects_claimed or 0, answered = b.prospects_answered or 0,
-    pulled = b.stakes_pulled or 0, stake = b.prospect and b.prospect.stake and b.prospect.stake.valid or false,
+    pulled = b.stakes_pulled or 0, driven = b.stakes_driven or 0, trucks_lost = b.stake_trucks_lost or 0, stake = b.prospect and b.prospect.stake and b.prospect.stake.valid or false,
     red = b.prospect and b.prospect.red and b.prospect.stake and b.prospect.stake.valid or false,
     phase = b.prospect and b.prospect.phase, at = b.prospect and {b.prospect.x, b.prospect.y}}
 end

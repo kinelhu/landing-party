@@ -328,6 +328,8 @@ remote.add_interface("landing-party", {
     if t.flare_burn ~= nil then storage.flare_burn = t.flare_burn end
     -- The levers (tune.lua) over the settings: {grubstake = {strength = 2, aggression = 0.5}, ...}.
     if t.levers ~= nil then storage.tune_levers = t.levers end
+    -- Tests: no operation of choice (the decider), answers still on.
+    if t.choice_off ~= nil then storage.choice_off = t.choice_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end

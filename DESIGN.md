@@ -1606,8 +1606,10 @@ tell in the world, and none stays on but a lost settlement's:
 - **Grubstake's claim stake** (`lp-claim-stake`): planted with a puff in the middle of a prospected patch, a lamp
   amber, then red and blinking in the window's last two minutes; pulled down, the claim is off (an incident); it gives
   way to the claim's works. Its description says what it means. `prospect`: a stake on every tagged patch, red near
-  the end; `prospect pulled`: the first stake pulled, that patch left alone, the camp on to the next. Not yet: a truck
-  that drives the stake out (the consult's "the road is the clock").
+  the end; `prospect pulled`: the first stake pulled, that patch left alone, the camp on to the next. The stake truck (2026-10-18): a buggy from
+  the camp drives the stake to the patch (18 to 32 s in `prospect`) and comes home; the window runs from the
+  planting. Destroyed on its way, the claim is off and the camp moves on (`prospect truck`; the loss is Grubstake's to
+  answer). With no buggy at home it is planted at once, as before.
 
 ### The map redrawn, and camp names (the user, 2026-10-17)
 The user: "I'm not a huge fan of how we represent territory on the map. The big circles and lines feel childish and
@@ -1658,7 +1660,9 @@ building) or trespass (its ground, its border, a turret covering its camp), and 
 - A call against Fable: a turret covering Grubstake's camp still provokes it (an act on the camp, not an unseen
   border), answered by a flare on that turret. Not built: the line stepping over the offending building before the
   mortar; Grubstake's snatch raid at the nearest lootable thing (its raid takes the nearest building, soft there).
-Not tested: Serenity's "remembered, then a siege" path.
+Scenario `remembered` (2026-10-18): eight gun turrets kill a Serenity unit (level 1, operations of choice off with
+`choice_off`, unprovoked at the start): remembered (32 needed, 10 to send), no raid; a second kill 7 minutes later: a
+siege, whose assault razes the block. Provoked from the start, it had besieged them on its own before any answer.
 
 ### Stance and the answer (the user, 2026-10-17; `docs/ai.md`)
 The user, on Serenity turning enemy and doing nothing visible: "we need to be quite flexible with our coding. It turns
