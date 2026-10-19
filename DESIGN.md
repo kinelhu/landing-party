@@ -628,6 +628,11 @@ besieged". A fortress cannot wall in what feeds it.
   fed and emptied by the test): three runs in 27 minutes, 67 items a run, 254 home in the yard, 5% of the belt's flow;
   `skim guarded` (an armed gun turret by the belt): no truck; `skim raid` (the yard destroyed at minute 24): 134 held,
   134 spilled.
+  On a reference factory (the user: "Did you not test the skim on a ref save?"): their outposts now belt their ore home
+  through the wall to a loader into a voiding chest (`tests/lp-ref`, 344 belt tiles on the laser base; they had filled
+  chests, and no belt outside the wall carried anything). One hour on the laser base: three runs from minute 29 (one
+  truck stuck on the way), 16 items a run: that outpost's belt carries under an item a second, so a 2-minute stop takes
+  little. The truck is the tell more than the loss (open: a longer stop or a bigger share).
 - **Dismantling** (the user, 2026-10-19: "Stealing items and buildings is genius for a more early game rival"; Fable's
   "carry it off instead" of the ladder top razing 247 panels). A Grubstake raid with machines at its target walks in
   answering only what hits it (a thief takes rather than shoots: raiding as an army, it razed three of four assemblers
