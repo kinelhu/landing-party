@@ -3236,6 +3236,14 @@ end
 -- losses to biters, clears the nests, and the waves stop. LP_MIX=off: hazard removal off, the nests stand.
 scenarios.hazard = function()
   local off = params.mix == "off"
+  -- The ledger (scripts/ledger.lua): the clearance held (hazard_hold), the nests in a cloud the test makes (pay, unpaid)
+  -- or not (clean), a player's furnace by spawn as the polluter; pay puts what is owed in the post every minute.
+  local pay, unpaid, clean = params.mix == "pay", params.mix == "unpaid", params.mix == "clean"
+  local billing = pay or unpaid or clean
+  -- worm: a behemoth worm by each nest (its 48 and the guards' 14 left the howitzer no site at 53: nw, "outranges even
+  -- the howitzer"). norails: no railgunners given and the garrison over its cap with Line troopers (production stopped
+  -- at the cap, and the clearance waited "for railgunners (0 of 8)" for two hours, nw).
+  local worm, norails = params.mix == "worm", params.mix == "norails"
   settle_when(function()
     if not S.nests then return false end
     for _, e in ipairs(S.nests) do if e.valid then return false end end
@@ -3243,9 +3251,9 @@ scenarios.hazard = function()
   end)
   schedule(30, function() game.forces.enemy.set_evolution_factor(0.5, surface()) end)
   schedule(60, function()
-    lp("debug_tune", {era = 2, history_off = true, hazard_off = off or nil})
+    lp("debug_tune", {era = 2, history_off = true, hazard_off = off or nil, hazard_hold = billing or nil})
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
-    lp("debug_units", storage.id, "lp-railgunner", 10)
+    if norails then lp("debug_units", storage.id, "lp-infantry", 80) else lp("debug_units", storage.id, "lp-railgunner", 10) end
   end)
   schedule(2 * 3600, function()
     local o = lp("stats", storage.id).origin
@@ -3257,10 +3265,38 @@ scenarios.hazard = function()
       local q = surface().find_non_colliding_position("biter-spawner", p, 8, 1)
       local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
       if e then table.insert(S.nests, e) end
+      if worm and e then
+        local w = surface().find_non_colliding_position("behemoth-worm-turret", {p[1] + ux * 8, p[2] + uy * 8}, 8, 1)
+        if w then surface().create_entity{name = "behemoth-worm-turret", position = w, force = "enemy"} end
+      end
     end
     S.o = o
     S.waves, S.waves_after = 0, 0
+    if billing then
+      local q = surface().find_non_colliding_position("stone-furnace", {0, 0}, 30, 1)
+      S.furnace = q and surface().create_entity{name = "stone-furnace", position = q, force = "player"}
+    end
   end)
+  -- norails: the garrison kept over its cap (losses to the waves had dropped it under, and the old code made railgunners
+  -- then: no guard).
+  if norails then
+    for t = 3 * 3600, END - 600, 2 * 3600 do schedule(t, function() lp("debug_units", storage.id, "lp-infantry", 10) end) end
+  end
+  if billing then
+    S.paid_in = 0
+    for t = 2 * 3600 + 60, END - 60, 3600 do
+      schedule(t, function()
+        if not clean then
+          for _, e in ipairs(S.nests or {}) do if e.valid then surface().pollute(e.position, 300) end end
+        end
+        local L = lp("ledger", storage.id)
+        if pay and L and L.owed > 0 and L.post then
+          local post = surface().find_entities_filtered{name = "lp-invoice-post", position = L.post, radius = 1}[1]
+          if post then S.paid_in = S.paid_in + post.insert{name = "electronic-circuit", count = L.owed} end
+        end
+      end)
+    end
+  end
   for t = 2 * 3600 + 600, END - 600, 3 * 3600 do
     schedule(t, function()
       local from
@@ -3270,10 +3306,13 @@ scenarios.hazard = function()
         return
       end
       local st = lp("stats", storage.id)
-      if (st.ops.hazards or 0) > 0 then S.waves_after = S.waves_after + 1 end
+      if (st.ops.hazards or 0) > 0 then
+        S.waves_after = S.waves_after + 1
+        S.first_hazard = S.first_hazard or game.tick
+      end
       S.waves = S.waves + 1
       local g = surface().create_unit_group{position = from.position, force = "enemy"}
-      for k = 1, 24 do
+      for k = 1, (billing or norails or worm) and 40 or 24 do
         local name = k % 3 == 0 and "big-biter" or "medium-biter"
         local p = surface().find_non_colliding_position(name, {from.position.x + (k % 6) * 2 - 5, from.position.y + 5}, 12, 0.5)
         local u = p and surface().create_entity{name = name, position = p, force = "enemy"}
@@ -3290,6 +3329,30 @@ scenarios.hazard = function()
       S.waves or 0, S.waves_after or 0, st.ops.biter_losses or 0, st.ops.hazards or 0, st.ops.clearances or 0, st.responses or 0, left, #(S.nests or {})))
     if off then
       check("hazard: off, no clearance and the nests stand", (st.ops.hazards or 0) == 0 and left == #S.nests, tostring(left))
+      return
+    end
+    if billing then
+      local L = lp("ledger", storage.id)
+      local now = lp("standing", "serenity", "player")
+      info(string.format("ledger: bills %d, billed %d, paid %d (put in %d), owed %d, unpaid %d, standing %s, furnace %s",
+        L.bills, L.billed, L.paid, S.paid_in, L.owed, L.unpaid, now, S.furnace and "placed" or "none"))
+      if clean then
+        check("hazard: ledger, no cloud on the nests, no bill", L.bills == 0 and now == "rival", string.format("%d bills, %s", L.bills, now))
+      elseif pay then
+        check("hazard: ledger, billed three times or more, paid, still a rival", L.bills >= 3 and L.paid > 0 and L.unpaid == 0
+          and now == "rival", string.format("%d bills, paid %d, %s", L.bills, L.paid, now))
+      else
+        check("hazard: ledger, unpaid, an enemy", L.unpaid == 1 and now == "enemy", string.format("%d unpaid, %s", L.unpaid, now))
+      end
+      return
+    end
+    if norails then
+      info(string.format("hazard: railgunners made %d", (st.built_by or {})["lp-railgunner"] or 0))
+      -- By minute 30: the old code made none while the garrison stood over its cap, and cleared at 35 only once the
+      -- waves had worn it under.
+      check("hazard: no railgunners and a full garrison, it made them and cleared by minute 30", (st.ops.hazards or 0) >= 1
+        and S.first_hazard and S.first_hazard < 30 * 3600, string.format("%d hazards, first seen at minute %s, %d railgunners made",
+        st.ops.hazards or 0, S.first_hazard and math.floor(S.first_hazard / 3600) or "-", (st.built_by or {})["lp-railgunner"] or 0))
       return
     end
     check("hazard: its losses to biters made it clear the nests", (st.ops.hazards or 0) >= 1 and left == 0, string.format("%d hazards, %d left", st.ops.hazards or 0, left))
@@ -7246,6 +7309,8 @@ script.on_init(function()
   -- And crystal marker: provoked, Serenity (whom claim markers do not hold) raided the marked outpost the test watches.
   local unprovoked = (params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill"
     or params.mix == "answered")) or (params.scenario == "crystal" and params.mix == "marker")
+    -- The ledger bills a rival only.
+    or (params.scenario == "hazard" and (params.mix == "pay" or params.mix == "unpaid" or params.mix == "clean"))
   if not TEMPERS[params.scenario] and not unprovoked then lp("debug_tune", {provoke = true}) end
 end)
 

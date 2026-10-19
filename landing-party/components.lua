@@ -147,6 +147,21 @@ data:extend({post,
     results = {{type = "item", name = "lp-trade-post", amount = 1}}},
 })
 
+-- Serenity's invoice post (ledger.lua): a steel chest in its colour, raised by script at its line, of the player's force
+-- so the player can open it; no item, not minable, not destructible (set at creation).
+local invoice = table.deepcopy(data.raw.container["steel-chest"])
+invoice.name = "lp-invoice-post"
+invoice.minable = nil
+invoice.icons = {{icon = invoice.icon or invoice.icons[1].icon, icon_size = invoice.icon_size, tint = S}}
+invoice.icon = nil
+invoice.next_upgrade = nil
+invoice.fast_replaceable_group = nil
+invoice.flags = {"placeable-neutral", "not-blueprintable", "not-deconstructable", "not-upgradable"}
+if invoice.picture and invoice.picture.layers then
+  for _, l in ipairs(invoice.picture.layers) do if not l.draw_as_shadow then l.tint = S end end
+end
+data:extend({invoice})
+
 -- Rail rifle (Serenity, two coils; after Military 3): the railgunner's weapon in the engineer's hands, a slug that
 -- pierces a 30-tile line for 150 physical, every 90 ticks, its enemies only (the consult). Paid once in coils (the
 -- research); the rifle and its slugs are ordinary crafts (a coil a slug would starve it: coils come from 1 railgunner

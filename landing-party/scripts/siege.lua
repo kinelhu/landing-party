@@ -278,13 +278,21 @@ local function out_of_worms(s, p, margin)
   end
   return true
 end
-local function clearance_site(s, nest, from, stand)
+-- The howitzer stands further off when it must (`far`: up to its reach less a margin, on more bearings): from its 53
+-- alone, a behemoth worm's 48 and the guards' 14 left no site, and on nw every nest by the camp "outranged even the
+-- howitzer" while the waves came from it.
+local function clearance_site(s, nest, from, stand, far)
   stand = stand or 33
   local base = math.atan2(from[2] - nest.position.y, from[1] - nest.position.x)
-  for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
-    local p = {nest.position.x + math.cos(base + turn) * stand, nest.position.y + math.sin(base + turn) * stand}
-    if out_of_worms(s, p, CLEAR_GUARD + 2) and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
-      return p
+  local dists = {stand}
+  if far then for d = stand + 12, far, 12 do dists[#dists + 1] = d end end
+  local turns = far and {0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4} or {0, 0.35, -0.35, 0.7, -0.7}
+  for _, d in ipairs(dists) do
+    for _, turn in ipairs(turns) do
+      local p = {nest.position.x + math.cos(base + turn) * d, nest.position.y + math.sin(base + turn) * d}
+      if out_of_worms(s, p, CLEAR_GUARD + 2) and s.count_entities_filtered{position = p, radius = 4, collision_mask = "water_tile", limit = 1} == 0 then
+        return p
+      end
     end
   end
 end
@@ -316,34 +324,36 @@ function ops.clearance(b, near, trace, army, toward)
   -- A nest whose clearance failed rests (t.cool, siege_step; b.nest_rest outlives the intel, which forgets nests off
   -- its claim: the same refusal was traced every two minutes).
   b.nest_rest = b.nest_rest or {}
-  if (t.cool or 0) > game.tick or (b.nest_rest[key] or 0) > game.tick then return false end
+  if (t.cool or 0) > game.tick or (b.nest_rest[key] or 0) > game.tick then return false, "resting" end
   local piece, reach = "lp-mortar", MORTAR_REACH
   local site = clearance_site(s, near, {h.position.x, h.position.y})
   if not site then
     -- Worms that outrange the mortar: the howitzer, from beyond a behemoth worm's reach.
-    site = clearance_site(s, near, {h.position.x, h.position.y}, HOWITZER_STAND)
+    site = clearance_site(s, near, {h.position.x, h.position.y}, HOWITZER_STAND, HOWITZER_REACH - 10)
     piece, reach = "lp-howitzer", HOWITZER_REACH
   end
   if not site then
     t.cool = game.tick + 15 * 3600
     b.nest_rest[key] = t.cool
     trace(b, string.format("clearance: the nest at %.0f,%.0f outranges even the howitzer", near.position.x, near.position.y))
-    return false
+    return false, "out of reach"
   end
-  if (b.parts or 0) < SIEGE_TIERS[2].cost then return false end
+  if (b.parts or 0) < SIEGE_TIERS[2].cost then return false, string.format("parts %d of %d", b.parts or 0, SIEGE_TIERS[2].cost) end
   -- Railgunners to hold the site: the nest's defenders came out at the first shells and broke the mortars of eight Line
   -- troopers in 35 s (visit b - rocket). Until it has CLEAR_RAILS at home, it asks for them (army.produce) and waits.
   local rails = 0
   for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then rails = rails + 1 end end
   b.want_rails = rails < CLEAR_RAILS * 2
+  b.rails_short = rails < CLEAR_RAILS and CLEAR_RAILS or nil   -- what it waits for (army.produce makes them over the cap)
   if rails < CLEAR_RAILS then
     if not b.rails_traced then
       b.rails_traced = true
       trace(b, string.format("clearance: waits for railgunners (%d of %d)", rails, CLEAR_RAILS))
     end
-    return false
+    return false, string.format("railgunners %d of %d", rails, CLEAR_RAILS)
   end
   b.rails_traced = nil
+  b.rails_short = nil
   local ok = launch_siege(b, key, site, trace, army, 2, true)
   if ok then
     b.op.piece, b.op.reach = piece, reach
@@ -365,6 +375,7 @@ local HAZARD_WINDOW = 30 * 3600
 local HAZARD_LOSSES = 20
 local HAZARD_REACH = 300         -- a nest this far from the losses' middle
 local HAZARD_RETRY = 5 * 3600
+ops.BILL_BUILDING, ops.BILL_UNIT = 8, 3   -- the ledger's price of a loss, in value (ops.LOOT_VALUE: a circuit is 1)
 local function hazard_trim(h)
   local cut = game.tick - HAZARD_WINDOW
   local k = 1
@@ -375,10 +386,15 @@ local function hazard_trim(h)
     h.log = keep
   end
 end
-function ops.hazard_note(b, pos)
+function ops.hazard_note(b, pos, unit)
   b.hazard = b.hazard or {log = {}}
   table.insert(b.hazard.log, {game.tick, pos.x, pos.y})
   b.biter_losses = (b.biter_losses or 0) + 1
+  -- What the ledger has not billed yet (scripts/ledger.lua): count, sum of positions, value.
+  local u = b.unbilled or {n = 0, x = 0, y = 0, cost = 0}
+  u.n, u.x, u.y = u.n + 1, u.x + pos.x, u.y + pos.y
+  u.cost = u.cost + (unit and ops.BILL_UNIT or ops.BILL_BUILDING)
+  b.unbilled = u
   if #b.hazard.log > 4 * HAZARD_LOSSES then hazard_trim(b.hazard) end
 end
 function ops.hazard_clear(b, trace, army)
@@ -403,9 +419,15 @@ function ops.hazard_clear(b, trace, army)
     trace(b, string.format("hazard: %d lost to biters round %.0f,%.0f in 30 minutes; no nest within %d", #h.log, mx, my, HAZARD_REACH))
     return false
   end
-  local ok = ops.clearance(b, near, trace, army)
+  -- Tried: from now on the ledger may bill (it never bills a hazard Serenity has not tried to remove itself).
+  b.hazard_tried = true
+  if storage.hazard_hold then
+    trace(b, string.format("hazard: the nest at %.0f,%.0f is held (test)", near.position.x, near.position.y))
+    return false
+  end
+  local ok, why = ops.clearance(b, near, trace, army)
   trace(b, string.format("hazard: %d lost to biters round %.0f,%.0f in 30 minutes; the nest at %.0f,%.0f %s", #h.log, mx, my,
-    near.position.x, near.position.y, ok and "is cleared" or "waits (strength)"))
+    near.position.x, near.position.y, ok and "is cleared" or ("waits (" .. (why or "no launch") .. ")")))
   if ok then
     b.hazards = (b.hazards or 0) + 1
     h.log = {}

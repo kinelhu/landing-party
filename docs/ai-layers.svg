@@ -21,7 +21,7 @@
 <title>Corporation</title>
 <path fill="#eef2f7" stroke="black" d="M286.24,-427C286.24,-427 183.99,-427 183.99,-427 177.99,-427 171.99,-421 171.99,-415 171.99,-415 171.99,-403 171.99,-403 171.99,-397 177.99,-391 183.99,-391 183.99,-391 286.24,-391 286.24,-391 292.24,-391 298.24,-397 298.24,-403 298.24,-403 298.24,-415 298.24,-415 298.24,-421 292.24,-427 286.24,-427"/>
 <text xml:space="preserve" text-anchor="middle" x="235.12" y="-410.55" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="235.12" y="-398.55" font-family="Helvetica,sans-Serif" font-size="11.00">10 modules, 2310 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="235.12" y="-398.55" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2502 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge5" class="edge">
@@ -40,24 +40,24 @@
 <!-- Corporation&#45;&gt;Settlement -->
 <g id="edge6" class="edge">
 <title>Corporation&#45;&gt;Settlement</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.5" d="M233.9,-390.96C233.82,-380.51 234.93,-367.09 239.87,-356.25 242.27,-350.98 245.62,-345.96 249.37,-341.35"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.5" points="251.79,-343.88 256.02,-334.16 246.65,-339.12 251.79,-343.88"/>
-<text xml:space="preserve" text-anchor="middle" x="242.49" y="-357.45" font-family="Helvetica,sans-Serif" font-size="9.00">6</text>
+<path fill="none" stroke="#8899aa" stroke-width="2.8" d="M233.9,-390.96C233.82,-380.51 234.93,-367.09 239.87,-356.25 242.2,-351.12 245.43,-346.24 249.06,-341.73"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.8" points="251.51,-344.23 255.71,-334.5 246.37,-339.49 251.51,-344.23"/>
+<text xml:space="preserve" text-anchor="middle" x="242.49" y="-357.45" font-family="Helvetica,sans-Serif" font-size="9.00">7</text>
 </g>
 <!-- Army and operations -->
 <g id="node4" class="node">
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M230.24,-235.5C230.24,-235.5 127.99,-235.5 127.99,-235.5 121.99,-235.5 115.99,-229.5 115.99,-223.5 115.99,-223.5 115.99,-203.5 115.99,-203.5 115.99,-197.5 121.99,-191.5 127.99,-191.5 127.99,-191.5 230.24,-191.5 230.24,-191.5 236.24,-191.5 242.24,-197.5 242.24,-203.5 242.24,-203.5 242.24,-223.5 242.24,-223.5 242.24,-229.5 236.24,-235.5 230.24,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4134 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4166 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1345</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->
 <g id="edge4" class="edge">
 <title>Corporation&#45;&gt;Army and operations</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.8" d="M223.31,-390.54C213.75,-375.5 200.78,-352.86 193.87,-331.25 185.4,-304.75 181.76,-273.41 180.22,-249.87"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.8" points="183.71,-249.7 179.7,-239.9 176.72,-250.07 183.71,-249.7"/>
-<text xml:space="preserve" text-anchor="middle" x="196.49" y="-309.57" font-family="Helvetica,sans-Serif" font-size="9.00">7</text>
+<path fill="none" stroke="#8899aa" stroke-width="3" d="M223.31,-390.54C213.75,-375.5 200.78,-352.86 193.87,-331.25 185.4,-304.75 181.76,-273.41 180.22,-249.87"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="3" points="183.73,-250 179.71,-240.2 176.74,-250.37 183.73,-250"/>
+<text xml:space="preserve" text-anchor="middle" x="196.49" y="-309.57" font-family="Helvetica,sans-Serif" font-size="9.00">8</text>
 </g>
 <!-- Settlement&#45;&gt;Seams (leaves) -->
 <g id="edge13" class="edge">

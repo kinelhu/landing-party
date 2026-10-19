@@ -33,6 +33,7 @@ local standing = require("__landing-party__.scripts.standing")
 local border = require("__landing-party__.scripts.border")
 local road = require("__landing-party__.scripts.road")
 local trade = require("__landing-party__.scripts.trade")
+local ledger = require("__landing-party__.scripts.ledger")
 local map = require("__landing-party__.scripts.map")
 war.forgive = standing.forgive
 rd.era = ops.era
@@ -59,7 +60,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -164,7 +165,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   if shared.is_corp(ent.force.name) and e.force and e.force.name == "enemy" and ent.unit_number then
     local own = storage.owner[ent.unit_number]
     local hb = storage.bases[own and own.base or storage.unit_owner[ent.unit_number] or 0]
-    if hb and not hb.fallen then ops.hazard_note(hb, ent.position) end
+    if hb and not hb.fallen then ops.hazard_note(hb, ent.position, ent.type == "unit" or ent.type == "spider-unit") end
   end
   if shared.is_corp(ent.force.name) then
     -- A crew's truck or drone killed is an attack on the corporation, as on its garrison (the user, 2026-10-17: "it
@@ -350,6 +351,8 @@ remote.add_interface("landing-party", {
     if t.next_ore_off ~= nil then storage.next_ore_off = t.next_ore_off end
     if t.sever_off ~= nil then storage.sever_off = t.sever_off end
     if t.hazard_off ~= nil then storage.hazard_off = t.hazard_off end
+    if t.hazard_hold ~= nil then storage.hazard_hold = t.hazard_hold end
+    if t.ledger_off ~= nil then storage.ledger_off = t.ledger_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
@@ -460,6 +463,7 @@ remote.add_interface("landing-party", {
   cordon_stats = function(id) return storage.bases[id] and cordon.stats(storage.bases[id]) end,
   -- Tests only: one pass of the line cutting what crosses it, now.
   debug_sever = function(id) local b = storage.bases[id]; return b and ops.sever(b) end,
+  ledger = function(id) local b = storage.bases[id]; return b and ledger.stats(b) end,
   next_ore = function(id) local b = storage.bases[id]; return b and {at = b.next_ore, targets = b.ore_targets or 0} end,
   crew_stats = function(id) return storage.bases[id] and crew.stats(storage.bases[id]) end,
   breaks = function() return {breaks = storage.pact_breaks or 0, till = storage.pact_suspended_till} end,

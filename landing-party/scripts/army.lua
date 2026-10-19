@@ -101,11 +101,21 @@ army.withdrawing = withdrawing
 local function produce(b, trace)
   if storage.army_off or withdrawing(b) then return end
   prune(b.garrison)
-  if strength(b) >= cap(b) then return end
+  -- A clearance short of railgunners (ops.clearance) has them made over the cap: on nw a full garrison of other kinds
+  -- made none, and it waited "for railgunners (0 of 8)" for two hours.
+  local over = b.rails_short and shared.units["lp-railgunner"] and (mix(b)["lp-railgunner"] or 0) > 0
+  if over then
+    -- Only up to what the clearance waits for (the flag stands until its next try: 42 were made, scenario).
+    local rails = 0
+    for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then rails = rails + 1 end end
+    over = rails < b.rails_short
+  end
+  local full = strength(b) >= cap(b)
+  if full and not over then return end
   -- A rebuild that makes parts is paid first (base.reserve; scenario occupy).
   local name = b.next_unit or rng.weighted(b.rng, mix(b))
   -- A clearance waiting for railgunners (ops.clearance) gets them first.
-  if b.want_rails and not b.next_unit and shared.units["lp-railgunner"] and (mix(b)["lp-railgunner"] or 0) > 0 then
+  if (b.want_rails and not b.next_unit and shared.units["lp-railgunner"] and (mix(b)["lp-railgunner"] or 0) > 0) or full then
     name = "lp-railgunner"
   end
   b.next_unit = name

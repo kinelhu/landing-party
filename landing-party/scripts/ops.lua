@@ -807,7 +807,7 @@ local function launch(b, key, trace, army, opts)
         t.cool = game.tick + 2 * 3600
         trace(b, string.format("raid on %s at %.0f,%.0f: %d nests in the way; a clearance first", t.kind, t.pos[1], t.pos[2],
           sp + worms))
-        return ops.clearance(b, near, trace, army, {t.pos[1], t.pos[2]})
+        return (ops.clearance(b, near, trace, army, {t.pos[1], t.pos[2]}))
       elseif near and false then
         b.op = nil
         for _, u in ipairs(members) do table.insert(b.garrison, u) end

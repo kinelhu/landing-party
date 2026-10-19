@@ -73,7 +73,12 @@ document describes the parts as built; the campaign document describes the game 
 | Grubstake prospects the player's frontier; its road (claim trucks, lapse) | built | `prospect` (two), `road` (two) |
 | Serenity's border stake; Grubstake's trade post (truce); bending the line with a decoy | built | `border` (two), `tribute`, `bend` |
 | The gate (decision 3): a scripted player that engages against one that turtles | instrument built, measuring | `gate` (LP_MIX=turtle, engage) |
-| Shields, jammers, gates, anti-air turret | open | |
+| Serenity against a fortress: fire plans, the howitzer against robot-kept walls, escalation; the jammer mast (downs robots, blinds threat scanners) | built | `fortress` (three), `scanner` |
+| Serenity's power strike: the cut pole behind the player's lasers, scouts first; dark turrets weigh nothing | built | `blackout` (two) |
+| Strangling: the line goes for outposts, then the next ore; at war it cuts belts and pipes on its edge | built | `strangle` (five) |
+| Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills a rival for waves its cloud draws; unpaid, an enemy) | built; the ledger's price a guess | `hazard` (five) |
+| Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
+| Shields, gates for the player, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -540,9 +545,35 @@ strangling (the line walls off outposts and ore).
   again every 5 minutes for two hours (now a nest resting from a failed clearance is passed over for the next), then
   "waits for railgunners (0 of 8)". Responses 116 -> 33, its losses 1,236 -> 236, razed by it 7 -> 39, and the
   player's robots and land mines lost 1,211 and 2,232 (its jammer and its units on the minefield): one run each, other
-  changes between them (staggered beats since withdrawn, the cut, the next ore), so read as a direction, not a measure. Next in
-  the consult: the ledger (waves drawn
-  by the player's cloud billed at an invoice post at the line), then a spike of an open lane.
+  changes between them (staggered beats since withdrawn, the cut, the next ore), so read as a direction, not a measure.
+  Why it never fired there (2026-10-19, second day): the howitzer's site was sought only 53 tiles from the nest, and a
+  behemoth worm's 48 plus the guards' ring (14) leaves nothing at 53: every nest by the camp "outranged even the
+  howitzer". Now it is sought out to its reach less 10 (53, 65, 77) on nine bearings. And a clearance waiting for its
+  railgunners has them made over the garrison's cap (production stopped at the cap, and a full garrison of other kinds
+  made none: "waits for railgunners (0 of 8)" for two hours), up to the eight it waits for. The hazard trace now says why
+  it waits (parts, railgunners, out of reach, resting). Scenarios (40 a wave): `hazard worm` (a behemoth worm by each
+  nest): a howitzer siege from 78 tiles, the four nests cleared (the old code: "outranges even the howitzer", none);
+  `hazard norails` (no railgunners given, the garrison kept over its cap with Line troopers, ten more every 2 minutes):
+  the first clearance by minute 20 (the old code: 35, once the waves had worn the garrison under its cap). Both run on
+  the old code to see them fail. Whether the cap is what held nw is not shown: it may have been parts; the next nw visit
+  says (its trace now names the reason).
+- **The ledger (built 2026-10-19; the consult's second part; `scripts/ledger.lua`, Serenity's temper `bills`).**
+  Serenity is provoked only, so a rival camp that took the player's waves took them for free. Now every 5 minutes a camp
+  that has tried to remove the hazard itself bills its losses to biters since the last bill (8 a building, 3 a unit, in
+  worth: a circuit is 1), when the nest nearest those losses sat in a cloud (pollution on its chunk or absorbed by it)
+  and a polluting building of the player's (drill, furnace, assembler, boiler) stands within 1,000 tiles of it. The bill
+  goes up on an invoice post at its line on the bearing to the player's spawn: a chest of the player's force, so it
+  opens, in Serenity's colour, not minable or destructible, the sum written over it (and the minutes left once due, a
+  red light by night). What is put in it is taken by its worth (circuits, modules, steel and the like; the rest stays)
+  and becomes parts. Unpaid 20 minutes after the third open bill, the player is an enemy: the post comes down, and the
+  answer goes for the polluting building the bill named. Paid off, the open bills go back to none. At war, nothing is
+  billed (it caps at enemy). Its tell is the post itself, and the incidents list (invoice, paid, unpaid). Counters: pay,
+  clear the nests yourself, keep the cloud off its ground.
+  Scenarios (the `hazard` waves, 40 a wave, the clearance held, a furnace by spawn, unprovoked): `hazard pay` (the test
+  puts what is owed in the post each minute): 8 bills, 736 billed and paid, still a rival; `hazard unpaid`: six bills,
+  610 owed, an enemy 20 minutes after the third, its answer at the furnace; `hazard clean` (no cloud on the nests): no
+  bill. The price is a guess: about 120 circuits every 5 minutes under waves this heavy. Next in the consult: a spike of
+  an open lane.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its
 parts")
