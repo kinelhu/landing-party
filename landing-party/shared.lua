@@ -49,7 +49,7 @@ shared.CORPS = {
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
-    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true, prospects = true,
+    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true, skims = true, prospects = true,
       -- How it answers a provocation (ops.answer), by kind: a loss (its unit, drone or building) or trespass (a turret
       -- covering its camp). The thief never fights fair: biters on the culprit, a snatch raid only where no turret covers
       -- it (Fable, docs/reviews/2026-10-18-answers-consult.md).
@@ -106,7 +106,7 @@ shared.CORPS = {
     -- masonry, what never forgives. A raid it would lose becomes a siege only on a second provocation (a drone shot
     -- down where the player never saw it is not worth mortars).
     -- Cuts: it surveys the power behind the turrets facing it and strikes the line (scripts/power.lua).
-    temper = {provoked_only = true, cuts = true, bills = true, answers = {loss = "raid", trespass = "siege"}},
+    temper = {provoked_only = true, hostile = true, cuts = true, bills = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).
     drill_pollution = 0,
     -- Crews (scripts/crew.lua): a constructor drone, flying over its walls, building with its beam.

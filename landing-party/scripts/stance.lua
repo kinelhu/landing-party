@@ -27,6 +27,9 @@ stance.provoked = provoked
 function stance.standing(corp, owner)
   local t = storage.truces and storage.truces[corp .. "|" .. owner]
   if t and game.tick < t then return "truce" end
+  -- Serenity is at war from landing (the user, 2026-10-19: "what's the point of serenity being non hostile sometimes",
+  -- then "no grace"); a truce bought at its invoice post (ledger.lua) is the only quiet.
+  if (shared.CORPS[corp].temper or {}).hostile then return "enemy" end
   if provoked(corp, owner) then return "enemy" end
   return "rival"
 end
@@ -59,7 +62,7 @@ end
 --   prospect   claims unworked ground, not the player's: always
 --   war        the war footing, relief and the stand-down clock: an enemy only (an unprovoked rival is not at war)
 -- The ladder's thresholds (a flare at rung 1, a rig at 2) stay with each system.
-local THEFT = {strip = true, tap = true, flare = true, jump = true}
+local THEFT = {strip = true, tap = true, flare = true, jump = true, skim = true}
 function stance.may(corp, owner, act)
   if not against_player(owner) then return true end
   if act == "prospect" then return true end

@@ -21,6 +21,7 @@ end
 
 function standing.get(corp, owner)
   if standing.truce and standing.truce(corp, owner) then return "truce" end
+  if (shared.CORPS[corp].temper or {}).hostile then return "enemy" end
   local d = corp_state(corp)
   if d.provoked and d.provoked[owner] then return "enemy" end
   return "rival"

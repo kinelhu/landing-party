@@ -162,6 +162,25 @@ if invoice.picture and invoice.picture.layers then
 end
 data:extend({invoice})
 
+-- Grubstake's skim (skim.lua): the siphon shack by a player's belt and the yard where the take is kept, chests in its
+-- colour, made by script (no item); what they hold spills when they die.
+for _, k in ipairs({{"lp-skim-shack", "wooden-chest", 250}, {"lp-skim-yard", "iron-chest", 600}}) do
+  local c = table.deepcopy(data.raw.container[k[2]])
+  c.name = k[1]
+  c.minable = nil
+  c.max_health = k[3]
+  c.icons = {{icon = c.icon or c.icons[1].icon, icon_size = c.icon_size, tint = G}}
+  c.icon = nil
+  c.next_upgrade = nil
+  c.fast_replaceable_group = nil
+  c.flags = {"placeable-neutral", "placeable-player", "player-creation", "not-blueprintable", "not-deconstructable"}
+  c.is_military_target = true
+  if c.picture and c.picture.layers then
+    for _, l in ipairs(c.picture.layers) do if not l.draw_as_shadow then l.tint = G end end
+  end
+  data:extend({c})
+end
+
 -- Rail rifle (Serenity, two coils; after Military 3): the railgunner's weapon in the engineer's hands, a slug that
 -- pierces a 30-tile line for 150 physical, every 90 ticks, its enemies only (the consult). Paid once in coils (the
 -- research); the rifle and its slugs are ordinary crafts (a coil a slug would starve it: coils come from 1 railgunner

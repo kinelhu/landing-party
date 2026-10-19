@@ -82,7 +82,7 @@ LAYERS = {
                    "road", "prospect"],
     "Army and operations": ["army", "ops", "routing", "intel", "siege", "strip", "answers", "cuts", "strike", "jammer",
                             "power"],
-    "Heists (Grubstake)": ["flare", "jumper", "tap", "bait", "marker"],
+    "Heists (Grubstake)": ["flare", "jumper", "tap", "skim", "bait", "marker"],
     "The map": ["map"],
     "The player's army": ["command", "scanner", "roads"],
     "Wiring (edges not drawn)": ["control", "dev"],

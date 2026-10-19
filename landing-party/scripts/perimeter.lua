@@ -132,6 +132,10 @@ function ops.perimeter(b, tick)
   local fast = storage.perimeter_fast
   local start, every = fast and 3600 or PERIMETER_START, fast and 3600 or PERIMETER_TICKS
   if tick - b.landed < start then return end
+  -- A truce bought at the invoice post (ledger.lua): the line holds.
+  for _, f in ipairs(shared.player_forces()) do
+    if stance.standing(b.corp, f.name) == "truce" then return end
+  end
   local quiet = tick - (storage.threat_last or 0) > FLOOR_TICKS and tick - (b.perimeter_floor or 0) > FLOOR_TICKS
   if tick < (b.perimeter_next or 0) and not quiet then return end
   if quiet and tick < (b.perimeter_next or 0) then b.perimeter_floor = tick end

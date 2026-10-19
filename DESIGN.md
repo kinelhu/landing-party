@@ -18,7 +18,7 @@ document describes the parts as built; the campaign document describes the game 
 | Answers by corporation: Grubstake a flare, Serenity a raid or (trespass) a siege | built | `flare answer`, `line turret`, `crew answered` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
-| Tempers: Serenity strikes only once provoked; Grubstake raids soft targets and strip-mines the player's ore | built | `temper`, `strip` |
+| Tempers: Serenity at war from landing (a truce bought at its invoice post the only quiet); Grubstake raids soft targets and strip-mines the player's ore, escalating when hurt | built (Serenity hostile 2026-10-19) | `temper`, `strip` |
 | Serenity's line moves: its perimeter grows towards the player, a named warning a step ahead | built | `line` (two) |
 | Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
 | Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
@@ -76,7 +76,8 @@ document describes the parts as built; the campaign document describes the game 
 | Serenity against a fortress: fire plans, the howitzer against robot-kept walls, escalation; the jammer mast (downs robots, blinds threat scanners) | built | `fortress` (three), `scanner` |
 | Serenity's power strike: the cut pole behind the player's lasers, scouts first; dark turrets weigh nothing | built | `blackout` (two) |
 | Strangling: the line goes for outposts, then the next ore; at war it cuts belts and pipes on its edge | built | `strangle` (five) |
-| Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills a rival for waves its cloud draws; unpaid, an enemy) | built; the ledger's price a guess | `hazard` (five) |
+| Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid off, a truce) | built; the ledger's price a guess | `hazard` (seven) |
+| Grubstake's skim (a siphon shack on an exposed belt, trucks to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
 | Shields, gates for the player, anti-air turret | open | |
 | Depletion and relocation | open | |
@@ -557,23 +558,88 @@ strangling (the line walls off outposts and ore).
   the first clearance by minute 20 (the old code: 35, once the waves had worn the garrison under its cap). Both run on
   the old code to see them fail. Whether the cap is what held nw is not shown: it may have been parts; the next nw visit
   says (its trace now names the reason).
+  The next nw visit (provoked at an hour, 3 hours, run alone, 0.1.21): the reasons were parts first ("parts 24 of 220"),
+  then railgunners, then sites. Four clearances went (three by howitzer from sites the old search had not found): the
+  first found its nest already gone, the second lost its eight railgunners to behemoth spitters at the site after nine
+  shells, the third fired 80 shells. Losses against the run with no hazard removal: buildings 1,236 -> 720, units 328 ->
+  171, responses 116 -> 72 (one run each). It built 138 railgunners and lost most of them: holding a site in nw's nest
+  field is costly. Script cost: mean tick 0.601 ms against the save's 0.521, script 0.043 ms; 44 ticks over 50 ms, two
+  causes found: Serenity's power survey on the meshed network (65 ms every 5 minutes at war, "no single cut" each time:
+  now not searched again while the player's pole count is unchanged, every 30 minutes regardless) and Grubstake's
+  sneaking raids staging inside the ring (95 to 125 ms a failed search, nine times: a failed staging point now stands
+  for 90 minutes and 128 tiles, from 30 and 64). Both not yet measured on a visit.
 - **The ledger (built 2026-10-19; the consult's second part; `scripts/ledger.lua`, Serenity's temper `bills`).**
-  Serenity is provoked only, so a rival camp that took the player's waves took them for free. Now every 5 minutes a camp
-  that has tried to remove the hazard itself bills its losses to biters since the last bill (8 a building, 3 a unit, in
-  worth: a circuit is 1), when the nest nearest those losses sat in a cloud (pollution on its chunk or absorbed by it)
-  and a polluting building of the player's (drill, furnace, assembler, boiler) stands within 1,000 tiles of it. The bill
-  goes up on an invoice post at its line on the bearing to the player's spawn: a chest of the player's force, so it
-  opens, in Serenity's colour, not minable or destructible, the sum written over it (and the minutes left once due, a
-  red light by night). What is put in it is taken by its worth (circuits, modules, steel and the like; the rest stays)
-  and becomes parts. Unpaid 20 minutes after the third open bill, the player is an enemy: the post comes down, and the
-  answer goes for the polluting building the bill named. Paid off, the open bills go back to none. At war, nothing is
-  billed (it caps at enemy). Its tell is the post itself, and the incidents list (invoice, paid, unpaid). Counters: pay,
-  clear the nests yourself, keep the cloud off its ground.
-  Scenarios (the `hazard` waves, 40 a wave, the clearance held, a furnace by spawn, unprovoked): `hazard pay` (the test
-  puts what is owed in the post each minute): 8 bills, 736 billed and paid, still a rival; `hazard unpaid`: six bills,
-  610 owed, an enemy 20 minutes after the third, its answer at the furnace; `hazard clean` (no cloud on the nests): no
-  bill. The price is a guess: about 120 circuits every 5 minutes under waves this heavy. Next in the consult: a spike of
-  an open lane.
+  Every 5 minutes a camp that has tried to remove the hazard itself bills its losses to biters since the last bill (8 a
+  building, 3 a unit, in worth: a circuit is 1), when the nest nearest those losses sat in a cloud (pollution on its
+  chunk or absorbed by it) and a polluting building of the player's (drill, furnace, assembler, boiler) stands within
+  1,000 tiles of it. The bill goes up on an invoice post at its line on the bearing to the player's spawn: a chest of
+  the player's force, so it opens, in Serenity's colour, not minable or destructible, the sum written over it. What is
+  put in it is taken by its worth (circuits, modules, steel and the like; the rest stays) and becomes parts.
+  First built for a provoked-only Serenity: unpaid 20 minutes after the third open bill, the player became an enemy. On
+  nw unprovoked (3 hours) it billed five times, 355 to 614 a bill, 2,170 owed within half an hour, and turned enemy 20
+  minutes after the third; losses whose nest had no cloud on it went unbilled. Since Serenity is at war from landing
+  (below), paying off buys a truce instead, the only quiet it gives: a minute for every 10 paid since the last truce, 10
+  to 60; no raid, siege or cut and its line holds while it lasts (stance "truce"); the post says how long is left and
+  shows an amber light by night. Unpaid, nothing changes. Counters: pay, clear the nests yourself, keep the cloud off
+  its ground.
+  Scenarios (the `hazard` waves, 40 a wave, the clearance held, a furnace by spawn the test keeps standing): `hazard pay`
+  (the test puts what is owed in the post each minute): 5 bills, 440 paid, 5 truces, a truce seen; `hazard unpaid`: 6
+  bills, 407 owed, no truce, at war; `hazard clean` (no cloud on the nests): no bill. The price is a guess.
+
+### Serenity at war from landing (the user, 2026-10-19)
+The user: "I'm left to wonder what's the point of serenity being non hostile sometimes… feels like a typical
+player-like smart adversary that would make gameplay more fun with constant hostility?", then, offered a grace period
+after landing: "No grace". Serenity had been provoked only (a rival until its buildings or units were hurt, its ground
+built on, a turret set in reach of it, or, last, a bill left unpaid). In the visits that rival phase was either dead
+time or ended by accident. Now its temper is `hostile`: the stance (`stance.standing`, `standing.get`) reads enemy from
+landing, so its campaign runs from the start: the line steps toward the player, strangles, cuts belts on its edge,
+surveys power, besieges. Provocations still drive the answers, the grudge and the ladder. The only quiet is a truce
+bought at its invoice post (the ledger, above), and under a truce its line holds (`ops.perimeter`). Grubstake stays a
+thief that escalates when hurt: the contrast is part of both identities. The `provoked_only` flag stays as Serenity's
+marker for its line (border, perimeter, cut).
+- **The border stake** treats only under a truce now (it had needed a rival Serenity, and "does not treat with
+  enemies" would have left it dead): a stake set during a truce bought at the invoice post draws the border, and the
+  border holds after the truce ends, until something of the player's stands on Serenity's side. Refused at war, it says
+  a truce opens talks. `border`: a 5-minute truce, the stake accepted, the line held short of it, at war after.
+- **The tests that assumed a rival Serenity** (the full regression, 162 of 172 at first): `temper` now checks that it
+  strikes first, unprovoked, at relays outside its territory; `line` holds raids (they razed the relays before the line
+  reached them) to watch the line grow, warn, enclose, and be provoked by a build inside (the turret mix lets raids go
+  once the turret stands, for the siege that answers it); `crew dronekill` checks the kill is recorded as a provocation;
+  `strip claim` and `crystal marker`, Grubstake's, give Serenity a truce (it raided the drill and the outpost they
+  watch).
+
+### Grubstake against a fortress: the skim (Fable: `docs/reviews/2026-10-19-grubstake-fortress-consult.md`; built 2026-10-19)
+On nw Grubstake did almost nothing a player would notice against the sealed ring: nine of ten operations aborted (no
+way round 117 turrets to any substation), flares never flew (no nests left near the walls), nothing looted. Fable: a
+burglar does not breach a bank, but nothing showing reads as a bug; aim for "I am being skimmed", never "I am
+besieged". A fortress cannot wall in what feeds it.
+- **The skim** (`scripts/skim.lua`, Grubstake's temper `skims`, a theft in the stance: a rival thief steals, a truce
+  stops it). A camp finds a player's belt within 250 tiles that carries something and that no turret reaches (30), and
+  sends a buggy by a route clear of every turret's reach (the heist's). The buggy drops a siphon shack beside it (a
+  chest in its colour, an amber arm drawn to the belt) and goes home. Each second the shack lifts 15% of what passes (the
+  tile's fill times a full belt's rate: of a full belt's rate whatever passed, it took 51% of a thin flow). At 40 items
+  a truck drives out, empties it and takes the load to the camp's yard (a chest with the goods' icon over it), where it
+  stays as items and adds its worth to parts. Destroy the yard or the shack and what they hold spills; kill the truck
+  and its load spills where it fell. Counters: an underground across the exposed stretch (only a belt tile is
+  skimmed), a turret by the belt, raiding the yard. Scenarios: `skim` (a belt of iron ore 150 tiles from the camp, fed
+  and emptied by the test): a shack out of turret reach, 13% of the flow taken (813 of 6,472), 790 home in the yard;
+  `skim guarded` (an armed gun turret by the belt): no shack; `skim raid` (the yard destroyed at minute 24): 547 held,
+  547 spilled. Gated on the stance toward each player force, not on intel (a young camp's intel knew no player target
+  and it never looked). Withdraw it (Fable) if over three seeds it fires under three times an hour, a shack's median
+  life is under a minute, or the take is under 2% of the flow: open, a visit will say.
+- **Dismantling** (the user, 2026-10-19: "Stealing items and buildings is genius for a more early game rival"; Fable's
+  "carry it off instead" of the ladder top razing 247 panels). A Grubstake raid with machines at its target walks in
+  answering only what hits it (a thief takes rather than shoots: raiding as an army, it razed three of four assemblers
+  before its first step could take one). Each step, every raider within 8 of a machine takes one apart (assemblers,
+  furnaces, drills, labs, solar panels, accumulators, beacons, radars, boilers, generators, inserters, poles, pumps,
+  tanks, roboports; machines first; not walls, turrets, belts, pipes or rails), its contents with it, and leaves its ghost
+  where it stood: the outline of what was stolen (robots rebuild it at the player's cost; early on, with none, the hole
+  stays). Twelve a raid at most. With nothing left to take it attacks as any raid. A raid's loot now stays items: home
+  in the yard (the skim's), its worth in parts as before; all raiders killed, it spills where they fell. Scenarios:
+  `dismantle` (an unguarded outpost of four assemblers holding plates, two solar panels, a pole, a chest): 7 ghosts, the
+  four assemblers and 160 plates in the yard; `dismantle ambush` (the raiders killed once two machines are gone): 178
+  items on the ground, none home.
+- Next in the consult: mine sweeping, a bird net for robots, the brood run.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its
 parts")

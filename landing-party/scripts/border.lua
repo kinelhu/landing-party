@@ -1,9 +1,10 @@
 -- The border stake (the rivals consult, slice 3: Serenity takes a direction; the player may concede it). A player sets
 -- a border stake toward a Serenity camp that holds them a rival: the camp acknowledges a border at the stake's distance
 -- from its origin, drawn on the map, and its line (ops.perimeter, the cordon) does not step past it. Anything of the
--- player's built on Serenity's side breaks the treaty: Serenity is provoked (an enemy, for good) and the line moves
--- again. An enemy Serenity does not treat. A stake removed lets the line resume. Ordinary items, from the start: the
--- player must be able to concede early.
+-- player's built on Serenity's side breaks the treaty: Serenity is provoked (its answer) and the line moves again.
+-- Serenity at war from landing (the user, 2026-10-19) treats only under a truce bought at its invoice post (ledger.lua);
+-- the border then holds after the truce ends, until broken. A stake removed lets the line resume. Ordinary items, from
+-- the start.
 local shared = require("__landing-party__.shared")
 local chart = require("__landing-party__.scripts.chart")
 local ops = require("__landing-party__.scripts.ops")
@@ -36,7 +37,8 @@ function border.placed(ent)
   local b, d = serenity_near(ent)
   local f = ent.force
   if not b then shared.reply(f, ent.position, {"lp.border-none"}); return end
-  if standing.get(b.corp, f.name) ~= "rival" then shared.reply(f, ent.position, {"lp.border-refused", shared.corp_label(b.corp)}); return end
+  local st = standing.get(b.corp, f.name)
+  if st ~= "rival" and st ~= "truce" then shared.reply(f, ent.position, {"lp.border-refused", shared.corp_label(b.corp)}); return end
   if d <= (b.perimeter or b.claim_radius or 0) then
     -- Inside its claim already: encroachment, not a treaty (ops.encroachment provokes).
     shared.reply(f, ent.position, {"lp.border-inside", shared.corp_label(b.corp)})
@@ -76,7 +78,8 @@ function border.tick(tick)
       table.remove(storage.borders, i)
     elseif not br.entity.valid or not b or b.fallen then
       void(br)
-    elseif standing.get(b.corp, br.owner) ~= "rival" then
+    elseif not (shared.CORPS[b.corp].temper or {}).hostile and standing.get(b.corp, br.owner) == "enemy" then
+      -- A corporation that is not at war by nature, provoked since: the treaty is off.
       void(br)
     else
       -- Anything of the player's on Serenity's side of the line breaks it (the stake itself stands on the line).

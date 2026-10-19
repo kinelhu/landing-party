@@ -2458,9 +2458,8 @@ scenarios.hq = function()
   end)
 end
 
--- Temper: Serenity never strikes the player first. With a depot and undefended relays within its sight but
--- outside its territory, it raids nothing of the player's while unprovoked; one shot at one of its buildings
--- provokes it, and it comes.
+-- Temper: Serenity strikes first (the user, 2026-10-19: at war from landing, "no grace"; it was provoked only). With a
+-- depot and undefended relays within its sight but outside its territory, never provoked, it goes for them.
 scenarios.temper = function()
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
   schedule(120, function()
@@ -2470,11 +2469,6 @@ scenarios.temper = function()
     local c = {math.floor(o.x - o.x / len * 185), math.floor(o.y - o.y / len * 185)}
     flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
     for k = -1, 1 do surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"} end
-  end)
-  schedule(15 * 3600, function()
-    S.before = lp("stats", storage.id).ops.launched
-    local t = surface().find_entities_filtered{force = FORCE, name = "lp-pylon", limit = 1}[1]
-    if t then t.damage(5, "player") end
   end)
   schedule(END - 60, function()
     local st = lp("stats", storage.id)
@@ -2486,11 +2480,8 @@ scenarios.temper = function()
         if not provoked or l.started < provoked then early = early + 1 end
       end
     end
-    -- Never first: every operation against the player started after it was provoked (by encroachment on its
-    -- territory or by the shot), and once provoked it came.
-    check("temper: no operation against the player before it was provoked", early == 0,
-      early .. " early of " .. against .. "; provoked at " .. tostring(provoked))
-    check("temper: provoked, it came", against > 0 or st.ops.op ~= nil, against .. " operations against the player")
+    check("temper: at war from landing, it struck first", early >= 1 and lp("standing", "serenity") == "enemy",
+      early .. " unprovoked of " .. against .. "; provoked at " .. tostring(provoked))
   end)
 end
 
@@ -2533,7 +2524,9 @@ end
 scenarios.line = function()
   local turret = params.mix == "turret"
   -- Turret: at level 1, where its sieges begin (shared.CORPS caps); a younger Serenity answers with a raid.
-  schedule(30, function() lp("debug_tune", {perimeter_fast = true, corp_level = turret and {serenity = 1} or nil}) end)
+  -- At war from landing (the user, 2026-10-19), it raided the relays before its line reached them: raids held (the
+  -- turret mix lets them go once the turret is built, for the answer) and the relays lasting.
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true, raids_off = true, corp_level = turret and {serenity = 1} or nil}) end)
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end end)
   schedule(120, function()
     local o = lp("stats", storage.id).origin
@@ -2542,7 +2535,9 @@ scenarios.line = function()
     flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
     S.relays = {}
     for k = -1, 1 do
-      table.insert(S.relays, surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"})
+      local r = surface().create_entity{name = "lp-command-relay", position = {c[1] + 5 * k, c[2]}, force = "player"}
+      r.destructible = false
+      table.insert(S.relays, r)
     end
   end)
   for m = 2, params.minutes - 1 do
@@ -2563,7 +2558,10 @@ scenarios.line = function()
             local name = turret and "gun-turret" or "assembling-machine-1"
             local p = surface().find_non_colliding_position(name, {r.position.x, r.position.y + 6}, 10, 1)
             S.built = surface().create_entity{name = name, position = p, force = "player", raise_built = true}
-            if turret then S.built.insert{name = "firearm-magazine", count = 50} end
+            if turret then
+              S.built.insert{name = "firearm-magazine", count = 50}
+              lp("debug_tune", {raids_off = false})
+            end
             S.built_at = game.tick
           end
         end
@@ -2580,7 +2578,6 @@ scenarios.line = function()
     check("line: the perimeter grew", (st.perimeter_steps or 0) > 0,
       tostring(st.perimeter_steps) .. " steps, radius " .. string.format("%.0f", st.claim_radius))
     check("line: a relay was named one step ahead", S.warned_at ~= nil, "warned at " .. tostring(S.warned_at))
-    check("line: no operation against the player before it was provoked", early == 0, early .. " early")
     if params.mix == "back" then
       check("line: pulled back, never provoked", provoked == nil, "provoked at " .. tostring(provoked))
     elseif turret then
@@ -2603,7 +2600,9 @@ end
 -- Strip: Grubstake strips the player's ore. A patch of iron near it, two of the player's drills on one side, no
 -- turrets: a camp must go up beside them, mine the real patch (its ore less), and the ore must reach home.
 scenarios.strip = function()
-  schedule(30, function() lp("debug_tune", {strip_fast = true}) end)
+  -- Serenity at war from landing raided the player's drill this scenario watches: a truce with it (Grubstake is the
+  -- subject).
+  schedule(30, function() lp("debug_tune", {strip_fast = true}); lp("debug_truce", "serenity", "player", params.minutes + 5) end)
   schedule(120, function()
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     if S.g then lp("debug_depot", S.g, 3000) end
@@ -3096,6 +3095,78 @@ scenarios.ability = function()
   end)
 end
 
+-- Dismantle (the user, 2026-10-19: "Stealing items and buildings is genius for a more early game rival"): an unguarded
+-- outpost 120 tiles from a Grubstake camp (four assemblers holding plates, two solar panels, a pole, a chest of
+-- circuits), a raid sent at it: the machines taken apart, their ghosts left, the goods home in the yard.
+-- LP_MIX=ambush: the raiders killed once they have taken two; what they carried spills there.
+scenarios.dismantle = function()
+  local ambush = params.mix == "ambush"
+  local function toward(id, d)
+    local o = lp("stats", id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    return {math.floor(o.x - o.x / len * d), math.floor(o.y - o.y / len * d)}
+  end
+  schedule(60, function()
+    lp("debug_tune", {era = 2, ops_off = false})
+    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
+  end)
+  schedule(3 * 3600, function()
+    lp("debug_tune", {raids_off = true})
+    local c = toward(S.id, 120)
+    flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
+    S.c = c
+    for k = 0, 3 do
+      local a = surface().create_entity{name = "assembling-machine-1", position = {c[1] - 6 + 4 * k + 0.5, c[2] + 0.5}, force = "player"}
+      a.set_recipe("iron-gear-wheel")
+      a.insert{name = "iron-plate", count = 40}
+    end
+    for k = 0, 1 do
+      surface().create_entity{name = "solar-panel", position = {c[1] - 3 + 4 * k + 0.5, c[2] + 5.5}, force = "player"}
+    end
+    surface().create_entity{name = "medium-electric-pole", position = {c[1] + 0.5, c[2] + 3.5}, force = "player"}
+    local chest = surface().create_entity{name = "steel-chest", position = {c[1] + 0.5, c[2] - 3.5}, force = "player"}
+    chest.insert{name = "electronic-circuit", count = 50}
+    lp("dev", {"raid", tostring(S.id)}, c)
+  end)
+  local function ghosts() return surface().count_entities_filtered{name = "entity-ghost", position = S.c, radius = 20} end
+  if ambush then
+    for t = 3 * 3600 + 60, END - 600, 60 do
+      schedule(t, function()
+        if S.ambushed or not S.c then return end
+        if ghosts() >= 2 then
+          S.ambushed = 0
+          for _, u in pairs(surface().find_entities_filtered{position = S.c, radius = 60, force = "lp-grubstake", type = "unit"}) do
+            u.die("player"); S.ambushed = S.ambushed + 1
+          end
+        end
+      end)
+    end
+  end
+  schedule(END - 60, function()
+    local y = surface().find_entities_filtered{name = "lp-skim-yard", limit = 1}[1]
+    local yinv = y and y.get_inventory(defines.inventory.chest)
+    local machines = yinv and yinv.get_item_count("assembling-machine-1") or 0
+    local plates = yinv and yinv.get_item_count("iron-plate") or 0
+    local left = surface().count_entities_filtered{name = "assembling-machine-1", position = S.c, radius = 20}
+    local on_ground = 0
+    for _, e in pairs(surface().find_entities_filtered{type = "item-entity", name = "item-on-ground", position = S.c, radius = 40}) do
+      on_ground = on_ground + e.stack.count
+    end
+    info(string.format("dismantle: ghosts %d, assemblers left %d, yard: %d assemblers, %d plates; on the ground %d (ambushed %s)",
+      ghosts(), left, machines, plates, on_ground, tostring(S.ambushed)))
+    if ambush then
+      check("dismantle: the raiders killed, what they carried spills", (S.ambushed or 0) > 0 and on_ground > 0 and machines == 0,
+        string.format("%d on the ground, yard %d", on_ground, machines))
+      return
+    end
+    check("dismantle: machines taken apart, their ghosts left", ghosts() >= 3 and left <= 1, string.format("%d ghosts, %d left",
+      ghosts(), left))
+    check("dismantle: the machines and what they held home in the yard", machines >= 2 and plates > 0,
+      string.format("%d assemblers, %d plates", machines, plates))
+  end)
+end
+
 -- Arc: the tree's area weapons hit more than one and spare their own side. One Shock trooper (Serenity) at five player
 -- cars three tiles apart, Serenity's own car beside them: its lightning must reach three or more, never its own. One
 -- dynamite sapper (Grubstake) at a block of four player walls, its own fence beside them: two or more walls hurt,
@@ -3275,6 +3346,8 @@ scenarios.hazard = function()
     if billing then
       local q = surface().find_non_colliding_position("stone-furnace", {0, 0}, 30, 1)
       S.furnace = q and surface().create_entity{name = "stone-furnace", position = q, force = "player"}
+      -- Lasting: Serenity is at war from landing and raided it (no polluter in reach, no bill).
+      if S.furnace then S.furnace.destructible = false end
     end
   end)
   -- norails: the garrison kept over its cap (losses to the waves had dropped it under, and the old code made railgunners
@@ -3290,6 +3363,7 @@ scenarios.hazard = function()
           for _, e in ipairs(S.nests or {}) do if e.valid then surface().pollute(e.position, 300) end end
         end
         local L = lp("ledger", storage.id)
+        if lp("standing", "serenity", "player") == "truce" then S.saw_truce = true end
         if pay and L and L.owed > 0 and L.post then
           local post = surface().find_entities_filtered{name = "lp-invoice-post", position = L.post, radius = 1}[1]
           if post then S.paid_in = S.paid_in + post.insert{name = "electronic-circuit", count = L.owed} end
@@ -3334,15 +3408,17 @@ scenarios.hazard = function()
     if billing then
       local L = lp("ledger", storage.id)
       local now = lp("standing", "serenity", "player")
-      info(string.format("ledger: bills %d, billed %d, paid %d (put in %d), owed %d, unpaid %d, standing %s, furnace %s",
-        L.bills, L.billed, L.paid, S.paid_in, L.owed, L.unpaid, now, S.furnace and "placed" or "none"))
+      info(string.format("ledger: bills %d, billed %d, paid %d (put in %d), owed %d, truces %d (seen %s), standing %s, furnace %s",
+        L.bills, L.billed, L.paid, S.paid_in, L.owed, L.truces, tostring(S.saw_truce), now, S.furnace and "placed" or "none"))
+      -- Serenity is at war from landing (the user, 2026-10-19): paying off buys a truce, the only quiet.
       if clean then
-        check("hazard: ledger, no cloud on the nests, no bill", L.bills == 0 and now == "rival", string.format("%d bills, %s", L.bills, now))
+        check("hazard: ledger, no cloud on the nests, no bill", L.bills == 0 and now == "enemy", string.format("%d bills, %s", L.bills, now))
       elseif pay then
-        check("hazard: ledger, billed three times or more, paid, still a rival", L.bills >= 3 and L.paid > 0 and L.unpaid == 0
-          and now == "rival", string.format("%d bills, paid %d, %s", L.bills, L.paid, now))
+        check("hazard: ledger, billed three times or more, paid off, a truce bought", L.bills >= 3 and L.paid > 0
+          and L.truces >= 1 and S.saw_truce, string.format("%d bills, paid %d, %d truces", L.bills, L.paid, L.truces))
       else
-        check("hazard: ledger, unpaid, an enemy", L.unpaid == 1 and now == "enemy", string.format("%d unpaid, %s", L.unpaid, now))
+        check("hazard: ledger, unpaid, no truce, still at war", L.bills >= 3 and L.owed > 0 and L.truces == 0 and not S.saw_truce
+          and now == "enemy", string.format("%d bills, owed %d, %s", L.bills, L.owed, now))
       end
       return
     end
@@ -3755,6 +3831,9 @@ scenarios.border = function()
     S.relay = surface().create_entity{name = "lp-command-relay", position = c, force = "player"}
     S.relay.destructible = false
   end)
+  -- Serenity is at war from landing (the user, 2026-10-19): it treats only under a truce (bought at its invoice post;
+  -- set here), and the border holds after the truce ends.
+  schedule(2 * 3600 - 60, function() lp("debug_truce", "serenity", "player", 5) end)
   schedule(2 * 3600, function()
     local p = {S.o.x + S.u[1] * 200, S.o.y + S.u[2] * 200}
     flatten(p[1] - 3, p[2] - 3, p[1] + 3, p[2] + 3)
@@ -3780,14 +3859,15 @@ scenarios.border = function()
       S.maxp or -1, st.perimeter or -1, standing_now, serpent.line(lp("borders"))))
     check("border: accepted", S.held0 == 1, tostring(S.held0))
     if breach then
-      check("border: built on its side, the treaty broke and it is an enemy", standing_now == "enemy", standing_now)
+      check("border: built on its side, the treaty broke, at war", standing_now == "enemy", standing_now)
       -- The treaty void (the line itself has nowhere to go: it stops 40 past the player's nearest building, the
       -- intruder inside its claim; the enemy raids it instead).
       check("border: the treaty is void", lp("borders").held == 0, serpent.line(lp("borders")))
       return
     end
     check("border: the line held short of the stake", (S.maxp or 999) <= 200, string.format("%.0f", S.maxp or -1))
-    check("border: still a rival", standing_now == "rival", standing_now)
+    check("border: the truce over, at war, the border held", standing_now == "enemy" and lp("borders").held == 1,
+      standing_now .. " " .. serpent.line(lp("borders")))
   end)
 end
 
@@ -4315,9 +4395,11 @@ scenarios.crew = function()
       return
     end
     if dronekill then
-      check("crew: its drone killed, Serenity an enemy (a rival before)", S.shot and S.before == "rival"
-        and lp("standing", "serenity") == "enemy", string.format("shot %s, before %s, now %s", tostring(S.shot),
-        tostring(S.before), lp("standing", "serenity")))
+      -- At war from landing (the user, 2026-10-19): the kill is a provocation all the same (its answer).
+      local pv = (lp("corp", "serenity").provoked or {}).player
+      check("crew: its drone killed, a provocation recorded, an enemy", S.shot and pv ~= nil and pv >= S.shot - 120
+        and lp("standing", "serenity") == "enemy", string.format("shot %s, provoked %s, now %s", tostring(S.shot),
+        tostring(pv), lp("standing", "serenity")))
       return
     end
     if island then
@@ -4366,6 +4448,8 @@ scenarios.crystal = function()
   local mark = params.mix == "marker"
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true})
+    -- Serenity, at war from landing, raided the marked outpost the test watches: a truce with it.
+    lp("debug_truce", "serenity", "player", params.minutes + 5)
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
     flatten(-20, -20, 20, 20)
@@ -4636,6 +4720,90 @@ end
 -- pylon line, clamps the tap, its draw rises (a step each 30 s here) and reaches the camp; a line pylon cut, the theft
 -- stops; the tap broken, it is over. A gun turret stands on the straight way: the line goes round it (the heist's
 -- route). LP_MIX=natural: no debug_tap, the camp's own choice (a pole its sensors have seen exposed).
+-- Skim (Grubstake; Fable's fortress consult): a player's belt of iron ore 150 tiles from the camp toward spawn, 24 tiles
+-- long, fed at its west end and emptied at its east by the test (both counted). The camp finds it, a buggy drops a
+-- shack, the shack lifts 15% of a full belt's flow, trucks carry it to the yard. LP_MIX=guarded: an armed gun turret by
+-- the belt, no shack; LP_MIX=raid: the yard destroyed at minute 24, what it held spills.
+scenarios.skim = function()
+  local guarded, raid = params.mix == "guarded", params.mix == "raid"
+  schedule(60, function()
+    lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+  end)
+  schedule(3 * 3600, function()
+    local o = lp("stats", S.g).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {o.x - ux * 150, o.y - uy * 150}
+    flatten(c[1] - 16, c[2] - 6, c[1] + 16, c[2] + 6)
+    S.belts = {}
+    for k = -12, 11 do
+      table.insert(S.belts, surface().create_entity{name = "transport-belt", position = {c[1] + k + 0.5, c[2] + 0.5},
+        direction = defines.direction.east, force = "player"})
+    end
+    S.fed, S.delivered = 0, 0
+    if guarded then
+      local t = surface().create_entity{name = "gun-turret", position = {c[1], c[2] + 4}, force = "player"}
+      t.insert{name = "piercing-rounds-magazine", count = 200}
+    end
+    S.c = c
+  end)
+  for t = 3 * 3600 + 30, END - 120, 30 do
+    schedule(t, function()
+      local first, last = S.belts[1], S.belts[#S.belts]
+      if not (first and first.valid and last and last.valid) then return end
+      for line = 1, 2 do
+        local tl = first.get_transport_line(line)
+        for _ = 1, 4 do
+          if tl.insert_at_back({name = "iron-ore", count = 1}) then S.fed = S.fed + 1 else break end
+        end
+        local out = last.get_transport_line(line)
+        local n = out.get_item_count("iron-ore")
+        if n > 0 then S.delivered = S.delivered + out.remove_item({name = "iron-ore", count = n}) end
+      end
+    end)
+  end
+  if raid then
+    schedule(24 * 3600, function()
+      local y = surface().find_entities_filtered{name = "lp-skim-yard", limit = 1}[1]
+      S.yard_held = y and y.get_inventory(defines.inventory.chest).get_item_count() or 0
+      if y then y.die("player") end
+    end)
+    schedule(24 * 3600 + 60, function()
+      local n = 0
+      for _, e in pairs(surface().find_entities_filtered{type = "item-entity", name = "item-on-ground"}) do
+        if e.stack.valid_for_read and e.stack.name == "iron-ore" then n = n + e.stack.count end
+      end
+      S.spilled = n
+    end)
+  end
+  schedule(END - 60, function()
+    local k = lp("skim", S.g)
+    local shack = surface().find_entities_filtered{name = "lp-skim-shack", limit = 1}[1]
+    local turret_near = shack and surface().count_entities_filtered{position = shack.position, radius = 30, force = "player",
+      type = {"ammo-turret", "electric-turret"}} or -1
+    info(string.format("skim: fed %d, delivered %d, skims %d, taken %d, home %d, yard %d, shack %s (turrets within 30: %d)",
+      S.fed or 0, S.delivered or 0, k.skims, k.taken, k.skimmed, k.yard, shack and "standing" or "none", turret_near))
+    if guarded then
+      check("skim: a guarded belt is not skimmed", k.skims == 0, tostring(k.skims))
+      return
+    end
+    if raid then
+      info(string.format("skim: the yard held %d, spilled %d", S.yard_held or 0, S.spilled or 0))
+      check("skim: the yard destroyed, its goods spill", (S.yard_held or 0) > 0 and (S.spilled or 0) >= S.yard_held,
+        string.format("held %d, spilled %d", S.yard_held or 0, S.spilled or 0))
+      return
+    end
+    local share = (S.fed or 0) > 0 and k.taken / S.fed or 0
+    check("skim: a shack on the exposed belt, out of turret reach", k.skims >= 1 and shack ~= nil and turret_near == 0,
+      string.format("%d skims", k.skims))
+    check("skim: it took part of the flow, not all", share >= 0.05 and share <= 0.4, string.format("%.0f%%", share * 100))
+    check("skim: trucks brought it home to the yard", k.skimmed >= 40 and k.yard >= 40, string.format("%d home, yard %d",
+      k.skimmed, k.yard))
+  end)
+end
+
 scenarios.tap = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true, tap_step = 30 * 60})

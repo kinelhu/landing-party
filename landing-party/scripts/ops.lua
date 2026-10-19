@@ -546,11 +546,23 @@ local function finish(b, outcome, trace, army)
       t.defence = math.max(t.defence or 0, (ops.weigh(game.surfaces[b.surface], t.pos, enemies(game.forces[b.force]))))
     end
   end
-  -- Loot reaches home with whoever survives (none, and it is lost).
+  -- Loot reaches home with whoever survives, as items in the yard (ops.stash, skim.lua) and its worth in parts; none
+  -- survive, and it spills where they fell (the player takes back what was stolen).
   if op.loot and op.loot.value > 0 and alive(op) > 0 then
     b.parts = b.parts + math.floor(op.loot.value)
     b.looted = (b.looted or 0) + op.loot.items
+    if op.loot.goods and ops.stash then ops.stash(b, op.loot.goods) end
     trace(b, string.format("raid home with %d items of loot: %d parts", op.loot.items, math.floor(op.loot.value)))
+  elseif op.loot and op.loot.goods then
+    local s = game.surfaces[b.surface]
+    local at = op.last_pos or (t and t.pos and {x = t.pos[1], y = t.pos[2]})
+    if at then
+      for _, g in pairs(op.loot.goods) do
+        if g.count > 0 then s.spill_item_stack{position = at, stack = {name = g.name, count = g.count, quality = g.quality},
+          enable_looted = true} end
+      end
+      trace(b, "raid lost; its loot spilled")
+    end
   end
   for _, e in ipairs(op.works or {}) do if e.valid then e.destroy() end end
   if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
@@ -605,6 +617,81 @@ local LOOT = {["uranium-235"] = 20, ["uranium-fuel-cell"] = 10, ["processing-uni
   ["speed-module-3"] = 40, ["efficiency-module-3"] = 40, ["productivity-module-3"] = 40, ["steel-plate"] = 0.3}
 local LOOT_ITEMS = 400
 ops.LOOT_VALUE = LOOT
+-- What a raid carries, item by item (kept as items: home in the yard, or spilled where the raid died).
+local function carry(op, name, quality, count)
+  op.loot.goods = op.loot.goods or {}
+  local k = name .. "|" .. (quality or "normal")
+  local g = op.loot.goods[k] or {name = name, quality = quality or "normal", count = 0}
+  g.count = g.count + count
+  op.loot.goods[k] = g
+end
+-- Dismantling (the user, 2026-10-19: "Stealing items and buildings is genius for a more early game rival"): at the
+-- target, a raider standing by one of the player's machines (DISMANTLE_REACH) takes it apart and carries it off, its
+-- contents with it, leaving its ghost where it stood: the outline of what was stolen (robots rebuild it, at the player's
+-- cost; with none, the hole stays). Machines first, by WORTH; one a raider a step, DISMANTLE_MAX a raid. Walls, turrets,
+-- belts, pipes and rails are left (it steals what makes things, not what holds them).
+local DISMANTLE_TYPES = {"assembling-machine", "furnace", "mining-drill", "lab", "solar-panel", "accumulator", "beacon",
+  "radar", "boiler", "generator", "inserter", "electric-pole", "pump", "offshore-pump", "storage-tank", "roboport"}
+local WORTH = {["assembling-machine"] = 3, furnace = 2, ["mining-drill"] = 3, lab = 3, ["solar-panel"] = 2, accumulator = 2,
+  beacon = 8, radar = 2, boiler = 1, generator = 3, inserter = 0.5, ["electric-pole"] = 0.5, pump = 1, ["offshore-pump"] = 1,
+  ["storage-tank"] = 1, roboport = 8}
+local DISMANTLE_MAX, DISMANTLE_REACH = 12, 8
+-- A thief walks in and takes rather than shoots (raiding as an army, it razed three of four assemblers before its first
+-- step could take one, scenario dismantle): with something to carry at the target, its raiders go there answering
+-- only what hits them; with nothing left (or its hands full), they attack as any raid does (ops.thief_done).
+local function thief_cmd(b, t, pos, surface)
+  if not storage.dismantle_off and (shared.CORPS[b.corp].temper or {}).loots and t and against_player(t.owner)
+    and surface.count_entities_filtered{position = pos, radius = 16, type = DISMANTLE_TYPES, force = t.owner, limit = 1} > 0 then
+    return {type = defines.command.go_to_location, destination = pos, radius = 4, distraction = defines.distraction.by_damage}, true
+  end
+  return {type = defines.command.attack_area, destination = pos, radius = 12, distraction = defines.distraction.by_anything}, false
+end
+local function dismantle(b, op, t, pos, surface, trace)
+  if storage.dismantle_off then return end
+  op.loot.dismantled = op.loot.dismantled or 0
+  local room = DISMANTLE_MAX - op.loot.dismantled
+  local list = room > 0 and surface.find_entities_filtered{position = pos, radius = 16, type = DISMANTLE_TYPES, force = t.owner} or {}
+  if #list == 0 then
+    -- Nothing left to carry: the thieves attack as any raid does.
+    if op.thieving then
+      op.thieving = false
+      order_all(op.members, {type = defines.command.attack_area, destination = pos, radius = 12,
+        distraction = defines.distraction.by_anything})
+    end
+    return
+  end
+  table.sort(list, function(x, y) return (WORTH[x.type] or 0) > (WORTH[y.type] or 0) end)
+  local hands = math.max(1, alive(op))
+  for _, e in ipairs(list) do
+    if hands <= 0 or room <= 0 then break end
+    if e.valid and surface.count_entities_filtered{position = e.position, radius = DISMANTLE_REACH, force = b.force,
+      type = "unit", limit = 1} > 0 then
+      local name, at, dir, q, force = e.name, e.position, e.direction, e.quality and e.quality.name or "normal", e.force
+      local kind = e.type
+      local inv = game.create_inventory(48)
+      if e.mine{inventory = inv, force = true, raise_destroyed = true} then
+        for _, it in pairs(inv.get_contents()) do
+          carry(op, it.name, it.quality, it.count)
+          op.loot.items = op.loot.items + it.count
+        end
+        op.loot.value = op.loot.value + (WORTH[kind] or 1)
+        op.loot.dismantled = op.loot.dismantled + 1
+        op.last_kill = game.tick
+        b.dismantled = (b.dismantled or 0) + 1
+        surface.create_entity{name = "entity-ghost", inner_name = name, position = at, direction = dir, force = force,
+          quality = q}
+        hands, room = hands - 1, room - 1
+        if not op.loot.alerted then
+          op.loot.alerted = true
+          alert(b, t, "lp.alert-loot", {at.x, at.y})
+        end
+        trace(b, string.format("dismantled a %s at %.0f,%.0f and carried it off (%d this raid)", name, at.x, at.y,
+          op.loot.dismantled))
+      end
+      inv.destroy()
+    end
+  end
+end
 local function loot(b, op, t, pos, surface, trace)
   if not (shared.CORPS[b.corp].temper or {}).loots or not (t and against_player(t.owner)) then return end
   op.loot = op.loot or {items = 0, value = 0, looted = {}}
@@ -623,6 +710,7 @@ local function loot(b, op, t, pos, surface, trace)
         local want = math.min(it.count, LOOT_ITEMS - op.loot.items)
         if want <= 0 then break end
         local took = inv.remove{name = it.name, count = want, quality = it.quality}
+        if took > 0 then carry(op, it.name, it.quality, took) end
         op.loot.items = op.loot.items + took
         op.loot.value = op.loot.value + took * (LOOT[it.name] or 0.1)
       end
@@ -634,6 +722,7 @@ local function loot(b, op, t, pos, surface, trace)
         c.position.y, op.loot.items, op.loot.value))
     end
   end
+  dismantle(b, op, t, pos, surface, trace)
 end
 
 ops.loot = loot
@@ -649,12 +738,15 @@ function ops.loot_wreck(b, ent)
   local inv = ent.get_inventory(ent.type == "cargo-wagon" and defines.inventory.cargo_wagon or defines.inventory.chest)
   for _, it in pairs(inv and inv.get_contents() or {}) do
     local took = math.min(it.count, LOOT_ITEMS - op.loot.items)
+    if took > 0 then carry(op, it.name, it.quality, took) end
     op.loot.items = op.loot.items + took
     op.loot.value = op.loot.value + took * (LOOT[it.name] or 0.1)
   end
 end
 
-local DEAD_END_RADIUS, DEAD_END_TICKS = 64, 30 * 3600
+-- 128 and 90 minutes (64 and 30 at first: on nw a fortress's staging points 115 apart each ran dry again every half hour,
+-- 95 to 125 ms a search, nine times in three hours).
+local DEAD_END_RADIUS, DEAD_END_TICKS = 128, 90 * 3600
 local function launch(b, key, trace, army, opts)
   local t = b.intel.targets[key]
   local h = home(b)
@@ -843,7 +935,7 @@ local function launch(b, key, trace, army, opts)
     -- undefended, and Grubstake's flares, which go at guarded targets, never knew of one, visit nw).
     if why and not why:find("turrets = 0[,}]") then t.exposure = math.max(t.exposure or 0, 1) end
     b.next_op = game.tick + 2 * 3600
-    trace(b, string.format("raid on %s at %.0f,%.0f: no way round biter country; not sent (%s)", t.kind, t.pos[1], t.pos[2],
+    trace(b, string.format("raid on %s at %.0f,%.0f: no way round the turrets or biter country; not sent (%s)", t.kind, t.pos[1], t.pos[2],
       why or ""))
     return false
   end
@@ -998,9 +1090,11 @@ local function step(b, trace, army)
           trace(b, string.format("raid sneaks in by %d waypoints to breach the wall at %.0f,%.0f (%d turrets reach it)",
             #op.route, op.breach_at[1], op.breach_at[2], cover))
         else
-          table.insert(cmds, {type = defines.command.attack_area, destination = pos, radius = 12,
-            distraction = defines.distraction.by_anything})
-          trace(b, string.format("raid sneaks in by %d waypoints with %d of %d", #op.route, n, op.launched))
+          local cmd, thief = thief_cmd(b, t, pos, game.surfaces[b.surface])
+          op.thieving = thief
+          table.insert(cmds, cmd)
+          trace(b, string.format("raid sneaks in by %d waypoints with %d of %d%s", #op.route, n, op.launched,
+            thief and ", to take what it can carry" or ""))
         end
         order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
           commands = cmds})
@@ -1025,8 +1119,9 @@ local function step(b, trace, army)
           trace(b, string.format("raid goes straight at the wall at %.0f,%.0f with %d of %d", op.breach_at[1],
             op.breach_at[2], n, op.launched))
         else
-          table.insert(cmds, {type = defines.command.attack_area, destination = pos, radius = 12,
-            distraction = defines.distraction.by_anything})
+          local cmd, thief = thief_cmd(b, t, pos, game.surfaces[b.surface])
+          op.thieving = thief
+          table.insert(cmds, cmd)
           order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
             commands = cmds})
           local far = 0
@@ -1096,6 +1191,7 @@ local function step(b, trace, army)
     local share = rd.has(b.corp, "prospector") and 0.7 or 0.5
     if n < share * op.launched and turrets > 0 then return finish(b, "aborted", trace, army) end
     loot(b, op, t, pos, surface, trace)
+    if op.loot then op.last_pos = {x = pos[1] or pos.x, y = pos[2] or pos.y} end
     -- The breach walled up again behind them before they were through, and nothing has fallen since: back at it (the
     -- player's robots put a piece back in 5 s, and Serenity's raiders stood at the rebuilt wall until the raid gave up,
     -- mended serenity).
@@ -1137,6 +1233,18 @@ local function step(b, trace, army)
     -- point, the nearest: told to attack the area again, they found nothing there they would attack and stood idle
     -- until the raid gave up (the user's save).
     local ents
+    -- Thieves (thief_cmd): each idle one walks to the nearest machine still to take, not to shoot it.
+    if op.thieving then
+      local goods = t and surface.find_entities_filtered{position = pos, radius = 16, type = DISMANTLE_TYPES, force = t.owner} or {}
+      for _, u in ipairs(op.members) do
+        if u.valid and not busy(u) and #goods > 0 then
+          local e = surface.get_closest(u.position, goods)
+          u.commandable.set_command{type = defines.command.go_to_location, destination = e.position, radius = 3,
+            distraction = defines.distraction.by_damage}
+        end
+      end
+      return
+    end
     for _, u in ipairs(op.members) do
       if u.valid and not busy(u) then
         ents = ents or surface.find_entities_filtered{position = pos, radius = 16, type = TYPES,

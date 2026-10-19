@@ -22,6 +22,11 @@ local function survey_power(b, trace)
   local s = game.surfaces[b.surface]
   for _, f in ipairs(shared.player_forces()) do
     if stance.may(b.corp, f.name, "war") then
+      -- A meshed network found with no single cut is not searched again while its poles are as many (65 ms a survey
+      -- every 5 minutes on nw's 954 poles, always "no single cut"); every 30 minutes regardless.
+      local npoles = s.count_entities_filtered{position = h.position, radius = CUT_RANGE + CUT_AREA, force = f, type = "electric-pole"}
+      local m = b.cut_mesh and b.cut_mesh[f.name]
+      if m and m.poles == npoles and game.tick < m.till then goto next_force end
       local lasers = s.find_entities_filtered{position = h.position, radius = CUT_RANGE, force = f, type = "electric-turret"}
       table.sort(lasers, function(x, y)
         return (x.position.x - h.position.x) ^ 2 + (x.position.y - h.position.y) ^ 2
@@ -60,11 +65,18 @@ local function survey_power(b, trace)
           if #scouts > 0 then trace(b, string.format("power survey: %d scouts walk the line to %.0f,%.0f", #scouts,
             p.position.x, p.position.y)) end
         end
-      elseif #lasers > 0 and game.tick >= (b.cut_quiet or 0) then
-        b.cut_quiet = game.tick + 30 * 3600
-        trace(b, "power survey: " .. why)
+      else
+        if why and why:find("no single cut", 1, true) then
+          b.cut_mesh = b.cut_mesh or {}
+          b.cut_mesh[f.name] = {poles = npoles, till = game.tick + 30 * 3600}
+        end
+        if #lasers > 0 and game.tick >= (b.cut_quiet or 0) then
+          b.cut_quiet = game.tick + 30 * 3600
+          trace(b, "power survey: " .. why)
+        end
       end
     end
+    ::next_force::
   end
 end
 

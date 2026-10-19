@@ -34,6 +34,7 @@ local border = require("__landing-party__.scripts.border")
 local road = require("__landing-party__.scripts.road")
 local trade = require("__landing-party__.scripts.trade")
 local ledger = require("__landing-party__.scripts.ledger")
+local skim = require("__landing-party__.scripts.skim")
 local map = require("__landing-party__.scripts.map")
 war.forgive = standing.forgive
 rd.era = ops.era
@@ -60,7 +61,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -130,6 +131,8 @@ script.on_event(defines.events.on_entity_died, function(e)
   -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
   -- corridor for 30 minutes (ops.route lets marches through it).
   if ent.type == "unit-spawner" then ops.cleared(ent.surface, ent.position) end
+  -- The skim's yard or shack: what it held spills.
+  if ent.type == "container" and shared.is_corp(ent.force.name) then skim.died(ent) end
   local kind = shared.kind_of(ent.name)
   if kind == "lp-uplink" then faction.uplink_lost(ent) end
   if kind == "lp-pacifier" then pact.lost(ent) end
@@ -353,6 +356,7 @@ remote.add_interface("landing-party", {
     if t.hazard_off ~= nil then storage.hazard_off = t.hazard_off end
     if t.hazard_hold ~= nil then storage.hazard_hold = t.hazard_hold end
     if t.ledger_off ~= nil then storage.ledger_off = t.ledger_off end
+    if t.skim_off ~= nil then storage.skim_off = t.skim_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
@@ -463,6 +467,13 @@ remote.add_interface("landing-party", {
   cordon_stats = function(id) return storage.bases[id] and cordon.stats(storage.bases[id]) end,
   -- Tests only: one pass of the line cutting what crosses it, now.
   debug_sever = function(id) local b = storage.bases[id]; return b and ops.sever(b) end,
+  debug_skim = function(id, pos) local b = storage.bases[id]; return b and skim.debug(b, pos) end,
+  skim = function(id) local b = storage.bases[id]; return b and skim.state(b) end,
+  -- Tests only: a truce between a corporation and a player force, as the invoice post (ledger.lua) or the trade post sells.
+  debug_truce = function(corp, owner, minutes)
+    storage.truces = storage.truces or {}
+    storage.truces[corp .. "|" .. owner] = game.tick + minutes * 3600
+  end,
   ledger = function(id) local b = storage.bases[id]; return b and ledger.stats(b) end,
   next_ore = function(id) local b = storage.bases[id]; return b and {at = b.next_ore, targets = b.ore_targets or 0} end,
   crew_stats = function(id) return storage.bases[id] and crew.stats(storage.bases[id]) end,

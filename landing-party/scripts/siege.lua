@@ -427,7 +427,7 @@ function ops.hazard_clear(b, trace, army)
   end
   local ok, why = ops.clearance(b, near, trace, army)
   trace(b, string.format("hazard: %d lost to biters round %.0f,%.0f in 30 minutes; the nest at %.0f,%.0f %s", #h.log, mx, my,
-    near.position.x, near.position.y, ok and "is cleared" or ("waits (" .. (why or "no launch") .. ")")))
+    near.position.x, near.position.y, ok and "gets a clearance" or ("waits (" .. (why or "no launch") .. ")")))
   if ok then
     b.hazards = (b.hazards or 0) + 1
     h.log = {}
