@@ -1201,6 +1201,7 @@ function ops.tick(b, tick, trace, army)
   if tick % 600 == 300 then stand_down(b) end
   if tick % SENSE_TICKS == (b.id * 97) % SENSE_TICKS then scan(b) end
   if tick % 3600 == (b.id * 53) % 3600 then ops.perimeter(b, tick) end
+  if tick % 1800 == (b.id * 59 + 13) % 1800 then ops.sever(b) end
   if tick % 600 == 200 then field_sight(b) end
   if tick % SURVEY_TICKS == (b.id * 131 + 7) % SURVEY_TICKS then survey(b) end
   if tick % CUT_TICKS == (b.id * 173 + 11) % CUT_TICKS then survey_power(b, trace) end
@@ -1220,6 +1221,8 @@ function ops.tick(b, tick, trace, army)
     -- it by its value and threat).
     local bkey, bsite = choose_siege(b, army, true)
     if bkey then return launch_siege(b, bkey, bsite, trace, army) end
+    -- Then a hazard on its ground: the nests whose waves it keeps losing to (siege.lua).
+    if ops.hazard_clear(b, trace, army) then return end
     local key = choose(b, army)
     if key and battery(b.intel.targets[key]) then return launch(b, key, trace, army) end
     -- A thief strips first: a raid was always available before and the camp never went up.
@@ -1331,6 +1334,7 @@ function ops.summary(b)
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
+    hazards = b.hazards or 0, biter_losses = b.biter_losses or 0,
     overflights = b.overflights or 0,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,

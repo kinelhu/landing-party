@@ -32,16 +32,16 @@ digraph ai {
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n393 lines", width=1.24, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n233 lines", width=1.06, fillcolor="#eef2f7"];
-    "perimeter" [label="perimeter\n221 lines", width=1.05, fillcolor="#d9f0d9"];
+    "perimeter" [label="perimeter\n260 lines", width=1.09, fillcolor="#d9f0d9"];
     "road" [label="road\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n344 lines", width=1.18, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n701 lines", width=1.58, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1341 lines", width=2.29, fillcolor="#f7dede"];
+    "ops" [label="ops\n1345 lines", width=2.29, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n225 lines", width=1.05, fillcolor="#d9f0d9"];
-    "siege" [label="siege\n697 lines", width=1.57, fillcolor="#d9f0d9"];
+    "siege" [label="siege\n755 lines", width=1.64, fillcolor="#d9f0d9"];
     "strip" [label="strip\n217 lines", width=1.04, fillcolor="#d9f0d9"];
     "answers" [label="answers\n132 lines", width=0.95, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n74 lines", width=0.88, fillcolor="#eef2f7"];
@@ -65,7 +65,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n462 lines", width=1.31, fillcolor="#eef2f7"];
+    "control" [label="control\n472 lines", width=1.32, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

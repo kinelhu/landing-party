@@ -160,6 +160,12 @@ script.on_event(defines.events.on_entity_died, function(e)
     and (e.cause.type == "artillery-turret" or e.cause.type == "artillery-wagon") then
     ops.counter_battery(ent.force.name, ent.surface, e.cause, e.force and e.force.name)
   end
+  -- Lost to biters: the hazard ledger (ops.hazard_clear).
+  if shared.is_corp(ent.force.name) and e.force and e.force.name == "enemy" and ent.unit_number then
+    local own = storage.owner[ent.unit_number]
+    local hb = storage.bases[own and own.base or storage.unit_owner[ent.unit_number] or 0]
+    if hb and not hb.fallen then ops.hazard_note(hb, ent.position) end
+  end
   if shared.is_corp(ent.force.name) then
     -- A crew's truck or drone killed is an attack on the corporation, as on its garrison (the user, 2026-10-17: "it
     -- gets multiple haulers destroyed and doesn't turn hostile").
@@ -342,6 +348,8 @@ remote.add_interface("landing-party", {
     if t.pods_off ~= nil then storage.pods_off = t.pods_off end
     if t.strangle_off ~= nil then storage.strangle_off = t.strangle_off end
     if t.next_ore_off ~= nil then storage.next_ore_off = t.next_ore_off end
+    if t.sever_off ~= nil then storage.sever_off = t.sever_off end
+    if t.hazard_off ~= nil then storage.hazard_off = t.hazard_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end
@@ -450,6 +458,8 @@ remote.add_interface("landing-party", {
   incidents = function() return storage.incidents or {} end,
   prospect_stats = function(id) return storage.bases[id] and prospect.stats(storage.bases[id]) end,
   cordon_stats = function(id) return storage.bases[id] and cordon.stats(storage.bases[id]) end,
+  -- Tests only: one pass of the line cutting what crosses it, now.
+  debug_sever = function(id) local b = storage.bases[id]; return b and ops.sever(b) end,
   next_ore = function(id) local b = storage.bases[id]; return b and {at = b.next_ore, targets = b.ore_targets or 0} end,
   crew_stats = function(id) return storage.bases[id] and crew.stats(storage.bases[id]) end,
   breaks = function() return {breaks = storage.pact_breaks or 0, till = storage.pact_suspended_till} end,

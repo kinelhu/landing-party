@@ -80,14 +80,13 @@ local function outpost(b, surface, r, f)
   return best, bd
 end
 
--- The next ore (strangling's second half): at war with no outpost in reach, the line goes for the field the player will
--- want next, so that growing means trespass. The ores the player mines (its drills' targets; iron and copper before it
+-- The next ore (strangling's second half): at war with none of the player's buildings in reach, the line goes for the
+-- field the player will want next, so that coming means trespass (with one in reach, the line goes for it as before:
+-- an ore target then turned the cordon away from the player's buildings, scenarios cordon and bend). The ores the player mines (its drills' targets; iron and copper before it
 -- has any), in cells of OUTPOST_CELL beyond the claim with ORE_MIN tiles of them or more and no drill of the player's,
--- the richest nearest the player's nearest building, on Serenity's side of it (no further out than that building and
--- FRONT: the ground between them is what it contests; a field past the player's front is the player's). Kept (b.next_ore) until the claim covers it or a drill stands on it:
+-- the richest (counted to 600), the nearest. Kept (b.next_ore) until the claim covers it or a drill stands on it:
 -- the search is a count a cell, some hundreds, once.
 local ORE_MIN = 150
-local FRONT = 60
 local function mined(surface, f)
   local names, any = {}, false
   for _, d in pairs(surface.find_entities_filtered{force = f, type = "mining-drill", limit = 60}) do
@@ -99,7 +98,7 @@ local function mined(surface, f)
   for n in pairs(names) do list[#list + 1] = n end
   return list
 end
-local function next_ore(b, surface, r, f, near)
+local function next_ore(b, surface, r, f)
   local o = b.origin
   local function covered(c)
     return (c.x - o.x) ^ 2 + (c.y - o.y) ^ 2 <= (b.claim_radius + 10) ^ 2
@@ -108,19 +107,17 @@ local function next_ore(b, surface, r, f, near)
   local k = b.next_ore
   if k and k.force == f.name and not covered(k) then return k end
   local names = mined(surface, f)
-  local front = near and near.valid and math.sqrt((near.position.x - o.x) ^ 2 + (near.position.y - o.y) ^ 2) + FRONT or r
   local best, bs
   local cx0, cy0 = math.floor((o.x - r) / OUTPOST_CELL), math.floor((o.y - r) / OUTPOST_CELL)
   local cx1, cy1 = math.floor((o.x + r) / OUTPOST_CELL), math.floor((o.y + r) / OUTPOST_CELL)
   for cx = cx0, cx1 do for cy = cy0, cy1 do
     local c = {x = (cx + 0.5) * OUTPOST_CELL, y = (cy + 0.5) * OUTPOST_CELL}
     local d = math.sqrt((c.x - o.x) ^ 2 + (c.y - o.y) ^ 2)
-    if d <= math.min(r, front) and d > b.claim_radius + 10 then
+    if d <= r and d > b.claim_radius + 10 then
       local n = surface.count_entities_filtered{area = {{cx * OUTPOST_CELL, cy * OUTPOST_CELL},
         {(cx + 1) * OUTPOST_CELL, (cy + 1) * OUTPOST_CELL}}, type = "resource", name = names, limit = 4 * ORE_MIN}
       if n >= ORE_MIN and not covered(c) then
-        local dp = near and near.valid and math.sqrt((near.position.x - c.x) ^ 2 + (near.position.y - c.y) ^ 2) or d
-        local sc = n / (1 + dp / 150)
+        local sc = n / (1 + d / 150)
         if not bs or sc > bs then best, bs = {x = c.x, y = c.y, n = n, d = d, force = f.name}, sc end
       end
     end
@@ -148,8 +145,8 @@ function ops.perimeter(b, tick)
     for _, f in ipairs(shared.player_forces()) do
       if stance.standing(b.corp, f.name) == "enemy" then
         local o, od = outpost(b, surface, PERIMETER_MAX + PERIMETER_STEP, f)
-        if not o and not storage.next_ore_off then
-          local ore = next_ore(b, surface, PERIMETER_MAX + PERIMETER_STEP, f, near)
+        if not o and not near and not storage.next_ore_off then
+          local ore = next_ore(b, surface, PERIMETER_MAX + PERIMETER_STEP, f)
           if ore then
             -- A resource entity at its middle stands for it (the cordon aims at an entity).
             local e = surface.find_entities_filtered{position = {ore.x, ore.y}, radius = OUTPOST_CELL / 2, type = "resource", limit = 1}[1]
@@ -191,6 +188,48 @@ function ops.perimeter(b, tick)
   -- The cordon (cordon.lua): the step is an arc of posts its drones build; the claim follows once they stand.
   if ops.cordon_step and ops.cordon_step(b, new, near) then return end
   ops.perimeter_advance(b, new, near, nd)
+end
+
+-- The line cuts what crosses it (strangling, the cut half): at war, the player's belts and pipes standing on the claim's
+-- edge (within BAND of it) are blown, a few a pass, so a supply line through Serenity's ground stops at its line. The
+-- counter is under it: an underground belt or pipe whose two ends stand off the line passes (the span between has no
+-- entity to cut), or around it. Each blast is the tell: an explosion where the belt was.
+local SEVER_TYPES = {"transport-belt", "underground-belt", "splitter", "pipe", "pipe-to-ground", "loader", "loader-1x1"}
+local BAND = 1.5
+local SEVER_MAX = 8
+local SEVER_BOX = 7
+function ops.sever(b)
+  if storage.sever_off or not (shared.CORPS[b.corp].temper or {}).provoked_only or not b.claim_radius or b.fallen then return 0 end
+  local forces = {}
+  for _, f in ipairs(shared.player_forces()) do
+    if stance.standing(b.corp, f.name) == "enemy" then forces[#forces + 1] = f end
+  end
+  if #forces == 0 then return 0 end
+  local surface = game.surfaces[b.surface]
+  local R, o = b.claim_radius, b.origin
+  local n = math.ceil(2 * math.pi * R / (2 * SEVER_BOX - 2))
+  local seen, cut = {}, 0
+  for k = 0, n - 1 do
+    local a = 2 * math.pi * k / n
+    local x, y = o.x + R * math.cos(a), o.y + R * math.sin(a)
+    for _, e in pairs(surface.find_entities_filtered{area = {{x - SEVER_BOX, y - SEVER_BOX}, {x + SEVER_BOX, y + SEVER_BOX}},
+      force = forces, type = SEVER_TYPES}) do
+      local id = e.unit_number
+      if id and not seen[id] then
+        seen[id] = true
+        local d = math.sqrt((e.position.x - o.x) ^ 2 + (e.position.y - o.y) ^ 2)
+        if math.abs(d - R) <= BAND then
+          local at = e.position
+          surface.create_entity{name = "explosion", position = at}
+          e.die(game.forces[b.force])
+          cut = cut + 1
+          b.severed = (b.severed or 0) + 1
+          if cut >= SEVER_MAX then return cut end
+        end
+      end
+    end
+  end
+  return cut
 end
 
 -- The claim steps out to `new` (at once, or once its cordon's arc stands): the map, the notices, the named warning.

@@ -355,6 +355,64 @@ function ops.clearance(b, near, trace, army, toward)
   return ok
 end
 
+-- Hazard removal (docs/reviews/2026-10-19-buffer-consult.md: "A patient corporation does not absorb a hazard for
+-- three hours"). Serenity landed between a factory and the nests its pollution draws, and the waves went through its
+-- settlement: 116 responses, 1,236 buildings lost on nw. A camp that lost HAZARD_LOSSES buildings or units to biters
+-- within HAZARD_WINDOW clears the nest nearest those losses (a clearance siege: its railgunners and mortars, away from
+-- the player), again as nests regrow. Its strength gates it: a clearance waits for its railgunners and parts.
+-- Its tell: a siege going out away from the player, the lane going quiet.
+local HAZARD_WINDOW = 30 * 3600
+local HAZARD_LOSSES = 20
+local HAZARD_REACH = 300         -- a nest this far from the losses' middle
+local HAZARD_RETRY = 5 * 3600
+local function hazard_trim(h)
+  local cut = game.tick - HAZARD_WINDOW
+  local k = 1
+  while h.log[k] and h.log[k][1] < cut do k = k + 1 end
+  if k > 1 then
+    local keep = {}
+    for i = k, #h.log do keep[#keep + 1] = h.log[i] end
+    h.log = keep
+  end
+end
+function ops.hazard_note(b, pos)
+  b.hazard = b.hazard or {log = {}}
+  table.insert(b.hazard.log, {game.tick, pos.x, pos.y})
+  b.biter_losses = (b.biter_losses or 0) + 1
+  if #b.hazard.log > 4 * HAZARD_LOSSES then hazard_trim(b.hazard) end
+end
+function ops.hazard_clear(b, trace, army)
+  local h = b.hazard
+  if storage.hazard_off or not h or game.tick < (h.next or 0) then return false end
+  hazard_trim(h)
+  if #h.log < HAZARD_LOSSES then return false end
+  h.next = game.tick + HAZARD_RETRY
+  local mx, my = 0, 0
+  for _, l in ipairs(h.log) do mx, my = mx + l[2], my + l[3] end
+  mx, my = mx / #h.log, my / #h.log
+  local s = game.surfaces[b.surface]
+  -- The nearest not resting from a failed clearance (one beyond even the howitzer was chosen again for two hours, nw).
+  local near, nd
+  local rest = b.nest_rest or {}
+  for _, e in pairs(s.find_entities_filtered{position = {mx, my}, radius = HAZARD_REACH, force = "enemy", type = "unit-spawner"}) do
+    local d = (e.position.x - mx) ^ 2 + (e.position.y - my) ^ 2
+    local key = "nest:" .. math.floor(e.position.x / CELL) .. "," .. math.floor(e.position.y / CELL)
+    if (rest[key] or 0) <= game.tick and (not nd or d < nd) then near, nd = e, d end
+  end
+  if not near then
+    trace(b, string.format("hazard: %d lost to biters round %.0f,%.0f in 30 minutes; no nest within %d", #h.log, mx, my, HAZARD_REACH))
+    return false
+  end
+  local ok = ops.clearance(b, near, trace, army)
+  trace(b, string.format("hazard: %d lost to biters round %.0f,%.0f in 30 minutes; the nest at %.0f,%.0f %s", #h.log, mx, my,
+    near.position.x, near.position.y, ok and "is cleared" or "waits (strength)"))
+  if ok then
+    b.hazards = (b.hazards or 0) + 1
+    h.log = {}
+  end
+  return ok
+end
+
 local function siege_step(b, trace, army)
   local op = b.op
   local n = alive(op)

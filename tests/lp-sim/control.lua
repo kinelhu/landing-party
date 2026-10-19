@@ -3230,6 +3230,72 @@ scenarios.clear = function()
   end)
 end
 
+-- Hazard (Fable's buffer consult, docs/reviews/2026-10-19-buffer-consult.md): Serenity at peace, grown, eight
+-- railgunners; four spawners 250 tiles out on its far side from the player; every 3 minutes, while one stands, a wave of
+-- medium biters from them attacks its settlement (the pollution waves nw sent through it, scripted). It counts its
+-- losses to biters, clears the nests, and the waves stop. LP_MIX=off: hazard removal off, the nests stand.
+scenarios.hazard = function()
+  local off = params.mix == "off"
+  settle_when(function()
+    if not S.nests then return false end
+    for _, e in ipairs(S.nests) do if e.valid then return false end end
+    return S.quiet_since and game.tick - S.quiet_since > 6 * 60 * 60
+  end)
+  schedule(30, function() game.forces.enemy.set_evolution_factor(0.5, surface()) end)
+  schedule(60, function()
+    lp("debug_tune", {era = 2, history_off = true, hazard_off = off or nil})
+    for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+    lp("debug_units", storage.id, "lp-railgunner", 10)
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    S.nests = {}
+    for k = -1.5, 1.5 do
+      local p = {o.x + ux * 250 - uy * 16 * k, o.y + uy * 250 + ux * 16 * k}
+      local q = surface().find_non_colliding_position("biter-spawner", p, 8, 1)
+      local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+      if e then table.insert(S.nests, e) end
+    end
+    S.o = o
+    S.waves, S.waves_after = 0, 0
+  end)
+  for t = 2 * 3600 + 600, END - 600, 3 * 3600 do
+    schedule(t, function()
+      local from
+      for _, e in ipairs(S.nests or {}) do if e.valid then from = e break end end
+      if not from then
+        S.quiet_since = S.quiet_since or game.tick
+        return
+      end
+      local st = lp("stats", storage.id)
+      if (st.ops.hazards or 0) > 0 then S.waves_after = S.waves_after + 1 end
+      S.waves = S.waves + 1
+      local g = surface().create_unit_group{position = from.position, force = "enemy"}
+      for k = 1, 24 do
+        local name = k % 3 == 0 and "big-biter" or "medium-biter"
+        local p = surface().find_non_colliding_position(name, {from.position.x + (k % 6) * 2 - 5, from.position.y + 5}, 12, 0.5)
+        local u = p and surface().create_entity{name = name, position = p, force = "enemy"}
+        if u then g.add_member(u) end
+      end
+      g.set_command{type = defines.command.attack_area, destination = {S.o.x, S.o.y}, radius = 40}
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local left = 0
+    for _, e in ipairs(S.nests or {}) do if e.valid then left = left + 1 end end
+    info(string.format("hazard: %d waves (%d after the first clearance), lost to biters %d, hazards %d, clearances %d, responses %d, nests left %d of %d",
+      S.waves or 0, S.waves_after or 0, st.ops.biter_losses or 0, st.ops.hazards or 0, st.ops.clearances or 0, st.responses or 0, left, #(S.nests or {})))
+    if off then
+      check("hazard: off, no clearance and the nests stand", (st.ops.hazards or 0) == 0 and left == #S.nests, tostring(left))
+      return
+    end
+    check("hazard: its losses to biters made it clear the nests", (st.ops.hazards or 0) >= 1 and left == 0, string.format("%d hazards, %d left", st.ops.hazards or 0, left))
+  end)
+end
+
 -- Rail: Serenity's railgunner against biters (the user: a biter-clearing unit, "a hand mounted railgun that's at its
 -- best against biters"). Four railgunners (88 parts) and, LP_MIX=line, nine Line troopers (90) meet 16 big biters, then
 -- what is left fires on a player wall for 20 s: the railgunners win against biters and do a trooper's damage to a wall.
@@ -5647,19 +5713,65 @@ end
 -- at 90 degrees to it. At war the line's first arcs go for the outpost (within 35 degrees of it). Unguarded, the outpost
 -- was raided either way and the line swung back once it was gone: guarded, it is what the line is for.
 -- LP_MIX=off (strangle_off): the line goes for the nearest building, the main position (the case).
--- LP_MIX=ore: no outpost, a rich iron field (32 by 32, one cell) 230 out at 90 degrees: the line goes for an ore field
--- (that one, or one of the map's on its side of the player's front).
--- LP_MIX=oreoff: the same with the next ore off: the line goes for the main position.
+-- LP_MIX=ore: no outpost and no main position (none of the player's buildings in reach), a rich iron field (32 by 32,
+-- one cell) 230 out at 90 degrees: the line goes for an ore field (that one, or a richer or nearer one of the map's).
+-- LP_MIX=oreoff: the same with the next ore off: no target, the line steps out evenly (no arc bears on the field).
+-- LP_MIX=sever: at war, a belt and a pipe laid across the claim's edge and an underground belt under it, one pass of
+-- the cut: the belt and pipe tiles on the line blown, those off it and the underground standing.
 scenarios.strangle = function()
   local ore, oreoff = params.mix == "ore", params.mix == "oreoff"
+  local sever = params.mix == "sever"
   local off = params.mix == "off" or oreoff
   schedule(30, function() lp("debug_tune", {perimeter_fast = true, strangle_off = (params.mix == "off") or nil,
-    next_ore_off = oreoff or nil, corp_level = {serenity = 1}}) end)
+    next_ore_off = oreoff or nil, corp_level = {serenity = 1}, provoke = (ore or oreoff) or nil}) end)
   schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 5000) end end)
   -- Settled: two arcs on record (the check reads the first).
   for t = 3 * 3600, END - 120, 3600 do
     schedule(t, function()
-      if #(lp("cordon_stats", storage.id).bearings or {}) >= 2 then finish_early() end
+      if not sever and #(lp("cordon_stats", storage.id).bearings or {}) >= 2 then finish_early() end
+    end)
+  end
+  if sever then
+    schedule(3 * 3600 + 300, function()
+      local st = lp("stats", storage.id)
+      local o, R = st.origin, st.claim_radius
+      S.R, S.war = R, lp("standing", "serenity")
+      S.belts, S.pipes = {}, {}
+      -- East: a belt from R - 5 to R + 5; south: a pipe the same; west: an underground pair, its ends 2.5 off the line.
+      local ex = math.floor(o.x + R)
+      flatten(ex - 7, math.floor(o.y) - 2, ex + 8, math.floor(o.y) + 3)
+      for x = ex - 5, ex + 5 do
+        table.insert(S.belts, surface().create_entity{name = "transport-belt", position = {x + 0.5, math.floor(o.y) + 0.5},
+          direction = defines.direction.east, force = "player"})
+      end
+      local sy = math.floor(o.y + R)
+      flatten(math.floor(o.x) - 2, sy - 7, math.floor(o.x) + 3, sy + 8)
+      for y = sy - 5, sy + 5 do
+        table.insert(S.pipes, surface().create_entity{name = "pipe", position = {math.floor(o.x) + 0.5, y + 0.5}, force = "player"})
+      end
+      local wx = math.floor(o.x - R)
+      flatten(wx - 6, math.floor(o.y) - 2, wx + 7, math.floor(o.y) + 3)
+      S.ug = {
+        surface().create_entity{name = "underground-belt", position = {wx + 3 + 0.5, math.floor(o.y) + 0.5}, direction = defines.direction.west,
+          type = "input", force = "player"},
+        surface().create_entity{name = "underground-belt", position = {wx - 2 + 0.5, math.floor(o.y) + 0.5}, direction = defines.direction.west,
+          type = "output", force = "player"},
+      }
+      local function on_line(e) return math.abs(math.sqrt((e.position.x - o.x) ^ 2 + (e.position.y - o.y) ^ 2) - R) <= 1.5 end
+      S.on, S.off = 0, 0
+      for _, e in ipairs(S.belts) do if on_line(e) then S.on = S.on + 1 else S.off = S.off + 1 end end
+      for _, e in ipairs(S.pipes) do if on_line(e) then S.on = S.on + 1 else S.off = S.off + 1 end end
+      S.ug_on = (S.ug[1] and on_line(S.ug[1]) or false) or (S.ug[2] and on_line(S.ug[2]) or false)
+      S.cut = lp("debug_sever", storage.id)
+      S.left_on, S.left_off = 0, 0
+      for _, list in ipairs({S.belts, S.pipes}) do
+        for _, e in ipairs(list) do
+          if e.valid then
+            if on_line(e) then S.left_on = S.left_on + 1 else S.left_off = S.left_off + 1 end
+          end
+        end
+      end
+      S.ug_left = (S.ug[1] and S.ug[1].valid and 1 or 0) + (S.ug[2] and S.ug[2].valid and 1 or 0)
     end)
   end
   schedule(120, function()
@@ -5668,11 +5780,13 @@ scenarios.strangle = function()
     local ux, uy = -o.x / len, -o.y / len
     local vx, vy = -uy, ux
     local m = {math.floor(o.x + ux * 200), math.floor(o.y + uy * 200)}
-    flatten(m[1] - 8, m[2] - 8, m[1] + 8, m[2] + 8)
-    surface().create_entity{name = "lp-command-relay", position = m, force = "player"}
-    for _, d in ipairs({-4, 4}) do
-      local t = surface().create_entity{name = "gun-turret", position = {m[1] + d, m[2] - 4}, force = "player"}
-      t.insert{name = "firearm-magazine", count = 50}
+    if not (ore or oreoff) then
+      flatten(m[1] - 8, m[2] - 8, m[1] + 8, m[2] + 8)
+      surface().create_entity{name = "lp-command-relay", position = m, force = "player"}
+      for _, d in ipairs({-4, 4}) do
+        local t = surface().create_entity{name = "gun-turret", position = {m[1] + d, m[2] - 4}, force = "player"}
+        t.insert{name = "firearm-magazine", count = 50}
+      end
     end
     local p = {math.floor(o.x + vx * 230), math.floor(o.y + vy * 230)}
     if ore or oreoff then
@@ -5708,8 +5822,23 @@ scenarios.strangle = function()
     local last = first
     info(string.format("strangle: bearings %s; outpost at %.0f, main at %.0f; drills left %d of 6; perimeter %s",
       serpent.line(cs.bearings), S.out_bearing, S.main_bearing, left, tostring(cs.perimeter)))
+    if oreoff then
+      local no = lp("next_ore", storage.id)
+      check("strangle: the next ore off, no ore target", no.targets == 0, tostring(no.targets))
+      return
+    end
     if off then
       check("strangle: off, the line goes for the nearest (the case)", last and off_by(last, S.main_bearing) <= 35, tostring(last))
+      return
+    end
+    if sever then
+      info(string.format("strangle: sever at R %.1f (standing %s): %d on the line, %d off; cut %s; left on %d, off %d; underground %d of 2 (on line %s); severed %d by the end",
+        S.R or 0, tostring(S.war), S.on or 0, S.off or 0, tostring(S.cut), S.left_on or -1, S.left_off or -1, S.ug_left or -1,
+        tostring(S.ug_on), cs.severed or 0))
+      check("strangle: at war, the line cuts the belt and pipe on it", S.war == "enemy" and (S.on or 0) >= 2 and S.cut == S.on
+        and S.left_on == 0, tostring(S.cut))
+      check("strangle: what stands off the line is left", S.left_off == S.off and (S.off or 0) > 0, tostring(S.left_off))
+      check("strangle: an underground passes under the line", S.ug_left == 2 and S.ug_on == false, tostring(S.ug_left))
       return
     end
     if ore then

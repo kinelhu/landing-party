@@ -226,7 +226,7 @@ function cordon.stats(b)
   for _, m in ipairs(c and c.posts or {}) do if m.built then built = built + 1 end end
   return {arcs = b.cordon_arcs or 0, posts = b.cordon_posts or 0, pending = c and #c.posts or 0, pending_built = built,
     radius = c and c.radius, perimeter = b.perimeter, bearings = b.cordon_bearings or {}, recovered = b.cordon_recovered or 0,
-    contact = b.cordon_contact or 0, gates = b.cordon_gates or 0, ore = b.cordon_ore or 0}
+    contact = b.cordon_contact or 0, gates = b.cordon_gates or 0, ore = b.cordon_ore or 0, severed = b.severed or 0}
 end
 
 ops.cordon_step = cordon.step

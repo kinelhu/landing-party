@@ -510,16 +510,39 @@ strangling (the line walls off outposts and ore).
   200 out toward spawn, a guarded outpost (six drills, two gun turrets) 230 out at 90 degrees: every arc at 92 degrees
   (the outpost at 91); `strangle off`: the first arcs at the main position. This camp was strong enough to raid both
   either way: what strangling changes here is where the wall goes.
-  **The next ore (2026-10-19).** At war with no outpost in reach, the line goes for the field the player will want
+  **The next ore (2026-10-19).** At war with none of the player's buildings in reach, the line goes for the field the player will want
   next, so that growing means trespass: the ores the player mines (its drills' targets; iron and copper before any),
-  in 48-tile cells beyond the claim with 150 tiles or more and none of the player's drills, on Serenity's side of the
-  player's front (no further out than its nearest building and 60), the richest (counted to 600) nearest that
-  building. Kept until the claim covers it or a drill stands on it; the cordon builds its arcs toward it, with no named
-  warning (a field is not the player's yet). The front rule was the call: with richness capped, a field by the
-  player's spawn 411 out won, and the line walked at the main position as if strangling were off. `strangle ore`: a
-  placed field at 96 degrees, the arcs at 101 (seed 12345); on 777 a field of the map's own nearer the front, the
-  arcs within 2 degrees of it; `strangle oreoff`: the main position. Not yet: belts and pipes cut where the line
-  crosses them.
+  in 48-tile cells beyond the claim with 150 tiles or more and none of the player's drills, the richest (counted to
+  600), the nearest. Kept until the claim covers it or a drill stands on it; the cordon builds its arcs toward it, with no named
+  warning (a field is not the player's yet). Only with none of the player's buildings in reach: a first version
+  (fields on Serenity's side of the player's front) turned the cordon away from the player's buildings and failed
+  `cordon` (four mixes) and `bend` in the full regression. So: an enemy out of reach, the line claims the ore it will
+  need before it comes; within reach, it goes for its buildings. `strangle ore` (no main position): the arcs at 101
+  degrees against the placed field's 96 (seed 12345), at -22 against -17 (777); `strangle oreoff`: no ore target.
+  **The line cuts what crosses it (2026-10-19).** At war, every 30 s, the player's belts, pipes and loaders standing on
+  the claim's edge (within 1.5 tiles) are blown, eight a pass at most, an explosion each (the tell). A supply line
+  through Serenity's ground stops at its line. The counter is under it: an underground belt or pipe with both ends off
+  the line passes, as the span between holds no entity; or around it. Rails are left alone (the trains are the
+  player's army transport). `strangle sever`: at war, R 90, a belt and a pipe across the edge: the 6 tiles on the line
+  cut, the 16 off it standing, an underground pair under it standing.
+- **Hazard removal (built 2026-10-19; Fable's buffer consult, docs/reviews/2026-10-19-buffer-consult.md).** On nw
+  Serenity stood between the factory and the nests its pollution draws, and spent three hours absorbing the waves
+  (116 responses, 1,236 buildings lost, 7 razed). Fable: "a bug in outcome, a feature in physics": keep the waves,
+  change the answer. A camp that lost 20 buildings or units to biters within 30 minutes clears the nest nearest those
+  losses (within 300): the clearance siege it already had for nests in a raid's way (railgunners, mortars or a
+  howitzer), chosen after counter-battery and before raids; tried again every 5 minutes while the losses stand. Its
+  strength gates it (a clearance waits for its railgunners and parts), so a camp barely holding does not go hunting.
+  Its tell: a siege going out away from the player, and the lane going quiet. Scenario `hazard`: four spawners 250
+  out on its far side, a scripted wave of 24 every 3 minutes while one stands: 24 lost, one clearance, the four dead,
+  the waves stop; `hazard off`: 13 waves, 48 lost, the nests standing.
+  On nw (3 hours provoked, run beside a regression so its ms are void) it never cleared: from minute 35 it lost 20 to
+  77 to biters each half hour, but the nest nearest the losses had worms beyond even the howitzer, and it was chosen
+  again every 5 minutes for two hours (now a nest resting from a failed clearance is passed over for the next), then
+  "waits for railgunners (0 of 8)". Responses 116 -> 33, its losses 1,236 -> 236, razed by it 7 -> 39, and the
+  player's robots and land mines lost 1,211 and 2,232 (its jammer and its units on the minefield): one run each, other
+  changes between them (staggered beats since withdrawn, the cut, the next ore), so read as a direction, not a measure. Next in
+  the consult: the ledger (waves drawn
+  by the player's cloud billed at an invoice post at the line), then a spike of an open lane.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its
 parts")
@@ -2325,6 +2348,14 @@ scenario with assertions first; the window is for art, feel and GUI.
   nw, the mod's own ticks (the harness's apart): over 50 ms 71 -> 25, over 100 ms 48 -> 1 (205 ms, once). Mean script
   0.042 ms a tick. `scripts/visit.sh` (LP_PROFILE) now reports the harness's ticks (setup, the census every 10 minutes,
   the end) apart from the mod's.
+- **With Space Age (2026-10-19, 0.1.17, 3 hours provoked).** deathworld10x (profiled, run beside nw): mean tick 0.38
+  ms without the mod, 0.75 with it, the mod's script 0.050 ms; 549 ticks over 5 ms, 2 over 50 (104 and 57 ms). 394
+  buildings razed in 14 raids, 144 corporation units lost. The worst ticks fell on the planners' shared beat: four
+  bases choosing a rule (site searches that found nothing), exporting and deciding raids (one route search of 11,600
+  cells) on the same tick, every base on `tick % N == 0`. Each base on its own beat (`b.id` offsets) was tried and
+  withdrawn: the full regression failed army, tap, unitnode and ability (their timings ride the shared beat; planning
+  and export staggered alone still failed three). Open: stagger with those scenarios' timings made robust. nw: 0.75 -> 0.96 ms a tick, razed 7, corporation buildings lost 1,236 (989 rebuilt), 116
+  responses: Serenity still stands in the lane of the waves the factory's pollution draws (the "buffer", open).
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each
