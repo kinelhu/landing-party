@@ -4733,7 +4733,18 @@ end
 -- hovering part of the items, filling its own trunk, then leaving"). LP_MIX=guarded: an armed gun turret by the belt, no
 -- truck; LP_MIX=raid: the yard destroyed at minute 24, what it held spills.
 scenarios.skim = function()
-  local guarded, raid = params.mix == "guarded", params.mix == "raid"
+  local guarded, raid, night = params.mix == "guarded", params.mix == "raid", params.mix == "night"
+  -- LP_MIX=night: a day of 6 minutes from noon; each truck must set out after dark (Grubstake's thieves' hours).
+  if night then
+    schedule(30, function() surface().always_day = false; surface().ticks_per_day = 6 * 3600; surface().daytime = 0 end)
+    S.launches = {}
+    for t = 3 * 3600, END - 120, 30 do
+      schedule(t, function()
+        local k = lp("skim", S.g)
+        if k and k.skims > #S.launches then table.insert(S.launches, surface().darkness) end
+      end)
+    end
+  end
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
@@ -4803,6 +4814,13 @@ scenarios.skim = function()
       S.fed or 0, S.delivered or 0, k.skims, k.taken, k.skimmed, k.yard, serpent.line(S.parked), tostring(S.near_turret)))
     if guarded then
       check("skim: a guarded belt is not skimmed", k.skims == 0, tostring(k.skims))
+      return
+    end
+    if night then
+      local dark, light = 0, 0
+      for _, d in ipairs(S.launches) do if d >= 0.25 then dark = dark + 1 else light = light + 1 end end
+      info("skim night: darkness at each setting out " .. serpent.line(S.launches))
+      check("skim: trucks set out by night only", dark >= 1 and light == 0, string.format("%d by night, %d by day", dark, light))
       return
     end
     if raid then
@@ -7500,6 +7518,9 @@ script.on_init(function()
     -- The ledger bills a rival only.
     or (params.scenario == "hazard" and (params.mix == "pay" or params.mix == "unpaid" or params.mix == "clean"))
   if not TEMPERS[params.scenario] and not unprovoked then lp("debug_tune", {provoke = true}) end
+  -- Grubstake's thieves' hours (ops.thief_hours) off but where they are the subject (skim night) and on visits: the
+  -- scenarios' timings were set without them.
+  if params.scenario ~= "visit" and params.mix ~= "night" then lp("debug_tune", {night_off = true}) end
 end)
 
 scenario()

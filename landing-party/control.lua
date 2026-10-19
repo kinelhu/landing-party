@@ -358,6 +358,7 @@ remote.add_interface("landing-party", {
     if t.hazard_hold ~= nil then storage.hazard_hold = t.hazard_hold end
     if t.ledger_off ~= nil then storage.ledger_off = t.ledger_off end
     if t.skim_off ~= nil then storage.skim_off = t.skim_off end
+    if t.night_off ~= nil then storage.night_off = t.night_off end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end

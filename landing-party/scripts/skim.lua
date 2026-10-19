@@ -140,6 +140,9 @@ function skim.launch(b, belt)
   if not u then return "no room for a truck" end
   b.skim = {phase = "out", belt = belt, owner = belt.force.name, truck = u, best = math.huge, best_at = game.tick, taken = 0,
     acc = 0, load = {}}
+  -- Headlights by night (its tell after dark), turning with the truck.
+  rendering.draw_light{sprite = "utility/light_cone", surface = u.surface, target = u, oriented = true, scale = 1.6, intensity = 0.7,
+    minimum_darkness = 0.2, color = {r = 1, g = 0.85, b = 0.6}}
   go(u, belt.position, 3)
   b.skims = (b.skims or 0) + 1
   base.trace(b, string.format("skim %d: a truck goes for a belt at %.0f,%.0f", b.skims, belt.position.x, belt.position.y))
@@ -219,7 +222,8 @@ local function step(b, k)
     if not k.belt.valid then return home_run(b, k, "the belt is gone") end
     siphon(k)
     if count(k.load) >= TRUNK then home_run(b, k, "full")
-    elseif game.tick - k.parked >= PARK then home_run(b, k, "time") end
+    elseif game.tick - k.parked >= PARK then home_run(b, k, "time")
+    elseif not ops.thief_hours(b) then home_run(b, k, "dawn") end
   elseif arrived(k, u, home_of(b).position, 18) then
     local goods = {}
     for _, g in pairs(k.load) do table.insert(goods, g) end
@@ -239,6 +243,7 @@ end
 local function consider(b)
   if storage.skim_off or not (shared.CORPS[b.corp].temper or {}).skims then return end
   if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_skim or 0) then return end
+  if not ops.thief_hours(b) then return end
   -- Any player force it may steal from (stance), whether or not its intel knows one of its targets: it finds the belts
   -- itself (war.at_war asked intel, and a young camp knew none: no skim in 30 minutes, scenario).
   local owner

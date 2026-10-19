@@ -669,8 +669,15 @@ besieged". A fortress cannot wall in what feeds it.
   whose replicator nests raid on a night schedule, take from belts most valuable first, drop what a killed raider
   carried, and grow a mineable scrap patch at their core with what they stole). Taken: the skim's truck lifts the most
   valuable items first; a raider killed with loot drops its share where it falls (it had spilled only when the whole
-  raid died; `dismantle ambush` now finds the loot at two spots or more). Not yet: a night rhythm for Grubstake's
-  thefts, a grudge raid on turrets (Landing Party's answers and ladder do that work).
+  raid died; `dismantle ambush` now finds the loot at two spots or more). Not taken: a grudge raid on turrets (Landing
+  Party's answers and ladder do that work).
+- **Thieves' hours** (Fulgora Replicators' raid nights; the user: "that seems great"). Grubstake's thefts set out only
+  after dark (darkness 0.3 or more): its raids on the player (`temper_allows`), its skims and its claim jumps; a skimming
+  truck leaves at dawn. Its answers to the player's attacks, flares included, come any time. A surface with no night
+  (always day, or day frozen in daylight) has no hours. Its trucks show headlights by night, turning with them. Serenity
+  keeps its campaign round the clock: the two read apart. The scenarios run with the hours off (`night_off`) but
+  `skim night` (a 6-minute day from noon: three trucks set out at darkness 0.38, 0.74, 0.46, one left at dawn) and
+  visits.
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its

@@ -313,6 +313,17 @@ function ops.marked(b, pos)
   return false
 end
 
+-- Thieves' hours (Grubstake's temper `night`; Fulgora Replicators' raid nights, the user: "that seems great"): its
+-- thefts (raids on the player, skims, claim jumps) set out only after dark, so the player learns when it comes. A
+-- surface with no night (always day, or day frozen) has no such hours: it steals when it will.
+local NIGHT = 0.3                 -- darkness from which it is night
+function ops.thief_hours(b)
+  if storage.night_off or not (shared.CORPS[b.corp].temper or {}).night then return true end
+  local s = game.surfaces[b.surface]
+  if not s or s.always_day or (s.freeze_daytime and s.darkness < NIGHT) then return true end
+  return s.darkness >= NIGHT
+end
+
 -- Whether a corporation's temper lets it go for this target at all.
 local function temper_allows(b, t)
   if not against_player(t.owner) then return true end
@@ -322,6 +333,7 @@ local function temper_allows(b, t)
   if stance.standing(b.corp, t.owner) == "truce" then return false end
   if battery(t) then return true end
   if not stance.may(b.corp, t.owner, "raid") then return false end
+  if not ops.thief_hours(b) then return false end
   local temper = shared.CORPS[b.corp].temper or {}
   -- Soft: what the player's turrets reach (exposure), up to 1.0 and LADDER_SOFT once the ladder relaxes it; at its top
   -- rung (cost no object) nothing (at a megabase every exposed spot was over 3, and nothing was ever razed, visit).
