@@ -729,6 +729,27 @@ end
 
 ops.loot = loot
 
+-- A raider killed with loot drops its share where it fell (Fulgora Replicators, the user's pointer: "killing a raider
+-- makes it drop what it was carrying"; the loot had spilled only when the whole raid died).
+function ops.raider_died(b, ent)
+  local op = b.op
+  if not (op and op.loot and op.loot.goods and op.members) then return end
+  local mine = false
+  for _, u in ipairs(op.members) do if u == ent then mine = true break end end
+  if not mine then return end
+  local n = math.max(1, alive(op))
+  local s = ent.surface
+  for _, g in pairs(op.loot.goods) do
+    local share = math.floor(g.count / n + 0.5)
+    if share > 0 then
+      s.spill_item_stack{position = ent.position, stack = {name = g.name, count = share, quality = g.quality}, enable_looted = true}
+      g.count = g.count - share
+      op.loot.items = math.max(0, op.loot.items - share)
+      op.loot.value = math.max(0, op.loot.value - share * (LOOT[g.name] or 0.1))
+    end
+  end
+end
+
 -- A container its raiders destroyed is looted from the wreck (the raid razed a chest before its looting step came
 -- round, every 5 seconds, and took nothing: ability).
 function ops.loot_wreck(b, ent)

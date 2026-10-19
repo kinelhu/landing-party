@@ -173,9 +173,13 @@ local function siphon(k)
   local want = math.min(math.floor(k.acc), room)
   if want <= 0 then return end
   k.acc = k.acc - want
+  -- The most valuable first (as Fulgora Replicators' raiders take from belts; the user pointed to it, 2026-10-19).
   for line = 1, 2 do
     local tl = k.belt.get_transport_line(line)
-    for _, it in pairs(tl.get_contents()) do
+    local items = {}
+    for _, it in pairs(tl.get_contents()) do table.insert(items, it) end
+    table.sort(items, function(x, y) return (ops.LOOT_VALUE[x.name] or 0.1) > (ops.LOOT_VALUE[y.name] or 0.1) end)
+    for _, it in ipairs(items) do
       if want <= 0 then break end
       local took = tl.remove_item{name = it.name, count = math.min(want, it.count), quality = it.quality}
       if took > 0 then

@@ -3139,6 +3139,11 @@ scenarios.dismantle = function()
           for _, u in pairs(surface().find_entities_filtered{position = S.c, radius = 60, force = "lp-grubstake", type = "unit"}) do
             u.die("player"); S.ambushed = S.ambushed + 1
           end
+          local spots = {}
+          for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.c, radius = 60}) do
+            spots[math.floor(it.position.x / 3) .. "," .. math.floor(it.position.y / 3)] = true
+          end
+          S.spots = table_size(spots)
         end
       end)
     end
@@ -3156,8 +3161,10 @@ scenarios.dismantle = function()
     info(string.format("dismantle: ghosts %d, assemblers left %d, yard: %d assemblers, %d plates; on the ground %d (ambushed %s)",
       ghosts(), left, machines, plates, on_ground, tostring(S.ambushed)))
     if ambush then
+      -- Each raider drops its share where it falls (killed one by one, the last had carried it all).
       check("dismantle: the raiders killed, what they carried spills", (S.ambushed or 0) > 0 and on_ground > 0 and machines == 0,
         string.format("%d on the ground, yard %d", on_ground, machines))
+      check("dismantle: spilled at more than one spot", (S.spots or 0) >= 2, tostring(S.spots))
       return
     end
     check("dismantle: machines taken apart, their ghosts left", ghosts() >= 3 and left <= 1, string.format("%d ghosts, %d left",

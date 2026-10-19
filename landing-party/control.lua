@@ -185,6 +185,7 @@ script.on_event(defines.events.on_entity_died, function(e)
       pool.discharge(b, ent.unit_number)
       if b then
         b.units_lost = b.units_lost + 1
+        ops.raider_died(b, ent)
         ops.on_unit_killed(b, e.cause)
         -- A clearance's losses: what killed them, and how far from the site (diagnostic, first ten an operation).
         if b.op and b.op.clearance and (b.op.deaths_traced or 0) < 10 then

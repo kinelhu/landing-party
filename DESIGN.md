@@ -665,6 +665,12 @@ besieged". A fortress cannot wall in what feeds it.
   left none for one camp and only belts across the big lake for the other ("no route"): nw is sealed by lakes and
   lasers, and the skim rightly finds nothing. On deathworld it went once, at minute 50 (the shack then). One in 90 minutes is under Fable's bar (three an hour); both saves
   are fortresses. On probation: a save with outposts wired by belts, or a mid-game base, is its real test (open).
+- **From Fulgora Replicators** (the user, 2026-10-19: "It has similar mechanics and is quite well done"; a Space Age mod
+  whose replicator nests raid on a night schedule, take from belts most valuable first, drop what a killed raider
+  carried, and grow a mineable scrap patch at their core with what they stole). Taken: the skim's truck lifts the most
+  valuable items first; a raider killed with loot drops its share where it falls (it had spilled only when the whole
+  raid died; `dismantle ambush` now finds the loot at two spots or more). Not yet: a night rhythm for Grubstake's
+  thefts, a grudge raid on turrets (Landing Party's answers and ladder do that work).
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its
