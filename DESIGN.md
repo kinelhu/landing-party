@@ -2604,8 +2604,19 @@ it steps out again (`cordon.check`, once a minute). Scenario `cordon broken`: tw
 turrets destroyed: the claim from 120 to 90 within three minutes, still 90 thirteen minutes on. Then the engaged player
 hunted it (from minute 40, every 20 minutes, 30 units at the leading arc's turrets): two seeds, four hours: 142,853 and
 161,392 against 155,659 and 188,045 without (-8%, -14%); the line broken one or two times; Serenity's answers 12 to 14 a
-run. Each post hit is a provocation, and its answer cost more than the broken line saved. Open (the user's call): is
-fighting at the line fair war (a post lost no provocation) or an insult it answers?
+run. Each post hit is a provocation, and its answer cost more than the broken line saved. The user took fair war: a
+cordon post's pieces hit raise its alarm (its units come to defend it) but provoke no answer. Two seeds again: 4242 the
+same to the ore (one line strike there), 777 123,861 (-20% on the run before): the answers (12 to 15 a run against the
+turtle's 5) came from losses, Serenity's units killed wherever the strikes met them, not from its posts. Open: whether
+Serenity, at war from landing, should answer every loss (built for a corporation that started at peace) or only
+trespass.
+Watched (`scripts/watch.sh`, the user wary of the harness): the factory scenario in a game window at speed 10, a
+screenshot of the factory, Serenity's line and Grubstake's camp every 10 minutes and of each strike group: seed
+12345, engaged, the strikes march to Grubstake's camp, fight at its walls, the lander falls on the third (the run's
+numbers as headless: 69,528). On that seed Serenity's line never stepped out (nothing for the line strikes). And the
+harness's limit, shown by these runs: deterministic but chaotic, a small rule change re-rolls a seed's game (777 gave
+155,659, 142,853 and 123,861 under three line rules); at two seeds a 10% effect is not distinguishable from that.
+Decisions of that size want eight seeds or more.
 
 ### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
 What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the

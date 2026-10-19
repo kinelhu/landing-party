@@ -3590,6 +3590,43 @@ scenarios.factory = function()
       for dt = 1800, 6 * 3600, 1800 do schedule(t + dt, aim_line) end
     end
   end
+  -- Watched (scripts/watch.sh, a game window: the user, wary of the harness): every 10 minutes the factory, Serenity's
+  -- line and Grubstake's camp; each strike group 3 minutes into its march and at 6. Fast between shots.
+  if params.watch then
+    local n = 0
+    local function shot(name, pos, zoom)
+      n = n + 1
+      game.take_screenshot{surface = surface(), position = pos, resolution = {1600, 900}, zoom = zoom, daytime = 0,
+        path = string.format("lp-watch/%03d-%s.png", n, name), show_entity_info = true}
+      helpers.write_file("lp-watch/shots.txt", string.format("%03d-%s.png at minute %d\n", n, name,
+        math.floor((game.tick - (storage.t0 or 0)) / 3600)), true)
+    end
+    schedule(90, function() game.speed = params.watch_speed or 10 end)
+    for t = 10 * 3600, END - 600, 10 * 3600 do
+      schedule(t, function()
+        shot("factory", {0, 0}, 0.18)
+        local cs = lp("cordon_stats", storage.id)
+        local so = lp("stats", storage.id).origin
+        if cs and cs.perimeter and so then
+          local len = math.max(1, math.sqrt(so.x * so.x + so.y * so.y))
+          shot("serenity-line", {so.x - so.x / len * cs.perimeter, so.y - so.y / len * cs.perimeter}, 0.3)
+        end
+        local g = lp("stats", S.g)
+        if g and g.origin then shot("grubstake-camp", g.origin, 0.35) end
+      end)
+    end
+    for t = 3 * 3600, END - 600, 3600 do
+      schedule(t, function()
+        for _, k in ipairs({"grp", "lgrp"}) do
+          local grp = A[k]
+          if grp and grp.valid and #grp.members > 0 and (A[k .. "_shot"] or 0) < game.tick - 2 * 3600 then
+            A[k .. "_shot"] = game.tick
+            shot(k == "grp" and "strike-grubstake" or "strike-line", grp.position, 0.6)
+          end
+        end
+      end)
+    end
+  end
   -- Each hour, and at the end: what happened.
   local function report(label)
     local g, s = lp("stats", S.g), lp("stats", storage.id)

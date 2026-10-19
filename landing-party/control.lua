@@ -103,7 +103,13 @@ end
 script.on_event(defines.events.on_entity_damaged, function(e)
   -- Any other force: a rival corporation's fire raises the alarm as the player's does.
   if e.force and e.force ~= e.entity.force then
-    ops.provoke(e.entity.force.name, e.force.name, e.cause and e.cause.valid and e.cause or e.entity)
+    -- Fighting at Serenity's line is fair war (the user, 2026-10-19, on hunting the line: each post hit had been
+    -- answered, and the answers cost the factory more than the broken line saved): a cordon post's pieces raise its
+    -- alarm (its units come to defend it) but provoke no answer.
+    local own = e.entity.unit_number and storage.owner[e.entity.unit_number]
+    if not (own and own.module and own.module.kind == "post") then
+      ops.provoke(e.entity.force.name, e.force.name, e.cause and e.cause.valid and e.cause or e.entity)
+    end
     base.on_damaged(e.entity)
   end
 end, BUILDINGS)
