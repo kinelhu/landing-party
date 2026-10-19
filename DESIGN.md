@@ -614,7 +614,7 @@ way round 117 turrets to any substation), flares never flew (no nests left near 
 burglar does not breach a bank, but nothing showing reads as a bug; aim for "I am being skimmed", never "I am
 besieged". A fortress cannot wall in what feeds it.
 - **The skim** (`scripts/skim.lua`, Grubstake's temper `skims`, a theft in the stance: a rival thief steals, a truce
-  stops it). A camp finds a player's belt within 250 tiles that carries something and that no turret reaches (30), and
+  stops it). A camp finds a player's belt within 150, then 300, then 500 tiles (250 alone found none on nw) that carries something and that no turret reaches (30), and
   sends a buggy by a route clear of every turret's reach (the heist's). The buggy drops a siphon shack beside it (a
   chest in its colour, an amber arm drawn to the belt) and goes home. Each second the shack lifts 15% of what passes (the
   tile's fill times a full belt's rate: of a full belt's rate whatever passed, it took 51% of a thin flow). At 40 items
@@ -646,6 +646,11 @@ besieged". A fortress cannot wall in what feeds it.
   says how many belts it looked at and how many carried). nw crashed at the claim jumper's heist: it loots through
   ops.loot, and dismantling read raid members it does not have (raids only now; `jumper` has an assembler by its chest,
   and the old code crashes on it).
+- **nw on 0.1.23** (3 hours, provoked at an hour, alone): 20 ticks over 50 ms (44 on 0.1.21), the power survey every 30
+  minutes on the unchanged mesh. Grubstake's raids dismantled 72 buildings (accumulators by its targets, as Fable
+  asked of the ladder top), looted 72 items, razed 221. The skim looked at no belt at all: its camps stood more than 250
+  tiles from every one (now rings of 150, 300, 500). Serenity's camp fell at the end, to biters (277 of its losses were
+  to them): at war from landing, in nw's nest field, it held less well than when it sat out the first hour (open).
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its

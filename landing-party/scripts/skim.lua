@@ -18,7 +18,8 @@ local pool = require("__landing-party__.scripts.pool")
 
 local skim = {}
 
-local RANGE = 250                 -- a belt this near the camp's home
+local RINGS = {150, 300, 500}      -- belts sought this near the camp's home, nearest ring first (250 alone found none on
+                                  -- nw: its camps stood further from every belt)
 local SAFE = 30                   -- no player turret this near the belt
 local FRACTION = 0.15             -- of a full belt's flow
 local HAUL = 40                   -- items in the shack before a truck goes
@@ -26,7 +27,7 @@ local COST = 10                   -- parts: the shack
 local COOLDOWN = 20 * 3600        -- after a shack is lost
 local NONE = 5 * 3600             -- after finding nothing
 local DRIVE = 60 * 60             -- a vehicle no nearer for this long is stuck
-local CANDIDATES = 400            -- belts looked at a search
+local CANDIDATES = 300            -- belts looked at a ring
 local AMBER = {0.85, 0.5, 0.2, 0.9}
 
 local function home_of(b)
@@ -84,23 +85,26 @@ local function yard_icon(b)
     target = {entity = y, offset = {0, -1.2}}, x_scale = 0.8, y_scale = 0.8} or nil
 end
 
--- A belt the camp could skim: the player's, carrying something, no turret within SAFE, within RANGE of home; the
+-- A belt the camp could skim: the player's, carrying something, no turret within SAFE, within a ring of RINGS; the
 -- nearest it can reach unseen.
 local function candidates(b, owner)
   local h = home_of(b)
   local s = h.surface
   local out = {}
   local seen, carrying = 0, 0
-  for _, e in pairs(s.find_entities_filtered{type = "transport-belt", force = owner, position = h.position, radius = RANGE,
-    limit = CANDIDATES}) do
-    local n = e.get_transport_line(1).get_item_count() + e.get_transport_line(2).get_item_count()
-    seen = seen + 1
-    if n > 0 then carrying = carrying + 1 end
-    if n > 0 and s.count_entities_filtered{position = e.position, radius = SAFE, force = owner,
-      type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} == 0 and not ops.marked(b, {e.position.x, e.position.y}) then
-      local d = (e.position.x - h.position.x) ^ 2 + (e.position.y - h.position.y) ^ 2
-      table.insert(out, {e, d})
+  for _, r in ipairs(RINGS) do
+    for _, e in pairs(s.find_entities_filtered{type = "transport-belt", force = owner, position = h.position, radius = r,
+      limit = CANDIDATES}) do
+      local n = e.get_transport_line(1).get_item_count() + e.get_transport_line(2).get_item_count()
+      seen = seen + 1
+      if n > 0 then carrying = carrying + 1 end
+      if n > 0 and s.count_entities_filtered{position = e.position, radius = SAFE, force = owner,
+        type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} == 0 and not ops.marked(b, {e.position.x, e.position.y}) then
+        local d = (e.position.x - h.position.x) ^ 2 + (e.position.y - h.position.y) ^ 2
+        table.insert(out, {e, d})
+      end
     end
+    if #out > 0 then break end
   end
   table.sort(out, function(x, y) return x[2] < y[2] end)
   b.skim_seen = {seen, carrying}
