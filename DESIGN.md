@@ -616,8 +616,8 @@ besieged". A fortress cannot wall in what feeds it.
 - **The skim** (`scripts/skim.lua`, Grubstake's temper `skims`, a theft in the stance: a rival thief steals, a truce
   stops it). A camp finds a player's belt within 150, then 300, then 500 tiles (250 alone found none on nw) that carries
   something and that no turret reaches (30), whose straight line from the camp passes no turret's reach, and sends a
-  truck by a route clear of every turret's reach (the heist's). The truck parks by the belt and lifts 15% of what passes
-  (the tile's fill times a full belt's rate) into its trunk, for 2 minutes or 120 items, then drives home: the goods go
+  truck by a route clear of every turret's reach (the heist's). The truck parks by the belt and lifts half of what passes
+  (the tile's fill times a full belt's rate) into its trunk, for 5 minutes or 120 items, then drives home: the goods go
   into the camp's yard (a steel chest in its colour, the goods' icon over it) as items, their worth into parts. It comes
   back after 5 minutes. Kill the truck and its load spills where it stopped; destroy the yard and what it holds spills.
   The tell is the truck parked at the belt and the gaps downstream. Counters: an underground across the exposed
@@ -633,6 +633,8 @@ besieged". A fortress cannot wall in what feeds it.
   chests, and no belt outside the wall carried anything). One hour on the laser base: three runs from minute 29 (one
   truck stuck on the way), 16 items a run: that outpost's belt carries under an item a second, so a 2-minute stop takes
   little. The truck is the tell more than the loss (open: a longer stop or a bigger share).
+  The user: "Take should be at least 50%". Now half of what passes, until the trunk holds 120 or 5 minutes pass: `skim`,
+  four runs in 27 minutes, each full in about a minute, 480 items home.
 - **Dismantling** (the user, 2026-10-19: "Stealing items and buildings is genius for a more early game rival"; Fable's
   "carry it off instead" of the ladder top razing 247 panels). A Grubstake raid with machines at its target walks in
   answering only what hits it (a thief takes rather than shoots: raiding as an army, it razed three of four assemblers

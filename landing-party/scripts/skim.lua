@@ -20,9 +20,9 @@ local skim = {}
 local RINGS = {150, 300, 500}      -- belts sought this near the camp's home, nearest ring first (250 alone found none on
                                   -- nw: its camps stood further from every belt)
 local SAFE = 30                   -- no player turret this near the belt
-local FRACTION = 0.15             -- of what passes
+local FRACTION = 0.5              -- of what passes (the user: "Take should be at least 50%"; 15% took 16 items a stop)
 local TRUNK = 120                 -- items, a full trunk
-local PARK = 2 * 3600             -- the longest it stays at the belt
+local PARK = 5 * 3600             -- the longest it stays at the belt
 local AGAIN = 5 * 3600            -- after a run home
 local COOLDOWN = 20 * 3600        -- after a truck lost
 local NONE = 5 * 3600             -- after finding nothing
@@ -165,7 +165,7 @@ local function count(load)
 end
 
 -- FRACTION of what passes: the flow is the tile's fill (8 items when full) times a full belt's rate (15% of a full
--- belt's rate whatever the belt carried took 51% of a thin flow, scenario).
+-- belt's rate whatever the belt carried took far more than its share of a thin flow, scenario).
 local function siphon(k)
   local room = TRUNK - count(k.load)
   local n = k.belt.get_transport_line(1).get_item_count() + k.belt.get_transport_line(2).get_item_count()

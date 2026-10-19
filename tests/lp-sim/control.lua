@@ -4722,7 +4722,7 @@ end
 -- route). LP_MIX=natural: no debug_tap, the camp's own choice (a pole its sensors have seen exposed).
 -- Skim (Grubstake; Fable's fortress consult): a player's belt of iron ore 150 tiles from the camp toward spawn, 24 tiles
 -- long, fed at its west end and emptied at its east by the test (both counted). The camp finds it, a truck parks by it,
--- lifts 15% of what passes into its trunk and takes it home to the yard (the user: "a truck simply going to the belt,
+-- lifts half of what passes into its trunk and takes it home to the yard (the user: "a truck simply going to the belt,
 -- hovering part of the items, filling its own trunk, then leaving"). LP_MIX=guarded: an armed gun turret by the belt, no
 -- truck; LP_MIX=raid: the yard destroyed at minute 24, what it held spills.
 scenarios.skim = function()
@@ -4807,7 +4807,7 @@ scenarios.skim = function()
     local share = (S.fed or 0) > 0 and k.skimmed / S.fed or 0
     check("skim: a truck parked at the exposed belt, out of turret reach", k.skims >= 1 and S.parked ~= nil and S.near_turret == 0,
       string.format("%d runs", k.skims))
-    check("skim: it took part of the flow, not all", share >= 0.03 and share <= 0.3, string.format("%.0f%%", share * 100))
+    check("skim: it took part of the flow, not all", share >= 0.05 and share <= 0.6, string.format("%.0f%%", share * 100))
     check("skim: trucks brought it home to the yard", k.skimmed >= 100 and k.yard >= 100, string.format("%d home, yard %d",
       k.skimmed, k.yard))
   end)
