@@ -651,6 +651,13 @@ besieged". A fortress cannot wall in what feeds it.
   asked of the ladder top), looted 72 items, razed 221. The skim looked at no belt at all: its camps stood more than 250
   tiles from every one (now rings of 150, 300, 500). Serenity's camp fell at the end, to biters (277 of its losses were
   to them): at war from landing, in nw's nest field, it held less well than when it sat out the first hour (open).
+- **The skim on real saves (0.1.24, 90 minutes each, provoked at an hour).** With rings out to 500 it saw 225 to 258
+  exposed belts carrying on nw, but the three nearest lay inside the laser ring ("no route"). Now only belts whose
+  straight line from the camp passes no turret's reach (sampled every 25 tiles, 40 looked at) are routed. On nw that
+  left none for one camp and only belts across the big lake for the other ("no route"): nw is sealed by lakes and
+  lasers, and the skim rightly finds nothing. On deathworld it went once, at minute 50: a shack by a belt 140 tiles
+  out, standing at the end (too late for a truck). One in 90 minutes is under Fable's bar (three an hour); both saves
+  are fortresses. On probation: a save with outposts wired by belts, or a mid-game base, is its real test (open).
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its

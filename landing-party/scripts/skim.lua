@@ -111,6 +111,21 @@ local function candidates(b, owner)
   return out
 end
 
+-- Whether the straight way from the camp to a belt passes no player turret's reach (sampled every 25 tiles): a belt
+-- behind the ring has no turret within SAFE of itself but turrets between it and the camp (on nw the three nearest
+-- exposed belts all lay inside the laser ring, "no route" each time). Only those with a clear line are routed.
+local LINE_STEP, LINE_TRIES = 25, 40
+local function clear_line(s, owner, from, to)
+  local dx, dy = to.x - from.x, to.y - from.y
+  local len = math.sqrt(dx * dx + dy * dy)
+  for d = 0, len, LINE_STEP do
+    local p = {from.x + dx * d / len, from.y + dy * d / len}
+    if s.count_entities_filtered{position = p, radius = SAFE, force = owner,
+      type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} > 0 then return false end
+  end
+  return true
+end
+
 local function over(b, why, cool)
   local k = b.skim
   if k then
@@ -282,10 +297,20 @@ local function consider(b)
   if not owner then return end
   local cands = candidates(b, owner)
   local why
-  for i = 1, math.min(3, #cands) do
-    why = skim.launch(b, cands[i][1])
-    if why == "launched" then return end
+  local h = home_of(b)
+  local tried, lines = 0, 0
+  for i = 1, math.min(LINE_TRIES, #cands) do
+    local e = cands[i][1]
+    if clear_line(e.surface, owner, h.position, e.position) then
+      lines = lines + 1
+      why = skim.launch(b, e)
+      if why == "launched" then return end
+      tried = tried + 1
+      if tried >= 3 then break end
+    end
   end
+  if #cands > 0 and lines == 0 then why = string.format("every line to them crosses a turret's reach (%d looked at)",
+    math.min(LINE_TRIES, #cands)) end
   if game.tick >= (b.skim_said or 0) then
     b.skim_said = game.tick + 30 * 3600
     local sn = b.skim_seen or {0, 0}
