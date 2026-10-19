@@ -360,6 +360,11 @@ remote.add_interface("landing-party", {
     if t.skim_off ~= nil then storage.skim_off = t.skim_off end
     if t.night_off ~= nil then storage.night_off = t.night_off end
     if t.leader_off ~= nil then storage.leader_off = t.leader_off end
+    -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
+    if t.harmless then
+      for _, k in ipairs({"ops_off", "flare_off", "jump_off", "tap_off", "skim_off", "prospect_off", "sever_off", "cuts_off",
+        "strangle_off", "ledger_off", "raids_off"}) do storage[k] = true end
+    end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
     for corp, n in pairs(t.rd_fund or {}) do rd.state(corp).fund = n end

@@ -2514,6 +2514,27 @@ scenario with assertions first; the window is for art, feel and GUI.
   faction for lack of time (all pass at 60/30). A run that ends before its scenario's checks fails, and each scenario
   states how long it needs after its strike.
 
+### The factory instrument (2026-10-19; the user: "I don't have time for playtesting"; scenario `factory`)
+A scripted mid-game player in place of one: a factory at the spawn that pollutes (30 assemblers on infinity chests), a
+ring of gun turrets kept in ammunition, an outpost every 15 minutes on a new iron patch 150 to 300 tiles out with
+eight drills on a belt home (its end emptied and counted: the income), ghosts rebuilt once no corporation unit stands
+near, two gun turrets added by an outpost that lost something (six at most). A Grubstake camp (a rival) and the usual
+Serenity camp from the start; Grubstake's thieves' hours on. Mixes: `control` (the corporations harmless: a test knob,
+`harmless`), `turtle` (as above), `engage` (also: a skimming truck killed after it parks, one leader a raid killed as
+it attacks, Serenity's invoice paid at 300 or less). Two hours, two seeds:
+
+| Seed | control | turtle | engage |
+|---|---|---|---|
+| 12345 | 84,803 ore | 70,092 (-17%); lost 926; Grubstake razed 114, dismantled 41, skimmed 724; Serenity razed 111 | 70,648 (-17%); lost 797; trucks 3, leaders 29 |
+| 777 | 105,700 | 68,297 (-35%); lost 986; Grubstake razed 247; Serenity razed 451, 4 sieges | 73,355 (-31%); lost 1,628; Serenity razed 750 |
+
+Read: the corporations cost a sixth to a third of the factory's income; the engaged player's answers (trucks, leaders)
+buy 1 to 7% back: decision 3 ("engaging must pay better than turtling") is not met by these answers; the instrument's
+engaged player does not yet strike a camp, the yard or the line, where the design puts the payoff (next). No bill
+came: biters did not hit Serenity on these maps. Found on the way: Serenity's raid regrouped every time a new leader
+fell (an engaged player killing each as it rose: 63 regroups, a raid that never broke): now once a raid, a second
+leader lost and it falls back home.
+
 ### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
 What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the
 units side by side; a skim by night with headlights; the yard; a raid's leader icon and the ghosts it leaves; the

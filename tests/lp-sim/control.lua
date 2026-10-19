@@ -3231,6 +3231,221 @@ scenarios.leader = function()
   end)
 end
 
+-- The factory instrument (the plan of 2026-10-19: "I don't have time for playtesting"; a scripted mid-game player in place
+-- of one). A factory at the spawn that pollutes (assemblers on infinity chests), a ring of gun turrets kept in
+-- ammunition, and an outpost every 15 minutes on a new iron patch 150 to 260 tiles out, its drills on a belt home (the
+-- test empties the belt's end and counts it: the factory's income). A Grubstake camp and the usual Serenity camp from
+-- the start. The player's robots rebuild ghosts once no corporation unit stands near; a building lost outside the ring
+-- gets two gun turrets near it (up to six an outpost). Mixes: control (the corporations harmless), turtle (as above),
+-- engage (also: a skimming truck killed 30 s after it parks, a raid's leader killed when it attacks, Serenity's invoice
+-- paid when it owes 300 or less). Each hour: income, losses, what each corporation did. Measures, few checks.
+scenarios.factory = function()
+  local control, engage = params.mix == "control", params.mix == "engage"
+  local A = {owned = {}, lost = 0, rebuilt = 0, turrets = 0, income = 0, paid = 0, trucks = 0, leaders = 0,
+    outposts = {}, sinks = {}, guards = {}}
+  S.arc = A
+  local function own(e) if e and e.valid then table.insert(A.owned, e) end return e end
+  local function put(name, pos, extra)
+    local spec = {name = name, position = pos, force = "player"}
+    for k, v in pairs(extra or {}) do spec[k] = v end
+    if not surface().can_place_entity{name = name, position = pos, force = "player", direction = spec.direction} then
+      local q = surface().find_non_colliding_position(name, pos, 4, 0.5)
+      if not q then return nil end
+      spec.position = q
+    end
+    return own(surface().create_entity(spec))
+  end
+  schedule(60, function()
+    lp("debug_tune", {era = 2, history_off = true, harmless = control or nil})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
+    lp("debug_depot", storage.id, 3000)
+  end)
+  -- The factory.
+  schedule(120, function()
+    game.forces.player.create_ghost_on_entity_death = true
+    flatten(-70, -70, 70, 70)
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {0, 0}, force = "player"}
+    eei.power_production, eei.electric_buffer_size = 200e6 / 60, 200e6
+    for x = -63, 63, 14 do for y = -63, 63, 14 do put("substation", {x, y}) end end
+    for i = 0, 5 do for j = 0, 4 do
+      local x, y = -40 + i * 14, -36 + j * 15
+      local a = put("assembling-machine-2", {x + 1.5, y + 1.5})
+      if a then
+        a.set_recipe("iron-gear-wheel")
+        put("inserter", {x + 1.5, y - 0.5}, {direction = defines.direction.south})
+        local src = put("infinity-chest", {x + 1.5, y - 1.5})
+        if src then src.set_infinity_container_filter(1, {name = "iron-plate", count = 100, mode = "exactly"}) end
+        put("inserter", {x + 1.5, y + 3.5}, {direction = defines.direction.south})
+        local sink = put("infinity-chest", {x + 1.5, y + 4.5})
+        if sink then sink.remove_unfiltered_items = true end
+      end
+    end end
+    for k = -60, 60, 10 do
+      for _, p in ipairs({{k, -64}, {k, 64}, {-64, k}, {64, k}}) do
+        local t = put("gun-turret", p)
+        if t then t.insert{name = "piercing-rounds-magazine", count = 100}; table.insert(A.guards, t) end
+      end
+    end
+  end)
+  -- An outpost: a 16x16 iron patch at a bearing, eight drills on a belt that runs home to the ring.
+  local DIRS = {east = defines.direction.east, west = defines.direction.west, north = defines.direction.north,
+    south = defines.direction.south}
+  local function outpost(k)
+    local a = k * 2.4 + 0.3
+    local r = 150 + 22 * k
+    local cx, cy = math.floor(math.cos(a) * r), math.floor(math.sin(a) * r)
+    flatten(cx - 12, cy - 12, cx + 12, cy + 12)
+    for x = -8, 7 do for y = -8, 7 do surface().create_entity{name = "iron-ore", position = {cx + x + 0.5, cy + y + 0.5}, amount = 4000} end end
+    -- The belt: along x then y to the ring's edge (66 out).
+    local tx = math.max(-60, math.min(60, cx))
+    local ty = (cy > 0 and 66 or -66)
+    if math.abs(cy) <= 60 then ty, tx = cy, (cx > 0 and 66 or -66) end
+    local path = {}
+    local sx = tx >= cx and 1 or -1
+    for x = cx, tx, sx do table.insert(path, {x, cy}) end
+    local sy = ty >= cy and 1 or -1
+    if ty ~= cy then for y = cy + sy, ty, sy do table.insert(path, {tx, y}) end end
+    local function dir(p, q)
+      if q[1] > p[1] then return "east" elseif q[1] < p[1] then return "west" elseif q[2] > p[2] then return "south" end
+      return "north"
+    end
+    local belts = {}
+    for i = 1, #path do
+      local d = path[i + 1] and dir(path[i], path[i + 1]) or (path[i - 1] and dir(path[i - 1], path[i]) or "east")
+      local pos = {path[i][1] + 0.5, path[i][2] + 0.5}
+      for _, e in pairs(surface().find_entities_filtered{area = {{pos[1] - 0.4, pos[2] - 0.4}, {pos[1] + 0.4, pos[2] + 0.4}}}) do
+        if e.valid and e.type ~= "resource" and e.type ~= "character" and e.force.name ~= "player" then e.destroy() end
+      end
+      local b = own(surface().create_entity{name = "transport-belt", position = pos, direction = DIRS[d], force = "player"})
+      if b then table.insert(belts, {b, d}) end
+    end
+    -- Drills both sides of the belt's first 12 tiles, facing it; a pole by each pair; big poles home.
+    for i = 1, math.min(12, #belts), 3 do
+      local b, d = belts[i][1], belts[i][2]
+      local horizontal = d == "east" or d == "west"
+      for side = -1, 1, 2 do
+        local at = horizontal and {b.position.x, b.position.y + 2 * side} or {b.position.x + 2 * side, b.position.y}
+        local face = horizontal and (side < 0 and "south" or "north") or (side < 0 and "east" or "west")
+        put("electric-mining-drill", at, {direction = DIRS[face]})
+      end
+      put("medium-electric-pole", horizontal and {b.position.x + 1.5, b.position.y + 1.5} or {b.position.x + 1.5, b.position.y + 1.5})
+    end
+    local len = math.sqrt(cx * cx + cy * cy)
+    for dd = len - 6, 60, -26 do put("big-electric-pole", {cx / len * dd + 2, cy / len * dd + 2}) end
+    A.sinks[k] = belts[#belts] and belts[#belts][1]
+    A.outposts[k] = {cx, cy, turrets = 0}
+  end
+  for k = 1, 8 do
+    local t = (3 + (k - 1) * 15) * 3600
+    if t < END - 600 then schedule(t, function() outpost(k) end) end
+  end
+  -- The belts' ends: the income.
+  for t = 3 * 3600, END - 60, 30 do
+    schedule(t, function()
+      for _, b in pairs(A.sinks) do
+        if b.valid then
+          for line = 1, 2 do
+            local tl = b.get_transport_line(line)
+            local n = tl.get_item_count("iron-ore")
+            if n > 0 then A.income = A.income + tl.remove_item({name = "iron-ore", count = n}) end
+          end
+        end
+      end
+    end)
+  end
+  -- Logistics: ammunition; the robots' rebuilds; losses answered with turrets.
+  for t = 3 * 3600, END - 60, 3600 do
+    schedule(t, function()
+      for _, g in ipairs(A.guards) do
+        if g.valid and g.get_item_count("piercing-rounds-magazine") < 50 then g.insert{name = "piercing-rounds-magazine", count = 50} end
+      end
+      local live = {}
+      for _, e in ipairs(A.owned) do
+        if e.valid then table.insert(live, e)
+        else
+          A.lost = A.lost + 1
+        end
+      end
+      A.owned = live
+      for _, gh in pairs(surface().find_entities_filtered{name = "entity-ghost", force = "player", position = {0, 0}, radius = 500}) do
+        if gh.valid and surface().count_entities_filtered{position = gh.position, radius = 30, type = "unit",
+          force = {"lp-grubstake", "lp-serenity"}, limit = 1} == 0 then
+          local _, e = gh.revive()
+          if e then own(e); A.rebuilt = A.rebuilt + 1 end
+        end
+      end
+      for k, o in pairs(A.outposts) do
+        if o.turrets < 6 and surface().count_entities_filtered{name = "entity-ghost", force = "player", position = {o[1], o[2]},
+          radius = 30, limit = 1} > 0 then
+          for _ = 1, 2 do
+            local tt = put("gun-turret", {o[1] + 8 - 4 * o.turrets, o[2] - 10})
+            if tt then tt.insert{name = "piercing-rounds-magazine", count = 100}; table.insert(A.guards, tt); A.turrets = A.turrets + 1 end
+            o.turrets = o.turrets + 1
+          end
+        end
+      end
+    end)
+  end
+  -- Engaged: the player answers what it sees.
+  if engage then
+    for t = 3 * 3600, END - 60, 600 do
+      schedule(t, function()
+        local k = lp("skim", S.g)
+        if k and k.parked then
+          A.parked_seen = A.parked_seen or {}
+          local key = k.skims
+          if A.parked_seen[key] then
+            for _, u in pairs(surface().find_entities_filtered{position = k.parked, radius = 3, force = "lp-grubstake", type = "unit"}) do
+              u.die("player"); A.trucks = A.trucks + 1
+            end
+          else
+            A.parked_seen[key] = true
+          end
+        end
+        -- One leader a raid (a player would not snipe each new one as it rose).
+        A.sniped = A.sniped or {}
+        for _, id in ipairs({S.g, storage.id}) do
+          local o = lp("stats", id).ops
+          local raid = id .. ":" .. (o.launched or 0)
+          if o.leader and o.phase == "attack" and not A.sniped[raid] then
+            A.sniped[raid] = true
+            for _, u in pairs(surface().find_entities_filtered{type = "unit", position = {0, 0}, radius = 600}) do
+              if u.unit_number == o.leader then u.die("player"); A.leaders = A.leaders + 1 break end
+            end
+          end
+        end
+        local L = lp("ledger", storage.id)
+        if L and L.owed > 0 and L.owed <= 300 and L.post then
+          local post = surface().find_entities_filtered{name = "lp-invoice-post", position = L.post, radius = 1}[1]
+          if post then A.paid = A.paid + post.insert{name = "electronic-circuit", count = L.owed} end
+        end
+      end)
+    end
+  end
+  -- Each hour, and at the end: what happened.
+  local function report(label)
+    local g, s = lp("stats", S.g), lp("stats", storage.id)
+    local sk = lp("skim", S.g) or {}
+    local L = lp("ledger", storage.id) or {}
+    info(string.format("factory %s: income %d ore; lost %d, rebuilt %d, turrets added %d; Grubstake raids %d (razed %d, looted %d, "
+      .. "dismantled %d), skims %d (%d items), trucks killed %d; Serenity raids %d (razed %d), sieges %d, bills %d (paid %d, truces %d), "
+      .. "leaders killed %d, broken %d, regrouped %d",
+      label, A.income, A.lost, A.rebuilt, A.turrets, g.ops.launched or 0, g.razed or 0, g.ops.looted or 0, g.ops.dismantled or 0,
+      sk.skims or 0, sk.skimmed or 0, A.trucks, s.ops.launched or 0, s.razed or 0, s.ops.sieges or 0, L.bills or 0, A.paid,
+      L.truces or 0, A.leaders, g.ops.broken or 0, s.ops.regrouped or 0))
+  end
+  for h = 1, math.floor(params.minutes / 60) do
+    if h * 3600 * 60 < END - 120 then schedule(h * 60 * 3600, function() report("hour " .. h) end) end
+  end
+  schedule(END - 60, function()
+    report("end")
+    metric("arc_income", A.income)
+    metric("arc_lost", A.lost)
+    check("factory: the factory made income", A.income > 0, tostring(A.income))
+  end)
+end
+
 -- Arc: the tree's area weapons hit more than one and spare their own side. One Shock trooper (Serenity) at five player
 -- cars three tiles apart, Serenity's own car beside them: its lightning must reach three or more, never its own. One
 -- dynamite sapper (Grubstake) at a block of four player walls, its own fence beside them: two or more walls hurt,
@@ -7567,7 +7782,7 @@ script.on_init(function()
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
   local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true,
-    mended = true, pool = true, remembered = true}
+    mended = true, pool = true, remembered = true, factory = true}
   -- Crews killed provoke (the user, 2026-10-17): those mixes start unprovoked, or the check proves nothing.
   -- And crystal marker: provoked, Serenity (whom claim markers do not hold) raided the marked outpost the test watches.
   local unprovoked = (params.scenario == "crew" and (params.mix == "doomed" or params.mix == "dronekill"
@@ -7577,7 +7792,7 @@ script.on_init(function()
   if not TEMPERS[params.scenario] and not unprovoked then lp("debug_tune", {provoke = true}) end
   -- Grubstake's thieves' hours (ops.thief_hours) off but where they are the subject (skim night) and on visits: the
   -- scenarios' timings were set without them.
-  if params.scenario ~= "visit" and params.mix ~= "night" then lp("debug_tune", {night_off = true}) end
+  if params.scenario ~= "visit" and params.scenario ~= "factory" and params.mix ~= "night" then lp("debug_tune", {night_off = true}) end
 end)
 
 scenario()

@@ -61,12 +61,14 @@ end)
 schedule(240, function()
   local names = {}
   for name, p in pairs(prototypes.get_entity_filtered{{filter = "type", type = {"unit", "car", "spider-vehicle"}}}) do
-    if name:sub(1, 3) == "lp-" then table.insert(names, name) end
+    -- Plate variants (research: -fire, -laser, -physical...) look the same: the base kinds only.
+    if name:sub(1, 3) == "lp-" and not name:find("%-fire$") and not name:find("%-laser$") and not name:find("%-physical$")
+      and not name:find("%-explosion$") and not name:find("%-electric$") then table.insert(names, name) end
   end
   table.sort(names)
   flatten(-560, -40, -400, 40)
   for i, name in ipairs(names) do
-    local x, y = -550 + ((i - 1) % 12) * 13, -25 + math.floor((i - 1) / 12) * 14
+    local x, y = -540 + ((i - 1) % 8) * 9, -24 + math.floor((i - 1) / 8) * 9
     local ok, e = pcall(function()
       return surface().create_entity{name = name, position = {x, y}, force = name:find("grubstake") and "lp-grubstake" or "lp-serenity"}
     end)
@@ -79,7 +81,7 @@ schedule(240, function()
   S.units = #names
 end)
 schedule(300, function()
-  shot("01-units", {-480, -10}, 0.6, false, S.units .. " units: tints, armour, sizes; Serenity's and Grubstake's apart")
+  shot("01-units", {-509, -10}, 0.9, false, S.units .. " units: tints, armour, sizes; Serenity's and Grubstake's apart")
 end)
 
 -- 2. The skim by night: a belt of copper plate, a Grubstake truck parked by it with headlights; then the yard.
@@ -139,7 +141,8 @@ end)
 poll(4 * 3600 + 30, 20 * 3600, 20, function()
   if not S.raid_at then return end
   local o = lp("stats", S.gru).ops
-  if not S.leader_shot and o.phase == "attack" and o.leader then
+  if not S.leader_shot and o.phase == "attack" and o.leader and surface().count_entities_filtered{position = S.raid_at,
+    radius = 10, force = "lp-grubstake", type = "unit", limit = 1} > 0 then
     S.leader_shot = true
     shot("05-raid-leader", S.raid_at, 1.5, false, "Grubstake raiders walking in, one under the mining-pick icon (its leader)")
   end
@@ -166,9 +169,12 @@ schedule(6 * 3600, function()
   local c = toward(S.ser, 140)
   flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
   local rp = surface().create_entity{name = "roboport", position = {c[1] + 10, c[2]}, force = "player"}
-  surface().create_entity{name = "electric-energy-interface", position = {c[1] + 16, c[2]}, force = "player"}
+  local eei = surface().create_entity{name = "electric-energy-interface", position = {c[1] + 16, c[2]}, force = "player"}
+  eei.power_production, eei.electric_buffer_size = 20e6 / 60, 20e6
   surface().create_entity{name = "substation", position = {c[1] + 14, c[2] + 4}, force = "player"}
   rp.insert{name = "construction-robot", count = 20}
+  local store = surface().create_entity{name = "storage-chest", position = {c[1] + 12, c[2] + 4}, force = "player"}
+  store.insert{name = "stone-wall", count = 50}
   for k = 0, 9 do surface().create_entity{name = "entity-ghost", inner_name = "stone-wall", position = {c[1] - 10 + 2 * k, c[2] + 12}, force = "player"} end
   S.jam = lp("debug_jammer", "serenity", {c[1] - 6, c[2]})
   S.jam_at = c

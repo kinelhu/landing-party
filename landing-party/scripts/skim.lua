@@ -61,6 +61,10 @@ local function yard(b)
   local s = h.surface
   local p = s.find_non_colliding_position("lp-skim-yard", {h.position.x - 8, h.position.y + 8}, 16, 1)
   local e = p and s.create_entity{name = "lp-skim-yard", position = p, force = h.force}
+  -- Cleared round it, so it is seen (in a screenshot it stood hidden in trees, scripts/shots.sh).
+  if e then
+    for _, t in pairs(s.find_entities_filtered{position = e.position, radius = 4, type = {"tree", "simple-entity"}}) do t.destroy() end
+  end
   b.skim_yard = e
   return e
 end
@@ -74,7 +78,7 @@ local function yard_icon(b)
   end
   if b.skim_icon and b.skim_icon.valid then b.skim_icon.destroy() end
   b.skim_icon = most and rendering.draw_sprite{sprite = "item/" .. most, surface = y.surface,
-    target = {entity = y, offset = {0, -1.2}}, x_scale = 0.8, y_scale = 0.8} or nil
+    target = {entity = y, offset = {0, -1.6}}, x_scale = 1.5, y_scale = 1.5} or nil
 end
 
 -- A belt the camp could skim: the player's, carrying something, no turret within SAFE, within a ring of RINGS; the

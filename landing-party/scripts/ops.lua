@@ -757,8 +757,9 @@ function ops.appoint(b, op)
   if not best then return end
   if op.leader_mark and op.leader_mark.valid then op.leader_mark.destroy() end
   op.leader = best
+  -- In its colour and a size up (at 0.6, white, it was hard to find in a screenshot, scripts/shots.sh).
   op.leader_mark = rendering.draw_sprite{sprite = "virtual-signal/" .. shared.CORPS[b.corp].icon, surface = best.surface,
-    target = {entity = best, offset = {0, -1.8}}, x_scale = 0.6, y_scale = 0.6}
+    target = {entity = best, offset = {0, -2.2}}, x_scale = 1.1, y_scale = 1.1, tint = shared.CORPS[b.corp].color}
 end
 
 -- A raider killed with loot drops its share where it fell (Fulgora Replicators, the user's pointer: "killing a raider
@@ -1067,8 +1068,11 @@ local function step(b, trace, army)
     op.leader_down = nil
     if op.leader_mark and op.leader_mark.valid then op.leader_mark.destroy() end
     b.leaders_lost = (b.leaders_lost or 0) + 1
-    if (shared.CORPS[b.corp].temper or {}).soft_only then
-      trace(b, string.format("raid: its foreman fell; the raid breaks and runs home with %d", n))
+    -- Serenity regroups once a raid: a second leader lost, it falls back home too (the factory scenario's engaged player
+    -- killed each new leader as it rose: 63 regroups, a raid that never broke).
+    if (shared.CORPS[b.corp].temper or {}).soft_only or op.regrouping then
+      trace(b, string.format("raid: its %s fell; the raid %s home with %d", op.regrouping and "second leader" or "foreman",
+        op.regrouping and "falls back" or "breaks and runs", n))
       b.broken = (b.broken or 0) + 1
       return finish(b, "fled", trace, army)
     end
@@ -1521,7 +1525,7 @@ function ops.summary(b)
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
     hazards = b.hazards or 0, biter_losses = b.biter_losses or 0,
     leader = b.op and b.op.leader and b.op.leader.valid and b.op.leader.unit_number or nil, phase = b.op and b.op.phase,
-    leaders_lost = b.leaders_lost or 0, broken = b.broken or 0, regrouped = b.regrouped or 0,
+    leaders_lost = b.leaders_lost or 0, broken = b.broken or 0, regrouped = b.regrouped or 0, dismantled = b.dismantled or 0,
     overflights = b.overflights or 0,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,
