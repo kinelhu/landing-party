@@ -32,8 +32,8 @@ digraph ai {
     "blocks" [label="blocks\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n393 lines", width=1.24, fillcolor="#eef2f7"];
-    "cordon" [label="cordon\n233 lines", width=1.06, fillcolor="#eef2f7"];
-    "perimeter" [label="perimeter\n264 lines", width=1.09, fillcolor="#d9f0d9"];
+    "cordon" [label="cordon\n297 lines", width=1.13, fillcolor="#eef2f7"];
+    "perimeter" [label="perimeter\n267 lines", width=1.10, fillcolor="#d9f0d9"];
     "road" [label="road\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n344 lines", width=1.18, fillcolor="#eef2f7"];
   }
@@ -179,6 +179,7 @@ digraph ai {
   "faction" -> "phases" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="on_trigger"];
   "war" -> "standing" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="forgive"];
   "rd" -> "ops" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="era"];
+  "ops" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_check"];
   "ops" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_step"];
   "base" -> "crew" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="crew_take"];
   "base" -> "crew" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="crew_rebuild"];

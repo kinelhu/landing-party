@@ -128,6 +128,9 @@ end
 
 function ops.perimeter(b, tick)
   if not (shared.CORPS[b.corp].temper or {}).provoked_only or not b.claim_radius then return end
+  if ops.cordon_check then ops.cordon_check(b) end
+  -- A broken line waits before it steps out again (cordon.check), even with nothing of the player's threatening it.
+  if tick < (b.restep_at or 0) then return end
   b.landed = b.landed or tick
   local fast = storage.perimeter_fast
   local start, every = fast and 3600 or PERIMETER_START, fast and 3600 or PERIMETER_TICKS

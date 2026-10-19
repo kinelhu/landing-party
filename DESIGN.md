@@ -2592,6 +2592,20 @@ went into units, a bigger garrison. In a parts economy, delay is not damage; wha
 Also withdrawn: a camp counted hurt when under half its generators stood (it never fired in these runs; with slow
 rebuilds it would have kept the raiders home to guard the camp). Reverted, four seeds: the four landers fall again (strikes 3 and 4);
 engage 66,762 (sd 7,573), lost 301, against the turtle's 61,924 and 462.
+Four hours, four seeds: control 296,662; turtle 156,158 (-47%, lost 1,726); engage 169,820 (-43%, lost 1,461; Grubstake's
+camp down on every seed). The corporations' cost grows with time (38% at two hours, 47% at four), and the late growth
+is Serenity's: its raids (6 to 9 an hour throughout) take more each (its garrison grows, its ladder climbs), and on seed
+777 its line cut 3, then 97, then 201 belt tiles an hour (the instrument's undergrounds cover a tile, not the band, and
+the edge moves on). The engaged player had no answer to Serenity.
+The line broken (the user: hunting the line "needs to be workable"): over half the posts of the arc its claim stands on
+lost their turrets, the claim falls back to where it stood before that arc, the arc's pieces still standing are pulled
+down (half their parts back), its rebuilds and the arc being built beyond dropped, and the line waits 15 minutes before
+it steps out again (`cordon.check`, once a minute). Scenario `cordon broken`: two arcs stood, the leading arc's eight
+turrets destroyed: the claim from 120 to 90 within three minutes, still 90 thirteen minutes on. Then the engaged player
+hunted it (from minute 40, every 20 minutes, 30 units at the leading arc's turrets): two seeds, four hours: 142,853 and
+161,392 against 155,659 and 188,045 without (-8%, -14%); the line broken one or two times; Serenity's answers 12 to 14 a
+run. Each post hit is a provocation, and its answer cost more than the broken line saved. Open (the user's call): is
+fighting at the line fair war (a post lost no provocation) or an insult it answers?
 
 ### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
 What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the

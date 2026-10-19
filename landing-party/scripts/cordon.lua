@@ -100,6 +100,7 @@ function cordon.step(b, new, near)
       b.cordon_recovered = (b.cordon_recovered or 0) + gone
       base.trace(b, string.format("cordon: the arc at %.0f recovered (%d pieces, %d parts back)", old.radius, gone, back))
     end
+    c.from = b.perimeter or b.claim_radius
     b.cordon_arcs = (b.cordon_arcs or 0) + 1
     b.cordon_posts = (b.cordon_posts or 0) + built
     ops.perimeter_advance(b, c.radius, near, near and near.valid and math.sqrt((near.position.x - b.origin.x) ^ 2
@@ -220,13 +221,76 @@ function cordon.step(b, new, near)
   return true
 end
 
+-- The line broken (the user, 2026-10-19: hunting the line must be "workable"; Fable's engagement consult: "kill a post
+-- and the line retreats"): over half the posts of the arc its claim stands on lost their turrets, and the claim falls
+-- back to where it stood before that arc; the arc's pieces still standing are pulled down (half their parts back), its
+-- rebuilds and any arc being built beyond are dropped, and the line waits RESTEP before it steps out again. Its belts
+-- cut and its strangling follow the claim's edge, so they fall back with it. Once a minute (ops.perimeter asks).
+local BROKEN, RESTEP = 0.5, 15 * 3600
+local function turrets_up(m)
+  for _, e in ipairs(m.entities or {}) do
+    if e.valid and shared.kind_of(e.name) == "lp-gun-turret" then return true end
+  end
+  return false
+end
+function cordon.check(b)
+  local hist = b.cordon_history
+  local c = hist and hist[#hist]
+  if not c or c.broken or not c.from then return end
+  local posts, up = 0, 0
+  for _, m in ipairs(c.posts) do
+    if not m.gate then
+      posts = posts + 1
+      if turrets_up(m) then up = up + 1 end
+    end
+  end
+  if posts == 0 or up >= BROKEN * posts then return end
+  c.broken = true
+  table.remove(hist)
+  -- What still stands of it comes down; its rebuilds and the arc being built beyond are dropped.
+  local mods, back = {}, 0
+  for _, m in ipairs(c.posts) do mods[m] = true end
+  for _, m in ipairs(c.walls or {}) do mods[m] = true end
+  for _, m in ipairs(c.gates or {}) do mods[m] = true end
+  if b.cordon then
+    for _, m in ipairs(b.cordon.posts) do mods[m] = true end
+    for _, m in ipairs(b.cordon.walls or {}) do mods[m] = true end
+    for _, m in ipairs(b.cordon.gates or {}) do mods[m] = true end
+    b.cordon = nil
+  end
+  for m in pairs(mods) do
+    for _, e in ipairs(m.entities or {}) do
+      if e.valid then
+        back = back + math.floor((shared.cost[shared.kind_of(e.name)] or 0) / 2)
+        e.surface.create_entity{name = "explosion-hit", position = e.position}
+        storage.owner[e.unit_number] = nil
+        e.destroy()
+      end
+    end
+    m.recovered = true
+  end
+  for _, list in ipairs({b.rebuild, b.queue}) do
+    for i = #list, 1, -1 do if list[i].module and mods[list[i].module] then table.remove(list, i) end end
+  end
+  b.parts = b.parts + back
+  local from = b.perimeter or b.claim_radius
+  b.perimeter = c.from
+  b.restep_at = game.tick + RESTEP
+  b.line_broken = (b.line_broken or 0) + 1
+  if ops.claim_map then ops.claim_map(b) end
+  base.trace(b, string.format("cordon: the arc at %.0f broken (%d of %d posts armed); the claim falls back from %.0f to %.0f",
+    c.radius, up, posts, from, c.from))
+end
+ops.cordon_check = cordon.check
+
 function cordon.stats(b)
   local c = b.cordon
   local built = 0
   for _, m in ipairs(c and c.posts or {}) do if m.built then built = built + 1 end end
   return {arcs = b.cordon_arcs or 0, posts = b.cordon_posts or 0, pending = c and #c.posts or 0, pending_built = built,
     radius = c and c.radius, perimeter = b.perimeter, bearings = b.cordon_bearings or {}, recovered = b.cordon_recovered or 0,
-    contact = b.cordon_contact or 0, gates = b.cordon_gates or 0, ore = b.cordon_ore or 0, severed = b.severed or 0}
+    contact = b.cordon_contact or 0, gates = b.cordon_gates or 0, ore = b.cordon_ore or 0, severed = b.severed or 0,
+    broken = b.line_broken or 0}
 end
 
 ops.cordon_step = cordon.step

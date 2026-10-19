@@ -3543,6 +3543,53 @@ scenarios.factory = function()
       end)
     end
   end
+  -- Engaged: the line hunted (the user: hunting the line must be "workable"; cordon.check pulls the claim back when
+  -- over half the leading arc's posts lose their turrets). From minute 40, every 20 minutes, 30 units (troopers,
+  -- breachers, battle tanks) from the factory's edge at the gun turrets on Serenity's leading arc, nearest first,
+  -- re-aimed every 30 s, for 6 minutes.
+  if engage then
+    A.line_strikes = 0
+    local function arc_turrets()
+      local cs = lp("cordon_stats", storage.id)
+      local o = lp("stats", storage.id).origin
+      if not (cs and cs.perimeter and o) then return {}, cs end
+      local out = {}
+      for _, e in pairs(surface().find_entities_filtered{force = FORCE, type = "ammo-turret", position = o, radius = cs.perimeter + 10}) do
+        local d = math.sqrt((e.position.x - o.x) ^ 2 + (e.position.y - o.y) ^ 2)
+        if math.abs(d - cs.perimeter) <= 10 then table.insert(out, e) end
+      end
+      return out, cs
+    end
+    local function aim_line()
+      if not (A.lgrp and A.lgrp.valid) then return end
+      local ts = arc_turrets()
+      if #ts > 0 then
+        A.lgrp.set_command{type = defines.command.attack, target = surface().get_closest(A.lgrp.position, ts),
+          distraction = defines.distraction.by_enemy}
+      end
+    end
+    for t = 40 * 3600, END - 600, 20 * 3600 do
+      schedule(t, function()
+        local ts = arc_turrets()
+        if #ts == 0 then return end
+        local first = surface().get_closest({0, 0}, ts).position
+        local len = math.max(1, math.sqrt(first.x ^ 2 + first.y ^ 2))
+        local from = {first.x / len * 70, first.y / len * 70}
+        local grp = surface().create_unit_group{position = from, force = "player"}
+        for _, k in ipairs({{"lp-trooper", 18}, {"lp-breacher", 6}, {"lp-battle-tank", 6}}) do
+          for _ = 1, k[2] do
+            local p = surface().find_non_colliding_position(k[1], from, 30, 1)
+            local u = p and surface().create_entity{name = k[1], position = p, force = "player"}
+            if u then grp.add_member(u) end
+          end
+        end
+        A.lgrp = grp
+        A.line_strikes = A.line_strikes + 1
+        aim_line()
+      end)
+      for dt = 1800, 6 * 3600, 1800 do schedule(t + dt, aim_line) end
+    end
+  end
   -- Each hour, and at the end: what happened.
   local function report(label)
     local g, s = lp("stats", S.g), lp("stats", storage.id)
@@ -3567,6 +3614,8 @@ scenarios.factory = function()
       n(sb.perimeter_steps), serpent.line(co.severed or "?"), n(sb.ops.cuts_found), n(sb.ops.recons), n(sb.ops.sieges),
       n(sb.ops.assaults), n(sb.ops.clearances), n(sb.ops.hazards), n(sb.ops.answers), n(sb.reinforced)))
     if engage then
+      info(string.format("factory %s: line strikes %d, the line broken %d times, claim radius %s", label, A.line_strikes or 0,
+        co.broken or 0, tostring(co.perimeter)))
       info(string.format("factory %s: strikes %d, recovered %d items, Grubstake's lander %s (%.0f%%, hull %s), setbacks %d, "
         .. "raids held home %d", label, A.strikes or 0, A.recovered or 0, g.lander and "standing" or "down",
         100 * (g.lander_health or 0), g.hull_up and "up" or "down", g.setbacks or 0, g.held_home or 0))
@@ -4536,7 +4585,40 @@ scenarios.cordon = function()
   -- steps out no further.
   local breach, contact, rail, oremix = params.mix == "breach", params.mix == "contact", params.mix == "rail", params.mix == "ore"
   local held = params.mix == "held"
+  -- LP_MIX=broken: once two arcs stand, every gun turret on the leading arc is destroyed (the player hunting the line):
+  -- the line counts as broken, the claim falls back to the arc before, and it does not step out again for 15 minutes.
+  local broken = params.mix == "broken"
   schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  if broken then
+    for t = 4 * 3600, END - 12 * 3600, 600 do
+      schedule(t, function()
+        if S.hit then return end
+        local cs = lp("cordon_stats", storage.id)
+        if (cs.arcs or 0) >= 2 and cs.perimeter then
+          local o = lp("stats", storage.id).origin
+          S.before = cs.perimeter
+          S.hit, S.killed = game.tick, 0
+          schedule(game.tick - (storage.t0 or 0) + 3 * 3600, function() S.after = lp("cordon_stats", storage.id).perimeter end)
+          schedule(game.tick - (storage.t0 or 0) + 13 * 3600, function() S.later = lp("cordon_stats", storage.id).perimeter end)
+          for _, e in pairs(surface().find_entities_filtered{force = FORCE, position = o, radius = cs.perimeter + 8}) do
+            local d = math.sqrt((e.position.x - o.x) ^ 2 + (e.position.y - o.y) ^ 2)
+            if e.valid and e.type == "ammo-turret" and math.abs(d - cs.perimeter) <= 8 then e.die("player"); S.killed = S.killed + 1 end
+          end
+        end
+      end)
+    end
+    schedule(END - 60, function()
+      local cs = lp("cordon_stats", storage.id)
+      info(string.format("cordon broken: hit at %s, %s turrets killed; claim %s before, %s 3 min after, %s 13 min after, %s at the end; broken %s",
+        tostring(S.hit), tostring(S.killed), tostring(S.before), tostring(S.after), tostring(S.later), tostring(cs.perimeter),
+        tostring(cs.broken)))
+      check("cordon: its leading arc broken, the claim falls back", S.hit and (cs.broken or 0) >= 1 and S.after
+        and S.after < S.before, string.format("%s -> %s, broken %s", tostring(S.before), tostring(S.after), tostring(cs.broken)))
+      check("cordon: and it waits before stepping out again", S.later and S.after and S.later <= S.after,
+        string.format("%s 13 minutes on", tostring(S.later)))
+    end)
+    return
+  end
   if held then
     schedule(6 * 3600, function() S.held_at = lp("cordon_stats", storage.id).perimeter end)
     for t = 6 * 3600 + 20, END - 120, 20 do
