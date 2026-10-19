@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M230.24,-235.5C230.24,-235.5 127.99,-235.5 127.99,-235.5 121.99,-235.5 115.99,-229.5 115.99,-223.5 115.99,-223.5 115.99,-203.5 115.99,-203.5 115.99,-197.5 121.99,-191.5 127.99,-191.5 127.99,-191.5 230.24,-191.5 230.24,-191.5 236.24,-191.5 242.24,-197.5 242.24,-203.5 242.24,-203.5 242.24,-223.5 242.24,-223.5 242.24,-229.5 236.24,-235.5 230.24,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4286 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="179.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1453</text>
+<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4288 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="179.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1455</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->
 <g id="edge4" class="edge">
@@ -127,7 +127,7 @@
 <title>Heists (Grubstake)</title>
 <path fill="#eef2f7" stroke="black" d="M307.24,-131.75C307.24,-131.75 210.99,-131.75 210.99,-131.75 204.99,-131.75 198.99,-125.75 198.99,-119.75 198.99,-119.75 198.99,-107.75 198.99,-107.75 198.99,-101.75 204.99,-95.75 210.99,-95.75 210.99,-95.75 307.24,-95.75 307.24,-95.75 313.24,-95.75 319.24,-101.75 319.24,-107.75 319.24,-107.75 319.24,-119.75 319.24,-119.75 319.24,-125.75 313.24,-131.75 307.24,-131.75"/>
 <text xml:space="preserve" text-anchor="middle" x="259.12" y="-115.3" font-family="Helvetica,sans-Serif" font-size="11.00">Heists (Grubstake)</text>
-<text xml:space="preserve" text-anchor="middle" x="259.12" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1433 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="259.12" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1439 lines</text>
 </g>
 <!-- Army and operations&#45;&gt;Heists (Grubstake) -->
 <g id="edge17" class="edge">

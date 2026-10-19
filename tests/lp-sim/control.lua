@@ -4987,6 +4987,10 @@ scenarios.jumper = function()
     S.chest = surface().create_entity{name = "iron-chest", position = c, force = "player"}
     S.chest.insert{name = "iron-plate", count = 200}
     S.chest.insert{name = "electronic-circuit", count = 50}
+    -- A machine by the chest: the heist loots through ops.loot as raids do, and raids' dismantling crashed on its hands
+    -- (visit nw, 0.1.22).
+    local q = surface().find_non_colliding_position("assembling-machine-1", {c[1] + 5, c[2]}, 6, 1)
+    if q then surface().create_entity{name = "assembling-machine-1", position = q, force = "player"} end
     S.parts0 = lp("stats", S.g).parts
     -- LP_MIX=cmd: through /lp rig (dev.remote), standing at the chest.
     if params.mix == "cmd" then lp("dev", {"rig"}, c); S.fired = "cmd" else S.fired = lp("debug_jumper", S.g, c) end

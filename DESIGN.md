@@ -639,6 +639,13 @@ besieged". A fortress cannot wall in what feeds it.
   `dismantle` (an unguarded outpost of four assemblers holding plates, two solar panels, a pole, a chest): 7 ghosts, the
   four assemblers and 160 plates in the yard; `dismantle ambush` (the raiders killed once two machines are gone): 178
   items on the ground, none home.
+- **First visits (0.1.22, provoked at an hour, 3 hours).** deathworld: Serenity razed 520 of the player's buildings,
+  Grubstake 253 (one camp 173) and looted 829 items; its raids dismantled long-handed inserters and medium poles (what
+  stood by its targets), a few a raid. Script 0.046 ms a tick (the save 0.31 ms, the visit 0.51), four ticks over 50 ms
+  (worst 89; 128 on 0.1.20). The skim never fired there or on nw: "0 exposed belts carrying in reach" (the trace now
+  says how many belts it looked at and how many carried). nw crashed at the claim jumper's heist: it loots through
+  ops.loot, and dismantling read raid members it does not have (raids only now; `jumper` has an assembler by its chest,
+  and the old code crashes on it).
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its

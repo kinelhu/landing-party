@@ -90,9 +90,12 @@ local function candidates(b, owner)
   local h = home_of(b)
   local s = h.surface
   local out = {}
+  local seen, carrying = 0, 0
   for _, e in pairs(s.find_entities_filtered{type = "transport-belt", force = owner, position = h.position, radius = RANGE,
     limit = CANDIDATES}) do
     local n = e.get_transport_line(1).get_item_count() + e.get_transport_line(2).get_item_count()
+    seen = seen + 1
+    if n > 0 then carrying = carrying + 1 end
     if n > 0 and s.count_entities_filtered{position = e.position, radius = SAFE, force = owner,
       type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} == 0 and not ops.marked(b, {e.position.x, e.position.y}) then
       local d = (e.position.x - h.position.x) ^ 2 + (e.position.y - h.position.y) ^ 2
@@ -100,6 +103,7 @@ local function candidates(b, owner)
     end
   end
   table.sort(out, function(x, y) return x[2] < y[2] end)
+  b.skim_seen = {seen, carrying}
   return out
 end
 
@@ -280,7 +284,9 @@ local function consider(b)
   end
   if game.tick >= (b.skim_said or 0) then
     b.skim_said = game.tick + 30 * 3600
-    base.trace(b, string.format("skim: none (%d exposed belts carrying in reach%s)", #cands, why and (", the last: " .. why) or ""))
+    local sn = b.skim_seen or {0, 0}
+    base.trace(b, string.format("skim: none (%d exposed belts carrying in reach, of %d belts looked at, %d carrying%s)", #cands,
+      sn[1], sn[2], why and (", the last: " .. why) or ""))
   end
   b.next_skim = game.tick + NONE
 end

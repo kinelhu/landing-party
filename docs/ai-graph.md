@@ -16,7 +16,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `ops` | 1453 | answers, cuts, intel, jammer, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, flare, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_step, flare.answer_flare, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
+| `ops` | 1455 | answers, cuts, intel, jammer, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, flare, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_step, flare.answer_flare, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `siege` | 777 | (leaf) | ops |  |  |  | threat_last |
 | `faction` | 769 | army, base, layout, names, ops, pact, pods, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `army` | 711 | ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
@@ -27,9 +27,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `crew` | 393 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `war` | 392 | army, base, ops, pods, pool, rd, rng, stance, tune | control, faction, flare, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `routing` | 374 | (leaf) | ops |  |  |  | corridors |
+| `skim` | 353 | base, ops, pool, stance, tune | control |  | 60, 600 |  |  |
 | `tap` | 353 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `construction` | 352 | (leaf) | base |  |  |  |  |
-| `skim` | 347 | base, ops, pool, stance, tune | control |  | 60, 600 |  |  |
 | `prospect` | 344 | base, chart, ops, pool, standing | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `rd` | 330 | (leaf) | army, control, faction, ops, war | ops.era |  |  | corps |
 | `flare` | 323 | base, ops, pact, pool, tune, war | bait, control, dev |  | 30, 600 |  |  |

@@ -647,7 +647,9 @@ local function thief_cmd(b, t, pos, surface)
   return {type = defines.command.attack_area, destination = pos, radius = 12, distraction = defines.distraction.by_anything}, false
 end
 local function dismantle(b, op, t, pos, surface, trace)
-  if storage.dismantle_off then return end
+  -- Raids only: the claim jumper's heist loots through ops.loot too, with hands, not members (it crashed on nw, an
+  -- assembler by the chests it emptied).
+  if storage.dismantle_off or op.kind ~= "raid" or not op.members then return end
   op.loot.dismantled = op.loot.dismantled or 0
   local room = DISMANTLE_MAX - op.loot.dismantled
   local list = room > 0 and surface.find_entities_filtered{position = pos, radius = 16, type = DISMANTLE_TYPES, force = t.owner} or {}
