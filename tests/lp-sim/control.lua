@@ -3256,7 +3256,8 @@ scenarios.factory = function()
     return own(surface().create_entity(spec))
   end
   schedule(60, function()
-    lp("debug_tune", {era = 2, history_off = true, harmless = control or nil})
+    -- prospect_uncharted: headless runs chart nothing (force.chart never lands), as the prospecting tests waive it.
+    lp("debug_tune", {era = 2, history_off = true, harmless = control or nil, prospect_uncharted = true})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
     lp("debug_depot", storage.id, 3000)
@@ -3264,6 +3265,8 @@ scenarios.factory = function()
   -- The factory.
   schedule(120, function()
     game.forces.player.create_ghost_on_entity_death = true
+    -- What a player's radars and walks would have charted (prospecting reads charted chunks: it saw none).
+    game.forces.player.chart(surface(), {{-700, -700}, {700, 700}})
     flatten(-70, -70, 70, 70)
     local eei = surface().create_entity{name = "electric-energy-interface", position = {0, 0}, force = "player"}
     eei.power_production, eei.electric_buffer_size = 200e6 / 60, 200e6
@@ -3333,6 +3336,10 @@ scenarios.factory = function()
     end
     local len = math.sqrt(cx * cx + cy * cy)
     for dd = len - 6, 60, -26 do put("big-electric-pole", {cx / len * dd + 2, cy / len * dd + 2}) end
+    -- A buffer chest by the drills, as outposts keep (the claim jumper's mark: no chest stood outside the core).
+    local bc = put("wooden-chest", {cx + 3, cy - 4})
+    if bc then bc.insert{name = "iron-plate", count = 200}; bc.insert{name = "electronic-circuit", count = 50} end
+    put("radar", {cx - 4, cy - 5})
     A.sinks[k] = belts[#belts] and belts[#belts][1]
     A.outposts[k] = {cx, cy, turrets = 0}
   end
@@ -3368,6 +3375,31 @@ scenarios.factory = function()
         end
       end
       A.owned = live
+      -- A belt cut on Serenity's line is crossed underground, as a player would (rebuilt as it was, it was cut again:
+      -- 635 cuts in two hours).
+      local ss = lp("stats", storage.id)
+      local edge, so = ss.perimeter or ss.claim_radius, ss.origin
+      for _, gh in pairs(surface().find_entities_filtered{ghost_type = "transport-belt", force = "player", position = {0, 0}, radius = 500}) do
+        local p = gh.valid and gh.position
+        if p and edge and so and math.abs(math.sqrt((p.x - so.x) ^ 2 + (p.y - so.y) ^ 2) - edge) <= 3 then
+          local d = gh.direction
+          local v = ({[defines.direction.north] = {0, -1}, [defines.direction.south] = {0, 1}, [defines.direction.east] = {1, 0},
+            [defines.direction.west] = {-1, 0}})[d]
+          if v then
+            local a = {p.x - 3 * v[1], p.y - 3 * v[2]}
+            local b = {p.x + 3 * v[1], p.y + 3 * v[2]}
+            for k = -3, 3 do
+              for _, e in pairs(surface().find_entities_filtered{position = {p.x + k * v[1], p.y + k * v[2]}, radius = 0.4,
+                force = "player"}) do
+                if e.valid and (e.type == "transport-belt" or (e.name == "entity-ghost" and e.ghost_type == "transport-belt")) then e.destroy() end
+              end
+            end
+            own(surface().create_entity{name = "underground-belt", position = a, direction = d, type = "input", force = "player"})
+            own(surface().create_entity{name = "underground-belt", position = b, direction = d, type = "output", force = "player"})
+            A.undergrounds = (A.undergrounds or 0) + 1
+          end
+        end
+      end
       for _, gh in pairs(surface().find_entities_filtered{name = "entity-ghost", force = "player", position = {0, 0}, radius = 500}) do
         if gh.valid and surface().count_entities_filtered{position = gh.position, radius = 30, type = "unit",
           force = {"lp-grubstake", "lp-serenity"}, limit = 1} == 0 then
@@ -3423,6 +3455,39 @@ scenarios.factory = function()
       end)
     end
   end
+  -- Engaged: a strike on Grubstake every 30 minutes from minute 20 (12 troopers, 4 breachers, 4 battle tanks from the
+  -- factory's edge), at its yard, else its lander; what lies on the ground there 8 minutes later is picked up (the
+  -- stolen goods recovered).
+  if engage then
+    A.strikes, A.recovered = 0, 0
+    for t = 20 * 3600, END - 600, 30 * 3600 do
+      schedule(t, function()
+        local y = surface().find_entities_filtered{name = "lp-skim-yard", force = "lp-grubstake", limit = 1}[1]
+        local g = lp("stats", S.g)
+        local at = y and y.position or (g and g.lander and g.origin)
+        if not at then return end
+        local len = math.max(1, math.sqrt(at.x * at.x + at.y * at.y))
+        local from = {at.x / len * 70, at.y / len * 70}
+        local grp = surface().create_unit_group{position = from, force = "player"}
+        for _, k in ipairs({{"lp-trooper", 12}, {"lp-breacher", 4}, {"lp-battle-tank", 4}}) do
+          for _ = 1, k[2] do
+            local p = surface().find_non_colliding_position(k[1], from, 20, 1)
+            local u = p and surface().create_entity{name = k[1], position = p, force = "player"}
+            if u then grp.add_member(u) end
+          end
+        end
+        grp.set_command{type = defines.command.attack_area, destination = at, radius = 24, distraction = defines.distraction.by_enemy}
+        A.strikes = A.strikes + 1
+        A.strike_at = {at.x, at.y}
+      end)
+      schedule(t + 8 * 3600, function()
+        if not A.strike_at then return end
+        for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = A.strike_at, radius = 30}) do
+          if it.valid and it.stack.valid_for_read then A.recovered = A.recovered + it.stack.count; it.destroy() end
+        end
+      end)
+    end
+  end
   -- Each hour, and at the end: what happened.
   local function report(label)
     local g, s = lp("stats", S.g), lp("stats", storage.id)
@@ -3434,6 +3499,22 @@ scenarios.factory = function()
       label, A.income, A.lost, A.rebuilt, A.turrets, g.ops.launched or 0, g.razed or 0, g.ops.looted or 0, g.ops.dismantled or 0,
       sk.skims or 0, sk.skimmed or 0, A.trucks, s.ops.launched or 0, s.razed or 0, s.ops.sieges or 0, L.bills or 0, A.paid,
       L.truces or 0, A.leaders, g.ops.broken or 0, s.ops.regrouped or 0))
+    -- Every mechanic's count so far (what fires, to prune by): Grubstake's, then Serenity's.
+    local gb, sb = g, s
+    local pr = lp("prospect_stats", S.g) or {}
+    local co = lp("cordon_stats", storage.id) or {}
+    local function n(v) return type(v) == "number" and v or (type(v) == "table" and table_size(v) or 0) end
+    info(string.format("factory %s: undergrounds laid under the line %d", label, A.undergrounds or 0))
+    info(string.format("factory %s mechanics: G flares %d, jumps %d, taps %d, strips %d, claims %s, answers %d, reliefs %d, "
+      .. "overflights %d | S posts %s, steps %d, severed %s, cuts found %d, recons %d, sieges %d, assaults %d, clearances %d, "
+      .. "hazards %d, answers %d, reliefs %d", label, n(gb.flares), n(gb.jumps), n(gb.taps), n(gb.ops.strips), serpent.line(pr.claims
+      or pr.claimed or "?"), n(gb.ops.answers), n(gb.reinforced), n(gb.ops.overflights), serpent.line(co.posts or "?"),
+      n(sb.perimeter_steps), serpent.line(co.severed or "?"), n(sb.ops.cuts_found), n(sb.ops.recons), n(sb.ops.sieges),
+      n(sb.ops.assaults), n(sb.ops.clearances), n(sb.ops.hazards), n(sb.ops.answers), n(sb.reinforced)))
+    if engage then
+      info(string.format("factory %s: strikes %d, recovered %d items, Grubstake's lander %s", label, A.strikes or 0,
+        A.recovered or 0, g.lander and "standing" or "down"))
+    end
   end
   for h = 1, math.floor(params.minutes / 60) do
     if h * 3600 * 60 < END - 120 then schedule(h * 60 * 3600, function() report("hour " .. h) end) end

@@ -36,9 +36,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `jumper` | 315 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
 | `perimeter` | 264 | (leaf) | ops |  |  |  |  |
 | `cordon` | 233 | base, ops, prospect | control |  |  |  |  |
+| `strip` | 228 | (leaf) | ops |  |  |  | threat_last |
 | `phases` | 227 | faction | control |  | 360, 3600 |  | phases |
 | `intel` | 225 | (leaf) | ops |  |  |  |  |
-| `strip` | 217 | (leaf) | ops |  |  |  | threat_last |
 | `planner` | 200 | (leaf) | base |  |  |  |  |
 | `ledger` | 197 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `dev` | 194 | army, base, faction, flare, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |

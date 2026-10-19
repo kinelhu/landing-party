@@ -2534,6 +2534,24 @@ engaged player does not yet strike a camp, the yard or the line, where the desig
 came: biters did not hit Serenity on these maps. Found on the way: Serenity's raid regrouped every time a new leader
 fell (an engaged player killing each as it rose: 63 regroups, a raid that never broke): now once a raid, a second
 leader lost and it falls back home.
+Strikes (the engaged player, next): every 30 minutes from minute 20, 12 troopers, 4 breachers and 4 battle tanks at
+Grubstake's yard (else its lander); what lies on the ground there 8 minutes later is picked up. Seed 777: the first
+strike took its lander, the camp fell, 143 stolen items back; income 77,234 against the turtle's 68,297 (+13%). Seed
+12345: four strikes, the lander standing, 10 items back; a rival hit becomes an enemy and Grubstake razed 213 (114
+turtling); income as the turtle's. A strike that wins pays; one that fails makes the thief worse. Whether engaging pays
+turns on whether the player's army can take a camp (fought capture, open).
+What fires (the turtle, two hours, two seeds; every mechanic counted, `factory ... mechanics`): Grubstake's raids,
+dismantling, skims, prospect claims (2 to 3) and taps (4 to 5); never flares (no nest within 600 on these maps), the
+claim jumper (it waits for the ladder's second rung, 20 minutes without a raze: while its raids work it never gets
+there: heists are what a thief turns to when raiding fails, which reads right), or strip-mining (its intel had seen
+none of the player's drills: they lay beyond its camp's sight; it strips what it has seen). Serenity: raids, two to
+four sieges, the line's cut. Nothing is cut on this evidence: what stays silent here is waiting for the map or the
+base that calls for it. Two instrument fixes on the way, each a player's habit: the map charted (prospecting reads
+charted chunks: headless charting never lands, so `prospect_uncharted` as its tests do), a buffer chest and a radar at
+each outpost; a belt cut on Serenity's line is crossed underground when rebuilt (rebuilt as it was, it was cut again:
+635 cuts in two hours; 121 with undergrounds, and the player's losses on seed 12345 from 757 to 351). Serenity's line
+built no post on seed 12345: its claim (228 from a camp 339 from the spawn) already took in the player's first
+outposts, so the line had nowhere to step; its cut is what the player meets there. `strip` now says why it chose none.
 
 ### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
 What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the

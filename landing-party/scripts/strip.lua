@@ -51,12 +51,20 @@ end
 
 local function choose_strip(b, army)
   local temper = shared.CORPS[b.corp].temper or {}
-  if not temper.strips or (b.parts or 0) < STRIP_COST or game.tick < (b.next_strip or 0) then return end
-  if field(b, army) < STRIP_GUARDS then return end
+  if not temper.strips or game.tick < (b.next_strip or 0) then return end
+  -- Why none, traced once in a while (the factory scenario: no strip in hours, and no word why).
+  local said = game.tick >= (b.strip_said or 0)
+  local function why(text)
+    if said and ops.trace then b.strip_said = game.tick + 30 * 3600; ops.trace(b, "strip: none (" .. text .. ")") end
+  end
+  if (b.parts or 0) < STRIP_COST then return why(string.format("parts %d of %d", b.parts or 0, STRIP_COST)) end
+  if field(b, army) < STRIP_GUARDS then return why(string.format("guards %d of %d", field(b, army), STRIP_GUARDS)) end
   local h = home(b)
   local in_flight = ops.player_ops()
   local best, bd, site
+  local drills, sited = 0, 0
   for key, t in pairs(b.intel.targets) do
+    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) then drills = drills + 1 end
     -- Any outpost with a camp site beyond turret reach (strip_site checks it): requiring an undefended drill as
     -- well left a careful player's outposts, each with two lasers, never stripped.
     if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner)
@@ -64,12 +72,15 @@ local function choose_strip(b, army)
       local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
       if not bd or d < bd then
         local p = strip_site(b, t)
+        if p then sited = sited + 1 end
         -- A patch it already holds (a camp kept there) is not stripped again.
         local held = p and (b.claims or {})[math.floor(p[1] / 64) .. "," .. math.floor(p[2] / 64)] or 0
         if p and held < 2 then best, bd, site = key, d, p end
       end
     end
   end
+  if not best then why(string.format("%d of the player's drills known, %d with a camp site out of turret reach, %d operations "
+    .. "against it in flight", drills, sited, in_flight)) end
   return best, site
 end
 

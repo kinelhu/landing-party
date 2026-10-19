@@ -43,7 +43,7 @@ digraph ai {
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n225 lines", width=1.05, fillcolor="#d9f0d9"];
     "siege" [label="siege\n777 lines", width=1.66, fillcolor="#d9f0d9"];
-    "strip" [label="strip\n217 lines", width=1.04, fillcolor="#d9f0d9"];
+    "strip" [label="strip\n228 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n132 lines", width=0.95, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
