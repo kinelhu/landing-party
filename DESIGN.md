@@ -2514,6 +2514,16 @@ scenario with assertions first; the window is for art, feel and GUI.
   faction for lack of time (all pass at 60/30). A run that ends before its scenario's checks fails, and each scenario
   states how long it needs after its strike.
 
+### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
+What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the
+units side by side; a skim by night with headlights; the yard; a raid's leader icon and the ghosts it leaves; the
+invoice post by day and under a truce by night; a jammer among robots; both camps from above) and frames each in a
+surface screenshot to `script-output/lp-shots/` (`shots.txt` says what to look for in each). The tips bubble's Tab
+is sent through System Events with the game brought to the front. First runs, unattended: the first shot (54 units)
+taken, then the game stopped ticking at tick 600: the display was asleep (a screen capture came back black) and
+nothing renders then. It needs the screen awake: run it when the user is at the computer. The units shot needs a
+tighter layout (54 at 13 tiles apart overflow the frame).
+
 ## Engine notes
 - Pathfinding is the engine's (the biters' pathfinder): units route around whatever their collision mask
   hits; with no way round, ground units shoot through; groups arrive as blobs; spider-units step over;

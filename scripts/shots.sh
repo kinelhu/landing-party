@@ -28,15 +28,16 @@ rm -rf "$out" "$SH/saves/shots.zip"
 echo 427520 > "$SH/steam_appid.txt"
 (cd "$SH" && exec "$FACTORIO" --config "$SH/config/config.ini" --load-game "$SH/saves/shots.zip" >> "$SH/run.out" 2>&1) &
 status="timeout"; started=0; tabs=0
-for i in $(seq 1 600); do
+for i in $(seq 1 300); do
   sleep 1
   [ -f "$out/done.txt" ] && { status="done"; break; }
   grep -q "caused a non-recoverable error" "$SH/factorio-current.log" 2>/dev/null && { status="error"; break; }
   if pgrep -f "$SH/config/config.ini" > /dev/null; then started=1; elif [ "$started" = 1 ]; then status="exited"; break; fi
   # The tips bubble's Tab: a few tries once the window is up.
   if [ "$started" = 1 ] && [ $tabs -lt 6 ] && [ $((i % 5)) -eq 0 ]; then
-    osascript -e 'tell application "System Events" to tell (first process whose unix id is '"$(pgrep -f "$SH/config/config.ini" | head -1)"') to key code 48' \
-      > /dev/null 2>&1 && tabs=$((tabs + 1)) || true
+    pid=$(pgrep -f "$SH/config/config.ini" | head -1)
+    osascript -e "tell application \"System Events\" to set frontmost of (first process whose unix id is $pid) to true" \
+      -e 'delay 0.5' -e 'tell application "System Events" to key code 48' > "$SH/tab.out" 2>&1 && tabs=$((tabs + 1)) || true
   fi
 done
 close_game

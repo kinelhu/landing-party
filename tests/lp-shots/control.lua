@@ -5,7 +5,10 @@ local lp = function(fn, ...) return remote.call("landing-party", fn, ...) end
 local DIR = "lp-shots/"
 local S = {}
 local lines = {}
-local function note(text) table.insert(lines, text) end
+local function note(text)
+  table.insert(lines, text)
+  helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
+end
 local function surface() return game.surfaces[1] end
 
 local function flatten(x0, y0, x1, y1)
@@ -188,6 +191,7 @@ schedule(6 * 3600 + 420, function()
 end)
 
 script.on_event(defines.events.on_tick, function(e)
+  if e.tick % 300 == 0 then helpers.write_file(DIR .. "tick.txt", e.tick .. " speed " .. game.speed .. " paused " .. tostring(game.tick_paused) .. "\n") end
   local f = at[e.tick]
   if f then
     local ok, err = pcall(f)
