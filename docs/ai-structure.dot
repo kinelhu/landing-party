@@ -24,8 +24,8 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_2 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n659 lines", width=1.53, fillcolor="#eef2f7"];
-    "construction" [label="construction\n352 lines", width=1.19, fillcolor="#d9f0d9"];
+    "base" [label="base\n686 lines", width=1.56, fillcolor="#eef2f7"];
+    "construction" [label="construction\n355 lines", width=1.19, fillcolor="#d9f0d9"];
     "planner" [label="planner\n200 lines", width=1.02, fillcolor="#d9f0d9"];
     "layout" [label="layout\n544 lines", width=1.40, fillcolor="#eef2f7"];
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
@@ -39,7 +39,7 @@ digraph ai {
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n711 lines", width=1.59, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1536 lines", width=2.51, fillcolor="#f7dede"];
+    "ops" [label="ops\n1573 lines", width=2.55, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n225 lines", width=1.05, fillcolor="#d9f0d9"];
     "siege" [label="siege\n777 lines", width=1.66, fillcolor="#d9f0d9"];
@@ -54,7 +54,7 @@ digraph ai {
     "flare" [label="flare\n323 lines", width=1.16, fillcolor="#eef2f7"];
     "jumper" [label="jumper\n315 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n353 lines", width=1.19, fillcolor="#eef2f7"];
-    "skim" [label="skim\n333 lines", width=1.17, fillcolor="#eef2f7"];
+    "skim" [label="skim\n334 lines", width=1.17, fillcolor="#eef2f7"];
     "bait" [label="bait\n35 lines", width=0.84, fillcolor="#eef2f7"];
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }

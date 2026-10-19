@@ -210,7 +210,8 @@ local function step(b, k)
   local u = k.truck
   if not u.valid then
     spill(game.surfaces[b.surface], k.last or (k.belt.valid and k.belt.position) or b.origin, k.load)
-    return over(b, count(k.load) > 0 and "the truck was lost; its load spilled" or "the truck was lost")
+    over(b, count(k.load) > 0 and "the truck was lost; its load spilled" or "the truck was lost")
+    return ops.setback(b, "a skimming truck lost")
   end
   local p = u.position
   k.last = {x = p.x, y = p.y}

@@ -3455,33 +3455,88 @@ scenarios.factory = function()
       end)
     end
   end
-  -- Engaged: a strike on Grubstake every 30 minutes from minute 20 (12 troopers, 4 breachers, 4 battle tanks from the
-  -- factory's edge), at its yard, else its lander; what lies on the ground there 8 minutes later is picked up (the
-  -- stolen goods recovered).
+  -- Engaged: a strike on Grubstake every 30 minutes from minute 20, as a player who learns would mount it (the user:
+  -- "Yeah" to a smarter strike): 20 troopers, breachers and battle tanks, 15 more for each strike that left the lander
+  -- standing (65 at most); it goes for the nearest Grubstake turret by the target, then the generators by the lander
+  -- (its hull holds the lander until half are down), then the lander, re-aimed every 30 s; 4 troopers join it every 2
+  -- minutes for 8 minutes (the barracks). What lies on the ground there 8 minutes later is picked up.
   if engage then
-    A.strikes, A.recovered = 0, 0
+    A.strikes, A.recovered, A.failed = 0, 0, 0
+    local function grub(name_part, at, r)
+      local out = {}
+      for _, e in pairs(surface().find_entities_filtered{force = "lp-grubstake", position = at, radius = r}) do
+        if e.valid and e.name:find(name_part, 1, true) then table.insert(out, e) end
+      end
+      return out
+    end
+    local function aim()
+      local g = lp("stats", S.g)
+      if not (g and g.lander and g.origin and A.grp and A.grp.valid) then return end
+      local turrets = surface().find_entities_filtered{force = "lp-grubstake", position = g.origin, radius = 45,
+        type = {"ammo-turret", "electric-turret", "fluid-turret"}}
+      local e
+      local pos = A.grp.position
+      if #turrets > 0 then e = surface().get_closest(pos, turrets)
+      elseif g.hull_up then
+        local gens = grub("generator", g.origin, 80)
+        if #gens > 0 then e = surface().get_closest(pos, gens) end
+      end
+      if not e then e = surface().find_entities_filtered{force = "lp-grubstake", position = g.origin, radius = 6, limit = 1,
+        name = {"lp-grubstake-lander", "lp-lander"}}[1] end
+      if e then
+        A.grp.set_command{type = defines.command.attack, target = e, distraction = defines.distraction.by_enemy}
+        A.aimed = e.name
+      end
+    end
     for t = 20 * 3600, END - 600, 30 * 3600 do
       schedule(t, function()
-        local y = surface().find_entities_filtered{name = "lp-skim-yard", force = "lp-grubstake", limit = 1}[1]
         local g = lp("stats", S.g)
-        local at = y and y.position or (g and g.lander and g.origin)
-        if not at then return end
+        if not (g and g.lander and g.origin) then return end
+        local at = g.origin
         local len = math.max(1, math.sqrt(at.x * at.x + at.y * at.y))
         local from = {at.x / len * 70, at.y / len * 70}
+        local size = math.min(65, 20 + 15 * A.failed)
         local grp = surface().create_unit_group{position = from, force = "player"}
-        for _, k in ipairs({{"lp-trooper", 12}, {"lp-breacher", 4}, {"lp-battle-tank", 4}}) do
+        local mix = {{"lp-trooper", math.floor(size * 0.6)}, {"lp-breacher", math.floor(size * 0.2)},
+          {"lp-battle-tank", size - math.floor(size * 0.6) - math.floor(size * 0.2)}}
+        for _, k in ipairs(mix) do
           for _ = 1, k[2] do
-            local p = surface().find_non_colliding_position(k[1], from, 20, 1)
+            local p = surface().find_non_colliding_position(k[1], from, 30, 1)
             local u = p and surface().create_entity{name = k[1], position = p, force = "player"}
             if u then grp.add_member(u) end
           end
         end
-        grp.set_command{type = defines.command.attack_area, destination = at, radius = 24, distraction = defines.distraction.by_enemy}
+        A.grp, A.from = grp, from
         A.strikes = A.strikes + 1
+        A.strike_units = grp.members
+        A.strike_size = #A.strike_units
+        A.strike_lost0 = g.units_lost or 0
+        A.strike_gens0 = #grub("generator", g.origin, 80)
         A.strike_at = {at.x, at.y}
+        aim()
       end)
+      for dt = 1800, 8 * 3600, 1800 do schedule(t + dt, aim) end
+      for dt = 2 * 3600, 8 * 3600, 2 * 3600 do
+        schedule(t + dt, function()
+          if not (A.grp and A.grp.valid and A.from) then return end
+          for _ = 1, 4 do
+            local p = surface().find_non_colliding_position("lp-trooper", A.from, 30, 1)
+            local u = p and surface().create_entity{name = "lp-trooper", position = p, force = "player"}
+            if u then A.grp.add_member(u); table.insert(A.strike_units, u) end
+          end
+        end)
+      end
       schedule(t + 8 * 3600, function()
         if not A.strike_at then return end
+        local alive = 0
+        for _, u in ipairs(A.strike_units or {}) do if u.valid then alive = alive + 1 end end
+        local g = lp("stats", S.g)
+        local gens = g and g.origin and #grub("generator", g.origin, 80) or 0
+        if g and g.lander then A.failed = A.failed + 1 end
+        info(string.format("factory strike %d (%d strong): %d of %d left after 8 minutes, aimed last at %s; Grubstake lost %d units; "
+          .. "generators by its lander %d -> %d; lander %s", A.strikes, A.strike_size or 0, alive, #(A.strike_units or {}),
+          tostring(A.aimed), (g and g.units_lost or 0) - (A.strike_lost0 or 0), A.strike_gens0 or 0, gens,
+          g and g.lander and string.format("%.0f%%", 100 * (g.lander_health or 0)) or "down"))
         for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = A.strike_at, radius = 30}) do
           if it.valid and it.stack.valid_for_read then A.recovered = A.recovered + it.stack.count; it.destroy() end
         end
@@ -3512,8 +3567,9 @@ scenarios.factory = function()
       n(sb.perimeter_steps), serpent.line(co.severed or "?"), n(sb.ops.cuts_found), n(sb.ops.recons), n(sb.ops.sieges),
       n(sb.ops.assaults), n(sb.ops.clearances), n(sb.ops.hazards), n(sb.ops.answers), n(sb.reinforced)))
     if engage then
-      info(string.format("factory %s: strikes %d, recovered %d items, Grubstake's lander %s", label, A.strikes or 0,
-        A.recovered or 0, g.lander and "standing" or "down"))
+      info(string.format("factory %s: strikes %d, recovered %d items, Grubstake's lander %s (%.0f%%, hull %s), setbacks %d, "
+        .. "raids held home %d", label, A.strikes or 0, A.recovered or 0, g.lander and "standing" or "down",
+        100 * (g.lander_health or 0), g.hull_up and "up" or "down", g.setbacks or 0, g.held_home or 0))
     end
   end
   for h = 1, math.floor(params.minutes / 60) do
@@ -3524,6 +3580,73 @@ scenarios.factory = function()
     metric("arc_income", A.income)
     metric("arc_lost", A.lost)
     check("factory: the factory made income", A.income > 0, tostring(A.income))
+  end)
+end
+
+-- Blob (a measurement, 2026-10-19; the user: "does the blob move at the speed of its slowest unit? Or does it trickle
+-- in?"): the factory's strike (12 troopers, 4 breachers, 4 battle tanks, one unit group, attack_area) marched 300 tiles
+-- over empty ground; every 2 s, the spread of its members along the way (the leader's and the last one's distance to go)
+-- and by kind. LP_MIX=go: go_to_location instead of attack_area.
+scenarios.blob = function()
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true}) end)
+  schedule(120, function()
+    -- The ground generated first (units do not path into ungenerated chunks).
+    surface().request_to_generate_chunks({160, 0}, 7)
+    surface().force_generate_chunk_requests()
+    flatten(-20, -40, 340, 40)
+    for _, e in pairs(surface().find_entities_filtered{force = "enemy", position = {160, 0}, radius = 400}) do e.destroy() end
+    local grp = surface().create_unit_group{position = {0, 0}, force = "player"}
+    S.members = {}
+    for _, k in ipairs({{"lp-trooper", 12}, {"lp-breacher", 4}, {"lp-battle-tank", 4}}) do
+      for _ = 1, k[2] do
+        local p = surface().find_non_colliding_position(k[1], {0, 0}, 20, 1)
+        local u = p and surface().create_entity{name = k[1], position = p, force = "player"}
+        if u then grp.add_member(u); table.insert(S.members, u) end
+      end
+    end
+    local dest = {300, 0}
+    -- Something to attack there (an attack_area with nothing in it finishes at once, the group unmoved).
+    S.target = surface().create_entity{name = "radar", position = dest, force = "lp-grubstake"}
+    if S.target then S.target.destructible = false end
+    if params.mix == "go" then
+      grp.set_command{type = defines.command.go_to_location, destination = dest, radius = 10, distraction = defines.distraction.by_enemy}
+    else
+      grp.set_command{type = defines.command.attack_area, destination = dest, radius = 24, distraction = defines.distraction.by_enemy}
+    end
+    if params.mix ~= "nostart" then grp.start_moving() end
+    S.grp = grp
+    S.log = {}
+  end)
+  for t = 240, END - 120, 120 do
+    schedule(t, function()
+      if not S.members then return end
+      local by = {}
+      local lo, hi = 1e9, -1e9
+      for _, u in ipairs(S.members) do
+        if u.valid then
+          local x = u.position.x
+          lo, hi = math.min(lo, x), math.max(hi, x)
+          local k = u.name:gsub("^lp%-", "")
+          by[k] = by[k] or {}
+          table.insert(by[k], x)
+        end
+      end
+      local function mean(t) local a = 0 for _, v in ipairs(t) do a = a + v end return #t > 0 and a / #t or 0 end
+      if #S.log < 80 then
+        local g = S.grp
+        local st = g and g.valid and string.format("group %s, state %s, moving %s", tostring(g.has_command), tostring(g.state),
+          tostring(g.moving_state)) or "group gone"
+        local u1 = S.members[1]
+        local uc = u1 and u1.valid and u1.commandable.command
+        table.insert(S.log, st .. string.format("; unit cmd %s", uc and tostring(uc.type) or "none"))
+        table.insert(S.log, string.format("t+%ds: front %.0f, rear %.0f, spread %.0f; trooper %.0f, breacher %.0f, tank %.0f",
+          (t - 120) / 60, hi, lo, hi - lo, mean(by.trooper or {}), mean(by.breacher or {}), mean(by["battle-tank"] or {})))
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    for _, l in ipairs(S.log or {}) do info("blob " .. l) end
+    check("blob: measured", #(S.log or {}) > 0, tostring(#(S.log or {})))
   end)
 end
 

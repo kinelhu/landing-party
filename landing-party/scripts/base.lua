@@ -488,6 +488,20 @@ function base.fall(lander)
       b.next_cascade = game.tick + CASCADE_TICKS
       local evacuated = army.disband(b, trace)
       b.evacuated = evacuated
+      -- Its yard bursts (a fallen camp is the player's prize, the user: "a significant landmark"): everything it stole
+      -- spills where it was kept.
+      local y = b.skim_yard
+      if y and y.valid then
+        local inv = y.get_inventory(defines.inventory.chest)
+        local n = 0
+        for _, it in pairs(inv.get_contents()) do
+          y.surface.spill_item_stack{position = y.position, stack = {name = it.name, count = it.count, quality = it.quality},
+            enable_looted = true}
+          n = n + it.count
+        end
+        y.destroy()
+        trace(b, string.format("the yard bursts: %d stolen items spill", n))
+      end
       trace(b, string.format("lander destroyed: the settlement falls (%d generators to fail)", #b.cascade))
       local f = game.forces.player
       if f and #f.players > 0 then
@@ -569,6 +583,17 @@ function base.tick(tick)
       if tick % 600 == 300 then capture(b) end
     elseif b.lander.valid then
       if tick % 60 == 0 then hull(b); pack_camp(b) end
+      -- A damaged lander mends slowly, 1% a minute, smoking while it is below 90% (Fable's engagement consult: damage
+      -- that a strike leaves stays long enough to be built on).
+      if tick % 3600 == (b.id * 17) % 3600 and b.lander.health < b.lander.max_health then
+        b.lander.health = math.min(b.lander.max_health, b.lander.health + 0.01 * b.lander.max_health)
+      end
+      -- Its state read from afar: smoke below 90%, thick and with fire's smoke below 60%.
+      local hp = b.lander.health / b.lander.max_health
+      if hp < 0.9 and tick % (hp < 0.6 and 20 or 120) == 0 then
+        b.lander.surface.create_trivial_smoke{name = hp < 0.6 and "fire-smoke" or "smoke-fast",
+          position = {b.lander.position.x + (tick % 7) - 3, b.lander.position.y - 2}}
+      end
       if tick % 7200 == (b.id * 61) % 7200 then base.claim_map(b) end
       site.scan_step(game.surfaces[b.surface], b)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
@@ -638,6 +663,8 @@ function base.stats(b)
     units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false, hq = b.hq,
+    lander_health = b.lander.valid and b.lander.health / b.lander.max_health or 0, hull_up = b.lander.valid and not b.lander.destructible,
+    setbacks = b.setbacks or 0, held_home = b.held_home or 0,
     turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0,
     patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
     convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0, convoys_stuck = b.convoys_stuck or 0,

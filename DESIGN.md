@@ -2552,6 +2552,46 @@ each outpost; a belt cut on Serenity's line is crossed underground when rebuilt 
 635 cuts in two hours; 121 with undergrounds, and the player's losses on seed 12345 from 757 to 351). Serenity's line
 built no post on seed 12345: its claim (228 from a camp 339 from the spawn) already took in the player's first
 outposts, so the line had nowhere to step; its cut is what the player meets there. `strip` now says why it chose none.
+Engagement (Fable: `docs/reviews/2026-10-19-engagement-consult.md`: "big win, costly failure is the right peak but the
+wrong floor": small kills should stay paid). Built from it, for Grubstake: a damaged lander mends slowly (1% a minute,
+smoking below 90%), and while it is below 60% or fewer than half its generators stand its raids are held home
+(`ops.camp_hurt`); each skimming truck lost or raid broken by its foreman's death holds its next operation back 10
+minutes (`ops.setback`). The engaged player's strikes now go for the generators by the lander while its hull holds.
+First runs (one seed each): setbacks fire (9 to 16 in two hours) but no strike of 20 got through Grubstake's garrison
+to its generators (the lander at 100%, its hull up, on both seeds): the player's army taking a camp is the open
+question again (fought capture). Runs are deterministic (a seed and the code give the same numbers; the turtle on 777
+made 62k to 80k only because the code changed between runs), so the spread worth reading is across seeds:
+`scripts/factory.sh` runs each mix on four seeds in parallel and reports means and spread. Two hours, seeds 12345, 777,
+4242, 1: control 100,476 (sd 10,448); turtle 61,924 (sd 5,664; lost 462); engage 62,266 (sd 7,036; lost 468). The
+corporations take 38% of the factory's income; engaging (trucks, leaders, invoices, four strikes) buys nothing on the
+mean. The strikes are where it should pay, and they do not take a camp. Each strike, recorded: all 20 dead within 8 minutes, Grubstake 31 to 48
+units down, both generators by its lander standing, the lander at 100%. So a camp whose garrison bled (under half its
+strength of the last hour) holds its raids home too (`ops.camp_hurt`); four seeds again: engage 63,062 (sd 8,470)
+against the turtle's 61,924: no change, and no raid was held (its garrison never fell under half: what the strikes
+killed was a part of it). Left there: tuning the corporation against a crude scripted strike would fit the game to the
+test. The question is the design's: what force should it take to break a Grubstake camp, the thief that "does not
+build to last" (fought capture, open since 2026-10-13).
+How a strike moves (scenario `blob`; the user: "does the blob move at the speed of its slowest unit? Or does it
+trickle in?"): the 20 in one engine unit group marched 290 tiles over open ground at about 5 tiles a second, front to
+rear 12 to 19 tiles all the way (troopers ahead, the tanks 7 tiles behind them); go_to_location and attack_area alike.
+A blob, not a trickle, until it fights (each member then answers on its own). Two traps on the way: an attack_area with
+nothing at its destination finishes at once with the group unmoved, and units do not path into ungenerated chunks.
+Engine groups drop a stuck member and go on (the convoys' finding, `army.lua`: discipline kept by script instead).
+A player who learns (the user: "Yeah" to a smarter strike): 20 strong, 15 more for each strike that left the lander
+standing (65 at most); the nearest Grubstake turret by the target first, then the generators by the lander, then the
+lander, re-aimed every 30 s; 4 troopers joining every 2 minutes for 8 minutes. Four seeds: Grubstake's lander taken on
+every one, by the third strike (50 strong) or the fourth (65); earlier strikes left it at 64% or 54%, which the next
+built on. Engage 67,034 (sd 7,785) against the turtle's 61,924: +8%, and 282 buildings lost against 462 (-39%), though
+the camps fall in the last half hour of two. Engaging pays, modestly, once the player mounts a real assault: a
+Grubstake camp takes 50 to 65 units on the third or fourth try (the user's call whether that is the right price for a
+camp that "does not build to last"). Then, to make a camp a landmark one wears down (the user: "A camp seems like a
+significant landmark"): the lander smokes as it is hurt (thick below 60%), and a fallen camp's yard bursts, everything
+it stole spilled. Tried and withdrawn: what a player destroyed of a Grubstake camp's defence put back slowly (generators
+in 10 minutes, turrets 5 later). One lander of four fell against four of four: the parts it did not spend rebuilding
+went into units, a bigger garrison. In a parts economy, delay is not damage; what wears a camp is what it loses.
+Also withdrawn: a camp counted hurt when under half its generators stood (it never fired in these runs; with slow
+rebuilds it would have kept the raiders home to guard the camp). Reverted, four seeds: the four landers fall again (strikes 3 and 4);
+engage 66,762 (sd 7,573), lost 301, against the turtle's 61,924 and 462.
 
 ### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
 What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the

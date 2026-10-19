@@ -274,6 +274,9 @@ function base.on_died(e, by)
   local due = game.tick + REBUILD_DELAY + (far and 0 or math.floor(d / REBUILD_TILES_PER_SECOND * 60))
   -- Generators come back in 90 s wherever they stand: a lander's hull holds while half of them do (hull).
   if kind == "lp-generator" then due = game.tick + 90 * 60 end
+  -- (Tried and withdrawn, 2026-10-19: what a player destroyed of Grubstake's defence put back slowly, to wear a camp
+  -- down. The parts it did not spend on them went into units: a bigger garrison held three camps of four that had all
+  -- fallen before, the factory, four seeds.)
   -- What makes parts and power (generators, fabricators, drills, pylons) goes to the front: queued behind 20 walls, a
   -- camp's two generators were still waiting at the end, its hull down (loot).
   table.insert(b.rebuild, ECONOMY[kind] and 1 or #b.rebuild + 1, {name = kind, pos = {e.position.x, e.position.y},

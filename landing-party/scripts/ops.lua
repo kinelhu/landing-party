@@ -313,6 +313,40 @@ function ops.marked(b, pos)
   return false
 end
 
+-- A thief's camp hurt (Fable's engagement consult: "Grubstake pulls raiders home to guard a damaged lander, so raids
+-- pause, which is itself the player's reward"): the lander below 60%, or its garrison bled: no raid on the player until
+-- it is mended. Grubstake only (soft_only); Serenity fights on.
+function ops.camp_hurt(b)
+  if not (shared.CORPS[b.corp].temper or {}).soft_only or not (b.lander and b.lander.valid) then return false end
+  -- Or its garrison bled: under half the strength it had at most in the last hour (the factory's strikes died to a man
+  -- but took 31 to 48 of its units each, and it raided on as if nothing had happened).
+  local st = pool.strength(b)
+  b.peak = b.peak or {at = game.tick, n = st}
+  if st >= b.peak.n or game.tick - b.peak.at > 60 * 3600 then b.peak = {at = game.tick, n = st} end
+  local bled = b.peak.n >= 10 and st < 0.5 * b.peak.n
+  -- Not its generators: down and slow to come back (construction.lua), they kept its raiders home to guard a camp that
+  -- then held every strike off (the factory: one lander of four taken, against four of four).
+  local hurt = b.lander.health < 0.6 * b.lander.max_health or bled
+  if hurt and not b.hurt_said then
+    b.hurt_said = true
+    b.held_home = (b.held_home or 0) + 1
+    if ops.trace then ops.trace(b, string.format("camp hurt (lander %.0f%%, generators %d of %d, garrison %d of %d): its raids held home",
+      100 * b.lander.health / b.lander.max_health, b.gens_counted or 0, b.gens_max or 0, st, b.peak.n)) end
+  elseif not hurt then
+    b.hurt_said = nil
+  end
+  return hurt
+end
+
+-- Setbacks (the same consult: "each kill should remove an asset the corporation has to re-earn"): a skimming truck lost
+-- or a raid broken by its leader's death holds the thief's next operation back SETBACK.
+local SETBACK = 10 * 3600
+function ops.setback(b, why)
+  b.next_op = math.max(b.next_op or 0, game.tick + SETBACK)
+  b.setbacks = (b.setbacks or 0) + 1
+  if ops.trace then ops.trace(b, "setback: " .. why .. "; its next operation held 10 minutes") end
+end
+
 -- Thieves' hours (Grubstake's temper `night`; Fulgora Replicators' raid nights, the user: "that seems great"): its
 -- thefts (raids on the player, skims, claim jumps) set out only after dark, so the player learns when it comes. A
 -- surface with no night (always day, or day frozen) has no such hours: it steals when it will.
@@ -334,6 +368,7 @@ local function temper_allows(b, t)
   if battery(t) then return true end
   if not stance.may(b.corp, t.owner, "raid") then return false end
   if not ops.thief_hours(b) then return false end
+  if ops.camp_hurt(b) then return false end
   local temper = shared.CORPS[b.corp].temper or {}
   -- Soft: what the player's turrets reach (exposure), up to 1.0 and LADDER_SOFT once the ladder relaxes it; at its top
   -- rung (cost no object) nothing (at a megabase every exposed spot was over 3, and nothing was ever razed, visit).
@@ -1073,8 +1108,10 @@ local function step(b, trace, army)
     if (shared.CORPS[b.corp].temper or {}).soft_only or op.regrouping then
       trace(b, string.format("raid: its %s fell; the raid %s home with %d", op.regrouping and "second leader" or "foreman",
         op.regrouping and "falls back" or "breaks and runs", n))
+      local done = finish(b, "fled", trace, army)
+      if (shared.CORPS[b.corp].temper or {}).soft_only then ops.setback(b, "a raid broken") end
       b.broken = (b.broken or 0) + 1
-      return finish(b, "fled", trace, army)
+      do return done end
     end
     ops.appoint(b, op)
     op.phase, op.phase_at, op.regrouping = "stage", game.tick, true
