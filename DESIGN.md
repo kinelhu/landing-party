@@ -2356,6 +2356,12 @@ scenario with assertions first; the window is for art, feel and GUI.
   withdrawn: the full regression failed army, tap, unitnode and ability (their timings ride the shared beat; planning
   and export staggered alone still failed three). Open: stagger with those scenarios' timings made robust. nw: 0.75 -> 0.96 ms a tick, razed 7, corporation buildings lost 1,236 (989 rebuilt), 116
   responses: Serenity still stands in the lane of the waves the factory's pollution draws (the "buffer", open).
+- **deathworld10x on 0.1.20 (2026-10-19, 3 hours provoked, profiled, alone).** Mean tick 0.32 ms without the mod,
+  0.51 with it; script 0.044 ms; 483 ticks over 5 ms, 2 over 50 (128 and 61 ms). The player's buildings razed, all
+  corporations: 878 (transport belts 381, walls 188, poles 99, inserters 73, gun turrets 64, assemblers 19). Five
+  settlements, none fallen; hazard removal cleared three nests (five hazards traced) and the pressure stood. The belts
+  are mostly the line's cut and the raids: unmeasured apart (the cut keeps no trace line); a playtest question whether
+  the cut bites too hard on a belt base.
 - `scripts/sheet.py`, `scripts/replay.py`, `scripts/overview.py`: variety sheet, raid replay, faction map.
 - Scenarios (`tests/lp-sim/control.lua`): grow, cut, raid, occupy, assault, defend, faction, uplink, army,
   caps, lively, convoy, train, orders, siege, duel, showcase, and the spikes air, path, cost, probe. Each
