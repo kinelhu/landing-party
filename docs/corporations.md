@@ -64,6 +64,10 @@ by all parties."
   everywhere. Silhouette: a web of roads with drills on it.
 - **Notice**: "Grubstake Mineral Recovery has recovered 4,000 iron ore from an unattended deposit. Thank you for
   your cooperation."
+- **As built (2026-10-19)**: a rival thief that escalates when hurt; it steals by night: soft raids that take machines
+  apart and carry them off (ghosts left), skimming trucks parked at exposed belts, chest heists by claim jumper, power
+  taps, ore claims; a pact with the biters, pheromone flares. Its loot is kept as items in its yard. Its raids break
+  when their foreman falls.
 
 ### Serenity Perimeter Group (the wall)
 - **Palette**: slate grey, pale teal. Lamps cold white.
@@ -78,6 +82,10 @@ by all parties."
 - **Layout**: fortress and bastion: compact walled compounds, short roads, everything inside a perimeter.
   Silhouette: concentric grey rectangles.
 - **Notice**: "Serenity Perimeter Group has secured the area at [map]. Unauthorised presence will be resolved."
+- **As built (2026-10-19)**: at war from landing. A line of cordon posts that steps toward the player, strangles
+  outposts, claims the next ore, cuts belts on its edge; sieges sized to win (mortars, the howitzer, a robot jammer), the
+  power strike, clearances of the nests that hit it, and an invoice for the waves the player's pollution draws, paid
+  off for a truce. Its raids regroup when their leader falls.
 
 ### Lumen Transparency (the eye)
 - **Palette**: black, violet, white. Lamps violet; many of them (it is lit at night, visible from far).

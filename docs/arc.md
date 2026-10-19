@@ -72,6 +72,10 @@ Less urgent: how many corporations (two that play well beat four that do not), t
    chemical science to the first rockets and the planets after). Megabase saves (nwa, nw) stay as a check that nothing
    breaks there, not as a design target.
 
+- **Revised 2026-10-19** (the user: "what's the point of serenity being non hostile sometimes… a typical player-like
+  smart adversary would make gameplay more fun with constant hostility", then "No grace"): Serenity is an enemy from
+  landing; its invoice post sells the only quiet. Grubstake stays a rival thief that becomes an enemy when hurt.
+
 ## The plan (the user took it, 2026-10-16; Fable: `docs/reviews/2026-10-16-rivals-consult.md`)
 Each corporation takes one thing turrets do not stand on, and its economy is one thing the player can reach. Grubstake
 takes what you are not using (prospecting: undrilled patches near its camp, tagged, then claimed; answers: stake it, rob

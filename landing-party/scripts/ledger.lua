@@ -177,6 +177,16 @@ function ledger.tick(tick)
   end
 end
 
+-- Tests and screenshots: a bill of `cost` to `owner` now, the post raised.
+function ledger.debug(b, owner, cost)
+  local L = b.ledger or {owner = owner, owed = 0, billed = 0, paid = 0, bills = 0, total_bills = 0, round = 0, truces = 0}
+  b.ledger = L
+  L.owed, L.billed, L.bills, L.total_bills = L.owed + cost, L.billed + cost, L.bills + 1, L.total_bills + 1
+  raise_post(b, L)
+  draw(b, L)
+  return L.post and L.post.valid and {L.post.position.x, L.post.position.y} or nil
+end
+
 function ledger.stats(b)
   local L = b.ledger
   return {owed = L and math.ceil(L.owed) or 0, billed = L and L.billed or 0, paid = L and L.paid or 0,

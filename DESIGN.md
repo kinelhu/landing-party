@@ -79,6 +79,7 @@ document describes the parts as built; the campaign document describes the game 
 | Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid off, a truce) | built; the ledger's price a guess | `hazard` (seven) |
 | Grubstake's skim (a truck parks at an exposed belt and fills its trunk, home to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
+| Raid leaders (an icon over one raider; Grubstake breaks when it falls, Serenity regroups) | built | `leader` (two) |
 | Shields, gates for the player, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
@@ -678,6 +679,14 @@ besieged". A fortress cannot wall in what feeds it.
   keeps its campaign round the clock: the two read apart. The scenarios run with the hours off (`night_off`) but
   `skim night` (a 6-minute day from noon: three trucks set out at darkness 0.38, 0.74, 0.46, one left at dawn) and
   visits.
+- **Raid leaders** (Jungle Raiders' Alpha, from the research the user asked for: "Any other cool things to draw
+  inspiration from?"; `docs/reviews/2026-10-19-inspiration-research.md`). A raid of three or more has a leader (an infantry
+  where it has one), its corporation's icon over it, so the player can pick it out. Killed: Grubstake's raid breaks and
+  runs home with what it carries ("fled"); Serenity's falls back to its staging point in order, a new leader takes the
+  icon, and it goes in again with what it has (the staging look that turns a short raid back is skipped then: it turned
+  back with 3 of the 4 it wanted). Scenarios `leader` (Grubstake: fled, 3 of 4 home) and `leader serenity`
+  (regrouped, then done with 3). Next from the research: the yard as a pile that grows with what was stolen, an
+  itemised invoice with a gauge on Serenity's post.
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 
 ### Space Age (the user, 2026-10-18: "I think it's okay to rely on space age. We might get some great use of some of its

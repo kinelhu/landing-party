@@ -500,6 +500,7 @@ local function finish(b, outcome, trace, army)
     end
   end
   if op.label and op.label.valid then op.label.destroy() end
+  if op.leader_mark and op.leader_mark.valid then op.leader_mark.destroy() end
   if op.kind == "siege" then b.next_siege = game.tick + (op.clearance and 2 * 3600 or SIEGE_COOL) end
   if op.kind == "strip" then
     b.next_strip = game.tick + (storage.strip_fast and 2 * 3600 or STRIP_COOL)
@@ -741,10 +742,30 @@ end
 
 ops.loot = loot
 
+-- The raid's leader (Jungle Raiders' Alpha; the user asked for inspiration, 2026-10-19): a raid of LEAD_MIN or more
+-- has one, its corporation's icon over it, so the player can pick it out. Killed, Grubstake's raid breaks and runs home
+-- with what it carries (a thief's courage is its foreman); Serenity's falls back to its staging point in order, a new
+-- leader takes the icon, and it comes again (ops.leader_step). The two read apart under fire.
+local LEAD_MIN = 3
+function ops.appoint(b, op)
+  if storage.leader_off or #op.members < LEAD_MIN then return end
+  local best
+  for _, u in ipairs(op.members) do
+    if u.valid and (not best or shared.kind_of(u.name) == "lp-infantry") then best = u end
+    if best and shared.kind_of(best.name) == "lp-infantry" then break end
+  end
+  if not best then return end
+  if op.leader_mark and op.leader_mark.valid then op.leader_mark.destroy() end
+  op.leader = best
+  op.leader_mark = rendering.draw_sprite{sprite = "virtual-signal/" .. shared.CORPS[b.corp].icon, surface = best.surface,
+    target = {entity = best, offset = {0, -1.8}}, x_scale = 0.6, y_scale = 0.6}
+end
+
 -- A raider killed with loot drops its share where it fell (Fulgora Replicators, the user's pointer: "killing a raider
 -- makes it drop what it was carrying"; the loot had spilled only when the whole raid died).
 function ops.raider_died(b, ent)
   local op = b.op
+  if op and op.leader == ent then op.leader_down = true end
   if not (op and op.loot and op.loot.goods and op.members) then return end
   local mine = false
   for _, u in ipairs(op.members) do if u == ent then mine = true break end end
@@ -828,6 +849,7 @@ local function launch(b, key, trace, army, opts)
   end
   b.op = {kind = "raid", answer = is_answer or nil, cut = t.cut, target = key, phase = "stage", members = members, launched = #members, staging = stage, owner = t.owner,
     started = game.tick, phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed}
+  ops.appoint(b, b.op)
   -- A sneaking raid (Grubstake) marches to its staging point round the turrets it knows of and fights only what hits
   -- it: engaging on sight, it walked into five lasers on its way and lost 25 of 31 before the attack (sneak).
   local sneaks = (shared.CORPS[b.corp].temper or {}).sneaks and not storage.sneak_off and against_player(t.owner)
@@ -1040,6 +1062,25 @@ local function step(b, trace, army)
   local n = alive(op)
   if n == 0 then return finish(b, "aborted", trace, army) end
   if game.tick - op.started > MAX_TICKS then return finish(b, "aborted", trace, army) end
+  -- Its leader fell (ops.appoint).
+  if op.leader_down then
+    op.leader_down = nil
+    if op.leader_mark and op.leader_mark.valid then op.leader_mark.destroy() end
+    b.leaders_lost = (b.leaders_lost or 0) + 1
+    if (shared.CORPS[b.corp].temper or {}).soft_only then
+      trace(b, string.format("raid: its foreman fell; the raid breaks and runs home with %d", n))
+      b.broken = (b.broken or 0) + 1
+      return finish(b, "fled", trace, army)
+    end
+    ops.appoint(b, op)
+    op.phase, op.phase_at, op.regrouping = "stage", game.tick, true
+    order_all(op.members, {type = defines.command.go_to_location, destination = op.staging, radius = 8,
+      distraction = defines.distraction.by_damage})
+    trace(b, string.format("raid: its leader fell; it falls back to %.0f,%.0f in order with %d, a new leader up", op.staging[1],
+      op.staging[2], n))
+    b.regrouped = (b.regrouped or 0) + 1
+    return
+  end
   if op.phase == "stage" then
     local near = 0
     for _, u in ipairs(op.members) do
@@ -1095,7 +1136,8 @@ local function step(b, trace, army)
         t.defence = seen
         t.units, t.units_at = mobile(s, t.pos, foes), game.tick
         local want = needed((t.defence + (t.resist or 0) + t.units) / rd.strength(b.corp, t.dmg))
-        if want > n and not (t.owner and against_player(t.owner) and ladder(t.owner, b.force) >= 3) then
+        -- Regrouping after its leader fell (ops.appoint), it goes in again with what it has: it had looked once.
+        if want > n and not op.regrouping and not (t.owner and against_player(t.owner) and ladder(t.owner, b.force) >= 3) then
           rd.turned_back(b)
           trace(b, string.format("raid sees defence %.1f and units %.1f at the target, needs %d, has %d: turns back", seen,
             t.units, want, n))
@@ -1478,6 +1520,8 @@ function ops.summary(b)
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
     looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
     hazards = b.hazards or 0, biter_losses = b.biter_losses or 0,
+    leader = b.op and b.op.leader and b.op.leader.valid and b.op.leader.unit_number or nil, phase = b.op and b.op.phase,
+    leaders_lost = b.leaders_lost or 0, broken = b.broken or 0, regrouped = b.regrouped or 0,
     overflights = b.overflights or 0,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,

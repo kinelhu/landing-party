@@ -21,7 +21,7 @@
 <title>Corporation</title>
 <path fill="#eef2f7" stroke="black" d="M286.24,-427C286.24,-427 183.99,-427 183.99,-427 177.99,-427 171.99,-421 171.99,-415 171.99,-415 171.99,-403 171.99,-403 171.99,-397 177.99,-391 183.99,-391 183.99,-391 286.24,-391 286.24,-391 292.24,-391 298.24,-397 298.24,-403 298.24,-403 298.24,-415 298.24,-415 298.24,-421 292.24,-427 286.24,-427"/>
 <text xml:space="preserve" text-anchor="middle" x="235.12" y="-410.55" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="235.12" y="-398.55" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2501 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="235.12" y="-398.55" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2511 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge5" class="edge">
@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M230.24,-235.5C230.24,-235.5 127.99,-235.5 127.99,-235.5 121.99,-235.5 115.99,-229.5 115.99,-223.5 115.99,-223.5 115.99,-203.5 115.99,-203.5 115.99,-197.5 121.99,-191.5 127.99,-191.5 127.99,-191.5 230.24,-191.5 230.24,-191.5 236.24,-191.5 242.24,-197.5 242.24,-203.5 242.24,-203.5 242.24,-223.5 242.24,-223.5 242.24,-229.5 236.24,-235.5 230.24,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="179.12" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4321 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="179.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1488</text>
+<text xml:space="preserve" text-anchor="middle" x="179.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 4365 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="179.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1532</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->
 <g id="edge4" class="edge">

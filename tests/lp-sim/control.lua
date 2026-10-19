@@ -3174,6 +3174,63 @@ scenarios.dismantle = function()
   end)
 end
 
+-- Leader (Jungle Raiders' Alpha, 2026-10-19): a raid on an unguarded outpost; once it attacks, the test kills its
+-- leader (the unit under its corporation's icon). Grubstake's raid breaks and runs home ("fled"); LP_MIX=serenity:
+-- Serenity's falls back to its staging point with a new leader and comes again.
+scenarios.leader = function()
+  local ser = params.mix == "serenity"
+  local function toward(id, d)
+    local o = lp("stats", id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    return {math.floor(o.x - o.x / len * d), math.floor(o.y - o.y / len * d)}
+  end
+  schedule(60, function()
+    lp("debug_tune", {era = 2, ops_off = false})
+    S.id = ser and storage.id or lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
+    lp("debug_units", S.id, "lp-infantry", 8)
+  end)
+  schedule(3 * 3600, function()
+    lp("debug_tune", {raids_off = true})
+    local c = toward(S.id, 120)
+    flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
+    S.c = c
+    for k = 0, 3 do
+      surface().create_entity{name = "assembling-machine-1", position = {c[1] - 6 + 4 * k + 0.5, c[2] + 0.5}, force = "player"}
+    end
+    for k = 0, 5 do surface().create_entity{name = "radar", position = {c[1] - 9 + 4 * k, c[2] + 6}, force = "player"} end
+    lp("dev", {"raid", tostring(S.id)}, c)
+    S.had_leader = lp("stats", S.id).ops.leader ~= nil
+  end)
+  for t = 3 * 3600 + 60, END - 300, 30 do
+    schedule(t, function()
+      if S.shot then return end
+      local o = lp("stats", S.id).ops
+      S.seen = S.seen or {}
+      S.seen[tostring(o.phase) .. ":" .. tostring(o.leader ~= nil)] = true
+      if o.leader and o.phase == "attack" then
+        for _, u in pairs(surface().find_entities_filtered{type = "unit", position = S.c, radius = 200}) do
+          if u.unit_number == o.leader then u.die("player"); S.shot = game.tick break end
+        end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local o = lp("stats", S.id).ops
+    local last = o.log and o.log[#o.log]
+    info("leader: phases seen " .. serpent.line(S.seen))
+    info(string.format("leader: had %s, shot %s, lost %d, broken %d, regrouped %d, now %s, last %s", tostring(S.had_leader),
+      tostring(S.shot), o.leaders_lost, o.broken, o.regrouped, tostring(o.op), last and last.outcome or "-"))
+    if ser then
+      check("leader: Serenity's raid falls back in order and comes again", S.shot and o.regrouped >= 1 and o.broken == 0
+        and (o.op ~= nil or (last and last.outcome == "done")), string.format("regrouped %d, %s", o.regrouped, last and last.outcome or tostring(o.op)))
+    else
+      check("leader: its foreman killed, Grubstake's raid breaks and runs", S.shot and o.broken == 1 and last and last.outcome == "fled",
+        string.format("broken %d, last %s", o.broken, last and last.outcome or "-"))
+    end
+  end)
+end
+
 -- Arc: the tree's area weapons hit more than one and spare their own side. One Shock trooper (Serenity) at five player
 -- cars three tiles apart, Serenity's own car beside them: its lightning must reach three or more, never its own. One
 -- dynamite sapper (Grubstake) at a block of four player walls, its own fence beside them: two or more walls hurt,

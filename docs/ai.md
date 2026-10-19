@@ -56,9 +56,9 @@ What each corporation should feel like, by stance, is the design the code should
 
 | Stance | Grubstake (the thief) | Serenity (the wall) |
 |---|---|---|
-| **Rival** (default) | Steals where you are not: soft raids, strips, taps, prospects, flares at rung 1 | Expands its line, clears nests, ignores you |
-| **Truce** (tribute, border) | No raids, flares or rigs; does it still tap, strip and prospect? (today: yes) | Line capped at the border |
-| **Provoked** (you hurt it) | Answers at once, then raids in force (half its field), heists escalate | Answers at once, then raids and sieges; never forgets |
+| **Rival** (Grubstake's default) | Steals where you are not, by night (thieves' hours): soft raids that dismantle machines, skimming trucks, strips, taps, prospects, flares at rung 1 | No longer: at war from landing (2026-10-19, the user: "No grace") |
+| **Truce** (Grubstake: tribute at the trade post; Serenity: its invoice paid off) | No raids, flares or rigs; does it still tap, strip and prospect? (today: yes) | No raid, siege or cut; its line holds; a border stake is accepted then and holds after |
+| **Enemy** (Grubstake: you hurt it; Serenity: always) | Answers at once, then raids in force (half its field), heists escalate | Its campaign from landing: line, strangling, cuts, sieges; provocations drive its answers |
 | **Escalating** (no raze in 10/20/30 min) | Rungs relax the soft temper, then cost no object | Same ladder: player targets weigh more, then sieges up a tier |
 | **Standing down** (nothing razed in 60 min) | Quiet, forgives, a new landing elsewhere | Quiet; does not forgive |
 
@@ -144,3 +144,14 @@ Order (as planned):
 3. The remaining systems move onto the seams as they are touched.
 
 Targeting (2.4) and the ladder's thresholds (2.5) are left until the storyboard settles what they should be.
+
+## 2026-10-19: what changed in the stance
+- Serenity's temper `hostile`: `stance.standing` and `standing.get` read enemy from landing; `provoked_only` stays as its
+  marker for the line (border, perimeter, cut). The truce is bought at its invoice post (`ledger.lua`: bills for the
+  biter waves the player's cloud draws, paid off for 10 to 60 minutes of quiet).
+- Grubstake's thieves' hours (`ops.thief_hours`, temper `night`): its raids on the player, skims and claim jumps set out
+  by night only; answers any time.
+- New modules: `ledger` (Corporation layer), `skim` (Heists). Raids (`ops`) gained dismantling (machines carried off,
+  ghosts left), loot kept as items (`ops.stash` into the yard; a killed raider drops its share) and a leader
+  (`ops.appoint`: Grubstake breaks when its foreman falls, Serenity regroups).
+
