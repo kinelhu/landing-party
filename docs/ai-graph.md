@@ -26,13 +26,13 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `control` | 487 | army, bait, base, biters, border, command, cordon, crew, dev, faction, flare, jammer, jumper, ledger, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, site, skim, stance, standing, strike, tap, trade, tune, war |  |  |  | built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, tick, script_raised_built | army_off, bases, capture_off, choice_off, cmd, cuts_off, era_override, flare_burn, focus_off, gates_off, grudge_fast, hazard_hold, hazard_off, history_off, hq_fast, ladder_fast, last_raze, ledger_off, mature_blocks, next_id, next_ore_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strip_fast, tap_step, trace, truces, tune_levers, unit_owner |
 | `crew` | 393 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `war` | 392 | army, base, ops, pods, pool, rd, rng, stance, tune | control, faction, flare, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
-| `skim` | 382 | base, ops, pool, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 374 | (leaf) | ops |  |  |  | corridors |
 | `tap` | 353 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `construction` | 352 | (leaf) | base |  |  |  |  |
 | `prospect` | 344 | base, chart, ops, pool, standing | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `rd` | 330 | (leaf) | army, control, faction, ops, war | ops.era |  |  | corps |
 | `flare` | 323 | base, ops, pact, pool, tune, war | bait, control, dev |  | 30, 600 |  |  |
+| `skim` | 320 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `jumper` | 314 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
 | `perimeter` | 264 | (leaf) | ops |  |  |  |  |
 | `cordon` | 233 | base, ops, prospect | control |  |  |  |  |
@@ -46,7 +46,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `trade` | 165 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 159 | modules | base, control, faction, layout |  |  |  |  |
 | `road` | 142 | base, standing | control |  | 60 |  |  |
-| `pool` | 140 | (leaf) | army, control, cuts, flare, ops, prospect, skim, tap, war |  |  |  |  |
+| `pool` | 140 | (leaf) | army, control, cuts, flare, ops, prospect, tap, war |  |  |  |  |
 | `answers` | 132 | (leaf) | ops |  |  |  |  |
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |
 | `chart` | 114 | (leaf) | base, border, map, prospect |  |  |  |  |

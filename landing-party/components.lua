@@ -162,9 +162,9 @@ if invoice.picture and invoice.picture.layers then
 end
 data:extend({invoice})
 
--- Grubstake's skim (skim.lua): the siphon shack by a player's belt and the yard where the take is kept, chests in its
--- colour, made by script (no item); what they hold spills when they die.
-for _, k in ipairs({{"lp-skim-shack", "wooden-chest", 250}, {"lp-skim-yard", "iron-chest", 600}}) do
+-- Grubstake's yard (skim.lua): where the skim's trucks and its raids leave what they took, a chest in its colour, made
+-- by script (no item); what it holds spills when it dies.
+for _, k in ipairs({{"lp-skim-yard", "steel-chest", 600}}) do
   local c = table.deepcopy(data.raw.container[k[2]])
   c.name = k[1]
   c.minable = nil

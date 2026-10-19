@@ -131,7 +131,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
   -- corridor for 30 minutes (ops.route lets marches through it).
   if ent.type == "unit-spawner" then ops.cleared(ent.surface, ent.position) end
-  -- The skim's yard or shack: what it held spills.
+  -- Grubstake's yard (the skim's, the raids'): what it held spills.
   if ent.type == "container" and shared.is_corp(ent.force.name) then skim.died(ent) end
   local kind = shared.kind_of(ent.name)
   if kind == "lp-uplink" then faction.uplink_lost(ent) end

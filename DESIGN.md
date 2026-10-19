@@ -77,7 +77,7 @@ document describes the parts as built; the campaign document describes the game 
 | Serenity's power strike: the cut pole behind the player's lasers, scouts first; dark turrets weigh nothing | built | `blackout` (two) |
 | Strangling: the line goes for outposts, then the next ore; at war it cuts belts and pipes on its edge | built | `strangle` (five) |
 | Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid off, a truce) | built; the ledger's price a guess | `hazard` (seven) |
-| Grubstake's skim (a siphon shack on an exposed belt, trucks to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
+| Grubstake's skim (a truck parks at an exposed belt and fills its trunk, home to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
 | Shields, gates for the player, anti-air turret | open | |
 | Depletion and relocation | open | |
@@ -614,19 +614,20 @@ way round 117 turrets to any substation), flares never flew (no nests left near 
 burglar does not breach a bank, but nothing showing reads as a bug; aim for "I am being skimmed", never "I am
 besieged". A fortress cannot wall in what feeds it.
 - **The skim** (`scripts/skim.lua`, Grubstake's temper `skims`, a theft in the stance: a rival thief steals, a truce
-  stops it). A camp finds a player's belt within 150, then 300, then 500 tiles (250 alone found none on nw) that carries something and that no turret reaches (30), and
-  sends a buggy by a route clear of every turret's reach (the heist's). The buggy drops a siphon shack beside it (a
-  chest in its colour, an amber arm drawn to the belt) and goes home. Each second the shack lifts 15% of what passes (the
-  tile's fill times a full belt's rate: of a full belt's rate whatever passed, it took 51% of a thin flow). At 40 items
-  a truck drives out, empties it and takes the load to the camp's yard (a chest with the goods' icon over it), where it
-  stays as items and adds its worth to parts. Destroy the yard or the shack and what they hold spills; kill the truck
-  and its load spills where it fell. Counters: an underground across the exposed stretch (only a belt tile is
-  skimmed), a turret by the belt, raiding the yard. Scenarios: `skim` (a belt of iron ore 150 tiles from the camp, fed
-  and emptied by the test): a shack out of turret reach, 13% of the flow taken (813 of 6,472), 790 home in the yard;
-  `skim guarded` (an armed gun turret by the belt): no shack; `skim raid` (the yard destroyed at minute 24): 547 held,
-  547 spilled. Gated on the stance toward each player force, not on intel (a young camp's intel knew no player target
-  and it never looked). Withdraw it (Fable) if over three seeds it fires under three times an hour, a shack's median
-  life is under a minute, or the take is under 2% of the flow: open, a visit will say.
+  stops it). A camp finds a player's belt within 150, then 300, then 500 tiles (250 alone found none on nw) that carries
+  something and that no turret reaches (30), whose straight line from the camp passes no turret's reach, and sends a
+  truck by a route clear of every turret's reach (the heist's). The truck parks by the belt and lifts 15% of what passes
+  (the tile's fill times a full belt's rate) into its trunk, for 2 minutes or 120 items, then drives home: the goods go
+  into the camp's yard (a steel chest in its colour, the goods' icon over it) as items, their worth into parts. It comes
+  back after 5 minutes. Kill the truck and its load spills where it stopped; destroy the yard and what it holds spills.
+  The tell is the truck parked at the belt and the gaps downstream. Counters: an underground across the exposed
+  stretch, a turret by the belt, hunting the truck, raiding the yard.
+  First built as a siphon shack dropped by a buggy, an amber arm to the belt, and trucks to empty it; the user: "I
+  think you're getting too cute with it. Why not a truck simply going to the belt, hovering part of the items, filling
+  its own trunk, then leaving?", and "No amber line". Scenarios: `skim` (a belt of iron ore 150 tiles from the camp,
+  fed and emptied by the test): three runs in 27 minutes, 67 items a run, 254 home in the yard, 5% of the belt's flow;
+  `skim guarded` (an armed gun turret by the belt): no truck; `skim raid` (the yard destroyed at minute 24): 134 held,
+  134 spilled.
 - **Dismantling** (the user, 2026-10-19: "Stealing items and buildings is genius for a more early game rival"; Fable's
   "carry it off instead" of the ladder top razing 247 panels). A Grubstake raid with machines at its target walks in
   answering only what hits it (a thief takes rather than shoots: raiding as an army, it razed three of four assemblers
@@ -655,8 +656,7 @@ besieged". A fortress cannot wall in what feeds it.
   exposed belts carrying on nw, but the three nearest lay inside the laser ring ("no route"). Now only belts whose
   straight line from the camp passes no turret's reach (sampled every 25 tiles, 40 looked at) are routed. On nw that
   left none for one camp and only belts across the big lake for the other ("no route"): nw is sealed by lakes and
-  lasers, and the skim rightly finds nothing. On deathworld it went once, at minute 50: a shack by a belt 140 tiles
-  out, standing at the end (too late for a truck). One in 90 minutes is under Fable's bar (three an hour); both saves
+  lasers, and the skim rightly finds nothing. On deathworld it went once, at minute 50 (the shack then). One in 90 minutes is under Fable's bar (three an hour); both saves
   are fortresses. On probation: a save with outposts wired by belts, or a mid-game base, is its real test (open).
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 

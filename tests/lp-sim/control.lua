@@ -4721,9 +4721,10 @@ end
 -- stops; the tap broken, it is over. A gun turret stands on the straight way: the line goes round it (the heist's
 -- route). LP_MIX=natural: no debug_tap, the camp's own choice (a pole its sensors have seen exposed).
 -- Skim (Grubstake; Fable's fortress consult): a player's belt of iron ore 150 tiles from the camp toward spawn, 24 tiles
--- long, fed at its west end and emptied at its east by the test (both counted). The camp finds it, a buggy drops a
--- shack, the shack lifts 15% of a full belt's flow, trucks carry it to the yard. LP_MIX=guarded: an armed gun turret by
--- the belt, no shack; LP_MIX=raid: the yard destroyed at minute 24, what it held spills.
+-- long, fed at its west end and emptied at its east by the test (both counted). The camp finds it, a truck parks by it,
+-- lifts 15% of what passes into its trunk and takes it home to the yard (the user: "a truck simply going to the belt,
+-- hovering part of the items, filling its own trunk, then leaving"). LP_MIX=guarded: an armed gun turret by the belt, no
+-- truck; LP_MIX=raid: the yard destroyed at minute 24, what it held spills.
 scenarios.skim = function()
   local guarded, raid = params.mix == "guarded", params.mix == "raid"
   schedule(60, function()
@@ -4778,13 +4779,21 @@ scenarios.skim = function()
       S.spilled = n
     end)
   end
+  -- The truck parked by the belt, seen once a minute (its tell).
+  for t = 3 * 3600 + 60, END - 120, 60 do
+    schedule(t, function()
+      local k = lp("skim", S.g)
+      if k and k.parked then
+        S.parked = S.parked or k.parked
+        S.near_turret = surface().count_entities_filtered{position = k.parked, radius = 30, force = "player",
+          type = {"ammo-turret", "electric-turret"}}
+      end
+    end)
+  end
   schedule(END - 60, function()
     local k = lp("skim", S.g)
-    local shack = surface().find_entities_filtered{name = "lp-skim-shack", limit = 1}[1]
-    local turret_near = shack and surface().count_entities_filtered{position = shack.position, radius = 30, force = "player",
-      type = {"ammo-turret", "electric-turret"}} or -1
-    info(string.format("skim: fed %d, delivered %d, skims %d, taken %d, home %d, yard %d, shack %s (turrets within 30: %d)",
-      S.fed or 0, S.delivered or 0, k.skims, k.taken, k.skimmed, k.yard, shack and "standing" or "none", turret_near))
+    info(string.format("skim: fed %d, delivered %d, runs %d, taken %d, home %d, yard %d, parked at %s (turrets within 30: %s)",
+      S.fed or 0, S.delivered or 0, k.skims, k.taken, k.skimmed, k.yard, serpent.line(S.parked), tostring(S.near_turret)))
     if guarded then
       check("skim: a guarded belt is not skimmed", k.skims == 0, tostring(k.skims))
       return
@@ -4795,11 +4804,11 @@ scenarios.skim = function()
         string.format("held %d, spilled %d", S.yard_held or 0, S.spilled or 0))
       return
     end
-    local share = (S.fed or 0) > 0 and k.taken / S.fed or 0
-    check("skim: a shack on the exposed belt, out of turret reach", k.skims >= 1 and shack ~= nil and turret_near == 0,
-      string.format("%d skims", k.skims))
-    check("skim: it took part of the flow, not all", share >= 0.05 and share <= 0.4, string.format("%.0f%%", share * 100))
-    check("skim: trucks brought it home to the yard", k.skimmed >= 40 and k.yard >= 40, string.format("%d home, yard %d",
+    local share = (S.fed or 0) > 0 and k.skimmed / S.fed or 0
+    check("skim: a truck parked at the exposed belt, out of turret reach", k.skims >= 1 and S.parked ~= nil and S.near_turret == 0,
+      string.format("%d runs", k.skims))
+    check("skim: it took part of the flow, not all", share >= 0.03 and share <= 0.3, string.format("%.0f%%", share * 100))
+    check("skim: trucks brought it home to the yard", k.skimmed >= 100 and k.yard >= 100, string.format("%d home, yard %d",
       k.skimmed, k.yard))
   end)
 end
