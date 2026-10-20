@@ -35,8 +35,9 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 3. **A raid that steals**: buggies and Shotgun hands at an exposed spot; they walk in without firing and take your
    machines apart one by one (assemblers, furnaces, drills, solar, poles...), carrying them off with what they held, and
    leave the machines' ghosts where they stood. Up to twelve a raid. Chests near the target are emptied too.
-4. **The leader**: one raider wears Grubstake's icon (the mining pick). Kill it and the raid breaks and runs home. Kill
-   any raider carrying loot and its share drops where it falls.
+4. **The leader**: one raider wears Grubstake's icon (the mining pick). Kill it and the raid breaks and runs home empty:
+   the foreman carries the haul and drops all of it where it falls. Kill any other raider carrying loot and its share
+   drops.
 5. **The skim**: a truck parks by one of your belts that no turret covers and takes half of what passes, the most
    valuable first, until its trunk holds 120 or five minutes pass, then drives home. Gaps downstream are the tell. Kill
    the truck and its load spills. Undergrounds across an exposed stretch, or a turret by it, stop it.
@@ -66,7 +67,8 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    whose posts you destroyed is open.
 16. **Against a fortress**: a hauler brings mortars (a howitzer when robots keep the wall), a fire plan on one point at a
    time, roboports first; a jammer mast in the emplacement whose tesla arcs down your robots and blinds your threat
-   scanners within 50 tiles. Destroy the mast.
+   scanners within 50 tiles. Destroy the mast. Kill the howitzer and its camp has none for 30 minutes: the next siege
+   comes with mortars only.
 17. **The power strike**: two scouts walk out to a pole of yours, and minutes later a raid goes for it: the one pole
    whose loss darkens the lasers behind it. A second feed, or accumulators by the turrets, is the answer.
 18. **Hazard removal**: when biters keep hitting it, it sends a clearance siege at their nest, away from you.

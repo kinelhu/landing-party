@@ -3176,9 +3176,10 @@ end
 
 -- Leader (Jungle Raiders' Alpha, 2026-10-19): a raid on an unguarded outpost; once it attacks, the test kills its
 -- leader (the unit under its corporation's icon). Grubstake's raid breaks and runs home ("fled"); LP_MIX=serenity:
--- Serenity's falls back to its staging point with a new leader and comes again.
+-- Serenity's falls back to its staging point with a new leader and comes again. LP_MIX=haul: chests of plates at the
+-- outpost; the leader is shot once the raid carries loot: Grubstake's foreman drops the whole haul, none reaches home.
 scenarios.leader = function()
-  local ser = params.mix == "serenity"
+  local ser, haul = params.mix == "serenity", params.mix == "haul"
   local function toward(id, d)
     local o = lp("stats", id).origin
     local len = math.sqrt(o.x * o.x + o.y * o.y)
@@ -3199,6 +3200,12 @@ scenarios.leader = function()
       surface().create_entity{name = "assembling-machine-1", position = {c[1] - 6 + 4 * k + 0.5, c[2] + 0.5}, force = "player"}
     end
     for k = 0, 5 do surface().create_entity{name = "radar", position = {c[1] - 9 + 4 * k, c[2] + 6}, force = "player"} end
+    if haul then
+      for k = 0, 3 do
+        local ch = surface().create_entity{name = "iron-chest", position = {c[1] - 6 + 4 * k + 0.5, c[2] - 4.5}, force = "player"}
+        ch.insert{name = "iron-plate", count = 200}
+      end
+    end
     lp("dev", {"raid", tostring(S.id)}, c)
     S.had_leader = lp("stats", S.id).ops.leader ~= nil
   end)
@@ -3208,9 +3215,17 @@ scenarios.leader = function()
       local o = lp("stats", S.id).ops
       S.seen = S.seen or {}
       S.seen[tostring(o.phase) .. ":" .. tostring(o.leader ~= nil)] = true
-      if o.leader and o.phase == "attack" then
+      if o.leader and o.phase == "attack" and (not haul or (o.carrying or 0) > 0) then
         for _, u in pairs(surface().find_entities_filtered{type = "unit", position = S.c, radius = 200}) do
-          if u.unit_number == o.leader then u.die("player"); S.shot = game.tick break end
+          if u.unit_number == o.leader then
+            S.carried, S.at = o.carrying, u.position
+            u.die("player"); S.shot = game.tick
+            S.dropped = 0
+            for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.at, radius = 12}) do
+              S.dropped = S.dropped + it.stack.count
+            end
+            break
+          end
         end
       end
     end)
@@ -3221,6 +3236,14 @@ scenarios.leader = function()
     info("leader: phases seen " .. serpent.line(S.seen))
     info(string.format("leader: had %s, shot %s, lost %d, broken %d, regrouped %d, now %s, last %s", tostring(S.had_leader),
       tostring(S.shot), o.leaders_lost, o.broken, o.regrouped, tostring(o.op), last and last.outcome or "-"))
+    if haul then
+      info(string.format("leader haul: carried %s, dropped %s by the foreman, looted home %d", tostring(S.carried),
+        tostring(S.dropped), o.looted))
+      check("leader: the raid carried loot when its foreman fell", (S.carried or 0) > 0, tostring(S.carried))
+      check("leader: the foreman dropped the whole haul", (S.dropped or 0) >= (S.carried or 1), string.format("%s of %s",
+        tostring(S.dropped), tostring(S.carried)))
+      check("leader: nothing reached home", o.looted == 0, tostring(o.looted))
+    end
     if ser then
       check("leader: Serenity's raid falls back in order and comes again", S.shot and o.regrouped >= 1 and o.broken == 0
         and (o.op ~= nil or (last and last.outcome == "done")), string.format("regrouped %d, %s", o.regrouped, last and last.outcome or tostring(o.op)))
@@ -6438,8 +6461,9 @@ end
 -- half the lasers and every roboport down, and the robots' repair packs spent. LP_MIX=old (focus_off: the siege as it
 -- was, its mortars left to choose): 117 shells, ten lasers at full health, 32 repair packs spent, nothing destroyed.
 -- LP_MIX=jammer: Serenity has its jammer (rd): a mast goes up in the emplacement and its arcs down the robots.
+-- LP_MIX=howitzer: the player kills the howitzer as it stands; a second siege on the same wall comes without one.
 scenarios.fortress = function()
-  local old, jam = params.mix == "old", params.mix == "jammer"
+  local old, jam, hw = params.mix == "old", params.mix == "jammer", params.mix == "howitzer"
   schedule(60, function()
     lp("debug_tune", {era = 3, history_off = true, raids_off = true, corp_level = {serenity = 3}, focus_off = old or nil,
       rd_tech = jam and {serenity = {nodes = {jammer = 1}}} or nil})
@@ -6490,8 +6514,20 @@ scenarios.fortress = function()
       end
       local mortars = surface().count_entities_filtered{name = "lp-mortar", force = "lp-serenity"}
       S.masts = math.max(S.masts or 0, surface().count_entities_filtered{name = "lp-jammer"})
-      -- Settled: the siege is over (its log entry written).
       local st0 = lp("stats", S.s)
+      if hw then
+        local hs = surface().find_entities_filtered{name = "lp-howitzer", force = "lp-serenity"}
+        if S.killed then S.after = math.max(S.after or 0, #hs)
+        elseif hs[1] then S.killed = game.tick; hs[1].die("player") end
+        -- The first siege over: a second on the same wall, inside the half hour.
+        if S.killed and not S.why2 and #(st0.ops.log or {}) > 0 and not st0.ops.op then
+          S.down = st0.howitzer_down
+          S.why2 = lp("dev", {"siege", tostring(S.s)}, {S.c[1], S.c[2]}) or "launched"
+        end
+        if S.why2 and #(st0.ops.log or {}) > 1 and not st0.ops.op then finish_early() end
+        return
+      end
+      -- Settled: the siege is over (its log entry written).
       if S.why and #(st0.ops.log or {}) > 0 and not st0.ops.op then finish_early() end
       if mortars > 0 then
         S.peak = math.max(S.peak or 0, held)
@@ -6516,6 +6552,15 @@ scenarios.fortress = function()
     S.fortress = {lasers = lasers, ports = ports, walls = walls}
     local js = lp("jammer_stats")
     info("fortress: jammer " .. serpent.line(js) .. ", masts seen " .. tostring(S.masts))
+    if hw then
+      info(string.format("fortress howitzer: killed at %s, down till %s, second siege %s, howitzers after %s",
+        tostring(S.killed), tostring(S.down), tostring(S.why2), tostring(S.after)))
+      check("fortress: a howitzer came and was killed", S.killed ~= nil, tostring(S.killed))
+      check("fortress: its camp is down a howitzer", (S.down or 0) > (S.killed or 0) + 25 * 3600, tostring(S.down))
+      check("fortress: a second siege launched", S.why2 == "launched", tostring(S.why2))
+      check("fortress: no howitzer came with it", S.after == 0, tostring(S.after))
+      return
+    end
     if jam then
       check("fortress: a jamming mast went up", (S.masts or 0) > 0, tostring(S.masts))
       check("fortress: its arcs downed robots", js.jammed >= 5, tostring(js.jammed))

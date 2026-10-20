@@ -39,10 +39,10 @@ digraph ai {
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n711 lines", width=1.59, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1581 lines", width=2.56, fillcolor="#f7dede"];
+    "ops" [label="ops\n1584 lines", width=2.56, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n230 lines", width=1.06, fillcolor="#d9f0d9"];
-    "siege" [label="siege\n777 lines", width=1.66, fillcolor="#d9f0d9"];
+    "siege" [label="siege\n782 lines", width=1.67, fillcolor="#d9f0d9"];
     "strip" [label="strip\n228 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n132 lines", width=0.95, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
@@ -67,7 +67,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n502 lines", width=1.36, fillcolor="#eef2f7"];
+    "control" [label="control\n513 lines", width=1.37, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

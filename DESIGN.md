@@ -73,16 +73,49 @@ document describes the parts as built; the campaign document describes the game 
 | Grubstake prospects the player's frontier; its road (claim trucks, lapse) | built | `prospect` (two), `road` (two) |
 | Serenity's border stake; Grubstake's trade post (truce); bending the line with a decoy | built | `border` (two), `tribute`, `bend` |
 | The gate (decision 3): a scripted player that engages against one that turtles | instrument built, measuring | `gate` (LP_MIX=turtle, engage) |
-| Serenity against a fortress: fire plans, the howitzer against robot-kept walls, escalation; the jammer mast (downs robots, blinds threat scanners) | built | `fortress` (three), `scanner` |
+| Serenity against a fortress: fire plans, the howitzer against robot-kept walls, escalation; the jammer mast (downs robots, blinds threat scanners) | built | `fortress` (four), `scanner` |
 | Serenity's power strike: the cut pole behind the player's lasers, scouts first; dark turrets weigh nothing | built | `blackout` (two) |
 | Strangling: the line goes for outposts, then the next ore; at war it cuts belts and pipes on its edge | built | `strangle` (five) |
 | Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid off, a truce) | built; the ledger's price a guess; disputed by killing the billed nest | `hazard` (eight) |
 | Grubstake's skim (a truck parks at an exposed belt and fills its trunk, home to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
-| Raid leaders (an icon over one raider; Grubstake breaks when it falls, Serenity regroups) | built | `leader` (two) |
+| Raid leaders (an icon over one raider; Grubstake breaks when it falls and its foreman drops the haul, Serenity regroups) | built | `leader` (three) |
 | Shields, gates for the player, anti-air turret | open | |
 | Depletion and relocation | open | |
+| Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
+
+## Legibility audit (2026-10-20)
+The user: "There is starting to be a big gap between mechanics and what's communicated to the players." The mod grew
+mechanic first, and much of its state lives in `storage` only. The rule from here: a mechanic that changes what the
+player should do has a sign in the world (an entity, a ghost, smoke, a light, an icon, a map mark), seen before or as
+it acts; chat notices stay a last resort. Read from the code (every `rendering.draw_*`, smoke, explosion, chart tag and
+notice), not from memory.
+
+**Told well** (keep as the model): raid leaders (an icon over the raider); the skim (a truck with headlights at the
+belt, the yard's icon); the pheromone flare (orange smoke on a canister); the claim jumper (rig, dust, mound); the power
+tap (a buggy, a drawn cable); the prospect (stake with an amber lamp, a map tag); the trade post (a lamp); the jammer
+(mast, lights, arcs); the pact (pacifier antennas to destroy); the siege's hauler and "Deploying N%"; the ledger post
+(what is owed, lit) and its billed nests (an icon; not yet seen in game); Grubstake's hurt lander (smoke under 90%, fire
+smoke under 60%); territory and standing on the map; constructors drawing a build line.
+
+**Gaps**, by what the player loses by not seeing them:
+
+| Mechanic | Seen today | Gap | Proposed sign | Step |
+| --- | --- | --- | --- | --- |
+| Howitzer down 30 minutes when killed | appears at deploy, vanishes at the end | a kill's reward invisible; no warning before a siege | a howitzer parked on a pad in the camp, towed out behind the hauler; the pad empty while out; killed, a ghost on the pad that fills in | 2 |
+| Rebuild delay (60 s plus travel from the lander) | nothing until the constructor arrives | where and when it comes back | a corporation ghost on the spot from the moment it dies | 2 |
+| Occupation (no rebuild with the player's military within 12) | nothing | why it does not come back | the ghost stays, dimmed or crossed | 2 |
+| Grubstake's loot and parts | one yard chest, the icon of what it holds most; parts a number | stolen goods do not become anything | a scrapyard that spreads with what it holds (chests, piles, wrecks); building from it | 3 |
+| Serenity reads as a fortified, intelligent foe | walls, pickets, posts | reads as a few buildings | gated or gapped walls (its units path through), bastions, layered depth, lamps; Fable consult on each camp's look; base-game assets unused today (the user: "space station flooring that could be used on the ground for Serenity, giving a real alien look"; the cargo landing pad and bays as its lander and depots), tiles laid by script (`space-platform-foundation` has the ground collision mask: units and buildings stand on it; but it is minable for its item, a free Space Age material, so a copy that yields nothing or scrap, and it has health: to check under explosions on Nauvis; and what a fall leaves) | 4 |
+| The economy (drills, fabricators, parts, power) | drills on real ore, fabricators, a power graph | production is abstract; nothing to cut | one real line a camp (drills, belt, furnace, the fabricator's input) the fabricators eat from; the player can cut or tap it | 5 |
+| Army reserve, unit cap, bandwidth | depots | how many it has waiting | crates in the depots (a sign first; units as items for the player's army) | 6 |
+| Serenity's line, the warning a step ahead | posts built by drones, the claim on the map; the warning a chat notice | the warning is a notice, against the rule | survey stakes on the next arc, a step ahead, in the world | later |
+| Belt cuts only where its guns stand | an explosion at the cut | which belts are at risk | none needed: its guns are visible | - |
+| Its ladder (rungs at 10/20/30 minutes without a raze), escalation (answer sieges heavier within 30 minutes) | nothing | that leaving it alone grows it | something added to the camp each rung (a depot, a flag, a gun) | later |
+| Corporate research, plates | unit names and resistances | what it learned against the player | a plated unit looks plated (tint, armour) | later |
+| Grudge, standing down | a later landing; a camp gone quiet | why the next one came angry, why one went quiet | a quiet camp's lights out and guns lowered; an angry landing's escort | later |
+| Grubstake's setbacks (a hurt or bled camp holds its raids) | the lander's smoke | that the raids paused | smoke covers it | - |
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and
@@ -477,6 +510,11 @@ strangling (the line walls off outposts and ore).
     damage to a roboport, set target an error).
   - **A howitzer for a wall kept by robots** (roboports within 60 of the target, tier 2 or level 2 up): the mortars'
     35 tiles reached the lasers, not the roboports 13 behind them; the howitzer's 98 does.
+  - **A howitzer killed stays lost** (2026-10-20; Fable's consult: a fresh one came with every siege, so killing it
+    cost Serenity nothing): one destroyed in the field leaves its camp without one for 30 minutes
+    (`shared.HOWITZER_DOWN`). Sieges in that window come with mortars only (traced "no howitzer (lost; N minutes
+    yet)"); a clearance that needs it waits. `fortress howitzer`: killed as it stood, the second siege on the same wall
+    came without one; with the window set to zero, both its checks failed.
   - **Escalation**: an answer siege within 30 minutes of the last comes a tier heavier, as far as parts and field reach.
   `fortress`: every laser and roboport destroyed (and four spare roboports the robots put back), 30 of 41 wall pieces,
   the 200 repair packs spent; the assault of 16 came home whole. Counters left to the player: artillery outranges the
@@ -693,7 +731,10 @@ besieged". A fortress cannot wall in what feeds it.
   runs home with what it carries ("fled"); Serenity's falls back to its staging point in order, a new leader takes the
   icon, and it goes in again with what it has (the staging look that turns a short raid back is skipped then: it turned
   back with 3 of the 4 it wanted). Scenarios `leader` (Grubstake: fled, 3 of 4 home) and `leader serenity`
-  (regrouped, then done with 3). Next from the research: the yard as a pile that grows with what was stolen, an
+  (regrouped, then done with 3). Grubstake's foreman carries the haul (2026-10-20, Fable's engagement consult: "kill
+  the leader and the party drops its load"): killed, it drops all the raid's loot, and the raid runs home empty
+  (`ops.raider_died`; another raider drops its share). `leader haul` (chests of plates at the outpost): 404 carried,
+  all dropped by the foreman, none home; with the foreman dropping a share only, 103 dropped and 303 reached home. Next from the research: the yard as a pile that grows with what was stolen, an
   itemised invoice with a gauge on Serenity's post.
 - Next in the consult: mine sweeping, a bird net for robots, the brood run.
 

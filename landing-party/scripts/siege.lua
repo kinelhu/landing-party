@@ -215,7 +215,11 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance)
   if not clearance and not storage.focus_off and against_player(t.owner) and (tier >= 2 or army.level(b) >= 2)
     and s.count_entities_filtered{position = t.pos, radius = 60, type = "roboport", force = enemies(game.forces[b.force]),
       limit = 1} > 0 then
-    b.op.with_howitzer = true
+    if (b.howitzer_down or 0) > game.tick then
+      trace(b, string.format("siege: no howitzer (lost; %d minutes yet)", math.ceil((b.howitzer_down - game.tick) / 3600)))
+    else
+      b.op.with_howitzer = true
+    end
   end
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
   -- A clearance's march keeps out of its worms' reach (straight on, its guards walked into a behemoth's, review).
@@ -331,6 +335,7 @@ function ops.clearance(b, near, trace, army, toward)
     -- Worms that outrange the mortar: the howitzer, from beyond a behemoth worm's reach.
     site = clearance_site(s, near, {h.position.x, h.position.y}, HOWITZER_STAND, HOWITZER_REACH - 10)
     piece, reach = "lp-howitzer", HOWITZER_REACH
+    if site and (b.howitzer_down or 0) > game.tick then return false, "howitzer lost" end
   end
   if not site then
     t.cool = game.tick + 15 * 3600

@@ -124,6 +124,8 @@ shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "
   "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
   "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer", "lp-scrap-cannon"}
+-- A howitzer destroyed in the field leaves its camp without one this long (sieges go with mortars only).
+shared.HOWITZER_DOWN = 30 * 3600
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)

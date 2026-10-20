@@ -660,7 +660,7 @@ function base.stats(b)
     doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, walls = #b.walls, road_tiles = b.road_tiles,
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, returning = #(b.returning or {}),
     roster = table_size(b.roster or {}), units_built = b.units_built,
-    units_lost = b.units_lost, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
+    units_lost = b.units_lost, howitzer_down = b.howitzer_down, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false, hq = b.hq,
     lander_health = b.lander.valid and b.lander.health / b.lander.max_health or 0, hull_up = b.lander.valid and not b.lander.destructible,

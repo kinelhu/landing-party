@@ -67,7 +67,7 @@ by all parties."
 - **As built (2026-10-19)**: a rival thief that escalates when hurt; it steals by night: soft raids that take machines
   apart and carry them off (ghosts left), skimming trucks parked at exposed belts, chest heists by claim jumper, power
   taps, ore claims; a pact with the biters, pheromone flares. Its loot is kept as items in its yard. Its raids break
-  when their foreman falls.
+  when their foreman falls, and the foreman drops the whole haul.
 
 ### Serenity Perimeter Group (the wall)
 - **Palette**: slate grey, pale teal. Lamps cold white.
@@ -85,7 +85,8 @@ by all parties."
 - **As built (2026-10-19)**: at war from landing. A line of cordon posts that steps toward the player, strangles
   outposts, claims the next ore, cuts belts on its edge where its guns stand; sieges sized to win (mortars, the
   howitzer, a robot jammer), the power strike, clearances of the nests that hit it, and an invoice for the waves the
-  player's pollution draws, paid off for a truce or disputed by killing the nest it names. Its raids regroup when their leader falls. Being at war, it answers
+  player's pollution draws, paid off for a truce or disputed by killing the nest it names. A howitzer killed leaves it
+  without one for 30 minutes. Its raids regroup when their leader falls. Being at war, it answers
   trespass only (a siege); its losses in the field are fair war.
 
 ### Lumen Transparency (the eye)

@@ -806,7 +806,9 @@ function ops.appoint(b, op)
 end
 
 -- A raider killed with loot drops its share where it fell (Fulgora Replicators, the user's pointer: "killing a raider
--- makes it drop what it was carrying"; the loot had spilled only when the whole raid died).
+-- makes it drop what it was carrying"; the loot had spilled only when the whole raid died). Grubstake's foreman carries
+-- the haul (Fable's engagement consult: kill the leader and the party drops its load): it drops all of it, and the raid
+-- breaks and runs home empty.
 function ops.raider_died(b, ent)
   local op = b.op
   if op and op.leader == ent then op.leader_down = true end
@@ -815,6 +817,7 @@ function ops.raider_died(b, ent)
   for _, u in ipairs(op.members) do if u == ent then mine = true break end end
   if not mine then return end
   local n = math.max(1, alive(op))
+  if op.leader == ent and (shared.CORPS[b.corp].temper or {}).soft_only then n = 1 end
   local s = ent.surface
   for _, g in pairs(op.loot.goods) do
     local share = math.floor(g.count / n + 0.5)
@@ -1567,7 +1570,7 @@ function ops.summary(b)
     siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
-    looted = b.looted or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
+    looted = b.looted or 0, carrying = b.op and b.op.loot and b.op.loot.items or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
     hazards = b.hazards or 0, biter_losses = b.biter_losses or 0,
     leader = b.op and b.op.leader and b.op.leader.valid and b.op.leader.unit_number or nil, phase = b.op and b.op.phase,
     leaders_lost = b.leaders_lost or 0, broken = b.broken or 0, regrouped = b.regrouped or 0, dismantled = b.dismantled or 0,
