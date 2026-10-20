@@ -62,8 +62,10 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    kill it and the raid falls back to its staging point in order, a new leader takes the icon, and it comes again.
 14. **The line**: 30 minutes after landing, drones build cordon posts on an arc toward you, each on plating with a
    cold-white lamp, a dark stripe painted post to post (at night a lit line across the map). Grown, its camp spreads:
-   clusters of blocks on lobed plates, each inside one wall with turrets, founded out toward its line and tied home by
-   plated roads, like metastases on the map. Its claim follows, its next
+   compounds laid out by wave function collapse: a chamfered wall, rooms behind doors, turrets, generators and
+   fabricators inside, lanes out through gaps in the wall, founded out toward its line every few minutes and tied home
+   by plated roads, like metastases on the map. Its spread done, a curtain wall goes up round the whole camp with a
+   killing ground before the compounds' walls. Its claim follows, its next
    arc drawn on the map, a named warning a step before it encloses a building of yours. Near you it closes with wall;
    across your rails a gate post (your trains stop). Shoot the drones: three lost on a post and the line is held there.
 15. **Strangling**: the line goes for your outpost easiest to cut off; with none of your buildings in reach, for the ore

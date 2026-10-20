@@ -5,6 +5,8 @@
 local shared = require("__landing-party__.shared")
 local blocks = require("__landing-party__.scripts.blocks")
 local rng = require("__landing-party__.scripts.rng")
+local wfc = require("__landing-party__.scripts.wfc")
+local WFC_TILES = {serenity = require("__landing-party__.scripts.wfc_serenity")}
 local site = require("__landing-party__.scripts.site")
 
 local layout = {}
@@ -419,6 +421,277 @@ function layout.wall_cluster(b, hub, fresh)
   return #edge
 end
 
+-- A compound laid out whole by wave function collapse (scripts/wfc.lua; the user: "Would WFC be a cool algorithm to
+-- implement for Serenity?"): WFC_CELLS by WFC_CELLS cells of the tile set's size, a lobed mask (a disc and two more off
+-- it), at (x0, y0) its top-left. Its floor paved, its walls, gates and buildings queued as jobs, a pylon chained to the
+-- network, its rooms carved (wfc.rooms: partitions of wall, doors left open). One block record (kind "compound", WFC_WEIGHT of the cap). Nil when the ground is not free or no layout
+-- passes in WFC_TRIES.
+local WFC_CELLS, WFC_TRIES, WFC_WEIGHT = 11, 8, 3
+local WFC_NAMES = {T = "lp-turret", G = "lp-generator", D = "lp-depot", F = "lp-fabricator", R = "lp-radar",
+  P = "lp-pylon", L = "lp-lamp"}
+-- Planned in one tick, laid out over the next (layout.wfc_step, once a second: the solve, then the rooms and the check,
+-- each in its own tick; done at once a compound took 52 to 73 ms of one tick in game). True when planned.
+function layout.wfc_plan(b, hub, x0, y0, need)
+  local tiles = WFC_TILES[b.corp]
+  if not tiles or b.wfc_job then return false end
+  local side = WFC_CELLS * tiles.size
+  if not layout.area_free(game.surfaces[b.surface], x0, y0, side, side) then return false end
+  b.wfc_job = {hub = hub.id, x0 = x0, y0 = y0, tries = 0, stage = "solve", need = need}
+  return true
+end
+
+-- Districts (whole-camp WFC, the user: "Why not WFC for the whole base?"; the default since the factory found them about
+-- even for the player, 2026-10-20; storage.wfc_core_off for scenarios that want blocks):
+-- where its blocks would open a generator or fabricator block, a corporation with a tile set plans a compound by its
+-- keep instead, at least two of what was asked in it; the nearest free ground round the lander, ring after ring, clear
+-- of the player's buildings and rivals' claims. Its own wall and rooms: districts walled apart, the curtain round all.
+function layout.districts(b) return not storage.wfc_core_off and WFC_TILES[b.corp] ~= nil end
+function layout.district(b, role)
+  if b.wfc_job then return nil end
+  local surface = game.surfaces[b.surface]
+  local side = WFC_CELLS * WFC_TILES[b.corp].size
+  local ox, oy = b.origin.x, b.origin.y
+  for r = side / 2 + 30, side / 2 + 230, 20 do
+    local steps = math.max(6, math.floor(2 * math.pi * r / 40))
+    local a0 = 2 * math.pi * rng.next(b.rng)
+    for k = 0, steps - 1 do
+      local a = a0 + 2 * math.pi * k / steps
+      local cx, cy = ox + r * math.cos(a), oy + r * math.sin(a)
+      local clear = true
+      for _, f in ipairs(shared.player_forces()) do
+        if surface.count_entities_filtered{position = {cx, cy}, radius = side / 2 + 30, force = f, limit = 1} > 0 then clear = false end
+      end
+      for _, o in pairs(storage.bases) do
+        if o ~= b and not o.fallen and o.surface == b.surface and o.claim_radius
+          and (o.origin.x - cx) ^ 2 + (o.origin.y - cy) ^ 2 < (o.claim_radius + side / 2) ^ 2 then clear = false end
+      end
+      if clear then
+        local h = new_hub(b, math.floor(cx), math.floor(cy))
+        h.district, h.walled = true, true
+        if layout.wfc_plan(b, h, math.floor(cx - side / 2), math.floor(cy - side / 2),
+          role == "depot" and {D = 1} or {[role == "gen" and "G" or "F"] = 2}) then
+          return {kind = "district (planned)", center = {cx, cy}, wfc = true}
+        end
+        table.remove(b.hubs)
+      end
+    end
+  end
+end
+
+local lay_out
+local function base_trace(b, s) if layout.trace then layout.trace(b, s) end end
+
+-- One stage of a planned compound: "solve" (a lobed mask, the collapse) or "rooms" (rooms carved, the ground checked;
+-- laid out when it passes, solved again when not, given up after WFC_TRIES).
+function layout.wfc_step(b)
+  local job = b.wfc_job
+  if not job then return end
+  local tiles = WFC_TILES[b.corp]
+  local n = WFC_CELLS
+  local side = n * tiles.size
+  local rand = function() return rng.next(b.rng) end
+  if job.stage == "solve" then
+    job.tries = job.tries + 1
+    local c = (n - 1) / 2
+    local discs = {{c + 0.5, c + 0.5, n / 3}}
+    for _ = 1, 2 do
+      local a = 2 * math.pi * rand()
+      table.insert(discs, {c + 0.5 + n / 3.5 * math.cos(a), c + 0.5 + n / 3.5 * math.sin(a), n / 4.2})
+    end
+    local function mask(x, y)
+      if x <= 0 or y <= 0 or x >= n - 1 or y >= n - 1 then return false end
+      for _, d in ipairs(discs) do if (x + 0.5 - d[1]) ^ 2 + (y + 0.5 - d[2]) ^ 2 <= d[3] ^ 2 then return true end end
+      return false
+    end
+    local sol = wfc.solve(tiles, n, n, mask, rand, nil, 3000)
+    if sol then job.g, job.stage = wfc.render(tiles, sol, n, n), "rooms"
+    elseif job.tries >= WFC_TRIES then b.wfc_job = nil end
+    return
+  end
+  wfc.rooms(job.g, side, side, rand)
+  -- What it was planned for (a district: generators, fabricators): enough of it, or solved again.
+  local short = false
+  for letter, n in pairs(job.need or {}) do
+    local have = 0
+    for _, bd in ipairs(wfc.buildings(job.g, side, side)) do if bd[1] == letter then have = have + 1 end end
+    if have < n then short = true end
+  end
+  if not short and not wfc.check(job.g, side, side) then
+    b.wfc_job = nil
+    lay_out(b, b.hubs[job.hub], job.x0, job.y0, job.g, side)
+    if base_trace then base_trace(b, string.format("compound laid out at %.0f,%.0f (%d tries)", job.x0 + side / 2,
+      job.y0 + side / 2, job.tries)) end
+  elseif job.tries >= WFC_TRIES then
+    b.wfc_job = nil
+  else
+    job.g, job.stage = nil, "solve"
+  end
+end
+
+lay_out = function(b, hub, x0, y0, g, side)
+  local block = {kind = "compound", hub = hub and hub.id, x0 = x0, y0 = y0, w = side, h = side,
+    center = {x0 + side / 2, y0 + side / 2}, entities = {}, slots = {}, opened = game.tick, walls = false, walled = true,
+    embellished = true, liveried = true, wfc = true, weight = WFC_WEIGHT}
+  table.insert(b.blocks, block)
+  table.insert(b.modules, block)
+  if hub then hub.count = hub.count + 1 end
+  local floor, lanes = {}, {}
+  for y = 0, side - 1 do
+    for x = 0, side - 1 do
+      local ch = g[y][x]
+      -- Walls on the plate too (left bare, sand showed under every wall and partition: the user, in game).
+      if ch ~= " " then table.insert(ch == "=" and lanes or floor, {x0 + x, y0 + y}) end
+    end
+  end
+  push(b, {tiles = floor, floor = "pad", module = block})
+  push(b, {tiles = lanes, floor = "road", module = block})
+  local pylon
+  for y = 0, side - 1 do
+    for x = 0, side - 1 do
+      local ch = g[y][x]
+      -- Its gates left open (gated, a raid stood behind far gates: a unit plans its path when ordered, gates shut).
+      if ch == "#" or ch == "w" then push(b, {name = "lp-wall", pos = {x0 + x + 0.5, y0 + y + 0.5}, module = block}) end
+    end
+  end
+  -- What makes parts and power first (a district's crews build in batches: its walls first left it producing nothing).
+  local ORDER = {P = 1, F = 2, G = 3, D = 4, R = 5, T = 6, L = 7}
+  local bds = wfc.buildings(g, side, side)
+  table.sort(bds, function(p, q) return ORDER[p[1]] < ORDER[q[1]] end)
+  local econ = {}
+  for _, bd in ipairs(bds) do
+    local name = WFC_NAMES[bd[1]]
+    local pos = {x0 + bd[2] + bd[4] / 2, y0 + bd[3] + bd[5] / 2}
+    table.insert(econ, {name = name, pos = pos, module = block})
+    if bd[1] == "P" and not pylon then pylon = pos end
+  end
+  -- Ahead of its walls in the queue.
+  local first = #b.queue + 1
+  for i = #b.queue, 1, -1 do if b.queue[i].module == block and b.queue[i].name == "lp-wall" then first = i end end
+  for k, j in ipairs(econ) do table.insert(b.queue, first + k - 1, j) end
+  if pylon then layout.connect(b, pylon[1], pylon[2], block) end
+  return block
+end
+
+-- The curtain (the user: "we need layers of walls too, closed clusters within the base etc. A huge blob with just an
+-- outside wall is boring"): grown out (its spread done), one wall round the whole camp, a killing ground before its
+-- compounds' own walls. Its ground: star-shaped round the lander (below), marked once, the edge traced over what is
+-- marked (testing every tile against every block, as a cluster's wall does, was too slow at this size). The wall on its
+-- edge (8-neighbour, joined side to side); open where a road leaves and at its
+-- four extremes (two gun turrets inside each); a gun turret every CURTAIN_GAP tiles inside it. Built in CURTAIN_SECTORS
+-- segments by bearing from the camp, each its own site for the drones. Once; a camp that grows after extends it.
+local CURTAIN_KILL, CURTAIN_GAP, CURTAIN_SECTORS, CURTAIN_BINS = 14, 18, 16, 72
+local N8 = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
+function layout.curtain(b)
+  if b.curtain or not b.origin or #b.blocks == 0 then return end
+  local surface = game.surfaces[b.surface]
+  local paint = {}
+  local function mark(x, y) local r = paint[y] if not r then r = {} paint[y] = r end r[x] = true end
+  local function on(x, y) local r = paint[y] return r and r[x] or false end
+  -- One enclosure, star-shaped round the lander: in each of CURTAIN_BINS bearings, out to its furthest block corner and
+  -- the killing ground; each bearing raised to most of its neighbours' (no deep spike between two compounds). Blocks
+  -- grown and joined only where they touched gave a ring round each compound, not one round the camp (curtain1).
+  local ox0, oy0 = b.origin.x, b.origin.y
+  local NB = CURTAIN_BINS
+  local rad = {}
+  for i = 1, NB do rad[i] = 0 end
+  local function bin(x, y) return math.floor(((math.atan2(y - oy0, x - ox0) + 2 * math.pi) % (2 * math.pi)) / (2 * math.pi) * NB) + 1 end
+  for _, k in ipairs(b.blocks) do
+    for _, c in ipairs({{k.x0, k.y0}, {k.x0 + k.w, k.y0}, {k.x0, k.y0 + k.h}, {k.x0 + k.w, k.y0 + k.h},
+      {k.x0 + k.w / 2, k.y0}, {k.x0 + k.w / 2, k.y0 + k.h}, {k.x0, k.y0 + k.h / 2}, {k.x0 + k.w, k.y0 + k.h / 2}}) do
+      local i = bin(c[1], c[2])
+      rad[i] = math.max(rad[i], math.sqrt((c[1] - ox0) ^ 2 + (c[2] - oy0) ^ 2) + CURTAIN_KILL)
+    end
+  end
+  for _ = 1, 3 do
+    local nr = {}
+    for i = 1, NB do
+      local a, c = rad[(i - 2) % NB + 1], rad[i % NB + 1]
+      nr[i] = math.max(rad[i], 0.8 * math.max(a, c), 0.5 * (a + c))
+    end
+    rad = nr
+  end
+  local rmax = 0
+  for i = 1, NB do rmax = math.max(rmax, rad[i]) end
+  for x = math.floor(ox0 - rmax) - 1, math.ceil(ox0 + rmax) + 1 do
+    for y = math.floor(oy0 - rmax) - 1, math.ceil(oy0 + rmax) + 1 do
+      local cx, cy = x + 0.5, y + 0.5
+      local a = ((math.atan2(cy - oy0, cx - ox0) + 2 * math.pi) % (2 * math.pi)) / (2 * math.pi) * NB
+      local i = math.floor(a) + 1
+      local f = a - math.floor(a)
+      local r = rad[i] * (1 - f) + rad[i % NB + 1] * f
+      if (cx - ox0) ^ 2 + (cy - oy0) ^ 2 <= r * r then mark(x, y) end
+    end
+  end
+  local ox, oy = b.origin.x, b.origin.y
+  local road = shared.variant(b.corp, "lp-road")
+  local segs = {}
+  local function seg_of(x, y)
+    local a = (math.atan2(y - oy, x - ox) + 2 * math.pi) % (2 * math.pi)
+    local i = math.floor(a / (2 * math.pi) * CURTAIN_SECTORS) + 1
+    if not segs[i] then segs[i] = {kind = "curtain", center = {0, 0}, entities = {}, n = 0, sx = 0, sy = 0} end
+    return segs[i]
+  end
+  local edge = {}
+  for y, row in pairs(paint) do
+    for x in pairs(row) do
+      local out = {}
+      for _, d in ipairs(N8) do if not on(x + d[1], y + d[2]) then table.insert(out, d) end end
+      if #out > 0 then
+        local open = false
+        if surface.get_tile(x, y).name == road then
+          for _, d in ipairs(out) do if surface.get_tile(x + d[1], y + d[2]).name == road then open = true end end
+        end
+        if not open then table.insert(edge, {x, y, out}) end
+      end
+    end
+  end
+  table.sort(edge, function(p, q) if p[2] ~= q[2] then return p[2] < q[2] end return p[1] < q[1] end)
+  -- Its ways out: the middle of its flattest edge at each extreme, four wide.
+  local gaps = {}
+  for _, d in ipairs({{0, -1}, {0, 1}, {1, 0}, {-1, 0}}) do
+    local bv = -math.huge
+    for _, e in ipairs(edge) do bv = math.max(bv, e[1] * d[1] + e[2] * d[2]) end
+    local flat = {}
+    for _, e in ipairs(edge) do if e[1] * d[1] + e[2] * d[2] == bv then table.insert(flat, e) end end
+    local e = flat[math.max(1, math.ceil(#flat / 2))]
+    if e then
+      local horizontal = d[2] ~= 0
+      for k = -2, 1 do gaps[(horizontal and (e[1] + k) or e[1]) .. "," .. (horizontal and e[2] or (e[2] + k))] = true end
+      for _, side in ipairs({-4, 3}) do
+        local tx, ty = horizontal and e[1] + side + 0.5 or e[1] + 0.5, horizontal and e[2] + 0.5 or e[2] + side + 0.5
+        push(b, {name = "lp-gun-turret", pos = {tx - d[1] * 4, ty - d[2] * 4}, module = seg_of(e[1], e[2]), loose = true})
+      end
+    end
+  end
+  local turrets, walls = {}, 0
+  for _, e in ipairs(edge) do
+    local x, y = e[1], e[2]
+    if not gaps[x .. "," .. y] then
+      local m = seg_of(x, y)
+      push(b, {name = "lp-wall", pos = {x + 0.5, y + 0.5}, module = m})
+      m.n, m.sx, m.sy = m.n + 1, m.sx + x, m.sy + y
+      walls = walls + 1
+      local far = true
+      for _, t in ipairs(turrets) do if (t[1] - x) ^ 2 + (t[2] - y) ^ 2 < CURTAIN_GAP ^ 2 then far = false break end end
+      if far then
+        local ix, iy = 0, 0
+        for _, d in ipairs(e[3]) do ix, iy = ix - d[1], iy - d[2] end
+        local n = math.max(1, math.sqrt(ix * ix + iy * iy))
+        table.insert(turrets, {x, y})
+        push(b, {name = "lp-gun-turret", pos = {x + 0.5 + 3 * ix / n, y + 0.5 + 3 * iy / n}, module = m, loose = true})
+      end
+    end
+  end
+  b.curtain = {segments = {}, walls = walls, turrets = #turrets}
+  for _, m in pairs(segs) do
+    m.center = m.n > 0 and {m.sx / m.n, m.sy / m.n} or {ox, oy}
+    table.insert(b.curtain.segments, m)
+    table.insert(b.modules, m)
+  end
+  base_trace(b, string.format("curtain: %d walls, %d turrets round the camp, %d segments", walls, #turrets,
+    #b.curtain.segments))
+end
+
 function layout.spread(b)
   local surface = game.surfaces[b.surface]
   local ox, oy = b.origin.x, b.origin.y
@@ -463,7 +736,18 @@ function layout.spread(b)
       if o ~= b and not o.fallen and o.surface == b.surface and o.claim_radius
         and (o.origin.x - cx) ^ 2 + (o.origin.y - cy) ^ 2 < (o.claim_radius + SPREAD_CLEAR / 2) ^ 2 then clear = false end
     end
-    if clear and layout.area_free(surface, x0, y0, S, S) then
+    -- A tile set: the cluster is one compound laid out whole (layout.wfc_compound), centred where the block would be.
+    if clear and WFC_TILES[b.corp] and not storage.wfc_off then
+      local side = WFC_CELLS * WFC_TILES[b.corp].size
+      local h = new_hub(b, x0, y0)
+      h.spread, h.walled = true, true
+      if layout.wfc_plan(b, h, math.floor(cx - side / 2), math.floor(cy - side / 2)) then
+        b.spread_hub = nil
+        -- Planned: its block comes once laid out (layout.wfc_step); for the planner's trace and pacing, a stand-in.
+        return {kind = "compound (planned)", center = {cx, cy}, wfc = true}
+      end
+      table.remove(b.hubs)
+    elseif clear and layout.area_free(surface, x0, y0, S, S) then
       -- The cluster before it is done: its wall goes up.
       layout.wall_cluster(b, hub)
       local h = new_hub(b, x0, y0)

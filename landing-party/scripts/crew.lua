@@ -33,6 +33,9 @@ local ARRIVE = 8
 -- player's guns held the line.
 local GIVE_UP = 3
 
+local CREW_BATCH = 40          -- jobs a crew takes at most (crew.take)
+local KEEP = 200               -- parts a compound's or the curtain's crews leave the camp (for rebuilds and sieges)
+local ECONOMY = {["lp-fabricator"] = true, ["lp-generator"] = true, ["lp-pylon"] = true, ["lp-drill"] = true}
 local function corp_crews(b) return shared.CORPS[b.corp].crews end
 local function body(b) return shared.variant(b.corp, corp_crews(b) == "drone" and "lp-harrier" or "lp-hauler") end
 
@@ -99,14 +102,25 @@ function crew.take(b, job)
   if game.tick < (m.crew_retry or 0) then return true end
   if out(b, false) >= MAX_OUT then return true end
   -- Its jobs, in order, off the queue; the bill paid at once.
+  -- In batches it can pay for (at least one job, at most CREW_BATCH): a compound's whole bill held the queue's head for two
+  -- hours while the camp exported its parts (wfc2).
   local jobs, bill = {}, 0
+  -- A compound's or the curtain's never the camp's last KEEP parts: building them down to 23 left nothing to rebuild its
+  -- fabricators with once a raid took them all, and it never made a part again (raid, occupy).
+  -- What makes parts and power exempt: a district's fabricators held back too, a camp landing with 90 parts never built
+  -- one and never made a part.
+  local keep = 0
+  local spare = b.parts - base.reserve(b)
   for _, q in ipairs(b.queue) do
     if q.module == m then
+      local c = q.name and shared.cost[q.name] or 0
+      local k = ((m.kind == "curtain" or m.wfc) and not ECONOMY[shared.kind_of(q.name or "")]) and KEEP or 0
+      if #jobs > 0 and (bill + c > spare - math.max(keep, k) or #jobs >= CREW_BATCH) then break end
       table.insert(jobs, q)
-      bill = bill + (q.name and shared.cost[q.name] or 0)
+      bill, keep = bill + c, math.max(keep, k)
     end
   end
-  if b.parts < bill + base.reserve(b) then b.waiting = "crew"; return true end
+  if b.parts < bill + base.reserve(b) + keep then b.waiting = "crew"; return true end
   -- A drone lifts off from home (walls do not stop it); a truck forms past the outermost wall.
   local p
   if corp_crews(b) == "drone" then
@@ -137,8 +151,11 @@ function crew.take(b, job)
   if not u then return true end
   storage.crew_owner = storage.crew_owner or {}
   storage.crew_owner[u.unit_number] = b.id
+  -- The jobs it took off the queue, those only (all of the module's went, and a compound's later batches were lost).
+  local taken = {}
+  for _, q in ipairs(jobs) do taken[q] = true end
   local j = 1
-  while b.queue[j] do if b.queue[j].module == m then table.remove(b.queue, j) else j = j + 1 end end
+  while b.queue[j] do if taken[b.queue[j]] then table.remove(b.queue, j) else j = j + 1 end end
   b.parts = b.parts - bill
   b.crews = b.crews or {}
   local c = {unit = u, module = m, site = m.center, jobs = jobs, k = 1, bill = bill, spent = 0, phase = "drive",
@@ -263,7 +280,9 @@ local function step(b, i)
   c.next_at = game.tick + BUILD_TICKS
   local job = c.jobs[c.k]
   if not job then
-    if c.module then c.module.built = true end
+    local left = false
+    for _, q in ipairs(b.queue) do if q.module == c.module then left = true break end end
+    if c.module and not left then c.module.built = true end
     b.crews_done = (b.crews_done or 0) + 1
     if c.rebuild then b.rebuilt = b.rebuilt + (c.placed or 0) end
     return done(b, i, string.format("%s at %.0f,%.0f in %ds", c.rebuild and "rebuilt what was lost" or ("built the "

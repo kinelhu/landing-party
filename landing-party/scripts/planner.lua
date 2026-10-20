@@ -8,7 +8,10 @@ local planner = {}
 local GROW_CAP = 30            -- blocks: Serenity's spread stops here (UPS)
 local SPREAD_PARTS = 250       -- parts in hand before it spreads (what it needs for units and its line first)
 local SPREAD_WAIT = 5 * 3600   -- after a spread that found no ground
+local SPREAD_GAP = 5 * 3600    -- after a compound laid out whole
 local function spreads(b) return shared.CORPS[b.corp].cordon and not storage.grow_to_line_off end
+-- Its size against GROW_CAP: a compound laid out whole (layout.wfc_compound) counts as several blocks.
+local function size(b) local n = 0 for _, k in ipairs(b.blocks) do n = n + (k.weight or 1) end return n end
 function planner.install(ops, K)
 local DEFENCE_RADIUS = K.DEFENCE_RADIUS
 local FAB_FEED_PER_MIN = K.FAB_FEED_PER_MIN
@@ -74,6 +77,23 @@ end
 
 -- Queue a slot's entity (a fabricator or generator in a block), or open a block for it.
 local function fill(b, role, entity)
+  -- Districts (layout.district): its free slots first, then a district planned, not a block opened. Not for its first
+  -- fabricator: by the lander, in its yard and first in the queue, as before (a district's crew spent a landing camp's
+  -- parts on its floor and generators first, it never had a fabricator and never made a part: seven scenarios).
+  local fab_owed = false
+  for _, q in ipairs(b.queue) do if q.name == "lp-fabricator" then fab_owed = true break end end
+  if layout.districts(b) and (#b.fabs > 0 or fab_owed) then
+    for _, blk in ipairs(b.blocks) do
+      if blk.kind == role then
+        for _, s in ipairs(blk.slots) do if not s.queued and s.name == entity then goto blocks end end
+      end
+    end
+    do
+      local d = layout.district(b, role)
+      return d and string.format("district planned at %.0f,%.0f for %s", d.center[1], d.center[2], role)
+    end
+  end
+  ::blocks::
   local slot, block = layout.slot(b, role, entity)
   if slot then
     slot.queued = true
@@ -142,10 +162,11 @@ local function plan(b, only)
     for _, h in ipairs(b.hubs) do if pred(h) then return h end end
   end
   -- Spread to its cap (however it got there, pickets too): its last cluster walled, its ring closed, once.
-  if spreads(b) and b.mature and #b.blocks >= GROW_CAP and not b.spread_done then
+  if spreads(b) and b.mature and size(b) >= GROW_CAP and not b.spread_done then
     b.spread_done = true
     layout.wall_cluster(b, b.spread_hub and b.hubs[b.spread_hub])
     K.matured(b)
+    layout.curtain(b)
   end
   local rules = {
     {"power", function() return demand + 200000 > 0.9 * supply end, function() return fill(b, "gen", "lp-generator") end},
@@ -173,6 +194,8 @@ local function plan(b, only)
       end},
     -- (Not lobed: its hubs' walls carry their turrets.)
     {"picket", function()
+      -- (Not with districts: their walls carry their guns.)
+      if layout.districts(b) then return false end
       b.target = hub_needing(function(h) return not h.spread and h.pickets < doc.pickets end); return b.target ~= nil end,
       function()
         local block = layout.picket(b, b.target, threat(b))
@@ -181,6 +204,11 @@ local function plan(b, only)
       b.target = hub_needing(function(h) return h.count >= 3 and not h.depot end); return b.target ~= nil end,
       function()
         b.target.depot = true
+        -- Districts: a depot comes in one (at least one in it).
+        if layout.districts(b) then
+          local d = layout.district(b, "depot")
+          return d and string.format("district planned at %.0f,%.0f for a depot", d.center[1], d.center[2])
+        end
         local block = layout.open_role(b, "depot")
         return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
     -- Serenity spreads out to its line (the user, 2026-10-20: "We need organic looking bases that look menacing, like
@@ -188,7 +216,7 @@ local function plan(b, only)
     -- road and pylons, up to GROW_CAP blocks; once grown and its launch pad open (its mines are ore-bound, this is
     -- ground-bound); towards its line once it has one.
     {"spread", function()
-      return spreads(b) and b.launch_opened and #b.blocks < GROW_CAP
+      return spreads(b) and b.launch_opened and size(b) < GROW_CAP and not b.wfc_job
         and b.parts > SPREAD_PARTS and (b.spread_wait or 0) <= game.tick end,
       function()
         local block = layout.spread(b)
@@ -198,9 +226,12 @@ local function plan(b, only)
           b.spread_wait = game.tick + SPREAD_WAIT
           layout.wall_cluster(b, b.spread_hub and b.hubs[b.spread_hub])
           K.matured(b)
+          layout.curtain(b)
           return
         end
-        if #b.blocks >= GROW_CAP then K.matured(b) end
+        if size(b) >= GROW_CAP then K.matured(b) end
+        -- A compound laid out whole: the next waits (three in ten seconds spent its parts at once, wfc1).
+        if block.wfc then b.spread_wait = game.tick + SPREAD_GAP end
         return string.format("spread: %s at %.0f,%.0f (%d blocks)", block.kind, block.center[1], block.center[2], #b.blocks)
       end},
     {"launch", function() return b.mature and not b.launch_opened end, function()

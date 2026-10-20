@@ -83,6 +83,7 @@ document describes the parts as built; the campaign document describes the game 
 | Shields, gates for the player, anti-air turret | open | |
 | Depletion and relocation | open | |
 | Serenity spreads: lobed, walled clusters out toward its line (metastases), up to 30 blocks; its line around a rival's claim | built 2026-10-20, seen on maps, not measured | `factory` maps, `gates`, `cordon ring` |
+| Serenity's compounds by wave function collapse (rooms, the curtain round the camp); districts by the keep (the default) | built 2026-10-20, seen on maps and in game; districts measured about even | `factory` maps (`turtlecore` for districts) |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -216,8 +217,43 @@ post's turrets), (5) gates in the contact wall's opening, (6) the cargo pad's an
     closed at both ends by the outer wall or another partition (a room split, not the compound: T-junctions, rooms of
     many sizes), the longest of the three longest, no partition within 9 tiles either side, not along a lane; a door
     where a lane crosses and at its middle; a partition that cuts a floor, a lane or a building off is taken back (one
-    fewer room instead of a rejected compound: 164 tries for 30 compounds became 43). Lanes pass through doors. Next: a
-    curtain wall round the whole camp with a killing ground before the compounds' own walls.
+    fewer room instead of a rejected compound: 164 tries for 30 compounds became 43). Lanes pass through doors.
+  - *In game (0.1.39).* Spread founds a compound laid out whole (`layout.wfc_plan`, `wfc_step`, `lay_out`): planned in
+    one tick, solved the next second, its rooms carved and checked the second after; laid out, its floor (walls and
+    partitions on it: left bare, sand showed under every wall, the user in game), then what makes parts and power, then
+    its walls, turrets and lamps as jobs; a pylon chained home; one block record counting three towards the cap; the
+    next spread five minutes on. Timings in game (a profiler, Factorio's own Lua): done at once a try took 94 ms; numbered
+    cells and a trail of changes undone on backtrack, then each cell's options as bit words, then the check by numbers,
+    not strings: about 16 ms the solve, 16 ms the rooms and check, each in its own tick. Its drones build a compound in
+    batches they can pay for (40 jobs at most): one crew took a whole compound's bill and held the queue's head for two
+    hours, and once taken, every job of the module had gone off the queue, the later batches lost. Seen on maps and in
+    game (the user: "Looks pretty cool. Serenity bases are going to feel like dungeons").
+  - *The curtain (`layout.curtain`).* Its spread done, one wall round the whole camp: star-shaped round the lander, in
+    each of 72 bearings out to its furthest block and a killing ground of 14, each bearing raised towards its
+    neighbours (blocks grown and joined where they touched gave a ring round each compound, curtain1); its edge walled,
+    open where a road leaves and at its four extremes, a gun turret every 18 tiles inside; built in 16 segments by
+    bearing, each a site for the drones. On 12345: 1,653 walls, 68 turrets, 106 ms once.
+  - *Districts (`layout.district`, behind `wfc_core` while tried; factory mixes ending "core").* Where its blocks would
+    open a generator, fabricator or depot block, a compound by its keep instead (at least two of what was asked, or a
+    depot), on the nearest free ground ring after ring; no pickets. On 12345: districts from minute one, nine walled
+    compounds round the keep by minute 89, the curtain going up; no square blocks but the launch pad. Each district its
+    own walled ward: keep, wards, curtain, three layers. The factory (turtle, seeds 11 to 18, three hours): the player's
+    income about even (139,082 with them, 131,899 without, one seed's chaos; without seed 12, 136,800 against 138,900),
+    Serenity's razes 2,978 against 2,654, belts cut 416 against 623, its entities and the milliseconds a tick the same
+    (about 5.0 both). The default since (`wfc_core_off` turns them off; factory mixes ending "blocks").
+  - *What the regression found with them.* A landing camp's first fabricator came in a district, built by a crew in
+    batches: its floor and generators first spent its 90 parts, it never had a fabricator and never made a part (seven
+    scenarios; the factory, which gives its camps 3,000 parts, never saw it). Its first fabricator is a block by the
+    lander again, and a district's fabricators come before its generators. Compounds and the curtain spent a camp down
+    to 23 parts, and a raid that took every fabricator left 175 to rebuild with nothing to make them: a compound's or
+    the curtain's walls, turrets and lamps never take the camp's last 200 parts (what makes parts and power exempt). The
+    raid and occupy scenarios' "not duplicated" counted every fabricator; a camp that spreads founds compounds with
+    fabricators after a raid, so it is asked per spot: at most one stands where one was lost. Scenarios of other
+    mechanics run with districts off (`wfc_core_off`): hazard and bait (a district camp loses too little to biters for
+    their nest clearances and invoices to come: a real effect, the ledger will bill less often in play), blackout,
+    plate, cordon (its plated floors counted as litter). Army runs with Serenity's line off too (`cordon_off`; since
+    0.1.38 its line steps round a rival's claim and an arc stood between the barracks and the outpost, the squad routed
+    clear of its turrets never set off) and whole, not from a fork (from one, the scenario's switches came too late).
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and

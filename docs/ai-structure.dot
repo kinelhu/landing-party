@@ -24,16 +24,16 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_2 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n699 lines", width=1.58, fillcolor="#eef2f7"];
+    "base" [label="base\n702 lines", width=1.58, fillcolor="#eef2f7"];
     "construction" [label="construction\n360 lines", width=1.20, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n235 lines", width=1.06, fillcolor="#d9f0d9"];
-    "layout" [label="layout\n758 lines", width=1.64, fillcolor="#eef2f7"];
+    "planner" [label="planner\n266 lines", width=1.10, fillcolor="#d9f0d9"];
+    "layout" [label="layout\n1042 lines", width=1.96, fillcolor="#f7dede"];
     "wfc" [label="wfc\n379 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n105 lines", width=0.92, fillcolor="#d9f0d9"];
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n397 lines", width=1.24, fillcolor="#eef2f7"];
+    "crew" [label="crew\n416 lines", width=1.26, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n144 lines", width=0.96, fillcolor="#eef2f7"];
@@ -69,7 +69,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n514 lines", width=1.37, fillcolor="#eef2f7"];
+    "control" [label="control\n516 lines", width=1.37, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";
@@ -122,6 +122,7 @@ digraph ai {
   "layout" -> "blocks";
   "layout" -> "rng";
   "layout" -> "site";
+  "layout" -> "wfc";
   "ledger" -> "base";
   "ledger" -> "ops";
   "ledger" -> "standing";

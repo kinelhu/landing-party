@@ -457,6 +457,7 @@ end
 
 ops.claim_map = base.claim_map
 ops.trace = trace
+layout.trace = trace
 
 -- A strip camp left alone twice on one patch stays (ops, strip_step): a mining module of the settlement,
 -- rebuilt and capturable like any outpost. Its ore is hauled (no line home), marked on the map with its own disc.
@@ -599,6 +600,8 @@ function base.tick(tick)
       if tick % ECONOMY_TICKS == 0 then economy(b) end
       -- A withdrawing corporation builds nothing more (its headquarters fell).
       local withdrawing = storage.corps and storage.corps[b.corp] and storage.corps[b.corp].withdrawing
+      -- A compound being laid out (layout.wfc_step): one stage a second.
+      if b.wfc_job and tick % 60 == 17 then layout.wfc_step(b) end
       if tick % BUILD_TICKS == 0 and not withdrawing then
         build(b)
         -- The fortress's own jobs go faster; everything else at the usual pace (a burst for all once

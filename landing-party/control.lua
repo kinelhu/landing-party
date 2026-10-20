@@ -337,6 +337,8 @@ remote.add_interface("landing-party", {
     if t.quiet ~= nil then storage.quiet = t.quiet end
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
     if t.grow_to_line_off ~= nil then storage.grow_to_line_off = t.grow_to_line_off or nil end
+    if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
+    if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
     if t.tap_step ~= nil then storage.tap_step = t.tap_step end
     if t.capture_off ~= nil then storage.capture_off = t.capture_off end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
