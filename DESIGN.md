@@ -2664,6 +2664,17 @@ Engaged against turtle, paired: +6.9% (spread 12.1%, standard error 4.3%), ahead
 now cuts the line's cutting by 40%. Serenity's pressure moved from belts cut out of sight to raids (razed up a quarter
 on the turtle). Its raids still come at the same pace engaged or not: blunted, not slowed. Left so: Serenity is the
 relentless one; what the player wins is the bite.
+Away (Fable's worry: Serenity at war while the player is on another planet): mix `away`, the turtle with its player
+gone from minute 60 to 180 (no rebuilds, no ammunition, no undergrounds, no turrets; its outposts still come on
+schedule: a first run without them lost income to growth that never came). Eight seeds against the turtle's runs (seed
+5 crashed, below, and ran again fixed), income by hour summed: turtle 183k, 443k, 477k, 406k; away 183k, 253k, 168k,
+339k: 57% and 35% of the turtle's while away, 83% the hour after it came back. On two seeds (1 and 8) the factory made
+nothing in its second hour away; on return 19 to 136 ghosts were waiting, and no turret had run dry (the raids break belts and
+drills, not the guns). Two hours away cost about one hour of income and the factory came back within the hour: it
+survives. No nests on these maps, so there is no vanilla baseline to set it against.
+A third crash, found there: a Grubstake raid dismantled one of its own drills (a camp the player captured) and left
+its ghost, which a corporation's building cannot have (no item places it); a ghost is now left only where an item
+places the building.
 
 ### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
 What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the

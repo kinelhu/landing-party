@@ -39,7 +39,7 @@ digraph ai {
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n711 lines", width=1.59, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1576 lines", width=2.55, fillcolor="#f7dede"];
+    "ops" [label="ops\n1581 lines", width=2.56, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n230 lines", width=1.06, fillcolor="#d9f0d9"];
     "siege" [label="siege\n777 lines", width=1.66, fillcolor="#d9f0d9"];

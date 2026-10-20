@@ -731,8 +731,13 @@ local function dismantle(b, op, t, pos, surface, trace)
         op.loot.dismantled = op.loot.dismantled + 1
         op.last_kill = game.tick
         b.dismantled = (b.dismantled or 0) + 1
-        surface.create_entity{name = "entity-ghost", inner_name = name, position = at, direction = dir, force = force,
-          quality = q}
+        -- Its ghost left for the player's robots, where one can stand: a captured camp's drill has no item to place it,
+        -- and its ghost crashed (factory away, seed 5).
+        local proto = prototypes.entity[name]
+        if proto and proto.items_to_place_this and #proto.items_to_place_this > 0 then
+          surface.create_entity{name = "entity-ghost", inner_name = name, position = at, direction = dir, force = force,
+            quality = q}
+        end
         hands, room = hands - 1, room - 1
         if not op.loot.alerted then
           op.loot.alerted = true

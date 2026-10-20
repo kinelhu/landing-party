@@ -3238,9 +3238,13 @@ end
 -- the start. The player's robots rebuild ghosts once no corporation unit stands near; a building lost outside the ring
 -- gets two gun turrets near it (up to six an outpost). Mixes: control (the corporations harmless), turtle (as above),
 -- engage (also: a skimming truck killed 30 s after it parks, a raid's leader killed when it attacks, Serenity's invoice
--- paid when it owes 300 or less). Each hour: income, losses, what each corporation did. Measures, few checks.
+-- paid when it owes 300 or less), away (the turtle, its player off-planet from minute 60 to 180: no rebuilds, no
+-- ammunition, no undergrounds, no turrets; Fable's worry: Serenity at war while the player is away). Its outposts still
+-- come on the turtle's schedule: without them, away lost income to growth that never came, not to the corporations.
+-- Each hour: income, losses, what each corporation did. Measures, few checks.
 scenarios.factory = function()
   local control, engage = params.mix == "control", params.mix == "engage"
+  local function gone() return params.mix == "away" and game.tick >= 60 * 3600 and game.tick < 180 * 3600 end
   local A = {owned = {}, lost = 0, rebuilt = 0, turrets = 0, income = 0, paid = 0, trucks = 0, leaders = 0,
     outposts = {}, sinks = {}, guards = {}}
   S.arc = A
@@ -3364,9 +3368,6 @@ scenarios.factory = function()
   -- Logistics: ammunition; the robots' rebuilds; losses answered with turrets.
   for t = 3 * 3600, END - 60, 3600 do
     schedule(t, function()
-      for _, g in ipairs(A.guards) do
-        if g.valid and g.get_item_count("piercing-rounds-magazine") < 50 then g.insert{name = "piercing-rounds-magazine", count = 50} end
-      end
       local live = {}
       for _, e in ipairs(A.owned) do
         if e.valid then table.insert(live, e)
@@ -3375,6 +3376,10 @@ scenarios.factory = function()
         end
       end
       A.owned = live
+      if gone() then return end
+      for _, g in ipairs(A.guards) do
+        if g.valid and g.get_item_count("piercing-rounds-magazine") < 50 then g.insert{name = "piercing-rounds-magazine", count = 50} end
+      end
       -- A belt cut on Serenity's line is crossed underground, as a player would (rebuilt as it was, it was cut again:
       -- 635 cuts in two hours).
       local ss = lp("stats", storage.id)
@@ -3644,6 +3649,12 @@ scenarios.factory = function()
     local co = lp("cordon_stats", storage.id) or {}
     local function n(v) return type(v) == "number" and v or (type(v) == "table" and table_size(v) or 0) end
     info(string.format("factory %s: undergrounds laid under the line %d", label, A.undergrounds or 0))
+    if params.mix == "away" then
+      local dry = 0
+      for _, t in ipairs(A.guards) do if t.valid and t.get_item_count("piercing-rounds-magazine") == 0 then dry = dry + 1 end end
+      info(string.format("factory %s: away: ghosts waiting %d, guard turrets dry %d of %d", label,
+        surface().count_entities_filtered{name = "entity-ghost", force = "player"}, dry, #A.guards))
+    end
     info(string.format("factory %s mechanics: G flares %d, jumps %d, taps %d, strips %d, claims %s, answers %d, reliefs %d, "
       .. "overflights %d | S posts %s, steps %d, severed %s, cuts found %d, recons %d, sieges %d, assaults %d, clearances %d, "
       .. "hazards %d, answers %d, reliefs %d", label, n(gb.flares), n(gb.jumps), n(gb.taps), n(gb.ops.strips), serpent.line(pr.claims
