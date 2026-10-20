@@ -21,7 +21,7 @@
 <title>Corporation</title>
 <path fill="#eef2f7" stroke="black" d="M288.24,-435C288.24,-435 185.99,-435 185.99,-435 179.99,-435 173.99,-429 173.99,-423 173.99,-423 173.99,-411 173.99,-411 173.99,-405 179.99,-399 185.99,-399 185.99,-399 288.24,-399 288.24,-399 294.24,-399 300.24,-405 300.24,-411 300.24,-411 300.24,-423 300.24,-423 300.24,-429 294.24,-435 288.24,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="237.11" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="237.11" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2579 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="237.11" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2641 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge5" class="edge">
@@ -35,8 +35,8 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M333.24,-339.25C333.24,-339.25 230.99,-339.25 230.99,-339.25 224.99,-339.25 218.99,-333.25 218.99,-327.25 218.99,-327.25 218.99,-307.25 218.99,-307.25 218.99,-301.25 224.99,-295.25 230.99,-295.25 230.99,-295.25 333.24,-295.25 333.24,-295.25 339.24,-295.25 345.24,-301.25 345.24,-307.25 345.24,-307.25 345.24,-327.25 345.24,-327.25 345.24,-333.25 339.24,-339.25 333.24,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="282.11" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="282.11" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">14 modules, 4718 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="282.11" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1042</text>
+<text xml:space="preserve" text-anchor="middle" x="282.11" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">14 modules, 4771 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="282.11" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1049</text>
 </g>
 <!-- Corporation&#45;&gt;Settlement -->
 <g id="edge6" class="edge">
@@ -70,9 +70,9 @@
 <!-- Settlement&#45;&gt;Corporation -->
 <g id="edge12" class="edge">
 <title>Settlement&#45;&gt;Corporation</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.8" d="M272.25,-339.67C265.84,-353.6 257.4,-371.93 250.4,-387.14"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.8" points="247.3,-385.5 246.3,-396.05 253.66,-388.43 247.3,-385.5"/>
-<text xml:space="preserve" text-anchor="middle" x="262.24" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">3</text>
+<path fill="none" stroke="#8899aa" stroke-width="2" d="M272.25,-339.67C265.84,-353.6 257.4,-371.93 250.4,-387.14"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2" points="247.43,-385.23 246.42,-395.77 253.79,-388.15 247.43,-385.23"/>
+<text xml:space="preserve" text-anchor="middle" x="262.24" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">4</text>
 </g>
 <!-- Settlement&#45;&gt;Corporation -->
 <g id="edge19" class="edge">
@@ -191,7 +191,7 @@
 <title>The player&#39;s army</title>
 <path fill="#eef2f7" stroke="black" d="M579.24,-530.75C579.24,-530.75 488.99,-530.75 488.99,-530.75 482.99,-530.75 476.99,-524.75 476.99,-518.75 476.99,-518.75 476.99,-506.75 476.99,-506.75 476.99,-500.75 482.99,-494.75 488.99,-494.75 488.99,-494.75 579.24,-494.75 579.24,-494.75 585.24,-494.75 591.24,-500.75 591.24,-506.75 591.24,-506.75 591.24,-518.75 591.24,-518.75 591.24,-524.75 585.24,-530.75 579.24,-530.75"/>
 <text xml:space="preserve" text-anchor="middle" x="534.11" y="-514.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="534.11" y="-502.3" font-family="Helvetica,sans-Serif" font-size="11.00">3 modules, 693 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="534.11" y="-502.3" font-family="Helvetica,sans-Serif" font-size="11.00">3 modules, 694 lines</text>
 </g>
 </g>
 </svg>

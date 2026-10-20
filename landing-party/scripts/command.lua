@@ -22,7 +22,8 @@ local ATTACK_REACH = 50
 local TURRET_COVER = 25            -- a laser's 24 and a little
 local REISSUE_TICKS = 600          -- an idle trooper is given its orders again after this long
 -- Every corporation's prototypes of these kinds.
-local MILITARY = shared.variants({"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad"})
+local MILITARY = shared.variants({"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad",
+  "lp-optics-lab", "lp-line-lab", "lp-siege-lab"})
 local TURRETS = shared.variants({"lp-turret", "lp-mortar"})
 local LASERS = shared.variants("lp-turret")
 local BINS = shared.variants("lp-bin")

@@ -3,12 +3,12 @@ digraph layers {
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
   edge [color="#8899aa", fontname="Helvetica", fontsize=9];
   "Seams (leaves)" [label="Seams (leaves)\n6 modules, 473 lines", fillcolor="#d9f0d9"];
-  "Corporation" [label="Corporation\n11 modules, 2579 lines", fillcolor="#eef2f7"];
-  "Settlement" [label="Settlement\n14 modules, 4718 lines\nlayout 1042", fillcolor="#f7dede"];
+  "Corporation" [label="Corporation\n11 modules, 2641 lines", fillcolor="#eef2f7"];
+  "Settlement" [label="Settlement\n14 modules, 4771 lines\nlayout 1049", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n11 modules, 4444 lines\nops 1590", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1424 lines", fillcolor="#eef2f7"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
-  "The player's army" [label="The player's army\n3 modules, 693 lines", fillcolor="#eef2f7"];
+  "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="2", penwidth=1.5];
   "Army and operations" -> "Seams (leaves)" [label="7", penwidth=2.8];
   "Army and operations" -> "Settlement" [label="1", penwidth=1.2];
@@ -20,7 +20,7 @@ digraph layers {
   "Heists (Grubstake)" -> "Seams (leaves)" [label="7", penwidth=2.8];
   "Heists (Grubstake)" -> "Settlement" [label="4", penwidth=2.0];
   "Settlement" -> "Army and operations" [label="5", penwidth=2.2];
-  "Settlement" -> "Corporation" [label="3", penwidth=1.8];
+  "Settlement" -> "Corporation" [label="4", penwidth=2.0];
   "Settlement" -> "Seams (leaves)" [label="6", penwidth=2.5];
   "The map" -> "Corporation" [label="1", penwidth=1.2];
   "The map" -> "Seams (leaves)" [label="2", penwidth=1.5];

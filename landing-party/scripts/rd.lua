@@ -97,10 +97,39 @@ local function categories(corp)
 end
 rd.categories = categories
 
--- Whether a corporation has bought a node (abilities: ops and control read them).
+-- Labs (shared.CORPS[corp].labs; the user, 2026-10-21: its tech in the world): a branch's nodes are bought, and what
+-- they field (units, plates, abilities) fielded, only while a lab of that branch stands in one of its camps. Off for a
+-- corporation without labs, for camps laid out by blocks (storage.wfc_core_off: labs come in districts) and for
+-- scenarios of other mechanics (storage.labs_off).
+function rd.gated(corp)
+  return shared.CORPS[corp].labs ~= nil and not storage.labs_off and not storage.wfc_core_off
+end
+function rd.lab_kind(corp, branch)
+  return (shared.CORPS[corp].labs or {})[branch]
+end
+function rd.lab(corp, branch)
+  if not rd.gated(corp) then return true end
+  local kind = rd.lab_kind(corp, branch)
+  if not kind then return true end
+  for _, b in pairs(storage.bases or {}) do
+    if b.corp == corp and not b.fallen then
+      for _, e in ipairs(b.labs or {}) do
+        if e.valid and e.force.name == b.force and shared.kind_of(e.name) == kind then return true end
+      end
+    end
+  end
+  return false
+end
+local function node_of(corp, id)
+  for _, node in ipairs(shared.CORPS[corp].tree or {}) do if node.id == id then return node end end
+end
+
+-- Whether a corporation has bought a node, and its lab stands (abilities: ops and control read them).
 function rd.has(corp, id)
   local d = storage.corps and storage.corps[corp]
-  return d and d.tech and d.tech.nodes and d.tech.nodes[id] ~= nil or false
+  if not (d and d.tech and d.tech.nodes and d.tech.nodes[id] ~= nil) then return false end
+  local node = node_of(corp, id)
+  return not node or rd.lab(corp, node.branch)
 end
 
 -- Salvage rights (Grubstake): a player building its raid destroyed pays into its fund, by what it was worth.
@@ -111,16 +140,31 @@ function rd.salvage(corp, value)
   t.salvaged = (t.salvaged or 0) + 10 + 5 * (value or 0)
 end
 
--- Units its tree has added to its mix, with their weights (army: mix).
+-- Units its tree has added to its mix, with their weights (army: mix): those whose lab stands.
 function rd.mix(corp)
   local d = storage.corps and storage.corps[corp]
-  return d and d.tech and d.tech.units or {}
+  local units = d and d.tech and d.tech.units or {}
+  if not rd.gated(corp) then return units end
+  local out = {}
+  for kind, w in pairs(units) do
+    local ok = true
+    for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+      if node.unit and node.unit.kind == kind and not rd.lab(corp, node.branch) then ok = false end
+    end
+    if ok then out[kind] = w end
+  end
+  return out
 end
 
 -- The prototype a depot builds for a kind: plated once its corporation bought the plate.
 function rd.unit(corp, kind)
   local d = storage.corps and storage.corps[corp]
   local plate = d and d.tech and d.tech.plate and d.tech.plate[kind]
+  if plate and rd.gated(corp) then
+    for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+      if node.plates and node.plates[kind] == plate and not rd.lab(corp, node.branch) then plate = nil; break end
+    end
+  end
   return shared.plated(corp, kind, plate)
 end
 
@@ -169,8 +213,10 @@ local function owned(t, node)
   for kind, p in pairs(node.plates or {}) do if t.plate[kind] ~= p then return false end end
   return true
 end
-local function allowed(t, node, era)
+local function allowed(t, node, era, corp)
   if owned(t, node) then return false end
+  -- (corp given: its lab must stand; a history brought from orbit needs none.)
+  if corp and not rd.lab(corp, node.branch) then return false end
   if node.requires and not t.nodes[node.requires] then return false end
   if node.track then return level_of(t, node) + 1 <= era + 1 end
   return era >= (node.era or 0)
@@ -218,17 +264,33 @@ local function apply(corp, t, node)
   t.bought = t.bought + 1
 end
 
--- The node it would buy now, and whether a trigger called for it.
+-- The node it would buy now, and whether a trigger called for it. And the lab it wants: the branch of the node the
+-- ledger calls for hardest when that branch has no lab, else (no lab at all) its first track's.
 local function pick(corp, t, era)
   local best, bs, fallback
+  local want, ws
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do
-    if allowed(t, node, era) then
+    if allowed(t, node, era, corp) then
       local s = score(t, node)
       if s > 0 and (not bs or s > bs) then best, bs = node, s end
       if node.track and not fallback then fallback = node end
+    elseif allowed(t, node, era) then
+      local s = score(t, node)
+      if s > 0 and (not ws or s > ws) then want, ws = node, s end
+      if node.track and not want then want, ws = node, 0 end
     end
   end
+  t.wants_lab = rd.gated(corp) and want and (not bs or ws > bs) and rd.lab_kind(corp, want.branch) or nil
   return best or fallback, best ~= nil
+end
+
+-- The lab a corporation wants built (the planner's research rule), nil when none.
+function rd.wanted_lab(corp)
+  local d = storage.corps and storage.corps[corp]
+  if not d or d.withdrawing or not rd.gated(corp) then return nil end
+  local t = rd.state(corp)
+  pick(corp, t, player_era())
+  return t.wants_lab
 end
 
 function rd.choose(corp)
@@ -323,7 +385,7 @@ function rd.summary(corp)
   local by = {}
   prune(t.losses)
   for _, l in ipairs(t.losses) do by[l.damage .. ":" .. tostring(l.killer)] = (by[l.damage .. ":" .. tostring(l.killer)] or 0) + 1 end
-  return {fund = t.fund, salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
+  return {fund = t.fund, wants_lab = t.wants_lab, gated = rd.gated(corp), fielded = rd.mix(corp), salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
     turned_back = #t.turned_back, walls_met = #t.walls_met, bought = t.bought, strength = rd.strength(corp)}
 end
 

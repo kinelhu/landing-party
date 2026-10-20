@@ -88,7 +88,9 @@ by all parties."
   player's pollution draws, paid off for a truce or disputed by killing the nest it names. Its camp and posts stand on
   space-platform plating; its line is lit and painted post to post; grown, its camp spreads in walled compounds with rooms (laid out by wave function collapse) toward its line, and closes a curtain wall round itself. Its railgunners clear nests and never raid. A howitzer killed leaves it
   without one for 30 minutes. Its raids regroup when their leader falls. Being at war, it answers
-  trespass only (a siege); its losses in the field are fair war.
+  trespass only (a siege); its losses in the field are fair war. Its research stands in its camp (2026-10-21): a lab per branch of its tree (Optics, Line,
+  Siege), each at the heart of its own district; a branch climbs, and fields its units, armour and abilities, only
+  while its lab stands.
 
 ### Lumen Transparency (the eye)
 - **Palette**: black, violet, white. Lamps violet; many of them (it is lit at night, visible from far).

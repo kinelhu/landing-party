@@ -85,6 +85,11 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    it: kill the nest a bill names (Serenity's icon over it, in game and on the map) and that bill is struck.
 20. **A border stake during a truce**: the border holds after the truce ends, until you build on its side.
 21. **Bend the line**: a decoy building nearer its camp than the rest swings its next arcs toward it.
+21b. **Its labs**: once its launch pad is open, a district goes up with a lab at its heart, an icon over it for its
+   branch (a laser turret: the Optics lab; heavy armour: the Line armoury; an artillery shell: the Siege works). Its
+   research climbs only in branches whose lab stands, and what a branch gave (Lances, armoured troopers, the jammer)
+   is fielded only while it stands. Kill one: does its army change? Is the lab worth the assault (artillery takes one
+   in a shell; a squad of 35 storming the district died at its flamers)?
 
 ## Your side
 22. **Loot and components**: what you destroy of theirs drops plates, circuits, magazines, and rare components that

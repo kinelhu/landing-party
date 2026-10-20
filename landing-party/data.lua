@@ -48,7 +48,8 @@ end
 -- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Nothing the faction owns can be mined,
 -- only its ruins once a settlement falls, or what the player captured: to what it is made of (made_of).
 local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
-  ["lp-uplink"] = true, ["lp-launchpad"] = true, ["lp-scrap-cannon"] = true}
+  ["lp-uplink"] = true, ["lp-launchpad"] = true, ["lp-scrap-cannon"] = true,
+  ["lp-optics-lab"] = true, ["lp-line-lab"] = true, ["lp-siege-lab"] = true}
 local function copy(type, name, new)
   local name_new = new
   local p = table.deepcopy(data.raw[type][name])
@@ -256,6 +257,18 @@ wall.max_health = 450
 
 local radar = copy("radar", "radar", "lp-radar")
 radar.energy_usage = watts(shared.power["lp-radar"])
+
+-- Research labs (rd.lua): a vanilla lab, lit as if always researching, one kind a branch of the corporation's tree.
+-- Military targets: what a player's turrets and squads go for.
+local labs = {}
+for _, name in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab"}) do
+  local l = copy("lab", "lab", name)
+  l.energy_source = {type = "void"}
+  l.max_health = 600
+  l.off_animation = table.deepcopy(l.on_animation)
+  table.insert(labs, l)
+end
+data:extend(labs)
 
 -- The pacifier (scripts/pact.lua): a radar dish broadcasting to the biters; while one stands, its corporation and they
 -- hold fire on each other. Self-powered, reveals nothing.

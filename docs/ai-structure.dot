@@ -19,17 +19,17 @@ digraph ai {
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
-    "rd" [label="rd\n330 lines", width=1.17, fillcolor="#d9f0d9"];
+    "rd" [label="rd\n392 lines", width=1.24, fillcolor="#d9f0d9"];
     "phases" [label="phases\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_2 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n702 lines", width=1.58, fillcolor="#eef2f7"];
+    "base" [label="base\n711 lines", width=1.59, fillcolor="#eef2f7"];
     "construction" [label="construction\n360 lines", width=1.20, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n266 lines", width=1.10, fillcolor="#d9f0d9"];
-    "layout" [label="layout\n1042 lines", width=1.96, fillcolor="#f7dede"];
+    "planner" [label="planner\n295 lines", width=1.13, fillcolor="#eef2f7"];
+    "layout" [label="layout\n1049 lines", width=1.97, fillcolor="#f7dede"];
     "wfc" [label="wfc\n379 lines", width=1.22, fillcolor="#d9f0d9"];
-    "wfc_serenity" [label="wfc_serenity\n105 lines", width=0.92, fillcolor="#d9f0d9"];
+    "wfc_serenity" [label="wfc_serenity\n113 lines", width=0.93, fillcolor="#d9f0d9"];
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
@@ -64,12 +64,12 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n575 lines", width=1.44, fillcolor="#d9f0d9"];
+    "command" [label="command\n576 lines", width=1.44, fillcolor="#d9f0d9"];
     "scanner" [label="scanner\n90 lines", width=0.90, fillcolor="#d9f0d9"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n516 lines", width=1.37, fillcolor="#eef2f7"];
+    "control" [label="control\n518 lines", width=1.38, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";
@@ -146,6 +146,7 @@ digraph ai {
   "ops" -> "tune";
   "pact" -> "base";
   "phases" -> "faction";
+  "planner" -> "rd";
   "prospect" -> "base";
   "prospect" -> "chart";
   "prospect" -> "ops";

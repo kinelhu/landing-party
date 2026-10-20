@@ -97,7 +97,8 @@ end
 -- Damage to the faction's buildings calls a response (filtered to them; army.alarm throttles).
 local BUILDINGS = {}
 for _, n in ipairs(shared.variants({"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator",
-  "lp-turret", "lp-wall", "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-scrap-cannon"})) do
+  "lp-turret", "lp-wall", "lp-radar", "lp-depot", "lp-launchpad", "lp-lamp", "lp-scrap-cannon", "lp-optics-lab", "lp-line-lab",
+  "lp-siege-lab"})) do
   table.insert(BUILDINGS, {filter = "name", name = n})
 end
 script.on_event(defines.events.on_entity_damaged, function(e)
@@ -339,6 +340,7 @@ remote.add_interface("landing-party", {
     if t.grow_to_line_off ~= nil then storage.grow_to_line_off = t.grow_to_line_off or nil end
     if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
+    if t.labs_off ~= nil then storage.labs_off = t.labs_off or nil end
     if t.tap_step ~= nil then storage.tap_step = t.tap_step end
     if t.capture_off ~= nil then storage.capture_off = t.capture_off end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end

@@ -122,7 +122,11 @@ shared.CORPS = {
     -- Crews (scripts/crew.lua): a constructor drone, flying over its walls, building with its beam.
     crews = "drone",
     -- Its moving line is a cordon of posts (scripts/cordon.lua).
-    cordon = true},
+    cordon = true,
+    -- Its research in the world (the user, 2026-10-21: "base gen moved ahead from the rest of it ... tying it to its
+    -- mechanics? And its tech"): a lab per branch of its tree, each in a district of its own (rd.lua). A branch's nodes
+    -- are bought, and its units, plates and abilities fielded, only while its lab stands; the icon over a lab says which.
+    labs = {optics = "lp-optics-lab", line = "lp-line-lab", siege = "lp-siege-lab"}},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
 shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}
@@ -133,9 +137,13 @@ shared.DEFAULT_CORP = "serenity"
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
   "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-post-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
-  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer", "lp-scrap-cannon"}
+  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer", "lp-scrap-cannon",
+  "lp-optics-lab", "lp-line-lab", "lp-siege-lab"}
 -- A howitzer destroyed in the field leaves its camp without one this long (sieges go with mortars only).
 shared.HOWITZER_DOWN = 30 * 3600
+-- The sign over each research lab: what its branch fields.
+shared.LAB_ICON = {["lp-optics-lab"] = "item/laser-turret", ["lp-line-lab"] = "item/heavy-armor",
+  ["lp-siege-lab"] = "item/artillery-shell"}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)
@@ -265,6 +273,9 @@ shared.cost = {
   ["lp-gate"] = 3,
   ["lp-flamer"] = 8,
   ["lp-gun-turret"] = 15,        -- a cordon post's (cordon.lua), fed by the camp
+  ["lp-optics-lab"] = 60,        -- research labs (rd.lua: a branch climbs only while its lab stands)
+  ["lp-line-lab"] = 60,
+  ["lp-siege-lab"] = 60,
 }
 
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.

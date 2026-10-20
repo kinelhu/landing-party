@@ -431,12 +431,12 @@ local WFC_NAMES = {T = "lp-turret", G = "lp-generator", D = "lp-depot", F = "lp-
   P = "lp-pylon", L = "lp-lamp"}
 -- Planned in one tick, laid out over the next (layout.wfc_step, once a second: the solve, then the rooms and the check,
 -- each in its own tick; done at once a compound took 52 to 73 ms of one tick in game). True when planned.
-function layout.wfc_plan(b, hub, x0, y0, need)
+function layout.wfc_plan(b, hub, x0, y0, need, lab)
   local tiles = WFC_TILES[b.corp]
   if not tiles or b.wfc_job then return false end
   local side = WFC_CELLS * tiles.size
   if not layout.area_free(game.surfaces[b.surface], x0, y0, side, side) then return false end
-  b.wfc_job = {hub = hub.id, x0 = x0, y0 = y0, tries = 0, stage = "solve", need = need}
+  b.wfc_job = {hub = hub.id, x0 = x0, y0 = y0, tries = 0, stage = "solve", need = need, lab = lab}
   return true
 end
 
@@ -446,7 +446,8 @@ end
 -- keep instead, at least two of what was asked in it; the nearest free ground round the lander, ring after ring, clear
 -- of the player's buildings and rivals' claims. Its own wall and rooms: districts walled apart, the curtain round all.
 function layout.districts(b) return not storage.wfc_core_off and WFC_TILES[b.corp] ~= nil end
-function layout.district(b, role)
+-- role "lab": a research district, its lab (the kind `lab`) at its heart (its tile pinned at the middle cell).
+function layout.district(b, role, lab)
   if b.wfc_job then return nil end
   local surface = game.surfaces[b.surface]
   local side = WFC_CELLS * WFC_TILES[b.corp].size
@@ -468,8 +469,8 @@ function layout.district(b, role)
       if clear then
         local h = new_hub(b, math.floor(cx), math.floor(cy))
         h.district, h.walled = true, true
-        if layout.wfc_plan(b, h, math.floor(cx - side / 2), math.floor(cy - side / 2),
-          role == "depot" and {D = 1} or {[role == "gen" and "G" or "F"] = 2}) then
+        local need = role == "lab" and {B = 1} or role == "depot" and {D = 1} or {[role == "gen" and "G" or "F"] = 2}
+        if layout.wfc_plan(b, h, math.floor(cx - side / 2), math.floor(cy - side / 2), need, lab) then
           return {kind = "district (planned)", center = {cx, cy}, wfc = true}
         end
         table.remove(b.hubs)
@@ -503,7 +504,13 @@ function layout.wfc_step(b)
       for _, d in ipairs(discs) do if (x + 0.5 - d[1]) ^ 2 + (y + 0.5 - d[2]) ^ 2 <= d[3] ^ 2 then return true end end
       return false
     end
-    local sol = wfc.solve(tiles, n, n, mask, rand, nil, 3000)
+    local fixed
+    if job.lab then
+      for i, v in ipairs(tiles.variants) do
+        if v.name == "lab" then fixed = {[math.floor(c) .. "," .. math.floor(c)] = i}; break end
+      end
+    end
+    local sol = wfc.solve(tiles, n, n, mask, rand, fixed, 3000)
     if sol then job.g, job.stage = wfc.render(tiles, sol, n, n), "rooms"
     elseif job.tries >= WFC_TRIES then b.wfc_job = nil end
     return
@@ -518,9 +525,9 @@ function layout.wfc_step(b)
   end
   if not short and not wfc.check(job.g, side, side) then
     b.wfc_job = nil
-    lay_out(b, b.hubs[job.hub], job.x0, job.y0, job.g, side)
-    if base_trace then base_trace(b, string.format("compound laid out at %.0f,%.0f (%d tries)", job.x0 + side / 2,
-      job.y0 + side / 2, job.tries)) end
+    lay_out(b, b.hubs[job.hub], job.x0, job.y0, job.g, side, job.lab)
+    if base_trace then base_trace(b, string.format("compound laid out at %.0f,%.0f (%d tries)%s", job.x0 + side / 2,
+      job.y0 + side / 2, job.tries, job.lab and (", " .. job.lab) or "")) end
   elseif job.tries >= WFC_TRIES then
     b.wfc_job = nil
   else
@@ -528,8 +535,8 @@ function layout.wfc_step(b)
   end
 end
 
-lay_out = function(b, hub, x0, y0, g, side)
-  local block = {kind = "compound", hub = hub and hub.id, x0 = x0, y0 = y0, w = side, h = side,
+lay_out = function(b, hub, x0, y0, g, side, lab)
+  local block = {kind = "compound", lab = lab, hub = hub and hub.id, x0 = x0, y0 = y0, w = side, h = side,
     center = {x0 + side / 2, y0 + side / 2}, entities = {}, slots = {}, opened = game.tick, walls = false, walled = true,
     embellished = true, liveried = true, wfc = true, weight = WFC_WEIGHT}
   table.insert(b.blocks, block)
@@ -554,14 +561,14 @@ lay_out = function(b, hub, x0, y0, g, side)
     end
   end
   -- What makes parts and power first (a district's crews build in batches: its walls first left it producing nothing).
-  local ORDER = {P = 1, F = 2, G = 3, D = 4, R = 5, T = 6, L = 7}
+  local ORDER = {P = 1, F = 2, G = 3, D = 4, B = 5, R = 6, T = 7, L = 8}
   local bds = wfc.buildings(g, side, side)
   table.sort(bds, function(p, q) return ORDER[p[1]] < ORDER[q[1]] end)
   local econ = {}
   for _, bd in ipairs(bds) do
-    local name = WFC_NAMES[bd[1]]
+    local name = bd[1] == "B" and lab or WFC_NAMES[bd[1]]
     local pos = {x0 + bd[2] + bd[4] / 2, y0 + bd[3] + bd[5] / 2}
-    table.insert(econ, {name = name, pos = pos, module = block})
+    if name then table.insert(econ, {name = name, pos = pos, module = block}) end
     if bd[1] == "P" and not pylon then pylon = pos end
   end
   -- Ahead of its walls in the queue.

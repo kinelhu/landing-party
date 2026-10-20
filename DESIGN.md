@@ -84,6 +84,7 @@ document describes the parts as built; the campaign document describes the game 
 | Depletion and relocation | open | |
 | Serenity spreads: lobed, walled clusters out toward its line (metastases), up to 30 blocks; its line around a rival's claim | built 2026-10-20, seen on maps, not measured | `factory` maps, `gates`, `cordon ring` |
 | Serenity's compounds by wave function collapse (rooms, the curtain round the camp); districts by the keep (the default) | built 2026-10-20, seen on maps and in game; districts measured about even | `factory` maps (`turtlecore` for districts) |
+| Serenity's research in the world: a lab per branch in its own district; a branch climbs and fields only while its lab stands | built 2026-10-21; a squad cannot take one yet, artillery can | `labs`, `breach arty`, `factory` maps |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -257,6 +258,48 @@ post's turrets), (5) gates in the contact wall's opening, (6) the cargo pad's an
     found no path even three tiles from the barracks. The ground is generated first now, the search goes all the way
     round, and no dry site is a failed check. Nothing routes the player's squads clear of turrets: an order is a plain
     go-to for the engine's pathfinder (an earlier note here said otherwise, unchecked).
+
+### Its research in the world: labs (the user, 2026-10-21: "Feels like base gen moved ahead from the rest of it, and we should look at tying it to its mechanics? And its tech..")
+The camp had come to look like a fortress, and nothing in it did anything a player could read or hit: research was a
+fund, its tree's nodes announcements and unit stats. The rule from here: every capability Serenity has is a building in
+a room, so what you see is what it can field, and what you destroy is what it loses. Slice 1, built 2026-10-21:
+- **A lab per branch of its tree** (`shared.CORPS.serenity.labs`): the Optics lab (`lp-optics-lab`: its lasers, the
+  Lance, Shock troops), the Line armoury (`lp-line-lab`: Warden armour, the Aegis) and the Siege works (`lp-siege-lab`:
+  hardened siege, the jammer, counter-battery). A vanilla lab lit as if always researching, 600 health, a military
+  target (the player's turrets and squads go for it), its branch's sign over it (an item icon: laser turret, heavy
+  armour, artillery shell). 60 parts.
+- **The gate** (`rd.lab`, `rd.gated`): a branch's nodes are bought only while a lab of that branch stands in one of the
+  corporation's camps; what the branch gave is fielded only while it stands: its units leave the depots' mix
+  (`rd.mix`), its plates are no longer built (`rd.unit`), its abilities are off (`rd.has`). Levels already bought are
+  kept (knowledge, not hardware): a dead Optics lab stops the climb, it does not take the lasers' damage back. The fund
+  keeps filling meanwhile. A history brought at landing (`rd.history`) needs no lab.
+- **What it wants** (`rd.wanted_lab`): the branch of the node its ledger calls for hardest, when that branch has no
+  lab; with no lab at all, its first track's (Optics). **The research rule** (planner, before spread): its launch pad
+  open (exports fund research), 150 parts in hand, that lab nowhere in its camps (standing, queued, carried, awaiting
+  rebuild or planned): a district planned for it (`layout.district(b, "lab", kind)`), the lab's tile pinned at the
+  middle cell (`serenity.tiles` "lab", weight 0.001: never chosen otherwise), so the lab sits at the heart of its own
+  walled district. A lost lab is rebuilt like any building.
+- **Off** for a corporation without labs (Grubstake, for now), for camps laid out by blocks (`wfc_core_off`) and in
+  scenarios of other mechanics (`labs_off`, the harness's default except `labs`, `breach`, `factory`, `visit`: they
+  test the tree's choices, not where it stands).
+- **Seen** (`factory` seed 12345, 100 minutes, `turtle`): the Optics lab district planned at minute 17, optics level 1
+  at 30, a Line armoury district at minute 42 when its losses called for Warden armour, optics 2 at 70; both labs at the
+  heart of their districts inside the curtain. Scenario `labs`: funded and choosing every minute, nothing bought while
+  no lab stood; the Optics lab at minute 12.8; lasers to level 2, the lab killed: level 2 without it and no Lance in the
+  mix, the lab back at minute 16.2, the climb on to 5.
+- **Taking a lab (scenario `breach`, seed 12345; the lab district by the keep, 6 guns and 245 walls within 45).** A
+  careful player's squad (gathered out of reach, the rally point steered onto the district's turret nearest its side,
+  one at a time, then the lab) against a Serenity at era 2 with nothing researched: 20 troopers, 10 breachers and 5
+  tanks killed four turrets in 45 seconds and died to the last unit; 10 breachers and 10 tanks the same (9 tanks burnt
+  by the flamers at its gates, range 30 against a battle tank's 18). With the fund given to reach a lab fast (9,000,
+  era 4: lasers +100%), the same. A player's artillery took it: a flare on the lab killed it in 12 seconds, an artillery
+  turret left to choose its own targets in 36 (`breach arty`, in the regression). So the lab is artillery's target, as
+  the lander is; storming a district with infantry is not an answer yet (`breach` with a squad stays out of the
+  regression, a measurement). Open: one shell takes a 600-health lab (too cheap?); the flamers at the gates against the
+  player's tanks.
+- **Next:** the Siege works holding the howitzer (parked on a pad in its district, towed out for a siege; the legibility
+  audit's step 1); units from their own buildings (Lances from a foundry, Aegis from a heavy factory); Grubstake's
+  equivalent (its scrapyard).
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and

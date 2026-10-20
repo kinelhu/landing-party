@@ -2888,6 +2888,255 @@ scenarios.techup = function()
   end)
 end
 
+-- Labs (rd.lua; the user, 2026-10-21: its tech in the world): Serenity's research climbs a branch only while that
+-- branch's lab stands. Funded and choosing every minute, it buys nothing while it has no lab; its research rule plans a
+-- district with the Optics lab at its heart; once the lab stands its lasers climb; the lab killed, the climb stops and
+-- the lab comes back. A Lance (Optics) set outright is fielded only while the lab stands.
+scenarios.labs = function()
+  S.seen = {}
+  schedule(60, function()
+    -- Grown at once (its research rule waits for its launch pad: exports fund research).
+    lp("debug_tune", {era = 4, rd_fast = true, history_off = true, rd_fund = {serenity = 9000}, mature_blocks = 2})
+    lp("debug_parts", storage.id, 2000)
+  end)
+  local function lab()
+    return surface().find_entities_filtered{name = "lp-optics-lab", force = FORCE}[1]
+  end
+  for t = 2 * 3600, END - 120, 600 do
+    schedule(t, function()
+      local r = lp("rd", "serenity")
+      local l = lab()
+      local lvl = (r.weapons or {}).laser or 0
+      if not S.built and l then
+        S.built, S.lvl_at_built = game.tick, lvl
+        S.lab_at = {l.position.x, l.position.y}
+        info(string.format("labs: the Optics lab stood at %.0f,%.0f at minute %.1f, lasers at level %d, fund %d",
+          l.position.x, l.position.y, game.tick / 3600, lvl, r.fund))
+        -- Its sign: one sprite over it.
+        local signs = 0
+        for _, o in pairs(rendering.get_all_objects("landing-party")) do
+          if o.valid and o.type == "sprite" and o.target and o.target.entity == l then signs = signs + 1 end
+        end
+        S.signs = signs
+        dump_map("labs-built", S.lab_at, 60)
+      end
+      if not S.built then S.wants = r.wants_lab; S.lvl_before = lvl end
+      -- Its lab up for two minutes: killed (mid-climb); the level then is what it keeps until the lab is back.
+      if S.built and not S.killed and game.tick > S.built + 2 * 3600 and l then
+        S.lvl_at_kill = lvl
+        S.killed = game.tick
+        S.lance_fielded_before = (r.fielded or {})["lp-lance"] ~= nil
+        l.die("player")
+      end
+      if S.killed and not S.back and game.tick > S.killed then
+        l = lab()
+        if l then
+          S.back = game.tick
+        else
+          S.lvl_dark = math.max(S.lvl_dark or 0, lvl)
+          S.lance_fielded_dark = S.lance_fielded_dark or (r.fielded or {})["lp-lance"] ~= nil
+        end
+      end
+      S.lvl_end = lvl
+    end)
+  end
+  -- A Lance node set outright (its units then in the mix only while the lab stands).
+  schedule(2 * 3600 + 30, function() lp("debug_tune", {rd_tech = {serenity = {nodes = {lance = 1}}}}) end)
+  schedule(END - 60, function()
+    local r = lp("rd", "serenity")
+    info("labs: " .. serpent.line({wants = S.wants, before = S.lvl_before, at_built = S.lvl_at_built, at_kill = S.lvl_at_kill,
+      dark = S.lvl_dark, back = S.back and S.back / 3600, killed = S.killed and S.killed / 3600, built = S.built and S.built / 3600,
+      end_ = S.lvl_end, fund = r.fund, nodes = r.nodes, signs = S.signs}))
+    check("labs: it wanted the Optics lab first", S.wants == "lp-optics-lab", tostring(S.wants))
+    check("labs: a research district built the Optics lab", S.built ~= nil, S.built and string.format("minute %.1f", S.built / 3600) or "none")
+    check("labs: nothing bought while no lab stood", (S.lvl_at_built or 0) == 0, tostring(S.lvl_at_built))
+    check("labs: the lab drawn with its sign", (S.signs or 0) >= 1, tostring(S.signs))
+    check("labs: its lab standing, its lasers climbed", (S.lvl_at_kill or 0) >= 1 and S.lvl_at_kill < 5, tostring(S.lvl_at_kill))
+    check("labs: the Lance fielded while the lab stood", S.lance_fielded_before == true, tostring(S.lance_fielded_before))
+    check("labs: the lab killed, no climb until it was back", S.killed and S.lvl_dark == S.lvl_at_kill,
+      string.format("%s at the kill, %s without it", tostring(S.lvl_at_kill), tostring(S.lvl_dark)))
+    check("labs: no Lance fielded without it", S.killed and not S.lance_fielded_dark, tostring(S.lance_fielded_dark))
+    check("labs: the lab rebuilt", S.back ~= nil, S.back and string.format("minute %.1f", S.back / 3600) or "not yet")
+    check("labs: back, the climb went on", (S.lvl_end or 0) > (S.lvl_at_kill or 0), string.format("%s -> %s", tostring(S.lvl_at_kill), tostring(S.lvl_end)))
+  end)
+end
+
+-- Breach (the user, 2026-10-21: if its labs matter, the player has to be able to take one): a player army (LP_MIX
+-- "troopers,breachers,tanks", default 20,10,5) goes for Serenity's Optics lab in its district. A careful player: the
+-- squad gathers out of turret reach, then the rally point is steered onto the district's turret nearest our side (A),
+-- one at a time; with none left within 45 of the lab, onto the lab itself. Maps every two minutes round the lab.
+scenarios.breach = function()
+  local ARMY = {"lp-trooper", "lp-breacher", "lp-battle-tank"}
+  local ORDER = {["lp-trooper"] = "lp-trooper-order", ["lp-breacher"] = "lp-breacher-order",
+    ["lp-battle-tank"] = "lp-battle-tank-order"}
+  local POP = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-battle-tank"] = 4}
+  local GUNS = {"lp-turret", "lp-gun-turret"}
+  local red = defines.wire_connector_id.circuit_red
+  local want, k = {}, 0
+  for n in (params.mix or ""):gmatch("%d+") do k = k + 1; want[ARMY[k]] = tonumber(n) end
+  if k == 0 then want = {["lp-trooper"] = 20, ["lp-breacher"] = 10, ["lp-battle-tank"] = 5} end
+  local arty = params.mix == "arty" or params.mix == "flare"
+  local SQUAD, POPULATION = 0, 0
+  for name, n in pairs(want) do SQUAD = SQUAD + n; POPULATION = POPULATION + n * POP[name] end
+  local function alive() return surface().count_entities_filtered{name = ARMY, force = "player"} end
+  local function lab() return surface().find_entities_filtered{name = "lp-optics-lab", force = FORCE}[1] end
+  schedule(60, function()
+    -- Its research as a camp this young would have it (none bought: the lab is the target, not its lasers).
+    lp("debug_tune", {era = 2, history_off = true, mature_blocks = 2, raids_off = true})
+    lp("debug_parts", storage.id, 3000)
+  end)
+  local function setup(l)
+    local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
+    local c = l.position
+    S.lab_at = {c.x, c.y}
+    local dx, dy = c.x - lander.position.x, c.y - lander.position.y
+    local len = math.sqrt(dx * dx + dy * dy)
+    local stage, a
+    for _, turn in ipairs({0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2}) do
+      local cs, sn = math.cos(turn), math.sin(turn)
+      local ux, uy = (dx * cs - dy * sn) / len, (dx * sn + dy * cs) / len
+      for d = 40, 250, 5 do
+        local st = {c.x + ux * d, c.y + uy * d}
+        local fwd = {c.x + ux * (d + 20), c.y + uy * (d + 20)}
+        surface().request_to_generate_chunks(fwd, 2)
+        surface().force_generate_chunk_requests()
+        if surface().count_entities_filtered{name = GUNS, force = FORCE, position = st, radius = 35} == 0
+          and surface().count_entities_filtered{force = FORCE, position = fwd, radius = 30} == 0
+          and surface().count_tiles_filtered{position = fwd, radius = 30, collision_mask = "water_tile"} == 0 then
+          stage, a, S.stage_d = st, {math.floor(fwd[1]), math.floor(fwd[2])}, d
+          break
+        end
+      end
+      if stage then break end
+    end
+    if not stage then check("breach: a staging ground clear of its guns", false, "none"); return end
+    S.stage, S.base_at = stage, a
+    flatten(a[1] - 28, a[2] - 6, a[1] + 42, a[2] + 12)
+    local function put(name, x, y)
+      return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    end
+    S.barracks = {}
+    for i, name in ipairs(ARMY) do
+      local x = a[1] - 8.5 + 6 * i
+      local b = put("lp-barracks", x, a[2] + 0.5)
+      b.set_recipe(ORDER[name])
+      S.barracks[name] = b
+      put("medium-electric-pole", x + 2, a[2] + 2.5)
+    end
+    put("electric-energy-interface", a[1] + 14, a[2] + 1)
+    for n = 1, 3 do game.forces.player.technologies["lp-command-bandwidth-" .. n].researched = true end
+    for n = 1, math.ceil(POPULATION / 10) do put("lp-command-relay", a[1] - 25.5 + 4 * n, a[2] + 7.5) end
+    for x = -23.5, 40, 7 do put("medium-electric-pole", a[1] + x, a[2] + 5.5) end
+    S.beacon = put("lp-rally-beacon", stage[1], stage[2])
+    S.cc = put("constant-combinator", stage[1] - 2, stage[2])
+    S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
+    S.orders = {}
+    S.feed = function()
+      for name, n in pairs(want) do
+        local b = S.barracks[name]
+        local done = S.orders[name] or 0
+        if b.valid and done < n then
+          S.orders[name] = done + b.get_inventory(defines.inventory.crafter_output).insert{name = ORDER[name],
+            count = math.min(10, n - done)}
+        end
+      end
+    end
+    S.feed()
+    -- LP_MIX "arty" (an artillery turret at the base, left to choose its own targets) or "flare" (and a flare on the lab,
+    -- as a player's artillery remote): no squad.
+    if params.mix == "arty" or params.mix == "flare" then
+      want = {}
+      local t = put("artillery-turret", a[1] + 20, a[2] - 4)
+      t.insert{name = "artillery-shell", count = 20}
+      S.arty = t
+      if params.mix == "flare" then
+        surface().create_entity{name = "artillery-flare", position = S.lab_at, force = "player", frame_speed = 0,
+          vertical_speed = 0, height = 0, movement = {0, 0}}
+      end
+    end
+    S.guns0 = surface().count_entities_filtered{name = GUNS, force = FORCE, position = S.lab_at, radius = 45}
+    S.walls0 = surface().count_entities_filtered{name = "lp-wall", force = FORCE, position = S.lab_at, radius = 45}
+    S.st0 = lp("stats", storage.id)
+    info(string.format("breach: lab at %.0f,%.0f; staging %d tiles out; %d guns and %d walls within 45; garrison %d",
+      S.lab_at[1], S.lab_at[2], S.stage_d, S.guns0, S.walls0, S.st0.garrison or -1))
+    dump_map("breach-0", S.lab_at, 75)
+  end
+  local function signals(list)
+    local f = {}
+    for name, v in pairs(list) do table.insert(f, {value = {type = "virtual", name = name, quality = "normal"}, min = v}) end
+    local cb = S.cc.get_or_create_control_behavior()
+    local sec = cb.get_section(1) or cb.add_section()
+    sec.filters = f
+  end
+  for t = 2 * 3600, END - 120, 300 do
+    schedule(t, function()
+      local l = lab()
+      -- Its district given four minutes to stand (walls, guns) once the lab is up.
+      if not S.seen and l then S.seen = game.tick end
+      if S.seen and not S.stage and game.tick >= S.seen + 4 * 3600 and l then setup(l) end
+      if S.stage and not S.go then
+        S.feed()
+        local n = 0
+        for name, w in pairs(want) do if (S.orders[name] or 0) >= w then n = n + 1 end end
+        if alive() >= SQUAD or next(want) == nil then S.go = game.tick; S.trained = alive() end
+        if S.ready_wait == nil then S.ready_wait = game.tick end
+        if game.tick > S.ready_wait + 4 * 3600 then S.go = game.tick; S.trained = alive() end
+        return
+      end
+      if not S.go or not (S.beacon and S.beacon.valid and S.cc.valid) then return end
+      if (game.tick - S.go) % 7200 < 300 then dump_map("breach-" .. math.floor((game.tick - S.go) / 3600), S.lab_at, 75) end
+      if not l then
+        if not S.fell then
+          S.fell = game.tick
+          info(string.format("breach t+%ds: the lab fell (%d units left)", (game.tick - S.go) / 60, alive()))
+          dump_map("breach-fell", S.lab_at, 75)
+          signals({})
+        end
+        return
+      end
+      if arty then
+        if not S.shots_logged and S.arty and S.arty.valid then
+          info(string.format("breach t+%ds: artillery shells left %d", (game.tick - S.go) / 60,
+            S.arty.get_inventory(defines.inventory.turret_ammo).get_item_count("artillery-shell")))
+        end
+        return
+      end
+      if S.aim and S.aim.valid then return end
+      local b = S.beacon.position
+      local best, bd
+      for _, x in pairs(surface().find_entities_filtered{name = GUNS, force = FORCE, position = S.lab_at, radius = 45}) do
+        local d = (x.position.x - b.x) ^ 2 + (x.position.y - b.y) ^ 2
+        if not bd or d < bd then best, bd = x, d end
+      end
+      local aim = best or l
+      S.aim = aim
+      S.aims = (S.aims or 0) + 1
+      signals({["signal-A"] = 1, ["signal-X"] = math.floor(aim.position.x - b.x), ["signal-Y"] = math.floor(aim.position.y - b.y)})
+      info(string.format("breach t+%ds: aim %d at the %s at %.0f,%.0f (%d units left)", (game.tick - S.go) / 60, S.aims,
+        aim.name, aim.position.x, aim.position.y, alive()))
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    local guns = S.lab_at and surface().count_entities_filtered{name = GUNS, force = FORCE, position = S.lab_at, radius = 45} or -1
+    local walls = S.lab_at and surface().count_entities_filtered{name = "lp-wall", force = FORCE, position = S.lab_at, radius = 45} or -1
+    metric("breach_squad", SQUAD)
+    metric("breach_trained", S.trained or 0)
+    metric("breach_alive", alive())
+    metric("breach_guns_before", S.guns0 or -1)
+    metric("breach_guns_after", guns)
+    metric("breach_walls_before", S.walls0 or -1)
+    metric("breach_walls_after", walls)
+    metric("breach_lab_fell", S.fell and 1 or 0)
+    metric("breach_minutes", S.fell and S.go and (S.fell - S.go) / 3600 or -1)
+    check("breach: the squad was trained", arty or (S.trained or 0) >= SQUAD * 0.8, tostring(S.trained) .. " of " .. SQUAD)
+    check("breach: the lab fell", S.fell ~= nil, S.fell and string.format("%.1f minutes in, %d units left", (S.fell - S.go) / 3600, alive())
+      or string.format("%d units left, guns %d -> %d", alive(), S.guns0 or -1, guns))
+    info("breach: " .. serpent.line(lp("army")) .. ", player units lost " .. serpent.line(S.killers or {})
+      .. ", faction units lost: " .. serpent.line(S.fallen or {}) .. ", responses " .. tostring(st.responses - (S.st0 and S.st0.responses or 0)))
+  end)
+end
+
 -- Plate: each corporation answers what kills its units from its own tree (shared.CORPS.tree). Fifteen of Serenity's
 -- Line troopers die to a gun turret (the player at era 2, a fund granted, choices every minute): it issues Warden
 -- armour (physical) and its depots build armoured Line troopers; the plain ones standing are kept. LP_MIX=grubstake:
@@ -8337,6 +8586,9 @@ end
 
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
+-- Labs (rd.lua) gate research only where a scenario asks for them: the rest test the tree's choices, not where it stands.
+local LABS = {labs = true, breach = true, factory = true, visit = true}
+if not LABS[params.scenario] then schedule(1, function() lp("debug_tune", {labs_off = true}) end) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with

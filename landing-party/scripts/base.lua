@@ -51,7 +51,8 @@ base.trace = trace
 local LISTS = {["lp-pylon"] = "pylons", ["lp-bin"] = "bins", ["lp-drill"] = "drills",
   ["lp-fabricator"] = "fabs", ["lp-generator"] = "gens", ["lp-turret"] = "turrets", ["lp-radar"] = "radars",
   ["lp-wall"] = "walls", ["lp-depot"] = "depots", ["lp-launchpad"] = "launchpads", ["lp-lamp"] = "lamps",
-  ["lp-mine"] = "mines", ["lp-flamer"] = "flamers", ["lp-scrap-cannon"] = "turrets", ["lp-gun-turret"] = "turrets"}
+  ["lp-mine"] = "mines", ["lp-flamer"] = "flamers", ["lp-scrap-cannon"] = "turrets", ["lp-gun-turret"] = "turrets",
+  ["lp-optics-lab"] = "labs", ["lp-line-lab"] = "labs", ["lp-siege-lab"] = "labs"}
 
 local function register(b, e, module)
   local list = LISTS[shared.kind_of(e.name)]
@@ -59,6 +60,12 @@ local function register(b, e, module)
   if list then b[list] = b[list] or {}; table.insert(b[list], e) end
   if module then table.insert(module.entities, e) end
   storage.owner[e.unit_number] = {base = b.id, module = module}
+  -- A lab's sign: its branch, over it, for everyone (gone with it).
+  local icon = shared.LAB_ICON[shared.kind_of(e.name)]
+  if icon then
+    rendering.draw_sprite{sprite = icon, target = {entity = e, offset = {0, -2.2}}, surface = e.surface, x_scale = 1.2,
+      y_scale = 1.2, render_layer = "air-object"}
+  end
 end
 
 -- Drop what is gone or no longer the faction's (a captured drill stays valid, on another force).
@@ -678,6 +685,8 @@ function base.stats(b)
     roster = table_size(b.roster or {}), units_built = b.units_built,
     units_lost = b.units_lost, howitzer_down = b.howitzer_down, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
+    labs = (function() local t = {} prune(b.labs or {}) for _, e in ipairs(b.labs or {}) do
+      local k = shared.kind_of(e.name) t[k] = (t[k] or 0) + 1 end return t end)(),
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false, hq = b.hq,
     lander_health = b.lander.valid and b.lander.health / b.lander.max_health or 0, hull_up = b.lander.valid and not b.lander.destructible,
     setbacks = b.setbacks or 0, held_home = b.held_home or 0,

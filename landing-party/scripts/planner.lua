@@ -2,6 +2,7 @@
 -- list (power, fabricate, mine, fortify, defend, picket, depot, launch, embellish, grow) and the queueing of what each
 -- rule builds. The code is as it was in base; install runs it with base's helpers bound (K) and returns what base calls.
 local shared = require("__landing-party__.shared")
+local rd = require("__landing-party__.scripts.rd")
 
 local planner = {}
 
@@ -12,6 +13,23 @@ local SPREAD_GAP = 5 * 3600    -- after a compound laid out whole
 local function spreads(b) return shared.CORPS[b.corp].cordon and not storage.grow_to_line_off end
 -- Its size against GROW_CAP: a compound laid out whole (layout.wfc_compound) counts as several blocks.
 local function size(b) local n = 0 for _, k in ipairs(b.blocks) do n = n + (k.weight or 1) end return n end
+local LAB_PARTS = 150          -- parts in hand before it plans a research district
+-- A lab of this kind standing, owed (queued, carried, awaiting rebuild) or planned in any camp of b's corporation.
+local function lab_coming(b, kind)
+  for _, o in pairs(storage.bases) do
+    if o.corp == b.corp and not o.fallen then
+      for _, e in ipairs(o.labs or {}) do if e.valid and e.name == shared.variant(o.corp, kind) then return true end end
+      if o.wfc_job and o.wfc_job.lab == kind then return true end
+      for _, list in ipairs({o.queue, o.rebuild or {}}) do
+        for _, j in ipairs(list) do if j.name == kind then return true end end
+      end
+      for _, c in ipairs(o.crews or {}) do
+        for _, j in ipairs(c.jobs or {}) do if j.name == kind then return true end end
+      end
+    end
+  end
+  return false
+end
 function planner.install(ops, K)
 local DEFENCE_RADIUS = K.DEFENCE_RADIUS
 local FAB_FEED_PER_MIN = K.FAB_FEED_PER_MIN
@@ -211,6 +229,17 @@ local function plan(b, only)
         end
         local block = layout.open_role(b, "depot")
         return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
+    -- Research (rd.lua: a branch climbs only while its lab stands): its exports flowing (launch pad open), the lab its
+    -- research wants and has nowhere, a district of its own planned for it, the lab at its heart.
+    {"research", function()
+      if not (layout.districts(b) and b.launch_opened and not b.wfc_job and b.parts > LAB_PARTS) then return false end
+      local kind = rd.wanted_lab(b.corp)
+      b.target = kind and not lab_coming(b, kind) and kind or nil
+      return b.target ~= nil end,
+      function()
+        local d = layout.district(b, "lab", b.target)
+        return d and string.format("district planned at %.0f,%.0f for %s", d.center[1], d.center[2], b.target)
+      end},
     -- Serenity spreads out to its line (the user, 2026-10-20: "We need organic looking bases that look menacing, like
     -- metastases on the map"): with parts to spare, clusters of blocks founded towards its line, each tied home by
     -- road and pylons, up to GROW_CAP blocks; once grown and its launch pad open (its mines are ore-bound, this is

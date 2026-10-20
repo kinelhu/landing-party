@@ -15,7 +15,7 @@ SIZE = 6
 WALLS = set("#g")
 INNER = set("w")
 WALK = set(".=gh")
-BUILD = {"T": (2, 2), "G": (2, 2), "D": (4, 4), "F": (3, 3), "R": (3, 3), "P": (1, 1), "L": (1, 1)}
+BUILD = {"T": (2, 2), "G": (2, 2), "D": (4, 4), "F": (3, 3), "R": (3, 3), "B": (3, 3), "P": (1, 1), "L": (1, 1)}
 
 def parse(path):
     tiles, cur = [], None
@@ -288,7 +288,7 @@ def lobe_mask(w, h, rng):
     return m
 
 COL = {" ": "#e9e2d0", ".": "#b8bfc6", "=": "#8f979e", "#": "#2c3e50", "g": "#e0a020", "w": "#56687a", "h": "#d9c38a", "+": None,
-       "T": "#3b5b7a", "G": "#6b8e23", "D": "#7a3b5b", "F": "#5b7a3b", "R": "#3b7a7a", "P": "#222222", "L": "#f4f1a0"}
+       "T": "#3b5b7a", "G": "#6b8e23", "D": "#7a3b5b", "F": "#5b7a3b", "R": "#3b7a7a", "B": "#a05bd0", "P": "#222222", "L": "#f4f1a0"}
 
 def draw(ax, g, title):
     import matplotlib.patches as mp

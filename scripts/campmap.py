@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 OWNER = {"lp-serenity": "#3b5b7a", "lp-grubstake": "#d08a1c", "player": "#2e8b3a", "enemy": "#c0392b"}
 FOOT = {"depot": 4, "launchpad": 9, "radar": 3, "fabricator": 3, "generator": 2, "turret": 2, "flamer": 2,
-        "uplink": 6, "lander": 8, "drill": 3}
+        "uplink": 6, "lander": 8, "drill": 3, "-lab": 3}
 TILE = {"road": "#9aa3ab", "pad": "#b8bfc6", "trim": "#5c6268", "stripe": "#111111"}
 
 def style(name, typ):
@@ -54,6 +54,7 @@ def draw(path, out_dir, zoom):
         ghost = typ == "entity-ghost"
         m, s = style(name, typ)
         col = "#bbbbbb" if ghost else OWNER.get(force, "#777777")
+        if name.endswith("-lab"): m, s, col = "P", 30, "#a05bd0"
         groups.setdefault((m, s, col), ([], []))
         groups[(m, s, col)][0].append(x); groups[(m, s, col)][1].append(y)
     k = max(1.0, 200.0 / r) ** 2 / 4
@@ -67,6 +68,9 @@ def draw(path, out_dir, zoom):
             col = "#bbbbbb" if typ == "entity-ghost" else OWNER.get(force, "#777777")
             if typ in ("wall", "gate"): col = "#1b2733" if force == "lp-serenity" else col
             if typ == "lamp": col = "#e8d870"
+            if name.endswith("-lab"):
+                col = "#a05bd0"
+                ax.annotate(name.split("-")[-2], (x, y - 2.5), ha="center", fontsize=7, color="#5a2a80", zorder=5)
             ax.add_patch(mp.Rectangle((x - n / 2, y - n / 2), n, n, color=col, lw=0, zorder=3))
     else:
         for (m, s, col), (xs, ys) in groups.items():
