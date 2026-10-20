@@ -72,7 +72,8 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 18. **Hazard removal**: when biters keep hitting it, it sends a clearance siege at their nest, away from you.
 19. **The invoice post**: a chest of yours at its line, the sum written over it: what the biter waves your pollution
    drew cost it. Put circuits, modules or steel in it. Paid off, it buys a truce (a minute per 10 paid, 10 to 60): no
-   raids, sieges or cuts, its line holds, an amber light by night. Is the price fair? Is it worth paying?
+   raids, sieges or cuts, its line holds, an amber light by night. Is the price fair? Is it worth paying? Or dispute
+   it: kill the nest a bill names (Serenity's icon over it, in game and on the map) and that bill is struck.
 20. **A border stake during a truce**: the border holds after the truce ends, until you build on its side.
 21. **Bend the line**: a decoy building nearer its camp than the rest swings its next arcs toward it.
 

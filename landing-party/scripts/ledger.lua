@@ -9,7 +9,10 @@
 -- left) and becomes parts. Paid off, the bill buys a truce, the only quiet Serenity gives: a minute for every
 -- VALUE_PER_MINUTE paid since the last one, MIN_TRUCE to MAX_TRUCE; no raid, siege or cut while it lasts, and its line
 -- holds (stance: "truce"). Unpaid, nothing changes: it is at war already.
--- Counters: pay, clear the nests yourself, or keep the cloud off its ground.
+-- Counters: pay, clear the nests yourself, or keep the cloud off its ground. Disputed (Fable's engagement consult:
+-- "invoices disputed in the field"): each bill names the nest whose waves it was; the billed player who kills that nest
+-- while the bill is open strikes it (its sum off what is owed; nothing left owed, the post comes down). A nest Serenity
+-- or anything else kills strikes nothing.
 local shared = require("__landing-party__.shared")
 local ops = require("__landing-party__.scripts.ops")
 local base = require("__landing-party__.scripts.base")
@@ -37,9 +40,34 @@ local function owed_text(b, L)
   return {"lp.invoice", shared.corp_label(b.corp), ITEM, tostring(math.ceil(L.owed))}
 end
 
+-- The billed nest marked for the billed player, in game and on the map (the world tells which nest a bill names; no
+-- notice): its corporation's icon over it while a bill of it is open.
+local function key(at) return string.format("%.1f,%.1f", at[1], at[2]) end
+local function mark(b, L, o)
+  L.marks = L.marks or {}
+  local k = key(o.at)
+  if L.marks[k] then return end
+  local sprite = "virtual-signal/" .. shared.CORPS[b.corp].icon
+  L.marks[k] = {}
+  for _, mode in ipairs({"game", "chart"}) do
+    table.insert(L.marks[k], rendering.draw_sprite{sprite = sprite, surface = o.nest.surface, target = {entity = o.nest,
+      offset = {0, -2.5}}, x_scale = 1.5, y_scale = 1.5, tint = shared.CORPS[b.corp].color, forces = {L.owner},
+      render_mode = mode})
+  end
+end
+local function unmark(L, at)
+  for k, list in pairs(L.marks or {}) do
+    if not at or k == key(at) then
+      for _, o in ipairs(list) do if o.valid then o.destroy() end end
+      L.marks[k] = nil
+    end
+  end
+end
+
 local function close(b, why)
   local L = b.ledger
   if not L then return end
+  unmark(L)
   if L.post and L.post.valid then L.post.destroy() end
   for _, o in ipairs(L.draw or {}) do if o.valid then o.destroy() end end
   base.trace(b, "ledger: closed (" .. why .. ")")
@@ -120,6 +148,9 @@ local function bill(b)
   b.ledger = L
   L.owed, L.billed = L.owed + u.cost, L.billed + u.cost
   L.bills, L.total_bills = L.bills + 1, L.total_bills + 1
+  L.open = L.open or {}
+  table.insert(L.open, {nest = near, at = {near.position.x, near.position.y}, cost = u.cost})
+  mark(b, L, L.open[#L.open])
   raise_post(b, L)
   draw(b, L)
   local at = L.post and L.post.valid and L.post.position or {x = mx, y = my}
@@ -150,7 +181,8 @@ local function pay(b, L)
     storage.truces = storage.truces or {}
     local k = b.corp .. "|" .. L.owner
     storage.truces[k] = math.max(storage.truces[k] or 0, game.tick) + minutes * 3600
-    L.owed, L.bills, L.round, L.truces = 0, 0, 0, L.truces + 1
+    L.owed, L.bills, L.round, L.truces, L.open = 0, 0, 0, L.truces + 1, {}
+    unmark(L)
     shared.reply(game.forces[L.owner], e.position, {"lp.invoice-paid", shared.corp_label(b.corp), tostring(minutes)})
     standing.incident(b.corp, "invoice paid", e.position, string.format("%d minutes of truce", minutes))
     base.trace(b, string.format("ledger: paid off; a truce of %d minutes", minutes))
@@ -177,6 +209,36 @@ function ledger.tick(tick)
   end
 end
 
+-- A nest died (control.lua): killed by the player a bill of its is open to, that bill is struck.
+function ledger.nest_died(nest, force)
+  if not (force and storage.bases) then return end
+  for _, b in pairs(storage.bases) do
+    local L = b.ledger
+    if L and L.owner == force.name and L.open then
+      local struck = 0
+      for i = #L.open, 1, -1 do
+        local o = L.open[i]
+        if o.nest == nest or (not (o.nest and o.nest.valid) and o.at[1] == nest.position.x and o.at[2] == nest.position.y) then
+          struck = struck + o.cost
+          table.remove(L.open, i)
+        end
+      end
+      if struck > 0 then
+        unmark(L, {nest.position.x, nest.position.y})
+        local before = L.owed
+        L.owed = math.max(0, L.owed - struck)
+        L.disputed = (L.disputed or 0) + (before - L.owed)
+        L.bills = #L.open
+        b.disputed = (b.disputed or 0) + 1
+        standing.incident(b.corp, "invoice disputed", nest.position, string.format("%d struck", math.ceil(before - L.owed)))
+        base.trace(b, string.format("ledger: %s killed the nest at %.0f,%.0f its bill named; %d struck (owed %d)", force.name,
+          nest.position.x, nest.position.y, math.ceil(before - L.owed), math.ceil(L.owed)))
+        if L.owed <= 0 and not truce_left(b, L) then close(b, "disputed: nothing owed") else draw(b, L) end
+      end
+    end
+  end
+end
+
 -- Tests and screenshots: a bill of `cost` to `owner` now, the post raised.
 function ledger.debug(b, owner, cost)
   local L = b.ledger or {owner = owner, owed = 0, billed = 0, paid = 0, bills = 0, total_bills = 0, round = 0, truces = 0}
@@ -191,7 +253,10 @@ function ledger.stats(b)
   local L = b.ledger
   return {owed = L and math.ceil(L.owed) or 0, billed = L and L.billed or 0, paid = L and L.paid or 0,
     bills = L and L.total_bills or 0, open = L and L.bills or 0, truces = L and L.truces or 0,
-    post = L and L.post and L.post.valid and L.post.position or nil, owner = L and L.owner}
+    post = L and L.post and L.post.valid and L.post.position or nil, owner = L and L.owner,
+    open_bills = L and L.open and table_size(L.open) or 0, disputed = b.disputed or 0,
+    marked = (function() local n = 0 for _, list in pairs(L and L.marks or {}) do if list[1] and list[1].valid then n = n + 1 end end return n end)(),
+    nests = L and L.open and (function() local out = {} for _, o in ipairs(L.open) do out[#out + 1] = {at = o.at, cost = o.cost} end return out end)() or {}}
 end
 
 return ledger

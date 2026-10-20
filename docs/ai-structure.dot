@@ -17,7 +17,7 @@ digraph ai {
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n108 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
-    "ledger" [label="ledger\n197 lines", width=1.02, fillcolor="#eef2f7"];
+    "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
     "rd" [label="rd\n330 lines", width=1.17, fillcolor="#d9f0d9"];
     "phases" [label="phases\n227 lines", width=1.05, fillcolor="#eef2f7"];

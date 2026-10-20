@@ -3889,8 +3889,10 @@ scenarios.hazard = function()
   local off = params.mix == "off"
   -- The ledger (scripts/ledger.lua): the clearance held (hazard_hold), the nests in a cloud the test makes (pay, unpaid)
   -- or not (clean), a player's furnace by spawn as the polluter; pay puts what is owed in the post every minute.
-  local pay, unpaid, clean = params.mix == "pay", params.mix == "unpaid", params.mix == "clean"
-  local billing = pay or unpaid or clean
+  -- disputed: unpaid, and once bills are open a billed nest is killed by Serenity (strikes nothing), then another billed
+  -- nest by the player (its bills struck).
+  local pay, unpaid, clean, disputed = params.mix == "pay", params.mix == "unpaid", params.mix == "clean", params.mix == "disputed"
+  local billing = pay or unpaid or clean or disputed
   -- worm: a behemoth worm by each nest (its 48 and the guards' 14 left the howitzer no site at 53: nw, "outranges even
   -- the howitzer"). norails: no railgunners given and the garrison over its cap with Line troopers (production stopped
   -- at the cap, and the clearance waited "for railgunners (0 of 8)" for two hours, nw).
@@ -3944,6 +3946,33 @@ scenarios.hazard = function()
         end
         local L = lp("ledger", storage.id)
         if lp("standing", "serenity", "player") == "truce" then S.saw_truce = true end
+        if disputed and L and L.open_bills > 0 then
+          local function billed()
+            for _, nb in ipairs(L.nests) do
+              local e = surface().find_entities_filtered{type = "unit-spawner", position = nb.at, radius = 1}[1]
+              if e then return e, nb.at end
+            end
+          end
+          if not S.d1 then
+            local e, at = billed()
+            if e then
+              S.d1 = {owed = L.owed}
+              e.die("lp-serenity")
+              S.d1.after = lp("ledger", storage.id).owed
+            end
+          elseif not S.d2 and game.tick > S.d1_tick then
+            local e, at = billed()
+            if e then
+              local due = 0
+              for _, nb in ipairs(L.nests) do if nb.at[1] == at[1] and nb.at[2] == at[2] then due = due + nb.cost end end
+              S.d2 = {owed = L.owed, due = due, marked = L.marked}
+              e.die("player")
+              local L2 = lp("ledger", storage.id)
+              S.d2.after, S.d2.disputed = L2.owed, L2.disputed
+            end
+          end
+          if S.d1 and not S.d1_tick then S.d1_tick = game.tick + 5 * 3600 end
+        end
         if pay and L and L.owed > 0 and L.post then
           local post = surface().find_entities_filtered{name = "lp-invoice-post", position = L.post, radius = 1}[1]
           if post then S.paid_in = S.paid_in + post.insert{name = "electronic-circuit", count = L.owed} end
@@ -3993,6 +4022,13 @@ scenarios.hazard = function()
       -- Serenity is at war from landing (the user, 2026-10-19): paying off buys a truce, the only quiet.
       if clean then
         check("hazard: ledger, no cloud on the nests, no bill", L.bills == 0 and now == "enemy", string.format("%d bills, %s", L.bills, now))
+      elseif disputed then
+        info("ledger disputed: " .. serpent.line({S.d1, S.d2}))
+        check("hazard: disputed, a billed nest Serenity killed strikes nothing", S.d1 and S.d1.after == S.d1.owed,
+          serpent.line(S.d1))
+        check("hazard: disputed, a billed nest the player killed strikes its bills", S.d2 and S.d2.due > 0
+          and math.abs(S.d2.after - math.max(0, S.d2.owed - S.d2.due)) <= 1 and S.d2.disputed >= 1, serpent.line(S.d2))
+        check("hazard: disputed, the billed nest was marked for the player", (S.d2 and S.d2.marked or 0) >= 1, serpent.line(S.d2))
       elseif pay then
         check("hazard: ledger, billed three times or more, paid off, a truce bought", L.bills >= 3 and L.paid > 0
           and L.truces >= 1 and S.saw_truce, string.format("%d bills, paid %d, %d truces", L.bills, L.paid, L.truces))

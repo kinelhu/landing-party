@@ -76,7 +76,7 @@ document describes the parts as built; the campaign document describes the game 
 | Serenity against a fortress: fire plans, the howitzer against robot-kept walls, escalation; the jammer mast (downs robots, blinds threat scanners) | built | `fortress` (three), `scanner` |
 | Serenity's power strike: the cut pole behind the player's lasers, scouts first; dark turrets weigh nothing | built | `blackout` (two) |
 | Strangling: the line goes for outposts, then the next ore; at war it cuts belts and pipes on its edge | built | `strangle` (five) |
-| Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid off, a truce) | built; the ledger's price a guess | `hazard` (seven) |
+| Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid off, a truce) | built; the ledger's price a guess; disputed by killing the billed nest | `hazard` (eight) |
 | Grubstake's skim (a truck parks at an exposed belt and fills its trunk, home to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
 | Raid leaders (an icon over one raider; Grubstake breaks when it falls, Serenity regroups) | built | `leader` (two) |
@@ -586,6 +586,14 @@ strangling (the line walls off outposts and ore).
   Scenarios (the `hazard` waves, 40 a wave, the clearance held, a furnace by spawn the test keeps standing): `hazard pay`
   (the test puts what is owed in the post each minute): 5 bills, 440 paid, 5 truces, a truce seen; `hazard unpaid`: 6
   bills, 407 owed, no truce, at war; `hazard clean` (no cloud on the nests): no bill. The price is a guess.
+  Disputed (2026-10-20; Fable's engagement consult: "invoices disputed in the field"): each bill names the nest whose
+  waves it was; the billed player who kills that nest while the bill is open strikes it (its sum off what is owed;
+  nothing left owed and no truce running, the post comes down). A nest killed by Serenity or anything else strikes
+  nothing. Billing comes after the losses, so the consult's "before the wave lands" became "while the bill is open".
+  While a bill is open, the nest it names carries Serenity's icon (in its colour, in game and on the map, for the billed
+  player only): the world says which nest, no notice. `hazard disputed`: a billed nest Serenity killed, 120 still owed;
+  another, marked, the player killed, its 145 struck. The mark has not been seen in a screenshot yet (`scripts/shots.sh`
+  wants the display awake).
 
 ### Serenity at war from landing (the user, 2026-10-19)
 The user: "I'm left to wonder what's the point of serenity being non hostile sometimes… feels like a typical
