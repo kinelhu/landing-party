@@ -251,9 +251,12 @@ post's turrets), (5) gates in the contact wall's opening, (6) the cargo pad's an
     fabricators after a raid, so it is asked per spot: at most one stands where one was lost. Scenarios of other
     mechanics run with districts off (`wfc_core_off`): hazard and bait (a district camp loses too little to biters for
     their nest clearances and invoices to come: a real effect, the ledger will bill less often in play), blackout,
-    plate, cordon (its plated floors counted as litter). Army runs with Serenity's line off too (`cordon_off`; since
-    0.1.38 its line steps round a rival's claim and an arc stood between the barracks and the outpost, the squad routed
-    clear of its turrets never set off) and whole, not from a fork (from one, the scenario's switches came too late).
+    plate, cordon (its plated floors counted as litter). Army runs with districts and the line on, from its fork: its
+    squad never set off because the test had put the barracks on an island. It checked each site for water before the
+    ground there was generated (no tiles read as dry), and when no site passed it kept the last one tried. Path probes
+    found no path even three tiles from the barracks. The ground is generated first now, the search goes all the way
+    round, and no dry site is a failed check. Nothing routes the player's squads clear of turrets: an order is a plain
+    go-to for the engine's pathfinder (an earlier note here said otherwise, unchecked).
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and

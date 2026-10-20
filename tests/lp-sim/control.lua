@@ -716,10 +716,6 @@ end
 -- turrets near the target are removed and the faction's responses and raids are off, so this tests
 -- training, orders, holding and capture, not a fight.
 scenarios.army = function()
-  -- No line from Serenity's camp and its camp by blocks: since 0.1.38 its line steps round a rival's claim, and an arc
-  -- of its posts stood between the barracks and the outpost; the squad, routed clear of turrets, never set off. (Run
-  -- whole, not from a fork: regress.sh.)
-  schedule(30, function() lp("debug_tune", {cordon_off = true, wfc_core_off = true}) end)
   local red = defines.wire_connector_id.circuit_red
   schedule(STRIKE, function()
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
@@ -744,17 +740,26 @@ scenarios.army = function()
     -- flattening once made an island in a lake and no path left it (seed 12345, strike 30). Other angles
     -- when straight beyond fails.
     local ok
-    for _, turn in ipairs({0, 0.5, -0.5, 1, -1}) do
+    -- All the way round, and no spot is a failure: the last one tried, kept anyway, put the barracks on a
+    -- flattened island in a lake and the squad never left it (seed 12345, 0.1.39).
+    for _, turn in ipairs({0, 0.5, -0.5, 1, -1, 1.5, -1.5, 2, -2, 2.5, -2.5, 3}) do
       local c, sn = math.cos(turn), math.sin(turn)
       local ux, uy = (dx * c - dy * sn) / len, (dx * sn + dy * c) / len
       for _, d in ipairs({60, 90, 120, 150}) do
         a = {far.position.x + ux * d, far.position.y + uy * d}
+        -- Generated first: ungenerated ground has no tiles, so a lake there read as dry (seed 12345).
+        surface().request_to_generate_chunks(a, 2)
+        surface().force_generate_chunk_requests()
         if surface().count_entities_filtered{force = FORCE, position = a, radius = 60} == 0
           and surface().count_tiles_filtered{position = a, radius = 25, collision_mask = "water_tile"} == 0 then
           ok = true; break
         end
       end
       if ok then break end
+    end
+    if not ok then
+      check("army: a dry spot clear of the faction for the barracks", false, "none found")
+      return
     end
     S.base_at = a
     flatten(math.floor(a[1]) - 10, math.floor(a[2]) - 10, math.floor(a[1]) + 10, math.floor(a[2]) + 10)
