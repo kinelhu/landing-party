@@ -195,7 +195,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance)
   -- A clearance takes railgunners only: Line troopers next to them died to the nest's big biters and killed next to
   -- none (nine of them killed one of sixteen, scenario rail).
   if not (clearance or t.owner == "enemy") then
-    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, function(u) return u.type == "unit" end)) do
+    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, FOOT)) do
       table.insert(guards, u)
     end
   end

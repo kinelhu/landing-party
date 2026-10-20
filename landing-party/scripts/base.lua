@@ -393,7 +393,7 @@ local build, rebuild = construction_.build, construction_.rebuild
 local planner_ = require("__landing-party__.scripts.planner").install(ops, {
   DEFENCE_RADIUS = DEFENCE_RADIUS, FAB_FEED_PER_MIN = FAB_FEED_PER_MIN, REACHES = REACHES,
   SITE_BUDGET = SITE_BUDGET, force = force, layout = layout, modules = modules, prune = prune, site = site,
-  trace = trace})
+  trace = trace, matured = function(b) if base.cordon_ring then base.cordon_ring(b) end end})
 local plan, power = planner_.plan, planner_.power
 
 local function label(b)
@@ -617,7 +617,20 @@ function base.tick(tick)
         for _, job in ipairs(b.rebuild) do
           if not job.occupied and game.tick >= job.due then pending = true end
         end
-        if #b.queue == 0 and not pending and not withdrawing then plan(b) end
+        if #b.queue == 0 and not pending and not withdrawing then plan(b)
+        -- Power while the queue is busy: the line's jobs kept it full while what was queued before them came up, and
+        -- demand ran past supply (cordon: 6.6 of 6.0 MW, the planner idle from minute 11).
+        elseif not withdrawing then
+          plan(b, "power")
+          -- Its generators first (queued behind the line's posts, a starved camp counted them as supply and never built
+          -- them: demand past supply, cordon broken), as its lost generators are rebuilt first.
+          local gens, rest = {}, {}
+          for _, j in ipairs(b.queue) do table.insert(shared.kind_of(j.name or "") == "lp-generator" and gens or rest, j) end
+          if #gens > 0 and b.queue[1] ~= gens[1] then
+            b.queue = gens
+            for _, j in ipairs(rest) do table.insert(b.queue, j) end
+          end
+        end
         label(b)
       end
     end

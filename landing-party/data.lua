@@ -335,6 +335,11 @@ launchpad.max_health = 2000
 
 local lamp = copy("lamp", "small-lamp", "lp-lamp")
 lamp.light = {intensity = 0.9, size = 40, color = {0.6, 0.8, 1}}
+-- A cordon post's lamp (Fable's look consult: the lit line): no grid out there, so it burns on nothing; cold white.
+local post_lamp = copy("lamp", "small-lamp", "lp-post-lamp")
+post_lamp.energy_source = {type = "void"}
+-- Blue enough to stay cold on sand (white light on desert read orange in the first screenshots).
+post_lamp.light = {intensity = 0.9, size = 30, color = {0.55, 0.75, 1}}
 local mine = copy("land-mine", "land-mine", "lp-mine")
 
 -- The uplink: a radar dish at twice the size, the faction's link home. Destroying it ends the landings.
@@ -356,7 +361,8 @@ local function double(t, seen)
 end
 double(uplink.pictures, {})
 
-local road = table.deepcopy(data.raw.tile["refined-concrete"])
+local road_of = shared.CORPS[shared.DEFAULT_CORP].road
+local road = table.deepcopy(data.raw.tile[road_of.tile] or data.raw.tile[road_of.fallback or "refined-concrete"])
 road.name = "lp-road"
 road.minable = nil
 road.placeable_by = nil
@@ -364,7 +370,7 @@ road.tint = shared.TINT
 road.map_color = {r = 0.32, g = 0.38, b = 0.46}
 
 data:extend({
-  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, pacifier, depot, road, launchpad, lamp, mine, uplink,
+  lander, generator, pylon, drill, bin, fabricator, turret, wall, radar, pacifier, depot, road, launchpad, lamp, post_lamp, mine, uplink,
   gun_turret, gate, flamer, flamer_stream, cannon, scrap_frag, scrap_burst, scrap_shell,
   {type = "ammo-category", name = "lp-scrap", hidden = true},
   mortar, mortar_gun, mortar_shell, projectile, bomblet, orbital, howitzer, howitzer_gun, {type = "ammo-category", name = "lp-mortar", hidden = true},

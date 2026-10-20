@@ -85,7 +85,8 @@ by all parties."
 - **As built (2026-10-19)**: at war from landing. A line of cordon posts that steps toward the player, strangles
   outposts, claims the next ore, cuts belts on its edge where its guns stand; sieges sized to win (mortars, the
   howitzer, a robot jammer), the power strike, clearances of the nests that hit it, and an invoice for the waves the
-  player's pollution draws, paid off for a truce or disputed by killing the nest it names. A howitzer killed leaves it
+  player's pollution draws, paid off for a truce or disputed by killing the nest it names. Its camp and posts stand on
+  space-platform plating; its line is lit and painted post to post; grown, its camp spreads in walled, lobed clusters toward its line. Its railgunners clear nests and never raid. A howitzer killed leaves it
   without one for 30 minutes. Its raids regroup when their leader falls. Being at war, it answers
   trespass only (a siege); its losses in the field are fair war.
 

@@ -3,9 +3,10 @@
 # 2026-10-18) reads as a global, nil at run time, with no error until that line runs. luajit's bytecode lists them.
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
+# bit32: Factorio's; bit: LuaJIT's, read only where scripts/wfc.lua falls back to it for the tests run outside the game.
 ALLOWED=" game script storage defines prototypes rendering settings helpers remote commands serpent log localised_print table_size
   require ipairs pairs next type tostring tonumber select error assert pcall xpcall setmetatable getmetatable rawget rawset
-  unpack math string table data mods "
+  unpack math string table data mods bit32 bit "
 ALLOWED=" $(echo $ALLOWED) "
 bad=0
 for f in "$REPO"/landing-party/*.lua "$REPO"/landing-party/scripts/*.lua; do

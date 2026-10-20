@@ -1,0 +1,182 @@
+# Serenity's cluster tiles (WFC). Each tile: a header "tile <name> <weight>", then 6 rows of 6 characters.
+#   ' ' outside (no plate)   '.' floor (plate)   '=' lane (plate, kept clear)   '#' wall   'g' gate
+#   'T' turret 2x2   'G' generator 2x2   'D' depot 4x4   'F' fabricator 3x3   'R' radar 3x3   'P' pylon   'L' lamp
+#   '+' the rest of a building's footprint (its letter at the top-left); buildings keep off the tile's edge
+# Two tiles fit where their touching edges agree character by character; a wall or gate may face outside. Every tile is
+# also used turned and mirrored.
+
+tile void 6
+"      "
+"      "
+"      "
+"      "
+"      "
+"      "
+
+tile floor 1
+"......"
+"......"
+"......"
+"......"
+"......"
+"......"
+
+tile wall 6
+"######"
+"......"
+"......"
+"......"
+"......"
+"......"
+
+tile wall_lamp 2
+"######"
+"......"
+"..L..."
+"......"
+"......"
+"......"
+
+tile chamfer 4
+"   ###"
+"  ##.."
+" ##..."
+"##...."
+"#....."
+"#....."
+
+tile corner_in 3
+"#....."
+"......"
+"......"
+"......"
+"......"
+"......"
+
+tile gate 4
+"##gg##"
+"..==.."
+"..==.."
+"..==.."
+"..==.."
+"..==.."
+
+tile nest 5
+"######"
+"..T+.."
+"..++.."
+"......"
+"......"
+"......"
+
+tile nest_chamfer 2
+"   ###"
+"  ##.."
+" ##T+."
+"##.++."
+"#....."
+"#....."
+
+tile lane 5
+"..==.."
+"..==.."
+"..==.."
+"..==.."
+"..==.."
+"..==.."
+
+tile lane_turn 3
+"..==.."
+"..===="
+"..===="
+"......"
+"......"
+"......"
+
+tile lane_tee 1
+"..==.."
+"======"
+"======"
+"......"
+"......"
+"......"
+
+tile lane_cross 0.3
+"..==.."
+"======"
+"======"
+"..==.."
+"..==.."
+"..==.."
+
+tile gens 5
+"......"
+".G+G+."
+".++++."
+".G+G+."
+".++++."
+"......"
+
+tile pylon_plaza 3
+"......"
+".L..L."
+"......"
+"..P..."
+".L..L."
+"......"
+
+tile fab 3
+"......"
+".F++.."
+".+++P."
+".+++.."
+"......"
+"......"
+
+tile radar 2
+"......"
+".R++.."
+".+++.."
+".+++L."
+"......"
+"......"
+
+tile depot 3
+"......"
+".D+++."
+".++++."
+".++++."
+".++++."
+"......"
+
+tile wall_gens 4
+"######"
+"......"
+".G+G+."
+".++++."
+"......"
+"......"
+
+tile wall_fab 3
+"######"
+"......"
+".F++.P"
+".+++.."
+".+++.."
+"......"
+
+tile wall_radar 2
+"######"
+".L...."
+"..R++."
+"..+++."
+"..+++."
+"......"
+
+tile gate_plain 4
+"##gg##"
+"......"
+".L..L."
+"......"
+"......"
+"......"

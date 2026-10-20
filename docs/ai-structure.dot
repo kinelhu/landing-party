@@ -24,22 +24,24 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_2 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n686 lines", width=1.56, fillcolor="#eef2f7"];
-    "construction" [label="construction\n355 lines", width=1.19, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n200 lines", width=1.02, fillcolor="#d9f0d9"];
-    "layout" [label="layout\n544 lines", width=1.40, fillcolor="#eef2f7"];
+    "base" [label="base\n699 lines", width=1.58, fillcolor="#eef2f7"];
+    "construction" [label="construction\n360 lines", width=1.20, fillcolor="#d9f0d9"];
+    "planner" [label="planner\n235 lines", width=1.06, fillcolor="#d9f0d9"];
+    "layout" [label="layout\n758 lines", width=1.64, fillcolor="#eef2f7"];
+    "wfc" [label="wfc\n379 lines", width=1.22, fillcolor="#d9f0d9"];
+    "wfc_serenity" [label="wfc_serenity\n105 lines", width=0.92, fillcolor="#d9f0d9"];
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n397 lines", width=1.24, fillcolor="#eef2f7"];
-    "cordon" [label="cordon\n297 lines", width=1.13, fillcolor="#eef2f7"];
-    "perimeter" [label="perimeter\n277 lines", width=1.11, fillcolor="#d9f0d9"];
+    "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
+    "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n144 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n344 lines", width=1.18, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n711 lines", width=1.59, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1584 lines", width=2.56, fillcolor="#f7dede"];
+    "ops" [label="ops\n1590 lines", width=2.57, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n230 lines", width=1.06, fillcolor="#d9f0d9"];
     "siege" [label="siege\n782 lines", width=1.67, fillcolor="#d9f0d9"];
@@ -67,7 +69,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n513 lines", width=1.37, fillcolor="#eef2f7"];
+    "control" [label="control\n514 lines", width=1.37, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";
@@ -179,6 +181,7 @@ digraph ai {
   "faction" -> "phases" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="on_trigger"];
   "war" -> "standing" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="forgive"];
   "rd" -> "ops" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="era"];
+  "base" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_ring"];
   "ops" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_check"];
   "ops" -> "cordon" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="cordon_step"];
   "base" -> "crew" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="crew_take"];

@@ -53,6 +53,36 @@ finish_early = function()
 end
 
 local function surface() return game.surfaces[1] end
+
+-- A map of the ground as data (the user, 2026-10-20: snapshots of the camp to inspect): every building within `radius`
+-- of `center` (no trees, rocks, ore, corpses or items on the ground), and the corporations' floors, written to
+-- script-output/landing-party/maps/<label>.json; scripts/campmap.py draws them.
+local MAP_SKIP = {tree = true, ["simple-entity"] = true, resource = true, corpse = true, ["item-entity"] = true,
+  ["character-corpse"] = true, decorative = true, fish = true, ["tile-ghost"] = true,
+  ["rail-remnants"] = true}
+local function dump_map(label, center, radius, extra)
+  local s = surface()
+  local out = {label = label, tick = game.tick, center = center, radius = radius, entities = {}, tiles = {}, extra = extra or {}}
+  local area = {{center[1] - radius, center[2] - radius}, {center[1] + radius, center[2] + radius}}
+  for _, e in pairs(s.find_entities_filtered{area = area}) do
+    if not MAP_SKIP[e.type] and e.force.name ~= "neutral" then
+      table.insert(out.entities, {e.force.name, e.name, math.floor(e.position.x * 2) / 2, math.floor(e.position.y * 2) / 2, e.type})
+    end
+  end
+  for _, kind in ipairs({"road", "pad", "trim", "stripe"}) do
+    local names = {}
+    for _, t in pairs(prototypes.tile) do
+      if t.name:match("^lp%-") and t.name:match("%-" .. kind .. "$") then table.insert(names, t.name) end
+    end
+    out.tiles[kind] = {}
+    if #names > 0 then
+      for _, t in pairs(s.find_tiles_filtered{area = area, name = names}) do
+        table.insert(out.tiles[kind], {t.position.x, t.position.y})
+      end
+    end
+  end
+  helpers.write_file("landing-party/maps/" .. label .. ".json", helpers.table_to_json(out), false)
+end
 local function lp_entities(name, area)
   return surface().find_entities_filtered{name = name, force = FORCE, area = area}
 end
@@ -3179,7 +3209,9 @@ end
 -- Serenity's falls back to its staging point with a new leader and comes again. LP_MIX=haul: chests of plates at the
 -- outpost; the leader is shot once the raid carries loot: Grubstake's foreman drops the whole haul, none reaches home.
 scenarios.leader = function()
-  local ser, haul = params.mix == "serenity", params.mix == "haul"
+  -- LP_MIX=rails: Serenity's garrison holds railgunners too; none goes on the raid (they outrange the player's turrets).
+  local rails = params.mix == "rails"
+  local ser, haul = params.mix == "serenity" or rails, params.mix == "haul"
   local function toward(id, d)
     local o = lp("stats", id).origin
     local len = math.sqrt(o.x * o.x + o.y * o.y)
@@ -3190,6 +3222,7 @@ scenarios.leader = function()
     S.id = ser and storage.id or lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
     lp("debug_units", S.id, "lp-infantry", 8)
+    if rails then lp("debug_units", S.id, "lp-railgunner", 6) end
   end)
   schedule(3 * 3600, function()
     lp("debug_tune", {raids_off = true})
@@ -3211,6 +3244,10 @@ scenarios.leader = function()
   end)
   for t = 3 * 3600 + 60, END - 300, 30 do
     schedule(t, function()
+      if rails then
+        S.rails_out = math.max(S.rails_out or 0, surface().count_entities_filtered{name = "lp-railgunner", position = S.c, radius = 70})
+        S.raiders = math.max(S.raiders or 0, surface().count_entities_filtered{type = "unit", force = "lp-serenity", position = S.c, radius = 70})
+      end
       if S.shot then return end
       local o = lp("stats", S.id).ops
       S.seen = S.seen or {}
@@ -3236,6 +3273,12 @@ scenarios.leader = function()
     info("leader: phases seen " .. serpent.line(S.seen))
     info(string.format("leader: had %s, shot %s, lost %d, broken %d, regrouped %d, now %s, last %s", tostring(S.had_leader),
       tostring(S.shot), o.leaders_lost, o.broken, o.regrouped, tostring(o.op), last and last.outcome or "-"))
+    if rails then
+      info(string.format("leader rails: at most %s raiders by the outpost, %s of them railgunners", tostring(S.raiders), tostring(S.rails_out)))
+      check("leader: the raid came", (S.raiders or 0) >= 3, tostring(S.raiders))
+      check("leader: no railgunner on it", S.rails_out == 0, tostring(S.rails_out))
+      return
+    end
     if haul then
       info(string.format("leader haul: carried %s, dropped %s by the foreman, looted home %d", tostring(S.carried),
         tostring(S.dropped), o.looted))
@@ -3266,6 +3309,10 @@ end
 -- come on the turtle's schedule: without them, away lost income to growth that never came, not to the corporations.
 -- Each hour: income, losses, what each corporation did. Measures, few checks.
 scenarios.factory = function()
+  -- A mix ending "old" (turtleold): the same, with Serenity's camp growing to a fixed size, not out to its line (the A/B
+  -- of 2026-10-20).
+  local old = params.mix:match("^(.-)old$")
+  if old then params.mix = old end
   local control, engage = params.mix == "control", params.mix == "engage"
   local function gone() return params.mix == "away" and game.tick >= 60 * 3600 and game.tick < 180 * 3600 end
   local A = {owned = {}, lost = 0, rebuilt = 0, turrets = 0, income = 0, paid = 0, trucks = 0, leaders = 0,
@@ -3284,7 +3331,8 @@ scenarios.factory = function()
   end
   schedule(60, function()
     -- prospect_uncharted: headless runs chart nothing (force.chart never lands), as the prospecting tests waive it.
-    lp("debug_tune", {era = 2, history_off = true, harmless = control or nil, prospect_uncharted = true})
+    lp("debug_tune", {era = 2, history_off = true, harmless = control or nil, prospect_uncharted = true,
+      grow_to_line_off = old and true or nil})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
     lp("debug_depot", storage.id, 3000)
@@ -3655,6 +3703,18 @@ scenarios.factory = function()
       end)
     end
   end
+  -- A map of the ground every MAP_EVERY (scripts/campmap.py draws them; the user: "No reason to be stingy").
+  local MAP_EVERY = 15 * 3600
+  local function snapshot()
+    local g, s = lp("stats", S.g), lp("stats", storage.id)
+    local co = lp("cordon_stats", storage.id) or {}
+    local far = 0
+    for _, o in ipairs({s.origin, g and g.origin}) do if o then far = math.max(far, math.sqrt(o.x * o.x + o.y * o.y)) end end
+    dump_map(string.format("factory-m%03d", math.floor(game.tick / 3600)), {0, 0}, far + 260, {serenity = s.origin,
+      grubstake = g and g.origin, perimeter = s.perimeter, ring = co.ring, blocks = s.blocks})
+  end
+  for t = MAP_EVERY, END - 60, MAP_EVERY do schedule(t, snapshot) end
+  schedule(END - 60, snapshot)
   -- Each hour, and at the end: what happened.
   local function report(label)
     local g, s = lp("stats", S.g), lp("stats", storage.id)
@@ -3672,6 +3732,9 @@ scenarios.factory = function()
     local co = lp("cordon_stats", storage.id) or {}
     local function n(v) return type(v) == "number" and v or (type(v) == "table" and table_size(v) or 0) end
     info(string.format("factory %s: undergrounds laid under the line %d", label, A.undergrounds or 0))
+    info(string.format("factory %s camp: Serenity blocks %d, entities %d, mature %s, ring %s (rings %s), perimeter %s",
+      label, s.blocks or 0, surface().count_entities_filtered{force = "lp-serenity"}, tostring(s.mature),
+      tostring(co.ring and math.floor(co.ring)), tostring(co.rings), tostring(s.perimeter and math.floor(s.perimeter))))
     if params.mix == "away" then
       local dry = 0
       for _, t in ipairs(A.guards) do if t.valid and t.get_item_count("piercing-rounds-magazine") == 0 then dry = dry + 1 end end
@@ -3927,7 +3990,9 @@ scenarios.hazard = function()
   end)
   schedule(30, function() game.forces.enemy.set_evolution_factor(0.5, surface()) end)
   schedule(60, function()
-    lp("debug_tune", {era = 2, history_off = true, hazard_off = off or nil, hazard_hold = billing or nil})
+    -- The ledger's mixes without spread: its walled clusters held the waves off before the losses that bill them came.
+    lp("debug_tune", {era = 2, history_off = true, hazard_off = off or nil, hazard_hold = billing or nil,
+      grow_to_line_off = billing or nil})
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
     if norails then lp("debug_units", storage.id, "lp-infantry", 80) else lp("debug_units", storage.id, "lp-railgunner", 10) end
   end)
@@ -4056,7 +4121,9 @@ scenarios.hazard = function()
         check("hazard: ledger, billed three times or more, paid off, a truce bought", L.bills >= 3 and L.paid > 0
           and L.truces >= 1 and S.saw_truce, string.format("%d bills, paid %d, %d truces", L.bills, L.paid, L.truces))
       else
-        check("hazard: ledger, unpaid, no truce, still at war", L.bills >= 3 and L.owed > 0 and L.truces == 0 and not S.saw_truce
+        -- Two bills at least (three until 2026-10-20: its line now steps, and the third losses fell by nests the
+        -- player's cloud does not reach, rightly not billed).
+        check("hazard: ledger, unpaid, no truce, still at war", L.bills >= 2 and L.owed > 0 and L.truces == 0 and not S.saw_truce
           and now == "enemy", string.format("%d bills, owed %d, %s", L.bills, L.owed, now))
       end
       return
@@ -4695,7 +4762,39 @@ scenarios.cordon = function()
   -- LP_MIX=broken: once two arcs stand, every gun turret on the leading arc is destroyed (the player hunting the line):
   -- the line counts as broken, the claim falls back to the arc before, and it does not step out again for 15 minutes.
   local broken = params.mix == "broken"
-  schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
+  -- LP_MIX=ring: the camp counts as grown at two blocks; grown, it closes a ring of posts round itself.
+  local ringmix = params.mix == "ring"
+  -- (No spread: a spreading camp closes its ring only when its spread is done.)
+  schedule(30, function() lp("debug_tune", {perimeter_fast = true, mature_blocks = ringmix and 2 or nil,
+    grow_to_line_off = ringmix or nil}) end)
+  -- Watched (scripts/watch.sh cordon): the camp and a post on the leading arc, by day and by night, and the line at night
+  -- (Serenity's look: its deck, the post lamps, the painted stripe).
+  if params.watch then
+    schedule(90, function() game.speed = params.watch_speed or 10 end)
+    schedule(END - 300, function()
+      local n = 0
+      local function shot(name, pos, zoom, night)
+        n = n + 1
+        game.take_screenshot{surface = surface(), position = pos, resolution = {1600, 900}, zoom = zoom,
+          daytime = night and 0.5 or 0, path = string.format("lp-watch/%03d-%s.png", n, name), show_entity_info = false}
+        helpers.write_file("lp-watch/shots.txt", string.format("%03d-%s.png\n", n, name), true)
+      end
+      local so = lp("stats", storage.id).origin
+      shot("camp-day", {so.x, so.y}, 0.5)
+      shot("camp-night", {so.x, so.y}, 0.5, true)
+      local far, lamp = 0, nil
+      for _, l in pairs(surface().find_entities_filtered{name = "lp-post-lamp"}) do
+        local d = (l.position.x - so.x) ^ 2 + (l.position.y - so.y) ^ 2
+        if d > far then far, lamp = d, l end
+      end
+      if lamp then
+        shot("post-day", lamp.position, 1)
+        shot("post-night", lamp.position, 1, true)
+        shot("line-night", {(lamp.position.x + so.x) / 2, (lamp.position.y + so.y) / 2}, 0.15, true)
+        shot("line-day", {(lamp.position.x + so.x) / 2, (lamp.position.y + so.y) / 2}, 0.15)
+      end
+    end)
+  end
   if broken then
     for t = 4 * 3600, END - 12 * 3600, 600 do
       schedule(t, function()
@@ -4886,8 +4985,13 @@ scenarios.cordon = function()
     for _, t in pairs(surface().find_entities_filtered{name = "lp-gun-turret", force = FORCE}) do
       local a = math.atan2(t.position.y - S.o.y, t.position.x - S.o.x)
       local d = math.abs(((a - a0 + math.pi) % (2 * math.pi)) - math.pi)
-      turrets = turrets + 1
-      if d > math.pi / 3 + 0.15 then off = off + 1 end
+      local cs0 = lp("cordon_stats", storage.id)
+      local dr = math.sqrt((t.position.x - S.o.x) ^ 2 + (t.position.y - S.o.y) ^ 2)
+      -- The ring's (LP_MIX=ring) face every way.
+      if not (cs0.ring and math.abs(dr - cs0.ring) < 8) then
+        turrets = turrets + 1
+        if d > math.pi / 3 + 0.15 then off = off + 1 end
+      end
     end
     info(string.format("cordon: %s; crews %s; %d post turrets, %d off the arc", serpent.line(cs), serpent.line(cr), turrets, off))
     check("cordon: two arcs stood", (cs.arcs or 0) >= 2, tostring(cs.arcs))
@@ -4896,6 +5000,45 @@ scenarios.cordon = function()
     check("cordon: old arcs recovered", (cs.recovered or 0) > 0 and turrets < 2 * (cs.posts or 0),
       string.format("%s pieces recovered, %d turrets standing of %s posts built", tostring(cs.recovered), turrets, tostring(cs.posts)))
     check("cordon: all on the arc facing the relay", off == 0, tostring(off))
+    -- The lit line (Fable's look consult): a lamp on every standing post, a stripe post to post that outlives recovery.
+    local lamps = surface().count_entities_filtered{name = "lp-post-lamp", force = FORCE}
+    local stripe = 0
+    for _, t in pairs(surface().find_tiles_filtered{name = "lp-stripe", position = {S.o.x, S.o.y}, radius = 300}) do
+      if (t.position.x - S.o.x) ^ 2 + (t.position.y - S.o.y) ^ 2 > 100 ^ 2 then stripe = stripe + 1 end
+    end
+    -- No litter: every pad beyond the camp is under a standing post (recovered posts gave their ground back).
+    local litter = 0
+    for _, t in pairs(surface().find_tiles_filtered{name = "lp-pad", position = {S.o.x, S.o.y}, radius = 300}) do
+      if (t.position.x - S.o.x) ^ 2 + (t.position.y - S.o.y) ^ 2 > 100 ^ 2
+        and surface().count_entities_filtered{name = "lp-post-lamp", position = {t.position.x + 0.5, t.position.y + 0.5}, radius = 4} == 0 then
+        litter = litter + 1
+      end
+    end
+    -- (Not with LP_MIX=ring: a ring post under construction has its pad before its lamp.)
+    check("cordon: no pads left where posts came down", ringmix or (litter == 0 and (cs.recovered or 0) > 0),
+      string.format("%d pad tiles with no post, %s pieces recovered", litter, tostring(cs.recovered)))
+    info(string.format("cordon: %d post lamps, %d stripe tiles beyond 100", lamps, stripe))
+    check("cordon: a lamp on every standing post", lamps > 0 and 2 * lamps >= turrets, string.format("%d lamps, %d turrets", lamps, turrets))
+    check("cordon: the line painted post to post", stripe >= 60 * (cs.arcs or 0), string.format("%d tiles, %s arcs", stripe, tostring(cs.arcs)))
+    -- Its back (Fable's look consult, item 2): grown, a ring of posts round the camp, every bearing covered.
+    local st = lp("stats", storage.id)
+    local sectors, ringed = {}, 0
+    for _, t in pairs(surface().find_entities_filtered{name = "lp-gun-turret", force = FORCE, position = {S.o.x, S.o.y},
+      radius = (cs.ring or 0) + 8}) do
+      local d = math.sqrt((t.position.x - S.o.x) ^ 2 + (t.position.y - S.o.y) ^ 2)
+      if cs.ring and math.abs(d - cs.ring) < 8 then
+        ringed = ringed + 1
+        sectors[math.floor(((math.deg(math.atan2(t.position.y - S.o.y, t.position.x - S.o.x)) + 360) % 360) / 45)] = true
+      end
+    end
+    local covered = 0
+    for _ in pairs(sectors) do covered = covered + 1 end
+    info(string.format("cordon: mature %s; ring at %s, %d guns on it, %d of 8 sectors", tostring(st.mature), tostring(cs.ring), ringed, covered))
+    if ringmix then
+      -- Seven of eight: a post may stand on water or wait for its drone (the ring relaid at 135 had 19 of 24 guns up).
+      check("cordon: a grown camp closes a ring round itself", cs.ring ~= nil and covered >= 7,
+        string.format("ring %s, %d sectors", tostring(cs.ring), covered))
+    end
     check("cordon: drones built them, none stuck", cr.done >= 6 and cr.stuck == 0, serpent.line(cr))
     check("cordon: the claim is no further than its last standing arc", cs.perimeter and (not cs.radius or cs.perimeter < cs.radius),
       string.format("perimeter %s, pending arc %s", tostring(cs.perimeter), tostring(cs.radius)))

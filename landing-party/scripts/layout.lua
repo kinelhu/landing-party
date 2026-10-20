@@ -118,7 +118,22 @@ local function wall_ring(x0, y0, w, h)
 end
 
 -- Open a block: record it, lay its road ring, queue its fixed entities. Slots are filled later.
-local function open(b, hub, role, x0, y0, w, h, cells)
+-- A spread block's ground (layout.spread): the block and its road ring with its corners cut back CLUSTER_CUT, paved
+-- whole; side by side they merge into one lobed plate (the user: "it's all squares everywhere").
+local CLUSTER_CUT = 6
+local function lobe(x0, y0, w, h)
+  local r = {x0 - R, y0 - R, x0 + w + R, y0 + h + R}
+  local out = {}
+  for x = r[1], r[3] - 1 do
+    for y = r[2], r[4] - 1 do
+      local cx, cy = x + 0.5, y + 0.5
+      if math.min(cx - r[1], r[3] - cx) + math.min(cy - r[2], r[4] - cy) > CLUSTER_CUT then table.insert(out, {x, y}) end
+    end
+  end
+  return out
+end
+
+local function open(b, hub, role, x0, y0, w, h, cells, lobed)
   local variants = blocks[role]
   local v = rng.pick(b.rng, variants)
   local t = {}
@@ -140,8 +155,20 @@ local function open(b, hub, role, x0, y0, w, h, cells)
     for _, c in ipairs(cells) do hub.cells[c[1] .. ":" .. c[2]] = block end
     hub.count = hub.count + 1
   end
-  push(b, {tiles = road_ring(x0, y0, w, h), module = block})
-  if role == "depot" then layout.livery(b, block) end
+  local arch = shared.CORPS[b.corp].arch or {}
+  -- Its spread clusters only: the core kept its blocks (lobed too, 23 scenarios turned: gates, power, hazards; the core
+  -- is to be laid out by wave function collapse instead).
+  if arch.lobed and role ~= "pad" and role ~= "picket" and hub and hub.spread then lobed = true end
+  if lobed then
+    block.walls = false
+    block.embellished = true
+    push(b, {tiles = lobe(x0, y0, w, h), floor = "pad", module = block})
+    if hub and hub.walled then layout.wall_cluster(b, hub, block) end
+    block.liveried = true
+  else
+    push(b, {tiles = road_ring(x0, y0, w, h), module = block})
+    if role == "depot" then layout.livery(b, block) end
+  end
   for _, e in ipairs(v.fixed) do
     local pos = at(e)
     if e[1] == "lp-pylon" then layout.connect(b, pos[1], pos[2], block) end
@@ -204,7 +231,9 @@ function layout.open_role(b, role)
   -- No fabricator yet and no free cell by its hub (its own drop generators, pacifier, first outpost and cliffs took the
   -- four a street hub allows, seed 4242): its new hub goes near, not at the doctrine's reach, and opens as the block
   -- asked for (a walled compound first spent its last parts on walls: 4 left for a fabricator of 25).
-  return layout.found(b, first and role)
+  -- The launch pad too: founded as a compound, the rule asked again and founded another (eight on 12345 by minute 60,
+  -- and never a pad; spread1, 2026-10-20).
+  return layout.found(b, (first or role == "launch") and role)
 end
 
 -- A hub's open slot for `role` (fabricator, generator), opening a block if every one is taken.
@@ -258,6 +287,191 @@ function layout.found(b, near)
         local block = open(b, hub, near or "compound", x0, y0, S, S, {{0, 0}})
         return block, hub
       end
+    end
+  end
+end
+
+-- Serenity's spread (planner "spread"; the user: "organic looking bases that look menacing, like metastases on the map"):
+-- a block by its newest cluster while it holds fewer than SPREAD_HUB (a depot, then compounds), else a new cluster
+-- founded with a compound (its own generators: a hard point) out between the camp's edge and SPREAD_SHORT inside its
+-- line, within SPREAD_ARC of the line's bearing. Returns the block, or nil when no ground is left.
+local SPREAD_HUB, SPREAD_SHORT, SPREAD_ARC = 3, 30, math.rad(100)
+local SPREAD_FREE = 160      -- before its line: no further out than this (unbounded, a cluster stood 50 tiles from the
+                             -- player's wall, and its claim ran past every target its line had: the line never stepped)
+local SPREAD_CLEAR = 60      -- from the player's buildings and rivals' claims
+
+-- A spread cluster's wall (the user: "more varied block shapes? it's all squares everywhere ... Factorio walls can build
+-- some nice looking shapes"): one wall round the cluster, not a square round each block. Its ground is the union of its
+-- blocks with their roads, each block's corners cut back CLUSTER_CUT tiles: lobes where blocks join, chamfered points.
+-- The wall stands on that ground's edge (8-neighbour: a diagonal joined side to side, no corner gaps); left open where
+-- the road home crosses it; a gun turret every CLUSTER_TURRET_GAP tiles inside it (CLUSTER_TURRETS at most; fed, not
+-- powered: lasers on every hub's wall ran demand past supply in nine scenarios).
+local CLUSTER_TURRET_GAP, CLUSTER_TURRETS = 14, 8
+-- `fresh`: a block opened in a hub already walled: the wall extended round it only (its lobe's edge; what stood between
+-- stays as an inner wall), no new ways out (an unwalled plate by a walled core, core1).
+function layout.wall_cluster(b, hub, fresh)
+  if not hub or (hub.walled and not fresh) then return end
+  hub.walled = true
+  local surface = game.surfaces[b.surface]
+  local rects = {}
+  for _, k in ipairs(b.blocks) do
+    if k.hub == hub.id then table.insert(rects, {k.x0 - R, k.y0 - R, k.x0 + k.w + R, k.y0 + k.h + R}) end
+  end
+  if #rects == 0 then return end
+  local function ground(x, y)
+    local cx, cy = x + 0.5, y + 0.5
+    for _, r in ipairs(rects) do
+      if cx > r[1] and cx < r[3] and cy > r[2] and cy < r[4]
+        and math.min(cx - r[1], r[3] - cx) + math.min(cy - r[2], r[4] - cy) > CLUSTER_CUT then return true end
+    end
+    return false
+  end
+  local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
+  for _, r in ipairs(rects) do
+    x0, y0, x1, y1 = math.min(x0, r[1]), math.min(y0, r[2]), math.max(x1, r[3]), math.max(y1, r[4])
+  end
+  local road = shared.variant(b.corp, "lp-road")
+  local block = nil
+  for _, k in ipairs(b.blocks) do if k.hub == hub.id then block = k break end end
+  local edge, turrets = {}, {}
+  for x = math.floor(x0), math.ceil(x1) do
+    for y = math.floor(y0), math.ceil(y1) do
+      if ground(x, y) then
+        local out = {}
+        for _, d in ipairs({{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}) do
+          if not ground(x + d[1], y + d[2]) then table.insert(out, d) end
+        end
+        -- Extended: the old wall now inside the plate comes down (it sealed the new block off).
+        if fresh and #out == 0 then
+          for _, w in pairs(surface.find_entities_filtered{area = {{x + 0.1, y + 0.1}, {x + 0.9, y + 0.9}}, name = "lp-wall",
+            force = b.force}) do
+            storage.owner[w.unit_number] = nil
+            w.destroy()
+          end
+          for i = #b.queue, 1, -1 do
+            local q = b.queue[i]
+            if q.name == "lp-wall" and math.floor(q.pos[1]) == x and math.floor(q.pos[2]) == y then table.remove(b.queue, i) end
+          end
+        end
+        if #out > 0 then
+          -- The road home: a road tile here with road beyond it is an opening.
+          local open = false
+          if surface.get_tile(x, y).name == road then
+            for _, d in ipairs(out) do
+              if surface.get_tile(x + d[1], y + d[2]).name == road then open = true end
+            end
+          end
+          local mine = not fresh or (x >= fresh.x0 - R and x < fresh.x0 + fresh.w + R and y >= fresh.y0 - R
+            and y < fresh.y0 + fresh.h + R)
+          if not open and mine then
+            push(b, {name = "lp-wall", pos = {x + 0.5, y + 0.5}, module = fresh or block})
+            table.insert(edge, {x, y, out})
+          end
+        end
+      end
+    end
+  end
+  -- Its ways out: the four extremes of its edge, north, south, east, west, each left open four wide.
+  for _, d in ipairs(fresh and {} or {{0, -1}, {0, 1}, {1, 0}, {-1, 0}}) do
+    local bv = -math.huge
+    for _, e in ipairs(edge) do bv = math.max(bv, e[1] * d[1] + e[2] * d[2]) end
+    -- The middle of that flat edge (the first in scan order sat by a cut corner).
+    local flat = {}
+    for i, e in ipairs(edge) do if e[1] * d[1] + e[2] * d[2] == bv then table.insert(flat, i) end end
+    local best = flat[math.max(1, math.ceil(#flat / 2))]
+    if best then
+      local e = edge[best]
+      local horizontal = d[2] ~= 0
+      for k = -2, 1 do
+        local gx, gy = horizontal and e[1] + k or e[1], horizontal and e[2] or e[2] + k
+        for i = #b.queue, 1, -1 do
+          local q = b.queue[i]
+          if q.name == "lp-wall" and q.module == block and math.floor(q.pos[1]) == gx and math.floor(q.pos[2]) == gy then
+            table.remove(b.queue, i)
+          end
+        end
+      end
+      -- Open, two turrets inside it (gated, a raid stood behind it: a unit plans its path when ordered, and an outer
+      -- gate far from it was shut then; gates).
+      local ix, iy = -d[1] * 4, -d[2] * 4
+      for _, side in ipairs({-4, 3}) do
+        local tx, ty = horizontal and e[1] + side + 0.5 or e[1] + 0.5, horizontal and e[2] + 0.5 or e[2] + side + 0.5
+        push(b, {name = "lp-gun-turret", pos = {tx + ix, ty + iy}, module = block, loose = true})
+      end
+    end
+  end
+  for _, k in ipairs(b.blocks) do if k.hub == hub.id then k.walled = true end end
+  -- Turrets along it, inside, spaced (the edge tiles in scan order, kept apart).
+  for _, e in ipairs(edge) do
+    if #turrets >= CLUSTER_TURRETS then break end
+    local far = true
+    for _, t in ipairs(turrets) do if (t[1] - e[1]) ^ 2 + (t[2] - e[2]) ^ 2 < CLUSTER_TURRET_GAP ^ 2 then far = false end end
+    if far then
+      local ix, iy = 0, 0
+      for _, d in ipairs(e[3]) do ix, iy = ix - d[1], iy - d[2] end
+      local n = math.max(1, math.sqrt(ix * ix + iy * iy))
+      local p = {e[1] + 0.5 + 3 * ix / n, e[2] + 0.5 + 3 * iy / n}
+      table.insert(turrets, {e[1], e[2]})
+      push(b, {name = "lp-gun-turret", pos = p, module = block, loose = true})
+    end
+  end
+  b.cluster_walls = (b.cluster_walls or 0) + #edge
+  return #edge
+end
+
+function layout.spread(b)
+  local surface = game.surfaces[b.surface]
+  local ox, oy = b.origin.x, b.origin.y
+  -- Short of its line; before it has one, a cluster's step beyond its furthest block.
+  local rmax = b.perimeter and (b.perimeter - SPREAD_SHORT) or nil
+  local function inside(x0, y0)
+    return not b.perimeter or math.sqrt((x0 + S / 2 - ox) ^ 2 + (y0 + S / 2 - oy) ^ 2) <= b.perimeter - SPREAD_SHORT
+  end
+  local hub = b.spread_hub and b.hubs[b.spread_hub]
+  if hub and hub.count < SPREAD_HUB then
+    local role = hub.count == 1 and "depot" or "compound"
+    for _, c in ipairs(candidates(b, hub)) do
+      local x0, y0 = hub.x + c.i * PITCH, hub.y + c.j * PITCH
+      if inside(x0, y0) and layout.area_free(surface, x0, y0, S, S) then
+        local k = open(b, hub, role, x0, y0, S, S, {{c.i, c.j}}, true)
+        k.walls = false
+        return k
+      end
+      hub.bad[c.k] = true
+    end
+  end
+  -- A new cluster: beyond its furthest block, short of its line.
+  local rmin = 0
+  for _, k in ipairs(b.blocks) do
+    rmin = math.max(rmin, math.sqrt((k.center[1] - ox) ^ 2 + (k.center[2] - oy) ^ 2))
+  end
+  rmin = math.max(60, rmin - PITCH)
+  rmax = rmax or math.min(SPREAD_FREE, rmin + 3 * PITCH)
+  if rmax < rmin + PITCH then return nil end
+  local bs = b.cordon_bearings
+  local bearing = bs and #bs > 0 and math.rad(bs[#bs]) or nil
+  for _ = 1, 24 do
+    local a = bearing and (bearing + (rng.next(b.rng) - 0.5) * 2 * SPREAD_ARC) or 2 * math.pi * rng.next(b.rng)
+    local r = rmin + rng.next(b.rng) * (rmax - rmin)
+    local x0, y0 = math.floor(ox + r * math.cos(a) - S / 2), math.floor(oy + r * math.sin(a) - S / 2)
+    local cx, cy = x0 + S / 2, y0 + S / 2
+    local clear = true
+    for _, f in ipairs(shared.player_forces()) do
+      if surface.count_entities_filtered{position = {cx, cy}, radius = SPREAD_CLEAR, force = f, limit = 1} > 0 then clear = false end
+    end
+    for _, o in pairs(storage.bases) do
+      if o ~= b and not o.fallen and o.surface == b.surface and o.claim_radius
+        and (o.origin.x - cx) ^ 2 + (o.origin.y - cy) ^ 2 < (o.claim_radius + SPREAD_CLEAR / 2) ^ 2 then clear = false end
+    end
+    if clear and layout.area_free(surface, x0, y0, S, S) then
+      -- The cluster before it is done: its wall goes up.
+      layout.wall_cluster(b, hub)
+      local h = new_hub(b, x0, y0)
+      h.spread = true
+      b.spread_hub = h.id
+      local k = open(b, h, "compound", x0, y0, S, S, {{0, 0}}, true)
+      k.walls = false
+      return k
     end
   end
 end

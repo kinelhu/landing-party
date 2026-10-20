@@ -69,8 +69,16 @@ shared.CORPS = {
     tints = {["lp-wall"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-turret"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
       ["lp-pylon"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-lamp"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
       ["lp-mine"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}},
-    road = {tile = "refined-concrete"}, pad = {tile = "refined-concrete"},
+    -- Its deck: the space platform's plating on the ground (the user, 2026-10-20: "space station flooring ... for
+    -- Serenity, giving a real alien look"; Fable's look consult, item 1). Refined concrete without Space Age.
+    -- Its roads too: a young camp's floor is its roads (the pads are laid whole only at maturity), and in concrete
+    -- they read as any base's (the first screenshots).
+    road = {tile = "space-platform-foundation", fallback = "refined-concrete", map_color = {r = 0.3, g = 0.32, b = 0.34}},
+    pad = {tile = "space-platform-foundation", fallback = "refined-concrete", map_color = {r = 0.27, g = 0.29, b = 0.31}},
     trim = {tile = "black-refined-concrete"},
+    -- The line's painted stripe (cordon.lua): its own tile, not a floor (shared.FLOORS), so a camp grown out to its
+    -- old arcs builds over it.
+    stripe = {tile = "black-refined-concrete"},
     icon = "signal-heart", motto = "Please remain behind the line.",
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
     -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
@@ -98,7 +106,9 @@ shared.CORPS = {
       {id = "aegis", branch = "line", era = 2, requires = "warden", cost = 2000, unit = {kind = "lp-aegis", weight = 1},
         trigger = {killer = {"vehicle", "lp-battle-tank"}, min = 5}},
     },
-    arch = {gates = true, baffles = true, pillboxes = true, flamers = true, pad = "ring"}, clears_nests = true,
+    -- lobed (the user, 2026-10-20: "organic looking bases ... like metastases", "it's all squares everywhere"): its
+    -- blocks on lobed plates, one wall round each hub (layout.wall_cluster), no square per block, no pickets.
+    arch = {gates = true, baffles = true, pillboxes = true, flamers = true, pad = "ring", lobed = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
@@ -121,7 +131,7 @@ shared.DEFAULT_CORP = "serenity"
 -- The faction's kinds of building and unit. The default corporation's prototypes carry the plain names
 -- ("lp-turret"); another's are "lp-<corp>-turret". Logic speaks in kinds; creation and queries translate.
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
-  "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
+  "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-post-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
   "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer", "lp-scrap-cannon"}
 -- A howitzer destroyed in the field leaves its camp without one this long (sieges go with mortars only).
@@ -248,6 +258,7 @@ shared.cost = {
   ["lp-depot"] = 40,
   ["lp-launchpad"] = 150,
   ["lp-lamp"] = 1,
+  ["lp-post-lamp"] = 1,
   ["lp-mine"] = 2,
   ["lp-mortar"] = 60,            -- a siege emplacement (scripts/ops.lua), carried by a hauler
   ["lp-howitzer"] = 120,         -- a clearance's long gun, where worms outrange the mortar

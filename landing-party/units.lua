@@ -397,6 +397,9 @@ rail_beam.action = nil
 -- Its look: Serenity's charcoal (its walls' and turrets'), not the Line trooper's slate-teal, and a size larger, so it
 -- reads as the heavy one at a glance.
 local railgunner = make_infantry("lp-railgunner", {r = 0.32, g = 0.35, b = 0.38, a = 1}, "mech-armor")
+-- Its firing pose: its own (the mech armour's, tinted once). The Line trooper's, tinted again, went black (a second tint
+-- finds no mask left and darkens the whole body; the user, 2026-10-20: "turn black only when they fire").
+local rail_pose = railgunner.attack_parameters.animation
 local function grow(t, k, seen)
   if type(t) ~= "table" or seen[t] then return end
   seen[t] = true
@@ -423,8 +426,7 @@ railgunner.attack_parameters = {
   -- failed (bombard, seed 12345: 10 of 22 back and aborted, against 17 of 22 and done without it; reverting that line
   -- alone restored it).
   sound = table.deepcopy((data.raw.gun["railgun"] or data.raw.gun["tank-cannon"]).attack_parameters.sound),
-  animation = (function() local a = table.deepcopy(infantry.attack_parameters.animation)
-    tint(a, {}, {r = 0.32, g = 0.35, b = 0.38, a = 1}); grow(a, 1.15, {}); return a end)(),
+  animation = (function() grow(rail_pose, 1.15, {}); return rail_pose end)(),
   ammo_type = {action = {
     {type = "direct", action_delivery = {type = "beam", beam = "lp-rail-beam", max_length = 31, duration = 8,
       source_offset = {0, -1}}},

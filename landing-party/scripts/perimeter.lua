@@ -180,18 +180,68 @@ function ops.perimeter(b, tick)
       end
     end
   end
-  if nd then cap = math.min(cap, nd + 40) end
-  -- A border the player set and keeps (border.lua): the line holds short of it.
-  local bc = ops.border_cap and ops.border_cap(b)
-  if bc then cap = math.min(cap, bc) end
-  for _, o in pairs(storage.bases) do
-    if o ~= b and not o.fallen and o.corp ~= b.corp and o.surface == b.surface and o.claim_radius then
-      local d = math.sqrt((o.origin.x - b.origin.x) ^ 2 + (o.origin.y - b.origin.y) ^ 2)
-      cap = math.min(cap, d - o.claim_radius)
+  -- How far it may step toward a target: short of the target, a border, a rival's claim in the way.
+  local function cap_toward(t, td)
+    local c, why = PERIMETER_MAX, "max"
+    if td and td + 40 < c then c, why = td + 40, "target" end
+    -- A border the player set and keeps (border.lua): the line holds short of it.
+    local bc = ops.border_cap and ops.border_cap(b)
+    if bc and bc < c then c, why = bc, "border" end
+    -- A rival's claim caps it only where the step goes: the arc faces its target (cordon.lua, 60 degrees either side),
+    -- and Grubstake's camp 150 tiles off to one side held Serenity's line still in every direction for three hours (12345).
+    local ta = t and t.valid and math.atan2(t.position.y - b.origin.y, t.position.x - b.origin.x)
+    for _, o in pairs(storage.bases) do
+      if o ~= b and not o.fallen and o.corp ~= b.corp and o.surface == b.surface and o.claim_radius then
+        local d = math.sqrt((o.origin.x - b.origin.x) ^ 2 + (o.origin.y - b.origin.y) ^ 2)
+        local oa = math.atan2(o.origin.y - b.origin.y, o.origin.x - b.origin.x)
+        local off = ta and math.abs(((oa - ta + math.pi) % (2 * math.pi)) - math.pi) or 0
+        -- Within the arc's half-width plus the rival claim's own angular reach.
+        if off <= math.pi / 3 + math.asin(math.min(1, o.claim_radius / math.max(d, 1))) and d - o.claim_radius < c then
+          c, why = d - o.claim_radius, "a rival's claim"
+        end
+      end
+    end
+    return c, why
+  end
+  local why
+  cap, why = cap_toward(near, nd)
+  -- Held by a rival on that side: it pushes where it can, toward the player's nearest building (its outposts on 12345
+  -- all lay past Grubstake's claim, and the line never stepped while the player's base lay open the other way).
+  if math.min(cur + PERIMETER_STEP, cap) <= cur and why == "a rival's claim" then
+    -- The player's buildings nearest first, every 30 degrees of bearing once (the nearest building also lay past it).
+    local cands, seen = {}, {}
+    for _, f in ipairs(shared.player_forces()) do
+      for _, e in pairs(surface.find_entities_filtered{position = {b.origin.x, b.origin.y}, radius = PERIMETER_MAX, force = f,
+        type = {"mining-drill", "assembling-machine", "furnace", "ammo-turret", "electric-turret", "electric-pole", "lab"}}) do
+        local ex, ey = e.position.x - b.origin.x, e.position.y - b.origin.y
+        local sector = math.floor((math.deg(math.atan2(ey, ex)) + 360) % 360 / 30)
+        local d = math.sqrt(ex * ex + ey * ey)
+        if not seen[sector] or d < seen[sector][2] then seen[sector] = {e, d} end
+      end
+    end
+    for _, v in pairs(seen) do table.insert(cands, v) end
+    table.sort(cands, function(p, q) return p[2] < q[2] end)
+    for _, v in ipairs(cands) do
+      local c2, w2 = cap_toward(v[1], v[2])
+      if math.min(cur + PERIMETER_STEP, c2) > cur then
+        near, nd, cap, why = v[1], v[2], c2, w2
+        if ops.trace then ops.trace(b, string.format("perimeter: a rival's claim in the way; the line goes for %s at %.0f,%.0f instead",
+          near.name, near.position.x, near.position.y)) end
+        break
+      end
     end
   end
   local new = math.min(cur + PERIMETER_STEP, cap)
-  if new <= cur then return end
+  if new <= cur then
+    -- Why it holds (once a reason: the line never stepped on 12345 and nothing said why).
+    local key = string.format("%s %d %d", why, math.floor(cap), math.floor(cur))
+    if b.held_why ~= key and ops.trace then
+      b.held_why = key
+      ops.trace(b, string.format("perimeter: holds at %.0f (cap %.0f: %s%s)", cur, cap, why,
+        nd and string.format(", target %.0f out", nd) or ""))
+    end
+    return
+  end
   -- The cordon (cordon.lua): the step is an arc of posts its drones build; the claim follows once they stand.
   if ops.cordon_step and ops.cordon_step(b, new, near) then return end
   ops.perimeter_advance(b, new, near, nd)

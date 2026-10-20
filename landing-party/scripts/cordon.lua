@@ -40,6 +40,14 @@ local function wall_line(a, c)
   return out
 end
 
+-- A post taken down: the ground its pad covered put back (construction.pave keeps it in m.under).
+local function unpave(b, m)
+  if m.under and #m.under > 0 then
+    game.surfaces[b.surface].set_tiles(m.under, true, false, true, false)
+    m.under = nil
+  end
+end
+
 local function bearing(b, near)
   if near and near.valid then
     return math.atan2(near.position.y - b.origin.y, near.position.x - b.origin.x)
@@ -54,15 +62,80 @@ local function post_jobs(b, m, p, a)
   local tiles = {}
   for i = -2, 2 do for j = -2, 2 do table.insert(tiles, {math.floor(p[1] + i), math.floor(p[2] + j)}) end end
   table.insert(jobs, {tiles = tiles, floor = "pad", module = m})
-  for k = 1, WALL do
-    local s = k - (WALL + 1) / 2
-    table.insert(jobs, {name = "lp-wall", pos = {p[1] + rx * 4 + tx * s, p[2] + ry * 4 + ty * s}, module = m})
+  -- Its front a continuous wall (side-joined): WALL pieces set along a diagonal touched only at their corners, and read
+  -- as loose blocks (the first screenshots).
+  local h = (WALL - 1) / 2
+  for _, q in ipairs(wall_line({p[1] + rx * 4 - tx * h, p[2] + ry * 4 - ty * h}, {p[1] + rx * 4 + tx * h, p[2] + ry * 4 + ty * h})) do
+    table.insert(jobs, {name = "lp-wall", pos = q, module = m})
   end
   for _, s in ipairs({-2, 2}) do
     table.insert(jobs, {name = "lp-gun-turret", pos = {p[1] + tx * s, p[2] + ty * s}, module = m})
   end
+  -- The lit line (Fable's look consult): a lamp between its guns.
+  table.insert(jobs, {name = "lp-post-lamp", pos = {p[1], p[2]}, module = m})
   return jobs
 end
+
+-- The camp's back (the user, 2026-10-20: "no defense towards their back"; Fable's look consult, item 2): grown (mature:
+-- it builds no more blocks, so nothing of its own is in the way), a ring of posts round the camp beyond its last block,
+-- facing out, one every SPACING tiles (RING_MIN to RING_MAX), the line's own post (pad, wall, guns, lamp); no stripe.
+-- Never recovered; rebuilt when lost, as any building.
+local RING_MIN, RING_MAX = 8, 12
+local RING_MARGIN = 20             -- beyond its furthest block or mine
+function cordon.ring(b)
+  if storage.cordon_off or not shared.CORPS[b.corp].cordon or not b.origin then return end
+  -- Not a camp that spreads: its clusters each have their wall and guns, and a ring round them all ran 279 out, through
+  -- the player's base (core3).
+  if (shared.CORPS[b.corp].arch or {}).lobed and not storage.grow_to_line_off then return end
+  -- Round its blocks (the camp proper): the claim follows the line, and a ring at the claim stood on the line itself
+  -- (206 of 210, five sectors of eight built); round its mines too, it ran 223 out, 12 posts on 1,400 tiles. Its mines
+  -- keep their own turrets.
+  local r = 40
+  for _, k in ipairs(b.blocks) do
+    for _, c in ipairs({{k.x0, k.y0}, {k.x0 + k.w, k.y0}, {k.x0, k.y0 + k.h}, {k.x0 + k.w, k.y0 + k.h}}) do
+      r = math.max(r, math.sqrt((c[1] - b.origin.x) ^ 2 + (c[2] - b.origin.y) ^ 2) + RING_MARGIN)
+    end
+  end
+  -- Grown again out to its line (planner.lua): the old ring, now inside the camp, comes down (half its parts back).
+  if b.ring then
+    if r < b.ring.radius + 20 then return end
+    local back, gone = 0, 0
+    for _, m in ipairs(b.ring.posts) do
+      for _, e in ipairs(m.entities or {}) do
+        if e.valid then
+          back = back + math.floor((shared.cost[shared.kind_of(e.name)] or 0) / 2)
+          storage.owner[e.unit_number] = nil
+          e.destroy()
+          gone = gone + 1
+        end
+      end
+      m.recovered = true
+      unpave(b, m)
+    end
+    local mods = {}
+    for _, m in ipairs(b.ring.posts) do mods[m] = true end
+    for _, list in ipairs({b.rebuild, b.queue}) do
+      for i = #list, 1, -1 do if list[i].module and mods[list[i].module] then table.remove(list, i) end end
+    end
+    b.parts = b.parts + back
+    base.trace(b, string.format("cordon: the ring at %.0f recovered (%d pieces, %d parts back)", b.ring.radius, gone, back))
+  end
+  local n = math.min(RING_MAX, math.max(RING_MIN, math.floor(2 * math.pi * r / SPACING)))
+  b.ring = {radius = r, posts = {}}
+  local jobs = {}
+  for k = 0, n - 1 do
+    local a = 2 * math.pi * (k + 0.5) / n
+    local p = {b.origin.x + math.cos(a) * r, b.origin.y + math.sin(a) * r}
+    local m = {kind = "post", center = p, entities = {}, ring = true}
+    table.insert(b.ring.posts, m)
+    for _, j in ipairs(post_jobs(b, m, p, a)) do table.insert(jobs, j) end
+  end
+  -- At the back of the queue (first, they held a camp's generators back: demand past supply in seven scenarios).
+  for _, j in ipairs(jobs) do table.insert(b.queue, j) end
+  b.rings = (b.rings or 0) + 1
+  base.trace(b, string.format("cordon: a ring of %d posts round the camp at %.0f", n, r))
+end
+base.cordon_ring = cordon.ring
 
 -- ops.perimeter asks with the step it would take: true while its arc is being built (the claim waits), false to step.
 function cordon.step(b, new, near)
@@ -95,6 +168,7 @@ function cordon.step(b, new, near)
           end
         end
         m.recovered = true
+        unpave(b, m)
       end
       b.parts = b.parts + back
       b.cordon_recovered = (b.cordon_recovered or 0) + gone
@@ -126,6 +200,18 @@ function cordon.step(b, new, near)
   for k, m in ipairs(c.posts) do
     local a = a0 - ARC + 2 * ARC * (k - 1) / (n - 1)
     for _, j in ipairs(post_jobs(b, m, m.center, a)) do table.insert(jobs, j) end
+  end
+  -- The painted line: a dark stripe post to post (its trim), laid with the posts; it outlives their recovery.
+  for k = 1, #c.posts - 1 do
+    local stripe = {}
+    for _, q in ipairs(wall_line(c.posts[k].center, c.posts[k + 1].center)) do
+      -- Off the posts' pads (it painted over half of one).
+      local a, z = c.posts[k].center, c.posts[k + 1].center
+      if math.max(math.abs(q[1] - a[1]), math.abs(q[2] - a[2])) > 3 and math.max(math.abs(q[1] - z[1]), math.abs(q[2] - z[2])) > 3 then
+        table.insert(stripe, {math.floor(q[1]), math.floor(q[2])})
+      end
+    end
+    table.insert(jobs, {tiles = stripe, floor = "stripe", module = c.posts[k]})
   end
   -- Gate posts (Fable: a route the arc crosses gets a gate): where the arc crosses a player's straight rail, two gates
   -- across it (a gate of another force on a player's rail stops their trains: spike, DESIGN Engine notes) and two gun
@@ -268,6 +354,7 @@ function cordon.check(b)
       end
     end
     m.recovered = true
+    unpave(b, m)
   end
   for _, list in ipairs({b.rebuild, b.queue}) do
     for i = #list, 1, -1 do if list[i].module and mods[list[i].module] then table.remove(list, i) end end
@@ -290,7 +377,8 @@ function cordon.stats(b)
   return {arcs = b.cordon_arcs or 0, posts = b.cordon_posts or 0, pending = c and #c.posts or 0, pending_built = built,
     radius = c and c.radius, perimeter = b.perimeter, bearings = b.cordon_bearings or {}, recovered = b.cordon_recovered or 0,
     contact = b.cordon_contact or 0, gates = b.cordon_gates or 0, ore = b.cordon_ore or 0, severed = b.severed or 0,
-    broken = b.line_broken or 0}
+    broken = b.line_broken or 0, ring = b.ring and b.ring.radius,
+    rings = b.rings or 0}
 end
 
 ops.cordon_step = cordon.step

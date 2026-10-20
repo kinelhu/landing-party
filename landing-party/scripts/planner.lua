@@ -5,6 +5,10 @@ local shared = require("__landing-party__.shared")
 
 local planner = {}
 
+local GROW_CAP = 30            -- blocks: Serenity's spread stops here (UPS)
+local SPREAD_PARTS = 250       -- parts in hand before it spreads (what it needs for units and its line first)
+local SPREAD_WAIT = 5 * 3600   -- after a spread that found no ground
+local function spreads(b) return shared.CORPS[b.corp].cordon and not storage.grow_to_line_off end
 function planner.install(ops, K)
 local DEFENCE_RADIUS = K.DEFENCE_RADIUS
 local FAB_FEED_PER_MIN = K.FAB_FEED_PER_MIN
@@ -93,7 +97,8 @@ local function threat(b)
 end
 
 -- The planner's rules, in priority order. The first that applies and finds a place acts.
-local function plan(b)
+-- `only`: that rule alone (base.lua: the power rule while the queue is busy).
+local function plan(b, only)
   local surface = game.surfaces[b.surface]
   local doc = layout.DOCTRINES[b.doctrine]
   local supply, demand = power(b)
@@ -129,10 +134,18 @@ local function plan(b)
     if #b.blocks >= mb or ((b.grow_failed or 0) >= 12 and #b.fabs > 0) then
       b.mature = game.tick
       trace(b, string.format("mature: %d blocks, %d hubs", #b.blocks, #b.hubs))
+      -- Grown, it closes its back (cordon.ring); a camp that spreads closes it once its spread is done (below).
+      if not spreads(b) then K.matured(b) end
     end
   end
   local function hub_needing(pred)
     for _, h in ipairs(b.hubs) do if pred(h) then return h end end
+  end
+  -- Spread to its cap (however it got there, pickets too): its last cluster walled, its ring closed, once.
+  if spreads(b) and b.mature and #b.blocks >= GROW_CAP and not b.spread_done then
+    b.spread_done = true
+    layout.wall_cluster(b, b.spread_hub and b.hubs[b.spread_hub])
+    K.matured(b)
   end
   local rules = {
     {"power", function() return demand + 200000 > 0.9 * supply end, function() return fill(b, "gen", "lp-generator") end},
@@ -158,7 +171,9 @@ local function plan(b)
         enqueue(b, modules.turrets, o)
         return string.format("turrets at %d,%d", o[1], o[2])
       end},
-    {"picket", function() b.target = hub_needing(function(h) return h.pickets < doc.pickets end); return b.target ~= nil end,
+    -- (Not lobed: its hubs' walls carry their turrets.)
+    {"picket", function()
+      b.target = hub_needing(function(h) return not h.spread and h.pickets < doc.pickets end); return b.target ~= nil end,
       function()
         local block = layout.picket(b, b.target, threat(b))
         return block and string.format("picket at %.0f,%.0f", block.center[1], block.center[2]) end},
@@ -168,6 +183,26 @@ local function plan(b)
         b.target.depot = true
         local block = layout.open_role(b, "depot")
         return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
+    -- Serenity spreads out to its line (the user, 2026-10-20: "We need organic looking bases that look menacing, like
+    -- metastases on the map"): with parts to spare, clusters of blocks founded towards its line, each tied home by
+    -- road and pylons, up to GROW_CAP blocks; once grown and its launch pad open (its mines are ore-bound, this is
+    -- ground-bound); towards its line once it has one.
+    {"spread", function()
+      return spreads(b) and b.launch_opened and #b.blocks < GROW_CAP
+        and b.parts > SPREAD_PARTS and (b.spread_wait or 0) <= game.tick end,
+      function()
+        local block = layout.spread(b)
+        -- Done (no ground left, or at its cap): it closes its ring round all of it (relaid three times while it spread,
+        -- each ring torn down, spread2).
+        if not block then
+          b.spread_wait = game.tick + SPREAD_WAIT
+          layout.wall_cluster(b, b.spread_hub and b.hubs[b.spread_hub])
+          K.matured(b)
+          return
+        end
+        if #b.blocks >= GROW_CAP then K.matured(b) end
+        return string.format("spread: %s at %.0f,%.0f (%d blocks)", block.kind, block.center[1], block.center[2], #b.blocks)
+      end},
     {"launch", function() return b.mature and not b.launch_opened end, function()
       local block = layout.open_role(b, "launch")
       if block and block.kind == "launch" then b.launch_opened = true end
@@ -179,7 +214,7 @@ local function plan(b)
     {"grow", function() return not b.mature and b.parts > 100 end, mining},
   }
   for _, r in ipairs(rules) do
-    if r[2]() then
+    if (not only or r[1] == only) and r[2]() then
       local did = r[3]()
       if did then
         b.rule = r[1]
@@ -192,7 +227,7 @@ local function plan(b)
       if r[1] == "grow" then b.grow_failed = (b.grow_failed or 0) + 1 end
     end
   end
-  b.rule = "idle"
+  if not only then b.rule = "idle" end
 end
 return {plan = plan, power = power}
 end

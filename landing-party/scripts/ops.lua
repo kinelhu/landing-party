@@ -200,12 +200,18 @@ local function cap(b, army) return army.cap(b) end
 local function battery(t) return t.kind == "artillery-turret" or t.kind == "artillery-wagon" end
 -- What an operation of choice can send, and the reserve it leaves home (pool.floor). Committing the reserve keeps the
 -- guard home (GUARD), as every taker does.
+-- Railgunners stay out of operations against buildings: their 30 tiles outrange a gun turret's 18, and the user saw them
+-- shoot at the player's turrets from beyond reach (deathworld, 2026-10-20). They clear nests (siege.lua) and guard home:
+-- they count towards the floor kept home, not towards what can be sent.
+local function fights(u) local k = shared.kind_of(u.name) return k ~= "lp-hauler" and k ~= "lp-railgunner" end
 local function field(b, army)
   local floor = pool.floor(cap(b, army), "reserve")
-  return math.max(0, pool.home(b) - floor), floor - pool.GUARD
+  local home, rails = pool.home(b), 0
+  for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then rails = rails + 1 end end
+  return math.max(0, math.min(home - floor, home - rails)), floor - pool.GUARD
 end
-local SOLDIER = function(u) return (u.type == "unit" or u.type == "spider-unit") and shared.kind_of(u.name) ~= "lp-hauler" end
-local FOOT = function(u) return u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" end
+local SOLDIER = function(u) return (u.type == "unit" or u.type == "spider-unit") and fights(u) end
+local FOOT = function(u) return u.type == "unit" and fights(u) end
 local function floor_of(b, army, committed) return pool.floor(cap(b, army), committed and "guard" or "reserve") end
 
 -- The threat budget (docs/campaign.md section 6): operations against a player force at once, across every

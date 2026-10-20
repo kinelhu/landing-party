@@ -68,7 +68,7 @@ document describes the parts as built; the campaign document describes the game 
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
 | `/lp flare`, `/lp rig`, `/lp tap` on demand | built | `flare`, `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
-| Serenity's cordon: arcs of posts built by drones, the claim behind them; old arcs recovered; mended when breached; a contact wall near the player; gate posts across the player's rails; ore it crosses claimed | built | `cordon` (six) |
+| Serenity's cordon: arcs of posts built by drones (on plating, lit, painted post to post), a ring round a grown camp that does not spread, the claim behind them; old arcs recovered; mended when breached; a contact wall near the player; gate posts across the player's rails; ore it crosses claimed | built | `cordon` (six) |
 | Rivals: standing (rival, enemy, truce), incidents, map labels | built | `standing` |
 | Grubstake prospects the player's frontier; its road (claim trucks, lapse) | built | `prospect` (two), `road` (two) |
 | Serenity's border stake; Grubstake's trade post (truce); bending the line with a decoy | built | `border` (two), `tribute`, `bend` |
@@ -82,6 +82,7 @@ document describes the parts as built; the campaign document describes the game 
 | Raid leaders (an icon over one raider; Grubstake breaks when it falls and its foreman drops the haul, Serenity regroups) | built | `leader` (three) |
 | Shields, gates for the player, anti-air turret | open | |
 | Depletion and relocation | open | |
+| Serenity spreads: lobed, walled clusters out toward its line (metastases), up to 30 blocks; its line around a rival's claim | built 2026-10-20, seen on maps, not measured | `factory` maps, `gates`, `cordon ring` |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -116,6 +117,107 @@ smoke under 60%); territory and standing on the map; constructors drawing a buil
 | Corporate research, plates | unit names and resistances | what it learned against the player | a plated unit looks plated (tint, armour) | later |
 | Grudge, standing down | a later landing; a camp gone quiet | why the next one came angry, why one went quiet | a quiet camp's lights out and guns lowered; an angry landing's escort | later |
 | Grubstake's setbacks (a hurt or bled camp holds its raids) | the lander's smoke | that the raids paused | smoke covers it | - |
+
+### Serenity's look (the user, 2026-10-20; Fable: `docs/reviews/2026-10-20-serenity-look-consult.md`)
+The user, first deathworld look: "Their base looks nothing like a smart opponent would build it: no outer walls except
+for their advancing frontier wall, they deconstruct turrets once the wall has advanced, which is debatable, no road
+going along with the wall, only 1 type of turret (might be locked behind tech?), no defense towards their back." The
+consult's order: (1) a deck and the lit line, (2) a ring of posts round the camp, (3) a supply lane along the line with
+masts, lasers on powered posts, flamers at openings, (4) old arcs kept as depth (pads, walls, stripe, lamps, every third
+post's turrets), (5) gates in the contact wall's opening, (6) the cargo pad's and bay's graphics for the lander and depots.
+- **(1) built 2026-10-20.** Its pads in `lp-pad`, now a copy of `space-platform-foundation` (the user: "space station
+  flooring ... giving a real alien look"): not minable (it would give Space Age's foundation for free), charcoal on the
+  map, refined concrete without Space Age (the sims). Each post carries a lamp between its guns (`lp-post-lamp`: no
+  grid out there, it burns on nothing, cold white), and a dark stripe (its trim) runs post to post, laid with the posts
+  and left by their recovery. `cordon`: 25 lamps on 25 standing posts, 2,543 stripe tiles over 5 arcs. Seen in a game
+  window (`scripts/watch.sh cordon`, screenshots by day and night): the camp showed only concrete (a young camp's floor
+  is its roads; pads are laid whole at maturity), so its roads are plating too; the lamps' white light read orange on
+  desert sand, now blue; a post's eight wall pieces set on a diagonal touched at their corners only and read as loose
+  blocks, now a side-joined line; the stripe painted over half the post's pad, now it stops at the pad. Second look:
+  plated roads with the platform's pipes, a plated post, a continuous front, and at night concentric arcs of cold lamps,
+  the old arcs left as dark lines with their pads (depth). The stripe comes out two tiles wide where the arc runs
+  diagonal: it reads as a service lane along the line. The tile's health under shells on Nauvis not yet checked.
+- The first run of it failed "power covers demand" (6.6 of 6.0 MW; 5.9 of 6.0 before it): the planner runs only on an
+  empty queue, the line's jobs kept the queue full from minute 11, and what was queued before them kept adding demand.
+  Now the power rule runs alone while the queue is busy (`plan(b, "power")`; generators queued already count): 6.6 of
+  8.0.
+- **(2) built 2026-10-20, at maturity.** At landing (the consult's choice) a ring at 40 would stand inside the camp's
+  later blocks: a block needs its road ring clear of anything built and its area clear of floor tiles
+  (`layout.area_free`), so the ring would have shaped its growth. A grown camp builds no more blocks: it closes a ring
+  then, just inside its claim (claim less 4), one post every 60 tiles (8 to 12), the line's own post facing out, no
+  stripe; never recovered, rebuilt when lost (`cordon.ring`, through the planner's `matured`). `cordon ring` (grown at
+  two blocks): a ring at 56, 16 guns, all eight 45-degree sectors covered. Without the line the camp in `cordon` does
+  not mature in 20 minutes (its planner busy behind the line's jobs), so the base scenario has no ring.
+- **Spread: the metastasis camp (the user, 2026-10-20: "Shouldn't the camp grow up to the Wall and when the wall is
+  pushed back again, continue growing?", then "We need organic looking bases that look menacing, like metastases on the
+  map", "it's all squares everywhere").** Built in steps, each looked at on one run's maps (`scripts/campmap.py`, a map
+  every 15 minutes from the factory instrument), not measured first:
+  - *Growth gated by the line (withdrawn).* Sites only inside its line, maturity at no site left or 30 blocks, each
+    step reopening growth. The factory A/B (16 runs, seeds 11-18, three hours): no bigger camps (5 to 11 blocks in
+    both arms: a camp's blocks follow ore, not ground), and the player's income 9% lower (134,988 against 148,870; 4
+    seeds lower, 2 the same, 2 higher), through its line: matured early under the 90-tile limit, its parts went to
+    the line, which stepped to 230 where the old one never stepped, and cut 1,020 belts and pipes against 551. One run
+    with maps would have shown it (the user: "1 test with snapshots is much smarter"); recorded in the harness notes.
+  - *The launch loop (a bug since the launch rule).* Grown, a camp asked for its launch pad; its newest hub was full, so
+    a new hub was founded as a compound, the pad never built, and the rule asked again: eight compound hubs on 12345 by
+    minute 60, and no exports. The launch pad now founds its own hub (`layout.open_role`).
+  - *Spread (planner rule "spread", `layout.spread`).* Grown and its pad open, with parts to spare (250), Serenity
+    founds clusters: a compound (its own generators, a hard point), then a depot and a compound by it (three blocks a
+    cluster), tied home by road and pylons; up to 30 blocks. Before its line: no further than 160 from the lander,
+    never within 60 of the player's buildings or inside a rival's claim (unbounded, a cluster stood 50 tiles from the
+    player's wall, and its claim outran every target its line had); with its line: within 100 degrees of its bearing,
+    30 short of it.
+  - *Lobed (Serenity's `arch.lobed`).* Every block of its hubs on a plate of its deck: the block and its road ring with
+    its corners cut back 6 (`lobe`); side by side they merge into lobes. One wall round each hub
+    (`layout.wall_cluster`): the edge of that plate, joined side to side (8-neighbour: no corner gaps), left open where
+    the road home crosses it and at its four extremes (open, two turrets inside each: gated, a raid stood behind the
+    far gates, `gates`), a turret every 14 tiles inside (8 at most). The core is walled when the camp is grown, a
+    cluster when the next is founded or the spread ends; a block opened in a walled hub extends the wall round itself
+    and the old wall between comes down. No pickets (its walls carry its guns), no square per block. Lobed for its
+    spread clusters only (2026-10-20): the core lobed too turned 23 of 190 scenarios (power past supply with lasers on
+    every hub's wall, the gates scenario's gaps, a player army that could not reach a walled outpost, the hazard
+    scenarios' camp losing nothing to biters); the core is to be laid out by wave function collapse instead. Its wall
+    turrets are gun turrets (fed, not powered). The ledger's scenarios run without spread (its clusters held the waves
+    off before the losses that bill them came), and `hazard unpaid` asks two bills, not three (its line now steps, and
+    the third losses fell by nests the player's cloud does not reach, rightly not billed).
+  - *No ring for a camp that spreads:* its clusters each have their wall; a ring round them all ran 279 out, through
+    the player's base. A camp that does not spread keeps it (`cordon ring`, with spread off).
+  - *Its line, held by a rival.* A rival's claim caps the line only within the arc it builds (Grubstake's camp to one
+    side held it still in every direction); held so on its target, the line takes the player's nearest building in a
+    free direction, one a 30-degree sector ("perimeter: a rival's claim in the way; the line goes for ... instead").
+    A line that holds says why ("perimeter: holds at 228 (cap 181: a rival's claim, target 445 out)"). On 12345 its
+    line had never stepped (three hours, every version): its targets all lay past Grubstake's claim; now it steps at
+    minute 80, toward the player's base.
+  - Seen on 12345 (`core7`, two hours): a lobed core and five walled clusters strung west on plated roads, 27 blocks,
+    its line at 258 pressing on the player's west wall. Next: composition and research by what it has built (a heavy
+    factory, a research block).
+- **Wave function collapse for its compounds (the user: "Would WFC be a cool algorithm to implement for Serenity?",
+  then "Why not WFC for the whole base?"; in progress, not hooked into the game yet).** Hand-made 6x6 tiles in
+  `scripts/wfc/serenity.tiles` (ASCII: wall, gate, lane, floor, outside, and buildings by their top-left letter at
+  their real footprints); two tiles stand side by side where their touching edges agree character by character, a wall
+  or gate may face outside, and a full wall edge never faces another; every tile also turned and mirrored.
+  `scripts/wfc/wfc.py` solves and checks with previews (`sheet`); `scripts/wfc/to_lua.py` makes the mod's table
+  (`landing-party/scripts/wfc_serenity.lua`); `landing-party/scripts/wfc.lua` is the same solver in game (seeded by the
+  caller). A result is checked: a gate opening outside, no floor open to outside, no wall stub or spur, lanes between two
+  gates, every floor reachable, every building beside reachable ground. What the sheets taught, in order: a building on
+  a tile's edge fits nothing (the validator's first catch); turning tiles by their characters merged two generators
+  (buildings are now turned as rectangles); restarting on a contradiction threw away 1,018 of 1,074 tries (depth-first
+  backtracking now), and nearly every lobed mask contradicted at once (its edge is soft: a cell beside the outside may be
+  outside); a lone wall corner tile ended wall lines in the floor (spurs) and back-to-back walls made thick spurs; with
+  those gone every cell walled itself into a sealed pod, so walls are allowed only at the mask's edge and the inside is
+  tiles whose edges are floor or lane: one compound a cluster, 6 of 6 samples in 11 tries. In LuaJIT, 30 clusters of 11
+  by 11 cells in 46 tries, 8 ms a try (Factorio's Lua slower; measured in game when hooked). Plan: spread founds a
+  cluster laid out whole by it (the planner asks what it must hold, generators, a depot; the solver places them; jobs as
+  now); then the whole camp, growing by collapsing new ground against what stands (fixed cells).
+  - *Rooms (the user: "we need layers of walls too, closed clusters within the base etc. A huge blob with just an
+    outside wall is boring").* Partition tiles inside the WFC never held: a partition must cross the compound wall to
+    wall, and the solver, which sees only neighbours, never finished one (160 of 190 tries rejected as stubs). So rooms
+    are carved after the collapse (`rooms`, binary space partition): straight partitions through floor and lanes only,
+    closed at both ends by the outer wall or another partition (a room split, not the compound: T-junctions, rooms of
+    many sizes), the longest of the three longest, no partition within 9 tiles either side, not along a lane; a door
+    where a lane crosses and at its middle; a partition that cuts a floor, a lane or a building off is taken back (one
+    fewer room instead of a rejected compound: 164 tries for 30 compounds became 43). Lanes pass through doors. Next: a
+    curtain wall round the whole camp with a killing ground before the compounds' own walls.
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and
@@ -1613,6 +1715,16 @@ the scenario in game (`scripts/watch-sim.sh`), the howitzer's balance and its cl
   Scenario `convoy LP_MIX=grown` (a bastion grown to full size before the uplink lands; in the full regression).
 - The bursts in the raze curve are not a problem (the user): the 80 at deathworld's minute 170 were 52 belts, 12 poles,
   10 walls; a raid is an event. Count by cost, not entities, in later reports.
+- **Railgunners stay off the player's buildings (2026-10-20).** The user, first deathworld look: railgunners "seem to
+  far outrange the gun turrets (intended??)" and "turn black only when they fire". Range 30 against a gun turret's 18:
+  they joined raids and assaults and shot from beyond reach (10 damage a shot to anything but biters, slow but free).
+  Tried: open fire at 17, the slug's line still 30 (one rule for every unit: what shoots a turret stands in its
+  reach). Against biters it lost: `rail` on 12345 every railgunner dead, 3 big biters killed (at 30 it passes); two
+  seeds, five clearance scenarios, 4 failures at 17 against 2 at 30. Range 30 kept; railgunners no longer go on raids,
+  assaults or a siege's guard (`ops.fights`), and count towards the floor kept home, not towards what a raid can send
+  (`field`). `leader rails`: six railgunners at home, a raid of four, none of them railgunners; letting them go, one
+  went. The black: their firing pose was the Line trooper's tinted a second time, and a second tint finds no mask left
+  and darkens the whole body; it is their own pose now (the mech armour's under Space Age), tinted once.
 
 ### Next design topics (the user, 2026-10-15; status 2026-10-16)
 - **Grubstake's flavour pass** (Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`): "felt before it is seen".

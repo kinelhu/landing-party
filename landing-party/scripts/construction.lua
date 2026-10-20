@@ -22,14 +22,19 @@ local site = K.site
 local trace = K.trace
 -- Lay road tiles, never over water or an existing road.
 -- Floors in the corporation's own tiles: roads, and pads (paved yards, docs/corporations.md).
-local function pave(b, tiles, floor)
+-- A post's pad remembers the ground under it (module.under), put back when the post comes down (cordon.lua: recovered
+-- arcs and rings left their pads as litter, the user's screenshot and spread2).
+local function pave(b, tiles, floor, module)
   local surface = game.surfaces[b.surface]
   local name = shared.variant(b.corp, "lp-" .. (floor or "road"))
   local out = {}
+  local keep = module and module.kind == "post" and floor == "pad"
+  if keep then module.under = module.under or {} end
   for _, t in ipairs(tiles) do
     local tile = surface.get_tile(t[1], t[2])
     if tile.valid and tile.name ~= name and not tile.collides_with("water_tile") then
       table.insert(out, {name = name, position = t})
+      if keep then table.insert(module.under, {name = tile.name, position = t}) end
     end
   end
   if #out > 0 then surface.set_tiles(out, true, false, true, false) end
@@ -124,7 +129,7 @@ local function place(b, job, by_crew)
 end
 
 function base.place_job(b, job, by_crew) return place(b, job, by_crew) end
-function base.pave_job(b, job) return pave(b, job.tiles, job.floor) end
+function base.pave_job(b, job) return pave(b, job.tiles, job.floor, job.module) end
 
 -- Forces whose presence occupies ground: every force the faction is at war with, biters excepted.
 local function occupied(b, surface, pos)
@@ -209,7 +214,7 @@ local function build(b)
   while b.queue[1] and b.queue[1].tiles do
     if b.queue[1].module and base.crew_take and base.crew_take(b, b.queue[1]) then return end
     local job = table.remove(b.queue, 1)
-    pave(b, job.tiles, job.floor)
+    pave(b, job.tiles, job.floor, job.module)
   end
   local job = b.queue[1]
   if not job then return end
