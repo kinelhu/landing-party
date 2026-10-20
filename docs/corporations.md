@@ -83,9 +83,10 @@ by all parties."
   Silhouette: concentric grey rectangles.
 - **Notice**: "Serenity Perimeter Group has secured the area at [map]. Unauthorised presence will be resolved."
 - **As built (2026-10-19)**: at war from landing. A line of cordon posts that steps toward the player, strangles
-  outposts, claims the next ore, cuts belts on its edge; sieges sized to win (mortars, the howitzer, a robot jammer), the
-  power strike, clearances of the nests that hit it, and an invoice for the waves the player's pollution draws, paid
-  off for a truce. Its raids regroup when their leader falls.
+  outposts, claims the next ore, cuts belts on its edge where its guns stand; sieges sized to win (mortars, the
+  howitzer, a robot jammer), the power strike, clearances of the nests that hit it, and an invoice for the waves the
+  player's pollution draws, paid off for a truce. Its raids regroup when their leader falls. Being at war, it answers
+  trespass only (a siege); its losses in the field are fair war.
 
 ### Lumen Transparency (the eye)
 - **Palette**: black, violet, white. Lamps violet; many of them (it is lit at night, visible from far).

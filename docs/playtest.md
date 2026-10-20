@@ -61,8 +61,9 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    arc drawn on the map, a named warning a step before it encloses a building of yours. Near you it closes with wall;
    across your rails a gate post (your trains stop). Shoot the drones: three lost on a post and the line is held there.
 15. **Strangling**: the line goes for your outpost easiest to cut off; with none of your buildings in reach, for the ore
-   field you will want next. On its edge it blows your belts, pipes and loaders every 30 seconds (an explosion each):
-   undergrounds with both ends off the line pass.
+   field you will want next. On its edge, where its guns stand (a turret of its within 30 tiles), it blows your belts,
+   pipes and loaders every 30 seconds (an explosion each): undergrounds with both ends off the line pass, and a sector
+   whose posts you destroyed is open.
 16. **Against a fortress**: a hauler brings mortars (a howitzer when robots keep the wall), a fire plan on one point at a
    time, roboports first; a jammer mast in the emplacement whose tesla arcs down your robots and blinds your threat
    scanners within 50 tiles. Destroy the mast.

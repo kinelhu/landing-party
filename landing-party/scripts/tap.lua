@@ -86,7 +86,7 @@ end
 
 local function home_of(b)
   for _, d in ipairs(b.depots or {}) do if d.valid then return d end end
-  return b.lander
+  return b.lander and b.lander.valid and b.lander or nil
 end
 
 -- Send a run (the laying or a repair) to plant pylons at the spots listed by index.

@@ -36,7 +36,7 @@ end
 
 local function home(b)
   for _, d in ipairs(b.depots or {}) do if d.valid then return d end end
-  return b.lander
+  return b.lander and b.lander.valid and b.lander or nil
 end
 
 function trade.placed(ent)
@@ -64,6 +64,7 @@ local function step(post)
     if not b then return end
     local s = post.entity.surface
     local h = home(b)
+    if not h then return end
     local name = shared.variant(b.corp, "lp-hauler")
     local p = s.find_non_colliding_position(name, {h.position.x, h.position.y + 12}, 20, 1)
     local u = p and s.create_entity{name = name, position = p, force = h.force}
@@ -105,8 +106,10 @@ local function step(post)
     standing.incident(b.corp, "tribute", post.entity.position, string.format("%d minutes of truce", minutes))
     shared.reply(game.forces[post.owner], post.entity.position, {"lp.tribute", shared.corp_label(b.corp), tostring(minutes)})
     local h = home(b)
-    r.unit.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 10,
-      distraction = defines.distraction.none}
+    if h then
+      r.unit.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 10,
+        distraction = defines.distraction.none}
+    end
   elseif r.phase == "home" and b then
     local h = home(b)
     if h and h.valid and (p.x - h.position.x) ^ 2 + (p.y - h.position.y) ^ 2 < 18 * 18 then

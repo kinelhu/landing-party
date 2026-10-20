@@ -200,11 +200,16 @@ end
 -- The line cuts what crosses it (strangling, the cut half): at war, the player's belts and pipes standing on the claim's
 -- edge (within BAND of it) are blown, a few a pass, so a supply line through Serenity's ground stops at its line. The
 -- counter is under it: an underground belt or pipe whose two ends stand off the line passes (the span between has no
--- entity to cut), or around it. Each blast is the tell: an explosion where the belt was.
+-- entity to cut), or around it. Each blast is the tell: an explosion where the belt was. Only where its guns are: a stretch
+-- of the edge with none of its turrets within SEVER_REACH is not cut. Cutting the whole circle, a broken line fell back
+-- and cut again at its new edge: the engaged player who broke it lost as many belt tiles as the turtle (factory, seven
+-- seeds, 2,924 against 2,784); now breaking a sector's posts opens that sector.
 local SEVER_TYPES = {"transport-belt", "underground-belt", "splitter", "pipe", "pipe-to-ground", "loader", "loader-1x1"}
 local BAND = 1.5
 local SEVER_MAX = 8
 local SEVER_BOX = 7
+local SEVER_REACH = 30            -- half a cordon's post spacing: a standing arc covers its whole span
+local GUNS = {"ammo-turret", "electric-turret", "fluid-turret"}
 function ops.sever(b)
   if storage.sever_off or not (shared.CORPS[b.corp].temper or {}).provoked_only or not b.claim_radius or b.fallen then return 0 end
   local forces = {}
@@ -219,13 +224,18 @@ function ops.sever(b)
   for k = 0, n - 1 do
     local a = 2 * math.pi * k / n
     local x, y = o.x + R * math.cos(a), o.y + R * math.sin(a)
+    local guarded
     for _, e in pairs(surface.find_entities_filtered{area = {{x - SEVER_BOX, y - SEVER_BOX}, {x + SEVER_BOX, y + SEVER_BOX}},
       force = forces, type = SEVER_TYPES}) do
       local id = e.unit_number
       if id and not seen[id] then
         seen[id] = true
         local d = math.sqrt((e.position.x - o.x) ^ 2 + (e.position.y - o.y) ^ 2)
-        if math.abs(d - R) <= BAND then
+        if guarded == nil and math.abs(d - R) <= BAND then
+          guarded = surface.count_entities_filtered{position = {x, y}, radius = SEVER_REACH, force = b.force, type = GUNS,
+            limit = 1} > 0
+        end
+        if guarded and math.abs(d - R) <= BAND then
           local at = e.position
           surface.create_entity{name = "explosion", position = at}
           e.die(game.forces[b.force])

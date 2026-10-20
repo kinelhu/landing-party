@@ -102,9 +102,9 @@ shared.CORPS = {
     caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
-    -- Answers: a loss gets a raid in formation; trespass (its ground, its border, a turret by its camp) the siege, its
-    -- masonry, what never forgives. A raid it would lose becomes a siege only on a second provocation (a drone shot
-    -- down where the player never saw it is not worth mortars).
+    -- Answers: trespass only (its ground, its border, a turret by its camp) gets the siege, its masonry, what never
+    -- forgives. Being at war, its losses are fair war and go unanswered (ops.request_answer; the user, 2026-10-19), so
+    -- the loss entry below is kept for a temper without `hostile`.
     -- Cuts: it surveys the power behind the turrets facing it and strikes the line (scripts/power.lua).
     temper = {provoked_only = true, hostile = true, cuts = true, bills = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).

@@ -64,10 +64,10 @@ local function choose_strip(b, army)
   local best, bd, site
   local drills, sited = 0, 0
   for key, t in pairs(b.intel.targets) do
-    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) then drills = drills + 1 end
+    if (t.drills or 0) > 0 and against_player(t.owner) then drills = drills + 1 end
     -- Any outpost with a camp site beyond turret reach (strip_site checks it): requiring an undefended drill as
     -- well left a careful player's outposts, each with two lasers, never stripped.
-    if t.value == ops.VALUE["mining-drill"] and against_player(t.owner) and in_flight < budget(t.owner)
+    if (t.drills or 0) > 0 and against_player(t.owner) and in_flight < budget(t.owner)
       and not ops.marked(b, t.pos) and stance.may(b.corp, t.owner, "strip") then
       local d = (t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2
       if not bd or d < bd then

@@ -219,7 +219,8 @@ local function step(b, j)
     -- five of six fell 10 tiles from the turret that killed them, 15 to 21 from the mound (jumper).
     local ents = {}
     for _, e in pairs(s.find_entities_filtered{position = j.mound, radius = 10, force = j.owner}) do
-      if e.type ~= "character" and e.type ~= "unit" and not e.type:find("turret") and s.count_entities_filtered{position = e.position,
+      -- Only what can be hit: a ghost in reach crashed the order (factory, seeds 12345, 4242, 2, 8).
+      if e.is_entity_with_health and e.type ~= "character" and e.type ~= "unit" and not e.type:find("turret") and s.count_entities_filtered{position = e.position,
         radius = REACH, force = j.owner, type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} == 0 then
         ents[#ents + 1] = e
       end

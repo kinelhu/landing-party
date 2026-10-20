@@ -15,11 +15,11 @@ document describes the parts as built; the campaign document describes the game 
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers: strength and aggression per corporation (settings) | built, uncalibrated | `levers` |
-| Answers by corporation: Grubstake a flare, Serenity a raid or (trespass) a siege | built | `flare answer`, `line turret`, `crew answered` |
+| Answers by corporation: Grubstake a flare; Serenity, at war, answers trespass only (a siege), its losses fair war | built (trespass only 2026-10-20) | `flare answer`, `line turret`, `crew answered`, `remembered` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
 | Tempers: Serenity at war from landing (a truce bought at its invoice post the only quiet); Grubstake raids soft targets and strip-mines the player's ore, escalating when hurt | built (Serenity hostile 2026-10-19) | `temper`, `strip` |
-| Serenity's line moves: its perimeter grows towards the player, a named warning a step ahead | built | `line` (two) |
+| Serenity's line moves: its perimeter grows towards the player, a named warning a step ahead; it cuts belts on its edge where its guns stand | built (cuts by its guns 2026-10-20) | `line` (two), `strangle sever` |
 | Settlement architecture: hubs, blocks, roads, walls, pickets, doctrines | built | `grow`, variety sheet |
 | Economy: drills on real ore, fabricators, parts, power as the graph | built | `grow`, `cut` |
 | Rebuild unless occupied | built | `raid`, `occupy` |
@@ -2617,6 +2617,53 @@ numbers as headless: 69,528). On that seed Serenity's line never stepped out (no
 harness's limit, shown by these runs: deterministic but chaotic, a small rule change re-rolls a seed's game (777 gave
 155,659, 142,853 and 123,861 under three line rules); at two seeds a 10% effect is not distinguishable from that.
 Decisions of that size want eight seeds or more.
+Trespass only (the user agreed, 2026-10-20): Serenity, at war from landing, no longer answers a loss; its units killed
+in the field are fair war, and only trespass (its ground, its border, a turret by its camp) gets the siege
+(`ops.request_answer`). Scenario `remembered` turned round: two of its units killed by turrets, neither answered.
+Eight seeds, four hours, turtle against engaged (four engaged runs crashed, below, and were run again fixed): income
+173,450 against 184,363, engaged ahead on six of eight, the pairs' difference +7.7% (spread 19.7%, standard error 7%):
+a lean, within the noise (one seed alone varies some 13% run to run). What the corporations did is sharper than
+income, summed over seven of the pairs (seed 8 engaged ran later):
+
+| | turtle | engaged | engaged lower on |
+|---|---|---|---|
+| Grubstake's skim (items) | 5,863 | 22 | 7 of 7 |
+| Grubstake raids | 168 | 84 | 5 |
+| Serenity razed | 3,067 | 1,860 | 5 |
+| buildings lost | 13,378 | 11,385 | 6 |
+| Serenity raids | 218 | 212 | 4 |
+| belt tiles its line severed | 2,784 | 2,924 | 3 |
+
+Fighting Grubstake breaks it (its trucks killed, its camp down, its raids halved); Serenity's tempo does not answer
+anything the player does: as many raids, as many belt tiles cut. That is the next problem (Fable's "escalate against
+what the player did, set back by what it kills").
+The runs found two crashes and a blind spot: a claim jumper's hand ordered to attack a ghost (four seeds; targets now
+need health), a line crew sent home after its lander fell (seed 8; every `home` helper now returns nil once nothing
+stands, and its callers wait); and intel named each 32-tile cell for its most valuable structure, so the substation
+feeding an outpost hid its drills and strip-mining knew none on a factory of drill outposts (it now counts drills per
+cell). With the count, it knows one to three; the instrument guards every patch it mines, so strip finds no camp site
+out of turret reach, a fair no. Also seen: the flare never fires in the instrument, whose maps have no nests
+(`scripts/map-gen.json`); the claim jumper waits for its ladder's second rung, and Grubstake's raids keep razing, so
+it never climbs (tricks come when force fails; left as it is).
+Why the line kept cutting: it cut every belt on its claim's edge, all the way round, posts or none; broken, the
+claim fell back and its new edge cut again. Now it cuts only where its guns are (a turret of its within 30 tiles,
+half a post's spacing, `ops.sever`): a standing arc covers its span, a broken sector is open. Scenario `strangle
+sever`: a belt by its turret cut, a pipe on the edge with no gun by it left (where its arcs bear the pipe was cut: a
+real post stood there), an underground by its guns passing. Eight seeds, four hours (`scripts/factory.sh` now sums
+what the corporations did as well):
+
+| | turtle before | engaged before | turtle | engaged |
+|---|---|---|---|---|
+| income (mean) | 173,450 | 184,363 | 188,965 | 201,385 |
+| belt tiles severed | 3,584 | (as the turtle) | 712 | 427 |
+| Serenity razed | 3,389 | | 4,209 | 3,524 |
+| Serenity raids | | | 250 | 238 |
+| Grubstake raids / skim items | | | 179 / 4,845 | 84 / 19 |
+
+Engaged against turtle, paired: +6.9% (spread 12.1%, standard error 4.3%), ahead on six of eight; the engaged player
+now cuts the line's cutting by 40%. Serenity's pressure moved from belts cut out of sight to raids (razed up a quarter
+on the turtle). Its raids still come at the same pace engaged or not: blunted, not slowed. Left so: Serenity is the
+relentless one; what the player wins is the bite.
 
 ### Screenshots (2026-10-19; `scripts/shots.sh`, `tests/lp-shots`)
 What headless runs cannot judge, seen: a game window on its own profile stages scenes through the mod's remotes (the

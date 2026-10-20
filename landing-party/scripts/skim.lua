@@ -31,7 +31,7 @@ local CANDIDATES = 300            -- belts looked at a ring
 
 local function home_of(b)
   for _, d in ipairs(b.depots or {}) do if d.valid then return d end end
-  return b.lander
+  return b.lander and b.lander.valid and b.lander or nil
 end
 
 local function go(u, pos, radius)
@@ -85,6 +85,7 @@ end
 -- nearest it can reach unseen.
 local function candidates(b, owner)
   local h = home_of(b)
+  if not h then return {} end
   local s = h.surface
   local out = {}
   local seen, carrying = 0, 0
@@ -202,7 +203,8 @@ end
 
 local function home_run(b, k, why)
   k.phase, k.best, k.best_at = "home", math.huge, game.tick
-  go(k.truck, home_of(b).position, 10)
+  local h = home_of(b)
+  if h then go(k.truck, h.position, 10) end
   base.trace(b, string.format("skim: the truck leaves the belt with %d items (%s)", count(k.load), why))
 end
 
@@ -229,7 +231,7 @@ local function step(b, k)
     if count(k.load) >= TRUNK then home_run(b, k, "full")
     elseif game.tick - k.parked >= PARK then home_run(b, k, "time")
     elseif not ops.thief_hours(b) then home_run(b, k, "dawn") end
-  elseif arrived(k, u, home_of(b).position, 18) then
+  elseif home_of(b) and arrived(k, u, home_of(b).position, 18) then
     local goods = {}
     for _, g in pairs(k.load) do table.insert(goods, g) end
     local v = goods_value(goods)

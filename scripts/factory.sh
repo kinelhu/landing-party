@@ -28,4 +28,22 @@ for m in mixes:
     if inc:
         sd = statistics.stdev(inc) if len(inc) > 1 else 0
         print(f"{m:8} {statistics.mean(inc):12.0f} {sd:8.0f} {statistics.mean(lost):6.0f}  " + " ".join(per))
+# What the corporations did, summed over the seeds each mix finished: sharper than income, which a seed alone varies by
+# some 13% run to run (DESIGN, the factory instrument).
+DAMAGE = [("G raids", r"Grubstake raids (\d+)"), ("G razed", r"Grubstake raids \d+ \(razed (\d+)"),
+          ("G skim", r"skims \d+ \((\d+) items"), ("S raids", r"Serenity raids (\d+)"),
+          ("S razed", r"Serenity raids \d+ \(razed (\d+)"), ("severed", r"severed (\d+)")]
+print(f"{'mix':8} " + " ".join(f"{k:>8}" for k, _ in DAMAGE) + "   (sums over the seeds that finished)")
+for m in mixes:
+    tot = [0] * len(DAMAGE)
+    for s in seeds:
+        p = f"{base}/factory-{s}-{tag}{m}/script-output/landing-party/results.txt"
+        try: t = open(p).read()
+        except OSError: continue
+        if not re.search(r"INFO factory end: income", t): continue
+        t = "\n".join(l for l in t.splitlines() if l.startswith("INFO factory end"))  # the hourly lines carry the same words
+        for i, (_, rx) in enumerate(DAMAGE):
+            r = re.search(rx, t)
+            tot[i] += int(r.group(1)) if r else 0
+    print(f"{m:8} " + " ".join(f"{v:8d}" for v in tot))
 PY

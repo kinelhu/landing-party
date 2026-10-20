@@ -102,13 +102,18 @@ local function sense(b, surface, pos, r)
         local key = math.floor(e.position.x / CELL) .. "," .. math.floor(e.position.y / CELL)
         local c = cells[key]
         if not c or v > c.value then
-          cells[key] = {pos = {e.position.x, e.position.y}, kind = e.name, value = v, owner = e.force.name, type = e.type}
+          cells[key] = {pos = {e.position.x, e.position.y}, kind = e.name, value = v, owner = e.force.name, type = e.type,
+            drills = c and c.drills or 0}
+          c = cells[key]
         end
+        -- Drills counted apart: a cell is named for its most valuable structure, and the substation feeding an
+        -- outpost outranks its drills, so strip-mining knew none on a factory of drill outposts (factory, 8 seeds).
+        if e.type == "mining-drill" then c.drills = c.drills + 1 end
       end
     end
     for key, c in pairs(cells) do
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
-      t.pos, t.kind, t.value, t.seen, t.owner = c.pos, c.kind, c.value, game.tick, c.owner
+      t.pos, t.kind, t.value, t.seen, t.owner, t.drills = c.pos, c.kind, c.value, game.tick, c.owner, c.drills
       t.defence, t.dmg = ops.weigh(surface, c.pos, other)
       t.exposure = ops.exposure(surface, c.pos, other)
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from

@@ -15,7 +15,7 @@ local STUCK = 6 * 3600
 
 local function home(b)
   for _, d in ipairs(b.depots or {}) do if d.valid then return d end end
-  return b.lander
+  return b.lander and b.lander.valid and b.lander or nil
 end
 
 local function tell(b, key, at, extra)
@@ -98,8 +98,10 @@ local function step(b, m)
     end
     r.cargo, r.ore, r.phase = cargo, ore, "home"
     local h = home(b)
-    r.unit.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 10,
-      distraction = defines.distraction.none}
+    if h then
+      r.unit.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 10,
+        distraction = defines.distraction.none}
+    end
   elseif r.phase == "home" then
     local h = home(b)
     if h and h.valid and (p.x - h.position.x) ^ 2 + (p.y - h.position.y) ^ 2 < 18 * 18 then

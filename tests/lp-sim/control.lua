@@ -4989,9 +4989,11 @@ scenarios.crew = function()
       local left = surface().count_entities_filtered{name = "gun-turret", force = "player", position = S.mid, radius = 8}
       info(string.format("crew answered: drone lost at %s, answer at %s, %s; turrets %d of %d left", tostring(S.lost_at),
         tostring(S.answer_at), serpent.line(st.ops.log[1]), left, S.guns or 0))
-      check("crew: the answer razed the turrets", left < (S.guns or 0), left .. " of " .. tostring(S.guns))
+      -- Serenity at war from landing answers trespass only (the user, 2026-10-19): a drone lost is not answered; its war
+      -- (raids at what it sees) takes the turrets all the same.
+      check("crew: the turrets razed", left < (S.guns or 0), left .. " of " .. tostring(S.guns))
       check("crew: the drone shot down by the turrets", S.lost_at ~= nil, tostring(S.lost_at))
-      check("crew: an answer within three minutes", S.answer_at and S.answer_at - S.lost_at <= 3 * 3600,
+      check("crew: a loss not answered (it answers trespass only)", S.answer_at == nil,
         string.format("lost %s, answer %s", tostring(S.lost_at), tostring(S.answer_at)))
       check("crew: Serenity an enemy", lp("standing", "serenity") == "enemy", lp("standing", "serenity"))
       return
@@ -6293,8 +6295,9 @@ end
 -- as an admin would (debug_setting): its cap doubles, its hour-long spans halve; Serenity's stay. At 8 minutes
 -- Grubstake's ladder (its clock at double speed, started with Serenity's at landing) is at rung 1, Serenity's at 0.
 -- Remembered (Serenity's reaction table): a block of eight gun turrets 150 tiles from a Serenity camp at level 1, more
--- than a raid of its could take. One of its units killed by them at 3 minutes: no raid into them, the provocation
--- remembered; another at 10 minutes (within 30): a siege on them.
+-- than a raid of its could take. One of its units killed by them at 3 minutes, another at 10. Until 2026-10-19 the
+-- first was remembered and the second besieged; Serenity now answers trespass only (losses are fair war, the user),
+-- so neither is answered: no raid, no siege.
 scenarios.remembered = function()
   schedule(60, function()
     -- Unprovoked at the start (the harness provokes; here the first kill does), and no operation of choice: provoked,
@@ -6329,8 +6332,8 @@ scenarios.remembered = function()
     info("remembered: after the first " .. serpent.line(S.first) .. ", at the end " .. serpent.line(log))
     check("remembered: both kills made", S.k1 and S.k2, string.format("%s %s", tostring(S.k1), tostring(S.k2)))
     check("remembered: no raid into the turrets", (log["a squad goes"] or 0) == 0, serpent.line(log))
-    check("remembered: the first only remembered", S.first and next(S.first) == nil, serpent.line(S.first))
-    check("remembered: the second answered with a siege", (log["a siege"] or 0) >= 1, serpent.line(log))
+    check("remembered: the first unanswered", S.first and next(S.first) == nil, serpent.line(S.first))
+    check("remembered: the second unanswered", next(log) == nil, serpent.line(log))
   end)
 end
 
@@ -6580,8 +6583,9 @@ end
 -- LP_MIX=ore: no outpost and no main position (none of the player's buildings in reach), a rich iron field (32 by 32,
 -- one cell) 230 out at 90 degrees: the line goes for an ore field (that one, or a richer or nearer one of the map's).
 -- LP_MIX=oreoff: the same with the next ore off: no target, the line steps out evenly (no arc bears on the field).
--- LP_MIX=sever: at war, a belt and a pipe laid across the claim's edge and an underground belt under it, one pass of
--- the cut: the belt and pipe tiles on the line blown, those off it and the underground standing.
+-- LP_MIX=sever: at war, a belt and a pipe laid across the claim's edge and an underground belt under it, a gun turret of
+-- Serenity's by the belt (a post), none by the pipe; one pass of the cut: the belt's tiles on the line blown, those off
+-- it, the underground and the unguarded pipe standing (it cuts only where its guns are).
 scenarios.strangle = function()
   local ore, oreoff = params.mix == "ore", params.mix == "oreoff"
   local sever = params.mix == "sever"
@@ -6601,14 +6605,22 @@ scenarios.strangle = function()
       local o, R = st.origin, st.claim_radius
       S.R, S.war = R, lp("standing", "serenity")
       S.belts, S.pipes = {}, {}
-      -- East: a belt from R - 5 to R + 5; south: a pipe the same; west: an underground pair, its ends 2.5 off the line.
+      -- East: a belt from R - 5 to R + 5; north: a pipe the same; west: an underground pair, its ends 2.5 off the line.
       local ex = math.floor(o.x + R)
       flatten(ex - 7, math.floor(o.y) - 2, ex + 8, math.floor(o.y) + 3)
       for x = ex - 5, ex + 5 do
         table.insert(S.belts, surface().create_entity{name = "transport-belt", position = {x + 0.5, math.floor(o.y) + 0.5},
           direction = defines.direction.east, force = "player"})
       end
-      local sy = math.floor(o.y + R)
+      -- Its guns by the belt and by the underground (a post each), none by the pipe.
+      local function gun(x, y)
+        local p = surface().find_non_colliding_position("gun-turret", {x, y}, 8, 1)
+        S.guns = (S.guns or 0) + (p and surface().create_entity{name = "gun-turret", position = p, force = "lp-serenity"} and 1 or 0)
+      end
+      gun(ex - 10, math.floor(o.y) - 6)
+      gun(math.floor(o.x - R) + 10, math.floor(o.y) - 6)
+      -- North: the line's arcs bear south (the outpost), so nothing of its stands by the pipe.
+      local sy = math.floor(o.y - R)
       flatten(math.floor(o.x) - 2, sy - 7, math.floor(o.x) + 3, sy + 8)
       for y = sy - 5, sy + 5 do
         table.insert(S.pipes, surface().create_entity{name = "pipe", position = {math.floor(o.x) + 0.5, y + 0.5}, force = "player"})
@@ -6622,19 +6634,18 @@ scenarios.strangle = function()
           type = "output", force = "player"},
       }
       local function on_line(e) return math.abs(math.sqrt((e.position.x - o.x) ^ 2 + (e.position.y - o.y) ^ 2) - R) <= 1.5 end
-      S.on, S.off = 0, 0
+      S.on, S.off, S.pipe_on = 0, 0, 0
       for _, e in ipairs(S.belts) do if on_line(e) then S.on = S.on + 1 else S.off = S.off + 1 end end
-      for _, e in ipairs(S.pipes) do if on_line(e) then S.on = S.on + 1 else S.off = S.off + 1 end end
+      for _, e in ipairs(S.pipes) do if on_line(e) then S.pipe_on = S.pipe_on + 1 end end
       S.ug_on = (S.ug[1] and on_line(S.ug[1]) or false) or (S.ug[2] and on_line(S.ug[2]) or false)
       S.cut = lp("debug_sever", storage.id)
-      S.left_on, S.left_off = 0, 0
-      for _, list in ipairs({S.belts, S.pipes}) do
-        for _, e in ipairs(list) do
-          if e.valid then
-            if on_line(e) then S.left_on = S.left_on + 1 else S.left_off = S.left_off + 1 end
-          end
+      S.left_on, S.left_off, S.pipe_left = 0, 0, 0
+      for _, e in ipairs(S.belts) do
+        if e.valid then
+          if on_line(e) then S.left_on = S.left_on + 1 else S.left_off = S.left_off + 1 end
         end
       end
+      for _, e in ipairs(S.pipes) do if e.valid and on_line(e) then S.pipe_left = S.pipe_left + 1 end end
       S.ug_left = (S.ug[1] and S.ug[1].valid and 1 or 0) + (S.ug[2] and S.ug[2].valid and 1 or 0)
     end)
   end
@@ -6699,10 +6710,13 @@ scenarios.strangle = function()
       info(string.format("strangle: sever at R %.1f (standing %s): %d on the line, %d off; cut %s; left on %d, off %d; underground %d of 2 (on line %s); severed %d by the end",
         S.R or 0, tostring(S.war), S.on or 0, S.off or 0, tostring(S.cut), S.left_on or -1, S.left_off or -1, S.ug_left or -1,
         tostring(S.ug_on), cs.severed or 0))
-      check("strangle: at war, the line cuts the belt and pipe on it", S.war == "enemy" and (S.on or 0) >= 2 and S.cut == S.on
+      check("strangle: at war, the line cuts the belt on it by its guns", S.war == "enemy" and (S.on or 0) >= 1 and S.cut == S.on
         and S.left_on == 0, tostring(S.cut))
+      check("strangle: the pipe on the line with no gun by it is left", (S.pipe_on or 0) >= 1 and S.pipe_left == S.pipe_on,
+        string.format("%s of %s", tostring(S.pipe_left), tostring(S.pipe_on)))
       check("strangle: what stands off the line is left", S.left_off == S.off and (S.off or 0) > 0, tostring(S.left_off))
-      check("strangle: an underground passes under the line", S.ug_left == 2 and S.ug_on == false, tostring(S.ug_left))
+      check("strangle: an underground passes under the line, by its guns", S.ug_left == 2 and S.ug_on == false and S.guns == 2,
+        tostring(S.ug_left) .. ", guns " .. tostring(S.guns))
       return
     end
     if ore then

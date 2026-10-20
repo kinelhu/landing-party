@@ -272,7 +272,10 @@ function ops.request_answer(corp_force, by, at, kind)
   if not x then return end
   local best, bd
   for _, b in pairs(storage.bases or {}) do
-    if b.force == corp_force and not b.fallen and b.lander and b.lander.valid then
+    -- A corporation at war from landing (Serenity) answers trespass only (the user, 2026-10-19: every unit it lost had
+    -- bought a raid on top of the war it already wages, and fighting it cost more than enduring it).
+    local hostile = (shared.CORPS[b.corp].temper or {}).hostile
+    if b.force == corp_force and not b.fallen and b.lander and b.lander.valid and not (hostile and kind ~= "trespass") then
       local h = home(b)
       if h then
         local d = (h.position.x - x) ^ 2 + (h.position.y - y) ^ 2
@@ -1494,7 +1497,7 @@ function ops.force(b, kind, pos, trace, army)
   sense(b, s, pos, 60)
   local best, bd
   for key, t in pairs(b.intel.targets) do
-    if against_player(t.owner) and (kind ~= "strip" or t.value == ops.VALUE["mining-drill"]) then
+    if against_player(t.owner) and (kind ~= "strip" or (t.drills or 0) > 0) then
       local d = (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2
       if d <= 60 * 60 and (not bd or d < bd) then best, bd = key, d end
     end

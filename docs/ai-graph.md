@@ -16,7 +16,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `ops` | 1573 | answers, cuts, intel, jammer, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, flare, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, flare.answer_flare, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
+| `ops` | 1576 | answers, cuts, intel, jammer, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, flare, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, flare.answer_flare, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `siege` | 777 | (leaf) | ops |  |  |  | threat_last |
 | `faction` | 769 | army, base, layout, names, ops, pact, pods, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `army` | 711 | ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
@@ -24,28 +24,28 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `command` | 575 | (leaf) | control |  | 60, 120 |  | cmd |
 | `layout` | 544 | blocks, rng, site | base, faction |  |  |  |  |
 | `control` | 502 | army, bait, base, biters, border, command, cordon, crew, dev, faction, flare, jammer, jumper, ledger, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, site, skim, stance, standing, strike, tap, trade, tune, war |  |  |  | built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, tick, script_raised_built | army_off, bases, capture_off, choice_off, cmd, cuts_off, era_override, flare_burn, focus_off, gates_off, grudge_fast, hazard_hold, hazard_off, history_off, hq_fast, ladder_fast, last_raze, leader_off, ledger_off, mature_blocks, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strip_fast, tap_step, trace, truces, tune_levers, unit_owner |
-| `crew` | 393 | base, ops, standing | control |  | 30 |  | crew_owner |
+| `crew` | 397 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `war` | 392 | army, base, ops, pods, pool, rd, rng, stance, tune | control, faction, flare, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `routing` | 374 | (leaf) | ops |  |  |  | corridors |
 | `construction` | 355 | (leaf) | base |  |  |  |  |
 | `tap` | 353 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `prospect` | 344 | base, chart, ops, pool, standing | control, cordon |  | 60, 3600 |  | prospect_failed |
-| `skim` | 334 | base, ops, stance, tune | control |  | 60, 600 |  |  |
+| `skim` | 336 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `rd` | 330 | (leaf) | army, control, faction, ops, war | ops.era |  |  | corps |
 | `flare` | 323 | base, ops, pact, pool, tune, war | bait, control, dev |  | 30, 600 |  |  |
-| `jumper` | 315 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
+| `jumper` | 316 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
 | `cordon` | 297 | base, ops, prospect | control |  |  |  |  |
-| `perimeter` | 267 | (leaf) | ops |  |  |  |  |
+| `perimeter` | 277 | (leaf) | ops |  |  |  |  |
+| `intel` | 230 | (leaf) | ops |  |  |  |  |
 | `strip` | 228 | (leaf) | ops |  |  |  | threat_last |
 | `phases` | 227 | faction | control |  | 360, 3600 |  | phases |
-| `intel` | 225 | (leaf) | ops |  |  |  |  |
 | `planner` | 200 | (leaf) | base |  |  |  |  |
 | `ledger` | 197 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `dev` | 194 | army, base, faction, flare, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `power` | 171 | (leaf) | ops |  |  |  |  |
-| `trade` | 165 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
+| `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 159 | modules | base, control, faction, layout |  |  |  |  |
-| `road` | 142 | base, standing | control |  | 60 |  |  |
+| `road` | 144 | base, standing | control |  | 60 |  |  |
 | `pool` | 140 | (leaf) | army, control, cuts, flare, ops, prospect, tap, war |  |  |  |  |
 | `answers` | 132 | (leaf) | ops |  |  |  |  |
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |

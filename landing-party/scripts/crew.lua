@@ -52,13 +52,15 @@ end
 
 local function home(b)
   for _, d in ipairs(b.depots or {}) do if d.valid then return d end end
-  return b.lander
+  -- Nil once nothing stands: a crew sent home after its lander fell crashed on it (factory engage, seed 8).
+  return b.lander and b.lander.valid and b.lander or nil
 end
 
 -- Past the settlement's own outermost wall or gate on the line from home to the site (the convoy's rule).
 local function formation(b, site)
   local s = game.surfaces[b.surface]
   local h = home(b)
+  if not h then return nil end
   local hx, hy = h.position.x, h.position.y
   local ux, uy = site[1] - hx, site[2] - hy
   local ul = math.max(1, math.sqrt(ux * ux + uy * uy))
@@ -109,6 +111,7 @@ function crew.take(b, job)
   local p
   if corp_crews(b) == "drone" then
     local h = home(b)
+    if not h then return true end
     p = game.surfaces[b.surface].find_non_colliding_position(body(b), {h.position.x, h.position.y - 4}, 10, 0.5)
   else
     p = formation(b, m.center)
@@ -186,8 +189,8 @@ end
 
 local function done(b, i, why)
   local c = b.crews[i]
-  if c.unit.valid then
-    local h = home(b)
+  local h = home(b)
+  if c.unit.valid and h then
     c.unit.commandable.set_command{type = defines.command.go_to_location, destination = h.position, radius = 10,
       distraction = defines.distraction.none}
     b.crews_home = b.crews_home or {}
@@ -350,6 +353,7 @@ function crew.rebuild(b, job)
   local p
   if corp_crews(b) == "drone" then
     local h = home(b)
+    if not h then return true end
     p = s.find_non_colliding_position(body(b), {h.position.x, h.position.y - 4}, 10, 0.5)
   else
     p = formation(b, job.pos)
