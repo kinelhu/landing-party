@@ -14,7 +14,7 @@ Line: a laser cannon on an armoured hull; against the player's battle tanks.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1100 | 5.4 tiles/s | 45 laser | 15 | 1/s | physical -5 30%, explosion -5 40%, laser -5, electric -5 | no | 95 parts |
 
-Fielded by: Serenity, research: line branch, era 2, after warden, 2000 fund.
+Fielded by: Kessler-Hayashi, research: line branch, era 2, after warden, 2000 fund.
 
 ## battle-tank
 
@@ -78,13 +78,13 @@ Fielded by: both (convoys; Grubstake's builders).
 
 ## infantry
 
-Serenity's Line trooper: a laser beam; the bulk of its raids.
+Kessler-Hayashi's Line trooper: a laser beam; the bulk of its raids.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 120 | 7.2 tiles/s | 7 laser | 15 | 2.4/s | physical -2 10%, laser 20% | yes | 10 parts |
 
-Fielded by: Grubstake (from landing); Serenity (from landing).
+Fielded by: Grubstake (from landing); Kessler-Hayashi (from landing).
 
 ## lance
 
@@ -94,7 +94,7 @@ Optics: a heavier beam that outranges the player's troopers.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 110 | 7.2 tiles/s | 24 laser | 17 | 1/s | physical -2 10%, laser 20% | yes | 16 parts |
 
-Fielded by: Serenity, research: optics branch, era 1, 900 fund.
+Fielded by: Kessler-Hayashi, research: optics branch, era 1, 900 fund.
 
 ## prism
 
@@ -104,17 +104,17 @@ Optics: a laser that splits on what it hits to the targets round it; against mas
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 700 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 14 laser | 16 | 1.2/s | physical -3 20%, laser -5, electric -5, explosion 10% | no | 100 parts |
 
-Fielded by: Serenity, research: optics branch, era 2, after lance, 1800 fund.
+Fielded by: Kessler-Hayashi, research: optics branch, era 2, after lance, 1800 fund.
 
 ## railgunner
 
-Serenity's nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls.
+Kessler-Hayashi's nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 140 | 6.0 tiles/s | 250 physical to biters, nests and worms; 10 physical to anything else | 30 | 0.67/s | physical -2 10%, laser 20% | no | 22 parts |
 
-Fielded by: Serenity (from landing).
+Fielded by: Kessler-Hayashi (from landing).
 
 ## rocket-trooper
 
@@ -164,7 +164,7 @@ Optics: an arcing electric beam that jumps target to target, a brief stun; again
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 160 | 7.2 tiles/s | (arcs to the next targets); 10 electric | 14 | 1.3/s | physical -2 10%, laser 20%, electric 50% | no | 30 parts |
 
-Fielded by: Serenity, research: optics branch, era 3, after lance, 2500 fund.
+Fielded by: Kessler-Hayashi, research: optics branch, era 3, after lance, 2500 fund.
 
 ## shotgun-hand
 
@@ -194,7 +194,7 @@ armour; cannon rounds that hit buildings three times as hard as units.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5 | no | 60 parts |
 
-Fielded by: Serenity (from landing).
+Fielded by: Kessler-Hayashi (from landing).
 
 ## tesla
 
@@ -204,7 +204,7 @@ Siege: lightning that jumps along a turret line and drains what it strikes of it
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 800 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 20 electric | 14 | 0.8/s | physical -3 20%, electric -5 80%, explosion 10%, laser -5 | no | 100 parts |
 
-Fielded by: Serenity, research: siege branch, era 3, 2500 fund.
+Fielded by: Kessler-Hayashi, research: siege branch, era 3, 2500 fund.
 
 ## trooper
 
@@ -224,4 +224,4 @@ a spider: steps over walls, rockets.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1600 | walks | 18 physical | 15 | 2.4/s | physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5 | yes | 100 parts |
 
-Fielded by: Serenity (from landing).
+Fielded by: Kessler-Hayashi (from landing).

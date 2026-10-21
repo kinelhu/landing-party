@@ -1,12 +1,15 @@
 # Corporations: identity design (proposed 2026-10-13)
 
+> Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
+
 A design pass before building the corporations (user: "factions should have architectural identity beyond
 just color ... you need a design pass before building them"). Each corporation must be recognisable at a
 glance from the ground and from the map, and must fight differently (`docs/campaign.md` section 4 has their
 roles: what they attack with, how they defend, where they break, what they want).
 
-Everything is made from vanilla sprites and entities: tinted, scaled, layered, recombined. Base game first;
-Space Age entities are used only where marked **SA**, with a base-game fallback.
+Everything is made from vanilla sprites and entities: tinted, scaled, layered, recombined. Space Age is a dependency
+(`info.json`; DESIGN.md), so its entities and sprites are always there; the **SA** marks and fallbacks below date from
+before that and are kept for the record.
 
 ## 1. The identity kit
 

@@ -4,11 +4,11 @@ A Factorio 2.0 + Space Age mod, in development: rival corporations answer your r
 build settlements of walled hubs, roads and outposts, and fight you with an army that is the output of their economy.
 Not a reskin of biters: each corporation is an adversary with intent and a character the player learns.
 
-- **Grubstake Mineral Recovery** (arrives at chemical science): a thief. It steals what you leave exposed, mostly by
+- **Grubstake Inc.** (arrives at chemical science): a thief. It steals what you leave exposed, mostly by
   night: trucks skim your belts, raids take your machines apart and carry them off (their ghosts left), heists empty
   your chests, taps drain your power, claims take your ore. It answers when hurt, and its stolen goods sit in its yard
   until you take them back.
-- **Serenity Perimeter Group** (arrives at the first rocket launch): a wall, at war from landing. Its line of posts
+- **Kessler-Hayashi** (arrives at the first rocket launch): a wall, at war from landing. Its line of posts
   advances on you, strangles your outposts, cuts belts and power, and besieges what stands in its way. It bills you for
   the biter waves your pollution sends through its ground; paying buys the only quiet it gives.
 

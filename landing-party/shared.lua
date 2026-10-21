@@ -9,7 +9,7 @@ local shared = {}
 -- stands for it on map tags and in notices, with its motto. (Logos on the ground were dropped: scaled icons
 -- looked pasted on, concrete pixel art merged into blobs; user 2026-10-13.)
 shared.CORPS = {
-  grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
+  grubstake = {name = "Grubstake Inc.", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     -- Its depot (a cargo landing pad's art, dark already) washed lighter: the full tint read sad and deflated (the user).
     tints = {["lp-depot"] = {r = 1, g = 0.9, b = 0.78, a = 1}},
@@ -69,7 +69,7 @@ shared.CORPS = {
     flak = 2,
     -- Crews build beyond the yards (scripts/crew.lua; the builders consult): a truck.
     crews = "truck"},
-  serenity = {name = "Serenity Perimeter Group", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
+  serenity = {name = "Kessler-Hayashi", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
     -- they read as vanilla; all slate-teal felt uniform); slate-teal for machines, vehicles and units.

@@ -11,15 +11,17 @@ DUMP = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser(
     "~/Library/Application Support/factorio-lp-check/script-output/data-raw-dump.json")
 d = json.load(open(DUMP))
 shared = open(os.path.join(REPO, "landing-party", "shared.lua")).read()
+# The names players see (the internal ids stay serenity and grubstake; the user renamed them, 2026-10-21).
+SHOWN = {"serenity": "Kessler-Hayashi", "grubstake": "Grubstake"}
 
 PLATES = ("-fire", "-laser", "-physical", "-explosion", "-electric")
 # What each unit is for (words only: every number below comes from the prototypes).
 ROLE = {
-    "lp-infantry": "Serenity's Line trooper: a laser beam; the bulk of its raids",
+    "lp-infantry": "Kessler-Hayashi's Line trooper: a laser beam; the bulk of its raids",
     "lp-tank": "armour; cannon rounds that hit buildings three times as hard as units",
     "lp-walker": "a spider: steps over walls, rockets",
     "lp-harrier": "air: flies over walls, cliffs and water; turrets that cannot shoot up ignore it",
-    "lp-railgunner": "Serenity's nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls",
+    "lp-railgunner": "Kessler-Hayashi's nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls",
     "lp-hauler": "convoys and Grubstake's building trucks; lightly armed",
     "lp-buggy": "Grubstake's raider and escort: fast, a machine gun",
     "lp-shotgun-hand": "Grubstake's infantry: three heavy pellets, deadly at the fence, useless against a turret line",
@@ -53,13 +55,13 @@ fielded = {}
 for m in re.finditer(r"mix = \{([^}]*)\}", shared):
     corp = corp_of(shared.count("\n", 0, m.start()))
     for k in re.findall(r'\["(lp-[a-z-]+)"\]', m.group(1)):
-        fielded.setdefault(k, []).append(f"{corp.capitalize()} (from landing)")
+        fielded.setdefault(k, []).append(f"{SHOWN[corp]} (from landing)")
 for m in re.finditer(r'\{id = "([a-z]+)", branch = "([a-z-]+)", era = (\d+)(?:, requires = "([a-z]+)")?, cost = (\d+), '
                      r'unit = \{kind = "(lp-[a-z-]+)"', shared):
     corp = corp_of(shared.count("\n", 0, m.start()))
     req = f", after {m.group(4)}" if m.group(4) else ""
     fielded.setdefault(m.group(6), []).append(
-        f"{corp.capitalize()}, research: {m.group(2)} branch, era {m.group(3)}{req}, {m.group(5)} fund")
+        f"{SHOWN[corp]}, research: {m.group(2)} branch, era {m.group(3)}{req}, {m.group(5)} fund")
 renamed = re.search(r'bases = \{[^}]*\["lp-infantry"\] = "(lp-[a-z-]+)"', shared)
 if renamed:
     fielded.setdefault(renamed.group(1), []).append("Grubstake (from landing, as its infantry)")

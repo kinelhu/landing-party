@@ -71,16 +71,16 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <h1>Landing Party Field Roster</h1>
   <p class="lede">Every unit the corporations field and the ones you train, with what each one learns and when. Numbers are
   the game's own, one shot before research; the research charts read down by era and across by branch.</p>
-  <nav><a href="#serenity">Serenity Perimeter Group</a><a href="#grubstake">Grubstake Mineral Recovery</a><a href="#yours">Your army</a><a href="#both">Shared</a></nav>
+  <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#yours">Your army</a><a href="#both">Shared</a></nav>
   <div class="rules">
     <div><b>Eras follow you</b>A corporation buys nothing above your era: era 1 at 25 technologies researched, 2 at 60, 3 at 100, 4 at 150.</div>
     <div><b>Losses decide</b>It buys the node your play calls for: the one whose condition your fighting met hardest in the last 30 minutes. With none called for, its weapon track climbs.</div>
-    <div><b>Serenity's labs</b>Each Serenity branch climbs, and fields what it gave, only while that branch's lab stands in its camp.</div>
+    <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch climbs, and fields what it gave, only while that branch's lab stands in its camp.</div>
   </div>
   <section class="corp" id="serenity" style="--corp:rgb(158,204,255)">
-  <header class="corphead"><span class="swatch"></span><div><h2>Serenity Perimeter Group</h2><p>Precise, walled, at war from landing. Lasers and rails; it clears nests and holds a line.</p></div></header>
+  <header class="corphead"><span class="swatch"></span><div><h2>Kessler-Hayashi</h2><p>Precise, walled, at war from landing. Lasers and rails; it clears nests and holds a line.</p></div></header>
   <h3>Research</h3>
-  <div class="tree"><svg viewBox="0 0 1096 842" width="1096" height="842" role="img" aria-label="Serenity Perimeter Group research tree">
+  <div class="tree"><svg viewBox="0 0 1096 842" width="1096" height="842" role="img" aria-label="Kessler-Hayashi research tree">
 <defs><marker id="arr-serenity" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="edgehead"/></marker></defs>
 <rect x="0" y="79.0" width="1096" height="184" class="band0"/>
 <text x="12" y="118" class="era">From landing</text>
@@ -204,10 +204,24 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </svg></div>
   <h3>Units</h3>
   <div class="units"><article class="unit">
+  <figure><img src="img/lp-walker.png" alt="Walker" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Walker</h4>
+    <p class="role">A spider: steps over walls, rockets</p>
+    <dl>
+      <div><dt>Health</dt><dd>1600</dd></div><div><dt>Speed</dt><dd>walks</dd></div>
+      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>2.4/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>18 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
+    </dl>
+    <p class="how">From era 2</p>
+  </div>
+</article><article class="unit">
   <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
   <div class="ubody">
     <h4>Railgunner</h4>
-    <p class="role">Serenity&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
+    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
     <dl>
       <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
@@ -230,20 +244,6 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>60 parts</dd></div>
     </dl>
     <p class="how">From landing</p>
-  </div>
-</article><article class="unit">
-  <figure><img src="img/lp-walker.png" alt="Walker" loading="lazy"></figure>
-  <div class="ubody">
-    <h4>Walker</h4>
-    <p class="role">A spider: steps over walls, rockets</p>
-    <dl>
-      <div><dt>Health</dt><dd>1600</dd></div><div><dt>Speed</dt><dd>walks</dd></div>
-      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>2.4/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>18 physical</dd></div>
-      <div class="wide"><dt>Resists</dt><dd>physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5</dd></div>
-      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
-    </dl>
-    <p class="how">From era 2</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-lance.png" alt="Lance" loading="lazy"></figure>
@@ -318,9 +318,9 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </article></div>
 </section>
   <section class="corp" id="grubstake" style="--corp:rgb(255,183,96)">
-  <header class="corphead"><span class="swatch"></span><div><h2>Grubstake Mineral Recovery</h2><p>A thief with a fund. Shotguns, buggies and trucks; it skims, strips and raids where you are soft.</p></div></header>
+  <header class="corphead"><span class="swatch"></span><div><h2>Grubstake Inc.</h2><p>A thief with a fund. Shotguns, buggies and trucks; it skims, strips and raids where you are soft.</p></div></header>
   <h3>Research</h3>
-  <div class="tree"><svg viewBox="0 0 1328 842" width="1328" height="842" role="img" aria-label="Grubstake Mineral Recovery research tree">
+  <div class="tree"><svg viewBox="0 0 1328 842" width="1328" height="842" role="img" aria-label="Grubstake Inc. research tree">
 <defs><marker id="arr-grubstake" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="edgehead"/></marker></defs>
 <rect x="0" y="79.0" width="1328" height="184" class="band0"/>
 <text x="12" y="118" class="era">From landing</text>
@@ -432,6 +432,20 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </svg></div>
   <h3>Units</h3>
   <div class="units"><article class="unit">
+  <figure><img src="img/lp-grubstake-buggy.png" alt="Buggy" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Buggy</h4>
+    <p class="role">Grubstake&#x27;s raider and escort: fast, a machine gun</p>
+    <dl>
+      <div><dt>Health</dt><dd>220</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>6/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>5 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 15%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>15 parts</dd></div>
+    </dl>
+    <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
   <figure><img src="img/lp-grubstake-harrier.png" alt="Harrier" loading="lazy"></figure>
   <div class="ubody">
     <h4>Harrier</h4>
@@ -456,20 +470,6 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>A shot</dt><dd>9 physical (x3)</dd></div>
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>-</dd></div>
-    </dl>
-    <p class="how">From landing</p>
-  </div>
-</article><article class="unit">
-  <figure><img src="img/lp-grubstake-buggy.png" alt="Buggy" loading="lazy"></figure>
-  <div class="ubody">
-    <h4>Buggy</h4>
-    <p class="role">Grubstake&#x27;s raider and escort: fast, a machine gun</p>
-    <dl>
-      <div><dt>Health</dt><dd>220</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
-      <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>6/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>5 physical</dd></div>
-      <div class="wide"><dt>Resists</dt><dd>physical -2 15%</dd></div>
-      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>15 parts</dd></div>
     </dl>
     <p class="how">From landing</p>
   </div>
@@ -606,7 +606,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </article></div>
   </section>
   <section class="corp" id="both" style="--corp: var(--edge)">
-    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Serenity's nest clearer.</p></div></header>
+    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
     <h3>Units</h3><div class="units"><article class="unit">
   <figure><img src="img/lp-hauler.png" alt="Hauler" loading="lazy"></figure>
   <div class="ubody">
@@ -625,7 +625,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
   <div class="ubody">
     <h4>Railgunner</h4>
-    <p class="role">Serenity&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
+    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
     <dl>
       <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
@@ -633,7 +633,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
     </dl>
-    <p class="how">Serenity: clears nests, never raids</p>
+    <p class="how">Kessler-Hayashi: clears nests, never raids</p>
   </div>
 </article></div>
   </section>

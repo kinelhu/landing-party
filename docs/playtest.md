@@ -1,5 +1,7 @@
 # Playtest kit (2026-10-19)
 
+> Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
+
 Nothing since the 16th has been played. Since then: Serenity is at war from landing (no grace), Grubstake steals by
 night (skimming trucks, raids that dismantle machines, a yard of stolen goods), raids have leaders, Serenity has a
 fortress kit (sieges sized to win, the howitzer, a robot jammer, the power strike, strangling, belts cut on its line),

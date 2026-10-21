@@ -1,5 +1,7 @@
 # Landing Party: the campaign (design v2, proposed 2026-10-13)
 
+> Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
+
 The frame above DESIGN.md. DESIGN describes the parts as built; this describes the game they serve. Written
 after the user judged the first frame too small ("3 bases, uplink, boss seems extremely small scale") and
 asked for a mid-game revealed, endgame-compatible threat with scaling, rival factions and interesting

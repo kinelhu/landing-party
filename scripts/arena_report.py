@@ -14,7 +14,7 @@ from collections import defaultdict
 # Each kind's class, by its body and its weapon (what decides its fights in the arena): many light bodies firing small
 # shots; one weapon that hits several at once (a blast, an arc, a split beam); a heavy hull with flat armour; fliers.
 CLASSES = [
-    ("small arms", ["infantry (Serenity)", "infantry (Grubstake)", "lance", "buggy", "slug", "railgunner", "trooper",
+    ("small arms", ["infantry (Kessler-Hayashi)", "infantry (Grubstake)", "lance", "buggy", "slug", "railgunner", "trooper",
                     "rocket trooper"]),
     ("splash", ["sapper", "shock", "prism", "tesla", "breacher"]),
     ("armour", ["tank", "aegis", "dozer", "walker", "scorcher", "battle tank"]),
@@ -24,7 +24,7 @@ CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
 
 # Who fields each kind, read from landing-party/shared.lua (a corporation's starting mix and its research tree's units).
 # Grubstake's infantry is its own (shotguns), so the two infantries are told apart by their labels.
-CORP_COLOUR = {"Serenity": "#2f6f86", "Grubstake": "#b0651a", "You": "#3d7a2a"}
+CORP_COLOUR = {"Kessler-Hayashi": "#2f6f86", "Grubstake": "#b0651a", "You": "#3d7a2a"}
 PLAYER = {"trooper", "breacher", "rocket trooper", "battle tank"}   # priced by command bandwidth (tests/lp-arena/arena.lua)
 
 def fielders():
@@ -32,7 +32,7 @@ def fielders():
     g, s = src.index("  grubstake = {"), src.index("  serenity = {")
     e = src.index("\n}\n", s)
     out = {}
-    for corp, t in (("Grubstake", src[g:s]), ("Serenity", src[s:e])):
+    for corp, t in (("Grubstake", src[g:s]), ("Kessler-Hayashi", src[s:e])):
         kinds = set(re.findall(r'"(lp-[a-z-]+)"', "".join(re.findall(r"mix = \{([^}]*)\}", t))))
         kinds |= set(re.findall(r'unit = \{kind = "(lp-[a-z-]+)"', t))
         for k in kinds:
@@ -73,7 +73,7 @@ def clusters(kinds, M, F, fixed_cols, corp, img):
         lab.set_color(CORP_COLOUR.get(corp[k], "black"))
     ax.set_xlabel("distance between two kinds' rows of scores (x100 scale: 1.0 is a 100-point gap in one fight)", fontsize=8)
     ax.set_title("Units grouped by whom they beat and lose to, from the arena alone\n(label: kind (hand-made class); "
-                 "Serenity teal, Grubstake amber)", fontsize=9)
+                 "Kessler-Hayashi teal, Grubstake amber, you green)", fontsize=9)
     ax.tick_params(axis="y", labelsize=8)
     fig.tight_layout()
     fig.savefig(img)
@@ -95,6 +95,10 @@ def clusters(kinds, M, F, fixed_cols, corp, img):
 def main():
     src, out = sys.argv[1], sys.argv[2]
     rows = [json.loads(l) for l in open(src) if l.strip()]
+    # The names players see: Serenity's internal id stays in the batch's labels (the user renamed it, 2026-10-21).
+    for r in rows:
+        for k in ("squad", "against"):
+            r[k] = r[k].replace("(Serenity)", "(Kessler-Hayashi)")
     # Mixed arms (batch.lua's MIXES): scored for the all-ground army, whichever side it fought on.
     mixes = defaultdict(list)
     for r in rows:
@@ -164,7 +168,7 @@ def main():
         ax.set_xlabel(title, fontsize=9, labelpad=8)
         ax.xaxis.set_label_position("bottom")
     fig.suptitle("Landing Party: who counters whom (row against column; blue, the row wins; red, it loses). "
-                 "Names coloured by side: Serenity teal, Grubstake amber, you green", fontsize=10, y=0.995)
+                 "Names coloured by side: Kessler-Hayashi teal, Grubstake amber, you green", fontsize=10, y=0.995)
     fig.text(0.01, 0.005, f"Score: share of the other side destroyed minus share of its own lost (x100). Price in parts in "
              f"brackets; yours at 10 parts per command bandwidth. {len(rows)} fights, {rounds} rounds, no research. scripts/arena.sh", fontsize=7)
     fig.tight_layout(rect=(0, 0.02, 1, 0.97))

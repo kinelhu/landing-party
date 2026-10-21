@@ -313,7 +313,7 @@ def corp_section(corp, blurb):
 
 player = "".join(unit_card(k, None, "Trained at your barracks; orders by beacon") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-battle-tank"))
 shared_units = "".join(unit_card(k, None, h) for k, h in (("lp-hauler", "Both: convoys, Grubstake's building trucks"),
-                                                          ("lp-railgunner", "Serenity: clears nests, never raids")))
+                                                          ("lp-railgunner", "Kessler-Hayashi: clears nests, never raids")))
 
 page = f'''<title>Landing Party Field Roster</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -388,11 +388,11 @@ footer {{ margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family:
   <h1>Landing Party Field Roster</h1>
   <p class="lede">Every unit the corporations field and the ones you train, with what each one learns and when. Numbers are
   the game's own, one shot before research; the research charts read down by era and across by branch.</p>
-  <nav><a href="#serenity">Serenity Perimeter Group</a><a href="#grubstake">Grubstake Mineral Recovery</a><a href="#yours">Your army</a><a href="#both">Shared</a></nav>
+  <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#yours">Your army</a><a href="#both">Shared</a></nav>
   <div class="rules">
     <div><b>Eras follow you</b>A corporation buys nothing above your era: era 1 at {ERA_TECHS[0]} technologies researched, 2 at {ERA_TECHS[1]}, 3 at {ERA_TECHS[2]}, 4 at {ERA_TECHS[3]}.</div>
     <div><b>Losses decide</b>It buys the node your play calls for: the one whose condition your fighting met hardest in the last {WINDOW_MIN} minutes. With none called for, its weapon track climbs.</div>
-    <div><b>Serenity's labs</b>Each Serenity branch climbs, and fields what it gave, only while that branch's lab stands in its camp.</div>
+    <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch climbs, and fields what it gave, only while that branch's lab stands in its camp.</div>
   </div>
   {corp_section("serenity", "Precise, walled, at war from landing. Lasers and rails; it clears nests and holds a line.")}
   {corp_section("grubstake", "A thief with a fund. Shotguns, buggies and trucks; it skims, strips and raids where you are soft.")}
@@ -401,7 +401,7 @@ footer {{ margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family:
     <h3>Units</h3><div class="units">{player}</div>
   </section>
   <section class="corp" id="both" style="--corp: var(--edge)">
-    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Serenity's nest clearer.</p></div></header>
+    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
     <h3>Units</h3><div class="units">{shared_units}</div>
   </section>
   <footer>Written by scripts/roster_page.py from the prototypes, shared.lua and the locale. Portraits from the screenshot run.</footer>

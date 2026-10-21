@@ -3,6 +3,10 @@
 The user, 2026-10-21: "For the third faction we need to go carefully and weigh different ideas before heading in."
 This paper lays the options side by side. It decides nothing.
 
+**Since then (2026-10-21):** three consults (`docs/reviews/2026-10-21-*-consult.md`); the user chose biotech, reshaped
+(Grubstake's flares retired, waves with intent, camps on nests): `docs/biotech.md`. Space Age is a dependency, so the
+fallbacks this paper worries about are moot.
+
 ## Where we start
 
 - **Two corporations, built.** Grubstake Mineral Recovery (the thief: strip-mines, convoys, raids; shotguns, buggies,

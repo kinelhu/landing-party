@@ -26,22 +26,22 @@ A class is a body and a weapon: **small arms** (many light bodies, small shots),
 | infantry (Grubstake) (8) | walker (78), scorcher (77), buggy (74) | scavenger (100), harrier (100), breacher (96) |
 | trooper (10) | harrier (98), scavenger (97), walker (72) | breacher (83), sapper (81), aegis (71) |
 | lance (16) | scavenger (96), harrier (94), dozer (66) | battle tank (86), rocket trooper (80), breacher (74) |
-| infantry (Serenity) (10) | scavenger (97), harrier (95), lance (65) | tank (86), battle tank (86), breacher (85) |
+| infantry (Kessler-Hayashi) (10) | scavenger (97), harrier (95), lance (65) | tank (86), battle tank (86), breacher (85) |
 | buggy (15) | scavenger (97), harrier (96), railgunner (67) | prism (100), tesla (100), aegis (100) |
 | railgunner (22) | lance (25), shock (-34), sapper (-37) | scavenger (100), harrier (100), prism (100) |
 | prism (100) | railgunner (100), shock (100), buggy (100) | scavenger (100), harrier (100), tank (100) |
 | breacher (10) | infantry (Grubstake) (96), buggy (94), railgunner (86) | scavenger (100), harrier (100), aegis (100) |
 | sapper (30) | buggy (94), infantry (Grubstake) (89), trooper (81) | scavenger (100), harrier (100), tesla (100) |
-| shock (30) | buggy (93), infantry (Grubstake) (82), infantry (Serenity) (81) | scavenger (100), harrier (100), prism (100) |
+| shock (30) | buggy (93), infantry (Grubstake) (82), infantry (Kessler-Hayashi) (81) | scavenger (100), harrier (100), prism (100) |
 | tesla (100) | railgunner (100), sapper (100), shock (100) | scavenger (100), harrier (100), aegis (100) |
 | aegis (95) | railgunner (100), buggy (100), prism (100) | scavenger (100), harrier (100), lance (49) |
 | battle tank (60) | railgunner (100), prism (100), tesla (100) | scavenger (100), harrier (100), walker (50) |
 | dozer (100) | railgunner (100), buggy (100), prism (100) | scavenger (100), harrier (100), rocket trooper (85) |
 | walker (100) | railgunner (100), sapper (100), scavenger (100) | slug (78), infantry (Grubstake) (78), dozer (75) |
 | tank (60) | prism (100), buggy (88), breacher (88) | scavenger (100), harrier (100), battle tank (79) |
-| scorcher (70) | buggy (83), railgunner (78), infantry (Serenity) (78) | scavenger (100), harrier (100), aegis (100) |
+| scorcher (70) | buggy (83), railgunner (78), infantry (Kessler-Hayashi) (78) | scavenger (100), harrier (100), aegis (100) |
 | harrier (40) | railgunner (100), sapper (100), infantry (Grubstake) (100) | walker (100), trooper (98), slug (96) |
-| scavenger (50) | railgunner (100), sapper (100), infantry (Grubstake) (100) | walker (100), slug (99), infantry (Serenity) (97) |
+| scavenger (50) | railgunner (100), sapper (100), infantry (Grubstake) (100) | walker (100), slug (99), infantry (Kessler-Hayashi) (97) |
 
 ## Groups found from the fights alone
 
@@ -52,7 +52,7 @@ Each kind is its row of scores (against every kind and every fixed opponent); ki
 | Group | Kinds (hand-made class) |
 |---|---|
 | 1 | infantry (Grubstake) (small arms), prism (splash), breacher (splash), sapper (splash), shock (splash), tesla (splash), aegis (armour), battle tank (armour), dozer (armour), tank (armour), scorcher (armour) |
-| 2 | rocket trooper (small arms), slug (small arms), trooper (small arms), lance (small arms), infantry (Serenity) (small arms), buggy (small arms), walker (armour) |
+| 2 | rocket trooper (small arms), slug (small arms), trooper (small arms), lance (small arms), infantry (Kessler-Hayashi) (small arms), buggy (small arms), walker (armour) |
 | 3 | harrier (air), scavenger (air) |
 | 4 | railgunner (small arms) |
 

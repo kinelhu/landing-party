@@ -8,6 +8,11 @@ Numbers quoted here are the code's at the time of writing; the code is the autho
 mid-game, scaling to the endgame, with biters in a three-way war and a player agent measuring the loop. This
 document describes the parts as built; the campaign document describes the game they serve.
 
+
+**Names (the user, 2026-10-21):** the corporations are shown as **Kessler-Hayashi** (internally `serenity`) and
+**Grubstake Inc.** (`grubstake`). Code, forces, prototypes, saves and older documents keep the internal ids, and this
+document still says Serenity where it records history.
+
 ## Status at a glance
 | Area | State | Tested by (headless scenario) |
 |---|---|---|
@@ -496,6 +501,9 @@ technologies, when big biters and behemoths come.
     first price pass it beat nearly everything). It beats ten kinds by numbers, is near even with rifles, and splash
     (shock, sapper, breacher) and fliers crush it. Since then the railgunner has no clear win among units (its one was
     Grubstake's infantry): it stays, judged by its job, the one squad that beats biters at evolution 0.95.
+    The `arms` scenario held each corporation's infantry to DPS parity against buildings (within 20%); the 0.1.49
+    regression found the Shotgun hands at 600 ticks to the Line troopers' 810, from the tighter spread, so it now asks
+    no slower and at most 40% faster.
   - After (three rounds, `docs/arena.md`): every kind but the railgunner clearly beats some, and all are clearly beaten by at least two. Class
     table: small arms beat air, air beats armour and splash, splash beats small arms, armour beats splash and small arms
     but loses to the anti-armour small arms (lance, slug, rocket trooper). The clustering still puts splash and armour
