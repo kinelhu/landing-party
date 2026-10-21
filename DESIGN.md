@@ -419,6 +419,14 @@ technologies, when big biters and behemoths come.
   three rounds. After: every kind has clear wins and losses; Serenity's riflemen have one hard counter, Grubstake's
   sapper, kept (at 10 parts they anchor both economies, and dynamite against rifle lines is a counter worth having).
   Prices are read through `shared.unit_cost(corp, kind)`, which takes a corporation's own price where a kind has one.
+- **Classes (the user, 2026-10-21: "not 100% clear on which units are where").** There was never a designed triangle;
+  the arena report now groups kinds by body and weapon (`CLASSES` in `scripts/arena_report.py`): small arms (Serenity
+  and Grubstake infantry, lance, buggy, slug, railgunner), splash (sapper, shock, Prism, Tesla), armour (tank, aegis,
+  dozer, walker, Scorcher), air (harrier, scavenger). What the grouped matrix shows (`docs/arena.md`): splash beats the
+  other ground classes on average and air loses to every ground class, so there is no cycle between classes; the cycles
+  are inside them. Within splash, the roles written for Prism and shock ("against massed troopers") do not hold against
+  Serenity's riflemen, who beat both, and of the splash kinds only the sapper does that job. Air has no arena role:
+  it is for turrets that cannot shoot up, and the arena only has its fixed lines for that.
 - **Limits:** no research on either side (a camp's tree levels and the player's damage upgrades both matter); open
   ground (no walls for the squads, no terrain); the wave arrives in one clump. Next, if the numbers call for it: tune
   costs or caps, not damage, since a squad's spend is the comparison.

@@ -11,6 +11,16 @@ antisymmetric and the side and force cancel. Every number in docs/arena.md is co
 import json, os, sys
 from collections import defaultdict
 
+# Each kind's class, by its body and its weapon (what decides its fights in the arena): many light bodies firing small
+# shots; one weapon that hits several at once (a blast, an arc, a split beam); a heavy hull with flat armour; fliers.
+CLASSES = [
+    ("small arms", ["infantry (Serenity)", "infantry (Grubstake)", "lance", "buggy", "slug", "railgunner"]),
+    ("splash", ["sapper", "shock", "prism", "tesla"]),
+    ("armour", ["tank", "aegis", "dozer", "walker", "scorcher"]),
+    ("air", ["harrier", "scavenger"]),
+]
+CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
+
 def score(r):
     a, b = r["a"], r["b"]
     lost_a = a["parts_lost"] / a["parts"] if a["parts"] else 0
@@ -42,7 +52,10 @@ def main():
     M = {(a, b): sum(v) / len(v) for (a, b), v in pair.items()}
     F = {(a, c): sum(v) / len(v) for (a, c), v in fixed.items()}
     strength = {k: sum(M.get((k, o), 0) for o in kinds) / len(kinds) for k in kinds}
-    order = sorted(kinds, key=lambda k: -strength[k])
+    unclassed = [k for k in kinds if k not in CLASS_OF]
+    assert not unclassed, f"give these a class in CLASSES: {unclassed}"
+    rank = {c: i for i, (c, _) in enumerate(CLASSES)}
+    order = sorted(kinds, key=lambda k: (rank[CLASS_OF[k]], -strength[k]))
     rounds = max(r["round"] for r in rows)
 
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
@@ -68,7 +81,11 @@ def main():
         ax.set_xticklabels([names.get(c, c) for c in cols], rotation=90 if ax is ax1 else 0, fontsize=7.5)
         ax.xaxis.tick_top()
         ax.set_yticks(range(n))
-        ax.set_yticklabels([f"{a} ({cost.get(a, '?')})" for a in order] if ax is ax1 else [], fontsize=8)
+        ax.set_yticklabels([f"{CLASS_OF[a]}: {a} ({cost.get(a, '?')})" for a in order] if ax is ax1 else [], fontsize=8)
+        for i in range(1, n):
+            if CLASS_OF[order[i]] != CLASS_OF[order[i - 1]]:
+                ax.axhline(i - 0.5, color="black", lw=1.6)
+                if ax is ax1: ax.axvline(i - 0.5, color="black", lw=1.6)
         ax.set_xlabel(title, fontsize=9, labelpad=8)
         ax.xaxis.set_label_position("bottom")
     fig.suptitle("Landing Party: who counters whom (row against column; blue, the row wins; red, it loses)", fontsize=10, y=0.995)
@@ -85,7 +102,20 @@ def main():
          "Each unit kind fights each other at equal spend (as near as whole units allow, about 420 parts a side), both "
          "ways round, and a 420-part squad of it meets three biter waves of 20 and three of your lines (no research). "
          "A cell is the row's score: the share of the other side it destroyed minus the share of its own value it lost, "
-         "from -100 (wiped out, took nothing) to +100. Rows run from the strongest against the others on average.", "",
+         "from -100 (wiped out, took nothing) to +100. Rows are grouped by class (below), strongest first within each.", "",
+         "## Classes", "",
+         "A class is a body and a weapon: **small arms** (many light bodies, small shots), **splash** (one weapon "
+         "that hits several at once: a blast, an arc, a split beam), **armour** (a heavy hull whose flat resistance "
+         "eats small shots), **air** (fliers, for turrets that cannot shoot up). The class against class score is "
+         "the mean of its kinds' cells.", "",
+         "| Row against column | " + " | ".join(c for c, _ in CLASSES) + " |", "|---|" + "---|" * len(CLASSES)]
+    for c, ks in CLASSES:
+        cells = []
+        for d, ls in CLASSES:
+            v = [M[(a, b)] for a in ks for b in ls if a != b and (a, b) in M]
+            cells.append(f"{round(100 * sum(v) / len(v)):+d}" if v else "")
+        L.append(f"| {c} | " + " | ".join(cells) + " |")
+    L += ["",
          "## Each kind's counters", "",
          "| Kind (price) | Beats most (its score) | Beaten most by (their score) |", "|---|---|---|"]
     for a in order:
