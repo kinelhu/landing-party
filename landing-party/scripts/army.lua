@@ -473,12 +473,13 @@ function army.convoy_debug(b)
   return table.concat(out, " | ")
 end
 
--- How far the escorts are from their hauler (the largest distance), for the convoy scenario.
-function army.convoy_spread(b)
+-- How far the escorts are from their hauler (the largest distance), for the convoy scenario; `moving` counts only
+-- haulers under way (a held hauler waits while its escorts walk round a wall to it).
+function army.convoy_spread(b, moving)
   local worst = 0
   for _, c in ipairs(b.convoys or {}) do
     -- Once formed (before, escorts are still walking in).
-    if c.hauler.valid and c.formed then
+    if c.hauler.valid and c.formed and (c.moving or not moving) then
       for _, e in ipairs(c.escorts) do
         if e.valid then
           worst = math.max(worst, math.sqrt((e.position.x - c.hauler.position.x) ^ 2 + (e.position.y - c.hauler.position.y) ^ 2))

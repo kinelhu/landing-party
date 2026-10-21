@@ -417,6 +417,12 @@ tint(launchpad.picture, {})
 launchpad.inventory_size = 10
 launchpad.max_health = 2000
 
+-- Belts in its districts (layout.belts; belts.lua moves parts along them while a player is near): a transport belt.
+local belt = copy("transport-belt", "transport-belt", "lp-belt")
+belt.max_health = 150
+belt.related_underground_belt = nil
+data:extend({belt})
+
 local lamp = copy("lamp", "small-lamp", "lp-lamp")
 lamp.light = {intensity = 0.9, size = 40, color = {0.6, 0.8, 1}}
 -- A cordon post's lamp (Fable's look consult: the lit line): no grid out there, so it burns on nothing; cold white.
@@ -479,6 +485,8 @@ wreck.max_health = 100
 wreck.flags = {"placeable-neutral", "placeable-off-grid", "not-blueprintable"}
 wreck.loot = nil
 wreck.corpse = nil
+-- Blocks nothing: one where a turret died had stood in its rebuild's way (defend: the outpost's turrets never came back).
+wreck.collision_mask = {layers = {}}
 data:extend({wreck})
 
 -- The pheromone flare's canister (scripts/flare.lua): a barrel stood on end in Grubstake's colour, 200 health, a target

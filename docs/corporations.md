@@ -55,7 +55,7 @@ by all parties."
 - **Palette**: ochre, rust brown. Lamps warm amber.
 - **Floor**: stone path (gravel, cheap) on roads; brown refined concrete only on convoy depots, with the logo.
 - **Walls**: none around production; a single low fence (a weak wall variant, half health) round convoy depots.
-  It does not build to last.
+  It does not build to last. By its yard, a sushi belt carries round what it stole (2026-10-21).
 - **Turrets**: few. Open gun turrets (script-fed ammunition) at depots only; outposts are unguarded and
   rebuilt fast instead.
 - **Units**: infantry, haulers in numbers, and its signature **buggy** (the car's hull as a fast, light raider
@@ -90,7 +90,10 @@ by all parties."
   without one for 30 minutes. Its raids regroup when their leader falls. Being at war, it answers
   trespass only (a siege); its losses in the field are fair war. Its research stands in its camp (2026-10-21): a lab per branch of its tree (Optics, Line,
   Siege), each at the heart of its own district; a branch climbs, and fields its units, armour and abilities, only
-  while its lab stands.
+  while its lab stands. Its districts (2026-10-21) are floored in its plating with refined concrete under its machines
+  and hazard rings round its labs and depots, belts carry parts from fabricators to its depots (cargo landing pads at
+  half size), its labs work day and night, and its launch pad stands paved in a ring of hazard stripes. A rival that
+  hurts it is paid back within minutes.
 
 ### Lumen Transparency (the eye)
 - **Palette**: black, violet, white. Lamps violet; many of them (it is lit at night, visible from far).

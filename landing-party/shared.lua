@@ -11,6 +11,8 @@ local shared = {}
 shared.CORPS = {
   grubstake = {name = "Grubstake Mineral Recovery", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
+    -- Its depot (a cargo landing pad's art, dark already) washed lighter: the full tint read sad and deflated (the user).
+    tints = {["lp-depot"] = {r = 1, g = 0.9, b = 0.78, a = 1}},
     road = {tile = "stone-path", tint = {r = 0.95, g = 0.78, b = 0.5}}, pad = {tile = "brown-refined-concrete"},
     trim = {tile = "refined-hazard-concrete-left"},
     -- Under its machines, and round what matters (the user, 2026-10-21: "flooring variation within clusters").
@@ -44,6 +46,9 @@ shared.CORPS = {
         trigger = {damage = "explosion", min = 5}},
       {id = "dozer", branch = "wheels", era = 3, requires = "slug", cost = 2500, unit = {kind = "lp-dozer", weight = 1},
         trigger = {walls_met = 2}},
+      -- Against a turret line: the Scorcher, a machine gun and three bursts of flame for walls, turrets and packs.
+      {id = "scorcher", branch = "scrap-arms", era = 2, cost = 2000, unit = {kind = "lp-scorcher", weight = 1},
+        trigger = {killer = {"gun-turret", "laser-turret", "flamethrower-turret"}, min = 8}},
     },
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {pad = "drop"},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
@@ -68,7 +73,7 @@ shared.CORPS = {
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
     -- they read as vanilla; all slate-teal felt uniform); slate-teal for machines, vehicles and units.
-    tints = {["lp-wall"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-turret"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
+    tints = {["lp-depot"] = {r = 0.88, g = 0.95, b = 1, a = 1}, ["lp-wall"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-turret"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
       ["lp-pylon"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}, ["lp-lamp"] = {r = 0.32, g = 0.35, b = 0.38, a = 1},
       ["lp-mine"] = {r = 0.32, g = 0.35, b = 0.38, a = 1}},
     -- Its deck: the space platform's plating on the ground (the user, 2026-10-20: "space station flooring ... for
@@ -110,6 +115,12 @@ shared.CORPS = {
       -- Against the player's tanks: a laser cannon on an armoured hull.
       {id = "aegis", branch = "line", era = 2, requires = "warden", cost = 2000, unit = {kind = "lp-aegis", weight = 1},
         trigger = {killer = {"vehicle", "lp-battle-tank"}, min = 5}},
+      -- Against massed troopers, heavier: the Prism, a laser that splits to the targets round the first.
+      {id = "prism", branch = "optics", era = 2, requires = "lance", cost = 1800, unit = {kind = "lp-prism", weight = 1},
+        trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 9}},
+      -- Against a turret line: the Tesla, lightning that jumps along it and drains what it strikes of its charge.
+      {id = "tesla", branch = "siege", era = 3, cost = 2500, unit = {kind = "lp-tesla", weight = 1},
+        trigger = {killer = {"laser-turret", "gun-turret", "flamethrower-turret"}, min = 10}},
     },
     -- lobed (the user, 2026-10-20: "organic looking bases ... like metastases", "it's all squares everywhere"): its
     -- blocks on lobed plates, one wall round each hub (layout.wall_cluster), no square per block, no pickets.
@@ -139,10 +150,10 @@ shared.DEFAULT_CORP = "serenity"
 
 -- The faction's kinds of building and unit. The default corporation's prototypes carry the plain names
 -- ("lp-turret"); another's are "lp-<corp>-turret". Logic speaks in kinds; creation and queries translate.
-shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall",
+shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall", "lp-belt",
   "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-post-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
-  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-howitzer", "lp-scrap-cannon",
+  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-prism", "lp-tesla", "lp-scorcher", "lp-howitzer", "lp-scrap-cannon",
   "lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-parked-howitzer"}
 -- A howitzer destroyed in the field leaves its camp without one this long (sieges go with mortars only).
 shared.HOWITZER_DOWN = 30 * 3600
@@ -189,7 +200,7 @@ end
 shared.SCAN_GROUPS = {
   {signal = "lp-scan-infantry", icon = "__base__/graphics/icons/heavy-armor.png",
     kinds = {"lp-infantry", "lp-lance", "lp-shock", "lp-sapper", "lp-slug"}},
-  {signal = "lp-scan-armour", icon = "__base__/graphics/icons/tank.png", kinds = {"lp-tank", "lp-aegis", "lp-dozer"}},
+  {signal = "lp-scan-armour", icon = "__base__/graphics/icons/tank.png", kinds = {"lp-tank", "lp-aegis", "lp-dozer", "lp-prism", "lp-tesla", "lp-scorcher"}},
   {signal = "lp-scan-walker", icon = "__base__/graphics/icons/spidertron.png", kinds = {"lp-walker"}},
   {signal = "lp-scan-air", icon = "__base__/graphics/icons/destroyer.png", kinds = {"lp-harrier", "lp-scavenger"}},
   {signal = "lp-scan-railgunner", icon = "__base__/graphics/icons/rocket-launcher.png", kinds = {"lp-railgunner"}},
@@ -272,6 +283,7 @@ shared.cost = {
   ["lp-launchpad"] = 150,
   ["lp-lamp"] = 1,
   ["lp-post-lamp"] = 1,
+  ["lp-belt"] = 1,
   ["lp-mine"] = 2,
   ["lp-mortar"] = 60,            -- a siege emplacement (scripts/ops.lua), carried by a hauler
   ["lp-howitzer"] = 120,         -- a clearance's long gun, where worms outrange the mortar
@@ -300,6 +312,10 @@ shared.units = {
   ["lp-aegis"] = {health = 1100, cost = 80},
   ["lp-dozer"] = {health = 1800, cost = 90},
   ["lp-scavenger"] = {health = 180, cost = 50},
+  -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
+  ["lp-prism"] = {health = 900, cost = 70},
+  ["lp-tesla"] = {health = 1000, cost = 85},
+  ["lp-scorcher"] = {health = 1100, cost = 70},
 }
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by

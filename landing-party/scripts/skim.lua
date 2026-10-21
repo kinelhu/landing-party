@@ -69,9 +69,78 @@ local function yard(b)
   return e
 end
 
+-- Its sushi belt (the user, 2026-10-21: "Grubstake could even have a sushi belt setup with its stolen goods"): a loop of
+-- belt beside the yard, SUSHI_W by 3, round and round with what it stole, a few of each kind taken out of the yard and
+-- put on it (the loop is part of the camp: kill it and what rides it is lost or spills).
+local SUSHI_W, SUSHI_PER_TILE = 6, 2
+local function sushi(b)
+  local y = b.skim_yard
+  if not (y and y.valid) then return end
+  local s = y.surface
+  local name = shared.variant(b.corp, "lp-belt")
+  if not b.sushi then
+    local ox, oy = math.floor(y.position.x) + 2, math.floor(y.position.y) - 1
+    local cells = {}
+    for x = 0, SUSHI_W - 1 do table.insert(cells, {x, 0, defines.direction.east}) end
+    table.insert(cells, {SUSHI_W - 1, 1, defines.direction.south})
+    for x = SUSHI_W - 1, 0, -1 do table.insert(cells, {x, 2, defines.direction.west}) end
+    table.insert(cells, {0, 1, defines.direction.north})
+    -- Corners turn: the top row's last tile points south, the bottom row's last (x 0) north.
+    cells[SUSHI_W][3] = defines.direction.south
+    cells[2 * SUSHI_W + 1][3] = defines.direction.north
+    local area = {{ox - 1, oy - 1}, {ox + SUSHI_W + 1, oy + 4}}
+    for _, t in pairs(s.find_entities_filtered{area = area, type = {"tree", "simple-entity"}}) do t.destroy() end
+    local placed = {}
+    for _, c in ipairs(cells) do
+      local pos = {ox + c[1] + 0.5, oy + c[2] + 0.5}
+      if s.can_place_entity{name = name, position = pos, direction = c[3], force = y.force} then
+        local e = s.create_entity{name = name, position = pos, direction = c[3], force = y.force}
+        if e then table.insert(placed, e) end
+      end
+    end
+    b.sushi = placed
+  end
+  local tiles, on = 0, 0
+  for _, e in ipairs(b.sushi) do
+    if e.valid then
+      tiles = tiles + 1
+      on = on + e.get_transport_line(1).get_item_count() + e.get_transport_line(2).get_item_count()
+    end
+  end
+  local inv = y.get_inventory(defines.inventory.chest)
+  local want = tiles * SUSHI_PER_TILE - on
+  if want <= 0 or not inv then return end
+  local goods = inv.get_contents()
+  if #goods == 0 then return end
+  local k = 0
+  for _, e in ipairs(b.sushi) do
+    if want <= 0 then break end
+    if e.valid then
+      for line = 1, 2 do
+        k = k + 1
+        local it = goods[(k - 1) % #goods + 1]
+        if want > 0 and inv.get_item_count({name = it.name, quality = it.quality}) > 0
+          and e.get_transport_line(line).insert_at_back({name = it.name, count = 1, quality = it.quality}) then
+          inv.remove({name = it.name, count = 1, quality = it.quality})
+          want = want - 1
+        end
+      end
+    end
+  end
+end
+skim.sushi = sushi
+function skim.on_sushi(b)
+  local n = 0
+  for _, e in ipairs(b.sushi or {}) do
+    if e.valid then n = n + e.get_transport_line(1).get_item_count() + e.get_transport_line(2).get_item_count() end
+  end
+  return n
+end
+
 local function yard_icon(b)
   local y = b.skim_yard
   if not (y and y.valid) then return end
+  sushi(b)
   local most, n
   for _, it in pairs(y.get_inventory(defines.inventory.chest).get_contents()) do
     if not n or it.count > n then most, n = it.name, it.count end
@@ -304,6 +373,20 @@ function skim.died(ent)
   if not inv then return end
   local goods = {}
   for _, it in pairs(inv.get_contents()) do table.insert(goods, {name = it.name, count = it.count, quality = it.quality}) end
+  -- What rode its sushi belt spills with it (the belt stays, empty).
+  for _, b in pairs(storage.bases or {}) do
+    if b.skim_yard == ent then
+      for _, e in ipairs(b.sushi or {}) do
+        if e.valid then
+          for line = 1, 2 do
+            local tl = e.get_transport_line(line)
+            for _, it in pairs(tl.get_contents()) do table.insert(goods, {name = it.name, count = it.count, quality = it.quality}) end
+            tl.clear()
+          end
+        end
+      end
+    end
+  end
   spill(ent.surface, ent.position, goods)
 end
 
@@ -318,7 +401,8 @@ function skim.state(b)
   local y = b.skim_yard
   return {phase = k and k.phase, taken = k and k.taken or 0, skims = b.skims or 0, skimmed = b.skimmed or 0,
     parked = k and k.phase == "skim" and k.truck and k.truck.valid and {k.truck.position.x, k.truck.position.y} or nil,
-    yard = y and y.valid and y.get_inventory(defines.inventory.chest).get_item_count() or 0,
+    yard = (y and y.valid and y.get_inventory(defines.inventory.chest).get_item_count() or 0) + skim.on_sushi(b),
+    sushi = #(b.sushi or {}), on_sushi = skim.on_sushi(b),
     truck = k and k.truck and k.truck.valid or false}
 end
 

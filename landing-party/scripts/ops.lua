@@ -180,7 +180,7 @@ function ops.wronged(b, by)
   if not w or game.tick - w.since > REPRISAL_TICKS then w = {since = game.tick, n = 0}; b.wrongs[by] = w end
   w.n = w.n + 1
   if w.n >= REPRISAL_LOSSES and not (b.reprisal and b.reprisal.owner == by and game.tick < b.reprisal.till) then
-    b.reprisal = {owner = by, till = game.tick + REPRISAL_TICKS}
+    b.reprisal = {owner = by, since = game.tick, till = game.tick + REPRISAL_TICKS}
     b.reprisals = (b.reprisals or 0) + 1
     -- Paid back soon: its next operation within REPRISAL_SOON, not at its usual pace (it came 14 minutes later, reprisal).
     b.next_op = math.min(b.next_op or 0, game.tick + REPRISAL_SOON)
@@ -1114,6 +1114,12 @@ local function launch(b, key, trace, army, opts)
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
+  -- A reprisal is one punitive raid (it had weighed the rival's targets for 20 minutes, raid after raid, and in rivals
+  -- Serenity took Grubstake's camp in 37 minutes): spent when it goes.
+  if reprisal(b, t) then
+    b.reprisal.till = game.tick
+    if ops.trace then ops.trace(b, "reprisal: the punitive raid goes; paid") end
+  end
   if t.owner == "enemy" then
     for _, f in pairs(game.forces) do
       if #f.players > 0 then
@@ -1618,7 +1624,7 @@ function ops.summary(b)
     for _, f in ipairs(shared.player_forces()) do return ladder(f.name, b.force) end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
     op_owner = t and t.owner or nil, reprisal = b.reprisal and game.tick < b.reprisal.till and b.reprisal.owner or nil,
-    reprisal_at = b.reprisal and b.reprisal.till - REPRISAL_TICKS, op_started = b.op and b.op.started,
+    reprisal_at = b.reprisal and (b.reprisal.since or b.reprisal.till - REPRISAL_TICKS), op_started = b.op and b.op.started,
     held = b.intel and b.intel.held and (function() local o = {} for k in pairs(b.intel.held) do o[k] = held_by(b, k) end
       return o end)() or nil,
     siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,

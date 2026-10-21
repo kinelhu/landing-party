@@ -84,7 +84,11 @@ document describes the parts as built; the campaign document describes the game 
 | Depletion and relocation | open | |
 | Serenity spreads: lobed, walled clusters out toward its line (metastases), up to 30 blocks; its line around a rival's claim | built 2026-10-20, seen on maps, not measured | `factory` maps, `gates`, `cordon ring` |
 | Serenity's compounds by wave function collapse (rooms, the curtain round the camp); districts by the keep (the default) | built 2026-10-20, seen on maps and in game; districts measured about even | `factory` maps (`turtlecore` for districts) |
-| Serenity's research in the world: a lab per branch in its own district; a branch climbs and fields only while its lab stands | built 2026-10-21; a squad cannot take one yet, artillery can | `labs`, `breach arty`, `factory` maps |
+| Serenity's research in the world: a lab per branch in its own district; a branch climbs and fields only while its lab stands | built 2026-10-21; artillery takes one; tanks now take its guns, its garrison then kills the squad | `labs`, `breach arty`, `factory` maps |
+| The user's remarks of 2026-10-21: tank shells, labs a size up and at work, cargo-pad depots, the launch pad, cleared ground, crews building from beside, fabricators at rest running, drops in wrecks, the harrier flying, rival intel and reprisals, map labels, district floors | built 0.1.42 | `reprisal`, `loot`, `labs`, `crew`, shots |
+| Belts in Serenity's districts (fabricator to depot), Grubstake's sushi belt of stolen goods | built 0.1.43; districts' fabricators back to 0.1.42's share 0.1.45 | `belts`, `skim`, `convoy grown`, shots |
+| The unit roster (`docs/units.md`, written from the prototypes by `scripts/roster.py`) | built 2026-10-21 | - |
+| New units from the design sheet: Prism, Tesla (Serenity), Scorcher (Grubstake); every tank with its turret | built 0.1.44 | `heavies`, `unitnode` (three) |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -297,6 +301,13 @@ a room, so what you see is what it can field, and what you destroy is what it lo
   the lander is; storming a district with infantry is not an answer yet (`breach` with a squad stays out of the
   regression, a measurement). Open: one shell takes a 600-health lab (too cheap?); the flamers at the gates against the
   player's tanks.
+  *With the tank's cannon round (0.1.43, a district of 4 guns and 114 walls within 45, a garrison of 77):* the squad's
+  aim moved from one gun to the next every 5 to 10 seconds, all four in 30 to 35 (45 for four before, against six);
+  then the garrison came out and killed it: 35 (20, 10, 5) lost 10 to its turrets and the rest to its Line troopers,
+  20 (0, 10, 10) lost 5 to turrets and 14 to troopers, and took 21 of its units with them. The district's guns are no
+  longer the wall; its garrison is. A lab wants an army the garrison's size, the garrison drawn away first, or artillery.
+  (Its first runs funded the camp until its lab stood and it bought a garrison of 100: the test now tops it up to 200
+  parts only.)
 - **The howitzer at home (the legibility audit's step 1, first half; built 2026-10-21).** Serenity's howitzer stands
   parked by its lander once its camp is grown (`base.park`), gone while a siege or clearance has it out; killed in the
   field or parked, its camp goes 30 minutes without one (as before) and a faded howitzer marks the empty spot
@@ -358,12 +369,78 @@ what was done:
   hazard stripes round a lab or a depot, the deck elsewhere; never sand (floors `lp-apron`, `lp-hazard`, both
   corporations').
 
-**Belts, next.** Why none yet: a WFC tile set matches edges character by character and uses every tile turned and
+**Belts (0.1.43).** Why none at first: a WFC tile set matches edges character by character and uses every tile turned and
 mirrored, so a belt's direction cannot live in the tile; and a belt moves what stands on it. The plan: a conveyor
 character `c` that connects like a lane, laid by tiles that only run straight or turn (no junctions), each run traced
 after the solve and given its direction from a fabricator (source) to the depot (sink); items put on at the source and
 taken off at the sink by script, only while a player is near. Grubstake: a loop of belt round its yard carrying what it
 stole (its sushi belt). Bigger districts if the tiles need room.
+Built: tiles `belt` (straight), `belt_turn`, `fab_out` (a fabricator, a belt leaving from under it) and `depot_in` (a
+depot, a belt ending at it); belt tiles allowed deep inside a district (the solver kept tiles with anything but floor or
+lane on their edges to the mask's edge, and had never placed one); layout.belts traces each run and queues its belts with
+their direction, after the rest; belts.lua puts parts (the corporation's own, of no use to a player) on each run's first
+tile and takes them off its last, every second, only while a player is within 160 of the district. Grubstake's sushi belt:
+a loop of 14 belts beside its yard, filled from the yard with two of what it stole a tile; killing the yard spills the
+loop's goods with the chest's. In the offline sheet (`scripts/wfc/wfc.py sheet`), runs are short (two to eight tiles),
+from a fabricator to a depot or between two fabricators. Scenario belts; the skim's sushi check.
+
+### What the full regression found, 0.1.42 to 0.1.45 (2026-10-21)
+- **0.1.42 was merged with 177 of 188 passing, not "188 of 190"** as its commit says: the count was read from the last 40
+  lines of the report. Eleven failed. The causes, each found by bisecting with snapshots:
+  - *Crews walking to every job* (defend, both line runs, bait): building ran about five times slower. Now a crew builds
+    whatever is within 12 tiles of it first, nearest first, and walks only for what is out of reach.
+  - *Wrecks on rebuild spots* (defend): a wreck where a turret died blocked its rebuild. Wrecks collide with nothing.
+  - *Reprisals chaining into conquest* (rivals: Serenity took Grubstake's camp in 37 minutes): a reprisal is now one
+    punitive raid, spent when it launches.
+  - Test fixes: breach arty given 60 shells, tribute's player rebuilds before the truce ends, dismantle counts the sushi
+    belt's goods as the yard's.
+- **Belts made camps that never matured (0.1.44, found on seeds 777 and 4242).** A belt run must end at a fabricator and
+  a depot, so the belt tiles brought fabricators of their own: a power district averaged 7.5 fabricators to 8.7
+  generators (0.1.42: 5.8 to 8.7; 40 game-sized districts sampled offline). Power demand chased supply, the camp planned
+  power district after power district (8 against 2 in 45 minutes), never ran out of growth, never matured, and sent no
+  convoys. The plain fabricator tile's weight went from 3 to 1.5 (0.1.45): 5.0 fabricators to 8.6 generators, 13 belt
+  tiles a district. Lowering the belt tiles' weights did not help (the ends still brought their fabricators).
+- **Tests changed, and why.** `convoy grown` judged escorts' distance while a hauler stood still waiting for them: on
+  seed 12345 it waits at one stop while its escorts walk round a wall (30 tiles); under way they keep within 12. The
+  check now judges the travelling spread and reports the parked one. `hazard` (plain) sent waves of 24 biters, every
+  other mix 40: since the tank shells and the belted districts, Serenity beat waves of 24 nearly unhurt and its first
+  clearance came after minute 57; now 40.
+- **Seed-specific, not regressions:** `hazard` fails on seeds 777 and 4242 in 0.1.42 as now (on 4242 the waves cost
+  Serenity nothing; on 777 its losses cross the threshold at minute 60): it is calibrated on 12345. `fortress old` lost 2
+  of 10 lasers on 12345 in 0.1.44, none on 777 or 4242. `bombard` on 12345: the new shell turned a won assault into an
+  abort; over three seeds, the new shell won 1 and the old weapon 2.
+
+### New units and shields (the user, 2026-10-21; units built 0.1.44, shields proposed)
+**Built (0.1.44):** every tank carries its own cannon turret now (units.lua, `crowned`: a turning head's layers on a
+hull's, held to its frames and pace). The Prism (Serenity, Optics, era 2 after Lances, 1,800 fund, when troopers, breachers
+or you have killed 9 of its units in 30 minutes): a tank with a small laser head on its turret, 22 laser to its target
+and a forking chain of 12 to the ones round it (three jumps, 6 tiles each); four of a pack of eight hurt by its first
+shot (scenario heavies; a chain passes over entities frozen with active = false, the first run's mistake). The Tesla
+(Serenity, Siege, era 3, 2,500, when turrets have killed 10): the tesla turret's head on a tank's hull, 30 electric and
+a chain of five jumps of 18, 8 tiles each; what it strikes that holds a charge loses 60% of it (on_entity_damaged,
+electric: 42 drains on four lasers in a minute). The Scorcher (Grubstake, Scrap arms, era 2, 2,000, when turrets have
+killed 8): the flamethrower turret's head on a tank's hull, a machine gun, and three bursts of the flamethrower's stream
+at a wall, gate or turret within 15 or a pack of three of yours within 9, one every 2 s, refilled one each 20 s, never
+within 30 of a nest while Grubstake's pact holds (scripts/scorcher.lua: five bursts in the minute at a wall line). Each
+bought by its node (`unitnode` prism, tesla, scorcher).
+
+- **Picked from the design sheet** (in-game mockups, `tests/lp-shots/data.lua`, scene 1c): Scorcher B (Grubstake: a tank
+  hull with a flamethrower head; a machine gun, three flame bursts spent only on walls, turrets or packed units within
+  about 12, refilled slowly or at a depot, no fire near nests while its pact holds), Prism B (Serenity, Optics: a tank
+  with its turret and a small laser head; a beam that splits to three to five targets: against infantry, weak on walls),
+  Tesla A (Serenity, Siege: the tesla head on a tank hull; chain lightning that drains the power buffer of what it hits),
+  the shield truck (Serenity, Line: a truck with a radar dish, a dome round it). And the tank's own cannon turret on every
+  tank (they have had the hull only).
+- **The shield's look**: our own (the user: Earendel's Shield Projector was the one remembered; not borrowed),
+  `scripts/make_shield.py`: a hexagon dome, faint inside and bright at the rim, a sweep of light and a shimmer; a hit
+  ripples outward from where it struck.
+- **Static shield generators** (the user: "bubbles which can tank some artillery shells"): Serenity's answer to the
+  question its labs left open (one shell kills a lab). A generator in a district holds a dome; damage to what stands
+  inside is taken off the dome's charge instead (on_entity_damaged: the health restored, the charge drained, a ripple
+  where it struck) until it breaks and flickers out, then recharges. Powered: cutting its line, which Serenity's own
+  cuts and the strangle already teach, drops the dome. Its counters, then: sustained fire, a power cut, the Tesla's drain
+  on the other side. A component from a generator's wreck could give the player the same, by a teardown, as Serenity's
+  other components do.
 
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and

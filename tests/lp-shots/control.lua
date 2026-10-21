@@ -50,7 +50,7 @@ schedule(60, function()
   surface().always_day = false
   surface().daytime = 0
   surface().freeze_daytime = true
-  lp("debug_tune", {history_off = true, raids_off = true, mature_blocks = 1})
+  lp("debug_tune", {history_off = true, raids_off = true, mature_blocks = 1, belts_always = true})
   S.ser = lp("arrive", 1, {x = 0, y = 0}, 300, {corp = "serenity"})
   S.gru = lp("arrive", 1, {x = 0, y = 0}, 300, {corp = "grubstake"})
   for _ = 1, 2 do lp("debug_depot", S.ser, 3000); lp("debug_depot", S.gru, 3000) end
@@ -82,6 +82,93 @@ schedule(240, function()
 end)
 schedule(300, function()
   shot("01-units", {-509, -10}, 0.9, false, S.units .. " units: tints, armour, sizes; Serenity's and Grubstake's apart")
+end)
+
+-- 1b. Portraits for the unit roster (scripts/roster_page.py): every unit alone, from close, by day; the labs too.
+schedule(400, function()
+  flatten(-560, 60, -380, 240)
+  S.portraits = {}
+  local names = {}
+  for name in pairs(prototypes.get_entity_filtered{{filter = "type", type = {"unit", "spider-unit"}}}) do
+    if name:sub(1, 3) == "lp-" and not name:find("%-fire$") and not name:find("%-laser$") and not name:find("%-physical$")
+      and not name:find("%-explosion$") and not name:find("%-electric$") then table.insert(names, name) end
+  end
+  for _, l in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-depot"}) do table.insert(names, l) end
+  table.sort(names)
+  for i, name in ipairs(names) do
+    local pos = {-550 + ((i - 1) % 12) * 14, 70 + math.floor((i - 1) / 12) * 14}
+    local ok, e = pcall(function()
+      return surface().create_entity{name = name, position = pos, force = name:find("grubstake") and "lp-grubstake" or "lp-serenity"}
+    end)
+    if ok and e then
+      e.active = false
+      table.insert(S.portraits, {name = name, pos = pos})
+    end
+  end
+end)
+schedule(460, function()
+  for _, p in ipairs(S.portraits or {}) do
+    local big = p.name:find("lab") or p.name:find("depot") or p.name:find("walker")
+    game.take_screenshot{surface = surface(), position = {p.pos[1], p.pos[2] - 0.6}, resolution = {320, 320},
+      zoom = big and 1.4 or 2.2, daytime = 0, path = DIR .. "roster/" .. p.name .. ".png", show_entity_info = false,
+      anti_alias = true}
+  end
+  note(string.format("roster/: %d portraits", #(S.portraits or {})))
+end)
+
+-- 1c. The design sheet (tests/lp-shots/data.lua): candidate looks for units not yet built, each alone, from close and
+-- at play zoom, facing four ways; the shield truck's bubble drawn round it.
+schedule(500, function()
+  flatten(-560, 260, -380, 420)
+  S.mocks = {}
+  local names = {}
+  for name in pairs(prototypes.get_entity_filtered{{filter = "type", type = "unit"}}) do
+    if name:sub(1, 5) == "mock-" then table.insert(names, name) end
+  end
+  table.sort(names)
+  for i, name in ipairs(names) do
+    local y = 275 + (i - 1) * 16
+    local row = {}
+    for k, dir in ipairs({defines.direction.south, defines.direction.southeast, defines.direction.east, defines.direction.north}) do
+      local e = surface().create_entity{name = name, position = {-540 + (k - 1) * 9, y}, force = "lp-serenity"}
+      if e then
+        -- Turned to face `dir` (a unit faces where it last moved): told to walk a step that way, then held.
+        local v = ({[defines.direction.south] = {0, 1}, [defines.direction.southeast] = {1, 1}, [defines.direction.east] = {1, 0},
+          [defines.direction.north] = {0, -1}})[dir]
+        e.commandable.set_command{type = defines.command.go_to_location, destination = {e.position.x + v[1] * 3, e.position.y + v[2] * 3},
+          distraction = defines.distraction.none}
+        table.insert(row, e)
+        if name:find("shield") then
+          rendering.draw_animation{animation = "mock-shield-dome", target = e, surface = surface(), render_layer = "air-object"}
+          -- The two on the right as if struck: the dome's flash and a ripple where the shot hit its rim (held still).
+          if k >= 3 then
+            rendering.draw_animation{animation = "mock-shield-flash", target = e, surface = surface(), render_layer = "air-object",
+              animation_speed = 0, animation_offset = k == 3 and 0 or 2}
+            rendering.draw_animation{animation = "mock-shield-hit", target = {entity = e, offset = {2.6, -2.2}}, surface = surface(),
+              render_layer = "air-object", animation_speed = 0, animation_offset = k == 3 and 2 or 5}
+          end
+        end
+      end
+    end
+    rendering.draw_text{text = prototypes.entity[name].localised_name, surface = surface(), target = {-545, y - 4.5},
+      color = {1, 1, 1}, scale = 1.4}
+    table.insert(S.mocks, {name = name, y = y, row = row})
+  end
+end)
+schedule(530, function()
+  for _, m in ipairs(S.mocks or {}) do for _, e in ipairs(m.row) do if e.valid then e.active = false end end end
+end)
+schedule(540, function()
+  for _, m in ipairs(S.mocks or {}) do
+    game.take_screenshot{surface = surface(), position = {-527, m.y - 1}, resolution = {1600, 440}, zoom = 1.4, daytime = 0,
+      path = DIR .. "mockups/" .. m.name .. ".png", show_entity_info = false, anti_alias = true}
+  end
+  local first, last = S.mocks[1], S.mocks[#S.mocks]
+  if first then
+    game.take_screenshot{surface = surface(), position = {-527, (first.y + last.y) / 2}, resolution = {1400, 1400}, zoom = 0.8,
+      daytime = 0, path = DIR .. "mockups/00-sheet.png", show_entity_info = false, anti_alias = true}
+  end
+  note(string.format("mockups/: %d candidates", #(S.mocks or {})))
 end)
 
 -- 2. The skim by night: a belt of copper plate, a Grubstake truck parked by it with headlights; then the yard.
@@ -230,6 +317,12 @@ schedule(12 * 3600, function()
   end
   if closest then shot("12-launch-pad", closest.position, 1.0, false, "Serenity's launch pad: paved, hazard ring, four lamps")
   else note("12-launch-pad: none built yet") end
+  -- A district's belts (parts riding from a fabricator to a depot) and its floor (aprons, hazard rings).
+  local belt = surface().find_entities_filtered{name = "lp-belt", force = "lp-serenity", limit = 1}[1]
+  if belt then shot("13-district-belts", belt.position, 1.2, false, "a Serenity district: belts carrying parts, concrete aprons, hazard rings")
+  else note("13-district-belts: no belt built yet") end
+  local yard = surface().find_entities_filtered{name = "lp-skim-yard", limit = 1}[1]
+  if yard then shot("14-sushi", yard.position, 1.8, false, "Grubstake's yard and its sushi belt of stolen goods") end
 end)
 
 schedule(12 * 3600 + 120, function()

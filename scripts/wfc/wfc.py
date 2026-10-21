@@ -14,7 +14,7 @@ import random, sys, os
 SIZE = 6
 WALLS = set("#g")
 INNER = set("w")
-WALK = set(".=gh")
+WALK = set(".=ghc")
 BUILD = {"T": (2, 2), "G": (2, 2), "D": (4, 4), "F": (3, 3), "R": (3, 3), "B": (4, 4), "P": (1, 1), "L": (1, 1)}
 
 def parse(path):
@@ -115,7 +115,7 @@ def solve(vs, cm, w, h, mask, rng, fixed=None, budget=3000):
     away 1,018 of 1,074 tries)."""
     void = [i for i, v in enumerate(vs) if v["name"] == "void"]
     allv = set(range(len(vs)))
-    inner = {i for i, v in enumerate(vs) if all(c in ".=wh" for e in v["edge"].values() for c in e)}
+    inner = {i for i, v in enumerate(vs) if all(c in ".=whc" for e in v["edge"].values() for c in e)}
     dom = {}
     for y in range(h):
         for x in range(w):
@@ -287,7 +287,7 @@ def lobe_mask(w, h, rng):
         return any((x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= r * r for cx, cy, r in discs)
     return m
 
-COL = {" ": "#e9e2d0", ".": "#b8bfc6", "=": "#8f979e", "#": "#2c3e50", "g": "#e0a020", "w": "#56687a", "h": "#d9c38a", "+": None,
+COL = {" ": "#e9e2d0", ".": "#b8bfc6", "=": "#8f979e", "#": "#2c3e50", "g": "#e0a020", "w": "#56687a", "h": "#d9c38a", "c": "#d04020", "+": None,
        "T": "#3b5b7a", "G": "#6b8e23", "D": "#7a3b5b", "F": "#5b7a3b", "R": "#3b7a7a", "B": "#a05bd0", "P": "#222222", "L": "#f4f1a0"}
 
 def draw(ax, g, title):
@@ -297,7 +297,7 @@ def draw(ax, g, title):
         for x in range(W):
             ch = g[y][x]
             base = COL[" "] if ch == " " else COL["."]
-            if ch in ("=", "#", "g", "w", "h"): base = COL[ch]
+            if ch in ("=", "#", "g", "w", "h", "c"): base = COL[ch]
             ax.add_patch(mp.Rectangle((x, y), 1, 1, color=base, lw=0))
     for y in range(H):
         for x in range(W):

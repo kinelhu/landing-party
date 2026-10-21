@@ -19,7 +19,7 @@ digraph ai {
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
-    "rd" [label="rd\n392 lines", width=1.24, fillcolor="#d9f0d9"];
+    "rd" [label="rd\n393 lines", width=1.24, fillcolor="#d9f0d9"];
     "phases" [label="phases\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
@@ -27,21 +27,22 @@ digraph ai {
     "base" [label="base\n807 lines", width=1.70, fillcolor="#eef2f7"];
     "construction" [label="construction\n360 lines", width=1.20, fillcolor="#d9f0d9"];
     "planner" [label="planner\n295 lines", width=1.13, fillcolor="#eef2f7"];
-    "layout" [label="layout\n1112 lines", width=2.04, fillcolor="#f7dede"];
-    "wfc" [label="wfc\n379 lines", width=1.22, fillcolor="#d9f0d9"];
-    "wfc_serenity" [label="wfc_serenity\n106 lines", width=0.92, fillcolor="#d9f0d9"];
+    "layout" [label="layout\n1192 lines", width=2.12, fillcolor="#f7dede"];
+    "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
+    "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n436 lines", width=1.28, fillcolor="#eef2f7"];
+    "crew" [label="crew\n449 lines", width=1.30, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n144 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n352 lines", width=1.19, fillcolor="#eef2f7"];
+    "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_3 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "army" [label="army\n711 lines", width=1.59, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1638 lines", width=2.62, fillcolor="#f7dede"];
+    "army" [label="army\n712 lines", width=1.59, fillcolor="#eef2f7"];
+    "ops" [label="ops\n1644 lines", width=2.63, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n230 lines", width=1.06, fillcolor="#d9f0d9"];
     "siege" [label="siege\n782 lines", width=1.67, fillcolor="#d9f0d9"];
@@ -50,13 +51,14 @@ digraph ai {
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
     "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
+    "scorcher" [label="scorcher\n105 lines", width=0.92, fillcolor="#d9f0d9"];
     "power" [label="power\n171 lines", width=0.99, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "flare" [label="flare\n323 lines", width=1.16, fillcolor="#eef2f7"];
     "jumper" [label="jumper\n316 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n353 lines", width=1.19, fillcolor="#eef2f7"];
-    "skim" [label="skim\n336 lines", width=1.17, fillcolor="#eef2f7"];
+    "skim" [label="skim\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "bait" [label="bait\n35 lines", width=0.84, fillcolor="#eef2f7"];
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
@@ -69,7 +71,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n540 lines", width=1.40, fillcolor="#eef2f7"];
+    "control" [label="control\n551 lines", width=1.41, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

@@ -1,0 +1,216 @@
+# Unit roster
+
+Written by `scripts/roster.py` from the game's prototypes (`scripts/check.sh` dumps them) and `shared.lua`:
+do not edit by hand. Damage is one shot's, before research and plates (a corporation's research raises its
+category's damage; a plated unit carries extra resistance). Grubstake's copies (`lp-grubstake-*`) share these
+stats in its colours.
+
+## aegis
+
+Line: a laser cannon on an armoured hull; against the player's battle tanks.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1100 | 5.4 tiles/s | 45 laser | 15 | 1/s | physical -5 30%, explosion 40% | 80 |
+
+Fielded by: Serenity, research: line branch, era 2, after warden, 2000 fund.
+
+## battle-tank
+
+the player's siege weapon.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 900 | 5.4 tiles/s | 70 explosion; 120 explosion over 1.5 tiles to buildings | 18 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30% | - |
+
+Fielded by: the player (a barracks).
+
+## breacher
+
+the player's: demolition charges, for walls.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 120 | 7.2 tiles/s | 100 explosion over 2.5 tiles | 12 | 0.33/s | physical -2 10% | - |
+
+Fielded by: the player (a barracks).
+
+## buggy
+
+Grubstake's raider and escort: fast, a machine gun.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 220 | 12.0 tiles/s | 5 physical | 13 | 6/s | physical -2 15% | 15 |
+
+Fielded by: Grubstake (from landing).
+
+## dozer
+
+Wheels: a ram that pushes a wall open for the shotguns.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1800 | 4.2 tiles/s | 60 physical | 2 | 1/s | physical -5 40%, fire 50%, explosion 20% | 90 |
+
+Fielded by: Grubstake, research: wheels branch, era 3, after slug, 2500 fund.
+
+## harrier
+
+air: flies over walls, cliffs and water; turrets that cannot shoot up ignore it.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 150 | 15.0 tiles/s | 10 physical | 15 | 4/s | fire 100% | 40 |
+
+Fielded by: Grubstake (from landing).
+
+## hauler
+
+convoys and Grubstake's building trucks; lightly armed.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1500 | 3.9 tiles/s | 4 physical | 10 | 2/s | physical -4 30%, fire 50%, explosion 20% | 30 |
+
+Fielded by: both (convoys; Grubstake's builders).
+
+## infantry
+
+Serenity's Line trooper: a laser beam; the bulk of its raids.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 120 | 7.2 tiles/s | 7 laser | 15 | 2.4/s | physical -2 10%, laser 20% | 10 |
+
+Fielded by: Grubstake (from landing); Serenity (from landing).
+
+## lance
+
+Optics: a heavier beam that outranges the player's troopers.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 110 | 7.2 tiles/s | 12 laser | 17 | 1.3/s | physical -2 10%, laser 20% | 14 |
+
+Fielded by: Serenity, research: optics branch, era 1, 900 fund.
+
+## prism
+
+Optics: a laser that splits on what it hits to the targets round it; against massed troopers.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 900 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 22 laser | 16 | 1.2/s | physical -3 20%, laser 30%, explosion -5 30% | 70 |
+
+Fielded by: Serenity, research: optics branch, era 2, after lance, 1800 fund.
+
+## railgunner
+
+Serenity's nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 140 | 6.0 tiles/s | 250 physical to biters, nests and worms; 10 physical to anything else | 30 | 0.67/s | physical -2 10%, laser 20% | 22 |
+
+Fielded by: Serenity (from landing).
+
+## sapper
+
+Scrap arms: dynamite over 3 tiles, enemies only; against blobs, and the wall in the way.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 120 | 7.8 tiles/s | 80 explosion over 3 tiles | 11 | 0.33/s | physical -2 10% | 16 |
+
+Fielded by: Grubstake, research: scrap-arms branch, era 2, 1500 fund.
+
+## scavenger
+
+Wheels: a harrier with rockets, for the player's artillery, mortars and radars.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 180 | 15.0 tiles/s | 18 explosion | 14 | 1.5/s | fire 100% | 50 |
+
+Fielded by: Grubstake, research: wheels branch, era 2, 1800 fund.
+
+## scorcher
+
+Scrap arms: a machine gun, and three bursts of flame for walls, turrets and packs, refilled slowly.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1100 | 5.4 tiles/s | 6 physical | 13 | 6/s | physical -3 25%, fire 100%, explosion -5 30% | 70 |
+
+Fielded by: Grubstake, research: scrap-arms branch, era 2, 2000 fund.
+
+## shock
+
+Optics: an arcing electric beam that jumps target to target, a brief stun; against massed troopers.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 160 | 7.2 tiles/s | (arcs to the next targets); 12 electric | 12 | 1.3/s | physical -2 10%, laser 20%, electric 50% | 30 |
+
+Fielded by: Serenity, research: optics branch, era 3, after lance, 2500 fund.
+
+## shotgun-hand
+
+Grubstake's infantry: three heavy pellets, deadly at the fence, useless against a turret line.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 120 | 7.8 tiles/s | 9 physical (x3) | 9 | 0.94/s | physical -2 10% | - |
+
+Fielded by: Grubstake (from landing, as its infantry).
+
+## slug
+
+Scrap arms: slugs; against the player's vehicles.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 240 | 12.0 tiles/s | 14 physical (x3) | 12 | 1.5/s | physical -2 15% | 25 |
+
+Fielded by: Grubstake, research: scrap-arms branch, era 1, 900 fund.
+
+## tank
+
+armour; cannon rounds that hit buildings three times as hard as units.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30% | 60 |
+
+Fielded by: Serenity (from landing).
+
+## tesla
+
+Siege: lightning that jumps along a turret line and drains what it strikes of its charge.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1000 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 30 electric | 14 | 0.8/s | physical -3 20%, electric 80%, explosion -5 30% | 85 |
+
+Fielded by: Serenity, research: siege branch, era 3, 2500 fund.
+
+## trooper
+
+the player's: a rifle.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 120 | 7.2 tiles/s | 6 physical | 15 | 3/s | physical -2 10% | - |
+
+Fielded by: the player (a barracks).
+
+## walker
+
+a spider: steps over walls, rockets.
+
+| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1600 | walks | 18 physical | 15 | 2.4/s | physical -3 20%, fire 60%, explosion -10 30%, acid 50% | 120 |
+
+Fielded by: Serenity (from landing).

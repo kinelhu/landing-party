@@ -100,7 +100,9 @@ local function make_infantry(name, color, armor)
   a.animation = table.deepcopy(look.idle_with_gun)
   u.attack_parameters = a
   u.dying_explosion = "explosion"
-  u.corpse = nil
+  -- Bodies (the user, 2026-10-21: "Do units leave bodies?"): what is left of a suit, a vehicle, a drone where it fell,
+  -- the engine's own remnants, gone after their usual time.
+  u.corpse = "small-remnants"
   u.resistances = {{type = "physical", decrease = 2, percent = 10}}
   tint(u.run_animation, {}, color)
   tint(u.attack_parameters.animation, {}, color)
@@ -174,6 +176,10 @@ local function shell(unit_name, direct, siege)
   p.name = unit_name .. "-shell"
   p.direction_only = false
   p.piercing_damage = 0
+  -- To its target only (a shell that hit what stood in its way, trees and walls, left a siege's assault short:
+  -- bombard aborted with 9 of 22 left; the instant hit it replaced always reached its target).
+  p.collision_box = nil
+  p.hit_collision_mask = {layers = {}}
   p.force_condition = "not-same"
   p.action = {
     {type = "direct", action_delivery = {type = "instant", target_effects = {
@@ -186,7 +192,30 @@ local function shell(unit_name, direct, siege)
   return {action = {type = "direct", action_delivery = {type = "projectile", projectile = p.name, starting_speed = 1,
     max_range = 30, source_effects = {type = "create-explosion", entity_name = "explosion-gunshot"}}}}
 end
-local function make_tank(name, color)
+-- A hull crowned (the design sheet, the user, 2026-10-21: units told apart by their silhouette, from vanilla parts): a
+-- turning head's layers added to a hull's, scaled and moved, held to the hull's frames and pace (layers of one
+-- animation advance alike).
+local function crowned(hull, heads)
+  local a = table.deepcopy(hull)
+  local base = a.layers[1]
+  for _, h in ipairs(heads) do
+    local src = table.deepcopy(h[1])
+    for _, l in ipairs(src.layers or {src}) do
+      local k = h[2] or 1
+      l.scale = (l.scale or 1) * k
+      local sh = l.shift or {0, 0}
+      l.shift = {sh[1] * k + (h[3] or 0), sh[2] * k + (h[4] or 0)}
+      l.frame_count, l.repeat_count = 1, base.frame_count or 1
+      l.line_length = l.line_length or 8
+      l.animation_speed, l.max_advance = base.animation_speed, base.max_advance
+      table.insert(a.layers, l)
+    end
+  end
+  return a
+end
+
+-- heads: the turning heads on its hull; by default the tank's own cannon turret (the units had the hull only).
+local function make_tank(name, color, heads)
 local tank = base_unit(name)
 tank.max_health = shared.units["lp-tank"].health
 tank.movement_speed = 0.09
@@ -194,14 +223,14 @@ tank.distance_per_frame = 0.5
 tank.vision_distance = 30
 tank.collision_box = {{-1, -1}, {1, 1}}
 tank.selection_box = {{-1.2, -1.4}, {1.2, 1.4}}
-tank.run_animation = table.deepcopy(tank_car.animation)
+tank.run_animation = crowned(tank_car.animation, heads or {{tank_car.turret_animation}})
 local ta = gun(35, 15, 90, "cannon-shell")
 ta.ammo_type = shell(name, 40, 80)
 ta.sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound)
-ta.animation = table.deepcopy(tank_car.animation)
+ta.animation = table.deepcopy(tank.run_animation)
 tank.attack_parameters = ta
 tank.dying_explosion = "medium-explosion"
-tank.corpse = nil
+tank.corpse = "tank-remnants"
 -- Armour that yellow ammo still hurts: a flat 10 made a gun turret's 5-damage rounds useless (seed 4242:
 -- seven raids, no unit lost).
 tank.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "fire", percent = 60},
@@ -232,7 +261,7 @@ local walker = {
   distraction_cooldown = 300, min_pursue_time = 600, max_pursue_distance = 50, vision_distance = 40,
   ai_settings = {destroy_when_commands_fail = false, allow_try_return_to_spawner = false},
   is_military_target = true,
-  dying_explosion = "spidertron-explosion",
+  dying_explosion = "spidertron-explosion", corpse = "spidertron-remnants",
   graphics_set = table.deepcopy(spidertron.graphics_set),
   spider_engine = table.deepcopy(spidertron.spider_engine),
   attack_parameters = gun(18, 15, 25, "rocket"),
@@ -278,7 +307,7 @@ local ha = gun(10, 15, 15)
 ha.animation = flying()
 harrier.attack_parameters = ha
 harrier.dying_explosion = "destroyer-robot-explosion"
-harrier.corpse = nil
+harrier.corpse = "destroyer-remnants"
 harrier.resistances = {{type = "fire", percent = 100}}
 tint(harrier.run_animation, {})
 tint(harrier.attack_parameters.animation, {})
@@ -298,7 +327,7 @@ local hla = gun(4, 10, 30)
 hla.animation = table.deepcopy(car.animation)
 hauler.attack_parameters = hla
 hauler.dying_explosion = "medium-explosion"
-hauler.corpse = nil
+hauler.corpse = "car-remnants"
 hauler.resistances = {{type = "physical", decrease = 4, percent = 30}, {type = "fire", percent = 50},
   {type = "explosion", percent = 20}}
 tint(hauler.run_animation, {}, {r = 1, g = 0.75, b = 0.45, a = 1})
@@ -317,7 +346,7 @@ local ba = gun(5, 13, 10)
 ba.animation = table.deepcopy(car.animation)
 buggy.attack_parameters = ba
 buggy.dying_explosion = "medium-explosion"
-buggy.corpse = nil
+buggy.corpse = "car-remnants"
 buggy.resistances = {{type = "physical", decrease = 2, percent = 15}}
 tint(buggy.run_animation, {})
 tint(buggy.attack_parameters.animation, {})
@@ -471,6 +500,84 @@ railgunner.attack_parameters = {
   }},
 }
 railgunner.resistances = table.deepcopy(infantry.resistances)
+
+-- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua mocks them).
+-- Prism (Serenity's Optics, after Lances): a tank with its turret and a small laser head on top; a laser of 22 that
+-- splits on what it hits to the targets round it (three jumps of 12, forking), every 50 ticks, range 16. Against a blob
+-- of troopers; little against a wall (one target, one beam).
+local laser_head = data.raw["electric-turret"]["laser-turret"].prepared_animation
+local prism = make_tank("lp-prism", nil, {{tank_car.turret_animation}, {laser_head, 0.5, 0, -1.0}})
+prism.max_health = shared.units["lp-prism"].health
+local function beam_copy(src, name, color, damage, dtype)
+  local b = table.deepcopy(data.raw.beam[src])
+  b.name = name
+  local seen = {}
+  local function paint(t)
+    if type(t) ~= "table" or seen[t] then return end
+    seen[t] = true
+    if t.filename or t.filenames then t.tint = color end
+    for _, v in pairs(t) do paint(v) end
+  end
+  paint(b.graphics_set)
+  b.action = damage and {type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "damage", damage = {amount = damage, type = dtype}}}}} or nil
+  return b
+end
+local prism_split = beam_copy("laser-beam", "lp-prism-split", {r = 0.85, g = 0.45, b = 1, a = 1}, 12, "laser")
+local prism_chain = {type = "chain-active-trigger", name = "lp-prism-chain", max_jumps = 3, max_range_per_jump = 6,
+  jump_delay_ticks = 3, fork_chance = 0.6, fork_chance_increase_per_quality_level = 0,
+  action = {type = "direct", action_delivery = {type = "beam", beam = "lp-prism-split", max_length = 6.5, duration = 18,
+    add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, 0}}}}
+prism.attack_parameters = {
+  type = "beam", ammo_category = "laser", cooldown = 50, range = 16, range_mode = "bounding-box-to-bounding-box",
+  source_direction_count = 8, source_offset = {0, -1.6}, animation = table.deepcopy(prism.run_animation),
+  ammo_type = {action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "nested-result", action = {type = "direct", action_delivery = {type = "chain", chain = "lp-prism-chain"}}},
+    {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "laser-beam",
+      max_length = 17, duration = 20, add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, -1.6}}}},
+    {type = "damage", damage = {amount = 22, type = "laser"}},
+  }}}},
+}
+prism.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "laser", percent = 30},
+  {type = "explosion", decrease = 5, percent = 30}}
+
+-- Tesla (Serenity's Siege): the tesla turret's head on a tank's hull; lightning of 30 that jumps along five more targets
+-- (18 each, 8 tiles a jump), every 75 ticks, range 14. What it strikes that holds a charge (a laser turret, an
+-- accumulator, a roboport) loses most of it (control.lua, on_entity_damaged): a turret line goes dark a moment.
+local tesla_turret = data.raw["electric-turret"]["tesla-turret"]
+local tesla_head = tesla_turret and tesla_turret.prepared_animation or laser_head
+local tesla = make_tank("lp-tesla", nil, {{tesla_head, 0.6, 0, 0.9}})
+tesla.max_health = shared.units["lp-tesla"].health
+local tesla_jump = beam_copy("electric-beam-no-sound", "lp-tesla-jump", {r = 0.7, g = 0.85, b = 1, a = 1}, 18, "electric")
+local tesla_chain = {type = "chain-active-trigger", name = "lp-tesla-chain", max_jumps = 5, max_range_per_jump = 8,
+  jump_delay_ticks = 4, fork_chance = 0,
+  action = {type = "direct", action_delivery = {type = "beam", beam = "lp-tesla-jump", max_length = 8.5, duration = 20,
+    add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, 0}}}}
+tesla.attack_parameters = {
+  type = "beam", ammo_category = "electric", cooldown = 75, range = 14, range_mode = "bounding-box-to-bounding-box",
+  source_direction_count = 8, source_offset = {0, -1.4}, animation = table.deepcopy(tesla.run_animation),
+  ammo_type = {action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "nested-result", action = {type = "direct", action_delivery = {type = "chain", chain = "lp-tesla-chain"}}},
+    {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "electric-beam",
+      max_length = 15, duration = 20, add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, -1.4}}}},
+    {type = "damage", damage = {amount = 30, type = "electric"}},
+  }}}},
+}
+tesla.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "electric", percent = 80},
+  {type = "explosion", decrease = 5, percent = 30}}
+
+-- Scorcher (Grubstake's Scrap arms): the flamethrower turret's head on a tank's hull; a machine gun (6 a round, 6 a
+-- second, range 13) most of the time, and three bursts of flame for walls, turrets and packed units, fired by script
+-- (scripts/scorcher.lua) and refilled slowly. Fire does not hurt it.
+local flamer_head = data.raw["fluid-turret"]["flamethrower-turret"].prepared_animation.north
+local scorcher = make_tank("lp-scorcher", nil, {{flamer_head, 0.95, 0, -0.2}})
+scorcher.max_health = shared.units["lp-scorcher"].health
+local sca = gun(6, 13, 10)
+sca.animation = table.deepcopy(scorcher.run_animation)
+scorcher.attack_parameters = sca
+scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type = "fire", percent = 100},
+  {type = "explosion", decrease = 5, percent = 30}}
+data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 
 -- Loot (the faction loot consult): a unit drops a little of its own kit, half the time. The player's units (trooper,
 -- breacher, battle tank) drop nothing: they are the player's.

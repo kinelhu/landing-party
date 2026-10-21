@@ -615,7 +615,86 @@ lay_out = function(b, hub, x0, y0, g, side, lab)
   for i = #b.queue, 1, -1 do if b.queue[i].module == block and b.queue[i].name == "lp-wall" then first = i end end
   for k, j in ipairs(econ) do table.insert(b.queue, first + k - 1, j) end
   if pylon then layout.connect(b, pylon[1], pylon[2], block) end
+  layout.belts(b, block, g, side, x0, y0)
   return block
+end
+
+-- Its belts (the user, 2026-10-21: "we did not incorporate any belts or logistics of any kind inside the clusters"): each
+-- run of "c" (tiles run straight or turn, never branch) traced end to end and given its direction, toward the end beside
+-- a depot when one is, from the end beside a fabricator; a loop runs round. Queued after the rest; block.belts keeps each
+-- run's first and last tile for belts.lua, which puts parts on at the first and takes them off at the last.
+local DIRS = {[0] = {[-1] = defines.direction.north, [1] = defines.direction.south},
+  [1] = {[0] = defines.direction.east}, [-1] = {[0] = defines.direction.west}}
+local N4 = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
+function layout.belts(b, block, g, side, x0, y0)
+  local function at(x, y) return g[y] and g[y][x] or " " end
+  local foot = {}
+  for _, bd in ipairs(wfc.buildings(g, side, side)) do
+    for dx = 0, bd[4] - 1 do for dy = 0, bd[5] - 1 do foot[(bd[2] + dx) .. ":" .. (bd[3] + dy)] = bd[1] end end
+  end
+  local function beside(x, y, letter)
+    for _, d in ipairs(N4) do if foot[(x + d[1]) .. ":" .. (y + d[2])] == letter then return d end end
+  end
+  local seen, runs = {}, {}
+  for y = 0, side - 1 do
+    for x = 0, side - 1 do
+      if at(x, y) == "c" and not seen[x .. ":" .. y] then
+        -- The run: its cells, and its ends (a cell with one belt neighbour).
+        local cells, ends, stack = {}, {}, {{x, y}}
+        seen[x .. ":" .. y] = true
+        while #stack > 0 do
+          local p = table.remove(stack)
+          table.insert(cells, p)
+          local n = 0
+          for _, d in ipairs(N4) do
+            local q = {p[1] + d[1], p[2] + d[2]}
+            if at(q[1], q[2]) == "c" then
+              n = n + 1
+              if not seen[q[1] .. ":" .. q[2]] then seen[q[1] .. ":" .. q[2]] = true; table.insert(stack, q) end
+            end
+          end
+          if n <= 1 then table.insert(ends, p) end
+        end
+        local start = ends[1] or cells[1]
+        for _, e in ipairs(ends) do
+          if beside(e[1], e[2], "D") then
+            -- The other end starts it.
+            for _, o in ipairs(ends) do if o ~= e then start = o end end
+          end
+        end
+        -- Walked from its start, each tile pointing at the next; the last at the building beside it, else straight on.
+        local order, done, p = {}, {}, start
+        while p do
+          table.insert(order, p)
+          done[p[1] .. ":" .. p[2]] = true
+          local nxt
+          for _, d in ipairs(N4) do
+            local q = {p[1] + d[1], p[2] + d[2]}
+            if at(q[1], q[2]) == "c" and not done[q[1] .. ":" .. q[2]] then nxt = q break end
+          end
+          p = nxt
+        end
+        local last_d
+        for i, c in ipairs(order) do
+          local q = order[i + 1]
+          local d
+          if q then d = {q[1] - c[1], q[2] - c[2]}
+          else
+            -- A loop's last tile points at its first; an open run's at the depot or fabricator beside it, or on.
+            local f = order[1]
+            if #ends == 0 and math.abs(f[1] - c[1]) + math.abs(f[2] - c[2]) == 1 then d = {f[1] - c[1], f[2] - c[2]}
+            else d = beside(c[1], c[2], "D") or beside(c[1], c[2], "F") or last_d or {0, 1} end
+          end
+          last_d = d
+          table.insert(b.queue, {name = "lp-belt", pos = {x0 + c[1] + 0.5, y0 + c[2] + 0.5}, dir = DIRS[d[1]][d[2]],
+            module = block})
+        end
+        table.insert(runs, {first = {x0 + order[1][1] + 0.5, y0 + order[1][2] + 0.5},
+          last = {x0 + order[#order][1] + 0.5, y0 + order[#order][2] + 0.5}, loop = #ends == 0, n = #order})
+      end
+    end
+  end
+  if #runs > 0 then block.belts = runs end
 end
 
 -- The curtain (the user: "we need layers of walls too, closed clusters within the base etc. A huge blob with just an
@@ -1019,8 +1098,9 @@ function layout.launch_floor(b, block, silo)
   local cx, cy = math.floor(silo[1]), math.floor(silo[2])
   local hazard = shared.CORPS[b.corp].hazard and "hazard" or "trim"
   local pad, ring = {}, {}
-  for x = x0 + 1, x0 + w - 2 do
-    for y = y0 + 1, y0 + h - 2 do
+  -- The whole block, out to its road (a band of sand had stood between the two: 12-launch-pad).
+  for x = x0, x0 + w - 1 do
+    for y = y0, y0 + h - 1 do
       local d = math.max(math.abs(x - cx), math.abs(y - cy))
       table.insert((d == 5 or d == 6) and ring or pad, {x, y})
     end

@@ -90,10 +90,18 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    branch (a laser turret: the Optics lab; heavy armour: the Line armoury; an artillery shell: the Siege works). Its
    research climbs only in branches whose lab stands, and what a branch gave (Lances, armoured troopers, the jammer)
    is fielded only while it stands. Kill one: does its army change? Is the lab worth the assault (artillery takes one
-   in a shell; a squad of 35 storming the district died at its flamers)?
+   in a shell; a squad of 35 storming the district died at its flamers)? Labs are a size up and always at work now.
+21c. **Your remarks of 2026-10-21, seen again** (0.1.42, 0.1.43): a tank's cannon round against a wall line (does it
+   tear through buildings, and not through your troopers?); depots as half-size cargo landing pads; the launch pad
+   paved, ringed in hazard stripes, lamps at its corners; trees gone in its blocks and round its drills; drones and
+   trucks flying or driving to each spot before building (a beam from beside it, not from a screen away);
+   fabricators running now and then; districts floored in refined concrete and hazard rings; belts in its districts
+   carrying parts from fabricators to depots, and Grubstake's sushi belt by its yard carrying what it stole; one
+   "Mineral rights" label where two patches lie close; a flying harrier in its own selection box; Grubstake no longer
+   throwing raids at Serenity's fortress for nothing, and Serenity paying back a rival that hurts it.
 
 ## Your side
-22. **Loot and components**: what you destroy of theirs drops plates, circuits, magazines, and rare components that
+22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that
    research six technologies (Cluster shells, Pheromone bait, Pact breaker, Claim marker, Rail rifle, Orbital strike).
 23. **Threat scanner**: wired to a combinator, it counts their units within 64 tiles by kind; a jammer in reach blinds
    it ("Scanner jammed").

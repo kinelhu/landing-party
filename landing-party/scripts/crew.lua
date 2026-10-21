@@ -28,7 +28,7 @@ local BUILD_TICKS = 90
 local STUCK = 60 * 60
 local REQUEUE = 60 * 60
 local ARRIVE = 8
-local REACH = 8                   -- how far a crew builds from
+local REACH = 12                  -- how far a crew builds from
 local REACH_WAIT = 15 * 60
 -- Crews lost on one module (or one rebuild) before the camp gives it up: a cordon's posts under a factory's turrets took
 -- 168 drones in two hours, one a minute (visit deathworld10x). An abandoned post never stands, so its arc holds: the
@@ -280,6 +280,19 @@ local function step(b, i)
     return
   end
   if game.tick < c.next_at then return end
+  -- The nearest work first: of the jobs left, one already within REACH is built before the crew moves on (walking to each
+  -- in queue order made a district's crew five times slower, and Serenity's line fell behind its schedule: line, bait).
+  local here = c.jobs[c.k]
+  if here and here.pos and not here.tiles and (p.x - here.pos[1]) ^ 2 + (p.y - here.pos[2]) ^ 2 > REACH * REACH then
+    for i = c.k + 1, #c.jobs do
+      local q = c.jobs[i]
+      if q.tiles or (q.pos and (p.x - q.pos[1]) ^ 2 + (p.y - q.pos[2]) ^ 2 <= REACH * REACH) then
+        c.jobs[c.k], c.jobs[i] = q, here
+        c.going = nil
+        break
+      end
+    end
+  end
   local job = c.jobs[c.k]
   -- Built from beside it (the user, 2026-10-21: a beam laying a turret by the player's base from a screen away read as
   -- unfair): a job farther than REACH, it goes there first; one it cannot get near in REACH_WAIT (a truck walled out by

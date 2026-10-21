@@ -35,6 +35,8 @@ local road = require("__landing-party__.scripts.road")
 local trade = require("__landing-party__.scripts.trade")
 local ledger = require("__landing-party__.scripts.ledger")
 local skim = require("__landing-party__.scripts.skim")
+local belts = require("__landing-party__.scripts.belts")
+local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
 war.forgive = standing.forgive
 rd.era = ops.era
@@ -61,7 +63,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -101,7 +103,13 @@ for _, n in ipairs(shared.variants({"lp-lander", "lp-generator", "lp-pylon", "lp
   "lp-siege-lab"})) do
   table.insert(BUILDINGS, {filter = "name", name = n})
 end
+-- What holds a charge, for the Tesla's drain (scorcher.lua).
+for _, t in ipairs({"electric-turret", "accumulator", "roboport", "electric-energy-interface"}) do
+  table.insert(BUILDINGS, {filter = "type", type = t})
+end
 script.on_event(defines.events.on_entity_damaged, function(e)
+  if e.damage_type and e.damage_type.name == "electric" then scorcher.drain(e) end
+  if not shared.is_corp(e.entity.force.name) then return end
   -- Any other force: a rival corporation's fire raises the alarm as the player's does.
   if e.force and e.force ~= e.entity.force then
     -- Fighting at Serenity's line is fair war (the user, 2026-10-19, on hunting the line: each post hit had been
@@ -357,6 +365,7 @@ remote.add_interface("landing-party", {
     if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
     if t.labs_off ~= nil then storage.labs_off = t.labs_off or nil end
+    if t.belts_always ~= nil then storage.belts_always = t.belts_always or nil end
     if t.tap_step ~= nil then storage.tap_step = t.tap_step end
     if t.capture_off ~= nil then storage.capture_off = t.capture_off end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
@@ -485,6 +494,8 @@ remote.add_interface("landing-party", {
     local e = b and base.place_job(b, {name = name, pos = pos})
     return e and e.unit_number
   end,
+  scorcher_stats = function() return scorcher.stats() end,
+  belt_stats = function(id) return storage.bases[id] and belts.stats(storage.bases[id]) end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,

@@ -8,7 +8,8 @@ local wfc = {}
 
 local STEP = {n = {0, -1}, s = {0, 1}, e = {1, 0}, w = {-1, 0}}
 local WALLS = {["#"] = true, g = true}
-local WALK = {["."] = true, ["="] = true, g = true, h = true}
+-- A belt ("c") is walked over (units cross belts), never built on.
+local WALK = {["."] = true, ["="] = true, g = true, h = true, c = true}
 wfc.BUILD = {T = {2, 2}, G = {2, 2}, D = {4, 4}, F = {3, 3}, R = {3, 3}, B = {4, 4}, P = {1, 1}, L = {1, 1}}
 
 local function count(s) local n = 0 for _ in pairs(s) do n = n + 1 end return n end
@@ -58,11 +59,11 @@ function wfc.solve(tiles, w, h, mask, rand, fixed, budget)
   for i, v in ipairs(V) do
     if v.name == "void" then void[i] = true end
     -- Deep inside, a tile's edges are floor or lane: walls only at the mask's edge (else every cell walled into its
-    -- own pod, a honeycomb of sealed octagons).
+    -- own pod, a honeycomb of sealed octagons). Or belt (it runs between tiles).
     local ok = true
-    for _, row in ipairs({v.rows[1], v.rows[#v.rows]}) do if row:find("[^.=]") then ok = false end end
+    for _, row in ipairs({v.rows[1], v.rows[#v.rows]}) do if row:find("[^.=c]") then ok = false end end
     for _, row in ipairs(v.rows) do
-      if not row:sub(1, 1):find("[.=]") or not row:sub(-1):find("[.=]") then ok = false end
+      if not row:sub(1, 1):find("[.=c]") or not row:sub(-1):find("[.=c]") then ok = false end
     end
     inner[i] = ok
   end
