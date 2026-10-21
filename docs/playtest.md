@@ -99,6 +99,13 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    carrying parts from fabricators to depots, and Grubstake's sushi belt by its yard carrying what it stole; one
    "Mineral rights" label where two patches lie close; a flying harrier in its own selection box; Grubstake no longer
    throwing raids at Serenity's fortress for nothing, and Serenity paying back a rival that hurts it.
+21d. **The new units** (0.1.45; save `lp-units`, built by `LP_MIX=units scripts/showcase.sh 12345 20`, opened by
+   `scripts/play-showcase.sh units`): both camps grown at era 3, Serenity with Prisms and Teslas and Grubstake with
+   Scorchers in their garrisons (7, 7 and 8 at the save), raids on, your outposts by each and an army of yours (20
+   troopers, 10 breachers, 5 battle tanks) at spawn. Does each read apart from a tank at a glance (the Prism's laser head,
+   the Tesla's coil, the Scorcher's flamer)? The Prism's beam forking into a pack; the Tesla's arcs jumping, and your
+   lasers going dim after its hits; the Scorcher's flame bursts at your walls and turrets. Tanks turning their own
+   turrets; a body where each unit dies.
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

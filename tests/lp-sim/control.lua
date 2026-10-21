@@ -1143,8 +1143,9 @@ scenarios.showcase = function()
     if params.mix == "rivals" then
       local other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
       if other then lp("debug_depot", other, 4000) end
-    elseif params.mix == "tour" then
-      -- LP_MIX=tour: Grubstake as well, both grown; your outposts by each (tour_outposts below).
+    elseif params.mix == "tour" or params.mix == "units" then
+      -- LP_MIX=tour: Grubstake as well, both grown; your outposts by each (tour_outposts below). LP_MIX=units: the same,
+      -- era 3, the new units' nodes owned (Prism, Tesla; Scorcher) and some of each in the garrisons (units below).
       S.tour = {s = storage.id, g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})}
       if S.tour.g then lp("debug_depot", S.tour.g, 4000) end
     else
@@ -1183,9 +1184,21 @@ scenarios.showcase = function()
     S.feed()
   end)
   for t = 1200, 6000, 600 do schedule(t, function() if S.feed then S.feed() end end) end
-  if params.mix == "tour" then schedule(STRIKE - 120, tour_outposts) end
+  local tour = params.mix == "tour" or params.mix == "units"
+  if tour then schedule(STRIKE - 120, tour_outposts) end
+  if params.mix == "units" then
+    schedule(150, function()
+      lp("debug_tune", {era = 3, rd_tech = {serenity = {nodes = {lance = 1, prism = 1, tesla = 1}},
+        grubstake = {nodes = {scorcher = 1}}}})
+    end)
+    schedule(STRIKE - 60, function()
+      lp("debug_units", S.tour.s, "lp-prism", 4)
+      lp("debug_units", S.tour.s, "lp-tesla", 4)
+      if S.tour.g then lp("debug_units", S.tour.g, "lp-scorcher", 5) end
+    end)
+  end
   schedule(STRIKE, function()
-    if params.mix == "tour" then lp("debug_tune", {raids_off = false}) end
+    if tour then lp("debug_tune", {raids_off = false}) end
     game.forces.player.chart(surface(), {{-600, -600}, {600, 600}})
     -- Exports for half an hour of convoys (one of 1,000 parts a minute): the granted stock ran out in three.
     lp("debug_parts", storage.id, 30000)
@@ -1194,8 +1207,12 @@ scenarios.showcase = function()
     game.speed = 1
     game.server_save("lp-showcase")
     local army = lp("army")
-    helpers.write_file("landing-party/saved.txt", string.format("%d (%d units, capacity %d)", game.tick, army.alive,
-      army.capacity))
+    local new = {}
+    for _, name in ipairs({"lp-prism", "lp-tesla", "lp-grubstake-scorcher"}) do
+      new[#new + 1] = name .. " " .. surface().count_entities_filtered{name = name}
+    end
+    helpers.write_file("landing-party/saved.txt", string.format("%d (%d units, capacity %d; %s)", game.tick, army.alive,
+      army.capacity, table.concat(new, ", ")))
   end)
 end
 
