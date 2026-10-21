@@ -89,7 +89,7 @@ document describes the parts as built; the campaign document describes the game 
 | Belts in Serenity's districts (fabricator to depot), Grubstake's sushi belt of stolen goods | built 0.1.43; districts' fabricators back to 0.1.42's share 0.1.45 | `belts`, `skim`, `convoy grown`, shots |
 | The unit roster (`docs/units.md`, written from the prototypes by `scripts/roster.py`) | built 2026-10-21 | - |
 | New units from the design sheet: Prism, Tesla (Serenity), Scorcher (Grubstake); every tank with its turret | built 0.1.44 | `heavies`, `unitnode` (three) |
-| The arena: unit balance by squad of equal spend, against biters by evolution, the player's lines and the rival; to watch, with a panel | built 0.1.46 | `scripts/arena.sh` (`docs/arena.md`), `scripts/play-arena.sh` |
+| The arena: a counter heatmap of every unit kind at equal spend, against biters by evolution and the player's lines; to watch, with a panel | built 0.1.46 | `scripts/arena.sh` (`docs/arena.md`), `scripts/play-arena.sh` |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
 
@@ -399,13 +399,16 @@ technologies, when big biters and behemoths come.
   corporation. Units fight on their real forces, so the Scorcher's bursts and the Tesla's drain run (`debug_tune
   arena_surface`: the Scorcher's flame loop also scans the arena's surface; 0.1.46). Seeded map: two runs give the same
   table. `scripts/play-arena.sh` opens the same arena to watch, with a panel to set up both sides by hand.
-- **What it shows (docs/arena.md):** biters at 0.95 beat every squad but railgunners (by design: 250 a shot to biters
-  along a piercing line out of their reach; a clumped wave flatters it); at 0.8 only railgunners and sappers win every
-  round. The flamer line
-  beats everything but the Scorcher (fire-proof) and Scorchers with infantry. The Prism is the strongest duellist and
-  takes no losses against biters up to 0.5. The Tesla beats heavies (tanks, Scorchers) and struggles against swarms
-  of infantry; paired with infantry it beats Grubstake's infantry too. Grubstake's sappers beat every Serenity squad (the Prism once in three).
-  The walker loses every duel.
+- **The counter matrix (the user: "a heatmap of counters ... a fixed number of parts-value worth of each unit"):** 17
+  kinds (both infantries: Grubstake's carry shotguns; every other Grubstake variant has its Serenity kind's stats), each
+  pair at equal spend as near as whole units allow (about 420 parts a side), fought both ways round so side and force
+  cancel; a cell is the share of the other side destroyed minus the share of its own value lost. Beside it, a 420-part
+  squad of each against biter waves at 0.5, 0.8, 0.95 and the three lines. `docs/arena/counters.png`, `docs/arena.md`.
+- **What it shows:** the sapper (16 parts: 80 explosion over 3 tiles every 3 s; equal spend buys 26) beats every kind,
+  the Prism alone holding it near even: underpriced. Then the Prism and Serenity's rifle infantry (10 parts) beat most
+  kinds; tanks (60) and the walker (120) lose to nearly everything for their price. The harrier and the scavenger
+  win or lose all (only some weapons reach them). The railgunner is the biter-killer it was built as (the one squad
+  that beats 0.95); flamer lines stop all but the Scorcher and the two that fly (harrier, scavenger).
 - **Limits:** no research on either side (a camp's tree levels and the player's damage upgrades both matter); open
   ground (no walls for the squads, no terrain); the wave arrives in one clump. Next, if the numbers call for it: tune
   costs or caps, not damage, since a squad's spend is the comparison.

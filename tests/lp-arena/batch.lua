@@ -1,62 +1,63 @@
--- The arena's balance table (scripts/arena.sh): every matchup at once, each in its own pen, ROUNDS times with the sides'
--- spawn points moved a little each round; results to script-output/lp-arena/results.jsonl, one fight a line.
--- Squads are bought with BUDGET parts at the corporations' own prices (shared.units), so a row compares what a camp
--- gets for the same spend. Opponents: biter waves (WAVE biters at each evolution in EVOS), three of the player's
--- defence lines with no research, the other corporation's squads, and mixed squads against the same.
+-- The arena's counter matrix (scripts/arena.sh): every unit kind against every other at equal spend, and against fixed
+-- opponents (the player's lines, biter waves), each fight in its own pen, ROUNDS times with the spawn points moved a
+-- little each round; results to script-output/lp-arena/results.jsonl, one fight a line (scripts/arena_report.py draws
+-- the heatmap).
+-- Kinds: every unit kind of the corporations; a Grubstake variant has its Serenity kind's stats but for infantry
+-- (Grubstake's carry shotguns), so both infantries are kinds and the rest are fought as Serenity's prototype. Each
+-- ordered pair is fought, the row's kind on Serenity's force from the west: (a, b) and (b, a) together cancel the side.
+-- Spend: counts are picked so both sides spend as nearly the same parts as whole units allow, round BUDGET.
 local arena = require("arena")
 local params = require("params")
+local shared = require("__landing-party__.shared")
 
 local batch = {}
 
 local BUDGET = 420
 local WAVE = 20
-local EVOS = {0.2, 0.5, 0.8, 0.95}
+local EVOS = {0.5, 0.8, 0.95}
 local ROUNDS = params.rounds or 3
 local SPACING = 220
 
--- Squads: a name and its entries, bought with BUDGET (a mix splits it as given).
-local function buy(corp, kind, parts)
-  return {corp, kind, math.floor(parts / arena.cost(kind))}
+-- {label, prototype}: the label is what the heatmap shows.
+local KINDS = {
+  {"infantry (Serenity)", "lp-infantry"}, {"infantry (Grubstake)", "lp-grubstake-infantry"},
+  {"lance", "lp-lance"}, {"railgunner", "lp-railgunner"}, {"shock", "lp-shock"}, {"sapper", "lp-sapper"},
+  {"buggy", "lp-buggy"}, {"slug", "lp-slug"}, {"scavenger", "lp-scavenger"}, {"harrier", "lp-harrier"},
+  {"tank", "lp-tank"}, {"prism", "lp-prism"}, {"tesla", "lp-tesla"}, {"scorcher", "lp-scorcher"},
+  {"aegis", "lp-aegis"}, {"dozer", "lp-dozer"}, {"walker", "lp-walker"},
+}
+
+local function cost(proto) return arena.cost(shared.kind_of(proto)) end
+
+-- Counts for a pair at equal spend: na of a, nb of b, both near BUDGET, the spends as close as whole units allow.
+local function counts(ca, cb)
+  local best
+  for na = math.max(1, math.floor(0.7 * BUDGET / ca)), math.max(1, math.ceil(1.3 * BUDGET / ca)) do
+    local nb = math.max(1, math.floor(na * ca / cb + 0.5))
+    local sa, sb = na * ca, nb * cb
+    local miss = math.abs(sa - sb) / math.max(sa, sb) + 0.1 * math.abs((sa + sb) / 2 - BUDGET) / BUDGET
+    if not best or miss < best[3] then best = {na, nb, miss} end
+  end
+  return best[1], best[2]
 end
-local SQUADS = {}
-local function squad(name, corp, ...)
-  local entries = {}
-  for _, part in ipairs({...}) do table.insert(entries, buy(corp, part[1], part[2])) end
-  table.insert(SQUADS, {name = name, corp = corp, entries = entries})
-end
-for _, k in ipairs({"lp-infantry", "lp-tank", "lp-lance", "lp-railgunner", "lp-walker", "lp-prism", "lp-tesla"}) do
-  squad("serenity " .. k:sub(4), "serenity", {k, BUDGET})
-end
-for _, k in ipairs({"lp-infantry", "lp-tank", "lp-slug", "lp-sapper", "lp-scorcher"}) do
-  squad("grubstake " .. k:sub(4), "grubstake", {k, BUDGET})
-end
--- Mixes: a heavy with infantry or its partner, the same spend.
-squad("serenity tank+infantry", "serenity", {"lp-tank", 180}, {"lp-infantry", 240})
-squad("serenity tesla+infantry", "serenity", {"lp-tesla", 170}, {"lp-infantry", 250})
-squad("serenity prism+lance", "serenity", {"lp-prism", 210}, {"lp-lance", 210})
-squad("grubstake scorcher+infantry", "grubstake", {"lp-scorcher", 210}, {"lp-infantry", 210})
 
 local function matchups()
   local out = {}
-  for _, sq in ipairs(SQUADS) do
+  for _, a in ipairs(KINDS) do
+    for _, b in ipairs(KINDS) do
+      local na, nb = counts(cost(a[2]), cost(b[2]))
+      table.insert(out, {kind = "pair", squad = a[1], against = b[1],
+        a = {{"raw", a[2], na, "lp-serenity"}}, b = {{"raw", b[2], nb, "lp-grubstake"}}})
+    end
+    local n = math.max(1, math.floor(BUDGET / cost(a[2]) + 0.5))
     for _, evo in ipairs(EVOS) do
-      table.insert(out, {kind = "biters", squad = sq.name, against = string.format("biters %.2f", evo),
-        a = sq.entries, b = {{"biters", "wave", WAVE, evo}}})
+      table.insert(out, {kind = "fixed", squad = a[1], against = string.format("biters %.2f", evo),
+        a = {{"raw", a[2], n, "lp-serenity"}}, b = {{"biters", "wave", WAVE, evo}}})
     end
     for _, ln in ipairs({{"guns", 6}, {"lasers", 4}, {"flamers", 3}}) do
       local def = {{"player", ln[1], ln[2]}, {"player", "walls", 14}}
       if ln[1] == "flamers" then table.insert(def, {"player", "guns", 2}) end
-      table.insert(out, {kind = "defence", squad = sq.name, against = ln[1], a = sq.entries, b = def})
-    end
-  end
-  -- Duels: each of Serenity's squads against each of Grubstake's (mixes included).
-  for _, s in ipairs(SQUADS) do
-    if s.corp == "serenity" then
-      for _, g in ipairs(SQUADS) do
-        if g.corp == "grubstake" then
-          table.insert(out, {kind = "duel", squad = s.name, against = g.name, a = s.entries, b = g.entries})
-        end
-      end
+      table.insert(out, {kind = "fixed", squad = a[1], against = ln[1], a = {{"raw", a[2], n, "lp-serenity"}}, b = def})
     end
   end
   -- A trial (LP_ARENA_ONLY): only the matchups whose label holds that text.
@@ -77,7 +78,7 @@ function batch.next_round()
   local B = storage.batch
   B.round = B.round + 1
   B.live = {}
-  local cols = 12
+  local cols = 20
   for i, m in ipairs(B.list) do
     local col, row = (i - 1) % cols, math.floor((i - 1) / cols)
     -- Each round a little off the last (units placed by find_non_colliding_position round a moved point).

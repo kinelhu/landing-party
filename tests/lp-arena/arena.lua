@@ -140,12 +140,14 @@ local function spawn(s, entries, x, y, facing)
     elseif who == "player" and arena.LINES[kind] then
       line(s, kind, n, x + facing * -8, y, out)
     else
-      local name = who == "player" and kind or shared.variant(who, kind)
+      -- "raw": a prototype by name on a force by name (the counter matrix: any kind on either corporation's force).
+      local name = who == "raw" and kind or who == "player" and kind or shared.variant(who, kind)
+      local force = who == "raw" and en[4] or arena.FORCES[who]
       for _ = 1, n do
-        local u = place(s, name, {x, y}, arena.FORCES[who], 20)
+        local u = place(s, name, {x, y}, force, 20)
         if u then table.insert(out, u) end
       end
-      parts = parts + (arena.cost(kind) or 0) * n
+      parts = parts + (arena.cost(shared.kind_of(name)) or 0) * n
     end
   end
   return out, parts
