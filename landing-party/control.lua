@@ -366,6 +366,8 @@ remote.add_interface("landing-party", {
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
     if t.labs_off ~= nil then storage.labs_off = t.labs_off or nil end
     if t.belts_always ~= nil then storage.belts_always = t.belts_always or nil end
+    -- The arena (tests/lp-arena): a surface with no camp whose Scorchers still burn.
+    if t.arena_surface then storage.arena_surfaces = storage.arena_surfaces or {}; storage.arena_surfaces[t.arena_surface] = true end
     if t.tap_step ~= nil then storage.tap_step = t.tap_step end
     if t.capture_off ~= nil then storage.capture_off = t.capture_off end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end

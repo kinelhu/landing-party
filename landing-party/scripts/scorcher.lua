@@ -50,11 +50,16 @@ end
 
 function scorcher.tick(tick)
   if tick % TICKS ~= 7 or not storage.bases then return end
-  local seen = {}
+  local seen, list = {}, {}
   for _, b in pairs(storage.bases) do
-    if not b.fallen and not seen[b.surface] then
-      seen[b.surface] = true
-      local s = game.surfaces[b.surface]
+    if not b.fallen and not seen[b.surface] then seen[b.surface] = true; table.insert(list, b.surface) end
+  end
+  for name in pairs(storage.arena_surfaces or {}) do
+    if not seen[name] then seen[name] = true; table.insert(list, name) end
+  end
+  for _, name in ipairs(list) do
+    do
+      local s = game.surfaces[name]
       for _, u in pairs(s and s.find_entities_filtered{name = shared.variants("lp-scorcher")} or {}) do
         local st = state(u)
         if st.fuel < BURSTS and tick >= st.refill then st.fuel, st.refill = st.fuel + 1, tick + REFILL end

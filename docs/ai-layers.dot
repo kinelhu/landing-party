@@ -5,7 +5,7 @@ digraph layers {
   "Seams (leaves)" [label="Seams (leaves)\n6 modules, 473 lines", fillcolor="#d9f0d9"];
   "Corporation" [label="Corporation\n11 modules, 2641 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n15 modules, 5159 lines\nlayout 1192", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n12 modules, 4604 lines\nops 1644", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n12 modules, 4609 lines\nops 1644", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1508 lines", fillcolor="#eef2f7"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];
