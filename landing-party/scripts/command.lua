@@ -564,7 +564,7 @@ end
 
 -- Command cores dropped by the faction's wreckage, lootable.
 function command.drop_cores(surface, pos, count)
-  surface.spill_item_stack{position = pos, stack = {name = "lp-command-core", count = count}, enable_looted = true}
+  shared.wreck(surface, pos, {{name = "lp-command-core", count = count}})
   storage.cmd.cores_dropped = (storage.cmd.cores_dropped or 0) + count
 end
 

@@ -53,6 +53,28 @@ finish_early = function()
 end
 
 local function surface() return game.surfaces[1] end
+-- What the dead left near pos: items on the ground and in the corporations' wrecks (lp-wreck), as {name = count}, and
+-- how many piles (each item on the ground, each wreck). take: emptied and removed (picked up).
+local function dropped(pos, radius, take)
+  local counts, piles = {}, 0
+  for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = pos, radius = radius}) do
+    if it.valid and it.stack.valid_for_read then
+      counts[it.stack.name] = (counts[it.stack.name] or 0) + it.stack.count
+      piles = piles + 1
+      if take then it.destroy() end
+    end
+  end
+  for _, w in pairs(surface().find_entities_filtered{name = "lp-wreck", position = pos, radius = radius}) do
+    piles = piles + 1
+    for _, c in pairs(w.get_inventory(defines.inventory.chest).get_contents()) do
+      counts[c.name] = (counts[c.name] or 0) + c.count
+    end
+    if take then w.destroy() end
+  end
+  local total = 0
+  for _, n in pairs(counts) do total = total + n end
+  return counts, piles, total
+end
 
 -- A map of the ground as data (the user, 2026-10-20: snapshots of the camp to inspect): every building within `radius`
 -- of `center` (no trees, rocks, ore, corpses or items on the ground), and the corporations' floors, written to
@@ -890,7 +912,7 @@ scenarios.caps = function()
   end)
   schedule(7 * 3600 + 60, function()
     local a = lp("army")
-    local on_ground = surface().count_entities_filtered{name = "item-on-ground"}
+    local _, on_ground = dropped({0, 0}, 100000)
     check("caps: a destroyed depot drops a command core", a.cores_dropped >= 1, a.cores_dropped .. " dropped, "
       .. on_ground .. " items on the ground")
     local r = prototypes.recipe["lp-trooper-order"]
@@ -2156,6 +2178,51 @@ end
 -- Rivals: two corporations side by side. Serenity lands as usual; Grubstake lands as the next settlement
 -- (its own force). Both get a depot; nothing else is scripted. They must be different forces, and at least one
 -- of them must mount an operation against the other's buildings and do damage.
+-- Reprisal (the user, 2026-10-21: Grubstake raided Serenity again and again and was never paid back): two camps as in
+-- rivals; at minute 6 five of Serenity's buildings and units die to Grubstake (their own fighting may call it first).
+-- Serenity mounts an operation on a Grubstake target within 8 minutes of the reprisal.
+scenarios.reprisal = function()
+  schedule(60, function()
+    for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+  end)
+  schedule(120, function()
+    S.other = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    if S.other then for _ = 1, 3 do lp("debug_depot", S.other, 3000) end end
+  end)
+  schedule(6 * 3600, function()
+    local n = 0
+    for _, e in pairs(surface().find_entities_filtered{force = FORCE}) do
+      local k = e.name
+      if n < 5 and e.valid and (k == "lp-wall" or k == "lp-drill" or k == "lp-lamp" or e.type == "unit") then
+        e.die("lp-grubstake"); n = n + 1
+      end
+    end
+    S.killed = n
+  end)
+  for t = 3600, END - 120, 1200 do
+    schedule(t, function()
+      local o = lp("stats", storage.id).ops
+      if o.reprisal and not S.reprisal_at then S.reprisal, S.reprisal_at = o.reprisal, o.reprisal_at end
+      local function seen(owner, started)
+        if owner == "lp-grubstake" and S.reprisal_at and started and started >= S.reprisal_at then
+          S.at_rival = S.at_rival or started
+        end
+      end
+      seen(o.op_owner, o.op_started)
+      for _, l in ipairs(o.log or {}) do seen(l.owner, l.started) end
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", storage.id)
+    info(string.format("reprisal: killed %s at minute 6; reprisal on %s at %s, an op at Grubstake at %s; reprisals %d",
+      tostring(S.killed), tostring(S.reprisal), tostring(S.reprisal_at), tostring(S.at_rival), st.reprisals or 0))
+    check("reprisal: losses to Grubstake call one", S.reprisal == "lp-grubstake" and (st.reprisals or 0) >= 1,
+      tostring(S.reprisal))
+    check("reprisal: Serenity went for Grubstake within 8 minutes", S.at_rival ~= nil and S.at_rival - S.reprisal_at <= 8 * 3600,
+      string.format("%s after", S.at_rival and string.format("%.1f min", (S.at_rival - S.reprisal_at) / 3600) or "none"))
+  end)
+end
+
 scenarios.rivals = function()
   -- Three depots each (a field of 21): a drop's escort and corner turrets turned back the one-depot raids (a field
   -- of 7) that were the only fighting in 40 minutes.
@@ -2271,7 +2338,7 @@ scenarios.phases = function()
   schedule(9 * 3600, function()
     local p = lp("phases")
     S.destroyed = p.survey and p.survey.done
-    S.core = p.survey and surface().count_entities_filtered{name = "item-on-ground", position = p.survey.pos, radius = 8} or 0
+    S.core = p.survey and select(2, dropped(p.survey.pos, 8)) or 0
     game.forces.player.get_item_production_statistics(surface()).on_flow("chemical-science-pack", 1)
     S.trigger_at = game.tick
   end)
@@ -2907,17 +2974,22 @@ scenarios.labs = function()
       local r = lp("rd", "serenity")
       local l = lab()
       local lvl = (r.weapons or {}).laser or 0
+      -- Funded until its lab stands: what is tested is the lab, not the economy (a depot district first and its eight
+      -- fabricators' hunger for ore kept it under the rule's 150 parts for 30 minutes, 0.1.42).
+      if not S.built and not l then lp("debug_parts", storage.id, 300) end
       if not S.built and l then
         S.built, S.lvl_at_built = game.tick, lvl
         S.lab_at = {l.position.x, l.position.y}
         info(string.format("labs: the Optics lab stood at %.0f,%.0f at minute %.1f, lasers at level %d, fund %d",
           l.position.x, l.position.y, game.tick / 3600, lvl, r.fund))
         -- Its sign: one sprite over it.
-        local signs = 0
+        local signs, bodies = 0, 0
         for _, o in pairs(rendering.get_all_objects("landing-party")) do
-          if o.valid and o.type == "sprite" and o.target and o.target.entity == l then signs = signs + 1 end
+          if o.valid and (o.type == "sprite" or o.type == "animation") and o.target and o.target.entity == l then
+            if o.type == "sprite" then signs = signs + 1 else bodies = bodies + 1 end
+          end
         end
-        S.signs = signs
+        S.signs, S.bodies = signs, bodies
         dump_map("labs-built", S.lab_at, 60)
       end
       if not S.built then S.wants = r.wants_lab; S.lvl_before = lvl end
@@ -2950,7 +3022,8 @@ scenarios.labs = function()
     check("labs: it wanted the Optics lab first", S.wants == "lp-optics-lab", tostring(S.wants))
     check("labs: a research district built the Optics lab", S.built ~= nil, S.built and string.format("minute %.1f", S.built / 3600) or "none")
     check("labs: nothing bought while no lab stood", (S.lvl_at_built or 0) == 0, tostring(S.lvl_at_built))
-    check("labs: the lab drawn with its sign", (S.signs or 0) >= 1, tostring(S.signs))
+    check("labs: the lab drawn with its sign and at work", (S.signs or 0) == 1 and (S.bodies or 0) == 1,
+      string.format("%s signs, %s bodies", tostring(S.signs), tostring(S.bodies)))
     check("labs: its lab standing, its lasers climbed", (S.lvl_at_kill or 0) >= 1 and S.lvl_at_kill < 5, tostring(S.lvl_at_kill))
     check("labs: the Lance fielded while the lab stood", S.lance_fielded_before == true, tostring(S.lance_fielded_before))
     check("labs: the lab killed, no climb until it was back", S.killed and S.lvl_dark == S.lvl_at_kill,
@@ -3071,6 +3144,8 @@ scenarios.breach = function()
   for t = 2 * 3600, END - 120, 300 do
     schedule(t, function()
       local l = lab()
+      -- Funded until its lab stands (as in labs: the lab is what is tested, not the economy).
+      if not S.seen and not l and game.tick % 600 == 0 then lp("debug_parts", storage.id, 150) end
       -- Its district given four minutes to stand (walls, guns) once the lab is up.
       if not S.seen and l then S.seen = game.tick end
       if S.seen and not S.stage and game.tick >= S.seen + 4 * 3600 and l then setup(l) end
@@ -3557,10 +3632,7 @@ scenarios.leader = function()
           if u.unit_number == o.leader then
             S.carried, S.at = o.carrying, u.position
             u.die("player"); S.shot = game.tick
-            S.dropped = 0
-            for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.at, radius = 12}) do
-              S.dropped = S.dropped + it.stack.count
-            end
+            S.dropped = select(3, dropped(S.at, 12))
             break
           end
         end
@@ -3916,9 +3988,7 @@ scenarios.factory = function()
           .. "generators by its lander %d -> %d; lander %s", A.strikes, A.strike_size or 0, alive, #(A.strike_units or {}),
           tostring(A.aimed), (g and g.units_lost or 0) - (A.strike_lost0 or 0), A.strike_gens0 or 0, gens,
           g and g.lander and string.format("%.0f%%", 100 * (g.lander_health or 0)) or "down"))
-        for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = A.strike_at, radius = 30}) do
-          if it.valid and it.stack.valid_for_read then A.recovered = A.recovered + it.stack.count; it.destroy() end
-        end
+        A.recovered = A.recovered + select(3, dropped(A.strike_at, 30, true))
       end)
     end
   end
@@ -4809,7 +4879,7 @@ scenarios.road = function()
       for _, bn in pairs(surface().find_entities_filtered{name = "lp-grubstake-bin", position = c, radius = 12}) do
         ore = ore + bn.get_item_count()
       end
-      local ground = surface().count_entities_filtered{type = "item-entity", position = c, radius = 12}
+      local _, ground = dropped(c, 12)
       info(string.format("road: claim %d,%d drills %s; bins hold %d; %d items on the ground", c[1], c[2], serpent.line(st), ore, ground))
     end
     if cut then
@@ -5459,9 +5529,7 @@ scenarios.crew = function()
       if killed and not S.lost_at and (lp("crew_stats", S.g).lost or 0) > 0 then
         S.lost_at = game.tick
         S.iron = 0
-        for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.mid, radius = 40}) do
-          if it.stack.name == "iron-plate" then S.iron = S.iron + it.stack.count end
-        end
+        S.iron = dropped(S.mid, 40)["iron-plate"] or 0
       end
       if S.built_at then return end
       local n = surface().count_entities_filtered{force = "lp-" .. corp, position = S.site, radius = 10,
@@ -5794,9 +5862,7 @@ scenarios.fuze = function()
   end)
   schedule(120, function()
     S.fuzes = 0
-    for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = {-60, 0}, radius = 6}) do
-      if it.stack.name == "lp-cluster-fuze" then S.fuzes = S.fuzes + it.stack.count end
-    end
+    S.fuzes = dropped({-60, 0}, 6)["lp-cluster-fuze"] or 0
     local src = surface().create_entity{name = "electric-energy-interface", position = {-50, 8}, force = "player"}
     src.power_production = 1000000; src.electric_buffer_size = 1e7
     surface().create_entity{name = "medium-electric-pole", position = {-47, 8}, force = "player"}
@@ -6051,7 +6117,7 @@ end
 
 -- Loot (the faction loot consult; the user: Factorio's own items, no salvage currency): a settlement's buildings and
 -- units destroyed by the player drop what they are made of. Twenty of its buildings of 8 parts or more and ten units
--- killed: items on the ground (plates, circuits, the kinds' own); walls, worth under 8, drop nothing; no salvage exists.
+-- killed: their wrecks hold items (plates, circuits, the kinds' own); walls, worth under 8, drop nothing; no salvage exists.
 scenarios.loot = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})
@@ -6060,7 +6126,7 @@ scenarios.loot = function()
   schedule(6 * 3600, function()
     local o = lp("stats", storage.id).origin
     S.o = o
-    local function ground() return surface().count_entities_filtered{type = "item-entity", position = o, radius = 200} end
+    local function ground() return select(2, dropped(o, 200)) end
     S.g0 = ground()
     local big, walls, units = 0, 0, 0
     local own = surface().find_entities_filtered{force = FORCE, position = o, radius = 200}
@@ -6082,12 +6148,11 @@ scenarios.loot = function()
     S.big, S.walls, S.units = big, walls, units
   end)
   schedule(6 * 3600 + 60, function()
-    local counts = {}
-    for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.o, radius = 200}) do
-      counts[it.stack.name] = (counts[it.stack.name] or 0) + it.stack.count
-    end
+    local counts = dropped(S.o, 200)
     S.counts = counts
     S.salvage = prototypes.item["lp-salvage"] ~= nil
+    S.wrecks = surface().count_entities_filtered{name = "lp-wreck", position = S.o, radius = 200}
+    S.loose = surface().count_entities_filtered{type = "item-entity", position = S.o, radius = 200}
   end)
   schedule(END - 60, function()
     local c = S.counts or {}
@@ -6098,6 +6163,9 @@ scenarios.loot = function()
     check("loot: kinds' own (magazines, engines or gears)", (c["firearm-magazine"] or 0) + (c["engine-unit"] or 0)
       + (c["iron-gear-wheel"] or 0) > 0, serpent.line(c))
     check("loot: no salvage item exists", not S.salvage, tostring(S.salvage))
+    -- In wrecks (the user, 2026-10-21: loose items are a hassle to pick up), none loose on the ground.
+    check("loot: left in wrecks, nothing loose", (S.wrecks or 0) >= 10 and (S.loose or 0) == 0,
+      string.format("%d wrecks, %d loose", S.wrecks or 0, S.loose or 0))
   end)
 end
 

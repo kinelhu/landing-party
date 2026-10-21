@@ -4,7 +4,7 @@ local shared = require("shared")
 
 local out = {}
 for corp, c in pairs(shared.CORPS) do
-  for _, floor in ipairs({"road", "pad", "trim", "stripe"}) do
+  for _, floor in ipairs({"road", "pad", "trim", "stripe", "apron", "hazard"}) do
     local name = shared.variant(corp, "lp-" .. floor)
     if not c[floor] then
     elseif data.raw.tile[name] then

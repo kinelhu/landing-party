@@ -9,7 +9,7 @@ local wfc = {}
 local STEP = {n = {0, -1}, s = {0, 1}, e = {1, 0}, w = {-1, 0}}
 local WALLS = {["#"] = true, g = true}
 local WALK = {["."] = true, ["="] = true, g = true, h = true}
-wfc.BUILD = {T = {2, 2}, G = {2, 2}, D = {4, 4}, F = {3, 3}, R = {3, 3}, B = {3, 3}, P = {1, 1}, L = {1, 1}}
+wfc.BUILD = {T = {2, 2}, G = {2, 2}, D = {4, 4}, F = {3, 3}, R = {3, 3}, B = {4, 4}, P = {1, 1}, L = {1, 1}}
 
 local function count(s) local n = 0 for _ in pairs(s) do n = n + 1 end return n end
 

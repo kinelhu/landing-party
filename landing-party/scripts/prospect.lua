@@ -111,12 +111,20 @@ local function find(b)
   return best
 end
 
+-- Labelled once in a neighbourhood: a second patch near a labelled one has the icon only (the user's map, 2026-10-21: two
+-- labels written over each other).
+local TEXT = "Mineral rights reassigned"
+local LABEL_APART = 80
 local function tag(b, p)
   local s = game.surfaces[b.surface]
   local tags = {}
   for _, f in ipairs(player_forces()) do
+    local text = TEXT
+    for _, o in pairs(f.find_chart_tags(s, {{p.x - LABEL_APART, p.y - LABEL_APART}, {p.x + LABEL_APART, p.y + LABEL_APART}})) do
+      if o.text == TEXT then text = "" break end
+    end
     local t = f.add_chart_tag(s, {position = {p.x, p.y}, icon = {type = "virtual", name = shared.CORPS[b.corp].icon},
-      text = "Mineral rights reassigned"})
+      text = text})
     if t then table.insert(tags, t) end
   end
   return tags

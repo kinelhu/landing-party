@@ -14,6 +14,7 @@ local ops = require("__landing-party__.scripts.ops")
 local base = {}
 
 local ECONOMY_TICKS = 60
+local IDLE_RUN = 0.08              -- a starved fabricator's chance a second of a run from nothing (about one in 12 s)
 local BUILD_TICKS = 90
 local PLAN_TICKS = 300
 local START_PARTS = 150
@@ -60,12 +61,44 @@ local function register(b, e, module)
   if list then b[list] = b[list] or {}; table.insert(b[list], e) end
   if module then table.insert(module.entities, e) end
   storage.owner[e.unit_number] = {base = b.id, module = module}
-  -- A lab's sign: its branch, over it, for everyone (gone with it).
-  local icon = shared.LAB_ICON[shared.kind_of(e.name)]
-  if icon then
-    rendering.draw_sprite{sprite = icon, target = {entity = e, offset = {0, -2.2}}, surface = e.surface, x_scale = 1.2,
-      y_scale = 1.2, render_layer = "air-object"}
+  base.lab_look(e)
+  -- A worked patch is cleared ground (the user, 2026-10-21: "a little deforestation around mining areas"): the trees and
+  -- the scrub round a drill go with it, a few tiles past its mining area.
+  if shared.kind_of(e.name) == "lp-drill" then
+    local p = e.position
+    for _, t in pairs(e.surface.find_entities_filtered{type = "tree", position = p, radius = 6}) do t.destroy() end
+    e.surface.destroy_decoratives{area = {{p.x - 4, p.y - 4}, {p.x + 4, p.y + 4}}}
   end
+end
+
+-- Labs from before their body was drawn (0.1.40, 0.1.41): their old sign taken down, the look drawn whole.
+function base.heal_labs()
+  if storage.lab_look then return end
+  storage.lab_look = {}
+  local old = {}
+  for _, b in pairs(storage.bases or {}) do
+    for _, e in ipairs(b.labs or {}) do if e.valid then old[e.unit_number] = e end end
+  end
+  if not next(old) then return end
+  for _, o in ipairs(rendering.get_all_objects(script.mod_name)) do
+    local t = o.valid and (o.type == "sprite" or o.type == "animation") and o.target
+    if t and t.entity and t.entity.valid and old[t.entity.unit_number] then o.destroy() end
+  end
+  for _, e in pairs(old) do base.lab_look(e) end
+end
+
+-- A lab's look: its body at work (data.lua: lp-lab-busy, drawn by script since its research is) and its sign, its branch,
+-- over it, for everyone; both gone with it. Once a lab (labs from 0.1.40 got theirs on the update: init).
+function base.lab_look(e)
+  local icon = shared.LAB_ICON[shared.kind_of(e.name)]
+  if not icon then return end
+  storage.lab_look = storage.lab_look or {}
+  if storage.lab_look[e.unit_number] then return end
+  storage.lab_look[e.unit_number] = true
+  rendering.draw_animation{animation = "lp-lab-busy", target = e, surface = e.surface, render_layer = "object",
+    animation_speed = 1 / 3}
+  rendering.draw_sprite{sprite = icon, target = {entity = e, offset = {0, -2.8}}, surface = e.surface, x_scale = 1.2,
+    y_scale = 1.2, render_layer = "air-object"}
 end
 
 -- Drop what is gone or no longer the faction's (a captured drill stays valid, on another force).
@@ -330,14 +363,30 @@ local function economy(b)
   b.feedstock = b.feedstock + gained
   b.mined = b.mined + gained
   local per = 2 * shared.FEEDSTOCK_PER_PART
+  -- A starved fabricator still runs now and then (the user, 2026-10-21: "fabricators could run (even if faking it)
+  -- intermittently"): a batch from nowhere, its part thrown away (b.idle_runs counts what is owed back to nothing).
+  b.idle_runs = b.idle_runs or {}
   for _, fab in ipairs(b.fabs) do
     local input = fab.get_inventory(defines.inventory.crafter_input)
-    local want = per - input.get_item_count("lp-feedstock")
+    local have = input.get_item_count("lp-feedstock")
+    local want = per - have
     local give = math.min(want, b.feedstock)
-    if give > 0 then b.feedstock = b.feedstock - input.insert{name = "lp-feedstock", count = give} end
+    if give > 0 then b.feedstock = b.feedstock - input.insert{name = "lp-feedstock", count = give}
+    elseif have == 0 and not fab.is_crafting() and math.random() < IDLE_RUN then
+      if input.insert{name = "lp-feedstock", count = shared.FEEDSTOCK_PER_PART} > 0 then
+        b.idle_runs[fab.unit_number] = (b.idle_runs[fab.unit_number] or 0) + 1
+      end
+    end
     local out = fab.get_inventory(defines.inventory.crafter_output)
     local c = out.get_item_count("lp-part")
-    if c > 0 then out.remove{name = "lp-part", count = c}; made = made + c end
+    if c > 0 then
+      out.remove{name = "lp-part", count = c}
+      local idle = math.min(c, b.idle_runs[fab.unit_number] or 0)
+      if idle > 0 then
+        b.idle_runs[fab.unit_number] = (b.idle_runs[fab.unit_number] > idle) and (b.idle_runs[fab.unit_number] - idle) or nil
+      end
+      made = made + c - idle
+    end
   end
   b.parts = b.parts + made
   b.made = b.made + made
@@ -619,6 +668,17 @@ local function collapse(b)
 end
 
 function base.tick(tick)
+  -- Wrecks no one came for crumble (shared.wreck); an emptied one at once.
+  if tick % 3600 == 1234 and storage.wrecks then
+    local keep = {}
+    for _, w in ipairs(storage.wrecks) do
+      if w.e.valid then
+        local inv = w.e.get_inventory(defines.inventory.chest)
+        if tick - w.at > shared.WRECK_TICKS or inv.is_empty() then w.e.destroy() else table.insert(keep, w) end
+      end
+    end
+    storage.wrecks = keep
+  end
   for _, b in pairs(storage.bases) do
     if b.fallen then
       collapse(b)
@@ -741,7 +801,7 @@ function base.stats(b)
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
     war_rung = b.war_rung or 0, map_text = b.map_text, name = b.name,
-    claim_marks = #(b.claim_marks or {}), flares = b.flares or 0, jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0}
+    claim_marks = #(b.claim_marks or {}), flares = b.flares or 0, jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0, reprisals = b.reprisals or 0}
 end
 
 return base

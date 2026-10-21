@@ -50,7 +50,7 @@ schedule(60, function()
   surface().always_day = false
   surface().daytime = 0
   surface().freeze_daytime = true
-  lp("debug_tune", {history_off = true, raids_off = true})
+  lp("debug_tune", {history_off = true, raids_off = true, mature_blocks = 1})
   S.ser = lp("arrive", 1, {x = 0, y = 0}, 300, {corp = "serenity"})
   S.gru = lp("arrive", 1, {x = 0, y = 0}, 300, {corp = "grubstake"})
   for _ = 1, 2 do lp("debug_depot", S.ser, 3000); lp("debug_depot", S.gru, 3000) end
@@ -164,6 +164,39 @@ schedule(5 * 3600 + 800, function()
   if S.post then shot("08-invoice-truce-night", S.post, 1.8, true, "by night under a truce: the amber light, the minutes left") end
 end)
 
+-- 4b. Close up (the user's feedback, 2026-10-21): a lab at work (animated, a size up), a depot (Space Age's cargo bay),
+-- the silo shut, a fabricator; a Serenity tank shelling a player wall (its cannon round); a wreck where a unit fell.
+schedule(5 * 3600, function()
+  local c = toward(S.ser, 170)
+  flatten(c[1] - 30, c[2] - 20, c[1] + 30, c[2] + 20)
+  for k, name in ipairs({"lp-optics-lab", "lp-depot", "lp-fabricator", "lp-launchpad"}) do
+    lp("debug_place", S.ser, name, {c[1] - 20 + (k - 1) * 9 + (name == "lp-launchpad" and 4 or 0), c[2] - 6})
+  end
+  for k = 0, 7 do surface().create_entity{name = "stone-wall", position = {c[1] - 4 + k, c[2] + 12}, force = "player"} end
+  S.tank = surface().create_entity{name = "lp-tank", position = {c[1], c[2] + 2}, force = "lp-serenity"}
+  if S.tank then
+    S.tank.commandable.set_command{type = defines.command.attack_area, destination = {c[1], c[2] + 12}, radius = 6}
+  end
+  local u = surface().create_entity{name = "lp-infantry", position = {c[1] + 12, c[2] + 8}, force = "lp-serenity"}
+  if u then u.die("player") end
+  S.close = c
+end)
+poll(5 * 3600 + 60, 5 * 3600 + 200, 7, function()
+  if S.close and not S.fired then
+    local n = surface().count_entities_filtered{name = "lp-tank-shell", position = S.close, radius = 30}
+    if n > 0 then S.fired = true; shot("08b-tank-shell", {S.close[1], S.close[2] + 7}, 2, false, "a Serenity tank's cannon round in flight at a wall") end
+  end
+end)
+schedule(5 * 3600 + 210, function()
+  if S.close then
+    shot("08c-props", {S.close[1] - 2, S.close[2] - 2}, 0.9, false,
+      "left to right: the lab (animated: compare 08d), the depot (cargo bay), a fabricator, the silo shut; a wreck lower right")
+  end
+end)
+schedule(5 * 3600 + 217, function()
+  if S.close then shot("08d-lab-frame", {S.close[1] - 20, S.close[2] - 6}, 2.5, false, "the lab a few frames on (it animates)") end
+end)
+
 -- 5. A jammer mast among the player's robots.
 schedule(6 * 3600, function()
   local c = toward(S.ser, 140)
@@ -183,15 +216,23 @@ schedule(6 * 3600 + 240, function()
   if S.jam_at then shot("09-jammer", S.jam_at, 1.0, false, "Serenity's jammer mast, its arcs on the player's robots") end
 end)
 
--- 6. Serenity's camp from above.
-schedule(6 * 3600 + 300, function()
+-- 6. Serenity's camp from above (late enough for its launch pad: mature_blocks 1).
+schedule(12 * 3600, function()
   local o = lp("stats", S.ser).origin
   shot("10-serenity-camp", {o.x, o.y}, 0.35, false, "Serenity's camp: walls, gates, concrete, its silhouette")
   local g = lp("stats", S.gru).origin
   shot("11-grubstake-camp", {g.x, g.y}, 0.35, false, "Grubstake's camp: sprawl, gravel, its yard")
+  -- Its launch pad grown (mature_blocks 1): the silo in its paved block, a ring of hazard stripes, a lamp at each corner.
+  local pads = surface().find_entities_filtered{name = "lp-launchpad", force = "lp-serenity"}
+  local closest
+  for _, p in ipairs(pads) do
+    if not S.close or (p.position.x - S.close[1]) ^ 2 + (p.position.y - S.close[2]) ^ 2 > 400 then closest = p end
+  end
+  if closest then shot("12-launch-pad", closest.position, 1.0, false, "Serenity's launch pad: paved, hazard ring, four lamps")
+  else note("12-launch-pad: none built yet") end
 end)
 
-schedule(6 * 3600 + 420, function()
+schedule(12 * 3600 + 120, function()
   helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
   helpers.write_file(DIR .. "done.txt", "done\n")
 end)

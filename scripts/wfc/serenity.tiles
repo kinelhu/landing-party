@@ -1,7 +1,7 @@
 # Serenity's cluster tiles (WFC). Each tile: a header "tile <name> <weight>", then 6 rows of 6 characters.
 #   ' ' outside (no plate)   '.' floor (plate)   '=' lane (plate, kept clear)   '#' wall   'g' gate
 #   'T' turret 2x2   'G' generator 2x2   'D' depot 4x4   'F' fabricator 3x3   'R' radar 3x3   'P' pylon   'L' lamp
-#   'B' a research lab 3x3 (which branch's: the district that asks for one; its tile pinned there, never chosen)
+#   'B' a research lab 4x4 (which branch's: the district that asks for one; its tile pinned there, never chosen)
 #   '+' the rest of a building's footprint (its letter at the top-left); buildings keep off the tile's edge
 # Two tiles fit where their touching edges agree character by character; a wall or gate may face outside. Every tile is
 # also used turned and mirrored.
@@ -144,10 +144,10 @@ tile radar 2
 
 tile lab 0.001
 "......"
-".B++L."
-".+++.."
-".+++.."
-"..L..."
+".B+++."
+".++++."
+".++++."
+".++++."
 "......"
 
 tile depot 3

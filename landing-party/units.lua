@@ -164,6 +164,28 @@ breacher.attack_parameters.ammo_type.action.action_delivery.target_effects = {
 -- Tank: the tank's hull as a unit (its turret does not turn on its own). A square box: units rotate. The
 -- faction's in cold blue; the player's battle tank (4 of command bandwidth) in its own colour.
 local tank_car = data.raw.car.tank
+-- Its shell (the user, 2026-10-21: "tank sounds but look like they fire SMGs ... a unit that should be good against
+-- bases"): the tank cannon's own round, flash and scorch, `direct` explosion to what it hits and a blast of `siege` over
+-- 1.5 tiles to buildings only (entity flag placeable-neutral: every building, the corporations' and the player's, and the
+-- player's vehicles; no unit, character or nest carries it). Against a squad it hits as before; against a wall line or a
+-- turret cluster three times as hard.
+local function shell(unit_name, direct, siege)
+  local p = table.deepcopy(data.raw.projectile["cannon-projectile"])
+  p.name = unit_name .. "-shell"
+  p.direction_only = false
+  p.piercing_damage = 0
+  p.force_condition = "not-same"
+  p.action = {
+    {type = "direct", action_delivery = {type = "instant", target_effects = {
+      {type = "damage", damage = {amount = direct, type = "explosion"}},
+      {type = "create-entity", entity_name = "explosion"}}}},
+    {type = "area", radius = 1.5, force = "not-same", entity_flags = {"placeable-neutral"}, action_delivery = {
+      type = "instant", target_effects = {{type = "damage", damage = {amount = siege, type = "explosion"}}}}},
+  }
+  data:extend({p})
+  return {action = {type = "direct", action_delivery = {type = "projectile", projectile = p.name, starting_speed = 1,
+    max_range = 30, source_effects = {type = "create-explosion", entity_name = "explosion-gunshot"}}}}
+end
 local function make_tank(name, color)
 local tank = base_unit(name)
 tank.max_health = shared.units["lp-tank"].health
@@ -174,7 +196,8 @@ tank.collision_box = {{-1, -1}, {1, 1}}
 tank.selection_box = {{-1.2, -1.4}, {1.2, 1.4}}
 tank.run_animation = table.deepcopy(tank_car.animation)
 local ta = gun(35, 15, 90, "cannon-shell")
-ta.ammo_type.action.action_delivery.target_effects[2].damage.type = "explosion"
+ta.ammo_type = shell(name, 40, 80)
+ta.sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound)
 ta.animation = table.deepcopy(tank_car.animation)
 tank.attack_parameters = ta
 tank.dying_explosion = "medium-explosion"
@@ -192,7 +215,7 @@ local battle_tank = make_tank("lp-battle-tank", {r = 1, g = 0.82, b = 0.55, a = 
 -- The player's siege weapon: heavier shells, a little more reach than its armour's 15. With the faction's
 -- 35, five tanks did 2,100 damage to turrets over a whole assault (siege).
 battle_tank.attack_parameters.range = 18
-battle_tank.attack_parameters.ammo_type.action.action_delivery.target_effects[2].damage.amount = 100
+battle_tank.attack_parameters.ammo_type = shell("lp-battle-tank-heavy", 70, 120)
 
 -- Walker: a spider-unit on the spidertron's body and legs (own copies of the legs, tinted). Steps over walls.
 local spidertron = data.raw["spider-vehicle"].spidertron
@@ -237,9 +260,22 @@ harrier.selection_box = {{-0.5, -1.5}, {0.5, -0.5}}
 harrier.collision_mask = {layers = {["lp-air"] = true}, not_colliding_with_itself = true}
 harrier.trigger_target_mask = {"lp-air-unit"}
 harrier.render_layer = "air-object"
-harrier.run_animation = table.deepcopy(defender.in_motion)
+-- Airborne: the destroyer's body drawn a tile up, over its own shadow on the ground (a combat robot is lifted by the
+-- engine, a unit is not: drawn where it stood, its selection box hung a tile above it; the user's screenshot, 2026-10-21).
+local function flying()
+  local a = {layers = {}}
+  for _, l in ipairs(table.deepcopy(defender.in_motion).layers) do
+    l.shift = {(l.shift or {0, 0})[1], (l.shift or {0, 0})[2] - 1}
+    table.insert(a.layers, l)
+  end
+  local sh = table.deepcopy(defender.shadow_in_motion)
+  sh.draw_as_shadow = true
+  table.insert(a.layers, sh)
+  return a
+end
+harrier.run_animation = flying()
 local ha = gun(10, 15, 15)
-ha.animation = table.deepcopy(defender.in_motion)
+ha.animation = flying()
 harrier.attack_parameters = ha
 harrier.dying_explosion = "destroyer-robot-explosion"
 harrier.corpse = nil

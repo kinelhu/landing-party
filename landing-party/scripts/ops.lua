@@ -166,6 +166,32 @@ local function threat_bonus(b, t)
   return 0
 end
 
+-- Reprisal (the user, 2026-10-21: Grubstake raided Serenity again and again, "I didn't witness a punitive raid on their
+-- base though?"): a rival that kills REPRISAL_LOSSES of a camp's buildings or units within REPRISAL_TICKS has its own
+-- targets weighed REPRISAL_WEIGHT times for REPRISAL_TICKS more, and the war on the player no longer holds them back.
+local REPRISAL_LOSSES = 4
+local REPRISAL_TICKS = 20 * 3600
+local REPRISAL_WEIGHT = 5
+local REPRISAL_SOON = 2 * 3600
+function ops.wronged(b, by)
+  if not b or b.fallen or not shared.is_corp(by) or by == b.force then return end
+  b.wrongs = b.wrongs or {}
+  local w = b.wrongs[by]
+  if not w or game.tick - w.since > REPRISAL_TICKS then w = {since = game.tick, n = 0}; b.wrongs[by] = w end
+  w.n = w.n + 1
+  if w.n >= REPRISAL_LOSSES and not (b.reprisal and b.reprisal.owner == by and game.tick < b.reprisal.till) then
+    b.reprisal = {owner = by, till = game.tick + REPRISAL_TICKS}
+    b.reprisals = (b.reprisals or 0) + 1
+    -- Paid back soon: its next operation within REPRISAL_SOON, not at its usual pace (it came 14 minutes later, reprisal).
+    b.next_op = math.min(b.next_op or 0, game.tick + REPRISAL_SOON)
+    if ops.trace then ops.trace(b, string.format("reprisal: %d lost to %s in %d s; its targets weigh %dx for %d minutes", w.n, by,
+      (game.tick - w.since) / 60, REPRISAL_WEIGHT, REPRISAL_TICKS / 3600)) end
+  end
+end
+local function reprisal(b, t)
+  return b.reprisal and b.reprisal.owner == t.owner and game.tick < b.reprisal.till
+end
+
 -- A faction unit killed by a hostile cause: where the defence is.
 function ops.on_unit_killed(b, cause)
   if not (b.intel and cause and cause.valid) then return end
@@ -394,10 +420,17 @@ ops.temper_allows = temper_allows
 -- Seen turrets, death markers, and resistance learned the hard way: a raid that attacked and razed nothing
 -- (robots out-repairing four infantry, five raids on one substation) counts one turret more each time.
 -- Divided by what its own research gives its units (rd.strength): a researched army reads the same turrets as less.
+-- What a rival's camp has shown it holds (finish: two for each raid on it that razed nothing), halved every HELD_HALF.
+local HELD_HALF = 30 * 3600
+local function held_by(b, owner)
+  local h = b.intel and b.intel.held and b.intel.held[owner]
+  if not h then return 0 end
+  return h.n * 0.5 ^ ((game.tick - h.at) / HELD_HALF)
+end
 local function defence(b, t)
   local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
-  return ((t.defence or 0) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3))
-    / rd.strength(b.corp, t.dmg)
+  return ((t.defence or 0) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
+    + held_by(b, t.owner)) / rd.strength(b.corp, t.dmg)
 end
 
 local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE end
@@ -440,7 +473,7 @@ local function choose(b, army)
     -- Pressed (the ladder's second rung against a player it is at war with): that player's targets only, self-defence
     -- excepted (weighted 0.2, a rival's lander still won every choice on the user's save: 48 raids on landers, none on
     -- the player, visit).
-    if pressed and not player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
+    if pressed and not player and not battery(t) and threat_bonus(b, t) == 0 and not reprisal(b, t) then held = true end
     -- Stood down (war.lua): nothing against a player but self-defence.
     if b.quiescent and player and not battery(t) and threat_bonus(b, t) == 0 then held = true end
     if game.tick >= (t.cool or 0) and not cooling(t) and not held then
@@ -453,7 +486,8 @@ local function choose(b, army)
         local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
           * ((player and (floor or ladder(t.owner, b.force) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)
-          * (desperate and 10 or 1) * ((not player and pressed) and 0.2 or 1)
+          * (desperate and 10 or 1) * ((not player and pressed and not reprisal(b, t)) and 0.2 or 1)
+          * (reprisal(b, t) and REPRISAL_WEIGHT or 1)
           * ((player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
             and (t.pos[1] - b.origin.x) ^ 2 + (t.pos[2] - b.origin.y) ^ 2 <= b.claim_radius ^ 2) and 2 or 1)
         if not bs or s > bs then best, bs = key, s end
@@ -577,6 +611,16 @@ local function finish(b, outcome, trace, army)
   -- Razed nothing and attacked, or razed nothing and lost raiders on the way: resistance there.
   if t and op.kind == "raid" and op.razed0 and b.razed == op.razed0 and (op.attacked or alive(op) < op.launched) then
     t.resist = (t.resist or 0) + 1
+    -- A rival corporation's camp is held as a whole (lines, patrols, districts): what one failed raid on it met, every
+    -- target of that rival is weighed with (Grubstake raided Serenity's fortress seven times for nothing, each target
+    -- new to it read "defence 0.0": factory-12345-labs1, the user's save).
+    if shared.is_corp(t.owner) then
+      b.intel.held = b.intel.held or {}
+      local h = b.intel.held[t.owner] or {n = 0, at = game.tick}
+      h.n = held_by(b, t.owner) + 2
+      h.at = game.tick
+      b.intel.held[t.owner] = h
+    end
     -- Walls round it: the ledger notes them (a Dozer's trigger, scripts/rd.lua).
     if op.attacked and game.surfaces[b.surface].count_entities_filtered{position = t.pos, radius = 20, type = "wall",
       force = enemies(game.forces[b.force]), limit = 1} > 0 then
@@ -1573,6 +1617,10 @@ function ops.summary(b)
   return {known = n, known_player = np, player_targets = pt, ladder = (function()
     for _, f in ipairs(shared.player_forces()) do return ladder(f.name, b.force) end end)(), op = b.op and (b.op.kind .. ":" .. b.op.phase) or nil, target = t and t.kind or nil,
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
+    op_owner = t and t.owner or nil, reprisal = b.reprisal and game.tick < b.reprisal.till and b.reprisal.owner or nil,
+    reprisal_at = b.reprisal and b.reprisal.till - REPRISAL_TICKS, op_started = b.op and b.op.started,
+    held = b.intel and b.intel.held and (function() local o = {} for k in pairs(b.intel.held) do o[k] = held_by(b, k) end
+      return o end)() or nil,
     siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
     shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,

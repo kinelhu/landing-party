@@ -310,6 +310,61 @@ a room, so what you see is what it can field, and what you destroy is what it lo
   audit's step 1); units from their own buildings (Lances from a foundry, Aegis from a heavy factory); Grubstake's
   equivalent (its scrapyard).
 
+### The user's visit to the labs save (2026-10-21): what it asked, what changed (0.1.42)
+The user played the factory save (seed 12345, minute 56) for a quarter of an hour and sent thirteen remarks. Each, and
+what was done:
+- **Tanks** ("tank sounds but look like they fire SMGs. Should have more oomph ... a unit that should be good against
+  bases"): a tank fires the tank cannon's own round (its flash, its shell in flight, its scorch), 40 explosion to what it
+  hits and a blast of 80 over 1.5 tiles to buildings only (`entity_flags = {"placeable-neutral"}`: every building, the
+  corporations' and the player's, and the player's vehicles; no unit, character or nest carries the flag). Against a
+  squad it hits as before (35 had been one instant hit); against a wall line or a turret cluster three times as hard.
+  The player's battle tank the same, heavier (70 and 120).
+- **Labs** ("should be animated ... increasing their sprite size"): 4x4 now (the WFC lab tile's `B` 4x4, the vanilla art
+  at 4/3), always at work: a lab animates only while researching and the corporation's research is scripted, so its
+  body is drawn by script (`lp-lab-busy`, base.lab_look) over the entity's floor plate and shadow. Labs built by 0.1.40
+  and 0.1.41 get the look on the update (base.heal_labs).
+- **The launch pad** ("a little unceremonious"): the silo whole and shut (its hole, doors and front, not the base ring
+  alone), its block cleared of trees, paved, the silo in a ring of hazard stripes two tiles wide, a cold lamp at each
+  corner of the ring (layout.launch_floor).
+- **Depots** ("still roboports? I thought we were going space age"): the cargo landing pad at half size (4x4), a pad pods
+  come down on. A cargo bay alone was tried first and read as a small hatch box: it is drawn to sit in a row of bays.
+- **Deforestation**: a block or district clears its ground when founded (trees, rocks, scrub: trees had stood inside the
+  landing pad's walls, over the lander), and a drill clears the trees within 6 and the scrub within 4.
+- **Belts inside the districts** ("WFC can handle this ... Grubstake could even have a sushi belt"): not in 0.1.42; next
+  (below).
+- **Drones building from a screen away**: a crew goes to each job before building it (within 8 tiles; one it cannot get
+  near in 15 s it builds from where it stands, counted as `far`). The cost: a district's crew of 40 jobs took 103 to 128 s,
+  not 21 (labs). The yard's beam (within 40 of the lander or a depot) is unchanged.
+- **Fabricators at rest**: a starved fabricator runs now and then (a batch from nothing about once in 12 s, its part
+  thrown away: b.idle_runs), so a camp's machines are seen working when its ore is short.
+- **Drops** ("not convinced with the resource drop mechanics ... from regular units, not things that were stolen from
+  us"): what a corporation's building or unit leaves (the engine's loot), a crew's parts, command cores and the pacifier
+  crystal go into a wreck (the crash site's wreck chest, `lp-wreck`, neutral), mined by hand or marked for robots to
+  everything it holds; gone after an hour, or when emptied. Stolen goods spilled by a beaten raid stay on the ground.
+- **The harrier's selection box above its sprite**: a unit is drawn where it stands (a combat robot is lifted by the
+  engine): its body is drawn a tile up, over the destroyer's own shadow on the ground, so it reads as flying and sits in
+  its box.
+- **Grubstake raiding Serenity for nothing; no punitive raid seen.** factory-12345-labs1: Grubstake raided Serenity's
+  depot, launch pad and generators seven times in 93 minutes, each target new to it read "defence 0.0", and 1 to 6 of
+  4 to 21 raiders came back; Serenity's responses (up to 70 units) killed them, and it never went for Grubstake, pressed
+  on the player. Two changes. *What a rival's camp has shown it holds*: a raid on a rival corporation that razed nothing
+  adds 2 to every target of that rival (halved every 30 minutes: ops.held_by), so the next one is sized for it or not
+  sent. *Reprisal*: a rival that kills 4 of a camp's buildings or units within 20 minutes has its own targets weighed 5x
+  for 20 minutes, not held back by the war on the player, and the camp's next operation comes within 2 minutes
+  (ops.wronged; scenario reprisal).
+- **Territory markers overlapping**: two "Mineral rights reassigned" labels written over each other: a second patch within
+  80 of a labelled one is tagged with the icon only.
+- **Floor variation in the districts**: refined concrete under each machine and a tile round it (the apron), a ring of
+  hazard stripes round a lab or a depot, the deck elsewhere; never sand (floors `lp-apron`, `lp-hazard`, both
+  corporations').
+
+**Belts, next.** Why none yet: a WFC tile set matches edges character by character and uses every tile turned and
+mirrored, so a belt's direction cannot live in the tile; and a belt moves what stands on it. The plan: a conveyor
+character `c` that connects like a lane, laid by tiles that only run straight or turn (no junctions), each run traced
+after the solve and given its direction from a fabricator (source) to the depot (sink); items put on at the source and
+taken off at the sink by script, only while a player is near. Grubstake: a loop of belt round its yard carrying what it
+stole (its sushi belt). Bigger districts if the tiles need room.
+
 ## Premise
 A rival machine faction answers the player's first rocket launch. It lands, mines the player's own ore and
 builds settlements that read as engineering. Its army is the output of its economy, so the war is economy

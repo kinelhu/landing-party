@@ -58,7 +58,7 @@ local function init()
 end
 
 script.on_init(init)
-script.on_configuration_changed(function() init(); base.heal_lines() end)
+script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
 script.on_event(defines.events.on_tick, function(e)
   biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick)
@@ -141,6 +141,16 @@ script.on_event(defines.events.on_entity_died, function(e)
   -- Grubstake's yard (the skim's, the raids'): what it held spills.
   if ent.type == "container" and shared.is_corp(ent.force.name) then skim.died(ent) end
   local kind = shared.kind_of(ent.name)
+  -- What a corporation's building or unit is made of (the engine's loot) goes into a wreck, not over the ground.
+  if shared.is_corp(ent.force.name) and e.loot and not e.loot.is_empty() then
+    local stacks = {}
+    for i = 1, #e.loot do
+      local st = e.loot[i]
+      if st.valid_for_read then table.insert(stacks, {name = st.name, count = st.count, quality = st.quality.name}) end
+    end
+    e.loot.clear()
+    shared.wreck(ent.surface, ent.position, stacks)
+  end
   if kind == "lp-uplink" then faction.uplink_lost(ent) end
   if kind == "lp-pacifier" then pact.lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
@@ -190,6 +200,11 @@ script.on_event(defines.events.on_entity_died, function(e)
     if hb and not hb.fallen then ops.hazard_note(hb, ent.position, ent.type == "unit" or ent.type == "spider-unit") end
   end
   if shared.is_corp(ent.force.name) then
+    -- Killed by a rival corporation: the camp it belonged to remembers (ops.wronged: a reprisal).
+    if e.force and shared.is_corp(e.force.name) and e.force ~= ent.force and ent.unit_number then
+      local own = storage.owner[ent.unit_number]
+      ops.wronged(storage.bases[own and own.base or storage.unit_owner[ent.unit_number] or 0], e.force.name)
+    end
     -- A crew's truck or drone killed is an attack on the corporation, as on its garrison (the user, 2026-10-17: "it
     -- gets multiple haulers destroyed and doesn't turn hostile").
     local cid = storage.crew_owner and storage.crew_owner[ent.unit_number]
@@ -464,6 +479,12 @@ remote.add_interface("landing-party", {
   pact_state = function() return storage.pact_state end,
   notice_counts = function() return storage.notice_counts or {told = 0, held = 0} end,
   debug_notice = function(key) shared.notice(game.forces.player, {key, "test", "test"}) end,
+  -- Tests only: one entity of kind `name` placed and registered for settlement `id` as its yard places it (scripts/lp-shots).
+  debug_place = function(id, name, pos)
+    local b = storage.bases[id]
+    local e = b and base.place_job(b, {name = name, pos = pos})
+    return e and e.unit_number
+  end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
   trade_stats = function() return trade.stats() end,

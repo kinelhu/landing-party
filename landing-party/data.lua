@@ -19,7 +19,7 @@ end
 -- Ordinary loot (docs/reviews/2026-10-15-faction-loot-consult.md; the user: no salvage currency, Factorio's own items):
 -- what a faction building of this cost is made of, iron cost/2, copper cost/4, circuits cost/10, and its kind's own.
 -- Under 8 parts (walls, gates, pylons, bins, lamps, mines, flamers) nothing, or every wall would be a mine. Dropped on
--- death at 80%, half to all of each (the engine's loot); its ruins and captures mine to all of it.
+-- death at 80%, half to all of each (the engine's loot, put in a wreck: control.lua); its ruins and captures mine to all of it.
 local FLAVOUR = {["lp-turret"] = {{"firearm-magazine", 2, 5}}, ["lp-gun-turret"] = {{"firearm-magazine", 2, 5}},
   ["lp-scrap-cannon"] = {{"firearm-magazine", 2, 5}}, ["lp-generator"] = {{"engine-unit", 1, 1}},
   ["lp-drill"] = {{"iron-gear-wheel", 2, 2}}, ["lp-depot"] = {{"steel-plate", 10, 10}},
@@ -277,14 +277,39 @@ radar.energy_usage = watts(shared.power["lp-radar"])
 
 -- Research labs (rd.lua): a vanilla lab, lit as if always researching, one kind a branch of the corporation's tree.
 -- Military targets: what a player's turrets and squads go for.
+-- A size up (4x4, the vanilla art at 4/3: the user, 2026-10-21, "they look a little puny"), and always at work: a lab
+-- animates only while researching, and the faction's research is scripted, so its body is drawn by script (base.lua,
+-- lab_look: the animation lp-lab-busy, its blinking lights included) over the entity's own floor plate and shadow.
+local LAB_SCALE = 4 / 3
+local function lab_layer(l)
+  local c = table.deepcopy(l)
+  c.scale = (c.scale or 1) * LAB_SCALE
+  if c.shift then c.shift = {c.shift[1] * LAB_SCALE, c.shift[2] * LAB_SCALE} end
+  return c
+end
+local vanilla_lab = data.raw.lab.lab.on_animation.layers
 local labs = {}
 for _, name in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab"}) do
   local l = copy("lab", "lab", name)
   l.energy_source = {type = "void"}
   l.max_health = 600
-  l.off_animation = table.deepcopy(l.on_animation)
+  l.collision_box = {{-1.9, -1.9}, {1.9, 1.9}}
+  l.selection_box = {{-2, -2}, {2, 2}}
+  local plate = {layers = {}}
+  for _, v in ipairs(vanilla_lab) do
+    if v.repeat_count then table.insert(plate.layers, lab_layer(v)) end
+  end
+  tint(plate, {})
+  l.on_animation = plate
+  l.off_animation = table.deepcopy(plate)
   table.insert(labs, l)
 end
+local busy = {type = "animation", name = "lp-lab-busy", layers = {}}
+for _, v in ipairs(vanilla_lab) do
+  if v.frame_count then table.insert(busy.layers, lab_layer(v)) end
+end
+tint(busy, {})
+table.insert(labs, busy)
 data:extend(labs)
 
 -- The pacifier (scripts/pact.lua): a radar dish broadcasting to the biters; while one stands, its corporation and they
@@ -343,12 +368,32 @@ scrap_shell.magazine_size = 1
 scrap_shell.ammo_type = {target_type = "position", clamp_position = true, action = {type = "direct", action_delivery = {
   type = "projectile", projectile = "lp-scrap-burst", starting_speed = 0.5}}}
 
--- The depot: a roboport's body as a container (it holds no robots yet).
+-- The depot: Space Age's cargo landing pad at half size, a pad pods come down on (the user, 2026-10-21: "depots are
+-- still roboports? I thought we were going space age"; a cargo bay alone read as a small hatch box, it is drawn to sit in a
+-- row of them); a roboport's body without its graphics. Both 4x4.
 local roboport = data.raw.roboport.roboport
 local depot = copy("container", "iron-chest", "lp-depot")
 depot.collision_box = roboport.collision_box
 depot.selection_box = roboport.selection_box
-depot.picture = table.deepcopy(roboport.base)
+local hub = data.raw["cargo-landing-pad"] and data.raw["cargo-landing-pad"]["cargo-landing-pad"]
+local HUB_SCALE = 0.5
+if hub and hub.graphics_set and hub.graphics_set.picture then
+  local layers = {}
+  for _, part in ipairs(hub.graphics_set.picture) do
+    -- Not the hatch's occluder (a mask over the cargo pods' hatch, nothing to see on its own).
+    for _, l in ipairs(part.layers or {part}) do
+      if not (l.filename or ""):find("occluder") then
+        local c = table.deepcopy(l)
+        c.scale = (c.scale or 1) * HUB_SCALE
+        if c.shift then c.shift = {c.shift[1] * HUB_SCALE, c.shift[2] * HUB_SCALE} end
+        table.insert(layers, c)
+      end
+    end
+  end
+  depot.picture = {layers = layers}
+else
+  depot.picture = table.deepcopy(roboport.base)
+end
 tint(depot.picture, {})
 depot.inventory_size = 48
 depot.max_health = 1000
@@ -358,7 +403,16 @@ local silo = data.raw["rocket-silo"]["rocket-silo"]
 local launchpad = copy("container", "iron-chest", "lp-launchpad")
 launchpad.collision_box = silo.collision_box
 launchpad.selection_box = silo.selection_box
-launchpad.picture = table.deepcopy(silo.base_day_sprite)
+-- The whole silo, shut (the user, 2026-10-21: the base ring alone read as a bare ring on sand): its shadow, the hole, the
+-- closed doors, the base and its front.
+launchpad.picture = {layers = {}}
+for _, k in ipairs({"shadow_sprite", "hole_sprite", "door_back_sprite", "door_front_sprite", "base_day_sprite", "base_front_sprite"}) do
+  local l = silo[k] and table.deepcopy(silo[k])
+  if l then
+    if k == "shadow_sprite" then l.draw_as_shadow = true end
+    table.insert(launchpad.picture.layers, l)
+  end
+end
 tint(launchpad.picture, {})
 launchpad.inventory_size = 10
 launchpad.max_health = 2000
@@ -414,6 +468,18 @@ data:extend({
     ingredients = {{type = "item", name = "lp-feedstock", amount = shared.FEEDSTOCK_PER_PART}},
     results = {{type = "item", name = "lp-part", amount = 1}}},
 })
+
+-- A wreck (shared.wreck): the crash site's wreck chest, what the corporations' dead leave, mined to what it holds.
+local wreck = table.deepcopy(data.raw.container["crash-site-chest-1"])
+wreck.name = "lp-wreck"
+wreck.hidden = true
+wreck.minable = {mining_time = 0.5}
+wreck.inventory_size = 16
+wreck.max_health = 100
+wreck.flags = {"placeable-neutral", "placeable-off-grid", "not-blueprintable"}
+wreck.loot = nil
+wreck.corpse = nil
+data:extend({wreck})
 
 -- The pheromone flare's canister (scripts/flare.lua): a barrel stood on end in Grubstake's colour, 200 health, a target
 -- the player's turrets and character shoot on sight; and its smoke, a tall orange column the script puffs while it burns.

@@ -3,9 +3,9 @@ digraph layers {
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
   edge [color="#8899aa", fontname="Helvetica", fontsize=9];
   "Seams (leaves)" [label="Seams (leaves)\n6 modules, 473 lines", fillcolor="#d9f0d9"];
-  "Corporation" [label="Corporation\n11 modules, 2641 lines", fillcolor="#eef2f7"];
-  "Settlement" [label="Settlement\n14 modules, 4805 lines\nlayout 1049", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n11 modules, 4444 lines\nops 1590", fillcolor="#f7dede"];
+  "Corporation" [label="Corporation\n11 modules, 2640 lines", fillcolor="#eef2f7"];
+  "Settlement" [label="Settlement\n14 modules, 4951 lines\nlayout 1112", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n11 modules, 4492 lines\nops 1638", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1424 lines", fillcolor="#eef2f7"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];

@@ -137,7 +137,7 @@ local function survey_step(s)
   if not sv.radar.valid then
     sv.done = "destroyed"
     s.delay = DELAY
-    surface.spill_item_stack{position = sv.pos, stack = {name = "lp-command-core", count = 1}, enable_looted = true}
+    shared.wreck(surface, sv.pos, {{name = "lp-command-core", count = 1}})
     tell("lp.survey-destroyed", gps(surface, sv.pos))
   elseif game.tick - sv.tick >= (storage.phases_fast and 3 * 3600 or SURVEY_TICKS) then
     sv.done = "left"

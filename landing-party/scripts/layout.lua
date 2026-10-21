@@ -135,7 +135,18 @@ local function lobe(x0, y0, w, h)
   return out
 end
 
+-- Its ground cleared when a block or district is founded (the user, 2026-10-21: trees stood inside the landing pad's
+-- walls, over the lander; "a little deforestation"): trees, rocks and scrub go.
+local function clear_ground(b, x0, y0, w, h)
+  local s = game.surfaces[b.surface]
+  local area = {{x0, y0}, {x0 + w, y0 + h}}
+  for _, e in pairs(s.find_entities_filtered{area = area, type = {"tree", "simple-entity"}}) do e.destroy() end
+  s.destroy_decoratives{area = area}
+end
+layout.clear_ground = clear_ground
+
 local function open(b, hub, role, x0, y0, w, h, cells, lobed)
+  clear_ground(b, x0, y0, w, h)
   local variants = blocks[role]
   local v = rng.pick(b.rng, variants)
   local t = {}
@@ -174,6 +185,7 @@ local function open(b, hub, role, x0, y0, w, h, cells, lobed)
   for _, e in ipairs(v.fixed) do
     local pos = at(e)
     if e[1] == "lp-pylon" then layout.connect(b, pos[1], pos[2], block) end
+    if e[1] == "lp-launchpad" and not lobed then layout.launch_floor(b, block, pos) end
     push(b, {name = e[1], pos = pos, module = block})
   end
   return block
@@ -535,23 +547,50 @@ function layout.wfc_step(b)
   end
 end
 
+local APRON = {F = {3, 3}, R = {3, 3}, G = {2, 2}, D = {4, 4}, B = {4, 4}}
+local HAZARD_RING = {D = true, B = true}
+local WALLISH = {["#"] = true, w = true, g = true, ["="] = true}
 lay_out = function(b, hub, x0, y0, g, side, lab)
+  clear_ground(b, x0, y0, side, side)
   local block = {kind = "compound", lab = lab, hub = hub and hub.id, x0 = x0, y0 = y0, w = side, h = side,
     center = {x0 + side / 2, y0 + side / 2}, entities = {}, slots = {}, opened = game.tick, walls = false, walled = true,
     embellished = true, liveried = true, wfc = true, weight = WFC_WEIGHT}
   table.insert(b.blocks, block)
   table.insert(b.modules, block)
   if hub then hub.count = hub.count + 1 end
-  local floor, lanes = {}, {}
+  -- Its floor varied (the user, 2026-10-21: "areas with hazard/refined concrete mixed in, without showing the sand"): the
+  -- apron under each machine and a tile round it, a ring of hazard stripes round a lab or a depot, the deck elsewhere.
+  local mark = {}
+  for y = 0, side - 1 do
+    for x = 0, side - 1 do
+      local sz = APRON[g[y][x]]
+      if sz then
+        local ring = HAZARD_RING[g[y][x]]
+        for dy = -1, sz[2] do
+          for dx = -1, sz[1] do
+            local edge = dx == -1 or dy == -1 or dx == sz[1] or dy == sz[2]
+            local k = (x + dx) .. ":" .. (y + dy)
+            if not (mark[k] == "hazard" and not edge) then mark[k] = (ring and edge) and "hazard" or "apron" end
+          end
+        end
+      end
+    end
+  end
+  local floor, lanes, apron, hazard = {}, {}, {}, {}
   for y = 0, side - 1 do
     for x = 0, side - 1 do
       local ch = g[y][x]
       -- Walls on the plate too (left bare, sand showed under every wall and partition: the user, in game).
-      if ch ~= " " then table.insert(ch == "=" and lanes or floor, {x0 + x, y0 + y}) end
+      if ch ~= " " then
+        local m = not WALLISH[ch] and mark[x .. ":" .. y]
+        table.insert(ch == "=" and lanes or m == "hazard" and hazard or m == "apron" and apron or floor, {x0 + x, y0 + y})
+      end
     end
   end
   push(b, {tiles = floor, floor = "pad", module = block})
   push(b, {tiles = lanes, floor = "road", module = block})
+  push(b, {tiles = apron, floor = "apron", module = block})
+  push(b, {tiles = hazard, floor = "hazard", module = block})
   local pylon
   for y = 0, side - 1 do
     for x = 0, side - 1 do
@@ -969,6 +1008,30 @@ local function pad_shape(b, block)
   block.liveried = true
 end
 layout.pad_shape = pad_shape
+
+-- The launch pad's ground (the user, 2026-10-21: "looks a little unceremonious": a silo on sand among trees): cleared,
+-- paved whole, the silo standing in a ring of hazard stripes (its apron where it has them), a cold lamp at each corner
+-- of the ring.
+function layout.launch_floor(b, block, silo)
+  local x0, y0, w, h = block.x0, block.y0, block.w, block.h
+  -- Its ground was cleared when the block was opened. The silo, 9 tiles across: the tiles within 4 of its centre tile
+  -- under it, the ring 5 and 6 out.
+  local cx, cy = math.floor(silo[1]), math.floor(silo[2])
+  local hazard = shared.CORPS[b.corp].hazard and "hazard" or "trim"
+  local pad, ring = {}, {}
+  for x = x0 + 1, x0 + w - 2 do
+    for y = y0 + 1, y0 + h - 2 do
+      local d = math.max(math.abs(x - cx), math.abs(y - cy))
+      table.insert((d == 5 or d == 6) and ring or pad, {x, y})
+    end
+  end
+  push(b, {tiles = pad, floor = "pad", module = block})
+  push(b, {tiles = ring, floor = hazard, module = block})
+  for _, c in ipairs({{-6, -6}, {6, -6}, {-6, 6}, {6, 6}}) do
+    push(b, {name = "lp-post-lamp", pos = {cx + c[1] + 0.5, cy + c[2] + 0.5}, module = block})
+  end
+  block.liveried = true
+end
 
 function layout.livery(b, block)
   -- A pad with its corporation's own shape keeps it (laid at landing).

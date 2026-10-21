@@ -73,8 +73,7 @@ function pact.lost(ent)
     if b.pacifier == ent then
       -- Its crystal (the faction loot consult): the landing's own pacifier always, a rebuilt one a quarter of the time.
       if (b.pacifiers_lost or 0) == 0 or math.random() < 0.25 then
-        ent.surface.spill_item_stack{position = ent.position, stack = {name = "lp-pacifier-crystal", count = 1},
-          enable_looted = true}
+        shared.wreck(ent.surface, ent.position, {{name = "lp-pacifier-crystal", count = 1}})
       end
       b.pacifiers_lost = (b.pacifiers_lost or 0) + 1
       b.pacifier = nil

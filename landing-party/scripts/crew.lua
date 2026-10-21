@@ -28,6 +28,8 @@ local BUILD_TICKS = 90
 local STUCK = 60 * 60
 local REQUEUE = 60 * 60
 local ARRIVE = 8
+local REACH = 8                   -- how far a crew builds from
+local REACH_WAIT = 15 * 60
 -- Crews lost on one module (or one rebuild) before the camp gives it up: a cordon's posts under a factory's turrets took
 -- 168 drones in two hours, one a minute (visit deathworld10x). An abandoned post never stands, so its arc holds: the
 -- player's guns held the line.
@@ -168,12 +170,13 @@ function crew.take(b, job)
   return true
 end
 
--- What parts are made of, spilled where a crew fell (the loot rule): iron half, copper a quarter, circuits a tenth.
+-- What parts are made of, left in a wreck where a crew fell (the loot rule): iron half, copper a quarter, circuits a tenth.
 local function spill(s, pos, parts)
+  local stacks = {}
   for _, it in ipairs({{"iron-plate", parts / 2}, {"copper-plate", parts / 4}, {"electronic-circuit", parts / 10}}) do
-    local n = math.floor(it[2])
-    if n > 0 then s.spill_item_stack{position = pos, stack = {name = it[1], count = n}, enable_looted = true} end
+    table.insert(stacks, {name = it[1], count = math.floor(it[2])})
   end
+  shared.wreck(s, pos, stacks)
 end
 
 -- failed: the crew was killed or stuck (counts toward GIVE_UP: a camp sent 24 crews to two sites they could not reach,
@@ -277,8 +280,25 @@ local function step(b, i)
     return
   end
   if game.tick < c.next_at then return end
-  c.next_at = game.tick + BUILD_TICKS
   local job = c.jobs[c.k]
+  -- Built from beside it (the user, 2026-10-21: a beam laying a turret by the player's base from a screen away read as
+  -- unfair): a job farther than REACH, it goes there first; one it cannot get near in REACH_WAIT (a truck walled out by
+  -- the module's own walls) it builds from where it is.
+  if job and job.pos and not job.tiles then
+    local d = (p.x - job.pos[1]) ^ 2 + (p.y - job.pos[2]) ^ 2
+    if d > REACH * REACH then
+      if c.going ~= c.k then
+        c.going, c.going_at = c.k, game.tick
+        c.unit.commandable.set_command{type = defines.command.go_to_location, destination = job.pos, radius = REACH - 3,
+          distraction = defines.distraction.none}
+        return
+      elseif game.tick - c.going_at < REACH_WAIT then
+        return
+      end
+      b.crews_far = (b.crews_far or 0) + 1
+    end
+  end
+  c.next_at = game.tick + BUILD_TICKS
   if not job then
     local left = false
     for _, q in ipairs(b.queue) do if q.module == c.module then left = true break end end
@@ -343,7 +363,7 @@ end
 
 function crew.stats(b)
   return {sent = b.crews_sent or 0, done = b.crews_done or 0, lost = b.crews_lost or 0, stuck = b.crews_stuck or 0,
-    gave_up = b.crews_gave_up or 0, unrouted = b.crews_unrouted or 0,
+    gave_up = b.crews_gave_up or 0, unrouted = b.crews_unrouted or 0, far = b.crews_far or 0,
     out = #(b.crews or {})}
 end
 

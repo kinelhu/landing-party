@@ -13,6 +13,8 @@ shared.CORPS = {
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     road = {tile = "stone-path", tint = {r = 0.95, g = 0.78, b = 0.5}}, pad = {tile = "brown-refined-concrete"},
     trim = {tile = "refined-hazard-concrete-left"},
+    -- Under its machines, and round what matters (the user, 2026-10-21: "flooring variation within clusters").
+    apron = {tile = "concrete"}, hazard = {tile = "hazard-concrete-left"},
     icon = "signal-mining", motto = "Resources in the right hands.",
     -- Architecture (docs/corporations.md): sprawl, gun turrets fed with ammunition instead of lasers, walls
     -- that are fences (half health); infantry, buggies and harriers, no tanks.
@@ -76,6 +78,9 @@ shared.CORPS = {
     road = {tile = "space-platform-foundation", fallback = "refined-concrete", map_color = {r = 0.3, g = 0.32, b = 0.34}},
     pad = {tile = "space-platform-foundation", fallback = "refined-concrete", map_color = {r = 0.27, g = 0.29, b = 0.31}},
     trim = {tile = "black-refined-concrete"},
+    -- Its districts' floor varied (the user, 2026-10-21): refined concrete under its machines, hazard stripes round its
+    -- labs, depots and launch pad (layout.lua).
+    apron = {tile = "refined-concrete"}, hazard = {tile = "refined-hazard-concrete-left"},
     -- The line's painted stripe (cordon.lua): its own tile, not a floor (shared.FLOORS), so a camp grown out to its
     -- old arcs builds over it.
     stripe = {tile = "black-refined-concrete"},
@@ -129,7 +134,7 @@ shared.CORPS = {
     labs = {optics = "lp-optics-lab", line = "lp-line-lab", siege = "lp-siege-lab"}},
 }
 -- Floors: "lp-road" and "lp-pad" are the default corporation's tiles; shared.variant names the others'.
-shared.FLOORS = {"lp-road", "lp-pad", "lp-trim"}
+shared.FLOORS = {"lp-road", "lp-pad", "lp-trim", "lp-apron", "lp-hazard"}
 shared.DEFAULT_CORP = "serenity"
 
 -- The faction's kinds of building and unit. The default corporation's prototypes carry the plain names
@@ -348,6 +353,33 @@ function shared.reply(force, pos, msg)
     p.create_local_flying_text{text = msg, position = pos, time_to_live = 300, speed = 0.5}
   end
   if shared.notices_on() then force.print(msg) end
+end
+
+-- What the corporations' dead leave (the user, 2026-10-21: items spilled on the ground are a hassle to pick up): a wreck,
+-- the crash site's wreck chest (data.lua: lp-wreck), neutral, holding it; mined by hand or marked for the robots, it gives
+-- it all at once. stacks: {{name =, count =, quality =}...}. What does not fit spills. Gone after WRECK_TICKS (base.lua).
+shared.WRECK_TICKS = 60 * 60 * 60
+function shared.wreck(surface, pos, stacks)
+  local x, y = pos.x or pos[1], pos.y or pos[2]
+  local at = surface.find_non_colliding_position("lp-wreck", {x, y}, 6, 0.5) or {x = x, y = y}
+  local w = surface.create_entity{name = "lp-wreck", position = at, force = "neutral"}
+  local inv = w and w.get_inventory(defines.inventory.chest)
+  for _, st in ipairs(stacks) do
+    if st.count > 0 then
+      local stack = {name = st.name, count = st.count, quality = st.quality}
+      local n = inv and inv.insert(stack) or 0
+      if n < st.count then
+        stack.count = st.count - n
+        surface.spill_item_stack{position = at, stack = stack, enable_looted = true}
+      end
+    end
+  end
+  if w and inv.is_empty() then w.destroy(); return nil end
+  if w then
+    storage.wrecks = storage.wrecks or {}
+    table.insert(storage.wrecks, {e = w, at = game.tick})
+  end
+  return w
 end
 
 return shared
