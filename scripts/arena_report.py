@@ -8,18 +8,44 @@ units (both sides spend about the same) and fighters for a line of turrets or a 
 its fights both ways round (row from the west on Serenity's force, then the column there), so the matrix is
 antisymmetric and the side and force cancel. Every number in docs/arena.md is computed here; none is typed.
 """
-import json, os, sys
+import json, os, re, sys
 from collections import defaultdict
 
 # Each kind's class, by its body and its weapon (what decides its fights in the arena): many light bodies firing small
 # shots; one weapon that hits several at once (a blast, an arc, a split beam); a heavy hull with flat armour; fliers.
 CLASSES = [
-    ("small arms", ["infantry (Serenity)", "infantry (Grubstake)", "lance", "buggy", "slug", "railgunner"]),
-    ("splash", ["sapper", "shock", "prism", "tesla"]),
-    ("armour", ["tank", "aegis", "dozer", "walker", "scorcher"]),
+    ("small arms", ["infantry (Serenity)", "infantry (Grubstake)", "lance", "buggy", "slug", "railgunner", "trooper",
+                    "rocket trooper"]),
+    ("splash", ["sapper", "shock", "prism", "tesla", "breacher"]),
+    ("armour", ["tank", "aegis", "dozer", "walker", "scorcher", "battle tank"]),
     ("air", ["harrier", "scavenger"]),
 ]
 CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
+
+# Who fields each kind, read from landing-party/shared.lua (a corporation's starting mix and its research tree's units).
+# Grubstake's infantry is its own (shotguns), so the two infantries are told apart by their labels.
+CORP_COLOUR = {"Serenity": "#2f6f86", "Grubstake": "#b0651a", "You": "#3d7a2a"}
+PLAYER = {"trooper", "breacher", "rocket trooper", "battle tank"}   # priced by command bandwidth (tests/lp-arena/arena.lua)
+
+def fielders():
+    src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "landing-party", "shared.lua")).read()
+    g, s = src.index("  grubstake = {"), src.index("  serenity = {")
+    e = src.index("\n}\n", s)
+    out = {}
+    for corp, t in (("Grubstake", src[g:s]), ("Serenity", src[s:e])):
+        kinds = set(re.findall(r'"(lp-[a-z-]+)"', "".join(re.findall(r"mix = \{([^}]*)\}", t))))
+        kinds |= set(re.findall(r'unit = \{kind = "(lp-[a-z-]+)"', t))
+        for k in kinds:
+            out.setdefault(k, []).append(corp)
+    return out
+
+def corp_of(label, fielded):
+    if label in PLAYER:
+        return "You"
+    if label.startswith("infantry ("):
+        return label[len("infantry ("):-1]
+    who = fielded.get("lp-" + label, [])
+    return who[0] if len(who) == 1 else "both" if who else "-"
 
 def score(r):
     a, b = r["a"], r["b"]
@@ -29,6 +55,42 @@ def score(r):
     else:
         took = (b["start"] - b["left"]) / b["start"] if b["start"] else 0
     return took - lost_a
+
+def clusters(kinds, M, F, fixed_cols, corp, img):
+    """Groups found from the fights alone (the user, 2026-10-21: "should we run some kind of clusterization on each unit
+    unsupervised?"): each kind is its row of scores, against every kind and every fixed opponent; average-linkage
+    clustering on the distance between rows. Two kinds land together when they beat and lose to the same things. The
+    hand-made classes are then compared with the groups at the same count."""
+    from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+    import matplotlib.pyplot as plt
+    X = [[M.get((a, b), 0) for b in kinds] + [F.get((a, c), 0) for c in fixed_cols] for a in kinds]
+    Z = linkage(X, method="average", metric="euclidean")
+    fig, ax = plt.subplots(figsize=(8, 0.32 * len(kinds) + 1.6), dpi=130)
+    labels = [f"{a} ({CLASS_OF[a]})" for a in kinds]
+    dendrogram(Z, labels=labels, orientation="right", ax=ax, color_threshold=0, above_threshold_color="#555555")
+    for lab in ax.get_yticklabels():
+        k = lab.get_text().rsplit(" (", 1)[0]
+        lab.set_color(CORP_COLOUR.get(corp[k], "black"))
+    ax.set_xlabel("distance between two kinds' rows of scores (x100 scale: 1.0 is a 100-point gap in one fight)", fontsize=8)
+    ax.set_title("Units grouped by whom they beat and lose to, from the arena alone\n(label: kind (hand-made class); "
+                 "Serenity teal, Grubstake amber)", fontsize=9)
+    ax.tick_params(axis="y", labelsize=8)
+    fig.tight_layout()
+    fig.savefig(img)
+    n = len(CLASSES)
+    cut = fcluster(Z, n, criterion="maxclust")
+    groups = {}
+    for k, c in zip(kinds, cut):
+        groups.setdefault(c, []).append(k)
+    L = ["## Groups found from the fights alone", "",
+         "Each kind is its row of scores (against every kind and every fixed opponent); kinds are joined by average "
+         "linkage on the distance between rows, so two kinds land together when they beat and lose to the same things "
+         f"(`scripts/arena_report.py`, scipy). Cut into {n} groups, as many as the hand-made classes:", "",
+         "![Clusters](arena/clusters.png)", "", "| Group | Kinds (hand-made class) |", "|---|---|"]
+    for i, (c, ks) in enumerate(sorted(groups.items(), key=lambda x: -len(x[1])), 1):
+        L.append(f"| {i} | " + ", ".join(f"{k} ({CLASS_OF[k]})" for k in ks) + " |")
+    L.append("")
+    return L
 
 def main():
     src, out = sys.argv[1], sys.argv[2]
@@ -62,6 +124,8 @@ def main():
     assert not unclassed, f"give these a class in CLASSES: {unclassed}"
     rank = {c: i for i, (c, _) in enumerate(CLASSES)}
     order = sorted(kinds, key=lambda k: (rank[CLASS_OF[k]], -strength[k]))
+    fielded = fielders()
+    corp = {k: corp_of(k, fielded) for k in kinds}
     rounds = max(r["round"] for r in rows)
 
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
@@ -87,16 +151,22 @@ def main():
         ax.set_xticklabels([names.get(c, c) for c in cols], rotation=90 if ax is ax1 else 0, fontsize=7.5)
         ax.xaxis.tick_top()
         ax.set_yticks(range(n))
-        ax.set_yticklabels([f"{CLASS_OF[a]}: {a} ({cost.get(a, '?')})" for a in order] if ax is ax1 else [], fontsize=8)
+        ax.set_yticklabels([f"{corp[a]} {CLASS_OF[a]}: {a} ({cost.get(a, '?')})" for a in order] if ax is ax1 else [], fontsize=8)
+        for lab, k in zip(ax.get_yticklabels(), order if ax is ax1 else []):
+            lab.set_color(CORP_COLOUR.get(corp[k], "black"))
+        if ax is ax1:
+            for lab, k in zip(ax.get_xticklabels(), cols):
+                lab.set_color(CORP_COLOUR.get(corp[k], "black"))
         for i in range(1, n):
             if CLASS_OF[order[i]] != CLASS_OF[order[i - 1]]:
                 ax.axhline(i - 0.5, color="black", lw=1.6)
                 if ax is ax1: ax.axvline(i - 0.5, color="black", lw=1.6)
         ax.set_xlabel(title, fontsize=9, labelpad=8)
         ax.xaxis.set_label_position("bottom")
-    fig.suptitle("Landing Party: who counters whom (row against column; blue, the row wins; red, it loses)", fontsize=10, y=0.995)
+    fig.suptitle("Landing Party: who counters whom (row against column; blue, the row wins; red, it loses). "
+                 "Names coloured by side: Serenity teal, Grubstake amber, you green", fontsize=10, y=0.995)
     fig.text(0.01, 0.005, f"Score: share of the other side destroyed minus share of its own lost (x100). Price in parts in "
-             f"brackets. {len(rows)} fights, {rounds} rounds, no research. scripts/arena.sh", fontsize=7)
+             f"brackets; yours at 10 parts per command bandwidth. {len(rows)} fights, {rounds} rounds, no research. scripts/arena.sh", fontsize=7)
     fig.tight_layout(rect=(0, 0.02, 1, 0.97))
     img = os.path.join(os.path.dirname(out), "arena", "counters.png")
     fig.savefig(img)
@@ -132,6 +202,7 @@ def main():
         fmt = lambda xs, sign: ", ".join(f"{b} ({round(100 * sign * v)})" for b, v in xs)
         L.append(f"| {a} ({cost.get(a, '?')}) | {fmt(best, 1)} | {fmt(worst, -1)} |")
     L.append("")
+    L += clusters(order, M, F, order_fixed, corp, os.path.join(os.path.dirname(out), "arena", "clusters.png"))
     if mixes:
         L += ["## Mixed arms: does a flier soak a ground army's fire?", "",
               "A ground army against the same spend with part of it in fliers, both ways round. Ground-only weapons "

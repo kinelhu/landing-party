@@ -19,7 +19,7 @@ digraph ai {
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
-    "rd" [label="rd\n393 lines", width=1.24, fillcolor="#d9f0d9"];
+    "rd" [label="rd\n394 lines", width=1.24, fillcolor="#d9f0d9"];
     "phases" [label="phases\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }

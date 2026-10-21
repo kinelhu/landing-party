@@ -112,6 +112,8 @@ end
 -- armour their recipe takes, Grubstake's Shotgun hands heavy armour too, in its colours.
 local infantry = make_infantry("lp-infantry", nil, "mech-armor")
 local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1}, "heavy-armor")
+-- 8 a round (6 until the RTS pass, 2026-10-21: a bandwidth of troopers lost to every rifle squad of the corporations).
+trooper.attack_parameters.ammo_type.action.action_delivery.target_effects[2].damage.amount = 8
 
 -- Each corporation's own infantry (docs/reviews/2026-10-14-identity-trees-consult.md): you know who attacks by ear.
 -- Serenity's Line trooper fires a laser beam: about 7 laser a shot every 25 ticks (the laser turret's beam, 10 a hit,
@@ -130,7 +132,10 @@ table.insert(infantry.resistances, {type = "laser", percent = 20})
 -- Deadly at the fence, useless against a turret line (which its temper never attacks). Built as its infantry
 -- through its CORPS.bases (corps.lua renames it lp-grubstake-infantry).
 local shotgun_hand = make_infantry("lp-shotgun-hand", nil, "heavy-armor")
-shotgun_hand.movement_speed = 0.13
+-- A swarm that wins once it closes (the RTS pass, 2026-10-21; the user: "Grubstake infantry seems a little
+-- underwhelming?"): in the arena it lost to every light infantry, dying on the way in from 15 to its 9 and then
+-- missing with a wide spread. Quicker (0.13 -> 0.17) and a tighter spread (0.3 -> 0.15).
+shotgun_hand.movement_speed = 0.17
 shotgun_hand.attack_parameters = {
   -- 64 with Space Age loaded (60 gave 630 ticks against the Line troopers' 810, out of parity; base alone 690).
   type = "projectile", ammo_category = "shotgun-shell", cooldown = 64, range = 9, min_range = 0,
@@ -138,7 +143,7 @@ shotgun_hand.attack_parameters = {
   sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound),
   animation = shotgun_hand.attack_parameters.animation,
   ammo_type = {action = {type = "direct", repeat_count = 3, action_delivery = {type = "projectile",
-    projectile = "lp-pellet", starting_speed = 1, starting_speed_deviation = 0.1, direction_deviation = 0.3,
+    projectile = "lp-pellet", starting_speed = 1, starting_speed_deviation = 0.1, direction_deviation = 0.15,
     range_deviation = 0.3, max_range = 11}}},
 }
 local pellet = table.deepcopy(data.raw.projectile["shotgun-pellet"])
@@ -157,11 +162,40 @@ breacher.attack_parameters.range = 12
 breacher.attack_parameters.cooldown = 180
 breacher.attack_parameters.ammo_category = "grenade"
 breacher.attack_parameters.sound = nil
+-- Against units, 15 (the RTS pass, 2026-10-21: at 100 to everything, one bandwidth of breachers beat 18 of 20 kinds in
+-- the arena, troopers 3; at 30, still 16; a demolition specialist is a poor fighter). Buildings (placeable-neutral:
+-- walls, turrets, every building) take the full 100.
 breacher.attack_parameters.ammo_type.action.action_delivery.target_effects = {
   {type = "create-entity", entity_name = "grenade-explosion"},
   {type = "nested-result", action = {type = "area", radius = 2.5, force = "enemy", action_delivery = {
-    type = "instant", target_effects = {{type = "damage", damage = {amount = 100, type = "explosion"}}}}}},
+    type = "instant", target_effects = {{type = "damage", damage = {amount = 15, type = "explosion"}}}}}},
+  {type = "nested-result", action = {type = "area", radius = 2.5, force = "enemy", entity_flags = {"placeable-neutral"},
+    action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = 85, type = "explosion"}}}}}},
 }
+
+-- Rocket trooper: the player's answer to armour (the RTS pass, the user, 2026-10-21: a trooper's 6 a bullet does about 2
+-- to a hull, so tanks and turrets were the only answer). A rocket of 110 explosion to its target every 2.5 seconds, from 18
+-- (beyond a tank's 15), the rocket launcher's own sound and round, flying to its target only (as the tanks' shells do);
+-- it hits fliers too. Slow to fire and weak against a crowd: a rifleman (120) takes two rockets, 5 seconds; a hull loses
+-- 70 or more to each. (At 100 every 2 s it beat light infantry as well as a trooper did; at 80 it lost to tanks.)
+local rocket_trooper = make_infantry("lp-rocket-trooper", {r = 0.95, g = 0.6, b = 0.4, a = 1}, "heavy-armor")
+local rocket = table.deepcopy(data.raw.projectile["rocket"])
+rocket.name = "lp-trooper-rocket"
+rocket.direction_only = false
+rocket.collision_box = nil
+rocket.hit_collision_mask = {layers = {}}
+rocket.force_condition = "not-same"
+rocket.action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+  {type = "create-entity", entity_name = "explosion"},
+  {type = "damage", damage = {amount = 110, type = "explosion"}}}}}
+rocket.final_action = nil
+rocket_trooper.attack_parameters.range = 18
+rocket_trooper.attack_parameters.cooldown = 150
+rocket_trooper.attack_parameters.ammo_category = "rocket"
+rocket_trooper.attack_parameters.sound = table.deepcopy(SOUND.rocket)
+rocket_trooper.attack_parameters.ammo_type = {action = {type = "direct", action_delivery = {type = "projectile",
+  projectile = "lp-trooper-rocket", starting_speed = 0.6, max_range = 24}}}
+data:extend({rocket_trooper, rocket})
 
 -- Tank: the tank's hull as a unit (its turret does not turn on its own). A square box: units rotate. The
 -- faction's in cold blue; the player's battle tank (4 of command bandwidth) in its own colour.
@@ -244,7 +278,9 @@ local battle_tank = make_tank("lp-battle-tank", {r = 1, g = 0.82, b = 0.55, a = 
 -- The player's siege weapon: heavier shells, a little more reach than its armour's 15. With the faction's
 -- 35, five tanks did 2,100 damage to turrets over a whole assault (siege).
 battle_tank.attack_parameters.range = 18
-battle_tank.attack_parameters.ammo_type = shell("lp-battle-tank-heavy", 70, 120)
+-- 50 to what it hits (70 until the RTS pass, 2026-10-21: at 4 then 6 of bandwidth it beat every ground kind in the
+-- arena); its siege blast unchanged: the player's siege weapon, not a better aegis.
+battle_tank.attack_parameters.ammo_type = shell("lp-battle-tank-heavy", 50, 120)
 
 -- Walker: a spider-unit on the spidertron's body and legs (own copies of the legs, tinted). Steps over walls.
 local spidertron = data.raw["spider-vehicle"].spidertron
@@ -377,12 +413,13 @@ slug.attack_parameters.animation = table.deepcopy(buggy.attack_parameters.animat
 slug.resistances = {{type = "physical", decrease = 2, percent = 15}, {type = "explosion", percent = 40}}
 
 -- Shock trooper (Serenity's Optics, after Lances): an electric beam that arcs to the next target and the next (a chain
--- on the destroyer's electric beam, base game: spiked 2026-10-14), a brief stun on the one it hits; 12 electric a hit,
--- every 45 ticks, range 14 (12 until the RTS pass, 2026-10-21: outranged by the rifles it is meant to punish), 160
--- health. The answer to massed troopers.
+-- on the destroyer's electric beam, base game: spiked 2026-10-14), a brief stun on the one it hits; 10 electric a hit and
+-- six jumps, every 45 ticks, range 14, 160 health. The answer to massed troopers. The RTS pass (2026-10-21): range 12 ->
+-- 14 (rifles at 15 outranged the unit meant to punish them); 12 a hit and four jumps -> 10 and six, so its damage is in
+-- small hits that a hull's flat armour shrugs off (armour beats splash).
 local arc_bounce = table.deepcopy(data.raw.beam["electric-beam-no-sound"])
 arc_bounce.name = "lp-arc-bounce"
-local arc_chain = {type = "chain-active-trigger", name = "lp-arc-chain", max_jumps = 4, max_range_per_jump = 6,
+local arc_chain = {type = "chain-active-trigger", name = "lp-arc-chain", max_jumps = 6, max_range_per_jump = 6,
   jump_delay_ticks = 6, fork_chance = 0,
   action = {type = "direct", action_delivery = {type = "beam", beam = "lp-arc-bounce", max_length = 6.5, duration = 20,
     add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, 0}}}}
@@ -390,7 +427,7 @@ local shock = make_infantry("lp-shock", nil, "mech-armor")
 shock.max_health = shared.units["lp-shock"].health
 shock.attack_parameters = {
   type = "beam", ammo_category = "electric", cooldown = 45, range = 14, range_mode = "bounding-box-to-bounding-box",
-  damage_modifier = 1.2, source_direction_count = 8, source_offset = {0, -0.6},
+  damage_modifier = 1.0, source_direction_count = 8, source_offset = {0, -0.6},
   animation = infantry.attack_parameters.animation,
   ammo_type = {action = {type = "direct", action_delivery = {type = "instant", target_effects = {
     -- The chain first, in case the beam kills the target (as Space Age's tesla turret does).
@@ -427,7 +464,7 @@ aegis.attack_parameters = table.deepcopy(infantry.attack_parameters)
 aegis.attack_parameters.damage_modifier = 4.5
 aegis.attack_parameters.cooldown = 60
 aegis.attack_parameters.animation = table.deepcopy(tank.attack_parameters.animation)
-aegis.resistances = {{type = "physical", decrease = 5, percent = 30}, {type = "explosion", percent = 40},
+aegis.resistances = {{type = "physical", decrease = 5, percent = 30}, {type = "explosion", decrease = 5, percent = 40},
   {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 -- Dozer (Grubstake's Wheels, after Slug buggies): the hauler's hull, 1,800 health, physical 40% and 5, a ram (60
 -- physical at 2 tiles, every 60 ticks), slow. Its one heavy: it pushes a fence or wall open for the shotguns.
@@ -436,7 +473,7 @@ dozer.name = "lp-dozer"
 dozer.max_health = shared.units["lp-dozer"].health
 dozer.movement_speed = 0.07
 dozer.resistances = {{type = "physical", decrease = 5, percent = 40}, {type = "fire", percent = 50},
-  {type = "explosion", percent = 20}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
+  {type = "explosion", decrease = 5, percent = 20}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 dozer.attack_parameters = gun(60, 2, 60, "melee")
 dozer.attack_parameters.sound = nil
 dozer.attack_parameters.animation = table.deepcopy(hauler.attack_parameters.animation)
@@ -501,9 +538,10 @@ railgunner.attack_parameters = {
 railgunner.resistances = table.deepcopy(infantry.resistances)
 
 -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua mocks them).
--- Prism (Serenity's Optics, after Lances): a tank with its turret and a small laser head on top; a laser of 22 that
--- splits on what it hits to the targets round it (three jumps of 12, forking), every 50 ticks, range 16. Against a blob
--- of troopers; little against a wall (one target, one beam).
+-- Prism (Serenity's Optics, after Lances): a tank with its turret and a small laser head on top; a laser of 14 (and the
+-- beam's own 10) that splits on what it hits to the targets round it (five jumps of 10, forking), every 50 ticks, range 16.
+-- Against a blob of troopers; little against a wall (one target, one beam) or a hull (the RTS pass, 2026-10-21: 22 and
+-- three jumps of 12 before, moved into more, smaller hits that flat armour shrugs off).
 local laser_head = data.raw["electric-turret"]["laser-turret"].prepared_animation
 local prism = make_tank("lp-prism", nil, {{tank_car.turret_animation}, {laser_head, 0.5, 0, -1.0}})
 prism.max_health = shared.units["lp-prism"].health
@@ -522,8 +560,8 @@ local function beam_copy(src, name, color, damage, dtype)
     {type = "damage", damage = {amount = damage, type = dtype}}}}} or nil
   return b
 end
-local prism_split = beam_copy("laser-beam", "lp-prism-split", {r = 0.85, g = 0.45, b = 1, a = 1}, 12, "laser")
-local prism_chain = {type = "chain-active-trigger", name = "lp-prism-chain", max_jumps = 3, max_range_per_jump = 6,
+local prism_split = beam_copy("laser-beam", "lp-prism-split", {r = 0.85, g = 0.45, b = 1, a = 1}, 10, "laser")
+local prism_chain = {type = "chain-active-trigger", name = "lp-prism-chain", max_jumps = 5, max_range_per_jump = 6,
   jump_delay_ticks = 3, fork_chance = 0.6, fork_chance_increase_per_quality_level = 0,
   action = {type = "direct", action_delivery = {type = "beam", beam = "lp-prism-split", max_length = 6.5, duration = 18,
     add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, 0}}}}
@@ -534,21 +572,22 @@ prism.attack_parameters = {
     {type = "nested-result", action = {type = "direct", action_delivery = {type = "chain", chain = "lp-prism-chain"}}},
     {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "laser-beam",
       max_length = 17, duration = 20, add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, -1.6}}}},
-    {type = "damage", damage = {amount = 22, type = "laser"}},
+    {type = "damage", damage = {amount = 14, type = "laser"}},
   }}}},
 }
 prism.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5},
   {type = "explosion", percent = 10}}
 
--- Tesla (Serenity's Siege): the tesla turret's head on a tank's hull; lightning of 30 that jumps along five more targets
--- (18 each, 8 tiles a jump), every 75 ticks, range 14. What it strikes that holds a charge (a laser turret, an
+-- Tesla (Serenity's Siege): the tesla turret's head on a tank's hull; lightning of 20 that jumps along seven more targets
+-- (12 each, 8 tiles a jump; 30, five of 18 before the RTS pass, 2026-10-21: smaller hits, which hulls shrug off), every
+-- 75 ticks, range 14. What it strikes that holds a charge (a laser turret, an
 -- accumulator, a roboport) loses most of it (control.lua, on_entity_damaged): a turret line goes dark a moment.
 local tesla_turret = data.raw["electric-turret"]["tesla-turret"]
 local tesla_head = tesla_turret and tesla_turret.prepared_animation or laser_head
 local tesla = make_tank("lp-tesla", nil, {{tesla_head, 0.6, 0, 0.9}})
 tesla.max_health = shared.units["lp-tesla"].health
-local tesla_jump = beam_copy("electric-beam-no-sound", "lp-tesla-jump", {r = 0.7, g = 0.85, b = 1, a = 1}, 18, "electric")
-local tesla_chain = {type = "chain-active-trigger", name = "lp-tesla-chain", max_jumps = 5, max_range_per_jump = 8,
+local tesla_jump = beam_copy("electric-beam-no-sound", "lp-tesla-jump", {r = 0.7, g = 0.85, b = 1, a = 1}, 12, "electric")
+local tesla_chain = {type = "chain-active-trigger", name = "lp-tesla-chain", max_jumps = 7, max_range_per_jump = 8,
   jump_delay_ticks = 4, fork_chance = 0,
   action = {type = "direct", action_delivery = {type = "beam", beam = "lp-tesla-jump", max_length = 8.5, duration = 20,
     add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, 0}}}}
@@ -559,7 +598,7 @@ tesla.attack_parameters = {
     {type = "nested-result", action = {type = "direct", action_delivery = {type = "chain", chain = "lp-tesla-chain"}}},
     {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "electric-beam",
       max_length = 15, duration = 20, add_to_shooter = false, destroy_with_source_or_target = false, source_offset = {0, -1.4}}}},
-    {type = "damage", damage = {amount = 30, type = "electric"}},
+    {type = "damage", damage = {amount = 20, type = "electric"}},
   }}}},
 }
 tesla.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "electric", decrease = 5, percent = 80},
@@ -579,7 +618,7 @@ scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type =
 data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 
 -- Loot (the faction loot consult): a unit drops a little of its own kit, half the time. The player's units (trooper,
--- breacher, battle tank) drop nothing: they are the player's.
+-- breacher, rocket trooper, battle tank) drop nothing: they are the player's.
 local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},
   [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"engine-unit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},
   [walker] = {{"steel-plate", 8, 8}, {"advanced-circuit", 2, 2}}, [hauler] = {{"steel-plate", 8, 8}},

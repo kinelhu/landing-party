@@ -25,6 +25,9 @@ local KINDS = {
   {"buggy", "lp-buggy"}, {"slug", "lp-slug"}, {"scavenger", "lp-scavenger"}, {"harrier", "lp-harrier"},
   {"tank", "lp-tank"}, {"prism", "lp-prism"}, {"tesla", "lp-tesla"}, {"scorcher", "lp-scorcher"},
   {"aegis", "lp-aegis"}, {"dozer", "lp-dozer"}, {"walker", "lp-walker"},
+  -- The player's, priced by command bandwidth (arena.PER_BANDWIDTH).
+  {"trooper", "lp-trooper"}, {"breacher", "lp-breacher"}, {"rocket trooper", "lp-rocket-trooper"},
+  {"battle tank", "lp-battle-tank"},
 }
 
 -- Mixed arms: {label, side x, side y}, each side a list of {prototype, count}; x is the ground army, y the same spend with

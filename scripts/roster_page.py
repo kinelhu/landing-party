@@ -81,7 +81,7 @@ BRANCH_NAME = {"optics": "Optics", "line": "Line", "siege": "Siege", "scrap-arms
                "wheels": "Wheels"}
 KILLER = {"gun-turret": "gun turrets", "laser-turret": "laser turrets", "flamethrower-turret": "flamethrower turrets",
           "vehicle": "your vehicles", "lp-battle-tank": "battle tanks", "lp-trooper": "troopers",
-          "lp-breacher": "breachers", "character": "you", "artillery-turret": "artillery turrets",
+          "lp-breacher": "breachers", "lp-rocket-trooper": "rocket troopers", "character": "you", "artillery-turret": "artillery turrets",
           "artillery-wagon": "artillery wagons"}
 
 
@@ -171,7 +171,7 @@ def unit_card(kind, corp, how):
       <div><dt>Range</dt><dd>{rng}</dd></div><div><dt>Rate</dt><dd>{esc(rate)}</dd></div>
       <div class="wide"><dt>A shot</dt><dd>{esc(w)}</dd></div>
       <div class="wide"><dt>Resists</dt><dd>{esc(res)}</dd></div>
-      <div><dt>Hits air</dt><dd>{air}</dd></div><div><dt>Cost</dt><dd>{c}{" parts" if c != "-" else ""}</dd></div>
+      <div><dt>Hits air</dt><dd>{air}</dd></div><div><dt>Cost</dt><dd>{c}{" parts" if isinstance(c, int) else ""}</dd></div>
     </dl>
     <p class="how">{esc(how)}</p>
   </div>
@@ -311,7 +311,7 @@ def corp_section(corp, blurb):
 </section>'''
 
 
-player = "".join(unit_card(k, None, "Trained at your barracks; orders by beacon") for k in ("lp-trooper", "lp-breacher", "lp-battle-tank"))
+player = "".join(unit_card(k, None, "Trained at your barracks; orders by beacon") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-battle-tank"))
 shared_units = "".join(unit_card(k, None, h) for k, h in (("lp-hauler", "Both: convoys, Grubstake's building trucks"),
                                                           ("lp-railgunner", "Serenity: clears nests, never raids")))
 

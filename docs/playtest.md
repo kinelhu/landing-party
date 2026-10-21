@@ -118,7 +118,8 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    research six technologies (Cluster shells, Pheromone bait, Pact breaker, Claim marker, Rail rifle, Orbital strike).
 23. **Threat scanner**: wired to a combinator, it counts their units within 64 tiles by kind; a jammer in reach blinds
    it ("Scanner jammed").
-24. **Barracks, rally beacons, the muster point**: troopers, breachers and tanks on circuit orders.
+24. **Barracks, rally beacons, the muster point**: troopers, breachers, rocket troopers (command bandwidth 2) and tanks on
+   circuit orders. Rocket troopers against their armour, troopers against their infantry: does each order earn its slot?
 
 ## Throughout
 25. **Space Age looks**: landings by cargo pod, armoured troopers, tesla arcs. Do they read as theirs, not vanilla?

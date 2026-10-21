@@ -128,6 +128,14 @@ data:extend({
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "grenade", amount = 10},
       {type = "item", name = "electronic-circuit", amount = 5}},
     results = {{type = "item", name = "lp-breacher-order", amount = 1}}},
+  {type = "item", name = "lp-rocket-trooper-order", icon = "__base__/graphics/icons/rocket-launcher.png", hidden = true,
+    stack_size = 10, subgroup = "other"},
+  -- Rocket troopers (the RTS pass, 2026-10-21): heavy armour, a rocket launcher and rockets; with the second level.
+  {type = "recipe", name = "lp-rocket-trooper-order", category = "lp-training", enabled = false, hidden_in_factoriopedia = true,
+    icon = "__base__/graphics/icons/rocket-launcher.png", energy_required = 40,
+    ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "rocket-launcher", amount = 1},
+      {type = "item", name = "rocket", amount = 10}},
+    results = {{type = "item", name = "lp-rocket-trooper-order", amount = 1}}},
   {type = "item", name = "lp-battle-tank-order", icon = "__base__/graphics/icons/tank.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-battle-tank-order", category = "lp-training", enabled = false, hidden_in_factoriopedia = true,
@@ -178,9 +186,9 @@ data:extend({
     {type = "unlock-recipe", recipe = "lp-breacher-order"}, {type = "unlock-recipe", recipe = "lp-threat-scanner"},
     {type = "unlock-recipe", recipe = "lp-muster-point"},
     {type = "give-item", item = "lp-command-core", count = 1}}),
-  -- Battle tanks with the second level, once the player has tanks of their own.
-  tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank", "battery-equipment"}, {red, green, blue}, 200, {
-    {type = "unlock-recipe", recipe = "lp-battle-tank-order"}}),
+  -- Battle tanks and rocket troopers with the second level, once the player has tanks and rocket launchers of their own.
+  tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank", "battery-equipment", "rocketry"}, {red, green, blue}, 200, {
+    {type = "unlock-recipe", recipe = "lp-battle-tank-order"}, {type = "unlock-recipe", recipe = "lp-rocket-trooper-order"}}),
   tech(3, {"lp-command-bandwidth-2", "military-3"}, {red, green, blue, grey}, 300),
   tech(4, {"lp-command-bandwidth-3"}, {red, green, blue, grey}, nil, nil,
     {max_level = "infinite", unit = {count_formula = "150*L", time = 30, ingredients = {red, green, blue, grey}}}),

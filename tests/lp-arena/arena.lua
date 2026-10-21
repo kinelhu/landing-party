@@ -12,7 +12,7 @@ local GAP = 60                   -- the sides start this far apart
 local RECOMMAND = 5 * 60         -- idle units are sent at the other side again this often
 
 arena.FORCES = {serenity = "lp-serenity", grubstake = "lp-grubstake", player = "player", biters = "enemy"}
-arena.PLAYER_UNITS = {"lp-trooper", "lp-breacher", "lp-battle-tank"}
+arena.PLAYER_UNITS = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-battle-tank"}
 arena.LINES = {guns = "gun turrets (piercing rounds)", lasers = "laser turrets", flamers = "flamethrower turrets",
   walls = "a wall line"}
 arena.BITERS = {"small-biter", "medium-biter", "big-biter", "behemoth-biter", "small-spitter", "medium-spitter",
@@ -40,7 +40,12 @@ end
 
 -- What a unit of the corporations costs in parts (shared.unit_cost: a Grubstake variant at Grubstake's price); nil for
 -- anything else.
+-- The player's units cost no parts; what limits an army of them is command bandwidth. In the matrix one slot of it is
+-- priced as a Serenity rifleman (10 parts), so a trooper is worth one and a battle tank four.
+arena.PER_BANDWIDTH = 10
+
 function arena.cost(kind, name)
+  if shared.POPULATION[kind] then return arena.PER_BANDWIDTH * shared.POPULATION[kind] end
   if not shared.units[kind] then return nil end
   return shared.unit_cost(name and name:find("^lp%-grubstake%-") and "grubstake" or "serenity", kind)
 end

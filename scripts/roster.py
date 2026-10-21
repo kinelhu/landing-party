@@ -34,7 +34,8 @@ ROLE = {
     "lp-tesla": "Siege: lightning that jumps along a turret line and drains what it strikes of its charge",
     "lp-scorcher": "Scrap arms: a machine gun, and three bursts of flame for walls, turrets and packs, refilled slowly",
     "lp-trooper": "the player's: a rifle",
-    "lp-breacher": "the player's: demolition charges, for walls",
+    "lp-breacher": "the player's: demolition charges, for walls (and only a scratch to units)",
+    "lp-rocket-trooper": "the player's: rockets against armour, and fliers; slow against a crowd",
     "lp-battle-tank": "the player's siege weapon",
 }
 
@@ -65,7 +66,9 @@ if renamed:
 cost = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = \{health = \d+, cost = (\d+)[,}]', shared)}
 # Who cannot shoot up (landing-party/air.lua): the kinds marked ground_only, and the player's cannon and charges.
 ground_only = set(re.findall(r'\["(lp-[a-z-]+)"\] = \{[^}]*ground_only = true', shared)) | {"lp-battle-tank", "lp-breacher"}
-for k in ("lp-trooper", "lp-breacher", "lp-battle-tank"):
+# The player's units cost no parts; their bandwidth instead (shared.POPULATION).
+bandwidth = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = (\d+)', re.search(r"shared.POPULATION = \{([^}]*)\}", shared).group(1))}
+for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-battle-tank"):
     fielded.setdefault(k, []).append("the player (a barracks)")
 fielded.setdefault("lp-hauler", []).append("both (convoys; Grubstake's builders)")
 
@@ -151,7 +154,7 @@ for kind in ("unit", "spider-unit"):
         else:
             speed_s = f"{speed * 60:.1f} tiles/s"
         rows.append((name, u["max_health"], speed_s, w, rng, rate, resist(u), "no" if name in ground_only else "yes",
-                     cost.get(name, "-"),
+                     f"{cost[name]} parts" if name in cost else f"{bandwidth[name]} bandwidth" if name in bandwidth else "-",
                      "; ".join(fielded.get(name, ["-"])), ROLE.get(name, "")))
 
 def write_md():
@@ -163,7 +166,7 @@ def write_md():
            "turns from a flier to a ground target it can hurt (`landing-party/scripts/aim.lua`).", ""]
     for name, hp, speed, w, rng, rate, res, air, c, who, role in rows:
         out += [f"## {name[3:]}", "", role + ("." if role else ""), "",
-                "| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost (parts) |",
+                "| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |",
                 "| --- | --- | --- | --- | --- | --- | --- | --- |",
                 f"| {hp:g} | {speed} | {w} | {rng} | {rate} | {res} | {air} | {c} |", "", f"Fielded by: {who}.", ""]
     path = os.path.join(REPO, "docs", "units.md")

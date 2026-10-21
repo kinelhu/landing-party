@@ -27,4 +27,4 @@ echo "$(cat "$out/done.txt")"
 [ -z "${LP_ARENA_ONLY:-}" ] || { cat "$out/results.jsonl"; exit 0; }
 mkdir -p "$REPO/docs/arena"
 cp "$out/results.jsonl" "$REPO/docs/arena/results.jsonl"
-uv run --with matplotlib python3 -I "$REPO/scripts/arena_report.py" "$REPO/docs/arena/results.jsonl" "$REPO/docs/arena.md"
+uv run --with matplotlib --with scipy python3 -I "$REPO/scripts/arena_report.py" "$REPO/docs/arena/results.jsonl" "$REPO/docs/arena.md"

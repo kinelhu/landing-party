@@ -1156,8 +1156,8 @@ scenarios.showcase = function()
       return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
     end
     for k = 1, 2 do game.forces.player.technologies["lp-command-bandwidth-" .. k].researched = true end
-    -- Barracks for each unit type, with finished orders: 20 troopers, 10 breachers, 5 battle tanks (50 of
-    -- bandwidth: five relays at research level 2).
+    -- Barracks for each unit type, with finished orders: 20 troopers, 10 breachers, 5 battle tanks (60 of
+    -- bandwidth since battle tanks take 6: six relays at research level 2).
     S.army = {{"lp-trooper-order", 20}, {"lp-breacher-order", 10}, {"lp-battle-tank-order", 5}}
     S.barracks = {}
     for i, o in ipairs(S.army) do
@@ -1167,7 +1167,7 @@ scenarios.showcase = function()
       put("medium-electric-pole", 6.5 + 6 * i, -12.5)
     end
     put("electric-energy-interface", 31, -11)
-    for k = 1, 5 do put("lp-command-relay", 2.5 + 4 * k, -7.5) end
+    for k = 1, 6 do put("lp-command-relay", 2.5 + 4 * k, -7.5) end
     for x = 4.5, 28.5, 6 do put("medium-electric-pole", x, -10.5) end
     put("lp-rally-beacon", 20.5, -26.5)
     S.feed = function()
@@ -3325,8 +3325,10 @@ scenarios.plate = function()
 end
 
 -- Arms: each corporation's own infantry (Serenity's Line troopers, beams; Grubstake's Shotgun hands, pellets). Six of
--- each against four player radars, 160 tiles apart: both destroy them, in times within 20% of each other (DPS
--- parity, docs/reviews/2026-10-14-identity-trees-consult.md); the pellets do not wound their own side.
+-- each against four player radars, 160 tiles apart: both destroy them; the pellets do not wound their own side. Until the
+-- RTS pass the times were held within 20% of each other (DPS parity, docs/reviews/2026-10-14-identity-trees-consult.md);
+-- since (2026-10-21) the Shotgun hands are a close-range swarm with a tighter spread that lands more of its pellets on a
+-- building (600 ticks to 810 in the 0.1.49 regression): no slower than the Line troopers, at most 40% faster.
 scenarios.arms = function()
   schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true}) end)
   schedule(120, function()
@@ -3371,8 +3373,8 @@ scenarios.arms = function()
       tostring(g.done), health(a), a.hp, health(g), g.hp))
     check("arms: the Line troopers destroyed their radars", a.done ~= nil, tostring(a.done))
     check("arms: the Shotgun hands destroyed theirs", g.done ~= nil, tostring(g.done))
-    check("arms: within 20% of each other", a.done and g.done and math.abs(a.done - g.done) <= 0.2 * math.max(a.done, g.done),
-      string.format("%s vs %s", tostring(a.done), tostring(g.done)))
+    check("arms: the Shotgun hands no slower, at most 40% faster", a.done and g.done and g.done <= 1.05 * a.done
+      and g.done >= 0.6 * a.done, string.format("%s vs %s", tostring(a.done), tostring(g.done)))
     check("arms: the pellets did not wound their own side", health(g) == g.hp, health(g) .. " of " .. g.hp)
   end)
 end

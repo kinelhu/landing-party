@@ -36,7 +36,7 @@ document describes the parts as built; the campaign document describes the game 
 | Beacon report on the circuit network: S squad, E enemy units, T turrets in reach | built | `circuit` |
 | Field repair: 2% health a second within 30 tiles of a powered barracks | built | `circuit` |
 | Command tool: box-select, move, attack, attack-move, release to beacons | built, tried in game | `control` |
-| Player units: trooper, breacher (charges for walls), battle tank (4 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`) |
+| Player units: trooper, breacher (charges for walls), rocket trooper (anti-armour, 2 bandwidth), battle tank (6 bandwidth); barracks picks its recipe | built | `siege` (`LP_MIX`), arena |
 | Fought capture against live defences | in progress: no squad wins yet | `siege`, `duel` |
 | Corporations as forces (Grubstake, Serenity): own force, colour, intel; they raid each other | built (first step) | `rivals` |
 | Capture of mining outposts by holding | built | `army` |
@@ -463,6 +463,44 @@ technologies, when big biters and behemoths come.
   small arms, armour edges splash and beats small arms but loses to the lance and the slug among them. Air is all or
   nothing (a squad with no anti-air loses every flier fight; one with it wins), which is the genre's way: build fliers
   when the other side has none. Every kind keeps clear wins and losses.
+- **Groups from the fights alone (the user, 2026-10-21: "should we run some kind of clusterization on each unit
+  unsupervised?").** `scripts/arena_report.py` clusters kinds by their rows of scores (average linkage, scipy;
+  `docs/arena/clusters.png`); the heatmap's names are coloured by corporation, read from `shared.lua`. Cut into four,
+  the groups are not the hand-made classes: the first split is who can shoot up (air; the ground units that hit air:
+  slug, lance, Serenity's rifles, buggy, walker; the ground-only fighters, splash and armour together; the weak
+  ground-only specialists: Grubstake's shotguns, railgunner, Scorcher). With the air columns left out, splash and armour
+  still merge: both beat light units, and neither clearly beats the other (class against class, 8). So the ground game
+  is light against heavy, with the lance and slug as light units that beat heavy; splash and armour are two answers to
+  light units more than two classes. To make them a real choice, one of them needs a clear edge over the other.
+- **Splash against armour, your units, the rocket trooper (0.1.49; the user: "go ahead with all three").**
+  - *Armour beats splash.* Splash damage moved into more, smaller hits, which a hull's flat 5 shrugs off: Prism 14 and
+    five jumps of 10 (was 22 and three of 12), Tesla 20 and seven of 12 (was 30 and five of 18), shock 10 a hit and six
+    jumps (was 12 and four); aegis and dozer took the flat 5 on explosion the other hulls had. Armour against splash
+    went from +8 to about +60; splash still beats small arms. Dozer 90 -> 100 parts after.
+  - *Your units in the matrix.* They cost no parts, so they are priced by command bandwidth, the supply cap of your
+    army: one slot as a Serenity rifleman, 10 parts (`arena.PER_BANDWIDTH`). At first the breacher (1 slot) beat 18 of
+    20 kinds and the trooper 3: you would never build troopers. The fixes keep army sizes (raising the breacher's
+    bandwidth would have shrunk every army): the breacher's charge does 15 to units and the full 100 to buildings (a
+    demolition specialist is a poor fighter); the battle tank's shell 50 to what it hits (was 70; its 120 siege blast
+    kept) at 6 bandwidth (was 4; the siege scenario now places six relays for its 20 troopers, 10 breachers, 5 tanks);
+    the trooper's rifle 8 a round (was 6).
+  - *The rocket trooper* (`lp-rocket-trooper`, barracks order with command bandwidth 2, which now also needs rocketry;
+    heavy armour, a rocket launcher and 10 rockets, 40 s; 2 bandwidth): a rocket of 110 explosion every 2.5 s from 18,
+    flying to its target only; it hits fliers. Tuned so its job shows: at 100 every 2 s it also beat light infantry
+    as well as a trooper; at 80 it lost to tanks; at 3 bandwidth it dropped from +40 to -26 (Lanchester again). Now it
+    beats dozer, walker, Scorcher, Prism, Tesla and the fliers, edges tank and aegis, and loses to riflemen and troopers.
+  - *Grubstake's infantry* (the user: "Grubstake infantry seems a little underwhelming?"): it was, second from the bottom
+    (beat 2 kinds, lost to every light infantry), dying on the way in from rifles' 15 to its 9 and then missing with a
+    wide spread. Now a swarm that wins once it closes: quicker (0.13 -> 0.17), a tighter spread (0.3 -> 0.15), and 8
+    parts for Grubstake (`by = {grubstake = 8}`; at 10 only its front rank was in reach of a rifle blob, at 6 in the
+    first price pass it beat nearly everything). It beats ten kinds by numbers, is near even with rifles, and splash
+    (shock, sapper, breacher) and fliers crush it. Since then the railgunner has no clear win among units (its one was
+    Grubstake's infantry): it stays, judged by its job, the one squad that beats biters at evolution 0.95.
+  - After (three rounds, `docs/arena.md`): every kind but the railgunner clearly beats some, and all are clearly beaten by at least two. Class
+    table: small arms beat air, air beats armour and splash, splash beats small arms, armour beats splash and small arms
+    but loses to the anti-armour small arms (lance, slug, rocket trooper). The clustering still puts splash and armour
+    together (both beat light units; it does not separate who beats whom within the pair), and the anti-air ground units
+    apart from the ground-only ones.
 - **Limits:** no research on either side (a camp's tree levels and the player's damage upgrades both matter); open
   ground (no walls for the squads, no terrain); the wave arrives in one clump. Next, if the numbers call for it: tune
   costs or caps, not damage, since a squad's spend is the comparison.

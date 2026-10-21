@@ -40,7 +40,7 @@ shared.CORPS = {
         trigger = {killer = {"vehicle", "lp-battle-tank"}, min = 5}},
       -- Against massed troopers (and the fence in the way): dynamite.
       {id = "sapper", branch = "scrap-arms", era = 2, cost = 1500, unit = {kind = "lp-sapper", weight = 2},
-        trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 10}},
+        trigger = {killer = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "character"}, min = 10}},
       -- Wheels: over the walls (against artillery and mortars), and through them.
       {id = "scavenger", branch = "wheels", era = 2, cost = 1800, unit = {kind = "lp-scavenger", weight = 1},
         trigger = {damage = "explosion", min = 5}},
@@ -108,16 +108,16 @@ shared.CORPS = {
         trigger = {damage = "physical", min = 10}},
       -- Against massed troopers: reach.
       {id = "lance", branch = "optics", era = 1, cost = 900, unit = {kind = "lp-lance", weight = 2},
-        trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 6}},
+        trigger = {killer = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "character"}, min = 6}},
       -- Against blobs: lightning that arcs from one trooper to the next.
       {id = "shock", branch = "optics", era = 3, requires = "lance", cost = 2500, unit = {kind = "lp-shock", weight = 2},
-        trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 12}},
+        trigger = {killer = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "character"}, min = 12}},
       -- Against the player's tanks: a laser cannon on an armoured hull.
       {id = "aegis", branch = "line", era = 2, requires = "warden", cost = 2000, unit = {kind = "lp-aegis", weight = 1},
         trigger = {killer = {"vehicle", "lp-battle-tank"}, min = 5}},
       -- Against massed troopers, heavier: the Prism, a laser that splits to the targets round the first.
       {id = "prism", branch = "optics", era = 2, requires = "lance", cost = 1800, unit = {kind = "lp-prism", weight = 1},
-        trigger = {killer = {"lp-trooper", "lp-breacher", "character"}, min = 9}},
+        trigger = {killer = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "character"}, min = 9}},
       -- Against a turret line: the Tesla, lightning that jumps along it and drains what it strikes of its charge.
       {id = "tesla", branch = "siege", era = 3, cost = 2500, unit = {kind = "lp-tesla", weight = 1},
         trigger = {killer = {"laser-turret", "gun-turret", "flamethrower-turret"}, min = 10}},
@@ -298,7 +298,9 @@ shared.cost = {
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix. ground_only: its weapons cannot touch
 -- air (air.lua); the rest shoot up.
 shared.units = {
-  ["lp-infantry"] = {health = 120, cost = 10},
+  -- Grubstake's are its Shotgun hands, at 8 (the RTS pass, 2026-10-21: at 10 a squad of them lost to every rifle squad,
+  -- only its front rank in reach at 9; at 6, a trial of the first price pass, they beat nearly everything).
+  ["lp-infantry"] = {health = 120, cost = 10, by = {grubstake = 8}},
   ["lp-tank"] = {health = 900, cost = 60, ground_only = true},
   ["lp-walker"] = {health = 1600, cost = 100},
   ["lp-harrier"] = {health = 150, cost = 40},
@@ -311,7 +313,7 @@ shared.units = {
   ["lp-railgunner"] = {health = 140, cost = 22, ground_only = true},
   ["lp-sapper"] = {health = 120, cost = 30, ground_only = true},
   ["lp-aegis"] = {health = 1100, cost = 95, ground_only = true},
-  ["lp-dozer"] = {health = 1800, cost = 90, ground_only = true},
+  ["lp-dozer"] = {health = 1800, cost = 100, ground_only = true},
   ["lp-scavenger"] = {health = 180, cost = 50},
   -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
   ["lp-prism"] = {health = 700, cost = 100, ground_only = true},
@@ -328,10 +330,10 @@ end
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by
 -- research level (0: before any; then levels 1-3; level 4 and beyond add RELAYS_PER_EXTRA_LEVEL each).
-shared.POPULATION = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-battle-tank"] = 4}
+shared.POPULATION = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-rocket-trooper"] = 2, ["lp-battle-tank"] = 6}
 -- What a barracks trains: each order item becomes its unit.
 shared.ORDERS = {["lp-trooper-order"] = "lp-trooper", ["lp-breacher-order"] = "lp-breacher",
-  ["lp-battle-tank-order"] = "lp-battle-tank"}
+  ["lp-battle-tank-order"] = "lp-battle-tank", ["lp-rocket-trooper-order"] = "lp-rocket-trooper"}
 shared.RELAY_CAPACITY = 10
 shared.RELAYS_BY_LEVEL = {[0] = 2, 4, 8, 15}
 shared.RELAYS_PER_EXTRA_LEVEL = 2
