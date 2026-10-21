@@ -52,6 +52,7 @@ digraph ai {
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
     "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
     "scorcher" [label="scorcher\n110 lines", width=0.92, fillcolor="#d9f0d9"];
+    "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n171 lines", width=0.99, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -71,7 +72,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n553 lines", width=1.41, fillcolor="#eef2f7"];
+    "control" [label="control\n556 lines", width=1.42, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

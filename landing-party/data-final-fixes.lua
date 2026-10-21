@@ -21,3 +21,6 @@ for _, type in ipairs({"unit", "unit-spawner", "turret"}) do
     end
   end
 end
+
+
+require("air")

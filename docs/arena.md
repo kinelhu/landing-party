@@ -8,33 +8,44 @@ Each unit kind fights each other at equal spend (as near as whole units allow, a
 
 ## Classes
 
-A class is a body and a weapon: **small arms** (many light bodies, small shots), **splash** (one weapon that hits several at once: a blast, an arc, a split beam), **armour** (a heavy hull whose flat resistance eats small shots), **air** (fliers, for turrets that cannot shoot up). The class against class score is the mean of its kinds' cells.
+A class is a body and a weapon: **small arms** (many light bodies, small shots), **splash** (one weapon that hits several at once: a blast, an arc, a split beam), **armour** (a heavy hull whose flat resistance eats small shots), **air** (fliers: only weapons that can shoot up touch them; `docs/units.md` says which). The class against class score is the mean of its kinds' cells.
 
 | Row against column | small arms | splash | armour | air |
 |---|---|---|---|---|
-| small arms | +0 | -26 | +6 | -2 |
-| splash | +26 | +0 | +24 | +96 |
-| armour | -6 | -24 | +0 | +99 |
-| air | +2 | -96 | -99 | +0 |
+| small arms | +0 | -72 | -38 | +31 |
+| splash | +72 | +0 | -8 | -100 |
+| armour | +38 | +8 | +0 | -60 |
+| air | -31 | +100 | +60 | +0 |
 
 ## Each kind's counters
 
 | Kind (price) | Beats most (its score) | Beaten most by (their score) |
 |---|---|---|
-| infantry (Serenity) (10) | scavenger (98), harrier (97), dozer (86) | sapper (79), slug (-51), buggy (-53) |
-| slug (25) | scorcher (92), prism (75), walker (74) | scavenger (100), harrier (100), sapper (87) |
-| lance (14) | scavenger (94), harrier (92), scorcher (68) | infantry (Serenity) (81), sapper (80), buggy (79) |
-| buggy (15) | scavenger (97), harrier (96), lance (79) | aegis (100), dozer (100), sapper (93) |
-| infantry (Grubstake) (10) | scorcher (69), walker (54), prism (10) | sapper (100), scavenger (100), harrier (100) |
-| railgunner (22) | infantry (Grubstake) (65), lance (38), shock (-22) | scavenger (100), harrier (100), tesla (100) |
-| prism (100) | railgunner (100), sapper (100), shock (100) | slug (75), infantry (Serenity) (69), infantry (Grubstake) (10) |
-| tesla (100) | railgunner (100), sapper (100), shock (100) | infantry (Serenity) (71), prism (71), aegis (70) |
-| sapper (30) | shock (100), infantry (Grubstake) (100), scavenger (93) | tesla (100), prism (100), walker (100) |
-| shock (30) | harrier (92), scavenger (90), infantry (Grubstake) (88) | sapper (100), tesla (100), prism (100) |
-| aegis (80) | railgunner (100), buggy (100), scavenger (100) | infantry (Serenity) (77), prism (67), lance (60) |
-| dozer (90) | railgunner (100), buggy (100), scavenger (100) | infantry (Serenity) (86), shock (84), lance (54) |
-| tank (52) | scavenger (100), railgunner (96), harrier (93) | aegis (83), tesla (75), prism (75) |
-| walker (100) | railgunner (100), sapper (100), scavenger (100) | dozer (86), infantry (Serenity) (81), aegis (80) |
-| scorcher (70) | scavenger (100), harrier (100), railgunner (78) | aegis (100), dozer (100), slug (92) |
-| harrier (40) | railgunner (100), slug (100), infantry (Grubstake) (100) | tesla (100), prism (100), scorcher (100) |
-| scavenger (50) | railgunner (100), slug (100), infantry (Grubstake) (100) | tesla (100), prism (100), tank (100) |
+| slug (30) | scavenger (98), harrier (96), walker (80) | dozer (80), tesla (78), aegis (77) |
+| lance (16) | scavenger (96), harrier (93), infantry (Grubstake) (85) | tank (71), tesla (71), sapper (65) |
+| infantry (Serenity) (10) | scavenger (98), harrier (96), infantry (Grubstake) (85) | tank (86), tesla (83), scorcher (83) |
+| buggy (15) | scavenger (97), harrier (96), railgunner (67) | tesla (100), aegis (100), dozer (100) |
+| infantry (Grubstake) (10) | walker (55), scorcher (52), buggy (14) | sapper (100), scavenger (100), harrier (100) |
+| railgunner (22) | infantry (Grubstake) (68), lance (16), sapper (-52) | scavenger (100), harrier (100), tesla (100) |
+| tesla (100) | railgunner (100), shock (100), sapper (100) | scavenger (100), harrier (100), dozer (52) |
+| prism (100) | railgunner (100), shock (100), buggy (96) | scavenger (100), harrier (100), dozer (74) |
+| shock (30) | infantry (Grubstake) (95), buggy (92), scorcher (77) | scavenger (100), harrier (100), tesla (100) |
+| sapper (30) | infantry (Grubstake) (100), buggy (93), infantry (Serenity) (69) | scavenger (100), harrier (100), tesla (100) |
+| dozer (90) | railgunner (100), buggy (100), scorcher (100) | scavenger (100), harrier (100), sapper (58) |
+| aegis (95) | railgunner (100), buggy (100), scorcher (100) | scavenger (100), harrier (100), lance (68) |
+| walker (100) | railgunner (100), sapper (100), scavenger (100) | dozer (86), slug (80), aegis (71) |
+| tank (60) | infantry (Serenity) (86), buggy (86), scorcher (83) | scavenger (100), harrier (100), dozer (75) |
+| scorcher (70) | buggy (86), infantry (Serenity) (83), railgunner (81) | scavenger (100), harrier (100), aegis (100) |
+| harrier (40) | railgunner (100), shock (100), sapper (100) | walker (100), infantry (Serenity) (96), slug (96) |
+| scavenger (50) | railgunner (100), shock (100), sapper (100) | walker (100), slug (98), infantry (Serenity) (98) |
+
+## Mixed arms: does a flier soak a ground army's fire?
+
+A ground army against the same spend with part of it in fliers, both ways round. Ground-only weapons cannot hurt a flier; a unit whose shot is aimed at one is turned to a ground target it can hurt (`landing-party/scripts/aim.lua`). The score is the all-ground army's.
+
+| Mix | All-ground army's score | Fights |
+|---|---|---|
+| prisms / prisms + harriers | -48 | 6 |
+| tanks and rifles / with harriers | +54 | 6 |
+| tanks / tanks + harriers | -33 | 6 |
+| dozers / dozers + harriers | -42 | 6 |

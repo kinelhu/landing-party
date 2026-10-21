@@ -106,6 +106,12 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    the Tesla's coil, the Scorcher's flamer)? The Prism's beam forking into a pack; the Tesla's arcs jumping, and your
    lasers going dim after its hits; the Scorcher's flame bursts at your walls and turrets. Tanks turning their own
    turrets; a body where each unit dies.
+21e. **Who shoots up, and armour** (0.1.48; the arena, `scripts/play-arena.sh`, panel: set two squads and Fight). Tanks,
+   aegis, dozers, Scorchers, sappers, shock troopers, Prisms, Teslas, railgunners, your battle tanks and breachers cannot
+   hurt a flier; rifles, lances, machine guns, slugs and walkers can. Put harriers against tanks, then against riflemen.
+   A ground-only unit that fires at a flier turns to a ground target (or holds fire): do tanks under harriers go for
+   the enemy's tanks, and does that read as "it cannot shoot up", not as a bug? Riflemen against tanks barely
+   scratch them now; lances and slug buggies are the answer. Does each fight's winner make sense from what you see?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

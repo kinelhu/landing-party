@@ -234,7 +234,7 @@ tank.corpse = "tank-remnants"
 -- Armour that yellow ammo still hurts: a flat 10 made a gun turret's 5-damage rounds useless (seed 4242:
 -- seven raids, no unit lost).
 tank.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "fire", percent = 60},
-  {type = "explosion", decrease = 5, percent = 30}}
+  {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 tint(tank.run_animation, {}, color)
 tint(tank.attack_parameters.animation, {}, color)
 return tank
@@ -256,7 +256,7 @@ local walker = {
   collision_box = spidertron.collision_box, selection_box = spidertron.selection_box,
   sticker_box = spidertron.sticker_box, drawing_box_vertical_extension = spidertron.drawing_box_vertical_extension,
   resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "fire", percent = 60},
-    {type = "explosion", decrease = 10, percent = 30}, {type = "acid", percent = 50}},
+    {type = "explosion", decrease = 10, percent = 30}, {type = "acid", percent = 50}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}},
   height = spidertron.height, torso_rotation_speed = spidertron.torso_rotation_speed,
   distraction_cooldown = 300, min_pursue_time = 600, max_pursue_distance = 50, vision_distance = 40,
   ai_settings = {destroy_when_commands_fail = false, allow_try_return_to_spawner = false},
@@ -352,36 +352,34 @@ tint(buggy.run_animation, {})
 tint(buggy.attack_parameters.animation, {})
 
 -- Tree units (docs/reviews/2026-10-14-identity-trees-consult.md; scripts/rd.lua buys them into a corporation's mix).
--- Lance (Serenity's Optics): a heavier, slower beam that outranges the player's troopers (15): 12 laser a shot every 45
--- ticks, range 17 (still inside a gun turret's 18), 110 health.
+-- Lance (Serenity's Optics): a heavier, slower beam that outranges the player's troopers (15): 24 laser a shot every 60
+-- ticks, range 17 (still inside a gun turret's 18), 110 health. Serenity's answer to armour (the RTS pass, 2026-10-21:
+-- a hit heavy enough to go through a hull's flat 5; at 12 a shot it was a weaker rifle).
 local lance = make_infantry("lp-lance", nil, "mech-armor")
 lance.max_health = shared.units["lp-lance"].health
 lance.attack_parameters = table.deepcopy(infantry.attack_parameters)
-lance.attack_parameters.damage_modifier = 1.2
+lance.attack_parameters.damage_modifier = 2.4
 lance.attack_parameters.range = 17
-lance.attack_parameters.cooldown = 45
+lance.attack_parameters.cooldown = 60
 lance.attack_parameters.ammo_type.action.action_delivery.max_length = 18
 lance.resistances = table.deepcopy(infantry.resistances)
--- Slug buggy (Grubstake's Scrap arms): three slugs of 14 a shot every 40 ticks, range 12, 240 health; shotgun shells,
--- so its Hand-loads cover it. The answer to the player's vehicles.
+-- Slug buggy (Grubstake's Scrap arms): one heavy slug of 55 physical every 50 ticks, range 15, 240 health; shotgun
+-- shells, so its Hand-loads cover it. The answer to vehicles (the RTS pass, 2026-10-21: three scattered pellets of 14
+-- landed a quarter of their damage on a tank at range, and slugs lost to every hull; an anti-armour unit hits surely,
+-- from as far as the hulls it hunts: at 12 against a tank's 15 they died closing in).
 local slug = table.deepcopy(buggy)
 slug.name = "lp-slug"
 slug.max_health = shared.units["lp-slug"].health
-slug.attack_parameters = {
-  type = "projectile", ammo_category = "shotgun-shell", cooldown = 40, range = 12, min_range = 0,
-  range_mode = "bounding-box-to-bounding-box", cooldown_deviation = 0.15,
-  sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound),
-  animation = table.deepcopy(buggy.attack_parameters.animation),
-  ammo_type = {action = {type = "direct", repeat_count = 3, action_delivery = {type = "projectile",
-    projectile = "lp-slug-round", starting_speed = 1, direction_deviation = 0.08, range_deviation = 0.1, max_range = 14}}},
-}
-local slug_round = table.deepcopy(pellet)
-slug_round.name = "lp-slug-round"
-slug_round.action.action_delivery.target_effects.damage.amount = 14
+slug.attack_parameters = gun(55, 15, 50, "shotgun-shell")
+slug.attack_parameters.sound = table.deepcopy(data.raw.gun["shotgun"].attack_parameters.sound)
+slug.attack_parameters.animation = table.deepcopy(buggy.attack_parameters.animation)
+-- Plated against shells: a vehicle hunter carries armour against its prey's weapon (it lost to tanks with the slug fixed).
+slug.resistances = {{type = "physical", decrease = 2, percent = 15}, {type = "explosion", percent = 40}}
 
 -- Shock trooper (Serenity's Optics, after Lances): an electric beam that arcs to the next target and the next (a chain
 -- on the destroyer's electric beam, base game: spiked 2026-10-14), a brief stun on the one it hits; 12 electric a hit,
--- every 45 ticks, range 12, 160 health. The answer to massed troopers.
+-- every 45 ticks, range 14 (12 until the RTS pass, 2026-10-21: outranged by the rifles it is meant to punish), 160
+-- health. The answer to massed troopers.
 local arc_bounce = table.deepcopy(data.raw.beam["electric-beam-no-sound"])
 arc_bounce.name = "lp-arc-bounce"
 local arc_chain = {type = "chain-active-trigger", name = "lp-arc-chain", max_jumps = 4, max_range_per_jump = 6,
@@ -391,14 +389,14 @@ local arc_chain = {type = "chain-active-trigger", name = "lp-arc-chain", max_jum
 local shock = make_infantry("lp-shock", nil, "mech-armor")
 shock.max_health = shared.units["lp-shock"].health
 shock.attack_parameters = {
-  type = "beam", ammo_category = "electric", cooldown = 45, range = 12, range_mode = "bounding-box-to-bounding-box",
+  type = "beam", ammo_category = "electric", cooldown = 45, range = 14, range_mode = "bounding-box-to-bounding-box",
   damage_modifier = 1.2, source_direction_count = 8, source_offset = {0, -0.6},
   animation = infantry.attack_parameters.animation,
   ammo_type = {action = {type = "direct", action_delivery = {type = "instant", target_effects = {
     -- The chain first, in case the beam kills the target (as Space Age's tesla turret does).
     {type = "nested-result", action = {type = "direct", action_delivery = {type = "chain", chain = "lp-arc-chain"}}},
     {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "electric-beam",
-      max_length = 13, duration = 20, add_to_shooter = false, destroy_with_source_or_target = false,
+      max_length = 15, duration = 20, add_to_shooter = false, destroy_with_source_or_target = false,
       source_offset = {0, -1}}}},
     {type = "create-sticker", sticker = "electric-mini-stun"},
   }}}},
@@ -429,7 +427,8 @@ aegis.attack_parameters = table.deepcopy(infantry.attack_parameters)
 aegis.attack_parameters.damage_modifier = 4.5
 aegis.attack_parameters.cooldown = 60
 aegis.attack_parameters.animation = table.deepcopy(tank.attack_parameters.animation)
-aegis.resistances = {{type = "physical", decrease = 5, percent = 30}, {type = "explosion", percent = 40}}
+aegis.resistances = {{type = "physical", decrease = 5, percent = 30}, {type = "explosion", percent = 40},
+  {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 -- Dozer (Grubstake's Wheels, after Slug buggies): the hauler's hull, 1,800 health, physical 40% and 5, a ram (60
 -- physical at 2 tiles, every 60 ticks), slow. Its one heavy: it pushes a fence or wall open for the shotguns.
 local dozer = table.deepcopy(hauler)
@@ -437,7 +436,7 @@ dozer.name = "lp-dozer"
 dozer.max_health = shared.units["lp-dozer"].health
 dozer.movement_speed = 0.07
 dozer.resistances = {{type = "physical", decrease = 5, percent = 40}, {type = "fire", percent = 50},
-  {type = "explosion", percent = 20}}
+  {type = "explosion", percent = 20}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 dozer.attack_parameters = gun(60, 2, 60, "melee")
 dozer.attack_parameters.sound = nil
 dozer.attack_parameters.animation = table.deepcopy(hauler.attack_parameters.animation)
@@ -538,8 +537,8 @@ prism.attack_parameters = {
     {type = "damage", damage = {amount = 22, type = "laser"}},
   }}}},
 }
-prism.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "laser", percent = 30},
-  {type = "explosion", decrease = 5, percent = 30}}
+prism.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5},
+  {type = "explosion", percent = 10}}
 
 -- Tesla (Serenity's Siege): the tesla turret's head on a tank's hull; lightning of 30 that jumps along five more targets
 -- (18 each, 8 tiles a jump), every 75 ticks, range 14. What it strikes that holds a charge (a laser turret, an
@@ -563,8 +562,8 @@ tesla.attack_parameters = {
     {type = "damage", damage = {amount = 30, type = "electric"}},
   }}}},
 }
-tesla.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "electric", percent = 80},
-  {type = "explosion", decrease = 5, percent = 30}}
+tesla.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "electric", decrease = 5, percent = 80},
+  {type = "explosion", percent = 10}, {type = "laser", decrease = 5}}
 
 -- Scorcher (Grubstake's Scrap arms): the flamethrower turret's head on a tank's hull; a machine gun (6 a round, 6 a
 -- second, range 13) most of the time, and three bursts of flame for walls, turrets and packed units, fired by script
@@ -576,7 +575,7 @@ local sca = gun(6, 13, 10)
 sca.animation = table.deepcopy(scorcher.run_animation)
 scorcher.attack_parameters = sca
 scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type = "fire", percent = 100},
-  {type = "explosion", decrease = 5, percent = 30}}
+  {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 
 -- Loot (the faction loot consult): a unit drops a little of its own kit, half the time. The player's units (trooper,
@@ -593,4 +592,4 @@ for u, list in pairs(UNIT_LOOT) do
 end
 
 data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
-  lance, slug, slug_round, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger, rail_beam, railgunner})
+  lance, slug, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger, rail_beam, railgunner})

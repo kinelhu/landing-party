@@ -38,6 +38,9 @@ local skim = require("__landing-party__.scripts.skim")
 local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
+local aim = require("__landing-party__.scripts.aim")
+script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
+script.on_nth_tick(3600, aim.sweep)
 war.forgive = standing.forgive
 rd.era = ops.era
 rd.trace = function(corp, text)

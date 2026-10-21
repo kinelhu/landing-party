@@ -62,7 +62,9 @@ for m in re.finditer(r'\{id = "([a-z]+)", branch = "([a-z-]+)", era = (\d+)(?:, 
 renamed = re.search(r'bases = \{[^}]*\["lp-infantry"\] = "(lp-[a-z-]+)"', shared)
 if renamed:
     fielded.setdefault(renamed.group(1), []).append("Grubstake (from landing, as its infantry)")
-cost = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = \{health = \d+, cost = (\d+)\}', shared)}
+cost = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = \{health = \d+, cost = (\d+)[,}]', shared)}
+# Who cannot shoot up (landing-party/air.lua): the kinds marked ground_only, and the player's cannon and charges.
+ground_only = set(re.findall(r'\["(lp-[a-z-]+)"\] = \{[^}]*ground_only = true', shared)) | {"lp-battle-tank", "lp-breacher"}
 for k in ("lp-trooper", "lp-breacher", "lp-battle-tank"):
     fielded.setdefault(k, []).append("the player (a barracks)")
 fielded.setdefault("lp-hauler", []).append("both (convoys; Grubstake's builders)")
@@ -87,7 +89,9 @@ def damage(action, mult=1):
         if not isinstance(a, dict):
             continue
         rep = a.get("repeat_count", 1)
-        area = f" over {a['radius']} tiles" if a.get("type") == "area" else ""
+        # air.lua's small circle round a single hit (it skips fliers) is still a single hit.
+        wrap = a.get("type") == "area" and a.get("radius") == 0.3 and a.get("trigger_target_mask") == ["common"]
+        area = f" over {a['radius']} tiles" if a.get("type") == "area" and not wrap else ""
         only = " to buildings" if a.get("entity_flags") == ["placeable-neutral"] else ""
         deliveries = a.get("action_delivery") or []
         for dl in deliveries if isinstance(deliveries, list) else [deliveries]:
@@ -146,7 +150,8 @@ for kind in ("unit", "spider-unit"):
             speed_s = "walks"
         else:
             speed_s = f"{speed * 60:.1f} tiles/s"
-        rows.append((name, u["max_health"], speed_s, w, rng, rate, resist(u), cost.get(name, "-"),
+        rows.append((name, u["max_health"], speed_s, w, rng, rate, resist(u), "no" if name in ground_only else "yes",
+                     cost.get(name, "-"),
                      "; ".join(fielded.get(name, ["-"])), ROLE.get(name, "")))
 
 def write_md():
@@ -154,11 +159,13 @@ def write_md():
            "Written by `scripts/roster.py` from the game's prototypes (`scripts/check.sh` dumps them) and `shared.lua`:",
            "do not edit by hand. Damage is one shot's, before research and plates (a corporation's research raises its",
            "category's damage; a plated unit carries extra resistance). Grubstake's copies (`lp-grubstake-*`) share these",
-           "stats in its colours.", ""]
-    for name, hp, speed, w, rng, rate, res, c, who, role in rows:
+           "stats in its colours. Hits air: whether its weapon can touch a flier (`landing-party/air.lua`); one that cannot",
+           "turns from a flier to a ground target it can hurt (`landing-party/scripts/aim.lua`).", ""]
+    for name, hp, speed, w, rng, rate, res, air, c, who, role in rows:
         out += [f"## {name[3:]}", "", role + ("." if role else ""), "",
-                "| Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |", "| --- | --- | --- | --- | --- | --- | --- |",
-                f"| {hp:g} | {speed} | {w} | {rng} | {rate} | {res} | {c} |", "", f"Fielded by: {who}.", ""]
+                "| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost (parts) |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- |",
+                f"| {hp:g} | {speed} | {w} | {rng} | {rate} | {res} | {air} | {c} |", "", f"Fielded by: {who}.", ""]
     path = os.path.join(REPO, "docs", "units.md")
     open(path, "w").write("\n".join(out))
     print(f"{path}: {len(rows)} units")

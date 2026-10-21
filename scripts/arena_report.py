@@ -24,7 +24,7 @@ CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
 def score(r):
     a, b = r["a"], r["b"]
     lost_a = a["parts_lost"] / a["parts"] if a["parts"] else 0
-    if r["kind"] == "pair":
+    if r["kind"] in ("pair", "mix"):
         took = b["parts_lost"] / b["parts"] if b["parts"] else 0
     else:
         took = (b["start"] - b["left"]) / b["start"] if b["start"] else 0
@@ -33,6 +33,12 @@ def score(r):
 def main():
     src, out = sys.argv[1], sys.argv[2]
     rows = [json.loads(l) for l in open(src) if l.strip()]
+    # Mixed arms (batch.lua's MIXES): scored for the all-ground army, whichever side it fought on.
+    mixes = defaultdict(list)
+    for r in rows:
+        if r["kind"] == "mix":
+            mixes[r["against"]].append(score(r) if not r.get("flip") else -score(r))
+    rows = [r for r in rows if r["kind"] != "mix"]
     kinds, cost = [], {}
     for r in rows:
         if r["squad"] not in kinds: kinds.append(r["squad"])
@@ -106,7 +112,8 @@ def main():
          "## Classes", "",
          "A class is a body and a weapon: **small arms** (many light bodies, small shots), **splash** (one weapon "
          "that hits several at once: a blast, an arc, a split beam), **armour** (a heavy hull whose flat resistance "
-         "eats small shots), **air** (fliers, for turrets that cannot shoot up). The class against class score is "
+         "eats small shots), **air** (fliers: only weapons that can shoot up touch them; `docs/units.md` says which). "
+         "The class against class score is "
          "the mean of its kinds' cells.", "",
          "| Row against column | " + " | ".join(c for c, _ in CLASSES) + " |", "|---|" + "---|" * len(CLASSES)]
     for c, ks in CLASSES:
@@ -125,6 +132,15 @@ def main():
         fmt = lambda xs, sign: ", ".join(f"{b} ({round(100 * sign * v)})" for b, v in xs)
         L.append(f"| {a} ({cost.get(a, '?')}) | {fmt(best, 1)} | {fmt(worst, -1)} |")
     L.append("")
+    if mixes:
+        L += ["## Mixed arms: does a flier soak a ground army's fire?", "",
+              "A ground army against the same spend with part of it in fliers, both ways round. Ground-only weapons "
+              "cannot hurt a flier; a unit whose shot is aimed at one is turned to a ground target it can hurt "
+              "(`landing-party/scripts/aim.lua`). The score is the all-ground army's.", "",
+              "| Mix | All-ground army's score | Fights |", "|---|---|---|"]
+        for label, v in mixes.items():
+            L.append(f"| {label} | {round(100 * sum(v) / len(v)):+d} | {len(v)} |")
+        L.append("")
     open(out, "w").write("\n".join(L))
     print(f"wrote {out} and {img}: {len(rows)} fights")
 

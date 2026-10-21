@@ -29,6 +29,7 @@ document describes the parts as built; the campaign document describes the game 
 | Siege: a hauler carries a mortar beyond the player's turrets; deploy, shell, pack up | built (first pass) | `bombard`, `mortar` |
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
+| Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -427,6 +428,41 @@ technologies, when big biters and behemoths come.
   are inside them. Within splash, the roles written for Prism and shock ("against massed troopers") do not hold against
   Serenity's riflemen, who beat both, and of the splash kinds only the sapper does that job. Air has no arena role:
   it is for turrets that cannot shoot up, and the arena only has its fixed lines for that.
+- **The RTS pass (0.1.48; the user: "do all of that ... abide by RTS gold standards design wise. We want fun and
+  competitive").** The aim: a cycle between classes, each unit a clear job inside its class, and counters a player can
+  read from what a unit is. Four rules, all from the genre's standard toolkit:
+  - *Who shoots up.* Cannons, rams, thrown charges, ground arcs and flame cannot touch a flier: tank, aegis, dozer,
+    Scorcher, sapper, shock, Prism, Tesla, railgunner (`ground_only` in `shared.units`, applied by `air.lua`), and the
+    player's battle tank and breacher. Rifles, lances, machine guns, slugs, the walker's rockets and the fliers' own guns
+    can. The engine has no target mask for units (an ammo's `target_filter` is not read by unit AI; a mask on a direct
+    hit is ignored), so each single hit of those weapons becomes a hit on a 0.3-tile circle that skips the
+    `lp-air-unit` trigger target, and their blasts, lines and chains skip it too (spiked in the arena: a tank's shell
+    stopped hurting harriers, and still killed infantry).
+  - *Ground-only units look for a target they can hurt* (the user: "This will be very problematic in mixed arms
+    encounters?"). The engine still lets a unit aim at a flier, so one harrier over a tank column soaked all its fire.
+    Each ground-only weapon also carries a script trigger that fires when its shot is aimed at a flier
+    (`scripts/aim.lua`); the shooter gets a distraction command (run before its own, which it then resumes): attack
+    the nearest enemy it can hurt within 40 tiles, units and turrets first, as an attack-move would; with none, stand
+    down 90 ticks without engaging. Measured with the arena's mixed fights (`docs/arena.md`, a ground army against the
+    same spend with part of it in harriers, both ways round, three rounds): without the redirect, Prisms killed nothing
+    of the other side in all six fights and tanks 0 to 60 of 420 parts, and a tank and rifle army lost four of six to
+    its copy with harriers; with it, the ground army destroyed the other's ground units in 17 of 18 fights and then
+    lost to the fliers it cannot touch, and the army with rifles won all six. A search within range + 8 tiles was not
+    enough: harriers that outran their own ground army left it standing down while they shot it.
+  - *Light and armoured.* Every armoured hull (tank, aegis, dozer, walker, Scorcher, Prism, Tesla, the player's battle
+    tank) takes 5 off each laser and each electric hit, beside its physical and explosion armour. A rifle's 7 then does
+    2: small arms do about a third of their damage to armour (C&C's armour classes). Prism and Tesla were made glassier
+    (700 and 800 health, explosion 10%) so that armour beats splash.
+  - *Anti-armour light units.* Each corporation has one: Serenity's **lance** (24 laser a shot every 60 ticks, range
+    17, 16 parts; it had been a weaker rifle at 12 a shot) and Grubstake's **slug buggy** (one slug of 55 every 50
+    ticks, range 15, explosion 40% resisted, 30 parts; three scattered pellets of 14 at range 12 landed a quarter of
+    their damage and lost to every hull). Shock's range went from 12 to 14: rifles at 15 outranged the unit meant to
+    punish them.
+  - *Prices after:* tank back to 60 (52 was set when tanks lost to everything; flat armour made them tough), aegis 95.
+  The class table (`docs/arena.md`) now runs as a loop: small arms beat air, air beats armour and splash, splash beats
+  small arms, armour edges splash and beats small arms but loses to the lance and the slug among them. Air is all or
+  nothing (a squad with no anti-air loses every flier fight; one with it wins), which is the genre's way: build fliers
+  when the other side has none. Every kind keeps clear wins and losses.
 - **Limits:** no research on either side (a camp's tree levels and the player's damage upgrades both matter); open
   ground (no walls for the squads, no terrain); the wave arrives in one clump. Next, if the numbers call for it: tune
   costs or caps, not damage, since a squad's spend is the comparison.

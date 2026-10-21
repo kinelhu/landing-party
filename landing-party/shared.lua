@@ -295,27 +295,28 @@ shared.cost = {
   ["lp-siege-lab"] = 60,
 }
 
--- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.
+-- Units: health and cost in parts. The depot builds them; doctrines weigh the mix. ground_only: its weapons cannot touch
+-- air (air.lua); the rest shoot up.
 shared.units = {
   ["lp-infantry"] = {health = 120, cost = 10},
-  ["lp-tank"] = {health = 900, cost = 52},
+  ["lp-tank"] = {health = 900, cost = 60, ground_only = true},
   ["lp-walker"] = {health = 1600, cost = 100},
   ["lp-harrier"] = {health = 150, cost = 40},
   ["lp-hauler"] = {health = 1500, cost = 30},
   ["lp-buggy"] = {health = 220, cost = 15},      -- Grubstake's raider and escort (docs/corporations.md)
   -- Tree units (scripts/rd.lua): bought into a corporation's mix.
-  ["lp-lance"] = {health = 110, cost = 14},
-  ["lp-slug"] = {health = 240, cost = 25},
-  ["lp-shock"] = {health = 160, cost = 30},
-  ["lp-railgunner"] = {health = 140, cost = 22},
-  ["lp-sapper"] = {health = 120, cost = 30},
-  ["lp-aegis"] = {health = 1100, cost = 80},
-  ["lp-dozer"] = {health = 1800, cost = 90},
+  ["lp-lance"] = {health = 110, cost = 16},
+  ["lp-slug"] = {health = 240, cost = 30},
+  ["lp-shock"] = {health = 160, cost = 30, ground_only = true},
+  ["lp-railgunner"] = {health = 140, cost = 22, ground_only = true},
+  ["lp-sapper"] = {health = 120, cost = 30, ground_only = true},
+  ["lp-aegis"] = {health = 1100, cost = 95, ground_only = true},
+  ["lp-dozer"] = {health = 1800, cost = 90, ground_only = true},
   ["lp-scavenger"] = {health = 180, cost = 50},
   -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
-  ["lp-prism"] = {health = 900, cost = 100},
-  ["lp-tesla"] = {health = 1000, cost = 100},
-  ["lp-scorcher"] = {health = 1100, cost = 70},
+  ["lp-prism"] = {health = 700, cost = 100, ground_only = true},
+  ["lp-tesla"] = {health = 800, cost = 100, ground_only = true},
+  ["lp-scorcher"] = {health = 1100, cost = 70, ground_only = true},
 }
 
 -- What a corporation pays for a unit kind: its own price where the kind has one (`by = {corp = parts}`), else the kind's.

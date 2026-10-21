@@ -158,7 +158,7 @@ def unit_card(kind, corp, how):
     r = stats.get(kind)
     if not r:
         return ""
-    name, hp, speed, w, rng, rate, res, c, who, role = r
+    name, hp, speed, w, rng, rate, res, air, c, who, role = r
     img = portrait(kind, corp)
     pic = f'<img src="{img}" alt="{esc(ename(kind))}" loading="lazy">' if img else '<div class="nopic">no portrait</div>'
     return f'''<article class="unit">
@@ -171,7 +171,7 @@ def unit_card(kind, corp, how):
       <div><dt>Range</dt><dd>{rng}</dd></div><div><dt>Rate</dt><dd>{esc(rate)}</dd></div>
       <div class="wide"><dt>A shot</dt><dd>{esc(w)}</dd></div>
       <div class="wide"><dt>Resists</dt><dd>{esc(res)}</dd></div>
-      <div><dt>Cost</dt><dd>{c}{" parts" if c != "-" else ""}</dd></div>
+      <div><dt>Hits air</dt><dd>{air}</dd></div><div><dt>Cost</dt><dd>{c}{" parts" if c != "-" else ""}</dd></div>
     </dl>
     <p class="how">{esc(how)}</p>
   </div>

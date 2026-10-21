@@ -27,6 +27,16 @@ local KINDS = {
   {"aegis", "lp-aegis"}, {"dozer", "lp-dozer"}, {"walker", "lp-walker"},
 }
 
+-- Mixed arms: {label, side x, side y}, each side a list of {prototype, count}; x is the ground army, y the same spend with
+-- fliers in it.
+local MIXES = {
+  {"tanks / tanks + harriers", {{"lp-tank", 7}}, {{"lp-tank", 5}, {"lp-harrier", 3}}},
+  {"prisms / prisms + harriers", {{"lp-prism", 4}}, {{"lp-prism", 3}, {"lp-harrier", 3}}},
+  {"dozers / dozers + harriers", {{"lp-dozer", 5}}, {{"lp-dozer", 4}, {"lp-harrier", 2}}},
+  {"tanks and rifles / with harriers", {{"lp-tank", 4}, {"lp-infantry", 18}},
+    {{"lp-tank", 3}, {"lp-infantry", 12}, {"lp-harrier", 3}}},
+}
+
 local function cost(proto) return arena.cost(shared.kind_of(proto), proto) end
 
 -- Counts for a pair at equal spend: na of a, nb of b, both near BUDGET, the spends as close as whole units allow.
@@ -60,6 +70,22 @@ local function matchups()
       table.insert(out, {kind = "fixed", squad = a[1], against = ln[1], a = {{"raw", a[2], n, "lp-serenity"}}, b = def})
     end
   end
+  -- Mixed arms (the user, 2026-10-21: ground-only weapons "very problematic in mixed arms encounters?"): a ground army
+  -- against the same army with part of its spend in fliers, both ways round. A flier that soaked the ground side's fire
+  -- would turn these into routs; with each side's ground fire on ground targets they stay close.
+  for _, mx in ipairs(MIXES) do
+    for flip = 0, 1 do
+      local x, y = mx[2], mx[3]
+      if flip == 1 then x, y = y, x end
+      local function side(list, force)
+        local out = {}
+        for _, e in ipairs(list) do table.insert(out, {"raw", e[1], e[2], force}) end
+        return out
+      end
+      table.insert(out, {kind = "mix", squad = flip == 0 and mx[1] or mx[1] .. " (swapped)", against = mx[1],
+        flip = flip, a = side(x, "lp-serenity"), b = side(y, "lp-grubstake")})
+    end
+  end
   -- A trial (LP_ARENA_ONLY): only the matchups whose label holds that text.
   if params.only and params.only ~= "" then
     local kept = {}
@@ -84,7 +110,7 @@ function batch.next_round()
     -- Each round a little off the last (units placed by find_non_colliding_position round a moved point).
     local c = {col * SPACING + (B.round - 1) * 3, row * SPACING + (B.round - 1) * 2}
     local f = arena.start(c, m.a, m.b, m.squad .. " vs " .. m.against)
-    f.m = {kind = m.kind, squad = m.squad, against = m.against, round = B.round}
+    f.m = {kind = m.kind, squad = m.squad, against = m.against, round = B.round, flip = m.flip}
     table.insert(B.live, f)
   end
 end
@@ -98,7 +124,7 @@ function batch.tick()
     if not f.written then
       if arena.step(f) then
         local r = f.result
-        r.kind, r.squad, r.against, r.round = f.m.kind, f.m.squad, f.m.against, f.m.round
+        r.kind, r.squad, r.against, r.round, r.flip = f.m.kind, f.m.squad, f.m.against, f.m.round, f.m.flip
         helpers.write_file("lp-arena/results.jsonl", helpers.table_to_json(r) .. "\n", true)
         f.written = true
       else

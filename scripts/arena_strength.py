@@ -6,7 +6,7 @@ with its price, for tuning prices (scripts/arena.sh writes the results).
 import json, sys
 from collections import defaultdict
 
-rows = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
+rows = [r for r in (json.loads(l) for l in open(sys.argv[1]) if l.strip()) if r["kind"] != "mix"]
 pair, cost, kinds = defaultdict(list), {}, []
 for r in rows:
     if r["squad"] not in kinds: kinds.append(r["squad"])
