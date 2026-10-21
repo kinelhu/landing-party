@@ -35,7 +35,7 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M333.24,-339.25C333.24,-339.25 230.99,-339.25 230.99,-339.25 224.99,-339.25 218.99,-333.25 218.99,-327.25 218.99,-327.25 218.99,-307.25 218.99,-307.25 218.99,-301.25 224.99,-295.25 230.99,-295.25 230.99,-295.25 333.24,-295.25 333.24,-295.25 339.24,-295.25 345.24,-301.25 345.24,-307.25 345.24,-307.25 345.24,-327.25 345.24,-327.25 345.24,-333.25 339.24,-339.25 333.24,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="282.11" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="282.11" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">14 modules, 4771 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="282.11" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">14 modules, 4805 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="282.11" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1049</text>
 </g>
 <!-- Corporation&#45;&gt;Settlement -->

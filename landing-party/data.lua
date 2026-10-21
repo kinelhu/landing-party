@@ -237,6 +237,23 @@ howitzer_gun.attack_parameters.cooldown = 360
 -- many"): two a spawner.
 howitzer_gun.attack_parameters.damage_modifier = 8
 
+-- The howitzer parked at home (base.park): its look, as a prop. Not a turret and not a military target (a parked
+-- artillery turret was the rivals' first raid target and was counted as a howitzer out on a siege); it can be shot.
+local function frame(layer)
+  return {filename = layer.filenames and layer.filenames[1] or layer.filename, width = layer.width, height = layer.height,
+    x = 0, y = 0, shift = layer.shift, scale = layer.scale, tint = layer.tint, draw_as_shadow = layer.draw_as_shadow}
+end
+local parked_layers = {}
+for _, set in ipairs({howitzer.base_picture, howitzer.cannon_base_pictures, howitzer.cannon_barrel_pictures}) do
+  for _, l in ipairs(set.layers or {set}) do table.insert(parked_layers, frame(l)) end
+end
+local parked_howitzer = {type = "simple-entity-with-force", name = "lp-parked-howitzer", hidden = true,
+  icons = table.deepcopy(howitzer.icons), flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable"},
+  max_health = howitzer.max_health, resistances = table.deepcopy(howitzer.resistances),
+  collision_box = howitzer.collision_box, selection_box = howitzer.selection_box, render_layer = "object",
+  dying_explosion = howitzer.dying_explosion, is_military_target = false, picture = {layers = parked_layers}}
+data:extend({parked_howitzer})
+
 -- A gun turret (a corporation may build these instead of lasers: shared.CORPS bases; fed by script) and a gate.
 local gun_turret = copy("ammo-turret", "gun-turret", "lp-gun-turret")
 local gate = copy("gate", "gate", "lp-gate")

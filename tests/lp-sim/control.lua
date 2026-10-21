@@ -3137,6 +3137,37 @@ scenarios.breach = function()
   end)
 end
 
+-- Parked (the legibility audit, step 1): Serenity's howitzer stands parked by its lander, a prop; killed there,
+-- its camp goes without one for 30 minutes, a ghost on its spot.
+scenarios.parked = function()
+  schedule(60, function() lp("debug_tune", {mature_blocks = 1}) end)
+  schedule(3 * 3600, function()
+    local st = lp("stats", storage.id)
+    local h = surface().find_entities_filtered{name = "lp-parked-howitzer", force = FORCE}
+    S.parked = st.parked and #h == 1
+    if h[1] then
+      S.off = h[1].type == "simple-entity-with-force" and not h[1].prototype.is_military_target
+      S.at = {h[1].position.x, h[1].position.y}
+      info(string.format("parked: the howitzer at %.0f,%.0f, %.0f tiles from the lander", S.at[1], S.at[2],
+        math.sqrt((S.at[1] - st.origin.x) ^ 2 + (S.at[2] - st.origin.y) ^ 2)))
+      h[1].die("player")
+    end
+  end)
+  schedule(3 * 3600 + 600, function()
+    local st = lp("stats", storage.id)
+    S.down = (st.howitzer_down or 0) > game.tick
+    S.ghost = st.parked_ghost
+    S.gone = not st.parked and surface().count_entities_filtered{name = {"lp-howitzer", "lp-parked-howitzer"}, force = FORCE} == 0
+  end)
+  schedule(END - 60, function()
+    check("parked: a howitzer parked by its lander", S.parked == true, tostring(S.parked))
+    check("parked: a prop, not a turret or a military target", S.off == true, tostring(S.off))
+    check("parked: killed, its camp without one", S.down == true and S.gone == true, string.format("down %s, gone %s",
+      tostring(S.down), tostring(S.gone)))
+    check("parked: its ghost on the spot", S.ghost == true, tostring(S.ghost))
+  end)
+end
+
 -- Plate: each corporation answers what kills its units from its own tree (shared.CORPS.tree). Fifteen of Serenity's
 -- Line troopers die to a gun turret (the player at era 2, a fund granted, choices every minute): it issues Warden
 -- armour (physical) and its depots build armoured Line troopers; the plain ones standing are kept. LP_MIX=grubstake:

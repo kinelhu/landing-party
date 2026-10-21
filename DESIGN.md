@@ -106,7 +106,7 @@ smoke under 60%); territory and standing on the map; constructors drawing a buil
 
 | Mechanic | Seen today | Gap | Proposed sign | Step |
 | --- | --- | --- | --- | --- |
-| Howitzer down 30 minutes when killed | appears at deploy, vanishes at the end | a kill's reward invisible; no warning before a siege | a howitzer parked on a pad in the camp, towed out behind the hauler; the pad empty while out; killed, a ghost on the pad that fills in | 2 |
+| Howitzer down 30 minutes when killed | parked by the lander, gone while out, a faded mark while down (2026-10-21) | a kill's reward invisible; no warning before a siege | a howitzer parked on a pad in the camp, towed out behind the hauler; the pad empty while out; killed, a ghost on the pad that fills in | 2 |
 | Rebuild delay (60 s plus travel from the lander) | nothing until the constructor arrives | where and when it comes back | a corporation ghost on the spot from the moment it dies | 2 |
 | Occupation (no rebuild with the player's military within 12) | nothing | why it does not come back | the ghost stays, dimmed or crossed | 2 |
 | Grubstake's loot and parts | one yard chest, the icon of what it holds most; parts a number | stolen goods do not become anything | a scrapyard that spreads with what it holds (chests, piles, wrecks); building from it | 3 |
@@ -297,6 +297,15 @@ a room, so what you see is what it can field, and what you destroy is what it lo
   the lander is; storming a district with infantry is not an answer yet (`breach` with a squad stays out of the
   regression, a measurement). Open: one shell takes a 600-health lab (too cheap?); the flamers at the gates against the
   player's tanks.
+- **The howitzer at home (the legibility audit's step 1, first half; built 2026-10-21).** Serenity's howitzer stands
+  parked by its lander once its camp is grown (`base.park`), gone while a siege or clearance has it out; killed in the
+  field or parked, its camp goes 30 minutes without one (as before) and a faded howitzer marks the empty spot
+  (its prototype can have no engine ghost: hidden, unplaceable). Scenario `parked`. The parked one is a prop
+  (`lp-parked-howitzer`, a simple entity with the howitzer's look, not a military target): as a real artillery turret
+  it was the rivals' first raid target (an artillery turret is worth 12 to their intel) and was counted as a howitzer out
+  on a siege, and 13 regression runs failed. Parked from landing, it took ground the camp then built round and four
+  more fights came out otherwise: it is parked once the camp is mature. Not yet: towed behind the hauler,
+  and parked at the Siege works rather than the lander.
 - **Next:** the Siege works holding the howitzer (parked on a pad in its district, towed out for a siege; the legibility
   audit's step 1); units from their own buildings (Lances from a foundry, Aegis from a heavy factory); Grubstake's
   equivalent (its scrapyard).

@@ -75,7 +75,8 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 16. **Against a fortress**: a hauler brings mortars (a howitzer when robots keep the wall), a fire plan on one point at a
    time, roboports first; a jammer mast in the emplacement whose tesla arcs down your robots and blinds your threat
    scanners within 50 tiles. Destroy the mast. Kill the howitzer and its camp has none for 30 minutes: the next siege
-   comes with mortars only.
+   comes with mortars only. At home it stands parked by the lander (gone while out on a siege); killed, a faded mark
+   holds its spot until it is back.
 17. **The power strike**: two scouts walk out to a pole of yours, and minutes later a raid goes for it: the one pole
    whose loss darkens the lasers behind it. A second feed, or accumulators by the turrets, is the answer.
 18. **Hazard removal**: when biters keep hitting it, it sends a clearance siege at their nest, away from you.

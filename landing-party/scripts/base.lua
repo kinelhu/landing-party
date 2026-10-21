@@ -484,6 +484,40 @@ end
 -- what stands becomes ruins: neutral and minable for salvage (the prototypes' results), except the mining
 -- outposts, left to be taken by holding them with no one to stop it, and the mines, still live.
 local CASCADE_TICKS = 90
+-- The howitzer at home (the legibility audit, step 1: "a kill's reward invisible; no warning before a siege"): a
+-- corporation that clears nests (Serenity) keeps its howitzer parked by its lander (a prop: lp-parked-howitzer). Gone while
+-- a siege or clearance has it out; killed there or here, the camp goes without one for HOWITZER_DOWN, its ghost on the
+-- spot meanwhile. Its spot chosen once, free ground near the lander.
+local function park(b)
+  if not shared.CORPS[b.corp].clears_nests then return end
+  local s = game.surfaces[b.surface]
+  local name = shared.variant(b.corp, "lp-parked-howitzer")
+  local out = b.op and (b.op.with_howitzer or b.op.piece == "lp-howitzer")
+  local down = (b.howitzer_down or 0) > game.tick
+  local here = b.parked and b.parked.valid
+  if out or down then
+    if here then b.parked.destroy() end
+    b.parked = nil
+    -- (Its own prototype can have no engine ghost, being hidden and unplaceable: its icon, faded, on the ground.)
+    if down and b.howitzer_pad and not (b.parked_ghost and b.parked_ghost.valid) then
+      b.parked_ghost = rendering.draw_sprite{sprite = "entity/" .. name, target = b.howitzer_pad, surface = s,
+        x_scale = 3, y_scale = 3, tint = {0.45, 0.45, 0.5, 0.45}, render_layer = "floor"}
+    end
+    return
+  end
+  if b.parked_ghost and b.parked_ghost.valid then b.parked_ghost.destroy() end
+  b.parked_ghost = nil
+  -- Parked once grown (its core laid out: parked from landing, it took ground the camp then built round, and a
+  -- regression's fights came out otherwise).
+  if here or not b.mature then return end
+  if not (b.howitzer_pad and s.can_place_entity{name = name, position = b.howitzer_pad, force = b.force}) then
+    local p = s.find_non_colliding_position(name, {b.lander.position.x + 12, b.lander.position.y + 12}, 30, 1)
+    if not p then return end
+    b.howitzer_pad = {p.x, p.y}
+  end
+  b.parked = s.create_entity{name = name, position = b.howitzer_pad, force = b.force}
+end
+
 function base.fall(lander)
   for _, b in pairs(storage.bases) do
     if b.lander == lander and not b.fallen then
@@ -591,6 +625,7 @@ function base.tick(tick)
       if tick % 600 == 300 then capture(b) end
     elseif b.lander.valid then
       if tick % 60 == 0 then hull(b); pack_camp(b) end
+      if tick % 120 == 53 then park(b) end
       -- A damaged lander mends slowly, 1% a minute, smoking while it is below 90% (Fable's engagement consult: damage
       -- that a strike leaves stays long enough to be built on).
       if tick % 3600 == (b.id * 17) % 3600 and b.lander.health < b.lander.max_health then
@@ -683,7 +718,8 @@ function base.stats(b)
     doctrine = b.doctrine, hubs = #b.hubs, blocks = #b.blocks, walls = #b.walls, road_tiles = b.road_tiles,
     radars = #b.radars, depots = #b.depots, garrison = #b.garrison, returning = #(b.returning or {}),
     roster = table_size(b.roster or {}), units_built = b.units_built,
-    units_lost = b.units_lost, howitzer_down = b.howitzer_down, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
+    units_lost = b.units_lost, howitzer_down = b.howitzer_down, parked = b.parked and b.parked.valid or false,
+    parked_ghost = b.parked_ghost and b.parked_ghost.valid or false, razed = b.razed, raids_sent = b.raids_sent, responses = b.responses or 0,
     mature = b.mature ~= nil, exported = b.exported or 0, lamps = #b.lamps, mines = #b.mines,
     labs = (function() local t = {} prune(b.labs or {}) for _, e in ipairs(b.labs or {}) do
       local k = shared.kind_of(e.name) t[k] = (t[k] or 0) + 1 end return t end)(),

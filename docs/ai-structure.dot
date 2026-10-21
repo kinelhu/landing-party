@@ -24,7 +24,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_2 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n711 lines", width=1.59, fillcolor="#eef2f7"];
+    "base" [label="base\n745 lines", width=1.63, fillcolor="#eef2f7"];
     "construction" [label="construction\n360 lines", width=1.20, fillcolor="#d9f0d9"];
     "planner" [label="planner\n295 lines", width=1.13, fillcolor="#eef2f7"];
     "layout" [label="layout\n1049 lines", width=1.97, fillcolor="#f7dede"];
@@ -69,7 +69,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_7 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n518 lines", width=1.38, fillcolor="#eef2f7"];
+    "control" [label="control\n519 lines", width=1.38, fillcolor="#eef2f7"];
     "dev" [label="dev\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

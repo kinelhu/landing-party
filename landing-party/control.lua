@@ -160,9 +160,10 @@ script.on_event(defines.events.on_entity_died, function(e)
   end
   -- A howitzer destroyed in the field: its camp goes without one for HOWITZER_DOWN (siege.lua; Fable's consult: killing
   -- it cost Serenity nothing, a fresh one came with every siege).
-  if kind == "lp-howitzer" then
+  if kind == "lp-howitzer" or kind == "lp-parked-howitzer" then
     for _, o in pairs(storage.bases) do
-      if o.op and (o.op.howitzer == ent or (o.op.mortars and o.op.mortars[1] == ent)) then
+      -- (In the field, or parked at home: base.park.)
+      if o.parked == ent or o.op and (o.op.howitzer == ent or (o.op.mortars and o.op.mortars[1] == ent)) then
         o.howitzer_down = game.tick + shared.HOWITZER_DOWN
         base.trace(o, string.format("howitzer at %.0f,%.0f destroyed by %s; none for %d minutes", ent.position.x,
           ent.position.y, e.force and e.force.name or "?", shared.HOWITZER_DOWN / 3600))
