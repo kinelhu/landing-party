@@ -298,8 +298,8 @@ shared.cost = {
 -- Units: health and cost in parts. The depot builds them; doctrines weigh the mix.
 shared.units = {
   ["lp-infantry"] = {health = 120, cost = 10},
-  ["lp-tank"] = {health = 900, cost = 60},
-  ["lp-walker"] = {health = 1600, cost = 120},
+  ["lp-tank"] = {health = 900, cost = 52},
+  ["lp-walker"] = {health = 1600, cost = 100},
   ["lp-harrier"] = {health = 150, cost = 40},
   ["lp-hauler"] = {health = 1500, cost = 30},
   ["lp-buggy"] = {health = 220, cost = 15},      -- Grubstake's raider and escort (docs/corporations.md)
@@ -308,15 +308,22 @@ shared.units = {
   ["lp-slug"] = {health = 240, cost = 25},
   ["lp-shock"] = {health = 160, cost = 30},
   ["lp-railgunner"] = {health = 140, cost = 22},
-  ["lp-sapper"] = {health = 120, cost = 16},
+  ["lp-sapper"] = {health = 120, cost = 30},
   ["lp-aegis"] = {health = 1100, cost = 80},
   ["lp-dozer"] = {health = 1800, cost = 90},
   ["lp-scavenger"] = {health = 180, cost = 50},
   -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
-  ["lp-prism"] = {health = 900, cost = 70},
-  ["lp-tesla"] = {health = 1000, cost = 85},
+  ["lp-prism"] = {health = 900, cost = 100},
+  ["lp-tesla"] = {health = 1000, cost = 100},
   ["lp-scorcher"] = {health = 1100, cost = 70},
 }
+
+-- What a corporation pays for a unit kind: its own price where the kind has one (`by = {corp = parts}`), else the kind's.
+function shared.unit_cost(corp, kind)
+  local u = shared.units[kind]
+  if not u then return 10 end
+  return (u.by and corp and u.by[corp]) or u.cost
+end
 
 -- The player's command bandwidth: what each unit takes, what a relay carries, how many relays count by
 -- research level (0: before any; then levels 1-3; level 4 and beyond add RELAYS_PER_EXTRA_LEVEL each).

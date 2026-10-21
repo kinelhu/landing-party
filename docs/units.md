@@ -101,7 +101,7 @@ Optics: a laser that splits on what it hits to the targets round it; against mas
 
 | Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
 | --- | --- | --- | --- | --- | --- | --- |
-| 900 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 22 laser | 16 | 1.2/s | physical -3 20%, laser 30%, explosion -5 30% | 70 |
+| 900 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 22 laser | 16 | 1.2/s | physical -3 20%, laser 30%, explosion -5 30% | 100 |
 
 Fielded by: Serenity, research: optics branch, era 2, after lance, 1800 fund.
 
@@ -121,7 +121,7 @@ Scrap arms: dynamite over 3 tiles, enemies only; against blobs, and the wall in 
 
 | Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
 | --- | --- | --- | --- | --- | --- | --- |
-| 120 | 7.8 tiles/s | 80 explosion over 3 tiles | 11 | 0.33/s | physical -2 10% | 16 |
+| 120 | 7.8 tiles/s | 80 explosion over 3 tiles | 11 | 0.33/s | physical -2 10% | 30 |
 
 Fielded by: Grubstake, research: scrap-arms branch, era 2, 1500 fund.
 
@@ -181,7 +181,7 @@ armour; cannon rounds that hit buildings three times as hard as units.
 
 | Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
 | --- | --- | --- | --- | --- | --- | --- |
-| 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30% | 60 |
+| 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30% | 52 |
 
 Fielded by: Serenity (from landing).
 
@@ -191,7 +191,7 @@ Siege: lightning that jumps along a turret line and drains what it strikes of it
 
 | Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1000 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 30 electric | 14 | 0.8/s | physical -3 20%, electric 80%, explosion -5 30% | 85 |
+| 1000 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 30 electric | 14 | 0.8/s | physical -3 20%, electric 80%, explosion -5 30% | 100 |
 
 Fielded by: Serenity, research: siege branch, era 3, 2500 fund.
 
@@ -211,6 +211,6 @@ a spider: steps over walls, rockets.
 
 | Health | Speed | A shot | Range | Rate | Resists | Cost (parts) |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1600 | walks | 18 physical | 15 | 2.4/s | physical -3 20%, fire 60%, explosion -10 30%, acid 50% | 120 |
+| 1600 | walks | 18 physical | 15 | 2.4/s | physical -3 20%, fire 60%, explosion -10 30%, acid 50% | 100 |
 
 Fielded by: Serenity (from landing).

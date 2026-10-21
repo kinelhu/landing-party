@@ -27,7 +27,7 @@ local KINDS = {
   {"aegis", "lp-aegis"}, {"dozer", "lp-dozer"}, {"walker", "lp-walker"},
 }
 
-local function cost(proto) return arena.cost(shared.kind_of(proto)) end
+local function cost(proto) return arena.cost(shared.kind_of(proto), proto) end
 
 -- Counts for a pair at equal spend: na of a, nb of b, both near BUDGET, the spends as close as whole units allow.
 local function counts(ca, cb)

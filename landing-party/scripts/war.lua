@@ -89,7 +89,7 @@ local function detachment(b, n)
     local name = rng.weighted(b.rng, m)
     if name == "lp-hauler" then name = "lp-infantry" end
     table.insert(names, name)
-    cost = cost + RELIEF_MARKUP * (shared.units[name] and shared.units[name].cost or 10)
+    cost = cost + RELIEF_MARKUP * shared.unit_cost(b.corp, name)
   end
   return names, cost
 end
@@ -155,7 +155,7 @@ local function send(b, owner, rung)
   local names, cost = detachment(b, n)
   while #names > RELIEF_MIN and cost > (d.chest or 0) do
     local name = table.remove(names)
-    cost = cost - RELIEF_MARKUP * (shared.units[name] and shared.units[name].cost or 10)
+    cost = cost - RELIEF_MARKUP * shared.unit_cost(b.corp, name)
   end
   if #names < RELIEF_MIN or cost > (d.chest or 0) then return false end
   if sister then

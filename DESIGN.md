@@ -409,6 +409,16 @@ technologies, when big biters and behemoths come.
   kinds; tanks (60) and the walker (120) lose to nearly everything for their price. The harrier and the scavenger
   win or lose all (only some weapons reach them). The railgunner is the biter-killer it was built as (the one squad
   that beats 0.95); flamer lines stop all but the Scorcher and the two that fly (harrier, scavenger).
+- **The price pass (0.1.47; the user: "go ahead with the price changes ... it's expected that some unit types counter
+  others. I don't want you to make everything equal").** The rule, from that: every kind clearly beats some kinds and
+  is clearly beaten by some (a score of 40 either way; `scripts/arena_strength.py` counts them), never an even matrix.
+  At the old prices the sapper and the Prism had no clear loss, and the tank and walker few clear wins. Prices are the
+  lever (a row is what its spend buys; damage would change who counters whom): sapper 16 -> 30, Prism 70 -> 100, Tesla
+  85 -> 100, tank 60 -> 52, walker 120 -> 100, the rest unchanged. Price moves a row more than in proportion (a squad
+  focuses fire: Grubstake's infantry at 6 instead of 10 went from the bottom to the top in a trial round), so it took
+  three rounds. After: every kind has clear wins and losses; Serenity's riflemen have one hard counter, Grubstake's
+  sapper, kept (at 10 parts they anchor both economies, and dynamite against rifle lines is a counter worth having).
+  Prices are read through `shared.unit_cost(corp, kind)`, which takes a corporation's own price where a kind has one.
 - **Limits:** no research on either side (a camp's tree levels and the player's damage upgrades both matter); open
   ground (no walls for the squads, no terrain); the wave arrives in one clump. Next, if the numbers call for it: tune
   costs or caps, not damage, since a squad's spend is the comparison.

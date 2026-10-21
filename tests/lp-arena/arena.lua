@@ -38,10 +38,11 @@ function arena.ground(c, radius_chunks)
   return s
 end
 
--- What a unit of the corporations costs in parts (shared.units); nil for anything else.
-function arena.cost(kind)
-  local u = shared.units[kind]
-  return u and u.cost
+-- What a unit of the corporations costs in parts (shared.unit_cost: a Grubstake variant at Grubstake's price); nil for
+-- anything else.
+function arena.cost(kind, name)
+  if not shared.units[kind] then return nil end
+  return shared.unit_cost(name and name:find("^lp%-grubstake%-") and "grubstake" or "serenity", kind)
 end
 
 -- The corporations' own unit kinds whose prototype exists for that corporation.
@@ -147,7 +148,7 @@ local function spawn(s, entries, x, y, facing)
         local u = place(s, name, {x, y}, force, 20)
         if u then table.insert(out, u) end
       end
-      parts = parts + (arena.cost(shared.kind_of(name)) or 0) * n
+      parts = parts + (arena.cost(shared.kind_of(name), name) or 0) * n
     end
   end
   return out, parts
@@ -211,7 +212,7 @@ function arena.start(c, a, b, label)
     for i, e in ipairs(side.units) do
       side.max[i] = e.max_health
       -- Units and walkers (spider-units: their deaths went uncounted until 2026-10-21).
-      side.cost[i] = (e.type == "unit" or e.type == "spider-unit") and arena.cost(shared.kind_of(e.name)) or nil
+      side.cost[i] = (e.type == "unit" or e.type == "spider-unit") and arena.cost(shared.kind_of(e.name), e.name) or nil
     end
   end
   command(f.a, f.b.at); command(f.b, f.a.at)
