@@ -171,7 +171,7 @@ function faction.site(surface, from, distance, count)
       -- research): a settlement landed there would die unseen. Against a megabase they ring it, just outside.
       if clear and not faction.under_guns then
         for _, pf in pairs(game.forces) do
-          if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
+          if clear and not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral"
             -- Its range research too (a factory with 210 technologies outranged 224 tiles: eleven landings in three
             -- hours died within 25 seconds, visit).
             and surface.count_entities_filtered{position = spot, radius = ARTILLERY_REACH * (1 + pf.artillery_range_modifier),
@@ -186,7 +186,7 @@ function faction.site(surface, from, distance, count)
       if clear then
         local keep = faction.pact_site and SQUAT_DISTANCE or 100
         for _, pf in pairs(game.forces) do
-          if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
+          if clear and not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral"
             and surface.count_entities_filtered{position = spot, radius = keep, force = pf,
               type = {"unit", "electric-turret", "ammo-turret", "fluid-turret", "car", "spider-vehicle"}, limit = 1} > 0 then
             clear = false
@@ -197,7 +197,7 @@ function faction.site(surface, from, distance, count)
       -- megabase's lasers counted as clear, and landings came down inside a 1,600-tile factory, visit).
       if clear then
         for _, pf in pairs(game.forces) do
-          if clear and not shared.is_corp(pf.name) and pf.name ~= "enemy" and pf.name ~= "neutral"
+          if clear and not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral"
             and surface.count_entities_filtered{position = spot, radius = CLEAR_OF_FACTORY, force = pf,
               type = FACTORY, limit = 1} > 0 then
             clear = false
@@ -730,7 +730,7 @@ function faction.uplink_lost(entity)
   if f.next then f.next = math.max(game.tick, f.next - VACANCY_HASTE) end
   tell("lp.hq-down-" .. hq.corp, string.format("[gps=%d,%d,%s]", hq.origin.x, hq.origin.y, game.surfaces[hq.surface].name))
   for _, force in pairs(game.forces) do
-    if not shared.is_corp(force.name) and force.name ~= "enemy" and force.name ~= "neutral" then
+    if not shared.is_corp(force.name) and not shared.is_biters(force.name) and force.name ~= "neutral" then
       local t = force.technologies["lp-prize-" .. hq.corp]
       if t then t.researched = true end
     end

@@ -39,6 +39,8 @@ local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
+local herd = require("__landing-party__.scripts.herd")
+script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
 script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
 script.on_nth_tick(3600, aim.sweep)
 war.forgive = standing.forgive
@@ -59,6 +61,7 @@ local function init()
     f.custom_color = c.color
   end
   pact.apply()
+  herd.init()
   command.init()
 end
 
@@ -66,7 +69,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -146,6 +149,7 @@ end)
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
   biters.on_died(e)
+  herd.on_died(e)
   -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
   -- corridor for 30 minutes (ops.route lets marches through it).
   if ent.type == "unit-spawner" then ops.cleared(ent.surface, ent.position); ledger.nest_died(ent, e.force) end
@@ -195,7 +199,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     command.drop_cores(ent.surface, ent.position, 3)
     local b = base.fall(ent)
     -- The grudge: a lander the player destroyed is answered by every corporation (faction.grudge).
-    if b and e.force and not shared.is_corp(e.force.name) and e.force.name ~= "enemy" and e.force.name ~= "neutral" then
+    if b and e.force and not shared.is_corp(e.force.name) and not shared.is_biters(e.force.name) and e.force.name ~= "neutral" then
       faction.grudge(b, e.force.name, e.cause and e.cause.valid and e.cause.position or nil)
     end
   end
@@ -245,7 +249,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     else
       base.on_died(ent, e.force and e.force.name)
     end
-  elseif e.force and shared.is_corp(e.force.name) and ent.force.name ~= "neutral" and ent.force.name ~= "enemy" then
+  elseif e.force and shared.is_corp(e.force.name) and ent.force.name ~= "neutral" and not shared.is_biters(ent.force.name) then
     -- A player building razed by a corporation, whatever did it, its killer dead or alive: the ladder's clock
     -- (ops.ladder) and the tally (lasers and artillery kept falling on the user's save with the tally still).
     if not shared.is_corp(ent.force.name) then
@@ -412,6 +416,8 @@ remote.add_interface("landing-party", {
     if t.skim_off ~= nil then storage.skim_off = t.skim_off end
     if t.night_off ~= nil then storage.night_off = t.night_off end
     if t.leader_off ~= nil then storage.leader_off = t.leader_off end
+    -- The biotech's pens send no wave on their own (tests send them: herd_wave).
+    if t.herd_off ~= nil then storage.herd_off = t.herd_off end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
     if t.harmless then
       for _, k in ipairs({"ops_off", "flare_off", "jump_off", "tap_off", "skim_off", "prospect_off", "sever_off", "cuts_off",
@@ -433,6 +439,25 @@ remote.add_interface("landing-party", {
     for corp, lvl in pairs(t.corp_level or {}) do faction.corp(corp).level = lvl end
   end,
   set_trace = function(on) storage.trace = on end,
+  -- The biotech (scripts/herd.lua). Tests only: a wild spawner near pos becomes a pen; bred units into a pen's stock;
+  -- a wave from a pen at pos (opts.sight: its biters' sight, 0 for the blind control); the herd's state and log.
+  herd_capture = function(surface_index, pos)
+    local sp = game.surfaces[surface_index].find_entities_filtered{position = pos, radius = 8, type = "unit-spawner",
+      force = "enemy", limit = 1}[1]
+    return sp and herd.capture(sp)
+  end,
+  herd_fill = function(pen_id, n, name)
+    local p = storage.herd.pens[pen_id]
+    local s = p.pen.surface
+    for _ = 1, n do
+      local q = s.find_non_colliding_position(name, p.pen.position, 30, 0.5)
+      local u = q and s.create_entity{name = name, position = q, force = shared.BIOTECH.force}
+      if u then table.insert(p.stock, u) end
+    end
+    return #p.stock
+  end,
+  herd_wave = function(pen_id, pos, opts) return herd.launch(storage.herd.pens[pen_id], pos, opts) end,
+  herd_state = function() return herd.state() end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).

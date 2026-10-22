@@ -134,10 +134,72 @@ stays as the skeleton; the identity is a pack, three habits the player can watch
   60 otherwise. Kessler-Hayashi's siege columns in the open are prey; no joint strike with anyone is scripted.
 - Tell to strike 3 to 6 minutes: the pen crowding at its gate, the tracker's loop (60 to 120 s), a minute's gathering.
 
-**First slice:** one pen, one wave: the tracker, the trail, the gathering, the march, the two-piece breach, the supply
-target, withdrawal, attribution (the ledger untouched). Proved by a `herd` scenario family in `tests/lp-sim` (the
-consult's section 9: tell timing, the feed under the guns, a second feed, scout killed then a wider loop, belt-fed guns,
-the trail, a repeat wave, wild biters uninvolved, a blind control, 200 biters for performance), then the arena rows for
-the bred biter before any breed. Five engine questions to spike first (consult section 10): a group walking a 300-tile
-trail intact, pauses in a compound command, `set_tiles` redrawing the player's map, a sprite drawn in the chart view,
-and the `cause` of a laser's damage (for the probe).
+**First slice: built 0.1.51** (2026-10-22), below.
+
+## The first slice, built (0.1.51, 2026-10-22)
+
+Engine spikes first (a throwaway mod, deleted): a group of 40 bred biters walked a 360-tile route of five waypoints
+whole (no strays, none lost, 30 s); a `stop` with `ticks_to_wait` inside a compound command holds a unit and the chain
+goes on; a turret is the `cause` of its hits, a laser's included (the beam is the `source`); mud decals can be laid by
+script. The map side needed no spike: the mod already draws on the map with `render_mode = "chart"` (`chart.lua`,
+`map.lua`), so the trail on the map and the scout's marker are chart drawings, not tiles.
+
+What is built (`landing-party/biotech.lua`, `scripts/herd.lua`; force `lp-biotech`, `shared.BIOTECH`):
+- **Breeds and the pen.** Bred small, medium, big and behemoth biters (mask layers retinted, map dots in its green); the
+  pen, a biter spawner drawn as the captive spawner, breeding them by the biotech force's evolution (set from the wild
+  biters' on each surface it holds pens on, for now), up to 40.
+- **Its force.** At peace both ways with the wild biters and with Grubstake; at war with the rest. `shared.is_corp` now
+  names the two corporations' forces exactly (it was any `lp-` force), and `shared.is_biters` (wild or bred) takes the
+  biotech's force out of every place that looked for "the player" as whatever was not biters, a corporation or neutral
+  (captures, intel, occupied ground, the Tesla, the jammer, grudges, provocation, the scorecards).
+- **A wave** when a pen holds 24 or more, at the nearest of the player's guns and machines within 500 tiles:
+  1. The tracker: the bred biter nearest the base walks a box 29 tiles outside the box of the player's turrets near the
+     target (sixteen points, pausing 10 s at four), the biotech's egg icon over it and on the map, noting the turrets it
+     sees within 40. Then it sits at the face (of eight) where it saw fewest. A loop that is not whole (the scout killed
+     or stopped) is no report: the wave comes blind, a plain wave, and the next loop round that base goes 10 wider; a
+     dead scout leaves a skull on the map.
+  2. The trail: mud decals every two tiles from the pen round the loop to the mark (never on a mineable floor or water),
+     and a dashed green line on the map; both gone after 20 minutes.
+  3. The herd gathers at the pen's gate for 90 s, then walks the trail fighting nothing, a leader's icon over it.
+  4. The breach: the two wall pieces where the line from the mark to the middle meets the wall; through, 15 tiles in.
+  5. What feeds the guns, seen from its lead biter (the one deepest in): power sources, inserters dropping into gun
+     turrets, pipes at flamethrowers, nearest first, passing over any with three or more turrets within 24 tiles of it;
+     seeing none, it pushes on to the middle once and looks again.
+  6. Home: when nothing in sight feeds a gun, after 90 s inside, or at half lost, back out of the breach and up its
+     trail, fighting nothing. Survivors are the pen's stock for the next wave.
+- Tests and tools: remote `herd_capture`, `herd_fill`, `herd_wave`, `herd_state`; `debug_tune{herd_off = true}`.
+  The biotech does not land yet: no game makes a pen on its own (the next slice: its arrival on a nest).
+
+What the runs taught (each a fix now in the code, the run named in its comment):
+- A circle round the turrets' average missed a lopsided base's heavy face (the loop was sized by the far back turret,
+  its front 55 to 67 tiles off, past the scout's sight): the loop is a box round the turrets' box.
+- A herd forty wide walking the loop spills into turret reach; fighting back there (distraction by damage) drew it on to
+  the faces it was going round, ten turrets taken and the herd dead before its mark; going home the same way did the
+  same. It marches and withdraws fighting nothing.
+- In at a corner of a 74-tile base, the power in the middle stood 43, then 40.5 tiles from its lead: past its sight. It
+  pushes on to the middle once before giving up.
+- Forty bred took a second power source under four lasers and three gun turrets for eleven of them: under the guns was
+  not a counter. It now passes over a target with three or more turrets within 24 tiles: the inner keep.
+- Turrets on the scout's loop only widened the loop (it goes round every turret it sees). The answer to the scout has to
+  move: troopers outside the wall stopped it. A half loop read unseen faces as empty and sent the herd to one it had not
+  seen; a loop that is not whole is now a blind wave.
+- A unit in a chunk not generated yet cannot path: every move fails at once (the test's pen 430 tiles out). A real pen
+  stands on a nest, in generated ground; the test generates its ground first.
+
+The `herd` scenario (`tests/lp-sim`, eight variants, seed 12345; a base 250 tiles from spawn: a wall ring of radius 40,
+7 lasers and 5 gun turrets heavy toward the pen, power in the middle; a pen 180 tiles out, 40 bred medium biters):
+
+| Variant | What happened |
+|---|---|
+| default | mark (the SW corner, no turret seen there) 86 s after launch, march 176 s, breach 204 s, power dead 218 s; 31 of 41 home; the trail there 15 minutes on (195 decals), none inside the wall, gone at 21 |
+| keep: the power under the front's guns | passed over (guarded); power up; 32 of 41 home |
+| second: a second source under the front's guns | the middle one killed, the guarded one spared; lasers lit; 18 of 41 home |
+| scout: seven troopers outside the wall on the loop | the scout stopped, a blind wave, all 41 dead; the next wave's loop 39 (10 wider), and it saw 9 turrets of 12 from there |
+| belt: twelve gun turrets fed by burner inserters, no power | four inserters killed, 11 of 12 guns standing; 17 of 41 home |
+| wild: a wild nest 50 tiles off the trail | no wild biter joined, no damage either way, the nest untouched; power dead, 32 of 41 home |
+| blind: its biters' sight 0 (the control) | marched to the nearest face (the heavy one), found nothing; power up; 13 of 41 home |
+| mega: 200 bred | power dead; 187 of 200 home. Its cost per tick not measured: the run's average covers 30 minutes and ran beside seven others |
+
+Open from here: its arrival (landing on a nest, the pens it grows), the evolution from what it eats, the Grubstake break,
+Kessler-Hayashi against its pens, the probe (tier 2), the arena rows for the bred biter, and retiring Grubstake's flares
+once the biotech lands in games.

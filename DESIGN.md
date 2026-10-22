@@ -35,7 +35,7 @@ document still says Serenity where it records history.
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
-| A third corporation, biotech (bred biters, pens on nests, waves with intent): `docs/biotech.md` | designed; engine tested 2026-10-22 | spikes (deleted) |
+| A third corporation, biotech: pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home): `docs/biotech.md` | first slice built 0.1.51; no arrival yet | `herd` (eight) |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -1533,7 +1533,7 @@ no provocation scripted, still see Serenity come (the player's outpost lies insi
 and 9 operations for the passive, robots and walled players in 2 hours, production 16, 93 and 94 of 94 standing.
 `temper` checks that no operation against the player starts before the provocation, whatever caused it.
 
-### The third corporation: biotech (the user, 2026-10-21; brief `docs/biotech.md`; engine tests 2026-10-22, nothing built)
+### The third corporation: biotech (the user, 2026-10-21; brief `docs/biotech.md`; engine tests 2026-10-22; first slice 0.1.51)
 Chosen from five candidates (`docs/third-corporation.md`, three consults): a corporation that breeds biters, lives in
 nests, is at peace with the wild biters and sends waves with intent; Grubstake's flares are retired for it. Engine tests
 (throwaway spikes, details in the brief):
@@ -1551,6 +1551,15 @@ nests, is at peace with the wild biters and sends waves with intent; Grubstake's
   Intelligence is cheap to script and worth an army, so its tell and its counters are the design problem.
 - Fairness trial (intel by sight only; a dead scout means a blind wave): spreading turrets evenly did not stop it; power
   under the guns, a second power source, or killing the scout (two outer turrets on its loop) each did. Table in the brief.
+- Direction from the consult (`docs/reviews/2026-10-22-wave-intelligence-consult.md`): a pack, not the others' moves (the
+  trial's breach-to-power was Grubstake's sneak plus Kessler-Hayashi's blackout). **First slice built 0.1.51**
+  (`biotech.lua`, `scripts/herd.lua`): the scout's loop round the turrets' box and its mark at the face it saw fewest,
+  the trail (mud and a map line, 20 minutes), the herd's march and withdrawal fighting nothing, a two-piece breach, what
+  feeds the guns (power, gun turrets' inserters, flamethrowers' pipes) passing over any target under three turrets, home
+  after. A loop not whole is a blind wave and a wider loop next time; turrets cannot catch the scout (it loops round them),
+  troopers outside the wall can. `shared.is_corp` is now exact (the two corporations' forces) and `shared.is_biters`
+  covers wild and bred. Scenario `herd`, eight variants; results in the brief.
+- Engine: a unit standing in a chunk not yet generated cannot path; every move it is given fails at once.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

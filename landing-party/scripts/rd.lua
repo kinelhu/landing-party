@@ -57,7 +57,7 @@ function rd.tally(b, cause, dead)
   if not (cause and cause.valid) then return end
   local kind = shared.kind_of(cause.name)
   local dmg = DAMAGE_BY_NAME[kind] or DAMAGE[cause.type]
-  local biter = cause.force.name == "enemy"
+  local biter = shared.is_biters(cause.force.name)
   if biter then dmg = (cause.type == "turret" or cause.name:find("spitter", 1, true)) and "acid" or "physical" end
   if not dmg then return end
   local t = rd.state(b.corp)

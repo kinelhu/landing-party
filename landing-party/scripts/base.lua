@@ -269,8 +269,7 @@ local CAPTURE_TICKS = 60 * 60
 local function holder(b, surface, pos)
   local f = force(b)
   for _, other in pairs(game.forces) do
-    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not shared.is_corp(other.name)
-      and not f.get_cease_fire(other) then
+    if other ~= f and shared.is_player_force(other) and not f.get_cease_fire(other) then
       local e = surface.find_entities_filtered{position = pos, radius = OCCUPY_RADIUS, force = other, type = OCCUPIERS,
         limit = 1}[1]
       if e then return other end

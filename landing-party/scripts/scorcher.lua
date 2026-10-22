@@ -33,7 +33,7 @@ local function target(u)
   local s, p, f = u.surface, u.position, u.force
   local best, bd
   for _, e in pairs(s.find_entities_filtered{position = p, radius = REACH, type = BUILDINGS}) do
-    if e.valid and e.force ~= f and not f.get_cease_fire(e.force) and e.force.name ~= "neutral" and e.force.name ~= "enemy" then
+    if e.valid and e.force ~= f and not f.get_cease_fire(e.force) and e.force.name ~= "neutral" and not shared.is_biters(e.force.name) then
       local d = (e.position.x - p.x) ^ 2 + (e.position.y - p.y) ^ 2
       if not bd or d < bd then best, bd = e.position, d end
     end

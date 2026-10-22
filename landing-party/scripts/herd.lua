@@ -1,0 +1,670 @@
+-- The biotech's waves: a pack (docs/biotech.md, "Waves with intent: the pack"; Fable:
+-- docs/reviews/2026-10-22-wave-intelligence-consult.md). The first slice: a pen on a held nest breeds to its stock, then
+-- sends one wave the player can watch and read.
+--   1. The tracker: one bred biter walks a loop outside the turrets' reach (LOOP_OUT past the outermost turret), stopping
+--      at four faces, noting the turrets it sees; its icon over it and on the map. Then it sits at the face where it saw
+--      fewest: the mark. Killed or stopped before its loop is whole, the wave comes blind (a plain wave) and the next
+--      loop there is wider.
+--   2. The trail: mud on the ground and a dashed line on the map, from the pen's gate round the loop to the mark.
+--   3. The herd gathers at the gate for 90 seconds, then walks the trail to the mark, a leader's icon over it, fighting
+--      nothing on the way.
+--   4. The breach: the two wall pieces nearest where the line to the middle meets the wall, then INSIDE tiles in.
+--   5. What feeds the guns, the first it sees: power, the inserters loading gun turrets, the pipes at flamethrowers; not
+--      what stands under three or more turrets (an inner keep is the counter); pushing on to the middle if it sees none.
+--   6. Home: when nothing in sight feeds a gun (once it has pushed on to the middle), after INSIDE_TICKS inside, or at
+--      half lost, back out the breach and up its trail, fighting nothing; never holding ground.
+-- The engine tests (2026-10-22): a force at cease-fire with "enemy" never fights the wild biters; a herd walks a
+-- 360-tile route of waypoints whole; a stop in a compound command holds the scout; turrets are the `cause` of their
+-- hits, lasers included.
+local shared = require("shared")
+local herd = {}
+
+local B = shared.BIOTECH
+local SIGHT = 40            -- what a biter of the pack sees, scout or herd (tiles)
+local LOOP_OUT = 29         -- the loop past the outermost turret: beyond a laser (24); a flamethrower (30) reaches it
+local LOOP_POINTS = 16
+local STOP_EVERY = 4        -- a pause at every fourth loop point: four faces
+local STOP_TICKS = 600
+local SIT_TICKS = 30 * 3600
+local GATHER_TICKS = 90 * 60
+local INSIDE = 15
+local INSIDE_TICKS = 90 * 60
+local TRAIL_TICKS = 20 * 3600
+local REACH = 500           -- how far from its pen a wave goes
+local BASE_REACH = 120      -- the turrets that make one base, round what drew the wave
+local SCOUT_EXTRA = 10      -- a dead scout's lesson: the next loop round that base this much wider
+local SCOUT_TIMEOUT = 5 * 3600
+-- It does not bite under the guns: a target with this many of the player's turrets within a laser's reach of it is
+-- passed over (forty bred took a power source under four lasers and three guns for eleven of them: the inner keep has
+-- to be a counter the player can build, docs/biotech.md).
+local GUARDED, GUARD_RANGE = 3, 24
+local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret"}
+local WALLS = {"wall", "gate"}
+local POWER = {"generator", "solar-panel", "accumulator", "burner-generator", "electric-energy-interface", "reactor",
+  "fusion-generator", "lightning-attractor"}
+local PIPES = {"pipe", "pipe-to-ground", "pump"}
+-- What draws a wave: the player's machines and guns (pollution is what feeds it; these make it).
+local DRAW = {"ammo-turret", "electric-turret", "fluid-turret", "assembling-machine", "furnace", "mining-drill", "boiler",
+  "generator", "lab"}
+
+local function st()
+  storage.herd = storage.herd or {pens = {}, waves = {}, next = 1, log = {}, trails = {}}
+  return storage.herd
+end
+
+local function force() return game.forces[B.force] end
+
+-- Its force: at peace with the wild biters both ways; neutral with Grubstake (it grows on its pollution) until a break,
+-- which a later slice gives triggers; at war with everyone else.
+function herd.init()
+  local f = game.forces[B.force] or game.create_force(B.force)
+  f.custom_color = B.color
+  local enemy = game.forces.enemy
+  if enemy then f.set_cease_fire(enemy, true); enemy.set_cease_fire(f, true) end
+  local g = game.forces[shared.CORPS.grubstake.force]
+  if g and not st().grubstake_broken then f.set_cease_fire(g, true); g.set_cease_fire(f, true) end
+  st()
+end
+
+local function d2(a, b)
+  local ax, ay = a.x or a[1], a.y or a[2]
+  local bx, by = b.x or b[1], b.y or b[2]
+  return (ax - bx) ^ 2 + (ay - by) ^ 2
+end
+local function xy(p) return {x = p.x or p[1], y = p.y or p[2]} end
+local function add(p, dx, dy) return {x = p.x + dx, y = p.y + dy} end
+
+local function players() return shared.player_forces() end
+
+local function log(w, text)
+  if storage.trace then
+    helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  wave %d: %s\n", game.tick, "biotech", w.id,
+      text), true)
+  end
+end
+
+-- Pens -------------------------------------------------------------------------------------------------------------
+
+function herd.add_pen(pen)
+  st().pens[pen.unit_number] = {pen = pen, stock = {}, memory = {}}
+  return pen.unit_number
+end
+
+-- A wild nest taken: the spawner gives way to a pen on the same spot (its wild biters stay wild).
+function herd.capture(spawner)
+  local s, pos = spawner.surface, spawner.position
+  spawner.destroy()
+  local pen = s.create_entity{name = "lp-pen", position = pos, force = B.force}
+  return pen and herd.add_pen(pen)
+end
+
+-- What a pen has to send: what it bred and still owns, and what came home from its last wave.
+local function stock(p)
+  local out, seen = {}, {}
+  local function take(u)
+    if u.valid and not seen[u.unit_number] then seen[u.unit_number] = true; table.insert(out, u) end
+  end
+  if p.pen.valid then for _, u in pairs(p.pen.units) do take(u) end end
+  for _, u in pairs(p.stock) do take(u) end
+  p.stock = {}
+  for _, u in ipairs(out) do table.insert(p.stock, u) end
+  return out
+end
+herd.stock = stock
+
+-- The base: the box round the player's turrets near what drew it, its middle and half sizes. (A circle round their
+-- average missed a lopsided base's heavy face: the loop sized by the far back turret ran 55 to 67 tiles off the front,
+-- beyond its sight; seen in the first herd run.)
+local function base_box(s, pos, forces)
+  local ts = s.find_entities_filtered{position = pos, radius = BASE_REACH, force = forces, type = TURRETS}
+  if #ts == 0 then return xy(pos), 8, 8 end
+  local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
+  for _, t in ipairs(ts) do
+    x0, y0 = math.min(x0, t.position.x), math.min(y0, t.position.y)
+    x1, y1 = math.max(x1, t.position.x), math.max(y1, t.position.y)
+  end
+  return {x = (x0 + x1) / 2, y = (y0 + y1) / 2}, math.max(8, (x1 - x0) / 2), math.max(8, (y1 - y0) / 2)
+end
+
+-- From the middle along angle a, out to a box of half sizes hx, hy.
+local function to_box(c, hx, hy, a)
+  local cs, sn = math.cos(a), math.sin(a)
+  local t = math.min(math.abs(cs) > 1e-6 and hx / math.abs(cs) or math.huge, math.abs(sn) > 1e-6 and hy / math.abs(sn) or math.huge)
+  return {x = c.x + t * cs, y = c.y + t * sn}
+end
+
+-- Map and world tells ---------------------------------------------------------------------------------------------
+
+local function mark_unit(w, u, on_map)
+  if not (u and u.valid) then return end
+  table.insert(w.marks, rendering.draw_sprite{sprite = B.icon, surface = u.surface, target = {entity = u, offset = {0, -2.2}},
+    x_scale = 0.9, y_scale = 0.9})
+  if on_map then
+    table.insert(w.marks, rendering.draw_sprite{sprite = B.icon, surface = u.surface, target = {entity = u},
+      x_scale = 1.5, y_scale = 1.5, render_mode = "chart"})
+  end
+end
+
+local function clear_marks(w)
+  for _, m in ipairs(w.marks or {}) do if m.valid then m.destroy() end end
+  w.marks = {}
+end
+
+-- The trail: mud every two tiles (not on anyone's floor, not in water) and a dashed line on the map, both for
+-- TRAIL_TICKS (herd.tick takes the mud up).
+local function lay_trail(s, points)
+  local decs, mud = {}, {}
+  for i = 1, #points - 1 do
+    local a, b = points[i], points[i + 1]
+    local len = math.sqrt(d2(a, b))
+    rendering.draw_line{surface = s, from = a, to = b, color = {r = B.color.r, g = B.color.g, b = B.color.b, a = 0.9},
+      width = 3, dash_length = 3, gap_length = 2, render_mode = "chart", time_to_live = TRAIL_TICKS}
+    for k = 0, math.floor(len / 2) do
+      local f = k * 2 / math.max(len, 1)
+      local side = (k % 2 == 0) and 0.6 or -0.6
+      local p = {x = a.x + (b.x - a.x) * f + side * (b.y - a.y) / math.max(len, 1),
+        y = a.y + (b.y - a.y) * f - side * (b.x - a.x) / math.max(len, 1)}
+      local tile = s.get_tile(p.x, p.y)
+      if tile.valid and not tile.prototype.mineable_properties.minable and not tile.collides_with("water_tile") then
+        table.insert(decs, {name = k % 3 == 0 and "dark-mud-decal" or "light-mud-decal", position = p, amount = 1})
+        table.insert(mud, {p.x, p.y})
+      end
+    end
+  end
+  if #decs > 0 then s.create_decoratives{check_collision = false, decoratives = decs} end
+  table.insert(st().trails, {surface = s.index, mud = mud, expires = game.tick + TRAIL_TICKS})
+end
+
+local function lift_trails(tick)
+  local keep = {}
+  for _, t in ipairs(st().trails) do
+    if tick >= t.expires then
+      local s = game.surfaces[t.surface]
+      if s then
+        for _, p in ipairs(t.mud) do
+          s.destroy_decoratives{area = {{p[1] - 0.5, p[2] - 0.5}, {p[1] + 0.5, p[2] + 0.5}},
+            name = {"dark-mud-decal", "light-mud-decal"}}
+        end
+      end
+    else
+      table.insert(keep, t)
+    end
+  end
+  st().trails = keep
+end
+
+-- The wave ---------------------------------------------------------------------------------------------------------
+
+-- The loop: a box LOOP_OUT (and what dead scouts taught) outside the turrets' box, sixteen points round it.
+local function loop_point(w, j)
+  local a = (j % LOOP_POINTS) * 2 * math.pi / LOOP_POINTS
+  return to_box(w.center, w.hx + w.loop, w.hy + w.loop, a)
+end
+-- The base's edge (its turrets' box) toward pos.
+local function face_toward(w, pos)
+  return to_box(w.center, w.hx, w.hy, math.atan2(pos.y - w.center.y, pos.x - w.center.x))
+end
+
+local function go(dest, distraction, radius)
+  return {type = defines.command.go_to_location, destination = dest, radius = radius or 3,
+    distraction = distraction or defines.distraction.none}
+end
+
+local function compound(cmds)
+  return {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
+end
+
+local function alive(w)
+  local n = 0
+  for _, u in ipairs(w.members) do if u.valid then n = n + 1 end end
+  return n
+end
+
+-- Where the herd is: the middle of its living members (a group's position is not where they stand: a push 15 tiles on
+-- from it completed in 20 ticks).
+local function where(w)
+  local x, y, n = 0, 0, 0
+  for _, u in ipairs(w.members) do
+    if u.valid and u ~= w.scout then x, y, n = x + u.position.x, y + u.position.y, n + 1 end
+  end
+  if n == 0 then return w.group and w.group.valid and w.group.position or w.center end
+  return {x = x / n, y = y / n}
+end
+
+-- Its eyes inside: the member deepest in, nearest the middle (the middle of forty still filing through a two-piece gap
+-- stood outside the wall, and saw nothing 28 tiles from the power: third herd run).
+local function front(w)
+  local best, bd
+  for _, u in ipairs(w.members) do
+    if u.valid and u ~= w.scout then
+      local d = d2(u.position, w.center)
+      if not bd or d < bd then best, bd = u, d end
+    end
+  end
+  return best and best.position or where(w)
+end
+
+local function memory_key(c) return string.format("%d,%d", math.floor(c.x / 32), math.floor(c.y / 32)) end
+
+-- A wave from pen p at what drew it (target: a position).
+function herd.launch(p, target, opts)
+  opts = opts or {}
+  local s = p.pen.surface
+  local units = stock(p)
+  if #units < 2 then return end
+  local forces = players()
+  local c, hx, hy = base_box(s, target, forces)
+  local h = st()
+  local mem = p.memory[memory_key(c)] or {extra = 0}
+  p.memory[memory_key(c)] = mem
+  local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy,
+    loop = LOOP_OUT + mem.extra, stage = "scout", t = game.tick, t0 = game.tick, members = {}, seen = {},
+    marks = {}, kills = {}, tried = {}, sight = opts.sight or SIGHT, size = #units}
+  h.next = h.next + 1
+  for _, u in ipairs(units) do
+    if u.valid then
+      if u.commandable and u.commandable.spawner then u.commandable.release_from_spawner() end
+      table.insert(w.members, u)
+    end
+  end
+  p.stock = {}
+  -- The scout: the one nearest the base.
+  local best, bd
+  for _, u in ipairs(w.members) do
+    local d = d2(u.position, c)
+    if not bd or d < bd then best, bd = u, d end
+  end
+  w.scout = best
+  -- The loop: entered at the point nearest the pen, walked whole, a pause at every fourth point.
+  local entry, ed
+  for j = 0, LOOP_POINTS - 1 do
+    local d = d2(loop_point(w, j), p.pen.position)
+    if not ed or d < ed then entry, ed = j, d end
+  end
+  w.entry = entry
+  local cmds = {}
+  for k = 0, LOOP_POINTS do
+    table.insert(cmds, go(loop_point(w, entry + k)))
+    if k % STOP_EVERY == 0 and k < LOOP_POINTS then
+      table.insert(cmds, {type = defines.command.stop, ticks_to_wait = STOP_TICKS, distraction = defines.distraction.none})
+    end
+  end
+  w.scout.commandable.set_command(compound(cmds))
+  mark_unit(w, w.scout, true)
+  h.waves[w.id] = w
+  log(w, string.format("%d bred from pen %d; scout loops %.0f outside the turrets' box round %.0f,%.0f (%.0f by %.0f)",
+    #w.members, w.pen, w.loop, c.x, c.y, 2 * hx, 2 * hy))
+  return w.id
+end
+
+local function herd_units(w)
+  local out = {}
+  for _, u in ipairs(w.members) do if u.valid and u ~= w.scout then table.insert(out, u) end end
+  return out
+end
+
+local function gate(w)
+  local p = st().pens[w.pen]
+  local pp = p and p.pen.valid and p.pen.position or w.trail and w.trail[1] or w.center
+  local e = loop_point(w, w.entry)
+  local len = math.sqrt(d2(pp, e))
+  return {x = pp.x + (e.x - pp.x) * 8 / math.max(len, 1), y = pp.y + (e.y - pp.y) * 8 / math.max(len, 1)}
+end
+
+local function gather(w, next_stage)
+  local s = game.surfaces[w.surface]
+  local g = s.create_unit_group{position = gate(w), force = B.force}
+  for _, u in ipairs(herd_units(w)) do g.add_member(u) end
+  w.group = g
+  w.stage = "gather"
+  w.after_gather = next_stage
+  w.t = game.tick
+end
+
+-- The scout's report: the face it saw fewest turrets at (of eight), nearest the pen on a tie.
+local function choose_mark(w)
+  local count = {}
+  for k = 0, 7 do count[k] = 0 end
+  for _, sector in pairs(w.seen) do count[sector] = count[sector] + 1 end
+  local best, bc, bsteps
+  for k = 0, 7 do
+    local j = k * LOOP_POINTS / 8
+    local steps = math.min((j - w.entry) % LOOP_POINTS, (w.entry - j) % LOOP_POINTS)
+    if not bc or count[k] < bc or (count[k] == bc and steps < bsteps) then best, bc, bsteps = k, count[k], steps end
+  end
+  return best * LOOP_POINTS / 8, count
+end
+
+-- The loop's points from the entry to j, the shorter way round.
+local function arc(w, j)
+  local fwd = (j - w.entry) % LOOP_POINTS
+  local back = (w.entry - j) % LOOP_POINTS
+  local out = {}
+  if fwd <= back then
+    for k = 0, fwd do table.insert(out, loop_point(w, w.entry + k)) end
+  else
+    for k = 0, back do table.insert(out, loop_point(w, w.entry - k)) end
+  end
+  return out
+end
+
+local function mark(w)
+  local j, count = choose_mark(w)
+  w.mark = loop_point(w, j)
+  w.mark_index = j
+  local parts = {}
+  for k = 0, 7 do table.insert(parts, count[k]) end
+  local p = st().pens[w.pen]
+  local trail = {p and p.pen.valid and p.pen.position or w.mark}
+  for _, q in ipairs(arc(w, j)) do table.insert(trail, q) end
+  w.trail = trail
+  lay_trail(game.surfaces[w.surface], trail)
+  -- It walks to the mark the same way and sits there, facing the wall.
+  if w.scout and w.scout.valid then
+    local cmds = {}
+    for _, q in ipairs(arc(w, j)) do table.insert(cmds, go(q)) end
+    table.insert(cmds, {type = defines.command.stop, ticks_to_wait = SIT_TICKS, distraction = defines.distraction.none})
+    -- From where it stands (the loop's end is the entry).
+    w.scout.commandable.set_command(compound(cmds))
+  end
+  w.t_mark = game.tick
+  log(w, string.format("scout's turrets by face (E, SE, S, SW, W, NW, N, NE from the middle) %s; mark at %.0f,%.0f",
+    table.concat(parts, " "), w.mark.x, w.mark.y))
+  gather(w, "march")
+end
+
+local function blind(w)
+  w.blind = true
+  log(w, "no whole loop from its scout: the wave comes blind")
+  local p = st().pens[w.pen]
+  if p then
+    local m = p.memory[memory_key(w.center)] or {extra = 0}
+    m.extra = m.extra + SCOUT_EXTRA
+    p.memory[memory_key(w.center)] = m
+  end
+  if w.scout_died_at then
+    rendering.draw_sprite{sprite = "virtual-signal/signal-skull", surface = w.surface, target = w.scout_died_at,
+      x_scale = 1.2, y_scale = 1.2, render_mode = "chart", tint = B.color, time_to_live = TRAIL_TICKS}
+  end
+  gather(w, "blind")
+end
+
+-- On the move it fights nothing: a herd forty wide spills into turret reach along the loop, and fighting back there
+-- (distraction by damage) drew it on to the faces it was going round (the first herd run: ten turrets taken on the way,
+-- the herd dead before its mark).
+local function march(w)
+  local cmds = {}
+  for k = 2, #w.trail do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
+  w.group.set_command(compound(cmds))
+  w.stage = "march"
+  w.t = game.tick
+  local lead = herd_units(w)[1]
+  mark_unit(w, lead, true)
+  log(w, string.format("herd of %d marches", #herd_units(w)))
+end
+
+local function blind_attack(w)
+  local p = st().pens[w.pen]
+  local from = p and p.pen.valid and p.pen.position or w.center
+  local face = face_toward(w, from)
+  w.group.set_command(compound({
+    {type = defines.command.attack_area, destination = face, radius = 16},
+    {type = defines.command.attack_area, destination = w.center, radius = math.max(w.hx, w.hy) + 10}}))
+  w.stage = "blind"
+  w.t = game.tick
+  w.trail = {from, face}
+  mark_unit(w, herd_units(w)[1], true)
+end
+
+-- Where the line from the mark to the middle meets the wall: the two pieces there, then INSIDE tiles in.
+local function breach(w)
+  local s = game.surfaces[w.surface]
+  local forces = players()
+  local m, c = w.mark, w.center
+  local len = math.sqrt(d2(m, c))
+  local ux, uy = (c.x - m.x) / math.max(len, 1), (c.y - m.y) / math.max(len, 1)
+  local hit
+  for k = 0, math.floor(len) do
+    local q = {x = m.x + ux * k, y = m.y + uy * k}
+    if s.count_entities_filtered{position = q, radius = 1.5, type = WALLS, force = forces, limit = 1} > 0 then hit = q; break end
+  end
+  local cmds = {}
+  local h = hit or face_toward(w, m)
+  if hit then
+    local ws = s.find_entities_filtered{position = hit, radius = 3, type = WALLS, force = forces}
+    table.sort(ws, function(a, b) return d2(a.position, hit) < d2(b.position, hit) end)
+    for i = 1, math.min(2, #ws) do
+      table.insert(cmds, {type = defines.command.attack, target = ws[i], distraction = defines.distraction.none})
+    end
+  end
+  local depth = math.min(INSIDE, math.sqrt(d2(h, c)))
+  w.breach = h
+  w.inside = {x = h.x + ux * depth, y = h.y + uy * depth}
+  table.insert(cmds, go(w.inside, defines.distraction.none, 4))
+  w.group.set_command(compound(cmds))
+  w.stage = "breach"
+  w.t = game.tick
+  w.t_breach = game.tick
+  log(w, string.format("breach at %.0f,%.0f (%s)", h.x, h.y, hit and (#cmds - 1) .. " wall pieces" or "no wall"))
+end
+
+-- What feeds the guns, the first in sight of the herd.
+local function supply_target(w)
+  local s = game.surfaces[w.surface]
+  local forces = players()
+  local at = front(w)
+  local best, bd
+  local function consider(e)
+    if e.valid and not w.tried[e.unit_number or 0]
+      and s.count_entities_filtered{position = e.position, radius = GUARD_RANGE, type = TURRETS, force = forces,
+        limit = GUARDED} < GUARDED then
+      local d = d2(e.position, at)
+      if not bd or d < bd then best, bd = e, d end
+    end
+  end
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = POWER, force = forces}) do consider(e) end
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = "inserter", force = forces}) do
+    if s.count_entities_filtered{position = e.drop_position, type = "ammo-turret", force = forces, limit = 1} > 0 then
+      consider(e)
+    end
+  end
+  for _, ft in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = "fluid-turret", force = forces}) do
+    for _, e in pairs(s.find_entities_filtered{position = ft.position, radius = 3, type = PIPES, force = forces}) do consider(e) end
+  end
+  return best
+end
+
+local withdraw
+
+local function hunt(w)
+  if not (w.group and w.group.valid) then return end
+  local t = supply_target(w)
+  if not t and not w.pushed then
+    -- Nothing in sight: on to the middle, once (in at a corner of a 74-tile base, its lead saw the power in the middle at
+    -- 43, then at 40.5, past its sight of 40: herd runs 2 to 4).
+    w.pushed = true
+    w.group.set_command(go(w.center, defines.distraction.none, 6))
+    log(w, "nothing in sight: pushes in")
+    return
+  end
+  if not t then
+    withdraw(w, "nothing in sight feeds a gun")
+    return
+  end
+  w.target = t
+  w.tried[t.unit_number or 0] = true
+  w.group.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
+  log(w, string.format("goes for %s at %.0f,%.0f", t.name, t.position.x, t.position.y))
+end
+
+withdraw = function(w, why)
+  if w.stage == "withdraw" or w.stage == "done" then return end
+  local g = w.group
+  if not (g and g.valid) then return end
+  if w.scout and w.scout.valid then g.add_member(w.scout) end
+  local cmds = {}
+  -- Out as it came, fighting nothing (fighting back on the way home drew it on to the faces it passed: second run).
+  if w.breach then table.insert(cmds, go(w.breach, defines.distraction.none, 4)) end
+  for k = #w.trail, 1, -1 do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
+  g.set_command(compound(cmds))
+  w.stage = "withdraw"
+  w.t_withdraw = game.tick
+  w.t = game.tick
+  log(w, string.format("withdraws (%s); %d of %d left", why, alive(w), w.size))
+end
+
+local function finish(w, outcome)
+  clear_marks(w)
+  local h = st()
+  local p = h.pens[w.pen]
+  if p then for _, u in ipairs(w.members) do if u.valid then table.insert(p.stock, u) end end end
+  if w.group and w.group.valid then w.group.destroy() end
+  w.stage = "done"
+  table.insert(h.log, {id = w.id, outcome = outcome, blind = w.blind or false, size = w.size, left = alive(w),
+    kills = w.kills, loop = w.loop, mark = w.mark and {w.mark.x, w.mark.y}, scout_seen = w.scout_seen,
+    t_launch = w.t0, t_mark = w.t_mark, t_march = w.t_march, t_breach = w.t_breach, t_inside = w.t_inside,
+    t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},
+    trail = w.trail})
+  h.waves[w.id] = nil
+  log(w, string.format("%s; %d of %d home", outcome, alive(w), w.size))
+end
+
+local function step(w, tick)
+  local s = game.surfaces[w.surface]
+  if not s then return finish(w, "lost") end
+  if w.stage == "scout" then
+    local sc = w.scout
+    if not (sc and sc.valid) then return blind(w) end
+    if tick % 30 == 0 then
+      for _, t in pairs(s.find_entities_filtered{position = sc.position, radius = w.sight, force = players(), type = TURRETS}) do
+        if not w.seen[t.unit_number] then
+          local a = math.atan2(t.position.y - w.center.y, t.position.x - w.center.x)
+          w.seen[t.unit_number] = math.floor(a / (math.pi / 4) + 0.5) % 8
+        end
+      end
+    end
+    if tick - w.t > SCOUT_TIMEOUT then mark(w) end
+    return
+  end
+  if alive(w) == 0 then return finish(w, "lost") end
+  if w.stage == "gather" then
+    if tick - w.t >= GATHER_TICKS then
+      if w.after_gather == "blind" then blind_attack(w) else w.t_march = tick; march(w) end
+    end
+    return
+  end
+  if not (w.group and w.group.valid) then return finish(w, "scattered") end
+  if w.stage == "inside" or w.stage == "breach" or w.stage == "blind" then
+    if alive(w) * 2 < w.size then return withdraw(w, "half lost") end
+    if w.t_inside and tick - w.t_inside > INSIDE_TICKS then return withdraw(w, "time inside") end
+  end
+  -- A command that never completes (stuck): move on after a while.
+  if w.stage == "withdraw" and tick - w.t > 10 * 3600 then return finish(w, "home late") end
+end
+
+function herd.tick(tick)
+  local h = storage.herd
+  if not h then return end
+  for _, w in pairs(h.waves) do
+    if w.stage == "scout" or tick % 60 == 0 then step(w, tick) end
+  end
+  if tick % 600 == 0 then
+    lift_trails(tick)
+    for id, p in pairs(h.pens) do
+      if not p.pen.valid then
+        h.pens[id] = nil
+      elseif not storage.herd_off then
+        local busy = false
+        for _, w in pairs(h.waves) do if w.pen == id then busy = true end end
+        if not busy and #stock(p) >= shared.WAVE_MIN then
+          local t = p.pen.surface.find_entities_filtered{position = p.pen.position, radius = REACH, force = players(),
+            type = DRAW, limit = 1}
+          -- The nearest of what draws it (a limited search returns any one; a second, bounded round it, the nearest).
+          if t[1] then
+            local near = p.pen.surface.find_entities_filtered{position = p.pen.position,
+              radius = math.sqrt(d2(t[1].position, p.pen.position)) + 1, force = players(), type = DRAW}
+            local best, bd
+            for _, e in ipairs(near) do
+              local d = d2(e.position, p.pen.position)
+              if not bd or d < bd then best, bd = e, d end
+            end
+            herd.launch(p, best and best.position or t[1].position)
+          end
+        end
+      end
+    end
+  end
+  if tick % 3600 == 7 then
+    -- Its breeds by the wild biters' evolution on each surface it holds pens on (its own, from what it eats, later).
+    local f, enemy = force(), game.forces.enemy
+    if f and enemy then
+      for _, p in pairs(h.pens) do
+        if p.pen.valid then f.set_evolution_factor(enemy.get_evolution_factor(p.pen.surface), p.pen.surface) end
+      end
+    end
+  end
+end
+
+function herd.on_command_completed(e)
+  local h = storage.herd
+  if not h then return end
+  for _, w in pairs(h.waves) do
+    if w.stage == "scout" and w.scout and w.scout.valid and e.unit_number == w.scout.unit_number then
+      w.scout_seen = 0
+      for _ in pairs(w.seen) do w.scout_seen = w.scout_seen + 1 end
+      log(w, string.format("scout's loop done (%s, result %d%s) at %.0f,%.0f, %d turrets seen",
+        e.result == defines.behavior_result.success and "whole" or "cut short", e.result,
+        e.was_distracted and ", distracted" or "", w.scout.position.x, w.scout.position.y, w.scout_seen))
+      -- Half a loop is not a report: faces it never saw would read as empty (a squad in its way cut one short, and the
+      -- herd went for a face it had not seen). It comes blind, and the next loop there goes wider.
+      if e.result ~= defines.behavior_result.success then return blind(w) end
+      return mark(w)
+    end
+    if w.group and w.group.valid and e.unit_number == w.group.unique_id then
+      if w.stage == "march" then return breach(w) end
+      if w.stage == "breach" then
+        w.stage = "inside"; w.t_inside = game.tick
+        return hunt(w)
+      end
+      if w.stage == "inside" then return hunt(w) end
+      if w.stage == "blind" then return withdraw(w, "blind wave spent") end
+      if w.stage == "withdraw" then return finish(w, "home") end
+    end
+  end
+end
+
+-- What its waves break: counted for the log (and the tests); the first kill (not a wall piece) timed.
+function herd.on_died(e)
+  local h = storage.herd
+  if not h or not next(h.waves) then return end
+  local ent = e.entity
+  if e.force and e.force.name == B.force and shared.is_player_force(ent.force) then
+    for _, w in pairs(h.waves) do
+      if w.stage ~= "scout" then
+        w.kills[ent.name] = (w.kills[ent.name] or 0) + 1
+        if not w.t_first_kill and ent.type ~= "wall" and ent.type ~= "gate" then w.t_first_kill = game.tick end
+      end
+    end
+  end
+  for _, w in pairs(h.waves) do
+    if w.scout == ent and w.stage == "scout" then w.scout_died_at = {x = ent.position.x, y = ent.position.y} end
+  end
+end
+
+function herd.state()
+  local h = st()
+  local pens, waves = {}, {}
+  for id, p in pairs(h.pens) do
+    pens[#pens + 1] = {id = id, valid = p.pen.valid, owned = p.pen.valid and #p.pen.units or 0, stock = #p.stock,
+      memory = p.memory}
+  end
+  for id, w in pairs(h.waves) do
+    waves[#waves + 1] = {id = id, stage = w.stage, alive = alive(w), size = w.size, loop = w.loop,
+      scout = w.scout and w.scout.valid and {w.scout.position.x, w.scout.position.y} or nil,
+      group = w.group and w.group.valid and {w.group.position.x, w.group.position.y} or nil,
+      mark = w.mark and {w.mark.x, w.mark.y}, trail = w.trail}
+  end
+  return {pens = pens, waves = waves, log = h.log, trails = #h.trails}
+end
+
+return herd

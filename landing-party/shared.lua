@@ -212,12 +212,26 @@ shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat sca
 
 -- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.
 shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-high"] = 2}
-function shared.is_corp(force_name) return force_name ~= nil and force_name:sub(1, 3) == "lp-" end
+-- The biotech (docs/biotech.md; the third corporation, its first slice): bred biters on their own force, at peace with
+-- the wild ones. Not one of CORPS yet (no settlements, ladder or tree): its pens and herds are scripts/herd.lua's.
+shared.BIOTECH = {force = "lp-biotech", color = {r = 0.45, g = 0.85, b = 0.2}, icon = "item/biter-egg",
+  -- Its breeds' mask layers (units.lua's tints are by kind; these are the biters'): green body, yellow bands.
+  tint1 = {r = 0.30, g = 0.85, b = 0.15, a = 1}, tint2 = {r = 0.95, g = 0.90, b = 0.20, a = 1}}
+-- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).
+shared.PEN_CAP = 40
+shared.WAVE_MIN = 24
+
+local corp_forces = {}
+for _, c in pairs(shared.CORPS) do corp_forces[c.force] = true end
+-- A corporation's force, by name. (Was any "lp-" force, which the biotech's force is and must not count as.)
+function shared.is_corp(force_name) return force_name ~= nil and corp_forces[force_name] == true end
+-- Biters, wild ("enemy") or bred (the biotech's): never a player's force and never a corporation's.
+function shared.is_biters(force_name) return force_name == "enemy" or force_name == shared.BIOTECH.force end
 -- A player's force: one with players, or the default "player" force (saves where nobody is connected), never a
 -- corporation's, the biters' or neutral. One definition (docs/ai.md 2.4: seven copies, two of which disagreed on neutral).
 function shared.is_player_force(f)
   local n = f.name
-  if shared.is_corp(n) or n == "enemy" or n == "neutral" then return false end
+  if shared.is_corp(n) or shared.is_biters(n) or n == "neutral" then return false end
   return n == "player" or #f.players > 0
 end
 function shared.player_forces()

@@ -563,7 +563,7 @@ local function intercept(b, trace)
   local lp = b.lander.position
   local best, bd
   for _, other in pairs(game.forces) do
-    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other) then
+    if other ~= f and not shared.is_biters(other.name) and other.name ~= "neutral" and not f.get_cease_fire(other) then
       for _, train in pairs(game.train_manager.get_trains{surface = b.lander.surface, force = other}) do
         for _, car in pairs(train.carriages) do
           local d = (car.position.x - lp.x) ^ 2 + (car.position.y - lp.y) ^ 2

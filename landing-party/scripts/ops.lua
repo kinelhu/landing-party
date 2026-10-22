@@ -272,7 +272,7 @@ end
 -- kind: "loss" (a unit, drone or building hurt; the default) or "trespass" (its ground, its border, a turret covering its
 -- camp): each corporation answers each its own way (shared.CORPS temper.answers, ops.answer).
 function ops.provoke(corp_force, by, at, kind)
-  if not shared.is_corp(corp_force) or by == nil or shared.is_corp(by) or by == "enemy" or by == "neutral" then return end
+  if not shared.is_corp(corp_force) or by == nil or shared.is_corp(by) or shared.is_biters(by) or by == "neutral" then return end
   for corp, c in pairs(shared.CORPS) do
     if c.force == corp_force then
       storage.corps = storage.corps or {}

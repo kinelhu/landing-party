@@ -135,7 +135,7 @@ function base.pave_job(b, job) return pave(b, job.tiles, job.floor, job.module) 
 local function occupied(b, surface, pos)
   local f = force(b)
   for _, other in pairs(game.forces) do
-    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other)
+    if other ~= f and not shared.is_biters(other.name) and other.name ~= "neutral" and not f.get_cease_fire(other)
       and surface.count_entities_filtered{position = pos, radius = OCCUPY_RADIUS, force = other,
         type = OCCUPIERS, limit = 1} > 0 then
       return true

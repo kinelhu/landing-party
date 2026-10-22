@@ -35,7 +35,7 @@ end
 local function foes_of(force)
   local out = {}
   for _, f in pairs(game.forces) do
-    if f ~= force and f.name ~= "enemy" and f.name ~= "neutral" and not force.get_cease_fire(f) then out[#out + 1] = f end
+    if f ~= force and not shared.is_biters(f.name) and f.name ~= "neutral" and not force.get_cease_fire(f) then out[#out + 1] = f end
   end
   return out
 end

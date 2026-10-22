@@ -79,7 +79,7 @@ end
 local function enemies(f)
   local out = {}
   for _, other in pairs(game.forces) do
-    if other ~= f and other.name ~= "enemy" and other.name ~= "neutral" and not f.get_cease_fire(other) then
+    if other ~= f and not shared.is_biters(other.name) and other.name ~= "neutral" and not f.get_cease_fire(other) then
       table.insert(out, other)
     end
   end

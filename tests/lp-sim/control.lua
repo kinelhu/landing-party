@@ -7240,6 +7240,225 @@ scenarios.fortress = function()
   end)
 end
 
+-- Herd (the biotech's first slice, scripts/herd.lua; docs/biotech.md "Waves with intent: the pack"): a base 250 tiles
+-- from spawn away from the Serenity camp (harmless): a square wall ring of radius 40, turrets heavy on the face toward
+-- the pen (4 lasers, 3 gun turrets), 2 on each flank, 1 laser at the back, 7 lasers and 5 gun turrets in all, power in
+-- the middle. A wild spawner 180 tiles out becomes a pen; 40 bred medium biters in its stock; one wave sent at the base.
+-- The default run: the scout's loop and mark, the gathering and the march as tells, the breach, the power dead, the
+-- herd home, the trail on the ground for 20 minutes and gone after. Mixes:
+--   keep: the power under the front's guns, none in the middle (power up; it withdrew, did not idle)
+--   second: a second source under the front's guns (power up)
+--   scout: seven troopers outside the wall on the scout's loop (the scout killed: a blind wave; the next loops wider)
+--   belt: no lasers, no power: twelve gun turrets fed by burner inserters from chests (the inserters go, the guns stand)
+--   wild: a wild nest 50 tiles off the trail (no wild biter in the herd; no fight between wild and bred)
+--   blind: its biters' sight 0 (the control: no report, nothing found inside; power up)
+--   mega: 200 bred biters (the cost recorded, not asserted)
+scenarios.herd = function()
+  local mix = params.mix or ""
+  local L, G = "laser-turret", "gun-turret"
+  local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
+  schedule(60, function()
+    lp("debug_tune", {harmless = true, army_off = true, herd_off = true, history_off = true})
+    local o = lp("stats", storage.id).origin
+    local ux, uy = 0, 0
+    if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
+    local vx, vy = -uy, ux
+    local c = {ux * 250 + 0.5, uy * 250 + 0.5}
+    -- du toward the pen (away from the camp), dv across.
+    local function at(du, dv) return {c[1] + ux * du + vx * dv, c[2] + uy * du + vy * dv} end
+    S.c, S.at = c, at
+    local a, b = at(-130, -130), at(260, 130)
+    -- The ground generated first: a unit in a chunk not yet generated cannot path (the scout's every move failed at once
+    -- 430 tiles out, while the herd marched minutes later, once the chunks were there).
+    surface().request_to_generate_chunks(at(65, 0), 9)
+    surface().force_generate_chunk_requests()
+    flatten(math.min(a[1], b[1]), math.min(a[2], b[2]), math.max(a[1], b[1]), math.max(a[2], b[2]))
+    -- The map's own mud off this ground: the trail's is what is counted.
+    surface().destroy_decoratives{area = {{math.min(a[1], b[1]), math.min(a[2], b[2])}, {math.max(a[1], b[1]), math.max(a[2], b[2])}},
+      name = {"dark-mud-decal", "light-mud-decal"}}
+    for i = -40, 40 do
+      put("stone-wall", at(40, i)); put("stone-wall", at(-40, i)); put("stone-wall", at(i, 40)); put("stone-wall", at(i, -40))
+    end
+    local layout
+    if mix == "belt" then
+      layout = {}
+      for _, p in ipairs({{37, -24}, {37, -8}, {37, 8}, {37, 24}, {-37, -16}, {-37, 16}, {-16, 37}, {16, 37}, {-16, -37},
+        {16, -37}, {0, 37}, {0, -37}}) do table.insert(layout, {G, p[1], p[2]}) end
+    else
+      layout = {{L, 37, -24}, {G, 37, -14}, {L, 37, -5}, {G, 37, 4}, {L, 37, 13}, {G, 37, 22}, {L, 37, 30},
+        {L, -12, -37}, {G, 12, -37}, {L, -12, 37}, {G, 12, 37}, {L, -37, 0}}
+    end
+    S.turrets, S.inserters = {}, {}
+    for _, t in ipairs(layout) do
+      local e = put(t[1], at(t[2], t[3]))
+      table.insert(S.turrets, e)
+      if t[1] == G then e.insert{name = "piercing-rounds-magazine", count = mix == "belt" and 10 or 200} end
+      if mix == "belt" then
+        -- Fed from inside: a burner inserter dropping into it, a chest of ammunition where it picks up. Placed by trial
+        -- (offsets and turns) until it drops into the turret (its drop_target is not set yet on the tick it is built).
+        local iu, iv = 0, 0
+        if math.abs(t[2]) == 37 then iu = t[2] > 0 and -1 or 1 else iv = t[3] > 0 and -1 or 1 end
+        local ins
+        for _, off in ipairs({2, 1.5, 2.5, 1}) do
+          ins = surface().create_entity{name = "burner-inserter", position = at(t[2] + iu * off, t[3] + iv * off), force = "player"}
+          local function feeds()
+            local d, bb = ins.drop_position, e.bounding_box
+            return d.x >= bb.left_top.x and d.x <= bb.right_bottom.x and d.y >= bb.left_top.y and d.y <= bb.right_bottom.y
+          end
+          for _ = 1, 4 do if feeds() then break end; ins.rotate() end
+          if feeds() then break end
+          ins.destroy(); ins = nil
+        end
+        if ins then
+          ins.insert{name = "coal", count = 50}
+          local ch = put("infinity-chest", ins.pickup_position)
+          ch.set_infinity_container_filter(1, {name = "piercing-rounds-magazine", count = 50})
+          table.insert(S.inserters, ins)
+        end
+      end
+    end
+    if mix ~= "belt" then
+      for x = -32, 32, 16 do for y = -32, 32, 16 do put("substation", at(x, y)) end end
+      local spots = {}
+      if mix ~= "keep" then table.insert(spots, at(4, 4)) end
+      if mix == "keep" or mix == "second" then table.insert(spots, at(24, -24)) end
+      S.power = {}
+      for _, p in ipairs(spots) do
+        local eei = put("electric-energy-interface", p)
+        eei.power_production, eei.electric_buffer_size = 5e6, 5e7
+        table.insert(S.power, eei)
+      end
+    end
+    for _, p in ipairs({{-20, -6}, {-20, 6}, {20, -6}, {20, 6}, {-6, 20}, {6, 20}, {-6, -20}, {6, -20}}) do
+      put("assembling-machine-2", at(p[1], p[2]))
+    end
+    if mix == "scout" then
+      -- A squad outside the wall where the scout comes on to its loop (turrets there only widen the loop: the scout goes
+      -- round every turret it sees, so the answer to it moves).
+      S.squad = {}
+      for k = -3, 3 do
+        table.insert(S.squad, surface().create_entity{name = "lp-trooper", position = at(66, k * 1.5), force = "player"})
+      end
+    end
+    if mix == "wild" then
+      local sp = surface().create_entity{name = "biter-spawner", position = at(130, 50), force = "enemy"}
+      S.wild = {sp}
+      for k = 1, 10 do table.insert(S.wild, surface().create_entity{name = "medium-biter", position = at(124, 44 + k), force = "enemy"}) end
+    end
+    -- The pen: a wild spawner taken, its stock bred.
+    surface().create_entity{name = "biter-spawner", position = at(180, 0), force = "enemy"}
+    S.pen = lp("herd_capture", 1, at(180, 0))
+    S.size = mix == "mega" and 200 or 40
+    lp("herd_fill", S.pen, S.size, "lp-bred-medium-biter")
+    S.damage = {}
+  end)
+  schedule(120, function()
+    S.t_send = game.tick
+    S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or nil)
+  end)
+  if mix == "scout" then
+    -- A second wave once the first is over: does it loop wider where the first scout died?
+    schedule(14 * 3600, function()
+      lp("herd_fill", S.pen, 40, "lp-bred-medium-biter")
+      S.wave2 = lp("herd_wave", S.pen, S.at(0, 0))
+    end)
+  end
+  local function entry(id)
+    for _, l in ipairs(lp("herd_state").log) do if l.id == id then return l end end
+  end
+  local function mud_near(points, inside)
+    local n = 0
+    for i = 1, #points - 1 do
+      local p, q = points[i], points[i + 1]
+      local area = {{math.min(p.x, q.x) - 2, math.min(p.y, q.y) - 2}, {math.max(p.x, q.x) + 2, math.max(p.y, q.y) + 2}}
+      n = n + #surface().find_decoratives_filtered{area = area, name = {"dark-mud-decal", "light-mud-decal"}}
+    end
+    return n
+  end
+  local function mud_inside()
+    local a, b = S.at(-40, -40), S.at(40, 40)
+    return #surface().find_decoratives_filtered{area = {{math.min(a[1], b[1]), math.min(a[2], b[2])},
+      {math.max(a[1], b[1]), math.max(a[2], b[2])}}, name = {"dark-mud-decal", "light-mud-decal"}}
+  end
+  -- The trail: there 15 minutes after the mark, gone 21 minutes after.
+  for t = 3 * 3600, END - 120, 600 do
+    schedule(t, function()
+      local w = S.wave1 and entry(S.wave1)
+      local mark_t = w and w.t_mark or S.mark_t
+      if not mark_t then
+        for _, x in ipairs(lp("herd_state").waves) do if x.id == S.wave1 and x.mark then S.mark_t = S.mark_t or game.tick end end
+      end
+      if w and w.trail and mark_t then
+        local since = game.tick - mark_t
+        if since >= 15 * 3600 and not S.mud15 then S.mud15 = mud_near(w.trail); S.mud_in = mud_inside() end
+        if since >= 21 * 3600 and not S.mud21 then S.mud21 = mud_near(w.trail) end
+      end
+      if mix ~= "" and w and (mix ~= "scout" or (S.wave2 and entry(S.wave2))) then finish_early() end
+      if mix == "" and S.mud21 then finish_early() end
+    end)
+  end
+  schedule(END - 60, function()
+    local w = S.wave1 and entry(S.wave1)
+    local state = lp("herd_state")
+    info("herd: " .. serpent.line(w))
+    info("herd: waves still out " .. serpent.line(state.waves))
+    local power = 0
+    for _, e in ipairs(S.power or {}) do if e.valid then power = power + 1 end end
+    local turrets = 0
+    for _, t in ipairs(S.turrets) do if t.valid then turrets = turrets + 1 end end
+    info(string.format("herd: power sources left %d of %d; turrets left %d of %d; damage between forces %s", power,
+      #(S.power or {}), turrets, #S.turrets, serpent.line(S.damage)))
+    check("herd: the wave ended", w ~= nil, w and w.outcome or "still out")
+    if not w then return end
+    local wb = (S.damage["enemy>lp-biotech"] or 0) + (S.damage["lp-biotech>enemy"] or 0)
+    check("herd: no fight between wild and bred", wb == 0, tostring(wb))
+    if mix == "" or mix == "wild" or mix == "mega" then
+      local s = w.t_launch
+      info(string.format("herd: tell: mark %s s after launch, march %s s, breach %s s, first kill %s s, withdraw %s s, end %s s",
+        tostring(w.t_mark and (w.t_mark - s) / 60), tostring(w.t_march and (w.t_march - s) / 60),
+        tostring(w.t_breach and (w.t_breach - s) / 60), tostring(w.t_first_kill and (w.t_first_kill - s) / 60),
+        tostring(w.t_withdraw and (w.t_withdraw - s) / 60), tostring((w.t_end - s) / 60)))
+    end
+    if mix == "" then
+      check("herd: the scout marked a face", w.mark ~= nil and not w.blind, serpent.line(w.mark))
+      check("herd: the power died", power == 0, tostring(power))
+      check("herd: fewer than half lost", w.left * 2 >= w.size, string.format("%d of %d", w.left, w.size))
+      check("herd: it went home", w.outcome == "home", w.outcome)
+      check("herd: tell, a minute's gathering", w.t_march and w.t_mark and w.t_march - w.t_mark >= 3600,
+        tostring(w.t_march and w.t_mark and (w.t_march - w.t_mark) / 60))
+      check("herd: tell, the mark 90 s before the breach", w.t_breach and w.t_mark and w.t_breach - w.t_mark >= 90 * 60,
+        tostring(w.t_breach and w.t_mark and (w.t_breach - w.t_mark) / 60))
+      check("herd: tell, 3 minutes from the scout to the breach", w.t_breach and w.t_breach - w.t_launch >= 180 * 60,
+        tostring(w.t_breach and (w.t_breach - w.t_launch) / 60))
+      check("herd: the trail on the ground 15 minutes on", (S.mud15 or 0) >= 20, tostring(S.mud15))
+      check("herd: no trail inside the wall", S.mud_in == 0, tostring(S.mud_in))
+      check("herd: the trail gone after 20 minutes", S.mud21 == 0, tostring(S.mud21))
+    elseif mix == "keep" or mix == "second" then
+      check("herd: power still up (" .. mix .. ")", power >= 1, string.format("%d of %d", power, #S.power))
+      check("herd: it withdrew (" .. mix .. ")", w.t_withdraw ~= nil, w.outcome)
+    elseif mix == "scout" then
+      local w2 = S.wave2 and entry(S.wave2)
+      check("herd: the scout killed, the wave came blind", w.blind == true, tostring(w.blind))
+      check("herd: the second wave ended", w2 ~= nil, "still out")
+      check("herd: the next loop wider", w2 and w2.loop >= w.loop + 10,
+        string.format("%s then %s", tostring(w.loop), tostring(w2 and w2.loop)))
+    elseif mix == "belt" then
+      local ins = 0
+      for _, i in ipairs(S.inserters) do if not i.valid then ins = ins + 1 end end
+      check("herd: inserters feeding the guns killed", ins >= 1, string.format("%d of %d", ins, #S.inserters))
+      check("herd: the guns mostly stand", turrets >= #S.turrets - 2, string.format("%d of %d", turrets, #S.turrets))
+    elseif mix == "wild" then
+      local wild = 0
+      for _, e in ipairs(S.wild) do if e.valid then wild = wild + 1 end end
+      check("herd: the wild nest untouched", wild == #S.wild, string.format("%d of %d", wild, #S.wild))
+    elseif mix == "blind" then
+      check("herd: blind, power up", power >= 1, tostring(power))
+    elseif mix == "mega" then
+      info(string.format("herd: mega: %d of %d home (%s), power left %d", w.left, w.size, w.outcome, power))
+    end
+  end)
+end
+
 -- Blackout (the power strike; Fable's fortress consult): ten lasers behind a wall 150 tiles from a provoked Serenity camp,
 -- fed only by a chain of big poles from a power source 120 tiles off to the side, beyond every turret's reach; and a
 -- decoy nearer the camp: a line of big poles feeding a radar, as exposed, darkening nothing. Its survey finds the pole
@@ -8997,6 +9216,17 @@ end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breac
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
   {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"}, {filter = "type", type = "mining-drill"},
   {filter = "type", type = "spider-unit"}})
+
+-- Herd: damage between the wild biters and the bred.
+if params.scenario == "herd" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    if not (e.force and S.damage) then return end
+    local a, v = e.force.name, e.entity.force.name
+    if (a == "enemy" and v == "lp-biotech") or (a == "lp-biotech" and v == "enemy") then
+      S.damage[a .. ">" .. v] = (S.damage[a .. ">" .. v] or 0) + e.final_damage_amount
+    end
+  end)
+end
 
 -- Flak: what the cannons do to the wall.
 if params.scenario == "flak" then
