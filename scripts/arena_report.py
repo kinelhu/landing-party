@@ -19,7 +19,8 @@ CLASSES = [
     ("splash", ["sapper", "shock", "prism", "tesla", "breacher"]),
     ("armour", ["tank", "aegis", "dozer", "walker", "scorcher", "battle tank"]),
     ("air", ["harrier", "scavenger"]),
-    ("bred", ["bred medium", "bred big"]),
+    ("bred", ["bred medium", "bred big", "bred spitter"]),
+    ("bred on creep", ["bred medium (creep)", "bred big (creep)"]),
 ]
 CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
 

@@ -40,7 +40,9 @@ local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
 local herd = require("__landing-party__.scripts.herd")
 local farm = require("__landing-party__.scripts.farm")
+local creep = require("__landing-party__.scripts.creep")
 script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
+script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
 script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
 script.on_nth_tick(3600, aim.sweep)
 war.forgive = standing.forgive
@@ -69,7 +71,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -465,6 +467,7 @@ remote.add_interface("landing-party", {
   -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
   farm_state = function() return farm.state() end,
+  creep_state = function() return creep.state() end,
   farm_wave = function() return farm.debug_wave() end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,

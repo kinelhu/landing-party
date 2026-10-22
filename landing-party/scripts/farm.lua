@@ -7,9 +7,16 @@
 -- Its waves (scripts/herd.lua): one at a time, WAVE_GAP apart at the least, from its pens' stock but a home guard, at
 -- most WAVE_MAX, sent from the pen nearest the target. A pen attacked recalls the wave on its way (the fight moves to the trail).
 -- Every pen dead: the farm is gone (its tag too), and it lands again on another field RELAND later.
+-- Creep (scripts/creep.lua): a tumor by each incubator; the creep spreads to the wild nests near, and each it reaches
+-- becomes an incubator (up to PENS_MAX). An incubator left off creep (its tumors killed) starves for STARVE and goes
+-- back to the wild, its stock with it.
+-- Biomass: an incubator breeds only while its culture can pay (shared.BREEDS, the arena's prices): a culture earns what
+-- its creep drinks of the pollution (creep.drink), TRICKLE an incubator a minute whatever the air, and START_BIOMASS its
+-- pod brought. Spent at each birth (on_entity_spawned); at nothing left its incubators stop (inactive) until it earns.
 local shared = require("__landing-party__.shared")
 local herd = require("__landing-party__.scripts.herd")
 local pods = require("__landing-party__.scripts.pods")
+local creep = require("__landing-party__.scripts.creep")
 
 local farm = {}
 
@@ -20,6 +27,10 @@ local SEARCH = 2500           -- nests looked at round the player's spawn, neare
 local CANDIDATES = 80         -- of those, how many are weighed
 local FIELD, FIELD_MIN = 40, 3
 local PENS = 4
+local PENS_MAX = 12           -- a culture's incubators at most, taken by its creep
+local STARVE = 3 * 3600       -- off creep this long, an incubator goes wild
+local TRICKLE = 3             -- biomass an incubator earns a minute, clean air or not
+local START_BIOMASS = 200     -- what its pod brought (its first wave, ten minutes on)
 local START = 6
 local WORMS = 2
 local HOME_GUARD = 6          -- per pen, kept at the gate when a wave goes
@@ -138,9 +149,13 @@ function farm.land(surface, pos)
         local q = surface.find_non_colliding_position("lp-bred-worm", {rec.pen.position.x + 6, rec.pen.position.y + 6}, 12, 1)
         if q then surface.create_entity{name = "lp-bred-worm", position = q, force = B.force} end
       end
+      -- Its tumor, beside it: the creep grows from there (scripts/creep.lua).
+      creep.plant(surface, rec.pen.position, f.id)
     end
   end
   s.list[f.id] = f
+  creep.culture(f.id, surface, pos)
+  creep.of(f.id).biomass = START_BIOMASS
   tag(f)
   trace(string.format("farm %d landed at %.0f,%.0f: %d pens", f.id, pos.x, pos.y, #f.pens))
   if not s.told then
@@ -171,6 +186,7 @@ function farm.arrive_now(surface) return arrive(surface, FAR) or arrive(surface,
 local function gone(f, why)
   for _, t in pairs(f.tags) do if t.valid then t.destroy() end end
   st().list[f.id] = nil
+  creep.forget(f.id)
   st().next_arrival = game.tick + RELAND
   trace(string.format("farm %d gone (%s); lands again in %d minutes", f.id, why, RELAND / 3600))
 end
@@ -221,16 +237,61 @@ local function send(f, tick)
   trace(string.format("farm %d sends %d at %.0f,%.0f", f.id, #units, target.x, target.y))
 end
 
+-- Its incubators breed while it has biomass, and stop when it has none.
+local function breeding(f, on)
+  for _, pid in ipairs(f.pens) do
+    local rec = herd.pen(pid)
+    if rec and rec.pen.valid and rec.pen.active ~= on then rec.pen.active = on end
+  end
+end
+
 function farm.tick(tick)
   if tick % 600 ~= 300 then return end
   local s = st()
+  creep.drink(10)
   for id, f in pairs(s.list) do
     local left = {}
+    local surface = game.surfaces[f.surface]
     for _, pid in ipairs(f.pens) do
       local rec = herd.pen(pid)
-      if rec and rec.pen.valid then table.insert(left, pid) end
+      if rec and rec.pen.valid then
+        -- Off creep it starves, then goes wild.
+        if creep.covered(surface, rec.pen.position) then
+          rec.starving = nil
+          table.insert(left, pid)
+        else
+          rec.starving = rec.starving or tick
+          if tick - rec.starving >= STARVE then
+            herd.release(pid)
+            f.lost_to_starving = (f.lost_to_starving or 0) + 1
+            trace(string.format("farm %d: an incubator starved off its creep and went wild", f.id))
+          else
+            table.insert(left, pid)
+          end
+        end
+      end
     end
     f.pens = left
+    local cul = creep.of(id)
+    if cul then
+      local t = #f.pens * TRICKLE / 6
+      cul.biomass, cul.trickled = cul.biomass + t, (cul.trickled or 0) + t
+      breeding(f, cul.biomass > 0)
+    end
+    -- The creep takes the wild nest it reaches.
+    local take = #left < PENS_MAX and creep.bud(id, tick)
+    if take then
+      local pid = herd.capture(take)
+      local rec = pid and herd.pen(pid)
+      if rec then
+        rec.farm = f.id
+        table.insert(f.pens, pid)
+        creep.plant(surface, rec.pen.position, f.id)
+        f.taken = (f.taken or 0) + 1
+        trace(string.format("farm %d: its creep took the nest at %.0f,%.0f (%d incubators)", f.id, rec.pen.position.x,
+          rec.pen.position.y, #f.pens))
+      end
+    end
     if #left == 0 then
       gone(f, "every pen dead")
     else
@@ -251,6 +312,19 @@ function farm.tick(tick)
     end
     if not came then s.next_arrival = tick + RETRY end
   end
+end
+
+-- A birth at an incubator: its breed's price off its culture's biomass; at nothing left, its incubators stop.
+function farm.on_spawned(e)
+  local sp = e.spawner
+  if not (sp and sp.valid and sp.name == "lp-pen") then return end
+  local rec = herd.pen(sp.unit_number)
+  local f = rec and rec.farm and st().list[rec.farm]
+  local cul = f and creep.of(f.id)
+  if not cul then return end
+  local price = shared.BREEDS[e.entity.name] and shared.BREEDS[e.entity.name].cost or 7
+  cul.biomass, cul.spent, cul.bred = cul.biomass - price, (cul.spent or 0) + price, (cul.bred or 0) + 1
+  if cul.biomass <= 0 then breeding(f, false) end
 end
 
 -- A pen hit by anyone at war with it: its farm's wave on its way comes home.
@@ -283,7 +357,9 @@ function farm.state()
     local tags = 0
     for _, t in pairs(f.tags) do if t.valid then tags = tags + 1 end end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
-      landed = f.landed})
+      landed = f.landed, taken = f.taken or 0, starved = f.lost_to_starving or 0, biomass = creep.of(id) and {
+        now = creep.of(id).biomass, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled,
+        spent = creep.of(id).spent or 0, bred = creep.of(id).bred or 0}})
   end
   return out
 end

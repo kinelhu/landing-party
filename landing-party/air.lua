@@ -34,7 +34,9 @@ local function delivery(d, direct)
   if d.target_effects then d.target_effects = effects(d.target_effects, direct) end
   if d.type == "beam" then d.beam = copy("beam", d.beam)
   elseif d.type == "projectile" then d.projectile = copy("projectile", d.projectile)
-  elseif d.type == "chain" then d.chain = copy("chain-active-trigger", d.chain) end
+  elseif d.type == "chain" then d.chain = copy("chain-active-trigger", d.chain)
+  -- A spitter's acid (the biotech's bred spitter, 2026-10-23: it reached harriers until streams were covered).
+  elseif d.type == "stream" then d.stream = copy("stream", d.stream) end
 end
 
 -- Transforms an action (a TriggerItem or an array of them) in place.
@@ -61,6 +63,7 @@ function copy(type, name)
   made[key] = p.name
   if p.action then action(p.action) end
   if p.final_action then action(p.final_action) end
+  if p.initial_action then action(p.initial_action) end
   data:extend({p})
   return p.name
 end

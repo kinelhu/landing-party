@@ -7352,6 +7352,167 @@ scenarios.herd = function()
   end)
 end
 
+-- Creep (Synthexis's, scripts/creep.lua): a player outpost (a turret, a substation), a nest field of five spawners 750
+-- tiles out on the map's own ground, the biters' evolution at 0.3, and the culture landed by farm_arrive. A stone wall
+-- of the player's 6 tiles from the first incubator, built as it lands. Six minutes on: a tumor by each incubator, grown
+-- to its reach; creep round them; nothing of the player's can be built on it; the wall stands and its tile is not creep
+-- (creep flows round); the ground under creep kept as its hidden tile; a hurt Synthexis biter on creep mends. Mixes:
+--   spread: a wild nest 45 tiles past the field's edge: the creep buds toward it and takes it (an incubator)
+--   killed: every tumor killed at 6 minutes: the creep withdraws, the incubators starve and go wild, the culture gone
+--   clean: biomass in clean air: its books balance (pod + trickle + drunk = spent + left), little drunk, and births
+--          stop when it has nothing (it never runs more than a breed's price into debt)
+--   smog: 3,000 pollution a minute poured on the culture: its creep drinks it, and it breeds more than the trickle pays
+scenarios.creep = function()
+  local mix = params.mix or ""
+  schedule(60, function()
+    lp("debug_tune", {harmless = true, army_off = true, history_off = true, herd_off = true})
+    local o = lp("stats", storage.id).origin
+    local ux, uy = 0, 0
+    if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
+    local vx, vy = -uy, ux
+    local c = {ux * 250 + 0.5, uy * 250 + 0.5}
+    local function at(du, dv) return {c[1] + ux * du + vx * dv, c[2] + uy * du + vy * dv} end
+    for d = 0, 800, 32 do surface().request_to_generate_chunks(at(d, 0), 3) end
+    surface().force_generate_chunk_requests()
+    surface().create_entity{name = "substation", position = at(0, 0), force = "player"}
+    surface().create_entity{name = "gun-turret", position = at(3, 3), force = "player"}
+    for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}, {-8, -12}}) do
+      local q = surface().find_non_colliding_position("biter-spawner", at(750 + d[1], d[2]), 30, 1)
+      if q then surface().create_entity{name = "biter-spawner", position = q, force = "enemy"} end
+    end
+    if mix == "spread" then
+      local q = surface().find_non_colliding_position("biter-spawner", at(750, 65), 10, 1)
+      S.far = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+      S.far_at = q
+    end
+    game.forces.enemy.set_evolution_factor(0.3, surface())
+    S.asked = lp("farm_arrive", surface().index)
+  end)
+  for t = 300, END - 120, 60 do
+    schedule(t, function()
+      local f = lp("farm_state").farms[1]
+      if f and not S.landed then
+        S.landed = game.tick
+        local pen = surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80, limit = 1}[1]
+        if pen then
+          local q = surface().find_non_colliding_position("stone-wall", {pen.position.x + 6, pen.position.y}, 4, 1)
+          S.wall = q and surface().create_entity{name = "stone-wall", position = q, force = "player"}
+        end
+        S.farm_pos = f.pos
+      end
+      -- A hurt Synthexis biter by the first incubator, two minutes in: does it mend on creep?
+      if S.landed and not S.hurt and game.tick - S.landed >= 2 * 3600 then
+        local u
+        for _, c in ipairs(surface().find_entities_filtered{name = {"lp-bred-small-biter", "lp-bred-medium-biter"},
+          position = S.farm_pos, radius = 60}) do
+          if not u and surface().get_tile(c.position.x, c.position.y).name == "lp-creep" then u = c end
+        end
+        if u then
+          u.health = u.max_health / 4
+          S.hurt, S.hurt_at, S.hurt_from, S.hurt_max = u, game.tick, u.health, u.max_health
+        end
+      end
+      if S.hurt and not S.mended and game.tick - S.hurt_at >= 600 then
+        S.mended = S.hurt.valid and S.hurt.health or -1
+      end
+      if mix == "killed" and S.landed and not S.killed and game.tick - S.landed >= 6 * 3600 then
+        S.killed = game.tick
+        for _, t in ipairs(surface().find_entities_filtered{name = "lp-tumor"}) do t.die("player") end
+      end
+      if mix == "smog" and S.landed and game.tick % 3600 < 60 then
+        surface().pollute(S.farm_pos, 3000)
+      end
+      if (mix == "clean" or mix == "smog") and S.landed then
+        local b = (lp("farm_state").farms[1] or {}).biomass
+        if b then S.low = math.min(S.low or math.huge, b.now) end
+      end
+      if mix == "spread" and S.far_at and not S.taken then
+        local p = surface().find_entities_filtered{name = "lp-pen", position = S.far_at, radius = 3, limit = 1}[1]
+        if p then S.taken = game.tick end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    check("creep: the culture landed", S.landed ~= nil, tostring(S.asked))
+    if not S.landed then return end
+    if mix == "killed" then
+      local fs = lp("farm_state")
+      local tiles = surface().count_tiles_filtered{position = S.farm_pos, radius = 100, name = "lp-creep"}
+      local wild = surface().count_entities_filtered{name = "biter-spawner", position = S.farm_pos, radius = 100}
+      local feral = surface().count_entities_filtered{name = {"lp-bred-small-biter", "lp-bred-medium-biter"}, force = "enemy",
+        position = S.farm_pos, radius = 150}
+      info(string.format("creep killed: creep tiles %d, wild spawners %d, feral %d, farm %s", tiles, wild, feral,
+        serpent.line(fs)))
+      check("creep: every tumor killed, the creep withdrawn", tiles == 0, tostring(tiles))
+      check("creep: the incubators back in the wild", wild >= 4, tostring(wild))
+      check("creep: their stock gone feral", feral >= 1, tostring(feral))
+      check("creep: the culture gone", #fs.farms == 0, serpent.line(fs.farms))
+      return
+    end
+    if mix == "clean" or mix == "smog" then
+      local b = lp("farm_state").farms[1].biomass
+      local books = 200 + b.trickled + b.drunk - b.spent - b.now
+      info(string.format("creep %s: biomass %s, lowest %.1f, books off by %.2f", mix, serpent.line(b), S.low or -1, books))
+      check("creep: the biomass books balance", math.abs(books) < 1, string.format("%.2f", books))
+      check("creep: never more than a breed's price in debt", (S.low or 0) > -30, string.format("%.1f", S.low or -1))
+      check("creep: it bred", b.bred >= 10, tostring(b.bred))
+      if mix == "clean" then
+        check("creep: clean air, little drunk", b.drunk < 50, string.format("%.1f", b.drunk))
+      else
+        check("creep: smog drunk", b.drunk >= 300, string.format("%.1f", b.drunk))
+        check("creep: smog bred more than the trickle and pod pay", b.spent > 200 + b.trickled + 100,
+          string.format("spent %.0f, pod and trickle %.0f", b.spent, 200 + b.trickled))
+      end
+      return
+    end
+    if mix == "spread" then
+      local f = lp("farm_state").farms[1]
+      info(string.format("creep spread: far nest taken at %s (%.1f min after landing), %s", tostring(S.taken),
+        S.taken and (S.taken - S.landed) / 3600 or -1, serpent.line(f)))
+      check("creep: the far nest taken by its creep", S.taken ~= nil, tostring(S.far_at))
+      return
+    end
+    local cs = lp("creep_state")
+    local pens = #lp("farm_state").farms[1].pen_ids
+    local grown = 0
+    for _, t in ipairs(cs.tumors) do if t.r >= 10 then grown = grown + 1 end end
+    local tiles = surface().find_tiles_filtered{position = S.farm_pos, radius = 80, name = "lp-creep"}
+    local hidden_ok, hidden_seen = 0, nil
+    for i = 1, math.min(20, #tiles) do
+      local h = surface().get_hidden_tile(tiles[i].position)
+      hidden_seen = hidden_seen or h
+      if h and h ~= "lp-creep" then hidden_ok = hidden_ok + 1 end
+    end
+    local refused, tried = 0, 0
+    for i = 1, #tiles, math.max(1, math.floor(#tiles / 10)) do
+      local p = {tiles[i].position.x + 0.5, tiles[i].position.y + 0.5}
+      tried = tried + 1
+      if not surface().can_place_entity{name = "gun-turret", position = p, force = "player",
+        build_check_type = defines.build_check_type.manual} then refused = refused + 1 end
+    end
+    local wp = S.wall and S.wall.valid and S.wall.position
+    local under = wp and surface().get_tile(wp.x, wp.y).name
+    local round = 0
+    if wp then
+      for _, d in ipairs({{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) do
+        if surface().get_tile(wp.x + d[1], wp.y + d[2]).name == "lp-creep" then round = round + 1 end
+      end
+    end
+    info(string.format("creep: %d pens, %d tumors (%d at full reach), %d creep tiles, hidden %d of 20 (%s), "
+      .. "turrets refused %d of %d, wall %s on %s, creep beside it %d", pens, #cs.tumors, grown, #tiles, hidden_ok,
+      tostring(hidden_seen), refused, tried, tostring(wp ~= nil), tostring(under), round))
+    check("creep: a tumor by each incubator", #cs.tumors >= pens and pens >= 3, string.format("%d / %d", #cs.tumors, pens))
+    check("creep: grown to full reach", grown == #cs.tumors, tostring(grown))
+    check("creep: creep round the culture", #tiles >= 600, tostring(#tiles))
+    check("creep: the ground under it kept", hidden_ok == math.min(20, #tiles), tostring(hidden_ok))
+    check("creep: nothing of the player's built on it", refused == tried and tried > 0, string.format("%d / %d", refused, tried))
+    check("creep: the player's wall stands, its tile not creep", wp and under ~= "lp-creep", tostring(under))
+    check("creep: creep flowed round the wall", round >= 2, tostring(round))
+    check("creep: a hurt Synthexis biter mended on it", S.mended and S.mended >= S.hurt_max * 0.99,
+      string.format("%s from %s of %s", tostring(S.mended), tostring(S.hurt_from), tostring(S.hurt_max)))
+  end)
+end
+
 -- Farm (the biotech's arrival, scripts/farm.lua): the herd scenario's base (250 tiles from spawn, away from the harmless
 -- Serenity camp), a nest field of five spawners and two worms 750 tiles beyond it over the map's own ground, the wild
 -- biters' evolution at 0.3. The biotech comes by itself: its pod on the field, pens and worms, its tag on the map, and

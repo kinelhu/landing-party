@@ -29,7 +29,10 @@ local KINDS = {
   {"trooper", "lp-trooper"}, {"breacher", "lp-breacher"}, {"rocket trooper", "lp-rocket-trooper"},
   {"battle tank", "lp-battle-tank"},
   -- The biotech's (docs/biotech.md), at shared.BREEDS' price.
-  {"bred medium", "lp-bred-medium-biter"}, {"bred big", "lp-bred-big-biter"},
+  {"bred medium", "lp-bred-medium-biter"}, {"bred big", "lp-bred-big-biter"}, {"bred spitter", "lp-bred-medium-spitter"},
+  -- On its creep (scripts/creep.lua): the same breeds with the haste and mend stickers renewed each second, as creep.tick
+  -- gives them; the stickers are what the creep does to a unit (its tile alone does nothing to units).
+  {"bred medium (creep)", "lp-bred-medium-biter", "creep"}, {"bred big (creep)", "lp-bred-big-biter", "creep"},
 }
 
 -- Mixed arms: {label, side x, side y}, each side a list of {prototype, count}; x is the ground army, y the same spend with
@@ -61,18 +64,19 @@ local function matchups()
   for _, a in ipairs(KINDS) do
     for _, b in ipairs(KINDS) do
       local na, nb = counts(cost(a[2]), cost(b[2]))
-      table.insert(out, {kind = "pair", squad = a[1], against = b[1],
+      table.insert(out, {kind = "pair", squad = a[1], against = b[1], creep_a = a[3] == "creep", creep_b = b[3] == "creep",
         a = {{"raw", a[2], na, "lp-serenity"}}, b = {{"raw", b[2], nb, "lp-grubstake"}}})
     end
     local n = math.max(1, math.floor(BUDGET / cost(a[2]) + 0.5))
     for _, evo in ipairs(EVOS) do
-      table.insert(out, {kind = "fixed", squad = a[1], against = string.format("biters %.2f", evo),
+      table.insert(out, {kind = "fixed", squad = a[1], against = string.format("biters %.2f", evo), creep_a = a[3] == "creep",
         a = {{"raw", a[2], n, "lp-serenity"}}, b = {{"biters", "wave", WAVE, evo}}})
     end
     for _, ln in ipairs({{"guns", 6}, {"lasers", 4}, {"flamers", 3}}) do
       local def = {{"player", ln[1], ln[2]}, {"player", "walls", 14}}
       if ln[1] == "flamers" then table.insert(def, {"player", "guns", 2}) end
-      table.insert(out, {kind = "fixed", squad = a[1], against = ln[1], a = {{"raw", a[2], n, "lp-serenity"}}, b = def})
+      table.insert(out, {kind = "fixed", squad = a[1], against = ln[1], creep_a = a[3] == "creep",
+        a = {{"raw", a[2], n, "lp-serenity"}}, b = def})
     end
   end
   -- Mixed arms (the user, 2026-10-21: ground-only weapons "very problematic in mixed arms encounters?"): a ground army
@@ -115,7 +119,8 @@ function batch.next_round()
     -- Each round a little off the last (units placed by find_non_colliding_position round a moved point).
     local c = {col * SPACING + (B.round - 1) * 3, row * SPACING + (B.round - 1) * 2}
     local f = arena.start(c, m.a, m.b, m.squad .. " vs " .. m.against)
-    f.m = {kind = m.kind, squad = m.squad, against = m.against, round = B.round, flip = m.flip}
+    f.m = {kind = m.kind, squad = m.squad, against = m.against, round = B.round, flip = m.flip, creep_a = m.creep_a,
+      creep_b = m.creep_b}
     table.insert(B.live, f)
   end
 end
@@ -126,6 +131,17 @@ function batch.tick()
   if not B or B.done or game.tick % 60 ~= 0 then return end
   local open = 0
   for _, f in ipairs(B.live) do
+    -- A side on creep: its units quicker and mending, renewed each second.
+    for _, side in ipairs({f.m.creep_a and f.a or false, f.m.creep_b and f.b or false}) do
+      if side and not f.written then
+        for _, u in ipairs(side.units) do
+          if u.valid and u.type == "unit" then
+            u.surface.create_entity{name = "lp-creep-haste", position = u.position, target = u}
+            if u.health < u.max_health then u.surface.create_entity{name = "lp-creep-mend", position = u.position, target = u} end
+          end
+        end
+      end
+    end
     if not f.written then
       if arena.step(f) then
         local r = f.result

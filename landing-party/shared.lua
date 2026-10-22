@@ -221,11 +221,14 @@ shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g
 -- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).
 shared.PEN_CAP = 40
 shared.WAVE_MIN = 24
--- Its breeds: what each is worth in parts where they are weighed against the corporations' units (the arena). A pen
--- spends time, not parts; these are provisional, set from the arena (docs/arena.md), against a rifleman's 10.
+-- Its breeds: what each costs, in parts in the arena (weighed against the corporations' units, a rifleman's 10;
+-- docs/arena.md) and in biomass in the game (an incubator breeds only while its culture can pay: farm.lua).
 -- None of them shoots up (air.lua): its class is many, healing and soft.
 shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
-  ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}}
+  ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}, ["lp-bred-medium-spitter"] = {cost = 9}}
+-- Biomass (docs/biotech.md "Biomass"): the breeds' costs are paid in it, earned from the pollution its creep drinks (each
+-- creep tile absorbs CREEP_ABSORB a second, the engine's own absorption; a unit of pollution drunk is a unit of biomass).
+shared.CREEP_ABSORB = 0.0005
 
 local corp_forces = {}
 for _, c in pairs(shared.CORPS) do corp_forces[c.force] = true end

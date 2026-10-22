@@ -115,9 +115,9 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    the enemy's tanks, and does that read as "it cannot shoot up", not as a bug? Riflemen against tanks barely
    scratch them now; lances and slug buggies are the answer. Does each fight's winner make sense from what you see?
 
-## The biotech (0.1.54: a third corporation, unnamed yet)
+## Synthexis (0.1.54 to 0.1.56: the third corporation, a bioengineering firm)
 It lands once the biters' evolution reaches 0.25, on a nest field 600 to 1,000 tiles from your factory, and breeds
-biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, "Biotech farm"), `/lp wave` sends a wave.
+biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, "Synthexis culture"), `/lp wave` sends a wave.
 28. **The tell**: before a wave, one green biter with an egg icon walks round your base out of turret reach, stops at
     each side, then sits at one. Did you notice it before the herd came, and could you tell where it would hit?
 29. **The trail**: mud on the ground and a dashed green line on the map from its farm to the side it chose. Does it read
@@ -126,6 +126,13 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     the inserters loading gun turrets), then leaves the way it came. Fair? What would you build against it?
 31. **The hunt**: go to the farm (pens drawn as captive spawners, worms by them). Hitting a pen calls its wave home.
     Kill every pen and it leaves, landing elsewhere an hour later. Is the expedition a fight worth making?
+32. **The creep** (0.1.56): violet ground round its incubators, green glowing tumors on it. You cannot build on creep.
+    Watch it bud toward the wild nests near (every two minutes or so) and take them. Fight its biters on creep and off:
+    on it they are quicker and mend. Kill the tumors: the creep withdraws, and incubators left off it go wild after
+    three minutes, their biters with them. Does the creep read from afar, and on the map?
+33. **Biomass** (0.1.57): its incubators breed only on biomass, from what its creep drinks of the pollution. A dirty
+    factory whose cloud reaches its culture feeds it (bigger, sooner waves); clean air leaves it the trickle. Watch an
+    incubator stop (no animation) when it has nothing.
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

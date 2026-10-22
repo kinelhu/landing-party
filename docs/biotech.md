@@ -326,3 +326,75 @@ collision `{ground_tile, object}`:
 - Grubstake's pheromone flare retired: `flare.lua`, the canister, `/lp flare` and its eight scenarios gone. Grubstake
   answers a loss with a snatch raid only where no turret covers it (scenario `snatch`, two). The biters' call moved into
   the player's bait; the pheromone gland drops from incubators (1–2) and Grubstake's pacifier antennas.
+
+### The build order with creep (2026-10-22, replaces the consult's section 7 from step 2)
+
+2. **Creep and tumors at the culture.** A creep tile (Gleba soil, recoloured; `{ground_tile, object}`: no building on
+   it, everything walks it; pollution absorbed). Each incubator is a tumor's first seat; creep grows round it to a
+   radius, the ground beneath recorded. Test: creep laid, a player's building refused there, nothing destroyed under it.
+3. **Spread nest to nest.** Tumors bud at the creep's edge toward the nearest wild nest; creep reaching a nest makes it
+   an incubator. Creep reaches only so far from a living tumor. Test: a second nest 60 tiles off is taken by creep.
+4. **The bonus on creep.** A pass each second over Synthexis's units on creep: a haste and a regen sticker. Test: the
+   arena on creep against off it.
+5. **Recession.** A tumor killed, its creep withdraws tile by tile to the ground recorded; an incubator off creep
+   starves (cap falls, then wild again). Test: kill the tumors, the creep gone and the nest wild within minutes.
+6. Then the consult's cell (biochamber, lamp), substrate and technicians, clinic, loot, and the Grubstake break.
+
+### Creep built (0.1.56): steps 2 to 5
+
+`scripts/creep.lua`, the tile `lp-creep`, the tumor `lp-tumor`, stickers `lp-creep-haste` and `lp-creep-mend`.
+- **Growth.** A tumor by each incubator at landing (and by each one taken later); a ring every 10 s to radius 10. Creep
+  never covers water, a floor someone laid (mineable tiles), or a tile under another force's building (it flows round:
+  nothing is destroyed). The ground beneath kept as the tile's hidden tile.
+- **Spread.** Every 2 minutes at most, once a culture's tumors are grown, it buds a tumor 9 tiles out toward the nearest
+  wild nest within 160 of it; creep reaching a nest takes it (an incubator with its own tumor), up to 12 per culture.
+  `creep spread`: a nest 65 tiles out taken 13.8 minutes after landing.
+- **On creep** Synthexis's units get a haste sticker (×1.3) and, hurt, a mend sticker (6 health a second), renewed
+  each second within 200 of a culture. `creep`: a medium at a quarter health back to full in 10 s.
+- **Recession.** A tumor dead, its creep withdraws a ring every 5 s to the ground kept, but where a living tumor
+  reaches. An incubator off creep for 3 minutes goes wild (a wild spawner in its place, its stock on the enemy force:
+  feral, still in Synthexis colours). `creep killed`: every tumor killed: creep 0, five wild spawners, 188 feral, the
+  culture gone.
+- **Look** (screenshots 2026-10-22): the untinted Gleba soil read as brown mud; tinted violet it is a clear stain on
+  Nauvis ground. Tumors: Gleba's small egg raft, green, 1.6x, with an acid-green light at night.
+- Not yet: the bonus measured in the arena; creep feeding on pollution (it absorbs three times grass, no growth link);
+  the player's way to clear creep other than killing tumors; Kessler-Hayashi's clearances aimed at tumors.
+
+### Biomass (0.1.57)
+
+The user, 2026-10-22: "How are we pricing the biters considering the parts economy doesn't really apply?" Until now the
+breeds' costs (small 2, medium 7, big 28, behemoth 60) priced them in the arena only; in a game an incubator bred free
+to its cap. Now they are paid in biomass, so the arena's balance holds in the game:
+- **Income.** What its creep drinks of the pollution: each creep tile absorbs `shared.CREEP_ABSORB` (0.0005 a second,
+  about 28 times grass; the engine's own absorption), counted to the culture whose tumor laid it, up to what is in the
+  chunk (`creep.drink`, each 10 s). Plus 3 an incubator a minute whatever the air, and 200 brought by its pod (its
+  first wave at ten minutes).
+- **Spending.** Each birth (`on_entity_spawned`) pays its breed's price; at nothing left the culture's incubators are
+  made inactive (they stop, animation too) until it earns. Never more than one breed's price in debt (lowest seen -7).
+- `creep clean` (20 minutes, clean air): 126 bred, 0 drunk, books balanced to 0.00. `creep smog` (3,000 pollution a
+  minute poured on it): 767 drunk, 164 bred (its incubators full), 649 banked. `farm`: a wave of 60, as before.
+- What follows: a dirty factory feeds Synthexis when its cloud reaches the culture (the user's "it grows on Grubstake's
+  pollution" too); cutting creep cuts income. Banked biomass does nothing yet: for the tiers above the trickle (mega
+  waves, bigger breeds), and Synthexis's strength lever as a multiplier on income.
+
+### The creep bonus in the arena (2026-10-23)
+
+Two new kinds, the breeds with the creep's haste (×1.3) and mend (6 a second) stickers renewed each second, fought the
+whole matrix (`docs/arena.md`, 2,325 fights). Class row, off creep → on creep: small arms +48 → +58, splash -71 → -47,
+armour -1 → +8, air -100 → -88; on creep against off it +24. A home advantage, not a fortress: splash and air still
+beat it on its own ground, the railgunner still wins every fight against both. Kept as it is.
+
+### The spitter (0.1.58, tier 1)
+
+`lp-bred-medium-spitter`: the vanilla medium spitter in Synthexis colours (50 health, acid at 14), bred from evolution
+0.3 (a sixth of births from 0.5, `lp-pen`'s table). Its acid is its answer to armour: no hull resists acid.
+- **Ground-only.** Its first trial beat harriers: `air.lua` rewrote projectiles, beams and chains but not streams, so
+  the acid reached fliers. Streams are covered now (it is the only stream weapon among the ground-only kinds).
+- **Price, by the arena** (`LP_ARENA_ONLY="bred spitter"`): at 6 it beat everything but splash, the railgunner and the
+  fixed lines; at 12 it lost to the tank and nearly everything; at 9, kept: it beats the tank, aegis, dozer and
+  Scorcher (+100) and the battle tank (+33), loses to the player's troopers, the slug, every splash kind, both fliers
+  and the railgunner (-100), is even with Kessler-Hayashi's riflemen (0) and beats Grubstake's (+33). The consult's
+  cycle holds where it matters: spitters beat tanks, tanks beat the stock, the stock beats rifles; rifles only draw
+  with the spitter, and the lance (anti-armour) loses to it (+100): a lance is a tank-killer, not a bug-killer.
+- Not yet: the pack's use of it (spitters at the breach and covering the withdrawal; now they fight in the herd as
+  any breed).

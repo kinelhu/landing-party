@@ -114,6 +114,20 @@ local function stock(p)
 end
 herd.stock = stock
 
+-- A pen given back to the wild (starved off its creep, farm.lua): a wild spawner in its place, and its stock gone feral
+-- (the wild force's now: they keep their colours).
+function herd.release(id)
+  local p = st().pens[id]
+  if not p then return nil end
+  local out = stock(p)
+  st().pens[id] = nil
+  if not p.pen.valid then return nil end
+  local s, pos = p.pen.surface, p.pen.position
+  p.pen.destroy()
+  for _, u in ipairs(out) do if u.valid then u.force = "enemy" end end
+  return s.create_entity{name = "biter-spawner", position = pos, force = "enemy"}
+end
+
 -- The base: the box round the player's turrets near what drew it, its middle and half sizes. (A circle round their
 -- average missed a lopsided base's heavy face: the loop sized by the far back turret ran 55 to 67 tiles off the front,
 -- beyond its sight; seen in the first herd run.)
