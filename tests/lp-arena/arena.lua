@@ -45,6 +45,8 @@ end
 arena.PER_BANDWIDTH = 10
 
 function arena.cost(kind, name)
+  -- The biotech's breeds at their provisional price (shared.BREEDS).
+  if name and shared.BREEDS[name] then return shared.BREEDS[name].cost end
   if shared.POPULATION[kind] then return arena.PER_BANDWIDTH * shared.POPULATION[kind] end
   if not shared.units[kind] then return nil end
   return shared.unit_cost(name and name:find("^lp%-grubstake%-") and "grubstake" or "serenity", kind)

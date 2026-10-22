@@ -200,6 +200,21 @@ The `herd` scenario (`tests/lp-sim`, eight variants, seed 12345; a base 250 tile
 | blind: its biters' sight 0 (the control) | marched to the nearest face (the heavy one), found nothing; power up; 13 of 41 home |
 | mega: 200 bred | power dead; 187 of 200 home. Its cost per tick not measured: the run's average covers 30 minutes and ran beside seven others |
 
+## In the arena (0.1.52, 2026-10-22)
+
+The stock breeds in the matrix (`docs/arena.md`), priced provisionally in `shared.BREEDS` (a pen spends time, not parts):
+bred medium 6 parts, bred big 28, against a rifleman's 10. None of them shoots up now (`air.lua`, as the corporations'
+ground-only units: a bite aimed at a flier hits nothing and the biter is turned to a ground target, `aim.lua`).
+- Bred big at 20 beat nearly everything, splash included; at 40 it lost to nearly everything (Lanchester again); at 28
+  it loses to every splash kind (shock -87, prism -79, tesla -75, sapper -64, breacher -40), the railgunner, air, the
+  flamers and the rocket trooper, and beats most armour (walker +93, tank +58, dozer +37, battle tank +16).
+- As a class: bred against small arms +40, splash -60, armour +45, air -100. A loop with the others: armour beats splash,
+  splash beats the breeds, the breeds beat armour (a swarm round slow hulls), and air beats all that cannot shoot up.
+  The railgunner, the biter specialist, has its clearest wins here (bred medium and big, -100 both).
+- The clustering does not give it a group of its own: the main split stays "can shoot up or not", and the breeds sit
+  with the ground-only kinds (with Grubstake's shotgun hands, the other swarm, when cut finer). Air at +100 against it is
+  the open question for the breeds consult.
+
 Open from here: its arrival (landing on a nest, the pens it grows), the evolution from what it eats, the Grubstake break,
 Kessler-Hayashi against its pens, the probe (tier 2), the arena rows for the bred biter, and retiring Grubstake's flares
 once the biotech lands in games.

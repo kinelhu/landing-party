@@ -1560,6 +1560,8 @@ nests, is at peace with the wild biters and sends waves with intent; Grubstake's
   troopers outside the wall can. `shared.is_corp` is now exact (the two corporations' forces) and `shared.is_biters`
   covers wild and bred. Scenario `herd`, eight variants; results in the brief.
 - Engine: a unit standing in a chunk not yet generated cannot path; every move it is given fails at once.
+- In the arena (0.1.52): bred medium 6 parts, bred big 28 (`shared.BREEDS`, provisional), ground-only like the corporations'
+  ground units. Class scores: against small arms +40, splash -60, armour +45, air -100. The railgunner wins against both.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

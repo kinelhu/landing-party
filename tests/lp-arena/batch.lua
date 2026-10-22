@@ -28,6 +28,8 @@ local KINDS = {
   -- The player's, priced by command bandwidth (arena.PER_BANDWIDTH).
   {"trooper", "lp-trooper"}, {"breacher", "lp-breacher"}, {"rocket trooper", "lp-rocket-trooper"},
   {"battle tank", "lp-battle-tank"},
+  -- The biotech's (docs/biotech.md), at shared.BREEDS' price.
+  {"bred medium", "lp-bred-medium-biter"}, {"bred big", "lp-bred-big-biter"},
 }
 
 -- Mixed arms: {label, side x, side y}, each side a list of {prototype, count}; x is the ground army, y the same spend with

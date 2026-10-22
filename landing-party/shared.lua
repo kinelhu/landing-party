@@ -220,6 +220,11 @@ shared.BIOTECH = {force = "lp-biotech", color = {r = 0.45, g = 0.85, b = 0.2}, i
 -- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).
 shared.PEN_CAP = 40
 shared.WAVE_MIN = 24
+-- Its breeds: what each is worth in parts where they are weighed against the corporations' units (the arena). A pen
+-- spends time, not parts; these are provisional, set from the arena (docs/arena.md), against a rifleman's 10.
+-- None of them shoots up (air.lua): its class is many, healing and soft.
+shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 6},
+  ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}}
 
 local corp_forces = {}
 for _, c in pairs(shared.CORPS) do corp_forces[c.force] = true end

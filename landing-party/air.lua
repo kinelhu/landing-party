@@ -65,7 +65,8 @@ function copy(type, name)
   return p.name
 end
 
--- The player's own: the battle tank's cannon and the breacher's charges do not shoot up either (one rule for every side).
+-- The player's own: the battle tank's cannon and the breacher's charges do not shoot up either (one rule for every side);
+-- nor do the biotech's breeds (shared.BREEDS).
 local PLAYER = {["lp-battle-tank"] = true, ["lp-breacher"] = true}
 
 -- A shot aimed at a flier tells the script (scripts/aim.lua), which turns the shooter to a target it can hurt: without
@@ -78,7 +79,9 @@ local count = 0
 for _, type in ipairs({"unit", "spider-unit"}) do
   for name, u in pairs(data.raw[type] or {}) do
     local spec = name:sub(1, 3) == "lp-" and shared.units[shared.kind_of(name)]
-    if (PLAYER[name] or spec and spec.ground_only) and u.attack_parameters and u.attack_parameters.ammo_type then
+    -- The biotech's breeds bite nothing in the air (docs/biotech.md: its class cannot shoot up).
+    if (PLAYER[name] or shared.BREEDS[name] or spec and spec.ground_only) and u.attack_parameters
+      and u.attack_parameters.ammo_type then
       local at = u.attack_parameters.ammo_type
       action(at.action)
       if at.action.type then at.action = {at.action} end

@@ -19,12 +19,13 @@ CLASSES = [
     ("splash", ["sapper", "shock", "prism", "tesla", "breacher"]),
     ("armour", ["tank", "aegis", "dozer", "walker", "scorcher", "battle tank"]),
     ("air", ["harrier", "scavenger"]),
+    ("bred", ["bred medium", "bred big"]),
 ]
 CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
 
 # Who fields each kind, read from landing-party/shared.lua (a corporation's starting mix and its research tree's units).
 # Grubstake's infantry is its own (shotguns), so the two infantries are told apart by their labels.
-CORP_COLOUR = {"Kessler-Hayashi": "#2f6f86", "Grubstake": "#b0651a", "You": "#3d7a2a"}
+CORP_COLOUR = {"Kessler-Hayashi": "#2f6f86", "Grubstake": "#b0651a", "You": "#3d7a2a", "Biotech": "#8a9e00"}
 PLAYER = {"trooper", "breacher", "rocket trooper", "battle tank"}   # priced by command bandwidth (tests/lp-arena/arena.lua)
 
 def fielders():
@@ -42,6 +43,8 @@ def fielders():
 def corp_of(label, fielded):
     if label in PLAYER:
         return "You"
+    if label.startswith("bred "):
+        return "Biotech"
     if label.startswith("infantry ("):
         return label[len("infantry ("):-1]
     who = fielded.get("lp-" + label, [])
@@ -73,7 +76,7 @@ def clusters(kinds, M, F, fixed_cols, corp, img):
         lab.set_color(CORP_COLOUR.get(corp[k], "black"))
     ax.set_xlabel("distance between two kinds' rows of scores (x100 scale: 1.0 is a 100-point gap in one fight)", fontsize=8)
     ax.set_title("Units grouped by whom they beat and lose to, from the arena alone\n(label: kind (hand-made class); "
-                 "Kessler-Hayashi teal, Grubstake amber, you green)", fontsize=9)
+                 "Kessler-Hayashi teal, Grubstake amber, you green, the biotech olive)", fontsize=9)
     ax.tick_params(axis="y", labelsize=8)
     fig.tight_layout()
     fig.savefig(img)
@@ -168,7 +171,7 @@ def main():
         ax.set_xlabel(title, fontsize=9, labelpad=8)
         ax.xaxis.set_label_position("bottom")
     fig.suptitle("Landing Party: who counters whom (row against column; blue, the row wins; red, it loses). "
-                 "Names coloured by side: Kessler-Hayashi teal, Grubstake amber, you green", fontsize=10, y=0.995)
+                 "Names coloured by side: Kessler-Hayashi teal, Grubstake amber, you green, the biotech olive", fontsize=10, y=0.995)
     fig.text(0.01, 0.005, f"Score: share of the other side destroyed minus share of its own lost (x100). Price in parts in "
              f"brackets; yours at 10 parts per command bandwidth. {len(rows)} fights, {rounds} rounds, no research. scripts/arena.sh", fontsize=7)
     fig.tight_layout(rect=(0, 0.02, 1, 0.97))
