@@ -35,6 +35,7 @@ document still says Serenity where it records history.
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
+| A third corporation, biotech (bred biters, pens on nests, waves with intent): `docs/biotech.md` | designed; engine tested 2026-10-22 | spikes (deleted) |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -1531,6 +1532,23 @@ behind the line"): a player building inside its territory counts as an attack. T
 no provocation scripted, still see Serenity come (the player's outpost lies inside its growing territory): 12, 11
 and 9 operations for the passive, robots and walled players in 2 hours, production 16, 93 and 94 of 94 standing.
 `temper` checks that no operation against the player starts before the provocation, whatever caused it.
+
+### The third corporation: biotech (the user, 2026-10-21; brief `docs/biotech.md`; engine tests 2026-10-22, nothing built)
+Chosen from five candidates (`docs/third-corporation.md`, three consults): a corporation that breeds biters, lives in
+nests, is at peace with the wild biters and sends waves with intent; Grubstake's flares are retired for it. Engine tests
+(throwaway spikes, details in the brief):
+- Engine: a force at cease-fire both ways with `enemy` never fights the wild biters, its herds included, marching
+  through a wild nest; a third force at peace with `enemy` (Grubstake) is attacked by its herds with no wild biter
+  joining in.
+- Engine: a `unit-spawner` on a script force spawns for that force, choosing by that force's own evolution factor. A
+  wild spawner whose force is changed breeds for its new owner but keeps the wild look and the wild breeds: holding a
+  nest means a pen in its place.
+- Engine: Space Age's captive-spawner graphics on a unit-spawner copy work (the pen); retinting a biter's mask layers
+  (`tint` in its run and attack animations) makes bred biters read apart from wild ones.
+- Trial: the same 40 biters against identical ringed bases (heavy side facing them, lasers on one power source). A plain
+  wave died for 3 turrets; a coordinated one (a scout's loop outside turret range, then round to the side it saw least
+  of, a two-segment breach, straight to the power with no distraction) killed the power in 36 seconds for 4 losses.
+  Intelligence is cheap to script and worth an army, so its tell and its counters are the design problem.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

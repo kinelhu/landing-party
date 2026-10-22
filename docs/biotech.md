@@ -43,7 +43,49 @@ Solutions); internal id to be chosen with it.
 ## First steps (engine tests and a trial, before any design commitment)
 
 1. Its own force at peace with the wild biters (cease-fire both ways), spawners it holds producing units on its force,
-   a captive spawner's look.
-2. One coordinated wave in the arena (`scripts/arena.sh`): a probe, then a split attack on the player's power, against
-   the player's lines; compared with the same biters as a plain wave.
-3. The arena's bred-biter rows: does it cluster as its own group (`docs/arena.md`)?
+   a captive spawner's look. **Done 2026-10-22, below.**
+2. One coordinated wave against the player's lines, compared with the same biters as a plain wave. **Done 2026-10-22,
+   below** (a spike of its own rather than the arena: the arena fights armies, this needed a base).
+3. The arena's bred-biter rows: does it cluster as its own group (`docs/arena.md`)? Not yet.
+
+## Engine tests (2026-10-22, throwaway spikes, deleted)
+
+**Peace, pens, capture** (a force `lp-bt` at cease-fire both ways with `enemy`; a wild nest of 2 spawners and 10 biters
+30 tiles from a pen; a Grubstake-like force also at peace with `enemy`; 21,000 ticks):
+- No damage either way between the wild biters and the biotech's, all run long, including its herd marching past and
+  through the wild nest twice.
+- Its herd sent at the Grubstake-like camp destroyed it; no wild biter joined in on either side. Grubstake's pact and the
+  biotech's herds coexist with plain force relations: nothing to script.
+- A pen (a `unit-spawner` copy whose graphics are Space Age's captive spawner) spawns on the biotech's force, choosing
+  units by **the biotech force's own evolution**, not the wild biters' (`set_evolution_factor(0.9)` on its force: big
+  ones only, while the wild nest at 0.3 bred small and medium). Spawning stops at the spawner's owned-unit cap and
+  resumes once a herd is taken from it (`add_member` releases them).
+- **A wild spawner given to its force (`entity.force = ...`) breeds for it, but keeps the wild look and breeds wild
+  biters** (vanilla colours, its result_units). Holding a nest therefore means replacing the spawner with a pen in place;
+  the nests around it can stay wild.
+- The look (screenshots sent 2026-10-22): the pen reads at a glance as a nest that is held (the captive spawner's tanks
+  and pipes on a biter mound). Bred biters retinted on their mask layers (green body, yellow bands) read apart from wild
+  ones even at zoom 1. A first answer to attribution, before leaders, trails and labels.
+- One run's herd never reached its target; that map had no fixed seed (terrain differs per run), the cause was not
+  confirmed. Reruns with the same setup reached it.
+
+**A coordinated wave against a plain one** (two identical bases side by side: a wall ring of radius 40, turrets heavy on
+the side facing the herd (4 lasers, 3 gun turrets), 2 on each flank, 1 laser at the back, every laser on one central
+power source; 40 bred medium biters each; flat map, no water or trees):
+- **Plain** (the near side, then everything around, as a vanilla attack group does): all 40 dead within 40 seconds of
+  arriving, for 2 gun turrets, 1 laser and 5 wall segments. The power was untouched.
+- **Coordinated**: one biter of the 40 scouts a loop 29 tiles outside the turrets (beyond laser range), noting the
+  turrets it sees within 40 tiles (east 1, north 2, south 2, west 7); the herd then marches round, out of range, to the
+  side it saw least of, breaks two wall segments, and goes for the power with no distraction. **The power fell 36 seconds
+  after launch, for 4 biters lost** (with 5 substations and 3 assemblers): every laser went dark.
+- What it took (two failed tries): breaching with `attack_area` chewed 21 wall segments for 25 seconds and the herd was
+  then drawn to the heavy side by damage and died there; the scout's loop at the edge of its sight saw nothing on the
+  west and sent the herd into the heavy wall. Narrow breach (attack two named walls) and `distraction = none` to the
+  target were what worked.
+- After the power, the herd stood idle in the south gun turret's range (guns need no power) and bled out: what a
+  wave does after its strike (sweep, withdraw, hold) is design still to do.
+
+So the intelligence is cheap to script (compound commands, a scout's sight read every half second) and is worth an army:
+the same 40 biters went from a failed wave to a dead base. That is the fairness problem to design: the tell must come
+before the strike (the scout circling at 29 tiles, in the biotech's colour, is the obvious one), and a player with
+turrets all round or a second power source must be able to read and beat it. A base with turrets all round, not tried.
