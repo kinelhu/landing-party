@@ -1549,6 +1549,8 @@ nests, is at peace with the wild biters and sends waves with intent; Grubstake's
   wave died for 3 turrets; a coordinated one (a scout's loop outside turret range, then round to the side it saw least
   of, a two-segment breach, straight to the power with no distraction) killed the power in 36 seconds for 4 losses.
   Intelligence is cheap to script and worth an army, so its tell and its counters are the design problem.
+- Fairness trial (intel by sight only; a dead scout means a blind wave): spreading turrets evenly did not stop it; power
+  under the guns, a second power source, or killing the scout (two outer turrets on its loop) each did. Table in the brief.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

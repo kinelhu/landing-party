@@ -88,4 +88,26 @@ power source; 40 bred medium biters each; flat map, no water or trees):
 So the intelligence is cheap to script (compound commands, a scout's sight read every half second) and is worth an army:
 the same 40 biters went from a failed wave to a dead base. That is the fairness problem to design: the tell must come
 before the strike (the scout circling at 29 tiles, in the biotech's colour, is the obvious one), and a player with
-turrets all round or a second power source must be able to read and beat it. A base with turrets all round, not tried.
+turrets all round or a second power source must be able to read and beat it.
+
+**Fairness: what beats it** (2026-10-22, same spike; now fair on intel: the herd is not told where the power is, it finds
+power by sight (40 tiles) once 15 tiles inside the wall, and a scout that does not finish its loop means a blind attack,
+the plain wave's; every base keeps 7 lasers and 5 gun turrets; 40 biters):
+
+| The player's base | Plain wave | Coordinated wave |
+|---|---|---|
+| Lopsided, one power source in the middle | all dead; power up | power down 38 s after launch; 21 of 40 left |
+| Turrets spread evenly, one power source in the middle | all dead; power up | power down; 11 left |
+| Lopsided, a second power source under the heavy side's guns | all dead | one source killed, none else in sight; swept, all dead; **power up** |
+| Lopsided, the one power source under the heavy side's guns | all dead | none in sight inside; swept, 24 lost; **power up** |
+| Lopsided, one gun turret outside the wall on the scout's loop | all dead | the scout got through; power down |
+| Lopsided, two gun turrets there (the scout killed) | all dead | **blind attack: all dead**, 4 wall segments |
+| Even, second source, one outer turret | all dead | one source killed; all dead; **power up** |
+
+- Spreading turrets evenly does not help: the herd takes any side, and the power in the middle was beyond every
+  turret's reach (a ring of turrets at radius 37 with range 24 leaves the middle uncovered).
+- What beats it: **power under the guns** (it cannot see it from where it breaks in, or must fight under fire to reach
+  it), **a second power source**, or **killing the scout** before its loop is done. All three are things a player can see
+  and do, and the scout is the tell that says which to do.
+- The numbers that set its strength, as levers: the herd's sight inside (40), how deep it goes before looking (15), the
+  scout's loop (29 tiles outside the turrets, beyond laser range) and whether a half loop is enough to act on (here: no).
