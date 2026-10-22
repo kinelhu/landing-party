@@ -247,6 +247,41 @@ The direction, to build in order (the consult's sections 3 to 8):
 - **Air** is the counter in the field (only Grubstake fields fliers, and only once it breaks with the biotech); at
   home, the worms.
 
-Open from here: its arrival (landing on a nest, the pens it grows), the evolution from what it eats, the Grubstake break,
+## Its arrival (0.1.54, 2026-10-22)
+
+`scripts/farm.lua`. Decided without the user (it gave the lead): the farm lands far out, so that hunting it along its
+trails is the answer to it.
+- **When:** once the wild biters' evolution on a surface reaches 0.25 (mediums to breed). Not tied to the corporations'
+  clocks.
+- **Where:** the nearest nest field (three spawners within 40 tiles) with none of the player's buildings within 600
+  tiles and some within 1,000 (then 1,500), not within 200 of a corporation's camp. No field, no biotech (looked at
+  again every 10 minutes).
+- **What lands:** its cargo pod; up to four of the field's spawners become pens, each with 6 bred and two bred worms; the
+  rest of the field stays wild round it. The farm is charted for the player with a map tag ("Biotech farm", the egg
+  icon); its first landing is told in chat once, as a corporation's first landing is.
+- **Its waves:** one at a time, the first 10 minutes after landing, then 20 minutes apart at the least; from its pens'
+  stock but six a pen kept at the gate, 24 at the least and 60 at the most, sent from the pen nearest the player's
+  nearest guns or machines (searched in rings to 1,600 tiles). Long legs go by waypoints every 100 tiles, moved off
+  water; the chunks along the way are asked for as the wave sets out.
+- **Hunting it:** a pen hit by anyone at war with it calls its wave home (the fight moves to the trail). Every pen dead:
+  the farm is gone, its tag too, and it lands again on another field an hour later.
+- `/lp biotech` lands it now; `/lp wave` makes its farm send one now.
+
+The `farm` scenario (seed 12345; the herd scenario's base, a field of five spawners and two worms 750 tiles beyond it on
+the map's own ground, the wild evolution at 0.3):
+
+| Variant | What happened |
+|---|---|
+| default | landed 20 s in, 750 tiles from the base: 4 pens, 8 worms, its tag; the first wave 10 minutes later. Four full pens sent 135 before the cap (now 60): walked the 750 tiles, scouted, broke in at the corner, killed the power; 40 of 60 home |
+| raid: a pen hit while the wave marched | the wave turned home with all 60; 39 got back |
+| killed: every pen destroyed | the farm and its tag gone; its next landing an hour later |
+| wave: `/lp wave`'s call a minute after landing | a wave out 10 s later |
+
+Open from here: the consult's roster (the spitter, the strafer scout after its spikes, the runt's probe, the cinder,
+the stomper), its pens growing (more pens over time, the mega wave as an event), Kessler-Hayashi against its pens,
+the Grubstake break, evolution from what it eats, the levers (strength and aggression settings), a name, and retiring
+Grubstake's flares now that the biotech lands in games.
+
+Earlier list: its arrival (landing on a nest, the pens it grows), the evolution from what it eats, the Grubstake break,
 Kessler-Hayashi against its pens, the probe (tier 2), the arena rows for the bred biter, and retiring Grubstake's flares
 once the biotech lands in games.

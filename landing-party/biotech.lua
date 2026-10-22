@@ -42,6 +42,21 @@ for _, src in ipairs(BREEDS) do
   table.insert(out, u)
 end
 
+-- Its worms: two by each pen (the breeds consult: a farm's home guard; the only thing of its that reaches a flier).
+local worm = table.deepcopy(data.raw.turret["medium-worm-turret"])
+worm.name = "lp-bred-worm"
+worm.localised_name = {"entity-name.lp-bred-worm"}
+worm.localised_description = {"entity-description.lp-bred"}
+worm.autoplace = nil
+worm.hidden_in_factoriopedia = true
+worm.map_color = B.color
+worm.enemy_map_color = B.color
+for _, k in ipairs({"folded_animation", "preparing_animation", "prepared_animation", "prepared_alternative_animation",
+  "starting_attack_animation", "attacking_animation", "ending_attack_animation", "folding_animation", "graphics_set"}) do
+  retint(worm[k], 0)
+end
+table.insert(out, worm)
+
 local pen = table.deepcopy(data.raw["unit-spawner"]["biter-spawner"])
 pen.name = "lp-pen"
 pen.localised_name = {"entity-name.lp-pen"}

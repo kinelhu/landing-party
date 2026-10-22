@@ -83,7 +83,7 @@ LAYERS = {
     "Army and operations": ["army", "ops", "routing", "intel", "siege", "strip", "answers", "cuts", "strike", "jammer", "scorcher", "aim",
                             "power"],
     "Heists (Grubstake)": ["flare", "jumper", "tap", "skim", "bait", "marker"],
-    "The biotech": ["herd"],
+    "The biotech": ["herd", "farm"],
     "The map": ["map"],
     "The player's army": ["command", "scanner", "roads"],
     "Wiring (edges not drawn)": ["control", "dev"],

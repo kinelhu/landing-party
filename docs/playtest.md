@@ -115,6 +115,18 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    the enemy's tanks, and does that read as "it cannot shoot up", not as a bug? Riflemen against tanks barely
    scratch them now; lances and slug buggies are the answer. Does each fight's winner make sense from what you see?
 
+## The biotech (0.1.54: a third corporation, unnamed yet)
+It lands once the biters' evolution reaches 0.25, on a nest field 600 to 1,000 tiles from your factory, and breeds
+biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, "Biotech farm"), `/lp wave` sends a wave.
+28. **The tell**: before a wave, one green biter with an egg icon walks round your base out of turret reach, stops at
+    each side, then sits at one. Did you notice it before the herd came, and could you tell where it would hit?
+29. **The trail**: mud on the ground and a dashed green line on the map from its farm to the side it chose. Does it read
+    as "they came from there", and does it lead you back to the farm?
+30. **The strike**: the herd breaks two wall pieces where the scout sat and goes for what feeds your guns (power,
+    the inserters loading gun turrets), then leaves the way it came. Fair? What would you build against it?
+31. **The hunt**: go to the farm (pens drawn as captive spawners, worms by them). Hitting a pen calls its wave home.
+    Kill every pen and it leaves, landing elsewhere an hour later. Is the expedition a fight worth making?
+
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that
    research six technologies (Cluster shells, Pheromone bait, Pact breaker, Claim marker, Rail rifle, Orbital strike).

@@ -30,7 +30,7 @@ local GATHER_TICKS = 90 * 60
 local INSIDE = 15
 local INSIDE_TICKS = 90 * 60
 local TRAIL_TICKS = 20 * 3600
-local REACH = 500           -- how far from its pen a wave goes
+local LEG = 100             -- a long march goes by waypoints this far apart (a group walks such legs whole: spike)
 local BASE_REACH = 120      -- the turrets that make one base, round what drew the wave
 local SCOUT_EXTRA = 10      -- a dead scout's lesson: the next loop round that base this much wider
 local SCOUT_TIMEOUT = 5 * 3600
@@ -44,7 +44,7 @@ local POWER = {"generator", "solar-panel", "accumulator", "burner-generator", "e
   "fusion-generator", "lightning-attractor"}
 local PIPES = {"pipe", "pipe-to-ground", "pump"}
 -- What draws a wave: the player's machines and guns (pollution is what feeds it; these make it).
-local DRAW = {"ammo-turret", "electric-turret", "fluid-turret", "assembling-machine", "furnace", "mining-drill", "boiler",
+herd.DRAW = {"ammo-turret", "electric-turret", "fluid-turret", "assembling-machine", "furnace", "mining-drill", "boiler",
   "generator", "lab"}
 
 local function st()
@@ -89,6 +89,8 @@ function herd.add_pen(pen)
   st().pens[pen.unit_number] = {pen = pen, stock = {}, memory = {}}
   return pen.unit_number
 end
+
+function herd.pen(id) return st().pens[id] end
 
 -- A wild nest taken: the spawner gives way to a pen on the same spot (its wild biters stay wild).
 function herd.capture(spawner)
@@ -246,11 +248,38 @@ end
 
 local function memory_key(c) return string.format("%d,%d", math.floor(c.x / 32), math.floor(c.y / 32)) end
 
--- A wave from pen p at what drew it (target: a position).
+-- Waypoints from a to b every LEG tiles, each moved off water and cliffs; a and b not included.
+local function legs(s, a, b)
+  local out = {}
+  local len = math.sqrt(d2(a, b))
+  local n = math.floor(len / LEG)
+  for k = 1, n do
+    local f = k * LEG / len
+    if len - k * LEG > LEG / 3 then
+      local q = {x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f}
+      local free = s.find_non_colliding_position("lp-bred-medium-biter", q, 24, 1)
+      table.insert(out, free and xy(free) or q)
+    end
+  end
+  return out
+end
+
+-- The ground between: a unit in a chunk not generated cannot path (every move fails at once), so the chunks along the
+-- way are asked for when a wave sets out (the engine makes them within seconds).
+local function corridor(s, a, b)
+  local len = math.sqrt(d2(a, b))
+  for k = 0, math.ceil(len / 32) do
+    local f = k * 32 / math.max(len, 1)
+    s.request_to_generate_chunks({a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f}, 1)
+  end
+end
+
+-- A wave from pen p at what drew it (target: a position). opts.units: the units it takes (a farm's, scripts/farm.lua);
+-- the pen's stock if none; opts.sight: its biters' sight (0, the blind control).
 function herd.launch(p, target, opts)
   opts = opts or {}
   local s = p.pen.surface
-  local units = stock(p)
+  local units = opts.units or stock(p)
   if #units < 2 then return end
   local forces = players()
   local c, hx, hy = base_box(s, target, forces)
@@ -267,7 +296,7 @@ function herd.launch(p, target, opts)
       table.insert(w.members, u)
     end
   end
-  p.stock = {}
+  if not opts.units then p.stock = {} end
   -- The scout: the one nearest the base.
   local best, bd
   for _, u in ipairs(w.members) do
@@ -282,7 +311,11 @@ function herd.launch(p, target, opts)
     if not ed or d < ed then entry, ed = j, d end
   end
   w.entry = entry
+  w.farm = opts.farm
+  corridor(s, p.pen.position, c)
+  w.approach = legs(s, xy(p.pen.position), loop_point(w, entry))
   local cmds = {}
+  for _, q in ipairs(w.approach) do table.insert(cmds, go(q, defines.distraction.none, 6)) end
   for k = 0, LOOP_POINTS do
     table.insert(cmds, go(loop_point(w, entry + k)))
     if k % STOP_EVERY == 0 and k < LOOP_POINTS then
@@ -306,7 +339,7 @@ end
 local function gate(w)
   local p = st().pens[w.pen]
   local pp = p and p.pen.valid and p.pen.position or w.trail and w.trail[1] or w.center
-  local e = loop_point(w, w.entry)
+  local e = w.approach and w.approach[1] or loop_point(w, w.entry)
   local len = math.sqrt(d2(pp, e))
   return {x = pp.x + (e.x - pp.x) * 8 / math.max(len, 1), y = pp.y + (e.y - pp.y) * 8 / math.max(len, 1)}
 end
@@ -355,7 +388,8 @@ local function mark(w)
   local parts = {}
   for k = 0, 7 do table.insert(parts, count[k]) end
   local p = st().pens[w.pen]
-  local trail = {p and p.pen.valid and p.pen.position or w.mark}
+  local trail = {p and p.pen.valid and xy(p.pen.position) or w.mark}
+  for _, q in ipairs(w.approach or {}) do table.insert(trail, q) end
   for _, q in ipairs(arc(w, j)) do table.insert(trail, q) end
   w.trail = trail
   lay_trail(game.surfaces[w.surface], trail)
@@ -524,7 +558,7 @@ local function finish(w, outcome)
     kills = w.kills, loop = w.loop, mark = w.mark and {w.mark.x, w.mark.y}, scout_seen = w.scout_seen,
     t_launch = w.t0, t_mark = w.t_mark, t_march = w.t_march, t_breach = w.t_breach, t_inside = w.t_inside,
     t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},
-    trail = w.trail})
+    trail = w.trail, farm = w.farm, recalled = w.recalled})
   h.waves[w.id] = nil
   log(w, string.format("%s; %d of %d home", outcome, alive(w), w.size))
 end
@@ -570,29 +604,7 @@ function herd.tick(tick)
   end
   if tick % 600 == 0 then
     lift_trails(tick)
-    for id, p in pairs(h.pens) do
-      if not p.pen.valid then
-        h.pens[id] = nil
-      elseif not storage.herd_off then
-        local busy = false
-        for _, w in pairs(h.waves) do if w.pen == id then busy = true end end
-        if not busy and #stock(p) >= shared.WAVE_MIN then
-          local t = p.pen.surface.find_entities_filtered{position = p.pen.position, radius = REACH, force = players(),
-            type = DRAW, limit = 1}
-          -- The nearest of what draws it (a limited search returns any one; a second, bounded round it, the nearest).
-          if t[1] then
-            local near = p.pen.surface.find_entities_filtered{position = p.pen.position,
-              radius = math.sqrt(d2(t[1].position, p.pen.position)) + 1, force = players(), type = DRAW}
-            local best, bd
-            for _, e in ipairs(near) do
-              local d = d2(e.position, p.pen.position)
-              if not bd or d < bd then best, bd = e, d end
-            end
-            herd.launch(p, best and best.position or t[1].position)
-          end
-        end
-      end
-    end
+    for id, p in pairs(h.pens) do if not p.pen.valid then h.pens[id] = nil end end
   end
   if tick % 3600 == 7 then
     -- Its breeds by the wild biters' evolution on each surface it holds pens on (its own, from what it eats, later).
@@ -649,6 +661,30 @@ function herd.on_died(e)
   for _, w in pairs(h.waves) do
     if w.scout == ent and w.stage == "scout" then w.scout_died_at = {x = ent.position.x, y = ent.position.y} end
   end
+end
+
+-- A farm attacked calls its wave home (Fable's breeds consult: the raid on the farm is the counter to a wave on its way,
+-- and the fight is on the trail, in the open).
+function herd.recall(farm_id, why)
+  for _, w in pairs(st().waves) do
+    if w.farm == farm_id and w.stage ~= "withdraw" and w.stage ~= "done" then
+      if w.stage == "scout" or w.stage == "gather" then
+        if not (w.group and w.group.valid) then
+          local s = game.surfaces[w.surface]
+          w.group = s.create_unit_group{position = where(w), force = B.force}
+          for _, u in ipairs(herd_units(w)) do w.group.add_member(u) end
+        end
+        w.trail = w.trail or {xy(st().pens[w.pen] and st().pens[w.pen].pen.valid and st().pens[w.pen].pen.position or w.center)}
+      end
+      w.recalled = true
+      withdraw(w, why)
+    end
+  end
+end
+
+function herd.out(farm_id)
+  for _, w in pairs(st().waves) do if w.farm == farm_id then return true end end
+  return false
 end
 
 function herd.state()

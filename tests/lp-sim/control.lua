@@ -7459,6 +7459,130 @@ scenarios.herd = function()
   end)
 end
 
+-- Farm (the biotech's arrival, scripts/farm.lua): the herd scenario's base (250 tiles from spawn, away from the harmless
+-- Serenity camp), a nest field of five spawners and two worms 750 tiles beyond it over the map's own ground, the wild
+-- biters' evolution at 0.3. The biotech comes by itself: its pod on the field, pens and worms, its tag on the map, and
+-- after FIRST_WAVE its first wave walks the 750 tiles by waypoints to the base. Mixes:
+--   raid: a pen hit while the wave marches: the wave turns home
+--   killed: every pen destroyed: the farm and its tag gone, its next landing an hour off
+--   wave: /lp wave's call a minute after landing: a wave out within a minute, not after FIRST_WAVE
+scenarios.farm = function()
+  local mix = params.mix or ""
+  local L, G = "laser-turret", "gun-turret"
+  local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
+  schedule(60, function()
+    lp("debug_tune", {harmless = true, army_off = true, history_off = true})
+    local o = lp("stats", storage.id).origin
+    local ux, uy = 0, 0
+    if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
+    local vx, vy = -uy, ux
+    local c = {ux * 250 + 0.5, uy * 250 + 0.5}
+    local function at(du, dv) return {c[1] + ux * du + vx * dv, c[2] + uy * du + vy * dv} end
+    S.at = at
+    for d = 0, 800, 32 do surface().request_to_generate_chunks(at(d, 0), 3) end
+    surface().force_generate_chunk_requests()
+    local a, b = at(-60, -60), at(60, 60)
+    flatten(math.min(a[1], b[1]), math.min(a[2], b[2]), math.max(a[1], b[1]), math.max(a[2], b[2]))
+    for i = -40, 40 do
+      put("stone-wall", at(40, i)); put("stone-wall", at(-40, i)); put("stone-wall", at(i, 40)); put("stone-wall", at(i, -40))
+    end
+    for _, t in ipairs({{L, 37, -24}, {G, 37, -14}, {L, 37, -5}, {G, 37, 4}, {L, 37, 13}, {G, 37, 22}, {L, 37, 30},
+        {L, -12, -37}, {G, 12, -37}, {L, -12, 37}, {G, 12, 37}, {L, -37, 0}}) do
+      local e = put(t[1], at(t[2], t[3]))
+      if t[1] == G then e.insert{name = "piercing-rounds-magazine", count = 200} end
+    end
+    for x = -32, 32, 16 do for y = -32, 32, 16 do put("substation", at(x, y)) end end
+    S.power = put("electric-energy-interface", at(4, 4))
+    S.power.power_production, S.power.electric_buffer_size = 5e6, 5e7
+    -- The nest field, on the map's own ground.
+    S.field = {}
+    for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}, {-8, -12}}) do
+      local q = surface().find_non_colliding_position("biter-spawner", at(750 + d[1], d[2]), 30, 1)
+      if q then table.insert(S.field, surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}) end
+    end
+    for _, d in ipairs({{20, 0}, {-20, 0}}) do
+      local q = surface().find_non_colliding_position("medium-worm-turret", at(750 + d[1], d[2]), 30, 1)
+      if q then surface().create_entity{name = "medium-worm-turret", position = q, force = "enemy"} end
+    end
+    game.forces.enemy.set_evolution_factor(0.3, surface())
+    info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
+  end)
+  local function farm1() return lp("farm_state").farms[1] end
+  for t = 600, END - 120, 300 do
+    schedule(t, function()
+      local f = farm1()
+      if f and not S.landed then
+        S.landed = game.tick
+        S.pens0 = f.pens
+        S.worms = surface().count_entities_filtered{name = "lp-bred-worm", position = f.pos, radius = 80}
+        S.tags = #game.forces.player.find_chart_tags(surface(), {{f.pos.x - 8, f.pos.y - 8}, {f.pos.x + 8, f.pos.y + 8}})
+        S.farm_pos = f.pos
+        S.dist = math.sqrt((f.pos.x - S.at(0, 0)[1]) ^ 2 + (f.pos.y - S.at(0, 0)[2]) ^ 2)
+        if mix == "wave" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave") and game.tick end) end
+        if mix == "killed" then
+          for _, sp in ipairs(surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80}) do
+            sp.die("player")
+          end
+          S.killed_at = game.tick
+        end
+      end
+      local st = lp("herd_state")
+      for _, w in ipairs(st.waves) do
+        S.wave_seen = S.wave_seen or game.tick
+        if mix == "raid" and w.stage == "march" and not S.raided then
+          local pen = surface().find_entities_filtered{name = "lp-pen", position = S.farm_pos, radius = 80, limit = 1}[1]
+          if pen then pen.damage(60, "player"); S.raided = game.tick end
+        end
+      end
+      if mix == "killed" and S.killed_at and game.tick - S.killed_at >= 1200 and not S.after then
+        S.after = lp("farm_state")
+        S.tags_after = #game.forces.player.find_chart_tags(surface(), {{S.farm_pos.x - 8, S.farm_pos.y - 8},
+          {S.farm_pos.x + 8, S.farm_pos.y + 8}})
+        finish_early()
+      end
+      if mix ~= "killed" and #st.log > 0 then finish_early() end
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("herd_state")
+    local w = st.log[1]
+    info("farm: " .. serpent.line(lp("farm_state")))
+    info("farm: wave " .. serpent.line(w and {outcome = w.outcome, blind = w.blind, size = w.size, left = w.left,
+      kills = w.kills, recalled = w.recalled, t_launch = w.t_launch, t_breach = w.t_breach, t_end = w.t_end}))
+    check("farm: it landed", S.landed ~= nil, tostring(S.landed))
+    if not S.landed then return end
+    info(string.format("farm: landed %.1f min in, %.0f tiles from the base, %s pens, %s worms, %s tags", S.landed / 3600,
+      S.dist or -1, tostring(S.pens0), tostring(S.worms), tostring(S.tags)))
+    check("farm: three pens or more", (S.pens0 or 0) >= 3, tostring(S.pens0))
+    check("farm: 600 tiles out or more", (S.dist or 0) >= 600, string.format("%.0f", S.dist or -1))
+    check("farm: worms by its pens", (S.worms or 0) >= 2 * (S.pens0 or 0), tostring(S.worms))
+    check("farm: its tag on the player's map", (S.tags or 0) >= 1, tostring(S.tags))
+    if mix == "killed" then
+      check("farm: every pen dead, the farm gone", S.after and #S.after.farms == 0, serpent.line(S.after))
+      check("farm: its tag gone", S.tags_after == 0, tostring(S.tags_after))
+      check("farm: it lands again in about an hour", S.after and S.after.next_arrival and
+        S.after.next_arrival - S.killed_at >= 55 * 3600, serpent.line(S.after and S.after.next_arrival))
+      return
+    end
+    check("farm: a wave went out", w ~= nil or S.wave_seen ~= nil, "none")
+    if not w then return end
+    if mix == "wave" then
+      check("farm: /lp wave sent one within a minute", S.asked and w.t_launch - S.asked <= 3600,
+        string.format("asked %s, launched %s", tostring(S.asked), tostring(w.t_launch)))
+      return
+    end
+    if mix == "raid" then
+      check("farm: the raid called the wave home", w.recalled == true and S.raided ~= nil,
+        string.format("recalled %s, raided %s", tostring(w.recalled), tostring(S.raided)))
+      check("farm: it never reached the base", w.t_breach == nil, tostring(w.t_breach))
+    else
+      check("farm: the wave walked the distance and broke in", w.t_breach ~= nil, w.outcome)
+      check("farm: the first wave ten minutes after landing or more", w.t_launch - S.landed >= 9 * 3600,
+        string.format("%.1f min", (w.t_launch - S.landed) / 3600))
+    end
+  end)
+end
+
 -- Blackout (the power strike; Fable's fortress consult): ten lasers behind a wall 150 tiles from a provoked Serenity camp,
 -- fed only by a chain of big poles from a power source 120 tiles off to the side, beyond every turret's reach; and a
 -- decoy nearer the camp: a line of big poles feeding a radar, as exposed, darkening nothing. Its survey finds the pole
@@ -9057,6 +9181,8 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 -- Labs (rd.lua) gate research only where a scenario asks for them: the rest test the tree's choices, not where it stands.
 local LABS = {labs = true, breach = true, factory = true, visit = true}
 if not LABS[params.scenario] then schedule(1, function() lp("debug_tune", {labs_off = true}) end) end
+-- The biotech lands only where it is the subject (its arrival needs nests and evolution, which some scenarios set up).
+if params.scenario ~= "farm" then schedule(1, function() lp("debug_tune", {biotech_off = true}) end) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with

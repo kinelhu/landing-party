@@ -12,6 +12,8 @@
 --   flare [id]               Grubstake fires a pheromone flare at you: its canister out of your turrets' reach
 --   rig [id]                 a claim jumper at the chests nearest you (a rig 40 to 60 out, hands up in 2.5 minutes)
 --   tap [id]                 a power tap on the pole nearest you (a pylon line out of turret reach, then the clamp)
+--   biotech                  the biotech's farm lands now on the nearest nest field 600 to 1,500 tiles from your factory
+--   wave                     its farm sends a wave now (its pens topped up to send one)
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
 local names = require("__landing-party__.scripts.names")
@@ -23,6 +25,7 @@ local flare = require("__landing-party__.scripts.flare")
 local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
 local standing = require("__landing-party__.scripts.standing")
+local farm = require("__landing-party__.scripts.farm")
 
 local dev = {}
 
@@ -92,6 +95,11 @@ function dev.run(player, args)
       or string.format("%s launched from %d %s (%s)", what, b.id, shared.CORPS[b.corp].name, gps(b)))
   elseif what == "incidents" then
     standing.list(player)
+  elseif what == "biotech" then
+    player.print(farm.arrive_now(player.surface) and "the biotech's pod is coming down (a map tag marks its farm)"
+      or "no nest field of three spawners 600 to 1,500 tiles from your factory")
+  elseif what == "wave" then
+    player.print(farm.debug_wave() and "the biotech's farm sends a wave within ten seconds" or "no biotech farm (/lp biotech)")
   elseif what == "flare" or what == "rig" or what == "tap" then
     -- Grubstake's discreet operations on demand (their own triggers wait on the ladder, the pact and intel).
     local temper = ({flare = "flares", rig = "jumps", tap = "taps"})[what]

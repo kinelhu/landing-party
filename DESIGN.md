@@ -35,7 +35,7 @@ document still says Serenity where it records history.
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
-| A third corporation, biotech: pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home): `docs/biotech.md` | first slice built 0.1.51; no arrival yet | `herd` (eight) |
+| A third corporation, biotech: pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave: `docs/biotech.md` | built 0.1.51 to 0.1.54 | `herd` (eight), `farm` (four) |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -1566,6 +1566,10 @@ nests, is at peace with the wild biters and sends waves with intent; Grubstake's
   an armour-killing bite. A bite damage type (`lp-bite`) that hulls resist 60% (walker, spidertron 40%); bred medium 7.
   Class now: small arms +48, splash -69, armour -5, air -100. The roster by tier, the scout as a bred strafer (spikes
   first), home defence and what is not built (no lightning breed: electric is Kessler-Hayashi's) are in the brief.
+- Its arrival (0.1.54, `scripts/farm.lua`): at the wild biters' evolution 0.25, by cargo pod, on the nearest nest field
+  600 to 1,000 tiles from the player's factory (1,500 if none); four pens, two worms each, a map tag; waves of 24 to 60
+  every 20 minutes at most, by waypoints; a pen hit recalls its wave; every pen dead, it lands elsewhere an hour later.
+  `/lp biotech`, `/lp wave`. Scenario `farm`: a wave walked 750 tiles of the map's own ground and killed the power.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

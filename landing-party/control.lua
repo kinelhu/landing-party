@@ -40,6 +40,7 @@ local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
 local herd = require("__landing-party__.scripts.herd")
+local farm = require("__landing-party__.scripts.farm")
 script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
 script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
 script.on_nth_tick(3600, aim.sweep)
@@ -69,7 +70,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -109,12 +110,15 @@ for _, n in ipairs(shared.variants({"lp-lander", "lp-generator", "lp-pylon", "lp
   "lp-siege-lab"})) do
   table.insert(BUILDINGS, {filter = "name", name = n})
 end
+-- The biotech's pens: one attacked calls its farm's wave home (farm.lua).
+table.insert(BUILDINGS, {filter = "name", name = "lp-pen"})
 -- What holds a charge, for the Tesla's drain (scorcher.lua).
 for _, t in ipairs({"electric-turret", "accumulator", "roboport", "electric-energy-interface"}) do
   table.insert(BUILDINGS, {filter = "type", type = t})
 end
 script.on_event(defines.events.on_entity_damaged, function(e)
   if e.damage_type and e.damage_type.name == "electric" then scorcher.drain(e) end
+  if e.entity.name == "lp-pen" then return farm.on_damaged(e) end
   if not shared.is_corp(e.entity.force.name) then return end
   -- Any other force: a rival corporation's fire raises the alarm as the player's does.
   if e.force and e.force ~= e.entity.force then
@@ -418,6 +422,8 @@ remote.add_interface("landing-party", {
     if t.leader_off ~= nil then storage.leader_off = t.leader_off end
     -- The biotech's pens send no wave on their own (tests send them: herd_wave).
     if t.herd_off ~= nil then storage.herd_off = t.herd_off end
+    -- No biotech arrival (farm.lua); tests that bring it do so with farm_arrive.
+    if t.biotech_off ~= nil then storage.biotech_off = t.biotech_off end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
     if t.harmless then
       for _, k in ipairs({"ops_off", "flare_off", "jump_off", "tap_off", "skim_off", "prospect_off", "sever_off", "cuts_off",
@@ -458,6 +464,10 @@ remote.add_interface("landing-party", {
   end,
   herd_wave = function(pen_id, pos, opts) return herd.launch(storage.herd.pens[pen_id], pos, opts) end,
   herd_state = function() return herd.state() end,
+  -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
+  farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
+  farm_state = function() return farm.state() end,
+  farm_wave = function() return farm.debug_wave() end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).

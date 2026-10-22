@@ -25,7 +25,7 @@ function arena.surface()
     s.generate_with_lab_tiles = true
     s.always_day = true
     -- The Scorcher's flame runs only where a camp stands, or on a surface named arena (landing-party control.lua).
-    remote.call("landing-party", "debug_tune", {arena_surface = arena.SURFACE})
+    remote.call("landing-party", "debug_tune", {arena_surface = arena.SURFACE, biotech_off = true})
   end
   return s
 end
