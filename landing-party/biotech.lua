@@ -13,8 +13,21 @@ local function retint(t, n)
   return n
 end
 
+-- A bite is not a bullet (Fable's breeds consult, docs/reviews/2026-10-22-biotech-breeds-consult.md): the breeds bite
+-- with their own damage type, which armoured hulls resist, so a tank drives through a herd (the stock as first built ate
+-- tanks and walkers in the arena: bred against armour +71). Infantry, walls and turrets do not resist it: the breach
+-- stays quick. The biotech's answer to armour is to be a breed of its own.
+local BITE = "lp-bite"
+local function bite(t)
+  if type(t) ~= "table" then return end
+  if t.type == "damage" and t.damage and t.damage.type == "physical" then t.damage.type = BITE end
+  for _, v in pairs(t) do bite(v) end
+end
+local HULLS = {["lp-tank"] = 60, ["lp-aegis"] = 60, ["lp-dozer"] = 60, ["lp-scorcher"] = 60, ["lp-prism"] = 60,
+  ["lp-tesla"] = 60, ["lp-battle-tank"] = 60, ["lp-walker"] = 40, tank = 60, spidertron = 40}
+
 local BREEDS = {"small-biter", "medium-biter", "big-biter", "behemoth-biter"}
-local out = {}
+local out = {{type = "damage-type", name = BITE}}
 for _, src in ipairs(BREEDS) do
   local u = table.deepcopy(data.raw.unit[src])
   u.name = "lp-bred-" .. src
@@ -22,6 +35,7 @@ for _, src in ipairs(BREEDS) do
   u.localised_description = {"entity-description.lp-bred"}
   retint(u.run_animation, 0)
   retint(u.attack_parameters.animation, 0)
+  bite(u.attack_parameters.ammo_type)
   u.map_color = B.color
   u.enemy_map_color = B.color
   u.hidden_in_factoriopedia = true
@@ -48,3 +62,14 @@ for _, r in ipairs(pen.result_units) do
 end
 table.insert(out, pen)
 data:extend(out)
+
+-- Every corporation's variant of a hull kind, the player's battle tank, and the base game's tank and spidertron.
+for _, type in ipairs({"unit", "spider-unit", "car", "spider-vehicle"}) do
+  for name, e in pairs(data.raw[type] or {}) do
+    local pct = HULLS[name] or HULLS[shared.kind_of(name)]
+    if pct then
+      e.resistances = e.resistances or {}
+      table.insert(e.resistances, {type = BITE, percent = pct})
+    end
+  end
+end

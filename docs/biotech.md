@@ -215,6 +215,38 @@ ground-only units: a bite aimed at a flier hits nothing and the biter is turned 
   with the ground-only kinds (with Grubstake's shotgun hands, the other swarm, when cut finer). Air at +100 against it is
   the open question for the breeds consult.
 
+## The breeds consult, and what was taken (2026-10-22, 0.1.53)
+
+Fable's consult (`docs/reviews/2026-10-22-biotech-breeds-consult.md`) read the first arena run (bred big at 20) and found
+the stock a copy of Grubstake's swarm with an armour-killing bite (it clustered with the Shotgun hands; bred against
+armour +71). Taken:
+- **A bite is not a bullet.** The breeds bite with `lp-bite`, which armoured hulls resist 60% (every corporation's tank,
+  aegis, dozer, Scorcher, Prism, Tesla; the player's battle tank; the base game's tank), the walker and the spidertron
+  40%; infantry, walls and turrets nothing. A tank drives through a herd, and the expedition to a farm has its tool.
+- **Regeneration is the pen's**, not the animal's: survivors walk home and the pen refills; vanilla heal rates stay.
+- Prices measured again with the bite: bred medium 7 (at 6 it still beat tanks +54 by numbers; at 8 it lost to
+  Kessler-Hayashi's riflemen -58), bred big 28. Class row: small arms +48, splash -69, armour -5, air -100. Bred big
+  loses to the tank -71, aegis -73, battle tank -86, every splash kind and air; bred medium beats every small-arms kind
+  (+10 to +98), is even with the tank (+4) and loses to the aegis, battle tank, dozer, splash, air and the railgunner.
+  Still odd, for its own pass: the Scorcher (a flamer hull) loses to both breeds.
+
+The direction, to build in order (the consult's sections 3 to 8):
+- **Roster by tier.** 0: the stock (bred medium), the tracker, bred worms by the pens (two a pen; the only thing of its
+  that shoots up). 1: the spitter (acid, its answer to armour; puddles cover the withdrawal; outranged by rifles and
+  lances) and the big as the front rank. 2: the runt (bred small) as the probe's body. 3: the cinder (a big biter with
+  ember bands that dies into the demolisher's fissure, force-filtered: the one to shoot first and at range). 4: the
+  stomper over the wall; the behemoth only as the mega wave's weight.
+- **Not built:** a lightning breed (electric is Kessler-Hayashi's track: Optics, Shock, Tesla, the jammer; at most a
+  death discharge), spreading fire, wrigglers, big spitters.
+- **The scout a different animal:** a bred small strafer (unarmed, its strafing AI off, lit at night), after three
+  spikes (a compound command with stops on a spider-unit; spider-units in a unit group; a stomper's steps on its own
+  herd). Fallback: a bred spitter.
+- **Home:** three to five pens on a nest field with worms, the wild nests round them as a hedge, the gate's stock as the
+  garrison (it does not withdraw at home); a pen attacked recalls its wave down the trail, so a raid on the farm is a
+  counter to a wave on its way and the fight happens in the open; the expedition goes by rail with artillery.
+- **Air** is the counter in the field (only Grubstake fields fliers, and only once it breaks with the biotech); at
+  home, the worms.
+
 Open from here: its arrival (landing on a nest, the pens it grows), the evolution from what it eats, the Grubstake break,
 Kessler-Hayashi against its pens, the probe (tier 2), the arena rows for the bred biter, and retiring Grubstake's flares
 once the biotech lands in games.

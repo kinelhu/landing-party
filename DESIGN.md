@@ -1562,6 +1562,10 @@ nests, is at peace with the wild biters and sends waves with intent; Grubstake's
 - Engine: a unit standing in a chunk not yet generated cannot path; every move it is given fails at once.
 - In the arena (0.1.52): bred medium 6 parts, bred big 28 (`shared.BREEDS`, provisional), ground-only like the corporations'
   ground units. Class scores: against small arms +40, splash -60, armour +45, air -100. The railgunner wins against both.
+- The breeds consult (`docs/reviews/2026-10-22-biotech-breeds-consult.md`; 0.1.53): the stock was Grubstake's swarm with
+  an armour-killing bite. A bite damage type (`lp-bite`) that hulls resist 60% (walker, spidertron 40%); bred medium 7.
+  Class now: small arms +48, splash -69, armour -5, air -100. The roster by tier, the scout as a bred strafer (spikes
+  first), home defence and what is not built (no lightning breed: electric is Kessler-Hayashi's) are in the brief.
 
 ## First contact: the baseline (2026-10-13)
 `contact` (seed 12345, 3 hours, real clocks; `docs/sim/contact-12345/timeline.png` and `timeline.md`): a

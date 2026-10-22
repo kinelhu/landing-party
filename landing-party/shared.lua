@@ -223,7 +223,7 @@ shared.WAVE_MIN = 24
 -- Its breeds: what each is worth in parts where they are weighed against the corporations' units (the arena). A pen
 -- spends time, not parts; these are provisional, set from the arena (docs/arena.md), against a rifleman's 10.
 -- None of them shoots up (air.lua): its class is many, healing and soft.
-shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 6},
+shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
   ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}}
 
 local corp_forces = {}
