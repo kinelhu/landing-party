@@ -35,7 +35,8 @@ Solutions); internal id to be chosen with it.
 ## Open
 
 - Name, palette, logo, voice (the identity kit, `docs/corporations.md`).
-- What the waves' intelligence is, exactly, and how it stays fair (a focused consult).
+- What the waves' intelligence is: **consulted 2026-10-22** (`docs/reviews/2026-10-22-wave-intelligence-consult.md`),
+  direction taken below ("Waves with intent: the pack").
 - What it does on a map with few or no nests (bring seed nests?).
 - What it wants from the player besides room: a trade with it? Pay to be spared, or nothing?
 - Performance of mega waves.
@@ -111,3 +112,32 @@ the plain wave's; every base keeps 7 lasers and 5 gun turrets; 40 biters):
   and do, and the scout is the tell that says which to do.
 - The numbers that set its strength, as levers: the herd's sight inside (40), how deep it goes before looking (15), the
   scout's loop (29 tiles outside the turrets, beyond laser range) and whether a half loop is enough to act on (here: no).
+
+## Waves with intent: the pack (direction taken 2026-10-22 from the consult)
+
+The trial's wave was, read as a player would, the other two's signature moves done by biters: round to the quiet side
+and a narrow breach is Grubstake's sneak raid (`routing.lua`, `breach_point`), going for the power is Kessler-Hayashi's
+power strike (`power.lua`, scenario `blackout`), and "a second power source" is already the blackout's counter. The trial
+stays as the skeleton; the identity is a pack, three habits the player can watch:
+- **It looks first, with one animal.** The tracker: a tinted biter with a leader icon and a map marker walks a loop
+  outside turret reach, stopping at each face, then sits at the face it chose: the mark. Killed before the mark, the
+  wave comes blind (every tier). A dead scout teaches a wider loop on that bearing, never a second scout.
+- **It leaves, and comes back the same way.** Withdraw on the kill, after 90 s inside, or at half lost; never hold. The
+  trail (dirt tiles from the pen's gate to the mark, never inside the player's wall) stays 20 minutes, and the next
+  wave's scout checks the old breach first: its memory, on the ground.
+- **It spends animals to learn** (tier 2): a probe of a handful thrown at one face, to see which turrets fire; the herd
+  goes where one did not (dark, dry or out of reach).
+- The target inside is "what feeds the guns", the first it sees: generator or substation, the inserter or belt feeding
+  gun turrets, the pipe feeding flamethrowers. The counter is a base shape (the feed under the guns, a second feed,
+  nothing dry or dark), not the blackout's one answer. Labs are not a target.
+- Mega waves are an event at the top tier (several pens full at once, a clock on each), not the default: waves of 20 to
+  60 otherwise. Kessler-Hayashi's siege columns in the open are prey; no joint strike with anyone is scripted.
+- Tell to strike 3 to 6 minutes: the pen crowding at its gate, the tracker's loop (60 to 120 s), a minute's gathering.
+
+**First slice:** one pen, one wave: the tracker, the trail, the gathering, the march, the two-piece breach, the supply
+target, withdrawal, attribution (the ledger untouched). Proved by a `herd` scenario family in `tests/lp-sim` (the
+consult's section 9: tell timing, the feed under the guns, a second feed, scout killed then a wider loop, belt-fed guns,
+the trail, a repeat wave, wild biters uninvolved, a blind control, 200 biters for performance), then the arena rows for
+the bred biter before any breed. Five engine questions to spike first (consult section 10): a group walking a 300-tile
+trail intact, pauses in a compound command, `set_tiles` redrawing the player's map, a sprite drawn in the chart view,
+and the `cause` of a laser's damage (for the probe).
