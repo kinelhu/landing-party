@@ -285,3 +285,44 @@ Grubstake's flares now that the biotech lands in games.
 Earlier list: its arrival (landing on a nest, the pens it grows), the evolution from what it eats, the Grubstake break,
 Kessler-Hayashi against its pens, the probe (tier 2), the arena rows for the bred biter, and retiring Grubstake's flares
 once the biotech lands in games.
+
+## Synthexis: name, identity consult, creep (2026-10-22)
+
+- **Name: Synthexis** (the user). High-tech bioengineering, not ranchers: names with a farm or old-world ring were
+  rejected (Verdant, Fenwick...). Internal id stays `biotech` (force `lp-biotech`).
+- **Identity consult:** `docs/reviews/2026-10-22-synthexis-identity-consult.md` (the culture site: cells, substrate,
+  clinic, technicians; the feed as weak point; "Synthexis culture N" on the map; "Engineered to adapt."). Taken as the
+  outpost's look; biter eggs as loot wait (they hatch in the player's chests: their own test first).
+- **Creep (the user, after the consult: "a Zerg creep?"; direction taken):** tumors grow creep and bud new tumors at
+  its edge; creep runs from nest to nest and turns the nests it reaches into incubators; incubators and the clinic stand
+  only on creep; bred biters are faster and heal on creep, plain off it; tumors killed, the creep recedes and what
+  stood on it withers. It grows toward nests, not toward the player (an advancing front is Kessler-Hayashi's).
+
+Creep engine spike (throwaway mod, own profile, deleted). A tile copied from `artificial-yumako-soil`, not mineable,
+collision `{ground_tile, object}`:
+- **It blocks every building and nothing that moves.** Refused on creep (placed on grass): gun turret, belt, wall,
+  pole, rail, land mine, assembler, pipe, chest, lamp, inserter, furnace, spawner, worm, trees. Allowed: underground
+  pipe, character, biters, car, tank, spidertron. `create_entity` ignores it (the script still places incubators and
+  tumors), and so the vanilla expansion cannot settle wild nests on creep.
+- **`set_tiles` with `remove_colliding_entities = false` paints under a standing wall and turret and leaves them;**
+  with true it deletes them.
+- **The engine keeps no hidden tile under creep** (`get_hidden_tile` nil; the creep is not a foundation): the ground
+  beneath has to be recorded (`set_hidden_tile` takes any tile; to check when built).
+- **A tile's `walking_speed_modifier` does nothing to units:** 100 tiles took 440 ticks on grass and on creep at 0.5,
+  1 and 2 alike (435–445). **A sticker does:** `target_movement_modifier` 1.5 re-applied each second: 315 ticks.
+- **A sticker with negative `damage_per_tick` heals** (a medium biter from 20 to its 75 cap within 120 ticks).
+- **Cost:** painting 2,500 tiles 1.9 ms in one call, restoring them 1.6 ms, 100 calls of 25 tiles 2.2 ms; a heal pass
+  over 300 units (find, tile check, heal 200) 0.4 ms each second.
+- **Creep can eat pollution:** `absorptions_per_second` 0.01 per tile: a creeped chunk fell from 1,000 to 88 in 30 s,
+  a grass one to 208.
+- So the creep bonus is a pass each second over the force's units on creep, giving each a haste and a regen sticker
+  (their goo animation blanked).
+
+### Step 1 built (0.1.55): the name, and the flares retired
+
+- Shown as Synthexis: incubators (`lp-pen`), Synthexis biters and worms, the map tag "Synthexis culture" (numbered from
+  the second), its first landing "Synthexis has seeded a culture in the nests at ... Engineered to adapt."
+  (notice-ok, as a corporation's first landing).
+- Grubstake's pheromone flare retired: `flare.lua`, the canister, `/lp flare` and its eight scenarios gone. Grubstake
+  answers a loss with a snatch raid only where no turret covers it (scenario `snatch`, two). The biters' call moved into
+  the player's bait; the pheromone gland drops from incubators (1–2) and Grubstake's pacifier antennas.

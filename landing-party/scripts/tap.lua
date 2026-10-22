@@ -318,7 +318,7 @@ end
 function tap.debug(b, pos)
   local pole = game.surfaces[b.surface].find_entities_filtered{type = "electric-pole", force = shared.player_forces(), position = pos,
     radius = 10, limit = 1}[1]
-  -- A buggy if none is at home (a young camp), as /lp flare does.
+  -- A buggy if none is at home (a young camp), as /lp rig does.
   local has
   for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-buggy" then has = true end end
   if not has and b.lander.valid then

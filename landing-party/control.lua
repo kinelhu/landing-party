@@ -20,7 +20,6 @@ local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
 local war = require("__landing-party__.scripts.war")
 local pact = require("__landing-party__.scripts.pact")
-local flare = require("__landing-party__.scripts.flare")
 local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
 local bait = require("__landing-party__.scripts.bait")
@@ -70,7 +69,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); flare.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -402,7 +401,6 @@ remote.add_interface("landing-party", {
     if t.history_off ~= nil then storage.history_off = t.history_off end
     if t.rings ~= nil then storage.rings = t.rings or nil end
     if t.ladder_fast ~= nil then storage.ladder_fast = t.ladder_fast end
-    if t.flare_burn ~= nil then storage.flare_burn = t.flare_burn end
     -- The levers (tune.lua) over the settings: {grubstake = {strength = 2, aggression = 0.5}, ...}.
     if t.levers ~= nil then storage.tune_levers = t.levers end
     -- Tests: no operation of choice (the decider), answers still on.
@@ -426,7 +424,7 @@ remote.add_interface("landing-party", {
     if t.biotech_off ~= nil then storage.biotech_off = t.biotech_off end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
     if t.harmless then
-      for _, k in ipairs({"ops_off", "flare_off", "jump_off", "tap_off", "skim_off", "prospect_off", "sever_off", "cuts_off",
+      for _, k in ipairs({"ops_off", "jump_off", "tap_off", "skim_off", "prospect_off", "sever_off", "cuts_off",
         "strangle_off", "ledger_off", "raids_off"}) do storage[k] = true end
     end
     if t.notices ~= nil then storage.notices = t.notices end
@@ -587,5 +585,4 @@ remote.add_interface("landing-party", {
   debug_tap = function(id, pos) return storage.bases[id] and tap.debug(storage.bases[id], pos) end,
   tap_state = function(id) return storage.bases[id] and tap.state(storage.bases[id]) end,
   debug_jumper = function(id, pos) return storage.bases[id] and jumper.launch(storage.bases[id], pos) end,
-  debug_flare = function(id, pos) return storage.bases[id] and flare.debug(storage.bases[id], pos) end,
 })

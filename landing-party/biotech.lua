@@ -75,6 +75,9 @@ for _, r in ipairs(pen.result_units) do
   local name = r[1] or r.unit
   if r[1] then r[1] = "lp-bred-" .. name else r.unit = "lp-bred-" .. name end
 end
+-- Killed, its gland (the player's pheromone bait research; it dropped from Grubstake's flare canisters until the flare
+-- was retired, 2026-10-22).
+pen.loot = {{item = "lp-pheromone-gland", probability = 1, count_min = 1, count_max = 2}}
 table.insert(out, pen)
 data:extend(out)
 

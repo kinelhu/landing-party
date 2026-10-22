@@ -9,7 +9,6 @@
 --   parts <n> [id]           parts for a settlement (growth, units, operations)
 --   fast                     short clocks on or off: perimeter, strip camps, phases, headquarters
 --   grudge [id]              as if you had destroyed that settlement's lander: the grudge without the fall
---   flare [id]               Grubstake fires a pheromone flare at you: its canister out of your turrets' reach
 --   rig [id]                 a claim jumper at the chests nearest you (a rig 40 to 60 out, hands up in 2.5 minutes)
 --   tap [id]                 a power tap on the pole nearest you (a pylon line out of turret reach, then the clamp)
 --   biotech                  the biotech's farm lands now on the nearest nest field 600 to 1,500 tiles from your factory
@@ -21,7 +20,6 @@ local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local base = require("__landing-party__.scripts.base")
 local faction = require("__landing-party__.scripts.faction")
-local flare = require("__landing-party__.scripts.flare")
 local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
 local standing = require("__landing-party__.scripts.standing")
@@ -100,27 +98,16 @@ function dev.run(player, args)
       or "no nest field of three spawners 600 to 1,500 tiles from your factory")
   elseif what == "wave" then
     player.print(farm.debug_wave() and "the biotech's farm sends a wave within ten seconds" or "no biotech farm (/lp biotech)")
-  elseif what == "flare" or what == "rig" or what == "tap" then
+  elseif what == "rig" or what == "tap" then
     -- Grubstake's discreet operations on demand (their own triggers wait on the ladder, the pact and intel).
-    local temper = ({flare = "flares", rig = "jumps", tap = "taps"})[what]
+    local temper = ({rig = "jumps", tap = "taps"})[what]
     local b = pick(player, id, function(b) return (shared.CORPS[b.corp].temper or {})[temper] end)
     if not b then return player.print("no settlement that does that (Grubstake: /lp land grubstake)") end
-    local busy = ({flare = b.flare, rig = b.jump, tap = b.tap})[what]
+    local busy = ({rig = b.jump, tap = b.tap})[what]
     if busy then return player.print(string.format("%d already has a %s under way", b.id, what)) end
     local pos = {player.position.x, player.position.y}
     local why
-    if what == "flare" then
-      local has
-      for _, u in ipairs(b.garrison) do if u.valid and shared.kind_of(u.name) == "lp-buggy" then has = true end end
-      if not has and b.lander.valid then
-        local s = b.lander.surface
-        local name = shared.variant(b.corp, "lp-buggy")
-        local p = s.find_non_colliding_position(name, b.lander.position, 20, 1)
-        local u = p and s.create_entity{name = name, position = p, force = b.lander.force}
-        if u then table.insert(b.garrison, u) end
-      end
-      why = flare.debug(b, pos)
-    elseif what == "rig" then
+    if what == "rig" then
       why = jumper.launch(b, pos)
     else
       why = tap.debug(b, pos)

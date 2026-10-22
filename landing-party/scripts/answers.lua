@@ -1,6 +1,6 @@
 -- Answers (split from ops.lua, 2026-10-18, along the AI graph's seams: docs/ai-graph.md): how a provoked corporation
--- answers, by its reaction table (temper.answers) and the kind of provocation: Grubstake's flare on the culprit (a raid
--- only where no turret covers it), Serenity's raid it can win, its siege for trespass or a second provocation, each
+-- answers, by its reaction table (temper.answers) and the kind of provocation: Grubstake's snatch raid (only where no turret
+-- covers it), Serenity's raid it can win, its siege for trespass or a second provocation, each
 -- answer siege soon after the last a tier heavier. The code is as it was in ops; install runs it with ops' helpers
 -- bound (K) and returns what ops calls.
 local shared = require("__landing-party__.shared")
@@ -30,7 +30,7 @@ end
 local ANSWER_AGAIN = 30 * 3600
 
 -- The answer, by the corporation's reaction table (temper.answers) and the kind of provocation:
---   flare   Grubstake: biters on the culprit (flare.answer); where no turret covers it, a snatch raid instead
+--   snatch  Grubstake: a raid only where no turret covers the spot, else nothing (its flare retired, 2026-10-22)
 --   raid    a raid on the player's building nearest the spot; one it would lose: a siege if provoked again within
 --           ANSWER_AGAIN, else nothing yet
 --   siege   mortars on the nearest of the player's turrets there (or what is there); none possible: the raid
@@ -104,11 +104,9 @@ local function answer(b, trace, army)
     return false
   end
   local function raid() return launch(b, key, trace, army, {answer = true}) and done("a squad goes") or false end
-  if how == "flare" then
+  if how == "snatch" then
     if not covered(s, a.owner, t.pos) and raid() then return end
-    local why = ops.answer_flare and ops.answer_flare(b, t.pos, a.owner) or "no flares"
-    if why == "launched" then return done("a flare on it") end
-    trace(b, said .. "no flare (" .. why .. ")")
+    trace(b, said .. "covered: no answer (it never fights turrets)")
     return
   end
   if how == "siege" and siege() then return end

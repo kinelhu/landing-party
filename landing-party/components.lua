@@ -29,7 +29,6 @@ local function add(type, name, item, min, max, p)
   table.insert(e.loot, {item = item, probability = p or 1, count_min = min, count_max = max})
 end
 add("radar", "lp-grubstake-pacifier", "lp-pheromone-gland", 3, 5)
-add("simple-entity-with-force", "lp-flare", "lp-pheromone-gland", 1, 1)
 add("simple-entity-with-force", "lp-claim-rig", "lp-drill-head", 2, 2)
 add("unit", "lp-railgunner", "lp-rail-coil", 1, 1, 0.2)
 add("artillery-turret", "lp-mortar", "lp-cluster-fuze", 1, 1)

@@ -103,7 +103,7 @@ local function tag(f)
   for _, pf in ipairs(players()) do
     if not (f.tags[pf.name] and f.tags[pf.name].valid) then
       pf.chart(s, {{f.pos.x - 64, f.pos.y - 64}, {f.pos.x + 64, f.pos.y + 64}})
-      local t = pf.add_chart_tag(s, {position = f.pos, icon = {type = "item", name = "biter-egg"}, text = "Biotech farm"})
+      local t = pf.add_chart_tag(s, {position = f.pos, icon = {type = "item", name = "biter-egg"}, text = f.id == 1 and "Synthexis culture" or ("Synthexis culture " .. f.id)})
       if t then f.tags[pf.name] = t else all = false end
     end
   end

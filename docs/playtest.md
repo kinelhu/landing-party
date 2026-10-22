@@ -26,7 +26,7 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 - `/lp list` shows the settlements; `/lp fast` speeds their clocks; `/lp incidents` lists the last twenty things they did
   and where; `/lp trace` writes their decisions to `script-output/landing-party/decisions.txt` in the visit profile.
 - `/editor` (Editor Extensions) to watch untouchable. Grubstake's thefts come by night: to see one now, wait for dusk.
-- Grubstake's heists on demand, from the nearest camp: `/lp flare` (a pheromone flare where you stand), `/lp rig` (a claim
+- Grubstake's heists on demand, from the nearest camp: `/lp rig` (a claim
   jumper at the chests nearest you), `/lp tap` (a power tap on the pole nearest you, one no turret covers).
 
 ## Grubstake, the thief (from chemical science)
@@ -45,8 +45,8 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    the truck and its load spills. Undergrounds across an exposed stretch, or a turret by it, stop it.
 6. **The yard**: by its camp, a chest in its colour with the icon of what it holds most. What its trucks and raids
    brought home is in there. Destroy it and it spills.
-7. **A pheromone flare**: a buggy drops an orange canister just out of your turrets' reach; idle biters nearby come for
-   whatever is near it. Shoot the canister.
+7. **No pheromone flare any more** (retired 2026-10-22: biter waves are Synthexis's). Kill one of Grubstake's units
+   from a turret: it does not answer on covered ground; from an open spot, a squad comes.
 8. **A claim jumper**: a rig digs in outside your wall, a mound grows by your chests, Shotgun hands come up, empty them
    and go back down. Kill the rig within the minute and nothing comes up.
 9. **A power tap**: a line of its pylons creeps to a pole no turret covers and clamps it. Look for "Power tap" in your

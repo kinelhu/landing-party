@@ -5,8 +5,8 @@ digraph layers {
   "Seams (leaves)" [label="Seams (leaves)\n6 modules, 473 lines", fillcolor="#d9f0d9"];
   "Corporation" [label="Corporation\n11 modules, 2642 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n15 modules, 5158 lines\nlayout 1192", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n13 modules, 4690 lines\nops 1644", fillcolor="#f7dede"];
-  "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1508 lines", fillcolor="#eef2f7"];
+  "Army and operations" [label="Army and operations\n13 modules, 4688 lines\nops 1644", fillcolor="#f7dede"];
+  "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1209 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n2 modules, 997 lines", fillcolor="#eef2f7"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];
@@ -16,10 +16,10 @@ digraph layers {
   "Corporation" -> "Army and operations" [label="8", penwidth=3.0];
   "Corporation" -> "Seams (leaves)" [label="6", penwidth=2.5];
   "Corporation" -> "Settlement" [label="7", penwidth=2.8];
-  "Heists (Grubstake)" -> "Army and operations" [label="4", penwidth=2.0];
-  "Heists (Grubstake)" -> "Corporation" [label="5", penwidth=2.2];
-  "Heists (Grubstake)" -> "Seams (leaves)" [label="7", penwidth=2.8];
-  "Heists (Grubstake)" -> "Settlement" [label="4", penwidth=2.0];
+  "Heists (Grubstake)" -> "Army and operations" [label="3", penwidth=1.8];
+  "Heists (Grubstake)" -> "Corporation" [label="3", penwidth=1.8];
+  "Heists (Grubstake)" -> "Seams (leaves)" [label="5", penwidth=2.2];
+  "Heists (Grubstake)" -> "Settlement" [label="3", penwidth=1.8];
   "Settlement" -> "Army and operations" [label="5", penwidth=2.2];
   "Settlement" -> "Corporation" [label="4", penwidth=2.0];
   "Settlement" -> "Seams (leaves)" [label="6", penwidth=2.5];
@@ -27,7 +27,6 @@ digraph layers {
   "The map" -> "Corporation" [label="1", penwidth=1.2];
   "The map" -> "Seams (leaves)" [label="2", penwidth=1.5];
   "Army and operations" -> "Corporation" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="2 plug-in"];
-  "Army and operations" -> "Heists (Grubstake)" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="1 plug-in"];
   "Army and operations" -> "Settlement" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="3 plug-in"];
   "Settlement" -> "Corporation" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="2 plug-in"];
 }

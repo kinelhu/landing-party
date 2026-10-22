@@ -489,15 +489,8 @@ wreck.corpse = nil
 wreck.collision_mask = {layers = {}}
 data:extend({wreck})
 
--- The pheromone flare's canister (scripts/flare.lua): a barrel stood on end in Grubstake's colour, 200 health, a target
--- the player's turrets and character shoot on sight; and its smoke, a tall orange column the script puffs while it burns.
-local flare_canister = {type = "simple-entity-with-force", name = "lp-flare", hidden = true,
-  icon = "__base__/graphics/icons/fluid/barreling/barrel-empty.png", icon_size = 64,
-  flags = {"placeable-neutral", "placeable-enemy", "placeable-off-grid", "not-blueprintable", "not-deconstructable"},
-  max_health = 200, is_military_target = true, collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
-  selection_box = {{-0.5, -0.7}, {0.5, 0.4}}, dying_explosion = "explosion",
-  picture = {filename = "__base__/graphics/icons/fluid/barreling/barrel-empty.png", size = 64, scale = 0.5,
-    tint = {r = 1, g = 0.5, b = 0.15, a = 1}}}
+-- The pheromone bait's smoke (scripts/bait.lua): a tall orange column the script puffs while it burns (it was Grubstake's
+-- flare canister's until the flare was retired, 2026-10-22).
 local flare_smoke = table.deepcopy(data.raw["trivial-smoke"]["smoke"])
 flare_smoke.name = "lp-flare-smoke"
 flare_smoke.color = {r = 1, g = 0.45, b = 0.1, a = 0.7}
@@ -508,7 +501,7 @@ flare_smoke.end_scale = 3
 flare_smoke.affected_by_wind = false
 flare_smoke.movement_slow_down_factor = 0
 flare_smoke.cyclic = true
-data:extend({flare_canister, flare_smoke})
+data:extend({flare_smoke})
 
 -- The claim jumper's rig (scripts/jumper.lua): an electric drill's body a size up, in Grubstake's colour, 1,200 health,
 -- a military target; dust puffs from it and from the mound it digs toward while it works.

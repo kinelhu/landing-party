@@ -56,11 +56,12 @@ shared.CORPS = {
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
-    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, flares = true, jumps = true, taps = true, skims = true, night = true, prospects = true,
+    temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, jumps = true, taps = true, skims = true, night = true, prospects = true,
       -- How it answers a provocation (ops.answer), by kind: a loss (its unit, drone or building) or trespass (a turret
-      -- covering its camp). The thief never fights fair: biters on the culprit, a snatch raid only where no turret covers
-      -- it (Fable, docs/reviews/2026-10-18-answers-consult.md).
-      answers = {loss = "flare", trespass = "flare"}},
+      -- covering its camp). The thief never fights fair: a snatch raid only where no turret covers it, else nothing (Fable,
+      -- docs/reviews/2026-10-18-answers-consult.md; its pheromone flare on the culprit was retired with the biotech's
+      -- arrival, 2026-10-22: biter waves are the biotech's alone).
+      answers = {loss = "snatch", trespass = "snatch"}},
     -- Its drills pollute, half again an electric drill's 10 a minute (the user, 2026-10-17). Under the pact the biters'
     -- waves skip its camp and come at the player's polluters near its cloud (spike: a 200-biter wave on two player
     -- drills that drew none alone).
@@ -214,7 +215,7 @@ shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat sca
 shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-high"] = 2}
 -- The biotech (docs/biotech.md; the third corporation, its first slice): bred biters on their own force, at peace with
 -- the wild ones. Not one of CORPS yet (no settlements, ladder or tree): its pens and herds are scripts/herd.lua's.
-shared.BIOTECH = {force = "lp-biotech", color = {r = 0.45, g = 0.85, b = 0.2}, icon = "item/biter-egg",
+shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g = 0.85, b = 0.2}, icon = "item/biter-egg",
   -- Its breeds' mask layers (units.lua's tints are by kind; these are the biters'): green body, yellow bands.
   tint1 = {r = 0.30, g = 0.85, b = 0.15, a = 1}, tint2 = {r = 0.95, g = 0.90, b = 0.20, a = 1}}
 -- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).

@@ -1,9 +1,9 @@
 -- The corporations' levers (the user, 2026-10-18: "scaling variables for strength and aggression sort of like what
 -- biters have at world gen, and balance through those"). Two per corporation, from its settings (settings.lua), each a
 -- multiplier (shared.TUNE: 0.5 to 2), each driving a set of numbers so a preset reads as one thing:
---   strength     how much it fields: a camp's unit cap (army.cap), the biters a flare calls (flare.wave)
+--   strength     how much it fields: a camp's unit cap (army.cap)
 --   aggression   how soon it acts: its ladder's clock runs faster (stance.rung), the gaps after an operation, between
---                answers and between heists (flare, rig, tap) are shorter, and it keeps at a hopeless front longer
+--                answers and between heists (rig, tap) are shorter, and it keeps at a hopeless front longer
 --                before standing down (war.quiet)
 -- Tests and sweeps set storage.tune_levers[corp][lever] (debug_tune levers) over the settings.
 -- A leaf: it reads settings and storage only.

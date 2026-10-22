@@ -47,7 +47,7 @@ digraph ai {
     "intel" [label="intel\n230 lines", width=1.06, fillcolor="#d9f0d9"];
     "siege" [label="siege\n782 lines", width=1.67, fillcolor="#d9f0d9"];
     "strip" [label="strip\n228 lines", width=1.05, fillcolor="#d9f0d9"];
-    "answers" [label="answers\n132 lines", width=0.95, fillcolor="#d9f0d9"];
+    "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
     "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
@@ -56,11 +56,10 @@ digraph ai {
     "power" [label="power\n171 lines", width=0.99, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "flare" [label="flare\n323 lines", width=1.16, fillcolor="#eef2f7"];
     "jumper" [label="jumper\n316 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n353 lines", width=1.19, fillcolor="#eef2f7"];
     "skim" [label="skim\n420 lines", width=1.27, fillcolor="#eef2f7"];
-    "bait" [label="bait\n35 lines", width=0.84, fillcolor="#eef2f7"];
+    "bait" [label="bait\n59 lines", width=0.87, fillcolor="#d9f0d9"];
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -76,15 +75,14 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_8 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n591 lines", width=1.46, fillcolor="#eef2f7"];
-    "dev" [label="dev\n202 lines", width=1.02, fillcolor="#eef2f7"];
+    "control" [label="control\n588 lines", width=1.45, fillcolor="#eef2f7"];
+    "dev" [label="dev\n189 lines", width=1.01, fillcolor="#eef2f7"];
   }
   "army" -> "ops";
   "army" -> "pool";
   "army" -> "rd";
   "army" -> "rng";
   "army" -> "tune";
-  "bait" -> "flare";
   "base" -> "army";
   "base" -> "blocks";
   "base" -> "chart";
@@ -118,12 +116,6 @@ digraph ai {
   "faction" -> "war";
   "farm" -> "herd";
   "farm" -> "pods";
-  "flare" -> "base";
-  "flare" -> "ops";
-  "flare" -> "pact";
-  "flare" -> "pool";
-  "flare" -> "tune";
-  "flare" -> "war";
   "jumper" -> "base";
   "jumper" -> "ops";
   "jumper" -> "tune";
@@ -199,7 +191,6 @@ digraph ai {
   "base" -> "crew" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="crew_rebuild"];
   "base" -> "crew" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="crew_far"];
   "base" -> "faction" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="on_export"];
-  "ops" -> "flare" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="answer_flare"];
   "faction" -> "phases" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="gate_open"];
   "ops" -> "trade" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="truce"];
   "base" -> "war" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="footing"];

@@ -5,7 +5,7 @@
 --   rung       the ladder, 0 to 3: minutes since it last razed something of that force (10, 20, 30); a rival thief's
 --              stays at 0 (it steals, it does not escalate)
 --   may(act)   whether its temper lets it do that act to that force now
--- A leaf: it reads storage only, so ops, war, flare and the rest can all ask it without a require loop.
+-- A leaf: it reads storage only, so ops, war, tap and the rest can all ask it without a require loop.
 local shared = require("__landing-party__.shared")
 local tune = require("__landing-party__.scripts.tune")
 
@@ -58,11 +58,11 @@ end
 
 -- What a corporation's temper lets it do to a player force (the user's storyboard calls, 2026-10-17, docs/ai.md):
 --   raid, siege, answer   not under a truce; a provoked_only corporation (Serenity) only once provoked
---   strip, tap, flare, jump   theft: not under a truce (bought peace leaves the player's things alone)
+--   strip, tap, jump         theft: not under a truce (bought peace leaves the player's things alone)
 --   prospect   claims unworked ground, not the player's: always
 --   war        the war footing, relief and the stand-down clock: an enemy only (an unprovoked rival is not at war)
--- The ladder's thresholds (a flare at rung 1, a rig at 2) stay with each system.
-local THEFT = {strip = true, tap = true, flare = true, jump = true, skim = true}
+-- The ladder's thresholds (a rig at 2) stay with each system.
+local THEFT = {strip = true, tap = true, jump = true, skim = true}
 function stance.may(corp, owner, act)
   if not against_player(owner) then return true end
   if act == "prospect" then return true end

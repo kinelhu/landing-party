@@ -20,7 +20,7 @@ document still says Serenity where it records history.
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers: strength and aggression per corporation (settings) | built, uncalibrated | `levers` |
-| Answers by corporation: Grubstake a flare; Serenity, at war, answers trespass only (a siege), its losses fair war | built (trespass only 2026-10-20) | `flare answer`, `line turret`, `crew answered`, `remembered` |
+| Answers by corporation: Grubstake a snatch raid where no turret covers (its flare retired 2026-10-22); Serenity, at war, answers trespass only (a siege), its losses fair war | built (trespass only 2026-10-20) | `snatch` (two), `line turret`, `crew answered`, `remembered` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
 | Tempers: Serenity at war from landing (a truce bought at its invoice post the only quiet); Grubstake raids soft targets and strip-mines the player's ore, escalating when hurt | built (Serenity hostile 2026-10-19) | `temper`, `strip` |
@@ -67,13 +67,13 @@ document still says Serenity where it records history.
 | Serenity against nests: railgunners, the howitzer with cluster shells, clearances that hold their site, the orbital barrage on landing | built | `rail` (two), `clear` (two), `clearing` |
 | Convoys leave walled camps (formed past the outermost wall, escorts ride out, stuck ones called off) | built | `convoy` (two, full list) |
 | Grubstake's scrap cannon (dirty flak), every second turret | built | `flak` |
-| Grubstake's pheromone flare (biters pulled onto a canister out of turret reach) | built | `flare` (four) |
+| Grubstake's pheromone flare (biters pulled onto a canister out of turret reach) | retired 2026-10-22 (biter waves are Synthexis's; its biter call lives on in the player's bait) | `snatch` |
 | Grubstake's claim jumper (a rig outside the wall, hands up through a mound, a heist) | built | `jumper` (three) |
 | Grubstake's power tap: a buggy lays a pylon line along the heist's route to an exposed pole and clamps a tap; the camp runs on the stolen power; grids never wired together | built | `tap` (three) |
 | Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
-| `/lp flare`, `/lp rig`, `/lp tap` on demand | built | `flare`, `jumper`, `tap` (`cmd`) |
+| `/lp rig`, `/lp tap` on demand (`/lp flare` retired) | built | `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
 | Serenity's cordon: arcs of posts built by drones (on plating, lit, painted post to post), a ring round a grown camp that does not spread, the claim behind them; old arcs recovered; mended when breached; a contact wall near the player; gate posts across the player's rails; ore it crosses claimed | built | `cordon` (six) |
 | Rivals: standing (rival, enemy, truce), incidents, map labels | built | `standing` |
@@ -949,6 +949,29 @@ not the day's; open.
   landing). The cache changes no result, so it is no state to keep in step.
 Robots rebuilt all that was razed (666 entities, 378 of them land mines, no ghost left): against a robot base, pressure
 is materials, not ruins. What would hurt is the robots' own network (roboports, power), which the siege went for.
+
+### The mortar truck (the user, 2026-10-22: the howitzer as artillery on a tank; engine spike, deleted)
+
+Idea: one unit, a tank body with the artillery barrel, in place of the hauler, the emplacement and the parked prop.
+Spike (a `unit` copied from a biter, the tank's animation, range 98, min range 20, cooldown 240):
+- **A unit with the artillery wagon's gun parameters crashes the engine** on its first shot (an assertion in the unit's
+  shoot). With the tank cannon's parameters it does not.
+- **The shot as a script trigger works:** the unit's ammo is an instant delivery with a `script` effect; the handler
+  creates a real `artillery-projectile` from the truck to the target (`source` the truck: kills and damage are its).
+  At 90 tiles it fired without moving and the shell landed 92 ticks later (1,000 damage); behind a wall of lasers it
+  hit them from 90 (8 hits, one shell's splash); an uncharted target is no obstacle; at 150 it drove to 99.6 and fired.
+- **Inside its minimum range it never fires and does not back off** (10 tiles: it edged to 16 and was shot dead): the
+  script must site it, as sieges already do.
+- **Only an explicit `attack` on an entity works.** `attack_area` walked it to 17 tiles of the target without a shot
+  (killed); idle with a vision of 100 it wandered in and fired from 23. The siege picks each target and orders the next
+  when a command completes, where the emplacement chose its own.
+- A grenade-style lobbed projectile also works (35 per hit, 12 hits to kill a turret) but flies flat: the script
+  shell is the artillery's real arc and crater.
+- **Its rules (the user: a deployment delay, and a limit, "otherwise that's just OP"):** it deploys 30 s at every
+  site before its first shot ("Deploying N%" over it, as the hauler's site now) and packs up 15 s before it moves; it
+  never fires on the move (it fires only when the script orders an attack). One per camp, as the howitzer: killed, the
+  camp goes `HOWITZER_DOWN` without one. The deploy is the counterplay: alone 90 tiles out with its escort. If the
+  player ever fields one: 10 bandwidth (a battle tank is 6) and at most one per bandwidth research level.
 
 ### Serenity against a fortress (the user, 2026-10-18; Fable: `docs/reviews/2026-10-18-fortress-consult.md`)
 The user: "that's hardly better than a biter mod. Why shouldn't Serenity be able to do more than that?", then "The
@@ -2389,6 +2412,11 @@ turrets.
   nothing they can hurt walk off; the trial holds them and makes the turret last, to measure what it deals.
 
 ### Grubstake's pheromone flare (the user; Fable: `docs/reviews/2026-10-15-grubstake-flavour-consult.md`; built 2026-10-16)
+**Retired 2026-10-22 (0.1.55)** with Synthexis's arrival (the user: biter waves become the biotech's alone).
+`scripts/flare.lua` and the canister are gone; the biters' call lives on in the player's bait (`bait.lua`); the gland
+drops from Synthexis incubators; Grubstake answers a loss with a snatch raid only where no turret covers it. Kept below
+as history.
+
 Grubstake is felt before it is seen (the consult's frame): things go wrong near the player's stuff and the cause is found
 a minute later, outside the wall. `scripts/flare.lua`. A settlement whose pact holds and whose ladder against the player
 is on rung 1 or more, mature, not standing down, picks the guarded player target it knows nearest home (turrets reach

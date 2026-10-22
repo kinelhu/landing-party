@@ -34,7 +34,7 @@ EVENT = re.compile(r"defines\.events\.(\w+)")
 STORE = re.compile(r"storage\.(\w+)\s*=[^=]")
 RUNG = re.compile(r"(?:ladder|rung)\b[^\n]*?>=\s*(\d)|war_rung or 0\)\s*>=\s*(\d)|local RUNG = (\d)")
 LEVER = re.compile(r"tune\.(strength|aggression|sooner)\(")
-CAPABLE = {"strip": "strips", "tap": "taps", "flare": "flares", "jump": "jumps", "prospect": "prospects"}
+CAPABLE = {"strip": "strips", "tap": "taps", "jump": "jumps", "prospect": "prospects"}
 
 
 def modules():
@@ -82,7 +82,7 @@ LAYERS = {
                    "road", "prospect", "belts"],
     "Army and operations": ["army", "ops", "routing", "intel", "siege", "strip", "answers", "cuts", "strike", "jammer", "scorcher", "aim",
                             "power"],
-    "Heists (Grubstake)": ["flare", "jumper", "tap", "skim", "bait", "marker"],
+    "Heists (Grubstake)": ["jumper", "tap", "skim", "bait", "marker"],
     "The biotech": ["herd", "farm"],
     "The map": ["map"],
     "The player's army": ["command", "scanner", "roads"],

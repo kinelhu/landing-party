@@ -6400,26 +6400,15 @@ scenarios.jumper = function()
   end)
 end
 
--- Flare (Grubstake's pheromone flare; the grubstake flavour consult): a player outpost guarded by two gun turrets 150
--- tiles from a Grubstake camp, 40 idle biters 60 tiles to its side. A flare is fired at it (debug_flare: the drop point
--- and launch the camp's own choice would use): the buggy drops the canister out of the turrets' reach, within 40 of the
--- outpost; at least 10 biters are called within 30 s; the turrets spend ammunition; the canister shot at 60 s, the group
--- goes idle within 30 s; no biter harms Grubstake. LP_MIX=nopact: no pact, no flare. LP_MIX=natural: no debug_flare,
--- the camp fires it itself. LP_MIX=nests: no idle biters, three nests 250 tiles past the outpost: they spawn the wave
--- (20 at evolution 0) and it reaches the canister before it is shot. LP_MIX=walled: a wall ring at 10 round the outpost,
--- its two turrets behind it (away from the camp), so no turret is within 30 of the canister, only walls: the wave goes on
--- from the canister and hits the wall (it waited outside it, the user's /lp flare). LP_MIX=burnout: walled, the canister
--- burns 1 s and is never shot: the wave goes on all the same (stood down at the burn, it wandered by the user's wall).
--- LP_MIX=answer: no debug_flare; one of the camp's units is killed by an outpost turret, and Grubstake answers the loss
--- with a flare on it (its reaction table: biters on a turret, never its own squad), within two minutes.
-scenarios.flare = function()
-  local off, natural, nests = params.mix == "nopact", params.mix == "natural", params.mix == "nests"
-  local answer = params.mix == "answer"
-  local burnout = params.mix == "burnout"
-  local walled = params.mix == "walled" or burnout
+-- Snatch (Grubstake's answer since its pheromone flare was retired, 2026-10-22): a player outpost guarded by two gun
+-- turrets 150 tiles from a Grubstake camp, 40 idle biters 60 tiles to its side; one of the camp's units is killed by an
+-- outpost turret. Covered by the turrets, the loss gets no answer: no squad, no biters called, and no flare canister
+-- (the prototype is gone). LP_MIX=open: the turrets are taken away after the kill, the spot uncovered: a squad goes
+-- within two minutes.
+scenarios.snatch = function()
+  local open = params.mix == "open"
   schedule(60, function()
-    lp("debug_tune", {era = 1, history_off = true, pact_off = off, raids_off = not answer, ladder_fast = natural or nil,
-      flare_burn = burnout and 60 or nil})
+    lp("debug_tune", {era = 1, history_off = true})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
   end)
@@ -6431,137 +6420,41 @@ scenarios.flare = function()
     flatten(c[1] - 10, c[2] - 10, c[1] + 10, c[2] + 10)
     S.c = c
     surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
-    S.turrets, S.walls = {}, {}
-    if walled then
-      flatten(c[1] - 20, c[2] - 20, c[1] + 20, c[2] + 20)
-      for x = -10, 10 do for y = -10, 10 do
-        if math.max(math.abs(x), math.abs(y)) == 10 and (x ~= 0 or y ~= 0) then
-          table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {c[1] + x, c[2] + y}, force = "player"})
-        end
-      end end
-    end
-    -- Walled: the turrets behind the outpost (away from the camp), so none is within 30 of the canister; only walls are.
-    local behind = {math.floor(-ux * 8 - uy * 3), math.floor(-uy * 8 + ux * 3)}
-    local behind2 = {math.floor(-ux * 8 + uy * 3), math.floor(-uy * 8 - ux * 3)}
-    for _, d in ipairs(walled and {behind, behind2} or {{-4, 0}, {4, 0}}) do
+    S.turrets = {}
+    for _, d in ipairs({{-4, 0}, {4, 0}}) do
       local t = surface().create_entity{name = "gun-turret", position = {c[1] + d[1], c[2] + d[2]}, force = "player"}
       t.insert{name = "firearm-magazine", count = 200}
       table.insert(S.turrets, t)
     end
-    S.biters = {}
-    if nests then
-      local nc = {c[1] - ux * 250, c[2] - uy * 250}
-      surface().request_to_generate_chunks(nc, 2); surface().force_generate_chunk_requests()
-      flatten(nc[1] - 20, nc[2] - 20, nc[1] + 20, nc[2] + 20)
-      for k = -1, 1 do
-        surface().create_entity{name = "biter-spawner", position = {nc[1] - uy * 12 * k, nc[2] + ux * 12 * k}, force = "enemy"}
-      end
-    end
     local side = {c[1] - uy * 60, c[2] + ux * 60}
-    for k = 1, nests and 0 or 40 do
+    for k = 1, 40 do
       local name = k % 4 == 0 and "medium-biter" or "small-biter"
       local p = surface().find_non_colliding_position(name, {side[1] + (k % 8) * 2, side[2] + math.floor(k / 8) * 2}, 8, 0.5)
-      table.insert(S.biters, surface().create_entity{name = name, position = p, force = "enemy"})
+      surface().create_entity{name = name, position = p, force = "enemy"}
     end
-    S.lost0 = lp("stats", S.g).units_lost or 0
-    -- LP_MIX=natural: the camp's own choice (it must learn the outpost and climb its ladder: sped tenfold).
-    -- LP_MIX=cmd: through the /lp command a player would type (dev.remote), at the outpost.
-    if params.mix == "cmd" then lp("dev", {"flare"}, c); S.fired = "cmd"
-    elseif answer then
-      local o2 = lp("stats", S.g).origin
-      local u = surface().find_entities_filtered{name = "lp-grubstake-infantry", position = o2, radius = 60, limit = 1}[1]
-      if u then u.die("player", S.turrets[1]); S.fired = "answer" end
-    elseif not natural then S.fired = lp("debug_flare", S.g, c) end
+    local u = surface().find_entities_filtered{name = "lp-grubstake-infantry", position = o, radius = 60, limit = 1}[1]
+    if u then u.die("player", S.turrets[1]); S.killed = true end
+    if open then for _, t in ipairs(S.turrets) do t.destroy() end end
     S.t0 = game.tick
   end)
-  local function canister() return surface().find_entities_filtered{name = "lp-flare", limit = 1}[1] end
-  -- Called: every biter seen in a group, alive or since killed by the turrets (12 called, 5 left at 30 s), the nests'
-  -- spawned ones too; arrived: seen in a group within 40 of the canister.
-  local function grouped(cn)
-    S.called, S.arrived, S.groups = S.called or {}, S.arrived or {}, S.groups or {}
-    for _, u in pairs(surface().find_entities_filtered{type = "unit", force = "enemy", position = S.at, radius = 700}) do
-      local g = u.commandable.parent_group
-      if g then
-        S.called[u.unit_number] = true
-        S.groups[g.unique_id] = g
-        if (u.position.x - S.at[1]) ^ 2 + (u.position.y - S.at[2]) ^ 2 < 40 * 40 then S.arrived[u.unit_number] = true end
-      end
-    end
-    return table_size(S.called)
-  end
-  for t = 2 * 3600 + 20, END - 120, 20 do
+  for t = 2 * 3600 + 60, END - 120, 60 do
     schedule(t, function()
-      local cn = canister()
-      if cn and not S.lit then
-        S.lit, S.at = game.tick, {cn.position.x, cn.position.y}
-        S.near = math.sqrt((cn.position.x - S.c[1]) ^ 2 + (cn.position.y - S.c[2]) ^ 2)
-        S.reach = surface().count_entities_filtered{position = cn.position, radius = 18, type = "ammo-turret", force = "player"}
-      end
-      if S.lit and not S.shot then
-        local n = grouped()
-        if game.tick - S.lit >= 30 * 60 and not S.g30 then S.g30 = n end
-      end
-      if S.lit and not S.shot and not burnout and game.tick - S.lit >= 60 * 60 and cn then
-        cn.die("player")
-        S.shot = game.tick
-      end
-      if S.shot and not S.idle and game.tick - S.shot >= 30 * 60 then
-        S.idle = true
-        for _, g in pairs(S.groups or {}) do
-          if g.valid and not (g.command and g.command.type == defines.command.wander) then
-            S.idle, S.idle_cmd = false, g.command and g.command.type
-          end
-        end
+      for _, u in pairs(surface().find_entities_filtered{type = "unit", force = "enemy", position = S.c, radius = 300}) do
+        if u.commandable.parent_group then S.grouped = (S.grouped or 0) + 1; break end
       end
     end)
   end
   schedule(END - 60, function()
-    local ammo = 0
-    for _, t in ipairs(S.turrets or {}) do if t.valid then ammo = ammo + t.get_item_count("firearm-magazine") end end
-    local hurt = 0
-    for _, w in ipairs(S.walls or {}) do if not w.valid or w.health < w.max_health then hurt = hurt + 1 end end
-    -- Grubstake's losses to biters only (the outpost's turrets may kill its buggy: fair).
-    local lost = 0
-    for k, v in pairs(S.fallen or {}) do
-      if k:find("^lp%-grubstake") and (k:find("biter") or k:find("spitter") or k:find("worm")) then lost = lost + v end
-    end
-    local st = lp("stats", S.g)
-    info(string.format("flare: the camp: mature %s, knows %d player targets %s, ladder %s, pact %s, flares %s",
-      tostring(st.mature), st.ops.known_player, serpent.line(st.ops.player_targets), tostring(st.ops.ladder),
-      serpent.line(lp("pact_state")), tostring(st.flares)))
-    info("flare: deaths " .. serpent.line(S.fallen or {}))
-    info(string.format("flare: fired %s, lit %s at %s, %.0f from the outpost, turrets in reach %s; %s biters grouped at 30 s; "
-      .. "turrets' ammunition %d of 400; shot %s, idle %s (%s); Grubstake units lost to biters %d; arrived %d", tostring(S.fired),
-      tostring(S.lit), serpent.line(S.at), S.near or -1, tostring(S.reach), tostring(S.g30), ammo, tostring(S.shot),
-      tostring(S.idle), tostring(S.idle_cmd), lost, table_size(S.arrived or {})))
-    if off then
-      check("flare: no pact, no flare", not S.lit, tostring(S.lit))
-      return
-    end
-    if answer then
-      local log = lp("stats", S.g).ops.answered or {}
-      info("flare answer: " .. serpent.line(log))
-      check("flare: a unit killed by the turret", S.fired == "answer", tostring(S.fired))
-      check("flare: the loss answered with a flare within two minutes", S.lit and S.lit - S.t0 <= 2 * 3600 and
-        (log["a flare on it"] or 0) >= 1, string.format("lit %s", S.lit and tostring(S.lit - S.t0) or "never"))
-      check("flare: no squad sent at the turret", (log["a squad goes"] or 0) == 0, serpent.line(log))
-    end
-    check("flare: the canister was dropped out of the turrets' reach", S.lit and S.reach == 0, tostring(S.reach))
-    check("flare: within 40 of the outpost", S.near and S.near <= 40, string.format("%.0f", S.near or -1))
-    if nests then
-      check("flare: the nests spawned a wave of 20 within 30 s", (S.g30 or 0) >= 20, tostring(S.g30))
-      check("flare: 15 of it reached the canister before it was shot", table_size(S.arrived or {}) >= 15,
-        tostring(table_size(S.arrived or {})))
+    local log = lp("stats", S.g).ops.answered or {}
+    info("snatch: answers " .. serpent.line(log) .. ", biters grouped seen " .. tostring(S.grouped))
+    check("snatch: a unit killed by the turret", S.killed == true, tostring(S.killed))
+    check("snatch: no flare canister prototype", prototypes.entity["lp-flare"] == nil, "")
+    check("snatch: no biters called to the outpost", not S.grouped, tostring(S.grouped))
+    if open then
+      check("snatch: uncovered, a squad goes", (log["a squad goes"] or 0) >= 1, serpent.line(log))
     else
-      check("flare: 10 biters called within 30 s", (S.g30 or 0) >= 10, tostring(S.g30))
+      check("snatch: covered, no squad sent", (log["a squad goes"] or 0) == 0, serpent.line(log))
     end
-    check("flare: the turrets fired", ammo < 400, tostring(ammo))
-    if walled then
-      info(string.format("flare: canister %.0f from the outpost; %d wall pieces hit", S.near or -1, hurt))
-      check("flare: the wave went on to the walls", hurt >= 3, tostring(hurt))
-    end
-    if not burnout then check("flare: shot, the group goes idle within 30 s", S.idle == true, tostring(S.idle_cmd)) end
-    check("flare: no biter harmed Grubstake", lost == 0, tostring(lost))
   end)
 end
 
@@ -7515,7 +7408,8 @@ scenarios.farm = function()
         S.landed = game.tick
         S.pens0 = f.pens
         S.worms = surface().count_entities_filtered{name = "lp-bred-worm", position = f.pos, radius = 80}
-        S.tags = #game.forces.player.find_chart_tags(surface(), {{f.pos.x - 8, f.pos.y - 8}, {f.pos.x + 8, f.pos.y + 8}})
+        local tags = game.forces.player.find_chart_tags(surface(), {{f.pos.x - 8, f.pos.y - 8}, {f.pos.x + 8, f.pos.y + 8}})
+        S.tags, S.tag_text = #tags, tags[1] and tags[1].text
         S.farm_pos = f.pos
         S.dist = math.sqrt((f.pos.x - S.at(0, 0)[1]) ^ 2 + (f.pos.y - S.at(0, 0)[2]) ^ 2)
         if mix == "wave" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave") and game.tick end) end
@@ -7557,6 +7451,7 @@ scenarios.farm = function()
     check("farm: 600 tiles out or more", (S.dist or 0) >= 600, string.format("%.0f", S.dist or -1))
     check("farm: worms by its pens", (S.worms or 0) >= 2 * (S.pens0 or 0), tostring(S.worms))
     check("farm: its tag on the player's map", (S.tags or 0) >= 1, tostring(S.tags))
+    check("farm: its tag names Synthexis", S.tag_text == "Synthexis culture", tostring(S.tag_text))
     if mix == "killed" then
       check("farm: every pen dead, the farm gone", S.after and #S.after.farms == 0, serpent.line(S.after))
       check("farm: its tag gone", S.tags_after == 0, tostring(S.tags_after))
