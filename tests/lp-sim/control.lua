@@ -7225,6 +7225,8 @@ end
 --   probe: evolution 0.5; two turrets in each of the eight sectors (lasers), so the scout's tie goes to the face toward the
 --          pen, where one of the two is a gun turret with no ammunition: the probe's runts find it silent, and the
 --          herd breaches in front of it rather than at the face's middle
+--   stomp: 36 bred mediums and 2 stompers (tier 4): a stomper gets inside the wall ring, and no Synthexis unit is hurt
+--          by a stomper (its stomp is on enemy forces only)
 scenarios.herd = function()
   local mix = params.mix or ""
   local L, G = "laser-turret", "gun-turret"
@@ -7337,6 +7339,9 @@ scenarios.herd = function()
     if mix == "spit" then
       lp("herd_fill", S.pen, 30, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 10, "lp-bred-medium-spitter")
+    elseif mix == "stomp" then
+      lp("herd_fill", S.pen, 36, "lp-bred-medium-biter")
+      lp("herd_fill", S.pen, 2, "lp-bred-stomper")
     else
       lp("herd_fill", S.pen, S.size, "lp-bred-medium-biter")
     end
@@ -7369,6 +7374,17 @@ scenarios.herd = function()
     local a, b = S.at(-40, -40), S.at(40, 40)
     return #surface().find_decoratives_filtered{area = {{math.min(a[1], b[1]), math.min(a[2], b[2])},
       {math.max(a[1], b[1]), math.max(a[2], b[2])}}, name = {"dark-mud-decal", "light-mud-decal"}}
+  end
+  if mix == "stomp" then
+    for t = 600, END - 120, 60 do
+      schedule(t, function()
+        local c = S.at(0, 0)
+        for _, u in pairs(surface().find_entities_filtered{name = "lp-bred-stomper", position = c, radius = 36}) do
+          S.stomp_in = S.stomp_in or game.tick
+        end
+        S.stompers = surface().count_entities_filtered{name = "lp-bred-stomper"}
+      end)
+    end
   end
   if mix == "spit" then
     for t = 600, END - 120, 120 do
@@ -7410,6 +7426,14 @@ scenarios.herd = function()
     local state = lp("herd_state")
     info("herd: " .. serpent.line(w))
     info("herd: waves still out " .. serpent.line(state.waves))
+    if mix == "stomp" then
+      info(string.format("herd stomp: inside at %s, stompers left %s, own hurt by a stomper %s", tostring(S.stomp_in),
+        tostring(S.stompers), tostring(S.damage["stomper>own"])))
+      check("herd: stomp, a stomper got inside the wall", S.stomp_in ~= nil, tostring(S.stomp_in))
+      check("herd: stomp, no Synthexis unit hurt by a stomper", (S.damage["stomper>own"] or 0) == 0,
+        tostring(S.damage["stomper>own"]))
+      return
+    end
     if mix == "probe" then
       local dry = S.at(S.dry_at[1], S.dry_at[2])
       local lit = S.at(S.dry_at[1], -S.dry_at[2])
@@ -9612,6 +9636,9 @@ if params.scenario == "herd" then
     local a, v = e.force.name, e.entity.force.name
     if (a == "enemy" and v == "lp-biotech") or (a == "lp-biotech" and v == "enemy") then
       S.damage[a .. ">" .. v] = (S.damage[a .. ">" .. v] or 0) + e.final_damage_amount
+    end
+    if e.cause and e.cause.valid and e.cause.name == "lp-bred-stomper" and v == "lp-biotech" then
+      S.damage["stomper>own"] = (S.damage["stomper>own"] or 0) + e.final_damage_amount
     end
   end)
 end

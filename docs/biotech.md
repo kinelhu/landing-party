@@ -458,6 +458,30 @@ evolution 0.25 (a twentieth of births from 0.4). The arena: it beats scavengers 
 wins every fight and loses half its value), costs a hull 38 to 57 (acid goes through armour), and loses to infantry
 by about 90.
 
+### The stomper (0.1.65, tier 4)
+
+Built for the gap the arena's faction table found (DESIGN "Fliers and anti-air", faction metrics): Kessler-Hayashi
+answered every breed at +100 and Synthexis answered it at +36, nothing bred beating the railgunner or the hulls.
+`lp-bred-stomper`: Space Age's small stomper (a spider-unit) in Synthexis's green, its legs copied
+(`lp-bred-stomper-leg`). Bred from evolution 0.8 (one in fifty from 0.95), priced 150.
+- **Spike (2026-10-23, deleted):** a small stomper on its own force joined a unit group with six biters (`add_member`
+  on a spider-unit works), marched with it, crossed a wall of 21 pieces leaving all 21, and stomped the gun turret behind
+  in 4 seconds; the biters were unhurt (its stomp is an area on enemy forces). A pen breeds spider-units as Gleba's
+  spawners do; the herd moves what its pens bred as a group, so no herd code changed.
+- **Not tagged lp-biter** (data-final-fixes tags units, spawners and worms, not spider-units): the railgunner, made to
+  kill biters, does it 10, not 250.
+- **Tuned by the arena:** vanilla's (3,500 health, 7 a second healed, 44 a stomp) beat every ground kind at 150, rocket
+  troopers and battle tanks too; at 2,000 and half the stomp it still did (22 rocket troopers dead in 7 seconds, the stomp
+  landing on all of them at once). Kept: 2,000 health, no healing (regeneration is the pen's), a fifth of the stomp
+  (9 impact within 4 tiles a step), ground-only (masked), physical 50% with no flat, laser 40%, nothing against
+  explosions; its shell kept where it falls, the premature wrigglers dropped. The arena (3,441 fights): it beats the
+  railgunner, the anti-air trooper and the laser tank by 100, laser troopers and the heavy tank; it loses to the battle
+  tank, both fliers (100), tanks, shock troopers, lightning tanks, walkers and flamer lines. Rocket troopers and slugs
+  still lose to it (+50, +67 for the stomper), where the consult wanted them to win: the battle tank is the player's answer.
+- **The faction table after:** Synthexis against Kessler-Hayashi +71 (was +36), coverage 70% (40%), the edge -29 (-64).
+- `herd stomp` (36 mediums and 2 stompers at the walled base): a stomper inside the wall ring; no Synthexis unit hurt by
+  a stomper. Creep's haste and mend are for units only (`creep.lua` finds type unit): not for the stomper.
+
 ### Kessler-Hayashi against its cultures (0.1.60)
 
 Its nests are nests to everyone else: `shared.NEST_FORCES = {"enemy", "lp-biotech"}` in Kessler-Hayashi's nest intel,

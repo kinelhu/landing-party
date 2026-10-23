@@ -148,6 +148,9 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     feel unanswered? Do the anti-air units feel useless when no flier comes?
 37. **Plain names** (0.1.64): Kessler-Hayashi's units are now Laser trooper, Heavy laser trooper, Anti-air trooper,
     Heavy tank, Laser tank and Lightning tank (were Line trooper, Lance, Skyguard, Aegis, Prism, Tesla).
+38. **The stomper** (0.1.65, evolution 0.8 and up): a green five-legged thing three tiles across walks over your wall
+    with the herd, no breach, and stomps what stands inside. Rifles and lasers barely slow it; battle tanks, fliers,
+    flamers and artillery do. Does it read as Synthexis's (green), and does it feel answerable?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

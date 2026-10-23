@@ -36,7 +36,7 @@ document still says Serenity where it records history.
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
 | Anti-air, one per side: Kessler-Hayashi's Skyguard and Grubstake's flak buggy (bought on losses to fliers or the player's combat robots), Synthexis's spore spitter (bred from its arrival) | built 0.1.63 | `unitnode` (`skyguard`, `flak-buggy`), arena |
-| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.60 (the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (ten), `farm` (four), `creep` (seven), `cinder`, `clear culture` |
+| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.65 (the spore spitter, its anti-air; the stomper, tier 4; the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (eleven), `farm` (four), `creep` (seven), `cinder`, `clear culture` |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -996,7 +996,8 @@ then the player's side read.
   against Kessler-Hayashi +36 with 40% coverage while Kessler-Hayashi answers every breed (+100): the railgunner beats
   every breed by 100 and no breed beats it, nor the heavy hulls. A breed for that gap (the stomper, tier 4, an armoured
   answer to railgunners and hulls) is the next lever; Kessler-Hayashi as the exterminator is meant to win, by how much
-  is the question.
+  is the question. Built 0.1.65 (`docs/biotech.md` "The stomper"): Synthexis against Kessler-Hayashi +71, coverage
+  70%, the edge -29; Kessler-Hayashi still ahead, as the exterminator.
 - **The player's side:** troopers beat harriers by 98 and rocket troopers by 95; turrets shoot fliers (flamethrowers do
   not). Not yet measured: player turret lines against a wave of fliers.
 

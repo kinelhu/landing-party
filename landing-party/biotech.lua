@@ -82,6 +82,69 @@ do
   table.insert(out, st)
 end
 
+-- The stomper (tier 4, the breeds consult; built 2026-10-23 for the gap the arena's faction table found: Kessler-
+-- Hayashi answered every breed at +100 and no breed answered its railgunner or its hulls). Space Age's small stomper
+-- in Synthexis's green: a pentapod that steps over walls without a breach (spiked: in a unit group it marched with
+-- six biters, crossed a wall of 21 pieces leaving all 21, and stomped the gun turret behind in 4 seconds, the biters
+-- unhurt: its stomp is an area on enemy forces). Not tagged lp-biter (data-final-fixes tags units, spawners and worms,
+-- not spider-units): to the railgunner, made to kill biters, it is another animal. Its stomp ground-only (a mask,
+-- as the breeds' weapons: air.lua covers its spit). Physical 50% with no flat (vanilla's flat 2 made rifles useless),
+-- laser 40% (vanilla 80%: lasers should hurt it), nothing against explosions: rockets, slugs, the battle tank,
+-- fliers and artillery beat it. Its shell stays where it falls; the premature wrigglers its death spawned are dropped.
+local STOMPER_HEALTH, STOMP_SHARE = 2000, 0.2
+do
+  local src = data.raw["spider-unit"]["small-stomper-pentapod"]
+  local u = table.deepcopy(src)
+  u.name = "lp-bred-stomper"
+  u.localised_name = {"entity-name.lp-bred-stomper"}
+  u.localised_description = {"entity-description.lp-bred-stomper"}
+  u.hidden_in_factoriopedia = true
+  u.map_color = B.color
+  u.enemy_map_color = B.color
+  u.resistances = {{type = "physical", percent = 50}, {type = "laser", percent = 40}, {type = "impact", percent = 80}}
+  -- Vanilla's (3,500 health, 7 a second healed, 44 a stomp) beat every ground kind at 150 in the arena, rocket troopers
+  -- and the battle tank too: a late Gleba enemy. Its regeneration is the pen's, not the animal's (the breeds consult).
+  u.max_health = STOMPER_HEALTH
+  u.healing_per_tick = 0
+  u.ai_settings = table.deepcopy(u.ai_settings or {})
+  u.ai_settings.destroy_when_commands_fail = false
+  local shell = {}
+  for _, e in ipairs(u.dying_trigger_effect or {}) do
+    if not (e.entity_name or ""):find("wriggler", 1, true) then table.insert(shell, e) end
+  end
+  u.dying_trigger_effect = shell
+  local function green(t, seen)
+    if type(t) ~= "table" or seen[t] then return end
+    seen[t] = true
+    if t.tint then t.tint = B.tint1 end
+    for _, v in pairs(t) do green(v, seen) end
+  end
+  green(u.graphics_set, {})
+  local legs = {}
+  for _, leg in ipairs(u.spider_engine.legs) do
+    -- The stomp: on the ground only.
+    for _, e in ipairs(leg.leg_hit_the_ground_when_attacking_trigger or {}) do
+      if e.type == "nested-result" and e.action and e.action.type == "area" then
+        e.action.trigger_target_mask = {"common"}
+        for _, d in ipairs(e.action.action_delivery.target_effects or {}) do
+          if d.type == "damage" then d.damage.amount = d.damage.amount * STOMP_SHARE end
+        end
+      end
+    end
+    local name = "lp-bred-stomper-leg"
+    if not legs[name] then
+      local l = table.deepcopy(data.raw["spider-leg"][leg.leg])
+      l.name = name
+      l.hidden = true
+      green(l.graphics_set, {})
+      legs[name] = l
+      table.insert(out, l)
+    end
+    leg.leg = name
+  end
+  table.insert(out, u)
+end
+
 -- The runt (tier 2, the breeds consult): the probe's body, a bred small biter of its own name so the probe's losses
 -- can be read (herd.lua: which turrets shot at it); spawned by script at probe time, never bred.
 do
@@ -212,6 +275,16 @@ do
   else
     table.insert(pen.result_units, {unit = "lp-bred-cinder", spawn_points = {
       {evolution_factor = 0.6, weight = 0.0}, {evolution_factor = 0.8, weight = 0.1}, {evolution_factor = 1.0, weight = 0.1}}})
+  end
+end
+-- Its stompers from evolution 0.8, one in fifty of what it breeds from 0.95.
+do
+  local first = pen.result_units[1]
+  if first[1] then
+    table.insert(pen.result_units, {"lp-bred-stomper", {{0.8, 0.0}, {0.95, 0.02}, {1.0, 0.025}}})
+  else
+    table.insert(pen.result_units, {unit = "lp-bred-stomper", spawn_points = {
+      {evolution_factor = 0.8, weight = 0.0}, {evolution_factor = 0.95, weight = 0.02}, {evolution_factor = 1.0, weight = 0.025}}})
   end
 end
 -- Its spore spitters from its arrival (evolution 0.25), a twentieth of what it breeds from 0.4: the herd's own guns up.

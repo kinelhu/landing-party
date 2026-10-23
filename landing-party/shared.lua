@@ -238,7 +238,9 @@ shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] 
   ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}, ["lp-bred-medium-spitter"] = {cost = 9},
   ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 70},
   -- air: it shoots up (air.lua leaves it whole).
-  ["lp-bred-spore"] = {cost = 10, air = true}}
+  ["lp-bred-spore"] = {cost = 10, air = true},
+  -- A spider-unit (Space Age's small stomper): tier 4, over the wall.
+  ["lp-bred-stomper"] = {cost = 150}}
 -- Biomass (docs/biotech.md "Biomass"): the breeds' costs are paid in it, earned from the pollution its creep drinks (each
 -- creep tile absorbs CREEP_ABSORB a second, the engine's own absorption; a unit of pollution drunk is a unit of biomass).
 shared.CREEP_ABSORB = 0.0005

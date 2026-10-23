@@ -32,7 +32,7 @@ local KINDS = {
   {"battle tank", "lp-battle-tank"},
   -- The biotech's (docs/biotech.md), at shared.BREEDS' price.
   {"bred medium", "lp-bred-medium-biter"}, {"bred big", "lp-bred-big-biter"}, {"bred spitter", "lp-bred-medium-spitter"}, {"bred cinder", "lp-bred-cinder"},
-  {"bred spore", "lp-bred-spore"},
+  {"bred spore", "lp-bred-spore"}, {"bred stomper", "lp-bred-stomper"},
   -- On its creep (scripts/creep.lua): the same breeds with the haste and mend stickers renewed each second, as creep.tick
   -- gives them; the stickers are what the creep does to a unit (its tile alone does nothing to units).
   {"bred medium (creep)", "lp-bred-medium-biter", "creep"}, {"bred big (creep)", "lp-bred-big-biter", "creep"},
