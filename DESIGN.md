@@ -958,7 +958,7 @@ counter. Plan (the user: "Go with your plan"): one anti-air answer per side, the
 then the player's side read.
 - **The answers (0.1.63).** Each hits a flier hard and the ground lightly, through masked areas at the target (an area
   honours `trigger_target_mask`, a direct hit does not), and outranges the fliers' 15:
-  - **Skyguard** (Kessler-Hayashi's Line, 18 parts, 110 health): a Line trooper's body, a tracking laser, 30 to a flier
+  - **Skyguard**, shown as Anti-air trooper since 0.1.64 (Kessler-Hayashi's Line, 18 parts, 110 health): a Line trooper's body, a tracking laser, 30 to a flier
     and 3 to the ground every 30 ticks, range 22.
   - **Flak buggy** (Grubstake's Wheels, 20 parts, 220 health): the buggy's hull with the car's turret, scrap flak over 2
     tiles, 22 to fliers and 3 to the ground every 30 ticks, range 22.
@@ -975,6 +975,28 @@ then the player's side read.
   harriers by 48. Air's own rows are unchanged (still +100 on splash and the breeds, +67 on armour): an army now answers it
   by buying or breeding the counter, which keeps the counter shape (`balance keeps counters`). Step 2 (fliers as
   harassers) is held until play shows air still runs over armies that have their answer.
+- **Ground fire and plain names (0.1.64; the user: "Do anti air units also fire on ground? ... they should be able to
+  kinda attack ground units also. For instance flak could be a sort of weak ground splash"; and "Not a fan of the names
+  you give Kessler units ... calling a heavy tank a heavy tank is good").** Ground hits raised from 3: the anti-air
+  trooper 8 on one target; the flak buggy 3 over 1.5 tiles (6 over 2 beat every infantry by 75 to 95, a better
+  anti-infantry unit than the dedicated ones); the spore spitter 18 within 1 (6 and 12 left it at -80 to -100 on the
+  ground; at 18 it costs a hull 38 to 57, acid going through armour, and still loses to infantry by about 90). Trials
+  (two rounds each): the anti-air trooper loses to the ground by 53 to 94 and is even with buggies; the flak buggy loses
+  to most of it by 30 to 100 and beats buggies, heavy laser troopers and railgunners by 52 to 73. Kessler-Hayashi's
+  units shown plainly (locale and the arena's labels; ids unchanged): Line trooper -> Laser trooper, Lance -> Heavy
+  laser trooper, Skyguard -> Anti-air trooper, Aegis tank -> Heavy tank, Prism tank -> Laser tank, Tesla tank ->
+  Lightning tank. The burster shows as such in the arena too.
+- **Faction metrics (the user: "a good complement to the heatmap could be some faction metrics, computed by clustering
+  unit counter metrics per faction matchup").** `scripts/arena_report.py` now writes a faction-against-faction table
+  and `docs/arena/factions.png` from the unit matrix: per pair, the row's best answer to each of the column's kinds
+  averaged (answer), the share of them it has a +50 counter for (coverage), the share of its own the other has one for
+  (exposure), and per faction how many of the fight-made groups its roster spans (breadth). On 0.1.64's arena (3,240
+  fights): the corporations even with each other (+92 and +90) and both above the player in coverage; the player's
+  answer to Kessler-Hayashi +84 against its +65. Synthexis against Grubstake +84 (+40 before the spore spitter), but
+  against Kessler-Hayashi +36 with 40% coverage while Kessler-Hayashi answers every breed (+100): the railgunner beats
+  every breed by 100 and no breed beats it, nor the heavy hulls. A breed for that gap (the stomper, tier 4, an armoured
+  answer to railgunners and hulls) is the next lever; Kessler-Hayashi as the exterminator is meant to win, by how much
+  is the question.
 - **The player's side:** troopers beat harriers by 98 and rocket troopers by 95; turrets shoot fliers (flamethrowers do
   not). Not yet measured: player turret lines against a wave of fliers.
 

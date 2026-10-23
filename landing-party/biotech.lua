@@ -45,8 +45,9 @@ for _, src in ipairs(BREEDS) do
 end
 
 -- The spore spitter (the user, 2026-10-23, on fliers: its class had no answer to them, -100 in the arena): a bred
--- spitter whose spit bursts into spores where it lands, aloft as well: 30 acid to a flier (45 changed nothing: it wins every fight with harriers and loses half its value doing it, a soft body under fire) within 1.5 tiles, 3 to the
--- ground, no burning pool; range 20, past the fliers' 15. Violet. Not ground-only (air.lua: shared.BREEDS air).
+-- spitter whose spit bursts into spores where it lands, aloft as well: 30 acid to a flier within 1.5 tiles, 18 to the
+-- ground within 1, no burning pool; range 20, past the fliers' 15. Violet. Not ground-only (air.lua: shared.BREEDS air).
+-- 45 to a flier changed nothing: it wins every fight with harriers and loses half its value doing it (a soft body).
 do
   local src
   for _, p in ipairs(out) do if p.name == "lp-bred-medium-spitter" then src = p end end
@@ -72,7 +73,7 @@ do
   st.initial_action = {
     {type = "direct", action_delivery = {type = "instant", target_effects = {
       {type = "create-entity", entity_name = "gleba-blood-explosion-small"}}}},
-    burst(30, {"lp-air-unit"}, 1.5), burst(3, {"common"}, 1)}
+    burst(30, {"lp-air-unit"}, 1.5), burst(18, {"common"}, 1)}
   st.action = nil
   u.attack_parameters.ammo_type = {action = {type = "direct", action_delivery = {type = "stream", stream = st.name}}}
   u.attack_parameters.damage_modifier = 1

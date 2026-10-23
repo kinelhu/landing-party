@@ -14,21 +14,26 @@ from collections import defaultdict
 # Each kind's class, by its body and its weapon (what decides its fights in the arena): many light bodies firing small
 # shots; one weapon that hits several at once (a blast, an arc, a split beam); a heavy hull with flat armour; fliers.
 CLASSES = [
-    ("small arms", ["infantry (Kessler-Hayashi)", "infantry (Grubstake)", "lance", "buggy", "slug", "railgunner", "trooper",
+    ("small arms", ["laser trooper", "shotgun hand", "heavy laser trooper", "buggy", "slug", "railgunner", "trooper",
                     "rocket trooper"]),
-    ("splash", ["sapper", "shock", "prism", "tesla", "breacher"]),
-    ("armour", ["tank", "aegis", "dozer", "walker", "scorcher", "battle tank"]),
+    ("splash", ["sapper", "shock", "laser tank", "lightning tank", "breacher"]),
+    ("armour", ["tank", "heavy tank", "dozer", "walker", "scorcher", "battle tank"]),
     ("air", ["harrier", "scavenger"]),
     # Hard on fliers, light on the ground (2026-10-23): one per side.
-    ("anti-air", ["skyguard", "flak buggy", "bred spore"]),
-    ("bred", ["bred medium", "bred big", "bred spitter", "bred cinder"]),
+    ("anti-air", ["anti-air trooper", "flak buggy", "bred spore"]),
+    ("bred", ["bred medium", "bred big", "bred spitter", "bred burster"]),
     ("bred on creep", ["bred medium (creep)", "bred big (creep)"]),
 ]
 CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
+# The batch's labels (tests/lp-arena/batch.lua, internal) as players read them (locale).
+SHOWN = {"infantry (Serenity)": "laser trooper", "infantry (Grubstake)": "shotgun hand", "lance": "heavy laser trooper",
+         "prism": "laser tank", "tesla": "lightning tank", "aegis": "heavy tank", "skyguard": "anti-air trooper",
+         "bred cinder": "bred burster"}
 
 # Who fields each kind, read from landing-party/shared.lua (a corporation's starting mix and its research tree's units).
 # Grubstake's infantry is its own (shotguns), so the two infantries are told apart by their labels.
 CORP_COLOUR = {"Kessler-Hayashi": "#2f6f86", "Grubstake": "#b0651a", "You": "#3d7a2a", "Synthexis": "#8a9e00"}
+UNSHOWN = {v: k for k, v in SHOWN.items()}
 PLAYER = {"trooper", "breacher", "rocket trooper", "battle tank"}   # priced by command bandwidth (tests/lp-arena/arena.lua)
 
 def fielders():
@@ -48,9 +53,12 @@ def corp_of(label, fielded):
         return "You"
     if label.startswith("bred "):
         return "Synthexis"
+    if label in ("laser trooper", "shotgun hand"):
+        return "Kessler-Hayashi" if label == "laser trooper" else "Grubstake"
     if label.startswith("infantry ("):
         return label[len("infantry ("):-1]
-    who = fielded.get("lp-" + label, [])
+    # Back to the kind's id: the batch's label, its spaces hyphens ("flak buggy": lp-flak-buggy).
+    who = fielded.get("lp-" + UNSHOWN.get(label, label).replace(" ", "-"), [])
     return who[0] if len(who) == 1 else "both" if who else "-"
 
 def score(r):
@@ -85,6 +93,7 @@ def clusters(kinds, M, F, fixed_cols, corp, img):
     fig.savefig(img)
     n = len(CLASSES)
     cut = fcluster(Z, n, criterion="maxclust")
+    clusters.of = dict(zip(kinds, cut))
     groups = {}
     for k, c in zip(kinds, cut):
         groups.setdefault(c, []).append(k)
@@ -98,13 +107,71 @@ def clusters(kinds, M, F, fixed_cols, corp, img):
     L.append("")
     return L
 
+FACTIONS = ["Kessler-Hayashi", "Grubstake", "Synthexis", "You"]
+
+def factions(kinds, M, corp, cluster_of, img):
+    """Faction against faction (the user, 2026-10-23: "faction metrics, computed by clustering unit counter metrics per
+    faction matchup"), from the unit matrix. A faction's roster: the kinds it fields (from landing or its tree; a kind
+    both corporations field counts for both; Synthexis's breeds, on creep too). For X against Y:
+    answer, the mean over Y's kinds of X's best score against each (can X answer whatever Y fields?);
+    coverage, the share of Y's kinds X has a hard counter for (a kind of X scoring +50 or more on it);
+    exposure, the share of X's kinds Y hard-counters. Breadth: how many of the fight-made groups X's roster spans."""
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import TwoSlopeNorm
+    roster = {f: [k for k in kinds if corp[k] == f or (corp[k] == "both" and f in ("Kessler-Hayashi", "Grubstake"))]
+              for f in FACTIONS}
+    def best(X, b): return max(M.get((a, b), -1) for a in X)
+    def answer(X, Y): return sum(best(X, b) for b in Y) / len(Y)
+    def coverage(X, Y): return sum(1 for b in Y if best(X, b) >= 0.5) / len(Y)
+    groups = {f: len({cluster_of[k] for k in roster[f]}) for f in FACTIONS}
+    fig, ax = plt.subplots(figsize=(6.4, 4.6), dpi=130)
+    grid = [[answer(roster[x], roster[y]) if x != y else float("nan") for y in FACTIONS] for x in FACTIONS]
+    ax.imshow(grid, cmap=plt.get_cmap("RdBu"), norm=TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1))
+    for i, x in enumerate(FACTIONS):
+        for j, y in enumerate(FACTIONS):
+            if x != y:
+                v = grid[i][j]
+                ax.text(j, i, f"{round(100 * v):+d}\ncovers {round(100 * coverage(roster[x], roster[y]))}%", ha="center",
+                        va="center", fontsize=8, color="white" if abs(v) > 0.6 else "black")
+    ax.set_xticks(range(len(FACTIONS))); ax.set_xticklabels(FACTIONS, fontsize=8); ax.xaxis.tick_top()
+    ax.set_yticks(range(len(FACTIONS)))
+    ax.set_yticklabels([f"{f} ({len(roster[f])} kinds, {groups[f]} groups)" for f in FACTIONS], fontsize=8)
+    for lab, f in zip(ax.get_yticklabels(), FACTIONS): lab.set_color(CORP_COLOUR[f])
+    for lab, f in zip(ax.get_xticklabels(), FACTIONS): lab.set_color(CORP_COLOUR[f])
+    ax.set_title("Faction against faction: the row's best answer to each of the column's kinds, averaged\n"
+                 "(and the share of them it has a counter scoring +50 for)", fontsize=8.5)
+    fig.tight_layout()
+    fig.savefig(img)
+    L = ["## Faction against faction", "",
+         "From the unit matrix, each faction's roster (the kinds it fields from landing or its tree; a kind both "
+         "corporations field counts for both; Synthexis's breeds on creep too). **Answer**: for each of the other "
+         "side's kinds, the row's best score against it, averaged: can it answer whatever the other fields? "
+         "**Coverage**: the share of the other side's kinds it has a counter scoring +50 or more for. **Exposure**: the "
+         "share of its own kinds the other side has such a counter for. **Breadth**: how many of the groups found from "
+         "the fights alone (above) its roster spans.", "",
+         "![Factions](arena/factions.png)", "",
+         "| Row against column | Answer | Coverage | Exposure | Their answer | Edge |", "|---|---|---|---|---|---|"]
+    for x in FACTIONS:
+        for y in FACTIONS:
+            if x == y: continue
+            X, Y = roster[x], roster[y]
+            a, them = answer(X, Y), answer(Y, X)
+            L.append(f"| {x} against {y} | {round(100 * a):+d} | {round(100 * coverage(X, Y))}% | "
+                     f"{round(100 * coverage(Y, X))}% | {round(100 * them):+d} | {round(100 * (a - them)):+d} |")
+    L += ["", "| Faction | Kinds | Breadth (groups of " + str(len(set(cluster_of.values()))) + ") | Roster |", "|---|---|---|---|"]
+    for f in FACTIONS:
+        L.append(f"| {f} | {len(roster[f])} | {groups[f]} | " + ", ".join(roster[f]) + " |")
+    L.append("")
+    return L
+
 def main():
     src, out = sys.argv[1], sys.argv[2]
     rows = [json.loads(l) for l in open(src) if l.strip()]
     # The names players see: Serenity's internal id stays in the batch's labels (the user renamed it, 2026-10-21).
+    # Its units' plain names too (the user, 2026-10-23: "calling a heavy tank a heavy tank"), and the burster's.
     for r in rows:
         for k in ("squad", "against"):
-            r[k] = r[k].replace("(Serenity)", "(Kessler-Hayashi)")
+            r[k] = SHOWN.get(r[k], r[k]).replace("(Serenity)", "(Kessler-Hayashi)")
     # Mixed arms (batch.lua's MIXES): scored for the all-ground army, whichever side it fought on.
     mixes = defaultdict(list)
     for r in rows:
@@ -213,6 +280,7 @@ def main():
         L.append(f"| {a} ({cost.get(a, '?')}) | {fmt(best, 1)} | {fmt(worst, -1)} |")
     L.append("")
     L += clusters(order, M, F, order_fixed, corp, os.path.join(os.path.dirname(out), "arena", "clusters.png"))
+    L += factions(order, M, corp, clusters.of, os.path.join(os.path.dirname(out), "arena", "factions.png"))
     if mixes:
         L += ["## Mixed arms: does a flier soak a ground army's fire?", "",
               "A ground army against the same spend with part of it in fliers, both ways round. Ground-only weapons "

@@ -452,9 +452,11 @@ Its damage, reach and price unchanged.
 ### The spore spitter (0.1.63)
 
 Synthexis's answer to fliers (DESIGN "Fliers and anti-air"): `lp-bred-spore`, a violet bred spitter whose spit
-(`lp-spore-stream`) bursts where it lands, aloft as well: 30 acid to a flier within 1.5 tiles, 3 to the ground, no
-burning pool, range 20, priced 10. Bred from evolution 0.25 (a twentieth of births from 0.4). The arena: it beats
-scavengers by 80 and harriers by 48 (it wins every fight and loses half its value), and loses to every ground kind.
+(`lp-spore-stream`) bursts where it lands, aloft as well: 30 acid to a flier within 1.5 tiles, 18 to the ground within 1
+(3 in 0.1.63; raised in 0.1.64 so it fights the ground a little), no burning pool, range 20, priced 10. Bred from
+evolution 0.25 (a twentieth of births from 0.4). The arena: it beats scavengers by about 80 and harriers by 48 to 57 (it
+wins every fight and loses half its value), costs a hull 38 to 57 (acid goes through armour), and loses to infantry
+by about 90.
 
 ### Kessler-Hayashi against its cultures (0.1.60)
 

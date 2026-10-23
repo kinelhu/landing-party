@@ -642,18 +642,18 @@ data:extend({truck})
 
 -- Anti-air, one per side (the user, 2026-10-23: "Not super comfortable about the flier units"; the arena had air beating
 -- splash and every breed by 100 and armour by 67, small arms its only answer). Each hits a flier hard and the ground
--- lightly: a masked area at the target (an area honours trigger_target_mask, a direct hit does not: air.lua), so it is a
+-- lightly (the user: "kinda attack ground units also ... flak could be a sort of weak ground splash"): a masked area at the target (an area honours trigger_target_mask, a direct hit does not: air.lua), so it is a
 -- counter, not a better rifle. Each outranges the fliers' 15.
-local function anti_air(air, ground, dtype, radius, look)
+local function anti_air(air, ground, dtype, radius, look, ground_radius)
   local function hit(amount, mask, r)
     return {type = "nested-result", action = {type = "area", radius = r, force = "enemy", trigger_target_mask = mask,
       action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = amount, type = dtype}}}}}}
   end
-  local fx = {hit(air, {"lp-air-unit"}, radius), hit(ground, {"common"}, 0.5)}
+  local fx = {hit(air, {"lp-air-unit"}, radius), hit(ground, {"common"}, ground_radius or 0.5)}
   if look then table.insert(fx, 1, {type = "create-entity", entity_name = look}) end
   return {type = "direct", action_delivery = {type = "instant", target_effects = fx}}
 end
--- Skyguard (Kessler-Hayashi's Line): a Line trooper's body with a long tracking laser, 30 to a flier and 3 to the ground
+-- Anti-air trooper (lp-skyguard; Kessler-Hayashi's Line): a Laser trooper's body with a long tracking laser, 30 to a flier and 8 to the ground
 -- every 30 ticks, range 22. Bought when fliers kill its units (shared.CORPS tree).
 local skyguard = make_infantry("lp-skyguard", {r = 0.85, g = 0.9, b = 1, a = 1}, "mech-armor")
 skyguard.max_health = shared.units["lp-skyguard"].health
@@ -663,12 +663,12 @@ skyguard.attack_parameters = {
   animation = table.deepcopy(infantry.attack_parameters.animation),
   ammo_type = {action = {
     {type = "direct", action_delivery = {type = "beam", beam = "lp-rail-beam", max_length = 23, duration = 6, source_offset = {0, -1}}},
-    anti_air(30, 3, "laser", 1),
+    anti_air(30, 8, "laser", 1),
   }},
 }
 skyguard.resistances = table.deepcopy(infantry.resistances)
 -- Flak buggy (Grubstake's Wheels): the buggy's hull with the car's gun turret, scrap flak bursting over 2 tiles, 22 to
--- fliers and 3 to the ground every 30 ticks, range 22; bullets, so its Hand-loads cover it.
+-- fliers and 3 over 1.5 tiles to the ground (a weak ground splash; 6 over 2 beat every infantry by 75 to 95) every 30 ticks, range 22; bullets, so its Hand-loads cover it.
 local flak_buggy = table.deepcopy(buggy)
 flak_buggy.name = "lp-flak-buggy"
 flak_buggy.max_health = shared.units["lp-flak-buggy"].health
@@ -678,7 +678,7 @@ flak_buggy.attack_parameters = {
   type = "projectile", ammo_category = "bullet", cooldown = 30, range = 22, range_mode = "bounding-box-to-bounding-box",
   sound = table.deepcopy(data.raw.gun["submachine-gun"].attack_parameters.sound),
   animation = table.deepcopy(flak_buggy.run_animation),
-  ammo_type = {action = anti_air(22, 3, "explosion", 2, "explosion")},
+  ammo_type = {action = anti_air(22, 3, "explosion", 2, "explosion", 1.5)},
 }
 data:extend({skyguard, flak_buggy})
 

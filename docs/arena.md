@@ -12,48 +12,48 @@ A class is a body and a weapon: **small arms** (many light bodies, small shots),
 
 | Row against column | small arms | splash | armour | air | anti-air | bred | bred on creep |
 |---|---|---|---|---|---|---|---|
-| small arms | +0 | -52 | -22 | +47 | +94 | -26 | -56 |
-| splash | +52 | +0 | -57 | -100 | +98 | +46 | +55 |
-| armour | +22 | +57 | +0 | -67 | +100 | -1 | -2 |
-| air | -47 | +100 | +67 | +0 | -88 | +100 | +93 |
-| anti-air | -94 | -98 | -100 | +88 | +0 | -89 | -97 |
-| bred | +26 | -46 | +1 | -100 | +89 | +0 | -1 |
-| bred on creep | +56 | -55 | +2 | -93 | +97 | +1 | +0 |
+| small arms | +0 | -51 | -21 | +47 | +47 | -27 | -56 |
+| splash | +51 | +0 | -57 | -100 | +85 | +46 | +48 |
+| armour | +21 | +57 | +0 | -67 | +81 | -2 | -5 |
+| air | -47 | +100 | +67 | +0 | -89 | +100 | +90 |
+| anti-air | -47 | -85 | -81 | +89 | +0 | -58 | -91 |
+| bred | +27 | -46 | +2 | -100 | +58 | +0 | -5 |
+| bred on creep | +56 | -48 | +5 | -90 | +91 | +5 | +0 |
 
 ## Each kind's counters
 
 | Kind (price) | Beats most (its score) | Beaten most by (their score) |
 |---|---|---|
-| rocket trooper (20) | bred spore (96), scavenger (95), harrier (95) | battle tank (74), breacher (67), slug (61) |
-| slug (30) | scavenger (100), bred spore (100), harrier (96) | bred big (creep) (80), aegis (80), prism (78) |
-| infantry (Grubstake) (8) | bred spore (100), flak buggy (97), skyguard (97) | scavenger (100), harrier (100), bred big (creep) (100) |
-| trooper (10) | scavenger (98), harrier (98), skyguard (97) | bred big (creep) (100), bred big (100), bred medium (creep) (90) |
-| infantry (Kessler-Hayashi) (10) | scavenger (98), skyguard (96), harrier (95) | shock (87), tank (86), battle tank (86) |
-| lance (16) | scavenger (96), harrier (95), skyguard (91) | bred big (creep) (83), battle tank (83), rocket trooper (80) |
-| railgunner (22) | bred medium (100), bred medium (creep) (100), bred big (creep) (100) | scavenger (100), harrier (100), prism (100) |
-| buggy (15) | bred spore (100), scavenger (97), harrier (96) | prism (100), bred big (creep) (100), tesla (100) |
-| prism (100) | railgunner (100), shock (100), bred big (creep) (100) | scavenger (100), harrier (100), tank (100) |
-| shock (30) | bred spore (100), buggy (93), flak buggy (93) | scavenger (100), harrier (100), prism (100) |
-| breacher (10) | bred spore (100), skyguard (97), flak buggy (96) | scavenger (100), harrier (100), aegis (100) |
-| tesla (100) | railgunner (100), sapper (100), shock (100) | scavenger (100), harrier (100), prism (100) |
-| sapper (30) | bred spore (100), infantry (Grubstake) (94), buggy (93) | scavenger (100), harrier (100), tesla (100) |
-| battle tank (60) | railgunner (100), sapper (100), prism (100) | scavenger (100), harrier (100), dozer (50) |
-| aegis (95) | railgunner (100), breacher (100), buggy (100) | scavenger (100), harrier (100), lance (61) |
-| dozer (100) | railgunner (100), shock (100), prism (100) | scavenger (100), harrier (100), bred spitter (93) |
-| tank (60) | prism (100), skyguard (100), flak buggy (100) | scavenger (100), harrier (100), aegis (87) |
-| walker (100) | railgunner (100), sapper (100), scavenger (100) | bred big (93), bred big (creep) (92), bred medium (creep) (84) |
-| scorcher (70) | skyguard (100), flak buggy (100), bred spore (100) | scavenger (100), harrier (100), bred big (creep) (100) |
-| harrier (40) | railgunner (100), infantry (Grubstake) (100), sapper (100) | skyguard (100), flak buggy (100), walker (100) |
-| scavenger (50) | railgunner (100), infantry (Grubstake) (100), sapper (100) | slug (100), flak buggy (100), walker (100) |
-| skyguard (18) | harrier (100), scavenger (99), bred spore (95) | prism (100), tesla (100), aegis (100) |
-| flak buggy (20) | scavenger (100), harrier (100), bred spore (93) | prism (100), tesla (100), aegis (100) |
-| bred spore (10) | scavenger (80), harrier (48), bred spitter (-84) | railgunner (100), infantry (Grubstake) (100), sapper (100) |
-| bred cinder (70) | buggy (100), scorcher (100), bred spore (100) | railgunner (100), scavenger (100), harrier (100) |
-| bred big (28) | infantry (Grubstake) (100), trooper (100), buggy (100) | railgunner (100), scavenger (100), harrier (100) |
-| bred spitter (9) | dozer (93), bred spore (84), flak buggy (76) | railgunner (100), scavenger (100), harrier (100) |
-| bred medium (7) | buggy (98), skyguard (98), bred spore (98) | railgunner (100), scavenger (100), harrier (100) |
-| bred big (creep) (28) | infantry (Grubstake) (100), trooper (100), buggy (100) | railgunner (100), scavenger (100), prism (100) |
-| bred medium (creep) (7) | bred spore (99), buggy (98), flak buggy (98) | railgunner (100), scavenger (100), harrier (100) |
+| rocket trooper (20) | scavenger (95), harrier (95), dozer (88) | battle tank (76), breacher (72), slug (56) |
+| slug (30) | scavenger (100), harrier (94), bred spore (89) | bred big (creep) (84), laser tank (83), heavy tank (80) |
+| shotgun hand (8) | bred spore (89), flak buggy (85), walker (77) | scavenger (100), harrier (100), bred big (100) |
+| trooper (10) | harrier (98), scavenger (97), bred spore (81) | bred big (100), bred big (creep) (100), bred medium (creep) (88) |
+| laser trooper (10) | scavenger (97), harrier (95), anti-air trooper (73) | shock (89), laser tank (88), tank (86) |
+| heavy laser trooper (16) | scavenger (96), harrier (95), dozer (67) | battle tank (86), bred big (creep) (79), rocket trooper (78) |
+| railgunner (22) | bred medium (100), bred big (100), bred medium (creep) (100) | scavenger (100), harrier (100), laser tank (100) |
+| buggy (15) | scavenger (97), harrier (96), bred spore (82) | laser tank (100), lightning tank (100), bred big (100) |
+| laser tank (100) | railgunner (100), shock (100), bred medium (100) | scavenger (100), harrier (100), heavy tank (100) |
+| breacher (10) | shotgun hand (96), buggy (95), bred medium (94) | scavenger (100), harrier (100), heavy tank (100) |
+| shock (30) | buggy (93), laser trooper (89), bred spore (89) | scavenger (100), harrier (100), laser tank (100) |
+| lightning tank (100) | railgunner (100), shock (100), sapper (100) | scavenger (100), harrier (100), heavy tank (100) |
+| sapper (30) | bred spore (94), buggy (93), shotgun hand (92) | scavenger (100), harrier (100), lightning tank (100) |
+| battle tank (60) | railgunner (100), laser tank (100), lightning tank (100) | scavenger (100), harrier (100), dozer (50) |
+| heavy tank (95) | railgunner (100), laser tank (100), lightning tank (100) | scavenger (100), harrier (100), heavy laser trooper (56) |
+| dozer (100) | railgunner (100), shock (100), laser tank (100) | scavenger (100), harrier (100), bred spitter (95) |
+| tank (60) | flak buggy (100), laser tank (93), laser trooper (86) | scavenger (100), harrier (100), battle tank (86) |
+| walker (100) | railgunner (100), sapper (100), scavenger (100) | bred big (93), bred big (creep) (92), bred medium (creep) (82) |
+| scorcher (70) | flak buggy (100), buggy (86), laser trooper (81) | scavenger (100), harrier (100), bred big (100) |
+| harrier (40) | railgunner (100), shotgun hand (100), shock (100) | anti-air trooper (100), flak buggy (100), trooper (98) |
+| scavenger (50) | railgunner (100), shotgun hand (100), shock (100) | slug (100), flak buggy (100), walker (100) |
+| anti-air trooper (18) | harrier (100), scavenger (98), bred spore (92) | bred big (creep) (94), battle tank (89), walker (88) |
+| flak buggy (20) | scavenger (100), harrier (100), bred spore (82) | laser tank (100), tank (100), scorcher (100) |
+| bred spore (10) | scavenger (82), harrier (55), tank (-28) | railgunner (100), walker (100), laser tank (96) |
+| bred burster (70) | scorcher (100), buggy (97), shotgun hand (83) | railgunner (100), scavenger (100), harrier (100) |
+| bred big (28) | shotgun hand (100), trooper (100), buggy (100) | railgunner (100), scavenger (100), harrier (100) |
+| bred medium (7) | buggy (98), bred spore (94), scorcher (86) | railgunner (100), scavenger (100), harrier (100) |
+| bred spitter (9) | dozer (95), bred medium (54), scorcher (52) | railgunner (100), scavenger (100), harrier (100) |
+| bred big (creep) (28) | shotgun hand (100), trooper (100), buggy (100) | railgunner (100), scavenger (100), laser tank (96) |
+| bred medium (creep) (7) | buggy (98), flak buggy (96), scorcher (94) | railgunner (100), scavenger (100), harrier (100) |
 
 ## Groups found from the fights alone
 
@@ -63,13 +63,41 @@ Each kind is its row of scores (against every kind and every fixed opponent); ki
 
 | Group | Kinds (hand-made class) |
 |---|---|
-| 1 | infantry (Grubstake) (small arms), shock (splash), breacher (splash), sapper (splash), bred cinder (bred), bred big (bred), bred spitter (bred), bred medium (bred), bred big (creep) (bred on creep), bred medium (creep) (bred on creep) |
-| 2 | rocket trooper (small arms), slug (small arms), trooper (small arms), infantry (Kessler-Hayashi) (small arms), lance (small arms), buggy (small arms), walker (armour) |
-| 3 | prism (splash), tesla (splash), battle tank (armour), aegis (armour), dozer (armour), tank (armour) |
-| 4 | skyguard (anti-air), flak buggy (anti-air), bred spore (anti-air) |
-| 5 | harrier (air), scavenger (air) |
-| 6 | railgunner (small arms) |
+| 1 | laser tank (splash), breacher (splash), shock (splash), lightning tank (splash), sapper (splash), battle tank (armour), heavy tank (armour), dozer (armour), tank (armour), bred burster (bred), bred big (bred), bred medium (bred), bred big (creep) (bred on creep), bred medium (creep) (bred on creep) |
+| 2 | rocket trooper (small arms), slug (small arms), trooper (small arms), laser trooper (small arms), heavy laser trooper (small arms), buggy (small arms), anti-air trooper (anti-air), flak buggy (anti-air), bred spore (anti-air) |
+| 3 | shotgun hand (small arms), bred spitter (bred) |
+| 4 | harrier (air), scavenger (air) |
+| 5 | railgunner (small arms) |
+| 6 | walker (armour) |
 | 7 | scorcher (armour) |
+
+## Faction against faction
+
+From the unit matrix, each faction's roster (the kinds it fields from landing or its tree; a kind both corporations field counts for both; Synthexis's breeds on creep too). **Answer**: for each of the other side's kinds, the row's best score against it, averaged: can it answer whatever the other fields? **Coverage**: the share of the other side's kinds it has a counter scoring +50 or more for. **Exposure**: the share of its own kinds the other side has such a counter for. **Breadth**: how many of the groups found from the fights alone (above) its roster spans.
+
+![Factions](arena/factions.png)
+
+| Row against column | Answer | Coverage | Exposure | Their answer | Edge |
+|---|---|---|---|---|---|
+| Kessler-Hayashi against Grubstake | +92 | 100% | 100% | +90 | +2 |
+| Kessler-Hayashi against Synthexis | +100 | 100% | 40% | +36 | +64 |
+| Kessler-Hayashi against You | +65 | 50% | 90% | +84 | -19 |
+| Grubstake against Kessler-Hayashi | +90 | 100% | 100% | +92 | -2 |
+| Grubstake against Synthexis | +99 | 100% | 89% | +84 | +16 |
+| Grubstake against You | +85 | 100% | 89% | +85 | +0 |
+| Synthexis against Kessler-Hayashi | +36 | 40% | 100% | +100 | -64 |
+| Synthexis against Grubstake | +84 | 89% | 100% | +99 | -16 |
+| Synthexis against You | +55 | 25% | 86% | +77 | -22 |
+| You against Kessler-Hayashi | +84 | 90% | 50% | +65 | +19 |
+| You against Grubstake | +85 | 89% | 100% | +85 | +0 |
+| You against Synthexis | +77 | 86% | 25% | +55 | +22 |
+
+| Faction | Kinds | Breadth (groups of 7) | Roster |
+|---|---|---|---|
+| Kessler-Hayashi | 10 | 4 | laser trooper, heavy laser trooper, railgunner, laser tank, shock, lightning tank, heavy tank, tank, walker, anti-air trooper |
+| Grubstake | 9 | 5 | slug, shotgun hand, buggy, sapper, dozer, scorcher, harrier, scavenger, flak buggy |
+| Synthexis | 7 | 3 | bred spore, bred burster, bred big, bred medium, bred spitter, bred big (creep), bred medium (creep) |
+| You | 4 | 2 | rocket trooper, trooper, breacher, battle tank |
 
 ## Mixed arms: does a flier soak a ground army's fire?
 
@@ -77,7 +105,7 @@ A ground army against the same spend with part of it in fliers, both ways round.
 
 | Mix | All-ground army's score | Fights |
 |---|---|---|
-| prisms / prisms + harriers | -37 | 6 |
-| tanks and rifles / with harriers | +6 | 6 |
-| dozers / dozers + harriers | -28 | 6 |
-| tanks / tanks + harriers | -38 | 6 |
+| prisms / prisms + harriers | -33 | 6 |
+| tanks and rifles / with harriers | +61 | 6 |
+| tanks / tanks + harriers | -43 | 6 |
+| dozers / dozers + harriers | -45 | 6 |

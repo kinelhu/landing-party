@@ -92,7 +92,7 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 21. **Bend the line**: a decoy building nearer its camp than the rest swings its next arcs toward it.
 21b. **Its labs**: once its launch pad is open, a district goes up with a lab at its heart, an icon over it for its
    branch (a laser turret: the Optics lab; heavy armour: the Line armoury; an artillery shell: the Siege works). Its
-   research climbs only in branches whose lab stands, and what a branch gave (Lances, armoured troopers, the jammer)
+   research climbs only in branches whose lab stands, and what a branch gave (heavy laser troopers, armoured troopers, the jammer)
    is fielded only while it stands. Kill one: does its army change? Is the lab worth the assault (artillery takes one
    in a shell; a squad of 35 storming the district died at its flamers)? Labs are a size up and always at work now.
 21c. **Your remarks of 2026-10-21, seen again** (0.1.42, 0.1.43): a tank's cannon round against a wall line (does it
@@ -104,15 +104,15 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
    "Mineral rights" label where two patches lie close; a flying harrier in its own selection box; Grubstake no longer
    throwing raids at Serenity's fortress for nothing, and Serenity paying back a rival that hurts it.
 21d. **The new units** (0.1.45; save `lp-units`, built by `LP_MIX=units scripts/showcase.sh 12345 20`, opened by
-   `scripts/play-showcase.sh units`): both camps grown at era 3, Serenity with Prisms and Teslas and Grubstake with
+   `scripts/play-showcase.sh units`): both camps grown at era 3, Serenity with laser tanks and lightning tanks and Grubstake with
    Scorchers in their garrisons (7, 7 and 8 at the save), raids on, your outposts by each and an army of yours (20
-   troopers, 10 breachers, 5 battle tanks) at spawn. Does each read apart from a tank at a glance (the Prism's laser head,
-   the Tesla's coil, the Scorcher's flamer)? The Prism's beam forking into a pack; the Tesla's arcs jumping, and your
+   troopers, 10 breachers, 5 battle tanks) at spawn. Does each read apart from a tank at a glance (the laser tank's laser head,
+   the lightning tank's coil, the Scorcher's flamer)? The laser tank's beam forking into a pack; the lightning tank's arcs jumping, and your
    lasers going dim after its hits; the Scorcher's flame bursts at your walls and turrets. Tanks turning their own
    turrets; a body where each unit dies.
 21e. **Who shoots up, and armour** (0.1.48; the arena, `scripts/play-arena.sh`, panel: set two squads and Fight). Tanks,
-   aegis, dozers, Scorchers, sappers, shock troopers, Prisms, Teslas, railgunners, your battle tanks and breachers cannot
-   hurt a flier; rifles, lances, machine guns, slugs and walkers can. Put harriers against tanks, then against riflemen.
+   heavy tanks, dozers, Scorchers, sappers, shock troopers, laser tanks, lightning tanks, railgunners, your battle tanks and breachers cannot
+   hurt a flier; rifles, heavy laser troopers, machine guns, slugs and walkers can. Put harriers against tanks, then against riflemen.
    A ground-only unit that fires at a flier turns to a ground target (or holds fire): do tanks under harriers go for
    the enemy's tanks, and does that read as "it cannot shoot up", not as a bug? Riflemen against tanks barely
    scratch them now; lances and slug buggies are the answer. Does each fight's winner make sense from what you see?
@@ -141,10 +141,13 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 35. **The burster** (0.1.59, recoloured 0.1.61; evolution 0.6 and up): a big biter with violet and acid-green bands,
     lit green at night. Where it dies the ground splits and bursts green: let it reach your wall and the wall and the
     turret behind it go. Kill it at range. Does the green burst read as Synthexis's?
-36. **Anti-air** (0.1.63): lose units to their fliers, or kill theirs with your combat robots, and Kessler-Hayashi fields
-    Skyguards (a pale Line trooper with a long thin laser) and Grubstake flak buggies (a buggy with a turret, bursts in
-    the air); Synthexis breeds violet spore spitters. Your destroyers and defenders should now meet an answer. Does air
-    still feel unanswered?
+36. **Anti-air** (0.1.63, ground fire 0.1.64): lose units to their fliers, or kill theirs with your combat robots, and
+    Kessler-Hayashi fields anti-air troopers (a pale laser trooper with a long thin laser) and Grubstake flak buggies (a
+    buggy with a turret, bursts in the air and a weak splash on the ground); Synthexis breeds violet spore spitters. Each
+    shreds fliers and fights the ground weakly. Your destroyers and defenders should now meet an answer. Does air still
+    feel unanswered? Do the anti-air units feel useless when no flier comes?
+37. **Plain names** (0.1.64): Kessler-Hayashi's units are now Laser trooper, Heavy laser trooper, Anti-air trooper,
+    Heavy tank, Laser tank and Lightning tank (were Line trooper, Lance, Skyguard, Aegis, Prism, Tesla).
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that
