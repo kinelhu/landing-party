@@ -623,9 +623,14 @@ data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, sc
 local art = data.raw["artillery-turret"]["artillery-turret"]
 local truck = make_tank("lp-howitzer-truck", nil, {{art.cannon_base_pictures, 1, 0, -0.97}, {art.cannon_barrel_pictures, 1, 0, -0.97}})
 -- Its cannon in the faction's colour, as the howitzer's is (the hull takes it on its mask only).
+-- The cannon's art has 256 directions and the hull 64: the engine picked the cannon's frame by the hull's direction (a
+-- truck facing south-east had its barrel north-north-east). Read as 64 directions of four frames, frame 0 held, its
+-- frame for each direction is every fourth of the 256: the hull's own bearing.
 for i = #tank_car.animation.layers + 1, #truck.run_animation.layers do
   local l = truck.run_animation.layers[i]
   if not l.draw_as_shadow then l.tint = shared.TINT end
+  l.direction_count, l.frame_count, l.repeat_count = 64, 4, nil
+  l.frame_sequence = {1, 1}
 end
 truck.max_health = 1200   -- the howitzer's (siege.lua carries health across the change)
 for _, k in ipairs({"movement_speed", "distance_per_frame", "vision_distance", "resistances"}) do truck[k] = table.deepcopy(hauler[k]) end

@@ -986,6 +986,10 @@ Spike (a `unit` copied from a biter, the tank's animation, range 98, min range 2
   resupply and the fire plan are the turret's, unchanged. Tested by `clear worms` (the truck's checks: out on its truck,
   deployed facing and health kept, never truck and turret at once, never beside its parked self, silent packing up,
   home and parked again) with the howitzer scenarios unchanged.
+  Screenshots (2026-10-23): first the barrel did not turn with the hull. A layer with more directions than the
+  animation's first layer is read by the first layer's direction index: the cannon's art has 256 directions and the
+  tank hull 64, so a truck facing south-east had its barrel pointing north-north-east. Fixed (0.1.62): the cannon read
+  as 64 directions of four frames, holding frame 0, so each direction lands on every fourth of its 256 frames.
 - **The plan it came from (2026-10-23).** The howitzer today runs through siege.lua in six places:
   the piece made at the site on deploy (`op.howitzer`, or `op.piece == "lp-howitzer"` for a clearance), its shells
   (an artillery turret's inventory, resupply convoys), its aiming (an `artillery-flare` on `op.focus` each step), its
