@@ -224,6 +224,29 @@ howitzer.automated_ammo_count = 1
 howitzer.circuit_connector = nil
 howitzer.corpse = nil
 howitzer.resistances = table.deepcopy(mortar.resistances)
+-- Deployed, the howitzer truck (units.lua): the tank's hull under the cannon, facing as the truck stood (siege.lua
+-- gives it the truck's direction), the hull's colour on its mask as the truck's.
+-- One frame of a rotated layer laid out in stripes (the tank's): the direction's cell, its first frame.
+local function stripe_frame(l, d)
+  local seen, start = {}, 0
+  for _, st in ipairs(l.stripes) do
+    if not seen[st.filename] then
+      seen[st.filename] = true
+      if d < start + st.height_in_frames then
+        return {filename = st.filename, width = l.width, height = l.height, x = 0, y = (d - start) * l.height,
+          shift = l.shift, scale = l.scale, draw_as_shadow = l.draw_as_shadow,
+          tint = l.apply_runtime_tint and shared.TINT or nil}
+      end
+      start = start + st.height_in_frames
+    end
+  end
+end
+local function hull(d)
+  local layers = {}
+  for _, l in ipairs(data.raw.car.tank.animation.layers) do table.insert(layers, stripe_frame(l, d)) end
+  return {layers = layers}
+end
+howitzer.base_picture = {north = hull(0), east = hull(16), south = hull(32), west = hull(48)}
 local howitzer_gun = table.deepcopy(data.raw.gun["artillery-wagon-cannon"])
 howitzer_gun.name = "lp-howitzer-gun"
 howitzer_gun.hidden = true
@@ -244,8 +267,15 @@ local function frame(layer)
     x = 0, y = 0, shift = layer.shift, scale = layer.scale, tint = layer.tint, draw_as_shadow = layer.draw_as_shadow}
 end
 local parked_layers = {}
-for _, set in ipairs({howitzer.base_picture, howitzer.cannon_base_pictures, howitzer.cannon_barrel_pictures}) do
-  for _, l in ipairs(set.layers or {set}) do table.insert(parked_layers, frame(l)) end
+-- The truck parked: its hull, the cannon raised on it as the turret draws it (cannon_base_shift).
+for _, l in ipairs(hull(0).layers) do table.insert(parked_layers, l) end
+for _, set in ipairs({howitzer.cannon_base_pictures, howitzer.cannon_barrel_pictures}) do
+  for _, l in ipairs(set.layers or {set}) do
+    local f = frame(l)
+    local sh = f.shift or {0, 0}
+    f.shift = {sh[1], sh[2] - howitzer.cannon_base_shift[3]}
+    table.insert(parked_layers, f)
+  end
 end
 local parked_howitzer = {type = "simple-entity-with-force", name = "lp-parked-howitzer", hidden = true,
   icons = table.deepcopy(howitzer.icons), flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable"},

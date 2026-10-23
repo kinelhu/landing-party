@@ -617,6 +617,24 @@ scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type =
   {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 
+-- The howitzer truck (the user, 2026-10-23: "the take-away howitzer a mortar truck ... the arty sprites but stuck onto
+-- a tank"): the artillery's cannon on a tank's hull, a hauler's pace and gun. It is the hauler of any siege that takes
+-- the howitzer, and gives way to the howitzer turret once deployed (siege.lua); it never fires the cannon.
+local art = data.raw["artillery-turret"]["artillery-turret"]
+local truck = make_tank("lp-howitzer-truck", nil, {{art.cannon_base_pictures, 1, 0, -0.97}, {art.cannon_barrel_pictures, 1, 0, -0.97}})
+-- Its cannon in the faction's colour, as the howitzer's is (the hull takes it on its mask only).
+for i = #tank_car.animation.layers + 1, #truck.run_animation.layers do
+  local l = truck.run_animation.layers[i]
+  if not l.draw_as_shadow then l.tint = shared.TINT end
+end
+truck.max_health = 1200   -- the howitzer's (siege.lua carries health across the change)
+for _, k in ipairs({"movement_speed", "distance_per_frame", "vision_distance", "resistances"}) do truck[k] = table.deepcopy(hauler[k]) end
+local tra = table.deepcopy(hauler.attack_parameters)
+tra.animation = table.deepcopy(truck.run_animation)
+truck.attack_parameters = tra
+truck.loot = {{item = "steel-plate", probability = 0.5, count_min = 8, count_max = 8}}
+data:extend({truck})
+
 -- Loot (the faction loot consult): a unit drops a little of its own kit, half the time. The player's units (trooper,
 -- breacher, rocket trooper, battle tank) drop nothing: they are the player's.
 local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},

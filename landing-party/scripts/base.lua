@@ -541,6 +541,10 @@ local function park(b)
   local s = game.surfaces[b.surface]
   local name = shared.variant(b.corp, "lp-parked-howitzer")
   local out = b.op and (b.op.with_howitzer or b.op.piece == "lp-howitzer")
+  -- (Or its truck still on the way home: ops.finish.)
+  for _, r in ipairs(b.haulers_home or {}) do
+    if r.unit.valid and shared.kind_of(r.unit.name) == "lp-howitzer-truck" then out = true end
+  end
   local down = (b.howitzer_down or 0) > game.tick
   local here = b.parked and b.parked.valid
   if out or down then

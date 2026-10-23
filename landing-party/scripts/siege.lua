@@ -52,6 +52,8 @@ local rd = K.rd
 local sneak_route = K.sneak_route
 local stance = K.stance
 local threat_bonus = K.threat_bonus
+local TRUCK_PACK = K.TRUCK_PACK
+local truck_down, truck_up, truck_piece = K.truck_down, K.truck_up, K.truck_piece
 -- A site for the mortar: from the target towards home (then at angles off that line), the first point beyond
 -- every known player turret's reach with one of them within the mortar's, on dry land.
 local function siege_site(b, t)
@@ -159,7 +161,7 @@ local function focus(s, live, foes, current)
   return best
 end
 
-local function launch_siege(b, key, site, trace, army, tier_override, clearance)
+local function launch_siege(b, key, site, trace, army, tier_override, clearance, piece)
   local t = b.intel.targets[key]
   local tier = tier_override or storage.siege_tier or siege_tier(b, t, army)
   local spec = SIEGE_TIERS[tier]
@@ -176,9 +178,24 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance)
       out = math.min(d + 5, dist)
     end
   end
-  local p = s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {hx + (site[1] - hx) * out / dist,
+  -- A wall kept by robots: a howitzer comes too, for the roboports behind it (98 tiles; the mortars' 35 reached the
+  -- lasers but not the roboports 13 tiles behind them, and the robots mended or rebuilt all they hit, fortress).
+  local with_howitzer = false
+  if not clearance and not storage.focus_off and against_player(t.owner) and (tier >= 2 or army.level(b) >= 2)
+    and s.count_entities_filtered{position = t.pos, radius = 60, type = "roboport", force = enemies(game.forces[b.force]),
+      limit = 1} > 0 then
+    if (b.howitzer_down or 0) > game.tick then
+      trace(b, string.format("siege: no howitzer (lost; %d minutes yet)", math.ceil((b.howitzer_down - game.tick) / 3600)))
+    else
+      with_howitzer = true
+    end
+  end
+  -- A siege that takes the howitzer goes behind the howitzer truck, its hauler (units.lua).
+  local truck = with_howitzer or piece == "lp-howitzer"
+  local hname = shared.variant(b.corp, truck and "lp-howitzer-truck" or "lp-hauler")
+  local p = s.find_non_colliding_position(hname, {hx + (site[1] - hx) * out / dist,
     hy + (site[2] - hy) * out / dist}, 20, 0.5)
-  local hauler = p and s.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = h.force}
+  local hauler = p and s.create_entity{name = hname, position = p, force = h.force}
   if not hauler then return false end
   local guards = {}
   -- Counter-battery (Serenity): against the player's artillery, its Shock troopers go first (up to six).
@@ -210,17 +227,8 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance)
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
     convoys_left = spec.convoys or 0}
   b.op.clearance = clearance
-  -- A wall kept by robots: a howitzer comes too, for the roboports behind it (98 tiles; the mortars' 35 reached the
-  -- lasers but not the roboports 13 tiles behind them, and the robots mended or rebuilt all they hit, fortress).
-  if not clearance and not storage.focus_off and against_player(t.owner) and (tier >= 2 or army.level(b) >= 2)
-    and s.count_entities_filtered{position = t.pos, radius = 60, type = "roboport", force = enemies(game.forces[b.force]),
-      limit = 1} > 0 then
-    if (b.howitzer_down or 0) > game.tick then
-      trace(b, string.format("siege: no howitzer (lost; %d minutes yet)", math.ceil((b.howitzer_down - game.tick) / 3600)))
-    else
-      b.op.with_howitzer = true
-    end
-  end
+  b.op.with_howitzer = with_howitzer or nil
+  b.op.truck = truck or nil
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
   -- A clearance's march keeps out of its worms' reach (straight on, its guards walked into a behemoth's, review).
   local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
@@ -359,7 +367,7 @@ function ops.clearance(b, near, trace, army, toward)
   end
   b.rails_traced = nil
   b.rails_short = nil
-  local ok = launch_siege(b, key, site, trace, army, 2, true)
+  local ok = launch_siege(b, key, site, trace, army, 2, true, piece)
   if ok then
     b.op.piece, b.op.reach = piece, reach
     b.op.clear_for = toward
@@ -440,6 +448,18 @@ function ops.hazard_clear(b, trace, army)
   return ok
 end
 
+-- The howitzer packing up (into its truck: ops.truck_up): it and the mortars silent from the moment it starts.
+local function quiet_pack(op)
+  local piece = op.truck and truck_piece(op)
+  if not (piece and piece.active) then return piece end
+  piece.active = false
+  for _, m in ipairs(op.mortars or {}) do if m.valid then m.active = false end end
+  if op.label and op.label.valid then op.label.destroy() end
+  op.label = rendering.draw_text{text = "Packing up", surface = piece.surface, target = {entity = piece, offset = {0, -2}},
+    color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
+  return piece
+end
+
 local function siege_step(b, trace, army)
   local op = b.op
   local n = alive(op)
@@ -506,7 +526,9 @@ local function siege_step(b, trace, army)
     local share = (game.tick - op.phase_at) / DEPLOY_TICKS
     if op.label and op.label.valid then op.label.text = string.format("Deploying %d%%", math.min(100, share * 100)) end
     if share >= 1 then
-      local s = op.hauler.surface
+      local s, force = op.hauler.surface, op.hauler.force
+      -- The truck gives way to its howitzer (ops.truck_down).
+      local truck = op.truck and truck_down(op)
       local spec = SIEGE_TIERS[op.tier or 1]
       local name = shared.variant(b.corp, op.piece or "lp-mortar")
       local guns = op.piece == "lp-howitzer" and 1 or spec.mortars
@@ -516,8 +538,11 @@ local function siege_step(b, trace, army)
       for k = 1, (carry and #carry or guns) do
         local a = 2 * math.pi * k / spec.mortars
         local off = spec.mortars > 1 and 4 or 0
-        local p = s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
-        local m = p and s.create_entity{name = name, position = p, force = op.hauler.force}
+        local here = op.piece == "lp-howitzer" and truck
+        local p = here and s.find_non_colliding_position(name, here.pos, 8, 0.5)
+          or s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
+        local m = p and s.create_entity{name = name, position = p, force = force, direction = here and here.dir or nil}
+        if m and here then m.health = math.max(1, here.share * m.max_health) end
         if m then
           local shells = carry and carry[k] or spec.shells * (op.piece == "lp-howitzer" and 2 or 1)
           if shells > 0 then m.insert{name = "lp-mortar-shell", count = shells} end
@@ -529,14 +554,16 @@ local function siege_step(b, trace, army)
       if not op.mortar then return finish(b, "aborted", trace, army) end
       if op.with_howitzer and not op.howitzer then
         local hn = shared.variant(b.corp, "lp-howitzer")
-        local p = s.find_non_colliding_position(hn, {op.site[1], op.site[2]}, 12, 1)
-        op.howitzer = p and s.create_entity{name = hn, position = p, force = op.hauler.force}
+        local p = s.find_non_colliding_position(hn, truck and truck.pos or {op.site[1], op.site[2]}, 12, 1)
+        op.howitzer = p and s.create_entity{name = hn, position = p, force = force, direction = truck and truck.dir or nil}
         if op.howitzer then
-          op.howitzer.insert{name = "lp-mortar-shell", count = spec.shells}
+          if truck then op.howitzer.health = math.max(1, truck.share * op.howitzer.max_health) end
+          op.howitzer.insert{name = "lp-mortar-shell", count = op.howitzer_carry or spec.shells}
+          op.howitzer_carry = nil
           trace(b, "siege: a howitzer for the roboports")
         end
         if rd.has(b.corp, "jammer") and not op.jammer then
-          op.jammer = jammer.raise(s, {op.site[1], op.site[2]}, op.hauler.force)
+          op.jammer = jammer.raise(s, {op.site[1], op.site[2]}, force)
           if op.jammer then trace(b, "siege: a jamming mast for their robots") end
         end
       end
@@ -555,14 +582,14 @@ local function siege_step(b, trace, army)
           local d = math.abs(((a - away + math.pi) % (2 * math.pi)) - math.pi)
           if d > 0.5 then
             local p = {op.site[1] + math.cos(a) * 7, op.site[2] + math.sin(a) * 7}
-            local w = s.can_place_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = op.hauler.force}
-              and s.create_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = op.hauler.force}
+            local w = s.can_place_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = force}
+              and s.create_entity{name = shared.variant(b.corp, "lp-wall"), position = p, force = force}
             if w then table.insert(op.works, w) end
           end
         end
         for _, dx in ipairs({-3, 3}) do
           local p = s.find_non_colliding_position("lp-gun-turret", {op.site[1] + dx, op.site[2] + 3}, 4, 0.5)
-          local g = p and s.create_entity{name = "lp-gun-turret", position = p, force = op.hauler.force}
+          local g = p and s.create_entity{name = "lp-gun-turret", position = p, force = force}
           if g then
             g.insert{name = "piercing-rounds-magazine", count = 50}
             table.insert(op.works, g)
@@ -682,10 +709,12 @@ local function siege_step(b, trace, army)
       -- side of a square and packed up).
       -- A clearance moves on along its way, nest after nest, while its shells last (one clearance per nest, each
       -- home and back, took 40 minutes for seven nests, push); any other siege moves up once.
-      if spec.mortars > 1 and (op.clearance or not op.moved) and left > 0 and op.hauler and op.hauler.valid and t
-        and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE then
+      if op.pack_site or (spec.mortars > 1 and (op.clearance or not op.moved) and left > 0
+        and (op.truck or (op.hauler and op.hauler.valid)) and t and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE) then
         local site
-        if op.clearance then
+        if op.pack_site then
+          site = op.pack_site
+        elseif op.clearance then
           local nxt = op.clear_for and nest_on_way(s, op.site, op.clear_for)
           site = nxt and clearance_site(s, nxt, op.site, op.piece == "lp-howitzer" and HOWITZER_STAND or nil)
           op.steps = (op.steps or 0) + 1
@@ -695,7 +724,33 @@ local function siege_step(b, trace, army)
         end
         op.moved = true
         if site and (site[1] - op.site[1]) ^ 2 + (site[2] - op.site[2]) ^ 2 > 8 * 8 then
-          op.carry = {}
+          -- The howitzer packs up before it moves (the user: no firing on the move), silent while it does.
+          local piece = op.truck and truck_piece(op)
+          if piece and not op.pack_site then
+            op.pack_site, op.packing = site, game.tick
+            quiet_pack(op)
+            trace(b, "siege: the howitzer packs up to move")
+            return
+          elseif piece and game.tick - op.packing < TRUCK_PACK then
+            if op.label and op.label.valid then
+              op.label.text = string.format("Packing up %d%%", 100 * (game.tick - op.packing) / TRUCK_PACK)
+            end
+            return
+          end
+          op.pack_site, op.packing = nil, nil
+          if op.label and op.label.valid then op.label.destroy() end
+          if piece then
+            if piece == op.howitzer then
+              op.howitzer_carry = piece.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell")
+              op.howitzer = nil
+            else
+              op.carry = {piece.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell")}
+              for i = #live, 1, -1 do if live[i] == piece then table.remove(live, i) end end
+            end
+            op.hauler = truck_up(b, piece)
+            if not op.hauler then return finish(b, "aborted", trace, army) end
+          end
+          op.carry = op.carry or {}
           for _, m in ipairs(live) do
             table.insert(op.carry, m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell"))
             m.destroy()
@@ -750,6 +805,7 @@ local function siege_step(b, trace, army)
       if (left == 0 and not waiting) or idle or n < 0.5 * op.launched then
         op.phase, op.phase_at = "pack", game.tick
         op.packing_because = left == 0 and "spent" or (idle and "done" or "aborted")
+        quiet_pack(op)
         trace(b, string.format("siege: packing up (%s; %d shells fired, %d of %d guards)", op.packing_because,
           op.shells_fired, n, op.launched))
       end
@@ -760,6 +816,7 @@ local function siege_step(b, trace, army)
       if done or n < 0.5 * op.launched then
         op.phase, op.phase_at = "pack", game.tick
         op.packing_because = done and "done" or "aborted"
+        quiet_pack(op)
         b.assault_razed = (b.assault_razed or 0) + b.razed - op.razed_before
         trace(b, string.format("siege: the assault ends (%s; %d of %d left, %d left standing at the target)",
           op.packing_because, n, op.launched, remaining))
@@ -773,7 +830,9 @@ local function siege_step(b, trace, army)
       end
     end
   elseif op.phase == "pack" then
-    if game.tick - op.phase_at >= PACK_TICKS then return finish(b, op.packing_because, trace, army) end
+    -- The howitzer folds into its truck slower than mortars pack, silent while it does (ops.finish drives it home).
+    local piece = quiet_pack(op)
+    if game.tick - op.phase_at >= (piece and TRUCK_PACK or PACK_TICKS) then return finish(b, op.packing_because, trace, army) end
   end
 end
 return {choose_siege = choose_siege, launch_siege = launch_siege, siege_site = siege_site, siege_step = siege_step, siege_tier = siege_tier}

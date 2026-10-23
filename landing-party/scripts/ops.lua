@@ -546,9 +546,45 @@ local function alive(op)
   return n
 end
 
+-- The howitzer truck and its howitzer, one for the other (the user, 2026-10-23: "it would become a building once
+-- deployed"): deployed, the truck (a siege's hauler) gives way to the turret where it stood, facing as it faced;
+-- packing up, the turret gives way to the truck. Health goes across as a share.
+local TRUCK_PACK = 15 * 60
+local function truck_down(op)
+  local tr = op.hauler
+  local d = math.floor((tr.orientation or 0) * 4 + 0.5) % 4
+  local out = {pos = {tr.position.x, tr.position.y}, dir = d * 4, share = tr.health / tr.max_health}
+  tr.destroy()
+  return out
+end
+local function truck_up(b, piece)
+  local s, force, pos = piece.surface, piece.force, {piece.position.x, piece.position.y}
+  local share = piece.health / piece.max_health
+  piece.destroy()
+  local name = shared.variant(b.corp, "lp-howitzer-truck")
+  local p = s.find_non_colliding_position(name, pos, 10, 0.5) or pos
+  local tr = s.create_entity{name = name, position = p, force = force}
+  if tr then tr.health = math.max(1, share * tr.max_health) end
+  return tr
+end
+-- The piece the truck folds back into: the clearance's howitzer, or the siege's beside its mortars.
+local function truck_piece(op)
+  if op.howitzer and op.howitzer.valid then return op.howitzer end
+  local m = op.mortars and op.mortars[1] or op.mortar
+  if op.piece == "lp-howitzer" and m and m.valid then return m end
+end
+
 local function finish(b, outcome, trace, army)
   local op = b.op
   local h = home(b)
+  -- Home on its wheels: the howitzer packs into its truck, which drives home as the hauler.
+  if op.truck and not (op.hauler and op.hauler.valid) then
+    local piece = truck_piece(op)
+    if piece then
+      if piece == op.howitzer then op.howitzer = nil end
+      op.hauler = truck_up(b, piece)
+    end
+  end
   if op.mortar and op.mortar.valid then op.mortar.destroy() end
   for _, m in ipairs(op.mortars or {}) do if m.valid then m.destroy() end end
   if op.howitzer and op.howitzer.valid then op.howitzer.destroy() end
@@ -1144,7 +1180,8 @@ local siege_ = require("__landing-party__.scripts.siege").install(ops, {
   TYPES = TYPES, against_player = against_player, alert = alert, alive = alive, battery = battery, budget = budget,
   defence = defence, enemies = enemies, field = field, finish = finish, floor_of = floor_of, home = home,
   jammer = jammer, needed = needed, order_all = order_all, pool = pool, push_escort = push_escort, rd = rd,
-  sneak_route = sneak_route, stance = stance, threat_bonus = threat_bonus})
+  sneak_route = sneak_route, stance = stance, threat_bonus = threat_bonus,
+  TRUCK_PACK = TRUCK_PACK, truck_down = truck_down, truck_up = truck_up, truck_piece = truck_piece})
 local choose_siege, launch_siege, siege_site, siege_step = siege_.choose_siege, siege_.launch_siege, siege_.siege_site, siege_.siege_step
 local siege_tier = siege_.siege_tier
 
@@ -1629,7 +1666,7 @@ function ops.summary(b)
       return o end)() or nil,
     siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,
     convoys_left = b.op and b.op.convoys_left, loaded = b.op and b.op.loaded, mortars = b.op and b.op.mortars and #b.op.mortars or 0,
-    shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil,
+    shells_fired = b.op and b.op.shells_fired, siege_phase = b.op and b.op.kind == "siege" and b.op.phase or nil, truck_packing = b.op and b.op.packing ~= nil,
     looted = b.looted or 0, carrying = b.op and b.op.loot and b.op.loot.items or 0, works = b.op and b.op.works and #b.op.works or 0, clearances = b.clearances or 0,
     hazards = b.hazards or 0, biter_losses = b.biter_losses or 0,
     leader = b.op and b.op.leader and b.op.leader.valid and b.op.leader.unit_number or nil, phase = b.op and b.op.phase,

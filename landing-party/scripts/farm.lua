@@ -348,10 +348,10 @@ function farm.on_spawned(e)
   local cul = f and creep.of(f.id)
   if not cul then return end
   local price = shared.BREEDS[e.entity.name] and shared.BREEDS[e.entity.name].cost or 7
-  -- A cinder burns inside: lit at night, its ember the one light in the herd.
+  -- A burster glows inside: lit at night, acid green, the one light in the herd.
   if e.entity.name == "lp-bred-cinder" then
     rendering.draw_light{sprite = "utility/light_small", surface = e.entity.surface, target = e.entity,
-      color = {1, 0.45, 0.1}, scale = 1.2, intensity = 0.8, minimum_darkness = 0.3}
+      color = {0.35, 1, 0.2}, scale = 1.2, intensity = 0.8, minimum_darkness = 0.3}
   end
   cul.biomass, cul.spent, cul.bred = cul.biomass - price, (cul.spent or 0) + price, (cul.bred or 0) + 1
   if cul.biomass <= 0 then breeding(f, false) end

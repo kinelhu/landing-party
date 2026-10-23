@@ -972,7 +972,21 @@ Spike (a `unit` copied from a biter, the tank's animation, range 98, min range 2
   never fires on the move (it fires only when the script orders an attack). One per camp, as the howitzer: killed, the
   camp goes `HOWITZER_DOWN` without one. The deploy is the counterplay: alone 90 tiles out with its escort. If the
   player ever fields one: 10 bandwidth (a battle tank is 6) and at most one per bandwidth research level.
-- **How it would be built (2026-10-23, a plan; not built).** The howitzer today runs through siege.lua in six places:
+- **Built (0.1.61), option 1** (the user: "Sure. That is probably the cheapest solution"). Any siege that takes the
+  howitzer (a clearance whose worms outrange the mortars, or a siege on a wall kept by robots) goes behind
+  `lp-howitzer-truck` as its hauler: the tank's hull crowned with the artillery cannon (`units.lua`, the cannon at the
+  turret's own size and height, in the faction's colour), the hauler's pace, gun and armour, the howitzer's 1,200 health.
+  Deployed (the siege's 30 s), the truck gives way to `lp-howitzer` where it stood (`ops.truck_down`), facing as it faced
+  (the turret's base is now the tank's hull, four ways) and with its health as a share; packing up, the turret gives
+  way to the truck (`ops.truck_up`), 15 s (`TRUCK_PACK`) during which it and the mortars are inactive: before a clearance
+  moves on (`op.pack_site`, the next site kept while it packs) and before it drives home (`ops.finish` folds it and
+  sends it home as the hauler). At home the parked prop is the truck's look (hull and cannon), hidden while the truck
+  is still on its way back. The truck killed, on the way out or home, is the howitzer killed (`HOWITZER_DOWN`). A siege
+  with a howitzer and mortars now moves the howitzer when it moves up (it stayed behind before). Aiming, shells,
+  resupply and the fire plan are the turret's, unchanged. Tested by `clear worms` (the truck's checks: out on its truck,
+  deployed facing and health kept, never truck and turret at once, never beside its parked self, silent packing up,
+  home and parked again) with the howitzer scenarios unchanged.
+- **The plan it came from (2026-10-23).** The howitzer today runs through siege.lua in six places:
   the piece made at the site on deploy (`op.howitzer`, or `op.piece == "lp-howitzer"` for a clearance), its shells
   (an artillery turret's inventory, resupply convoys), its aiming (an `artillery-flare` on `op.focus` each step), its
   loss (`HOWITZER_DOWN`), its parked prop at home (`base.park`, `lp-parked-howitzer`), and packing up. Two ways:

@@ -441,6 +441,14 @@ the crack, the eruption and the scorchmark (the small demolisher's, copied as `l
   infantry and the fixed gun and laser lines (+100: breaking defences is its job), and loses to range and fire (the
   railgunner, rocket troopers, flamer lines), to fliers, and to the battle tank, tank and aegis.
 
+### The burster, recoloured (0.1.61)
+
+The user, seeing the cinder: "Reminds me of the banelings from SC. Perhaps we should recolor the eruption to be more in
+theme?" Shown as **Synthexis burster** (the id stays `lp-bred-cinder`, the fissure `lp-cinder-fissure*`, "Burster
+rupture"): violet and acid-green bands, an acid-green light at night, and the crack, eruption and scorchmark tinted acid
+green (a multiply tint on the lava art: its yellow cores read green, its orange edges olive), their lights acid green.
+Its damage, reach and price unchanged.
+
 ### Kessler-Hayashi against its cultures (0.1.60)
 
 Its nests are nests to everyone else: `shared.NEST_FORCES = {"enemy", "lp-biotech"}` in Kessler-Hayashi's nest intel,

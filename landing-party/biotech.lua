@@ -55,11 +55,20 @@ do
   table.insert(out, r)
 end
 
--- The cinder (tier 3, the breeds consult): a big biter with ember bands that dies into the demolisher's fissure (a
+-- The burster (id cinder; tier 3, the breeds consult): a big biter with acid bands that dies into the demolisher's fissure (a
 -- telegraphed crack, then an eruption that breaks walls and turrets round it: fire would not, walls are immune to it,
--- and fire spreads). Shoot the orange one first, at range. Its eruption hurts any force but its own ("not-same"), so a
+-- and fire spreads). Shoot the banded one first, at range. Its eruption hurts any force but its own ("not-same"), so a
 -- cinder killed at home cracks no incubator. Lit at night by script (farm.on_spawned).
-local EMBER1, EMBER2 = {r = 1, g = 0.45, b = 0.1, a = 1}, {r = 0.95, g = 0.8, b = 0.2, a = 1}
+-- In Synthexis's colours (the user, 2026-10-23: the banelings', "recolor the eruption to be more in theme"): violet
+-- and acid bands, an acid-green crack and burst where vanilla's are lava.
+local EMBER1, EMBER2 = {r = 0.72, g = 0.35, b = 1, a = 1}, {r = 0.6, g = 1, b = 0.2, a = 1}
+local ACID, ACID_LIGHT = {r = 0.45, g = 1, b = 0.3, a = 1}, {r = 0.35, g = 1, b = 0.2}
+local function acid(t, seen)
+  if type(t) ~= "table" or seen[t] then return end
+  seen[t] = true
+  if t.filename or t.filenames or t.stripes then t.tint = ACID end
+  for _, v in pairs(t) do acid(v, seen) end
+end
 local function ember(t, n)
   if type(t) ~= "table" then return n end
   if t.tint then t.tint = (n % 2 == 0) and EMBER1 or EMBER2; n = n + 1 end
@@ -102,7 +111,8 @@ do
         local q = table.deepcopy(p)
         rename(q)
         q.localised_name = {"entity-name.lp-cinder-fissure"}
-        if q.light then q.light.color = {r = 1, g = 0.4, b = 0.05} end
+        if q.light then q.light.color = ACID_LIGHT end
+        for _, k in ipairs({"animations", "animation", "decay_animation"}) do acid(q[k], {}) end
         -- The crack is a look only here (its delayed eruption and damage are the death's own, above).
         if q.name == TO then q.created_effect = nil end
         table.insert(out, q)

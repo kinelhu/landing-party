@@ -4399,7 +4399,56 @@ end
 -- culture's are, not 45: a wall of full incubators, no culture's biomass to pay for them, killed every guard): Kessler-
 -- Hayashi clears them as nests. Short, for debugging the clearance (a visit
 -- takes 80 minutes to reach one).
+-- The howitzer truck (the user, 2026-10-23): it drives out, deploys into the howitzer facing as it stood and with its
+-- health, packs back into it silently, drives home, and is parked again; never truck and howitzer at once, never the
+-- truck beside its parked self. Sampled every second; truck_checks judges.
+local function truck_watch()
+  for t = 600, END - 120, 60 do
+    schedule(t, function()
+      local W = S.truck or {}
+      S.truck = W
+      local trucks = surface().find_entities_filtered{name = "lp-howitzer-truck", force = FORCE}
+      local hws = surface().find_entities_filtered{name = "lp-howitzer", force = FORCE}
+      local parked = surface().count_entities_filtered{name = "lp-parked-howitzer", force = FORCE}
+      local ops_ = lp("stats", storage.id).ops
+      if #trucks > 0 then W.drove = (W.drove or 0) + 1 end
+      if #hws > 0 then W.deployed = (W.deployed or 0) + 1 end
+      if #trucks > 0 and #hws > 0 then W.both = (W.both or 0) + 1 end
+      if #trucks > 0 and parked > 0 then W.twice = (W.twice or 0) + 1 end
+      if #hws > 0 and (ops_.phase == "pack" or ops_.truck_packing) and game.tick % 300 > 120 then
+        if hws[1].active then W.loud = (W.loud or 0) + 1 else W.quiet = (W.quiet or 0) + 1 end
+      end
+      if #hws == 1 and W.last and not W.matched then
+        W.matched = {dir = hws[1].direction, want = (math.floor(W.last.o * 4 + 0.5) % 4) * 4,
+          hp = hws[1].health / hws[1].max_health, want_hp = W.last.hp}
+      end
+      if #trucks == 1 then
+        local tr = trucks[1]
+        -- Hurt once on its way out, so the health carried across is a share, not a full bar.
+        if not W.hurt then W.hurt = true; tr.damage(300, "player", "physical") end
+        W.last = {o = tr.orientation, hp = tr.health / tr.max_health}
+        if W.deployed then W.packed = true end
+      end
+      if W.packed and #trucks == 0 and #hws == 0 and parked > 0 then W.home = true end
+    end)
+  end
+end
+local function truck_checks()
+  local W = S.truck or {}
+  info("truck: " .. serpent.line(W))
+  check("truck: the howitzer went out on its truck", (W.drove or 0) > 0, tostring(W.drove))
+  check("truck: it deployed into the howitzer", (W.deployed or 0) > 0, tostring(W.deployed))
+  check("truck: never truck and howitzer at once", (W.both or 0) == 0, tostring(W.both))
+  check("truck: never beside its parked self", (W.twice or 0) == 0, tostring(W.twice))
+  check("truck: deployed facing as it stood, with its health", W.matched ~= nil and W.matched.dir == W.matched.want
+    and math.abs(W.matched.hp - W.matched.want_hp) < 0.05, serpent.line(W.matched))
+  check("truck: silent while packing up", (W.quiet or 0) > 0 and (W.loud or 0) == 0, string.format("%s quiet, %s loud",
+    tostring(W.quiet), tostring(W.loud)))
+  check("truck: packed into its truck, home and parked again", W.home == true, tostring(W.home))
+end
+
 scenarios.clear = function()
+  if params.mix == "worms" then truck_watch() end
   -- Settled: the target razed.
   settle_when(function()
     return S.c ~= nil and surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"} == 0
@@ -4454,6 +4503,7 @@ scenarios.clear = function()
       (st.units_lost or 0) - S.lost0, st.ops.clearances or 0, target > 0 and "standing" or "razed"))
     check("clear: a way cleared through the nests", left < #S.nests and (st.ops.clearances or 0) > 0, tostring(left))
     check("clear: the assembler razed", target == 0, target > 0 and "standing" or "razed")
+    if params.mix == "worms" then truck_checks() end
     if params.mix == "culture" then
       local gone = 0
       for _, p in ipairs(S.pens) do if not p.valid then gone = gone + 1 end end

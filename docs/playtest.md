@@ -77,8 +77,10 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 16. **Against a fortress**: a hauler brings mortars (a howitzer when robots keep the wall), a fire plan on one point at a
    time, roboports first; a jammer mast in the emplacement whose tesla arcs down your robots and blinds your threat
    scanners within 50 tiles. Destroy the mast. Kill the howitzer and its camp has none for 30 minutes: the next siege
-   comes with mortars only. At home it stands parked by the lander (gone while out on a siege); killed, a faded mark
-   holds its spot until it is back.
+   comes with mortars only. Since 0.1.61 the howitzer is a truck (a tank's hull, the artillery cannon on it): it
+   drives out, deploys for 30 s ("Deploying N%") into the emplacement where it stopped, and packs up for 15 s, silent,
+   before it moves or drives home. The deploy and the pack-up are your window. At home it stands parked by the lander
+   (gone while out); killed, a faded mark holds its spot until it is back.
 17. **The power strike**: two scouts walk out to a pole of yours, and minutes later a raid goes for it: the one pole
    whose loss darkens the lasers behind it. A second feed, or accumulators by the turrets, is the answer.
 18. **Hazard removal**: when biters keep hitting it, it sends a clearance siege at their nest, away from you.
@@ -136,8 +138,9 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 34. **The probe and the spitters** (0.1.59, at evolution 0.45 and up): before a wave, eight small green "runts" walk at
     one face and die there. Leave a turret on that face without ammunition: the herd comes in in front of it. Once it
     is inside, its spitters (long green bodies) stay at the gap and spit at whatever comes; they leave last.
-35. **The cinder** (0.1.59, evolution 0.6 and up): a big biter with orange bands, lit at night. Where it dies the ground
-    cracks and erupts: let it reach your wall and the wall and the turret behind it go. Kill it at range.
+35. **The burster** (0.1.59, recoloured 0.1.61; evolution 0.6 and up): a big biter with violet and acid-green bands,
+    lit green at night. Where it dies the ground splits and bursts green: let it reach your wall and the wall and the
+    turret behind it go. Kill it at range. Does the green burst read as Synthexis's?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that
