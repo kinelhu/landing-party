@@ -66,6 +66,22 @@ function herd.init()
   st()
 end
 
+-- The break with Grubstake (the brief: "neutral with Grubstake at first ... with its own bred herds only, never the wild
+-- ones"; farm.lua says when): the cease-fire between the two goes, for good. The wild biters' pact with Grubstake stands.
+function herd.break_grubstake(why)
+  if st().grubstake_broken then return false end
+  st().grubstake_broken = {why = why, tick = game.tick}
+  local f, g = force(), game.forces[shared.CORPS.grubstake.force]
+  if f and g then f.set_cease_fire(g, false); g.set_cease_fire(f, false) end
+  if storage.trace then
+    helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  at war with Grubstake: %s\n", game.tick,
+      "biotech", why), true)
+  end
+  return true
+end
+
+function herd.grubstake_broken() return st().grubstake_broken end
+
 local function d2(a, b)
   local ax, ay = a.x or a[1], a.y or a[2]
   local bx, by = b.x or b[1], b.y or b[2]
@@ -881,7 +897,7 @@ function herd.state()
       table.insert(rears, {id = id, valid = false})
     end
   end
-  return {pens = pens, waves = waves, log = h.log, trails = #h.trails, rears = rears}
+  return {pens = pens, waves = waves, log = h.log, trails = #h.trails, rears = rears, grubstake_broken = h.grubstake_broken}
 end
 
 return herd

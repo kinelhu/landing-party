@@ -230,6 +230,9 @@ shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] 
 -- Biomass (docs/biotech.md "Biomass"): the breeds' costs are paid in it, earned from the pollution its creep drinks (each
 -- creep tile absorbs CREEP_ABSORB a second, the engine's own absorption; a unit of pollution drunk is a unit of biomass).
 shared.CREEP_ABSORB = 0.0005
+-- Whose nests and worms count as nests (Kessler-Hayashi clears them, routes go round them): the wild biters' and
+-- Synthexis's (its incubators and worms are nests to everyone else). Not its pollution billing: that is the wild waves'.
+shared.NEST_FORCES = {"enemy", "lp-biotech"}
 
 local corp_forces = {}
 for _, c in pairs(shared.CORPS) do corp_forces[c.force] = true end

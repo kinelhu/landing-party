@@ -63,9 +63,9 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_5 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n887 lines", width=1.79, fillcolor="#d9f0d9"];
-    "farm" [label="farm\n379 lines", width=1.22, fillcolor="#eef2f7"];
-    "creep" [label="creep\n264 lines", width=1.09, fillcolor="#eef2f7"];
+    "herd" [label="herd\n903 lines", width=1.80, fillcolor="#d9f0d9"];
+    "farm" [label="farm\n401 lines", width=1.25, fillcolor="#eef2f7"];
+    "creep" [label="creep\n273 lines", width=1.10, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
@@ -76,7 +76,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_8 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n594 lines", width=1.46, fillcolor="#eef2f7"];
+    "control" [label="control\n596 lines", width=1.46, fillcolor="#eef2f7"];
     "dev" [label="dev\n189 lines", width=1.01, fillcolor="#eef2f7"];
   }
   "army" -> "ops";

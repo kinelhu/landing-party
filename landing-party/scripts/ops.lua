@@ -1040,7 +1040,7 @@ local function launch(b, key, trace, army, opts)
       local len2 = math.max(1, dx * dx + dy * dy)
       local near, nd
       for _, e in pairs(s.find_entities_filtered{position = {hx, hy}, radius = math.sqrt(len2), type = {"unit-spawner", "turret"},
-        force = "enemy"}) do
+        force = shared.NEST_FORCES}) do
         local f = math.max(0, math.min(1, ((e.position.x - hx) * dx + (e.position.y - hy) * dy) / len2))
         local off = (hx + dx * f - e.position.x) ^ 2 + (hy + dy * f - e.position.y) ^ 2
         local d = (e.position.x - hx) ^ 2 + (e.position.y - hy) ^ 2
@@ -1364,8 +1364,8 @@ local function step(b, trace, army)
     local turrets, left
     if t and t.owner == "enemy" then
       -- A nest: its spawners, and the worms by them.
-      turrets = surface.count_entities_filtered{position = pos, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
-      left = surface.count_entities_filtered{position = pos, radius = 16, force = "enemy", type = "unit-spawner"}
+      turrets = surface.count_entities_filtered{position = pos, radius = DEFENCE_RADIUS, force = shared.NEST_FORCES, type = "turret"}
+      left = surface.count_entities_filtered{position = pos, radius = 16, force = shared.NEST_FORCES, type = "unit-spawner"}
     else
       turrets = surface.count_entities_filtered{position = pos, radius = DEFENCE_RADIUS, type = TURRETS,
         force = enemies(game.forces[b.force])}

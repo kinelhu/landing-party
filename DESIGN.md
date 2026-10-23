@@ -35,7 +35,7 @@ document still says Serenity where it records history.
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
-| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.59 (the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers) | `herd` (ten), `farm` (four), `creep` (six), `cinder` |
+| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.60 (the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (ten), `farm` (four), `creep` (seven), `cinder`, `clear culture` |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -972,6 +972,20 @@ Spike (a `unit` copied from a biter, the tank's animation, range 98, min range 2
   never fires on the move (it fires only when the script orders an attack). One per camp, as the howitzer: killed, the
   camp goes `HOWITZER_DOWN` without one. The deploy is the counterplay: alone 90 tiles out with its escort. If the
   player ever fields one: 10 bandwidth (a battle tank is 6) and at most one per bandwidth research level.
+- **How it would be built (2026-10-23, a plan; not built).** The howitzer today runs through siege.lua in six places:
+  the piece made at the site on deploy (`op.howitzer`, or `op.piece == "lp-howitzer"` for a clearance), its shells
+  (an artillery turret's inventory, resupply convoys), its aiming (an `artillery-flare` on `op.focus` each step), its
+  loss (`HOWITZER_DOWN`), its parked prop at home (`base.park`, `lp-parked-howitzer`), and packing up. Two ways:
+  1. *The truck drives, the turret fires* (smaller): `lp-howitzer-truck`, a unarmed unit (the tank's body with the
+     howitzer's barrel, `crowned` as the tanks are), drives out with the hauler and replaces the parked prop at home;
+     at the site, once deployed, it gives way to the `lp-howitzer` turret as now (aiming, shells, resupply unchanged);
+     packing up, the turret gives way to the truck again. Loses: the turret's look stays an emplacement.
+  2. *The truck fires* (the spike's way): the unit fires by a script trigger that launches `artillery-projectile` at
+     the target the siege orders (`attack` on `op.focus`; each completed command orders the next); its shells a count
+     in `op`, not an inventory; deploy 30 s and pack-up 15 s by script; no turret at all. Simpler in the end, but every
+     howitzer scenario changes: `fortress howitzer`, `clear` (two), `clearing`, `parked`, `rail` (two), `breach arty`.
+  Recommendation: 1 first (it keeps every tested behaviour and gives the look and the drive), 2 only if the turret's
+  look at the site matters. To build with the user about, not overnight.
 
 ### Serenity against a fortress (the user, 2026-10-18; Fable: `docs/reviews/2026-10-18-fortress-consult.md`)
 The user: "that's hardly better than a biter mod. Why shouldn't Serenity be able to do more than that?", then "The

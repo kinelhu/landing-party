@@ -275,7 +275,7 @@ end
 -- 24 tiles round it were not, and six died to big worms 5 to 10 tiles from it, visit nw).
 local function out_of_worms(s, p, margin)
   margin = margin or 2
-  for _, w in pairs(s.find_entities_filtered{position = p, radius = 52 + margin, type = "turret", force = "enemy"}) do
+  for _, w in pairs(s.find_entities_filtered{position = p, radius = 52 + margin, type = "turret", force = shared.NEST_FORCES}) do
     local ap = w.prototype.attack_parameters
     local r = (ap and ap.range or 30) + margin
     if (w.position.x - p[1]) ^ 2 + (w.position.y - p[2]) ^ 2 <= r * r then return false end
@@ -306,7 +306,7 @@ local function nest_on_way(s, from, to)
   local len2 = math.max(1, dx * dx + dy * dy)
   local near, nd
   for _, e in pairs(s.find_entities_filtered{position = from, radius = math.sqrt(len2), type = {"unit-spawner", "turret"},
-    force = "enemy"}) do
+    force = shared.NEST_FORCES}) do
     local f = math.max(0, math.min(1, ((e.position.x - from[1]) * dx + (e.position.y - from[2]) * dy) / len2))
     local off = (from[1] + dx * f - e.position.x) ^ 2 + (from[2] + dy * f - e.position.y) ^ 2
     local d = (e.position.x - from[1]) ^ 2 + (e.position.y - from[2]) ^ 2
@@ -324,7 +324,7 @@ function ops.clearance(b, near, trace, army, toward)
   b.intel.targets[key] = b.intel.targets[key] or {tried = 0, cool = 0}
   local t = b.intel.targets[key]
   t.pos, t.kind, t.value, t.seen, t.owner = {near.position.x, near.position.y}, near.name, 3, game.tick, "enemy"
-  t.defence = s.count_entities_filtered{position = near.position, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+  t.defence = s.count_entities_filtered{position = near.position, radius = DEFENCE_RADIUS, force = shared.NEST_FORCES, type = "turret"}
   -- A nest whose clearance failed rests (t.cool, siege_step; b.nest_rest outlives the intel, which forgets nests off
   -- its claim: the same refusal was traced every two minutes).
   b.nest_rest = b.nest_rest or {}
@@ -580,7 +580,7 @@ local function siege_step(b, trace, army)
       local s = game.surfaces[b.surface]
       -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
       local guard_r = CLEAR_GUARD
-      local foes = s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = "enemy"}
+      local foes = s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
       if #foes > 0 then
         -- Within the ring only, undistracted: chasing biters, they followed them into the worms (scenario clear: railgunners
         -- killed by behemoth worms 26 to 31 tiles out).
@@ -614,7 +614,7 @@ local function siege_step(b, trace, army)
     for _, m in ipairs(live) do
       -- A clearance's targets are the nests (the player's turrets for any other siege).
       in_reach = in_reach + (op.clearance
-        and s.count_entities_filtered{position = m.position, radius = op.reach or MORTAR_REACH, type = {"unit-spawner", "turret"}, force = "enemy"}
+        and s.count_entities_filtered{position = m.position, radius = op.reach or MORTAR_REACH, type = {"unit-spawner", "turret"}, force = shared.NEST_FORCES}
         or s.count_entities_filtered{position = m.position, radius = op.reach or MORTAR_REACH, type = TURRETS, force = foes})
     end
     if in_reach > 0 then op.last_target = game.tick end

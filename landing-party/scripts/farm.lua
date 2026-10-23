@@ -10,6 +10,9 @@
 -- Creep (scripts/creep.lua): a tumor by each incubator; the creep spreads to the wild nests near, and each it reaches
 -- becomes an incubator (up to PENS_MAX). An incubator left off creep (its tumors killed) starves for STARVE and goes
 -- back to the wild, its stock with it.
+-- The break with Grubstake: when Grubstake's ground meets its creep (a Grubstake building or unit within BREAK_NEAR of a
+-- tumor: a claim or strip mine on its edge, a convoy across it) or Grubstake hurts an incubator or a tumor, they are at
+-- war (herd.break_grubstake); its waves may then go for Grubstake's camps as for the player's factory.
 -- Biomass: an incubator breeds only while its culture can pay (shared.BREEDS, the arena's prices): a culture earns what
 -- its creep drinks of the pollution (creep.drink), TRICKLE an incubator a minute whatever the air, and START_BIOMASS its
 -- pod brought. Spent at each birth (on_entity_spawned); at nothing left its incubators stop (inactive) until it earns.
@@ -30,6 +33,7 @@ local FIELD, FIELD_MIN = 40, 3
 local PENS = 4
 local PENS_MAX = 12           -- a culture's incubators at most, taken by its creep
 local STARVE = 3 * 3600       -- off creep this long, an incubator goes wild
+local BREAK_NEAR = 12          -- a Grubstake building or unit this near a tumor breaks the truce
 local TRICKLE = 3             -- biomass an incubator earns a minute, clean air or not
 local START_BIOMASS = 200     -- what its pod brought (its first wave, ten minutes on)
 local START = 6
@@ -192,9 +196,13 @@ local function gone(f, why)
   trace(string.format("farm %d gone (%s); lands again in %d minutes", f.id, why, RELAND / 3600))
 end
 
--- The nearest of the player's guns and machines from pos, by rings (a bounded search, then the nearest in it).
+-- The nearest of the player's guns and machines from pos (and Grubstake's, once at war with it), by rings (a bounded
+-- search, then the nearest in it).
 local function target_from(surface, pos)
   local forces = players()
+  if herd.grubstake_broken() and game.forces[shared.CORPS.grubstake.force] then
+    table.insert(forces, game.forces[shared.CORPS.grubstake.force])
+  end
   for _, r in ipairs({200, 400, 800, 1600}) do
     local near = surface.find_entities_filtered{position = pos, radius = r, force = forces, type = herd.DRAW}
     if #near > 0 then
@@ -285,6 +293,16 @@ function farm.tick(tick)
       cul.biomass, cul.trickled = cul.biomass + t, (cul.trickled or 0) + t
       breeding(f, cul.biomass > 0)
     end
+    -- Grubstake on its creep: the truce is over.
+    if not herd.grubstake_broken() then
+      local g = shared.CORPS.grubstake.force
+      for _, t in ipairs(creep.tumors_of(id)) do
+        if surface.count_entities_filtered{position = t.position, radius = BREAK_NEAR, force = g, limit = 1} > 0 then
+          herd.break_grubstake(string.format("Grubstake at its tumor at %.0f,%.0f", t.position.x, t.position.y))
+          break
+        end
+      end
+    end
     -- The creep takes the wild nest it reaches.
     local take = #left < PENS_MAX and creep.bud(id, tick)
     if take then
@@ -342,6 +360,10 @@ end
 -- A pen hit by anyone at war with it: its farm's wave on its way comes home.
 function farm.on_damaged(e)
   local ent = e.entity
+  if e.force and e.force.name == shared.CORPS.grubstake.force then
+    herd.break_grubstake(string.format("Grubstake hit its %s at %.0f,%.0f", ent.name, ent.position.x, ent.position.y))
+  end
+  if ent.name == "lp-tumor" then return end
   if ent.name ~= "lp-pen" or not e.force or e.force.name == B.force or shared.is_biters(e.force.name) then return end
   local rec = herd.pen(ent.unit_number)
   if rec and rec.farm and herd.out(rec.farm) then herd.recall(rec.farm, "its farm is attacked") end

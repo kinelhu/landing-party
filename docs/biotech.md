@@ -440,3 +440,33 @@ the crack, the eruption and the scorchmark (the small demolisher's, copied as `l
 - **Price, by the arena:** at 40 it beat everything but the railgunner and flamers; at 70, kept: it beats massed light
   infantry and the fixed gun and laser lines (+100: breaking defences is its job), and loses to range and fire (the
   railgunner, rocket troopers, flamer lines), to fliers, and to the battle tank, tank and aegis.
+
+### Kessler-Hayashi against its cultures (0.1.60)
+
+Its nests are nests to everyone else: `shared.NEST_FORCES = {"enemy", "lp-biotech"}` in Kessler-Hayashi's nest intel,
+its clearances (siting out of worms' reach, the nest's defence, what is in reach, the guards' foes, the nests on its
+way) and the routes that go round biter country. Not its pollution billing (`ledger`, the hazard): a Synthexis wave
+is not the player's pollution, and Kessler-Hayashi must not bill for it (the brief's attribution rule).
+- `clear culture` (one spawner in six an incubator, eight): two clearances, 2 incubators destroyed, its way cleared and
+  the assembler razed. Dearer than wild nests: 102 units lost against 43 (an incubator's stock defends it; its
+  spitters killed the guards at the site).
+- A first try made all 45 spawners incubators: full stock and no culture to pay for it (pens outside a culture breed
+  free, as a test's do) killed all ten guards and nothing was cleared. A real culture has at most 12.
+
+### The break with Grubstake (0.1.60)
+
+The consult's trigger (a Grubstake skim truck at a biochamber) waits for biochambers; creep gave a legible one now:
+land. The truce ends, for good (`herd.break_grubstake`, `storage.herd.grubstake_broken` with its cause), when a
+Grubstake building or unit stands within 12 tiles of a tumor (a claim or strip mine on its creep's edge, a convoy across
+it) or Grubstake hurts an incubator or a tumor. Then Synthexis's waves may go for Grubstake's camps as for the
+player's factory (`target_from`, the nearest of either). The wild biters' pact with Grubstake stands: the herds that
+turn are bred ones only.
+- `creep break`: a Grubstake rifleman put 7 tiles from a tumor four minutes in: the truce gone within a second (it shot
+  an incubator: "Grubstake hit its lp-pen"), both ways; Synthexis still at peace with the wild biters.
+- Not yet: a sign of the break in the world (the consult: the truck burning on the pad); its waves at a Grubstake
+  camp, tested.
+
+Screenshots (2026-10-23): the breeds on creep by day and night (the cinder reads apart by its bands and, at night, its
+light; the spitter's body is lower and longer), and a cinder's death at a wall (crack, eruption, the middle pieces gone).
+The bred worm read close to a wild one (its mask, the only tinted layer, is a thin band): its body layers are now
+tinted light green as well (not yet seen in a screenshot).

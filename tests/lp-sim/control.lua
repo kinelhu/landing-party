@@ -4395,7 +4395,9 @@ end
 -- Clear: Serenity at war with a player whose assembler lies past a wall of nests (49 spawners 14 apart, 670 tiles wide,
 -- and medium worms, 90 tiles out across the line, evolution 0.6 so big biters defend them). It has six railgunners. It clears the field
 -- with mortar sieges (ops.clearance) and goes on to raze the assembler. LP_MIX=worms: behemoth worms (48), which outrange
--- the mortar: a howitzer clears them. Short, for debugging the clearance (a visit
+-- the mortar: a howitzer clears them. LP_MIX=culture: one spawner in six is Synthexis's (an incubator; eight, as a
+-- culture's are, not 45: a wall of full incubators, no culture's biomass to pay for them, killed every guard): Kessler-
+-- Hayashi clears them as nests. Short, for debugging the clearance (a visit
 -- takes 80 minutes to reach one).
 scenarios.clear = function()
   -- Settled: the target razed.
@@ -4429,6 +4431,17 @@ scenarios.clear = function()
       local q = surface().find_non_colliding_position(worm, p, 6, 1)
       if q then surface().create_entity{name = worm, position = q, force = "enemy"} end
     end
+    if params.mix == "culture" then
+      S.pens = {}
+      for i, e in ipairs(S.nests) do
+        if i % 6 == 1 then
+          local pos = e.position
+          local id = lp("herd_capture", 1, {pos.x, pos.y})
+          local pen = surface().find_entities_filtered{name = "lp-pen", position = pos, radius = 1, limit = 1}[1]
+          if pen then table.insert(S.pens, pen); S.nests[i] = pen end
+        end
+      end
+    end
     S.lost0 = lp("stats", storage.id).units_lost or 0
   end)
   schedule(END - 60, function()
@@ -4441,6 +4454,12 @@ scenarios.clear = function()
       (st.units_lost or 0) - S.lost0, st.ops.clearances or 0, target > 0 and "standing" or "razed"))
     check("clear: a way cleared through the nests", left < #S.nests and (st.ops.clearances or 0) > 0, tostring(left))
     check("clear: the assembler razed", target == 0, target > 0 and "standing" or "razed")
+    if params.mix == "culture" then
+      local gone = 0
+      for _, p in ipairs(S.pens) do if not p.valid then gone = gone + 1 end end
+      info(string.format("clear culture: %d of %d incubators destroyed", gone, #S.pens))
+      check("clear: Synthexis's incubators cleared as nests", gone >= 1, string.format("%d of %d", gone, #S.pens))
+    end
   end)
 end
 
@@ -7425,6 +7444,8 @@ end
 --          stop when it has nothing (it never runs more than a breed's price into debt)
 --   smog: 3,000 pollution a minute poured on the culture: its creep drinks it, and it breeds more than the trickle pays
 --   strong: clean, Synthexis's strength lever at 2: its pod and trickle doubled (books on 400)
+--   break: four minutes on, a Grubstake rifleman put 7 tiles from a tumor: the truce with Grubstake ends (both ways), and
+--          the wild biters' cease-fire with Synthexis stands
 scenarios.creep = function()
   local mix = params.mix or ""
   schedule(60, function()
@@ -7479,6 +7500,17 @@ scenarios.creep = function()
       if S.hurt and not S.mended and game.tick - S.hurt_at >= 600 then
         S.mended = S.hurt.valid and S.hurt.health or -1
       end
+      if mix == "break" and S.landed and not S.intruder and game.tick - S.landed >= 4 * 3600 then
+        local t = surface().find_entities_filtered{name = "lp-tumor", position = S.farm_pos, radius = 80, limit = 1}[1]
+        local q = t and surface().find_non_colliding_position("lp-grubstake-infantry", {t.position.x + 7, t.position.y}, 4, 0.5)
+        S.intruder = q and surface().create_entity{name = "lp-grubstake-infantry", position = q, force = "lp-grubstake"}
+        S.intruder_at = game.tick
+        S.ceased_before = game.forces["lp-biotech"].get_cease_fire("lp-grubstake")
+      end
+      if mix == "break" and S.intruder_at and not S.broken then
+        local b = lp("herd_state").grubstake_broken
+        if b then S.broken, S.broken_after = b, game.tick - S.intruder_at end
+      end
       if mix == "killed" and S.landed and not S.killed and game.tick - S.landed >= 6 * 3600 then
         S.killed = game.tick
         for _, t in ipairs(surface().find_entities_filtered{name = "lp-tumor"}) do t.die("player") end
@@ -7511,6 +7543,18 @@ scenarios.creep = function()
       check("creep: the incubators back in the wild", wild >= 4, tostring(wild))
       check("creep: their stock gone feral", feral >= 1, tostring(feral))
       check("creep: the culture gone", #fs.farms == 0, serpent.line(fs.farms))
+      return
+    end
+    if mix == "break" then
+      local bf = game.forces["lp-biotech"]
+      info(string.format("creep break: %s after %s ticks; cease-fire before %s, now %s / %s; with the wild %s",
+        serpent.line(S.broken), tostring(S.broken_after), tostring(S.ceased_before),
+        tostring(bf.get_cease_fire("lp-grubstake")), tostring(game.forces["lp-grubstake"].get_cease_fire(bf)),
+        tostring(bf.get_cease_fire("enemy"))))
+      check("creep: a truce with Grubstake before", S.ceased_before == true, tostring(S.ceased_before))
+      check("creep: Grubstake at its tumor broke it within 20 s", S.broken and S.broken_after <= 1200, tostring(S.broken_after))
+      check("creep: at war both ways", not bf.get_cease_fire("lp-grubstake") and not game.forces["lp-grubstake"].get_cease_fire(bf), "")
+      check("creep: still at peace with the wild biters", bf.get_cease_fire("enemy") == true, "")
       return
     end
     if mix == "clean" or mix == "smog" or mix == "strong" then

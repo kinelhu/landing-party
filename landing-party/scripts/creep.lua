@@ -202,6 +202,15 @@ function creep.drink(seconds)
   return out
 end
 
+-- A culture's living tumors (entities).
+function creep.tumors_of(id)
+  local out = {}
+  for _, rec in pairs(st().tumors) do
+    if rec.farm == id and not rec.dying and rec.entity.valid then table.insert(out, rec.entity) end
+  end
+  return out
+end
+
 -- A culture's record (its biomass lives there), or nil.
 function creep.of(id) return st().cultures and st().cultures[id] end
 

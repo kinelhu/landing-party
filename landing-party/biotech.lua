@@ -124,6 +124,18 @@ for _, k in ipairs({"folded_animation", "preparing_animation", "prepared_animati
   "starting_attack_animation", "attacking_animation", "ending_attack_animation", "folding_animation", "graphics_set"}) do
   retint(worm[k], 0)
 end
+-- Its mask is a thin band: tinted alone, the worm read as a wild one (screenshot, 2026-10-23). Its body green too.
+local function body(t)
+  if type(t) ~= "table" then return end
+  if t.filename and not t.draw_as_shadow and not t.filename:find("mask", 1, true) and not t.tint then
+    t.tint = {r = 0.7, g = 1, b = 0.6, a = 1}
+  end
+  for _, v in pairs(t) do body(v) end
+end
+for _, k in ipairs({"folded_animation", "preparing_animation", "prepared_animation", "prepared_alternative_animation",
+  "starting_attack_animation", "attacking_animation", "ending_attack_animation", "folding_animation", "graphics_set"}) do
+  body(worm[k])
+end
 table.insert(out, worm)
 
 local pen = table.deepcopy(data.raw["unit-spawner"]["biter-spawner"])

@@ -40,7 +40,7 @@ outside_ray = function(b, t, ux, uy, off, len, strict)
     -- Not among nests either (a staging point 35 tiles from a worm could never be reached round biter country).
     if s.count_entities_filtered{position = p, radius = STAND_OFF, type = TURRETS, force = foes, limit = 1} == 0
       and (t.owner == "enemy" or s.count_entities_filtered{position = p, radius = 50, type = {"unit-spawner", "turret"},
-        force = "enemy", limit = 1} == 0)
+        force = shared.NEST_FORCES, limit = 1} == 0)
       -- Nor by water: staged on a lake shore, a raid on a substation found no way to its staging point, the same six
       -- points one after another for three hours (visit nw).
       and s.count_tiles_filtered{position = p, radius = 8, collision_mask = "water_tile", limit = 1} == 0
@@ -114,8 +114,8 @@ local function sneak_route(b, from, to, opts, wide)
     "fluid-turret"}, force = foes} or {}
   -- Air units (opts.worms) keep clear of worms only: spawners do not shoot.
   -- A pact with the biters (Grubstake: "We don't fight bugs"): nests and worms let it pass (a cease-fire, both ways).
-  local nests = (opts.nests and not ops.pact(b.force) and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = "enemy"})
-    or (opts.worms and s.find_entities_filtered{area = box, type = "turret", force = "enemy"}) or {}
+  local nests = (opts.nests and not ops.pact(b.force) and s.find_entities_filtered{area = box, type = {"unit-spawner", "turret"}, force = shared.NEST_FORCES})
+    or (opts.worms and s.find_entities_filtered{area = box, type = "turret", force = shared.NEST_FORCES}) or {}
   local function centre(i, j) return x0 + (i + 0.5) * SNEAK_CELL, y0 + (j + 0.5) * SNEAK_CELL end
   -- Each turret's and nest's reach marked on the grid once (a cell then looks itself up): testing buckets of them per
   -- cell took 300 ms on a failed route through a deathworld (12,000 cells), and before the buckets, seconds against a
@@ -290,7 +290,7 @@ local function crossings(b, from, to)
   for k = 0, math.max(1, math.floor(len / 20)) do
     local f = k / math.max(1, math.floor(len / 20))
     local p = {from[1] + (to[1] - from[1]) * f, from[2] + (to[2] - from[2]) * f}
-    for _, e in pairs(s.find_entities_filtered{position = p, radius = 40, type = {"unit-spawner", "turret"}, force = "enemy"}) do
+    for _, e in pairs(s.find_entities_filtered{position = p, radius = 40, type = {"unit-spawner", "turret"}, force = shared.NEST_FORCES}) do
       if not seen[e.unit_number] then
         seen[e.unit_number] = true
         if e.type == "unit-spawner" then sp = sp + 1 else worms = worms + 1 end

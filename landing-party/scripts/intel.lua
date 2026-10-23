@@ -142,11 +142,11 @@ end
 local function sense_nests(b, surface)
   if not shared.CORPS[b.corp].clears_nests or not b.claim_radius then return end
   for _, sp in pairs(surface.find_entities_filtered{position = {b.origin.x, b.origin.y}, radius = b.claim_radius,
-    force = "enemy", type = "unit-spawner"}) do
+    force = shared.NEST_FORCES, type = "unit-spawner"}) do
     local key = "nest:" .. math.floor(sp.position.x / CELL) .. "," .. math.floor(sp.position.y / CELL)
     local t = b.intel.targets[key] or {tried = 0, cool = 0}
     t.pos, t.kind, t.value, t.seen, t.owner = {sp.position.x, sp.position.y}, sp.name, 3, game.tick, "enemy"
-    t.defence = surface.count_entities_filtered{position = sp.position, radius = DEFENCE_RADIUS, force = "enemy", type = "turret"}
+    t.defence = surface.count_entities_filtered{position = sp.position, radius = DEFENCE_RADIUS, force = shared.NEST_FORCES, type = "turret"}
     b.intel.targets[key] = t
   end
 end

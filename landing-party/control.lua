@@ -115,13 +115,15 @@ end
 table.insert(BUILDINGS, {filter = "name", name = "lp-pen"})
 -- Its probe's runts: which of the player's turrets shoot at them (herd.lua).
 table.insert(BUILDINGS, {filter = "name", name = "lp-runt"})
+-- Its tumors: Grubstake hurting one breaks its truce (farm.on_damaged).
+table.insert(BUILDINGS, {filter = "name", name = "lp-tumor"})
 -- What holds a charge, for the Tesla's drain (scorcher.lua).
 for _, t in ipairs({"electric-turret", "accumulator", "roboport", "electric-energy-interface"}) do
   table.insert(BUILDINGS, {filter = "type", type = t})
 end
 script.on_event(defines.events.on_entity_damaged, function(e)
   if e.damage_type and e.damage_type.name == "electric" then scorcher.drain(e) end
-  if e.entity.name == "lp-pen" then return farm.on_damaged(e) end
+  if e.entity.name == "lp-pen" or e.entity.name == "lp-tumor" then return farm.on_damaged(e) end
   if e.entity.name == "lp-runt" then return herd.on_probe_hit(e) end
   if not shared.is_corp(e.entity.force.name) then return end
   -- Any other force: a rival corporation's fire raises the alarm as the player's does.
