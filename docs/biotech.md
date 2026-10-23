@@ -586,6 +586,10 @@ against the player -1; the player against Kessler-Hayashi +24.
   unchanged (0.505) and its breeds at 0.3; a new clinic by pod 30.3 minutes on, the breeds at 0.505 again.
 - **Seen in a window (2026-10-23):** the clinic reads beside the heating tower, its lights acid green at night. The
   substrate's plants were seedling mounds (a plant made by script starts ungrown): now made grown (`tick_grown`).
+- **Seen in the all-factions save (the user, 2026-10-23):** "Not a fan of the big green line on the map pointing to
+  Synthexis": a wave's map trail is now its last 120 tiles only, thin and faint (where it came in from); the mud on the
+  ground still runs all the way home. "The Synthexis labs probably could use a green concrete floor": the clinic stands
+  on a 7x7 pad of the biochambers' acid-green concrete (`cell.pad`, shared with the cells).
 - **Next (the consult's step 6):** loot and the trophy (a dead culture leaves its soil and trees; the clinic goes with
   the culture for now).
 

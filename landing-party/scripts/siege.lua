@@ -101,7 +101,10 @@ local function choose_siege(b, army, only_battery)
       and not (b.quiescent and against_player(t.owner) and not battery(t))
       and not (against_player(t.owner) and in_flight >= budget(t.owner) and not battery(t))
       and not (against_player(t.owner) and not battery(t) and besieged(t.owner))
-      and stance.may(b.corp, t.owner, "siege") then
+      and stance.may(b.corp, t.owner, "siege")
+      -- Marked ground and a hurt camp hold a siege as they hold a raid (it skipped them; the faction AI audit,
+      -- 2026-10-23). A grudge siege still ignores the soft rule, as designed.
+      and not (against_player(t.owner) and not battery(t) and ((t.pos and ops.marked(b, t.pos)) or ops.camp_hurt(b))) then
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
       if not bs or s > bs then

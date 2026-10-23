@@ -18,6 +18,7 @@ script.on_event(defines.events.on_cargo_pod_finished_descending, pods.on_landed)
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
 local rd = require("__landing-party__.scripts.rd")
+local know = require("__landing-party__.scripts.know")
 local war = require("__landing-party__.scripts.war")
 local pact = require("__landing-party__.scripts.pact")
 local jumper = require("__landing-party__.scripts.jumper")
@@ -72,7 +73,7 @@ script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -159,6 +160,8 @@ end)
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
+  -- What the factions know: every loss of theirs, by whom (scripts/know.lua).
+  know.loss(e)
   biters.on_died(e)
   herd.on_died(e)
   -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
@@ -257,7 +260,6 @@ script.on_event(defines.events.on_entity_died, function(e)
             e.cause and e.cause.valid and e.cause.name or "?", math.sqrt((ent.position.x - b.op.site[1]) ^ 2
             + (ent.position.y - b.op.site[2]) ^ 2)))
         end
-        rd.tally(b, e.cause, ent.name)
         if e.force then ops.provoke(b.force, e.force.name, e.cause and e.cause.valid and e.cause or ent.position) end
       end
     else
@@ -479,6 +481,7 @@ remote.add_interface("landing-party", {
   creep_state = function() return creep.state() end,
   cell_state = function() return cell.state() end,
   cell_sites = function() return cell.sites() end,
+  know_state = function() return know.state() end,
   farm_wave = function() return farm.debug_wave() end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,

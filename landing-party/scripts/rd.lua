@@ -22,14 +22,7 @@ rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser
   ["lp-aegis"] = "laser", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "laser", ["lp-laser-drone"] = "laser"},
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade",
     ["lp-scorcher"] = "bullet", ["lp-flak-buggy"] = "bullet"}}
--- What a killer deals, by its type or name: the plate that would answer it (biters are not counted).
-local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "physical", ["electric-turret"] = "laser",
-  ["fluid-turret"] = "fire", ["artillery-turret"] = "explosion", ["artillery-wagon"] = "explosion",
-  -- The player's combat robots (2026-10-23: unrecorded until anti-air was bought on what kills from the air).
-  ["combat-robot"] = "physical"}
-local DAMAGE_BY_NAME = {["lp-trooper"] = "physical", ["lp-breacher"] = "explosion", ["lp-battle-tank"] = "explosion",
-  ["lp-rocket-trooper"] = "explosion", ["lp-harrier"] = "physical", ["lp-scavenger"] = "explosion",
-  ["lp-laser-drone"] = "laser"}
+local know = require("__landing-party__.scripts.know")
 
 function rd.state(corp)
   storage.corps = storage.corps or {}
@@ -53,21 +46,11 @@ local function prune(list)
   for i = #list, 1, -1 do if game.tick - list[i].tick > WINDOW_TICKS then table.remove(list, i) end end
 end
 
--- A unit of b's lost to cause (control.lua, on_entity_died).
--- Biters count (at maximum evolution a single biter cleared turrets and ten units, the user in game): biters'
--- jaws as physical, spitters' and worms' acid as acid; their killer is "biter".
-function rd.tally(b, cause, dead)
-  if not (cause and cause.valid) then return end
-  local kind = shared.kind_of(cause.name)
-  local dmg = DAMAGE_BY_NAME[kind] or DAMAGE[cause.type]
-  local biter = shared.is_biters(cause.force.name)
-  if biter then dmg = (cause.type == "turret" or cause.name:find("spitter", 1, true)) and "acid" or "physical" end
-  if not dmg then return end
-  local t = rd.state(b.corp)
-  -- Who killed it, for triggers on the killer: a character, a vehicle (cars and tanks), else its kind.
-  local killer = biter and "biter" or cause.type == "character" and "character" or (cause.type == "car" and "vehicle") or kind
-  table.insert(t.losses, {tick = game.tick, damage = dmg, kind = shared.kind_of(dead), killer = killer})
-  if #t.losses > 200 then table.remove(t.losses, 1) end
+-- Its units lost in the window, with what killed them: the faction's ledger (know.lua; the tree's own, rd.tally, gave
+-- way to it). Biters count (at maximum evolution a single biter cleared turrets and ten units, the user in game):
+-- their jaws as physical, spitters' and worms' acid as acid; their killer is "biter".
+local function losses_of(corp)
+  return know.losses(corp, WINDOW_TICKS, function(l) return l.unit and l.damage ~= nil end)
 end
 
 -- A raid that attacked a target behind walls and razed nothing (ops).
@@ -272,6 +255,7 @@ end
 -- The node it would buy now, and whether a trigger called for it. And the lab it wants: the branch of the node the
 -- ledger calls for hardest when that branch has no lab, else (no lab at all) its first track's.
 local function pick(corp, t, era)
+  t.losses = losses_of(corp)
   local best, bs, fallback
   local want, ws
   for _, node in ipairs(shared.CORPS[corp].tree or {}) do
@@ -302,9 +286,10 @@ function rd.choose(corp)
   local d = storage.corps and storage.corps[corp]
   if not d or d.withdrawing then return end
   local t = rd.state(corp)
-  prune(t.losses)
   prune(t.turned_back)
   prune(t.walls_met)
+  -- (Was never pruned: the jammer's trigger only grew; the faction AI audit, 2026-10-23.)
+  prune(t.mended or {})
   local node, called = pick(corp, t, player_era())
   if not node then return end
   local cost = cost_of(t, node)
@@ -388,7 +373,7 @@ end
 function rd.summary(corp)
   local t = rd.state(corp)
   local by = {}
-  prune(t.losses)
+  t.losses = losses_of(corp)
   for _, l in ipairs(t.losses) do by[l.damage .. ":" .. tostring(l.killer)] = (by[l.damage .. ":" .. tostring(l.killer)] or 0) + 1 end
   return {fund = t.fund, wants_lab = t.wants_lab, gated = rd.gated(corp), fielded = rd.mix(corp), salvaged = t.salvaged or 0, weapons = t.weapons, plate = t.plate, nodes = t.nodes, units = t.units, saving = t.saving, lost_by = by,
     turned_back = #t.turned_back, walls_met = #t.walls_met, bought = t.bought, strength = rd.strength(corp)}

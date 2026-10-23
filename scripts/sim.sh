@@ -52,12 +52,15 @@ mkdir -p "$dest"
 cp "$out/decisions.txt" "$out/sim.jsonl" "$out/results.txt" "$dest/"
 if [ -s "$out/timeline.jsonl" ]; then
   cp "$out/timeline.jsonl" "$dest/"
-  uv run --quiet --with matplotlib python3 "$REPO/scripts/timeline.py" "$dest" > /dev/null
+  uv run --quiet --with matplotlib python3 "$REPO/scripts/timeline.py" "$dest" > /dev/null 2>&1 \
+  || echo "plots skipped (uv: $(basename "$dest")); the run is judged by its results"
 fi
-uv run --quiet --with matplotlib python3 "$REPO/scripts/plot.py" "$dest/sim.jsonl" "$dest" > /dev/null
+uv run --quiet --with matplotlib python3 "$REPO/scripts/plot.py" "$dest/sim.jsonl" "$dest" > /dev/null 2>&1 \
+  || echo "plots skipped (uv: $(basename "$dest")); the run is judged by its results"
 if [ -s "$out/faction.jsonl" ]; then
   cp "$out/faction.jsonl" "$dest/"
-  uv run --quiet --with matplotlib python3 "$REPO/scripts/overview.py" "$dest/faction.jsonl" "$dest/overview.png" > /dev/null
+  uv run --quiet --with matplotlib python3 "$REPO/scripts/overview.py" "$dest/faction.jsonl" "$dest/overview.png" > /dev/null 2>&1 \
+  || echo "plots skipped (uv: $(basename "$dest")); the run is judged by its results"
 fi
 # The animation took two minutes of a siege run whose game ran 15 s: on request only (the positions are kept).
 if [ -s "$out/life.jsonl" ]; then cp "$out/life.jsonl" "$dest/"; fi

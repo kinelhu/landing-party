@@ -48,14 +48,20 @@ end
 -- and its rung; nil when there is none. Before the stance it ignored truces and Grubstake's temper: an unprovoked rival
 -- was "at war", held its rebuilds on a war footing and tapped under a paid truce (docs/ai.md).
 local function at_war(b, act)
-  local seen = {}
+  -- The player force on its highest rung (the first in `pairs` order had been taken: with two players, an arbitrary
+  -- rung; the faction AI audit, 2026-10-23).
+  local seen, best, br = {}, nil, nil
   for _, t in pairs(b.intel and b.intel.targets or {}) do
     local o = t.owner
     if o and not seen[o] and game.forces[o] and shared.is_player_force(game.forces[o]) then
       seen[o] = true
-      if stance.may(b.corp, o, act or "war") then return o, ops.ladder(o, b.force) end
+      if stance.may(b.corp, o, act or "war") then
+        local r = ops.ladder(o, b.force)
+        if not br or r > br or (r == br and o < best) then best, br = o, r end
+      end
     end
   end
+  return best, br
 end
 war.at_war = at_war
 

@@ -30,10 +30,10 @@ local GATHER_TICKS = 90 * 60
 local INSIDE = 15
 local INSIDE_TICKS = 90 * 60
 local TRAIL_TICKS = 20 * 3600
-local LEG = 100             -- a long march goes by waypoints this far apart (a group walks such legs whole: spike)
 local BASE_REACH = 120      -- the turrets that make one base, round what drew the wave
 local SCOUT_EXTRA = 10      -- a dead scout's lesson: the next loop round that base this much wider
 local SCOUT_TIMEOUT = 5 * 3600
+local GEN_WAIT = 2 * 3600      -- at most, for its corridor's chunks before the scout sets out
 -- It does not bite under the guns: a target with this many of the player's turrets within a laser's reach of it is
 -- passed over (forty bred took a power source under four lasers and three guns for eleven of them: the inner keep has
 -- to be a counter the player can build, docs/biotech.md).
@@ -91,6 +91,8 @@ local function xy(p) return {x = p.x or p[1], y = p.y or p[2]} end
 local function add(p, dx, dy) return {x = p.x + dx, y = p.y + dy} end
 
 local function players() return shared.player_forces() end
+-- Whom a wave is sent against: the player's forces, or the rival it was sent at (farm.lua, every third wave).
+local function foes(w) return (w and w.foes) or players() end
 
 local function log(w, text)
   if storage.trace then
@@ -182,15 +184,31 @@ local function clear_marks(w)
   w.marks = {}
 end
 
--- The trail: mud every two tiles (not on anyone's floor, not in water) and a dashed line on the map, both for
--- TRAIL_TICKS (herd.tick takes the mud up).
+-- The trail: mud every two tiles (not on anyone's floor, not in water) for TRAIL_TICKS (herd.tick takes the mud up),
+-- the whole way home; on the map only its last MAP_TRAIL tiles, thin and faint: where a wave came in from, not a line to
+-- the culture (the user, 2026-10-23: "Not a fan of the big green line on the map pointing to Synthexis"). Finding home
+-- is following the mud.
+local MAP_TRAIL = 120
 local function lay_trail(s, points)
   local decs, mud = {}, {}
+  -- Each segment's distance from the trail's end, so the map line keeps the last MAP_TRAIL tiles only.
+  local to_end, run = {}, 0
+  for i = #points - 1, 1, -1 do
+    to_end[i] = run
+    run = run + math.sqrt(d2(points[i], points[i + 1]))
+  end
   for i = 1, #points - 1 do
     local a, b = points[i], points[i + 1]
     local len = math.sqrt(d2(a, b))
-    rendering.draw_line{surface = s, from = a, to = b, color = {r = B.color.r, g = B.color.g, b = B.color.b, a = 0.9},
-      width = 3, dash_length = 3, gap_length = 2, render_mode = "chart", time_to_live = TRAIL_TICKS}
+    if to_end[i] < MAP_TRAIL then
+      local from = a
+      if to_end[i] + len > MAP_TRAIL then
+        local f = 1 - (MAP_TRAIL - to_end[i]) / len
+        from = {x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f}
+      end
+      rendering.draw_line{surface = s, from = from, to = b, color = {r = B.color.r, g = B.color.g, b = B.color.b, a = 0.45},
+        width = 1, dash_length = 2, gap_length = 2, render_mode = "chart", time_to_live = TRAIL_TICKS}
+    end
     for k = 0, math.floor(len / 2) do
       local f = k * 2 / math.max(len, 1)
       local side = (k % 2 == 0) and 0.6 or -0.6
@@ -278,30 +296,33 @@ end
 
 local function memory_key(c) return string.format("%d,%d", math.floor(c.x / 32), math.floor(c.y / 32)) end
 
--- Waypoints from a to b every LEG tiles, each moved off water and cliffs; a and b not included.
-local function legs(s, a, b)
-  local out = {}
-  local len = math.sqrt(d2(a, b))
-  local n = math.floor(len / LEG)
-  for k = 1, n do
-    local f = k * LEG / len
-    if len - k * LEG > LEG / 3 then
-      local q = {x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f}
-      local free = s.find_non_colliding_position("lp-bred-medium-biter", q, 24, 1)
-      table.insert(out, free and xy(free) or q)
-    end
-  end
-  return out
-end
-
 -- The ground between: a unit in a chunk not generated cannot path (every move fails at once), so the chunks along the
 -- way are asked for when a wave sets out (the engine makes them within seconds).
+-- The ground between incubator and target, generated wide enough for the engine's route round what blocks the straight
+-- line (units cannot path through chunks never generated: on seed 4242 a lake sent the way round through such chunks,
+-- every scout failed at once and every wave came blind and turned home, 2026-10-23). Requested, not forced (forcing it
+-- held a tick for a second): the points it returns are what the scout waits on.
+local CORRIDOR = 8
 local function corridor(s, a, b)
   local len = math.sqrt(d2(a, b))
+  local ux, uy = (b.x - a.x) / math.max(len, 1), (b.y - a.y) / math.max(len, 1)
+  local check = {}
   for k = 0, math.ceil(len / 32) do
     local f = k * 32 / math.max(len, 1)
-    s.request_to_generate_chunks({a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f}, 1)
+    local q = {a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f}
+    s.request_to_generate_chunks(q, CORRIDOR)
+    for _, side in ipairs({0, -CORRIDOR * 32, CORRIDOR * 32}) do
+      check[#check + 1] = {math.floor((q[1] - uy * side) / 32), math.floor((q[2] + ux * side) / 32)}
+    end
   end
+  return check
+end
+
+local function generated(s, chunks)
+  for _, c in ipairs(chunks or {}) do
+    if not s.is_chunk_generated({c[1], c[2]}) then return false end
+  end
+  return true
 end
 
 -- A wave from pen p at what drew it (target: a position). opts.units: the units it takes (a farm's, scripts/farm.lua);
@@ -311,12 +332,13 @@ function herd.launch(p, target, opts)
   local s = p.pen.surface
   local units = opts.units or stock(p)
   if #units < 2 then return end
-  local forces = players()
+  local forces = opts.forces or players()
   local c, hx, hy = base_box(s, target, forces)
   local h = st()
   local mem = p.memory[memory_key(c)] or {extra = 0}
   p.memory[memory_key(c)] = mem
-  local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy,
+  local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy, foes = opts.forces,
+    no_probe = opts.no_probe,
     loop = LOOP_OUT + mem.extra, stage = "scout", t = game.tick, t0 = game.tick, members = {}, seen = {},
     marks = {}, kills = {}, tried = {}, sight = opts.sight or SIGHT, size = #units}
   h.next = h.next + 1
@@ -342,17 +364,19 @@ function herd.launch(p, target, opts)
   end
   w.entry = entry
   w.farm = opts.farm
-  corridor(s, p.pen.position, c)
-  w.approach = legs(s, xy(p.pen.position), loop_point(w, entry))
-  local cmds = {}
-  for _, q in ipairs(w.approach) do table.insert(cmds, go(q, defines.distraction.none, 6)) end
+  w.gen = corridor(s, p.pen.position, c)
+  -- By the engine's route, not straight legs (a leg's waypoint across a lake had no path); its track becomes the
+  -- approach the herd marches (w.crumbs, step).
+  w.approach, w.crumbs = {}, {xy(w.scout.position)}
+  local cmds = {go(loop_point(w, entry), defines.distraction.none, 6)}
   for k = 0, LOOP_POINTS do
     table.insert(cmds, go(loop_point(w, entry + k)))
     if k % STOP_EVERY == 0 and k < LOOP_POINTS then
       table.insert(cmds, {type = defines.command.stop, ticks_to_wait = STOP_TICKS, distraction = defines.distraction.none})
     end
   end
-  w.scout.commandable.set_command(compound(cmds))
+  -- Sent once its corridor is generated (step), at most GEN_WAIT on.
+  w.scout_cmds = cmds
   mark_unit(w, w.scout, true)
   h.waves[w.id] = w
   log(w, string.format("%d bred from pen %d; scout loops %.0f outside the turrets' box round %.0f,%.0f (%.0f by %.0f)",
@@ -448,7 +472,7 @@ local function probe(w)
     distraction = defines.distraction.by_enemy})
   g.set_command(compound(cmds))
   local turrets = {}
-  for _, t in ipairs(s.find_entities_filtered{position = face, radius = 40, type = TURRETS, force = players()}) do
+  for _, t in ipairs(s.find_entities_filtered{position = face, radius = 40, type = TURRETS, force = foes(w)}) do
     local ap = t.prototype.attack_parameters
     turrets[t.unit_number] = {entity = t, range = ap and ap.range or 18, reach = false, fired = false}
   end
@@ -573,9 +597,12 @@ local function blind_attack(w)
   local p = st().pens[w.pen]
   local from = p and p.pen.valid and p.pen.position or w.center
   local face = face_toward(w, from)
-  w.group.set_command(compound({
-    {type = defines.command.attack_area, destination = face, radius = 16},
-    {type = defines.command.attack_area, destination = w.center, radius = math.max(w.hx, w.hy) + 10}}))
+  -- Along the scout's track as far as it got (one long attack_area across unreached ground failed at once).
+  local cmds = {}
+  for _, q in ipairs(w.approach or {}) do table.insert(cmds, go(q, defines.distraction.none, 6)) end
+  table.insert(cmds, {type = defines.command.attack_area, destination = face, radius = 16})
+  table.insert(cmds, {type = defines.command.attack_area, destination = w.center, radius = math.max(w.hx, w.hy) + 10})
+  w.group.set_command(compound(cmds))
   w.stage = "blind"
   w.t = game.tick
   w.trail = {from, face}
@@ -585,7 +612,7 @@ end
 -- Where the line from the mark to the middle meets the wall: the two pieces there, then INSIDE tiles in.
 local function breach(w)
   local s = game.surfaces[w.surface]
-  local forces = players()
+  local forces = foes(w)
   local m, c = w.mark, w.center
   local len = math.sqrt(d2(m, c))
   local ux, uy = (c.x - m.x) / math.max(len, 1), (c.y - m.y) / math.max(len, 1)
@@ -617,7 +644,7 @@ end
 -- What feeds the guns, the first in sight of the herd.
 local function supply_target(w)
   local s = game.surfaces[w.surface]
-  local forces = players()
+  local forces = foes(w)
   local at = front(w)
   local best, bd
   local function consider(e)
@@ -749,11 +776,30 @@ local function step(w, tick)
     local sc = w.scout
     if not (sc and sc.valid) then return blind(w) end
     if tick % 30 == 0 then
-      for _, t in pairs(s.find_entities_filtered{position = sc.position, radius = w.sight, force = players(), type = TURRETS}) do
+      for _, t in pairs(s.find_entities_filtered{position = sc.position, radius = w.sight, force = foes(w), type = TURRETS}) do
         if not w.seen[t.unit_number] then
           local a = math.atan2(t.position.y - w.center.y, t.position.x - w.center.x)
           w.seen[t.unit_number] = math.floor(a / (math.pi / 4) + 0.5) % 8
         end
+      end
+    end
+    if w.scout_cmds then
+      -- Waiting for its corridor: the scout's clock starts when it sets out.
+      if generated(s, w.gen) or tick - w.t > GEN_WAIT then
+        sc.commandable.set_command(compound(w.scout_cmds))
+        w.scout_cmds, w.t = nil, tick
+      end
+      return
+    end
+    -- Its track, every 60 tiles, until it reaches the loop: the herd's approach.
+    if tick % 60 == 0 and not w.at_loop then
+      local last = w.crumbs[#w.crumbs]
+      if d2(sc.position, loop_point(w, w.entry)) < 15 * 15 then
+        w.at_loop = true
+      elseif d2(sc.position, last) >= 60 * 60 then
+        table.insert(w.crumbs, xy(sc.position))
+        w.approach = {}
+        for k = 2, #w.crumbs do w.approach[#w.approach + 1] = w.crumbs[k] end
       end
     end
     if tick - w.t > SCOUT_TIMEOUT then mark(w) end
@@ -790,11 +836,16 @@ function herd.tick(tick)
     for id, p in pairs(h.pens) do if not p.pen.valid then h.pens[id] = nil end end
   end
   if tick % 3600 == 7 then
-    -- Its breeds by the wild biters' evolution on each surface it holds pens on (its own, from what it eats, later).
+    -- Its breeds by the wild biters' evolution on each surface it holds pens on, where no culture holds them: a culture's
+    -- evolution is its clinic's (farm.lua; this overwrote it every minute, the faction AI audit, 2026-10-23).
     local f, enemy = force(), game.forces.enemy
     if f and enemy then
+      local cultured = {}
+      for _, p in pairs(h.pens) do if p.pen.valid and p.farm then cultured[p.pen.surface.index] = true end end
       for _, p in pairs(h.pens) do
-        if p.pen.valid then f.set_evolution_factor(enemy.get_evolution_factor(p.pen.surface), p.pen.surface) end
+        if p.pen.valid and not cultured[p.pen.surface.index] then
+          f.set_evolution_factor(enemy.get_evolution_factor(p.pen.surface), p.pen.surface)
+        end
       end
     end
   end

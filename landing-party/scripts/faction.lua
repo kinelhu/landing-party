@@ -634,7 +634,6 @@ end
 
 -- Tiers no longer add damage (a hidden evolution factor by another name, design review 2026-10-13); they will
 -- buy capabilities per corporation (docs/campaign.md, development).
-local function apply_tier(f) end
 
 -- Parts sent off-world by a mature settlement.
 -- A corporation's development (per corporation, from its own exports).
@@ -708,7 +707,6 @@ function faction.export(b, parts)
   faction.develop(b, parts)
   while f.tiers[f.tier + 1] and f.exported >= f.tiers[f.tier + 1] do
     f.tier = f.tier + 1
-    apply_tier(f)
     base.trace(b, string.format("faction tier %d (%d parts exported)", f.tier, f.exported))
   end
 end

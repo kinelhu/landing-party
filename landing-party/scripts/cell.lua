@@ -18,25 +18,18 @@ local function st()
   return storage.cells
 end
 
--- The incubator pen (an entity) of pen id `id`, in farm `farm_id` whose middle is `mid`.
-function cell.build(id, pen, farm_id, mid)
-  if st()[id] or not (pen and pen.valid) then return st()[id] end
-  local s, p = pen.surface, pen.position
-  local dx, dy = p.x - mid.x, p.y - mid.y
-  local len = math.sqrt(dx * dx + dy * dy)
-  if len < 1 then dx, dy, len = -1, 0, 1 end
-  local c = {x = math.floor(p.x + dx / len * OUT) + 0.5, y = math.floor(p.y + dy / len * OUT) + 0.5}
-  local area = {{c.x - PAD - 0.5, c.y - PAD - 0.5}, {c.x + PAD + 0.5, c.y + PAD + 0.5}}
-  -- Trees, rocks and remains off the pad.
-  for _, e in pairs(s.find_entities_filtered{area = area, type = {"tree", "simple-entity", "corpse"}}) do
+-- A pad of the floor centred on c (a tile's middle), half size `half`: trees, rocks and remains cleared; what lay
+-- under it (creep's ground, the substrate's soil) kept as its hidden tile.
+function cell.pad(s, c, half)
+  local area = {{c.x - half - 0.5, c.y - half - 0.5}, {c.x + half + 0.5, c.y + half + 0.5}}
+  for _, e in pairs(s.find_entities_filtered{area = area, type = {"tree", "simple-entity", "corpse", "plant"}}) do
     if e.valid then e.destroy() end
   end
   local tiles, under = {}, {}
-  for x = c.x - PAD - 0.5, c.x + PAD - 0.5 do
-    for y = c.y - PAD - 0.5, c.y + PAD - 0.5 do
+  for x = c.x - half - 0.5, c.x + half - 0.5 do
+    for y = c.y - half - 0.5, c.y + half - 0.5 do
       local t = s.get_tile(x, y)
       if not t.collides_with("water_tile") then
-        -- What lies under creep stays the ground under the pad.
         under[#under + 1] = {x, y, t.hidden_tile or t.name}
         tiles[#tiles + 1] = {name = FLOOR, position = {x, y}}
       end
@@ -46,6 +39,17 @@ function cell.build(id, pen, farm_id, mid)
   for _, u in ipairs(under) do
     if u[3] ~= FLOOR then s.set_hidden_tile({u[1], u[2]}, u[3]) end
   end
+end
+
+-- The incubator pen (an entity) of pen id `id`, in farm `farm_id` whose middle is `mid`.
+function cell.build(id, pen, farm_id, mid)
+  if st()[id] or not (pen and pen.valid) then return st()[id] end
+  local s, p = pen.surface, pen.position
+  local dx, dy = p.x - mid.x, p.y - mid.y
+  local len = math.sqrt(dx * dx + dy * dy)
+  if len < 1 then dx, dy, len = -1, 0, 1 end
+  local c = {x = math.floor(p.x + dx / len * OUT) + 0.5, y = math.floor(p.y + dy / len * OUT) + 0.5}
+  cell.pad(s, c, PAD)
   local chamber = s.create_entity{name = "lp-biochamber", position = c, force = B.force, raise_built = false}
   local lamp = s.create_entity{name = "lp-cell-lamp", position = {c.x + PAD, c.y + PAD}, force = B.force}
   st()[id] = {chamber = chamber, lamp = lamp, farm = farm_id, at = c, fed_until = game.tick + 5 * 60 * 60}
@@ -113,6 +117,13 @@ local function place_clinic(site, surface)
     if not q and surface.can_place_entity{name = "lp-clinic", position = p, force = B.force} then q = p end
   end
   q = q or surface.find_non_colliding_position("lp-clinic", t, 16, 1)
+  -- On a floor of its own (the user, 2026-10-23: "the Synthexis labs probably could use a green concrete floor"):
+  -- the biochambers' acid-green concrete, a tile past its walls.
+  if q then
+    local r = {x = math.floor(q.x) + 0.5, y = math.floor(q.y) + 0.5}
+    if surface.can_place_entity{name = "lp-clinic", position = r, force = B.force} then q = r end
+    cell.pad(surface, {x = math.floor(q.x) + 0.5, y = math.floor(q.y) + 0.5}, 3)
+  end
   site.clinic = q and surface.create_entity{name = "lp-clinic", position = q, force = B.force} or nil
   site.clinic_drop_at, site.clinic_dropping = nil, nil
   return site.clinic

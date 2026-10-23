@@ -395,7 +395,13 @@ end
 
 -- Whether a corporation's temper lets it go for this target at all.
 local function temper_allows(b, t)
-  if not against_player(t.owner) then return true end
+  if not against_player(t.owner) then
+    -- A soft-only corporation keeps off a rival's guarded ground as off the player's (the system sim, 2026-10-23:
+    -- Grubstake raided Kessler-Hayashi's walls and flamers 2 to 6 times in two hours and lost 4 to 78 units to it, 0 to
+    -- 8 the other way): its rivals' drills, pylons and convoys, not their fortress. No ladder for a rival: 1.0 holds.
+    if (shared.CORPS[b.corp].temper or {}).soft_only and (t.exposure or t.defence or 0) > 1.0 then return false end
+    return true
+  end
   if t.pos and ops.marked(b, t.pos) then return false end
   -- A paid truce (trade.lua): no raid on that player while it lasts; a battery shelling it is answered regardless of
   -- temper (counter-battery provokes anyway); else the stance (a provoked_only corporation once provoked).

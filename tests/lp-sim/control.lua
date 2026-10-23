@@ -1243,6 +1243,9 @@ scenarios.showcase = function()
       end
       put("radar", x1 - 10, y1 - 10)
       put("roboport", x0 + 12, y1 - 10)
+      -- The barracks on the base's network (the user, 2026-10-23: "power was missing": a raid took the barracks' own
+      -- source before the save, and the army had none).
+      for _, x in ipairs({-16.5, -9.5, -2.5}) do put("medium-electric-pole", x, -10.5) end
       if S.tour.s then lp("debug_units", S.tour.s, "lp-laser-drone", 3) end
       if S.tour.g then lp("debug_units", S.tour.g, "lp-scavenger", 4); lp("debug_units", S.tour.g, "lp-harrier", 4) end
       local f = lp("farm_state").farms[1]
@@ -1263,8 +1266,15 @@ scenarios.showcase = function()
   schedule(STRIKE, function()
     if tour then lp("debug_tune", {raids_off = false}) end
     game.forces.player.chart(surface(), {{-600, -600}, {600, 600}})
-    -- Exports for half an hour of convoys (one of 1,000 parts a minute): the granted stock ran out in three.
-    lp("debug_parts", storage.id, 30000)
+    -- Exports for half an hour of convoys (one of 1,000 parts a minute): the granted stock ran out in three. The tour
+    -- has no uplink: each corporation the same (the user, 2026-10-23, in the all-factions save: "Grubstake got
+    -- absolutely demolished by Kessler": Serenity alone had been given 30,000 parts at the save).
+    if tour then
+      lp("debug_parts", S.tour.s, 8000)
+      if S.tour.g then lp("debug_parts", S.tour.g, 8000) end
+    else
+      lp("debug_parts", storage.id, 30000)
+    end
   end)
   schedule(STRIKE + 300, function()
     game.speed = 1
@@ -2304,6 +2314,140 @@ scenarios.reprisal = function()
       tostring(S.reprisal))
     check("reprisal: Serenity went for Grubstake within 8 minutes", S.at_rival ~= nil and S.at_rival - S.reprisal_at <= 8 * 3600,
       string.format("%s after", S.at_rival and string.format("%.1f min", (S.at_rival - S.reprisal_at) / 3600) or "none"))
+  end)
+end
+
+-- System (the user, 2026-10-23: "we now need to think and work on the balance of the whole system"): every faction on
+-- one map, as a game brings them, and a player's base standing in for the player; a frame a minute to
+-- landing-party/system.jsonl (scripts/system_report.py judges them against the targets in docs/system.md).
+-- The stand-in: a walled square at spawn, gun turrets (refilled) and lasers on its walls, assemblers, a radar, and
+-- pollution let out at its middle, rising over the game (a factory growing). Grubstake lands at minute 1, Kessler-
+-- Hayashi at 15 (its gate, the first rocket, comes later in a game: the order kept, the wait cut); Synthexis on a nest
+-- field 750 tiles out once the wild reach 0.25 (pushed there at minute 20 if the pollution has not).
+local SYSTEM_LAND_G, SYSTEM_LAND_S, SYSTEM_SYNTH = 1, 15, 20
+scenarios.system = function()
+  local function put(name, x, y, items)
+    local e = surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+    if e and items then e.insert(items) end
+    return e
+  end
+  schedule(30, function()
+    lp("debug_tune", {history_off = true})
+    local x0, y0, x1, y1 = -45, -45, 45, 45
+    flatten(x0 - 4, y0 - 4, x1 + 4, y1 + 4)
+    for x = x0, x1 do put("stone-wall", x + 0.5, y0 + 0.5); put("stone-wall", x + 0.5, y1 + 0.5) end
+    for y = y0 + 1, y1 - 1 do put("stone-wall", x0 + 0.5, y + 0.5); put("stone-wall", x1 + 0.5, y + 0.5) end
+    local src = put("electric-energy-interface", 0, 0)
+    if src then src.power_production, src.electric_buffer_size = 2e7, 2e8 end
+    for x = x0 + 5, x1 - 5, 14 do for y = y0 + 5, y1 - 5, 14 do put("substation", x, y) end end
+    S.guns = {}
+    local k = 0
+    for t = -36, 36, 12 do
+      for _, side in ipairs({{t, y0 + 3}, {t, y1 - 3}, {x0 + 3, t}, {x1 - 3, t}}) do
+        k = k + 1
+        if k % 2 == 0 then table.insert(S.guns, put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100}))
+        else put("laser-turret", side[1], side[2]) end
+      end
+    end
+    for i = 0, 11 do
+      local a = put("assembling-machine-2", -25 + (i % 4) * 9, -20 + math.floor(i / 4) * 12)
+      if a then a.set_recipe("iron-gear-wheel"); a.insert{name = "iron-plate", count = 400} end
+    end
+    put("radar", 20, 20)
+    S.frames = 0
+  end)
+  schedule(SYSTEM_LAND_G * 3600, function()
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    -- The harness's own log (sim.jsonl) follows a base: the first to land.
+    storage.id = storage.id or S.g
+  end)
+  schedule(SYSTEM_LAND_S * 3600, function()
+    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+  end)
+  schedule(SYSTEM_SYNTH * 3600, function()
+    local evo = game.forces.enemy.get_evolution_factor(surface())
+    if evo < 0.25 then game.forces.enemy.set_evolution_factor(0.25, surface()) end
+    -- A field for it, away from Serenity (a seed may have none in its band); not taken (seed 1: no landing in two
+    -- hours), another a quarter turn round, five minutes on, up to four.
+    local o = S.s and lp("stats", S.s) and lp("stats", S.s).origin or {x = 1, y = 0}
+    local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+    local function field(k)
+      local a = math.atan2(-o.y, -o.x) + k * math.pi / 2
+      local c = {math.cos(a) * 750, math.sin(a) * 750}
+      surface().request_to_generate_chunks(c, 3)
+      surface().force_generate_chunk_requests()
+      for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}, {-8, -12}}) do
+        local q = surface().find_non_colliding_position("biter-spawner", {c[1] + d[1], c[2] + d[2]}, 30, 1)
+        if q then surface().create_entity{name = "biter-spawner", position = q, force = "enemy"} end
+      end
+      S.synth = lp("farm_arrive", 1)
+      S.synth_tries = k + 1
+      if not S.synth and k < 3 then schedule(game.tick - storage.t0 + 5 * 3600, function() field(k + 1) end) end
+    end
+    field(0)
+  end)
+  -- A minute's frame: pollution let out, ammunition topped up, the state of each faction.
+  for t = 3600, END - 60, 3600 do
+    schedule(t, function()
+      local m = game.tick / 3600
+      -- A factory growing: 600 a minute rising by 40 a minute (about the pollution of a few dozen boilers and drills).
+      surface().pollute({0, 0}, (600 + 40 * m))
+      for _, g in ipairs(S.guns or {}) do if g.valid then g.insert{name = "piercing-rounds-magazine", count = 50} end end
+      local frame = {minute = m, evo = game.forces.enemy.get_evolution_factor(surface()), corps = {}, kills = S.kills or {}}
+      for _, id in ipairs(lp("bases")) do
+        local st = lp("stats", id)
+        if st then
+          local c = frame.corps[st.corp] or {bases = 0, live = 0, radius = {}, parts = 0, made = 0, fabs = 0, drills = 0,
+            turrets = 0, garrison = 0, units_lost = 0, lost = 0, raids = 0, ops = {}}
+          frame.corps[st.corp] = c
+          c.bases = c.bases + 1
+          if not st.fallen then
+            c.live = c.live + 1
+            table.insert(c.radius, st.claim_radius or 0)
+            c.parts, c.made = c.parts + (st.parts or 0), c.made + (st.made or 0)
+            c.fabs, c.drills, c.turrets = c.fabs + st.fabs, c.drills + st.drills, c.turrets + st.turrets
+            c.garrison = c.garrison + st.garrison
+          end
+          c.units_lost, c.lost = c.units_lost + (st.units_lost or 0), c.lost + (st.lost or 0)
+          c.raids = c.raids + (st.raids_sent or 0)
+          for _, l in ipairs(st.ops and st.ops.log or {}) do
+            local o = l.owner or "?"
+            c.ops[o] = (c.ops[o] or 0) + 1
+          end
+        end
+      end
+      for _, f in ipairs({"player", "lp-serenity", "lp-grubstake", "lp-biotech"}) do
+        frame[f] = {units = surface().count_entities_filtered{force = f, type = {"unit", "spider-unit"}},
+          all = surface().count_entities_filtered{force = f}}
+      end
+      local fs = lp("farm_state").farms
+      frame.biotech = {farms = #fs}
+      if fs[1] then frame.biotech.pens, frame.biotech.evo, frame.biotech.clinic = fs[1].pens, fs[1].evo, fs[1].clinic end
+      local hs = lp("herd_state")
+      frame.biotech.waves = #(hs.log or {})
+      -- What each faction knows (scripts/know.lua): its losses by killer force, its grievances.
+      frame.know = lp("know_state")
+      S.know_last = frame.know
+      helpers.write_file("landing-party/system.jsonl", helpers.table_to_json(frame) .. "\n", true)
+      S.frames = (S.frames or 0) + 1
+    end)
+  end
+  schedule(END - 30, function()
+    check("system: a frame a minute written", (S.frames or 0) >= END / 3600 - 2, tostring(S.frames))
+    -- The knowledge layer saw what the world did to each faction: a faction that lost anything holds a record of it.
+    local lost, recorded = {}, {}
+    for key, n in pairs(S.kills or {}) do
+      local victim = key:match("^(.-)>")
+      local fk = victim == "lp-serenity" and "serenity" or victim == "lp-grubstake" and "grubstake"
+        or victim == "lp-biotech" and "biotech" or nil
+      if fk then lost[fk] = (lost[fk] or 0) + n end
+    end
+    for fk, k in pairs(S.know_last or {}) do recorded[fk] = k.losses end
+    local ok = true
+    for fk, n in pairs(lost) do if n > 0 and (recorded[fk] or 0) == 0 then ok = false end end
+    check("system: each faction's losses known to it", ok, serpent.line({lost = lost, recorded = recorded}))
+    check("system: every faction landed", S.g ~= nil and S.s ~= nil and S.synth ~= nil and S.synth ~= false,
+      string.format("grubstake %s, serenity %s, synthexis %s", tostring(S.g), tostring(S.s), tostring(S.synth)))
   end)
 end
 
@@ -9708,6 +9852,8 @@ script.on_init(function()
   -- Land as the real arrival does, `distance` tiles from spawn (on a site with ore round it).
   -- Phases plays the opening itself: no landing at the start.
   if params.scenario == "phases" then return end
+  -- System plays its own arrivals (scenarios.system).
+  if params.scenario == "system" then return end
   -- A real factory (scripts/visit.sh) is loaded, not created: its arrival is placed by the scenario.
   if params.scenario == "visit" then return end
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
@@ -9794,6 +9940,17 @@ end)
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
+  -- System: who lost what to whom (victim force > killer force, units and buildings apart).
+  if params.scenario == "system" then
+    local v, k = e.entity.force.name, e.force and e.force.name or "none"
+    local what = (e.entity.type == "unit" or e.entity.type == "spider-unit" or e.entity.type == "character") and "units"
+      or "buildings"
+    if e.entity.type ~= "tree" and e.entity.type ~= "simple-entity" then
+      S.kills = S.kills or {}
+      local key = v .. ">" .. k .. ":" .. what
+      S.kills[key] = (S.kills[key] or 0) + 1
+    end
+  end
   -- Where a corporation's unit fell to a turret, and how far from it (the claim rig's hands fell to turrets out of reach).
   if e.cause and e.cause.valid and e.cause.type == "ammo-turret" and e.entity.type == "unit" and e.entity.force.name:sub(1, 3) == "lp-" then
     S.turret_kills = S.turret_kills or {}

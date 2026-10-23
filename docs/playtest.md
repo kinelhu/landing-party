@@ -10,6 +10,14 @@ armour, tesla arcs. The player's side: threat scanner, muster point. All checked
 of real saves); none of it played. Chat notices are off by default: the world should tell you what happens.
 
 ## Start
+**Every faction at once (0.2.1, Factorio 2.1):** `LP_MIX=all scripts/showcase.sh 12345 30` builds it (a few minutes,
+headless), then `scripts/play-showcase.sh all` opens it, both from `~/Dev/landing-party-wt` until 0.2.1 is merged. At
+minute 30: your walled base at spawn (12 gun and 12 laser turrets, power, assemblers, a radar, a roboport), your
+barracks' 35 units, an outpost toward each corporation and an artillery turret with its shells in a chest beside it;
+Kessler-Hayashi and Grubstake at level 2 with their tree units (laser drones, Anti-air troopers; bomb drones, flak
+buggies); Synthexis 750 tiles east (five incubators, creep, cells, substrate, technicians, its clinic, breeds at 0.57).
+Raids are on.
+
 Close your own game first (Steam allows one copy). Then, in a terminal:
 
     cd ~/Dev/landing-party && scripts/play-visit.sh deathworld10x

@@ -707,6 +707,5 @@ function army.disband(b, trace)
   return n, dest
 end
 
-army.UNITS = {"lp-infantry", "lp-tank", "lp-walker", "lp-harrier"}
 
 return army

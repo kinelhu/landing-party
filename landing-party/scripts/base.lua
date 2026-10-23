@@ -466,6 +466,9 @@ local EXPORT_RESERVE = 300
 local EXPORT_MAX = 1000
 local function export(b)
   if not b.mature then return end
+  -- Not while on a war footing (short of its cap at war: units first; it shipped its stock off regardless, the faction
+  -- AI audit, 2026-10-23).
+  if base.footing and not base.footing(b, {name = "lp-export"}) then return end
   local surplus = math.floor(b.parts - EXPORT_RESERVE)
   if surplus < 100 then return end
   local amount = math.min(surplus, EXPORT_MAX)

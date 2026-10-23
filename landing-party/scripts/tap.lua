@@ -177,7 +177,8 @@ function tap.launch(b, pole)
   table.insert(points, goal)
   local spots = spots_along(points)
   local cost = #spots * (shared.cost["lp-pylon"] or 0)
-  if b.parts < cost then return "short of parts" end
+  -- Above the reserve, as every build (it spent through it; the faction AI audit, 2026-10-23).
+  if b.parts < cost + base.reserve(b) then return "short of parts" end
   local u = buggy(b)
   if not u then return "no buggy" end
   b.parts = b.parts - cost
@@ -259,7 +260,7 @@ local function step(b, t)
       if not (t.line[i] and t.line[i].valid) then table.insert(todo, i) end
     end
     local cost = #todo * (shared.cost["lp-pylon"] or 0)
-    local u = #todo > 0 and b.parts >= cost and buggy(b)
+    local u = #todo > 0 and b.parts >= cost + base.reserve(b) and buggy(b)
     if u then
       b.parts = b.parts - cost
       drive(b, t, u, todo)

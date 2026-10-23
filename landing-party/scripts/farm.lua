@@ -215,9 +215,11 @@ local function gone(f, why)
 end
 
 -- The nearest of the player's guns and machines from pos (and Grubstake's, once at war with it), by rings (a bounded
--- search, then the nearest in it).
-local function target_from(surface, pos)
-  local forces = players()
+-- search, then the nearest in it). To be replaced by the faction AI's one picker (smell and grievance;
+-- docs/reviews/2026-10-23-faction-ai-audit.md): a fixed every-third-wave rule at Kessler-Hayashi was tried and taken
+-- out (the user: "Is hard coding such a thing really a good idea?"). `rival` (forces at the target) stays for it.
+local function target_from(surface, pos, f)
+  local forces, rival = players(), nil
   if herd.grubstake_broken() and game.forces[shared.CORPS.grubstake.force] then
     table.insert(forces, game.forces[shared.CORPS.grubstake.force])
   end
@@ -229,7 +231,7 @@ local function target_from(surface, pos)
         local d = d2(e.position, pos)
         if not bd or d < bd then best, bd = e, d end
       end
-      return best.position
+      return best.position, rival
     end
   end
 end
@@ -237,7 +239,7 @@ end
 local function send(f, tick)
   local s = game.surfaces[f.surface]
   local units, origin = {}, nil
-  local target = target_from(s, f.pos)
+  local target, rival = target_from(s, f.pos, f)
   if not target then return end
   local bd
   for _, id in ipairs(f.pens) do
@@ -260,13 +262,20 @@ local function send(f, tick)
     return
   end
   f.last_wave = tick
+  f.waves = (f.waves or 0) + 1
   -- Its probe's runts, if it will throw them (herd.lua), at their price.
+  -- Only what it can pay for (it was charged into debt; the faction AI audit, 2026-10-23).
   local cul = creep.of(f.id)
+  local no_probe = false
   if cul and game.forces[B.force].get_evolution_factor(s) >= herd.PROBE_EVO then
     local price = herd.PROBE_N * shared.BREEDS["lp-runt"].cost
-    cul.biomass, cul.spent = cul.biomass - price, (cul.spent or 0) + price
+    if cul.biomass >= price then
+      cul.biomass, cul.spent = cul.biomass - price, (cul.spent or 0) + price
+    else
+      no_probe = true
+    end
   end
-  herd.launch(origin, target, {units = units, farm = f.id})
+  herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe})
   trace(string.format("farm %d sends %d at %.0f,%.0f", f.id, #units, target.x, target.y))
 end
 
