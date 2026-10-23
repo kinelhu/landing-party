@@ -708,6 +708,11 @@ local function finish(b, outcome, trace, army)
     or GAP_ABORTED)
     + math.floor(lost / 5) * GAP_PER_5_LOST
   if op.clearance then b.next_op = game.tick + 3600 end
+  -- A reprisal still owed keeps its pace: the losses that called it were often this op's own raiders, and its end set
+  -- the next op ten minutes off (reprisal, 2026-10-23: paid back 13.6 minutes later).
+  if b.reprisal and game.tick < b.reprisal.till then
+    b.next_op = math.min(b.next_op, math.max(game.tick, b.reprisal.since + REPRISAL_SOON))
+  end
   -- What it saw there at the end is the record: destroyed targets are forgotten (a raid set out again for
   -- creep it had already destroyed).
   if t then
@@ -1035,7 +1040,7 @@ local function launch(b, key, trace, army, opts)
       for i = #list, 1, -1 do
         local u = list[i]
         local k = u.valid and shared.kind_of(u.name)
-        if #air < 6 and (k == "lp-harrier" or k == "lp-scavenger") then table.insert(air, table.remove(list, i)) end
+        if #air < 6 and (k == "lp-harrier" or k == "lp-scavenger" or k == "lp-laser-drone") then table.insert(air, table.remove(list, i)) end
       end
     end
     local aroute = #air >= 3 and sneak_route(b, {h.position.x, h.position.y}, {t.pos[1], t.pos[2]}, {turrets = false, worms = true})

@@ -19,7 +19,7 @@ rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
 rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric",
   ["lp-railgunner"] = "laser",
-  ["lp-aegis"] = "laser", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "laser"},
+  ["lp-aegis"] = "laser", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "laser", ["lp-laser-drone"] = "laser"},
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade",
     ["lp-scorcher"] = "bullet", ["lp-flak-buggy"] = "bullet"}}
 -- What a killer deals, by its type or name: the plate that would answer it (biters are not counted).
@@ -28,7 +28,8 @@ local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "phy
   -- The player's combat robots (2026-10-23: unrecorded until anti-air was bought on what kills from the air).
   ["combat-robot"] = "physical"}
 local DAMAGE_BY_NAME = {["lp-trooper"] = "physical", ["lp-breacher"] = "explosion", ["lp-battle-tank"] = "explosion",
-  ["lp-rocket-trooper"] = "explosion", ["lp-harrier"] = "physical", ["lp-scavenger"] = "explosion"}
+  ["lp-rocket-trooper"] = "explosion", ["lp-harrier"] = "physical", ["lp-scavenger"] = "explosion",
+  ["lp-laser-drone"] = "laser"}
 
 function rd.state(corp)
   storage.corps = storage.corps or {}

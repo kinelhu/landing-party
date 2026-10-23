@@ -315,8 +315,11 @@ for _, leg in ipairs(walker.spider_engine.legs) do
 end
 data:extend(legs)
 
+-- The fliers (the user, 2026-10-23: "give Kessler the actual high tech fliers, whereas Grubstake is a more scrappy
+-- opponent ... simpler drones, if not even kamikaze drones"): Grubstake's scrap drone (lp-harrier: the distractor's
+-- body, weak, cheap, many) and bomb drone (lp-scavenger: flies at a target and bursts on it), Kessler-Hayashi's laser
+-- drone (the destroyer's body, armoured, a laser beam).
 local harrier = base_unit("lp-harrier")
-local defender = data.raw["combat-robot"]["destroyer"]
 harrier.max_health = shared.units["lp-harrier"].health
 harrier.movement_speed = 0.25
 harrier.vision_distance = 30
@@ -327,7 +330,8 @@ harrier.trigger_target_mask = {"lp-air-unit"}
 harrier.render_layer = "air-object"
 -- Airborne: the destroyer's body drawn a tile up, over its own shadow on the ground (a combat robot is lifted by the
 -- engine, a unit is not: drawn where it stood, its selection box hung a tile above it; the user's screenshot, 2026-10-21).
-local function flying()
+local function flying(robot)
+  local defender = data.raw["combat-robot"][robot or "distractor"]
   local a = {layers = {}}
   for _, l in ipairs(table.deepcopy(defender.in_motion).layers) do
     l.shift = {(l.shift or {0, 0})[1], (l.shift or {0, 0})[2] - 1}
@@ -339,11 +343,12 @@ local function flying()
   return a
 end
 harrier.run_animation = flying()
-local ha = gun(10, 15, 15)
+-- A scrap drone: 6 a shot every 20 ticks, range 12.
+local ha = gun(6, 12, 20)
 ha.animation = flying()
 harrier.attack_parameters = ha
-harrier.dying_explosion = "destroyer-robot-explosion"
-harrier.corpse = "destroyer-remnants"
+harrier.dying_explosion = "distractor-robot-explosion"
+harrier.corpse = "distractor-remnants"
 harrier.resistances = {{type = "fire", percent = 100}}
 tint(harrier.run_animation, {})
 tint(harrier.attack_parameters.animation, {})
@@ -477,15 +482,49 @@ dozer.resistances = {{type = "physical", decrease = 5, percent = 40}, {type = "f
 dozer.attack_parameters = gun(60, 2, 60, "melee")
 dozer.attack_parameters.sound = nil
 dozer.attack_parameters.animation = table.deepcopy(hauler.attack_parameters.animation)
--- Scavenger harrier (Grubstake's Wheels): a harrier with rockets, 18 explosion every 40 ticks, range 14, 180 health.
--- It flies over walls to the player's artillery, mortars and radars.
+-- Bomb drone (Grubstake's Wheels; id lp-scavenger, once a harrier with rockets): a scrap drone, quicker, that flies
+-- over walls at the player's artillery, mortars and radars and bursts on arrival, BOMB explosion over BOMB_R tiles
+-- (its enemies only), and dies in it (a damage effect on its attack's source: spiked, 2026-10-23).
+-- Its blast spreads 2.5 and the target takes as much again (the arena, 2026-10-23: over 3 at 20 parts it beat squads
+-- +40 to +85 and a turret line +5: its value moved to what it dives on).
+local BOMB, BOMB_R = 150, 2.5
 local scavenger = table.deepcopy(harrier)
 scavenger.name = "lp-scavenger"
 scavenger.max_health = shared.units["lp-scavenger"].health
-local sa = gun(18, 14, 40, "rocket")
-sa.ammo_type.action.action_delivery.target_effects[2].damage.type = "explosion"
-sa.animation = table.deepcopy(harrier.attack_parameters.animation)
-scavenger.attack_parameters = sa
+scavenger.movement_speed = 0.3
+-- Its own look (the user, 2026-10-23): the defender's body, the smallest of the three, in hazard red: the one with the
+-- charge in it, told at a glance from the scrap drone (the distractor's) and the laser drone (the destroyer's).
+local HAZARD = {r = 0.95, g = 0.32, b = 0.15, a = 1}
+scavenger.run_animation = flying("defender")
+tint(scavenger.run_animation, {}, HAZARD)
+scavenger.dying_explosion = "defender-robot-explosion"
+scavenger.corpse = "defender-remnants"
+scavenger.attack_parameters = {type = "projectile", ammo_category = "rocket", range = 1.5, cooldown = 30,
+  range_mode = "bounding-box-to-bounding-box", animation = table.deepcopy(scavenger.run_animation),
+  ammo_type = {action = {type = "direct", action_delivery = {type = "instant",
+    target_effects = {{type = "create-entity", entity_name = "big-explosion"},
+      {type = "damage", damage = {amount = BOMB, type = "explosion"}},
+      {type = "nested-result", action = {type = "area", radius = BOMB_R, force = "not-same", action_delivery = {
+        type = "instant", target_effects = {{type = "damage", damage = {amount = BOMB, type = "explosion"}}}}}}},
+    source_effects = {{type = "damage", damage = {amount = 10000, type = "physical"}}}}}}}
+
+-- Laser drone (Kessler-Hayashi's garrisons, in the harrier's place: army.lua): the destroyer's body in its colours,
+-- armoured against small arms, a laser beam of about 12 every 20 ticks, range 16. Its sky is few and dear.
+local laser_drone = table.deepcopy(harrier)
+laser_drone.name = "lp-laser-drone"
+laser_drone.max_health = shared.units["lp-laser-drone"].health
+laser_drone.movement_speed = 0.2
+laser_drone.run_animation = flying("destroyer")
+laser_drone.attack_parameters = {type = "beam", ammo_category = "laser", cooldown = 20, range = 16,
+  range_mode = "bounding-box-to-bounding-box", damage_modifier = 1.2, animation = flying("destroyer"),
+  ammo_type = {action = {type = "direct", action_delivery = {type = "beam", beam = "laser-beam", max_length = 17,
+    duration = 20, source_offset = {0, -1}}}}}
+laser_drone.dying_explosion = "destroyer-robot-explosion"
+laser_drone.corpse = "destroyer-remnants"
+laser_drone.resistances = {{type = "fire", percent = 100}, {type = "physical", decrease = 3, percent = 40},
+  {type = "laser", percent = 20}}
+tint(laser_drone.run_animation, {})
+tint(laser_drone.attack_parameters.animation, {})
 
 -- Railgunner (Serenity; the user: "a biter clearing unit like a hand mounted railgun that's at its best against biters"):
 -- a slug that pierces everything on a line 30 tiles long (out of a medium worm's reach), 250 to what carries the lp-biter
@@ -696,17 +735,36 @@ flak_buggy.attack_parameters = {
 data:extend({skyguard, flak_buggy})
 
 -- Loot (the faction loot consult): a unit drops a little of its own kit, half the time. The player's units (trooper,
--- breacher, rocket trooper, battle tank) drop nothing: they are the player's.
+-- breacher, rocket trooper, battle tank) drop nothing: they are the player's. The bomb drone neither: it dies in every
+-- blow (a drop a hit).
+-- Grubstake's vehicles told apart from afar (the user, 2026-10-23: "Grubstake buggies also very much all look alike
+-- from afar"): by outline first, then colour. The buggy small and plain in its amber, the slug buggy with a long barrel
+-- in rust, the flak buggy with a big turret in sky blue (anti-air; olive was lost on grass), the dozer a size up in construction yellow. Each drawn afresh from
+-- the car (a second tint on a tinted animation darkens all of it).
+local RUST, SKY, YELLOW = {r = 0.85, g = 0.38, b = 0.22, a = 1}, {r = 0.6, g = 0.78, b = 1, a = 1},
+  {r = 1, g = 0.84, b = 0.2, a = 1}
+local function look(u, anim, color, k)
+  u.run_animation = table.deepcopy(anim)
+  tint(u.run_animation, {}, color)
+  if k then grow(u.run_animation, k, {}) end
+  u.attack_parameters.animation = table.deepcopy(u.run_animation)
+end
+look(buggy, car.animation, nil, 0.85)
+look(slug, crowned(car.animation, {{tank_car.turret_animation, 0.9, 0, 0.15}}), RUST)
+look(flak_buggy, crowned(car.animation, {{car.turret_animation, 1.4}}), SKY)
+look(dozer, car.animation, YELLOW, 1.25)
+dozer.selection_box = {{-1.25, -1.5}, {1.25, 1.5}}
+
 local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},
-  [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"engine-unit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},
+  [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"iron-gear-wheel", 1, 2}}, [laser_drone] = {{"advanced-circuit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},
   [walker] = {{"steel-plate", 8, 8}, {"advanced-circuit", 2, 2}}, [hauler] = {{"steel-plate", 8, 8}},
   [lance] = {{"electronic-circuit", 2, 2}}, [slug] = {{"piercing-shotgun-shell", 2, 4}}, [shock] = {{"battery", 1, 1}},
   [sapper] = {{"explosives", 1, 2}}, [aegis] = {{"steel-plate", 4, 4}}, [dozer] = {{"steel-plate", 6, 6}, {"engine-unit", 1, 1}},
-  [scavenger] = {{"rocket", 1, 2}}, [railgunner] = {{"steel-plate", 2, 2}, {"advanced-circuit", 1, 1}}}
+  [railgunner] = {{"steel-plate", 2, 2}, {"advanced-circuit", 1, 1}}}
 for u, list in pairs(UNIT_LOOT) do
   u.loot = {}
   for _, m in ipairs(list) do table.insert(u.loot, {type = "item", name = m[1], independent_probability = 0.5, amount_min = m[2], amount_max = m[3]}) end
 end
 
 data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
-  lance, slug, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger, rail_beam, railgunner})
+  lance, slug, arc_bounce, arc_chain, shock, sapper, aegis, dozer, scavenger, laser_drone, rail_beam, railgunner})

@@ -159,6 +159,15 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     heating tower (the site's light at night); white-suited technicians walk from it to each biochamber in turn. Kill
     them: five minutes on its biochambers stop and its incubators starve; a pod brings two more ten minutes later. Is
     the walk between tower and glass readable, and is killing the technicians worth the trip?
+41. **Its clinic** (0.2.1): a biolab on the substrate by the heating tower, 1,500 health. While it stands Synthexis's
+    breeds grow stronger, faster than the wild biters (spitters, then cinders, then stompers). Destroy it: its incubators
+    breed only small and medium biters until a pod brings a new clinic half an hour later. Is it clear that this is the
+    building to shell, and is the half hour worth an artillery trip?
+
+42. **Fliers by corporation** (0.2.1): Grubstake's scrap drones come in numbers (weak, a little gun) and its bomb drones
+    dive at your artillery, mortars and radars and blow up on them; Kessler-Hayashi fields a few laser drones from its
+    second level, armoured, a laser beam. Do the two skies read as the two corporations? Do gun turrets and rockets
+    feel like an answer to the laser drones, and is a bomb drone getting through to your artillery fair?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

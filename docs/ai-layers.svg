@@ -21,7 +21,7 @@
 <title>Corporation</title>
 <path fill="#eef2f7" stroke="black" d="M463.12,-339.25C463.12,-339.25 360.88,-339.25 360.88,-339.25 354.88,-339.25 348.88,-333.25 348.88,-327.25 348.88,-327.25 348.88,-315.25 348.88,-315.25 348.88,-309.25 354.88,-303.25 360.88,-303.25 360.88,-303.25 463.12,-303.25 463.12,-303.25 469.12,-303.25 475.12,-309.25 475.12,-315.25 475.12,-315.25 475.12,-327.25 475.12,-327.25 475.12,-333.25 469.12,-339.25 463.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="412" y="-322.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="412" y="-310.8" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2644 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="412" y="-310.8" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2645 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge5" class="edge">
@@ -50,8 +50,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M447.12,-139.75C447.12,-139.75 344.88,-139.75 344.88,-139.75 338.88,-139.75 332.88,-133.75 332.88,-127.75 332.88,-127.75 332.88,-107.75 332.88,-107.75 332.88,-101.75 338.88,-95.75 344.88,-95.75 344.88,-95.75 447.12,-95.75 447.12,-95.75 453.12,-95.75 459.12,-101.75 459.12,-107.75 459.12,-107.75 459.12,-127.75 459.12,-127.75 459.12,-133.75 453.12,-139.75 447.12,-139.75"/>
 <text xml:space="preserve" text-anchor="middle" x="396" y="-125.3" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="396" y="-113.3" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 4784 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="396" y="-101.3" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1681</text>
+<text xml:space="preserve" text-anchor="middle" x="396" y="-113.3" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 4791 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="396" y="-101.3" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1686</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->
 <g id="edge4" class="edge">
@@ -128,7 +128,7 @@
 <title>Heists (Grubstake)</title>
 <path fill="#eef2f7" stroke="black" d="M181.12,-435C181.12,-435 84.88,-435 84.88,-435 78.88,-435 72.88,-429 72.88,-423 72.88,-423 72.88,-411 72.88,-411 72.88,-405 78.88,-399 84.88,-399 84.88,-399 181.12,-399 181.12,-399 187.12,-399 193.12,-405 193.12,-411 193.12,-411 193.12,-423 193.12,-423 193.12,-429 187.12,-435 181.12,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="133" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">Heists (Grubstake)</text>
-<text xml:space="preserve" text-anchor="middle" x="133" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 1209 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="133" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 1224 lines</text>
 </g>
 <!-- Heists (Grubstake)&#45;&gt;Seams (leaves) -->
 <g id="edge9" class="edge">
@@ -163,7 +163,7 @@
 <title>The biotech</title>
 <path fill="#eef2f7" stroke="black" d="M574.12,-435C574.12,-435 477.88,-435 477.88,-435 471.88,-435 465.88,-429 465.88,-423 465.88,-423 465.88,-411 465.88,-411 465.88,-405 471.88,-399 477.88,-399 477.88,-399 574.12,-399 574.12,-399 580.12,-399 586.12,-405 586.12,-411 586.12,-411 586.12,-423 586.12,-423 586.12,-429 580.12,-435 574.12,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="526" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="526" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 1897 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="526" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 1965 lines</text>
 </g>
 <!-- The biotech&#45;&gt;Seams (leaves) -->
 <g id="edge15" class="edge">

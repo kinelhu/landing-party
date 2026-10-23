@@ -424,6 +424,20 @@ do
     animations = {layers = layers}})
 end
 
+-- The clinic (the identity consult, step 5; scripts/cell.lua): Space Age's biolab as a prop, always at work, on the
+-- substrate by the heating tower. While it stands Synthexis's breeds climb its tiers (farm.lua); the one building worth
+-- artillery. A military target, so turrets in reach fire on it.
+do
+  local b = data.raw.lab["biolab"]
+  table.insert(out, {type = "simple-entity-with-force", name = "lp-clinic", localised_name = {"entity-name.lp-clinic"},
+    localised_description = {"entity-description.lp-clinic"}, hidden = true, icon = b.icon, icon_size = b.icon_size,
+    flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable"}, max_health = 1500, is_military_target = true,
+    resistances = {{type = "fire", percent = 70}, {type = "acid", percent = 50}},
+    collision_box = b.collision_box, selection_box = b.selection_box, render_layer = "object",
+    dying_explosion = b.dying_explosion, corpse = b.corpse, map_color = B.color, enemy_map_color = B.color,
+    animations = table.deepcopy(b.on_animation)})
+end
+
 data:extend(out)
 
 -- Every corporation's variant of a hull kind, the player's battle tank, and the base game's tank and spidertron.

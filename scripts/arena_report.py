@@ -18,7 +18,7 @@ CLASSES = [
                     "rocket trooper"]),
     ("splash", ["sapper", "shock", "laser tank", "lightning tank", "breacher"]),
     ("armour", ["tank", "heavy tank", "dozer", "walker", "scorcher", "battle tank"]),
-    ("air", ["harrier", "scavenger"]),
+    ("air", ["scrap drone", "bomb drone", "laser drone"]),
     # Hard on fliers, light on the ground (2026-10-23): one per side.
     ("anti-air", ["anti-air trooper", "flak buggy", "bred spore"]),
     ("bred", ["bred small", "bred medium", "bred big", "bred behemoth", "bred spitter", "bred burster", "bred stomper"]),
@@ -28,7 +28,7 @@ CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
 # The batch's labels (tests/lp-arena/batch.lua, internal) as players read them (locale).
 SHOWN = {"infantry (Serenity)": "laser trooper", "infantry (Grubstake)": "shotgun hand", "lance": "heavy laser trooper",
          "prism": "laser tank", "tesla": "lightning tank", "aegis": "heavy tank", "skyguard": "anti-air trooper",
-         "bred cinder": "bred burster"}
+         "bred cinder": "bred burster", "harrier": "scrap drone", "scavenger": "bomb drone"}
 
 # Who fields each kind, read from landing-party/shared.lua (a corporation's starting mix and its research tree's units).
 # Grubstake's infantry is its own (shotguns), so the two infantries are told apart by their labels.

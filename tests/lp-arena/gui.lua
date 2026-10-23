@@ -6,11 +6,19 @@ local arena = require("arena")
 local gui = {}
 
 local PEN = {0, 0}
-local WHO = {"serenity", "grubstake", "player", "biters"}
-local WHO_LABEL = {"Serenity", "Grubstake", "You", "Biters"}
+local shared = require("__landing-party__.shared")
+local WHO = {"serenity", "grubstake", "biotech", "player", "biters"}
+local WHO_LABEL = {"Kessler-Hayashi", "Grubstake Inc.", "Synthexis", "You", "Biters"}
 
 local function kinds(who)
-  if who == "serenity" or who == "grubstake" then return arena.corp_kinds(who) end
+  if who == "serenity" or who == "grubstake" then return arena.fielded(who) end
+  if who == "biotech" then
+    -- Its breeds (shared.BREEDS), at their arena prices.
+    local out = {}
+    for name in pairs(shared.BREEDS) do if prototypes.entity[name] then table.insert(out, name) end end
+    table.sort(out, function(x, y) return shared.BREEDS[x].cost < shared.BREEDS[y].cost end)
+    return out
+  end
   if who == "player" then
     local out = {}
     for _, k in ipairs(arena.PLAYER_UNITS) do table.insert(out, k) end
@@ -25,14 +33,23 @@ end
 local function caption(who, kind)
   if who == "player" and arena.LINES[kind] then return arena.LINES[kind] end
   if who == "biters" and kind == "wave" then return "a wave (spawners' mix at the evolution)" end
-  return kind
+  -- Units by their names in game.
+  local name = (who == "serenity" or who == "grubstake") and shared.variant(who, kind) or kind
+  local p = prototypes.entity[name]
+  return p and p.localised_name or kind
+end
+
+local function who_label(who)
+  if who == "raw" then return "Synthexis" end
+  for i, w in ipairs(WHO) do if w == who then return WHO_LABEL[i] end end
+  return who
 end
 
 local function state(player)
   storage.gui = storage.gui or {}
   local s = storage.gui[player.index]
   if not s then
-    s = {sides = {a = {}, b = {}}, pick = {a = {who = 1, kind = 1}, b = {who = 4, kind = 1}}, evo = 0.5}
+    s = {sides = {a = {}, b = {}}, pick = {a = {who = 1, kind = 1}, b = {who = 5, kind = 1}}, evo = 0.5}
     storage.gui[player.index] = s
   end
   return s
@@ -55,7 +72,7 @@ local function side_flow(parent, s, key, title)
   row2.add{type = "button", name = "lpa_empty_" .. key, caption = "Empty"}
   for _, en in ipairs(s.sides[key]) do
     local extra = en[1] == "biters" and en[2] == "wave" and string.format(" at %.2f", en[4]) or ""
-    col.add{type = "label", caption = string.format("%d x %s (%s)%s", en[3], caption(en[1], en[2]), en[1], extra)}
+    col.add{type = "label", caption = {"", en[3], " x ", caption(en[1], en[2]), " (", who_label(en[1]), ")", extra}}
   end
 end
 
@@ -101,7 +118,9 @@ function gui.on_click(e)
     local pick = s.pick[key]
     local who = WHO[pick.who]
     local kind = kinds(who)[pick.kind]
-    table.insert(s.sides[key], {who, kind, math.max(1, math.min(500, pick.n or 5)), s.evo})
+    local n = math.max(1, math.min(500, pick.n or 5))
+    -- Synthexis's breeds go in as raw prototypes on its force (arena.lua's spawn).
+    table.insert(s.sides[key], who == "biotech" and {"raw", kind, n, shared.BIOTECH.force} or {who, kind, n, s.evo})
   elseif el.name:find("^lpa_empty_") then
     s.sides[key] = {}
   elseif el.name == "lpa_fight" then

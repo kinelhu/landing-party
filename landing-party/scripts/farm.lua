@@ -39,6 +39,11 @@ local STARVE = 3 * 3600       -- off creep this long, an incubator goes wild
 -- keeps FED_CAP of its stock (the rest goes feral: the wild's), and after UNFED_WILD goes back to the wild. A biochamber
 -- hit calls no wave home (a pen hit does): the quiet kill, a raid on the feed while the herd is out.
 local FED_CAP = 12
+-- Its clinic (scripts/cell.lua; the consult's third weak point): Synthexis's evolution is its own (the culture's
+-- learned value, f.evo). While the clinic stands it climbs CLIMB a minute, never behind the wild's; destroyed, it stops,
+-- and the incubators breed at STOCK_EVO at the most (small and medium biters) until a new clinic lands.
+local CLIMB = 0.004
+local STOCK_EVO = 0.3
 local UNFED_WILD = 10 * 3600
 local BREAK_NEAR = 12          -- a Grubstake building or unit this near a tumor breaks the truce
 local TRICKLE = 3             -- biomass an incubator earns a minute, clean air or not
@@ -148,6 +153,7 @@ function farm.land(surface, pos)
   local enemy = game.forces.enemy
   if bf and enemy then bf.set_evolution_factor(enemy.get_evolution_factor(surface), surface) end
   local f = {id = s.next, surface = surface.index, pos = {x = pos.x, y = pos.y}, pens = {}, tags = {},
+    evo = enemy and enemy.get_evolution_factor(surface) or 0,
     last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.tick}
   s.next = s.next + 1
   for i = 1, math.min(PENS, #field) do
@@ -296,6 +302,18 @@ local function unfed(rec, tick)
   return tick - rec.unfed >= UNFED_WILD
 end
 
+-- Its evolution: learned while its clinic stands, held at the stock's without it.
+local function evolve(f, surface)
+  local bf, enemy = game.forces[B.force], game.forces.enemy
+  if not bf then return end
+  f.evo = f.evo or bf.get_evolution_factor(surface)
+  local up = cell.clinic_up(f.id)
+  if up then
+    f.evo = math.min(1, math.max(enemy and enemy.get_evolution_factor(surface) or 0, f.evo + CLIMB / 6))
+  end
+  bf.set_evolution_factor(up and f.evo or math.min(f.evo, STOCK_EVO), surface)
+end
+
 function farm.tick(tick)
   if tick % 600 ~= 300 then return end
   local s = st()
@@ -306,6 +324,7 @@ function farm.tick(tick)
     -- Its substrate (older saves: built now) and its technicians' rounds.
     cell.site(id, surface, f.pos)
     cell.tick(id, surface, f.pens, tick)
+    evolve(f, surface)
     for _, pid in ipairs(f.pens) do
       local rec = herd.pen(pid)
       if rec and rec.pen.valid then
@@ -452,7 +471,8 @@ function farm.state()
     end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
       landed = f.landed, taken = f.taken or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
-      lost_to_feed = f.lost_to_feed or 0, biomass = creep.of(id) and {
+      lost_to_feed = f.lost_to_feed or 0, evo = f.evo, clinic = cell.clinic_up(id),
+      bred_evo = game.forces[B.force] and game.forces[B.force].get_evolution_factor(f.surface), biomass = creep.of(id) and {
         now = creep.of(id).biomass, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled,
         spent = creep.of(id).spent or 0, bred = creep.of(id).bred or 0}})
   end

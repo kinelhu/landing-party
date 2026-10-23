@@ -123,7 +123,22 @@ local function run_step(b, t)
   if d > 3 * 3 then return end
   local s = game.surfaces[b.surface]
   local name = shared.variant(b.corp, "lp-pylon")
+  -- Clear of the buggy standing on the spot: a pylon overlapping it, by even a hundredth of a tile, left it inside an
+  -- entity, and on Factorio 2.1 its next go_to_location failed at once (it wandered, and the run was given up). The
+  -- search for a free position does not count units.
+  local bb = r.buggy.bounding_box
+  local function clear(q)
+    return q and (q.x < bb.left_top.x - 1 or q.x > bb.right_bottom.x + 1 or q.y < bb.left_top.y - 1 or q.y > bb.right_bottom.y + 1)
+  end
   local q = s.find_non_colliding_position(name, sp, 4, 0.5)
+  if not clear(q) then
+    q = nil
+    for k = 0, 7 do
+      local a = math.pi / 4 * k
+      local c = s.find_non_colliding_position(name, {sp.x + math.cos(a) * 2.5, sp.y + math.sin(a) * 2.5}, 1, 0.5)
+      if not q and clear(c) then q = c end
+    end
+  end
   local e = q and s.create_entity{name = name, position = q, force = b.lander.force, auto_connect = true}
   if e then base.unwire(e) end
   t.line[i] = e

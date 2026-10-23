@@ -22,7 +22,7 @@ local SPACING = 220
 local KINDS = {
   {"infantry (Serenity)", "lp-infantry"}, {"infantry (Grubstake)", "lp-grubstake-infantry"},
   {"lance", "lp-lance"}, {"railgunner", "lp-railgunner"}, {"shock", "lp-shock"}, {"sapper", "lp-sapper"},
-  {"buggy", "lp-buggy"}, {"slug", "lp-slug"}, {"scavenger", "lp-scavenger"}, {"harrier", "lp-harrier"},
+  {"buggy", "lp-buggy"}, {"slug", "lp-slug"}, {"scavenger", "lp-scavenger"}, {"harrier", "lp-harrier"}, {"laser drone", "lp-laser-drone"},
   {"tank", "lp-tank"}, {"prism", "lp-prism"}, {"tesla", "lp-tesla"}, {"scorcher", "lp-scorcher"},
   {"aegis", "lp-aegis"}, {"dozer", "lp-dozer"}, {"walker", "lp-walker"},
   -- Anti-air, one per side (2026-10-23).

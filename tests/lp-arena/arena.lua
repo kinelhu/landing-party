@@ -62,6 +62,29 @@ function arena.corp_kinds(corp)
   return out
 end
 
+-- What a corporation really fields (as scripts/arena_report.py reads it): the kinds in its landing mixes and the units its
+-- tree unlocks, in shared.CORPS. The panel offers these; the batch fights every kind on both forces (the counter matrix).
+function arena.fielded(corp)
+  local seen, out = {}, {}
+  local function walk(t)
+    for k, v in pairs(t) do
+      if k == "mix" and type(v) == "table" then
+        for kind in pairs(v) do seen[kind] = true end
+      elseif k == "unit" and type(v) == "table" and v.kind then
+        seen[v.kind] = true
+      elseif type(v) == "table" then
+        walk(v)
+      end
+    end
+  end
+  walk(shared.CORPS[corp] or {})
+  for kind in pairs(seen) do
+    if prototypes.entity[shared.variant(corp, kind)] then table.insert(out, kind) end
+  end
+  table.sort(out)
+  return out
+end
+
 -- A biter wave of n at evolution evo: each spawner's weights read at evo (linear between its points), half from the
 -- biter spawner and half from the spitter spawner, counts by largest remainder (deterministic).
 function arena.wave(n, evo)

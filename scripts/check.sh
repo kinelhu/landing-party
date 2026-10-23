@@ -21,6 +21,8 @@ fail() { echo "CHECK FAILED ($1)"; grep -hnE -A6 "Error|Failed" "$log" "$P/check
 "$FACTORIO" --config "$P/config/config.ini" --dump-data > "$P/check.out" 2>&1 || fail "data stage"
 grep -qE "Error|Failed to load mods" "$log" && fail "data stage"
 echo "data stage ok: $(grep -c 'Checksum of' "$log") mods loaded"
+# Every locale key the final prototypes name exists ("Unknown key" in game otherwise).
+python3 -I "$(dirname "$0")/lint_names.py" "$P/script-output/data-raw-dump.json" "$REPO/landing-party/locale/en/locale.cfg"
 rm -f "$P/saves/_check.zip"
 "$FACTORIO" --config "$P/config/config.ini" --create "$P/saves/_check.zip" > "$P/check.out" 2>&1 || fail "control stage"
 echo "control stage ok: fresh map created, on_init ran"

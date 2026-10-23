@@ -10,7 +10,7 @@ local shared = {}
 -- looked pasted on, concrete pixel art merged into blobs; user 2026-10-13.)
 -- What kills from the air, as the research ledger names a killer (rd.lua): the corporations' fliers, the player's
 -- combat robots. Their losses to these buy each corporation its anti-air.
-local shared_fliers = {"lp-harrier", "lp-scavenger", "destroyer", "defender", "distractor"}
+local shared_fliers = {"lp-harrier", "lp-scavenger", "lp-laser-drone", "destroyer", "defender", "distractor"}
 shared.FLIERS = shared_fliers
 shared.CORPS = {
   grubstake = {name = "Grubstake Inc.", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
@@ -45,7 +45,7 @@ shared.CORPS = {
       -- Against massed troopers (and the fence in the way): dynamite.
       {id = "sapper", branch = "scrap-arms", era = 2, cost = 1500, unit = {kind = "lp-sapper", weight = 2},
         trigger = {killer = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "character"}, min = 10}},
-      -- Wheels: over the walls (against artillery and mortars), and through them.
+      -- Wheels: over the walls (bomb drones, against artillery and mortars), and through them.
       {id = "scavenger", branch = "wheels", era = 2, cost = 1800, unit = {kind = "lp-scavenger", weight = 1},
         trigger = {damage = "explosion", min = 5}},
       {id = "dozer", branch = "wheels", era = 3, requires = "slug", cost = 2500, unit = {kind = "lp-dozer", weight = 1},
@@ -57,7 +57,8 @@ shared.CORPS = {
       {id = "scorcher", branch = "scrap-arms", era = 2, cost = 2000, unit = {kind = "lp-scorcher", weight = 1},
         trigger = {killer = {"gun-turret", "laser-turret", "flamethrower-turret"}, min = 8}},
     },
-    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 1}, arch = {pad = "drop"},
+    -- Its sky is scrap drones, cheap and many (the user, 2026-10-23: "a more scrappy opponent").
+    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 2}, arch = {pad = "drop"},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
@@ -99,8 +100,10 @@ shared.CORPS = {
     stripe = {tile = "black-refined-concrete"},
     icon = "signal-heart", motto = "Please remain behind the line.",
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
-    -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, no air.
-    doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1, ["lp-railgunner"] = 2},
+    -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, and from its second level a few laser
+    -- drones (the user, 2026-10-23: "give Kessler the actual high tech fliers").
+    doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1, ["lp-railgunner"] = 2,
+      ["lp-laser-drone"] = 1},
     names = {["lp-infantry"] = "lp-line-trooper"},
     -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.
     tree = {
@@ -136,7 +139,7 @@ shared.CORPS = {
     -- lobed (the user, 2026-10-20: "organic looking bases ... like metastases", "it's all squares everywhere"): its
     -- blocks on lobed plates, one wall round each hub (layout.wall_cluster), no square per block, no pickets.
     arch = {gates = true, baffles = true, pillboxes = true, flamers = true, pad = "ring", lobed = true}, clears_nests = true,
-    caps = {siege = 1, ["lp-walker"] = 2, pickets_see = 2, headquarters = 3},
+    caps = {siege = 1, ["lp-walker"] = 2, ["lp-laser-drone"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
     -- Answers: trespass only (its ground, its border, a turret by its camp) gets the siege, its masonry, what never
@@ -164,7 +167,7 @@ shared.DEFAULT_CORP = "serenity"
 shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "lp-fabricator", "lp-turret", "lp-wall", "lp-belt",
   "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-post-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
-  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-prism", "lp-tesla", "lp-scorcher", "lp-howitzer", "lp-scrap-cannon",
+  "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-laser-drone", "lp-railgunner", "lp-prism", "lp-tesla", "lp-scorcher", "lp-howitzer", "lp-scrap-cannon",
   "lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-parked-howitzer", "lp-howitzer-truck", "lp-skyguard", "lp-flak-buggy"}
 -- A howitzer destroyed in the field leaves its camp without one this long (sieges go with mortars only).
 shared.HOWITZER_DOWN = 30 * 3600
@@ -213,7 +216,7 @@ shared.SCAN_GROUPS = {
     kinds = {"lp-infantry", "lp-lance", "lp-shock", "lp-sapper", "lp-slug"}},
   {signal = "lp-scan-armour", icon = "__base__/graphics/icons/tank.png", kinds = {"lp-tank", "lp-aegis", "lp-dozer", "lp-prism", "lp-tesla", "lp-scorcher"}},
   {signal = "lp-scan-walker", icon = "__base__/graphics/icons/spidertron.png", kinds = {"lp-walker"}},
-  {signal = "lp-scan-air", icon = "__base__/graphics/icons/destroyer.png", kinds = {"lp-harrier", "lp-scavenger"}},
+  {signal = "lp-scan-air", icon = "__base__/graphics/icons/destroyer.png", kinds = {"lp-harrier", "lp-scavenger", "lp-laser-drone"}},
   {signal = "lp-scan-railgunner", icon = "__base__/graphics/icons/rocket-launcher.png", kinds = {"lp-railgunner"}},
   {signal = "lp-scan-hauler", icon = "__base__/graphics/icons/car.png", kinds = {"lp-hauler"}},
   {signal = "lp-scan-buggy", icon = "__base__/graphics/icons/car.png", kinds = {"lp-buggy"}},
@@ -344,7 +347,10 @@ shared.units = {
   ["lp-infantry"] = {health = 120, cost = 10, by = {grubstake = 8}},
   ["lp-tank"] = {health = 900, cost = 60, ground_only = true},
   ["lp-walker"] = {health = 1600, cost = 100},
-  ["lp-harrier"] = {health = 150, cost = 40},
+  -- The fliers (units.lua): Grubstake's scrap drone (id lp-harrier) and bomb drone (lp-scavenger), Kessler-Hayashi's
+  -- laser drone.
+  ["lp-harrier"] = {health = 80, cost = 15},
+  ["lp-laser-drone"] = {health = 400, cost = 70},
   ["lp-hauler"] = {health = 1500, cost = 30},
   ["lp-buggy"] = {health = 220, cost = 15},      -- Grubstake's raider and escort (docs/corporations.md)
   -- Tree units (scripts/rd.lua): bought into a corporation's mix.
@@ -355,7 +361,7 @@ shared.units = {
   ["lp-sapper"] = {health = 120, cost = 30, ground_only = true},
   ["lp-aegis"] = {health = 1100, cost = 95, ground_only = true},
   ["lp-dozer"] = {health = 1800, cost = 100, ground_only = true},
-  ["lp-scavenger"] = {health = 180, cost = 50},
+  ["lp-scavenger"] = {health = 60, cost = 35},
   -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
   ["lp-prism"] = {health = 700, cost = 100, ground_only = true},
   ["lp-tesla"] = {health = 800, cost = 100, ground_only = true},
@@ -383,7 +389,7 @@ shared.RELAYS_BY_LEVEL = {[0] = 2, 4, 8, 15}
 shared.RELAYS_PER_EXTRA_LEVEL = 2
 
 -- Faction tier needed to build each unit (the tier rises with parts exported, scripts/faction.lua).
-shared.UNLOCK = {["lp-infantry"] = 0, ["lp-tank"] = 0, ["lp-buggy"] = 0, ["lp-harrier"] = 1, ["lp-walker"] = 2}
+shared.UNLOCK = {["lp-infantry"] = 0, ["lp-tank"] = 0, ["lp-buggy"] = 0, ["lp-harrier"] = 1, ["lp-walker"] = 2, ["lp-laser-drone"] = 2}
 
 -- Fabrication: FEEDSTOCK_PER_PART feedstock make one part in PART_SECONDS (before crafting speed).
 shared.FEEDSTOCK_PER_PART = 5

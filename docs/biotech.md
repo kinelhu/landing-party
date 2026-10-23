@@ -493,6 +493,10 @@ is not the player's pollution, and Kessler-Hayashi must not bill for it (the bri
 - `clear culture` (one spawner in six an incubator, eight): two clearances, 2 incubators destroyed, its way cleared and
   the assembler razed. Dearer than wild nests: 102 units lost against 43 (an incubator's stock defends it; its
   spitters killed the guards at the site).
+- On Factorio 2.1 (0.2.1, 2026-10-23) it fails "the assembler razed": the map shifted a few tiles; the first clearance
+  takes the incubator on its way and loses all ten guards to its stock, the wild worms and big biters (41 shells), the
+  second kills it at 3 of 10 guards 18 minutes later, the third starts at minute 38. Known, to look at: how
+  Kessler-Hayashi sizes a clearance against a stocked incubator.
 - A first try made all 45 spawners incubators: full stock and no culture to pay for it (pens outside a culture breed
   free, as a test's do) killed all ten guards and nothing was cleared. A real culture has at most 12.
 
@@ -565,4 +569,23 @@ against the player -1; the player against Kessler-Hayashi +24.
 - **Tests:** `farm` (default): the substrate (soil, the tower, 8 plants) and two technicians; no incubator unfed in 40
   minutes. `farm techs`: every technician killed at landing; seven minutes on, every original incubator unfed and its
   biochamber stopped; fourteen minutes on, technicians back by pod (3), every biochamber at work, none unfed, none lost.
+
+### The clinic (0.2.1; the identity consult's step 5)
+
+- **The clinic** (`lp-clinic`, `cell.lua`): Space Age's biolab as a prop, always at work, on the substrate by the
+  heating tower; 1,500 health, a military target (turrets in reach fire on it), fire 70% and acid 50%. Built with the
+  substrate (an older save's site gets one at its next look).
+- **Its evolution is the culture's own** (`farm.lua`, `f.evo`): taken from the wild's at landing; while the clinic
+  stands it climbs 0.004 a minute, never behind the wild's (0.25 to the stomper's 0.8 in about two and a half hours,
+  where the wild take many). Destroyed, the climb stops and the incubators breed at 0.3 at the most: small and medium
+  biters, a trace of spore spitters; no spitters, cinders or stompers. A pod brings a new clinic 30 minutes on and the
+  breeds are back where they were (what was learned is kept). The farm sets the force's evolution every ten seconds;
+  the engine moves it a little between (a few millionths), which does nothing.
+- **Tests:** every `farm` run: the clinic stands and the breeds climb (default: 0.301 at landing, 0.385 21 minutes on).
+  `farm clinic` (the wild at 0.5): the clinic killed a minute after landing; five and twenty minutes on its learning
+  unchanged (0.505) and its breeds at 0.3; a new clinic by pod 30.3 minutes on, the breeds at 0.505 again.
+- **Seen in a window (2026-10-23):** the clinic reads beside the heating tower, its lights acid green at night. The
+  substrate's plants were seedling mounds (a plant made by script starts ungrown): now made grown (`tick_grown`).
+- **Next (the consult's step 6):** loot and the trophy (a dead culture leaves its soil and trees; the clinic goes with
+  the culture for now).
 

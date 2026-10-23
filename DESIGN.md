@@ -35,8 +35,9 @@ document still says Serenity where it records history.
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
+| Fliers by corporation (the user, 2026-10-23: "give Kessler the actual high tech fliers, whereas Grubstake is a more scrappy opponent ... kamikaze drones"): Grubstake's scrap drone (id lp-harrier: weak, cheap, two in its mix of nine) and bomb drone (id lp-scavenger, its Wheels node: bursts on what it dives on and dies), Kessler-Hayashi's laser drone (armoured, a beam; in its mix from level 2) | built 0.2.1 | arena |
 | Anti-air, one per side: Kessler-Hayashi's Skyguard and Grubstake's flak buggy (bought on losses to fliers or the player's combat robots), Synthexis's spore spitter (bred from its arrival) | built 0.1.63 | `unitnode` (`skyguard`, `flak-buggy`), arena |
-| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.67 (its cells: pad, biochamber, lamp by each incubator, the feed its weak point; its substrate and technicians who carry the feed; the spore spitter, its anti-air; the stomper, tier 4; the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (eleven), `farm` (seven), `creep` (seven), `cinder`, `clear culture` |
+| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.2.1 (its clinic: breeds climb while it stands, stock only without it; its cells: pad, biochamber, lamp by each incubator, the feed its weak point; its substrate and technicians who carry the feed; the spore spitter, its anti-air; the stomper, tier 4; the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (eleven), `farm` (eight), `creep` (seven), `cinder`, `clear culture` |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -470,6 +471,31 @@ technologies, when big biters and behemoths come.
   small arms, armour edges splash and beats small arms but loses to the lance and the slug among them. Air is all or
   nothing (a squad with no anti-air loses every flier fight; one with it wins), which is the genre's way: build fliers
   when the other side has none. Every kind keeps clear wins and losses.
+- **Fliers by corporation (0.2.1, 2026-10-23).** The user: "Shouldn't we give Kessler the actual high tech fliers,
+  whereas Grubstake is a more scrappy opponent, and should perhaps have simpler drones, if not even kamikaze drones?"
+  Until then Grubstake had the harrier (150 health, 40 parts) and the Scavenger harrier (rockets), and Kessler-Hayashi
+  no fighter in the air: the harriers of its garrison doctrines (`army.MIX`) never applied, every corporation base
+  building from its corporation's own mix (`army.lua` `mix()`), which had none. Now, ids kept:
+  - *Scrap drone* (Grubstake, lp-harrier): the distractor's body, 80 health, 6 a shot every 20 ticks at 12, 15 parts,
+    two in its mix of nine (was one in eight). Beats every ground-only kind, loses to every gun that shoots up (-98).
+  - *Bomb drone* (Grubstake's Wheels node, lp-scavenger): 60 health, quick; on its target 150 explosion and 150 more
+    over 2.5 tiles (its enemies only), and dies in it (a damage effect on its attack's source: spiked both ways, a
+    script trigger works too); drops nothing (a drop a blow otherwise). First at 150 over 3 and 20 parts it beat squads
+    +40 to +85 and a turret line +5; at 35 parts it beats the slow specialists (railgunner +67, sapper +64, shock +53,
+    the laser drone +47) and loses to rifles, shotguns, armour and anti-air. Gun turrets shoot it down (-94): its
+    targets are the unarmed ones (artillery, mortars, radars), which its Wheels raids pick.
+  - *Laser drone* (Kessler-Hayashi, from level 2, one in eleven of its mix): the destroyer's body, 400 health,
+    physical 40% and 3 off a hit, laser 20%, a beam of about 12 every 20 ticks at 16, 70 parts. Beats every
+    ground-only kind (+100), six gun turrets about even (-11), four laser turrets +50; loses to infantry of every side
+    (-77 to -88), rocket troopers, slugs, the walker, bomb drones and all three anti-air. At 300 health and 30% it lost
+    to gun turrets (-50); at 50% and 4 off it beat them +83, which left the player's standard defence no answer.
+- **Grubstake's vehicles told apart (0.2.1; the user, 2026-10-23: "Grubstake buggies also very much all look alike from
+  afar").** All were the car's hull in the same amber; the buggy and the slug buggy were the same picture. Now by
+  outline, then colour, each drawn afresh from the car (`units.lua` `look()`): the buggy at 85% in amber, the slug
+  buggy with the tank's turret at 0.9 (a dome and twin barrels) in rust, the flak buggy with the car's turret at 1.4 in
+  sky blue (olive was lost on grass), the dozer at 125% in construction yellow; the hauler as it was. The bomb drone
+  took the defender's body in hazard red (the scrap drone the distractor's, the laser drone the destroyer's). Seen in
+  a window, near and far.
 - **Groups from the fights alone (the user, 2026-10-21: "should we run some kind of clusterization on each unit
   unsupervised?").** `scripts/arena_report.py` clusters kinds by their rows of scores (average linkage, scipy;
   `docs/arena/clusters.png`); the heatmap's names are coloured by corporation, read from `shared.lua`. Cut into four,
@@ -3359,6 +3385,10 @@ tighter layout (54 at 13 tiles apart overflow the frame).
   rocket turrets 400 to 1,500 health, Tesla turrets 1,000 to 2,000, the shotgun's cooldown 60 to 40, cannon shells aimed
   at a position, groups sized by `size_in_group` (big 2, behemoth 3). Steam updated the game mid-regression: every run
   failed at launch with "Incompatible Factorio version", a launch failure, not a test result.
+  The recoloured sprites (`scripts/make_sprites.py`) are cut from vanilla's files, and 2.1 re-drew some (the flamethrower
+  turret's base, assembling machine 2 split into a base and an animation): the game window refused to load ("sprite
+  rectangle outside the actual sprite size"), which no headless run sees (it loads no sprites). After a game update,
+  rerun `make_sprites.py --write` and open a window (`scripts/shots.sh`) before anything else.
 - Pathfinding is the engine's (the biters' pathfinder): units route around whatever their collision mask
   hits; with no way round, ground units shoot through; groups arrive as blobs; spider-units step over;
   air units fly straight. Long trips go in ~100-tile legs.

@@ -75,7 +75,7 @@ NODE_NAME = {"optics": "Optics", "handloads": "Hand-loads", "warden": "Warden ar
              "shock": "Shock troopers", "aegis": "Aegis tanks", "hardened": "Dug in", "jammer": "Jammer mast",
              "counter": "Counter-battery", "salvage": "Salvage rights", "prospector": "Prospector's eye",
              "scrap-plating": "Scrap plating", "asbestos": "Asbestos suits", "slug": "Slug buggies",
-             "sapper": "Dynamite sappers", "scavenger": "Scavenger harriers", "dozer": "Dozer", "prism": "Prism tanks",
+             "sapper": "Dynamite sappers", "scavenger": "Bomb drones", "dozer": "Dozer", "prism": "Prism tanks",
              "tesla": "Tesla tanks", "scorcher": "Scorchers"}
 BRANCH_NAME = {"optics": "Optics", "line": "Line", "siege": "Siege", "scrap-arms": "Scrap arms", "loot": "Loot",
                "wheels": "Wheels"}

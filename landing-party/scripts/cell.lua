@@ -99,6 +99,36 @@ pods.handlers["biotech-techs"] = function(payload, surface, position)
   end
 end
 
+-- The clinic (the identity consult, step 5): a biolab on the substrate by the tower. While it stands the culture's breeds
+-- climb (farm.lua); destroyed, a pod brings another CLINIC_WAIT later. site.clinic: the entity, false while one is
+-- awaited, nil before the first (an older save's site: built at its next look).
+local CLINIC_WAIT = 30 * 60 * 60
+
+local function place_clinic(site, surface)
+  local t = site.tower and site.tower.valid and site.tower.position or site.at
+  local q
+  for k = 0, 7 do
+    local a = math.pi / 4 * k
+    local p = {x = t.x + math.cos(a) * 5.5, y = t.y + math.sin(a) * 5.5}
+    if not q and surface.can_place_entity{name = "lp-clinic", position = p, force = B.force} then q = p end
+  end
+  q = q or surface.find_non_colliding_position("lp-clinic", t, 16, 1)
+  site.clinic = q and surface.create_entity{name = "lp-clinic", position = q, force = B.force} or nil
+  site.clinic_drop_at, site.clinic_dropping = nil, nil
+  return site.clinic
+end
+
+pods.handlers["biotech-clinic"] = function(payload, surface, position)
+  local site = sites()[payload.farm]
+  if site and not (site.clinic and site.clinic.valid) then place_clinic(site, surface) end
+end
+
+-- Whether a culture's clinic stands.
+function cell.clinic_up(farm_id)
+  local site = sites()[farm_id]
+  return site ~= nil and site.clinic ~= nil and site.clinic ~= false and site.clinic.valid
+end
+
 -- A culture's substrate, built once when it lands (or at its first look, in an older save).
 function cell.site(farm_id, surface, mid)
   local site = sites()[farm_id]
@@ -138,11 +168,13 @@ function cell.site(farm_id, surface, mid)
   end
   local tower = surface.create_entity{name = "lp-heating-tower", position = c, force = B.force}
   site = {at = c, tower = tower, techs = {}, plants = {}}
+  place_clinic(site, surface)
   for k = 1, 8 do
     local a = 2 * math.pi * k / 8
     local q = surface.find_non_colliding_position(PLANTS[k % 2 + 1], {c.x + math.cos(a) * 3.5, c.y + math.sin(a) * 3.5}, 2, 0.5)
     local e = q and surface.create_entity{name = PLANTS[k % 2 + 1], position = q, force = "neutral"}
-    if e then table.insert(site.plants, e) end
+    -- Grown already (a plant made by script is a seedling for its whole growth time).
+    if e then e.tick_grown = game.tick; table.insert(site.plants, e) end
   end
   sites()[farm_id] = site
   spawn_techs(site, surface, TECHS)
@@ -171,6 +203,20 @@ function cell.tick(farm_id, surface, pen_ids, tick)
     end
   end
   if #site.techs > 0 then site.dropping = nil end
+  -- The clinic: built for an older save's site; destroyed, another by pod CLINIC_WAIT later.
+  if not (site.clinic and site.clinic.valid) then
+    if site.clinic == nil and not site.clinic_drop_at then
+      place_clinic(site, surface)
+    elseif not site.clinic_drop_at then
+      site.clinic, site.clinic_drop_at = false, tick + CLINIC_WAIT
+    elseif tick >= site.clinic_drop_at and not site.clinic_dropping then
+      site.clinic_dropping = true
+      local at = site.tower and site.tower.valid and site.tower.position or site.at
+      if not pods.send(surface, {at.x - 6, at.y}, B.force, {kind = "biotech-clinic", farm = farm_id}) then
+        place_clinic(site, surface)
+      end
+    end
+  end
   -- The cells of this culture with a biochamber standing.
   local cs = {}
   for _, id in ipairs(pen_ids) do
@@ -222,6 +268,7 @@ function cell.forget_site(farm_id)
   local site = sites()[farm_id]
   if not site then return end
   for _, t in ipairs(site.techs) do if t.unit.valid then t.unit.destroy() end end
+  if site.clinic and site.clinic.valid then site.clinic.destroy() end
   sites()[farm_id] = nil
 end
 
@@ -239,7 +286,8 @@ function cell.sites()
       end
     end
     out[#out + 1] = {farm = id, at = {site.at.x, site.at.y}, tower = site.tower and site.tower.valid or false, techs = n,
-      plants = #site.plants, drop_at = site.drop_at, walks = walks}
+      plants = #site.plants, drop_at = site.drop_at, walks = walks, clinic = cell.clinic_up(id),
+      clinic_drop_at = site.clinic_drop_at or nil}
   end
   return out
 end

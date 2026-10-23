@@ -197,6 +197,8 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     hy + (site[2] - hy) * out / dist}, 20, 0.5)
   local hauler = p and s.create_entity{name = hname, position = p, force = h.force}
   if not hauler then return false end
+  -- The howitzer leaves its pad now (base.park would hide it at its next look, two seconds on: truck and pad at once).
+  if truck and b.parked and b.parked.valid then b.parked.destroy(); b.parked = nil end
   local guards = {}
   -- Counter-battery (Serenity): against the player's artillery, its Shock troopers go first (up to six).
   local floor = floor_of(b, army, battery(t))
