@@ -44,6 +44,73 @@ for _, src in ipairs(BREEDS) do
   table.insert(out, u)
 end
 
+-- The runt (tier 2, the breeds consult): the probe's body, a bred small biter of its own name so the probe's losses
+-- can be read (herd.lua: which turrets shot at it); spawned by script at probe time, never bred.
+do
+  local r
+  for _, p in ipairs(out) do if p.name == "lp-bred-small-biter" then r = table.deepcopy(p) end end
+  r.name = "lp-runt"
+  r.localised_name = {"entity-name.lp-runt"}
+  r.localised_description = {"entity-description.lp-runt"}
+  table.insert(out, r)
+end
+
+-- The cinder (tier 3, the breeds consult): a big biter with ember bands that dies into the demolisher's fissure (a
+-- telegraphed crack, then an eruption that breaks walls and turrets round it: fire would not, walls are immune to it,
+-- and fire spreads). Shoot the orange one first, at range. Its eruption hurts any force but its own ("not-same"), so a
+-- cinder killed at home cracks no incubator. Lit at night by script (farm.on_spawned).
+local EMBER1, EMBER2 = {r = 1, g = 0.45, b = 0.1, a = 1}, {r = 0.95, g = 0.8, b = 0.2, a = 1}
+local function ember(t, n)
+  if type(t) ~= "table" then return n end
+  if t.tint then t.tint = (n % 2 == 0) and EMBER1 or EMBER2; n = n + 1 end
+  for _, v in pairs(t) do n = ember(v, n) end
+  return n
+end
+do
+  local src
+  for _, p in ipairs(out) do if p.name == "lp-bred-big-biter" then src = p end end
+  local c = table.deepcopy(src)
+  c.name = "lp-bred-cinder"
+  c.localised_name = {"entity-name.lp-bred-cinder"}
+  c.localised_description = {"entity-description.lp-bred-cinder"}
+  ember(c.run_animation, 0)
+  ember(c.attack_parameters.animation, 0)
+  -- The demolisher's delayed chain (crack, then eruption, then damage) never fired from a dying unit (a test: the crack
+  -- drew, no damage came): the death does it all at once, the crack and eruption as its look.
+  local function area(r, amount)
+    return {type = "nested-result", action = {type = "area", radius = r, force = "not-same", ignore_collision_condition = true, trigger_target_mask = {"common"},
+      action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = amount, type = "explosion"}}}}}}
+  end
+  c.dying_trigger_effect = {
+    {type = "create-entity", entity_name = "lp-cinder-fissure"},
+    {type = "create-entity", entity_name = "lp-cinder-fissure-explosion"},
+    {type = "create-entity", entity_name = "lp-cinder-fissure-scorchmark"},
+    area(4, 350), area(2, 200)}
+  table.insert(out, c)
+  -- The small demolisher's fissure set, renamed and its damage its own.
+  local FROM, TO = "small-demolisher-fissure", "lp-cinder-fissure"
+  local function rename(t)
+    if type(t) ~= "table" then return end
+    for k, v in pairs(t) do
+      if type(v) == "string" and v:sub(1, #FROM) == FROM then t[k] = TO .. v:sub(#FROM + 1)
+      else rename(v) end
+    end
+  end
+  for _, protos in pairs(data.raw) do
+    for name, p in pairs(protos) do
+      if name:sub(1, #FROM) == FROM then
+        local q = table.deepcopy(p)
+        rename(q)
+        q.localised_name = {"entity-name.lp-cinder-fissure"}
+        if q.light then q.light.color = {r = 1, g = 0.4, b = 0.05} end
+        -- The crack is a look only here (its delayed eruption and damage are the death's own, above).
+        if q.name == TO then q.created_effect = nil end
+        table.insert(out, q)
+      end
+    end
+  end
+end
+
 -- Its worms: two by each pen (the breeds consult: a farm's home guard; the only thing of its that reaches a flier).
 local worm = table.deepcopy(data.raw.turret["medium-worm-turret"])
 worm.name = "lp-bred-worm"
@@ -76,6 +143,16 @@ pen.max_friends_around_to_spawn = shared.PEN_CAP
 for _, r in ipairs(pen.result_units) do
   local name = r[1] or r.unit
   if r[1] then r[1] = "lp-bred-" .. name else r.unit = "lp-bred-" .. name end
+end
+-- Its cinders from evolution 0.6, a tenth of what it breeds from 0.8.
+do
+  local first = pen.result_units[1]
+  if first[1] then
+    table.insert(pen.result_units, {"lp-bred-cinder", {{0.6, 0.0}, {0.8, 0.1}, {1.0, 0.1}}})
+  else
+    table.insert(pen.result_units, {unit = "lp-bred-cinder", spawn_points = {
+      {evolution_factor = 0.6, weight = 0.0}, {evolution_factor = 0.8, weight = 0.1}, {evolution_factor = 1.0, weight = 0.1}}})
+  end
 end
 -- Its spitters from evolution 0.3, a sixth of what it breeds from 0.5 (the vanilla spitter spawner's medium comes at 0.4).
 local first = pen.result_units[1]

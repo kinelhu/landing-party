@@ -5,6 +5,7 @@
 --   aggression   how soon it acts: its ladder's clock runs faster (stance.rung), the gaps after an operation, between
 --                answers and between heists (rig, tap) are shorter, and it keeps at a hopeless front longer
 --                before standing down (war.quiet)
+-- Synthexis (corp "biotech", not in shared.CORPS) has the two as well: biomass income and the gap between waves.
 -- Tests and sweeps set storage.tune_levers[corp][lever] (debug_tune levers) over the settings.
 -- A leaf: it reads settings and storage only.
 local shared = require("__landing-party__.shared")

@@ -113,6 +113,8 @@ for _, n in ipairs(shared.variants({"lp-lander", "lp-generator", "lp-pylon", "lp
 end
 -- The biotech's pens: one attacked calls its farm's wave home (farm.lua).
 table.insert(BUILDINGS, {filter = "name", name = "lp-pen"})
+-- Its probe's runts: which of the player's turrets shoot at them (herd.lua).
+table.insert(BUILDINGS, {filter = "name", name = "lp-runt"})
 -- What holds a charge, for the Tesla's drain (scorcher.lua).
 for _, t in ipairs({"electric-turret", "accumulator", "roboport", "electric-energy-interface"}) do
   table.insert(BUILDINGS, {filter = "type", type = t})
@@ -120,6 +122,7 @@ end
 script.on_event(defines.events.on_entity_damaged, function(e)
   if e.damage_type and e.damage_type.name == "electric" then scorcher.drain(e) end
   if e.entity.name == "lp-pen" then return farm.on_damaged(e) end
+  if e.entity.name == "lp-runt" then return herd.on_probe_hit(e) end
   if not shared.is_corp(e.entity.force.name) then return end
   -- Any other force: a rival corporation's fire raises the alarm as the player's does.
   if e.force and e.force ~= e.entity.force then

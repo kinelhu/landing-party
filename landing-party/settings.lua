@@ -9,7 +9,8 @@ data:extend{
 -- running game. The presets' multipliers live in shared.TUNE.
 local levels = {"very-low", "low", "normal", "high", "very-high"}
 local order = 0
-for _, corp in ipairs({"grubstake", "serenity"}) do
+-- Synthexis (id biotech) too: its strength is its biomass income, its aggression the gap between its waves (farm.lua).
+for _, corp in ipairs({"grubstake", "serenity", "biotech"}) do
   for _, lever in ipairs({"strength", "aggression"}) do
     order = order + 1
     data:extend{{type = "string-setting", name = "lp-" .. corp .. "-" .. lever, setting_type = "runtime-global",

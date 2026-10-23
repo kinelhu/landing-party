@@ -14,6 +14,7 @@
 -- Biomass (creep.drink): the pollution the engine's creep tiles absorb (shared.CREEP_ABSORB each, a second, up to what is
 -- in the chunk) is counted to the culture whose tumor laid them; farm.lua spends it on breeding.
 local shared = require("__landing-party__.shared")
+local tune = require("__landing-party__.scripts.tune")
 
 local creep = {}
 
@@ -190,7 +191,7 @@ function creep.drink(seconds)
     local cul = st().cultures and st().cultures[c.culture]
     if surface and cul then
       local p = surface.get_pollution({c.x, c.y})
-      local got = math.min(p, c.n * shared.CREEP_ABSORB * seconds)
+      local got = math.min(p, c.n * shared.CREEP_ABSORB * seconds) * tune.strength("biotech")
       if got > 0 then
         cul.biomass = (cul.biomass or 0) + got
         cul.drunk = (cul.drunk or 0) + got

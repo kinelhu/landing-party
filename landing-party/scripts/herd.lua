@@ -395,6 +395,105 @@ local function arc(w, j)
   return out
 end
 
+-- The probe (the waves consult; the runt, tier 2 of the breeds consult): from evolution PROBE_EVO, once the mark is
+-- chosen, PROBE_N runts walk the trail ahead of the herd and throw themselves at the marked face. The herd reads only
+-- whether each turret there shot at them (on_entity_damaged, the turret the cause): a turret that had a runt in its
+-- reach and stayed silent is dry, dark or broken, and the herd goes in in front of it. Kept for this wave only.
+local PROBE_EVO, PROBE_N, PROBE_WAIT = 0.45, 8, 3 * 3600
+herd.PROBE_EVO, herd.PROBE_N = PROBE_EVO, PROBE_N
+
+local function probe_point(w)
+  local m, c = w.mark, w.center
+  local len = math.sqrt(d2(m, c))
+  local k = math.max(0, w.loop - 4) / math.max(len, 1)
+  return {x = m.x + (c.x - m.x) * k, y = m.y + (c.y - m.y) * k}
+end
+
+local function probe(w)
+  if w.no_probe then return end
+  local s = game.surfaces[w.surface]
+  local f = force()
+  if not f or f.get_evolution_factor(s) < PROBE_EVO then return end
+  local at = gate(w)
+  local g = s.create_unit_group{position = at, force = B.force}
+  local units = {}
+  for _ = 1, PROBE_N do
+    local q = s.find_non_colliding_position("lp-runt", at, 12, 0.5)
+    local u = q and s.create_entity{name = "lp-runt", position = q, force = B.force}
+    if u then g.add_member(u); table.insert(units, u) end
+  end
+  if #units == 0 then g.destroy(); return end
+  local face = probe_point(w)
+  local cmds = {}
+  for k = 2, #w.trail do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
+  table.insert(cmds, {type = defines.command.attack_area, destination = face, radius = 14,
+    distraction = defines.distraction.by_enemy})
+  g.set_command(compound(cmds))
+  local turrets = {}
+  for _, t in ipairs(s.find_entities_filtered{position = face, radius = 40, type = TURRETS, force = players()}) do
+    local ap = t.prototype.attack_parameters
+    turrets[t.unit_number] = {entity = t, range = ap and ap.range or 18, reach = false, fired = false}
+  end
+  w.probe = {group = g, units = units, turrets = turrets, face = face, t = game.tick}
+  log(w, string.format("probe: %d runts at the face %.0f,%.0f (%d turrets near)", #units, face.x, face.y,
+    table_size(turrets)))
+end
+
+-- Which turrets had a runt in reach, a second at a time while the probe lives.
+local function probe_watch(w)
+  local p = w.probe
+  if not p or p.done then return end
+  local live = 0
+  for _, u in ipairs(p.units) do
+    if u.valid then
+      live = live + 1
+      for _, t in pairs(p.turrets) do
+        if not t.reach and t.entity.valid and d2(u.position, t.entity.position) <= (t.range - 1) ^ 2 then t.reach = true end
+      end
+    end
+  end
+  p.live = live
+end
+
+-- The probe's answer: the silent turret nearest the mark, if any, becomes where the herd goes in.
+local function probe_read(w)
+  local p = w.probe
+  if not p or p.done then return end
+  probe_watch(w)
+  p.done = true
+  local fired, silent, best, bd = 0, 0, nil, nil
+  for _, t in pairs(p.turrets) do
+    if t.fired then fired = fired + 1
+    elseif t.reach and t.entity.valid then
+      silent = silent + 1
+      local d = d2(t.entity.position, w.mark)
+      if not bd or d < bd then best, bd = t.entity, d end
+    end
+  end
+  p.result = {fired = fired, silent = silent}
+  if best then
+    local a = math.atan2(best.position.y - w.center.y, best.position.x - w.center.x)
+    w.mark = to_box(w.center, w.hx + w.loop, w.hy + w.loop, a)
+    p.result.moved_to = {best.position.x, best.position.y}
+    log(w, string.format("probe: %d fired, %d silent: the herd goes in at the silent %s at %.0f,%.0f", fired, silent,
+      best.name, best.position.x, best.position.y))
+  else
+    log(w, string.format("probe: %d fired, none silent: the mark stands", fired))
+  end
+end
+
+function herd.on_probe_hit(e)
+  local c = e.cause
+  if not (c and c.valid and c.unit_number) then return end
+  for _, w in pairs(st().waves) do
+    local p = w.probe
+    if p and not p.done then
+      local t = p.turrets[c.unit_number]
+      if t then t.fired = true; return end
+    end
+  end
+end
+
 local function mark(w)
   local j, count = choose_mark(w)
   w.mark = loop_point(w, j)
@@ -418,6 +517,7 @@ local function mark(w)
   w.t_mark = game.tick
   log(w, string.format("scout's turrets by face (E, SE, S, SW, W, NW, N, NE from the middle) %s; mark at %.0f,%.0f",
     table.concat(parts, " "), w.mark.x, w.mark.y))
+  probe(w)
   gather(w, "march")
 end
 
@@ -524,8 +624,53 @@ end
 
 local withdraw
 
+-- Its spitters (the breeds consult, tier 1): once the herd is inside they leave it and hold the breach, spitting at
+-- whatever comes at the gap (a sally into the herd's back walks into puddles); when it withdraws they stay COVER_TICKS,
+-- then follow it home down the trail.
+local COVER_TICKS = 20 * 60
+local function is_spitter(u) return u.valid and u.name:find("spitter", 1, true) ~= nil end
+
+local function hold_breach(w)
+  if not w.breach or w.holding then return end
+  w.holding = true
+  local n = 0
+  for _, u in ipairs(w.members) do
+    if is_spitter(u) then
+      -- A command of its own takes a unit out of its group (there is no release in 2.0's commandable).
+      u.commandable.set_command{type = defines.command.attack_area, destination = w.breach, radius = 10,
+        distraction = defines.distraction.by_enemy}
+      n = n + 1
+      if u.commandable.parent_group then w.still_grouped = (w.still_grouped or 0) + 1 end
+    end
+  end
+  if n > 0 then log(w, string.format("%d spitters hold the breach (%d still in the group)", n, w.still_grouped or 0)) end
+end
+
+-- A rearguard of its own (a group: the spitters sent home one by one lined up 40 tiles out and stood there).
+local function cover(w)
+  if not w.holding or not w.breach then return end
+  local s = game.surfaces[w.surface]
+  local rear
+  local n = 0
+  for _, u in ipairs(w.members) do
+    if is_spitter(u) and not u.commandable.parent_group then
+      rear = rear or s.create_unit_group{position = u.position, force = B.force}
+      rear.add_member(u)
+      n = n + 1
+    end
+  end
+  if not rear then return end
+  local cmds = {{type = defines.command.stop, ticks_to_wait = COVER_TICKS, distraction = defines.distraction.by_enemy}}
+  for k = #w.trail, 1, -1 do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
+  rear.set_command(compound(cmds))
+  st().rears = st().rears or {}
+  st().rears[rear.unique_id] = rear
+  log(w, string.format("%d spitters cover the withdrawal", n))
+end
+
 local function hunt(w)
   if not (w.group and w.group.valid) then return end
+  hold_breach(w)
   local t = supply_target(w)
   if not t and not w.pushed then
     -- Nothing in sight: on to the middle, once (in at a corner of a 74-tile base, its lead saw the power in the middle at
@@ -555,6 +700,7 @@ withdraw = function(w, why)
   if w.breach then table.insert(cmds, go(w.breach, defines.distraction.none, 4)) end
   for k = #w.trail, 1, -1 do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
   g.set_command(compound(cmds))
+  cover(w)
   w.stage = "withdraw"
   w.t_withdraw = game.tick
   w.t = game.tick
@@ -572,7 +718,8 @@ local function finish(w, outcome)
     kills = w.kills, loop = w.loop, mark = w.mark and {w.mark.x, w.mark.y}, scout_seen = w.scout_seen,
     t_launch = w.t0, t_mark = w.t_mark, t_march = w.t_march, t_breach = w.t_breach, t_inside = w.t_inside,
     t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},
-    trail = w.trail, farm = w.farm, recalled = w.recalled})
+    trail = w.trail, farm = w.farm, recalled = w.recalled, probe = w.probe and w.probe.result,
+    breach = w.breach and {w.breach.x, w.breach.y}})
   h.waves[w.id] = nil
   log(w, string.format("%s; %d of %d home", outcome, alive(w), w.size))
 end
@@ -593,6 +740,10 @@ local function step(w, tick)
     end
     if tick - w.t > SCOUT_TIMEOUT then mark(w) end
     return
+  end
+  if w.probe and not w.probe.done then
+    probe_watch(w)
+    if w.probe.live == 0 or tick - w.probe.t > PROBE_WAIT then probe_read(w) end
   end
   if alive(w) == 0 then return finish(w, "lost") end
   if w.stage == "gather" then
@@ -634,6 +785,12 @@ end
 function herd.on_command_completed(e)
   local h = storage.herd
   if not h then return end
+  local rear = h.rears and h.rears[e.unit_number]
+  if rear then
+    h.rears[e.unit_number] = nil
+    if rear.valid then rear.destroy() end
+    return
+  end
   for _, w in pairs(h.waves) do
     if w.stage == "scout" and w.scout and w.scout.valid and e.unit_number == w.scout.unit_number then
       w.scout_seen = 0
@@ -647,7 +804,7 @@ function herd.on_command_completed(e)
       return mark(w)
     end
     if w.group and w.group.valid and e.unit_number == w.group.unique_id then
-      if w.stage == "march" then return breach(w) end
+      if w.stage == "march" then probe_read(w); return breach(w) end
       if w.stage == "breach" then
         w.stage = "inside"; w.t_inside = game.tick
         return hunt(w)
@@ -712,9 +869,19 @@ function herd.state()
     waves[#waves + 1] = {id = id, stage = w.stage, alive = alive(w), size = w.size, loop = w.loop,
       scout = w.scout and w.scout.valid and {w.scout.position.x, w.scout.position.y} or nil,
       group = w.group and w.group.valid and {w.group.position.x, w.group.position.y} or nil,
-      mark = w.mark and {w.mark.x, w.mark.y}, trail = w.trail}
+      mark = w.mark and {w.mark.x, w.mark.y}, trail = w.trail, breach = w.breach and {w.breach.x, w.breach.y},
+      holding = w.holding or false}
   end
-  return {pens = pens, waves = waves, log = h.log, trails = #h.trails}
+  local rears = {}
+  for id, g in pairs(h.rears or {}) do
+    if g.valid then
+      table.insert(rears, {id = id, state = g.state, members = #g.members, pos = {g.position.x, g.position.y},
+        cmd = g.command and g.command.type, sub = g.command and g.command.commands and #g.command.commands})
+    else
+      table.insert(rears, {id = id, valid = false})
+    end
+  end
+  return {pens = pens, waves = waves, log = h.log, trails = #h.trails, rears = rears}
 end
 
 return herd

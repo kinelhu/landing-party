@@ -133,6 +133,11 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 33. **Biomass** (0.1.57): its incubators breed only on biomass, from what its creep drinks of the pollution. A dirty
     factory whose cloud reaches its culture feeds it (bigger, sooner waves); clean air leaves it the trickle. Watch an
     incubator stop (no animation) when it has nothing.
+34. **The probe and the spitters** (0.1.59, at evolution 0.45 and up): before a wave, eight small green "runts" walk at
+    one face and die there. Leave a turret on that face without ammunition: the herd comes in in front of it. Once it
+    is inside, its spitters (long green bodies) stay at the gap and spit at whatever comes; they leave last.
+35. **The cinder** (0.1.59, evolution 0.6 and up): a big biter with orange bands, lit at night. Where it dies the ground
+    cracks and erupts: let it reach your wall and the wall and the turret behind it go. Kill it at range.
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

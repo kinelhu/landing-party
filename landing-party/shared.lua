@@ -225,7 +225,8 @@ shared.WAVE_MIN = 24
 -- docs/arena.md) and in biomass in the game (an incubator breeds only while its culture can pay: farm.lua).
 -- None of them shoots up (air.lua): its class is many, healing and soft.
 shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
-  ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}, ["lp-bred-medium-spitter"] = {cost = 9}}
+  ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}, ["lp-bred-medium-spitter"] = {cost = 9},
+  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 70}}
 -- Biomass (docs/biotech.md "Biomass"): the breeds' costs are paid in it, earned from the pollution its creep drinks (each
 -- creep tile absorbs CREEP_ABSORB a second, the engine's own absorption; a unit of pollution drunk is a unit of biomass).
 shared.CREEP_ABSORB = 0.0005

@@ -396,5 +396,47 @@ beat it on its own ground, the railgunner still wins every fight against both. K
   and the railgunner (-100), is even with Kessler-Hayashi's riflemen (0) and beats Grubstake's (+33). The consult's
   cycle holds where it matters: spitters beat tanks, tanks beat the stock, the stock beats rifles; rifles only draw
   with the spitter, and the lance (anti-armour) loses to it (+100): a lance is a tank-killer, not a bug-killer.
-- Not yet: the pack's use of it (spitters at the breach and covering the withdrawal; now they fight in the herd as
-  any breed).
+- **In the pack (0.1.59).** Once the herd is inside, its spitters leave it and hold the breach (`attack_area` 10 round
+  it): a sally into the herd's back walks into acid. When it withdraws they stay 20 s, then follow as a rearguard group
+  down the same trail. Sent home one by one they were overtaken by the end of the test, not stuck (the test now waits
+  for the rearguard); as a group they walk it as the herd does. `herd spit` (30 mediums, 10 spitters): 9 held the
+  breach, 9 covered, 8 home.
+
+### Synthexis's levers (0.1.59)
+
+Its two settings, as the corporations have (`lp-biotech-strength`, `lp-biotech-aggression`; "Synthexis: ..."):
+strength multiplies its biomass income (pod, trickle and what its creep drinks), aggression shortens the gap between
+its waves and to its first. `creep strong` (strength 2, clean air): pod 400, trickle 580 in 20 minutes against 290.
+
+### The runt and the probe (0.1.59, tier 2)
+
+`lp-runt`: a bred small biter of its own name (so its hits can be read), spawned by script, never bred (the pens stop
+breeding smalls at 0.5). From evolution 0.45, once the scout's mark is chosen, 8 runts walk the trail ahead of the herd
+(they leave while it gathers; the walk is the same) and attack the marked face (`attack_area` 14 at the turrets' line).
+The herd reads only whether each turret near the face shot at them (`on_entity_damaged` on `lp-runt`, the turret the
+cause) and which had a runt within its range (checked each second): a turret in reach that never shot is dry, dark or
+broken, and the mark moves to the face in front of the silent turret nearest it. Read when the runts are dead, after 3
+minutes, or when the herd reaches the mark, whichever first; kept for this wave only.
+- `herd probe`: two lasers in each of the eight sectors, but toward the pen one of the two a gun turret with no
+  ammunition: 8 runts, 3 turrets fired, 1 silent; the herd breached 4 tiles from the dry gun (24 from its lit twin).
+- The tell is the consult's: "ten green biters threw themselves at my north wall and died" is a clock (the herd is
+  about a minute and a half behind) and a pointer (check that face's ammunition and power).
+- Their price, 8 runts at 2, is taken off the culture's biomass when a wave is sent at evolution 0.45 or more. Not yet:
+  the probe on the scout's return to an old breach.
+
+### The cinder (0.1.59, tier 3)
+
+`lp-bred-cinder`: the bred big biter with ember bands (orange and gold) and an orange light at night (drawn at its
+birth, `farm.on_spawned`), bred from evolution 0.6 (a tenth of births from 0.8). It dies into the demolisher's fissure:
+the crack, the eruption and the scorchmark (the small demolisher's, copied as `lp-cinder-fissure*`, the light ember).
+- **The damage is the death's own.** The demolisher's chain (crack, then a delayed eruption, then delayed damage) drew
+  the crack and never dealt damage from a dying unit; the cinder's `dying_trigger_effect` now deals it at once:
+  explosion 350 within 4, 200 more within 2, `force = "not-same"` (its own herd and incubators untouched: a cinder
+  killed at home cracks nothing of Synthexis's), ground-only (`trigger_target_mask = {"common"}`: the first arena
+  trial had it beating harriers by its death). The one-second telegraph is lost.
+- `cinder` (a cinder killed at a seven-piece wall, a gun turret 2.5 behind it, a Synthexis medium and an incubator by
+  it): 5 wall pieces broken, 2 hurt, the turret at 8 of 400; the medium and the incubator untouched. (A first run read
+  "no damage": the test's cinder had walked 5 tiles before it was killed.)
+- **Price, by the arena:** at 40 it beat everything but the railgunner and flamers; at 70, kept: it beats massed light
+  infantry and the fixed gun and laser lines (+100: breaking defences is its job), and loses to range and fire (the
+  railgunner, rocket troopers, flamer lines), to fliers, and to the battle tank, tank and aegis.

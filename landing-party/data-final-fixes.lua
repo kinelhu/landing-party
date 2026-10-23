@@ -21,6 +21,13 @@ for _, type in ipairs({"unit", "unit-spawner", "turret"}) do
     end
   end
 end
+-- And Synthexis's tumors (creep.lua): the railgunner's full shot is for what grows biters.
+do
+  local t = data.raw["simple-entity-with-force"]["lp-tumor"]
+  local mask = table.deepcopy(t.trigger_target_mask or defaults["simple-entity-with-force"] or {"common"})
+  table.insert(mask, "lp-biter")
+  t.trigger_target_mask = mask
+end
 
 
 require("air")

@@ -7146,6 +7146,11 @@ end
 --   wild: a wild nest 50 tiles off the trail (no wild biter in the herd; no fight between wild and bred)
 --   blind: its biters' sight 0 (the control: no report, nothing found inside; power up)
 --   mega: 200 bred biters (the cost recorded, not asserted)
+--   spit: 30 bred mediums and 10 bred spitters: the spitters leave the herd once it is inside and hold the breach (within
+--         15 of it while the herd hunts), cover the withdrawal, and come home
+--   probe: evolution 0.5; two turrets in each of the eight sectors (lasers), so the scout's tie goes to the face toward the
+--          pen, where one of the two is a gun turret with no ammunition: the probe's runts find it silent, and the
+--          herd breaches in front of it rather than at the face's middle
 scenarios.herd = function()
   local mix = params.mix or ""
   local L, G = "laser-turret", "gun-turret"
@@ -7177,6 +7182,19 @@ scenarios.herd = function()
       layout = {}
       for _, p in ipairs({{37, -24}, {37, -8}, {37, 8}, {37, 24}, {-37, -16}, {-37, 16}, {-16, 37}, {16, 37}, {-16, -37},
         {16, -37}, {0, 37}, {0, -37}}) do table.insert(layout, {G, p[1], p[2]}) end
+    elseif mix == "probe" then
+      layout = {}
+      for k = 0, 7 do
+        for _, off in ipairs({-0.3, 0.3}) do
+          local a = k * math.pi / 4 + off
+          local r = 37 / math.max(math.abs(math.cos(a)), math.abs(math.sin(a)))
+          local du, dv = math.floor(r * math.cos(a) + 0.5), math.floor(r * math.sin(a) + 0.5)
+          -- Toward the pen (k = 0), the second of the two: a gun turret left dry.
+          table.insert(layout, {(k == 0 and off > 0) and G or L, du, dv})
+          if k == 0 and off > 0 then S.dry_at = {du, dv} end
+        end
+      end
+      game.forces.enemy.set_evolution_factor(0.5, surface())
     else
       layout = {{L, 37, -24}, {G, 37, -14}, {L, 37, -5}, {G, 37, 4}, {L, 37, 13}, {G, 37, 22}, {L, 37, 30},
         {L, -12, -37}, {G, 12, -37}, {L, -12, 37}, {G, 12, 37}, {L, -37, 0}}
@@ -7185,7 +7203,7 @@ scenarios.herd = function()
     for _, t in ipairs(layout) do
       local e = put(t[1], at(t[2], t[3]))
       table.insert(S.turrets, e)
-      if t[1] == G then e.insert{name = "piercing-rounds-magazine", count = mix == "belt" and 10 or 200} end
+      if t[1] == G and mix ~= "probe" then e.insert{name = "piercing-rounds-magazine", count = mix == "belt" and 10 or 200} end
       if mix == "belt" then
         -- Fed from inside: a burner inserter dropping into it, a chest of ammunition where it picks up. Placed by trial
         -- (offsets and turns) until it drops into the turret (its drop_target is not set yet on the tick it is built).
@@ -7242,7 +7260,12 @@ scenarios.herd = function()
     surface().create_entity{name = "biter-spawner", position = at(180, 0), force = "enemy"}
     S.pen = lp("herd_capture", 1, at(180, 0))
     S.size = mix == "mega" and 200 or 40
-    lp("herd_fill", S.pen, S.size, "lp-bred-medium-biter")
+    if mix == "spit" then
+      lp("herd_fill", S.pen, 30, "lp-bred-medium-biter")
+      lp("herd_fill", S.pen, 10, "lp-bred-medium-spitter")
+    else
+      lp("herd_fill", S.pen, S.size, "lp-bred-medium-biter")
+    end
     S.damage = {}
   end)
   schedule(120, function()
@@ -7273,6 +7296,23 @@ scenarios.herd = function()
     return #surface().find_decoratives_filtered{area = {{math.min(a[1], b[1]), math.min(a[2], b[2])},
       {math.max(a[1], b[1]), math.max(a[2], b[2])}}, name = {"dark-mud-decal", "light-mud-decal"}}
   end
+  if mix == "spit" then
+    for t = 600, END - 120, 120 do
+      schedule(t, function()
+        for _, x in ipairs(lp("herd_state").waves) do
+          if x.id == S.wave1 and x.holding and x.breach and x.stage == "inside" then
+            local sp = surface().find_entities_filtered{name = "lp-bred-medium-spitter", position = x.breach, radius = 15}
+            S.held = math.max(S.held or 0, #sp)
+          end
+          if x.id == S.wave1 and x.stage == "withdraw" then
+            local sp = surface().find_entities_filtered{name = "lp-bred-medium-spitter", position = x.breach, radius = 15}
+            local g = x.group and #surface().find_entities_filtered{name = "lp-bred-medium-biter", position = x.breach, radius = 15} or 0
+            S.covering = math.max(S.covering or 0, #sp)
+          end
+        end
+      end)
+    end
+  end
   -- The trail: there 15 minutes after the mark, gone 21 minutes after.
   for t = 3 * 3600, END - 120, 600 do
     schedule(t, function()
@@ -7286,7 +7326,8 @@ scenarios.herd = function()
         if since >= 15 * 3600 and not S.mud15 then S.mud15 = mud_near(w.trail); S.mud_in = mud_inside() end
         if since >= 21 * 3600 and not S.mud21 then S.mud21 = mud_near(w.trail) end
       end
-      if mix ~= "" and w and (mix ~= "scout" or (S.wave2 and entry(S.wave2))) then finish_early() end
+      local rear_out = mix == "spit" and #(lp("herd_state").rears or {}) > 0
+      if mix ~= "" and w and not rear_out and (mix ~= "scout" or (S.wave2 and entry(S.wave2))) then finish_early() end
       if mix == "" and S.mud21 then finish_early() end
     end)
   end
@@ -7295,6 +7336,27 @@ scenarios.herd = function()
     local state = lp("herd_state")
     info("herd: " .. serpent.line(w))
     info("herd: waves still out " .. serpent.line(state.waves))
+    if mix == "probe" then
+      local dry = S.at(S.dry_at[1], S.dry_at[2])
+      local lit = S.at(S.dry_at[1], -S.dry_at[2])
+      local b = w and w.breach
+      local dd = b and math.sqrt((b[1] - dry[1]) ^ 2 + (b[2] - dry[2]) ^ 2) or -1
+      local dl = b and math.sqrt((b[1] - lit[1]) ^ 2 + (b[2] - lit[2]) ^ 2) or -1
+      info(string.format("herd probe: %s; breach %s, %.0f from the dry gun, %.0f from its lit twin", serpent.line(w and w.probe),
+        serpent.line(b), dd, dl))
+      check("herd: the probe found a silent turret", w and w.probe and w.probe.silent >= 1, serpent.line(w and w.probe))
+      check("herd: the probe saw turrets fire", w and w.probe and w.probe.fired >= 1, serpent.line(w and w.probe))
+      check("herd: it breached at the silent turret", b and dd < dl and dd <= 12, string.format("%.0f / %.0f", dd, dl))
+    end
+    if mix == "spit" then
+      local spit_home = surface().count_entities_filtered{name = "lp-bred-medium-spitter", position = S.at(180, 0), radius = 60}
+      info(string.format("herd spit: at most %s spitters at the breach while inside, %s while withdrawing, %d by the pen",
+        tostring(S.held), tostring(S.covering), spit_home))
+      check("herd: spitters held the breach while the herd was inside", (S.held or 0) >= 3, tostring(S.held))
+      check("herd: spitters stayed at the breach as the herd withdrew", (S.covering or 0) >= 1, tostring(S.covering))
+      check("herd: the wave came home", w and (w.outcome == "home" or w.outcome == "home late"), tostring(w and w.outcome))
+      check("herd: the spitters came home behind it", spit_home >= 5, tostring(spit_home))
+    end
     local power = 0
     for _, e in ipairs(S.power or {}) do if e.valid then power = power + 1 end end
     local turrets = 0
@@ -7362,10 +7424,12 @@ end
 --   clean: biomass in clean air: its books balance (pod + trickle + drunk = spent + left), little drunk, and births
 --          stop when it has nothing (it never runs more than a breed's price into debt)
 --   smog: 3,000 pollution a minute poured on the culture: its creep drinks it, and it breeds more than the trickle pays
+--   strong: clean, Synthexis's strength lever at 2: its pod and trickle doubled (books on 400)
 scenarios.creep = function()
   local mix = params.mix or ""
   schedule(60, function()
-    lp("debug_tune", {harmless = true, army_off = true, history_off = true, herd_off = true})
+    lp("debug_tune", {harmless = true, army_off = true, history_off = true, herd_off = true,
+      levers = mix == "strong" and {biotech = {strength = 2}} or nil})
     local o = lp("stats", storage.id).origin
     local ux, uy = 0, 0
     if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
@@ -7422,7 +7486,7 @@ scenarios.creep = function()
       if mix == "smog" and S.landed and game.tick % 3600 < 60 then
         surface().pollute(S.farm_pos, 3000)
       end
-      if (mix == "clean" or mix == "smog") and S.landed then
+      if (mix == "clean" or mix == "smog" or mix == "strong") and S.landed then
         local b = (lp("farm_state").farms[1] or {}).biomass
         if b then S.low = math.min(S.low or math.huge, b.now) end
       end
@@ -7449,14 +7513,17 @@ scenarios.creep = function()
       check("creep: the culture gone", #fs.farms == 0, serpent.line(fs.farms))
       return
     end
-    if mix == "clean" or mix == "smog" then
+    if mix == "clean" or mix == "smog" or mix == "strong" then
       local b = lp("farm_state").farms[1].biomass
-      local books = 200 + b.trickled + b.drunk - b.spent - b.now
+      local pod = mix == "strong" and 400 or 200
+      local books = pod + b.trickled + b.drunk - b.spent - b.now
       info(string.format("creep %s: biomass %s, lowest %.1f, books off by %.2f", mix, serpent.line(b), S.low or -1, books))
       check("creep: the biomass books balance", math.abs(books) < 1, string.format("%.2f", books))
       check("creep: never more than a breed's price in debt", (S.low or 0) > -30, string.format("%.1f", S.low or -1))
       check("creep: it bred", b.bred >= 10, tostring(b.bred))
-      if mix == "clean" then
+      if mix == "strong" then
+        check("creep: strength 2, the trickle doubled (clean: 290 in 20 minutes)", b.trickled >= 500, string.format("%.0f", b.trickled))
+      elseif mix == "clean" then
         check("creep: clean air, little drunk", b.drunk < 50, string.format("%.1f", b.drunk))
       else
         check("creep: smog drunk", b.drunk >= 300, string.format("%.1f", b.drunk))
@@ -7510,6 +7577,46 @@ scenarios.creep = function()
     check("creep: creep flowed round the wall", round >= 2, tostring(round))
     check("creep: a hurt Synthexis biter mended on it", S.mended and S.mended >= S.hurt_max * 0.99,
       string.format("%s from %s of %s", tostring(S.mended), tostring(S.hurt_from), tostring(S.hurt_max)))
+  end)
+end
+
+-- Cinder (Synthexis's tier 3, biotech.lua): a cinder killed against a player wall (seven pieces, a gun turret two tiles
+-- behind), a Synthexis medium and an incubator beside it. Within three seconds: the wall at it and the turret broken or
+-- badly hurt, the Synthexis medium and the incubator untouched (the eruption spares its own force).
+scenarios.cinder = function()
+  schedule(60, function()
+    lp("debug_tune", {harmless = true, army_off = true, history_off = true})
+    local c = {-200.5, 200.5}
+    surface().request_to_generate_chunks(c, 2); surface().force_generate_chunk_requests()
+    flatten(c[1] - 20, c[2] - 20, c[1] + 20, c[2] + 20)
+    S.walls = {}
+    for i = -3, 3 do table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {c[1] + i, c[2]}, force = "player"}) end
+    S.turret = surface().create_entity{name = "gun-turret", position = {c[1], c[2] + 2.5}, force = "player"}
+    S.cinder = surface().create_entity{name = "lp-bred-cinder", position = {c[1], c[2] - 1.5}, force = "lp-biotech"}
+    S.mate = surface().create_entity{name = "lp-bred-medium-biter", position = {c[1] + 2, c[2] - 2}, force = "lp-biotech"}
+    S.pen = surface().create_entity{name = "lp-pen", position = {c[1] - 3, c[2] - 5}, force = "lp-biotech"}
+    S.mate.active = false
+    S.cinder.active = false
+  end)
+  schedule(120, function() if S.cinder.valid then S.died_at = S.cinder.position; S.cinder.die("player") end end)
+  schedule(360, function()
+    local broken, hurt = 0, 0
+    for _, w in ipairs(S.walls) do
+      if not w.valid then broken = broken + 1 elseif w.health < w.max_health then hurt = hurt + 1 end
+    end
+    local th = S.turret.valid and S.turret.health or 0
+    local fissures = surface().count_entities_filtered{name = "lp-cinder-fissure-scorchmark"}
+    local hs = {}
+    for _, w in ipairs(S.walls) do table.insert(hs, w.valid and string.format("%.0f", w.health) or "x") end
+    info("cinder: walls " .. table.concat(hs, " ") .. string.format("; died at %s", serpent.line(S.died_at)))
+    info(string.format("cinder: walls broken %d, hurt %d; turret %s; mate %s; incubator %s; scorchmarks %d", broken, hurt,
+      S.turret.valid and string.format("%.0f/%d", th, S.turret.max_health) or "broken",
+      S.mate.valid and string.format("%.0f/%d", S.mate.health, S.mate.max_health) or "dead",
+      S.pen.valid and string.format("%.0f/%d", S.pen.health, S.pen.max_health) or "dead", fissures))
+    check("cinder: the wall at it broken", broken >= 2, tostring(broken))
+    check("cinder: the turret behind broken or badly hurt", not S.turret.valid or th <= S.turret.max_health / 2, tostring(th))
+    check("cinder: its own medium untouched", S.mate.valid and S.mate.health == S.mate.max_health, "")
+    check("cinder: its incubator untouched", S.pen.valid and S.pen.health == S.pen.max_health, "")
   end)
 end
 

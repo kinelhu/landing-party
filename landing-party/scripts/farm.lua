@@ -17,6 +17,7 @@ local shared = require("__landing-party__.shared")
 local herd = require("__landing-party__.scripts.herd")
 local pods = require("__landing-party__.scripts.pods")
 local creep = require("__landing-party__.scripts.creep")
+local tune = require("__landing-party__.scripts.tune")
 
 local farm = {}
 
@@ -136,7 +137,7 @@ function farm.land(surface, pos)
   local enemy = game.forces.enemy
   if bf and enemy then bf.set_evolution_factor(enemy.get_evolution_factor(surface), surface) end
   local f = {id = s.next, surface = surface.index, pos = {x = pos.x, y = pos.y}, pens = {}, tags = {},
-    last_wave = game.tick - WAVE_GAP + FIRST_WAVE, landed = game.tick}
+    last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.tick}
   s.next = s.next + 1
   for i = 1, math.min(PENS, #field) do
     local id = herd.capture(field[i])
@@ -155,7 +156,7 @@ function farm.land(surface, pos)
   end
   s.list[f.id] = f
   creep.culture(f.id, surface, pos)
-  creep.of(f.id).biomass = START_BIOMASS
+  creep.of(f.id).biomass = START_BIOMASS * tune.strength("biotech")
   tag(f)
   trace(string.format("farm %d landed at %.0f,%.0f: %d pens", f.id, pos.x, pos.y, #f.pens))
   if not s.told then
@@ -233,6 +234,12 @@ local function send(f, tick)
     return
   end
   f.last_wave = tick
+  -- Its probe's runts, if it will throw them (herd.lua), at their price.
+  local cul = creep.of(f.id)
+  if cul and game.forces[B.force].get_evolution_factor(s) >= herd.PROBE_EVO then
+    local price = herd.PROBE_N * shared.BREEDS["lp-runt"].cost
+    cul.biomass, cul.spent = cul.biomass - price, (cul.spent or 0) + price
+  end
   herd.launch(origin, target, {units = units, farm = f.id})
   trace(string.format("farm %d sends %d at %.0f,%.0f", f.id, #units, target.x, target.y))
 end
@@ -274,7 +281,7 @@ function farm.tick(tick)
     f.pens = left
     local cul = creep.of(id)
     if cul then
-      local t = #f.pens * TRICKLE / 6
+      local t = #f.pens * TRICKLE / 6 * tune.strength("biotech")
       cul.biomass, cul.trickled = cul.biomass + t, (cul.trickled or 0) + t
       breeding(f, cul.biomass > 0)
     end
@@ -296,7 +303,7 @@ function farm.tick(tick)
       gone(f, "every pen dead")
     else
       if not f.tagged then tag(f) end
-      if not storage.herd_off and not herd.out(id) and tick - f.last_wave >= WAVE_GAP then send(f, tick) end
+      if not storage.herd_off and not herd.out(id) and tick - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then send(f, tick) end
     end
   end
   if s.landing and tick - s.landing.sent > POD_WAIT then
@@ -323,6 +330,11 @@ function farm.on_spawned(e)
   local cul = f and creep.of(f.id)
   if not cul then return end
   local price = shared.BREEDS[e.entity.name] and shared.BREEDS[e.entity.name].cost or 7
+  -- A cinder burns inside: lit at night, its ember the one light in the herd.
+  if e.entity.name == "lp-bred-cinder" then
+    rendering.draw_light{sprite = "utility/light_small", surface = e.entity.surface, target = e.entity,
+      color = {1, 0.45, 0.1}, scale = 1.2, intensity = 0.8, minimum_darkness = 0.3}
+  end
   cul.biomass, cul.spent, cul.bred = cul.biomass - price, (cul.spent or 0) + price, (cul.bred or 0) + 1
   if cul.biomass <= 0 then breeding(f, false) end
 end
