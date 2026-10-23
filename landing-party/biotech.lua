@@ -44,6 +44,43 @@ for _, src in ipairs(BREEDS) do
   table.insert(out, u)
 end
 
+-- The spore spitter (the user, 2026-10-23, on fliers: its class had no answer to them, -100 in the arena): a bred
+-- spitter whose spit bursts into spores where it lands, aloft as well: 30 acid to a flier (45 changed nothing: it wins every fight with harriers and loses half its value doing it, a soft body under fire) within 1.5 tiles, 3 to the
+-- ground, no burning pool; range 20, past the fliers' 15. Violet. Not ground-only (air.lua: shared.BREEDS air).
+do
+  local src
+  for _, p in ipairs(out) do if p.name == "lp-bred-medium-spitter" then src = p end end
+  local u = table.deepcopy(src)
+  u.name = "lp-bred-spore"
+  u.localised_name = {"entity-name.lp-bred-spore"}
+  u.localised_description = {"entity-description.lp-bred-spore"}
+  local VIOLET1, VIOLET2 = {r = 0.62, g = 0.4, b = 1, a = 1}, {r = 0.85, g = 0.75, b = 1, a = 1}
+  local function violet(t, n)
+    if type(t) ~= "table" then return n end
+    if t.tint then t.tint = (n % 2 == 0) and VIOLET1 or VIOLET2; n = n + 1 end
+    for _, v in pairs(t) do n = violet(v, n) end
+    return n
+  end
+  violet(u.run_animation, 0)
+  violet(u.attack_parameters.animation, 0)
+  local st = table.deepcopy(data.raw.stream["acid-stream-spitter-medium"])
+  st.name = "lp-spore-stream"
+  local function burst(amount, mask, r)
+    return {type = "area", radius = r, force = "enemy", ignore_collision_condition = true, trigger_target_mask = mask,
+      action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = amount, type = "acid"}}}}}
+  end
+  st.initial_action = {
+    {type = "direct", action_delivery = {type = "instant", target_effects = {
+      {type = "create-entity", entity_name = "gleba-blood-explosion-small"}}}},
+    burst(30, {"lp-air-unit"}, 1.5), burst(3, {"common"}, 1)}
+  st.action = nil
+  u.attack_parameters.ammo_type = {action = {type = "direct", action_delivery = {type = "stream", stream = st.name}}}
+  u.attack_parameters.damage_modifier = 1
+  u.attack_parameters.range = 20
+  table.insert(out, u)
+  table.insert(out, st)
+end
+
 -- The runt (tier 2, the breeds consult): the probe's body, a bred small biter of its own name so the probe's losses
 -- can be read (herd.lua: which turrets shot at it); spawned by script at probe time, never bred.
 do
@@ -174,6 +211,16 @@ do
   else
     table.insert(pen.result_units, {unit = "lp-bred-cinder", spawn_points = {
       {evolution_factor = 0.6, weight = 0.0}, {evolution_factor = 0.8, weight = 0.1}, {evolution_factor = 1.0, weight = 0.1}}})
+  end
+end
+-- Its spore spitters from its arrival (evolution 0.25), a twentieth of what it breeds from 0.4: the herd's own guns up.
+do
+  local first = pen.result_units[1]
+  if first[1] then
+    table.insert(pen.result_units, {"lp-bred-spore", {{0.25, 0.0}, {0.4, 0.05}, {1.0, 0.06}}})
+  else
+    table.insert(pen.result_units, {unit = "lp-bred-spore", spawn_points = {
+      {evolution_factor = 0.25, weight = 0.0}, {evolution_factor = 0.4, weight = 0.05}, {evolution_factor = 1.0, weight = 0.06}}})
   end
 end
 -- Its spitters from evolution 0.3, a sixth of what it breeds from 0.5 (the vanilla spitter spawner's medium comes at 0.4).

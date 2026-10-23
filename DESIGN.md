@@ -35,6 +35,7 @@ document still says Serenity where it records history.
 | Response forces | built (first pass) | `defend` |
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
+| Anti-air, one per side: Kessler-Hayashi's Skyguard and Grubstake's flak buggy (bought on losses to fliers or the player's combat robots), Synthexis's spore spitter (bred from its arrival) | built 0.1.63 | `unitnode` (`skyguard`, `flak-buggy`), arena |
 | A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.60 (the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (ten), `farm` (four), `creep` (seven), `cinder`, `clear culture` |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
@@ -949,6 +950,33 @@ not the day's; open.
   landing). The cache changes no result, so it is no state to keep in step.
 Robots rebuilt all that was razed (666 entities, 378 of them land mines, no ghost left): against a robot base, pressure
 is materials, not ruins. What would hurt is the robots' own network (roboports, power), which the siege went for.
+
+### Fliers and anti-air (the user, 2026-10-23: "Not super comfortable about the flier units currently")
+The arena (2,673 fights) had air beating splash by 100, armour by 67 and every breed by 93 to 100, losing only to small
+arms (-47): nine of the corporations' kinds and every breed cannot shoot up, so in most armies air was a hole, not a
+counter. Plan (the user: "Go with your plan"): one anti-air answer per side, then the fliers retuned if still needed,
+then the player's side read.
+- **The answers (0.1.63).** Each hits a flier hard and the ground lightly, through masked areas at the target (an area
+  honours `trigger_target_mask`, a direct hit does not), and outranges the fliers' 15:
+  - **Skyguard** (Kessler-Hayashi's Line, 18 parts, 110 health): a Line trooper's body, a tracking laser, 30 to a flier
+    and 3 to the ground every 30 ticks, range 22.
+  - **Flak buggy** (Grubstake's Wheels, 20 parts, 220 health): the buggy's hull with the car's turret, scrap flak over 2
+    tiles, 22 to fliers and 3 to the ground every 30 ticks, range 22.
+  - **Spore spitter** (Synthexis, 10 biomass): a violet bred spitter whose spit bursts where it lands, aloft too, 30 acid
+    to a flier within 1.5 and 3 to the ground, no burning pool, range 20; bred from evolution 0.25 (a twentieth of births
+    from 0.4). Not ground-only (`shared.BREEDS` `air`). 45 changed nothing: it wins every fight with harriers and loses
+    half its value doing it (+48), a soft body under fire.
+- **How the corporations get theirs:** tree nodes bought when fliers kill 6 of their units: the corporations' harriers
+  and scavengers or the player's destroyers, defenders and distractors (`shared.FLIERS`). The research ledger never
+  recorded either before (a unit's or a robot's kill had no damage type in `rd.tally`): now harriers deal physical,
+  scavengers explosion, combat robots physical.
+- **The arena after (3,264 fights):** anti-air beats air by 88 and loses to every ground class by 89 to 100: a counter,
+  not a better rifle. Skyguard and flak buggy beat harriers and scavengers by 99 to 100; the spore spitter scavengers by 80,
+  harriers by 48. Air's own rows are unchanged (still +100 on splash and the breeds, +67 on armour): an army now answers it
+  by buying or breeding the counter, which keeps the counter shape (`balance keeps counters`). Step 2 (fliers as
+  harassers) is held until play shows air still runs over armies that have their answer.
+- **The player's side:** troopers beat harriers by 98 and rocket troopers by 95; turrets shoot fliers (flamethrowers do
+  not). Not yet measured: player turret lines against a wave of fliers.
 
 ### The mortar truck (the user, 2026-10-22: the howitzer as artillery on a tank; engine spike, deleted)
 

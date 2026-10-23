@@ -3401,6 +3401,10 @@ local NODE_CASES = {
   tesla = {corp = "serenity", victim = "lp-infantry", kills = 10, killer = "turret", era = 3, made = "lp-tesla"},
   scorcher = {corp = "grubstake", victim = "lp-grubstake-infantry", kills = 8, killer = "turret", era = 2,
     made = "lp-grubstake-scorcher"},
+  -- Anti-air (2026-10-23): its units killed by the player's combat robots buy each its answer to fliers.
+  skyguard = {corp = "serenity", victim = "lp-infantry", kills = 6, killer = "destroyer", era = 2, made = "lp-skyguard"},
+  ["flak-buggy"] = {corp = "grubstake", victim = "lp-grubstake-buggy", kills = 6, killer = "destroyer", era = 2,
+    made = "lp-grubstake-flak-buggy"},
 }
 -- Heavies (the design sheet's picks, the user, 2026-10-21): each against what it is for, far from the camps.
 --   A Scorcher (Grubstake's) before a player wall with gun turrets behind it: it spends flame bursts, and not more than
@@ -3481,7 +3485,8 @@ scenarios.unitnode = function()
     if c.killer == "trooper" then cause = spawn("lp-trooper", {0, 0}, 1, "player")[1]
     elseif c.killer == "tank" then cause = surface().create_entity{name = "tank", position = {0, 0}, force = "player"}
     elseif c.killer == "artillery" then cause = surface().create_entity{name = "artillery-turret", position = {0, 0}, force = "player"}
-    elseif c.killer == "turret" then cause = surface().create_entity{name = "gun-turret", position = {0, 0}, force = "player"} end
+    elseif c.killer == "turret" then cause = surface().create_entity{name = "gun-turret", position = {0, 0}, force = "player"}
+    elseif c.killer == "destroyer" then cause = surface().create_entity{name = "destroyer", position = {0, 0}, force = "player"} end
     local n = 0
     if c.victim then
       -- By kind: a plate preset (Warden) builds them plated.

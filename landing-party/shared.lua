@@ -8,6 +8,10 @@ local shared = {}
 -- (and a tint); trim: the border of its paved yards and pads (its floor livery). icon: the virtual signal that
 -- stands for it on map tags and in notices, with its motto. (Logos on the ground were dropped: scaled icons
 -- looked pasted on, concrete pixel art merged into blobs; user 2026-10-13.)
+-- What kills from the air, as the research ledger names a killer (rd.lua): the corporations' fliers, the player's
+-- combat robots. Their losses to these buy each corporation its anti-air.
+local shared_fliers = {"lp-harrier", "lp-scavenger", "destroyer", "defender", "distractor"}
+shared.FLIERS = shared_fliers
 shared.CORPS = {
   grubstake = {name = "Grubstake Inc.", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
@@ -46,6 +50,9 @@ shared.CORPS = {
         trigger = {damage = "explosion", min = 5}},
       {id = "dozer", branch = "wheels", era = 3, requires = "slug", cost = 2500, unit = {kind = "lp-dozer", weight = 1},
         trigger = {walls_met = 2}},
+      -- Against fliers (the player's robots, a rival's harriers): flak buggies.
+      {id = "flak-buggy", branch = "wheels", era = 1, cost = 900, unit = {kind = "lp-flak-buggy", weight = 2},
+        trigger = {killer = shared_fliers, min = 6}},
       -- Against a turret line: the Scorcher, a machine gun and three bursts of flame for walls, turrets and packs.
       {id = "scorcher", branch = "scrap-arms", era = 2, cost = 2000, unit = {kind = "lp-scorcher", weight = 1},
         trigger = {killer = {"gun-turret", "laser-turret", "flamethrower-turret"}, min = 8}},
@@ -107,6 +114,9 @@ shared.CORPS = {
         trigger = {killer = {"artillery-turret", "artillery-wagon"}, min = 3}},
       {id = "warden", branch = "line", era = 1, cost = 1500, plates = {["lp-infantry"] = "physical"},
         trigger = {damage = "physical", min = 10}},
+      -- Against fliers (the player's robots, a rival's harriers): the Skyguard.
+      {id = "skyguard", branch = "line", era = 1, cost = 900, unit = {kind = "lp-skyguard", weight = 2},
+        trigger = {killer = shared_fliers, min = 6}},
       -- Against massed troopers: reach.
       {id = "lance", branch = "optics", era = 1, cost = 900, unit = {kind = "lp-lance", weight = 2},
         trigger = {killer = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "character"}, min = 6}},
@@ -155,7 +165,7 @@ shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "
   "lp-radar", "lp-pacifier", "lp-depot", "lp-launchpad", "lp-lamp", "lp-post-lamp", "lp-mine", "lp-uplink", "lp-mortar", "lp-infantry", "lp-tank",
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
   "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-railgunner", "lp-prism", "lp-tesla", "lp-scorcher", "lp-howitzer", "lp-scrap-cannon",
-  "lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-parked-howitzer", "lp-howitzer-truck"}
+  "lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-parked-howitzer", "lp-howitzer-truck", "lp-skyguard", "lp-flak-buggy"}
 -- A howitzer destroyed in the field leaves its camp without one this long (sieges go with mortars only).
 shared.HOWITZER_DOWN = 30 * 3600
 -- The sign over each research lab: what its branch fields.
@@ -226,7 +236,9 @@ shared.WAVE_MIN = 24
 -- None of them shoots up (air.lua): its class is many, healing and soft.
 shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
   ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}, ["lp-bred-medium-spitter"] = {cost = 9},
-  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 70}}
+  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 70},
+  -- air: it shoots up (air.lua leaves it whole).
+  ["lp-bred-spore"] = {cost = 10, air = true}}
 -- Biomass (docs/biotech.md "Biomass"): the breeds' costs are paid in it, earned from the pollution its creep drinks (each
 -- creep tile absorbs CREEP_ABSORB a second, the engine's own absorption; a unit of pollution drunk is a unit of biomass).
 shared.CREEP_ABSORB = 0.0005
@@ -346,6 +358,9 @@ shared.units = {
   ["lp-prism"] = {health = 700, cost = 100, ground_only = true},
   ["lp-tesla"] = {health = 800, cost = 100, ground_only = true},
   ["lp-scorcher"] = {health = 1100, cost = 70, ground_only = true},
+  -- Anti-air, one per side (units.lua): hard on fliers, light on the ground.
+  ["lp-skyguard"] = {health = 110, cost = 18},
+  ["lp-flak-buggy"] = {health = 220, cost = 20},
 }
 
 -- What a corporation pays for a unit kind: its own price where the kind has one (`by = {corp = parts}`), else the kind's.

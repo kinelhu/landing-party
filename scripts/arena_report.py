@@ -19,6 +19,8 @@ CLASSES = [
     ("splash", ["sapper", "shock", "prism", "tesla", "breacher"]),
     ("armour", ["tank", "aegis", "dozer", "walker", "scorcher", "battle tank"]),
     ("air", ["harrier", "scavenger"]),
+    # Hard on fliers, light on the ground (2026-10-23): one per side.
+    ("anti-air", ["skyguard", "flak buggy", "bred spore"]),
     ("bred", ["bred medium", "bred big", "bred spitter", "bred cinder"]),
     ("bred on creep", ["bred medium (creep)", "bred big (creep)"]),
 ]

@@ -83,7 +83,7 @@ for _, type in ipairs({"unit", "spider-unit"}) do
   for name, u in pairs(data.raw[type] or {}) do
     local spec = name:sub(1, 3) == "lp-" and shared.units[shared.kind_of(name)]
     -- The biotech's breeds bite nothing in the air (docs/biotech.md: its class cannot shoot up).
-    if (PLAYER[name] or shared.BREEDS[name] or spec and spec.ground_only) and u.attack_parameters
+    if (PLAYER[name] or (shared.BREEDS[name] and not shared.BREEDS[name].air) or spec and spec.ground_only) and u.attack_parameters
       and u.attack_parameters.ammo_type then
       local at = u.attack_parameters.ammo_type
       action(at.action)

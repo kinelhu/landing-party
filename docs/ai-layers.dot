@@ -3,7 +3,7 @@ digraph layers {
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
   edge [color="#8899aa", fontname="Helvetica", fontsize=9];
   "Seams (leaves)" [label="Seams (leaves)\n6 modules, 474 lines", fillcolor="#d9f0d9"];
-  "Corporation" [label="Corporation\n11 modules, 2642 lines", fillcolor="#eef2f7"];
+  "Corporation" [label="Corporation\n11 modules, 2644 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n15 modules, 5162 lines\nlayout 1192", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n13 modules, 4784 lines\nops 1681", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1209 lines", fillcolor="#eef2f7"];

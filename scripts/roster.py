@@ -35,6 +35,8 @@ ROLE = {
     "lp-prism": "Optics: a laser that splits on what it hits to the targets round it; against massed troopers",
     "lp-tesla": "Siege: lightning that jumps along a turret line and drains what it strikes of its charge",
     "lp-scorcher": "Scrap arms: a machine gun, and three bursts of flame for walls, turrets and packs, refilled slowly",
+    "lp-skyguard": "Line: a long laser that tracks fliers; little use against the ground",
+    "lp-flak-buggy": "Wheels: scrap flak bursting among fliers; little use against the ground",
     "lp-trooper": "the player's: a rifle",
     "lp-breacher": "the player's: demolition charges, for walls (and only a scratch to units)",
     "lp-rocket-trooper": "the player's: rockets against armour, and fliers; slow against a crowd",
@@ -56,7 +58,7 @@ for m in re.finditer(r"mix = \{([^}]*)\}", shared):
     corp = corp_of(shared.count("\n", 0, m.start()))
     for k in re.findall(r'\["(lp-[a-z-]+)"\]', m.group(1)):
         fielded.setdefault(k, []).append(f"{SHOWN[corp]} (from landing)")
-for m in re.finditer(r'\{id = "([a-z]+)", branch = "([a-z-]+)", era = (\d+)(?:, requires = "([a-z]+)")?, cost = (\d+), '
+for m in re.finditer(r'\{id = "([a-z-]+)", branch = "([a-z-]+)", era = (\d+)(?:, requires = "([a-z]+)")?, cost = (\d+), '
                      r'unit = \{kind = "(lp-[a-z-]+)"', shared):
     corp = corp_of(shared.count("\n", 0, m.start()))
     req = f", after {m.group(4)}" if m.group(4) else ""

@@ -12,7 +12,7 @@ Line: a laser cannon on an armoured hull; against the player's battle tanks.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1100 | 5.4 tiles/s | 45 laser | 15 | 1/s | physical -5 30%, explosion -5 40%, laser -5, electric -5 | no | 95 parts |
+| 1100 | 5.4 tiles/s | 45 laser | 15 | 1/s | physical -5 30%, explosion -5 40%, laser -5, electric -5, lp-bite 60% | no | 95 parts |
 
 Fielded by: Kessler-Hayashi, research: line branch, era 2, after warden, 2000 fund.
 
@@ -22,7 +22,7 @@ the player's siege weapon.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 900 | 5.4 tiles/s | 50 explosion; 120 explosion over 1.5 tiles to buildings | 18 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5 | no | 6 bandwidth |
+| 900 | 5.4 tiles/s | 50 explosion; 120 explosion over 1.5 tiles to buildings | 18 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 6 bandwidth |
 
 Fielded by: the player (a barracks).
 
@@ -35,6 +35,76 @@ the player's: demolition charges, for walls (and only a scratch to units).
 | 120 | 7.2 tiles/s | 15 explosion over 2.5 tiles; 85 explosion over 2.5 tiles to buildings | 12 | 0.33/s | physical -2 10% | no | 1 bandwidth |
 
 Fielded by: the player (a barracks).
+
+## bred-behemoth-biter
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 3000 | 18.0 tiles/s | 90 lp-bite | 1.5 | 1.2/s | physical -12 10%, explosion -12 10% | yes | - |
+
+Fielded by: -.
+
+## bred-big-biter
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 375 | 13.8 tiles/s | 30 lp-bite | 1.5 | 1.7/s | physical -8 10%, explosion 10% | yes | - |
+
+Fielded by: -.
+
+## bred-cinder
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 375 | 13.8 tiles/s | 30 lp-bite | 1.5 | 1.7/s | physical -8 10%, explosion 10% | yes | - |
+
+Fielded by: -.
+
+## bred-medium-biter
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 75 | 14.4 tiles/s | 15 lp-bite | 1 | 1.7/s | physical -4 10%, explosion 10% | yes | - |
+
+Fielded by: -.
+
+## bred-medium-spitter
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 50 | 9.9 tiles/s | - | 14 | 0.6/s | explosion 10% | yes | - |
+
+Fielded by: -.
+
+## bred-small-biter
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 15 | 12.0 tiles/s | 7 lp-bite | 0.5 | 1.7/s | - | yes | - |
+
+Fielded by: -.
+
+## bred-spore
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 50 | 9.9 tiles/s | - | 20 | 0.6/s | explosion 10% | yes | - |
+
+Fielded by: -.
 
 ## buggy
 
@@ -52,9 +122,19 @@ Wheels: a ram that pushes a wall open for the shotguns.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1800 | 4.2 tiles/s | 60 physical | 2 | 1/s | physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5 | no | 100 parts |
+| 1800 | 4.2 tiles/s | 60 physical | 2 | 1/s | physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5, lp-bite 60% | no | 100 parts |
 
 Fielded by: Grubstake, research: wheels branch, era 3, after slug, 2500 fund.
+
+## flak-buggy
+
+Wheels: scrap flak bursting among fliers; little use against the ground.
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 220 | 12.0 tiles/s | 22 explosion over 2 tiles; 3 explosion over 0.5 tiles | 22 | 2/s | physical -2 15% | yes | 20 parts |
+
+Fielded by: Grubstake, research: wheels branch, era 1, 900 fund.
 
 ## harrier
 
@@ -75,6 +155,16 @@ convoys and Grubstake's building trucks; lightly armed.
 | 1500 | 3.9 tiles/s | 4 physical | 10 | 2/s | physical -4 30%, fire 50%, explosion 20% | yes | 30 parts |
 
 Fielded by: both (convoys; Grubstake's builders).
+
+## howitzer-truck
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1200 | 3.9 tiles/s | 4 physical | 10 | 2/s | physical -4 30%, fire 50%, explosion 20% | yes | - |
+
+Fielded by: -.
 
 ## infantry
 
@@ -102,7 +192,7 @@ Optics: a laser that splits on what it hits to the targets round it; against mas
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 700 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 14 laser | 16 | 1.2/s | physical -3 20%, laser -5, electric -5, explosion 10% | no | 100 parts |
+| 700 | 5.4 tiles/s | (arcs to the next targets); 10 laser; 14 laser | 16 | 1.2/s | physical -3 20%, laser -5, electric -5, explosion 10%, lp-bite 60% | no | 100 parts |
 
 Fielded by: Kessler-Hayashi, research: optics branch, era 2, after lance, 1800 fund.
 
@@ -125,6 +215,16 @@ the player's: rockets against armour, and fliers; slow against a crowd.
 | 120 | 7.2 tiles/s | 110 explosion | 18 | 0.4/s | physical -2 10% | yes | 2 bandwidth |
 
 Fielded by: the player (a barracks).
+
+## runt
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 15 | 12.0 tiles/s | 7 lp-bite | 0.5 | 1.7/s | - | yes | - |
+
+Fielded by: -.
 
 ## sapper
 
@@ -152,7 +252,7 @@ Scrap arms: a machine gun, and three bursts of flame for walls, turrets and pack
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1100 | 5.4 tiles/s | 6 physical | 13 | 6/s | physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5 | no | 70 parts |
+| 1100 | 5.4 tiles/s | 6 physical | 13 | 6/s | physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 70 parts |
 
 Fielded by: Grubstake, research: scrap-arms branch, era 2, 2000 fund.
 
@@ -176,6 +276,16 @@ Grubstake's infantry: three heavy pellets, deadly at the fence, useless against 
 
 Fielded by: Grubstake (from landing, as its infantry).
 
+## skyguard
+
+Line: a long laser that tracks fliers; little use against the ground.
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 110 | 7.2 tiles/s | 30 laser over 1 tiles; 3 laser over 0.5 tiles | 22 | 2/s | physical -2 10%, laser 20% | yes | 18 parts |
+
+Fielded by: Kessler-Hayashi, research: line branch, era 1, 900 fund.
+
 ## slug
 
 Scrap arms: slugs; against the player's vehicles.
@@ -192,7 +302,7 @@ armour; cannon rounds that hit buildings three times as hard as units.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5 | no | 60 parts |
+| 900 | 5.4 tiles/s | 40 explosion; 80 explosion over 1.5 tiles to buildings | 15 | 0.67/s | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, lp-bite 60% | no | 60 parts |
 
 Fielded by: Kessler-Hayashi (from landing).
 
@@ -202,7 +312,7 @@ Siege: lightning that jumps along a turret line and drains what it strikes of it
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 800 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 20 electric | 14 | 0.8/s | physical -3 20%, electric -5 80%, explosion 10%, laser -5 | no | 100 parts |
+| 800 | 5.4 tiles/s | (arcs to the next targets); 10 electric; 20 electric | 14 | 0.8/s | physical -3 20%, electric -5 80%, explosion 10%, laser -5, lp-bite 60% | no | 100 parts |
 
 Fielded by: Kessler-Hayashi, research: siege branch, era 3, 2500 fund.
 
@@ -222,6 +332,6 @@ a spider: steps over walls, rockets.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1600 | walks | 18 physical | 15 | 2.4/s | physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5 | yes | 100 parts |
+| 1600 | walks | 18 physical | 15 | 2.4/s | physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5, lp-bite 40% | yes | 100 parts |
 
 Fielded by: Kessler-Hayashi (from landing).

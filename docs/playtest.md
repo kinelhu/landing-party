@@ -141,6 +141,10 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 35. **The burster** (0.1.59, recoloured 0.1.61; evolution 0.6 and up): a big biter with violet and acid-green bands,
     lit green at night. Where it dies the ground splits and bursts green: let it reach your wall and the wall and the
     turret behind it go. Kill it at range. Does the green burst read as Synthexis's?
+36. **Anti-air** (0.1.63): lose units to their fliers, or kill theirs with your combat robots, and Kessler-Hayashi fields
+    Skyguards (a pale Line trooper with a long thin laser) and Grubstake flak buggies (a buggy with a turret, bursts in
+    the air); Synthexis breeds violet spore spitters. Your destroyers and defenders should now meet an answer. Does air
+    still feel unanswered?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that
