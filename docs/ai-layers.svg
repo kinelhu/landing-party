@@ -16,19 +16,19 @@
 <text xml:space="preserve" text-anchor="middle" x="217" y="-19.55" font-family="Helvetica,sans-Serif" font-size="11.00">Seams (leaves)</text>
 <text xml:space="preserve" text-anchor="middle" x="217" y="-7.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 474 lines</text>
 </g>
-<!-- Knowledge (per faction) -->
+<!-- Knowledge and strategy (per faction) -->
 <g id="node2" class="node">
-<title>Knowledge (per faction)</title>
-<path fill="#eef2f7" stroke="black" d="M702.38,-36C702.38,-36 595.62,-36 595.62,-36 589.62,-36 583.62,-30 583.62,-24 583.62,-24 583.62,-12 583.62,-12 583.62,-6 589.62,0 595.62,0 595.62,0 702.38,0 702.38,0 708.38,0 714.38,-6 714.38,-12 714.38,-12 714.38,-24 714.38,-24 714.38,-30 708.38,-36 702.38,-36"/>
-<text xml:space="preserve" text-anchor="middle" x="649" y="-19.55" font-family="Helvetica,sans-Serif" font-size="11.00">Knowledge (per faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="649" y="-7.55" font-family="Helvetica,sans-Serif" font-size="11.00">1 module, 138 lines</text>
+<title>Knowledge and strategy (per faction)</title>
+<path fill="#eef2f7" stroke="black" d="M733.5,-36C733.5,-36 564.5,-36 564.5,-36 558.5,-36 552.5,-30 552.5,-24 552.5,-24 552.5,-12 552.5,-12 552.5,-6 558.5,0 564.5,0 564.5,0 733.5,0 733.5,0 739.5,0 745.5,-6 745.5,-12 745.5,-12 745.5,-24 745.5,-24 745.5,-30 739.5,-36 733.5,-36"/>
+<text xml:space="preserve" text-anchor="middle" x="649" y="-19.55" font-family="Helvetica,sans-Serif" font-size="11.00">Knowledge and strategy (per faction)</text>
+<text xml:space="preserve" text-anchor="middle" x="649" y="-7.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 187 lines</text>
 </g>
 <!-- Corporation -->
 <g id="node3" class="node">
 <title>Corporation</title>
 <path fill="#eef2f7" stroke="black" d="M403.12,-339.25C403.12,-339.25 300.88,-339.25 300.88,-339.25 294.88,-339.25 288.88,-333.25 288.88,-327.25 288.88,-327.25 288.88,-315.25 288.88,-315.25 288.88,-309.25 294.88,-303.25 300.88,-303.25 300.88,-303.25 403.12,-303.25 403.12,-303.25 409.12,-303.25 415.12,-309.25 415.12,-315.25 415.12,-315.25 415.12,-327.25 415.12,-327.25 415.12,-333.25 409.12,-339.25 403.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="352" y="-322.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="352" y="-310.8" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2634 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="352" y="-310.8" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 2643 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge7" class="edge">
@@ -37,19 +37,19 @@
 <polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.5" points="191.02,-48.59 195.6,-39.03 186.06,-43.65 191.02,-48.59"/>
 <text xml:space="preserve" text-anchor="middle" x="112.48" y="-165.95" font-family="Helvetica,sans-Serif" font-size="9.00">6</text>
 </g>
-<!-- Corporation&#45;&gt;Knowledge (per faction) -->
+<!-- Corporation&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge6" class="edge">
-<title>Corporation&#45;&gt;Knowledge (per faction)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.2" d="M415.58,-309.54C443.32,-303.12 475.5,-293.2 502,-278.25 589.96,-228.64 629.24,-103.98 642.95,-47.55"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.2" points="646.3,-48.58 645.15,-38.05 639.48,-47 646.3,-48.58"/>
-<text xml:space="preserve" text-anchor="middle" x="602.18" y="-165.95" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
+<title>Corporation&#45;&gt;Knowledge and strategy (per faction)</title>
+<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M415.58,-309.54C443.32,-303.12 475.5,-293.2 502,-278.25 589.78,-228.74 629.08,-104.5 642.86,-47.9"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="646.19,-49.03 645.04,-38.49 639.37,-47.44 646.19,-49.03"/>
+<text xml:space="preserve" text-anchor="middle" x="602.18" y="-165.95" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
 </g>
 <!-- Settlement -->
 <g id="node4" class="node">
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M320.12,-243.5C320.12,-243.5 217.88,-243.5 217.88,-243.5 211.88,-243.5 205.88,-237.5 205.88,-231.5 205.88,-231.5 205.88,-211.5 205.88,-211.5 205.88,-205.5 211.88,-199.5 217.88,-199.5 217.88,-199.5 320.12,-199.5 320.12,-199.5 326.12,-199.5 332.12,-205.5 332.12,-211.5 332.12,-211.5 332.12,-231.5 332.12,-231.5 332.12,-237.5 326.12,-243.5 320.12,-243.5"/>
 <text xml:space="preserve" text-anchor="middle" x="269" y="-229.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="269" y="-217.05" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 5165 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="269" y="-217.05" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 5170 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="269" y="-205.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1192</text>
 </g>
 <!-- Corporation&#45;&gt;Settlement -->
@@ -64,8 +64,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M471.12,-139.75C471.12,-139.75 368.88,-139.75 368.88,-139.75 362.88,-139.75 356.88,-133.75 356.88,-127.75 356.88,-127.75 356.88,-107.75 356.88,-107.75 356.88,-101.75 362.88,-95.75 368.88,-95.75 368.88,-95.75 471.12,-95.75 471.12,-95.75 477.12,-95.75 483.12,-101.75 483.12,-107.75 483.12,-107.75 483.12,-127.75 483.12,-127.75 483.12,-133.75 477.12,-139.75 471.12,-139.75"/>
 <text xml:space="preserve" text-anchor="middle" x="420" y="-125.3" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="420" y="-113.3" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 4843 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="420" y="-101.3" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1735</text>
+<text xml:space="preserve" text-anchor="middle" x="420" y="-113.3" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 4882 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="420" y="-101.3" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1740</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->
 <g id="edge5" class="edge">
@@ -109,12 +109,12 @@
 <polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.8" points="267.67,-39.51 257.14,-38.33 264.63,-45.82 267.67,-39.51"/>
 <text xml:space="preserve" text-anchor="middle" x="321.12" y="-62.2" font-family="Helvetica,sans-Serif" font-size="9.00">7</text>
 </g>
-<!-- Army and operations&#45;&gt;Knowledge (per faction) -->
+<!-- Army and operations&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge2" class="edge">
-<title>Army and operations&#45;&gt;Knowledge (per faction)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.2" d="M470.26,-95.3C507.88,-79.24 559.19,-57.33 597.19,-41.11"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.2" points="598.53,-44.35 606.36,-37.2 595.79,-37.91 598.53,-44.35"/>
-<text xml:space="preserve" text-anchor="middle" x="550.84" y="-62.2" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
+<title>Army and operations&#45;&gt;Knowledge and strategy (per faction)</title>
+<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M470.26,-95.3C507.88,-79.24 559.19,-57.33 597.19,-41.11"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="598.12,-44.53 605.94,-37.38 595.37,-38.09 598.12,-44.53"/>
+<text xml:space="preserve" text-anchor="middle" x="550.84" y="-62.2" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
 </g>
 <!-- Army and operations&#45;&gt;Corporation -->
 <g id="edge1" class="edge">
@@ -193,11 +193,11 @@
 <polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="286.92,-19.58 276.71,-22.41 286.46,-26.56 286.92,-19.58"/>
 <text xml:space="preserve" text-anchor="middle" x="760.49" y="-217.82" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
 </g>
-<!-- The biotech&#45;&gt;Knowledge (per faction) -->
+<!-- The biotech&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge17" class="edge">
-<title>The biotech&#45;&gt;Knowledge (per faction)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.2" d="M840.93,-398.66C863.14,-382.02 891,-354.69 891,-322.25 891,-322.25 891,-322.25 891,-116.75 891,-80.57 796.82,-51.49 725.96,-34.73"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.2" points="727.11,-31.4 716.58,-32.56 725.53,-38.22 727.11,-31.4"/>
+<title>The biotech&#45;&gt;Knowledge and strategy (per faction)</title>
+<path fill="none" stroke="#8899aa" stroke-width="1.2" d="M840.93,-398.66C863.14,-382.02 891,-354.69 891,-322.25 891,-322.25 891,-322.25 891,-116.75 891,-83.65 812.16,-56.49 744.48,-39.27"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.2" points="745.61,-35.94 735.06,-36.93 743.92,-42.74 745.61,-35.94"/>
 <text xml:space="preserve" text-anchor="middle" x="893.62" y="-217.82" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- The biotech&#45;&gt;Corporation -->

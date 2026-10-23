@@ -167,8 +167,10 @@ function base.land(surface, pos, opts)
   storage.bases[id] = b
   site.scan_init(b, SEARCH)
   if not opts.uplink then base.drop_power(b) end
+  -- A developer's readout (its rule, parts, flow, power): shown only while tracing (dev, the sims); it had hung over
+  -- every lander in every game (seen in the field guide's screenshots, 2026-10-24).
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
-    color = {0.7, 0.9, 1}, scale = 1.4, alignment = "center"}.id
+    color = {0.7, 0.9, 1}, scale = 1.4, alignment = "center", visible = storage.trace == true}.id
   trace(b, string.format("landed at %.0f,%.0f: doctrine %s, first hub %s", at[1], at[2], b.doctrine,
     b.hubs[1].archetype))
   return b
@@ -454,6 +456,8 @@ local plan, power = planner_.plan, planner_.power
 local function label(b)
   local o = rendering.get_object_by_id(b.label)
   if not o then return end
+  o.visible = storage.trace == true
+  if not o.visible then return end
   local supply, demand = power(b)
   o.text = string.format("%s | parts %d | feed %d | in %.0f/min | parts %.1f/min | fabs %d drills %d | %.1f/%.1f MW",
     b.rule .. (b.waiting and (" (waiting: " .. b.waiting .. ")") or ""), b.parts, b.feedstock, b.rate_in,
@@ -806,7 +810,7 @@ function base.stats(b)
     grudge = b.grudge, grudge_till = b.grudge_till, cap = army.cap(b), escort = b.escort, gens_counted = b.gens_counted,
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
-    war_rung = b.war_rung or 0, map_text = b.map_text, name = b.name,
+    war_rung = b.war_rung or 0, posture = b.posture, map_text = b.map_text, name = b.name,
     claim_marks = #(b.claim_marks or {}), jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0, reprisals = b.reprisals or 0}
 end
 

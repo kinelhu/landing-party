@@ -178,3 +178,25 @@ balance targets are judged after step 3 and again after 5; the constants are tun
     It replaced the fixed chain (raid before siege before strip; a thief's strip before all).
   - Measured: the 57 raid-heavy scenarios after each piece (3a 56 of 57 until loss_aversion, then 57; 3b 57; 3c 57)
     and the 44 siege-related ones on 3c (44).
+- **Step 4 (first form, 0.2.4):** `strategy.lua`, a leaf: a settlement's posture (the army cap's multiple, the war
+  footing's condition, how pressed it is) from its rung, a fresh grudge and its recent losses (know.lua), refreshed
+  every 10 seconds by war.lua; army.cap and the footing read it, the planner holds its lamps and paving while at war.
+  The threat term (losses arming a faction) ships off: at 0.5 Kessler-Hayashi, hit by Grubstake's first raids, armed
+  half again, went on a war footing and took Grubstake's camp to two buildings (`rivals`): a runaway. Restructure
+  first; how much losses should arm a faction is tuned last, against the system sim. Budget shares for the planner wait
+  for that tuning too.
+- **Step 5 (0.2.4):** the counter matrix in the game. `scripts/arena_report.py` writes `landing-party/counters.lua` (each
+  unit's arena score against each foe kind, each line and the biters); `army.composition` tilts the mix toward what
+  answers its killers of the last 20 minutes (know.lua), by its mind's counter (Kessler-Hayashi 1, Grubstake 0.5).
+  Scenario `compose`: six Line troopers killed by gun turrets; railgunners x1.70 and tanks x1.43 in what it builds.
+  The arena's results predate the drones: rerun it to price them and refresh the table.
+- **Step 6 (deliberately small, 0.2.4):** the arrival order is each corporation's (`arrives`, early or late), not two ids
+  in phases.lua. Not done, with reasons: site scoring over all eight directions (each candidate generates up to 25
+  chunks in a tick; the search stops at the first rich site because evaluating them all stalled landings by over a
+  second); territory with Grubstake's claims (section 3 was wrong: a claim has its own map mark by design, and the disc
+  is the camp; claims added would also have widened what holds Kessler-Hayashi's line back).
+- **Step 7 (first form, 0.2.4):** dispositions as weights, capabilities as flags. Grubstake's soft_only exposure gates
+  (rival and player targets) are its mind's `max_exposure` (1.0; none for Kessler-Hayashi). The temper's other flags
+  (strips, skims, taps, jumps, pact, night, prospects; cuts, bills) say what a corporation can do at all and stay
+  booleans; soft_only's other uses (a raid breaks when its foreman falls, a provoked thief's half answer) are behaviours
+  of its kind and stay too.

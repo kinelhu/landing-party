@@ -10,26 +10,27 @@ digraph ai {
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
   }
-  subgraph cluster_1 { label="Knowledge (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_1 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "know" [label="know\n138 lines", width=0.95, fillcolor="#d9f0d9"];
+    "strategy" [label="strategy\n49 lines", width=0.85, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "faction" [label="faction\n767 lines", width=1.65, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
-    "war" [label="war\n398 lines", width=1.24, fillcolor="#eef2f7"];
+    "war" [label="war\n402 lines", width=1.25, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n107 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
     "rd" [label="rd\n382 lines", width=1.22, fillcolor="#eef2f7"];
-    "phases" [label="phases\n227 lines", width=1.05, fillcolor="#eef2f7"];
+    "phases" [label="phases\n232 lines", width=1.06, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_3 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n813 lines", width=1.70, fillcolor="#eef2f7"];
+    "base" [label="base\n817 lines", width=1.71, fillcolor="#eef2f7"];
     "construction" [label="construction\n360 lines", width=1.20, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n295 lines", width=1.13, fillcolor="#eef2f7"];
+    "planner" [label="planner\n296 lines", width=1.13, fillcolor="#eef2f7"];
     "layout" [label="layout\n1192 lines", width=2.12, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
@@ -44,8 +45,8 @@ digraph ai {
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "army" [label="army\n711 lines", width=1.59, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1735 lines", width=2.73, fillcolor="#f7dede"];
+    "army" [label="army\n745 lines", width=1.63, fillcolor="#eef2f7"];
+    "ops" [label="ops\n1740 lines", width=2.73, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n230 lines", width=1.06, fillcolor="#d9f0d9"];
     "siege" [label="siege\n846 lines", width=1.74, fillcolor="#d9f0d9"];
@@ -80,9 +81,10 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n605 lines", width=1.47, fillcolor="#eef2f7"];
+    "control" [label="control\n607 lines", width=1.47, fillcolor="#eef2f7"];
     "dev" [label="dev\n189 lines", width=1.01, fillcolor="#eef2f7"];
   }
+  "army" -> "know";
   "army" -> "ops";
   "army" -> "pool";
   "army" -> "rd";
@@ -175,6 +177,7 @@ digraph ai {
   "skim" -> "tune";
   "stance" -> "tune";
   "standing" -> "ops";
+  "strategy" -> "know";
   "tap" -> "base";
   "tap" -> "ops";
   "tap" -> "pool";
@@ -191,6 +194,7 @@ digraph ai {
   "war" -> "rd";
   "war" -> "rng";
   "war" -> "stance";
+  "war" -> "strategy";
   "war" -> "tune";
   "ops" -> "base" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="claim_map"];
   "ops" -> "border" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="border_cap"];

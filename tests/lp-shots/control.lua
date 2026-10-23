@@ -93,24 +93,36 @@ schedule(400, function()
     if name:sub(1, 3) == "lp-" and not name:find("%-fire$") and not name:find("%-laser$") and not name:find("%-physical$")
       and not name:find("%-explosion$") and not name:find("%-electric$") then table.insert(names, name) end
   end
-  for _, l in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-depot"}) do table.insert(names, l) end
+  for _, l in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-depot",
+    -- Synthexis's buildings (the field guide, 2026-10-24).
+    "lp-clinic", "lp-pen", "lp-biochamber", "lp-heating-tower", "lp-tumor", "lp-bred-worm"}) do
+    if prototypes.entity[l] then table.insert(names, l) end
+  end
   table.sort(names)
   for i, name in ipairs(names) do
     local pos = {-550 + ((i - 1) % 12) * 14, 70 + math.floor((i - 1) / 12) * 14}
     local ok, e = pcall(function()
-      return surface().create_entity{name = name, position = pos, force = name:find("grubstake") and "lp-grubstake" or "lp-serenity"}
+      local synth = name:find("^lp%-bred") or name == "lp-clinic" or name == "lp-pen" or name == "lp-biochamber"
+        or name == "lp-heating-tower" or name == "lp-tumor" or name == "lp-technician" or name == "lp-runt"
+      return surface().create_entity{name = name, position = pos,
+        force = synth and "lp-biotech" or name:find("grubstake") and "lp-grubstake" or "lp-serenity"}
     end)
     if ok and e then
-      e.disabled_by_script = true
+      -- Held still; not a lab (on 2.1 a disabled lab draws only its shadow, the field guide's run, 2026-10-24).
+      if e.type ~= "lab" then e.disabled_by_script = true end
+      -- A lab's body is the mod's busy animation, drawn on it by script when a camp places it (data.lua lp-lab-busy).
+      if e.type == "lab" then rendering.draw_animation{animation = "lp-lab-busy", target = e, surface = e.surface, render_layer = "object"} end
       table.insert(S.portraits, {name = name, pos = pos})
     end
   end
 end)
 schedule(460, function()
   for _, p in ipairs(S.portraits or {}) do
-    local big = p.name:find("lab") or p.name:find("depot") or p.name:find("walker")
+    local big = p.name:find("lab") or p.name:find("depot") or p.name:find("walker") or p.name:find("stomper")
+      or p.name:find("behemoth") or p.name == "lp-clinic" or p.name == "lp-pen" or p.name == "lp-heating-tower"
+      or p.name == "lp-biochamber" or p.name:find("truck")
     game.take_screenshot{surface = surface(), position = {p.pos[1], p.pos[2] - 0.6}, resolution = {320, 320},
-      zoom = big and 1.4 or 2.2, daytime = 0, path = DIR .. "roster/" .. p.name .. ".png", show_entity_info = false,
+      zoom = big and 1.4 or (p.name:find("harrier") or p.name:find("scavenger") or p.name:find("drone")) and 4 or 2.2, daytime = 0, path = DIR .. "roster/" .. p.name .. ".png", show_entity_info = false,
       anti_alias = true}
   end
   note(string.format("roster/: %d portraits", #(S.portraits or {})))

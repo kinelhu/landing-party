@@ -62,7 +62,12 @@ end
 -- more firepower"): Grubstake, the cheap swarm, first, its survey party at oil processing and its arrival at the first
 -- chemical science pack; Serenity, the high-tech one, only once its gate opens: the first rocket launch (Space Age), the
 -- first utility science pack (base game, where a launch ends the game). Its first landing then comes within LATE_HASTE.
-local EARLY_CORP, LATE_CORP = "grubstake", "serenity"
+-- Which corporation comes first and which second: each corporation's own (shared.CORPS[corp].arrives, "early" or
+-- "late"; the faction AI audit, 2026-10-23: the order was written here by id).
+local function arriving(when)
+  for id, c in pairs(shared.CORPS) do if c.arrives == when then return id end end
+end
+local EARLY_CORP, LATE_CORP = arriving("early"), arriving("late")
 local LATE_HASTE = 5 * 3600
 local function first_corp(surface)
   local s = state()

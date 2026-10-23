@@ -1,6 +1,7 @@
 -- The army: depots build units from parts up to a garrison cap, in the mix the doctrine prefers. Raids are
 -- operations (scripts/ops.lua); this module answers alarms, patrols, escorts convoys and intercepts trains.
 local shared = require("__landing-party__.shared")
+local know = require("__landing-party__.scripts.know")
 local tune = require("__landing-party__.scripts.tune")
 local rng = require("__landing-party__.scripts.rng")
 local ops = require("__landing-party__.scripts.ops")
@@ -53,6 +54,9 @@ local function cap(b)
   n = math.max(1, math.floor(n * tune.strength(b.corp) + 0.5))
   -- The ladder buys capacity (Fable's pressure-ramp consult, item 4): from its second rung against a player, half as many
   -- again (b.war_rung, war.lua). It had only lowered the price of using what the settlement had.
+  -- Its posture (strategy.lua, refreshed every 10 s by war.lua): a rung, a grudge, its recent losses. Before it is
+  -- first set, the rung and the grudge as they were read here.
+  if b.posture then return math.floor(n * b.posture.arm) end
   if (b.war_rung or 0) >= 2 then n = math.floor(n * 1.5) end
   return (b.grudge_till and game.tick < b.grudge_till) and 2 * n or n
 end
@@ -98,6 +102,36 @@ end
 -- One unit from the first depot with room, if parts allow; the doctrine weighs which.
 local function withdrawing(b) return storage.corps and storage.corps[b.corp] and storage.corps[b.corp].withdrawing end
 army.withdrawing = withdrawing
+-- What it builds, tilted toward what answers what has been killing it (the faction AI's composition, step 5;
+-- docs/reviews/2026-10-23-faction-ai-audit.md): each kind's weight in its mix times 1 + counter x its arena score
+-- (counters.lua, -1 to 1) against its killers of the last COMPOSE_WINDOW (know.lua), each killer by its share, at
+-- least a tenth. counter is its mind's (how hard it adapts); none, or under three losses, the mix as it is.
+local COUNTERS = require("__landing-party__.counters")
+local COMPOSE_WINDOW = 20 * 3600
+local KILLER_COLUMN = {vehicle = "lp-battle-tank", character = "lp-trooper"}
+local function composition(b, m)
+  local mind = (shared.CORPS[b.corp] or {}).mind or {}
+  local k = mind.counter or 0
+  if k == 0 then return m end
+  local seen, n = {}, 0
+  for _, l in ipairs(know.losses(b.corp, COMPOSE_WINDOW, function(l) return l.unit and l.killer ~= nil end)) do
+    local key = KILLER_COLUMN[l.killer] or l.killer
+    seen[key] = (seen[key] or 0) + 1
+    n = n + 1
+  end
+  if n < 3 then return m end
+  local out = {}
+  for name, w in pairs(m) do
+    local row = COUNTERS[shared.variant(b.corp, name)] or COUNTERS[name]
+    local s = 0
+    if row then for key, c in pairs(seen) do s = s + (row[key] or 0) * c / n end end
+    out[name] = w * math.max(0.1, 1 + k * s)
+  end
+  b.composed = out
+  return out
+end
+army.composition = composition
+
 local function produce(b, trace)
   if storage.army_off or withdrawing(b) then return end
   prune(b.garrison)
@@ -113,7 +147,7 @@ local function produce(b, trace)
   local full = strength(b) >= cap(b)
   if full and not over then return end
   -- A rebuild that makes parts is paid first (base.reserve; scenario occupy).
-  local name = b.next_unit or rng.weighted(b.rng, mix(b))
+  local name = b.next_unit or rng.weighted(b.rng, composition(b, mix(b)))
   -- A clearance waiting for railgunners (ops.clearance) gets them first.
   if (b.want_rails and not b.next_unit and shared.units["lp-railgunner"] and (mix(b)["lp-railgunner"] or 0) > 0) or full then
     name = "lp-railgunner"

@@ -9,6 +9,7 @@
 --   column from its nearest other settlement along a planned route (none: no relief), or, with no other settlement,
 --   drop at the lander at half strength.
 local shared = require("__landing-party__.shared")
+local strategy = require("__landing-party__.scripts.strategy")
 local pods = require("__landing-party__.scripts.pods")
 local tune = require("__landing-party__.scripts.tune")
 local ops = require("__landing-party__.scripts.ops")
@@ -72,7 +73,7 @@ function war.footing(b, job)
   if ESSENTIAL[shared.kind_of(job.name)] then return true end
   if (b.war_checked or -1) ~= game.tick then
     b.war_checked = game.tick
-    b.on_footing = at_war(b) ~= nil and strength(b) < army.cap(b)
+    b.on_footing = ((b.posture and b.posture.war) or at_war(b) ~= nil) and strength(b) < army.cap(b)
   end
   return not b.on_footing
 end
@@ -330,8 +331,11 @@ local function quiet(tick)
   local span = storage.quiet_ticks or QUIET_TICKS
   for _, b in pairs(storage.bases) do
     -- Its rung against the player it is at war with, for the cap and the siege tier (army.cap, ops.siege_tier).
-    local _, rung = at_war(b)
+    local foe, rung = at_war(b)
     b.war_rung = rung or 0
+    -- Its posture (strategy.lua): the cap's multiple and the footing's condition, in one place.
+    b.posture = strategy.posture({corp = b.corp, rung = b.war_rung, at_war = foe ~= nil,
+      grudge = b.grudge_till ~= nil and tick < b.grudge_till, threat = strategy.threat(b.corp)})
     if not b.fallen and b.lander.valid then
       if b.quiescent then
         if tick - b.quiescent >= span then

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""The field roster page (docs/roster/index.html, img/): every unit with its portrait, its numbers and what fields it, and
-each corporation's research tree drawn as a diagram. Written from the game's prototypes (scripts/roster.py reads the
-dump), landing-party/shared.lua (read with LuaJIT), ops.lua's era thresholds and the locale; the portraits come from
-the screenshot run (scripts/shots.sh writes lp-shots/roster/). Never edit the page by hand:
+"""The field guide (docs/guide/index.html, img/; the user, 2026-10-24: "useful user-facing documents for the mod. A unit
+roster/catalog, faction and player tech trees, faction presentation vignettes, screenshots"): each faction's vignette
+and its base in the game, every unit with its portrait, numbers and who fields it, each corporation's research tree,
+Synthexis's breeds by evolution and its buildings, and your own technologies, drawn. Written from the game's prototypes
+(scripts/roster.py reads the dump), landing-party/shared.lua (read with LuaJIT), ops.lua's era thresholds, farm.lua's
+clinic and the locale; the portraits from the screenshot run (scripts/shots.sh), the vistas from the all-factions save
+(LP_MIX=all scripts/showcase.sh, then the vista run). Never edit the page by hand:
 
     scripts/check.sh && scripts/shots.sh && python3 -I scripts/roster_page.py
 """
@@ -11,8 +14,9 @@ import html, importlib.util, json, os, re, shutil, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 MOD = os.path.join(REPO, "landing-party")
-OUT = os.path.join(REPO, "docs", "roster")
+OUT = os.path.join(REPO, "docs", "guide")
 SHOTS = os.path.expanduser("~/Library/Application Support/factorio-lp-shots/script-output/lp-shots/roster")
+VISTAS = os.path.expanduser("~/Library/Application Support/factorio-lp-vista/script-output/lp-vista")
 
 spec = importlib.util.spec_from_file_location("roster", os.path.join(HERE, "roster.py"))
 roster = importlib.util.module_from_spec(spec)
@@ -32,7 +36,8 @@ local function dump(v)
   elseif type(v) == "number" or type(v) == "boolean" then return tostring(v) end
   return "null"
 end
-local out = {corps = {}, unlock = s.UNLOCK, units = s.units, lab_icon = s.LAB_ICON}
+local out = {corps = {}, unlock = s.UNLOCK, units = s.units, lab_icon = s.LAB_ICON, breeds = s.BREEDS,
+  biotech = {name = s.BIOTECH.name, color = s.BIOTECH.color, mind = s.BIOTECH.mind}}
 for corp, c in pairs(s.CORPS) do
   out.corps[corp] = {name = c.name, tree = c.tree, mix = c.mix, labs = c.labs, tint = c.tint, bases = c.bases, names = c.names}
 end
@@ -76,13 +81,15 @@ NODE_NAME = {"optics": "Optics", "handloads": "Hand-loads", "warden": "Warden ar
              "counter": "Counter-battery", "salvage": "Salvage rights", "prospector": "Prospector's eye",
              "scrap-plating": "Scrap plating", "asbestos": "Asbestos suits", "slug": "Slug buggies",
              "sapper": "Dynamite sappers", "scavenger": "Bomb drones", "dozer": "Dozer", "prism": "Prism tanks",
-             "tesla": "Tesla tanks", "scorcher": "Scorchers"}
+             "tesla": "Tesla tanks", "scorcher": "Scorchers", "skyguard": "Anti-air troopers", "flak-buggy": "Flak buggies"}
 BRANCH_NAME = {"optics": "Optics", "line": "Line", "siege": "Siege", "scrap-arms": "Scrap arms", "loot": "Loot",
                "wheels": "Wheels"}
 KILLER = {"gun-turret": "gun turrets", "laser-turret": "laser turrets", "flamethrower-turret": "flamethrower turrets",
           "vehicle": "your vehicles", "lp-battle-tank": "battle tanks", "lp-trooper": "troopers",
           "lp-breacher": "breachers", "lp-rocket-trooper": "rocket troopers", "character": "you", "artillery-turret": "artillery turrets",
-          "artillery-wagon": "artillery wagons"}
+          "artillery-wagon": "artillery wagons", "lp-harrier": "scrap drones", "lp-scavenger": "bomb drones",
+          "lp-laser-drone": "laser drones", "destroyer": "your combat robots", "defender": "your combat robots",
+          "distractor": "your combat robots"}
 
 
 def trigger_text(t):
@@ -132,7 +139,7 @@ def corp_kind(corp, kind):
     return names.get(kind, kind)
 
 
-# Portraits: the screenshot run's, made smaller, into docs/roster/img.
+# Portraits: the screenshot run's, made smaller, into docs/guide/img.
 os.makedirs(os.path.join(OUT, "img"), exist_ok=True)
 have = set()
 if os.path.isdir(SHOTS):
@@ -159,6 +166,12 @@ def unit_card(kind, corp, how):
     if not r:
         return ""
     name, hp, speed, w, rng, rate, res, air, c, who, role = r
+    # (The biters' bite is lp-bite inside; a range read off a float; a breed's price is biomass.)
+    w, res = w.replace("lp-bite", "bite"), res.replace("lp-bite", "bite")
+    if isinstance(rng, float):
+        rng = f"{rng:.3g}"
+    breed = (data.get("breeds") or {}).get(kind)
+    cost_text = f"{breed['cost']} biomass" if breed else f'{c}{" parts" if isinstance(c, int) else ""}'
     img = portrait(kind, corp)
     pic = f'<img src="{img}" alt="{esc(ename(kind))}" loading="lazy">' if img else '<div class="nopic">no portrait</div>'
     return f'''<article class="unit">
@@ -171,7 +184,7 @@ def unit_card(kind, corp, how):
       <div><dt>Range</dt><dd>{rng}</dd></div><div><dt>Rate</dt><dd>{esc(rate)}</dd></div>
       <div class="wide"><dt>A shot</dt><dd>{esc(w)}</dd></div>
       <div class="wide"><dt>Resists</dt><dd>{esc(res)}</dd></div>
-      <div><dt>Hits air</dt><dd>{air}</dd></div><div><dt>Cost</dt><dd>{c}{" parts" if isinstance(c, int) else ""}</dd></div>
+      <div><dt>Hits air</dt><dd>{air}</dd></div><div><dt>Cost</dt><dd>{cost_text}</dd></div>
     </dl>
     <p class="how">{esc(how)}</p>
   </div>
@@ -272,8 +285,9 @@ def tree_svg(corp):
 def fielded_text(kind, corp):
     c = data["corps"][corp]
     if kind in (c.get("mix") or {}):
-        era = (data.get("unlock") or {}).get(kind, 0)
-        return "From landing" if not era else f"From era {era}"
+        # (UNLOCK is the corporation's development level, not the player's era.)
+        lvl = (data.get("unlock") or {}).get(kind, 0)
+        return "From landing" if not lvl else f"From its level {lvl}"
     for n in c["tree"]:
         if (n.get("unit") or {}).get("kind") == kind:
             req = f", after {NODE_NAME.get(n['requires'], n['requires'])}" if n.get("requires") else ""
@@ -304,6 +318,7 @@ def corp_section(corp, blurb):
     sw = f"rgb({int(t['r'] * 255)},{int(t['g'] * 255)},{int(t['b'] * 255)})"
     return f'''<section class="corp" id="{corp}" style="--corp:{sw}">
   <header class="corphead"><span class="swatch"></span><div><h2>{esc(c["name"])}</h2><p>{esc(blurb)}</p></div></header>
+  {vignette(corp, c["name"], corp + "-close")}
   <h3>Research</h3>
   <div class="tree">{tree_svg(corp)}</div>
   <h3>Units</h3>
@@ -311,11 +326,210 @@ def corp_section(corp, blurb):
 </section>'''
 
 
+# ---- The field guide's additions (2026-10-24) ----
+farm_src = open(os.path.join(MOD, "scripts", "farm.lua")).read()
+CLIMB = float(re.search(r"local CLIMB = ([\d.]+)", farm_src).group(1))
+STOCK_EVO = float(re.search(r"local STOCK_EVO = ([\d.]+)", farm_src).group(1))
+WAVE_GAP_MIN = int(re.search(r"local WAVE_GAP = (\d+) \* 3600", farm_src).group(1))
+dump = roster.d
+
+# Vistas: the all-factions save's bases, made lighter (jpeg) for the page.
+vistas = set()
+if os.path.isdir(VISTAS):
+    for f in sorted(os.listdir(VISTAS)):
+        if f.endswith(".png"):
+            dst = os.path.join(OUT, "img", "vista-" + f[:-4] + ".jpg")
+            subprocess.run(["sips", "-s", "format", "jpeg", "-s", "formatOptions", "78", "-Z", "1400", os.path.join(VISTAS, f),
+                            "--out", dst], capture_output=True, check=True)
+            vistas.add(f[:-4])
+
+
+def vista(name, alt):
+    return f'<img class="vista" src="img/vista-{name}.jpg" alt="{esc(alt)}" loading="lazy">' if name in vistas else ""
+
+
+# Each faction in a paragraph or two: who they are, how they play, what undoes them. Words only; numbers from the code.
+VIGNETTE = {
+    "serenity": ("The wall", f"""Kessler-Hayashi is a security contractor that treats your factory as a perimeter problem.
+It lands at war with you, builds compact walled camps of slate concrete under cold white light, and pushes a line of
+posts outward until it meets your ground. Its army is precise and expensive: laser troopers, tanks, walkers, and from its
+second level a few armoured laser drones. It clears biter nests in its way with railgunners and the howitzer, and it
+bills you for the waves your pollution draws through its ground.""",
+                 """It is slow to start and dear to replace. Hit its labs and each research branch stalls while its lab is down;
+cut the power to its line and the posts go dark; raid its convoys rather than its walls. Rocket troopers, slugs and every
+kind of anti-air bring its drones down."""),
+    "grubstake": ("The thief", """Grubstake Inc. is a mining outfit that lives off what it can take. It lands rough
+camps of amber gravel, sprawls toward the ore, and works by night: skimming trucks at your chests, strip camps on your
+outposts, taps on your power lines, claim jumpers on your patches. It fields cheap things in numbers: shotgun hands,
+buggies, scrap drones, and bomb drones that dive at your artillery and radars.""",
+                  """It keeps off guarded ground, so a turret over each outpost turns it away. Kill its foreman and a raid
+breaks; pay its trade post and it holds off for a while. Flak and gun turrets shred its drones before they arrive."""),
+    "biotech": ("The test range", f"""Synthexis is a bioengineering firm that uses Nauvis as a test range. It lands on a
+nest field far out, takes the nests as incubators, grows creep between them, and lives on the pollution the creep
+drinks. Every {WAVE_GAP_MIN} minutes or so it sends a wave as a trial of its breeds against a defence: yours, or
+Kessler-Hayashi's walls, whichever would teach it most. While its clinic stands its breeds climb {CLIMB * 60:.2f} of
+evolution an hour: spitters, then bursters, then stompers that step over your wall.""",
+                "Its weak points are its supply. Kill a biochamber and that incubator starves, its stock wanders off feral; "
+                "kill its technicians and every cell goes hungry; shell its clinic and its incubators breed only small and "
+                f"medium biters (evolution {STOCK_EVO:g}) until a new one lands. Hitting an incubator calls its wave home; "
+                "hitting the feed does not."),
+}
+
+
+def vignette(fid, name, vista_name):
+    title, who, beat = VIGNETTE[fid]
+    return f'''<div class="vignette">
+  {vista(vista_name, name + "'s base in the game")}
+  <div><p class="tag">{esc(title)}</p><p>{esc(" ".join(who.split()))}</p>
+  <p class="beat"><b>How to beat it.</b> {esc(" ".join(beat.split()))}</p></div>
+</div>'''
+
+
+# Synthexis's breeds, by evolution: each breed's share of what its incubators breed (lp-pen's result_units).
+PEN = dump["unit-spawner"]["lp-pen"]["result_units"]
+
+
+def weight_at(points, e):
+    if e <= points[0][0]:
+        return points[0][1] if e == points[0][0] else 0
+    for (a, wa), (b, wb) in zip(points, points[1:]):
+        if a <= e <= b:
+            return wa + (wb - wa) * (e - a) / (b - a)
+    return points[-1][1]
+
+
+BREED_COLOUR = {"lp-bred-small-biter": "#8fae3a", "lp-bred-medium-biter": "#5f8f1f", "lp-bred-big-biter": "#3d6b12",
+                "lp-bred-behemoth-biter": "#22420a", "lp-bred-medium-spitter": "#b8a92f", "lp-bred-spore": "#8a5bb5",
+                "lp-bred-cinder": "#c4682b", "lp-bred-stomper": "#5b3f8f"}
+
+
+def tiers_svg():
+    W, H, L, T, B = 900, 300, 56, 16, 40
+    xs = [i / 100 for i in range(101)]
+    shares = {name: [] for name, _ in PEN}
+    for e in xs:
+        tot = sum(weight_at(pts, e) for _, pts in PEN) or 1
+        for name, pts in PEN:
+            shares[name].append(weight_at(pts, e) / tot)
+    out = [f'<svg viewBox="0 0 {W} {H}" width="100%" role="img" aria-label="What Synthexis breeds by evolution">']
+    for k in range(0, 11, 2):
+        x = L + (W - L - 10) * k / 10
+        out.append(f'<line x1="{x}" y1="{T}" x2="{x}" y2="{H - B}" class="grid"/><text x="{x}" y="{H - B + 18}" class="axis" text-anchor="middle">{k / 10:g}</text>')
+    out.append(f'<text x="{L + (W - L) / 2}" y="{H - 4}" class="axis" text-anchor="middle">evolution</text>')
+    base = [0.0] * len(xs)
+    for name, _ in PEN:
+        top = [b + v for b, v in zip(base, shares[name])]
+        pts = [f"{L + (W - L - 10) * e:.1f},{T + (H - T - B) * (1 - t):.1f}" for e, t in zip(xs, top)]
+        pts += [f"{L + (W - L - 10) * e:.1f},{T + (H - T - B) * (1 - b):.1f}" for e, b in reversed(list(zip(xs, base)))]
+        out.append(f'<polygon points="{" ".join(pts)}" fill="{BREED_COLOUR.get(name, "#777")}" opacity="0.9"><title>{esc(ename(name))}</title></polygon>')
+        # Its label where it is widest.
+        i = max(range(len(xs)), key=lambda j: shares[name][j])
+        if shares[name][i] > 0.06:
+            y = T + (H - T - B) * (1 - (base[i] + top[i]) / 2)
+            out.append(f'<text x="{L + (W - L - 10) * xs[i]:.0f}" y="{y + 4:.0f}" class="blabel" text-anchor="middle">{esc(ename(name).replace("Synthexis ", ""))}</text>')
+        base = top
+    out.append(f'<text x="{L - 8}" y="{T + 10}" class="axis" text-anchor="end">all</text><text x="{L - 8}" y="{H - B}" class="axis" text-anchor="end">0</text>')
+    out.append("</svg>")
+    return "\n".join(out)
+
+
+def building_card(name, how):
+    img = portrait(name)
+    pic = f'<img src="{img}" alt="{esc(ename(name))}" loading="lazy">' if img else '<div class="nopic">no portrait</div>'
+    desc = locale.get(("entity-description", name), "")
+    return f'''<article class="unit">
+  <figure>{pic}</figure>
+  <div class="ubody"><h4>{esc(ename(name))}</h4><p class="role">{esc(desc)}</p><p class="how">{esc(how)}</p></div>
+</article>'''
+
+
+def breed_cards():
+    cards = []
+    for name, pts in PEN:
+        start = pts[0][0]
+        price = (data.get("breeds") or {}).get(name, {}).get("cost")
+        how = f"Bred from evolution {start:g}"
+        r = stats.get(name)
+        if r:
+            cards.append(unit_card(name, None, how))
+    return "".join(cards)
+
+
+def synth_section():
+    b = data["biotech"]
+    c = b["color"]
+    sw = f"rgb({int(c['r'] * 255)},{int(c['g'] * 255)},{int(c['b'] * 255)})"
+    blds = "".join(building_card(n, h) for n, h in (
+        ("lp-pen", "A wild nest it took; kill it, and its wave comes home"),
+        ("lp-biochamber", "One by each incubator; kill it, and that incubator starves"),
+        ("lp-clinic", f"While it stands its breeds climb {CLIMB * 60:.2f} an hour"),
+        ("lp-heating-tower", "The heart of its substrate: Gleba soil, yumako and jellystems"),
+        ("lp-tumor", "Grows the creep; kill them and the creep withers")))
+    return f'''<section class="corp" id="biotech" style="--corp:{sw}">
+  <header class="corphead"><span class="swatch"></span><div><h2>{esc(b["name"])}</h2><p>Bred, not built. Its incubators breed
+  by evolution, and its clinic decides how far that climbs.</p></div></header>
+  {vignette("biotech", b["name"], "synthexis-night")}
+  <h3>What it breeds, by evolution</h3>
+  <div class="tree tiers">{tiers_svg()}</div>
+  <h3>Breeds</h3><div class="units">{breed_cards()}</div>
+  <h3>Its culture</h3><div class="narrow">{vista("synthexis-clinic", "The clinic by the heating tower")}</div><div class="units">{blds}</div>
+</section>'''
+
+
+# Your technologies (the mod's, lp-*): by group, each with what unlocks it and what it gives.
+TECH = {k: v for k, v in dump["technology"].items() if k.startswith("lp-")}
+
+
+def tname(k):
+    base = re.sub(r"-\d+$", "", k)
+    n = locale.get(("technology-name", base), k)
+    m = re.search(r"-(\d+)$", k)
+    return f"{n} {m.group(1)}" if m and base != k else n
+
+
+def how_researched(t):
+    tr = t.get("research_trigger")
+    if tr and tr.get("type") == "craft-item":
+        return "craft " + locale.get(("item-name", tr["item"]), tr["item"]).lower()
+    if t.get("hidden"):
+        return "granted when its headquarters falls"
+    u = t.get("unit") or {}
+    if u.get("count"):
+        return f"{u['count']} x " + " + ".join(i[0].replace("-science-pack", "") for i in u.get("ingredients", []))
+    if u.get("count_formula"):
+        return "infinite: " + u["count_formula"]
+    return ""
+
+
+def gives(t):
+    out = []
+    for e in t.get("effects", []):
+        if e.get("recipe"):
+            out.append(locale.get(("recipe-name", e["recipe"]), locale.get(("item-name", e["recipe"]), locale.get(("entity-name", e["recipe"]), e["recipe"]))))
+    return ", ".join(out) if out else "more command bandwidth"
+
+
+def techs_html():
+    groups = (("Command", [k for k in sorted(TECH) if k.startswith("lp-command-bandwidth")]),
+              ("From their wreckage", [k for k in sorted(TECH) if (TECH[k].get("research_trigger") or {}).get("type") == "craft-item"]),
+              ("Prizes", [k for k in sorted(TECH) if k.startswith("lp-prize")]))
+    cols = []
+    for title, ks in groups:
+        items = []
+        for k in ks:
+            t = TECH[k]
+            pre = [tname(p) if p.startswith("lp-") else p.replace("-", " ") for p in (t.get("prerequisites") or [])]
+            items.append(f'''<li><b>{esc(tname(k))}</b><span class="gives">{esc(gives(t))}</span>
+            <span class="how">{esc(how_researched(t))}</span>{f'<span class="pre">after {esc(", ".join(pre))}</span>' if pre else ""}</li>''')
+        cols.append(f'<div class="techcol"><h4>{esc(title)}</h4><ol>{"".join(items)}</ol></div>')
+    return f'<div class="techs">{"".join(cols)}</div>'
+
+
 player = "".join(unit_card(k, None, "Trained at your barracks; orders by beacon") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-battle-tank"))
 shared_units = "".join(unit_card(k, None, h) for k, h in (("lp-hauler", "Both: convoys, Grubstake's building trucks"),
                                                           ("lp-railgunner", "Kessler-Hayashi: clears nests, never raids")))
 
-page = f'''<title>Landing Party Field Roster</title>
+page = f'''<title>Landing Party Field Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -382,13 +596,32 @@ dt {{ font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; l
 dd {{ margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }}
 .how {{ margin: 10px 0 0; font-size: 0.8rem; font-family: var(--mono); color: var(--accent); }}
 @media (max-width: 480px) {{ .unit {{ grid-template-columns: 84px 1fr; }} }}
+.vignette {{ display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; margin: 18px 0 6px; align-items: start; }}
+.vignette p {{ margin: 0 0 10px; }}
+.vignette .tag {{ font-family: var(--display); font-size: 1.5rem; font-weight: 800; text-transform: uppercase; color: var(--corp); }}
+.vignette .beat {{ font-size: 0.93rem; }}
+.vista {{ width: 100%; border-radius: 6px; border: 1px solid var(--line); display: block; }}
+@media (max-width: 760px) {{ .vignette {{ grid-template-columns: 1fr; }} }}
+.tiers svg {{ max-width: 100%; height: auto; }}
+.narrow {{ max-width: 720px; margin-bottom: 14px; }}
+.grid {{ stroke: var(--line); stroke-width: 1; }}
+.axis {{ font-family: var(--mono); font-size: 12px; fill: var(--muted); }}
+.blabel {{ font-family: var(--body); font-size: 13px; font-weight: 600; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,0.45); stroke-width: 3px; }}
+.techs {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }}
+.techcol {{ background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }}
+.techcol ol {{ margin: 8px 0 0; padding-left: 1.2em; }}
+.techcol li {{ margin-bottom: 10px; }}
+.techcol span {{ display: block; font-size: 0.82rem; }}
+.techcol .gives {{ color: var(--fg); }} .techcol .how {{ font-family: var(--mono); color: var(--accent); }}
+.techcol .pre {{ color: var(--muted); }}
 footer {{ margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }}
 </style>
 <div class="wrap">
-  <h1>Landing Party Field Roster</h1>
-  <p class="lede">Every unit the corporations field and the ones you train, with what each one learns and when. Numbers are
-  the game's own, one shot before research; the research charts read down by era and across by branch.</p>
-  <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#yours">Your army</a><a href="#both">Shared</a></nav>
+  <h1>Landing Party Field Guide</h1>
+  <p class="lede">Three companies land on your planet: one to hold it, one to rob it, one to test on it. Who they are, how they
+  fight, what each unit does and what each of them learns, and what you have against them. Numbers are the game's own, one
+  shot before research; the research charts read down by era and across by branch.</p>
+  <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#biotech">Synthexis</a><a href="#yours">Your army</a><a href="#tech">Your technologies</a><a href="#both">Shared</a></nav>
   <div class="rules">
     <div><b>Eras follow you</b>A corporation buys nothing above your era: era 1 at {ERA_TECHS[0]} technologies researched, 2 at {ERA_TECHS[1]}, 3 at {ERA_TECHS[2]}, 4 at {ERA_TECHS[3]}.</div>
     <div><b>Losses decide</b>It buys the node your play calls for: the one whose condition your fighting met hardest in the last {WINDOW_MIN} minutes. With none called for, its weapon track climbs.</div>
@@ -396,16 +629,21 @@ footer {{ margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family:
   </div>
   {corp_section("serenity", "Precise, walled, at war from landing. Lasers and rails; it clears nests and holds a line.")}
   {corp_section("grubstake", "A thief with a fund. Shotguns, buggies and trucks; it skims, strips and raids where you are soft.")}
+  {synth_section()}
   <section class="corp" id="yours" style="--corp: var(--accent)">
     <header class="corphead"><span class="swatch"></span><div><h2>Your army</h2><p>Trained at a barracks, sent by beacon.</p></div></header>
     <h3>Units</h3><div class="units">{player}</div>
+    <h3 id="tech">Your technologies</h3>
+    <p class="lede">Command bandwidth sets how many units you can lead. The rest come from their wreckage: craft a part you
+    looted from them and its technology is yours.</p>
+    {techs_html()}
   </section>
   <section class="corp" id="both" style="--corp: var(--edge)">
     <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
     <h3>Units</h3><div class="units">{shared_units}</div>
   </section>
-  <footer>Written by scripts/roster_page.py from the prototypes, shared.lua and the locale. Portraits from the screenshot run.</footer>
+  <footer>Written by scripts/roster_page.py from the prototypes, shared.lua, farm.lua and the locale. Portraits from the screenshot run; the bases from the all-factions save.</footer>
 </div>
 '''
 open(os.path.join(OUT, "index.html"), "w").write(page)
-print(os.path.join(OUT, "index.html"), f"{len(have)} portraits")
+print(os.path.join(OUT, "index.html"), f"{len(have)} portraits, {len(vistas)} vistas")

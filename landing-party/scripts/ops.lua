@@ -400,7 +400,9 @@ local function temper_allows(b, t)
     -- A soft-only corporation keeps off a rival's guarded ground as off the player's (the system sim, 2026-10-23:
     -- Grubstake raided Kessler-Hayashi's walls and flamers 2 to 6 times in two hours and lost 4 to 78 units to it, 0 to
     -- 8 the other way): its rivals' drills, pylons and convoys, not their fortress. No ladder for a rival: 1.0 holds.
-    if (shared.CORPS[b.corp].temper or {}).soft_only and (t.exposure or t.defence or 0) > 1.0 then return false end
+    -- (The higher of its exposure and defence: a rival's exposure is often 0, and its depot of defence 1.6 was raided.)
+    local cap_ = ((shared.CORPS[b.corp] or {}).mind or {}).max_exposure
+    if cap_ and math.max(t.exposure or 0, t.defence or 0) > cap_ then return false end
     return true
   end
   if t.pos and ops.marked(b, t.pos) then return false end
@@ -415,7 +417,10 @@ local function temper_allows(b, t)
   -- Soft: what the player's turrets reach (exposure), up to 1.0 and LADDER_SOFT once the ladder relaxes it; at its top
   -- rung (cost no object) nothing (at a megabase every exposed spot was over 3, and nothing was ever razed, visit).
   local rung = ladder(t.owner, b.force)
-  if temper.soft_only and rung < 3 and (t.exposure or t.defence or 0) > (rung >= 1 and LADDER_SOFT or 1.0) then return false end
+  -- How much defence it will go up against (its mind's max_exposure; was the temper's soft_only at 1.0), relaxed to
+  -- LADDER_SOFT from the first rung and lifted at the top.
+  local cap_ = ((shared.CORPS[b.corp] or {}).mind or {}).max_exposure
+  if cap_ and rung < 3 and (t.exposure or t.defence or 0) > (rung >= 1 and math.max(cap_, LADDER_SOFT) or cap_) then return false end
   -- A thief does not break the drills that show it where the ore is: those are for strip-mining (it raided them
   -- instead, and had nothing left to strip).
   if temper.strips and t.value == ops.VALUE["mining-drill"] then return false end

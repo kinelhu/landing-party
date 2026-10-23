@@ -64,11 +64,17 @@ shared.CORPS = {
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
+    -- When it comes (phases.lua): early, on the player's first oil; Kessler-Hayashi late, on the first rocket.
+    arrives = "early",
     -- Its mind (the faction AI's personality; docs/reviews/2026-10-23-faction-ai-audit.md): the odds it wants before it
     -- commits (a raid's force against what the defence needs, ops.odds), how hard it discounts a risky target, and how
     -- much it minds what a defence will cost it whatever the odds (loss_aversion: value / (1 + defence)^loss_aversion).
     -- prefer: what each kind of operation is worth to it beside a raid (a thief strips first).
-    mind = {min_odds = 0.6, caution = 2, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 10}},
+    -- counter: how hard it tilts what it builds toward what answers its killers (army.composition).
+    -- max_exposure: the most defence it goes up against (a thief keeps off guarded ground; none for a corporation that
+    -- goes anywhere).
+    mind = {min_odds = 0.6, caution = 2, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 10}, counter = 0.5,
+      max_exposure = 1.0},
     temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, jumps = true, taps = true, skims = true, night = true, prospects = true,
       -- How it answers a provocation (ops.answer), by kind: a loss (its unit, drone or building) or trespass (a turret
       -- covering its camp). The thief never fights fair: a snatch raid only where no turret covers it, else nothing (Fable,
@@ -151,7 +157,8 @@ shared.CORPS = {
     -- forgives. Being at war, its losses are fair war and go unanswered (ops.request_answer; the user, 2026-10-19), so
     -- the loss entry below is kept for a temper without `hostile`.
     -- Cuts: it surveys the power behind the turrets facing it and strikes the line (scripts/power.lua).
-    mind = {min_odds = 0.5, caution = 1, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 0}},
+    mind = {min_odds = 0.5, caution = 1, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 0}, counter = 1},
+    arrives = "late",
     temper = {provoked_only = true, hostile = true, cuts = true, bills = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).
     drill_pollution = 0,

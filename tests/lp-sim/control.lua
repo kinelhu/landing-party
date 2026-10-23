@@ -2407,6 +2407,10 @@ scenarios.system = function()
             c.parts, c.made = c.parts + (st.parts or 0), c.made + (st.made or 0)
             c.fabs, c.drills, c.turrets = c.fabs + st.fabs, c.drills + st.drills, c.turrets + st.turrets
             c.garrison = c.garrison + st.garrison
+            -- Its posture (strategy.lua): the most pressed of its settlements.
+            if st.posture and (not c.pressed or st.posture.pressed > c.pressed) then
+              c.pressed, c.arm, c.war = st.posture.pressed, st.posture.arm, st.posture.war
+            end
           end
           c.units_lost, c.lost = c.units_lost + (st.units_lost or 0), c.lost + (st.lost or 0)
           c.raids = c.raids + (st.raids_sent or 0)
@@ -2448,6 +2452,49 @@ scenarios.system = function()
     check("system: each faction's losses known to it", ok, serpent.line({lost = lost, recorded = recorded}))
     check("system: every faction landed", S.g ~= nil and S.s ~= nil and S.synth ~= nil and S.synth ~= false,
       string.format("grubstake %s, serenity %s, synthexis %s", tostring(S.g), tostring(S.s), tostring(S.synth)))
+  end)
+end
+
+-- (Required at load: require cannot run inside a scheduled step.)
+local COUNTERS = require("__landing-party__.counters")
+-- Compose (the faction AI's composition, step 5): six of Serenity's Line troopers walk into four gun turrets with
+-- piercing rounds and die; its mix is then tilted toward what beats gun turrets (counters.lua): the kind that scores
+-- best against them gains on the one that scores worst.
+scenarios.compose = function()
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, history_off = true})
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+    flatten(c[1] - 12, c[2] - 12, c[1] + 12, c[2] + 12)
+    for k = -1, 2 do
+      local t = surface().create_entity{name = "gun-turret", position = {c[1] + k * 3, c[2]}, force = "player"}
+      t.insert{name = "piercing-rounds-magazine", count = 200}
+    end
+    for k = 1, 6 do
+      surface().create_entity{name = "lp-infantry", position = {c[1] - 6 + k * 2, c[2] - 8}, force = "lp-serenity"}
+    end
+    S.c = c
+  end)
+  schedule(60 * 60, function()
+    S.compose = lp("debug_compose", storage.id)
+    info("compose: " .. serpent.line(S.compose))
+    local m, k = S.compose.mix, S.compose.composed
+    local best, worst, bs, ws
+    local counters = COUNTERS
+    for name in pairs(m) do
+      local row = counters[name]
+      local s = row and row["gun-turret"]
+      if s then
+        if not bs or s > bs then best, bs = name, s end
+        if not ws or s < ws then worst, ws = name, s end
+      end
+    end
+    check("compose: its losses to gun turrets known", ((lp("know_state").serenity or {}).losses or 0) >= 3,
+      serpent.line(lp("know_state").serenity))
+    check("compose: it builds more of what beats gun turrets", best and worst and best ~= worst
+      and k[best] / m[best] > k[worst] / m[worst], string.format("%s (%.2f against gun turrets) x%.2f, %s (%.2f) x%.2f",
+      tostring(best), bs or 0, best and k[best] / m[best] or 0, tostring(worst), ws or 0, worst and k[worst] / m[worst] or 0))
   end)
 end
 

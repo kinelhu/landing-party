@@ -1,0 +1,912 @@
+<title>Landing Party Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a field manual. Each corporation a chapter: its research drawn as a chart by era and branch, its units as
+   record cards with an in-game portrait. */
+:root {
+  --bg: #eef0ee; --panel: #ffffff; --fg: #1d2326; --muted: #5d676b; --line: #c9d0d2; --band: #e4e8e8;
+  --accent: #b5651d; --edge: #7d8a90;
+  --display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15191b; --panel: #1e2427; --fg: #e3e7e8; --muted: #9aa5a9; --line: #333c40; --band: #1a1f21;
+  --accent: #e0954f; --edge: #8a989e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15191b; --panel: #1e2427; --fg: #e3e7e8; --muted: #9aa5a9; --line: #333c40; --band: #1a1f21;
+  --accent: #e0954f; --edge: #8a989e; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; }
+h1, h2, h3, h4 { font-family: var(--display); letter-spacing: 0.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; text-transform: uppercase; }
+.lede { max-width: 68ch; color: var(--muted); margin: 10px 0 0; }
+nav { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 18px 0 8px; font-family: var(--mono); font-size: 0.85rem; }
+nav a { color: var(--fg); }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 22px 0 8px; }
+.rules div { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; font-size: 0.92rem; }
+.rules b { font-family: var(--display); font-size: 1.15rem; letter-spacing: 0.03em; display: block; }
+.corp { margin-top: 56px; }
+.corphead { display: flex; gap: 14px; align-items: center; border-bottom: 3px solid var(--corp); padding-bottom: 10px; }
+.corphead p { margin: 2px 0 0; color: var(--muted); max-width: 70ch; }
+.swatch { width: 36px; height: 36px; border-radius: 50%; background: var(--corp); flex: none; box-shadow: inset 0 0 0 3px var(--panel); }
+h2 { font-size: 2rem; font-weight: 800; }
+h3 { font-size: 1.3rem; font-weight: 600; text-transform: uppercase; color: var(--muted); margin: 26px 0 10px; }
+.tree { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.tree svg { display: block; font-family: var(--body); }
+.band0 { fill: var(--band); } .band1 { fill: var(--panel); }
+.era { font-family: var(--display); font-size: 18px; font-weight: 600; fill: var(--fg); }
+.erasub { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.branch { font-family: var(--display); font-size: 22px; font-weight: 800; fill: var(--fg); text-transform: uppercase; letter-spacing: 1px; }
+.lab { font-size: 13px; font-weight: 600; fill: var(--fg); }
+.nbox { fill: var(--panel); stroke: var(--line); stroke-width: 1.2; }
+.node.unit .nbox { stroke: var(--corp); stroke-width: 2; }
+.chip { font-family: var(--mono); font-size: 10px; letter-spacing: 1px; fill: var(--muted); }
+.node.unit .chip { fill: var(--accent); }
+.ntitle { font-family: var(--display); font-size: 19px; font-weight: 600; fill: var(--fg); }
+.nmeta { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.neff { font-size: 12px; fill: var(--fg); }
+.ntrig { font-size: 11px; fill: var(--muted); font-style: italic; }
+.edge { fill: none; stroke: var(--edge); stroke-width: 1.6; }
+.edgehead { fill: var(--edge); }
+.units { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.unit { display: grid; grid-template-columns: 120px 1fr; gap: 12px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 12px; min-width: 0; }
+.unit figure { margin: 0; background: var(--band); border-radius: 4px; aspect-ratio: 1; overflow: hidden; max-width: 100%; }
+.unit img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nopic { font-size: 0.75rem; color: var(--muted); display: grid; place-items: center; height: 100%; }
+.ubody { min-width: 0; }
+h4 { font-size: 1.4rem; font-weight: 600; }
+.role { margin: 2px 0 8px; font-size: 0.88rem; color: var(--muted); }
+dl { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin: 0; font-size: 0.82rem; }
+dl div { min-width: 0; } dl .wide { grid-column: 1 / -1; }
+dt { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.how { margin: 10px 0 0; font-size: 0.8rem; font-family: var(--mono); color: var(--accent); }
+@media (max-width: 480px) { .unit { grid-template-columns: 84px 1fr; } }
+.vignette { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; margin: 18px 0 6px; align-items: start; }
+.vignette p { margin: 0 0 10px; }
+.vignette .tag { font-family: var(--display); font-size: 1.5rem; font-weight: 800; text-transform: uppercase; color: var(--corp); }
+.vignette .beat { font-size: 0.93rem; }
+.vista { width: 100%; border-radius: 6px; border: 1px solid var(--line); display: block; }
+@media (max-width: 760px) { .vignette { grid-template-columns: 1fr; } }
+.tiers svg { max-width: 100%; height: auto; }
+.narrow { max-width: 720px; margin-bottom: 14px; }
+.grid { stroke: var(--line); stroke-width: 1; }
+.axis { font-family: var(--mono); font-size: 12px; fill: var(--muted); }
+.blabel { font-family: var(--body); font-size: 13px; font-weight: 600; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,0.45); stroke-width: 3px; }
+.techs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.techcol { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+.techcol ol { margin: 8px 0 0; padding-left: 1.2em; }
+.techcol li { margin-bottom: 10px; }
+.techcol span { display: block; font-size: 0.82rem; }
+.techcol .gives { color: var(--fg); } .techcol .how { font-family: var(--mono); color: var(--accent); }
+.techcol .pre { color: var(--muted); }
+footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
+</style>
+<div class="wrap">
+  <h1>Landing Party Field Guide</h1>
+  <p class="lede">Three companies land on your planet: one to hold it, one to rob it, one to test on it. Who they are, how they
+  fight, what each unit does and what each of them learns, and what you have against them. Numbers are the game's own, one
+  shot before research; the research charts read down by era and across by branch.</p>
+  <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#biotech">Synthexis</a><a href="#yours">Your army</a><a href="#tech">Your technologies</a><a href="#both">Shared</a></nav>
+  <div class="rules">
+    <div><b>Eras follow you</b>A corporation buys nothing above your era: era 1 at 25 technologies researched, 2 at 60, 3 at 100, 4 at 150.</div>
+    <div><b>Losses decide</b>It buys the node your play calls for: the one whose condition your fighting met hardest in the last 30 minutes. With none called for, its weapon track climbs.</div>
+    <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch climbs, and fields what it gave, only while that branch's lab stands in its camp.</div>
+  </div>
+  <section class="corp" id="serenity" style="--corp:rgb(158,204,255)">
+  <header class="corphead"><span class="swatch"></span><div><h2>Kessler-Hayashi</h2><p>Precise, walled, at war from landing. Lasers and rails; it clears nests and holds a line.</p></div></header>
+  <div class="vignette">
+  <img class="vista" src="img/vista-serenity-close.jpg" alt="Kessler-Hayashi&#x27;s base in the game" loading="lazy">
+  <div><p class="tag">The wall</p><p>Kessler-Hayashi is a security contractor that treats your factory as a perimeter problem. It lands at war with you, builds compact walled camps of slate concrete under cold white light, and pushes a line of posts outward until it meets your ground. Its army is precise and expensive: laser troopers, tanks, walkers, and from its second level a few armoured laser drones. It clears biter nests in its way with railgunners and the howitzer, and it bills you for the waves your pollution draws through its ground.</p>
+  <p class="beat"><b>How to beat it.</b> It is slow to start and dear to replace. Hit its labs and each research branch stalls while its lab is down; cut the power to its line and the posts go dark; raid its convoys rather than its walls. Rocket troopers, slugs and every kind of anti-air bring its drones down.</p></div>
+</div>
+  <h3>Research</h3>
+  <div class="tree"><svg viewBox="0 0 1328 842" width="1328" height="842" role="img" aria-label="Kessler-Hayashi research tree">
+<defs><marker id="arr-serenity" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="edgehead"/></marker></defs>
+<rect x="0" y="79.0" width="1328" height="184" class="band0"/>
+<text x="12" y="118" class="era">From landing</text>
+<rect x="0" y="263.0" width="1328" height="184" class="band1"/>
+<text x="12" y="302" class="era">Era 1</text>
+<text x="12" y="320" class="erasub">you: 25 techs</text>
+<rect x="0" y="447.0" width="1328" height="184" class="band0"/>
+<text x="12" y="486" class="era">Era 2</text>
+<text x="12" y="504" class="erasub">you: 60 techs</text>
+<rect x="0" y="631.0" width="1328" height="184" class="band1"/>
+<text x="12" y="670" class="era">Era 3</text>
+<text x="12" y="688" class="erasub">you: 100 techs</text>
+<text x="201.0" y="34" class="branch" text-anchor="middle">Optics</text>
+<image href="img/lp-optics-lab.png" x="127.0" y="42" width="44" height="44"/>
+<text x="177.0" y="62" class="lab">Optics lab</text>
+<text x="177.0" y="78" class="erasub">climbs while it stands</text>
+<text x="573.0" y="34" class="branch" text-anchor="middle">Siege</text>
+<image href="img/lp-siege-lab.png" x="499.0" y="42" width="44" height="44"/>
+<text x="549.0" y="62" class="lab">Siege works</text>
+<text x="549.0" y="78" class="erasub">climbs while it stands</text>
+<text x="1061.0" y="34" class="branch" text-anchor="middle">Line</text>
+<image href="img/lp-line-lab.png" x="987.0" y="42" width="44" height="44"/>
+<text x="1037.0" y="62" class="lab">Line armoury</text>
+<text x="1037.0" y="78" class="erasub">climbs while it stands</text>
+<path d="M457.0,614 C457.0,636 457.0,626 457.0,646" class="edge" marker-end="url(#arr-serenity)"/>
+<path d="M201.0,430 C201.0,452 201.0,626 201.0,646" class="edge" marker-end="url(#arr-serenity)"/>
+<path d="M945.0,430 C945.0,452 945.0,442 945.0,462" class="edge" marker-end="url(#arr-serenity)"/>
+<path d="M201.0,430 C201.0,452 201.0,442 201.0,462" class="edge" marker-end="url(#arr-serenity)"/>
+<g class="node track"><rect x="96" y="96" width="210" height="150" rx="6" class="nbox"/>
+<text x="108" y="118" class="chip">TRACK</text>
+<text x="108" y="140" class="ntitle">Optics</text>
+<text x="108" y="158" class="nmeta">400 fund a level</text>
+<text x="108" y="178" class="neff">raises laser, electric damage,</text>
+<text x="108" y="193" class="neff">5 levels</text>
+<text x="108" y="210" class="ntrig">when: climbs while nothing else</text>
+<text x="108" y="224" class="ntrig">is called for</text>
+</g>
+<g class="node ability"><rect x="352" y="464" width="210" height="150" rx="6" class="nbox"/>
+<text x="364" y="486" class="chip">ABILITY</text>
+<text x="364" y="508" class="ntitle">Dug in</text>
+<text x="364" y="526" class="nmeta">1200 fund</text>
+<text x="364" y="548" class="ntrig">when: 5 of its units killed by</text>
+<text x="364" y="562" class="ntrig">explosion damage within 30</text>
+<text x="364" y="576" class="ntrig">minutes</text>
+</g>
+<g class="node ability"><rect x="584" y="464" width="210" height="150" rx="6" class="nbox"/>
+<text x="596" y="486" class="chip">ABILITY</text>
+<text x="596" y="508" class="ntitle">Jammer mast</text>
+<text x="596" y="526" class="nmeta">1500 fund</text>
+<text x="596" y="548" class="ntrig">when: a siege&#x27;s hits mended by</text>
+<text x="596" y="562" class="ntrig">your robots once</text>
+</g>
+<g class="node ability"><rect x="352" y="648" width="210" height="150" rx="6" class="nbox"/>
+<text x="364" y="670" class="chip">ABILITY</text>
+<text x="364" y="692" class="ntitle">Counter-battery</text>
+<text x="364" y="710" class="nmeta">1000 fund</text>
+<text x="364" y="732" class="ntrig">when: 3 of its units killed by</text>
+<text x="364" y="746" class="ntrig">artillery turrets, artillery</text>
+<text x="364" y="760" class="ntrig">wagons within 30 minutes</text>
+</g>
+<g class="node plate"><rect x="840" y="280" width="210" height="150" rx="6" class="nbox"/>
+<text x="852" y="302" class="chip">PLATE</text>
+<text x="852" y="324" class="ntitle">Warden armour</text>
+<text x="852" y="342" class="nmeta">1500 fund</text>
+<text x="852" y="362" class="neff">armour plates, Laser trooper:</text>
+<text x="852" y="377" class="neff">physical</text>
+<text x="852" y="394" class="ntrig">when: 10 of its units killed by</text>
+<text x="852" y="408" class="ntrig">physical damage within 30</text>
+<text x="852" y="422" class="ntrig">minutes</text>
+</g>
+<g class="node unit"><rect x="1072" y="280" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-skyguard.png" x="1216" y="288" width="58" height="58"/>
+<text x="1084" y="302" class="chip">UNIT</text>
+<text x="1084" y="324" class="ntitle">Anti-air troopers</text>
+<text x="1084" y="342" class="nmeta">900 fund</text>
+<text x="1084" y="362" class="neff">fields Anti-air trooper</text>
+<text x="1084" y="379" class="ntrig">when: 6 of its units killed by</text>
+<text x="1084" y="393" class="ntrig">bomb drones, laser drones, scrap</text>
+<text x="1084" y="407" class="ntrig">drones, your combat robots</text>
+</g>
+<g class="node unit"><rect x="96" y="280" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-lance.png" x="240" y="288" width="58" height="58"/>
+<text x="108" y="302" class="chip">UNIT</text>
+<text x="108" y="324" class="ntitle">Lances</text>
+<text x="108" y="342" class="nmeta">900 fund</text>
+<text x="108" y="362" class="neff">fields Heavy laser trooper</text>
+<text x="108" y="379" class="ntrig">when: 6 of its units killed by</text>
+<text x="108" y="393" class="ntrig">you, breachers, rocket troopers,</text>
+<text x="108" y="407" class="ntrig">troopers within 30 minutes</text>
+</g>
+<g class="node unit"><rect x="96" y="648" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-shock.png" x="240" y="656" width="58" height="58"/>
+<text x="108" y="670" class="chip">UNIT</text>
+<text x="108" y="692" class="ntitle">Shock troopers</text>
+<text x="108" y="710" class="nmeta">2500 fund</text>
+<text x="108" y="730" class="neff">fields Shock trooper</text>
+<text x="108" y="747" class="ntrig">when: 12 of its units killed by</text>
+<text x="108" y="761" class="ntrig">you, breachers, rocket troopers,</text>
+<text x="108" y="775" class="ntrig">troopers within 30 minutes</text>
+</g>
+<g class="node unit"><rect x="840" y="464" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-aegis.png" x="984" y="472" width="58" height="58"/>
+<text x="852" y="486" class="chip">UNIT</text>
+<text x="852" y="508" class="ntitle">Aegis tanks</text>
+<text x="852" y="526" class="nmeta">2000 fund</text>
+<text x="852" y="546" class="neff">fields Heavy tank</text>
+<text x="852" y="563" class="ntrig">when: 5 of its units killed by</text>
+<text x="852" y="577" class="ntrig">battle tanks, your vehicles</text>
+<text x="852" y="591" class="ntrig">within 30 minutes</text>
+</g>
+<g class="node unit"><rect x="96" y="464" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-prism.png" x="240" y="472" width="58" height="58"/>
+<text x="108" y="486" class="chip">UNIT</text>
+<text x="108" y="508" class="ntitle">Prism tanks</text>
+<text x="108" y="526" class="nmeta">1800 fund</text>
+<text x="108" y="546" class="neff">fields Laser tank</text>
+<text x="108" y="563" class="ntrig">when: 9 of its units killed by</text>
+<text x="108" y="577" class="ntrig">you, breachers, rocket troopers,</text>
+<text x="108" y="591" class="ntrig">troopers within 30 minutes</text>
+</g>
+<g class="node unit"><rect x="584" y="648" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-tesla.png" x="728" y="656" width="58" height="58"/>
+<text x="596" y="670" class="chip">UNIT</text>
+<text x="596" y="692" class="ntitle">Tesla tanks</text>
+<text x="596" y="710" class="nmeta">2500 fund</text>
+<text x="596" y="730" class="neff">fields Lightning tank</text>
+<text x="596" y="747" class="ntrig">when: 10 of its units killed by</text>
+<text x="596" y="761" class="ntrig">flamethrower turrets, gun</text>
+<text x="596" y="775" class="ntrig">turrets, laser turrets within 30</text>
+</g>
+</svg></div>
+  <h3>Units</h3>
+  <div class="units"><article class="unit">
+  <figure><img src="img/lp-tank.png" alt="Tank" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Tank</h4>
+    <p class="role">Armour; cannon rounds that hit buildings three times as hard as units</p>
+    <dl>
+      <div><dt>Health</dt><dd>900</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>40 explosion; 80 explosion over 1.5 tiles to buildings</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>60 parts</dd></div>
+    </dl>
+    <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-walker.png" alt="Walker" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Walker</h4>
+    <p class="role">A spider: steps over walls, rockets</p>
+    <dl>
+      <div><dt>Health</dt><dd>1600</dd></div><div><dt>Speed</dt><dd>walks</dd></div>
+      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>2.4/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>18 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5, bite 40%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
+    </dl>
+    <p class="how">From its level 2</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Railgunner</h4>
+    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
+    <dl>
+      <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>250 physical to biters, nests and worms; 10 physical to anything else</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
+    </dl>
+    <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-laser-drone.png" alt="Laser drone" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Laser drone</h4>
+    <p class="role">Air: Kessler-Hayashi&#x27;s, armoured, a laser beam; few and dear</p>
+    <dl>
+      <div><dt>Health</dt><dd>400</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>12 laser</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>fire 100%, physical -3 40%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>70 parts</dd></div>
+    </dl>
+    <p class="how">From its level 2</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-skyguard.png" alt="Anti-air trooper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Anti-air trooper</h4>
+    <p class="role">Line: a long laser that tracks fliers; a weak shot at the ground</p>
+    <dl>
+      <div><dt>Health</dt><dd>110</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>22</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>30 laser over 1 tiles; 8 laser over 0.5 tiles</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>18 parts</dd></div>
+    </dl>
+    <p class="how">Research: Anti-air troopers (Line, era 1)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-lance.png" alt="Heavy laser trooper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Heavy laser trooper</h4>
+    <p class="role">Optics: a heavier beam that outranges the player&#x27;s troopers</p>
+    <dl>
+      <div><dt>Health</dt><dd>110</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>17</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>24 laser</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>16 parts</dd></div>
+    </dl>
+    <p class="how">Research: Lances (Optics, era 1)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-shock.png" alt="Shock trooper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Shock trooper</h4>
+    <p class="role">Optics: an arcing electric beam that jumps target to target, a brief stun; against massed troopers</p>
+    <dl>
+      <div><dt>Health</dt><dd>160</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>14</dd></div><div><dt>Rate</dt><dd>1.3/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>(arcs to the next targets); 10 electric</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%, electric 50%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>30 parts</dd></div>
+    </dl>
+    <p class="how">Research: Shock troopers (Optics, era 3, after Lances)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-aegis.png" alt="Heavy tank" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Heavy tank</h4>
+    <p class="role">Line: a laser cannon on an armoured hull; against the player&#x27;s battle tanks</p>
+    <dl>
+      <div><dt>Health</dt><dd>1100</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>45 laser</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -5 30%, explosion -5 40%, laser -5, electric -5, bite 60%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>95 parts</dd></div>
+    </dl>
+    <p class="how">Research: Aegis tanks (Line, era 2, after Warden armour)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-prism.png" alt="Laser tank" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Laser tank</h4>
+    <p class="role">Optics: a laser that splits on what it hits to the targets round it; against massed troopers</p>
+    <dl>
+      <div><dt>Health</dt><dd>700</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>1.2/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>(arcs to the next targets); 10 laser; 14 laser</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -3 20%, laser -5, electric -5, explosion 10%, bite 60%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
+    </dl>
+    <p class="how">Research: Prism tanks (Optics, era 2, after Lances)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-tesla.png" alt="Lightning tank" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Lightning tank</h4>
+    <p class="role">Siege: lightning that jumps along a turret line and drains what it strikes of its charge</p>
+    <dl>
+      <div><dt>Health</dt><dd>800</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>14</dd></div><div><dt>Rate</dt><dd>0.8/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>(arcs to the next targets); 10 electric; 20 electric</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -3 20%, electric -5 80%, explosion 10%, laser -5, bite 60%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
+    </dl>
+    <p class="how">Research: Tesla tanks (Siege, era 3)</p>
+  </div>
+</article></div>
+</section>
+  <section class="corp" id="grubstake" style="--corp:rgb(255,183,96)">
+  <header class="corphead"><span class="swatch"></span><div><h2>Grubstake Inc.</h2><p>A thief with a fund. Shotguns, buggies and trucks; it skims, strips and raids where you are soft.</p></div></header>
+  <div class="vignette">
+  <img class="vista" src="img/vista-grubstake-close.jpg" alt="Grubstake Inc.&#x27;s base in the game" loading="lazy">
+  <div><p class="tag">The thief</p><p>Grubstake Inc. is a mining outfit that lives off what it can take. It lands rough camps of amber gravel, sprawls toward the ore, and works by night: skimming trucks at your chests, strip camps on your outposts, taps on your power lines, claim jumpers on your patches. It fields cheap things in numbers: shotgun hands, buggies, scrap drones, and bomb drones that dive at your artillery and radars.</p>
+  <p class="beat"><b>How to beat it.</b> It keeps off guarded ground, so a turret over each outpost turns it away. Kill its foreman and a raid breaks; pay its trade post and it holds off for a while. Flak and gun turrets shred its drones before they arrive.</p></div>
+</div>
+  <h3>Research</h3>
+  <div class="tree"><svg viewBox="0 0 1328 842" width="1328" height="842" role="img" aria-label="Grubstake Inc. research tree">
+<defs><marker id="arr-grubstake" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="edgehead"/></marker></defs>
+<rect x="0" y="79.0" width="1328" height="184" class="band0"/>
+<text x="12" y="118" class="era">From landing</text>
+<rect x="0" y="263.0" width="1328" height="184" class="band1"/>
+<text x="12" y="302" class="era">Era 1</text>
+<text x="12" y="320" class="erasub">you: 25 techs</text>
+<rect x="0" y="447.0" width="1328" height="184" class="band0"/>
+<text x="12" y="486" class="era">Era 2</text>
+<text x="12" y="504" class="erasub">you: 60 techs</text>
+<rect x="0" y="631.0" width="1328" height="184" class="band1"/>
+<text x="12" y="670" class="era">Era 3</text>
+<text x="12" y="688" class="erasub">you: 100 techs</text>
+<text x="433.0" y="34" class="branch" text-anchor="middle">Scrap arms</text>
+<text x="921.0" y="34" class="branch" text-anchor="middle">Loot</text>
+<text x="1177.0" y="34" class="branch" text-anchor="middle">Wheels</text>
+<path d="M921.0,430 C921.0,452 921.0,442 921.0,462" class="edge" marker-end="url(#arr-grubstake)"/>
+<path d="M665.0,430 C665.0,452 1177.0,626 1177.0,646" class="edge" marker-end="url(#arr-grubstake)"/>
+<g class="node track"><rect x="96" y="96" width="210" height="150" rx="6" class="nbox"/>
+<text x="108" y="118" class="chip">TRACK</text>
+<text x="108" y="140" class="ntitle">Hand-loads</text>
+<text x="108" y="158" class="nmeta">400 fund a level</text>
+<text x="108" y="178" class="neff">raises shotgun-shell, bullet</text>
+<text x="108" y="193" class="neff">damage, 5 levels</text>
+<text x="108" y="210" class="ntrig">when: climbs while nothing else</text>
+<text x="108" y="224" class="ntrig">is called for</text>
+</g>
+<g class="node ability"><rect x="816" y="280" width="210" height="150" rx="6" class="nbox"/>
+<text x="828" y="302" class="chip">ABILITY</text>
+<text x="828" y="324" class="ntitle">Salvage rights</text>
+<text x="828" y="342" class="nmeta">800 fund</text>
+<text x="828" y="364" class="ntrig">when: 2 raids turned back for</text>
+<text x="828" y="378" class="ntrig">want of force</text>
+</g>
+<g class="node ability"><rect x="816" y="464" width="210" height="150" rx="6" class="nbox"/>
+<text x="828" y="486" class="chip">ABILITY</text>
+<text x="828" y="508" class="ntitle">Prospector&#x27;s eye</text>
+<text x="828" y="526" class="nmeta">1000 fund</text>
+<text x="828" y="548" class="ntrig">when: 3 raids turned back for</text>
+<text x="828" y="562" class="ntrig">want of force</text>
+</g>
+<g class="node plate"><rect x="96" y="280" width="210" height="150" rx="6" class="nbox"/>
+<text x="108" y="302" class="chip">PLATE</text>
+<text x="108" y="324" class="ntitle">Scrap plating</text>
+<text x="108" y="342" class="nmeta">900 fund</text>
+<text x="108" y="362" class="neff">armour plates, Buggy:</text>
+<text x="108" y="377" class="neff">physical; Shotgun hand:</text>
+<text x="108" y="394" class="ntrig">when: 10 of its units killed by</text>
+<text x="108" y="408" class="ntrig">physical damage within 30</text>
+<text x="108" y="422" class="ntrig">minutes</text>
+</g>
+<g class="node plate"><rect x="328" y="280" width="210" height="150" rx="6" class="nbox"/>
+<text x="340" y="302" class="chip">PLATE</text>
+<text x="340" y="324" class="ntitle">Asbestos suits</text>
+<text x="340" y="342" class="nmeta">900 fund</text>
+<text x="340" y="362" class="neff">armour plates, Buggy: fire;</text>
+<text x="340" y="377" class="neff">Shotgun hand: fire</text>
+<text x="340" y="394" class="ntrig">when: 10 of its units killed by</text>
+<text x="340" y="408" class="ntrig">fire damage within 30 minutes</text>
+</g>
+<g class="node unit"><rect x="560" y="280" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-grubstake-slug.png" x="704" y="288" width="58" height="58"/>
+<text x="572" y="302" class="chip">UNIT</text>
+<text x="572" y="324" class="ntitle">Slug buggies</text>
+<text x="572" y="342" class="nmeta">900 fund</text>
+<text x="572" y="362" class="neff">fields Slug buggy</text>
+<text x="572" y="379" class="ntrig">when: 5 of its units killed by</text>
+<text x="572" y="393" class="ntrig">battle tanks, your vehicles</text>
+<text x="572" y="407" class="ntrig">within 30 minutes</text>
+</g>
+<g class="node unit"><rect x="96" y="464" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-grubstake-sapper.png" x="240" y="472" width="58" height="58"/>
+<text x="108" y="486" class="chip">UNIT</text>
+<text x="108" y="508" class="ntitle">Dynamite sappers</text>
+<text x="108" y="526" class="nmeta">1500 fund</text>
+<text x="108" y="546" class="neff">fields Dynamite sapper</text>
+<text x="108" y="563" class="ntrig">when: 10 of its units killed by</text>
+<text x="108" y="577" class="ntrig">you, breachers, rocket troopers,</text>
+<text x="108" y="591" class="ntrig">troopers within 30 minutes</text>
+</g>
+<g class="node unit"><rect x="1072" y="464" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-grubstake-scavenger.png" x="1216" y="472" width="58" height="58"/>
+<text x="1084" y="486" class="chip">UNIT</text>
+<text x="1084" y="508" class="ntitle">Bomb drones</text>
+<text x="1084" y="526" class="nmeta">1800 fund</text>
+<text x="1084" y="546" class="neff">fields Bomb drone</text>
+<text x="1084" y="563" class="ntrig">when: 5 of its units killed by</text>
+<text x="1084" y="577" class="ntrig">explosion damage within 30</text>
+<text x="1084" y="591" class="ntrig">minutes</text>
+</g>
+<g class="node unit"><rect x="1072" y="648" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-grubstake-dozer.png" x="1216" y="656" width="58" height="58"/>
+<text x="1084" y="670" class="chip">UNIT</text>
+<text x="1084" y="692" class="ntitle">Dozer</text>
+<text x="1084" y="710" class="nmeta">2500 fund</text>
+<text x="1084" y="730" class="neff">fields Dozer</text>
+<text x="1084" y="747" class="ntrig">when: its raids meet walls 2</text>
+<text x="1084" y="761" class="ntrig">times</text>
+</g>
+<g class="node unit"><rect x="1072" y="280" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-grubstake-flak-buggy.png" x="1216" y="288" width="58" height="58"/>
+<text x="1084" y="302" class="chip">UNIT</text>
+<text x="1084" y="324" class="ntitle">Flak buggies</text>
+<text x="1084" y="342" class="nmeta">900 fund</text>
+<text x="1084" y="362" class="neff">fields Flak buggy</text>
+<text x="1084" y="379" class="ntrig">when: 6 of its units killed by</text>
+<text x="1084" y="393" class="ntrig">bomb drones, laser drones, scrap</text>
+<text x="1084" y="407" class="ntrig">drones, your combat robots</text>
+</g>
+<g class="node unit"><rect x="328" y="464" width="210" height="150" rx="6" class="nbox"/>
+<image href="img/lp-grubstake-scorcher.png" x="472" y="472" width="58" height="58"/>
+<text x="340" y="486" class="chip">UNIT</text>
+<text x="340" y="508" class="ntitle">Scorchers</text>
+<text x="340" y="526" class="nmeta">2000 fund</text>
+<text x="340" y="546" class="neff">fields Scorcher</text>
+<text x="340" y="563" class="ntrig">when: 8 of its units killed by</text>
+<text x="340" y="577" class="ntrig">flamethrower turrets, gun</text>
+<text x="340" y="591" class="ntrig">turrets, laser turrets within 30</text>
+</g>
+</svg></div>
+  <h3>Units</h3>
+  <div class="units"><article class="unit">
+  <figure><img src="img/lp-grubstake-harrier.png" alt="Scrap drone" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Scrap drone</h4>
+    <p class="role">Air (the scrap drone): weak and cheap, many; flies over walls, cliffs and water</p>
+    <dl>
+      <div><dt>Health</dt><dd>80</dd></div><div><dt>Speed</dt><dd>15.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>12</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>6 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>fire 100%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>15 parts</dd></div>
+    </dl>
+    <p class="how">From its level 1</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-shotgun-hand.png" alt="Shotgun hand" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Shotgun hand</h4>
+    <p class="role">Grubstake&#x27;s infantry: three heavy pellets, deadly at the fence, useless against a turret line</p>
+    <dl>
+      <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>10.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>9</dd></div><div><dt>Rate</dt><dd>0.94/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>9 physical (x3)</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>-</dd></div>
+    </dl>
+    <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-buggy.png" alt="Buggy" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Buggy</h4>
+    <p class="role">Grubstake&#x27;s raider and escort: fast, a machine gun</p>
+    <dl>
+      <div><dt>Health</dt><dd>220</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>6/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>5 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 15%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>15 parts</dd></div>
+    </dl>
+    <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-slug.png" alt="Slug buggy" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Slug buggy</h4>
+    <p class="role">Scrap arms: slugs; against the player&#x27;s vehicles</p>
+    <dl>
+      <div><dt>Health</dt><dd>240</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>1.2/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>55 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 15%, explosion 40%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>30 parts</dd></div>
+    </dl>
+    <p class="how">Research: Slug buggies (Scrap arms, era 1)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-sapper.png" alt="Dynamite sapper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Dynamite sapper</h4>
+    <p class="role">Scrap arms: dynamite over 3 tiles, enemies only; against blobs, and the wall in the way</p>
+    <dl>
+      <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.8 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>11</dd></div><div><dt>Rate</dt><dd>0.33/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>80 explosion over 3 tiles</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>30 parts</dd></div>
+    </dl>
+    <p class="how">Research: Dynamite sappers (Scrap arms, era 2)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-scavenger.png" alt="Bomb drone" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Bomb drone</h4>
+    <p class="role">Wheels (the bomb drone): flies at the player&#x27;s artillery, mortars and radars and bursts on them</p>
+    <dl>
+      <div><dt>Health</dt><dd>60</dd></div><div><dt>Speed</dt><dd>18.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>1.5</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>150 explosion; 150 explosion over 2.5 tiles</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>fire 100%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>35 parts</dd></div>
+    </dl>
+    <p class="how">Research: Bomb drones (Wheels, era 2)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-dozer.png" alt="Dozer" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Dozer</h4>
+    <p class="role">Wheels: a ram that pushes a wall open for the shotguns</p>
+    <dl>
+      <div><dt>Health</dt><dd>1800</dd></div><div><dt>Speed</dt><dd>4.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>2</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>60 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5, bite 60%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
+    </dl>
+    <p class="how">Research: Dozer (Wheels, era 3, after Slug buggies)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-flak-buggy.png" alt="Flak buggy" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Flak buggy</h4>
+    <p class="role">Wheels: scrap flak bursting among fliers, a weak splash on the ground</p>
+    <dl>
+      <div><dt>Health</dt><dd>220</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>22</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>22 explosion over 2 tiles; 3 explosion over 1.5 tiles</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 15%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>20 parts</dd></div>
+    </dl>
+    <p class="how">Research: Flak buggies (Wheels, era 1)</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-scorcher.png" alt="Scorcher" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Scorcher</h4>
+    <p class="role">Scrap arms: a machine gun, and three bursts of flame for walls, turrets and packs, refilled slowly</p>
+    <dl>
+      <div><dt>Health</dt><dd>1100</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>6/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>6 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5, bite 60%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>70 parts</dd></div>
+    </dl>
+    <p class="how">Research: Scorchers (Scrap arms, era 2)</p>
+  </div>
+</article></div>
+</section>
+  <section class="corp" id="biotech" style="--corp:rgb(114,216,51)">
+  <header class="corphead"><span class="swatch"></span><div><h2>Synthexis</h2><p>Bred, not built. Its incubators breed
+  by evolution, and its clinic decides how far that climbs.</p></div></header>
+  <div class="vignette">
+  <img class="vista" src="img/vista-synthexis-night.jpg" alt="Synthexis&#x27;s base in the game" loading="lazy">
+  <div><p class="tag">The test range</p><p>Synthexis is a bioengineering firm that uses Nauvis as a test range. It lands on a nest field far out, takes the nests as incubators, grows creep between them, and lives on the pollution the creep drinks. Every 20 minutes or so it sends a wave as a trial of its breeds against a defence: yours, or Kessler-Hayashi&#x27;s walls, whichever would teach it most. While its clinic stands its breeds climb 0.24 of evolution an hour: spitters, then bursters, then stompers that step over your wall.</p>
+  <p class="beat"><b>How to beat it.</b> Its weak points are its supply. Kill a biochamber and that incubator starves, its stock wanders off feral; kill its technicians and every cell goes hungry; shell its clinic and its incubators breed only small and medium biters (evolution 0.3) until a new one lands. Hitting an incubator calls its wave home; hitting the feed does not.</p></div>
+</div>
+  <h3>What it breeds, by evolution</h3>
+  <div class="tree tiers"><svg viewBox="0 0 900 300" width="100%" role="img" aria-label="What Synthexis breeds by evolution">
+<line x1="56.0" y1="16" x2="56.0" y2="260" class="grid"/><text x="56.0" y="278" class="axis" text-anchor="middle">0</text>
+<line x1="222.8" y1="16" x2="222.8" y2="260" class="grid"/><text x="222.8" y="278" class="axis" text-anchor="middle">0.2</text>
+<line x1="389.6" y1="16" x2="389.6" y2="260" class="grid"/><text x="389.6" y="278" class="axis" text-anchor="middle">0.4</text>
+<line x1="556.4" y1="16" x2="556.4" y2="260" class="grid"/><text x="556.4" y="278" class="axis" text-anchor="middle">0.6</text>
+<line x1="723.2" y1="16" x2="723.2" y2="260" class="grid"/><text x="723.2" y="278" class="axis" text-anchor="middle">0.8</text>
+<line x1="890.0" y1="16" x2="890.0" y2="260" class="grid"/><text x="890.0" y="278" class="axis" text-anchor="middle">1</text>
+<text x="478.0" y="296" class="axis" text-anchor="middle">evolution</text>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,25.0 239.5,33.9 247.8,42.5 256.2,50.9 264.5,59.1 272.8,70.0 281.2,80.4 289.5,90.3 297.9,99.6 306.2,108.6 314.5,120.4 322.9,131.3 331.2,141.2 339.6,150.2 347.9,158.6 356.2,166.4 364.6,173.5 372.9,180.2 381.3,186.4 389.6,192.2 397.9,197.1 406.3,201.8 414.6,206.3 423.0,210.5 431.3,214.6 439.6,218.5 448.0,222.3 456.3,225.9 464.7,229.4 473.0,232.7 481.3,236.0 489.7,239.2 498.0,242.2 506.4,245.1 514.7,247.9 523.0,250.5 531.4,253.0 539.7,255.5 548.1,257.8 556.4,260.0 564.7,260.0 573.1,260.0 581.4,260.0 589.8,260.0 598.1,260.0 606.4,260.0 614.8,260.0 623.1,260.0 631.5,260.0 639.8,260.0 648.1,260.0 656.5,260.0 664.8,260.0 673.2,260.0 681.5,260.0 689.8,260.0 698.2,260.0 706.5,260.0 714.9,260.0 723.2,260.0 731.5,260.0 739.9,260.0 748.2,260.0 756.6,260.0 764.9,260.0 773.2,260.0 781.6,260.0 789.9,260.0 798.3,260.0 806.6,260.0 814.9,260.0 823.3,260.0 831.6,260.0 840.0,260.0 848.3,260.0 856.6,260.0 865.0,260.0 873.3,260.0 881.7,260.0 890.0,260.0 890.0,260.0 881.7,260.0 873.3,260.0 865.0,260.0 856.6,260.0 848.3,260.0 840.0,260.0 831.6,260.0 823.3,260.0 814.9,260.0 806.6,260.0 798.3,260.0 789.9,260.0 781.6,260.0 773.2,260.0 764.9,260.0 756.6,260.0 748.2,260.0 739.9,260.0 731.5,260.0 723.2,260.0 714.9,260.0 706.5,260.0 698.2,260.0 689.8,260.0 681.5,260.0 673.2,260.0 664.8,260.0 656.5,260.0 648.1,260.0 639.8,260.0 631.5,260.0 623.1,260.0 614.8,260.0 606.4,260.0 598.1,260.0 589.8,260.0 581.4,260.0 573.1,260.0 564.7,260.0 556.4,260.0 548.1,260.0 539.7,260.0 531.4,260.0 523.0,260.0 514.7,260.0 506.4,260.0 498.0,260.0 489.7,260.0 481.3,260.0 473.0,260.0 464.7,260.0 456.3,260.0 448.0,260.0 439.6,260.0 431.3,260.0 423.0,260.0 414.6,260.0 406.3,260.0 397.9,260.0 389.6,260.0 381.3,260.0 372.9,260.0 364.6,260.0 356.2,260.0 347.9,260.0 339.6,260.0 331.2,260.0 322.9,260.0 314.5,260.0 306.2,260.0 297.9,260.0 289.5,260.0 281.2,260.0 272.8,260.0 264.5,260.0 256.2,260.0 247.8,260.0 239.5,260.0 231.1,260.0 222.8,260.0 214.5,260.0 206.1,260.0 197.8,260.0 189.4,260.0 181.1,260.0 172.8,260.0 164.4,260.0 156.1,260.0 147.7,260.0 139.4,260.0 131.1,260.0 122.7,260.0 114.4,260.0 106.0,260.0 97.7,260.0 89.4,260.0 81.0,260.0 72.7,260.0 64.3,260.0 56.0,260.0" fill="#8fae3a" opacity="0.9"><title>Bred small biter</title></polygon>
+<text x="56" y="142" class="blabel" text-anchor="middle">Bred small biter</text>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,16.0 239.5,16.0 247.8,16.0 256.2,16.0 264.5,16.0 272.8,19.7 281.2,23.3 289.5,26.6 297.9,29.8 306.2,32.8 314.5,41.0 322.9,48.5 331.2,55.3 339.6,61.6 347.9,67.4 356.2,72.7 364.6,77.7 372.9,82.3 381.3,86.5 389.6,90.6 397.9,92.9 406.3,95.1 414.6,97.2 423.0,99.3 431.3,101.2 439.6,103.1 448.0,104.8 456.3,106.6 464.7,108.2 473.0,109.8 481.3,112.1 489.7,114.4 498.0,116.5 506.4,118.6 514.7,120.5 523.0,122.4 531.4,124.2 539.7,125.9 548.1,127.6 556.4,129.1 564.7,136.5 573.1,144.0 581.4,151.7 589.8,159.6 598.1,167.6 606.4,175.9 614.8,184.3 623.1,192.9 631.5,201.8 639.8,210.9 648.1,212.2 656.5,213.5 664.8,214.7 673.2,215.8 681.5,216.9 689.8,217.9 698.2,218.9 706.5,219.8 714.9,220.7 723.2,221.6 731.5,222.2 739.9,222.7 748.2,223.3 756.6,223.9 764.9,224.4 773.2,224.9 781.6,225.4 789.9,225.9 798.3,226.4 806.6,226.8 814.9,228.5 823.3,230.1 831.6,231.5 840.0,232.8 848.3,233.9 856.6,235.0 865.0,236.0 873.3,236.9 881.7,237.7 890.0,238.5 890.0,260.0 881.7,260.0 873.3,260.0 865.0,260.0 856.6,260.0 848.3,260.0 840.0,260.0 831.6,260.0 823.3,260.0 814.9,260.0 806.6,260.0 798.3,260.0 789.9,260.0 781.6,260.0 773.2,260.0 764.9,260.0 756.6,260.0 748.2,260.0 739.9,260.0 731.5,260.0 723.2,260.0 714.9,260.0 706.5,260.0 698.2,260.0 689.8,260.0 681.5,260.0 673.2,260.0 664.8,260.0 656.5,260.0 648.1,260.0 639.8,260.0 631.5,260.0 623.1,260.0 614.8,260.0 606.4,260.0 598.1,260.0 589.8,260.0 581.4,260.0 573.1,260.0 564.7,260.0 556.4,260.0 548.1,257.8 539.7,255.5 531.4,253.0 523.0,250.5 514.7,247.9 506.4,245.1 498.0,242.2 489.7,239.2 481.3,236.0 473.0,232.7 464.7,229.4 456.3,225.9 448.0,222.3 439.6,218.5 431.3,214.6 423.0,210.5 414.6,206.3 406.3,201.8 397.9,197.1 389.6,192.2 381.3,186.4 372.9,180.2 364.6,173.5 356.2,166.4 347.9,158.6 339.6,150.2 331.2,141.2 322.9,131.3 314.5,120.4 306.2,108.6 297.9,99.6 289.5,90.3 281.2,80.4 272.8,70.0 264.5,59.1 256.2,50.9 247.8,42.5 239.5,33.9 231.1,25.0 222.8,16.0 214.5,16.0 206.1,16.0 197.8,16.0 189.4,16.0 181.1,16.0 172.8,16.0 164.4,16.0 156.1,16.0 147.7,16.0 139.4,16.0 131.1,16.0 122.7,16.0 114.4,16.0 106.0,16.0 97.7,16.0 89.4,16.0 81.0,16.0 72.7,16.0 64.3,16.0 56.0,16.0" fill="#5f8f1f" opacity="0.9"><title>Bred medium biter</title></polygon>
+<text x="556" y="199" class="blabel" text-anchor="middle">Bred medium biter</text>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,16.0 239.5,16.0 247.8,16.0 256.2,16.0 264.5,16.0 272.8,19.7 281.2,23.3 289.5,26.6 297.9,29.8 306.2,32.8 314.5,41.0 322.9,48.5 331.2,55.3 339.6,61.6 347.9,67.4 356.2,72.7 364.6,77.7 372.9,82.3 381.3,86.5 389.6,90.6 397.9,92.9 406.3,95.1 414.6,97.2 423.0,99.3 431.3,101.2 439.6,103.1 448.0,104.8 456.3,106.6 464.7,108.2 473.0,109.8 481.3,107.9 489.7,106.1 498.0,104.3 506.4,102.7 514.7,101.1 523.0,99.6 531.4,98.2 539.7,96.8 548.1,95.5 556.4,94.2 564.7,97.7 573.1,101.2 581.4,104.7 589.8,108.4 598.1,112.2 606.4,116.0 614.8,119.9 623.1,124.0 631.5,128.1 639.8,132.4 648.1,132.0 656.5,131.6 664.8,131.3 673.2,130.9 681.5,130.6 689.8,130.3 698.2,130.1 706.5,129.8 714.9,129.5 723.2,129.3 731.5,128.3 739.9,127.4 748.2,126.4 756.6,125.5 764.9,124.7 773.2,123.8 781.6,123.0 789.9,122.2 798.3,121.4 806.6,120.7 814.9,125.4 823.3,129.6 831.6,133.4 840.0,136.9 848.3,140.1 856.6,143.0 865.0,145.7 873.3,148.1 881.7,150.4 890.0,152.5 890.0,238.5 881.7,237.7 873.3,236.9 865.0,236.0 856.6,235.0 848.3,233.9 840.0,232.8 831.6,231.5 823.3,230.1 814.9,228.5 806.6,226.8 798.3,226.4 789.9,225.9 781.6,225.4 773.2,224.9 764.9,224.4 756.6,223.9 748.2,223.3 739.9,222.7 731.5,222.2 723.2,221.6 714.9,220.7 706.5,219.8 698.2,218.9 689.8,217.9 681.5,216.9 673.2,215.8 664.8,214.7 656.5,213.5 648.1,212.2 639.8,210.9 631.5,201.8 623.1,192.9 614.8,184.3 606.4,175.9 598.1,167.6 589.8,159.6 581.4,151.7 573.1,144.0 564.7,136.5 556.4,129.1 548.1,127.6 539.7,125.9 531.4,124.2 523.0,122.4 514.7,120.5 506.4,118.6 498.0,116.5 489.7,114.4 481.3,112.1 473.0,109.8 464.7,108.2 456.3,106.6 448.0,104.8 439.6,103.1 431.3,101.2 423.0,99.3 414.6,97.2 406.3,95.1 397.9,92.9 389.6,90.6 381.3,86.5 372.9,82.3 364.6,77.7 356.2,72.7 347.9,67.4 339.6,61.6 331.2,55.3 322.9,48.5 314.5,41.0 306.2,32.8 297.9,29.8 289.5,26.6 281.2,23.3 272.8,19.7 264.5,16.0 256.2,16.0 247.8,16.0 239.5,16.0 231.1,16.0 222.8,16.0 214.5,16.0 206.1,16.0 197.8,16.0 189.4,16.0 181.1,16.0 172.8,16.0 164.4,16.0 156.1,16.0 147.7,16.0 139.4,16.0 131.1,16.0 122.7,16.0 114.4,16.0 106.0,16.0 97.7,16.0 89.4,16.0 81.0,16.0 72.7,16.0 64.3,16.0 56.0,16.0" fill="#3d6b12" opacity="0.9"><title>Bred big biter</title></polygon>
+<text x="807" y="178" class="blabel" text-anchor="middle">Bred big biter</text>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,16.0 239.5,16.0 247.8,16.0 256.2,16.0 264.5,16.0 272.8,19.7 281.2,23.3 289.5,26.6 297.9,29.8 306.2,32.8 314.5,41.0 322.9,48.5 331.2,55.3 339.6,61.6 347.9,67.4 356.2,72.7 364.6,77.7 372.9,82.3 381.3,86.5 389.6,90.6 397.9,92.9 406.3,95.1 414.6,97.2 423.0,99.3 431.3,101.2 439.6,103.1 448.0,104.8 456.3,106.6 464.7,108.2 473.0,109.8 481.3,107.9 489.7,106.1 498.0,104.3 506.4,102.7 514.7,101.1 523.0,99.6 531.4,98.2 539.7,96.8 548.1,95.5 556.4,94.2 564.7,97.7 573.1,101.2 581.4,104.7 589.8,108.4 598.1,112.2 606.4,116.0 614.8,119.9 623.1,124.0 631.5,128.1 639.8,132.4 648.1,132.0 656.5,131.6 664.8,131.3 673.2,130.9 681.5,130.6 689.8,130.3 698.2,130.1 706.5,129.8 714.9,129.5 723.2,129.3 731.5,128.3 739.9,127.4 748.2,126.4 756.6,125.5 764.9,124.7 773.2,123.8 781.6,123.0 789.9,122.2 798.3,121.4 806.6,120.7 814.9,115.9 823.3,111.7 831.6,107.8 840.0,104.2 848.3,101.0 856.6,98.0 865.0,95.2 873.3,92.6 881.7,90.2 890.0,88.0 890.0,152.5 881.7,150.4 873.3,148.1 865.0,145.7 856.6,143.0 848.3,140.1 840.0,136.9 831.6,133.4 823.3,129.6 814.9,125.4 806.6,120.7 798.3,121.4 789.9,122.2 781.6,123.0 773.2,123.8 764.9,124.7 756.6,125.5 748.2,126.4 739.9,127.4 731.5,128.3 723.2,129.3 714.9,129.5 706.5,129.8 698.2,130.1 689.8,130.3 681.5,130.6 673.2,130.9 664.8,131.3 656.5,131.6 648.1,132.0 639.8,132.4 631.5,128.1 623.1,124.0 614.8,119.9 606.4,116.0 598.1,112.2 589.8,108.4 581.4,104.7 573.1,101.2 564.7,97.7 556.4,94.2 548.1,95.5 539.7,96.8 531.4,98.2 523.0,99.6 514.7,101.1 506.4,102.7 498.0,104.3 489.7,106.1 481.3,107.9 473.0,109.8 464.7,108.2 456.3,106.6 448.0,104.8 439.6,103.1 431.3,101.2 423.0,99.3 414.6,97.2 406.3,95.1 397.9,92.9 389.6,90.6 381.3,86.5 372.9,82.3 364.6,77.7 356.2,72.7 347.9,67.4 339.6,61.6 331.2,55.3 322.9,48.5 314.5,41.0 306.2,32.8 297.9,29.8 289.5,26.6 281.2,23.3 272.8,19.7 264.5,16.0 256.2,16.0 247.8,16.0 239.5,16.0 231.1,16.0 222.8,16.0 214.5,16.0 206.1,16.0 197.8,16.0 189.4,16.0 181.1,16.0 172.8,16.0 164.4,16.0 156.1,16.0 147.7,16.0 139.4,16.0 131.1,16.0 122.7,16.0 114.4,16.0 106.0,16.0 97.7,16.0 89.4,16.0 81.0,16.0 72.7,16.0 64.3,16.0 56.0,16.0" fill="#22420a" opacity="0.9"><title>Bred behemoth biter</title></polygon>
+<text x="890" y="124" class="blabel" text-anchor="middle">Bred behemoth biter</text>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,16.0 239.5,16.0 247.8,16.0 256.2,16.0 264.5,16.0 272.8,19.7 281.2,23.3 289.5,26.6 297.9,29.8 306.2,32.8 314.5,41.0 322.9,48.5 331.2,55.3 339.6,61.6 347.9,67.4 356.2,72.7 364.6,77.7 372.9,82.3 381.3,86.5 389.6,90.6 397.9,92.9 406.3,95.1 414.6,97.2 423.0,99.3 431.3,101.2 439.6,103.1 448.0,104.8 456.3,106.6 464.7,108.2 473.0,109.8 481.3,107.9 489.7,106.1 498.0,104.3 506.4,102.7 514.7,101.1 523.0,99.6 531.4,98.2 539.7,96.8 548.1,95.5 556.4,94.2 564.7,95.5 573.1,96.7 581.4,98.0 589.8,99.3 598.1,100.6 606.4,102.0 614.8,103.4 623.1,104.8 631.5,106.3 639.8,107.8 648.1,105.7 656.5,103.7 664.8,101.8 673.2,100.0 681.5,98.3 689.8,96.7 698.2,95.1 706.5,93.6 714.9,92.2 723.2,90.8 731.5,90.5 739.9,90.1 748.2,89.7 756.6,89.4 764.9,89.1 773.2,88.7 781.6,88.4 789.9,88.1 798.3,87.8 806.6,87.5 814.9,84.5 823.3,81.8 831.6,79.3 840.0,77.0 848.3,74.9 856.6,73.0 865.0,71.2 873.3,69.5 881.7,68.0 890.0,66.5 890.0,88.0 881.7,90.2 873.3,92.6 865.0,95.2 856.6,98.0 848.3,101.0 840.0,104.2 831.6,107.8 823.3,111.7 814.9,115.9 806.6,120.7 798.3,121.4 789.9,122.2 781.6,123.0 773.2,123.8 764.9,124.7 756.6,125.5 748.2,126.4 739.9,127.4 731.5,128.3 723.2,129.3 714.9,129.5 706.5,129.8 698.2,130.1 689.8,130.3 681.5,130.6 673.2,130.9 664.8,131.3 656.5,131.6 648.1,132.0 639.8,132.4 631.5,128.1 623.1,124.0 614.8,119.9 606.4,116.0 598.1,112.2 589.8,108.4 581.4,104.7 573.1,101.2 564.7,97.7 556.4,94.2 548.1,95.5 539.7,96.8 531.4,98.2 523.0,99.6 514.7,101.1 506.4,102.7 498.0,104.3 489.7,106.1 481.3,107.9 473.0,109.8 464.7,108.2 456.3,106.6 448.0,104.8 439.6,103.1 431.3,101.2 423.0,99.3 414.6,97.2 406.3,95.1 397.9,92.9 389.6,90.6 381.3,86.5 372.9,82.3 364.6,77.7 356.2,72.7 347.9,67.4 339.6,61.6 331.2,55.3 322.9,48.5 314.5,41.0 306.2,32.8 297.9,29.8 289.5,26.6 281.2,23.3 272.8,19.7 264.5,16.0 256.2,16.0 247.8,16.0 239.5,16.0 231.1,16.0 222.8,16.0 214.5,16.0 206.1,16.0 197.8,16.0 189.4,16.0 181.1,16.0 172.8,16.0 164.4,16.0 156.1,16.0 147.7,16.0 139.4,16.0 131.1,16.0 122.7,16.0 114.4,16.0 106.0,16.0 97.7,16.0 89.4,16.0 81.0,16.0 72.7,16.0 64.3,16.0 56.0,16.0" fill="#c4682b" opacity="0.9"><title>Synthexis burster</title></polygon>
+<text x="723" y="114" class="blabel" text-anchor="middle">burster</text>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,16.0 239.5,16.0 247.8,16.0 256.2,16.0 264.5,16.0 272.8,19.7 281.2,23.3 289.5,26.6 297.9,29.8 306.2,32.8 314.5,41.0 322.9,48.5 331.2,55.3 339.6,61.6 347.9,67.4 356.2,72.7 364.6,77.7 372.9,82.3 381.3,86.5 389.6,90.6 397.9,92.9 406.3,95.1 414.6,97.2 423.0,99.3 431.3,101.2 439.6,103.1 448.0,104.8 456.3,106.6 464.7,108.2 473.0,109.8 481.3,107.9 489.7,106.1 498.0,104.3 506.4,102.7 514.7,101.1 523.0,99.6 531.4,98.2 539.7,96.8 548.1,95.5 556.4,94.2 564.7,95.5 573.1,96.7 581.4,98.0 589.8,99.3 598.1,100.6 606.4,102.0 614.8,103.4 623.1,104.8 631.5,106.3 639.8,107.8 648.1,105.7 656.5,103.7 664.8,101.8 673.2,100.0 681.5,98.3 689.8,96.7 698.2,95.1 706.5,93.6 714.9,92.2 723.2,90.8 731.5,90.0 739.9,89.1 748.2,88.3 756.6,87.5 764.9,86.7 773.2,85.9 781.6,85.2 789.9,84.5 798.3,83.8 806.6,83.1 814.9,79.9 823.3,77.0 831.6,74.3 840.0,71.9 848.3,69.7 856.6,67.7 865.0,65.9 873.3,64.2 881.7,62.6 890.0,61.1 890.0,66.5 881.7,68.0 873.3,69.5 865.0,71.2 856.6,73.0 848.3,74.9 840.0,77.0 831.6,79.3 823.3,81.8 814.9,84.5 806.6,87.5 798.3,87.8 789.9,88.1 781.6,88.4 773.2,88.7 764.9,89.1 756.6,89.4 748.2,89.7 739.9,90.1 731.5,90.5 723.2,90.8 714.9,92.2 706.5,93.6 698.2,95.1 689.8,96.7 681.5,98.3 673.2,100.0 664.8,101.8 656.5,103.7 648.1,105.7 639.8,107.8 631.5,106.3 623.1,104.8 614.8,103.4 606.4,102.0 598.1,100.6 589.8,99.3 581.4,98.0 573.1,96.7 564.7,95.5 556.4,94.2 548.1,95.5 539.7,96.8 531.4,98.2 523.0,99.6 514.7,101.1 506.4,102.7 498.0,104.3 489.7,106.1 481.3,107.9 473.0,109.8 464.7,108.2 456.3,106.6 448.0,104.8 439.6,103.1 431.3,101.2 423.0,99.3 414.6,97.2 406.3,95.1 397.9,92.9 389.6,90.6 381.3,86.5 372.9,82.3 364.6,77.7 356.2,72.7 347.9,67.4 339.6,61.6 331.2,55.3 322.9,48.5 314.5,41.0 306.2,32.8 297.9,29.8 289.5,26.6 281.2,23.3 272.8,19.7 264.5,16.0 256.2,16.0 247.8,16.0 239.5,16.0 231.1,16.0 222.8,16.0 214.5,16.0 206.1,16.0 197.8,16.0 189.4,16.0 181.1,16.0 172.8,16.0 164.4,16.0 156.1,16.0 147.7,16.0 139.4,16.0 131.1,16.0 122.7,16.0 114.4,16.0 106.0,16.0 97.7,16.0 89.4,16.0 81.0,16.0 72.7,16.0 64.3,16.0 56.0,16.0" fill="#5b3f8f" opacity="0.9"><title>Synthexis stomper</title></polygon>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,16.0 239.5,16.0 247.8,16.0 256.2,16.0 264.5,16.0 272.8,16.0 281.2,16.0 289.5,16.0 297.9,16.0 306.2,16.0 314.5,21.8 322.9,27.0 331.2,31.8 339.6,36.3 347.9,40.3 356.2,44.1 364.6,47.6 372.9,50.8 381.3,53.8 389.6,56.7 397.9,59.7 406.3,62.6 414.6,65.3 423.0,67.9 431.3,70.4 439.6,72.9 448.0,75.2 456.3,77.4 464.7,79.5 473.0,81.6 481.3,80.3 489.7,79.0 498.0,77.9 506.4,76.7 514.7,75.7 523.0,74.6 531.4,73.7 539.7,72.7 548.1,71.8 556.4,71.0 564.7,71.8 573.1,72.8 581.4,73.7 589.8,74.6 598.1,75.6 606.4,76.6 614.8,77.6 623.1,78.6 631.5,79.7 639.8,80.8 648.1,79.3 656.5,78.0 664.8,76.6 673.2,75.4 681.5,74.2 689.8,73.1 698.2,72.0 706.5,71.0 714.9,70.0 723.2,69.1 731.5,68.5 739.9,67.9 748.2,67.3 756.6,66.7 764.9,66.2 773.2,65.7 781.6,65.2 789.9,64.7 798.3,64.2 806.6,63.8 814.9,61.5 823.3,59.4 831.6,57.6 840.0,55.9 848.3,54.3 856.6,52.9 865.0,51.6 873.3,50.4 881.7,49.3 890.0,48.2 890.0,61.1 881.7,62.6 873.3,64.2 865.0,65.9 856.6,67.7 848.3,69.7 840.0,71.9 831.6,74.3 823.3,77.0 814.9,79.9 806.6,83.1 798.3,83.8 789.9,84.5 781.6,85.2 773.2,85.9 764.9,86.7 756.6,87.5 748.2,88.3 739.9,89.1 731.5,90.0 723.2,90.8 714.9,92.2 706.5,93.6 698.2,95.1 689.8,96.7 681.5,98.3 673.2,100.0 664.8,101.8 656.5,103.7 648.1,105.7 639.8,107.8 631.5,106.3 623.1,104.8 614.8,103.4 606.4,102.0 598.1,100.6 589.8,99.3 581.4,98.0 573.1,96.7 564.7,95.5 556.4,94.2 548.1,95.5 539.7,96.8 531.4,98.2 523.0,99.6 514.7,101.1 506.4,102.7 498.0,104.3 489.7,106.1 481.3,107.9 473.0,109.8 464.7,108.2 456.3,106.6 448.0,104.8 439.6,103.1 431.3,101.2 423.0,99.3 414.6,97.2 406.3,95.1 397.9,92.9 389.6,90.6 381.3,86.5 372.9,82.3 364.6,77.7 356.2,72.7 347.9,67.4 339.6,61.6 331.2,55.3 322.9,48.5 314.5,41.0 306.2,32.8 297.9,29.8 289.5,26.6 281.2,23.3 272.8,19.7 264.5,16.0 256.2,16.0 247.8,16.0 239.5,16.0 231.1,16.0 222.8,16.0 214.5,16.0 206.1,16.0 197.8,16.0 189.4,16.0 181.1,16.0 172.8,16.0 164.4,16.0 156.1,16.0 147.7,16.0 139.4,16.0 131.1,16.0 122.7,16.0 114.4,16.0 106.0,16.0 97.7,16.0 89.4,16.0 81.0,16.0 72.7,16.0 64.3,16.0 56.0,16.0" fill="#8a5bb5" opacity="0.9"><title>Synthexis spore spitter</title></polygon>
+<text x="390" y="78" class="blabel" text-anchor="middle">spore spitter</text>
+<polygon points="56.0,16.0 64.3,16.0 72.7,16.0 81.0,16.0 89.4,16.0 97.7,16.0 106.0,16.0 114.4,16.0 122.7,16.0 131.1,16.0 139.4,16.0 147.7,16.0 156.1,16.0 164.4,16.0 172.8,16.0 181.1,16.0 189.4,16.0 197.8,16.0 206.1,16.0 214.5,16.0 222.8,16.0 231.1,16.0 239.5,16.0 247.8,16.0 256.2,16.0 264.5,16.0 272.8,16.0 281.2,16.0 289.5,16.0 297.9,16.0 306.2,16.0 314.5,16.0 322.9,16.0 331.2,16.0 339.6,16.0 347.9,16.0 356.2,16.0 364.6,16.0 372.9,16.0 381.3,16.0 389.6,16.0 397.9,16.0 406.3,16.0 414.6,16.0 423.0,16.0 431.3,16.0 439.6,16.0 448.0,16.0 456.3,16.0 464.7,16.0 473.0,16.0 481.3,16.0 489.7,16.0 498.0,16.0 506.4,16.0 514.7,16.0 523.0,16.0 531.4,16.0 539.7,16.0 548.1,16.0 556.4,16.0 564.7,16.0 573.1,16.0 581.4,16.0 589.8,16.0 598.1,16.0 606.4,16.0 614.8,16.0 623.1,16.0 631.5,16.0 639.8,16.0 648.1,16.0 656.5,16.0 664.8,16.0 673.2,16.0 681.5,16.0 689.8,16.0 698.2,16.0 706.5,16.0 714.9,16.0 723.2,16.0 731.5,16.0 739.9,16.0 748.2,16.0 756.6,16.0 764.9,16.0 773.2,16.0 781.6,16.0 789.9,16.0 798.3,16.0 806.6,16.0 814.9,16.0 823.3,16.0 831.6,16.0 840.0,16.0 848.3,16.0 856.6,16.0 865.0,16.0 873.3,16.0 881.7,16.0 890.0,16.0 890.0,48.2 881.7,49.3 873.3,50.4 865.0,51.6 856.6,52.9 848.3,54.3 840.0,55.9 831.6,57.6 823.3,59.4 814.9,61.5 806.6,63.8 798.3,64.2 789.9,64.7 781.6,65.2 773.2,65.7 764.9,66.2 756.6,66.7 748.2,67.3 739.9,67.9 731.5,68.5 723.2,69.1 714.9,70.0 706.5,71.0 698.2,72.0 689.8,73.1 681.5,74.2 673.2,75.4 664.8,76.6 656.5,78.0 648.1,79.3 639.8,80.8 631.5,79.7 623.1,78.6 614.8,77.6 606.4,76.6 598.1,75.6 589.8,74.6 581.4,73.7 573.1,72.8 564.7,71.8 556.4,71.0 548.1,71.8 539.7,72.7 531.4,73.7 523.0,74.6 514.7,75.7 506.4,76.7 498.0,77.9 489.7,79.0 481.3,80.3 473.0,81.6 464.7,79.5 456.3,77.4 448.0,75.2 439.6,72.9 431.3,70.4 423.0,67.9 414.6,65.3 406.3,62.6 397.9,59.7 389.6,56.7 381.3,53.8 372.9,50.8 364.6,47.6 356.2,44.1 347.9,40.3 339.6,36.3 331.2,31.8 322.9,27.0 314.5,21.8 306.2,16.0 297.9,16.0 289.5,16.0 281.2,16.0 272.8,16.0 264.5,16.0 256.2,16.0 247.8,16.0 239.5,16.0 231.1,16.0 222.8,16.0 214.5,16.0 206.1,16.0 197.8,16.0 189.4,16.0 181.1,16.0 172.8,16.0 164.4,16.0 156.1,16.0 147.7,16.0 139.4,16.0 131.1,16.0 122.7,16.0 114.4,16.0 106.0,16.0 97.7,16.0 89.4,16.0 81.0,16.0 72.7,16.0 64.3,16.0 56.0,16.0" fill="#b8a92f" opacity="0.9"><title>Bred medium spitter</title></polygon>
+<text x="473" y="53" class="blabel" text-anchor="middle">Bred medium spitter</text>
+<text x="48" y="26" class="axis" text-anchor="end">all</text><text x="48" y="260" class="axis" text-anchor="end">0</text>
+</svg></div>
+  <h3>Breeds</h3><div class="units"><article class="unit">
+  <figure><img src="img/lp-bred-small-biter.png" alt="Bred small biter" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Bred small biter</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>15</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>0.5</dd></div><div><dt>Rate</dt><dd>1.7/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>7 bite</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>-</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>2 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-bred-medium-biter.png" alt="Bred medium biter" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Bred medium biter</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>75</dd></div><div><dt>Speed</dt><dd>14.4 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>1</dd></div><div><dt>Rate</dt><dd>1.7/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>15 bite</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -4 10%, explosion 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>7 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0.2</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-bred-big-biter.png" alt="Bred big biter" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Bred big biter</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>375</dd></div><div><dt>Speed</dt><dd>13.8 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>1.5</dd></div><div><dt>Rate</dt><dd>1.7/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>30 bite</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -8 10%, explosion 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>28 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0.5</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-bred-behemoth-biter.png" alt="Bred behemoth biter" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Bred behemoth biter</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>3000</dd></div><div><dt>Speed</dt><dd>18.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>1.5</dd></div><div><dt>Rate</dt><dd>1.2/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>90 bite</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -12 10%, explosion -12 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>200 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0.9</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-bred-cinder.png" alt="Synthexis burster" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Synthexis burster</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>375</dd></div><div><dt>Speed</dt><dd>13.8 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>1.5</dd></div><div><dt>Rate</dt><dd>1.7/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>30 bite</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -8 10%, explosion 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>70 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0.6</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-bred-stomper.png" alt="Synthexis stomper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Synthexis stomper</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>2000</dd></div><div><dt>Speed</dt><dd>walks</dd></div>
+      <div><dt>Range</dt><dd>5.85</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>-</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical 50%, laser 40%, impact 80%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>150 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0.8</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-bred-spore.png" alt="Synthexis spore spitter" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Synthexis spore spitter</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>50</dd></div><div><dt>Speed</dt><dd>9.9 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>20</dd></div><div><dt>Rate</dt><dd>0.6/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>-</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>explosion 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>10 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0.25</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-bred-medium-spitter.png" alt="Bred medium spitter" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Bred medium spitter</h4>
+    <p class="role"></p>
+    <dl>
+      <div><dt>Health</dt><dd>50</dd></div><div><dt>Speed</dt><dd>9.9 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>14</dd></div><div><dt>Rate</dt><dd>0.6/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>-</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>explosion 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>9 biomass</dd></div>
+    </dl>
+    <p class="how">Bred from evolution 0.3</p>
+  </div>
+</article></div>
+  <h3>Its culture</h3><div class="narrow"><img class="vista" src="img/vista-synthexis-clinic.jpg" alt="The clinic by the heating tower" loading="lazy"></div><div class="units"><article class="unit">
+  <figure><img src="img/lp-pen.png" alt="Synthexis incubator" loading="lazy"></figure>
+  <div class="ubody"><h4>Synthexis incubator</h4><p class="role">A biter nest taken and fed by Synthexis. What it breeds is Synthexis&#x27;s, not the wild nests&#x27;. Hit, it calls its wave home; killed, it drops a pheromone gland.</p><p class="how">A wild nest it took; kill it, and its wave comes home</p></div>
+</article><article class="unit">
+  <figure><img src="img/lp-biochamber.png" alt="Synthexis biochamber" loading="lazy"></figure>
+  <div class="ubody"><h4>Synthexis biochamber</h4><p class="role">Where Synthexis feeds an incubator. While it works, the incubator breeds.</p><p class="how">One by each incubator; kill it, and that incubator starves</p></div>
+</article><article class="unit">
+  <figure><img src="img/lp-clinic.png" alt="Synthexis clinic" loading="lazy"></figure>
+  <div class="ubody"><h4>Synthexis clinic</h4><p class="role">Where Synthexis improves its breeds. While it stands they grow stronger; destroyed, its incubators breed only small and medium biters until a new one lands.</p><p class="how">While it stands its breeds climb 0.24 an hour</p></div>
+</article><article class="unit">
+  <figure><img src="img/lp-heating-tower.png" alt="Synthexis heating tower" loading="lazy"></figure>
+  <div class="ubody"><h4>Synthexis heating tower</h4><p class="role"></p><p class="how">The heart of its substrate: Gleba soil, yumako and jellystems</p></div>
+</article><article class="unit">
+  <figure><img src="img/lp-tumor.png" alt="Synthexis tumor" loading="lazy"></figure>
+  <div class="ubody"><h4>Synthexis tumor</h4><p class="role">Grows Synthexis&#x27;s creep round it. Nothing can be built on creep.</p><p class="how">Grows the creep; kill them and the creep withers</p></div>
+</article></div>
+</section>
+  <section class="corp" id="yours" style="--corp: var(--accent)">
+    <header class="corphead"><span class="swatch"></span><div><h2>Your army</h2><p>Trained at a barracks, sent by beacon.</p></div></header>
+    <h3>Units</h3><div class="units"><article class="unit">
+  <figure><img src="img/lp-trooper.png" alt="Trooper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Trooper</h4>
+    <p class="role">The player&#x27;s: a rifle</p>
+    <dl>
+      <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>8 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>1 bandwidth</dd></div>
+    </dl>
+    <p class="how">Trained at your barracks; orders by beacon</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-breacher.png" alt="Breacher" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Breacher</h4>
+    <p class="role">The player&#x27;s: demolition charges, for walls (and only a scratch to units)</p>
+    <dl>
+      <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>12</dd></div><div><dt>Rate</dt><dd>0.33/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>15 explosion over 2.5 tiles; 85 explosion over 2.5 tiles to buildings</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>1 bandwidth</dd></div>
+    </dl>
+    <p class="how">Trained at your barracks; orders by beacon</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-rocket-trooper.png" alt="Rocket trooper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Rocket trooper</h4>
+    <p class="role">The player&#x27;s: rockets against armour, and fliers; slow against a crowd</p>
+    <dl>
+      <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>18</dd></div><div><dt>Rate</dt><dd>0.4/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>110 explosion</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>2 bandwidth</dd></div>
+    </dl>
+    <p class="how">Trained at your barracks; orders by beacon</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-battle-tank.png" alt="Battle tank" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Battle tank</h4>
+    <p class="role">The player&#x27;s siege weapon</p>
+    <dl>
+      <div><dt>Health</dt><dd>900</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>18</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>50 explosion; 120 explosion over 1.5 tiles to buildings</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>6 bandwidth</dd></div>
+    </dl>
+    <p class="how">Trained at your barracks; orders by beacon</p>
+  </div>
+</article></div>
+    <h3 id="tech">Your technologies</h3>
+    <p class="lede">Command bandwidth sets how many units you can lead. The rest come from their wreckage: craft a part you
+    looted from them and its technology is yours.</p>
+    <div class="techs"><div class="techcol"><h4>Command</h4><ol><li><b>Command bandwidth 1</b><span class="gives">Barracks, Command relay, Rally beacon, Trooper, Breacher, Threat scanner, Muster point</span>
+            <span class="how">100 x automation + logistic</span><span class="pre">after military 2, heavy armor</span></li><li><b>Command bandwidth 2</b><span class="gives">Battle tank, Rocket trooper</span>
+            <span class="how">200 x automation + logistic + chemical</span><span class="pre">after Command bandwidth 1, chemical science pack, tank, battery equipment, rocketry</span></li><li><b>Command bandwidth 3</b><span class="gives">more command bandwidth</span>
+            <span class="how">300 x automation + logistic + chemical + military</span><span class="pre">after Command bandwidth 2, military 3</span></li><li><b>Command bandwidth 4</b><span class="gives">more command bandwidth</span>
+            <span class="how">infinite: 150*L</span><span class="pre">after Command bandwidth 3</span></li></ol></div><div class="techcol"><h4>From their wreckage</h4><ol><li><b>Claim marker</b><span class="gives">Claim marker</span>
+            <span class="how">craft pacifier crystal, disassembled</span><span class="pre">after military</span></li><li><b>Cluster shells</b><span class="gives">Cluster artillery shell</span>
+            <span class="how">craft cluster fuze, disassembled</span><span class="pre">after artillery</span></li><li><b>Orbital strike</b><span class="gives">Orbital strike beacon</span>
+            <span class="how">craft orbital beacon, disassembled</span><span class="pre">after rocket silo</span></li><li><b>Pact breaker</b><span class="gives">Pact breaker</span>
+            <span class="how">craft pacifier crystal, disassembled</span><span class="pre">after Pheromone bait</span></li><li><b>Pheromone bait</b><span class="gives">Pheromone bait</span>
+            <span class="how">craft pheromone gland, disassembled</span><span class="pre">after military</span></li><li><b>Rail rifle</b><span class="gives">Rail rifle, Rail slug</span>
+            <span class="how">craft rail coil, disassembled</span><span class="pre">after military 3</span></li></ol></div><div class="techcol"><h4>Prizes</h4><ol><li><b>Grubstake&#x27;s strip drill</b><span class="gives">Strip drill</span>
+            <span class="how">granted when its headquarters falls</span></li><li><b>Kessler-Hayashi&#x27;s mortar</b><span class="gives">Mortar, Mortar shell</span>
+            <span class="how">granted when its headquarters falls</span></li></ol></div></div>
+  </section>
+  <section class="corp" id="both" style="--corp: var(--edge)">
+    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
+    <h3>Units</h3><div class="units"><article class="unit">
+  <figure><img src="img/lp-hauler.png" alt="Hauler" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Hauler</h4>
+    <p class="role">Convoys and Grubstake&#x27;s building trucks; lightly armed</p>
+    <dl>
+      <div><dt>Health</dt><dd>1500</dd></div><div><dt>Speed</dt><dd>3.9 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>10</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>4 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -4 30%, fire 50%, explosion 20%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>30 parts</dd></div>
+    </dl>
+    <p class="how">Both: convoys, Grubstake&#x27;s building trucks</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Railgunner</h4>
+    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
+    <dl>
+      <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>250 physical to biters, nests and worms; 10 physical to anything else</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
+    </dl>
+    <p class="how">Kessler-Hayashi: clears nests, never raids</p>
+  </div>
+</article></div>
+  </section>
+  <footer>Written by scripts/roster_page.py from the prototypes, shared.lua, farm.lua and the locale. Portraits from the screenshot run; the bases from the all-factions save.</footer>
+</div>

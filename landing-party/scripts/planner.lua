@@ -267,7 +267,8 @@ local function plan(b, only)
       local block = layout.open_role(b, "launch")
       if block and block.kind == "launch" then b.launch_opened = true end
       return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
-    {"embellish", function() return b.mature and b.parts > 60 end, function()
+    -- (Not while pressed: lamps and paving wait while its posture is war, strategy.lua.)
+    {"embellish", function() return b.mature and b.parts > 60 and not (b.posture and b.posture.war) end, function()
       local block = layout.embellish(b)
       return block and string.format("lamps, paving and mines at %s %.0f,%.0f", block.kind, block.center[1],
         block.center[2]) end},

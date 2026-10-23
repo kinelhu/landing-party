@@ -164,6 +164,44 @@ def factions(kinds, M, corp, cluster_of, img):
     L.append("")
     return L
 
+def export_counters(M, F, kinds, fixed_cols, path):
+    """The counter matrix for the game (landing-party/counters.lua; the faction AI's composition, step 5): for each own
+    unit kind, its score against each foe kind and against each line and the biters, -1 to 1, from these fights. Labels
+    are mapped to prototypes by tests/lp-arena/batch.lua; a kind fielded under two labels (the infantries) keeps each
+    under its own prototype, and a foe column is keyed by kind."""
+    src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tests", "lp-arena", "batch.lua")).read()
+    proto = dict(re.findall(r'\{"([^"]+)", "(lp-[a-z-]+)"', src))
+    def kind(p):
+        m = re.match(r"lp-(?:grubstake|serenity)-(.*)", p)
+        return "lp-" + m.group(1) if m else p
+    line_key = {"guns": "gun-turret", "lasers": "laser-turret", "flamers": "flamethrower-turret", "biters 0.80": "biter"}
+    # (The report shows plain names: back to the batch's labels.)
+    def raw(label):
+        return UNSHOWN.get(label, label).replace("(Kessler-Hayashi)", "(Serenity)")
+    out = {}
+    for a in kinds:
+        # (On creep is a breed's home ground, not what it is bred as.)
+        if raw(a) not in proto or "(creep)" in a:
+            continue
+        row = {}
+        for b in kinds:
+            if raw(b) in proto and "(creep)" not in b and (a, b) in M:
+                row.setdefault(kind(proto[raw(b)]), []).append(M[(a, b)])
+        for c in fixed_cols:
+            if c in line_key and (a, c) in F:
+                row[line_key[c]] = [F[(a, c)]]
+        out.setdefault(proto[raw(a)], {}).update({k: sum(v) / len(v) for k, v in row.items()})
+    L = ["-- Written by scripts/arena_report.py from docs/arena/results.jsonl: each own unit's score (-1 to 1) against each",
+         "-- foe kind, line and the biters, from the arena's fights. Never edit by hand; regenerate with the arena.",
+         "return {"]
+    for p_ in sorted(out):
+        cells = ", ".join(f'["{k}"] = {v:.2f}' for k, v in sorted(out[p_].items()))
+        L.append(f'  ["{p_}"] = {{{cells}}},')
+    L.append("}")
+    open(path, "w").write("\n".join(L) + "\n")
+    print(f"wrote {path}: {len(out)} units")
+
+
 def main():
     src, out = sys.argv[1], sys.argv[2]
     rows = [json.loads(l) for l in open(src) if l.strip()]
@@ -280,6 +318,7 @@ def main():
         L.append(f"| {a} ({cost.get(a, '?')}) | {fmt(best, 1)} | {fmt(worst, -1)} |")
     L.append("")
     L += clusters(order, M, F, order_fixed, corp, os.path.join(os.path.dirname(out), "arena", "clusters.png"))
+    export_counters(M, F, kinds, fixed_cols, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "landing-party", "counters.lua"))
     L += factions(order, M, corp, clusters.of, os.path.join(os.path.dirname(out), "arena", "factions.png"))
     if mixes:
         L += ["## Mixed arms: does a flier soak a ground army's fire?", "",

@@ -482,6 +482,8 @@ remote.add_interface("landing-party", {
   cell_state = function() return cell.state() end,
   cell_sites = function() return cell.sites() end,
   know_state = function() return know.state() end,
+  -- Tests: a settlement's mix as it stands, and as its losses tilt it now (army.composition).
+  debug_compose = function(id) local b = storage.bases[id]; local m = army.mix(b); return {mix = m, composed = army.composition(b, m)} end,
   farm_wave = function() return farm.debug_wave() end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
