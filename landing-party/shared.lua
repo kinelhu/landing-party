@@ -64,6 +64,11 @@ shared.CORPS = {
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
     -- defence only), and it strips the player's ore instead.
     -- A pact with the biters (pact): a cease-fire both ways; it never fights bugs and they never fight it.
+    -- Its mind (the faction AI's personality; docs/reviews/2026-10-23-faction-ai-audit.md): the odds it wants before it
+    -- commits (a raid's force against what the defence needs, ops.odds), how hard it discounts a risky target, and how
+    -- much it minds what a defence will cost it whatever the odds (loss_aversion: value / (1 + defence)^loss_aversion).
+    -- prefer: what each kind of operation is worth to it beside a raid (a thief strips first).
+    mind = {min_odds = 0.6, caution = 2, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 10}},
     temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, jumps = true, taps = true, skims = true, night = true, prospects = true,
       -- How it answers a provocation (ops.answer), by kind: a loss (its unit, drone or building) or trespass (a turret
       -- covering its camp). The thief never fights fair: a snatch raid only where no turret covers it, else nothing (Fable,
@@ -146,6 +151,7 @@ shared.CORPS = {
     -- forgives. Being at war, its losses are fair war and go unanswered (ops.request_answer; the user, 2026-10-19), so
     -- the loss entry below is kept for a temper without `hostile`.
     -- Cuts: it surveys the power behind the turrets facing it and strikes the line (scripts/power.lua).
+    mind = {min_odds = 0.5, caution = 1, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 0}},
     temper = {provoked_only = true, hostile = true, cuts = true, bills = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).
     drill_pollution = 0,
@@ -230,7 +236,12 @@ shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-hi
 -- the wild ones. Not one of CORPS yet (no settlements, ladder or tree): its pens and herds are scripts/herd.lua's.
 shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g = 0.85, b = 0.2}, icon = "item/biter-egg",
   -- Its breeds' mask layers (units.lua's tints are by kind; these are the biters'): green body, yellow bands.
-  tint1 = {r = 0.30, g = 0.85, b = 0.15, a = 1}, tint2 = {r = 0.95, g = 0.90, b = 0.20, a = 1}}
+  tint1 = {r = 0.30, g = 0.85, b = 0.15, a = 1}, tint2 = {r = 0.95, g = 0.90, b = 0.20, a = 1},
+  -- Its mind (the faction AI's personality; docs/reviews/2026-10-23-faction-ai-audit.md): a wave is a trial of its
+  -- breeds against a defence (farm.target_from). per_turret: a turret's worth in its biters (a wave of n against d:
+  -- odds from n / (1 + per_turret d)); per_wall: walls to a turret's worth; fade: how long a place tested stays
+  -- tested; reach: how far it looks; far: how fast distance discounts.
+  mind = {per_turret = 6, per_wall = 20, fade = 40 * 3600, reach = 1600, far = 800}}
 -- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).
 shared.PEN_CAP = 40
 shared.WAVE_MIN = 24

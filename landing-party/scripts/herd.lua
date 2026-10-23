@@ -739,7 +739,8 @@ withdraw = function(w, why)
   if w.stage == "withdraw" or w.stage == "done" then return end
   local g = w.group
   if not (g and g.valid) then return end
-  if w.scout and w.scout.valid then g.add_member(w.scout) end
+  -- (Its own only: a scout from an unfed incubator goes feral, the wild's, and add_member raised an error.)
+  if w.scout and w.scout.valid and w.scout.force.name == B.force then g.add_member(w.scout) end
   local cmds = {}
   -- Out as it came, fighting nothing (fighting back on the way home drew it on to the faces it passed: second run).
   if w.breach then table.insert(cmds, go(w.breach, defines.distraction.none, 4)) end

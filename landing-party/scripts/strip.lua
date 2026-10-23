@@ -61,7 +61,7 @@ local function choose_strip(b, army)
   if field(b, army) < STRIP_GUARDS then return why(string.format("guards %d of %d", field(b, army), STRIP_GUARDS)) end
   local h = home(b)
   local in_flight = ops.player_ops()
-  local best, bd, site
+  local best, bd, site, bdrills
   local drills, sited = 0, 0
   for key, t in pairs(b.intel.targets) do
     if (t.drills or 0) > 0 and against_player(t.owner) then drills = drills + 1 end
@@ -75,13 +75,14 @@ local function choose_strip(b, army)
         if p then sited = sited + 1 end
         -- A patch it already holds (a camp kept there) is not stripped again.
         local held = p and (b.claims or {})[math.floor(p[1] / 64) .. "," .. math.floor(p[2] / 64)] or 0
-        if p and held < 2 then best, bd, site = key, d, p end
+        if p and held < 2 then best, bd, site, bdrills = key, d, p, t.drills end
       end
     end
   end
   if not best then why(string.format("%d of the player's drills known, %d with a camp site out of turret reach, %d operations "
     .. "against it in flight", drills, sited, in_flight)) end
-  return best, site
+  -- Its worth, beside a raid's and a siege's (ops' decider): the drills there over distance.
+  return best, site, best and (bdrills or 1) / (1 + math.sqrt(bd) / 300) or nil
 end
 
 local function launch_strip(b, key, site, trace, army)

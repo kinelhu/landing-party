@@ -113,7 +113,7 @@ local function choose_siege(b, army, only_battery)
       end
     end
   end
-  return best, site
+  return best, site, bs
 end
 
 -- The tier this settlement can mount against t now: its level, held to a player's era + 1, a grudge one up, then down

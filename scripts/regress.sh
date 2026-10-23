@@ -10,7 +10,8 @@ source "$DIR/env.sh"
 SEED="${1:-12345}"; FULL="${2:-}"
 # A seed is a number: "scripts/regress.sh --full" once ran every scenario on seed "--full", all failing at once.
 case "$SEED" in ''|*[!0-9]*) echo "usage: scripts/regress.sh [seed] [--full|--quick]  (seed a number, got '$SEED')"; exit 2;; esac
-JOBS="${LP_JOBS:-4}"
+# Ten at a time on a 14-core machine (four took the full list an hour and a half, 2026-10-23); LP_JOBS overrides.
+JOBS="${LP_JOBS:-10}"
 logs="$(mktemp -d)"
 # name | env | minutes | every | strike
 RUNS=(

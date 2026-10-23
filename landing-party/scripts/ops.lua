@@ -11,6 +11,7 @@
 local shared = require("__landing-party__.shared")
 local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
+local know = require("__landing-party__.scripts.know")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
 local jammer = require("__landing-party__.scripts.jammer")
@@ -441,6 +442,42 @@ end
 
 local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE end
 
+-- Its odds against a defence (the faction AI's chance of winning; docs/reviews/2026-10-23-faction-ai-audit.md): the
+-- force it can send over the force that defence needs, r, and the odds r^2 / (1 + r^2) (0.5 at an even match, 0.8 at
+-- twice). A corporation commits at its mind's min_odds and discounts a target by odds^caution (they replaced a hard
+-- "needed <= what it can field"), and by what it would cost, (1 + defence)^loss_aversion: odds alone made every
+-- target it could win look alike, and Kessler-Hayashi sent 41 at a Grubstake generator of defence 10.6 and took 108
+-- of its buildings in 40 minutes (rivals, 2026-10-23).
+local function odds(avail, d)
+  local r = avail / math.max(1, needed(d))
+  return r * r / (1 + r * r)
+end
+ops.odds = odds
+local function mind_of(b) return (shared.CORPS[b.corp] or {}).mind or {min_odds = 0.5, caution = 1, loss_aversion = 1.5} end
+
+-- Why a target matters now (the faction AI's relevance, one place for what were seven multipliers in choose): each a
+-- named weight a corporation's mind may set (shared.CORPS[corp].mind.weights), these the defaults.
+--   pressure     a player's target while the floor holds (no op against it lately) or its ladder has climbed
+--   battery      artillery shelling it
+--   desperate    the ladder's top rung against that player
+--   distracted   a rival's or nest's target while pressed against a player
+--   ground       a player's building on its own claimed ground, at war
+--   grudge       grievance against the owner (know.lua): 1 + grievance / grudge, at most grudge_max (a reprisal: four
+--                lost Line troopers, 40 parts, made x5, as the reprisal's fixed weight did; now buildings lost count too,
+--                and it is the faction's, not one camp's)
+local WEIGHTS = {pressure = 3, battery = 10, desperate = 10, distracted = 0.2, ground = 2, grudge = 10, grudge_max = 5}
+local function relevance(b, t, c)
+  local w = mind_of(b).weights or WEIGHTS
+  local r = 1
+  if c.player and (c.floor or c.rung >= 1) then r = r * w.pressure end
+  if battery(t) then r = r * w.battery end
+  if c.desperate then r = r * w.desperate end
+  if not c.player and c.pressed and not reprisal(b, t) then r = r * w.distracted end
+  if c.ground then r = r * w.ground end
+  if t.owner then r = r * math.min(w.grudge_max, 1 + know.grievance(b.corp, t.owner) / w.grudge) end
+  return r
+end
+
 -- The best target worth the force the settlement can field: value over defence, nearer preferred, tried
 -- targets less, cooling targets not at all.
 local function choose(b, army)
@@ -487,20 +524,22 @@ local function choose(b, army)
       -- Self-defence (a battery, or a static threat on its ground: turret creep) takes the reserve too: weighted,
       -- three upgraded creeping turrets needed 21 and a garrison of 28 kept 9 home (defend).
       local desperate = player and ladder(t.owner, b.force) >= 3
-      if desperate or needed(d) <= ((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field) then
+      local mind = mind_of(b)
+      local p = odds((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field, d)
+      if desperate or p >= mind.min_odds - 1e-9 then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
-        local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) / (1 + d) ^ 1.5 / (1 + dist / 300)
+        local ground = player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
+          and (t.pos[1] - b.origin.x) ^ 2 + (t.pos[2] - b.origin.y) ^ 2 <= b.claim_radius ^ 2
+        local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) * p ^ mind.caution / (1 + d) ^ mind.loss_aversion
+          / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
-          * ((player and (floor or ladder(t.owner, b.force) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)
-          * (desperate and 10 or 1) * ((not player and pressed and not reprisal(b, t)) and 0.2 or 1)
-          * (reprisal(b, t) and REPRISAL_WEIGHT or 1)
-          * ((player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
-            and (t.pos[1] - b.origin.x) ^ 2 + (t.pos[2] - b.origin.y) ^ 2 <= b.claim_radius ^ 2) and 2 or 1)
+          * relevance(b, t, {player = player, floor = floor, rung = player and ladder(t.owner, b.force) or 0,
+            desperate = desperate, pressed = pressed, ground = ground})
         if not bs or s > bs then best, bs = key, s end
       end
     end
   end
-  return best
+  return best, bs
 end
 
 -- Alerts (readability): an operation going in against a player puts a custom alert, with the corporation's icon,
@@ -1564,24 +1603,28 @@ function ops.tick(b, tick, trace, army)
     if bkey then return launch_siege(b, bkey, bsite, trace, army) end
     -- Then a hazard on its ground: the nests whose waves it keeps losing to (siege.lua).
     if ops.hazard_clear(b, trace, army) then return end
-    local key = choose(b, army)
+    local key, rs = choose(b, army)
     if key and battery(b.intel.targets[key]) then return launch(b, key, trace, army) end
-    -- A thief strips first: a raid was always available before and the camp never went up.
-    if (shared.CORPS[b.corp].temper or {}).strips then
-      local tkey, tsite = choose_strip(b, army)
-      if tkey then return launch_strip(b, tkey, tsite, trace, army) end
+    -- Then the best of a raid, a siege and a strip, each weighed by what the corporation prefers (its mind's prefer;
+    -- the faction AI's comparison, docs/reviews/2026-10-23-faction-ai-audit.md): a fixed order had a raid on a pylon
+    -- always beat a siege on a factory block, and a thief strip before anything.
+    local prefer = mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
+    local skey, ssite, ss = choose_siege(b, army)
+    local tkey, tsite, ts = choose_strip(b, army)
+    local options = {}
+    if key then options[#options + 1] = {"raid", (rs or 0) * (prefer.raid or 1)} end
+    if skey then options[#options + 1] = {"siege", (ss or 0) * (prefer.siege or 0)} end
+    if tkey then options[#options + 1] = {"strip", (ts or 0) * (prefer.strip or 0)} end
+    table.sort(options, function(x, y) return x[2] > y[2] end)
+    if #options > 1 then
+      local parts = {}
+      for _, o in ipairs(options) do parts[#parts + 1] = string.format("%s %.2f", o[1], o[2]) end
+      trace(b, "weighs " .. table.concat(parts, ", "))
     end
-    if key then
-      launch(b, key, trace, army)
-    else
-      local skey, site = choose_siege(b, army)
-      if skey then
-        launch_siege(b, skey, site, trace, army)
-      else
-        local tkey, tsite = choose_strip(b, army)
-        if tkey then launch_strip(b, tkey, tsite, trace, army) end
-      end
-    end
+    local pick = options[1] and options[1][1]
+    if pick == "raid" then launch(b, key, trace, army)
+    elseif pick == "siege" then launch_siege(b, skey, ssite, trace, army)
+    elseif pick == "strip" then launch_strip(b, tkey, tsite, trace, army) end
   end
 end
 

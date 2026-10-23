@@ -21,6 +21,7 @@ local herd = require("__landing-party__.scripts.herd")
 local pods = require("__landing-party__.scripts.pods")
 local creep = require("__landing-party__.scripts.creep")
 local cell = require("__landing-party__.scripts.cell")
+local know = require("__landing-party__.scripts.know")
 local tune = require("__landing-party__.scripts.tune")
 
 local farm = {}
@@ -214,32 +215,102 @@ local function gone(f, why)
   trace(string.format("farm %d gone (%s); lands again in %d minutes", f.id, why, RELAND / 3600))
 end
 
--- The nearest of the player's guns and machines from pos (and Grubstake's, once at war with it), by rings (a bounded
--- search, then the nearest in it). To be replaced by the faction AI's one picker (smell and grievance;
--- docs/reviews/2026-10-23-faction-ai-audit.md): a fixed every-third-wave rule at Kessler-Hayashi was tried and taken
--- out (the user: "Is hard coding such a thing really a good idea?"). `rival` (forces at the target) stays for it.
-local function target_from(surface, pos, f)
-  local forces, rival = players(), nil
+-- Where a wave goes (the faction AI's one picker, Synthexis's part; docs/reviews/2026-10-23-faction-ai-audit.md). It is
+-- a test range, not a hungry animal (the user, 2026-10-23: "what that faction would target if not pollution, lore wise.
+-- Maybe any defended base as a way to 'test' their bioengineered weapons?"; the identity consult: it "never retaliates
+-- in anger, it samples, records, adjusts"). Pollution is its food (creep.drink), not its target. A wave is a trial:
+-- every force it is at war with (the players, Kessler-Hayashi, Grubstake once broken with it), their defended places
+-- in reach by 64-tile cell, each scored by what there is to test (its defence: turrets by kind, walls), how much the
+-- trial would teach (its odds against that defence, p, the most when uncertain: 4p(1 - p)), whether it was tried
+-- lately (novelty, coming back as the trial fades or the defence changes) and distance. Kessler-Hayashi's walls draw
+-- trials as the player's do, on their merits. Its last trials (cell, defence, when) are kept in know.lua's record.
+local DEFENCE = {["ammo-turret"] = 1, ["electric-turret"] = 1.5, ["fluid-turret"] = 2.5}
+local WALL_TYPES = {"wall", "gate"}
+
+local function foes()
+  local out = {}
+  for _, f in ipairs(players()) do out[#out + 1] = f end
   if herd.grubstake_broken() and game.forces[shared.CORPS.grubstake.force] then
-    table.insert(forces, game.forces[shared.CORPS.grubstake.force])
+    out[#out + 1] = game.forces[shared.CORPS.grubstake.force]
   end
-  for _, r in ipairs({200, 400, 800, 1600}) do
-    local near = surface.find_entities_filtered{position = pos, radius = r, force = forces, type = herd.DRAW}
-    if #near > 0 then
-      local best, bd
-      for _, e in ipairs(near) do
-        local d = d2(e.position, pos)
-        if not bd or d < bd then best, bd = e, d end
+  if game.forces[shared.CORPS.serenity.force] then out[#out + 1] = game.forces[shared.CORPS.serenity.force] end
+  return out
+end
+
+local function trials()
+  local k = know.of("biotech")
+  k.trials = k.trials or {}
+  return k.trials
+end
+
+local function target_from(surface, pos, f, n)
+  local mind = B.mind
+  local cells = {}
+  for _, force in ipairs(foes()) do
+    for _, e in ipairs(surface.find_entities_filtered{position = pos, radius = mind.reach, force = force, type = herd.DRAW}) do
+      local cx, cy = math.floor(e.position.x / 64), math.floor(e.position.y / 64)
+      local key = string.format("%s|%d,%d", force.name, cx, cy)
+      local c = cells[key]
+      if not c then
+        c = {key = key, force = force.name, cx = cx, cy = cy, defence = 0, n = 0}
+        cells[key] = c
       end
-      return best.position, rival
+      c.n = c.n + 1
+      c.defence = c.defence + (DEFENCE[e.type] or 0)
+      local d = d2(e.position, pos)
+      if not c.d or d < c.d then c.d, c.at = d, {x = e.position.x, y = e.position.y} end
     end
   end
+  local tried = trials()
+  local ranked, soft = {}, nil
+  for _, c in pairs(cells) do
+    if c.defence > 0 then
+      c.walls = surface.count_entities_filtered{area = {{c.cx * 64, c.cy * 64}, {c.cx * 64 + 64, c.cy * 64 + 64}},
+        type = WALL_TYPES, force = c.force}
+      c.defence = c.defence + c.walls / mind.per_wall
+      local r = (n or shared.WAVE_MIN) / (1 + mind.per_turret * c.defence)
+      local p = r * r / (1 + r * r)
+      c.odds, c.teach = p, 4 * p * (1 - p)
+      local t = tried[c.key]
+      c.novelty = 1
+      if t and math.abs(c.defence - t.defence) <= 0.3 * math.max(t.defence, 1) then
+        c.novelty = 1 - math.exp(-(game.tick - t.tick) / mind.fade)
+      end
+      c.dist = math.sqrt(c.d)
+      c.score = (1 + c.defence) * c.teach * c.novelty / (1 + c.dist / mind.far)
+      ranked[#ranked + 1] = c
+    elseif not soft or c.d < soft.d then
+      soft = c
+    end
+  end
+  table.sort(ranked, function(a, b) return a.score > b.score end)
+  local why = {}
+  for k = 1, math.min(3, #ranked) do
+    local c = ranked[k]
+    why[#why + 1] = string.format("%s at %.0f,%.0f: defence %.1f (%d walls), odds %.2f, teaches %.2f, novelty %.2f, %.0f tiles, score %.2f",
+      c.force, c.at.x, c.at.y, c.defence, c.walls, c.odds, c.teach, c.novelty, c.dist, c.score)
+  end
+  -- Nothing defended in reach: the nearest of what stands, a trial against nothing (it calibrates).
+  local best = ranked[1] or soft
+  if not best then return end
+  if not ranked[1] then why[1] = string.format("nothing defended; %s at %.0f,%.0f, %.0f tiles", best.force, best.at.x,
+    best.at.y, math.sqrt(best.d)) end
+  trace(string.format("farm %d weighs: %s", f and f.id or 0, table.concat(why, "; ")))
+  tried[best.key] = {tick = game.tick, defence = best.defence}
+  local rival = not shared.is_player_force(game.forces[best.force]) and {best.force} or nil
+  return best.at, rival
 end
 
 local function send(f, tick)
   local s = game.surfaces[f.surface]
   local units, origin = {}, nil
-  local target, rival = target_from(s, f.pos, f)
+  -- What it could send (its odds are weighed with it): every pen's stock over its guard, at most WAVE_MAX.
+  local avail = 0
+  for _, id in ipairs(f.pens) do
+    local rec = herd.pen(id)
+    if rec and rec.pen.valid then avail = avail + math.max(0, #herd.stock(rec) - HOME_GUARD) end
+  end
+  local target, rival = target_from(s, f.pos, f, math.min(avail, WAVE_MAX))
   if not target then return end
   local bd
   for _, id in ipairs(f.pens) do

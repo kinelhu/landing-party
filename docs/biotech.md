@@ -590,6 +590,24 @@ against the player -1; the player against Kessler-Hayashi +24.
   Synthexis": a wave's map trail is now its last 120 tiles only, thin and faint (where it came in from); the mud on the
   ground still runs all the way home. "The Synthexis labs probably could use a green concrete floor": the clinic stands
   on a 7x7 pad of the biochambers' acid-green concrete (`cell.pad`, shared with the cells).
+### Its waves are trials (0.2.2; the faction AI's one picker)
+
+- The user (2026-10-23), on a fixed every-third-wave rule at Kessler-Hayashi: "Is hard coding such a thing really a good
+  idea?"; and on a smell-and-grievance picker that came next: "It's just that it seems pollution is actively feeding it?
+  ... Maybe any defended base as a way to 'test' their bioengineered weapons?" Taken: pollution is its food (creep), not
+  its target, and it does not retaliate (the identity consult: "it never retaliates in anger, it samples, records,
+  adjusts").
+- `farm.target_from`: every force it is at war with (the players, Kessler-Hayashi, Grubstake once broken), their
+  defended places in reach (1,600) by 64-tile cell; each scored by its defence (gun 1, laser 1.5, flamer 2.5, a wall a
+  twentieth), what the trial would teach (its odds p against that defence, a wave of n against d: r = n / (1 + 6d), p =
+  r^2 / (1 + r^2); taught 4p(1 - p), the most when uncertain), novelty (a place tried within its fade, 40 minutes,
+  counts less unless its defence changed by a third) and distance. Nothing defended in reach: the nearest of what stands.
+  Its last trials are kept in `know.lua`'s record; each wave logs its best three with every term (decisions.txt).
+- Seen (system sim, 90 minutes, seeds 12345 and 4242): trials went to three different faces of the player's base in
+  turn (novelty), and Kessler-Hayashi's walled camp came second for the third wave on its merits.
+- Its personality in `shared.BIOTECH.mind`. The weights replaced, in order: the nearest player building; the every-third
+  rule; smell and grievance.
+
 - **Next (the consult's step 6):** loot and the trophy (a dead culture leaves its soil and trees; the clinic goes with
   the culture for now).
 

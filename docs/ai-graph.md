@@ -16,16 +16,16 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `ops` | 1692 | answers, cuts, intel, jammer, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
+| `ops` | 1735 | answers, cuts, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1192 | blocks, rng, site, wfc | base, faction |  |  |  |  |
-| `herd` | 956 | (leaf) | control, farm |  | 30, 60, 600, 3600 |  | herd |
+| `herd` | 957 | (leaf) | control, farm |  | 30, 60, 600, 3600 |  | herd |
 | `siege` | 846 | (leaf) | ops |  |  |  | threat_last |
 | `base` | 813 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `faction` | 767 | army, base, layout, names, ops, pact, pods, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `army` | 711 | ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
 | `control` | 605 | aim, army, bait, base, belts, biters, border, cell, command, cordon, creep, crew, dev, faction, farm, herd, jammer, jumper, know, ledger, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, scorcher, site, skim, stance, standing, strike, tap, trade, tune, war |  |  |  | ai_command_completed, built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, entity_spawned, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, script_trigger_effect, tick, script_raised_built | arena_surfaces, army_off, bases, belts_always, biotech_off, capture_off, choice_off, cmd, cordon_off, cuts_off, era_override, focus_off, gates_off, grow_to_line_off, grudge_fast, hazard_hold, hazard_off, herd_off, history_off, hq_fast, labs_off, ladder_fast, last_raze, leader_off, ledger_off, mature_blocks, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strip_fast, tap_step, trace, truces, tune_levers, unit_owner, wfc_core_off |
 | `command` | 576 | (leaf) | control |  | 60, 120 |  | cmd |
-| `farm` | 491 | cell, creep, herd, pods, tune | control, dev |  | 600 |  | farms |
+| `farm` | 562 | cell, creep, herd, know, pods, tune | control, dev |  | 600 |  | farms |
 | `crew` | 449 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `skim` | 420 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `war` | 398 | army, base, ops, pods, pool, rd, rng, stance, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
@@ -43,7 +43,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `creep` | 273 | tune | control, farm |  |  |  | creep |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `intel` | 230 | (leaf) | ops |  |  |  |  |
-| `strip` | 228 | (leaf) | ops |  |  |  | threat_last |
+| `strip` | 229 | (leaf) | ops |  |  |  | threat_last |
 | `phases` | 227 | faction | control |  | 360, 3600 |  | phases |
 | `dev` | 189 | army, base, faction, farm, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `power` | 171 | (leaf) | ops |  |  |  |  |
@@ -51,7 +51,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `site` | 159 | modules | base, control, faction, layout |  |  |  |  |
 | `road` | 144 | base, standing | control |  | 60 |  |  |
 | `pool` | 140 | (leaf) | army, control, cuts, ops, prospect, tap, war |  |  |  |  |
-| `know` | 138 | (leaf) | control, rd |  | 3600 |  | know |
+| `know` | 138 | (leaf) | control, farm, ops, rd |  | 3600 |  | know |
 | `wfc_serenity` | 134 | (leaf) |  |  |  |  |  |
 | `answers` | 130 | (leaf) | ops |  |  |  |  |
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |
@@ -107,9 +107,9 @@ From `stance.may`, run on the mod's own tables. Yes: allowed. No: forbidden. A d
 | `army` | 2 | `if (b.war_rung or 0) >= 2 then n = math.floor(n * 1.5) end` |
 | `jumper` | 2 | `local RUNG = 2` |
 | `ops` | 1 | `if temper.soft_only and rung < 3 and (t.exposure or t.defence or 0) > (rung >= 1 and LADDER_SOFT or 1.0) then ` |
+| `ops` | 1 | `if c.player and (c.floor or c.rung >= 1) then r = r * w.pressure end` |
 | `ops` | 2 | `if shared.is_player_force(f) and ladder(f.name, b.force) >= 2` |
 | `ops` | 3 | `local desperate = player and ladder(t.owner, b.force) >= 3` |
-| `ops` | 1 | `* ((player and (floor or ladder(t.owner, b.force) >= 1)) and 3 or 1) * (battery(t) and 10 or 1)` |
 | `ops` | 3 | `local desperate = against_player(t.owner) and ladder(t.owner, b.force) >= 3` |
 | `ops` | 3 | `if not route and not shared.capable(b.corp, "siege", 99) and against_player(t.owner) and ladder(t.owner, b.for` |
 | `ops` | 1 | `local worth = (t.value or 0) * (t.line and 2 or 1) * (ladder(t.owner, b.force) >= 1 and 3 or 1)` |

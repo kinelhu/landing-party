@@ -152,3 +152,29 @@ balance targets are judged after step 3 and again after 5; the constants are tun
   (smell and grievance weighted high, caution low); its breeding stays the engine's by evolution for now.
 - **No rewrite in one go.** Each step replaces one family of decisions behind the same tactics, so the game stays
   playable and every step is measured.
+
+## Progress
+
+- **Step 1 (done, 0.2.2):** the bugs in section 3 fixed (the territory definition moved to step 6), the Synthexis scout
+  fixed (a wide corridor generated before it sets out, the engine's route, the herd marching its track); the targeted
+  tests and the system sim on seed 4242 pass (its scout now loops and its waves breach).
+- **Step 2 (first form, 0.2.2):** `know.lua`: each faction's losses (by killer force, killer, damage, place, value) and
+  grievances; sightings merged from its settlements' intel. The tech tree reads its losses through it (its own ledger
+  and `rd.tally` gone). The system sim checks every faction's losses are known to it.
+- **Step 3 (done, 0.2.3):** Synthexis's waves are trials (`docs/biotech.md`): the user's call on what it targets,
+  replacing smell and grievance. The corporations' raid picker, in three measured pieces:
+  - *3a, odds:* `ops.odds` (the force it can send over what the defence needs, r; odds r^2 / (1 + r^2)) replaced the
+    hard "needed <= what it can field"; each corporation's mind (`shared.CORPS[corp].mind`) sets the odds it commits at
+    (Kessler-Hayashi 0.5, the old gate exactly; Grubstake 0.6) and caution (odds^caution: 1 and 2). Odds alone made
+    every target it could win look alike: Kessler-Hayashi sent 41 at a Grubstake generator of defence 10.6 and took 108
+    of its buildings in 40 minutes (`rivals` failed). What a defence costs is a term of its own: loss_aversion,
+    value / (1 + defence)^1.5, the old discount, now named and per corporation.
+  - *3b, relevance:* the seven multipliers are named weights in one function (`relevance`: pressure, battery,
+    desperate, distracted, ground, grudge), a mind may set its own. The reprisal's fixed x5 (four losses at one camp in
+    20 minutes) became the faction's grievance (know.lua): 1 + grievance / 10, at most 5; buildings lost count too.
+  - *3c, comparison:* after the battery siege and the hazard clearance (defence first), a raid, a siege and a strip are
+    weighed together, each by the corporation's preference (mind.prefer: Kessler-Hayashi raid 1, siege 0.5, strip 0;
+    Grubstake raid 1, siege 0.5, strip 10, its "strips first" as a weight), each choice logged with all three scores.
+    It replaced the fixed chain (raid before siege before strip; a thief's strip before all).
+  - Measured: the 57 raid-heavy scenarios after each piece (3a 56 of 57 until loss_aversion, then 57; 3b 57; 3c 57)
+    and the 44 siege-related ones on 3c (44).

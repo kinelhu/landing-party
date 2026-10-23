@@ -6,12 +6,13 @@ digraph layers {
   "Knowledge (per faction)" [label="Knowledge (per faction)\n1 module, 138 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n11 modules, 2634 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n15 modules, 5165 lines\nlayout 1192", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n13 modules, 4799 lines\nops 1692", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n13 modules, 4843 lines\nops 1735", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1225 lines", fillcolor="#eef2f7"];
-  "The biotech" [label="The biotech\n4 modules, 2036 lines", fillcolor="#eef2f7"];
+  "The biotech" [label="The biotech\n4 modules, 2108 lines", fillcolor="#eef2f7"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="2", penwidth=1.5];
+  "Army and operations" -> "Knowledge (per faction)" [label="1", penwidth=1.2];
   "Army and operations" -> "Seams (leaves)" [label="7", penwidth=2.8];
   "Army and operations" -> "Settlement" [label="1", penwidth=1.2];
   "Corporation" -> "Army and operations" [label="8", penwidth=3.0];
@@ -26,6 +27,7 @@ digraph layers {
   "Settlement" -> "Corporation" [label="4", penwidth=2.0];
   "Settlement" -> "Seams (leaves)" [label="6", penwidth=2.5];
   "The biotech" -> "Corporation" [label="2", penwidth=1.5];
+  "The biotech" -> "Knowledge (per faction)" [label="1", penwidth=1.2];
   "The biotech" -> "Seams (leaves)" [label="2", penwidth=1.5];
   "The map" -> "Corporation" [label="1", penwidth=1.2];
   "The map" -> "Seams (leaves)" [label="2", penwidth=1.5];

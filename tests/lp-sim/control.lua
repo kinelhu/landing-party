@@ -7991,6 +7991,15 @@ scenarios.farm = function()
     for x = -32, 32, 16 do for y = -32, 32, 16 do put("substation", at(x, y)) end end
     S.power = put("electric-energy-interface", at(4, 4))
     S.power.power_production, S.power.electric_buffer_size = 5e6, 5e7
+    -- What any player's base has, and what draws a wave (its smell, farm.target_from): machines that pollute.
+    for _, d in ipairs({{-20, -20}, {-20, 20}, {20, -20}, {20, 20}}) do
+      local q = surface().find_non_colliding_position("assembling-machine-2", at(d[1], d[2]), 8, 1)
+      if q then put("assembling-machine-2", q) end
+    end
+    for _, d in ipairs({{-8, 0}, {8, -8}}) do
+      local q = surface().find_non_colliding_position("boiler", at(d[1], d[2]), 8, 1)
+      if q then put("boiler", q) end
+    end
     -- The nest field, on the map's own ground.
     S.field = {}
     for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}, {-8, -12}}) do
