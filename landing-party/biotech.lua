@@ -92,6 +92,7 @@ end
 -- laser 40% (vanilla 80%: lasers should hurt it), nothing against explosions: rockets, slugs, the battle tank,
 -- fliers and artillery beat it. Its shell stays where it falls; the premature wrigglers its death spawned are dropped.
 local STOMPER_HEALTH, STOMP_SHARE = 2000, 0.2
+local STOMPER_MASK = {r = 0.55, g = 0.3, b = 0.85, a = 0.8}   -- violet, the creep's
 do
   local src = data.raw["spider-unit"]["small-stomper-pentapod"]
   local u = table.deepcopy(src)
@@ -113,10 +114,13 @@ do
     if not (e.entity_name or ""):find("wriggler", 1, true) then table.insert(shell, e) end
   end
   u.dying_trigger_effect = shell
+  -- Its plates only (the mask layers), the body's art left as vanilla draws it: tinted whole it read as a plastic toy
+  -- (the user, 2026-10-23: "Tint looks too toy like").
   local function green(t, seen)
     if type(t) ~= "table" or seen[t] then return end
     seen[t] = true
-    if t.tint then t.tint = B.tint1 end
+    local f = t.filename or (t.filenames and t.filenames[1])
+    if t.tint and type(f) == "string" and f:find("-mask", 1, true) then t.tint = STOMPER_MASK end
     for _, v in pairs(t) do green(v, seen) end
   end
   green(u.graphics_set, {})
@@ -365,6 +369,47 @@ mend.damage_interval = 1
 mend.hidden = true
 table.insert(out, haste)
 table.insert(out, mend)
+-- The cell (the identity consult, docs/reviews/2026-10-22-synthexis-identity-consult.md, step 2; scripts/cell.lua): beside
+-- each incubator a pad of acid-green refined concrete, a biochamber at work on it and a lamp in its colour: glass and a
+-- glow where Kessler-Hayashi has white light and Grubstake amber. The biochamber needs no power and no nutrients (it
+-- crafts nothing, for ever: its animation and light are the tell that the incubator is fed).
+table.insert(out, {type = "recipe-category", name = "lp-culture"})
+table.insert(out, {type = "recipe", name = "lp-culture-feed", category = "lp-culture", hidden = true, enabled = true,
+  energy_required = 20, ingredients = {}, results = {}, icon = "__space-age__/graphics/icons/biochamber.png"})
+do
+  local c = table.deepcopy(data.raw["assembling-machine"]["biochamber"])
+  c.name = "lp-biochamber"
+  c.localised_name = {"entity-name.lp-biochamber"}
+  c.localised_description = {"entity-description.lp-biochamber"}
+  c.hidden = true
+  c.minable = nil
+  c.flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"}
+  c.energy_source = {type = "void"}
+  c.crafting_categories = {"lp-culture"}
+  c.fixed_recipe = "lp-culture-feed"
+  c.module_slots = 0
+  c.allowed_effects = nil
+  c.effect_receiver = nil
+  c.fast_replaceable_group = nil
+  c.next_upgrade = nil
+  c.map_color = B.color
+  c.enemy_map_color = B.color
+  table.insert(out, c)
+  local l = table.deepcopy(data.raw.lamp["small-lamp"])
+  l.name = "lp-cell-lamp"
+  l.localised_name = {"entity-name.lp-cell-lamp"}
+  l.hidden = true
+  l.minable = nil
+  l.flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable", "not-deconstructable"}
+  l.energy_source = {type = "void"}
+  l.always_on = true
+  l.light = table.deepcopy(l.light)
+  l.light.color = {r = 0.35, g = 1, b = 0.2}
+  l.light_when_colored = nil
+  l.circuit_connector = nil
+  table.insert(out, l)
+end
+
 data:extend(out)
 
 -- Every corporation's variant of a hull kind, the player's battle tank, and the base game's tank and spidertron.

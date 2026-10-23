@@ -7804,6 +7804,20 @@ scenarios.farm = function()
         S.farm_pos = f.pos
         S.dist = math.sqrt((f.pos.x - S.at(0, 0)[1]) ^ 2 + (f.pos.y - S.at(0, 0)[2]) ^ 2)
         if mix == "wave" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave") and game.tick end) end
+        if mix == "starve" then
+          -- Its first incubator stocked over the fed cap, then its biochamber killed a minute on.
+          S.spid = f.pen_ids[1]
+          lp("herd_fill", S.spid, 30, "lp-bred-medium-biter")
+          schedule(game.tick - storage.t0 + 3600, function()
+            for _, c in ipairs(lp("cell_state")) do
+              if c.id == S.spid then
+                local ch = surface().find_entities_filtered{name = "lp-biochamber", position = c.at, radius = 1, limit = 1}[1]
+                if ch then S.spos = surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80}
+                  ch.die("player"); S.starved_at = game.tick end
+              end
+            end
+          end)
+        end
         if mix == "killed" then
           for _, sp in ipairs(surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80}) do
             sp.die("player")
@@ -7811,9 +7825,23 @@ scenarios.farm = function()
           S.killed_at = game.tick
         end
       end
+      -- Its cells (scripts/cell.lua): a pad, a biochamber at work and a lamp by each incubator.
+      if f and S.landed and game.tick > S.landed and not S.cells then
+        local cs, working, lamps, pads = lp("cell_state"), 0, 0, 0
+        for _, c in ipairs(cs) do
+          if c.working then working = working + 1 end
+          if c.lamp then lamps = lamps + 1 end
+          if surface().get_tile(c.at[1], c.at[2]).name == "acid-refined-concrete" then pads = pads + 1 end
+        end
+        S.cells = {n = #cs, working = working, lamps = lamps, pads = pads}
+      end
       local st = lp("herd_state")
       for _, w in ipairs(st.waves) do
         S.wave_seen = S.wave_seen or game.tick
+        if mix == "quiet" and w.stage == "march" and not S.raided then
+          local ch = surface().find_entities_filtered{name = "lp-biochamber", position = S.farm_pos, radius = 80, limit = 1}[1]
+          if ch then ch.damage(60, "player"); S.raided = game.tick end
+        end
         if mix == "raid" and w.stage == "march" and not S.raided then
           local pen = surface().find_entities_filtered{name = "lp-pen", position = S.farm_pos, radius = 80, limit = 1}[1]
           if pen then pen.damage(60, "player"); S.raided = game.tick end
@@ -7821,11 +7849,24 @@ scenarios.farm = function()
       end
       if mix == "killed" and S.killed_at and game.tick - S.killed_at >= 1200 and not S.after then
         S.after = lp("farm_state")
+        S.chambers_after = surface().count_entities_filtered{name = "lp-biochamber"}
         S.tags_after = #game.forces.player.find_chart_tags(surface(), {{S.farm_pos.x - 8, S.farm_pos.y - 8},
           {S.farm_pos.x + 8, S.farm_pos.y + 8}})
         finish_early()
       end
-      if mix ~= "killed" and #st.log > 0 then finish_early() end
+      -- Unfed: within a minute and a half it breeds nothing and has kept its fed cap; at ten minutes it is wild.
+      if mix == "starve" and S.starved_at then
+        local fs = lp("farm_state").farms[1]
+        local u
+        for _, x in ipairs(fs and fs.unfed or {}) do if x.id == S.spid then u = x end end
+        if u and game.tick - S.starved_at >= 5400 and not S.unfed then S.unfed = {active = u.active, stock = u.stock, feral = fs.feral} end
+        if fs and fs.lost_to_feed >= 1 and not S.wild_at then
+          S.wild_at = game.tick
+          S.pens_after = fs.pens
+          finish_early()
+        end
+      end
+      if mix ~= "killed" and mix ~= "starve" and #st.log > 0 then finish_early() end
     end)
   end
   schedule(END - 60, function()
@@ -7843,11 +7884,25 @@ scenarios.farm = function()
     check("farm: worms by its pens", (S.worms or 0) >= 2 * (S.pens0 or 0), tostring(S.worms))
     check("farm: its tag on the player's map", (S.tags or 0) >= 1, tostring(S.tags))
     check("farm: its tag names Synthexis", S.tag_text == "Synthexis culture", tostring(S.tag_text))
+    local c = S.cells or {}
+    check("farm: a cell by each incubator (pad, biochamber at work, lamp)", (c.n or 0) == (S.pens0 or -1)
+      and c.working == c.n and c.lamps == c.n and c.pads == c.n, serpent.line(c))
     if mix == "killed" then
       check("farm: every pen dead, the farm gone", S.after and #S.after.farms == 0, serpent.line(S.after))
       check("farm: its tag gone", S.tags_after == 0, tostring(S.tags_after))
+      check("farm: its biochambers gone with its incubators", S.chambers_after == 0, tostring(S.chambers_after))
       check("farm: it lands again in about an hour", S.after and S.after.next_arrival and
         S.after.next_arrival - S.killed_at >= 55 * 3600, serpent.line(S.after and S.after.next_arrival))
+      return
+    end
+    if mix == "starve" then
+      info(string.format("farm starve: unfed %s, wild after %s ticks, incubators %s -> %s", serpent.line(S.unfed),
+        tostring(S.wild_at and S.wild_at - S.starved_at), tostring(S.pens0), tostring(S.pens_after)))
+      check("farm: unfed, it breeds nothing and keeps 12 of its stock", S.unfed and S.unfed.active == false
+        and S.unfed.stock <= 12 and (S.unfed.feral or 0) >= 1, serpent.line(S.unfed))
+      check("farm: unfed ten minutes, it went wild", S.wild_at and S.wild_at - S.starved_at >= 10 * 3600
+        and S.wild_at - S.starved_at <= 11 * 3600, tostring(S.wild_at and S.wild_at - S.starved_at))
+      check("farm: the culture lives on", (S.pens_after or 0) >= 1, tostring(S.pens_after))
       return
     end
     check("farm: a wave went out", w ~= nil or S.wave_seen ~= nil, "none")
@@ -7857,8 +7912,14 @@ scenarios.farm = function()
         string.format("asked %s, launched %s", tostring(S.asked), tostring(w.t_launch)))
       return
     end
+    if mix == "quiet" then
+      -- The quiet kill: a biochamber hit while the herd marches calls nothing home.
+      check("farm: a biochamber hit called no wave home", S.raided ~= nil and w.recalled ~= true,
+        string.format("recalled %s, hit %s", tostring(w.recalled), tostring(S.raided)))
+      return
+    end
     if mix == "raid" then
-      check("farm: the raid called the wave home", w.recalled == true and S.raided ~= nil,
+      check("farm: the raid called the wave home", (w.recalled == true and S.raided ~= nil),
         string.format("recalled %s, raided %s", tostring(w.recalled), tostring(S.raided)))
       check("farm: it never reached the base", w.t_breach == nil, tostring(w.t_breach))
     else

@@ -41,6 +41,7 @@ local aim = require("__landing-party__.scripts.aim")
 local herd = require("__landing-party__.scripts.herd")
 local farm = require("__landing-party__.scripts.farm")
 local creep = require("__landing-party__.scripts.creep")
+local cell = require("__landing-party__.scripts.cell")
 script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
 script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
 script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
@@ -476,6 +477,7 @@ remote.add_interface("landing-party", {
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
   farm_state = function() return farm.state() end,
   creep_state = function() return creep.state() end,
+  cell_state = function() return cell.state() end,
   farm_wave = function() return farm.debug_wave() end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,

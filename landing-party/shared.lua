@@ -235,7 +235,7 @@ shared.WAVE_MIN = 24
 -- docs/arena.md) and in biomass in the game (an incubator breeds only while its culture can pay: farm.lua).
 -- None of them shoots up (air.lua): its class is many, healing and soft.
 shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
-  ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 60}, ["lp-bred-medium-spitter"] = {cost = 9},
+  ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 200}, ["lp-bred-medium-spitter"] = {cost = 9},
   ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 70},
   -- air: it shoots up (air.lua leaves it whole).
   ["lp-bred-spore"] = {cost = 10, air = true},

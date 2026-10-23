@@ -20,6 +20,7 @@ local shared = require("__landing-party__.shared")
 local herd = require("__landing-party__.scripts.herd")
 local pods = require("__landing-party__.scripts.pods")
 local creep = require("__landing-party__.scripts.creep")
+local cell = require("__landing-party__.scripts.cell")
 local tune = require("__landing-party__.scripts.tune")
 
 local farm = {}
@@ -33,6 +34,11 @@ local FIELD, FIELD_MIN = 40, 3
 local PENS = 4
 local PENS_MAX = 12           -- a culture's incubators at most, taken by its creep
 local STARVE = 3 * 3600       -- off creep this long, an incubator goes wild
+-- Its feed (the identity consult's weak point; scripts/cell.lua): an incubator whose biochamber is dead breeds nothing,
+-- keeps FED_CAP of its stock (the rest goes feral: the wild's), and after UNFED_WILD goes back to the wild. A biochamber
+-- hit calls no wave home (a pen hit does): the quiet kill, a raid on the feed while the herd is out.
+local FED_CAP = 12
+local UNFED_WILD = 10 * 3600
 local BREAK_NEAR = 12          -- a Grubstake building or unit this near a tumor breaks the truce
 local TRICKLE = 3             -- biomass an incubator earns a minute, clean air or not
 local START_BIOMASS = 200     -- what its pod brought (its first wave, ten minutes on)
@@ -156,6 +162,8 @@ function farm.land(surface, pos)
       end
       -- Its tumor, beside it: the creep grows from there (scripts/creep.lua).
       creep.plant(surface, rec.pen.position, f.id)
+      -- Its cell: pad, biochamber, lamp (scripts/cell.lua).
+      cell.build(id, rec.pen, f.id, f.pos)
     end
   end
   s.list[f.id] = f
@@ -256,8 +264,32 @@ end
 local function breeding(f, on)
   for _, pid in ipairs(f.pens) do
     local rec = herd.pen(pid)
-    if rec and rec.pen.valid and rec.pen.active ~= on then rec.pen.active = on end
+    local want = on and not (rec and rec.unfed)
+    if rec and rec.pen.valid and rec.pen.active ~= want then rec.pen.active = want end
   end
+end
+
+-- An incubator whose biochamber is dead: its stock over FED_CAP goes feral (the wild's force, out of the incubator's
+-- hold); true once it has been unfed UNFED_WILD.
+local function unfed(rec, tick)
+  rec.unfed = rec.unfed or tick
+  local all = herd.stock(rec)
+  local feral = 0
+  for i = FED_CAP + 1, #all do
+    local u = all[i]
+    if u.valid then
+      if u.commandable and u.commandable.spawner then u.commandable.release_from_spawner() end
+      u.force = "enemy"
+      feral = feral + 1
+    end
+  end
+  if feral > 0 then
+    local keep = {}
+    for i = 1, math.min(FED_CAP, #all) do keep[#keep + 1] = all[i] end
+    rec.stock = keep
+    rec.feral = (rec.feral or 0) + feral
+  end
+  return tick - rec.unfed >= UNFED_WILD
 end
 
 function farm.tick(tick)
@@ -270,13 +302,21 @@ function farm.tick(tick)
     for _, pid in ipairs(f.pens) do
       local rec = herd.pen(pid)
       if rec and rec.pen.valid then
+        -- Its cell (old saves had none: built now); its biochamber dead, it is unfed and goes wild in time.
+        local c = cell.of(pid) or cell.build(pid, rec.pen, f.id, f.pos)
+        if c and not (c.chamber and c.chamber.valid) and unfed(rec, tick) then
+          cell.forget(pid)
+          herd.release(pid)
+          f.lost_to_feed = (f.lost_to_feed or 0) + 1
+          trace(string.format("farm %d: an incubator unfed for %d minutes went wild", f.id, UNFED_WILD / 3600))
         -- Off creep it starves, then goes wild.
-        if creep.covered(surface, rec.pen.position) then
+        elseif creep.covered(surface, rec.pen.position) then
           rec.starving = nil
           table.insert(left, pid)
         else
           rec.starving = rec.starving or tick
           if tick - rec.starving >= STARVE then
+            cell.forget(pid)
             herd.release(pid)
             f.lost_to_starving = (f.lost_to_starving or 0) + 1
             trace(string.format("farm %d: an incubator starved off its creep and went wild", f.id))
@@ -284,6 +324,8 @@ function farm.tick(tick)
             table.insert(left, pid)
           end
         end
+      else
+        cell.forget(pid)
       end
     end
     f.pens = left
@@ -312,6 +354,7 @@ function farm.tick(tick)
         rec.farm = f.id
         table.insert(f.pens, pid)
         creep.plant(surface, rec.pen.position, f.id)
+        cell.build(pid, rec.pen, f.id, f.pos)
         f.taken = (f.taken or 0) + 1
         trace(string.format("farm %d: its creep took the nest at %.0f,%.0f (%d incubators)", f.id, rec.pen.position.x,
           rec.pen.position.y, #f.pens))
@@ -390,8 +433,16 @@ function farm.state()
   for id, f in pairs(s.list) do
     local tags = 0
     for _, t in pairs(f.tags) do if t.valid then tags = tags + 1 end end
+    local unfed, feral = {}, 0
+    for _, pid in ipairs(f.pens) do
+      local rec = herd.pen(pid)
+      if rec and rec.unfed then unfed[#unfed + 1] = {id = pid, since = rec.unfed, active = rec.pen.valid and rec.pen.active,
+        stock = #herd.stock(rec)} end
+      feral = feral + (rec and rec.feral or 0)
+    end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
-      landed = f.landed, taken = f.taken or 0, starved = f.lost_to_starving or 0, biomass = creep.of(id) and {
+      landed = f.landed, taken = f.taken or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
+      lost_to_feed = f.lost_to_feed or 0, biomass = creep.of(id) and {
         now = creep.of(id).biomass, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled,
         spent = creep.of(id).spent or 0, bred = creep.of(id).bred or 0}})
   end

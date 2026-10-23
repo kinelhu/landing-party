@@ -21,8 +21,8 @@ CLASSES = [
     ("air", ["harrier", "scavenger"]),
     # Hard on fliers, light on the ground (2026-10-23): one per side.
     ("anti-air", ["anti-air trooper", "flak buggy", "bred spore"]),
-    ("bred", ["bred medium", "bred big", "bred spitter", "bred burster", "bred stomper"]),
-    ("bred on creep", ["bred medium (creep)", "bred big (creep)"]),
+    ("bred", ["bred small", "bred medium", "bred big", "bred behemoth", "bred spitter", "bred burster", "bred stomper"]),
+    ("bred on creep", ["bred medium (creep)", "bred big (creep)", "bred spitter (creep)"]),
 ]
 CLASS_OF = {k: c for c, ks in CLASSES for k in ks}
 # The batch's labels (tests/lp-arena/batch.lua, internal) as players read them (locale).

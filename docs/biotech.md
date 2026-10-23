@@ -462,7 +462,9 @@ by about 90.
 
 Built for the gap the arena's faction table found (DESIGN "Fliers and anti-air", faction metrics): Kessler-Hayashi
 answered every breed at +100 and Synthexis answered it at +36, nothing bred beating the railgunner or the hulls.
-`lp-bred-stomper`: Space Age's small stomper (a spider-unit) in Synthexis's green, its legs copied
+`lp-bred-stomper`: Space Age's small stomper (a spider-unit), its plates violet (the creep's colour; 0.1.66: tinted
+green whole it read as a plastic toy, the user, and of violet, acid yellow and deep green on the plates alone, with the
+body's art left as vanilla draws it, the user chose violet), its legs copied
 (`lp-bred-stomper-leg`). Bred from evolution 0.8 (one in fifty from 0.95), priced 150.
 - **Spike (2026-10-23, deleted):** a small stomper on its own force joined a unit group with six biters (`add_member`
   on a spider-unit works), marched with it, crossed a wall of 21 pieces leaving all 21, and stomped the gun turret behind
@@ -511,3 +513,34 @@ Screenshots (2026-10-23): the breeds on creep by day and night (the cinder reads
 light; the spitter's body is lower and longer), and a cinder's death at a wall (crack, eruption, the middle pieces gone).
 The bred worm read close to a wild one (its mask, the only tinted layer, is a thin band): its body layers are now
 tinted light green as well (not yet seen in a screenshot).
+
+### The culture site: the cell and the feed (0.1.66; the identity consult's steps 2 and 3)
+
+The user, after the stomper: the base next, its identity beyond "a small sprite on the captured nest".
+- **The cell** (`scripts/cell.lua`): beside each incubator, 7 tiles out of the culture's middle, a 5x5 pad of
+  acid-green refined concrete (the ground under creep kept as its hidden tile; trees, rocks and remains cleared), a
+  biochamber at work on it (`lp-biochamber`: Space Age's, no power, no nutrients, a recipe that makes nothing for
+  ever, so its animation and light run) and an always-on lamp in acid green (`lp-cell-lamp`). Built when a culture
+  lands, when its creep takes a nest, and for old saves' incubators at the farm's next tick. An incubator gone wild or
+  dead takes its biochamber and lamp with it; the pad stays, a floor.
+- **The feed as the weak point** (`farm.lua`): an incubator whose biochamber is dead is unfed. It breeds nothing (it
+  stays inactive whatever the biomass), keeps 12 of its stock (`FED_CAP`; the rest goes feral: released from it, on the
+  wild's force, at peace with Synthexis as all wild biters are), and after 10 minutes (`UNFED_WILD`) goes back to the
+  wild, a plain spawner. A biochamber hit calls no wave home; an incubator hit does. The quiet kill: raid the feed while
+  the herd is out, and it comes home to a dead cell.
+- **Tests:** `farm` (default and `killed`): a cell by each incubator (pad, biochamber at work, lamp: 4 of 4), and the
+  biochambers gone with the incubators. `farm starve` (30 stock, its biochamber killed a minute on): inactive, 12 kept,
+  36 feral; wild 36,600 ticks after (10 minutes and the farm's 10-second tick); the culture lives on. `farm quiet`: a
+  biochamber hit during the march, no recall (`farm raid`, an incubator hit, still recalls).
+- **Next (the consult's steps 4 to 6):** the substrate (Gleba soil, yumako trees, farm towers, a heating tower) and
+  technicians walking fruit from towers to biochambers (kill them and the feed stops until replacements land); the
+  clinic (a biolab: while it stands the breeds climb tiers); loot and the trophy (a dead site leaves its soil).
+
+### The behemoth priced (0.1.66)
+
+Added to the arena with the bred small and the spitter on creep (the user: "Are all units in the arena tester?"): the
+incubators breed behemoths from evolution 0.9 (the vanilla spawner's table, bred), and at 60 biomass it beat nearly
+every kind, lifting Synthexis's faction answers to +96 and over. At 200 (two a fight) it beats walkers, lightning and
+laser tanks, troopers and buggies, and loses to laser troopers, heavy laser troopers, rocket troopers, railgunners and
+tanks.
+

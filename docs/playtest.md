@@ -148,9 +148,13 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     feel unanswered? Do the anti-air units feel useless when no flier comes?
 37. **Plain names** (0.1.64): Kessler-Hayashi's units are now Laser trooper, Heavy laser trooper, Anti-air trooper,
     Heavy tank, Laser tank and Lightning tank (were Line trooper, Lance, Skyguard, Aegis, Prism, Tesla).
-38. **The stomper** (0.1.65, evolution 0.8 and up): a green five-legged thing three tiles across walks over your wall
-    with the herd, no breach, and stomps what stands inside. Rifles and lasers barely slow it; battle tanks, fliers,
-    flamers and artillery do. Does it read as Synthexis's (green), and does it feel answerable?
+38. **The stomper** (0.1.65, violet plates 0.1.66; evolution 0.8 and up): a five-legged thing three tiles across with
+    violet plates walks over your wall with the herd, no breach, and stomps what stands inside. Rifles and lasers barely
+    slow it; battle tanks, fliers, flamers and artillery do. Does it read as Synthexis's, and does it feel answerable?
+39. **Its cells and their feed** (0.1.66): by each incubator a small acid-green floor, a biochamber at work on it and a
+    green lamp: the culture at night is green dots. Kill a biochamber: that incubator stops breeding, most of its stock
+    wanders off wild, and ten minutes later it is a plain nest again. Hitting a biochamber does not call the wave home
+    (hitting an incubator does): raid the feed while the herd is out. Do the cells read as a lab on the nests?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

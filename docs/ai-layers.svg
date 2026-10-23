@@ -163,7 +163,7 @@
 <title>The biotech</title>
 <path fill="#eef2f7" stroke="black" d="M574.12,-435C574.12,-435 477.88,-435 477.88,-435 471.88,-435 465.88,-429 465.88,-423 465.88,-423 465.88,-411 465.88,-411 465.88,-405 471.88,-399 477.88,-399 477.88,-399 574.12,-399 574.12,-399 580.12,-399 586.12,-405 586.12,-411 586.12,-411 586.12,-423 586.12,-423 586.12,-429 580.12,-435 574.12,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="526" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="526" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">3 modules, 1577 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="526" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 1703 lines</text>
 </g>
 <!-- The biotech&#45;&gt;Seams (leaves) -->
 <g id="edge15" class="edge">
