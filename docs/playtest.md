@@ -155,6 +155,10 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     green lamp: the culture at night is green dots. Kill a biochamber: that incubator stops breeding, most of its stock
     wanders off wild, and ten minutes later it is a plain nest again. Hitting a biochamber does not call the wave home
     (hitting an incubator does): raid the feed while the herd is out. Do the cells read as a lab on the nests?
+40. **Its substrate and technicians** (0.1.67): near its middle a patch of Gleba soil with yumako trees and a burning
+    heating tower (the site's light at night); white-suited technicians walk from it to each biochamber in turn. Kill
+    them: five minutes on its biochambers stop and its incubators starve; a pod brings two more ten minutes later. Is
+    the walk between tower and glass readable, and is killing the technicians worth the trip?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

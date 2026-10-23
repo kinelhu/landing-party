@@ -478,6 +478,7 @@ remote.add_interface("landing-party", {
   farm_state = function() return farm.state() end,
   creep_state = function() return creep.state() end,
   cell_state = function() return cell.state() end,
+  cell_sites = function() return cell.sites() end,
   farm_wave = function() return farm.debug_wave() end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,

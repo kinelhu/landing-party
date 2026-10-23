@@ -73,7 +73,7 @@ schedule(240, function()
       return surface().create_entity{name = name, position = {x, y}, force = name:find("grubstake") and "lp-grubstake" or "lp-serenity"}
     end)
     if ok and e then
-      e.active = false
+      e.disabled_by_script = true
       rendering.draw_text{text = name:gsub("^lp%-", ""), surface = surface(), target = {x, y + 3}, color = {1, 1, 1},
         scale = 1.2, alignment = "center"}
     end
@@ -101,7 +101,7 @@ schedule(400, function()
       return surface().create_entity{name = name, position = pos, force = name:find("grubstake") and "lp-grubstake" or "lp-serenity"}
     end)
     if ok and e then
-      e.active = false
+      e.disabled_by_script = true
       table.insert(S.portraits, {name = name, pos = pos})
     end
   end
@@ -156,7 +156,7 @@ schedule(500, function()
   end
 end)
 schedule(530, function()
-  for _, m in ipairs(S.mocks or {}) do for _, e in ipairs(m.row) do if e.valid then e.active = false end end end
+  for _, m in ipairs(S.mocks or {}) do for _, e in ipairs(m.row) do if e.valid then e.disabled_by_script = true end end end
 end)
 schedule(540, function()
   for _, m in ipairs(S.mocks or {}) do

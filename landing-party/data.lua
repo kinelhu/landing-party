@@ -36,7 +36,7 @@ local function made_of(name, cost)
 end
 local function loot_of(list)
   local loot = {}
-  for _, m in ipairs(list) do table.insert(loot, {item = m[1], probability = 0.8, count_min = m[2], count_max = m[3]}) end
+  for _, m in ipairs(list) do table.insert(loot, {type = "item", name = m[1], independent_probability = 0.8, amount_min = m[2], amount_max = m[3]}) end
   return #loot > 0 and loot or nil
 end
 local function mined_of(list)
@@ -289,6 +289,8 @@ local gun_turret = copy("ammo-turret", "gun-turret", "lp-gun-turret")
 local gate = copy("gate", "gate", "lp-gate")
 -- A flamethrower turret covering a gate (Serenity), kept in light oil by script.
 local flamer = copy("fluid-turret", "flamethrower-turret", "lp-flamer")
+-- No circuit network (2.1 gave the flamethrower turret 8 connectors where a copy takes 4).
+flamer.circuit_connector = nil
 -- Its own stream: the base one's splash hurt every force, and the flamers beside the gates burned 8 to 11 of Serenity's
 -- own units a run (review). The splash spares its own side; the burning ground stays (without it biters took a
 -- settlement apart, visit b - rocket), and still burns whoever stands in it.
@@ -499,7 +501,7 @@ data:extend({
     stack_size = 200, subgroup = "other"},
   {type = "item", name = "lp-part", icon = "__base__/graphics/icons/iron-gear-wheel.png", hidden = true,
     stack_size = 200, subgroup = "other"},
-  {type = "recipe", name = "lp-parts", category = "lp-fabrication", hidden = true, enabled = true,
+  {type = "recipe", name = "lp-parts", categories = {"lp-fabrication"}, hidden = true, enabled = true,
     energy_required = shared.PART_SECONDS,
     ingredients = {{type = "item", name = "lp-feedstock", amount = shared.FEEDSTOCK_PER_PART}},
     results = {{type = "item", name = "lp-part", amount = 1}}},
@@ -586,7 +588,7 @@ local power_tap = {type = "electric-energy-interface", name = "lp-power-tap", hi
   selection_box = {{-0.5, -0.5}, {0.5, 0.5}}, dying_explosion = "explosion", picture = lamp_pic, gui_mode = "none",
   energy_source = {type = "electric", usage_priority = "secondary-input", buffer_capacity = "1MJ"},
   energy_production = "0W", energy_usage = "0W",
-  loot = {{item = "copper-cable", probability = 1, count_min = 5, count_max = 10}}}
+  loot = {{type = "item", name = "copper-cable", independent_probability = 1, amount_min = 5, amount_max = 10}}}
 local power_receiver = {type = "electric-energy-interface", name = "lp-power-receiver", hidden = true,
   icon = "__base__/graphics/icons/small-lamp.png", icon_size = 64,
   flags = {"placeable-neutral", "placeable-off-grid", "not-on-map", "not-blueprintable", "not-deconstructable"},

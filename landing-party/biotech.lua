@@ -311,7 +311,7 @@ else
 end
 -- Killed, its gland (the player's pheromone bait research; it dropped from Grubstake's flare canisters until the flare
 -- was retired, 2026-10-22).
-pen.loot = {{item = "lp-pheromone-gland", probability = 1, count_min = 1, count_max = 2}}
+pen.loot = {{type = "item", name = "lp-pheromone-gland", independent_probability = 1, amount_min = 1, amount_max = 2}}
 table.insert(out, pen)
 
 -- Creep (the user, 2026-10-22: "kind of a Zerg creep?"; scripts/creep.lua): Gleba's jellynut soil, not mineable, with
@@ -374,7 +374,7 @@ table.insert(out, mend)
 -- glow where Kessler-Hayashi has white light and Grubstake amber. The biochamber needs no power and no nutrients (it
 -- crafts nothing, for ever: its animation and light are the tell that the incubator is fed).
 table.insert(out, {type = "recipe-category", name = "lp-culture"})
-table.insert(out, {type = "recipe", name = "lp-culture-feed", category = "lp-culture", hidden = true, enabled = true,
+table.insert(out, {type = "recipe", name = "lp-culture-feed", categories = {"lp-culture"}, hidden = true, enabled = true,
   energy_required = 20, ingredients = {}, results = {}, icon = "__space-age__/graphics/icons/biochamber.png"})
 do
   local c = table.deepcopy(data.raw["assembling-machine"]["biochamber"])
@@ -408,6 +408,20 @@ do
   l.light_when_colored = nil
   l.circuit_connector = nil
   table.insert(out, l)
+end
+
+-- The substrate's heart (the identity consult, step 4; scripts/cell.lua): Space Age's heating tower as a prop, always
+-- burning (its fire and light drawn as one animation), the site's silhouette from far and its glow at night.
+do
+  local h = data.raw.reactor["heating-tower"]
+  local layers = {}
+  for _, l in ipairs(table.deepcopy(h.picture.layers)) do l.repeat_count = 24; table.insert(layers, l) end
+  for _, l in ipairs(table.deepcopy(h.working_light_picture.layers)) do table.insert(layers, l) end
+  table.insert(out, {type = "simple-entity-with-force", name = "lp-heating-tower", localised_name = {"entity-name.lp-heating-tower"},
+    hidden = true, icon = h.icon, icon_size = h.icon_size, flags = {"placeable-neutral", "placeable-enemy", "not-blueprintable"},
+    max_health = 500, collision_box = h.collision_box, selection_box = h.selection_box, render_layer = "object",
+    dying_explosion = h.dying_explosion, map_color = B.color, enemy_map_color = B.color,
+    animations = {layers = layers}})
 end
 
 data:extend(out)

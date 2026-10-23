@@ -7718,8 +7718,8 @@ scenarios.cinder = function()
     S.cinder = surface().create_entity{name = "lp-bred-cinder", position = {c[1], c[2] - 1.5}, force = "lp-biotech"}
     S.mate = surface().create_entity{name = "lp-bred-medium-biter", position = {c[1] + 2, c[2] - 2}, force = "lp-biotech"}
     S.pen = surface().create_entity{name = "lp-pen", position = {c[1] - 3, c[2] - 5}, force = "lp-biotech"}
-    S.mate.active = false
-    S.cinder.active = false
+    S.mate.disabled_by_script = true
+    S.cinder.disabled_by_script = true
   end)
   schedule(120, function() if S.cinder.valid then S.died_at = S.cinder.position; S.cinder.die("player") end end)
   schedule(360, function()
@@ -7834,6 +7834,29 @@ scenarios.farm = function()
           if surface().get_tile(c.at[1], c.at[2]).name == "acid-refined-concrete" then pads = pads + 1 end
         end
         S.cells = {n = #cs, working = working, lamps = lamps, pads = pads}
+        local site = lp("cell_sites")[1]
+        S.site = site and {tower = site.tower, techs = site.techs, plants = site.plants,
+          soil = surface().get_tile(site.at[1], site.at[2] + 2).name}
+        if mix == "techs" and site then
+          -- Every technician killed: the feed stops within five minutes, a pod brings more at ten, the feed comes back.
+          for _, u in pairs(surface().find_entities_filtered{name = "lp-technician"}) do u.die("player") end
+          S.techs_killed = game.tick
+        end
+      end
+      if mix == "techs" and S.techs_killed then
+        local since = game.tick - S.techs_killed
+        local fs = lp("farm_state").farms[1]
+        local cs, working = lp("cell_state"), 0
+        for _, c in ipairs(cs) do if c.working then working = working + 1 end end
+        if since >= 7 * 3600 and not S.hungry then
+          S.hungry = {working = working, unfed = fs and #fs.unfed or 0, pens = fs and fs.pens or 0}
+        end
+        if since >= 14 * 3600 and not S.fed_again then
+          local site = lp("cell_sites")[1]
+          S.fed_again = {working = working, unfed = fs and #fs.unfed or 0, pens = fs and fs.pens or 0,
+            techs = site and site.techs or 0}
+          finish_early()
+        end
       end
       local st = lp("herd_state")
       for _, w in ipairs(st.waves) do
@@ -7866,13 +7889,15 @@ scenarios.farm = function()
           finish_early()
         end
       end
-      if mix ~= "killed" and mix ~= "starve" and #st.log > 0 then finish_early() end
+      if mix ~= "killed" and mix ~= "starve" and mix ~= "techs" and #st.log > 0 then finish_early() end
     end)
   end
   schedule(END - 60, function()
     local st = lp("herd_state")
     local w = st.log[1]
     info("farm: " .. serpent.line(lp("farm_state")))
+    info("farm: sites " .. serpent.line(lp("cell_sites")))
+    info("farm: cells " .. serpent.line(lp("cell_state")))
     info("farm: wave " .. serpent.line(w and {outcome = w.outcome, blind = w.blind, size = w.size, left = w.left,
       kills = w.kills, recalled = w.recalled, t_launch = w.t_launch, t_breach = w.t_breach, t_end = w.t_end}))
     check("farm: it landed", S.landed ~= nil, tostring(S.landed))
@@ -7887,6 +7912,19 @@ scenarios.farm = function()
     local c = S.cells or {}
     check("farm: a cell by each incubator (pad, biochamber at work, lamp)", (c.n or 0) == (S.pens0 or -1)
       and c.working == c.n and c.lamps == c.n and c.pads == c.n, serpent.line(c))
+    local site = S.site or {}
+    check("farm: its substrate (Gleba soil, a heating tower, plants) and technicians", site.tower == true
+      and site.soil == "artificial-yumako-soil" and (site.plants or 0) >= 4 and (site.techs or 0) >= 2, serpent.line(site))
+    if mix == "techs" then
+      info(string.format("farm techs: after 7 min %s; after 14 min %s", serpent.line(S.hungry), serpent.line(S.fed_again)))
+      -- (An incubator its creep took after the killing has a cell of its own, fed five minutes from its building.)
+      check("farm: its technicians dead, the biochambers stopped and the incubators unfed", S.hungry
+        and S.hungry.unfed >= S.pens0 and S.hungry.working <= S.hungry.pens - S.pens0, serpent.line(S.hungry))
+      check("farm: technicians came back by pod and the feed with them, no incubator lost", S.fed_again
+        and S.fed_again.techs >= 2 and S.fed_again.working == S.fed_again.pens and S.fed_again.unfed == 0
+        and S.fed_again.pens >= S.pens0, serpent.line(S.fed_again))
+      return
+    end
     if mix == "killed" then
       check("farm: every pen dead, the farm gone", S.after and #S.after.farms == 0, serpent.line(S.after))
       check("farm: its tag gone", S.tags_after == 0, tostring(S.tags_after))

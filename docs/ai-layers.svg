@@ -163,7 +163,7 @@
 <title>The biotech</title>
 <path fill="#eef2f7" stroke="black" d="M574.12,-435C574.12,-435 477.88,-435 477.88,-435 471.88,-435 465.88,-429 465.88,-423 465.88,-423 465.88,-411 465.88,-411 465.88,-405 471.88,-399 477.88,-399 477.88,-399 574.12,-399 574.12,-399 580.12,-399 586.12,-405 586.12,-411 586.12,-411 586.12,-423 586.12,-423 586.12,-429 580.12,-435 574.12,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="526" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="526" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 1703 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="526" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 1897 lines</text>
 </g>
 <!-- The biotech&#45;&gt;Seams (leaves) -->
 <g id="edge15" class="edge">
@@ -175,9 +175,9 @@
 <!-- The biotech&#45;&gt;Corporation -->
 <g id="edge14" class="edge">
 <title>The biotech&#45;&gt;Corporation</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.2" d="M504.82,-398.59C487.15,-384.05 461.74,-363.16 441.98,-346.9"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.2" points="444.41,-344.37 434.46,-340.72 439.97,-349.78 444.41,-344.37"/>
-<text xml:space="preserve" text-anchor="middle" x="475.04" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M504.82,-398.59C487.31,-384.18 462.2,-363.53 442.51,-347.34"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="444.76,-344.66 434.82,-341.01 440.32,-350.07 444.76,-344.66"/>
+<text xml:space="preserve" text-anchor="middle" x="475.04" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
 </g>
 <!-- The map -->
 <g id="node7" class="node">

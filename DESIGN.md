@@ -1,7 +1,7 @@
 # Landing Party: design
 
 Living document, organised for design reviews: what is decided, what is built and how it was tested, what
-is open. Prototype stage, Factorio 2.0 (2.1 is experimental only). Prefix `lp-`, mod folder `landing-party/`.
+is open. Prototype stage, Factorio 2.1 (ported from 2.0 in 0.2.0, 2026-10-23, when Steam moved to 2.1.23). Prefix `lp-`, mod folder `landing-party/`.
 Numbers quoted here are the code's at the time of writing; the code is the authority.
 
 **The campaign frame (proposed 2026-10-13): `docs/campaign.md`.** Rival corporations across a world, revealed
@@ -36,7 +36,7 @@ document still says Serenity where it records history.
 | Air units ignoring walls, mines, flamethrowers | built | `air` |
 | Ground-only weapons (no anti-air) and armour classes (flat laser and electric on hulls): the RTS pass | built 0.1.48 | arena |
 | Anti-air, one per side: Kessler-Hayashi's Skyguard and Grubstake's flak buggy (bought on losses to fliers or the player's combat robots), Synthexis's spore spitter (bred from its arrival) | built 0.1.63 | `unitnode` (`skyguard`, `flak-buggy`), arena |
-| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.66 (its cells: pad, biochamber, lamp by each incubator, the feed its weak point; the spore spitter, its anti-air; the stomper, tier 4; the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (eleven), `farm` (six), `creep` (seven), `cinder`, `clear culture` |
+| A third corporation, Synthexis (id biotech): pens and breeds, its force (at peace with wild biters and Grubstake), a wave as a pack (scout loop and mark, trail, march, breach, what feeds the guns, home); its arrival on a nest field 600 to 1,500 tiles out at evolution 0.25, worms, a raid on a pen recalls its wave; creep (tumors, nest to nest, quicker and mending on it, withdrawn when its tumors die, incubators off it go wild); biomass (breeds paid at the arena's prices from what its creep drinks of the pollution, a trickle, and its pod's 200): `docs/biotech.md` | built 0.1.51 to 0.1.67 (its cells: pad, biochamber, lamp by each incubator, the feed its weak point; its substrate and technicians who carry the feed; the spore spitter, its anti-air; the stomper, tier 4; the spitter, tier 1, priced 9 by the arena, holding the breach; the runt and the probe; the cinder, tier 3, priced 70; its two levers; Kessler-Hayashi clears its incubators as nests; the break with Grubstake over its creep) | `herd` (eleven), `farm` (seven), `creep` (seven), `cinder`, `clear culture` |
 | Headquarters per corporation (fortress and uplink): consolidation, fall, withdrawal, prize | built | `hq`, `uplink` |
 | Player army: barracks, troopers, rally beacons (hold, advance, occupy, retreat) | built (first pass) | `army` |
 | Beacon as a combinator: own or wired signals, X/Y move the rally point, reach drawn | built | `orders` |
@@ -3350,6 +3350,15 @@ nothing renders then. It needs the screen awake: run it when the user is at the 
 tighter layout (54 at 13 tiles apart overflow the frame).
 
 ## Engine notes
+- **Factorio 2.1 (the port, 0.2.0, 2026-10-23):** what broke loading: loot is a list of item products (`type`, `name`,
+  `amount_min`/`amount_max`, `independent_probability`); recipes take `categories`, not `category`; a copied flamethrower
+  turret's 8 circuit connectors were refused (dropped: the corporations wire nothing); the shotgun pellet's
+  `target_effects` became a list. At run time `LuaEntity::active` is read-only: `disabled_by_script` turns a machine off
+  (reading `active` is false when anything disables it). Vanilla moved too, without errors: a magazine's
+  `target_effects` now open with an impact and carry the damage second (our own guns are built by `gun()`, untouched),
+  rocket turrets 400 to 1,500 health, Tesla turrets 1,000 to 2,000, the shotgun's cooldown 60 to 40, cannon shells aimed
+  at a position, groups sized by `size_in_group` (big 2, behemoth 3). Steam updated the game mid-regression: every run
+  failed at launch with "Incompatible Factorio version", a launch failure, not a test result.
 - Pathfinding is the engine's (the biters' pathfinder): units route around whatever their collision mask
   hits; with no way round, ground units shoot through; groups arrive as blobs; spider-units step over;
   air units fly straight. Long trips go in ~100-tile legs.

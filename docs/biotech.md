@@ -542,5 +542,27 @@ Added to the arena with the bred small and the spitter on creep (the user: "Are 
 incubators breed behemoths from evolution 0.9 (the vanilla spawner's table, bred), and at 60 biomass it beat nearly
 every kind, lifting Synthexis's faction answers to +96 and over. At 200 (two a fight) it beats walkers, lightning and
 laser tanks, troopers and buggies, and loses to laser troopers, heavy laser troopers, rocket troopers, railgunners and
-tanks.
+tanks. The faction table with every breed (4,080 fights): Synthexis against Kessler-Hayashi -13, against Grubstake -8,
+against the player -1; the player against Kessler-Hayashi +24.
+
+### The substrate and technicians (0.1.67; the identity consult's step 4)
+
+- **The substrate** (`cell.site`): a blot of Gleba soil (`artificial-yumako-soil`, radius 5) round a heating tower
+  (`lp-heating-tower`: Space Age's as a prop, always burning, its fire and light one animation: the site's silhouette
+  and its glow at night), eight yumako trees and jellystems on it. Laid clear of nests and worms by its blot and a
+  margin, 10 to 40 tiles from the culture's middle (the first run laid it on an incubator: its soil took the creep from
+  under it, and the incubator starved and went wild, was retaken by the creep, and starved again, five times in 40
+  minutes). It stays when the culture is gone (the trophy, step 6).
+- **Technicians** (`lp-technician`: a plain suit in white and green, unarmed, 80 health): two, and one more for every
+  four incubators (one walks out of the tower every ten minutes while short). Each walks from the tower to the next
+  biochamber in turn, to the pad's edge on the tower's side (the biochamber's middle is inside it: no path ends there),
+  waits 12 seconds, and walks back; each visit feeds that biochamber five minutes. Unvisited longer, a biochamber stops
+  (its animation and lamp go) and its incubator is unfed as if the biochamber were dead (breeds nothing, keeps 12, wild
+  at ten minutes), back at work at the next visit. Every technician dead, a pod brings two more ten minutes on: the
+  reprieve. (A unit made by script wanders, which counts as a command: the first rounds were never sent.)
+- **A fix found on the way:** an unfed incubator's feral biters were still in a wave's list, and adding them back to
+  its group raised an error (a feral biter is the wild's): a wave now takes only its own (`herd.lua`).
+- **Tests:** `farm` (default): the substrate (soil, the tower, 8 plants) and two technicians; no incubator unfed in 40
+  minutes. `farm techs`: every technician killed at landing; seven minutes on, every original incubator unfed and its
+  biochamber stopped; fourteen minutes on, technicians back by pod (3), every biochamber at work, none unfed, none lost.
 

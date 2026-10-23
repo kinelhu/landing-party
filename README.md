@@ -1,6 +1,6 @@
 # Landing Party
 
-A Factorio 2.0 + Space Age mod, in development: rival corporations answer your rocket programme. They land, mine,
+A Factorio 2.1 + Space Age mod, in development: rival corporations answer your rocket programme. They land, mine,
 build settlements of walled hubs, roads and outposts, and fight you with an army that is the output of their economy.
 Not a reskin of biters: each corporation is an adversary with intent and a character the player learns.
 

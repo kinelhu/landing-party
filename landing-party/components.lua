@@ -26,7 +26,7 @@ data:extend(out)
 local function add(type, name, item, min, max, p)
   local e = data.raw[type][name]
   e.loot = e.loot or {}
-  table.insert(e.loot, {item = item, probability = p or 1, count_min = min, count_max = max})
+  table.insert(e.loot, {type = "item", name = item, independent_probability = p or 1, amount_min = min, amount_max = max})
 end
 add("radar", "lp-grubstake-pacifier", "lp-pheromone-gland", 3, 5)
 add("simple-entity-with-force", "lp-claim-rig", "lp-drill-head", 2, 2)

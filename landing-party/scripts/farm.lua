@@ -34,7 +34,8 @@ local FIELD, FIELD_MIN = 40, 3
 local PENS = 4
 local PENS_MAX = 12           -- a culture's incubators at most, taken by its creep
 local STARVE = 3 * 3600       -- off creep this long, an incubator goes wild
--- Its feed (the identity consult's weak point; scripts/cell.lua): an incubator whose biochamber is dead breeds nothing,
+-- Its feed (the identity consult's weak point; scripts/cell.lua): an incubator whose biochamber is dead (or stopped,
+-- no technician having come for five minutes) breeds nothing,
 -- keeps FED_CAP of its stock (the rest goes feral: the wild's), and after UNFED_WILD goes back to the wild. A biochamber
 -- hit calls no wave home (a pen hit does): the quiet kill, a raid on the feed while the herd is out.
 local FED_CAP = 12
@@ -168,6 +169,8 @@ function farm.land(surface, pos)
   end
   s.list[f.id] = f
   creep.culture(f.id, surface, pos)
+  -- Its substrate and technicians (scripts/cell.lua).
+  cell.site(f.id, surface, f.pos)
   creep.of(f.id).biomass = START_BIOMASS * tune.strength("biotech")
   tag(f)
   trace(string.format("farm %d landed at %.0f,%.0f: %d pens", f.id, pos.x, pos.y, #f.pens))
@@ -200,6 +203,7 @@ local function gone(f, why)
   for _, t in pairs(f.tags) do if t.valid then t.destroy() end end
   st().list[f.id] = nil
   creep.forget(f.id)
+  cell.forget_site(f.id)
   st().next_arrival = game.tick + RELAND
   trace(string.format("farm %d gone (%s); lands again in %d minutes", f.id, why, RELAND / 3600))
 end
@@ -265,7 +269,7 @@ local function breeding(f, on)
   for _, pid in ipairs(f.pens) do
     local rec = herd.pen(pid)
     local want = on and not (rec and rec.unfed)
-    if rec and rec.pen.valid and rec.pen.active ~= want then rec.pen.active = want end
+    if rec and rec.pen.valid and rec.pen.disabled_by_script ~= not want then rec.pen.disabled_by_script = not want end
   end
 end
 
@@ -299,12 +303,18 @@ function farm.tick(tick)
   for id, f in pairs(s.list) do
     local left = {}
     local surface = game.surfaces[f.surface]
+    -- Its substrate (older saves: built now) and its technicians' rounds.
+    cell.site(id, surface, f.pos)
+    cell.tick(id, surface, f.pens, tick)
     for _, pid in ipairs(f.pens) do
       local rec = herd.pen(pid)
       if rec and rec.pen.valid then
         -- Its cell (old saves had none: built now); its biochamber dead, it is unfed and goes wild in time.
         local c = cell.of(pid) or cell.build(pid, rec.pen, f.id, f.pos)
-        if c and not (c.chamber and c.chamber.valid) and unfed(rec, tick) then
+        -- Unfed: its biochamber dead, or stopped for want of a technician's visit.
+        local hungry = c and (not (c.chamber and c.chamber.valid) or cell.hungry(c, tick))
+        if not hungry and rec.unfed then rec.unfed = nil end
+        if hungry and unfed(rec, tick) then
           cell.forget(pid)
           herd.release(pid)
           f.lost_to_feed = (f.lost_to_feed or 0) + 1

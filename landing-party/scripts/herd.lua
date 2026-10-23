@@ -362,7 +362,9 @@ end
 
 local function herd_units(w)
   local out = {}
-  for _, u in ipairs(w.members) do if u.valid and u ~= w.scout then table.insert(out, u) end end
+  -- Its own only: an unfed incubator's stock goes feral (farm.lua), and a feral biter in a wave's list is the wild's
+  -- (add_member to its group raised an error).
+  for _, u in ipairs(w.members) do if u.valid and u ~= w.scout and u.force.name == B.force then table.insert(out, u) end end
   return out
 end
 
@@ -669,7 +671,7 @@ local function cover(w)
   local rear
   local n = 0
   for _, u in ipairs(w.members) do
-    if is_spitter(u) and not u.commandable.parent_group then
+    if u.valid and u.force.name == B.force and is_spitter(u) and not u.commandable.parent_group then
       rear = rear or s.create_unit_group{position = u.position, force = B.force}
       rear.add_member(u)
       n = n + 1

@@ -452,8 +452,8 @@ end
 local function quiet_pack(op)
   local piece = op.truck and truck_piece(op)
   if not (piece and piece.active) then return piece end
-  piece.active = false
-  for _, m in ipairs(op.mortars or {}) do if m.valid then m.active = false end end
+  piece.disabled_by_script = true
+  for _, m in ipairs(op.mortars or {}) do if m.valid then m.disabled_by_script = true end end
   if op.label and op.label.valid then op.label.destroy() end
   op.label = rendering.draw_text{text = "Packing up", surface = piece.surface, target = {entity = piece, offset = {0, -2}},
     color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}

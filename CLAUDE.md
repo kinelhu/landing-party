@@ -5,7 +5,7 @@ Prototype stage. Design: `DESIGN.md` (read it first). Mod folder: `landing-party
 Sister project: `~/Dev/factorio-mods` (Empirical Science); the two share the dev profile, nothing else.
 
 ## Environment
-- Factorio **2.0.77** + Space Age, Steam install, macOS arm64. Paths live in `scripts/env.sh`.
+- Factorio **2.1.23** + Space Age (Steam moved from 2.0.77 on 2026-10-23; the port is 0.2.0), Steam install, macOS arm64. Paths live in `scripts/env.sh`.
 - Game data (the best examples of how things are really done): `$APP/data/{core,base,space-age,quality,elevated-rails}`.
 - **API reference, version-matched:** `$APP/doc-html/runtime-api.json` and `prototype-api.json`.
   Look up every API before using it. Memory mixes the 1.1 and 2.0 APIs, which differ a lot.

@@ -149,7 +149,7 @@ shotgun_hand.attack_parameters = {
 local pellet = table.deepcopy(data.raw.projectile["shotgun-pellet"])
 pellet.name = "lp-pellet"
 -- Heavy shot: a biter's armour takes 4 (medium) to 12 (behemoth) off every hit, and pellets of 4 did next to nothing.
-pellet.action.action_delivery.target_effects.damage.amount = 9
+for _, t in ipairs(pellet.action.action_delivery.target_effects) do if t.type == "damage" then t.damage.amount = 9 end end
 -- Through its own side (force_condition defaults to all: six Shotgun hands lost 555 of 720 health to each other).
 pellet.force_condition = "not-same"
 
@@ -637,8 +637,21 @@ for _, k in ipairs({"movement_speed", "distance_per_frame", "vision_distance", "
 local tra = table.deepcopy(hauler.attack_parameters)
 tra.animation = table.deepcopy(truck.run_animation)
 truck.attack_parameters = tra
-truck.loot = {{item = "steel-plate", probability = 0.5, count_min = 8, count_max = 8}}
+truck.loot = {{type = "item", name = "steel-plate", independent_probability = 0.5, amount_min = 8, amount_max = 8}}
 data:extend({truck})
+
+-- Synthexis's technician (the identity consult, step 4; scripts/cell.lua): a plain suit in white and green, unarmed (a
+-- shove of 1 for the engine's sake; its walks are ordered undistracted), walking fruit from the substrate to the
+-- biochambers. Not a corporation's unit (no parts, no arena row).
+local technician = make_infantry("lp-technician", {r = 0.85, g = 1, b = 0.8, a = 1})
+technician.max_health = 80
+technician.movement_speed = 0.1
+technician.attack_parameters = gun(1, 1, 60, "melee")
+technician.attack_parameters.sound = nil
+technician.attack_parameters.animation = table.deepcopy(technician.run_animation)
+technician.map_color = shared.BIOTECH.color
+technician.enemy_map_color = shared.BIOTECH.color
+data:extend({technician})
 
 -- Anti-air, one per side (the user, 2026-10-23: "Not super comfortable about the flier units"; the arena had air beating
 -- splash and every breed by 100 and armour by 67, small arms its only answer). Each hits a flier hard and the ground
@@ -692,7 +705,7 @@ local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] =
   [scavenger] = {{"rocket", 1, 2}}, [railgunner] = {{"steel-plate", 2, 2}, {"advanced-circuit", 1, 1}}}
 for u, list in pairs(UNIT_LOOT) do
   u.loot = {}
-  for _, m in ipairs(list) do table.insert(u.loot, {item = m[1], probability = 0.5, count_min = m[2], count_max = m[3]}) end
+  for _, m in ipairs(list) do table.insert(u.loot, {type = "item", name = m[1], independent_probability = 0.5, amount_min = m[2], amount_max = m[3]}) end
 end
 
 data:extend({infantry, tank, walker, harrier, trooper, breacher, battle_tank, hauler, buggy, shotgun_hand, pellet,
