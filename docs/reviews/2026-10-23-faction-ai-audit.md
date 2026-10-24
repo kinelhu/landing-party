@@ -201,6 +201,11 @@ balance targets are judged after step 3 and again after 5; the constants are tun
   chunks in a tick; the search stops at the first rich site because evaluating them all stalled landings by over a
   second); territory with Grubstake's claims (section 3 was wrong: a claim has its own map mark by design, and the disc
   is the camp; claims added would also have widened what holds Kessler-Hayashi's line back).
+- **Step 6, site scoring (0.2.8):** done the way the stall allowed: an asynchronous landing already waits for its
+  candidates' ground (requested, not forced), so every clear and rich candidate of a ring is scored by the corporation's
+  `mind.site` (ore, nests on the way to the player, nest density, distance from rivals) and the best taken; a direct
+  landing keeps the first. Grubstake and Kessler-Hayashi swapped sites on seed 12345. Measured: shapes 2 of 4 seeds
+  (1 before), fights unchanged.
 - **Step 7 (first form, 0.2.4):** dispositions as weights, capabilities as flags. Grubstake's soft_only exposure gates
   (rival and player targets) are its mind's `max_exposure` (1.0; none for Kessler-Hayashi). The temper's other flags
   (strips, skims, taps, jumps, pact, night, prospects; cuts, bills) say what a corporation can do at all and stay

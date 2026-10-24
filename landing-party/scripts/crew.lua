@@ -125,7 +125,21 @@ function crew.take(b, job)
   -- A batch of nothing but what makes parts and power is not held for the reserve (the reserve is for it).
   local economy = true
   for _, q in ipairs(jobs) do if q.name and not ECONOMY[shared.kind_of(q.name)] then economy = false end end
-  if b.parts < bill + (economy and 0 or base.reserve(b)) + keep then b.waiting = "crew"; return true end
+  if b.parts < bill + (economy and 0 or base.reserve(b)) + keep then
+    -- Short for that, its jobs that make parts and power go alone (a new camp's mining waited behind its ore bin, held
+    -- for the reserve, and Kessler-Hayashi's camp never made a part on seed 4242, 2026-10-24).
+    local ejobs, ebill = {}, 0
+    for _, q in ipairs(b.queue) do
+      if q.module == m and q.name and ECONOMY[shared.kind_of(q.name)] and #ejobs < CREW_BATCH then
+        local c = shared.cost[q.name] or 0
+        if ebill + c > b.parts then break end
+        table.insert(ejobs, q)
+        ebill = ebill + c
+      end
+    end
+    if #ejobs == 0 then b.waiting = "crew"; return true end
+    jobs, bill, keep = ejobs, ebill, 0
+  end
   -- A drone lifts off from home (walls do not stop it); a truck forms past the outermost wall.
   local p
   if corp_crews(b) == "drone" then

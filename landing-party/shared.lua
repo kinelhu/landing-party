@@ -77,7 +77,9 @@ shared.CORPS = {
     -- max_exposure: the most defence it goes up against (a thief keeps off guarded ground; none for a corporation that
     -- goes anywhere).
     mind = {min_odds = 0.6, caution = 2, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 10}, counter = 0.5,
-      max_exposure = 1.0},
+      max_exposure = 1.0,
+      -- Where it lands (faction.site): by ore first and away from its rivals; the way to the player matters less.
+      site = {ore = 1.5, approach = 0.5, density = 0.3, rival = 1}},
     temper = {soft_only = true, strips = true, loots = true, sneaks = true, pact = true, jumps = true, taps = true, skims = true, night = true, prospects = true,
       -- How it answers a provocation (ops.answer), by kind: a loss (its unit, drone or building) or trespass (a turret
       -- covering its camp). The thief never fights fair: a snatch raid only where no turret covers it, else nothing (Fable,
@@ -160,7 +162,9 @@ shared.CORPS = {
     -- forgives. Being at war, its losses are fair war and go unanswered (ops.request_answer; the user, 2026-10-19), so
     -- the loss entry below is kept for a temper without `hostile`.
     -- Cuts: it surveys the power behind the turrets facing it and strikes the line (scripts/power.lua).
-    mind = {min_odds = 0.5, caution = 1, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 0}, counter = 1},
+    mind = {min_odds = 0.5, caution = 1, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 0}, counter = 1,
+      -- Where it lands (faction.site): a clear way to the player first; rivals do not move it.
+      site = {ore = 1, approach = 1.5, density = 0.5, rival = 0}},
     arrives = "late",
     temper = {provoked_only = true, hostile = true, cuts = true, bills = true, answers = {loss = "raid", trespass = "siege"}},
     -- Clean: its drills emit nothing (Grubstake's pollute).

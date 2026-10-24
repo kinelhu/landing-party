@@ -16,7 +16,7 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n767 lines", width=1.65, fillcolor="#eef2f7"];
+    "faction" [label="faction\n799 lines", width=1.69, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n409 lines", width=1.25, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
@@ -38,7 +38,7 @@ digraph ai {
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n469 lines", width=1.32, fillcolor="#eef2f7"];
+    "crew" [label="crew\n483 lines", width=1.34, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n144 lines", width=0.96, fillcolor="#eef2f7"];

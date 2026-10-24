@@ -152,11 +152,11 @@ local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"]
 -- What makes parts comes first: with its fabricators destroyed, a settlement spent its last 646 parts on new blocks,
 -- units and two turrets while their ground was held, and once it was free had nothing to rebuild them with, nor ever
 -- again (scenario occupy). Parts kept back for every pending rebuild of what makes them.
--- And always one of each, before any loss: kept back only once rebuilds were due, the parts were gone by then (a camp
--- at 13 parts lost its nine fabricators to a raid and, a fabricator costing 25, never made another, scenario raid,
--- 2026-10-24). Economy jobs still build below it.
-local FLOOR = 0
-for name in pairs(ECONOMY) do FLOOR = FLOOR + (shared.cost[name] or 0) end
+-- And always a fabricator and its pylon, before any loss: kept back only once rebuilds were due, the parts were gone by
+-- then (a camp at 13 parts lost its nine fabricators to a raid and, a fabricator costing 25, never made another, scenario
+-- raid, 2026-10-24). Economy jobs still build below it. (One of every economy kind, 57, held a camp landed with 60 from
+-- anything else: Kessler-Hayashi on seed 4242.)
+local FLOOR = (shared.cost["lp-fabricator"] or 0) + (shared.cost["lp-pylon"] or 0)
 function base.reserve(b)
   local reserve = 0
   for _, job in ipairs(b.rebuild) do

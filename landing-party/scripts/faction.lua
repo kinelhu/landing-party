@@ -103,7 +103,28 @@ faction.approach = approach
 -- the landing count) with a rich enough patch within SITE_SEARCH tiles of the ring and no lander within
 -- APART. A single point per direction found no ore at 300 tiles on most maps (seed 2: 7 of 8 empty).
 local ORE_CACHE, ORE_CACHE_N = {}, 0
+
+-- Its candidates scored (faction AI step 6; docs/reviews/2026-10-23-faction-ai-audit.md), by its corporation's mind
+-- (shared.CORPS[corp].mind.site): the ore by it (to three times SITE_MIN_ORE), the nests on the way to the player, the
+-- nest density round it, and how far it lands from its rivals' camps (to 1,000 tiles). Scored only on a dry search
+-- (an asynchronous landing, its candidates' ground requested and waited for): forcing eight candidates' ground in one
+-- tick stalled a landing by over a second, so a direct landing keeps the first rich site.
+local function site_score(w, surface, spot, n, density, from, corp)
+  local rival = 1000
+  for _, b in pairs(storage.bases or {}) do
+    if b.corp ~= corp and not b.fallen and b.lander and b.lander.valid then
+      local o = b.lander.position
+      rival = math.min(rival, math.sqrt((o.x - spot[1]) ^ 2 + (o.y - spot[2]) ^ 2))
+    end
+  end
+  return (w.ore or 0) * math.min(3, n / SITE_MIN_ORE) - (w.approach or 0) * approach(surface, spot, from) / APPROACH_MAX
+    - (w.density or 0) * density / DENSE_MAX + (w.rival or 0) * rival / 1000
+end
+
 function faction.site(surface, from, distance, count)
+  local mind = faction.site_corp and shared.CORPS[faction.site_corp] and shared.CORPS[faction.site_corp].mind
+  local weigh = faction.dry and mind and mind.site
+  local best, best_score
   local start = (surface.map_gen_settings.seed + 3 * (count or 0)) % 8
   local avoid = landers()
   local fallback, fallback_n = nil, -1
@@ -253,13 +274,21 @@ function faction.site(surface, from, distance, count)
       end
       if clear then
         local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
-        if n > SITE_MIN_ORE then return spot end
+        if n > SITE_MIN_ORE then
+          if not weigh then return spot end
+          local sc = site_score(weigh, surface, spot, n, density, from, faction.site_corp)
+          if not best_score or sc > best_score then best, best_score = spot, sc end
+        end
         if n > fallback_n then fallback, fallback_n = spot, n end
       end
     end
   end
   -- No direction rich and clear: the best clear one seen (seed 2024 once landed blind on two drills' worth); by
   -- approach, a site among nests next.
+  if best then
+    faction.site_scored = string.format("scored %.2f", best_score)
+    return best
+  end
   return fallback or among or dense
 end
 
@@ -350,7 +379,9 @@ function faction.arrive(surface, from, opts, quiet)
     for _, ring in ipairs(schedule) do
       local extra = ring[1]
       faction.dense_ok = ring[2]
+      faction.site_corp = (opts and opts.corp) or shared.DEFAULT_CORP
       pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
+      faction.site_corp = nil
       -- Dry: the settlement's reach (base.land's 15x15 chunks) made by the engine first.
       if pos and faction.dry and wait_for(surface, pos, 7) then pos = nil end
       if faction.pending then
@@ -422,9 +453,10 @@ function faction.arrive(surface, from, opts, quiet)
     f.surface, f.from = surface.index, {x = from.x, y = from.y}
     f.next = game.tick + f.cadence
   end
-  base.trace(b, string.format("landing %d of the faction (tier %d): %d candidate sites, %d on new ground; %s", f.landings,
+  base.trace(b, string.format("landing %d of the faction (tier %d): %d candidate sites, %d on new ground; %s%s", f.landings,
     f.tier, faction.candidates, faction.generated, b.approach and (b.approach .. " nests on the way to the player")
-    or "by the older passes"))
+    or "by the older passes", faction.site_scored and ("; the best of its candidates, " .. faction.site_scored) or ""))
+  faction.site_scored = nil
   if not quiet then announce(b, surface) end
   return b
 end
