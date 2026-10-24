@@ -177,6 +177,11 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     second level, armoured, a laser beam. Do the two skies read as the two corporations? Do gun turrets and rockets
     feel like an answer to the laser drones, and is a bomb drone getting through to your artillery fair?
 
+43. **The flamethrower trooper** (0.2.5, command bandwidth 3): a fifth order at the barracks, against swarms. Send a
+    few with your troopers at a Synthexis wave or a late biter attack: does the fire read, does it hold the bugs, and does
+    it ever burn your own? Kessler-Hayashi's Heavy tank now fires a rail cannon: can you tell its three tanks apart by
+    their shots?
+
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that
    research six technologies (Cluster shells, Pheromone bait, Pact breaker, Claim marker, Rail rifle, Orbital strike).

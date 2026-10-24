@@ -270,8 +270,13 @@ local function step(b, i)
     end
     if base.occupied(b, s, c.site) then
       b.parts = b.parts + (c.bill - c.spent)
-      requeue(b, c)
-      return done(b, i, "the site is occupied: turned back with its parts")
+      -- New work: a failure, as a crew stuck on the way is (GIVE_UP of them and the site is given up). Not counted, a
+      -- site beside the player's mining outpost was tried for ever (226 times in 90 minutes, system 12345), and as the
+      -- planner plans only with its queue empty, Grubstake's camp sat on 6,600 parts and built nothing more. A rebuild
+      -- waits instead: its ground held, what was lost there comes back once it is free (scenario occupy).
+      local given = requeue(b, c, not c.rebuild)
+      if given then b.crews_gave_up = (b.crews_gave_up or 0) + 1 end
+      return done(b, i, "the site is occupied: turned back with its parts" .. (given and ("; " .. given .. " given up") or ""))
     end
     if d <= ARRIVE * ARRIVE then
       c.phase, c.next_at = "build", game.tick

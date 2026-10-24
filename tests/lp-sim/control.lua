@@ -2354,16 +2354,66 @@ scenarios.system = function()
       if a then a.set_recipe("iron-gear-wheel"); a.insert{name = "iron-plate", count = 400} end
     end
     put("radar", 20, 20)
+    -- Its mining outposts, as any player's: two drills, a pole and power on each of the three nearest ore patches 120
+    -- to 300 tiles out (without them Grubstake had nothing to strip, and held no claim in two hours on any seed).
+    surface().request_to_generate_chunks({0, 0}, 10)
+    surface().force_generate_chunk_requests()
+    local picked = {}
+    local ores = surface().find_entities_filtered{position = {0, 0}, radius = 300, type = "resource",
+      name = {"iron-ore", "copper-ore", "coal", "stone"}}
+    table.sort(ores, function(a, b) return a.position.x ^ 2 + a.position.y ^ 2 < b.position.x ^ 2 + b.position.y ^ 2 end)
+    for _, o in ipairs(ores) do
+      local d2_ = o.position.x ^ 2 + o.position.y ^ 2
+      local far = true
+      for _, q in ipairs(picked) do if (q.x - o.position.x) ^ 2 + (q.y - o.position.y) ^ 2 < 80 * 80 then far = false end end
+      if d2_ > 120 * 120 and far and #picked < 3 then
+        local x, y = math.floor(o.position.x), math.floor(o.position.y)
+        local a1 = surface().find_non_colliding_position("electric-mining-drill", {x, y}, 6, 1)
+        local d1 = a1 and put("electric-mining-drill", a1.x, a1.y)
+        local a2 = a1 and surface().find_non_colliding_position("electric-mining-drill", {a1.x + 4, a1.y}, 6, 1)
+        if a2 then put("electric-mining-drill", a2.x, a2.y) end
+        local pp = surface().find_non_colliding_position("medium-electric-pole", {x + 2, y + 3}, 6, 1)
+        if pp then put("medium-electric-pole", pp.x, pp.y) end
+        local ep = surface().find_non_colliding_position("electric-energy-interface", {x + 3, y + 6}, 8, 1)
+        local e = ep and put("electric-energy-interface", ep.x, ep.y)
+        if e then e.power_production, e.electric_buffer_size = 1e6, 1e7 end
+        if d1 then table.insert(picked, {x = x, y = y}) end
+      end
+    end
+    S.outposts = #picked
     S.frames = 0
   end)
-  schedule(SYSTEM_LAND_G * 3600, function()
-    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
-    -- The harness's own log (sim.jsonl) follows a base: the first to land.
-    storage.id = storage.id or S.g
-  end)
-  schedule(SYSTEM_LAND_S * 3600, function()
-    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
-  end)
+  -- The opening as a game plays it (2026-10-24; LP_MIX=forced lands each once, directly, as the first measurements
+  -- did, and then nothing landed again in two hours): oil researched (Grubstake's survey party), a chemical science pack
+  -- made (its camp), the late gate opened (Kessler-Hayashi); the landing clock brings the rest.
+  local forced = params.mix == "forced"
+  if forced then
+    schedule(SYSTEM_LAND_G * 3600, function()
+      S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+      storage.id = storage.id or S.g
+    end)
+    schedule(SYSTEM_LAND_S * 3600, function()
+      S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    end)
+  else
+    schedule(40, function() lp("debug_tune", {phases_fast = true}) end)
+    schedule(SYSTEM_LAND_G * 3600, function() game.forces.player.technologies["oil-processing"].researched = true end)
+    schedule((SYSTEM_LAND_G + 4) * 3600, function()
+      game.forces.player.get_item_production_statistics(surface()).on_flow("chemical-science-pack", 1)
+    end)
+    schedule(SYSTEM_LAND_S * 3600, function() lp("debug_late_gate") end)
+    -- Who landed: the first base of each corporation, looked up as they come.
+    for t = 2 * 3600, END - 60, 3600 do
+      schedule(t, function()
+        for _, id in ipairs(lp("bases")) do
+          local st = lp("stats", id)
+          if st and st.corp == "grubstake" and not S.g then S.g = id end
+          if st and st.corp == "serenity" and not S.s then S.s = id end
+        end
+        storage.id = storage.id or S.g or S.s
+      end)
+    end
+  end
   schedule(SYSTEM_SYNTH * 3600, function()
     local evo = game.forces.enemy.get_evolution_factor(surface())
     if evo < 0.25 then game.forces.enemy.set_evolution_factor(0.25, surface()) end
@@ -2398,7 +2448,7 @@ scenarios.system = function()
         local st = lp("stats", id)
         if st then
           local c = frame.corps[st.corp] or {bases = 0, live = 0, radius = {}, parts = 0, made = 0, fabs = 0, drills = 0,
-            turrets = 0, garrison = 0, units_lost = 0, lost = 0, raids = 0, ops = {}}
+            turrets = 0, garrison = 0, units_lost = 0, lost = 0, raids = 0, ops = {}, claims = 0}
           frame.corps[st.corp] = c
           c.bases = c.bases + 1
           if not st.fallen then
@@ -2407,6 +2457,8 @@ scenarios.system = function()
             c.parts, c.made = c.parts + (st.parts or 0), c.made + (st.made or 0)
             c.fabs, c.drills, c.turrets = c.fabs + st.fabs, c.drills + st.drills, c.turrets + st.turrets
             c.garrison = c.garrison + st.garrison
+            -- Its claims (strip camps settled on the player's ore): ground it holds beyond its camps' discs.
+            c.claims = c.claims + (st.claims_settled or 0)
             -- Its posture (strategy.lua): the most pressed of its settlements.
             if st.posture and (not c.pressed or st.posture.pressed > c.pressed) then
               c.pressed, c.arm, c.war = st.posture.pressed, st.posture.arm, st.posture.war
@@ -2431,7 +2483,9 @@ scenarios.system = function()
       frame.biotech.waves = #(hs.log or {})
       -- What each faction knows (scripts/know.lua): its losses by killer force, its grievances.
       frame.know = lp("know_state")
-      S.know_last = frame.know
+      -- The most each faction held at once (its ledger keeps an hour): what the check below reads.
+      S.know_max = S.know_max or {}
+      for fk, k in pairs(frame.know or {}) do S.know_max[fk] = math.max(S.know_max[fk] or 0, k.losses or 0) end
       helpers.write_file("landing-party/system.jsonl", helpers.table_to_json(frame) .. "\n", true)
       S.frames = (S.frames or 0) + 1
     end)
@@ -2446,7 +2500,7 @@ scenarios.system = function()
         or victim == "lp-biotech" and "biotech" or nil
       if fk then lost[fk] = (lost[fk] or 0) + n end
     end
-    for fk, k in pairs(S.know_last or {}) do recorded[fk] = k.losses end
+    for fk, n in pairs(S.know_max or {}) do recorded[fk] = n end
     local ok = true
     for fk, n in pairs(lost) do if n > 0 and (recorded[fk] or 0) == 0 then ok = false end end
     check("system: each faction's losses known to it", ok, serpent.line({lost = lost, recorded = recorded}))

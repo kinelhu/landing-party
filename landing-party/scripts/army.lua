@@ -147,7 +147,15 @@ local function produce(b, trace)
   local full = strength(b) >= cap(b)
   if full and not over then return end
   -- A rebuild that makes parts is paid first (base.reserve; scenario occupy).
-  local name = b.next_unit or rng.weighted(b.rng, composition(b, mix(b)))
+  -- A unit its research has just given comes off the line first, once at each settlement; then the composition decides
+  -- (unitnode tesla, 2026-10-24: the tree bought the Tesla against turrets, the counter matrix scored it -0.72 against
+  -- gun turrets, the tilt cut it to a quarter, and no depot built one: research that never takes the field).
+  local first
+  local fresh = {}
+  for kind in pairs(rd.mix(b.corp)) do if not (b.built_by and b.built_by[kind]) then fresh[#fresh + 1] = kind end end
+  table.sort(fresh)
+  first = fresh[1]
+  local name = b.next_unit or first or rng.weighted(b.rng, composition(b, mix(b)))
   -- A clearance waiting for railgunners (ops.clearance) gets them first.
   if (b.want_rails and not b.next_unit and shared.units["lp-railgunner"] and (mix(b)["lp-railgunner"] or 0) > 0) or full then
     name = "lp-railgunner"

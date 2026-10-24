@@ -9,8 +9,11 @@ Targets (design calls, 2026-10-23):
   survive    no corporation wiped out by its rivals in two hours: each has a live base (Synthexis a culture) at the end.
   even       no one-sided rivalry: between two corporations, the one that lost more buildings to the other lost at most
              three times as many (a floor of 5 each, so a quiet pair passes).
-  shapes     growth of their own kind: Grubstake the wider early (its territory larger than Kessler-Hayashi's 30 minutes
-             after Kessler-Hayashi lands), Kessler-Hayashi the stronger late (garrison and turrets at the end).
+  shapes     growth of their own kind: Grubstake the wider early (30 minutes after Kessler-Hayashi lands, more pieces of
+             ground, its camps and its settled claims, or a larger territory radius: "many small camps and strip mines"),
+             Kessler-Hayashi the stronger late (garrison and turrets at the end). Until 2026-10-24 the radius alone was
+             read, and a claim (a strip camp on the player's ore) has its own mark, not the disc: Grubstake's sprawl was
+             not counted.
   fights     every pairing fights: losses both ways between Kessler-Hayashi and Grubstake, and Kessler-Hayashi's kills
              among Synthexis's (its clearances).
   pressure   each corporation goes for the player: operations against the player from each of Kessler-Hayashi and
@@ -59,10 +62,13 @@ def judge(frames):
     out["even"] = (worst, "; ".join(notes))
     at = next((f for f in frames if f["minute"] >= LAND_S + 30), end)
     rs, rg = max(corp(at, "serenity").get("radius") or [0]), max(corp(at, "grubstake").get("radius") or [0])
+    ps = corp(at, "serenity").get("live", 0) + corp(at, "serenity").get("claims", 0)
+    pg = corp(at, "grubstake").get("live", 0) + corp(at, "grubstake").get("claims", 0)
     ss = s_end.get("garrison", 0) + s_end.get("turrets", 0)
     sg = g_end.get("garrison", 0) + g_end.get("turrets", 0)
-    out["shapes"] = (rg > rs and ss > sg, f"territory at minute {at['minute']:.0f}: Grubstake {rg:.0f}, Kessler-Hayashi "
-                     f"{rs:.0f}; garrison and turrets at the end: Kessler-Hayashi {ss}, Grubstake {sg}")
+    out["shapes"] = ((pg > ps or rg > rs) and ss > sg, f"at minute {at['minute']:.0f}: ground held (camps and claims) "
+                     f"Grubstake {pg}, Kessler-Hayashi {ps}; territory radius Grubstake {rg:.0f}, Kessler-Hayashi {rs:.0f}; "
+                     f"garrison and turrets at the end: Kessler-Hayashi {ss}, Grubstake {sg}")
     sg_units = kills(end, "serenity", "grubstake", "units") + kills(end, "serenity", "grubstake")
     gs_units = kills(end, "grubstake", "serenity", "units") + kills(end, "grubstake", "serenity")
     bs = kills(end, "biotech", "serenity", "units") + kills(end, "biotech", "serenity")

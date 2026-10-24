@@ -5,7 +5,7 @@ and its base in the game, every unit with its portrait, numbers and who fields i
 Synthexis's breeds by evolution and its buildings, and your own technologies, drawn. Written from the game's prototypes
 (scripts/roster.py reads the dump), landing-party/shared.lua (read with LuaJIT), ops.lua's era thresholds, farm.lua's
 clinic and the locale; the portraits from the screenshot run (scripts/shots.sh), the vistas from the all-factions save
-(LP_MIX=all scripts/showcase.sh, then the vista run). Never edit the page by hand:
+(LP_MIX=all scripts/showcase.sh 12345 30, then scripts/vistas.sh). Never edit the page by hand:
 
     scripts/check.sh && scripts/shots.sh && python3 -I scripts/roster_page.py
 """
@@ -86,7 +86,7 @@ BRANCH_NAME = {"optics": "Optics", "line": "Line", "siege": "Siege", "scrap-arms
                "wheels": "Wheels"}
 KILLER = {"gun-turret": "gun turrets", "laser-turret": "laser turrets", "flamethrower-turret": "flamethrower turrets",
           "vehicle": "your vehicles", "lp-battle-tank": "battle tanks", "lp-trooper": "troopers",
-          "lp-breacher": "breachers", "lp-rocket-trooper": "rocket troopers", "character": "you", "artillery-turret": "artillery turrets",
+          "lp-breacher": "breachers", "lp-rocket-trooper": "rocket troopers", "lp-flame-trooper": "flamethrower troopers", "character": "you", "artillery-turret": "artillery turrets",
           "artillery-wagon": "artillery wagons", "lp-harrier": "scrap drones", "lp-scavenger": "bomb drones",
           "lp-laser-drone": "laser drones", "destroyer": "your combat robots", "defender": "your combat robots",
           "distractor": "your combat robots"}
@@ -525,7 +525,7 @@ def techs_html():
     return f'<div class="techs">{"".join(cols)}</div>'
 
 
-player = "".join(unit_card(k, None, "Trained at your barracks; orders by beacon") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-battle-tank"))
+player = "".join(unit_card(k, None, "Trained at your barracks; orders by beacon") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"))
 shared_units = "".join(unit_card(k, None, h) for k, h in (("lp-hauler", "Both: convoys, Grubstake's building trucks"),
                                                           ("lp-railgunner", "Kessler-Hayashi: clears nests, never raids")))
 

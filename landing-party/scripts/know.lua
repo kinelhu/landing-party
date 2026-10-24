@@ -18,7 +18,7 @@ local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "phy
   -- The player's combat robots (2026-10-23: unrecorded until anti-air was bought on what kills from the air).
   ["combat-robot"] = "physical"}
 local DAMAGE_BY_NAME = {["lp-trooper"] = "physical", ["lp-breacher"] = "explosion", ["lp-battle-tank"] = "explosion",
-  ["lp-rocket-trooper"] = "explosion", ["lp-harrier"] = "physical", ["lp-scavenger"] = "explosion",
+  ["lp-rocket-trooper"] = "explosion", ["lp-flame-trooper"] = "fire", ["lp-aegis"] = "lp-rail", ["lp-harrier"] = "physical", ["lp-scavenger"] = "explosion",
   ["lp-laser-drone"] = "laser"}
 know.DAMAGE, know.DAMAGE_BY_NAME = DAMAGE, DAMAGE_BY_NAME
 

@@ -136,6 +136,14 @@ data:extend({
     ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "rocket-launcher", amount = 1},
       {type = "item", name = "rocket", amount = 10}},
     results = {{type = "item", name = "lp-rocket-trooper-order", amount = 1}}},
+  {type = "item", name = "lp-flame-trooper-order", icon = "__base__/graphics/icons/flamethrower.png", hidden = true,
+    stack_size = 10, subgroup = "other"},
+  -- Flamethrower troopers (2026-10-24): heavy armour, a flamethrower and its fuel; with the third level.
+  {type = "recipe", name = "lp-flame-trooper-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
+    icon = "__base__/graphics/icons/flamethrower.png", energy_required = 40,
+    ingredients = {{type = "item", name = "heavy-armor", amount = 1}, {type = "item", name = "flamethrower", amount = 1},
+      {type = "item", name = "flamethrower-ammo", amount = 10}},
+    results = {{type = "item", name = "lp-flame-trooper-order", amount = 1}}},
   {type = "item", name = "lp-battle-tank-order", icon = "__base__/graphics/icons/tank.png", hidden = true,
     stack_size = 10, subgroup = "other"},
   {type = "recipe", name = "lp-battle-tank-order", categories = {"lp-training"}, enabled = false, hidden_in_factoriopedia = true,
@@ -189,7 +197,9 @@ data:extend({
   -- Battle tanks and rocket troopers with the second level, once the player has tanks and rocket launchers of their own.
   tech(2, {"lp-command-bandwidth-1", "chemical-science-pack", "tank", "battery-equipment", "rocketry"}, {red, green, blue}, 200, {
     {type = "unlock-recipe", recipe = "lp-battle-tank-order"}, {type = "unlock-recipe", recipe = "lp-rocket-trooper-order"}}),
-  tech(3, {"lp-command-bandwidth-2", "military-3"}, {red, green, blue, grey}, 300),
+  -- Flamethrower troopers with the third, once the player has flamethrowers.
+  tech(3, {"lp-command-bandwidth-2", "military-3", "flamethrower"}, {red, green, blue, grey}, 300, {
+    {type = "unlock-recipe", recipe = "lp-flame-trooper-order"}}),
   tech(4, {"lp-command-bandwidth-3"}, {red, green, blue, grey}, nil, nil,
     {max_level = "infinite", unit = {count_formula = "150*L", time = 30, ingredients = {red, green, blue, grey}}}),
 })

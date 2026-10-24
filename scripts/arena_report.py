@@ -16,7 +16,7 @@ from collections import defaultdict
 CLASSES = [
     ("small arms", ["laser trooper", "shotgun hand", "heavy laser trooper", "buggy", "slug", "railgunner", "trooper",
                     "rocket trooper"]),
-    ("splash", ["sapper", "shock", "laser tank", "lightning tank", "breacher"]),
+    ("splash", ["sapper", "shock", "laser tank", "lightning tank", "breacher", "flame trooper"]),
     ("armour", ["tank", "heavy tank", "dozer", "walker", "scorcher", "battle tank"]),
     ("air", ["scrap drone", "bomb drone", "laser drone"]),
     # Hard on fliers, light on the ground (2026-10-23): one per side.
@@ -34,7 +34,7 @@ SHOWN = {"infantry (Serenity)": "laser trooper", "infantry (Grubstake)": "shotgu
 # Grubstake's infantry is its own (shotguns), so the two infantries are told apart by their labels.
 CORP_COLOUR = {"Kessler-Hayashi": "#2f6f86", "Grubstake": "#b0651a", "You": "#3d7a2a", "Synthexis": "#8a9e00"}
 UNSHOWN = {v: k for k, v in SHOWN.items()}
-PLAYER = {"trooper", "breacher", "rocket trooper", "battle tank"}   # priced by command bandwidth (tests/lp-arena/arena.lua)
+PLAYER = {"trooper", "breacher", "rocket trooper", "flame trooper", "battle tank"}   # priced by command bandwidth (tests/lp-arena/arena.lua)
 
 def fielders():
     src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "landing-party", "shared.lua")).read()

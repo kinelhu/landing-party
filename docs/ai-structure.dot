@@ -37,7 +37,7 @@ digraph ai {
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n70 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n449 lines", width=1.30, fillcolor="#eef2f7"];
+    "crew" [label="crew\n454 lines", width=1.30, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n144 lines", width=0.96, fillcolor="#eef2f7"];
@@ -45,7 +45,7 @@ digraph ai {
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "army" [label="army\n745 lines", width=1.63, fillcolor="#eef2f7"];
+    "army" [label="army\n753 lines", width=1.64, fillcolor="#eef2f7"];
     "ops" [label="ops\n1740 lines", width=2.73, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n230 lines", width=1.06, fillcolor="#d9f0d9"];

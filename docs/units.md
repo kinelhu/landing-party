@@ -8,11 +8,11 @@ turns from a flier to a ground target it can hurt (`landing-party/scripts/aim.lu
 
 ## aegis
 
-Line: a laser cannon on an armoured hull; against the player's battle tanks.
+Line: a rail cannon on an armoured hull, one heavy slug; against the player's battle tanks.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1100 | 5.4 tiles/s | 45 laser | 15 | 1/s | physical -5 30%, explosion -5 40%, laser -5, electric -5, lp-bite 60% | no | 95 parts |
+| 1100 | 5.4 tiles/s | 38 lp-rail | 16 | 1/s | physical -5 30%, explosion -5 40%, laser -5, electric -5, lp-bite 60% | no | 95 parts |
 
 Fielded by: Kessler-Hayashi, research: line branch, era 2, after warden, 2000 fund.
 
@@ -128,21 +128,31 @@ Fielded by: Grubstake, research: wheels branch, era 3, after slug, 2500 fund.
 
 ## flak-buggy
 
-Wheels: scrap flak bursting among fliers; little use against the ground.
+Wheels: scrap flak bursting among fliers, a weak splash on the ground.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 220 | 12.0 tiles/s | 22 explosion over 2 tiles; 3 explosion over 0.5 tiles | 22 | 2/s | physical -2 15% | yes | 20 parts |
+| 220 | 12.0 tiles/s | 22 explosion over 2 tiles; 3 explosion over 1.5 tiles | 22 | 2/s | physical -2 15% | yes | 20 parts |
 
 Fielded by: Grubstake, research: wheels branch, era 1, 900 fund.
 
-## harrier
+## flame-trooper
 
-air: flies over walls, cliffs and water; turrets that cannot shoot up ignore it.
+the player's: a flamethrower against swarms of bugs and bunched infantry; outranged, and weak on armour.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 150 | 15.0 tiles/s | 10 physical | 15 | 4/s | fire 100% | yes | 40 parts |
+| 120 | 7.2 tiles/s | - | 13 | 15/s | physical -2 10% | yes | 2 bandwidth |
+
+Fielded by: the player (a barracks).
+
+## harrier
+
+air (the scrap drone): weak and cheap, many; flies over walls, cliffs and water.
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 80 | 15.0 tiles/s | 6 physical | 12 | 3/s | fire 100% | yes | 15 parts |
 
 Fielded by: Grubstake (from landing).
 
@@ -185,6 +195,16 @@ Optics: a heavier beam that outranges the player's troopers.
 | 110 | 7.2 tiles/s | 24 laser | 17 | 1/s | physical -2 10%, laser 20% | yes | 16 parts |
 
 Fielded by: Kessler-Hayashi, research: optics branch, era 1, 900 fund.
+
+## laser-drone
+
+air: Kessler-Hayashi's, armoured, a laser beam; few and dear.
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 400 | 12.0 tiles/s | 12 laser | 16 | 3/s | fire 100%, physical -3 40%, laser 20% | yes | 70 parts |
+
+Fielded by: Kessler-Hayashi (from landing).
 
 ## prism
 
@@ -238,11 +258,11 @@ Fielded by: Grubstake, research: scrap-arms branch, era 2, 1500 fund.
 
 ## scavenger
 
-Wheels: a harrier with rockets, for the player's artillery, mortars and radars.
+Wheels (the bomb drone): flies at the player's artillery, mortars and radars and bursts on them.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 180 | 15.0 tiles/s | 18 explosion | 14 | 1.5/s | fire 100% | yes | 50 parts |
+| 60 | 18.0 tiles/s | 150 explosion; 150 explosion over 2.5 tiles | 1.5 | 2/s | fire 100% | yes | 35 parts |
 
 Fielded by: Grubstake, research: wheels branch, era 2, 1800 fund.
 
@@ -278,11 +298,11 @@ Fielded by: Grubstake (from landing, as its infantry).
 
 ## skyguard
 
-Line: a long laser that tracks fliers; little use against the ground.
+Line: a long laser that tracks fliers; a weak shot at the ground.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 110 | 7.2 tiles/s | 30 laser over 1 tiles; 3 laser over 0.5 tiles | 22 | 2/s | physical -2 10%, laser 20% | yes | 18 parts |
+| 110 | 7.2 tiles/s | 30 laser over 1 tiles; 8 laser over 0.5 tiles | 22 | 2/s | physical -2 10%, laser 20% | yes | 18 parts |
 
 Fielded by: Kessler-Hayashi, research: line branch, era 1, 900 fund.
 
@@ -306,6 +326,16 @@ armour; cannon rounds that hit buildings three times as hard as units.
 
 Fielded by: Kessler-Hayashi (from landing).
 
+## technician
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 80 | 6.0 tiles/s | 1 physical | 1 | 1/s | physical -2 10% | yes | - |
+
+Fielded by: -.
+
 ## tesla
 
 Siege: lightning that jumps along a turret line and drains what it strikes of its charge.
@@ -325,6 +355,16 @@ the player's: a rifle.
 | 120 | 7.2 tiles/s | 8 physical | 15 | 3/s | physical -2 10% | yes | 1 bandwidth |
 
 Fielded by: the player (a barracks).
+
+## bred-stomper
+
+
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2000 | walks | - | 5.8500000000000005 | 1/s | physical 50%, laser 40%, impact 80% | yes | - |
+
+Fielded by: -.
 
 ## walker
 

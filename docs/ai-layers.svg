@@ -49,7 +49,7 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M320.12,-243.5C320.12,-243.5 217.88,-243.5 217.88,-243.5 211.88,-243.5 205.88,-237.5 205.88,-231.5 205.88,-231.5 205.88,-211.5 205.88,-211.5 205.88,-205.5 211.88,-199.5 217.88,-199.5 217.88,-199.5 320.12,-199.5 320.12,-199.5 326.12,-199.5 332.12,-205.5 332.12,-211.5 332.12,-211.5 332.12,-231.5 332.12,-231.5 332.12,-237.5 326.12,-243.5 320.12,-243.5"/>
 <text xml:space="preserve" text-anchor="middle" x="269" y="-229.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="269" y="-217.05" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 5170 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="269" y="-217.05" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 5175 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="269" y="-205.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1192</text>
 </g>
 <!-- Corporation&#45;&gt;Settlement -->
@@ -64,7 +64,7 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M471.12,-139.75C471.12,-139.75 368.88,-139.75 368.88,-139.75 362.88,-139.75 356.88,-133.75 356.88,-127.75 356.88,-127.75 356.88,-107.75 356.88,-107.75 356.88,-101.75 362.88,-95.75 368.88,-95.75 368.88,-95.75 471.12,-95.75 471.12,-95.75 477.12,-95.75 483.12,-101.75 483.12,-107.75 483.12,-107.75 483.12,-127.75 483.12,-127.75 483.12,-133.75 477.12,-139.75 471.12,-139.75"/>
 <text xml:space="preserve" text-anchor="middle" x="420" y="-125.3" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="420" y="-113.3" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 4882 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="420" y="-113.3" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 4890 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="420" y="-101.3" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1740</text>
 </g>
 <!-- Corporation&#45;&gt;Army and operations -->

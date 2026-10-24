@@ -192,8 +192,8 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="108" y="342" class="nmeta">900 fund</text>
 <text x="108" y="362" class="neff">fields Heavy laser trooper</text>
 <text x="108" y="379" class="ntrig">when: 6 of its units killed by</text>
-<text x="108" y="393" class="ntrig">you, breachers, rocket troopers,</text>
-<text x="108" y="407" class="ntrig">troopers within 30 minutes</text>
+<text x="108" y="393" class="ntrig">you, breachers, flamethrower</text>
+<text x="108" y="407" class="ntrig">troopers, rocket troopers,</text>
 </g>
 <g class="node unit"><rect x="96" y="648" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-shock.png" x="240" y="656" width="58" height="58"/>
@@ -202,8 +202,8 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="108" y="710" class="nmeta">2500 fund</text>
 <text x="108" y="730" class="neff">fields Shock trooper</text>
 <text x="108" y="747" class="ntrig">when: 12 of its units killed by</text>
-<text x="108" y="761" class="ntrig">you, breachers, rocket troopers,</text>
-<text x="108" y="775" class="ntrig">troopers within 30 minutes</text>
+<text x="108" y="761" class="ntrig">you, breachers, flamethrower</text>
+<text x="108" y="775" class="ntrig">troopers, rocket troopers,</text>
 </g>
 <g class="node unit"><rect x="840" y="464" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-aegis.png" x="984" y="472" width="58" height="58"/>
@@ -222,8 +222,8 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="108" y="526" class="nmeta">1800 fund</text>
 <text x="108" y="546" class="neff">fields Laser tank</text>
 <text x="108" y="563" class="ntrig">when: 9 of its units killed by</text>
-<text x="108" y="577" class="ntrig">you, breachers, rocket troopers,</text>
-<text x="108" y="591" class="ntrig">troopers within 30 minutes</text>
+<text x="108" y="577" class="ntrig">you, breachers, flamethrower</text>
+<text x="108" y="591" class="ntrig">troopers, rocket troopers,</text>
 </g>
 <g class="node unit"><rect x="584" y="648" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-tesla.png" x="728" y="656" width="58" height="58"/>
@@ -238,6 +238,34 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </svg></div>
   <h3>Units</h3>
   <div class="units"><article class="unit">
+  <figure><img src="img/lp-laser-drone.png" alt="Laser drone" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Laser drone</h4>
+    <p class="role">Air: Kessler-Hayashi&#x27;s, armoured, a laser beam; few and dear</p>
+    <dl>
+      <div><dt>Health</dt><dd>400</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>12 laser</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>fire 100%, physical -3 40%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>70 parts</dd></div>
+    </dl>
+    <p class="how">From its level 2</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Railgunner</h4>
+    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
+    <dl>
+      <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>250 physical to biters, nests and worms; 10 physical to anything else</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
+    </dl>
+    <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
   <figure><img src="img/lp-tank.png" alt="Tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Tank</h4>
@@ -262,34 +290,6 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>A shot</dt><dd>18 physical</dd></div>
       <div class="wide"><dt>Resists</dt><dd>physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5, bite 40%</dd></div>
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
-    </dl>
-    <p class="how">From its level 2</p>
-  </div>
-</article><article class="unit">
-  <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
-  <div class="ubody">
-    <h4>Railgunner</h4>
-    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
-    <dl>
-      <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
-      <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>250 physical to biters, nests and worms; 10 physical to anything else</dd></div>
-      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
-      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
-    </dl>
-    <p class="how">From landing</p>
-  </div>
-</article><article class="unit">
-  <figure><img src="img/lp-laser-drone.png" alt="Laser drone" loading="lazy"></figure>
-  <div class="ubody">
-    <h4>Laser drone</h4>
-    <p class="role">Air: Kessler-Hayashi&#x27;s, armoured, a laser beam; few and dear</p>
-    <dl>
-      <div><dt>Health</dt><dd>400</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
-      <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>12 laser</dd></div>
-      <div class="wide"><dt>Resists</dt><dd>fire 100%, physical -3 40%, laser 20%</dd></div>
-      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>70 parts</dd></div>
     </dl>
     <p class="how">From its level 2</p>
   </div>
@@ -339,11 +339,11 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-aegis.png" alt="Heavy tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Heavy tank</h4>
-    <p class="role">Line: a laser cannon on an armoured hull; against the player&#x27;s battle tanks</p>
+    <p class="role">Line: a rail cannon on an armoured hull, one heavy slug; against the player&#x27;s battle tanks</p>
     <dl>
       <div><dt>Health</dt><dd>1100</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
-      <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>45 laser</dd></div>
+      <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>38 lp-rail</dd></div>
       <div class="wide"><dt>Resists</dt><dd>physical -5 30%, explosion -5 40%, laser -5, electric -5, bite 60%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>95 parts</dd></div>
     </dl>
@@ -464,8 +464,8 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="108" y="526" class="nmeta">1500 fund</text>
 <text x="108" y="546" class="neff">fields Dynamite sapper</text>
 <text x="108" y="563" class="ntrig">when: 10 of its units killed by</text>
-<text x="108" y="577" class="ntrig">you, breachers, rocket troopers,</text>
-<text x="108" y="591" class="ntrig">troopers within 30 minutes</text>
+<text x="108" y="577" class="ntrig">you, breachers, flamethrower</text>
+<text x="108" y="591" class="ntrig">troopers, rocket troopers,</text>
 </g>
 <g class="node unit"><rect x="1072" y="464" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-grubstake-scavenger.png" x="1216" y="472" width="58" height="58"/>
@@ -509,20 +509,6 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </svg></div>
   <h3>Units</h3>
   <div class="units"><article class="unit">
-  <figure><img src="img/lp-grubstake-harrier.png" alt="Scrap drone" loading="lazy"></figure>
-  <div class="ubody">
-    <h4>Scrap drone</h4>
-    <p class="role">Air (the scrap drone): weak and cheap, many; flies over walls, cliffs and water</p>
-    <dl>
-      <div><dt>Health</dt><dd>80</dd></div><div><dt>Speed</dt><dd>15.0 tiles/s</dd></div>
-      <div><dt>Range</dt><dd>12</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>6 physical</dd></div>
-      <div class="wide"><dt>Resists</dt><dd>fire 100%</dd></div>
-      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>15 parts</dd></div>
-    </dl>
-    <p class="how">From its level 1</p>
-  </div>
-</article><article class="unit">
   <figure><img src="img/lp-shotgun-hand.png" alt="Shotgun hand" loading="lazy"></figure>
   <div class="ubody">
     <h4>Shotgun hand</h4>
@@ -549,6 +535,20 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>15 parts</dd></div>
     </dl>
     <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-grubstake-harrier.png" alt="Scrap drone" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Scrap drone</h4>
+    <p class="role">Air (the scrap drone): weak and cheap, many; flies over walls, cliffs and water</p>
+    <dl>
+      <div><dt>Health</dt><dd>80</dd></div><div><dt>Speed</dt><dd>15.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>12</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>6 physical</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>fire 100%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>15 parts</dd></div>
+    </dl>
+    <p class="how">From its level 1</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-grubstake-slug.png" alt="Slug buggy" loading="lazy"></figure>
@@ -845,6 +845,20 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
     <p class="how">Trained at your barracks; orders by beacon</p>
   </div>
 </article><article class="unit">
+  <figure><img src="img/lp-flame-trooper.png" alt="Flamethrower trooper" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Flamethrower trooper</h4>
+    <p class="role">The player&#x27;s: a flamethrower against swarms of bugs and bunched infantry; outranged, and weak on armour</p>
+    <dl>
+      <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>15/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>-</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>2 bandwidth</dd></div>
+    </dl>
+    <p class="how">Trained at your barracks; orders by beacon</p>
+  </div>
+</article><article class="unit">
   <figure><img src="img/lp-battle-tank.png" alt="Battle tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Battle tank</h4>
@@ -864,8 +878,8 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
     looted from them and its technology is yours.</p>
     <div class="techs"><div class="techcol"><h4>Command</h4><ol><li><b>Command bandwidth 1</b><span class="gives">Barracks, Command relay, Rally beacon, Trooper, Breacher, Threat scanner, Muster point</span>
             <span class="how">100 x automation + logistic</span><span class="pre">after military 2, heavy armor</span></li><li><b>Command bandwidth 2</b><span class="gives">Battle tank, Rocket trooper</span>
-            <span class="how">200 x automation + logistic + chemical</span><span class="pre">after Command bandwidth 1, chemical science pack, tank, battery equipment, rocketry</span></li><li><b>Command bandwidth 3</b><span class="gives">more command bandwidth</span>
-            <span class="how">300 x automation + logistic + chemical + military</span><span class="pre">after Command bandwidth 2, military 3</span></li><li><b>Command bandwidth 4</b><span class="gives">more command bandwidth</span>
+            <span class="how">200 x automation + logistic + chemical</span><span class="pre">after Command bandwidth 1, chemical science pack, tank, battery equipment, rocketry</span></li><li><b>Command bandwidth 3</b><span class="gives">Flamethrower trooper</span>
+            <span class="how">300 x automation + logistic + chemical + military</span><span class="pre">after Command bandwidth 2, military 3, flamethrower</span></li><li><b>Command bandwidth 4</b><span class="gives">more command bandwidth</span>
             <span class="how">infinite: 150*L</span><span class="pre">after Command bandwidth 3</span></li></ol></div><div class="techcol"><h4>From their wreckage</h4><ol><li><b>Claim marker</b><span class="gives">Claim marker</span>
             <span class="how">craft pacifier crystal, disassembled</span><span class="pre">after military</span></li><li><b>Cluster shells</b><span class="gives">Cluster artillery shell</span>
             <span class="how">craft cluster fuze, disassembled</span><span class="pre">after artillery</span></li><li><b>Orbital strike</b><span class="gives">Orbital strike beacon</span>

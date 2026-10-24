@@ -28,7 +28,7 @@ ROLE = {
     "lp-shotgun-hand": "Grubstake's infantry: three heavy pellets, deadly at the fence, useless against a turret line",
     "lp-lance": "Optics: a heavier beam that outranges the player's troopers",
     "lp-shock": "Optics: an arcing electric beam that jumps target to target, a brief stun; against massed troopers",
-    "lp-aegis": "Line: a laser cannon on an armoured hull; against the player's battle tanks",
+    "lp-aegis": "Line: a rail cannon on an armoured hull, one heavy slug; against the player's battle tanks",
     "lp-slug": "Scrap arms: slugs; against the player's vehicles",
     "lp-sapper": "Scrap arms: dynamite over 3 tiles, enemies only; against blobs, and the wall in the way",
     "lp-dozer": "Wheels: a ram that pushes a wall open for the shotguns",
@@ -41,6 +41,7 @@ ROLE = {
     "lp-trooper": "the player's: a rifle",
     "lp-breacher": "the player's: demolition charges, for walls (and only a scratch to units)",
     "lp-rocket-trooper": "the player's: rockets against armour, and fliers; slow against a crowd",
+    "lp-flame-trooper": "the player's: a flamethrower against swarms of bugs and bunched infantry; outranged, and weak on armour",
     "lp-battle-tank": "the player's siege weapon",
 }
 
@@ -73,7 +74,7 @@ cost = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = \{health = \d+, 
 ground_only = set(re.findall(r'\["(lp-[a-z-]+)"\] = \{[^}]*ground_only = true', shared)) | {"lp-battle-tank", "lp-breacher"}
 # The player's units cost no parts; their bandwidth instead (shared.POPULATION).
 bandwidth = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = (\d+)', re.search(r"shared.POPULATION = \{([^}]*)\}", shared).group(1))}
-for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-battle-tank"):
+for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"):
     fielded.setdefault(k, []).append("the player (a barracks)")
 fielded.setdefault("lp-hauler", []).append("both (convoys; Grubstake's builders)")
 

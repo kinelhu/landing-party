@@ -197,6 +197,45 @@ rocket_trooper.attack_parameters.ammo_type = {action = {type = "direct", action_
   projectile = "lp-trooper-rocket", starting_speed = 0.6, max_range = 24}}}
 data:extend({rocket_trooper, rocket})
 
+-- Flamethrower trooper (the player's, with the third level; the user, 2026-10-24: "tackle player units too"): the arena
+-- had every one of the player's units losing to biters from evolution 0.8 and to the big breeds; this is the answer to a
+-- swarm. The handheld flamethrower's stream, its splash (2.5, its enemies only) and the burning it leaves on what it hits
+-- (the fire sticker), but no burning ground: ground fire burns its own side as well, and the corporations' flamers had
+-- killed eight to eleven of their own a run that way. Range 15: rifles and lances outrange it; armour shrugs it off.
+local flame_trooper = make_infantry("lp-flame-trooper", {r = 0.95, g = 0.4, b = 0.18, a = 1}, "heavy-armor")
+local trooper_stream = table.deepcopy(data.raw.stream["handheld-flamethrower-fire-stream"])
+trooper_stream.name = "lp-trooper-fire-stream"
+-- Its own burn: 4 fire a second for 4 seconds (vanilla's fire sticker, 10 a second for 30, on every target of the
+-- splash, had it beating rifles +95 and tanks +51 in the arena, 2026-10-24).
+local trooper_burn = table.deepcopy(data.raw.sticker["fire-sticker"])
+trooper_burn.name = "lp-trooper-burn"
+trooper_burn.duration_in_ticks = 4 * 60
+trooper_burn.damage_per_tick = {amount = 4 / 60, type = "fire"}
+trooper_burn.spread_fire_entity = nil
+trooper_burn.fire_spread_cooldown = nil
+local actions = {}
+for _, a in ipairs(trooper_stream.action or {}) do
+  if a.type == "area" then
+    a.force = "not-same"
+    for _, e in ipairs(a.action_delivery.target_effects or {}) do
+      if e.type == "create-sticker" then e.sticker = "lp-trooper-burn" end
+      -- 1 a lick, not 2 (at 2 with its burn it still beat rifles by +90).
+      if e.type == "damage" then e.damage.amount = 1 end
+    end
+    table.insert(actions, a)
+  end
+end
+trooper_stream.action = actions
+flame_trooper.attack_parameters = {
+  type = "stream", ammo_category = "flamethrower", cooldown = 4, range = 13, min_range = 0,
+  range_mode = "bounding-box-to-bounding-box", fire_penalty = 0, gun_barrel_length = 0.6, gun_center_shift = {0, -1},
+  sound = table.deepcopy(data.raw.gun["flamethrower"].attack_parameters.cyclic_sound and nil or data.raw.gun["flamethrower"].attack_parameters.sound),
+  cyclic_sound = table.deepcopy(data.raw.gun["flamethrower"].attack_parameters.cyclic_sound),
+  animation = flame_trooper.attack_parameters.animation,
+  ammo_type = {action = {type = "direct", action_delivery = {type = "stream", stream = "lp-trooper-fire-stream"}}},
+}
+data:extend({flame_trooper, trooper_stream, trooper_burn})
+
 -- Tank: the tank's hull as a unit (its turret does not turn on its own). A square box: units rotate. The
 -- faction's in cold blue; the player's battle tank (4 of command bandwidth) in its own colour.
 local tank_car = data.raw.car.tank
@@ -575,6 +614,31 @@ railgunner.attack_parameters = {
   }},
 }
 railgunner.resistances = table.deepcopy(infantry.resistances)
+
+data:extend({{type = "damage-type", name = "lp-rail"}})
+-- The Heavy tank's rail cannon (lp-aegis, Kessler-Hayashi's Line; the user, 2026-10-24: "Kessler has basically two types
+-- of laser tanks. Seems redundant?"). Its job in the arena was always armour (it beat tanks and the Laser tank, lost to
+-- swarms), but its heavy laser beam made it read as the Laser tank's twin. Now a rail cannon: one heavy kinetic slug,
+-- 38 every 60 ticks at 16 (at 45 it beat rocket troopers +58; at 30 it lost to the battle tank -67, which it is
+-- for), drawn with the railgunner's beam; single, not piercing (a line would cut through rows of
+-- infantry: the Laser tank's work). Its damage its own type, lp-rail, that no armour resists: hulls are built against
+-- physical and explosion, so a slug hard enough to hurt a tank wrecked everything soft (150 physical: it beat all but
+-- fliers; 80 every 80: still rocket troopers +58 and lances +75, the arena, 2026-10-24). Light on everything, full on
+-- a hull: the anti-armour gun, and rocket troopers and lances answer it from 18 and 17.
+-- Ammunition category laser, as the railgunner's: Kessler-Hayashi's research scales it as before.
+aegis.attack_parameters = {
+  -- Range 16: rocket troopers (18) and lances (17) answer it from beyond its reach (at 20 it outranged both, +75 on each).
+  type = "projectile", ammo_category = "laser", cooldown = 60, cooldown_deviation = 0.1, range = 16,
+  range_mode = "bounding-box-to-bounding-box",
+  sound = table.deepcopy((data.raw.gun["railgun"] or data.raw.gun["tank-cannon"]).attack_parameters.sound),
+  animation = table.deepcopy(aegis.attack_parameters.animation),
+  ammo_type = {action = {
+    {type = "direct", action_delivery = {type = "beam", beam = "lp-rail-beam", max_length = 17, duration = 8,
+      source_offset = {0, -1.2}}},
+    {type = "direct", action_delivery = {type = "instant", target_effects = {
+      {type = "damage", damage = {amount = 38, type = "lp-rail"}}, {type = "create-entity", entity_name = "explosion-hit"}}}},
+  }},
+}
 
 -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua mocks them).
 -- Prism (Serenity's Optics, after Lances): a tank with its turret and a small laser head on top; a laser of 14 (and the
