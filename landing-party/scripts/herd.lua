@@ -26,7 +26,8 @@ local LOOP_OUT = 29         -- the loop past the outermost turret: beyond a lase
 local LOOP_POINTS = 16
 local STOP_EVERY = 4        -- a pause at every fourth loop point: four faces
 local LOOP_CLEAR = 30       -- a loop point this far from every foe turret (a gun turret's 18, a laser's 24, a margin)
-local RESUMES = 3          -- a failed loop taken up again from the next point, at most this often
+local RESUMES = 3
+local REGROUPS = 3         -- a wave's group formed again from its living members, at most this often          -- a failed loop taken up again from the next point, at most this often
 local STOP_TICKS = 600
 local SIT_TICKS = 30 * 3600
 local GATHER_TICKS = 90 * 60
@@ -431,16 +432,21 @@ local function gather(w, next_stage)
   w.t = game.tick
 end
 
--- The scout's report: the face it saw fewest turrets at (of eight), nearest the pen on a tie.
+-- The scout's report: the face it saw fewest turrets at (of eight), nearest the pen on a tie; of the faces it saw. A face
+-- it never had in sight counted none and read weakest: on seed 1 it went for an east face of seven turrets it had not
+-- seen, over the south face's one (system sim, 2026-10-24).
 local function choose_mark(w)
   local count = {}
   for k = 0, 7 do count[k] = 0 end
   for _, sector in pairs(w.seen) do count[sector] = count[sector] + 1 end
+  local any = w.watched and next(w.watched) ~= nil
   local best, bc, bsteps
   for k = 0, 7 do
+    if any and not w.watched[k] then goto continue end
     local j = k * LOOP_POINTS / 8
     local steps = math.min((j - w.entry) % LOOP_POINTS, (w.entry - j) % LOOP_POINTS)
     if not bc or count[k] < bc or (count[k] == bc and steps < bsteps) then best, bc, bsteps = k, count[k], steps end
+    ::continue::
   end
   return best * LOOP_POINTS / 8, count
 end
@@ -578,8 +584,10 @@ local function mark(w)
     w.scout.commandable.set_command(compound(cmds))
   end
   w.t_mark = game.tick
-  log(w, string.format("scout's turrets by face (E, SE, S, SW, W, NW, N, NE from the middle) %s; mark at %.0f,%.0f",
-    table.concat(parts, " "), w.mark.x, w.mark.y))
+  local seen_faces = {}
+  for k = 0, 7 do seen_faces[#seen_faces + 1] = (w.watched and w.watched[k]) and "y" or "-" end
+  log(w, string.format("scout's turrets by face (E, SE, S, SW, W, NW, N, NE from the middle) %s (faces seen %s); mark at %.0f,%.0f",
+    table.concat(parts, " "), table.concat(seen_faces), w.mark.x, w.mark.y))
   probe(w)
   gather(w, "march")
 end
@@ -587,7 +595,8 @@ end
 local function blind(w)
   w.blind = true
   log(w, "no whole loop from its scout: the wave comes blind" .. (w.scout_died_at and string.format(" (its scout killed by %s at %.0f,%.0f, %.0f from the turrets' middle)",
-    w.scout_killer or "?", w.scout_died_at.x, w.scout_died_at.y, math.sqrt(d2(w.scout_died_at, w.center))) or " (its scout alive)"))
+    w.scout_killer or "?", w.scout_died_at.x, w.scout_died_at.y, math.sqrt(d2(w.scout_died_at, w.center)))
+    or (w.scout and w.scout.valid and " (its scout alive)") or " (its scout gone without dying: taken off the map)"))
   local p = st().pens[w.pen]
   if p then
     local m = p.memory[memory_key(w.center)] or {extra = 0}
@@ -799,6 +808,13 @@ local function step(w, tick)
     local sc = w.scout
     if not (sc and sc.valid) then return blind(w) end
     if tick % 30 == 0 then
+      -- The faces it has seen: within its sight of a face's point on the turrets' box.
+      w.watched = w.watched or {}
+      for k = 0, 7 do
+        if not w.watched[k] and d2(sc.position, to_box(w.center, w.hx, w.hy, k * math.pi / 4)) <= w.sight * w.sight then
+          w.watched[k] = true
+        end
+      end
       for _, t in pairs(s.find_entities_filtered{position = sc.position, radius = w.sight, force = foes(w), type = TURRETS}) do
         if not w.seen[t.unit_number] then
           local a = math.atan2(t.position.y - w.center.y, t.position.x - w.center.x)
@@ -839,7 +855,21 @@ local function step(w, tick)
     end
     return
   end
-  if not (w.group and w.group.valid) then return finish(w, "scattered") end
+  if not (w.group and w.group.valid) then
+    -- Its group gone with its members alive (a failed order disbands a group on 2.1): formed again where they stand and
+    -- on with what it was doing, up to REGROUPS times; only then scattered.
+    local live = herd_units(w)
+    if #live >= 2 and (w.regroups or 0) < REGROUPS and (w.stage == "inside" or w.stage == "breach" or w.stage == "march"
+      or w.stage == "blind") then
+      w.regroups = (w.regroups or 0) + 1
+      w.group = s.create_unit_group{position = where(w), force = B.force}
+      for _, u in ipairs(live) do if not u.commandable.parent_group then w.group.add_member(u) end end
+      log(w, string.format("its group broke up with %d alive: formed again (%d of %d)", #live, w.regroups, REGROUPS))
+      if w.stage == "march" then march(w) elseif w.stage == "blind" then blind_attack(w) else hunt(w) end
+      return
+    end
+    return finish(w, "scattered")
+  end
   if w.stage == "inside" or w.stage == "breach" or w.stage == "blind" then
     if alive(w) * 2 < w.size then return withdraw(w, "half lost") end
     if w.t_inside and tick - w.t_inside > INSIDE_TICKS then return withdraw(w, "time inside") end

@@ -2346,10 +2346,19 @@ scenarios.system = function()
     for x = x0 + 5, x1 - 5, 14 do for y = y0 + 5, y1 - 5, 14 do put("substation", x, y) end end
     S.guns = {}
     local k = 0
+    -- One face lightly held, as a real base has one (the user, 2026-10-24: Synthexis, the smart biter enemy, is to find
+    -- and use the weak face; against an even square of guns it had none to find): by the seed, north, south, west or
+    -- east, a single gun turret in its middle instead of seven turrets.
+    local seed = game.default_map_gen_settings.seed
+    S.weak = ({[12345] = "north", [1] = "south", [4242] = "west", [777] = "east"})[seed]
+      or ({"north", "south", "west", "east"})[(seed % 4) + 1]
     for t = -36, 36, 12 do
-      for _, side in ipairs({{t, y0 + 3}, {t, y1 - 3}, {x0 + 3, t}, {x1 - 3, t}}) do
+      for f, side in ipairs({{t, y0 + 3}, {t, y1 - 3}, {x0 + 3, t}, {x1 - 3, t}}) do
         k = k + 1
-        if k % 2 == 0 then table.insert(S.guns, put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100}))
+        local face = ({"north", "south", "west", "east"})[f]
+        if face == S.weak then
+          if t == 0 then table.insert(S.guns, put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100})) end
+        elseif k % 2 == 0 then table.insert(S.guns, put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100}))
         else put("laser-turret", side[1], side[2]) end
       end
     end
@@ -2542,6 +2551,7 @@ scenarios.system = function()
       end
       local fs = lp("farm_state").farms
       frame.watch = (lp("watch_state") or {}).alarms or {}
+      frame.weak = S.weak
       -- The wild biters' nests on the map (LP_MIX=aged grows them for an hour).
       frame.nests = surface().count_entities_filtered{force = "enemy", type = "unit-spawner"}
       frame.biotech = {farms = #fs, at = {}}
