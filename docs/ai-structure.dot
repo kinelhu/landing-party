@@ -68,8 +68,8 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n933 lines", width=1.84, fillcolor="#eef2f7"];
-    "farm" [label="farm\n562 lines", width=1.42, fillcolor="#eef2f7"];
+    "herd" [label="herd\n998 lines", width=1.91, fillcolor="#eef2f7"];
+    "farm" [label="farm\n571 lines", width=1.43, fillcolor="#eef2f7"];
     "creep" [label="creep\n273 lines", width=1.10, fillcolor="#eef2f7"];
     "cell" [label="cell\n316 lines", width=1.15, fillcolor="#eef2f7"];
   }
@@ -82,7 +82,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n625 lines", width=1.49, fillcolor="#eef2f7"];
+    "control" [label="control\n627 lines", width=1.50, fillcolor="#eef2f7"];
     "dev" [label="dev\n189 lines", width=1.01, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
   }

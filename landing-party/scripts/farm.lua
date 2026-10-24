@@ -237,6 +237,7 @@ local function foes()
   return out
 end
 
+local NOVELTY_REACH = 192   -- a trial counts for the same force's ground this near (three cells)
 local function trials()
   local k = know.of("biotech")
   k.trials = k.trials or {}
@@ -275,6 +276,14 @@ local function target_from(surface, pos, f, n)
       c.novelty = 1
       if t and math.abs(c.defence - t.defence) <= 0.3 * math.max(t.defence, 1) then
         c.novelty = 1 - math.exp(-(game.tick - t.tick) / mind.fade)
+      end
+      -- And a trial beside it on the same force's ground (within NOVELTY_REACH): each corner of one camp read as untried,
+      -- and five waves in a row went at Kessler-Hayashi's sprawling camp, every one lost (system 12345, 2026-10-24).
+      for key, o in pairs(tried) do
+        local f2, ox, oy = key:match("^(.-)|(-?%d+),(-?%d+)$")
+        if f2 == c.force and key ~= c.key and ((tonumber(ox) - c.cx) ^ 2 + (tonumber(oy) - c.cy) ^ 2) * 64 * 64 <= NOVELTY_REACH ^ 2 then
+          c.novelty = math.min(c.novelty, 1 - math.exp(-(game.tick - o.tick) / mind.fade))
+        end
       end
       c.dist = math.sqrt(c.d)
       c.score = (1 + c.defence) * c.teach * c.novelty / (1 + c.dist / mind.far)

@@ -2353,6 +2353,17 @@ scenarios.system = function()
         else put("laser-turret", side[1], side[2]) end
       end
     end
+    -- LP_MIX=aged: a base hours in, a second ring of turrets inside the wall (16 more).
+    if params.mix == "aged" then
+      local j = 0
+      for t = -30, 30, 20 do
+        for _, side in ipairs({{t, y0 + 7}, {t, y1 - 7}, {x0 + 7, t}, {x1 - 7, t}}) do
+          j = j + 1
+          if j % 2 == 0 then table.insert(S.guns, put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100}))
+          else put("laser-turret", side[1], side[2]) end
+        end
+      end
+    end
     for i = 0, 11 do
       local a = put("assembling-machine-2", -25 + (i % 4) * 9, -20 + math.floor(i / 4) * 12)
       if a then a.set_recipe("iron-gear-wheel"); a.insert{name = "iron-plate", count = 400} end
@@ -2395,6 +2406,22 @@ scenarios.system = function()
   -- did, and then nothing landed again in two hours): oil researched (Grubstake's survey party), a chemical science pack
   -- made (its camp), the late gate opened (Kessler-Hayashi); the landing clock brings the rest.
   local forced = params.mix == "forced"
+  -- LP_MIX=aged (the natural opening on an older world): for its first hour the wild biters expand every 30 to 60 s
+  -- from evolution 0.3 (default: 4 to 60 minutes), so the map has the grown nest fields of a game hours in; then the
+  -- defaults again.
+  if params.mix == "aged" then
+    schedule(20, function()
+      local ex = game.map_settings.enemy_expansion
+      ex.enabled = true
+      S.expansion = {ex.min_expansion_cooldown, ex.max_expansion_cooldown}
+      ex.min_expansion_cooldown, ex.max_expansion_cooldown = 30 * 60, 60 * 60
+      game.forces.enemy.set_evolution_factor(0.3, surface())
+    end)
+    schedule(60 * 3600, function()
+      local ex = game.map_settings.enemy_expansion
+      ex.min_expansion_cooldown, ex.max_expansion_cooldown = S.expansion[1], S.expansion[2]
+    end)
+  end
   -- LP_MIX=dump<minute> (natural opening): each camp's map at that minute (scripts/campmap.py draws it), to see a raid
   -- that never left its camp (9 of 55 raids in the four seeds, 2026-10-24).
   local dump_at = tonumber((params.mix or ""):match("^dump(%d+)$"))
@@ -2435,7 +2462,8 @@ scenarios.system = function()
   end
   schedule(SYSTEM_SYNTH * 3600, function()
     local evo = game.forces.enemy.get_evolution_factor(surface())
-    if evo < 0.25 then game.forces.enemy.set_evolution_factor(0.25, surface()) end
+    local want = params.mix == "aged" and 0.4 or 0.25
+    if evo < want then game.forces.enemy.set_evolution_factor(want, surface()) end
     -- A field for it, away from Serenity (a seed may have none in its band); not taken (seed 1: no landing in two
     -- hours), another a quarter turn round, five minutes on, up to four.
     local o = S.s and lp("stats", S.s) and lp("stats", S.s).origin or {x = 1, y = 0}
@@ -2447,9 +2475,22 @@ scenarios.system = function()
       local c = {math.cos(a) * 900, math.sin(a) * 900}
       surface().request_to_generate_chunks(c, 3)
       surface().force_generate_chunk_requests()
-      for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}, {-8, -12}}) do
+      -- Aged: a grown field, twelve nests and four worms (the user, 2026-10-24: Synthexis arrives after hours of
+      -- the biters' spreading, not on five nests).
+      local spots = {{0, 0}, {14, 6}, {-12, 8}, {6, -14}, {-8, -12}}
+      if params.mix == "aged" then
+        for i = 1, 7 do local b_ = i * 2 * math.pi / 7; table.insert(spots, {math.cos(b_) * 28, math.sin(b_) * 28}) end
+      end
+      for _, d in ipairs(spots) do
         local q = surface().find_non_colliding_position("biter-spawner", {c[1] + d[1], c[2] + d[2]}, 30, 1)
         if q then surface().create_entity{name = "biter-spawner", position = q, force = "enemy"} end
+      end
+      if params.mix == "aged" then
+        for i = 1, 4 do
+          local b_ = (i + 0.5) * math.pi / 2
+          local q = surface().find_non_colliding_position("medium-worm-turret", {c[1] + math.cos(b_) * 18, c[2] + math.sin(b_) * 18}, 20, 1)
+          if q then surface().create_entity{name = "medium-worm-turret", position = q, force = "enemy"} end
+        end
       end
       S.synth = lp("farm_arrive", 1)
       S.synth_tries = k + 1
@@ -2501,6 +2542,8 @@ scenarios.system = function()
       end
       local fs = lp("farm_state").farms
       frame.watch = (lp("watch_state") or {}).alarms or {}
+      -- The wild biters' nests on the map (LP_MIX=aged grows them for an hour).
+      frame.nests = surface().count_entities_filtered{force = "enemy", type = "unit-spawner"}
       frame.biotech = {farms = #fs, at = {}}
       for _, f in ipairs(fs) do
         local q = f.pos and (f.pos.x and f.pos or {x = f.pos[1], y = f.pos[2]})

@@ -25,6 +25,8 @@ local SIGHT = 40            -- what a biter of the pack sees, scout or herd (til
 local LOOP_OUT = 29         -- the loop past the outermost turret: beyond a laser (24); a flamethrower (30) reaches it
 local LOOP_POINTS = 16
 local STOP_EVERY = 4        -- a pause at every fourth loop point: four faces
+local LOOP_CLEAR = 30       -- a loop point this far from every foe turret (a gun turret's 18, a laser's 24, a margin)
+local RESUMES = 3          -- a failed loop taken up again from the next point, at most this often
 local STOP_TICKS = 600
 local SIT_TICKS = 30 * 3600
 local GATHER_TICKS = 90 * 60
@@ -94,6 +96,13 @@ local function add(p, dx, dy) return {x = p.x + dx, y = p.y + dy} end
 local function players() return shared.player_forces() end
 -- Whom a wave is sent against: the player's forces, or the rival it was sent at (farm.lua, every third wave).
 local function foes(w) return (w and w.foes) or players() end
+-- Everyone whose turrets shoot its units: the player's forces and every corporation's (a wave's foes are its target's).
+local function hostiles()
+  local out = {}
+  for _, f in ipairs(players()) do out[#out + 1] = f end
+  for _, c in pairs(shared.CORPS) do if game.forces[c.force] then out[#out + 1] = c.force end end
+  return out
+end
 
 local function log(w, text)
   if storage.trace then
@@ -246,10 +255,36 @@ end
 
 -- The wave ---------------------------------------------------------------------------------------------------------
 
--- The loop: a box LOOP_OUT (and what dead scouts taught) outside the turrets' box, sixteen points round it.
-local function loop_point(w, j)
-  local a = (j % LOOP_POINTS) * 2 * math.pi / LOOP_POINTS
-  return to_box(w.center, w.hx + w.loop, w.hy + w.loop, a)
+-- The loop: a box LOOP_OUT (and what dead scouts taught) outside the turrets' box, sixteen points round it, each moved
+-- to the nearest ground a biter can stand on (kept once its chunk is generated). On the box itself a point fell in a
+-- lake, on a cliff or on a building, its leg failed, and the scout's whole loop with it: 14 of 19 waves came blind
+-- (the system sim, 0.2.9).
+-- `scouting`: the scout's own loop, moved to walkable ground clear of every turret. Without it, the point as laid out:
+-- the mark and the herd's approach (its probe tests the turrets by the mark: moved 60 tiles off, it tested none).
+local function loop_point(w, j, scouting)
+  local k = j % LOOP_POINTS
+  local a = k * 2 * math.pi / LOOP_POINTS
+  local p = to_box(w.center, w.hx + w.loop, w.hy + w.loop, a)
+  if not scouting then return p end
+  w.snap = w.snap or {}
+  if w.snap[k] then return w.snap[k] end
+  local s = game.surfaces[w.surface]
+  if s and s.is_chunk_generated({math.floor(p.x / 32), math.floor(p.y / 32)}) then
+    -- Out of every foe turret's reach too, pushed outward up to 60 tiles: on a ring laid out from its target's turrets
+    -- alone, the corporations' outposts and pickets beside it shot 7 of 12 blind waves' scouts (2026-10-24).
+    local ux, uy = p.x - w.center.x, p.y - w.center.y
+    local ul = math.max(1, math.sqrt(ux * ux + uy * uy))
+    for out = 0, 60, 10 do
+      local q0 = {x = p.x + ux / ul * out, y = p.y + uy / ul * out}
+      if s.count_entities_filtered{position = q0, radius = LOOP_CLEAR, type = TURRETS, force = hostiles(), limit = 1} == 0 then
+        p = q0
+        break
+      end
+    end
+    local q = s.find_non_colliding_position(w.scout and w.scout.valid and w.scout.name or "small-biter", p, 12, 1)
+    if q then w.snap[k] = {x = q.x, y = q.y}; return w.snap[k] end
+  end
+  return p
 end
 -- The base's edge (its turrets' box) toward pos.
 local function face_toward(w, pos)
@@ -344,9 +379,19 @@ function herd.launch(p, target, opts)
   -- By the engine's route, not straight legs (a leg's waypoint across a lake had no path); its track becomes the
   -- approach the herd marches (w.crumbs, step).
   w.approach, w.crumbs = {}, {xy(w.scout.position)}
-  local cmds = {go(loop_point(w, entry), defines.distraction.none, 6)}
+  -- To its loop round every foe's turrets, not only its target's (the corporations' route, ops.route, wired by
+  -- control.lua): on the engine's way its scouts were shot passing the corporations' camps and outposts, 100 to 300
+  -- tiles from what they scouted, and 14 of 19 waves came blind (the system sim, 0.2.9).
+  local cmds = {}
+  if herd.route then
+    local e = loop_point(w, entry, true)
+    local way = herd.route({surface = s.index, force = B.force}, {w.scout.position.x, w.scout.position.y}, {e.x, e.y},
+      {turrets = true, nests = false})
+    for _, q in ipairs(way or {}) do table.insert(cmds, go({x = q[1], y = q[2]}, defines.distraction.none, 6)) end
+  end
+  table.insert(cmds, go(loop_point(w, entry, true), defines.distraction.none, 6))
   for k = 0, LOOP_POINTS do
-    table.insert(cmds, go(loop_point(w, entry + k)))
+    table.insert(cmds, go(loop_point(w, entry + k, true)))
     if k % STOP_EVERY == 0 and k < LOOP_POINTS then
       table.insert(cmds, {type = defines.command.stop, ticks_to_wait = STOP_TICKS, distraction = defines.distraction.none})
     end
@@ -541,7 +586,8 @@ end
 
 local function blind(w)
   w.blind = true
-  log(w, "no whole loop from its scout: the wave comes blind")
+  log(w, "no whole loop from its scout: the wave comes blind" .. (w.scout_died_at and string.format(" (its scout killed by %s at %.0f,%.0f, %.0f from the turrets' middle)",
+    w.scout_killer or "?", w.scout_died_at.x, w.scout_died_at.y, math.sqrt(d2(w.scout_died_at, w.center))) or " (its scout alive)"))
   local p = st().pens[w.pen]
   if p then
     local m = p.memory[memory_key(w.center)] or {extra = 0}
@@ -771,7 +817,7 @@ local function step(w, tick)
     -- Its track, every 60 tiles, until it reaches the loop: the herd's approach.
     if tick % 60 == 0 and not w.at_loop then
       local last = w.crumbs[#w.crumbs]
-      if d2(sc.position, loop_point(w, w.entry)) < 15 * 15 then
+      if d2(sc.position, loop_point(w, w.entry, true)) < 15 * 15 then
         w.at_loop = true
       elseif d2(sc.position, last) >= 60 * 60 then
         table.insert(w.crumbs, xy(sc.position))
@@ -844,6 +890,22 @@ function herd.on_command_completed(e)
       log(w, string.format("scout's loop done (%s, result %d%s) at %.0f,%.0f, %d turrets seen",
         e.result == defines.behavior_result.success and "whole" or "cut short", e.result,
         e.was_distracted and ", distracted" or "", w.scout.position.x, w.scout.position.y, w.scout_seen))
+      -- A leg it could not walk: the rest of the loop from the point after its nearest, the unwalkable one skipped, up to
+      -- RESUMES times (one unreachable point failed the whole compound).
+      if e.result ~= defines.behavior_result.success and (w.resumes or 0) < RESUMES and w.scout.valid then
+        local near, nd = 0, nil
+        for k = 0, LOOP_POINTS do
+          local d = d2(w.scout.position, loop_point(w, w.entry + k, true))
+          if not nd or d < nd then near, nd = k, d end
+        end
+        local cmds = {}
+        for k = near + 2, LOOP_POINTS do table.insert(cmds, go(loop_point(w, w.entry + k, true))) end
+        if #cmds == 0 then return mark(w) end
+        w.resumes = (w.resumes or 0) + 1
+        log(w, string.format("scout resumes its loop from point %d of %d (a leg it could not walk)", near + 2, LOOP_POINTS))
+        w.scout.commandable.set_command(compound(cmds))
+        return
+      end
       -- Half a loop is not a report: faces it never saw would read as empty (a squad in its way cut one short, and the
       -- herd went for a face it had not seen). It comes blind, and the next loop there goes wider.
       if e.result ~= defines.behavior_result.success then return blind(w) end
@@ -876,7 +938,10 @@ function herd.on_died(e)
     end
   end
   for _, w in pairs(h.waves) do
-    if w.scout == ent and w.stage == "scout" then w.scout_died_at = {x = ent.position.x, y = ent.position.y} end
+    if w.scout == ent and w.stage == "scout" then
+      w.scout_died_at = {x = ent.position.x, y = ent.position.y}
+      w.scout_killer = (e.cause and e.cause.valid and e.cause.name) or (e.force and e.force.name) or "?"
+    end
   end
 end
 

@@ -41,6 +41,8 @@ local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
 local herd = require("__landing-party__.scripts.herd")
+-- Synthexis's scouts take the corporations' way round turrets (herd.lua; a hook, not a require: ops is the corporations').
+herd.route = function(...) return ops.route(...) end
 local farm = require("__landing-party__.scripts.farm")
 local creep = require("__landing-party__.scripts.creep")
 local cell = require("__landing-party__.scripts.cell")
