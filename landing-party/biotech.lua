@@ -160,12 +160,17 @@ do
   table.insert(out, r)
 end
 
--- The burster (id cinder; tier 3, the breeds consult): a big biter with acid bands that dies into the demolisher's fissure (a
+-- The burster (id cinder; tier 3, the breeds consult): a biter with acid bands that dies into the demolisher's fissure (a
 -- telegraphed crack, then an eruption that breaks walls and turrets round it: fire would not, walls are immune to it,
 -- and fire spreads). Shoot the banded one first, at range. Its eruption hurts any force but its own ("not-same"), so a
 -- cinder killed at home cracks no incubator. Lit at night by script (farm.on_spawned).
+-- A baneling since 0.2.7 (the user, 2026-10-24: "a little more fragile? perhaps on a small biter body that goes fast?
+-- ... giving some time to react before they burst in your face"): a medium biter's body, faster than any breed, no
+-- armour (it was a big biter's, whose physical 8 flat took a rifle's 8 down to 0.45: one held off ten troopers), and it
+-- does not bite: in reach of its target it bursts, and dies of it.
 -- In Synthexis's colours (the user, 2026-10-23: the banelings', "recolor the eruption to be more in theme"): violet
 -- and acid bands, an acid-green crack and burst where vanilla's are lava.
+local BURSTER = {health = 120, speed = 0.32}
 local EMBER1, EMBER2 = {r = 0.72, g = 0.35, b = 1, a = 1}, {r = 0.6, g = 1, b = 0.2, a = 1}
 local ACID, ACID_LIGHT = {r = 0.45, g = 1, b = 0.3, a = 1}, {r = 0.35, g = 1, b = 0.2}
 local function acid(t, seen)
@@ -182,9 +187,14 @@ local function ember(t, n)
 end
 do
   local src
-  for _, p in ipairs(out) do if p.name == "lp-bred-big-biter" then src = p end end
+  for _, p in ipairs(out) do if p.name == "lp-bred-medium-biter" then src = p end end
   local c = table.deepcopy(src)
   c.name = "lp-bred-cinder"
+  c.max_health, c.movement_speed, c.resistances = BURSTER.health, BURSTER.speed, {}
+  -- Its attack is its end: the hit kills it (as the bomb drone's), and its death is the eruption below.
+  c.attack_parameters.cooldown = 30
+  c.attack_parameters.ammo_type = {target_type = "entity", action = {type = "direct", action_delivery = {type = "instant",
+    source_effects = {{type = "damage", damage = {amount = 10000, type = "physical"}}}}}}
   c.localised_name = {"entity-name.lp-bred-cinder"}
   c.localised_description = {"entity-description.lp-bred-cinder"}
   ember(c.run_animation, 0)

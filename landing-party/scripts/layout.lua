@@ -1022,15 +1022,7 @@ function layout.fortify(b)
         push(b, {name = "lp-flamer", pos = {x0 - 2.5, y0 + oy + blocks.OPENING + 1}, dir = defines.direction.west, module = block})
         push(b, {name = "lp-flamer", pos = {x0 + w + 1.5, y0 + oy - 1}, dir = defines.direction.east, module = block})
       end
-      if arch.baffles and block.kind ~= "picket" then
-        -- A baffle wall two tiles inside each opening, wider than it: entry zigzags (the staggered double wall).
-        for k = -1, blocks.OPENING do
-          push(b, {name = "lp-wall", pos = {x0 + ox + k + 0.5, y0 + 2.5}, module = block})
-          push(b, {name = "lp-wall", pos = {x0 + ox + k + 0.5, y0 + h - 2.5}, module = block})
-          push(b, {name = "lp-wall", pos = {x0 + 2.5, y0 + oy + k + 0.5}, module = block})
-          push(b, {name = "lp-wall", pos = {x0 + w - 2.5, y0 + oy + k + 0.5}, module = block})
-        end
-      end
+      -- (No baffle walls inside the openings since 2026-10-24: the lane they left stopped its tanks, scenario blockexit.)
       if block.kind ~= "picket" and block.kind ~= "depot" then
         local corners = {{2, 2}, {w - 2, 2}, {2, h - 2}, {w - 2, h - 2}}
         for _, c in ipairs(corners) do

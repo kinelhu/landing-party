@@ -170,7 +170,10 @@ local function produce(b, trace)
     if depot.valid then
       local surface = depot.surface
       local proto = rd.unit(b.corp, name)
-      local p = surface.find_non_colliding_position(proto, {depot.position.x, depot.position.y + 4}, 12, 0.5)
+      -- Out past its own walls, facing the player, where walls stand between (army.muster); else by the depot.
+      local spawn = game.forces.player.get_spawn_position(surface)
+      local p, out = army.muster(b, depot.position, spawn, proto, 0)
+      if out < 5 then p = surface.find_non_colliding_position(proto, {depot.position.x, depot.position.y + 4}, 12, 0.5) end
       local u = p and surface.create_entity{name = proto, position = p, force = depot.force}
       if u then
         b.parts = b.parts - cost
@@ -364,6 +367,24 @@ local function uplink_settlement(b)
   if u and u.uplink and u.uplink.valid then return u end
 end
 
+-- Its rally point: past its own outermost wall on the line from `from` toward `to` (its own walls only: walked the whole
+-- way, the uplink's, the same force, set a hauler down beside it, delivered in 0 s), at least `min` out. Units made inside
+-- a walled district or block stood there raid after raid (system 4242, 2026-10-24: tanks in a district walled shut on
+-- the side facing the player); a convoy's haulers made inside never left (visit deathworld10x). nil: no free spot.
+function army.muster(b, from, to, name, min)
+  local surface = b.lander.surface
+  local hx, hy = from.x or from[1], from.y or from[2]
+  local ux, uy = (to.x or to[1]) - hx, (to.y or to[2]) - hy
+  local ul = math.max(1, math.sqrt(ux * ux + uy * uy))
+  local out = min or 0
+  for d = 0, ul / 2, 2 do
+    if surface.count_entities_filtered{position = {hx + ux / ul * d, hy + uy / ul * d}, radius = 2.5, force = b.lander.force,
+      type = {"wall", "gate"}, limit = 1} > 0 then out = math.max(out, d + 5) end
+  end
+  out = math.min(out, ul)
+  return surface.find_non_colliding_position(name, {hx + ux / ul * out, hy + uy / ul * out}, 20, 0.5), out
+end
+
 function army.convoy(b, cargo, trace)
   local dest = uplink_settlement(b)
   if not dest or dest == b then return false end
@@ -372,18 +393,7 @@ function army.convoy(b, cargo, trace)
   -- Form up outside the settlement, on the side facing the uplink: past its outermost wall or gate on that line (gates open
   -- for no unit). Formed 25 to 45 tiles out, a nine-block bastion's haulers were made inside a walled fab compound and
   -- never left: 68 sent, none delivered (visit deathworld10x). Beside a walled depot, escorts stalled (seed 4242).
-  local hx, hy = home.position.x, home.position.y
-  local ux, uy = dest.uplink.position.x - hx, dest.uplink.position.y - hy
-  local ul = math.max(1, math.sqrt(ux * ux + uy * uy))
-  -- Its own walls only: walked the whole way, the uplink's (the same force) set the hauler down beside it, delivered in 0 s.
-  local out = 25
-  for d = 0, ul / 2, 2 do
-    if surface.count_entities_filtered{position = {hx + ux / ul * d, hy + uy / ul * d}, radius = 2.5, force = home.force,
-      type = {"wall", "gate"}, limit = 1} > 0 then out = math.max(out, d + 5) end
-  end
-  out = math.min(out, ul)
-  local p = surface.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), {hx + ux / ul * out, hy + uy / ul * out},
-    20, 0.5)
+  local p = army.muster(b, home.position, dest.uplink.position, shared.variant(b.corp, "lp-hauler"), 25)
   local hauler = p and surface.create_entity{name = shared.variant(b.corp, "lp-hauler"), position = p, force = home.force}
   if not hauler then return false end
   local escorts = {}

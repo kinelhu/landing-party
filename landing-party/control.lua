@@ -233,7 +233,9 @@ script.on_event(defines.events.on_entity_died, function(e)
   end
   if shared.is_corp(ent.force.name) then
     -- Killed by a rival corporation: the camp it belonged to remembers (ops.wronged: a reprisal).
-    if e.force and shared.is_corp(e.force.name) and e.force ~= ent.force and ent.unit_number then
+    -- (Not a unit lost away from home: its own raid's cost, know.at_home.)
+    local away = (ent.type == "unit" or ent.type == "spider-unit") and not know.at_home(know.faction_of(ent.force.name), ent.position)
+    if e.force and shared.is_corp(e.force.name) and e.force ~= ent.force and ent.unit_number and not away then
       local own = storage.owner[ent.unit_number]
       ops.wronged(storage.bases[own and own.base or storage.unit_owner[ent.unit_number] or 0], e.force.name)
     end

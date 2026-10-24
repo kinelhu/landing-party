@@ -852,7 +852,11 @@ scenarios.army = function()
     -- Any outpost: the beacon picks the one nearest to itself, not necessarily the test's (seed 777).
     local mine = surface().count_entities_filtered{name = "lp-drill", force = "player"}
     check("army: troopers were trained", (S.trained or 0) >= 10, tostring(S.trained) .. " by the advance")
-    check("army: the beacon took them to the outpost", S.reached >= 5, S.reached .. " at the outpost at most")
+    -- Those the camp's turrets killed on the way count as taken there: the beacon's path is the test, and with the camp
+    -- guarding its outposts sooner (0.2.7), 8 of 12 fell to an outpost's guns on the way and 4 stood at it.
+    local shot = (S.killers or {})["lp-gun-turret"] or 0
+    check("army: the beacon took them to the outpost", S.reached + shot >= 5,
+      S.reached .. " at the outpost at most, " .. shot .. " shot by its turrets on the way")
     check("army: holding it captured it", mine > 0 and st.captured > 0, mine .. " drills now the player's, " ..
       st.captured .. " outposts captured")
     info("army: " .. serpent.line(lp("army")) .. ", killed by " .. serpent.line(S.killers or {}))
@@ -2391,6 +2395,17 @@ scenarios.system = function()
   -- did, and then nothing landed again in two hours): oil researched (Grubstake's survey party), a chemical science pack
   -- made (its camp), the late gate opened (Kessler-Hayashi); the landing clock brings the rest.
   local forced = params.mix == "forced"
+  -- LP_MIX=dump<minute> (natural opening): each camp's map at that minute (scripts/campmap.py draws it), to see a raid
+  -- that never left its camp (9 of 55 raids in the four seeds, 2026-10-24).
+  local dump_at = tonumber((params.mix or ""):match("^dump(%d+)$"))
+  if dump_at then
+    schedule(dump_at * 3600, function()
+      for _, id in ipairs(lp("bases")) do
+        local st = lp("stats", id)
+        dump_map(string.format("system-%s-%d-m%d", st.corp, id, dump_at), {st.origin.x, st.origin.y}, 160)
+      end
+    end)
+  end
   if forced then
     schedule(SYSTEM_LAND_G * 3600, function()
       S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
@@ -2454,12 +2469,14 @@ scenarios.system = function()
         local st = lp("stats", id)
         if st then
           local c = frame.corps[st.corp] or {bases = 0, live = 0, radius = {}, parts = 0, made = 0, fabs = 0, drills = 0,
-            turrets = 0, garrison = 0, units_lost = 0, lost = 0, raids = 0, ops = {}, claims = 0}
+            turrets = 0, garrison = 0, units_lost = 0, lost = 0, raids = 0, ops = {}, claims = 0, at = {}}
           frame.corps[st.corp] = c
           c.bases = c.bases + 1
           if not st.fallen then
             c.live = c.live + 1
             table.insert(c.radius, st.claim_radius or 0)
+            -- Where its camps stand (system_report.py: a rivalry is judged between neighbours).
+            table.insert(c.at, {math.floor(st.origin.x), math.floor(st.origin.y)})
             c.parts, c.made = c.parts + (st.parts or 0), c.made + (st.made or 0)
             c.fabs, c.drills, c.turrets = c.fabs + st.fabs, c.drills + st.drills, c.turrets + st.turrets
             c.garrison = c.garrison + st.garrison
@@ -2483,7 +2500,11 @@ scenarios.system = function()
           all = surface().count_entities_filtered{force = f}}
       end
       local fs = lp("farm_state").farms
-      frame.biotech = {farms = #fs}
+      frame.biotech = {farms = #fs, at = {}}
+      for _, f in ipairs(fs) do
+        local q = f.pos and (f.pos.x and f.pos or {x = f.pos[1], y = f.pos[2]})
+        if q then table.insert(frame.biotech.at, {math.floor(q.x), math.floor(q.y)}) end
+      end
       if fs[1] then frame.biotech.pens, frame.biotech.evo, frame.biotech.clinic = fs[1].pens, fs[1].evo, fs[1].clinic end
       local hs = lp("herd_state")
       frame.biotech.waves = #(hs.log or {})
@@ -7398,6 +7419,185 @@ scenarios.gates = function()
     else
       check("gates: its raiders got out and razed the target", S.target and not S.target.valid, serpent.line(st.ops.log))
     end
+  end)
+end
+
+-- Way out (2026-10-24: Kessler-Hayashi's tanks stood in its walled blocks raid after raid while its infantry left, 9 of
+-- 55 raids in the four-seed system sim called off). A ring of its wall, 21 across, an opening of 4 on the east; inside,
+-- two each of a tank (2 x 2), a buggy (1.4) and drone infantry, ordered 60 tiles east. LP_MIX: gap (the opening empty),
+-- gate (gated, every gate asked open each second from a second before the order), shut (gated, never opened),
+-- lane2, lane3, lane4 (the opening empty, and a lane that wide from it between two walls, 12 long).
+scenarios.wayout = function()
+  local mode = params.mix ~= "" and params.mix or "gap"
+  local C = {200, 200}
+  -- A force of its own (the mod commands Kessler-Hayashi's units), and the ground generated (no unit paths through a chunk
+  -- never made).
+  local F = "lp-wayout"
+  schedule(30, function()
+    if not game.forces[F] then game.create_force(F) end
+    surface().request_to_generate_chunks({C[1] + 30, C[2]}, 4)
+    surface().force_generate_chunk_requests()
+  end)
+  schedule(60, function()
+    flatten(C[1] - 20, C[2] - 20, C[1] + 80, C[2] + 20)
+    local function wall(x, y, name)
+      surface().create_entity{name = name or "lp-wall", position = {C[1] + x + 0.5, C[2] + y + 0.5}, force = F,
+        direction = defines.direction.north}
+    end
+    for k = -10, 10 do
+      wall(k, -10); wall(k, 10); wall(-10, k)
+      if k < -2 or k > 1 then wall(10, k)
+      elseif mode == "gate" or mode == "shut" then wall(10, k, "lp-gate") end
+    end
+    -- lane2, lane3, lane4: a lane that wide beyond the opening (walls either side, 12 long).
+    local lane = tonumber(mode:match("^lane(%d)$"))
+    if lane then
+      local lo = -math.floor(lane / 2) - 1
+      for x = 11, 22 do wall(x, lo); wall(x, lo + lane + 1) end
+    end
+    S.units = {}
+    for _, name in ipairs({"lp-tank", "lp-buggy", "lp-infantry"}) do
+      for _, u in ipairs(spawn(name, {C[1] - 3, C[2]}, 2, F)) do table.insert(S.units, u) end
+    end
+  end)
+  if mode == "gate" then
+    for t = 120, 120 + 70 * 60, 60 do
+      schedule(t, function()
+        for _, g in pairs(surface().find_entities_filtered{name = "lp-gate", position = C, radius = 20}) do
+          g.request_to_open(g.force, 90)
+        end
+      end)
+    end
+  end
+  schedule(180, function()
+    for _, u in ipairs(S.units) do
+      u.commandable.set_command{type = defines.command.go_to_location, destination = {C[1] + 60, C[2]}, radius = 6,
+        distraction = defines.distraction.none}
+    end
+  end)
+  schedule(180 + 60 * 60, function()
+    local out = {}
+    for _, u in ipairs(S.units) do
+      if u.valid then
+        local k = u.name
+        out[k] = out[k] or {out = 0, n = 0}
+        out[k].n = out[k].n + 1
+        if u.position.x > C[1] + 40 then out[k].out = out[k].out + 1 end
+        info(string.format("wayout %s: %s ends at %.0f,%.0f", mode, k, u.position.x - C[1], u.position.y - C[2]))
+      end
+    end
+    for k, v in pairs(out) do info(string.format("wayout %s: %s %d of %d out", mode, k, v.out, v.n)) end
+    local all, any = true, false
+    for _, v in pairs(out) do
+      if v.out < v.n then all = false end
+      if v.out > 0 then any = true end
+    end
+    if mode == "shut" then check("wayout: shut, none out", not any, serpent.line(out))
+    else check("wayout: " .. mode .. ", every unit out", all, serpent.line(out)) end
+  end)
+end
+
+-- Block exits (2026-10-24: wayout says a lane under 3 wide stops every unit). Every walled block template of
+-- Kessler-Hayashi's (scripts/blocks.lua), built as its camp builds it (the wall ring, a gate in each opening, the corner
+-- turrets and pillboxes, every fixed entity and every slot filled; the pad with its lander): tanks set down inside, its
+-- gates held open, ordered 25 tiles north. Every tank must be out of every block within two minutes (five to a block
+-- queue at its gates). The launch block is left out: its
+-- pad fills the middle and no unit is made there.
+local BLOCKS = require("__landing-party__.scripts.blocks")
+local SHARED = require("__landing-party__.shared")
+scenarios.blockexit = function()
+  local F = "lp-wayout"
+  -- LP_MIX switches parts off to find what blocks: nopill, empty (no fixed or slot entities), noturret.
+  local mix = params.mix or ""
+  local arch = {}
+  for k, v in pairs(SHARED.CORPS.serenity.arch or {}) do arch[k] = v end
+  if mix:find("nopill", 1, true) then arch.pillboxes = false end
+  local empty, noturret = mix:find("empty", 1, true), mix:find("noturret", 1, true)
+  local made = {}
+  schedule(30, function()
+    if not game.forces[F] then game.create_force(F) end
+    surface().request_to_generate_chunks({650, -700}, 16)
+    surface().force_generate_chunk_requests()
+  end)
+  schedule(60, function()
+    local n = 0
+    for _, kind in ipairs({"fab", "gen", "depot", "compound", "pad"}) do
+      for v, t in ipairs(BLOCKS[kind]) do
+        local w = kind == "pad" and BLOCKS.PAD_W or BLOCKS.SIZE
+        local h = BLOCKS.SIZE
+        local x0, y0 = 200 + n * 80, -700
+        n = n + 1
+        flatten(x0 - 15, y0 - 40, x0 + w + 15, y0 + h + 10)
+        local function put(name, x, y, dir)
+          return surface().create_entity{name = name, position = {x0 + x, y0 + y}, force = F, direction = dir}
+        end
+        local ox, oy = math.floor(w / 2) - BLOCKS.OPENING / 2, math.floor(h / 2) - BLOCKS.OPENING / 2
+        for x = 0, w - 1 do for _, y in ipairs({0, h - 1}) do
+          put((x < ox or x >= ox + BLOCKS.OPENING) and "lp-wall" or (arch.gates and "lp-gate") or "lp-wall", x + 0.5, y + 0.5,
+            defines.direction.east)
+        end end
+        for y = 1, h - 2 do for _, x in ipairs({0, w - 1}) do
+          put((y < oy or y >= oy + BLOCKS.OPENING) and "lp-wall" or (arch.gates and "lp-gate") or "lp-wall", x + 0.5, y + 0.5,
+            defines.direction.north)
+        end end
+        if not empty then
+          for _, e in ipairs(t.fixed or {}) do put(e[1], e[2], e[3]) end
+          for _, e in ipairs(t.slots or {}) do put(e[1], e[2], e[3]) end
+        end
+        if kind == "pad" then put("lp-lander", w / 2, h / 2) end
+        for _, c in ipairs({{2, 2}, {w - 2, 2}, {2, h - 2}, {w - 2, h - 2}}) do
+          if not noturret then put("lp-turret", c[1], c[2]) end
+          if arch.pillboxes then
+            local sx, sy = c[1] < w / 2 and 1 or -1, c[2] < h / 2 and 1 or -1
+            for _, q in ipairs({{sx * 1.5, -sy * 0.5}, {sx * 1.5, sy * 0.5}, {-sx * 0.5, sy * 1.5}, {sx * 0.5, sy * 1.5}}) do
+              put("lp-wall", c[1] + q[1], c[2] + q[2])
+            end
+          end
+        end
+        -- Where its units stand: 4 below a depot and 8 below the lander (army.lua), the middle, and the cross's arms
+        -- (where they wander).
+        local tanks = {}
+        local spots = {{w / 2, h / 2}, {w / 2, 4}, {w / 2, h - 4}, {4, h / 2}, {w - 4, h / 2}}
+        for _, e in ipairs(t.fixed or {}) do if e[1] == "lp-depot" then table.insert(spots, 1, {e[2], e[3] + 4}) end end
+        if kind == "pad" then table.insert(spots, 1, {w / 2, h / 2 + 8}) end
+        for _, spot in ipairs(spots) do
+          local q = surface().find_non_colliding_position("lp-tank", {x0 + spot[1], y0 + spot[2]}, 4, 0.5)
+          if q and q.x > x0 + 1 and q.x < x0 + w - 1 and q.y > y0 + 1 and q.y < y0 + h - 1 then
+            local u = surface().create_entity{name = "lp-tank", position = q, force = F}
+            if u then table.insert(tanks, u) end
+          end
+        end
+        table.insert(made, {label = kind .. " " .. v, tanks = tanks, x0 = x0, y0 = y0, w = w})
+      end
+    end
+  end)
+  for t = 90, 90 + 130 * 60, 60 do
+    schedule(t, function()
+      for _, g in pairs(surface().find_entities_filtered{name = "lp-gate", force = F}) do g.request_to_open(g.force, 90) end
+    end)
+  end
+  schedule(150, function()
+    for _, m in ipairs(made) do
+      for _, u in ipairs(m.tanks) do
+        u.commandable.set_command{type = defines.command.go_to_location, destination = {m.x0 + m.w / 2, m.y0 - 25},
+          radius = 6, distraction = defines.distraction.none}
+      end
+    end
+  end)
+  schedule(150 + 120 * 60, function()
+    local stuck = {}
+    for _, m in ipairs(made) do
+      local out = 0
+      for _, u in ipairs(m.tanks) do
+        local q = u.valid and u.position
+        if q and (q.x < m.x0 - 1 or q.x > m.x0 + m.w + 1 or q.y < m.y0 - 1 or q.y > m.y0 + BLOCKS.SIZE + 1) then out = out + 1 end
+      end
+      local at = {}
+      for _, u in ipairs(m.tanks) do if u.valid then at[#at + 1] = string.format("%.0f,%.0f", u.position.x - m.x0, u.position.y - m.y0) end end
+      info(string.format("blockexit %s: %d of %d tanks out (%s)", m.label, out, #m.tanks, table.concat(at, " ")))
+      if out < #m.tanks or #m.tanks == 0 then table.insert(stuck, m.label) end
+    end
+    check("blockexit: every tank out of every block", #stuck == 0, table.concat(stuck, ", "))
   end)
 end
 

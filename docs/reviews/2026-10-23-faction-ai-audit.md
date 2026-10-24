@@ -185,6 +185,12 @@ balance targets are judged after step 3 and again after 5; the constants are tun
   half again, went on a war footing and took Grubstake's camp to two buildings (`rivals`): a runaway. Restructure
   first; how much losses should arm a faction is tuned last, against the system sim. Budget shares for the planner wait
   for that tuning too.
+- **Step 4, second form (0.2.7):** the budget by posture: the posture carries `keep`, the parts the planner leaves in
+  hand for the army (its shortfall against its cap, at the mean price of its mix, times keep_peace 0.25 or keep_war 0.5)
+  before walls, growth, spreading, labs and lamps. The threat term counted net (each foe: what it lost to it less what it
+  made it lose, so only the side losing an exchange arms) and measured apart from the budget (system 12345 and 777):
+  the budget alone held every target on 12345; the threat alone armed the losing Grubstake to a garrison of 70 against
+  Kessler-Hayashi's 38 and missed shapes. The threat stays off: arming the loser erases the corporations' shapes.
 - **Step 5 (0.2.4):** the counter matrix in the game. `scripts/arena_report.py` writes `landing-party/counters.lua` (each
   unit's arena score against each foe kind, each line and the biters); `army.composition` tilts the mix toward what
   answers its killers of the last 20 minutes (know.lua), by its mind's counter (Kessler-Hayashi 1, Grubstake 0.5).

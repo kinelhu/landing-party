@@ -12,6 +12,7 @@ local shared = require("__landing-party__.shared")
 local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
+local ground = require("__landing-party__.scripts.ground")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
 local jammer = require("__landing-party__.scripts.jammer")
@@ -578,6 +579,27 @@ end
 
 local function order_all(members, cmd)
   for _, u in ipairs(members) do if u.valid then u.commandable.set_command(cmd) end end
+end
+
+-- Every gate of its camp asked open for `ticks`, before a departure's orders. A unit plans its path when ordered and
+-- takes a shut gate for wall (scenario wayout: none out); army.lua opens a gate only for a unit within 5 tiles of it,
+-- which a unit standing back in the yard never was. Returns how many.
+-- Not a gate across a rail (the cordon's, which stop the player's trains: opened, a train ran past the line, scenario
+-- cordon rail), nor any while gates are off (tests).
+local RAILS = {"straight-rail", "half-diagonal-rail", "curved-rail-a", "curved-rail-b"}
+local function open_gates(b, ticks)
+  local n = 0
+  if storage.gates_off then return 0 end
+  if b.lander and b.lander.valid then
+    local s = b.lander.surface
+    for _, g in pairs(s.find_entities_filtered{position = b.lander.position,
+      radius = (b.claim_radius or 150) + 60, type = "gate", force = b.lander.force}) do
+      if s.count_entities_filtered{position = g.position, radius = 1, type = RAILS, limit = 1} == 0 then
+        g.request_to_open(g.force, ticks); n = n + 1
+      end
+    end
+  end
+  return n
 end
 
 -- Whether a unit is still about an order worth keeping: on its way in (a compound), or attacking something that stands.
@@ -1192,9 +1214,19 @@ local function launch(b, key, trace, army, opts)
     table.insert(cmds, {type = defines.command.go_to_location, destination = w, radius = 4, distraction = how})
   end
   table.insert(cmds, {type = defines.command.go_to_location, destination = stage, radius = 6, distraction = how})
-  order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-    commands = cmds})
+  -- The ground it marches over, asked for now (ground.lua): by its first look at the staging point it is there.
+  local s = game.surfaces[b.surface]
+  local gen, from = {}, h.position
+  for _, w in ipairs(route) do
+    for _, c in ipairs(ground.corridor(s, from, w, 2)) do gen[#gen + 1] = c end
+    from = w
+  end
+  for _, c in ipairs(ground.corridor(s, from, stage, 2)) do gen[#gen + 1] = c end
+  local depart = {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
+  open_gates(b, STAGE_TICKS)
+  order_all(members, depart)
   b.op_route = route
+  b.op.depart, b.op.gen = depart, gen
   -- Time to reach the staging point: by the march's length, more where the engine finds its own way round water (a
   -- fixed 90 s sent a raid in while its raiders were still 237 tiles off, walking round a lake, visit nw).
   local march, px, py = 0, h.position.x, h.position.y
@@ -1320,6 +1352,36 @@ local function step(b, trace, army)
         end
         local first = not op.stage_waited
         op.stage_waited = true
+        -- Stalled at the first look, with its ground generated since it set out: ordered out again, its clock restarted
+        -- (its first orders failed at once on ground not yet made, seed 1, 2026-10-24); called off at the next.
+        if first and not closing and op.depart and not op.redone then
+          local missing = ground.missing(game.surfaces[b.surface], op.gen)
+          op.redone = true
+          open_gates(b, op.stage_ticks or STAGE_TICKS)
+          order_all(op.members, op.depart)
+          op.phase_at, op.stage_dist, op.stage_waited = game.tick, nil, nil
+          trace(b, string.format("raid stalled %.0f from its staging point (%d of %d chunks on its way still to be made): "
+            .. "ordered out again", mean, missing, #(op.gen or {})))
+          -- What it stands among (tracing only): its kinds, and the trees, cliffs, water and walls round them.
+          if storage.trace then
+            local s, kinds, cx, cy, m = game.surfaces[b.surface], {}, 0, 0, 0
+            for _, u in ipairs(op.members) do
+              if u.valid then
+                kinds[u.name] = (kinds[u.name] or 0) + 1
+                cx, cy, m = cx + u.position.x, cy + u.position.y, m + 1
+              end
+            end
+            local at = {cx / math.max(1, m), cy / math.max(1, m)}
+            local parts = {}
+            for k, n in pairs(kinds) do parts[#parts + 1] = n .. " " .. k end
+            trace(b, string.format("  stalled at %.0f,%.0f: %s; within 12: %d trees, %d cliffs, %d water tiles, %d walls",
+              at[1], at[2], table.concat(parts, ", "), s.count_entities_filtered{position = at, radius = 12, type = "tree"},
+              s.count_entities_filtered{position = at, radius = 12, type = "cliff"},
+              s.count_tiles_filtered{position = at, radius = 12, collision_mask = "water_tile"},
+              s.count_entities_filtered{position = at, radius = 12, type = {"wall", "gate"}}))
+          end
+          return
+        end
         if first and not closing then return end
       end
     end

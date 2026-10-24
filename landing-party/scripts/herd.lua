@@ -16,6 +16,7 @@
 -- The engine tests (2026-10-22): a force at cease-fire with "enemy" never fights the wild biters; a herd walks a
 -- 360-tile route of waypoints whole; a stop in a compound command holds the scout; turrets are the `cause` of their
 -- hits, lasers included.
+local ground = require("__landing-party__.scripts.ground")
 local shared = require("shared")
 local herd = {}
 
@@ -296,34 +297,9 @@ end
 
 local function memory_key(c) return string.format("%d,%d", math.floor(c.x / 32), math.floor(c.y / 32)) end
 
--- The ground between: a unit in a chunk not generated cannot path (every move fails at once), so the chunks along the
--- way are asked for when a wave sets out (the engine makes them within seconds).
--- The ground between incubator and target, generated wide enough for the engine's route round what blocks the straight
--- line (units cannot path through chunks never generated: on seed 4242 a lake sent the way round through such chunks,
--- every scout failed at once and every wave came blind and turned home, 2026-10-23). Requested, not forced (forcing it
--- held a tick for a second): the points it returns are what the scout waits on.
-local CORRIDOR = 8
-local function corridor(s, a, b)
-  local len = math.sqrt(d2(a, b))
-  local ux, uy = (b.x - a.x) / math.max(len, 1), (b.y - a.y) / math.max(len, 1)
-  local check = {}
-  for k = 0, math.ceil(len / 32) do
-    local f = k * 32 / math.max(len, 1)
-    local q = {a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f}
-    s.request_to_generate_chunks(q, CORRIDOR)
-    for _, side in ipairs({0, -CORRIDOR * 32, CORRIDOR * 32}) do
-      check[#check + 1] = {math.floor((q[1] - uy * side) / 32), math.floor((q[2] + ux * side) / 32)}
-    end
-  end
-  return check
-end
-
-local function generated(s, chunks)
-  for _, c in ipairs(chunks or {}) do
-    if not s.is_chunk_generated({c[1], c[2]}) then return false end
-  end
-  return true
-end
+-- The ground between incubator and target: ground.lua (a unit cannot path through chunks never generated).
+local function corridor(s, a, b) return ground.corridor(s, a, b) end
+local function generated(s, chunks) return ground.missing(s, chunks) == 0 end
 
 -- A wave from pen p at what drew it (target: a position). opts.units: the units it takes (a farm's, scripts/farm.lua);
 -- the pen's stock if none; opts.sight: its biters' sight (0, the blind control).

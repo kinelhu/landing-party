@@ -334,8 +334,15 @@ local function quiet(tick)
     local foe, rung = at_war(b)
     b.war_rung = rung or 0
     -- Its posture (strategy.lua): the cap's multiple and the footing's condition, in one place.
+    -- And what its army lacks, at the mean price of what it builds (the planner leaves that much for it, by posture).
+    local short, price, weight = 0, 0, 0
+    if not b.fallen and b.lander.valid then
+      short = math.max(0, army.cap(b) - strength(b))
+      for kind, wt in pairs(army.mix(b) or {}) do price, weight = price + wt * shared.unit_cost(b.corp, kind), weight + wt end
+    end
     b.posture = strategy.posture({corp = b.corp, rung = b.war_rung, at_war = foe ~= nil,
-      grudge = b.grudge_till ~= nil and tick < b.grudge_till, threat = strategy.threat(b.corp)})
+      grudge = b.grudge_till ~= nil and tick < b.grudge_till, threat = strategy.threat(b.corp), short = short,
+      unit_cost = weight > 0 and price / weight or 0})
     if not b.fallen and b.lander.valid then
       if b.quiescent then
         if tick - b.quiescent >= span then

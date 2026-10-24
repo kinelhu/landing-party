@@ -16,30 +16,30 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `ops` | 1740 | answers, cuts, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
-| `layout` | 1192 | blocks, rng, site, wfc | base, faction |  |  |  |  |
-| `herd` | 957 | (leaf) | control, farm |  | 30, 60, 600, 3600 |  | herd |
+| `ops` | 1802 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
+| `layout` | 1184 | blocks, rng, site, wfc | base, faction |  |  |  |  |
+| `herd` | 933 | ground | control, farm |  | 30, 60, 600, 3600 |  | herd |
 | `siege` | 846 | (leaf) | ops |  |  |  | threat_last |
-| `base` | 817 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
+| `base` | 820 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `faction` | 767 | army, base, layout, names, ops, pact, pods, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
-| `army` | 753 | know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
-| `control` | 607 | aim, army, bait, base, belts, biters, border, cell, command, cordon, creep, crew, dev, faction, farm, herd, jammer, jumper, know, ledger, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, scorcher, site, skim, stance, standing, strike, tap, trade, tune, war |  |  |  | ai_command_completed, built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, entity_spawned, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, script_trigger_effect, tick, script_raised_built | arena_surfaces, army_off, bases, belts_always, biotech_off, capture_off, choice_off, cmd, cordon_off, cuts_off, era_override, focus_off, gates_off, grow_to_line_off, grudge_fast, hazard_hold, hazard_off, herd_off, history_off, hq_fast, labs_off, ladder_fast, last_raze, leader_off, ledger_off, mature_blocks, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strip_fast, tap_step, trace, truces, tune_levers, unit_owner, wfc_core_off |
+| `army` | 763 | know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
+| `control` | 609 | aim, army, bait, base, belts, biters, border, cell, command, cordon, creep, crew, dev, faction, farm, herd, jammer, jumper, know, ledger, map, marker, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, scorcher, site, skim, stance, standing, strike, tap, trade, tune, war |  |  |  | ai_command_completed, built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, entity_spawned, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, script_trigger_effect, tick, script_raised_built | arena_surfaces, army_off, bases, belts_always, biotech_off, capture_off, choice_off, cmd, cordon_off, cuts_off, era_override, focus_off, gates_off, grow_to_line_off, grudge_fast, hazard_hold, hazard_off, herd_off, history_off, hq_fast, labs_off, ladder_fast, last_raze, leader_off, ledger_off, mature_blocks, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strip_fast, tap_step, trace, truces, tune_levers, unit_owner, wfc_core_off |
 | `command` | 576 | (leaf) | control |  | 60, 120 |  | cmd |
 | `farm` | 562 | cell, creep, herd, know, pods, tune | control, dev |  | 600 |  | farms |
-| `crew` | 454 | base, ops, standing | control |  | 30 |  | crew_owner |
+| `crew` | 469 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `skim` | 420 | base, ops, stance, tune | control |  | 60, 600 |  |  |
-| `war` | 402 | army, base, ops, pods, pool, rd, rng, stance, strategy, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
+| `war` | 409 | army, base, ops, pods, pool, rd, rng, stance, strategy, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `rd` | 382 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
+| `construction` | 381 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
+| `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `routing` | 374 | (leaf) | ops |  |  |  | corridors |
-| `tap` | 369 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
-| `construction` | 360 | (leaf) | base |  |  |  |  |
 | `prospect` | 352 | base, chart, ops, pool, standing | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `cell` | 316 | pods | control, farm |  |  |  | cell_sites, cells |
 | `jumper` | 316 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
-| `planner` | 296 | rd | base |  |  |  |  |
+| `planner` | 301 | rd | base |  |  |  |  |
 | `creep` | 273 | tune | control, farm |  |  |  | creep |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
@@ -49,9 +49,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `power` | 171 | (leaf) | ops |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 159 | modules | base, control, faction, layout |  |  |  |  |
+| `know` | 155 | (leaf) | army, control, farm, ops, rd, strategy |  | 3600 |  | know |
 | `road` | 144 | base, standing | control |  | 60 |  |  |
 | `pool` | 140 | (leaf) | army, control, cuts, ops, prospect, tap, war |  |  |  |  |
-| `know` | 138 | (leaf) | army, control, farm, ops, rd, strategy |  | 3600 |  | know |
 | `wfc_serenity` | 134 | (leaf) |  |  |  |  |  |
 | `answers` | 130 | (leaf) | ops |  |  |  |  |
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |
@@ -64,16 +64,17 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `cuts` | 86 | pool | ops |  |  |  |  |
 | `aim` | 81 | (leaf) | control |  |  |  | aim_redirected |
 | `stance` | 78 | tune | control, ops, skim, war |  |  |  | last_raze |
+| `strategy` | 77 | know | war |  |  |  |  |
+| `blocks` | 76 | (leaf) | base, layout |  |  |  |  |
 | `jammer` | 73 | (leaf) | control, ops |  |  |  | jam_beams, jammed, jammers |
 | `map` | 71 | chart, names, standing | control |  | 600 |  |  |
-| `blocks` | 70 | (leaf) | base, layout |  |  |  |  |
 | `strike` | 67 | (leaf) | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `pods` | 64 | (leaf) | cell, control, faction, farm, war |  | 60 |  | pods |
 | `marker` | 61 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
 | `bait` | 59 | (leaf) | control |  | 30 |  | baits, baits_called |
 | `rng` | 56 | (leaf) | army, base, layout, names, war |  |  |  |  |
 | `names` | 54 | rng | base, dev, faction, map |  |  |  | camp_names |
-| `strategy` | 49 | know | war |  |  |  |  |
+| `ground` | 38 | (leaf) | herd, ops |  |  |  |  |
 | `biters` | 36 | (leaf) | control |  |  |  | evo_refunds, nests_cleared |
 | `tune` | 32 | (leaf) | army, control, creep, farm, jumper, ops, skim, stance, tap, war |  |  |  |  |
 | `roads` | 28 | (leaf) | control |  |  |  |  |

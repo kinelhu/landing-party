@@ -122,7 +122,10 @@ function crew.take(b, job)
       bill, keep = bill + c, math.max(keep, k)
     end
   end
-  if b.parts < bill + base.reserve(b) + keep then b.waiting = "crew"; return true end
+  -- A batch of nothing but what makes parts and power is not held for the reserve (the reserve is for it).
+  local economy = true
+  for _, q in ipairs(jobs) do if q.name and not ECONOMY[shared.kind_of(q.name)] then economy = false end end
+  if b.parts < bill + (economy and 0 or base.reserve(b)) + keep then b.waiting = "crew"; return true end
   -- A drone lifts off from home (walls do not stop it); a truck forms past the outermost wall.
   local p
   if corp_crews(b) == "drone" then
@@ -336,6 +339,18 @@ local function step(b, i)
   local e = base.place_job(b, job, true)
   if e then
     c.placed = (c.placed or 0) + 1
+    -- A truck its own building now overlaps steps clear: on 2.1 a unit inside an entity fails its next order at once,
+    -- and the crew stood "stuck on the way" (scenario crew, a compound's pylon set beside where its truck parked,
+    -- 2026-10-24). Drones fly; trucks do not.
+    local u = c.unit
+    if u and u.valid and u.type == "unit" and e.valid then
+      local a, q = e.bounding_box, u.bounding_box
+      if a.left_top.x < q.right_bottom.x and q.left_top.x < a.right_bottom.x and a.left_top.y < q.right_bottom.y
+        and q.left_top.y < a.right_bottom.y then
+        local to = s.find_non_colliding_position(u.name, u.position, 8, 0.5)
+        if to then u.teleport(to) end
+      end
+    end
     if corp_crews(b) == "drone" then
       rendering.draw_line{from = c.unit, to = e, surface = s, color = {0.5, 0.8, 1, 0.8}, width = 2, time_to_live = BUILD_TICKS}
     else

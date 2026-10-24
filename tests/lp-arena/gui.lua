@@ -39,6 +39,54 @@ local function caption(who, kind)
   return p and p.localised_name or kind
 end
 
+-- Each unit's numbers (scripts/arena_stats.py, from the prototypes) and the matchup worked out from them.
+local STATS = require("stats")
+local TYPE_LABEL = {["lp-bite"] = "bite", ["lp-rail"] = "rail"}
+
+local function proto_of(who, kind)
+  if (who == "player" and arena.LINES[kind]) or kind == "wave" then return nil end
+  if who == "serenity" or who == "grubstake" then return shared.variant(who, kind) end
+  return kind
+end
+
+-- The engine's rule: the flat part first (a hit no bigger than it still does 1 / (2 + flat - hit)), then the percent.
+local function after(amount, typ, resist)
+  local r = resist[typ]
+  if not r then return amount end
+  local a = amount > r[1] and amount - r[1] or 1 / (2 + r[1] - amount)
+  return a * (1 - r[2] / 100)
+end
+
+local function shot_text(st)
+  local parts = {}
+  for _, h in ipairs(st.hits) do
+    parts[#parts + 1] = string.format("%g %s%s%s%s", h.amount, TYPE_LABEL[h.type] or h.type, h.rep > 1 and (" x" .. h.rep) or "",
+      h.area > 0 and string.format(" over %g tiles", h.area) or "", h.buildings and " (buildings)" or "")
+  end
+  return #parts > 0 and table.concat(parts, ", ") or "none"
+end
+
+local function resist_text(st)
+  local parts = {}
+  for typ, r in pairs(st.resist) do
+    if r[1] ~= 0 or r[2] ~= 0 then
+      parts[#parts + 1] = (TYPE_LABEL[typ] or typ) .. " " .. (r[1] ~= 0 and string.format("%g flat", r[1]) or "")
+        .. (r[1] ~= 0 and r[2] ~= 0 and " + " or "") .. (r[2] ~= 0 and string.format("%g%%", r[2]) or "")
+    end
+  end
+  table.sort(parts)
+  return #parts > 0 and table.concat(parts, ", ") or "none"
+end
+
+-- What one of `a`'s shots does to `b`, what a second of fire does, and how long n of them take to kill one.
+local function matchup(a, b, n)
+  local per = 0
+  for _, h in ipairs(a.hits) do if not h.buildings then per = per + after(h.amount, h.type, b.resist) * h.rep end end
+  local dps = per * a.rate
+  local t = dps > 0 and b.health / (dps * math.max(1, n)) or nil
+  return per, dps, t
+end
+
 local function who_label(who)
   if who == "raw" then return "Synthexis" end
   for i, w in ipairs(WHO) do if w == who then return WHO_LABEL[i] end end
@@ -70,6 +118,17 @@ local function side_flow(parent, s, key, title)
   row2.add{type = "textfield", name = "lpa_n_" .. key, text = tostring(pick.n or 5), numeric = true, style = "short_number_textfield"}
   row2.add{type = "button", name = "lpa_add_" .. key, caption = "Add"}
   row2.add{type = "button", name = "lpa_empty_" .. key, caption = "Empty"}
+  -- The picked unit's numbers.
+  local name = proto_of(WHO[pick.who], ks[pick.kind])
+  local st = name and STATS[name]
+  if st then
+    local box = col.add{type = "frame", direction = "vertical", style = "deep_frame_in_shallow_frame"}
+    box.style.padding = 6
+    box.add{type = "label", caption = string.format("Health %g   speed %g tiles/s   range %g   %g shots/s", st.health, st.speed,
+      st.range, st.rate)}
+    box.add{type = "label", caption = "A shot: " .. shot_text(st)}
+    box.add{type = "label", caption = "Resists: " .. resist_text(st)}
+  end
   for _, en in ipairs(s.sides[key]) do
     local extra = en[1] == "biters" and en[2] == "wave" and string.format(" at %.2f", en[4]) or ""
     col.add{type = "label", caption = {"", en[3], " x ", caption(en[1], en[2]), " (", who_label(en[1]), ")", extra}}
@@ -84,6 +143,20 @@ function gui.build(player)
   local sides = frame.add{type = "flow", direction = "horizontal"}
   side_flow(sides, s, "a", "West")
   side_flow(sides, s, "b", "East")
+  -- The matchup of the two picked units, each way.
+  local na = proto_of(WHO[s.pick.a.who], kinds(WHO[s.pick.a.who])[s.pick.a.kind])
+  local nb = proto_of(WHO[s.pick.b.who], kinds(WHO[s.pick.b.who])[s.pick.b.kind])
+  if na and nb and STATS[na] and STATS[nb] then
+    local m = frame.add{type = "frame", direction = "vertical", style = "inside_shallow_frame_with_padding"}
+    m.add{type = "label", caption = "Picked against picked (one shot, before research):", style = "caption_label"}
+    for _, way in ipairs({{na, nb, s.pick.a.n or 5, "West"}, {nb, na, s.pick.b.n or 5, "East"}}) do
+      local per, dps, t = matchup(STATS[way[1]], STATS[way[2]], way[3])
+      m.add{type = "label", caption = {"", way[4], "'s ", prototypes.entity[way[1]].localised_name, " on ",
+        prototypes.entity[way[2]].localised_name, string.format(": %.2f a shot after its resistances, %.2f a second; ", per, dps),
+        not t and "it cannot hurt it" or way[3] <= 1 and string.format("one kills one in %.0f s", t)
+          or string.format("%d of them kill one in %.0f s", way[3], t)}}
+    end
+  end
   local row = frame.add{type = "flow", direction = "horizontal"}
   row.add{type = "label", caption = "Biters' evolution"}
   row.add{type = "textfield", name = "lpa_evo", text = tostring(s.evo), numeric = true, allow_decimal = true,
@@ -181,6 +254,45 @@ function gui.welcome(player)
   player.teleport({PEN[1], PEN[2] - 10}, arena.SURFACE)
   player.zoom = 0.6
   gui.build(player)
+end
+
+-- The GUI test (scripts/arena-gui.sh): every side's every pick built against a burster (an error is written, not
+-- raised), then ten of your troopers against one burster, the panel's text and a screenshot with the GUI written.
+local function captions(el, out)
+  if el.type == "label" then out[#out + 1] = type(el.caption) == "table" and serpent.line(el.caption) or tostring(el.caption) end
+  for _, c in pairs(el.children) do captions(c, out) end
+  return out
+end
+
+local function index_of(list, v) for i, x in ipairs(list) do if x == v then return i end end end
+
+function gui.test_tick(tick)
+  local p = game.get_player(1)
+  if not p or not p.connected then return end
+  storage.test = storage.test or {start = tick}
+  local t = tick - storage.test.start
+  local s = state(p)
+  if t == 30 then
+    local errors, built = {}, 0
+    for w = 1, #WHO do
+      for k = 1, #kinds(WHO[w]) do
+        s.pick.a = {who = w, kind = k, n = 5}
+        s.pick.b = {who = 3, kind = index_of(kinds("biotech"), "lp-bred-cinder") or 1, n = 1}
+        local ok, err = pcall(gui.build, p)
+        if ok then built = built + 1 else errors[#errors + 1] = WHO[w] .. " " .. tostring(kinds(WHO[w])[k]) .. ": " .. err end
+      end
+    end
+    helpers.write_file("lp-arena/gui.txt", string.format("built %d panels, %d errors\n%s\n", built, #errors,
+      table.concat(errors, "\n")))
+    s.pick.a = {who = 4, kind = index_of(kinds("player"), "lp-trooper") or 1, n = 10}
+    s.pick.b = {who = 3, kind = index_of(kinds("biotech"), "lp-bred-cinder") or 1, n = 1}
+    gui.build(p)
+  elseif t == 90 then
+    helpers.write_file("lp-arena/gui.txt", table.concat(captions(p.gui.screen.lpa_frame, {}), "\n") .. "\n", true)
+    game.take_screenshot{player = p, show_gui = true, path = "lp-arena/panel.png", resolution = {1600, 1000}}
+  elseif t == 180 then
+    helpers.write_file("lp-arena/done.txt", "done\n")
+  end
 end
 
 return gui

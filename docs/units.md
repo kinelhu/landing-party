@@ -8,7 +8,7 @@ turns from a flier to a ground target it can hurt (`landing-party/scripts/aim.lu
 
 ## aegis
 
-Line: a rail cannon on an armoured hull, one heavy slug; against the player's battle tanks.
+A heavy tank with a rail cannon. Its slug ignores armour; used against your battle tanks.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -18,7 +18,7 @@ Fielded by: Kessler-Hayashi, research: line branch, era 2, after warden, 2000 fu
 
 ## battle-tank
 
-the player's siege weapon.
+Your heavy tank, for attacking bases.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -28,7 +28,7 @@ Fielded by: the player (a barracks).
 
 ## breacher
 
-the player's: demolition charges, for walls (and only a scratch to units).
+Carries demolition charges for walls. Does little to units.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -62,7 +62,7 @@ Fielded by: -.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 375 | 13.8 tiles/s | 30 lp-bite | 1.5 | 1.7/s | physical -8 10%, explosion 10% | yes | - |
+| 120 | 19.2 tiles/s | - | 1 | 2/s | - | yes | - |
 
 Fielded by: -.
 
@@ -108,7 +108,7 @@ Fielded by: -.
 
 ## buggy
 
-Grubstake's raider and escort: fast, a machine gun.
+A fast buggy with a machine gun. Grubstake's raider and escort.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -118,7 +118,7 @@ Fielded by: Grubstake (from landing).
 
 ## dozer
 
-Wheels: a ram that pushes a wall open for the shotguns.
+Rams walls open for the shotgun hands behind it.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -128,7 +128,7 @@ Fielded by: Grubstake, research: wheels branch, era 3, after slug, 2500 fund.
 
 ## flak-buggy
 
-Wheels: scrap flak bursting among fliers, a weak splash on the ground.
+A buggy with a flak gun against fliers. Weak against ground targets.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -138,7 +138,7 @@ Fielded by: Grubstake, research: wheels branch, era 1, 900 fund.
 
 ## flame-trooper
 
-the player's: a flamethrower against swarms of bugs and bunched infantry; outranged, and weak on armour.
+A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armour.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -148,7 +148,7 @@ Fielded by: the player (a barracks).
 
 ## harrier
 
-air (the scrap drone): weak and cheap, many; flies over walls, cliffs and water.
+A cheap, weak flier with a gun, sent in numbers. Flies over walls, cliffs and water.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -158,7 +158,7 @@ Fielded by: Grubstake (from landing).
 
 ## hauler
 
-convoys and Grubstake's building trucks; lightly armed.
+A lightly armed truck. Carries convoys and Grubstake's building crews.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -178,7 +178,7 @@ Fielded by: -.
 
 ## infantry
 
-Kessler-Hayashi's Line trooper: a laser beam; the bulk of its raids.
+Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding force.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -188,7 +188,7 @@ Fielded by: Grubstake (from landing); Kessler-Hayashi (from landing).
 
 ## lance
 
-Optics: a heavier beam that outranges the player's troopers.
+A laser trooper with a heavier beam that outranges your troopers.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -198,7 +198,7 @@ Fielded by: Kessler-Hayashi, research: optics branch, era 1, 900 fund.
 
 ## laser-drone
 
-air: Kessler-Hayashi's, armoured, a laser beam; few and dear.
+An armoured flier with a laser. Expensive, so there are few of them.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -208,7 +208,7 @@ Fielded by: Kessler-Hayashi (from landing).
 
 ## prism
 
-Optics: a laser that splits on what it hits to the targets round it; against massed troopers.
+A tank whose laser splits from its target to the units around it. Used against groups of troopers.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -218,7 +218,7 @@ Fielded by: Kessler-Hayashi, research: optics branch, era 2, after lance, 1800 f
 
 ## railgunner
 
-Kessler-Hayashi's nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls.
+Clears biter nests. Its slug goes through a 30-tile line; deadly to biters, weak against walls.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -228,7 +228,7 @@ Fielded by: Kessler-Hayashi (from landing).
 
 ## rocket-trooper
 
-the player's: rockets against armour, and fliers; slow against a crowd.
+Fires rockets, good against armour and fliers. Slow to kill a crowd.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -248,7 +248,7 @@ Fielded by: -.
 
 ## sapper
 
-Scrap arms: dynamite over 3 tiles, enemies only; against blobs, and the wall in the way.
+Throws dynamite over 3 tiles, at groups of units and at walls in its way. Spares its own side.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -258,7 +258,7 @@ Fielded by: Grubstake, research: scrap-arms branch, era 2, 1500 fund.
 
 ## scavenger
 
-Wheels (the bomb drone): flies at the player's artillery, mortars and radars and bursts on them.
+Flies at your artillery, mortars and radars and explodes on them.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -268,7 +268,7 @@ Fielded by: Grubstake, research: wheels branch, era 2, 1800 fund.
 
 ## scorcher
 
-Scrap arms: a machine gun, and three bursts of flame for walls, turrets and packs, refilled slowly.
+An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -278,7 +278,7 @@ Fielded by: Grubstake, research: scrap-arms branch, era 2, 2000 fund.
 
 ## shock
 
-Optics: an arcing electric beam that jumps target to target, a brief stun; against massed troopers.
+Its electric beam jumps from target to target and stuns them briefly. Used against groups of troopers.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -288,7 +288,7 @@ Fielded by: Kessler-Hayashi, research: optics branch, era 3, after lance, 2500 f
 
 ## shotgun-hand
 
-Grubstake's infantry: three heavy pellets, deadly at the fence, useless against a turret line.
+Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -298,7 +298,7 @@ Fielded by: Grubstake (from landing, as its infantry).
 
 ## skyguard
 
-Line: a long laser that tracks fliers; a weak shot at the ground.
+Its long laser tracks fliers. Weak against ground targets.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -308,7 +308,7 @@ Fielded by: Kessler-Hayashi, research: line branch, era 1, 900 fund.
 
 ## slug
 
-Scrap arms: slugs; against the player's vehicles.
+A buggy with a slug gun, used against your vehicles.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -318,7 +318,7 @@ Fielded by: Grubstake, research: scrap-arms branch, era 1, 900 fund.
 
 ## tank
 
-armour; cannon rounds that hit buildings three times as hard as units.
+An armoured tank. Its cannon does three times as much damage to buildings as to units.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -338,7 +338,7 @@ Fielded by: -.
 
 ## tesla
 
-Siege: lightning that jumps along a turret line and drains what it strikes of its charge.
+A tank whose lightning jumps along a turret line and drains the turrets it hits.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -348,7 +348,7 @@ Fielded by: Kessler-Hayashi, research: siege branch, era 3, 2500 fund.
 
 ## trooper
 
-the player's: a rifle.
+Your basic soldier, with a rifle.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -368,7 +368,7 @@ Fielded by: -.
 
 ## walker
 
-a spider: steps over walls, rockets.
+A spider-legged machine that walks over walls and fires rockets.
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |

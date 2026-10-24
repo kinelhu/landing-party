@@ -737,6 +737,9 @@ function base.tick(tick)
         -- demand ran past supply (cordon: 6.6 of 6.0 MW, the planner idle from minute 11).
         elseif not withdrawing then
           plan(b, "power")
+          -- And its first fabricator (queued first, planner.fill): a camp whose queue waited on parts it could not make
+          -- planned nothing more and never made a part (parked, 2026-10-24).
+          if #b.fabs == 0 then plan(b, "fabricate") end
           -- Its generators first (queued behind the line's posts, a starved camp counted them as supply and never built
           -- them: demand past supply, cordon broken), as its lost generators are rebuilt first.
           local gens, rest = {}, {}

@@ -14,8 +14,11 @@ Targets (design calls, 2026-10-23):
              Kessler-Hayashi the stronger late (garrison and turrets at the end). Until 2026-10-24 the radius alone was
              read, and a claim (a strip camp on the player's ore) has its own mark, not the disc: Grubstake's sprawl was
              not counted.
-  fights     every pairing fights: losses both ways between Kessler-Hayashi and Grubstake, and Kessler-Hayashi's kills
-             among Synthexis's (its clearances).
+  fights     every pairing of neighbours fights: losses both ways between Kessler-Hayashi and Grubstake while their
+             nearest camps have come within NEIGHBOURS tiles of each other, and Kessler-Hayashi's kills among Synthexis's
+             (its clearances) while a culture has come that near a Kessler-Hayashi camp. Camps further apart than that all game owe no fight (the user, 2026-10-24: "if they are so
+             far apart, might be expected that they don't attack each other. In real games we expect multiple landings
+             to come in over time"); a run without camp positions (before 2026-10-24) counts them as neighbours.
   pressure   each corporation goes for the player: operations against the player from each of Kessler-Hayashi and
              Grubstake, and a Synthexis wave, within the two hours.
 """
@@ -29,6 +32,25 @@ FORCE = {"serenity": "lp-serenity", "grubstake": "lp-grubstake", "biotech": "lp-
 COLOUR = {"serenity": "#2f6f86", "grubstake": "#b0651a", "biotech": "#8a9e00", "player": "#3d7a2a"}
 LAND_S = 15  # Kessler-Hayashi's landing minute (scenarios.system, SYSTEM_LAND_S)
 EVEN, FLOOR = 3, 5
+NEIGHBOURS = 500  # tiles between the nearest camps of two corporations for a rivalry to be expected
+
+
+def at(frame, c):
+    return (frame.get("biotech") or {}).get("at") if c == "biotech" else corp(frame, c).get("at")
+
+
+def closest(frames, a, b):
+    """The nearest two camps of factions a and b came to each other in the run (None: no positions recorded)."""
+    best = None
+    for f in frames:
+        pa, pb = at(f, a), at(f, b)
+        if pa is None or pb is None:
+            continue
+        for x in pa:
+            for y in pb:
+                d = ((x[0] - y[0]) ** 2 + (x[1] - y[1]) ** 2) ** 0.5
+                best = d if best is None else min(best, d)
+    return best
 
 
 def load(path):
@@ -72,9 +94,17 @@ def judge(frames):
     sg_units = kills(end, "serenity", "grubstake", "units") + kills(end, "serenity", "grubstake")
     gs_units = kills(end, "grubstake", "serenity", "units") + kills(end, "grubstake", "serenity")
     bs = kills(end, "biotech", "serenity", "units") + kills(end, "biotech", "serenity")
-    out["fights"] = (sg_units > 0 and gs_units > 0 and bs > 0,
-                     f"Kessler-Hayashi lost {sg_units} to Grubstake, Grubstake {gs_units} to Kessler-Hayashi; "
-                     f"Synthexis lost {bs} to Kessler-Hayashi")
+    near = closest(frames, "serenity", "grubstake")
+    neighbours = near is None or near <= NEIGHBOURS
+    apart = ("" if near is None else f" (their nearest camps {near:.0f} tiles apart"
+             + ("" if neighbours else f", beyond {NEIGHBOURS}: no fight owed") + ")")
+    near_b = closest(frames, "serenity", "biotech")
+    neighbours_b = near_b is None or near_b <= NEIGHBOURS
+    apart_b = ("" if near_b is None else f" (its nearest culture {near_b:.0f} tiles from a Kessler-Hayashi camp"
+               + ("" if neighbours_b else f", beyond {NEIGHBOURS}: no clearance owed") + ")")
+    out["fights"] = (((sg_units > 0 and gs_units > 0) or not neighbours) and (bs > 0 or not neighbours_b),
+                     f"Kessler-Hayashi lost {sg_units} to Grubstake, Grubstake {gs_units} to Kessler-Hayashi{apart}; "
+                     f"Synthexis lost {bs} to Kessler-Hayashi{apart_b}")
     os_ = s_end.get("ops", {}).get("player", 0)
     og = g_end.get("ops", {}).get("player", 0)
     waves = end.get("biotech", {}).get("waves", 0)

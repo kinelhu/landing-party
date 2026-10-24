@@ -152,7 +152,7 @@ shared.CORPS = {
     },
     -- lobed (the user, 2026-10-20: "organic looking bases ... like metastases", "it's all squares everywhere"): its
     -- blocks on lobed plates, one wall round each hub (layout.wall_cluster), no square per block, no pickets.
-    arch = {gates = true, baffles = true, pillboxes = true, flamers = true, pad = "ring", lobed = true}, clears_nests = true,
+    arch = {gates = true, pillboxes = true, flamers = true, pad = "ring", lobed = true}, clears_nests = true,
     caps = {siege = 1, ["lp-walker"] = 2, ["lp-laser-drone"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
@@ -260,7 +260,7 @@ shared.WAVE_MIN = 24
 -- None of them shoots up (air.lua): its class is many, healing and soft.
 shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
   ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 200}, ["lp-bred-medium-spitter"] = {cost = 9},
-  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 70},
+  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 40},
   -- air: it shoots up (air.lua leaves it whole).
   ["lp-bred-spore"] = {cost = 10, air = true},
   -- A spider-unit (Space Age's small stomper): tier 4, over the wall.

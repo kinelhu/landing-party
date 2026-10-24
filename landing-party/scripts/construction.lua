@@ -152,12 +152,17 @@ local ECONOMY = {["lp-generator"] = true, ["lp-fabricator"] = true, ["lp-drill"]
 -- What makes parts comes first: with its fabricators destroyed, a settlement spent its last 646 parts on new blocks,
 -- units and two turrets while their ground was held, and once it was free had nothing to rebuild them with, nor ever
 -- again (scenario occupy). Parts kept back for every pending rebuild of what makes them.
+-- And always one of each, before any loss: kept back only once rebuilds were due, the parts were gone by then (a camp
+-- at 13 parts lost its nine fabricators to a raid and, a fabricator costing 25, never made another, scenario raid,
+-- 2026-10-24). Economy jobs still build below it.
+local FLOOR = 0
+for name in pairs(ECONOMY) do FLOOR = FLOOR + (shared.cost[name] or 0) end
 function base.reserve(b)
   local reserve = 0
   for _, job in ipairs(b.rebuild) do
     if ECONOMY[shared.kind_of(job.name)] then reserve = reserve + (shared.cost[job.name] or 0) end
   end
-  return reserve
+  return math.max(reserve, FLOOR)
 end
 army.reserve = base.reserve
 
@@ -221,7 +226,23 @@ local function build(b)
   -- A module beyond every yard goes to a crew (crew.lua), which takes its jobs off the queue or holds them for one.
   if base.crew_take and base.crew_take(b, job) then return end
   local cost = shared.cost[job.name] or 0
-  if b.parts < cost + base.reserve(b) then b.waiting = job.name; return end
+  -- (What makes parts and power builds below the reserve: the reserve is for it.)
+  local held = ECONOMY[shared.kind_of(job.name or "")] and 0 or base.reserve(b)
+  if b.parts < cost + held then
+    -- What makes parts and power goes past a job waiting for parts: behind a turret or a launch pad the camp could
+    -- not pay for, its first fabricator and its pylon waited for good (parked, grow; 2026-10-24).
+    -- Moved to the head, it is built as the head is, next step (a crew's if its module is beyond the yards).
+    for i = 2, #b.queue do
+      local q = b.queue[i]
+      if q.name and not q.tiles and ECONOMY[shared.kind_of(q.name)] and b.parts >= (shared.cost[q.name] or 0) then
+        table.remove(b.queue, i)
+        table.insert(b.queue, 1, q)
+        break
+      end
+    end
+    b.waiting = job.name
+    return
+  end
   b.waiting = nil
   table.remove(b.queue, 1)
   local e = place(b, job)

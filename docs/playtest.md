@@ -181,6 +181,18 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     few with your troopers at a Synthexis wave or a late biter attack: does the fire read, does it hold the bugs, and does
     it ever burn your own? Kessler-Hayashi's Heavy tank now fires a rail cannon: can you tell its three tanks apart by
     their shots?
+44. **Kessler-Hayashi's tanks leave camp** (0.2.7): its walled blocks no longer have baffle walls inside the gates,
+    and nothing stands in front of a gate. Its tanks, walkers and research tanks should now come out on raids with its
+    infantry (before, the tanks often stood in the yard while the infantry went alone). New camps only: blocks already
+    built keep their old layout.
+45. **The arena's numbers** (0.2.7, `scripts/play-arena.sh`): pick a unit on each side and the panel shows its health,
+    speed, range, shots a second, one shot's damage and its resistances, and the two picked units against each other:
+    what one shot does after resistances, per second, and how long your number of them takes to kill one. Does it
+    answer the questions you had (the burster against troopers)?
+46. **The burster, rebuilt** (0.2.7, evolution 0.6 and up): smaller and faster than the other breeds, frail (120
+    health, no armour), and it no longer bites: it runs at your line and bursts there. Your rifles should drop it if
+    they see it coming; a pack reaching a clump of troopers or your wall should hurt. Is there time to react, and can
+    you pick it out of a wave?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

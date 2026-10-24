@@ -440,6 +440,15 @@ the crack, the eruption and the scorchmark (the small demolisher's, copied as `l
 - **Price, by the arena:** at 40 it beat everything but the railgunner and flamers; at 70, kept: it beats massed light
   infantry and the fixed gun and laser lines (+100: breaking defences is its job), and loses to range and fire (the
   railgunner, rocket troopers, flamer lines), to fliers, and to the battle tank, tank and aegis.
+- **A baneling (0.2.7).** The user, in the arena: a single burster held off ten troopers. Its big biter's physical 8 flat
+  took a rifle's 8 down to 0.45 a shot, 28 s for ten (the arena's new panel shows it). Asked for "a little more fragile
+  ... on a small biter body that goes fast ... giving some time to react before they burst in your face": a medium
+  biter's body, 120 health, no resistances, speed 0.32 (the fastest breed); it does not bite: in reach it bursts and
+  dies of it, the eruption its death's as before. Priced by the arena (154 fights a price): at 25 it beat 31 of 42
+  matchups; at 40, kept, 19 wins and 19 losses: it beats rifle troopers (+0.25), infantry, lances and armour
+  (slightly), and loses to turret lines (guns -0.64, lasers -0.55), flamers, fliers, the railgunner, sappers and rocket
+  troopers. Alone it no longer breaks a line, which is shot before it arrives; it breaks one inside the herd that
+  draws the fire.
 
 ### The burster, recoloured (0.1.61)
 

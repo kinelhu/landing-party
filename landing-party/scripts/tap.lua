@@ -58,21 +58,27 @@ end
 -- bridgeable).
 local SPACING = shared.PYLON_REACH - 4
 local function spots_along(points)
-  local goal = points[#points]
-  local out, carry = {}, 0
-  for i = 2, #points do
-    local a, c = points[i - 1], points[i]
-    local dx, dy = c.x - a.x, c.y - a.y
-    local len = math.sqrt(dx * dx + dy * dy)
-    local d = SPACING - carry
-    while d <= len do
-      table.insert(out, {x = a.x + dx * d / len, y = a.y + dy * d / len})
-      d = d + SPACING
+  -- Evenly along the way, the last on the goal: no gap above SPACING and none much below it. (A last spot moved onto
+  -- the goal stretched its gap to one and a half spacings, past a pylon's reach; one added beside it left a cut line
+  -- still standing. Scenario tap, 2026-10-24.)
+  local total = 0
+  for i = 2, #points do total = total + math.sqrt((points[i].x - points[i - 1].x) ^ 2 + (points[i].y - points[i - 1].y) ^ 2) end
+  local n = math.max(1, math.ceil(total / SPACING))
+  local step, out, walked, i = total / n, {}, 0, 2
+  for k = 1, n do
+    local want = k * step
+    while i <= #points do
+      local a, c = points[i - 1], points[i]
+      local len = math.sqrt((c.x - a.x) ^ 2 + (c.y - a.y) ^ 2)
+      if walked + len >= want - 1e-6 or i == #points then
+        local f = len > 0 and math.min(1, (want - walked) / len) or 1
+        table.insert(out, {x = a.x + (c.x - a.x) * f, y = a.y + (c.y - a.y) * f})
+        break
+      end
+      walked, i = walked + len, i + 1
     end
-    carry = len - (d - SPACING)
   end
-  if carry > SPACING / 2 or #out == 0 then table.insert(out, {x = goal.x, y = goal.y})
-  elseif carry > 0 then out[#out] = {x = goal.x, y = goal.y} end
+  out[#out] = {x = points[#points].x, y = points[#points].y}
   return out
 end
 

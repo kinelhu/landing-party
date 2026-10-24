@@ -52,6 +52,22 @@ local function decayed(g, tick)
   return g.v * 0.5 ^ ((tick - g.t) / GRIEVE_HALF)
 end
 
+-- Whether a place is a corporation's home ground: within one of its camps' claims and HOME_MARGIN beyond. A unit lost
+-- elsewhere was lost on its own errand: resented, it fed an escalation (rivals, 2026-10-24: Kessler-Hayashi's raids on
+-- Grubstake lost 4, then 5, 22, 35, 70 units to its defenders, each loss a reprisal, each reprisal a bigger raid, until
+-- Grubstake's camp was gone). Synthexis has no home to defend with units: its units' losses are never resented.
+local HOME_MARGIN = 60
+function know.at_home(key, pos)
+  for _, b in pairs(storage.bases or {}) do
+    if b.corp == key and not b.fallen and b.lander and b.lander.valid then
+      local r = (b.claim_radius or 150) + HOME_MARGIN
+      local o = b.lander.position
+      if (o.x - (pos.x or pos[1])) ^ 2 + (o.y - (pos.y or pos[2])) ^ 2 <= r * r then return true end
+    end
+  end
+  return false
+end
+
 -- A death (control.lua, on_entity_died): recorded when the dead belonged to a faction.
 function know.loss(e)
   local ent = e.entity
@@ -72,7 +88,8 @@ function know.loss(e)
   table.insert(k.losses, {tick = game.tick, force = by, killer = killer, damage = dmg, kind = shared.kind_of(ent.name),
     unit = ent.type == "unit" or ent.type == "spider-unit", pos = {ent.position.x, ent.position.y}, value = value})
   if #k.losses > LOSSES_MAX then table.remove(k.losses, 1) end
-  if by ~= "none" and by ~= "neutral" and by ~= ent.force.name then
+  local unit = ent.type == "unit" or ent.type == "spider-unit"
+  if by ~= "none" and by ~= "neutral" and by ~= ent.force.name and not (unit and not know.at_home(key, ent.position)) then
     local g = k.grievance[by]
     k.grievance[by] = {v = decayed(g, game.tick) + value, t = game.tick}
   end

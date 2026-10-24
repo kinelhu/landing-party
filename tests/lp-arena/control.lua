@@ -2,6 +2,7 @@
 -- and biters, in pens on their own surface. params.lua (written by the script that runs it) says how:
 --   mode = "batch": every matchup headless, the balance table (scripts/arena.sh)
 --   mode = "play":  a panel to set fights up by hand and watch them (scripts/play-arena.sh)
+--   mode = "guitest": the panel driven through every pick, its text and a screenshot written (scripts/arena-gui.sh)
 local params = require("params")
 local arena = require("arena")
 local batch = require("batch")
@@ -19,11 +20,12 @@ script.on_event(defines.events.on_tick, function(e)
     batch.tick()
   else
     gui.tick()
+    if params.mode == "guitest" then gui.test_tick(e.tick) end
   end
 end)
 
 script.on_event(defines.events.on_player_created, function(e)
-  if params.mode == "play" then gui.welcome(game.get_player(e.player_index)) end
+  if params.mode == "play" or params.mode == "guitest" then gui.welcome(game.get_player(e.player_index)) end
 end)
 script.on_event(defines.events.on_gui_click, gui.on_click)
 script.on_event(defines.events.on_gui_selection_state_changed, gui.on_selection)

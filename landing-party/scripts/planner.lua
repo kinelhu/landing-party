@@ -134,6 +134,9 @@ local function threat(b)
   return {s.x, s.y}
 end
 
+-- What it leaves in hand for its army before building what it can do without (strategy.lua: the budget by posture).
+local function keep(b) return b.posture and b.posture.keep or 0 end
+
 -- The planner's rules, in priority order. The first that applies and finds a place acts.
 -- `only`: that rule alone (base.lua: the power rule while the queue is busy).
 local function plan(b, only)
@@ -187,7 +190,9 @@ local function plan(b, only)
     layout.curtain(b)
   end
   local rules = {
-    {"power", function() return demand + 200000 > 0.9 * supply end, function() return fill(b, "gen", "lp-generator") end},
+    -- Ahead of need: a generator district takes minutes to build, and a camp growing fast ran past its supply while it
+    -- went up (loot, 4.5 of 4 MW at 8 minutes, 2026-10-24; at 0.9 of supply it was planned at 4.0).
+    {"power", function() return demand + 400000 > 0.8 * supply end, function() return fill(b, "gen", "lp-generator") end},
     -- Fabrication follows the flow of ore, never the stock: a backlog left by a raid is worked off by the
     -- fabricators the base has, not answered with more (a raid once doubled them).
     {"fabricate", function() return b.rate_in > fab_cap * 1.1 and b.rate_in > 0 end,
@@ -197,7 +202,7 @@ local function plan(b, only)
       local floor = b.mature and 0.5 or 0.8
       return b.rate_in < fab_cap * floor or #b.drills + (owed["lp-drill"] or 0) == 0 end, mining},
     -- Walls wait for a working economy: spent first, they starved a settlement that had no fabricator yet.
-    {"fortify", function() return b.parts > 80 and #b.fabs > 0 end, function()
+    {"fortify", function() return b.parts > 80 + keep(b) and #b.fabs > 0 end, function()
       local block = layout.fortify(b)
       return block and string.format("walls round %s at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
     {"defend", function()
@@ -232,7 +237,7 @@ local function plan(b, only)
     -- Research (rd.lua: a branch climbs only while its lab stands): its exports flowing (launch pad open), the lab its
     -- research wants and has nowhere, a district of its own planned for it, the lab at its heart.
     {"research", function()
-      if not (layout.districts(b) and b.launch_opened and not b.wfc_job and b.parts > LAB_PARTS) then return false end
+      if not (layout.districts(b) and b.launch_opened and not b.wfc_job and b.parts > LAB_PARTS + keep(b)) then return false end
       local kind = rd.wanted_lab(b.corp)
       b.target = kind and not lab_coming(b, kind) and kind or nil
       return b.target ~= nil end,
@@ -246,7 +251,7 @@ local function plan(b, only)
     -- ground-bound); towards its line once it has one.
     {"spread", function()
       return spreads(b) and b.launch_opened and size(b) < GROW_CAP and not b.wfc_job
-        and b.parts > SPREAD_PARTS and (b.spread_wait or 0) <= game.tick end,
+        and b.parts > SPREAD_PARTS + keep(b) and (b.spread_wait or 0) <= game.tick end,
       function()
         local block = layout.spread(b)
         -- Done (no ground left, or at its cap): it closes its ring round all of it (relaid three times while it spread,
@@ -268,11 +273,11 @@ local function plan(b, only)
       if block and block.kind == "launch" then b.launch_opened = true end
       return block and string.format("opened %s block at %.0f,%.0f", block.kind, block.center[1], block.center[2]) end},
     -- (Not while pressed: lamps and paving wait while its posture is war, strategy.lua.)
-    {"embellish", function() return b.mature and b.parts > 60 and not (b.posture and b.posture.war) end, function()
+    {"embellish", function() return b.mature and b.parts > 60 + keep(b) and not (b.posture and b.posture.war) end, function()
       local block = layout.embellish(b)
       return block and string.format("lamps, paving and mines at %s %.0f,%.0f", block.kind, block.center[1],
         block.center[2]) end},
-    {"grow", function() return not b.mature and b.parts > 100 end, mining},
+    {"grow", function() return not b.mature and b.parts > 100 + keep(b) end, mining},
   }
   for _, r in ipairs(rules) do
     if (not only or r[1] == only) and r[2]() then
