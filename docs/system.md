@@ -7,39 +7,39 @@ with a stand-in for the player, a frame a minute. Targets and their reasons: the
 
 | seed | minutes | survive | even | shapes | fights | pressure |
 |---|---|---|---|---|---|---|
-| 12345 | 119 | met | met | **missed** | met | met |
+| 12345 | 119 | met | **missed** | met | met | met |
 | 1 | 119 | met | met | met | **missed** | met |
 | 4242 | 119 | met | met | met | met | met |
 | 777 | 119 | met | met | met | met | met |
 
 ### Seed 12345
 - **survive** (met): live bases: Kessler-Hayashi 1, Grubstake 2; Synthexis cultures 1
-- **even** (met): Kessler-Hayashi lost 0, Grubstake lost 0; Kessler-Hayashi lost 0, Synthexis lost 0; Grubstake lost 0, Synthexis lost 0
-- **shapes** (missed): at minute 45: ground held (camps and claims) Grubstake 1, Kessler-Hayashi 1; territory radius Grubstake 74, Kessler-Hayashi 217; garrison and turrets at the end: Kessler-Hayashi 179, Grubstake 72
-- **fights** (met): Kessler-Hayashi lost 2 to Grubstake, Grubstake 39 to Kessler-Hayashi (their nearest camps 213 tiles apart); Synthexis lost 189 to Kessler-Hayashi (its nearest culture 529 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
-- **pressure** (met): operations against the player: Kessler-Hayashi 5, Grubstake 4; Synthexis waves 5; the player lost 3 buildings to them
-- watchdog: no alarm
+- **even** (missed): Kessler-Hayashi lost 0, Grubstake lost 18; Kessler-Hayashi lost 0, Synthexis lost 0; Grubstake lost 0, Synthexis lost 0
+- **shapes** (met): at minute 45: ground held (camps and claims) Grubstake 2, Kessler-Hayashi 1; territory radius Grubstake 74, Kessler-Hayashi 217; garrison and turrets at the end: Kessler-Hayashi 69, Grubstake 64
+- **fights** (met): Kessler-Hayashi lost 61 to Grubstake, Grubstake 90 to Kessler-Hayashi (their nearest camps 213 tiles apart); Synthexis lost 178 to Kessler-Hayashi (its nearest culture 529 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
+- **pressure** (met): operations against the player: Kessler-Hayashi 7, Grubstake 3; Synthexis waves 5; the player lost 4 buildings to them
+- watchdog: queue 1
 
 ### Seed 1
-- **survive** (met): live bases: Kessler-Hayashi 1, Grubstake 2; Synthexis cultures 1
+- **survive** (met): live bases: Kessler-Hayashi 1, Grubstake 3; Synthexis cultures 1
 - **even** (met): Kessler-Hayashi lost 0, Grubstake lost 0; Kessler-Hayashi lost 0, Synthexis lost 0; Grubstake lost 0, Synthexis lost 0
-- **shapes** (met): at minute 45: ground held (camps and claims) Grubstake 1, Kessler-Hayashi 1; territory radius Grubstake 186, Kessler-Hayashi 107; garrison and turrets at the end: Kessler-Hayashi 263, Grubstake 65
-- **fights** (missed): Kessler-Hayashi lost 0 to Grubstake, Grubstake 7 to Kessler-Hayashi (their nearest camps 351 tiles apart); Synthexis lost 83 to Kessler-Hayashi (its nearest culture 1401 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
-- **pressure** (met): operations against the player: Kessler-Hayashi 5, Grubstake 4; Synthexis waves 4; the player lost 8 buildings to them
-- watchdog: queue 1, stuck 5
+- **shapes** (met): at minute 45: ground held (camps and claims) Grubstake 2, Kessler-Hayashi 1; territory radius Grubstake 181, Kessler-Hayashi 108; garrison and turrets at the end: Kessler-Hayashi 277, Grubstake 161
+- **fights** (missed): Kessler-Hayashi lost 0 to Grubstake, Grubstake 7 to Kessler-Hayashi (their nearest camps 351 tiles apart); Synthexis lost 74 to Kessler-Hayashi (its nearest culture 1401 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
+- **pressure** (met): operations against the player: Kessler-Hayashi 6, Grubstake 9; Synthexis waves 4; the player lost 8 buildings to them
+- watchdog: queue 1, stuck 2
 
 ### Seed 4242
 - **survive** (met): live bases: Kessler-Hayashi 1, Grubstake 2; Synthexis cultures 1
-- **even** (met): Kessler-Hayashi lost 0, Grubstake lost 3; Kessler-Hayashi lost 0, Synthexis lost 0; Grubstake lost 0, Synthexis lost 0
-- **shapes** (met): at minute 45: ground held (camps and claims) Grubstake 2, Kessler-Hayashi 1; territory radius Grubstake 80, Kessler-Hayashi 131; garrison and turrets at the end: Kessler-Hayashi 67, Grubstake 41
-- **fights** (met): Kessler-Hayashi lost 4 to Grubstake, Grubstake 3 to Kessler-Hayashi (their nearest camps 236 tiles apart); Synthexis lost 109 to Kessler-Hayashi (its nearest culture 938 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
-- **pressure** (met): operations against the player: Kessler-Hayashi 5, Grubstake 6; Synthexis waves 4; the player lost 2 buildings to them
-- watchdog: queue 1, stuck 2
+- **even** (met): Kessler-Hayashi lost 0, Grubstake lost 0; Kessler-Hayashi lost 0, Synthexis lost 0; Grubstake lost 0, Synthexis lost 0
+- **shapes** (met): at minute 45: ground held (camps and claims) Grubstake 2, Kessler-Hayashi 1; territory radius Grubstake 80, Kessler-Hayashi 79; garrison and turrets at the end: Kessler-Hayashi 112, Grubstake 35
+- **fights** (met): Kessler-Hayashi lost 4 to Grubstake, Grubstake 7 to Kessler-Hayashi (their nearest camps 236 tiles apart); Synthexis lost 83 to Kessler-Hayashi (its nearest culture 938 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
+- **pressure** (met): operations against the player: Kessler-Hayashi 8, Grubstake 4; Synthexis waves 4; the player lost 8 buildings to them
+- watchdog: queue 1, stuck 1
 
 ### Seed 777
 - **survive** (met): live bases: Kessler-Hayashi 1, Grubstake 2; Synthexis cultures 1
-- **even** (met): Kessler-Hayashi lost 0, Grubstake lost 2; Kessler-Hayashi lost 0, Synthexis lost 0; Grubstake lost 0, Synthexis lost 0
-- **shapes** (met): at minute 45: ground held (camps and claims) Grubstake 2, Kessler-Hayashi 1; territory radius Grubstake 163, Kessler-Hayashi 87; garrison and turrets at the end: Kessler-Hayashi 150, Grubstake 44
-- **fights** (met): Kessler-Hayashi lost 0 to Grubstake, Grubstake 24 to Kessler-Hayashi (their nearest camps 540 tiles apart, beyond 500: no fight owed); Synthexis lost 50 to Kessler-Hayashi (its nearest culture 993 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
-- **pressure** (met): operations against the player: Kessler-Hayashi 5, Grubstake 7; Synthexis waves 5; the player lost 15 buildings to them
-- watchdog: queue 2, stuck 9
+- **even** (met): Kessler-Hayashi lost 0, Grubstake lost 1; Kessler-Hayashi lost 0, Synthexis lost 0; Grubstake lost 0, Synthexis lost 0
+- **shapes** (met): at minute 45: ground held (camps and claims) Grubstake 1, Kessler-Hayashi 1; territory radius Grubstake 163, Kessler-Hayashi 87; garrison and turrets at the end: Kessler-Hayashi 173, Grubstake 46
+- **fights** (met): Kessler-Hayashi lost 0 to Grubstake, Grubstake 1 to Kessler-Hayashi (their nearest camps 540 tiles apart, beyond 500: no fight owed); Synthexis lost 3 to Kessler-Hayashi (its nearest culture 993 tiles from a Kessler-Hayashi camp, beyond 500: no clearance owed)
+- **pressure** (met): operations against the player: Kessler-Hayashi 5, Grubstake 3; Synthexis waves 4; the player lost 9 buildings to them
+- watchdog: queue 1, stuck 9
