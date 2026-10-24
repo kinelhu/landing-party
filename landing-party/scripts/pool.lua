@@ -84,6 +84,8 @@ local function roster(b)
   return b.roster
 end
 
+pool.roster = roster
+
 function pool.strength(b)
   local n = 0
   local r = roster(b)

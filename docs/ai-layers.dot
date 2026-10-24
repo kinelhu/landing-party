@@ -2,11 +2,11 @@ digraph layers {
   graph [rankdir=TB, fontname="Helvetica", nodesep=0.5, ranksep=0.7];
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
   edge [color="#8899aa", fontname="Helvetica", fontsize=9];
-  "Seams (leaves)" [label="Seams (leaves)\n7 modules, 512 lines", fillcolor="#d9f0d9"];
-  "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 232 lines", fillcolor="#eef2f7"];
+  "Seams (leaves)" [label="Seams (leaves)\n7 modules, 514 lines", fillcolor="#d9f0d9"];
+  "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 255 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n11 modules, 2682 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n15 modules, 5231 lines\nlayout 1184", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n13 modules, 4962 lines\nops 1802", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n13 modules, 4967 lines\nops 1807", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1231 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n4 modules, 2084 lines", fillcolor="#eef2f7"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];

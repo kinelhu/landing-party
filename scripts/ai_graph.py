@@ -87,7 +87,7 @@ LAYERS = {
     "The biotech": ["herd", "farm", "creep", "cell"],
     "The map": ["map"],
     "The player's army": ["command", "scanner", "roads"],
-    "Wiring (edges not drawn)": ["control", "dev"],
+    "Wiring (edges not drawn)": ["control", "dev", "watch"],
 }
 WIRING = set(LAYERS["Wiring (edges not drawn)"])
 

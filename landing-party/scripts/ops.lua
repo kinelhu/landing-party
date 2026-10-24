@@ -177,6 +177,9 @@ local REPRISAL_WEIGHT = 5
 local REPRISAL_SOON = 2 * 3600
 function ops.wronged(b, by)
   if not b or b.fallen or not shared.is_corp(by) or by == b.force then return end
+  -- A mind without reprisals (a thief does not send punitive raids into a fortress: rivals, 2026-10-24) remembers its
+  -- grievance (know.lua) and goes on as it was.
+  if ((shared.CORPS[b.corp] or {}).mind or {}).reprisals == false then return end
   b.wrongs = b.wrongs or {}
   local w = b.wrongs[by]
   if not w or game.tick - w.since > REPRISAL_TICKS then w = {since = game.tick, n = 0}; b.wrongs[by] = w end
@@ -473,7 +476,9 @@ local function mind_of(b) return (shared.CORPS[b.corp] or {}).mind or {min_odds 
 --                and it is the faction's, not one camp's)
 local WEIGHTS = {pressure = 3, battery = 10, desperate = 10, distracted = 0.2, ground = 2, grudge = 10, grudge_max = 5}
 local function relevance(b, t, c)
-  local w = mind_of(b).weights or WEIGHTS
+  -- A mind sets the weights it differs on; the rest are these.
+  local own = mind_of(b).weights or {}
+  local w = setmetatable({}, {__index = function(_, k) local v = own[k]; if v == nil then v = WEIGHTS[k] end; return v end})
   local r = 1
   if c.player and (c.floor or c.rung >= 1) then r = r * w.pressure end
   if battery(t) then r = r * w.battery end

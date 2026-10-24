@@ -156,6 +156,9 @@ def main():
         lines.append(f"| {seed} | {frames[-1]['minute']:.0f} | " + " | ".join("met" if j[n][0] else "**missed**" for n in names) + " |")
         detail.append(f"### Seed {seed}")
         detail += [f"- **{n}** ({'met' if j[n][0] else 'missed'}): {j[n][1]}" for n in names]
+        # The watchdog's alarms (landing-party/scripts/watch.lua): faults it saw, by kind; not a target, a lead.
+        w = frames[-1].get("watch") or {}
+        detail.append("- watchdog: " + (", ".join(f"{k} {v}" for k, v in sorted(w.items())) if w else "no alarm"))
         detail.append("")
     open(md, "w").write("\n".join(lines + [""] + detail))
     print(f"wrote {md}")

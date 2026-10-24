@@ -9,6 +9,7 @@ faction.on_trigger = phases.late
 local ops = require("__landing-party__.scripts.ops")
 local pool = require("__landing-party__.scripts.pool")
 local army = require("__landing-party__.scripts.army")
+local watch = require("__landing-party__.scripts.watch")
 local tune = require("__landing-party__.scripts.tune")
 local jammer = require("__landing-party__.scripts.jammer")
 local scanner = require("__landing-party__.scripts.scanner")
@@ -72,8 +73,22 @@ end
 script.on_init(init)
 script.on_configuration_changed(function() init(); base.heal_lines(); base.heal_labs() end)
 
+-- The watchdog's view of a settlement (scripts/watch.lua).
+local WATCH_DEPS = {
+  trace = function(b, text) base.trace(b, text) end,
+  units = function(b) return pool.roster(b) end,
+  strength = function(b) return pool.strength(b) end,
+  cap = function(b) return army.cap(b) end,
+  reserve = function(b) return base.reserve and base.reserve(b) or 0 end,
+  price = function(b)
+    local price, weight = 0, 0
+    for kind, w in pairs(army.mix(b) or {}) do price, weight = price + w * shared.unit_cost(b.corp, kind), weight + w end
+    return weight > 0 and price / weight or 0
+  end,
+}
 script.on_event(defines.events.on_tick, function(e)
   biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  watch.tick(e.tick, WATCH_DEPS)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
@@ -233,8 +248,8 @@ script.on_event(defines.events.on_entity_died, function(e)
   end
   if shared.is_corp(ent.force.name) then
     -- Killed by a rival corporation: the camp it belonged to remembers (ops.wronged: a reprisal).
-    -- (Not a unit lost away from home: its own raid's cost, know.at_home.)
-    local away = (ent.type == "unit" or ent.type == "spider-unit") and not know.at_home(know.faction_of(ent.force.name), ent.position)
+    -- (Not a unit lost on an errand of its own or away from home: know.resented.)
+    local away = (ent.type == "unit" or ent.type == "spider-unit") and not know.resented(know.faction_of(ent.force.name), ent)
     if e.force and shared.is_corp(e.force.name) and e.force ~= ent.force and ent.unit_number and not away then
       local own = storage.owner[ent.unit_number]
       ops.wronged(storage.bases[own and own.base or storage.unit_owner[ent.unit_number] or 0], e.force.name)
@@ -480,6 +495,7 @@ remote.add_interface("landing-party", {
   -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
   farm_state = function() return farm.state() end,
+  watch_state = function() return watch.state() end,
   creep_state = function() return creep.state() end,
   cell_state = function() return cell.state() end,
   cell_sites = function() return cell.sites() end,

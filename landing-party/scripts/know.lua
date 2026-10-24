@@ -52,10 +52,7 @@ local function decayed(g, tick)
   return g.v * 0.5 ^ ((tick - g.t) / GRIEVE_HALF)
 end
 
--- Whether a place is a corporation's home ground: within one of its camps' claims and HOME_MARGIN beyond. A unit lost
--- elsewhere was lost on its own errand: resented, it fed an escalation (rivals, 2026-10-24: Kessler-Hayashi's raids on
--- Grubstake lost 4, then 5, 22, 35, 70 units to its defenders, each loss a reprisal, each reprisal a bigger raid, until
--- Grubstake's camp was gone). Synthexis has no home to defend with units: its units' losses are never resented.
+-- Whether a place is a corporation's home ground: within one of its camps' claims and HOME_MARGIN beyond.
 local HOME_MARGIN = 60
 function know.at_home(key, pos)
   for _, b in pairs(storage.bases or {}) do
@@ -63,6 +60,32 @@ function know.at_home(key, pos)
       local r = (b.claim_radius or 150) + HOME_MARGIN
       local o = b.lander.position
       if (o.x - (pos.x or pos[1])) ^ 2 + (o.y - (pos.y or pos[2])) ^ 2 <= r * r then return true end
+    end
+  end
+  return false
+end
+
+-- A unit's death is a wrong done to its faction only at home and off any errand of its own: its convoy escorts and
+-- patrols shot walking past Grubstake's turrets far from home made Kessler-Hayashi's reprisals ("4 lost in 2 s"), and
+-- Grubstake's camp was gone in two hours (system 4242, 2026-10-24).
+function know.resented(key, ent)
+  return know.at_home(key, ent.position) and not know.on_errand(key, ent)
+end
+
+-- Whether a unit died on an errand of its own: a member of one of its faction's operations (a raid, a siege, a strip
+-- camp). What a faction's own attacks cost it is not a wrong done to it: resented, it fed an escalation (rivals,
+-- 2026-10-24: Kessler-Hayashi's raids on Grubstake lost 4, then 5, 22, 35, 70 units to its defenders, each loss a
+-- reprisal, each reprisal a bigger raid, until Grubstake's camp was gone). Judged by distance from home first (its
+-- claim and 60 tiles), it failed where the two camps stood 213 tiles apart: the raiders died "at home" (system 12345).
+-- Synthexis's units are all on errands (its waves): never resented.
+function know.on_errand(key, ent)
+  if key == "biotech" then return true end
+  for _, b in pairs(storage.bases or {}) do
+    if b.corp == key then
+      for _, u in ipairs(b.op and b.op.members or {}) do if u == ent then return true end end
+      -- On its way back from one (pool.give): its raid over, it was still in the rival's ground, and a reprisal came
+      -- 52 ticks after "raid razed nothing" (rivals, 2026-10-24).
+      for _, u in ipairs(b.returning or {}) do if u == ent then return true end end
     end
   end
   return false
@@ -89,7 +112,7 @@ function know.loss(e)
     unit = ent.type == "unit" or ent.type == "spider-unit", pos = {ent.position.x, ent.position.y}, value = value})
   if #k.losses > LOSSES_MAX then table.remove(k.losses, 1) end
   local unit = ent.type == "unit" or ent.type == "spider-unit"
-  if by ~= "none" and by ~= "neutral" and by ~= ent.force.name and not (unit and not know.at_home(key, ent.position)) then
+  if by ~= "none" and by ~= "neutral" and by ~= ent.force.name and not (unit and not know.resented(key, ent)) then
     local g = k.grievance[by]
     k.grievance[by] = {v = decayed(g, game.tick) + value, t = game.tick}
   end

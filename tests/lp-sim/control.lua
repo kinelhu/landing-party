@@ -2500,6 +2500,7 @@ scenarios.system = function()
           all = surface().count_entities_filtered{force = f}}
       end
       local fs = lp("farm_state").farms
+      frame.watch = (lp("watch_state") or {}).alarms or {}
       frame.biotech = {farms = #fs, at = {}}
       for _, f in ipairs(fs) do
         local q = f.pos and (f.pos.x and f.pos or {x = f.pos[1], y = f.pos[2]})
@@ -7601,6 +7602,35 @@ scenarios.blockexit = function()
   end)
 end
 
+-- The watchdog (landing-party/scripts/watch.lua), its alarms made to fire. LP_MIX: economy (at 4 minutes its
+-- fabricators destroyed and its parts taken to nought: the deadlock of 2026-10-24), army (every unit it makes killed
+-- as it comes, parts to spare). The stuck alarm is not staged here: a unit walled in alone was taken up by its camp's
+-- operations and moved off; it fires in the system sim on every seed (stuck units among trees).
+scenarios.watchdog = function()
+  local mode = params.mix ~= "" and params.mix or "economy"
+  schedule(60, function() lp("debug_tune", {history_off = true, raids_off = true}) end)
+  schedule(4 * 3600, function()
+    local id = storage.id
+    if mode == "economy" then
+      for _, f in pairs(surface().find_entities_filtered{name = "lp-fabricator", force = FORCE}) do f.die("player") end
+      lp("debug_parts", id, -lp("stats", id).parts)
+    elseif mode == "army" then
+      lp("debug_parts", id, 5000)
+    end
+  end)
+  for t = 4 * 3600 + 30, 20 * 3600, 30 do
+    schedule(t, function()
+      if mode == "army" then
+        for _, u in pairs(surface().find_entities_filtered{type = {"unit", "spider-unit"}, force = FORCE}) do u.die("player") end
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local w = lp("watch_state") or {}
+    check("watchdog: the " .. mode .. " alarm fired", ((w.alarms or {})[mode] or 0) > 0, serpent.line(w.alarms))
+  end)
+end
+
 -- Fortress (Fable's fortress consult; the user: "that's hardly better than a biter mod"): a player laser wall facing a
 -- Serenity camp 150 tiles off, as on nw: 40 tiles of stone wall, ten lasers behind it, substations, an infinite power
 -- source behind, two roboports with construction robots and repair packs, spares in storage (walls, lasers,
@@ -10226,6 +10256,18 @@ schedule(END, function()
   local s = lp("stats", storage.id)
   -- A run that ends before its scenario's checks fire must not pass (path once "passed" at 32 minutes with
   -- its checks due at 35).
+  -- The watchdog (scripts/watch.lua): its alarms by kind, and the first few with what it saw.
+  local ok_w, wst = pcall(lp, "watch_state")
+  if ok_w and wst then
+    local n = 0
+    for _, v in pairs(wst.alarms or {}) do n = n + v end
+    metric("watch_alarms", n)
+    info("watch: " .. serpent.line(wst.alarms or {}))
+    for i = 1, math.min(5, #(wst.log or {})) do
+      local l = wst.log[i]
+      info(string.format("watch %d base %d %s: %s", l.tick, l.base, l.kind, l.text))
+    end
+  end
   local CHECKLESS = {grow = true, probe = true, cost = true, showcase = true}
   if not CHECKLESS[params.scenario] then
     local ran = 0
