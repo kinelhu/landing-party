@@ -2323,7 +2323,7 @@ end
 -- The stand-in: a walled square at spawn, gun turrets (refilled) and lasers on its walls, assemblers, a radar, and
 -- pollution let out at its middle, rising over the game (a factory growing). Grubstake lands at minute 1, Kessler-
 -- Hayashi at 15 (its gate, the first rocket, comes later in a game: the order kept, the wait cut); Synthexis on a nest
--- field 750 tiles out once the wild reach 0.25 (pushed there at minute 20 if the pollution has not).
+-- field 900 tiles out once the wild reach 0.25 (pushed there at minute 20 if the pollution has not).
 local SYSTEM_LAND_G, SYSTEM_LAND_S, SYSTEM_SYNTH = 1, 15, 20
 scenarios.system = function()
   local function put(name, x, y, items)
@@ -2423,7 +2423,9 @@ scenarios.system = function()
     local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
     local function field(k)
       local a = math.atan2(-o.y, -o.x) + k * math.pi / 2
-      local c = {math.cos(a) * 750, math.sin(a) * 750}
+      -- 900 out: Synthexis wants none of the player's buildings within 600 of its field, and the stand-in's outposts
+      -- reach 300 from spawn (at 750 they blocked every direction on seed 1).
+      local c = {math.cos(a) * 900, math.sin(a) * 900}
       surface().request_to_generate_chunks(c, 3)
       surface().force_generate_chunk_requests()
       for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}, {-8, -12}}) do
