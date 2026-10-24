@@ -75,13 +75,25 @@ def voice(node_id):
     return v.replace("__1__", "It").replace(" (level __2__)", "")
 
 
-# What each node is called on the page (its locale line says what it does; these are names only).
-NODE_NAME = {"optics": "Optics", "handloads": "Hand-loads", "warden": "Warden armour", "lance": "Lances",
-             "shock": "Shock troopers", "aegis": "Aegis tanks", "hardened": "Dug in", "jammer": "Jammer mast",
-             "counter": "Counter-battery", "salvage": "Salvage rights", "prospector": "Prospector's eye",
-             "scrap-plating": "Scrap plating", "asbestos": "Asbestos suits", "slug": "Slug buggies",
-             "sapper": "Dynamite sappers", "scavenger": "Bomb drones", "dozer": "Dozer", "prism": "Prism tanks",
-             "tesla": "Tesla tanks", "scorcher": "Scorchers", "skyguard": "Anti-air troopers", "flak-buggy": "Flak buggies"}
+# What each node is called on the page: a unit's node by the unit's own name (the locale's), the rest plainly.
+NODE_NAME = {"optics": "Better optics", "handloads": "Hand-loaded shells", "warden": "Heavier armour",
+             "hardened": "Dug-in siege crews", "jammer": "Jamming mast", "counter": "Counter-battery",
+             "salvage": "Salvage rights", "prospector": "Better prospecting", "scrap-plating": "Scrap plating",
+             "asbestos": "Asbestos suits"}
+
+
+def plural(name):
+    return name[:-1] + "ies" if name.endswith("y") else name + "s"
+
+
+def node_name(node_id):
+    if node_id in NODE_NAME:
+        return NODE_NAME[node_id]
+    for c in data["corps"].values():
+        for n in c["tree"]:
+            if n["id"] == node_id and n.get("unit"):
+                return plural(ename(n["unit"]["kind"]))
+    return node_id
 BRANCH_NAME = {"optics": "Optics", "line": "Line", "siege": "Siege", "scrap-arms": "Scrap arms", "loot": "Loot",
                "wheels": "Wheels"}
 KILLER = {"gun-turret": "gun turrets", "laser-turret": "laser turrets", "flamethrower-turret": "flamethrower turrets",
@@ -94,7 +106,7 @@ KILLER = {"gun-turret": "gun turrets", "laser-turret": "laser turrets", "flameth
 
 def trigger_text(t):
     if not t:
-        return "climbs while nothing else is called for"
+        return "nothing else is called for"
     if "killer" in t:
         who = sorted({KILLER.get(k, k) for k in t["killer"]}, key=lambda x: (x != "you", x))
         return f"{t['min']} of its units killed by {', '.join(who)} within {WINDOW_MIN} minutes"
@@ -125,7 +137,7 @@ def effect_text(node, corp):
     if node.get("track"):
         return f"raises {', '.join(node['track'])} damage, {node.get('levels', 5)} levels"
     if node.get("unit"):
-        return "fields " + ename(node["unit"]["kind"])
+        return "adds the " + ename(node["unit"]["kind"]).lower()
     if node.get("plates"):
         parts = []
         for k, p in sorted(node["plates"].items()):
@@ -245,7 +257,7 @@ def tree_svg(corp):
             if img:
                 out.append(f'<image href="{img}" x="{bx + bw / 2 - 74}" y="42" width="44" height="44"/>')
             out.append(f'<text x="{bx + bw / 2 - 24}" y="62" class="lab">{esc(ename(lab))}</text>')
-            out.append(f'<text x="{bx + bw / 2 - 24}" y="78" class="erasub">climbs while it stands</text>')
+            out.append(f'<text x="{bx + bw / 2 - 24}" y="78" class="erasub">researches only while it stands</text>')
     for (b, e), nodes in cells.items():
         for i, n in enumerate(nodes):
             nx, ny = xs[b] + i * (NW + GX), HEAD + e * (NH + GY)
@@ -267,7 +279,7 @@ def tree_svg(corp):
             if img:
                 out.append(f'<image href="{img}" x="{nx + NW - 66}" y="{ny + 8}" width="58" height="58"/>')
         out.append(f'<text x="{tx}" y="{ny + 22}" class="chip">{k.upper()}</text>')
-        out.append(f'<text x="{tx}" y="{ny + 44}" class="ntitle">{esc(NODE_NAME.get(n["id"], n["id"]))}</text>')
+        out.append(f'<text x="{tx}" y="{ny + 44}" class="ntitle">{esc(node_name(n["id"]))}</text>')
         cost = f'{n["cost"]} fund' + (" a level" if n.get("track") else "")
         out.append(f'<text x="{tx}" y="{ny + 62}" class="nmeta">{esc(cost)}</text>')
         eff = effect_text(n, corp)
@@ -290,9 +302,9 @@ def fielded_text(kind, corp):
         return "From landing" if not lvl else f"From its level {lvl}"
     for n in c["tree"]:
         if (n.get("unit") or {}).get("kind") == kind:
-            req = f", after {NODE_NAME.get(n['requires'], n['requires'])}" if n.get("requires") else ""
+            req = f", after {node_name(n['requires'])}" if n.get("requires") else ""
             branch = BRANCH_NAME.get(n["branch"], n["branch"])
-            return f"Research: {NODE_NAME.get(n['id'], n['id'])} ({branch}, era {n.get('era', 0)}{req})"
+            return f"Research: {node_name(n['id'])} ({branch}, era {n.get('era', 0)}{req})"
     return ""
 
 
@@ -350,37 +362,41 @@ def vista(name, alt):
 
 # Each faction in a paragraph or two: who they are, how they play, what undoes them. Words only; numbers from the code.
 VIGNETTE = {
-    "serenity": ("The wall", f"""Kessler-Hayashi is a security contractor that treats your factory as a perimeter problem.
-It lands at war with you, builds compact walled camps of slate concrete under cold white light, and pushes a line of
-posts outward until it meets your ground. Its army is precise and expensive: laser troopers, tanks, walkers, and from its
-second level a few armoured laser drones. It clears biter nests in its way with railgunners and the howitzer, and it
-bills you for the waves your pollution draws through its ground.""",
-                 """It is slow to start and dear to replace. Hit its labs and each research branch stalls while its lab is down;
-cut the power to its line and the posts go dark; raid its convoys rather than its walls. Rocket troopers, slugs and every
-kind of anti-air bring its drones down."""),
-    "grubstake": ("The thief", """Grubstake Inc. is a mining outfit that lives off what it can take. It lands rough
-camps of amber gravel, sprawls toward the ore, and works by night: skimming trucks at your chests, strip camps on your
-outposts, taps on your power lines, claim jumpers on your patches. It fields cheap things in numbers: shotgun hands,
-buggies, scrap drones, and bomb drones that dive at your artillery and radars.""",
-                  """It keeps off guarded ground, so a turret over each outpost turns it away. Kill its foreman and a raid
-breaks; pay its trade post and it holds off for a while. Flak and gun turrets shred its drones before they arrive."""),
-    "biotech": ("The test range", f"""Synthexis is a bioengineering firm that uses Nauvis as a test range. It lands on a
-nest field far out, takes the nests as incubators, grows creep between them, and lives on the pollution the creep
-drinks. Every {WAVE_GAP_MIN} minutes or so it sends a wave as a trial of its breeds against a defence: yours, or
-Kessler-Hayashi's walls, whichever would teach it most. While its clinic stands its breeds climb {CLIMB * 60:.2f} of
-evolution an hour: spitters, then bursters, then stompers that step over your wall.""",
-                "Its weak points are its supply. Kill a biochamber and that incubator starves, its stock wanders off feral; "
-                "kill its technicians and every cell goes hungry; shell its clinic and its incubators breed only small and "
-                f"medium biters (evolution {STOCK_EVO:g}) until a new one lands. Hitting an incubator calls its wave home; "
-                "hitting the feed does not."),
+    "serenity": (f"""Kessler-Hayashi is a security contractor. It lands at war with you and stays at war. Its camps are
+small, walled and paved in concrete, and it pushes a line of posts out from them until the line reaches your ground. Its
+units are expensive and hit hard: drone infantry, tanks and walkers from the start, laser drones from its second level,
+and heavier tanks from research. Railgunners and howitzers clear the biter nests in its way. When biters drawn by your
+pollution cross its ground, it sends you an invoice.""",
+                 """It is slow to start and its losses are expensive to replace. Each of its research branches advances
+only while that branch's lab stands, so the labs are worth a raid. Its posts run on power from the line, and go dark when
+you cut it. Its convoys are easier to hit than its walls. Its drones are armoured: rockets bring them down, rifles barely
+scratch them."""),
+    "grubstake": ("""Grubstake Inc. is a mining company that makes its money from your ore and your stock. Its camps are
+rough gravel pads that spread toward ore, and most of its work happens at night. Its trucks skim your chests, its strip
+camps dig the patches under your outposts, it taps your power lines, and it stakes claims on patches you leave unworked.
+Its units are cheap and come in numbers: shotgun hands, buggies and scrap drones, and later bomb drones that fly at your
+artillery and radars and explode on them.""",
+                  """It avoids defended ground, so one turret at each outpost is often enough to send it elsewhere. A raid
+falls apart when its foreman dies. Paying at its trade post buys a period without attacks. Gun turrets kill its drones
+before they reach your wall."""),
+    "biotech": (f"""Synthexis is a bioengineering company that uses Nauvis to test what it breeds. It lands on a biter nest
+field far from you and takes the nests over as incubators, each fed from a biochamber beside it. Creep spreads between
+them and absorbs pollution, which is what Synthexis lives on. About every {WAVE_GAP_MIN} minutes it sends a wave to try
+its breeds against a defended base, yours or Kessler-Hayashi's, whichever it expects to learn more from. While its clinic
+stands its breeds gain {CLIMB * 60:.2f} evolution an hour. Spitters appear first, then bursters, then stompers that walk
+over walls.""",
+                f"""Go for its supply. When a biochamber dies, its incubator stops breeding and the stock goes feral. Its
+technicians feed every cell, so killing them starves the whole culture. Without its clinic it breeds only small and
+medium biters (evolution {STOCK_EVO:g}) until a replacement lands. Attacking an incubator brings its wave home to defend
+it; attacking the biochambers does not."""),
 }
 
 
 def vignette(fid, name, vista_name):
-    title, who, beat = VIGNETTE[fid]
+    who, beat = VIGNETTE[fid]
     return f'''<div class="vignette">
   {vista(vista_name, name + "'s base in the game")}
-  <div><p class="tag">{esc(title)}</p><p>{esc(" ".join(who.split()))}</p>
+  <div><p>{esc(" ".join(who.split()))}</p>
   <p class="beat"><b>How to beat it.</b> {esc(" ".join(beat.split()))}</p></div>
 </div>'''
 
@@ -460,14 +476,14 @@ def synth_section():
     c = b["color"]
     sw = f"rgb({int(c['r'] * 255)},{int(c['g'] * 255)},{int(c['b'] * 255)})"
     blds = "".join(building_card(n, h) for n, h in (
-        ("lp-pen", "A wild nest it took; kill it, and its wave comes home"),
-        ("lp-biochamber", "One by each incubator; kill it, and that incubator starves"),
-        ("lp-clinic", f"While it stands its breeds climb {CLIMB * 60:.2f} an hour"),
-        ("lp-heating-tower", "The heart of its substrate: Gleba soil, yumako and jellystems"),
-        ("lp-tumor", "Grows the creep; kill them and the creep withers")))
+        ("lp-pen", "A captured nest. Attacking it brings Synthexis's wave home"),
+        ("lp-biochamber", "One beside each incubator. Kill it and that incubator stops breeding"),
+        ("lp-clinic", f"While it stands, its breeds gain {CLIMB * 60:.2f} evolution an hour"),
+        ("lp-heating-tower", "Keeps its Gleba soil, yumako and jellystem warm"),
+        ("lp-tumor", "Grows the creep. Kill them and the creep withers")))
     return f'''<section class="corp" id="biotech" style="--corp:{sw}">
-  <header class="corphead"><span class="swatch"></span><div><h2>{esc(b["name"])}</h2><p>Bred, not built. Its incubators breed
-  by evolution, and its clinic decides how far that climbs.</p></div></header>
+  <header class="corphead"><span class="swatch"></span><div><h2>{esc(b["name"])}</h2><p>A bioengineering company that breeds its army in
+  captured nests.</p></div></header>
   {vignette("biotech", b["name"], "synthexis-night")}
   <h3>What it breeds, by evolution</h3>
   <div class="tree tiers">{tiers_svg()}</div>
@@ -525,9 +541,9 @@ def techs_html():
     return f'<div class="techs">{"".join(cols)}</div>'
 
 
-player = "".join(unit_card(k, None, "Trained at your barracks; orders by beacon") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"))
-shared_units = "".join(unit_card(k, None, h) for k, h in (("lp-hauler", "Both: convoys, Grubstake's building trucks"),
-                                                          ("lp-railgunner", "Kessler-Hayashi: clears nests, never raids")))
+player = "".join(unit_card(k, None, "Ordered at your barracks") for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"))
+shared_units = "".join(unit_card(k, None, h) for k, h in (("lp-hauler", "Fielded by both corporations"),
+                                                          ("lp-railgunner", "Kessler-Hayashi only. Clears nests and never raids")))
 
 page = f'''<title>Landing Party Field Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -618,28 +634,29 @@ footer {{ margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family:
 </style>
 <div class="wrap">
   <h1>Landing Party Field Guide</h1>
-  <p class="lede">Three companies land on your planet: one to hold it, one to rob it, one to test on it. Who they are, how they
-  fight, what each unit does and what each of them learns, and what you have against them. Numbers are the game's own, one
-  shot before research; the research charts read down by era and across by branch.</p>
+  <p class="lede">Landing Party adds three companies that land on your planet and compete with you and with each other.
+  This guide covers each one's base, units and research, and the units and technologies you get against them. Unit numbers
+  come from the game's prototypes, before any research. Research charts read top to bottom by era and left to right by
+  branch.</p>
   <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#biotech">Synthexis</a><a href="#yours">Your army</a><a href="#tech">Your technologies</a><a href="#both">Shared</a></nav>
   <div class="rules">
-    <div><b>Eras follow you</b>A corporation buys nothing above your era: era 1 at {ERA_TECHS[0]} technologies researched, 2 at {ERA_TECHS[1]}, 3 at {ERA_TECHS[2]}, 4 at {ERA_TECHS[3]}.</div>
-    <div><b>Losses decide</b>It buys the node your play calls for: the one whose condition your fighting met hardest in the last {WINDOW_MIN} minutes. With none called for, its weapon track climbs.</div>
-    <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch climbs, and fields what it gave, only while that branch's lab stands in its camp.</div>
+    <div><b>Their research follows yours</b>A corporation researches nothing above your era: era 1 at {ERA_TECHS[0]} technologies researched, 2 at {ERA_TECHS[1]}, 3 at {ERA_TECHS[2]}, 4 at {ERA_TECHS[3]}.</div>
+    <div><b>It answers your attacks</b>It researches the item whose condition your attacks met most in the last {WINDOW_MIN} minutes. When none was met, it upgrades its weapon damage.</div>
+    <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch advances, and its units are built, only while that branch's lab stands in its camp.</div>
   </div>
-  {corp_section("serenity", "Precise, walled, at war from landing. Lasers and rails; it clears nests and holds a line.")}
-  {corp_section("grubstake", "A thief with a fund. Shotguns, buggies and trucks; it skims, strips and raids where you are soft.")}
+  {corp_section("serenity", "A security contractor, at war with you from the day it lands.")}
+  {corp_section("grubstake", "A mining company that takes your ore, your stock and your power.")}
   {synth_section()}
   <section class="corp" id="yours" style="--corp: var(--accent)">
-    <header class="corphead"><span class="swatch"></span><div><h2>Your army</h2><p>Trained at a barracks, sent by beacon.</p></div></header>
+    <header class="corphead"><span class="swatch"></span><div><h2>Your army</h2><p>Ordered at a barracks and sent to a rally beacon.</p></div></header>
     <h3>Units</h3><div class="units">{player}</div>
     <h3 id="tech">Your technologies</h3>
-    <p class="lede">Command bandwidth sets how many units you can lead. The rest come from their wreckage: craft a part you
-    looted from them and its technology is yours.</p>
+    <p class="lede">Command bandwidth sets how many units you can lead. The other technologies come from the corporations'
+    wreckage: crafting a part you looted from them unlocks its technology.</p>
     {techs_html()}
   </section>
   <section class="corp" id="both" style="--corp: var(--edge)">
-    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
+    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Units both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
     <h3>Units</h3><div class="units">{shared_units}</div>
   </section>
   <footer>Written by scripts/roster_page.py from the prototypes, shared.lua, farm.lua and the locale. Portraits from the screenshot run; the bases from the all-factions save.</footer>

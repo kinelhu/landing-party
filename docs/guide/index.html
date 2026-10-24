@@ -87,21 +87,22 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </style>
 <div class="wrap">
   <h1>Landing Party Field Guide</h1>
-  <p class="lede">Three companies land on your planet: one to hold it, one to rob it, one to test on it. Who they are, how they
-  fight, what each unit does and what each of them learns, and what you have against them. Numbers are the game's own, one
-  shot before research; the research charts read down by era and across by branch.</p>
+  <p class="lede">Landing Party adds three companies that land on your planet and compete with you and with each other.
+  This guide covers each one's base, units and research, and the units and technologies you get against them. Unit numbers
+  come from the game's prototypes, before any research. Research charts read top to bottom by era and left to right by
+  branch.</p>
   <nav><a href="#serenity">Kessler-Hayashi</a><a href="#grubstake">Grubstake Inc.</a><a href="#biotech">Synthexis</a><a href="#yours">Your army</a><a href="#tech">Your technologies</a><a href="#both">Shared</a></nav>
   <div class="rules">
-    <div><b>Eras follow you</b>A corporation buys nothing above your era: era 1 at 25 technologies researched, 2 at 60, 3 at 100, 4 at 150.</div>
-    <div><b>Losses decide</b>It buys the node your play calls for: the one whose condition your fighting met hardest in the last 30 minutes. With none called for, its weapon track climbs.</div>
-    <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch climbs, and fields what it gave, only while that branch's lab stands in its camp.</div>
+    <div><b>Their research follows yours</b>A corporation researches nothing above your era: era 1 at 25 technologies researched, 2 at 60, 3 at 100, 4 at 150.</div>
+    <div><b>It answers your attacks</b>It researches the item whose condition your attacks met most in the last 30 minutes. When none was met, it upgrades its weapon damage.</div>
+    <div><b>Kessler-Hayashi's labs</b>Each Kessler-Hayashi branch advances, and its units are built, only while that branch's lab stands in its camp.</div>
   </div>
   <section class="corp" id="serenity" style="--corp:rgb(158,204,255)">
-  <header class="corphead"><span class="swatch"></span><div><h2>Kessler-Hayashi</h2><p>Precise, walled, at war from landing. Lasers and rails; it clears nests and holds a line.</p></div></header>
+  <header class="corphead"><span class="swatch"></span><div><h2>Kessler-Hayashi</h2><p>A security contractor, at war with you from the day it lands.</p></div></header>
   <div class="vignette">
   <img class="vista" src="img/vista-serenity-close.jpg" alt="Kessler-Hayashi&#x27;s base in the game" loading="lazy">
-  <div><p class="tag">The wall</p><p>Kessler-Hayashi is a security contractor that treats your factory as a perimeter problem. It lands at war with you, builds compact walled camps of slate concrete under cold white light, and pushes a line of posts outward until it meets your ground. Its army is precise and expensive: laser troopers, tanks, walkers, and from its second level a few armoured laser drones. It clears biter nests in its way with railgunners and the howitzer, and it bills you for the waves your pollution draws through its ground.</p>
-  <p class="beat"><b>How to beat it.</b> It is slow to start and dear to replace. Hit its labs and each research branch stalls while its lab is down; cut the power to its line and the posts go dark; raid its convoys rather than its walls. Rocket troopers, slugs and every kind of anti-air bring its drones down.</p></div>
+  <div><p>Kessler-Hayashi is a security contractor. It lands at war with you and stays at war. Its camps are small, walled and paved in concrete, and it pushes a line of posts out from them until the line reaches your ground. Its units are expensive and hit hard: drone infantry, tanks and walkers from the start, laser drones from its second level, and heavier tanks from research. Railgunners and howitzers clear the biter nests in its way. When biters drawn by your pollution cross its ground, it sends you an invoice.</p>
+  <p class="beat"><b>How to beat it.</b> It is slow to start and its losses are expensive to replace. Each of its research branches advances only while that branch&#x27;s lab stands, so the labs are worth a raid. Its posts run on power from the line, and go dark when you cut it. Its convoys are easier to hit than its walls. Its drones are armoured: rockets bring them down, rifles barely scratch them.</p></div>
 </div>
   <h3>Research</h3>
   <div class="tree"><svg viewBox="0 0 1328 842" width="1328" height="842" role="img" aria-label="Kessler-Hayashi research tree">
@@ -120,31 +121,30 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="201.0" y="34" class="branch" text-anchor="middle">Optics</text>
 <image href="img/lp-optics-lab.png" x="127.0" y="42" width="44" height="44"/>
 <text x="177.0" y="62" class="lab">Optics lab</text>
-<text x="177.0" y="78" class="erasub">climbs while it stands</text>
+<text x="177.0" y="78" class="erasub">researches only while it stands</text>
 <text x="573.0" y="34" class="branch" text-anchor="middle">Siege</text>
 <image href="img/lp-siege-lab.png" x="499.0" y="42" width="44" height="44"/>
 <text x="549.0" y="62" class="lab">Siege works</text>
-<text x="549.0" y="78" class="erasub">climbs while it stands</text>
+<text x="549.0" y="78" class="erasub">researches only while it stands</text>
 <text x="1061.0" y="34" class="branch" text-anchor="middle">Line</text>
 <image href="img/lp-line-lab.png" x="987.0" y="42" width="44" height="44"/>
 <text x="1037.0" y="62" class="lab">Line armoury</text>
-<text x="1037.0" y="78" class="erasub">climbs while it stands</text>
+<text x="1037.0" y="78" class="erasub">researches only while it stands</text>
 <path d="M457.0,614 C457.0,636 457.0,626 457.0,646" class="edge" marker-end="url(#arr-serenity)"/>
 <path d="M201.0,430 C201.0,452 201.0,626 201.0,646" class="edge" marker-end="url(#arr-serenity)"/>
 <path d="M945.0,430 C945.0,452 945.0,442 945.0,462" class="edge" marker-end="url(#arr-serenity)"/>
 <path d="M201.0,430 C201.0,452 201.0,442 201.0,462" class="edge" marker-end="url(#arr-serenity)"/>
 <g class="node track"><rect x="96" y="96" width="210" height="150" rx="6" class="nbox"/>
 <text x="108" y="118" class="chip">TRACK</text>
-<text x="108" y="140" class="ntitle">Optics</text>
+<text x="108" y="140" class="ntitle">Better optics</text>
 <text x="108" y="158" class="nmeta">400 fund a level</text>
 <text x="108" y="178" class="neff">raises laser, electric damage,</text>
 <text x="108" y="193" class="neff">5 levels</text>
-<text x="108" y="210" class="ntrig">when: climbs while nothing else</text>
-<text x="108" y="224" class="ntrig">is called for</text>
+<text x="108" y="210" class="ntrig">when: nothing else is called for</text>
 </g>
 <g class="node ability"><rect x="352" y="464" width="210" height="150" rx="6" class="nbox"/>
 <text x="364" y="486" class="chip">ABILITY</text>
-<text x="364" y="508" class="ntitle">Dug in</text>
+<text x="364" y="508" class="ntitle">Dug-in siege crews</text>
 <text x="364" y="526" class="nmeta">1200 fund</text>
 <text x="364" y="548" class="ntrig">when: 5 of its units killed by</text>
 <text x="364" y="562" class="ntrig">explosion damage within 30</text>
@@ -152,7 +152,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </g>
 <g class="node ability"><rect x="584" y="464" width="210" height="150" rx="6" class="nbox"/>
 <text x="596" y="486" class="chip">ABILITY</text>
-<text x="596" y="508" class="ntitle">Jammer mast</text>
+<text x="596" y="508" class="ntitle">Jamming mast</text>
 <text x="596" y="526" class="nmeta">1500 fund</text>
 <text x="596" y="548" class="ntrig">when: a siege&#x27;s hits mended by</text>
 <text x="596" y="562" class="ntrig">your robots once</text>
@@ -167,7 +167,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </g>
 <g class="node plate"><rect x="840" y="280" width="210" height="150" rx="6" class="nbox"/>
 <text x="852" y="302" class="chip">PLATE</text>
-<text x="852" y="324" class="ntitle">Warden armour</text>
+<text x="852" y="324" class="ntitle">Heavier armour</text>
 <text x="852" y="342" class="nmeta">1500 fund</text>
 <text x="852" y="362" class="neff">armour plates, Laser trooper:</text>
 <text x="852" y="377" class="neff">physical</text>
@@ -180,7 +180,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="1084" y="302" class="chip">UNIT</text>
 <text x="1084" y="324" class="ntitle">Anti-air troopers</text>
 <text x="1084" y="342" class="nmeta">900 fund</text>
-<text x="1084" y="362" class="neff">fields Anti-air trooper</text>
+<text x="1084" y="362" class="neff">adds the anti-air trooper</text>
 <text x="1084" y="379" class="ntrig">when: 6 of its units killed by</text>
 <text x="1084" y="393" class="ntrig">bomb drones, laser drones, scrap</text>
 <text x="1084" y="407" class="ntrig">drones, your combat robots</text>
@@ -188,9 +188,9 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <g class="node unit"><rect x="96" y="280" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-lance.png" x="240" y="288" width="58" height="58"/>
 <text x="108" y="302" class="chip">UNIT</text>
-<text x="108" y="324" class="ntitle">Lances</text>
+<text x="108" y="324" class="ntitle">Heavy laser troopers</text>
 <text x="108" y="342" class="nmeta">900 fund</text>
-<text x="108" y="362" class="neff">fields Heavy laser trooper</text>
+<text x="108" y="362" class="neff">adds the heavy laser trooper</text>
 <text x="108" y="379" class="ntrig">when: 6 of its units killed by</text>
 <text x="108" y="393" class="ntrig">you, breachers, flamethrower</text>
 <text x="108" y="407" class="ntrig">troopers, rocket troopers,</text>
@@ -200,7 +200,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="108" y="670" class="chip">UNIT</text>
 <text x="108" y="692" class="ntitle">Shock troopers</text>
 <text x="108" y="710" class="nmeta">2500 fund</text>
-<text x="108" y="730" class="neff">fields Shock trooper</text>
+<text x="108" y="730" class="neff">adds the shock trooper</text>
 <text x="108" y="747" class="ntrig">when: 12 of its units killed by</text>
 <text x="108" y="761" class="ntrig">you, breachers, flamethrower</text>
 <text x="108" y="775" class="ntrig">troopers, rocket troopers,</text>
@@ -208,9 +208,9 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <g class="node unit"><rect x="840" y="464" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-aegis.png" x="984" y="472" width="58" height="58"/>
 <text x="852" y="486" class="chip">UNIT</text>
-<text x="852" y="508" class="ntitle">Aegis tanks</text>
+<text x="852" y="508" class="ntitle">Heavy tanks</text>
 <text x="852" y="526" class="nmeta">2000 fund</text>
-<text x="852" y="546" class="neff">fields Heavy tank</text>
+<text x="852" y="546" class="neff">adds the heavy tank</text>
 <text x="852" y="563" class="ntrig">when: 5 of its units killed by</text>
 <text x="852" y="577" class="ntrig">battle tanks, your vehicles</text>
 <text x="852" y="591" class="ntrig">within 30 minutes</text>
@@ -218,9 +218,9 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <g class="node unit"><rect x="96" y="464" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-prism.png" x="240" y="472" width="58" height="58"/>
 <text x="108" y="486" class="chip">UNIT</text>
-<text x="108" y="508" class="ntitle">Prism tanks</text>
+<text x="108" y="508" class="ntitle">Laser tanks</text>
 <text x="108" y="526" class="nmeta">1800 fund</text>
-<text x="108" y="546" class="neff">fields Laser tank</text>
+<text x="108" y="546" class="neff">adds the laser tank</text>
 <text x="108" y="563" class="ntrig">when: 9 of its units killed by</text>
 <text x="108" y="577" class="ntrig">you, breachers, flamethrower</text>
 <text x="108" y="591" class="ntrig">troopers, rocket troopers,</text>
@@ -228,9 +228,9 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <g class="node unit"><rect x="584" y="648" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-tesla.png" x="728" y="656" width="58" height="58"/>
 <text x="596" y="670" class="chip">UNIT</text>
-<text x="596" y="692" class="ntitle">Tesla tanks</text>
+<text x="596" y="692" class="ntitle">Lightning tanks</text>
 <text x="596" y="710" class="nmeta">2500 fund</text>
-<text x="596" y="730" class="neff">fields Lightning tank</text>
+<text x="596" y="730" class="neff">adds the lightning tank</text>
 <text x="596" y="747" class="ntrig">when: 10 of its units killed by</text>
 <text x="596" y="761" class="ntrig">flamethrower turrets, gun</text>
 <text x="596" y="775" class="ntrig">turrets, laser turrets within 30</text>
@@ -238,38 +238,10 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </svg></div>
   <h3>Units</h3>
   <div class="units"><article class="unit">
-  <figure><img src="img/lp-laser-drone.png" alt="Laser drone" loading="lazy"></figure>
-  <div class="ubody">
-    <h4>Laser drone</h4>
-    <p class="role">Air: Kessler-Hayashi&#x27;s, armoured, a laser beam; few and dear</p>
-    <dl>
-      <div><dt>Health</dt><dd>400</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
-      <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>12 laser</dd></div>
-      <div class="wide"><dt>Resists</dt><dd>fire 100%, physical -3 40%, laser 20%</dd></div>
-      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>70 parts</dd></div>
-    </dl>
-    <p class="how">From its level 2</p>
-  </div>
-</article><article class="unit">
-  <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
-  <div class="ubody">
-    <h4>Railgunner</h4>
-    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
-    <dl>
-      <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
-      <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
-      <div class="wide"><dt>A shot</dt><dd>250 physical to biters, nests and worms; 10 physical to anything else</dd></div>
-      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
-      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
-    </dl>
-    <p class="how">From landing</p>
-  </div>
-</article><article class="unit">
   <figure><img src="img/lp-tank.png" alt="Tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Tank</h4>
-    <p class="role">Armour; cannon rounds that hit buildings three times as hard as units</p>
+    <p class="role">An armoured tank. Its cannon does three times as much damage to buildings as to units</p>
     <dl>
       <div><dt>Health</dt><dd>900</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
       <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
@@ -283,7 +255,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-walker.png" alt="Walker" loading="lazy"></figure>
   <div class="ubody">
     <h4>Walker</h4>
-    <p class="role">A spider: steps over walls, rockets</p>
+    <p class="role">A spider-legged machine that walks over walls and fires rockets</p>
     <dl>
       <div><dt>Health</dt><dd>1600</dd></div><div><dt>Speed</dt><dd>walks</dd></div>
       <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>2.4/s</dd></div>
@@ -294,10 +266,38 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
     <p class="how">From its level 2</p>
   </div>
 </article><article class="unit">
+  <figure><img src="img/lp-laser-drone.png" alt="Laser drone" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Laser drone</h4>
+    <p class="role">An armoured flier with a laser. Expensive, so there are few of them</p>
+    <dl>
+      <div><dt>Health</dt><dd>400</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>12 laser</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>fire 100%, physical -3 40%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>70 parts</dd></div>
+    </dl>
+    <p class="how">From its level 2</p>
+  </div>
+</article><article class="unit">
+  <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
+  <div class="ubody">
+    <h4>Railgunner</h4>
+    <p class="role">Clears biter nests. Its slug goes through a 30-tile line; deadly to biters, weak against walls</p>
+    <dl>
+      <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
+      <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
+      <div class="wide"><dt>A shot</dt><dd>250 physical to biters, nests and worms; 10 physical to anything else</dd></div>
+      <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
+      <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
+    </dl>
+    <p class="how">From landing</p>
+  </div>
+</article><article class="unit">
   <figure><img src="img/lp-skyguard.png" alt="Anti-air trooper" loading="lazy"></figure>
   <div class="ubody">
     <h4>Anti-air trooper</h4>
-    <p class="role">Line: a long laser that tracks fliers; a weak shot at the ground</p>
+    <p class="role">Its long laser tracks fliers. Weak against ground targets</p>
     <dl>
       <div><dt>Health</dt><dd>110</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>22</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
@@ -311,7 +311,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-lance.png" alt="Heavy laser trooper" loading="lazy"></figure>
   <div class="ubody">
     <h4>Heavy laser trooper</h4>
-    <p class="role">Optics: a heavier beam that outranges the player&#x27;s troopers</p>
+    <p class="role">A laser trooper with a heavier beam that outranges your troopers</p>
     <dl>
       <div><dt>Health</dt><dd>110</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>17</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
@@ -319,13 +319,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>16 parts</dd></div>
     </dl>
-    <p class="how">Research: Lances (Optics, era 1)</p>
+    <p class="how">Research: Heavy laser troopers (Optics, era 1)</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-shock.png" alt="Shock trooper" loading="lazy"></figure>
   <div class="ubody">
     <h4>Shock trooper</h4>
-    <p class="role">Optics: an arcing electric beam that jumps target to target, a brief stun; against massed troopers</p>
+    <p class="role">Its electric beam jumps from target to target and stuns them briefly. Used against groups of troopers</p>
     <dl>
       <div><dt>Health</dt><dd>160</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>14</dd></div><div><dt>Rate</dt><dd>1.3/s</dd></div>
@@ -333,13 +333,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%, electric 50%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>30 parts</dd></div>
     </dl>
-    <p class="how">Research: Shock troopers (Optics, era 3, after Lances)</p>
+    <p class="how">Research: Shock troopers (Optics, era 3, after Heavy laser troopers)</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-aegis.png" alt="Heavy tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Heavy tank</h4>
-    <p class="role">Line: a rail cannon on an armoured hull, one heavy slug; against the player&#x27;s battle tanks</p>
+    <p class="role">A heavy tank with a rail cannon. Its slug ignores armour; used against your battle tanks</p>
     <dl>
       <div><dt>Health</dt><dd>1100</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
       <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
@@ -347,13 +347,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -5 30%, explosion -5 40%, laser -5, electric -5, bite 60%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>95 parts</dd></div>
     </dl>
-    <p class="how">Research: Aegis tanks (Line, era 2, after Warden armour)</p>
+    <p class="how">Research: Heavy tanks (Line, era 2, after Heavier armour)</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-prism.png" alt="Laser tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Laser tank</h4>
-    <p class="role">Optics: a laser that splits on what it hits to the targets round it; against massed troopers</p>
+    <p class="role">A tank whose laser splits from its target to the units around it. Used against groups of troopers</p>
     <dl>
       <div><dt>Health</dt><dd>700</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
       <div><dt>Range</dt><dd>16</dd></div><div><dt>Rate</dt><dd>1.2/s</dd></div>
@@ -361,13 +361,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -3 20%, laser -5, electric -5, explosion 10%, bite 60%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
     </dl>
-    <p class="how">Research: Prism tanks (Optics, era 2, after Lances)</p>
+    <p class="how">Research: Laser tanks (Optics, era 2, after Heavy laser troopers)</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-tesla.png" alt="Lightning tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Lightning tank</h4>
-    <p class="role">Siege: lightning that jumps along a turret line and drains what it strikes of its charge</p>
+    <p class="role">A tank whose lightning jumps along a turret line and drains the turrets it hits</p>
     <dl>
       <div><dt>Health</dt><dd>800</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
       <div><dt>Range</dt><dd>14</dd></div><div><dt>Rate</dt><dd>0.8/s</dd></div>
@@ -375,16 +375,16 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -3 20%, electric -5 80%, explosion 10%, laser -5, bite 60%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
     </dl>
-    <p class="how">Research: Tesla tanks (Siege, era 3)</p>
+    <p class="how">Research: Lightning tanks (Siege, era 3)</p>
   </div>
 </article></div>
 </section>
   <section class="corp" id="grubstake" style="--corp:rgb(255,183,96)">
-  <header class="corphead"><span class="swatch"></span><div><h2>Grubstake Inc.</h2><p>A thief with a fund. Shotguns, buggies and trucks; it skims, strips and raids where you are soft.</p></div></header>
+  <header class="corphead"><span class="swatch"></span><div><h2>Grubstake Inc.</h2><p>A mining company that takes your ore, your stock and your power.</p></div></header>
   <div class="vignette">
   <img class="vista" src="img/vista-grubstake-close.jpg" alt="Grubstake Inc.&#x27;s base in the game" loading="lazy">
-  <div><p class="tag">The thief</p><p>Grubstake Inc. is a mining outfit that lives off what it can take. It lands rough camps of amber gravel, sprawls toward the ore, and works by night: skimming trucks at your chests, strip camps on your outposts, taps on your power lines, claim jumpers on your patches. It fields cheap things in numbers: shotgun hands, buggies, scrap drones, and bomb drones that dive at your artillery and radars.</p>
-  <p class="beat"><b>How to beat it.</b> It keeps off guarded ground, so a turret over each outpost turns it away. Kill its foreman and a raid breaks; pay its trade post and it holds off for a while. Flak and gun turrets shred its drones before they arrive.</p></div>
+  <div><p>Grubstake Inc. is a mining company that makes its money from your ore and your stock. Its camps are rough gravel pads that spread toward ore, and most of its work happens at night. Its trucks skim your chests, its strip camps dig the patches under your outposts, it taps your power lines, and it stakes claims on patches you leave unworked. Its units are cheap and come in numbers: shotgun hands, buggies and scrap drones, and later bomb drones that fly at your artillery and radars and explode on them.</p>
+  <p class="beat"><b>How to beat it.</b> It avoids defended ground, so one turret at each outpost is often enough to send it elsewhere. A raid falls apart when its foreman dies. Paying at its trade post buys a period without attacks. Gun turrets kill its drones before they reach your wall.</p></div>
 </div>
   <h3>Research</h3>
   <div class="tree"><svg viewBox="0 0 1328 842" width="1328" height="842" role="img" aria-label="Grubstake Inc. research tree">
@@ -407,12 +407,11 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <path d="M665.0,430 C665.0,452 1177.0,626 1177.0,646" class="edge" marker-end="url(#arr-grubstake)"/>
 <g class="node track"><rect x="96" y="96" width="210" height="150" rx="6" class="nbox"/>
 <text x="108" y="118" class="chip">TRACK</text>
-<text x="108" y="140" class="ntitle">Hand-loads</text>
+<text x="108" y="140" class="ntitle">Hand-loaded shells</text>
 <text x="108" y="158" class="nmeta">400 fund a level</text>
 <text x="108" y="178" class="neff">raises shotgun-shell, bullet</text>
 <text x="108" y="193" class="neff">damage, 5 levels</text>
-<text x="108" y="210" class="ntrig">when: climbs while nothing else</text>
-<text x="108" y="224" class="ntrig">is called for</text>
+<text x="108" y="210" class="ntrig">when: nothing else is called for</text>
 </g>
 <g class="node ability"><rect x="816" y="280" width="210" height="150" rx="6" class="nbox"/>
 <text x="828" y="302" class="chip">ABILITY</text>
@@ -423,7 +422,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </g>
 <g class="node ability"><rect x="816" y="464" width="210" height="150" rx="6" class="nbox"/>
 <text x="828" y="486" class="chip">ABILITY</text>
-<text x="828" y="508" class="ntitle">Prospector&#x27;s eye</text>
+<text x="828" y="508" class="ntitle">Better prospecting</text>
 <text x="828" y="526" class="nmeta">1000 fund</text>
 <text x="828" y="548" class="ntrig">when: 3 raids turned back for</text>
 <text x="828" y="562" class="ntrig">want of force</text>
@@ -452,7 +451,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="572" y="302" class="chip">UNIT</text>
 <text x="572" y="324" class="ntitle">Slug buggies</text>
 <text x="572" y="342" class="nmeta">900 fund</text>
-<text x="572" y="362" class="neff">fields Slug buggy</text>
+<text x="572" y="362" class="neff">adds the slug buggy</text>
 <text x="572" y="379" class="ntrig">when: 5 of its units killed by</text>
 <text x="572" y="393" class="ntrig">battle tanks, your vehicles</text>
 <text x="572" y="407" class="ntrig">within 30 minutes</text>
@@ -462,7 +461,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="108" y="486" class="chip">UNIT</text>
 <text x="108" y="508" class="ntitle">Dynamite sappers</text>
 <text x="108" y="526" class="nmeta">1500 fund</text>
-<text x="108" y="546" class="neff">fields Dynamite sapper</text>
+<text x="108" y="546" class="neff">adds the dynamite sapper</text>
 <text x="108" y="563" class="ntrig">when: 10 of its units killed by</text>
 <text x="108" y="577" class="ntrig">you, breachers, flamethrower</text>
 <text x="108" y="591" class="ntrig">troopers, rocket troopers,</text>
@@ -472,7 +471,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="1084" y="486" class="chip">UNIT</text>
 <text x="1084" y="508" class="ntitle">Bomb drones</text>
 <text x="1084" y="526" class="nmeta">1800 fund</text>
-<text x="1084" y="546" class="neff">fields Bomb drone</text>
+<text x="1084" y="546" class="neff">adds the bomb drone</text>
 <text x="1084" y="563" class="ntrig">when: 5 of its units killed by</text>
 <text x="1084" y="577" class="ntrig">explosion damage within 30</text>
 <text x="1084" y="591" class="ntrig">minutes</text>
@@ -480,9 +479,9 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <g class="node unit"><rect x="1072" y="648" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-grubstake-dozer.png" x="1216" y="656" width="58" height="58"/>
 <text x="1084" y="670" class="chip">UNIT</text>
-<text x="1084" y="692" class="ntitle">Dozer</text>
+<text x="1084" y="692" class="ntitle">Dozers</text>
 <text x="1084" y="710" class="nmeta">2500 fund</text>
-<text x="1084" y="730" class="neff">fields Dozer</text>
+<text x="1084" y="730" class="neff">adds the dozer</text>
 <text x="1084" y="747" class="ntrig">when: its raids meet walls 2</text>
 <text x="1084" y="761" class="ntrig">times</text>
 </g>
@@ -491,7 +490,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <text x="1084" y="302" class="chip">UNIT</text>
 <text x="1084" y="324" class="ntitle">Flak buggies</text>
 <text x="1084" y="342" class="nmeta">900 fund</text>
-<text x="1084" y="362" class="neff">fields Flak buggy</text>
+<text x="1084" y="362" class="neff">adds the flak buggy</text>
 <text x="1084" y="379" class="ntrig">when: 6 of its units killed by</text>
 <text x="1084" y="393" class="ntrig">bomb drones, laser drones, scrap</text>
 <text x="1084" y="407" class="ntrig">drones, your combat robots</text>
@@ -499,9 +498,9 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 <g class="node unit"><rect x="328" y="464" width="210" height="150" rx="6" class="nbox"/>
 <image href="img/lp-grubstake-scorcher.png" x="472" y="472" width="58" height="58"/>
 <text x="340" y="486" class="chip">UNIT</text>
-<text x="340" y="508" class="ntitle">Scorchers</text>
+<text x="340" y="508" class="ntitle">Flame tanks</text>
 <text x="340" y="526" class="nmeta">2000 fund</text>
-<text x="340" y="546" class="neff">fields Scorcher</text>
+<text x="340" y="546" class="neff">adds the flame tank</text>
 <text x="340" y="563" class="ntrig">when: 8 of its units killed by</text>
 <text x="340" y="577" class="ntrig">flamethrower turrets, gun</text>
 <text x="340" y="591" class="ntrig">turrets, laser turrets within 30</text>
@@ -512,7 +511,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-shotgun-hand.png" alt="Shotgun hand" loading="lazy"></figure>
   <div class="ubody">
     <h4>Shotgun hand</h4>
-    <p class="role">Grubstake&#x27;s infantry: three heavy pellets, deadly at the fence, useless against a turret line</p>
+    <p class="role">Grubstake&#x27;s soldier, with a shotgun. Deadly up close, useless against a turret line</p>
     <dl>
       <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>10.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>9</dd></div><div><dt>Rate</dt><dd>0.94/s</dd></div>
@@ -526,7 +525,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-grubstake-buggy.png" alt="Buggy" loading="lazy"></figure>
   <div class="ubody">
     <h4>Buggy</h4>
-    <p class="role">Grubstake&#x27;s raider and escort: fast, a machine gun</p>
+    <p class="role">A fast buggy with a machine gun. Grubstake&#x27;s raider and escort</p>
     <dl>
       <div><dt>Health</dt><dd>220</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>6/s</dd></div>
@@ -540,7 +539,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-grubstake-harrier.png" alt="Scrap drone" loading="lazy"></figure>
   <div class="ubody">
     <h4>Scrap drone</h4>
-    <p class="role">Air (the scrap drone): weak and cheap, many; flies over walls, cliffs and water</p>
+    <p class="role">A cheap, weak flier with a gun, sent in numbers. Flies over walls, cliffs and water</p>
     <dl>
       <div><dt>Health</dt><dd>80</dd></div><div><dt>Speed</dt><dd>15.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>12</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
@@ -554,7 +553,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-grubstake-slug.png" alt="Slug buggy" loading="lazy"></figure>
   <div class="ubody">
     <h4>Slug buggy</h4>
-    <p class="role">Scrap arms: slugs; against the player&#x27;s vehicles</p>
+    <p class="role">A buggy with a slug gun, used against your vehicles</p>
     <dl>
       <div><dt>Health</dt><dd>240</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>1.2/s</dd></div>
@@ -568,7 +567,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-grubstake-sapper.png" alt="Dynamite sapper" loading="lazy"></figure>
   <div class="ubody">
     <h4>Dynamite sapper</h4>
-    <p class="role">Scrap arms: dynamite over 3 tiles, enemies only; against blobs, and the wall in the way</p>
+    <p class="role">Throws dynamite over 3 tiles, at groups of units and at walls in its way. Spares its own side</p>
     <dl>
       <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.8 tiles/s</dd></div>
       <div><dt>Range</dt><dd>11</dd></div><div><dt>Rate</dt><dd>0.33/s</dd></div>
@@ -582,7 +581,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-grubstake-scavenger.png" alt="Bomb drone" loading="lazy"></figure>
   <div class="ubody">
     <h4>Bomb drone</h4>
-    <p class="role">Wheels (the bomb drone): flies at the player&#x27;s artillery, mortars and radars and bursts on them</p>
+    <p class="role">Flies at your artillery, mortars and radars and explodes on them</p>
     <dl>
       <div><dt>Health</dt><dd>60</dd></div><div><dt>Speed</dt><dd>18.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>1.5</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
@@ -596,7 +595,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
   <figure><img src="img/lp-grubstake-dozer.png" alt="Dozer" loading="lazy"></figure>
   <div class="ubody">
     <h4>Dozer</h4>
-    <p class="role">Wheels: a ram that pushes a wall open for the shotguns</p>
+    <p class="role">Rams walls open for the shotgun hands behind it</p>
     <dl>
       <div><dt>Health</dt><dd>1800</dd></div><div><dt>Speed</dt><dd>4.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>2</dd></div><div><dt>Rate</dt><dd>1/s</dd></div>
@@ -604,13 +603,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5, bite 60%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>100 parts</dd></div>
     </dl>
-    <p class="how">Research: Dozer (Wheels, era 3, after Slug buggies)</p>
+    <p class="how">Research: Dozers (Wheels, era 3, after Slug buggies)</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-grubstake-flak-buggy.png" alt="Flak buggy" loading="lazy"></figure>
   <div class="ubody">
     <h4>Flak buggy</h4>
-    <p class="role">Wheels: scrap flak bursting among fliers, a weak splash on the ground</p>
+    <p class="role">A buggy with a flak gun against fliers. Weak against ground targets</p>
     <dl>
       <div><dt>Health</dt><dd>220</dd></div><div><dt>Speed</dt><dd>12.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>22</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
@@ -621,10 +620,10 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
     <p class="how">Research: Flak buggies (Wheels, era 1)</p>
   </div>
 </article><article class="unit">
-  <figure><img src="img/lp-grubstake-scorcher.png" alt="Scorcher" loading="lazy"></figure>
+  <figure><img src="img/lp-grubstake-scorcher.png" alt="Flame tank" loading="lazy"></figure>
   <div class="ubody">
-    <h4>Scorcher</h4>
-    <p class="role">Scrap arms: a machine gun, and three bursts of flame for walls, turrets and packs, refilled slowly</p>
+    <h4>Flame tank</h4>
+    <p class="role">An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly</p>
     <dl>
       <div><dt>Health</dt><dd>1100</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
       <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>6/s</dd></div>
@@ -632,17 +631,17 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5, bite 60%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>70 parts</dd></div>
     </dl>
-    <p class="how">Research: Scorchers (Scrap arms, era 2)</p>
+    <p class="how">Research: Flame tanks (Scrap arms, era 2)</p>
   </div>
 </article></div>
 </section>
   <section class="corp" id="biotech" style="--corp:rgb(114,216,51)">
-  <header class="corphead"><span class="swatch"></span><div><h2>Synthexis</h2><p>Bred, not built. Its incubators breed
-  by evolution, and its clinic decides how far that climbs.</p></div></header>
+  <header class="corphead"><span class="swatch"></span><div><h2>Synthexis</h2><p>A bioengineering company that breeds its army in
+  captured nests.</p></div></header>
   <div class="vignette">
   <img class="vista" src="img/vista-synthexis-night.jpg" alt="Synthexis&#x27;s base in the game" loading="lazy">
-  <div><p class="tag">The test range</p><p>Synthexis is a bioengineering firm that uses Nauvis as a test range. It lands on a nest field far out, takes the nests as incubators, grows creep between them, and lives on the pollution the creep drinks. Every 20 minutes or so it sends a wave as a trial of its breeds against a defence: yours, or Kessler-Hayashi&#x27;s walls, whichever would teach it most. While its clinic stands its breeds climb 0.24 of evolution an hour: spitters, then bursters, then stompers that step over your wall.</p>
-  <p class="beat"><b>How to beat it.</b> Its weak points are its supply. Kill a biochamber and that incubator starves, its stock wanders off feral; kill its technicians and every cell goes hungry; shell its clinic and its incubators breed only small and medium biters (evolution 0.3) until a new one lands. Hitting an incubator calls its wave home; hitting the feed does not.</p></div>
+  <div><p>Synthexis is a bioengineering company that uses Nauvis to test what it breeds. It lands on a biter nest field far from you and takes the nests over as incubators, each fed from a biochamber beside it. Creep spreads between them and absorbs pollution, which is what Synthexis lives on. About every 20 minutes it sends a wave to try its breeds against a defended base, yours or Kessler-Hayashi&#x27;s, whichever it expects to learn more from. While its clinic stands its breeds gain 0.24 evolution an hour. Spitters appear first, then bursters, then stompers that walk over walls.</p>
+  <p class="beat"><b>How to beat it.</b> Go for its supply. When a biochamber dies, its incubator stops breeding and the stock goes feral. Its technicians feed every cell, so killing them starves the whole culture. Without its clinic it breeds only small and medium biters (evolution 0.3) until a replacement lands. Attacking an incubator brings its wave home to defend it; attacking the biochambers does not.</p></div>
 </div>
   <h3>What it breeds, by evolution</h3>
   <div class="tree tiers"><svg viewBox="0 0 900 300" width="100%" role="img" aria-label="What Synthexis breeds by evolution">
@@ -785,28 +784,28 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
 </article></div>
   <h3>Its culture</h3><div class="narrow"><img class="vista" src="img/vista-synthexis-clinic.jpg" alt="The clinic by the heating tower" loading="lazy"></div><div class="units"><article class="unit">
   <figure><img src="img/lp-pen.png" alt="Synthexis incubator" loading="lazy"></figure>
-  <div class="ubody"><h4>Synthexis incubator</h4><p class="role">A biter nest taken and fed by Synthexis. What it breeds is Synthexis&#x27;s, not the wild nests&#x27;. Hit, it calls its wave home; killed, it drops a pheromone gland.</p><p class="how">A wild nest it took; kill it, and its wave comes home</p></div>
+  <div class="ubody"><h4>Synthexis incubator</h4><p class="role">A biter nest taken and fed by Synthexis. What it breeds is Synthexis&#x27;s, not the wild nests&#x27;. Hit, it calls its wave home; killed, it drops a pheromone gland.</p><p class="how">A captured nest. Attacking it brings Synthexis&#x27;s wave home</p></div>
 </article><article class="unit">
   <figure><img src="img/lp-biochamber.png" alt="Synthexis biochamber" loading="lazy"></figure>
-  <div class="ubody"><h4>Synthexis biochamber</h4><p class="role">Where Synthexis feeds an incubator. While it works, the incubator breeds.</p><p class="how">One by each incubator; kill it, and that incubator starves</p></div>
+  <div class="ubody"><h4>Synthexis biochamber</h4><p class="role">Where Synthexis feeds an incubator. While it works, the incubator breeds.</p><p class="how">One beside each incubator. Kill it and that incubator stops breeding</p></div>
 </article><article class="unit">
   <figure><img src="img/lp-clinic.png" alt="Synthexis clinic" loading="lazy"></figure>
-  <div class="ubody"><h4>Synthexis clinic</h4><p class="role">Where Synthexis improves its breeds. While it stands they grow stronger; destroyed, its incubators breed only small and medium biters until a new one lands.</p><p class="how">While it stands its breeds climb 0.24 an hour</p></div>
+  <div class="ubody"><h4>Synthexis clinic</h4><p class="role">Where Synthexis improves its breeds. While it stands they grow stronger; destroyed, its incubators breed only small and medium biters until a new one lands.</p><p class="how">While it stands, its breeds gain 0.24 evolution an hour</p></div>
 </article><article class="unit">
   <figure><img src="img/lp-heating-tower.png" alt="Synthexis heating tower" loading="lazy"></figure>
-  <div class="ubody"><h4>Synthexis heating tower</h4><p class="role"></p><p class="how">The heart of its substrate: Gleba soil, yumako and jellystems</p></div>
+  <div class="ubody"><h4>Synthexis heating tower</h4><p class="role"></p><p class="how">Keeps its Gleba soil, yumako and jellystem warm</p></div>
 </article><article class="unit">
   <figure><img src="img/lp-tumor.png" alt="Synthexis tumor" loading="lazy"></figure>
-  <div class="ubody"><h4>Synthexis tumor</h4><p class="role">Grows Synthexis&#x27;s creep round it. Nothing can be built on creep.</p><p class="how">Grows the creep; kill them and the creep withers</p></div>
+  <div class="ubody"><h4>Synthexis tumor</h4><p class="role">Grows Synthexis&#x27;s creep round it. Nothing can be built on creep.</p><p class="how">Grows the creep. Kill them and the creep withers</p></div>
 </article></div>
 </section>
   <section class="corp" id="yours" style="--corp: var(--accent)">
-    <header class="corphead"><span class="swatch"></span><div><h2>Your army</h2><p>Trained at a barracks, sent by beacon.</p></div></header>
+    <header class="corphead"><span class="swatch"></span><div><h2>Your army</h2><p>Ordered at a barracks and sent to a rally beacon.</p></div></header>
     <h3>Units</h3><div class="units"><article class="unit">
   <figure><img src="img/lp-trooper.png" alt="Trooper" loading="lazy"></figure>
   <div class="ubody">
     <h4>Trooper</h4>
-    <p class="role">The player&#x27;s: a rifle</p>
+    <p class="role">Your basic soldier, with a rifle</p>
     <dl>
       <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>15</dd></div><div><dt>Rate</dt><dd>3/s</dd></div>
@@ -814,13 +813,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>1 bandwidth</dd></div>
     </dl>
-    <p class="how">Trained at your barracks; orders by beacon</p>
+    <p class="how">Ordered at your barracks</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-breacher.png" alt="Breacher" loading="lazy"></figure>
   <div class="ubody">
     <h4>Breacher</h4>
-    <p class="role">The player&#x27;s: demolition charges, for walls (and only a scratch to units)</p>
+    <p class="role">Carries demolition charges for walls. Does little to units</p>
     <dl>
       <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>12</dd></div><div><dt>Rate</dt><dd>0.33/s</dd></div>
@@ -828,13 +827,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>1 bandwidth</dd></div>
     </dl>
-    <p class="how">Trained at your barracks; orders by beacon</p>
+    <p class="how">Ordered at your barracks</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-rocket-trooper.png" alt="Rocket trooper" loading="lazy"></figure>
   <div class="ubody">
     <h4>Rocket trooper</h4>
-    <p class="role">The player&#x27;s: rockets against armour, and fliers; slow against a crowd</p>
+    <p class="role">Fires rockets, good against armour and fliers. Slow to kill a crowd</p>
     <dl>
       <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>18</dd></div><div><dt>Rate</dt><dd>0.4/s</dd></div>
@@ -842,13 +841,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>2 bandwidth</dd></div>
     </dl>
-    <p class="how">Trained at your barracks; orders by beacon</p>
+    <p class="how">Ordered at your barracks</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-flame-trooper.png" alt="Flamethrower trooper" loading="lazy"></figure>
   <div class="ubody">
     <h4>Flamethrower trooper</h4>
-    <p class="role">The player&#x27;s: a flamethrower against swarms of bugs and bunched infantry; outranged, and weak on armour</p>
+    <p class="role">A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armour</p>
     <dl>
       <div><dt>Health</dt><dd>120</dd></div><div><dt>Speed</dt><dd>7.2 tiles/s</dd></div>
       <div><dt>Range</dt><dd>13</dd></div><div><dt>Rate</dt><dd>15/s</dd></div>
@@ -856,13 +855,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%</dd></div>
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>2 bandwidth</dd></div>
     </dl>
-    <p class="how">Trained at your barracks; orders by beacon</p>
+    <p class="how">Ordered at your barracks</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-battle-tank.png" alt="Battle tank" loading="lazy"></figure>
   <div class="ubody">
     <h4>Battle tank</h4>
-    <p class="role">The player&#x27;s siege weapon</p>
+    <p class="role">Your heavy tank, for attacking bases</p>
     <dl>
       <div><dt>Health</dt><dd>900</dd></div><div><dt>Speed</dt><dd>5.4 tiles/s</dd></div>
       <div><dt>Range</dt><dd>18</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
@@ -870,12 +869,12 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>6 bandwidth</dd></div>
     </dl>
-    <p class="how">Trained at your barracks; orders by beacon</p>
+    <p class="how">Ordered at your barracks</p>
   </div>
 </article></div>
     <h3 id="tech">Your technologies</h3>
-    <p class="lede">Command bandwidth sets how many units you can lead. The rest come from their wreckage: craft a part you
-    looted from them and its technology is yours.</p>
+    <p class="lede">Command bandwidth sets how many units you can lead. The other technologies come from the corporations'
+    wreckage: crafting a part you looted from them unlocks its technology.</p>
     <div class="techs"><div class="techcol"><h4>Command</h4><ol><li><b>Command bandwidth 1</b><span class="gives">Barracks, Command relay, Rally beacon, Trooper, Breacher, Threat scanner, Muster point</span>
             <span class="how">100 x automation + logistic</span><span class="pre">after military 2, heavy armor</span></li><li><b>Command bandwidth 2</b><span class="gives">Battle tank, Rocket trooper</span>
             <span class="how">200 x automation + logistic + chemical</span><span class="pre">after Command bandwidth 1, chemical science pack, tank, battery equipment, rocketry</span></li><li><b>Command bandwidth 3</b><span class="gives">Flamethrower trooper</span>
@@ -891,12 +890,12 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
             <span class="how">granted when its headquarters falls</span></li></ol></div></div>
   </section>
   <section class="corp" id="both" style="--corp: var(--edge)">
-    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Bodies both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
+    <header class="corphead"><span class="swatch"></span><div><h2>Shared and special</h2><p>Units both corporations use, and Kessler-Hayashi's nest clearer.</p></div></header>
     <h3>Units</h3><div class="units"><article class="unit">
   <figure><img src="img/lp-hauler.png" alt="Hauler" loading="lazy"></figure>
   <div class="ubody">
     <h4>Hauler</h4>
-    <p class="role">Convoys and Grubstake&#x27;s building trucks; lightly armed</p>
+    <p class="role">A lightly armed truck. Carries convoys and Grubstake&#x27;s building crews</p>
     <dl>
       <div><dt>Health</dt><dd>1500</dd></div><div><dt>Speed</dt><dd>3.9 tiles/s</dd></div>
       <div><dt>Range</dt><dd>10</dd></div><div><dt>Rate</dt><dd>2/s</dd></div>
@@ -904,13 +903,13 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -4 30%, fire 50%, explosion 20%</dd></div>
       <div><dt>Hits air</dt><dd>yes</dd></div><div><dt>Cost</dt><dd>30 parts</dd></div>
     </dl>
-    <p class="how">Both: convoys, Grubstake&#x27;s building trucks</p>
+    <p class="how">Fielded by both corporations</p>
   </div>
 </article><article class="unit">
   <figure><img src="img/lp-railgunner.png" alt="Railgunner" loading="lazy"></figure>
   <div class="ubody">
     <h4>Railgunner</h4>
-    <p class="role">Kessler-Hayashi&#x27;s nest clearer: a slug through a 30-tile line, deadly to biters, a scratch to walls</p>
+    <p class="role">Clears biter nests. Its slug goes through a 30-tile line; deadly to biters, weak against walls</p>
     <dl>
       <div><dt>Health</dt><dd>140</dd></div><div><dt>Speed</dt><dd>6.0 tiles/s</dd></div>
       <div><dt>Range</dt><dd>30</dd></div><div><dt>Rate</dt><dd>0.67/s</dd></div>
@@ -918,7 +917,7 @@ footer { margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family: 
       <div class="wide"><dt>Resists</dt><dd>physical -2 10%, laser 20%</dd></div>
       <div><dt>Hits air</dt><dd>no</dd></div><div><dt>Cost</dt><dd>22 parts</dd></div>
     </dl>
-    <p class="how">Kessler-Hayashi: clears nests, never raids</p>
+    <p class="how">Kessler-Hayashi only. Clears nests and never raids</p>
   </div>
 </article></div>
   </section>

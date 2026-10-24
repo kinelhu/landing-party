@@ -2381,6 +2381,10 @@ scenarios.system = function()
       end
     end
     S.outposts = #picked
+    -- Its map, charted as a player's is by then (radars, a walk round): Grubstake prospects the player's charted
+    -- frontier, and with 1,477 of its chunks uncharted it never found a patch (system 12345, 2026-10-24). Headless runs
+    -- chart nothing (force.chart never lands; a chart here changed no byte of the run), so the check is waived.
+    lp("debug_tune", {prospect_uncharted = true})
     S.frames = 0
   end)
   -- The opening as a game plays it (2026-10-24; LP_MIX=forced lands each once, directly, as the first measurements
