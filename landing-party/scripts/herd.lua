@@ -695,6 +695,22 @@ local function supply_target(w)
   for _, ft in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = "fluid-turret", force = forces}) do
     for _, e in pairs(s.find_entities_filtered{position = ft.position, radius = 3, type = PIPES, force = forces}) do consider(e) end
   end
+  if best then return best end
+  -- The supply cut, the guns it silenced: laser turrets on a network with no power source left, the nearest (cut off,
+  -- such a turret shoots only what its own charge holds, and goes dark). It cut a base's power and went home with 55 of
+  -- 59 while the lasers it had cut off stood (system 4242, 2026-10-24): cut the supply, then use it.
+  local fed = {}
+  for _, p in pairs(s.find_entities_filtered{position = at, radius = 4 * w.sight, type = POWER, force = forces}) do
+    if p.valid and p.electric_network_id then fed[p.electric_network_id] = true end
+  end
+  -- (Across the base, not its sight: from the middle, where the power stood, the lasers on the wall were out of it.)
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = math.max(w.sight, w.hx + w.hy), type = "electric-turret",
+    force = forces}) do
+    if e.valid and not w.tried[e.unit_number or 0] and not (e.electric_network_id and fed[e.electric_network_id]) then
+      local d = d2(e.position, at)
+      if not bd or d < bd then best, bd = e, d end
+    end
+  end
   return best
 end
 
@@ -746,6 +762,11 @@ end
 
 local function hunt(w)
   if not (w.group and w.group.valid) then return end
+  -- What became of its last target (a run counted none of the player's buildings lost to its waves).
+  if w.target_name then
+    log(w, string.format("its %s %s", w.target_name, (w.target and w.target.valid) and "still stands" or "is down"))
+    w.target_name = nil
+  end
   hold_breach(w)
   local t = supply_target(w)
   if not t and not w.pushed then
@@ -760,7 +781,7 @@ local function hunt(w)
     withdraw(w, "nothing in sight feeds a gun")
     return
   end
-  w.target = t
+  w.target, w.target_name = t, t.name
   w.tried[t.unit_number or 0] = true
   w.group.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
   log(w, string.format("goes for %s at %.0f,%.0f", t.name, t.position.x, t.position.y))

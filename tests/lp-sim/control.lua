@@ -2341,8 +2341,12 @@ scenarios.system = function()
     flatten(x0 - 4, y0 - 4, x1 + 4, y1 + 4)
     for x = x0, x1 do put("stone-wall", x + 0.5, y0 + 0.5); put("stone-wall", x + 0.5, y1 + 0.5) end
     for y = y0 + 1, y1 - 1 do put("stone-wall", x0 + 0.5, y + 0.5); put("stone-wall", x1 + 0.5, y + 0.5) end
-    local src = put("electric-energy-interface", 0, 0)
-    if src then src.power_production, src.electric_buffer_size = 2e7, 2e8 end
+    -- Its power a small block, as a steam plant is (three sources side by side; one interface at the middle was all a
+    -- Synthexis wave had to break, 2026-10-24).
+    for _, dx in ipairs({-3, 0, 3}) do
+      local src = put("electric-energy-interface", dx, 0)
+      if src then src.power_production, src.electric_buffer_size = 2e7 / 3, 2e8 / 3 end
+    end
     for x = x0 + 5, x1 - 5, 14 do for y = y0 + 5, y1 - 5, 14 do put("substation", x, y) end end
     S.guns = {}
     local k = 0
@@ -2352,13 +2356,41 @@ scenarios.system = function()
     local seed = game.default_map_gen_settings.seed
     S.weak = ({[12345] = "north", [1] = "south", [4242] = "west", [777] = "east"})[seed]
       or ({"north", "south", "west", "east"})[(seed % 4) + 1]
+    -- Its gun turrets fed as a player's are: an inserter from a chest of ammunition behind each (by hand, no inserter
+    -- fed them, and Synthexis, which goes for what feeds a gun, found nothing to break but the power).
+    local INWARD = {north = {0, 1}, south = {0, -1}, west = {1, 0}, east = {-1, 0}}
+    local function feed(turret, face)
+      if not turret then return end
+      local v = INWARD[face]
+      local tx, ty = turret.position.x, turret.position.y
+      local ix, iy = tx + v[1] * 1.5 - (v[2] ~= 0 and 0.5 or 0), ty + v[2] * 1.5 - (v[1] ~= 0 and 0.5 or 0)
+      local cx, cy = ix + v[1], iy + v[2]
+      local chest = put("wooden-chest", cx, cy, {name = "piercing-rounds-magazine", count = 200})
+      for _, dir in ipairs({defines.direction.north, defines.direction.south, defines.direction.east, defines.direction.west}) do
+        local ins = surface().create_entity{name = "inserter", position = {ix, iy}, direction = dir, force = "player"}
+        if ins then
+          local dp = ins.drop_position
+          if (dp.x - tx) ^ 2 + (dp.y - ty) ^ 2 < 2 then break end
+          ins.destroy()
+        end
+      end
+      return chest
+    end
+    S.fed = 0
     for t = -36, 36, 12 do
       for f, side in ipairs({{t, y0 + 3}, {t, y1 - 3}, {x0 + 3, t}, {x1 - 3, t}}) do
         k = k + 1
         local face = ({"north", "south", "west", "east"})[f]
         if face == S.weak then
-          if t == 0 then table.insert(S.guns, put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100})) end
-        elseif k % 2 == 0 then table.insert(S.guns, put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100}))
+          if t == 0 then
+            local g = put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100})
+            table.insert(S.guns, g)
+            if feed(g, face) then S.fed = S.fed + 1 end
+          end
+        elseif k % 2 == 0 then
+          local g = put("gun-turret", side[1], side[2], {name = "piercing-rounds-magazine", count = 100})
+          table.insert(S.guns, g)
+          if feed(g, face) then S.fed = S.fed + 1 end
         else put("laser-turret", side[1], side[2]) end
       end
     end
@@ -2405,6 +2437,10 @@ scenarios.system = function()
       end
     end
     S.outposts = #picked
+    info(string.format("system: stand-in guns fed by inserter %d (inserters %d), power sources %d, weak face %s", S.fed or 0,
+      surface().count_entities_filtered{name = "inserter", force = "player"},
+      surface().count_entities_filtered{name = "electric-energy-interface", force = "player", position = {0, 0}, radius = 10},
+      tostring(S.weak)))
     -- Its map, charted as a player's is by then (radars, a walk round): Grubstake prospects the player's charted
     -- frontier, and with 1,477 of its chunks uncharted it never found a patch (system 12345, 2026-10-24). Headless runs
     -- chart nothing (force.chart never lands; a chart here changed no byte of the run), so the check is waived.
@@ -8078,7 +8114,10 @@ scenarios.herd = function()
     if mix == "" then
       check("herd: the scout marked a face", w.mark ~= nil and not w.blind, serpent.line(w.mark))
       check("herd: the power died", power == 0, tostring(power))
-      check("herd: fewer than half lost", w.left * 2 >= w.size, string.format("%d of %d", w.left, w.size))
+      -- Cut the supply, then use it (0.2.12): with the power down it turns on the lasers it silenced, and stays until
+      -- half are lost (it had gone home 34 of 41 strong with every laser standing). Some come home; turrets fall.
+      check("herd: it broke turrets it had cut off", turrets < #S.turrets, string.format("%d of %d standing", turrets, #S.turrets))
+      check("herd: some came home", w.left * 4 >= w.size, string.format("%d of %d", w.left, w.size))
       check("herd: it went home", w.outcome == "home", w.outcome)
       check("herd: tell, a minute's gathering", w.t_march and w.t_mark and w.t_march - w.t_mark >= 3600,
         tostring(w.t_march and w.t_mark and (w.t_march - w.t_mark) / 60))
@@ -10360,6 +10399,7 @@ script.on_event(defines.events.on_entity_died, function(e)
       S.kills = S.kills or {}
       local key = v .. ">" .. k .. ":" .. what
       S.kills[key] = (S.kills[key] or 0) + 1
+
     end
   end
   -- Where a corporation's unit fell to a turret, and how far from it (the claim rig's hands fell to turrets out of reach).
