@@ -8601,11 +8601,36 @@ scenarios.farm = function()
       local q = surface().find_non_colliding_position("medium-worm-turret", at(750 + d[1], d[2]), 30, 1)
       if q then surface().create_entity{name = "medium-worm-turret", position = q, force = "enemy"} end
     end
+    -- seed, seedkill: a second wild field 400 tiles from the first, where its carrier goes (0.2.22).
+    if mix == "seed" or mix == "seedkill" then
+      for d = -40, 440, 32 do surface().request_to_generate_chunks(at(750, d), 3) end
+      surface().force_generate_chunk_requests()
+      S.field2 = {}
+      for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}}) do
+        local q = surface().find_non_colliding_position("biter-spawner", at(750 + d[1], 400 + d[2]), 30, 1)
+        if q then table.insert(S.field2, surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}) end
+      end
+    end
     -- (clinic: the wild at 0.5, so the breeds' cap without a clinic, 0.3, shows.)
     game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or 0.3, surface())
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
+  if mix == "seed" or mix == "seedkill" then
+    for t = 600, END - 120, 120 do
+      schedule(t, function()
+        local cs = surface().find_entities_filtered{name = "lp-bred-carrier"}
+        if #cs > 0 then
+          S.carrier_seen = S.carrier_seen or game.tick
+          -- seedkill: shot on its way, a minute out.
+          if mix == "seedkill" and game.tick - S.carrier_seen >= 3600 and not S.carrier_killed then
+            for _, c in ipairs(cs) do c.die("player") end
+            S.carrier_killed = game.tick
+          end
+        end
+      end)
+    end
+  end
   for t = 600, END - 120, 300 do
     schedule(t, function()
       local f = farm1()
@@ -8626,6 +8651,9 @@ scenarios.farm = function()
           end)
         end
         if mix == "wave" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave") and game.tick end) end
+        if mix == "seed" or mix == "seedkill" then
+          schedule(game.tick - storage.t0 + 3600, function() S.ripe = lp("farm_debug_seed", f.id) and game.tick end)
+        end
         if mix == "starve" then
           -- Its first incubator stocked over the fed cap, then its biochamber killed a minute on.
           S.spid = f.pen_ids[1]
@@ -8747,6 +8775,31 @@ scenarios.farm = function()
     local site = S.site or {}
     check("farm: its substrate (Gleba soil, a heating tower, plants) and technicians", site.tower == true
       and site.soil == "artificial-yumako-soil" and (site.plants or 0) >= 4 and (site.techs or 0) >= 2, serpent.line(site))
+    -- Seeding (0.2.22): its carrier walked to the second field and a young culture began there; shot on the way, none.
+    if mix == "seed" or mix == "seedkill" then
+      local st_ = lp("farm_state")
+      local g2 = S.field2 and S.field2[1] and S.at(750, 400)
+      local young
+      for _, f in ipairs(st_.farms) do
+        if f.seeded and g2 and math.sqrt((f.pos.x - g2[1]) ^ 2 + (f.pos.y - g2[2]) ^ 2) < 80 then young = f end
+      end
+      info(string.format("farm %s: ripe at %s, carrier seen %s, killed %s; cultures %d; young %s", mix, tostring(S.ripe),
+        tostring(S.carrier_seen), tostring(S.carrier_killed), #st_.farms, serpent.line(young and {pens = young.pens,
+        clinic = young.clinic, pos = young.pos})))
+      check("farm: " .. mix .. ", a carrier set out", S.carrier_seen ~= nil, tostring(S.carrier_seen))
+      if mix == "seed" then
+        check("farm: seed, a young culture began at the second field", young ~= nil and young.clinic == false,
+          serpent.line(young))
+      else
+        check("farm: seedkill, its carrier shot, no culture began", S.carrier_killed ~= nil and young == nil and #st_.farms == 1,
+          string.format("killed %s, cultures %d", tostring(S.carrier_killed), #st_.farms))
+      end
+    end
+    -- Its technicians bought as it grows (0.2.22, cell.hire: they came free, one in ten minutes).
+    if mix == "" then
+      local now = lp("cell_sites")[1] or {}
+      check("farm: it bought technicians as it grew", (now.bought or 0) >= 1, serpent.line({bought = now.bought, techs = now.techs}))
+    end
     if mix == "clinic" then
       info(string.format("farm clinic: landed at %s, killed %s; 5 min on %s; 20 min on %s; back %s", serpent.line(S.evo_land),
         tostring(S.clinic_killed), serpent.line(S.frozen), serpent.line(S.later), serpent.line(S.back)))

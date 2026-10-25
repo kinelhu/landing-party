@@ -68,15 +68,16 @@ end
 
 -- The substrate and its technicians (the identity consult, step 4). A culture's substrate: Gleba soil in a blot SOIL
 -- round its heating tower (a lit prop) near its middle, yumako trees and jellystems on it. Its technicians (TECHS, more
--- with more incubators) walk from the tower to each biochamber in turn and wait there a while: each visit feeds that
+-- bought with biomass as it grows: cell.hire) walk from the tower to each biochamber in turn and wait there a while: each visit feeds that
 -- biochamber FEED_LAST. A biochamber unvisited longer stops (inactive: its animation and light go), and its incubator is
 -- unfed as if it were dead (farm.lua), back at work at the next visit. Every technician dead, a pod brings TECHS more
 -- after DROP_WAIT: the reprieve, not a defence.
 local SOIL = 5
-local TECHS, TECHS_PER = 2, 4        -- two, and one more for every TECHS_PER incubators
+local TECHS = 2                      -- at landing; more are bought (cell.hire)
 local FEED_LAST = 5 * 60 * 60
 local WAIT = 12 * 60                 -- at a biochamber (longer than the farm's 10-second look)
 local DROP_WAIT = 10 * 60 * 60
+local MISS_WAIT = 2 * 60 * 60        -- a cell its technician could not reach is passed over this long
 local PLANTS = {"yumako-tree", "jellystem"}
 local pods = require("__landing-party__.scripts.pods")
 
@@ -141,7 +142,7 @@ function cell.clinic_up(farm_id)
 end
 
 -- A culture's substrate, built once when it lands (or at its first look, in an older save).
-function cell.site(farm_id, surface, mid)
+function cell.site(farm_id, surface, mid, young)
   local site = sites()[farm_id]
   if site then return site end
   -- Clear of nests and worms by its blot and a margin: laid on an incubator, its soil took the creep from under it and
@@ -179,7 +180,8 @@ function cell.site(farm_id, surface, mid)
   end
   local tower = surface.create_entity{name = "lp-heating-tower", position = c, force = B.force}
   site = {at = c, tower = tower, techs = {}, plants = {}}
-  place_clinic(site, surface)
+  -- A culture seeded by a carrier (farm.lua) waits for its clinic by pod, CLINIC_WAIT on: a young culture reads young.
+  if young then site.clinic, site.clinic_drop_at = false, game.tick + CLINIC_WAIT else place_clinic(site, surface) end
   for k = 1, 8 do
     local a = 2 * math.pi * k / 8
     local q = surface.find_non_colliding_position(PLANTS[k % 2 + 1], {c.x + math.cos(a) * 3.5, c.y + math.sin(a) * 3.5}, 2, 0.5)
@@ -202,7 +204,6 @@ function cell.tick(farm_id, surface, pen_ids, tick)
   local live = {}
   for _, t in ipairs(site.techs) do if t.unit.valid then table.insert(live, t) end end
   site.techs = live
-  local want = TECHS + math.floor(#pen_ids / TECHS_PER)
   if #live == 0 and not site.drop_at then
     site.drop_at = tick + DROP_WAIT
   elseif site.drop_at and tick >= site.drop_at and not site.dropping then
@@ -246,16 +247,20 @@ function cell.tick(farm_id, surface, pen_ids, tick)
     -- Not on a round (a unit made by script wanders, which counts as a command): sent to the next biochamber.
     local cmd = u.commandable.command
     if (not cmd or cmd.type ~= defines.command.compound) and #cs > 0 then
+      -- Its last round over without feeding the cell it was sent to: a cell it cannot reach. Passed over for MISS_WAIT
+      -- (the unvisited longest, it was chosen again and again while its neighbours went fed: one went wild unfed, creep
+      -- spread on flat ground).
+      if t.to and t.sent and (t.to.fed_until or 0) < t.sent then t.to.skip_until = tick + MISS_WAIT end
       -- The biochamber unvisited longest that no other technician is bound for (a fixed round left one cell unfed four
       -- minutes after a pod brought new technicians to five cells).
       local taken = {}
       for _, o in ipairs(site.techs) do if o ~= t and o.to then taken[o.to] = true end end
       local c
       for _, x in ipairs(cs) do
-        if not taken[x] and (not c or (x.fed_until or 0) < (c.fed_until or 0)) then c = x end
+        if not taken[x] and (x.skip_until or 0) <= tick and (not c or (x.fed_until or 0) < (c.fed_until or 0)) then c = x end
       end
       if not c then site.next = (site.next or 0) % #cs + 1; c = cs[site.next] end
-      t.to = c
+      t.to, t.sent = c, tick
       local home = site.tower and site.tower.valid and site.tower.position or site.at
       -- To the pad's edge on the tower's side (the biochamber's middle is inside it: no path ends there).
       local q = c.chamber.position
@@ -276,11 +281,29 @@ function cell.tick(farm_id, surface, pen_ids, tick)
     if c.chamber.disabled_by_script == on then c.chamber.disabled_by_script = not on end
     if c.lamp and c.lamp.valid and c.lamp.disabled_by_script == on then c.lamp.disabled_by_script = not on end
   end
-  if #site.techs < want and not site.drop_at and tick - (site.staffed or 0) > DROP_WAIT then
-    -- Grown (more incubators): one more technician walks out of the tower.
-    site.staffed = tick
-    spawn_techs(site, surface, 1)
-  end
+end
+
+-- Technicians are bought (the Fable consult, docs/reviews/2026-10-25-synthexis-growth-research-consult.md: they came
+-- free, one in ten minutes, a clock with no feedback; the user asked for growth that speeds up then levels off). A
+-- culture buys one with TECH_PRICE of biomass while two thirds of its cells are fed (keeps_up), at most one every
+-- TECH_EVERY, up to one an incubator; with no clinic standing, only up to its landing number. Biomass comes from the
+-- pollution its creep drinks, the creep grows with its incubators, and its incubators are taken only while its
+-- technicians keep up: slow when small, fast when fed, levelling off at what its ground and the air give it.
+local TECH_PRICE = 56          -- two big biters' worth
+local TECH_EVERY = 2 * 60 * 60
+function cell.hire(farm_id, surface, pen_ids, tick, culture)
+  local site = sites()[farm_id]
+  if not (site and culture) or site.drop_at then return end
+  local live = 0
+  for _, t in ipairs(site.techs) do if t.unit.valid then live = live + 1 end end
+  local most = cell.clinic_up(farm_id) and math.max(TECHS, #pen_ids) or TECHS
+  if live >= most or culture.biomass < TECH_PRICE or tick - (site.hired or -TECH_EVERY) < TECH_EVERY then return end
+  if not cell.keeps_up(farm_id, pen_ids, tick) then return end
+  site.hired = tick
+  culture.biomass, culture.spent = culture.biomass - TECH_PRICE, (culture.spent or 0) + TECH_PRICE
+  site.bought = (site.bought or 0) + 1
+  spawn_techs(site, surface, 1)
+  return live + 1
 end
 
 -- Its technicians and their cells, for the trace (farm.lua, every ten minutes): where each stands, how far from the
@@ -354,7 +377,7 @@ function cell.sites()
       end
     end
     out[#out + 1] = {farm = id, at = {site.at.x, site.at.y}, tower = site.tower and site.tower.valid or false, techs = n,
-      plants = #site.plants, drop_at = site.drop_at, walks = walks, clinic = cell.clinic_up(id),
+      plants = #site.plants, drop_at = site.drop_at, walks = walks, clinic = cell.clinic_up(id), bought = site.bought or 0,
       clinic_drop_at = site.clinic_drop_at or nil}
   end
   return out

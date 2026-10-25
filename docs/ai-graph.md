@@ -19,23 +19,23 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `ops` | 1809 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `herd` | 1518 | ground, know | control, farm |  | 60, 600, 3600 |  | herd |
 | `layout` | 1184 | blocks, rng, site, wfc | base, faction |  |  |  |  |
+| `farm` | 1011 | cell, creep, herd, know, pods, tune | control, dev |  | 600, 3600, 36000 |  | farms |
 | `siege` | 856 | (leaf) | ops |  |  |  | threat_last |
 | `base` | 820 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
-| `farm` | 818 | cell, creep, herd, know, pods, tune | control, dev |  | 600, 3600, 36000 |  | farms |
 | `faction` | 799 | army, base, layout, names, ops, pact, pods, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `army` | 759 | know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
-| `control` | 644 | aim, army, bait, base, belts, biters, border, cell, command, cordon, creep, crew, dev, faction, farm, herd, jammer, jumper, know, ledger, map, marker, oplog, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, scorcher, site, skim, stance, standing, strike, tap, trade, tune, war, watch |  |  |  | ai_command_completed, built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, entity_spawned, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, script_trigger_effect, tick, script_raised_built | arena_surfaces, army_off, bases, belts_always, biotech_no_hold, biotech_no_orders, biotech_off, biotech_unlearned, capture_off, choice_off, cmd, cordon_off, cuts_off, era_override, focus_off, gates_off, grow_to_line_off, grudge_fast, hazard_hold, hazard_off, herd_off, history_off, hq_fast, labs_off, ladder_fast, last_raze, leader_off, ledger_off, mature_blocks, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strip_fast, tap_step, trace, truces, tune_levers, unit_owner, wfc_core_off |
+| `control` | 645 | aim, army, bait, base, belts, biters, border, cell, command, cordon, creep, crew, dev, faction, farm, herd, jammer, jumper, know, ledger, map, marker, oplog, ops, pact, phases, pods, pool, prospect, rd, road, roads, scanner, scorcher, site, skim, stance, standing, strike, tap, trade, tune, war, watch |  |  |  | ai_command_completed, built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, entity_spawned, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, script_trigger_effect, tick, script_raised_built | arena_surfaces, army_off, bases, belts_always, biotech_no_hold, biotech_no_orders, biotech_off, biotech_unlearned, capture_off, choice_off, cmd, cordon_off, cuts_off, era_override, focus_off, gates_off, grow_to_line_off, grudge_fast, hazard_hold, hazard_off, herd_off, history_off, hq_fast, labs_off, ladder_fast, last_raze, leader_off, ledger_off, mature_blocks, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strip_fast, tap_step, trace, truces, tune_levers, unit_owner, wfc_core_off |
 | `command` | 576 | (leaf) | control |  | 60, 120 |  | cmd |
 | `crew` | 483 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `skim` | 420 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `war` | 409 | army, base, ops, pods, pool, rd, rng, stance, strategy, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `routing` | 405 | (leaf) | ops |  |  |  | corridors |
+| `cell` | 396 | pods | control, farm |  |  |  | cell_sites, cells |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 381 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
-| `cell` | 373 | pods | control, farm |  |  |  | cell_sites, cells |
 | `prospect` | 352 | base, chart, ops, pool, standing | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `jumper` | 316 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
@@ -135,7 +135,7 @@ From `stance.may`, run on the mod's own tables. Yes: allowed. No: forbidden. A d
 | strength | `creep` | `local got = math.min(p, c.n * shared.CREEP_ABSORB * seconds) * tune.strength("biotech")` |
 | aggression | `farm` | `last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.t` |
 | aggression | `farm` | `last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.t` |
-| strength | `farm` | `creep.of(f.id).biomass = START_BIOMASS * tune.strength("biotech")` |
+| strength | `farm` | `creep.of(f.id).biomass = seeded and seeded.biomass or START_BIOMASS * tune.strength("biotech")` |
 | strength | `farm` | `local t = #f.pens * TRICKLE / 6 * tune.strength("biotech")` |
 | aggression | `farm` | `if not storage.herd_off and not herd.out(id) and tick - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then s` |
 | aggression | `jumper` | `b.next_jump = game.tick + (storage.jump_cooldown or tune.sooner(b.corp, COOLDOWN))` |

@@ -158,9 +158,11 @@ local function tag(f)
 end
 
 -- The pod touched down: the field's spawners nearest it become pens.
-function farm.land(surface, pos)
+-- seeded: a culture founded by a carrier ({biomass = n}): one incubator, no worms, its clinic later, its biomass what the
+-- carrier brought; told to no one (the first landing only is).
+function farm.land(surface, pos, seeded)
   local s = st()
-  s.landing = nil
+  if not seeded then s.landing = nil end
   local field = surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = pos, radius = FIELD + 10}
   table.sort(field, function(a, b) return d2(a.position, pos) < d2(b.position, pos) end)
   if #field == 0 then
@@ -175,14 +177,14 @@ function farm.land(surface, pos)
     evo = enemy and enemy.get_evolution_factor(surface) or 0,
     last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.tick}
   s.next = s.next + 1
-  for i = 1, math.min(PENS, #field) do
+  for i = 1, math.min(seeded and 1 or PENS, #field) do
     local id = herd.capture(field[i])
     local rec = id and herd.pen(id)
     if rec then
       rec.farm = f.id
       table.insert(f.pens, id)
-      bred_stock(surface, rec.pen, START)
-      for _ = 1, WORMS do
+      bred_stock(surface, rec.pen, seeded and 2 or START)
+      for _ = 1, seeded and 0 or WORMS do
         local q = surface.find_non_colliding_position("lp-bred-worm", {rec.pen.position.x + 6, rec.pen.position.y + 6}, 12, 1)
         if q then surface.create_entity{name = "lp-bred-worm", position = q, force = B.force} end
       end
@@ -195,10 +197,13 @@ function farm.land(surface, pos)
   s.list[f.id] = f
   creep.culture(f.id, surface, pos)
   -- Its substrate and technicians (scripts/cell.lua).
-  cell.site(f.id, surface, f.pos)
-  creep.of(f.id).biomass = START_BIOMASS * tune.strength("biotech")
+  cell.site(f.id, surface, f.pos, seeded ~= nil)
+  creep.of(f.id).biomass = seeded and seeded.biomass or START_BIOMASS * tune.strength("biotech")
+  f.seeded = seeded and game.tick or nil
   tag(f)
-  trace(string.format("farm %d landed at %.0f,%.0f: %d pens", f.id, pos.x, pos.y, #f.pens))
+  trace(string.format("farm %d %s at %.0f,%.0f: %d pens", f.id, seeded and "seeded by a carrier" or "landed", pos.x, pos.y,
+    #f.pens))
+  if seeded then return f end
   if not s.told then
     s.told = true
     for _, pf in ipairs(players()) do
@@ -410,6 +415,14 @@ local function fulfil(f, rec, surface, want, have)
   return false
 end
 
+-- Seeding's numbers (seed, below).
+local SEED_AT, SEED_BANK, SEED_WAIT = 8, 300, 20 * 3600
+local SEED_NEAR, SEED_FAR, SEED_APART, SEED_CLEAR = 300, 600, 300, 200
+local SEED_FARTHEST = 1000
+local ESCORT, CULTURE_CAP, YOUNG_WAVES = 12, 5, 3
+local CARRY_LIMIT = 30 * 3600   -- a carrier still walking this long has lost its way
+local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
+
 -- Why a farm due a wave holds it, traced at most every ten minutes (on the player's nw it sent one wave in three hours
 -- and the trace said nothing of why).
 local function holds(f, tick, why)
@@ -420,6 +433,8 @@ local function holds(f, tick, why)
 end
 
 local function send(f, tick)
+  -- A young culture grows first: no wave until it has YOUNG_WAVES incubators.
+  if f.seeded and #f.pens < YOUNG_WAVES then return holds(f, tick, string.format("young: %d incubators of %d", #f.pens, YOUNG_WAVES)) end
   -- (Waiting for a bigger wave: looked at again every ten seconds, not every tick.)
   if f.escalate_retry and tick < f.escalate_retry then return end
   f.escalate_retry = nil
@@ -536,6 +551,160 @@ local function send(f, tick)
   trace(string.format("farm %d sends %d at %.0f,%.0f", f.id, #units, target.x, target.y))
 end
 
+-- Seeding (the Fable consult, docs/reviews/2026-10-25-synthexis-growth-research-consult.md; the user: multiple landings
+-- "just like other factions", spread suited to space): a mature culture (SEED_AT incubators, two thirds fed, SEED_BANK
+-- of biomass) sends a carrier (biotech.lua) with ESCORT of its stock to a wild nest field SEED_NEAR to SEED_FAR out,
+-- with no culture within SEED_APART and nothing of the player's within SEED_CLEAR. It walks routed legs round turrets;
+-- where it stops, a young culture begins (farm.land, seeded: one incubator, no worms, its clinic by pod later, no wave
+-- until YOUNG_WAVES incubators). Killed on the way, the culture paid for nothing and tries again SEED_WAIT on. Orbit
+-- brings only the first culture, and the next once every one is gone: an infestation, where the corporations invade.
+
+local function seed_site(f, s, far)
+  local best, bd
+  for _, sp in ipairs(s.find_entities_filtered{type = "unit-spawner", force = "enemy", position = f.pos, radius = far}) do
+    local d = d2(sp.position, f.pos)
+    if d >= SEED_NEAR * SEED_NEAR and (not bd or d < bd) then
+      local ok = true
+      for _, g in pairs(st().list) do if d2(g.pos, sp.position) < SEED_APART * SEED_APART then ok = false end end
+      if ok and s.count_entities_filtered{position = sp.position, radius = SEED_CLEAR, force = players(), limit = 1} == 0
+        and s.count_entities_filtered{type = "unit-spawner", force = "enemy", position = sp.position, radius = FIELD} >= FIELD_MIN then
+        best, bd = {x = sp.position.x, y = sp.position.y}, d
+      end
+    end
+  end
+  return best
+end
+
+local function seed(f, tick)
+  local sl = st()
+  -- Mature: SEED_AT incubators, or its field filled (PENS at least and no nest taken for FILLED_WAIT: on a fresh map's
+  -- sparse fields a culture stopped at five, and never seeded in three hours).
+  local filled = #f.pens >= PENS and tick - (f.last_take or f.landed or 0) >= FILLED_WAIT
+  if f.carrier or (#f.pens < SEED_AT and not filled) or tick - (f.seed_tried or -SEED_WAIT) < SEED_WAIT then return end
+  local n = 0
+  for _, g in pairs(sl.list) do n = n + 1 + (g.carrier and 1 or 0) end
+  local function why(text)
+    if tick - (f.seed_said or -36000) >= 36000 then
+      f.seed_said = tick
+      trace(string.format("farm %d: mature (%d incubators), not seeding yet: %s", f.id, #f.pens, text))
+    end
+  end
+  if n >= (B.mind.culture_cap or CULTURE_CAP) then f.saving = nil; return why(string.format("%d cultures, the most", n)) end
+  local cul = creep.of(f.id)
+  if not cul then return end
+  if not cell.keeps_up(f.id, f.pens, tick) then return why("its cells hungry") end
+  -- It saves for its carrier: its incubators breed only above SEED_BANK (breeding spent all it earned, and on fresh maps
+  -- the bank never filled in three hours).
+  if cul.biomass < SEED_BANK then f.saving = true; return why(string.format("saving, %.0f of %d", cul.biomass, SEED_BANK)) end
+  f.saving = nil
+  f.seed_tried = tick
+  local s = game.surfaces[f.surface]
+  -- The nearest field SEED_NEAR to SEED_FAR out, else out to SEED_FARTHEST (a fresh map's nests are sparse: none within
+  -- 600 of a culture on two seeds of three hours).
+  local dest = seed_site(f, s, SEED_FAR) or seed_site(f, s, SEED_FARTHEST)
+  if not dest then
+    f.saving = nil
+    return trace(string.format("farm %d: mature, but no wild field to seed within %d", f.id, SEED_FARTHEST))
+  end
+  local rec, rd
+  for _, id in ipairs(f.pens) do
+    local r = herd.pen(id)
+    if r and r.pen.valid and (not rd or d2(r.pen.position, dest) < rd) then rec, rd = r, d2(r.pen.position, dest) end
+  end
+  if not rec then return end
+  local q = s.find_non_colliding_position("lp-bred-carrier", rec.pen.position, 12, 1)
+  local carrier = q and s.create_entity{name = "lp-bred-carrier", position = q, force = B.force}
+  if not carrier then return end
+  rendering.draw_light{sprite = "utility/light_small", surface = s, target = carrier, color = {0.6, 0.25, 1},
+    scale = 1.8, intensity = 0.9, minimum_darkness = 0.3}
+  local g = s.create_unit_group{position = carrier.position, force = B.force}
+  g.add_member(carrier)
+  local stock, keep, escort = herd.stock(rec), {}, {}
+  for _, u in ipairs(stock) do
+    if #escort < ESCORT and u.valid then
+      if u.commandable.spawner then u.commandable.release_from_spawner() end
+      g.add_member(u)
+      escort[#escort + 1] = u
+    else
+      keep[#keep + 1] = u
+    end
+  end
+  rec.stock = keep
+  cul.biomass, cul.spent = cul.biomass - SEED_BANK, (cul.spent or 0) + SEED_BANK
+  -- Its way: round the turrets known to it (wide), a leg at most 60 tiles; failing that, straight in 60-tile legs.
+  local from = carrier.position
+  local far = math.sqrt(d2(from, dest))
+  local way = herd.route and herd.route({surface = f.surface, force = B.force}, {from.x, from.y}, {dest.x, dest.y},
+    {turrets = true, nests = false, cell = far > 400 and 16 or 10}, true)
+  local pts, legs = {}, {}
+  for _, p in ipairs(way or {}) do pts[#pts + 1] = {x = p[1], y = p[2]} end
+  pts[#pts + 1] = dest
+  local a = {x = from.x, y = from.y}
+  for _, p in ipairs(pts) do
+    local d = math.sqrt(d2(a, p))
+    for k = 1, math.floor(d / 60) do legs[#legs + 1] = {x = a.x + (p.x - a.x) * k * 60 / d, y = a.y + (p.y - a.y) * k * 60 / d} end
+    legs[#legs + 1] = p
+    a = p
+  end
+  f.carrier = {group = g, unit = carrier, escort = escort, legs = legs, leg = 1, dest = dest, t = tick,
+    bank = SEED_BANK / 2}
+  trace(string.format("farm %d sends a carrier with %d escorts to the nests at %.0f,%.0f (%.0f tiles, %s)", f.id, #escort,
+    dest.x, dest.y, far, way and "routed" or "straight"))
+end
+
+-- The carrier on its way, every farm look: leg by leg; at its field, the new culture.
+local function carry(f, tick)
+  local c = f.carrier
+  if not c then return end
+  local s = game.surfaces[f.surface]
+  if not c.unit.valid then
+    f.carrier = nil
+    f.seed_tried = tick
+    return trace(string.format("farm %d: its carrier killed on its way", f.id))
+  end
+  if d2(c.unit.position, c.dest) < 24 * 24 then
+    local nf = farm.land(s, c.dest, {biomass = c.bank})
+    local rec = nf and nf.pens[1] and herd.pen(nf.pens[1])
+    for _, u in ipairs(c.escort) do if u.valid and rec then table.insert(rec.stock, u) end end
+    if c.group.valid then c.group.destroy() end
+    c.unit.destroy()
+    f.carrier = nil
+    f.seeds = (f.seeds or 0) + 1
+    if not nf then trace(string.format("farm %d: its carrier found no nests at its field", f.id)) end
+    return
+  end
+  if tick - c.t > CARRY_LIMIT then
+    if c.group.valid then c.group.destroy() end
+    c.unit.die()
+    f.carrier = nil
+    return trace(string.format("farm %d: its carrier lost its way", f.id))
+  end
+  if not (c.group and c.group.valid) then
+    c.group = s.create_unit_group{position = c.unit.position, force = B.force}
+    c.group.add_member(c.unit)
+    for _, u in ipairs(c.escort) do if u.valid then c.group.add_member(u) end end
+    c.ordered = nil
+  end
+  local target = c.legs[c.leg]
+  while target and d2(c.unit.position, target) < 15 * 15 and c.leg < #c.legs do
+    c.leg = c.leg + 1
+    target = c.legs[c.leg]
+    c.ordered = nil
+  end
+  -- Its group idle (the leg walked, or an order that failed at once: an unreachable waypoint): on to the next leg. (It
+  -- re-gave the same leg once a minute and walked 45 tiles in 40 minutes.)
+  if c.ordered and c.group.valid and not c.group.command and c.leg < #c.legs then
+    c.leg = c.leg + 1
+    target = c.legs[c.leg]
+    c.ordered = nil
+  end
+  if target and (not c.ordered or tick - c.ordered > 3600) then
+    c.group.set_command{type = defines.command.go_to_location, destination = target, radius = 6,
+      distraction = defines.distraction.by_enemy}
+    c.ordered = tick
+  end
+end
+
 -- Its incubators breed while it has biomass, and stop when it has none.
 local function breeding(f, on)
   for _, pid in ipairs(f.pens) do
@@ -569,6 +738,9 @@ local function unfed(rec, tick)
 end
 
 -- Its evolution: learned while its clinic stands, held at the stock's without it.
+-- With several cultures (seeding, 0.2.22) the force's evolution is one a surface: the most any culture there breeds at
+-- (each culture's own, f.evo, climbing while its clinic stands, held at STOCK_EVO without one). Set by each in turn, a
+-- young culture with no clinic yet held it at 0.3 for the old one too.
 local function evolve(f, surface)
   local bf, enemy = game.forces[B.force], game.forces.enemy
   if not bf then return end
@@ -577,7 +749,13 @@ local function evolve(f, surface)
   if up then
     f.evo = math.min(1, math.max(enemy and enemy.get_evolution_factor(surface) or 0, f.evo + CLIMB / 6))
   end
-  bf.set_evolution_factor(up and f.evo or math.min(f.evo, STOCK_EVO), surface)
+  local best = 0
+  for id, g in pairs(st().list) do
+    if g.surface == f.surface and g.evo then
+      best = math.max(best, cell.clinic_up(id) and g.evo or math.min(g.evo, STOCK_EVO))
+    end
+  end
+  bf.set_evolution_factor(best, surface)
 end
 
 -- Obsolete stock recycled (2026-10-25): an incubator holds at most 40, and full of the small biters of its first
@@ -638,6 +816,8 @@ function farm.tick(tick)
     -- Its substrate (older saves: built now) and its technicians' rounds.
     cell.site(id, surface, f.pos)
     cell.tick(id, surface, f.pens, tick)
+    local hired = cell.hire(id, surface, f.pens, tick, creep.of(id))
+    if hired then trace(string.format("farm %d: buys a technician (%d now, %d incubators)", f.id, hired, #f.pens)) end
     evolve(f, surface)
     if tick % 36000 == 300 then trace(string.format("farm %d: %s", f.id, cell.summary(id, f.pens, tick))) end
     -- Its order, once a minute: what it wants for the next wave, against what its incubators hold.
@@ -702,7 +882,7 @@ function farm.tick(tick)
       local t = #f.pens * TRICKLE / 6 * tune.strength("biotech")
       cul.biomass, cul.trickled = cul.biomass + t, (cul.trickled or 0) + t
       -- An order short: chance breeding waits while the biomass is kept for it.
-      breeding(f, cul.biomass > (f.short or 0))
+      breeding(f, cul.biomass > math.max(f.short or 0, f.saving and SEED_BANK or 0))
     end
     -- Grubstake on its creep: the truce is over.
     if not herd.grubstake_broken() then
@@ -725,6 +905,7 @@ function farm.tick(tick)
         creep.plant(surface, rec.pen.position, f.id)
         cell.build(pid, rec.pen, f.id, f.pos)
         f.taken = (f.taken or 0) + 1
+        f.last_take = tick
         trace(string.format("farm %d: its creep took the nest at %.0f,%.0f (%d incubators)", f.id, rec.pen.position.x,
           rec.pen.position.y, #f.pens))
       end
@@ -734,6 +915,7 @@ function farm.tick(tick)
     else
       if not f.tagged then tag(f) end
       if not storage.herd_off and not herd.out(id) and tick - f.last_wave >= tune.sooner("biotech", WAVE_GAP) then send(f, tick) end
+      if not storage.seed_off then seed(f, tick); carry(f, tick) end
     end
   end
   if s.landing and tick - s.landing.sent > POD_WAIT then
@@ -777,6 +959,16 @@ function farm.on_damaged(e)
   if rec and rec.farm and herd.out(rec.farm) then herd.recall(rec.farm, "its farm is attacked") end
 end
 
+-- Dev and tests: a farm made ripe to seed at its next look (its field read as filled, its bank full, no wait).
+function farm.debug_seed(id)
+  local f = st().list[id]
+  if not f then return false end
+  f.last_take, f.seed_tried = game.tick - FILLED_WAIT, nil
+  local cul = creep.of(id)
+  if cul then cul.biomass = math.max(cul.biomass, 2 * SEED_BANK) end
+  return true
+end
+
 -- Dev: every farm sends a wave at its next check, its pens topped up to send one.
 function farm.debug_wave()
   local any = false
@@ -807,7 +999,8 @@ function farm.state()
     end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
       landed = f.landed, taken = f.taken or 0, recycled = f.recycled or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
-      lost_to_feed = f.lost_to_feed or 0, evo = f.evo, clinic = cell.clinic_up(id),
+      lost_to_feed = f.lost_to_feed or 0, evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0,
+      seeded = f.seeded, carrier = f.carrier and f.carrier.unit.valid and {f.carrier.unit.position.x, f.carrier.unit.position.y} or nil,
       bred_evo = game.forces[B.force] and game.forces[B.force].get_evolution_factor(f.surface), biomass = creep.of(id) and {
         now = creep.of(id).biomass, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled,
         spent = creep.of(id).spent or 0, bred = creep.of(id).bred or 0}})

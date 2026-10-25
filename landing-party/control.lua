@@ -513,6 +513,7 @@ remote.add_interface("landing-party", {
   rd_state = function(corp) return rd.state(corp) end,
   -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
+  farm_debug_seed = function(id) return farm.debug_seed(id) end,
   farm_state = function() return farm.state() end,
   watch_state = function() return watch.state() end,
   creep_state = function() return creep.state() end,

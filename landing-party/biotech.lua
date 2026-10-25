@@ -182,6 +182,28 @@ do
   table.insert(out, r)
 end
 
+-- The carrier (the Fable consult, docs/reviews/2026-10-25-synthexis-growth-research-consult.md: "spatial spread needs
+-- a thing that travels"): a mature culture's seed, a big biter's body in deep violet, slow and tough, lit by script,
+-- walking with an escort to a wild nest field where a new culture begins (farm.lua). Never bred: made when it sets out.
+do
+  local r
+  for _, p in ipairs(out) do if p.name == "lp-bred-big-biter" then r = table.deepcopy(p) end end
+  r.name = "lp-bred-carrier"
+  r.localised_name = {"entity-name.lp-bred-carrier"}
+  r.localised_description = {"entity-description.lp-bred-carrier"}
+  r.max_health, r.movement_speed = 600, 0.12
+  local V1, V2 = {r = 0.42, g = 0.12, b = 0.62, a = 1}, {r = 0.6, g = 1, b = 0.25, a = 1}
+  local function violet(t, n)
+    if type(t) ~= "table" then return n end
+    if t.tint then t.tint = (n % 2 == 0) and V1 or V2; n = n + 1 end
+    for _, v in pairs(t) do n = violet(v, n) end
+    return n
+  end
+  violet(r.run_animation, 0)
+  violet(r.attack_parameters.animation, 0)
+  table.insert(out, r)
+end
+
 -- The burster (id cinder; tier 3, the breeds consult): a biter with acid bands that dies into the demolisher's fissure (a
 -- telegraphed crack, then an eruption that breaks walls and turrets round it: fire would not, walls are immune to it,
 -- and fire spreads). Shoot the banded one first, at range. Its eruption hurts any force but its own ("not-same"), so a
