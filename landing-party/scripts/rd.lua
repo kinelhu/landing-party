@@ -354,13 +354,22 @@ function rd.history(corp, surface)
   local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
   t.fund = math.min(FUND_CAP, t.fund + HISTORY_ERA * era + HISTORY_EVO * evo)
   local bought = {}
+  -- What the world calls for first: past half evolution, armour against biters' jaws, then what answers biters
+  -- (railguns), then the other tracks. In tree order the tracks went first: on the player's nw (evolution 0.91) optics
+  -- to five and railguns to three spent it all, and its troopers came without the armour they had (2026-10-25).
+  local function rank(node)
+    local biters = false
+    for _, k in ipairs(node.trigger and node.trigger.killer or {}) do if k == "biter" then biters = true end end
+    if evo >= 0.5 and node.plates and node.trigger and node.trigger.damage == "physical" then return 1 end
+    if evo >= 0.5 and node.track and biters then return 2 end
+    if node.track then return 3 end
+    return nil
+  end
   for _ = 1, 12 do
-    local pickd
+    local pickd, pr
     for _, node in ipairs(shared.CORPS[corp].tree or {}) do
-      if not pickd and allowed(t, node, era) and t.fund >= cost_of(t, node) then
-        local wanted = node.track or (evo >= 0.5 and node.plates and node.trigger and node.trigger.damage == "physical")
-        if wanted then pickd = node end
-      end
+      local r = rank(node)
+      if r and (not pr or r < pr) and allowed(t, node, era) and t.fund >= cost_of(t, node) then pickd, pr = node, r end
     end
     if not pickd then break end
     t.fund = t.fund - cost_of(t, pickd)

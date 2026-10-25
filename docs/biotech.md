@@ -715,3 +715,18 @@ against the player -1; the player against Kessler-Hayashi +24.
   biters and stops, and does its full damage to spawners, worms, incubators and tumors, a fraction to biters on their
   feet; its camp keeps it for clearances. Big biters and behemoths beat it, until Kessler-Hayashi, losing units to
   biters, buys heavier railguns (the user: an investment, weaker at baseline).
+
+### On real factories (0.2.21)
+
+- The visits to the player's saves had never had Synthexis: the test mod kept it off. On them it starved (its creep
+  took nests faster than its technicians could walk to them, and incubators went wild with their stock), sent one wave
+  in three hours on nw (its guard, six an incubator, kept 72 home), and its waves walked straight lines into laser
+  walls or round whole factories. Read a sprawling base as one box of every turret in 240 tiles, its scout looped
+  through the factory and its faces were ones no wave could reach.
+- Now its waves stage as the corporations' raids do, routed round turrets, water, cliffs and buildings to the approach
+  with the least fire on the way in and where it fights; a target deep within a perimeter of turrets gives way to the
+  building nearest the edge of its reach; inside, with nothing feeding a gun in sight, it breaks what is there. Its
+  creep grows only as its technicians keep up.
+- On deathworld10x, three hours: 172 of the player's buildings broken, mostly mining outposts (belts, drills,
+  poles), where straight trails broke 84 by throwing waves at turret lines. Each fault was found from the operation
+  records (scripts/oplog.lua), one map a wave.

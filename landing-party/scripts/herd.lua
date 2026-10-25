@@ -27,15 +27,22 @@ local LOOP_OUT = 29         -- the loop past the outermost turret: beyond a lase
 local LOOP_POINTS = 16
 local STOP_EVERY = 4        -- a pause at every fourth loop point: four faces
 local LOOP_CLEAR = 30       -- a loop point this far from every foe turret (a gun turret's 18, a laser's 24, a margin)
-local RESUMES = 3
-local REGROUPS = 3         -- a wave's group formed again from its living members, at most this often          -- a failed loop taken up again from the next point, at most this often
+local RESUMES = 3          -- a failed loop taken up again from the next point, at most this often
+local REGROUPS = 3         -- a wave's group formed again from its living members, at most this often a leg (a wave of
+                           -- the player's deathworld used its three on one long trail and scattered)
+local STRAY_FAR = 60       -- a member this far from the herd is left behind, not called in
 local STOP_TICKS = 600
 local SIT_TICKS = 30 * 3600
 local GATHER_TICKS = 90 * 60
 local INSIDE = 15
 local INSIDE_TICKS = 90 * 60
 local TRAIL_TICKS = 20 * 3600
-local BASE_REACH = 120      -- the turrets that make one base, round what drew the wave
+local BASE_REACH = 48       -- the turrets that make the defence a wave meets, round what drew it: those that can bear
+                           -- on where it breaks in. At 120 a player's sprawling factory was one box of every turret in
+                           -- 240 tiles, its scout's loop and the herd's trail ran through the factory, and a face could
+                           -- be one no wave could reach (the user's deathworld, 2026-10-25: "treating bases as big
+                           -- squares")
+local OPEN_R, OPEN_MAX = 12, 2   -- a face's approach is in the open with at most this many foe buildings this near
 local SCOUT_EXTRA = 10      -- a dead scout's lesson: the next loop round that base this much wider
 local SCOUT_TIMEOUT = 5 * 3600
 local GEN_WAIT = 2 * 3600      -- at most, for its corridor's chunks before the scout sets out
@@ -48,6 +55,9 @@ local WALLS = {"wall", "gate"}
 local POWER = {"generator", "solar-panel", "accumulator", "burner-generator", "electric-energy-interface", "reactor",
   "fusion-generator", "lightning-attractor"}
 local PIPES = {"pipe", "pipe-to-ground", "pump"}
+-- What it breaks inside when nothing in sight feeds a gun: what the factory runs on.
+local SOFT = {"mining-drill", "assembling-machine", "furnace", "lab", "boiler", "generator", "electric-pole", "inserter",
+  "transport-belt", "underground-belt", "splitter", "pump", "offshore-pump", "storage-tank", "radar", "beacon", "roboport"}
 -- What draws a wave: the player's machines and guns (pollution is what feeds it; these make it).
 herd.DRAW = {"ammo-turret", "electric-turret", "fluid-turret", "assembling-machine", "furnace", "mining-drill", "boiler",
   "generator", "lab"}
@@ -398,7 +408,7 @@ function herd.launch(p, target, opts)
   local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy, foes = opts.forces,
     no_probe = opts.no_probe,
     loop = LOOP_OUT + mem.extra, stage = "scout", t = game.tick, t0 = game.tick, members = {}, seen = {},
-    marks = {}, kills = {}, tried = {}, sight = opts.sight or SIGHT, size = #units}
+    marks = {}, kills = {}, tried = {}, sight = opts.sight or SIGHT, size = #units, goal = xy(target)}
   h.next = h.next + 1
   for _, u in ipairs(units) do
     if u.valid then
@@ -473,7 +483,8 @@ local function herd_units(w)
   -- One its incubator took back while it waited (11 to 19 of every wave stayed behind in the pen, never in the group):
   -- released again.
   for _, u in ipairs(w.members) do
-    if u.valid and u ~= w.scout and u.force.name == B.force and not (w.sappers and w.sappers.set[u.unit_number]) then
+    if u.valid and u ~= w.scout and u.force.name == B.force and not (w.sappers and w.sappers.set[u.unit_number])
+      and not (w.left_behind and w.left_behind[u.unit_number]) then
       if u.commandable and u.commandable.spawner then u.commandable.release_from_spawner() end
       table.insert(out, u)
     end
@@ -644,11 +655,24 @@ end
 -- a non essential complement"). Its faces were the scout's sightings, and in four-faction runs 15 of 19 waves came blind:
 -- their scouts killed by Kessler-Hayashi's tanks and outposts. The scout still loops the base before the wave, the tell
 -- and the wave's clock; killed, the wave comes all the same.
+-- Whether a point is open ground, not inside the foe's buildings (a face on a sprawling base can be in the factory).
+local function open_ground(w, p)
+  local s = game.surfaces[w.surface]
+  return s.count_entities_filtered{position = p, radius = OPEN_R, force = foes(w), limit = OPEN_MAX + 1,
+    type = {"wall", "gate", "assembling-machine", "furnace", "mining-drill", "inserter", "transport-belt", "electric-pole",
+      "container", "logistic-container", "pipe", "lab", "roboport", "solar-panel", "accumulator", "boiler", "generator",
+      "radar", "ammo-turret", "electric-turret", "fluid-turret", "rocket-silo", "beacon", "storage-tank"}} <= OPEN_MAX
+end
+
 local function read_ground(w)
   local s = game.surfaces[w.surface]
   local r = w.loop
   w.seen, w.watched = {}, {}
-  for k = 0, 7 do w.watched[k] = true end
+  -- The faces a wave can come at: those whose approach is open ground (all of them if none is).
+  for k = 0, 7 do
+    if open_ground(w, loop_point(w, k * LOOP_POINTS / 8)) then w.watched[k] = true end
+  end
+  if not next(w.watched) then for k = 0, 7 do w.watched[k] = true end end
   for _, t in pairs(s.find_entities_filtered{area = {{w.center.x - w.hx - r, w.center.y - w.hy - r},
     {w.center.x + w.hx + r, w.center.y + w.hy + r}}, force = foes(w), type = TURRETS}) do
     local a = math.atan2(t.position.y - w.center.y, t.position.x - w.center.x)
@@ -675,24 +699,172 @@ local function scout_lost(w)
   end
 end
 
+-- Its approach, as the corporations' raids stage (the user, 2026-10-25: "the other factions already have some code that
+-- could be reused"): for each of eight directions out from its target a staging point beyond every turret's reach,
+-- outside the player's walls and off water (routing.outside), the approach weighed by the fire on the line from it in
+-- (ops.exposure, every STAGE_STEP tiles: the hottest point), what its lessons say of that face, and the walk from its
+-- incubator. The weakest it can reach is its mark; the herd is routed there round turrets (ops.route), and breaks in
+-- straight from it. A sprawling factory read as one box round every turret in 240 tiles had sent its herd round half
+-- the factory to a face no wave could reach (the user's deathworld).
+local STAGE_OFF, STAGE_LEN, STAGE_STEP = 34, 200, 8
+local HELD_FIRE = 3          -- a face that held weighs this much more fire, each time
+local LEG = 60               -- at most, tiles a leg of the herd's trail
+local ROUTE_TRIES = 4        -- staging points tried in order for a route
+local EDGE_RETARGET = 100    -- its target this far within the edge of its reach: it goes for what is at the edge,
+local EDGE_SEARCH = 400      -- the foe's building nearest the edge within this (a deathworld's turrets reached 450
+                             -- tiles round its targets, nothing within 100 of the edge, and its herds marched 400 to 590
+                             -- tiles under its guns to the wall: 6 buildings broken in eight waves)
+local WALK_FIRE = 1 / 60     -- and the walk to its staging point this much a tile (at 1/200 a staging point on the far
+                             -- side of the player's deathworld factory won, and its herd walked round the whole walled
+                             -- factory to reach it, 1,500 tiles, and came scattered)
+local function foe_names(w)
+  local out = {}
+  for _, f in ipairs(foes(w)) do out[#out + 1] = type(f) == "string" and f or f.name end
+  return out
+end
+
+local function stage_choice(w)
+  if not (herd.outside and herd.exposure) then return nil end
+  local s = game.surfaces[w.surface]
+  local c = w.goal or w.center
+  local p = st().pens[w.pen]
+  local from = p and p.pen.valid and p.pen.position or w.center
+  local l = lessons()[lesson_key(w.center)]
+  local forces = {}
+  for _, f in ipairs(foes(w)) do forces[#forces + 1] = type(f) == "string" and f or f.name end
+  local cands, why = {}, {}
+  for k = 0, 7 do
+    local a = k * math.pi / 4
+    local ux, uy = math.cos(a), math.sin(a)
+    local stage = herd.outside({surface = w.surface, force = B.force}, {pos = {c.x, c.y}, owner = "enemy"}, ux, uy,
+      STAGE_OFF, STAGE_LEN)
+    if stage then
+      -- The fire on its way in: from the staging point toward the target, to where it first meets the foe's wall or
+      -- buildings (the breach). Read out from the target, every face met the overlapping fire of the base's middle,
+      -- and the walk decided.
+      local sx, sy = c.x - stage[1], c.y - stage[2]
+      local len = math.max(1, math.sqrt(sx * sx + sy * sy))
+      -- And on through the breach as far as the herd goes in (INSIDE): at a corner beside a heavy face the guns
+      -- reached where it fought, and it lost more getting out (herd test, three seeds, 9 to 13 of 41 home).
+      local fire, met = 0, nil
+      for d = 0, len, STAGE_STEP / 2 do
+        local q = {stage[1] + sx / len * d, stage[2] + sy / len * d}
+        fire = math.max(fire, herd.exposure(s, q, forces))
+        if met and d - met >= INSIDE then break end
+        if not met and s.count_entities_filtered{position = q, radius = 3, force = forces, limit = 1,
+          type = {"wall", "gate", "ammo-turret", "electric-turret", "fluid-turret", "assembling-machine", "furnace",
+            "mining-drill", "container", "electric-pole", "inserter", "transport-belt"}} > 0 then met = d end
+      end
+      local f = l and l.faces[k]
+      local held = f and math.max(0, f.tried - f.broke) or 0
+      local walk = math.sqrt((stage[1] - from.x) ^ 2 + (stage[2] - from.y) ^ 2)
+      local score = fire + HELD_FIRE * held + WALK_FIRE * walk
+      why[#why + 1] = string.format("%d:%.1f", k, score)
+      cands[#cands + 1] = {k = k, at = {x = stage[1], y = stage[2]}, score = score, fire = fire}
+    end
+  end
+  table.sort(cands, function(a, b) return a.score < b.score end)
+  return cands, table.concat(why, " ")
+end
+
 local function mark(w)
   read_ground(w)
   local j, count = choose_mark(w)
   w.mark = loop_point(w, j)
   w.mark_index = j
   w.mark_sector = math.floor(j * 8 / LOOP_POINTS + 0.5) % 8
-  local parts = {}
-  for k = 0, 7 do table.insert(parts, count[k]) end
+  local cands, why = stage_choice(w)
   local p = st().pens[w.pen]
   local trail = {p and p.pen.valid and xy(p.pen.position) or w.mark}
   for _, q in ipairs(w.approach or {}) do table.insert(trail, q) end
-  for _, q in ipairs(arc(w, j)) do table.insert(trail, q) end
+  local last = trail[#trail]
+  -- The approaches in order, the first its herd can be routed to round the turrets known to it (wide, as a long raid's,
+  -- when the plain search runs dry; a coarser grid for a long way): on the player's deathworld the best-scored staging
+  -- points lay in pockets ringed by turret reach, beyond every turret but with no way in, and every wave walked straight.
+  local way, staged, tried = nil, nil, {}
+  local b = {surface = w.surface, force = B.force}
+  for i = 1, math.min(ROUTE_TRIES, #(cands or {})) do
+    local c = cands[i]
+    local far = math.sqrt(d2(last, c.at))
+    local o = {turrets = true, nests = false, solid = foe_names(w), cell = far > 400 and 16 or far > 200 and 10 or nil}
+    if herd.route then
+      way = herd.route(b, {last.x, last.y}, {c.at.x, c.at.y}, o) or herd.route(b, {last.x, last.y}, {c.at.x, c.at.y}, o, true)
+    end
+    if way or not herd.route then staged = c; break end
+    local r = herd.route_why and herd.route_why() or {}
+    tried[#tried + 1] = string.format("face %d %s", c.k, r.enclosed and "enclosed" or "no way")
+  end
+  -- None reachable (its target inside a perimeter of turrets, every staging point found in a pocket within it): it
+  -- stages at the nearest point to its target it can reach out of every turret's reach, the edge of the defence, and
+  -- breaks in from there.
+  if not staged and herd.route then
+    local g = w.goal or w.center
+    local far = math.sqrt(d2(last, g))
+    local o = {turrets = true, nests = false, solid = foe_names(w), partial = true, cell = far > 400 and 16 or far > 200 and 10 or nil}
+    -- (Wide at once: on the plain search's 4,000 steps the "nearest reached" was where it ran dry, near its own side,
+    -- and its herds staged 500 to 770 tiles from the wall they went for, on the player's deathworld.)
+    local part = herd.route(b, {last.x, last.y}, {g.x, g.y}, o, true)
+    local r = herd.route_why and herd.route_why() or {}
+    if part and r.partial then
+      way = part
+      local e = {x = r.partial[1], y = r.partial[2]}
+      local a = math.atan2(e.y - g.y, e.x - g.x)
+      staged = {k = math.floor(a / (math.pi / 4) + 0.5) % 8, at = e, score = 0, fire = herd.exposure(game.surfaces[w.surface],
+        {e.x, e.y}, foes(w))}
+      tried[#tried + 1] = "so at the edge of its reach"
+      -- Its target far within (more than EDGE_RETARGET): it goes for the foe's building nearest that edge instead, what
+      -- it can reach (staged 450 tiles out on the player's deathworld, its breach would have crossed the factory).
+      if math.sqrt(d2(e, g)) > EDGE_RETARGET then
+        local s = game.surfaces[w.surface]
+        local near = s.find_entities_filtered{position = {e.x, e.y}, radius = EDGE_SEARCH, force = foes(w), type = herd.DRAW}
+        local best, bd
+        for _, x in ipairs(near) do
+          local d = d2(x.position, e)
+          if not bd or d < bd then best, bd = x, d end
+        end
+        if best then
+          w.goal = {x = best.position.x, y = best.position.y}
+          tried[#tried + 1] = string.format("its target far within: goes for the %s at %.0f,%.0f", best.name,
+            best.position.x, best.position.y)
+        end
+      end
+    end
+  end
+  -- None at all: the best, straight, and said so.
+  if not staged and cands and cands[1] then staged = cands[1] end
+  if staged then
+    w.mark, w.mark_sector, w.staged = staged.at, staged.k, true
+    log(w, string.format("stages at %.0f,%.0f (face %d, fire %.1f; by face %s)%s; %s", staged.at.x, staged.at.y, staged.k,
+      staged.fire, why, #tried > 0 and (" (not reachable: " .. table.concat(tried, ", ") .. ")") or "",
+      way and string.format("its trail routed round turrets (%d points)", #way) or "no route found: its trail straight"))
+  end
+  local parts = {}
+  for k = 0, 7 do table.insert(parts, count[k]) end
+  if w.staged then
+    -- The scout's way out (its track every 60 tiles), then its route; no leg longer than LEG (one leg of 994 tiles
+    -- failed at once: seed 777).
+    local pts = {}
+    for _, q in ipairs(way or {}) do pts[#pts + 1] = {x = q[1], y = q[2]} end
+    pts[#pts + 1] = {x = w.mark.x, y = w.mark.y}
+    for _, q in ipairs(pts) do
+      local a = trail[#trail]
+      local d = math.sqrt(d2(a, q))
+      for k = 1, math.floor(d / LEG) do
+        table.insert(trail, {x = a.x + (q.x - a.x) * k * LEG / d, y = a.y + (q.y - a.y) * k * LEG / d})
+      end
+      table.insert(trail, q)
+    end
+  else
+    for _, q in ipairs(arc(w, j)) do table.insert(trail, q) end
+  end
   w.trail = trail
   lay_trail(game.surfaces[w.surface], trail)
   -- It walks to the mark the same way and sits there, facing the wall.
   if w.scout and w.scout.valid then
     local cmds = {}
-    for _, q in ipairs(arc(w, j)) do table.insert(cmds, go(q)) end
+    if w.staged then table.insert(cmds, go(w.mark)) else
+      for _, q in ipairs(arc(w, j)) do table.insert(cmds, go(q)) end
+    end
     table.insert(cmds, {type = defines.command.stop, ticks_to_wait = SIT_TICKS, distraction = defines.distraction.none})
     -- From where it stands (the loop's end is the entry).
     w.scout.commandable.set_command(compound(cmds))
@@ -709,11 +881,30 @@ end
 -- the herd dead before its mark).
 local function march(w)
   -- Every one of its own in the group (at the gather a quarter of a wave of 120 was not, and stayed at the gate).
-  local strays = 0
+  -- A stray far behind (STRAY_FAR) is not called in: the same ten to thirteen were called in at every leg on the player's
+  -- deathworld and the herd broke up; it goes home, and the herd marches on without it.
+  local strays, far, why = 0, 0, {}
+  local at = w.group.valid and w.group.position or where(w)
   for _, u in ipairs(herd_units(w)) do
-    if u.commandable.parent_group ~= w.group then w.group.add_member(u); strays = strays + 1 end
+    if u.commandable.parent_group ~= w.group then
+      if d2(u.position, at) > STRAY_FAR * STRAY_FAR then
+        far = far + 1
+        w.left_behind = w.left_behind or {}
+        if not w.left_behind[u.unit_number] then
+          w.left_behind[u.unit_number] = true
+          local p = st().pens[w.pen]
+          local home = p and p.pen.valid and p.pen.position or w.trail[1]
+          u.commandable.set_command{type = defines.command.go_to_location, destination = home, radius = 8,
+            distraction = defines.distraction.by_enemy}
+          why[#why + 1] = string.format("%.0f,%.0f", u.position.x, u.position.y)
+        end
+      else
+        w.group.add_member(u); strays = strays + 1
+      end
+    end
   end
   if strays > 0 then log(w, string.format("%d strays called into the herd", strays)) end
+  if #why > 0 then log(w, string.format("%d left behind, sent home (at %s)", #why, table.concat(why, " ", 1, math.min(#why, 6)))) end
   -- Leg by leg along its trail (step goes on at each leg's end; a group formed again goes on from the leg it was on):
   -- its whole trail as one compound order failed 40 ticks after it was given on most waves of the system sim, and the
   -- herd went straight at its mark from 900 tiles off, its trail unwalked (2026-10-25).
@@ -750,7 +941,7 @@ local hold_bursters     -- below, with the breach's spitters
 local function breach(w)
   local s = game.surfaces[w.surface]
   local forces = foes(w)
-  local m, c = w.mark, w.center
+  local m, c = w.mark, w.staged and w.goal or w.center
   local len = math.sqrt(d2(m, c))
   local ux, uy = (c.x - m.x) / math.max(len, 1), (c.y - m.y) / math.max(len, 1)
   local hit
@@ -759,7 +950,9 @@ local function breach(w)
     if s.count_entities_filtered{position = q, radius = 1.5, type = WALLS, force = forces, limit = 1} > 0 then hit = q; break end
   end
   local cmds = {}
-  local h = hit or face_toward(w, m)
+  -- No wall on its way: in at the box's face toward its mark, or, staged, straight at what it came for (the box was its
+  -- first target's: retargeted at the edge of its reach, its "breach" lay 500 tiles past the drill it went for).
+  local h = hit or (w.staged and w.goal) or face_toward(w, m)
   if hit then
     local ws = s.find_entities_filtered{position = hit, radius = 3, type = WALLS, force = forces}
     table.sort(ws, function(a, b) return d2(a.position, hit) < d2(b.position, hit) end)
@@ -815,7 +1008,10 @@ local function supply_target(w)
   for _, e in pairs(s.find_entities_filtered{position = at, radius = math.max(w.sight, w.hx + w.hy), type = "electric-turret",
     force = forces}) do
     if e.valid and not w.tried[e.unit_number or 0] and not (e.electric_network_id and fed[e.electric_network_id]) then
-      local d = d2(e.position, at)
+      -- The one the guns still firing cover least (a silenced laser beside a face of gun turrets cost the herd half its
+      -- number: herd test, seeds 1 and 12345), then the nearest: its distance in tiles, each gun's worth of fire 20.
+      local d = math.sqrt(d2(e.position, at)) + (herd.exposure and 20 * herd.exposure(s, {e.position.x, e.position.y},
+        forces) or 0)
       if not bd or d < bd then best, bd = e, d end
     end
   end
@@ -950,11 +1146,26 @@ local function hunt(w)
   local t = supply_target(w)
   if not t and not w.pushed then
     -- Nothing in sight: on to the middle, once (in at a corner of a 74-tile base, its lead saw the power in the middle at
-    -- 43, then at 40.5, past its sight of 40: herd runs 2 to 4).
+    -- 43, then at 40.5, past its sight of 40: herd runs 2 to 4); staged, on to what it came for.
     w.pushed = true
-    w.group.set_command(go(w.center, defines.distraction.none, 6))
+    w.group.set_command(go(w.staged and w.goal or w.center, defines.distraction.none, 6))
     log(w, "nothing in sight: pushes in")
     return
+  end
+  -- Nothing that feeds a gun in sight: what is there, the nearest it has not tried (on the player's deathworld six
+  -- waves in a row broke in at outposts with no gun fed near, and went home whole, 60 of 60 on the last). Supply first,
+  -- as ever; this only when there is none.
+  if not t and B.mind.havoc ~= false then
+    local s = game.surfaces[w.surface]
+    local at = where(w)
+    local bd
+    for _, e in ipairs(s.find_entities_filtered{position = at, radius = w.sight, force = foes(w), type = SOFT}) do
+      if not w.tried[e.unit_number or 0] then
+        local d = d2(e.position, at)
+        if not bd or d < bd then t, bd = e, d end
+      end
+    end
+    if t and not w.havoc then w.havoc = true; log(w, "nothing feeds a gun: breaks what is there") end
   end
   if not t then
     withdraw(w, "nothing in sight feeds a gun")
@@ -962,6 +1173,8 @@ local function hunt(w)
   end
   w.target, w.target_name = t, t.name
   w.tried[t.unit_number or 0] = true
+  w.went_for = w.went_for or {}
+  table.insert(w.went_for, t.type)
   w.group.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
   log(w, string.format("goes for %s at %.0f,%.0f", t.name, t.position.x, t.position.y))
 end
@@ -1005,7 +1218,7 @@ local function finish(w, outcome)
     t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},
     trail = w.trail, farm = w.farm, recalled = w.recalled, probe = w.probe and w.probe.result,
     breach = w.breach and {w.breach.x, w.breach.y}, legs = w.leg, legs_failed = w.legs_failed or 0,
-    home_legs = w.home_leg, home_n = w.home and #w.home,
+    home_legs = w.home_leg, home_n = w.home and #w.home, went_for = w.went_for,
     bursters = (w.sappers or w.bursts) and {held = w.sappers and w.sappers.n or 0, burst = w.bursts and w.bursts.n or 0,
       broke = w.bursts and w.bursts.broke or {}, released = w.sappers and w.sappers.released and (w.sappers.released - w.sappers.t) / 60}})
   if w.sappers or w.bursts then
@@ -1181,6 +1394,8 @@ function herd.on_command_completed(e)
           w.legs_failed = (w.legs_failed or 0) + 1
           log(w, string.format("leg %d of %d of its trail failed (%s)", w.leg, #w.trail, tostring(e.result)))
         end
+        -- A leg walked: its regroups start again (REGROUPS a leg).
+        if e.result == defines.behavior_result.success then w.regroups = 0 end
         w.leg = (w.leg or #w.trail) + 1
         if w.leg <= #w.trail then
           -- (A failed order disbands a group on 2.1: step forms it again and goes on from this leg.)

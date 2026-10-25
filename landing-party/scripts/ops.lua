@@ -826,6 +826,8 @@ local R = require("__landing-party__.scripts.routing").install(ops, {enemies = e
 local outside, sneak_route, push_escort, breach_point, wall_on_line = R.outside, R.sneak_route, R.push_escort,
   R.breach_point, R.wall_on_line
 local PUSH_VALUE, PUSH_CROSSINGS, SNEAK_BOX = R.PUSH_VALUE, R.PUSH_CROSSINGS, R.SNEAK_BOX
+-- (Synthexis stages its waves as raids stage, herd.lua through control.lua.)
+ops.outside = outside
 -- Looting (Grubstake's temper: the user's heists, folded into its identity, docs/reviews/2026-10-14-identity-trees-consult
 -- .md): a raid at the target first empties the player's chests within 16 tiles that one of its units stands by (6
 -- tiles), valuable items first, up to LOOT_ITEMS a raid; what survivors carry home becomes parts (finish), by LOOT.

@@ -64,6 +64,13 @@ end
 -- BREACH_RADIUS): it picks the wall piece the fewest turrets can reach, knocks it and its neighbour out (a two-tile gap,
 -- buggies fit), and goes through. Serenity keeps its straight, disciplined approach.
 local SNEAK_CELL, SNEAK_MARGIN, SNEAK_OPEN, SNEAK_BOX = 6, 3, 16, 120
+-- What blocks a herd's way (opts.solid): the foe's buildings, not its units, nor what a unit walks over (rails and belts:
+-- counted, a deathworld's rail network and belt lines fenced off hundreds of tiles, and its herds staged 200 to 590
+-- tiles out and marched that far under its guns to the wall).
+local SOLID_TYPES = {"wall", "gate", "ammo-turret", "electric-turret", "fluid-turret", "assembling-machine", "furnace",
+  "mining-drill", "inserter", "underground-belt", "splitter", "container", "logistic-container", "pipe", "pipe-to-ground",
+  "storage-tank", "lab", "roboport", "solar-panel", "accumulator", "boiler", "generator", "radar", "beacon", "rocket-silo",
+  "train-stop", "reactor", "heat-pipe", "pump", "offshore-pump"}
 local BREACH_RADIUS = 30
 local REACH = {["ammo-turret"] = 18, ["electric-turret"] = 24, ["fluid-turret"] = 30}
 
@@ -102,6 +109,9 @@ local ENCLOSED_PROBE = 3000
 local NEIGHBOURS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}
 local function sneak_route(b, from, to, opts, wide)
   opts = opts or {turrets = true, nests = true}
+  -- opts.cell: a coarser grid for a long way (Synthexis's herds: on 6-tile cells a 1,000-tile route ran dry, wide or not,
+  -- on 11 of 12 waves of two visits, and the herd walked straight into the player's lasers).
+  local SNEAK_CELL = opts.cell or SNEAK_CELL
   local SNEAK_BOX = wide and 3 * SNEAK_BOX or SNEAK_BOX
   local s = game.surfaces[b.surface]
   local foes = enemies(game.forces[b.force])
@@ -159,7 +169,16 @@ local function sneak_route(b, from, to, opts, wide)
       local bad = false
       if tmark[k] and (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then bad = true end
       if not bad and nmark[k] and not in_corridor(cx, cy) then bad = true end
-      if not bad and s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0 then
+      -- (On a coarse grid, opts.cell, over more of the cell: water within 2 of a 16-tile cell's middle missed lakeshores,
+      -- and the engine walked Synthexis's herds round lakes and cliffs between waypoints, loops of 500 tiles on the
+      -- player's deathworld. opts.solid: cliffs and the foe's buildings block too, where a herd cannot pass.)
+      local r = opts.cell and SNEAK_CELL / 2 or 2
+      if not bad and s.count_tiles_filtered{position = {cx, cy}, radius = r, collision_mask = "water_tile", limit = 1} > 0 then
+        bad = true
+      end
+      if not bad and opts.solid and (s.count_entities_filtered{position = {cx, cy}, radius = r, type = "cliff", limit = 1} > 0
+        or s.count_entities_filtered{position = {cx, cy}, radius = r, force = type(opts.solid) == "table" and opts.solid or foes,
+          limit = 1, type = SOLID_TYPES} > 0) then
         bad = true
       end
       blocked[k] = bad
@@ -174,7 +193,8 @@ local function sneak_route(b, from, to, opts, wide)
   -- The pocket round the target is small: flooded first from there, within ENCLOSED_PROBE cells, it fails at once
   -- (the same cells and moves as the search, so it fails only where the search would). Bounded by the box's edge is
   -- not sealed: only a pocket walled in all round counts. The wide box has its own grid, so its own probe.
-  do
+  -- (A partial search, opts.partial, wants the nearest it can reach to a sealed goal: no probe.)
+  if not opts.partial then
     local seen, queue, qi, escapes = {[ti * h + tj] = true}, {{ti, tj}}, 1, false
     while queue[qi] and #queue <= ENCLOSED_PROBE and not escapes do
       local ci, cj = queue[qi][1], queue[qi][2]
@@ -231,6 +251,9 @@ local function sneak_route(b, from, to, opts, wide)
   local closed = {}
   local found = false
   local steps = 0
+  -- opts.partial: the cell nearest the goal it reached, for a route there when the goal cannot be reached (Synthexis's
+  -- herd: the edge of the turrets' reach nearest its target inside a turreted perimeter, where it breaks in).
+  local near, nd = key(si, sj), hdist(si, sj)
   while #heap > 0 and steps < (wide and 16000 or 4000) do
     local _, ci, cj = table.unpack(pop())
     local ck = key(ci, cj)
@@ -238,6 +261,7 @@ local function sneak_route(b, from, to, opts, wide)
     steps = steps + 1
     if ci == ti and cj == tj then found = true; break end
     closed[ck] = true
+    if opts.partial and hdist(ci, cj) < nd then near, nd = ck, hdist(ci, cj) end
     for _, d in ipairs({{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}) do
       local ni, nj = ci + d[1], cj + d[2]
       local nk = key(ni, nj)
@@ -256,11 +280,11 @@ local function sneak_route(b, from, to, opts, wide)
   ops.last_route = {nests = #nests, turrets = #turrets, blocked = nb, cells = w * h, found = found, steps = steps}
   -- Water the box could not get round: once more over a box three times as wide (a lake 100 tiles across kept Grubstake's
   -- raids home for 40 minutes, visit nw; left to the engine, the raiders stood at home: its pathfinder gave up the detour).
-  if not found and not wide and steps < 4000 then return sneak_route(b, from, to, opts, true) end
-  if not found then return nil end
+  if not found and not wide and steps < 4000 and not opts.partial then return sneak_route(b, from, to, opts, true) end
+  if not found and not opts.partial then return nil end
   -- Back from the target, every third cell a waypoint (the engine's pathfinder walks between them).
   local cells = {}
-  local k = key(ti, tj)
+  local k = found and key(ti, tj) or near
   while k do
     table.insert(cells, 1, k)
     k = came[k]
@@ -272,6 +296,13 @@ local function sneak_route(b, from, to, opts, wide)
       local cx, cy = centre(i, j)
       table.insert(route, {cx, cy})
     end
+  end
+  -- A partial route ends at the nearest cell reached (its last point).
+  if not found and #cells > 0 then
+    local i, j = math.floor(cells[#cells] / h), cells[#cells] % h
+    local cx, cy = centre(i, j)
+    table.insert(route, {cx, cy})
+    ops.last_route.partial = {cx, cy}
   end
   return route
 end

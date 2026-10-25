@@ -221,6 +221,10 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     biter attack; they go out with its nest clearances, and it researches heavier railguns when biters keep killing its
     units. On a map crawling with biters, does a Kessler-Hayashi camp now look like it can fall, and does it still
     clear the nests it needs to? Does Synthexis leave it alone until Kessler-Hayashi hits its incubators?
+55. **Where Synthexis hits a big factory** (0.2.21): on a sprawling base its waves now go for what they can reach,
+    usually your mining outposts at the edge of your turrets, routed round your guns, and break belts, drills and poles
+    when nothing there feeds a gun. Does it feel like a smart enemy picking at your weak edge, or like a nuisance? Do
+    you see where they came from (the trail) and can you follow it back to the farm?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

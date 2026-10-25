@@ -49,7 +49,7 @@ local EXPOSE = {["ammo-turret"] = 20, ["electric-turret"] = 26, ["fluid-turret"]
 -- Walled in weighs over the ladder's soft (ops.lua, LADDER_SOFT 3): pressed, Grubstake still raided a walled base's
 -- substations at 1.5; a thief breaks a perimeter only at its top rung, where no limit holds.
 local ENCLOSE_REACH, ENCLOSE_RAYS, WALLED = 80, 6, 3.5
-function ops.exposure(surface, pos, forces)
+function ops.exposure(surface, pos, forces, fire_only)
   local w = 0
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = 32, force = forces,
     type = {"ammo-turret", "electric-turret", "fluid-turret"}}) do
@@ -64,7 +64,9 @@ function ops.exposure(surface, pos, forces)
   -- read as exposed 0, and Grubstake broke 54 walls and turrets on its way to it (system sim, seed 1). Walled in: of
   -- eight lines out to ENCLOSE_REACH, at least ENCLOSE_RAYS cross the owner's wall or gate.
   -- (Only where it decides anything: already exposed, it is; the count stops once six lines can no longer be walled.)
-  if w > WALLED then return w end
+  -- (fire_only: the turrets' fire alone, Synthexis's reading of an approach: with the walled-in weight every point past
+  -- a wall read 3.5 more, and a lone laser's back face outweighed a corner between a gun and a laser, herd test.)
+  if w > WALLED or fire_only then return w end
   local rays = 0
   for k = 0, 7 do
     if rays + (8 - k) < ENCLOSE_RAYS then break end

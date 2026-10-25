@@ -7382,6 +7382,17 @@ scenarios.visit = function()
     info("visit: player at the end " .. serpent.line(census()))
     info("visit: the player's buildings razed by the corporations " .. serpent.line(lp("pressure").razed))
     info("visit: the player's buildings razed by biters " .. serpent.line(S.biter_razed or {}))
+    -- Synthexis: whether it came, its waves and where they went, what it broke.
+    local fs = lp("farm_state")
+    local hl = lp("herd_state").log or {}
+    local waves = {}
+    for _, l in ipairs(hl) do
+      waves[#waves + 1] = string.format("%s at %s, %d of %d home%s", l.outcome, l.center and string.format("%.0f,%.0f",
+        l.center[1], l.center[2]) or "?", l.left or 0, l.size or 0, l.breach and "" or " (no breach)")
+    end
+    info(string.format("visit: Synthexis %s, %d waves: %s; razed of the player's %s", #(fs.farms or {}) > 0 and
+      string.format("landed (%d farms, first at %s)", #fs.farms, serpent.line(fs.farms[1] and fs.farms[1].pos)) or "never landed",
+      #hl, table.concat(waves, "; "), serpent.line(S.syn_razed or {})))
     -- What fought back without a player: robots rebuilding, and turrets still armed.
     local rebuilt = 0
     for _, v in pairs(S.robot_built or {}) do rebuilt = rebuilt + v end
@@ -7959,9 +7970,10 @@ end
 --   mega: 200 bred biters (the cost recorded, not asserted)
 --   spit: 30 bred mediums and 10 bred spitters: the spitters leave the herd once it is inside and hold the breach (within
 --         15 of it while the herd hunts), cover the withdrawal, and come home
---   probe: evolution 0.5; two turrets in each of the eight sectors (lasers), so the scout's tie goes to the face toward the
---          pen, where one of the two is a gun turret with no ammunition: the probe's runts find it silent, and the
---          herd breaches in front of it rather than at the face's middle
+--   probe: evolution 0.5; four lasers in each of seven sectors, and toward the pen only a gun turret with no
+--          ammunition, the approach its fire reads weakest (0.2.19: faces read by the fire on the way in; two in every
+--          sector until then, the tie going toward the pen): the probe's runts find the gun silent, and the herd
+--          breaches in front of it rather than at the face's middle
 --   stomp: 36 bred mediums and 2 stompers (tier 4): a stomper gets inside the wall ring, and no Synthexis unit is hurt
 --          by a stomper (its stomp is on enemy forces only)
 --   burst: 32 bred mediums and 4 bursters, and a lesson that a wall held here before: the bursters wait outside the wall
@@ -8001,7 +8013,7 @@ scenarios.herd = function()
     elseif mix == "probe" then
       layout = {}
       for k = 0, 7 do
-        for _, off in ipairs({-0.3, 0.3}) do
+        for _, off in ipairs(k == 0 and {0.3} or {-0.3, -0.1, 0.1, 0.3}) do
           local a = k * math.pi / 4 + off
           local r = 37 / math.max(math.abs(math.cos(a)), math.abs(math.sin(a)))
           local du, dv = math.floor(r * math.cos(a) + 0.5), math.floor(r * math.sin(a) + 0.5)
@@ -8220,7 +8232,10 @@ scenarios.herd = function()
       check("herd: spitters held the breach while the herd was inside", (S.held or 0) >= 3, tostring(S.held))
       check("herd: spitters stayed at the breach as the herd withdrew", (S.covering or 0) >= 1, tostring(S.covering))
       check("herd: the wave came home", w and (w.outcome == "home" or w.outcome == "home late"), tostring(w and w.outcome))
-      check("herd: the spitters came home behind it", spit_home >= 5, tostring(spit_home))
+      -- Those that covered the withdrawal came home (up to five; 0.2.21: five at least, but how many live to cover is the
+      -- fight's: 3, 7 and 6 covered on three seeds, and every one came home).
+      check("herd: the spitters came home behind it", spit_home >= math.min(5, S.covering or 0) and spit_home > 0,
+        string.format("%d home of %d covering", spit_home, S.covering or 0))
     end
     local power = 0
     for _, e in ipairs(S.power or {}) do if e.valid then power = power + 1 end end
@@ -8257,7 +8272,12 @@ scenarios.herd = function()
       check("herd: the power died", power == 0, tostring(power))
       -- Cut the supply, then use it (0.2.12): with the power down it turns on the lasers it silenced, and stays until
       -- half are lost (it had gone home 34 of 41 strong with every laser standing). Some come home; turrets fall.
-      check("herd: it broke turrets it had cut off", turrets < #S.turrets, string.format("%d of %d standing", turrets, #S.turrets))
+      -- (Went for, since 0.2.21: whether it breaks one is the numbers', staged at a corner beside a face of guns that need
+      -- no power; 2 of 3 seeds broke one.)
+      local cut = false
+      for _, ty in ipairs(w.went_for or {}) do if ty == "electric-turret" then cut = true end end
+      info(string.format("herd: turrets standing %d of %d; went for %s", turrets, #S.turrets, serpent.line(w.went_for)))
+      check("herd: it went for turrets it had cut off", cut, serpent.line(w.went_for))
       check("herd: some came home", w.left * 4 >= w.size, string.format("%d of %d", w.left, w.size))
       check("herd: it went home", w.outcome == "home", w.outcome)
       check("herd: tell, a minute's gathering", w.t_march and w.t_mark and w.t_march - w.t_mark >= 3600,
@@ -10401,7 +10421,9 @@ if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenar
 local LABS = {labs = true, breach = true, factory = true, visit = true}
 if not LABS[params.scenario] then schedule(1, function() lp("debug_tune", {labs_off = true}) end) end
 -- The biotech lands only where it is the subject (its arrival needs nests and evolution, which some scenarios set up).
-if params.scenario ~= "farm" then schedule(1, function() lp("debug_tune", {biotech_off = true}) end) end
+-- (A visit lets it come as it would to the player's game: on evolution, to a nest field out from the factory; the
+-- user, 2026-10-25: the visits never had Synthexis.)
+if params.scenario ~= "farm" and params.scenario ~= "visit" then schedule(1, function() lp("debug_tune", {biotech_off = true}) end) end
 -- Scenarios that strike need the run to outlast the strike (occupy at 3 minutes once crashed reading
 -- state its strike at 30 never made).
 -- Minutes each needs after its strike (occupy holds 10, then needs time to rebuild: a 40-minute run with
@@ -10574,6 +10596,11 @@ script.on_event(defines.events.on_entity_died, function(e)
     local d = math.sqrt((e.entity.position.x - e.cause.position.x) ^ 2 + (e.entity.position.y - e.cause.position.y) ^ 2)
     table.insert(S.turret_kills, string.format("%.0f,%.0f d%.1f t+%ds", e.entity.position.x, e.entity.position.y, d,
       math.floor((game.tick - (S.t0 or 0)) / 60)))
+  end
+  -- The player's buildings Synthexis destroyed (the visit's report).
+  if e.entity.force.name == "player" and e.force and e.force.name == "lp-biotech" then
+    S.syn_razed = S.syn_razed or {}
+    S.syn_razed[e.entity.type] = (S.syn_razed[e.entity.type] or 0) + 1
   end
   -- The player's buildings the biters destroyed (the visit's report: Grubstake's pollution draws them).
   if e.entity.force.name == "player" and e.force and e.force.name == "enemy" and e.entity.type ~= "character" then

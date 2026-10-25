@@ -239,7 +239,9 @@ function cell.tick(farm_id, surface, pen_ids, tick)
     -- At its biochamber: fed.
     if t.to and t.to.chamber and t.to.chamber.valid then
       local q = t.to.chamber.position
-      if (u.position.x - q.x) ^ 2 + (u.position.y - q.y) ^ 2 < 5 * 5 then t.to.fed_until = tick + FEED_LAST end
+      -- (Within 8: in the player's deathworld's packed nest field its technicians stopped 15 to 38 from their cells,
+      -- the spot by each one blocked, and 43 incubators went wild unfed in three hours.)
+      if (u.position.x - q.x) ^ 2 + (u.position.y - q.y) ^ 2 < 8 * 8 then t.to.fed_until = tick + FEED_LAST end
     end
     -- Not on a round (a unit made by script wanders, which counts as a command): sent to the next biochamber.
     local cmd = u.commandable.command
@@ -262,7 +264,7 @@ function cell.tick(farm_id, surface, pen_ids, tick)
       local stand = {q.x + dx / len * 3, q.y + dy / len * 3}
       u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
         commands = {
-          {type = defines.command.go_to_location, destination = stand, radius = 1.5, distraction = defines.distraction.none},
+          {type = defines.command.go_to_location, destination = stand, radius = 4, distraction = defines.distraction.none},
           {type = defines.command.stop, ticks_to_wait = WAIT, distraction = defines.distraction.none},
           {type = defines.command.go_to_location, destination = home, radius = 4, distraction = defines.distraction.none},
           {type = defines.command.stop, ticks_to_wait = 120, distraction = defines.distraction.none}}}
@@ -279,6 +281,54 @@ function cell.tick(farm_id, surface, pen_ids, tick)
     site.staffed = tick
     spawn_techs(site, surface, 1)
   end
+end
+
+-- Its technicians and their cells, for the trace (farm.lua, every ten minutes): where each stands, how far from the
+-- biochamber it is bound for, what it is doing; and how many cells are hungry (the player's deathworld lost 47 incubators
+-- unfed in three hours with the cells 20 tiles apart, and nothing said why).
+function cell.summary(farm_id, pen_ids, tick)
+  local site = sites()[farm_id]
+  if not site then return "no site" end
+  local parts = {}
+  for _, t in ipairs(site.techs) do
+    local u = t.unit
+    if u.valid then
+      local cmd = u.commandable and u.commandable.command
+      local to = t.to and t.to.chamber and t.to.chamber.valid and t.to.chamber.position
+      parts[#parts + 1] = string.format("%.0f,%.0f%s %s", u.position.x, u.position.y,
+        to and string.format(" (%.0f from its cell)", math.sqrt((to.x - u.position.x) ^ 2 + (to.y - u.position.y) ^ 2)) or "",
+        cmd and tostring(cmd.type) or "idle")
+    end
+  end
+  local hungry, cells = 0, 0
+  for _, id in ipairs(pen_ids) do
+    local c = st()[id]
+    if c and c.chamber and c.chamber.valid then
+      cells = cells + 1
+      if cell.hungry(c, tick) then hungry = hungry + 1 end
+    end
+  end
+  return string.format("%d technicians [%s]; %d of %d cells hungry", #parts, table.concat(parts, "; "), hungry, cells)
+end
+
+-- Whether a culture keeps up with its incubators: two thirds of its cells fed at least. Its creep
+-- takes a nest only then (farm.lua): on the player's nw the creep took twelve nests spread over a hundred tiles of
+-- rough ground faster than its technicians could walk them, an incubator went wild every ten to forty minutes with its
+-- stock, and in three hours it sent one wave (2026-10-25).
+function cell.keeps_up(farm_id, pen_ids, tick)
+  local site = sites()[farm_id]
+  if not site then return true end
+  -- (A third of its cells hungry at most: one cell no technician could reach held the whole culture still, creep spread;
+  -- on deathworld10x ten of twelve were.)
+  local hungry, cells = 0, 0
+  for _, id in ipairs(pen_ids) do
+    local c = st()[id]
+    if c and c.chamber and c.chamber.valid then
+      cells = cells + 1
+      if cell.hungry(c, tick) then hungry = hungry + 1 end
+    end
+  end
+  return hungry * 3 <= cells
 end
 
 -- A culture gone: its technicians with it; its substrate stays (the trophy, step 6).

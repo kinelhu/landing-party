@@ -52,7 +52,10 @@ local TRICKLE = 3             -- biomass an incubator earns a minute, clean air 
 local START_BIOMASS = 200     -- what its pod brought (its first wave, ten minutes on)
 local START = 6
 local WORMS = 2
-local HOME_GUARD = 6          -- per pen, kept at the gate when a wave goes
+local HOME_GUARD = 6          -- per pen, kept at the gate when a wave goes, while the culture has PENS of them; past
+local GUARD_TOTAL = PENS * HOME_GUARD   -- that the guard is shared out (twelve incubators kept 72 at home, and the
+                                        -- player's nw farm sat at 20 ready of the 24 a wave needs for an hour)
+local function guard_of(f) return math.ceil(GUARD_TOTAL / math.max(PENS, #f.pens)) end
 -- A wave's most (the consult: waves of 20 to 60; the mega wave is an event at the top of its ladder, not the default).
 -- Four full pens sent 135 in the first farm run.
 local WAVE_MAX = 60
@@ -407,6 +410,15 @@ local function fulfil(f, rec, surface, want, have)
   return false
 end
 
+-- Why a farm due a wave holds it, traced at most every ten minutes (on the player's nw it sent one wave in three hours
+-- and the trace said nothing of why).
+local function holds(f, tick, why)
+  if tick - (f.held_said or -36000) >= 36000 then
+    f.held_said = tick
+    trace(string.format("farm %d holds its wave: %s", f.id, why))
+  end
+end
+
 local function send(f, tick)
   -- (Waiting for a bigger wave: looked at again every ten seconds, not every tick.)
   if f.escalate_retry and tick < f.escalate_retry then return end
@@ -417,10 +429,10 @@ local function send(f, tick)
   local avail = 0
   for _, id in ipairs(f.pens) do
     local rec = herd.pen(id)
-    if rec and rec.pen.valid then avail = avail + math.max(0, #herd.stock(rec) - HOME_GUARD) end
+    if rec and rec.pen.valid then avail = avail + math.max(0, #herd.stock(rec) - guard_of(f)) end
   end
   local target, rival, choice = target_from(s, f.pos, f, math.min(avail, WAVE_MAX))
-  if not target then return end
+  if not target then return holds(f, tick, string.format("nothing to go for within %d tiles (%d ready)", B.mind.reach, avail)) end
   local bd
   -- What killed its last wave there (herd.lesson_near): the breeds that beat those killers go first, the rest keep the
   -- gate (counters.lua, the arena's matrix; the user, 2026-10-24: learning that shows). With no lesson, the nearest go.
@@ -432,13 +444,19 @@ local function send(f, tick)
   local cap = math.floor(WAVE_MAX * math.min(2, 1 + 0.5 * held))
   if cap > WAVE_MAX and avail < cap then
     f.escalate_since = f.escalate_since or tick
-    if tick - f.escalate_since < ESCALATE_WAIT then f.escalate_retry = tick + 600; return end
+    if tick - f.escalate_since < ESCALATE_WAIT then
+      f.escalate_retry = tick + 600
+      return holds(f, tick, string.format("a defence that held: waits for %d (%d ready)", cap, avail))
+    end
   end
   f.escalate_since = nil
   -- Its order not yet filled: the wave waits for it, ORDER_WAIT at the most.
   if f.short then
     f.order_since = f.order_since or tick
-    if tick - f.order_since < ORDER_WAIT then f.escalate_retry = tick + 600; return end
+    if tick - f.order_since < ORDER_WAIT then
+      f.escalate_retry = tick + 600
+      return holds(f, tick, "waits for its bursters")
+    end
   end
   f.order_since = nil
   local total = 0
@@ -459,7 +477,7 @@ local function send(f, tick)
         table.sort(stock, function(a, b) return fits[a.unit_number] > fits[b.unit_number] end)
         -- The least fit keep the gate (the loop below keeps the first HOME_GUARD at home), the fittest go first.
         local guard = {}
-        for i = #stock, math.max(1, #stock - HOME_GUARD + 1), -1 do table.insert(guard, 1, table.remove(stock, i)) end
+        for i = #stock, math.max(1, #stock - guard_of(f) + 1), -1 do table.insert(guard, 1, table.remove(stock, i)) end
         for i = #guard, 1, -1 do table.insert(stock, 1, guard[i]) end
       else
         table.sort(stock, function(a, b) return d2(a.position, rec.pen.position) < d2(b.position, rec.pen.position) end)
@@ -469,7 +487,7 @@ local function send(f, tick)
         -- (With a lesson, a breed that loses to what killed the last wave stays at the gate too: small biters, -1 against
         -- gun turrets, were half of a wave sent against them.)
         local unfit = total > 0 and fit(u) < UNFIT
-        if i <= HOME_GUARD or #units >= cap or unfit then table.insert(home, u) else table.insert(units, u) end
+        if i <= guard_of(f) or #units >= cap or unfit then table.insert(home, u) else table.insert(units, u) end
       end
       rec.stock = home
       local d = d2(rec.pen.position, target)
@@ -486,6 +504,7 @@ local function send(f, tick)
       serpent.line(by)))
   end
   if #units < shared.WAVE_MIN or not origin then
+    holds(f, tick, string.format("%d ready, %d the least it sends", #units, shared.WAVE_MIN))
     -- Not enough yet: back into the pens' stock.
     for _, u in ipairs(units) do table.insert(origin and origin.stock or herd.pen(f.pens[1]).stock, u) end
     return
@@ -620,6 +639,7 @@ function farm.tick(tick)
     cell.site(id, surface, f.pos)
     cell.tick(id, surface, f.pens, tick)
     evolve(f, surface)
+    if tick % 36000 == 300 then trace(string.format("farm %d: %s", f.id, cell.summary(id, f.pens, tick))) end
     -- Its order, once a minute: what it wants for the next wave, against what its incubators hold.
     local want, have
     if tick % 3600 == 300 then
@@ -695,7 +715,7 @@ function farm.tick(tick)
       end
     end
     -- The creep takes the wild nest it reaches.
-    local take = #left < PENS_MAX and creep.bud(id, tick)
+    local take = #left < PENS_MAX and cell.keeps_up(id, f.pens, tick) and creep.bud(id, tick)
     if take then
       local pid = herd.capture(take)
       local rec = pid and herd.pen(pid)

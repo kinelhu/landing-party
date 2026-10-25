@@ -43,9 +43,14 @@ local aim = require("__landing-party__.scripts.aim")
 local herd = require("__landing-party__.scripts.herd")
 -- Synthexis's scouts take the corporations' way round turrets (herd.lua; a hook, not a require: ops is the corporations').
 herd.route = function(...) return ops.route(...) end
+-- And stages its waves as their raids stage (routing.outside) and reads an approach's fire as they do (ops.exposure).
+herd.outside = function(...) return ops.outside(...) end
+herd.exposure = function(surface, pos, forces) return ops.exposure(surface, pos, forces, true) end
+herd.route_why = function() return ops.last_route end
 local farm = require("__landing-party__.scripts.farm")
 local creep = require("__landing-party__.scripts.creep")
 local cell = require("__landing-party__.scripts.cell")
+local oplog = require("__landing-party__.scripts.oplog")
 script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
 script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
 script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
@@ -90,6 +95,7 @@ local WATCH_DEPS = {
 }
 script.on_event(defines.events.on_tick, function(e)
   biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
 
@@ -186,6 +192,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   know.loss(e)
   biters.on_died(e)
   herd.on_died(e)
+  oplog.on_died(e)
   -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
   -- corridor for 30 minutes (ops.route lets marches through it).
   if ent.type == "unit-spawner" then ops.cleared(ent.surface, ent.position); ledger.nest_died(ent, e.force) end
