@@ -98,7 +98,7 @@ def synthexis(decisions, frames):
     weak = end.get("weak")
     def face(x, y):
         return ("east" if x > 0 else "west") if abs(x) > abs(y) else ("south" if y > 0 else "north")
-    waves, whole, blind, aims, breaches, lessons, made = 0, 0, 0, [], [], [], {}
+    waves, whole, blind, aims, breaches, lessons, made, ordered = 0, 0, 0, [], [], [], {}, {}
     for raw in open(decisions, errors="replace"):
         if " biotech " not in raw:
             continue
@@ -121,16 +121,29 @@ def synthexis(decisions, frames):
             breaches.append(face(int(m.group(1)), int(m.group(2))))
         if "lesson: face" in raw:
             lessons.append("gave" if " gave " in raw else "held")
+        # Bred to order (farm.lua): what each wave carried of what was ordered for it.
+        m = re.search(r"its wave carries of its order \{(.*)\} \(ordered \{(.*)\}\)", raw)
+        if m:
+            def tally(t):
+                return {k: int(v) for k, v in re.findall(r'\["lp-bred-([\w-]+)"\] = (\d+)', t)}
+            got, asked = tally(m.group(1)), tally(m.group(2))
+            for k, v in asked.items():
+                o = ordered.setdefault(k, [0, 0])
+                o[0] += min(got.get(k, 0), v)
+                o[1] += v
     kills = end.get("kills") or {}
     broke = {kd: kills.get(f"player>lp-biotech:{kd}", 0) for kd in ("turrets", "walls", "defence", "power", "logistics", "production", "other")}
     broke = {k: v for k, v in broke.items() if v}
     farms = (end.get("biotech") or {})
     total = sum(made.values()) or 1
-    mix = ", ".join(f"{name} {100 * n // total}%" for name, n in sorted(made.items(), key=lambda x: -x[1]))
+    def bred(name):
+        return plain("lp-bred-" + name).replace("Synthexis ", "")
+    mix = ", ".join(f"{bred(name)} {100 * n // total}%" for name, n in sorted(made.items(), key=lambda x: -x[1]))
     on_weak = sum(1 for a in aims if a == weak)
     return (f"<div class='synth'><b>Synthexis</b>: {waves} waves ({mix or 'no makeup logged'}); scouts finished {whole}, "
             f"blind {blind}; aimed at your base {len(aims)} times, {on_weak} at the weak face ({weak or '?'}); breaches "
-            f"{', '.join(breaches) or 'none'}; lessons {', '.join(lessons) or 'none'}; broke of yours "
+            f"{', '.join(breaches) or 'none'}; lessons {', '.join(lessons) or 'none'}; bred to order "
+            f"{', '.join(f'{bred(k)} {g} of {a}' for k, (g, a) in ordered.items()) or 'nothing'}; broke of yours "
             f"{', '.join(f'{k} {v}' for k, v in broke.items()) or 'nothing'}.</div>")
 
 

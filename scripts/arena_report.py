@@ -215,7 +215,12 @@ def main():
     for r in rows:
         if r["kind"] == "mix":
             mixes[r["against"]].append(score(r) if not r.get("flip") else -score(r))
-    rows = [r for r in rows if r["kind"] != "mix"]
+    # The breach (batch.lua's BREACH): the same spend at a walled gun line, apart from the matrix.
+    breach = defaultdict(list)
+    for r in rows:
+        if r["kind"] == "breach":
+            breach[r["squad"]].append(r)
+    rows = [r for r in rows if r["kind"] not in ("mix", "breach")]
     kinds, cost = [], {}
     for r in rows:
         if r["squad"] not in kinds: kinds.append(r["squad"])
@@ -328,6 +333,24 @@ def main():
               "| Mix | All-ground army's score | Fights |", "|---|---|---|"]
         for label, v in mixes.items():
             L.append(f"| {label} | {round(100 * sum(v) / len(v)):+d} | {len(v)} |")
+        L.append("")
+    if breach:
+        L += ["## The breach: bursters among other biters at a wall", "",
+              "The same spend sent at gun turrets behind a wall two deep (`tests/lp-arena/batch.lua`, BREACH), as plain "
+              "biters and with part of it in bursters. A burster bursts where it dies: alone it is shot short of the "
+              "wall; among others it reaches it. Ranges over the rounds.", "",
+              "| Wave | Spend | Won | Turrets broken | Wall pieces broken | Units lost |", "|---|---|---|---|---|---|"]
+        def span(v):
+            return f"{min(v)}" if min(v) == max(v) else f"{min(v)} to {max(v)}"
+        # In batch.lua's order (results come in the order fights end).
+        src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tests", "lp-arena", "batch.lua")).read()
+        listed = re.findall(r'^\s*\{"([^"]+)", \{\{"lp-bred', src.split("local BREACH = {", 1)[1].split("\n}\n", 1)[0], re.M)
+        for label, rs in sorted(breach.items(), key=lambda x: listed.index(x[0]) if x[0] in listed else 99):
+            tur = [sum(n for t, n in (r["b"].get("lost") or {}).items() if t.endswith("turret")) for r in rs]
+            wal = [(r["b"].get("lost") or {}).get("wall", 0) for r in rs]
+            lost = [r["a"]["start"] - r["a"]["left"] for r in rs]
+            won = sum(1 for r in rs if r["winner"] == "a")
+            L.append(f"| {label} | {rs[0]['a']['parts']} | {won} of {len(rs)} | {span(tur)} | {span(wal)} | {span(lost)} of {rs[0]['a']['start']} |")
         L.append("")
     open(out, "w").write("\n".join(L))
     print(f"wrote {out} and {img}: {len(rows)} fights")

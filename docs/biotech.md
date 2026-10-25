@@ -658,3 +658,20 @@ against the player -1; the player against Kessler-Hayashi +24.
   272 for 1,519 (17.9). The same damage for about a fifth fewer units, won on three seeds of four; on 12345 an escalated
   wave of 90 broke nothing and the learner did less. Learning pays in units, not yet in damage.
 
+
+### Bursters for a wall, and why not the rest of its make-up (0.2.17)
+
+- Bursters were a third-hour breed (from evolution 0.6): in two-hour system runs none were bred, and in three-hour runs
+  a few went out by chance. The arena never tried them as they are meant: its lines lost to nearly every kind, and a
+  pack of bursters alone is shot short of a wall.
+- The arena's breach (`docs/arena.md`, "The breach"): one spend sent at gun turrets behind a wall two deep, as plain
+  biters and with part of it in bursters. Among mediums a few bursters open the wall and break guns behind it, where the
+  same spend in mediums alone breaks almost nothing; big biters break that line alone, so the burster's place is the
+  middle game. It now comes from evolution 0.45.
+- Bred to order: where a wall held its last wave, its incubators make bursters for the next wave there, and the wave
+  waits for them a little. It also ordered the breed that best beat what killed its last wave (counters.lua), against
+  the same runs without orders (`system` LP_MIX=solo-noorder, the lever `biotech_no_orders`): it broke less where it
+  ordered after every wave, and no more where it ordered only after a defence held, its waves fewer for the wait. The
+  counters' turret columns came from lines nearly every kind beats, so they told no breed from another; and a wave's
+  make-up is the part of its cleverness a player sees least. Its cleverness goes into how it attacks: when, where,
+  feints, a breach pressed while open. The burster stays, the one breed a wall calls for, and it glows.

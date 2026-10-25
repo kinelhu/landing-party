@@ -50,6 +50,21 @@ local MIXES = {
     {{"lp-tank", 3}, {"lp-infantry", 12}, {"lp-harrier", 3}}},
 }
 
+-- The breach (the user, 2026-10-25: bursters as wall breakers "provided there are some meat shields to absorb turrets"):
+-- the same spend sent at a walled gun line, as plain biters and with part of it in bursters. The line is one a plain
+-- wave of mediums only just fails against, so what the bursters add shows. Its own family: LP_ARENA_ONLY=breach.
+local BREACH_LINE = {{"player", "guns", 10}, {"player", "walls", 16, 2}}
+local BREACH = {
+  {"40 medium", {{"lp-bred-medium-biter", 40}}},
+  {"34 medium + 1 burster", {{"lp-bred-medium-biter", 34}, {"lp-bred-cinder", 1}}},
+  {"29 medium + 2 bursters", {{"lp-bred-medium-biter", 29}, {"lp-bred-cinder", 2}}},
+  {"23 medium + 3 bursters", {{"lp-bred-medium-biter", 23}, {"lp-bred-cinder", 3}}},
+  {"17 medium + 4 bursters", {{"lp-bred-medium-biter", 17}, {"lp-bred-cinder", 4}}},
+  {"7 bursters", {{"lp-bred-cinder", 7}}},
+  {"10 big", {{"lp-bred-big-biter", 10}}},
+  {"6 big + 3 bursters", {{"lp-bred-big-biter", 6}, {"lp-bred-cinder", 3}}},
+}
+
 local function cost(proto) return arena.cost(shared.kind_of(proto), proto) end
 
 -- Counts for a pair at equal spend: na of a, nb of b, both near BUDGET, the spends as close as whole units allow.
@@ -99,6 +114,11 @@ local function matchups()
       table.insert(out, {kind = "mix", squad = flip == 0 and mx[1] or mx[1] .. " (swapped)", against = mx[1],
         flip = flip, a = side(x, "lp-serenity"), b = side(y, "lp-grubstake")})
     end
+  end
+  for _, br in ipairs(BREACH) do
+    local side = {}
+    for _, e in ipairs(br[2]) do table.insert(side, {"raw", e[1], e[2], "lp-serenity"}) end
+    table.insert(out, {kind = "breach", squad = br[1], against = "breach line", a = side, b = BREACH_LINE})
   end
   -- A trial (LP_ARENA_ONLY): only the matchups whose label holds that text.
   if params.only and params.only ~= "" then

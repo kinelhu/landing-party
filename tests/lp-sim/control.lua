@@ -2480,11 +2480,13 @@ scenarios.system = function()
   end
   -- LP_MIX=solo: Synthexis alone against the stand-in (the user, 2026-10-24: "why not test it in isolation against a
   -- player base? Without Kessler"): no corporation's arrival is set off, and their landing clock is stopped.
-  -- LP_MIX=solo-nolearn: the same with its lessons off (what learning is worth, measured against solo).
-  local solo = params.mix == "solo" or params.mix == "solo-nolearn"
+  -- LP_MIX=solo-nolearn: the same with its lessons off (what learning is worth, measured against solo); solo-noorder:
+  -- with its lessons but no breeding to order (what the order is worth).
+  local solo = params.mix == "solo" or params.mix == "solo-nolearn" or params.mix == "solo-noorder"
   S.solo = solo
   if solo then
-    schedule(40, function() lp("debug_tune", {cadence_minutes = 1000000, biotech_unlearned = params.mix == "solo-nolearn"}) end)
+    schedule(40, function() lp("debug_tune", {cadence_minutes = 1000000, biotech_unlearned = params.mix == "solo-nolearn",
+      biotech_no_orders = params.mix == "solo-noorder"}) end)
     -- Solo, the stand-in rebuilds as a player with robots does: what it lost five minutes on, as it was (a stand-in gutted
     -- by the first wave that broke in left every later wave nothing to break, and learning could not be measured).
     schedule(3600, function()

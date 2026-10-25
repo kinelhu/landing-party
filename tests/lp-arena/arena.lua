@@ -123,11 +123,14 @@ local function place(s, name, at, force, spread)
 end
 
 -- A defence line of the player's facing west at x, n turrets along y, a wall line 4 tiles in front.
-local function line(s, kind, n, x, y, out)
+local function line(s, kind, n, x, y, out, thick)
   local f = game.forces.player
   local half = (n - 1) / 2
   if kind == "walls" then
-    for dy = -n, n do table.insert(out, s.create_entity{name = "stone-wall", position = {x - 4, y + dy}, force = f}) end
+    -- thick: rows of wall (a player's wall is often two deep).
+    for row = 0, (thick or 1) - 1 do
+      for dy = -n, n do table.insert(out, s.create_entity{name = "stone-wall", position = {x - 4 - row, y + dy}, force = f}) end
+    end
     return
   end
   local name = kind == "guns" and "gun-turret" or kind == "lasers" and "laser-turret" or "flamethrower-turret"
@@ -169,7 +172,7 @@ local function spawn(s, entries, x, y, facing)
         end
       end
     elseif who == "player" and arena.LINES[kind] then
-      line(s, kind, n, x + facing * -8, y, out)
+      line(s, kind, n, x + facing * -8, y, out, en[4])
     else
       -- "raw": a prototype by name on a force by name (the counter matrix: any kind on either corporation's force).
       local name = who == "raw" and kind or who == "player" and kind or shared.variant(who, kind)
@@ -238,15 +241,24 @@ function arena.start(c, a, b, label)
   f.a.units, f.a.parts = spawn(s, a, f.a.at[1], f.a.at[2], -1)
   f.b.units, f.b.parts = spawn(s, b, f.b.at[1], f.b.at[2], 1)
   for _, side in ipairs({f.a, f.b}) do
-    side.max, side.cost, side.n0 = {}, {}, alive(side.units)
+    side.max, side.cost, side.type, side.n0 = {}, {}, {}, alive(side.units)
     for i, e in ipairs(side.units) do
-      side.max[i] = e.max_health
+      side.max[i], side.type[i] = e.max_health, e.type
       -- Units and walkers (spider-units: their deaths went uncounted until 2026-10-21).
       side.cost[i] = (e.type == "unit" or e.type == "spider-unit") and arena.cost(shared.kind_of(e.name), e.name) or nil
     end
   end
   command(f.a, f.b.at); command(f.b, f.a.at)
   return f
+end
+
+-- What a side lost by type (the breach: walls and turrets apart).
+local function lost_by_type(side)
+  local out = {}
+  for i, e in ipairs(side.units) do
+    if not e.valid then out[side.type[i]] = (out[side.type[i]] or 0) + 1 end
+  end
+  return out
 end
 
 -- One step of a fight; returns true once it is decided (f.result set).
@@ -269,6 +281,7 @@ function arena.step(f)
       a = {start = f.a.n0, left = na, parts = f.a.parts, parts_lost = parts_lost(f.a), hurt = hurt(f.a)},
       b = {start = f.b.n0, left = nb, parts = f.b.parts, parts_lost = parts_lost(f.b), hurt = hurt(f.b)},
     }
+    f.result.a.lost, f.result.b.lost = lost_by_type(f.a), lost_by_type(f.b)
     return true
   end
   return false

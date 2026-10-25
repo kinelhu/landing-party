@@ -303,14 +303,15 @@ for _, r in ipairs(pen.result_units) do
   local name = r[1] or r.unit
   if r[1] then r[1] = "lp-bred-" .. name else r.unit = "lp-bred-" .. name end
 end
--- Its cinders from evolution 0.6, a tenth of what it breeds from 0.8.
+-- Its cinders from evolution 0.45, a tenth of what it breeds from 0.65 (from 0.6 and 0.8 until 0.2.17: a third-hour
+-- breed, while the arena's breach showed them the middle game's wall breaker, before big biters break a line alone).
 do
   local first = pen.result_units[1]
   if first[1] then
-    table.insert(pen.result_units, {"lp-bred-cinder", {{0.6, 0.0}, {0.8, 0.1}, {1.0, 0.1}}})
+    table.insert(pen.result_units, {"lp-bred-cinder", {{0.45, 0.0}, {0.65, 0.1}, {1.0, 0.1}}})
   else
     table.insert(pen.result_units, {unit = "lp-bred-cinder", spawn_points = {
-      {evolution_factor = 0.6, weight = 0.0}, {evolution_factor = 0.8, weight = 0.1}, {evolution_factor = 1.0, weight = 0.1}}})
+      {evolution_factor = 0.45, weight = 0.0}, {evolution_factor = 0.65, weight = 0.1}, {evolution_factor = 1.0, weight = 0.1}}})
   end
 end
 -- Its stompers from evolution 0.8, one in fifty of what it breeds from 0.95.

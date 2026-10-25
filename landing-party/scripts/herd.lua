@@ -732,6 +732,7 @@ local function breach(w)
   end
   local depth = math.min(INSIDE, math.sqrt(d2(h, c)))
   w.breach = h
+  w.walled = hit and #cmds or 0
   w.inside = {x = h.x + ux * depth, y = h.y + uy * depth}
   table.insert(cmds, go(w.inside, defines.distraction.none, 4))
   w.group.set_command(compound(cmds))
@@ -914,6 +915,10 @@ local function finish(w, outcome)
       if not (proto and (proto.type == "wall" or proto.type == "gate")) then broke = broke + n end
     end
     if broke > 0 then f.broke = f.broke + 1 end
+    -- A wall in its way at the breach, and nothing broken past it: what its incubators breed for the next wave there
+    -- (farm.lua's order: bursters).
+    if (w.walled or 0) > 0 then l.walled = (l.walled or 0) + 1 end
+    if (w.walled or 0) > 0 and broke == 0 and w.why ~= "nothing in sight feeds a gun" then l.walled_held = (l.walled_held or 0) + 1 end
     -- Nothing there to break (in, and nothing in sight fed a gun) is not a defence that held: not a trial of the face (a
     -- turret left of a base drew waves of 120 that each walked in and home, counted held, and escalated: 2026-10-25).
     if broke == 0 and w.why == "nothing in sight feeds a gun" then f.tried = f.tried - 1; l.waves = l.waves - 1 end

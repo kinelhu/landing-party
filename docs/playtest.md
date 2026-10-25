@@ -210,6 +210,9 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     straight at their mark, and some left a fifth of the herd at the incubators. Now the whole herd follows the trail on
     the map to the face its scout chose, and goes home the same way. Does the green trail now predict where they come
     from? Are the waves noticeably harder?
+52. **Bursters for a wall that held** (0.2.17): where a Synthexis wave was stopped at your wall and broke nothing past
+    it, the next wave there carries bursters (the glowing, acid-banded biters) among the others. Do you see them come
+    behind the biters, and does the wall open where they burst? Are they worth shooting first, at range, and can you?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

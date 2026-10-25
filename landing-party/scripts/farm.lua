@@ -64,6 +64,18 @@ local RELAND = 60 * 3600
 local RETRY = 10 * 3600       -- a surface with no field for it is looked at again after this
 local APART = 200             -- from a corporation's camp
 local POD_WAIT = 2 * 3600
+-- Breeding to order (the user, 2026-10-25: "if we don't make Synthexis breed on purpose, we are kinda missing the point of
+-- making it the smart biters"). For its next wave at the place its last went: bursters, where a wall held its last wave
+-- (nothing broken past it). Each incubator makes two ordered units a minute; while an order is short its culture keeps
+-- the biomass for it (chance breeding waits), and the wave waits for it up to ORDER_WAIT. Sized by its last wave there.
+-- It ordered the breed that best beat its killers too (counters.lua), and broke no more for it: in four 3-hour runs 347
+-- against 462 where it ordered after every wave, 452 against 462 where only after a defence held, its waves fewer for
+-- the wait; the counters' turret columns then told no breed from another, and a wave's make-up is hard for a player to
+-- see. Its cleverness is in how it attacks (the user, 2026-10-25: "let the smartness reside in attack staging"); the
+-- burster stays, the one breed a wall calls for, and seen (it glows).
+local ORDER_BREACH = 0.12   -- of its units, bursters (the arena's breach, 2026-10-25: 3 or 4 among 25 to 35 mediums broke
+                            -- 10 to 20 of a double wall and up to a third of the guns behind it; 40 mediums broke 1 to 3)
+local ORDER_WAIT = 5 * 3600
 
 local function st()
   storage.farms = storage.farms or {list = {}, next = 1}
@@ -313,6 +325,66 @@ local function target_from(surface, pos, f, n)
   return best.at, rival
 end
 
+-- What a breed scores against a lesson's killers (counters.lua: +1 wins, -1 loses), weighed by how many each killed.
+local function fit_of(name, killers, total)
+  if total == 0 then return 0 end
+  local row, v = COUNTERS[name] or COUNTERS[shared.kind_of(name)] or {}, 0
+  for k, n in pairs(killers) do v = v + n / total * (row[k] or 0) end
+  return v
+end
+
+-- A burster glows inside: lit at night, acid green, the one light in the herd.
+local function glow(u)
+  rendering.draw_light{sprite = "utility/light_small", surface = u.surface, target = u,
+    color = {0.35, 1, 0.2}, scale = 1.2, intensity = 0.8, minimum_darkness = 0.3}
+end
+
+local breeds_at, unlocked
+
+-- Its order for the next wave (nil: none, it sends what it bred): by breed, how many it wants in its stock.
+local function order(f, surface)
+  if B.mind.orders == false or storage.biotech_no_orders or not f.aim then return nil end
+  local l = herd.lesson_near(f.aim, 128)
+  if not l then return nil end
+  -- Only where a wall held: what worked elsewhere is sent again.
+  if (l.walled_held or 0) == 0 then return nil end
+  if not unlocked(game.forces[B.force].get_evolution_factor(surface))["lp-bred-cinder"] then return nil end
+  return {["lp-bred-cinder"] = math.ceil((f.last_size or WAVE_MAX) * ORDER_BREACH)}
+end
+
+-- What its order still lacks: the price of the dearest breed short (nil: filled), what its culture keeps back (kept to the
+-- cheapest, chance breeding spent the biomass between it and a burster's price: 2 of 4 bursters ordered were made).
+local function short(want, have)
+  local p
+  for name, n in pairs(want or {}) do
+    if (have[name] or 0) < n and (not p or shared.BREEDS[name].cost > p) then p = shared.BREEDS[name].cost end
+  end
+  return p
+end
+
+-- One ordered unit at an incubator, paid from its culture's biomass; true if one was made.
+local function fulfil(f, rec, surface, want, have)
+  local cul = creep.of(f.id)
+  if not cul then return false end
+  for name, n in pairs(want) do
+    local price = shared.BREEDS[name].cost
+    if (have[name] or 0) < n and cul.biomass >= price then
+      local p = surface.find_non_colliding_position(name, rec.pen.position, 12, 0.5)
+      local u = p and surface.create_entity{name = name, position = p, force = B.force}
+      if u then
+        cul.biomass, cul.spent, cul.bred = cul.biomass - price, (cul.spent or 0) + price, (cul.bred or 0) + 1
+        table.insert(rec.stock, u)
+        have[name] = (have[name] or 0) + 1
+        f.made_to_order = f.made_to_order or {}
+        f.made_to_order[name] = (f.made_to_order[name] or 0) + 1
+        if name == "lp-bred-cinder" then glow(u) end
+        return true
+      end
+    end
+  end
+  return false
+end
+
 local function send(f, tick)
   -- (Waiting for a bigger wave: looked at again every ten seconds, not every tick.)
   if f.escalate_retry and tick < f.escalate_retry then return end
@@ -341,19 +413,25 @@ local function send(f, tick)
     if tick - f.escalate_since < ESCALATE_WAIT then f.escalate_retry = tick + 600; return end
   end
   f.escalate_since = nil
+  -- Its order not yet filled: the wave waits for it, ORDER_WAIT at the most.
+  if f.short then
+    f.order_since = f.order_since or tick
+    if tick - f.order_since < ORDER_WAIT then f.escalate_retry = tick + 600; return end
+  end
+  f.order_since = nil
   local total = 0
   for _, n in pairs(lesson and lesson.killers or {}) do total = total + n end
+  -- What it bred to order goes first and is never held back (the bursters it made for a wall).
+  local want = f.want or {}
   local function fit(u)
-    if total == 0 then return 0 end
-    local row, v = COUNTERS[u.name] or COUNTERS[shared.kind_of(u.name)] or {}, 0
-    for k, n in pairs(lesson.killers) do v = v + n / total * (row[k] or 0) end
-    return v
+    if want[u.name] then return 2 end
+    return fit_of(u.name, lesson and lesson.killers or {}, total)
   end
   for _, id in ipairs(f.pens) do
     local rec = herd.pen(id)
     if rec and rec.pen.valid then
       local stock = herd.stock(rec)
-      if total > 0 then
+      if total > 0 or next(want) then
         local fits = {}
         for _, u in ipairs(stock) do fits[u.unit_number] = fit(u) end
         table.sort(stock, function(a, b) return fits[a.unit_number] > fits[b.unit_number] end)
@@ -392,6 +470,13 @@ local function send(f, tick)
   end
   f.last_wave = tick
   f.waves = (f.waves or 0) + 1
+  f.aim = {x = target.x, y = target.y}
+  f.last_size = #units
+  local made = {}
+  if f.want then
+    for _, u in ipairs(units) do if f.want[u.name] then made[u.name] = (made[u.name] or 0) + 1 end end
+    trace(string.format("farm %d: its wave carries of its order %s (ordered %s)", f.id, serpent.line(made), serpent.line(f.want)))
+  end
   -- Its probe's runts, if it will throw them (herd.lua), at their price.
   -- Only what it can pay for (it was charged into debt; the faction AI audit, 2026-10-23).
   local cul = creep.of(f.id)
@@ -457,7 +542,7 @@ end
 -- turrets that beat them). Once a minute a full incubator turns one unit its evolution no longer breeds back into
 -- biomass (half its price), and breeds a current one in its place.
 local RECYCLE_FULL = 0.9   -- of its capacity
-local function breeds_at(evo)
+breeds_at = function(evo)
   local out = {}
   for _, r in ipairs(prototypes.entity["lp-pen"].result_units or {}) do
     local pts, w = r.spawn_points, 0
@@ -473,6 +558,14 @@ local function breeds_at(evo)
       end
     end
     out[r.unit] = w
+  end
+  return out
+end
+-- The breeds whose evolution has come (past their first spawn point): what it can breed to order.
+unlocked = function(evo)
+  local out = {}
+  for _, r in ipairs(prototypes.entity["lp-pen"].result_units or {}) do
+    if evo > r.spawn_points[1].evolution_factor then out[r.unit] = true end
   end
   return out
 end
@@ -503,6 +596,24 @@ function farm.tick(tick)
     cell.site(id, surface, f.pos)
     cell.tick(id, surface, f.pens, tick)
     evolve(f, surface)
+    -- Its order, once a minute: what it wants for the next wave, against what its incubators hold.
+    local want, have
+    if tick % 3600 == 300 then
+      want = order(f, surface)
+      local key = want and serpent.line(want) or nil
+      if key ~= f.want_key then
+        f.want_key = key
+        if want then trace(string.format("farm %d: breeds to order for its next wave at %.0f,%.0f: %s", f.id, f.aim.x, f.aim.y, key)) end
+      end
+      f.want = want
+      if want then
+        have = {}
+        for _, pid in ipairs(f.pens) do
+          local rec = herd.pen(pid)
+          if rec and rec.pen.valid then for _, u in ipairs(herd.stock(rec)) do have[u.name] = (have[u.name] or 0) + 1 end end
+        end
+      end
+    end
     for _, pid in ipairs(f.pens) do
       local rec = herd.pen(pid)
       if rec and rec.pen.valid then
@@ -511,7 +622,11 @@ function farm.tick(tick)
         -- Unfed: its biochamber dead, or stopped for want of a technician's visit.
         local hungry = c and (not (c.chamber and c.chamber.valid) or cell.hungry(c, tick))
         if not hungry and rec.unfed then rec.unfed = nil end
-        if not hungry and tick % 3600 == 300 then recycle(f, rec, surface) end
+        if not hungry and tick % 3600 == 300 then
+          recycle(f, rec, surface)
+          if want then fulfil(f, rec, surface, want, have) end
+          if want then fulfil(f, rec, surface, want, have) end
+        end
         if hungry and unfed(rec, tick) then
           cell.forget(pid)
           herd.release(pid)
@@ -537,11 +652,13 @@ function farm.tick(tick)
       end
     end
     f.pens = left
+    if have then f.short = short(want, have) elseif tick % 3600 == 300 then f.short = nil end
     local cul = creep.of(id)
     if cul then
       local t = #f.pens * TRICKLE / 6 * tune.strength("biotech")
       cul.biomass, cul.trickled = cul.biomass + t, (cul.trickled or 0) + t
-      breeding(f, cul.biomass > 0)
+      -- An order short: chance breeding waits while the biomass is kept for it.
+      breeding(f, cul.biomass > (f.short or 0))
     end
     -- Grubstake on its creep: the truce is over.
     if not herd.grubstake_broken() then
@@ -599,11 +716,7 @@ function farm.on_spawned(e)
   local cul = f and creep.of(f.id)
   if not cul then return end
   local price = shared.BREEDS[e.entity.name] and shared.BREEDS[e.entity.name].cost or 7
-  -- A burster glows inside: lit at night, acid green, the one light in the herd.
-  if e.entity.name == "lp-bred-cinder" then
-    rendering.draw_light{sprite = "utility/light_small", surface = e.entity.surface, target = e.entity,
-      color = {0.35, 1, 0.2}, scale = 1.2, intensity = 0.8, minimum_darkness = 0.3}
-  end
+  if e.entity.name == "lp-bred-cinder" then glow(e.entity) end
   cul.biomass, cul.spent, cul.bred = cul.biomass - price, (cul.spent or 0) + price, (cul.bred or 0) + 1
   if cul.biomass <= 0 then breeding(f, false) end
 end
