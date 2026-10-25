@@ -18,7 +18,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 |---|---|---|---|---|---|---|---|
 | `ops` | 1807 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1184 | blocks, rng, site, wfc | base, faction |  |  |  |  |
-| `herd` | 1179 | ground, know | control, farm |  | 30, 60, 600, 3600 |  | herd |
+| `herd` | 1180 | ground, know | control, farm |  | 30, 60, 600, 3600 |  | herd |
 | `siege` | 856 | (leaf) | ops |  |  |  | threat_last |
 | `base` | 820 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `faction` | 799 | army, base, layout, names, ops, pact, pods, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
