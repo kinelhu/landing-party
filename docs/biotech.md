@@ -675,3 +675,17 @@ against the player -1; the player against Kessler-Hayashi +24.
   counters' turret columns came from lines nearly every kind beats, so they told no breed from another; and a wave's
   make-up is the part of its cleverness a player sees least. Its cleverness goes into how it attacks: when, where,
   feints, a breach pressed while open. The burster stays, the one breed a wall calls for, and it glows.
+
+### Bursters held back (0.2.18)
+
+- Its cleverness is in how it attacks (the user, 2026-10-25), and the first piece is its bursters'. Where a wall held one
+  of its waves before, at the breach order they leave the herd and wait outside the wall, past a gun turret's and a laser's reach; once the biters are at the
+  wall (the guns busy with them) they run at it, or at the turret nearest the breach when the wall there is open. A
+  wave without a wall where it breaks in keeps them with it.
+- The herd test `burst` (the walled ring, 32 mediums and 4 bursters) against `burst-nohold` on four seeds: held, their
+  bursts broke several times the wall pieces, and the wave a hole of 17 to 29 pieces where unheld it opened 2 to 11;
+  it broke no more turrets there, the breach being at the weak face with few guns near it. What it gives is the wide
+  breach, and the tell: glowing biters waiting out of range, a few seconds to shoot them.
+- Held at every wall, in four 3-hour solo runs it broke less than with the hold off: where its biters open the wall
+  themselves, unheld bursters go in with them and burst on what stands behind, the power more than once, and held ones
+  widen a hole already open. So it holds them only where its lesson says a wall held.

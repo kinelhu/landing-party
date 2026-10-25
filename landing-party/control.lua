@@ -419,6 +419,7 @@ remote.add_interface("landing-party", {
     if t.capture_off ~= nil then storage.capture_off = t.capture_off end
     if t.biotech_unlearned ~= nil then storage.biotech_unlearned = t.biotech_unlearned or nil end
     if t.biotech_no_orders ~= nil then storage.biotech_no_orders = t.biotech_no_orders or nil end
+    if t.biotech_no_hold ~= nil then storage.biotech_no_hold = t.biotech_no_hold or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
     if t.prospect_pace ~= nil then storage.prospect_pace = t.prospect_pace end
     if t.prospect_uncharted ~= nil then storage.prospect_uncharted = t.prospect_uncharted end
@@ -500,6 +501,7 @@ remote.add_interface("landing-party", {
     return #p.stock
   end,
   herd_wave = function(pen_id, pos, opts) return herd.launch(storage.herd.pens[pen_id], pos, opts) end,
+  herd_wall_lesson = function(pos) herd.debug_wall_lesson(pos) end,
   herd_state = function() return herd.state() end,
   -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,

@@ -109,6 +109,14 @@ local function lessons()
   k.lessons = k.lessons or {}
   return k.lessons
 end
+-- Dev and tests: a lesson that a wall held a wave at the base round pos.
+function herd.debug_wall_lesson(pos)
+  local key = lesson_key({x = pos.x or pos[1], y = pos.y or pos[2]})
+  local l = lessons()[key] or {faces = {}, killers = {}, waves = 0}
+  lessons()[key] = l
+  l.walled_held = (l.walled_held or 0) + 1
+end
+
 function herd.lesson_near(pos, reach)
   local best, bd
   for key, l in pairs(lessons()) do
@@ -454,7 +462,7 @@ local function herd_units(w)
   -- One its incubator took back while it waited (11 to 19 of every wave stayed behind in the pen, never in the group):
   -- released again.
   for _, u in ipairs(w.members) do
-    if u.valid and u ~= w.scout and u.force.name == B.force then
+    if u.valid and u ~= w.scout and u.force.name == B.force and not (w.sappers and w.sappers.set[u.unit_number]) then
       if u.commandable and u.commandable.spawner then u.commandable.release_from_spawner() end
       table.insert(out, u)
     end
@@ -710,6 +718,7 @@ local function blind_attack(w)
 end
 
 -- Where the line from the mark to the middle meets the wall: the two pieces there, then INSIDE tiles in.
+local hold_bursters     -- below, with the breach's spitters
 local function breach(w)
   local s = game.surfaces[w.surface]
   local forces = foes(w)
@@ -733,6 +742,7 @@ local function breach(w)
   local depth = math.min(INSIDE, math.sqrt(d2(h, c)))
   w.breach = h
   w.walled = hit and #cmds or 0
+  hold_bursters(w, hit)
   w.inside = {x = h.x + ux * depth, y = h.y + uy * depth}
   table.insert(cmds, go(w.inside, defines.distraction.none, 4))
   w.group.set_command(compound(cmds))
@@ -790,6 +800,77 @@ local withdraw, home_leg
 -- whatever comes at the gap (a sally into the herd's back walks into puddles); when it withdraws they stay COVER_TICKS,
 -- then follow it home down the trail.
 local COVER_TICKS = 20 * 60
+-- Bursters held back (the user, 2026-10-25: wall breakers "provided there are some meat shields to absorb turrets"; the
+-- arena's breach: a burster bursts where it dies, and alone it is shot short of the wall). At the breach order its
+-- bursters leave the herd and wait HOLD_BACK tiles outside the wall where it breaks in (past a gun turret's 18 and a
+-- laser's 24 from turrets a few tiles behind the wall), until RELEASE_N of the herd are within RELEASE_R of that wall
+-- (the turrets busy with them) or RELEASE_TICKS have passed; then they run at the wall, or, the wall already open, at the
+-- turret nearest the breach. A wave with no wall where it breaks in keeps its bursters with the herd. Its personality: B.mind.holds (the test lever biotech_no_hold).
+local HOLD_BACK = 25
+local RELEASE_N, RELEASE_R = 5, 8
+local RELEASE_TICKS = 40 * 60
+
+hold_bursters = function(w, hit)
+  if not hit or B.mind.holds == false or storage.biotech_no_hold then return end
+  -- Only where a wall held a wave of its before: elsewhere its biters open the wall themselves, and its bursters do more
+  -- going in with them (held everywhere, in four 3-hour runs it broke 401 against 451: the held ones widened holes
+  -- already open, where unheld ones burst on the power behind the wall).
+  local l = herd.lesson_near(w.center, 128)
+  if not (l and (l.walled_held or 0) > 0) then return end
+  local dx, dy = w.mark.x - hit.x, w.mark.y - hit.y
+  local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+  local at = {x = hit.x + dx / len * HOLD_BACK, y = hit.y + dy / len * HOLD_BACK}
+  local set, n = {}, 0
+  for _, u in ipairs(w.members) do
+    if u.valid and u.name == "lp-bred-cinder" and u.commandable then
+      -- (A command of its own takes a unit out of its group.)
+      u.commandable.set_command{type = defines.command.go_to_location, destination = at, radius = 4,
+        distraction = defines.distraction.none}
+      set[u.unit_number] = true
+      n = n + 1
+    end
+  end
+  if n == 0 then return end
+  w.sappers = {set = set, n = n, hold = at, wall = {x = hit.x, y = hit.y}, t = game.tick}
+  log(w, string.format("%d bursters wait %d tiles outside the wall at %.0f,%.0f", n, HOLD_BACK, hit.x, hit.y))
+end
+
+local function release_bursters(w, tick)
+  local sp = w.sappers
+  if not sp or sp.released then return end
+  local front = 0
+  for _, u in ipairs(w.members) do
+    if u.valid and not sp.set[u.unit_number] and d2(u.position, sp.wall) <= RELEASE_R * RELEASE_R then front = front + 1 end
+  end
+  if front < RELEASE_N and tick - sp.t < RELEASE_TICKS then return end
+  sp.released = tick
+  local s = game.surfaces[w.surface]
+  local target
+  -- The wall where the herd breaks in while it stands; once open (the herd broke its two pieces before the bursters were
+  -- let go, and they ran inside at whatever they met), the turret nearest the breach: the guns are what kill the herd.
+  local ws = s.find_entities_filtered{position = sp.wall, radius = 3, type = WALLS, force = foes(w)}
+  local ts = #ws == 0 and s.find_entities_filtered{position = sp.wall, radius = 30, type = TURRETS, force = foes(w)} or {}
+  local bd
+  for _, e in ipairs(#ws > 0 and ws or ts) do
+    local d = d2(e.position, sp.wall)
+    if not bd or d < bd then target, bd = e, d end
+  end
+  local n = 0
+  for _, u in ipairs(w.members) do
+    if u.valid and sp.set[u.unit_number] then
+      if target then
+        u.commandable.set_command{type = defines.command.attack, target = target, distraction = defines.distraction.none}
+      else
+        u.commandable.set_command{type = defines.command.go_to_location, destination = w.inside or sp.wall, radius = 2,
+          distraction = defines.distraction.by_enemy}
+      end
+      n = n + 1
+    end
+  end
+
+  log(w, string.format("%d bursters released at the %s, %d of the herd at the wall, %.0f s on", n,
+    target and target.name or "breach", front, (tick - sp.t) / 60))
+end
 local function is_spitter(u) return u.valid and u.name:find("spitter", 1, true) ~= nil end
 
 local function hold_breach(w)
@@ -896,7 +977,13 @@ local function finish(w, outcome)
     t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},
     trail = w.trail, farm = w.farm, recalled = w.recalled, probe = w.probe and w.probe.result,
     breach = w.breach and {w.breach.x, w.breach.y}, legs = w.leg, legs_failed = w.legs_failed or 0,
-    home_legs = w.home_leg, home_n = w.home and #w.home})
+    home_legs = w.home_leg, home_n = w.home and #w.home,
+    bursters = (w.sappers or w.bursts) and {held = w.sappers and w.sappers.n or 0, burst = w.bursts and w.bursts.n or 0,
+      broke = w.bursts and w.bursts.broke or {}, released = w.sappers and w.sappers.released and (w.sappers.released - w.sappers.t) / 60}})
+  if w.sappers or w.bursts then
+    log(w, string.format("bursters: %d held, %d burst, their bursts broke %s", w.sappers and w.sappers.n or 0,
+      w.bursts and w.bursts.n or 0, serpent.line(w.bursts and w.bursts.broke or {})))
+  end
   h.waves[w.id] = nil
   log(w, string.format("%s; %d of %d home", outcome, alive(w), w.size))
   -- Its lesson: the face it tried and whether it broke anything past the wall there; what killed its units round it.
@@ -1007,6 +1094,7 @@ local function step(w, tick)
     end
     return finish(w, "scattered")
   end
+  if w.stage == "inside" or w.stage == "breach" then release_bursters(w, tick) end
   if w.stage == "inside" or w.stage == "breach" or w.stage == "blind" then
     if alive(w) * 2 < w.size then return withdraw(w, "half lost") end
     if w.t_inside and tick - w.t_inside > INSIDE_TICKS then return withdraw(w, "time inside") end
@@ -1121,6 +1209,25 @@ function herd.on_died(e)
       if w.stage ~= "scout" then
         w.kills[ent.name] = (w.kills[ent.name] or 0) + 1
         if not w.t_first_kill and ent.type ~= "wall" and ent.type ~= "gate" then w.t_first_kill = game.tick end
+      end
+    end
+  end
+  -- What its bursters' bursts broke (a death to its force with no cause left standing: the burster died of it), and how
+  -- many burst at all once the herd was in (for the log and the herd test; the arena's breach is the measure of worth).
+  if e.force and e.force.name == B.force and not (e.cause and e.cause.valid) and shared.is_player_force(ent.force) then
+    for _, w in pairs(h.waves) do
+      if w.breach then
+        w.bursts = w.bursts or {n = 0, broke = {}}
+        w.bursts.broke[ent.type] = (w.bursts.broke[ent.type] or 0) + 1
+      end
+    end
+  end
+  if ent.name == "lp-bred-cinder" then
+    for _, w in pairs(h.waves) do
+      if w.breach then
+        for _, u in ipairs(w.members) do
+          if u == ent then w.bursts = w.bursts or {n = 0, broke = {}}; w.bursts.n = w.bursts.n + 1; break end
+        end
       end
     end
   end

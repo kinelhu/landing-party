@@ -213,6 +213,9 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 52. **Bursters for a wall that held** (0.2.17): where a Synthexis wave was stopped at your wall and broke nothing past
     it, the next wave there carries bursters (the glowing, acid-banded biters) among the others. Do you see them come
     behind the biters, and does the wall open where they burst? Are they worth shooting first, at range, and can you?
+53. **Bursters wait their turn** (0.2.18): when a Synthexis wave comes back to a wall that stopped it, its glowing bursters hang back
+    out of your guns' reach while the biters go at the wall, then rush the spot where the biters are. Can you see them
+    waiting? Do you get a chance to kill them before they arrive, and is the hole they leave a fair price if you don't?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

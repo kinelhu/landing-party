@@ -2481,12 +2481,12 @@ scenarios.system = function()
   -- LP_MIX=solo: Synthexis alone against the stand-in (the user, 2026-10-24: "why not test it in isolation against a
   -- player base? Without Kessler"): no corporation's arrival is set off, and their landing clock is stopped.
   -- LP_MIX=solo-nolearn: the same with its lessons off (what learning is worth, measured against solo); solo-noorder:
-  -- with its lessons but no breeding to order (what the order is worth).
-  local solo = params.mix == "solo" or params.mix == "solo-nolearn" or params.mix == "solo-noorder"
+  -- with its lessons but no breeding to order (what the order is worth); solo-nohold: its bursters not held back.
+  local solo = params.mix == "solo" or params.mix == "solo-nolearn" or params.mix == "solo-noorder" or params.mix == "solo-nohold"
   S.solo = solo
   if solo then
     schedule(40, function() lp("debug_tune", {cadence_minutes = 1000000, biotech_unlearned = params.mix == "solo-nolearn",
-      biotech_no_orders = params.mix == "solo-noorder"}) end)
+      biotech_no_orders = params.mix == "solo-noorder", biotech_no_hold = params.mix == "solo-nohold"}) end)
     -- Solo, the stand-in rebuilds as a player with robots does: what it lost five minutes on, as it was (a stand-in gutted
     -- by the first wave that broke in left every later wave nothing to break, and learning could not be measured).
     schedule(3600, function()
@@ -7943,6 +7943,9 @@ end
 --          herd breaches in front of it rather than at the face's middle
 --   stomp: 36 bred mediums and 2 stompers (tier 4): a stomper gets inside the wall ring, and no Synthexis unit is hurt
 --          by a stomper (its stomp is on enemy forces only)
+--   burst: 32 bred mediums and 4 bursters, and a lesson that a wall held here before: the bursters wait outside the wall
+--          while the herd goes at it, are released once it is there, and their bursts break something; burst-nohold:
+--          the same with the hold off (the control, measured)
 scenarios.herd = function()
   local mix = params.mix or ""
   local L, G = "laser-turret", "gun-turret"
@@ -8058,12 +8061,18 @@ scenarios.herd = function()
     elseif mix == "stomp" then
       lp("herd_fill", S.pen, 36, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 2, "lp-bred-stomper")
+    elseif mix == "burst" or mix == "burst-nohold" then
+      lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
+      lp("herd_fill", S.pen, 4, "lp-bred-cinder")
+      if mix == "burst-nohold" then lp("debug_tune", {biotech_no_hold = true}) end
     else
       lp("herd_fill", S.pen, S.size, "lp-bred-medium-biter")
     end
     S.damage = {}
   end)
   schedule(120, function()
+    -- burst: a wall held a wave here before (the bursters are held only where one did).
+    if mix == "burst" or mix == "burst-nohold" then lp("herd_wall_lesson", S.at(0, 0)) end
     S.t_send = game.tick
     S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or nil)
   end)
@@ -8148,6 +8157,27 @@ scenarios.herd = function()
       check("herd: stomp, a stomper got inside the wall", S.stomp_in ~= nil, tostring(S.stomp_in))
       check("herd: stomp, no Synthexis unit hurt by a stomper", (S.damage["stomper>own"] or 0) == 0,
         tostring(S.damage["stomper>own"]))
+      return
+    end
+    if mix == "burst" or mix == "burst-nohold" then
+      local k, walls, guns = w and w.kills or {}, 0, 0
+      for name, n in pairs(k) do
+        local pr = prototypes.entity[name]
+        if pr and pr.type == "wall" then walls = walls + n elseif pr and pr.type:find("turret") then guns = guns + n end
+      end
+      local alive = 0
+      for _, t in ipairs(S.turrets) do if t.valid then alive = alive + 1 end end
+      info(string.format("herd %s: bursters %s; broke %d wall pieces, %d turrets (%d of %d standing); kills %s", mix,
+        serpent.line(w and w.bursters), walls, guns, alive, #S.turrets, serpent.line(k)))
+      if mix == "burst" then
+        local b = w and w.bursters or {}
+        check("herd: burst, the bursters were held and released", (b.held or 0) == 4 and b.released ~= nil, serpent.line(b))
+        local broke = 0
+        for _, n in pairs(b.broke or {}) do broke = broke + n end
+        check("herd: burst, their bursts broke something", broke > 0, serpent.line(b))
+      else
+        check("herd: burst-nohold, the wave went in and finished", w ~= nil and w.breach ~= nil, serpent.line(w and w.breach))
+      end
       return
     end
     if mix == "probe" then
