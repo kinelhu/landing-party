@@ -217,6 +217,10 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 53. **Bursters wait their turn** (0.2.18): when a Synthexis wave comes back to a wall that stopped it, its glowing bursters hang back
     out of your guns' reach while the biters go at the wall, then rush the spot where the biters are. Can you see them
     waiting? Do you get a chance to kill them before they arrive, and is the hole they leave a fair price if you don't?
+54. **Railgunners clear nests, not waves** (0.2.20): Kessler-Hayashi's railgunners no longer hold its camp against any
+    biter attack; they go out with its nest clearances, and it researches heavier railguns when biters keep killing its
+    units. On a map crawling with biters, does a Kessler-Hayashi camp now look like it can fall, and does it still
+    clear the nests it needs to? Does Synthexis leave it alone until Kessler-Hayashi hits its incubators?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

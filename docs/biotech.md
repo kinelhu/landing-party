@@ -706,3 +706,12 @@ against the player -1; the player against Kessler-Hayashi +24.
   when a wave leaves, and a place is weighed by the share of its waves there that came home.
 - In four-faction runs its waves no longer come blind, and now fight: at Kessler-Hayashi's camps most die, where blind
   waves used to walk up and home whole. How Synthexis should fare against Kessler-Hayashi is a balance question left open.
+
+### The player first; Kessler-Hayashi when struck (0.2.20)
+
+- Kessler-Hayashi is among its targets only while it holds a grievance against it: an incubator, a tumor, a
+  biochamber destroyed. Its waves at Kessler-Hayashi's armies died nearly to the last unit; the player is its enemy.
+- Kessler-Hayashi's railgunner, the nest clearer, no longer holds a camp against any wave: its slug pierces a few
+  biters and stops, and does its full damage to spawners, worms, incubators and tumors, a fraction to biters on their
+  feet; its camp keeps it for clearances. Big biters and behemoths beat it, until Kessler-Hayashi, losing units to
+  biters, buys heavier railguns (the user: an investment, weaker at baseline).

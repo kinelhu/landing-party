@@ -76,7 +76,7 @@ def voice(node_id):
 
 
 # What each node is called on the page: a unit's node by the unit's own name (the locale's), the rest plainly.
-NODE_NAME = {"optics": "Better optics", "handloads": "Hand-loaded shells", "warden": "Heavier armour",
+NODE_NAME = {"optics": "Better optics", "railguns": "Heavier railguns", "handloads": "Hand-loaded shells", "warden": "Heavier armour",
              "hardened": "Dug-in siege crews", "jammer": "Jamming mast", "counter": "Counter-battery",
              "salvage": "Salvage rights", "prospector": "Better prospecting", "scrap-plating": "Scrap plating",
              "asbestos": "Asbestos suits"}

@@ -9,14 +9,16 @@ for _, type in ipairs({"fluid-turret", "artillery-turret"}) do
 end
 
 
--- Biters, spawners and worms carry the lp-biter trigger target (the railgunner's full shot, units.lua). The faction's
--- and the player's units are units too: only the enemy's (not named lp-), and the biotech's (bred, and its pens).
+-- Spawners and worms carry the lp-nest trigger target (the railgunner's full shot, units.lua), biters on their feet
+-- lp-biter (its lighter one: a nest stands still, a wave does not; at full damage on both a camp with railgunners was
+-- proof against any wave, the user, 2026-10-25). The faction's and the player's units are units too: only the enemy's
+-- (not named lp-), and the biotech's (bred, and its pens).
 local defaults = data.raw["utility-constants"].default.default_trigger_target_mask_by_type or {}
 for _, type in ipairs({"unit", "unit-spawner", "turret"}) do
   for name, p in pairs(data.raw[type] or {}) do
     if name:sub(1, 3) ~= "lp-" or name:sub(1, 8) == "lp-bred-" or name == "lp-pen" then
       local mask = table.deepcopy(p.trigger_target_mask or defaults[type] or {"common"})
-      table.insert(mask, "lp-biter")
+      table.insert(mask, type == "unit" and "lp-biter" or "lp-nest")
       p.trigger_target_mask = mask
     end
   end
@@ -25,7 +27,7 @@ end
 do
   local t = data.raw["simple-entity-with-force"]["lp-tumor"]
   local mask = table.deepcopy(t.trigger_target_mask or defaults["simple-entity-with-force"] or {"common"})
-  table.insert(mask, "lp-biter")
+  table.insert(mask, "lp-nest")
   t.trigger_target_mask = mask
 end
 

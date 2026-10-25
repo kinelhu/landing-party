@@ -239,6 +239,7 @@ end
 -- trial would teach (its odds against that defence, p, the most when uncertain: 4p(1 - p)), whether it was tried
 -- lately (novelty, coming back as the trial fades or the defence changes) and distance. Kessler-Hayashi's walls draw
 -- trials as the player's do, on their merits. Its last trials (cell, defence, when) are kept in know.lua's record.
+local STRUCK = 1              -- a grievance this big (value lost, fading) makes Kessler-Hayashi a target
 local DEFENCE = {["ammo-turret"] = 1, ["electric-turret"] = 1.5, ["fluid-turret"] = 2.5}
 local WALL_TYPES = {"wall", "gate"}
 -- A place's defenders that move count too, a fifth of a gun turret each, within GARRISON_REACH of it: weighed by its
@@ -258,7 +259,12 @@ local function foes()
   if herd.grubstake_broken() and game.forces[shared.CORPS.grubstake.force] then
     out[#out + 1] = game.forces[shared.CORPS.grubstake.force]
   end
-  if game.forces[shared.CORPS.serenity.force] then out[#out + 1] = game.forces[shared.CORPS.serenity.force] end
+  -- Kessler-Hayashi only while it holds a grievance against it (the user, 2026-10-25: option 2): the player's enemy first,
+  -- and an answer to Kessler-Hayashi when struck (an incubator, a tumor, a biochamber destroyed: its units lost on its
+  -- own waves are no wrong done to it, know.lua). Its waves at Kessler-Hayashi's armies died to the last unit, 127 of
+  -- 859 home in four-faction runs, while its pressure on the player was the point of it.
+  local ks = shared.CORPS.serenity.force
+  if game.forces[ks] and know.grievance("biotech", ks) >= STRUCK then out[#out + 1] = game.forces[ks] end
   return out
 end
 

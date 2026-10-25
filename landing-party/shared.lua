@@ -130,6 +130,11 @@ shared.CORPS = {
       {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400},
       -- Siege: its mortars dig in (against sallies and the player's artillery).
       {id = "hardened", branch = "siege", era = 2, cost = 1200, ability = true, trigger = {damage = "explosion", min = 5}},
+      -- Railguns: its railgunners' slugs heavier, against biters and their nests, when biters are what kill its units
+      -- (the user, 2026-10-25: weaker at baseline, an investment when it needs clearance and biter defence).
+      -- +60% a level: weak at baseline (40 to a biter on its feet), 160 at the fifth (units.lua).
+      {id = "railguns", branch = "siege", track = {"lp-rail"}, levels = 5, step = 0.6, cost = 600,
+        trigger = {killer = {"biter"}, min = 8}},
       -- The jammer (scripts/jammer.lua): a mast in the emplacement whose arcs down the player's robots, once a siege's
       -- hits were mended by them.
       {id = "jammer", branch = "siege", era = 2, cost = 1500, ability = true, trigger = {mended = 1}},

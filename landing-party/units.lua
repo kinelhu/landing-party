@@ -70,6 +70,7 @@ end
 
 data:extend({
   {type = "trigger-target-type", name = "lp-biter"},
+  {type = "trigger-target-type", name = "lp-nest"},
   {type = "collision-layer", name = "lp-air"},
   {type = "trigger-target-type", name = "lp-air-unit"},
 })
@@ -592,13 +593,41 @@ grow(railgunner.run_animation, 1.15, {})
 railgunner.max_health = shared.units["lp-railgunner"].health
 railgunner.movement_speed = 0.1
 railgunner.vision_distance = 34
-local function rail(amount, mask)
-  return {type = "line", range = 30, width = 1.5, force = "enemy", trigger_target_mask = mask,
-    action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = amount, type = "physical"}},
-      {type = "create-entity", entity_name = "explosion-hit"}}}}
+-- Its slug pierces what it hits until RAIL_PIERCE is spent on their health (vanilla's own rule for a piercing shell):
+-- about four medium biters, and a big one stops it. It was a line through everything in 30 tiles, which made a Kessler-
+-- Hayashi camp with railgunners in it proof against any wave (the user, 2026-10-25: "makes KH bases virtually impregnable
+-- to biters"; the arena: +1.00 against every breed of Synthexis's but the stomper): a nest stands still and dies the
+-- same, a packed wave no longer dies row by row.
+local RAIL_PIERCE = 300
+local RAIL_UNIT = 40          -- to a biter on its feet; RAIL_NEST to what grows them (spawners, worms, incubators, tumors);
+                              -- its railguns research (+60% a level, five, as the player's era allows) takes both up (the
+                              -- user, 2026-10-25: "an investment for Kessler if they feel they need more clearance/biter
+                              -- defense, and weaker at baseline"). The arena at 40: beats small and medium biters and
+                              -- spitters, loses to big biters (-0.71), behemoths and biters at 0.95; at 60 it beat bigs
+local RAIL_NEST = 250
+-- (A small area at the hit, not "direct": a direct trigger's target mask did not keep the 250 to biters, and the slug
+-- did 260 to tanks and turrets: seven tanks dead in six seconds in the arena.)
+local function rail_hit(amount, mask)
+  return {type = "area", radius = 0.5, force = "enemy", trigger_target_mask = mask, action_delivery = {type = "instant",
+    target_effects = {{type = "damage", damage = {amount = amount, type = "physical"}}, {type = "create-entity", entity_name = "explosion-hit"}}}}
 end
+local rail_slug = table.deepcopy(data.raw.projectile["cannon-projectile"])
+rail_slug.name = "lp-railgunner-slug"
+rail_slug.piercing_damage = RAIL_PIERCE
+rail_slug.force_condition = "enemy"
+rail_slug.direction_only = true
+-- Hit at the target's own position: at the edge of its box, a big biter's middle lay outside the 0.5 area, and four
+-- railgunners left 15 of 16 big biters standing.
+rail_slug.hit_at_collision_position = false
+rail_slug.action = {rail_hit(RAIL_NEST, {"lp-nest"}), rail_hit(RAIL_UNIT, {"lp-biter"}), rail_hit(10, {"common"})}
+rail_slug.final_action = nil
+rail_slug.animation, rail_slug.shadow, rail_slug.smoke = nil, nil, nil
+data:extend({rail_slug})
+
 railgunner.attack_parameters = {
-  type = "projectile", ammo_category = "laser", cooldown = 90, cooldown_deviation = 0.1, range = 30,
+  -- Its own ammunition category (lp-rail, the player's rail rifle's too: force modifiers are a force's own): its
+  -- research is Kessler-Hayashi's railguns track, bought when biters kill its units (shared.CORPS.serenity.tree).
+  type = "projectile", ammo_category = "lp-rail", cooldown = 90, cooldown_deviation = 0.1, range = 30,
   range_mode = "bounding-box-to-bounding-box",
   -- Space Age's railgun gunshot (the tank cannon's without it). Its beam drawn along the shot's line (range_effects
   -- on the line) was tried and withdrawn: with it the railgunners' shots fared worse in a siege's assault, which then
@@ -609,8 +638,8 @@ railgunner.attack_parameters = {
   ammo_type = {action = {
     {type = "direct", action_delivery = {type = "beam", beam = "lp-rail-beam", max_length = 31, duration = 8,
       source_offset = {0, -1}}},
-    rail(250, {"lp-biter"}),
-    rail(10, {"common"}),
+    {type = "direct", action_delivery = {type = "projectile", projectile = "lp-railgunner-slug", starting_speed = 2,
+      max_range = 30}},
   }},
 }
 railgunner.resistances = table.deepcopy(infantry.resistances)

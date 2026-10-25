@@ -22,7 +22,7 @@ ROLE = {
     "lp-walker": "A spider-legged machine that walks over walls and fires rockets",
     "lp-harrier": "A cheap, weak flier with a gun, sent in numbers. Flies over walls, cliffs and water",
     "lp-laser-drone": "An armoured flier with a laser. Expensive, so there are few of them",
-    "lp-railgunner": "Clears biter nests. Its slug goes through a 30-tile line; deadly to biters, weak against walls",
+    "lp-railgunner": "Clears biter nests. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level)",
     "lp-hauler": "A lightly armed truck. Carries convoys and Grubstake's building crews",
     "lp-buggy": "A fast buggy with a machine gun. Grubstake's raider and escort",
     "lp-shotgun-hand": "Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line",

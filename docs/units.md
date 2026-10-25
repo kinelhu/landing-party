@@ -86,6 +86,16 @@ Fielded by: -.
 
 Fielded by: -.
 
+## bred-scout
+
+Synthexis's scout: circles your defence before a wave and picks the weakest side. Fast and frail.
+
+| Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 30 | 20.4 tiles/s | 7 lp-bite | 0.5 | 1.7/s | - | yes | - |
+
+Fielded by: -.
+
 ## bred-small-biter
 
 
@@ -218,11 +228,11 @@ Fielded by: Kessler-Hayashi, research: optics branch, era 2, after lance, 1800 f
 
 ## railgunner
 
-Clears biter nests. Its slug goes through a 30-tile line; deadly to biters, weak against walls.
+Clears biter nests. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level).
 
 | Health | Speed | A shot | Range | Rate | Resists | Hits air | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 140 | 6.0 tiles/s | 250 physical to biters, nests and worms; 10 physical to anything else | 30 | 0.67/s | physical -2 10%, laser 20% | no | 22 parts |
+| 140 | 6.0 tiles/s | 250 physical over 0.5 tiles; 40 physical over 0.5 tiles; 10 physical over 0.5 tiles | 30 | 0.67/s | physical -2 10%, laser 20% | no | 22 parts |
 
 Fielded by: Kessler-Hayashi (from landing).
 

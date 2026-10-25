@@ -18,7 +18,7 @@ rd.CATEGORY = {["lp-infantry"] = "bullet", ["lp-buggy"] = "bullet", ["lp-harrier
   ["lp-tank"] = "cannon-shell", ["lp-walker"] = "rocket"}
 -- Each corporation's own infantry (units.lua): Serenity's Line troopers fire lasers, Grubstake's Shotgun hands shells.
 rd.CORP_CATEGORY = {serenity = {["lp-infantry"] = "laser", ["lp-lance"] = "laser", ["lp-shock"] = "electric",
-  ["lp-railgunner"] = "laser",
+  ["lp-railgunner"] = "lp-rail",
   ["lp-aegis"] = "laser", ["lp-prism"] = "laser", ["lp-tesla"] = "electric", ["lp-skyguard"] = "laser", ["lp-laser-drone"] = "laser"},
   grubstake = {["lp-infantry"] = "shotgun-shell", ["lp-slug"] = "shotgun-shell", ["lp-sapper"] = "grenade",
     ["lp-scorcher"] = "bullet", ["lp-flak-buggy"] = "bullet"}}
@@ -188,7 +188,7 @@ local function notify(corp, key, ...)
 end
 
 -- The tree (shared.CORPS[corp].tree): nodes in the corporation's voice. A track node raises the damage of its
--- ammunition categories a level at a time (LEVEL_COST x k for level k, +LEVEL_DAMAGE each, at most the player's
+-- ammunition categories a level at a time (LEVEL_COST x k for level k, +LEVEL_DAMAGE each or its own step, at most the player's
 -- era + 1); a plate node sets plates on unit kinds (rd.unit builds them), from its era. A trigger reads the ledger:
 -- {damage = d, min = n} (n or more of its units killed by damage d in the window), {turned_back = n} (raids turned
 -- back for want of force). The node whose trigger fires hardest wins (tree order breaks ties); with none, the first
@@ -240,7 +240,7 @@ local function apply(corp, t, node)
     t.nodes[node.id] = k
     for _, c in ipairs(node.track) do
       t.weapons[c] = k
-      f.set_ammo_damage_modifier(c, LEVEL_DAMAGE * k)
+      f.set_ammo_damage_modifier(c, (node.step or LEVEL_DAMAGE) * k)
     end
     notify(corp, "lp.node-" .. node.id, k)
   else
@@ -331,7 +331,12 @@ function rd.set(corp, tech)
   local f = game.forces[shared.CORPS[corp].force]
   for c, k in pairs(tech.weapons or {}) do
     t.weapons[c] = k
-    f.set_ammo_damage_modifier(c, LEVEL_DAMAGE * k)
+    -- (A track's own step per level, node.step: railguns.)
+    local step = LEVEL_DAMAGE
+    for _, node in ipairs(shared.CORPS[corp].tree or {}) do
+      for _, cc in ipairs(node.track or {}) do if cc == c and node.step then step = node.step end end
+    end
+    f.set_ammo_damage_modifier(c, step * k)
   end
   for kind, p in pairs(tech.plate or {}) do t.plate[kind] = p end
 end

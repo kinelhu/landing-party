@@ -261,14 +261,10 @@ function army.alarm(b, pos, trace)
     {type = defines.command.go_to_location, destination = dest, radius = 16, distraction = defines.distraction.by_enemy},
     {type = defines.command.attack_area, destination = dest, radius = 30, distraction = defines.distraction.by_anything},
   }}
-  -- Against biters alone, its railgunners first (the biter-clearing unit).
-  if biters_only then
-    for _, u in ipairs(pool.take(b, size, HOME_GUARD, function(u) return shared.kind_of(u.name) == "lp-railgunner" end)) do
-      group.add_member(u)
-      table.insert(members, u)
-    end
-  end
-  for _, u in ipairs(pool.take(b, size - #members, HOME_GUARD)) do
+  -- Its railgunners stay home for its clearances: a nest clearer since 0.2.20, weak against biters on their feet until
+  -- researched, sent first at every wave they died at it (hazard worm: 6 of 10 lost in 12 minutes, the clearance then
+  -- waiting for railgunners while the waves bled its economy dry). Against biters they were sent first until then.
+  for _, u in ipairs(pool.take(b, size - #members, HOME_GUARD, function(u) return shared.kind_of(u.name) ~= "lp-railgunner" end)) do
     if u.type == "unit" then group.add_member(u) else u.commandable.set_command(cmd) end
     table.insert(members, u)
   end

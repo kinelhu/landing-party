@@ -4967,7 +4967,9 @@ scenarios.clear = function()
   schedule(60, function()
     -- Matured at 3 blocks (2.1 lands the camp a few tiles off on this seed, and it kept finding sites: never matured,
     -- so no howitzer parked and the razing raid came after the run; the clearance is what is tested).
-    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true, mature_blocks = 3})
+    -- Railguns at their top level (0.2.20: weaker at baseline, an investment; the clearance is what is tested here).
+    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true, mature_blocks = 3,
+      rd_tech = {serenity = {weapons = {["lp-rail"] = 5}, nodes = {railguns = 5}}}})
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
     lp("debug_units", storage.id, "lp-railgunner", 6)
   end)
@@ -5041,6 +5043,9 @@ scenarios.hazard = function()
   -- the howitzer"). norails: no railgunners given and the garrison over its cap with Line troopers (production stopped
   -- at the cap, and the clearance waited "for railgunners (0 of 8)" for two hours, nw).
   local worm, norails = params.mix == "worm", params.mix == "norails"
+  -- research: no railguns given (the others have them at their top level, 0.2.20: the clearance is what they test):
+  -- its losses to biters make it buy them.
+  local research = params.mix == "research"
   settle_when(function()
     if not S.nests then return false end
     for _, e in ipairs(S.nests) do if e.valid then return false end end
@@ -5050,7 +5055,7 @@ scenarios.hazard = function()
   schedule(60, function()
     -- The ledger's mixes without spread: its walled clusters held the waves off before the losses that bill them came.
     lp("debug_tune", {wfc_core_off = true, era = 2, history_off = true, hazard_off = off or nil, hazard_hold = billing or nil,
-      grow_to_line_off = billing or nil})
+      grow_to_line_off = billing or nil, rd_tech = not research and {serenity = {weapons = {["lp-rail"] = 5}, nodes = {railguns = 5}}} or nil})
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
     if norails then lp("debug_units", storage.id, "lp-infantry", 80) else lp("debug_units", storage.id, "lp-railgunner", 10) end
   end)
@@ -5200,6 +5205,13 @@ scenarios.hazard = function()
         st.ops.hazards or 0, S.first_hazard and math.floor(S.first_hazard / 3600) or "-", (st.built_by or {})["lp-railgunner"] or 0))
       return
     end
+    if research then
+      local t = lp("rd_state", "serenity")
+      info(string.format("hazard research: railguns level %s, %d hazards, %d nests left", tostring(t.nodes.railguns),
+        st.ops.hazards or 0, left))
+      check("hazard: research, its losses to biters bought railguns", (t.nodes.railguns or 0) >= 1, tostring(t.nodes.railguns))
+      return
+    end
     check("hazard: its losses to biters made it clear the nests", (st.ops.hazards or 0) >= 1 and left == 0, string.format("%d hazards, %d left", st.ops.hazards or 0, left))
   end)
 end
@@ -5210,7 +5222,8 @@ end
 scenarios.rail = function()
   local line = params.mix == "line"
   local name, n = line and "lp-infantry" or "lp-railgunner", line and 9 or 4
-  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true}) end)
+  -- Railguns at their top level (0.2.20; at baseline a railgunner loses to big biters, as it is meant to).
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true, rd_tech = {serenity = {weapons = {["lp-rail"] = 5}, nodes = {railguns = 5}}}}) end)
   schedule(120, function()
     flatten(-60, -40, 60, 40)
     S.own = {}
@@ -5219,7 +5232,8 @@ scenarios.rail = function()
     end
     S.biters = {}
     local g = surface().create_unit_group{position = {30, 0}, force = "enemy"}
-    for k = 1, 16 do
+    -- Eight big biters (sixteen until 0.2.20: the line through the whole pack; a slug stops in a big biter now).
+    for k = 1, 8 do
       local u = surface().create_entity{name = "big-biter", force = "enemy",
         position = surface().find_non_colliding_position("big-biter", {30 + (k % 4) * 2, math.floor(k / 4) * 2 - 3}, 6, 0.5)}
       if u then g.add_member(u); table.insert(S.biters, u) end
