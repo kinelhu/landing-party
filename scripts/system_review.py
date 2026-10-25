@@ -163,8 +163,8 @@ def timeline(seed, frames, raids, alarms, path):
     plt.close(fig)
 
 
-def map_(seed, frames, raids, alarms, path):
-    fig, ax = plt.subplots(figsize=(7, 7), dpi=100)
+def camps(ax, frames):
+    """The player's base, each corporation's camps (discs: territory) and Synthexis's incubator fields."""
     end = frames[-1]
     ax.add_patch(plt.Rectangle((-45, -45), 90, 90, fill=False, color=COLOUR["player"], lw=2))
     ax.text(0, 52, "player", ha="center", fontsize=7, color=COLOUR["player"])
@@ -182,6 +182,11 @@ def map_(seed, frames, raids, alarms, path):
     for p in (end.get("biotech") or {}).get("at") or []:
         ax.plot(*p, "o", color=COLOUR["biotech"], ms=8)
         ax.text(p[0], p[1] + 12, "Synthexis", fontsize=6, ha="center", color=COLOUR["biotech"])
+
+
+def map_(seed, frames, raids, alarms, path):
+    fig, ax = plt.subplots(figsize=(7, 7), dpi=100)
+    camps(ax, frames)
     for r in raids:
         (sx, sy), (tx, ty) = r["stage"], r["to"]
         ax.annotate("", xy=(tx, ty), xytext=(sx, sy), arrowprops=dict(arrowstyle="->", lw=1.2,
@@ -201,6 +206,119 @@ def map_(seed, frames, raids, alarms, path):
     plt.close(fig)
 
 
+# Deaths (the user, 2026-10-25: where units and buildings die, by kind): deaths.jsonl beside system.jsonl, a row per
+# death with the victim's force and name, its kind, the killer's force and, when it still stood, the killer and where.
+FORCE_OF = {"player": "player", "lp-serenity": "serenity", "lp-grubstake": "grubstake", "lp-biotech": "biotech"}
+WHO = {"player": "the player", "serenity": "Kessler-Hayashi", "grubstake": "Grubstake", "biotech": "Synthexis",
+       "enemy": "wild biters", "none": "nothing"}
+FCOLOUR = dict(COLOUR, enemy="#7a4a8c", none="#999999")
+MARK = {"turrets": "^", "walls": "s", "power": "*", "logistics": ".", "production": "D", "other": "x"}
+LOCALE = {}
+_loc = os.path.join(os.path.dirname(HERE), "landing-party", "locale", "en", "locale.cfg")
+if os.path.exists(_loc):
+    _sec = None
+    for _l in open(_loc):
+        _l = _l.strip()
+        if _l.startswith("["):
+            _sec = _l
+        elif _sec == "[entity-name]" and "=" in _l:
+            k, v = _l.split("=", 1)
+            LOCALE[k] = v
+
+
+def plain(name):
+    """A name as the game shows it (the locale), or the prototype's with its prefix and dashes gone."""
+    if name in LOCALE and "__" not in LOCALE[name]:
+        return LOCALE[name]
+    if name.startswith("lp-bred-"):
+        return "Synthexis " + name[8:].replace("-", " ")
+    return (name[3:] if name.startswith("lp-") else name).replace("-", " ")
+
+
+def force(f):
+    return FORCE_OF.get(f, f)
+
+
+def load_deaths(path):
+    """The run's deaths, a corporation's own (cargo pods it scuttles, what it pulls down) left out."""
+    if not os.path.exists(path):
+        return None
+    rows = [json.loads(l) for l in open(path) if l.strip()]
+    return [r for r in rows if r.get("k") != r.get("v") and r.get("v") != "neutral"]
+
+
+def extent(frames, deaths, pad=60):
+    """The ground the deaths and the camps cover, padded."""
+    pts = [(r["x"], r["y"]) for r in deaths] + [(-45, -45), (45, 45)]
+    for f in frames:
+        for c in ("serenity", "grubstake", "biotech"):
+            pts += [tuple(p) for p in (report.at(f, c) or [])]
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    return min(xs) - pad, max(xs) + pad, min(ys) - pad, max(ys) + pad
+
+
+def death_map(seed, frames, deaths, path):
+    x0, x1, y0, y1 = extent(frames, deaths)
+    w, h = x1 - x0, y1 - y0
+    # Side by side when the ground is tall, one above the other when it is wide (the incubators can stand 900 tiles out).
+    wide = w > 1.3 * h
+    pw = 12 if wide else 6.5
+    ph = min(max(pw * h / w, 3), 9) + 0.8
+    fig, axes = plt.subplots(2, 1, figsize=(pw, 2 * ph), dpi=100) if wide else plt.subplots(1, 2, figsize=(2 * pw, ph), dpi=100)
+    for ax, what in zip(axes, ("buildings", "units")):
+        camps(ax, frames)
+        rows = [r for r in deaths if (r["d"] == "units") == (what == "units")]
+        for r in rows:
+            vc = FCOLOUR.get(force(r["v"]), "#444")
+            if what == "buildings":
+                if r.get("cx") is not None:
+                    ax.plot([r["cx"], r["x"]], [r["cy"], r["y"]], color=FCOLOUR.get(force(r["k"]), "#444"), lw=0.5, alpha=0.35)
+                ax.plot(r["x"], r["y"], MARK.get(r["d"], "x"), color=vc, ms=5, alpha=0.8, mec="none" if r["d"] != "other" else vc)
+            else:
+                ax.plot(r["x"], r["y"], ".", color=vc, ms=3, alpha=0.4)
+        counts = {}
+        for r in rows:
+            counts[force(r["v"])] = counts.get(force(r["v"]), 0) + 1
+        for v, n in sorted(counts.items(), key=lambda x: -x[1]):
+            ax.plot([], [], "o", color=FCOLOUR.get(v, "#444"), label=f"{WHO.get(v, v)}: {n}")
+        if what == "buildings":
+            for kd, mk in MARK.items():
+                if any(r["d"] == kd for r in rows):
+                    ax.plot([], [], mk, color="#555", ls="none", label=kd)
+        if rows:
+            ax.legend(fontsize=7, loc="upper left")
+        ax.set_aspect("equal")
+        ax.set_xlim(x0, x1)
+        ax.set_ylim(y0, y1)
+        ax.tick_params(labelsize=7)
+        ax.set_title(f"seed {seed}: {what} lost, coloured by owner" + (
+            "\nshape: kind; a thin line runs back to the killer, coloured by its owner" if what == "buildings" else
+            "\none dot a unit"), fontsize=8)
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def death_table(deaths, top=14):
+    """What killed what: victim (its owner) by killer (its owner), most first; buildings and units apart."""
+    out = []
+    for what in ("buildings", "units"):
+        tally = {}
+        for r in deaths:
+            if (r["d"] == "units") != (what == "units"):
+                continue
+            key = (force(r["v"]), plain(r["n"]), force(r["k"]), plain(r["c"]) if r.get("c") else "gone before it")
+            tally[key] = tally.get(key, 0) + 1
+        if not tally:
+            continue
+        rows = sorted(tally.items(), key=lambda x: -x[1])
+        trs = "".join(f"<tr><td>{n}</td><td>{html.escape(WHO.get(v, v))}</td><td>{html.escape(nm)}</td>"
+                      f"<td>{html.escape(WHO.get(k, k))}</td><td>{html.escape(c)}</td></tr>" for (v, nm, k, c), n in rows[:top])
+        more = f"<p class='sum'>and {len(rows) - top} smaller lines.</p>" if len(rows) > top else ""
+        out.append(f"<table class='kinds'><tr><th>{what}</th><th>owner</th><th>what</th><th>killed by</th><th>with</th></tr>{trs}</table>{more}")
+    return "<div class='scroll'>" + "".join(out) + "</div>" if out else ""
+
+
 def main():
     *paths, out = sys.argv[1:]
     outdir = os.path.dirname(out)
@@ -212,6 +330,12 @@ def main():
         events, raids, alarms = parse(os.path.join(os.path.dirname(path), "decisions.txt"), frames)
         timeline(seed, frames, raids, alarms, os.path.join(outdir, "img", f"timeline-{seed}.png"))
         map_(seed, frames, raids, alarms, os.path.join(outdir, "img", f"map-{seed}.png"))
+        deaths = load_deaths(os.path.join(os.path.dirname(path), "deaths.jsonl"))
+        dpart = ""
+        if deaths is not None:
+            death_map(seed, frames, deaths, os.path.join(outdir, "img", f"deaths-{seed}.png"))
+            dpart = (f'<details open><summary>Deaths ({len(deaths)})</summary><img class="wide" src="img/deaths-{seed}.png" '
+                     f'alt="deaths, seed {seed}">{death_table(deaths)}</details>')
         cells = "".join(f'<td class="{"ok" if judged[n][0] else "miss"}">{"met" if judged[n][0] else "missed"}</td>' for n in NAMES)
         rows.append(f'<tr><td><a href="#s{seed}">{seed}</a></td>{cells}<td>{len(alarms)}</td><td>{len(raids)}</td></tr>')
         why = "".join(f"<li><b>{n}</b> {'met' if judged[n][0] else 'missed'}: {html.escape(judged[n][1])}</li>" for n in NAMES)
@@ -236,6 +360,7 @@ def main():
         sections.append(f'''<section id="s{seed}"><h2>Seed {seed}</h2><ul class="why">{why}</ul>{ktable}{syn}
 <p class="sum">Raids and sieges: {html.escape(summary) or "none"}. Watchdog alarms: {len(alarms)}.</p>
 <div class="pics"><img src="img/timeline-{seed}.png" alt="timeline, seed {seed}"><img src="img/map-{seed}.png" alt="map, seed {seed}"></div>
+{dpart}
 <details><summary>Events ({len(events)})</summary><table class="ev"><tr><th>min</th><th>who</th><th>what</th></tr>{ev}</table></details></section>''')
     page = f'''<title>Landing Party System Review</title>
 <style>
@@ -251,6 +376,7 @@ td.ok {{ color: var(--ok); }} td.miss {{ color: var(--miss); font-weight: 600; }
 .why li {{ margin-bottom: 4px; }} .sum, .lede {{ color: var(--muted); }}
 .ev {{ font-size: 13px; }} .kinds {{ margin: 10px 0; font-size: 14px; font-variant-numeric: tabular-nums; }}
 .kinds td.meant {{ color: var(--muted); font-size: 13px; }} .synth {{ margin: 8px 0 12px; padding: 8px 12px; border-left: 3px solid #8a9e00; background: var(--panel); font-size: 14px; }} .scroll {{ overflow-x: auto; }} .ev tr.alarm td {{ color: var(--miss); }}
+img.wide {{ width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 4px; }}
 section {{ margin-top: 36px; }} details {{ margin-top: 10px; }}
 </style>
 <main><h1>System review</h1>

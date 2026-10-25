@@ -2650,6 +2650,10 @@ scenarios.system = function()
       S.know_max = S.know_max or {}
       for fk, k in pairs(frame.know or {}) do S.know_max[fk] = math.max(S.know_max[fk] or 0, k.losses or 0) end
       helpers.write_file("landing-party/system.jsonl", helpers.table_to_json(frame) .. "\n", true)
+      local rows = {}
+      for _, r in ipairs(S.death_buf or {}) do rows[#rows + 1] = helpers.table_to_json(r) .. "\n" end
+      helpers.write_file("landing-party/deaths.jsonl", table.concat(rows), true)
+      S.death_buf = {}
       S.frames = (S.frames or 0) + 1
     end)
   end
@@ -10501,7 +10505,13 @@ script.on_event(defines.events.on_entity_died, function(e)
         local kk = v .. ">" .. k .. ":" .. kind
         S.kills[kk] = (S.kills[kk] or 0) + 1
       end
-
+      -- And where (the user, 2026-10-25: a map of the deaths by kind): each death with its killer and where that stood,
+      -- written with the minute's frame to deaths.jsonl (scripts/system_review.py draws them).
+      local p, c = e.entity.position, e.cause and e.cause.valid and e.cause or nil
+      S.death_buf = S.death_buf or {}
+      table.insert(S.death_buf, {s = math.floor(game.tick / 60), x = math.floor(p.x), y = math.floor(p.y), v = v,
+        n = e.entity.name, d = what == "units" and "units" or (KILL_KIND[e.entity.type] or "other"), k = k,
+        c = c and c.name or nil, cx = c and math.floor(c.position.x) or nil, cy = c and math.floor(c.position.y) or nil})
     end
   end
   -- Where a corporation's unit fell to a turret, and how far from it (the claim rig's hands fell to turrets out of reach).
