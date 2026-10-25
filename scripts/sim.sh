@@ -49,14 +49,17 @@ avg=$(grep -oE "avg: [0-9.]+ ms" "$SIM/sim.out" | head -1 | grep -oE "[0-9.]+" |
 echo "METRIC ms_per_tick $avg" >> "$out/results.txt"
 dest="$REPO/docs/sim/$RUN"
 mkdir -p "$dest"
-cp "$out/decisions.txt" "$out/sim.jsonl" "$out/results.txt" "$dest/"
+# (A run with no settlement writes no sim.jsonl: system solo, Synthexis alone.)
+for f in decisions.txt sim.jsonl results.txt; do [ -f "$out/$f" ] && cp "$out/$f" "$dest/"; done
 if [ -s "$out/timeline.jsonl" ]; then
   cp "$out/timeline.jsonl" "$dest/"
   uv run --quiet --with matplotlib python3 "$REPO/scripts/timeline.py" "$dest" > /dev/null 2>&1 \
   || echo "plots skipped (uv: $(basename "$dest")); the run is judged by its results"
 fi
-uv run --quiet --with matplotlib python3 "$REPO/scripts/plot.py" "$dest/sim.jsonl" "$dest" > /dev/null 2>&1 \
+if [ -f "$dest/sim.jsonl" ]; then
+  uv run --quiet --with matplotlib python3 "$REPO/scripts/plot.py" "$dest/sim.jsonl" "$dest" > /dev/null 2>&1 \
   || echo "plots skipped (uv: $(basename "$dest")); the run is judged by its results"
+fi
 if [ -s "$out/faction.jsonl" ]; then
   cp "$out/faction.jsonl" "$dest/"
   uv run --quiet --with matplotlib python3 "$REPO/scripts/overview.py" "$dest/faction.jsonl" "$dest/overview.png" > /dev/null 2>&1 \

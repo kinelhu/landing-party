@@ -2669,6 +2669,22 @@ scenarios.system = function()
     check("system: each faction's losses known to it", ok, serpent.line({lost = lost, recorded = recorded}))
     if S.solo then
       check("system: Synthexis landed (solo)", S.synth ~= nil and S.synth ~= false, tostring(S.synth))
+      -- Every wave that marched walked its trail to the breach (as one compound order the march "ended" within 120 ticks
+      -- on seeds 777 and 1, its first legs out of the incubator field unwalkable, and the herd went straight at its mark).
+      local fast = {}
+      for _, l in ipairs(lp("herd_state").log) do
+        if l.t_march and l.t_breach then
+          local len = 0
+          for k = 2, #(l.trail or {}) do
+            local a, b = l.trail[k - 1], l.trail[k]
+            len = len + math.sqrt(((a[1] or a.x) - (b[1] or b.x)) ^ 2 + ((a[2] or a.y) - (b[2] or b.y)) ^ 2)
+          end
+          if l.t_breach - l.t_march < len * 3 then
+            table.insert(fast, string.format("wave %d: %d ticks for %.0f tiles", l.id, l.t_breach - l.t_march, len))
+          end
+        end
+      end
+      check("system: every wave walked its trail (solo)", #fast == 0, table.concat(fast, "; "))
     else
       check("system: every faction landed", S.g ~= nil and S.s ~= nil and S.synth ~= nil and S.synth ~= false,
         string.format("grubstake %s, serenity %s, synthexis %s", tostring(S.g), tostring(S.s), tostring(S.synth)))
@@ -8168,6 +8184,19 @@ scenarios.herd = function()
     end
     if mix == "" then
       check("herd: the scout marked a face", w.mark ~= nil and not w.blind, serpent.line(w.mark))
+      -- Its trail walked: one leg after another, at a biter's pace (as one compound order the march "ended" 35 to 120
+      -- ticks after it was given and the herd went straight at its mark; system sim, 2026-10-25).
+      local len = 0
+      for k = 2, #(w.trail or {}) do
+        local a, b = w.trail[k - 1], w.trail[k]
+        len = len + math.sqrt(((a[1] or a.x) - (b[1] or b.x)) ^ 2 + ((a[2] or a.y) - (b[2] or b.y)) ^ 2)
+      end
+      check("herd: it walked its trail", w.legs and w.legs > #w.trail and w.legs_failed * 2 <= #w.trail
+        and w.t_breach and w.t_march and w.t_breach - w.t_march >= len * 3,
+        string.format("legs %s of %d, %s failed; %s ticks for %.0f tiles", tostring(w.legs), #(w.trail or {}),
+          tostring(w.legs_failed), tostring(w.t_breach and w.t_march and w.t_breach - w.t_march), len))
+      check("herd: it walked home", w.outcome ~= "home" or (w.home_legs and w.home_n and w.home_legs > w.home_n),
+        string.format("%s of %s legs", tostring(w.home_legs), tostring(w.home_n)))
       check("herd: the power died", power == 0, tostring(power))
       -- Cut the supply, then use it (0.2.12): with the power down it turns on the lasers it silenced, and stays until
       -- half are lost (it had gone home 34 of 41 strong with every laser standing). Some come home; turrets fall.
@@ -10396,7 +10425,8 @@ schedule(END, function()
   -- No settlement at all (a scenario that lands later and never did): its own checks say why.
   if not storage.id then
     if not S.solo then check("a settlement exists", false, "none landed") end
-    table.insert(lines, "DONE " .. failed .. " FAILED")
+    -- (As below: "ALL PASSED" when none failed, which sim.sh and the regression read; system solo lands no settlement.)
+    table.insert(lines, failed == 0 and "DONE ALL PASSED" or ("DONE " .. failed .. " FAILED"))
     helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")
     return
   end

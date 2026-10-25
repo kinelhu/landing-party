@@ -894,7 +894,8 @@ local function finish(w, outcome)
     t_launch = w.t0, t_mark = w.t_mark, t_march = w.t_march, t_breach = w.t_breach, t_inside = w.t_inside,
     t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},
     trail = w.trail, farm = w.farm, recalled = w.recalled, probe = w.probe and w.probe.result,
-    breach = w.breach and {w.breach.x, w.breach.y}})
+    breach = w.breach and {w.breach.x, w.breach.y}, legs = w.leg, legs_failed = w.legs_failed or 0,
+    home_legs = w.home_leg, home_n = w.home and #w.home})
   h.waves[w.id] = nil
   log(w, string.format("%s; %d of %d home", outcome, alive(w), w.size))
   -- Its lesson: the face it tried and whether it broke anything past the wall there; what killed its units round it.
