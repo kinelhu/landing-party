@@ -241,6 +241,16 @@ end
 -- trials as the player's do, on their merits. Its last trials (cell, defence, when) are kept in know.lua's record.
 local DEFENCE = {["ammo-turret"] = 1, ["electric-turret"] = 1.5, ["fluid-turret"] = 2.5}
 local WALL_TYPES = {"wall", "gate"}
+-- A place's defenders that move count too, a fifth of a gun turret each, within GARRISON_REACH of it: weighed by its
+-- turrets and walls alone, a Kessler-Hayashi camp with a few guns on its edge and a hundred units inside read as soft,
+-- and in four-faction runs 15 of 19 waves came blind (the scout killed by its tanks, troopers and outposts) and lost half
+-- their number to it (2026-10-25; alone against the stand-in, 1 of 24).
+local UNIT_DEFENCE = 0.2
+local GARRISON_REACH = 96
+-- And by what its waves there cost: the share that came home, with KEEP_PRIOR units' benefit of the doubt (a wave wiped
+-- out leaves a quarter of the score; its odds model alone kept a Kessler-Hayashi outpost "worth learning from", and it
+-- sent waves of 60 and 90 there in turn, none home, 2026-10-25).
+local KEEP_PRIOR = 20
 
 local function foes()
   local out = {}
@@ -284,6 +294,9 @@ local function target_from(surface, pos, f, n)
       c.walls = surface.count_entities_filtered{area = {{c.cx * 64, c.cy * 64}, {c.cx * 64 + 64, c.cy * 64 + 64}},
         type = WALL_TYPES, force = c.force}
       c.defence = c.defence + c.walls / mind.per_wall
+      c.units = surface.count_entities_filtered{position = {c.cx * 64 + 32, c.cy * 64 + 32}, radius = GARRISON_REACH,
+        type = {"unit", "spider-unit"}, force = c.force}
+      c.defence = c.defence + c.units * UNIT_DEFENCE
       local r = (n or shared.WAVE_MIN) / (1 + mind.per_turret * c.defence)
       local p = r * r / (1 + r * r)
       c.odds, c.teach = p, 4 * p * (1 - p)
@@ -301,7 +314,9 @@ local function target_from(surface, pos, f, n)
         end
       end
       c.dist = math.sqrt(c.d)
-      c.score = (1 + c.defence) * c.teach * c.novelty / (1 + c.dist / mind.far)
+      local l = herd.lesson_near(c.at, 128)
+      c.kept = (((l and l.home) or 0) + KEEP_PRIOR) / (((l and l.sent) or 0) + KEEP_PRIOR)
+      c.score = (1 + c.defence) * c.teach * c.novelty * c.kept / (1 + c.dist / mind.far)
       ranked[#ranked + 1] = c
     elseif not soft or c.d < soft.d then
       soft = c
@@ -311,18 +326,19 @@ local function target_from(surface, pos, f, n)
   local why = {}
   for k = 1, math.min(3, #ranked) do
     local c = ranked[k]
-    why[#why + 1] = string.format("%s at %.0f,%.0f: defence %.1f (%d walls), odds %.2f, teaches %.2f, novelty %.2f, %.0f tiles, score %.2f",
-      c.force, c.at.x, c.at.y, c.defence, c.walls, c.odds, c.teach, c.novelty, c.dist, c.score)
+    why[#why + 1] = string.format("%s at %.0f,%.0f: defence %.1f (%d walls, %d units), odds %.2f, teaches %.2f, novelty %.2f, kept %.2f, %.0f tiles, score %.2f",
+      c.force, c.at.x, c.at.y, c.defence, c.walls, c.units or 0, c.odds, c.teach, c.novelty, c.kept, c.dist, c.score)
   end
   -- Nothing defended in reach: the nearest of what stands, a trial against nothing (it calibrates).
   local best = ranked[1] or soft
   if not best then return end
   if not ranked[1] then why[1] = string.format("nothing defended; %s at %.0f,%.0f, %.0f tiles", best.force, best.at.x,
     best.at.y, math.sqrt(best.d)) end
-  trace(string.format("farm %d weighs: %s", f and f.id or 0, table.concat(why, "; ")))
-  tried[best.key] = {tick = game.tick, defence = best.defence}
   local rival = not shared.is_player_force(game.forces[best.force]) and {best.force} or nil
-  return best.at, rival
+  -- The trial is recorded, and the weighing traced, when a wave goes (send): waiting for a bigger wave or its order it
+  -- weighs again every ten seconds, and each weighing marked its choice tried, until every place read as just tried
+  -- (novelty 0.01 everywhere) and the place it went was all but chance (0.2.14 to 0.2.18).
+  return best.at, rival, {key = best.key, defence = best.defence, why = table.concat(why, "; ")}
 end
 
 -- What a breed scores against a lesson's killers (counters.lua: +1 wins, -1 loses), weighed by how many each killed.
@@ -397,7 +413,7 @@ local function send(f, tick)
     local rec = herd.pen(id)
     if rec and rec.pen.valid then avail = avail + math.max(0, #herd.stock(rec) - HOME_GUARD) end
   end
-  local target, rival = target_from(s, f.pos, f, math.min(avail, WAVE_MAX))
+  local target, rival, choice = target_from(s, f.pos, f, math.min(avail, WAVE_MAX))
   if not target then return end
   local bd
   -- What killed its last wave there (herd.lesson_near): the breeds that beat those killers go first, the rest keep the
@@ -489,6 +505,8 @@ local function send(f, tick)
       no_probe = true
     end
   end
+  trace(string.format("farm %d weighs: %s", f.id, choice.why))
+  trials()[choice.key] = {tick = tick, defence = choice.defence}
   herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe})
   trace(string.format("farm %d sends %d at %.0f,%.0f", f.id, #units, target.x, target.y))
 end

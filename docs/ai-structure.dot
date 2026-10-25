@@ -68,8 +68,8 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n1292 lines", width=2.24, fillcolor="#f7dede"];
-    "farm" [label="farm\n774 lines", width=1.66, fillcolor="#eef2f7"];
+    "herd" [label="herd\n1303 lines", width=2.25, fillcolor="#f7dede"];
+    "farm" [label="farm\n792 lines", width=1.68, fillcolor="#eef2f7"];
     "creep" [label="creep\n273 lines", width=1.10, fillcolor="#eef2f7"];
     "cell" [label="cell\n323 lines", width=1.16, fillcolor="#eef2f7"];
   }

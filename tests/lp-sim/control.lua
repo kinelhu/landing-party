@@ -2673,6 +2673,12 @@ scenarios.system = function()
     local ok = true
     for fk, n in pairs(lost) do if n > 0 and (recorded[fk] or 0) == 0 then ok = false end end
     check("system: each faction's losses known to it", ok, serpent.line({lost = lost, recorded = recorded}))
+    -- Every wave chose its face (0.2.18: from the ground; with the scout's sightings 15 of 19 waves came blind in
+    -- four-faction runs, their scouts killed by Kessler-Hayashi's armies, 2026-10-25).
+    local hl = lp("herd_state").log or {}
+    local blind = 0
+    for _, l in ipairs(hl) do if l.blind or not l.mark then blind = blind + 1 end end
+    check("system: every Synthexis wave chose its face", blind == 0, string.format("%d of %d without", blind, #hl))
     if S.solo then
       check("system: Synthexis landed (solo)", S.synth ~= nil and S.synth ~= false, tostring(S.synth))
       -- Every wave that marched walked its trail to the breach (as one compound order the march "ended" within 120 ticks
@@ -7931,7 +7937,8 @@ end
 -- herd home, the trail on the ground for 20 minutes and gone after. Mixes:
 --   keep: the power under the front's guns, none in the middle (power up; it withdrew, did not idle)
 --   second: a second source under the front's guns (power up)
---   scout: seven troopers outside the wall on the scout's loop (the scout killed: a blind wave; the next loops wider)
+--   scout: seven troopers outside the wall on the scout's loop (the scout killed: the wave comes all the same, its face
+--          read from the ground; the next loops wider)
 --   belt: no lasers, no power: twelve gun turrets fed by burner inserters from chests (the inserters go, the guns stand)
 --   wild: a wild nest 50 tiles off the trail (no wild biter in the herd; no fight between wild and bred)
 --   blind: its biters' sight 0 (the control: no report, nothing found inside; power up)
@@ -8253,7 +8260,8 @@ scenarios.herd = function()
       check("herd: it withdrew (" .. mix .. ")", w.t_withdraw ~= nil, w.outcome)
     elseif mix == "scout" then
       local w2 = S.wave2 and entry(S.wave2)
-      check("herd: the scout killed, the wave came blind", w.blind == true, tostring(w.blind))
+      check("herd: the scout killed, the wave chose its face all the same", w.mark ~= nil and not w.blind,
+        serpent.line({mark = w.mark, blind = w.blind}))
       check("herd: the second wave ended", w2 ~= nil, "still out")
       check("herd: the next loop wider", w2 and w2.loop >= w.loop + 10,
         string.format("%s then %s", tostring(w.loop), tostring(w2 and w2.loop)))

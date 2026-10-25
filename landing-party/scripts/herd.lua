@@ -382,7 +382,18 @@ function herd.launch(p, target, opts)
   local forces = opts.forces or players()
   local c, hx, hy = base_box(s, target, forces)
   local h = st()
-  local mem = p.memory[memory_key(c)] or {extra = 0}
+  -- What its scouts learnt round this base: the nearest memory within two cells (a wave that broke half a base moved the
+  -- next one's middle 25 tiles, into another cell, and its scout looped no wider where the last was killed).
+  local mem = p.memory[memory_key(c)]
+  if not mem then
+    local bd
+    for key, m in pairs(p.memory) do
+      local mx, my = key:match("^(-?%d+),(-?%d+)$")
+      local d = (tonumber(mx) * 32 + 16 - c.x) ^ 2 + (tonumber(my) * 32 + 16 - c.y) ^ 2
+      if d <= 64 * 64 and (not bd or d < bd) then mem, bd = m, d end
+    end
+  end
+  mem = mem or {extra = 0}
   p.memory[memory_key(c)] = mem
   local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy, foes = opts.forces,
     no_probe = opts.no_probe,
@@ -629,7 +640,43 @@ function herd.on_probe_hit(e)
   end
 end
 
+-- What it knows of the base it goes at: every turret round it, by face (the user, 2026-10-25: "ground truth only + scout as
+-- a non essential complement"). Its faces were the scout's sightings, and in four-faction runs 15 of 19 waves came blind:
+-- their scouts killed by Kessler-Hayashi's tanks and outposts. The scout still loops the base before the wave, the tell
+-- and the wave's clock; killed, the wave comes all the same.
+local function read_ground(w)
+  local s = game.surfaces[w.surface]
+  local r = w.loop
+  w.seen, w.watched = {}, {}
+  for k = 0, 7 do w.watched[k] = true end
+  for _, t in pairs(s.find_entities_filtered{area = {{w.center.x - w.hx - r, w.center.y - w.hy - r},
+    {w.center.x + w.hx + r, w.center.y + w.hy + r}}, force = foes(w), type = TURRETS}) do
+    local a = math.atan2(t.position.y - w.center.y, t.position.x - w.center.x)
+    w.seen[t.unit_number] = math.floor(a / (math.pi / 4) + 0.5) % 8
+  end
+end
+
+-- Its scout killed: a skull where it fell, and the next scout round that base loops wider (flavour; the wave comes).
+local function scout_lost(w)
+  if w.scout_lost then return end
+  w.scout_lost = true
+  log(w, w.scout_died_at and string.format("its scout killed by %s at %.0f,%.0f, %.0f from the turrets' middle; the wave comes all the same",
+    w.scout_killer or "?", w.scout_died_at.x, w.scout_died_at.y, math.sqrt(d2(w.scout_died_at, w.center)))
+    or "its scout gone; the wave comes all the same")
+  local p = st().pens[w.pen]
+  if p then
+    local m = p.memory[memory_key(w.center)] or {extra = 0}
+    m.extra = m.extra + SCOUT_EXTRA
+    p.memory[memory_key(w.center)] = m
+  end
+  if w.scout_died_at then
+    rendering.draw_sprite{sprite = "virtual-signal/signal-skull", surface = w.surface, target = w.scout_died_at,
+      x_scale = 1.2, y_scale = 1.2, render_mode = "chart", tint = B.color, time_to_live = TRAIL_TICKS}
+  end
+end
+
 local function mark(w)
+  read_ground(w)
   local j, count = choose_mark(w)
   w.mark = loop_point(w, j)
   w.mark_index = j
@@ -651,30 +698,10 @@ local function mark(w)
     w.scout.commandable.set_command(compound(cmds))
   end
   w.t_mark = game.tick
-  local seen_faces = {}
-  for k = 0, 7 do seen_faces[#seen_faces + 1] = (w.watched and w.watched[k]) and "y" or "-" end
-  log(w, string.format("scout's turrets by face (E, SE, S, SW, W, NW, N, NE from the middle) %s (faces seen %s); mark at %.0f,%.0f",
-    table.concat(parts, " "), table.concat(seen_faces), w.mark.x, w.mark.y))
+  log(w, string.format("turrets by face (E, SE, S, SW, W, NW, N, NE from the middle) %s; mark at %.0f,%.0f",
+    table.concat(parts, " "), w.mark.x, w.mark.y))
   probe(w)
   gather(w, "march")
-end
-
-local function blind(w)
-  w.blind = true
-  log(w, "no whole loop from its scout: the wave comes blind" .. (w.scout_died_at and string.format(" (its scout killed by %s at %.0f,%.0f, %.0f from the turrets' middle)",
-    w.scout_killer or "?", w.scout_died_at.x, w.scout_died_at.y, math.sqrt(d2(w.scout_died_at, w.center)))
-    or (w.scout and w.scout.valid and " (its scout alive)") or " (its scout gone without dying: taken off the map)"))
-  local p = st().pens[w.pen]
-  if p then
-    local m = p.memory[memory_key(w.center)] or {extra = 0}
-    m.extra = m.extra + SCOUT_EXTRA
-    p.memory[memory_key(w.center)] = m
-  end
-  if w.scout_died_at then
-    rendering.draw_sprite{sprite = "virtual-signal/signal-skull", surface = w.surface, target = w.scout_died_at,
-      x_scale = 1.2, y_scale = 1.2, render_mode = "chart", tint = B.color, time_to_live = TRAIL_TICKS}
-  end
-  gather(w, "blind")
 end
 
 -- On the move it fights nothing: a herd forty wide spills into turret reach along the loop, and fighting back there
@@ -701,6 +728,7 @@ local function march(w)
   end
 end
 
+-- A wave that came blind (waves of older saves: since 0.2.18 none does).
 local function blind_attack(w)
   local p = st().pens[w.pen]
   local from = p and p.pen.valid and p.pen.position or w.center
@@ -993,6 +1021,8 @@ local function finish(w, outcome)
     local l = lessons()[key] or {faces = {}, killers = {}, waves = 0}
     lessons()[key] = l
     l.waves = l.waves + 1
+    -- What it cost: how many it sent there and how many came home (farm.lua weighs the place by it).
+    l.sent, l.home = (l.sent or 0) + (w.size or 0), (l.home or 0) + alive(w)
     local f = l.faces[w.mark_sector] or {tried = 0, broke = 0}
     l.faces[w.mark_sector] = f
     f.tried = f.tried + 1
@@ -1027,24 +1057,7 @@ local function step(w, tick)
   if not s then return finish(w, "lost") end
   if w.stage == "scout" then
     local sc = w.scout
-    if not (sc and sc.valid) then return blind(w) end
-    if tick % 30 == 0 then
-      -- The faces it has seen: the sector it stands in, while on its loop's ring (within the loop's distance and 15 of
-      -- the turrets' box). Judged by a face's middle point, a loop 39 out passed the east face of seed 777 between two
-      -- looks, and its single gun was never weighed (2026-10-25).
-      w.watched = w.watched or {}
-      local dx, dy = sc.position.x - w.center.x, sc.position.y - w.center.y
-      if math.abs(dx) <= w.hx + w.loop + 15 and math.abs(dy) <= w.hy + w.loop + 15 then
-        local k = math.floor(math.atan2(dy, dx) / (math.pi / 4) + 0.5) % 8
-        w.watched[k] = true
-      end
-      for _, t in pairs(s.find_entities_filtered{position = sc.position, radius = w.sight, force = foes(w), type = TURRETS}) do
-        if not w.seen[t.unit_number] then
-          local a = math.atan2(t.position.y - w.center.y, t.position.x - w.center.x)
-          w.seen[t.unit_number] = math.floor(a / (math.pi / 4) + 0.5) % 8
-        end
-      end
-    end
+    if not (sc and sc.valid) then scout_lost(w); return mark(w) end
     if w.scout_cmds then
       -- Waiting for its corridor: the scout's clock starts when it sets out.
       if generated(s, w.gen) or tick - w.t > GEN_WAIT then
@@ -1140,11 +1153,9 @@ function herd.on_command_completed(e)
   end
   for _, w in pairs(h.waves) do
     if w.stage == "scout" and w.scout and w.scout.valid and e.unit_number == w.scout.unit_number then
-      w.scout_seen = 0
-      for _ in pairs(w.seen) do w.scout_seen = w.scout_seen + 1 end
-      log(w, string.format("scout's loop done (%s, result %d%s) at %.0f,%.0f, %d turrets seen",
+      log(w, string.format("scout's loop done (%s, result %d%s) at %.0f,%.0f",
         e.result == defines.behavior_result.success and "whole" or "cut short", e.result,
-        e.was_distracted and ", distracted" or "", w.scout.position.x, w.scout.position.y, w.scout_seen))
+        e.was_distracted and ", distracted" or "", w.scout.position.x, w.scout.position.y))
       -- A leg it could not walk: the rest of the loop from the point after its nearest, the unwalkable one skipped, up to
       -- RESUMES times (one unreachable point failed the whole compound).
       if e.result ~= defines.behavior_result.success and (w.resumes or 0) < RESUMES and w.scout.valid then
@@ -1161,9 +1172,7 @@ function herd.on_command_completed(e)
         w.scout.commandable.set_command(compound(cmds))
         return
       end
-      -- Half a loop is not a report: faces it never saw would read as empty (a squad in its way cut one short, and the
-      -- herd went for a face it had not seen). It comes blind, and the next loop there goes wider.
-      if e.result ~= defines.behavior_result.success then return blind(w) end
+      -- (Its loop cut short, the wave comes all the same: the faces are read from the ground, read_ground.)
       return mark(w)
     end
     if w.group and w.group.valid and e.unit_number == w.group.unique_id then
@@ -1232,9 +1241,11 @@ function herd.on_died(e)
     end
   end
   for _, w in pairs(h.waves) do
-    if w.scout == ent and w.stage == "scout" then
+    -- Its scout killed, at any stage (cut short under fire, its wave marked before it fell): the skull, the next loop wider.
+    if w.scout == ent and not w.scout_lost then
       w.scout_died_at = {x = ent.position.x, y = ent.position.y}
       w.scout_killer = (e.cause and e.cause.valid and e.cause.name) or (e.force and e.force.name) or "?"
+      scout_lost(w)
     end
   end
 end

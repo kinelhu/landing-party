@@ -689,3 +689,20 @@ against the player -1; the player against Kessler-Hayashi +24.
 - Held at every wall, in four 3-hour solo runs it broke less than with the hold off: where its biters open the wall
   themselves, unheld bursters go in with them and burst on what stands behind, the power more than once, and held ones
   widen a hole already open. So it holds them only where its lesson says a wall held.
+
+### It knows the ground; the scout is the warning (0.2.19)
+
+- In four-faction runs 15 of 19 waves came blind: their scouts, looping round turrets only, were killed by
+  Kessler-Hayashi's tanks, troopers and outposts, and the wave went in without a face, losing half its number. Alone
+  against the stand-in, 1 of 24.
+- Its faces are now read from the ground, every turret round its target, with what its lessons say of each face. The
+  scout still loops the base before the wave: the player's warning, and the wave's clock. Killed, it leaves a skull on
+  the map and the next scout there loops wider; the wave comes all the same.
+- Its targets are weighed by their moving defenders too: a Kessler-Hayashi camp with a few guns on its edge and a
+  hundred units inside had read as soft, and drew wave after wave.
+- Two faults in its weighing of targets, found reading the trace: while a wave waited to grow or for its order, it
+  weighed again every ten seconds and marked each choice tried, so every place soon read as just tried and where it
+  went was close to chance; and nothing told it that every wave sent somewhere had died there. A trial is now recorded
+  when a wave leaves, and a place is weighed by the share of its waves there that came home.
+- In four-faction runs its waves no longer come blind, and now fight: at Kessler-Hayashi's camps most die, where blind
+  waves used to walk up and home whole. How Synthexis should fare against Kessler-Hayashi is a balance question left open.

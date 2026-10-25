@@ -130,6 +130,7 @@ It lands once the biters' evolution reaches 0.25, on a nest field 600 to 1,000 t
 biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, "Synthexis culture"), `/lp wave` sends a wave.
 28. **The tell**: before a wave, one pale cyan biter, small, quick and lit at night (the Synthexis scout, 0.2.14), walks
     round your base out of turret reach, stops at each side, then sits at one. Did you notice it before the herd came, and could you tell where it would hit?
+    (0.2.18: killing it no longer blinds the wave; Synthexis knows your defences, and the scout is the warning.)
 29. **The trail**: mud on the ground and a dashed green line on the map from its farm to the side it chose. Does it read
     as "they came from there", and does it lead you back to the farm?
 30. **The strike**: the herd breaks two wall pieces where the scout sat and goes for what feeds your guns (power,
