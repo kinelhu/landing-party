@@ -206,6 +206,10 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 50. **Kessler-Hayashi's clearing guards stay home** (0.2.14): the troopers guarding a dug-in clearance used to chase
     biters out into the worms and die there. A guard that strays more than six tiles past its ring now walks back.
     Watch a clearance next to a worm field: do the guards hold their ground?
+51. **The herd walks its trail** (0.2.15): until now most Synthexis waves dropped their route at the start and went
+    straight at their mark, and some left a fifth of the herd at the incubators. Now the whole herd follows the trail on
+    the map to the face its scout chose, and goes home the same way. Does the green trail now predict where they come
+    from? Are the waves noticeably harder?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

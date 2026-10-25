@@ -639,3 +639,22 @@ against the player -1; the player against Kessler-Hayashi +24.
 - **Watched faces by sector**: the wave picks among the faces its scout saw, never one it did not (an unseen face read
   as the weakest).
 
+### What learning is worth, and the march it uncovered (0.2.15)
+
+- Measured with `system` LP_MIX=solo against LP_MIX=solo-nolearn (its lessons off: `B.mind.learns`, the test lever
+  `biotech_unlearned`), four seeds, three game hours each.
+- The first run showed two faults, not a verdict. An incubator took back the units it released while they waited for
+  the scout, so 11 to 19 of every wave of 60 never left; once an incubator went unfed, 87 of a wave of 120 went feral
+  with it. And the herd's whole trail as one compound order failed 35 to 120 ticks after it was given, on most waves: the
+  herd went straight at its mark from 900 tiles off, its trail never walked; its way home failed the same way and left
+  it standing at the wall it had broken, counted home. Both are fixed: members released again and called into the group,
+  a pen's stock never counting a unit out with a wave, and the march and the way home given leg by leg. On seed 777 the
+  second wave then broke 17 to 20 buildings where it had broken none or four.
+- A wave that went in and found nothing to break leaves no lesson: a turret left of a gutted base drew waves of 120 that
+  each walked in and home, counted "held", each escalating the next.
+- The stand-in rebuilt nothing, so after the first breakthrough every wave met a gutted base. Solo, it now rebuilds what
+  it lost five minutes on, as a player with robots would.
+- Against the rebuilding stand-in: with lessons, 273 buildings broken for 1,252 units sent (21.8 per 100); without,
+  272 for 1,519 (17.9). The same damage for about a fifth fewer units, won on three seeds of four; on 12345 an escalated
+  wave of 90 broke nothing and the learner did less. Learning pays in units, not yet in damage.
+
