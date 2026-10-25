@@ -22,6 +22,7 @@ local pods = require("__landing-party__.scripts.pods")
 local creep = require("__landing-party__.scripts.creep")
 local cell = require("__landing-party__.scripts.cell")
 local know = require("__landing-party__.scripts.know")
+local COUNTERS = require("__landing-party__.counters")
 local tune = require("__landing-party__.scripts.tune")
 
 local farm = {}
@@ -55,6 +56,8 @@ local HOME_GUARD = 6          -- per pen, kept at the gate when a wave goes
 -- A wave's most (the consult: waves of 20 to 60; the mega wave is an event at the top of its ladder, not the default).
 -- Four full pens sent 135 in the first farm run.
 local WAVE_MAX = 60
+local ESCALATE_WAIT = 10 * 3600   -- at most this much longer for a bigger wave at a defence that held
+local UNFIT = -0.5                -- a breed scoring under this against a defence's killers is not sent at it
 local WAVE_GAP = 20 * 3600
 local FIRST_WAVE = 10 * 3600  -- after landing
 local RELAND = 60 * 3600
@@ -311,6 +314,9 @@ local function target_from(surface, pos, f, n)
 end
 
 local function send(f, tick)
+  -- (Waiting for a bigger wave: looked at again every ten seconds, not every tick.)
+  if f.escalate_retry and tick < f.escalate_retry then return end
+  f.escalate_retry = nil
   local s = game.surfaces[f.surface]
   local units, origin = {}, nil
   -- What it could send (its odds are weighed with it): every pen's stock over its guard, at most WAVE_MAX.
@@ -322,19 +328,62 @@ local function send(f, tick)
   local target, rival = target_from(s, f.pos, f, math.min(avail, WAVE_MAX))
   if not target then return end
   local bd
+  -- What killed its last wave there (herd.lesson_near): the breeds that beat those killers go first, the rest keep the
+  -- gate (counters.lua, the arena's matrix; the user, 2026-10-24: learning that shows). With no lesson, the nearest go.
+  local lesson = herd.lesson_near(target, 128)
+  -- Escalation (the user, 2026-10-24): a defence that held draws a bigger wave, half as many again for each that broke
+  -- nothing there (at most twice WAVE_MAX), and it waits for its stock to reach it (at most ESCALATE_WAIT longer).
+  local held = 0
+  for _, fc in pairs(lesson and lesson.faces or {}) do held = held + (fc.tried - fc.broke) end
+  local cap = math.floor(WAVE_MAX * math.min(2, 1 + 0.5 * held))
+  if cap > WAVE_MAX and avail < cap then
+    f.escalate_since = f.escalate_since or tick
+    if tick - f.escalate_since < ESCALATE_WAIT then f.escalate_retry = tick + 600; return end
+  end
+  f.escalate_since = nil
+  local total = 0
+  for _, n in pairs(lesson and lesson.killers or {}) do total = total + n end
+  local function fit(u)
+    if total == 0 then return 0 end
+    local row, v = COUNTERS[u.name] or COUNTERS[shared.kind_of(u.name)] or {}, 0
+    for k, n in pairs(lesson.killers) do v = v + n / total * (row[k] or 0) end
+    return v
+  end
   for _, id in ipairs(f.pens) do
     local rec = herd.pen(id)
     if rec and rec.pen.valid then
       local stock = herd.stock(rec)
-      table.sort(stock, function(a, b) return d2(a.position, rec.pen.position) < d2(b.position, rec.pen.position) end)
+      if total > 0 then
+        local fits = {}
+        for _, u in ipairs(stock) do fits[u.unit_number] = fit(u) end
+        table.sort(stock, function(a, b) return fits[a.unit_number] > fits[b.unit_number] end)
+        -- The least fit keep the gate (the loop below keeps the first HOME_GUARD at home), the fittest go first.
+        local guard = {}
+        for i = #stock, math.max(1, #stock - HOME_GUARD + 1), -1 do table.insert(guard, 1, table.remove(stock, i)) end
+        for i = #guard, 1, -1 do table.insert(stock, 1, guard[i]) end
+      else
+        table.sort(stock, function(a, b) return d2(a.position, rec.pen.position) < d2(b.position, rec.pen.position) end)
+      end
       local home = {}
       for i, u in ipairs(stock) do
-        if i <= HOME_GUARD or #units >= WAVE_MAX then table.insert(home, u) else table.insert(units, u) end
+        -- (With a lesson, a breed that loses to what killed the last wave stays at the gate too: small biters, -1 against
+        -- gun turrets, were half of a wave sent against them.)
+        local unfit = total > 0 and fit(u) < UNFIT
+        if i <= HOME_GUARD or #units >= cap or unfit then table.insert(home, u) else table.insert(units, u) end
       end
       rec.stock = home
       local d = d2(rec.pen.position, target)
       if not bd or d < bd then origin, bd = rec, d end
     end
+  end
+  if cap > WAVE_MAX then
+    trace(string.format("farm %d: the defence there held %d times; a wave of %d (at most %d)", f.id, held, #units, cap))
+  end
+  if total > 0 and #units > 0 then
+    local by = {}
+    for _, u in ipairs(units) do local n = u.name:gsub("^lp%-bred%-", ""); by[n] = (by[n] or 0) + 1 end
+    trace(string.format("farm %d: its wave made up against what killed the last (%s): %s", f.id, serpent.line(lesson.killers),
+      serpent.line(by)))
   end
   if #units < shared.WAVE_MIN or not origin then
     -- Not enough yet: back into the pens' stock.

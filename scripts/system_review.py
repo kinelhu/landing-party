@@ -25,6 +25,14 @@ spec.loader.exec_module(report)
 
 CORPS, COLOUR = report.CORPS, report.COLOUR
 NAMES = ["survive", "even", "shapes", "fights", "pressure"]
+# What each faction is meant to break of the player's, as designed (DESIGN.md; the user, 2026-10-25: count kinds apart, to
+# see whether each faction's effect reflects the target priorities given to it). Words only; the numbers are the runs'.
+# (Runs before 2026-10-25's split counted turrets and walls together as "defence".)
+KINDS = ["turrets", "walls", "defence", "power", "logistics", "production", "other"]
+MEANT = {"lp-serenity": "defences and siege targets (it breaks your line)",
+         "lp-grubstake": "production and logistics (soft targets: drills, belts, chests)",
+         "lp-biotech": "supply first (power, inserters that feed guns), then the defences it has cut off",
+         "enemy": "whatever your pollution draws them to"}
 OUTCOME = {"done": "#2e8b3a", "aborted": "#8a8a8a", "fled": "#d08a1c", "breaks": "#c0392b"}
 
 LINE = re.compile(r"^\s*(\d+) (base (\d+)|biotech|grubstake|serenity)\s+(.*)$")
@@ -170,7 +178,18 @@ def main():
         for r in raids:
             outcomes[(r["fac"], r["outcome"])] = outcomes.get((r["fac"], r["outcome"]), 0) + 1
         summary = ", ".join(f"{CORPS.get(f, f)} {o} {n}" for (f, o), n in sorted(outcomes.items()))
-        sections.append(f'''<section id="s{seed}"><h2>Seed {seed}</h2><ul class="why">{why}</ul>
+        # What each faction broke of the player's, by kind, beside what it is meant to go for.
+        kills = frames[-1].get("kills") or {}
+        used = [i for i, kd in enumerate(KINDS) if any(kills.get(f"player>{k_}:{kd}", 0) for k_ in MEANT)]
+        krows = []
+        for killer, meant in MEANT.items():
+            vals = [kills.get(f"player>{killer}:{KINDS[i]}", 0) for i in used]
+            if sum(vals):
+                name = {"lp-serenity": "Kessler-Hayashi", "lp-grubstake": "Grubstake", "lp-biotech": "Synthexis", "enemy": "Wild biters"}[killer]
+                krows.append(f"<tr><td>{name}</td>" + "".join(f"<td>{v}</td>" for v in vals) + f"<td class='meant'>{html.escape(meant)}</td></tr>")
+        ktable = ("<div class='scroll'><table class='kinds'><tr><th>broke of yours</th>" + "".join(f"<th>{KINDS[i]}</th>" for i in used)
+                  + "<th>meant to go for</th></tr>" + "".join(krows) + "</table></div>") if krows else "<p class='sum'>Nothing of yours broken.</p>"
+        sections.append(f'''<section id="s{seed}"><h2>Seed {seed}</h2><ul class="why">{why}</ul>{ktable}
 <p class="sum">Raids and sieges: {html.escape(summary) or "none"}. Watchdog alarms: {len(alarms)}.</p>
 <div class="pics"><img src="img/timeline-{seed}.png" alt="timeline, seed {seed}"><img src="img/map-{seed}.png" alt="map, seed {seed}"></div>
 <details><summary>Events ({len(events)})</summary><table class="ev"><tr><th>min</th><th>who</th><th>what</th></tr>{ev}</table></details></section>''')
@@ -186,7 +205,8 @@ td.ok {{ color: var(--ok); }} td.miss {{ color: var(--miss); font-weight: 600; }
 .pics {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 10px; }}
 .pics img {{ width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 4px; }}
 .why li {{ margin-bottom: 4px; }} .sum, .lede {{ color: var(--muted); }}
-.ev {{ font-size: 13px; }} .ev tr.alarm td {{ color: var(--miss); }}
+.ev {{ font-size: 13px; }} .kinds {{ margin: 10px 0; font-size: 14px; font-variant-numeric: tabular-nums; }}
+.kinds td.meant {{ color: var(--muted); font-size: 13px; }} .scroll {{ overflow-x: auto; }} .ev tr.alarm td {{ color: var(--miss); }}
 section {{ margin-top: 36px; }} details {{ margin-top: 10px; }}
 </style>
 <main><h1>System review</h1>

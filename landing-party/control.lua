@@ -151,7 +151,12 @@ script.on_event(defines.events.on_entity_damaged, function(e)
     -- answered, and the answers cost the factory more than the broken line saved): a cordon post's pieces raise its
     -- alarm (its units come to defend it) but provoke no answer.
     local own = e.entity.unit_number and storage.owner[e.entity.unit_number]
-    if not (own and own.module and own.module.kind == "post") then
+    -- Nor a unit hit on an errand of its own or away from home (know.resented): Grubstake's raid broke, the player's
+    -- turrets shot the raiders running home, and it "answered" with a raid on the walled base it had just fled
+    -- (system 1, 2026-10-25), as reprisals had before.
+    local unit = e.entity.type == "unit" or e.entity.type == "spider-unit"
+    local errand = unit and not know.resented(know.faction_of(e.entity.force.name), e.entity)
+    if not (own and own.module and own.module.kind == "post") and not errand then
       ops.provoke(e.entity.force.name, e.force.name, e.cause and e.cause.valid and e.cause or e.entity)
     end
     base.on_damaged(e.entity)

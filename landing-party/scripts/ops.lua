@@ -1256,8 +1256,8 @@ local function launch(b, key, trace, army, opts)
       end
     end
   end
-  trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %.1f): %d units stage at %.0f,%.0f", t.kind,
-    t.pos[1], t.pos[2], t.value, d, #members, stage[1], stage[2]))
+  trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %.1f, exposure %.1f, rung %d): %d units stage at %.0f,%.0f",
+    t.kind, t.pos[1], t.pos[2], t.value, d, t.exposure or -1, t.owner and ladder(t.owner, b.force) or -1, #members, stage[1], stage[2]))
   return true
 end
 

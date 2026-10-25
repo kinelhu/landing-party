@@ -46,6 +46,9 @@ end
 -- plus 2). Grubstake's soft is exposure, not any turret within 30 tiles: a megabase's rails, big poles and far
 -- substations sit just beyond its turrets' reach, and every one of them had counted as defended.
 local EXPOSE = {["ammo-turret"] = 20, ["electric-turret"] = 26, ["fluid-turret"] = 32}
+-- Walled in weighs over the ladder's soft (ops.lua, LADDER_SOFT 3): pressed, Grubstake still raided a walled base's
+-- substations at 1.5; a thief breaks a perimeter only at its top rung, where no limit holds.
+local ENCLOSE_REACH, ENCLOSE_RAYS, WALLED = 80, 6, 3.5
 function ops.exposure(surface, pos, forces)
   local w = 0
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = 32, force = forces,
@@ -57,6 +60,21 @@ function ops.exposure(surface, pos, forces)
       w = w + k[1] * (1 + f.get_ammo_damage_modifier(k[2])) * (1 + f.get_gun_speed_modifier(k[2]))
     end
   end
+  -- Behind a wall is not soft (2026-10-25): a substation in the middle of a walled base, out of every turret's reach,
+  -- read as exposed 0, and Grubstake broke 54 walls and turrets on its way to it (system sim, seed 1). Walled in: of
+  -- eight lines out to ENCLOSE_REACH, at least ENCLOSE_RAYS cross the owner's wall or gate.
+  -- (Only where it decides anything: already exposed, it is; the count stops once six lines can no longer be walled.)
+  if w > WALLED then return w end
+  local rays = 0
+  for k = 0, 7 do
+    if rays + (8 - k) < ENCLOSE_RAYS then break end
+    local a = k * math.pi / 4
+    for d = 4, ENCLOSE_REACH, 4 do
+      if surface.count_entities_filtered{position = {pos[1] + math.cos(a) * d, pos[2] + math.sin(a) * d}, radius = 2.5,
+        force = forces, type = {"wall", "gate"}, limit = 1} > 0 then rays = rays + 1; break end
+    end
+  end
+  if rays >= ENCLOSE_RAYS then w = w + WALLED end
   return w
 end
 -- Who stands by a target, at the staging look only (units move; the two-minute scan would be stale): characters 0.5,

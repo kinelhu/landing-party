@@ -17,6 +17,7 @@
 -- 360-tile route of waypoints whole; a stop in a compound command holds the scout; turrets are the `cause` of their
 -- hits, lasers included.
 local ground = require("__landing-party__.scripts.ground")
+local know = require("__landing-party__.scripts.know")
 local shared = require("shared")
 local herd = {}
 
@@ -97,6 +98,27 @@ local function add(p, dx, dy) return {x = p.x + dx, y = p.y + dy} end
 local function players() return shared.player_forces() end
 -- Whom a wave is sent against: the player's forces, or the rival it was sent at (farm.lua, every third wave).
 local function foes(w) return (w and w.foes) or players() end
+-- What its waves learnt at a defence (the user, 2026-10-24: Synthexis, the smart biter enemy; learning that shows): by
+-- the defence's middle on a 64-tile grid, each face tried (of eight) with what came of it, and what killed its units
+-- there, by kind. Read by the scout (a face that held weighs as if better gunned) and by farm.lua (a wave's make-up
+-- tilts toward the breeds that beat those killers, counters.lua). Kept in its knowledge (know.lua).
+local HELD_PENALTY = 3      -- a face that held: this many turrets more in the scout's eyes, each time
+local function lesson_key(c) return string.format("%d,%d", math.floor(c.x / 64), math.floor(c.y / 64)) end
+local function lessons()
+  local k = know.of("biotech")
+  k.lessons = k.lessons or {}
+  return k.lessons
+end
+function herd.lesson_near(pos, reach)
+  local best, bd
+  for key, l in pairs(lessons()) do
+    local cx, cy = key:match("^(-?%d+),(-?%d+)$")
+    local d = (tonumber(cx) * 64 + 32 - (pos.x or pos[1])) ^ 2 + (tonumber(cy) * 64 + 32 - (pos.y or pos[2])) ^ 2
+    if d <= (reach or 128) ^ 2 and (not bd or d < bd) then best, bd = l, d end
+  end
+  return best
+end
+
 -- Everyone whose turrets shoot its units: the player's forces and every corporation's (a wave's foes are its target's).
 local function hostiles()
   local out = {}
@@ -439,6 +461,16 @@ local function choose_mark(w)
   local count = {}
   for k = 0, 7 do count[k] = 0 end
   for _, sector in pairs(w.seen) do count[sector] = count[sector] + 1 end
+  -- A face that held before weighs as better gunned than it looks.
+  local l = lessons()[lesson_key(w.center)]
+  w.held_seen = {}
+  for k = 0, 7 do
+    local f = l and l.faces[k]
+    if f and f.tried > f.broke then
+      count[k] = count[k] + HELD_PENALTY * (f.tried - f.broke)
+      w.held_seen[#w.held_seen + 1] = k
+    end
+  end
   local any = w.watched and next(w.watched) ~= nil
   local best, bc, bsteps
   for k = 0, 7 do
@@ -567,6 +599,7 @@ local function mark(w)
   local j, count = choose_mark(w)
   w.mark = loop_point(w, j)
   w.mark_index = j
+  w.mark_sector = math.floor(j * 8 / LOOP_POINTS + 0.5) % 8
   local parts = {}
   for k = 0, 7 do table.insert(parts, count[k]) end
   local p = st().pens[w.pen]
@@ -820,6 +853,31 @@ local function finish(w, outcome)
     breach = w.breach and {w.breach.x, w.breach.y}})
   h.waves[w.id] = nil
   log(w, string.format("%s; %d of %d home", outcome, alive(w), w.size))
+  -- Its lesson: the face it tried and whether it broke anything past the wall there; what killed its units round it.
+  if w.mark_sector and not w.blind then
+    local key = lesson_key(w.center)
+    local l = lessons()[key] or {faces = {}, killers = {}, waves = 0}
+    lessons()[key] = l
+    l.waves = l.waves + 1
+    local f = l.faces[w.mark_sector] or {tried = 0, broke = 0}
+    l.faces[w.mark_sector] = f
+    f.tried = f.tried + 1
+    local broke = 0
+    for name, n in pairs(w.kills or {}) do
+      local proto = prototypes.entity[name]
+      if not (proto and (proto.type == "wall" or proto.type == "gate")) then broke = broke + n end
+    end
+    if broke > 0 then f.broke = f.broke + 1 end
+    local r = w.hx + w.hy + 60
+    local killed = 0
+    for _, loss in ipairs(know.losses("biotech", game.tick - (w.t0 or game.tick) + 60, function(x)
+      return x.unit and x.killer and (x.pos[1] - w.center.x) ^ 2 + (x.pos[2] - w.center.y) ^ 2 <= r * r end)) do
+      l.killers[loss.killer] = (l.killers[loss.killer] or 0) + 1
+      killed = killed + 1
+    end
+    log(w, string.format("lesson: face %d %s (%d of %d broke there); %d of its own killed by %s", w.mark_sector,
+      broke > 0 and "gave" or "held", f.broke, f.tried, killed, serpent.line(l.killers)))
+  end
 end
 
 local function step(w, tick)

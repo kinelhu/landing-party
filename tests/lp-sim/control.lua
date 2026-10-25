@@ -2478,7 +2478,13 @@ scenarios.system = function()
       end
     end)
   end
-  if forced then
+  -- LP_MIX=solo: Synthexis alone against the stand-in (the user, 2026-10-24: "why not test it in isolation against a
+  -- player base? Without Kessler"): no corporation's arrival is set off, and their landing clock is stopped.
+  local solo = params.mix == "solo"
+  S.solo = solo
+  if solo then
+    schedule(40, function() lp("debug_tune", {cadence_minutes = 1000000}) end)
+  elseif forced then
     schedule(SYSTEM_LAND_G * 3600, function()
       S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
       storage.id = storage.id or S.g
@@ -2621,8 +2627,12 @@ scenarios.system = function()
     local ok = true
     for fk, n in pairs(lost) do if n > 0 and (recorded[fk] or 0) == 0 then ok = false end end
     check("system: each faction's losses known to it", ok, serpent.line({lost = lost, recorded = recorded}))
-    check("system: every faction landed", S.g ~= nil and S.s ~= nil and S.synth ~= nil and S.synth ~= false,
-      string.format("grubstake %s, serenity %s, synthexis %s", tostring(S.g), tostring(S.s), tostring(S.synth)))
+    if S.solo then
+      check("system: Synthexis landed (solo)", S.synth ~= nil and S.synth ~= false, tostring(S.synth))
+    else
+      check("system: every faction landed", S.g ~= nil and S.s ~= nil and S.synth ~= nil and S.synth ~= false,
+        string.format("grubstake %s, serenity %s, synthexis %s", tostring(S.g), tostring(S.s), tostring(S.synth)))
+    end
   end)
 end
 
@@ -10340,7 +10350,7 @@ schedule(END, function()
   if storage.levers_note then table.insert(lines, 1, "INFO " .. storage.levers_note) end
   -- No settlement at all (a scenario that lands later and never did): its own checks say why.
   if not storage.id then
-    check("a settlement exists", false, "none landed")
+    if not S.solo then check("a settlement exists", false, "none landed") end
     table.insert(lines, "DONE " .. failed .. " FAILED")
     helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")
     return
@@ -10387,6 +10397,16 @@ schedule(END, function()
   helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\n")
 end)
 
+-- Buildings by kind, for the system sim's tally.
+local KILL_KIND = {}
+for _, t in ipairs({"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret", "turret"}) do KILL_KIND[t] = "turrets" end
+for _, t in ipairs({"wall", "gate"}) do KILL_KIND[t] = "walls" end
+for _, t in ipairs({"generator", "electric-energy-interface", "solar-panel", "accumulator", "electric-pole", "reactor",
+  "boiler", "burner-generator", "fusion-generator"}) do KILL_KIND[t] = "power" end
+for _, t in ipairs({"inserter", "transport-belt", "underground-belt", "splitter", "container", "logistic-container", "pipe",
+  "pipe-to-ground", "pump", "loader", "loader-1x1"}) do KILL_KIND[t] = "logistics" end
+for _, t in ipairs({"mining-drill", "furnace", "assembling-machine", "lab", "rocket-silo", "radar", "roboport"}) do KILL_KIND[t] = "production" end
+
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
@@ -10399,6 +10419,13 @@ script.on_event(defines.events.on_entity_died, function(e)
       S.kills = S.kills or {}
       local key = v .. ">" .. k .. ":" .. what
       S.kills[key] = (S.kills[key] or 0) + 1
+      -- And buildings by kind (the user, 2026-10-25: what each faction breaks, against what it is meant to go for).
+      if what == "buildings" then
+        local t = e.entity.type
+        local kind = KILL_KIND[t] or "other"
+        local kk = v .. ">" .. k .. ":" .. kind
+        S.kills[kk] = (S.kills[kk] or 0) + 1
+      end
 
     end
   end
@@ -10441,10 +10468,12 @@ script.on_event(defines.events.on_entity_died, function(e)
     table.insert(lines, string.format("INFO lander killed at tick %d by %s (%s)", e.tick, by,
       e.force and e.force.name or "?"))
   end
-end, {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
+-- Every death in the system sim (its tally of who lost what to whom): filtered, the tally saw only these kinds, and a
+-- Synthexis wave that broke the player's power, inserters and lasers counted 1 of 20 (2026-10-25).
+end, params.scenario ~= "system" and {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
   {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"}, {filter = "type", type = "mining-drill"},
-  {filter = "type", type = "spider-unit"}})
+  {filter = "type", type = "spider-unit"}} or nil)
 
 -- Bait: what the biters it called do to Serenity (12 small biters reach its camp and bite; on 2.1 its flamers kill them
 -- all before anything falls: 42 to a pylon, nothing destroyed).

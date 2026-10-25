@@ -78,17 +78,25 @@ end
 -- reprisal, each reprisal a bigger raid, until Grubstake's camp was gone). Judged by distance from home first (its
 -- claim and 60 tiles), it failed where the two camps stood 213 tiles apart: the raiders died "at home" (system 12345).
 -- Synthexis's units are all on errands (its waves): never resented.
+-- (A set of the units on errands, built once a tick per faction: the damage handler asks on every hit.)
+local errands = {tick = -1, sets = {}}
 function know.on_errand(key, ent)
   if key == "biotech" then return true end
-  for _, b in pairs(storage.bases or {}) do
-    if b.corp == key then
-      for _, u in ipairs(b.op and b.op.members or {}) do if u == ent then return true end end
-      -- On its way back from one (pool.give): its raid over, it was still in the rival's ground, and a reprisal came
-      -- 52 ticks after "raid razed nothing" (rivals, 2026-10-24).
-      for _, u in ipairs(b.returning or {}) do if u == ent then return true end end
+  if errands.tick ~= game.tick then errands.tick, errands.sets = game.tick, {} end
+  local set = errands.sets[key]
+  if not set then
+    set = {}
+    for _, b in pairs(storage.bases or {}) do
+      if b.corp == key then
+        for _, u in ipairs(b.op and b.op.members or {}) do if u.valid and u.unit_number then set[u.unit_number] = true end end
+        -- On its way back from one (pool.give): its raid over, it was still in the rival's ground, and a reprisal came
+        -- 52 ticks after "raid razed nothing" (rivals, 2026-10-24).
+        for _, u in ipairs(b.returning or {}) do if u.valid and u.unit_number then set[u.unit_number] = true end end
+      end
     end
+    errands.sets[key] = set
   end
-  return false
+  return ent.unit_number ~= nil and set[ent.unit_number] == true
 end
 
 -- A death (control.lua, on_entity_died): recorded when the dead belonged to a faction.
