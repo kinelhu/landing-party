@@ -383,13 +383,22 @@ function herd.launch(p, target, opts)
     end
   end
   if not opts.units then p.stock = {} end
-  -- The scout: the one nearest the base.
-  local best, bd
-  for _, u in ipairs(w.members) do
-    local d = d2(u.position, c)
-    if not bd or d < bd then best, bd = u, d end
+  -- The scout: one of its own breed, made at the pen (biotech.lua: fast, frail, pale bands, lit at night), the wave's
+  -- strength untouched; where none can stand there, the herd's one nearest the base.
+  local sq = s.find_non_colliding_position("lp-bred-scout", p.pen.position, 12, 0.5)
+  local scout = sq and s.create_entity{name = "lp-bred-scout", position = sq, force = B.force}
+  if scout then
+    rendering.draw_light{sprite = "utility/light_small", surface = s, target = scout, color = {0.45, 0.95, 1},
+      scale = 1.4, intensity = 0.9, minimum_darkness = 0.3}
+    w.scout = scout
+  else
+    local best, bd
+    for _, u in ipairs(w.members) do
+      local d = d2(u.position, c)
+      if not bd or d < bd then best, bd = u, d end
+    end
+    w.scout = best
   end
-  w.scout = best
   -- The loop: entered at the point nearest the pen, walked whole, a pause at every fourth point.
   local entry, ed
   for j = 0, LOOP_POINTS - 1 do
@@ -423,8 +432,13 @@ function herd.launch(p, target, opts)
   w.scout_cmds = cmds
   mark_unit(w, w.scout, true)
   h.waves[w.id] = w
-  log(w, string.format("%d bred from pen %d; scout loops %.0f outside the turrets' box round %.0f,%.0f (%.0f by %.0f)",
-    #w.members, w.pen, w.loop, c.x, c.y, 2 * hx, 2 * hy))
+  local by = {}
+  for _, u in ipairs(w.members) do if u.valid then local n = u.name:gsub("^lp%-bred%-", ""); by[n] = (by[n] or 0) + 1 end end
+  local parts = {}
+  for n, k in pairs(by) do parts[#parts + 1] = k .. " " .. n end
+  table.sort(parts)
+  log(w, string.format("%d bred from pen %d (%s); scout loops %.0f outside the turrets' box round %.0f,%.0f (%.0f by %.0f)",
+    #w.members, w.pen, table.concat(parts, ", "), w.loop, c.x, c.y, 2 * hx, 2 * hy))
   return w.id
 end
 
@@ -887,12 +901,14 @@ local function step(w, tick)
     local sc = w.scout
     if not (sc and sc.valid) then return blind(w) end
     if tick % 30 == 0 then
-      -- The faces it has seen: within its sight of a face's point on the turrets' box.
+      -- The faces it has seen: the sector it stands in, while on its loop's ring (within the loop's distance and 15 of
+      -- the turrets' box). Judged by a face's middle point, a loop 39 out passed the east face of seed 777 between two
+      -- looks, and its single gun was never weighed (2026-10-25).
       w.watched = w.watched or {}
-      for k = 0, 7 do
-        if not w.watched[k] and d2(sc.position, to_box(w.center, w.hx, w.hy, k * math.pi / 4)) <= w.sight * w.sight then
-          w.watched[k] = true
-        end
+      local dx, dy = sc.position.x - w.center.x, sc.position.y - w.center.y
+      if math.abs(dx) <= w.hx + w.loop + 15 and math.abs(dy) <= w.hy + w.loop + 15 then
+        local k = math.floor(math.atan2(dy, dx) / (math.pi / 4) + 0.5) % 8
+        w.watched[k] = true
       end
       for _, t in pairs(s.find_entities_filtered{position = sc.position, radius = w.sight, force = foes(w), type = TURRETS}) do
         if not w.seen[t.unit_number] then

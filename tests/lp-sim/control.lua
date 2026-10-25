@@ -4991,7 +4991,10 @@ scenarios.hazard = function()
     local len = math.sqrt(o.x * o.x + o.y * o.y)
     local ux, uy = o.x / len, o.y / len
     S.nests = {}
-    for k = -1.5, 1.5 do
+    -- (The plain case six nests, not four: four drew 10 to 264 losses by the camp's luck, under the 20 that call a
+    -- clearance on some seeds, 0.2.6 included; the billing cases keep their four.)
+    local spread = (params.mix == "" or params.mix == nil) and 2.5 or 1.5
+    for k = -spread, spread do
       local p = {o.x + ux * 250 - uy * 16 * k, o.y + uy * 250 + ux * 16 * k}
       local q = surface().find_non_colliding_position("biter-spawner", p, 8, 1)
       local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
@@ -7847,7 +7850,9 @@ scenarios.fortress = function()
       -- Breaks nothing that matters: it aborts, the roboports stand. Since tanks fire cannon rounds (0.1.44) its assault
       -- takes a laser or two on seed 12345 (none on 777, 4242); "all 10 standing" until 2026-10-21.
       local last = (st.ops.log or {})[#(st.ops.log or {})]
-      check("fortress: the old siege breaks nothing (the case)", lasers >= 8 and ports == 2 and last and last.outcome == "aborted",
+      -- (Six, not eight, since 0.2.7: with its units out of their camp the old siege takes three lasers; it still aborts
+      -- with the roboports standing, where the fire plan leaves five lasers at most and no roboport.)
+      check("fortress: the old siege breaks nothing (the case)", lasers >= 6 and ports == 2 and last and last.outcome == "aborted",
         string.format("%d lasers, %d ports, %s", lasers, ports, last and last.outcome or "no siege"))
     else
       check("fortress: half the lasers down", lasers <= 5, tostring(lasers))

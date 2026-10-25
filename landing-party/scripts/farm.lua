@@ -452,6 +452,46 @@ local function evolve(f, surface)
   bf.set_evolution_factor(up and f.evo or math.min(f.evo, STOCK_EVO), surface)
 end
 
+-- Obsolete stock recycled (2026-10-25): an incubator holds at most 40, and full of the small biters of its first
+-- evolution it bred nothing newer (at 0.65 it breeds no small biter, yet its waves were half small biters, sent at gun
+-- turrets that beat them). Once a minute a full incubator turns one unit its evolution no longer breeds back into
+-- biomass (half its price), and breeds a current one in its place.
+local RECYCLE_FULL = 0.9   -- of its capacity
+local function breeds_at(evo)
+  local out = {}
+  for _, r in ipairs(prototypes.entity["lp-pen"].result_units or {}) do
+    local pts, w = r.spawn_points, 0
+    if evo <= pts[1].evolution_factor then w = evo == pts[1].evolution_factor and pts[1].weight or 0
+    else
+      w = pts[#pts].weight
+      for i = 2, #pts do
+        local a, b = pts[i - 1], pts[i]
+        if evo <= b.evolution_factor then
+          w = a.weight + (b.weight - a.weight) * (evo - a.evolution_factor) / math.max(1e-9, b.evolution_factor - a.evolution_factor)
+          break
+        end
+      end
+    end
+    out[r.unit] = w
+  end
+  return out
+end
+local function recycle(f, rec, surface)
+  local cap = prototypes.entity["lp-pen"].max_count_of_owned_units or 40
+  local stock = herd.stock(rec)
+  if #stock < cap * RECYCLE_FULL then return end
+  local now = breeds_at(game.forces[B.force].get_evolution_factor(surface))
+  for _, u in ipairs(stock) do
+    if u.valid and (now[u.name] or 0) <= 0 and shared.BREEDS[u.name] then
+      local cul = creep.of(f.id)
+      if cul then cul.biomass = cul.biomass + math.floor(shared.BREEDS[u.name].cost / 2) end
+      f.recycled = (f.recycled or 0) + 1
+      u.destroy()
+      return
+    end
+  end
+end
+
 function farm.tick(tick)
   if tick % 600 ~= 300 then return end
   local s = st()
@@ -471,6 +511,7 @@ function farm.tick(tick)
         -- Unfed: its biochamber dead, or stopped for want of a technician's visit.
         local hungry = c and (not (c.chamber and c.chamber.valid) or cell.hungry(c, tick))
         if not hungry and rec.unfed then rec.unfed = nil end
+        if not hungry and tick % 3600 == 300 then recycle(f, rec, surface) end
         if hungry and unfed(rec, tick) then
           cell.forget(pid)
           herd.release(pid)
@@ -608,7 +649,7 @@ function farm.state()
       feral = feral + (rec and rec.feral or 0)
     end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
-      landed = f.landed, taken = f.taken or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
+      landed = f.landed, taken = f.taken or 0, recycled = f.recycled or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
       lost_to_feed = f.lost_to_feed or 0, evo = f.evo, clinic = cell.clinic_up(id),
       bred_evo = game.forces[B.force] and game.forces[B.force].get_evolution_factor(f.surface), biomass = creep.of(id) and {
         now = creep.of(id).biomass, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled,

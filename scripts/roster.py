@@ -38,6 +38,7 @@ ROLE = {
     "lp-scorcher": "An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly",
     "lp-skyguard": "Its long laser tracks fliers. Weak against ground targets",
     "lp-flak-buggy": "A buggy with a flak gun against fliers. Weak against ground targets",
+    "lp-bred-scout": "Synthexis's scout: circles your defence before a wave and picks the weakest side. Fast and frail",
     "lp-trooper": "Your basic soldier, with a rifle",
     "lp-breacher": "Carries demolition charges for walls. Does little to units",
     "lp-rocket-trooper": "Fires rockets, good against armour and fliers. Slow to kill a crowd",

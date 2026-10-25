@@ -286,6 +286,7 @@ end
 -- hauler died on the way every two minutes all night, visit). None: mortars cannot clear it.
 -- Out of every worm's reach, by `margin` more (the guards' ring: the site was out of reach, its railgunners guarding
 -- 24 tiles round it were not, and six died to big worms 5 to 10 tiles from it, visit nw).
+local LEASH = 6
 local function out_of_worms(s, p, margin)
   margin = margin or 2
   for _, w in pairs(s.find_entities_filtered{position = p, radius = 52 + margin, type = "turret", force = shared.NEST_FORCES}) do
@@ -612,6 +613,15 @@ local function siege_step(b, trace, army)
       local s = game.surfaces[b.surface]
       -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
       local guard_r = CLEAR_GUARD
+      -- A leash: a guard more than LEASH beyond its ring walks back to the site, undistracted. Told to hold the ring,
+      -- guards still followed what they fought out of it, and behemoth worms killed eight of ten 15 to 36 tiles from the
+      -- site (scenario clear, worms, 2026-10-25).
+      for _, u in ipairs(op.members) do
+        if u.valid and (u.position.x - op.site[1]) ^ 2 + (u.position.y - op.site[2]) ^ 2 > (guard_r + LEASH) ^ 2 then
+          u.commandable.set_command{type = defines.command.go_to_location, destination = {x = op.site[1], y = op.site[2]},
+            radius = 6, distraction = defines.distraction.none}
+        end
+      end
       local foes = s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
       if #foes > 0 then
         -- Within the ring only, undistracted: chasing biters, they followed them into the worms (scenario clear: railgunners

@@ -620,3 +620,22 @@ against the player -1; the player against Kessler-Hayashi +24.
 - **Next (the consult's step 6):** loot and the trophy (a dead culture leaves its soil and trees; the clinic goes with
   the culture for now).
 
+### Learning that shows (0.2.12 to 0.2.14)
+
+- The user (2026-10-24): "Really think synthexis as the smart biter enemy has legs"; the features asked for were visible
+  scouting, learning that shows, and escalation.
+- **The scout a breed of its own** (0.2.14): `lp-bred-scout`, a small biter's body in pale cyan, 30 health, speed 0.34,
+  lit, made at launch (not bred). Its loop and its marks are unchanged; it is what the player looks for.
+- **Lessons** (`herd.lesson_near`): each wave leaves, at its target, which faces were tried and which broke, and what
+  killed it, by killer. The next wave there is made up against those killers from `counters.lua` (the arena's matrix):
+  a breed scoring under -0.5 against them stays at the gate. Seen on four seeds (solo, weak face): after a wave lost to
+  gun turrets, the next held fewer small biters and more medium biters and spitters.
+- **Escalation**: a defence that held draws a wave half as many again per hold (at most twice the cap), and the farm
+  waits up to ten minutes for its stock to reach it.
+- **Novelty**: a trial counts for the same force's ground within 192 tiles, so corners of one camp no longer read as
+  four untried places.
+- **Recycling**: a full incubator (90% of its 40) turns, once a minute, one unit its evolution no longer breeds into
+  half its price in biomass. Before, incubators filled with first-evolution small biters and bred nothing newer.
+- **Watched faces by sector**: the wave picks among the faces its scout saw, never one it did not (an unseen face read
+  as the weakest).
+

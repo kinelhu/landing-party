@@ -91,6 +91,49 @@ def parse(decisions, frames):
     return events, raids, alarms
 
 
+def synthexis(decisions, frames):
+    """Synthexis at a glance (the user's priority, 2026-10-24): its waves, scouting, aim against the stand-in's weak face,
+    breaches, lessons, recycling and what it broke."""
+    end = frames[-1]
+    weak = end.get("weak")
+    def face(x, y):
+        return ("east" if x > 0 else "west") if abs(x) > abs(y) else ("south" if y > 0 else "north")
+    waves, whole, blind, aims, breaches, lessons, made = 0, 0, 0, [], [], [], {}
+    for raw in open(decisions, errors="replace"):
+        if " biotech " not in raw:
+            continue
+        m = re.search(r"wave \d+: \d+ bred from pen \d+(?: \(([^)]*)\))?", raw)
+        if m:
+            waves += 1
+            for part in (m.group(1) or "").split(", "):
+                if part:
+                    n, name = part.split(" ", 1)
+                    made[name] = made.get(name, 0) + int(n)
+        if "loop done (whole" in raw:
+            whole += 1
+        if "comes blind" in raw:
+            blind += 1
+        m = re.search(r"mark at (-?\d+),(-?\d+)", raw)
+        if m and abs(int(m.group(1))) < 150 and abs(int(m.group(2))) < 150:
+            aims.append(face(int(m.group(1)), int(m.group(2))))
+        m = re.search(r": breach at (-?\d+),(-?\d+)", raw)
+        if m and abs(int(m.group(1))) < 150 and abs(int(m.group(2))) < 150:
+            breaches.append(face(int(m.group(1)), int(m.group(2))))
+        if "lesson: face" in raw:
+            lessons.append("gave" if " gave " in raw else "held")
+    kills = end.get("kills") or {}
+    broke = {kd: kills.get(f"player>lp-biotech:{kd}", 0) for kd in ("turrets", "walls", "defence", "power", "logistics", "production", "other")}
+    broke = {k: v for k, v in broke.items() if v}
+    farms = (end.get("biotech") or {})
+    total = sum(made.values()) or 1
+    mix = ", ".join(f"{name} {100 * n // total}%" for name, n in sorted(made.items(), key=lambda x: -x[1]))
+    on_weak = sum(1 for a in aims if a == weak)
+    return (f"<div class='synth'><b>Synthexis</b>: {waves} waves ({mix or 'no makeup logged'}); scouts finished {whole}, "
+            f"blind {blind}; aimed at your base {len(aims)} times, {on_weak} at the weak face ({weak or '?'}); breaches "
+            f"{', '.join(breaches) or 'none'}; lessons {', '.join(lessons) or 'none'}; broke of yours "
+            f"{', '.join(f'{k} {v}' for k, v in broke.items()) or 'nothing'}.</div>")
+
+
 def timeline(seed, frames, raids, alarms, path):
     mins = [f["minute"] for f in frames]
     fig, axes = plt.subplots(3, 1, figsize=(9, 6.4), dpi=100, sharex=True)
@@ -189,7 +232,8 @@ def main():
                 krows.append(f"<tr><td>{name}</td>" + "".join(f"<td>{v}</td>" for v in vals) + f"<td class='meant'>{html.escape(meant)}</td></tr>")
         ktable = ("<div class='scroll'><table class='kinds'><tr><th>broke of yours</th>" + "".join(f"<th>{KINDS[i]}</th>" for i in used)
                   + "<th>meant to go for</th></tr>" + "".join(krows) + "</table></div>") if krows else "<p class='sum'>Nothing of yours broken.</p>"
-        sections.append(f'''<section id="s{seed}"><h2>Seed {seed}</h2><ul class="why">{why}</ul>{ktable}
+        syn = synthexis(os.path.join(os.path.dirname(path), "decisions.txt"), frames)
+        sections.append(f'''<section id="s{seed}"><h2>Seed {seed}</h2><ul class="why">{why}</ul>{ktable}{syn}
 <p class="sum">Raids and sieges: {html.escape(summary) or "none"}. Watchdog alarms: {len(alarms)}.</p>
 <div class="pics"><img src="img/timeline-{seed}.png" alt="timeline, seed {seed}"><img src="img/map-{seed}.png" alt="map, seed {seed}"></div>
 <details><summary>Events ({len(events)})</summary><table class="ev"><tr><th>min</th><th>who</th><th>what</th></tr>{ev}</table></details></section>''')
@@ -206,7 +250,7 @@ td.ok {{ color: var(--ok); }} td.miss {{ color: var(--miss); font-weight: 600; }
 .pics img {{ width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 4px; }}
 .why li {{ margin-bottom: 4px; }} .sum, .lede {{ color: var(--muted); }}
 .ev {{ font-size: 13px; }} .kinds {{ margin: 10px 0; font-size: 14px; font-variant-numeric: tabular-nums; }}
-.kinds td.meant {{ color: var(--muted); font-size: 13px; }} .scroll {{ overflow-x: auto; }} .ev tr.alarm td {{ color: var(--miss); }}
+.kinds td.meant {{ color: var(--muted); font-size: 13px; }} .synth {{ margin: 8px 0 12px; padding: 8px 12px; border-left: 3px solid #8a9e00; background: var(--panel); font-size: 14px; }} .scroll {{ overflow-x: auto; }} .ev tr.alarm td {{ color: var(--miss); }}
 section {{ margin-top: 36px; }} details {{ margin-top: 10px; }}
 </style>
 <main><h1>System review</h1>

@@ -244,8 +244,15 @@ function cell.tick(farm_id, surface, pen_ids, tick)
     -- Not on a round (a unit made by script wanders, which counts as a command): sent to the next biochamber.
     local cmd = u.commandable.command
     if (not cmd or cmd.type ~= defines.command.compound) and #cs > 0 then
-      site.next = (site.next or 0) % #cs + 1
-      local c = cs[site.next]
+      -- The biochamber unvisited longest that no other technician is bound for (a fixed round left one cell unfed four
+      -- minutes after a pod brought new technicians to five cells).
+      local taken = {}
+      for _, o in ipairs(site.techs) do if o ~= t and o.to then taken[o.to] = true end end
+      local c
+      for _, x in ipairs(cs) do
+        if not taken[x] and (not c or (x.fed_until or 0) < (c.fed_until or 0)) then c = x end
+      end
+      if not c then site.next = (site.next or 0) % #cs + 1; c = cs[site.next] end
       t.to = c
       local home = site.tower and site.tower.valid and site.tower.position or site.at
       -- To the pad's edge on the tower's side (the biochamber's middle is inside it: no path ends there).

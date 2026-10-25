@@ -160,6 +160,28 @@ do
   table.insert(out, r)
 end
 
+-- The scout (the user, 2026-10-24: "visible scouting", the lone biter that circles the wall before a wave and that the
+-- player learns to read): a small biter's body in pale cyan bands, the fastest of the breeds and frail, lit at night;
+-- made by script when a wave sets out (herd.launch), never bred, so its loss costs the wave no fighter.
+do
+  local r
+  for _, p in ipairs(out) do if p.name == "lp-bred-small-biter" then r = table.deepcopy(p) end end
+  r.name = "lp-bred-scout"
+  r.localised_name = {"entity-name.lp-bred-scout"}
+  r.localised_description = {"entity-description.lp-bred-scout"}
+  r.max_health, r.movement_speed = 30, 0.34
+  local PALE1, PALE2 = {r = 0.45, g = 0.95, b = 1, a = 1}, {r = 0.9, g = 1, b = 1, a = 1}
+  local function pale(t, n)
+    if type(t) ~= "table" then return n end
+    if t.tint then t.tint = (n % 2 == 0) and PALE1 or PALE2; n = n + 1 end
+    for _, v in pairs(t) do n = pale(v, n) end
+    return n
+  end
+  pale(r.run_animation, 0)
+  pale(r.attack_parameters.animation, 0)
+  table.insert(out, r)
+end
+
 -- The burster (id cinder; tier 3, the breeds consult): a biter with acid bands that dies into the demolisher's fissure (a
 -- telegraphed crack, then an eruption that breaks walls and turrets round it: fire would not, walls are immune to it,
 -- and fire spreads). Shoot the banded one first, at range. Its eruption hurts any force but its own ("not-same"), so a

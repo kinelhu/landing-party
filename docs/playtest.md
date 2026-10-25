@@ -128,8 +128,8 @@ Extensions and flib. No test mod: the mod runs as a player would meet it.
 ## Synthexis (0.1.54 to 0.1.56: the third corporation, a bioengineering firm)
 It lands once the biters' evolution reaches 0.25, on a nest field 600 to 1,000 tiles from your factory, and breeds
 biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, "Synthexis culture"), `/lp wave` sends a wave.
-28. **The tell**: before a wave, one green biter with an egg icon walks round your base out of turret reach, stops at
-    each side, then sits at one. Did you notice it before the herd came, and could you tell where it would hit?
+28. **The tell**: before a wave, one pale cyan biter, small, quick and lit at night (the Synthexis scout, 0.2.14), walks
+    round your base out of turret reach, stops at each side, then sits at one. Did you notice it before the herd came, and could you tell where it would hit?
 29. **The trail**: mud on the ground and a dashed green line on the map from its farm to the side it chose. Does it read
     as "they came from there", and does it lead you back to the farm?
 30. **The strike**: the herd breaks two wall pieces where the scout sat and goes for what feeds your guns (power,
@@ -193,6 +193,19 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     health, no armour), and it no longer bites: it runs at your line and bursts there. Your rifles should drop it if
     they see it coming; a pack reaching a clump of troopers or your wall should hurt. Is there time to react, and can
     you pick it out of a wave?
+47. **It learns from a wave that failed** (0.2.14): after a wave dies at your wall, the next one at the same place is
+    made up against what killed it. Lose a wave to gun turrets and the next brings more medium biters and spitters,
+    fewer small ones. Hold twice and the next wave is bigger (half as many again for each, up to twice the usual), and
+    Synthexis waits up to ten more minutes to gather it. Can you see the second wave is different from the first?
+48. **It tries somewhere new** (0.2.14): each wave records which face held and which gave, and the next scout weighs
+    that with what it sees; a place it tried recently counts as tried for about 190 tiles around, so its next trial
+    goes elsewhere. Does it feel like it is probing you, not repeating itself?
+49. **Old stock goes back into the vat** (0.2.14): a full incubator turns, once a minute, one biter its evolution no
+    longer breeds back into biomass and breeds a current one. Late in the game its waves should no longer be half small
+    biters.
+50. **Kessler-Hayashi's clearing guards stay home** (0.2.14): the troopers guarding a dug-in clearance used to chase
+    biters out into the worms and die there. A guard that strays more than six tiles past its ring now walks back.
+    Watch a clearance next to a worm field: do the guards hold their ground?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

@@ -7,8 +7,9 @@ Each input is one seed's run (its profile's script-output/landing-party/system.j
 
 Targets (design calls, 2026-10-23):
   survive    no corporation wiped out by its rivals in two hours: each has a live base (Synthexis a culture) at the end.
-  even       no one-sided rivalry: between two corporations, the one that lost more buildings to the other lost at most
-             three times as many (a floor of 5 each, so a quiet pair passes).
+  even       no one-sided rivalry: between Kessler-Hayashi and Grubstake, the one that lost more buildings (walls apart)
+             to the other lost at most three times as many (a floor of 5 each, so a quiet pair passes). Synthexis's pairs
+             are lopsided by design and not judged (2026-10-25, when the tally began counting every death).
   shapes     growth of their own kind: Grubstake the wider early (30 minutes after Kessler-Hayashi lands, more pieces of
              ground, its camps and its settled claims, or a larger territory radius: "many small camps and strip mines"),
              Kessler-Hayashi the stronger late (garrison and turrets at the end). Until 2026-10-24 the radius alone was
@@ -63,6 +64,15 @@ def kills(frame, victim, killer, what="buildings"):
     return frame.get("kills", {}).get(f"{FORCE[victim]}>{FORCE[killer]}:{what}", 0)
 
 
+def built_lost(frame, victim, killer):
+    """Buildings victim lost to killer, walls apart where the tally has kinds (runs from 2026-10-25), else all."""
+    k = frame.get("kills", {})
+    kinds = ["turrets", "power", "logistics", "production", "other", "defence"]
+    if any(f"{FORCE[victim]}>{FORCE[killer]}:{kd}" in k for kd in kinds + ["walls"]):
+        return sum(k.get(f"{FORCE[victim]}>{FORCE[killer]}:{kd}", 0) for kd in kinds)
+    return kills(frame, victim, killer)
+
+
 def corp(frame, c):
     return frame.get("corps", {}).get(c) or {}
 
@@ -74,14 +84,12 @@ def judge(frames):
     out["survive"] = (s_end.get("live", 0) > 0 and g_end.get("live", 0) > 0 and end.get("biotech", {}).get("farms", 0) > 0,
                       f"live bases: Kessler-Hayashi {s_end.get('live', 0)}, Grubstake {g_end.get('live', 0)}; "
                       f"Synthexis cultures {end.get('biotech', {}).get('farms', 0)}")
-    worst, notes = True, []
-    for a, b in (("serenity", "grubstake"), ("serenity", "biotech"), ("grubstake", "biotech")):
-        la, lb = kills(end, a, b), kills(end, b, a)
-        ratio = max(la, FLOOR) / max(lb, FLOOR)
-        ok = 1 / EVEN <= ratio <= EVEN
-        worst = worst and ok
-        notes.append(f"{CORPS[a]} lost {la}, {CORPS[b]} lost {lb}")
-    out["even"] = (worst, "; ".join(notes))
+    # The rivalry only (2026-10-25): Synthexis's pairs are lopsided by design (Kessler-Hayashi clears its nests; it has
+    # almost no buildings to lose), and since the tally counts every death, walls broken on the way in are left out.
+    la, lb = built_lost(end, "serenity", "grubstake"), built_lost(end, "grubstake", "serenity")
+    ratio = max(la, FLOOR) / max(lb, FLOOR)
+    out["even"] = (1 / EVEN <= ratio <= EVEN, f"buildings (walls apart) Kessler-Hayashi lost {la} to Grubstake, "
+                   f"Grubstake {lb} to Kessler-Hayashi")
     at = next((f for f in frames if f["minute"] >= LAND_S + 30), end)
     rs, rg = max(corp(at, "serenity").get("radius") or [0]), max(corp(at, "grubstake").get("radius") or [0])
     ps = corp(at, "serenity").get("live", 0) + corp(at, "serenity").get("claims", 0)
