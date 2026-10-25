@@ -50,7 +50,7 @@ digraph ai {
     "ops" [label="ops\n1807 lines", width=2.81, fillcolor="#f7dede"];
     "routing" [label="routing\n374 lines", width=1.22, fillcolor="#d9f0d9"];
     "intel" [label="intel\n248 lines", width=1.08, fillcolor="#d9f0d9"];
-    "siege" [label="siege\n846 lines", width=1.74, fillcolor="#d9f0d9"];
+    "siege" [label="siege\n856 lines", width=1.75, fillcolor="#d9f0d9"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
@@ -68,10 +68,10 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n1123 lines", width=2.05, fillcolor="#f7dede"];
+    "herd" [label="herd\n1179 lines", width=2.11, fillcolor="#f7dede"];
     "farm" [label="farm\n661 lines", width=1.53, fillcolor="#eef2f7"];
     "creep" [label="creep\n273 lines", width=1.10, fillcolor="#eef2f7"];
-    "cell" [label="cell\n316 lines", width=1.15, fillcolor="#eef2f7"];
+    "cell" [label="cell\n323 lines", width=1.16, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
@@ -82,7 +82,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n632 lines", width=1.50, fillcolor="#eef2f7"];
+    "control" [label="control\n633 lines", width=1.50, fillcolor="#eef2f7"];
     "dev" [label="dev\n189 lines", width=1.01, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
   }

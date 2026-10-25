@@ -342,6 +342,7 @@ def corp_section(corp, blurb):
 farm_src = open(os.path.join(MOD, "scripts", "farm.lua")).read()
 CLIMB = float(re.search(r"local CLIMB = ([\d.]+)", farm_src).group(1))
 STOCK_EVO = float(re.search(r"local STOCK_EVO = ([\d.]+)", farm_src).group(1))
+PROBE_EVO = float(re.search(r"local PROBE_EVO, PROBE_N, PROBE_WAIT = ([\d.]+)", open(os.path.join(MOD, "scripts", "herd.lua")).read()).group(1))
 WAVE_GAP_MIN = int(re.search(r"local WAVE_GAP = (\d+) \* 3600", farm_src).group(1))
 dump = roster.d
 
@@ -467,6 +468,11 @@ def breed_cards():
         how = f"Bred from evolution {start:g}"
         r = stats.get(name)
         if r:
+            cards.append(unit_card(name, None, how))
+    # Not bred: made at an incubator when a wave sets out (scripts/herd.lua).
+    for name, how in (("lp-bred-scout", "Made at an incubator for each wave"),
+                      ("lp-runt", f"Made for a wave's probe, from evolution {PROBE_EVO:g}")):
+        if stats.get(name):
             cards.append(unit_card(name, None, how))
     return "".join(cards)
 
