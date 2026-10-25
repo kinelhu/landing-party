@@ -2480,10 +2480,50 @@ scenarios.system = function()
   end
   -- LP_MIX=solo: Synthexis alone against the stand-in (the user, 2026-10-24: "why not test it in isolation against a
   -- player base? Without Kessler"): no corporation's arrival is set off, and their landing clock is stopped.
-  local solo = params.mix == "solo"
+  -- LP_MIX=solo-nolearn: the same with its lessons off (what learning is worth, measured against solo).
+  local solo = params.mix == "solo" or params.mix == "solo-nolearn"
   S.solo = solo
   if solo then
-    schedule(40, function() lp("debug_tune", {cadence_minutes = 1000000}) end)
+    schedule(40, function() lp("debug_tune", {cadence_minutes = 1000000, biotech_unlearned = params.mix == "solo-nolearn"}) end)
+    -- Solo, the stand-in rebuilds as a player with robots does: what it lost five minutes on, as it was (a stand-in gutted
+    -- by the first wave that broke in left every later wave nothing to break, and learning could not be measured).
+    schedule(3600, function()
+      S.plan = {}
+      for _, e in ipairs(surface().find_entities_filtered{force = "player", area = {{-60, -60}, {60, 60}}}) do
+        if e.prototype.is_building or e.type == "wall" then
+          local r = {name = e.name, pos = {e.position.x, e.position.y}, dir = e.direction}
+          if e.type == "electric-energy-interface" then r.power = {e.power_production, e.electric_buffer_size} end
+          if e.type == "assembling-machine" then r.recipe = e.get_recipe() and e.get_recipe().name end
+          if e.type == "ammo-turret" then r.items = {name = "piercing-rounds-magazine", count = 100} end
+          if e.type == "container" then r.items = {name = "piercing-rounds-magazine", count = 200} end
+          table.insert(S.plan, r)
+        end
+      end
+      S.rebuilt = 0
+    end)
+    for t = 2 * 3600, END - 120, 600 do
+      schedule(t, function()
+        for _, r in ipairs(S.plan or {}) do
+          if not (r.e and r.e.valid) then
+            r.e = surface().find_entity(r.name, r.pos)
+            if r.e then r.lost = nil
+            elseif not r.lost then r.lost = game.tick
+            elseif game.tick - r.lost >= 5 * 3600 then
+              local e = surface().create_entity{name = r.name, position = r.pos, direction = r.dir, force = "player",
+                raise_built = true}
+              if e then
+                r.e, r.lost, S.rebuilt = e, nil, S.rebuilt + 1
+                if r.power then e.power_production, e.electric_buffer_size = r.power[1], r.power[2] end
+                if r.recipe then e.set_recipe(r.recipe); e.insert{name = "iron-plate", count = 400} end
+                if r.items then e.insert(r.items) end
+                if e.type == "ammo-turret" then table.insert(S.guns, e) end
+              end
+            end
+          end
+        end
+      end)
+    end
+    schedule(END - 61, function() info(string.format("system: the stand-in rebuilt %d buildings", S.rebuilt or 0)) end)
   elseif forced then
     schedule(SYSTEM_LAND_G * 3600, function()
       S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})

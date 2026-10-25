@@ -151,11 +151,16 @@ function herd.capture(spawner)
   return pen and herd.add_pen(pen)
 end
 
--- What a pen has to send: what it bred and still owns, and what came home from its last wave.
+-- What a pen has to send: what it bred and still owns, and what came home from its last wave. Never a unit out with a
+-- live wave: an incubator takes back the units it released while they wait for the scout, and counted as its stock
+-- they went feral with it when it went unfed (87 of a wave of 120 walked home as the wild's; system sim, 2026-10-25).
 local function stock(p)
   local out, seen = {}, {}
+  for _, w in pairs(st().waves) do
+    for _, u in ipairs(w.members) do if u.valid then seen[u.unit_number] = true end end
+  end
   local function take(u)
-    if u.valid and not seen[u.unit_number] then seen[u.unit_number] = true; table.insert(out, u) end
+    if u.valid and u.force.name == B.force and not seen[u.unit_number] then seen[u.unit_number] = true; table.insert(out, u) end
   end
   if p.pen.valid then for _, u in pairs(p.pen.units) do take(u) end end
   for _, u in pairs(p.stock) do take(u) end
@@ -446,7 +451,14 @@ local function herd_units(w)
   local out = {}
   -- Its own only: an unfed incubator's stock goes feral (farm.lua), and a feral biter in a wave's list is the wild's
   -- (add_member to its group raised an error).
-  for _, u in ipairs(w.members) do if u.valid and u ~= w.scout and u.force.name == B.force then table.insert(out, u) end end
+  -- One its incubator took back while it waited (11 to 19 of every wave stayed behind in the pen, never in the group):
+  -- released again.
+  for _, u in ipairs(w.members) do
+    if u.valid and u ~= w.scout and u.force.name == B.force then
+      if u.commandable and u.commandable.spawner then u.commandable.release_from_spawner() end
+      table.insert(out, u)
+    end
+  end
   return out
 end
 
@@ -661,14 +673,24 @@ end
 -- (distraction by damage) drew it on to the faces it was going round (the first herd run: ten turrets taken on the way,
 -- the herd dead before its mark).
 local function march(w)
-  local cmds = {}
-  for k = 2, #w.trail do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
-  w.group.set_command(compound(cmds))
+  -- Every one of its own in the group (at the gather a quarter of a wave of 120 was not, and stayed at the gate).
+  local strays = 0
+  for _, u in ipairs(herd_units(w)) do
+    if u.commandable.parent_group ~= w.group then w.group.add_member(u); strays = strays + 1 end
+  end
+  if strays > 0 then log(w, string.format("%d strays called into the herd", strays)) end
+  -- Leg by leg along its trail (step goes on at each leg's end; a group formed again goes on from the leg it was on):
+  -- its whole trail as one compound order failed 40 ticks after it was given on most waves of the system sim, and the
+  -- herd went straight at its mark from 900 tiles off, its trail unwalked (2026-10-25).
+  w.leg = w.leg or 2
   w.stage = "march"
   w.t = game.tick
-  local lead = herd_units(w)[1]
-  mark_unit(w, lead, true)
-  log(w, string.format("herd of %d marches", #herd_units(w)))
+  w.group.set_command(go(w.trail[math.min(w.leg, #w.trail)], defines.distraction.none, 6))
+  if not w.marched then
+    w.marched = true
+    mark_unit(w, herd_units(w)[1], true)
+    log(w, string.format("herd of %d marches", #herd_units(w)))
+  end
 end
 
 local function blind_attack(w)
@@ -761,7 +783,7 @@ local function supply_target(w)
   return best
 end
 
-local withdraw
+local withdraw, home_leg
 
 -- Its spitters (the breeds consult, tier 1): once the herd is inside they leave it and hold the breach, spitting at
 -- whatever comes at the gap (a sally into the herd's back walks into puddles); when it withdraws they stay COVER_TICKS,
@@ -834,21 +856,29 @@ local function hunt(w)
   log(w, string.format("goes for %s at %.0f,%.0f", t.name, t.position.x, t.position.y))
 end
 
+home_leg = function(w)
+  w.group.set_command(go(w.home[math.min(w.home_leg, #w.home)], defines.distraction.none, 6))
+end
+
 withdraw = function(w, why)
   if w.stage == "withdraw" or w.stage == "done" then return end
   local g = w.group
   if not (g and g.valid) then return end
   -- (Its own only: a scout from an unfed incubator goes feral, the wild's, and add_member raised an error.)
   if w.scout and w.scout.valid and w.scout.force.name == B.force then g.add_member(w.scout) end
-  local cmds = {}
-  -- Out as it came, fighting nothing (fighting back on the way home drew it on to the faces it passed: second run).
-  if w.breach then table.insert(cmds, go(w.breach, defines.distraction.none, 4)) end
-  for k = #w.trail, 1, -1 do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
-  g.set_command(compound(cmds))
+  -- Out as it came, fighting nothing (fighting back on the way home drew it on to the faces it passed: second run), leg by
+  -- leg as it marched (as one compound order it failed at once, and the herd stood at the wall it had broken, counted
+  -- home: the next wave's strays, 2026-10-25).
+  w.home = {}
+  if w.breach then table.insert(w.home, w.breach) end
+  for k = #w.trail, 1, -1 do table.insert(w.home, w.trail[k]) end
+  w.home_leg = 1
   cover(w)
   w.stage = "withdraw"
   w.t_withdraw = game.tick
   w.t = game.tick
+  w.why = why
+  home_leg(w)
   log(w, string.format("withdraws (%s); %d of %d left", why, alive(w), w.size))
 end
 
@@ -868,7 +898,8 @@ local function finish(w, outcome)
   h.waves[w.id] = nil
   log(w, string.format("%s; %d of %d home", outcome, alive(w), w.size))
   -- Its lesson: the face it tried and whether it broke anything past the wall there; what killed its units round it.
-  if w.mark_sector and not w.blind then
+  -- (Its personality: B.mind.learns; off, it keeps none, which is how the system sim measures what learning is worth.)
+  if w.mark_sector and not w.blind and B.mind.learns ~= false and not storage.biotech_unlearned then
     local key = lesson_key(w.center)
     local l = lessons()[key] or {faces = {}, killers = {}, waves = 0}
     lessons()[key] = l
@@ -882,6 +913,9 @@ local function finish(w, outcome)
       if not (proto and (proto.type == "wall" or proto.type == "gate")) then broke = broke + n end
     end
     if broke > 0 then f.broke = f.broke + 1 end
+    -- Nothing there to break (in, and nothing in sight fed a gun) is not a defence that held: not a trial of the face (a
+    -- turret left of a base drew waves of 120 that each walked in and home, counted held, and escalated: 2026-10-25).
+    if broke == 0 and w.why == "nothing in sight feeds a gun" then f.tried = f.tried - 1; l.waves = l.waves - 1 end
     local r = w.hx + w.hy + 60
     local killed = 0
     for _, loss in ipairs(know.losses("biotech", game.tick - (w.t0 or game.tick) + 60, function(x)
@@ -890,7 +924,8 @@ local function finish(w, outcome)
       killed = killed + 1
     end
     log(w, string.format("lesson: face %d %s (%d of %d broke there); %d of its own killed by %s", w.mark_sector,
-      broke > 0 and "gave" or "held", f.broke, f.tried, killed, serpent.line(l.killers)))
+      broke > 0 and "gave" or (w.why == "nothing in sight feeds a gun" and "had nothing to break") or "held", f.broke, f.tried,
+      killed, serpent.line(l.killers)))
   end
 end
 
@@ -955,12 +990,13 @@ local function step(w, tick)
     -- on with what it was doing, up to REGROUPS times; only then scattered.
     local live = herd_units(w)
     if #live >= 2 and (w.regroups or 0) < REGROUPS and (w.stage == "inside" or w.stage == "breach" or w.stage == "march"
-      or w.stage == "blind") then
+      or w.stage == "blind" or (w.stage == "withdraw" and w.home)) then
       w.regroups = (w.regroups or 0) + 1
       w.group = s.create_unit_group{position = where(w), force = B.force}
       for _, u in ipairs(live) do if not u.commandable.parent_group then w.group.add_member(u) end end
       log(w, string.format("its group broke up with %d alive: formed again (%d of %d)", #live, w.regroups, REGROUPS))
-      if w.stage == "march" then march(w) elseif w.stage == "blind" then blind_attack(w) else hunt(w) end
+      if w.stage == "march" then march(w) elseif w.stage == "blind" then blind_attack(w)
+      elseif w.stage == "withdraw" then home_leg(w) else hunt(w) end
       return
     end
     return finish(w, "scattered")
@@ -1037,14 +1073,34 @@ function herd.on_command_completed(e)
       return mark(w)
     end
     if w.group and w.group.valid and e.unit_number == w.group.unique_id then
-      if w.stage == "march" then probe_read(w); return breach(w) end
+      if w.stage == "march" then
+        if e.result ~= defines.behavior_result.success then
+          w.legs_failed = (w.legs_failed or 0) + 1
+          log(w, string.format("leg %d of %d of its trail failed (%s)", w.leg, #w.trail, tostring(e.result)))
+        end
+        w.leg = (w.leg or #w.trail) + 1
+        if w.leg <= #w.trail then
+          -- (A failed order disbands a group on 2.1: step forms it again and goes on from this leg.)
+          if w.group.valid then march(w) end
+          return
+        end
+        probe_read(w); return breach(w)
+      end
       if w.stage == "breach" then
         w.stage = "inside"; w.t_inside = game.tick
         return hunt(w)
       end
       if w.stage == "inside" then return hunt(w) end
       if w.stage == "blind" then return withdraw(w, "blind wave spent") end
-      if w.stage == "withdraw" then return finish(w, "home") end
+      if w.stage == "withdraw" then
+        -- (A wave of an older save withdraws by one order: home at its end.)
+        w.home_leg = (w.home_leg or 0) + 1
+        if w.home and w.home_leg <= #w.home then
+          if w.group.valid then home_leg(w) end
+          return
+        end
+        return finish(w, "home")
+      end
     end
   end
 end

@@ -417,6 +417,7 @@ remote.add_interface("landing-party", {
     if t.arena_surface then storage.arena_surfaces = storage.arena_surfaces or {}; storage.arena_surfaces[t.arena_surface] = true end
     if t.tap_step ~= nil then storage.tap_step = t.tap_step end
     if t.capture_off ~= nil then storage.capture_off = t.capture_off end
+    if t.biotech_unlearned ~= nil then storage.biotech_unlearned = t.biotech_unlearned or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
     if t.prospect_pace ~= nil then storage.prospect_pace = t.prospect_pace end
     if t.prospect_uncharted ~= nil then storage.prospect_uncharted = t.prospect_uncharted end
