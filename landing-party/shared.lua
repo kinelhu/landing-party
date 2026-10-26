@@ -61,7 +61,7 @@ shared.CORPS = {
         trigger = {killer = {"gun-turret", "laser-turret", "flamethrower-turret"}, min = 8}},
     },
     -- Its sky is scrap drones, cheap and many (the user, 2026-10-23: "a more scrappy opponent").
-    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 2}, arch = {pad = "drop"},
+    mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 2}, arch = {pad = "drop", town = true},
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known

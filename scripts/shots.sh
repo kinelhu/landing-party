@@ -28,7 +28,7 @@ rm -rf "$out" "$SH/saves/shots.zip"
 echo 427520 > "$SH/steam_appid.txt"
 (cd "$SH" && exec "$FACTORIO" --config "$SH/config/config.ini" --load-game "$SH/saves/shots.zip" >> "$SH/run.out" 2>&1) &
 status="timeout"; started=0; tabs=0
-for i in $(seq 1 900); do
+for i in $(seq 1 1500); do
   sleep 1
   [ -f "$out/done.txt" ] && { status="done"; break; }
   grep -q "caused a non-recoverable error" "$SH/factorio-current.log" 2>/dev/null && { status="error"; break; }

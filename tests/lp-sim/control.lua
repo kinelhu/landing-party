@@ -87,11 +87,14 @@ local function dump_map(label, center, radius, extra)
   local out = {label = label, tick = game.tick, center = center, radius = radius, entities = {}, tiles = {}, extra = extra or {}}
   local area = {{center[1] - radius, center[2] - radius}, {center[1] + radius, center[2] + radius}}
   for _, e in pairs(s.find_entities_filtered{area = area}) do
-    if not MAP_SKIP[e.type] and e.force.name ~= "neutral" then
+    -- Neutral: only a town's yard props (layout.lua), not the map's rocks and trees.
+    local prop = e.force.name == "neutral" and e.type ~= "tree" and e.type ~= "simple-entity" and e.type ~= "resource"
+      and e.type ~= "cliff"
+    if not MAP_SKIP[e.type] and (e.force.name ~= "neutral" or prop) then
       table.insert(out.entities, {e.force.name, e.name, math.floor(e.position.x * 2) / 2, math.floor(e.position.y * 2) / 2, e.type})
     end
   end
-  for _, kind in ipairs({"road", "pad", "trim", "stripe"}) do
+  for _, kind in ipairs({"road", "pad", "trim", "stripe", "hazard"}) do
     local names = {}
     for _, t in pairs(prototypes.tile) do
       if t.name:match("^lp%-") and t.name:match("%-" .. kind .. "$") then table.insert(names, t.name) end

@@ -11,10 +11,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OWNER = {"lp-serenity": "#3b5b7a", "lp-grubstake": "#d08a1c", "player": "#2e8b3a", "enemy": "#c0392b"}
+OWNER = {"lp-serenity": "#3b5b7a", "lp-grubstake": "#d08a1c", "player": "#2e8b3a", "enemy": "#c0392b", "neutral": "#6e665c"}
 FOOT = {"depot": 4, "launchpad": 9, "radar": 3, "fabricator": 3, "generator": 2, "turret": 2, "flamer": 2,
         "uplink": 6, "lander": 8, "drill": 3, "-lab": 3}
-TILE = {"road": "#9aa3ab", "pad": "#b8bfc6", "trim": "#5c6268", "stripe": "#111111"}
+TILE = {"road": "#9aa3ab", "pad": "#b8bfc6", "trim": "#5c6268", "stripe": "#111111", "hazard": "#e3b23c"}
 
 def style(name, typ):
     if typ in ("ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"): return "^", 16

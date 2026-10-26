@@ -32,9 +32,10 @@ digraph ai {
     "base" [label="base\n820 lines", width=1.71, fillcolor="#eef2f7"];
     "construction" [label="construction\n381 lines", width=1.22, fillcolor="#d9f0d9"];
     "planner" [label="planner\n301 lines", width=1.13, fillcolor="#eef2f7"];
-    "layout" [label="layout\n1184 lines", width=2.12, fillcolor="#f7dede"];
+    "layout" [label="layout\n1450 lines", width=2.41, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
+    "lots_grubstake" [label="lots_grubstake\n154 lines", width=0.97, fillcolor="#d9f0d9"];
     "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];

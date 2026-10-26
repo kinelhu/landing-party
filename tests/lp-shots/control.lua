@@ -337,7 +337,22 @@ schedule(12 * 3600, function()
   if yard then shot("14-sushi", yard.position, 1.8, false, "Grubstake's yard and its sushi belt of stolen goods") end
 end)
 
-schedule(12 * 3600 + 120, function()
+-- 7. Grubstake's town grown (layout.lua towns: lots along a tree of gravel streets, yards of junk, no walls but its
+-- pad's fence): fed parts so it grows, seen wide and close at 30 and 45 minutes.
+poll(13 * 3600, 44 * 3600, 3600, function() lp("debug_depot", S.gru, 3000) end)
+local function town_shots(tag)
+  local g = lp("stats", S.gru).origin
+  shot("15-grubstake-town-" .. tag, {g.x, g.y}, 0.25, false, "Grubstake's town, wide: streets branching from its pad")
+  local f = surface().find_entities_filtered{name = "lp-grubstake-fabricator", limit = 1}[1]
+  if f then shot("16-grubstake-street-" .. tag, f.position, 0.7, false, "a Grubstake street: machines either side, gravel") end
+  local w = surface().find_entities_filtered{name = "wooden-chest", force = "neutral", position = {g.x, g.y}, radius = 200, limit = 1}[1]
+    or surface().find_entities_filtered{name = "crash-site-spaceship-wreck-small-4", force = "neutral", position = {g.x, g.y}, radius = 200, limit = 1}[1]
+  if w then shot("17-grubstake-yard-" .. tag, w.position, 0.8, false, "a Grubstake junk yard beside a lot") end
+end
+schedule(30 * 3600, function() town_shots("m30") end)
+schedule(45 * 3600, function() town_shots("m45") end)
+
+schedule(45 * 3600 + 120, function()
   helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
   helpers.write_file(DIR .. "done.txt", "done\n")
 end)
