@@ -2,40 +2,49 @@
 
 > Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
 
-Nothing since the 16th has been played. Since then: Serenity is at war from landing (no grace), Grubstake steals by
+(Written 2026-10-19.) Nothing since the 16th has been played. Since then: Serenity is at war from landing (no grace), Grubstake steals by
 night (skimming trucks, raids that dismantle machines, a yard of stolen goods), raids have leaders, Serenity has a
 fortress kit (sieges sized to win, the howitzer, a robot jammer, the power strike, strangling, belts cut on its line),
 clears the nests that hit it and bills you for the waves your pollution draws. Space Age: landings by cargo pod,
 armour, tesla arcs. The player's side: threat scanner, muster point. All checked headless (about 180 scenarios, visits
 of real saves); none of it played. Chat notices are off by default: the world should tell you what happens.
 
-## Start
-**Every faction at once (0.2.1, Factorio 2.1):** `LP_MIX=all scripts/showcase.sh 12345 30` builds it (a few minutes,
-headless), then `scripts/play-showcase.sh all` opens it, both from `~/Dev/landing-party-wt` until 0.2.1 is merged. At
-minute 30: your walled base at spawn (12 gun and 12 laser turrets, power, assemblers, a radar, a roboport), your
-barracks' 35 units, an outpost toward each corporation and an artillery turret with its shells in a chest beside it;
-Kessler-Hayashi and Grubstake at level 2 with their tree units (laser drones, Anti-air troopers; bomb drones, flak
-buggies); Synthexis 750 tiles east (five incubators, creep, cells, substrate, technicians, its clinic, breeds at 0.57).
-Raids are on.
+## Start (playtest of 2026-10-26)
 
-Close your own game first (Steam allows one copy). Then, in a terminal:
+Nothing has been played since the 16th. Close your own game first (Steam allows one copy). Then, in a terminal:
 
-    cd ~/Dev/landing-party && scripts/play-visit.sh deathworld10x
+    cd ~/Dev/landing-party && scripts/play-visit.sh playtest
 
-It opens a fresh copy of the deathworld save the visits used (never the real file), with Landing Party, Editor
-Extensions and flib. No test mod: the mod runs as a player would meet it.
+It opens a fresh copy of deathworld10x (the save the visits used, never the real file) with the committed Landing
+Party (and Editor Extensions and flib when your copies are made for 2.1). No test mod: the mod runs as a player would meet it. Play an hour or two; the ten
+below are what matters most, the numbered list after them is the full reference.
 
-- Grubstake comes first. This save has oil processing but has never made a chemical science pack, so only its survey
-  party lands at first (a radar, two drills, a lamp, four guards, about 450 tiles out). The lander follows the first
-  chemical science pack, or 30 minutes after the survey party leaves. Not to wait: `/lp land grubstake 300` lands it
-  now; `/lp fast` shortens the survey and the wait after it to 3 minutes.
-- Serenity's gate is the first rocket launch (Space Age): on this save, call it with `/lp land serenity 300`. It is at
-  war with you from the moment it lands.
-- `/lp list` shows the settlements; `/lp fast` speeds their clocks; `/lp incidents` lists the last twenty things they did
-  and where; `/lp trace` writes their decisions to `script-output/landing-party/decisions.txt` in the visit profile.
-- `/editor` (Editor Extensions) to watch untouchable. Grubstake's thefts come by night: to see one now, wait for dusk.
-- Grubstake's heists on demand, from the nearest camp: `/lp rig` (a claim
-  jumper at the chests nearest you), `/lp tap` (a power tap on the pole nearest you, one no turret covers).
+- **Synthexis** lands within minutes (the biters' evolution here is past 0.25), on the nest field with the most room
+  and air a few hundred tiles out. Its first wave comes about ten minutes after.
+- **Grubstake**'s survey party lands at first; its lander follows the first chemical science pack, or 30 minutes after
+  the survey party leaves. Not to wait:
+  `/lp land grubstake 300`.
+- **Kessler-Hayashi** comes at the first rocket: on this save call it with `/lp land serenity 300`. At war from landing.
+- `/lp list` shows the settlements, `/lp fast` speeds their clocks, `/lp incidents` lists the last twenty things they
+  did and where, `/editor` (the game's own) to watch untouchable. Grubstake steals by night: wait for dusk.
+
+### The ten
+1. **Synthexis's waves** (47, 51, 55): a scout, then a herd walking its trail to a face of your base it picked. Does it
+   come where you are weak? After a wave you stopped, does the next one try elsewhere? Can you read it coming?
+2. **Bursters at a wall** (52, 53): glowing biters held back, sent in when the wall is reached. Do they read, and do they
+   matter?
+3. **It lives on your smoke** (57): it eats your pollution where its creep and incubators meet it. Cut a polluting line:
+   does it slow?
+4. **The carrier** (56): a violet, lit biter with an escort crossing the map to found a second culture. Worth chasing?
+5. **Grubstake's town** (58): gravel streets, machines both sides, junk yards, wooden poles, turrets in pits at the
+   street ends. Does it read as a prospectors' town? Can you drive through it? Its oldest camp grows biggest and gets a
+   second depot: are its raids the dangerous ones?
+6. **Grubstake by night** (2, 3, 5): trucks skimming your belts, raids that take machines apart. Fair? Readable?
+7. **Kessler-Hayashi's line** (13, 14): at war from landing, its perimeter growing toward you. Does the pressure feel
+   right?
+8. **Railgunners** (54): they clear nests; do they still shred Synthexis's waves?
+9. **Readability without chat** (26): could you tell who did what, and why, from the world alone?
+10. **Anything that feels wrong** (27): units stuck, friendly fire, a theft or a raid that seems unfair, a slow game.
 
 ## Grubstake, the thief (from chemical science)
 1. **Its camp and pacifier antenna**: a radar dish a size larger than a radar by the lander. Biters walk past the camp.

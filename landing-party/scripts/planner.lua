@@ -7,6 +7,9 @@ local rd = require("__landing-party__.scripts.rd")
 local planner = {}
 
 local GROW_CAP = 30            -- blocks: Serenity's spread stops here (UPS)
+local TOWN_PARTS = 120         -- parts past its army's keep before a town lays a street lot for its own sake
+local TOWN_GAP = 2 * 3600
+local CAPITAL_DEPOT_AT = 6
 local SPREAD_PARTS = 250       -- parts in hand before it spreads (what it needs for units and its line first)
 local SPREAD_WAIT = 5 * 3600   -- after a spread that found no ground
 local SPREAD_GAP = 5 * 3600    -- after a compound laid out whole
@@ -172,7 +175,10 @@ local function plan(b, only)
     local mb = storage.mature_blocks or doc.mature
     -- Only plans where growth wanted ore and found no site count: counting every idle plan (waiting for
     -- parts included) matured settlements of two blocks after five minutes.
-    if #b.blocks >= mb or ((b.grow_failed or 0) >= 12 and #b.fabs > 0) then
+    -- (A town's streets and yards are no blocks of industry: weight 0, not counted.)
+    local counted = 0
+    for _, k in ipairs(b.blocks) do if (k.weight or 1) > 0 then counted = counted + 1 end end
+    if counted >= mb or ((b.grow_failed or 0) >= 12 and #b.fabs > 0) then
       b.mature = game.tick
       trace(b, string.format("mature: %d blocks, %d hubs", #b.blocks, #b.hubs))
       -- Grown, it closes its back (cordon.ring); a camp that spreads closes it once its spread is done (below).
@@ -224,9 +230,15 @@ local function plan(b, only)
         local block = layout.picket(b, b.target, threat(b))
         return block and string.format("picket at %.0f,%.0f", block.center[1], block.center[2]) end},
     {"depot", function()
-      b.target = hub_needing(function(h) return h.count >= 3 and not h.depot end); return b.target ~= nil end,
+      b.target, b.second_depot = hub_needing(function(h) return h.count >= 3 and not h.depot end), nil
+      -- Its capital's second depot (layout.capital), once its town holds CAPITAL_DEPOT_AT lots with machines.
+      if not b.target and layout.town(b) and layout.capital(b) then
+        b.target = hub_needing(function(h) return h.lots and h.count >= CAPITAL_DEPOT_AT and not h.depot2 end)
+        b.second_depot = b.target ~= nil or nil
+      end
+      return b.target ~= nil end,
       function()
-        b.target.depot = true
+        if b.second_depot then b.target.depot2 = true else b.target.depot = true end
         -- Districts: a depot comes in one (at least one in it).
         if layout.districts(b) then
           local d = layout.district(b, "depot")
@@ -278,6 +290,18 @@ local function plan(b, only)
       return block and string.format("lamps, paving and mines at %s %.0f,%.0f", block.kind, block.center[1],
         block.center[2]) end},
     {"grow", function() return not b.mature and b.parts > 100 + keep(b) end, mining},
+    -- A town grows with its wealth (layout.town_grow; the user, 2026-10-26: "tie it to wealth"): parts to spare past its
+    -- army's keep, a street lot every TOWN_GAP at most. Last: industry, mining and defence come first.
+    {"town", function()
+      -- Mature only: a young camp builds what it needs (from minute four, the tests' rich camps laid streets and yards
+      -- round everything, and their trucks stuck among them: crew, road, prospect, tap, skim, heist).
+      return layout.town(b) and b.mature and #b.fabs > 0 and b.parts > TOWN_PARTS + keep(b)
+        and (b.town_wait or 0) <= game.tick end,
+      function()
+        b.town_wait = game.tick + TOWN_GAP
+        local block = layout.town_grow(b)
+        return block and string.format("town: %s at %.0f,%.0f", block.lot, block.center[1], block.center[2])
+      end},
   }
   for _, r in ipairs(rules) do
     if (not only or r[1] == only) and r[2]() then

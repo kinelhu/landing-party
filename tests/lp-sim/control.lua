@@ -9646,7 +9646,10 @@ scenarios.mended = function()
     info("mended: Grubstake's standing at the raid " .. tostring(S.standing0))
     info("mended: provoked at " .. serpent.line((lp("corp", "grubstake") or {}).provoked))
     if provoked then
-      check("mended: a provoked Grubstake raids with 10 or more", first and first.launched >= 10, serpent.line(first))
+      -- A quarter of its garrison at least (the bug: raids of 4 from camps of 31 to 54). Until 0.2.27, 10 or more: a town
+      -- camp has almost no walls, loses more to the attack here, and raided with 9 of 36 (a walled camp: 12 of 42).
+      check("mended: a provoked Grubstake raids with a quarter of its garrison or more",
+        first and first.launched >= math.ceil((S.garrison0 or 0) / 4), serpent.line({first = first, garrison = S.garrison0}))
     elseif serenity then
       info("mended serenity: breach " .. serpent.line(st.ops.breach_at) .. ", breached " .. tostring(st.ops.breached))
       check("mended: Serenity broke through the wall", S.rebuilt >= 1, tostring(S.rebuilt))

@@ -15,7 +15,7 @@ import wfc as W
 SIZE = 12
 W.SIZE = SIZE
 W.BUILD = {"D": (4, 4), "F": (3, 3), "G": (2, 2), "R": (3, 3), "K": (3, 3), "T": (2, 2), "V": (2, 2), "W": (2, 2),
-           "X": (1, 1), "C": (1, 1), "P": (1, 1), "L": (1, 1), "O": (2, 2), "I": (1, 1)}
+           "X": (1, 1), "C": (1, 1), "P": (1, 1), "L": (1, 1), "O": (2, 2), "I": (1, 1), "M": (3, 3)}
 MACHINES = set("DFGRK")
 STEP = {"n": (0, -1), "s": (0, 1), "e": (1, 0), "w": (-1, 0)}
 OPP = {"n": "s", "s": "n", "e": "w", "w": "e"}
@@ -84,8 +84,9 @@ def validate(vs, sol, w, h):
     return None
 
 
-CORE = {"depot", "depot_fab", "depot_pair", "fab_row", "fab", "power", "tankfarm", "stockpile", "radar"}
-FRINGE = {"end_nest", "scrap", "orepile", "parking", "straight", "empty"}
+CORE = {"depot", "depot2", "depot_fab", "depot_pair", "fab_row", "fab", "fab3", "corner_fab", "tee_fab", "power", "power2",
+        "corner_power", "tee_power", "tankfarm", "fueldump", "stockpile", "shacks", "radar"}
+FRINGE = {"end_nest", "scrap", "wreckpile", "orepile", "parking", "straight", "empty", "guardpost"}
 
 
 def opens(v):
@@ -157,7 +158,7 @@ def grow(vs, n, lots, rng):
 
 COL = {"ground": "#d9cfb4", ":": "#9c8f78", ".": "#b7ad97", "%": "#e3b23c",
        "D": "#b0651a", "F": "#8a5a2b", "G": "#6b6b2b", "R": "#4f7a7a", "K": "#7a6a55", "T": "#3a3a3a", "V": "#c9772a",
-       "W": "#5e5a55", "X": "#7d6b4f", "C": "#a07a3c", "P": "#4a3520", "L": "#f4e27a", "O": "#8c4a3a", "I": "#6f7a80"}
+       "W": "#5e5a55", "X": "#7d6b4f", "C": "#a07a3c", "P": "#4a3520", "L": "#f4e27a", "O": "#8c4a3a", "I": "#6f7a80", "M": "#4a4642"}
 
 
 def draw(ax, vs, sol, w, h, mask, title):

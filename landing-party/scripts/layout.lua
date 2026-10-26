@@ -155,22 +155,47 @@ layout.clear_ground = clear_ground
 -- of junk (wrecks, crates, a tank, ore heaps: neutral props, cleared when a lot takes the ground).
 local LOT = 12
 local LOTS = {grubstake = require("__landing-party__.scripts.lots_grubstake")}
-local ROLE_LOTS = {fab = {fab = 1, fab_row = 1}, gen = {power = 1}, depot = {depot = 1}, compound = {compound = 1}}
-local CONNECT_LOTS = {straight = 3, straight_lamp = 2, corner = 2, tee = 2, cross = 1}
-local YARD_LOTS = {scrap = 3, orepile = 2, stockpile = 2, tankfarm = 1, vehicle_yard = 1}
-local BRANCH = 0.35            -- a crossing, turn or stretch laid before the lot asked for
-local YARD = 0.45              -- a yard beside a new lot
+local ROLE_LOTS = {fab = {fab = 1, fab_row = 1, fab3 = 1, corner_fab = 1, tee_fab = 1, corner_yard = 0.5},
+  gen = {power = 1, power2 = 1, corner_power = 1, tee_power = 1}, depot = {depot = 1, depot2 = 1}, compound = {compound = 1}}
+-- (guardpost: two of its guns either side of a street, behind junk: turrets in the town, not only at its ends.)
+local CONNECT_LOTS = {straight = 3, straight_lamp = 2, corner = 2, tee = 2, cross = 1, guardpost = 0.6, parking = 1,
+  radar = 0.4}
+local YARD_LOTS = {scrap = 3, orepile = 2, stockpile = 2, tankfarm = 1, vehicle_yard = 1, fueldump = 1, wreckpile = 2,
+  shacks = 2}
+local BRANCH = 0.6             -- a crossing, turn or stretch laid before the lot asked for (0.35: 45 minutes in, a town of
+                               -- three lots; Grubstake builds few machines, its sprawl is its streets)
+local YARD = 0.7               -- a yard beside a new lot
+local TREE_MARGIN = 4          -- trees cleared this far round a lot (twice that to its south)
+local STREETS_PER_LOT, STREETS_FREE = 2, 4
+local CAPITAL_PER_LOT, CAPITAL_FREE = 3, 12
+local NEST_EVERY = 4           -- every this many lots with machines, a turret nest closes its farthest street end
 local TOWN_CAP = 14            -- lots with machines in a town hub before a new hub is founded
 local LETTER = {F = {"lp-fabricator", 3}, G = {"lp-generator", 2}, D = {"lp-depot", 4}, R = {"lp-radar", 3},
   T = {"lp-turret", 2}, P = {"lp-pylon", 1}, L = {"lp-post-lamp", 1}}
-local DECOR = {W = 2, X = 1, C = 1, O = 2, K = 3, I = 1}
-local DECOR_NAMES = {["wooden-chest"] = true, ["storage-tank"] = true, pipe = true, ["big-rock"] = true}
+local DECOR = {W = 2, X = 1, C = 1, O = 2, K = 3, I = 1, V = 2, M = 3}
+local DECOR_NAMES = {["wooden-chest"] = true, ["storage-tank"] = true, pipe = true, ["big-rock"] = true, car = true,
+  ["small-electric-pole"] = true}
+local POLE_CHANCE = 0.18
 for k = 1, 6 do DECOR_NAMES["crash-site-spaceship-wreck-small-" .. k] = true end
+for k = 1, 3 do DECOR_NAMES["crash-site-spaceship-wreck-medium-" .. k] = true end
 local DIRS = {n = {0, -1}, s = {0, 1}, e = {1, 0}, w = {-1, 0}}
 local BACK = {n = "s", s = "n", e = "w", w = "e"}
 
 function layout.town(b)
   return (shared.CORPS[b.corp].arch or {}).town and LOTS[b.corp] ~= nil and not storage.town_off
+end
+
+-- Its capital (the user, 2026-10-26: "have the cap vary per town with room for one very large town existing at once";
+-- "go with the capital idea"): the oldest standing town of its corporation. It grows CAPITAL_PER_LOT streets a lot
+-- with machines and CAPITAL_FREE more, where the others grow STREETS_PER_LOT and STREETS_FREE, and it takes a second
+-- depot (planner rule depot): the big town is where its big raids come from.
+function layout.capital(b)
+  local best, bid
+  for id, o in pairs(storage.bases or {}) do
+    if o.corp == b.corp and o.lander and o.lander.valid and not o.fallen and o.hubs and o.hubs[1] and o.hubs[1].lots
+      and (not bid or id < bid) then best, bid = o, id end
+  end
+  return best == b
 end
 
 -- Variants by name, then by the sides their street opens on ("ns", "enw"...).
@@ -208,7 +233,8 @@ local function lot_free(b, hub, i, j)
   end
   if surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = 1} > 0
     or surface.count_tiles_filtered{area = area, name = shared.variants(shared.FLOORS), limit = 1} > 0
-    or surface.count_entities_filtered{area = area, type = "resource"} > 20 then
+    -- No ore: a town grows round its patches, never over them (its drills' and its claims' ground: prospect, road).
+    or surface.count_entities_filtered{area = area, type = "resource", limit = 1} > 0 then
     return bad()
   end
   return true
@@ -217,9 +243,39 @@ end
 local function decor(surface, ch, pos, r)
   local name = (ch == "W" or ch == "X") and ("crash-site-spaceship-wreck-small-" .. (1 + math.floor(r * 6)))
     or ch == "C" and "wooden-chest" or ch == "O" and "big-rock" or ch == "K" and "storage-tank" or ch == "I" and "pipe"
+    or ch == "V" and "car" or ch == "M" and ("crash-site-spaceship-wreck-medium-" .. (1 + math.floor(r * 3)))
   if not name or not surface.can_place_entity{name = name, position = pos} then return end
-  local e = surface.create_entity{name = name, position = pos, force = "neutral"}
-  if e and name ~= "big-rock" then e.minable_flag = false end
+  local e = surface.create_entity{name = name, position = pos, force = "neutral", direction = defines.direction.north}
+  if not e then return end
+  if name ~= "big-rock" then e.minable_flag = false end
+  -- A parked car: set dressing, never a free ride.
+  if name == "car" then e.operable, e.disabled_by_script = false, true end
+end
+
+-- Worn ground under a lot (the user, 2026-10-26: "changing the ground underneath the town also (perhaps dirt/sand). It
+-- looks a little too clean"): its bare tiles turned to dirt, dry dirt and sand in clumps of WORN_CLUMP tiles, fading out
+-- WORN_FADE tiles past its edge so no square shows. Natural ground only (never water, a floor laid or a street), set at
+-- once and free: it is trodden earth, not something built.
+local WORN = {"dirt-4", "dirt-5", "dirt-6", "dry-dirt", "sand-2", "dirt-3"}
+local WORN_CLUMP, WORN_FADE = 4, 3
+local function hash(x, y, k) return ((x * 73856093 + y * 19349663 + k * 83492791) % 1000003) / 1000003 end
+local function worn(surface, x0, y0, skip)
+  local tiles = {}
+  for x = x0 - WORN_FADE, x0 + LOT + WORN_FADE - 1 do
+    for y = y0 - WORN_FADE, y0 + LOT + WORN_FADE - 1 do
+      local out = math.max(x0 - x, x - (x0 + LOT - 1), y0 - y, y - (y0 + LOT - 1), 0)
+      local keep = 1 - out / (WORN_FADE + 1)
+      if not skip[x .. "," .. y] and hash(x, y, 7) < keep then
+        local t = surface.get_tile(x, y)
+        local name = t.valid and t.name
+        if name and not t.collides_with("water_tile") and not name:find("^lp%-") and not t.prototype.mineable_properties.minable then
+          local cx, cy = math.floor(x / WORN_CLUMP), math.floor(y / WORN_CLUMP)
+          table.insert(tiles, {name = WORN[1 + math.floor(hash(cx, cy, 3) * #WORN)], position = {x, y}})
+        end
+      end
+    end
+  end
+  if #tiles > 0 then surface.set_tiles(tiles, true, false, true, false) end
 end
 
 -- Lay a lot: its street and yard floors, its machines (slots for the role asked, the rest queued), its props.
@@ -230,6 +286,10 @@ local function lot_open(b, hub, i, j, v, role)
   for _, e in pairs(surface.find_entities_filtered{area = {{x0, y0}, {x0 + LOT, y0 + LOT}}, force = "neutral"}) do
     if DECOR_NAMES[e.name] then e.destroy() end
   end
+  -- Trees round it too (TREE_MARGIN, more to the south): a tree's sprite stands tall over the ground north of it, and
+  -- the forest beside a cleared lot hid its street and machines (screenshots, 2026-10-26).
+  for _, e in pairs(surface.find_entities_filtered{type = "tree", area = {{x0 - TREE_MARGIN, y0 - TREE_MARGIN},
+    {x0 + LOT + TREE_MARGIN, y0 + LOT + 2 * TREE_MARGIN}}}) do e.destroy() end
   local yard = YARD_LOTS[v.name] ~= nil
   local block = {kind = role or (yard and "yard" or "street"), hub = hub.id, x0 = x0, y0 = y0, w = LOT, h = LOT,
     center = {x0 + LOT / 2, y0 + LOT / 2}, entities = {}, slots = {}, opened = game.tick, walls = false, walled = false,
@@ -242,6 +302,7 @@ local function lot_open(b, hub, i, j, v, role)
   if role then hub.count = hub.count + 1 end
   local slot = role == "fab" and "F" or role == "gen" and "G" or nil
   local road, hazard = {}, {}
+  local function at(c, r) local row = v.rows[r]; return row and row:sub(c, c) or nil end
   for r, row in ipairs(v.rows) do
     for c = 1, #row do
       local ch = row:sub(c, c)
@@ -256,6 +317,18 @@ local function lot_open(b, hub, i, j, v, role)
         else
           if ch == "P" then layout.connect(b, pos[1], pos[2], block) end
           push(b, {name = L[1], pos = pos, module = block})
+          -- A turret's pit: its fence on the bare tiles hugging it (the user, 2026-10-26: "turrets could have some walls
+          -- around them ... very close to them, not enclosing a whole block"); open where it meets the street.
+          if ch == "T" then
+            for dc = -1, 2 do
+              for dr = -1, 2 do
+                local n = at(c + dc, r + dr)
+                if (dc == -1 or dc == 2 or dr == -1 or dr == 2) and (n == " " or n == "X" or n == ".") then
+                  push(b, {name = "lp-wall", pos = {x + dc + 0.5, y + dr + 0.5}, module = block})
+                end
+              end
+            end
+          end
         end
       elseif DECOR[ch] then
         decor(surface, ch, {x + DECOR[ch] / 2, y + DECOR[ch] / 2}, rng.next(b.rng))
@@ -264,6 +337,26 @@ local function lot_open(b, hub, i, j, v, role)
   end
   if #road > 0 then push(b, {tiles = road, module = block}) end
   if #hazard > 0 then push(b, {tiles = hazard, floor = "hazard", module = block}) end
+  -- Wooden poles beside its street (the user: "some wooden poles in addition to the existing pylons ... make it look
+  -- busier"): neutral props on bare tiles next to the gravel, POLE_CHANCE of them, wired to each other by the engine.
+  if not yard then
+    for r, row in ipairs(v.rows) do
+      for c = 1, #row do
+        if row:sub(c, c) == " " and c > 1 and c < LOT and r > 1 and r < LOT and hash(x0 + c, y0 + r, 11) < POLE_CHANCE
+          and (at(c - 1, r) == ":" or at(c + 1, r) == ":" or at(c, r - 1) == ":" or at(c, r + 1) == ":") then
+          local pos = {x0 + c - 0.5, y0 + r - 0.5}
+          if surface.can_place_entity{name = "small-electric-pole", position = pos} then
+            local e = surface.create_entity{name = "small-electric-pole", position = pos, force = "neutral"}
+            if e then e.minable_flag = false end
+          end
+        end
+      end
+    end
+  end
+  local skip = {}
+  for _, t in ipairs(road) do skip[t[1] .. "," .. t[2]] = true end
+  for _, t in ipairs(hazard) do skip[t[1] .. "," .. t[2]] = true end
+  worn(surface, x0, y0, skip)
   return block
 end
 
@@ -305,10 +398,20 @@ end
 
 -- The open street end to build on: nearest the hub first, by chance. Ends that can take no lot are dropped (their
 -- street runs off into the open).
+-- A lot may touch no other lot but the one its street comes from and yards (the previews' rule: else streets ran side by
+-- side a lot apart, and ended against lots that did not open to them).
+local function alone(hub, e)
+  for d, v in pairs(DIRS) do
+    local n = hub.lots[(e.i + v[1]) .. ":" .. (e.j + v[2])]
+    if d ~= e.back and n and not n.yard then return false end
+  end
+  return true
+end
+
 local function town_end(b, hub)
   local keep, best, bs = {}, nil, nil
   for _, e in ipairs(hub.ends) do
-    if lot_free(b, hub, e.i, e.j) then
+    if lot_free(b, hub, e.i, e.j) and alone(hub, e) then
       table.insert(keep, e)
       local sc = math.abs(e.i) + math.abs(e.j) + 3 * rng.next(b.rng)
       if not bs or sc < bs then best, bs = e, sc end
@@ -326,8 +429,80 @@ local function lay(b, hub, e, names, role, outs)
   if not v then return nil end
   for k, x in ipairs(hub.ends) do if x == e then table.remove(hub.ends, k) break end end
   local block = lot_open(b, hub, e.i, e.j, v, role)
+  if not role and not block.yard then hub.streets = (hub.streets or 0) + 1 end
+  -- Its street joined to the pad it starts from (the pad is narrower than its lots: a strip of grass stood between).
+  local back = hub.lots[(e.i + DIRS[e.back][1]) .. ":" .. (e.j + DIRS[e.back][2])]
+  if back and back.pad and hub.pad_box then
+    local p, x0, y0 = hub.pad_box, lot_xy(hub, e.i, e.j)
+    local t = {}
+    if e.back == "s" or e.back == "n" then
+      local ya, yb = e.back == "n" and p[4] or y0 + LOT, e.back == "n" and y0 - 1 or p[2] - 1
+      for y = ya, yb do for x = x0 + 5, x0 + 6 do table.insert(t, {x, y}) end end
+    else
+      local xa, xb = e.back == "w" and p[3] or x0 + LOT, e.back == "w" and x0 - 1 or p[1] - 1
+      for x = xa, xb do for y = y0 + 5, y0 + 6 do table.insert(t, {x, y}) end end
+    end
+    if #t > 0 then push(b, {tiles = t, module = block}) end
+  end
   for _, d in ipairs(outs) do table.insert(hub.ends, {i = e.i + DIRS[d][1], j = e.j + DIRS[d][2], back = BACK[d]}) end
   return block
+end
+
+-- A town grows with its wealth (planner rule "town": parts to spare): a stretch of street, a turn or a crossing at an
+-- open end of its newest town hub, a yard beside it by chance. A camp kept poor stays a few sheds round its pad; one
+-- left alone sprawls. Nil when no end can take a lot.
+function layout.town_grow(b)
+  local hub
+  for k = #b.hubs, 1, -1 do if b.hubs[k].lots and #b.hubs[k].ends > 0 then hub = b.hubs[k] break end end
+  -- Streets in proportion to its industry (STREETS_PER_LOT a lot with machines, STREETS_FREE more): wealth shows as a
+  -- town, not a grid of empty gravel (seed 777, 90 minutes: mostly empty streets).
+  if not hub then return nil end
+  local cap = layout.capital(b) and CAPITAL_PER_LOT * hub.count + CAPITAL_FREE
+    or STREETS_PER_LOT * hub.count + STREETS_FREE
+  if (hub.streets or 0) >= cap then return nil end
+  local e = town_end(b, hub)
+  if not e then return nil end
+  local fwd = BACK[e.back]
+  local others = {}
+  for _, d in ipairs({"e", "n", "s", "w"}) do if d ~= e.back and d ~= fwd then table.insert(others, d) end end
+  local r = rng.next(b.rng)
+  local outs = r < 0.45 and {fwd} or r < 0.65 and {others[1 + math.floor(rng.next(b.rng) * 2)]}
+    or r < 0.9 and {fwd, others[1 + math.floor(rng.next(b.rng) * 2)]} or {fwd, others[1], others[2]}
+  local block = lay(b, hub, e, CONNECT_LOTS, nil, outs)
+  if block then town_yard(b, hub, e.i, e.j) end
+  return block
+end
+
+-- A town grown at once, for pictures (remote debug_town; scripts/shots.sh town): `machines` lots of fabricators and
+-- generators (one in three), their machines queued, then up to `streets` street lots. Returns {machines, streets}.
+function layout.debug_town(b, machines, streets)
+  local m, st = 0, 0
+  for k = 1, machines do
+    local block = layout.open_role(b, k % 3 == 0 and "gen" or "fab")
+    if block and block.slots then
+      m = m + 1
+      for _, s in ipairs(block.slots) do
+        if not s.queued then
+          s.queued = true
+          push(b, {name = s.name, pos = s.pos, slot = s, module = block})
+        end
+      end
+    end
+  end
+  for _ = 1, streets do if layout.town_grow(b) then st = st + 1 end end
+  return {machines = m, streets = st}
+end
+
+-- A turret nest (two of its guns behind junk) closing the street end farthest from the hub, every NEST_EVERY lots
+-- with machines: the town's guns stand where its streets run out, not round its machines.
+local function town_nest(b, hub)
+  if hub.count % NEST_EVERY ~= 0 then return end
+  local far, fd
+  for _, e in ipairs(hub.ends) do
+    local d = math.abs(e.i) + math.abs(e.j)
+    if (not fd or d > fd) and lot_free(b, hub, e.i, e.j) then far, fd = e, d end
+  end
+  if far then lay(b, hub, far, {end_nest = 1}, nil, {}) end
 end
 
 -- The lot for `role` in a town hub: at an open end, by chance after a stretch, a turn or a crossing. Nil when no end
@@ -337,21 +512,26 @@ local function town_role(b, hub, role)
     local e = town_end(b, hub)
     if not e then return nil end
     local fwd = BACK[e.back]
-    if rng.next(b.rng) >= BRANCH then
-      local block = lay(b, hub, e, ROLE_LOTS[role], role, {fwd})
-      if block then town_yard(b, hub, e.i, e.j) end
-      return block
-    end
     local others = {}
     for _, d in ipairs({"e", "n", "s", "w"}) do if d ~= e.back and d ~= fwd then table.insert(others, d) end end
     local side = others[1 + math.floor(rng.next(b.rng) * 2)]
+    if rng.next(b.rng) >= BRANCH then
+      -- Its machines on a straight, a turn or a tee (each has its lots: machines at the town's bends too).
+      local shapes = {{fwd}, {side}, {fwd, side}}
+      local first = 1 + math.floor(rng.next(b.rng) * 3)
+      for k = 0, 2 do
+        local block = lay(b, hub, e, ROLE_LOTS[role], role, shapes[(first + k - 1) % 3 + 1])
+        if block then town_yard(b, hub, e.i, e.j); town_nest(b, hub) return block end
+      end
+      return nil
+    end
     local r = rng.next(b.rng)
     local outs = r < 0.35 and {fwd} or r < 0.6 and {side} or r < 0.9 and {fwd, side} or {fwd, others[1], others[2]}
     lay(b, hub, e, CONNECT_LOTS, nil, outs)
   end
   local e = town_end(b, hub)
   local block = e and lay(b, hub, e, ROLE_LOTS[role], role, {BACK[e.back]})
-  if block then town_yard(b, hub, e.i, e.j) end
+  if block then town_yard(b, hub, e.i, e.j); town_nest(b, hub) end
   return block
 end
 
@@ -359,6 +539,7 @@ end
 local function town_pad(hub)
   local wi, hj = math.ceil(blocks.PAD_W / LOT), math.ceil(S / LOT)
   for i = 0, wi - 1 do for j = 0, hj - 1 do hub.lots[i .. ":" .. j] = {pad = true} end end
+  hub.pad_box = {hub.x, hub.y, hub.x + blocks.PAD_W, hub.y + S}
   local mi, mj = math.floor(wi / 2), math.floor(hj / 2)
   hub.ends = {{i = mi - 1, j = -1, back = "s"}, {i = mi, j = hj, back = "n"}, {i = -1, j = mj, back = "e"},
     {i = wi, j = mj, back = "w"}}

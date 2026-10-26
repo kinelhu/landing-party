@@ -18,6 +18,7 @@ local pods = require("__landing-party__.scripts.pods")
 script.on_event(defines.events.on_cargo_pod_finished_descending, pods.on_landed)
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
+local layout = require("__landing-party__.scripts.layout")
 local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
 local war = require("__landing-party__.scripts.war")
@@ -415,6 +416,7 @@ remote.add_interface("landing-party", {
     if t.tiers then f.tiers = t.tiers end
     if t.quiet ~= nil then storage.quiet = t.quiet end
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
+    if t.crews_off ~= nil then storage.crews_off = t.crews_off or nil end
     if t.grow_to_line_off ~= nil then storage.grow_to_line_off = t.grow_to_line_off or nil end
     if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
@@ -572,6 +574,8 @@ remote.add_interface("landing-party", {
       hour = tune.sooner(b.corp, 3600 * 60), rung = stance.rung("player", b.force)}
   end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
+  -- A town grown at once, for pictures (scripts/shots.sh town): machine lots with their machines queued, then streets.
+  debug_town = function(id, machines, streets) local b = storage.bases[id]; return b and layout.debug_town(b, machines, streets) end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
   debug_depot = function(id, parts) return dev.depot(storage.bases[id], parts) end,
   snapshot = snapshot,

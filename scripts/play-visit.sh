@@ -20,7 +20,12 @@ REAL="$HOME/Library/Application Support/factorio/mods"
 extra=""
 for m in EditorExtensions flib; do
   z=$(ls "$REAL/${m}_"*.zip 2>/dev/null | sort -V | tail -1 || true)
-  if [ -n "$z" ]; then cp "$z" "$V/mods/"; extra="$extra, {\"name\": \"$m\", \"enabled\": true}"; fi
+  # Only a copy made for this Factorio (2.1): the real profile's 2.0 copies are refused at load (the user, 2026-10-26).
+  if [ -n "$z" ] && unzip -p "$z" '*/info.json' 2>/dev/null | grep -q '"factorio_version": *"2.1"'; then
+    cp "$z" "$V/mods/"; extra="$extra, {\"name\": \"$m\", \"enabled\": true}"
+  else
+    rm -f "$V/mods/${m}_"*.zip
+  fi
 done
 echo "{\"mods\": [{\"name\": \"base\", \"enabled\": true}, {\"name\": \"space-age\", \"enabled\": true}, {\"name\": \"quality\", \"enabled\": true}, {\"name\": \"elevated-rails\", \"enabled\": true}, {\"name\": \"landing-party\", \"enabled\": true}$extra]}" > "$V/mods/mod-list.json"
 # Started from a folder holding steam_appid.txt, the game does not hand itself to Steam to relaunch.

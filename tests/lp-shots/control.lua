@@ -40,6 +40,11 @@ end
 local at = {}
 local function schedule(t, f) local g = at[t]; at[t] = g and function() g(); f() end or f end
 local function poll(from, to, every, f) for t = from, to, every do schedule(t, f) end end
+-- LP_SHOTS=town (scripts/shots.sh): Grubstake's town only, grown at once (remote debug_town), in a minute and a half.
+local ok_mode, mode = pcall(require, "mode")
+local MODE = ok_mode and mode or "all"
+local only = schedule
+if MODE == "town" then schedule = function(t, f) if t <= 60 then only(t, f) end end end
 
 -- Setup: no biters near, the day frozen at noon, two camps.
 schedule(60, function()
@@ -356,6 +361,30 @@ schedule(45 * 3600 + 120, function()
   helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
   helpers.write_file(DIR .. "done.txt", "done\n")
 end)
+
+if MODE == "town" then
+  only(300, function()
+    lp("debug_tune", {crews_off = true})
+    lp("debug_depot", S.gru, 10000)
+    note("town: " .. serpent.line(lp("debug_town", S.gru, 12, 20)))
+  end)
+  only(300 + 5 * 3600, function()
+    local g = lp("stats", S.gru).origin
+    shot("15-grubstake-town-fast", {g.x, g.y}, 0.2, false, "Grubstake's town grown at once: streets, lots, yards")
+    shot("15-grubstake-town-fast-near", {g.x, g.y}, 0.4, false, "the same, nearer")
+    local f = surface().find_entities_filtered{name = "lp-grubstake-fabricator", position = {g.x, g.y}, radius = 200}
+    if f[#f] then shot("16-grubstake-street-fast", f[#f].position, 0.8, false, "a Grubstake street") end
+    local w = surface().find_entities_filtered{name = "wooden-chest", force = "neutral", position = {g.x, g.y}, radius = 250, limit = 1}[1]
+    if w then shot("17-grubstake-yard-fast", w.position, 0.9, false, "a Grubstake yard") end
+    shot("18-grubstake-town-fast-night", {g.x, g.y}, 0.4, true, "the town by night: its lamps")
+    local t = surface().find_entities_filtered{name = "lp-grubstake-turret", position = {g.x, g.y}, radius = 250}
+    if t[#t] then shot("19-grubstake-turret-pit", t[#t].position, 1.2, false, "a Grubstake turret in its pit of fence") end
+  end)
+  only(300 + 5 * 3600 + 120, function()
+    helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
+    helpers.write_file(DIR .. "done.txt", "done\n")
+  end)
+end
 
 script.on_event(defines.events.on_tick, function(e)
   if e.tick % 300 == 0 then helpers.write_file(DIR .. "tick.txt", e.tick .. " speed " .. game.speed .. " paused " .. tostring(game.tick_paused) .. "\n") end

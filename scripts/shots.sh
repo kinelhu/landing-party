@@ -11,6 +11,8 @@ mkdir -p "$SH/config" "$SH/mods" "$SH/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SH" > "$SH/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SH/mods/landing-party"
 ln -sfn "$REPO/tests/lp-shots" "$SH/mods/lp-shots"
+# LP_SHOTS=town: Grubstake's town only, grown at once (tests/lp-shots/mode.lua, not in git).
+echo "return \"${LP_SHOTS:-all}\"" > "$REPO/tests/lp-shots/mode.lua"
 cat > "$SH/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true},
   {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-shots", "enabled": true}]}

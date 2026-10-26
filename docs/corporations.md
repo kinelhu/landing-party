@@ -68,6 +68,8 @@ by all parties."
 - **Town (2026-10-26)**: its hubs are prospectors' towns: 12 by 12 lots (`scripts/wfc/grubstake.tiles`) strung along
   a tree of gravel streets from its pad, fabricator rows and generator lots facing each other across the street, junk
   yards of wrecks, crates and tanks between, no walls but the pad's fence. Units and vehicles cross it anywhere.
+  Its turrets stand in pits of fence at street ends and guard posts; wooden poles and worn dirt make it look lived in.
+  It grows with its wealth once mature; its oldest town is its capital, the biggest, with a second depot.
 - **Notice**: "Grubstake Mineral Recovery has recovered 4,000 iron ore from an unattended deposit. Thank you for
   your cooperation."
 - **As built (2026-10-19)**: a rival thief that escalates when hurt; it steals by night: soft raids that take machines
