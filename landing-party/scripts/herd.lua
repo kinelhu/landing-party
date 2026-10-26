@@ -35,7 +35,14 @@ local STOP_TICKS = 600
 local SIT_TICKS = 30 * 3600
 local GATHER_TICKS = 90 * 60
 local INSIDE = 15
-local INSIDE_TICKS = 90 * 60
+local INSIDE_TICKS = 90 * 60     -- inside with nothing of its brought down this long, it goes home
+local INSIDE_MAX = 4 * 3600      -- and inside this long at most, however it fares
+-- Inside, its herd in squads of SQUAD (the user, 2026-10-26: "smart biters would simply pour in and target
+-- defenses/power"): each after its own target from the same list, several things falling at once.
+local SQUAD = 10
+-- What runs its defences besides their power and ammunition: what sees for them and mends them (the user: "radars and
+-- roboports as targets"), after the supply, before the guns it silenced.
+local CONTROL = {"radar", "roboport"}
 local TRAIL_TICKS = 20 * 3600
 local BASE_REACH = 48       -- the turrets that make the defence a wave meets, round what drew it: those that can bear
                            -- on where it breaks in. At 120 a player's sprawling factory was one box of every turret in
@@ -980,13 +987,14 @@ local function breach(w)
 end
 
 -- What feeds the guns, the first in sight of the herd.
-local function supply_target(w)
+local function supply_target(w, taken, at)
   local s = game.surfaces[w.surface]
   local forces = foes(w)
-  local at = front(w)
+  at = at or front(w)
+  taken = taken or {}
   local best, bd
   local function consider(e)
-    if e.valid and not w.tried[e.unit_number or 0]
+    if e.valid and not w.tried[e.unit_number or 0] and not taken[e.unit_number or 0]
       and s.count_entities_filtered{position = e.position, radius = GUARD_RANGE, type = TURRETS, force = forces,
         limit = GUARDED} < GUARDED then
       local d = d2(e.position, at)
@@ -1003,6 +1011,9 @@ local function supply_target(w)
     for _, e in pairs(s.find_entities_filtered{position = ft.position, radius = 3, type = PIPES, force = forces}) do consider(e) end
   end
   if best then return best end
+  -- What sees for its guns and mends them: radars, roboports.
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = CONTROL, force = forces}) do consider(e) end
+  if best then return best end
   -- The supply cut, the guns it silenced: laser turrets on a network with no power source left, the nearest (cut off,
   -- such a turret shoots only what its own charge holds, and goes dark). It cut a base's power and went home with 55 of
   -- 59 while the lasers it had cut off stood (system 4242, 2026-10-24): cut the supply, then use it.
@@ -1013,7 +1024,8 @@ local function supply_target(w)
   -- (Across the base, not its sight: from the middle, where the power stood, the lasers on the wall were out of it.)
   for _, e in pairs(s.find_entities_filtered{position = at, radius = math.max(w.sight, w.hx + w.hy), type = "electric-turret",
     force = forces}) do
-    if e.valid and not w.tried[e.unit_number or 0] and not (e.electric_network_id and fed[e.electric_network_id]) then
+    if e.valid and not w.tried[e.unit_number or 0] and not taken[e.unit_number or 0]
+      and not (e.electric_network_id and fed[e.electric_network_id]) then
       -- The one the guns still firing cover least (a silenced laser beside a face of gun turrets cost the herd half its
       -- number: herd test, seeds 1 and 12345), then the nearest: its distance in tiles, each gun's worth of fire 20.
       local d = math.sqrt(d2(e.position, at)) + (herd.exposure and 20 * herd.exposure(s, {e.position.x, e.position.y},
@@ -1141,49 +1153,96 @@ local function cover(w)
   log(w, string.format("%d spitters cover the withdrawal", n))
 end
 
+-- Its squads (inside): its group the first, the rest made from it, SQUAD units each (its spitters hold the breach).
+local function squads_of(w)
+  local live = {}
+  for _, g in ipairs(w.squads or {}) do if g.valid and #g.members > 0 then live[#live + 1] = g end end
+  local main = false
+  for _, g in ipairs(live) do if g == w.group then main = true end end
+  if not main and w.group and w.group.valid then table.insert(live, 1, w.group) end
+  w.squads = live
+  return live
+end
+
+local function split(w)
+  local s = game.surfaces[w.surface]
+  local units = {}
+  for _, u in ipairs(w.group.members) do units[#units + 1] = u end
+  w.squads = {w.group}
+  for k = 2, math.ceil(#units / SQUAD) do
+    local first = units[(k - 1) * SQUAD + 1]
+    local g = s.create_unit_group{position = first.position, force = B.force}
+    for i = (k - 1) * SQUAD + 1, math.min(k * SQUAD, #units) do g.add_member(units[i]) end
+    w.squads[#w.squads + 1] = g
+  end
+  if #w.squads > 1 then log(w, string.format("in squads: %d of up to %d", #w.squads, SQUAD)) end
+end
+
 local function hunt(w)
   ensure_group(w)
   if not (w.group and w.group.valid) then return end
-  -- What became of its last target (a run counted none of the player's buildings lost to its waves).
-  if w.target_name then
-    log(w, string.format("its %s %s", w.target_name, (w.target and w.target.valid) and "still stands" or "is down"))
-    w.target_name = nil
-  end
   hold_breach(w)
-  local t = supply_target(w)
-  if not t and not w.pushed then
-    -- Nothing in sight: on to the middle, once (in at a corner of a 74-tile base, its lead saw the power in the middle at
-    -- 43, then at 40.5, past its sight of 40: herd runs 2 to 4); staged, on to what it came for.
-    w.pushed = true
-    w.group.set_command(go(w.staged and w.goal or w.center, defines.distraction.none, 6))
-    log(w, "nothing in sight: pushes in")
-    return
+  if not w.squads then split(w) end
+  w.aim = w.aim or {}
+  local squads = squads_of(w)
+  local taken = {}
+  for _, g in ipairs(squads) do
+    local a = w.aim[g.unique_id]
+    if a and a.target and a.target.valid then taken[a.target.unit_number or 0] = true end
   end
-  -- Nothing that feeds a gun in sight: what is there, the nearest it has not tried (on the player's deathworld six
-  -- waves in a row broke in at outposts with no gun fed near, and went home whole, 60 of 60 on the last). Supply first,
-  -- as ever; this only when there is none.
-  if not t and B.mind.havoc ~= false then
-    local s = game.surfaces[w.surface]
-    local at = where(w)
-    local bd
-    for _, e in ipairs(s.find_entities_filtered{position = at, radius = w.sight, force = foes(w), type = SOFT}) do
-      if not w.tried[e.unit_number or 0] then
-        local d = d2(e.position, at)
-        if not bd or d < bd then t, bd = e, d end
+  local s = game.surfaces[w.surface]
+  local busy = 0
+  for _, g in ipairs(squads) do
+    local a = w.aim[g.unique_id]
+    -- What became of its last target (a run counted none of the player's buildings lost to its waves).
+    if a and not (a.target and a.target.valid) then
+      log(w, string.format("its %s is down", a.name))
+      w.t_progress, w.downed = game.tick, (w.downed or 0) + 1
+      w.aim[g.unique_id], a = nil, nil
+    end
+    if a and g.command then
+      busy = busy + 1
+    else
+      local at = g.position
+      local t = supply_target(w, taken, at)
+      -- Nothing in sight: on to the middle, once a squad (in at a corner of a 74-tile base, its lead saw the power in the
+      -- middle at 43, then at 40.5, past its sight of 40: herd runs 2 to 4); staged, on to what it came for.
+      -- (Per squad since 0.2.30: a wave of an older save had one flag.)
+      if type(w.pushed) ~= "table" then w.pushed = {} end
+      if not t and not w.pushed[g.unique_id] then
+        w.pushed[g.unique_id] = true
+        g.set_command(go(w.staged and w.goal or w.center, defines.distraction.none, 6))
+        log(w, "nothing in sight: a squad pushes in")
+        busy = busy + 1
+        goto next_squad
+      end
+      -- Nothing that feeds a gun in sight: what is there, the nearest it has not tried (on the player's deathworld six
+      -- waves in a row broke in at outposts with no gun fed near, and went home whole, 60 of 60 on the last).
+      if not t and B.mind.havoc ~= false then
+        local bd
+        for _, e in ipairs(s.find_entities_filtered{position = at, radius = w.sight, force = foes(w), type = SOFT}) do
+          if not w.tried[e.unit_number or 0] and not taken[e.unit_number or 0] then
+            local d = d2(e.position, at)
+            if not bd or d < bd then t, bd = e, d end
+          end
+        end
+        if t and not w.havoc then w.havoc = true; log(w, "nothing feeds a gun: breaks what is there") end
+      end
+      if t then
+        taken[t.unit_number or 0] = true
+        w.tried[t.unit_number or 0] = true
+        w.aim[g.unique_id] = {target = t, name = t.name}
+        w.target, w.target_name = t, t.name
+        w.went_for = w.went_for or {}
+        table.insert(w.went_for, t.type)
+        g.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
+        log(w, string.format("goes for %s at %.0f,%.0f", t.name, t.position.x, t.position.y))
+        busy = busy + 1
       end
     end
-    if t and not w.havoc then w.havoc = true; log(w, "nothing feeds a gun: breaks what is there") end
+    ::next_squad::
   end
-  if not t then
-    withdraw(w, "nothing in sight feeds a gun")
-    return
-  end
-  w.target, w.target_name = t, t.name
-  w.tried[t.unit_number or 0] = true
-  w.went_for = w.went_for or {}
-  table.insert(w.went_for, t.type)
-  w.group.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
-  log(w, string.format("goes for %s at %.0f,%.0f", t.name, t.position.x, t.position.y))
+  if busy == 0 then withdraw(w, "nothing in sight feeds a gun") end
 end
 
 home_leg = function(w)
@@ -1193,8 +1252,19 @@ end
 
 withdraw = function(w, why)
   if w.stage == "withdraw" or w.stage == "done" then return end
+  ensure_group(w)
   local g = w.group
   if not (g and g.valid) then return end
+  -- Its squads back into one, to go home as it came.
+  for _, q in ipairs(w.squads or {}) do
+    if q.valid and q ~= g then
+      local ms = {}
+      for _, u in ipairs(q.members) do ms[#ms + 1] = u end
+      for _, u in ipairs(ms) do if u.valid then g.add_member(u) end end
+      if q.valid then q.destroy() end
+    end
+  end
+  w.squads = {g}
   -- (Its own only: a scout from an unfed incubator goes feral, the wild's, and add_member raised an error.)
   if w.scout and w.scout.valid and w.scout.force.name == B.force then g.add_member(w.scout) end
   -- Out as it came, fighting nothing (fighting back on the way home drew it on to the faces it passed: second run), leg by
@@ -1331,7 +1401,11 @@ local function step(w, tick)
   if w.stage == "inside" or w.stage == "breach" then release_bursters(w, tick) end
   if w.stage == "inside" or w.stage == "breach" or w.stage == "blind" then
     if alive(w) * 2 < w.size then return withdraw(w, "half lost") end
-    if w.t_inside and tick - w.t_inside > INSIDE_TICKS then return withdraw(w, "time inside") end
+    -- Inside while it brings things down (INSIDE_TICKS since the last fell), INSIDE_MAX at most.
+    if w.t_inside and tick - math.max(w.t_inside, w.t_progress or 0) > INSIDE_TICKS then return withdraw(w, "time inside") end
+    if w.t_inside and tick - w.t_inside > INSIDE_MAX then return withdraw(w, "time inside, the most") end
+    -- Its squads' next targets, every five seconds (a squad's attack ends when its target falls).
+    if w.stage == "inside" and tick % 300 == 0 then hunt(w) end
   end
   -- A command that never completes (stuck): move on after a while.
   if w.stage == "withdraw" and tick - w.t > 10 * 3600 then return finish(w, "home late") end
@@ -1395,6 +1469,12 @@ function herd.on_command_completed(e)
       end
       -- (Its loop cut short, the wave comes all the same: the faces are read from the ground, read_ground.)
       return mark(w)
+    end
+    -- A squad of its (inside) done with its target: the next.
+    if w.stage == "inside" and w.group and w.group.valid and e.unit_number ~= w.group.unique_id then
+      for _, q in ipairs(w.squads or {}) do
+        if q.valid and q.unique_id == e.unit_number then return hunt(w) end
+      end
     end
     if w.group and w.group.valid and e.unit_number == w.group.unique_id then
       if w.stage == "march" then

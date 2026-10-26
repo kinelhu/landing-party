@@ -18,7 +18,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 |---|---|---|---|---|---|---|---|
 | `ops` | 1809 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1721 | blocks, rng, site, wfc | base, control, faction |  |  |  |  |
-| `herd` | 1526 | ground, know | control, farm |  | 60, 600, 3600 |  | herd |
+| `herd` | 1606 | ground, know | control, farm |  | 60, 300, 600, 3600 |  | herd |
 | `farm` | 1126 | cell, creep, herd, know, pods, tune | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
 | `siege` | 856 | (leaf) | ops |  |  |  | threat_last |
 | `base` | 834 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
