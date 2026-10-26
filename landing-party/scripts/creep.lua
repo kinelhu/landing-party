@@ -4,7 +4,7 @@
 -- force's building is left as it is (the building stays, the player is not dispossessed), and it never covers water or a
 -- floor someone laid (a mineable tile: concrete, the player's soils). The ground it covers is kept as the tile's hidden
 -- tile, so it can withdraw to it. A culture plants one tumor by each incubator when it lands (farm.land).
--- Spread (creep.bud, from farm.tick): every BUD_TICKS, once its tumors are grown, a culture buds a tumor at its creep's edge
+-- Spread (creep.bud, from farm.tick): paid for (BUD_PRICE), a culture buds a tumor at its creep's edge
 -- toward the nearest wild nest within HEDGE of it; creep that reaches the nest takes it (farm: an incubator). It grows
 -- toward nests, never toward the player: an advancing front is Kessler-Hayashi's.
 -- On creep (creep.tick): Synthexis's units are quicker and mend (stickers lp-creep-haste, lp-creep-mend) renewed each second
@@ -25,8 +25,17 @@ local R_MAX = 10               -- a tumor's creep reaches this far
 local GROW_TICKS = 10 * 60     -- a ring each
 local CHECK = 60
 local RECEDE_TICKS = 5 * 60    -- a ring each, withdrawing
-local BUD_TICKS = 2 * 3600     -- a culture buds a tumor this often, at most
+-- A bud is paid for (0.2.23; the user, 2026-10-25: "I want to see the sigmoid"): BUD_PRICE of biomass a tumor, as fast
+-- as it can pay, BUD_MIN apart at least. On a two-minute clock its incubators rose in a straight line to their cap;
+-- paid, its growth follows its income, and its income its creep: slow, then fast, then as the air allows.
+local BUD_PRICE = 30
+local BUD_MIN = 15 * 60
 local HEDGE = 160              -- wild nests this near a culture are its to take
+local FOOD_HALF = 20           -- pollution in the 5 by 5 chunks round a nest that makes it count half as far
+local FOUND_PRICE = 150        -- an incubator of its own, where no wild nest is near (five buds; a wild one is free)
+local FOUND_APART = 16         -- from its other incubators
+local STEP = R_MAX + 2         -- a bud toward the air, from a grown tumor
+local SHY = 48                 -- nor within this of the player's buildings
 local TUMORS_MAX = 40          -- per culture
 local BONUS_RADIUS = 200       -- round a culture, its units looked at for the bonus
 
@@ -182,24 +191,60 @@ function creep.tick(tick)
   end
 end
 
--- What the creep drank over `seconds`, to each culture's biomass: per chunk, its creep tiles' absorption, up to the
--- pollution there (the engine absorbs it itself; this counts it). Returns {culture = amount}.
-function creep.drink(seconds)
+-- What a culture ate over `seconds`, to its biomass: per chunk, what its creep tiles and incubators there absorb
+-- (shared.CREEP_ABSORB, PEN_ABSORB, PEN_SHARE), up to the pollution there, taken off the air (the engine's absorption on
+-- both is off: this is it). pens: {culture = {incubator entities}}. Returns {culture = biomass}.
+function creep.drink(seconds, pens)
+  local at = {}
+  local function chunk(si, x, y, culture)
+    local cx, cy = math.floor(x / 32), math.floor(y / 32)
+    local key = si .. ":" .. cx .. "," .. cy
+    local c = at[key]
+    if not c then
+      c = {surface = si, x = cx * 32 + 16, y = cy * 32 + 16, n = 0, pens = 0, culture = culture}
+      at[key] = c
+    end
+    return c
+  end
+  for _, c in pairs(st().chunks) do chunk(c.surface, c.x, c.y, c.culture).n = c.n end
+  for id, list in pairs(pens or {}) do
+    for _, e in ipairs(list) do
+      if e.valid then
+        local c = chunk(e.surface.index, e.position.x, e.position.y, id)
+        c.pens = c.pens + 1
+      end
+    end
+  end
   local out = {}
-  for _, c in pairs(st().chunks) do
+  for _, c in pairs(at) do
     local surface = game.surfaces[c.surface]
     local cul = st().cultures and st().cultures[c.culture]
     if surface and cul then
       local p = surface.get_pollution({c.x, c.y})
-      local got = math.min(p, c.n * shared.CREEP_ABSORB * seconds) * tune.strength("biotech")
-      if got > 0 then
+      local took = math.min(p, (c.n * shared.CREEP_ABSORB + c.pens * shared.PEN_ABSORB) * seconds
+        + p * math.min(1, c.pens * shared.PEN_SHARE * seconds))
+      if took > 0 then
+        surface.pollute({c.x, c.y}, -took, c.pens > 0 and "lp-pen" or nil)
+        local got = took * shared.YIELD * tune.strength("biotech")
         cul.biomass = (cul.biomass or 0) + got
         cul.drunk = (cul.drunk or 0) + got
+        cul.eaten = (cul.eaten or 0) + took
         out[c.culture] = (out[c.culture] or 0) + got
       end
     end
   end
   return out
+end
+
+-- The pollution round pos: its chunk and the chunks within `r` chunks of it. Where wild nests ring a factory's cloud they
+-- eat its edge, and their own chunks read clean (deathworld10x, 2026-10-26: every nest field 200 to 450 tiles out read 0
+-- in its 5 by 5 chunks); the air a little way in tells how near the cloud is.
+function creep.food(surface, pos, r)
+  local t = 0
+  for dx = -r, r do
+    for dy = -r, r do t = t + surface.get_pollution({pos.x + dx * 32, pos.y + dy * 32}) end
+  end
+  return t
 end
 
 -- A culture's living tumors (entities).
@@ -226,40 +271,113 @@ end
 
 function creep.forget(id) if st().cultures then st().cultures[id] = nil end end
 
--- Spread (farm.tick): the wild nest whose spawner the creep now reaches, for the farm to take; else, when every tumor
--- of the culture is grown and BUD_TICKS have passed, a tumor budded at the creep's edge toward the nearest wild nest
--- within HEDGE. Returns the spawner to take, or nil.
+local function pay(c, tick, price)
+  c.last_bud = tick
+  c.biomass, c.spent = c.biomass - price, (c.spent or 0) + price
+end
+
+-- No wild nest within HEDGE (the user, 2026-10-26: "in the cases of 0 nest being capturable in range, shouldn't we give
+-- ability to establish a new one at cost?"): it grows its own. A grown tumor with no incubator within FOUND_APART gets
+-- one, at FOUND_PRICE; else a tumor buds at the creep's edge toward the most pollution, never within SHY of the player's.
+-- Returns {found = position} or nil; c.wants is the price it is saving for.
+-- Room for an incubator near pos: no entity in its box. (find_non_colliding_position finds none on creep: the tile
+-- is on the object layer, as buildings are, so the player cannot build on it.)
+local function room(surface, pos)
+  for r = 3, 9, 3 do
+    for k = 0, 7 do
+      local a = k * math.pi / 4
+      local p = {x = pos.x + math.cos(a) * r, y = pos.y + math.sin(a) * r}
+      if surface.count_entities_filtered{area = {{p.x - 3, p.y - 3}, {p.x + 3, p.y + 3}}, limit = 1} == 0 then return p end
+    end
+  end
+end
+
+local function found(c, id, surface, mine, tick)
+  for _, rec in ipairs(mine) do
+    if rec.r >= R_MAX
+      and surface.count_entities_filtered{name = "lp-pen", position = rec.pos, radius = FOUND_APART, limit = 1} == 0 then
+      local q = room(surface, rec.pos)
+      if q then
+        c.wants = FOUND_PRICE
+        if tick - c.last_bud < BUD_MIN or (c.biomass or 0) < FOUND_PRICE then return nil end
+        pay(c, tick, FOUND_PRICE)
+        c.founded = (c.founded or 0) + 1
+        return {found = q}
+      end
+    end
+  end
+  if #mine >= TUMORS_MAX then return nil end
+  c.wants = BUD_PRICE
+  if tick - c.last_bud < BUD_MIN or (c.biomass or 0) < BUD_PRICE then return nil end
+  local forces = shared.player_forces()
+  local at, best
+  for _, rec in ipairs(mine) do
+    if rec.r >= R_MAX - 1 then
+      for k = 0, 7 do
+        local a = k * math.pi / 4
+        local p = {x = rec.pos.x + math.cos(a) * STEP, y = rec.pos.y + math.sin(a) * STEP}
+        local new = true
+        for _, o in ipairs(mine) do
+          if (o.pos.x - p.x) ^ 2 + (o.pos.y - p.y) ^ 2 < R_MAX * R_MAX then new = false; break end
+        end
+        local t = new and surface.get_tile(p.x, p.y)
+        if t and t.valid and not t.collides_with("water_tile") and t.name ~= "out-of-map" then
+          -- The air first, then outward from the culture's middle.
+          local score = surface.get_pollution(p) + 0.001 * ((p.x - c.pos.x) ^ 2 + (p.y - c.pos.y) ^ 2) ^ 0.5
+          if (not best or score > best)
+            and surface.count_entities_filtered{position = p, radius = SHY, force = forces, limit = 1} == 0 then
+            at, best = p, score
+          end
+        end
+      end
+    end
+  end
+  if not at then return nil end
+  pay(c, tick, BUD_PRICE)
+  c.budded = (c.budded or 0) + 1
+  creep.plant(surface, at, id)
+  return nil
+end
+
+-- Spread (farm.tick): the wild nest whose spawner the creep now reaches, for the farm to take; else a tumor budded at the
+-- creep's edge (BUD_PRICE, BUD_MIN apart) toward the wild nest within HEDGE that is nearest for the air round it (a nest
+-- with FOOD_HALF of pollution in the chunks round it counts half as far: the creep leans toward the cloud); with none,
+-- an incubator of its own (found). Returns the spawner to take, {found = position}, or nil.
 function creep.bud(id, tick)
   local s = st()
   local c = s.cultures and s.cultures[id]
   if not c then return nil end
   local surface = game.surfaces[c.surface]
-  local mine, growing = {}, false
+  local mine = {}
   for _, rec in pairs(s.tumors) do
     if rec.farm == id and not rec.dying and rec.entity.valid then
       table.insert(mine, rec)
-      if rec.r < R_MAX then growing = true end
     end
   end
+  c.wants = nil
   if #mine == 0 then return nil end
   local nests = surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = c.pos, radius = HEDGE}
-  local best, bd, from
+  if #nests == 0 then return found(c, id, surface, mine, tick) end
+  local best, bs, bd, from
   for _, n in ipairs(nests) do
+    local pull = 1 + creep.food(surface, n.position, 2) / FOOD_HALF
     for _, rec in ipairs(mine) do
-      local d = (n.position.x - rec.pos.x) ^ 2 + (n.position.y - rec.pos.y) ^ 2
-      if not bd or d < bd then best, bd, from = n, d, rec end
+      local d = ((n.position.x - rec.pos.x) ^ 2 + (n.position.y - rec.pos.y) ^ 2) ^ 0.5
+      if d <= rec.r + 2 then return n end
+      if not bs or d / pull < bs then best, bs, bd, from = n, d / pull, d, rec end
     end
   end
-  if not best then return nil end
-  if math.sqrt(bd) <= from.r + 2 then return best end
-  if growing or tick - c.last_bud < BUD_TICKS or #mine >= TUMORS_MAX then return nil end
-  c.last_bud = tick
-  local d = math.sqrt(bd)
-  local step = math.min(R_MAX - 1, d)
-  local at = {x = from.pos.x + (best.position.x - from.pos.x) / d * step, y = from.pos.y + (best.position.y - from.pos.y) / d * step}
+  c.wants = BUD_PRICE
+  if tick - c.last_bud < BUD_MIN or #mine >= TUMORS_MAX or (c.biomass or 0) < BUD_PRICE then return nil end
+  pay(c, tick, BUD_PRICE)
+  c.budded = (c.budded or 0) + 1
+  local step = math.min(R_MAX - 1, bd)
+  local at = {x = from.pos.x + (best.position.x - from.pos.x) / bd * step, y = from.pos.y + (best.position.y - from.pos.y) / bd * step}
   creep.plant(surface, at, id)
   return nil
 end
+
+creep.BUD_PRICE = BUD_PRICE
 
 function creep.state()
   local out = {tumors = {}, dying = 0}

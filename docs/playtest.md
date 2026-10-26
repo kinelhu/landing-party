@@ -225,6 +225,13 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     usually your mining outposts at the edge of your turrets, routed round your guns, and break belts, drills and poles
     when nothing there feeds a gun. Does it feel like a smart enemy picking at your weak edge, or like a nuisance? Do
     you see where they came from (the trail) and can you follow it back to the farm?
+56. **The carrier** (0.2.22): a grown Synthexis culture sends a slow violet biter, lit at night, with an escort
+    across the map to a wild nest field, and a second culture starts there, small and without its clinic for half an
+    hour. Did you notice one walking? Was it worth chasing down, and did burning the young culture early feel like the
+    right answer? With several cultures, does the map feel infested rather than invaded?
+57. **It lands on your smoke** (0.2.24): Synthexis now comes down at the edge of your pollution cloud, nearer than
+    before, and eats it as wild nests would; with no nests near it grows its own incubators. Did it land closer than
+    you expected? Did cleaning up a polluting line slow it? Did the wild nests' attacks drop where it took over?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

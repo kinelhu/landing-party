@@ -253,7 +253,8 @@ The direction, to build in order (the consult's sections 3 to 8):
 trails is the answer to it.
 - **When:** once the wild biters' evolution on a surface reaches 0.25 (mediums to breed). Not tied to the corporations'
   clocks.
-- **Where:** the nearest nest field (three spawners within 40 tiles) with none of the player's buildings within 600
+- **Where** (until 0.2.24; now the field at the edge of the player's pollution first: "It lives on your smoke"):
+  the nearest nest field (three spawners within 40 tiles) with none of the player's buildings within 600
   tiles and some within 1,000 (then 1,500), not within 200 of a corporation's camp. No field, no biotech (looked at
   again every 10 minutes).
 - **What lands:** its cargo pod; up to four of the field's spawners become pens, each with 6 bred and two bred worms; the
@@ -367,7 +368,8 @@ breeds' costs (small 2, medium 7, big 28, behemoth 60) priced them in the arena 
 to its cap. Now they are paid in biomass, so the arena's balance holds in the game:
 - **Income.** What its creep drinks of the pollution: each creep tile absorbs `shared.CREEP_ABSORB` (0.0005 a second,
   about 28 times grass; the engine's own absorption), counted to the culture whose tumor laid it, up to what is in the
-  chunk (`creep.drink`, each 10 s). Plus 3 an incubator a minute whatever the air, and 200 brought by its pod (its
+  chunk (`creep.drink`, each 10 s). Since 0.2.24 the script eats for it, its incubators too, and a unit eaten is
+  `shared.YIELD` of biomass: "It lives on your smoke" below. Plus 3 an incubator a minute whatever the air, and 200 brought by its pod (its
   first wave at ten minutes).
 - **Spending.** Each birth (`on_entity_spawned`) pays its breed's price; at nothing left the culture's incubators are
   made inactive (they stop, animation too) until it earns. Never more than one breed's price in debt (lowest seen -7).
@@ -730,3 +732,31 @@ against the player -1; the player against Kessler-Hayashi +24.
 - On deathworld10x, three hours: 172 of the player's buildings broken, mostly mining outposts (belts, drills,
   poles), where straight trails broke 84 by throwing waves at turret lines. Each fault was found from the operation
   records (scripts/oplog.lua), one map a wave.
+
+### A colony that grows and spreads (0.2.22)
+
+- Its technicians are bought, not given: two big biters' worth of biomass each, while it keeps most of its cells fed.
+  Its biomass comes from the pollution its creep drinks, its creep grows with its incubators: a culture starts slow,
+  speeds up as it is fed, and levels off. Shell its clinic and it stops buying, as its evolution stops.
+- A culture that has filled its ground saves for a carrier: a violet, lit, slow biter with an escort, walking to a
+  wild nest field a few hundred tiles away. Where it stops, a young culture begins: one incubator, no worms, no clinic
+  for half an hour, no waves until it has three incubators. Catch the carrier in the open and the culture paid for
+  nothing; burn a young culture before it grows and it never sends a wave.
+- Fresh maps have few nests, and their cultures rarely find a field to seed; on a map grown over with nests, they
+  spread. Measured in the farm scenario (a second field 400 tiles off: the carrier walked it in two minutes and a
+  young culture began; shot on the way, none did).
+
+### It lives on your smoke (0.2.23 and 0.2.24)
+
+- Its growth is bought: each bud of creep costs biomass, so a culture grows as fast as it eats. While it has a nest to
+  reach, it breeds only above the next bud's price.
+- It eats what a wild nest would. Its incubators take the pollution in their chunk at a spawner's rate and its creep
+  takes a little more, and that is its biomass: a captured nest turns your smoke into units at the rate the wild one
+  would have, aimed. Wild nests and Synthexis now compete for the edge of your cloud.
+- It lands where it can eat: the pod comes down on the nest field at the edge of your pollution, a few hundred tiles
+  out, and only far out in clean air when no field is in the cloud. Its carriers go the same way, and onto bare
+  polluted ground when no field is near, where the carrier founds an incubator.
+- With no wild nest in reach it grows its own incubators, at five buds' price, and its creep buds toward the air. It
+  never buds toward your buildings closer than a short way off.
+- A cleaner factory starves it. A dirty one feeds a culture that tops out at its tumor cap and spends its surplus on
+  carriers, one every twenty minutes.

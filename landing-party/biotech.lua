@@ -316,6 +316,8 @@ pen.captured_spawner_entity = nil
 pen.hidden_in_factoriopedia = true
 pen.graphics_set = {animations = {table.deepcopy(data.raw["assembling-machine"]["captive-biter-spawner"].graphics_set.animation)}}
 pen.map_color = B.color
+-- It eats by script (creep.drink), as a wild spawner would: the engine's absorption off, or it would eat uncounted.
+pen.absorptions_per_second = nil
 pen.enemy_map_color = B.color
 -- Its stock is the wave: it breeds up to the cap and keeps them by its gate.
 pen.max_count_of_owned_units = shared.PEN_CAP
@@ -371,15 +373,16 @@ table.insert(out, pen)
 
 -- Creep (the user, 2026-10-22: "kind of a Zerg creep?"; scripts/creep.lua): Gleba's jellynut soil, not mineable, with
 -- the "object" layer so nothing is built on it (turrets, walls, belts, rails, poles, chests, spawners: tested) while
--- everything walks it (biters, the player, cars, tanks, spidertrons). It drinks pollution, nearly thirty times grass: what
--- it drinks is Synthexis's biomass (scripts/creep.lua).
+-- everything walks it (biters, the player, cars, tanks, spidertrons). It drinks pollution (scripts/creep.lua): what it
+-- drinks is Synthexis's biomass.
 local creep = table.deepcopy(data.raw.tile["artificial-jellynut-soil"])
 creep.name = "lp-creep"
 creep.localised_name = {"tile-name.lp-creep"}
 creep.minable = nil
 creep.autoplace = nil
 creep.collision_mask = {layers = {ground_tile = true, object = true}}
-creep.absorptions_per_second = {pollution = shared.CREEP_ABSORB}
+-- It eats by script (creep.drink, shared.CREEP_ABSORB a tile): the engine's absorption off.
+creep.absorptions_per_second = nil
 creep.map_color = {150, 50, 170}
 -- Violet over the soil: the first look (untinted) read as brown mud beside Nauvis dirt.
 creep.tint = {r = 0.8, g = 0.55, b = 1, a = 1}

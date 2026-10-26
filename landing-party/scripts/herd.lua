@@ -177,8 +177,14 @@ local function stock(p)
   for _, w in pairs(st().waves) do
     for _, u in ipairs(w.members) do if u.valid then seen[u.unit_number] = true end end
   end
+  -- Nor a carrier or its escort (farm.lua: an incubator took a carrier back while it waited, and a wave set out with it).
+  local carrying = storage.carrying or {}
   local function take(u)
-    if u.valid and u.force.name == B.force and not seen[u.unit_number] then seen[u.unit_number] = true; table.insert(out, u) end
+    if u.valid and u.force.name == B.force and not seen[u.unit_number] and not carrying[u.unit_number]
+      and u.name ~= "lp-bred-carrier" then
+      seen[u.unit_number] = true
+      table.insert(out, u)
+    end
   end
   if p.pen.valid then for _, u in pairs(p.pen.units) do take(u) end end
   for _, u in pairs(p.stock) do take(u) end

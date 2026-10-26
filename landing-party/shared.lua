@@ -278,9 +278,16 @@ shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] 
   ["lp-bred-spore"] = {cost = 10, air = true},
   -- A spider-unit (Space Age's small stomper): tier 4, over the wall.
   ["lp-bred-stomper"] = {cost = 150}}
--- Biomass (docs/biotech.md "Biomass"): the breeds' costs are paid in it, earned from the pollution its creep drinks (each
--- creep tile absorbs CREEP_ABSORB a second, the engine's own absorption; a unit of pollution drunk is a unit of biomass).
-shared.CREEP_ABSORB = 0.0005
+-- Biomass (docs/biotech.md "Biomass"): the breeds' costs are paid in it, earned from the pollution it eats. The script eats
+-- for it (creep.drink), so each culture's share is known: an incubator as a wild spawner absorbs (PEN_ABSORB a second and
+-- PEN_SHARE of its chunk's pollution a second, measured 2026-10-26), a creep tile CREEP_ABSORB a second, and a unit
+-- eaten is YIELD of biomass (a wild nest spends 20 on a medium biter's attack, an incubator 7 on its birth: smoke
+-- becomes units at the wild's rate, aimed). The engine's own absorption on both is off. Until 0.2.24 the creep tiles
+-- alone were counted, at a tenth of this, and the incubators' absorption went to no one: two cultures on deathworld10x
+-- at the cloud's edge ate nothing on the count.
+shared.CREEP_ABSORB = 0.005
+shared.PEN_ABSORB, shared.PEN_SHARE = 20, 0.01
+shared.YIELD = 0.35
 -- Whose nests and worms count as nests (Kessler-Hayashi clears them, routes go round them): the wild biters' and
 -- Synthexis's (its incubators and worms are nests to everyone else). Not its pollution billing: that is the wild waves'.
 shared.NEST_FORCES = {"enemy", "lp-biotech"}

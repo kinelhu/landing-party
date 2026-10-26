@@ -17,9 +17,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
 | `ops` | 1809 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
-| `herd` | 1518 | ground, know | control, farm |  | 60, 600, 3600 |  | herd |
+| `herd` | 1524 | ground, know | control, farm |  | 60, 600, 3600 |  | herd |
 | `layout` | 1184 | blocks, rng, site, wfc | base, faction |  |  |  |  |
-| `farm` | 1011 | cell, creep, herd, know, pods, tune | control, dev |  | 600, 3600, 36000 |  | farms |
+| `farm` | 1097 | cell, creep, herd, know, pods, tune | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
 | `siege` | 856 | (leaf) | ops |  |  |  | threat_last |
 | `base` | 820 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `faction` | 799 | army, base, layout, names, ops, pact, pods, rd, site, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
@@ -32,6 +32,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `routing` | 405 | (leaf) | ops |  |  |  | corridors |
 | `cell` | 396 | pods | control, farm |  |  |  | cell_sites, cells |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
+| `creep` | 391 | tune | control, farm |  |  |  | creep |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 381 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
@@ -40,7 +41,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `jumper` | 316 | base, ops, tune, war | control, dev |  | 60, 600 |  |  |
 | `planner` | 301 | rd | base |  |  |  |  |
-| `creep` | 273 | tune | control, farm |  |  |  | creep |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `intel` | 250 | (leaf) | ops |  |  |  |  |
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
@@ -132,7 +132,7 @@ From `stance.may`, run on the mod's own tables. Yes: allowed. No: forbidden. A d
 |---|---|---|
 | aggression | `answers` | `b.next_answer = game.tick + tune.sooner(b.corp, ANSWER_COOLDOWN)` |
 | strength | `army` | `n = math.max(1, math.floor(n * tune.strength(b.corp) + 0.5))` |
-| strength | `creep` | `local got = math.min(p, c.n * shared.CREEP_ABSORB * seconds) * tune.strength("biotech")` |
+| strength | `creep` | `local got = took * shared.YIELD * tune.strength("biotech")` |
 | aggression | `farm` | `last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.t` |
 | aggression | `farm` | `last_wave = game.tick - tune.sooner("biotech", WAVE_GAP) + tune.sooner("biotech", FIRST_WAVE), landed = game.t` |
 | strength | `farm` | `creep.of(f.id).biomass = seeded and seeded.biomass or START_BIOMASS * tune.strength("biotech")` |

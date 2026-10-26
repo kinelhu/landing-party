@@ -8554,6 +8554,9 @@ end
 --   raid: a pen hit while the wave marches: the wave turns home
 --   killed: every pen destroyed: the farm and its tag gone, its next landing an hour off
 --   wave: /lp wave's call a minute after landing: a wave out within a minute, not after FIRST_WAVE
+local GROWTH_SMOG = 20       -- pollution laid on each of 25 points over the culture's ground every ten seconds (growth,
+                             -- found): 3,000 a minute, the consult's dirty factory. 400 until 0.2.24 (60,000 a minute),
+                             -- when the creep tiles alone ate and could take little of it.
 scenarios.farm = function()
   local mix = params.mix or ""
   local L, G = "laser-turret", "gun-turret"
@@ -8601,6 +8604,26 @@ scenarios.farm = function()
       local q = surface().find_non_colliding_position("medium-worm-turret", at(750 + d[1], d[2]), 30, 1)
       if q then surface().create_entity{name = "medium-worm-turret", position = q, force = "enemy"} end
     end
+    -- growth: room to grow, to see its curve (the user, 2026-10-25: "I want to see the sigmoid"): 24 more spawners within
+    -- its creep's reach round the field, and pollution over its ground every ten seconds; a record a minute.
+    if mix == "growth" then
+      for k = 1, 24 do
+        local a, r = k * 2.4, 40 + (k % 6) * 20
+        local q = surface().find_non_colliding_position("biter-spawner", at(750 + math.cos(a) * r, math.sin(a) * r), 20, 1)
+        if q then table.insert(S.field, surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}) end
+      end
+    end
+    -- fed (0.2.24): a second field 330 tiles out, in a cloud laid round it: its pod comes down there, not at the field
+    -- 750 out (the user, 2026-10-26: "tie this to pollution cloud coverage to ensure a new culture can feed itself").
+    if mix == "fed" then
+      for d = 200, 460, 32 do surface().request_to_generate_chunks(at(d, 0), 3) end
+      surface().force_generate_chunk_requests()
+      S.fed_field = {}
+      for _, d in ipairs({{0, 0}, {14, 6}, {-12, 8}, {6, -14}}) do
+        local q = surface().find_non_colliding_position("biter-spawner", at(330 + d[1], d[2]), 30, 1)
+        if q then table.insert(S.fed_field, surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}) end
+      end
+    end
     -- seed, seedkill: a second wild field 400 tiles from the first, where its carrier goes (0.2.22).
     if mix == "seed" or mix == "seedkill" then
       for d = -40, 440, 32 do surface().request_to_generate_chunks(at(750, d), 3) end
@@ -8616,7 +8639,48 @@ scenarios.farm = function()
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
-  if mix == "seed" or mix == "seedkill" then
+  -- fed: its cloud, from the start (before the pod) and on, between the base and the near field.
+  if mix == "fed" then
+    for t = 120, END - 120, 600 do
+      schedule(t, function()
+        for du = 240, 300, 30 do for dv = -60, 60, 60 do surface().pollute(S.at(du, dv), 400) end end
+      end)
+    end
+  end
+  -- seedbare: ripe, every wild nest within 1,100 of it gone, and a cloud 400 tiles off its side: its carrier founds an
+  -- incubator on the bare ground there (0.2.24).
+  if mix == "seedbare" then
+    for t = 600, END - 120, 600 do
+      schedule(t, function()
+        for du = -60, 60, 60 do for dv = 340, 460, 60 do surface().pollute(S.at(750 + du, dv), 400) end end
+      end)
+    end
+  end
+  if mix == "growth" or mix == "found" then
+    for t = 600, END - 120, 600 do
+      schedule(t, function()
+        local f = farm1()
+        local c = f and f.pos or (S.at and {x = S.at(750, 0)[1], y = S.at(750, 0)[2]})
+        if c then
+          for dx = -120, 120, 60 do for dy = -120, 120, 60 do surface().pollute({c.x + dx, c.y + dy}, GROWTH_SMOG) end end
+        end
+      end)
+    end
+    for t = 3600, END - 120, 3600 do
+      schedule(t, function()
+        local f = farm1()
+        if not f then return end
+        local site = lp("cell_sites")[1] or {}
+        local tumors = 0
+        for _, tu in ipairs(lp("creep_state").tumors) do if tu.farm == f.id then tumors = tumors + 1 end end
+        local b = f.biomass or {}
+        helpers.write_file("landing-party/growth.jsonl", helpers.table_to_json({minute = game.tick / 3600, pens = f.pens,
+          techs = site.techs or 0, bought = site.bought or 0, biomass = b.now, drunk = b.drunk, trickled = b.trickled,
+          spent = b.spent, bred = b.bred, tumors = tumors, seeds = f.seeds or 0}) .. "\n", true)
+      end)
+    end
+  end
+  if mix == "seed" or mix == "seedkill" or mix == "seedbare" then
     for t = 600, END - 120, 120 do
       schedule(t, function()
         local cs = surface().find_entities_filtered{name = "lp-bred-carrier"}
@@ -8651,8 +8715,14 @@ scenarios.farm = function()
           end)
         end
         if mix == "wave" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave") and game.tick end) end
-        if mix == "seed" or mix == "seedkill" then
-          schedule(game.tick - storage.t0 + 3600, function() S.ripe = lp("farm_debug_seed", f.id) and game.tick end)
+        if mix == "seed" or mix == "seedkill" or mix == "seedbare" then
+          schedule(game.tick - storage.t0 + 3600, function()
+            if mix == "seedbare" then
+              for _, sp in ipairs(surface().find_entities_filtered{type = "unit-spawner", force = "enemy", position = f.pos,
+                radius = 1100}) do sp.destroy() end
+            end
+            S.ripe = lp("farm_debug_seed", f.id) and game.tick
+          end)
         end
         if mix == "starve" then
           -- Its first incubator stocked over the fed cap, then its biochamber killed a minute on.
@@ -8749,7 +8819,8 @@ scenarios.farm = function()
           finish_early()
         end
       end
-      if mix ~= "killed" and mix ~= "starve" and mix ~= "techs" and mix ~= "clinic" and #st.log > 0 then finish_early() end
+      if mix ~= "killed" and mix ~= "starve" and mix ~= "techs" and mix ~= "clinic" and mix ~= "growth" and mix ~= "found"
+        and mix ~= "seedbare" and #st.log > 0 then finish_early() end
     end)
   end
   schedule(END - 60, function()
@@ -8765,7 +8836,21 @@ scenarios.farm = function()
     info(string.format("farm: landed %.1f min in, %.0f tiles from the base, %s pens, %s worms, %s tags", S.landed / 3600,
       S.dist or -1, tostring(S.pens0), tostring(S.worms), tostring(S.tags)))
     check("farm: three pens or more", (S.pens0 or 0) >= 3, tostring(S.pens0))
-    check("farm: 600 tiles out or more", (S.dist or 0) >= 600, string.format("%.0f", S.dist or -1))
+    if mix == "fed" then
+      local nf = S.at(330, 0)
+      local fp = S.farm_pos or {x = 0, y = 0}
+      local f1 = lp("farm_state").farms[1] or {}
+      check("farm: fed, its pod came down on the field in the cloud", math.sqrt((fp.x - nf[1]) ^ 2 + (fp.y - nf[2]) ^ 2) < 60,
+        string.format("%.0f tiles out", S.dist or -1))
+      check("farm: fed, it ate the cloud", ((f1.biomass or {}).eaten or 0) > 0, serpent.line(f1.biomass))
+    else
+      check("farm: 600 tiles out or more", (S.dist or 0) >= 600, string.format("%.0f", S.dist or -1))
+    end
+    if mix == "found" then
+      local f1 = lp("farm_state").farms[1] or {}
+      check("farm: found, no wild nest near, it grew incubators of its own", (f1.grown or 0) >= 1,
+        serpent.line({grown = f1.grown, pens = f1.pens, biomass = f1.biomass}))
+    end
     check("farm: worms by its pens", (S.worms or 0) >= 2 * (S.pens0 or 0), tostring(S.worms))
     check("farm: its tag on the player's map", (S.tags or 0) >= 1, tostring(S.tags))
     check("farm: its tag names Synthexis", S.tag_text == "Synthexis culture", tostring(S.tag_text))
@@ -8776,9 +8861,10 @@ scenarios.farm = function()
     check("farm: its substrate (Gleba soil, a heating tower, plants) and technicians", site.tower == true
       and site.soil == "artificial-yumako-soil" and (site.plants or 0) >= 4 and (site.techs or 0) >= 2, serpent.line(site))
     -- Seeding (0.2.22): its carrier walked to the second field and a young culture began there; shot on the way, none.
-    if mix == "seed" or mix == "seedkill" then
+    -- seedbare: on the bare ground in the cloud, an incubator of its own.
+    if mix == "seed" or mix == "seedkill" or mix == "seedbare" then
       local st_ = lp("farm_state")
-      local g2 = S.field2 and S.field2[1] and S.at(750, 400)
+      local g2 = (mix == "seedbare" or S.field2 and S.field2[1]) and S.at(750, 400)
       local young
       for _, f in ipairs(st_.farms) do
         if f.seeded and g2 and math.sqrt((f.pos.x - g2[1]) ^ 2 + (f.pos.y - g2[2]) ^ 2) < 80 then young = f end
@@ -8789,6 +8875,10 @@ scenarios.farm = function()
       check("farm: " .. mix .. ", a carrier set out", S.carrier_seen ~= nil, tostring(S.carrier_seen))
       if mix == "seed" then
         check("farm: seed, a young culture began at the second field", young ~= nil and young.clinic == false,
+          serpent.line(young))
+      elseif mix == "seedbare" then
+        -- (Its clinic may have come by then: on bare ground near, it walks two minutes.)
+        check("farm: seedbare, a young culture began on the bare ground in the cloud", young ~= nil and young.pens >= 1,
           serpent.line(young))
       else
         check("farm: seedkill, its carrier shot, no culture began", S.carrier_killed ~= nil and young == nil and #st_.farms == 1,
