@@ -232,6 +232,9 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 57. **It lands on your smoke** (0.2.24): Synthexis now comes down at the edge of your pollution cloud, nearer than
     before, and eats it as wild nests would; with no nests near it grows its own incubators. Did it land closer than
     you expected? Did cleaning up a polluting line slow it? Did the wild nests' attacks drop where it took over?
+58. **Grubstake's towns** (0.2.26): Grubstake's camps now grow as towns along gravel streets, machines on both sides,
+    junk yards between, no walls but the landing pad's fence. Does it read as a scrappy prospectors' town? Can you
+    and your units drive straight through it? Does it look better than the old plated squares?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

@@ -65,6 +65,9 @@ by all parties."
   that escorts convoys and runs down lone engineers). No tanks.
 - **Layout**: sprawl: thin, spread, many small mining outposts strung on long gravel roads, few hubs; convoys
   everywhere. Silhouette: a web of roads with drills on it.
+- **Town (2026-10-26)**: its hubs are prospectors' towns: 12 by 12 lots (`scripts/wfc/grubstake.tiles`) strung along
+  a tree of gravel streets from its pad, fabricator rows and generator lots facing each other across the street, junk
+  yards of wrecks, crates and tanks between, no walls but the pad's fence. Units and vehicles cross it anywhere.
 - **Notice**: "Grubstake Mineral Recovery has recovered 4,000 iron ore from an unattended deposit. Thank you for
   your cooperation."
 - **As built (2026-10-19)**: a rival thief that escalates when hurt; it steals by night: soft raids that take machines
