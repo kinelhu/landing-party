@@ -1,7 +1,7 @@
 -- The biotech's farms (docs/biotech.md; Fable's breeds consult, docs/reviews/2026-10-22-biotech-breeds-consult.md, "Home").
 -- It comes once the wild biters' evolution on a surface reaches ARRIVE_EVO (there are mediums to breed by then): a cargo
--- pod comes down on the nest field at the edge of the player's pollution (FED_NEAR out at the least, the most pollution
--- round it), else on the nearest NEAR to FAR tiles out (to FARTHEST if none), and up to PENS of its spawners become
+-- pod comes down on the nest field with the most wild spawners in reach and pollution round it, FED_NEAR to FAR tiles
+-- from the player's factory (to FARTHEST if none), and up to PENS of its spawners become
 -- pens, each with START bred and WORMS bred worms. The farm is charted for the player, with a map tag; its first landing
 -- is told in chat, as a corporation's is. It lives on the player's smoke: hunting it down along its trails, or starving
 -- it, is the answer to it.
@@ -30,10 +30,12 @@ local farm = {}
 
 local B = shared.BIOTECH
 local ARRIVE_EVO = 0.25
-local NEAR, FAR, FARTHEST = 600, 1000, 1500
+local FAR, FARTHEST = 1000, 1500   -- NEAR (600) until 0.2.25: the pod now weighs every field FED_NEAR out
 local SEARCH = 2500           -- nests looked at round the player's spawn, nearest first
 local FED_NEAR = 250          -- a field in the cloud: none of the player's buildings within this
-local FED_R, FED_MIN = 3, 2   -- the pollution in the 7 by 7 chunks round it, at the least (creep.food)
+local FED_R, FED_MIN = 3, 2   -- the pollution in the 7 by 7 chunks round it (creep.food); a carrier's bare ground needs FED_MIN
+local FOOD_K = 50             -- pollution round a field that doubles its worth to the pod
+local ROOM_MAX = 30           -- wild spawners in a field's reach counted, at most
 local CANDIDATES = 80         -- of those, how many are weighed
 local FIELD, FIELD_MIN = 40, 3
 local PENS = 4
@@ -111,48 +113,44 @@ end
 
 -- The nest field for its pod (the user, 2026-10-26: "shouldn't we tie this to pollution cloud coverage to ensure a new
 -- culture can feed itself?"): of the fields with none of the player's buildings within FED_NEAR and some within `far`,
--- the one with the most pollution round it (creep.food, FED_R chunks), if one has FED_MIN; else the nearest NEAR to
--- `far` out, as before 0.2.24 (a clean factory, an early cloud: it lives on its trickle). Until 0.2.24 always that one:
--- on deathworld10x 576 and 725 tiles out, where the cloud stops 300 to 400 tiles from the factory. Its middle and its
--- spawners.
+-- the one with the most room and air: the wild spawners its creep can reach (creep.HEDGE, ROOM_MAX at most), raised by
+-- the pollution round it (creep.food, FED_R chunks; FOOD_K doubles it). Its growth is in nests to take, and its income
+-- in its incubators (TRICKLE each) as much as in the air: on deathworld10x the cloud's edge held 6 of pollution, and a
+-- pod sent for the air alone came down on three spawners and sent two waves in three hours (it had sent eleven from a
+-- packed field 600 tiles out). Until 0.2.24, always the nearest field 600 to `far` out. Its middle and its spawners.
 local function site(surface, far)
   local forces = players()
   if #forces == 0 then return nil end
   local origin = forces[1].get_spawn_position(surface)
   local nests = surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = origin, radius = SEARCH}
   table.sort(nests, function(a, b) return d2(a.position, origin) < d2(b.position, origin) end)
-  local fed_n, plain_n = 0, 0
-  local fed, fed_food, plain
+  local weighed, best, bs, why = 0, nil, nil, nil
   local corps = corp_forces()
   for _, sp in ipairs(nests) do
-    if fed_n >= CANDIDATES and (plain or plain_n >= CANDIDATES) then break end
+    if weighed >= CANDIDATES then break end
     local p = sp.position
     if surface.count_entities_filtered{position = p, radius = FED_NEAR, force = forces, limit = 1} == 0 then
-      local outer = surface.count_entities_filtered{position = p, radius = NEAR, force = forces, limit = 1} == 0
-      fed_n = fed_n + 1
-      if outer then plain_n = plain_n + 1 end
-      if (fed_n <= CANDIDATES or (outer and not plain))
-        and surface.count_entities_filtered{position = p, radius = far, force = forces, limit = 1} > 0
+      weighed = weighed + 1
+      if surface.count_entities_filtered{position = p, radius = far, force = forces, limit = 1} > 0
         and (#corps == 0 or surface.count_entities_filtered{position = p, radius = APART, force = corps, limit = 1} == 0) then
         local field = surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = p, radius = FIELD}
         if #field >= FIELD_MIN then
           local x, y = 0, 0
           for _, f in ipairs(field) do x, y = x + f.position.x, y + f.position.y end
           local mid = {x = x / #field, y = y / #field}
-          if fed_n <= CANDIDATES then
-            local food = creep.food(surface, mid, FED_R)
-            if food >= FED_MIN and (not fed_food or food > fed_food) then fed, fed_food = {mid, field}, food end
-          end
-          if outer and not plain then plain = {mid, field} end
+          local room = math.min(ROOM_MAX, surface.count_entities_filtered{type = "unit-spawner", force = "enemy",
+            position = mid, radius = creep.HEDGE})
+          local food = creep.food(surface, mid, FED_R)
+          local score = room * (1 + food / FOOD_K)
+          if not bs or score > bs then best, bs, why = {mid, field}, score, {room, food} end
         end
       end
     end
   end
-  local c = fed or plain
-  if not c then return nil end
-  trace(fed and string.format("its landing: the field at %.0f,%.0f, %.0f of pollution round it", c[1].x, c[1].y, fed_food)
-    or string.format("its landing: no field in the cloud; the nearest %d out, at %.0f,%.0f", NEAR, c[1].x, c[1].y))
-  return c[1], c[2]
+  if not best then return nil end
+  trace(string.format("its landing: the field at %.0f,%.0f, %d wild spawners in reach, %.0f of pollution round it",
+    best[1].x, best[1].y, why[1], why[2]))
+  return best[1], best[2]
 end
 
 local function bred_stock(surface, pen, n)

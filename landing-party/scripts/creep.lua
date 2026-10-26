@@ -378,6 +378,7 @@ function creep.bud(id, tick)
 end
 
 creep.BUD_PRICE = BUD_PRICE
+creep.HEDGE = HEDGE
 
 function creep.state()
   local out = {tumors = {}, dying = 0}
