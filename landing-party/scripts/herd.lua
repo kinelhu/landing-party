@@ -69,33 +69,20 @@ end
 
 local function force() return game.forces[B.force] end
 
--- Its force: at peace with the wild biters both ways; neutral with Grubstake (it grows on its pollution) until a break,
--- which a later slice gives triggers; at war with everyone else.
+-- Its force: at peace with the wild biters both ways, and with Grubstake for good (the user, 2026-10-26: "a lasting truce
+-- with Grubstake as they have a sort of symbiotic relationship, and are both going to come in at similar times": it grows
+-- on the smoke Grubstake's mines and fabricators put out, and both live by the wild biters' leave); at war with everyone
+-- else. Until 0.2.29 Grubstake by its creep or at its incubators broke the truce for good: a save where it had broken
+-- gets it back here.
 function herd.init()
   local f = game.forces[B.force] or game.create_force(B.force)
   f.custom_color = B.color
   local enemy = game.forces.enemy
   if enemy then f.set_cease_fire(enemy, true); enemy.set_cease_fire(f, true) end
   local g = game.forces[shared.CORPS.grubstake.force]
-  if g and not st().grubstake_broken then f.set_cease_fire(g, true); g.set_cease_fire(f, true) end
-  st()
+  if g then f.set_cease_fire(g, true); g.set_cease_fire(f, true) end
+  st().grubstake_broken = nil
 end
-
--- The break with Grubstake (the brief: "neutral with Grubstake at first ... with its own bred herds only, never the wild
--- ones"; farm.lua says when): the cease-fire between the two goes, for good. The wild biters' pact with Grubstake stands.
-function herd.break_grubstake(why)
-  if st().grubstake_broken then return false end
-  st().grubstake_broken = {why = why, tick = game.tick}
-  local f, g = force(), game.forces[shared.CORPS.grubstake.force]
-  if f and g then f.set_cease_fire(g, false); g.set_cease_fire(f, false) end
-  if storage.trace then
-    helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  at war with Grubstake: %s\n", game.tick,
-      "biotech", why), true)
-  end
-  return true
-end
-
-function herd.grubstake_broken() return st().grubstake_broken end
 
 local function d2(a, b)
   local ax, ay = a.x or a[1], a.y or a[2]
@@ -885,7 +872,17 @@ end
 -- On the move it fights nothing: a herd forty wide spills into turret reach along the loop, and fighting back there
 -- (distraction by damage) drew it on to the faces it was going round (the first herd run: ten turrets taken on the way,
 -- the herd dead before its mark).
+-- Its group, formed again from its units when the engine disbanded it (an incubator takes back its idle units, and a
+-- group left empty goes: an order to it crashed two deathworld visits, 0.2.29).
+local function ensure_group(w)
+  if w.group and w.group.valid then return end
+  local s = game.surfaces[w.surface]
+  w.group = s.create_unit_group{position = where(w), force = B.force}
+  for _, u in ipairs(herd_units(w)) do if not u.commandable.parent_group then w.group.add_member(u) end end
+end
+
 local function march(w)
+  ensure_group(w)
   -- Every one of its own in the group (at the gather a quarter of a wave of 120 was not, and stayed at the gate).
   -- A stray far behind (STRAY_FAR) is not called in: the same ten to thirteen were called in at every leg on the player's
   -- deathworld and the herd broke up; it goes home, and the herd marches on without it.
@@ -904,7 +901,8 @@ local function march(w)
             distraction = defines.distraction.by_enemy}
           why[#why + 1] = string.format("%.0f,%.0f", u.position.x, u.position.y)
         end
-      else
+      elseif w.group.valid then
+        -- (A group disbanded meanwhile is formed again by step: adding to it was a crash, deathworld10x visit, 0.2.29.)
         w.group.add_member(u); strays = strays + 1
       end
     end
@@ -927,6 +925,7 @@ end
 
 -- A wave that came blind (waves of older saves: since 0.2.18 none does).
 local function blind_attack(w)
+  ensure_group(w)
   local p = st().pens[w.pen]
   local from = p and p.pen.valid and p.pen.position or w.center
   local face = face_toward(w, from)
@@ -945,6 +944,7 @@ end
 -- Where the line from the mark to the middle meets the wall: the two pieces there, then INSIDE tiles in.
 local hold_bursters     -- below, with the breach's spitters
 local function breach(w)
+  ensure_group(w)
   local s = game.surfaces[w.surface]
   local forces = foes(w)
   local m, c = w.mark, w.staged and w.goal or w.center
@@ -1142,6 +1142,7 @@ local function cover(w)
 end
 
 local function hunt(w)
+  ensure_group(w)
   if not (w.group and w.group.valid) then return end
   -- What became of its last target (a run counted none of the player's buildings lost to its waves).
   if w.target_name then
@@ -1186,6 +1187,7 @@ local function hunt(w)
 end
 
 home_leg = function(w)
+  ensure_group(w)
   w.group.set_command(go(w.home[math.min(w.home_leg, #w.home)], defines.distraction.none, 6))
 end
 
@@ -1518,7 +1520,7 @@ function herd.state()
       table.insert(rears, {id = id, valid = false})
     end
   end
-  return {pens = pens, waves = waves, log = h.log, trails = #h.trails, rears = rears, grubstake_broken = h.grubstake_broken}
+  return {pens = pens, waves = waves, log = h.log, trails = #h.trails, rears = rears}
 end
 
 return herd

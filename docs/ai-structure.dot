@@ -29,17 +29,17 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_3 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n820 lines", width=1.71, fillcolor="#eef2f7"];
-    "construction" [label="construction\n381 lines", width=1.22, fillcolor="#d9f0d9"];
-    "planner" [label="planner\n325 lines", width=1.16, fillcolor="#eef2f7"];
-    "layout" [label="layout\n1631 lines", width=2.61, fillcolor="#f7dede"];
+    "base" [label="base\n834 lines", width=1.73, fillcolor="#eef2f7"];
+    "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
+    "planner" [label="planner\n327 lines", width=1.16, fillcolor="#eef2f7"];
+    "layout" [label="layout\n1721 lines", width=2.71, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
-    "lots_grubstake" [label="lots_grubstake\n242 lines", width=1.07, fillcolor="#d9f0d9"];
-    "site" [label="site\n159 lines", width=0.98, fillcolor="#eef2f7"];
+    "lots_grubstake" [label="lots_grubstake\n266 lines", width=1.10, fillcolor="#d9f0d9"];
+    "site" [label="site\n162 lines", width=0.98, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n483 lines", width=1.34, fillcolor="#eef2f7"];
+    "crew" [label="crew\n488 lines", width=1.34, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n144 lines", width=0.96, fillcolor="#eef2f7"];
@@ -69,8 +69,8 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n1524 lines", width=2.49, fillcolor="#f7dede"];
-    "farm" [label="farm\n1145 lines", width=2.07, fillcolor="#f7dede"];
+    "herd" [label="herd\n1526 lines", width=2.50, fillcolor="#f7dede"];
+    "farm" [label="farm\n1126 lines", width=2.05, fillcolor="#f7dede"];
     "creep" [label="creep\n447 lines", width=1.30, fillcolor="#eef2f7"];
     "cell" [label="cell\n401 lines", width=1.25, fillcolor="#eef2f7"];
   }
@@ -83,7 +83,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n649 lines", width=1.52, fillcolor="#eef2f7"];
+    "control" [label="control\n651 lines", width=1.52, fillcolor="#eef2f7"];
     "dev" [label="dev\n189 lines", width=1.01, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n125 lines", width=0.94, fillcolor="#d9f0d9"];

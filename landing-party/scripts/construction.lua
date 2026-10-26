@@ -30,6 +30,8 @@ local function pave(b, tiles, floor, module)
   local out = {}
   local keep = module and module.kind == "post" and floor == "pad"
   if keep then module.under = module.under or {} end
+  -- Water under its floor filled first, by a corporation that fills (shared.landfill: a pond, never a lake).
+  shared.landfill(surface, tiles, b)
   for _, t in ipairs(tiles) do
     local tile = surface.get_tile(t[1], t[2])
     if tile.valid and tile.name ~= name and not tile.collides_with("water_tile") then
@@ -89,7 +91,7 @@ local function place(b, job, by_crew)
     if b.turrets_placed % flak == 0 then job.name = "lp-scrap-cannon" end
   end
   local name = shared.variant(b.corp, job.name)
-  clear_area(surface, name, pos)
+  clear_area(surface, name, pos, b)
   make_way(b, surface, name, pos)
   if job.loose then pos = surface.find_non_colliding_position(name, pos, 4, 0.5) or pos end
   local ok = surface.can_place_entity{name = name, position = pos, direction = job.dir, force = force(b)}

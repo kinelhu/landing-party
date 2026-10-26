@@ -15,7 +15,7 @@ import wfc as W
 SIZE = 12
 W.SIZE = SIZE
 W.BUILD = {"D": (4, 4), "F": (3, 3), "G": (2, 2), "R": (3, 3), "K": (3, 3), "T": (2, 2), "V": (2, 2), "W": (2, 2),
-           "X": (1, 1), "C": (1, 1), "P": (1, 1), "L": (1, 1), "O": (2, 2), "I": (1, 1), "M": (3, 3)}
+           "X": (1, 1), "C": (1, 1), "P": (1, 1), "L": (1, 1), "O": (2, 2), "I": (1, 1), "M": (3, 3), "U": (1, 1)}
 MACHINES = set("DFGRK")
 STEP = {"n": (0, -1), "s": (0, 1), "e": (1, 0), "w": (-1, 0)}
 OPP = {"n": "s", "s": "n", "e": "w", "w": "e"}
@@ -93,6 +93,9 @@ def opens(v):
     return frozenset(d for d in "nsew" if ":" in v["edge"][d])
 
 
+LAKE = set()
+
+
 def grow(vs, n, lots, rng):
     """Its streets as a tree (the user wanted a sprawl that never blocks: no enclosed block, no ladder of parallel
     streets): from a crossing at the middle, an open street end is taken (nearer the middle first, by chance) and
@@ -101,9 +104,10 @@ def grow(vs, n, lots, rng):
     exactly its openings, by weight; the lots beside a street get yards (scrap, stores) or stay empty."""
     mid = (n // 2, n // 2)
     street = {mid: set("nsew")}
+    shore = {}
     ends = [(mid, d) for d in "nsew"]
     def free(q, came):
-        if q in street or not (0 <= q[0] < n and 0 <= q[1] < n): return False
+        if q in street or q in LAKE or not (0 <= q[0] < n and 0 <= q[1] < n): return False
         for d, (dx, dy) in STEP.items():
             r = (q[0] + dx, q[1] + dy)
             if r in street and r != came: return False
@@ -113,6 +117,9 @@ def grow(vs, n, lots, rng):
         p, d = ends.pop(0)
         dx, dy = STEP[d]
         q = (p[0] + dx, p[1] + dy)
+        if q in LAKE and q not in shore:
+            shore[q] = OPP[d]
+            continue
         if not free(q, p):
             street[p].discard(d)
             continue
@@ -125,11 +132,14 @@ def grow(vs, n, lots, rng):
         else: out = set()
         street[q] = {back} | out
         ends += [(q, o) for o in out]
-    # Unbuilt ends: the street stops in the lot before (its opening closed), unless it runs off the camp's edge.
+    # Unbuilt ends: the street stops in the lot before (its opening closed), unless it runs off the camp's edge, or into
+    # the lake: a pier there (its back to the street).
+    piers = dict(shore)
     for p, d in ends:
         dx, dy = STEP[d]
         q = (p[0] + dx, p[1] + dy)
-        if 0 <= q[0] < n and 0 <= q[1] < n: street[p].discard(d)
+        if q in LAKE and q not in piers: piers[q] = OPP[d]
+        elif 0 <= q[0] < n and 0 <= q[1] < n: street[p].discard(d)
     by = {}
     for i, v in enumerate(vs): by.setdefault(opens(v), []).append(i)
     # Where a lot stands sets its kind: the working lots by the crossing, the scrap and the guns at the fringe.
@@ -139,7 +149,7 @@ def grow(vs, n, lots, rng):
         if name in FRINGE: return 0.4 if near else 3
         return 1
     def pick(key, dist):
-        opts = by.get(frozenset(key), [])
+        opts = [i for i in by.get(frozenset(key), []) if not vs[i]["name"].startswith("pier")]
         if not opts: return None
         return rng.choices(opts, [vs[i]["w"] * lean(vs[i]["name"], dist) for i in opts])[0]
     sol = {}
@@ -148,28 +158,34 @@ def grow(vs, n, lots, rng):
         i = pick(o, dist(p))
         if i is None: return None
         sol[p] = i
+    for q, back in piers.items():
+        opts = [i for i, v in enumerate(vs) if v["name"].startswith("pier") and opens(v) == frozenset(back)
+                and all(c == "~" for c in v["edge"][OPP[back]])]
+        if opts: sol[q] = rng.choice(opts)
     for p in list(street):
         for d, (dx, dy) in STEP.items():
             q = (p[0] + dx, p[1] + dy)
-            if q not in sol and 0 <= q[0] < n and 0 <= q[1] < n:
+            if q not in sol and q not in LAKE and 0 <= q[0] < n and 0 <= q[1] < n:
                 sol[q] = pick(set(), dist(q))
     return sol
 
 
 COL = {"ground": "#d9cfb4", ":": "#9c8f78", ".": "#b7ad97", "%": "#e3b23c",
        "D": "#b0651a", "F": "#8a5a2b", "G": "#6b6b2b", "R": "#4f7a7a", "K": "#7a6a55", "T": "#3a3a3a", "V": "#c9772a",
-       "W": "#5e5a55", "X": "#7d6b4f", "C": "#a07a3c", "P": "#4a3520", "L": "#f4e27a", "O": "#8c4a3a", "I": "#6f7a80", "M": "#4a4642"}
+       "W": "#5e5a55", "X": "#7d6b4f", "C": "#a07a3c", "P": "#4a3520", "L": "#f4e27a", "O": "#8c4a3a", "I": "#6f7a80", "M": "#4a4642", "U": "#3a6f8f",
+       "~": "#4f86a8", "=": "#a89a80"}
 
 
 def draw(ax, vs, sol, w, h, mask, title):
     import matplotlib.patches as mp
+    for (x, y) in LAKE: ax.add_patch(mp.Rectangle((x * SIZE, y * SIZE), SIZE, SIZE, color=COL["~"], lw=0))
     for (x, y) in sol: ax.add_patch(mp.Rectangle((x * SIZE, y * SIZE), SIZE, SIZE, color=COL["ground"], lw=0))
     for (x, y), i in sol.items():
         rows = vs[i]["rows"]
         for r, row in enumerate(rows):
             for c, ch in enumerate(row):
                 X, Y = x * SIZE + c, y * SIZE + r
-                if ch in ":.%":
+                if ch in ":.%~=":
                     ax.add_patch(mp.Rectangle((X, Y), 1, 1, color=COL[ch], lw=0))
         for r, row in enumerate(rows):
             for c, ch in enumerate(row):
@@ -178,7 +194,7 @@ def draw(ax, vs, sol, w, h, mask, title):
                     bw, bh = W.BUILD[ch]
                     if ch in "PL":
                         ax.add_patch(mp.Circle((X + 0.5, Y + 0.5), 0.4, color=COL[ch], lw=0))
-                    elif ch in "XCI":
+                    elif ch in "XCIU":
                         ax.add_patch(mp.Rectangle((X + 0.15, Y + 0.15), 0.7, 0.7, color=COL[ch], lw=0))
                     else:
                         ax.add_patch(mp.Rectangle((X + 0.1, Y + 0.1), bw - 0.2, bh - 0.2, color=COL[ch], lw=0))
@@ -202,7 +218,7 @@ def export(path, out):
     errs = [e for t in tiles for e in W.check_tile(t)]
     if errs: print("\n".join(errs)); sys.exit(1)
     vs = W.variants(tiles)
-    bad = sorted({e for v in vs for e in v["edge"].values()} - {" " * SIZE, " " * 5 + "::" + " " * 5})
+    bad = sorted({e for v in vs if not v["name"].startswith("pier") for e in v["edge"].values()} - {" " * SIZE, " " * 5 + "::" + " " * 5})
     if bad: print("an edge neither bare nor a centred track:", bad); sys.exit(1)
     lines = ["-- Generated by scripts/wfc/sprawl.py export from grubstake.tiles: do not edit; edit the .tiles file.",
              "return {size = %d, variants = {" % SIZE]
@@ -220,6 +236,9 @@ def main():
     args = sys.argv[3:]
     opt = lambda k, d: int(args[args.index(k) + 1]) if k in args else d
     n, size, seed, lots = opt("--n", 9), opt("--size", 9), opt("--seed", 1), opt("--lots", 16)
+    lake = opt("--lake", 0)
+    for x in range(size - lake, size):
+        for y in range(size): LAKE.add((x, y))
     tiles = W.parse(path)
     errs = [e for t in tiles for e in W.check_tile(t)]
     if errs: print("\n".join(errs)); sys.exit(1)

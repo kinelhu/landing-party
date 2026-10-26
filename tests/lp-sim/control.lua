@@ -2472,6 +2472,14 @@ scenarios.system = function()
   end
   -- LP_MIX=dump<minute> (natural opening): each camp's map at that minute (scripts/campmap.py draws it), to see a raid
   -- that never left its camp (9 of 55 raids in the four seeds, 2026-10-24).
+  -- Ground refused and crews stuck, by cause, at the end (cliffs measured, 2026-10-26).
+  schedule(END - 30, function()
+    for _, id in ipairs(lp("bases")) do
+      local st = lp("stats", id)
+      info(string.format("system: %s %d ground refused %s; crews stuck %d; cliffs blasted %d, water tiles filled %d, piers %d", st.corp, id,
+        serpent.line(st.refused or {}), st.crews_stuck or 0, st.blasted or 0, st.landfilled or 0, st.piers or 0))
+    end
+  end)
   local dump_at = tonumber((params.mix or ""):match("^dump(%d+)$"))
   if dump_at then
     schedule(dump_at * 3600, function()
@@ -6803,7 +6811,26 @@ scenarios.tap = function()
     elseif params.mix ~= "natural" then S.fired = lp("debug_tap", S.g, S.pole_at) end
   end)
   local function st() return lp("tap_state", S.g) end
-  schedule(9 * 3600, function()
+  -- Its steps from the tap's start: at 9 minutes for a tap called (debug, cmd); LP_MIX=natural, a minute after the camp's own
+  -- tap draws, whenever that is (0.2.29: the camp built where its cliffs had been, and its tap came at 10.4 minutes).
+  local function at(t, f)
+    if params.mix ~= "natural" then return schedule(t, f) end
+    S.steps = S.steps or {}
+    table.insert(S.steps, {t - 9 * 3600, f})
+  end
+  if params.mix == "natural" then
+    for t = 3 * 3600, END - 8 * 3600, 600 do
+      schedule(t, function()
+        if S.started then return end
+        local now = st()
+        if now and now.phase == "draw" then
+          S.started = game.tick
+          for _, step in ipairs(S.steps) do schedule(game.tick - storage.t0 + 3600 + step[1], step[2]) end
+        end
+      end)
+    end
+  end
+  at(9 * 3600, function()
     S.mid = st()
     -- The camp's grid apart from the player's: the tap draws across, the wires never do (the user saw the camp's drills
     -- and fabricators in the player's network: a pylon auto-connected to a player pole within reach).
@@ -6836,13 +6863,13 @@ scenarios.tap = function()
     end
     info("tap: line pylons from the pole " .. table.concat(ds, " ") .. "; cut " .. tostring(S.cut))
   end)
-  schedule(9 * 3600 + 3 * 60, function() S.after_cut = st() end)
-  schedule(12 * 3600, function()
+  at(9 * 3600 + 3 * 60, function() S.after_cut = st() end)
+  at(12 * 3600, function()
     S.healed = st()
     local t = surface().find_entities_filtered{name = "lp-power-tap", limit = 1}[1]
     if t then t.die("player") end
   end)
-  schedule(12 * 3600 + 3 * 60, function() S.broken = st() end)
+  at(12 * 3600 + 3 * 60, function() S.broken = st() end)
   schedule(END - 60, function()
     info(string.format("tap: %s; at 9 min %s; cut %s: %s; at 12 min %s; broken: %s", tostring(S.fired),
       serpent.line(S.mid), tostring(S.cut), serpent.line(S.after_cut), serpent.line(S.healed), serpent.line(S.broken)))
@@ -7008,6 +7035,43 @@ end
 -- outpost turret. Covered by the turrets, the loss gets no answer: no squad, no biters called, and no flare canister
 -- (the prototype is gone). LP_MIX=open: the turrets are taken away after the kill, the spot uncovered: a squad goes
 -- within two minutes.
+-- Grubstake's town grown at once (remote debug_town, the screenshots' fast mode): its lots laid and built, none on ore.
+-- LP_MIX=lake (0.2.29): a lake east of its pad: a street end there takes a waterfront lot, its pier landfilled.
+scenarios.town = function()
+  local lake = params.mix == "lake"
+  schedule(60, function()
+    lp("debug_tune", {history_off = true, raids_off = true, crews_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    storage.id = S.g
+    local o = lp("stats", S.g).origin
+    S.o = o
+    if lake then
+      local x0 = math.floor(o.x + 32)
+      S.lake = {x0, math.floor(o.y - 80), x0 + 100, math.floor(o.y + 80)}
+      local t = {}
+      for x = S.lake[1], S.lake[3] do for y = S.lake[2], S.lake[4] do t[#t + 1] = {name = "water", position = {x, y}} end end
+      for _, e in pairs(surface().find_entities_filtered{area = {{S.lake[1], S.lake[2]}, {S.lake[3], S.lake[4]}}}) do
+        if e.type ~= "character" then e.destroy() end
+      end
+      surface().set_tiles(t)
+    end
+    lp("debug_depot", S.g, 10000)
+    S.grown = lp("debug_town", S.g, 12, 20)
+  end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    info("town: " .. serpent.line(S.grown) .. "; piers " .. tostring(st.piers) .. ", fabs " .. tostring(st.fabs))
+    check("town: its lots laid", S.grown and S.grown.machines >= 6, serpent.line(S.grown))
+    if lake then
+      -- (All water when laid: what is not water now is its piers, landfill under gravel.)
+      local area = {{S.lake[1], S.lake[2]}, {S.lake[3], S.lake[4]}}
+      local fill = surface().count_tiles_filtered{area = area} - surface().count_tiles_filtered{area = area, collision_mask = "water_tile"}
+      check("town: lake, a street end on its shore took a waterfront lot", (st.piers or 0) >= 1, tostring(st.piers))
+      check("town: lake, its piers built out over the water", fill >= 10, tostring(fill))
+    end
+  end)
+end
+
 scenarios.snatch = function()
   local open = params.mix == "open"
   schedule(60, function()
@@ -7426,6 +7490,9 @@ scenarios.visit = function()
       info(string.format("visit: %s %d%s: garrison %d, razed %d, looted %d, units lost %d, %d operations (%d done, %d aborted, %d sieges, %d strips)",
         st.corp, id, st.fallen and " (fallen)" or "", st.garrison, st.razed, st.ops.looted or 0, st.units_lost or 0,
         st.ops.launched, st.ops.done, st.ops.aborted, st.ops.sieges, st.ops.strips))
+      -- Ground refused and crews stuck, by cause (cliffs measured, 2026-10-26).
+      info(string.format("visit: %s %d ground refused %s; crews stuck %d; cliffs blasted %d, water tiles filled %d, piers %d", st.corp, id,
+        serpent.line(st.refused or {}), st.crews_stuck or 0, st.blasted or 0, st.landfilled or 0, st.piers or 0))
       for _, l in ipairs(st.ops.log or {}) do
         info(string.format("visit:   %s %s on %s (%s), %d of %d back", l.op, l.outcome, l.kind, tostring(l.owner), l.back, l.launched))
       end
@@ -8463,9 +8530,14 @@ scenarios.creep = function()
         serpent.line(S.broken), tostring(S.broken_after), tostring(S.ceased_before),
         tostring(bf.get_cease_fire("lp-grubstake")), tostring(game.forces["lp-grubstake"].get_cease_fire(bf)),
         tostring(bf.get_cease_fire("enemy"))))
+      -- A lasting truce (0.2.29; the user: "symbiotic"): until then Grubstake at its tumor broke it within a second.
+      local tumors = surface().count_entities_filtered{name = "lp-tumor", position = S.farm_pos, radius = 80}
       check("creep: a truce with Grubstake before", S.ceased_before == true, tostring(S.ceased_before))
-      check("creep: Grubstake at its tumor broke it within 20 s", S.broken and S.broken_after <= 1200, tostring(S.broken_after))
-      check("creep: at war both ways", not bf.get_cease_fire("lp-grubstake") and not game.forces["lp-grubstake"].get_cease_fire(bf), "")
+      check("creep: Grubstake beside its tumor, the truce holds", S.broken == nil, serpent.line(S.broken))
+      check("creep: at peace both ways at the end", bf.get_cease_fire("lp-grubstake") and game.forces["lp-grubstake"].get_cease_fire(bf), "")
+      -- (No Grubstake camp here, so no pacifier: the wild biters may kill it; Synthexis never.)
+      check("creep: its tumors stand, and nothing of Synthexis's killed the rifleman", tumors > 0
+        and S.intruder_killer ~= "lp-biotech", string.format("%d tumors, rifleman killed by %s", tumors, tostring(S.intruder_killer)))
       check("creep: still at peace with the wild biters", bf.get_cease_fire("enemy") == true, "")
       return
     end
@@ -10639,6 +10711,12 @@ script.on_init(function()
   storage.t0 = game.tick
   helpers.remove_path("landing-party")
   lp("set_trace", true)
+  -- LP_OFF=blast,landfill,pier (sim.sh): 0.2.29's ground handling off, each named (bisecting what it changed).
+  if (params.off or "") ~= "" then
+    local t = {}
+    for k in params.off:gmatch("[%a_]+") do t[k .. "_off"] = true end
+    lp("debug_tune", t)
+  end
   -- Levers from the mix, before any early return (a visit's levers were never set; sweeps: LP_MIX=provoked-S2-A0.5): S<x> every corporation's strength, A<x> its aggression.
   local mix = params.mix or ""
   local st, ag = tonumber(mix:match("S([%d%.]+)")), tonumber(mix:match("A([%d%.]+)"))
@@ -10762,6 +10840,8 @@ for _, t in ipairs({"mining-drill", "furnace", "assembling-machine", "lab", "roc
 
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
+  -- creep break: who killed the Grubstake rifleman by its tumor (the truce: never Synthexis).
+  if S.intruder and e.entity == S.intruder then S.intruder_killer = e.force and e.force.name or "nobody" end
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
   -- System: who lost what to whom (victim force > killer force, units and buildings apart).
   if params.scenario == "system" then

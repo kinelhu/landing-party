@@ -246,6 +246,8 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     and your units drive straight through it? Does it look better than the old plated squares?
 59. **Synthexis's creep** (0.2.28): its creep wanders, its tumors lie sunk in roots and slime, the forest it covers dies
     to bare trunks. Does a culture read as something growing into the land? Do its technicians walk free of their plants?
+60. **Cliffs and water** (0.2.29): the corporations blow up cliffs where they build (an explosion), Kessler-Hayashi fills
+    ponds under its buildings, Grubstake's streets end on lakes in piers. Did you see one? Do their camps sit better on rough ground?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

@@ -511,7 +511,11 @@ is not the player's pollution, and Kessler-Hayashi must not bill for it (the bri
 - A first try made all 45 spawners incubators: full stock and no culture to pay for it (pens outside a culture breed
   free, as a test's do) killed all ten guards and nothing was cleared. A real culture has at most 12.
 
-### The break with Grubstake (0.1.60)
+### The break with Grubstake (0.1.60; withdrawn 0.2.29)
+
+Since 0.2.29 there is no break: Synthexis and Grubstake keep a lasting truce (the user: "a sort of symbiotic
+relationship"). What follows is how it was.
+
 
 The consult's trigger (a Grubstake skim truck at a biochamber) waits for biochambers; creep gave a legible one now:
 land. The truce ends, for good (`herd.break_grubstake`, `storage.herd.grubstake_broken` with its cause), when a

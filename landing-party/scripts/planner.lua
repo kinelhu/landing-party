@@ -144,6 +144,8 @@ local function keep(b) return b.posture and b.posture.keep or 0 end
 -- `only`: that rule alone (base.lua: the power rule while the queue is busy).
 local function plan(b, only)
   local surface = game.surfaces[b.surface]
+  -- Whose ground the layout's checks refuse (shared.refused), while it plans.
+  layout.measuring = b
   local doc = layout.DOCTRINES[b.doctrine]
   local supply, demand = power(b)
   -- What awaits a rebuild still counts: the base knows what it lost and will replace it.

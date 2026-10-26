@@ -164,6 +164,7 @@ shared.CORPS = {
     -- lobed (the user, 2026-10-20: "organic looking bases ... like metastases", "it's all squares everywhere"): its
     -- blocks on lobed plates, one wall round each hub (layout.wall_cluster), no square per block, no pickets.
     arch = {gates = true, pillboxes = true, flamers = true, pad = "ring", lobed = true}, clears_nests = true,
+    landfill = true,
     caps = {siege = 1, ["lp-walker"] = 2, ["lp-laser-drone"] = 2, pickets_see = 2, headquarters = 3},
     -- Temper: it never strikes a player first; once provoked (its buildings or units hurt by that player), it
     -- does not forget.
@@ -291,6 +292,64 @@ shared.YIELD = 0.35
 -- Whose nests and worms count as nests (Kessler-Hayashi clears them, routes go round them): the wild biters' and
 -- Synthexis's (its incubators and worms are nests to everyone else). Not its pollution billing: that is the wild waves'.
 shared.NEST_FORCES = {"enemy", "lp-biotech"}
+-- Why ground was refused for a building (the user, 2026-10-26: cliffs "a pain for every faction"; measured before the
+-- corporations blast them): a tally per settlement by reason, read by the visits and the system sims.
+-- Cliffs in its way blown up (the user, 2026-10-26: "I think we should do it now"; measured first: cliffs turned away 15
+-- to 50% of the ground the corporations considered, 40% of Kessler-Hayashi's on three maps of four): every cliff touching
+-- `area`, an explosion where it stood, BLAST_COST parts each, the cliffs round it corrected by the engine.
+shared.BLAST_COST = 2
+function shared.blast(surface, area, b)
+  if storage.blast_off then return 0 end
+  local n = 0
+  for _, c in pairs(surface.find_entities_filtered{area = area, type = "cliff"}) do
+    if c.valid then
+      local p = c.position
+      surface.create_entity{name = "big-explosion", position = p}
+      c.destroy{do_cliff_correction = true}
+      n = n + 1
+    end
+  end
+  if n > 0 and b then
+    b.parts = b.parts - n * shared.BLAST_COST
+    b.blasted = (b.blasted or 0) + n
+  end
+  return n
+end
+
+-- Water under what it builds filled (Kessler-Hayashi: shared.CORPS[corp].landfill; the user, 2026-10-26, water next to
+-- cliffs: 7,278 refusals at its deathworld uplink): water tiles among `tiles` ({x, y} lists) become landfill,
+-- LANDFILL_COST parts each, unless there are more than LANDFILL_MAX of them (a lake, not a pond: left).
+shared.LANDFILL_COST, shared.LANDFILL_MAX = 0.5, 120
+function shared.fills(b) return b and (shared.CORPS[b.corp] or {}).landfill and not storage.landfill_off end
+-- Whether a cliff is ground it may build on (it blows it up), or in its way (blast_off).
+function shared.cliff_clears() return not storage.blast_off end
+function shared.landfill(surface, tiles, b)
+  if not shared.fills(b) then return 0 end
+  local wet = {}
+  for _, t in ipairs(tiles) do
+    local tile = surface.get_tile(t[1], t[2])
+    if tile.valid and tile.collides_with("water_tile") then wet[#wet + 1] = {name = "landfill", position = {t[1], t[2]}} end
+    if #wet > shared.LANDFILL_MAX then return 0 end
+  end
+  if #wet == 0 then return 0 end
+  surface.set_tiles(wet, true, false, true, false)
+  b.parts = b.parts - math.ceil(#wet * shared.LANDFILL_COST)
+  b.landfilled = (b.landfilled or 0) + #wet
+  return #wet
+end
+
+-- A town's junk (layout.lua: wrecks, crates, tanks, pipes, rocks, parked cars, poles, pumps; neutral): cleared where a
+-- building of its goes (a wreck's sprite stood over a turret's footprint, and the nest's gun was never placed).
+shared.DECOR_PROPS = {["wooden-chest"] = true, ["storage-tank"] = true, pipe = true, ["big-rock"] = true, car = true,
+  ["offshore-pump"] = true, ["small-electric-pole"] = true}
+for k = 1, 6 do shared.DECOR_PROPS["crash-site-spaceship-wreck-small-" .. k] = true end
+for k = 1, 3 do shared.DECOR_PROPS["crash-site-spaceship-wreck-medium-" .. k] = true end
+
+function shared.refused(b, why)
+  if not b then return end
+  b.refused = b.refused or {}
+  b.refused[why] = (b.refused[why] or 0) + 1
+end
 
 local corp_forces = {}
 for _, c in pairs(shared.CORPS) do corp_forces[c.force] = true end

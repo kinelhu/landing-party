@@ -5,7 +5,7 @@ local modules = require("__landing-party__.scripts.modules")
 local site = {}
 
 site.ORES = {"iron-ore", "copper-ore", "coal", "stone"}
-local CLEARABLE = {tree = true, ["simple-entity"] = true, resource = true, corpse = true,
+local CLEARABLE = {tree = true, ["simple-entity"] = true, resource = true, corpse = true, cliff = true,
   ["rail-remnants"] = true, fish = true}
 
 local function box_at(m, ox, oy, margin)
@@ -38,9 +38,12 @@ function site.fits(surface, b, m, ox, oy)
   if not generated(surface, area) then return false end
   if reserved(b, area) then return false end
   for _, e in pairs(surface.find_entities_filtered{area = area}) do
-    if not CLEARABLE[e.type] then return false end
+    if not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()) then shared.refused(b, e.type == "cliff" and "cliff" or "built") return false end
   end
-  if surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = 1} > 0 then return false end
+  local wet = surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = shared.LANDFILL_MAX + 1}
+  if wet > 0 and not (shared.fills(b) and wet <= shared.LANDFILL_MAX) then
+    shared.refused(b, "water") return false
+  end
   local inner = box_at(m, ox, oy, 0)
   local ore = surface.count_entities_filtered{area = inner, type = "resource", name = site.ORES}
   if m.ore then

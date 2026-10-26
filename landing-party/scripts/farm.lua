@@ -11,9 +11,7 @@
 -- Creep (scripts/creep.lua): a tumor by each incubator; the creep spreads to the wild nests near, and each it reaches
 -- becomes an incubator (up to PENS_MAX). An incubator left off creep (its tumors killed) starves for STARVE and goes
 -- back to the wild, its stock with it.
--- The break with Grubstake: when Grubstake's ground meets its creep (a Grubstake building or unit within BREAK_NEAR of a
--- tumor: a claim or strip mine on its edge, a convoy across it) or Grubstake hurts an incubator or a tumor, they are at
--- war (herd.break_grubstake); its waves may then go for Grubstake's camps as for the player's factory.
+-- Grubstake: a lasting truce (herd.init): it grows on the smoke Grubstake puts out.
 -- Biomass: an incubator breeds only while its culture can pay (shared.BREEDS, the arena's prices): a culture earns what
 -- its incubators and creep eat of the pollution (creep.drink), TRICKLE an incubator a minute whatever the air, and START_BIOMASS its
 -- pod brought. Spent at each birth (on_entity_spawned); at nothing left its incubators stop (inactive) until it earns.
@@ -53,7 +51,6 @@ local FED_CAP = 12
 local CLIMB = 0.004
 local STOCK_EVO = 0.3
 local UNFED_WILD = 10 * 3600
-local BREAK_NEAR = 12          -- a Grubstake building or unit this near a tumor breaks the truce
 local TRICKLE = 3             -- biomass an incubator earns a minute, clean air or not
 local START_BIOMASS = 200     -- what its pod brought (its first wave, ten minutes on)
 local START = 6
@@ -291,9 +288,6 @@ local KEEP_PRIOR = 20
 local function foes()
   local out = {}
   for _, f in ipairs(players()) do out[#out + 1] = f end
-  if herd.grubstake_broken() and game.forces[shared.CORPS.grubstake.force] then
-    out[#out + 1] = game.forces[shared.CORPS.grubstake.force]
-  end
   -- Kessler-Hayashi only while it holds a grievance against it (the user, 2026-10-25: option 2): the player's enemy first,
   -- and an answer to Kessler-Hayashi when struck (an incubator, a tumor, a biochamber destroyed: its units lost on its
   -- own waves are no wrong done to it, know.lua). Its waves at Kessler-Hayashi's armies died to the last unit, 127 of
@@ -1007,16 +1001,6 @@ function farm.tick(tick)
       local grows = cul.wants and #f.pens < PENS_MAX and cell.keeps_up(id, f.pens, tick)
       breeding(f, cul.biomass > math.max(f.short or 0, f.saving and SEED_BANK or 0, grows and cul.wants or 0))
     end
-    -- Grubstake on its creep: the truce is over.
-    if not herd.grubstake_broken() then
-      local g = shared.CORPS.grubstake.force
-      for _, t in ipairs(creep.tumors_of(id)) do
-        if surface.count_entities_filtered{position = t.position, radius = BREAK_NEAR, force = g, limit = 1} > 0 then
-          herd.break_grubstake(string.format("Grubstake at its tumor at %.0f,%.0f", t.position.x, t.position.y))
-          break
-        end
-      end
-    end
     -- The creep takes the wild nest it reaches; with none near, it grows an incubator of its own (creep.bud).
     local take = #left < PENS_MAX and cell.keeps_up(id, f.pens, tick) and creep.bud(id, tick)
     if take then
@@ -1083,9 +1067,6 @@ end
 -- A pen hit by anyone at war with it: its farm's wave on its way comes home.
 function farm.on_damaged(e)
   local ent = e.entity
-  if e.force and e.force.name == shared.CORPS.grubstake.force then
-    herd.break_grubstake(string.format("Grubstake hit its %s at %.0f,%.0f", ent.name, ent.position.x, ent.position.y))
-  end
   if ent.name == "lp-tumor" then return end
   if ent.name ~= "lp-pen" or not e.force or e.force.name == B.force or shared.is_biters(e.force.name) then return end
   local rec = herd.pen(ent.unit_number)

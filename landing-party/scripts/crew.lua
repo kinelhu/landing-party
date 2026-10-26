@@ -282,8 +282,13 @@ local function step(b, i)
       local given = requeue(b, c, true)
       b.crews_stuck = (b.crews_stuck or 0) + 1
       if given then b.crews_gave_up = (b.crews_gave_up or 0) + 1 end
-      return done(b, i, string.format("stuck on the way to %.0f,%.0f, home with its parts%s", c.site[1], c.site[2],
-        given and string.format("; %d crews failed there, %s given up", GIVE_UP, given) or ""))
+      -- What it stood among (cliffs measured before the corporations blast them, 2026-10-26).
+      local cl = s.count_entities_filtered{position = p, radius = 12, type = "cliff"}
+      local wa = s.count_tiles_filtered{position = p, radius = 12, collision_mask = "water_tile"}
+      local tr = s.count_entities_filtered{position = p, radius = 12, type = "tree"}
+      shared.refused(b, cl > 0 and "crew stuck by cliffs" or wa > 0 and "crew stuck by water" or "crew stuck, neither")
+      return done(b, i, string.format("stuck on the way to %.0f,%.0f, home with its parts%s; within 12: %d cliffs, %d water tiles, %d trees",
+        c.site[1], c.site[2], given and string.format("; %d crews failed there, %s given up", GIVE_UP, given) or "", cl, wa, tr))
     end
     if base.occupied(b, s, c.site) then
       b.parts = b.parts + (c.bill - c.spent)

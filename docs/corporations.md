@@ -70,6 +70,8 @@ by all parties."
   yards of wrecks, crates and tanks between, no walls but the pad's fence. Units and vehicles cross it anywhere.
   Its turrets stand in pits of fence at street ends and guard posts; wooden poles and worn dirt make it look lived in.
   It grows with its wealth once mature; its oldest town is its capital, the biggest, with a second depot.
+  Where a street reaches a lake, a pier runs out over the water. Both corporations blow up the cliffs where they build;
+  Kessler-Hayashi fills small water under what it builds, Grubstake builds out over it.
 - **Notice**: "Grubstake Mineral Recovery has recovered 4,000 iron ore from an unattended deposit. Thank you for
   your cooperation."
 - **As built (2026-10-19)**: a rival thief that escalates when hurt; it steals by night: soft raids that take machines

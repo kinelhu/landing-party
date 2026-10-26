@@ -32,7 +32,8 @@ layout.DOCTRINES = {
 }
 layout.ARCHETYPES = {grid = 3, street = 2, cross = 2}
 
-local CLEARABLE = {tree = true, ["simple-entity"] = true, resource = true, corpse = true, ["rail-remnants"] = true,
+-- (Cliffs too: blown up when it builds, shared.blast.)
+local CLEARABLE = {tree = true, ["simple-entity"] = true, resource = true, corpse = true, ["rail-remnants"] = true, cliff = true,
   fish = true}
 
 local function generated(surface, x0, y0, x1, y1)
@@ -47,13 +48,19 @@ end
 function layout.area_free(surface, x0, y0, w, h, ore)
   if not generated(surface, x0 - R, y0 - R, x0 + w + R, y0 + h + R) then return false end
   local ring = {{x0 - R + 0.1, y0 - R + 0.1}, {x0 + w + R - 0.1, y0 + h + R - 0.1}}
+  local b = layout.measuring
   for _, e in pairs(surface.find_entities_filtered{area = ring}) do
-    if not CLEARABLE[e.type] then return false end
+    if not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()) then shared.refused(b, e.type == "cliff" and "cliff" or "built") return false end
   end
   local inner = {{x0, y0}, {x0 + w, y0 + h}}
-  if surface.count_tiles_filtered{area = inner, collision_mask = "water_tile", limit = 1} > 0 then return false end
-  if surface.count_tiles_filtered{area = inner, name = shared.variants(shared.FLOORS), limit = 1} > 0 then return false end
-  if surface.count_entities_filtered{area = inner, type = "resource"} > (ore or 6) then return false end
+  local wet = surface.count_tiles_filtered{area = inner, collision_mask = "water_tile", limit = shared.LANDFILL_MAX + 1}
+  if wet > 0 and not (shared.fills(b) and wet <= shared.LANDFILL_MAX) then
+    shared.refused(b, "water") return false
+  end
+  if surface.count_tiles_filtered{area = inner, name = shared.variants(shared.FLOORS), limit = 1} > 0 then
+    shared.refused(b, "floor") return false
+  end
+  if surface.count_entities_filtered{area = inner, type = "resource"} > (ore or 6) then shared.refused(b, "ore") return false end
   return true
 end
 
@@ -141,6 +148,7 @@ local function clear_ground(b, x0, y0, w, h)
   local s = game.surfaces[b.surface]
   local area = {{x0, y0}, {x0 + w, y0 + h}}
   for _, e in pairs(s.find_entities_filtered{area = area, type = {"tree", "simple-entity"}}) do e.destroy() end
+  shared.blast(s, {{x0 - R, y0 - R}, {x0 + w + R, y0 + h + R}}, b)   -- its road margin too
   s.destroy_decoratives{area = area}
 end
 layout.clear_ground = clear_ground
@@ -172,8 +180,14 @@ local NEST_EVERY = 4           -- every this many lots with machines, a turret n
 local TOWN_CAP = 14            -- lots with machines in a town hub before a new hub is founded
 local LETTER = {F = {"lp-fabricator", 3}, G = {"lp-generator", 2}, D = {"lp-depot", 4}, R = {"lp-radar", 3},
   T = {"lp-turret", 2}, P = {"lp-pylon", 1}, L = {"lp-post-lamp", 1}}
-local DECOR = {W = 2, X = 1, C = 1, O = 2, K = 3, I = 1, V = 2, M = 3}
+local DECOR = {W = 2, X = 1, C = 1, O = 2, K = 3, I = 1, V = 2, M = 3, U = 1}
+-- Waterfront lots (the user, 2026-10-26, "water-incorporating WFC tiles"): a street end on a shore, its pier over the
+-- water ('=' landfilled and gravelled, '~' water left), its far half water where the lot stands (pier_try).
+local PIER_LOTS = {pier = 1, pier_pump = 1, pier_shack = 1}
+local PIER_WET = 0.6           -- of its water half, water at least
+local PIER_SHORE = 0.15        -- of its shore half, water at most (landfilled: a ragged shoreline)
 local DECOR_NAMES = {["wooden-chest"] = true, ["storage-tank"] = true, pipe = true, ["big-rock"] = true, car = true,
+  ["offshore-pump"] = true,
   ["small-electric-pole"] = true}
 local POLE_CHANCE = 0.18
 for k = 1, 6 do DECOR_NAMES["crash-site-spaceship-wreck-small-" .. k] = true end
@@ -227,15 +241,18 @@ local function lot_free(b, hub, i, j)
   local x0, y0 = lot_xy(hub, i, j)
   if not generated(surface, x0, y0, x0 + LOT, y0 + LOT) then return false end
   local area = {{x0 + 0.1, y0 + 0.1}, {x0 + LOT - 0.1, y0 + LOT - 0.1}}
-  local function bad() hub.bad[k] = true return false end
+  local function bad(why) shared.refused(b, why) hub.bad[k] = true return false end
   for _, e in pairs(surface.find_entities_filtered{area = area}) do
-    if not CLEARABLE[e.type] and not (e.force.name == "neutral" and DECOR_NAMES[e.name]) then return bad() end
+    if (not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()))
+      and not (e.force.name == "neutral" and DECOR_NAMES[e.name]) then
+      return bad(e.type == "cliff" and "cliff" or "built")
+    end
   end
   if surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = 1} > 0
     or surface.count_tiles_filtered{area = area, name = shared.variants(shared.FLOORS), limit = 1} > 0
     -- No ore: a town grows round its patches, never over them (its drills' and its claims' ground: prospect, road).
     or surface.count_entities_filtered{area = area, type = "resource", limit = 1} > 0 then
-    return bad()
+    return bad("water, floor or ore")
   end
   return true
 end
@@ -243,9 +260,17 @@ end
 local function decor(surface, ch, pos, r)
   local name = (ch == "W" or ch == "X") and ("crash-site-spaceship-wreck-small-" .. (1 + math.floor(r * 6)))
     or ch == "C" and "wooden-chest" or ch == "O" and "big-rock" or ch == "K" and "storage-tank" or ch == "I" and "pipe"
-    or ch == "V" and "car" or ch == "M" and ("crash-site-spaceship-wreck-medium-" .. (1 + math.floor(r * 3)))
-  if not name or not surface.can_place_entity{name = name, position = pos} then return end
-  local e = surface.create_entity{name = name, position = pos, force = "neutral", direction = defines.direction.north}
+    or ch == "U" and "offshore-pump" or ch == "V" and "car" or ch == "M" and ("crash-site-spaceship-wreck-medium-" .. (1 + math.floor(r * 3)))
+  if not name then return end
+  local dir = defines.direction.north
+  if name == "offshore-pump" then
+    dir = nil
+    for _, d in ipairs({defines.direction.north, defines.direction.east, defines.direction.south, defines.direction.west}) do
+      if surface.can_place_entity{name = name, position = pos, direction = d} then dir = d break end
+    end
+    if not dir then return end
+  elseif not surface.can_place_entity{name = name, position = pos} then return end
+  local e = surface.create_entity{name = name, position = pos, force = "neutral", direction = dir}
   if not e then return end
   if name ~= "big-rock" then e.minable_flag = false end
   -- A parked car: set dressing, never a free ride.
@@ -301,14 +326,15 @@ local function lot_open(b, hub, i, j, v, role)
   end
   if role then hub.count = hub.count + 1 end
   local slot = role == "fab" and "F" or role == "gen" and "G" or nil
-  local road, hazard = {}, {}
+  local road, hazard, pier = {}, {}, {}
   local function at(c, r) local row = v.rows[r]; return row and row:sub(c, c) or nil end
   for r, row in ipairs(v.rows) do
     for c = 1, #row do
       local ch = row:sub(c, c)
       local x, y = x0 + c - 1, y0 + r - 1
       if ch == ":" or ch == "." then table.insert(road, {x, y})
-      elseif ch == "%" then table.insert(hazard, {x, y}) end
+      elseif ch == "%" then table.insert(hazard, {x, y})
+      elseif ch == "=" then table.insert(pier, {name = "landfill", position = {x, y}}); table.insert(road, {x, y}) end
       local L = not yard and LETTER[ch]
       if L then
         local pos = {x + L[2] / 2, y + L[2] / 2}
@@ -323,7 +349,7 @@ local function lot_open(b, hub, i, j, v, role)
             for dc = -1, 2 do
               for dr = -1, 2 do
                 local n = at(c + dc, r + dr)
-                if (dc == -1 or dc == 2 or dr == -1 or dr == 2) and (n == " " or n == "X" or n == ".") then
+                if (dc == -1 or dc == 2 or dr == -1 or dr == 2) and (n == " " or n == ".") then   -- (not on X: a wreck stands there)
                   push(b, {name = "lp-wall", pos = {x + dc + 0.5, y + dr + 0.5}, module = block})
                 end
               end
@@ -335,6 +361,8 @@ local function lot_open(b, hub, i, j, v, role)
       end
     end
   end
+  -- Its pier: landfill first (the water under '='), the gravel over it in the road job.
+  if #pier > 0 then surface.set_tiles(pier, true, false, true, false) end
   if #road > 0 then push(b, {tiles = road, module = block}) end
   if #hazard > 0 then push(b, {tiles = hazard, floor = "hazard", module = block}) end
   -- Wooden poles beside its street (the user: "some wooden poles in addition to the existing pylons ... make it look
@@ -408,7 +436,69 @@ local function alone(hub, e)
   return true
 end
 
+-- A waterfront lot on end e (its street ending on a shore): a pier variant facing back, where its shore cells are all dry,
+-- PIER_WET of its water cells water, and nothing stands on it but what a lot clears. Laid, or nil.
+local function pier_try(b, hub, e)
+  e.pier_tried = true
+  if storage.pier_off then return nil end
+  local function no(why)
+    if layout.trace then layout.trace(b, string.format("town: no pier at lot %d,%d (back %s): %s", e.i, e.j, e.back, why)) end
+    return nil
+  end
+  if hub.lots[e.i .. ":" .. e.j] then return no("taken") end
+  if not alone(hub, e) then return no("not alone") end
+  local surface = game.surfaces[b.surface]
+  local x0, y0 = lot_xy(hub, e.i, e.j)
+  if not generated(surface, x0, y0, x0 + LOT, y0 + LOT) then return nil end
+  for _, en in pairs(surface.find_entities_filtered{area = {{x0 + 0.1, y0 + 0.1}, {x0 + LOT - 0.1, y0 + LOT - 0.1}}}) do
+    if not CLEARABLE[en.type] and not (en.force.name == "neutral" and DECOR_NAMES[en.name]) then return no("built: " .. en.name) end
+  end
+  -- Each variant facing back tried against the ground, with no draw (a draw for every end looked at changed every
+  -- later choice of its camp, on maps with no water at all: heist, plate grubstake); drawn among those that fit.
+  local by = lot_index(b.corp)
+  local fits, why = {}, "no variant"
+  local names = {}
+  for name in pairs(PIER_LOTS) do names[#names + 1] = name end
+  table.sort(names)
+  for _, name in ipairs(names) do
+    for _, v in ipairs((by[name] or {})[e.back] or {}) do
+      local wet, cells, shore, damp = 0, 0, 0, {}
+      for r, row in ipairs(v.rows) do
+        for c = 1, #row do
+          local ch = row:sub(c, c)
+          local t = surface.get_tile(x0 + c - 1, y0 + r - 1)
+          local water = t.valid and t.collides_with("water_tile")
+          if ch == "~" or ch == "=" then
+            cells = cells + 1
+            if water then wet = wet + 1 end
+          else
+            shore = shore + 1
+            if water then damp[#damp + 1] = {name = "landfill", position = {x0 + c - 1, y0 + r - 1}} end
+          end
+        end
+      end
+      if #damp > PIER_SHORE * shore then why = string.format("%d of %d shore cells water", #damp, shore)
+      elseif cells == 0 or wet < PIER_WET * cells then why = string.format("%d of %d water cells wet", wet, cells)
+      else fits[#fits + 1] = {v = v, damp = damp} end
+    end
+  end
+  if #fits == 0 then return no(why) end
+  local f = fits[1 + math.floor(rng.next(b.rng) * #fits)]
+  local v = f.v
+  if #f.damp > 0 then surface.set_tiles(f.damp, true, false, true, false) end
+  for idx, x in ipairs(hub.ends) do if x == e then table.remove(hub.ends, idx) break end end
+  local block = lot_open(b, hub, e.i, e.j, v, nil)
+  if block then b.piers = (b.piers or 0) + 1 end
+  return block
+end
+
 local function town_end(b, hub)
+  -- Ends on a shore get their waterfront lot first (pier_try), once each.
+  local ends = {}
+  for _, e in ipairs(hub.ends) do ends[#ends + 1] = e end
+  for _, e in ipairs(ends) do
+    if not e.pier_tried and not hub.lots[e.i .. ":" .. e.j] and not lot_free(b, hub, e.i, e.j) then pier_try(b, hub, e) end
+  end
   local keep, best, bs = {}, nil, nil
   for _, e in ipairs(hub.ends) do
     if lot_free(b, hub, e.i, e.j) and alone(hub, e) then

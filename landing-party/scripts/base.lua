@@ -110,13 +110,26 @@ local function prune(list)
   for i = #list, j + 1, -1 do list[i] = nil end
 end
 
-local function clear_area(surface, name, pos)
+local function clear_area(surface, name, pos, b)
   local cb = prototypes.entity[name].collision_box
   local area = {{pos[1] + cb.left_top.x - 0.5, pos[2] + cb.left_top.y - 0.5},
     {pos[1] + cb.right_bottom.x + 0.5, pos[2] + cb.right_bottom.y + 0.5}}
   -- Items on the ground too: a wreck's loot lies where it stood, and a rebuild could not be placed over it (occupy, defend).
   -- What the player has not picked up by then, the corporation reclaims.
   for _, e in pairs(surface.find_entities_filtered{area = area, type = {"tree", "simple-entity", "item-entity"}}) do e.destroy() end
+  -- A town's junk where it builds (shared.DECOR_PROPS).
+  for _, e in pairs(surface.find_entities_filtered{area = area, force = "neutral"}) do
+    if shared.DECOR_PROPS[e.name] then e.destroy() end
+  end
+  -- Cliffs in its way blown up (shared.blast); water under it filled, by a corporation that fills (shared.landfill).
+  shared.blast(surface, area, b)
+  if shared.fills(b) then
+    local t = {}
+    for x = math.floor(area[1][1]), math.ceil(area[2][1]) - 1 do
+      for y = math.floor(area[1][2]), math.ceil(area[2][2]) - 1 do t[#t + 1] = {x, y} end
+    end
+    shared.landfill(surface, t, b)
+  end
 end
 
 -- Land a settlement near pos. opts: seed, doctrine (else drawn from the seed).
@@ -814,6 +827,7 @@ function base.stats(b)
     cleared = b.cleared, under_guns = b.under_guns, reinforced = b.reinforced or 0, on_footing = b.on_footing,
     columns_arrived = b.columns_arrived or 0, quiescent = b.quiescent, stood_down = b.stood_down or 0,
     war_rung = b.war_rung or 0, posture = b.posture, map_text = b.map_text, name = b.name,
+    refused = b.refused, crews_stuck = b.crews_stuck or 0, blasted = b.blasted or 0, landfilled = b.landfilled or 0, piers = b.piers or 0,
     claim_marks = #(b.claim_marks or {}), jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0, reprisals = b.reprisals or 0}
 end
 

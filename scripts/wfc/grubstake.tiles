@@ -5,6 +5,8 @@
 #   'D' depot 4x4   'F' fabricator 3x3   'G' generator 2x2   'R' radar 3x3   'K' storage tank 3x3   'T' turret 2x2
 #   'V' a parked vehicle 2x2   'W' a wreck (scrap) 2x2   'X' junk barricade 1x1   'C' crate 1x1   'P' wooden pole   'L' lamp
 #   'O' an ore heap 2x2   'I' a pipe 1x1   'M' a medium wreck 3x3
+#   Waterfront lots (pier_*): a street end; '~' water (its far half: where the lot stands, the water must be), '='
+#   its pier over the water (landfill, 2 wide, gravel on it), 'U' an offshore pump at the pier's end (a prop)
 #   '+' the rest of a building's footprint (its letter at the top-left)
 # Two lots fit where their touching edges agree; a track may run off the camp's edge into the wild. Lots keep their
 # buildings off their own edge, so every edge is bare ground or a track: the camp is open everywhere.
@@ -470,3 +472,45 @@ tile shacks 2
 "        L   "
 "            "
 "            "
+
+tile pier 1
+"     ::     "
+"  C  ::  L  "
+" W+  ::     "
+" ++  ::  C  "
+"     ::     "
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~U~~~~~~"
+"~~~~~~~~~~~~"
+
+tile pier_pump 1
+"     ::     "
+" K++ ::  L  "
+" +++ ::     "
+" +++I::     "
+"    I::     "
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~U~~~~~~"
+"~~~~~~~~~~~~"
+"~~~~~~~~~~~~"
+
+tile pier_shack 1
+"     ::     "
+" C.C ::  W+ "
+" ... ::  ++ "
+" C.C ::     "
+"   L ::  X  "
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~==~~~~~"
+"~~~~~U~~~~~~"
+"~~~~~~~~~~~~"
