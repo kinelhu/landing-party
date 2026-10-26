@@ -130,6 +130,11 @@ stays as the skeleton; the identity is a pack, three habits the player can watch
 - The target inside is "what feeds the guns", the first it sees: generator or substation, the inserter or belt feeding
   gun turrets, the pipe feeding flamethrowers. The counter is a base shape (the feed under the guns, a second feed,
   nothing dry or dark), not the blackout's one answer. Labs are not a target.
+- Inside (0.2.31), each biter picks its own target, the nearest on that list with fewer than 3 already on it (8 on a
+  reactor or a roboport), radars and roboports next after the feed, and looks again every 2 seconds. What stands
+  under three or more turrets is left alone: an inner keep holds. Sometimes a wave skips the edge and rushes to the
+  heart of the base as one before it scatters (its trail runs on inside, its leader marked); it does this less where
+  the last deep strike lost half its number. Caught under fire on the march (10% lost in 15 s), it breaks in there.
 - Mega waves are an event at the top tier (several pens full at once, a clock on each), not the default: waves of 20 to
   60 otherwise. Kessler-Hayashi's siege columns in the open are prey; no joint strike with anyone is scripted.
 - Tell to strike 3 to 6 minutes: the pen crowding at its gate, the tracker's loop (60 to 120 s), a minute's gathering.

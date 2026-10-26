@@ -480,7 +480,10 @@ local function send(f, tick)
   local held = 0
   for _, fc in pairs(lesson and lesson.faces or {}) do held = held + (fc.tried - fc.broke) end
   local cap = math.floor(WAVE_MAX * math.min(2, 1 + 0.5 * held))
-  if cap > WAVE_MAX and avail < cap then
+  -- /lp wave <n> (dev): a wave of that many, past the caps, once.
+  local forced = f.debug_size
+  if forced then cap, f.debug_size = forced, nil end
+  if not forced and cap > WAVE_MAX and avail < cap then
     f.escalate_since = f.escalate_since or tick
     if tick - f.escalate_since < ESCALATE_WAIT then
       f.escalate_retry = tick + 600
@@ -570,7 +573,8 @@ local function send(f, tick)
   end
   trace(string.format("farm %d weighs: %s", f.id, choice.why))
   trials()[choice.key] = {tick = tick, defence = choice.defence}
-  herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe})
+  herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep})
+  f.debug_deep = nil
   trace(string.format("farm %d sends %d at %.0f,%.0f", f.id, #units, target.x, target.y))
 end
 
@@ -1085,14 +1089,27 @@ function farm.debug_seed(id)
 end
 
 -- Dev: every farm sends a wave at its next check, its pens topped up to send one.
-function farm.debug_wave()
+-- A wave now (/lp wave; tests): each incubator's stock topped up past its guard. With n (/lp wave <n>, dev: the user,
+-- 2026-10-26, to see a mega wave in play): the first culture's incubators bred n more between them, and its next wave
+-- that big, past WAVE_MAX and its escalation.
+function farm.debug_wave(n, deep)
   local any = false
   for _, f in pairs(st().list) do
     local s = game.surfaces[f.surface]
+    local pens = {}
     for _, id in ipairs(f.pens) do
       local rec = herd.pen(id)
-      if rec and rec.pen.valid then bred_stock(s, rec.pen, math.max(0, HOME_GUARD + 10 - #herd.stock(rec))) end
+      if rec and rec.pen.valid then pens[#pens + 1] = rec end
     end
+    if n and not any and #pens > 0 then
+      for k, rec in ipairs(pens) do
+        bred_stock(s, rec.pen, math.floor(n / #pens) + ((k <= n % #pens) and 1 or 0) + guard_of(f))
+      end
+      f.debug_size = n
+    else
+      for _, rec in ipairs(pens) do bred_stock(s, rec.pen, math.max(0, HOME_GUARD + 10 - #herd.stock(rec))) end
+    end
+    if deep and not f.debug_deep then f.debug_deep = true end
     f.last_wave = -WAVE_GAP
     any = true
   end

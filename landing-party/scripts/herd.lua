@@ -37,12 +37,31 @@ local GATHER_TICKS = 90 * 60
 local INSIDE = 15
 local INSIDE_TICKS = 90 * 60     -- inside with nothing of its brought down this long, it goes home
 local INSIDE_MAX = 4 * 3600      -- and inside this long at most, however it fares
--- Inside, its herd in squads of SQUAD (the user, 2026-10-26: "smart biters would simply pour in and target
--- defenses/power"): each after its own target from the same list, several things falling at once.
-local SQUAD = 10
+-- Inside, each of its biters after its own target (the user, 2026-10-26: "smart biters would simply pour in and target
+-- defenses/power"; then, the squads of 0.2.30 seen: "it could do better by turning biters into individuals once they
+-- are past the breach. The squads gang up on a single target"): the nearest on the list with fewer than PER_TARGET on it
+-- (BIG_TARGET for what is big), the list read once a look, every LOOK ticks.
+local PER_TARGET, BIG_TARGET = 3, 8
+local BIG = {reactor = true, ["fusion-generator"] = true, roboport = true, ["assembling-machine"] = false}
+local LOOK = 120
+-- On the march, under fire (the user, 2026-10-26: a wave of 200 "walk alongside a wall while getting pummeled by turrets,
+-- ignoring them because they weren't at the final staging point yet", pushed there by forests and cliffs): FIRE_LOSS of it
+-- lost within FIRE_WINDOW with turrets within FIRE_NEAR, it breaks in where it stands.
+local FIRE_LOSS, FIRE_WINDOW, FIRE_NEAR = 0.1, 15 * 60, 30
 -- What runs its defences besides their power and ammunition: what sees for them and mends them (the user: "radars and
 -- roboports as targets"), after the supply, before the guns it silenced.
 local CONTROL = {"radar", "roboport"}
+-- The deep strike (the user, 2026-10-26: "some waves could, once a breach is made, simply rush in past the first line of
+-- defenses towards the heart of the base"): at the breach it weighs its two plans, the edge (what it can break near the
+-- breach, against the fire there) and the heart (what stands round the base's heart, against the fire there and on the
+-- way), and goes for the heart when it is worth DEEP_MARGIN times the edge: a hard shell round a soft middle. A deep
+-- strike that cost it half its number there halves the next one's worth (its lesson). Tells: its trail runs on into the
+-- base, its leader marked.
+local DEEP_MIN = 40           -- the heart this far past the breach at least, or there is no difference
+local DEEP_MARGIN = 2          -- the heart worth twice the edge (1.25: nearly every wave struck for it, most bases a shell)
+local DEEP_AGAIN = 0.5         -- the heart's worth, at a base where its last wave struck for it (so the strike surprises)
+local DEEP_VALUE = {"generator", "solar-panel", "accumulator", "burner-generator", "electric-energy-interface", "reactor",
+  "fusion-generator", "roboport", "radar", "assembling-machine", "furnace", "lab", "boiler", "beacon"}
 local TRAIL_TICKS = 20 * 3600
 local BASE_REACH = 48       -- the turrets that make the defence a wave meets, round what drew it: those that can bear
                            -- on where it breaks in. At 120 a player's sprawling factory was one box of every turret in
@@ -406,7 +425,7 @@ function herd.launch(p, target, opts)
   mem = mem or {extra = 0}
   p.memory[memory_key(c)] = mem
   local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy, foes = opts.forces,
-    no_probe = opts.no_probe,
+    no_probe = opts.no_probe, force_deep = opts.deep,
     loop = LOOP_OUT + mem.extra, stage = "scout", t = game.tick, t0 = game.tick, members = {}, seen = {},
     marks = {}, kills = {}, tried = {}, sight = opts.sight or SIGHT, size = #units, goal = xy(target)}
   h.next = h.next + 1
@@ -707,6 +726,10 @@ end
 -- straight from it. A sprawling factory read as one box round every turret in 240 tiles had sent its herd round half
 -- the factory to a face no wave could reach (the user's deathworld).
 local STAGE_OFF, STAGE_LEN, STAGE_STEP = 34, 200, 8
+-- A herd's half-width (the user, 2026-10-26: staging "a little further from turrets, to account for the waist of the wave
+-- when it has a lot of biters"): its units packed a tile and a fifth apart, the radius of their disc. Its staging point and
+-- its route keep that much more from the turrets: 4 tiles for 40, 10 for 200.
+local function waist(w) return math.ceil(1.2 * math.sqrt((w.size or 0) / math.pi)) end
 local HELD_FIRE = 3          -- a face that held weighs this much more fire, each time
 local LEG = 60               -- at most, tiles a leg of the herd's trail
 local ROUTE_TRIES = 4        -- staging points tried in order for a route
@@ -736,8 +759,8 @@ local function stage_choice(w)
   for k = 0, 7 do
     local a = k * math.pi / 4
     local ux, uy = math.cos(a), math.sin(a)
-    local stage = herd.outside({surface = w.surface, force = B.force}, {pos = {c.x, c.y}, owner = "enemy"}, ux, uy,
-      STAGE_OFF, STAGE_LEN)
+    local stage = herd.outside({surface = w.surface, force = B.force}, {pos = {c.x, c.y}, owner = "enemy",
+      margin = waist(w)}, ux, uy, STAGE_OFF, STAGE_LEN)
     if stage then
       -- The fire on its way in: from the staging point toward the target, to where it first meets the foe's wall or
       -- buildings (the breach). Read out from the target, every face met the overlapping fire of the base's middle,
@@ -786,7 +809,8 @@ local function mark(w)
   for i = 1, math.min(ROUTE_TRIES, #(cands or {})) do
     local c = cands[i]
     local far = math.sqrt(d2(last, c.at))
-    local o = {turrets = true, nests = false, solid = foe_names(w), cell = far > 400 and 16 or far > 200 and 10 or nil}
+    local o = {turrets = true, nests = false, solid = foe_names(w), cell = far > 400 and 16 or far > 200 and 10 or nil,
+      margin = waist(w)}
     if herd.route then
       way = herd.route(b, {last.x, last.y}, {c.at.x, c.at.y}, o) or herd.route(b, {last.x, last.y}, {c.at.x, c.at.y}, o, true)
     end
@@ -800,7 +824,8 @@ local function mark(w)
   if not staged and herd.route then
     local g = w.goal or w.center
     local far = math.sqrt(d2(last, g))
-    local o = {turrets = true, nests = false, solid = foe_names(w), partial = true, cell = far > 400 and 16 or far > 200 and 10 or nil}
+    local o = {turrets = true, nests = false, solid = foe_names(w), partial = true, cell = far > 400 and 16 or far > 200 and 10 or nil,
+      margin = waist(w)}
     -- (Wide at once: on the plain search's 4,000 steps the "nearest reached" was where it ran dry, near its own side,
     -- and its herds staged 500 to 770 tiles from the wall they went for, on the player's deathworld.)
     local part = herd.route(b, {last.x, last.y}, {g.x, g.y}, o, true)
@@ -881,11 +906,15 @@ end
 -- the herd dead before its mark).
 -- Its group, formed again from its units when the engine disbanded it (an incubator takes back its idle units, and a
 -- group left empty goes: an order to it crashed two deathworld visits, 0.2.29).
+-- A spitter holding the breach: left out of the herd's group, to cover its withdrawal (inside, its biters on their own,
+-- the group was made again at the withdrawal and took them in: 1 of 5 came home behind it).
+local function holds(w, u) return w.holders ~= nil and w.holders[u.unit_number] == true end
+
 local function ensure_group(w)
   if w.group and w.group.valid then return end
   local s = game.surfaces[w.surface]
   w.group = s.create_unit_group{position = where(w), force = B.force}
-  for _, u in ipairs(herd_units(w)) do if not u.commandable.parent_group then w.group.add_member(u) end end
+  for _, u in ipairs(herd_units(w)) do if not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end end
 end
 
 local function march(w)
@@ -950,6 +979,62 @@ end
 
 -- Where the line from the mark to the middle meets the wall: the two pieces there, then INSIDE tiles in.
 local hold_bursters     -- below, with the breach's spitters
+-- The heart of the base it broke into: the middle of its power and machines (what DEEP_VALUE names, in its box), at the
+-- nearest of them to that middle. Its worth there and at the edge: what stands within SIGHT, each over 1 plus the fire
+-- there (and on the way in, for the heart). Returns {at, worth, edge, why} or nil.
+local function deep_plan(w, h, forced)
+  local s = game.surfaces[w.surface]
+  local forces = foes(w)
+  local box = math.max(w.hx, w.hy) + 20
+  local xs, ys, n = 0, 0, 0
+  local stuff = s.find_entities_filtered{position = w.center, radius = box, type = DEEP_VALUE, force = forces}
+  for _, e in ipairs(stuff) do xs, ys, n = xs + e.position.x, ys + e.position.y, n + 1 end
+  if n == 0 then return nil end
+  local mid = {x = xs / n, y = ys / n}
+  local core, cd
+  for _, e in ipairs(stuff) do
+    local d = d2(e.position, mid)
+    if not cd or d < cd then core, cd = e, d end
+  end
+  local at = {x = core.position.x, y = core.position.y}
+  local far = math.sqrt(d2(at, h))
+  if far < DEEP_MIN and not forced then return nil end
+  local fire = function(p) return herd.exposure and herd.exposure(s, {p.x, p.y}, forces) or 0 end
+  local worth = function(p) return s.count_entities_filtered{position = p, radius = SIGHT, type = DEEP_VALUE, force = forces} end
+  local way = 0
+  for k = 1, math.floor(far / 15) do
+    local f = k * 15 / far
+    way = math.max(way, fire({x = h.x + (at.x - h.x) * f, y = h.y + (at.y - h.y) * f}))
+  end
+  local edge = worth(w.inside) / (1 + fire(w.inside))
+  local heart = worth(at) / (1 + fire(at) + 0.5 * way)
+  local l = lessons()[lesson_key(w.center)]
+  if l and (l.deep_lost or 0) > 0 then heart = heart * 0.5 ^ l.deep_lost end
+  if l and l.last_deep then heart = heart * DEEP_AGAIN end
+  return {at = at, worth = heart, edge = edge, far = far,
+    why = string.format("the heart %.1f (%d things, fire %.1f there, %.1f on the way) against the edge %.1f", heart,
+      worth(at), fire(at), way, edge)}
+end
+
+-- Its plan at the breach: the heart when worth it, or when told (/lp wave deep). Its tells: the trail runs on to the
+-- heart, its leader marked.
+local function choose_plan(w)
+  local p = deep_plan(w, w.breach, w.force_deep)
+  if not p then return end
+  local deep = w.force_deep or p.worth > DEEP_MARGIN * p.edge
+  log(w, string.format("%s: %s", deep and "strikes for the heart" or "raids the edge", p.why))
+  if not deep then return end
+  w.deep = {at = p.at, t = game.tick}
+  lay_trail(game.surfaces[w.surface], {w.breach, p.at})
+  local lead = herd_units(w)[1]
+  if lead and lead.valid then
+    table.insert(w.marks, rendering.draw_sprite{sprite = "utility/warning_icon", surface = lead.surface,
+      target = {entity = lead, offset = {0, -3.4}}, x_scale = 0.6, y_scale = 0.6})
+    table.insert(w.marks, rendering.draw_sprite{sprite = "utility/warning_icon", surface = lead.surface,
+      target = {entity = lead}, x_scale = 1.2, y_scale = 1.2, render_mode = "chart"})
+  end
+end
+
 local function breach(w)
   ensure_group(w)
   local s = game.surfaces[w.surface]
@@ -983,58 +1068,9 @@ local function breach(w)
   w.stage = "breach"
   w.t = game.tick
   w.t_breach = game.tick
-  log(w, string.format("breach at %.0f,%.0f (%s)", h.x, h.y, hit and (#cmds - 1) .. " wall pieces" or "no wall"))
+  log(w, string.format("breach at %.0f,%.0f (%s)", h.x, h.y, hit and (#cmds - 1) .. " wall pieces" or "no wall"))  choose_plan(w)
 end
 
--- What feeds the guns, the first in sight of the herd.
-local function supply_target(w, taken, at)
-  local s = game.surfaces[w.surface]
-  local forces = foes(w)
-  at = at or front(w)
-  taken = taken or {}
-  local best, bd
-  local function consider(e)
-    if e.valid and not w.tried[e.unit_number or 0] and not taken[e.unit_number or 0]
-      and s.count_entities_filtered{position = e.position, radius = GUARD_RANGE, type = TURRETS, force = forces,
-        limit = GUARDED} < GUARDED then
-      local d = d2(e.position, at)
-      if not bd or d < bd then best, bd = e, d end
-    end
-  end
-  for _, e in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = POWER, force = forces}) do consider(e) end
-  for _, e in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = "inserter", force = forces}) do
-    if s.count_entities_filtered{position = e.drop_position, type = "ammo-turret", force = forces, limit = 1} > 0 then
-      consider(e)
-    end
-  end
-  for _, ft in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = "fluid-turret", force = forces}) do
-    for _, e in pairs(s.find_entities_filtered{position = ft.position, radius = 3, type = PIPES, force = forces}) do consider(e) end
-  end
-  if best then return best end
-  -- What sees for its guns and mends them: radars, roboports.
-  for _, e in pairs(s.find_entities_filtered{position = at, radius = w.sight, type = CONTROL, force = forces}) do consider(e) end
-  if best then return best end
-  -- The supply cut, the guns it silenced: laser turrets on a network with no power source left, the nearest (cut off,
-  -- such a turret shoots only what its own charge holds, and goes dark). It cut a base's power and went home with 55 of
-  -- 59 while the lasers it had cut off stood (system 4242, 2026-10-24): cut the supply, then use it.
-  local fed = {}
-  for _, p in pairs(s.find_entities_filtered{position = at, radius = 4 * w.sight, type = POWER, force = forces}) do
-    if p.valid and p.electric_network_id then fed[p.electric_network_id] = true end
-  end
-  -- (Across the base, not its sight: from the middle, where the power stood, the lasers on the wall were out of it.)
-  for _, e in pairs(s.find_entities_filtered{position = at, radius = math.max(w.sight, w.hx + w.hy), type = "electric-turret",
-    force = forces}) do
-    if e.valid and not w.tried[e.unit_number or 0] and not taken[e.unit_number or 0]
-      and not (e.electric_network_id and fed[e.electric_network_id]) then
-      -- The one the guns still firing cover least (a silenced laser beside a face of gun turrets cost the herd half its
-      -- number: herd test, seeds 1 and 12345), then the nearest: its distance in tiles, each gun's worth of fire 20.
-      local d = math.sqrt(d2(e.position, at)) + (herd.exposure and 20 * herd.exposure(s, {e.position.x, e.position.y},
-        forces) or 0)
-      if not bd or d < bd then best, bd = e, d end
-    end
-  end
-  return best
-end
 
 local withdraw, home_leg
 
@@ -1121,6 +1157,8 @@ local function hold_breach(w)
   local n = 0
   for _, u in ipairs(w.members) do
     if is_spitter(u) then
+      w.holders = w.holders or {}
+      w.holders[u.unit_number] = true
       -- A command of its own takes a unit out of its group (there is no release in 2.0's commandable).
       u.commandable.set_command{type = defines.command.attack_area, destination = w.breach, radius = 10,
         distraction = defines.distraction.by_enemy}
@@ -1153,96 +1191,118 @@ local function cover(w)
   log(w, string.format("%d spitters cover the withdrawal", n))
 end
 
--- Its squads (inside): its group the first, the rest made from it, SQUAD units each (its spitters hold the breach).
-local function squads_of(w)
-  local live = {}
-  for _, g in ipairs(w.squads or {}) do if g.valid and #g.members > 0 then live[#live + 1] = g end end
-  local main = false
-  for _, g in ipairs(live) do if g == w.group then main = true end end
-  if not main and w.group and w.group.valid then table.insert(live, 1, w.group) end
-  w.squads = live
-  return live
-end
-
-local function split(w)
+-- What it goes for inside, from where it stands: what feeds the guns (power, the inserters loading gun turrets, the pipes
+-- at flamethrowers: tier 1), what sees for them and mends them (radars, roboports: 2), the lasers it silenced (3), and
+-- what is there (4, havoc); never what stands under GUARDED turrets (the inner keep). Each {e, tier}.
+local function targets(w, at)
   local s = game.surfaces[w.surface]
-  local units = {}
-  for _, u in ipairs(w.group.members) do units[#units + 1] = u end
-  w.squads = {w.group}
-  for k = 2, math.ceil(#units / SQUAD) do
-    local first = units[(k - 1) * SQUAD + 1]
-    local g = s.create_unit_group{position = first.position, force = B.force}
-    for i = (k - 1) * SQUAD + 1, math.min(k * SQUAD, #units) do g.add_member(units[i]) end
-    w.squads[#w.squads + 1] = g
+  local forces = foes(w)
+  local out, seen = {}, {}
+  local function add(e, tier)
+    if e.valid and not seen[e.unit_number or 0] and s.count_entities_filtered{position = e.position, radius = GUARD_RANGE,
+      type = TURRETS, force = forces, limit = GUARDED} < GUARDED then
+      seen[e.unit_number or 0] = true
+      out[#out + 1] = {e = e, tier = tier}
+    end
   end
-  if #w.squads > 1 then log(w, string.format("in squads: %d of up to %d", #w.squads, SQUAD)) end
+  local r = w.sight
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = r, type = POWER, force = forces}) do add(e, 1) end
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = r, type = "inserter", force = forces}) do
+    if s.count_entities_filtered{position = e.drop_position, type = "ammo-turret", force = forces, limit = 1} > 0 then add(e, 1) end
+  end
+  for _, ft in pairs(s.find_entities_filtered{position = at, radius = r, type = "fluid-turret", force = forces}) do
+    for _, e in pairs(s.find_entities_filtered{position = ft.position, radius = 3, type = PIPES, force = forces}) do add(e, 1) end
+  end
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = r, type = CONTROL, force = forces}) do add(e, 2) end
+  local fed = {}
+  for _, p in pairs(s.find_entities_filtered{position = at, radius = 4 * r, type = POWER, force = forces}) do
+    if p.valid and p.electric_network_id then fed[p.electric_network_id] = true end
+  end
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = math.max(r, w.hx + w.hy), type = "electric-turret",
+    force = forces}) do
+    if not (e.electric_network_id and fed[e.electric_network_id]) then add(e, 3) end
+  end
+  if B.mind.havoc ~= false then
+    for _, e in pairs(s.find_entities_filtered{position = at, radius = r, type = SOFT, force = forces}) do add(e, 4) end
+  end
+  return out
 end
 
+-- Its biters inside, each after its own target (LOOK ticks apart, and when its group's order ends): who has one keeps it;
+-- the idle each take the best they can reach, by tier then distance, at most PER_TARGET (BIG_TARGET) on one. Nothing
+-- left in sight: the wave on to the middle once (its goal, staged), then home.
 local function hunt(w)
-  ensure_group(w)
-  if not (w.group and w.group.valid) then return end
-  hold_breach(w)
-  if not w.squads then split(w) end
+  -- (Its rush for the heart broken off: it hunts from where it stands.)
+  if w.deep and w.deep.going then w.deep.going, w.deep.reached = false, game.tick end
+  if not w.individual then
+    ensure_group(w)
+    if not (w.group and w.group.valid) then return end
+    hold_breach(w)
+  end
   w.aim = w.aim or {}
-  local squads = squads_of(w)
-  local taken = {}
-  for _, g in ipairs(squads) do
-    local a = w.aim[g.unique_id]
-    if a and a.target and a.target.valid then taken[a.target.unit_number or 0] = true end
-  end
-  local s = game.surfaces[w.surface]
-  local busy = 0
-  for _, g in ipairs(squads) do
-    local a = w.aim[g.unique_id]
-    -- What became of its last target (a run counted none of the player's buildings lost to its waves).
-    if a and not (a.target and a.target.valid) then
-      log(w, string.format("its %s is down", a.name))
-      w.t_progress, w.downed = game.tick, (w.downed or 0) + 1
-      w.aim[g.unique_id], a = nil, nil
-    end
-    if a and g.command then
-      busy = busy + 1
-    else
-      local at = g.position
-      local t = supply_target(w, taken, at)
-      -- Nothing in sight: on to the middle, once a squad (in at a corner of a 74-tile base, its lead saw the power in the
-      -- middle at 43, then at 40.5, past its sight of 40: herd runs 2 to 4); staged, on to what it came for.
-      -- (Per squad since 0.2.30: a wave of an older save had one flag.)
-      if type(w.pushed) ~= "table" then w.pushed = {} end
-      if not t and not w.pushed[g.unique_id] then
-        w.pushed[g.unique_id] = true
-        g.set_command(go(w.staged and w.goal or w.center, defines.distraction.none, 6))
-        log(w, "nothing in sight: a squad pushes in")
-        busy = busy + 1
-        goto next_squad
+  w.holders = w.holders or {}
+  local units = herd_units(w)
+  if #units == 0 then return end
+  -- Targets fallen since the last look; claims on the standing ones.
+  local claims, busy = {}, 0
+  for _, u in ipairs(units) do
+    local a = w.aim[u.unit_number]
+    if a and not (a.e and a.e.valid) then
+      if not (w.down or {})[a.id] then
+        w.down = w.down or {}
+        w.down[a.id] = true
+        w.t_progress, w.downed = game.tick, (w.downed or 0) + 1
+        log(w, string.format("its %s is down", a.name))
       end
-      -- Nothing that feeds a gun in sight: what is there, the nearest it has not tried (on the player's deathworld six
-      -- waves in a row broke in at outposts with no gun fed near, and went home whole, 60 of 60 on the last).
-      if not t and B.mind.havoc ~= false then
-        local bd
-        for _, e in ipairs(s.find_entities_filtered{position = at, radius = w.sight, force = foes(w), type = SOFT}) do
-          if not w.tried[e.unit_number or 0] and not taken[e.unit_number or 0] then
-            local d = d2(e.position, at)
-            if not bd or d < bd then t, bd = e, d end
-          end
+      w.aim[u.unit_number], a = nil, nil
+    end
+    if a then claims[a.id] = (claims[a.id] or 0) + 1; busy = busy + 1 end
+  end
+  local at = where(w)
+  local list = targets(w, at)
+  table.sort(list, function(x, y) return x.tier < y.tier end)
+  local given = 0
+  for _, u in ipairs(units) do
+    if not w.aim[u.unit_number] and not w.holders[u.unit_number] and u.valid then
+      local best, bs
+      for _, c in ipairs(list) do
+        local id = c.e.unit_number or 0
+        local cap = BIG[c.e.type] and BIG_TARGET or PER_TARGET
+        if c.e.valid and (claims[id] or 0) < cap then
+          local sc = c.tier * 10000 + d2(c.e.position, u.position)
+          if not bs or sc < bs then best, bs = c, sc end
         end
-        if t and not w.havoc then w.havoc = true; log(w, "nothing feeds a gun: breaks what is there") end
       end
-      if t then
-        taken[t.unit_number or 0] = true
-        w.tried[t.unit_number or 0] = true
-        w.aim[g.unique_id] = {target = t, name = t.name}
-        w.target, w.target_name = t, t.name
-        w.went_for = w.went_for or {}
-        table.insert(w.went_for, t.type)
-        g.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
-        log(w, string.format("goes for %s at %.0f,%.0f", t.name, t.position.x, t.position.y))
-        busy = busy + 1
+      if best then
+        local id = best.e.unit_number or 0
+        claims[id] = (claims[id] or 0) + 1
+        w.aim[u.unit_number] = {e = best.e, id = id, name = best.e.name}
+        if not w.tried[id] then
+          w.tried[id] = true
+          w.went_for = w.went_for or {}
+          table.insert(w.went_for, best.e.type)
+          if best.tier == 4 and not w.havoc then w.havoc = true; log(w, "nothing feeds a gun: breaks what is there") end
+        end
+        -- Its own order takes it out of its group: from here each of its biters is on its own.
+        u.commandable.set_command{type = defines.command.attack, target = best.e, distraction = defines.distraction.none}
+        given, busy = given + 1, busy + 1
+        w.individual = true
       end
     end
-    ::next_squad::
   end
-  if busy == 0 then withdraw(w, "nothing in sight feeds a gun") end
+  if given > 0 then log(w, string.format("%d of its biters each go for their own target (%d targets in sight)", given, #list)) end
+  if busy > 0 then return end
+  -- Nothing in sight: on to the middle once, as a group; then home.
+  if not w.pushed then
+    w.pushed = true
+    w.individual = nil
+    ensure_group(w)
+    for _, u in ipairs(units) do if u.valid and not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end end
+    w.group.set_command(go(w.staged and w.goal or w.center, defines.distraction.none, 6))
+    log(w, "nothing in sight: pushes in")
+    return
+  end
+  withdraw(w, "nothing in sight feeds a gun")
 end
 
 home_leg = function(w)
@@ -1252,19 +1312,13 @@ end
 
 withdraw = function(w, why)
   if w.stage == "withdraw" or w.stage == "done" then return end
+  -- Its biters back into one group, to go home as it came (inside, each was on its own).
+  w.individual = nil
   ensure_group(w)
   local g = w.group
   if not (g and g.valid) then return end
-  -- Its squads back into one, to go home as it came.
-  for _, q in ipairs(w.squads or {}) do
-    if q.valid and q ~= g then
-      local ms = {}
-      for _, u in ipairs(q.members) do ms[#ms + 1] = u end
-      for _, u in ipairs(ms) do if u.valid then g.add_member(u) end end
-      if q.valid then q.destroy() end
-    end
-  end
-  w.squads = {g}
+  -- (Not the spitters holding the breach: they cover the withdrawal, below.)
+  for _, u in ipairs(herd_units(w)) do if u.valid and not u.commandable.parent_group and not holds(w, u) then g.add_member(u) end end
   -- (Its own only: a scout from an unfed incubator goes feral, the wild's, and add_member raised an error.)
   if w.scout and w.scout.valid and w.scout.force.name == B.force then g.add_member(w.scout) end
   -- Out as it came, fighting nothing (fighting back on the way home drew it on to the faces it passed: second run), leg by
@@ -1297,6 +1351,8 @@ local function finish(w, outcome)
     trail = w.trail, farm = w.farm, recalled = w.recalled, probe = w.probe and w.probe.result,
     breach = w.breach and {w.breach.x, w.breach.y}, legs = w.leg, legs_failed = w.legs_failed or 0,
     home_legs = w.home_leg, home_n = w.home and #w.home, went_for = w.went_for,
+    deep = w.deep and {at = {w.deep.at.x, w.deep.at.y}, reached = w.deep.reached and true or false},
+    under_fire = w.under_fire, downed = w.downed or 0,
     bursters = (w.sappers or w.bursts) and {held = w.sappers and w.sappers.n or 0, burst = w.bursts and w.bursts.n or 0,
       broke = w.bursts and w.bursts.broke or {}, released = w.sappers and w.sappers.released and (w.sappers.released - w.sappers.t) / 60}})
   if w.sappers or w.bursts then
@@ -1326,6 +1382,12 @@ local function finish(w, outcome)
     -- A wall in its way at the breach, and nothing broken past it: what its incubators breed for the next wave there
     -- (farm.lua's order: bursters).
     if (w.walled or 0) > 0 then l.walled = (l.walled or 0) + 1 end
+    -- A deep strike that cost it half its number: the next one there is worth half (deep_plan).
+    l.last_deep = w.deep ~= nil
+    if w.deep then
+      l.deep = (l.deep or 0) + 1
+      if alive(w) * 2 < (w.size or 0) then l.deep_lost = (l.deep_lost or 0) + 1 end
+    end
     if (w.walled or 0) > 0 and broke == 0 and w.why ~= "nothing in sight feeds a gun" then l.walled_held = (l.walled_held or 0) + 1 end
     -- Nothing there to break (in, and nothing in sight fed a gun) is not a defence that held: not a trial of the face (a
     -- turret left of a base drew waves of 120 that each walked in and home, counted held, and escalated: 2026-10-25).
@@ -1382,7 +1444,7 @@ local function step(w, tick)
     end
     return
   end
-  if not (w.group and w.group.valid) then
+  if not (w.group and w.group.valid) and not (w.stage == "inside" and w.individual) then
     -- Its group gone with its members alive (a failed order disbands a group on 2.1): formed again where they stand and
     -- on with what it was doing, up to REGROUPS times; only then scattered.
     local live = herd_units(w)
@@ -1390,7 +1452,7 @@ local function step(w, tick)
       or w.stage == "blind" or (w.stage == "withdraw" and w.home)) then
       w.regroups = (w.regroups or 0) + 1
       w.group = s.create_unit_group{position = where(w), force = B.force}
-      for _, u in ipairs(live) do if not u.commandable.parent_group then w.group.add_member(u) end end
+      for _, u in ipairs(live) do if not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end end
       log(w, string.format("its group broke up with %d alive: formed again (%d of %d)", #live, w.regroups, REGROUPS))
       if w.stage == "march" then march(w) elseif w.stage == "blind" then blind_attack(w)
       elseif w.stage == "withdraw" then home_leg(w) else hunt(w) end
@@ -1404,8 +1466,26 @@ local function step(w, tick)
     -- Inside while it brings things down (INSIDE_TICKS since the last fell), INSIDE_MAX at most.
     if w.t_inside and tick - math.max(w.t_inside, w.t_progress or 0) > INSIDE_TICKS then return withdraw(w, "time inside") end
     if w.t_inside and tick - w.t_inside > INSIDE_MAX then return withdraw(w, "time inside, the most") end
-    -- Its squads' next targets, every five seconds (a squad's attack ends when its target falls).
-    if w.stage == "inside" and tick % 300 == 0 then hunt(w) end
+    -- Its biters' next targets, every LOOK ticks (one's attack ends when its target falls).
+    if w.stage == "inside" and tick % LOOK == 0 and not (w.deep and w.deep.going) then hunt(w) end
+  end
+  -- Under fire on the march (FIRE_LOSS within FIRE_WINDOW, turrets within FIRE_NEAR): it breaks in where it stands.
+  if w.stage == "march" then
+    w.fire_log = w.fire_log or {}
+    local now = alive(w)
+    table.insert(w.fire_log, {tick, now})
+    while #w.fire_log > 1 and tick - w.fire_log[1][1] > FIRE_WINDOW do table.remove(w.fire_log, 1) end
+    if w.fire_log[1][2] - now > FIRE_LOSS * (w.size or now) then
+      local at = where(w)
+      if s.count_entities_filtered{position = at, radius = FIRE_NEAR, type = TURRETS, force = foes(w), limit = 1} > 0 then
+        log(w, string.format("under fire on the march (%d lost in %d s): breaks in where it stands, at %.0f,%.0f",
+          w.fire_log[1][2] - now, math.floor((tick - w.fire_log[1][1]) / 60), at.x, at.y))
+        w.under_fire = tick
+        w.mark = {x = at.x, y = at.y}
+        w.fire_log = nil
+        return breach(w)
+      end
+    end
   end
   -- A command that never completes (stuck): move on after a while.
   if w.stage == "withdraw" and tick - w.t > 10 * 3600 then return finish(w, "home late") end
@@ -1470,12 +1550,6 @@ function herd.on_command_completed(e)
       -- (Its loop cut short, the wave comes all the same: the faces are read from the ground, read_ground.)
       return mark(w)
     end
-    -- A squad of its (inside) done with its target: the next.
-    if w.stage == "inside" and w.group and w.group.valid and e.unit_number ~= w.group.unique_id then
-      for _, q in ipairs(w.squads or {}) do
-        if q.valid and q.unique_id == e.unit_number then return hunt(w) end
-      end
-    end
     if w.group and w.group.valid and e.unit_number == w.group.unique_id then
       if w.stage == "march" then
         if e.result ~= defines.behavior_result.success then
@@ -1494,6 +1568,21 @@ function herd.on_command_completed(e)
       end
       if w.stage == "breach" then
         w.stage = "inside"; w.t_inside = game.tick
+        -- A deep strike: past what is near, on to the heart, fighting nothing; there it hunts.
+        if w.deep and not w.deep.reached then
+          w.deep.going = true
+          -- Its spitters stay at the breach (sent back from the heart they crossed the base again, late and few).
+          hold_breach(w)
+          w.group.set_command(go(w.deep.at, defines.distraction.none, 8))
+          log(w, string.format("rushes for the heart at %.0f,%.0f", w.deep.at.x, w.deep.at.y))
+          return
+        end
+        return hunt(w)
+      end
+      if w.stage == "inside" and w.deep and w.deep.going then
+        w.deep.going, w.deep.reached = false, game.tick
+        w.t_progress = game.tick
+        log(w, string.format("at the heart (%s)", e.result == defines.behavior_result.success and "reached" or "as far as it got"))
         return hunt(w)
       end
       if w.stage == "inside" then return hunt(w) end

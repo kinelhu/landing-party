@@ -95,9 +95,16 @@ function dev.run(player, args)
     standing.list(player)
   elseif what == "biotech" then
     player.print(farm.arrive_now(player.surface) and "the biotech's pod is coming down (a map tag marks its farm)"
-      or "no nest field of three spawners 600 to 1,500 tiles from your factory")
+      or "no nest field of three spawners 250 to 1,500 tiles from your factory")
   elseif what == "wave" then
-    player.print(farm.debug_wave() and "the biotech's farm sends a wave within ten seconds" or "no biotech farm (/lp biotech)")
+    -- /lp wave [n] [deep]: a wave now; of n (past the caps); a deep strike, whatever it weighs at the breach.
+    local n, deep
+    for k = 2, #args do
+      if tonumber(args[k]) then n = tonumber(args[k]) elseif args[k] == "deep" then deep = true end
+    end
+    player.print(farm.debug_wave(n, deep) and string.format("its culture sends %s%s within ten seconds",
+      n and string.format("%d", n) or "a wave", deep and ", a deep strike for the heart," or "")
+      or "no biotech farm (/lp biotech)")
   elseif what == "rig" or what == "tap" then
     -- Grubstake's discreet operations on demand (their own triggers wait on the ladder, the pact and intel).
     local temper = ({rig = "jumps", tap = "taps"})[what]

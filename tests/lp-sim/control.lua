@@ -8141,6 +8141,11 @@ scenarios.herd = function()
     for _, p in ipairs({{-20, -6}, {-20, 6}, {20, -6}, {20, 6}, {-6, 20}, {6, 20}, {-6, -20}, {6, -20}}) do
       put("assembling-machine-2", at(p[1], p[2]))
     end
+    -- core (0.2.31): this base's heart guarded (four lasers round its middle): no soft middle, so its wave raids the edge;
+    -- unguarded (the plain herd: every gun on the wall) it strikes for the heart.
+    if mix == "core" then
+      for _, p in ipairs({{-8, -8}, {-8, 8}, {8, -8}, {8, 8}}) do table.insert(S.turrets, put(L, at(p[1], p[2]))) end
+    end
     if mix == "scout" then
       -- A squad outside the wall where the scout comes on to its loop (turrets there only widen the loop: the scout goes
       -- round every turret it sees, so the answer to it moves).
@@ -8177,7 +8182,27 @@ scenarios.herd = function()
     -- burst: a wall held a wave here before (the bursters are held only where one did).
     if mix == "burst" or mix == "burst-nohold" then lp("herd_wall_lesson", S.at(0, 0)) end
     S.t_send = game.tick
-    S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or nil)
+    S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or mix == "deep" and {deep = true} or nil)
+    -- fire (0.2.31): once it marches, eight fed gun turrets round it: caught under fire, it should break in there.
+    if mix == "fire" then
+      for t = game.tick - storage.t0 + 600, END - 600, 120 do
+        schedule(t, function()
+          if S.fire_at then return end
+          for _, wv in ipairs(lp("herd_state").waves) do
+            if wv.id == S.wave1 and wv.stage == "march" and wv.group then
+              S.fire_at = game.tick
+              for k = 0, 7 do
+                local a = k * math.pi / 4
+                local q = surface().find_non_colliding_position("gun-turret",
+                  {wv.group[1] + math.cos(a) * 14, wv.group[2] + math.sin(a) * 14}, 6, 1)
+                local g = q and put("gun-turret", q)
+                if g then g.insert{name = "piercing-rounds-magazine", count = 100} end
+              end
+            end
+          end
+        end)
+      end
+    end
   end)
   if mix == "scout" then
     -- A second wave once the first is over: does it loop wider where the first scout died?
@@ -8254,6 +8279,23 @@ scenarios.herd = function()
     local state = lp("herd_state")
     info("herd: " .. serpent.line(w))
     info("herd: waves still out " .. serpent.line(state.waves))
+    -- The deep strike (0.2.30): told (deep), it rushed for the heart and got there; a hard shell round a soft middle
+    -- (shell), it chose to; this base's heart too near its breach (the plain herd), it raided the edge.
+    if mix == "deep" or mix == "" then
+      local d = w and w.deep
+      check("herd: " .. (mix == "" and "a shell round a soft middle" or "told") .. ", a deep strike for the heart", d ~= nil,
+        serpent.line(d))
+      check("herd: it reached the heart", d and d.reached == true, serpent.line(d))
+      check("herd: inside, its biters each went for their own (more than one target down)", w and (w.downed or 0) >= 2,
+        tostring(w and w.downed))
+      if mix == "deep" then return end
+    end
+    if mix == "core" then check("herd: its heart guarded, it raided the edge", w and w.deep == nil, serpent.line(w and w.deep)) end
+    if mix == "fire" then
+      check("herd: fire, caught under fire on the march, it broke in where it stood", w and w.under_fire ~= nil,
+        serpent.line(w and {under_fire = w.under_fire, breach = w.breach, outcome = w.outcome}))
+      return
+    end
     if mix == "stomp" then
       info(string.format("herd stomp: inside at %s, stompers left %s, own hurt by a stomper %s", tostring(S.stomp_in),
         tostring(S.stompers), tostring(S.damage["stomper>own"])))
@@ -8357,7 +8399,8 @@ scenarios.herd = function()
       check("herd: tell, 3 minutes from the scout to the breach", w.t_breach and w.t_breach - w.t_launch >= 180 * 60,
         tostring(w.t_breach and (w.t_breach - w.t_launch) / 60))
       check("herd: the trail on the ground 15 minutes on", (S.mud15 or 0) >= 20, tostring(S.mud15))
-      check("herd: no trail inside the wall", S.mud_in == 0, tostring(S.mud_in))
+      -- (A deep strike's trail runs on inside: its tell.)
+      check("herd: no trail inside the wall", S.mud_in == 0 or w.deep ~= nil, tostring(S.mud_in))
       check("herd: the trail gone after 20 minutes", S.mud21 == 0, tostring(S.mud21))
     elseif mix == "keep" or mix == "second" then
       check("herd: power still up (" .. mix .. ")", power >= 1, string.format("%d of %d", power, #S.power))
@@ -8832,6 +8875,8 @@ scenarios.farm = function()
           end)
         end
         if mix == "wave" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave") and game.tick end) end
+        -- wave200 (0.2.30): /lp wave 200, a mega wave on demand, past the caps.
+        if mix == "wave200" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave", 200) and game.tick end) end
         if mix == "seed" or mix == "seedkill" or mix == "seedbare" then
           schedule(game.tick - storage.t0 + 3600, function()
             if mix == "seedbare" then
@@ -9067,6 +9112,12 @@ scenarios.farm = function()
     if mix == "wave" then
       check("farm: /lp wave sent one within a minute", S.asked and w.t_launch - S.asked <= 3600,
         string.format("asked %s, launched %s", tostring(S.asked), tostring(w.t_launch)))
+      return
+    end
+    if mix == "wave200" then
+      check("farm: /lp wave 200 sent a wave of 180 or more within a minute", S.asked and w.t_launch - S.asked <= 3600
+        and (w.size or 0) >= 180, string.format("asked %s, launched %s, size %s", tostring(S.asked), tostring(w.t_launch),
+        tostring(w.size)))
       return
     end
     if mix == "quiet" then

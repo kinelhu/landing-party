@@ -38,7 +38,8 @@ outside_ray = function(b, t, ux, uy, off, len, strict)
   for d = off, math.min(len, off + 160), 4 do
     local p = {t.pos[1] + ux * d, t.pos[2] + uy * d}
     -- Not among nests either (a staging point 35 tiles from a worm could never be reached round biter country).
-    if s.count_entities_filtered{position = p, radius = STAND_OFF, type = TURRETS, force = foes, limit = 1} == 0
+    -- (t.margin: what a big herd needs past that, its own half-width: herd.lua waist.)
+    if s.count_entities_filtered{position = p, radius = STAND_OFF + (t.margin or 0), type = TURRETS, force = foes, limit = 1} == 0
       and (t.owner == "enemy" or s.count_entities_filtered{position = p, radius = 50, type = {"unit-spawner", "turret"},
         force = shared.NEST_FORCES, limit = 1} == 0)
       -- Nor by water: staged on a lake shore, a raid on a substation found no way to its staging point, the same six
@@ -144,7 +145,8 @@ local function sneak_route(b, from, to, opts, wide)
     end
     return out
   end
-  local tmark = mark(turrets, function(e) return (REACH[e.type] or 20) + SNEAK_MARGIN end)
+  -- (opts.margin: a big herd's half-width besides, herd.lua waist: a wave of 200 is a blob 20 tiles wide.)
+  local tmark = mark(turrets, function(e) return (REACH[e.type] or 20) + SNEAK_MARGIN + (opts.margin or 0) end)
   local nmark = mark(nests, function(e) return e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm end)
   -- Corridors on this surface within the box, once per route.
   local corr = {}
