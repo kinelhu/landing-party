@@ -31,11 +31,16 @@ local RECEDE_TICKS = 5 * 60    -- a ring each, withdrawing
 local BUD_PRICE = 30
 local BUD_MIN = 15 * 60
 local HEDGE = 160              -- wild nests this near a culture are its to take
+local STALL = 3                -- buds toward a nest without coming nearer: out of reach
+local STRAY = 0.9              -- a bud strays to a side, up to this share of a tumor's reach either way
 local FOOD_HALF = 20           -- pollution in the 5 by 5 chunks round a nest that makes it count half as far
 local FOUND_PRICE = 150        -- an incubator of its own, where no wild nest is near (five buds; a wild one is free)
 local FOUND_APART = 16         -- from its other incubators
 local STEP = R_MAX + 2         -- a bud toward the air, from a grown tumor
-local SHY = 48                 -- nor within this of the player's buildings
+local SHY = 48
+local DEAD_TREES = {"dry-tree", "dead-tree-desert", "dead-grey-trunk", "dead-dry-hairy-tree", "dry-hairy-tree"}
+local DEAD_TREE = {}
+for _, n in ipairs(DEAD_TREES) do DEAD_TREE[n] = true end                 -- nor within this of the player's buildings
 local TUMORS_MAX = 40          -- per culture
 local BONUS_RADIUS = 200       -- round a culture, its units looked at for the bonus
 
@@ -124,6 +129,16 @@ local function grow(rec)
       end
     end
   end
+  -- The trees it reaches die (the user, 2026-10-26: "creep needs to make trees lose their leaves"): each becomes one of
+  -- the game's dead trees (a tree's last gray stage only darkens its leaves: seen in screenshots, not bare).
+  for _, t in pairs(s.find_entities_filtered{area = box, type = "tree"}) do
+    local p = t.position
+    if not DEAD_TREE[t.name] and (p.x - cx) ^ 2 + (p.y - cy) ^ 2 <= r * r then
+      local name = DEAD_TREES[1 + math.floor(((p.x * 73 + p.y * 151) % 97) / 97 * #DEAD_TREES)]
+      t.destroy()
+      s.create_entity{name = name, position = p}
+    end
+  end
   if #tiles == 0 then return 0 end
   s.set_tiles(tiles, true, false, true, false)
   for i, t in ipairs(tiles) do
@@ -158,6 +173,24 @@ local function recede(rec)
   rec.r = r - 1
 end
 
+-- A grown tumor sunk in its creep: Gleba's slime under it and nerve roots round it (decoratives, laid once its creep is
+-- grown: growing, the creep's tiles clear what lies on them).
+-- (Cream, red and grey on its violet: the purple ones were laid and could not be seen, 2026-10-26.)
+local ROOTS = {"cream-nerve-roots-veins-dense", "red-nerve-roots-veins-sparse", "curly-roots-grey", "knobbly-roots",
+  "cream-nerve-roots-veins-sparse"}
+local SLIME = "polycephalum-slime"
+local function sink(rec)
+  local s = game.surfaces[rec.surface]
+  if not s or not rec.entity.valid then return end
+  local out = {{name = SLIME, position = {rec.pos.x, rec.pos.y}, amount = 1}}
+  for k = 1, 7 do
+    local a = k * 2.4 + rec.pos.x
+    local r = 1.5 + (k % 3) * 1.2
+    out[#out + 1] = {name = ROOTS[k % #ROOTS + 1], position = {rec.pos.x + math.cos(a) * r, rec.pos.y + math.sin(a) * r}, amount = 1}
+  end
+  s.create_decoratives{check_collision = false, decoratives = out}
+end
+
 -- Synthexis's units on creep: quicker and mending, a second at a time.
 local function bonus(s, pos)
   for _, u in ipairs(s.find_entities_filtered{position = pos, radius = BONUS_RADIUS, force = B.force, type = "unit"}) do
@@ -183,6 +216,7 @@ function creep.tick(tick)
     elseif rec.r < R_MAX and tick >= rec.next then
       grow(rec)
       rec.next = tick + GROW_TICKS
+      if rec.r >= R_MAX then sink(rec) end
     end
   end
   for _, c in pairs(s.cultures or {}) do
@@ -356,7 +390,13 @@ function creep.bud(id, tick)
   end
   c.wants = nil
   if #mine == 0 then return nil end
-  local nests = surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = c.pos, radius = HEDGE}
+  -- Nests it found out of reach (STALL buds toward one brought the creep no nearer: across water) are left out; with
+  -- none left, it grows its own (found).
+  c.blocked = c.blocked or {}
+  local nests = {}
+  for _, n in ipairs(surface.find_entities_filtered{type = "unit-spawner", force = "enemy", position = c.pos, radius = HEDGE}) do
+    if not c.blocked[n.unit_number] then nests[#nests + 1] = n end
+  end
   if #nests == 0 then return found(c, id, surface, mine, tick) end
   local best, bs, bd, from
   for _, n in ipairs(nests) do
@@ -369,10 +409,25 @@ function creep.bud(id, tick)
   end
   c.wants = BUD_PRICE
   if tick - c.last_bud < BUD_MIN or #mine >= TUMORS_MAX or (c.biomass or 0) < BUD_PRICE then return nil end
+  -- Progress toward it: the nearest any tumor has come. STALL buds without coming nearer, it is out of reach.
+  c.aim = c.aim or {}
+  local key = best.unit_number
+  local a = c.aim[key]
+  if not a or bd < a.d - 1 then c.aim[key] = {d = bd, n = 0}
+  else
+    a.n = a.n + 1
+    if a.n >= STALL then c.blocked[key], c.aim[key] = true, nil return nil end
+  end
   pay(c, tick, BUD_PRICE)
   c.budded = (c.budded or 0) + 1
-  local step = math.min(R_MAX - 1, bd)
-  local at = {x = from.pos.x + (best.position.x - from.pos.x) / bd * step, y = from.pos.y + (best.position.y - from.pos.y) / bd * step}
+  -- Not a straight line of tumors (the user: "a little variation in tumor positioning to make it look more organic"):
+  -- each bud steps a share of its reach and strays to a side, by a hash of where and when.
+  local ux, uy = (best.position.x - from.pos.x) / bd, (best.position.y - from.pos.y) / bd
+  local h1 = ((from.pos.x * 73856093 + from.pos.y * 19349663 + tick * 83492791) % 1000003) / 1000003
+  local h2 = ((from.pos.x * 19349663 + from.pos.y * 83492791 + tick * 73856093) % 1000003) / 1000003
+  local step = math.min(R_MAX - 1, bd) * (0.7 + 0.3 * h1)
+  local side = (h2 - 0.5) * STRAY * R_MAX
+  local at = {x = from.pos.x + ux * step - uy * side, y = from.pos.y + uy * step + ux * side}
   creep.plant(surface, at, id)
   return nil
 end

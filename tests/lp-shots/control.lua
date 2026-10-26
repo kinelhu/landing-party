@@ -44,7 +44,7 @@ local function poll(from, to, every, f) for t = from, to, every do schedule(t, f
 local ok_mode, mode = pcall(require, "mode")
 local MODE = ok_mode and mode or "all"
 local only = schedule
-if MODE == "town" then schedule = function(t, f) if t <= 60 then only(t, f) end end end
+if MODE == "town" or MODE == "culture" then schedule = function(t, f) if t <= 60 then only(t, f) end end end
 
 -- Setup: no biters near, the day frozen at noon, two camps.
 schedule(60, function()
@@ -381,6 +381,45 @@ if MODE == "town" then
     if t[#t] then shot("19-grubstake-turret-pit", t[#t].position, 1.2, false, "a Grubstake turret in its pit of fence") end
   end)
   only(300 + 5 * 3600 + 120, function()
+    helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
+    helpers.write_file(DIR .. "done.txt", "done\n")
+  end)
+end
+
+-- LP_SHOTS=culture: a Synthexis culture on a nest field 450 tiles east, fed smog, eight minutes on: its creep, its
+-- buried tumors and their roots, its wandering buds.
+if MODE == "culture" then
+  only(300, function()
+    local s = surface()
+    for x = -6, 6, 3 do surface().create_entity{name = "assembling-machine-1", position = {x, -20}, force = "player"} end
+    S.field = {450, 0}
+    s.request_to_generate_chunks(S.field, 5)
+    s.force_generate_chunk_requests()
+    for k = 1, 30 do
+      local a, r = k * 2.4, (k <= 5) and 8 or 30 + (k % 6) * 15
+      local q = s.find_non_colliding_position("biter-spawner", {450 + math.cos(a) * r, math.sin(a) * r}, 20, 1)
+      if q then s.create_entity{name = "biter-spawner", position = q, force = "enemy"} end
+    end
+    game.forces.enemy.set_evolution_factor(0.3, s)
+    note("culture: " .. tostring(lp("farm_arrive", 1)))
+  end)
+  poll(600, 8 * 3600, 600, function()
+    local f = (lp("farm_state").farms or {})[1]
+    local c = f and {f.pos.x, f.pos.y} or S.field
+    for dx = -90, 90, 45 do for dy = -90, 90, 45 do surface().pollute({c[1] + dx, c[2] + dy}, 300) end end
+  end)
+  only(8 * 3600, function()
+    -- Where it came down (its pod picks the field: likely ours, maybe the map's own).
+    local f = (lp("farm_state").farms or {})[1]
+    if f then S.field = {f.pos.x, f.pos.y} end
+    note(string.format("culture at %.0f,%.0f", S.field[1], S.field[2]))
+    shot("20-culture-wide", S.field, 0.3, false, "a Synthexis culture: creep, incubators, tumors budding out")
+    shot("21-culture-near", S.field, 0.8, false, "its tumors sunk in the creep, slime and nerve roots round them")
+    local t = surface().find_entities_filtered{name = "lp-tumor", position = S.field, radius = 150}
+    if t[#t] then shot("22-culture-tumor", t[#t].position, 1.6, false, "a tumor close up") end
+    shot("23-culture-night", S.field, 0.5, true, "the culture by night")
+  end)
+  only(8 * 3600 + 120, function()
     helpers.write_file(DIR .. "shots.txt", table.concat(lines, "\n") .. "\n")
     helpers.write_file(DIR .. "done.txt", "done\n")
   end)

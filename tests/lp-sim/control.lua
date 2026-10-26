@@ -8417,6 +8417,32 @@ scenarios.creep = function()
   schedule(END - 60, function()
     check("creep: the culture landed", S.landed ~= nil, tostring(S.asked))
     if not S.landed then return end
+    -- Its grown tumors sunk in slime and roots (0.2.28): decoratives round each, and the trees on its creep bare.
+    do
+      local grown, decor, slime = 0, 0, 0
+      for _, tu in ipairs(lp("creep_state").tumors) do
+        if tu.r >= 10 then
+          grown = grown + 1
+          local a = {{tu.pos.x - 6, tu.pos.y - 6}, {tu.pos.x + 6, tu.pos.y + 6}}
+          decor = decor + #surface().find_decoratives_filtered{area = a, name = {"cream-nerve-roots-veins-dense",
+            "red-nerve-roots-veins-sparse", "curly-roots-grey", "knobbly-roots", "cream-nerve-roots-veins-sparse"}}
+          slime = slime + #surface().find_decoratives_filtered{area = a, name = "polycephalum-slime"}
+        end
+      end
+      local trees, bare = 0, 0
+      for _, t in pairs(surface().find_entities_filtered{position = S.farm_pos, radius = 60, type = "tree"}) do
+        if surface().get_tile(t.position.x, t.position.y).name == "lp-creep" then
+          trees = trees + 1
+          if ({["dry-tree"] = 1, ["dead-tree-desert"] = 1, ["dead-grey-trunk"] = 1, ["dead-dry-hairy-tree"] = 1,
+            ["dry-hairy-tree"] = 1})[t.name] then bare = bare + 1 end
+        end
+      end
+      info(string.format("creep: %d grown tumors, %d root and %d slime decoratives round them; trees on its creep %d, bare %d",
+        grown, decor, slime, trees, bare))
+      check("creep: its grown tumors sunk in slime and roots", grown == 0 or (slime >= grown and decor >= grown),
+        string.format("%d tumors, %d roots, %d slime", grown, decor, slime))
+      check("creep: the trees on its creep bare", trees == 0 or bare == trees, string.format("%d of %d", bare, trees))
+    end
     if mix == "killed" then
       local fs = lp("farm_state")
       local tiles = surface().count_tiles_filtered{position = S.farm_pos, radius = 100, name = "lp-creep"}
@@ -8627,6 +8653,22 @@ scenarios.farm = function()
         if q then table.insert(S.fed_field, surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}) end
       end
     end
+    -- moat (0.2.28): the only other wild nest in its creep's reach (120 tiles off) stands in a lake 25 tiles wide (a
+    -- tumor that cannot stand on water stands within 10 tiles of where it was meant: a narrow moat it hops): its creep
+    -- gives it up as out of reach and grows incubators of its own (until 0.2.28 it budded at it for ever).
+    if mix == "moat" then
+      local c = at(750, 120)
+      surface().request_to_generate_chunks(c, 3)
+      surface().force_generate_chunk_requests()
+      local water = {}
+      for dx = -32, 32 do for dy = -32, 32 do
+        local d = dx * dx + dy * dy
+        if d >= 6 * 6 and d <= 31 * 31 then water[#water + 1] = {name = "water", position = {c[1] + dx, c[2] + dy}} end
+      end end
+      surface().set_tiles(water)
+      S.moat_nest = surface().create_entity{name = "biter-spawner", position = c, force = "enemy"}
+      info(string.format("farm moat: nest %s at %.0f,%.0f", tostring(S.moat_nest and S.moat_nest.valid), c[1], c[2]))
+    end
     -- seed, seedkill: a second wild field 400 tiles from the first, where its carrier goes (0.2.22).
     if mix == "seed" or mix == "seedkill" then
       for d = -40, 440, 32 do surface().request_to_generate_chunks(at(750, d), 3) end
@@ -8659,7 +8701,7 @@ scenarios.farm = function()
       end)
     end
   end
-  if mix == "growth" or mix == "found" then
+  if mix == "growth" or mix == "found" or mix == "moat" then
     for t = 600, END - 120, 600 do
       schedule(t, function()
         local f = farm1()
@@ -8823,7 +8865,7 @@ scenarios.farm = function()
         end
       end
       if mix ~= "killed" and mix ~= "starve" and mix ~= "techs" and mix ~= "clinic" and mix ~= "growth" and mix ~= "found"
-        and mix ~= "seedbare" and #st.log > 0 then finish_early() end
+        and mix ~= "seedbare" and mix ~= "moat" and #st.log > 0 then finish_early() end
     end)
   end
   schedule(END - 60, function()
@@ -8848,6 +8890,13 @@ scenarios.farm = function()
       check("farm: fed, it ate the cloud", ((f1.biomass or {}).eaten or 0) > 0, serpent.line(f1.biomass))
     else
       check("farm: 600 tiles out or more", (S.dist or 0) >= 600, string.format("%.0f", S.dist or -1))
+    end
+    if mix == "moat" then
+      local f1 = lp("farm_state").farms[1] or {}
+      check("farm: moat, its nest stood on its island to the end", S.moat_nest ~= nil and S.moat_nest.valid,
+        tostring(S.moat_nest and S.moat_nest.valid))
+      check("farm: moat, its only nest near out of reach, it grew incubators of its own", (f1.grown or 0) >= 1,
+        serpent.line({grown = f1.grown, pens = f1.pens, nest = S.moat_nest and S.moat_nest.valid}))
     end
     if mix == "found" then
       local f1 = lp("farm_state").farms[1] or {}

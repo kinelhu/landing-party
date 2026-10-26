@@ -70,9 +70,9 @@ digraph ai {
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n1524 lines", width=2.49, fillcolor="#f7dede"];
-    "farm" [label="farm\n1095 lines", width=2.02, fillcolor="#f7dede"];
-    "creep" [label="creep\n392 lines", width=1.24, fillcolor="#eef2f7"];
-    "cell" [label="cell\n396 lines", width=1.24, fillcolor="#eef2f7"];
+    "farm" [label="farm\n1145 lines", width=2.07, fillcolor="#f7dede"];
+    "creep" [label="creep\n447 lines", width=1.30, fillcolor="#eef2f7"];
+    "cell" [label="cell\n401 lines", width=1.25, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];

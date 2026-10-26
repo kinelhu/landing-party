@@ -760,3 +760,10 @@ against the player -1; the player against Kessler-Hayashi +24.
   never buds toward your buildings closer than a short way off.
 - A cleaner factory starves it. A dirty one feeds a culture that tops out at its tumor cap and spends its surplus on
   carriers, one every twenty minutes.
+
+### How its creep looks and spreads (0.2.28)
+
+- Its creep wanders toward the nest it buds for, each tumor a little to a side; a nest across a lake it gives up, and
+  with none in reach it grows its own incubators.
+- Its tumors lie low in the creep, in slime with roots spreading from them; the trees its creep reaches die, bare
+  trunks on the violet where the forest was green.

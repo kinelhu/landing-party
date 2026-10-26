@@ -89,6 +89,8 @@ end
 local function spawn_techs(site, surface, n)
   local t = site.tower
   local at = t and t.valid and t.position or site.at
+  -- Outside its soil and plants (the user, 2026-10-26: technicians spawned by the tower stood boxed in by the yumako).
+  at = {x = at.x, y = at.y + SOIL + 2}
   for _ = 1, n do
     local q = surface.find_non_colliding_position("lp-technician", at, 10, 0.5)
     local u = q and surface.create_entity{name = "lp-technician", position = q, force = B.force}
@@ -182,12 +184,15 @@ function cell.site(farm_id, surface, mid, young)
   site = {at = c, tower = tower, techs = {}, plants = {}}
   -- A culture seeded by a carrier (farm.lua) waits for its clinic by pod, CLINIC_WAIT on: a young culture reads young.
   if young then site.clinic, site.clinic_drop_at = false, game.tick + CLINIC_WAIT else place_clinic(site, surface) end
+  -- Six of eight round it: two gaps (east and west) so nothing is penned in by its plants.
   for k = 1, 8 do
     local a = 2 * math.pi * k / 8
+    if k % 4 == 0 then goto next_plant end
     local q = surface.find_non_colliding_position(PLANTS[k % 2 + 1], {c.x + math.cos(a) * 3.5, c.y + math.sin(a) * 3.5}, 2, 0.5)
     local e = q and surface.create_entity{name = PLANTS[k % 2 + 1], position = q, force = "neutral"}
     -- Grown already (a plant made by script is a seedling for its whole growth time).
     if e then e.tick_grown = game.tick; table.insert(site.plants, e) end
+    ::next_plant::
   end
   sites()[farm_id] = site
   spawn_techs(site, surface, TECHS)

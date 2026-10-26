@@ -447,6 +447,7 @@ local SEED_AT, SEED_BANK, SEED_WAIT = 8, 300, 20 * 3600
 local SEED_NEAR, SEED_FAR, SEED_APART, SEED_CLEAR = 300, 600, 300, 200
 local SEED_FARTHEST = 1000
 local SEED_WEIGHED = 40   -- fields weighed for their air, nearest first
+local STUCK, REPLANS = 2 * 3600, 3   -- a carrier no nearer its field this long plans a new way, so many times at most
 local ESCORT, CULTURE_CAP, YOUNG_WAVES = 12, 5, 3
 local CARRY_LIMIT = 30 * 3600   -- a carrier still walking this long has lost its way
 local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
@@ -631,11 +632,13 @@ local function seed_site(f, s, far)
   return best, bf
 end
 
+local carrier_legs
+
 local function seed(f, tick)
   local sl = st()
   -- Mature: SEED_AT incubators, or its field filled (PENS at least and no nest taken for FILLED_WAIT: on a fresh map's
   -- sparse fields a culture stopped at five, and never seeded in three hours).
-  local filled = #f.pens >= PENS and tick - (f.last_take or f.landed or 0) >= FILLED_WAIT
+  local filled = #f.pens >= PENS and (f.seed_forced or tick - (f.last_take or f.landed or 0) >= FILLED_WAIT)
   if f.carrier or (#f.pens < SEED_AT and not filled) or tick - (f.seed_tried or -SEED_WAIT) < SEED_WAIT then return end
   local n = 0
   for _, g in pairs(sl.list) do n = n + 1 + (g.carrier and 1 or 0) end
@@ -688,11 +691,26 @@ local function seed(f, tick)
   end
   rec.stock = keep
   cul.biomass, cul.spent = cul.biomass - SEED_BANK, (cul.spent or 0) + SEED_BANK
-  -- Its way: round the turrets known to it (wide), a leg at most 60 tiles; failing that, straight in 60-tile legs.
   local from = carrier.position
   local far = math.sqrt(d2(from, dest))
+  local legs, way = carrier_legs(f, from, dest)
+  f.carrier = {group = g, unit = carrier, escort = escort, legs = legs, leg = 1, dest = dest, t = tick,
+    bank = SEED_BANK / 2}
+  storage.carrying = storage.carrying or {}
+  for _, u in ipairs(escort) do storage.carrying[u.unit_number] = true end
+  if carrier.commandable and carrier.commandable.spawner then carrier.commandable.release_from_spawner() end
+  trace(string.format("farm %d sends a carrier with %d escorts to %s at %.0f,%.0f (%.0f tiles, %s; %s)", f.id, #escort,
+    dest.bare and "bare ground" or "the nests", dest.x, dest.y, far, way and "routed" or "straight",
+    food and string.format("%.0f of pollution round it", food) or "clean air"))
+end
+
+-- Its way, from `from` to `dest`: round the turrets known to it and round cliffs and the player's buildings (solid; a
+-- carrier stood 17 minutes at a line of cliffs, its every order ending at once: farm seedbare, 0.2.28), a leg at most
+-- 60 tiles; failing that, straight in 60-tile legs. Returns its legs and whether it was routed.
+carrier_legs = function(f, from, dest)
+  local far = math.sqrt(d2(from, dest))
   local way = herd.route and herd.route({surface = f.surface, force = B.force}, {from.x, from.y}, {dest.x, dest.y},
-    {turrets = true, nests = false, cell = far > 400 and 16 or 10}, true)
+    {turrets = true, nests = false, solid = players(), cell = far > 400 and 16 or 10}, true)
   local pts, legs = {}, {}
   for _, p in ipairs(way or {}) do pts[#pts + 1] = {x = p[1], y = p[2]} end
   pts[#pts + 1] = dest
@@ -703,14 +721,7 @@ local function seed(f, tick)
     legs[#legs + 1] = p
     a = p
   end
-  f.carrier = {group = g, unit = carrier, escort = escort, legs = legs, leg = 1, dest = dest, t = tick,
-    bank = SEED_BANK / 2}
-  storage.carrying = storage.carrying or {}
-  for _, u in ipairs(escort) do storage.carrying[u.unit_number] = true end
-  if carrier.commandable and carrier.commandable.spawner then carrier.commandable.release_from_spawner() end
-  trace(string.format("farm %d sends a carrier with %d escorts to %s at %.0f,%.0f (%.0f tiles, %s; %s)", f.id, #escort,
-    dest.bare and "bare ground" or "the nests", dest.x, dest.y, far, way and "routed" or "straight",
-    food and string.format("%.0f of pollution round it", food) or "clean air"))
+  return legs, way
 end
 
 -- The carrier on its way, every farm look: leg by leg; at its field, the new culture.
@@ -724,7 +735,11 @@ local function carry(f, tick)
     f.seed_tried = tick
     return trace(string.format("farm %d: its carrier killed on its way", f.id))
   end
-  if d2(c.unit.position, c.dest) < 24 * 24 then
+  -- Arrived: the carrier at its field, or its group done there (a carrier lagging behind its escort, its big body caught
+  -- on the way: the group stood 10 tiles from the field, finished, and the carrier 38 back, for good; seedbare, 0.2.28).
+  local arrived = d2(c.unit.position, c.dest) < 24 * 24 or (c.group and c.group.valid
+    and c.group.state == defines.group_state.finished and d2(c.group.position, c.dest) < 16 * 16)
+  if arrived then
     local nf = farm.land(s, c.dest, {biomass = c.bank})
     local rec = nf and nf.pens[1] and herd.pen(nf.pens[1])
     for _, u in ipairs(c.escort) do if u.valid and rec then table.insert(rec.stock, u) end end
@@ -748,6 +763,40 @@ local function carry(f, tick)
     c.group.add_member(c.unit)
     for _, u in ipairs(c.escort) do if u.valid then c.group.add_member(u) end end
     c.ordered = nil
+  end
+  -- Its walk, for the trace: where it is every five minutes.
+  if tick - (c.said or c.t) >= 5 * 3600 then
+    c.said = tick
+    local tg = c.legs[c.leg] or c.dest
+    trace(string.format("farm %d: its carrier at %.0f,%.0f, leg %d of %d (to %.0f,%.0f; its field %.0f,%.0f), %d escorts",
+      f.id, c.unit.position.x, c.unit.position.y, c.leg, #c.legs, tg.x, tg.y, c.dest.x, c.dest.y, #c.escort))
+    local at = c.unit.position
+    trace(string.format("farm %d: round its carrier (30 tiles): %d water tiles, %d cliffs, %d wild biters, command %s, group %s",
+      f.id, s.count_tiles_filtered{position = at, radius = 30, collision_mask = "water_tile"},
+      s.count_entities_filtered{position = at, radius = 30, type = "cliff"},
+      s.count_entities_filtered{position = at, radius = 30, force = "enemy", type = "unit"},
+      tostring(c.group.valid and c.group.command and c.group.command.type), tostring(c.group.valid and c.group.state)))
+    local cm = c.unit.commandable
+    trace(string.format("farm %d: its group at %s, %d members; the carrier %s it, its own command %s", f.id,
+      c.group.valid and string.format("%.0f,%.0f", c.group.position.x, c.group.position.y) or "gone",
+      c.group.valid and #c.group.members or 0, cm and cm.parent_group == c.group and "in" or "not in",
+      tostring(cm and cm.command and cm.command.type)))
+    local d = c.dest
+    local q = s.find_non_colliding_position("lp-bred-carrier", d, 6, 1)
+    trace(string.format("farm %d: round its field %.0f,%.0f (20 tiles): %d water tiles, %d cliffs, %d trees; a carrier fits %s",
+      f.id, d.x, d.y, s.count_tiles_filtered{position = d, radius = 20, collision_mask = "water_tile"},
+      s.count_entities_filtered{position = d, radius = 20, type = "cliff"},
+      s.count_entities_filtered{position = d, radius = 20, type = "tree"},
+      q and string.format("at %.0f,%.0f", q.x, q.y) or "nowhere"))
+  end
+  -- No nearer its field for STUCK: a new way from where it stands (REPLANS at most), its legs walked again.
+  local dd = d2(c.unit.position, c.dest)
+  if not c.best or dd < c.best - 100 then c.best, c.best_t = dd, tick
+  elseif tick - c.best_t >= STUCK and (c.replans or 0) < REPLANS then
+    c.replans = (c.replans or 0) + 1
+    c.legs, c.leg, c.ordered, c.best_t = carrier_legs(f, c.unit.position, c.dest), 1, nil, tick
+    trace(string.format("farm %d: its carrier stuck at %.0f,%.0f: a new way (%d legs, try %d)", f.id, c.unit.position.x,
+      c.unit.position.y, #c.legs, c.replans))
   end
   local target = c.legs[c.leg]
   while target and d2(c.unit.position, target) < 15 * 15 and c.leg < #c.legs do
@@ -1047,7 +1096,8 @@ end
 function farm.debug_seed(id)
   local f = st().list[id]
   if not f then return false end
-  f.last_take, f.seed_tried = game.tick - FILLED_WAIT, nil
+  -- Ripe now and for good (a nest its creep takes after this resets the field's clock: farm seed, 0.2.28).
+  f.last_take, f.seed_tried, f.seed_forced = game.tick - FILLED_WAIT, nil, true
   local cul = creep.of(id)
   if cul then cul.biomass = math.max(cul.biomass, 2 * SEED_BANK) end
   return true

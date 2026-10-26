@@ -402,11 +402,14 @@ local tumor = {type = "simple-entity-with-force", name = "lp-tumor", hidden_in_f
   map_color = B.color, enemy_map_color = B.color,
   dying_explosion = raft.dying_explosion, corpse = raft.corpse, damaged_trigger_effect = raft.damaged_trigger_effect,
   resistances = {{type = "fire", percent = -50}, {type = "physical", decrease = 2}},
+  -- Low: under the units walking its creep, sunk in it (the user, 2026-10-26: "look a little more buried"), with its
+  -- slime and roots round it once grown (creep.lua).
+  render_layer = "lower-object",
   animations = table.deepcopy(raft.graphics_set.animations)}
 for _, a in ipairs(tumor.animations) do
   for _, l in ipairs(a.layers or {}) do
-    l.scale = (l.scale or 1) * 1.6
-    if l.shift then l.shift = {l.shift[1] * 1.6, l.shift[2] * 1.6} end
+    l.scale = (l.scale or 1) * 1.3
+    if l.shift then l.shift = {l.shift[1] * 1.3, l.shift[2] * 1.3} end
     if not l.draw_as_shadow then l.tint = {r = 0.75, g = 1, b = 0.6, a = 1} end
   end
 end
