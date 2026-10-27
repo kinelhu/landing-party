@@ -253,6 +253,10 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
 62. **Deep strikes** (0.2.31): sometimes a wave rushes past your wall to the heart of your base (its trail runs on
     inside, its leader marked). Was it a surprise you could read afterwards? `/lp wave 200 deep` forces one.
 63. **Caught under fire** (0.2.31): a wave that strays into your turrets on its way breaks in there. Did it?
+64. **It reads your base** (0.2.32): Synthexis goes for what is worth most and costs least to reach (an outpost
+    with few guns, a power plant left at the edge), saves up for a bigger wave when your defence is too dear, and the
+    next wave comes back through a hole the last one made. Did a raid surprise you? Could you see afterwards why it
+    went there? Does mending holes and guarding outposts feel like the answer?
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

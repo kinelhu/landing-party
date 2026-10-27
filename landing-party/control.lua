@@ -42,6 +42,8 @@ local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
 local herd = require("__landing-party__.scripts.herd")
+local firemap = require("__landing-party__.scripts.firemap")
+local valuemap = require("__landing-party__.scripts.valuemap")
 -- Synthexis's scouts take the corporations' way round turrets (herd.lua; a hook, not a require: ops is the corporations').
 herd.route = function(...) return ops.route(...) end
 -- And stages its waves as their raids stage (routing.outside) and reads an approach's fire as they do (ops.exposure).
@@ -526,7 +528,7 @@ remote.add_interface("landing-party", {
   know_state = function() return know.state() end,
   -- Tests: a settlement's mix as it stands, and as its losses tilt it now (army.composition).
   debug_compose = function(id) local b = storage.bases[id]; local m = army.mix(b); return {mix = m, composed = army.composition(b, m)} end,
-  farm_wave = function(n, deep) return farm.debug_wave(n, deep) end,
+  farm_wave = function(n, deep, decide) return farm.debug_wave(n, deep, decide) end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
@@ -545,6 +547,26 @@ remote.add_interface("landing-party", {
     local r = ops.route(b, {b.origin.x, b.origin.y}, to, {turrets = true, nests = true})
     return {found = r ~= nil, waypoints = r and #r or 0, corridors = #(storage.corridors or {}), last = ops.last_route,
       route = r, from = {b.origin.x, b.origin.y}}
+  end,
+  -- Tests only: what Synthexis reads of the player's base from `from` (valuemap, firemap) and the soft hearts it finds for a
+  -- wave of n, for scripts/wavemap.py.
+  debug_base_maps = function(from, radius, n, reach)
+    local s = game.surfaces[1]
+    local forces = {game.forces.player}
+    local vmap = valuemap.read(s, from, radius, forces, valuemap.CORE)
+    local fmap = firemap.read(s, from, radius, forces)
+    local cells, turrets, hearts = {}, {}, {}
+    for _, c in pairs(vmap.cells) do cells[#cells + 1] = {c.mid.x, c.mid.y, c.worth} end
+    for _, t in ipairs(fmap.list) do turrets[#turrets + 1] = {t.x, t.y, t.r} end
+    for _, h in ipairs(valuemap.hearts(vmap, fmap, n or 60, from, reach or 400, {most = 10, price = herd.price("player")})) do
+      hearts[#hearts + 1] = {h.cell.mid.x, h.cell.mid.y, h.worth, h.cost, h.score, h.at and {h.at.position.x, h.at.position.y}}
+    end
+    return {cells = cells, turrets = turrets, hearts = hearts, cell = vmap.size}
+  end,
+  -- Tests only: the route planner between two points for Synthexis's herds (opts as the herd's).
+  debug_herd_route = function(from, to, opts)
+    local r = ops.route({surface = 1, force = shared.BIOTECH.force}, from, to, opts)
+    return {waypoints = r and #r or 0, last = ops.last_route, route = r}
   end,
   -- Tests only: units of a kind straight into a settlement's garrison.
   debug_units = function(id, kind, n)

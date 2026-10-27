@@ -265,7 +265,8 @@ shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g
   -- breeds against a defence (farm.target_from). per_turret: a turret's worth in its biters (a wave of n against d:
   -- odds from n / (1 + per_turret d)); per_wall: walls to a turret's worth; fade: how long a place tested stays
   -- tested; reach: how far it looks; far: how fast distance discounts.
-  mind = {per_turret = 6, per_wall = 20, fade = 40 * 3600, reach = 1600, far = 800, learns = true, orders = true, holds = true, havoc = true}}
+  mind = {per_turret = 6, per_wall = 20, fade = 40 * 3600, reach = 1600, far = 800, learns = true, orders = true, holds = true, havoc = true,
+    min_gain = 2}}
 -- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).
 shared.PEN_CAP = 40
 shared.WAVE_MIN = 24

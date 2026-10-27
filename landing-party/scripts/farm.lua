@@ -21,6 +21,8 @@ local pods = require("__landing-party__.scripts.pods")
 local creep = require("__landing-party__.scripts.creep")
 local cell = require("__landing-party__.scripts.cell")
 local know = require("__landing-party__.scripts.know")
+local firemap = require("__landing-party__.scripts.firemap")
+local valuemap = require("__landing-party__.scripts.valuemap")
 local COUNTERS = require("__landing-party__.counters")
 local tune = require("__landing-party__.scripts.tune")
 
@@ -62,6 +64,8 @@ local function guard_of(f) return math.ceil(GUARD_TOTAL / math.max(PENS, #f.pens
 -- A wave's most (the consult: waves of 20 to 60; the mega wave is an event at the top of its ladder, not the default).
 -- Four full pens sent 135 in the first farm run.
 local WAVE_MAX = 60
+local SAVE_FOR = 2 * WAVE_MAX       -- the wave it saves up for when nothing is worth one of its size
+local WORTH_WAIT = 10 * 3600         -- and how long it waits, nothing worth either, before it sends a trial
 local ESCALATE_WAIT = 10 * 3600   -- at most this much longer for a bigger wave at a defence that held
 local UNFIT = -0.5                -- a breed scoring under this against a defence's killers is not sent at it
 local WAVE_GAP = 20 * 3600
@@ -279,6 +283,8 @@ local WALL_TYPES = {"wall", "gate"}
 -- and in four-faction runs 15 of 19 waves came blind (the scout killed by its tanks, troopers and outposts) and lost half
 -- their number to it (2026-10-25; alone against the stand-in, 1 of 24).
 local UNIT_DEFENCE = 0.2
+local ENTRY_REACH = 400     -- how far out it reads the way into a place (firemap.entry_cost; at 150 the factory 160 to
+                           -- 220 tiles inside a ring of guns read as open, 2026-10-27)
 local GARRISON_REACH = 96
 -- And by what its waves there cost: the share that came home, with KEEP_PRIOR units' benefit of the doubt (a wave wiped
 -- out leaves a quarter of the score; its odds model alone kept a Kessler-Hayashi outpost "worth learning from", and it
@@ -318,22 +324,29 @@ local function target_from(surface, pos, f, n)
       end
       c.n = c.n + 1
       c.defence = c.defence + (DEFENCE[e.type] or 0)
+      c.value = (c.value or 0) + valuemap.worth_of(e)
       local d = d2(e.position, pos)
       if not c.d or d < c.d then c.d, c.at = d, {x = e.position.x, y = e.position.y} end
     end
   end
   local tried = trials()
-  local ranked, soft = {}, nil
+  local ranked = {}
+  -- The way in counts (firemap.entry_cost, there and back): a cell with no gun of its own inside a ring of them read as
+  -- open, and every wave went at the factory through the ring and lost half its number there, in and out (2026-10-27).
+  local map = firemap.read(surface, pos, mind.reach + ENTRY_REACH, foes())
   for _, c in pairs(cells) do
-    if c.defence > 0 then
+    c.entry = firemap.entry_cost(map, c.at, ENTRY_REACH)
+    c.defence = math.max(c.defence, 2 * c.entry)
+    do
       c.walls = surface.count_entities_filtered{area = {{c.cx * 64, c.cy * 64}, {c.cx * 64 + 64, c.cy * 64 + 64}},
         type = WALL_TYPES, force = c.force}
       c.defence = c.defence + c.walls / mind.per_wall
       c.units = surface.count_entities_filtered{position = {c.cx * 64 + 32, c.cy * 64 + 32}, radius = GARRISON_REACH,
         type = {"unit", "spider-unit"}, force = c.force}
       c.defence = c.defence + c.units * UNIT_DEFENCE
-      local r = (n or shared.WAVE_MIN) / (1 + mind.per_turret * c.defence)
-      local p = r * r / (1 + r * r)
+      -- Its odds: what a wave of n keeps there (valuemap.keeps: the guns on its way, there and back, each at the price it
+      -- has learned against that foe, herd.price).
+      local p = valuemap.keeps(n or shared.WAVE_MIN, c.defence / 2, herd.price(c.force))
       c.odds, c.teach = p, 4 * p * (1 - p)
       local t = tried[c.key]
       c.novelty = 1
@@ -351,29 +364,37 @@ local function target_from(surface, pos, f, n)
       c.dist = math.sqrt(c.d)
       local l = herd.lesson_near(c.at, 128)
       c.kept = (((l and l.home) or 0) + KEEP_PRIOR) / (((l and l.sent) or 0) + KEEP_PRIOR)
-      c.score = (1 + c.defence) * c.teach * c.novelty * c.kept / (1 + c.dist / mind.far)
+      -- What it would win (its odds times what stands there), and what it would learn (a close fight, and the harder the
+      -- more it teaches). Learning alone, it went at a deathworld's turret ring, a 50/50 fight with nothing behind it, and
+      -- never at the mining outpost north of it, 95 drills under 4 turrets: a sure win taught it nothing (2026-10-27).
+      c.gain = c.odds * c.value
+      c.learn = (1 + c.defence) * c.teach * c.novelty
+      c.score = (c.gain + c.learn) * c.kept / (1 + c.dist / mind.far)
       ranked[#ranked + 1] = c
-    elseif not soft or c.d < soft.d then
-      soft = c
     end
   end
   table.sort(ranked, function(a, b) return a.score > b.score end)
   local why = {}
   for k = 1, math.min(3, #ranked) do
     local c = ranked[k]
-    why[#why + 1] = string.format("%s at %.0f,%.0f: defence %.1f (%d walls, %d units), odds %.2f, teaches %.2f, novelty %.2f, kept %.2f, %.0f tiles, score %.2f",
-      c.force, c.at.x, c.at.y, c.defence, c.walls, c.units or 0, c.odds, c.teach, c.novelty, c.kept, c.dist, c.score)
+    why[#why + 1] = string.format("%s at %.0f,%.0f: defence %.1f (%d walls, %d units, the way in %d), odds %.2f, worth %d, wins %.1f, teaches %.2f, novelty %.2f, learns %.1f, kept %.2f, %.0f tiles, score %.2f",
+      c.force, c.at.x, c.at.y, c.defence, c.walls, c.units or 0, c.entry, c.odds, c.value or 0, c.gain, c.teach, c.novelty, c.learn,
+      c.kept, c.dist, c.score)
   end
-  -- Nothing defended in reach: the nearest of what stands, a trial against nothing (it calibrates).
-  local best = ranked[1] or soft
+  local best = ranked[1]
   if not best then return end
-  if not ranked[1] then why[1] = string.format("nothing defended; %s at %.0f,%.0f, %.0f tiles", best.force, best.at.x,
-    best.at.y, math.sqrt(best.d)) end
   local rival = not shared.is_player_force(game.forces[best.force]) and {best.force} or nil
   -- The trial is recorded, and the weighing traced, when a wave goes (send): waiting for a bigger wave or its order it
   -- weighs again every ten seconds, and each weighing marked its choice tried, until every place read as just tried
   -- (novelty 0.01 everywhere) and the place it went was all but chance (0.2.14 to 0.2.18).
-  return best.at, rival, {key = best.key, defence = best.defence, why = table.concat(why, "; ")}
+  -- Its three best, as numbers, for the wave's record (scripts/wavemap.py plots and tables them).
+  local top = {}
+  for k = 1, math.min(3, #ranked) do
+    local c = ranked[k]
+    top[k] = {at = {c.at.x, c.at.y}, force = c.force, worth = c.value or 0, entry = c.entry, defence = c.defence,
+      odds = c.odds, score = c.score}
+  end
+  return best.at, rival, {key = best.key, defence = best.defence, why = table.concat(why, "; "), top = top, gain = best.gain}
 end
 
 -- What a breed scores against a lesson's killers (counters.lua: +1 wins, -1 loses), weighed by how many each killed.
@@ -471,6 +492,26 @@ local function send(f, tick)
   end
   local target, rival, choice = target_from(s, f.pos, f, math.min(avail, WAVE_MAX))
   if not target then return holds(f, tick, string.format("nothing to go for within %d tiles (%d ready)", B.mind.reach, avail)) end
+  -- Nothing worth a wave of its size (the best it would win under its mind's min_gain): what one of SAVE_FOR would win; it
+  -- saves up for that, or waits, WORTH_WAIT at most, then sends its best as a trial, what it learns its price by (sent
+  -- all the same, waves went back to an outpost already razed, worth 1, and at a ring of guns that kept them out; never
+  -- sent, a well defended base never saw a wave; 2026-10-27). /lp wave <n> sends regardless.
+  local saving
+  if choice.gain < (B.mind.min_gain or 0) and not f.debug_size and not f.debug_now then
+    local t2, r2, c2 = target_from(s, f.pos, f, SAVE_FOR)
+    if t2 and c2.gain >= B.mind.min_gain then
+      target, rival, choice, saving = t2, r2, c2, SAVE_FOR
+    else
+      f.worthless_since = f.worthless_since or tick
+      if tick - f.worthless_since < WORTH_WAIT then
+        f.escalate_retry = tick + 600
+        return holds(f, tick, string.format("nothing worth a wave of %d or %d (the best wins %.0f and %.0f)",
+          math.min(avail, WAVE_MAX), SAVE_FOR, choice.gain, c2 and c2.gain or 0))
+      end
+      trace(string.format("farm %d: nothing worth a wave for %d minutes: sends its best as a trial", f.id, WORTH_WAIT / 3600))
+    end
+  end
+  f.worthless_since = nil
   local bd
   -- What killed its last wave there (herd.lesson_near): the breeds that beat those killers go first, the rest keep the
   -- gate (counters.lua, the arena's matrix; the user, 2026-10-24: learning that shows). With no lesson, the nearest go.
@@ -480,6 +521,7 @@ local function send(f, tick)
   local held = 0
   for _, fc in pairs(lesson and lesson.faces or {}) do held = held + (fc.tried - fc.broke) end
   local cap = math.floor(WAVE_MAX * math.min(2, 1 + 0.5 * held))
+  if saving then cap = math.max(cap, saving) end
   -- /lp wave <n> (dev): a wave of that many, past the caps, once.
   local forced = f.debug_size
   if forced then cap, f.debug_size = forced, nil end
@@ -487,7 +529,8 @@ local function send(f, tick)
     f.escalate_since = f.escalate_since or tick
     if tick - f.escalate_since < ESCALATE_WAIT then
       f.escalate_retry = tick + 600
-      return holds(f, tick, string.format("a defence that held: waits for %d (%d ready)", cap, avail))
+      return holds(f, tick, string.format("%s: waits for %d (%d ready)", saving and "saves up for its target" or "a defence that held",
+        cap, avail))
     end
   end
   f.escalate_since = nil
@@ -508,6 +551,7 @@ local function send(f, tick)
     if want[u.name] then return 2 end
     return fit_of(u.name, lesson and lesson.killers or {}, total)
   end
+  local taken = {}
   for _, id in ipairs(f.pens) do
     local rec = herd.pen(id)
     if rec and rec.pen.valid then
@@ -524,6 +568,10 @@ local function send(f, tick)
         table.sort(stock, function(a, b) return d2(a.position, rec.pen.position) < d2(b.position, rec.pen.position) end)
       end
       local home = {}
+      -- (A biter in two incubators' stock is sent once: herd.launch.)
+      local mine = {}
+      for _, u in ipairs(stock) do if not taken[u.unit_number] then mine[#mine + 1] = u; taken[u.unit_number] = true end end
+      stock = mine
       for i, u in ipairs(stock) do
         -- (With a lesson, a breed that loses to what killed the last wave stays at the gate too: small biters, -1 against
         -- gun turrets, were half of a wave sent against them.)
@@ -573,8 +621,9 @@ local function send(f, tick)
   end
   trace(string.format("farm %d weighs: %s", f.id, choice.why))
   trials()[choice.key] = {tick = tick, defence = choice.defence}
-  herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep})
-  f.debug_deep = nil
+  herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep,
+    choice = choice and choice.top})
+  f.debug_deep, f.debug_now = nil, nil
   trace(string.format("farm %d sends %d at %.0f,%.0f", f.id, #units, target.x, target.y))
 end
 
@@ -1092,7 +1141,8 @@ end
 -- A wave now (/lp wave; tests): each incubator's stock topped up past its guard. With n (/lp wave <n>, dev: the user,
 -- 2026-10-26, to see a mega wave in play): the first culture's incubators bred n more between them, and its next wave
 -- that big, past WAVE_MAX and its escalation.
-function farm.debug_wave(n, deep)
+-- (decide: stock topped up and a wave let go, what it goes for and whether it goes at all its own; tests.)
+function farm.debug_wave(n, deep, decide)
   local any = false
   for _, f in pairs(st().list) do
     local s = game.surfaces[f.surface]
@@ -1110,6 +1160,7 @@ function farm.debug_wave(n, deep)
       for _, rec in ipairs(pens) do bred_stock(s, rec.pen, math.max(0, HOME_GUARD + 10 - #herd.stock(rec))) end
     end
     if deep and not f.debug_deep then f.debug_deep = true end
+    if not decide then f.debug_now = true end
     f.last_wave = -WAVE_GAP
     any = true
   end

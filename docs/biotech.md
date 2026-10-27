@@ -130,6 +130,12 @@ stays as the skeleton; the identity is a pack, three habits the player can watch
 - The target inside is "what feeds the guns", the first it sees: generator or substation, the inserter or belt feeding
   gun turrets, the pipe feeding flamethrowers. The counter is a base shape (the feed under the guns, a second feed,
   nothing dry or dark), not the blackout's one answer. Labs are not a target.
+- How it reads a base (0.2.32): three maps, the guns' cover (`firemap.lua`), what is worth what where and its soft
+  hearts (`valuemap.lua`), and what reaching anywhere costs it in its own (`costmap.lua`), with a gun's price learned at
+  each breach. Its farm goes where a wave would win most and keep enough to win it, saves up for a bigger wave when
+  nothing is worth this one, and its waves come back through the holes the last ones made. The counters: guns that
+  cover each other (a keep is what a wave of its size cannot take), a mended hole, outposts with guns of their own;
+  a second feed apart from the first is untested since 0.2.32 (the herd test's two sources stood within one wave's reach).
 - Inside (0.2.31), each biter picks its own target, the nearest on that list with fewer than 3 already on it (8 on a
   reactor or a roboport), radars and roboports next after the feed, and looks again every 2 seconds. What stands
   under three or more turrets is left alone: an inner keep holds. Sometimes a wave skips the edge and rushes to the

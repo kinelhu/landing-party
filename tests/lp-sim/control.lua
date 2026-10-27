@@ -7395,6 +7395,68 @@ scenarios.visit = function()
       info(string.format("visit: map dumped (%d walls, %d turrets, %d water samples)", #out.walls, #out.turrets, #out.water))
     end)
   end
+  -- LP_MIX=waves (any mix containing it): its incubators topped up and a wave let go every 5 minutes from minute 12
+  -- (Synthexis lands by then), to see many waves against one real base in an hour; what each goes for, how big, and
+  -- whether it goes at all, its own (wavesize: a wave of 60 forced each time).
+  if params.mix:find("waves", 1, true) then
+    -- The record (scripts/wavemap.py): the player's buildings and what Synthexis reads of them, from its first farm, when
+    -- the first wave is forced; the waves' log at the end.
+    -- (wavesN: the waves N minutes later, a second sample of the same base: one wave's change of course changes all after
+    -- it, and one run is one path of many.)
+    local shift = tonumber(params.mix:match("waves(%d+)") or 0) * 3600
+    schedule(12 * 3600 - 60, function()
+      local fs = lp("farm_state").farms
+      local from = fs[1] and fs[1].pos or {x = 0, y = 0}
+      local out = {}
+      for _, e in pairs(surface().find_entities_filtered{area = {{-800, -800}, {800, 800}}, force = "player"}) do
+        if e.type ~= "character" then out[#out + 1] = {e.type, e.name, math.floor(e.position.x * 2) / 2, math.floor(e.position.y * 2) / 2} end
+      end
+      local maps = lp("debug_base_maps", from, 1600, 60, 400)
+      maps.from = {from.x or from[1], from.y or from[2]}
+      helpers.write_file("landing-party/base.json", helpers.table_to_json(out))
+      helpers.write_file("landing-party/maps.json", helpers.table_to_json(maps))
+      info(string.format("visit: base and maps dumped (%d buildings, %d hearts)", #out, #maps.hearts))
+    end)
+    schedule(END - 120, function()
+      helpers.write_file("landing-party/waves.json", helpers.table_to_json(lp("herd_state").log or {}))
+      info("visit: waves dumped")
+    end)
+    for t = 12 * 3600 + shift, END - 10 * 3600, 5 * 3600 do
+      schedule(t, function() info(string.format("visit: wave forced at minute %d: %s", math.floor((game.tick - storage.t0) / 3600),
+        tostring(lp("farm_wave", params.mix:find("wavesize", 1, true) and 60 or nil, nil, not params.mix:find("wavesize", 1, true))))) end)
+    end
+  end
+  -- LP_MIX=routeprobe: the herd's router from Synthexis's landing toward the mining outpost north of the deathworld's wall.
+  if params.mix:find("routeprobe", 1, true) then
+    schedule(120, function()
+      local from = {-536, 594}
+      for _, o in ipairs({{to = {-245, -370}}, {to = {-150, -312}}, {to = {-60, -370}}, {to = {-150, -440}},
+        {to = {-245, -370}, cell = 6}, {to = {-245, -370}, wide = true}}) do
+        local to = o.to
+        o.cell = o.cell or 16
+        o.margin = 8
+        local opts = {turrets = true, nests = false, solid = not o.nosolid and {"player"} or nil, cell = o.cell, margin = o.margin,
+          partial = o.partial}
+        local r = lp("debug_herd_route", from, to, opts)
+        info(string.format("visit: route %s: %d waypoints, %s, ends %s", serpent.line(o), r.waypoints, serpent.line(r.last),
+          serpent.line(r.route and r.route[#r.route])))
+      end
+    end)
+  end
+  -- LP_MIX=basemap (any mix containing it): at the start, every building of the player's within 600 of the middle (type,
+  -- name, position), for a plot of what a wave meets (docs/sim/visit-*/base.json).
+  if params.mix:find("basemap", 1, true) then
+    schedule(60, function()
+      local out = {}
+      for _, e in pairs(surface().find_entities_filtered{area = {{-600, -600}, {600, 600}}, force = "player"}) do
+        if e.type ~= "character" then
+          out[#out + 1] = {e.type, e.name, math.floor(e.position.x * 2) / 2, math.floor(e.position.y * 2) / 2}
+        end
+      end
+      helpers.write_file("landing-party/base.json", helpers.table_to_json(out))
+      info(string.format("visit: base dumped (%d buildings)", #out))
+    end)
+  end
   -- LP_MIX=async (any mix containing it): at 30 minutes, a landing queued as the faction's own are (asynchronous).
   if params.mix:find("async", 1, true) then
     schedule(30 * 3600, function() lp("arrive_async", 1, S.sp, S.dist + 400, {corp = "grubstake"}) end)
@@ -8283,9 +8345,12 @@ scenarios.herd = function()
     -- (shell), it chose to; this base's heart too near its breach (the plain herd), it raided the edge.
     if mix == "deep" or mix == "" then
       local d = w and w.deep
-      check("herd: " .. (mix == "" and "a shell round a soft middle" or "told") .. ", a deep strike for the heart", d ~= nil,
-        serpent.line(d))
-      check("herd: it reached the heart", d and d.reached == true, serpent.line(d))
+      -- (Or it broke in beside the heart: its way in priced from its own side, costmap, it can land within DEEP_MIN of it,
+      -- and needs no strike; 2026-10-27.)
+      local near = mix == "" and w and w.heart_near
+      check("herd: " .. (mix == "" and "a shell round a soft middle" or "told") .. ", a deep strike for the heart, or in beside it",
+        d ~= nil or near, serpent.line({deep = d, near = near}))
+      check("herd: it reached the heart", (d and d.reached == true) or near, serpent.line(d))
       check("herd: inside, its biters each went for their own (more than one target down)", w and (w.downed or 0) >= 2,
         tostring(w and w.downed))
       if mix == "deep" then return end
@@ -8357,6 +8422,10 @@ scenarios.herd = function()
       #(S.power or {}), turrets, #S.turrets, serpent.line(S.damage)))
     check("herd: the wave ended", w ~= nil, w and w.outcome or "still out")
     if not w then return end
+    -- Nothing in sight at the wall, it pushes in and looks again there (0.2.31: it looked again two seconds on, where it
+    -- stood, and went home, losing more on the way out than on the way in).
+    check("herd: a wave that pushed in got there before it turned", w.push_walked == nil or w.push_walked >= 10,
+      tostring(w.push_walked))
     local wb = (S.damage["enemy>lp-biotech"] or 0) + (S.damage["lp-biotech>enemy"] or 0)
     check("herd: no fight between wild and bred", wb == 0, tostring(wb))
     if mix == "" or mix == "wild" or mix == "mega" then
@@ -8403,7 +8472,11 @@ scenarios.herd = function()
       check("herd: no trail inside the wall", S.mud_in == 0 or w.deep ~= nil, tostring(S.mud_in))
       check("herd: the trail gone after 20 minutes", S.mud21 == 0, tostring(S.mud21))
     elseif mix == "keep" or mix == "second" then
-      check("herd: power still up (" .. mix .. ")", power >= 1, string.format("%d of %d", power, #S.power))
+      -- (second: not asked since 2026-10-27, open. A wave now breaks all it can take inside, and on this small base both
+      -- sources stood in its reach; whether a second feed still counters it is a question for a base where it stands
+      -- apart: keep, the feed under the inner keep's guns, is the counter asked here.)
+      if mix == "keep" then check("herd: power still up (" .. mix .. ")", power >= 1, string.format("%d of %d", power, #S.power))
+      else info(string.format("herd second: power still up %d of %d", power, #S.power)) end
       check("herd: it withdrew (" .. mix .. ")", w.t_withdraw ~= nil, w.outcome)
     elseif mix == "scout" then
       local w2 = S.wave2 and entry(S.wave2)
@@ -8416,7 +8489,8 @@ scenarios.herd = function()
       local ins = 0
       for _, i in ipairs(S.inserters) do if not i.valid then ins = ins + 1 end end
       check("herd: inserters feeding the guns killed", ins >= 1, string.format("%d of %d", ins, #S.inserters))
-      check("herd: the guns mostly stand", turrets >= #S.turrets - 2, string.format("%d of %d", turrets, #S.turrets))
+      -- (The guns standing is no longer asked: since 2026-10-27 it kills the guns firing on it when it can take them, firemap.)
+      info(string.format("herd belt: guns standing %d of %d", turrets, #S.turrets))
     elseif mix == "wild" then
       local wild = 0
       for _, e in ipairs(S.wild) do if e.valid then wild = wild + 1 end end
@@ -9112,12 +9186,18 @@ scenarios.farm = function()
     if mix == "wave" then
       check("farm: /lp wave sent one within a minute", S.asked and w.t_launch - S.asked <= 3600,
         string.format("asked %s, launched %s", tostring(S.asked), tostring(w.t_launch)))
+      -- Nothing in sight at the wall, it pushes in and looks again there (0.2.31: it looked again two seconds on, where it
+      -- stood, and went home).
+      check("farm: a wave that pushed in got there before it turned", w.push_walked == nil or w.push_walked >= 10,
+        tostring(w.push_walked))
       return
     end
     if mix == "wave200" then
       check("farm: /lp wave 200 sent a wave of 180 or more within a minute", S.asked and w.t_launch - S.asked <= 3600
         and (w.size or 0) >= 180, string.format("asked %s, launched %s, size %s", tostring(S.asked), tostring(w.t_launch),
         tostring(w.size)))
+      check("farm: a wave that pushed in got there before it turned", w.push_walked == nil or w.push_walked >= 10,
+        tostring(w.push_walked))
       return
     end
     if mix == "quiet" then
