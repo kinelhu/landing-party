@@ -18,13 +18,16 @@ at milestones, asked for.
   and Elevated Rails, a dependency since 2026-10-18; no biters; the settlement arrives as the real one does, `LP_DISTANCE` tiles from spawn). Plots
   (`growth.png`, `final.png`), the planner's `decisions.txt` and results go to `docs/sim/<scenario>-<seed>/`
   (gitignored). Look at the plots before claiming anything about layout.
-- **Quick regression: `scripts/regress.sh 12345 --quick`** (31 scenarios, one or two a layer of the AI graph, about 7
-  minutes) while iterating; the whole list before committing a batch. A scenario whose outcome is settled ends early
-  (`finish_early`, `settle_when` in `tests/lp-sim/control.lua`): its final checks run then, and the benchmark's
-  remaining ticks cost almost nothing.
-- **Regression: `scripts/regress.sh [seed]`** (about 3 minutes): scenarios that strike run from forks, short
-  ones in full. `--full` adds the long growth scenarios (about 10 more minutes): at milestones and before
-  commits that touch growth, not after every change. After a change, run the scenarios that exercise it.
+- **Quick regression: `scripts/regress.sh 12345 --quick`** (44 runs, one or two a layer of the AI graph, about 6
+  minutes) while iterating. A scenario whose outcome is settled ends early (`finish_early`, `settle_when` in
+  `tests/lp-sim/control.lua`): its final checks run then, and the benchmark's remaining ticks cost almost nothing.
+- **Before a commit: `scripts/regress.sh 12345 --changed`**: the quick set plus every scenario of the areas the
+  uncommitted change touches (biotech, player, perception, growth, ops; a shared module runs everything). About 6 to
+  20 minutes. `--area=biotech,ops` names areas instead; the table is in `regress.sh` (`area_of_scenario`,
+  `areas_of_file`), and a new scenario or module goes in it. A change to the test harness alone selects nothing: name
+  its areas. `LP_DRY=1` lists the runs without making them; every regression ends with its time and its slowest runs.
+- **Whole list: `scripts/regress.sh [seed]`** (240 runs, about 37 minutes) at milestones; `--full` adds the long
+  growth scenarios (about 40): before commits that touch growth. Scenarios that strike run from forks.
 - First-contact timelines: `scripts/contact.sh [seed]` (three player variants, 2 hours, about 5 minutes;
   plots and event lists in `docs/sim/contact-<seed>-v<variant>/`). A design instrument, not a regression.
 - **In-game looks: `/lp` dev tools** (`landing-party/scripts/dev.lua`; `/lp help`) force raids, sieges, strips,

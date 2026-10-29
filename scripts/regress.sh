@@ -12,7 +12,7 @@ SEED="${1:-12345}"; FULL="${2:-}"
 case "$SEED" in ''|*[!0-9]*) echo "usage: scripts/regress.sh [seed] [--full|--quick]  (seed a number, got '$SEED')"; exit 2;; esac
 # Ten at a time on a 14-core machine (four took the full list an hour and a half, 2026-10-23); LP_JOBS overrides.
 JOBS="${LP_JOBS:-10}"
-logs="$(mktemp -d)"
+logs="$(mktemp -d)"; T0=$(date +%s)
 # name | env | minutes | every | strike
 RUNS=(
   "cut||50|50|30" "raid||50|50|30" "occupy||48|48|30" "defend||41|41|30" "army||41|41|30" "train||36|36|30"
@@ -43,6 +43,65 @@ if [ "$FULL" = "--full" ]; then
   RUNS+=("grow||60|10|30" "assault||60|10|30" "faction||60|10|30" "uplink||60|10|30" "lively||60|10|30"
     "convoy||60|10|30" "convoy|LP_MIX=grown|45|45|1" "fall||15|5|10" "strip|LP_MIX=claim|40|40|1")
 fi
+# Areas (the user, 2026-10-29: the whole list had grown to 40 minutes): every scenario belongs to one, and
+# --area a,b (or --changed) runs the quick set plus those areas' scenarios, every variant. --changed reads the areas
+# from what differs from HEAD (LP_SINCE=<ref> to read from a ref instead): a module of one area runs that area, a
+# shared one (threat, know, tune, control.lua, shared.lua, the data stage...) runs everything. The test harness and the
+# docs choose nothing: changed alone, a scenario's own checks need --area or LP_ONLY. The whole list stays the
+# milestone's, and --full the growth change's.
+area_of_scenario() {
+  case "$1" in
+    herd|farm|creep|clear|cinder|town|quiet|biters|maxevo) echo biotech;;
+    cut|raid|occupy|defend|army|train|siege|orders|control|rifle|bait|flak) echo player;;
+    compose|feeds|perceive|wayout|blockexit) echo perception;;
+    grow|assault|faction|uplink|lively|convoy|fall|phases|budget|develop|evolution|nests|hq|temper|line|snatch|strip|\
+      artillery|circuit|caps|techup|plate|arms|unitnode|arc|ability|podland|roads|muster|pads|clearing|country|system|\
+      watchdog|async) echo growth;;
+    *) echo ops;;
+  esac
+}
+# A module's areas ("all": everything).
+areas_of_file() {
+  case "$1" in
+    landing-party/info.json|docs/*|*.md|scripts/*.py|tests/*) ;;
+    scripts/*) echo quick;;
+    landing-party/biotech.lua|landing-party/counters.lua) echo biotech;;
+    landing-party/player.lua) echo player;;
+    landing-party/scripts/*.lua)
+      m="${1##*/}"; m="${m%.lua}"
+      case "$m" in
+        herd|farm|creep|cell|pods|costmap|valuemap|biters|scorcher) echo biotech;;
+        command|aim|bait|marker) echo player;;
+        layout|site|planner|blocks|wfc|wfc_serenity|construction|modules|names|phases|roads|lots_grubstake|map|chart) echo growth;;
+        answers|cuts|jammer|perimeter|pool|siege|stance|strip|strategy|war|crew|cordon|prospect|skim|tap|jumper|ledger|\
+          trade|road|border|standing|pact|belts|strike|oplog|scanner) echo ops;;
+        base|faction|army|rd|ops) echo growth ops;;
+        *) echo all;;
+      esac;;
+    *) echo all;;
+  esac
+}
+AREAS=""
+case "$FULL" in
+  --area=*) AREAS=" $(echo "${FULL#--area=}" | tr ',' ' ') ";;
+  --changed)
+    for f in $(git -C "$DIR/.." diff --name-only "${LP_SINCE:-HEAD}"; git -C "$DIR/.." ls-files --others --exclude-standard); do
+      AREAS="$AREAS $(areas_of_file "$f")"
+    done
+    AREAS=" $(echo $AREAS | tr ' ' '\n' | sort -u | tr '\n' ' ') "
+    echo "changed: areas$AREAS";;
+esac
+if [ -n "$AREAS" ] && [ "${AREAS#* all }" = "$AREAS" ]; then
+  QUICK=" $(echo $QUICK) "
+  kept=()
+  for r in "${RUNS[@]}"; do
+    IFS='|' read -r sc envs _ <<< "$r"
+    case "$QUICK" in *" $sc|$envs "*) kept+=("$r"); continue;; esac
+    case "$AREAS" in *" $(area_of_scenario "$sc") "*) kept+=("$r");; esac
+  done
+  RUNS=("${kept[@]}")
+  echo "areas$AREAS: ${#RUNS[@]} scenarios"
+fi
 # LP_ONLY="name|env name|env ...": just those (a regression's failures run again), as the list has them.
 if [ -n "${LP_ONLY:-}" ]; then
   kept=()
@@ -52,6 +111,10 @@ if [ -n "${LP_ONLY:-}" ]; then
   done
   RUNS=("${kept[@]}")
   echo "only: ${#RUNS[@]} scenarios"
+fi
+# LP_DRY=1: the runs it would make, and their minutes, without making them.
+if [ -n "${LP_DRY:-}" ]; then
+  printf "%s\n" "${RUNS[@]}"; printf "%s\n" "${RUNS[@]}" | awk -F'|' '{m+=$3} END {print NR " runs, " m " game minutes"}'; exit 0
 fi
 # Every scenario listed must exist in the test mod (twice a scenario was cut by an edit to its neighbour, and the run
 # failed only once the game reported "unknown scenario").
@@ -71,7 +134,8 @@ for r in "${RUNS[@]}"; do
   name="$sc${envs:+-$tag}"
   # An entry may carry its own seed (LP_SEED=n in its env): a fault only some maps show (Synthexis's march, seed 777).
   seed="$SEED"; case " $envs " in *" LP_SEED="*) seed="${envs##*LP_SEED=}"; seed="${seed%% *}";; esac
-  ( env $envs LP_FORK=$fork LP_TAG=$tag "$DIR/sim.sh" "$sc" "$seed" "$minutes" "$every" "$strike" > "$logs/$name.log" 2>&1 ) &
+  ( t0=$(date +%s); env $envs LP_FORK=$fork LP_TAG=$tag "$DIR/sim.sh" "$sc" "$seed" "$minutes" "$every" "$strike" > "$logs/$name.log" 2>&1
+    echo $(( $(date +%s) - t0 )) > "$logs/$name.secs" ) &
   names+=("$name")
 done
 wait
@@ -80,4 +144,7 @@ for n in "${names[@]}"; do
   line=$(grep -hE "DONE|SIM FAILED" "$logs/$n.log" | tail -1)
   case "$line" in *"ALL PASSED"*) printf "  pass  %s\n" "$n";; *) printf "  FAIL  %s  %s\n" "$n" "$line"; grep -hE "FAIL " "$logs/$n.log" | sed "s/^/        /"; [ -n "$line" ] || tail -5 "$logs/$n.log" | sed "s/^/        /"; fail=1;; esac
 done
+# What it cost: the whole list grew to 40 minutes ten scenarios a day before anyone measured it (2026-10-29).
+for n in "${names[@]}"; do echo "$(cat "$logs/$n.secs" 2>/dev/null || echo 0) $n"; done | sort -rn > "$logs/secs"
+echo "  $(wc -l < "$logs/secs" | tr -d ' ') runs, $(( $(date +%s) - T0 )) s; slowest: $(head -5 "$logs/secs" | awk '{printf "%s %ss, ", $2, $1}')"
 exit $fail
