@@ -297,7 +297,8 @@ function farm.land(surface, pos, seeded)
   creep.culture(f.id, surface, pos)
   -- Its substrate and technicians (scripts/cell.lua).
   cell.site(f.id, surface, f.pos, seeded ~= nil)
-  creep.of(f.id).biomass = seeded and seeded.biomass or START_BIOMASS * tune.strength("biotech")
+  -- (Split as any income, young: its first buds from it, as when growth came first; creep.earn.)
+  creep.earn(creep.of(f.id), seeded and seeded.biomass or START_BIOMASS * tune.strength("biotech"))
   f.seeded = seeded and game.tick or nil
   tag(f)
   trace(string.format("farm %d %s at %.0f,%.0f: %d pens", f.id, seeded and "seeded by a carrier" or "landed", pos.x, pos.y,
@@ -1123,9 +1124,8 @@ local function seed(f, tick)
   local cul = creep.of(f.id)
   if not cul then return end
   if not cell.keeps_up(f.id, f.pens, tick) then return why("its cells hungry") end
-  -- It saves for its carrier: its incubators breed only above SEED_BANK (breeding spent all it earned, and on fresh maps
-  -- the bank never filled in three hours).
-  if cul.biomass < SEED_BANK then f.saving = true; return why(string.format("saving, %.0f of %d", cul.biomass, SEED_BANK)) end
+  -- Its carrier from its growth's pool (creep.earn: breeding no longer spends what it saves).
+  if (cul.growth or 0) < SEED_BANK then f.saving = true; return why(string.format("saving, %.0f of %d", cul.growth or 0, SEED_BANK)) end
   f.saving = nil
   f.seed_tried = tick
   local s = game.surfaces[f.surface]
@@ -1161,7 +1161,7 @@ local function seed(f, tick)
     end
   end
   rec.stock = keep
-  cul.biomass, cul.spent = cul.biomass - SEED_BANK, (cul.spent or 0) + SEED_BANK
+  creep.spend_growth(cul, SEED_BANK)
   local from = carrier.position
   local far = math.sqrt(d2(from, dest))
   local legs, way = carrier_legs(f, from, dest)
@@ -1451,7 +1451,9 @@ function farm.tick(tick)
         end
         if hungry and unfed(rec, tick) then
           cell.forget(pid)
-          herd.release(pid)
+          -- (Not taken again: one nest was taken, never reached, wild again seven times in five hours on nw, its stock
+          -- over the fed cap let loose each time, 2026-10-29.)
+          creep.block(creep.of(f.id), herd.release(pid))
           f.lost_to_feed = (f.lost_to_feed or 0) + 1
           trace(string.format("farm %d: an incubator unfed for %d minutes went wild", f.id, UNFED_WILD / 3600))
         -- Off creep it starves, then goes wild.
@@ -1462,7 +1464,7 @@ function farm.tick(tick)
           rec.starving = rec.starving or tick
           if tick - rec.starving >= STARVE then
             cell.forget(pid)
-            herd.release(pid)
+            creep.block(creep.of(f.id), herd.release(pid))
             f.lost_to_starving = (f.lost_to_starving or 0) + 1
             trace(string.format("farm %d: an incubator starved off its creep and went wild", f.id))
           else
@@ -1478,24 +1480,15 @@ function farm.tick(tick)
     local cul = creep.of(id)
     if cul then
       local t = #f.pens * TRICKLE / 6 * tune.strength("biotech") * creep.evo_rate(surface)
-      cul.biomass, cul.trickled = cul.biomass + t, (cul.trickled or 0) + t
-      -- An order short: chance breeding waits while the biomass is kept for it.
-      -- Growth first: while its creep has a nest to reach and its cells are fed, it breeds above the next bud's price.
-      local grows = cul.wants and #f.pens < PENS_MAX and cell.keeps_up(id, f.pens, tick)
-      -- (Growing, above the next bud and the dearest breed it may spawn: a spawn is paid after it comes, and above the bud
-      -- alone one behemoth took its culture to -170, every bud waited on its debt, and on a megabase's cloud it budded 8
-      -- times in an hour and never reached a nest; 2026-10-27.)
-      local keep = 0
-      if grows then
-        keep = cul.wants
-        for name, wt in pairs(breeds_at(game.forces[B.force].get_evolution_factor(surface))) do
-          if wt > 0 and shared.BREEDS[name] then keep = math.max(keep, cul.wants + shared.BREEDS[name].cost) end
-        end
-      end
-      f.reserve = math.max(f.short or 0, f.saving and SEED_BANK or 0, keep)
-      -- A siege laid, its growth (buds, technicians) waits on it too: paid regardless, twelve technicians and its buds took
-      -- the biomass a siege's big bursters waited on, 7 of 12 bred in 40 minutes (the siege test, 2026-10-28).
-      cul.keep = f.siege and ((f.short or 0) + (f.siege.mines or 0) * shared.BREEDS["lp-runt"].cost) or 0
+      creep.earn(cul, t)
+      cul.trickled = (cul.trickled or 0) + t
+      -- An order short: chance breeding waits while the biomass is kept for it, and a siege's sweep (its runts, one a mine on
+      -- its way in) with it: kept for none, its 17 big bursters bred, its wave waited 20 minutes on 74 biomass for its sweep
+      -- while chance breeding spent all it earned (farm siege, 2026-10-29). (Its growth and its carrier no longer: they
+      -- spend their own pool, creep.earn.)
+      f.reserve = (f.short or 0) + (f.siege and (f.siege.mines or 0) * shared.BREEDS["lp-runt"].cost or 0)
+      -- Young (fewer than SEED_AT incubators), most of what it earns grows it (creep.YOUNG_SHARE); mature, a third.
+      cul.share = #f.pens < SEED_AT and creep.YOUNG_SHARE or creep.GROWTH_SHARE
       -- And its incubators breed to its order alone till it is filled (by chance, mediums took all above one burster's
       -- price between its orders' minutes).
       if f.siege and f.short then f.reserve = math.huge end
@@ -1583,7 +1576,7 @@ function farm.debug_seed(id)
   -- Ripe now and for good (a nest its creep takes after this resets the field's clock: farm seed, 0.2.28).
   f.last_take, f.seed_tried, f.seed_forced = game.tick - FILLED_WAIT, nil, true
   local cul = creep.of(id)
-  if cul then cul.biomass = math.max(cul.biomass, 2 * SEED_BANK) end
+  if cul then cul.growth = math.max(cul.growth or 0, 2 * SEED_BANK) end
   return true
 end
 
@@ -1635,7 +1628,7 @@ function farm.state()
       lost_to_feed = f.lost_to_feed or 0, evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0, grown = f.grown or 0,
       seeded = f.seeded, carrier = f.carrier and f.carrier.unit.valid and {f.carrier.unit.position.x, f.carrier.unit.position.y} or nil,
       bred_evo = game.forces[B.force] and game.forces[B.force].get_evolution_factor(f.surface), biomass = creep.of(id) and {
-        now = creep.of(id).biomass, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled, eaten = creep.of(id).eaten,
+        now = creep.of(id).biomass, growth = creep.of(id).growth, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled, eaten = creep.of(id).eaten,
         spent = creep.of(id).spent or 0, bred = creep.of(id).bred or 0, wants = creep.of(id).wants,
         budded = creep.of(id).budded or 0, blocked = table_size(creep.of(id).blocked or {})}, short = f.short, saving = f.saving,
       reserve = f.reserve, siege = f.siege and {k = f.siege.k, at = {f.siege.at.x, f.siege.at.y}, cover = f.siege.cover}})

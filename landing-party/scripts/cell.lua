@@ -302,10 +302,11 @@ function cell.hire(farm_id, surface, pen_ids, tick, culture)
   local live = 0
   for _, t in ipairs(site.techs) do if t.unit.valid then live = live + 1 end end
   local most = cell.clinic_up(farm_id) and math.max(TECHS, #pen_ids) or TECHS
-  if live >= most or culture.biomass - (culture.keep or 0) < TECH_PRICE or tick - (site.hired or -TECH_EVERY) < TECH_EVERY then return end
+  if live >= most or (culture.growth or 0) < TECH_PRICE or tick - (site.hired or -TECH_EVERY) < TECH_EVERY then return end
   if not cell.keeps_up(farm_id, pen_ids, tick) then return end
   site.hired = tick
-  culture.biomass, culture.spent = culture.biomass - TECH_PRICE, (culture.spent or 0) + TECH_PRICE
+  -- (From its growth's pool: creep.earn.)
+  culture.growth, culture.spent = (culture.growth or 0) - TECH_PRICE, (culture.spent or 0) + TECH_PRICE
   site.bought = (site.bought or 0) + 1
   spawn_techs(site, surface, 1)
   return live + 1

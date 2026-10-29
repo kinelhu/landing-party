@@ -8,7 +8,7 @@ digraph layers {
   "Settlement" [label="Settlement\n16 modules, 6084 lines\nlayout 1721", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n13 modules, 5037 lines\nops 1812", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1229 lines", fillcolor="#eef2f7"];
-  "The biotech" [label="The biotech\n8 modules, 6317 lines\nherd 2975, farm 1646", fillcolor="#f7dede"];
+  "The biotech" [label="The biotech\n8 modules, 6350 lines\nherd 2975, farm 1639", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="2", penwidth=1.5];

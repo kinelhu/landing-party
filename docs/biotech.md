@@ -763,8 +763,9 @@ against the player -1; the player against Kessler-Hayashi +24.
 
 ### It lives on your smoke (0.2.23 and 0.2.24)
 
-- Its growth is bought: each bud of creep costs biomass, so a culture grows as fast as it eats. While it has a nest to
-  reach, it breeds only above the next bud's price.
+- Its growth is bought: each bud of creep costs biomass, so a culture grows as fast as it eats. Since 0.2.88 a share of
+  what it eats goes to its growth (half while it is young, a third once it has eight incubators, held to 450, the rest
+  to breeding): it grows while it saves for a siege, and breeds while it grows.
 - It eats what a wild nest would. Its incubators take the pollution in their chunk at a spawner's rate and its creep
   takes a little more, and that is its biomass: a captured nest turns your smoke into units at the rate the wild one
   would have, aimed. Wild nests and Synthexis now compete for the edge of your cloud.
@@ -823,6 +824,14 @@ And at 0.2.86 (its stay priced, 2026-10-29):
   unit-second, nothing firing on it, is nearly three times what it dealt under fire in the herd test: `BITE_SHARE` is a
   base under fire's. The visit's report read all of this as nothing: its tally of the player's buildings was filtered
   (fixed, 0.2.87; the herd test now checks the tally).
+
+And at 0.2.88 (its growth paid apart from its breeding, 2026-10-29):
+
+- nw played out naturally, five hours: five cultures by about two hours, where one had grown in five hours; its first
+  waves at about three hours and 20 minutes, five in all; 1,166 assemblers, 94 roboports, 125 lasers and 846 wall pieces
+  razed (each kill counted, rebuilds again). Kessler-Hayashi's camp stood: before the fix, a nest its technicians never
+  reached was taken seven times, its stock let loose each time, and those biters took the camp's lander.
+- A fresh culture's first wave goes out at about 45 minutes after landing, where it went at 40: it grows first.
 
 Open: a flamethrower line behind a wall, out of a burster's reach (a bigger blast, or a breed that walks through fire);
 a second breach for a defence in depth (the east entrance: a second sweep and bursters at the second line); a long

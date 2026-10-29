@@ -278,7 +278,7 @@ function creep.drink(seconds, pens)
       if took > 0 then
         surface.pollute({c.x, c.y}, -took, c.pens > 0 and "lp-pen" or nil)
         local got = took * shared.YIELD * tune.strength("biotech") * creep.evo_rate(surface)
-        cul.biomass = (cul.biomass or 0) + got
+        creep.earn(cul, got)
         cul.drunk = (cul.drunk or 0) + got
         cul.eaten = (cul.eaten or 0) + took
         out[c.culture] = (out[c.culture] or 0) + got
@@ -311,6 +311,13 @@ end
 -- A culture's record (its biomass lives there), or nil.
 function creep.of(id) return st().cultures and st().cultures[id] end
 
+-- A nest its creep is not to take again: an incubator gone back to the wild (farm.lua) is a new spawner where it stood.
+function creep.block(c, nest)
+  if not (c and nest and nest.valid) then return end
+  c.blocked = c.blocked or {}
+  c.blocked[nest.unit_number] = true
+end
+
 -- Whether pos is on creep.
 function creep.covered(surface, pos) return surface.get_tile(pos.x, pos.y).name == creep.TILE end
 
@@ -318,15 +325,39 @@ function creep.covered(surface, pos) return surface.get_tile(pos.x, pos.y).name 
 function creep.culture(id, surface, pos)
   local s = st()
   s.cultures = s.cultures or {}
-  s.cultures[id] = {surface = surface.index, pos = {x = pos.x, y = pos.y}, last_bud = game.tick, biomass = 0, drunk = 0}
+  s.cultures[id] = {surface = surface.index, pos = {x = pos.x, y = pos.y}, last_bud = game.tick, biomass = 0, growth = 0,
+    drunk = 0}
 end
 
 function creep.forget(id) if st().cultures then st().cultures[id] = nil end end
 
--- (c.keep: what its farm keeps back for a siege's breeds, farm.lua; its growth spends what is above it.)
+-- Its income in two pools (the user, 2026-10-29: "decouple growth from breeding for spending"): GROWTH_SHARE of all it
+-- earns to its growth (buds, incubators of its own, technicians, carriers), the rest to its breeding, and neither waits
+-- on the other. One pool, a siege priced at four hours of income took it all at minute 10 on nw: three incubators and
+-- eight tumors for three hours, its creep short of the air that fed it, and one wave in five hours. Its growth still
+-- follows its income (the sigmoid); what growth holds above GROWTH_HOLD (a carrier and an incubator: nothing left to grow
+-- into) spills to its breeding. Young, YOUNG_SHARE (its farm sets c.share): at a third, a culture on a map with no
+-- pollution bought 5 buds while it bred 113, and its creep never reached the far nest (creep spread, 2026-10-29); at
+-- three quarters, a young culture grew 7 incubators in 40 minutes and bred half its first wave (farm).
+creep.GROWTH_SHARE = 1 / 3
+creep.YOUNG_SHARE = 1 / 2
+creep.GROWTH_HOLD = 450
+function creep.earn(c, amount)
+  local share = c.share or creep.YOUNG_SHARE
+  local g = (c.growth or 0) + amount * share
+  local spill = math.max(0, g - creep.GROWTH_HOLD)
+  c.growth = g - spill
+  c.biomass = (c.biomass or 0) + amount * (1 - share) + spill
+end
+
+-- Growth paid from its own pool.
+function creep.spend_growth(c, price)
+  c.growth, c.spent = (c.growth or 0) - price, (c.spent or 0) + price
+end
+
 local function pay(c, tick, price)
   c.last_bud = tick
-  c.biomass, c.spent = c.biomass - price, (c.spent or 0) + price
+  creep.spend_growth(c, price)
 end
 
 -- No wild nest within HEDGE (the user, 2026-10-26: "in the cases of 0 nest being capturable in range, shouldn't we give
@@ -340,7 +371,9 @@ local function room(surface, pos)
     for k = 0, 7 do
       local a = k * math.pi / 4
       local p = {x = pos.x + math.cos(a) * r, y = pos.y + math.sin(a) * r}
-      if surface.count_entities_filtered{area = {{p.x - 3, p.y - 3}, {p.x + 3, p.y + 3}}, limit = 1} == 0 then return p end
+      -- (On its creep: off it, an incubator starves, farm.lua.)
+      if surface.count_entities_filtered{area = {{p.x - 3, p.y - 3}, {p.x + 3, p.y + 3}}, limit = 1} == 0
+        and creep.covered(surface, p) then return p end
     end
   end
 end
@@ -361,7 +394,7 @@ local function found(c, id, surface, mine, tick)
       local q = room(surface, rec.pos)
       if q then
         c.wants = FOUND_PRICE
-        if tick - c.last_bud < BUD_MIN or (c.biomass or 0) - (c.keep or 0) < FOUND_PRICE then return nil end
+        if tick - c.last_bud < BUD_MIN or (c.growth or 0) < FOUND_PRICE then return nil end
         pay(c, tick, FOUND_PRICE)
         c.founded = (c.founded or 0) + 1
         return {found = q}
@@ -370,7 +403,7 @@ local function found(c, id, surface, mine, tick)
   end
   if #mine >= TUMORS_MAX then return nil end
   c.wants = BUD_PRICE
-  if tick - c.last_bud < BUD_MIN or (c.biomass or 0) - (c.keep or 0) < BUD_PRICE then return nil end
+  if tick - c.last_bud < BUD_MIN or (c.growth or 0) < BUD_PRICE then return nil end
   local forces = shared.player_forces()
   local at, best
   for _, rec in ipairs(mine) do
@@ -441,7 +474,13 @@ function creep.bud(id, tick)
   for _, n in ipairs(nests) do
     for _, rec in ipairs(mine) do
       local d = ((n.position.x - rec.pos.x) ^ 2 + (n.position.y - rec.pos.y) ^ 2) ^ 0.5
-      if d <= rec.r + 2 then return n end
+      -- Taken only on its creep, as an incubator is fed (creep.covered): within reach and two tiles but off it, a nest was
+      -- taken, starved off its creep in three minutes, went wild and was taken again, 172 times in five hours on nw, its
+      -- culture's breeding in debt all the while (2026-10-29). Within reach and still off it, its creep cannot cover it.
+      if d <= rec.r + 2 then
+        if creep.covered(surface, n.position) then return n end
+        if rec.r >= R_MAX then c.blocked[n.unit_number] = true end
+      end
     end
     local walk = costmap.cost(land, n.position)
     if walk then
@@ -477,7 +516,7 @@ function creep.bud(id, tick)
     if not bd or d < bd then from, bd = rec, d end
   end
   c.wants = BUD_PRICE
-  if tick - c.last_bud < BUD_MIN or #mine >= TUMORS_MAX or (c.biomass or 0) - (c.keep or 0) < BUD_PRICE then return nil end
+  if tick - c.last_bud < BUD_MIN or #mine >= TUMORS_MAX or (c.growth or 0) < BUD_PRICE then return nil end
   -- Progress along it: the farthest point of the walk its creep has covered. STALL buds without covering more, it is out
   -- of reach.
   c.aim = c.aim or {}

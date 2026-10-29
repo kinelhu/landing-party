@@ -8962,6 +8962,28 @@ scenarios.creep = function()
         local b = (lp("farm_state").farms[1] or {}).biomass
         if b then S.low = math.min(S.low or math.huge, b.now) end
       end
+      -- A wild nest within a grown tumor's reach on ground its creep cannot cover (edge): a floor of stone path, which
+      -- the creep grows round (creep.lua: mineable tiles are skipped).
+      if mix == "edge" and S.landed and not S.edge and game.tick - S.landed >= 3 * 3600 then
+        for _, tu in ipairs(lp("creep_state").tumors) do
+          if not S.edge and tu.r >= 10 then
+            for k = 0, 7 do
+              local a = k * math.pi / 4
+              local q = {math.floor(tu.pos.x + math.cos(a) * (tu.r - 3)) + 0.5, math.floor(tu.pos.y + math.sin(a) * (tu.r - 3)) + 0.5}
+              local tiles = {}
+              for dx = -4, 4 do for dy = -4, 4 do tiles[#tiles + 1] = {name = "stone-path", position = {q[1] + dx, q[2] + dy}} end end
+              -- (Only where it goes, clear of its incubators: laid at each spot tried, it starved one of its own.)
+              -- (Creep is on the object layer: a spawner can be placed on it only once the floor is down.)
+              if not S.edge and surface().count_entities_filtered{name = "lp-pen", position = q, radius = 12, limit = 1} == 0
+                and surface().count_entities_filtered{area = {{q[1] - 4, q[2] - 4}, {q[1] + 4, q[2] + 4}}, limit = 1} == 0 then
+                surface().set_tiles(tiles)
+                S.edge = surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+                S.edge_at = q
+              end
+            end
+          end
+        end
+      end
       if mix == "spread" and S.far_at and not S.taken then
         local p = surface().find_entities_filtered{name = "lp-pen", position = S.far_at, radius = 3, limit = 1}[1]
         if p then S.taken = game.tick end
@@ -9031,7 +9053,8 @@ scenarios.creep = function()
     if mix == "clean" or mix == "smog" or mix == "strong" then
       local b = lp("farm_state").farms[1].biomass
       local pod = mix == "strong" and 400 or 200
-      local books = pod + b.trickled + b.drunk - b.spent - b.now
+      -- (Its growth's pool too: creep.earn, 2026-10-29.)
+      local books = pod + b.trickled + b.drunk - b.spent - b.now - (b.growth or 0)
       info(string.format("creep %s: biomass %s, lowest %.1f, books off by %.2f", mix, serpent.line(b), S.low or -1, books))
       check("creep: the biomass books balance", math.abs(books) < 1, string.format("%.2f", books))
       check("creep: never more than a breed's price in debt", (S.low or 0) > -30, string.format("%.1f", S.low or -1))
@@ -9045,6 +9068,14 @@ scenarios.creep = function()
         check("creep: smog bred more than the trickle and pod pay", b.spent > 200 + b.trickled + 100,
           string.format("spent %.0f, pod and trickle %.0f", b.spent, 200 + b.trickled))
       end
+      return
+    end
+    -- A nest within its reach but off its creep was taken, starved off its creep in three minutes, went wild and was taken
+    -- again, 172 times in five hours on nw (2026-10-29): now set aside, as a nest across water is.
+    if mix == "edge" then
+      local f = lp("farm_state").farms[1]
+      check("creep: edge, a wild nest placed on ground its creep cannot cover", S.edge_at ~= nil, serpent.line(S.edge_at))
+      check("creep: edge, no incubator starved off its creep", f and f.starved == 0, tostring(f and f.starved))
       return
     end
     if mix == "spread" then
@@ -9404,6 +9435,7 @@ scenarios.farm = function()
               if c.id == S.spid then
                 local ch = surface().find_entities_filtered{name = "lp-biochamber", position = c.at, radius = 1, limit = 1}[1]
                 if ch then S.spos = surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80}
+                  for _, p in ipairs(S.spos) do if p.unit_number == S.spid then S.ppos = p.position end end
                   ch.die("player"); S.starved_at = game.tick end
               end
             end
@@ -9487,6 +9519,10 @@ scenarios.farm = function()
         if fs and fs.lost_to_feed >= 1 and not S.wild_at then
           S.wild_at = game.tick
           S.pens_after = fs.pens
+        end
+        -- Six minutes on: the nest it went back to the wild as, still the wild's (see the check).
+        if S.wild_at and game.tick - S.wild_at >= 6 * 3600 and not S.retaken then
+          S.retaken = surface().count_entities_filtered{name = "lp-pen", position = S.ppos, radius = 2}
           finish_early()
         end
       end
@@ -9616,6 +9652,10 @@ scenarios.farm = function()
       check("farm: unfed ten minutes, it went wild", S.wild_at and S.wild_at - S.starved_at >= 10 * 3600
         and S.wild_at - S.starved_at <= 11 * 3600, tostring(S.wild_at and S.wild_at - S.starved_at))
       check("farm: the culture lives on", (S.pens_after or 0) >= 1, tostring(S.pens_after))
+      -- An incubator gone wild unfed was taken back by its creep at once, never reached, wild again: one nest seven
+      -- times in five hours on nw, its stock over the fed cap let loose each time, bred big biters that took Serenity's
+      -- lander (2026-10-29).
+      check("farm: the nest it went wild as, not taken again", S.retaken == 0, tostring(S.retaken))
       return
     end
     if mix == "artillery" then
@@ -9641,9 +9681,16 @@ scenarios.farm = function()
       -- and 10 of 13 while a biter in two incubators' stock was counted twice.)
       check("farm: siege, its wave came with the big bursters it ordered", k > 0 and (S.max_near or 0) >= k - 2,
         string.format("ordered %d, near the base at once %d", k, S.max_near or 0))
-      -- (At least 8: with its sweep ahead of its bursters they broke 12 of the lasers; with no sweep, the mines took them and
-      -- they broke 4; 2026-10-28.)
-      check("farm: siege, lasers broken", lasers <= (S.lasers0 or 0) - 8, string.format("%d -> %d", S.lasers0 or 0, lasers))
+      -- Its bursters opened the wall and its wave went in: what a siege is for. (Lasers broken, at least 8, was checked here:
+      -- with its growth paid apart from its breeding its wave came five minutes later at another spot, 2 of its bursters
+      -- reached their guns and it broke 6, yet its bursts broke 64 wall pieces and 8 went through, 5 before with 13 broken;
+      -- the user, 2026-10-29: bursters are for the wall. Its sweep has its own check below.)
+      local bw
+      for _, l in ipairs(lp("herd_state").log or {}) do
+        if l.breach then bw = {wall = l.bursters and l.bursters.broke and l.bursters.broke.wall or 0, inside = l.t_inside ~= nil}; break end
+      end
+      check("farm: siege, its bursts opened the wall and its wave went in", bw and bw.wall >= 30 and bw.inside,
+        serpent.line({bw = bw, lasers = string.format("%d -> %d", S.lasers0 or 0, lasers)}))
       -- Its siege wave staged near where it broke in (within 200 tiles), not at its nest.
       local staged
       for _, l in ipairs(lp("herd_state").log or {}) do
@@ -9668,6 +9715,8 @@ scenarios.farm = function()
         tostring(lp_price))
       return
     end
+    -- (Within 50 minutes, run length in regress.sh: with its growth paid apart from its breeding, half its income to growth
+    -- while young, its first wave goes out at about 45, 2026-10-29; 40 before.)
     check("farm: a wave went out", w ~= nil or S.wave_seen ~= nil, "none")
     if not w then return end
     if mix == "wave" then
