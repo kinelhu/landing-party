@@ -27,6 +27,7 @@ local threat = require("__landing-party__.scripts.threat")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local COUNTERS = require("__landing-party__.counters")
 local tune = require("__landing-party__.scripts.tune")
+local rng = require("__landing-party__.scripts.rng")
 
 local farm = {}
 
@@ -630,6 +631,110 @@ end
 
 local breeds_at, unlocked
 
+-- Hatched at launch (the faction consult, docs/reviews/2026-10-29-synthexis-faction-consult.md): its army is its biomass,
+-- made units at its incubators when a wave goes, and the engine breeds each incubator's home guard alone. Bred by the
+-- engine up to 40 an incubator and crowded by its neighbours (max_friends_around_to_spawn), a culture of 7 held 60 while
+-- it weighed sieges as if it held 280, and sat on 13,000 biomass it could turn into nothing; five cultures kept 645 idle
+-- units (nw, 2026-10-29). storage.biotech_old_stock (debug_tune old_stock): the old way, side by side.
+local function hatching() return not storage.biotech_old_stock end
+-- The evolution its incubators breed at: its own while its clinic stands, held at the stock's without (evolve).
+local function evo_of(f, surface)
+  local e = f.evo or game.forces[B.force].get_evolution_factor(surface)
+  return cell.clinic_up(f.id) and e or math.min(e, STOCK_EVO)
+end
+-- Its incubators' chance breeds at that evolution, by name, and their mean price; unfit(name) true: left out.
+local function chance(f, surface, unfit)
+  local list, total, sum = {}, 0, 0
+  for name, w in pairs(breeds_at(evo_of(f, surface))) do
+    if w > 0 and shared.BREEDS[name] and not (unfit and unfit(name)) then
+      list[#list + 1] = {name = name, w = w}
+      total, sum = total + w, sum + w * shared.BREEDS[name].cost
+    end
+  end
+  table.sort(list, function(a, b) return a.name < b.name end)
+  return list, total, total > 0 and sum / total or 7
+end
+-- How many it could hatch with what it holds over keep: its biomass over its chance breeds' mean price.
+local function hatchable(f, surface, keep)
+  local cul = creep.of(f.id)
+  if not cul then return 0 end
+  local _, _, mean = chance(f, surface)
+  return math.max(0, math.floor((cul.biomass - (keep or 0)) / mean))
+end
+-- A wave's breeds to hatch, names only, within budget: its order first (want, less what it has), the dearest first, then
+-- by chance at its evolution (unfit left out).
+local function compose(f, surface, n, want, have, unfit, budget)
+  local names, spent, order = {}, 0, {}
+  for name in pairs(want or {}) do if shared.BREEDS[name] then order[#order + 1] = name end end
+  table.sort(order, function(a, b)
+    local ca, cb = shared.BREEDS[a].cost, shared.BREEDS[b].cost
+    if ca ~= cb then return ca > cb end
+    return a < b
+  end)
+  for _, name in ipairs(order) do
+    local price = shared.BREEDS[name].cost
+    for _ = 1, want[name] - ((have or {})[name] or 0) do
+      if #names >= n or spent + price > budget then break end
+      names[#names + 1], spent = name, spent + price
+    end
+  end
+  local list, total = chance(f, surface, unfit)
+  f.rng = f.rng or rng.new(f.id * 7919 + game.tick)
+  while #names < n and total > 0 do
+    local r, pick = rng.next(f.rng) * total, list[#list].name
+    for _, x in ipairs(list) do
+      r = r - x.w
+      if r <= 0 then pick = x.name; break end
+    end
+    local price = shared.BREEDS[pick].cost
+    if spent + price > budget then break end
+    names[#names + 1], spent = pick, spent + price
+  end
+  return names, spent
+end
+-- A wave's list made units: each name hatched at its incubators in turn (or at one, at), paid from its biomass; units
+-- kept as they are.
+local function hatch(f, surface, units, at)
+  local cul, pens = creep.of(f.id), {at}
+  if not at then
+    for _, id in ipairs(f.pens) do
+      local rec = herd.pen(id)
+      if rec and rec.pen.valid then pens[#pens + 1] = rec end
+    end
+  end
+  local out, k = {}, 0
+  for _, u in ipairs(units) do
+    if type(u) == "string" then
+      k = k + 1
+      local rec = cul and pens[(k - 1) % math.max(1, #pens) + 1]
+      local p = rec and surface.find_non_colliding_position(u, rec.pen.position, 32, 0.5)
+      local e = p and surface.create_entity{name = u, position = p, force = B.force}
+      if e then
+        local price = shared.BREEDS[u].cost
+        cul.biomass, cul.spent, cul.bred = cul.biomass - price, (cul.spent or 0) + price, (cul.bred or 0) + 1
+        f.hatched = (f.hatched or 0) + 1
+        if u == "lp-bred-cinder" then glow(e) end
+        out[#out + 1] = e
+      end
+    elseif u.valid then out[#out + 1] = u end
+  end
+  return out
+end
+-- The name of a wave's member, hatched or still a name.
+local function name_of(u) return type(u) == "string" and u or u.valid and u.name end
+-- What it could field: what stands over its guards and, hatching, what its biomass hatches; else its incubators full.
+local function field_of(f, surface, guarded)
+  if hatching() then
+    local over = 0
+    for _, id in ipairs(f.pens) do
+      local rec = herd.pen(id)
+      if rec and rec.pen.valid then over = over + math.max(0, #herd.stock(rec) - guard_of(f)) end
+    end
+    return over + hatchable(f, surface)
+  end
+  return #f.pens * ((prototypes.entity["lp-pen"].max_count_of_owned_units or 0) - (guarded and guard_of(f) or 0))
+end
+
 -- Its order for the next wave (nil: none, it sends what it bred): by breed, how many it wants in its stock.
 -- Whether its own have lately died mostly to what burns and beams (TOUGH_SHARE of its losses over its last TOUGH_LOOK waves,
 -- TOUGH_MIN at least): lasers and flamethrowers, by their profile (threat.lua), whatever the base. Only its waves that
@@ -661,7 +766,7 @@ end
 -- megabase's wall no siege could be laid.) Returns bursters, herd, its price.
 local function siege_size(f, pl)
   -- (What its incubators hold over their guard, each: what it can send.)
-  local field = #f.pens * ((prototypes.entity["lp-pen"].max_count_of_owned_units or 0) - guard_of(f))
+  local field = field_of(f, game.surfaces[f.surface], true)
   local bc, hc = shared.BREEDS["lp-bred-big-burster"].cost, shared.BREEDS["lp-bred-big-biter"].cost
   local reach = pl.openable or pl.cover or 0
   local best
@@ -803,8 +908,10 @@ local function send(f, tick)
   end
   if avail > (f.avail_peak or -1) then f.avail_peak, f.avail_peak_tick = avail, tick end
   local can = (tick - (f.avail_peak_tick or tick) >= STALL) and avail or SAVE_FOR
-  -- (What it could field at the most: its incubators full, the bound of any siege it lays, siege_size.)
-  local field = #f.pens * (prototypes.entity["lp-pen"].max_count_of_owned_units or 0)
+  -- (What it could field at the most, the bound of any siege it lays, siege_size.) Hatching, what its biomass hatches is
+  -- ready as well.
+  local field = field_of(f, s)
+  if hatching() then avail = field end
   local target, rival, choice = target_from(s, f.pos, f, math.min(avail, WAVE_MAX), {bursters = bursters, field = field})
   if not target then return holds(f, tick, string.format("nothing to go for within %d tiles (%d ready)", B.mind.reach, avail)) end
   -- A siege laid: it goes there once its bursters and herd are bred (order: f.siege). It ends when a wave of what it has
@@ -831,8 +938,17 @@ local function send(f, tick)
     local sweep_price = (siege.mines or 0) * shared.BREEDS["lp-runt"].cost
     local cul0 = creep.of(f.id)
     -- (Its bursters, its herd as its plan priced it, siege_size, and its sweep's price.)
-    if bursters < siege.k or avail < siege.n or (cul0 and cul0.biomass < sweep_price) then
+    -- (Hatching: on the biomass that hatches its bursters, its herd and its sweep.)
+    local hatch_short = hatching() and cul0 and (cul0.biomass < sweep_price + siege.k * shared.BREEDS["lp-bred-big-burster"].cost
+      + math.max(0, siege.n - siege.k) * select(3, chance(f, s)))
+    if hatching() and not hatch_short then
+    elseif hatch_short or not hatching() and (bursters < siege.k or avail < siege.n or (cul0 and cul0.biomass < sweep_price)) then
       f.escalate_retry = tick + 600
+      if hatching() then
+        return holds(f, tick, string.format("lays siege to the way in at %.0f,%.0f: waits for the biomass to hatch %d big bursters and %d in all, and its sweep of %d (%.0f of %.0f)",
+          siege.at.x, siege.at.y, siege.k, siege.n, siege.mines or 0, cul0.biomass, sweep_price + siege.k * shared.BREEDS["lp-bred-big-burster"].cost
+          + math.max(0, siege.n - siege.k) * select(3, chance(f, s))))
+      end
       return holds(f, tick, string.format("lays siege to the way in at %.0f,%.0f: waits for %d big bursters (%d bred) and %d in all (%d ready), and %d biomass for its sweep of %d",
         siege.at.x, siege.at.y, siege.k, bursters, siege.n, avail, sweep_price, siege.mines or 0))
     end
@@ -860,7 +976,6 @@ local function send(f, tick)
       -- Nothing it can field wins anything: the way in to its best place is the job. Sized by the plan its wave will follow
       -- (herd.plan), not the weighing's coarser reading: sized by that, three sieges bred all their bursters and their
       -- plans still said the way in cost more than the wave, an hour each (a megabase, 2026-10-28).
-      local field = #f.pens * (prototypes.entity["lp-pen"].max_count_of_owned_units or 0)
       local pl = herd.plan(s, f.pos, sg.at, sg.rival or players(), field)
       local k, n, price
       if pl then k, n, price = siege_size(f, pl) end
@@ -931,7 +1046,7 @@ local function send(f, tick)
   end
   f.escalate_since = nil
   -- Its order not yet filled: the wave waits for it, ORDER_WAIT at the most.
-  if f.short then
+  if f.short and not hatching() then
     f.order_since = f.order_since or tick
     if tick - f.order_since < ((f.want or {})["lp-bred-big-burster"] and ORDER_WAIT_BIG or ORDER_WAIT) then
       f.escalate_retry = tick + 600
@@ -995,19 +1110,42 @@ local function send(f, tick)
       if not bd or d < bd then origin, bd = rec, d end
     end
   end
+  -- Hatching: the rest of its wave, names to hatch once its plan says it goes (hatch): its order less what stood, then by
+  -- chance, its unfit breeds left out, within its biomass (less its probe's and its sweep's runts).
+  if hatching() and #units < cap then
+    local have = {}
+    for _, u in ipairs(units) do local nm = name_of(u); if nm then have[nm] = (have[nm] or 0) + 1 end end
+    local cul = creep.of(f.id)
+    local keep = (herd.PROBE_N + herd.SWEEP_MAX) * shared.BREEDS["lp-runt"].cost
+    local names = compose(f, s, cap - #units, want, have,
+      total > 0 and function(name) return fit_of(name, lesson.killers, total) < UNFIT and not want[name] end or nil,
+      math.max(0, (cul and cul.biomass or 0) - keep))
+    for _, name in ipairs(names) do units[#units + 1] = name end
+    if not origin then
+      for _, id in ipairs(f.pens) do
+        local rec = herd.pen(id)
+        if rec and rec.pen.valid then
+          local d = d2(rec.pen.position, target)
+          if not bd or d < bd then origin, bd = rec, d end
+        end
+      end
+    end
+  end
   if cap > WAVE_MAX then
     trace(string.format("farm %d: the defence there held %d times; a wave of %d (at most %d)", f.id, held, #units, cap))
   end
   if total > 0 and #units > 0 then
     local by = {}
-    for _, u in ipairs(units) do local n = u.name:gsub("^lp%-bred%-", ""); by[n] = (by[n] or 0) + 1 end
+    for _, u in ipairs(units) do local n = name_of(u):gsub("^lp%-bred%-", ""); by[n] = (by[n] or 0) + 1 end
     trace(string.format("farm %d: its wave made up against what killed the last (%s): %s", f.id, serpent.line(lesson.killers),
       serpent.line(by)))
   end
   if #units < shared.WAVE_MIN or not origin then
     holds(f, tick, string.format("%d ready, %d the least it sends", #units, shared.WAVE_MIN))
     -- Not enough yet: back into the pens' stock.
-    for _, u in ipairs(units) do table.insert(origin and origin.stock or herd.pen(f.pens[1]).stock, u) end
+    for _, u in ipairs(units) do
+      if type(u) ~= "string" then table.insert(origin and origin.stock or herd.pen(f.pens[1]).stock, u) end
+    end
     return
   end
   -- Its plan (herd.plan: from here at its target, on one cost map, at the grain its waves read), and the wave's own test
@@ -1015,13 +1153,13 @@ local function send(f, tick)
   -- the plan found (know: dear) while it weighs again. Its waves follow the plan (herd.lua mark): read twice, by the farm
   -- and again by the wave from where its scout ended, 12 of 16 waves turned home at the gate (2026-10-28).
   local big = 0
-  for _, u in ipairs(units) do if u.valid and u.name == "lp-bred-big-burster" then big = big + 1 end end
+  for _, u in ipairs(units) do if name_of(u) == "lp-bred-big-burster" then big = big + 1 end end
   local plan = herd.plan(s, f.pos, target, rival or players(), #units)
   local lost = plan and herd.way_cost(plan.cost, plan.cover, big, plan.openable)
   if not forced and (not plan or not herd.affords(#units, lost)) then
     priced(s, rival and rival[1] or "player", target, {lost = plan and plan.cost or NO_WAY, tick = tick,
       openable = plan and (plan.openable or plan.cover)})
-    for _, u in ipairs(units) do table.insert(origin.stock, u) end
+    for _, u in ipairs(units) do if type(u) ~= "string" then table.insert(origin.stock, u) end end
     -- A siege bred and still short of what its plan, read again now, asks: sized again from that plan (siege_size) and
     -- bred on, or, no siege it can field paying it, ended.
     if siege and plan then
@@ -1042,6 +1180,8 @@ local function send(f, tick)
       target.x, target.y, plan.cost, lost, big, plan.cover, #units) or string.format("no way to %.0f,%.0f", target.x, target.y))
   end
   f.siege = nil
+  -- It goes: what was a name is hatched now.
+  units = hatch(f, s, units)
   f.last_wave = tick
   f.waves = (f.waves or 0) + 1
   f.aim = {x = target.x, y = target.y}
@@ -1180,6 +1320,15 @@ local function seed(f, tick)
   local g = s.create_unit_group{position = carrier.position, force = B.force}
   g.add_member(carrier)
   local stock, keep, escort = herd.stock(rec), {}, {}
+  -- (Hatching: its escort hatched for it at that incubator, what its biomass pays; its guard stays at the gate.)
+  if hatching() then
+    for _, u in ipairs(hatch(f, s, compose(f, s, ESCORT, nil, nil, nil, cul.biomass), rec)) do
+      g.add_member(u)
+      escort[#escort + 1] = u
+    end
+    stock = {}
+    keep = herd.stock(rec)
+  end
   for _, u in ipairs(stock) do
     if #escort < ESCORT and u.valid then
       if u.commandable.spawner then u.commandable.release_from_spawner() end
@@ -1322,7 +1471,8 @@ end
 local function breeding(f, on)
   for _, pid in ipairs(f.pens) do
     local rec = herd.pen(pid)
-    local want = on and not (rec and rec.unfed)
+    -- (Hatching: up to its home guard, no more.)
+    local want = on and not (rec and rec.unfed) and not (hatching() and rec and #herd.stock(rec) >= guard_of(f))
     if rec and rec.pen.valid and rec.pen.disabled_by_script ~= not want then rec.pen.disabled_by_script = not want end
   end
 end
@@ -1475,8 +1625,9 @@ function farm.tick(tick)
         if not hungry and rec.unfed then rec.unfed = nil end
         if not hungry and tick % 3600 == 300 then
           recycle(f, rec, surface)
-          if want then fulfil(f, rec, surface, want, have) end
-          if want then fulfil(f, rec, surface, want, have) end
+          -- (Hatching: its order is hatched with its wave, compose.)
+          if want and not hatching() then fulfil(f, rec, surface, want, have) end
+          if want and not hatching() then fulfil(f, rec, surface, want, have) end
         end
         if hungry and unfed(rec, tick) then
           cell.forget(pid)
@@ -1505,7 +1656,8 @@ function farm.tick(tick)
       end
     end
     f.pens = left
-    if have then f.short = short(want, have) elseif tick % 3600 == 300 then f.short = nil end
+    if hatching() then f.short = nil
+    elseif have then f.short = short(want, have) elseif tick % 3600 == 300 then f.short = nil end
     local cul = creep.of(id)
     if cul then
       local t = #f.pens * TRICKLE / 6 * tune.strength("biotech") * creep.evo_rate(surface)

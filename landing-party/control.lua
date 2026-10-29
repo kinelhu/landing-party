@@ -438,6 +438,8 @@ remote.add_interface("landing-party", {
     -- march_trace: each marching herd's group every second to the log (where, its state, its order; debugging).
     if t.march_trace ~= nil then storage.march_trace = t.march_trace or nil end
     if t.biotech_no_hold ~= nil then storage.biotech_no_hold = t.biotech_no_hold or nil end
+    -- old_stock: Synthexis's army bred by the engine and standing at its incubators, as before 0.2.90 (farm.lua hatching).
+    if t.old_stock ~= nil then storage.biotech_old_stock = t.old_stock or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
     if t.prospect_pace ~= nil then storage.prospect_pace = t.prospect_pace end
     if t.prospect_uncharted ~= nil then storage.prospect_uncharted = t.prospect_uncharted end

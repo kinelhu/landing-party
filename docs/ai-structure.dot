@@ -72,7 +72,7 @@ digraph ai {
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n2975 lines", width=3.80, fillcolor="#f7dede"];
-    "farm" [label="farm\n1668 lines", width=2.65, fillcolor="#f7dede"];
+    "farm" [label="farm\n1820 lines", width=2.82, fillcolor="#f7dede"];
     "creep" [label="creep\n557 lines", width=1.42, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
     "firemap" [label="firemap\n150 lines", width=0.97, fillcolor="#eef2f7"];
@@ -89,7 +89,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n726 lines", width=1.61, fillcolor="#eef2f7"];
+    "control" [label="control\n728 lines", width=1.61, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n125 lines", width=0.94, fillcolor="#d9f0d9"];
@@ -144,6 +144,7 @@ digraph ai {
   "farm" -> "herd";
   "farm" -> "know";
   "farm" -> "pods";
+  "farm" -> "rng";
   "farm" -> "threat";
   "farm" -> "tune";
   "farm" -> "valuemap";

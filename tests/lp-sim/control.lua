@@ -7660,6 +7660,10 @@ scenarios.visit = function()
         info(string.format("visit: growth tumors %s; nearest wild spawner %s tiles (%s)", serpent.line((function()
           local o = {} for _, tu in ipairs(ts) do o[#o + 1] = {math.floor(tu.pos.x), math.floor(tu.pos.y)} end return o end)()),
           tostring(near and math.floor(near)), serpent.line(at)))
+        -- Synthexis's units standing on the map (waves among them): idle at its incubators, 645 at five hours on nw before
+        -- it hatched its waves at launch (2026-10-29).
+        info(string.format("visit: growth min %d synthexis units standing %d", math.floor((game.tick - storage.t0) / 3600),
+          surface().count_entities_filtered{force = "lp-biotech", type = "unit"}))
         for _, f in ipairs(lp("farm_state").farms) do
           info(string.format("visit: growth min %d farm %d: pens %d, taken %d, grown %d, tumors %d, short %s, saving %s, biomass %s",
             math.floor((game.tick - storage.t0) / 3600), f.id, f.pens, f.taken, f.grown, tumors, tostring(f.short),

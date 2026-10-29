@@ -3566,3 +3566,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   test). A place its plan priced is now held at that plan, what its bursters can open there and whether a siege was
   refused, while its turrets and walls stand as they were and the culture can field no more (0.2.89; farm behind: a ring
   of lasers inside the wall, seen failing with 262 repeats). The planner's trace also logs every change of reason.
+- Synthexis's army stood idle at its incubators: bred by the engine up to 40 an incubator and crowded by its neighbours,
+  a culture of 7 held 60 while it weighed sieges as if it held 280, and five cultures kept 645 idle units on nw. Its waves
+  are now hatched at launch from its biomass (0.2.90: its order first, then by chance at its evolution, its unfit breeds
+  left out; a refused plan hatches nothing), the engine breeds its home guard alone, a siege waits on the biomass to hatch
+  it, and a carrier's escort is hatched for it. On nw, five hours: 1.53 ms a tick against 5.05, 26 to 88 units standing
+  before its first wave; the siege test's wave goes 6.5 minutes sooner and 19 get in where 8 did. Open: its biomass still
+  piles up (2,700 to 9,000 a culture on nw), because its plans price a way in and size a wave in units, and on nw's walls
+  every plan asks for 700 to 1,400 while 9,000 biomass hatches about 90: biomass buys health its arithmetic cannot see.
