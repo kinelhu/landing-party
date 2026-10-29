@@ -19,7 +19,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `herd` | 2975 | costmap, feeds, firemap, ground, know, threat, valuemap | control, farm |  | 60, 600, 3600 |  | herd |
 | `ops` | 1812 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, threat, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1721 | blocks, rng, site, wfc | base, control, faction |  |  |  |  |
-| `farm` | 1639 | cell, costmap, creep, firemap, herd, know, pods, threat, tune, valuemap | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
+| `farm` | 1668 | cell, costmap, creep, firemap, herd, know, pods, threat, tune, valuemap | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
 | `siege` | 856 | (leaf) | ops |  |  |  | threat_last |
 | `base` | 834 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, faction, jumper, ledger, pact, prospect, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `faction` | 800 | army, base, layout, names, ops, pact, pods, rd, site, threat, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |

@@ -9207,7 +9207,7 @@ scenarios.farm = function()
     -- siege (2026-10-28): a laser wall no wave it fields crosses (a laser every 6 tiles on every face, nw's research): the
     -- chain from its order to the breach in minutes, which on nw took a three-hour visit a fault (its order bred the cheap
     -- breed first, its incubators overspent what it kept back, its wave left most bursters behind, each counted twice).
-    if mix == "siege" then
+    if mix == "siege" or mix == "behind" then
       game.forces.player.set_ammo_damage_modifier("laser", 3)
       game.forces.player.set_gun_speed_modifier("laser", 2.2)
       -- (Every 3 tiles, 107 lasers: no siege of 20 big bursters opens that, and none was laid.)
@@ -9232,6 +9232,17 @@ scenarios.farm = function()
       S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
       lp("debug_learn_price", "player", "land-mine", 40)
       lp("debug_tune", {march_trace = true})
+      -- behind: a second ring of lasers 10 tiles inside the wall, out of a burster's blast at the wall (nw's flamethrower
+      -- line): its weighing read the wall as one its bursters open, its plan refused every siege, and the two alternated
+      -- for five hours at one place while 13,000 biomass piled up (2026-10-29).
+      if mix == "behind" then
+        for i = -24, 24, 6 do
+          for _, p in ipairs({{27, i}, {-27, i}, {i, 27}, {i, -27}}) do
+            local q = surface().find_non_colliding_position(L, at(p[1], p[2]), 2, 1)
+            if q then put(L, q) end
+          end
+        end
+      end
     end
     -- What any player's base has, and what draws a wave (its smell, farm.target_from): machines that pollute.
     for _, d in ipairs({{-20, -20}, {-20, 20}, {20, -20}, {20, 20}}) do
@@ -9300,7 +9311,7 @@ scenarios.farm = function()
     end
     -- (clinic: the wild at 0.5, so the breeds' cap without a clinic, 0.3, shows.)
     -- (siege: 0.95, its big bursters come at 0.85: its evolution follows the wild's, farm.evolve.)
-    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or mix == "siege" and 0.95 or 0.3, surface())
+    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "behind") and 0.95 or 0.3, surface())
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
@@ -9372,7 +9383,7 @@ scenarios.farm = function()
         S.farm_pos = f.pos
         S.dist = math.sqrt((f.pos.x - S.at(0, 0)[1]) ^ 2 + (f.pos.y - S.at(0, 0)[2]) ^ 2)
         S.evo_land = f.evo
-        if mix == "siege" then
+        if mix == "siege" or mix == "behind" then
           S.min_bio, S.max_near, S.sieges = math.huge, 0, {}
           for t2 = game.tick - storage.t0 + 60, END - 120, 600 do
             schedule(t2, function()
@@ -9622,7 +9633,7 @@ scenarios.farm = function()
     local mins = e.tick and (e.tick - S.landed) / 3600 or 0
     info(string.format("farm: evolution %s at landing, %s %.1f min on (bred at %s), clinic %s", tostring(S.evo_land),
       tostring(e.evo), mins, tostring(e.bred), tostring(e.clinic)))
-    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" then
+    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "behind" then
       check("farm: its clinic stands and its breeds climb", e.clinic == true and S.evo_land and e.evo
         and e.evo - S.evo_land >= 0.004 * (mins - 1) * 0.9 and math.abs(e.bred - e.evo) < 0.001, serpent.line(e))
     end
@@ -9666,6 +9677,20 @@ scenarios.farm = function()
       -- adds, artillery's worth to a wave and never landing in its reach, is the farm's: herd.shelling, farm.shelled.)
       check("farm: artillery, brought down", S.art_at ~= nil and not (S.art and S.art.valid),
         serpent.line({at = S.art_at, standing = S.art and S.art.valid}))
+      return
+    end
+    if mix == "behind" then
+      local fs = lp("farm_state").farms[1]
+      info(string.format("farm behind: sieges refused %s (%s again with no more to field), sieges %s", tostring(fs and fs.refused),
+        tostring(fs and fs.repeats), serpent.line(S.sieges)))
+      -- (A function check: it weighed a siege there at all, else the next proves nothing.)
+      check("farm: behind, a siege weighed at the wall and refused", fs and fs.refused >= 1, tostring(fs and fs.refused))
+      -- Refused, priced at its plan until the place changes or it can field more: before, its weighing read the wall as
+      -- one its bursters open whatever the plan said, and weighed the same siege every ten seconds (269 refusals in 75
+      -- minutes, all at one place with 7 incubators; five hours at one place on nw). Another place, or more incubators,
+      -- may be weighed and refused.
+      check("farm: behind, a refused siege not weighed again with no more to field", fs and fs.repeats == 0,
+        serpent.line({refused = fs and fs.refused, repeats = fs and fs.repeats}))
       return
     end
     if mix == "siege" then

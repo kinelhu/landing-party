@@ -443,6 +443,23 @@ local function ways_from(surface, pos, f, cells)
   return by, cover
 end
 
+-- What stands of a place that its plan priced: its foe's turrets and walls in its cell (herd.dear_key's). A place its plan
+-- found too dear is priced at that plan while this holds (a gun dies, a wall opens: it is read again), not for a time:
+-- refused, a siege faded from its record in 30 minutes and was weighed again, and the next weighing (every ten seconds)
+-- weighed it again, its plan refusing each time (269 times in 75 minutes, farm behind; five hours at one place on nw).
+local PLACE_TYPES = {"ammo-turret", "electric-turret", "fluid-turret", "wall", "gate"}
+local function place_sig(surface, force, at)
+  local cx, cy = math.floor(at.x / 64), math.floor(at.y / 64)
+  return surface.count_entities_filtered{area = {{cx * 64, cy * 64}, {cx * 64 + 64, cy * 64 + 64}}, type = PLACE_TYPES,
+    force = force}
+end
+local function priced(surface, force, at, rec)
+  rec.sig = place_sig(surface, force, at)
+  local k = know.of("biotech")
+  k.dear = k.dear or {}
+  k.dear[herd.dear_key(force, at)] = rec
+end
+
 -- opts: bursters (big bursters in its stock: its way in priced with them, herd.way_cost), field (the most it could field:
 -- what a siege is sized for).
 local function target_from(surface, pos, f, n, opts)
@@ -486,11 +503,17 @@ local function target_from(surface, pos, f, n, opts)
     c.entry = ways[c.key] or NO_WAY
     -- What a wave sent here found its way in to cost, when it turned home for it (herd.lua: too dear), lately: the wave
     -- reads the way it would walk, the rays here a straight line.
+    -- (Its plan's record, while the place stands as it was: what its bursters can open there, the guns they reach at the
+    -- wall, and whether a siege there was refused by a field no bigger than it has now.)
     local dr = dear[c.key]
-    if dr and game.tick - dr.tick < DEAR_FOR then c.entry = math.max(c.entry, dr.lost) end
+    local held = dr and (dr.sig and dr.sig == place_sig(surface, c.force, {x = c.cx * 64 + 32, y = c.cy * 64 + 32})
+      or not dr.sig and game.tick - dr.tick < DEAR_FOR)
+    if held then c.entry = math.max(c.entry, dr.lost) end
+    local openable = held and dr.openable or nil
+    local refused = held and dr.no_siege and field <= (dr.field or 0)
     c.cover = covers[c.key] or 0
     local raw = c.entry
-    c.entry = herd.way_cost(raw, c.cover, opts.bursters)
+    c.entry = herd.way_cost(raw, c.cover, opts.bursters, openable)
     local guns = c.defence
     do
       c.walls = surface.count_entities_filtered{area = {{c.cx * 64, c.cy * 64}, {c.cx * 64 + 64, c.cy * 64 + 64}},
@@ -507,7 +530,7 @@ local function target_from(surface, pos, f, n, opts)
       end
       -- (Its own guns too, opened in the share its bursters open the way's: the guns covering where it breaks in are its
       -- own where the place is the wall; counted whole, a siege's odds stayed nothing at every wall, and none was laid.)
-      local function defence_at(entry, k) return math.max(guns * (1 - herd.opened(c.cover, k)), 2 * entry) + extra end
+      local function defence_at(entry, k) return math.max(guns * (1 - herd.opened(c.cover, k, openable)), 2 * entry) + extra end
       c.defence = defence_at(c.entry, opts.bursters)
       -- Its odds: what a wave of n keeps there (valuemap.keeps_lost: its defence there and back, in its own).
       local p = valuemap.keeps_lost(n or shared.WAVE_MIN, c.defence / 2)
@@ -537,9 +560,9 @@ local function target_from(surface, pos, f, n, opts)
       -- Whether a wave of n goes in there at all (the wave's own test), and if not, how many big bursters would make the
       -- way in one a wave it could field takes and wins something past (a siege).
       c.passes = raw < NO_WAY and herd.affords(n or shared.WAVE_MIN, c.entry)
-      if not (c.passes and c.gain >= (mind.min_gain or 0)) and c.cover > 0 and raw < NO_WAY and field > 0 then
-        for k = 1, math.ceil(c.cover / herd.BURST_OPENS) do
-          local e = herd.way_cost(raw, c.cover, k)
+      if not (c.passes and c.gain >= (mind.min_gain or 0)) and c.cover > 0 and raw < NO_WAY and field > 0 and not refused then
+        for k = 1, math.ceil(math.min(openable or c.cover, c.cover) / herd.BURST_OPENS) do
+          local e = herd.way_cost(raw, c.cover, k, openable)
           if herd.affords(field, e) and valuemap.keeps_lost(field, defence_at(e, k) / 2) * (c.value or 0) >= (mind.min_gain or 0) then
             c.siege = k
             break
@@ -745,9 +768,12 @@ local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
 
 -- Why a farm due a wave holds it, traced at most every ten minutes (on the player's nw it sent one wave in three hours
 -- and the trace said nothing of why).
+-- (Once in ten minutes, and whenever its reason changes, its words up to the first number or colon: throttled alone, two
+-- refusals alternating at culture 2 on nw read as one steady state for five hours.)
 local function holds(f, tick, why)
-  if tick - (f.held_said or -36000) >= 36000 then
-    f.held_said = tick
+  local kind = why:match("^[^:%d]*")
+  if tick - (f.held_said or -36000) >= 36000 or kind ~= f.held_kind then
+    f.held_said, f.held_kind = tick, kind
     trace(string.format("farm %d holds its wave: %s", f.id, why))
   end
 end
@@ -839,10 +865,14 @@ local function send(f, tick)
       local k, n, price
       if pl then k, n, price = siege_size(f, pl) end
       if not k then
-        local kn = know.of("biotech")
-        kn.dear = kn.dear or {}
-        kn.dear[herd.dear_key(sg.rival and sg.rival[1] or "player", sg.at)] = {lost = pl and pl.cost or NO_WAY, tick = tick}
+        priced(s, sg.rival and sg.rival[1] or "player", sg.at, {lost = pl and pl.cost or NO_WAY, tick = tick,
+          openable = pl and (pl.openable or pl.cover), no_siege = true, field = field})
         f.escalate_retry = tick + 600
+        -- (Counted, and a refusal of the same place with no more to field than before counted again: the loop, farm behind.)
+        f.refused, f.refused_at = (f.refused or 0) + 1, f.refused_at or {}
+        local r = f.refused_at[sg.key]
+        if r and field <= r then f.repeats = (f.repeats or 0) + 1 end
+        f.refused_at[sg.key] = field
         return holds(f, tick, pl and string.format("no siege it can lay at %.0f,%.0f: its plan costs %.0f (%d guns cover the breach, %d its bursters can reach), more than its %d incubators can field",
           sg.at.x, sg.at.y, pl.cost, pl.cover, pl.openable or pl.cover, #f.pens) or string.format("no way to %.0f,%.0f", sg.at.x, sg.at.y))
       end
@@ -989,9 +1019,8 @@ local function send(f, tick)
   local plan = herd.plan(s, f.pos, target, rival or players(), #units)
   local lost = plan and herd.way_cost(plan.cost, plan.cover, big, plan.openable)
   if not forced and (not plan or not herd.affords(#units, lost)) then
-    local k = know.of("biotech")
-    k.dear = k.dear or {}
-    k.dear[herd.dear_key(rival and rival[1] or "player", target)] = {lost = plan and plan.cost or NO_WAY, tick = tick}
+    priced(s, rival and rival[1] or "player", target, {lost = plan and plan.cost or NO_WAY, tick = tick,
+      openable = plan and (plan.openable or plan.cover)})
     for _, u in ipairs(units) do table.insert(origin.stock, u) end
     -- A siege bred and still short of what its plan, read again now, asks: sized again from that plan (siege_size) and
     -- bred on, or, no siege it can field paying it, ended.
@@ -1625,7 +1654,7 @@ function farm.state()
     end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
       landed = f.landed, taken = f.taken or 0, recycled = f.recycled or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
-      lost_to_feed = f.lost_to_feed or 0, evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0, grown = f.grown or 0,
+      lost_to_feed = f.lost_to_feed or 0, refused = f.refused or 0, repeats = f.repeats or 0, evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0, grown = f.grown or 0,
       seeded = f.seeded, carrier = f.carrier and f.carrier.unit.valid and {f.carrier.unit.position.x, f.carrier.unit.position.y} or nil,
       bred_evo = game.forces[B.force] and game.forces[B.force].get_evolution_factor(f.surface), biomass = creep.of(id) and {
         now = creep.of(id).biomass, growth = creep.of(id).growth, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled, eaten = creep.of(id).eaten,

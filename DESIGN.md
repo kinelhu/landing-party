@@ -3560,3 +3560,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   bursters reach a gun; the rest die to lasers on the way in.
 - Open (nw, 0.2.88): a culture at the cap of five and a wave of 60 its plan cannot pay held 13,000 biomass unspent and
   laid no siege; a visit with five cultures ran at 5.05 ms a tick against 0.69 for the save alone.
+- Its weighing read any wall as one its bursters open, whatever its plan had found: with guns behind the wall (nw's
+  flamethrower line) the plan refused the siege, the refusal's record faded in 30 minutes, and the weighing put the same
+  siege forward every ten seconds meanwhile (culture 2 on nw, five hours at one place; 269 refusals in 75 minutes in the
+  test). A place its plan priced is now held at that plan, what its bursters can open there and whether a siege was
+  refused, while its turrets and walls stand as they were and the culture can field no more (0.2.89; farm behind: a ring
+  of lasers inside the wall, seen failing with 262 repeats). The planner's trace also logs every change of reason.
