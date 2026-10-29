@@ -62,6 +62,36 @@ function valuemap.read(surface, at, radius, forces, types, cell)
   return {cells = cells, size = size, at = {x = x, y = y}}
 end
 
+-- A turret starved of its feed (feeds.lua), in worth: as much as an assembler razed.
+valuemap.STARVED = 2
+-- An artillery piece that reaches its incubators, in worth for each (the perception consult, section 5: no danger to a
+-- wave, mortal to the culture: it shells every pen in its reach until none is left): one covering four outweighs a factory.
+valuemap.SHELLS = 50
+
+-- A feed's worth where it stands (STARVED for each turret cutting it would starve), the most of any one cut in a cell:
+-- one cut does it, and summed over the sixteen pieces of a belt line in a cell the ammunition belt behind a ring of guns
+-- read as worth five factories, and waves fought for it under the guns (2026-10-27).
+function valuemap.add(map, e, w)
+  if not (e.valid and w > 0) then return end
+  local size = map.size
+  local i, j = math.floor(e.position.x / size), math.floor(e.position.y / size)
+  local k = i .. "," .. j
+  local c = map.cells[k]
+  if not c then
+    c = {i = i, j = j, worth = 0, sx = 0, sy = 0, list = {}}
+    map.cells[k] = c
+  end
+  local more = w - (c.feed or 0)
+  if more <= 0 then return end
+  c.feed = w
+  w = more
+  c.worth, c.sx, c.sy = c.worth + w, c.sx + e.position.x * w, c.sy + e.position.y * w
+  c.mid = {x = c.sx / c.worth, y = c.sy / c.worth}
+  c.list[#c.list + 1] = e
+  map.extra = map.extra or {}
+  map.extra[e.unit_number or 0] = (map.extra[e.unit_number or 0] or 0) + w
+end
+
 -- What stands within r of pos is worth (its cells' buildings, counted one by one).
 function valuemap.worth_near(map, pos, r)
   local x, y = xy(pos)
@@ -72,7 +102,9 @@ function valuemap.worth_near(map, pos, r)
       local c = map.cells[i .. "," .. j]
       if c then
         for _, e in ipairs(c.list) do
-          if e.valid and (e.position.x - x) ^ 2 + (e.position.y - y) ^ 2 <= r * r then total = total + valuemap.worth_of(e) end
+          if e.valid and (e.position.x - x) ^ 2 + (e.position.y - y) ^ 2 <= r * r then
+            total = total + valuemap.worth_of(e) + (map.extra and map.extra[e.unit_number or 0] or 0)
+          end
         end
       end
     end
@@ -80,19 +112,41 @@ function valuemap.worth_near(map, pos, r)
   return total
 end
 
--- What a wave of n keeps of what it is worth to reach a place whose way costs `cost` turrets, there and back, each `price`
--- of its own: all of it with nothing to cross, none at HOLD of its number lost (it turns home there: herd.lua). A ring
+-- What is worth something within r of pos, each to f: what a wave there has to break for that worth.
+function valuemap.each_near(map, pos, r, f)
+  local x, y = xy(pos)
+  local size = map.size
+  for i = math.floor((x - r) / size), math.floor((x + r) / size) do
+    for j = math.floor((y - r) / size), math.floor((y + r) / size) do
+      local c = map.cells[i .. "," .. j]
+      if c then
+        for _, e in ipairs(c.list) do
+          if e.valid and (e.position.x - x) ^ 2 + (e.position.y - y) ^ 2 <= r * r
+            and valuemap.worth_of(e) + (map.extra and map.extra[e.unit_number or 0] or 0) > 0 then
+            f(e)
+          end
+        end
+      end
+    end
+  end
+end
+
+-- What a wave of n keeps of what it is worth to reach a place whose way costs it `lost` of its own one way, there and
+-- back: all of it with nothing to cross, none at HOLD of its number lost (it turns home there: herd.lua). A ring
 -- of guns read as five turrets against an outpost's three, a little dearer; it cost waves of 60 half their number going
 -- in, and they came home with nothing, while the outpost's drills fell (2026-10-27).
 valuemap.HOLD = 0.5
-function valuemap.keeps(n, cost, price) return valuemap.keeps_lost(n, cost * (price or firemap.AFFORD)) end
--- The same, from what the way there costs it one way, in its own (costmap.lua): there and back.
+-- (lost: what the way there costs it one way, in its own: costmap.lua, firemap.entry_cost.)
 function valuemap.keeps_lost(n, lost) return math.max(0, 1 - 2 * lost / (n * valuemap.HOLD)) end
+-- What a wave of n keeps going one way at a cost of `lost` (it arrives with the rest): once it is on its way in, the way
+-- back is its stay rule's to weigh, not the target's.
+function valuemap.keeps_one_way(n, lost) return math.max(0, 1 - lost / math.max(1, n)) end
 
 -- The soft hearts, best first: each cell's worth with SPREAD of its neighbours', times what a wave of n keeps of it
 -- (valuemap.keeps: the way in there and back), over the walk from `from` (FAR). The way in: opts.lost(mid) when given, what
--- getting there costs it in its own (costmap.lua), else from outside (firemap.entry_cost over `reach`). opts.price:
--- a turret's cost (firemap.AFFORD unlearned); opts.min: none nearer `from` than this; opts.most: how many (MOST). Those
+-- getting there costs it in its own (costmap.lua), else from outside (firemap.entry_cost over `reach`, the fire map
+-- priced); opts.min: none nearer `from` than this; opts.most: how many (MOST); opts.keeps: what it keeps of n at a cost
+-- (valuemap.keeps_lost, there and back, by default). Those
 -- it keeps nothing of are left out. Each {cell, at = its building with the least fire on it, nearest its middle, worth,
 -- cost, keeps, far, score}.
 valuemap.MOST = 8
@@ -111,9 +165,10 @@ function valuemap.hearts(map, fire, n, from, reach, opts)
           if o then w = w + valuemap.SPREAD * o.worth end
         end
       end
-      local lost = opts.lost and opts.lost(c.mid)
-      local cost = not opts.lost and firemap.entry_cost(fire, c.mid, reach) or 0
-      local keeps = lost and valuemap.keeps_lost(n, lost) or (not opts.lost and valuemap.keeps(n, cost, opts.price) or 0)
+      local lost
+      if opts.lost then lost = opts.lost(c.mid) else lost = firemap.entry_cost(fire, c.mid, reach) end
+      local cost = lost
+      local keeps = lost and (opts.keeps or valuemap.keeps_lost)(n, lost) or 0
       if keeps > 0 then
         out[#out + 1] = {cell = c, worth = w, cost = cost, lost = lost, keeps = keeps, far = d,
           score = w * keeps / (1 + d / valuemap.FAR)}

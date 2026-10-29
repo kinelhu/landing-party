@@ -1,9 +1,10 @@
 -- Intel (split from ops.lua, 2026-10-18, along the AI graph's seams: docs/ai-graph.md): what a settlement knows of its
--- enemies' buildings and how it weighs them. Weighted defence and exposure (a dark turret weighs nothing: power.lua),
+-- enemies' buildings and how it weighs them. Weighted defence and exposure (a silent turret weighs nothing: threat.lua),
 -- what stands by a target, the cells its sensors record and forget, the nests on its ground, the survey toward each
 -- player's spawn, and what its units in the field see. The code is as it was in ops; install runs it with ops' helpers
 -- bound (K) and returns what ops calls.
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 
 local intel = {}
 
@@ -30,7 +31,7 @@ function ops.weigh(surface, pos, forces, r)
     -- of them killed about 15 units whatever the raid's size, so 21 and 23 lost and 30 is what wins). Corporate
     -- research (rd.strength) is what keeps the raid a size a garrison can field.
     -- A dark turret (no power) is no defence: the Line goes through the dark stretch (the power strike).
-    if k and k[1] > 0 and not power.dark(e) then
+    if k and k[1] > 0 and threat.firing(e) then
       local f = e.force
       local x = k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
       w = w + x
@@ -42,18 +43,17 @@ function ops.weigh(surface, pos, forces, r)
   for dmg, x in pairs(by) do if not tw or x > tw then top, tw = dmg, x end end
   return w, top
 end
--- Exposure (the megabase consult): the weighted turrets whose own reach covers pos (gun 18, laser 24, flamethrower 30,
--- plus 2). Grubstake's soft is exposure, not any turret within 30 tiles: a megabase's rails, big poles and far
+-- Exposure (the megabase consult): the weighted turrets whose own reach covers pos (threat.reach, from each one's
+-- prototype). Grubstake's soft is exposure, not any turret within 30 tiles: a megabase's rails, big poles and far
 -- substations sit just beyond its turrets' reach, and every one of them had counted as defended.
-local EXPOSE = {["ammo-turret"] = 20, ["electric-turret"] = 26, ["fluid-turret"] = 32}
 -- Walled in weighs over the ladder's soft (ops.lua, LADDER_SOFT 3): pressed, Grubstake still raided a walled base's
 -- substations at 1.5; a thief breaks a perimeter only at its top rung, where no limit holds.
 local ENCLOSE_REACH, ENCLOSE_RAYS, WALLED = 80, 6, 3.5
 function ops.exposure(surface, pos, forces, fire_only)
   local w = 0
-  for _, e in pairs(surface.find_entities_filtered{position = pos, radius = 32, force = forces,
-    type = {"ammo-turret", "electric-turret", "fluid-turret"}}) do
-    local r = not power.dark(e) and EXPOSE[e.type]
+  for _, e in pairs(surface.find_entities_filtered{position = pos, radius = threat.far(), force = forces,
+    type = threat.FIRE}) do
+    local r = threat.firing(e) and WEIGHT[e.type] and threat.reach(e)
     if r and (e.position.x - pos[1]) ^ 2 + (e.position.y - pos[2]) ^ 2 <= r * r then
       local k = WEIGHT[e.type]
       local f = e.force

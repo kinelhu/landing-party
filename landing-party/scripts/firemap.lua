@@ -4,45 +4,48 @@
 -- a point is the keep for a wave too small to take it (a review of the waves, 2026-10-27: "three turrets within 24" made
 -- a whole ring of guns 8 tiles apart the keep, its ammo belt with it, and nothing on a base's perimeter could be touched).
 -- A leaf: it reads the surface only.
-local power = require("__landing-party__.scripts.power")
+local threat = require("__landing-party__.scripts.threat")
 
 local firemap = {}
 
--- A turret's reach over a point, by type (a gun turret's 18, a laser's 24, a flamethrower's 30, plus 2).
-firemap.REACH = {["ammo-turret"] = 20, ["electric-turret"] = 26, ["fluid-turret"] = 32}
-firemap.AFFORD = 6            -- what a turret costs it, in its own, before it has learned (the price: herd.lua learns it
-                              -- per foe from what crossing its guns cost; on a deathworld's ring of gun turrets, 6 to 7)
-local TYPES = {"ammo-turret", "electric-turret", "fluid-turret"}
-local FAR = 32                -- the longest reach: turrets this far past the map's radius still cover points in it
-local CELL = 32               -- turrets bucketed by cell (no less than FAR: a point's cover is in its cell's 3x3)
+firemap.AFFORD = 6            -- a turret's price when its reader gives none (its readers learn one per prototype:
+                              -- know.price; on a deathworld's ring of gun turrets, 4.5 to 10)
+-- Turrets bucketed by cell, no smaller than the longest reach (threat.far): a point's cover is in its cell's 3x3.
+local function cell_size() return math.max(32, math.ceil(threat.far())) end
 -- The way in (entry_cost): from RAYS directions, a point every STEP tiles out to the reach given (at 12 the points stepped
 -- over the wall line where the cover peaks: a ring's crossing read as 2 guns, its breach had 5; 2026-10-27).
 firemap.RAYS, firemap.STEP = 8, 6
 
 local function xy(p) return p.x or p[1], p.y or p[2] end
 
-local function key(x, y) return math.floor(x / CELL) .. "," .. math.floor(y / CELL) end
-
--- The turrets of `forces` that can fire on points within `radius` of `at` (a dark laser fires on nothing).
-function firemap.read(surface, at, radius, forces)
+-- The turrets of `forces` (or what of `types`: threat.ARMED, its units too) that can fire on points within `radius` of `at`, each by its own reach (threat.lua: from its
+-- prototype) and its price in the reader's own (price(turret): learned per prototype, know.price; AFFORD without one);
+-- a silent one (a dark laser, a dry gun, a flamethrower with nothing to burn) fires on nothing.
+-- A cost map's box of half-side r reaches r * BOX from its middle at its corners: a fire map read for one is read that far
+-- (read to r alone, a megabase's corner of lasers lay outside the circle and inside the box, priced free, and a wave
+-- planned through it met 15 lasers; 2026-10-28).
+firemap.BOX = 1.42
+function firemap.read(surface, at, radius, forces, price, types)
   local x, y = xy(at)
+  local size = cell_size()
   local list, cells = {}, {}
-  for _, t in ipairs(surface.find_entities_filtered{position = {x, y}, radius = radius + FAR, type = TYPES, force = forces}) do
-    if not power.dark(t) then
-      local e = {x = t.position.x, y = t.position.y, r = firemap.REACH[t.type] or 20, e = t}
+  for _, t in ipairs(surface.find_entities_filtered{position = {x, y}, radius = radius + threat.far(), type = types or threat.FIRE,
+    force = forces}) do
+    if threat.firing(t) and threat.reach(t) > 0 then
+      local e = {x = t.position.x, y = t.position.y, r = threat.reach(t), p = price and price(t) or firemap.AFFORD, e = t}
       list[#list + 1] = e
-      local k = key(e.x, e.y)
+      local k = math.floor(e.x / size) .. "," .. math.floor(e.y / size)
       cells[k] = cells[k] or {}
       table.insert(cells[k], e)
     end
   end
-  return {list = list, cells = cells, surface = surface, forces = forces}
+  return {list = list, cells = cells, size = size, surface = surface, forces = forces}
 end
 
 -- Each standing turret whose reach covers pos, to f (which returns true to stop).
 local function each(map, pos, f)
   local x, y = xy(pos)
-  local cx, cy = math.floor(x / CELL), math.floor(y / CELL)
+  local cx, cy = math.floor(x / map.size), math.floor(y / map.size)
   for i = cx - 1, cx + 1 do
     for j = cy - 1, cy + 1 do
       for _, t in ipairs(map.cells[i .. "," .. j] or {}) do
@@ -50,6 +53,54 @@ local function each(map, pos, f)
       end
     end
   end
+end
+
+-- Whether a standing turret stands within d of pos (its ground defended, whatever covers pos itself).
+function firemap.near(map, pos, d)
+  local x, y = xy(pos)
+  local size = map.size
+  local cx, cy = math.floor(x / size), math.floor(y / size)
+  local span = math.ceil(d / size)
+  for i = cx - span, cx + span do
+    for j = cy - span, cy + span do
+      for _, t in ipairs(map.cells[i .. "," .. j] or {}) do
+        if (t.x - x) ^ 2 + (t.y - y) ^ 2 <= d * d and t.e.valid then return true end
+      end
+    end
+  end
+  return false
+end
+
+-- The standing turrets whose reach covers pos, as the map holds them ({x, y, r, p, e}).
+function firemap.entries(map, pos)
+  local out = {}
+  each(map, pos, function(t) out[#out + 1] = t end)
+  return out
+end
+
+-- The standing turrets whose reach touches any of the square of half-side `half` round pos, not only its middle (a cost map's
+-- cell: read at its middle, 32-tile cells fell between a ring of gun turrets 18 tiles in reach, its ways ran through them
+-- priced free, and its waves were shot on the march; 2026-10-28).
+function firemap.entries_box(map, pos, half)
+  local x, y = xy(pos)
+  local out = {}
+  local s = map.size
+  for i = math.floor((x - half) / s) - 1, math.floor((x + half) / s) + 1 do
+    for j = math.floor((y - half) / s) - 1, math.floor((y + half) / s) + 1 do
+      for _, t in ipairs(map.cells[i .. "," .. j] or {}) do
+        local dx, dy = math.max(0, math.abs(t.x - x) - half), math.max(0, math.abs(t.y - y) - half)
+        if dx * dx + dy * dy <= t.r * t.r and t.e.valid then out[#out + 1] = t end
+      end
+    end
+  end
+  return out
+end
+
+-- What the turrets covering pos cost to take, in the reader's own (their prices summed).
+function firemap.cost(map, pos)
+  local c = 0
+  each(map, pos, function(t) c = c + t.p end)
+  return c
 end
 
 -- The standing turrets whose reach covers pos.
@@ -66,7 +117,7 @@ function firemap.count(map, pos, most)
   return n
 end
 
--- The coolest of RAYS ways in: its cost (its hottest point) and its index.
+-- The coolest of RAYS ways in: its cost (its hottest point, the turrets there priced) and its index.
 local function best_ray(map, x, y, reach)
   local best, bk
   for k = 0, firemap.RAYS - 1 do
@@ -74,7 +125,7 @@ local function best_ray(map, x, y, reach)
     local ca, sa = math.cos(a), math.sin(a)
     local worst = 0
     for d = 0, reach, firemap.STEP do
-      local n = firemap.count(map, {x + ca * d, y + sa * d}, best)
+      local n = firemap.cost(map, {x + ca * d, y + sa * d})
       if n > worst then worst = n end
       if best and worst >= best then break end
     end
@@ -84,7 +135,7 @@ local function best_ray(map, x, y, reach)
   return best or 0, bk
 end
 
--- What it costs to reach pos from outside, in turrets: of RAYS ways in from `reach` tiles out, the one whose hottest
+-- What it costs to reach pos from outside, in the reader's own: of RAYS ways in from `reach` tiles out, the one whose hottest
 -- point is coolest (a factory inside a ring of guns costs the ring whichever way; an outpost in the open, its own guns;
 -- a hole its last wave broke in the ring, nothing; no shape assumed). The map must hold the turrets within reach of pos.
 -- A quick reading, for the farm weighing dozens of places a look; a wave's own way in is priced whole (costmap.lua).
@@ -93,10 +144,7 @@ function firemap.entry_cost(map, pos, reach)
   return (best_ray(map, x, y, reach))
 end
 
--- Whether a wave of n can take pos, each turret covering it costing `price` of its own (AFFORD unlearned).
-function firemap.affords(map, pos, n, price)
-  local p = price or firemap.AFFORD
-  return firemap.count(map, pos, math.floor(n / p) + 1) * p <= n
-end
+-- Whether a wave of n can take pos: what the turrets covering it cost (their prices) no more than n.
+function firemap.affords(map, pos, n) return firemap.cost(map, pos) <= n end
 
 return firemap

@@ -32,4 +32,40 @@ do
 end
 
 
+-- What each unit's attack deals a second (lp-bites, read by threat.bite): the runtime reads no damage amounts (a
+-- TriggerEffectItem there has no damage), and Synthexis prices a stay by how fast its herd breaks what it came for.
+-- Its damage effects summed through deliveries, streams, projectiles and nested results, times repeats, over its cooldown.
+do
+  local function list(x) if x == nil then return {} end; if x[1] ~= nil or next(x) == nil then return x end; return {x} end
+  local damage
+  local function action(a, seen)
+    local d = 0
+    for _, item in ipairs(list(a)) do
+      local n = item.repeat_count or 1
+      for _, del in ipairs(list(item.action_delivery)) do
+        for _, eff in ipairs(list(del.target_effects)) do d = d + n * damage(eff, seen) end
+        local via = del.stream and data.raw.stream[del.stream] or del.projectile and data.raw.projectile[del.projectile]
+        if via and not seen[via.name] then
+          seen[via.name] = true
+          d = d + n * (action(via.initial_action, seen) + action(via.action, seen) + action(via.final_action, seen))
+        end
+      end
+    end
+    return d
+  end
+  damage = function(eff, seen)
+    local n = eff.repeat_count or 1
+    if eff.type == "damage" and eff.damage then return n * (eff.damage.amount or 0) end
+    if eff.type == "nested-result" then return n * action(eff.action, seen) end
+    return 0
+  end
+  local bites = {}
+  for name, u in pairs(data.raw.unit or {}) do
+    local ap = u.attack_parameters
+    local hit = ap and ap.ammo_type and action(ap.ammo_type.action, {}) * (ap.damage_modifier or 1)
+    if hit and hit > 0 then bites[name] = hit * 60 / math.max(1, ap.cooldown or 60) end
+  end
+  data:extend{{type = "mod-data", name = "lp-bites", data = bites}}
+end
+
 require("air")

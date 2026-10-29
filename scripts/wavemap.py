@@ -123,8 +123,9 @@ def main(src, out):
     fig.savefig(out / "wavemap.png", bbox_inches="tight")
 
     # The table.
-    rows = ["| wave | sent | home | target (worth, way in, odds) | breach | heart | died: march / breach / inside / withdraw | worth razed | per own lost |",
-            "|---|---|---|---|---|---|---|---|---|"]
+    rows = ["| wave | sent | home | target (worth, way in, odds) | breach | heart | died: march / breach / inside / withdraw | crossing lost: expected / lost | worth razed | per own lost |",
+            "|---|---|---|---|---|---|---|---|---|---|"]
+    calib = [0.0, 0.0]
     tot = {"sent": 0, "home": 0, "razed": 0.0}
     by_stage = {"march": 0, "breach": 0, "inside": 0, "withdraw": 0}
     for k, w in enumerate(waves):
@@ -141,10 +142,16 @@ def main(src, out):
         sent, home = w.get("size", 0), w.get("left", 0)
         razed = w.get("razed_worth", 0) or 0
         lost_n = sent - home
+        pred = w.get("predicted")
+        crossed = w.get("crossed")
         b = xy(w.get("breach"))
         rows.append(f"| {w.get('id', k + 1)} | {sent} | {home} | {tgt} | {f'{b[0]:.0f},{b[1]:.0f}' if b else '-'} | "
                     f"{'yes' if w.get('deep') else 'no'} | {lost['march']} / {lost['breach']} / {lost['inside']} / {lost['withdraw']} | "
+                    f"{(f'{pred:.0f}' if pred is not None else '-')} / {crossed if crossed is not None else '-'} | "
                     f"{razed:.0f} | {razed / lost_n if lost_n else float('inf'):.1f} |")
+        if pred is not None and crossed is not None:
+            calib[0] += pred
+            calib[1] += crossed
         tot["sent"] += sent
         tot["home"] += home
         tot["razed"] += razed
@@ -156,10 +163,17 @@ def main(src, out):
     checks.append(f"Waves {len(waves)}: sent {tot['sent']}, home {tot['home']}; worth razed {tot['razed']:.0f}, "
                   f"{tot['razed'] / lost_all if lost_all else float('inf'):.1f} a biter lost.")
     checks.append("Lost by stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.items()) + ".")
-    prices = [f"{(w.get('price') or {}).get('sample', 0):.1f} -> {(w.get('price') or {}).get('per', 0):.1f}"
-              for w in waves if w.get("price")]
+    if calib[0] > 0:
+        checks.append(f"Calibration of the way in (march, breach, way out; waves that broke in): expected {calib[0]:.0f} lost, "
+                      f"lost {calib[1]:.0f}, ratio {calib[1] / calib[0]:.2f} (1 is right; the learned scale corrects it, know.scale).")
+    # Prices learned per turret prototype at each breach (herd.lua learn_price: {proto = {sample, per, n}}).
+    prices = []
+    for w in waves:
+        for proto, p in sorted((w.get("price") or {}).items()):
+            if isinstance(p, dict) and "per" in p:
+                prices.append(f"w{w.get('id')} {proto}: {p.get('sample', 0):.1f} ({p.get('n', 0)} covering) -> {p['per']:.1f}")
     if prices:
-        checks.append("A gun's price in its own, learned at each breach (that breach -> its price): " + ", ".join(prices) + ".")
+        checks.append("Prices learned at each breach, in its own (that breach -> the price now): " + "; ".join(prices) + ".")
     md = ["# Synthexis waves against one base", "", "![wavemap](wavemap.png)", "", *rows, "", *[f"- {c}" for c in checks], ""]
     (out / "wavemap.md").write_text("\n".join(md))
     print("\n".join(checks))

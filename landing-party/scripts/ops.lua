@@ -17,6 +17,7 @@ local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
 local jammer = require("__landing-party__.scripts.jammer")
 local power = require("__landing-party__.scripts.power")
+local threat = require("__landing-party__.scripts.threat")
 
 local ops = {}
 
@@ -36,7 +37,9 @@ local RESERVE = pool.RESERVE           -- share of the garrison cap that never l
 local PER_TURRET, BASE_FORCE = 3.5, 4
 local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground stays a priority this long
 local THREAT_BONUS = 10               -- value added to targets by it
-local STAND_OFF = 34                  -- staging this far from the target: a laser's 24 and 10 to spare
+-- Staging this far from the target: the longest reach of any turret (threat.far, from the prototypes: a flat 34 was a
+-- laser's 24 and 10 to spare, inside a flamethrower's 30 and a modded turret's whatever) and 8 to spare.
+local STAND_OFF = threat.far() + 8
 local STAGE_TICKS = 90 * 60
 local MARCH_SPEED = 0.08          -- tiles a tick, a slow column's pace
 local NO_KILL_TICKS = 90 * 60

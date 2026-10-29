@@ -4,6 +4,7 @@
 --   Tier: parts exported by mature settlements, faction-wide. Each tier unlocks units, adds damage and
 --   garrison room (army.lua reads it).
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 local names = require("__landing-party__.scripts.names")
 local site = require("__landing-party__.scripts.site")
 local base = require("__landing-party__.scripts.base")
@@ -43,7 +44,7 @@ local APART = 200                -- a new landing keeps this far from every stan
 local SITE_SEARCH = 120
 local SQUAT_DISTANCE = 60         -- Grubstake's distance from the player's turrets and units
 local SITE_MIN_ORE = 300
-local ARTILLERY_REACH = 300      -- vanilla artillery's 224 and a margin for range research
+local ARTILLERY_SPARE = 20       -- past its artillery's reach (threat.artillery_reach: its prototypes, its research)
 
 faction.TIERS = {3000, 8000, 20000, 45000}           -- parts exported to reach tiers 1..4
 
@@ -195,7 +196,7 @@ function faction.site(surface, from, distance, count)
           if clear and not shared.is_corp(pf.name) and not shared.is_biters(pf.name) and pf.name ~= "neutral"
             -- Its range research too (a factory with 210 technologies outranged 224 tiles: eleven landings in three
             -- hours died within 25 seconds, visit).
-            and surface.count_entities_filtered{position = spot, radius = ARTILLERY_REACH * (1 + pf.artillery_range_modifier),
+            and surface.count_entities_filtered{position = spot, radius = threat.artillery_reach(pf) + ARTILLERY_SPARE,
               force = pf, type = {"artillery-turret", "artillery-wagon"}, limit = 1} > 0 then
             clear = false
           end

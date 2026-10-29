@@ -6,6 +6,7 @@
 -- the minute and nothing comes up; killed after, the tunnel caves in and the hands are left inside. One rig a settlement
 -- at a time, from its ladder's second rung against the player.
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 local tune = require("__landing-party__.scripts.tune")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
@@ -21,7 +22,6 @@ local LOOT_TICKS = 60 * 60        -- they look for chests this long
 local RAZE_TICKS = 30 * 60        -- then break what is near this long
 local LEAVE_TICKS = 45 * 60       -- then go back down; who is not at the mound by then stays
 local RIG_MIN, RIG_MAX = 40, 60
-local REACH = 19
 local HANDS_MIN, HANDS_MAX = 4, 6
 local CHEST_RADIUS = 16
 local RUNG = 2
@@ -53,8 +53,7 @@ local function rig_point(s, owner, tpos, hpos)
   if len < RIG_MAX + 10 then return nil end
   for d = RIG_MIN, RIG_MAX, 2 do
     local q = {tpos[1] + dx / len * d, tpos[2] + dy / len * d}
-    if s.count_entities_filtered{position = q, radius = REACH, force = owner,
-      type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} == 0 then
+    if threat.covering(s, q, owner, 1) == 0 then
       return s.find_non_colliding_position("lp-claim-rig", q, 6, 0.5)
     end
   end
@@ -214,14 +213,13 @@ local function step(b, j)
       j.phase, j.phase_at = "raze", game.tick
     end
   elseif j.phase == "raze" then
-    -- Each hand on a building within 10 of the mound that no turret of the player's reaches (REACH), the nearest, told
+    -- Each hand on a building within 10 of the mound that no turret of the player's reaches (threat.covering), the nearest, told
     -- again when it falls; none left, back to the mound. Told to attack the area, they went for turrets beyond it and
     -- five of six fell 10 tiles from the turret that killed them, 15 to 21 from the mound (jumper).
     local ents = {}
     for _, e in pairs(s.find_entities_filtered{position = j.mound, radius = 10, force = j.owner}) do
       -- Only what can be hit: a ghost in reach crashed the order (factory, seeds 12345, 4242, 2, 8).
-      if e.is_entity_with_health and e.type ~= "character" and e.type ~= "unit" and not e.type:find("turret") and s.count_entities_filtered{position = e.position,
-        radius = REACH, force = j.owner, type = {"ammo-turret", "electric-turret", "fluid-turret"}, limit = 1} == 0 then
+      if e.is_entity_with_health and e.type ~= "character" and e.type ~= "unit" and not e.type:find("turret") and threat.covering(s, e.position, j.owner, 1) == 0 then
         ents[#ents + 1] = e
       end
     end

@@ -39,6 +39,51 @@ function know.of(key)
   return s[key]
 end
 
+-- What a weapon of a foe has cost the faction, in its own lost, per prototype (a gun turret, a laser, a modded one each
+-- its own: one price for every turret could not learn that a laser line is dearer than a gun line; the perception
+-- consult, docs/reviews/2026-10-27-synthexis-perception-consult.md). Learned from what crossing them cost, PRICE_LEARN of
+-- each new sample, from the prior its first sample replaces. nil: nothing learned yet.
+know.PRICE_LEARN, know.PRICE_MIN, know.PRICE_MAX = 0.4, 1, 40
+function know.price(key, foe, proto)
+  local p = know.of(key).price
+  p = p and p[foe] and p[foe][proto]
+  return p and p.per
+end
+-- How far its reading of the way in falls short, per foe: what crossing cost it (march, breach, way out) over what it
+-- expected (costmap.way_in, there and back), learned at each wave that broke in (PRICE_LEARN of each; 1 before any): the
+-- cost map's fire scaled by it when its mind calibrates (a deathworld's waves lost twice what they expected crossing, its
+-- prices learned at the breach alone; 2026-10-27). Clamped to SCALE_MIN, SCALE_MAX.
+know.SCALE_MIN, know.SCALE_MAX = 0.5, 4
+function know.scale(key, foe)
+  local s = know.of(key).scale
+  return s and s[foe] or 1
+end
+function know.learn_scale(key, foe, sample)
+  local k = know.of(key)
+  k.scale = k.scale or {}
+  local old = k.scale[foe]
+  sample = math.min(know.SCALE_MAX, math.max(know.SCALE_MIN, sample))
+  k.scale[foe] = old and old + (sample - old) * know.PRICE_LEARN or sample
+  return k.scale[foe]
+end
+
+-- prior: what it priced it at before (its first sample moves from there, PRICE_LEARN of the way, not to the sample: one
+-- wave wiped out at 15 lasers made a laser 2.5 from 15.4 at a stroke; 2026-10-28). floor: the sample is a least (a wave
+-- that lost all it had could have lost more: it raises a price, never lowers it).
+function know.learn_price(key, foe, proto, sample, prior, floor)
+  local k = know.of(key)
+  k.price = k.price or {}
+  k.price[foe] = k.price[foe] or {}
+  local p = k.price[foe][proto]
+  sample = math.min(know.PRICE_MAX, math.max(know.PRICE_MIN, sample))
+  if not p and prior then p = {per = prior, n = 0} end
+  if floor and p and sample <= p.per then return p.per end
+  if not p then p = {per = sample, n = 0} else p.per = p.per + (sample - p.per) * know.PRICE_LEARN end
+  p.n = p.n + 1
+  k.price[foe][proto] = p
+  return p.per
+end
+
 -- What a thing of a faction is worth to it: a unit's or building's price (parts; a breed's, biomass), else 1.
 local function worth(name)
   local kind = shared.kind_of(name)

@@ -15,6 +15,7 @@
 -- in the chunk) is counted to the culture whose tumor laid them; farm.lua spends it on breeding.
 local shared = require("__landing-party__.shared")
 local tune = require("__landing-party__.scripts.tune")
+local costmap = require("__landing-party__.scripts.costmap")
 
 local creep = {}
 
@@ -32,6 +33,8 @@ local BUD_PRICE = 30
 local BUD_MIN = 15 * 60
 local HEDGE = 160              -- wild nests this near a culture are its to take
 local STALL = 3                -- buds toward a nest without coming nearer: out of reach
+local LAND_CELL = 8            -- tiles a cell of its reading of the ground round it (the walk to a nest over land)
+local LAND_FOR = 10 * 3600     -- how long that reading holds (the ground, and the player's walls on it)
 local STRAY = 0.9              -- a bud strays to a side, up to this share of a tumor's reach either way
 local FOOD_HALF = 20           -- pollution in the 5 by 5 chunks round a nest that makes it count half as far
 local FOUND_PRICE = 150        -- an incubator of its own, where no wild nest is near (five buds; a wild one is free)
@@ -225,6 +228,21 @@ function creep.tick(tick)
   end
 end
 
+-- How much faster its incubators turn air into biomass at its evolution: as a wild spawner's births quicken, its cooldown
+-- from 360 ticks to 150 over evolution (the game's own biter-spawner, data/base enemies.lua), EVO_QUICKEN times at the most.
+-- (The user, 2026-10-27, on a megabase's map at full evolution: its income stayed what it was at the start, and its waves
+-- of mediums were a quarter of what its defences took.)
+local EVO_QUICKEN = 360 / 150
+-- (EVO_ON: on deathworld, six timings each, 685 razed with it against 895 without, each side from 34 or 58 to over 1,500:
+-- noise, 2026-10-28. On nw it took Synthexis from one culture to five.)
+local EVO_ON = true
+function creep.evo_rate(surface)
+  if not EVO_ON then return 1 end
+  local f = game.forces[B.force]
+  local evo = f and f.get_evolution_factor(surface) or 0
+  return 1 + (EVO_QUICKEN - 1) * evo
+end
+
 -- What a culture ate over `seconds`, to its biomass: per chunk, what its creep tiles and incubators there absorb
 -- (shared.CREEP_ABSORB, PEN_ABSORB, PEN_SHARE), up to the pollution there, taken off the air (the engine's absorption on
 -- both is off: this is it). pens: {culture = {incubator entities}}. Returns {culture = biomass}.
@@ -259,7 +277,7 @@ function creep.drink(seconds, pens)
         + p * math.min(1, c.pens * shared.PEN_SHARE * seconds))
       if took > 0 then
         surface.pollute({c.x, c.y}, -took, c.pens > 0 and "lp-pen" or nil)
-        local got = took * shared.YIELD * tune.strength("biotech")
+        local got = took * shared.YIELD * tune.strength("biotech") * creep.evo_rate(surface)
         cul.biomass = (cul.biomass or 0) + got
         cul.drunk = (cul.drunk or 0) + got
         cul.eaten = (cul.eaten or 0) + took
@@ -305,6 +323,7 @@ end
 
 function creep.forget(id) if st().cultures then st().cultures[id] = nil end end
 
+-- (c.keep: what its farm keeps back for a siege's breeds, farm.lua; its growth spends what is above it.)
 local function pay(c, tick, price)
   c.last_bud = tick
   c.biomass, c.spent = c.biomass - price, (c.spent or 0) + price
@@ -326,6 +345,15 @@ local function room(surface, pos)
   end
 end
 
+-- Where it could found an incubator of its own now: a grown tumor with no incubator within FOUND_APART and room by it.
+local function found_spot(surface, mine)
+  for _, rec in ipairs(mine) do
+    if rec.r >= R_MAX
+      and surface.count_entities_filtered{name = "lp-pen", position = rec.pos, radius = FOUND_APART, limit = 1} == 0
+      and room(surface, rec.pos) then return rec end
+  end
+end
+
 local function found(c, id, surface, mine, tick)
   for _, rec in ipairs(mine) do
     if rec.r >= R_MAX
@@ -333,7 +361,7 @@ local function found(c, id, surface, mine, tick)
       local q = room(surface, rec.pos)
       if q then
         c.wants = FOUND_PRICE
-        if tick - c.last_bud < BUD_MIN or (c.biomass or 0) < FOUND_PRICE then return nil end
+        if tick - c.last_bud < BUD_MIN or (c.biomass or 0) - (c.keep or 0) < FOUND_PRICE then return nil end
         pay(c, tick, FOUND_PRICE)
         c.founded = (c.founded or 0) + 1
         return {found = q}
@@ -342,7 +370,7 @@ local function found(c, id, surface, mine, tick)
   end
   if #mine >= TUMORS_MAX then return nil end
   c.wants = BUD_PRICE
-  if tick - c.last_bud < BUD_MIN or (c.biomass or 0) < BUD_PRICE then return nil end
+  if tick - c.last_bud < BUD_MIN or (c.biomass or 0) - (c.keep or 0) < BUD_PRICE then return nil end
   local forces = shared.player_forces()
   local at, best
   for _, rec in ipairs(mine) do
@@ -398,22 +426,64 @@ function creep.bud(id, tick)
     if not c.blocked[n.unit_number] then nests[#nests + 1] = n end
   end
   if #nests == 0 then return found(c, id, surface, mine, tick) end
-  local best, bs, bd, from
+  -- Over land: the walk from its middle to each nest, round water (a cost map of the ground, no fire: costmap). In a
+  -- straight line, its creep went for nests across a lake arm from a megabase's shore, budded along the waterline for half
+  -- an hour and took none (2026-10-27).
+  c.land = c.land or {}
+  local land = c.land.map
+  if not land or tick - c.land.tick >= LAND_FOR then
+    local m = costmap.read(surface, c.pos, HEDGE + 2 * R_MAX, {"player"}, {from = c.pos, cell = LAND_CELL})
+    -- (Kept in storage: its numbers only, what costmap.cost and costmap.path read.)
+    land = {x0 = m.x0, y0 = m.y0, size = m.size, w = m.w, h = m.h, cost = m.cost, came = m.came}
+    c.land = {map = land, tick = tick}
+  end
+  local best, bs, path
   for _, n in ipairs(nests) do
-    local pull = 1 + creep.food(surface, n.position, 2) / FOOD_HALF
     for _, rec in ipairs(mine) do
       local d = ((n.position.x - rec.pos.x) ^ 2 + (n.position.y - rec.pos.y) ^ 2) ^ 0.5
       if d <= rec.r + 2 then return n end
-      if not bs or d / pull < bs then best, bs, bd, from = n, d / pull, d, rec end
+    end
+    local walk = costmap.cost(land, n.position)
+    if walk then
+      local pull = 1 + creep.food(surface, n.position, 2) / FOOD_HALF
+      local tiles = walk / costmap.WALK
+      if not bs or tiles / pull < bs then best, bs = n, tiles / pull end
+    else
+      c.blocked[n.unit_number] = true
     end
   end
+  if not best then return found(c, id, surface, mine, tick) end
+  path = costmap.path(land, best.position) or {}
+  -- Its next step: the first point of that walk its creep does not cover yet, budded from the tumor nearest it.
+  local k, to
+  for i, q in ipairs(path) do
+    local covered = false
+    for _, rec in ipairs(mine) do
+      if (q.x - rec.pos.x) ^ 2 + (q.y - rec.pos.y) ^ 2 <= rec.r * rec.r then covered = true; break end
+    end
+    if not covered then k, to = i, q; break end
+  end
+  if not to then k, to = #path + 1, {x = best.position.x, y = best.position.y} end
+  -- The cheaper incubator (the user, 2026-10-28, on a megabase where its creep took one nest for 114 buds in three
+  -- hours): the rest of the way to that nest in buds (its walk not yet covered, STEP a bud, BUD_PRICE each) against
+  -- one of its own (FOUND_PRICE), where it has room for one.
+  local left = math.max(0, #path - k + 1) * land.size
+  if math.ceil(left / STEP) * BUD_PRICE > FOUND_PRICE and found_spot(surface, mine) then
+    return found(c, id, surface, mine, tick)
+  end
+  local from, bd
+  for _, rec in ipairs(mine) do
+    local d = ((to.x - rec.pos.x) ^ 2 + (to.y - rec.pos.y) ^ 2) ^ 0.5
+    if not bd or d < bd then from, bd = rec, d end
+  end
   c.wants = BUD_PRICE
-  if tick - c.last_bud < BUD_MIN or #mine >= TUMORS_MAX or (c.biomass or 0) < BUD_PRICE then return nil end
-  -- Progress toward it: the nearest any tumor has come. STALL buds without coming nearer, it is out of reach.
+  if tick - c.last_bud < BUD_MIN or #mine >= TUMORS_MAX or (c.biomass or 0) - (c.keep or 0) < BUD_PRICE then return nil end
+  -- Progress along it: the farthest point of the walk its creep has covered. STALL buds without covering more, it is out
+  -- of reach.
   c.aim = c.aim or {}
   local key = best.unit_number
   local a = c.aim[key]
-  if not a or bd < a.d - 1 then c.aim[key] = {d = bd, n = 0}
+  if not a or k > a.k then c.aim[key] = {k = k, n = 0}
   else
     a.n = a.n + 1
     if a.n >= STALL then c.blocked[key], c.aim[key] = true, nil return nil end
@@ -422,7 +492,8 @@ function creep.bud(id, tick)
   c.budded = (c.budded or 0) + 1
   -- Not a straight line of tumors (the user: "a little variation in tumor positioning to make it look more organic"):
   -- each bud steps a share of its reach and strays to a side, by a hash of where and when.
-  local ux, uy = (best.position.x - from.pos.x) / bd, (best.position.y - from.pos.y) / bd
+  bd = math.max(bd, 1)
+  local ux, uy = (to.x - from.pos.x) / bd, (to.y - from.pos.y) / bd
   local h1 = ((from.pos.x * 73856093 + from.pos.y * 19349663 + tick * 83492791) % 1000003) / 1000003
   local h2 = ((from.pos.x * 19349663 + from.pos.y * 83492791 + tick * 73856093) % 1000003) / 1000003
   local step = math.min(R_MAX - 1, bd) * (0.7 + 0.3 * h1)

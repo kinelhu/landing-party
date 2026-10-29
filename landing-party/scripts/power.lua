@@ -5,12 +5,14 @@
 -- where no turret reaches it. Its counter is the player's: a second feed, accumulators by the turrets, walls round the
 -- line. A dark turret (no energy) weighs nothing (ops.weigh): the Line goes through the dark stretch.
 -- A leaf: it reads the surface only.
+local threat = require("__landing-party__.scripts.threat")
+
 local power = {}
 
 local SOURCES = {"generator", "solar-panel", "accumulator", "burner-generator", "electric-energy-interface", "reactor",
   "fusion-generator", "lightning-attractor"}
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret"}
-local REACH = 30                 -- a pole this far from every turret stands beyond their reach (laser 24, and a margin)
+local SPARE = 4                  -- a pole this far past every turret's own reach (threat.reach) stands beyond it
 local ATTACH = 12                -- a source or a turret hangs on the nearest pole within this
 
 -- Whether an electric turret has no power to fire: its network gives it none (by its buffer, a laser just built read
@@ -81,20 +83,22 @@ function power.cut(surface, force, turrets, radius)
   end
   hang(src, surface.find_entities_filtered{area = area, force = force, type = SOURCES})
   hang(tur, turrets)
-  -- Exposed: no turret within REACH (the force's turrets on a grid, one query in all: a query a pole cost 300 ms on a
-  -- megabase's 949 poles, visit nw).
+  -- Exposed: no turret whose own reach (threat.reach, plus SPARE) covers it (the force's turrets on a grid, one query in
+  -- all: a query a pole cost 300 ms on a megabase's 949 poles, visit nw; a flat 30 read a pole inside a flamethrower's
+  -- reach as exposed).
+  local REACH = threat.far() + SPARE
   local tgrid = {}
   for _, t in pairs(surface.find_entities_filtered{area = {{cx - radius - REACH, cy - radius - REACH},
     {cx + radius + REACH, cy + radius + REACH}}, force = force, type = TURRETS}) do
     local k = math.floor(t.position.x / REACH) .. "," .. math.floor(t.position.y / REACH)
     tgrid[k] = tgrid[k] or {}
-    table.insert(tgrid[k], t.position)
+    table.insert(tgrid[k], {x = t.position.x, y = t.position.y, r = threat.reach(t) + SPARE})
   end
   local function exposed(p)
     local gx, gy = math.floor(p.position.x / REACH), math.floor(p.position.y / REACH)
     for dx = -1, 1 do for dy = -1, 1 do
       for _, q in ipairs(tgrid[(gx + dx) .. "," .. (gy + dy)] or {}) do
-        if (q.x - p.position.x) ^ 2 + (q.y - p.position.y) ^ 2 <= REACH * REACH then return false end
+        if (q.x - p.position.x) ^ 2 + (q.y - p.position.y) ^ 2 <= q.r * q.r then return false end
       end
     end end
     return true

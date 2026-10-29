@@ -1,3 +1,4 @@
+local lp_threat = require("__landing-party__.scripts.threat")
 -- Headless simulation: lands one base near spawn, lets it grow, plays a scripted player action at
 -- params.strike minutes, snapshots the base and checks what should follow.
 -- params.lua (written by scripts/sim.sh into this mod's copy in the run's profile) gives
@@ -2720,6 +2721,126 @@ local COUNTERS = require("__landing-party__.counters")
 -- Compose (the faction AI's composition, step 5): six of Serenity's Line troopers walk into four gun turrets with
 -- piercing rounds and die; its mix is then tilted toward what beats gun turrets (counters.lua): the kind that scores
 -- best against them gains on the one that scores worst.
+-- feeds (the perception consult, step 4): a gun turret loaded by one inserter from one belt line, an underground pair
+-- in it, reads as hanging on the whole line (feeds.lua follows the belt upstream, under the ground too: underground_belt_
+-- neighbour; a key of 2.0's crashed the first deathworld run with an underground in its ammunition line).
+scenarios.feeds = function()
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, history_off = true})
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+    flatten(c[1] - 30, c[2] - 20, c[1] + 30, c[2] + 20)
+    S.c = c
+    -- One line: from the far west, eastward into an inserter, into a turret.
+    local function line(x0, y, n, under)
+      local made = {}
+      for k = 0, n - 1 do
+        local x = x0 + k
+        local name, extra = "transport-belt", nil
+        if under and k == under then name, extra = "underground-belt", "input" end
+        if under and k > under and k < under + 3 then name = nil end
+        if under and k == under + 3 then name, extra = "underground-belt", "output" end
+        if name then
+          local e = surface().create_entity{name = name, position = {x + 0.5, y + 0.5}, direction = defines.direction.east,
+            force = "player", type = extra}
+          made[#made + 1] = e
+        end
+      end
+      return made
+    end
+    local function feed(x, y, dir)
+      -- An inserter at x, y, turned until it drops east (dir 1) or west (dir -1).
+      for _, d in ipairs({defines.direction.east, defines.direction.west}) do
+        local ins = surface().create_entity{name = "burner-inserter", position = {x + 0.5, y + 0.5}, direction = d, force = "player"}
+        if (ins.drop_position.x - ins.position.x) * dir > 0 then return ins end
+        ins.destroy()
+      end
+    end
+    -- The first turret: one line of 14, an underground pair at 4 (its far end 10 tiles out).
+    local t1 = surface().create_entity{name = "gun-turret", position = {c[1] + 1, c[2] - 5}, force = "player"}
+    t1.insert{name = "piercing-rounds-magazine", count = 10}
+    S.line1 = line(c[1] - 15, c[2] - 6, 14, 4)
+    S.ins1 = feed(c[1] - 1, c[2] - 6, 1)
+    -- The second: one plain line.
+    local t2 = surface().create_entity{name = "gun-turret", position = {c[1] + 1, c[2] + 7}, force = "player"}
+    t2.insert{name = "piercing-rounds-magazine", count = 10}
+    S.line2 = line(c[1] - 12, c[2] + 6, 11)
+    S.ins2 = feed(c[1] - 1, c[2] + 6, 1)
+    S.t1, S.t2 = t1, t2
+  end)
+  schedule(5 * 60, function()
+    local c = S.c
+    local seen = lp("debug_feeds", {c[1], c[2]}, 40)
+    info("feeds: " .. serpent.line(seen))
+    local by = {}
+    for _, f in ipairs(seen) do by[string.format("%.1f,%.1f", f[2], f[3])] = f end
+    local far = S.line1 and S.line1[1]
+    local farkey = far and far.valid and string.format("%.1f,%.1f", far.position.x, far.position.y)
+    check("feeds: the inserter drops into the turret", S.ins1 and S.ins1.drop_target == S.t1,
+      tostring(S.ins1 and S.ins1.drop_target and S.ins1.drop_target.name))
+    check("feeds: the far end of the line, past the underground, starves the turret", farkey and by[farkey] and by[farkey][4] >= 1,
+      tostring(farkey))
+  end)
+end
+
+-- perceive (the perception consult, step 7: lab bases each with a named expectation, checked before any wave): what
+-- Synthexis reads of a base. "" (lasers on one power line): the pole whose loss darkens them is a feed (feeds.lua, by
+-- power.cut); twofeed (the same line fed from both ends): no single cut, the player's answer; sprawl (machines in the
+-- open, three guns among them, no wall): its best soft heart is a cell no gun covers.
+scenarios.perceive = function()
+  local mix = params.mix or ""
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, history_off = true, harmless = true})
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(o.x - o.x / len * 200), math.floor(o.y - o.y / len * 200)}
+    flatten(c[1] - 90, c[2] - 40, c[1] + 90, c[2] + 40)
+    S.c = c
+    local function put(name, x, y) return surface().create_entity{name = name, position = {c[1] + x, c[2] + y}, force = "player"} end
+    if mix == "" or mix == "twofeed" then
+      -- Eight lasers round a substation, its power from a source 70 tiles east down a line of big poles (and, twofeed,
+      -- a second from 70 tiles west).
+      put("substation", 0, 0)
+      for k = 0, 7 do
+        local a = k * math.pi / 4
+        put("laser-turret", math.floor(math.cos(a) * 6 + 0.5), math.floor(math.sin(a) * 6 + 0.5))
+      end
+      local function line(sign)
+        -- (Within wire reach: a substation's 18, a big pole's 32.)
+        for _, x in ipairs({16, 44, 68}) do put("big-electric-pole", sign * x, 0) end
+        put("substation", sign * 74, 0)
+        local src = put("electric-energy-interface", sign * 78, 0)
+        src.power_production, src.electric_buffer_size = 1e7, 1e8
+      end
+      line(1)
+      if mix == "twofeed" then line(-1) end
+    elseif mix == "sprawl" then
+      for k = 0, 11 do put("assembling-machine-2", -60 + k * 10, (k % 2) * 12 - 6) end
+      for _, x in ipairs({-55, 0, 55}) do
+        local t = put("gun-turret", x, 20)
+        t.insert{name = "piercing-rounds-magazine", count = 50}
+      end
+    end
+  end)
+  schedule(5 * 60, function()
+    local c = S.c
+    if mix == "" or mix == "twofeed" then
+      local seen = lp("debug_feeds", {c[1], c[2]}, 90)
+      info("perceive feeds: " .. serpent.line(seen))
+      local pole
+      for _, f in ipairs(seen) do if f[1]:find("pole") and f[4] >= 4 then pole = f end end
+      if mix == "" then check("perceive: one power line, its pole a feed that darkens the lasers", pole ~= nil, serpent.line(seen))
+      else check("perceive: fed from both ends, no single cut", pole == nil, serpent.line(seen)) end
+    elseif mix == "sprawl" then
+      local maps = lp("debug_base_maps", {c[1] - 120, c[2]}, 200, 60, 200)
+      local h = maps.hearts[1]
+      info("perceive hearts: " .. serpent.line(maps.hearts))
+      check("perceive: sprawl, its best soft heart is no gun's", h ~= nil and h[4] == 0, serpent.line(h))
+    end
+  end)
+end
+
 scenarios.compose = function()
   schedule(60, function()
     lp("debug_tune", {raids_off = true, history_off = true})
@@ -3421,10 +3542,11 @@ scenarios.weigh = function()
     end
     local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
     S.guns, S.flames, S.relay = at(120, -60), at(120, 0), at(120, 60)
+    -- Armed, as a base's turrets are: a dry turret weighs nothing (threat.firing).
     for _, c in ipairs({S.guns, S.flames, S.relay}) do flatten(c[1] - 12, c[2] - 12, c[1] + 12, c[2] + 12) end
     for k = -1, 1 do
-      put("gun-turret", {S.guns[1] + 4 * k, S.guns[2] - 5})
-      put("flamethrower-turret", {S.flames[1] + 4 * k, S.flames[2] - 5})
+      put("gun-turret", {S.guns[1] + 4 * k, S.guns[2] - 5}).insert{name = "firearm-magazine", count = 50}
+      put("flamethrower-turret", {S.flames[1] + 4 * k, S.flames[2] - 5}).insert_fluid{name = "light-oil", amount = 100}
     end
     put("assembling-machine-1", S.guns)
     put("assembling-machine-1", S.flames)
@@ -3465,6 +3587,7 @@ scenarios.techup = function()
     flatten(S.guns[1] - 12, S.guns[2] - 12, S.guns[1] + 12, S.guns[2] + 12)
     for k = -1, 1 do
       surface().create_entity{name = "gun-turret", position = {S.guns[1] + 4 * k, S.guns[2] - 5}, force = "player"}
+        .insert{name = "firearm-magazine", count = 50}  -- armed: a dry turret weighs nothing (threat.firing)
     end
     surface().create_entity{name = "assembling-machine-1", position = S.guns, force = "player"}
   end)
@@ -7418,6 +7541,14 @@ scenarios.visit = function()
       info(string.format("visit: base and maps dumped (%d buildings, %d hearts)", #out, #maps.hearts))
     end)
     schedule(END - 120, function()
+      -- The player's turrets by status at the end: how many a cut supply left dry or dark (feeds.lua).
+      local names, by = {}, {}
+      for k, v in pairs(defines.entity_status) do names[v] = k end
+      for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"ammo-turret", "electric-turret", "fluid-turret"}}) do
+        local key = e.type .. " " .. tostring(names[e.status] or e.status)
+        by[key] = (by[key] or 0) + 1
+      end
+      info("visit: turret statuses at the end " .. serpent.line(by))
       helpers.write_file("landing-party/waves.json", helpers.table_to_json(lp("herd_state").log or {}))
       info("visit: waves dumped")
     end)
@@ -7443,6 +7574,134 @@ scenarios.visit = function()
       end
     end)
   end
+  -- LP_MIX=waterprobe: water and cliffs on a grid of 8 tiles round Synthexis's way north of nw's base (what its cost map
+  -- may miss between a trail's legs).
+  if params.mix:find("waterprobe", 1, true) then
+    schedule(60, function()
+      local out = {}
+      for x = 300, 760, 8 do
+        for y = -520, 0, 8 do
+          local wt = surface().count_tiles_filtered{area = {{x, y}, {x + 8, y + 8}}, collision_mask = "water_tile"}
+          local cl = surface().count_entities_filtered{area = {{x, y}, {x + 8, y + 8}}, type = "cliff"}
+          if wt > 0 or cl > 0 then out[#out + 1] = {x, y, wt, cl} end
+        end
+      end
+      helpers.write_file("landing-party/water.json", helpers.table_to_json(out))
+      -- And the cost map's way from Synthexis's landing to the staging point across the lake, on both grids.
+      for _, q in ipairs({{{700, -280}, {422, -266}, 16}, {{700, -280}, {422, -266}, 32}, {{700, -280}, {422, -266}, 48},
+        {{262, -745}, {300, -300}, 48}, {{262, -745}, {300, -120}, 48}}) do
+        local cell = q[3]
+        local r = lp("debug_cost_path", q[1], q[2], cell)
+        info(string.format("visit: cost path cell %d: cost %s, %s", cell, tostring(r.cost), serpent.line(r.path)))
+      end
+      info(string.format("visit: water dumped (%d cells)", #out))
+    end)
+  end
+  -- LP_MIX=breachlab (any mix containing it): Synthexis's cultures paid 200 biomass each 10 s, so its first sieges come in
+  -- minutes, not the hours of a visit (the nw breach lab, 2026-10-28: the real wall, mines and interior, a try in minutes).
+  if params.mix:find("breachlab", 1, true) then
+    for t = 600, END - 60, 600 do
+      schedule(t, function()
+        for _, f in ipairs(lp("farm_state").farms or {}) do lp("debug_biomass", f.id, 200) end
+      end)
+    end
+  end
+  -- LP_MIX=savesiege (with breachlab): the game saved (an auto-save named "siege", in this profile's saves) the moment a
+  -- siege's wave sets out, to watch it in a window (scripts/play-visit.sh, LP_WATCH=_autosave-siege.zip; the user,
+  -- 2026-10-28: "prepare a save so I can see such a siege using my own eyes").
+  if params.mix:find("savesiege", 1, true) then
+    local sieging = {}
+    -- (As a server, as fast as it goes: scripts/siege-save.sh waits for the save.)
+    schedule(30, function() game.speed = 64 end)
+    for t = 120, END - 60, 60 do
+      schedule(t, function()
+        if S.siege_saved then return end
+        for _, f in ipairs(lp("farm_state").farms or {}) do
+          if f.siege then sieging[f.id] = true
+          elseif sieging[f.id] and f.last_wave and game.tick - f.last_wave <= 120 then
+            S.siege_saved = game.tick
+            -- (At its own speed again, saved so: the save is to be watched. A server writes _autosave-siege.zip,
+            -- scripts/siege-save.sh; a benchmark saves nothing.)
+            -- (Its speed back to 1 a tick before it saves: set and saved in one tick, a watch save opened at speed.)
+            game.speed = 1
+            schedule(game.tick - storage.t0 + 1, function() game.auto_save("siege") end)
+            info(string.format("visit: siege of farm %d set out, saved at tick %d", f.id, game.tick + 1))
+            return
+          end
+        end
+      end)
+    end
+  end
+  -- LP_MIX=growth (any mix containing it): every 5 minutes, Synthexis's culture: its incubators, biomass, what it saves
+  -- for, its tumors, the nests its creep gave up on (why a culture does not grow).
+  if params.mix:find("growth", 1, true) then
+    for t = 3600, END - 60, 5 * 3600 do
+      schedule(t, function()
+        local ts = lp("creep_state").tumors
+        local tumors = #ts
+        -- Its creep's reach toward the wild: the tumor nearest any wild spawner, and how near.
+        local near, at
+        for _, tu in ipairs(ts) do
+          for _, sp in ipairs(surface().find_entities_filtered{type = "unit-spawner", force = "enemy", position = tu.pos, radius = 200}) do
+            local d = math.sqrt((sp.position.x - tu.pos.x) ^ 2 + (sp.position.y - tu.pos.y) ^ 2)
+            if not near or d < near then near, at = d, {math.floor(tu.pos.x), math.floor(tu.pos.y), math.floor(sp.position.x), math.floor(sp.position.y)} end
+          end
+        end
+        -- The corporations' armies by unit, for what Synthexis's waves meet on the way.
+        for _, f in pairs(game.forces) do
+          if f.name:find("^lp%-") or f.name == "serenity" or f.name == "grubstake" then
+            local by = {}
+            for _, u in ipairs(surface().find_entities_filtered{force = f, type = {"unit", "car", "spider-vehicle"}}) do
+              by[u.name] = (by[u.name] or 0) + 1
+            end
+            if next(by) then info(string.format("visit: growth army %s: %s", f.name, serpent.line(by))) end
+          end
+        end
+        info(string.format("visit: growth tumors %s; nearest wild spawner %s tiles (%s)", serpent.line((function()
+          local o = {} for _, tu in ipairs(ts) do o[#o + 1] = {math.floor(tu.pos.x), math.floor(tu.pos.y)} end return o end)()),
+          tostring(near and math.floor(near)), serpent.line(at)))
+        for _, f in ipairs(lp("farm_state").farms) do
+          info(string.format("visit: growth min %d farm %d: pens %d, taken %d, grown %d, tumors %d, short %s, saving %s, biomass %s",
+            math.floor((game.tick - storage.t0) / 3600), f.id, f.pens, f.taken, f.grown, tumors, tostring(f.short),
+            tostring(f.saving), serpent.line(f.biomass)))
+        end
+      end)
+    end
+  end
+  -- LP_MIX=reachprobe: what reaching every cell round nw's base costs from Synthexis's landing (16-tile cells), and the
+  -- player's buildings, for a picture of where it could get in (docs: the nw question, 2026-10-27).
+  if params.mix:find("reachprobe", 1, true) then
+    schedule(120, function()
+      local g = lp("debug_cost_grid", {700, -280}, {0, -100}, 900, 16)
+      helpers.write_file("landing-party/reach.json", helpers.table_to_json(g))
+      local out = {}
+      for _, e in pairs(surface().find_entities_filtered{area = {{-900, -1000}, {900, 800}}, force = "player",
+        type = {"ammo-turret", "electric-turret", "fluid-turret", "land-mine", "wall", "gate", "assembling-machine", "furnace",
+          "mining-drill", "solar-panel", "accumulator", "roboport", "lab", "radar", "electric-pole"}}) do
+        out[#out + 1] = {e.type, math.floor(e.position.x), math.floor(e.position.y)}
+      end
+      helpers.write_file("landing-party/reach_base.json", helpers.table_to_json(out))
+      local corp = {}
+      for _, e in pairs(surface().find_entities_filtered{area = {{-900, -1000}, {1100, 800}}, force = {"lp-serenity", "lp-grubstake"}}) do
+        corp[#corp + 1] = {e.type, math.floor(e.position.x), math.floor(e.position.y)}
+      end
+      helpers.write_file("landing-party/reach_corp.json", helpers.table_to_json(corp))
+      info(string.format("visit: reach dumped (%d cells, %d buildings, %d corporation entities)", #g.cost, #out, #corp))
+    end)
+  end
+  -- LP_MIX=statusprobe: the player's turrets by type and status at the start (what threat.firing reads).
+  if params.mix:find("statusprobe", 1, true) then
+    schedule(120, function()
+      local by = {}
+      local names = {}
+      for k, v in pairs(defines.entity_status) do names[v] = k end
+      for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"ammo-turret", "electric-turret", "fluid-turret"}}) do
+        local key = e.type .. " " .. tostring(names[e.status] or e.status)
+        by[key] = (by[key] or 0) + 1
+      end
+      info("visit: turret statuses " .. serpent.line(by))
+    end)
+  end
   -- LP_MIX=basemap (any mix containing it): at the start, every building of the player's within 600 of the middle (type,
   -- name, position), for a plot of what a wave meets (docs/sim/visit-*/base.json).
   if params.mix:find("basemap", 1, true) then
@@ -7455,6 +7714,92 @@ scenarios.visit = function()
       end
       helpers.write_file("landing-party/base.json", helpers.table_to_json(out))
       info(string.format("visit: base dumped (%d buildings)", #out))
+    end)
+  end
+  -- LP_MIX=marchtrace: every marching herd's group traced each second (landing-party debug_tune march_trace).
+  if params.mix:find("marchtrace", 1, true) then schedule(30, function() lp("debug_tune", {march_trace = true}) end) end
+  -- LP_MIX=priorprobe: threat.prior (lp_threat, required at load) of one of the player's turrets of each prototype (what a turret is priced at before any
+  -- is learned).
+  if params.mix:find("priorprobe", 1, true) then
+    schedule(params.mix:find("kh", 1, true) and 14 * 3600 or 60, function()
+      local seen = {}
+      for _, t in pairs(surface().find_entities_filtered{force = params.mix:find("kh", 1, true) and "lp-serenity" or "player",
+        type = {"ammo-turret", "electric-turret", "fluid-turret", "unit"}}) do
+        if not seen[t.name] then
+          seen[t.name] = true
+          local p = lp_threat.profile(t.name)
+          info(string.format("visit: prior %s %s (%s, %s) %.1f, firing %s, learned %s", t.force.name, t.name, p and p.kind or "?",
+            p and p.dmg or "?", lp_threat.prior(t, 6), tostring(lp_threat.firing(t)), tostring(lp("debug_price", t.force.name, t.name))))
+        end
+      end
+    end)
+  end
+  -- LP_MIX=speedprobe: the game's speed as loaded (a watch save made at speed must open at 1).
+  if params.mix:find("speedprobe", 1, true) then schedule(5, function() info("visit: game speed " .. game.speed) end) end
+  -- LP_MIX=pathprobe: the cost map's way and price from Synthexis's landing and from the east gap to the middle of nw's base,
+  -- at 16, 32 and 48-tile cells (the farm reads 48, its waves 32): why the farm priced a way at 8 its wave priced at 83.
+  if params.mix:find("pathprobe", 1, true) then
+    schedule(120, function()
+      local out = {}
+      for _, from in ipairs({{700, -280}, {568, -50}}) do
+        for _, cell in ipairs({16, 32, 48}) do
+          out[#out + 1] = {from = from, cell = cell, r = lp("debug_cost_path", from, {319, 1}, cell)}
+        end
+      end
+      helpers.write_file("landing-party/paths.json", helpers.table_to_json(out))
+      info("visit: paths dumped")
+    end)
+  end
+  -- LP_MIX=treeprobe: at the start, neutral obstacles (trees, rocks) round where nw's big waves turned, by 8-tile cell.
+  if params.mix:find("treeprobe", 1, true) then
+    schedule(60, function()
+      local out = {}
+      for _, e in pairs(surface().find_entities_filtered{area = {{560, -220}, {780, 0}}, force = "neutral"}) do
+        out[#out + 1] = {e.type, math.floor(e.position.x), math.floor(e.position.y)}
+      end
+      helpers.write_file("landing-party/trees.json", helpers.table_to_json(out))
+      info(string.format("visit: trees dumped (%d)", #out))
+    end)
+  end
+  -- LP_MIX=spotprobe: at 80 minutes, what stands round where nw's big waves turned (600..760, -200..-20): water and cliffs,
+  -- and every entity there not the player's that collides (a corporation's camp), for why its pathfinder went round.
+  if params.mix:find("spotprobe", 1, true) then
+    schedule(80 * 3600, function()
+      local area = {{600, -200}, {760, -20}}
+      local out = {water = {}, cliffs = {}, other = {}}
+      for _, t in pairs(surface().find_tiles_filtered{area = area, collision_mask = "water_tile"}) do
+        out.water[#out.water + 1] = {t.position.x, t.position.y}
+      end
+      for _, e in pairs(surface().find_entities_filtered{area = area, type = "cliff"}) do
+        out.cliffs[#out.cliffs + 1] = {e.position.x, e.position.y}
+      end
+      for _, e in pairs(surface().find_entities_filtered{area = area}) do
+        if e.force.name ~= "player" and e.force.name ~= "neutral" and e.type ~= "cliff" then
+          out.other[#out.other + 1] = {e.force.name, e.type, e.name, math.floor(e.position.x), math.floor(e.position.y)}
+        end
+      end
+      helpers.write_file("landing-party/spot.json", helpers.table_to_json(out))
+      info(string.format("visit: spot dumped (%d water, %d cliffs, %d others)", #out.water, #out.cliffs, #out.other))
+    end)
+  end
+  -- LP_MIX=walldump: a 200-tile stretch of nw's north wall as built (name, exact position, direction, quality, the
+  -- flamers' fluid), for the arena's wall pen (tests/lp-arena/nwwall.lua).
+  if params.mix:find("walldump", 1, true) then
+    schedule(60, function()
+      local out = {}
+      for _, e in pairs(surface().find_entities_filtered{area = {{-200, -440}, {0, -375}}, force = "player",
+        type = {"wall", "gate", "ammo-turret", "electric-turret", "fluid-turret", "land-mine"}}) do
+        local fl = e.type == "fluid-turret" and next(e.get_fluid_contents()) or nil
+        out[#out + 1] = {e.name, e.position.x, e.position.y, e.direction, e.quality.name, fl}
+      end
+      helpers.write_file("landing-party/wall.json", helpers.table_to_json(out))
+      local pf, mods = game.forces.player, {ammo = {}, speed = {}, turret = {}}
+      for name in pairs(prototypes.ammo_category) do
+        mods.ammo[name], mods.speed[name] = pf.get_ammo_damage_modifier(name), pf.get_gun_speed_modifier(name)
+      end
+      for _, name in ipairs({"laser-turret", "flamethrower-turret", "gun-turret"}) do mods.turret[name] = pf.get_turret_attack_modifier(name) end
+      helpers.write_file("landing-party/wall_research.json", helpers.table_to_json(mods))
+      info(string.format("visit: wall dumped (%d pieces)", #out))
     end)
   end
   -- LP_MIX=async (any mix containing it): at 30 minutes, a landing queued as the faction's own are (asynchronous).
@@ -8161,9 +8506,13 @@ scenarios.herd = function()
     end
     S.turrets, S.inserters = {}, {}
     for _, t in ipairs(layout) do
-      local e = put(t[1], at(t[2], t[3]))
+      -- flamer: the gun turrets flamethrowers, full of crude (a flamethrower's 30 reached the scout's old loop at 29: on
+      -- such a base it died and its wave came blind; 2026-10-27, the perception consult).
+      local flame = mix == "flamer" and t[1] == G
+      local e = put(flame and "flamethrower-turret" or t[1], at(t[2], t[3]))
       table.insert(S.turrets, e)
-      if t[1] == G and mix ~= "probe" then e.insert{name = "piercing-rounds-magazine", count = mix == "belt" and 10 or 200} end
+      if flame then e.insert_fluid{name = "crude-oil", amount = 100}
+      elseif t[1] == G and mix ~= "probe" then e.insert{name = "piercing-rounds-magazine", count = mix == "belt" and 10 or 200} end
       if mix == "belt" then
         -- Fed from inside: a burner inserter dropping into it, a chest of ammunition where it picks up. Placed by trial
         -- (offsets and turns) until it drops into the turret (its drop_target is not set yet on the tick it is built).
@@ -8205,7 +8554,7 @@ scenarios.herd = function()
     end
     -- core (0.2.31): this base's heart guarded (four lasers round its middle): no soft middle, so its wave raids the edge;
     -- unguarded (the plain herd: every gun on the wall) it strikes for the heart.
-    if mix == "core" then
+    if mix == "core" or mix == "coreedge" then
       for _, p in ipairs({{-8, -8}, {-8, 8}, {8, -8}, {8, 8}}) do table.insert(S.turrets, put(L, at(p[1], p[2]))) end
     end
     if mix == "scout" then
@@ -8244,7 +8593,7 @@ scenarios.herd = function()
     -- burst: a wall held a wave here before (the bursters are held only where one did).
     if mix == "burst" or mix == "burst-nohold" then lp("herd_wall_lesson", S.at(0, 0)) end
     S.t_send = game.tick
-    S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or mix == "deep" and {deep = true} or nil)
+    S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or mix == "deep" and {deep = true} or (mix == "edge" or mix == "coreedge") and {deep = false} or nil)
     -- fire (0.2.31): once it marches, eight fed gun turrets round it: caught under fire, it should break in there.
     if mix == "fire" then
       for t = game.tick - storage.t0 + 600, END - 600, 120 do
@@ -8253,8 +8602,10 @@ scenarios.herd = function()
           for _, wv in ipairs(lp("herd_state").waves) do
             if wv.id == S.wave1 and wv.stage == "march" and wv.group then
               S.fire_at = game.tick
-              for k = 0, 7 do
-                local a = k * math.pi / 4
+              -- (Sixteen: eight killed 4 of 41 in 15 s on one path, a hair under FIRE_LOSS, and the test asked the threshold,
+              -- not the rule; 2026-10-27.)
+              for k = 0, 15 do
+                local a = k * math.pi / 8
                 local q = surface().find_non_colliding_position("gun-turret",
                   {wv.group[1] + math.cos(a) * 14, wv.group[2] + math.sin(a) * 14}, 6, 1)
                 local g = q and put("gun-turret", q)
@@ -8329,7 +8680,10 @@ scenarios.herd = function()
       if w and w.trail and mark_t then
         local since = game.tick - mark_t
         if since >= 15 * 3600 and not S.mud15 then S.mud15 = mud_near(w.trail); S.mud_in = mud_inside() end
-        if since >= 21 * 3600 and not S.mud21 then S.mud21 = mud_near(w.trail) end
+        -- (Gone 21 minutes after the last of it was laid: a deep strike lays its way on at the breach, round the fire, a
+        -- minute after its mark.)
+        local laid = math.max(mark_t, w.t_breach or 0)
+        if game.tick - laid >= 21 * 3600 and not S.mud21 then S.mud21 = mud_near(w.trail) end
       end
       local rear_out = mix == "spit" and #(lp("herd_state").rears or {}) > 0
       if mix ~= "" and w and not rear_out and (mix ~= "scout" or (S.wave2 and entry(S.wave2))) then finish_early() end
@@ -8340,6 +8694,8 @@ scenarios.herd = function()
     local w = S.wave1 and entry(S.wave1)
     local state = lp("herd_state")
     info("herd: " .. serpent.line(w))
+    info("herd threat profiles: " .. serpent.line(lp("debug_threat", {"gun-turret", "laser-turret", "flamethrower-turret",
+      "artillery-turret", "artillery-wagon", "small-worm-turret"})))
     info("herd: waves still out " .. serpent.line(state.waves))
     -- The deep strike (0.2.30): told (deep), it rushed for the heart and got there; a hard shell round a soft middle
     -- (shell), it chose to; this base's heart too near its breach (the plain herd), it raided the edge.
@@ -8356,6 +8712,12 @@ scenarios.herd = function()
       if mix == "deep" then return end
     end
     if mix == "core" then check("herd: its heart guarded, it raided the edge", w and w.deep == nil, serpent.line(w and w.deep)) end
+    if mix == "flamer" then
+      -- Its scout looped past the flamethrowers' reach (threat.lua: 30 and 2, and LOOP_SPARE) and saw the base: no blind wave.
+      check("herd: flamer, the scout's loop past a flamethrower's reach", w and (w.loop or 0) >= 35, tostring(w and w.loop))
+      check("herd: flamer, the scout lived to mark a face", w and w.blind == false and w.mark ~= nil,
+        serpent.line({blind = w and w.blind, mark = w and w.mark}))
+    end
     if mix == "fire" then
       check("herd: fire, caught under fire on the march, it broke in where it stood", w and w.under_fire ~= nil,
         serpent.line(w and {under_fire = w.under_fire, breach = w.breach, outcome = w.outcome}))
@@ -8803,6 +9165,35 @@ scenarios.farm = function()
     for x = -32, 32, 16 do for y = -32, 32, 16 do put("substation", at(x, y)) end end
     S.power = put("electric-energy-interface", at(4, 4))
     S.power.power_production, S.power.electric_buffer_size = 5e6, 5e7
+    -- siege (2026-10-28): a laser wall no wave it fields crosses (a laser every 6 tiles on every face, nw's research): the
+    -- chain from its order to the breach in minutes, which on nw took a three-hour visit a fault (its order bred the cheap
+    -- breed first, its incubators overspent what it kept back, its wave left most bursters behind, each counted twice).
+    if mix == "siege" then
+      game.forces.player.set_ammo_damage_modifier("laser", 3)
+      game.forces.player.set_gun_speed_modifier("laser", 2.2)
+      -- (Every 3 tiles, 107 lasers: no siege of 20 big bursters opens that, and none was laid.)
+      for i = -36, 36, 6 do
+        for _, p in ipairs({{37, i}, {-37, i}, {i, 37}, {i, -37}}) do
+          local q = surface().find_non_colliding_position(L, at(p[1], p[2]), 2, 1)
+          if q then put(L, q) end
+        end
+      end
+      S.power.power_production, S.power.electric_buffer_size = 1e9 / 60, 1e9
+      S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
+      -- And a pipeline of the player's out toward the nests, a megabase's outlying ground, worth nothing to it (read short of
+      -- the foe's ground, its plan staged at its own nest, and its bursters went at nothing; poles drew waves of their own).
+      for d = 48, 600 do put("pipe", at(d, 10)) end
+      -- And mines, a belt of them 3 to 9 tiles outside the wall on every face (nw's gap: 84 of them), its price for them
+      -- learned (as if a wave had died to them): its sweep should set them off ahead of its wave.
+      for i = -48, 48, 4 do
+        for _, off in ipairs({43, 47}) do
+          for _, p in ipairs({{off, i}, {-off, i}, {i, off}, {i, -off}}) do put("land-mine", at(p[1], p[2])) end
+        end
+      end
+      S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
+      lp("debug_learn_price", "player", "land-mine", 40)
+      lp("debug_tune", {march_trace = true})
+    end
     -- What any player's base has, and what draws a wave (its smell, farm.target_from): machines that pollute.
     for _, d in ipairs({{-20, -20}, {-20, 20}, {20, -20}, {20, 20}}) do
       local q = surface().find_non_colliding_position("assembling-machine-2", at(d[1], d[2]), 8, 1)
@@ -8869,7 +9260,8 @@ scenarios.farm = function()
       end
     end
     -- (clinic: the wild at 0.5, so the breeds' cap without a clinic, 0.3, shows.)
-    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or 0.3, surface())
+    -- (siege: 0.95, its big bursters come at 0.85: its evolution follows the wild's, farm.evolve.)
+    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or mix == "siege" and 0.95 or 0.3, surface())
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
@@ -8941,6 +9333,41 @@ scenarios.farm = function()
         S.farm_pos = f.pos
         S.dist = math.sqrt((f.pos.x - S.at(0, 0)[1]) ^ 2 + (f.pos.y - S.at(0, 0)[2]) ^ 2)
         S.evo_land = f.evo
+        if mix == "siege" then
+          S.min_bio, S.max_near, S.sieges = math.huge, 0, {}
+          for t2 = game.tick - storage.t0 + 60, END - 120, 600 do
+            schedule(t2, function()
+              local g = farm1()
+              if not g then return end
+              -- (180 a minute: at 600 its order and its reserve could go wrong unseen, there was always enough; nw's
+              -- poorest culture earned 23.)
+              lp("debug_biomass", g.id, 30)
+              local b = g.biomass and g.biomass.now
+              if b and b < S.min_bio then S.min_bio = b end
+              if g.siege then S.sieges[#S.sieges + 1] = g.siege.k end
+            end)
+          end
+          for t2 = game.tick - storage.t0 + 60, END - 120, 30 do
+            schedule(t2, function()
+              local n = surface().count_entities_filtered{name = "lp-bred-big-burster", position = S.at(0, 0), radius = 120}
+              if n > S.max_near then S.max_near = n end
+            end)
+          end
+        end
+        if mix == "artillery" then
+          -- An artillery turret, loaded, in the middle of the base behind its guns, its range researched to reach the
+          -- culture: it shells the pens (the perception consult, section 5), and the culture should come for it (in the
+          -- open on its doorstep any wave passing broke it, the code before as well: no guard).
+          -- (Ten minutes on, once it has bred: placed as it landed, the artillery razed its four pens in seventy seconds.)
+          schedule(game.tick - storage.t0 + 10 * 3600, function()
+            local b = S.at(0, 0)
+            local dist = math.sqrt((b[1] - f.pos.x) ^ 2 + (b[2] - f.pos.y) ^ 2)
+            game.forces.player.artillery_range_modifier = (dist + 40) / 224 - 1
+            local q = surface().find_non_colliding_position("artillery-turret", b, 12, 1)
+            S.art = q and surface().create_entity{name = "artillery-turret", position = q, force = "player"}
+            if S.art then S.art.insert{name = "artillery-shell", count = 50}; S.art_at = {q.x, q.y} end
+          end)
+        end
         if mix == "clinic" then
           -- Its clinic killed a minute on: its learning stops, the breeds fall to the stock's, a pod brings another.
           schedule(game.tick - storage.t0 + 3600, function()
@@ -9117,7 +9544,9 @@ scenarios.farm = function()
         clinic = young.clinic, pos = young.pos})))
       check("farm: " .. mix .. ", a carrier set out", S.carrier_seen ~= nil, tostring(S.carrier_seen))
       if mix == "seed" then
-        check("farm: seed, a young culture began at the second field", young ~= nil and young.clinic == false,
+        -- (A seeded culture there, its clinic by pod 30 minutes on: with its sieges waiting for their order, no early wave
+        -- ends this run, and by minute 40 the clinic had come, 2026-10-29; seeded is what it began as.)
+        check("farm: seed, a young culture began at the second field", young ~= nil and young.seeded ~= nil,
           serpent.line(young))
       elseif mix == "seedbare" then
         -- (Its clinic may have come by then: on bare ground near, it walks two minutes.)
@@ -9149,7 +9578,7 @@ scenarios.farm = function()
     local mins = e.tick and (e.tick - S.landed) / 3600 or 0
     info(string.format("farm: evolution %s at landing, %s %.1f min on (bred at %s), clinic %s", tostring(S.evo_land),
       tostring(e.evo), mins, tostring(e.bred), tostring(e.clinic)))
-    if mix ~= "killed" then
+    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" then
       check("farm: its clinic stands and its breeds climb", e.clinic == true and S.evo_land and e.evo
         and e.evo - S.evo_land >= 0.004 * (mins - 1) * 0.9 and math.abs(e.bred - e.evo) < 0.001, serpent.line(e))
     end
@@ -9179,6 +9608,56 @@ scenarios.farm = function()
       check("farm: unfed ten minutes, it went wild", S.wild_at and S.wild_at - S.starved_at >= 10 * 3600
         and S.wild_at - S.starved_at <= 11 * 3600, tostring(S.wild_at and S.wild_at - S.starved_at))
       check("farm: the culture lives on", (S.pens_after or 0) >= 1, tostring(S.pens_after))
+      return
+    end
+    if mix == "artillery" then
+      -- The artillery that shelled its pens: worth a wave (herd.shelling, valuemap.SHELLS), and gone by the end.
+      check("farm: artillery, it was placed in reach of the pens", S.art_at ~= nil, "not placed")
+      -- (A function check, not a guard: the pens' own biters went for the artillery that shelled them, the engine's answer
+      -- to artillery on spawners, before any wave was weighed; and on this base every wave's odds were 0 anyway. What it
+      -- adds, artillery's worth to a wave and never landing in its reach, is the farm's: herd.shelling, farm.shelled.)
+      check("farm: artillery, brought down", S.art_at ~= nil and not (S.art and S.art.valid),
+        serpent.line({at = S.art_at, standing = S.art and S.art.valid}))
+      return
+    end
+    if mix == "siege" then
+      local lasers = surface().count_entities_filtered{name = L, force = "player"}
+      local k = 0
+      for _, x in ipairs(S.sieges or {}) do k = math.max(k, x) end
+      info(string.format("farm siege: sieges %s, least biomass %.0f, big bursters near the base at once %d, lasers %d -> %d",
+        serpent.line(S.sieges), S.min_bio or 0, S.max_near or 0, S.lasers0 or 0, lasers))
+      check("farm: siege, laid", #(S.sieges or {}) > 0, "none")
+      -- (A birth is charged after the engine makes it: a behemoth or two at once past what it kept, 200 each.)
+      check("farm: siege, its biomass never far below nothing", (S.min_bio or 0) >= -450, tostring(S.min_bio))
+      -- (Within two: one may die on the march, and they burst at their guns at different moments; its wave carried 8 of 17
+      -- and 10 of 13 while a biter in two incubators' stock was counted twice.)
+      check("farm: siege, its wave came with the big bursters it ordered", k > 0 and (S.max_near or 0) >= k - 2,
+        string.format("ordered %d, near the base at once %d", k, S.max_near or 0))
+      -- (At least 8: with its sweep ahead of its bursters they broke 12 of the lasers; with no sweep, the mines took them and
+      -- they broke 4; 2026-10-28.)
+      check("farm: siege, lasers broken", lasers <= (S.lasers0 or 0) - 8, string.format("%d -> %d", S.lasers0 or 0, lasers))
+      -- Its siege wave staged near where it broke in (within 200 tiles), not at its nest.
+      local staged
+      for _, l in ipairs(lp("herd_state").log or {}) do
+        if l.breach and l.mark then staged = math.sqrt((l.mark[1] - l.breach[1]) ^ 2 + (l.mark[2] - l.breach[2]) ^ 2); break end
+      end
+      check("farm: siege, its wave staged near where it broke in", staged ~= nil and staged <= 200, tostring(staged))
+      -- Its sweep ahead of it: its wave lost few to the mines (set off by the wave itself, 13 went and it lost 36 to them).
+      local mines = surface().count_entities_filtered{name = "land-mine", force = "player"}
+      local to_mines
+      for _, l in ipairs(lp("herd_state").log or {}) do
+        if l.breach then
+          to_mines = 0
+          for key, n in pairs(l.lost_by or {}) do if key:find("land%-mine") then to_mines = to_mines + n end end
+          break
+        end
+      end
+      check("farm: siege, its wave lost few to the mines its sweep went ahead of", to_mines ~= nil and to_mines <= 10,
+        string.format("lost %s to mines; mines %d -> %d", tostring(to_mines), S.mines0 or 0, mines))
+      -- What its bursters broke taught it nothing of a laser's price (it learned 1.0 from a siege, against 15 before).
+      local lp_price = lp("debug_price", "player", "laser-turret")
+      check("farm: siege, a laser's price not learned from guns its bursters broke", lp_price == nil or lp_price >= 5,
+        tostring(lp_price))
       return
     end
     check("farm: a wave went out", w ~= nil or S.wave_seen ~= nil, "none")

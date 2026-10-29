@@ -157,6 +157,13 @@ do
   r.name = "lp-runt"
   r.localised_name = {"entity-name.lp-runt"}
   r.localised_description = {"entity-description.lp-runt"}
+  -- Its death pops the mines round it (the user, 2026-10-28: "make runts pop mines in a radius around them"): a land
+  -- mine's 15 of health, RUNT_POP over RUNT_POP_R, little to a wall or a turret; a runt of the sweep (herd.lua) set off on
+  -- one clears the field round it, not that one alone.
+  local RUNT_POP, RUNT_POP_R = 30, 4
+  r.dying_trigger_effect = {{type = "nested-result", action = {type = "area", radius = RUNT_POP_R, force = "not-same",
+    ignore_collision_condition = true, trigger_target_mask = {"common"},
+    action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = RUNT_POP, type = "explosion"}}}}}}}
   table.insert(out, r)
 end
 
@@ -280,6 +287,56 @@ do
   end
 end
 
+-- The big burster (the user, 2026-10-27: "a big burster or behemoth burster? With a larger boom and large HP pool?"): a
+-- behemoth's body that carries its blast to the turret line through the fire. The burster's 120 of health died before any
+-- laser line and its 550 broke a gun turret (400), not a laser (1,000) or a flamethrower (1,400): on a megabase's wall of
+-- 60 lasers 4 tiles apart, a wave of 262 mediums lost 235 crossing. This one's blast breaks every turret BIG_BURST.r of it,
+-- three of such a line; slow, alone in front, it is what focused fire, rockets and artillery are for, and a wall that
+-- holds it short of the turrets takes its blast.
+local BIG_BURST = shared.BIG_BURST
+do
+  local src
+  for _, p in ipairs(out) do if p.name == "lp-bred-behemoth-biter" then src = p end end
+  local c = table.deepcopy(src)
+  c.name = "lp-bred-big-burster"
+  -- Half of laser and fire (the user, 2026-10-28: "more resistances for bursters at high evo"; it comes from 0.85): an answer
+  -- to a wall of lasers and flamethrowers, none to bullets, rockets and artillery, its counters (balance keeps counters).
+  c.max_health = BIG_BURST.health
+  c.resistances = {{type = "laser", percent = 50}, {type = "fire", percent = 50}}
+  -- Its bite the behemoth's: set off by its herd at the gun it is sent at (herd.lua detonate), or by its death. Its attack
+  -- its blast, blocked on the march by a pipe or a pole it attacked that, and 7 of 13 burst on the way (the siege test,
+  -- 2026-10-28).
+  c.localised_name = {"entity-name.lp-bred-big-burster"}
+  c.localised_description = {"entity-description.lp-bred-big-burster"}
+  ember(c.run_animation, 0)
+  ember(c.attack_parameters.animation, 0)
+  local function area(r, amount)
+    return {type = "nested-result", action = {type = "area", radius = r, force = "not-same", ignore_collision_condition = true, trigger_target_mask = {"common"},
+      action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = amount, type = "explosion"}}}}}}
+  end
+  c.dying_trigger_effect = {
+    {type = "create-entity", entity_name = "lp-cinder-fissure"},
+    {type = "create-entity", entity_name = "lp-big-burst-explosion"},
+    {type = "create-entity", entity_name = "lp-cinder-fissure-scorchmark"},
+    area(BIG_BURST.r, BIG_BURST.amount), area(BIG_BURST.r / 2, BIG_BURST.core)}
+  table.insert(out, c)
+  -- Its blast seen as what it does (the user, 2026-10-28: "we need to add a green explosion FX or something if they're
+  -- going to be as strong as this"): the big artillery shell's explosion in the burster's acid green, its blast's breadth
+  -- (BIG_BURST.r) across, and a green flash.
+  local ex = table.deepcopy(data.raw.explosion["big-artillery-explosion"])
+  ex.name = "lp-big-burst-explosion"
+  ex.localised_name = {"entity-name.lp-bred-big-burster"}
+  local GREEN = {r = 0.45, g = 1, b = 0.25, a = 1}
+  local function green(t)
+    if type(t) ~= "table" then return end
+    if t.filename or t.filenames or t.stripes then t.tint = GREEN; t.scale = (t.scale or 1) * 1.4 end
+    for _, v in pairs(t) do green(v) end
+  end
+  green(ex.animations)
+  ex.light = {intensity = 1, size = BIG_BURST.r * 6, color = {r = 0.4, g = 1, b = 0.3}}
+  table.insert(out, ex)
+end
+
 -- Its worms: two by each pen (the breeds consult: a farm's home guard; the only thing of its that reaches a flier).
 local worm = table.deepcopy(data.raw.turret["medium-worm-turret"])
 worm.name = "lp-bred-worm"
@@ -336,6 +393,17 @@ do
   else
     table.insert(pen.result_units, {unit = "lp-bred-cinder", spawn_points = {
       {evolution_factor = 0.45, weight = 0.0}, {evolution_factor = 0.65, weight = 0.1}, {evolution_factor = 1.0, weight = 0.1}}})
+  end
+end
+-- Its big bursters from evolution 0.85, one in a hundred of what it breeds at full evolution: bred to order (farm.lua) when
+-- its own die mostly to lasers and flamethrowers.
+do
+  local first = pen.result_units[1]
+  if first[1] then
+    table.insert(pen.result_units, {"lp-bred-big-burster", {{0.85, 0.0}, {1.0, 0.01}}})
+  else
+    table.insert(pen.result_units, {unit = "lp-bred-big-burster", spawn_points = {
+      {evolution_factor = 0.85, weight = 0.0}, {evolution_factor = 1.0, weight = 0.01}}})
   end
 end
 -- Its stompers from evolution 0.8, one in fifty of what it breeds from 0.95.

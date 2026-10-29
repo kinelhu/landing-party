@@ -266,7 +266,15 @@ shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g
   -- odds from n / (1 + per_turret d)); per_wall: walls to a turret's worth; fade: how long a place tested stays
   -- tested; reach: how far it looks; far: how fast distance discounts.
   mind = {per_turret = 6, per_wall = 20, fade = 40 * 3600, reach = 1600, far = 800, learns = true, orders = true, holds = true, havoc = true,
-    min_gain = 2}}
+    min_gain = 2, cuts = 0,
+    -- Its probe (herd.lua: runts thrown at the face to find its silent guns) or none: it reads each gun's state (threat.firing),
+    -- and the probe's runts ran far ahead of its herd, alone, past what they met (the user, 2026-10-28: "the runts seem to
+    -- run far in front of the wave, it's weird"). Off.
+    probe = false,
+    -- Its reading of the way in scaled by what crossing has really cost (know.scale), or not: calibrated, it read a ring of
+    -- guns truly (expected against lost 1.45, 0.90, 1.19, from 2.2) and waited more, and razed 1,246 an hour against 1,498
+    -- (three timings on a deathworld, 2026-10-27). Synthexis is the bolder: off. Learned and logged either way.
+    calibrate = false}}
 -- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).
 shared.PEN_CAP = 40
 shared.WAVE_MIN = 24
@@ -275,7 +283,7 @@ shared.WAVE_MIN = 24
 -- None of them shoots up (air.lua): its class is many, healing and soft.
 shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
   ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 200}, ["lp-bred-medium-spitter"] = {cost = 9},
-  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 40},
+  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 40}, ["lp-bred-big-burster"] = {cost = 300},
   -- air: it shoots up (air.lua leaves it whole).
   ["lp-bred-spore"] = {cost = 10, air = true},
   -- A spider-unit (Space Age's small stomper): tier 4, over the wall.
@@ -560,5 +568,13 @@ function shared.wreck(surface, pos, stacks)
   end
   return w
 end
+
+-- How far past its claim an idle unit of a settlement's garrison may stand before it is sent home (army.lua): what a
+-- camp's garrison holds, read by the biotech before it razes a camp (herd.lua).
+shared.LEASH = 15
+
+-- The biotech's big burster (biotech.lua builds it from these; herd.lua sends and sets it off by them): its health, its
+-- blast's radius, the blast's damage, and the core's (half the radius) on top.
+shared.BIG_BURST = {health = 3000, r = 6, amount = 1500, core = 800}
 
 return shared

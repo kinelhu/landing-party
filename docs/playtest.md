@@ -257,6 +257,17 @@ biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, 
     with few guns, a power plant left at the edge), saves up for a bigger wave when your defence is too dear, and the
     next wave comes back through a hole the last one made. Did a raid surprise you? Could you see afterwards why it
     went there? Does mending holes and guarding outposts feel like the answer?
+65. **The siege** (0.2.85): against a wall it cannot cross, a culture stops sending waves and breeds for one siege:
+    big bursters (behemoth-sized, glowing, a green blast that takes out lasers and walls round it) and big biters. Its
+    log says what it waits for. When it comes: runts walk onto your mines first, one each, then the bursters go at your
+    turrets, then the herd runs through the hole to what it came for without stopping. Could you tell a siege was
+    coming? Did the order (sweep, bursters, herd) read? Is the blast too strong, or about right?
+66. **It sees your mines** (0.2.69): it routes round a minefield where it can and sweeps it where it cannot. Do mines
+    still feel worth placing (they cost it a runt and time each)?
+67. **Kessler-Hayashi in the way** (0.2.85): a Synthexis wave shot at by a corporation's camp on its way either turns on
+    it (bursters at its guns first) or goes round it. Did you see one fight Kessler-Hayashi? Did it choose sensibly?
+    To watch a siege on a save of your own: `scripts/siege-save.sh <copy of your save>`, then
+    `LP_WATCH=siege.zip scripts/play-visit.sh <name>-waves0-breachlabsavesiege`.
 
 ## Your side
 22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that

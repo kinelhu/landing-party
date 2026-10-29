@@ -644,7 +644,7 @@ end
 -- sees; biters drawn to a clearance pulled infantry and tanks after them into behemoth worms' reach, 28 to 56 tiles
 -- beyond the site (scenario clear). Not within the claim: leashed at 35 tiles from its first depot, the far side of a
 -- settlement went undefended and biters took 497 of its buildings (visit b - rocket).
-local LEASH = 15
+local LEASH = shared.LEASH
 local function leash(b)
   local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
   if not h then return end

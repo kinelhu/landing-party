@@ -782,3 +782,55 @@ against the player -1; the player against Kessler-Hayashi +24.
   with none in reach it grows its own incubators.
 - Its tumors lie low in the creep, in slime with roots spreading from them; the trees its creep reaches die, bare
   trunks on the violet where the forest was green.
+
+### Sieges, and a megabase (0.2.33 to 0.2.85)
+
+The nw save (a late megabase: a north wall of about 50 lasers with a flamethrower line 10 tiles behind it, an east entrance
+built in depth, minefields at its gaps, Kessler-Hayashi's camp on the way from Synthexis's landing) is where its waves
+never broke a single building in three days of visits. What it took, in the order it was found (DESIGN.md's rows of
+0.2.33 to 0.2.85 hold each mechanism):
+
+- Its waves turned home intact at a forest its plans had drawn a straight leg through, and at the gate where the farm's
+  coarse price and the wave's own disagreed. Now it plans once, at the grain its waves read, and the wave follows.
+- Its plans were blind where its fire maps were coarse or round: guns between a cell's middles, lasers in a box's
+  corners. Fire is now priced over every cell a reach touches.
+- Its prices were guesses: a flat 6 a gun, learned down from wiped-out waves and from guns its bursters had broken. Now a
+  gun's price starts from its kind and its owner's research (lasers), from what it measured (flamethrowers), or from the
+  arena (armed units), and learns honestly.
+- A wall of lasers is a job, not a target: the siege. Its sizing, its breeding, its savings, its gathering and its ending
+  each had a fault the siege test (`farm` LP_MIX=siege) now catches.
+- Mines it now sees and sweeps; its bursters lead, its herd follows, each on the one before being done; past the wall it
+  punches through to what it came for along the way it priced, committed.
+- Kessler-Hayashi's camp, between its landing and nw's east gate, bled every siege on its march. It now prices that camp,
+  turns on it when it can take it (its bursters at the camp's guns first), or goes round it.
+
+Where it stands (0.2.85):
+
+- Deathworld, three timings: 1,122 to 1,297 razed a timing, against 816 to 913 before the plan and the punch-through.
+- nw in the breach lab (its cultures paid, sieges in minutes): a siege's bursters break 28 to 35 lasers, 250 wall pieces,
+  poles and a roboport at a time, and its herd goes in; it has not yet razed the economy behind (inner lines on the east
+  side; the north wall's flamethrower line).
+- nw played out naturally (five hours from its landing): a culture fields its first siege at about two and a half hours.
+  Its sieges have been caught by Kessler-Hayashi's camp on the way; nothing of the player's economy razed yet.
+
+Open: a flamethrower line behind a wall, out of a burster's reach (a bigger blast, or a breed that walks through fire);
+a second breach for a defence in depth (the east entrance: a second sweep and bursters at the second line); a long
+natural visit from a matured culture rather than from landing; Kessler-Hayashi and Grubstake to the same level of
+reasoning (docs: the parity note).
+
+Found by the full regression of 2026-10-29 (0.2.86): the heart was overvalued. On the herd test's two bases a wave
+forbidden the deep strike (`deep = false`, LP_MIX=edge and coreedge) razed more than one that took it: 50 against 46 on
+the plain base, 17 against 6 where four lasers guard the middle. Its stay is now priced (`stay_share`: what it breaks
+before half its size is lost, its bite from each unit's prototype, `lp-bites`, against the fire on what it breaks), and
+each stay is measured against its price (`stay_end`, a line in the decisions log). Measured on both bases, heart and
+edge: its losses a second read within a fifth where it stayed long; its bite read 25.4 health a unit-second and dealt
+7.3 to 11.7, guns and walls with what is worth something (`BITE_SHARE` 0.4: the rest of its time it walks between
+targets); and at a heart the four lasers covered, 350 of the 4700 health it broke was worth anything: the guns whose
+reach covers the spot take its bite first. Priced so, the plain base's heart read 50% broken (48% measured) and the wave
+strikes it; the guarded heart reads 0% and the wave raids the edge. (All guns within its sight subtracted read the plain
+heart 0%: only those covering it.)
+
+The spitters holding the breach of a deep strike all died covering its withdrawal (`herd` spit, 0 home of 8): told to
+stop `by_enemy`, they left the gap for a gun 28 tiles in that the strike had left standing (raiding the edge, the herd
+had broken it). They cover from the breach now, answering what hits them (`by_damage`), as long again as the herd takes
+to walk back from the heart: 8 of 8 home.

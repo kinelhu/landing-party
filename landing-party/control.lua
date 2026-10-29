@@ -43,7 +43,10 @@ local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
 local herd = require("__landing-party__.scripts.herd")
 local firemap = require("__landing-party__.scripts.firemap")
+local threat = require("__landing-party__.scripts.threat")
 local valuemap = require("__landing-party__.scripts.valuemap")
+local costmap = require("__landing-party__.scripts.costmap")
+local feeds = require("__landing-party__.scripts.feeds")
 -- Synthexis's scouts take the corporations' way round turrets (herd.lua; a hook, not a require: ops is the corporations').
 herd.route = function(...) return ops.route(...) end
 -- And stages its waves as their raids stage (routing.outside) and reads an approach's fire as they do (ops.exposure).
@@ -432,6 +435,8 @@ remote.add_interface("landing-party", {
     if t.capture_off ~= nil then storage.capture_off = t.capture_off end
     if t.biotech_unlearned ~= nil then storage.biotech_unlearned = t.biotech_unlearned or nil end
     if t.biotech_no_orders ~= nil then storage.biotech_no_orders = t.biotech_no_orders or nil end
+    -- march_trace: each marching herd's group every second to the log (where, its state, its order; debugging).
+    if t.march_trace ~= nil then storage.march_trace = t.march_trace or nil end
     if t.biotech_no_hold ~= nil then storage.biotech_no_hold = t.biotech_no_hold or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
     if t.prospect_pace ~= nil then storage.prospect_pace = t.prospect_pace end
@@ -521,6 +526,16 @@ remote.add_interface("landing-party", {
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
   farm_debug_seed = function(id) return farm.debug_seed(id) end,
   farm_state = function() return farm.state() end,
+  -- Tests only: what Synthexis has learned a prototype of `foe`'s costs it (nil: nothing yet).
+  debug_price = function(foe, proto) return know.price("biotech", foe, proto) end,
+  -- Tests only: what it has learned a prototype costs it, set (as if its waves had died to it).
+  debug_learn_price = function(foe, proto, per) return know.learn_price("biotech", foe, proto, per, per) end,
+  -- Tests only: biomass added to a farm's culture (a siege's breeds paid for without an hour of pollution).
+  debug_biomass = function(id, amount)
+    local c = creep.of(id)
+    if c then c.biomass = c.biomass + amount end
+    return c and c.biomass
+  end,
   watch_state = function() return watch.state() end,
   creep_state = function() return creep.state() end,
   cell_state = function() return cell.state() end,
@@ -554,14 +569,52 @@ remote.add_interface("landing-party", {
     local s = game.surfaces[1]
     local forces = {game.forces.player}
     local vmap = valuemap.read(s, from, radius, forces, valuemap.CORE)
-    local fmap = firemap.read(s, from, radius, forces)
+    local fmap = firemap.read(s, from, radius * firemap.BOX, forces, herd.price_of)
     local cells, turrets, hearts = {}, {}, {}
     for _, c in pairs(vmap.cells) do cells[#cells + 1] = {c.mid.x, c.mid.y, c.worth} end
     for _, t in ipairs(fmap.list) do turrets[#turrets + 1] = {t.x, t.y, t.r} end
-    for _, h in ipairs(valuemap.hearts(vmap, fmap, n or 60, from, reach or 400, {most = 10, price = herd.price("player")})) do
+    for _, h in ipairs(valuemap.hearts(vmap, fmap, n or 60, from, reach or 400, {most = 10})) do
       hearts[#hearts + 1] = {h.cell.mid.x, h.cell.mid.y, h.worth, h.cost, h.score, h.at and {h.at.position.x, h.at.position.y}}
     end
     return {cells = cells, turrets = turrets, hearts = hearts, cell = vmap.size}
+  end,
+  -- Tests only: what reaching every cell of the box round `center` costs from `from` (the cost map Synthexis's waves read:
+  -- the player's walls and ground, everyone's guns and armed units, water): {x0, y0, size, w, cost = {[i * w + j] = c}}.
+  debug_cost_grid = function(from, center, radius, cell)
+    local s = game.surfaces[1]
+    local fmap = firemap.read(s, {x = center[1], y = center[2]}, radius * firemap.BOX, herd.hostiles(), herd.price_of, threat.ARMED)
+    local cm = costmap.read(s, {x = center[1], y = center[2]}, radius, {game.forces.player}, {fire = fmap,
+      from = {x = from[1], y = from[2]}, cell = cell})
+    local cost = {}
+    for k, c in pairs(cm.cost) do cost[#cost + 1] = {math.floor(k / cm.h), k % cm.h, c} end
+    return {x0 = cm.x0, y0 = cm.y0, size = cm.size, w = cm.w, cost = cost}
+  end,
+  -- Tests only: the cost map's cheapest way from `from` to `to` over the player's base (the box round both, `cell` tiles a
+  -- cell): {cost, path = {{x, y}...}}.
+  debug_cost_path = function(from, to, cell)
+    local s = game.surfaces[1]
+    local forces = {game.forces.player}
+    local mid = {x = (from[1] + to[1]) / 2, y = (from[2] + to[2]) / 2}
+    local radius = math.sqrt((from[1] - to[1]) ^ 2 + (from[2] - to[2]) ^ 2) / 2 + 150
+    local fmap = firemap.read(s, mid, radius * firemap.BOX, forces, herd.price_of)
+    local cm = costmap.read(s, mid, radius, forces, {fire = fmap, from = {x = from[1], y = from[2]}, cell = cell})
+    local path = {}
+    for _, q in ipairs(costmap.path(cm, {x = to[1], y = to[2]}) or {}) do path[#path + 1] = {q.x, q.y} end
+    return {cost = costmap.cost(cm, {x = to[1], y = to[2]}), path = path}
+  end,
+  -- Tests only: what feeds.lua reads of the player's turrets' supply round pos: {name, x, y, starves} each.
+  debug_feeds = function(pos, radius)
+    local out = {}
+    for _, f in pairs(feeds.read(game.surfaces[1], pos, radius, {game.forces.player})) do
+      if f.e.valid then out[#out + 1] = {f.e.name, f.e.position.x, f.e.position.y, f.starves} end
+    end
+    return out
+  end,
+  -- Tests only: the weapon profiles threat.lua reads from prototypes, and the longest reach.
+  debug_threat = function(names)
+    local out = {far = threat.far()}
+    for _, n in ipairs(names) do out[n] = threat.profile(n) or false end
+    return out
   end,
   -- Tests only: the route planner between two points for Synthexis's herds (opts as the herd's).
   debug_herd_route = function(from, to, opts)

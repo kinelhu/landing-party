@@ -3,6 +3,7 @@
 -- corridors cleared of nests), where it breaches, and whether a push through biter country is worth it. The code is as
 -- it was in ops; install runs it with ops' helpers bound (K) and returns what ops calls.
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 
 local routing = {}
 
@@ -60,7 +61,7 @@ end
 
 -- Sneaking and breaching (Grubstake's temper; the user: "do they try to avoid turrets? And perhaps make holes in
 -- undefended sections of the wall?"). From its staging point a sneaking raid plans its approach on a SNEAK_CELL grid
--- (A*), round every cell within a known turret's reach (REACH by type, plus SNEAK_MARGIN) and water, exposed only in
+-- (A*), round every cell within a known turret's reach (its prototype's range, threat.lua, plus SNEAK_MARGIN) and water, exposed only in
 -- the last SNEAK_OPEN tiles to the target; it walks the route as waypoints. Walls round the target (within
 -- BREACH_RADIUS): it picks the wall piece the fewest turrets can reach, knocks it and its neighbour out (a two-tile gap,
 -- buggies fit), and goes through. Serenity keeps its straight, disciplined approach.
@@ -73,7 +74,8 @@ local SOLID_TYPES = {"wall", "gate", "ammo-turret", "electric-turret", "fluid-tu
   "storage-tank", "lab", "roboport", "solar-panel", "accumulator", "boiler", "generator", "radar", "beacon", "rocket-silo",
   "train-stop", "reactor", "heat-pipe", "pump", "offshore-pump"}
 local BREACH_RADIUS = 30
-local REACH = {["ammo-turret"] = 18, ["electric-turret"] = 24, ["fluid-turret"] = 30}
+-- A turret's range, from its prototype (threat.lua; a vanilla table here read modded turrets as guns).
+local function range(e) return threat.reach(e) - threat.MARGIN end
 
 -- Biter country (the user: "raids and sieges will also need to cross biter country to reach us sometimes"): every
 -- corporation's marches route round spawners (NEST_KEEP.spawner) and worms (NEST_KEEP.worm: a behemoth worm's reach
@@ -146,7 +148,7 @@ local function sneak_route(b, from, to, opts, wide)
     return out
   end
   -- (opts.margin: a big herd's half-width besides, herd.lua waist: a wave of 200 is a blob 20 tiles wide.)
-  local tmark = mark(turrets, function(e) return (REACH[e.type] or 20) + SNEAK_MARGIN + (opts.margin or 0) end)
+  local tmark = mark(turrets, function(e) return range(e) + SNEAK_MARGIN + (opts.margin or 0) end)
   local nmark = mark(nests, function(e) return e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm end)
   -- Corridors on this surface within the box, once per route.
   local corr = {}
@@ -361,7 +363,7 @@ local function breach_point(b, t, from)
       -- inside the flank lasers' reach: 16 of 31 lost and the raid aborted, sneak).
       local c = 0
       for _, e in ipairs(turrets) do
-        local r = (REACH[e.type] or 20) + 6
+        local r = range(e) + 6
         if (e.position.x - wl.position.x) ^ 2 + (e.position.y - wl.position.y) ^ 2 <= r * r then c = c + 1 end
       end
       local d = (wl.position.x - from[1]) ^ 2 + (wl.position.y - from[2]) ^ 2

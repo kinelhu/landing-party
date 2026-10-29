@@ -1,7 +1,7 @@
 -- The biotech's waves: a pack (docs/biotech.md, "Waves with intent: the pack"; Fable:
 -- docs/reviews/2026-10-22-wave-intelligence-consult.md). The first slice: a pen on a held nest breeds to its stock, then
 -- sends one wave the player can watch and read.
---   1. The tracker: one bred biter walks a loop outside the turrets' reach (LOOP_OUT past the outermost turret), stopping
+--   1. The tracker: one bred biter walks a loop outside the turrets' reach (LOOP_SPARE past their reach), stopping
 --      at four faces, noting the turrets it sees; its icon over it and on the map. Then it sits at the face where it saw
 --      fewest: the mark. Killed or stopped before its loop is whole, the wave comes blind (a plain wave) and the next
 --      loop there is wider.
@@ -19,17 +19,19 @@
 local ground = require("__landing-party__.scripts.ground")
 local know = require("__landing-party__.scripts.know")
 local firemap = require("__landing-party__.scripts.firemap")
+local threat = require("__landing-party__.scripts.threat")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local costmap = require("__landing-party__.scripts.costmap")
+local feeds = require("__landing-party__.scripts.feeds")
 local shared = require("shared")
 local herd = {}
 
 local B = shared.BIOTECH
 local SIGHT = 40            -- what a biter of the pack sees, scout or herd (tiles)
-local LOOP_OUT = 29         -- the loop past the outermost turret: beyond a laser (24); a flamethrower (30) reaches it
+local LOOP_SPARE = 3        -- the loop this far past its turrets' reach (threat.reach, from their prototypes: a flat 29
+                           -- stood inside a flamethrower's 30, and on a flamer base the scout and its tell died)
 local LOOP_POINTS = 16
 local STOP_EVERY = 4        -- a pause at every fourth loop point: four faces
-local LOOP_CLEAR = 30       -- a loop point this far from every foe turret (a gun turret's 18, a laser's 24, a margin)
 local RESUMES = 3          -- a failed loop taken up again from the next point, at most this often
 local REGROUPS = 3         -- a wave's group formed again from its living members, at most this often a leg (a wave of
                            -- the player's deathworld used its three on one long trail and scattered)
@@ -62,6 +64,7 @@ local FIRE_LOSS, FIRE_WINDOW, FIRE_NEAR = 0.1, 15 * 60, 30
 -- What runs its defences besides their power and ammunition: what sees for them and mends them (the user: "radars and
 -- roboports as targets"), after the supply, before the guns it silenced.
 local CONTROL = {"radar", "roboport"}
+local ARTILLERY = {"artillery-turret", "artillery-wagon"}
 -- The deep strike (the user, 2026-10-26: "some waves could, once a breach is made, simply rush in past the first line of
 -- defenses towards the heart of the base"): at the breach it weighs its two plans, the edge (what it can break near the
 -- breach, against the fire there) and the heart (what stands round the base's heart, against the fire there and on the
@@ -99,7 +102,15 @@ local SOFT = {"mining-drill", "assembling-machine", "furnace", "lab", "boiler", 
 -- 1,600 tiles round: a power plant, a silo, a roboport left at the edge is a soft heart too.)
 herd.DRAW = {"ammo-turret", "electric-turret", "fluid-turret", "assembling-machine", "furnace", "mining-drill", "boiler",
   "generator", "lab", "reactor", "fusion-generator", "rocket-silo", "roboport", "radar", "beacon", "burner-generator",
-  "electric-energy-interface"}
+  "electric-energy-interface", "artillery-turret", "artillery-wagon"}
+-- And all the value map weighs from CORE up (solar fields, accumulators, substations): on a megabase its soft hearts were
+-- power fields north of its walls, no gun near, worth 274 a cell, and its farm never weighed them, choosing among what
+-- DRAW listed, all behind the guns (2026-10-27).
+do
+  local seen = {}
+  for _, t in ipairs(herd.DRAW) do seen[t] = true end
+  for _, t in ipairs(valuemap.CORE) do if not seen[t] then seen[t] = true; herd.DRAW[#herd.DRAW + 1] = t end end
+end
 
 local function st()
   storage.herd = storage.herd or {pens = {}, waves = {}, next = 1, log = {}, trails = {}}
@@ -145,34 +156,165 @@ local function lessons()
   k.lessons = k.lessons or {}
   return k.lessons
 end
--- What a turret costs it, in its own, against a foe (firemap.affords, valuemap.keeps): learned from what its breaches
--- cost (its own lost breaking in, over the turrets covering the breach), PRICE_LEARN of each new one, from its mind's
--- per_turret before any (a guess of 6 let waves of 60 at a ring of guns whose gaps cost them half their number, and they
--- came home with nothing; 2026-10-27).
-local PRICE_LEARN, PRICE_MIN, PRICE_MAX = 0.4, 1, 40
-function herd.price(force_name)
+-- What a turret costs it, in its own (firemap.affords, valuemap.keeps_lost, costmap): learned per foe and per prototype
+-- (know.price) from what its breaches cost, its own each prototype covering the breach killed over how many of them
+-- covered it; before any, its mind's per_turret scaled by the turret's research (threat.prior). One price for every
+-- turret could not learn that a laser line is dearer than a gun line (the perception consult, 2026-10-27); a guess of 6
+-- for all let waves of 60 at a ring of guns whose gaps cost them half their number.
+function herd.price_of(t)
+  return know.price("biotech", t.force.name, t.name) or threat.prior(t, B.mind.per_turret or firemap.AFFORD)
+end
+-- Where its own died lately to what the fire map cannot show (a killer no turret profile names: mines, burning ground,
+-- units, nothing), each weighing less as it ages (DEATHS_FOR): the cost map's memory of the ground (costmap.DEATH).
+local DEATHS_FOR = 60 * 3600
+function herd.deaths()
+  local out = {}
+  for _, l in ipairs(know.losses("biotech", DEATHS_FOR, function(l)
+    local p = l.unit and l.killer and threat.profile(l.killer)
+    return l.unit and not (p and (p.kind == "ammo" or p.kind == "power" or p.kind == "fluid"))
+  end)) do
+    out[#out + 1] = {l.pos[1], l.pos[2], 1 - (game.tick - l.tick) / DEATHS_FOR}
+  end
+  return out
+end
+
+-- Ground its herds found no way through (a leg the pathfinder went round: DETOUR), lately (BLOCKED_FOR): {x, y} each, for
+-- its cost maps to price as water. Terrain does not move, but a player's walls and buildings do.
+local BLOCKED_FOR = 4 * 60 * 3600
+function herd.blocked()
   local k = know.of("biotech")
-  local p = k.price and k.price[force_name or "player"]
-  return p and p.per or B.mind.per_turret or firemap.AFFORD
+  local out, kept = {}, {}
+  for _, b in ipairs(k.blocked or {}) do
+    if game.tick - b[3] < BLOCKED_FOR then kept[#kept + 1] = b; out[#out + 1] = {b[1], b[2]} end
+  end
+  k.blocked = kept
+  return out
 end
-local function price_of(w)
+
+-- How many of its incubators an artillery piece reaches (threat.reach: its range with its force's research).
+function herd.shelling(art)
+  local r = threat.reach(art)
+  local n = 0
+  for _, p in pairs(st().pens) do
+    if p.pen.valid and p.pen.surface == art.surface and d2(p.pen.position, art.position) <= r * r then n = n + 1 end
+  end
+  return n
+end
+
+-- The farm's cell a wave's target stood in (farm.lua target_from: 64 tiles, by force), for what the wave learned of it.
+function herd.dear_key(force, pos)
+  local name = force and (type(force) == "string" and force or force.name) or "player"
+  return string.format("%s|%d,%d", name, math.floor(pos.x / 64), math.floor(pos.y / 64))
+end
+
+-- The name of the foe a wave goes at.
+local function foe_name(w)
   local f = foes(w)[1]
-  return herd.price(f and (type(f) == "string" and f or f.name) or "player")
+  return f and (type(f) == "string" and f or f.name) or "player"
 end
+
+-- What breaking into a foe's walls costs it besides the guns it can see: its own killed at the breach by what no turret
+-- profile names (mines, burning ground, units), learned per killer as a price per breach (n = 0 in the record): a base that
+-- mines its walls makes every wall it has dear (one minefield at a time, each wave paid for the next one on a megabase's
+-- mined wall; 2026-10-27).
+function herd.hidden_cost(foe)
+  local p = know.of("biotech").price
+  local total = 0
+  for proto, r in pairs(p and p[foe] or {}) do
+    local prof = threat.profile(proto)
+    -- (Not its mines: it sees them now, each priced where it lies, costmap.MINE.)
+    local mine = prototypes.entity[proto] and prototypes.entity[proto].type == "land-mine"
+    if not (mine or (prof and (prof.kind == "ammo" or prof.kind == "power" or prof.kind == "fluid"))) then total = total + r.per end
+  end
+  return total
+end
+
+-- What crossing cost it against what it expected (costmap.way_in there and back), for know.scale: its march, its breach
+-- and its way out, not what it fought inside.
+local function learn_scale(w)
+  if not (w.breach and w.way_in and w.way_in.lost > 0) then return end
+  local crossed = 0
+  for key, n in pairs(w.lost_by or {}) do
+    local stage = key:match("^(%a+) ")
+    if stage == "march" or stage == "breach" or stage == "withdraw" then crossed = crossed + n end
+  end
+  w.crossed = crossed
+  -- (Against what it expected with its big bursters' work counted, herd.way_cost: against the bare price, a siege that
+  -- went as planned taught it every crossing was cheaper.)
+  local expected = herd.way_cost(w.way_in.lost, w.way_in.cover, w.big_sent, w.way_in.openable)
+  w.scale_learned = know.learn_scale("biotech", foe_name(w), crossed / (2 * math.max(1, expected)))
+end
+
+-- What its march cost it, learned as its breaches are (the user, 2026-10-28): each killer on the march, its kills over how
+-- many of its kind stood where they were (within FIRE_NEAR of their middle). Learned at the breach alone, a corporation's
+-- flamethrower turrets its siege walked past killed 61 and stayed at their prior, 3.8, and the next siege went that way.
+local function learn_march(w)
+  local s = game.surfaces[w.surface]
+  if not (s and w.march_killers) then return end
+  local left = 0
+  for _, u in ipairs(w.members) do if u.valid then left = left + 1 end end
+  local wiped = left <= 0.2 * (w.size or 1)
+  local base = B.mind.per_turret or firemap.AFFORD
+  w.price_learned = w.price_learned or {}
+  for name, mk in pairs(w.march_killers) do
+    local at = {mk.x / mk.n, mk.y / mk.n}
+    local n = s.count_entities_filtered{position = at, radius = FIRE_NEAR, name = name, force = mk.force}
+    if n > 0 then
+      local per = know.learn_price("biotech", mk.force, name, mk.n / n, threat.prior_of(name, mk.force, base), wiped)
+      w.price_learned["march " .. name] = {sample = mk.n / n, per = per, n = n}
+    end
+  end
+  -- (Each once: learned when it re-plans under fire, and again at its end from what came after.)
+  w.march_killers = nil
+end
+herd.learn_march = learn_march
+
 local function learn_price(w)
-  if not (w.breach_cover and w.breach_cover > 0) then return end
-  local lost = 0
-  for key, n in pairs(w.lost_by or {}) do if key:find("^breach ") then lost = lost + n end end
+  learn_scale(w)
+  learn_march(w)
+  if not w.breach then return end
   local f = foes(w)[1]
-  local name = f and (type(f) == "string" and f or f.name) or "player"
-  local k = know.of("biotech")
-  k.price = k.price or {}
-  local p = k.price[name] or {per = B.mind.per_turret or firemap.AFFORD, n = 0}
-  local sample = math.min(PRICE_MAX, math.max(PRICE_MIN, lost / w.breach_cover))
-  p.per = p.per + (sample - p.per) * (p.n == 0 and 1 or PRICE_LEARN)
-  p.n = p.n + 1
-  k.price[name] = p
-  w.price_learned = {sample = sample, per = p.per}
+  local foe = f and (type(f) == "string" and f or f.name) or "player"
+  w.price_learned = w.price_learned or {}
+  -- With no wall where it broke in (breach_by read at a wall only), what covered the ground where its own died breaking in,
+  -- in the middle of them: on a megabase's laser line, 58 of its own killed at a breach with no wall taught it nothing of
+  -- lasers, and its next wave priced them as before (2026-10-27).
+  if not w.breach_by then
+    local x, y, k = 0, 0, 0
+    for _, d in ipairs(w.dead_at or {}) do
+      if d[3] == "breach" then x, y, k = x + d[1], y + d[2], k + 1 end
+    end
+    local s = game.surfaces[w.surface]
+    if k > 0 and s then
+      local map = firemap.read(s, {x / k, y / k}, 0, foes(w), herd.price_of)
+      w.breach_by = {}
+      for _, t in ipairs(firemap.cover(map, {x / k, y / k})) do w.breach_by[t.name] = (w.breach_by[t.name] or 0) + 1 end
+    end
+  end
+  -- Not where its big bursters broke the guns first: what the guns left standing then cost is no price of theirs (a siege's
+  -- wave lost 4 to 11 lasers its bursters had opened, and learned a laser cost it 1.0, not 15; the siege test, 2026-10-28).
+  -- (Most of it lost: what it lost is a least, the guns would have taken more of more; it raises a price only.)
+  local left = 0
+  for _, u in ipairs(w.members) do if u.valid then left = left + 1 end end
+  local wiped = left <= 0.2 * (w.size or 1)
+  local base = B.mind.per_turret or firemap.AFFORD
+  for proto, n in pairs((w.big_sent or 0) == 0 and w.breach_by or {}) do
+    local killed = (w.lost_by or {})["breach " .. proto] or 0
+    local per = know.learn_price("biotech", foe, proto, killed / n, threat.prior_of(proto, foe, base), wiped)
+    w.price_learned[proto] = {sample = killed / n, per = per, n = n}
+  end
+  do
+    for key, killed in pairs(w.lost_by or {}) do
+      local proto = key:match("^breach (.+)$")
+      local prof = proto and threat.profile(proto)
+      -- (Nor its own: a big burster's blast kills it, and it learned its own breed as a killer at 8.)
+      if proto and proto ~= "none" and not proto:find("^lp%-bred%-") and not (w.breach_by and w.breach_by[proto])
+        and not (prof and (prof.kind == "ammo" or prof.kind == "power" or prof.kind == "fluid")) then
+        local per = know.learn_price("biotech", foe, proto, killed, nil, wiped)
+        w.price_learned[proto] = {sample = killed, per = per, n = 0}
+      end
+    end
+  end
 end
 
 -- Dev and tests: a lesson that a wall held a wave at the base round pos.
@@ -200,6 +342,7 @@ local function hostiles()
   for _, c in pairs(shared.CORPS) do if game.forces[c.force] then out[#out + 1] = c.force end end
   return out
 end
+herd.hostiles = hostiles
 
 local function log(w, text)
   if storage.trace then
@@ -269,15 +412,17 @@ end
 -- The base: the box round the player's turrets near what drew it, its middle and half sizes. (A circle round their
 -- average missed a lopsided base's heavy face: the loop sized by the far back turret ran 55 to 67 tiles off the front,
 -- beyond its sight; seen in the first herd run.)
+-- (And the longest reach among them, threat.reach; none known, the longest there is, threat.far.)
 local function base_box(s, pos, forces)
   local ts = s.find_entities_filtered{position = pos, radius = BASE_REACH, force = forces, type = TURRETS}
-  if #ts == 0 then return xy(pos), 8, 8 end
-  local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
+  if #ts == 0 then return xy(pos), 8, 8, threat.far() end
+  local x0, y0, x1, y1, reach = math.huge, math.huge, -math.huge, -math.huge, 0
   for _, t in ipairs(ts) do
     x0, y0 = math.min(x0, t.position.x), math.min(y0, t.position.y)
     x1, y1 = math.max(x1, t.position.x), math.max(y1, t.position.y)
+    reach = math.max(reach, threat.reach(t))
   end
-  return {x = (x0 + x1) / 2, y = (y0 + y1) / 2}, math.max(8, (x1 - x0) / 2), math.max(8, (y1 - y0) / 2)
+  return {x = (x0 + x1) / 2, y = (y0 + y1) / 2}, math.max(8, (x1 - x0) / 2), math.max(8, (y1 - y0) / 2), reach
 end
 
 -- From the middle along angle a, out to a box of half sizes hx, hy.
@@ -365,7 +510,7 @@ end
 
 -- The wave ---------------------------------------------------------------------------------------------------------
 
--- The loop: a box LOOP_OUT (and what dead scouts taught) outside the turrets' box, sixteen points round it, each moved
+-- The loop: a box its turrets' reach and LOOP_SPARE (and what dead scouts taught) outside the turrets' box, sixteen points round it, each moved
 -- to the nearest ground a biter can stand on (kept once its chunk is generated). On the box itself a point fell in a
 -- lake, on a cliff or on a building, its leg failed, and the scout's whole loop with it: 14 of 19 waves came blind
 -- (the system sim, 0.2.9).
@@ -386,7 +531,7 @@ local function loop_point(w, j, scouting)
     local ul = math.max(1, math.sqrt(ux * ux + uy * uy))
     for out = 0, 60, 10 do
       local q0 = {x = p.x + ux / ul * out, y = p.y + uy / ul * out}
-      if s.count_entities_filtered{position = q0, radius = LOOP_CLEAR, type = TURRETS, force = hostiles(), limit = 1} == 0 then
+      if threat.covering(s, q0, hostiles(), 1, LOOP_SPARE) == 0 then
         p = q0
         break
       end
@@ -448,7 +593,7 @@ function herd.launch(p, target, opts)
   local units = opts.units or stock(p)
   if #units < 2 then return end
   local forces = opts.forces or players()
-  local c, hx, hy = base_box(s, target, forces)
+  local c, hx, hy, reach = base_box(s, target, forces)
   local h = st()
   -- What its scouts learnt round this base: the nearest memory within two cells (a wave that broke half a base moved the
   -- next one's middle 25 tiles, into another cell, and its scout looped no wider where the last was killed).
@@ -464,8 +609,8 @@ function herd.launch(p, target, opts)
   mem = mem or {extra = 0}
   p.memory[memory_key(c)] = mem
   local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy, foes = opts.forces,
-    no_probe = opts.no_probe, force_deep = opts.deep, choice = opts.choice,
-    loop = LOOP_OUT + mem.extra, stage = "scout", t = game.tick, t0 = game.tick, members = {}, seen = {},
+    no_probe = opts.no_probe, force_deep = opts.deep, choice = opts.choice, plan = opts.plan, sweep = opts.sweep,
+    loop = reach + LOOP_SPARE + mem.extra, stage = "scout", t = game.tick, t0 = game.tick, members = {}, seen = {},
     marks = {}, kills = {}, tried = {}, sight = opts.sight or SIGHT, size = #units, goal = xy(target)}
   h.next = h.next + 1
   -- Each once (a biter in two incubators' stock came twice: a wave of 41 counted 48, and a death of one of those took two
@@ -794,6 +939,9 @@ local STAGE_OFF, STAGE_LEN, STAGE_STEP = 34, 200, 8
 -- its route keep that much more from the turrets: 4 tiles for 40, 10 for 200.
 local function waist(w) return math.ceil(1.2 * math.sqrt((w.size or 0) / math.pi)) end
 local HELD_FIRE = 3          -- a face that held weighs this much more fire, each time
+local DETOUR = 64             -- tiles off the line of its leg: the pathfinder went round, no way through there
+local DETOUR_PER = 2         -- and this many more for each square root of its number (a big herd strings out)
+local DETOUR_BACK = 3        -- the legs before the one it is on that still count as its way
 local LEG = 60               -- at most, tiles a leg of the herd's trail
 local ROUTE_TRIES = 8        -- staging points tried in order for a route (every face: at 4, a mining outpost on a
                              -- lake was "no way" on its four best faces, the four on the water's side, 2026-10-27)
@@ -809,6 +957,30 @@ local EDGE_GOALS = {"assembling-machine", "furnace", "mining-drill", "boiler", "
 local function foe_names(w)
   local out = {}
   for _, f in ipairs(foes(w)) do out[#out + 1] = type(f) == "string" and f or f.name end
+  return out
+end
+
+-- Debugging (debug_tune march_trace): a wave's cost map to script-output/landing-party/costmaps/wave<id>-<tag>.json, each
+-- cell reached its price to cross and what reaching it cost (-1: no way), with `extra` (its way, its trail);
+-- scripts/raidmap.py draws them.
+local function dump_costmap(w, cm, tag, extra)
+  if not storage.march_trace then return end
+  local cells = {}
+  for k, c in pairs(cm.cost) do
+    local p = cm.cell_cost[k]
+    cells[#cells + 1] = {math.floor(k / cm.h), k % cm.h, c >= math.huge and -1 or c, p and (p >= math.huge and -1 or p) or 0}
+  end
+  for k, p in pairs(cm.cell_cost) do
+    if not cm.cost[k] then cells[#cells + 1] = {math.floor(k / cm.h), k % cm.h, -1, p >= math.huge and -1 or p} end
+  end
+  local out = {wave = w.id, tag = tag, tick = game.tick, x0 = cm.x0, y0 = cm.y0, size = cm.size, w = cm.w, cells = cells}
+  for k, v in pairs(extra or {}) do out[k] = v end
+  helpers.write_file(string.format("landing-party/costmaps/wave%d-%s.json", w.id, tag), helpers.table_to_json(out))
+end
+
+local function xy_list(list)
+  local out = {}
+  for _, q in ipairs(list or {}) do out[#out + 1] = {q.x or q[1], q.y or q[2]} end
   return out
 end
 
@@ -861,16 +1033,24 @@ local function stage_choice(w, last)
   local mid = last and {x = (last.x + c.x) / 2, y = (last.y + c.y) / 2} or c
   local half = last and math.sqrt(d2(last, c)) / 2 + WAY_MARGIN or WAY_REACH
   local radius = math.max(WAY_REACH, half)
-  local fmap = firemap.read(s, mid, radius, forces)
-  local cm = costmap.read(s, mid, radius, forces, {fire = fmap, price = price_of(w), n = #herd_units(w), from = last,
+  -- (Its way priced by everyone who shoots it, the corporations' camps and their armed units too, not its target's turrets
+  -- alone.)
+  local fmap = firemap.read(s, mid, radius * firemap.BOX, hostiles(), herd.price_of, threat.ARMED)
+  local cm = costmap.read(s, mid, radius, forces, {fire = fmap, n = #herd_units(w), from = last, deaths = herd.deaths(), blocked = herd.blocked(), hidden = herd.hidden_cost(foe_name(w)), scale = B.mind.calibrate and know.scale("biotech", foe_name(w)) or 1,
     cell = radius > WAY_REACH and costmap.CELL * 2 or nil})
   local way = costmap.way_in(cm, c)
   if way then
     weigh(math.floor(math.atan2(way.start.y - c.y, way.start.x - c.x) / (math.pi / 4) + 0.5) % 8, {way.start.x, way.start.y}, true)
     local top = cands[#cands]
     top.score, top.lost = -1, way.cost
-    w.way_in = {start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y}, lost = way.cost}
+    w.way_in = {start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y}, lost = way.cost,
+      cover = #firemap.cover(fmap, way.breach)}
+    -- (And its way there, for when the router finds none: cells' middles round fire and the deaths it met.)
+    w.way_path = costmap.path(cm, way.start)
   end
+  dump_costmap(w, cm, "stage", {from = last and {last.x, last.y}, target = {c.x, c.y},
+    way = way and {start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y}, cost = way.cost} or nil,
+    path = xy_list(w.way_path)})
   -- (Ties by face, then a face before the way in: table.sort is not stable, and a tie went either way from run to run.)
   table.sort(cands, function(a, b)
     if a.score ~= b.score then return a.score < b.score end
@@ -878,6 +1058,80 @@ local function stage_choice(w, last)
     return not a.way and b.way
   end)
   return cands, table.concat(why, " ")
+end
+
+local finish     -- below: a wave over, its biters back in their pens' stock
+local DEAR = 1    -- a way in costing it, there and back, this many times its number: it does not come
+
+-- Its big bursters sent at the guns covering where it breaks in (send_big_bursters) each take about BURST_OPENS of one:
+-- its way in costs that share less, and the bursters themselves (the wall lab, 2026-10-28: 14 at a stretch of nw's north
+-- wall broke 12 to 20 of its lasers). (Its walls and mines are left: what they cost stays.)
+herd.BURST_OPENS = 0.9
+-- The share of the guns covering a breach its bursters open.
+-- openable: of those guns, the ones its bursters can reach (within their blast of the wall they stop at, herd.plan): a
+-- flamethrower line behind a wall of lasers it cannot (its bursters, sent at the flamethrowers first, stuck biting the
+-- wall under the lasers and burst there; the flamethrowers stood, and burned 114 of 120; 2026-10-28). Nil: all of them.
+function herd.opened(cover, bursters, openable)
+  if (bursters or 0) <= 0 or not cover or cover <= 0 then return 0 end
+  return math.min(openable or cover, bursters * herd.BURST_OPENS) / cover
+end
+function herd.way_cost(lost, cover, bursters, openable)
+  bursters = bursters or 0
+  if bursters <= 0 or not cover or cover <= 0 then return lost end
+  return lost * (1 - herd.opened(cover, bursters, openable)) + bursters
+end
+
+-- Whether a wave of n goes at a way in costing it `lost` (there and back, DEAR times its number or more: it does not).
+-- One test, asked by the farm before it sends and by the wave when it stages: the farm sent waves its own odds gave
+-- nothing, and each turned home at the wave's (18 of 18 on a megabase; a context-free review, 2026-10-28).
+function herd.affords(n, lost) return 2 * lost < DEAR * n end
+
+-- Its plan for a wave from `from` to `target` (the user, 2026-10-28: "plan once and follow it"; it sees the whole map from
+-- the start): one cost map (its fire, walls, deaths, blocked ground, hidden price, calibration), the cheapest way, where it
+-- starts (out of all fire) and breaks in, what it costs and how many guns cover the breach. Made by the farm before it
+-- sends, followed by the wave (mark): the farm read a way in at 8 its wave read at 83 from where its scout ended, and 12
+-- of 16 waves turned home at the gate (2026-10-28). nil: no way. forces: whom it goes at (names or forces).
+-- How far a marching herd of n strings out round its middle, as its way keeps from fire (a wave of 91 spread 30 tiles).
+-- (Half that, the root of its number: at twice it, every way on a deathworld read dearer and its razing fell from 662 to
+-- 307 over three timings; 2026-10-28.)
+function herd.spread(n) return math.ceil(math.sqrt(n or 0)) end
+herd.PLAN_CELL = costmap.CELL   -- at the grain its waves read near their target (at 32, a deathworld's razing halved)
+function herd.plan(surface, from, target, forces, n)
+  from, target = xy(from), xy(target)
+  local mid = {x = (from.x + target.x) / 2, y = (from.y + target.y) / 2}
+  local radius = math.max(WAY_REACH, math.sqrt(d2(from, target)) / 2 + WAY_MARGIN)
+  local fmap = firemap.read(surface, mid, radius * firemap.BOX, hostiles(), herd.price_of, threat.ARMED)
+  local name = forces[1] and (type(forces[1]) == "string" and forces[1] or forces[1].name) or "player"
+  local cm = costmap.read(surface, mid, radius, forces, {fire = fmap, n = n, from = from, deaths = herd.deaths(),
+    blocked = herd.blocked(), hidden = herd.hidden_cost(name), scale = B.mind.calibrate and know.scale("biotech", name) or 1,
+    cell = herd.PLAN_CELL, margin = herd.spread(n), ground_cost = costmap.GROUND_COST, wall_forces = hostiles()})
+  local way = costmap.staging(cm, target)
+  local path = costmap.path(cm, target)
+  if not (way and path) or way.cost >= math.huge then return nil end
+  local pts, upto = {}, #path
+  for i, q in ipairs(path) do
+    pts[#pts + 1] = {q.x, q.y}
+    if q.x == way.start.x and q.y == way.start.y then upto = i end
+  end
+  -- (And its foe's mines from where it starts on: what its sweep will go at, herd.sweep.)
+  local rest = {}
+  for i = upto, #path do rest[#rest + 1] = path[i] end
+  if #rest < 2 then rest[#rest + 1] = target end
+  local mines = herd.mines_along(surface, forces, rest, herd.spread(n) + 3)
+  -- The guns covering its breach its bursters can reach: within their blast of a wall piece by the breach (where they stop
+  -- and burst), or all of them where no wall stands in the way.
+  local cover = firemap.cover(fmap, way.breach)
+  local walls = surface.find_entities_filtered{position = way.breach, radius = threat.far(), type = WALLS, force = forces}
+  local openable = 0
+  for _, t in ipairs(cover) do
+    local reach = #walls == 0
+    for _, wl in ipairs(walls) do
+      if d2(wl.position, t.position) <= shared.BIG_BURST.r * shared.BIG_BURST.r then reach = true; break end
+    end
+    if reach then openable = openable + 1 end
+  end
+  return {path = pts, upto = upto, start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y},
+    cost = way.cost, cover = #cover, openable = openable, target = {target.x, target.y}, mines = #mines}
 end
 
 local function mark(w)
@@ -891,17 +1145,32 @@ local function mark(w)
   for _, q in ipairs(w.approach or {}) do table.insert(trail, q) end
   -- From the last of its scout's way that no gun reaches (its scout walked to the corner of a ring of guns and died there,
   -- and from there every route ran into their reach at its first step: "no way" on all eight faces of an outpost in the
-  -- open, and its herd broke in at that corner; 2026-10-27).
+  -- open, and its herd broke in at that corner; 2026-10-27). (Not from its pens: read from there, 780 tiles off on a
+  -- deathworld, its ways ran along the ring, and its razing fell from 1,147 to 82 and 418; 2026-10-27.)
   if herd.exposure then
     local s = game.surfaces[w.surface]
     while #trail > 1 and herd.exposure(s, {trail[#trail].x, trail[#trail].y}, foes(w)) > 0 do table.remove(trail) end
   end
   local last = trail[#trail]
+  local way
+  if w.plan then
+    -- Its farm's plan (herd.plan): from its pen along the planned way to where it starts, breaking in where it breaks in.
+    local pl = w.plan
+    trail = {trail[1]}
+    way = {}
+    for i = 1, pl.upto do way[#way + 1] = pl.path[i] end
+    w.mark, w.staged = xy(pl.start), true
+    w.mark_sector = math.floor(math.atan2(pl.start[2] - pl.target[2], pl.start[1] - pl.target[1]) / (math.pi / 4) + 0.5) % 8
+    w.breach_at = xy(pl.breach)
+    w.way_in = {start = pl.start, breach = pl.breach, lost = pl.cost, cover = pl.cover, openable = pl.openable}
+    log(w, string.format("follows its farm's plan: in at %.0f,%.0f from %.0f,%.0f, costing %.0f (%d guns cover where it breaks in), %d points",
+      pl.breach[1], pl.breach[2], pl.start[1], pl.start[2], pl.cost, pl.cover, #way))
+  else
   local cands, why = stage_choice(w, last)
   -- The approaches in order, the first its herd can be routed to round the turrets known to it (wide, as a long raid's,
   -- when the plain search runs dry; a coarser grid for a long way): on the player's deathworld the best-scored staging
   -- points lay in pockets ringed by turret reach, beyond every turret but with no way in, and every wave walked straight.
-  local way, staged, tried = nil, nil, {}
+  local staged, tried = nil, {}
   local b = {surface = w.surface, force = B.force}
   for i = 1, math.min(ROUTE_TRIES, #(cands or {})) do
     local c = cands[i]
@@ -912,6 +1181,17 @@ local function mark(w)
       way = herd.route(b, {last.x, last.y}, {c.at.x, c.at.y}, o) or herd.route(b, {last.x, last.y}, {c.at.x, c.at.y}, o, true)
     end
     if way or not herd.route then staged = c; break end
+    -- The cost map's own way in, unrouted: it goes all the same, its trail straight from where the route ran dry. The router
+    -- holds the foe's buildings solid and its turrets' reach closed; the cost map prices them, breaking a wall or a field of
+    -- solar panels for what they cost, and on a megabase every soft heart lay behind walls no gun covered: "enclosed", and
+    -- its waves retargeted to a minefield (2026-10-27).
+    if c.way then
+      way = {}
+      for _, q in ipairs(w.way_path or {}) do way[#way + 1] = {q.x, q.y} end
+      staged = c
+      tried[#tried + 1] = "the cost map's way in, unrouted: it goes straight"
+      break
+    end
     local r = herd.route_why and herd.route_why() or {}
     tried[#tried + 1] = string.format("face %d %s at %.0f,%.0f", c.k, r.enclosed and "enclosed" or "no way", c.at.x, c.at.y)
   end
@@ -940,11 +1220,19 @@ local function mark(w)
         local s = game.surfaces[w.surface]
         -- (Not a turret: its goal a turret, it staged by it and "broke in" walking at its guns, no wall between.)
         local near = s.find_entities_filtered{position = {e.x, e.y}, radius = EDGE_SEARCH, force = foes(w), type = EDGE_GOALS}
+        -- The cheapest to reach by its cost map from that edge (its fire, the deaths it met, its hidden price), not the
+        -- nearest: the nearest was an assembler in a minefield on a megabase, and five waves died there, 2026-10-27.
+        local fmap = firemap.read(s, e, EDGE_SEARCH * firemap.BOX, hostiles(), herd.price_of, threat.ARMED)
+        local cm = costmap.read(s, e, EDGE_SEARCH, foes(w), {fire = fmap, n = #herd_units(w), from = e, deaths = herd.deaths(), blocked = herd.blocked(),
+          hidden = herd.hidden_cost(foe_name(w)), scale = B.mind.calibrate and know.scale("biotech", foe_name(w)) or 1,
+          cell = costmap.CELL * 2})
         local best, bd
         for _, x in ipairs(near) do
-          local d = d2(x.position, e)
-          if not bd or d < bd then best, bd = x, d end
+          local d = costmap.cost(cm, x.position)
+          if d and (not bd or d < bd) then best, bd = x, d end
         end
+        -- Its way in now that cost (the refusal below reads it).
+        if best then w.way_in = {start = {e.x, e.y}, breach = {best.position.x, best.position.y}, lost = bd}; w.aimed = {x = g.x, y = g.y} end
         if best then
           w.goal = {x = best.position.x, y = best.position.y}
           tried[#tried + 1] = string.format("its target far within: goes for the %s at %.0f,%.0f", best.name,
@@ -957,9 +1245,36 @@ local function mark(w)
   if not staged and cands and cands[1] then staged = cands[1] end
   if staged then
     w.mark, w.mark_sector, w.staged = staged.at, staged.k, true
+    -- Staged on its cheapest way in (costmap), it breaks in where that way does (breach_at, as a probe's silent turret):
+    -- aimed straight from there at its target, it walked back into the minefield the way had gone round, and lost 18 of
+    -- 28 there to mines the wave before had found (2026-10-27).
+    if staged.way and w.way_in and w.way_in.breach then w.breach_at = {x = w.way_in.breach[1], y = w.way_in.breach[2]} end
     log(w, string.format("stages at %.0f,%.0f (face %d, fire %.1f; by face %s)%s; %s", staged.at.x, staged.at.y, staged.k,
       staged.fire, why, #tried > 0 and (" (not reachable: " .. table.concat(tried, ", ") .. ")") or "",
       way and string.format("its trail routed round turrets (%d points)", #way) or "no route found: its trail straight"))
+  end
+  -- Its cheapest way in dearer than it can pay (there and back, DEAR times its number or more): it does not come (at half
+  -- its number it turned back from raids that lost about half and did their work, the herd belt and probe tests), and its farm weighs that place at what the wave found (know: dear), not at its rays (sent all the same, waves
+  -- of 25 went at 14 to 22 lasers on a megabase whose way in the farm's rays had read as free, and 107 of 108 died;
+  -- 2026-10-27, the farm and the wave two models of the way in until the farm reads the cost map too).
+  local big = 0
+  for _, u in ipairs(w.members) do if u.valid and u.name == "lp-bred-big-burster" then big = big + 1 end end
+  local lost = w.way_in and herd.way_cost(w.way_in.lost, w.way_in.cover, big)
+  if w.way_in and big > 0 then
+    log(w, string.format("its way in costs %.0f, %.0f with its %d big bursters at the %d guns covering where it breaks in",
+      w.way_in.lost, lost, big, w.way_in.cover or 0))
+  end
+  if w.way_in and not herd.affords(#herd_units(w), lost) then
+    local k = know.of("biotech")
+    k.dear = k.dear or {}
+    k.dear[herd.dear_key(foes(w)[1], w.goal or w.center)] = {lost = w.way_in.lost, tick = game.tick}
+    -- (And the farm's target, when it went for another at the edge: the farm weighs the target it chose.)
+    if w.aimed then k.dear[herd.dear_key(foes(w)[1], w.aimed)] = {lost = w.way_in.lost, tick = game.tick} end
+    log(w, string.format("its way in would cost %.0f of its own, there and back as many as its %d: it does not come",
+      lost, #herd_units(w)))
+    if w.scout and w.scout.valid then w.scout.commandable.set_command(go(gate(w), defines.distraction.none, 6)) end
+    return finish(w, "too dear")
+  end
   end
   local parts = {}
   for k = 0, 7 do table.insert(parts, count[k]) end
@@ -982,6 +1297,10 @@ local function mark(w)
   end
   w.trail = trail
   lay_trail(game.surfaces[w.surface], trail)
+  if storage.march_trace then
+    helpers.write_file(string.format("landing-party/costmaps/wave%d-trail.json", w.id),
+      helpers.table_to_json({wave = w.id, trail = xy_list(trail), mark = {w.mark.x, w.mark.y}, size = #herd_units(w)}))
+  end
   -- It walks to the mark the same way and sits there, facing the wall.
   if w.scout and w.scout.valid then
     local cmds = {}
@@ -1075,10 +1394,19 @@ end
 -- Where the line from the mark to the middle meets the wall: the two pieces there, then INSIDE tiles in.
 local hold_bursters     -- below, with the breach's spitters
 -- The base round a point as a wave reads it: what it is worth (valuemap) and the fire on it (firemap), HEART_REACH round.
+-- (Not what feeds its guns: worth STARVED a turret it would starve in its value map, the ammunition belt behind a ring of
+-- guns drew whole waves from the factory and they razed two thirds as much, three timings on a deathworld, 2026-10-27;
+-- inside it cuts the best feeds it passes, targets.)
 local function read_base(w, at)
   local s = game.surfaces[w.surface]
   local forces = foes(w)
-  return valuemap.read(s, at, HEART_REACH, forces, valuemap.CORE), firemap.read(s, at, HEART_REACH, forces)
+  local vmap = valuemap.read(s, at, HEART_REACH, forces, valuemap.CORE)
+  -- (And the artillery that shells its incubators: SHELLS for each it reaches.)
+  for _, a in ipairs(s.find_entities_filtered{position = at, radius = HEART_REACH, type = ARTILLERY, force = forces}) do
+    local n = herd.shelling(a)
+    if n > 0 then valuemap.add(vmap, a, valuemap.SHELLS * n) end
+  end
+  return vmap, firemap.read(s, at, HEART_REACH * firemap.BOX, forces, herd.price_of)
 end
 
 -- The soft hearts of the base from where it stands (valuemap.hearts; the way there priced from here, costmap), none
@@ -1087,11 +1415,88 @@ end
 -- factory 150 tiles in went untouched.
 local function hearts_from(w, at, min)
   local vmap, fmap = read_base(w, at)
-  local n, price = #herd_units(w), price_of(w)
-  local cm = costmap.read(game.surfaces[w.surface], at, HEART_REACH, foes(w), {fire = fmap, price = price, n = n, from = at})
-  local hearts = valuemap.hearts(vmap, fmap, n, at, HEART_REACH,
-    {min = min, price = price, lost = function(mid) return costmap.cost(cm, mid) end})
+  local n = #herd_units(w)
+  local cm = costmap.read(game.surfaces[w.surface], at, HEART_REACH, foes(w), {fire = fmap, n = n, from = at, deaths = herd.deaths(), blocked = herd.blocked(), hidden = herd.hidden_cost(foe_name(w)), scale = B.mind.calibrate and know.scale("biotech", foe_name(w)) or 1})
+  -- (Inside, one way: what reaching it costs from here, and it goes if it gets there with any of its own (keeps_lost asks a
+  -- way there and back keeping half, so a quarter of it). Asked that from its breach, where the wall's guns still covered
+  -- every way off it, no heart was ever within reach and every wave that broke in turned home; 2026-10-28. Whether it
+  -- leaves after is its stay rule's.)
+  -- (One way, valuemap.keeps_one_way: it is on its way in, and whether it leaves after is its stay rule's. By the way there
+  -- and back keeping half, no heart past a wall of lasers was ever worth it once the wall was down; 2026-10-28.)
+  local hearts = valuemap.hearts(vmap, fmap, n, at, HEART_REACH, {min = min, keeps = valuemap.keeps_one_way,
+    lost = function(mid) return costmap.cost(cm, mid) end})
   return hearts, vmap, fmap, cm
+end
+
+-- What share of what stands within SIGHT of `at` a herd arriving there `arrive` strong breaks before its stay rule takes
+-- it out (half its size lost: valuemap.HOLD). Its bite (threat.bite, each unit's attack a second) wears down what is worth
+-- something there (valuemap.each_near) while the guns covering `at` take its number down: each turret's price is what
+-- a crossing of its reach costs (firemap), so standing in it costs that price each time the herd could have crossed it,
+-- 2r at its pace. Its bite falls as it loses: broken by t, bite * (arrive * t - loss * t^2 / 2), until arrive - loss * t is
+-- half its size. (Priced on the way there alone, a heart four lasers guarded read cheap; the wave reached it, stayed,
+-- lost 17 to them and broke little: herd test, core, 2026-10-29.)
+-- What share of its prototype bite a herd inside deals: the rest of its time it walks between targets. Measured
+-- (stay_end, herd test, 2026-10-29): 7.3 to 11.7 health a unit-second, guns and walls with what is worth something, on
+-- both bases, heart and edge, against 25.4 read; its losses there read within a fifth where it stayed long.
+local BITE_SHARE = 0.4
+
+local function stay_share(w, at, arrive, fmap, vmap)
+  local units = herd_units(w)
+  if #units == 0 or arrive <= 0 then return 0 end
+  local bite, pace = 0, 0
+  for _, u in ipairs(units) do
+    bite = bite + threat.bite(u.name)
+    pace = pace + (u.prototype.speed or 0) * 60
+  end
+  bite, pace = BITE_SHARE * bite / #units, pace / #units
+  -- Its biters spread over what is there (each its own target), so the fire it stands in is the fire on each thing it
+  -- breaks, for as long as that takes: weighted by its health. (Read at the heart alone, the building there with the least
+  -- fire on it, the guns round it read as nothing: herd test, 2026-10-29.)
+  local need, loss = 0, 0
+  valuemap.each_near(vmap, at, SIGHT, function(e)
+    local h = e.health or 0
+    need = need + h
+    for _, t in ipairs(firemap.entries(fmap, e.position)) do loss = loss + h * t.p * pace / (2 * t.r) end
+  end)
+  if need <= 0 then return 1 end
+  if bite <= 0 then return 0 end
+  loss = loss / need
+  -- (What it read, for the measure of its stay: stay_measure.)
+  local read = {bite = bite, loss = loss, need = need, arrive = arrive}
+  -- The guns standing among what it came for take its bite first: they fire on it, it turns on them. (At a heart four
+  -- lasers guarded, a wave broke 4700 health in its stay and 350 of it was worth something: herd test, core, 2026-10-29.)
+  -- (The guns whose reach covers it, not all within its sight: those read the plain base's heart 0% broken, where a wave
+  -- forced to it broke 48%.)
+  local guns = 0
+  for _, t in ipairs(firemap.entries(fmap, at)) do guns = guns + (t.e.valid and t.e.max_health or 0) end
+  read.guns = guns
+  local room = arrive - (w.size or #units) * valuemap.HOLD
+  if room <= 0 then return 0, read end
+  local t = loss > 0 and room / loss or math.huge
+  read.t = t
+  local broken = loss > 0 and bite * (arrive * t - loss * t * t / 2) or math.huge
+  return math.min(1, math.max(0, broken - guns) / need), read
+end
+
+-- A stay measured against its price (stay_share): from its start (at the heart, or inside at the edge) to its end, the
+-- health of what it broke a unit-second against the bite it read, and its losses a second against the fire's. For the
+-- herd test (2026-10-29: priced, a heart four lasers guarded would be 81% to 100% broken; the waves broke half or less).
+local function stay_begin(w)
+  if w.stay_m then return end
+  w.stay_m = {t = game.tick, last = game.tick, n = alive(w), hp = 0, us = 0, broke = 0}
+end
+
+local function stay_end(w)
+  local m = w.stay_m
+  if not m or m.done then return end
+  m.done = true
+  local secs = math.max(1, game.tick - m.t) / 60
+  local r = w.stay_read or {}
+  log(w, string.format("its stay measured: %.0f s, %d to %d alive, broke %d (%.0f health, %.0f with guns and walls): "
+    .. "%.2f health a unit-second, %.2f with guns and walls (read %.2f), lost %.3f a second (read %.3f, over %.0f s), %.0f%% of the %.0f there (read %.0f%%, guns on it %.0f)",
+    secs, m.n, alive(w), m.broke, m.hp, m.all or 0, m.hp / math.max(1, m.us / 60), (m.all or 0) / math.max(1, m.us / 60),
+    r.bite or 0, (m.n - alive(w)) / secs,
+    r.loss or 0, r.t or 0, 100 * m.hp / math.max(1, r.need or 0), r.need or 0, 100 * (r.share or 0), r.guns or 0))
 end
 
 -- The heart of the base it broke into: its best soft heart from the breach (hearts_from). Its worth there and at the edge:
@@ -1101,7 +1506,7 @@ local function deep_plan(w, h, forced)
   local hearts, vmap, fmap, cm = hearts_from(w, h)
   local best = hearts[1]
   if not (best and best.at) then
-    log(w, string.format("no heart it can take within %d of the breach (a gun %.1f of its own)", HEART_REACH, price_of(w)))
+    log(w, string.format("no heart it can take within %d of the breach", HEART_REACH))
     return nil
   end
   local at = {x = best.at.position.x, y = best.at.position.y}
@@ -1114,29 +1519,47 @@ local function deep_plan(w, h, forced)
   local function here(p) return valuemap.worth_near(vmap, p, SIGHT) end
   -- The edge priced as the heart is (costmap, from the breach): two units, and a shell round a soft middle read as not
   -- worth the strike (herd test).
-  local n, price = #herd_units(w), price_of(w)
-  local edge = here(w.inside) * valuemap.keeps_lost(n, costmap.cost(cm, w.inside) or 0)
+  local n = #herd_units(w)
+  local edge_keeps = valuemap.keeps_lost(n, costmap.cost(cm, w.inside) or 0)
+  local edge_stay, edge_read = stay_share(w, w.inside, n * edge_keeps, fmap, vmap)
+  local edge = here(w.inside) * edge_keeps * edge_stay
   -- (The fire on the way counted whole: at half, a ring of turrets between a mining outpost it had broken into and the
   -- factory behind it read cheap, and it left 95 drills for the factory, and lost half its number in the ring; 2026-10-27.)
-  local heart = here(at) * best.keeps
+  -- (And what it breaks there before the stay rule takes it out: stay_share.)
+  local stay, heart_read = stay_share(w, at, n * best.keeps, fmap, vmap)
+  if edge_read then edge_read.share = edge_stay end
+  if heart_read then heart_read.share = stay end
+  local heart = here(at) * best.keeps * stay
   local l = lessons()[lesson_key(w.center)]
   if l and (l.deep_lost or 0) > 0 then heart = heart * 0.5 ^ l.deep_lost end
   if l and l.last_deep then heart = heart * DEEP_AGAIN end
-  return {at = at, worth = heart, edge = edge, far = far,
-    why = string.format("the heart %.1f (worth %.0f, the way there %.1f of its own, a gun %.1f) against the edge %.1f",
-      heart, here(at), best.lost or 0, price, edge)}
+  -- (And the way there it priced: the cost map's, round the fire, cell by cell.)
+  local way = {}
+  for _, q in ipairs(costmap.path(cm, at) or {}) do way[#way + 1] = {x = q.x, y = q.y} end
+  return {at = at, worth = heart, edge = edge, far = far, way = way, heart_read = heart_read, edge_read = edge_read,
+    why = string.format("the heart %.1f (worth %.0f, the way there %.1f of its own, %.0f%% broken before it must leave) against the edge %.1f (%.0f%%)",
+      heart, here(at), best.lost or 0, 100 * stay, edge, 100 * edge_stay)}
 end
 
 -- Its plan at the breach: the heart when worth it, or when told (/lp wave deep). Its tells: the trail runs on to the
 -- heart, its leader marked.
 local function choose_plan(w)
-  local p = deep_plan(w, w.breach, w.force_deep)
+  -- From where its herd stands, on the guns still standing once its bursters and sweep have gone ahead (sequence;
+  -- read at the breach before they had, every way off it was under every gun, and no heart was ever within reach;
+  -- 2026-10-28).
+  local at = w.group and w.group.valid and w.group.position or where(w)
+  local p = deep_plan(w, at, w.force_deep)
   if not p then return end
-  local deep = w.force_deep or p.worth > DEEP_MARGIN * p.edge
+  -- (force_deep false, tests: the edge whatever it is worth, to compare.)
+  local deep = w.force_deep or (w.force_deep ~= false and p.worth > DEEP_MARGIN * p.edge)
   log(w, string.format("%s: %s", deep and "strikes for the heart" or "raids the edge", p.why))
+  w.stay_read = deep and p.heart_read or p.edge_read
   if not deep then return end
-  w.deep = {at = p.at, t = game.tick}
-  lay_trail(game.surfaces[w.surface], {w.breach, p.at})
+  w.deep = {at = p.at, t = game.tick, way = p.way}
+  local trail = {w.breach}
+  for _, q in ipairs(p.way or {}) do trail[#trail + 1] = q end
+  trail[#trail + 1] = p.at
+  lay_trail(game.surfaces[w.surface], trail)
   local lead = herd_units(w)[1]
   if lead and lead.valid then
     table.insert(w.marks, rendering.draw_sprite{sprite = "utility/warning_icon", surface = lead.surface,
@@ -1146,11 +1569,190 @@ local function choose_plan(w)
   end
 end
 
+-- Its big bursters at the turrets ahead (between its mark and its target, nearest first), one each, each at the next
+-- turret out of the blast of those already sent (BIG_BURST_R apart): they break the line, the herd crosses the hole.
+local BIG_BURST_R = shared.BIG_BURST.r
+local BIG_AHEAD = 120
+-- The herd holds back, out of reach where it marked, till they are spent (sequence), so it crosses a hole and not a line
+-- still firing: at a stretch of nw's north wall rebuilt in the arena (scripts/wall-lab.sh, 2026-10-28), 7 big bursters
+-- sent with 300 mediums broke 6 lasers and none got in; 14 ahead of 75 big biters behind them broke 20, and 14 got in.
+-- They in turn hold till its sweep is done, on ground it has cleared: sent with it, they crossed the mines first, and 11
+-- broke 23 mines, 52 wall pieces and 5 lasers (the siege test, 2026-10-28).
+-- (guns: the turrets to go at, given: a camp it turns on, every gun of it; else those ahead of it, below.)
+local function send_big_bursters(w, s, forces, m, c, now, given)
+  local big = {}
+  for _, u in ipairs(w.members) do
+    if u.valid and u.name == "lp-bred-big-burster" and u.commandable and not (w.big_busy or {})[u.unit_number] then big[#big + 1] = u end
+  end
+  if #big == 0 then return 0 end
+  local len = math.max(1, math.sqrt(d2(m, c)))
+  local ux, uy = (c.x - m.x) / len, (c.y - m.y) / len
+  local seen, guns = {}, given or {}
+  for d = 0, given and -1 or math.min(len, BIG_AHEAD), 8 do
+    local q = {m.x + ux * d, m.y + uy * d}
+    for _, t in ipairs(s.find_entities_filtered{position = q, radius = threat.far(), type = threat.FIRE, force = forces}) do
+      if not seen[t.unit_number] and threat.firing(t) then seen[t.unit_number] = true; guns[#guns + 1] = t end
+    end
+  end
+  -- The dearest first (herd.price_of: what each costs it to cross), nearest of those alike: where a burster takes most off
+  -- its way in. Nearest first, they broke the laser line and left the flamethrowers behind it, which burned 109 of the
+  -- herd that came after (a megabase's north wall, 2026-10-28).
+  local price = {}
+  for _, t in ipairs(guns) do price[t.unit_number] = herd.price_of(t) end
+  table.sort(guns, function(a, b)
+    local pa, pb = price[a.unit_number], price[b.unit_number]
+    if math.abs(pa - pb) > 1e-6 then return pa > pb end
+    return d2(a.position, m) < d2(b.position, m)
+  end)
+  local hit, k = {}, 0
+  for _, t in ipairs(guns) do
+    if k >= #big then break end
+    local near = false
+    for _, h in ipairs(hit) do if d2(h, t.position) < BIG_BURST_R * BIG_BURST_R then near = true; break end end
+    if not near then
+      k = k + 1
+      hit[#hit + 1] = t.position
+      local hit = {type = defines.command.attack, target = t, distraction = defines.distraction.none}
+      w.big_targets = w.big_targets or {}
+      table.insert(w.big_targets, {unit = big[k], target = t})
+      w.big_busy = w.big_busy or {}
+      w.big_busy[big[k].unit_number] = true
+      -- (A sweep to come: it holds where it stands till the sweep is done, sequence.)
+      if (w.sweep or 0) > 0 and not now then
+        w.big_targets[#w.big_targets].held = true
+        big[k].commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
+      else
+        big[k].commandable.set_command(hit)
+      end
+    end
+  end
+  if k > 0 then log(w, string.format("%d big bursters sent at %d turrets ahead", k, k)) end
+  w.big_sent = (w.big_sent or 0) + k
+  return k
+end
+
+-- The sweep (the user, 2026-10-28: "couldn't the solution be to devise an answer to minefields?", then "let it see the
+-- mines"): a runt at each of its foe's mines on the last of its way and through its breach, ahead of it; its big bursters
+-- go once it is done, the herd once they are (sequence). SWEEP_MAX runts at most. (Two waves on a megabase lost 55 and 40
+-- to the mines of a breach their bursters had opened; a line of runts swept blind cleared a dense field's first row.)
+local SWEEP_GAP, SWEEP_MAX = 3, 60
+herd.SWEEP_MAX = SWEEP_MAX
+-- The mines within `reach` of the way from `a` through `b` to `c` (its sweep's: the last of its way and its breach), nearest
+-- `a` first.
+local function mines_along(s, forces, pts, reach)
+  local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
+  for _, p in ipairs(pts) do
+    x0, y0, x1, y1 = math.min(x0, p.x), math.min(y0, p.y), math.max(x1, p.x), math.max(y1, p.y)
+  end
+  local out = {}
+  for _, m in ipairs(s.find_entities_filtered{area = {{x0 - reach, y0 - reach}, {x1 + reach, y1 + reach}}, type = "land-mine",
+    force = forces}) do
+    local q = m.position
+    for i = 2, #pts do
+      local a, b = pts[i - 1], pts[i]
+      local ex, ey = b.x - a.x, b.y - a.y
+      local f = math.max(0, math.min(1, ((q.x - a.x) * ex + (q.y - a.y) * ey) / math.max(1, ex * ex + ey * ey)))
+      if d2(q, {x = a.x + ex * f, y = a.y + ey * f}) <= reach * reach then out[#out + 1] = m; break end
+    end
+  end
+  table.sort(out, function(m1, m2) return d2(m1.position, pts[1]) < d2(m2.position, pts[1]) end)
+  return out
+end
+herd.mines_along = mines_along
+
+-- Its sweep: a runt at each of its foe's mines on the last of its way and through the breach (w.sweep of them, paid by its
+-- farm from its plan, herd.plan: mines), nearest first; each walks on to its mine and sets it off.
+local function sweep(w, s, from, to, inside)
+  local n = w.sweep or 0
+  if n <= 0 then return 0 end
+  local mines = mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP)
+  local made = 0
+  for i = 1, math.min(n, #mines) do
+    local q = s.find_non_colliding_position("lp-runt", {from.x, from.y}, 12, 0.5)
+    local u = q and s.create_entity{name = "lp-runt", position = q, force = B.force}
+    if u then
+      made = made + 1
+      u.commandable.set_command(go(mines[i].position, defines.distraction.none, 0.5))
+      w.sweepers = w.sweepers or {}
+      table.insert(w.sweepers, u)
+    end
+  end
+  w.swept = made
+  return made
+end
+
+-- Its big bursters set off at their guns: within BIG_DETONATE of the gun each was sent at, it dies, and its death is its
+-- blast (biotech.lua); its gun gone, it goes at the nearest firing one within BIG_RETARGET, else it is spent where it is.
+-- (Set off once its gun is within its blast, shared.BIG_BURST.r.)
+-- Its gun gone, it goes at the nearest that can still reach it (threat.far: the longest reach of any gun).
+local BIG_DETONATE = shared.BIG_BURST.r
+local function detonate(w)
+  if not w.big_targets then return end
+  local s = game.surfaces[w.surface]
+  local kept = {}
+  for _, b in ipairs(w.big_targets) do
+    local u, t = b.unit, b.target
+    if u.valid then
+      if not (t and t.valid) and not b.retargeted then
+        b.retargeted = true
+        t = nil
+        for _, g in ipairs(s.find_entities_filtered{position = u.position, radius = threat.far(), type = threat.FIRE, force = foes(w)}) do
+          if threat.firing(g) and (not t or d2(g.position, u.position) < d2(t.position, u.position)) then t = g end
+        end
+        b.target = t
+        if t then u.commandable.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none} end
+      end
+      if t and t.valid and not b.held and d2(u.position, t.position) <= BIG_DETONATE * BIG_DETONATE then
+        w.big_set_off = (w.big_set_off or 0) + 1
+        log(w, string.format("a big burster set off at the %s at %.0f,%.0f (%d of them)", t.name, t.position.x, t.position.y, w.big_set_off))
+        u.die(u.force)
+      elseif t or not b.spent then kept[#kept + 1] = b end
+    end
+  end
+  w.big_targets = #kept > 0 and kept or nil
+end
+
 local function breach(w)
   ensure_group(w)
   local s = game.surfaces[w.surface]
   local forces = foes(w)
   local m, c = w.mark, w.staged and w.goal or w.center
+  -- (At the guns covering where its plan breaks in, w.breach_at: toward its target, 400 tiles along the wall from where it
+  -- broke in, they found no gun within reach of their line and were never sent, and 113 of 120 burned; 2026-10-28.)
+  local led = send_big_bursters(w, s, forces, m, w.breach_at or c)
+  -- Its plan's way on past its breach to what it came for (the user, 2026-10-28: "once you get passage, just try and rush
+  -- through past the defenses"): one move along the way it priced, round the fire, no stop to fight a gun or break a wall
+  -- (blocked, its biters break what blocks them), committed till it gets there (no half-lost turn while it crosses).
+  -- Stopping in the fire to break named wall pieces and walk a step in, a herd of 120 burned to 6 at a flamethrower line.
+  if w.plan then
+    local pl = w.plan
+    local rest, after = {}, nil
+    for i = pl.upto + 1, #pl.path do
+      local q = {x = pl.path[i][1], y = pl.path[i][2]}
+      rest[#rest + 1] = q
+      if not after and pl.path[i - 1] and pl.path[i - 1][1] == pl.breach[1] and pl.path[i - 1][2] == pl.breach[2] then after = q end
+    end
+    rest[#rest + 1] = {x = pl.target[1], y = pl.target[2]}
+    local h = w.breach_at or rest[1]
+    w.breach, w.inside, w.walled, w.silenced = h, after or rest[#rest], 0, 0
+    w.punch, w.committed = true, true
+    local cmds = {}
+    for _, q in ipairs(rest) do cmds[#cmds + 1] = go(q, defines.distraction.none, 6) end
+    local swept = sweep(w, s, m, h, w.inside)
+    if swept > 0 then log(w, string.format("%d runts sweep the way in ahead of it, one at each mine", swept)) end
+    if led > 0 or swept > 0 then
+      w.held_cmds = cmds
+      w.group.set_command{type = defines.command.stop, distraction = defines.distraction.none}
+    else
+      w.group.set_command(compound(cmds))
+    end
+    w.stage, w.t, w.t_breach = "breach", game.tick, game.tick
+    lay_trail(s, rest)
+    log(w, string.format("breach at %.0f,%.0f: punches through to its target at %.0f,%.0f, %d legs round the fire%s", h.x, h.y,
+      pl.target[1], pl.target[2], #cmds, (led > 0 or swept > 0) and string.format(", behind its %s",
+      led > 0 and swept > 0 and "sweep and its big bursters" or led > 0 and "big bursters" or "sweep") or ""))
+    return
+  end
   -- Toward a silent turret its probe found (probe_read), and on past it.
   if w.breach_at then
     local dx, dy = w.breach_at.x - m.x, w.breach_at.y - m.y
@@ -1173,10 +1775,12 @@ local function breach(w)
   -- of a wave of 60 lost there in and out, against a ring of gun turrets 8 tiles apart; a deathworld visit, 2026-10-27).
   local silenced = 0
   if hit then
-    local map = firemap.read(s, hit, 0, forces)
+    local map = firemap.read(s, hit, 0, forces, herd.price_of)
     local cover = firemap.cover(map, hit)
-    w.breach_cover = #cover
-    if #cover > 0 and firemap.affords(map, hit, #herd_units(w), price_of(w)) then
+    -- (By prototype, for what each costs it: learn_price.)
+    w.breach_cover, w.breach_by = #cover, {}
+    for _, t in ipairs(cover) do w.breach_by[t.name] = (w.breach_by[t.name] or 0) + 1 end
+    if #cover > 0 and firemap.affords(map, hit, #herd_units(w)) then
       table.sort(cover, function(a, b) return d2(a.position, hit) < d2(b.position, hit) end)
       for _, t in ipairs(cover) do
         table.insert(cmds, {type = defines.command.attack, target = t, distraction = defines.distraction.none})
@@ -1198,13 +1802,65 @@ local function breach(w)
   hold_bursters(w, hit)
   w.inside = {x = h.x + ux * depth, y = h.y + uy * depth}
   table.insert(cmds, go(w.inside, defines.distraction.none, 4))
-  w.group.set_command(compound(cmds))
+  local swept = sweep(w, s, m, h, w.inside)
+  if swept > 0 then log(w, string.format("%d runts sweep the way in ahead of it, one at each mine", swept)) end
+  -- Its sweep and its bursters ahead of it: it holds, fighting nothing, till they are spent (sequence); then in. (By
+  -- by_enemy, its string's end in reach of the lasers drew the herd after them into the mines its sweep had only begun on,
+  -- 49 lost in five seconds; the siege test, 2026-10-28.)
+  if led > 0 or swept > 0 then
+    w.held_cmds = cmds
+    w.group.set_command{type = defines.command.stop, distraction = defines.distraction.none}
+  else
+    w.group.set_command(compound(cmds))
+  end
   w.stage = "breach"
   w.t = game.tick
   w.t_breach = game.tick
-  log(w, string.format("breach at %.0f,%.0f (%s%s)", h.x, h.y, hit and (#cmds - 1 - silenced) .. " wall pieces" or "no wall",
-    silenced > 0 and string.format(", the %d turrets covering it first", silenced) or ""))
-  choose_plan(w)
+
+  log(w, string.format("breach at %.0f,%.0f (%s%s%s)", h.x, h.y, hit and (#cmds - 1 - silenced - ((led > 0 or swept > 0) and 1 or 0)) .. " wall pieces" or "no wall",
+    silenced > 0 and string.format(", the %d turrets covering it first", silenced) or "",
+    (led > 0 or swept > 0) and string.format(", behind its %s", led > 0 and swept > 0 and "sweep and its big bursters"
+      or led > 0 and "big bursters" or "sweep") or ""))
+  if not w.held_cmds then choose_plan(w) end
+end
+
+-- Its breach in order, each when the one before is done (the user, 2026-10-28: "event-driven sequencing, no more clocks"):
+-- its sweep (every runt dead on its mine or at it), then its big bursters (each set off, dead, or with no gun left it can
+-- go at), then its herd, in; and then its heart is chosen, from where its herd stands, on the guns still standing.
+local function sequence(w)
+  if w.sweepers then
+    local spent = 0
+    for _, u in ipairs(w.sweepers) do
+      if not u.valid then spent = spent + 1
+      elseif u.commandable and u.commandable.has_command then return end
+    end
+    log(w, string.format("its sweep is done (%d of %d runts spent): its big bursters go", spent, #w.sweepers))
+    w.sweepers = nil
+  end
+  -- (Held for a sweep that found no mine to go at, or done: they go.)
+  do
+    for _, b in ipairs(w.big_targets or {}) do
+      if b.held then
+        b.held = nil
+        if b.unit.valid and b.target and b.target.valid then
+          b.unit.commandable.set_command{type = defines.command.attack, target = b.target, distraction = defines.distraction.none}
+        end
+      end
+    end
+  end
+  if w.held_cmds then
+    for _, b in ipairs(w.big_targets or {}) do
+      if b.unit.valid and (b.held or (b.unit.commandable and b.unit.commandable.has_command)) then return end
+    end
+    -- (What it was aimed at may be gone, broken by its bursters: the rest.)
+    local cmds = {}
+    for _, cmd in ipairs(w.held_cmds) do if not cmd.target or cmd.target.valid then cmds[#cmds + 1] = cmd end end
+    w.held_cmds = nil
+    ensure_group(w)
+    if w.group and w.group.valid then w.group.set_command(compound(cmds)) end
+    log(w, string.format("its big bursters spent (%d set off at their guns): it goes in", w.big_set_off or 0))
+    if not w.punch then choose_plan(w) end
+  end
 end
 
 
@@ -1319,12 +1975,25 @@ local function cover(w)
     end
   end
   if not rear then return end
-  local cmds = {{type = defines.command.stop, ticks_to_wait = COVER_TICKS, distraction = defines.distraction.by_enemy}}
+  -- At the breach, answering what hits them (by_damage), not what they see: told by_enemy, they went from the gap for a gun
+  -- 28 tiles in that a deep strike had left standing, and all 8 died to it in 5 seconds (herd test, spit, 2026-10-29;
+  -- raiding the edge, the herd had broken it). From a deep strike, as long again as its herd takes to walk back from the
+  -- heart.
+  local wait = COVER_TICKS
+  if w.deep and w.deep.reached then
+    local units = herd_units(w)
+    local pace = 0
+    for _, u in ipairs(units) do pace = pace + (u.prototype.speed or 0) end
+    pace = #units > 0 and pace / #units or 0
+    if pace > 0 then wait = wait + math.floor(math.sqrt(d2(w.deep.at, w.breach)) / pace) end
+  end
+  local cmds = {go(w.breach, defines.distraction.none, 4),
+    {type = defines.command.stop, ticks_to_wait = wait, distraction = defines.distraction.by_damage}}
   for k = #w.trail, 1, -1 do table.insert(cmds, go(w.trail[k], defines.distraction.none, 6)) end
   rear.set_command(compound(cmds))
   st().rears = st().rears or {}
   st().rears[rear.unique_id] = rear
-  log(w, string.format("%d spitters cover the withdrawal", n))
+  log(w, string.format("%d spitters cover the withdrawal (%.0f s)", n, wait / 60))
 end
 
 -- What it goes for inside, from where it stands: the guns firing on it there (0), what feeds the guns (power, the inserters loading gun turrets, the pipes
@@ -1336,10 +2005,10 @@ local function targets(w, at)
   local forces = foes(w)
   local out, seen = {}, {}
   -- What it can take (firemap.affords): the fire round here read once for the look.
-  local map = firemap.read(s, at, math.max(w.sight, w.hx + w.hy), forces)
-  local n, price = #herd_units(w), price_of(w)
+  local map = firemap.read(s, at, math.max(w.sight, w.hx + w.hy), forces, herd.price_of)
+  local n = #herd_units(w)
   local function add(e, tier)
-    if e.valid and not seen[e.unit_number or 0] and firemap.affords(map, e.position, n, price) then
+    if e.valid and not seen[e.unit_number or 0] and firemap.affords(map, e.position, n) then
       seen[e.unit_number or 0] = true
       out[#out + 1] = {e = e, tier = tier}
     end
@@ -1348,9 +2017,29 @@ local function targets(w, at)
   -- First, the guns firing on it where it stands, when it can take them (it ate an outpost's drills under its four guns
   -- and lost half its number there, and more leaving past them; 2026-10-27).
   for _, t in ipairs(firemap.cover(map, at)) do add(t, 0) end
+  -- Then the artillery shelling its incubators (herd.shelling): what it came for, when it came for one.
+  for _, a in pairs(s.find_entities_filtered{position = at, radius = r, type = ARTILLERY, force = forces}) do
+    if herd.shelling(a) > 0 then add(a, 0.5) end
+  end
+  -- What rebuilds and mends what it breaks: the roboports (on a megabase of 543, its biters gnawed solar panels the
+  -- construction robots put back, the roboports in reach left for after the power; 2026-10-27).
+  for _, e in pairs(s.find_entities_filtered{position = at, radius = r, type = "roboport", force = forces}) do add(e, 0.75) end
   for _, e in pairs(s.find_entities_filtered{position = at, radius = r, type = POWER, force = forces}) do add(e, 1) end
+  -- What feeds the guns: the inserters loading them. Cutting further back (feeds.lua: the belt behind, the pole that
+  -- powers the lasers) is its mind's (cuts: how many of the best cuts in sight it goes for), none by default: its biters
+  -- spread along an ammunition belt under a ring of guns, the guns ran dry, and within the hour it razed two thirds as
+  -- much (three timings on a deathworld, each way of it, 2026-10-27; a longer game may pay it back).
   for _, e in pairs(s.find_entities_filtered{position = at, radius = r, type = "inserter", force = forces}) do
-    if s.count_entities_filtered{position = e.drop_position, type = "ammo-turret", force = forces, limit = 1} > 0 then add(e, 1) end
+    local d = e.drop_target
+    if d and d.valid and d.type == "ammo-turret" then add(e, 1) end
+  end
+  if (B.mind.cuts or 0) > 0 then
+    local supply = {}
+    for _, f in pairs(feeds.read(s, at, r, forces, herd.price_of)) do
+      if f.e.valid and d2(f.e.position, at) <= r * r then supply[#supply + 1] = f end
+    end
+    table.sort(supply, function(a, b) return a.starves > b.starves end)
+    for k = 1, math.min(#supply, B.mind.cuts) do add(supply[k].e, 1 + k / (B.mind.cuts + 1)) end
   end
   for _, ft in pairs(s.find_entities_filtered{position = at, radius = r, type = "fluid-turret", force = forces}) do
     for _, e in pairs(s.find_entities_filtered{position = ft.position, radius = 3, type = PIPES, force = forces}) do add(e, 1) end
@@ -1380,6 +2069,25 @@ end
 -- Its biters inside, each after its own target (LOOK ticks apart, and when its group's order ends): who has one keeps it;
 -- the idle each take the best they can reach, by tier then distance, at most PER_TARGET (BIG_TARGET) on one. Nothing
 -- left in sight: the wave on to the middle once (its goal, staged), then home.
+-- The nearest of the foe's buildings no gun covers, within QUIET_REACH of where it stands, deeper than its breach: where it
+-- goes rather than back out through the fire (nil: none).
+local QUIET_REACH = 160
+local function quiet_spot(w)
+  local s = game.surfaces[w.surface]
+  local at = where(w)
+  local fmap = firemap.read(s, at, QUIET_REACH, foes(w), herd.price_of)
+  local back = w.breach or w.mark
+  local best, bd
+  for _, e in ipairs(s.find_entities_filtered{position = at, radius = QUIET_REACH, type = SOFT, force = foes(w)}) do
+    local p = e.position
+    if firemap.count(fmap, p, 1) == 0 and (not back or d2(p, back) > d2(at, back)) then
+      local d = d2(p, at)
+      if not bd or d < bd then best, bd = p, d end
+    end
+  end
+  return best and {x = best.x, y = best.y}
+end
+
 local function hunt(w)
   -- (Its rush for the heart broken off: it hunts from where it stands.)
   if w.deep and w.deep.going then w.deep.going, w.deep.broken = false, game.tick end
@@ -1453,13 +2161,17 @@ local function hunt(w)
     local at = where(w)
     local s = game.surfaces[w.surface]
     -- The soft heart past its sight (hearts_from); none it can take within HEART_REACH: home.
-    local hearts = hearts_from(w, at, w.sight)
+    local hearts, _, _, cm = hearts_from(w, at, w.sight)
     local near = hearts[1] and hearts[1].at
     if not near then
       log(w, string.format("nothing in sight, and no heart within %d it can take", HEART_REACH))
       return withdraw(w, "nothing in sight feeds a gun")
     end
-    w.group.set_command(go(near.position, defines.distraction.none, 6))
+    -- (Along the way it priced, round the fire, as its rush for the heart.)
+    local cmds = {}
+    for _, q in ipairs(costmap.path(cm, near.position) or {}) do cmds[#cmds + 1] = go(q, defines.distraction.none, 6) end
+    cmds[#cmds + 1] = go(near.position, defines.distraction.none, 6)
+    w.group.set_command(compound(cmds))
     w.push_to = near
     w.pushing = game.tick
     -- (Measured by its group, where the order went: the middle of 186 strung out lagged 40 tiles behind it.)
@@ -1479,9 +2191,9 @@ home_leg = function(w)
   -- ring, 2026-10-27). At most CLEAR_MAX orders.
   if w.home_leg == 1 and w.breach and not w.out_clear then
     local s = game.surfaces[w.surface]
-    local map = firemap.read(s, w.breach, 0, foes(w))
+    local map = firemap.read(s, w.breach, 0, foes(w), herd.price_of)
     local cover = firemap.cover(map, w.breach)
-    if #cover > 0 and (w.clearing or 0) < CLEAR_MAX and firemap.affords(map, w.breach, #herd_units(w), price_of(w)) then
+    if #cover > 0 and (w.clearing or 0) < CLEAR_MAX and firemap.affords(map, w.breach, #herd_units(w)) then
       local at = w.group.position
       table.sort(cover, function(a, b) return d2(a.position, at) < d2(b.position, at) end)
       if (w.clearing or 0) == 0 then log(w, string.format("clears its way out: the %d turrets covering the gap", #cover)) end
@@ -1496,6 +2208,7 @@ end
 
 withdraw = function(w, why)
   if w.stage == "withdraw" or w.stage == "done" then return end
+  stay_end(w)
   -- Its biters back into one group, to go home as it came (inside, each was on its own).
   w.individual = nil
   ensure_group(w)
@@ -1521,7 +2234,8 @@ withdraw = function(w, why)
   log(w, string.format("withdraws (%s); %d of %d left", why, alive(w), w.size))
 end
 
-local function finish(w, outcome)
+finish = function(w, outcome)
+  stay_end(w)
   clear_marks(w)
   learn_price(w)
   local h = st()
@@ -1534,13 +2248,15 @@ local function finish(w, outcome)
     t_launch = w.t0, t_mark = w.t_mark, t_march = w.t_march, t_breach = w.t_breach, t_inside = w.t_inside,
     t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},
     trail = w.trail, farm = w.farm, recalled = w.recalled, probe = w.probe and w.probe.result,
-    breach = w.breach and {w.breach.x, w.breach.y}, legs = w.leg, legs_failed = w.legs_failed or 0,
+    breach = w.breach and {w.breach.x, w.breach.y}, legs = w.leg, legs_failed = w.legs_failed or 0, walked = w.walked, off_leg = w.off_leg,
     home_legs = w.home_leg, home_n = w.home and #w.home, went_for = w.went_for,
     deep = w.deep and {at = {w.deep.at.x, w.deep.at.y}, reached = w.deep.reached and true or false},
     under_fire = w.under_fire, downed = w.downed or 0, push_walked = w.push_walked,
     choice = w.choice, goal = w.goal and {w.goal.x, w.goal.y}, heart_near = w.heart_near, razed_worth = w.razed_worth or 0, dead_at = w.dead_at,
     lost_by = w.lost_by, silenced = w.silenced, clearing = w.clearing, staged = w.staged and true or false,
-    breach_cover = w.breach_cover, price = w.price_learned,
+    breach_cover = w.breach_cover, breach_by = w.breach_by, price = w.price_learned,
+    -- What it expected its way in to cost, there and back (costmap.way_in), against what it lost: its calibration.
+    predicted = w.way_in and 2 * w.way_in.lost or nil, crossed = w.crossed, scale = w.scale_learned,
     bursters = (w.sappers or w.bursts) and {held = w.sappers and w.sappers.n or 0, burst = w.bursts and w.bursts.n or 0,
       broke = w.bursts and w.bursts.broke or {}, released = w.sappers and w.sappers.released and (w.sappers.released - w.sappers.t) / 60}})
   if w.sappers or w.bursts then
@@ -1554,9 +2270,9 @@ local function finish(w, outcome)
   for _, n in pairs(w.lost_by or {}) do died = died + n end
   log(w, string.format("%s; %d of %d home; died %s; gone without a death %d", outcome, alive(w), w.size,
     serpent.line(w.lost_by or {}), w.size - alive(w) - died))
-  if w.price_learned then
-    log(w, string.format("a gun cost it %.1f of its own at the breach (%d covering it): its price now %.1f",
-      w.price_learned.sample, w.breach_cover, w.price_learned.per))
+  for proto, p in pairs(w.price_learned or {}) do
+    log(w, string.format("a %s cost it %.1f of its own at the breach (%d covering it): its price now %.1f", proto, p.sample,
+      p.n, p.per))
   end
   -- Its lesson: the face it tried and whether it broke anything past the wall there; what killed its units round it.
   -- (Its personality: B.mind.learns; off, it keeps none, which is how the system sim measures what learning is worth.)
@@ -1602,7 +2318,37 @@ local function finish(w, outcome)
   end
 end
 
+-- A way from `at` to its mark by its cost map (blocked ground priced as water, its fire and its deaths): the cells'
+-- middles and what it costs; nil when there is none, or it costs DEAR times its number or more (there and back).
+local REPLANS, REPLAN_STRIDE = 2, 3
+local function replan(w, at)
+  local s = game.surfaces[w.surface]
+  local m = w.mark
+  local mid = {x = (at.x + m.x) / 2, y = (at.y + m.y) / 2}
+  local radius = math.max(WAY_REACH, math.sqrt(d2(at, m)) / 2 + WAY_MARGIN)
+  local fmap = firemap.read(s, mid, radius * firemap.BOX, hostiles(), herd.price_of, threat.ARMED)
+  local n = #herd_units(w)
+  local cm = costmap.read(s, mid, radius, foes(w), {fire = fmap, n = n, from = at, deaths = herd.deaths(),
+    blocked = herd.blocked(), hidden = herd.hidden_cost(foe_name(w)),
+    scale = B.mind.calibrate and know.scale("biotech", foe_name(w)) or 1, cell = radius > WAY_REACH and costmap.CELL * 2 or nil})
+  local cost = costmap.cost(cm, m)
+  local path = costmap.path(cm, m)
+  dump_costmap(w, cm, "replan" .. ((w.replans or 0) + 1), {from = {at.x, at.y}, target = {m.x, m.y}, path = xy_list(path), cost = cost})
+  if not cost or cost >= math.huge or not herd.affords(n, cost) then return nil end
+  return path and #path > 0 and path or nil, cost
+end
+
+-- Whether what is left of it pays its way in (herd.affords on its plan's price, its big bursters left counted).
+local function plan_pays(w)
+  if not w.way_in then return true end
+  local big = 0
+  for _, u in ipairs(w.members) do if u.valid and u.name == "lp-bred-big-burster" then big = big + 1 end end
+  return herd.affords(alive(w), herd.way_cost(w.way_in.lost, w.way_in.cover, big, w.way_in.openable))
+end
+
 local function step(w, tick)
+  detonate(w)
+  if w.stage == "breach" then sequence(w) end
   local s = game.surfaces[w.surface]
   if not s then return finish(w, "lost") end
   if w.stage == "scout" then
@@ -1663,10 +2409,34 @@ local function step(w, tick)
     -- way out is through the fire it paid to cross (a deathworld visit, 2026-10-27: waves lost half in the gap of a turret
     -- ring, turned at the heart where nothing fired on them, and lost as many again going back through it).
     local now = alive(w)
+    if w.stay_m and not w.stay_m.done then
+      w.stay_m.us = w.stay_m.us + now * (tick - w.stay_m.last)
+      w.stay_m.last = tick
+    end
     w.loss_log = w.loss_log or {}
     table.insert(w.loss_log, {tick, now})
     while #w.loss_log > 1 and tick - w.loss_log[1][1] > FIRE_WINDOW do table.remove(w.loss_log, 1) end
-    if now * 2 < w.size and w.loss_log[1][2] > now then return withdraw(w, "half lost") end
+    if not w.committed and now * 2 < w.size and w.loss_log[1][2] > now then
+      -- Unless going out costs more than staying: its way out what its way in cost, what it lost getting here or what its cost
+      -- map said (the more), and that half or more of what is left. Then it moves off the fire, deeper, to the nearest of the foe's buildings no gun covers, and
+      -- razes there until worn down (time inside). A wave of 262 crossed a megabase's laser wall into a factory no gun
+      -- covered, turned at half lost, and lost 106 more going back out through the lasers, razing nothing; 2026-10-27.
+      local out = math.max(w.way_in and w.way_in.lost or 0, (w.size or now) - now)
+      local quiet = (out >= now * valuemap.HOLD) and not w.stayed and quiet_spot(w)
+      if not quiet then return withdraw(w, "half lost") end
+      w.stayed = tick
+      w.pushing = tick
+      w.loss_log = nil
+      w.individual = nil
+      ensure_group(w)
+      if w.group and w.group.valid then
+        for _, u in ipairs(herd_units(w)) do if u.valid and not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end end
+        w.group.set_command(go(quiet, defines.distraction.none, 8))
+      end
+      log(w, string.format("half lost, but its way out would cost %.0f of its %d: stays, deeper, off the fire, at %.0f,%.0f",
+        out, now, quiet.x, quiet.y))
+      return
+    end
     -- Inside while it brings things down (INSIDE_TICKS since the last fell), INSIDE_MAX at most.
     if w.t_inside and tick - math.max(w.t_inside, w.t_progress or 0) > INSIDE_TICKS then return withdraw(w, "time inside") end
     if w.t_inside and tick - w.t_inside > INSIDE_MAX then return withdraw(w, "time inside, the most") end
@@ -1677,15 +2447,232 @@ local function step(w, tick)
     if w.pushing and tick - w.pushing >= PUSH_MAX then w.pushing = nil end
     if w.stage == "inside" and tick % LOOK == 0 and not (w.deep and w.deep.going) and not w.pushing then hunt(w) end
   end
+  -- Off its leg (DETOUR from the line it was sent along): the engine's pathfinder found the leg's ground unwalkable and went
+  -- round, the long way. It remembers that ground as no way (herd.blocked, priced as water by its cost maps) and turns
+  -- home along what it walked: on a megabase its cost map read a lake's strait as open, and the pathfinder took the herd
+  -- round the lake's far side, through the turret line, into the mined gap; 82 lost of 82 (2026-10-27).
+  if storage.march_trace and (w.stage == "march" or w.stage == "breach") and tick % 60 == 0 and w.group and w.group.valid then
+    local g = w.group
+    local names = {}
+    for k, v in pairs(defines.group_state) do names[v] = k end
+    local cmd, dc = g.command, g.distraction_command
+    local mid = where(w)
+    log(w, string.format("TRACE leg %d to %s: group at %.0f,%.0f (%s, %d in it), members' middle %.0f,%.0f; command %s; distraction %s",
+      w.leg, w.trail[w.leg] and string.format("%.0f,%.0f", w.trail[w.leg].x, w.trail[w.leg].y) or "-", g.position.x, g.position.y,
+      tostring(names[g.state] or g.state), #g.members, mid.x, mid.y, cmd and serpent.line({cmd.type, cmd.destination}) or "none",
+      dc and serpent.line({dc.type, dc.target and dc.target.valid and dc.target.name}) or "none"))
+  end
+  -- A fight on the march (it turned on a camp that shot it): on till nothing of theirs within reach of it fires, its
+  -- detour check and its march held meanwhile (fighting took it off its way, and it read that as no way through and
+  -- went home mid-fight, 66 lost; 2026-10-28); then on along its trail.
+  if w.stage == "march" and w.fighting then
+    -- (Its bursters spent: set off, dead, or with no gun left they can go at; then its herd goes in.)
+    if w.fighting.stage == "bursters" then
+      for _, b in ipairs(w.big_targets or {}) do
+        if b.unit.valid and b.unit.commandable and b.unit.commandable.has_command then return end
+      end
+      w.fighting.stage = "assault"
+      ensure_group(w)
+      if w.group and w.group.valid then
+        w.group.set_command{type = defines.command.attack_area, destination = w.fighting.at, radius = w.fighting.reach,
+          distraction = defines.distraction.by_anything}
+      end
+      log(w, string.format("its big bursters spent at %s's guns (%d set off): it goes in", w.fighting.force, w.big_set_off or 0))
+      return
+    end
+    local g = w.group and w.group.valid and w.group.position or where(w)
+    local live = false
+    for _, e in ipairs(s.find_entities_filtered{position = g, radius = w.fighting.reach, type = threat.ARMED,
+      force = w.fighting.force}) do
+      if threat.firing(e) then live = true; break end
+    end
+    if live then return end
+    -- Its guns silent: what is left of it pays its way in to its target, and it marches on; or it does not, and what it
+    -- fought is what it razes (the user, 2026-10-28: "why doesn't it destroy the lander?"): their buildings its targets, as
+    -- inside a base (hunt), then home.
+    local force = w.fighting.force
+    w.fighting = nil
+    if plan_pays(w) then
+      log(w, string.format("nothing of %s's fires on it now: marches on (%d of %d left)", force, alive(w), w.size))
+      return march(w)
+    end
+    -- What their camp would cost it to raze: every gun and armed unit of theirs within its reach of their lander (their
+    -- farthest building from it, and the leash their idle garrison keeps, shared.LEASH): a raid on it lost 19 to railgunners
+    -- and 10 to flamers it had not counted, and withdrew half lost (2026-10-28). Too dear: home.
+    local g = w.group and w.group.valid and w.group.position or where(w)
+    local lander = s.find_entities_filtered{position = g, radius = 2 * FIRE_NEAR + herd.spread(alive(w)),
+      name = shared.variants({"lp-lander"}), force = force, limit = 1}[1]
+    if lander then
+      local extent = 0
+      for _, e in ipairs(s.find_entities_filtered{position = lander.position, radius = 150, force = force, type = WALLS}) do
+        extent = math.max(extent, math.sqrt(d2(e.position, lander.position)))
+      end
+      local cost = 0
+      for _, e in ipairs(s.find_entities_filtered{position = lander.position, radius = extent + shared.LEASH, type = threat.ARMED,
+        force = force}) do
+        if threat.firing(e) then cost = cost + herd.price_of(e) end
+      end
+      -- (One way, as a heart is weighed: the garrison beaten, its way home is not through it; valuemap.keeps_one_way.)
+      if valuemap.keeps_one_way(alive(w), cost) <= 0 then
+        log(w, string.format("nothing of %s's fires on it now, but their camp (%.0f tiles across) holds %.0f of guns and garrison, as many as its %d: home",
+          force, 2 * (extent + shared.LEASH), cost, alive(w)))
+        return withdraw(w, "their camp too strong")
+      end
+    end
+    log(w, string.format("nothing of %s's fires on it now, and what is left of it (%d) cannot pay its way in: it razes their camp",
+      force, alive(w)))
+    w.foes = {force}
+    w.stage, w.t_inside, w.t = "inside", tick, tick
+    -- (Its new task's losses from here: by the half it set out with, half spent on the march, it withdrew a breath into it.)
+    w.size, w.loss_log = alive(w), nil
+    w.breach = w.group and w.group.valid and w.group.position or where(w)
+    return hunt(w)
+  end
+  if w.stage == "march" and w.leg and w.leg >= 2 and w.trail[w.leg] and w.trail[w.leg - 1] then
+    local a, b = w.trail[w.leg - 1], w.trail[w.leg]
+    -- Where its group is (the engine's own place for it), not the middle of its members: those not marching with it
+    -- count in that middle (2026-10-28).
+    local mid = where(w)
+    local at = w.group and w.group.valid and w.group.position or mid
+    local dx, dy = b.x - a.x, b.y - a.y
+    -- Off its way: farther than DETOUR, and more for a bigger herd, from its leg and the legs it walked before it (a herd of
+    -- 262 strung out, its middle 65 tiles back along the leg before, read as taken off its way, and it turned home intact;
+    -- 2026-10-27).
+    local function off_from(pt)
+      local off = math.huge
+      for i = math.max(2, w.leg - DETOUR_BACK), w.leg do
+        local p, q = w.trail[i - 1], w.trail[i]
+        local ex, ey = q.x - p.x, q.y - p.y
+        local f = math.max(0, math.min(1, ((pt.x - p.x) * ex + (pt.y - p.y) * ey) / math.max(1, ex * ex + ey * ey)))
+        off = math.min(off, d2(pt, {x = p.x + ex * f, y = p.y + ey * f}))
+      end
+      return off
+    end
+    local off = off_from(at)
+    local slack = DETOUR + DETOUR_PER * math.sqrt(#herd_units(w))
+    if off > slack * slack then
+      local k = know.of("biotech")
+      k.blocked = k.blocked or {}
+      for _, q in ipairs({0.25, 0.5, 0.75}) do
+        table.insert(k.blocked, {a.x + dx * q, a.y + dy * q, game.tick})
+      end
+      -- A new way from where it stands to its mark, round what it now knows (REPLANS a wave): a wave of 485 that had lost
+      -- none turned home at a forest its way had run through (2026-10-28). Home only when there is none, or it is dear.
+      if (w.replans or 0) < REPLANS and w.mark then
+        local path, cost = replan(w, at)
+        if path then
+          w.replans = (w.replans or 0) + 1
+          local trail = {}
+          for i = 1, w.leg - 1 do trail[#trail + 1] = w.trail[i] end
+          trail[#trail + 1] = {x = at.x, y = at.y}
+          local from = #trail
+          for i = REPLAN_STRIDE, #path, REPLAN_STRIDE do trail[#trail + 1] = path[i] end
+          trail[#trail + 1] = {x = w.mark.x, y = w.mark.y}
+          w.trail, w.leg = trail, from + 1
+          lay_trail(game.surfaces[w.surface], trail)
+          log(w, string.format("off its leg %d (%.0f,%.0f to %.0f,%.0f) at %.0f,%.0f: no way through there, remembered; a new way to its mark from here (%d legs, costing %.0f), %d of %d",
+            w.leg - 1, a.x, a.y, b.x, b.y, at.x, at.y, #trail - from, cost, w.replans, REPLANS))
+          return march(w)
+        end
+      end
+      log(w, string.format("off its leg %d (%.0f,%.0f to %.0f,%.0f) at %.0f,%.0f: no way through there, remembered; it turns home",
+        w.leg, a.x, a.y, b.x, b.y, at.x, at.y))
+      local walked = {}
+      for i = 1, math.min(w.leg - 1, #w.trail) do walked[#walked + 1] = w.trail[i] end
+      walked[#walked + 1] = {x = at.x, y = at.y}
+      w.trail = walked
+      w.off_leg = {a.x, a.y, b.x, b.y}
+      return withdraw(w, "no way through")
+    end
+  end
   -- Under fire on the march (FIRE_LOSS within FIRE_WINDOW, turrets within FIRE_NEAR): it breaks in where it stands.
   if w.stage == "march" then
     w.fire_log = w.fire_log or {}
     local now = alive(w)
     table.insert(w.fire_log, {tick, now})
     while #w.fire_log > 1 and tick - w.fire_log[1][1] > FIRE_WINDOW do table.remove(w.fire_log, 1) end
-    if w.fire_log[1][2] - now > FIRE_LOSS * (w.size or now) then
-      local at = where(w)
-      if s.count_entities_filtered{position = at, radius = FIRE_NEAR, type = TURRETS, force = foes(w), limit = 1} > 0 then
+    local bled = (w.rival_lost or 0) >= FIRE_LOSS * (w.size or now)
+    if bled or w.fire_log[1][2] - now > FIRE_LOSS * (w.size or now) then
+      -- (Bled by another: looked for where its killers stand.)
+      local at = bled and w.rival_at or where(w)
+      w.rival_lost = 0
+      -- (Anyone's guns or armed units: walking on through a corporation's camp under orders to ignore it, a wave of 265
+      -- lost 240 and killed nothing; 2026-10-27.)
+      -- (Round its middle, wider for a bigger herd: a column of 381 lost 271 to railgunners firing from 30 tiles off its
+      -- flank, none within FIRE_NEAR of its middle, and walked on.)
+      local near = s.find_entities_filtered{position = at, radius = FIRE_NEAR + DETOUR_PER * math.sqrt(now), type = threat.ARMED,
+        force = hostiles()}
+      -- Who shoots it: its target's own (it breaks in where it stands, below), or another (a corporation's camp it passes):
+      -- it turns on them, every one of its own fighting what it meets there, and then marches on. (Breaking in where it
+      -- stood at Kessler-Hayashi's flamers, 100 tiles from the player's wall, its siege sent its bursters from there and its
+      -- herd came to the breach late and scattered, and went home; a megabase, 2026-10-28.)
+      local mine, other = nil, nil
+      local targets = {}
+      for _, f in ipairs(foes(w)) do targets[type(f) == "string" and f or f.name] = true end
+      for _, e in ipairs(near) do
+        if targets[e.force.name] then mine = mine or e else other = other or e end
+      end
+      if other and not mine then
+        -- What shoots it there, priced as it now knows it (learn_march), its big bursters' work counted (herd.way_cost):
+        -- what it can take it takes (the user, 2026-10-28: a wave "full of bursters and a lot of big biters ... in contact
+        -- with the KH camp ... it makes no sense that they don't just turn on KH and annihilate them"), its bursters at the
+        -- guns; what it cannot, it goes round, a new way to its mark.
+        learn_march(w)
+        local reach = FIRE_NEAR + herd.spread(now)
+        local guns, cost, turrets, units_cost = 0, 0, {}, 0
+        for _, e in ipairs(s.find_entities_filtered{position = other.position, radius = reach, type = threat.ARMED,
+          force = other.force}) do
+          if threat.firing(e) then
+            cost = cost + herd.price_of(e)
+            if e.type ~= "unit" then guns = guns + 1; turrets[#turrets + 1] = e else units_cost = units_cost + herd.price_of(e) end
+          end
+        end
+        local big = 0
+        for _, u in ipairs(w.members) do if u.valid and u.name == "lp-bred-big-burster" then big = big + 1 end end
+        -- (Its bursters take guns, not the units round them: they are paid whole. Its bursters counted against the whole of
+        -- a camp, railgunners and all, a wave of 120 turned on one priced at 17 and lost 90 to its railgunners; 2026-10-29.)
+        local lost = herd.way_cost(cost - units_cost, guns, big) + units_cost
+        if herd.affords(now, lost) then
+          log(w, string.format("under fire on the march (%d lost in %d s) from %s: its guns and units there cost %.0f, %.0f with its %d big bursters: it turns on them",
+            w.fire_log[1][2] - now, math.floor((tick - w.fire_log[1][1]) / 60), other.force.name, cost, lost, big))
+          w.fire_log = nil
+          w.fought = (w.fought or 0) + 1
+          local sent = send_big_bursters(w, s, {other.force}, at, {x = other.position.x, y = other.position.y}, true, turrets)
+          -- As at a wall: its bursters at their guns first, its herd back out of their fire on its trail till they are
+          -- spent, then in (charging in with them, it stood in the flamers' fire and lost 79 of 120; 2026-10-28). Its fight
+          -- on till nothing of theirs within reach of it fires (step).
+          w.fighting = {force = other.force.name, at = {x = other.position.x, y = other.position.y}, reach = reach,
+            stage = sent > 0 and "bursters" or "assault"}
+          ensure_group(w)
+          if w.group and w.group.valid then
+            if sent > 0 then
+              w.group.set_command(compound({go(w.trail[math.max(1, w.leg - 1)], defines.distraction.none, 6),
+                {type = defines.command.stop, distraction = defines.distraction.none}}))
+            else
+              w.group.set_command{type = defines.command.attack_area, destination = other.position, radius = reach,
+                distraction = defines.distraction.by_anything}
+            end
+          end
+          return
+        end
+        local path, cost2 = replan(w, at)
+        log(w, string.format("under fire on the march (%d lost in %d s) from %s: %s", w.fire_log[1][2] - now,
+          math.floor((tick - w.fire_log[1][1]) / 60), other.force.name,
+          path and string.format("not theirs to take (%.0f, %.0f with its %d big bursters): a new way round them to its mark (costing %.0f)",
+            cost, lost, big, cost2) or "not theirs to take, and no way round them it can pay: home"))
+        w.fire_log = nil
+        if not path then return withdraw(w, "under fire on the march") end
+        local trail = {}
+        for k = 1, w.leg - 1 do trail[#trail + 1] = w.trail[k] end
+        trail[#trail + 1] = {x = at.x, y = at.y}
+        local from = #trail
+        for k = REPLAN_STRIDE, #path, REPLAN_STRIDE do trail[#trail + 1] = path[k] end
+        trail[#trail + 1] = {x = w.mark.x, y = w.mark.y}
+        w.trail, w.leg = trail, from + 1
+        lay_trail(game.surfaces[w.surface], trail)
+        return march(w)
+      end
+      if mine then
         log(w, string.format("under fire on the march (%d lost in %d s): breaks in where it stands, at %.0f,%.0f",
           w.fire_log[1][2] - now, math.floor((tick - w.fire_log[1][1]) / 60), at.x, at.y))
         w.under_fire = tick
@@ -1782,31 +2769,54 @@ function herd.on_command_completed(e)
         end
         -- A leg walked: its regroups start again (REGROUPS a leg).
         if e.result == defines.behavior_result.success then w.regroups = 0 end
+        -- Where the herd stood at each leg's end, against the trail it was given (the visit's wave map draws both).
+        local at = where(w)
+        w.walked = w.walked or {}
+        w.walked[#w.walked + 1] = {math.floor(at.x), math.floor(at.y), w.leg, e.result == defines.behavior_result.success}
         w.leg = (w.leg or #w.trail) + 1
         if w.leg <= #w.trail then
           -- (A failed order disbands a group on 2.1: step forms it again and goes on from this leg.)
           if w.group.valid then march(w) end
           return
         end
+        -- (Having fought on the way: what is left of it pays its way in, or it goes home.)
+        if w.fought and not plan_pays(w) then
+          log(w, string.format("what is left of it after its fight (%d) cannot pay its way in: home", alive(w)))
+          return withdraw(w, "spent on the way")
+        end
         probe_read(w); return breach(w)
       end
       if w.stage == "breach" then
         w.stage = "inside"; w.t_inside = game.tick
+        -- (Through: its stay rule's again from here, its losses counted from what got there.)
+        if w.committed then
+          w.committed = nil
+          w.size, w.loss_log = alive(w), nil
+          log(w, string.format("through to its target with %d", w.size))
+        end
         -- A deep strike: past what is near, on to the heart, fighting nothing; there it hunts.
         if w.deep and not w.deep.reached then
           w.deep.going = true
           -- Its spitters stay at the breach (sent back from the heart they crossed the base again, late and few).
           hold_breach(w)
-          w.group.set_command(go(w.deep.at, defines.distraction.none, 8))
-          log(w, string.format("rushes for the heart at %.0f,%.0f", w.deep.at.x, w.deep.at.y))
+          -- Along the way it priced, round the fire (the user, 2026-10-28: "why don't we simply avoid going in a straight
+          -- line?"): told to go straight to it, the engine's shortest way crossed a second laser line and a line of
+          -- flamethrowers it had priced its way round, and it lost 54 there.
+          local cmds = {}
+          for _, q in ipairs(w.deep.way or {}) do cmds[#cmds + 1] = go(q, defines.distraction.none, 6) end
+          cmds[#cmds + 1] = go(w.deep.at, defines.distraction.none, 8)
+          w.group.set_command(compound(cmds))
+          log(w, string.format("rushes for the heart at %.0f,%.0f, %d legs round the fire", w.deep.at.x, w.deep.at.y, #cmds))
           return
         end
+        stay_begin(w)
         return hunt(w)
       end
       if w.stage == "inside" and w.deep and w.deep.going then
         w.deep.going, w.deep.reached = false, game.tick
         w.t_progress = game.tick
         log(w, string.format("at the heart (%s)", e.result == defines.behavior_result.success and "reached" or "as far as it got"))
+        stay_begin(w)
         return hunt(w)
       end
       if w.stage == "inside" then w.pushing = nil; return hunt(w) end
@@ -1842,6 +2852,21 @@ function herd.on_died(e)
           -- Where (its record: scripts/wavemap.py), at most DEAD_AT.
           w.dead_at = w.dead_at or {}
           if #w.dead_at < DEAD_AT then w.dead_at[#w.dead_at + 1] = {math.floor(ent.position.x), math.floor(ent.position.y), w.stage} end
+          -- (Its killers on the march, by name, where they stood: their price learned, learn_price.)
+          if w.stage == "march" and c and c.force.name ~= B.force then
+            -- (Killed by other than its target's: counted to the end of its march, no window: a slow bleed at a camp's walls,
+            -- 66 over two minutes, never made a tenth in any 15 s, and it was never answered; 2026-10-28.)
+            local theirs = false
+            for _, f in ipairs(foes(w)) do if (type(f) == "string" and f or f.name) == c.force.name then theirs = true end end
+            if not theirs then
+              w.rival_lost = (w.rival_lost or 0) + 1
+              w.rival_at = {x = c.position.x, y = c.position.y}
+            end
+            w.march_killers = w.march_killers or {}
+            local mk = w.march_killers[c.name] or {force = c.force.name, n = 0, x = 0, y = 0}
+            mk.n, mk.x, mk.y = mk.n + 1, mk.x + c.position.x, mk.y + c.position.y
+            w.march_killers[c.name] = mk
+          end
           break
         end
       end
@@ -1852,6 +2877,11 @@ function herd.on_died(e)
       if w.stage ~= "scout" then
         w.kills[ent.name] = (w.kills[ent.name] or 0) + 1
         w.razed_worth = (w.razed_worth or 0) + valuemap.worth_of(ent)
+        local m = w.stay_m
+        if m and not m.done then
+          m.all = (m.all or 0) + (ent.max_health or 0)
+          if valuemap.worth_of(ent) > 0 then m.broke, m.hp = m.broke + 1, m.hp + (ent.max_health or 0) end
+        end
         if not w.t_first_kill and ent.type ~= "wall" and ent.type ~= "gate" then w.t_first_kill = game.tick end
       end
     end
