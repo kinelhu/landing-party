@@ -813,6 +813,17 @@ Where it stands (0.2.85):
 - nw played out naturally (five hours from its landing): a culture fields its first siege at about two and a half hours.
   Its sieges have been caught by Kessler-Hayashi's camp on the way; nothing of the player's economy razed yet.
 
+And at 0.2.86 (its stay priced, 2026-10-29):
+
+- Deathworld, three timings: 991, 1,328 and 1,248 razed, the same as 0.2.85 within one path's spread.
+- nw played out naturally, five hours: one wave, at about four hours. Its bursters broke six lasers at the east wall
+  (581,220), and 22 went through to the factory, lost none in four minutes there and broke 444 of its buildings (12
+  assemblers and 6 roboports down at once at the ten-minute sample; the player's robots had rebuilt them all by the
+  next); it left at its time limit and lost 12 to lasers and drones on the way out. Its bite there, 27 health a
+  unit-second, nothing firing on it, is nearly three times what it dealt under fire in the herd test: `BITE_SHARE` is a
+  base under fire's. The visit's report read all of this as nothing: its tally of the player's buildings was filtered
+  (fixed, 0.2.87; the herd test now checks the tally).
+
 Open: a flamethrower line behind a wall, out of a burster's reach (a bigger blast, or a breed that walks through fire);
 a second breach for a defence in depth (the east entrance: a second sweep and bursters at the second line); a long
 natural visit from a matured culture rather than from landing; Kessler-Hayashi and Grubstake to the same level of

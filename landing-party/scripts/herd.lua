@@ -1491,7 +1491,14 @@ local function stay_end(w)
   if not m or m.done then return end
   m.done = true
   local secs = math.max(1, game.tick - m.t) / 60
-  local r = w.stay_read or {}
+  local r = w.stay_read
+  if not r then
+    -- (Not priced: a siege's or a plan's own target, not a choice of heart or edge.)
+    log(w, string.format("its stay measured: %.0f s, %d to %d alive, broke %d (%.0f health, %.0f with guns and walls): "
+      .. "%.2f health a unit-second with guns and walls, lost %.3f a second, unpriced", secs, m.n, alive(w), m.broke, m.hp,
+      m.all or 0, (m.all or 0) / math.max(1, m.us / 60), (m.n - alive(w)) / secs))
+    return
+  end
   log(w, string.format("its stay measured: %.0f s, %d to %d alive, broke %d (%.0f health, %.0f with guns and walls): "
     .. "%.2f health a unit-second, %.2f with guns and walls (read %.2f), lost %.3f a second (read %.3f, over %.0f s), %.0f%% of the %.0f there (read %.0f%%, guns on it %.0f)",
     secs, m.n, alive(w), m.broke, m.hp, m.all or 0, m.hp / math.max(1, m.us / 60), (m.all or 0) / math.max(1, m.us / 60),

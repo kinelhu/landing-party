@@ -8697,6 +8697,14 @@ scenarios.herd = function()
     info("herd threat profiles: " .. serpent.line(lp("debug_threat", {"gun-turret", "laser-turret", "flamethrower-turret",
       "artillery-turret", "artillery-wagon", "small-worm-turret"})))
     info("herd: waves still out " .. serpent.line(state.waves))
+    -- The test's own tally of what Synthexis razed of the player's sees what the wave broke (filtered, it saw none of the
+    -- 46 a wave broke here, and a visit's report read nw's 444 as nothing; 2026-10-29).
+    local tallied = 0
+    for _, v in pairs(S.syn_razed or {}) do tallied = tallied + v end
+    local broke = 0
+    for name, v in pairs(w and w.kills or {}) do broke = broke + v end
+    check("herd: the test's tally saw what the wave broke of the player's", broke == 0 or tallied >= broke,
+      string.format("%d tallied of %d", tallied, broke))
     -- The deep strike (0.2.30): told (deep), it rushed for the heart and got there; a hard shell round a soft middle
     -- (shell), it chose to; this base's heart too near its breach (the plain herd), it raided the edge.
     if mix == "deep" or mix == "" then
@@ -11523,8 +11531,10 @@ script.on_event(defines.events.on_entity_died, function(e)
       e.force and e.force.name or "?"))
   end
 -- Every death in the system sim (its tally of who lost what to whom): filtered, the tally saw only these kinds, and a
--- Synthexis wave that broke the player's power, inserters and lasers counted 1 of 20 (2026-10-25).
-end, params.scenario ~= "system" and {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
+-- Synthexis wave that broke the player's power, inserters and lasers counted 1 of 20 (2026-10-25). And in a visit (what
+-- Synthexis and the biters razed of the player's): filtered, nw's first wave into the factory broke 444 of its buildings,
+-- 12 assemblers and 6 roboports down at once, and the report read "razed of the player's {}" (2026-10-29).
+end, params.scenario ~= "system" and params.scenario ~= "visit" and params.scenario ~= "herd" and {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
   {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"}, {filter = "type", type = "mining-drill"},
   {filter = "type", type = "spider-unit"}} or nil)

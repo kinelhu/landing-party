@@ -3541,3 +3541,6 @@ Bugs and surprises the headless runs caught, each kept as a check:
   measured, its bite inside was 0.4 of its prototype's, and spent first on the guns covering the spot (`BITE_SHARE`, the
   covering guns in `stay_share`; each stay logs its measure). A deep strike's spitters, told to cover by_enemy, left the
   breach for a gun its strike left standing and all died (cover from the breach, by_damage; herd spit).
+- A visit's report of what Synthexis razed of the player's saw only the kinds the test's death handler was filtered to
+  (troopers, gun turrets, drills): nw's first wave into the factory broke 444 buildings and it read "{}". Unfiltered in
+  visits and the herd test, which checks its tally against the wave's kills.
