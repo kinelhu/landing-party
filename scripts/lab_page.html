@@ -1,0 +1,716 @@
+<title>Siege Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an annotated survey. The map is the sheet; the record sits in the margin; the timeline runs under both.
+   Colour by role: the player's defences blue, Synthexis aqua (its green in the game), its siege machinery orange. */
+:root {
+  --surface: #fcfcfb; --sheet: #f3f5f4; --raise: #eceeed; --rule: #dfe2e0; --grid: #e8eae9;
+  --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #85847e;
+  --foe: #2a78d6; --ours: #1baf7a; --siege: #eb6834;
+  --wall: #a3a8a6; --building: #c9cdcb; --mine: #9a8466; --dead: #0b0b0b;
+  --band-a: rgba(11, 11, 11, 0.035); --band-b: rgba(11, 11, 11, 0.075);
+  --ui: "IBM Plex Sans", "Helvetica Neue", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: #1a1a19; --sheet: #141413; --raise: #242423; --rule: #353533; --grid: #2a2a29;
+    --ink: #f0efec; --ink-2: #c3c2b7; --ink-3: #8f8e86;
+    --foe: #3987e5; --ours: #199e70; --siege: #d95926;
+    --wall: #6f7472; --building: #3b3f3d; --mine: #8a7556; --dead: #f0efec;
+    --band-a: rgba(240, 239, 236, 0.03); --band-b: rgba(240, 239, 236, 0.07);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #1a1a19; --sheet: #141413; --raise: #242423; --rule: #353533; --grid: #2a2a29;
+  --ink: #f0efec; --ink-2: #c3c2b7; --ink-3: #8f8e86;
+  --foe: #3987e5; --ours: #199e70; --siege: #d95926;
+  --wall: #6f7472; --building: #3b3f3d; --mine: #8a7556; --dead: #f0efec;
+  --band-a: rgba(240, 239, 236, 0.03); --band-b: rgba(240, 239, 236, 0.07);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--surface); color: var(--ink); font: 15px/1.45 var(--ui); }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--foe); outline-offset: 2px; }
+.app { display: grid; grid-template-rows: auto 1fr; height: 100%; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 12px; gap: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+h1 { margin: 0; font-size: 19px; font-weight: 600; }
+.sub { color: var(--ink-2); font-size: 13px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { background: var(--surface); border: 0; border-right: 1px solid var(--rule); padding: 4px 12px; cursor: pointer; color: var(--ink-2); font-size: 14px; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--raise); color: var(--ink); font-weight: 500; }
+.trials button { display: inline-flex; gap: 6px; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.view { min-height: 0; }
+.replay { display: grid; grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; height: 100%; }
+.mapwrap { position: relative; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; min-height: 340px; }
+#map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.layers { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 210px); }
+.chip { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 1px 10px; font-size: 13px; cursor: pointer; color: var(--ink-3); display: inline-flex; gap: 6px; align-items: center; }
+.chip[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-3); }
+.chip[aria-pressed="false"] .dot { opacity: 0.35; }
+.zoom { position: absolute; right: 10px; top: 10px; display: flex; gap: 4px; }
+.zoom button { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; min-width: 30px; height: 28px; cursor: pointer; padding: 0 9px; font-size: 13px; }
+.legend { position: absolute; left: 10px; bottom: 10px; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); max-width: calc(100% - 20px); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend svg { flex: none; }
+#tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 8px; font-size: 13px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.empty { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 16px; max-width: min(520px, 90%); color: var(--ink-2); }
+.empty b { color: var(--ink); font-weight: 600; display: block; margin-bottom: 2px; }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; grid-row: 1 / 3; grid-column: 2; }
+.panel h2 { margin: 0; font-size: 17px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; align-items: center; text-wrap: balance; }
+h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 14px; margin: 0; }
+.kv dt { color: var(--ink-2); } .kv dd { margin: 0; text-align: right; font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.state { font-size: 12px; padding: 1px 8px; border-radius: 10px; font-weight: 500; display: inline-flex; gap: 5px; align-items: center; background: var(--raise); color: var(--ink-2); }
+.bars { display: grid; gap: 5px; font-size: 13px; }
+.bar { display: grid; grid-template-columns: 118px 1fr 46px; gap: 8px; align-items: center; }
+.bar > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+.bar svg { display: block; width: 100%; height: 10px; }
+.bar > span:last-child { font-family: var(--mono); text-align: right; font-size: 12px; font-variant-numeric: tabular-nums; }
+.notes { display: grid; gap: 1px; font-size: 13px; max-height: 280px; overflow-y: auto; }
+.note { display: grid; grid-template-columns: 44px 1fr; gap: 8px; background: none; border: 0; text-align: left; padding: 3px 4px; cursor: pointer; border-radius: 4px; }
+.note:hover { background: var(--raise); }
+.note time { font-family: var(--mono); color: var(--ink-3); font-size: 12px; }
+.close { background: none; border: 1px solid var(--rule); border-radius: 6px; color: var(--ink-2); cursor: pointer; padding: 0 8px; font-size: 13px; }
+.muted { color: var(--ink-2); font-size: 14px; margin: 0; }
+.link { background: none; border: 0; color: var(--foe); cursor: pointer; padding: 0; font-size: 14px; }
+.timeline { grid-column: 1; display: grid; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: center; }
+.play { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; width: 38px; height: 32px; cursor: pointer; }
+select { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 4px 6px; }
+.tl { position: relative; height: 40px; min-width: 0; }
+#tl { position: absolute; inset: 0; width: 100%; height: 100%; }
+#scrub { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; margin: 0; }
+.clock { font-family: var(--mono); font-size: 13px; color: var(--ink-2); min-width: 150px; text-align: right; font-variant-numeric: tabular-nums; }
+.clock b { color: var(--ink); font-weight: 500; }
+/* Stats and the comparison: a scrolling sheet of figures. */
+.sheet { overflow-y: auto; height: 100%; display: grid; gap: 20px; align-content: start; padding-bottom: 20px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 14px; display: grid; gap: 2px; }
+.tile .l { font-size: 13px; color: var(--ink-2); }
+.tile .v { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .d { font-size: 13px; color: var(--ink-2); }
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; }
+figure { margin: 0; border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; min-width: 0; position: relative; }
+figcaption { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+figcaption small { display: block; font-weight: 400; font-size: 13px; color: var(--ink-2); }
+.chart { width: 100%; height: 220px; display: block; overflow: visible; }
+.chart.small { height: 170px; }
+.ctip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 9px; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); white-space: nowrap; }
+.ctip b { font-weight: 600; } .ctip .r { display: flex; gap: 6px; align-items: center; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; width: 100%; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { color: var(--ink-2); font-weight: 500; font-size: 13px; }
+th button { background: none; border: 0; padding: 0; color: inherit; cursor: pointer; font: inherit; }
+td.n, th.n { text-align: right; font-family: var(--mono); font-size: 13px; }
+tr.pick { cursor: pointer; } tr.pick:hover td { background: var(--raise); }
+.section-note { font-size: 14px; color: var(--ink-2); margin: -10px 0 0; max-width: 72ch; }
+@media (max-width: 900px) {
+  .app { height: auto; }
+  .replay { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; height: auto; }
+  .mapwrap { height: 62vh; }
+  .panel { grid-row: auto; grid-column: 1; }
+  .timeline { grid-column: 1; grid-template-columns: auto auto 1fr; }
+  .clock { grid-column: 1 / -1; text-align: left; }
+  .layers { max-width: calc(100% - 20px); top: 48px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Siege Lab</h1>
+    <div class="seg trials" id="tabs" role="tablist" aria-label="Trial"></div>
+    <div class="seg" id="views" aria-label="View">
+      <button data-v="replay" aria-pressed="true">Replay</button><button data-v="stats" aria-pressed="false">Stats</button><button data-v="across" aria-pressed="false">Across trials</button>
+    </div>
+    <span class="sub" id="sub"></span>
+  </header>
+
+  <section class="view replay" id="v-replay">
+    <div class="mapwrap" id="mapwrap">
+      <canvas id="map" aria-label="Map of the trial"></canvas>
+      <div class="layers" id="layers"></div>
+      <div class="zoom">
+        <button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button>
+        <button id="zfit">Fortress</button><button id="zwave">Wave</button>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div id="tip" hidden></div>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+    <div class="timeline">
+      <button class="play" id="play" aria-label="Play">▶</button>
+      <select id="speed" aria-label="Playback speed">
+        <option value="1">1×</option><option value="4" selected>4×</option><option value="16">16×</option><option value="64">64×</option>
+      </select>
+      <div class="tl"><canvas id="tl"></canvas><input type="range" id="scrub" min="0" max="0" value="0" aria-label="Time in the trial"></div>
+      <div class="clock" id="clock"></div>
+    </div>
+  </section>
+
+  <section class="view sheet" id="v-stats" hidden></section>
+  <section class="view sheet" id="v-across" hidden></section>
+</div>
+
+<script>
+const DATA = __LAB_DATA__;
+const N = DATA.names, MED = DATA.medium_hp || 75;
+const nm = i => (i != null && i >= 0) ? N[i] : null;
+const short = s => s ? s.replace(/^lp-bred-/, "").replace(/-turret$/, "").replace(/^lp-/, "").replace(/-/g, " ") : "?";
+const fmtT = ticks => { const s = Math.max(0, Math.round(ticks / 60)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+const fmt = (v, d = 0) => v == null || isNaN(v) ? "–" : Number(v).toLocaleString("en", { maximumFractionDigits: d, minimumFractionDigits: d });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const STAGE_NAME = { scout: "scouting", gather: "gathering", march: "march", stage: "staging", breach: "breach", inside: "inside", withdraw: "withdrawal", blind: "blind", done: "done" };
+let C = {};
+function readColors() {
+  const s = getComputedStyle(document.documentElement);
+  ["surface", "sheet", "raise", "rule", "grid", "ink", "ink-2", "ink-3", "foe", "ours", "siege", "wall", "building", "mine", "dead", "band-a", "band-b"].forEach(k => C[k] = s.getPropertyValue("--" + k).trim());
+}
+readColors();
+
+// The player's things, by kind.
+function kindOf(e) {
+  const t = nm(e[4]) || "", n = nm(e[0]) || "";
+  if (t === "wall" || t === "gate") return "wall";
+  if (t === "land-mine") return "mine";
+  if (t === "electric-turret") return "laser";
+  if (t === "ammo-turret") return "gun";
+  if (t === "fluid-turret") return "flamethrower";
+  if (t === "artillery-turret") return "artillery";
+  if (n === "pipe" || t === "pipe") return "pipe";
+  if (t === "electric-pole") return "pole";
+  return "building";
+}
+const ENTS = DATA.ents.map((e, i) => ({ i, name: nm(e[0]), x: e[1], y: e[2], max: e[3] || 1, kind: kindOf(e) }));
+const TURRETS = new Set(["laser", "gun", "flamethrower", "artillery"]);
+const isDef = e => TURRETS.has(e.kind) || e.kind === "wall" || e.kind === "mine";
+const GRID = new Map();
+ENTS.forEach(e => { const k = Math.floor(e.x) + "," + Math.floor(e.y); (GRID.get(k) || GRID.set(k, []).get(k)).push(e); });
+function entNear(x, y, name) {
+  let best = null, bd = 2.25;
+  for (let dx = -2; dx <= 2; dx++) for (let dy = -2; dy <= 2; dy++) for (const e of GRID.get((Math.floor(x) + dx) + "," + (Math.floor(y) + dy)) || []) {
+    const d = (e.x - x) ** 2 + (e.y - y) ** 2;
+    if ((!name || e.name === name) && d < bd) { best = e; bd = d; }
+  }
+  return best;
+}
+
+// Each trial prepared once.
+const prep = DATA.trials.map(tr => {
+  const P = { tracks: new Map(), entHp: new Map(), deathOf: new Map(), entDeath: new Map(), killsBy: new Map(), deaths: [], times: tr.frames.map(f => f[0]), big: new Map(), target: new Map() };
+  tr.units.forEach((us, fi) => us.forEach(u => {
+    let t = P.tracks.get(u[0]);
+    if (!t) { t = { id: u[0], name: nm(u[1]), role: ["herd", "burster", "scout", "sweep"][u[5]], max: 0, pts: [] }; P.tracks.set(u[0], t); }
+    t.max = Math.max(t.max, u[4]); t.pts.push([fi, u[2], u[3], u[4]]);
+  }));
+  tr.defhp.forEach(([fi, i, hp]) => (P.entHp.get(i) || P.entHp.set(i, []).get(i)).push([fi, hp]));
+  tr.big.forEach(([fi, id, tx, ty]) => { (P.big.get(fi) || P.big.set(fi, []).get(fi)).push([id, tx, ty]); if (!P.target.has(id)) P.target.set(id, [tx, ty, fi]); });
+  tr.deaths.forEach(d => {
+    const D = { t: d[0], id: d[1], name: nm(d[2]), force: nm(d[3]), x: d[4], y: d[5], killer: nm(d[6]), kx: d[7], ky: d[8], kid: d[9], dt: nm(d[10]), def: d[11] };
+    if (D.def >= 0) P.entDeath.set(D.def, D);
+    if (D.id != null && D.force === "lp-biotech") P.deathOf.set(D.id, D);
+    if (D.kx != null && D.force === "lp-biotech") {
+      const k = entNear(D.kx, D.ky, D.killer);
+      if (k) { D.kent = k.i; (P.killsBy.get(k.i) || P.killsBy.set(k.i, []).get(k.i)).push(D); }
+    }
+    P.deaths.push(D);
+  });
+  P.worthOf = id => { const t = P.tracks.get(id); return t ? (t.role === "burster" ? 0 : t.max / MED) : 0; };
+  return P;
+});
+const frameAt = (P, t) => { let lo = 0, hi = P.times.length - 1; if (hi < 0) return 0; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (P.times[m] <= t) lo = m; else hi = m - 1; } return lo; };
+const t0Of = tr => tr.launch || tr.start;
+function entHpAt(P, i, f) { const h = P.entHp.get(i); if (!h) return null; let v = null; for (const [fi, hp] of h) { if (fi <= f) v = hp; else break; } return v; }
+function outcomeOf(tr) {
+  if (tr.outcome === "held") return "no wave";
+  if (tr.outcome === "timeout") return "timed out";
+  return tr.wave && tr.wave.inside ? "got in" : "held out";
+}
+
+// State.
+let T = 0, F = 0, sel = null, playing = false, acc = 0, last = 0, VIEW = "replay";
+const layers = { costmap: false, buildings: true, defences: true, plan: true, units: true, deaths: true, kills: true, bursters: true };
+try { const s = JSON.parse(localStorage.getItem("lab-layers2") || "null"); if (s) Object.assign(layers, s); } catch (e) {}
+
+// ---------- the map ----------
+const cv = document.getElementById("map"), ctx = cv.getContext("2d");
+const cam = { x: 0, y: 0, s: 4 };
+let W = 0, H = 0, dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const t = document.getElementById("tl"), tr = t.getBoundingClientRect(); t.width = Math.round(tr.width * dpr); t.height = Math.round(tr.height * dpr);
+  draw(); drawTimeline();
+}
+const sx = x => (x - cam.x) * cam.s + W / 2, sy = y => (y - cam.y) * cam.s + H / 2;
+const wx = px => (px - W / 2) / cam.s + cam.x, wy = py => (py - H / 2) / cam.s + cam.y;
+function fitBox(x0, y0, x1, y1) { cam.x = (x0 + x1) / 2; cam.y = (y0 + y1) / 2; cam.s = Math.max(0.3, Math.min(30, Math.min(W / Math.max(10, x1 - x0), H / Math.max(10, y1 - y0)) * 0.9)); draw(); }
+function fitFortress() {
+  const c = DATA.center || [0, 0]; let x0 = c[0] - 60, y0 = c[1] - 60, x1 = c[0] + 60, y1 = c[1] + 60;
+  ENTS.forEach(e => { if ((TURRETS.has(e.kind) || e.kind === "wall") && Math.abs(e.x - c[0]) < 150 && Math.abs(e.y - c[1]) < 150) { x0 = Math.min(x0, e.x); y0 = Math.min(y0, e.y); x1 = Math.max(x1, e.x); y1 = Math.max(y1, e.y); } });
+  fitBox(x0 - 25, y0 - 25, x1 + 25, y1 + 25);
+}
+function fitWave() {
+  const tr = DATA.trials[T], P = prep[T]; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const add = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  (tr.plan.path || []).forEach(p => add(p[0], p[1])); P.tracks.forEach(t => t.pts.forEach(p => add(p[1], p[2])));
+  const c = DATA.center || [0, 0]; add(c[0] - 50, c[1] - 50); add(c[0] + 50, c[1] + 50);
+  if (isFinite(x0)) fitBox(x0 - 20, y0 - 20, x1 + 20, y1 + 20);
+}
+function cross(X, Y, r, col, w) { ctx.strokeStyle = col; ctx.lineWidth = w || 1.6; ctx.beginPath(); ctx.moveTo(X - r, Y - r); ctx.lineTo(X + r, Y + r); ctx.moveTo(X + r, Y - r); ctx.lineTo(X - r, Y + r); ctx.stroke(); }
+function diamond(X, Y, r) { ctx.beginPath(); ctx.moveTo(X, Y - r); ctx.lineTo(X + r, Y); ctx.lineTo(X, Y + r); ctx.lineTo(X - r, Y); ctx.closePath(); }
+function alpha(hex, a) { const h = hex.replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+
+function draw() {
+  if (!W || VIEW !== "replay") return;
+  const tr = DATA.trials[T], P = prep[T], now = P.times.length ? P.times[F] : tr.end;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = C.sheet; ctx.fillRect(0, 0, W, H);
+  // The planner's 32-tile cell, as a hairline grid.
+  const g = 32;
+  if (cam.s * g > 18) {
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = Math.floor(wx(0) / g) * g; x < wx(W); x += g) { ctx.moveTo(Math.round(sx(x)) + 0.5, 0); ctx.lineTo(Math.round(sx(x)) + 0.5, H); }
+    for (let y = Math.floor(wy(0) / g) * g; y < wy(H); y += g) { ctx.moveTo(0, Math.round(sy(y)) + 0.5); ctx.lineTo(W, Math.round(sy(y)) + 0.5); }
+    ctx.stroke();
+  }
+  // Its cost map: each cell's fire, as its plan read it before the wave went (one hue, light to dark).
+  if (layers.costmap && tr.costmap) {
+    const cm = tr.costmap, sz = cm.size; let mx = 0; cm.cells.forEach(c => { if (c[2] > mx) mx = c[2]; });
+    cm.cells.forEach(c => {
+      if (c[2] === 0) return;
+      ctx.fillStyle = c[2] < 0 ? alpha(C.ink, 0.12) : alpha(C.siege, 0.06 + 0.5 * Math.log1p(c[2]) / Math.log1p(mx || 1));
+      ctx.fillRect(sx(cm.x0 + c[0] * sz), sy(cm.y0 + c[1] * sz), sz * cam.s + 0.5, sz * cam.s + 0.5);
+    });
+  }
+  const selEnt = sel && sel.type === "ent" ? sel.i : -1;
+  for (const e of ENTS) {
+    if (isDef(e) ? !layers.defences : !layers.buildings) continue;
+    const hp = entHpAt(P, e.i, F), dead = hp === 0, frac = hp == null ? 1 : hp / e.max, X = sx(e.x), Y = sy(e.y);
+    if (X < -20 || Y < -20 || X > W + 20 || Y > H + 20) continue;
+    if (e.kind === "wall") { const s = Math.max(1.4, cam.s); ctx.fillStyle = dead ? alpha(C.wall, 0.25) : C.wall; ctx.globalAlpha = dead ? 1 : 0.5 + 0.5 * frac; ctx.fillRect(X - s / 2, Y - s / 2, s, s); ctx.globalAlpha = 1; if (dead && cam.s > 3) cross(X, Y, s * 0.35, C.dead, 1); continue; }
+    if (e.kind === "mine") { if (cam.s < 1.5) continue; ctx.fillStyle = dead ? alpha(C.mine, 0.3) : C.mine; ctx.beginPath(); ctx.arc(X, Y, Math.max(1, cam.s * 0.3), 0, 7); ctx.fill(); continue; }
+    if (e.kind === "pipe" || e.kind === "pole") { if (cam.s < 2) continue; ctx.fillStyle = dead ? alpha(C.building, 0.4) : C.building; ctx.fillRect(X - cam.s * 0.25, Y - cam.s * 0.25, cam.s * 0.5, cam.s * 0.5); continue; }
+    if (TURRETS.has(e.kind)) {
+      const r = Math.max(3.5, cam.s * 1.0);
+      ctx.fillStyle = dead ? C.surface : C.foe; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill();
+      ctx.strokeStyle = C.surface; ctx.lineWidth = 2; ctx.stroke();
+      if (dead) { ctx.strokeStyle = C.foe; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.stroke(); cross(X, Y, r * 0.7, C.dead, 2); }
+      else if (frac < 1) { ctx.strokeStyle = C.siege; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, r + 2.5, -Math.PI / 2, -Math.PI / 2 + (1 - frac) * 2 * Math.PI); ctx.stroke(); }
+      if (e.i === selEnt) { ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, r + 6, 0, 7); ctx.stroke(); }
+      continue;
+    }
+    const s = Math.max(2.5, cam.s * 2.2);
+    ctx.fillStyle = dead ? alpha(C.building, 0.35) : C.building; ctx.fillRect(X - s / 2, Y - s / 2, s, s);
+    if (dead) cross(X, Y, s * 0.3, C.dead, 1.5);
+    if (e.i === selEnt) { ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(X - s / 2 - 3, Y - s / 2 - 3, s + 6, s + 6); }
+  }
+  // Its plan: the way, where it starts, where it means to break in; and where it did.
+  if (layers.plan && tr.plan.path && tr.plan.path.length) {
+    ctx.strokeStyle = C.siege; ctx.lineWidth = 2; ctx.setLineDash([7, 5]); ctx.beginPath();
+    tr.plan.path.forEach((p, k) => k ? ctx.lineTo(sx(p[0]), sy(p[1])) : ctx.moveTo(sx(p[0]), sy(p[1]))); ctx.stroke(); ctx.setLineDash([]);
+    if (tr.plan.start) { ctx.fillStyle = C.surface; ctx.strokeStyle = C.siege; ctx.lineWidth = 2; ctx.fillRect(sx(tr.plan.start[0]) - 5, sy(tr.plan.start[1]) - 5, 10, 10); ctx.strokeRect(sx(tr.plan.start[0]) - 5, sy(tr.plan.start[1]) - 5, 10, 10); }
+    if (tr.plan.breach) ring(sx(tr.plan.breach[0]), sy(tr.plan.breach[1]), C.siege);
+  }
+  if (layers.plan && tr.wave && tr.wave.breach) { const X = sx(tr.wave.breach[0]), Y = sy(tr.wave.breach[1]); ctx.fillStyle = C.siege; ctx.beginPath(); ctx.arc(X, Y, 5, 0, 7); ctx.fill(); ctx.strokeStyle = C.surface; ctx.lineWidth = 2; ctx.stroke(); }
+  if (layers.kills) {
+    for (const d of P.deaths) {
+      if (d.t > now || d.t < now - 1200 || d.kx == null) continue;
+      ctx.strokeStyle = alpha(C.ink, 0.08 + 0.32 * (1 - (now - d.t) / 1200)); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sx(d.x), sy(d.y)); ctx.lineTo(sx(d.kx), sy(d.ky)); ctx.stroke();
+    }
+  }
+  if (layers.deaths) for (const d of P.deaths) if (d.t <= now && d.force === "lp-biotech") cross(sx(d.x), sy(d.y), 3.2, d.name === "lp-bred-big-burster" ? C.siege : C.ours, 1.6);
+  const us = tr.units[F] || [], pos = new Map(); us.forEach(u => pos.set(u[0], u));
+  if (layers.bursters) {
+    ctx.strokeStyle = alpha(C.siege, 0.8); ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    for (const [id, tx, ty] of P.big.get(F) || []) { const u = pos.get(id); if (!u) continue; ctx.beginPath(); ctx.moveTo(sx(u[2]), sy(u[3])); ctx.lineTo(sx(tx), sy(ty)); ctx.stroke(); }
+    ctx.setLineDash([]);
+  }
+  if (sel && (sel.type === "unit" || sel.type === "death")) {
+    const t = P.tracks.get(sel.id);
+    if (t) { ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); let k = 0; for (const p of t.pts) { if (p[0] > F) break; k++ ? ctx.lineTo(sx(p[1]), sy(p[2])) : ctx.moveTo(sx(p[1]), sy(p[2])); } ctx.stroke(); }
+  }
+  if (layers.units) {
+    for (const u of us) {
+      const t = P.tracks.get(u[0]), role = ["herd", "burster", "scout", "sweep"][u[5]];
+      if (role === "burster" && !layers.bursters) continue;
+      const max = t ? t.max : u[4], r = Math.max(2.8, Math.min(9, (0.55 + 0.35 * Math.log2(1 + max / MED)) * cam.s)), X = sx(u[2]), Y = sy(u[3]), frac = max ? u[4] / max : 1;
+      ctx.lineWidth = 2; ctx.strokeStyle = C.surface;
+      if (role === "burster") { ctx.fillStyle = C.siege; diamond(X, Y, r * 1.25); ctx.fill(); ctx.stroke(); }
+      else if (role === "scout") { ctx.fillStyle = C.surface; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill(); ctx.strokeStyle = C.ours; ctx.stroke(); }
+      else { ctx.fillStyle = role === "sweep" ? C["ink-3"] : C.ours; ctx.beginPath(); ctx.arc(X, Y, r, 0, 7); ctx.fill(); ctx.stroke(); }
+      if (frac < 0.999 && r > 3) { ctx.strokeStyle = C.surface; ctx.lineWidth = Math.max(1, r * 0.45); ctx.beginPath(); ctx.arc(X, Y, r * 0.5, -Math.PI / 2, -Math.PI / 2 + (1 - frac) * 2 * Math.PI); ctx.stroke(); }
+      if (sel && sel.type === "unit" && sel.id === u[0]) { ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, r + 4, 0, 7); ctx.stroke(); }
+    }
+  }
+  if (sel) drawSelLinks(P, now);
+}
+function ring(X, Y, col) { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X, Y, 9, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(X, Y, 3, 0, 7); ctx.fillStyle = col; ctx.fill(); }
+function drawSelLinks(P, now) {
+  ctx.lineWidth = 2;
+  if (sel.type === "death" || sel.type === "unit") {
+    const d = P.deathOf.get(sel.id);
+    if (d && d.t <= now && d.kx != null) { ctx.strokeStyle = C.ink; ctx.beginPath(); ctx.moveTo(sx(d.x), sy(d.y)); ctx.lineTo(sx(d.kx), sy(d.ky)); ctx.stroke(); ctx.beginPath(); ctx.arc(sx(d.kx), sy(d.ky), 8, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(sx(d.x), sy(d.y), 6, 0, 7); ctx.stroke(); }
+  }
+  if (sel.type === "ent") {
+    const e = ENTS[sel.i];
+    ctx.strokeStyle = alpha(C.ink, 0.55); ctx.lineWidth = 1.2;
+    for (const d of P.killsBy.get(sel.i) || []) { if (d.t > now) continue; ctx.beginPath(); ctx.moveTo(sx(e.x), sy(e.y)); ctx.lineTo(sx(d.x), sy(d.y)); ctx.stroke(); }
+    const dd = P.entDeath.get(sel.i);
+    if (dd && dd.t <= now && dd.kx != null) { ctx.strokeStyle = C.ours; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sx(e.x), sy(e.y)); ctx.lineTo(sx(dd.kx), sy(dd.ky)); ctx.stroke(); }
+  }
+}
+function pick(px, py) {
+  const tr = DATA.trials[T], P = prep[T], now = P.times.length ? P.times[F] : tr.end;
+  let best = null, bd = 12 * 12;
+  const test = (x, y, o) => { const d = (sx(x) - px) ** 2 + (sy(y) - py) ** 2; if (d < bd) { bd = d; best = o; } };
+  if (layers.units) for (const u of tr.units[F] || []) test(u[2], u[3], { type: "unit", id: u[0] });
+  if (best) return best;
+  if (layers.deaths) for (const d of P.deaths) if (d.t <= now && d.force === "lp-biotech") test(d.x, d.y, { type: "death", id: d.id });
+  if (best) return best;
+  bd = 10 * 10;
+  for (const e of ENTS) { if (isDef(e) ? !layers.defences : !layers.buildings) continue; test(e.x, e.y, { type: "ent", i: e.i }); }
+  return best;
+}
+function label(o) {
+  const P = prep[T];
+  if (o.type !== "ent") { const t = P.tracks.get(o.id), d = P.deathOf.get(o.id); return short(t ? t.name : d && d.name) + (o.type === "death" && d ? `, killed by ${short(d.killer || "its own blast")}` : ""); }
+  const e = ENTS[o.i], k = (P.killsBy.get(o.i) || []).length; return short(e.name) + (k ? `, ${k} kills` : "");
+}
+
+// ---------- the side panel ----------
+const panel = document.getElementById("panel");
+function hbars(rows, col) {
+  const mx = Math.max(1, ...rows.map(r => r[1]));
+  return `<div class="bars">${rows.map(([k, v]) => `<div class="bar"><span title="${esc(k)}">${esc(short(k))}</span><svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="1" width="${Math.max(0.8, 100 * v / mx).toFixed(2)}" height="8" rx="2" fill="${col}"/></svg><span>${fmt(v)}</span></div>`).join("")}</div>`;
+}
+function lostByKiller(w) { const by = {}; for (const [k, v] of Object.entries(w.lost_worth_by || {})) { const killer = k.replace(/^\S+ /, ""); by[killer] = (by[killer] || 0) + v; } return Object.entries(by).filter(r => r[1] >= 0.5).sort((a, b) => b[1] - a[1]); }
+function pricesMoved(tr) {
+  const out = [], b = tr.prices_before || {}, a = tr.prices_after || {};
+  for (const foe of new Set([...Object.keys(b), ...Object.keys(a)])) for (const p of new Set([...Object.keys(b[foe] || {}), ...Object.keys(a[foe] || {})])) out.push([p, (b[foe] || {})[p], (a[foe] || {})[p]]);
+  return out;
+}
+function summary() {
+  const tr = DATA.trials[T], w = tr.wave, sg = tr.siege;
+  let h = `<h2>Trial ${tr.trial} <span class="state">${outcomeOf(tr)}</span></h2>`;
+  if (tr.held) h += `<p class="muted">Its farm held: ${esc(tr.held)}</p>`;
+  if (sg) h += `<div><h3>Siege laid</h3><dl class="kv"><dt>Big bursters</dt><dd>${sg.k}</dd><dt>Herd</dt><dd>${(sg.n || 0) - (sg.k || 0)} ${esc(short(sg.breed))}</dd><dt>Price</dt><dd>${fmt(sg.price)} biomass</dd><dt>Guns covering the breach</dt><dd>${sg.cover}</dd></dl></div>`;
+  if (w) {
+    const lost = Object.values(w.lost_worth_by || {}).reduce((a, b) => a + b, 0);
+    h += `<div><h3>Wave</h3><dl class="kv"><dt>Sent</dt><dd>${w.size} units, ${fmt(w.worth)} mediums</dd><dt>Plan, there and back</dt><dd>${fmt(w.predicted)}</dd><dt>Lost</dt><dd>${fmt(lost)} mediums</dd><dt>Came home</dt><dd>${w.left}</dd><dt>Ended</dt><dd>${esc(w.outcome || "?")}</dd></dl></div>`;
+    h += `<div><h3>Made of</h3>${hbars(Object.entries(w.made_of).sort((a, b) => b[1] - a[1]), C.ours)}</div>`;
+    const lk = lostByKiller(w); if (lk.length) h += `<div><h3>Lost to, in mediums</h3>${hbars(lk, C.foe)}</div>`;
+  }
+  const pm = pricesMoved(tr);
+  h += `<div><h3>Its prices, in mediums</h3>${pm.length ? `<dl class="kv">${pm.map(([p, b, a]) => `<dt>${esc(short(p))}</dt><dd>${b == null ? "prior" : fmt(b, 1)} → ${fmt(a, 1)}</dd>`).join("")}</dl>` : `<p class="muted">Nothing learned yet: every gun at its prior.</p>`}</div>`;
+  const rb = Object.entries(tr.rebuilt || {}); if (rb.length) h += `<div><h3>Rebuilt before it</h3><p class="muted">${rb.map(([k, v]) => `${v} ${esc(short(k))}`).join(", ")}</p></div>`;
+  if (tr.notes.length) h += `<div><h3>Its reasons</h3><div class="notes">${tr.notes.map(([t, txt]) => `<button class="note" data-t="${t}"><time>${fmtT(t - t0Of(tr))}</time><span>${esc(txt)}</span></button>`).join("")}</div></div>`;
+  return h;
+}
+function spark(vals, max) {
+  const n = Math.max(1, DATA.trials[T].frames.length - 1), w = 300, h = 44, mx = max || Math.max(1, ...vals.map(v => v[1]));
+  const pts = vals.map(([f, v]) => `${(w * f / n).toFixed(1)},${(h - 3 - (h - 6) * v / mx).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:44px;display:block" aria-hidden="true"><line x1="0" x2="${w}" y1="${h - 3}" y2="${h - 3}" stroke="${C.rule}" vector-effect="non-scaling-stroke"/><polyline points="${pts}" fill="none" stroke="${C.ink}" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="${(w * F / n).toFixed(1)}" x2="${(w * F / n).toFixed(1)}" y1="0" y2="${h}" stroke="${C["ink-3"]}" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function selection() {
+  const tr = DATA.trials[T], P = prep[T], close = `<button class="close" id="unsel" aria-label="Back to the trial">×</button>`;
+  if (sel.type !== "ent") {
+    const t = P.tracks.get(sel.id), d = P.deathOf.get(sel.id), name = t ? t.name : d && d.name, max = t ? t.max : 0, cur = t && [...t.pts].reverse().find(p => p[0] <= F);
+    let h = `<h2>${esc(short(name))} ${close}</h2><dl class="kv"><dt>Role</dt><dd>${t ? t.role : "?"}</dd><dt>Health</dt><dd>${cur ? fmt(cur[3]) : 0} of ${fmt(max)}</dd><dt>Worth</dt><dd>${fmt(max / MED, 1)} mediums</dd>`;
+    if (d) h += `<dt>Died at</dt><dd>${fmtT(d.t - t0Of(tr))}</dd><dt>Killed by</dt><dd>${esc(short(d.killer || "its own blast"))}</dd><dt>Damage</dt><dd>${esc(d.dt || "?")}</dd>`;
+    const tg = P.target.get(sel.id); if (tg && d) h += `<dt>From its gun</dt><dd>${fmt(Math.hypot(d.x - tg[0], d.y - tg[1]), 1)} tiles</dd>`;
+    h += `</dl>`;
+    if (t) h += `<div><h3>Health over the trial</h3>${spark(t.pts.map(p => [p[0], p[3]]), max)}</div>`;
+    if (d) h += `<div style="display:flex;gap:14px"><button class="link" id="seekDeath">Go to its death</button>${d.kent != null ? `<button class="link" id="selKiller">Select its killer</button>` : ""}</div>`;
+    return h;
+  }
+  const e = ENTS[sel.i], kills = P.killsBy.get(sel.i) || [], dd = P.entDeath.get(sel.i), hp = entHpAt(P, sel.i, F);
+  const km = kills.reduce((a, d) => a + P.worthOf(d.id), 0);
+  let h = `<h2>${esc(short(e.name))} ${close}</h2><dl class="kv"><dt>Health</dt><dd>${fmt(hp == null ? e.max : hp)} of ${fmt(e.max)}</dd><dt>Killed</dt><dd>${kills.length} units, ${fmt(km)} mediums</dd>`;
+  if (dd) h += `<dt>Destroyed at</dt><dd>${fmtT(dd.t - t0Of(tr))}</dd><dt>By</dt><dd>${esc(short(dd.killer || "a blast"))}</dd>`;
+  if (TURRETS.has(e.kind) || e.kind === "mine") { const pb = Object.values(tr.prices_before || {}).map(p => p[e.name]).find(v => v != null), pa = Object.values(tr.prices_after || {}).map(p => p[e.name]).find(v => v != null); h += `<dt>Its kind's price</dt><dd>${pb == null ? "prior" : fmt(pb, 1)} → ${pa == null ? "prior" : fmt(pa, 1)}</dd>`; }
+  h += `</dl>`;
+  const hh = P.entHp.get(sel.i); if (hh) h += `<div><h3>Health over the trial</h3>${spark([[0, e.max], ...hh], e.max)}</div>`;
+  if (kills.length) { const by = {}; kills.forEach(d => by[d.name] = (by[d.name] || 0) + 1); h += `<div><h3>Its kills</h3>${hbars(Object.entries(by).sort((a, b) => b[1] - a[1]), C.ours)}</div>`; }
+  return h;
+}
+function renderPanel() {
+  panel.innerHTML = sel ? selection() : summary();
+  const u = document.getElementById("unsel"); if (u) u.onclick = () => { sel = null; renderPanel(); draw(); };
+  const sd = document.getElementById("seekDeath"); if (sd) sd.onclick = () => seek(frameAt(prep[T], prep[T].deathOf.get(sel.id).t));
+  const sk = document.getElementById("selKiller"); if (sk) sk.onclick = () => { sel = { type: "ent", i: prep[T].deathOf.get(sel.id).kent }; renderPanel(); draw(); };
+  panel.querySelectorAll(".note").forEach(b => b.onclick = () => seek(frameAt(prep[T], +b.dataset.t)));
+}
+
+// ---------- the timeline ----------
+const tl = document.getElementById("tl"), tctx = tl.getContext("2d"), scrub = document.getElementById("scrub");
+function stageRuns(tr) {
+  const runs = []; let s0 = 0;
+  for (let f = 1; f <= tr.frames.length; f++) if (f === tr.frames.length || tr.frames[f][1] !== tr.frames[s0][1]) { runs.push([s0, f, DATA.stages[tr.frames[s0][1]] || "?"]); s0 = f; }
+  return runs;
+}
+function drawTimeline() {
+  if (VIEW !== "replay") return;
+  const tr = DATA.trials[T], P = prep[T], w = tl.width / dpr, h = tl.height / dpr, n = Math.max(1, tr.frames.length - 1);
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0); tctx.clearRect(0, 0, w, h);
+  tctx.fillStyle = C.sheet; tctx.fillRect(0, 0, w, h);
+  if (!tr.frames.length) { tctx.fillStyle = C["ink-2"]; tctx.font = "13px " + getComputedStyle(document.body).fontFamily; tctx.fillText("No wave in this trial", 10, h / 2 + 4); return; }
+  stageRuns(tr).forEach(([a, b, st], k) => {
+    tctx.fillStyle = k % 2 ? C["band-b"] : C["band-a"]; tctx.fillRect(w * a / n, 0, w * (b - a) / n, h);
+    if (w * (b - a) / n > 54) { tctx.fillStyle = C["ink-2"]; tctx.font = "12px " + getComputedStyle(document.body).fontFamily; tctx.fillText(STAGE_NAME[st] || st, w * a / n + 5, 14); }
+  });
+  for (const d of P.deaths) {
+    const x = w * frameAt(P, d.t) / n;
+    if (d.force === "lp-biotech") { tctx.fillStyle = d.name === "lp-bred-big-burster" ? C.siege : C.ours; tctx.fillRect(x, h - 12, 2, 10); }
+    else if (d.def >= 0 && TURRETS.has(ENTS[d.def].kind)) { tctx.fillStyle = C.foe; tctx.fillRect(x, h - 24, 2, 10); }
+  }
+  tctx.fillStyle = C.ink; tctx.fillRect(w * F / n - 1, 0, 2, h);
+}
+function seek(f) { F = Math.max(0, Math.min(f, DATA.trials[T].frames.length - 1)); scrub.value = F; update(); }
+function update() {
+  const tr = DATA.trials[T], P = prep[T], clock = document.getElementById("clock");
+  clock.innerHTML = tr.frames.length ? `<b>${fmtT(P.times[F] - t0Of(tr))}</b> after launch, ${STAGE_NAME[DATA.stages[tr.frames[F][1]]] || "?"}` : "";
+  draw(); drawTimeline(); if (sel) renderPanel();
+}
+
+// ---------- charts (SVG, hairline grid, 2px lines, a crosshair and tooltip) ----------
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p; return 10 * p; }
+// opts: {series: [{name, col, pts: [[x, y]], step}], xs: [x0, x1], xfmt, yfmt, refs: [{y, label}], bands: [[x0, x1, label]], small}
+function lineChart(id, o) {
+  const W2 = 560, H2 = o.small ? 170 : 220, L = 44, R = 16, Tp = 18, B = 26;
+  const ymax = niceMax(Math.max(1, ...o.series.flatMap(s => s.pts.map(p => p[1])), ...(o.refs || []).map(r => r.y)));
+  const X = x => L + (W2 - L - R) * (x - o.xs[0]) / Math.max(1e-9, o.xs[1] - o.xs[0]), Y = y => Tp + (H2 - Tp - B) * (1 - y / ymax);
+  let s = `<svg class="chart${o.small ? " small" : ""}" id="${id}" viewBox="0 0 ${W2} ${H2}" role="img" aria-label="${esc(o.label || "")}">`;
+  (o.bands || []).forEach(([a, b, lab], k) => { s += `<rect x="${X(a)}" y="${Tp}" width="${Math.max(0, X(b) - X(a))}" height="${H2 - Tp - B}" fill="${k % 2 ? C["band-b"] : C["band-a"]}"/>`; if (X(b) - X(a) > 50) s += `<text x="${X(a) + 4}" y="${Tp + 12}" font-size="11" fill="${C["ink-3"]}">${esc(lab)}</text>`; });
+  for (let k = 0; k <= 4; k++) { const v = ymax * k / 4; s += `<line x1="${L}" x2="${W2 - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.grid}" stroke-width="1"/><text x="${L - 6}" y="${Y(v) + 4}" font-size="11" text-anchor="end" fill="${C["ink-2"]}">${(o.yfmt || fmt)(v)}</text>`; }
+  for (let k = 0; k <= 4; k++) { const v = o.xs[0] + (o.xs[1] - o.xs[0]) * k / 4; s += `<text x="${X(v)}" y="${H2 - 8}" font-size="11" text-anchor="${k === 0 ? "start" : k === 4 ? "end" : "middle"}" fill="${C["ink-2"]}">${(o.xfmt || fmt)(v)}</text>`; }
+  (o.refs || []).forEach(r => { s += `<line x1="${L}" x2="${W2 - R}" y1="${Y(r.y)}" y2="${Y(r.y)}" stroke="${C["ink-3"]}" stroke-width="1" stroke-dasharray="4 4"/><text x="${W2 - R}" y="${Y(r.y) - 5}" font-size="11" text-anchor="end" fill="${C["ink-2"]}">${esc(r.label)}</text>`; });
+  o.series.forEach(se => {
+    if (!se.pts.length) return;
+    let d = ""; se.pts.forEach((p, k) => { if (se.step && k) d += `L${X(p[0])},${Y(se.pts[k - 1][1])}`; d += `${k ? "L" : "M"}${X(p[0])},${Y(p[1])}`; });
+    s += `<path d="${d}" fill="none" stroke="${se.col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const e = se.pts[se.pts.length - 1]; s += `<circle cx="${X(e[0])}" cy="${Y(e[1])}" r="4" fill="${se.col}" stroke="${C.surface}" stroke-width="2"/>`;
+  });
+  s += `<line class="xh" x1="0" x2="0" y1="${Tp}" y2="${H2 - B}" stroke="${C["ink-3"]}" stroke-width="1" visibility="hidden"/><rect class="hit" x="${L}" y="${Tp}" width="${W2 - L - R}" height="${H2 - Tp - B}" fill="transparent"/></svg>`;
+  CHARTS[id] = { o, X, W2, L, R };
+  return s;
+}
+const CHARTS = {};
+function wireCharts(root) {
+  root.querySelectorAll("svg.chart").forEach(svg => {
+    const c = CHARTS[svg.id]; if (!c) return;
+    const fig = svg.closest("figure"), tip = document.createElement("div"); tip.className = "ctip"; tip.hidden = true; fig.appendChild(tip);
+    const xh = svg.querySelector(".xh");
+    svg.querySelector(".hit").addEventListener("pointermove", ev => {
+      const r = svg.getBoundingClientRect(), vx = (ev.clientX - r.left) * c.W2 / r.width;
+      const x = c.o.xs[0] + (vx - c.L) / (c.W2 - c.L - c.R) * (c.o.xs[1] - c.o.xs[0]);
+      xh.setAttribute("x1", vx); xh.setAttribute("x2", vx); xh.setAttribute("visibility", "visible");
+      const rows = c.o.series.map(se => { let v = null; for (const p of se.pts) { if (p[0] <= x) v = p[1]; else break; } return `<div class="r"><span class="dot" style="background:${se.col}"></span>${esc(se.name)} <b>${(c.o.yfmt || fmt)(v ?? 0)}</b></div>`; }).join("");
+      tip.innerHTML = `<div>${(c.o.xfmt || fmt)(x)}</div>${rows}`; tip.hidden = false;
+      const fr = fig.getBoundingClientRect(); tip.style.left = Math.min(ev.clientX - fr.left + 12, fr.width - 180) + "px"; tip.style.top = (ev.clientY - fr.top - 10) + "px";
+    });
+    svg.querySelector(".hit").addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+  });
+}
+// Columns by trial: one series, or two side by side.
+function columns(id, o) {
+  const W2 = 560, H2 = 170, L = 44, R = 16, Tp = 14, B = 26, n = o.cats.length;
+  const ymax = niceMax(Math.max(1, ...o.series.flatMap(s => s.vals.map(v => v || 0))));
+  const Y = y => Tp + (H2 - Tp - B) * (1 - y / ymax), band = (W2 - L - R) / n, bw = Math.min(24, (band * 0.6) / o.series.length);
+  let s = `<svg class="chart small" viewBox="0 0 ${W2} ${H2}" role="img" aria-label="${esc(o.label || "")}">`;
+  for (let k = 0; k <= 4; k++) { const v = ymax * k / 4; s += `<line x1="${L}" x2="${W2 - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.grid}"/><text x="${L - 6}" y="${Y(v) + 4}" font-size="11" text-anchor="end" fill="${C["ink-2"]}">${fmt(v)}</text>`; }
+  o.cats.forEach((cat, i) => {
+    const cx = L + band * (i + 0.5);
+    s += `<text x="${cx}" y="${H2 - 8}" font-size="11" text-anchor="middle" fill="${C["ink-2"]}">${esc(cat)}</text>`;
+    o.series.forEach((se, j) => {
+      const v = se.vals[i]; if (v == null) return;
+      const x = cx - (o.series.length * (bw + 2) - 2) / 2 + j * (bw + 2), y = Y(v), h = Math.max(0, Y(0) - y), rr = Math.min(4, h / 2, bw / 2);
+      s += `<path d="M${x},${Y(0)}V${y + rr}Q${x},${y} ${x + rr},${y}H${x + bw - rr}Q${x + bw},${y} ${x + bw},${y + rr}V${Y(0)}Z" fill="${se.col}"><title>${esc(se.name)}, ${esc(cat)}: ${fmt(v)}</title></path>`;
+      if (o.series.length === 1 || bw >= 18) s += `<text x="${x + bw / 2}" y="${y - 4}" font-size="11" text-anchor="middle" fill="${C.ink}">${fmt(v)}</text>`;
+    });
+  });
+  return s + `</svg>`;
+}
+const legendRow = items => `<div style="display:flex;gap:14px;font-size:13px;color:${C["ink-2"]};margin:2px 0 4px">${items.map(([n, c]) => `<span style="display:inline-flex;gap:6px;align-items:center"><span class="dot" style="background:${c}"></span>${esc(n)}</span>`).join("")}</div>`;
+
+// ---------- Stats: this trial ----------
+function trialStats(k) {
+  const tr = DATA.trials[k], P = prep[k], w = tr.wave;
+  if (!tr.frames.length) return { none: true };
+  const t0 = t0Of(tr), xsec = P.times.map(t => (t - t0) / 60);
+  const deaths = [...P.deaths].sort((a, b) => a.t - b.t);
+  let lost = 0; const lostPts = [[xsec[0], 0]];
+  let guns = 0, walls = 0; const gunPts = [[xsec[0], 0]];
+  for (const d of deaths) {
+    const x = (d.t - t0) / 60;
+    if (d.force === "lp-biotech") { const v = P.worthOf(d.id); if (v > 0) { lost += v; lostPts.push([x, lost]); } }
+    else if (d.def >= 0 && TURRETS.has(ENTS[d.def].kind)) { guns++; gunPts.push([x, guns]); }
+    else if (d.def >= 0 && ENTS[d.def].kind === "wall") walls++;
+  }
+  lostPts.push([xsec[xsec.length - 1], lost]); gunPts.push([xsec[xsec.length - 1], guns]);
+  const strength = tr.units.map((us, fi) => [xsec[fi], us.reduce((a, u) => a + ((["herd", "burster", "scout", "sweep"][u[5]] === "burster") ? 0 : u[4] / MED), 0)]);
+  const bands = stageRuns(tr).map(([a, b, st]) => [xsec[a], xsec[Math.min(b, xsec.length - 1)], STAGE_NAME[st] || st]);
+  // Its bursters: set off by their own blast, or killed on the way, and how far from their gun.
+  const bursters = [...P.tracks.values()].filter(t => t.role === "burster").map(t => {
+    const d = P.deathOf.get(t.id), tg = P.target.get(t.id);
+    const blast = d && !d.killer;
+    return { id: t.id, d, tg, blast, dist: d && tg ? Math.hypot(d.x - tg[0], d.y - tg[1]) : null, alive: d && tg ? (d.t - P.times[tg[2]]) / 60 : null };
+  });
+  const set = bursters.filter(b => b.blast).length, killed = bursters.filter(b => b.d && !b.blast).length;
+  const gunsByBlast = P.deaths.filter(d => d.def >= 0 && TURRETS.has(ENTS[d.def].kind) && !d.killer).length;
+  // Each defence that fought: kills, mediums killed, damage taken, destroyed.
+  const rows = [];
+  ENTS.forEach(e => {
+    if (!TURRETS.has(e.kind) && e.kind !== "mine") return;
+    const kills = P.killsBy.get(e.i) || [], hh = P.entHp.get(e.i), dd = P.entDeath.get(e.i);
+    if (!kills.length && !hh && !dd) return;
+    let minhp = e.max; (hh || []).forEach(([, hp]) => { if (hp < minhp) minhp = hp; });
+    rows.push({ e, kills: kills.length, med: kills.reduce((a, d) => a + P.worthOf(d.id), 0), dmg: e.max - minhp, died: dd ? (dd.t - t0) / 60 : null, by: dd ? (dd.killer || "a blast") : "" });
+  });
+  return { xsec, lostPts, gunPts, strength, bands, bursters, set, killed, gunsByBlast, rows, lost, guns, walls };
+}
+let SORT = { k: "med", dir: -1 };
+function renderStats() {
+  const tr = DATA.trials[T], v = document.getElementById("v-stats"), S = trialStats(T);
+  if (S.none) { v.innerHTML = `<p class="muted">No wave in trial ${tr.trial}. ${esc(tr.held || "")}</p>`; return; }
+  const w = tr.wave || {}, x1 = S.xsec[S.xsec.length - 1], mmss = x => `${Math.floor(x / 60)}:${String(Math.round(x % 60)).padStart(2, "0")}`;
+  let h = `<div class="tiles">
+    <div class="tile"><span class="l">Strength sent</span><span class="v">${fmt(w.worth)}</span><span class="d">mediums, bursters apart</span></div>
+    <div class="tile"><span class="l">Lost</span><span class="v">${fmt(S.lost)}</span><span class="d">mediums; its plan expected ${fmt((w.predicted || 0) / 2)} going in</span></div>
+    <div class="tile"><span class="l">Guns destroyed</span><span class="v">${S.guns}</span><span class="d">and ${S.walls} wall pieces</span></div>
+    <div class="tile"><span class="l">Bursters at their gun</span><span class="v">${S.set} of ${S.bursters.length}</span><span class="d">${S.killed} killed on the way</span></div>
+    <div class="tile"><span class="l">Guns per burster set off</span><span class="v">${S.set ? fmt(S.gunsByBlast / S.set, 2) : "–"}</span><span class="d">its planner assumes 0.9</span></div>
+  </div>`;
+  h += `<div class="figs">
+    <figure><figcaption>What it lost, in mediums<small>Cumulative, over the trial, against what its plan expected the way in to cost.</small></figcaption>
+      ${lineChart("c-lost", { label: "Mediums lost over time", series: [{ name: "Lost", col: C.ours, pts: S.lostPts, step: true }], xs: [S.xsec[0], x1], xfmt: mmss, refs: [{ y: (w.predicted || 0) / 2, label: "plan: the way in" }], bands: S.bands })}</figure>
+    <figure><figcaption>Its strength on the field, in mediums<small>The living herd's health, bursters apart.</small></figcaption>
+      ${lineChart("c-str", { label: "Strength over time", series: [{ name: "Strength", col: C.ours, pts: S.strength }], xs: [S.xsec[0], x1], xfmt: mmss, bands: S.bands })}</figure>
+    <figure><figcaption>Your guns destroyed<small>Cumulative, over the trial.</small></figcaption>
+      ${lineChart("c-guns", { label: "Guns destroyed over time", series: [{ name: "Guns destroyed", col: C.foe, pts: S.gunPts, step: true }], xs: [S.xsec[0], x1], xfmt: mmss, bands: S.bands })}</figure>
+  </div>`;
+  // By kind, then each defence.
+  const kinds = {};
+  S.rows.forEach(r => { const k = kinds[r.e.kind] || (kinds[r.e.kind] = { n: 0, kills: 0, med: 0, died: 0 }); k.n++; k.kills += r.kills; k.med += r.med; if (r.died != null) k.died++; });
+  const standing = {}; ENTS.forEach(e => { if (TURRETS.has(e.kind) || e.kind === "mine") standing[e.kind] = (standing[e.kind] || 0) + 1; });
+  h += `<figure><figcaption>Your defences, by kind<small>Every one in the fortress; those that fought this trial counted in its kills.</small></figcaption><div class="tablewrap"><table><thead><tr><th>Kind</th><th class="n">In the fortress</th><th class="n">Fought</th><th class="n">Kills</th><th class="n">Mediums killed</th><th class="n">Mediums a gun</th><th class="n">Destroyed</th></tr></thead><tbody>${Object.entries(standing).sort((a, b) => b[1] - a[1]).map(([k, n]) => { const s = kinds[k] || { n: 0, kills: 0, med: 0, died: 0 }; return `<tr><td>${esc(k)}</td><td class="n">${n}</td><td class="n">${s.n}</td><td class="n">${s.kills}</td><td class="n">${fmt(s.med)}</td><td class="n">${fmt(s.med / n, 1)}</td><td class="n">${s.died}</td></tr>`; }).join("")}</tbody></table></div></figure>`;
+  const cols = [["name", "Defence"], ["pos", "Where"], ["kills", "Kills", 1], ["med", "Mediums killed", 1], ["dmg", "Damage taken", 1], ["died", "Destroyed at", 1], ["by", "By"]];
+  const val = (r, k) => k === "name" ? short(r.e.name) : k === "pos" ? r.e.x : r[k] ?? Infinity;
+  const rows = [...S.rows].sort((a, b) => { const va = val(a, SORT.k), vb = val(b, SORT.k); return (va > vb ? 1 : va < vb ? -1 : 0) * SORT.dir; });
+  h += `<figure><figcaption>Each defence that fought<small>Click a row to see it on the map. Sort by any column.</small></figcaption><div class="tablewrap"><table><thead><tr>${cols.map(([k, l, n]) => `<th class="${n ? "n" : ""}"><button data-sort="${k}">${l}${SORT.k === k ? (SORT.dir > 0 ? " ↑" : " ↓") : ""}</button></th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr class="pick" data-ent="${r.e.i}"><td>${esc(short(r.e.name))}</td><td>${fmt(r.e.x)}, ${fmt(r.e.y)}</td><td class="n">${r.kills}</td><td class="n">${fmt(r.med, 1)}</td><td class="n">${fmt(r.dmg)}</td><td class="n">${r.died == null ? "" : mmss(r.died)}</td><td>${esc(short(r.by))}</td></tr>`).join("")}</tbody></table></div></figure>`;
+  h += `<figure><figcaption>Its bursters<small>Each big burster: whether it reached the gun it was sent at (set off by its own blast) or was killed on the way, and how far from that gun it died.</small></figcaption><div class="tablewrap"><table><thead><tr><th>Burster</th><th>Fate</th><th>Killed by</th><th class="n">From its gun, tiles</th><th class="n">Seconds after it was sent</th></tr></thead><tbody>${S.bursters.map(b => `<tr class="pick" data-unit="${b.id}"><td>#${b.id}</td><td>${b.d ? (b.blast ? "set off" : "killed on the way") : "survived"}</td><td>${b.d && !b.blast ? esc(short(b.d.killer)) : ""}</td><td class="n">${fmt(b.dist, 1)}</td><td class="n">${fmt(b.alive)}</td></tr>`).join("")}</tbody></table></div></figure>`;
+  v.innerHTML = h; wireCharts(v);
+  v.querySelectorAll("th button").forEach(b => b.onclick = () => { const k = b.dataset.sort; SORT = { k, dir: SORT.k === k ? -SORT.dir : (k === "name" || k === "by" ? 1 : -1) }; renderStats(); });
+  v.querySelectorAll("tr[data-ent]").forEach(r => r.onclick = () => { sel = { type: "ent", i: +r.dataset.ent }; setView("replay"); const e = ENTS[sel.i]; cam.x = e.x; cam.y = e.y; cam.s = Math.max(cam.s, 6); renderPanel(); draw(); });
+  v.querySelectorAll("tr[data-unit]").forEach(r => r.onclick = () => { sel = { type: "unit", id: +r.dataset.unit }; setView("replay"); const d = prep[T].deathOf.get(sel.id); if (d) seek(frameAt(prep[T], d.t)); renderPanel(); draw(); });
+}
+
+// ---------- Across trials ----------
+function renderAcross() {
+  const v = document.getElementById("v-across"), cats = DATA.trials.map(t => `Trial ${t.trial}`);
+  const S = DATA.trials.map((t, k) => trialStats(k));
+  const lost = S.map(s => s.none ? null : s.lost), guns = S.map(s => s.none ? null : s.guns);
+  const plan = DATA.trials.map(t => t.wave ? (t.wave.predicted || 0) / 2 : null), str = DATA.trials.map(t => t.wave ? t.wave.worth : null);
+  const protos = new Set(); DATA.trials.forEach(t => [t.prices_before, t.prices_after].forEach(p => Object.values(p || {}).forEach(o => Object.keys(o).forEach(k => protos.add(k)))));
+  let h = `<p class="section-note">Whether it adapts: a fortress left as it is should see its sieges change as it learns, and settle. Identical rows mean it learned nothing from the trial before.</p>`;
+  h += `<div class="figs">
+    <figure><figcaption>Lost, in mediums</figcaption>${columns("x-lost", { label: "Mediums lost by trial", cats, series: [{ name: "Lost", col: C.ours, vals: lost }] })}</figure>
+    <figure><figcaption>Your guns destroyed</figcaption>${columns("x-guns", { label: "Guns destroyed by trial", cats, series: [{ name: "Guns destroyed", col: C.foe, vals: guns }] })}</figure>
+    <figure><figcaption>Strength sent, and its plan's price for the way in</figcaption>${legendRow([["Strength sent", C.ours], ["Plan: the way in", C.siege]])}${columns("x-plan", { label: "Strength and plan by trial", cats, series: [{ name: "Strength sent", col: C.ours, vals: str }, { name: "Plan: the way in", col: C.siege, vals: plan }] })}</figure>
+  </div>`;
+  h += `<figure><figcaption>Each trial</figcaption><div class="tablewrap"><table><thead><tr><th>Trial</th><th>Outcome</th><th class="n">Bursters</th><th>Herd</th><th class="n">Biomass</th><th class="n">Strength</th><th class="n">Plan: the way in</th><th class="n">Lost</th><th class="n">Guns destroyed</th><th class="n">Bursters at their gun</th></tr></thead><tbody>${DATA.trials.map((t, k) => { const sg = t.siege || {}, s = S[k]; return `<tr class="pick" data-t="${k}"><td>${t.trial}</td><td>${outcomeOf(t)}</td><td class="n">${sg.k ?? ""}</td><td>${sg.n ? (sg.n - sg.k) + " " + esc(short(sg.breed)) : ""}</td><td class="n">${fmt(sg.price)}</td><td class="n">${fmt(t.wave && t.wave.worth)}</td><td class="n">${fmt(plan[k])}</td><td class="n">${fmt(lost[k])}</td><td class="n">${guns[k] ?? ""}</td><td class="n">${s.none ? "" : `${s.set} of ${s.bursters.length}`}</td></tr>`; }).join("")}</tbody></table></div></figure>`;
+  h += `<figure><figcaption>Its prices after each trial, in mediums a gun<small>“prior”: not learned yet, read from its kind and your research.</small></figcaption><div class="tablewrap"><table><thead><tr><th>Defence</th><th class="n">Before trial 1</th>${cats.map(c => `<th class="n">After ${c.toLowerCase()}</th>`).join("")}</tr></thead><tbody>${[...protos].sort().map(p => { const at = o => { for (const f of Object.values(o || {})) if (f[p] != null) return f[p]; return null; }; const b0 = at(DATA.trials[0].prices_before); return `<tr><td>${esc(short(p))}</td><td class="n">${b0 == null ? "prior" : fmt(b0, 1)}</td>${DATA.trials.map(t => { const a = at(t.prices_after); return `<td class="n">${a == null ? "prior" : fmt(a, 1)}</td>`; }).join("")}</tr>`; }).join("") || `<tr><td colspan="${2 + cats.length}">Nothing learned in any trial.</td></tr>`}</tbody></table></div></figure>`;
+  v.innerHTML = h;
+  v.querySelectorAll("tr[data-t]").forEach(r => r.onclick = () => { setTrial(+r.dataset.t); setView("stats"); });
+}
+
+// ---------- views, trials, layers, legend ----------
+function setView(name) {
+  VIEW = name;
+  document.querySelectorAll("#views button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === name)));
+  ["replay", "stats", "across"].forEach(n => document.getElementById("v-" + n).hidden = n !== name);
+  if (name === "stats") renderStats();
+  if (name === "across") renderAcross();
+  if (name === "replay") requestAnimationFrame(resize);
+}
+document.querySelectorAll("#views button").forEach(b => b.onclick = () => setView(b.dataset.v));
+function setTrial(k) {
+  T = k; sel = null; playing = false; document.getElementById("play").textContent = "▶";
+  const tr = DATA.trials[T]; scrub.max = Math.max(0, tr.frames.length - 1); F = 0; scrub.value = 0;
+  document.querySelectorAll("#tabs button").forEach((b, i) => b.setAttribute("aria-selected", String(i === T)));
+  const empty = document.getElementById("empty");
+  empty.hidden = !!tr.frames.length; if (!tr.frames.length) empty.innerHTML = `<b>No wave in trial ${tr.trial}</b>${esc(tr.held || "")}`;
+  renderPanel(); update();
+  if (VIEW === "stats") renderStats();
+}
+function buildTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = DATA.trials.map((tr, i) => `<button role="tab" data-i="${i}" title="${esc(outcomeOf(tr))}">Trial ${tr.trial}</button>`).join("");
+  tabs.querySelectorAll("button").forEach(b => b.onclick = () => setTrial(+b.dataset.i));
+  const lasers = ENTS.filter(e => e.kind === "laser").length, guns = ENTS.filter(e => e.kind === "gun").length, walls = ENTS.filter(e => e.kind === "wall").length, mines = ENTS.filter(e => e.kind === "mine").length;
+  document.getElementById("sub").textContent = `${lasers} lasers, ${guns} gun turrets, ${walls} wall pieces, ${mines} mines; ${fmt(DATA.biomass)} biomass a trial`;
+}
+const LAYER_UI = [["defences", "Defences", "foe"], ["buildings", "Buildings", "building"], ["units", "Wave", "ours"], ["bursters", "Bursters", "siege"], ["plan", "Plan", "siege"], ["deaths", "Deaths", "ours"], ["kills", "Kill lines", "ink-3"], ["costmap", "Cost map", "siege"]];
+function buildLayers() {
+  const box = document.getElementById("layers");
+  box.innerHTML = LAYER_UI.map(([k, l, c]) => `<button class="chip" data-k="${k}" aria-pressed="${layers[k]}"><span class="dot" style="background:var(--${c})"></span>${l}</button>`).join("");
+  box.querySelectorAll(".chip").forEach(b => b.onclick = () => { layers[b.dataset.k] = !layers[b.dataset.k]; b.setAttribute("aria-pressed", String(layers[b.dataset.k])); try { localStorage.setItem("lab-layers2", JSON.stringify(layers)); } catch (e) {} draw(); });
+  const sw = (svg) => `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">${svg}</svg>`;
+  document.getElementById("legend").innerHTML = [
+    [sw(`<circle cx="7" cy="7" r="5" fill="var(--foe)"/>`), "Your turret"],
+    [sw(`<circle cx="7" cy="7" r="5" fill="none" stroke="var(--foe)" stroke-width="1.5"/><path d="M4 4L10 10M10 4L4 10" stroke="var(--dead)" stroke-width="1.6"/>`), "Destroyed"],
+    [sw(`<rect x="3" y="3" width="8" height="8" fill="var(--wall)"/>`), "Wall"],
+    [sw(`<circle cx="7" cy="7" r="5" fill="var(--ours)"/>`), "Synthexis"],
+    [sw(`<path d="M7 1L13 7L7 13L1 7Z" fill="var(--siege)"/>`), "Big burster"],
+    [sw(`<path d="M3 3L11 11M11 3L3 11" stroke="var(--ours)" stroke-width="1.8"/>`), "Its dead"],
+    [sw(`<path d="M1 7H13" stroke="var(--siege)" stroke-width="2" stroke-dasharray="3 2"/>`), "Its plan"],
+    [sw(`<circle cx="7" cy="7" r="5" fill="none" stroke="var(--siege)" stroke-width="2"/><circle cx="7" cy="7" r="2" fill="var(--siege)"/>`), "Planned breach"],
+  ].map(([s, l]) => `<span>${s}${l}</span>`).join("");
+}
+
+// ---------- pointer, playback, keys ----------
+let drag = null; const tip = document.getElementById("tip");
+cv.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => {
+  const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; cam.x = drag.cx - dx / cam.s; cam.y = drag.cy - dy / cam.s; draw(); tip.hidden = true; return; }
+  const o = pick(px, py);
+  if (o) { tip.hidden = false; tip.textContent = label(o); tip.style.left = Math.min(px + 12, W - 200) + "px"; tip.style.top = (py + 14) + "px"; cv.style.cursor = "pointer"; } else { tip.hidden = true; cv.style.cursor = "crosshair"; }
+});
+cv.addEventListener("pointerup", e => { const r = cv.getBoundingClientRect(); if (drag && !drag.moved) { sel = pick(e.clientX - r.left, e.clientY - r.top); renderPanel(); draw(); } drag = null; });
+cv.addEventListener("pointerleave", () => { tip.hidden = true; });
+cv.addEventListener("wheel", e => { e.preventDefault(); const r = cv.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top, bx = wx(px), by = wy(py); cam.s = Math.max(0.3, Math.min(40, cam.s * Math.exp(-e.deltaY * 0.0015))); cam.x = bx - (px - W / 2) / cam.s; cam.y = by - (py - H / 2) / cam.s; draw(); }, { passive: false });
+const zoomBy = k => { cam.s = Math.max(0.3, Math.min(40, cam.s * k)); draw(); };
+document.getElementById("zin").onclick = () => zoomBy(1.4); document.getElementById("zout").onclick = () => zoomBy(1 / 1.4);
+document.getElementById("zfit").onclick = fitFortress; document.getElementById("zwave").onclick = fitWave;
+const playBtn = document.getElementById("play"), speedSel = document.getElementById("speed");
+playBtn.onclick = () => { if (!DATA.trials[T].frames.length) return; playing = !playing; if (playing && F >= DATA.trials[T].frames.length - 1) F = 0; playBtn.textContent = playing ? "❚❚" : "▶"; playBtn.setAttribute("aria-label", playing ? "Pause" : "Play"); last = performance.now(); acc = 0; requestAnimationFrame(tick); };
+function tick(now) { if (!playing) return; acc += (now - last) / 1000 * 2 * (+speedSel.value); last = now; const st = Math.floor(acc); if (st > 0) { acc -= st; seek(F + st); if (F >= DATA.trials[T].frames.length - 1) { playing = false; playBtn.textContent = "▶"; } } requestAnimationFrame(tick); }
+scrub.addEventListener("input", () => seek(+scrub.value));
+document.addEventListener("keydown", e => {
+  if (VIEW !== "replay" || e.target.tagName === "SELECT" || e.target.tagName === "INPUT" && e.target !== scrub) return;
+  if (e.code === "Space" && e.target === document.body) { e.preventDefault(); playBtn.click(); }
+  if (e.key === "ArrowRight" && e.target === document.body) seek(F + (e.shiftKey ? 20 : 1));
+  if (e.key === "ArrowLeft" && e.target === document.body) seek(F - (e.shiftKey ? 20 : 1));
+  if (e.key === "Escape") { sel = null; renderPanel(); draw(); }
+});
+// The theme can change under the page: colours read again, everything redrawn.
+const mq = matchMedia("(prefers-color-scheme: dark)");
+const retheme = () => { readColors(); buildLayers(); update(); if (VIEW === "stats") renderStats(); if (VIEW === "across") renderAcross(); };
+mq.addEventListener("change", retheme);
+new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+new ResizeObserver(resize).observe(document.getElementById("mapwrap"));
+buildLayers(); buildTabs(); resize(); fitFortress();
+setTrial(Math.max(0, DATA.trials.findIndex(t => t.frames.length)));
+</script>

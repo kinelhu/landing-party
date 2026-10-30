@@ -514,7 +514,7 @@ local function target_from(surface, pos, f, n, opts)
     local refused = held and dr.no_siege and (dr.need and (opts.budget or 0) < dr.need or not dr.need and field <= (dr.field or 0))
     c.cover = covers[c.key] or 0
     local raw = c.entry
-    c.entry = herd.way_cost(raw, c.cover, opts.bursters, openable)
+    c.entry = herd.way_cost(raw, c.cover, opts.bursters, openable, c.force)
     local guns = c.defence
     do
       c.walls = surface.count_entities_filtered{area = {{c.cx * 64, c.cy * 64}, {c.cx * 64 + 64, c.cy * 64 + 64}},
@@ -531,7 +531,7 @@ local function target_from(surface, pos, f, n, opts)
       end
       -- (Its own guns too, opened in the share its bursters open the way's: the guns covering where it breaks in are its
       -- own where the place is the wall; counted whole, a siege's odds stayed nothing at every wall, and none was laid.)
-      local function defence_at(entry, k) return math.max(guns * (1 - herd.opened(c.cover, k, openable)), 2 * entry) + extra end
+      local function defence_at(entry, k) return math.max(guns * (1 - herd.opened(c.cover, k, openable, c.force)), 2 * entry) + extra end
       c.guns, c.extra = guns, extra
       c.defence = defence_at(c.entry, opts.bursters)
       -- Its odds: what a wave of n keeps there (valuemap.keeps_lost: its defence there and back, in its own).
@@ -563,8 +563,8 @@ local function target_from(surface, pos, f, n, opts)
       -- way in one a wave it could field takes and wins something past (a siege).
       c.passes = raw < NO_WAY and herd.affords(n or shared.WAVE_MIN, c.entry)
       if not (c.passes and c.gain >= (mind.min_gain or 0)) and c.cover > 0 and raw < NO_WAY and field > 0 and not refused then
-        for k = 1, math.ceil(math.min(openable or c.cover, c.cover) / herd.BURST_OPENS) do
-          local e = herd.way_cost(raw, c.cover, k, openable)
+        for k = 1, math.ceil(math.min(openable or c.cover, c.cover) / herd.opens(c.force)) do
+          local e = herd.way_cost(raw, c.cover, k, openable, c.force)
           if herd.affords(field, e) and valuemap.keeps_lost(field, defence_at(e, k) / 2) * (c.value or 0) >= (mind.min_gain or 0) then
             c.siege = k
             break
@@ -815,11 +815,12 @@ local function siege_size(f, pl, place)
   local bc, hc, hw = shared.BREEDS["lp-bred-big-burster"].cost, shared.BREEDS[breed].cost, herd.strength({breed})
   local reach = pl.openable or pl.cover or 0
   local best, least
-  for k = 0, math.ceil(reach / herd.BURST_OPENS) do
-    local lost = herd.way_cost(pl.cost, pl.cover, k, pl.openable)
+  local foe = place and place.rival and place.rival[1] or "player"
+  for k = 0, math.ceil(reach / herd.opens(foe)) do
+    local lost = herd.way_cost(pl.cost, pl.cover, k, pl.openable, foe)
     local need = 2 * lost
     if place and place.guns then
-      local defence = math.max(place.guns * (1 - herd.opened(pl.cover, k, pl.openable)), 2 * lost) + (place.extra or 0)
+      local defence = math.max(place.guns * (1 - herd.opened(pl.cover, k, pl.openable, foe)), 2 * lost) + (place.extra or 0)
       local keep = 1 - (B.mind.min_gain or 0) / math.max(place.value or 0, 1e-9)
       need = keep > 0 and math.max(need, defence / (valuemap.HOLD * keep)) or math.huge
     end
@@ -931,6 +932,7 @@ local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
 -- (Once in ten minutes, and whenever its reason changes, its words up to the first number or colon: throttled alone, two
 -- refusals alternating at culture 2 on nw read as one steady state for five hours.)
 local function holds(f, tick, why)
+  f.held_why = why
   local kind = why:match("^[^:%d]*")
   if tick - (f.held_said or -36000) >= 36000 or kind ~= f.held_kind then
     f.held_said, f.held_kind = tick, kind
@@ -981,7 +983,7 @@ local function send(f, tick)
     -- reading alone: by that, three farms ended their sieges for waves their plans then refused, and sent none; 2026-10-28.)
     local other = choice.passes and choice.gain >= (B.mind.min_gain or 0)
       and herd.plan(s, f.pos, target, rival or players(), math.min(avail, WAVE_MAX))
-    if other and herd.affords(ready(math.min(avail, WAVE_MAX)), herd.way_cost(other.cost, other.cover, bursters, other.openable)) then
+    if other and herd.affords(ready(math.min(avail, WAVE_MAX)), herd.way_cost(other.cost, other.cover, bursters, other.openable, rival and rival[1] or "player")) then
       why = string.format("a wave of what it has pays at %.0f,%.0f", target.x, target.y)
     elseif s.count_entities_filtered{position = f.siege.at, radius = 32, force = f.siege.rival or players(), type = herd.DRAW, limit = 1} == 0 then
       why = "nothing of its foe's stands there now"
@@ -1229,7 +1231,7 @@ local function send(f, tick)
   local big = 0
   for _, u in ipairs(units) do if name_of(u) == "lp-bred-big-burster" then big = big + 1 end end
   local plan = herd.plan(s, f.pos, target, rival or players(), #units)
-  local lost = plan and herd.way_cost(plan.cost, plan.cover, big, plan.openable)
+  local lost = plan and herd.way_cost(plan.cost, plan.cover, big, plan.openable, rival and rival[1] or "player")
   local strength = herd.strength(units)
   if not forced and (not plan or not herd.affords(strength, lost)) then
     priced(s, rival and rival[1] or "player", target, {lost = plan and plan.cost or NO_WAY, tick = tick,
@@ -1848,6 +1850,18 @@ function farm.on_damaged(e)
   if rec and rec.farm and herd.out(rec.farm) then herd.recall(rec.farm, "its farm is attacked") end
 end
 
+-- The siege lab (tests/lp-sim, mix lab; scripts/siegelab.sh): its culture holds `biomass` at least, and the farm weighs
+-- its next wave now (its retries, its waits and its gap since the last wave cleared); what it decides is its own.
+function farm.debug_lab_prime(id, biomass)
+  local f = st().list[id]
+  if not f then return false end
+  local cul = creep.of(id)
+  if cul and biomass then cul.biomass = math.max(cul.biomass, biomass) end
+  f.escalate_retry, f.escalate_since, f.worthless_since, f.order_since = nil, nil, nil, nil
+  f.last_wave = game.tick - tune.sooner("biotech", WAVE_GAP)
+  return true
+end
+
 -- Dev and tests: a farm made ripe to seed at its next look (its field read as filled, its bank full, no wait).
 function farm.debug_seed(id)
   local f = st().list[id]
@@ -1910,7 +1924,8 @@ function farm.state()
         now = creep.of(id).biomass, growth = creep.of(id).growth, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled, eaten = creep.of(id).eaten,
         spent = creep.of(id).spent or 0, bred = creep.of(id).bred or 0, wants = creep.of(id).wants,
         budded = creep.of(id).budded or 0, blocked = table_size(creep.of(id).blocked or {})}, short = f.short, saving = f.saving,
-      reserve = f.reserve, siege = f.siege and {k = f.siege.k, at = {f.siege.at.x, f.siege.at.y}, cover = f.siege.cover}})
+      reserve = f.reserve, siege = f.siege and {k = f.siege.k, at = {f.siege.at.x, f.siege.at.y}, cover = f.siege.cover,
+        n = f.siege.n, breed = f.siege.breed, price = f.siege.price}, held = f.held_why})
   end
   return out
 end

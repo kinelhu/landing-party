@@ -530,6 +530,20 @@ remote.add_interface("landing-party", {
   farm_debug_seed = function(id) return farm.debug_seed(id) end,
   farm_state = function() return farm.state() end,
   -- Tests only: what Synthexis has learned a prototype of `foe`'s costs it (nil: nothing yet).
+  -- The siege lab (tests/lp-sim, mix lab): its culture primed for a trial, and its waves' units for the recorder.
+  lab_prime = function(id, biomass) return farm.debug_lab_prime(id, biomass) end,
+  lab_waves = function() return herd.lab_waves() end,
+  lab_prices = function()
+    local k, out = know.of("biotech"), {price = {}, scale = {}}
+    for foe, ps in pairs(k.price or {}) do
+      out.price[foe] = {}
+      for proto, r in pairs(ps) do out.price[foe][proto] = r.per end
+    end
+    for foe, v in pairs(k.scale or {}) do out.scale[foe] = v end
+    out.opens = {}
+    for foe, v in pairs(k.opens or {}) do out.opens[foe] = v end
+    return out
+  end,
   debug_price = function(foe, proto) return know.price("biotech", foe, proto) end,
   -- Tests only: what it has learned a prototype costs it, set (as if its waves had died to it).
   debug_learn_price = function(foe, proto, per) return know.learn_price("biotech", foe, proto, per, per) end,

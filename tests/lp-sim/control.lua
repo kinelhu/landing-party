@@ -126,6 +126,7 @@ local function line_pylons()
 end
 
 local S = {}  -- scenario state (the run never saves, so plain locals are enough)
+local LAB = {}  -- the siege lab's hooks (scenarios.lab): its recorder's deaths
 
 -- Rates over a window from the cumulative counters: the smoothed rates in stats alias against crafting
 -- cycles (a raid on seed 4242 read 95.7 -> 83.7 parts/min with the same four fabricators all working).
@@ -7328,6 +7329,170 @@ end
 -- out past the 95th percentile of its drills, machines and poles, plus 150), Grubstake 20 minutes later; the
 -- faction's own cadence lands more. Every 10 minutes a line of timeline.jsonl (operations, razed, looted, the
 -- player's buildings); at the end, each settlement's story in results.txt.
+-- The siege lab's trials (scripts/siegelab.sh run; the user, 2026-10-30: a standard fortress, a culture not held back by
+-- its income, sieges launched by its own AI, the defences edited between runs, and every trial recorded to be played back
+-- with a slider). On a save made for it (scripts/siegelab.sh build, or one edited from it): its defences snapshot, then
+-- params.lab_trials trials, each: the defences rebuilt as they were, its culture primed (params.lab_biomass, its waits
+-- cleared, farm.debug_lab_prime), its farm's own decision, its wave recorded every half second (each unit, the defences'
+-- health, every death with its killer) to lab-rec-<n>.jsonl, and its summary to lab.jsonl. A trial with no wave within
+-- params.lab_hold minutes records why its farm held. What it learned stays; the save it ends with (lab-out) keeps it, with
+-- its waves held (herd_off) for the next edit. State in storage, by run: a save that held the test mod before is primed again.
+scenarios.lab = function()
+  local TURRET = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true}
+  local AMMO = {["gun-turret"] = "piercing-rounds-magazine"}
+  local FRAME, MAX_TRIAL = 30, 45 * 3600
+  local function out(file, t) helpers.write_file("landing-party/" .. file, helpers.table_to_json(t) .. "\n", true) end
+  local function farm() return (lp("farm_state").farms or {})[1] end
+  local function xy(p) return {math.floor(p.x * 10 + 0.5) / 10, math.floor(p.y * 10 + 0.5) / 10} end
+  local function log_of(id)
+    for _, l in ipairs(lp("herd_state").log or {}) do if l.id == id then return l end end
+  end
+  local function begin()
+    local L = {run = params.lab_run, trial = 0, step = "prime", snap = {}, ents = {}, hp = {}}
+    storage.lab = L
+    lp("debug_tune", {herd_off = false})
+    lp("set_trace", true)
+    local cx, cy, k = 0, 0, 0
+    -- (Everything of the player's, not its defences alone: the first trial razed the soft heart and its power, and the next
+    -- two found nothing worth a wave.)
+    for _, e in ipairs(surface().find_entities_filtered{force = "player"}) do
+      if e.type ~= "character" and e.health then
+        local d = {name = e.name, pos = {e.position.x, e.position.y}, dir = e.direction, max = e.max_health, type = e.type}
+        if e.type == "electric-energy-interface" then d.power = {e.power_production, e.electric_buffer_size} end
+        L.snap[#L.snap + 1] = d
+        L.ents[#L.ents + 1] = e
+        L.hp[#L.snap] = e.health
+        if TURRET[e.type] then cx, cy, k = cx + e.position.x, cy + e.position.y, k + 1 end
+      end
+    end
+    L.center = {k > 0 and cx / k or 0, k > 0 and cy / k or 0}
+    local context = {}
+    local f, pens = farm(), {}
+    for _, p in ipairs(surface().find_entities_filtered{name = "lp-pen"}) do pens[#pens + 1] = xy(p.position) end
+    local defences = {}
+    for i, d in ipairs(L.snap) do defences[i] = {d.name, d.pos[1], d.pos[2], d.max, d.type} end
+    out("lab-run.jsonl", {run = L.run, trials = params.lab_trials, biomass = params.lab_biomass, center = L.center,
+      defences = defences, context = context, pens = pens, farm = f and f.id, tick = game.tick})
+  end
+  -- Each defence as it was, rebuilt where gone, at full health, its gun turrets loaded.
+  local function rebuild()
+    local L, rebuilt = storage.lab, {}
+    for i, d in ipairs(L.snap) do
+      local e = L.ents[i]
+      if not (e and e.valid) then
+        e = surface().create_entity{name = d.name, position = d.pos, direction = d.dir, force = "player"}
+        L.ents[i] = e
+        if e then rebuilt[d.name] = (rebuilt[d.name] or 0) + 1 end
+        if e and d.power then e.power_production, e.electric_buffer_size = d.power[1], d.power[2] end
+      end
+      if e and e.valid then
+        if e.max_health and e.max_health > 0 then e.health = e.max_health end
+        if AMMO[e.name] then
+          local inv = e.get_inventory(defines.inventory.turret_ammo)
+          if inv then inv.clear(); inv.insert{name = AMMO[e.name], count = 200} end
+        end
+        L.hp[i] = e.health
+      end
+    end
+    return rebuilt
+  end
+  local function finish(L, outcome, wave)
+    local f = farm()
+    L.rec.outcome, L.rec["end"] = outcome, game.tick
+    L.rec.held = outcome ~= "wave" and f and f.held or nil
+    L.rec.wave = wave
+    L.rec.prices_after = lp("lab_prices")
+    local alive = {}
+    for i, e in ipairs(L.ents) do alive[i] = (e and e.valid) and 1 or 0 end
+    L.rec.alive = alive
+    out("lab.jsonl", L.rec)
+    L.recording, L.wave = nil, nil
+    L.step = L.trial >= (params.lab_trials or 3) and "save" or "prime"
+  end
+  LAB.died = function(e)
+    local L = storage.lab
+    if not (L and L.recording) then return end
+    local v, c = e.entity, e.cause and e.cause.valid and e.cause or nil
+    local ev = {ev = "die", t = game.tick, id = v.unit_number, n = v.name, f = v.force.name, p = xy(v.position),
+      dt = e.damage_type and e.damage_type.name, kf = e.force and e.force.name}
+    if c then ev.k, ev.kid, ev.kp = c.name, c.unit_number, xy(c.position) end
+    for i, d in ipairs(L.ents) do if d == v then ev.def = i; break end end
+    out("lab-rec-" .. L.trial .. ".jsonl", ev)
+  end
+  script.on_nth_tick(FRAME, function()
+    if not (storage.lab and storage.lab.run == params.lab_run) then
+      if game.tick - (storage.t0 or 0) < 120 then return end
+      game.speed = 64
+      begin()
+    end
+    local L = storage.lab
+    local f = farm()
+    if L.step == "prime" then
+      L.trial = L.trial + 1
+      local rebuilt = rebuild()
+      L.rec = {trial = L.trial, start = game.tick, rebuilt = rebuilt, prices_before = lp("lab_prices"),
+        rec = "lab-rec-" .. L.trial .. ".jsonl"}
+      if f then lp("lab_prime", f.id, params.lab_biomass or 20000) end
+      L.step, L.recording = "wait", true
+      return
+    end
+    if L.step == "wait" or L.step == "wave" then
+      if f then
+        if f.siege then L.rec.siege = f.siege end
+        local b = f.biomass and f.biomass.now or 0
+        if b < (params.lab_biomass or 20000) then lp("debug_biomass", f.id, (params.lab_biomass or 20000) - b) end
+      end
+      local w
+      -- (The newest of its farm's: an older one stuck on the field held two trials to their end.)
+      for _, x in ipairs(lp("lab_waves")) do if (not f or x.farm == f.id) and (not w or x.id > w.id) then w = x end end
+      if L.step == "wait" then
+        if w then
+          L.step, L.wave = "wave", w.id
+          L.rec.launch, L.rec.plan = game.tick, w.plan
+        elseif game.tick - L.rec.start > (params.lab_hold or 15) * 3600 then
+          return finish(L, "held")
+        end
+      end
+      if L.step == "wave" then
+        if not w or w.id ~= L.wave then return finish(L, "wave", log_of(L.wave)) end
+        if game.tick - L.rec.start > MAX_TRIAL then return finish(L, "timeout", log_of(L.wave)) end
+        local u = {}
+        local function add(e, role)
+          if e and e.valid then
+            u[#u + 1] = {e.unit_number, e.name, xy(e.position)[1], xy(e.position)[2], math.floor(e.health), role}
+          end
+        end
+        for _, m in pairs(w.members) do add(m, m.valid and m.name == "lp-bred-big-burster" and "burster" or "herd") end
+        add(w.scout, "scout")
+        for _, m in pairs(w.sweepers) do add(m, "sweep") end
+        local d = {}
+        for i, e in ipairs(L.ents) do
+          local hp = (e and e.valid) and e.health or 0
+          if hp ~= L.hp[i] then d[#d + 1] = {i, math.floor(hp)}; L.hp[i] = hp end
+        end
+        local big = {}
+        for _, b in ipairs(w.big) do
+          -- (A burster or its gun gone arrives as nothing.)
+          if b.unit and b.unit.valid and b.target and b.target.valid then big[#big + 1] = {b.unit.unit_number, xy(b.target.position)} end
+        end
+        out(L.rec.rec, {ev = "frame", t = game.tick, s = w.stage, u = u, d = d, big = big})
+      end
+      return
+    end
+    if L.step == "save" then
+      lp("debug_tune", {herd_off = true})
+      game.speed = 1
+      L.step = "saving"
+      return
+    end
+    if L.step == "saving" then
+      game.server_save("lab-out")
+      helpers.write_file("landing-party/lab-done.txt", string.format("%d trials, tick %d", L.trial, game.tick))
+      L.step = "done"
+    end
+  end)
+end
+
 scenarios.visit = function()
   local KEY = {"mining-drill", "assembling-machine", "furnace", "lab", "electric-pole", "ammo-turret", "electric-turret",
     "fluid-turret", "artillery-turret", "roboport", "container", "logistic-container", "wall"}
@@ -9211,7 +9376,7 @@ scenarios.farm = function()
     -- siege (2026-10-28): a laser wall no wave it fields crosses (a laser every 6 tiles on every face, nw's research): the
     -- chain from its order to the breach in minutes, which on nw took a three-hour visit a fault (its order bred the cheap
     -- breed first, its incubators overspent what it kept back, its wave left most bursters behind, each counted twice).
-    if mix == "siege" or mix == "behind" then
+    if mix == "siege" or mix == "behind" or mix == "lab" then
       game.forces.player.set_ammo_damage_modifier("laser", 3)
       game.forces.player.set_gun_speed_modifier("laser", 2.2)
       -- (Every 3 tiles, 107 lasers: no siege of 20 big bursters opens that, and none was laid.)
@@ -9225,7 +9390,8 @@ scenarios.farm = function()
       S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
       -- And a pipeline of the player's out toward the nests, a megabase's outlying ground, worth nothing to it (read short of
       -- the foe's ground, its plan staged at its own nest, and its bursters went at nothing; poles drew waves of their own).
-      for d = 48, 600 do put("pipe", at(d, 10)) end
+      -- (Not in the siege lab: a star fort's waves went in for the pipe at its edge, found nothing more, and died going out.)
+      if mix ~= "lab" then for d = 48, 600 do put("pipe", at(d, 10)) end end
       -- And mines, a belt of them 3 to 9 tiles outside the wall on every face (nw's gap: 84 of them), its price for them
       -- learned (as if a wave had died to them): its sweep should set them off ahead of its wave.
       for i = -48, 48, 4 do
@@ -9247,6 +9413,98 @@ scenarios.farm = function()
           end
         end
       end
+    end
+    -- The siege lab's star fort (scripts/siegelab.sh build <seed> star; the user, 2026-10-30: "a star fort inspired by
+    -- french fortresses, with tons of mines at the star points to kill bursters and force them between legs"): five
+    -- bastions, their points 72 tiles out, their flanks firing along the curtains between them (46 out); lasers inside
+    -- the walls; a wedge of mines before each point, the ways to the curtains left open, under two bastions' flanks.
+    if params.fort == "star" then
+      for _, e in ipairs(surface().find_entities_filtered{force = "player", type = {"wall", "electric-turret", "ammo-turret", "land-mine"},
+        area = {at(-62, -62), at(62, 62)}}) do e.destroy() end
+      local a1, b1 = at(-110, -110), at(110, 110)
+      local X0, Y0, X1, Y1 = math.min(a1[1], b1[1]), math.min(a1[2], b1[2]), math.max(a1[1], b1[1]), math.max(a1[2], b1[2])
+      local a2, b2 = at(-60, -60), at(60, 60)
+      local x0, y0, x1, y1 = math.min(a2[1], b2[1]), math.min(a2[2], b2[2]), math.max(a2[1], b2[1]), math.max(a2[2], b2[2])
+      flatten(X0, Y0, x0, Y1); flatten(x1, Y0, X1, Y1); flatten(x0, Y0, x1, y0); flatten(x0, y1, x1, Y1)
+      local function place(name, p)
+        if surface().can_place_entity{name = name, position = p, force = "player"} then return put(name, p) end
+      end
+      local function polar(r, deg) local a = math.rad(deg); return r * math.cos(a), r * math.sin(a) end
+      local walled = {}
+      local function wall_line(u0, v0, u1, v1)
+        local n = math.ceil(math.max(math.abs(u1 - u0), math.abs(v1 - v0)))
+        for k = 0, n do
+          local u, v = math.floor(u0 + (u1 - u0) * k / n + 0.5), math.floor(v0 + (v1 - v0) * k / n + 0.5)
+          if not walled[u .. "," .. v] then walled[u .. "," .. v] = true; place("stone-wall", at(u, v)) end
+        end
+      end
+      -- Lasers along a stretch of wall, `step` apart, `inset` tiles toward the middle.
+      local function lasers_along(u0, v0, u1, v1, step, inset)
+        local len = math.sqrt((u1 - u0) ^ 2 + (v1 - v0) ^ 2)
+        for d = step / 2, len - 1, step do
+          local u, v = u0 + (u1 - u0) * d / len, v0 + (v1 - v0) * d / len
+          local r = math.sqrt(u * u + v * v)
+          local q = surface().find_non_colliding_position(L, at(u - u / r * inset, v - v / r * inset), 3, 1)
+          if q then put(L, q) end
+        end
+      end
+      local R, SH, SHA, GO, GOA = 72, 52, 14, 46, 22
+      local corners = {}
+      for i = 0, 4 do
+        local a = i * 72 - 90
+        local su, sv = polar(R, a)
+        local lu, lv = polar(SH, a - SHA); local ru, rv = polar(SH, a + SHA)
+        local glu, glv = polar(GO, a - GOA); local gru, grv = polar(GO, a + GOA)
+        corners[i] = {a = a, s = {su, sv}, l = {lu, lv}, r = {ru, rv}, gl = {glu, glv}, gr = {gru, grv}}
+      end
+      for i = 0, 4 do
+        local c, nx = corners[i], corners[(i + 1) % 5]
+        wall_line(c.gl[1], c.gl[2], c.l[1], c.l[2]); wall_line(c.l[1], c.l[2], c.s[1], c.s[2])
+        wall_line(c.s[1], c.s[2], c.r[1], c.r[2]); wall_line(c.r[1], c.r[2], c.gr[1], c.gr[2])
+        wall_line(c.gr[1], c.gr[2], nx.gl[1], nx.gl[2])
+      end
+      for i = 0, 4 do
+        local c, nx = corners[i], corners[(i + 1) % 5]
+        lasers_along(c.l[1], c.l[2], c.s[1], c.s[2], 6, 3); lasers_along(c.s[1], c.s[2], c.r[1], c.r[2], 6, 3)
+        lasers_along(c.gl[1], c.gl[2], c.l[1], c.l[2], 4.5, 3); lasers_along(c.r[1], c.r[2], c.gr[1], c.gr[2], 4.5, 3)
+        lasers_along(c.gr[1], c.gr[2], nx.gl[1], nx.gl[2], 9, 3)
+        -- Its point's mines: a wedge from 4 to 22 tiles out, widening as it goes.
+        local du, dv = math.cos(math.rad(c.a)), math.sin(math.rad(c.a))
+        for d = 4, 22, 2.5 do
+          local half = 3 + 0.6 * d
+          for w = -half, half, 2.5 do place("land-mine", at(c.s[1] + du * d - dv * w, c.s[2] + dv * d + du * w)) end
+        end
+      end
+      for u = -64, 64, 16 do for v = -64, 64, 16 do if u * u + v * v <= 60 * 60 then place("substation", at(u, v)) end end end
+      S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
+      S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
+      info(string.format("lab: star fort, %d lasers, %d mines, %d wall pieces", S.lasers0, S.mines0,
+        surface().count_entities_filtered{type = "wall", force = "player"}))
+    end
+    -- The siege lab's empty plot (scripts/siegelab.sh build <seed> plot; the user, 2026-10-30: "a save with fortress
+    -- boundaries and let me just build some different fortresses to test out"): the square fort's walls, guns and mines
+    -- cleared, the ground flattened 110 tiles round its middle, the plot's edge in hazard concrete, its soft heart and the
+    -- power at its middle kept. Nothing defends it.
+    if params.fort == "plot" then
+      for _, e in ipairs(surface().find_entities_filtered{force = "player", type = {"wall", "gate", "electric-turret", "ammo-turret",
+        "land-mine"}, area = {at(-62, -62), at(62, 62)}}) do e.destroy() end
+      local a1, b1 = at(-110, -110), at(110, 110)
+      local X0, Y0, X1, Y1 = math.min(a1[1], b1[1]), math.min(a1[2], b1[2]), math.max(a1[1], b1[1]), math.max(a1[2], b1[2])
+      local a2, b2 = at(-60, -60), at(60, 60)
+      local x0, y0, x1, y1 = math.min(a2[1], b2[1]), math.min(a2[2], b2[2]), math.max(a2[1], b2[1]), math.max(a2[2], b2[2])
+      flatten(X0, Y0, x0, Y1); flatten(x1, Y0, X1, Y1); flatten(x0, Y0, x1, y0); flatten(x0, y1, x1, Y1)
+      local edge = {}
+      for u = -108, 107 do
+        for _, v in ipairs({-108, -107, 106, 107}) do
+          local p, q = at(u, v), at(v, u)
+          edge[#edge + 1] = {name = "hazard-concrete-left", position = {math.floor(p[1]), math.floor(p[2])}}
+          edge[#edge + 1] = {name = "hazard-concrete-left", position = {math.floor(q[1]), math.floor(q[2])}}
+        end
+      end
+      surface().set_tiles(edge, true, false, true, false)
+      local c = at(0, 0)
+      game.forces.player.add_chart_tag(surface(), {position = c, text = "Fortress plot (build within the hazard line)"})
+      S.lasers0, S.mines0 = 0, 0
     end
     -- What any player's base has, and what draws a wave (its smell, farm.target_from): machines that pollute.
     for _, d in ipairs({{-20, -20}, {-20, 20}, {20, -20}, {20, 20}}) do
@@ -9315,10 +9573,29 @@ scenarios.farm = function()
     end
     -- (clinic: the wild at 0.5, so the breeds' cap without a clinic, 0.3, shows.)
     -- (siege: 0.95, its big bursters come at 0.85: its evolution follows the wild's, farm.evolve.)
-    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "behind") and 0.95 or 0.3, surface())
+    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "behind" or mix == "lab") and 0.95 or 0.3, surface())
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
+  -- The siege lab (scripts/siegelab.sh build): the siege test's fortress and its culture, grown to 8 incubators and saved;
+  -- no wave goes meanwhile (herd_off: its trials send them, scenarios.lab).
+  if params.lab == "build" then
+    schedule(30, function() game.speed = 64 end)
+    schedule(61, function() lp("debug_tune", {herd_off = true}) end)
+    for t = 10 * 3600, END - 60, 600 do
+      schedule(t, function()
+        local f = farm1()
+        if S.lab_saved or not (f and f.pens >= 8) then return end
+        S.lab_saved = game.tick
+        game.speed = 1
+        local pens = f.pens
+        schedule(game.tick - storage.t0 + 1, function()
+          game.server_save("lab")
+          helpers.write_file("landing-party/lab-saved.txt", string.format("tick %d, %d incubators", game.tick, pens))
+        end)
+      end)
+    end
+  end
   -- fed: its cloud, from the start (before the pod) and on, between the base and the near field.
   if mix == "fed" then
     for t = 120, END - 120, 600 do
@@ -9387,7 +9664,7 @@ scenarios.farm = function()
         S.farm_pos = f.pos
         S.dist = math.sqrt((f.pos.x - S.at(0, 0)[1]) ^ 2 + (f.pos.y - S.at(0, 0)[2]) ^ 2)
         S.evo_land = f.evo
-        if mix == "siege" or mix == "behind" then
+        if mix == "siege" or mix == "behind" or mix == "lab" then
           S.min_bio, S.max_near, S.sieges = math.huge, 0, {}
           for t2 = game.tick - storage.t0 + 60, END - 120, 600 do
             schedule(t2, function()
@@ -11442,6 +11719,8 @@ script.on_init(function()
   if params.scenario == "system" then return end
   -- A real factory (scripts/visit.sh) is loaded, not created: its arrival is placed by the scenario.
   if params.scenario == "visit" then return end
+  -- The siege lab's trials (scenarios.lab) run on a save made for them.
+  if params.scenario == "lab" then return end
   storage.id = lp("arrive", 1, {x = 0, y = 0}, params.distance,
     {doctrine = params.doctrine or (params.scenario == "defend" and "bastion")
       or (params.scenario == "convoy" and params.mix == "grown" and "bastion")
@@ -11548,6 +11827,7 @@ for _, t in ipairs({"mining-drill", "furnace", "assembling-machine", "lab", "roc
 
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
+  if LAB.died then LAB.died(e) end
   -- creep break: who killed the Grubstake rifleman by its tumor (the truce: never Synthexis).
   if S.intruder and e.entity == S.intruder then S.intruder_killer = e.force and e.force.name or "nobody" end
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
@@ -11624,7 +11904,7 @@ script.on_event(defines.events.on_entity_died, function(e)
 -- Synthexis wave that broke the player's power, inserters and lasers counted 1 of 20 (2026-10-25). And in a visit (what
 -- Synthexis and the biters razed of the player's): filtered, nw's first wave into the factory broke 444 of its buildings,
 -- 12 assemblers and 6 roboports down at once, and the report read "razed of the player's {}" (2026-10-29).
-end, params.scenario ~= "system" and params.scenario ~= "visit" and params.scenario ~= "herd" and {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
+end, params.scenario ~= "system" and params.scenario ~= "visit" and params.scenario ~= "herd" and params.scenario ~= "lab" and {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
   {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"}, {filter = "type", type = "mining-drill"},
   {filter = "type", type = "spider-unit"}} or nil)

@@ -36,6 +36,7 @@ at milestones, asked for.
   worth looking at gets a `/lp` verb, and a check in scenario `dev`.
 - **Real factories: `scripts/visit.sh <save.zip> [minutes]`** runs the corporations against a copy of a real save in
   its own profile (never the real profile or the original file; ask the user before copying one of theirs).
+- **Siege lab: `scripts/siegelab.sh build`, then `scripts/siegelab.sh run <save.zip> [trials]`**: trials of Synthexis's real AI against a fortress save, defences rebuilt between trials, learning kept; a replay page per run (`docs/sim/lab-<save>/report.html`) and `lab-out.zip` to edit (map editor, time paused) and run again.
 - **Reference factories: `scripts/make_reference.sh <belt|laser|artillery> [seed] [evolution]`** builds a control base
   (`tests/lp-ref`, without Landing Party) on a map with default biters and saves it to
   `~/Library/Application Support/factorio-lp-ref/<kind>.zip`, for `scripts/visit.sh` as any save: the same working,
