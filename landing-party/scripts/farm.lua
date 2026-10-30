@@ -873,7 +873,9 @@ siege_size = function(f, pl, place)
     -- the design consult's step 3). (Priced from its guns alone, the user's fort read as more than 60 could take, though
     -- sieges of 42 to 60 had got in there four times.)
     if proven then need = proven end
-    local n = math.floor(need / hw) + 1
+    -- (No smaller than the least wave it sends, WAVE_MIN: a siege of 4 bursters and 11 at the star fort's cheap corner
+    -- waited six trials for a wave it would never send, "13 ready, 24 the least it sends"; the siege lab, 2026-10-31.)
+    local n = math.max(math.floor(need / hw) + 1, shared.WAVE_MIN - k - fodder)
     local price = k * bc + n * hc + fodder * fc
     if not least or price < least then least = price end
     -- (No bigger than any wave, WAVE_MAX: a place that asks more is not besieged, its farm weighs another.)
@@ -1395,7 +1397,10 @@ local function send(f, tick)
   -- and again by the wave from where its scout ended, 12 of 16 waves turned home at the gate (2026-10-28).
   local big = 0
   for _, u in ipairs(units) do if name_of(u) == "lp-bred-big-burster" then big = big + 1 end end
-  local plan = herd.plan(s, f.pos, target, rival or players(), #units)
+  -- (From the incubator it leaves from: planned from the farm's middle, a wave sent from an incubator 90 tiles off walked
+  -- back there first, its first legs failed; the fed lab fort, 2026-10-30.)
+  local from = origin and origin.pen and origin.pen.valid and origin.pen.position or f.pos
+  local plan = herd.plan(s, from, target, rival or players(), #units)
   -- (A siege with its rams and screen pays the crossing, not the standing at the wall: siege_size.)
   local screened = siege and big > 0 and (siege.fodder or 0) > 0
   local base = plan and math.max(0, plan.cost - (screened and (plan.standing or 0) or 0))
@@ -1440,7 +1445,8 @@ local function send(f, tick)
     while k < #units - shared.WAVE_MIN and not herd.affords(k * per_u, cut.plan.cost) do k = k + 1 end
     local cutters = {}
     for i = 1, k do cutters[#cutters + 1] = table.remove(units, 1) end
-    local id = herd.launch(origin, cut.at, {units = cutters, farm = f.id, forces = rival, no_probe = true, plan = cut.plan,
+    local cut_plan = herd.plan(s, from, cut.at, rival or players(), #cutters) or cut.plan
+    local id = herd.launch(origin, cut.at, {units = cutters, farm = f.id, forces = rival, no_probe = true, plan = cut_plan,
       trust = "probe", cut = {e = cut.e, worth = 0, starves = cut.starves, for_strike = true},
       sig = herd.place_sig(s, rival or players(), cut.at)})
     wait_cut = {e = cut.e, wave = id}
@@ -2041,6 +2047,14 @@ end
 
 -- The siege lab: one weighing (target_from, its reading of the ways in fresh) timed at `cell` tiles a cell, written to
 -- landing-party/timing.txt (the design consult's step 2: one reading at its waves' grain, its cost not yet known).
+-- Tests only: the siege a farm would size against a plan (siege_size): its big bursters, herd and screen, or nil.
+function farm.debug_siege_size(id, pl)
+  local f = st().list[id]
+  if not f then return nil end
+  local k, n, _, _, _, fodder = siege_size(f, pl, nil)
+  return k and {k = k, n = n, fodder = fodder} or nil
+end
+
 function farm.debug_time_ways(id, cell)
   local f = st().list[id]
   if not f then return false end

@@ -10058,6 +10058,12 @@ scenarios.farm = function()
       local hist = {{sent = 60, spent = 300, got = 40, inside = true, sig = was}, {sent = 30, spent = 100, got = 32, inside = true, sig = was},
         {sent = 45, spent = 200, got = 20, inside = true, sig = more}}
       local same, reinforced = lp("debug_best_size", hist, 10, was), lp("debug_best_size", hist, 10, more)
+      -- A siege at a cheap walled place (one gun, its way in 5) is still a wave it sends: WAVE_MIN at the least (4 bursters
+      -- and 11 at the star fort's corner waited six trials for a wave of 24 it would never send; the siege lab, 2026-10-31).
+      local fid = (lp("farm_state").farms or {})[1]
+      local sz = fid and lp("debug_siege_size", fid.id, {cost = 5, cover = 1, openable = 1, walled = true, standing = 0,
+        target = {x = S.at(0, 0)[1], y = S.at(0, 0)[2]}})
+      check("farm: a siege no smaller than the least wave", sz ~= nil and sz.k + sz.n + (sz.fodder or 0) >= 24, serpent.line(sz))
       check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
         serpent.line({same = same, reinforced = reinforced}))
       local now = lp("cell_sites")[1] or {}
