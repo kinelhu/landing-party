@@ -81,10 +81,13 @@ run)
   out="$P/script-output/landing-party"
   rm -rf "$out" "$P/saves/"*.zip
   cp "$SAVE" "$P/saves/in.zip"
-  serve "$P" "$P/saves/in.zip" "$out/lab-done.txt" $((TRIALS * 900 + 300))
+  # (The last run's results cleared first: a run that died left them, and they were read as the new one's, 2026-10-30.)
   dest="$REPO/docs/sim/lab-$NAME"
   mkdir -p "$dest"
-  rm -rf "$dest"/lab*.jsonl "$dest/costmaps"; cp "$out"/lab*.jsonl "$out/decisions.txt" "$dest/" 2>/dev/null || true; cp -R "$out/costmaps" "$dest/" 2>/dev/null || true
+  rm -rf "$dest"/lab*.jsonl "$dest/costmaps" "$dest/report.md" "$dest/report.html" "$dest/decisions.txt"
+  serve "$P" "$P/saves/in.zip" "$out/lab-done.txt" $((TRIALS * 900 + 300))
+  if grep -q "Error while running event" "$P/server.out"; then echo "LAB FAILED: the mod errored"; grep -A4 "Error while running event" "$P/server.out" | head -8; exit 1; fi
+  cp "$out"/lab*.jsonl "$out/decisions.txt" "$dest/" 2>/dev/null || true; cp -R "$out/costmaps" "$dest/" 2>/dev/null || true
   cp "$P/saves/lab-out.zip" "$dest/lab-out.zip"
   uv run --quiet --with matplotlib python3 -I "$REPO/scripts/lab_report.py" "$dest/lab.jsonl" "$dest" || echo "report skipped"
   echo "trials: $dest/report.md; the learning kept: $dest/lab-out.zip"

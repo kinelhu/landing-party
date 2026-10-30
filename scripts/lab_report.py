@@ -128,7 +128,9 @@ def page_data(dest):
         if len(parts) == 3 and parts[0].isdigit() and "TRACE" not in parts[2]:
             decisions.append((int(parts[0]), parts[1], parts[2]))
     costmaps = []
-    for f in sorted((d / "costmaps").glob("farm*-*.json")) if (d / "costmaps").exists() else []:
+    # (The plan's own maps first, at the grain its waves follow; the farm's coarse weighing where there is none.)
+    plans = sorted((d / "costmaps").glob("plan-*.json")) if (d / "costmaps").exists() else []
+    for f in plans or (sorted((d / "costmaps").glob("farm*-*.json")) if (d / "costmaps").exists() else []):
         try:
             costmaps.append(json.load(open(f)))
         except ValueError:
@@ -175,7 +177,8 @@ def page_data(dest):
                      "lost_by": w.get("lost_by") or {}, "kills": w.get("kills") or {},
                      "bursts": (w.get("bursters") or {}).get("broke") or {}, "inside": w.get("t_inside") is not None,
                      "breach": w.get("breach"), "outcome": w.get("outcome"), "t_breach": w.get("t_breach"),
-                     "t_inside": w.get("t_inside")} if w else None,
+            "big_sent": w.get("big_sent"), "big_set_off": w.get("big_set_off"),
+                     "t_inside": w.get("t_inside"), "razed": w.get("razed_worth")} if w else None,
             "prices_before": (t.get("prices_before") or {}).get("price", {}),
             "prices_after": (t.get("prices_after") or {}).get("price", {}),
             "alive": t.get("alive"), "frames": frames, "units": units, "defhp": defhp, "big": big, "deaths": deaths,

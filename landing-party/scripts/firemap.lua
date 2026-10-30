@@ -33,6 +33,14 @@ function firemap.read(surface, at, radius, forces, price, types)
     force = forces}) do
     if threat.firing(t) and threat.reach(t) > 0 then
       local e = {x = t.position.x, y = t.position.y, r = threat.reach(t), p = price and price(t) or firemap.AFFORD, e = t}
+      -- (A turret that turns through less than a circle, about the way its base faces (its direction, 16 to a turn); its
+      -- minimum reach; a fluid turret's burn: the fire consult, 2026-10-30.)
+      local prof = threat.profile(t.name)
+      if prof then
+        if prof.arc and prof.arc < 1 then e.arc, e.o = prof.arc, (t.direction or 0) / 16 end
+        if (prof.min_reach or 0) > 0 then e.r0 = prof.min_reach end
+        e.burn = prof.burn
+      end
       list[#list + 1] = e
       local k = math.floor(e.x / size) .. "," .. math.floor(e.y / size)
       cells[k] = cells[k] or {}
@@ -42,14 +50,25 @@ function firemap.read(surface, at, radius, forces, price, types)
   return {list = list, cells = cells, size = size, surface = surface, forces = forces}
 end
 
--- Each standing turret whose reach covers pos, to f (which returns true to stop).
+-- Whether a turret's arc takes in (x, y), d tiles off, with `give` tiles of slack across (a box's half).
+local function in_arc(t, x, y, d, give)
+  if not t.arc or d <= (give or 0) + 1 then return true end
+  local o = (math.atan2(x - t.x, t.y - y) / (2 * math.pi)) % 1
+  local diff = math.abs(o - t.o)
+  diff = math.min(diff, 1 - diff)
+  return diff <= t.arc / 2 + (give and math.atan(give / d) / (2 * math.pi) or 0)
+end
+firemap.in_arc = in_arc
+
+-- Each standing turret whose reach covers pos (past its minimum reach, inside its arc), to f (which returns true to stop).
 local function each(map, pos, f)
   local x, y = xy(pos)
   local cx, cy = math.floor(x / map.size), math.floor(y / map.size)
   for i = cx - 1, cx + 1 do
     for j = cy - 1, cy + 1 do
       for _, t in ipairs(map.cells[i .. "," .. j] or {}) do
-        if (t.x - x) ^ 2 + (t.y - y) ^ 2 <= t.r * t.r and t.e.valid and f(t) then return end
+        local d2 = (t.x - x) ^ 2 + (t.y - y) ^ 2
+        if d2 <= t.r * t.r and d2 >= (t.r0 or 0) ^ 2 and in_arc(t, x, y, math.sqrt(d2)) and t.e.valid and f(t) then return end
       end
     end
   end
@@ -89,7 +108,8 @@ function firemap.entries_box(map, pos, half)
     for j = math.floor((y - half) / s) - 1, math.floor((y + half) / s) + 1 do
       for _, t in ipairs(map.cells[i .. "," .. j] or {}) do
         local dx, dy = math.max(0, math.abs(t.x - x) - half), math.max(0, math.abs(t.y - y) - half)
-        if dx * dx + dy * dy <= t.r * t.r and t.e.valid then out[#out + 1] = t end
+        if dx * dx + dy * dy <= t.r * t.r and in_arc(t, x, y, math.sqrt((t.x - x) ^ 2 + (t.y - y) ^ 2), half * 1.42)
+          and t.e.valid then out[#out + 1] = t end
       end
     end
   end

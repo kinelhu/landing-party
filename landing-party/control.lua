@@ -481,6 +481,8 @@ remote.add_interface("landing-party", {
     if t.leader_off ~= nil then storage.leader_off = t.leader_off end
     -- The biotech's pens send no wave on their own (tests send them: herd_wave).
     if t.herd_off ~= nil then storage.herd_off = t.herd_off end
+    -- (Its big bursters developed, as if walls had held its waves: herd.develop_bursters.)
+    if t.bursters ~= nil then know.of("biotech").bursters = t.bursters and game.tick or nil end
     -- No biotech arrival (farm.lua); tests that bring it do so with farm_arrive.
     if t.biotech_off ~= nil then storage.biotech_off = t.biotech_off end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.

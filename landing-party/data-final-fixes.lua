@@ -68,4 +68,41 @@ do
   data:extend{{type = "mod-data", name = "lp-bites", data = bites}}
 end
 
+-- What a fluid turret's fire does (lp-fire, read by threat.profile): the sticker its stream leaves on what it lands on (its
+-- hits, a hit's damage and type: a flamethrower's, 180 of 16.7 fire over 30 s, 3,000, a behemoth's health), and the arc it
+-- turns through. The fire consult, docs/reviews/2026-10-30-flamethrower-consult.md: priced as a gun, two flamethrowers
+-- that killed 686 mediums of a wave of 750 were learned at 37 each.
+do
+  local function list(x) if x == nil then return {} end; if x[1] ~= nil or next(x) == nil then return x end; return {x} end
+  local function sticker_of(a, seen)
+    for _, item in ipairs(list(a)) do
+      for _, del in ipairs(list(item.action_delivery)) do
+        for _, eff in ipairs(list(del.target_effects)) do
+          if eff.type == "create-sticker" and data.raw.sticker[eff.sticker] then return data.raw.sticker[eff.sticker] end
+          if eff.type == "nested-result" then local s = sticker_of(eff.action, seen); if s then return s end end
+        end
+        local via = del.stream and data.raw.stream[del.stream]
+        if via and not seen[via.name] then
+          seen[via.name] = true
+          local s = sticker_of(via.initial_action, seen) or sticker_of(via.action, seen) or sticker_of(via.final_action, seen)
+          if s then return s end
+        end
+      end
+    end
+  end
+  local fire = {}
+  for name, t in pairs(data.raw["fluid-turret"] or {}) do
+    local ap = t.attack_parameters
+    local st = ap and ap.ammo_type and sticker_of(ap.ammo_type.action, {})
+    local dmg = st and st.damage_per_tick
+    if dmg and dmg.amount and dmg.amount > 0 then
+      fire[name] = {hits = math.floor((st.duration_in_ticks or 0) / (st.damage_interval or 1)), hit = dmg.amount,
+        every = st.damage_interval or 1, type = dmg.type or "fire", arc = ap.turn_range or 1}
+    elseif ap then
+      fire[name] = {hits = 0, hit = 0, type = "fire", arc = ap.turn_range or 1}
+    end
+  end
+  data:extend{{type = "mod-data", name = "lp-fire", data = fire}}
+end
+
 require("air")

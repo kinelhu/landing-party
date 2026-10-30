@@ -37,8 +37,27 @@ function threat.profile(name)
     cooldown = ap and ap.cooldown or 60, dmg = ap and ap.ammo_categories and ap.ammo_categories[1] or kind,
     -- (Artillery's own range: turret_range where its prototype gives one, else its attack's.)
     artillery = kind == "artillery" and (proto.turret_range or (ap and ap.range)) or nil}
+  -- A fluid turret's arc (the share of a circle it turns through about its facing) and its burn (data-final-fixes: lp-fire).
+  local f = prototypes.mod_data["lp-fire"] and prototypes.mod_data["lp-fire"].data[name]
+  if f then p.arc, p.burn = f.arc, f.hits > 0 and f or nil
+  elseif ap and ap.turn_range and ap.turn_range < 1 then p.arc = ap.turn_range end
   profiles[name] = p
   return p
+end
+
+-- Whether a unit of this breed dies of the burn alone (its health no more than the burn's hits, each less what it resists).
+local burnt = {}
+function threat.burns(burn, name)
+  local key = name .. "|" .. burn.hit .. "|" .. burn.hits
+  local v = burnt[key]
+  if v == nil then
+    local u = prototypes.entity[name]
+    local r = u and u.resistances and u.resistances[burn.type]
+    local per = math.max(0, burn.hit - (r and r.decrease or 0)) * (1 - (r and r.percent or 0))
+    v = u ~= nil and u.get_max_health() <= burn.hits * per
+    burnt[key] = v
+  end
+  return v
 end
 
 -- How far it reaches (artillery: its range with its force's research).

@@ -10,6 +10,10 @@
   --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #85847e;
   --foe: #2a78d6; --ours: #1baf7a; --siege: #eb6834;
   --wall: #a3a8a6; --building: #c9cdcb; --mine: #9a8466; --dead: #0b0b0b;
+  /* Killers and the player's losses by kind (validated, adjacent order): laser, flamethrower, mines, gun turrets. */
+  --k-laser: #2a78d6; --k-flame: #eb6834; --k-mine: #6250d6; --k-gun: #eda100; --k-other: #85847e;
+  /* Its breeds, small to big: one hue, Synthexis's (validated ordinal). */
+  --b-1: #5cc49b; --b-2: #2fa97c; --b-3: #1a855f; --b-4: #0f5c42;
   --band-a: rgba(11, 11, 11, 0.035); --band-b: rgba(11, 11, 11, 0.075);
   --ui: "IBM Plex Sans", "Helvetica Neue", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -22,6 +26,8 @@
     --foe: #3987e5; --ours: #199e70; --siege: #d95926;
     --wall: #6f7472; --building: #3b3f3d; --mine: #8a7556; --dead: #f0efec;
     --band-a: rgba(240, 239, 236, 0.03); --band-b: rgba(240, 239, 236, 0.07);
+    --k-laser: #3987e5; --k-flame: #d95926; --k-mine: #9085e9; --k-gun: #c98500; --k-other: #8f8e86;
+    --b-1: #0f6e4c; --b-2: #17906a; --b-3: #3fbf8e; --b-4: #8fdcba;
   }
 }
 :root[data-theme="dark"] {
@@ -31,6 +37,8 @@
   --foe: #3987e5; --ours: #199e70; --siege: #d95926;
   --wall: #6f7472; --building: #3b3f3d; --mine: #8a7556; --dead: #f0efec;
   --band-a: rgba(240, 239, 236, 0.03); --band-b: rgba(240, 239, 236, 0.07);
+  --k-laser: #3987e5; --k-flame: #d95926; --k-mine: #9085e9; --k-gun: #c98500; --k-other: #8f8e86;
+  --b-1: #0f6e4c; --b-2: #17906a; --b-3: #3fbf8e; --b-4: #8fdcba;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
@@ -173,7 +181,8 @@ const STAGE_NAME = { scout: "scouting", gather: "gathering", march: "march", sta
 let C = {};
 function readColors() {
   const s = getComputedStyle(document.documentElement);
-  ["surface", "sheet", "raise", "rule", "grid", "ink", "ink-2", "ink-3", "foe", "ours", "siege", "wall", "building", "mine", "dead", "band-a", "band-b"].forEach(k => C[k] = s.getPropertyValue("--" + k).trim());
+  ["surface", "sheet", "raise", "rule", "grid", "ink", "ink-2", "ink-3", "foe", "ours", "siege", "wall", "building", "mine", "dead", "band-a", "band-b",
+    "k-laser", "k-flame", "k-mine", "k-gun", "k-other", "b-1", "b-2", "b-3", "b-4"].forEach(k => C[k] = s.getPropertyValue("--" + k).trim());
 }
 readColors();
 
@@ -547,19 +556,62 @@ const legendRow = items => `<div style="display:flex;gap:14px;font-size:13px;col
 function trialStats(k) {
   const tr = DATA.trials[k], P = prep[k], w = tr.wave;
   if (!tr.frames.length) return { none: true };
-  const t0 = t0Of(tr), xsec = P.times.map(t => (t - t0) / 60);
+  // The siege phase: from 10 s before its herd reached the breach (its first frame at the breach, inside, out or blind) to
+  // the end; time counted from the breach. (Its preparation left out: the scout's loop and the march are minutes of nothing.)
+  const SIEGE = new Set(["breach", "inside", "withdraw", "blind"].map(s => DATA.stages.indexOf(s)));
+  let fb = tr.frames.findIndex(f => SIEGE.has(f[1]));
+  if (fb < 0) fb = Math.max(0, tr.frames.findIndex(f => f[1] === DATA.stages.indexOf("march")));
+  const f0 = Math.max(0, fb - 20);
+  const t0 = P.times[fb], xsec = P.times.map(t => (t - t0) / 60);
   const deaths = [...P.deaths].sort((a, b) => a.t - b.t);
-  let lost = 0; const lostPts = [[xsec[0], 0]];
+  let lostSum = 0; const lostPts = [[xsec[0], 0]];
   let guns = 0, walls = 0; const gunPts = [[xsec[0], 0]];
   for (const d of deaths) {
     const x = (d.t - t0) / 60;
-    if (d.force === "lp-biotech") { const v = P.worthOf(d.id); if (v > 0) { lost += v; lostPts.push([x, lost]); } }
+    if (d.force === "lp-biotech") { const v = P.worthOf(d.id); if (v > 0) { lostSum += v; lostPts.push([x, lostSum]); } }
     else if (d.def >= 0 && TURRETS.has(ENTS[d.def].kind)) { guns++; gunPts.push([x, guns]); }
     else if (d.def >= 0 && ENTS[d.def].kind === "wall") walls++;
   }
-  lostPts.push([xsec[xsec.length - 1], lost]); gunPts.push([xsec[xsec.length - 1], guns]);
-  const strength = tr.units.map((us, fi) => [xsec[fi], us.reduce((a, u) => a + ((["herd", "burster", "scout", "sweep"][u[5]] === "burster") ? 0 : u[4] / MED), 0)]);
-  const bands = stageRuns(tr).map(([a, b, st]) => [xsec[a], xsec[Math.min(b, xsec.length - 1)], STAGE_NAME[st] || st]);
+  lostPts.push([xsec[xsec.length - 1], lostSum]); gunPts.push([xsec[xsec.length - 1], guns]);
+  const strength = tr.units.map((us, fi) => [xsec[fi], us.reduce((a, u) => a + ((["herd", "burster", "scout", "sweep"][u[5]] === "burster") ? 0 : u[4] / MED), 0)]).slice(f0);
+  const bands = stageRuns(tr).filter(([a, b]) => b > f0).map(([a, b, st]) => [xsec[Math.max(a, f0)], xsec[Math.min(b, xsec.length - 1)], STAGE_NAME[st] || st]);
+  const x0 = xsec[f0], x1 = xsec[xsec.length - 1];
+  // Its losses by what killed them, in mediums, cumulative from the window's start.
+  const causeOf = n => n === "laser-turret" ? "Lasers" : n === "flamethrower-turret" ? "Flamethrowers" : n === "land-mine" ? "Mines"
+    : n === "gun-turret" ? "Gun turrets" : "Other or unattributed";
+  const CAUSES = [["Lasers", C["k-laser"]], ["Flamethrowers", C["k-flame"]], ["Mines", C["k-mine"]], ["Gun turrets", C["k-gun"]], ["Other or unattributed", C["k-other"]]];
+  const byCause = {}; CAUSES.forEach(([c]) => byCause[c] = { v: 0, pts: [[x0, 0]] });
+  for (const d of deaths) {
+    if (d.force !== "lp-biotech" || d.t < P.times[f0]) continue;
+    const v = P.worthOf(d.id); if (v <= 0) continue;
+    const c = byCause[causeOf(d.killer)]; c.v += v; c.pts.push([(d.t - t0) / 60, c.v]);
+  }
+  CAUSES.forEach(([c]) => byCause[c].pts.push([x1, byCause[c].v]));
+  const causeSeries = CAUSES.filter(([c]) => byCause[c].v > 0).map(([c, col]) => ({ name: c, col, pts: byCause[c].pts, step: true }));
+  // Its herd by breed: units alive, small to big, its big bursters apart.
+  const groupOf = n => n === "lp-bred-big-burster" ? "Big bursters" : n === "lp-bred-behemoth-biter" ? "Behemoths" : n === "lp-bred-big-biter" ? "Big biters"
+    : (n === "lp-bred-medium-biter" || n === "lp-bred-small-biter") ? "Small and medium" : "Spitters, cinders and others";
+  const BREEDS = [["Spitters, cinders and others", C["b-1"]], ["Small and medium", C["b-2"]], ["Big biters", C["b-3"]], ["Behemoths", C["b-4"]], ["Big bursters", C.siege]];
+  const herdPts = {}; BREEDS.forEach(([g]) => herdPts[g] = []);
+  for (let fi = f0; fi < tr.units.length; fi++) {
+    const n = {}; BREEDS.forEach(([g]) => n[g] = 0);
+    for (const u of tr.units[fi]) { const role = ["herd", "burster", "scout", "sweep"][u[5]]; if (role === "herd" || role === "burster") n[groupOf(nm(u[1]))]++; }
+    BREEDS.forEach(([g]) => herdPts[g].push([xsec[fi], n[g]]));
+  }
+  const herdSeries = BREEDS.filter(([g]) => herdPts[g].some(p => p[1] > 0)).map(([g, col]) => ({ name: g, col, pts: herdPts[g] }));
+  // What it destroyed of the player's, by kind, cumulative: its guns, and the rest.
+  const KINDS_G = [["Lasers", "laser", C["k-laser"]], ["Flamethrowers", "flamethrower", C["k-flame"]], ["Gun turrets", "gun", C["k-gun"]]];
+  const KINDS_R = [["Walls", "wall", C["ink-3"]], ["Mines", "mine", C["k-mine"]], ["Buildings", "building", C["ink"]]];
+  const lost = {}; [...KINDS_G, ...KINDS_R].forEach(([l]) => lost[l] = { v: 0, pts: [[x0, 0]] });
+  for (const d of deaths) {
+    if (d.def < 0 || d.t < P.times[f0]) continue;
+    const kind = ENTS[d.def].kind, k = kind === "pipe" || kind === "pole" ? "building" : kind;
+    const row = [...KINDS_G, ...KINDS_R].find(r => r[1] === k); if (!row) continue;
+    const c = lost[row[0]]; c.v++; c.pts.push([(d.t - t0) / 60, c.v]);
+  }
+  Object.values(lost).forEach(c => c.pts.push([x1, c.v]));
+  const mk = rows => rows.filter(([l]) => lost[l].v > 0).map(([l, , col]) => ({ name: l, col, pts: lost[l].pts, step: true }));
+  const gunSeries = mk(KINDS_G), restSeries = mk(KINDS_R);
   // Its bursters: set off by their own blast, or killed on the way, and how far from their gun.
   const bursters = [...P.tracks.values()].filter(t => t.role === "burster").map(t => {
     const d = P.deathOf.get(t.id), tg = P.target.get(t.id);
@@ -577,13 +629,15 @@ function trialStats(k) {
     let minhp = e.max; (hh || []).forEach(([, hp]) => { if (hp < minhp) minhp = hp; });
     rows.push({ e, kills: kills.length, med: kills.reduce((a, d) => a + P.worthOf(d.id), 0), dmg: e.max - minhp, died: dd ? (dd.t - t0) / 60 : null, by: dd ? (dd.killer || "a blast") : "" });
   });
-  return { xsec, lostPts, gunPts, strength, bands, bursters, set, killed, gunsByBlast, rows, lost, guns, walls };
+  return { xsec, x0, x1, lostPts, gunPts, strength, bands, bursters, set, killed, gunsByBlast, rows, lost: lostSum, guns, walls,
+    causeSeries, herdSeries, gunSeries, restSeries };
 }
 let SORT = { k: "med", dir: -1 };
 function renderStats() {
   const tr = DATA.trials[T], v = document.getElementById("v-stats"), S = trialStats(T);
   if (S.none) { v.innerHTML = `<p class="muted">No wave in trial ${tr.trial}. ${esc(tr.held || "")}</p>`; return; }
-  const w = tr.wave || {}, x1 = S.xsec[S.xsec.length - 1], mmss = x => `${Math.floor(x / 60)}:${String(Math.round(x % 60)).padStart(2, "0")}`;
+  const w = tr.wave || {}, x0 = S.x0, x1 = S.x1;
+  const mmss = x => { const a = Math.round(Math.abs(x)); return `${x < -0.5 ? "−" : ""}${Math.floor(a / 60)}:${String(a % 60).padStart(2, "0")}`; };
   let h = `<div class="tiles">
     <div class="tile"><span class="l">Strength sent</span><span class="v">${fmt(w.worth)}</span><span class="d">mediums, bursters apart</span></div>
     <div class="tile"><span class="l">Lost</span><span class="v">${fmt(S.lost)}</span><span class="d">mediums; its plan expected ${fmt((w.predicted || 0) / 2)} going in</span></div>
@@ -591,13 +645,13 @@ function renderStats() {
     <div class="tile"><span class="l">Bursters at their gun</span><span class="v">${S.set} of ${S.bursters.length}</span><span class="d">${S.killed} killed on the way</span></div>
     <div class="tile"><span class="l">Guns per burster set off</span><span class="v">${S.set ? fmt(S.gunsByBlast / S.set, 2) : "–"}</span><span class="d">its planner assumes 0.9</span></div>
   </div>`;
+  const fig = (id, title, note, series, opts) => `<figure><figcaption>${title}<small>${note}</small></figcaption>${series.length > 1 ? legendRow(series.map(se => [se.name, se.col])) : ""}${series.length ? lineChart(id, Object.assign({ series, xs: [x0, x1], xfmt: mmss, bands: S.bands }, opts || {})) : `<p class="muted">None.</p>`}</figure>`;
+  h += `<p class="section-note">From 10 seconds before its herd reached the breach; time counted from the breach.</p>`;
   h += `<div class="figs">
-    <figure><figcaption>What it lost, in mediums<small>Cumulative, over the trial, against what its plan expected the way in to cost.</small></figcaption>
-      ${lineChart("c-lost", { label: "Mediums lost over time", series: [{ name: "Lost", col: C.ours, pts: S.lostPts, step: true }], xs: [S.xsec[0], x1], xfmt: mmss, refs: [{ y: (w.predicted || 0) / 2, label: "plan: the way in" }], bands: S.bands })}</figure>
-    <figure><figcaption>Its strength on the field, in mediums<small>The living herd's health, bursters apart.</small></figcaption>
-      ${lineChart("c-str", { label: "Strength over time", series: [{ name: "Strength", col: C.ours, pts: S.strength }], xs: [S.xsec[0], x1], xfmt: mmss, bands: S.bands })}</figure>
-    <figure><figcaption>Your guns destroyed<small>Cumulative, over the trial.</small></figcaption>
-      ${lineChart("c-guns", { label: "Guns destroyed over time", series: [{ name: "Guns destroyed", col: C.foe, pts: S.gunPts, step: true }], xs: [S.xsec[0], x1], xfmt: mmss, bands: S.bands })}</figure>
+    ${fig("c-cause", "What it lost, by what killed it", "Mediums, cumulative. Unattributed: burn deaths after the turret that lit them was gone, and the like.", S.causeSeries, { label: "Mediums lost by cause over time" })}
+    ${fig("c-herd", "Its herd, by breed", "Units alive.", S.herdSeries, { label: "Units alive by breed over time" })}
+    ${fig("c-guns", "Your guns it destroyed, by kind", "Cumulative.", S.gunSeries, { label: "Guns destroyed by kind over time" })}
+    ${fig("c-rest", "Your walls, mines and buildings it destroyed", "Cumulative.", S.restSeries, { label: "Walls, mines and buildings destroyed over time" })}
   </div>`;
   // By kind, then each defence.
   const kinds = {};
@@ -623,6 +677,21 @@ function renderAcross() {
   const plan = DATA.trials.map(t => t.wave ? (t.wave.predicted || 0) / 2 : null), str = DATA.trials.map(t => t.wave ? t.wave.worth : null);
   const protos = new Set(); DATA.trials.forEach(t => [t.prices_before, t.prices_after].forEach(p => Object.values(p || {}).forEach(o => Object.keys(o).forEach(k => protos.add(k)))));
   let h = `<p class="section-note">Whether it adapts: a fortress left as it is should see its sieges change as it learns, and settle. Identical rows mean it learned nothing from the trial before.</p>`;
+  // The attempts (the design consult's step 1): each trial's method, breach cell (16 tiles) and outcome; how many breach
+  // cells it tried, and the largest jump of any price between two trials.
+  const cellOf = p => p ? `${Math.floor(p[0] / 16)},${Math.floor(p[1] / 16)}` : "–";
+  const methodOf = t => !t.wave ? "none" : (t.wave.big_sent || 0) > 0 || t.siege ? "siege" : "raid";
+  const cells = new Set(DATA.trials.filter(t => t.wave && t.plan.breach).map(t => cellOf(t.plan.breach)));
+  let jump = 0, jumpAt = "";
+  DATA.trials.forEach(t => { for (const foe of Object.keys(t.prices_after || {})) for (const [p, a] of Object.entries(t.prices_after[foe])) {
+    const b = ((t.prices_before || {})[foe] || {})[p]; if (b != null && Math.abs(a - b) > jump) { jump = Math.abs(a - b); jumpAt = `${short(p)}, trial ${t.trial}`; } } });
+  const helds = DATA.trials.filter(t => t.outcome === "held").length;
+  h += `<div class="tiles">
+    <div class="tile"><span class="l">Breach cells tried</span><span class="v">${cells.size}</span><span class="d">16-tile cells, over ${DATA.trials.length} trials</span></div>
+    <div class="tile"><span class="l">Trials with no attack</span><span class="v">${helds}</span><span class="d">its farm held</span></div>
+    <div class="tile"><span class="l">Largest price jump</span><span class="v">${fmt(jump, 1)}</span><span class="d">${jumpAt ? "mediums a gun, " + esc(jumpAt) : "none"}</span></div>
+  </div>`;
+  h += `<figure><figcaption>Its attempts<small>Method, where it broke in, what it sent, and how it went.</small></figcaption><div class="tablewrap"><table><thead><tr><th>Trial</th><th>Method</th><th>Breach cell</th><th>Make-up</th><th>Rams set off</th><th>Got in</th><th class="n">Razed</th><th class="n">Lost</th></tr></thead><tbody>${DATA.trials.map(t => { const w = t.wave || {}; const mk = Object.entries(w.made_of || {}).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${v} ${short(k)}`).join(", "); const lost = Object.values(w.lost_worth_by || {}).reduce((a, b) => a + b, 0); return `<tr><td>${t.trial}</td><td>${methodOf(t)}</td><td>${t.wave ? cellOf(t.plan.breach) : "–"}</td><td>${esc(mk) || (t.held ? "held: " + esc(t.held.slice(0, 60)) : "–")}</td><td class="n">${t.wave ? `${w.big_set_off || 0} of ${w.big_sent || 0}` : ""}</td><td>${t.wave ? (w.inside ? "yes" : "no") : ""}</td><td class="n">${t.wave ? fmt(w.razed || 0) : ""}</td><td class="n">${t.wave ? fmt(lost) : ""}</td></tr>`; }).join("")}</tbody></table></div></figure>`;
   h += `<div class="figs">
     <figure><figcaption>Lost, in mediums</figcaption>${columns("x-lost", { label: "Mediums lost by trial", cats, series: [{ name: "Lost", col: C.ours, vals: lost }] })}</figure>
     <figure><figcaption>Your guns destroyed</figcaption>${columns("x-guns", { label: "Guns destroyed by trial", cats, series: [{ name: "Guns destroyed", col: C.foe, vals: guns }] })}</figure>

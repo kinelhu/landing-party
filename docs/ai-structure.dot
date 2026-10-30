@@ -10,7 +10,7 @@ digraph ai {
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
     "ground" [label="ground\n38 lines", width=0.84, fillcolor="#d9f0d9"];
-    "threat" [label="threat\n137 lines", width=0.95, fillcolor="#eef2f7"];
+    "threat" [label="threat\n156 lines", width=0.97, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -71,13 +71,13 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n3105 lines", width=3.80, fillcolor="#f7dede"];
-    "farm" [label="farm\n1933 lines", width=2.95, fillcolor="#f7dede"];
+    "herd" [label="herd\n3303 lines", width=3.80, fillcolor="#f7dede"];
+    "farm" [label="farm\n1965 lines", width=2.98, fillcolor="#f7dede"];
     "creep" [label="creep\n557 lines", width=1.42, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
-    "firemap" [label="firemap\n150 lines", width=0.97, fillcolor="#eef2f7"];
+    "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
     "valuemap" [label="valuemap\n195 lines", width=1.02, fillcolor="#eef2f7"];
-    "costmap" [label="costmap\n331 lines", width=1.17, fillcolor="#eef2f7"];
+    "costmap" [label="costmap\n353 lines", width=1.19, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n101 lines", width=0.91, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -89,7 +89,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n743 lines", width=1.63, fillcolor="#eef2f7"];
+    "control" [label="control\n745 lines", width=1.63, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n125 lines", width=0.94, fillcolor="#d9f0d9"];

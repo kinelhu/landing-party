@@ -303,9 +303,11 @@ do
   -- to a wall of lasers and flamethrowers, none to bullets, rockets and artillery, its counters (balance keeps counters).
   c.max_health = BIG_BURST.health
   c.resistances = {{type = "laser", percent = 50}, {type = "fire", percent = 50}}
-  -- Its bite the behemoth's: set off by its herd at the gun it is sent at (herd.lua detonate), or by its death. Its attack
-  -- its blast, blocked on the march by a pipe or a pole it attacked that, and 7 of 13 burst on the way (the siege test,
-  -- 2026-10-28).
+  -- Its bite the behemoth's. Its blast whole when its herd sets it off where it reaches the gun it is sent at or the wall
+  -- (herd.lua detonate: its death and the rest of its blast in script); killed short of it, its core alone goes (BIG_BURST.core within half its reach): at the wall a hole half as
+  -- wide, in the open nothing that matters (the user, 2026-10-30: one burster punched through any wall, and shot down at
+  -- the wall its death blast opened it all the same, 68 wall pieces from two in the user's fort: nothing the player built
+  -- could stop it. With no blast at all, the siege test's laser wall killed all 12 short of it and stood whole).
   c.localised_name = {"entity-name.lp-bred-big-burster"}
   c.localised_description = {"entity-description.lp-bred-big-burster"}
   ember(c.run_animation, 0)
@@ -316,9 +318,8 @@ do
   end
   c.dying_trigger_effect = {
     {type = "create-entity", entity_name = "lp-cinder-fissure"},
-    {type = "create-entity", entity_name = "lp-big-burst-explosion"},
     {type = "create-entity", entity_name = "lp-cinder-fissure-scorchmark"},
-    area(BIG_BURST.r, BIG_BURST.amount), area(BIG_BURST.r / 2, BIG_BURST.core)}
+    area(BIG_BURST.r / 2, BIG_BURST.core)}
   table.insert(out, c)
   -- Its blast seen as what it does (the user, 2026-10-28: "we need to add a green explosion FX or something if they're
   -- going to be as strong as this"): the big artillery shell's explosion in the burster's acid green, its blast's breadth
@@ -395,17 +396,9 @@ do
       {evolution_factor = 0.45, weight = 0.0}, {evolution_factor = 0.65, weight = 0.1}, {evolution_factor = 1.0, weight = 0.1}}})
   end
 end
--- Its big bursters from evolution 0.85, one in a hundred of what it breeds at full evolution: bred to order (farm.lua) when
--- its own die mostly to lasers and flamethrowers.
-do
-  local first = pen.result_units[1]
-  if first[1] then
-    table.insert(pen.result_units, {"lp-bred-big-burster", {{0.85, 0.0}, {1.0, 0.01}}})
-  else
-    table.insert(pen.result_units, {unit = "lp-bred-big-burster", spawn_points = {
-      {evolution_factor = 0.85, weight = 0.0}, {evolution_factor = 1.0, weight = 0.01}}})
-  end
-end
+-- Its big bursters are not bred by chance: hatched to order alone, once it has developed them (farm.lua: walls that held
+-- its waves; the user, 2026-10-30: "a Synthexis tech they can develop once they can't siege without them"). Bred by chance
+-- from 0.85, two came with a siege that had ordered none, and stood at the wall.
 -- Its stompers from evolution 0.8, one in fifty of what it breeds from 0.95.
 do
   local first = pen.result_units[1]

@@ -7366,13 +7366,27 @@ scenarios.lab = function()
       end
     end
     L.center = {k > 0 and cx / k or 0, k > 0 and cy / k or 0}
+    -- The ground round the fort cleared, in this copy alone (cliffs, trees, rocks within CLEAR_R): the lab tries a fort, not
+    -- the map's terrain. (A cliff walked herds round its end past the user's fort's mined corner; routed round it, a plan
+    -- ran into woods where its legs failed and its herd scattered; the siege lab, 2026-10-30.)
+    local CLEAR_R = 450
+    local cleared = 0
+    for _, e in ipairs(surface().find_entities_filtered{type = {"cliff", "tree", "simple-entity"}, position = L.center, radius = CLEAR_R}) do
+      if e.valid and e.force.name ~= "player" then e.destroy(); cleared = cleared + 1 end
+    end
+    L.cleared = cleared
     local context = {}
     local f, pens = farm(), {}
     for _, p in ipairs(surface().find_entities_filtered{name = "lp-pen"}) do pens[#pens + 1] = xy(p.position) end
     local defences = {}
-    for i, d in ipairs(L.snap) do defences[i] = {d.name, d.pos[1], d.pos[2], d.max, d.type} end
+    for i, d in ipairs(L.snap) do defences[i] = {d.name, d.pos[1], d.pos[2], d.max, d.type, d.dir} end
+    -- (The ground its herds cannot cross, for the page: cliffs and water within 300 tiles.)
+    local cliffs = {}
+    for _, c in ipairs(surface().find_entities_filtered{type = "cliff", position = L.center, radius = 900}) do
+      cliffs[#cliffs + 1] = xy(c.position)
+    end
     out("lab-run.jsonl", {run = L.run, trials = params.lab_trials, biomass = params.lab_biomass, center = L.center,
-      defences = defences, context = context, pens = pens, farm = f and f.id, tick = game.tick})
+      defences = defences, context = context, pens = pens, farm = f and f.id, tick = game.tick, cliffs = cliffs})
   end
   -- Each defence as it was, rebuilt where gone, at full health, its gun turrets loaded.
   local function rebuild()
@@ -9402,6 +9416,9 @@ scenarios.farm = function()
       S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
       lp("debug_learn_price", "player", "land-mine", 40)
       lp("debug_tune", {march_trace = true})
+      -- (Its big bursters developed: what is under test is the siege they make, not their development, herd.develop_bursters.
+      -- Not in the lab: there they come of the walls that hold its waves.)
+      if mix ~= "lab" then lp("debug_tune", {bursters = true}) end
       -- behind: a second ring of lasers 10 tiles inside the wall, out of a burster's blast at the wall (nw's flamethrower
       -- line): its weighing read the wall as one its bursters open, its plan refused every siege, and the two alternated
       -- for five hours at one place while 13,000 biomass piled up (2026-10-29).
@@ -9999,16 +10016,29 @@ scenarios.farm = function()
       -- and 10 of 13 while a biter in two incubators' stock was counted twice.)
       check("farm: siege, its wave came with the big bursters it ordered", k > 0 and (S.max_near or 0) >= k - 2,
         string.format("ordered %d, near the base at once %d", k, S.max_near or 0))
-      -- Its bursters opened the wall and its wave went in: what a siege is for. (Lasers broken, at least 8, was checked here:
-      -- with its growth paid apart from its breeding its wave came five minutes later at another spot, 2 of its bursters
-      -- reached their guns and it broke 6, yet its bursts broke 64 wall pieces and 8 went through, 5 before with 13 broken;
-      -- the user, 2026-10-29: bursters are for the wall. Its sweep has its own check below.)
-      local bw
+      -- This wall holds against a siege of bursters walking up to it (the user, 2026-10-30: a big burster killed short of its
+      -- gun or the wall fizzles, and "a heavily researched laser wall should stop a naive burster rush"; its death blasts had
+      -- opened it, 64 wall pieces, whatever killed them). What it must do is learn: what its bursters open (herd.opens) falls
+      -- below what it reckoned before any siege, and it does not lay the same siege at the same breach again.
+      local sieges, first = {}, nil
       for _, l in ipairs(lp("herd_state").log or {}) do
-        if l.breach then bw = {wall = l.bursters and l.bursters.broke and l.bursters.broke.wall or 0, inside = l.t_inside ~= nil}; break end
+        if (l.big_sent or 0) > 0 then
+          sieges[#sieges + 1] = l
+          first = first or l
+        end
       end
-      check("farm: siege, its bursts opened the wall and its wave went in", bw and bw.wall >= 30 and bw.inside,
-        serpent.line({bw = bw, lasers = string.format("%d -> %d", S.lasers0 or 0, lasers)}))
+      local opens = (lp("lab_prices").opens or {})["player"]
+      check("farm: siege, its bursters' yield learned below its first reckoning", first ~= nil and opens ~= nil and opens < 0.9,
+        serpent.line({opens = opens, sent = first and first.big_sent, set_off = first and first.big_set_off,
+          broke = first and first.bursters and first.bursters.broke, lasers = string.format("%d -> %d", S.lasers0 or 0, lasers)}))
+      local same = 0
+      for k = 2, #sieges do
+        local l = sieges[k]
+        if l.big_sent == first.big_sent and l.plan_breach and first.plan_breach and l.plan_breach[1] == first.plan_breach[1]
+          and l.plan_breach[2] == first.plan_breach[2] then same = same + 1 end
+      end
+      check("farm: siege, a siege that failed not laid again the same", first ~= nil and same == 0,
+        serpent.line({sieges = #sieges, same = same}))
       -- Its siege wave staged near where it broke in (within 200 tiles), not at its nest.
       local staged
       for _, l in ipairs(lp("herd_state").log or {}) do

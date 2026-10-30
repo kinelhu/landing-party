@@ -667,7 +667,9 @@ local function hatchable(f, surface, keep)
 end
 -- A wave's breeds to hatch, names only, within budget: its order first (want, less what it has), the dearest first, then
 -- by chance at its evolution (unfit left out).
-local function compose(f, surface, n, want, have, unfit, budget)
+-- strong: hatched by chance until its strength is that much (herd.strength), not n heads: a siege's herd drawn n heads of
+-- the mix came short of the strength its plan asked, and was refused four times running (the user's fort, 2026-10-30).
+local function compose(f, surface, n, want, have, unfit, budget, strong)
   local names, spent, order = {}, 0, {}
   for name in pairs(want or {}) do if shared.BREEDS[name] then order[#order + 1] = name end end
   table.sort(order, function(a, b)
@@ -684,7 +686,9 @@ local function compose(f, surface, n, want, have, unfit, budget)
   end
   local list, total = chance(f, surface, unfit)
   f.rng = f.rng or rng.new(f.id * 7919 + game.tick)
-  while #names < n and total > 0 do
+  local got = strong and herd.strength(names) + (strong.have or 0) or 0
+  -- (Drawn to its strength, n heads at the most all the same: WAVE_MAX for a siege.)
+  while total > 0 and #names < n and (not strong or got < strong.need) do
     local r, pick = rng.next(f.rng) * total, list[#list].name
     for _, x in ipairs(list) do
       r = r - x.w
@@ -693,6 +697,7 @@ local function compose(f, surface, n, want, have, unfit, budget)
     local price = shared.BREEDS[pick].cost
     if spent + price > budget then break end
     names[#names + 1], spent = pick, spent + price
+    if strong then got = got + herd.strength({pick}) end
   end
   return names, spent
 end
@@ -783,24 +788,9 @@ end
 -- work counted), within what its incubators hold (their count times an incubator's units). nil: none it can field. (The
 -- user, 2026-10-28: "avoid hard coding": its waves were sized at a fixed 120 and its bursters at most 20, and at a
 -- megabase's wall no siege could be laid.) Returns bursters, herd, its price.
--- Its herd (the user, 2026-10-30: in health): of the biters it breeds now, the one with the most health for its biomass,
--- as many as pay the way in (herd.strength), within what its incubators could hold (in biomass, hatching).
--- Returns bursters, herd, its price, the herd's breed.
-local function herd_breed(f, surface)
-  local can, best, bv = unlocked(evo_of(f, surface)), "lp-bred-medium-biter", 0
-  for name in pairs(can) do
-    local b = shared.BREEDS[name]
-    if b and not b.air and name:find("biter$") then
-      local v = herd.strength({name}) / b.cost
-      if v > bv or v == bv and name < best then best, bv = name, v end
-    end
-  end
-  return best
-end
--- place: {guns, extra, value} (target_from): its herd keeps enough past the place's guns, the share its bursters open
--- taken off, to win what it weighed there (valuemap.keeps_lost, as target_from weighs a siege). Paying the way in alone,
--- a herd of 14 behemoths and no burster was laid at a laser wall: it got in for 11 mediums, and the lasers it had not
--- opened killed 298 inside and 160 on its way out (the siege test, 2026-10-30).
+-- Its siege (the user, 2026-10-30: in health): big bursters, rams at a walled breach and openers of the guns they reach,
+-- and a herd of the culture's own mix as many as pay the way in (herd.strength), within what its incubators could hold
+-- (in biomass, hatching). Returns bursters, herd, its price, "mixed".
 local function siege_size(f, pl, place)
   -- (What its incubators hold over their guard, each: what it can send.)
   local s = game.surfaces[f.surface]
@@ -811,27 +801,53 @@ local function siege_size(f, pl, place)
     local cap = prototypes.entity["lp-pen"].max_count_of_owned_units or 0
     budget = math.max(budget, #f.pens * math.max(0, cap - guard_of(f)) * select(3, chance(f, s)))
   end
-  local breed = herd_breed(f, s)
-  local bc, hc, hw = shared.BREEDS["lp-bred-big-burster"].cost, shared.BREEDS[breed].cost, herd.strength({breed})
+  -- Its herd the culture's own mix, by chance at its evolution as any wave's (chance): its price and strength a unit the
+  -- mix's means. (The breed with the most health for its biomass, a siege of the user's fort was 42 to 61 behemoths and
+  -- its big bursters, nothing else: the user, 2026-10-30, "behemoth can't be the only unit besides bursters even if the
+  -- culture would love to".)
+  local _, _, hc, hw = chance(f, s)
+  local breed = "mixed"
+  local bc = shared.BREEDS["lp-bred-big-burster"].cost
   local reach = pl.openable or pl.cover or 0
   local best, least
   local foe = place and place.rival and place.rival[1] or "player"
-  for k = 0, math.ceil(reach / herd.opens(foe)) do
-    local lost = herd.way_cost(pl.cost, pl.cover, k, pl.openable, foe)
+  -- Its big bursters are rams (the user, 2026-10-30: "bursters should clearly be understood like siege rams that break
+  -- heavily fortified walls"): at a walled breach, enough that one reaches the wall alive (herd.reach, learned), whatever
+  -- guns they can reach. (Valued only for the guns their blast reached, it laid a siege of 45 behemoths and no burster at
+  -- the user's fort, whose guns stand 6 to 16 tiles behind its wall; the siege lab.)
+  local rams = pl.walled and math.ceil(1 / herd.reach(foe)) or 0
+  -- And with its rams a screen, the front of its herd, sent at the wall ahead of them while the rest waits out of reach
+  -- (herd.lua sequence): the guns' fire on it, not on its rams, nor on its herd standing
+  -- at the wall (screened by its whole herd, a siege of the user's fort got its ram to the wall, and its herd, at the wall
+  -- under the flamethrowers meanwhile, lost 692 of 746; the user, 2026-10-30: "build the fodder screen").
+  -- (One of its cheapest breed for each gun covering its breach. Sized as strong as those guns cost to cross, of its mix,
+  -- and its herd behind it paying them no more, its sieges of the user's fort shrank to 22 and broke nothing; the siege
+  -- lab, 2026-10-30.)
+  local fodder = rams > 0 and (pl.cover or 0) or 0
+  local fc = shared.BREEDS[herd.FODDER].cost
+  -- (With its rams and its screen, its herd waits out of reach while the wall is blown: it pays the crossing, not the
+  -- standing at the wall, pl.standing. Priced standing there, every siege of the user's fort asked more than 60 could pay,
+  -- and its screen was never laid; the siege lab, 2026-10-30.)
+  local base = pl.cost - (rams > 0 and (pl.standing or 0) or 0)
+  for k = rams, rams + math.ceil(reach / herd.opens(foe)) do
+    local lost = herd.way_cost(base, pl.cover, k, pl.openable, foe)
+    -- Its herd pays its way in once and the place's guns once (what its rams leave of them), and is not to come back: a
+    -- siege is a ram and the herd behind it, spent breaking in (the user, 2026-10-30). Sized to come back with half past
+    -- every gun, its herd at the user's fort grew trial by trial as it learned their price, 122 units, then 334, then 516.
+    -- (Twice its way in at the least: the wave's own test, herd.affords.)
     local need = 2 * lost
     if place and place.guns then
-      local defence = math.max(place.guns * (1 - herd.opened(pl.cover, k, pl.openable, foe)), 2 * lost) + (place.extra or 0)
-      local keep = 1 - (B.mind.min_gain or 0) / math.max(place.value or 0, 1e-9)
-      need = keep > 0 and math.max(need, defence / (valuemap.HOLD * keep)) or math.huge
+      need = math.max(need, lost + place.guns * (1 - herd.opened(pl.cover, k, pl.openable, foe)) + (place.extra or 0))
     end
-    local n = need < math.huge and math.floor(need / hw) + 1 or math.huge
-    local price = k * bc + n * hc
+    local n = math.floor(need / hw) + 1
+    local price = k * bc + n * hc + fodder * fc
     if not least or price < least then least = price end
-    if (budget and price <= budget) or (not budget and n + k <= count) then
+    -- (No bigger than any wave, WAVE_MAX: a place that asks more is not besieged, its farm weighs another.)
+    if n + k + fodder <= WAVE_MAX and ((budget and price <= budget) or (not budget and n + k + fodder <= count)) then
       if not best or price < best[3] then best = {k, n, price} end
     end
   end
-  if best then return best[1], best[2], best[3], breed end
+  if best then return best[1], best[2], best[3], breed, best[2] * hw + fodder * herd.strength({herd.FODDER}), fodder end
   -- (None: what the cheapest would cost, hatching: the biomass it waits for before it weighs that siege again.)
   return nil, budget and least or nil
 end
@@ -843,6 +859,7 @@ local function order(f, surface)
   -- A siege laid (send): its big bursters, and the big biters its herd lacks (siege_size).
   if f.siege and can["lp-bred-big-burster"] then
     if f.siege.k > 0 then want["lp-bred-big-burster"] = f.siege.k end
+    if (f.siege.fodder or 0) > 0 then want[herd.FODDER] = f.siege.fodder end
     local breed = f.siege.breed or "lp-bred-big-biter"
     if can[breed] and (f.siege.big or 0) > 0 then want[breed] = f.siege.big end
     return next(want) and want or nil
@@ -1038,8 +1055,8 @@ local function send(f, tick)
       -- (herd.plan), not the weighing's coarser reading: sized by that, three sieges bred all their bursters and their
       -- plans still said the way in cost more than the wave, an hour each (a megabase, 2026-10-28).
       local pl = herd.plan(s, f.pos, sg.at, sg.rival or players(), field_n)
-      local k, n, price, breed
-      if pl then k, n, price, breed = siege_size(f, pl, sg) end
+      local k, n, price, breed, need, fodder
+      if pl then k, n, price, breed, need, fodder = siege_size(f, pl, sg) end
       if not k then
         -- (n: with no siege it can lay, siege_size's cheapest price.)
         -- (Refused until it holds what the cheapest siege there costs, hatching: held at what it could field, a field
@@ -1061,7 +1078,9 @@ local function send(f, tick)
           sg.at.x, sg.at.y, pl.cost, pl.cover, pl.openable or pl.cover, #f.pens) or string.format("no way to %.0f,%.0f", sg.at.x, sg.at.y))
       end
       -- (Hatching, its herd ordered whole, hatched first: by chance, a herd of mediums was not the strength its plan asked.)
-      f.siege = {at = sg.at, key = sg.key, k = k, n = k + n, big = hatching() and n or math.max(0, n - avail), breed = breed,
+      -- (Its rams ordered; its herd hatched by chance, the culture's mix: big 0.)
+      f.siege = {at = sg.at, key = sg.key, k = k, n = k + n + (fodder or 0), big = 0, breed = breed, need = need,
+        fodder = fodder,
         price = price, guns = sg.guns, extra = sg.extra, cover = pl.cover, defence = sg.defence, rival = sg.rival, value = sg.value, tick = tick,
         mines = math.min(herd.SWEEP_MAX, pl.mines or 0)}
       f.aim = {x = sg.at.x, y = sg.at.y}
@@ -1071,11 +1090,12 @@ local function send(f, tick)
       f.want_key = f.want and serpent.line(f.want) or nil
       trace(string.format("farm %d: nothing it can field wins anything; lays siege to the way in at %.0f,%.0f (its plan: in at %.0f,%.0f costing %.0f, %d guns cover the breach, %d its bursters can reach; worth %.0f past them): %d big bursters and a herd of %d %s (%d biomass)",
         f.id, sg.at.x, sg.at.y, pl.breach[1], pl.breach[2], pl.cost, pl.cover, pl.openable or pl.cover, sg.value, k, n,
-        breed:gsub("^lp%-bred%-", ""), price))
+        breed, price))
       f.escalate_retry = tick + 600
       return holds(f, tick, "lays siege")
     elseif not choice.passes then
       -- No way in it can take and no siege: it does not send a wave to turn home at the wave's own test.
+      herd.stopped("noway|" .. (choice.key or "?"))
       f.escalate_retry = tick + 600
       return holds(f, tick, string.format("no way in it can take with %d or %d, and no siege (%s)", math.min(avail, WAVE_MAX), can,
         (c2 or choice).why))
@@ -1090,6 +1110,8 @@ local function send(f, tick)
       end
       if tick - f.worthless_since < WORTH_WAIT or learned then
         f.escalate_retry = tick + 600
+        -- (Stopped there, for its bursters' development: herd.stopped.)
+        if learned then herd.stopped("worthless|" .. (choice.key or "?")) end
         return holds(f, tick, string.format("nothing worth a wave of %d or %d (the best wins %.0f and %.0f)%s",
           math.min(avail, WAVE_MAX), can, choice.gain, c2 and c2.gain or 0, learned and ": it holds and grows" or ""))
       end
@@ -1193,9 +1215,12 @@ local function send(f, tick)
     for _, u in ipairs(units) do local nm = name_of(u); if nm then have[nm] = (have[nm] or 0) + 1 end end
     local cul = creep.of(f.id)
     local keep = (herd.PROBE_N + herd.SWEEP_MAX) * shared.BREEDS["lp-runt"].cost
-    local names = compose(f, s, cap - #units, want, have,
-      total > 0 and function(name) return fit_of(name, lesson.killers, total) < UNFIT and not want[name] end or nil,
-      math.max(0, (cul and cul.biomass or 0) - keep))
+    -- (A siege's herd the culture's mix, its lesson in its rams and screen: filtered by what beat the last wave there, the
+    -- user's fort's lasers and flamethrowers left cinders alone, and its sieges were 270 of them; the siege lab.)
+    local names = compose(f, s, (siege and WAVE_MAX or cap) - #units, want, have,
+      not siege and total > 0 and function(name) return fit_of(name, lesson.killers, total) < UNFIT and not want[name] end or nil,
+      math.max(0, (cul and cul.biomass or 0) - keep),
+      siege and siege.need and {need = siege.need, have = herd.strength(units)} or nil)
     for _, name in ipairs(names) do units[#units + 1] = name end
     if not origin then
       for _, id in ipairs(f.pens) do
@@ -1231,19 +1256,23 @@ local function send(f, tick)
   local big = 0
   for _, u in ipairs(units) do if name_of(u) == "lp-bred-big-burster" then big = big + 1 end end
   local plan = herd.plan(s, f.pos, target, rival or players(), #units)
-  local lost = plan and herd.way_cost(plan.cost, plan.cover, big, plan.openable, rival and rival[1] or "player")
+  -- (A siege with its rams and screen pays the crossing, not the standing at the wall: siege_size.)
+  local screened = siege and big > 0 and (siege.fodder or 0) > 0
+  local base = plan and math.max(0, plan.cost - (screened and (plan.standing or 0) or 0))
+  local lost = plan and herd.way_cost(base, plan.cover, big, plan.openable, rival and rival[1] or "player")
   local strength = herd.strength(units)
   if not forced and (not plan or not herd.affords(strength, lost)) then
     priced(s, rival and rival[1] or "player", target, {lost = plan and plan.cost or NO_WAY, tick = tick,
       openable = plan and (plan.openable or plan.cover)})
+    herd.stopped("dear|" .. (choice.key or "?"))
     for _, u in ipairs(units) do if type(u) ~= "string" then table.insert(origin.stock, u) end end
     -- A siege bred and still short of what its plan, read again now, asks: sized again from that plan (siege_size) and
     -- bred on, or, no siege it can field paying it, ended.
     if siege and plan then
-      local k2, n2, price2, breed2 = siege_size(f, plan, siege)
+      local k2, n2, price2, breed2, need2, fodder2 = siege_size(f, plan, siege)
       if k2 then
-        siege.k, siege.n, siege.big = k2, k2 + n2, hatching() and n2 or math.max(0, n2 - avail)
-        siege.breed, siege.price = breed2, price2
+        siege.k, siege.n, siege.big = k2, k2 + n2 + (fodder2 or 0), 0
+        siege.breed, siege.price, siege.need, siege.fodder = breed2, price2, need2, fodder2
         f.want = order(f, s)
         f.want_key = f.want and serpent.line(f.want) or nil
         siege.cover, siege.mines = plan.cover, math.min(herd.SWEEP_MAX, plan.mines or 0)
@@ -1294,7 +1323,8 @@ local function send(f, tick)
   trace(string.format("farm %d weighs: %s", f.id, choice.why))
   trials()[choice.key] = {tick = tick, defence = choice.defence}
   herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep,
-    choice = choice and choice.top, plan = plan, sweep = sweep_n})
+    choice = choice and choice.top, plan = plan, sweep = sweep_n,
+    fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil})
   f.debug_deep, f.debug_now = nil, nil
   trace(string.format("farm %d sends %d at %.0f,%.0f%s", f.id, #units, target.x, target.y,
     plan and (plan.mines or 0) > 0 and string.format(", a sweep of %d for the %d mines on its way in", sweep_n, plan.mines) or ""))
@@ -1631,6 +1661,8 @@ unlocked = function(evo)
   for _, r in ipairs(prototypes.entity["lp-pen"].result_units or {}) do
     if evo > r.spawn_points[1].evolution_factor then out[r.unit] = true end
   end
+  -- (Its big bursters: developed, not bred by chance, herd.develop_bursters.)
+  if herd.bursters_developed() then out["lp-bred-big-burster"] = true end
   return out
 end
 local function recycle(f, rec, surface)

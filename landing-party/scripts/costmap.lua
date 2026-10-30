@@ -22,6 +22,10 @@ costmap.WATER_SHARE = 0.4  -- a cell this much water, or more, is no way
 -- drawn through one was walked round the long way: nw's biggest waves, sent at a forest of 0.2 to 0.26 trees a tile,
 -- went round its edge through 0.12 to 0.18 and were turned home as taken off their way (2026-10-28).
 costmap.FOREST = 0.2
+-- Cliff pieces in a cell that make it no way: one. (At two, a cliff line crossing cells corner to corner left one piece
+-- in each, read as open: a plan ran along it 500 tiles from the user's fort, and its herd's legs failed one after another
+-- until it scattered; the siege lab, 2026-10-30. A cliff's end closes a cell it need not: the safe side.)
+costmap.CLIFFS = 1
 -- Its foe's mines, seen (the user, 2026-10-28: "let it see the mines"): each in a cell costs it MINE of its own to cross, a
 -- runt of its sweep and the time (herd.lua sweep): a mined way is dearer than an open one, and a field it can go round it
 -- goes round.
@@ -61,6 +65,12 @@ local function cell_cost(map, i, j)
   elseif s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}}, type = "tree"}
     >= costmap.FOREST * size * size then
     c = costmap.WATER
+  -- A cliff line across it (CLIFFS or more cliff pieces): no way, as the engine's pathfinder has none. (Blind to them, its
+  -- plans ran straight across a cliff south-east of the user's fort; every herd was walked round the cliff's end by the
+  -- engine, past the fort's mined corner, and lost 23 to 27 to the mines on its march; the siege lab, 2026-10-30.)
+  elseif s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}}, type = "cliff"}
+    >= costmap.CLIFFS then
+    c = costmap.WATER
   else
     local fire = 0
     -- Each gun covering it, its price over the cells its reach spans: crossing its reach costs about its price.
@@ -81,6 +91,9 @@ local function cell_cost(map, i, j)
     local mines = s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
       type = "land-mine", force = map.forces}
     c = size * costmap.WALK + fire + costmap.DEATH * (map.deaths[k] or 0) + costmap.MINE * mines
+    -- (What of it is standing at the wall to break it, kept apart: a siege whose rams blow the wall while its herd waits out
+    -- of reach does not pay it, farm.lua siege_size.)
+    if walls then map.wallc[k] = costmap.WALL + fire * map.n / costmap.FUNNEL end
     if walls then c = c + costmap.WALL + fire * map.n / costmap.FUNNEL
     -- (A plan's: the foe's buildings in its way, a pipe, a pole, cost a little to cross, so its way goes round them where it
     -- can: blocked by one, a herd breaks it, and a big burster's attack is its blast: on a megabase's outlying pipes they
@@ -134,7 +147,7 @@ function costmap.read(surface, center, radius, forces, opts)
   local map = {surface = surface, forces = forces, fire = opts.fire, n = opts.n or 60,
     size = size, x0 = x - radius, y0 = y - radius, w = w, h = w, cell_cost = {}, cost = {}, came = {}, deaths = {},
     hidden = opts.hidden or 0, held = {}, ground = {}, blocked = {}, scale = opts.scale or 1, margin = opts.margin or 0,
-    ground_cost = opts.ground_cost or 0,
+    ground_cost = opts.ground_cost or 0, wallc = {},
     -- (Walls of these, not its target's alone: a corporation's camp walls on its way it walks into, and stuck on them under
     -- their flamers its herd lost 66 and left half behind; 2026-10-28.)
     wall_forces = opts.wall_forces}
@@ -146,6 +159,7 @@ function costmap.read(surface, center, radius, forces, opts)
     local i, j = math.floor((d[1] - map.x0) / size), math.floor((d[2] - map.y0) / size)
     if i >= 0 and j >= 0 and i < w and j < w then map.deaths[i * map.h + j] = (map.deaths[i * map.h + j] or 0) + (d[3] or 1) end
   end
+
   -- Dijkstra on a binary heap.
   local heap = {}
   local function push(c, k)
@@ -277,6 +291,14 @@ function costmap.path(map, pos)
     k = map.came[k]
   end
   return out
+end
+
+-- What of the way to pos is standing at the foe's walls to break them (costmap.WALL and the funnel), summed over its cells.
+function costmap.wall_along(map, pos)
+  local k, b = key_of(map, pos), 0
+  if not (k and map.cost[k]) then return 0 end
+  while k do b = b + (map.wallc[k] or 0); k = map.came[k] end
+  return b
 end
 
 -- The way in to pos: where it starts (the last cell of the cheapest way still out of all fire and short of the foe's ground), where
