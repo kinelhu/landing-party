@@ -691,12 +691,18 @@ local function evo_of(f, surface)
   local e = f.evo or game.forces[B.force].get_evolution_factor(surface)
   return cell.clinic_up(f.id) and e or math.min(e, STOCK_EVO)
 end
--- Its incubators' chance breeds at that evolution, by name, and their mean price; unfit(name) true: left out.
--- (And their mean strength, herd.strength.)
-local function chance(f, surface, unfit)
+-- Its incubators' chance breeds at that evolution, by name, and their mean price (and mean strength, herd.strength).
+-- tilt(name): a breed's fit against what killed its last wave there (fit_of), its chance times 1 + that, held within
+-- TILT: none left out, none more than doubled (the design consult, 2026-10-30, G: a breed under UNFIT had been left out
+-- of raids, and a siege's herd, filtered so, was 270 cinders at the user's fort; sieges then took no lesson at all).
+local TILT_LOW, TILT_HIGH = -0.9, 1
+local function chance(f, surface, tilt)
   local list, total, sum, worth = {}, 0, 0, 0
   for name, w in pairs(breeds_at(evo_of(f, surface))) do
-    if w > 0 and shared.BREEDS[name] and not (unfit and unfit(name)) then
+    if w > 0 and tilt and shared.BREEDS[name] then
+      w = w * (1 + math.max(TILT_LOW, math.min(TILT_HIGH, tilt(name))))
+    end
+    if w > 0 and shared.BREEDS[name] then
       list[#list + 1] = {name = name, w = w}
       total, sum = total + w, sum + w * shared.BREEDS[name].cost
       worth = worth + w * herd.strength({name})
@@ -713,10 +719,10 @@ local function hatchable(f, surface, keep)
   return math.max(0, math.floor((cul.biomass - (keep or 0)) / mean))
 end
 -- A wave's breeds to hatch, names only, within budget: its order first (want, less what it has), the dearest first, then
--- by chance at its evolution (unfit left out).
+-- by chance at its evolution (tilted: chance).
 -- strong: hatched by chance until its strength is that much (herd.strength), not n heads: a siege's herd drawn n heads of
 -- the mix came short of the strength its plan asked, and was refused four times running (the user's fort, 2026-10-30).
-local function compose(f, surface, n, want, have, unfit, budget, strong)
+local function compose(f, surface, n, want, have, tilt, budget, strong)
   local names, spent, order = {}, 0, {}
   for name in pairs(want or {}) do if shared.BREEDS[name] then order[#order + 1] = name end end
   table.sort(order, function(a, b)
@@ -731,7 +737,7 @@ local function compose(f, surface, n, want, have, unfit, budget, strong)
       names[#names + 1], spent = name, spent + price
     end
   end
-  local list, total = chance(f, surface, unfit)
+  local list, total = chance(f, surface, tilt)
   f.rng = f.rng or rng.new(f.id * 7919 + game.tick)
   local got = strong and herd.strength(names) + (strong.have or 0) or 0
   -- (Drawn to its strength, n heads at the most all the same: WAVE_MAX for a siege.)
@@ -1354,16 +1360,16 @@ local function send(f, tick)
     end
   end
   -- Hatching: the rest of its wave, names to hatch once its plan says it goes (hatch): its order less what stood, then by
-  -- chance, its unfit breeds left out, within its biomass (less its probe's and its sweep's runts).
+  -- chance, tilted by what killed its last wave there, within its biomass (less its probe's and its sweep's runts).
   if hatching() and #units < cap then
     local have = {}
     for _, u in ipairs(units) do local nm = name_of(u); if nm then have[nm] = (have[nm] or 0) + 1 end end
     local cul = creep.of(f.id)
     local keep = (herd.PROBE_N + herd.SWEEP_MAX) * shared.BREEDS["lp-runt"].cost
-    -- (A siege's herd the culture's mix, its lesson in its rams and screen: filtered by what beat the last wave there, the
-    -- user's fort's lasers and flamethrowers left cinders alone, and its sieges were 270 of them; the siege lab.)
+    -- (A siege's herd the culture's mix tilted as a raid's, chance: filtered by what beat the last wave there, the user's
+    -- fort's lasers and flamethrowers left cinders alone, and its sieges were 270 of them; the siege lab.)
     local names = compose(f, s, (siege and WAVE_MAX or cap) - #units, want, have,
-      not siege and total > 0 and function(name) return fit_of(name, lesson.killers, total) < UNFIT and not want[name] end or nil,
+      total > 0 and function(name) return fit_of(name, lesson.killers, total) end or nil,
       math.max(0, (cul and cul.biomass or 0) - keep),
       siege and siege.need and {need = siege.need, have = herd.strength(units)} or nil)
     for _, name in ipairs(names) do units[#units + 1] = name end
@@ -2047,6 +2053,22 @@ end
 
 -- The siege lab: one weighing (target_from, its reading of the ways in fresh) timed at `cell` tiles a cell, written to
 -- landing-party/timing.txt (the design consult's step 2: one reading at its waves' grain, its cost not yet known).
+-- Tests only: its chance breeds' weights, untilted and tilted by `killers` (what killed a wave: chance, fit_of).
+function farm.debug_chance(id, killers)
+  local f = st().list[id]
+  if not f then return nil end
+  local s = game.surfaces[f.surface]
+  local total = 0
+  for _, n in pairs(killers) do total = total + n end
+  local out = {}
+  for _, x in ipairs(chance(f, s)) do out[x.name] = {x.w} end
+  for _, x in ipairs(chance(f, s, function(name) return fit_of(name, killers, total) end)) do
+    out[x.name] = out[x.name] or {0}
+    out[x.name][2] = x.w
+  end
+  return out
+end
+
 -- Tests only: the siege a farm would size against a plan (siege_size): its big bursters, herd and screen, or nil.
 function farm.debug_siege_size(id, pl)
   local f = st().list[id]

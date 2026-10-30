@@ -10063,6 +10063,18 @@ scenarios.farm = function()
       local fid = (lp("farm_state").farms or {})[1]
       local sz = fid and lp("debug_siege_size", fid.id, {cost = 5, cover = 1, openable = 1, walled = true, standing = 0,
         target = {x = S.at(0, 0)[1], y = S.at(0, 0)[2]}})
+      -- Its breeds tilted by what killed its last wave, none left out and none past twice its chance (a breed under UNFIT
+      -- was left out of raids, and a siege's herd filtered so was 270 cinders; the design consult, 2026-10-30, G).
+      local ch = fid and lp("debug_chance", fid.id, {["laser-turret"] = 10, ["gun-turret"] = 5}) or {}
+      local dropped, wild, moved = {}, {}, false
+      for name, w in pairs(ch) do
+        local r = (w[2] or 0) / math.max(1e-9, w[1])
+        if not w[2] or w[2] <= 0 then dropped[#dropped + 1] = name end
+        if r < 0.1 - 1e-6 or r > 2 + 1e-6 then wild[#wild + 1] = name end
+        if math.abs(r - 1) > 1e-6 then moved = true end
+      end
+      check("farm: its breeds tilted by what killed its last wave, none left out", next(ch) ~= nil and #dropped == 0
+        and #wild == 0 and moved, serpent.line({dropped = dropped, wild = wild, moved = moved}))
       check("farm: a siege no smaller than the least wave", sz ~= nil and sz.k + sz.n + (sz.fodder or 0) >= 24, serpent.line(sz))
       check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
         serpent.line({same = same, reinforced = reinforced}))
