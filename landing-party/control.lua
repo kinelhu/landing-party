@@ -534,6 +534,7 @@ remote.add_interface("landing-party", {
   -- Tests only: what Synthexis has learned a prototype of `foe`'s costs it (nil: nothing yet).
   -- The siege lab (tests/lp-sim, mix lab): its culture primed for a trial, and its waves' units for the recorder.
   lab_prime = function(id, biomass) return farm.debug_lab_prime(id, biomass) end,
+  lab_time_ways = function(id, cell) return farm.debug_time_ways(id, cell) end,
   lab_waves = function() return herd.lab_waves() end,
   lab_prices = function()
     local k, out = know.of("biotech"), {price = {}, scale = {}}

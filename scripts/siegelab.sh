@@ -10,7 +10,8 @@
 #                                                  lab-out.zip (the learning kept) in docs/sim/lab-<save>/
 # Edit a save's defences in the game's map editor (/editor), time paused, and run it again. LAB_BIOMASS: what the
 # culture holds at each trial's start (20000); LAB_HOLD: game minutes a trial waits for a wave before it records why
-# none came (15).
+# none came (15); LAB_REBUILD_AFTER: game minutes after a trial ends before its defences are rebuilt (0: before the next
+# trial; later, the next attack may find the hole open).
 # Both run as a headless server at speed (a benchmark cannot save), in their own profile.
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
@@ -76,8 +77,8 @@ run)
   P="$LAB/run-$NAME"
   profile "$P"
   RUN="$(date +%s)"
-  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s}\n' \
-    "$RUN" "$TRIALS" "${LAB_BIOMASS:-20000}" "${LAB_HOLD:-15}" > "$P/mods/lp-sim/params.lua"
+  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s, lab_rebuild_after = %s, lab_time = %s}\n' \
+    "$RUN" "$TRIALS" "${LAB_BIOMASS:-20000}" "${LAB_HOLD:-15}" "${LAB_REBUILD_AFTER:-0}" "${LAB_TIME:-false}" > "$P/mods/lp-sim/params.lua"
   out="$P/script-output/landing-party"
   rm -rf "$out" "$P/saves/"*.zip
   cp "$SAVE" "$P/saves/in.zip"

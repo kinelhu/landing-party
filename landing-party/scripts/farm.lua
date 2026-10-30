@@ -356,7 +356,6 @@ local WALL_TYPES = {"wall", "gate"}
 -- and in four-faction runs 15 of 19 waves came blind (the scout killed by its tanks, troopers and outposts) and lost half
 -- their number to it (2026-10-25; alone against the stand-in, 1 of 24).
 local UNIT_DEFENCE = 0.2
-local DEAR_FOR = 30 * 3600  -- how long a place a wave found too dear is priced at what it found
 local WAYS_FOR = 5 * 3600   -- how long its reading of the ways in (ways_from) holds, a wave's end aside
 local NO_WAY = 1e6           -- what a place with no way to it costs (water all round it in the box)
 local WAYS_MARGIN = 150    -- the box it reads them in: round the places it weighs, this much more
@@ -410,11 +409,14 @@ local function ways_from(surface, pos, f, cells)
     -- (Its fire scaled by what crossing has cost against what it expected, when its mind calibrates: know.scale.)
     local scale = 1
     if B.mind.calibrate then for _, fo in ipairs(forces) do scale = math.max(scale, know.scale("biotech", fo.name)) end end
+    -- One reading, at its waves' own grain and with their plan's options (herd.plan), shared with the plans it makes this
+    -- tick (herd.shared): its weighing and its waves' plans read the same map (the design consult, 2026-10-30, step 2:
+    -- read at 32 and 48 tiles without walls, rams or screens, its weighing and its plans disagreed, and the farm wrote
+    -- refusals back between them; at 16 tiles a weighing of the user's fort cost 100 ms, a plan already 116).
     local cm = costmap.read(surface, mid, radius, forces, {fire = fmap, n = WAVE_MAX, deaths = herd.deaths(), blocked = herd.blocked(), hidden = hidden, from = pos, scale = scale,
-      -- (Coarser than its waves' own: on 32-tile cells over the whole base, its razing on a deathworld fell from 1,088 to
-      -- 603 over three timings, though on a megabase its 48-tile reading sent waves of 60 its waves then turned home;
-      -- 2026-10-27, unexplained.)
-      cell = radius > 600 and costmap.CELL * 3 or radius > 300 and costmap.CELL * 2 or nil})
+      cell = storage.biotech_ways_cell or herd.PLAN_CELL, margin = herd.spread(WAVE_MAX), ground_cost = costmap.GROUND_COST,
+      wall_forces = herd.hostiles()})
+    herd.shared = {tick = game.tick, from = {pos.x, pos.y}, cm = cm, fmap = fmap}
     -- (And how many guns cover where each way breaks in: what its bursters would be sent at, herd.way_cost.)
     local paths = storage.march_trace and {} or nil
     for key, c in pairs(cells) do
@@ -440,29 +442,15 @@ local function ways_from(surface, pos, f, cells)
         hidden = hidden, scale = scale}))
     end
   end
-  f.ways = {tick = game.tick, ended = ended, by = by, cover = cover}
+  f.ways = {tick = game.tick, ended = ended, by = by, cover = cover, sieges = {}}
   return by, cover
-end
-
--- What stands of a place that its plan priced: its foe's turrets and walls in its cell (herd.dear_key's). A place its plan
--- found too dear is priced at that plan while this holds (a gun dies, a wall opens: it is read again), not for a time:
--- refused, a siege faded from its record in 30 minutes and was weighed again, and the next weighing (every ten seconds)
--- weighed it again, its plan refusing each time (269 times in 75 minutes, farm behind; five hours at one place on nw).
-local PLACE_TYPES = {"ammo-turret", "electric-turret", "fluid-turret", "wall", "gate"}
-local function place_sig(surface, force, at)
-  local cx, cy = math.floor(at.x / 64), math.floor(at.y / 64)
-  return surface.count_entities_filtered{area = {{cx * 64, cy * 64}, {cx * 64 + 64, cy * 64 + 64}}, type = PLACE_TYPES,
-    force = force}
-end
-local function priced(surface, force, at, rec)
-  rec.sig = place_sig(surface, force, at)
-  local k = know.of("biotech")
-  k.dear = k.dear or {}
-  k.dear[herd.dear_key(force, at)] = rec
 end
 
 -- opts: bursters (big bursters in its stock: its way in priced with them, herd.way_cost), field (the most it could field:
 -- what a siege is sized for).
+local siege_size   -- below: what a siege at a plan costs and holds
+local ATTEMPT_FADED = 0.1   -- an attempt faded below this weight (herd.attempt) says nothing: tried long ago, not tried
+local SIEGE_LOOKS = 4   -- places a fresh reading sizes a siege at: its best that a wave of what it has does not win
 local function target_from(surface, pos, f, n, opts)
   local mind = B.mind
   opts = opts or {}
@@ -494,7 +482,6 @@ local function target_from(surface, pos, f, n, opts)
   local ranked = {}
   -- The way in counts (there and back): a cell with no gun of its own inside a ring of them read as
   -- open, and every wave went at the factory through the ring and lost half its number there, in and out (2026-10-27).
-  local dear = know.of("biotech").dear or {}
   -- What reaching each place costs (costmap: its fire, its walls, the deaths its waves met there, and the walk from here to
   -- the base's edge), read over the base in one search and kept WAYS_FOR or until a wave ends (its rays read a megabase's
   -- way in as free over water and through minefields, and it sent waves of 25 to 42 that all died; 2026-10-27).
@@ -502,16 +489,7 @@ local function target_from(surface, pos, f, n, opts)
   local field = math.max(n or 0, opts.field or 0)
   for _, c in pairs(cells) do
     c.entry = ways[c.key] or NO_WAY
-    -- What a wave sent here found its way in to cost, when it turned home for it (herd.lua: too dear), lately: the wave
-    -- reads the way it would walk, the rays here a straight line.
-    -- (Its plan's record, while the place stands as it was: what its bursters can open there, the guns they reach at the
-    -- wall, and whether a siege there was refused by a field no bigger than it has now.)
-    local dr = dear[c.key]
-    local held = dr and (dr.sig and dr.sig == place_sig(surface, c.force, {x = c.cx * 64 + 32, y = c.cy * 64 + 32})
-      or not dr.sig and game.tick - dr.tick < DEAR_FOR)
-    if held then c.entry = math.max(c.entry, dr.lost) end
-    local openable = held and dr.openable or nil
-    local refused = held and dr.no_siege and (dr.need and (opts.budget or 0) < dr.need or not dr.need and field <= (dr.field or 0))
+    local openable = nil
     c.cover = covers[c.key] or 0
     local raw = c.entry
     c.entry = herd.way_cost(raw, c.cover, opts.bursters, openable, c.force)
@@ -562,15 +540,7 @@ local function target_from(surface, pos, f, n, opts)
       -- Whether a wave of n goes in there at all (the wave's own test), and if not, how many big bursters would make the
       -- way in one a wave it could field takes and wins something past (a siege).
       c.passes = raw < NO_WAY and herd.affords(n or shared.WAVE_MIN, c.entry)
-      if not (c.passes and c.gain >= (mind.min_gain or 0)) and c.cover > 0 and raw < NO_WAY and field > 0 and not refused then
-        for k = 1, math.ceil(math.min(openable or c.cover, c.cover) / herd.opens(c.force)) do
-          local e = herd.way_cost(raw, c.cover, k, openable, c.force)
-          if herd.affords(field, e) and valuemap.keeps_lost(field, defence_at(e, k) / 2) * (c.value or 0) >= (mind.min_gain or 0) then
-            c.siege = k
-            break
-          end
-        end
-      end
+      c.raw = raw
       ranked[#ranked + 1] = c
     end
   end
@@ -591,14 +561,48 @@ local function target_from(surface, pos, f, n, opts)
   end
   local best = ranked[1]
   if not best then return end
-  -- Its best siege.
-  -- (By what it wins for each burster, near first: by the fewest bursters alone it laid siege to a place worth 9.)
-  local sg, sv
-  for _, c in ipairs(ranked) do
-    if c.siege then
-      local v = (c.value or 0) / (1 + c.siege) / (1 + c.dist / mind.far)
-      if not sv or v > sv then sg, sv = c, v end
+  -- Its sieges, weighed as its waves will make them: on a fresh reading, at the SIEGE_LOOKS best places a wave of what it
+  -- has does not win, each its plan on the same map (herd.plan, herd.shared) and its size (siege_size), kept with the
+  -- reading (f.ways.sieges) until it is read again. One model: weighed apart from its plans, sieges it laid were refused
+  -- by them and written back as refusals (the design consult, 2026-10-30).
+  -- (Its places by what they are worth, for its sieges and its probes: by the weighing's score, all 0 at a fort no wave
+  -- wins, its sieges went to a cell of the user's fort's wall worth 37 with little behind it, got in, and razed nothing
+  -- five times running; the siege lab, 2026-10-30.)
+  local by_worth = {}
+  for _, c in ipairs(ranked) do by_worth[#by_worth + 1] = c end
+  table.sort(by_worth, function(a, b)
+    if (a.value or 0) ~= (b.value or 0) then return (a.value or 0) > (b.value or 0) end
+    return a.key < b.key
+  end)
+  if f.ways and f.ways.tick == game.tick and f.ways.sieges and field > 0 then
+    local looked, said = 0, {}
+    for _, c in ipairs(by_worth) do
+      if looked >= SIEGE_LOOKS then break end
+      if not (c.passes and c.gain >= (mind.min_gain or 0)) and c.cover > 0 and (c.raw or NO_WAY) < NO_WAY then
+        looked = looked + 1
+        local rival = not shared.is_player_force(game.forces[c.force]) and {c.force} or nil
+        local pl = herd.plan(surface, pos, c.at, rival or players(), WAVE_MAX)
+        if not pl then said[#said + 1] = string.format("%.0f,%.0f no plan", c.at.x, c.at.y) end
+        if pl then
+          local k, n, price, breed, need, fodder, proven = siege_size(f, pl, {guns = c.guns, extra = c.extra, value = c.value, rival = rival})
+          said[#said + 1] = string.format("%.0f,%.0f plan %.0f (%d guns, walled %s): %s", c.at.x, c.at.y, pl.cost, pl.cover,
+            tostring(pl.walled), k and string.format("%d rams, %d, %d biomass", k, n, price) or "none fits")
+          if k then
+            f.ways.sieges[c.key] = {at = {x = c.at.x, y = c.at.y}, key = c.key, k = k, n = n, price = price, breed = breed,
+              need = need, fodder = fodder, plan = pl, cover = pl.cover, defence = c.defence, value = c.value or 0,
+              rival = rival, guns = c.guns, extra = c.extra, dist = c.dist, proven = proven}
+          end
+        end
+      end
     end
+    if #said > 0 then trace(string.format("farm %d sizes its sieges: %s", f.id, table.concat(said, "; "))) end
+  end
+  -- Its best siege: by what it wins for each burster, near first (by the fewest bursters alone it laid siege to a place
+  -- worth 9).
+  local sg, sv
+  for _, s in pairs(f.ways and f.ways.sieges or {}) do
+    local v = (s.value or 0) / (1 + s.k) / (1 + (s.dist or 0) / mind.far)
+    if not sv or v > sv or (v == sv and s.key < sg.key) then sg, sv = s, v end
   end
   local rival = not shared.is_player_force(game.forces[best.force]) and {best.force} or nil
   -- The trial is recorded, and the weighing traced, when a wave goes (send): waiting for a bigger wave or its order it
@@ -612,9 +616,14 @@ local function target_from(surface, pos, f, n, opts)
       odds = c.odds, score = c.score}
   end
   return best.at, rival, {key = best.key, defence = best.defence, why = table.concat(why, "; "), top = top, gain = best.gain,
-    passes = best.passes, siege = sg and {at = sg.at, key = sg.key, k = sg.siege, cover = sg.cover, defence = sg.defence,
-      guns = sg.guns, extra = sg.extra,
-      rival = not shared.is_player_force(game.forces[sg.force]) and {sg.force} or nil, value = sg.value or 0}}
+    passes = best.passes, siege = sg, places = (function()
+      local out = {}
+      for k = 1, math.min(SIEGE_LOOKS, #by_worth) do
+        local c = by_worth[k]
+        out[k] = {at = {c.at.x, c.at.y}, force = c.force, worth = c.value or 0, defence = c.defence}
+      end
+      return out
+    end)()}
 end
 
 -- What a breed scores against a lesson's killers (counters.lua: +1 wins, -1 loses), weighed by how many each killed.
@@ -791,7 +800,7 @@ end
 -- Its siege (the user, 2026-10-30: in health): big bursters, rams at a walled breach and openers of the guns they reach,
 -- and a herd of the culture's own mix as many as pay the way in (herd.strength), within what its incubators could hold
 -- (in biomass, hatching). Returns bursters, herd, its price, "mixed".
-local function siege_size(f, pl, place)
+siege_size = function(f, pl, place)
   -- (What its incubators hold over their guard, each: what it can send.)
   local s = game.surfaces[f.surface]
   local count, _, budget = field_of(f, s, true)
@@ -829,6 +838,10 @@ local function siege_size(f, pl, place)
   -- standing at the wall, pl.standing. Priced standing there, every siege of the user's fort asked more than 60 could pay,
   -- and its screen was never laid; the siege lab, 2026-10-30.)
   local base = pl.cost - (rams > 0 and (pl.standing or 0) or 0)
+  local mem, wt = herd.attempt(foe, pl.target, "siege")
+  -- (Proven by what it razed there, not by getting in: in and razing nothing, five sieges at one breach of the user's fort.)
+  local proven = mem and wt > ATTEMPT_FADED and mem.inside > 0 and mem.got / mem.n >= (B.mind.min_gain or 0)
+    and mem.spent / mem.n or nil
   for k = rams, rams + math.ceil(reach / herd.opens(foe)) do
     local lost = herd.way_cost(base, pl.cover, k, pl.openable, foe)
     -- Its herd pays its way in once and the place's guns once (what its rams leave of them), and is not to come back: a
@@ -839,6 +852,10 @@ local function siege_size(f, pl, place)
     if place and place.guns then
       need = math.max(need, lost + place.guns * (1 - herd.opened(pl.cover, k, pl.openable, foe)) + (place.extra or 0))
     end
+    -- Where its sieges have got in at this breach, what they spent there, not what its prices add up to (herd.attempt,
+    -- the design consult's step 3). (Priced from its guns alone, the user's fort read as more than 60 could take, though
+    -- sieges of 42 to 60 had got in there four times.)
+    if proven then need = proven end
     local n = math.floor(need / hw) + 1
     local price = k * bc + n * hc + fodder * fc
     if not least or price < least then least = price end
@@ -847,7 +864,7 @@ local function siege_size(f, pl, place)
       if not best or price < best[3] then best = {k, n, price} end
     end
   end
-  if best then return best[1], best[2], best[3], breed, best[2] * hw + fodder * herd.strength({herd.FODDER}), fodder end
+  if best then return best[1], best[2], best[3], breed, best[2] * hw + fodder * herd.strength({herd.FODDER}), fodder, proven ~= nil end
   -- (None: what the cheapest would cost, hatching: the biomass it waits for before it weighs that siege again.)
   return nil, budget and least or nil
 end
@@ -948,6 +965,41 @@ local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
 -- and the trace said nothing of why).
 -- (Once in ten minutes, and whenever its reason changes, its words up to the first number or colon: throttled alone, two
 -- refusals alternating at culture 2 on nw read as one steady state for five hours.)
+-- A probe (the design consult, 2026-10-30, step 3): with no way in it can take and no siege it can lay, a small siege, a
+-- wave's least (WAVE_MIN: its rams, its screen, its herd making up the rest), at the best of its places its siege has not
+-- tried lately (herd.attempt), sent though its prices say it is too dear: what it costs there is learned by going.
+-- (Held on its prices alone, it never went back to a fort it had got into four times running; the siege lab.)
+local function probe(f, s, choice, tick)
+  if not herd.bursters_developed() or B.mind.orders == false or storage.biotech_no_orders then return false end
+  local bc, fc = shared.BREEDS["lp-bred-big-burster"].cost, shared.BREEDS[herd.FODDER].cost
+  local _, _, hc, hw = chance(f, s)
+  for _, top in ipairs(choice.places or choice.top or {}) do
+    local rival = not shared.is_player_force(game.forces[top.force]) and {top.force} or nil
+    local at = {x = top.at[1], y = top.at[2]}
+    local pl = herd.plan(s, f.pos, at, rival or players(), shared.WAVE_MIN)
+    local foe = rival and rival[1] or "player"
+    local _, wt = herd.attempt(foe, at, "siege")
+    if pl and pl.walled and wt <= ATTEMPT_FADED then
+      local k = math.ceil(1 / herd.reach(foe))
+      local fodder = math.max(0, math.min(pl.cover or 0, shared.WAVE_MIN - k - 1))
+      local n = math.max(1, shared.WAVE_MIN - k - fodder)
+      local price = k * bc + fodder * fc + n * hc
+      f.siege = {at = at, key = herd.attempt_key(foe, at), k = k, n = k + n + fodder, big = 0, breed = "mixed",
+        need = n * hw + fodder * herd.strength({herd.FODDER}), fodder = fodder, price = price, cover = pl.cover,
+        defence = top.defence, rival = rival, value = top.worth, tick = tick, mines = math.min(herd.SWEEP_MAX, pl.mines or 0),
+        trust = "probe"}
+      f.aim = {x = at.x, y = at.y}
+      f.want = order(f, s)
+      f.want_key = f.want and serpent.line(f.want) or nil
+      trace(string.format("farm %d: probes the way in at %.0f,%.0f (its plan: in at %.0f,%.0f costing %.0f, %d guns cover the breach; not tried there lately): %d big bursters, a screen of %d and a herd of %d (%d biomass)",
+        f.id, at.x, at.y, pl.breach[1], pl.breach[2], pl.cost, pl.cover, k, fodder, n, price))
+      f.escalate_retry = tick + 600
+      return true
+    end
+  end
+  return false
+end
+
 local function holds(f, tick, why)
   f.held_why = why
   local kind = why:match("^[^:%d]*")
@@ -995,14 +1047,10 @@ local function send(f, tick)
   -- A siege laid: it goes there once its bursters and herd are bred (order: f.siege). It ends when a wave of what it has
   -- pays somewhere (the weighing's best passes and wins something), or when nothing of its foe's stands where it aimed.
   if f.siege then
+    -- (Its target gone. Not a wave of what it has paying elsewhere: read apart from the siege's own model, that ended sieges
+    -- for waves its plans then refused; one reading now, the design consult, 2026-10-30.)
     local why
-    -- (A wave of what it has paying elsewhere by the plan it would follow there, herd.plan, not the weighing's coarser
-    -- reading alone: by that, three farms ended their sieges for waves their plans then refused, and sent none; 2026-10-28.)
-    local other = choice.passes and choice.gain >= (B.mind.min_gain or 0)
-      and herd.plan(s, f.pos, target, rival or players(), math.min(avail, WAVE_MAX))
-    if other and herd.affords(ready(math.min(avail, WAVE_MAX)), herd.way_cost(other.cost, other.cover, bursters, other.openable, rival and rival[1] or "player")) then
-      why = string.format("a wave of what it has pays at %.0f,%.0f", target.x, target.y)
-    elseif s.count_entities_filtered{position = f.siege.at, radius = 32, force = f.siege.rival or players(), type = herd.DRAW, limit = 1} == 0 then
+    if s.count_entities_filtered{position = f.siege.at, radius = 32, force = f.siege.rival or players(), type = herd.DRAW, limit = 1} == 0 then
       why = "nothing of its foe's stands there now"
     end
     if why then
@@ -1051,37 +1099,16 @@ local function send(f, tick)
     if t2 and c2.gain >= B.mind.min_gain and c2.passes then
       target, rival, choice, saving = t2, r2, c2, can
     elseif sg and B.mind.orders ~= false and not storage.biotech_no_orders and unlocked(evo)["lp-bred-big-burster"] then
-      -- Nothing it can field wins anything: the way in to its best place is the job. Sized by the plan its wave will follow
-      -- (herd.plan), not the weighing's coarser reading: sized by that, three sieges bred all their bursters and their
-      -- plans still said the way in cost more than the wave, an hour each (a megabase, 2026-10-28).
-      local pl = herd.plan(s, f.pos, sg.at, sg.rival or players(), field_n)
-      local k, n, price, breed, need, fodder
-      if pl then k, n, price, breed, need, fodder = siege_size(f, pl, sg) end
-      if not k then
-        -- (n: with no siege it can lay, siege_size's cheapest price.)
-        -- (Refused until it holds what the cheapest siege there costs, hatching: held at what it could field, a field
-        -- in health grew a little every ten seconds, and it weighed the siege again each time, 147 refusals in the
-        -- behind test.)
-        priced(s, sg.rival and sg.rival[1] or "player", sg.at, {lost = pl and pl.cost or NO_WAY, tick = tick,
-          openable = pl and (pl.openable or pl.cover), no_siege = true, field = field,
-          need = hatching() and (pl and n or math.huge) or nil})
-        f.escalate_retry = tick + 600
-        -- (Counted, and a refusal of the same place with no more to field than before counted again: the loop, farm behind.)
-        f.refused, f.refused_at = (f.refused or 0) + 1, f.refused_at or {}
-        -- (Again while the last refusal there stood: the biomass under the price it waited for, or no more to field.)
-        local r = f.refused_at[sg.key]
-        if type(r) == "table" and (r.need and (budget or 0) < r.need or not r.need and field <= r.field) then
-          f.repeats = (f.repeats or 0) + 1
-        end
-        f.refused_at[sg.key] = {field = field, need = hatching() and (pl and n or math.huge) or nil}
-        return holds(f, tick, pl and string.format("no siege it can lay at %.0f,%.0f: its plan costs %.0f (%d guns cover the breach, %d its bursters can reach), more than its %d incubators can field",
-          sg.at.x, sg.at.y, pl.cost, pl.cover, pl.openable or pl.cover, #f.pens) or string.format("no way to %.0f,%.0f", sg.at.x, sg.at.y))
-      end
+      -- Nothing it can field wins anything: the way in to its best place is the job, as its weighing sized it (target_from:
+      -- its plan and siege_size on the one reading).
+      local pl, k, n, price, breed, need, fodder = sg.plan, sg.k, sg.n, sg.price, sg.breed, sg.need, sg.fodder
+      local trust = sg.proven and "proven" or nil
       -- (Hatching, its herd ordered whole, hatched first: by chance, a herd of mediums was not the strength its plan asked.)
       -- (Its rams ordered; its herd hatched by chance, the culture's mix: big 0.)
       f.siege = {at = sg.at, key = sg.key, k = k, n = k + n + (fodder or 0), big = 0, breed = breed, need = need,
         fodder = fodder,
         price = price, guns = sg.guns, extra = sg.extra, cover = pl.cover, defence = sg.defence, rival = sg.rival, value = sg.value, tick = tick,
+        trust = trust,
         mines = math.min(herd.SWEEP_MAX, pl.mines or 0)}
       f.aim = {x = sg.at.x, y = sg.at.y}
       -- (Its order at once, not at the minute: sized to the biomass it has, a siege was ready at the next weighing, and its
@@ -1093,6 +1120,8 @@ local function send(f, tick)
         breed, price))
       f.escalate_retry = tick + 600
       return holds(f, tick, "lays siege")
+    elseif not choice.passes and probe(f, s, choice, tick) then
+      return holds(f, tick, "lays a probe")
     elseif not choice.passes then
       -- No way in it can take and no siege: it does not send a wave to turn home at the wave's own test.
       herd.stopped("noway|" .. (choice.key or "?"))
@@ -1261,9 +1290,9 @@ local function send(f, tick)
   local base = plan and math.max(0, plan.cost - (screened and (plan.standing or 0) or 0))
   local lost = plan and herd.way_cost(base, plan.cover, big, plan.openable, rival and rival[1] or "player")
   local strength = herd.strength(units)
-  if not forced and (not plan or not herd.affords(strength, lost)) then
-    priced(s, rival and rival[1] or "player", target, {lost = plan and plan.cost or NO_WAY, tick = tick,
-      openable = plan and (plan.openable or plan.cover)})
+  -- (A probe, or a siege its attempts proved: sent on what it learns or knows there, not its prices.)
+  local trust = siege and siege.trust
+  if not forced and (not plan or not (trust or herd.affords(strength, lost))) then
     herd.stopped("dear|" .. (choice.key or "?"))
     for _, u in ipairs(units) do if type(u) ~= "string" then table.insert(origin.stock, u) end end
     -- A siege bred and still short of what its plan, read again now, asks: sized again from that plan (siege_size) and
@@ -1324,7 +1353,7 @@ local function send(f, tick)
   trials()[choice.key] = {tick = tick, defence = choice.defence}
   herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep,
     choice = choice and choice.top, plan = plan, sweep = sweep_n,
-    fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil})
+    fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil, trust = trust})
   f.debug_deep, f.debug_now = nil, nil
   trace(string.format("farm %d sends %d at %.0f,%.0f%s", f.id, #units, target.x, target.y,
     plan and (plan.mines or 0) > 0 and string.format(", a sweep of %d for the %d mines on its way in", sweep_n, plan.mines) or ""))
@@ -1880,6 +1909,28 @@ function farm.on_damaged(e)
   if ent.name ~= "lp-pen" or not e.force or e.force.name == B.force or shared.is_biters(e.force.name) then return end
   local rec = herd.pen(ent.unit_number)
   if rec and rec.farm and herd.out(rec.farm) then herd.recall(rec.farm, "its farm is attacked") end
+end
+
+-- The siege lab: one weighing (target_from, its reading of the ways in fresh) timed at `cell` tiles a cell, written to
+-- landing-party/timing.txt (the design consult's step 2: one reading at its waves' grain, its cost not yet known).
+function farm.debug_time_ways(id, cell)
+  local f = st().list[id]
+  if not f then return false end
+  local s = game.surfaces[f.surface]
+  storage.biotech_ways_cell, f.ways = cell, nil
+  local p = helpers.create_profiler()
+  local target, rival = target_from(s, f.pos, f, WAVE_MAX, {})
+  p.stop()
+  storage.biotech_ways_cell, f.ways = nil, nil
+  helpers.write_file("landing-party/timing.txt", {"", "weighing, cell " .. cell .. ": ", p, "\n"}, true)
+  -- (And one plan, as a wave's: what each wave already pays at its waves' grain.)
+  if target and cell == 16 then
+    local q = helpers.create_profiler()
+    herd.plan(s, f.pos, target, rival or players(), WAVE_MAX)
+    q.stop()
+    helpers.write_file("landing-party/timing.txt", {"", "plan, cell 16: ", q, "\n"}, true)
+  end
+  return true
 end
 
 -- The siege lab (tests/lp-sim, mix lab; scripts/siegelab.sh): its culture holds `biomass` at least, and the farm weighs

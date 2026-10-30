@@ -7377,6 +7377,10 @@ scenarios.lab = function()
     L.cleared = cleared
     local context = {}
     local f, pens = farm(), {}
+    -- (LAB_TIME: one weighing timed at its coarse grain and at its waves', landing-party/timing.txt.)
+    if params.lab_time and f then
+      for _, cell in ipairs({48, 32, 16}) do lp("lab_time_ways", f.id, cell) end
+    end
     for _, p in ipairs(surface().find_entities_filtered{name = "lp-pen"}) do pens[#pens + 1] = xy(p.position) end
     local defences = {}
     for i, d in ipairs(L.snap) do defences[i] = {d.name, d.pos[1], d.pos[2], d.max, d.type, d.dir} end
@@ -7419,6 +7423,7 @@ scenarios.lab = function()
     local alive = {}
     for i, e in ipairs(L.ents) do alive[i] = (e and e.valid) and 1 or 0 end
     L.rec.alive = alive
+    L.ended = game.tick
     out("lab.jsonl", L.rec)
     L.recording, L.wave = nil, nil
     L.step = L.trial >= (params.lab_trials or 3) and "save" or "prime"
@@ -7441,9 +7446,20 @@ scenarios.lab = function()
     end
     local L = storage.lab
     local f = farm()
+    -- (A rebuild put off, params.lab_rebuild_after: due now.)
+    if L.rebuild_at and game.tick >= L.rebuild_at then
+      L.rebuild_at = nil
+      local late = rebuild()
+      if L.rec then L.rec.rebuilt_late = late end
+    end
     if L.step == "prime" then
       L.trial = L.trial + 1
-      local rebuilt = rebuild()
+      -- (Its defences rebuilt now, or params.lab_rebuild_after game minutes after the last trial ended: the next attack
+      -- may find the last one's hole still open, what the design consult's exploitation is to be seen against.)
+      local after = params.lab_rebuild_after or 0
+      local rebuilt = {}
+      -- (A rebuild already due keeps its time: put off again at each trial, a short trial's damage was never rebuilt.)
+      if after > 0 and L.trial > 1 then L.rebuild_at = L.rebuild_at or (L.ended or game.tick) + after * 3600 else rebuilt = rebuild() end
       L.rec = {trial = L.trial, start = game.tick, rebuilt = rebuilt, prices_before = lp("lab_prices"),
         rec = "lab-rec-" .. L.trial .. ".jsonl"}
       if f then lp("lab_prime", f.id, params.lab_biomass or 20000) end
