@@ -362,12 +362,24 @@ function herd.attempt_key(foe, pos)
   -- grew into a siege sized on what had worked; the siege lab, 2026-10-30.)
   return string.format("%s|%d,%d", type(foe) == "string" and foe or foe.name, math.floor(x / 64), math.floor(y / 64))
 end
+-- Of its attempts there that razed `least` or more, the one that razed most for what it spent: what it sent (its strength).
+function herd.best_size(r, least)
+  local best, bv
+  for _, a in ipairs(r and r.hist or {}) do
+    if a.inside and a.got >= least then
+      local v = a.got / math.max(1, a.spent)
+      if not bv or v > bv then best, bv = a, v end
+    end
+  end
+  return best and best.sent
+end
 function herd.attempt(foe, pos, method)
   local a = know.of("biotech").attempts
   local r = a and a[herd.attempt_key(foe, pos) .. "|" .. method]
   if not r then return nil, 0 end
   return r, math.exp(-(game.tick - r.tick) / (B.mind.fade or 40 * 3600))
 end
+local HISTORY = 5
 local function record_attempt(w)
   local at = w.plan and w.plan.target or (w.goal and {w.goal.x, w.goal.y})
   if not at then return end
@@ -381,6 +393,11 @@ local function record_attempt(w)
   r.n, r.spent, r.got = r.n + 1, r.spent + spent, r.got + (w.razed_worth or 0)
   if w.t_inside then r.inside = r.inside + 1 end
   r.tick, r.last = game.tick, {spent = spent, got = w.razed_worth or 0, inside = w.t_inside ~= nil, probe = w.trust == "probe"}
+  -- (Its last HISTORY there, each what it sent, spent and razed: the size that razed most for what it spent is the one it
+  -- sends again, farm.lua siege_size.)
+  r.hist = r.hist or {}
+  table.insert(r.hist, {sent = w.worth or 0, spent = spent, got = w.razed_worth or 0, inside = w.t_inside ~= nil})
+  while #r.hist > HISTORY do table.remove(r.hist, 1) end
   k.attempts[key] = r
 end
 

@@ -9933,6 +9933,13 @@ scenarios.farm = function()
     end
     -- Its technicians bought as it grows (0.2.22, cell.hire: they came free, one in ten minutes).
     if mix == "" then
+      -- A siege sized from experience copies the one that razed most for what it spent, among those that got in with
+      -- something to show (sized by what the last spent, its 34-38 lost 230-300 and razed less than its probes of 24 on
+      -- the user's fort; the siege lab, 2026-10-30).
+      local sized = lp("debug_best_size", {
+        {sent = 60, spent = 300, got = 40, inside = true}, {sent = 30, spent = 100, got = 32, inside = true},
+        {sent = 20, spent = 50, got = 5, inside = true}, {sent = 50, spent = 100, got = 45, inside = false}}, 10)
+      check("farm: a siege sized by what razed most per biomass", sized == 30, tostring(sized))
       local now = lp("cell_sites")[1] or {}
       check("farm: it bought technicians as it grew", (now.bought or 0) >= 1, serpent.line({bought = now.bought, techs = now.techs}))
     end

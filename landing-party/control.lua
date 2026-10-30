@@ -536,6 +536,8 @@ remote.add_interface("landing-party", {
   lab_prime = function(id, biomass) return farm.debug_lab_prime(id, biomass) end,
   lab_time_ways = function(id, cell) return farm.debug_time_ways(id, cell) end,
   lab_waves = function() return herd.lab_waves() end,
+  -- Tests only: the size herd.best_size draws from an attempt's history (its sieges sized by what razed most per biomass).
+  debug_best_size = function(hist, least) return herd.best_size({hist = hist}, least) end,
   lab_prices = function()
     local k, out = know.of("biotech"), {price = {}, scale = {}}
     for foe, ps in pairs(k.price or {}) do

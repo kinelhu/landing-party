@@ -72,11 +72,6 @@ local function guard_of(f) return math.ceil(GUARD_TOTAL / math.max(PENS, #f.pens
 -- A wave's most (the consult: waves of 20 to 60; the mega wave is an event at the top of its ladder, not the default).
 -- Four full pens sent 135 in the first farm run.
 local WAVE_MAX = 60
-local SAVE_FOR = 2 * WAVE_MAX       -- the wave it saves up for when nothing is worth one of its size
-local WORTH_WAIT = 10 * 3600         -- and how long it waits, nothing worth either, before it sends a trial
-local SAVE_WAIT = 30 * 3600          -- how long it saves up for SAVE_FOR, at most, before it sends what it has
-local STALL = 5 * 3600              -- its stock not growing this long: what it has is what it can field
-local ESCALATE_WAIT = 10 * 3600   -- at most this much longer for a bigger wave at a defence that held
 -- A siege (a context-free review, 2026-10-28: with nothing it can field worth a wave, "change the mission, not go quiet"):
 -- the way in to its best place becomes the job. It orders big bursters and a herd of big biters to cross the hole (the
 -- wall lab: mediums behind them, 2 got in; big biters, 14), the cheapest mix its plan's way in pays for (siege_size). It
@@ -99,8 +94,6 @@ local POD_WAIT = 2 * 3600
 -- the wait; the counters' turret columns then told no breed from another, and a wave's make-up is hard for a player to
 -- see. Its cleverness is in how it attacks (the user, 2026-10-25: "let the smartness reside in attack staging"); the
 -- burster stays, the one breed a wall calls for, and seen (it glows).
-local BURST_SHARE = 0.5         -- of its last wave's biomass, in big bursters, when lasers and flames held it
-local TOUGH_LOOK, TOUGH_MIN, TOUGH_SHARE = 3, 40, 0.5  -- its last waves read, the least lost, the share to lasers and flames
 local ORDER_BREACH = 0.12   -- of its units, bursters (the arena's breach, 2026-10-25: 3 or 4 among 25 to 35 mediums broke
                             -- 10 to 20 of a double wall and up to a third of the guns behind it; 40 mediums broke 1 to 3)
 local ORDER_WAIT = 5 * 3600
@@ -108,7 +101,6 @@ local ORDER_WAIT = 5 * 3600
 -- waves of 90 big and medium biters went at a laser wall without them). 14 of them open a stretch of nw's north wall
 -- (scripts/wall-lab.sh): a wave without them is lost there whatever its size.
 local ORDER_WAIT_BIG = 30 * 3600
-local TOUGH_NEAR = 256          -- its waves read for what killed them: those that went within this of where it aims
 
 local function st()
   storage.farms = storage.farms or {list = {}, next = 1}
@@ -769,29 +761,6 @@ local function field_of(f, surface, guarded)
 end
 
 -- Its order for the next wave (nil: none, it sends what it bred): by breed, how many it wants in its stock.
--- Whether its own have lately died mostly to what burns and beams (TOUGH_SHARE of its losses over its last TOUGH_LOOK waves,
--- TOUGH_MIN at least): lasers and flamethrowers, by their profile (threat.lua), whatever the base. Only its waves that
--- went near where it aims now (TOUGH_NEAR): a wave lost to a laser wall says nothing of a camp of railgunners, where the
--- order then went (a nw visit, 2026-10-28).
-local function tough_wanted(aim)
-  local log = storage.herd and storage.herd.log or {}
-  local by, all, seen = 0, 0, 0
-  for i = #log, 1, -1 do
-    if seen >= TOUGH_LOOK then break end
-    local c = log[i].center
-    if c and (c[1] - aim.x) ^ 2 + (c[2] - aim.y) ^ 2 <= TOUGH_NEAR * TOUGH_NEAR then
-      seen = seen + 1
-      for key, n in pairs(log[i].lost_by or {}) do
-        local proto = key:match("^%S+ (.+)$")
-        local p = proto and threat.profile(proto)
-        all = all + n
-        if p and (p.kind == "power" or p.kind == "fluid") then by = by + n end
-      end
-    end
-  end
-  return all >= TOUGH_MIN and by / all >= TOUGH_SHARE
-end
-
 -- The siege a farm can field against a plan (herd.plan): the cheapest mix in biomass of big bursters (no more than the guns
 -- they can reach take: herd.BURST_OPENS of one each) and a herd, that pays the plan's way in (herd.affords, the bursters'
 -- work counted), within what its incubators hold (their count times an incubator's units). nil: none it can field. (The
@@ -839,9 +808,10 @@ siege_size = function(f, pl, place)
   -- and its screen was never laid; the siege lab, 2026-10-30.)
   local base = pl.cost - (rams > 0 and (pl.standing or 0) or 0)
   local mem, wt = herd.attempt(foe, pl.target, "siege")
-  -- (Proven by what it razed there, not by getting in: in and razing nothing, five sieges at one breach of the user's fort.)
-  local proven = mem and wt > ATTEMPT_FADED and mem.inside > 0 and mem.got / mem.n >= (B.mind.min_gain or 0)
-    and mem.spent / mem.n or nil
+  -- (Proven by what it razed there, not by getting in: in and razing nothing, five sieges at one breach of the user's fort.
+  -- Sized as the one that razed most for what it spent: sized on what a siege spent, its sieges of 34 to 38 lost 230 to 300
+  -- and razed 3 to 24, where its probes of 24 had lost 110 and razed up to 41; the siege lab, 2026-10-30.)
+  local proven = mem and wt > ATTEMPT_FADED and herd.best_size(mem, B.mind.min_gain or 0) or nil
   for k = rams, rams + math.ceil(reach / herd.opens(foe)) do
     local lost = herd.way_cost(base, pl.cover, k, pl.openable, foe)
     -- Its herd pays its way in once and the place's guns once (what its rams leave of them), and is not to come back: a
@@ -886,24 +856,8 @@ local function order(f, surface)
   if l and (l.walled_held or 0) > 0 and can["lp-bred-cinder"] then
     want["lp-bred-cinder"] = math.ceil((f.last_size or WAVE_MAX) * ORDER_BREACH)
   end
-  -- Its own dying mostly to lasers and flamethrowers: big biters, as much biomass as its last wave's mediums (more health
-  -- for it, 375 for 28 against 75 for 7, and fewer bodies under a flamethrower's fire; a wave of 262 mediums lost 235
-  -- crossing a megabase's wall of 60 lasers and 24 flamethrowers, 2026-10-27).
-  -- Where it can breed them, big bursters ahead of it, BURST_SHARE of that biomass, and big biters with the rest: the
-  -- bursters break the line, the big biters cross the hole (mediums behind 14 bursters: 2 got in; big biters: 14; the
-  -- wall lab, scripts/wall-lab.sh, 2026-10-28).
-  if tough_wanted(f.aim) then
-    local mediums = (f.last_size or WAVE_MAX) * shared.BREEDS["lp-bred-medium-biter"].cost
-    local rest = mediums
-    if can["lp-bred-big-burster"] then
-      local n = math.max(1, math.floor(mediums * BURST_SHARE / shared.BREEDS["lp-bred-big-burster"].cost))
-      want["lp-bred-big-burster"] = n
-      rest = math.max(0, mediums - n * shared.BREEDS["lp-bred-big-burster"].cost)
-    end
-    if can["lp-bred-big-biter"] and rest > 0 then
-      want["lp-bred-big-biter"] = math.ceil(rest / shared.BREEDS["lp-bred-big-biter"].cost)
-    end
-  end
+  -- (Its own dying mostly to lasers and flamethrowers, big bursters and big biters were ordered for its next wave,
+  -- tough_wanted: a siege's rams and its herd's mix do that now; the design consult, 2026-10-30.)
   return next(want) and want or nil
 end
 
@@ -1032,8 +986,9 @@ local function send(f, tick)
       end
     end
   end
-  if avail > (f.avail_peak or -1) then f.avail_peak, f.avail_peak_tick = avail, tick end
-  local can = (tick - (f.avail_peak_tick or tick) >= STALL) and avail or SAVE_FOR
+  -- (What it can field is what it sends: it saves up for no bigger wave, its probes learn what a place takes; the design
+  -- consult, 2026-10-30, step 2: SAVE_FOR, STALL, WORTH_WAIT, SAVE_WAIT and ESCALATE_WAIT, timers each, gone.)
+  local can = math.min(avail, WAVE_MAX)
   -- (What it could field at the most, the bound of any siege it lays, siege_size.) Hatching, what its biomass hatches is
   -- ready as well.
   -- (Its weighing in strength, herd.strength: how strong a wave of n of what it could field would be.)
@@ -1082,23 +1037,17 @@ local function send(f, tick)
     choice = {key = siege.key, defence = siege.defence, why = string.format("its siege, %d big bursters at %d guns", bursters,
       siege.cover), top = {}, gain = siege.value, passes = true}
   end
-  -- Nothing worth a wave of its size (the best it would win under its mind's min_gain): what one of SAVE_FOR would win; it
-  -- saves up for that, or waits, WORTH_WAIT at most, then sends its best as a trial, what it learns its price by (sent
-  -- all the same, waves went back to an outpost already razed, worth 1, and at a ring of guns that kept them out; never
-  -- sent, a well defended base never saw a wave; 2026-10-27). /lp wave <n> sends regardless.
-  -- What it can field (its stock stopped growing for STALL: its incubators full, or the engine's crowding cap): it saves
-  -- up for no more (three incubators held 36 ready and waited the hour for 120, on a megabase; 2026-10-27).
+  -- Nothing worth a wave of its size (the best it would win under its mind's min_gain): a siege, a probe, a raid probe or
+  -- it holds. /lp wave <n> sends regardless.
   -- (A siege's bursters bred, it goes with what it has: its plan says whether that pays the way in. Saving up to its 120
   -- as well, it waited with 117 ready; the siege test, 2026-10-28.)
   local saving = siege and math.min(siege.n, avail)
+  local raid_probe
   if not siege and choice.gain < (B.mind.min_gain or 0) and not f.debug_size and not f.debug_now then
-    local t2, r2, c2
-    if can > math.min(avail, WAVE_MAX) then t2, r2, c2 = target_from(s, f.pos, f, ready(can), {bursters = bursters, field = field, budget = budget}) end
-    local sg = (c2 and c2.siege) or choice.siege
+    local sg = choice.siege
+    local c2
     local evo = game.forces[B.force].get_evolution_factor(s)
-    if t2 and c2.gain >= B.mind.min_gain and c2.passes then
-      target, rival, choice, saving = t2, r2, c2, can
-    elseif sg and B.mind.orders ~= false and not storage.biotech_no_orders and unlocked(evo)["lp-bred-big-burster"] then
+    if sg and B.mind.orders ~= false and not storage.biotech_no_orders and unlocked(evo)["lp-bred-big-burster"] then
       -- Nothing it can field wins anything: the way in to its best place is the job, as its weighing sized it (target_from:
       -- its plan and siege_size on the one reading).
       local pl, k, n, price, breed, need, fodder = sg.plan, sg.k, sg.n, sg.price, sg.breed, sg.need, sg.fodder
@@ -1129,49 +1078,31 @@ local function send(f, tick)
       return holds(f, tick, string.format("no way in it can take with %d or %d, and no siege (%s)", math.min(avail, WAVE_MAX), can,
         (c2 or choice).why))
     else
-      f.worthless_since = f.worthless_since or tick
-      -- A trial is to learn its price by: once it has learned this foe's guns (know.price), nothing it can field worth
-      -- a wave, it holds and grows (trials sent past that lost every biter to a megabase's mines and guns).
-      local learned = false
-      for _, fo in ipairs(foes()) do
-        local p = know.of("biotech").price
-        if p and p[fo.name] and next(p[fo.name]) then learned = true end
-      end
-      if tick - f.worthless_since < WORTH_WAIT or learned then
+      -- A raid probe: its best place not raided lately (herd.attempt), the least wave sent to learn what it takes, sent
+      -- though nothing there reads as worth one; tried lately, it holds and grows. (A trial after WORTH_WAIT on a clock,
+      -- held for good once it had learned any price, before: the design consult, 2026-10-30.)
+      local _, wt = herd.attempt(rival and rival[1] or "player", target, "raid")
+      if wt > ATTEMPT_FADED then
         f.escalate_retry = tick + 600
-        -- (Stopped there, for its bursters' development: herd.stopped.)
-        if learned then herd.stopped("worthless|" .. (choice.key or "?")) end
-        return holds(f, tick, string.format("nothing worth a wave of %d or %d (the best wins %.0f and %.0f)%s",
-          math.min(avail, WAVE_MAX), can, choice.gain, c2 and c2.gain or 0, learned and ": it holds and grows" or ""))
+        herd.stopped("worthless|" .. (choice.key or "?"))
+        return holds(f, tick, string.format("nothing worth a wave of %d (the best wins %.0f): it holds and grows",
+          math.min(avail, WAVE_MAX), choice.gain))
       end
-      trace(string.format("farm %d: nothing worth a wave for %d minutes: sends its best as a trial", f.id, WORTH_WAIT / 3600))
+      raid_probe = true
+      trace(string.format("farm %d: nothing worth a wave; probes its best place with a raid of %d", f.id, shared.WAVE_MIN))
     end
   end
-  f.worthless_since = nil
   local bd
   -- What killed its last wave there (herd.lesson_near): the breeds that beat those killers go first, the rest keep the
   -- gate (counters.lua, the arena's matrix; the user, 2026-10-24: learning that shows). With no lesson, the nearest go.
   local lesson = herd.lesson_near(target, 128)
-  -- Escalation (the user, 2026-10-24): a defence that held draws a bigger wave, half as many again for each that broke
-  -- nothing there (at most twice WAVE_MAX), and it waits for its stock to reach it (at most ESCALATE_WAIT longer).
-  local held = 0
-  for _, fc in pairs(lesson and lesson.faces or {}) do held = held + (fc.tried - fc.broke) end
-  local cap = math.floor(WAVE_MAX * math.min(2, 1 + 0.5 * held))
+  -- (Escalation by method, not headcount: a wave of WAVE_MAX at most, a raid probe the least, a siege its own size. A
+  -- defence that held drew waves up to twice WAVE_MAX, waited for: the design consult, 2026-10-30.)
+  local cap = raid_probe and shared.WAVE_MIN or WAVE_MAX
   if saving then cap = math.max(cap, saving) end
   -- /lp wave <n> (dev): a wave of that many, past the caps, once.
   local forced = f.debug_size
   if forced then cap, f.debug_size = forced, nil end
-  if not forced and cap > WAVE_MAX and avail < cap then
-    f.escalate_since = f.escalate_since or tick
-    -- (Saving up because a smaller wave would win nothing: longer, SAVE_WAIT; at ESCALATE_WAIT it sent its 30 into a mined
-    -- wall that had just killed 25, 2026-10-27.)
-    if tick - f.escalate_since < (saving and SAVE_WAIT or ESCALATE_WAIT) then
-      f.escalate_retry = tick + 600
-      return holds(f, tick, string.format("%s: waits for %d (%d ready)", saving and "saves up for its target" or "a defence that held",
-        cap, avail))
-    end
-  end
-  f.escalate_since = nil
   -- Its order not yet filled: the wave waits for it, ORDER_WAIT at the most.
   if f.short and not hatching() then
     f.order_since = f.order_since or tick
@@ -1261,9 +1192,6 @@ local function send(f, tick)
       end
     end
   end
-  if cap > WAVE_MAX then
-    trace(string.format("farm %d: the defence there held %d times; a wave of %d (at most %d)", f.id, held, #units, cap))
-  end
   if total > 0 and #units > 0 then
     local by = {}
     for _, u in ipairs(units) do local n = name_of(u):gsub("^lp%-bred%-", ""); by[n] = (by[n] or 0) + 1 end
@@ -1291,7 +1219,7 @@ local function send(f, tick)
   local lost = plan and herd.way_cost(base, plan.cover, big, plan.openable, rival and rival[1] or "player")
   local strength = herd.strength(units)
   -- (A probe, or a siege its attempts proved: sent on what it learns or knows there, not its prices.)
-  local trust = siege and siege.trust
+  local trust = siege and siege.trust or raid_probe and "probe" or nil
   if not forced and (not plan or not (trust or herd.affords(strength, lost))) then
     herd.stopped("dear|" .. (choice.key or "?"))
     for _, u in ipairs(units) do if type(u) ~= "string" then table.insert(origin.stock, u) end end
@@ -1940,7 +1868,7 @@ function farm.debug_lab_prime(id, biomass)
   if not f then return false end
   local cul = creep.of(id)
   if cul and biomass then cul.biomass = math.max(cul.biomass, biomass) end
-  f.escalate_retry, f.escalate_since, f.worthless_since, f.order_since = nil, nil, nil, nil
+  f.escalate_retry, f.order_since = nil, nil
   f.last_wave = game.tick - tune.sooner("biotech", WAVE_GAP)
   return true
 end
