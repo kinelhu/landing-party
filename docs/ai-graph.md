@@ -16,8 +16,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 3375 | costmap, feeds, firemap, ground, know, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
-| `farm` | 1944 | cell, costmap, creep, firemap, herd, know, pods, rng, threat, tune, valuemap | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
+| `herd` | 3471 | costmap, feeds, firemap, ground, know, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `farm` | 2144 | cell, costmap, creep, feeds, firemap, herd, know, pods, rng, threat, tune, valuemap | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
 | `ops` | 1812 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, threat, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1721 | blocks, rng, site, wfc | base, control, faction |  |  |  |  |
 | `siege` | 856 | (leaf) | ops |  |  |  | threat_last |
@@ -48,6 +48,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
 | `know` | 231 | (leaf) | army, control, farm, herd, ops, rd, strategy |  | 3600 |  | know |
 | `strip` | 229 | (leaf) | ops |  |  |  | threat_last |
+| `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `dev` | 196 | army, base, faction, farm, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `valuemap` | 195 | firemap | control, farm, herd |  |  |  |  |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
@@ -66,7 +67,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `scorcher` | 110 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_drains |
 | `border` | 108 | chart, ops, standing | control |  | 600 |  | borders |
 | `pact` | 107 | base | control, faction, marker |  | 600 |  | pact_broken, pact_state |
-| `feeds` | 101 | power, threat | control, herd |  |  |  |  |
 | `scanner` | 90 | (leaf) | control |  |  |  | scanners |
 | `belts` | 86 | (leaf) | control |  |  |  |  |
 | `cuts` | 86 | pool | ops |  |  |  |  |

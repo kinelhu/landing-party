@@ -2769,6 +2769,25 @@ scenarios.feeds = function()
     S.line2 = line(c[1] - 12, c[2] + 6, 11)
     S.ins2 = feed(c[1] - 1, c[2] + 6, 1)
     S.t1, S.t2 = t1, t2
+    -- A tank feeding three flamethrowers in a row through runs of pipe (each turret passes the fluid on): the pipe by the
+    -- tank parts all three, the pipe between the first and second the last two.
+    local X = c[1] + 2
+    local function row(R, oil)
+      local function pipe(x) return surface().create_entity{name = "pipe", position = {x + 0.5, R + 0.5}, force = "player"} end
+      local tank = surface().create_entity{name = "storage-tank", position = {X + 0.5, R - 0.5}, force = "player"}
+      if oil then tank.insert_fluid{name = "crude-oil", amount = oil} end
+      local pipes, flames = {}, {}
+      for _, x in ipairs({X + 2, X + 3, X + 4, X + 5, X + 8, X + 9, X + 10, X + 13, X + 14, X + 15, X + 16}) do pipes[x - X] = pipe(x) end
+      for _, x in ipairs({X + 7, X + 12, X + 18}) do
+        flames[#flames + 1] = surface().create_entity{name = "flamethrower-turret", position = {x, R - 0.5},
+          direction = defines.direction.north, force = "player"}
+      end
+      return pipes, flames
+    end
+    S.pipes, S.flames = row(c[2] - 15)
+    -- The same, its tank full: the pipes past the tank hold more oil than the turrets, hours of fire; the pipe into the last
+    -- turret alone is a cut (the user, 2026-10-30: one tank of 15,000 kept an outpost's flamethrowers going for hours).
+    S.wet = row(c[2] - 9, 20000)
   end)
   schedule(5 * 60, function()
     local c = S.c
@@ -2782,6 +2801,17 @@ scenarios.feeds = function()
       tostring(S.ins1 and S.ins1.drop_target and S.ins1.drop_target.name))
     check("feeds: the far end of the line, past the underground, starves the turret", farkey and by[farkey] and by[farkey][4] >= 1,
       tostring(farkey))
+    -- (Its flamethrowers' pipes: none was read, the user's fort's 22 fed from one tank, 2026-10-30.)
+    local function starves(p) return p and p.valid and by[string.format("%.1f,%.1f", p.position.x, p.position.y)] and
+      by[string.format("%.1f,%.1f", p.position.x, p.position.y)][4] or 0 end
+    local linked = {}
+    for _, ft in ipairs(S.flames or {}) do linked[#linked + 1] = #(ft.fluidbox_neighbours[1] or {}) end
+    check("feeds: the pipe by the tank parts all three flamethrowers, the one past the first two",
+      starves(S.pipes[3]) == 3 and starves(S.pipes[9]) == 2,
+      serpent.line({by_tank = starves(S.pipes[3]), past_first = starves(S.pipes[9]), linked = linked}))
+    check("feeds: full, the pipe by the tank no cut, the pipe into the last flamethrower one",
+      starves(S.wet[3]) == 0 and starves(S.wet[16]) == 1,
+      serpent.line({by_tank = starves(S.wet[3]), into_last = starves(S.wet[16]), oil_past = S.wet[16].valid and S.wet[16].get_fluid_count()}))
   end)
 end
 
@@ -7389,8 +7419,28 @@ scenarios.lab = function()
     for _, c in ipairs(surface().find_entities_filtered{type = "cliff", position = L.center, radius = 900}) do
       cliffs[#cliffs + 1] = xy(c.position)
     end
+    -- (What feeds its guns, feeds.lua: each cut, what it starves and the fluid left past it, for the page.)
+    local dark, lasers = 0, 0
+    for _, l in ipairs(surface().find_entities_filtered{type = "electric-turret", force = "player"}) do
+      lasers = lasers + 1
+      if l.status == defines.entity_status.no_power then dark = dark + 1 end
+    end
+    local poles = {}
+    for _, p in ipairs(surface().find_entities_filtered{name = "medium-electric-pole", force = "player"}) do
+      local c = p.get_wire_connector(defines.wire_connector_id.pole_copper, false)
+      poles[#poles + 1] = {xy(p.position), c and #c.connections or 0, p.electric_network_id}
+    end
+    local eei = {}
+    for _, e in ipairs(surface().find_entities_filtered{type = "electric-energy-interface", force = "player"}) do
+      eei[#eei + 1] = {xy(e.position), e.electric_network_id, e.power_production}
+    end
+    out("lab-power.jsonl", {dark = dark, lasers = lasers, poles = poles, eei = eei})
+    local supply = lp("debug_feeds", L.center, 300)
+    table.sort(supply, function(a, b) return a[4] > b[4] end)
+    local cuts = {}
+    for k = 1, math.min(12, #supply) do cuts[k] = supply[k] end
     out("lab-run.jsonl", {run = L.run, trials = params.lab_trials, biomass = params.lab_biomass, center = L.center,
-      defences = defences, context = context, pens = pens, farm = f and f.id, tick = game.tick, cliffs = cliffs})
+      defences = defences, context = context, pens = pens, farm = f and f.id, tick = game.tick, cliffs = cliffs, cuts = cuts})
   end
   -- Each defence as it was, rebuilt where gone, at full health, its gun turrets loaded.
   local function rebuild()
@@ -8793,6 +8843,35 @@ scenarios.herd = function()
     if mix == "burst" or mix == "burst-nohold" then lp("herd_wall_lesson", S.at(0, 0)) end
     S.t_send = game.tick
     S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or mix == "deep" and {deep = true} or (mix == "edge" or mix == "coreedge") and {deep = false} or nil)
+    -- stray: once it marches, eight of its own carried 300 tiles back and out of its group (strays, sent home): its march
+    -- keeps a biter's pace (counted in its middle as they walked home, its herd waited 15 times a leg and its cutters took
+    -- 23 minutes to a pole 100 seconds off; the fed lab fort, 2026-10-30).
+    if mix == "stray" then
+      for t = game.tick - storage.t0 + 600, END - 600, 60 do
+        schedule(t, function()
+          if S.strayed then return end
+          for _, wv in ipairs(lp("herd_state").waves) do
+            if wv.id == S.wave1 and wv.stage == "march" and wv.group then
+              local n = 0
+              for _, u in ipairs(surface().find_entities_filtered{position = {wv.group[1], wv.group[2]}, radius = 30,
+                type = "unit", force = "lp-biotech"}) do
+                if n < 8 and u.commandable and u.commandable.parent_group then
+                  local home = S.at(180, 0)
+                  local dx, dy = wv.group[1] - home[1], wv.group[2] - home[2]
+                  local d = math.max(1, math.sqrt(dx * dx + dy * dy))
+                  local q = surface().find_non_colliding_position(u.name, {wv.group[1] - dx / d * 300, wv.group[2] - dy / d * 300}, 20, 1)
+                  if q and u.teleport(q) then
+                    u.commandable.set_command{type = defines.command.stop, ticks_to_wait = 60}
+                    n = n + 1
+                  end
+                end
+              end
+              S.strayed = n
+            end
+          end
+        end)
+      end
+    end
     -- fire (0.2.31): once it marches, eight fed gun turrets round it: caught under fire, it should break in there.
     if mix == "fire" then
       for t = game.tick - storage.t0 + 600, END - 600, 120 do
@@ -9003,6 +9082,17 @@ scenarios.herd = function()
         tostring(w.t_mark and (w.t_mark - s) / 60), tostring(w.t_march and (w.t_march - s) / 60),
         tostring(w.t_breach and (w.t_breach - s) / 60), tostring(w.t_first_kill and (w.t_first_kill - s) / 60),
         tostring(w.t_withdraw and (w.t_withdraw - s) / 60), tostring((w.t_end - s) / 60)))
+    end
+    if mix == "stray" then
+      local len = 0
+      for k = 2, #(w.trail or {}) do
+        local a, b = w.trail[k - 1], w.trail[k]
+        len = len + math.sqrt(((a[1] or a.x) - (b[1] or b.x)) ^ 2 + ((a[2] or a.y) - (b[2] or b.y)) ^ 2)
+      end
+      check("herd: stray, strays sent home do not slow its march", (S.strayed or 0) > 0 and w.t_breach and w.t_march
+        and w.t_breach - w.t_march <= len * 20,
+        string.format("%s strayed; %s ticks for %.0f tiles", tostring(S.strayed), tostring(w.t_breach and w.t_march and w.t_breach - w.t_march), len))
+      return
     end
     if mix == "" then
       check("herd: the scout marked a face", w.mark ~= nil and not w.blind, serpent.line(w.mark))
@@ -9446,6 +9536,28 @@ scenarios.farm = function()
           end
         end
       end
+    end
+    -- The siege lab's fed fort (scripts/siegelab.sh build <seed> fed): the square, its power from outside, a line of poles
+    -- from the south face out to its source 90 tiles from the middle, out of its lasers' reach: the cut (feeds.lua,
+    -- power.cut) a wave can take for its way there, every laser dark behind it.
+    if params.fort == "fed" then
+      local prod, buf = S.power.power_production, S.power.electric_buffer_size
+      S.power.destroy()
+      -- (A medium pole links within 9 tiles: at 16 from the substations, the line hung loose and every laser was dark.)
+      for v = 38, 86, 6 do
+        local q = surface().find_non_colliding_position("medium-electric-pole", at(2, v), 2, 1)
+        if q then put("medium-electric-pole", q) end
+      end
+      S.power = put("electric-energy-interface", at(2, 89))
+      S.power.power_production, S.power.electric_buffer_size = prod, buf
+      -- (And a pole beside it: past the last pole's reach by half a tile, the source was on no network.)
+      put("medium-electric-pole", {S.power.position.x, S.power.position.y - 2})
+      schedule(game.tick + 300, function()
+        local dark, lasers = 0, surface().find_entities_filtered{name = L, force = "player"}
+        for _, l in ipairs(lasers) do if l.status == defines.entity_status.no_power then dark = dark + 1 end end
+        check("lab: the fed fort's lasers powered through its line", #lasers > 0 and dark == 0,
+          string.format("%d of %d dark", dark, #lasers))
+      end)
     end
     -- The siege lab's star fort (scripts/siegelab.sh build <seed> star; the user, 2026-10-30: "a star fort inspired by
     -- french fortresses, with tons of mines at the star points to kill bursters and force them between legs"): five
@@ -9940,6 +10052,14 @@ scenarios.farm = function()
         {sent = 60, spent = 300, got = 40, inside = true}, {sent = 30, spent = 100, got = 32, inside = true},
         {sent = 20, spent = 50, got = 5, inside = true}, {sent = 50, spent = 100, got = 45, inside = false}}, 10)
       check("farm: a siege sized by what razed most per biomass", sized == 30, tostring(sized))
+      -- Against a defence reinforced since (more guns where it went), its attempts there count for nothing: its record of
+      -- a siege that razed 45 outlived the guns put there after (the user, 2026-10-30: "perpetual identical actions").
+      local was, more = {guns = 5, walls = 20}, {guns = 10, walls = 20}
+      local hist = {{sent = 60, spent = 300, got = 40, inside = true, sig = was}, {sent = 30, spent = 100, got = 32, inside = true, sig = was},
+        {sent = 45, spent = 200, got = 20, inside = true, sig = more}}
+      local same, reinforced = lp("debug_best_size", hist, 10, was), lp("debug_best_size", hist, 10, more)
+      check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
+        serpent.line({same = same, reinforced = reinforced}))
       local now = lp("cell_sites")[1] or {}
       check("farm: it bought technicians as it grew", (now.bought or 0) >= 1, serpent.line({bought = now.bought, techs = now.techs}))
     end

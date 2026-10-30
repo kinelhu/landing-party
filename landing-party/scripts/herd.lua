@@ -363,15 +363,52 @@ function herd.attempt_key(foe, pos)
   return string.format("%s|%d,%d", type(foe) == "string" and foe or foe.name, math.floor(x / 64), math.floor(y / 64))
 end
 -- Of its attempts there that razed `least` or more, the one that razed most for what it spent: what it sent (its strength).
-function herd.best_size(r, least)
-  local best, bv
+-- What defends a place (the guns and walls within SIG_REACH of it), as its attempts there met it, and whether it stands
+-- stronger now than that by over SIG_CHANGE (more guns or more walls): an attempt against a defence since reinforced says
+-- nothing of it. (Weaker, the attempt holds: a hole left open is its to come back through.) The user, 2026-10-30: "are we
+-- not at risk of perpetual identical actions?"; its record of a siege that razed 45 outlived the guns put there after.
+herd.SIG_REACH, herd.SIG_CHANGE = 48, 0.3
+function herd.place_sig(surface, forces, at)
+  local p = {x = at.x or at[1], y = at.y or at[2]}
+  return {guns = surface.count_entities_filtered{position = p, radius = herd.SIG_REACH, type = threat.FIRE, force = forces},
+    walls = surface.count_entities_filtered{position = p, radius = herd.SIG_REACH, type = {"wall", "gate"}, force = forces}}
+end
+local function stronger(now, was)
+  if not (now and was) then return false end
+  return now.guns > was.guns + herd.SIG_CHANGE * math.max(was.guns, 3)
+    or now.walls > was.walls + herd.SIG_CHANGE * math.max(was.walls, 10)
+end
+-- Its attempts at a place that still speak for it: those against a defence no stronger than it stands now (sig).
+function herd.history(r, sig)
+  local out = {}
   for _, a in ipairs(r and r.hist or {}) do
+    if not stronger(sig, a.sig) then out[#out + 1] = a end
+  end
+  return out
+end
+function herd.best_size(r, least, sig)
+  local best, bv
+  for _, a in ipairs(herd.history(r, sig)) do
     if a.inside and a.got >= least then
       local v = a.got / math.max(1, a.spent)
       if not bv or v > bv then best, bv = a, v end
     end
   end
   return best and best.sent
+end
+-- What its attempts by `method` at this foe have done, on the mean over every place (got, spent; nil: none yet): what a
+-- place it has not tried is expected to give (farm.lua menu, a probe's prior).
+function herd.foe_record(foe, method)
+  local a = know.of("biotech").attempts or {}
+  local pre, suf = (type(foe) == "string" and foe or foe.name) .. "|", "|" .. method
+  local got, spent, n = 0, 0, 0
+  for key, r in pairs(a) do
+    if key:sub(1, #pre) == pre and key:sub(-#suf) == suf then
+      for _, h in ipairs(r.hist or {}) do got, spent, n = got + h.got, spent + h.spent, n + 1 end
+    end
+  end
+  if n == 0 then return nil end
+  return got / n, spent / n
 end
 function herd.attempt(foe, pos, method)
   local a = know.of("biotech").attempts
@@ -385,18 +422,34 @@ local function record_attempt(w)
   if not at then return end
   local k = know.of("biotech")
   k.attempts = k.attempts or {}
-  local method = ((w.big_sent or 0) > 0 or w.fodder_set) and "siege" or "raid"
+  -- (A strike's cutters are the strike's: what they spent and razed waits for it, st().cutters, and is counted with its own.)
+  if w.cut and w.cut.for_strike then
+    local spent0 = 0
+    for _, v in pairs(w.lost_worth_by or {}) do spent0 = spent0 + v end
+    st().cutters = st().cutters or {}
+    st().cutters[w.id] = {spent = spent0, got = w.razed_worth or 0, sent = w.worth or 0}
+    return
+  end
+  local method = w.cut and "cut" or w.wait_cut and "strike" or ((w.big_sent or 0) > 0 or w.fodder_set) and "siege" or "raid"
   local key = herd.attempt_key(foe_name(w), at) .. "|" .. method
   local r = k.attempts[key] or {n = 0, spent = 0, got = 0, inside = 0}
   local spent = 0
   for _, v in pairs(w.lost_worth_by or {}) do spent = spent + v end
-  r.n, r.spent, r.got = r.n + 1, r.spent + spent, r.got + (w.razed_worth or 0)
+  -- (A cut got what it razed, as any wave: credited with the price of the guns it parted, its record was in other units
+  -- than its raids'.)
+  local got, sent = w.razed_worth or 0, w.worth or 0
+  local cutters = w.wait_cut and st().cutters and st().cutters[w.wait_cut.wave]
+  if cutters then
+    spent, got, sent = spent + cutters.spent, got + cutters.got, sent + cutters.sent
+    st().cutters[w.wait_cut.wave] = nil
+  end
+  r.n, r.spent, r.got = r.n + 1, r.spent + spent, r.got + got
   if w.t_inside then r.inside = r.inside + 1 end
-  r.tick, r.last = game.tick, {spent = spent, got = w.razed_worth or 0, inside = w.t_inside ~= nil, probe = w.trust == "probe"}
+  r.tick, r.last = game.tick, {spent = spent, got = got, inside = w.t_inside ~= nil, probe = w.trust == "probe"}
   -- (Its last HISTORY there, each what it sent, spent and razed: the size that razed most for what it spent is the one it
   -- sends again, farm.lua siege_size.)
   r.hist = r.hist or {}
-  table.insert(r.hist, {sent = w.worth or 0, spent = spent, got = w.razed_worth or 0, inside = w.t_inside ~= nil})
+  table.insert(r.hist, {sent = sent, spent = spent, got = got, inside = w.t_inside ~= nil, sig = w.sig, tick = game.tick})
   while #r.hist > HISTORY do table.remove(r.hist, 1) end
   k.attempts[key] = r
 end
@@ -725,6 +778,7 @@ function herd.launch(p, target, opts)
   p.memory[memory_key(c)] = mem
   local w = {id = h.next, pen = p.pen.unit_number, surface = s.index, center = c, hx = hx, hy = hy, foes = opts.forces,
     no_probe = opts.no_probe, force_deep = opts.deep, choice = opts.choice, plan = opts.plan, sweep = opts.sweep, trust = opts.trust,
+    cut = opts.cut, sig = opts.sig, wait_cut = opts.wait_cut,
     loop = reach + LOOP_SPARE + mem.extra, stage = "scout", t = game.tick, t0 = game.tick, members = {}, seen = {},
     marks = {}, kills = {}, tried = {}, sight = opts.sight or SIGHT, size = #units, goal = xy(target)}
   h.next = h.next + 1
@@ -1573,8 +1627,15 @@ local function march(w)
   -- Its herd together before each leg: its members' middle within twice its spread and a cell of its group, else the group
   -- stops WAIT_TICKS for them. (Its group ran on ahead of its slow breeds, its members' middle 100 to 130 tiles behind, and
   -- they made their own way to it, round the user's fort and over its mines: 30 lost on the march; the siege lab.)
+  -- (The middle of those in its group: counted with the strays it had sent home, its middle stayed behind it as they
+  -- walked back, and every leg it waited its 15 waits; its cutters took 23 minutes to a pole 100 seconds off, the fed lab
+  -- fort, 2026-10-30.)
   if w.group.valid and w.leg > 2 and (w.waits or 0) < WAITS then
-    local mid, n = where(w), #herd_units(w)
+    local sx, sy, n = 0, 0, 0
+    for _, u in ipairs(w.group.members) do
+      if u.valid then sx, sy, n = sx + u.position.x, sy + u.position.y, n + 1 end
+    end
+    local mid = n > 0 and {x = sx / n, y = sy / n} or w.group.position
     local r = 2 * herd.spread(n) + costmap.CELL
     if d2(mid, w.group.position) > r * r then
       w.waiting, w.waits = true, (w.waits or 0) + 1
@@ -2352,6 +2413,8 @@ local function targets(w, at)
   -- strength, inside the user's fort, whose guns cover each other, it went for buildings and died under the guns, none
   -- broken in five sieges that each got in; the siege lab, 2026-10-30.)
   for _, t in ipairs(firemap.cover(map, at)) do add(t, 0, true) end
+  -- A cut's feed before all (farm.lua menu: what it came for), wherever it stands.
+  if w.cut and w.cut.e and w.cut.e.valid then add(w.cut.e, -1, true) end
   -- Then the artillery shelling its incubators (herd.shelling): what it came for, when it came for one.
   for _, a in pairs(s.find_entities_filtered{position = at, radius = r, type = ARTILLERY, force = forces}) do
     if herd.shelling(a) > 0 then add(a, 0.5) end
@@ -2700,8 +2763,25 @@ local function plan_pays(w)
   return herd.affords(herd.strength(w.members), herd.way_cost(w.way_in.lost, w.way_in.cover, big, w.way_in.openable, foe_name(w)))
 end
 
+-- A strike's wait at its mark (farm.lua menu): its cutters' feed fallen, in; its cutters gone home or dead with the feed
+-- standing, or CUT_HOLD past, home: the guns it was to come in under are firing.
+local CUT_HOLD = 3 * 3600
+local function cut_wait(w)
+  local c = w.wait_cut
+  if not (c.e and c.e.valid) then
+    w.cut_hold = nil
+    log(w, "its cutters' feed is down: in")
+    probe_read(w)
+    return breach(w)
+  end
+  if not st().waves[c.wave] or game.tick - w.cut_hold > CUT_HOLD then
+    w.cut_hold = nil
+    return withdraw(w, "its cut failed")
+  end
+end
 local function step(w, tick)
   detonate(w)
+  if w.cut_hold and w.stage == "march" then return cut_wait(w) end
   -- (And its rams held behind its herd until it is at the wall, whatever stage the herd has gone on to: looked at in the
   -- breach alone, they were never let go once the herd went in; the siege lab, 2026-10-30.)
   if w.stage == "breach" or (w.screened and (not w.rams_done or w.held_cmds)) then sequence(w) end
@@ -3123,6 +3203,13 @@ function herd.on_command_completed(e)
     end
     if w.group and w.group.valid and e.unit_number == w.group.unique_id then
       -- (A wait for its stragglers ended, march: the same leg again, not the next.)
+      -- (A strike's wait at its mark ended by the clock: waits on, cut_wait decides.)
+      if w.stage == "march" and w.cut_hold then
+        if w.group.valid then
+          w.group.set_command{type = defines.command.stop, ticks_to_wait = CUT_HOLD, distraction = defines.distraction.by_damage}
+        end
+        return
+      end
       if w.stage == "march" and w.waiting then
         w.waiting = nil
         if w.group.valid then march(w) end
@@ -3149,6 +3236,15 @@ function herd.on_command_completed(e)
         if w.fought and not plan_pays(w) then
           log(w, string.format("what is left of it after its fight (%d) cannot pay its way in: home", alive(w)))
           return withdraw(w, "spent on the way")
+        end
+        -- A strike: at its mark till its cutters' feed falls (cut_hold, step).
+        if w.wait_cut and w.wait_cut.e and w.wait_cut.e.valid then
+          if not w.cut_hold then
+            w.cut_hold = game.tick
+            log(w, "at its mark: waits for its cutters")
+          end
+          w.group.set_command{type = defines.command.stop, ticks_to_wait = CUT_HOLD, distraction = defines.distraction.by_damage}
+          return
         end
         probe_read(w); return breach(w)
       end

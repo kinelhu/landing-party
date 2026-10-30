@@ -537,7 +537,7 @@ remote.add_interface("landing-party", {
   lab_time_ways = function(id, cell) return farm.debug_time_ways(id, cell) end,
   lab_waves = function() return herd.lab_waves() end,
   -- Tests only: the size herd.best_size draws from an attempt's history (its sieges sized by what razed most per biomass).
-  debug_best_size = function(hist, least) return herd.best_size({hist = hist}, least) end,
+  debug_best_size = function(hist, least, sig) return herd.best_size({hist = hist}, least, sig) end,
   lab_prices = function()
     local k, out = know.of("biotech"), {price = {}, scale = {}}
     for foe, ps in pairs(k.price or {}) do
@@ -628,7 +628,7 @@ remote.add_interface("landing-party", {
   debug_feeds = function(pos, radius)
     local out = {}
     for _, f in pairs(feeds.read(game.surfaces[1], pos, radius, {game.forces.player})) do
-      if f.e.valid then out[#out + 1] = {f.e.name, f.e.position.x, f.e.position.y, f.starves} end
+      if f.e.valid then out[#out + 1] = {f.e.name, f.e.position.x, f.e.position.y, f.starves, f.held} end
     end
     return out
   end,

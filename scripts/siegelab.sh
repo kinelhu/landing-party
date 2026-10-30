@@ -4,7 +4,7 @@
 # rebuilt between trials and what it learned kept; the save it ends with carries the learning, for the next edit.
 #   scripts/siegelab.sh play <save.zip>            open a copy in the game window (its own profile, this checkout's mod) to
 #                                                  build on; plot: an empty plot to build a fortress on (build ... plot)
-#   scripts/siegelab.sh build [seed] [square|star|plot] grow the lab (the siege test's fortress, a star fort, or an empty plot; a culture of 8 or more
+#   scripts/siegelab.sh build [seed] [square|star|plot|fed] grow the lab (the siege test's fortress, a star fort, an empty plot, or the square powered from outside; a culture of 8 or more
 #                                                  incubators at full evolution): factorio-lp-lab/lab.zip
 #   scripts/siegelab.sh run <save.zip> [trials]    trials against a COPY of the save (never the original); report and
 #                                                  lab-out.zip (the learning kept) in docs/sim/lab-<save>/

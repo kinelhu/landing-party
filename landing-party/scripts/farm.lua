@@ -23,6 +23,7 @@ local cell = require("__landing-party__.scripts.cell")
 local know = require("__landing-party__.scripts.know")
 local firemap = require("__landing-party__.scripts.firemap")
 local costmap = require("__landing-party__.scripts.costmap")
+local feeds = require("__landing-party__.scripts.feeds")
 local threat = require("__landing-party__.scripts.threat")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local COUNTERS = require("__landing-party__.counters")
@@ -442,6 +443,7 @@ end
 -- what a siege is sized for).
 local siege_size   -- below: what a siege at a plan costs and holds
 local ATTEMPT_FADED = 0.1   -- an attempt faded below this weight (herd.attempt) says nothing: tried long ago, not tried
+local CUT_LOOKS, CUT_R = 3, 200   -- cuts a fresh reading plans a way to, and how far round its best place it reads feeds
 local SIEGE_LOOKS = 4   -- places a fresh reading sizes a siege at: its best that a wave of what it has does not win
 local function target_from(surface, pos, f, n, opts)
   local mind = B.mind
@@ -570,7 +572,9 @@ local function target_from(surface, pos, f, n, opts)
     local looked, said = 0, {}
     for _, c in ipairs(by_worth) do
       if looked >= SIEGE_LOOKS then break end
-      if not (c.passes and c.gain >= (mind.min_gain or 0)) and c.cover > 0 and (c.raw or NO_WAY) < NO_WAY then
+      -- (Where a raid would win as well: its menu weighs them against each other, menu. Sized only where no raid won, a
+      -- siege never met a raid in it.)
+      if c.cover > 0 and (c.raw or NO_WAY) < NO_WAY then
         looked = looked + 1
         local rival = not shared.is_player_force(game.forces[c.force]) and {c.force} or nil
         local pl = herd.plan(surface, pos, c.at, rival or players(), WAVE_MAX)
@@ -588,6 +592,46 @@ local function target_from(surface, pos, f, n, opts)
       end
     end
     if #said > 0 then trace(string.format("farm %d sizes its sieges: %s", f.id, table.concat(said, "; "))) end
+    -- Its cuts (the user, 2026-10-30: "a pipe that is free on the cost map is an undefended pipe"): what feeds the guns
+    -- round its best place (feeds.lua: the pipe, pole or belt whose loss parts the most of them from their supply), by
+    -- what the guns it parts cost it over what reaching it costs on the one reading; the CUT_LOOKS best planned, those
+    -- past no wall kept with the reading (f.ways.cuts).
+    local top = by_worth[1]
+    local sm = herd.shared
+    if top and sm and sm.tick == game.tick then
+      local rival = not shared.is_player_force(game.forces[top.force]) and {top.force} or nil
+      local list = {}
+      for _, c in pairs(feeds.read(surface, top.at, CUT_R, rival or players(), herd.price_of)) do
+        local reach = c.e.valid and costmap.cost(sm.cm, c.e.position)
+        if reach and reach < NO_WAY then
+          c.reach, c.v = reach, c.price / (1 + reach)
+          list[#list + 1] = c
+        end
+      end
+      table.sort(list, function(a, b)
+        if a.v ~= b.v then return a.v > b.v end
+        return a.e.unit_number < b.e.unit_number
+      end)
+      f.ways.cuts = {}
+      local cut_said = {}
+      for k = 1, math.min(CUT_LOOKS, #list) do
+        local c = list[k]
+        local at = {x = c.e.position.x, y = c.e.position.y}
+        local pl = herd.plan(surface, pos, at, rival or players(), shared.WAVE_MIN)
+        cut_said[#cut_said + 1] = string.format("%s at %.0f,%.0f parts %d guns (%.0f), reached for %.0f%s", c.e.name, at.x,
+          at.y, c.starves, c.price, c.reach, pl and (pl.walled and ", past a wall" or "") or ", no plan")
+        if pl and not pl.walled then
+          -- (What it would win: its best place's worth, in the share of its guns the cut parts; credited with those guns'
+          -- price, a cut scored 70 to a raid's 0.02 on the fed lab fort, the two in different units.)
+          local share = math.min(1, c.price / math.max(1, top.guns or 0))
+          f.ways.cuts[#f.ways.cuts + 1] = {e = c.e, at = at, starves = c.starves, price = c.price, held = c.held, plan = pl,
+            gain = (top.value or 0) * share,
+            strike = {at = {x = top.at.x, y = top.at.y}, value = top.value or 0, defence = top.defence or 0, force = top.force},
+            rival = rival, dist = math.sqrt(d2(at, pos)), key = herd.attempt_key(rival and rival[1] or "player", at)}
+        end
+      end
+      if #cut_said > 0 then trace(string.format("farm %d reads its cuts: %s", f.id, table.concat(cut_said, "; "))) end
+    end
   end
   -- Its best siege: by what it wins for each burster, near first (by the fewest bursters alone it laid siege to a place
   -- worth 9).
@@ -608,7 +652,9 @@ local function target_from(surface, pos, f, n, opts)
       odds = c.odds, score = c.score}
   end
   return best.at, rival, {key = best.key, defence = best.defence, why = table.concat(why, "; "), top = top, gain = best.gain,
-    passes = best.passes, siege = sg, places = (function()
+    passes = best.passes, siege = sg, sieges = f.ways and f.ways.sieges or {}, cuts = f.ways and f.ways.cuts or {},
+    odds = best.odds, dist = best.dist,
+    value = best.value or 0, strength = n or shared.WAVE_MIN, places = (function()
       local out = {}
       for k = 1, math.min(SIEGE_LOOKS, #by_worth) do
         local c = by_worth[k]
@@ -811,7 +857,8 @@ siege_size = function(f, pl, place)
   -- (Proven by what it razed there, not by getting in: in and razing nothing, five sieges at one breach of the user's fort.
   -- Sized as the one that razed most for what it spent: sized on what a siege spent, its sieges of 34 to 38 lost 230 to 300
   -- and razed 3 to 24, where its probes of 24 had lost 110 and razed up to 41; the siege lab, 2026-10-30.)
-  local proven = mem and wt > ATTEMPT_FADED and herd.best_size(mem, B.mind.min_gain or 0) or nil
+  local proven = mem and wt > ATTEMPT_FADED and herd.best_size(mem, B.mind.min_gain or 0,
+    herd.place_sig(s, place and place.rival or players(), pl.target)) or nil
   for k = rams, rams + math.ceil(reach / herd.opens(foe)) do
     local lost = herd.way_cost(base, pl.cover, k, pl.openable, foe)
     -- Its herd pays its way in once and the place's guns once (what its rams leave of them), and is not to come back: a
@@ -923,6 +970,109 @@ local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
 -- wave's least (WAVE_MIN: its rams, its screen, its herd making up the rest), at the best of its places its siege has not
 -- tried lately (herd.attempt), sent though its prices say it is too dear: what it costs there is learned by going.
 -- (Held on its prices alone, it never went back to a fort it had got into four times running; the siege lab.)
+-- Its menu (the design consult, 2026-10-30, B: methods scored, not a ladder of vetoes): each way it could go, by what
+-- it would raze for what it would lose, nearer first. A raid at its best place, a siege at each it sized. What it expects
+-- is what its attempts there did (herd.attempt: the one that razed most for what it spent) where it has tried, else its
+-- reading: a raid wins its odds of the place's worth and loses the rest of its strength; a siege spends its herd breaking
+-- in (siege_size: sized to pay once) and razes what stands there. One worth less than its mind's min_gain is no choice.
+-- (A siege was weighed only when no raid was worth anything: on the user's fort a raid of 28 lost 710 and razed 33,
+-- where sieges razed 45 for 296; the siege lab.)
+-- Its attempts there count only against a defence no stronger than now (herd.history), and each lately made there takes
+-- REPEAT off what it expects (the player answers what it did: it rebuilds, it reinforces), so a place that worked is not
+-- gone at forever. It picks among its choices by chance, in proportion to their scores (f.rng, seeded: one game plays
+-- the same): mostly the best, a close second its turn. (Always the best, the siege lab's trials 5 to 8 were one siege at
+-- one breach, its defences rebuilt each time; the user, 2026-10-30.) REPEAT assumed, not tuned.
+local REPEAT = 0.3
+local function menu(f, choice, sieges_allowed, s)
+  local mind = B.mind
+  local ops = {}
+  local function expect(op, foe)
+    local mem, wt = herd.attempt(foe, op.at, op.method)
+    if mem and wt > ATTEMPT_FADED then
+      local forces = foe == "player" and players() or {foe}
+      local hist = herd.history(mem, herd.place_sig(s, forces, op.at))
+      local best, bv, lately = nil, nil, 0
+      for _, a in ipairs(hist) do
+        local v = a.got / math.max(1, a.spent)
+        if not bv or v > bv then best, bv = a, v end
+        if a.tick then lately = lately + math.exp(-(game.tick - a.tick) / (mind.fade or 40 * 3600)) end
+      end
+      if best then op.gain, op.lost, op.sent, op.known = best.got / (1 + REPEAT * lately), best.spent, best.sent, true end
+      op.voided = #hist < #(mem.hist or {}) and #(mem.hist or {}) - #hist or nil
+    end
+    -- (Its losses as a share of what it sends: over 1 + what it lost alone, a cut that razed 7 and lost nothing scored 40
+    -- times a strike that razed 11 for 77 of 700; the fed lab fort, 2026-10-30.)
+    op.score = op.gain / (1 + op.lost / math.max(1, op.sent or choice.strength or 1)) / (1 + (op.dist or 0) / mind.far)
+    if op.gain >= (mind.min_gain or 0) then ops[#ops + 1] = op end
+  end
+  if choice.passes then
+    local foe = choice.rival or "player"
+    expect({method = "raid", at = choice.at, gain = choice.gain, lost = choice.strength * (1 - (choice.odds or 0)),
+      dist = choice.dist}, foe)
+  end
+  -- A cut: what the guns it parts cost it, for its way there and back (its plan, past no wall).
+  for _, c in ipairs(choice.cuts or {}) do
+    if c.e.valid then
+      expect({method = "cut", at = c.at, gain = c.gain or 0, lost = 2 * c.plan.cost, dist = c.dist, cut = c},
+        c.rival and c.rival[1] or "player")
+    end
+  end
+  -- A cut and a strike (the user, 2026-10-30: "should a smart adversary combine the power cut with an attack on
+  -- unpowered defenses?"): its cutters at the feed, its herd staged out of reach of the place the cut darkens and sent in
+  -- the moment the feed falls (herd.lua: the strike holds at its mark). What it would win there with the parted guns'
+  -- price off its defence, for the cutters' way there and back and what the herd would lose.
+  for _, c in ipairs(choice.cuts or {}) do
+    if c.e.valid and c.strike then
+      local st, n = c.strike, choice.strength
+      local odds = valuemap.keeps_lost(n, math.max(0, st.defence - c.price) / 2)
+      expect({method = "strike", at = st.at, gain = odds * st.value, lost = 2 * c.plan.cost + n * (1 - odds),
+        dist = math.sqrt(d2(st.at, f.pos)), cut = c}, c.rival and c.rival[1] or "player")
+    end
+  end
+  if sieges_allowed then
+    for _, sg in pairs(choice.sieges or {}) do
+      expect({method = "siege", at = sg.at, gain = sg.value or 0, lost = sg.need or 0, sent = sg.need, dist = sg.dist, siege = sg},
+        sg.rival and sg.rival[1] or "player")
+    end
+    -- A probe at its best place not tried lately: what its sieges at this foe have done on the mean (herd.foe_record),
+    -- once it has any. (A probe only when nothing fit, a siege proven at one place was the only choice there ever was,
+    -- and it went there every time; the siege lab, 2026-10-30.)
+    for _, top in ipairs(choice.places or {}) do
+      local foe = not shared.is_player_force(game.forces[top.force]) and top.force or "player"
+      local at = {x = top.at[1], y = top.at[2]}
+      local _, wt = herd.attempt(foe, at, "siege")
+      local got, spent = herd.foe_record(foe, "siege")
+      if got and wt <= ATTEMPT_FADED then
+        expect({method = "probe", at = at, gain = got, lost = spent, dist = math.sqrt(d2(at, f.pos)), place = top}, foe)
+        break
+      end
+    end
+  end
+  table.sort(ops, function(a, b)
+    if a.score ~= b.score then return a.score > b.score end
+    return (a.siege and a.siege.key or "") < (b.siege and b.siege.key or "")
+  end)
+  local total = 0
+  for _, o in ipairs(ops) do total = total + o.score end
+  local said = {}
+  for k = 1, math.min(4, #ops) do
+    local o = ops[k]
+    said[#said + 1] = string.format("%s at %.0f,%.0f razes %.0f for %.0f%s%s, score %.3f (%.0f%%)", o.method, o.at.x, o.at.y,
+      o.gain, o.lost, o.known and " (as its attempts did)" or "", o.voided and string.format(", %d attempts void: stronger now", o.voided) or "",
+      o.score, total > 0 and 100 * o.score / total or 0)
+  end
+  if #ops == 0 then return nil end
+  f.rng = f.rng or rng.new(f.id * 7919 + game.tick)
+  local pick, r = ops[1], rng.next(f.rng) * total
+  for _, o in ipairs(ops) do
+    r = r - o.score
+    if r <= 0 then pick = o; break end
+  end
+  trace(string.format("farm %d weighs its methods: %s; picks %s at %.0f,%.0f", f.id, table.concat(said, "; "), pick.method,
+    pick.at.x, pick.at.y))
+  return pick
+end
+
 local function probe(f, s, choice, tick)
   if not herd.bursters_developed() or B.mind.orders == false or storage.biotech_no_orders then return false end
   local bc, fc = shared.BREEDS["lp-bred-big-burster"].cost, shared.BREEDS[herd.FODDER].cost
@@ -1043,11 +1193,40 @@ local function send(f, tick)
   -- as well, it waited with 117 ready; the siege test, 2026-10-28.)
   local saving = siege and math.min(siege.n, avail)
   local raid_probe
-  if not siege and choice.gain < (B.mind.min_gain or 0) and not f.debug_size and not f.debug_now then
-    local sg = choice.siege
-    local c2
+  local op
+  if not siege and not f.debug_size and not f.debug_now then
     local evo = game.forces[B.force].get_evolution_factor(s)
-    if sg and B.mind.orders ~= false and not storage.biotech_no_orders and unlocked(evo)["lp-bred-big-burster"] then
+    choice.at, choice.rival = target, rival and rival[1] or nil
+    op = menu(f, choice, B.mind.orders ~= false and not storage.biotech_no_orders and unlocked(evo)["lp-bred-big-burster"], s)
+  end
+  -- A cut: its wave goes for the feed (herd.lua targets: first), as many as pay its way there and back.
+  local cut
+  if op and op.method == "cut" then
+    cut = op.cut
+    target, rival = cut.at, cut.rival
+    choice = {key = cut.key, defence = 0, top = {}, gain = cut.price, passes = true,
+      why = string.format("a cut: %s at %.0f,%.0f parts %d guns from their supply", cut.e.name, cut.at.x, cut.at.y, cut.starves)}
+    trace(string.format("farm %d: cuts the supply of %d guns at %.0f,%.0f (%s, its way there %.0f)", f.id, cut.starves, cut.at.x,
+      cut.at.y, cut.e.name, cut.plan.cost))
+  end
+  if op and op.method == "probe" and probe(f, s, {places = {op.place}}, tick) then
+    return holds(f, tick, "lays a probe")
+  end
+  local strike
+  if op and op.method == "strike" then
+    strike = op
+    cut = op.cut
+    target, rival = op.at, cut.rival
+    choice = {key = herd.attempt_key(rival and rival[1] or "player", op.at), defence = 0, top = {}, gain = op.gain, passes = true,
+      why = string.format("a strike at %.0f,%.0f once its cut at %.0f,%.0f (%s) parts %d guns", op.at.x, op.at.y, cut.at.x,
+        cut.at.y, cut.e.name, cut.starves)}
+    trace(string.format("farm %d: strikes at %.0f,%.0f, its cutters first at %.0f,%.0f (%s, %d guns parted)", f.id, op.at.x,
+      op.at.y, cut.at.x, cut.at.y, cut.e.name, cut.starves))
+  end
+  if not siege and not f.debug_size and not f.debug_now and not (op and (op.method == "raid" or op.method == "cut" or op.method == "strike")) then
+    local sg = op and op.siege
+    local c2
+    if sg then
       -- Nothing it can field wins anything: the way in to its best place is the job, as its weighing sized it (target_from:
       -- its plan and siege_size on the one reading).
       local pl, k, n, price, breed, need, fodder = sg.plan, sg.k, sg.n, sg.price, sg.breed, sg.need, sg.fodder
@@ -1099,6 +1278,10 @@ local function send(f, tick)
   -- (Escalation by method, not headcount: a wave of WAVE_MAX at most, a raid probe the least, a siege its own size. A
   -- defence that held drew waves up to twice WAVE_MAX, waited for: the design consult, 2026-10-30.)
   local cap = raid_probe and shared.WAVE_MIN or WAVE_MAX
+  if cut and not strike then
+    cap = shared.WAVE_MIN
+    while cap < WAVE_MAX and not herd.affords(ready(cap), cut.plan.cost) do cap = cap + 1 end
+  end
   if saving then cap = math.max(cap, saving) end
   -- /lp wave <n> (dev): a wave of that many, past the caps, once.
   local forced = f.debug_size
@@ -1219,7 +1402,7 @@ local function send(f, tick)
   local lost = plan and herd.way_cost(base, plan.cover, big, plan.openable, rival and rival[1] or "player")
   local strength = herd.strength(units)
   -- (A probe, or a siege its attempts proved: sent on what it learns or knows there, not its prices.)
-  local trust = siege and siege.trust or raid_probe and "probe" or nil
+  local trust = siege and siege.trust or raid_probe and "probe" or strike and "strike" or nil
   if not forced and (not plan or not (trust or herd.affords(strength, lost))) then
     herd.stopped("dear|" .. (choice.key or "?"))
     for _, u in ipairs(units) do if type(u) ~= "string" then table.insert(origin.stock, u) end end
@@ -1248,6 +1431,21 @@ local function send(f, tick)
   f.siege = nil
   -- It goes: what was a name is hatched now.
   units = hatch(f, s, units)
+  -- A strike: its cutters, as many as pay the way to the feed, sent first; the rest the strike, held at its mark till the
+  -- feed falls (wait_cut).
+  local wait_cut
+  if strike then
+    local per_u = herd.strength(units) / math.max(1, #units)
+    local k = shared.WAVE_MIN
+    while k < #units - shared.WAVE_MIN and not herd.affords(k * per_u, cut.plan.cost) do k = k + 1 end
+    local cutters = {}
+    for i = 1, k do cutters[#cutters + 1] = table.remove(units, 1) end
+    local id = herd.launch(origin, cut.at, {units = cutters, farm = f.id, forces = rival, no_probe = true, plan = cut.plan,
+      trust = "probe", cut = {e = cut.e, worth = 0, starves = cut.starves, for_strike = true},
+      sig = herd.place_sig(s, rival or players(), cut.at)})
+    wait_cut = {e = cut.e, wave = id}
+    trace(string.format("farm %d sends %d cutters at %.0f,%.0f; its strike of %d waits at its mark", f.id, k, cut.at.x, cut.at.y, #units))
+  end
   f.last_wave = tick
   f.waves = (f.waves or 0) + 1
   f.aim = {x = target.x, y = target.y}
@@ -1281,7 +1479,9 @@ local function send(f, tick)
   trials()[choice.key] = {tick = tick, defence = choice.defence}
   herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep,
     choice = choice and choice.top, plan = plan, sweep = sweep_n,
-    fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil, trust = trust})
+    fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil, trust = trust,
+    cut = cut and not strike and {e = cut.e, worth = cut.price, starves = cut.starves} or nil, wait_cut = wait_cut,
+    sig = herd.place_sig(s, rival or players(), plan and plan.target or target)})
   f.debug_deep, f.debug_now = nil, nil
   trace(string.format("farm %d sends %d at %.0f,%.0f%s", f.id, #units, target.x, target.y,
     plan and (plan.mines or 0) > 0 and string.format(", a sweep of %d for the %d mines on its way in", sweep_n, plan.mines) or ""))
