@@ -132,6 +132,13 @@ function herd.init()
   local g = game.forces[shared.CORPS.grubstake.force]
   if g then f.set_cease_fire(g, true); g.set_cease_fire(f, true) end
   st().grubstake_broken = nil
+  -- (0.2.91: its prices learned in heads read as mediums, herd.strength: learned again, from its priors.)
+  if not storage.biotech_priced_in_health then
+    storage.biotech_priced_in_health = true
+    local k = know.of("biotech")
+    k.price, k.scale, k.dear = nil, nil, nil
+    for _, f in pairs(storage.farms and storage.farms.list or {}) do f.refused_at = nil end
+  end
 end
 
 local function d2(a, b)
@@ -234,7 +241,7 @@ end
 local function learn_scale(w)
   if not (w.breach and w.way_in and w.way_in.lost > 0) then return end
   local crossed = 0
-  for key, n in pairs(w.lost_by or {}) do
+  for key, n in pairs(w.lost_worth_by or w.lost_by or {}) do
     local stage = key:match("^(%a+) ")
     if stage == "march" or stage == "breach" or stage == "withdraw" then crossed = crossed + n end
   end
@@ -260,8 +267,9 @@ local function learn_march(w)
     local at = {mk.x / mk.n, mk.y / mk.n}
     local n = s.count_entities_filtered{position = at, radius = FIRE_NEAR, name = name, force = mk.force}
     if n > 0 then
-      local per = know.learn_price("biotech", mk.force, name, mk.n / n, threat.prior_of(name, mk.force, base), wiped)
-      w.price_learned["march " .. name] = {sample = mk.n / n, per = per, n = n}
+      local killed = mk.worth or mk.n
+      local per = know.learn_price("biotech", mk.force, name, killed / n, threat.prior_of(name, mk.force, base), wiped)
+      w.price_learned["march " .. name] = {sample = killed / n, per = per, n = n}
     end
   end
   -- (Each once: learned when it re-plans under fire, and again at its end from what came after.)
@@ -299,12 +307,12 @@ local function learn_price(w)
   local wiped = left <= 0.2 * (w.size or 1)
   local base = B.mind.per_turret or firemap.AFFORD
   for proto, n in pairs((w.big_sent or 0) == 0 and w.breach_by or {}) do
-    local killed = (w.lost_by or {})["breach " .. proto] or 0
+    local killed = (w.lost_worth_by or w.lost_by or {})["breach " .. proto] or 0
     local per = know.learn_price("biotech", foe, proto, killed / n, threat.prior_of(proto, foe, base), wiped)
     w.price_learned[proto] = {sample = killed / n, per = per, n = n}
   end
   do
-    for key, killed in pairs(w.lost_by or {}) do
+    for key, killed in pairs(w.lost_worth_by or w.lost_by or {}) do
       local proto = key:match("^breach (.+)$")
       local prof = proto and threat.profile(proto)
       -- (Nor its own: a big burster's blast kills it, and it learned its own breed as a killer at 8.)
@@ -624,6 +632,7 @@ function herd.launch(p, target, opts)
     end
   end
   w.size = #w.members
+  w.worth = herd.strength(w.members)
   if not opts.units then p.stock = {} end
   -- The scout: one of its own breed, made at the pen (biotech.lua: fast, frail, pale bands, lit at night), the wave's
   -- strength untouched; where none can stand there, the herd's one nearest the base.
@@ -1075,13 +1084,40 @@ function herd.opened(cover, bursters, openable)
   if (bursters or 0) <= 0 or not cover or cover <= 0 then return 0 end
   return math.min(openable or cover, bursters * herd.BURST_OPENS) / cover
 end
+-- (Its bursters are spent at the wall, not lost crossing it: they are no part of the way's price, nor of the strength that
+-- pays it, herd.strength. Counted as lost at a big burster's health, each asked 40 mediums more of the herd.)
 function herd.way_cost(lost, cover, bursters, openable)
   bursters = bursters or 0
   if bursters <= 0 or not cover or cover <= 0 then return lost end
-  return lost * (1 - herd.opened(cover, bursters, openable)) + bursters
+  return lost * (1 - herd.opened(cover, bursters, openable))
 end
 
--- Whether a wave of n goes at a way in costing it `lost` (there and back, DEAR times its number or more: it does not).
+-- Its strength and its losses in health, in mediums (a medium biter's health to the unit: the breed its priors were set
+-- by), not in heads (the user, 2026-10-30): a way priced at 700 heads asked 700 of anything, 9,000 biomass hatched about 90
+-- of its dearest breeds, each with the health of 40 mediums, and every siege on nw's walls was refused (2026-10-29).
+-- Health alone: what a breed resists is left to the prices it learns (know.price, learned in mediums too).
+local worth_of = {}
+function herd.worth(name)
+  local w = worth_of[name]
+  if not w then
+    local p, m = prototypes.entity[name], prototypes.entity["lp-bred-medium-biter"]
+    w = p and m and p.get_max_health() / m.get_max_health() or 1
+    worth_of[name] = w
+  end
+  return w
+end
+-- Of a list of units (entities or names to hatch), its big bursters left out (spent at the wall: herd.way_cost).
+function herd.strength(units)
+  local total = 0
+  for _, u in ipairs(units) do
+    local name = type(u) == "string" and u or (u.valid and u.name)
+    if name and name ~= "lp-bred-big-burster" then total = total + herd.worth(name) end
+  end
+  return total
+end
+
+-- Whether a wave of strength n (herd.strength) goes at a way in costing it `lost` (there and back, DEAR times its strength
+-- or more: it does not).
 -- One test, asked by the farm before it sends and by the wave when it stages: the farm sent waves its own odds gave
 -- nothing, and each turned home at the wave's (18 of 18 on a megabase; a context-free review, 2026-10-28).
 function herd.affords(n, lost) return 2 * lost < DEAR * n end
@@ -1264,14 +1300,15 @@ local function mark(w)
     log(w, string.format("its way in costs %.0f, %.0f with its %d big bursters at the %d guns covering where it breaks in",
       w.way_in.lost, lost, big, w.way_in.cover or 0))
   end
-  if w.way_in and not herd.affords(#herd_units(w), lost) then
+  local strength = herd.strength(herd_units(w))
+  if w.way_in and not herd.affords(strength, lost) then
     local k = know.of("biotech")
     k.dear = k.dear or {}
     k.dear[herd.dear_key(foes(w)[1], w.goal or w.center)] = {lost = w.way_in.lost, tick = game.tick}
     -- (And the farm's target, when it went for another at the edge: the farm weighs the target it chose.)
     if w.aimed then k.dear[herd.dear_key(foes(w)[1], w.aimed)] = {lost = w.way_in.lost, tick = game.tick} end
-    log(w, string.format("its way in would cost %.0f of its own, there and back as many as its %d: it does not come",
-      lost, #herd_units(w)))
+    log(w, string.format("its way in would cost %.0f of its own (in mediums), there and back as much as its %d (%.0f): it does not come",
+      lost, #herd_units(w), strength))
     if w.scout and w.scout.valid then w.scout.commandable.set_command(go(gate(w), defines.distraction.none, 6)) end
     return finish(w, "too dear")
   end
@@ -1423,7 +1460,7 @@ local function hearts_from(w, at, min)
   -- leaves after is its stay rule's.)
   -- (One way, valuemap.keeps_one_way: it is on its way in, and whether it leaves after is its stay rule's. By the way there
   -- and back keeping half, no heart past a wall of lasers was ever worth it once the wall was down; 2026-10-28.)
-  local hearts = valuemap.hearts(vmap, fmap, n, at, HEART_REACH, {min = min, keeps = valuemap.keeps_one_way,
+  local hearts = valuemap.hearts(vmap, fmap, herd.strength(herd_units(w)), at, HEART_REACH, {min = min, keeps = valuemap.keeps_one_way,
     lost = function(mid) return costmap.cost(cm, mid) end})
   return hearts, vmap, fmap, cm
 end
@@ -1527,7 +1564,7 @@ local function deep_plan(w, h, forced)
   -- The edge priced as the heart is (costmap, from the breach): two units, and a shell round a soft middle read as not
   -- worth the strike (herd test).
   local n = #herd_units(w)
-  local edge_keeps = valuemap.keeps_lost(n, costmap.cost(cm, w.inside) or 0)
+  local edge_keeps = valuemap.keeps_lost(herd.strength(herd_units(w)), costmap.cost(cm, w.inside) or 0)
   local edge_stay, edge_read = stay_share(w, w.inside, n * edge_keeps, fmap, vmap)
   local edge = here(w.inside) * edge_keeps * edge_stay
   -- (The fire on the way counted whole: at half, a ring of turrets between a mining outpost it had broken into and the
@@ -1787,7 +1824,7 @@ local function breach(w)
     -- (By prototype, for what each costs it: learn_price.)
     w.breach_cover, w.breach_by = #cover, {}
     for _, t in ipairs(cover) do w.breach_by[t.name] = (w.breach_by[t.name] or 0) + 1 end
-    if #cover > 0 and firemap.affords(map, hit, #herd_units(w)) then
+    if #cover > 0 and firemap.affords(map, hit, herd.strength(herd_units(w))) then
       table.sort(cover, function(a, b) return d2(a.position, hit) < d2(b.position, hit) end)
       for _, t in ipairs(cover) do
         table.insert(cmds, {type = defines.command.attack, target = t, distraction = defines.distraction.none})
@@ -1869,6 +1906,7 @@ local function sequence(w)
     if not w.punch then choose_plan(w) end
   end
 end
+
 
 
 local withdraw, home_leg
@@ -2013,7 +2051,7 @@ local function targets(w, at)
   local out, seen = {}, {}
   -- What it can take (firemap.affords): the fire round here read once for the look.
   local map = firemap.read(s, at, math.max(w.sight, w.hx + w.hy), forces, herd.price_of)
-  local n = #herd_units(w)
+  local n = herd.strength(herd_units(w))
   local function add(e, tier)
     if e.valid and not seen[e.unit_number or 0] and firemap.affords(map, e.position, n) then
       seen[e.unit_number or 0] = true
@@ -2200,7 +2238,7 @@ home_leg = function(w)
     local s = game.surfaces[w.surface]
     local map = firemap.read(s, w.breach, 0, foes(w), herd.price_of)
     local cover = firemap.cover(map, w.breach)
-    if #cover > 0 and (w.clearing or 0) < CLEAR_MAX and firemap.affords(map, w.breach, #herd_units(w)) then
+    if #cover > 0 and (w.clearing or 0) < CLEAR_MAX and firemap.affords(map, w.breach, herd.strength(herd_units(w))) then
       local at = w.group.position
       table.sort(cover, function(a, b) return d2(a.position, at) < d2(b.position, at) end)
       if (w.clearing or 0) == 0 then log(w, string.format("clears its way out: the %d turrets covering the gap", #cover)) end
@@ -2260,7 +2298,7 @@ finish = function(w, outcome)
     deep = w.deep and {at = {w.deep.at.x, w.deep.at.y}, reached = w.deep.reached and true or false},
     under_fire = w.under_fire, downed = w.downed or 0, push_walked = w.push_walked,
     choice = w.choice, goal = w.goal and {w.goal.x, w.goal.y}, heart_near = w.heart_near, razed_worth = w.razed_worth or 0, dead_at = w.dead_at,
-    lost_by = w.lost_by, silenced = w.silenced, clearing = w.clearing, staged = w.staged and true or false,
+    lost_by = w.lost_by, lost_worth_by = w.lost_worth_by, worth = w.worth, silenced = w.silenced, clearing = w.clearing, staged = w.staged and true or false,
     breach_cover = w.breach_cover, breach_by = w.breach_by, price = w.price_learned,
     -- What it expected its way in to cost, there and back (costmap.way_in), against what it lost: its calibration.
     predicted = w.way_in and 2 * w.way_in.lost or nil, crossed = w.crossed, scale = w.scale_learned,
@@ -2277,6 +2315,9 @@ finish = function(w, outcome)
   for _, n in pairs(w.lost_by or {}) do died = died + n end
   log(w, string.format("%s; %d of %d home; died %s; gone without a death %d", outcome, alive(w), w.size,
     serpent.line(w.lost_by or {}), w.size - alive(w) - died))
+  local worth = {}
+  for key, v in pairs(w.lost_worth_by or {}) do worth[key] = math.floor(v + 0.5) end
+  log(w, string.format("in mediums, of its %.0f: %s", w.worth or 0, serpent.line(worth)))
   for proto, p in pairs(w.price_learned or {}) do
     log(w, string.format("a %s cost it %.1f of its own at the breach (%d covering it): its price now %.1f", proto, p.sample,
       p.n, p.per))
@@ -2341,7 +2382,7 @@ local function replan(w, at)
   local cost = costmap.cost(cm, m)
   local path = costmap.path(cm, m)
   dump_costmap(w, cm, "replan" .. ((w.replans or 0) + 1), {from = {at.x, at.y}, target = {m.x, m.y}, path = xy_list(path), cost = cost})
-  if not cost or cost >= math.huge or not herd.affords(n, cost) then return nil end
+  if not cost or cost >= math.huge or not herd.affords(herd.strength(herd_units(w)), cost) then return nil end
   return path and #path > 0 and path or nil, cost
 end
 
@@ -2350,7 +2391,7 @@ local function plan_pays(w)
   if not w.way_in then return true end
   local big = 0
   for _, u in ipairs(w.members) do if u.valid and u.name == "lp-bred-big-burster" then big = big + 1 end end
-  return herd.affords(alive(w), herd.way_cost(w.way_in.lost, w.way_in.cover, big, w.way_in.openable))
+  return herd.affords(herd.strength(w.members), herd.way_cost(w.way_in.lost, w.way_in.cover, big, w.way_in.openable))
 end
 
 local function step(w, tick)
@@ -2428,8 +2469,10 @@ local function step(w, tick)
       -- map said (the more), and that half or more of what is left. Then it moves off the fire, deeper, to the nearest of the foe's buildings no gun covers, and
       -- razes there until worn down (time inside). A wave of 262 crossed a megabase's laser wall into a factory no gun
       -- covered, turned at half lost, and lost 106 more going back out through the lasers, razing nothing; 2026-10-27.
-      local out = math.max(w.way_in and w.way_in.lost or 0, (w.size or now) - now)
-      local quiet = (out >= now * valuemap.HOLD) and not w.stayed and quiet_spot(w)
+      -- (In mediums, as its way in is priced: herd.strength.)
+      local left = herd.strength(w.members)
+      local out = math.max(w.way_in and w.way_in.lost or 0, (w.worth or left) - left)
+      local quiet = (out >= left * valuemap.HOLD) and not w.stayed and quiet_spot(w)
       if not quiet then return withdraw(w, "half lost") end
       w.stayed = tick
       w.pushing = tick
@@ -2440,8 +2483,8 @@ local function step(w, tick)
         for _, u in ipairs(herd_units(w)) do if u.valid and not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end end
         w.group.set_command(go(quiet, defines.distraction.none, 8))
       end
-      log(w, string.format("half lost, but its way out would cost %.0f of its %d: stays, deeper, off the fire, at %.0f,%.0f",
-        out, now, quiet.x, quiet.y))
+      log(w, string.format("half lost, but its way out would cost %.0f of its %d (%.0f): stays, deeper, off the fire, at %.0f,%.0f",
+        out, now, left, quiet.x, quiet.y))
       return
     end
     -- Inside while it brings things down (INSIDE_TICKS since the last fell), INSIDE_MAX at most.
@@ -2639,7 +2682,7 @@ local function step(w, tick)
         -- (Its bursters take guns, not the units round them: they are paid whole. Its bursters counted against the whole of
         -- a camp, railgunners and all, a wave of 120 turned on one priced at 17 and lost 90 to its railgunners; 2026-10-29.)
         local lost = herd.way_cost(cost - units_cost, guns, big) + units_cost
-        if herd.affords(now, lost) then
+        if herd.affords(herd.strength(w.members), lost) then
           log(w, string.format("under fire on the march (%d lost in %d s) from %s: its guns and units there cost %.0f, %.0f with its %d big bursters: it turns on them",
             w.fire_log[1][2] - now, math.floor((tick - w.fire_log[1][1]) / 60), other.force.name, cost, lost, big))
           w.fire_log = nil
@@ -2856,6 +2899,9 @@ function herd.on_died(e)
           local key = w.stage .. " " .. (c and (c.force.name == "enemy" and "wild " or "") .. c.name or "none")
           w.lost_by = w.lost_by or {}
           w.lost_by[key] = (w.lost_by[key] or 0) + 1
+          -- (And in mediums, what its prices are learned in: herd.strength.)
+          w.lost_worth_by = w.lost_worth_by or {}
+          w.lost_worth_by[key] = (w.lost_worth_by[key] or 0) + herd.strength({ent.name})
           -- Where (its record: scripts/wavemap.py), at most DEAD_AT.
           w.dead_at = w.dead_at or {}
           if #w.dead_at < DEAD_AT then w.dead_at[#w.dead_at + 1] = {math.floor(ent.position.x), math.floor(ent.position.y), w.stage} end
@@ -2870,8 +2916,9 @@ function herd.on_died(e)
               w.rival_at = {x = c.position.x, y = c.position.y}
             end
             w.march_killers = w.march_killers or {}
-            local mk = w.march_killers[c.name] or {force = c.force.name, n = 0, x = 0, y = 0}
+            local mk = w.march_killers[c.name] or {force = c.force.name, n = 0, worth = 0, x = 0, y = 0}
             mk.n, mk.x, mk.y = mk.n + 1, mk.x + c.position.x, mk.y + c.position.y
+            mk.worth = (mk.worth or mk.n - 1) + herd.worth(ent.name)
             w.march_killers[c.name] = mk
           end
           break

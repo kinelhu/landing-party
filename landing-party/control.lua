@@ -198,6 +198,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   know.loss(e)
   biters.on_died(e)
   herd.on_died(e)
+  if ent.name == "lp-pen" then farm.on_pen_died(e) end
   oplog.on_died(e)
   -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
   -- corridor for 30 minutes (ops.route lets marches through it).

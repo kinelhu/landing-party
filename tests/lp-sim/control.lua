@@ -9457,8 +9457,13 @@ scenarios.farm = function()
           end)
         end
         if mix == "killed" then
-          for _, sp in ipairs(surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80}) do
+          -- (Its share of its biomass dies with each: the first one killed takes its part of 1,000 over what it had, the
+          -- user, 2026-10-30. Hatched at launch, a raid on its incubators had killed the guard and nothing of its army.)
+          local pens = surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80}
+          local before = lp("debug_biomass", f.id, 1000)
+          for k, sp in ipairs(pens) do
             sp.die("player")
+            if k == 1 then S.share = {before = before, after = lp("debug_biomass", f.id, 0), n = #pens} end
           end
           S.killed_at = game.tick
         end
@@ -9653,6 +9658,9 @@ scenarios.farm = function()
     end
     if mix == "killed" then
       check("farm: every pen dead, the farm gone", S.after and #S.after.farms == 0, serpent.line(S.after))
+      local sh = S.share
+      check("farm: an incubator killed, its share of the biomass with it", sh and sh.n >= 2
+        and math.abs(sh.after - sh.before * (sh.n - 1) / sh.n) <= 1, serpent.line(sh))
       check("farm: its tag gone", S.tags_after == 0, tostring(S.tags_after))
       check("farm: its biochambers gone with its incubators", S.chambers_after == 0, tostring(S.chambers_after))
       check("farm: it lands again in about an hour", S.after and S.after.next_arrival and
@@ -9687,12 +9695,16 @@ scenarios.farm = function()
       local fs = lp("farm_state").farms[1]
       info(string.format("farm behind: sieges refused %s (%s again with no more to field), sieges %s", tostring(fs and fs.refused),
         tostring(fs and fs.repeats), serpent.line(S.sieges)))
-      -- (A function check: it weighed a siege there at all, else the next proves nothing.)
-      check("farm: behind, a siege weighed at the wall and refused", fs and fs.refused >= 1, tostring(fs and fs.refused))
+      -- Its biomass put to a siege through both rings (its herd priced in health, herd.strength: priced in heads, every
+      -- plan asked 700 heads and more, 9,000 biomass hatched about 90 behemoths, and it refused every siege while its biomass
+      -- piled up; HEAD at 0.2.90 refused here, 2026-10-30).
+      check("farm: behind, a siege laid through both rings", #(S.sieges or {}) > 0, serpent.line({refused = fs and fs.refused}))
       -- Refused, priced at its plan until the place changes or it can field more: before, its weighing read the wall as
       -- one its bursters open whatever the plan said, and weighed the same siege every ten seconds (269 refusals in 75
       -- minutes, all at one place with 7 incubators; five hours at one place on nw). Another place, or more incubators,
-      -- may be weighed and refused.
+      -- may be weighed and refused. (Hatching, held until its biomass reaches the cheapest siege's price there: held at
+      -- what it could field, in health, the field grew a little every ten seconds and it weighed the siege again, 27
+      -- repeats of 147, 2026-10-30.)
       check("farm: behind, a refused siege not weighed again with no more to field", fs and fs.repeats == 0,
         serpent.line({refused = fs and fs.refused, repeats = fs and fs.repeats}))
       return
