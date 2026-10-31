@@ -523,7 +523,14 @@ remote.add_interface("landing-party", {
     end
     return #p.stock
   end,
-  herd_wave = function(pen_id, pos, opts) return herd.launch(storage.herd.pens[pen_id], pos, opts) end,
+  -- (opts.planned, tests only: the wave follows a plan of its farm's kind, herd.plan, as a farm's wave does.)
+  herd_wave = function(pen_id, pos, opts)
+    local p = storage.herd.pens[pen_id]
+    if opts and opts.planned then
+      opts.plan, opts.planned = herd.plan(p.pen.surface, p.pen.position, pos, {"player"}, #(p.stock or {})), nil
+    end
+    return herd.launch(p, pos, opts)
+  end,
   herd_wall_lesson = function(pos) herd.debug_wall_lesson(pos) end,
   herd_state = function() return herd.state() end,
   rd_state = function(corp) return rd.state(corp) end,
@@ -543,6 +550,7 @@ remote.add_interface("landing-party", {
   debug_best_size = function(hist, least, sig) return herd.best_size({hist = hist}, least, sig) end,
   debug_stopped = function(key, tick) herd.stopped(key, tick) return herd.held() end,
   debug_learn_reach = function(r0, set_off, sent) return herd.learn_reach(r0, set_off, sent) end,
+  debug_held_back = function(alive_n, sent, guns, inside) return herd.held_back(alive_n, sent, guns, inside) end,
   -- Tests only: sets what it has learned of its rams' reach at `foe`, returning what it was.
   debug_reach = function(foe, r)
     local k = know.of("biotech")

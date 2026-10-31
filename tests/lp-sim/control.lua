@@ -8753,6 +8753,9 @@ scenarios.herd = function()
         end
       end
       game.forces.enemy.set_evolution_factor(0.5, surface())
+    elseif mix == "wallgoal" then
+      -- (Its face toward the pen unguarded: what is under test is the wall between it and its target, not the price.)
+      layout = {{L, -37, 0}, {G, 12, -37}}
     else
       layout = {{L, 37, -24}, {G, 37, -14}, {L, 37, -5}, {G, 37, 4}, {L, 37, 13}, {G, 37, 22}, {L, 37, 30},
         {L, -12, -37}, {G, 12, -37}, {L, -12, 37}, {G, 12, 37}, {L, -37, 0}}
@@ -8846,6 +8849,32 @@ scenarios.herd = function()
     -- burst: a wall held a wave here before (the bursters are held only where one did).
     if mix == "burst" or mix == "burst-nohold" then lp("herd_wall_lesson", S.at(0, 0)) end
     S.t_send = game.tick
+    -- wallgoal: its target 2 tiles behind the wall, among the guns (a lane's: the lab's waves said they were through with
+    -- no wall broken, from within 6 tiles of it outside the wall; the siege lab, 2026-10-31). Through means past the wall.
+    if mix == "wallgoal" then
+      S.wave1 = lp("herd_wave", S.pen, S.at(38, 0), {planned = true})
+      for t = game.tick - storage.t0 + 60, END - 60, 30 do
+        schedule(t, function()
+          if S.inside_at then return end
+          for _, l in ipairs(lp("herd_state").log or {}) do if l.id == S.wave1 and l.t_inside then S.inside_at = l.t_inside end end
+          for _, wv in ipairs(lp("herd_state").waves or {}) do
+            if wv.id == S.wave1 and wv.stage == "inside" then S.inside_at = game.tick end
+          end
+          if not S.inside_at then return end
+          local past, c = 0, S.c
+          for _, u in ipairs(surface().find_entities_filtered{type = "unit", force = "lp-biotech", position = S.at(0, 0), radius = 60}) do
+            local ux_, uy_ = S.at(1, 0)[1] - c[1], S.at(1, 0)[2] - c[2]
+            local du = (u.position.x - c[1]) * ux_ + (u.position.y - c[2]) * uy_
+            local vx_, vy_ = S.at(0, 1)[1] - c[1], S.at(0, 1)[2] - c[2]
+            local dv = (u.position.x - c[1]) * vx_ + (u.position.y - c[2]) * vy_
+            if du < 39.5 and math.abs(dv) < 39.5 then past = past + 1 end
+          end
+          S.past_at_inside = past
+        end)
+      end
+      S.damage = S.damage or {}
+      return
+    end
     S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or mix == "deep" and {deep = true} or (mix == "edge" or mix == "coreedge") and {deep = false} or nil)
     -- stray: once it marches, eight of its own carried 300 tiles back and out of its group (strays, sent home): its march
     -- keeps a biter's pace (counted in its middle as they walked home, its herd waited 15 times a leg and its cutters took
@@ -9019,6 +9048,13 @@ scenarios.herd = function()
       check("herd: stomp, a stomper got inside the wall", S.stomp_in ~= nil, tostring(S.stomp_in))
       check("herd: stomp, no Synthexis unit hurt by a stomper", (S.damage["stomper>own"] or 0) == 0,
         tostring(S.damage["stomper>own"]))
+      return
+    end
+    if mix == "wallgoal" then
+      info(string.format("herd wallgoal: inside at %s, %s of its own past the wall then; kills %s", tostring(S.inside_at),
+        tostring(S.past_at_inside), serpent.line(w and w.kills)))
+      check("herd: wallgoal, through only once past the wall", S.inside_at ~= nil and (S.past_at_inside or 0) >= 1,
+        string.format("inside at %s, %s past the wall", tostring(S.inside_at), tostring(S.past_at_inside)))
       return
     end
     if mix == "burst" or mix == "burst-nohold" then
@@ -10235,6 +10271,11 @@ scenarios.farm = function()
       -- None of its rams reached the wall: twice as many next time (1, 2, 3 by its share alone at the square lab fort, each
       -- killed short, and its record kept it from a fourth; the siege lab, 2026-10-31).
       local r1, r2 = lp("debug_learn_reach", 1, 0, 1), lp("debug_learn_reach", 0.5, 0, 2)
+      -- A wave half lost that never got in was held back, whatever guns it broke over the wall (raids at a saw-toothed lane
+      -- broke 12 a wave from outside, and no wall had held them: 16 raids, no bursters; the siege lab, 2026-10-31).
+      local hb_out, hb_in = lp("debug_held_back", 10, 40, 12, false), lp("debug_held_back", 10, 40, 12, true)
+      check("farm: a wave half lost that never got in was held back, whatever it broke", hb_out == true and hb_in == false,
+        serpent.line({hb_out, hb_in}))
       check("farm: none of its rams reached the wall, twice as many next time", r1 <= 0.5 + 1e-9 and r2 <= 0.25 + 1e-9,
         serpent.line({r1, r2}))
       -- However few have reached it, a handful of rams at most (43 big bursters in one siege of the square lab fort; the

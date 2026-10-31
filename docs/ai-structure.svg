@@ -56,8 +56,8 @@
 </g>
 <g id="clust10" class="cluster">
 <title>cluster_9</title>
-<path fill="none" stroke="#bbbbbb" stroke-dasharray="5,2" d="M3966,-884C3966,-884 4340,-884 4340,-884 4346,-884 4352,-890 4352,-896 4352,-896 4352,-944 4352,-944 4352,-950 4346,-956 4340,-956 4340,-956 3966,-956 3966,-956 3960,-956 3954,-950 3954,-944 3954,-944 3954,-896 3954,-896 3954,-890 3960,-884 3966,-884"/>
-<text xml:space="preserve" text-anchor="middle" x="4153" y="-941.55" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#666666">Wiring (edges not drawn)</text>
+<path fill="none" stroke="#bbbbbb" stroke-dasharray="5,2" d="M3965,-884C3965,-884 4340,-884 4340,-884 4346,-884 4352,-890 4352,-896 4352,-896 4352,-944 4352,-944 4352,-950 4346,-956 4340,-956 4340,-956 3965,-956 3965,-956 3959,-956 3953,-950 3953,-944 3953,-944 3953,-896 3953,-896 3953,-890 3959,-884 3965,-884"/>
+<text xml:space="preserve" text-anchor="middle" x="4152.5" y="-941.55" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#666666">Wiring (edges not drawn)</text>
 </g>
 <!-- stance -->
 <g id="node1" class="node">
@@ -1215,7 +1215,7 @@
 <title>herd</title>
 <path fill="#f7dede" stroke="black" d="M2761.8,-384.75C2761.8,-384.75 2512.2,-384.75 2512.2,-384.75 2506.2,-384.75 2500.2,-378.75 2500.2,-372.75 2500.2,-372.75 2500.2,-360.75 2500.2,-360.75 2500.2,-354.75 2506.2,-348.75 2512.2,-348.75 2512.2,-348.75 2761.8,-348.75 2761.8,-348.75 2767.8,-348.75 2773.8,-354.75 2773.8,-360.75 2773.8,-360.75 2773.8,-372.75 2773.8,-372.75 2773.8,-378.75 2767.8,-384.75 2761.8,-384.75"/>
 <text xml:space="preserve" text-anchor="middle" x="2637" y="-368.5" font-family="Helvetica,sans-Serif" font-size="10.00">herd</text>
-<text xml:space="preserve" text-anchor="middle" x="2637" y="-357.25" font-family="Helvetica,sans-Serif" font-size="10.00">3550 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="2637" y="-357.25" font-family="Helvetica,sans-Serif" font-size="10.00">3589 lines</text>
 </g>
 <!-- herd&#45;&gt;ground -->
 <g id="edge62" class="edge">
@@ -1483,9 +1483,9 @@
 <!-- control -->
 <g id="node69" class="node">
 <title>control</title>
-<path fill="#eef2f7" stroke="black" d="M4068.4,-928C4068.4,-928 3973.6,-928 3973.6,-928 3967.6,-928 3961.6,-922 3961.6,-916 3961.6,-916 3961.6,-904 3961.6,-904 3961.6,-898 3967.6,-892 3973.6,-892 3973.6,-892 4068.4,-892 4068.4,-892 4074.4,-892 4080.4,-898 4080.4,-904 4080.4,-904 4080.4,-916 4080.4,-916 4080.4,-922 4074.4,-928 4068.4,-928"/>
+<path fill="#eef2f7" stroke="black" d="M4068.76,-928C4068.76,-928 3973.24,-928 3973.24,-928 3967.24,-928 3961.24,-922 3961.24,-916 3961.24,-916 3961.24,-904 3961.24,-904 3961.24,-898 3967.24,-892 3973.24,-892 3973.24,-892 4068.76,-892 4068.76,-892 4074.76,-892 4080.76,-898 4080.76,-904 4080.76,-904 4080.76,-916 4080.76,-916 4080.76,-922 4074.76,-928 4068.76,-928"/>
 <text xml:space="preserve" text-anchor="middle" x="4021" y="-911.75" font-family="Helvetica,sans-Serif" font-size="10.00">control</text>
-<text xml:space="preserve" text-anchor="middle" x="4021" y="-900.5" font-family="Helvetica,sans-Serif" font-size="10.00">766 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="4021" y="-900.5" font-family="Helvetica,sans-Serif" font-size="10.00">774 lines</text>
 </g>
 <!-- dev -->
 <g id="node70" class="node">

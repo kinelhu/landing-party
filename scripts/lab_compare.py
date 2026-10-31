@@ -22,11 +22,12 @@ GUN_KINDS = [("laser", "laser-turret"), ("flame", "flamethrower-turret"), ("gun"
 
 def load(d):
     d = Path(d)
+    replay = d / "report.html"
     trials = [json.loads(l) for l in open(d / "lab.jsonl") if l.strip()]
     run = json.loads(open(d / "lab-run.jsonl").readline())
     m = re.match(r"lab-lab-lane-(.+)-s(\d+)$", d.name) or re.match(r"lab-(.+)-s(\d+)$", d.name)
     variant, seed = (m.group(1), m.group(2)) if m else (d.name, "1")
-    return {"variant": variant, "seed": seed, "trials": trials, "run": run}
+    return {"variant": variant, "seed": seed, "trials": trials, "run": run, "replay": replay if replay.exists() else None}
 
 
 def trial_stats(t):
@@ -123,7 +124,9 @@ def chips(runs):
                 tip = (f'trial {t["trial"]}: {"got in" if s["inside"] else "stopped"}, '
                        f'{s["rams"]} bursters, {s["size"]} units, broke {s["guns"]} guns and {s["walls"]} walls, lost {s["lost"]:.0f}')
                 cells.append(f'<span class="chip {"in" if s["inside"] else "out"}" title="{html.escape(tip)}">{label}</span>')
-        rows.append(f'<div class="chiprow"><span class="seed">seed {r["seed"]}</span>{"".join(cells)}</div>')
+        watch = (f'<a class="watch" href="replays/{html.escape(r["variant"])}-s{r["seed"]}.html">watch</a>'
+                 if r.get("replay") else "")
+        rows.append(f'<div class="chiprow"><span class="seed">seed {r["seed"]}</span>{"".join(cells)}{watch}</div>')
     return "\n".join(rows)
 
 
@@ -241,6 +244,9 @@ tbody th a:hover, tbody th a:focus-visible {{ color: var(--accent); text-decorat
 .chip.in {{ background: var(--in); color: var(--bg); }}
 .chip.out {{ background: transparent; color: var(--out); box-shadow: inset 0 0 0 2px var(--out); }}
 .chip.held {{ color: var(--muted); }}
+.watch {{ margin-left: 8px; font: 600 .8rem var(--data); color: var(--accent); text-decoration: none; padding: 3px 8px;
+  border: 1px solid var(--accent); border-radius: 3px; }}
+.watch:hover, .watch:focus-visible {{ background: var(--accent); color: var(--bg); }}
 .key {{ font-size: .85rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 16px; }}
 .key span {{ display: inline-flex; gap: 6px; align-items: center; }}
 footer {{ color: var(--muted); font-size: .82rem; }}
@@ -278,7 +284,8 @@ code {{ font-family: var(--data); font-size: .85em; }}
       <span class="legend">{legend}</span>
     </div>
     <p class="lede">Each map: the front along, the culture beyond the top edge. Below it each trial in order by seed: a filled
-    disc got in, a ring was stopped, the number is the bursters it brought (r: a raid, none). Hover a disc for its numbers.</p>
+    disc got in, a ring was stopped, the number is the bursters it brought (r: a raid, none). Hover a disc for its numbers;
+    <b>watch</b> opens that run's replay, every wave on a time slider.</p>
     <div class="variants">{"".join(cards)}</div>
   </section>
   <footer>From <code>{html.escape(src)}</code> by <code>scripts/lab_compare.py</code>.</footer>
@@ -292,6 +299,20 @@ def main(out, dirs):
             r = load(d)
             groups.setdefault(r["variant"], []).append(r)
     Path(out).write_text(page(groups, " ".join(sorted({str(Path(d).parent) for d in dirs}))))
+    # Each run's replay beside the page (replays/<variant>-s<seed>.html), for its watch links.
+    rd = Path(out).parent / "replays"
+    rd.mkdir(exist_ok=True)
+    for v, rs in groups.items():
+        for r in rs:
+            if r.get("replay"):
+                # (A page of its own beside this one: its own doctype and metas; named by its variant and seed; a way back.)
+                t = r["replay"].read_text()
+                name = f"Lane {v}, seed {r['seed']}"
+                t = re.sub(r"<title>.*?</title>", f"<title>{html.escape(name)}</title>", t, count=1)
+                t = re.sub(r"<h1>.*?</h1>", f'<h1>{html.escape(name)}</h1><p><a href="../">All lane variants</a></p>', t, count=1)
+                head = ('<!doctype html><html lang="en"><meta charset="utf-8">'
+                        '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">')
+                (rd / f"{v}-s{r['seed']}.html").write_text(head + t)
     for v, rs in sorted(groups.items()):
         s = summary(rs)
         print(f"{v:10} in {s['in']:2}/{s['n']:2}  held {s['held']}  bursters {s['rams']:.1f}  guns {s['guns']:5.1f}  "

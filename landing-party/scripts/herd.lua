@@ -472,6 +472,12 @@ function herd.learn_reach(r0, set_off, sent)
   if set_off == 0 then r = math.max(herd.OPENS_MIN, math.min(r, 1 / (2 * sent))) end
   return r
 end
+-- A wave the foe held back: half of it or more lost, and not in, or not one gun broken. (Not in alone: with "in" counted
+-- only past the wall, raids at a saw-toothed lane broke 12 guns a wave over it from outside, never got in, and no wall
+-- had held them: no bursters, 16 raids of 16 thrown at it; the siege lab, 2026-10-31.)
+function herd.held_back(alive_n, sent, guns_broke, inside)
+  return alive_n * 2 <= sent and (guns_broke == 0 or not inside)
+end
 local DEVELOP_HELD = 2
 local STOP_AGAIN = 15 * 3600
 function herd.stopped(key, tick)
@@ -759,6 +765,29 @@ local function holds(w, u) return w.holders ~= nil and w.holders[u.unit_number] 
 
 -- (Not those holding the breach: their middle and the herd's at the heart lay 177 tiles back toward the wall, and it saw
 -- nothing there, 2026-10-27.)
+-- The first of its foe's wall pieces on the line from `a` to `b` (nil: none), a tile at a time.
+local WALL_TRIES = 6   -- walls it goes at between it and its target before it counts itself through all the same
+local function wall_between(w, a, b)
+  local s = game.surfaces[w.surface]
+  local n = math.ceil(math.sqrt(d2(a, b)))
+  for i = 0, n do
+    local p = {a.x + (b.x - a.x) * i / math.max(1, n), a.y + (b.y - a.y) * i / math.max(1, n)}
+    local e = s.find_entities_filtered{position = p, radius = 0.8, type = WALLS, force = foes(w), limit = 1}[1]
+    if e then return e end
+  end
+end
+-- Its unit nearest its goal (through when that one is: from its middle, a wave that had broken a gap had wall pieces
+-- beside the gap on its line, and went at them; the herd test, spit).
+local function foremost(w)
+  local best, bd
+  for _, u in ipairs(w.members) do
+    if u.valid and u ~= w.scout then
+      local d = d2(u.position, w.goal)
+      if not bd or d < bd then best, bd = u.position, d end
+    end
+  end
+  return best or w.center
+end
 local function where(w)
   local x, y, n = 0, 0, 0
   for _, u in ipairs(w.members) do
@@ -2784,7 +2813,7 @@ finish = function(w, outcome)
       local t = prototypes.entity[name] and prototypes.entity[name].type
       if t == "ammo-turret" or t == "electric-turret" or t == "fluid-turret" then guns_broke = guns_broke + n end
     end
-    if alive(w) * 2 <= (w.sent or w.size or 0) and guns_broke == 0 then herd.stopped("lost|" .. key) end
+    if herd.held_back(alive(w), w.sent or w.size or 0, guns_broke, w.t_inside ~= nil) then herd.stopped("lost|" .. key) end
     record_attempt(w)
     -- Nothing there to break (in, and nothing in sight fed a gun) is not a defence that held: not a trial of the face (a
     -- turret left of a base drew waves of 120 that each walked in and home, counted held, and escalated: 2026-10-25).
@@ -3326,6 +3355,16 @@ function herd.on_command_completed(e)
         probe_read(w); return breach(w)
       end
       if w.stage == "breach" then
+        -- Through only past the wall: a wall still standing between it and its target, it goes at that wall first. (Its
+        -- orders done within 6 tiles of a target 2 tiles behind the wall, its waves were through with no wall broken, from
+        -- outside it, and their attempts read as got in; the lane, the siege lab, 2026-10-31.)
+        local wall = (w.wall_tries or 0) < WALL_TRIES and w.goal and wall_between(w, foremost(w), w.goal)
+        if wall and w.group.valid then
+          w.wall_tries = (w.wall_tries or 0) + 1
+          log(w, string.format("a wall between it and its target at %.0f,%.0f: it goes at it", wall.position.x, wall.position.y))
+          w.group.set_command{type = defines.command.attack, target = wall, distraction = defines.distraction.by_enemy}
+          return
+        end
         w.stage = "inside"; w.t_inside = game.tick
         -- (Through: its stay rule's again from here, its losses counted from what got there.)
         if w.committed then
