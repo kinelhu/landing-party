@@ -1,297 +1,124 @@
-# Playtest kit (2026-10-19; Synthexis and Kessler-Hayashi brought up to date 2026-10-31)
+# Playtest kit
 
-> Since the 29th, all headless (the siege lab, its lane matrices): Synthexis chooses each attack from a menu (a raid, a
-> siege with big bursters as rams and a screen, a probe, a cut of a power or fluid feed, a strike behind a cut), sweeps
-> mines with sweepers (ochre big biters whose death blast clears mines within 7 tiles), sends twice the rams where the last
-> ones all went off and its wave still stood at a wall, sets aside an attack that failed at a place lately, and sends larger
-> waves as its colony grows (60 up to 8 incubators, up to 200). Kessler-Hayashi learns what each turret costs it, keeps a
-> record of its operations, and when desperate holds and saves for a siege instead of throwing raids it will lose.
+Mod 0.2.126, branch `muster`, rewritten 2026-10-31. Nothing has been played since 2026-10-16; everything below has
+been checked headless only. Chat notices are off: the world should tell you what happens.
 
-> Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
+## Start
 
-(Written 2026-10-19.) Nothing since the 16th has been played. Since then: Serenity is at war from landing (no grace), Grubstake steals by
-night (skimming trucks, raids that dismantle machines, a yard of stolen goods), raids have leaders, Serenity has a
-fortress kit (sieges sized to win, the howitzer, a robot jammer, the power strike, strangling, belts cut on its line),
-clears the nests that hit it and bills you for the waves your pollution draws. Space Age: landings by cargo pod,
-armour, tesla arcs. The player's side: threat scanner, muster point. All checked headless (about 180 scenarios, visits
-of real saves); none of it played. Chat notices are off by default: the world should tell you what happens.
+Close your own game first (Steam allows one copy). Then:
 
-## Start (playtest of 2026-10-26)
+    cd ~/Dev/landing-party-wt && scripts/play-visit.sh playtest
 
-Nothing has been played since the 16th. Close your own game first (Steam allows one copy). Then, in a terminal:
+From the worktree, not `~/Dev/landing-party`: main is still at 0.2.32. This opens a fresh copy of deathworld10x (never
+the real file) with Landing Party as a player would meet it, no test mod.
 
-    cd ~/Dev/landing-party && scripts/play-visit.sh playtest
+| When | What arrives | Not to wait |
+|---|---|---|
+| minutes in (evolution here is past 0.25) | **Synthexis**, at the edge of your pollution; first wave about 10 min later | `/lp biotech`, then `/lp wave [n] [deep]` |
+| first chemical science pack | **Grubstake Inc.** (survey party first, lander after) | `/lp land grubstake 300` |
+| first rocket | **Kessler-Hayashi**, at war from landing | `/lp land serenity 300` |
 
-It opens a fresh copy of deathworld10x (the save the visits used, never the real file) with the committed Landing
-Party (and Editor Extensions and flib when your copies are made for 2.1). No test mod: the mod runs as a player would meet it. Play an hour or two; the ten
-below are what matters most, the numbered list after them is the full reference.
+Useful: `/lp list` (settlements), `/lp fast` (speeds their clocks), `/lp incidents` (last twenty things they did, and
+where), `/lp help`, `/editor` (watch untouchable). Grubstake works by night: wait for dusk.
 
-- **Synthexis** lands within minutes (the biters' evolution here is past 0.25), on the nest field with the most room
-  and air a few hundred tiles out. Its first wave comes about ten minutes after.
-- **Grubstake**'s survey party lands at first; its lander follows the first chemical science pack, or 30 minutes after
-  the survey party leaves. Not to wait:
-  `/lp land grubstake 300`.
-- **Kessler-Hayashi** comes at the first rocket: on this save call it with `/lp land serenity 300`. At war from landing.
-- `/lp list` shows the settlements, `/lp fast` speeds their clocks, `/lp incidents` lists the last twenty things they
-  did and where, `/editor` (the game's own) to watch untouchable. Grubstake steals by night: wait for dusk.
+A plan for two hours: Synthexis alone for the first hour (let two or three waves come, then build a second wall and
+mines and let it come again), call Grubstake at dusk, Kessler-Hayashi last.
 
-### The ten
-1. **Synthexis's waves** (47, 51, 55): a scout, then a herd walking its trail to a face of your base it picked. Does it
-   come where you are weak? After a wave you stopped, does the next one try elsewhere or come back differently (more
-   rams, a siege, a cut)? Can you read why it chose what it did? Does a big colony's wave of 150 feel earned, or unfair?
-2. **Rams and sweepers at a wall** (52, 53): ochre sweepers go ahead and blow your mines; a screen goes at the wall; big
-   bursters follow and blow it; the herd waits out of reach, then rushes the gap. Do the steps read? Do mines between two
-   walls still feel worth building? Does an exposed power line feel like the weak point it is (it is Synthexis's answer to
-   tesla turrets)?
-3. **It lives on your smoke** (57): it eats your pollution where its creep and incubators meet it. Cut a polluting line:
-   does it slow?
-4. **The carrier** (56): a violet, lit biter with an escort crossing the map to found a second culture. Worth chasing?
-5. **Grubstake's town** (58): gravel streets, machines both sides, junk yards, wooden poles, turrets in pits at the
-   street ends. Does it read as a prospectors' town? Can you drive through it? Its oldest camp grows biggest and gets a
-   second depot: are its raids the dangerous ones?
-6. **Grubstake by night** (2, 3, 5): trucks skimming your belts, raids that take machines apart. Fair? Readable?
-7. **Kessler-Hayashi's line** (13, 14): at war from landing, its perimeter growing toward you. Does the pressure feel
-   right? Against a fort: does it hold, save and come back with a heavier siege (more mortars), and does that read?
-8. **Railgunners** (54): they clear nests; do they still shred Synthexis's waves?
-9. **Readability without chat** (26): could you tell who did what, and why, from the world alone?
-10. **Anything that feels wrong** (27): units stuck, friendly fire, a theft or a raid that seems unfair, a slow game.
+## The ten
 
-## Grubstake, the thief (from chemical science)
-1. **Its camp and pacifier antenna**: a radar dish a size larger than a radar by the lander. Biters walk past the camp.
-   Destroy every antenna and the biters turn on it; one is rebuilt five minutes later if the lander stands.
-2. **By night**: its raids, skims and claim jumps set out only after dark; at dawn a skimming truck leaves. Its trucks
-   show headlights. Does the rhythm read? Does night feel like the dangerous time?
-3. **A raid that steals**: buggies and Shotgun hands at an exposed spot; they walk in without firing and take your
-   machines apart one by one (assemblers, furnaces, drills, solar, poles...), carrying them off with what they held, and
-   leave the machines' ghosts where they stood. Up to twelve a raid. Chests near the target are emptied too.
-4. **The leader**: one raider wears Grubstake's icon (the mining pick). Kill it and the raid breaks and runs home empty:
-   the foreman carries the haul and drops all of it where it falls. Kill any other raider carrying loot and its share
-   drops.
-5. **The skim**: a truck parks by one of your belts that no turret covers and takes half of what passes, the most
-   valuable first, until its trunk holds 120 or five minutes pass, then drives home. Gaps downstream are the tell. Kill
-   the truck and its load spills. Undergrounds across an exposed stretch, or a turret by it, stop it.
-6. **The yard**: by its camp, a chest in its colour with the icon of what it holds most. What its trucks and raids
-   brought home is in there. Destroy it and it spills.
-7. **No pheromone flare any more** (retired 2026-10-22: biter waves are Synthexis's). Kill one of Grubstake's units
-   from a turret: it does not answer on covered ground; from an open spot, a squad comes.
-8. **A claim jumper**: a rig digs in outside your wall, a mound grows by your chests, Shotgun hands come up, empty them
-   and go back down. Kill the rig within the minute and nothing comes up.
-9. **A power tap**: a line of its pylons creeps to a pole no turret covers and clamps it. Look for "Power tap" in your
-   power statistics. Cut the line or break the clamp.
-10. **Prospecting and the road**: it tags the undrilled patch nearest your base and claims it ten minutes later (drill it
-   or set a border stake to stop it); a truck carries the ore home; kill it and the claim lapses.
-11. **Pay the thief**: a trade post (a steel chest and 5 circuits) by its camp; what it empties buys a truce, a minute for
-   each 10 of value; a lamp on the post while it holds.
+1. **Does Synthexis pick its target well?** A pale cyan scout walks round your base out of reach and sits at one
+   side; the herd follows a green trail to that face. Does it come where you are weak (an outpost with few guns, a
+   power plant at the edge)? Could you tell why afterwards?
+2. **Does it learn?** After a wave you stopped, the next one should come back different: elsewhere, with twice the
+   rams, as a siege, or as a cut of a power line feeding your turrets. Can you see the difference? Can you read why?
+3. **The siege against a wall** (build two walls with mines between). Ochre sweepers blow your mines first, a screen
+   goes at the wall, big glowing bursters blow it open while the herd waits out of reach, then the herd rushes the gap.
+   Do the steps read? Do mines still feel worth building? Is the burst too strong?
+4. **Wave size.** Waves grow with the colony (about 60 up to 8 incubators, up to 200 beyond). Does a 150-biter wave
+   from a big colony feel earned, or unfair? Does killing incubators visibly shrink the next one?
+5. **Tesla turrets.** Synthexis answers them by cutting the power line behind them. Does an exposed line feel like the
+   weak point it is? Does a second feed or accumulators feel like the fix?
+6. **The hunt.** Go to its culture: creep, incubators, biochambers, technicians, the clinic. Is the expedition a fight
+   worth making, and is it clear what to shoot first?
+7. **Grubstake by night.** Trucks skimming your belts, raids that take machines apart, its leader carrying the haul.
+   Fair? Readable? Does night feel like the dangerous time?
+8. **Kessler-Hayashi's pressure.** Raids from landing, its line creeping toward you, belts blown on its edge. Against a
+   fort it should hold back, save, and come with a siege: mortars set just out of your turrets' reach, then a howitzer
+   if the mortars fail twice. Does holding back read as intent or as idleness? Is the howitzer's deploy a fair window?
+9. **Readability without chat.** Could you tell who did what, and why, from the world alone (trails, icons, posts,
+   ghosts, map tags)?
+10. **Anything wrong.** Units stuck, friendly fire, a slow game, a theft or raid that seems unfair.
 
-## Serenity, the wall (from the first rocket)
-12. **Arrival**: the orbital barrage on the nests within 120 tiles, a camp on space-platform plating, railgunners in
-   charcoal (the same colour when they fire). Railgunners clear nests and guard home; they never come at your
-   buildings (their reach is 30, a gun turret's 18).
-13. **At war from landing**: raids come at your exposed buildings from the start. A raid's leader wears its heart icon;
-   kill it and the raid falls back to its staging point in order, a new leader takes the icon, and it comes again.
-14. **The line**: 30 minutes after landing, drones build cordon posts on an arc toward you, each on plating with a
-   cold-white lamp, a dark stripe painted post to post (at night a lit line across the map). Grown, its camp spreads:
-   compounds laid out by wave function collapse: a chamfered wall, rooms behind doors, turrets, generators and
-   fabricators inside, lanes out through gaps in the wall, founded out toward its line every few minutes and tied home
-   by plated roads, like metastases on the map. Its spread done, a curtain wall goes up round the whole camp with a
-   killing ground before the compounds' walls. Its claim follows, its next
-   arc drawn on the map, a named warning a step before it encloses a building of yours. Near you it closes with wall;
-   across your rails a gate post (your trains stop). Shoot the drones: three lost on a post and the line is held there.
-15. **Strangling**: the line goes for your outpost easiest to cut off; with none of your buildings in reach, for the ore
-   field you will want next. On its edge, where its guns stand (a turret of its within 30 tiles), it blows your belts,
-   pipes and loaders every 30 seconds (an explosion each): undergrounds with both ends off the line pass, and a sector
-   whose posts you destroyed is open.
-16. **Against a fortress**: a hauler brings mortars (a howitzer when robots keep the wall), a fire plan on one point at a
-   time, roboports first; a jammer mast in the emplacement whose tesla arcs down your robots and blinds your threat
-   scanners within 50 tiles. Destroy the mast. Kill the howitzer and its camp has none for 30 minutes: the next siege
-   comes with mortars only. Since 0.1.61 the howitzer is a truck (a tank's hull, the artillery cannon on it): it
-   drives out, deploys for 30 s ("Deploying N%") into the emplacement where it stopped, and packs up for 15 s, silent,
-   before it moves or drives home. The deploy and the pack-up are your window. At home it stands parked by the lander
-   (gone while out); killed, a faded mark holds its spot until it is back.
-17. **The power strike**: two scouts walk out to a pole of yours, and minutes later a raid goes for it: the one pole
-   whose loss darkens the lasers behind it. A second feed, or accumulators by the turrets, is the answer.
-18. **Hazard removal**: when biters keep hitting it, it sends a clearance siege at their nest, away from you.
-19. **The invoice post**: a chest of yours at its line, the sum written over it: what the biter waves your pollution
-   drew cost it. Put circuits, modules or steel in it. Paid off, it buys a truce (a minute per 10 paid, 10 to 60): no
-   raids, sieges or cuts, its line holds, an amber light by night. Is the price fair? Is it worth paying? Or dispute
-   it: kill the nest a bill names (Serenity's icon over it, in game and on the map) and that bill is struck.
-20. **A border stake during a truce**: the border holds after the truce ends, until you build on its side.
-21. **Bend the line**: a decoy building nearer its camp than the rest swings its next arcs toward it.
-21b. **Its labs**: once its launch pad is open, a district goes up with a lab at its heart, an icon over it for its
-   branch (a laser turret: the Optics lab; heavy armour: the Line armoury; an artillery shell: the Siege works). Its
-   research climbs only in branches whose lab stands, and what a branch gave (heavy laser troopers, armoured troopers, the jammer)
-   is fielded only while it stands. Kill one: does its army change? Is the lab worth the assault (artillery takes one
-   in a shell; a squad of 35 storming the district died at its flamers)? Labs are a size up and always at work now.
-21c. **Your remarks of 2026-10-21, seen again** (0.1.42, 0.1.43): a tank's cannon round against a wall line (does it
-   tear through buildings, and not through your troopers?); depots as half-size cargo landing pads; the launch pad
-   paved, ringed in hazard stripes, lamps at its corners; trees gone in its blocks and round its drills; drones and
-   trucks flying or driving to each spot before building (a beam from beside it, not from a screen away);
-   fabricators running now and then; districts floored in refined concrete and hazard rings; belts in its districts
-   carrying parts from fabricators to depots, and Grubstake's sushi belt by its yard carrying what it stole; one
-   "Mineral rights" label where two patches lie close; a flying harrier in its own selection box; Grubstake no longer
-   throwing raids at Serenity's fortress for nothing, and Serenity paying back a rival that hurts it.
-21d. **The new units** (0.1.45; save `lp-units`, built by `LP_MIX=units scripts/showcase.sh 12345 20`, opened by
-   `scripts/play-showcase.sh units`): both camps grown at era 3, Serenity with laser tanks and lightning tanks and Grubstake with
-   Scorchers in their garrisons (7, 7 and 8 at the save), raids on, your outposts by each and an army of yours (20
-   troopers, 10 breachers, 5 battle tanks) at spawn. Does each read apart from a tank at a glance (the laser tank's laser head,
-   the lightning tank's coil, the Scorcher's flamer)? The laser tank's beam forking into a pack; the lightning tank's arcs jumping, and your
-   lasers going dim after its hits; the Scorcher's flame bursts at your walls and turrets. Tanks turning their own
-   turrets; a body where each unit dies.
-21e. **Who shoots up, and armour** (0.1.48; the arena, `scripts/play-arena.sh`, panel: set two squads and Fight). Tanks,
-   heavy tanks, dozers, Scorchers, sappers, shock troopers, laser tanks, lightning tanks, railgunners, your battle tanks and breachers cannot
-   hurt a flier; rifles, heavy laser troopers, machine guns, slugs and walkers can. Put harriers against tanks, then against riflemen.
-   A ground-only unit that fires at a flier turns to a ground target (or holds fire): do tanks under harriers go for
-   the enemy's tanks, and does that read as "it cannot shoot up", not as a bug? Riflemen against tanks barely
-   scratch them now; lances and slug buggies are the answer. Does each fight's winner make sense from what you see?
+## Reference: what each faction does
 
-## Synthexis (0.1.54 to 0.1.56: the third corporation, a bioengineering firm)
-It lands once the biters' evolution reaches 0.25, on a nest field 600 to 1,000 tiles from your factory, and breeds
-biters in green and yellow. Not to wait: `/lp biotech` lands it now (a map tag, "Synthexis culture"), `/lp wave` sends a wave.
-28. **The tell**: before a wave, one pale cyan biter, small, quick and lit at night (the Synthexis scout, 0.2.14), walks
-    round your base out of turret reach, stops at each side, then sits at one. Did you notice it before the herd came, and could you tell where it would hit?
-    (0.2.18: killing it no longer blinds the wave; Synthexis knows your defences, and the scout is the warning.)
-29. **The trail**: mud on the ground and a dashed green line on the map from its farm to the side it chose. Does it read
-    as "they came from there", and does it lead you back to the farm?
-30. **The strike**: the herd breaks two wall pieces where the scout sat and goes for what feeds your guns (power,
-    the inserters loading gun turrets), then leaves the way it came. Fair? What would you build against it?
-31. **The hunt**: go to the farm (pens drawn as captive spawners, worms by them). Hitting a pen calls its wave home.
-    Kill every pen and it leaves, landing elsewhere an hour later. Is the expedition a fight worth making?
-32. **The creep** (0.1.56): violet ground round its incubators, green glowing tumors on it. You cannot build on creep.
-    Watch it bud toward the wild nests near (every two minutes or so) and take them. Fight its biters on creep and off:
-    on it they are quicker and mend. Kill the tumors: the creep withdraws, and incubators left off it go wild after
-    three minutes, their biters with them. Does the creep read from afar, and on the map?
-33. **Biomass** (0.1.57): its incubators breed only on biomass, from what its creep drinks of the pollution. A dirty
-    factory whose cloud reaches its culture feeds it (bigger, sooner waves); clean air leaves it the trickle. Watch an
-    incubator stop (no animation) when it has nothing.
-34. **The probe and the spitters** (0.1.59, at evolution 0.45 and up): before a wave, eight small green "runts" walk at
-    one face and die there. Leave a turret on that face without ammunition: the herd comes in in front of it. Once it
-    is inside, its spitters (long green bodies) stay at the gap and spit at whatever comes; they leave last.
-35. **The burster** (0.1.59, recoloured 0.1.61; evolution 0.6 and up): a big biter with violet and acid-green bands,
-    lit green at night. Where it dies the ground splits and bursts green: let it reach your wall and the wall and the
-    turret behind it go. Kill it at range. Does the green burst read as Synthexis's?
-36. **Anti-air** (0.1.63, ground fire 0.1.64): lose units to their fliers, or kill theirs with your combat robots, and
-    Kessler-Hayashi fields anti-air troopers (a pale laser trooper with a long thin laser) and Grubstake flak buggies (a
-    buggy with a turret, bursts in the air and a weak splash on the ground); Synthexis breeds violet spore spitters. Each
-    shreds fliers and fights the ground weakly. Your destroyers and defenders should now meet an answer. Does air still
-    feel unanswered? Do the anti-air units feel useless when no flier comes?
-37. **Plain names** (0.1.64): Kessler-Hayashi's units are now Laser trooper, Heavy laser trooper, Anti-air trooper,
-    Heavy tank, Laser tank and Lightning tank (were Line trooper, Lance, Skyguard, Aegis, Prism, Tesla).
-38. **The stomper** (0.1.65, violet plates 0.1.66; evolution 0.8 and up): a five-legged thing three tiles across with
-    violet plates walks over your wall with the herd, no breach, and stomps what stands inside. Rifles and lasers barely
-    slow it; battle tanks, fliers, flamers and artillery do. Does it read as Synthexis's, and does it feel answerable?
-39. **Its cells and their feed** (0.1.66): by each incubator a small acid-green floor, a biochamber at work on it and a
-    green lamp: the culture at night is green dots. Kill a biochamber: that incubator stops breeding, most of its stock
-    wanders off wild, and ten minutes later it is a plain nest again. Hitting a biochamber does not call the wave home
-    (hitting an incubator does): raid the feed while the herd is out. Do the cells read as a lab on the nests?
-40. **Its substrate and technicians** (0.1.67): near its middle a patch of Gleba soil with yumako trees and a burning
-    heating tower (the site's light at night); white-suited technicians walk from it to each biochamber in turn. Kill
-    them: five minutes on its biochambers stop and its incubators starve; a pod brings two more ten minutes later. Is
-    the walk between tower and glass readable, and is killing the technicians worth the trip?
-41. **Its clinic** (0.2.1): a biolab on the substrate by the heating tower, 1,500 health. While it stands Synthexis's
-    breeds grow stronger, faster than the wild biters (spitters, then cinders, then stompers). Destroy it: its incubators
-    breed only small and medium biters until a pod brings a new clinic half an hour later. Is it clear that this is the
-    building to shell, and is the half hour worth an artillery trip?
+Read when something puzzles you; not a checklist.
 
-42. **Fliers by corporation** (0.2.1): Grubstake's scrap drones come in numbers (weak, a little gun) and its bomb drones
-    dive at your artillery, mortars and radars and blow up on them; Kessler-Hayashi fields a few laser drones from its
-    second level, armoured, a laser beam. Do the two skies read as the two corporations? Do gun turrets and rockets
-    feel like an answer to the laser drones, and is a bomb drone getting through to your artillery fair?
+### Synthexis (biotech, from evolution 0.25)
+- **Landing and food**: lands at the edge of your pollution and eats it through its creep. Incubators breed only on
+  that biomass; a clean factory leaves it a trickle. An idle incubator has no animation.
+- **Creep**: violet ground with sunk tumors, dead trees on it. No building on creep; its biters are quicker and mend on
+  it. Kill the tumors and it withdraws; incubators left off it go wild after three minutes.
+- **The culture**: biochambers by each incubator (kill one: that incubator stops), technicians walking from a heating
+  tower on Gleba soil (kill them: five minutes without feed), a clinic biolab (kill it: only small and medium biters for
+  half an hour). Hitting an incubator calls the wave home; hitting a biochamber does not.
+- **The scout and the trail**: one pale cyan biter before each wave, a mud trail and a dashed map line from the farm.
+- **Choosing**: it reads your base as fire, value and cost, and picks from a menu: raid, siege, probe (eight runts that
+  die at a face), cut of a power or fluid feed, strike behind a cut. An attack that failed at a place lately is set
+  aside; where rams all went off and the wave still stood at a wall, it sends twice the rams. When your defence is too
+  dear it saves up and waits.
+- **Inside**: each biter takes its own target (power, inserters loading guns, radars, roboports); spitters hold the
+  gap. Sometimes a deep strike runs for the heart. A wave caught under fire on the march breaks in there. The next wave
+  comes back through holes earlier ones made.
+- **Breeds**: spitters (0.45), bursters (0.6: frail, run at your line and burst), big bursters for sieges, sweepers
+  (ochre, clear mines within 7 tiles), stompers (0.8: walk over walls), spore spitters against your fliers. Old stock
+  goes back into the vat.
+- **Carrier**: a slow violet lit biter with an escort crossing to found a second culture.
+- **Others**: it fights Kessler-Hayashi when shot at on the way (or goes round), and leaves it alone otherwise.
 
-43. **The flamethrower trooper** (0.2.5, command bandwidth 3): a fifth order at the barracks, against swarms. Send a
-    few with your troopers at a Synthexis wave or a late biter attack: does the fire read, does it hold the bugs, and does
-    it ever burn your own? Kessler-Hayashi's Heavy tank now fires a rail cannon: can you tell its three tanks apart by
-    their shots?
-44. **Kessler-Hayashi's tanks leave camp** (0.2.7): its walled blocks no longer have baffle walls inside the gates,
-    and nothing stands in front of a gate. Its tanks, walkers and research tanks should now come out on raids with its
-    infantry (before, the tanks often stood in the yard while the infantry went alone). New camps only: blocks already
-    built keep their old layout.
-45. **The arena's numbers** (0.2.7, `scripts/play-arena.sh`): pick a unit on each side and the panel shows its health,
-    speed, range, shots a second, one shot's damage and its resistances, and the two picked units against each other:
-    what one shot does after resistances, per second, and how long your number of them takes to kill one. Does it
-    answer the questions you had (the burster against troopers)?
-46. **The burster, rebuilt** (0.2.7, evolution 0.6 and up): smaller and faster than the other breeds, frail (120
-    health, no armour), and it no longer bites: it runs at your line and bursts there. Your rifles should drop it if
-    they see it coming; a pack reaching a clump of troopers or your wall should hurt. Is there time to react, and can
-    you pick it out of a wave?
-47. **It learns from a wave that failed** (0.2.14): after a wave dies at your wall, the next one at the same place is
-    made up against what killed it. Lose a wave to gun turrets and the next brings more medium biters and spitters,
-    fewer small ones. Hold twice and the next wave is bigger (half as many again for each, up to twice the usual), and
-    Synthexis waits up to ten more minutes to gather it. Can you see the second wave is different from the first?
-48. **It tries somewhere new** (0.2.14): each wave records which face held and which gave, and the next scout weighs
-    that with what it sees; a place it tried recently counts as tried for about 190 tiles around, so its next trial
-    goes elsewhere. Does it feel like it is probing you, not repeating itself?
-49. **Old stock goes back into the vat** (0.2.14): a full incubator turns, once a minute, one biter its evolution no
-    longer breeds back into biomass and breeds a current one. Late in the game its waves should no longer be half small
-    biters.
-50. **Kessler-Hayashi's clearing guards stay home** (0.2.14): the troopers guarding a dug-in clearance used to chase
-    biters out into the worms and die there. A guard that strays more than six tiles past its ring now walks back.
-    Watch a clearance next to a worm field: do the guards hold their ground?
-51. **The herd walks its trail** (0.2.15): until now most Synthexis waves dropped their route at the start and went
-    straight at their mark, and some left a fifth of the herd at the incubators. Now the whole herd follows the trail on
-    the map to the face its scout chose, and goes home the same way. Does the green trail now predict where they come
-    from? Are the waves noticeably harder?
-52. **Bursters for a wall that held** (0.2.17): where a Synthexis wave was stopped at your wall and broke nothing past
-    it, the next wave there carries bursters (the glowing, acid-banded biters) among the others. Do you see them come
-    behind the biters, and does the wall open where they burst? Are they worth shooting first, at range, and can you?
-53. **Bursters wait their turn** (0.2.18): when a Synthexis wave comes back to a wall that stopped it, its glowing bursters hang back
-    out of your guns' reach while the biters go at the wall, then rush the spot where the biters are. Can you see them
-    waiting? Do you get a chance to kill them before they arrive, and is the hole they leave a fair price if you don't?
-54. **Railgunners clear nests, not waves** (0.2.20): Kessler-Hayashi's railgunners no longer hold its camp against any
-    biter attack; they go out with its nest clearances, and it researches heavier railguns when biters keep killing its
-    units. On a map crawling with biters, does a Kessler-Hayashi camp now look like it can fall, and does it still
-    clear the nests it needs to? Does Synthexis leave it alone until Kessler-Hayashi hits its incubators?
-55. **Where Synthexis hits a big factory** (0.2.21): on a sprawling base its waves now go for what they can reach,
-    usually your mining outposts at the edge of your turrets, routed round your guns, and break belts, drills and poles
-    when nothing there feeds a gun. Does it feel like a smart enemy picking at your weak edge, or like a nuisance? Do
-    you see where they came from (the trail) and can you follow it back to the farm?
-56. **The carrier** (0.2.22): a grown Synthexis culture sends a slow violet biter, lit at night, with an escort
-    across the map to a wild nest field, and a second culture starts there, small and without its clinic for half an
-    hour. Did you notice one walking? Was it worth chasing down, and did burning the young culture early feel like the
-    right answer? With several cultures, does the map feel infested rather than invaded?
-57. **It lands on your smoke** (0.2.24): Synthexis now comes down at the edge of your pollution cloud, nearer than
-    before, and eats it as wild nests would; with no nests near it grows its own incubators. Did it land closer than
-    you expected? Did cleaning up a polluting line slow it? Did the wild nests' attacks drop where it took over?
-58. **Grubstake's towns** (0.2.26): Grubstake's camps now grow as towns along gravel streets, machines on both sides,
-    junk yards between, no walls but the landing pad's fence. Does it read as a scrappy prospectors' town? Can you
-    and your units drive straight through it? Does it look better than the old plated squares?
-59. **Synthexis's creep** (0.2.28): its creep wanders, its tumors lie sunk in roots and slime, the forest it covers dies
-    to bare trunks. Does a culture read as something growing into the land? Do its technicians walk free of their plants?
-60. **Cliffs and water** (0.2.29): the corporations blow up cliffs where they build (an explosion), Kessler-Hayashi fills
-    ponds under its buildings, Grubstake's streets end on lakes in piers. Did you see one? Do their camps sit better on rough ground?
-61. **Synthexis through your wall** (0.2.30): once in, each of its biters goes for its own target: power, what
-    loads your guns, your radars and roboports. Does a breach feel dangerous? Can an inner keep of turrets hold it?
-62. **Deep strikes** (0.2.31): sometimes a wave rushes past your wall to the heart of your base (its trail runs on
-    inside, its leader marked). Was it a surprise you could read afterwards? `/lp wave 200 deep` forces one.
-63. **Caught under fire** (0.2.31): a wave that strays into your turrets on its way breaks in there. Did it?
-64. **It reads your base** (0.2.32): Synthexis goes for what is worth most and costs least to reach (an outpost
-    with few guns, a power plant left at the edge), saves up for a bigger wave when your defence is too dear, and the
-    next wave comes back through a hole the last one made. Did a raid surprise you? Could you see afterwards why it
-    went there? Does mending holes and guarding outposts feel like the answer?
-65. **The siege** (0.2.85): against a wall it cannot cross, a culture stops sending waves and breeds for one siege:
-    big bursters (behemoth-sized, glowing, a green blast that takes out lasers and walls round it) and big biters. Its
-    log says what it waits for. When it comes: runts walk onto your mines first, one each, then the bursters go at your
-    turrets, then the herd runs through the hole to what it came for without stopping. Could you tell a siege was
-    coming? Did the order (sweep, bursters, herd) read? Is the blast too strong, or about right?
-66. **It sees your mines** (0.2.69): it routes round a minefield where it can and sweeps it where it cannot. Do mines
-    still feel worth placing (they cost it a runt and time each)?
-67. **Kessler-Hayashi in the way** (0.2.85): a Synthexis wave shot at by a corporation's camp on its way either turns on
-    it (bursters at its guns first) or goes round it. Did you see one fight Kessler-Hayashi? Did it choose sensibly?
-    To watch a siege on a save of your own: `scripts/siege-save.sh <copy of your save>`, then
-    `LP_WATCH=siege.zip scripts/play-visit.sh <name>-waves0-breachlabsavesiege`.
+### Grubstake Inc. (the thief, from chemical science)
+- **Town**: gravel streets, machines both sides, junk yards, piers on lakes, turrets at street ends, no walls. A
+  pacifier antenna keeps biters off it (destroy every antenna and they turn on it).
+- **By night**: raids, skims and claim jumps leave after dark. Raiders walk in without firing and dismantle up to
+  twelve machines, leaving ghosts, and empty chests near. The foreman (pick icon) carries the haul: kill it and all of
+  it drops and the raid runs.
+- **Skim**: a truck parks by an uncovered belt and takes half of what passes. Undergrounds or a turret stop it.
+- **Yard**: a chest by its camp with what it stole; destroy it and it spills.
+- **Claim jumper**: a rig digs in by your chests; kill it within the minute. **Power tap**: pylons creep to an
+  uncovered pole ("Power tap" in your power stats). **Prospecting**: it claims the undrilled patch nearest you ten
+  minutes after tagging it (drill it or stake it).
+- **Pay the thief**: a trade post by its camp; what it empties buys a truce, a minute per 10 of value.
+- It takes soft targets and leaves walls alone.
 
-## Your side
-22. **Loot and components** (in wrecks since 0.1.42: mine one, or mark it for robots): what you destroy of theirs drops plates, circuits, magazines, and rare components that
-   research six technologies (Cluster shells, Pheromone bait, Pact breaker, Claim marker, Rail rifle, Orbital strike).
-23. **Threat scanner**: wired to a combinator, it counts their units within 64 tiles by kind; a jammer in reach blinds
-   it ("Scanner jammed").
-24. **Barracks, rally beacons, the muster point**: troopers, breachers, rocket troopers (command bandwidth 2) and tanks on
-   circuit orders. Rocket troopers against their armour, troopers against their infantry: does each order earn its slot?
+### Kessler-Hayashi (the wall, from the first rocket)
+- **Arrival**: orbital barrage on nests within 120 tiles, a plated camp, railgunners (charcoal) that clear nests and
+  never come at you.
+- **Raids** from landing at exposed buildings; the leader wears its heart icon (kill it: they fall back and come again).
+- **The line**: drones build lit cordon posts on arcs toward you; compounds spread out like metastases, then a curtain
+  wall. A named warning comes a step before it encloses a building of yours. Shoot the drones: three lost and the line
+  holds there. A decoy building bends its arcs.
+- **Strangling**: on its edge, where its guns reach, it blows your belts, pipes and loaders every 30 s. Undergrounds
+  with both ends off the line pass.
+- **Memory**: it learns what each of your turrets costs it and keeps a record of its operations. When the odds are
+  bad it holds and saves instead of throwing raids it will lose.
+- **Sieges**: a hauler brings mortars, placed just out of your turrets' reach, side by side; a howitzer truck where no
+  mortar site exists or after two failed sieges (deploys 30 s, packs 15 s: your window; killed, none for 30 min). A
+  jammer mast blinds your scanners and arcs down robots. The power strike goes for the one pole that darkens your
+  lasers.
+- **Hazard clearance**, **the invoice post** (it bills you for biter waves your pollution drew; pay for a truce, or kill
+  the nest a bill names), **border stakes**, and **labs** (each branch's units fielded only while its lab stands).
+- **Units**: laser, heavy laser and anti-air troopers; heavy, laser and lightning tanks; laser drones.
 
-## Throughout
-25. **Space Age looks**: landings by cargo pod, armoured troopers, tesla arcs. Do they read as theirs, not vanilla?
-26. **Readability without chat**: could you tell who did what, and why, from the world alone (the map labels, the
-   ghosts, the posts, the trucks, the icons)?
-27. **Anything that feels wrong**: units stuck, wandering into worms, friendly fire, a theft or a raid that seems unfair.
+### Your side
+- Wrecks drop plates, circuits and rare components that unlock six technologies.
+- Threat scanner (counts their units within 64 tiles on a wire; jammed near a mast).
+- Barracks, rally beacons and the muster point: troopers, breachers, rocket and flamethrower troopers, tanks on circuit
+  orders. The arena (`scripts/play-arena.sh`) shows any matchup's numbers.
+
+### Looks worth a glance
+Space Age touches (cargo pods, armour, tesla arcs); each faction's fliers (Grubstake's scrap and bomb drones,
+Kessler-Hayashi's laser drones); cliffs blown and ponds filled where they build. Showcase saves for units and the
+arena: `LP_MIX=units scripts/showcase.sh 12345 20`, then `scripts/play-showcase.sh units`. A siege on your own save:
+`scripts/siege-save.sh <copy>`, then `LP_WATCH=siege.zip scripts/play-visit.sh <name>-waves0-breachlabsavesiege`.
 
 ## Tell me
-What you saw for each, and what you'd change. Screenshots welcome.
+For each of the ten: what you saw, and what you would change. Screenshots welcome.
