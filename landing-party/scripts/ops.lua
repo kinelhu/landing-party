@@ -37,6 +37,10 @@ local RESERVE = pool.RESERVE           -- share of the garrison cap that never l
 -- defend), and with research now in the weight (x1.8 there) 5 counted it twice. At 3, the 21 sent there won once
 -- and lost once (two thirds dead either way): 3.5 sends 23.
 local PER_TURRET, BASE_FORCE = 3.5, 4
+-- Desperate (the ladder's top rung against a player): its odds rule at this share of its mind's min_odds, not lifted.
+-- Bolder, not blind (the counters and desperation consult, 2026-10-31): lifted, Kessler-Hayashi raided a laser wall with 4
+-- to 40 again and again, lost all, and its learning (prices, the ladder) went for nothing.
+local DESPERATE_ODDS, DESPERATE_SIEGE = 0.5, 2
 ops.PER_TURRET = PER_TURRET
 local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground stays a priority this long
 local THREAT_BONUS = 10               -- value added to targets by it
@@ -470,6 +474,8 @@ local function odds(avail, d)
 end
 ops.odds = odds
 local function mind_of(b) return (shared.CORPS[b.corp] or {}).mind or {min_odds = 0.5, caution = 1, loss_aversion = 1.5} end
+-- Whether a desperate raid of n against defence d clears its odds at DESPERATE_ODDS of its min_odds.
+function ops.desperate_ok(b, n, d) return odds(n, d) >= mind_of(b).min_odds * DESPERATE_ODDS - 1e-9 end
 
 -- Why a target matters now (the faction AI's relevance, one place for what were seven multipliers in choose): each a
 -- named weight a corporation's mind may set (shared.CORPS[corp].mind.weights), these the defaults.
@@ -544,7 +550,7 @@ local function choose(b, army)
       local desperate = player and ladder(t.owner, b.force) >= 3
       local mind = mind_of(b)
       local p = odds((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field, d)
-      if desperate or p >= mind.min_odds - 1e-9 then
+      if p >= mind.min_odds * (desperate and DESPERATE_ODDS or 1) - 1e-9 then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local ground = player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
           and (t.pos[1] - b.origin.x) ^ 2 + (t.pos[2] - b.origin.y) ^ 2 <= b.claim_radius ^ 2
@@ -1083,7 +1089,11 @@ local function launch(b, key, trace, army, opts)
   local is_answer = opts and opts.answer
   if battery(t) or threat_bonus(b, t) > 0 or desperate or is_answer then n = n + reserve end
   -- Cost no object (the ladder): what the garrison has goes, however few.
-  if desperate then want = math.min(want, n) end
+  -- (Its reserve in and what it has sent, while that clears its odds at DESPERATE_ODDS; else it holds and saves.)
+  if desperate then
+    if not ops.desperate_ok(b, n, d) then return false end
+    want = math.min(want, n)
+  end
   -- An answer (ops.request_answer): at least ANSWER_MIN, what it has if fewer.
   if is_answer then want = math.min(math.max(want, ANSWER_MIN), n) end
   if n < want or n == 0 then return false end
@@ -1775,6 +1785,11 @@ function ops.tick(b, tick, trace, army)
     local prefer = mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
     local skey, ssite, ss = choose_siege(b, army)
     local tkey, tsite, ts = choose_strip(b, army)
+    -- (Desperate against a player: its siege weighs DESPERATE_SIEGE times as much, what it saves for.)
+    local st_ = skey and b.intel.targets[skey]
+    if st_ and against_player(st_.owner) and ladder(st_.owner, b.force) >= 3 then
+      prefer = {raid = prefer.raid, siege = (prefer.siege or 0) * DESPERATE_SIEGE, strip = prefer.strip}
+    end
     -- Each worth less where it failed lately (tactics.ladder: every attacker's), so the next method up has its turn.
     local function ladder(k, method)
       local t = k and b.intel.targets[k]

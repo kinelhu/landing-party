@@ -558,6 +558,10 @@ remote.add_interface("landing-party", {
   -- Tests and the siege lab: a settlement's parts at `parts` at least (its siege costs SIEGE_COST: what the lab primes,
   -- as it primes Synthexis's biomass), and what its attempts have done (tactics.lua).
   -- Tests only: what a settlement's raid at pos would be (ops.raid_want: what got in there, else its formula).
+  -- Tests and the siege lab: a corporation's war chest filled to `parts` at least (its reliefs paid from it, war.lua: the
+  -- lab's chest was empty, and a desperate corporation could never find its force).
+  debug_war_chest = function(corp, parts) return war.debug_chest(corp, parts) end,
+  debug_desperate_ok = function(id, n, d) local b = storage.bases[id]; return b and ops.desperate_ok(b, n, d) end,
   debug_raid_want = function(id, pos, defence)
     local b = storage.bases[id]
     if not b then return nil end

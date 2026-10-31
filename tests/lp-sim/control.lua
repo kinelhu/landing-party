@@ -7552,6 +7552,8 @@ scenarios.lab = function()
             lp("debug_sense", b.id, {L.center[1], L.center[2]}, 150)
             lp("debug_corp_parts", b.id, params.lab_parts or 1000)
             lp("debug_corp_level", FACTION, params.lab_level or 2)
+            -- (Its war chest too, LAB_CHEST: its reliefs come from it, and a lab camp exports nothing.)
+            lp("debug_war_chest", FACTION, params.lab_chest or 3000)
             -- (And the player's era, LAB_ERA, its siege tier's cap: at 0 its sieges stayed at tier 1 against a laser wall.)
             lp("dev", {"era", tostring(params.lab_era or 2)}, {L.center[1], L.center[2]}, surface().index)
           end
@@ -10517,6 +10519,11 @@ scenarios.farm = function()
       check("ops: tesla kills read as electric; a wall piece keeps the ladder's clock, a building resets it; a failure near counts",
         dmg == "electric" and after_wall == before and after_asm == game.tick and l_near < 1,
         serpent.line({dmg = dmg, before = before, after_wall = after_wall, after_asm = after_asm, tick = game.tick, near = l_near}))
+      -- Desperate, bolder not blind (the consult, 2026-10-31): a raid of 10 at a defence of 50 (the formula's 179) does not
+      -- go; one of 150 does (lifted, its raids of 4 to 40 went at a laser wall again and again).
+      local dz_few, dz_many = lp("debug_desperate_ok", storage.id, 10, 50), lp("debug_desperate_ok", storage.id, 150, 50)
+      check("ops: a desperate corporation keeps half its odds rule", dz_few == false and dz_many == true,
+        serpent.line({few = dz_few, many = dz_many}))
       -- A siege that fired and broke nothing at a place: its tier there is what it brings more than next time (tactics.failed_
       -- specialists; a tier-1 mortar's 30 shells broke nothing of a laser wall, and its next siege was tier 1 again).
       lp("debug_tactics_record", "lp-test-corp", "player", {700, 0}, "siege", {sent = 10, spent = 0, got = 0, inside = false, rams = 1})

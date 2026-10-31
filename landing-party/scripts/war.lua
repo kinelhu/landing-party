@@ -40,6 +40,12 @@ local function corp_state(corp)
   return storage.corps[corp]
 end
 
+function war.debug_chest(corp, parts)
+  local d = corp_state(corp)
+  d.chest = math.max(d.chest or 0, parts)
+  return d.chest
+end
+
 function war.fund(corp, parts)
   local d = corp_state(corp)
   d.chest = math.min(CHEST_CAP, (d.chest or 0) + CHEST_SHARE * parts)

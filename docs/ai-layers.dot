@@ -5,9 +5,9 @@ digraph layers {
   "Seams (leaves)" [label="Seams (leaves)\n9 modules, 699 lines", fillcolor="#d9f0d9"];
   "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1318 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 312 lines", fillcolor="#eef2f7"];
-  "Corporation" [label="Corporation\n11 modules, 2697 lines", fillcolor="#eef2f7"];
+  "Corporation" [label="Corporation\n11 modules, 2703 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n16 modules, 6084 lines\nlayout 1721", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n13 modules, 5174 lines\nops 1914", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n13 modules, 5189 lines\nops 1929", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1229 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n4 modules, 6774 lines\nherd 3549, farm 2266", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
