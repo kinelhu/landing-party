@@ -8852,13 +8852,22 @@ scenarios.herd = function()
     -- wallgoal: its target 2 tiles behind the wall, among the guns (a lane's: the lab's waves said they were through with
     -- no wall broken, from within 6 tiles of it outside the wall; the siege lab, 2026-10-31). Through means past the wall.
     if mix == "wallgoal" then
-      S.wave1 = lp("herd_wave", S.pen, S.at(38, 0), {planned = true})
+      -- Three mines before the wall and three behind it, on its way: its sweep goes at those before it alone (a sweeper sent
+      -- at mines between two walls chewed through the outer to reach them; the lane, 2026-10-31).
+      for _, dv in ipairs({-4, 0, 4}) do
+        surface().create_entity{name = "land-mine", position = S.at(44, dv), force = "player"}
+        surface().create_entity{name = "land-mine", position = S.at(36, dv), force = "player"}
+      end
+      S.wave1 = lp("herd_wave", S.pen, S.at(38, 0), {planned = true, sweep = 6})
       for t = game.tick - storage.t0 + 60, END - 60, 30 do
         schedule(t, function()
-          if S.inside_at then return end
-          for _, l in ipairs(lp("herd_state").log or {}) do if l.id == S.wave1 and l.t_inside then S.inside_at = l.t_inside end end
-          for _, wv in ipairs(lp("herd_state").waves or {}) do
-            if wv.id == S.wave1 and wv.stage == "inside" then S.inside_at = game.tick end
+          -- (Past the wall within 3 s of through: through from the gap it broke, its foremost stands in the wall's line.)
+          if S.inside_at and game.tick > S.inside_at + 180 then return end
+          if not S.inside_at then
+            for _, l in ipairs(lp("herd_state").log or {}) do if l.id == S.wave1 and l.t_inside then S.inside_at = l.t_inside end end
+            for _, wv in ipairs(lp("herd_state").waves or {}) do
+              if wv.id == S.wave1 and wv.stage == "inside" then S.inside_at = game.tick end
+            end
           end
           if not S.inside_at then return end
           local past, c = 0, S.c
@@ -8869,7 +8878,7 @@ scenarios.herd = function()
             local dv = (u.position.x - c[1]) * vx_ + (u.position.y - c[2]) * vy_
             if du < 39.5 and math.abs(dv) < 39.5 then past = past + 1 end
           end
-          S.past_at_inside = past
+          S.past_at_inside = math.max(S.past_at_inside or 0, past)
         end)
       end
       S.damage = S.damage or {}
@@ -9053,6 +9062,8 @@ scenarios.herd = function()
     if mix == "wallgoal" then
       info(string.format("herd wallgoal: inside at %s, %s of its own past the wall then; kills %s", tostring(S.inside_at),
         tostring(S.past_at_inside), serpent.line(w and w.kills)))
+      local sw = w and w.sweep_mines
+      check("herd: wallgoal, its sweep went at the mines before the wall alone", sw ~= nil and sw >= 1 and sw <= 3, tostring(sw))
       check("herd: wallgoal, through only once past the wall", S.inside_at ~= nil and (S.past_at_inside or 0) >= 1,
         string.format("inside at %s, %s past the wall", tostring(S.inside_at), tostring(S.past_at_inside)))
       return

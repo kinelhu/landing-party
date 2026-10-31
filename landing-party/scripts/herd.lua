@@ -1438,7 +1438,7 @@ function herd.plan(surface, from, target, forces, n)
   local rest = {}
   for i = upto, #path do rest[#rest + 1] = path[i] end
   if #rest < 2 then rest[#rest + 1] = target end
-  local mines = herd.mines_along(surface, forces, rest, herd.spread(n) + 3)
+  local mines = herd.mines_along(surface, forces, rest, herd.spread(n) + 3, rest[1])
   -- The guns covering its breach its bursters can reach: within their blast of a wall piece by the breach (where they stop
   -- and burst), or all of them where no wall stands in the way.
   local cover = firemap.cover(fmap, way.breach)
@@ -2029,7 +2029,20 @@ local SWEEP_GAP, SWEEP_MAX = 3, 60
 herd.SWEEP_MAX = SWEEP_MAX
 -- The mines within `reach` of the way from `a` through `b` to `c` (its sweep's: the last of its way and its breach), nearest
 -- `a` first.
-local function mines_along(s, forces, pts, reach)
+-- Whether a wall piece of `forces` stands on the line from `a` to `b`, a tile at a time.
+local function wall_on_line(s, forces, a, b)
+  local n = math.ceil(math.sqrt(d2(a, b)))
+  for i = 1, n - 1 do
+    local p = {a.x + (b.x - a.x) * i / n, a.y + (b.y - a.y) * i / n}
+    if s.count_entities_filtered{position = p, radius = 0.8, type = WALLS, force = forces, limit = 1} > 0 then return true end
+  end
+  return false
+end
+-- Its foe's mines within `reach` of its way (pts), those it can walk to from `from` without crossing a wall: a sweeper
+-- sent at mines between two walls chewed through the outer to reach them, a ram's work for a sweeper's 60 biomass, and
+-- mines laid between layers were worse than none (the lane, 2026-10-31; the user: "yes", sweep what lies before the
+-- wall). Those past a wall its rams' blasts and its herd meet.
+local function mines_along(s, forces, pts, reach, from)
   local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
   for _, p in ipairs(pts) do
     x0, y0, x1, y1 = math.min(x0, p.x), math.min(y0, p.y), math.max(x1, p.x), math.max(y1, p.y)
@@ -2042,7 +2055,10 @@ local function mines_along(s, forces, pts, reach)
       local a, b = pts[i - 1], pts[i]
       local ex, ey = b.x - a.x, b.y - a.y
       local f = math.max(0, math.min(1, ((q.x - a.x) * ex + (q.y - a.y) * ey) / math.max(1, ex * ex + ey * ey)))
-      if d2(q, {x = a.x + ex * f, y = a.y + ey * f}) <= reach * reach then out[#out + 1] = m; break end
+      if d2(q, {x = a.x + ex * f, y = a.y + ey * f}) <= reach * reach then
+        if not (from and wall_on_line(s, forces, from, q)) then out[#out + 1] = m end
+        break
+      end
     end
   end
   table.sort(out, function(m1, m2) return d2(m1.position, pts[1]) < d2(m2.position, pts[1]) end)
@@ -2066,7 +2082,7 @@ end
 local function sweep(w, s, from, to, inside)
   local n = w.sweep or 0
   if n <= 0 then return 0 end
-  local mines = mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP)
+  local mines = mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP, from)
   local spots = herd.sapper_spots(mines)
   w.sweep_mines = #mines
   local made = 0
