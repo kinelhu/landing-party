@@ -1805,7 +1805,8 @@ function ops.tick(b, tick, trace, army)
       if key then trace(b, string.format("holds its raid at %s: it failed there lately (ladder %.2f)", key, lr)) end
       key = nil
     end
-    if ls < tactics.LADDER_HOLD then skey = nil end
+    -- (Its howitzer is the step past what failed there: not set aside by the ladder that called it, siege_plan.)
+    if ls < tactics.LADDER_HOLD and spiece ~= "lp-howitzer" then skey = nil end
     if lt < tactics.LADDER_HOLD then tkey = nil end
     if key then options[#options + 1] = {"raid", (rs or 0) * (prefer.raid or 1) * lr} end
     if skey then options[#options + 1] = {"siege", (ss or 0) * (prefer.siege or 0) * ls} end

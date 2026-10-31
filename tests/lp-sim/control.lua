@@ -10548,6 +10548,15 @@ scenarios.farm = function()
       put("assembling-machine-1", {rz[1] + 6, rz[2]})
       local plan_r = lp("debug_siege_plan", storage.id, {rz[1] + 6, rz[2]})
       local plan_t = lp("debug_siege_plan", storage.id, {tz[1] + 6, tz[2]})
+      -- And its howitzer past the tesla too once its sieges there failed twice where they got there (tactics.failures: at
+      -- its ladder's third it never came; the code review, 2026-10-31).
+      local corp_ = lp("stats", storage.id).corp
+      for _ = 1, 2 do
+        lp("debug_tactics_record", corp_, "player", {tz[1] + 6, tz[2]}, "siege", {sent = 30, spent = 5, got = 0, inside = false,
+          rams = 1, breach = {tz[1] + 6, tz[2]}})
+      end
+      local plan_t2 = lp("debug_siege_plan", storage.id, {tz[1] + 6, tz[2]})
+      check("ops: its howitzer where its sieges failed twice", plan_t2 and plan_t2.piece == "lp-howitzer", serpent.line(plan_t2))
       check("ops: its howitzer where a rocket turret outranges its mortars, its mortar past a tesla",
         plan_r and plan_r.piece == "lp-howitzer" and plan_t and plan_t.piece == "lp-mortar",
         serpent.line({rocket = plan_r, tesla = plan_t}))
@@ -10562,7 +10571,11 @@ scenarios.farm = function()
       lp("debug_tactics_record", "lp-test-corp", "player", {700, 200}, "siege", {sent = 10, spent = 0, got = 4, inside = true, rams = 2})
       local fs_fail = lp("debug_failed_specialists", "lp-test-corp", "player", {700, 0}, "siege")
       local fs_ok = lp("debug_failed_specialists", "lp-test-corp", "player", {700, 200}, "siege")
-      check("tactics: a siege that broke nothing is the tier to go past", fs_fail == 1 and fs_ok == nil, serpent.line({fs_fail, fs_ok}))
+      -- (Not one that never got there: its hauler killed on the way, no shell fired; the code review, 2026-10-31.)
+      lp("debug_tactics_record", "lp-test-corp", "player", {700, 400}, "siege", {sent = 10, spent = 10, got = 0, inside = false, rams = 1, reached = false})
+      local fs_away = lp("debug_failed_specialists", "lp-test-corp", "player", {700, 400}, "siege")
+      check("tactics: a siege that broke nothing is the tier to go past", fs_fail == 1 and fs_ok == nil and fs_away == nil,
+        serpent.line({fs_fail, fs_ok, fs_away}))
       -- A corporation weighs a turret type at the price its losses taught it where it has one (ops.weigh, its own reading):
       -- a gun turret at 21 units lost a turret weighs 6 (21 over 3.5), whatever the formula made it (Kessler-Hayashi's raids at a
       -- laser wall, weighed by a formula set against gun turrets, lost every one; the lane, 2026-10-31).

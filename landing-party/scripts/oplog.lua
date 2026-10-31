@@ -36,10 +36,11 @@ local function corp_view(id, b)
   local t = b.intel and b.intel.targets and b.intel.targets[op.target]
   -- (Its mortars among its members: what their shells break is its own, attempt.lua.)
   local members = op.members or {}
-  if op.mortars and #op.mortars > 0 then
+  if (op.mortars and #op.mortars > 0) or op.howitzer then
     members = {}
     for _, m in ipairs(op.members or {}) do members[#members + 1] = m end
-    for _, m in ipairs(op.mortars) do members[#members + 1] = m end
+    for _, m in ipairs(op.mortars or {}) do members[#members + 1] = m end
+    if op.howitzer then members[#members + 1] = op.howitzer end
   end
   return {key = "b" .. id .. ":" .. op.started, faction = b.corp, force = b.force, kind = op.kind, camp = xy(b.origin),
     target = t and xy(t.pos) or nil, target_kind = t and t.kind or nil, owner = t and t.owner or op.owner,
@@ -105,8 +106,12 @@ local function follow(s, view, base_id, seen)
       if not s.member[u.unit_number] then
         s.member[u.unit_number] = view.key
         rec.units[#rec.units + 1] = u.unit_number
-        rec.size = rec.size + 1
-        rec.attempt.sent = rec.attempt.sent + attempt.worth(u.name)
+        -- (Its units alone in its size and what it sent: its mortars set up again after each move had new numbers, counted
+        -- anew; the code review, 2026-10-31.)
+        if u.type == "unit" then
+          rec.size = rec.size + 1
+          rec.attempt.sent = rec.attempt.sent + attempt.worth(u.name)
+        end
       end
     end
   end

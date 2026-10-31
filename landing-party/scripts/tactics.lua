@@ -166,11 +166,24 @@ function tactics.failed_specialists(faction, foe, pos, method, sig, fade)
   if not r then return nil end
   local most
   for _, a in ipairs(tactics.history(r, sig)) do
-    if not a.inside and (a.got or 0) <= 0 and math.exp(-(game.tick - (a.tick or 0)) / (fade or tactics.FADE)) > 0.1 then
+    -- (Where it got there: a siege whose hauler was killed on its way fired no shell and broke nothing for want of one;
+    -- the code review, 2026-10-31.)
+    if not a.inside and (a.got or 0) <= 0 and a.reached ~= false
+      and math.exp(-(game.tick - (a.tick or 0)) / (fade or tactics.FADE)) > 0.1 then
       most = math.max(most or 0, a.rams or 0)
     end
   end
   return most
+end
+
+-- How many of its attempts by `method` near pos failed lately where they got there (not in; not faded past a tenth):
+-- a count, not the ladder's faded sum (two failures at 20 and 2 minutes summed 1.56, and its ladder never reached a third).
+function tactics.failures(faction, foe, pos, method, sig, fade)
+  local n = 0
+  for _, a in ipairs(tactics.history_near(faction, foe, pos, method, sig, fade)) do
+    if not a.inside and a.reached ~= false and math.exp(-(game.tick - (a.tick or 0)) / (fade or tactics.FADE)) > 0.1 then n = n + 1 end
+  end
+  return n
 end
 
 -- Below this the method is set aside there for now (about 44 minutes after one fresh failure, 72 after two; at 0.6, 16

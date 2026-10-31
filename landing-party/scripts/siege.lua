@@ -119,17 +119,19 @@ local function howitzer_site(b, t)
 end
 
 -- Its siege against t: its mortars from out of every gun's reach (siege_site); its howitzer where no mortar's site is
--- out of reach (rockets and railguns outrange a mortar's 36), or where its sieges there broke nothing twice lately (the
--- ladder at a third), at its level 2 and up and its howitzer not lost. Its mortars are its bursters: what opens the way;
+-- out of reach (rockets and railguns outrange a mortar's 36), or where its sieges there failed twice lately where they got
+-- there (tactics.failures), at its level 2 and up and its howitzer not lost. Its mortars are its bursters: what opens the way;
 -- its howitzer the next step up, slow, lost for a while if killed, and outranged by the player's artillery (the user,
 -- 2026-10-31: escalate to the howitzer, not a mortar that outranges everything). Returns its site and its piece.
 local function siege_plan(b, t, army)
   local site = siege_site(b, t)
   local can = army.level(b) >= 2 and (b.howitzer_down or 0) <= game.tick
   if site and can and t.pos then
-    local failed = tactics.ladder(b.corp, t.owner or "player", t.pos, "siege",
-      attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos), nil, nil, true)
-    if failed <= 1 / 3 + 1e-6 then
+    -- (Counted, tactics.failures: at its ladder's third it never came, the ladder's hold having set the siege aside first;
+    -- the code review, 2026-10-31.)
+    local failed = tactics.failures(b.corp, t.owner or "player", t.pos, "siege",
+      attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
+    if failed >= 2 then
       local hs = howitzer_site(b, t)
       if hs then return hs, "lp-howitzer" end
     end
@@ -270,6 +272,8 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
       with_howitzer = true
     end
   end
+  -- (A howitzer siege's piece is its howitzer: none besides it for the roboports; two came from one truck, the review.)
+  if piece == "lp-howitzer" then with_howitzer = false end
   -- A siege that takes the howitzer goes behind the howitzer truck, its hauler (units.lua).
   local truck = with_howitzer or piece == "lp-howitzer"
   local hname = shared.variant(b.corp, truck and "lp-howitzer-truck" or "lp-hauler")
@@ -650,6 +654,9 @@ local function siege_step(b, trace, army)
         local p = s.find_non_colliding_position(hn, truck and truck.pos or {op.site[1], op.site[2]}, 12, 1)
         op.howitzer = p and s.create_entity{name = hn, position = p, force = force, direction = truck and truck.dir or nil}
         if op.howitzer then
+          -- (Its settlement's, as its mortars: what it breaks is its razing.)
+          storage.unit_owner = storage.unit_owner or {}
+          if op.howitzer.unit_number then storage.unit_owner[op.howitzer.unit_number] = b.id end
           if truck then op.howitzer.health = math.max(1, truck.share * op.howitzer.max_health) end
           op.howitzer.insert{name = "lp-mortar-shell", count = op.howitzer_carry or spec.shells}
           op.howitzer_carry = nil
@@ -899,6 +906,10 @@ local function siege_step(b, trace, army)
         trace(b, string.format("siege: no assault (%d needed, %d guards and %d at home)", want, n, home_n))
       end
       if want and (spec.assault or n + home_n >= want) then
+        -- (Its living guards: the dead counted, it drew short and its abort at half came early; the review.)
+        local live = {}
+        for _, u in ipairs(op.members) do if u.valid then live[#live + 1] = u end end
+        op.members = live
         for _, u in ipairs(pool.take(b, want - #op.members, pool.GUARD, FOOT)) do table.insert(op.members, u) end
         op.launched = #op.members
         op.phase, op.phase_at, op.last_kill, op.kills_at, op.razed_before = "assault", game.tick, game.tick, b.razed, b.razed
