@@ -70,7 +70,9 @@ end
 -- prior: what it priced it at before (its first sample moves from there, PRICE_LEARN of the way, not to the sample: one
 -- wave wiped out at 15 lasers made a laser 2.5 from 15.4 at a stroke; 2026-10-28). floor: the sample is a least (a wave
 -- that lost all it had could have lost more: it raises a price, never lowers it).
-function know.learn_price(key, foe, proto, sample, prior, floor)
+-- weight: how much this sample counts, 0 to 1 (a wave's size over a full wave's: a probe of 24 moves a price less than a
+-- siege of 60; the design consult, 2026-10-30, D; prices swung by 18 in one trial in the siege lab, 2026-10-31).
+function know.learn_price(key, foe, proto, sample, prior, floor, weight)
   local k = know.of(key)
   k.price = k.price or {}
   k.price[foe] = k.price[foe] or {}
@@ -78,7 +80,7 @@ function know.learn_price(key, foe, proto, sample, prior, floor)
   sample = math.min(know.PRICE_MAX, math.max(know.PRICE_MIN, sample))
   if not p and prior then p = {per = prior, n = 0} end
   if floor and p and sample <= p.per then return p.per end
-  if not p then p = {per = sample, n = 0} else p.per = p.per + (sample - p.per) * know.PRICE_LEARN end
+  if not p then p = {per = sample, n = 0} else p.per = p.per + (sample - p.per) * know.PRICE_LEARN * (weight or 1) end
   p.n = p.n + 1
   k.price[foe][proto] = p
   return p.per

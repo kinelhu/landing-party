@@ -14,7 +14,7 @@ digraph ai {
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "know" [label="know\n231 lines", width=1.06, fillcolor="#d9f0d9"];
+    "know" [label="know\n233 lines", width=1.06, fillcolor="#d9f0d9"];
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -71,7 +71,7 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n3471 lines", width=3.80, fillcolor="#f7dede"];
+    "herd" [label="herd\n3473 lines", width=3.80, fillcolor="#f7dede"];
     "farm" [label="farm\n2180 lines", width=3.22, fillcolor="#f7dede"];
     "creep" [label="creep\n557 lines", width=1.42, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
@@ -89,7 +89,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n750 lines", width=1.63, fillcolor="#eef2f7"];
+    "control" [label="control\n754 lines", width=1.64, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n125 lines", width=0.94, fillcolor="#d9f0d9"];

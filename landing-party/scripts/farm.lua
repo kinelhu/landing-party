@@ -72,7 +72,7 @@ local GUARD_TOTAL = PENS * HOME_GUARD   -- that the guard is shared out (twelve 
 local function guard_of(f) return math.ceil(GUARD_TOTAL / math.max(PENS, #f.pens)) end
 -- A wave's most (the consult: waves of 20 to 60; the mega wave is an event at the top of its ladder, not the default).
 -- Four full pens sent 135 in the first farm run.
-local WAVE_MAX = 60
+local WAVE_MAX = shared.WAVE_MAX
 -- A siege (a context-free review, 2026-10-28: with nothing it can field worth a wave, "change the mission, not go quiet"):
 -- the way in to its best place becomes the job. It orders big bursters and a herd of big biters to cross the hole (the
 -- wall lab: mediums behind them, 2 got in; big biters, 14), the cheapest mix its plan's way in pays for (siege_size). It

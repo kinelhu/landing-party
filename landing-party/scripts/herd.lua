@@ -264,6 +264,7 @@ local function learn_march(w)
   -- 3 and wiped out read as whole, and its laser price fell from 15 to 1.1; the fire consult, 2026-10-30.)
   local wiped = left <= 0.2 * (w.sent or w.size or 1)
   local base = B.mind.per_turret or firemap.AFFORD
+  local weight = math.min(1, (w.sent or w.size or shared.WAVE_MAX) / shared.WAVE_MAX)
   w.price_learned = w.price_learned or {}
   for key, mk in pairs(w.march_killers) do
     local name = mk.name or key
@@ -275,7 +276,7 @@ local function learn_march(w)
     else n = s.count_entities_filtered{position = at, radius = FIRE_NEAR, name = name, force = mk.force} end
     if n > 0 then
       local killed = mk.worth or mk.n
-      local per = know.learn_price("biotech", mk.force, name, killed / n, threat.prior_of(name, mk.force, base), wiped)
+      local per = know.learn_price("biotech", mk.force, name, killed / n, threat.prior_of(name, mk.force, base), wiped, weight)
       w.price_learned[(mk.name and key or "march " .. name)] = {sample = killed / n, per = per, n = n}
     end
   end
@@ -330,11 +331,12 @@ local function learn_price(w)
   -- 3 and wiped out read as whole, and its laser price fell from 15 to 1.1; the fire consult, 2026-10-30.)
   local wiped = left <= 0.2 * (w.sent or w.size or 1)
   local base = B.mind.per_turret or firemap.AFFORD
+  local weight = math.min(1, (w.sent or w.size or shared.WAVE_MAX) / shared.WAVE_MAX)
   -- (A siege's: the guns still covering its breach once its bursters were spent, breach_after, sequence. Learned from
   -- none, its laser price never moved in four sieges that each lost 450 to 770 mediums to them; the siege lab, 2026-10-30.)
   for proto, n in pairs((w.big_sent or 0) == 0 and w.breach_by or w.breach_after or {}) do
     local killed = (w.lost_worth_by or w.lost_by or {})["breach " .. proto] or 0
-    local per = know.learn_price("biotech", foe, proto, killed / n, threat.prior_of(proto, foe, base), wiped)
+    local per = know.learn_price("biotech", foe, proto, killed / n, threat.prior_of(proto, foe, base), wiped, weight)
     w.price_learned[proto] = {sample = killed / n, per = per, n = n}
   end
   do
@@ -344,7 +346,7 @@ local function learn_price(w)
       -- (Nor its own: a big burster's blast kills it, and it learned its own breed as a killer at 8.)
       if proto and proto ~= "none" and not proto:find("^lp%-bred%-") and not (w.breach_by and w.breach_by[proto])
         and not (prof and (prof.kind == "ammo" or prof.kind == "power" or prof.kind == "fluid")) then
-        local per = know.learn_price("biotech", foe, proto, killed, nil, wiped)
+        local per = know.learn_price("biotech", foe, proto, killed, nil, wiped, weight)
         w.price_learned[proto] = {sample = killed, per = per, n = 0}
       end
     end

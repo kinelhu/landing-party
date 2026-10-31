@@ -10075,6 +10075,12 @@ scenarios.farm = function()
       end
       check("farm: its breeds tilted by what killed its last wave, none left out", next(ch) ~= nil and #dropped == 0
         and #wild == 0 and moved, serpent.line({dropped = dropped, wild = wild, moved = moved}))
+      -- A price moves by the size of the wave that taught it: a probe's sample less than a full wave's (prices swung by 18
+      -- in one trial in the siege lab, 2026-10-31).
+      local small = lp("debug_learn_weighted", "player", "lp-test-small", 20, 10, 24 / 60)
+      local full = lp("debug_learn_weighted", "player", "lp-test-full", 20, 10, 1)
+      check("farm: a probe moves a price less than a full wave", math.abs(small - 11.6) < 0.01 and math.abs(full - 14) < 0.01,
+        serpent.line({small = small, full = full}))
       check("farm: a siege no smaller than the least wave", sz ~= nil and sz.k + sz.n + (sz.fodder or 0) >= 24, serpent.line(sz))
       check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
         serpent.line({same = same, reinforced = reinforced}))

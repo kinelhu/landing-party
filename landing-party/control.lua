@@ -554,6 +554,10 @@ remote.add_interface("landing-party", {
   debug_price = function(foe, proto) return know.price("biotech", foe, proto) end,
   -- Tests only: what it has learned a prototype costs it, set (as if its waves had died to it).
   debug_learn_price = function(foe, proto, per) return know.learn_price("biotech", foe, proto, per, per) end,
+  -- Tests only: a price learned from a sample at a weight (know.learn_price), from a prior.
+  debug_learn_weighted = function(foe, proto, sample, prior, weight)
+    return know.learn_price("biotech", foe, proto, sample, prior, false, weight)
+  end,
   -- Tests only: biomass added to a farm's culture (a siege's breeds paid for without an hour of pollution).
   debug_biomass = function(id, amount)
     local c = creep.of(id)

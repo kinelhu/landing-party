@@ -278,6 +278,7 @@ shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g
 -- The pen's stock that sends a wave, and the most it holds (the pen's unit cap, data and control).
 shared.PEN_CAP = 40
 shared.WAVE_MIN = 24
+shared.WAVE_MAX = 60   -- the most a culture sends at once (farm.lua), a full wave (herd.lua: what a price is learned from)
 -- Its breeds: what each costs, in parts in the arena (weighed against the corporations' units, a rifleman's 10;
 -- docs/arena.md) and in biomass in the game (an incubator breeds only while its culture can pay: farm.lua).
 -- None of them shoots up (air.lua): its class is many, healing and soft.
