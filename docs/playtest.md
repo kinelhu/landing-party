@@ -7,9 +7,9 @@ been checked headless only. Chat notices are off: the world should tell you what
 
 Close your own game first (Steam allows one copy). Then:
 
-    cd ~/Dev/landing-party-wt && scripts/play-visit.sh playtest
+    cd ~/Dev/landing-party && scripts/play-visit.sh playtest
 
-From the worktree, not `~/Dev/landing-party`: main is still at 0.2.32. This opens a fresh copy of deathworld10x (never
+(Main has `muster` merged; the worktree runs the same.) This opens a fresh copy of deathworld10x (never
 the real file) with Landing Party as a player would meet it, no test mod.
 
 | When | What arrives | Not to wait |
