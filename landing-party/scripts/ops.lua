@@ -69,7 +69,7 @@ local DEPLOY_TICKS = 30 * 60
 local PACK_TICKS = 10 * 60
 local REACHED = 30                    -- an operation got to its target: a member came this near it (tactics.record)
 local PLAYER_REACH = 31
-local MORTAR_REACH = 35
+local MORTAR_REACH = 36   -- its gun's range (data.lua: lp-mortar-gun, 36); at 35, out of a tesla's reach left it no site
 local HOWITZER_REACH, HOWITZER_STAND = 98, 53   -- its reach, and how far from the nest it stands
 local STUCK_TICKS = 60 * 60       -- a siege's hauler no nearer its site for this long is stuck
 local CLEAR_RAILS = 8             -- railgunners a clearance waits for (its only guards; six could not hold, the user)
@@ -1341,6 +1341,7 @@ local siege_ = require("__landing-party__.scripts.siege").install(ops, {
   TRUCK_PACK = TRUCK_PACK, truck_down = truck_down, truck_up = truck_up, truck_piece = truck_piece})
 local choose_siege, launch_siege, siege_site, siege_step = siege_.choose_siege, siege_.launch_siege, siege_.siege_site, siege_.siege_step
 function ops.siege_why(b, army) return siege_.siege_why(b, army) end
+function ops.debug_siege_site(b, pos, owner) return siege_site(b, {pos = pos, owner = owner or "player"}) end
 local siege_tier = siege_.siege_tier
 
 -- Strip: scripts/strip.lua (split from here, 2026-10-18).

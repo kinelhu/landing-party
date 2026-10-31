@@ -6,6 +6,7 @@
 local shared = require("__landing-party__.shared")
 local attempt = require("__landing-party__.scripts.attempt")
 local tactics = require("__landing-party__.scripts.tactics")
+local threat = require("__landing-party__.scripts.threat")
 
 local siege = {}
 
@@ -58,6 +59,20 @@ local TRUCK_PACK = K.TRUCK_PACK
 local truck_down, truck_up, truck_piece = K.truck_down, K.truck_up, K.truck_piece
 -- A site for the mortar: from the target towards home (then at angles off that line), the first point beyond
 -- every known player turret's reach with one of them within the mortar's, on dry land.
+-- Whether a point lies out of every one of foes' guns' own reach (threat.reach, from each gun's prototype, its size in it),
+-- and SITE_MARGIN more for the guards by its mortars. (At PLAYER_REACH, 31 for every gun, a siege
+-- set up 31 tiles from tesla turrets, which reach 30 from a body three tiles wide, and its guards round it were stunned
+-- and chained to death in a minute, its mortar with them, three sieges of three; the lane, 2026-10-31. Synthexis reads
+-- them so already: the perception consult's first lesson, correct perception.)
+local SITE_MARGIN = 1
+local function out_of_reach(s, p, foes)
+  for _, e in ipairs(s.find_entities_filtered{position = p, radius = threat.far() + SITE_MARGIN + 3, type = TURRETS, force = foes}) do
+    local r = threat.reach(e) + SITE_MARGIN
+    if (e.position.x - p[1]) ^ 2 + (e.position.y - p[2]) ^ 2 <= r * r then return false end
+  end
+  return true
+end
+
 local function siege_site(b, t)
   local s = game.surfaces[b.surface]
   local h = home(b)
@@ -65,9 +80,9 @@ local function siege_site(b, t)
   local base = math.atan2(h.position.y - t.pos[2], h.position.x - t.pos[1])
   for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
     local a = base + turn
-    for d = 20, 70, 2 do
+    for d = 20, 70, 1 do
       local p = {t.pos[1] + math.cos(a) * d, t.pos[2] + math.sin(a) * d}
-      if s.count_entities_filtered{position = p, radius = PLAYER_REACH, type = TURRETS, force = foes} == 0 then
+      if out_of_reach(s, p, foes) then
         if s.count_entities_filtered{position = p, radius = MORTAR_REACH, type = TURRETS, force = foes} > 0
           and s.count_tiles_filtered{position = p, radius = 4, collision_mask = "water_tile"} == 0 then
           return p
@@ -556,8 +571,12 @@ local function siege_step(b, trace, army)
       op.mortars, op.carry = {}, nil
       if not carry then op.loaded = 0 end
       for k = 1, (carry and #carry or guns) do
-        local a = 2 * math.pi * k / spec.mortars
-        local off = spec.mortars > 1 and 4 or 0
+        -- (Side by side across its line of fire, 4 apart, none nearer its target than its site: in a ring of 4 round it,
+        -- one stood 4 tiles nearer, in a tesla's reach where its site was not.)
+        local tg = op.target and b.intel.targets[op.target]
+        local fire = tg and tg.pos and math.atan2(tg.pos[2] - op.site[2], tg.pos[1] - op.site[1]) or 0
+        local a = fire + math.pi / 2
+        local off = spec.mortars > 1 and 4 * (k - (spec.mortars + 1) / 2) or 0
         local here = op.piece == "lp-howitzer" and truck
         local p = here and s.find_non_colliding_position(name, here.pos, 8, 0.5)
           or s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)

@@ -10530,6 +10530,16 @@ scenarios.farm = function()
       check("ops: tesla kills read as electric; a wall piece keeps the ladder's clock, a building resets it; a failure near counts",
         dmg == "electric" and after_wall == before and after_asm == game.tick and l_near < 1,
         serpent.line({dmg = dmg, before = before, after_wall = after_wall, after_asm = after_asm, tick = game.tick, near = l_near}))
+      -- A siege set up out of each gun's own reach and its guards' room (a tesla's 30, threat.MARGIN's 2 for its size, 1 for
+      -- the guards: at a fixed 31, three sieges of the tesla lane were stunned and chained to death in a minute; the lane,
+      -- 2026-10-31).
+      local tz = S.at(-200, 120)
+      local tesla = put("tesla-turret", tz)
+      put("assembling-machine-1", {tz[1] + 6, tz[2]})
+      local site = lp("debug_siege_site", storage.id, {tz[1] + 6, tz[2]})
+      local sd = site and math.sqrt((site[1] - tesla.position.x) ^ 2 + (site[2] - tesla.position.y) ^ 2)
+      check("ops: a siege set up out of a tesla turret's reach and its guards' room", sd ~= nil and sd > 30 + 2 + 1 - 1e-6,
+        serpent.line({site = site, from_tesla = sd}))
       -- Desperate, bolder not blind (the consult, 2026-10-31): a raid of 10 at a defence of 50 (the formula's 179) does not
       -- go; one of 150 does (lifted, its raids of 4 to 40 went at a laser wall again and again).
       local dz_few, dz_many = lp("debug_desperate_ok", storage.id, 10, 50), lp("debug_desperate_ok", storage.id, 150, 50)
