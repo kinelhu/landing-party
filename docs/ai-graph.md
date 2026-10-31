@@ -16,8 +16,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 3624 | attempt, costmap, feeds, firemap, ground, know, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
-| `farm` | 2221 | cell, costmap, creep, feeds, firemap, herd, know, pods, rng, threat, tune, valuemap | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
+| `herd` | 3544 | attempt, costmap, feeds, firemap, ground, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `farm` | 2198 | cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 600, 3600, 36000 |  | carrying, farms |
 | `ops` | 1812 | answers, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, threat, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1721 | blocks, rng, site, wfc | base, control, faction |  |  |  |  |
 | `siege` | 856 | (leaf) | ops |  |  |  | threat_last |
@@ -45,7 +45,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `intel` | 250 | threat | ops |  |  |  |  |
-| `know` | 233 | (leaf) | army, control, farm, herd, ops, rd, strategy |  | 3600 |  | know |
+| `know` | 233 | (leaf) | army, control, farm, herd, ops, rd, strategy, tactics |  | 3600 |  | know |
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
 | `strip` | 229 | (leaf) | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
@@ -54,6 +54,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
 | `oplog` | 173 | attempt, valuemap | control |  |  |  | oplog |
 | `firemap` | 170 | threat | control, costmap, farm, herd, valuemap |  |  |  |  |
+| `tactics` | 168 | know, rng | farm, herd |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 162 | modules | base, control, faction, layout |  |  |  |  |
 | `threat` | 156 | unit_prior | attempt, control, costmap, faction, farm, feeds, firemap, herd, intel, jumper, ops, power, routing |  |  |  |  |
@@ -81,7 +82,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `attempt` | 62 | threat | herd, oplog |  |  |  |  |
 | `marker` | 61 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
 | `bait` | 59 | (leaf) | control |  | 30 |  | baits, baits_called |
-| `rng` | 56 | (leaf) | army, base, farm, layout, names, war |  |  |  |  |
+| `rng` | 56 | (leaf) | army, base, farm, layout, names, tactics, war |  |  |  |  |
 | `names` | 54 | rng | base, dev, faction, map |  |  |  | camp_names |
 | `ground` | 38 | (leaf) | herd, ops |  |  |  |  |
 | `biters` | 36 | (leaf) | control |  |  |  | evo_refunds, nests_cleared |

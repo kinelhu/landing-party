@@ -17,6 +17,7 @@
 -- pod brought. Spent at each birth (on_entity_spawned); at nothing left its incubators stop (inactive) until it earns.
 local shared = require("__landing-party__.shared")
 local herd = require("__landing-party__.scripts.herd")
+local tactics = require("__landing-party__.scripts.tactics")
 local pods = require("__landing-party__.scripts.pods")
 local creep = require("__landing-party__.scripts.creep")
 local cell = require("__landing-party__.scripts.cell")
@@ -1007,35 +1008,14 @@ local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
 -- gone at forever. It picks among its choices by chance, in proportion to their scores (f.rng, seeded: one game plays
 -- the same): mostly the best, a close second its turn. (Always the best, the siege lab's trials 5 to 8 were one siege at
 -- one breach, its defences rebuilt each time; the user, 2026-10-30.) REPEAT assumed, not tuned.
-local REPEAT = 0.3
 local function menu(f, choice, sieges_allowed, s)
   local mind = B.mind
   local ops, rejected = {}, {}
+  -- Weighed by what its attempts there did (tactics.expect: every attacker's); a siege's rams its specialists.
   local function expect(op, foe)
-    local mem, wt = herd.attempt(foe, op.at, op.method)
-    if mem and wt > ATTEMPT_FADED then
-      local forces = foe == "player" and players() or {foe}
-      local hist = herd.history(mem, herd.place_sig(s, forces, op.at))
-      -- (A siege with more rams than those it tried there is another siege: those say nothing of it. Its two sieges of 1 and
-      -- 2 rams at the square lab fort, both killed short, read as all a siege there could do, and it held; 2026-10-31.)
-      if op.method == "siege" and op.siege and (op.siege.k or 0) > 0 then
-        local kept = {}
-        for _, a in ipairs(hist) do if (a.rams or 0) >= op.siege.k then kept[#kept + 1] = a end end
-        hist = kept
-      end
-      local best, bv, lately = nil, nil, 0
-      for _, a in ipairs(hist) do
-        local v = a.got / math.max(1, a.spent)
-        if not bv or v > bv then best, bv = a, v end
-        if a.tick then lately = lately + math.exp(-(game.tick - a.tick) / (mind.fade or 40 * 3600)) end
-      end
-      if best then op.gain, op.lost, op.sent, op.known = best.got / (1 + REPEAT * lately), best.spent, best.sent, true end
-      op.voided = #hist < #(mem.hist or {}) and #(mem.hist or {}) - #hist or nil
-    end
-    -- (Its losses as a share of what it sends: over 1 + what it lost alone, a cut that razed 7 and lost nothing scored 40
-    -- times a strike that razed 11 for 77 of 700; the fed lab fort, 2026-10-30.)
-    op.score = op.gain / (1 + op.lost / math.max(1, op.sent or choice.strength or 1)) / (1 + (op.dist or 0) / mind.far)
-    if op.gain >= (mind.min_gain or 0) then ops[#ops + 1] = op
+    local forces = foe == "player" and players() or {foe}
+    op.specialists = op.method == "siege" and op.siege and op.siege.k or nil
+    if tactics.expect("biotech", op, foe, herd.place_sig(s, forces, op.at), mind, choice.strength, ATTEMPT_FADED) then ops[#ops + 1] = op
     else rejected[#rejected + 1] = string.format("%s at %.0f,%.0f razes %.1f for %.0f%s", op.method, op.at.x, op.at.y, op.gain,
       op.lost, op.known and " (as its attempts did)" or "") end
   end
@@ -1082,9 +1062,10 @@ local function menu(f, choice, sieges_allowed, s)
       end
     end
   end
+  local tie = function(o) return o.siege and o.siege.key or "" end
   table.sort(ops, function(a, b)
     if a.score ~= b.score then return a.score > b.score end
-    return (a.siege and a.siege.key or "") < (b.siege and b.siege.key or "")
+    return tie(a) < tie(b)
   end)
   local total = 0
   for _, o in ipairs(ops) do total = total + o.score end
@@ -1103,11 +1084,7 @@ local function menu(f, choice, sieges_allowed, s)
     return nil
   end
   f.rng = f.rng or rng.new(f.id * 7919 + game.tick)
-  local pick, r = ops[1], rng.next(f.rng) * total
-  for _, o in ipairs(ops) do
-    r = r - o.score
-    if r <= 0 then pick = o; break end
-  end
+  local pick = tactics.pick(ops, f.rng, tie)
   trace(string.format("farm %d weighs its methods: %s; picks %s at %.0f,%.0f", f.id, table.concat(said, "; "), pick.method,
     pick.at.x, pick.at.y))
   return pick

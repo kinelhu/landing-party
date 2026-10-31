@@ -19,6 +19,7 @@ digraph ai {
     "costmap" [label="costmap\n353 lines", width=1.19, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n62 lines", width=0.87, fillcolor="#eef2f7"];
+    "tactics" [label="tactics\n168 lines", width=0.99, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "know" [label="know\n233 lines", width=1.06, fillcolor="#d9f0d9"];
@@ -78,8 +79,8 @@ digraph ai {
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n3624 lines", width=3.80, fillcolor="#f7dede"];
-    "farm" [label="farm\n2221 lines", width=3.27, fillcolor="#f7dede"];
+    "herd" [label="herd\n3544 lines", width=3.80, fillcolor="#f7dede"];
+    "farm" [label="farm\n2198 lines", width=3.24, fillcolor="#f7dede"];
     "creep" [label="creep\n557 lines", width=1.42, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
   }
@@ -150,6 +151,7 @@ digraph ai {
   "farm" -> "know";
   "farm" -> "pods";
   "farm" -> "rng";
+  "farm" -> "tactics";
   "farm" -> "threat";
   "farm" -> "tune";
   "farm" -> "valuemap";
@@ -162,6 +164,7 @@ digraph ai {
   "herd" -> "firemap";
   "herd" -> "ground";
   "herd" -> "know";
+  "herd" -> "tactics";
   "herd" -> "threat";
   "herd" -> "valuemap";
   "intel" -> "threat";
@@ -219,6 +222,8 @@ digraph ai {
   "stance" -> "tune";
   "standing" -> "ops";
   "strategy" -> "know";
+  "tactics" -> "know";
+  "tactics" -> "rng";
   "tap" -> "base";
   "tap" -> "ops";
   "tap" -> "pool";

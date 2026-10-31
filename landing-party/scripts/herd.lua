@@ -21,6 +21,7 @@ local know = require("__landing-party__.scripts.know")
 local firemap = require("__landing-party__.scripts.firemap")
 local threat = require("__landing-party__.scripts.threat")
 local attempt = require("__landing-party__.scripts.attempt")
+local tactics = require("__landing-party__.scripts.tactics")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local costmap = require("__landing-party__.scripts.costmap")
 local feeds = require("__landing-party__.scripts.feeds")
@@ -353,90 +354,17 @@ local function learn_price(w)
   end
 end
 
--- What it has tried, by foe, place (its farm's 64-tile cell, as it weighs them) and method ("siege" or "raid"): attempts,
--- its own spent (in
--- mediums), the worth it razed, how often it got in, and when (the design consult, 2026-10-30, step 3). Read faded by
--- its mind's fade: an old attempt says little. (Learning gun prices alone, a fort it had got into four times in a row it
--- read, once those prices were true, as one no siege under 60 could take, and never tried it again; the siege lab.)
-function herd.attempt_key(foe, pos)
-  local x, y = pos.x or pos[1], pos.y or pos[2]
-  -- (By place, not breach cell: its probes' breaches moved a cell or two each time, every one read as untried, and none
-  -- grew into a siege sized on what had worked; the siege lab, 2026-10-30.)
-  return string.format("%s|%d,%d", type(foe) == "string" and foe or foe.name, math.floor(x / 64), math.floor(y / 64))
-end
--- Of its attempts there that razed `least` or more, the one that razed most for what it spent: what it sent (its strength).
--- What defends a place (the guns and walls within SIG_REACH of it), as its attempts there met it, and whether it stands
--- stronger now than that by over SIG_CHANGE (more guns or more walls): an attempt against a defence since reinforced says
--- nothing of it. (Weaker, the attempt holds: a hole left open is its to come back through.) The user, 2026-10-30: "are we
--- not at risk of perpetual identical actions?"; its record of a siege that razed 45 outlived the guns put there after.
-herd.SIG_REACH, herd.SIG_CHANGE = attempt.SIG_REACH, 0.3
+-- What it has tried, and how it reads it: tactics.lua, every attacker's (by foe, place and method; faded; voided against a
+-- defence since reinforced; shared between breaches near). Its own wrappers, as Synthexis ("biotech").
+herd.SIG_CHANGE, herd.NEAR_BREACH = tactics.SIG_CHANGE, tactics.NEAR_BREACH
+herd.attempt_key = tactics.key
+herd.history = tactics.history
+herd.best_size = tactics.best_size
+function herd.attempt(foe, pos, method) return tactics.attempt("biotech", foe, pos, method, B.mind.fade) end
+function herd.history_near(foe, breach, method, sig) return tactics.history_near("biotech", foe, breach, method, sig, B.mind.fade) end
+function herd.foe_record(foe, method) return tactics.foe_record("biotech", foe, method) end
 herd.place_sig = attempt.sig   -- (one measure for every attacker: attempt.lua)
-local function stronger(now, was)
-  if not (now and was) then return false end
-  return now.guns > was.guns + herd.SIG_CHANGE * math.max(was.guns, 3)
-    or now.walls > was.walls + herd.SIG_CHANGE * math.max(was.walls, 10)
-end
--- Its attempts at a place that still speak for it: those against a defence no stronger than it stands now (sig).
-function herd.history(r, sig)
-  local out = {}
-  for _, a in ipairs(r and r.hist or {}) do
-    if not stronger(sig, a.sig) then out[#out + 1] = a end
-  end
-  return out
-end
-function herd.best_size(r, least, sig)
-  local best, bv
-  for _, a in ipairs(herd.history(r, sig)) do
-    if a.inside and a.got >= least then
-      local v = a.got / math.max(1, a.spent)
-      if not bv or v > bv then best, bv = a, v end
-    end
-  end
-  return best and best.sent, best and best.rams
-end
--- Its attempts by `method` at `foe` that broke in within NEAR_BREACH of `breach`, whatever place they were kept by, not
--- faded nor against a defence since reinforced (sig): what a siege there is sized on. (Kept by its target's 64-tile cell,
--- a siege that got through two walls with 4 rams at y 0 was not copied at y -6, a cell over, and the next brought 2 and
--- stood at the inner wall; the lane, 2026-10-31.)
-herd.NEAR_BREACH = 32
-function herd.history_near(foe, breach, method, sig)
-  local out = {}
-  local a = know.of("biotech").attempts
-  if not (a and breach) then return out end
-  local bx, by = breach.x or breach[1], breach.y or breach[2]
-  local head, tail = (type(foe) == "string" and foe or foe.name) .. "|", "|" .. method
-  local fade = B.mind.fade or 40 * 3600
-  for key, r in pairs(a) do
-    if key:sub(1, #head) == head and key:sub(-#tail) == tail then
-      for _, h in ipairs(r.hist or {}) do
-        if h.breach and (h.breach[1] - bx) ^ 2 + (h.breach[2] - by) ^ 2 <= herd.NEAR_BREACH ^ 2
-          and math.exp(-(game.tick - (h.tick or 0)) / fade) > 0.1 and not stronger(sig, h.sig) then out[#out + 1] = h end
-      end
-    end
-  end
-  return out
-end
--- What its attempts by `method` at this foe have done, on the mean over every place (got, spent; nil: none yet): what a
--- place it has not tried is expected to give (farm.lua menu, a probe's prior).
-function herd.foe_record(foe, method)
-  local a = know.of("biotech").attempts or {}
-  local pre, suf = (type(foe) == "string" and foe or foe.name) .. "|", "|" .. method
-  local got, spent, n = 0, 0, 0
-  for key, r in pairs(a) do
-    if key:sub(1, #pre) == pre and key:sub(-#suf) == suf then
-      for _, h in ipairs(r.hist or {}) do got, spent, n = got + h.got, spent + h.spent, n + 1 end
-    end
-  end
-  if n == 0 then return nil end
-  return got / n, spent / n
-end
-function herd.attempt(foe, pos, method)
-  local a = know.of("biotech").attempts
-  local r = a and a[herd.attempt_key(foe, pos) .. "|" .. method]
-  if not r then return nil, 0 end
-  return r, math.exp(-(game.tick - r.tick) / (B.mind.fade or 40 * 3600))
-end
-local HISTORY = 5
+herd.SIG_REACH = attempt.SIG_REACH
 local function record_attempt(w)
   local at = w.plan and w.plan.target or (w.goal and {w.goal.x, w.goal.y})
   if not at then return end
@@ -451,8 +379,6 @@ local function record_attempt(w)
     return
   end
   local method = w.cut and "cut" or w.wait_cut and "strike" or ((w.big_sent or 0) > 0 or w.fodder_set) and "siege" or "raid"
-  local key = herd.attempt_key(foe_name(w), at) .. "|" .. method
-  local r = k.attempts[key] or {n = 0, spent = 0, got = 0, inside = 0}
   local spent = 0
   for _, v in pairs(w.lost_worth_by or {}) do spent = spent + v end
   -- (A cut got what it razed, as any wave: credited with the price of the guns it parted, its record was in other units
@@ -463,17 +389,11 @@ local function record_attempt(w)
     spent, got, sent = spent + cutters.spent, got + cutters.got, sent + cutters.sent
     st().cutters[w.wait_cut.wave] = nil
   end
-  r.n, r.spent, r.got = r.n + 1, r.spent + spent, r.got + got
-  if w.t_inside then r.inside = r.inside + 1 end
-  r.tick, r.last = game.tick, {spent = spent, got = got, inside = w.t_inside ~= nil, probe = w.trust == "probe"}
-  -- (Its last HISTORY there, each what it sent, spent and razed: the size that razed most for what it spent is the one it
-  -- sends again, farm.lua siege_size.)
-  r.hist = r.hist or {}
-  local b = w.plan and w.plan.breach or (w.breach and {w.breach.x, w.breach.y})
-  table.insert(r.hist, {sent = sent, spent = spent, got = got, inside = w.t_inside ~= nil, sig = w.sig, tick = game.tick,
-    rams = w.big_sent or 0, breach = b})
-  while #r.hist > HISTORY do table.remove(r.hist, 1) end
-  k.attempts[key] = r
+  -- (Its last attempts there, each what it sent, spent and razed: the size that razed most for what it spent is the one it
+  -- sends again, farm.lua siege_size; tactics.record.)
+  tactics.record("biotech", foe_name(w), at, method, {sent = sent, spent = spent, got = got, inside = w.t_inside ~= nil,
+    sig = w.sig, rams = w.big_sent or 0, breach = w.plan and w.plan.breach or (w.breach and {w.breach.x, w.breach.y}),
+    probe = w.trust == "probe"})
 end
 
 -- Its big bursters, developed (farm.lua unlocked) once it has been stopped DEVELOP_HELD times, wherever: walls that held
