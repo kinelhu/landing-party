@@ -21,7 +21,7 @@
 <title>Perception and attempts (any attacker)</title>
 <path fill="#eef2f7" stroke="black" d="M612,-435C612,-435 434,-435 434,-435 428,-435 422,-429 422,-423 422,-423 422,-411 422,-411 422,-405 428,-399 434,-399 434,-399 612,-399 612,-399 618,-399 624,-405 624,-411 624,-411 624,-423 624,-423 624,-429 618,-435 612,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="523" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">Perception and attempts (any attacker)</text>
-<text xml:space="preserve" text-anchor="middle" x="523" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1211 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="523" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1226 lines</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Seams (leaves) -->
 <g id="edge16" class="edge">
@@ -49,7 +49,7 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M620.12,-339.25C620.12,-339.25 517.88,-339.25 517.88,-339.25 511.88,-339.25 505.88,-333.25 505.88,-327.25 505.88,-327.25 505.88,-307.25 505.88,-307.25 505.88,-301.25 511.88,-295.25 517.88,-295.25 517.88,-295.25 620.12,-295.25 620.12,-295.25 626.12,-295.25 632.12,-301.25 632.12,-307.25 632.12,-307.25 632.12,-327.25 632.12,-327.25 632.12,-333.25 626.12,-339.25 620.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="569" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="569" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 5110 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="569" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 5124 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="569" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1870</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
@@ -140,9 +140,9 @@
 <!-- Army and operations&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge3" class="edge">
 <title>Army and operations&#45;&gt;Perception and attempts (any attacker)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M558.92,-339.67C552.3,-353.74 543.57,-372.3 536.37,-387.59"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="533.28,-385.93 532.19,-396.47 539.62,-388.91 533.28,-385.93"/>
-<text xml:space="preserve" text-anchor="middle" x="548.62" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
+<path fill="none" stroke="#8899aa" stroke-width="2" d="M558.92,-339.67C552.37,-353.6 543.74,-371.93 536.58,-387.14"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2" points="533.6,-385.25 532.51,-395.79 539.94,-388.23 533.6,-385.25"/>
+<text xml:space="preserve" text-anchor="middle" x="548.62" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">4</text>
 </g>
 <!-- Army and operations&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge2" class="edge">

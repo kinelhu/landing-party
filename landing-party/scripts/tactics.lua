@@ -136,6 +136,21 @@ function tactics.ladder(faction, foe, pos, method, sig, fade)
   return 1 / (1 + failed)
 end
 
+-- The most specialists (rams, mortars' tier) its failures at a place lately brought, against a defence no stronger (nil:
+-- none failed there): the caller brings more. Synthexis's rams doubled when every one set off and its wave still stood
+-- at a wall (herd.learn_reach); a corporation's siege goes a tier up where its shells broke nothing.
+function tactics.failed_specialists(faction, foe, pos, method, sig, fade)
+  local r = tactics.attempt(faction, foe, pos, method, fade)
+  if not r then return nil end
+  local most
+  for _, a in ipairs(tactics.history(r, sig)) do
+    if not a.inside and (a.got or 0) <= 0 and math.exp(-(game.tick - (a.tick or 0)) / (fade or tactics.FADE)) > 0.1 then
+      most = math.max(most or 0, a.rams or 0)
+    end
+  end
+  return most
+end
+
 -- Below this the method is set aside there for now (about 44 minutes after one fresh failure, 72 after two; at 0.6, 16
 -- minutes, its raids came back before it could save for a siege): with
 -- nothing better on offer it holds and grows, as Synthexis holds when nothing pays, and saves for the next method up.

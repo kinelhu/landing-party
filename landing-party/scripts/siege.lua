@@ -4,6 +4,8 @@
 -- and clearances, sieges on nests (Serenity's own ground). The code is as it was in ops; install runs it with ops'
 -- helpers bound (K) and returns what ops calls.
 local shared = require("__landing-party__.shared")
+local attempt = require("__landing-party__.scripts.attempt")
+local tactics = require("__landing-party__.scripts.tactics")
 
 local siege = {}
 
@@ -125,6 +127,18 @@ local function siege_tier(b, t, army)
   -- The ladder's top rung against that player: a tier more, past the budget (b.war_rung, war.lua).
   if against_player(t.owner) and (b.war_rung or 0) >= 3 then k = k + 1 end
   k = math.min(k, #SIEGE_TIERS)
+  -- Its cap: what the player's era allows (budget), a grudge and the ladder's top rung a tier more each.
+  local cap_k = #SIEGE_TIERS
+  if against_player(t.owner) then
+    cap_k = math.min(cap_k, budget(t.owner) + (b.grudge and 1 or 0) + ((b.war_rung or 0) >= 3 and 1 or 0))
+  end
+  -- A tier up where its sieges lately broke nothing (tactics.failed_specialists, every attacker's: Synthexis's rams double
+  -- where every one set off and its wave still stood at a wall). Within its cap above: what the player's era allows.
+  if t.pos then
+    local failed = tactics.failed_specialists(b.corp, t.owner or "player", t.pos, "siege",
+      attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
+    if failed and failed >= k then k = math.min(failed + 1, cap_k) end
+  end
   local n, reserve = field(b, army)
   if battery(t) then n = n + reserve end
   while k > 1 and ((b.parts or 0) < SIEGE_TIERS[k].cost or n < SIEGE_TIERS[k].guards) do k = k - 1 end

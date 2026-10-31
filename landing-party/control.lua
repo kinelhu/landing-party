@@ -567,6 +567,7 @@ remote.add_interface("landing-party", {
     return storage.corps[corp].level
   end,
   debug_ladder = function(faction, foe, pos, method) return tactics.ladder(faction, foe, pos, method, nil) end,
+  debug_failed_specialists = function(faction, foe, pos, method) return tactics.failed_specialists(faction, foe, pos, method, nil) end,
   debug_tactics_record = function(faction, foe, pos, method, e) tactics.record(faction, foe, pos, method, e) end,
   -- Tests and the siege lab: a settlement shown what stands within r of pos, as its radar would (intel.lua, ops.sense_at).
   debug_sense = function(id, pos, r)

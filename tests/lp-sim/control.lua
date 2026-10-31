@@ -7546,6 +7546,8 @@ scenarios.lab = function()
             lp("debug_sense", b.id, {L.center[1], L.center[2]}, 150)
             lp("debug_corp_parts", b.id, params.lab_parts or 1000)
             lp("debug_corp_level", FACTION, params.lab_level or 2)
+            -- (And the player's era, LAB_ERA, its siege tier's cap: at 0 its sieges stayed at tier 1 against a laser wall.)
+            lp("dev", {"era", tostring(params.lab_era or 2)}, {L.center[1], L.center[2]}, surface().index)
           end
         end
         if L.rec.kind ~= "auto" then lp("dev", {L.rec.kind}, {L.center[1], L.center[2]}, surface().index) end
@@ -9776,18 +9778,37 @@ scenarios.farm = function()
     -- LAB_LANE (key=value, comma-separated): walls (layers, 1), gap (tiles between them, 4), step (a laser every, 6),
     -- inset (guns behind the inner wall, 3), mines (out, in, between or none; out), half (the corridor's half-height, 64),
     -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), shape (line, saw, bastion; line), amp (8), period (32),
-    -- faces (east, toward the culture; west, toward the corporation camp behind the fort; both).
+    -- faces (east, toward the culture; west, toward the corporation camp behind the fort; both); shape maze: its walls
+    -- each open mgap tiles (6) at alternate ends but the innermost, closed (the user, 2026-10-31: "a tower defense like maze
+    -- wall ... closed off at the final layer"); tech (early, mid, late: its guns' damage and speed research, set at build);
+    -- outpost (1: a mining outpost of four drills and a chest, unwalled and unguarded, 80 tiles out from the west front
+    -- toward the camps, its pole line back to the fort: the soft target beside a fort, for Grubstake, which should take it
+    -- and leave the wall; the user, 2026-10-31).
     -- Twice as many lasers within a laser's reach of each end: at the water a wall point saw half the guns its middle did
     -- (5 against 8), and three plain waves went in at its end, none of them a siege (the lab, 2026-10-31): a lane whose
     -- every point faces the same guns.
     if params.fort == "lane" then
       local o = {walls = 1, gap = 4, step = 6, inset = 3, mines = "out", half = 64, guns = "laser", shape = "line", amp = 8, period = 32,
-        faces = "east"}
+        faces = "east", mgap = 6, outpost = 0}
       for k, v in string.gmatch(params.lane or "", "(%w+)=([%w%.%+]+)") do o[k] = tonumber(v) or v end
       -- (The map a ribbon HALF either side of y 0, siegelab.sh's map settings: its edge, out of map, collides as water does,
       -- its cost map's no way and the engine's. The fort's axis along it, its camp east or west.)
       if uy ~= 0 then error("lab: the lane needs its axis along the ribbon (x); the camp lay north or south") end
       local HALF, U0, U1 = o.half, -150, 900
+      -- Its guns' research (LAB_LANE tech): damage and speed for each kind together, in place of the lab's lasers alone
+      -- (3 and 2.2: its gun turrets fired unresearched rounds beside researched lasers, and half a mixed line was weak).
+      local TECH = {
+        early = {laser = {0.3, 0.5}, bullet = {0.3, 0.3}, flamethrower = {0.2, 0}, rocket = {0.2, 0.2}, electric = {0.2, 0}},
+        mid = {laser = {1.5, 1.2}, bullet = {1.2, 0.9}, flamethrower = {0.8, 0}, rocket = {0.9, 0.7}, electric = {0.8, 0}},
+        late = {laser = {3, 2.2}, bullet = {2.5, 1.8}, flamethrower = {1.6, 0}, rocket = {1.8, 1.4}, electric = {1.6, 0}},
+      }
+      if o.tech then
+        local lv = TECH[o.tech] or error("lab: no tech " .. tostring(o.tech))
+        for cat, v in pairs(lv) do
+          game.forces.player.set_ammo_damage_modifier(cat, v[1])
+          game.forces.player.set_gun_speed_modifier(cat, v[2])
+        end
+      end
       for d = U0, U1, 32 do surface().request_to_generate_chunks(at(d, 0), 2) end
       surface().force_generate_chunk_requests()
       for _, e in ipairs(surface().find_entities_filtered{force = "player", type = {"wall", "gate", "electric-turret", "ammo-turret",
@@ -9840,8 +9861,13 @@ scenarios.farm = function()
           local last
           for v = -HALF, HALF do
             local u = wall_u(k, v)
-            for w = math.min(u, last or u), math.max(u, last or u) do
-              if on_map(A(w, v)) then put("stone-wall", A(w, v)) end
+            -- (A maze: each wall but the innermost open mgap tiles at one end, the next at the other.)
+            local open = o.shape == "maze" and k > 0
+              and ((k % 2 == 1 and v > HALF - o.mgap) or (k % 2 == 0 and v < -HALF + o.mgap))
+            if not open then
+              for w = math.min(u, last or u), math.max(u, last or u) do
+                if on_map(A(w, v)) then put("stone-wall", A(w, v)) end
+              end
             end
             last = u
           end
@@ -9883,7 +9909,7 @@ scenarios.farm = function()
         for u = 16, 32, 16 do for v = -HALF, HALF, 16 do if math.abs(v) > 32 then place("substation", A(u, v)) end end end
         -- No way round: along each wall's line and past its ends, every tile walled or off the map (a tile of it, and a herd
         -- walks round).
-        for k = 0, o.walls - 1 do
+        for k = 0, (o.shape == "maze" and 0 or o.walls - 1) do
           for v = -HALF - 3, HALF + 3 do
             local p = A(wall_u(k, v), v)
             if on_map(p)
@@ -9893,6 +9919,23 @@ scenarios.farm = function()
       end
       S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
       S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
+      if (o.outpost or 0) > 0 then
+        local ou = -(40 + 80)
+        local ore = {}
+        for du = -8, 8 do for dv = -8, 8 do
+          local p = at(ou + du, dv)
+          ore[#ore + 1] = {name = "iron-ore", position = {math.floor(p[1]), math.floor(p[2])}, amount = 5000}
+        end end
+        for _, r in ipairs(ore) do surface().create_entity(r) end
+        for _, d in ipairs({{-3, -3}, {3, -3}, {-3, 3}, {3, 3}}) do
+          local q = surface().find_non_colliding_position("electric-mining-drill", at(ou + d[1], d[2]), 3, 1)
+          if q then put("electric-mining-drill", q) end
+        end
+        put("iron-chest", at(ou, 0))
+        -- Its pole line back to the fort (a medium pole every 8 tiles: they link within 9).
+        for u = ou + 6, -32, 8 do place("medium-electric-pole", at(u, 0)) end
+        S.outpost = at(ou, 0)
+      end
       info(string.format("lab: lane %s, %d lasers, %d mines, %d wall pieces, %d gaps past its ends", serpent.line(o), S.lasers0,
         S.mines0, surface().count_entities_filtered{type = "wall", force = "player"}, gaps))
       -- Its flamethrowers fed (a pipe at the wrong tile, and they stand dry).
@@ -10405,6 +10448,13 @@ scenarios.farm = function()
       local l_away = lp("debug_ladder", "lp-test-corp", "player", {500, 400}, "raid")
       check("tactics: a method that failed at a place lately is worth less there, one that got in or never got there is not",
         l_fail < 0.3 and l_ok > 0.99 and l_away > 0.99, serpent.line({l_fail, l_ok, l_away}))
+      -- A siege that fired and broke nothing at a place: its tier there is what it brings more than next time (tactics.failed_
+      -- specialists; a tier-1 mortar's 30 shells broke nothing of a laser wall, and its next siege was tier 1 again).
+      lp("debug_tactics_record", "lp-test-corp", "player", {700, 0}, "siege", {sent = 10, spent = 0, got = 0, inside = false, rams = 1})
+      lp("debug_tactics_record", "lp-test-corp", "player", {700, 200}, "siege", {sent = 10, spent = 0, got = 4, inside = true, rams = 2})
+      local fs_fail = lp("debug_failed_specialists", "lp-test-corp", "player", {700, 0}, "siege")
+      local fs_ok = lp("debug_failed_specialists", "lp-test-corp", "player", {700, 200}, "siege")
+      check("tactics: a siege that broke nothing is the tier to go past", fs_fail == 1 and fs_ok == nil, serpent.line({fs_fail, fs_ok}))
       -- (Last of the sizes: its record here would size the others.)
       -- A proven siege's herd copied without its rams (sized apart): one that sent 4 rams and 300 mediums of herd was asked 460 (here: 4 rams and 10 of herd, at this evolution's half a medium a head),
       -- fitted under no 60, and none was laid (the lane, 2026-10-31). Its size here, at a cheap place, proven by it.

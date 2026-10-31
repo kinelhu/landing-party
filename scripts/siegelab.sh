@@ -93,9 +93,9 @@ run)
   P="$LAB/run-$NAME"
   profile "$P"
   RUN="$(date +%s)"
-  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s, lab_rebuild_after = %s, lab_time = %s, lab_seed = %s, lab_faction = "%s", lab_kind = "%s", lab_parts = %s, lab_level = %s}\n' \
+  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s, lab_rebuild_after = %s, lab_time = %s, lab_seed = %s, lab_faction = "%s", lab_kind = "%s", lab_parts = %s, lab_level = %s, lab_era = %s}\n' \
     "$RUN" "$TRIALS" "${LAB_BIOMASS:-20000}" "${LAB_HOLD:-15}" "${LAB_REBUILD_AFTER:-0}" "${LAB_TIME:-false}" "${LAB_SEED:-nil}" \
-    "${LAB_FACTION:-biotech}" "${LAB_KIND:-auto}" "${LAB_PARTS:-1000}" "${LAB_LEVEL:-2}" > "$P/mods/lp-sim/params.lua"
+    "${LAB_FACTION:-biotech}" "${LAB_KIND:-auto}" "${LAB_PARTS:-1000}" "${LAB_LEVEL:-2}" "${LAB_ERA:-2}" > "$P/mods/lp-sim/params.lua"
   out="$P/script-output/landing-party"
   rm -rf "$out" "$P/saves/"*.zip
   cp "$SAVE" "$P/saves/in.zip"
