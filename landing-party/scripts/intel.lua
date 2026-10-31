@@ -5,6 +5,7 @@
 -- bound (K) and returns what ops calls.
 local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
+local know = require("__landing-party__.scripts.know")
 
 local intel = {}
 
@@ -23,17 +24,22 @@ local WEIGHT = {["ammo-turret"] = {1, "bullet"}, ["electric-turret"] = {1.5, "la
   ["artillery-turret"] = {0}}
 local DEALS = {["ammo-turret"] = "physical", ["electric-turret"] = "laser", ["fluid-turret"] = "fire"}
 -- Returns the weight and the damage the turrets mostly deal (for a plate that answers it: rd.strength).
-function ops.weigh(surface, pos, forces, r)
+-- corp: a corporation's own reading, a turret type at the price its losses taught it (know.price, units lost a turret,
+-- over PER_TURRET: what the formula's weight stands for) where it has one, as Synthexis prices each gun by what it cost
+-- (Kessler-Hayashi's raids at a laser wall, weighed by a formula set against gun turrets, lost every one).
+function ops.weigh(surface, pos, forces, r, corp)
   local w, by = 0, {}
   for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r or DEFENCE_RADIUS, force = forces, type = TURRETS}) do
     local k = WEIGHT[e.type]
+    local learned = corp and know.price(corp, e.force.name, e.name)
     -- Firepower: damage times rate of fire (defend's guns, bullet damage +0.8 and shooting speed +0.6: 2.88 each; three
     -- of them killed about 15 units whatever the raid's size, so 21 and 23 lost and 30 is what wins). Corporate
     -- research (rd.strength) is what keeps the raid a size a garrison can field.
     -- A dark turret (no power) is no defence: the Line goes through the dark stretch (the power strike).
     if k and k[1] > 0 and threat.firing(e) then
       local f = e.force
-      local x = k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
+      local x = learned and learned / ops.PER_TURRET
+        or k[1] * (1 + (k[2] and f.get_ammo_damage_modifier(k[2]) or 0)) * (1 + (k[2] and f.get_gun_speed_modifier(k[2]) or 0))
       w = w + x
       local dmg = DEALS[e.type]
       if dmg then by[dmg] = (by[dmg] or 0) + x end
@@ -134,7 +140,7 @@ local function sense(b, surface, pos, r)
     for key, c in pairs(cells) do
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
       t.pos, t.kind, t.value, t.seen, t.owner, t.drills = c.pos, c.kind, c.value, game.tick, c.owner, c.drills
-      t.defence, t.dmg = ops.weigh(surface, c.pos, other)
+      t.defence, t.dmg = ops.weigh(surface, c.pos, other, nil, b.corp)
       t.exposure = ops.exposure(surface, c.pos, other)
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
       -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was

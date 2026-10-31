@@ -37,6 +37,7 @@ local RESERVE = pool.RESERVE           -- share of the garrison cap that never l
 -- defend), and with research now in the weight (x1.8 there) 5 counted it twice. At 3, the 21 sent there won once
 -- and lost once (two thirds dead either way): 3.5 sends 23.
 local PER_TURRET, BASE_FORCE = 3.5, 4
+ops.PER_TURRET = PER_TURRET
 local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground stays a priority this long
 local THREAT_BONUS = 10               -- value added to targets by it
 -- Staging this far from the target: the longest reach of any turret (threat.far, from the prototypes: a flat 34 was a
@@ -763,7 +764,7 @@ local function finish(b, outcome, trace, army)
     end
     if outcome == "aborted" then
       t.tried = (t.tried or 0) + 1
-      t.defence = math.max(t.defence or 0, (ops.weigh(game.surfaces[b.surface], t.pos, enemies(game.forces[b.force]))))
+      t.defence = math.max(t.defence or 0, (ops.weigh(game.surfaces[b.surface], t.pos, enemies(game.forces[b.force]), nil, b.corp)))
     end
   end
   -- Loot reaches home with whoever survives, as items in the yard (ops.stash, skim.lua) and its worth in parts; none
@@ -827,6 +828,20 @@ local function finish(b, outcome, trace, army)
       -- enough: a raid of 2 attacked from its staging and died to the nests on its 7 waypoints, none near.)
       reached = ((op.closest or math.huge) <= REACHED or (op.shells_fired or 0) > 0 or got > 0) and true or false,
       rams = op.kind == "siege" and op.tier or nil})
+  end
+  -- Its guns' prices from what they cost it (know.learn_price, as Synthexis's): where it got there, the units lost to each
+  -- gun type over how many of them stood at its target; a sample a least when none came home; a small operation's moves a
+  -- price less (its size over 30).
+  if tpos and op.guns_at and (op.closest or math.huge) <= REACHED then
+    local lost_to = {}
+    for _, l in ipairs(know.losses(b.corp, game.tick - (op.started or game.tick))) do
+      if l.unit and l.killer and op.guns_at[l.killer] then lost_to[l.killer] = (lost_to[l.killer] or 0) + 1 end
+    end
+    local owner = (t and t.owner) or op.owner or "player"
+    for name, n in pairs(op.guns_at) do
+      know.learn_price(b.corp, owner, name, (lost_to[name] or 0) / n, op.gun_prior[name], alive(op) == 0,
+        math.min(1, (op.launched or 1) / 30))
+    end
   end
   b.ops_log = b.ops_log or {}
   -- The owner as at launch (a target destroyed is forgotten, and its raid read as at nobody: nests).
@@ -1317,7 +1332,17 @@ local function measure(b, op)
   op.sent_worth = sent
   op.razed0 = op.razed0 or b.razed
   local t = b.intel.targets[op.target]
-  if t and t.pos then op.sig = attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos) end
+  if t and t.pos then
+    local s = game.surfaces[b.surface]
+    op.sig = attempt.sig(s, t.owner or "player", t.pos)
+    -- The guns at its target by name, and each one's weight by the formula (its prior when it learns their price).
+    op.guns_at, op.gun_prior = {}, {}
+    for _, e in ipairs(s.find_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS, force = t.owner or "player",
+      type = threat.FIRE}) do
+      op.guns_at[e.name] = (op.guns_at[e.name] or 0) + 1
+      if not op.gun_prior[e.name] then op.gun_prior[e.name] = PER_TURRET * (ops.weigh(s, e.position, t.owner or "player", 0.5) or 0) end
+    end
+  end
 end
 
 -- How near its nearest member has come to its target (op.closest, tiles): whether it got there (tactics.record).

@@ -872,7 +872,7 @@ siege_size = function(f, pl, place, floor)
   -- Sized as the one that razed most for what it spent: sized on what a siege spent, its sieges of 34 to 38 lost 230 to 300
   -- and razed 3 to 24, where its probes of 24 had lost 110 and razed up to 41; the siege lab, 2026-10-30.)
   -- (Of its sieges that broke in near this one's breach, wherever they were kept: herd.history_near.)
-  local sig = herd.place_sig(s, place and place.rival or players(), pl.target)
+  local sig = function(p) return herd.place_sig(s, place and place.rival or players(), p or pl.target) end
   local near = herd.history_near(foe, pl.breach, "siege", sig)
   if mem and wt > ATTEMPT_FADED then for _, h in ipairs(herd.history(mem, sig)) do near[#near + 1] = h end end
   local proven, proven_rams = herd.best_size({hist = near}, B.mind.min_gain or 0, nil)
@@ -1015,9 +1015,12 @@ local function menu(f, choice, sieges_allowed, s)
   local function expect(op, foe)
     local forces = foe == "player" and players() or {foe}
     op.specialists = op.method == "siege" and op.siege and op.siege.k or nil
-    if tactics.expect("biotech", op, foe, herd.place_sig(s, forces, op.at), mind, choice.strength, ATTEMPT_FADED) then ops[#ops + 1] = op
-    else rejected[#rejected + 1] = string.format("%s at %.0f,%.0f razes %.1f for %.0f%s", op.method, op.at.x, op.at.y, op.gain,
-      op.lost, op.known and " (as its attempts did)" or "") end
+    -- (The defence now read where each attempt met it: tactics.now_for.)
+    local sig_at = function(p) return herd.place_sig(s, forces, p or op.at) end
+    if tactics.expect("biotech", op, foe, sig_at, mind, choice.strength, ATTEMPT_FADED) then ops[#ops + 1] = op
+    else rejected[#rejected + 1] = string.format("%s at %.0f,%.0f razes %.1f for %.0f%s%s", op.method, op.at.x, op.at.y, op.gain,
+      op.lost, op.known and " (as its attempts did)" or "",
+      (op.ladder or 1) < tactics.LADDER_HOLD and string.format(", failed there lately (ladder %.2f)", op.ladder) or "") end
   end
   if choice.passes then
     local foe = choice.rival or "player"
@@ -1073,7 +1076,7 @@ local function menu(f, choice, sieges_allowed, s)
   for k = 1, math.min(4, #ops) do
     local o = ops[k]
     said[#said + 1] = string.format("%s at %.0f,%.0f razes %.0f for %.0f%s%s, score %.3f (%.0f%%)", o.method, o.at.x, o.at.y,
-      o.gain, o.lost, o.known and " (as its attempts did)" or "", o.voided and string.format(", %d attempts void: stronger now", o.voided) or "",
+      o.gain, o.lost, o.known and " (as its attempts did)" or "", o.voided and string.format(", %d attempts void: stronger now (%s)", o.voided, o.void_why or "?") or "",
       o.score, total > 0 and 100 * o.score / total or 0)
   end
   if #ops == 0 then

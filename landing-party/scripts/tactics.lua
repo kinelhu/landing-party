@@ -46,7 +46,7 @@ function tactics.record(faction, foe, at, method, e)
   r.tick, r.last = game.tick, {spent = e.spent, got = e.got, inside = e.inside, probe = e.probe}
   r.hist = r.hist or {}
   table.insert(r.hist, {sent = e.sent, spent = e.spent, got = e.got, inside = e.inside, sig = e.sig, tick = game.tick,
-    rams = e.rams or 0, breach = e.breach, reached = e.reached})
+    rams = e.rams or 0, breach = e.breach, reached = e.reached, at = {at.x or at[1], at.y or at[2]}})
   while #r.hist > tactics.HISTORY do table.remove(r.hist, 1) end
   k.attempts[key] = r
 end
@@ -60,11 +60,21 @@ function tactics.stronger(now, was)
     or now.walls > was.walls + tactics.SIG_CHANGE * math.max(was.walls, 10)
 end
 
+-- The defence now where an attempt met it: `sig` a table (one reading for all), or a function of a point, read where
+-- that attempt measured its own (a.at). (Read at the place's middle against attempts measured at their targets, up to 60
+-- tiles off in one cell, a lane's rebuilt wall read as reinforced and voided a siege that razed 131; the second lane
+-- matrix, 2026-10-31.)
+local function now_for(sig, a)
+  if type(sig) == "function" then return sig(a.at) end
+  return sig
+end
+tactics.now_for = now_for
+
 -- Its attempts at a place that still speak for it: against a defence no stronger than it stands now (sig).
 function tactics.history(r, sig)
   local out = {}
   for _, a in ipairs(r and r.hist or {}) do
-    if not tactics.stronger(sig, a.sig) then out[#out + 1] = a end
+    if not tactics.stronger(now_for(sig, a), a.sig) then out[#out + 1] = a end
   end
   return out
 end
@@ -95,7 +105,7 @@ function tactics.history_near(faction, foe, breach, method, sig, fade)
     if key:sub(1, #head) == head and key:sub(-#tail) == tail then
       for _, h in ipairs(r.hist or {}) do
         if h.breach and (h.breach[1] - bx) ^ 2 + (h.breach[2] - by) ^ 2 <= tactics.NEAR_BREACH ^ 2
-          and math.exp(-(game.tick - (h.tick or 0)) / (fade or tactics.FADE)) > 0.1 and not tactics.stronger(sig, h.sig) then
+          and math.exp(-(game.tick - (h.tick or 0)) / (fade or tactics.FADE)) > 0.1 and not tactics.stronger(now_for(sig, h), h.sig) then
           out[#out + 1] = h
         end
       end
@@ -122,16 +132,21 @@ end
 -- a place lately (not in, nothing got), against a defence no stronger than it met, is worth less there by 1 over 1 + its
 -- failures (faded), so the next method up has its turn. (Kessler-Hayashi raided a laser wall three times with 4, 7 and
 -- 14, lost every one, razed nothing, and never weighed its mortar; the lane, 2026-10-31.)
-function tactics.ladder(faction, foe, pos, method, sig, fade)
+-- specialists: of a method with specialists (a siege's rams), only failures with as many or more count (a bigger siege
+-- is another option). A failure: not in, whatever it broke on its way (Synthexis's raids at a tesla lane broke 7 of its
+-- walls' worth for 888 mediums, read as worth sending, and went again five times).
+function tactics.ladder(faction, foe, pos, method, sig, fade, specialists)
   local r = tactics.attempt(faction, foe, pos, method, fade)
   if not r then return 1 end
   local failed = 0
   for _, a in ipairs(tactics.history(r, sig)) do
+    if (a.rams or 0) < (specialists or 0) then goto next end
     -- (Only where it got there: Kessler-Hayashi's raids on an assembler died to the wild nests on their way, its
     -- clearances working through them, and its raid there was set aside as failed; the clear test, worms.)
-    if not a.inside and (a.got or 0) <= 0 and a.reached ~= false then
+    if not a.inside and a.reached ~= false then
       failed = failed + math.exp(-(game.tick - (a.tick or 0)) / (fade or tactics.FADE))
     end
+    ::next::
   end
   return 1 / (1 + failed)
 end
@@ -168,6 +183,20 @@ function tactics.expect(faction, op, foe, sig, mind, strength, faded)
   local mem, wt = tactics.attempt(faction, foe, op.at, op.method, fade)
   if mem and wt > faded then
     local hist = tactics.history(mem, sig)
+    -- (Void: against a defence since reinforced, counted before those with fewer specialists are set apart: those it
+    -- counted too, and its trace read "void: stronger now" for a lane rebuilt as it was; the second lane matrix.)
+    op.voided = #hist < #(mem.hist or {}) and #(mem.hist or {}) - #hist or nil
+    -- (Why, for the trace: the first voided attempt's defence then and now.)
+    if op.voided then
+      for _, a in ipairs(mem.hist or {}) do
+        local now = now_for(sig, a)
+        if tactics.stronger(now, a.sig) then
+          op.void_why = string.format("%d guns %d walls then at %s, %d and %d now", a.sig.guns, a.sig.walls,
+            a.at and string.format("%.0f,%.0f", a.at[1], a.at[2]) or "?", now.guns, now.walls)
+          break
+        end
+      end
+    end
     -- (An option with more specialists than those it tried there is another option: those say nothing of it. Two sieges
     -- of 1 and 2 rams at the square lab fort, both killed short, read as all a siege there could do; 2026-10-31.)
     if (op.specialists or 0) > 0 then
@@ -182,10 +211,12 @@ function tactics.expect(faction, op, foe, sig, mind, strength, faded)
       if a.tick then lately = lately + math.exp(-(game.tick - a.tick) / fade) end
     end
     if best then op.gain, op.lost, op.sent, op.known = best.got / (1 + tactics.REPEAT * lately), best.spent, best.sent, true end
-    op.voided = #hist < #(mem.hist or {}) and #(mem.hist or {}) - #hist or nil
   end
   op.score = op.gain / (1 + op.lost / math.max(1, op.sent or strength or 1)) / (1 + (op.dist or 0) / mind.far)
-  return op.gain >= (mind.min_gain or 0)
+  -- The ladder (every attacker's): worth less where it failed lately, set aside below LADDER_HOLD.
+  op.ladder = tactics.ladder(faction, foe, op.at, op.method, sig, fade, op.specialists)
+  op.score = op.score * op.ladder
+  return op.gain >= (mind.min_gain or 0) and op.ladder >= tactics.LADDER_HOLD
 end
 
 -- Its pick of the options weighed, by chance in proportion to their scores (`state`: its seeded random source, rng.lua),

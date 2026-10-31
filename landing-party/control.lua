@@ -568,6 +568,12 @@ remote.add_interface("landing-party", {
   end,
   debug_ladder = function(faction, foe, pos, method) return tactics.ladder(faction, foe, pos, method, nil) end,
   debug_failed_specialists = function(faction, foe, pos, method) return tactics.failed_specialists(faction, foe, pos, method, nil) end,
+  -- Tests only: an option weighed as every attacker's are (tactics.expect): whether it is worth weighing, its ladder.
+  debug_expect = function(faction, foe, pos, method)
+    local op = {method = method, at = {x = pos[1], y = pos[2]}, gain = 10, lost = 1, sent = 10}
+    local ok = tactics.expect(faction, op, foe, nil, {far = 300, min_gain = 2}, 10, 0)
+    return {ok = ok, ladder = op.ladder}
+  end,
   debug_tactics_record = function(faction, foe, pos, method, e) tactics.record(faction, foe, pos, method, e) end,
   -- Tests and the siege lab: a settlement shown what stands within r of pos, as its radar would (intel.lua, ops.sense_at).
   debug_sense = function(id, pos, r)
@@ -633,6 +639,11 @@ remote.add_interface("landing-party", {
   debug_price = function(foe, proto) return know.price("biotech", foe, proto) end,
   -- Tests only: what it has learned a prototype costs it, set (as if its waves had died to it).
   debug_learn_price = function(foe, proto, per) return know.learn_price("biotech", foe, proto, per, per) end,
+  -- Tests only: a corporation's price set (know.learn_price), and its weighing of a place (ops.weigh, its own reading).
+  debug_corp_price = function(corp, foe, proto, per) return know.learn_price(corp, foe, proto, per, per) end,
+  debug_weigh = function(surface_index, pos, corp, r)
+    return (ops.weigh(game.surfaces[surface_index], {x = pos[1], y = pos[2]}, {"player"}, r or 0.5, corp))
+  end,
   -- Tests only: a price learned from a sample at a weight (know.learn_price), from a prior.
   debug_learn_weighted = function(foe, proto, sample, prior, weight)
     return know.learn_price("biotech", foe, proto, sample, prior, false, weight)

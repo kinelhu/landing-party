@@ -7492,6 +7492,10 @@ scenarios.lab = function()
     for i, e in ipairs(L.ents) do alive[i] = (e and e.valid) and 1 or 0 end
     L.rec.alive = alive
     L.ended = game.tick
+    -- (Rebuilt the moment it ends, with no rebuild put off: in the half second before the next trial's, its farm sent a
+    -- wave at the broken defence, its attempt kept that as what it met, and the rebuilt one read as stronger, voiding a
+    -- siege that razed 131; the second lane matrix, 2026-10-31.)
+    if (params.lab_rebuild_after or 0) == 0 then L.prebuilt = rebuild() end
     out("lab.jsonl", L.rec)
     L.recording, L.wave = nil, nil
     L.step = L.trial >= (params.lab_trials or 3) and "save" or "prime"
@@ -7527,7 +7531,9 @@ scenarios.lab = function()
       local after = params.lab_rebuild_after or 0
       local rebuilt = {}
       -- (A rebuild already due keeps its time: put off again at each trial, a short trial's damage was never rebuilt.)
-      if after > 0 and L.trial > 1 then L.rebuild_at = L.rebuild_at or (L.ended or game.tick) + after * 3600 else rebuilt = rebuild() end
+      if after > 0 and L.trial > 1 then L.rebuild_at = L.rebuild_at or (L.ended or game.tick) + after * 3600
+      elseif L.prebuilt then rebuilt, L.prebuilt = L.prebuilt, nil
+      else rebuilt = rebuild() end
       L.rec = {trial = L.trial, start = game.tick, rebuilt = rebuilt, prices_before = lp("lab_prices"),
         rec = "lab-rec-" .. L.trial .. ".jsonl"}
       if f then lp("lab_prime", f.id, params.lab_biomass or 20000) end
@@ -7595,7 +7601,15 @@ scenarios.lab = function()
         end
       end
       if L.step == "wave" then
-        if not w or w.id ~= L.wave then return finish(L, "wave", log_of(L.wave)) end
+        -- (Its wave gone: its record closed by the observer on its next sample, oplog.lua, every 3 s; closed before it, most
+        -- trials of the second lane matrix had no attempt block. Up to 5 s for it.)
+        if not w or w.id ~= L.wave then
+          L.closing = L.closing or game.tick
+          local recorded = false
+          for _, r in ipairs(op_records()) do if r.key == "w" .. tostring(L.wave) then recorded = true end end
+          if recorded or game.tick - L.closing > 300 then L.closing = nil; return finish(L, "wave", log_of(L.wave)) end
+          return
+        end
         if game.tick - L.rec.start > MAX_TRIAL then return finish(L, "timeout", log_of(L.wave)) end
         local u = {}
         local function add(e, role)
@@ -10448,6 +10462,16 @@ scenarios.farm = function()
       local l_away = lp("debug_ladder", "lp-test-corp", "player", {500, 400}, "raid")
       check("tactics: a method that failed at a place lately is worth less there, one that got in or never got there is not",
         l_fail < 0.3 and l_ok > 0.99 and l_away > 0.99, serpent.line({l_fail, l_ok, l_away}))
+      -- Every attacker's weighing takes the ladder, Synthexis's menu too: a raid that failed twice at a place lately is set
+      -- aside there, whatever it broke on its way (raids of 60 at a tesla lane broke 7 of its walls' worth for 888 mediums,
+      -- read as worth sending, and went again five times; the second lane matrix, 2026-10-31).
+      for _ = 1, 2 do
+        lp("debug_tactics_record", "lp-test-wave", "player", {900, 0}, "raid", {sent = 60, spent = 60, got = 7, inside = false})
+      end
+      local ex_fail = lp("debug_expect", "lp-test-wave", "player", {900, 0}, "raid")
+      local ex_clean = lp("debug_expect", "lp-test-wave", "player", {900, 300}, "raid")
+      check("tactics: a raid that failed at a place lately is set aside there in the weighing", ex_fail and ex_fail.ok == false
+        and ex_clean and ex_clean.ok == true, serpent.line({failed = ex_fail, clean = ex_clean}))
       -- A siege that fired and broke nothing at a place: its tier there is what it brings more than next time (tactics.failed_
       -- specialists; a tier-1 mortar's 30 shells broke nothing of a laser wall, and its next siege was tier 1 again).
       lp("debug_tactics_record", "lp-test-corp", "player", {700, 0}, "siege", {sent = 10, spent = 0, got = 0, inside = false, rams = 1})
@@ -10455,6 +10479,17 @@ scenarios.farm = function()
       local fs_fail = lp("debug_failed_specialists", "lp-test-corp", "player", {700, 0}, "siege")
       local fs_ok = lp("debug_failed_specialists", "lp-test-corp", "player", {700, 200}, "siege")
       check("tactics: a siege that broke nothing is the tier to go past", fs_fail == 1 and fs_ok == nil, serpent.line({fs_fail, fs_ok}))
+      -- A corporation weighs a turret type at the price its losses taught it where it has one (ops.weigh, its own reading):
+      -- a gun turret at 21 units lost a turret weighs 6 (21 over 3.5), whatever the formula made it (Kessler-Hayashi's raids at a
+      -- laser wall, weighed by a formula set against gun turrets, lost every one; the lane, 2026-10-31).
+      -- (The fort weighed whole, 60 tiles round its middle: its gun turrets weigh 6 each once learned; its lasers, unlit
+      -- there, weigh nothing either way.)
+      local mid = S.at(0, 0)
+      local w_formula = lp("debug_weigh", surface().index, mid, "lp-test-corp", 60)
+      lp("debug_corp_price", "lp-test-corp", "player", G, 21)
+      local w_learned = lp("debug_weigh", surface().index, mid, "lp-test-corp", 60)
+      check("ops: a corporation weighs a turret at the price its losses taught it", (w_formula or 0) > 0 and (w_learned or 0) > 0
+        and math.abs(w_learned - w_formula) > 1e-6, serpent.line({formula = w_formula, learned = w_learned}))
       -- (Last of the sizes: its record here would size the others.)
       -- A proven siege's herd copied without its rams (sized apart): one that sent 4 rams and 300 mediums of herd was asked 460 (here: 4 rams and 10 of herd, at this evolution's half a medium a head),
       -- fitted under no 60, and none was laid (the lane, 2026-10-31). Its size here, at a cheap place, proven by it.
