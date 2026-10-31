@@ -535,11 +535,21 @@ remote.add_interface("landing-party", {
   -- The siege lab (tests/lp-sim, mix lab): its culture primed for a trial, and its waves' units for the recorder.
   lab_prime = function(id, biomass) return farm.debug_lab_prime(id, biomass) end,
   lab_time_ways = function(id, cell) return farm.debug_time_ways(id, cell) end,
-  debug_siege_size = function(id, pl) return farm.debug_siege_size(id, pl) end,
+  debug_siege_size = function(id, pl, floor) return farm.debug_siege_size(id, pl, floor) end,
   debug_chance = function(id, killers) return farm.debug_chance(id, killers) end,
   lab_waves = function() return herd.lab_waves() end,
   -- Tests only: the size herd.best_size draws from an attempt's history (its sieges sized by what razed most per biomass).
   debug_best_size = function(hist, least, sig) return herd.best_size({hist = hist}, least, sig) end,
+  debug_stopped = function(key, tick) herd.stopped(key, tick) return herd.held() end,
+  debug_learn_reach = function(r0, set_off, sent) return herd.learn_reach(r0, set_off, sent) end,
+  -- Tests only: sets what it has learned of its rams' reach at `foe`, returning what it was.
+  debug_reach = function(foe, r)
+    local k = know.of("biotech")
+    k.reach = k.reach or {}
+    local was = k.reach[foe]
+    k.reach[foe] = r
+    return was
+  end,
   debug_razed = function(list) local n = 0 for _, e in ipairs(list) do n = n + valuemap.razed_of(e) end return n end,
   lab_prices = function()
     local k, out = know.of("biotech"), {price = {}, scale = {}}

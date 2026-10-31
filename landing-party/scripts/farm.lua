@@ -824,10 +824,11 @@ end
 -- Its siege (the user, 2026-10-30: in health): big bursters, rams at a walled breach and openers of the guns they reach,
 -- and a herd of the culture's own mix as many as pay the way in (herd.strength), within what its incubators could hold
 -- (in biomass, hatching). Returns bursters, herd, its price, "mixed".
-siege_size = function(f, pl, place)
-  -- (What its incubators hold over their guard, each: what it can send.)
+siege_size = function(f, pl, place, floor)
+  -- (What its incubators hold over their guard, each: what it can send; `floor`, the tests' least budget.)
   local s = game.surfaces[f.surface]
   local count, _, budget = field_of(f, s, true)
+  if floor then budget = math.max(budget or 0, floor) end
   -- (Hatching, within the biomass its incubators could hold, full: what it waits for, not only what it has. Laid only
   -- on what it had, it refused the best place for want of an hour's biomass and laid siege to a worse one sooner.)
   if budget then
@@ -2093,10 +2094,10 @@ function farm.debug_chance(id, killers)
 end
 
 -- Tests only: the siege a farm would size against a plan (siege_size): its big bursters, herd and screen, or nil.
-function farm.debug_siege_size(id, pl)
+function farm.debug_siege_size(id, pl, floor)
   local f = st().list[id]
   if not f then return nil end
-  local k, n, _, _, _, fodder = siege_size(f, pl, nil)
+  local k, n, _, _, _, fodder = siege_size(f, pl, nil, floor)
   return k and {k = k, n = n, fodder = fodder} or nil
 end
 

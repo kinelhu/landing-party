@@ -10086,6 +10086,27 @@ scenarios.farm = function()
       local razed = lp("debug_razed", {{name = "laser-turret", type = "electric-turret"}, {name = "gun-turret", type = "ammo-turret"},
         {name = "stone-wall", type = "wall"}, {name = "assembling-machine-2", type = "assembling-machine"}})
       check("farm: the guns and walls a wave broke count as razed", math.abs(razed - 5.1) < 1e-6, tostring(razed))
+      -- Held at one place for one reason, it is stopped again a trial on, not once ever (sixteen holds at the user's fort
+      -- counted once, and it waited four trials to develop its bursters; the siege lab, 2026-10-31). Last: it moves its
+      -- count of stops.
+      local t0 = game.tick
+      local h1 = lp("debug_stopped", "test|held", t0)
+      local h2 = lp("debug_stopped", "test|held", t0 + 600)
+      local h3 = lp("debug_stopped", "test|held", t0 + 15 * 3600)
+      check("farm: held at one place again, stopped again a trial on, not at each look", h2 == h1 and h3 == h1 + 1,
+        serpent.line({h1, h2, h3}))
+      -- None of its rams reached the wall: twice as many next time (1, 2, 3 by its share alone at the square lab fort, each
+      -- killed short, and its record kept it from a fourth; the siege lab, 2026-10-31).
+      local r1, r2 = lp("debug_learn_reach", 1, 0, 1), lp("debug_learn_reach", 0.5, 0, 2)
+      check("farm: none of its rams reached the wall, twice as many next time", r1 <= 0.5 + 1e-9 and r2 <= 0.25 + 1e-9,
+        serpent.line({r1, r2}))
+      -- However few have reached it, a handful of rams at most (43 big bursters in one siege of the square lab fort; the
+      -- user, 2026-10-31: "at most we shouldn't need more than a handful").
+      local was_reach = lp("debug_reach", "player", 0.01)
+      local capped = fid and lp("debug_siege_size", fid.id, {cost = 5, cover = 1, openable = 1, walled = true, standing = 0,
+        target = {x = S.at(0, 0)[1], y = S.at(0, 0)[2]}}, 1e6)
+      lp("debug_reach", "player", was_reach)
+      check("farm: a handful of rams at most, however few reached the wall", capped ~= nil and capped.k == 5, serpent.line(capped))
       check("farm: a siege no smaller than the least wave", sz ~= nil and sz.k + sz.n + (sz.fodder or 0) >= 24, serpent.line(sz))
       check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
         serpent.line({same = same, reinforced = reinforced}))
@@ -10216,6 +10237,18 @@ scenarios.farm = function()
       check("farm: siege, its big bursters spent counted in what it lost", first ~= nil and (first.big_set_off or 0) > 0
         and lost >= first.big_set_off * big - 1e-6, string.format("lost %.1f to no killer, %d set off at %.1f each", lost,
         first and first.big_set_off or 0, big))
+      -- Its rams go at the wall piece on its swept lane, then their guns (sent at the wall nearest their own gun, they walked
+      -- off the lane into mines and stood stunned under the lasers; the square lab fort, 2026-10-31).
+      check("farm: siege, its rams go at the wall on its swept lane", first ~= nil and first.ram_off ~= nil and first.ram_off <= 6 + 1e-6,
+        tostring(first and first.ram_off))
+      -- Its sweepers clear every mine on its way in (runts of 15 health died to the lasers short of them, 10 of 10 spent; the
+      -- user's sweeper, 2026-10-31: "high hp, high range boom that kills mines").
+      local swept_mines = first and first.bursters and first.bursters.broke and first.bursters.broke["land-mine"] or 0
+      -- (Those its plan saw, what its farm paid sweepers for: at the breach its sweep reads the herd's whole width and found
+      -- 12 where its plan had 10, two clusters past what it paid for.)
+      check("farm: siege, its sweepers cleared the mines on its way in", first ~= nil and (first.plan_mines or 0) > 0
+        and swept_mines >= first.plan_mines, string.format("%d of the %s its plan saw (%s at the breach)", swept_mines,
+        tostring(first and first.plan_mines), tostring(first and first.sweep_mines)))
       local same = 0
       for k = 2, #sieges do
         local l = sieges[k]

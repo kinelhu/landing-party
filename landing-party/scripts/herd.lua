@@ -300,12 +300,7 @@ local function learn_price(w)
     k.opens[foe] = math.max(herd.OPENS_MIN, old + (broke / w.big_sent - old) * know.PRICE_LEARN)
     w.opens_learned = {sample = broke / w.big_sent, now = k.opens[foe]}
     k.reach = k.reach or {}
-    local r0 = k.reach[foe] or 1
-    local r = math.max(herd.OPENS_MIN, r0 + ((w.big_set_off or 0) / w.big_sent - r0) * know.PRICE_LEARN)
-    -- None reached the wall: twice as many rams next time (by its share alone, 1 ram then 2 then 3, each killed short in
-    -- five seconds by the square lab fort's lasers, and its record of those sieges kept it from a third; 2026-10-31).
-    if (w.big_set_off or 0) == 0 then r = math.max(herd.OPENS_MIN, math.min(r, 1 / (2 * w.big_sent))) end
-    k.reach[foe] = r
+    k.reach[foe] = herd.learn_reach(k.reach[foe] or 1, w.big_set_off or 0, w.big_sent)
   end
   if not w.breach then return end
   local f = foes(w)[1]
@@ -466,20 +461,40 @@ end
 -- wave). An answer it grows to what stopped it, as the corporations' research answers what turned them back
 -- (shared.CORPS trees: turned_back = 2). Announced to the players. (On walls held alone, the user's fort held its first
 -- wave and its farm held after it, sending none: no second wall held, no bursters, ever; the siege lab, 2026-10-30.)
+-- The same stop at the same place counts again STOP_AGAIN on, not at each look (its farm looks every ten seconds): once
+-- each ever, the user's fort held sixteen times at one place for one reason, counted once, and waited four trials for a
+-- second stop elsewhere before it developed them (the siege lab, 2026-10-31).
+-- The share of its rams that reach the wall, learned from a siege: `set_off` of `sent`. None reached it: twice as many
+-- rams next time (by its share alone, 1 ram then 2 then 3, each killed short in five seconds by the square lab fort's
+-- lasers, and its record of those sieges kept it from a third; 2026-10-31).
+function herd.learn_reach(r0, set_off, sent)
+  local r = math.max(herd.OPENS_MIN, r0 + (set_off / sent - r0) * know.PRICE_LEARN)
+  if set_off == 0 then r = math.max(herd.OPENS_MIN, math.min(r, 1 / (2 * sent))) end
+  return r
+end
 local DEVELOP_HELD = 2
-function herd.stopped(key)
+local STOP_AGAIN = 15 * 3600
+function herd.stopped(key, tick)
+  tick = tick or game.tick
   local k = know.of("biotech")
   k.stopped = k.stopped or {}
-  if k.stopped[key] then return end
-  k.stopped[key] = game.tick
+  local was = k.stopped[key]
+  if type(was) == "number" then was = {t = was, n = 1} end
+  if was and tick - was.t < STOP_AGAIN then return end
+  k.stopped[key] = {t = tick, n = (was and was.n or 0) + 1}
   herd.develop_bursters()
+end
+function herd.held()
+  local k = know.of("biotech")
+  local held = 0
+  for _, l in pairs(lessons()) do held = held + (l.walled_held or 0) end
+  for _, s in pairs(k.stopped or {}) do held = held + (type(s) == "table" and s.n or 1) end
+  return held
 end
 function herd.develop_bursters()
   local k = know.of("biotech")
   if k.bursters then return end
-  local held = 0
-  for _, l in pairs(lessons()) do held = held + (l.walled_held or 0) end
-  for _ in pairs(k.stopped or {}) do held = held + 1 end
+  local held = herd.held()
   if held < DEVELOP_HELD then return end
   k.bursters = game.tick
   if storage.trace then
@@ -1891,7 +1906,13 @@ local function ram_order(u, t, lane)
   end
   local at_gun = {type = defines.command.attack, target = t, distraction = defines.distraction.none}
   if not best then return at_gun end
-  return compound({{type = defines.command.attack, target = best, distraction = defines.distraction.none}, at_gun})
+  return compound({{type = defines.command.attack, target = best, distraction = defines.distraction.none}, at_gun}), best
+end
+-- Its ram's order at `w`'s swept lane, and how far off that lane the wall piece it goes at stands (the tests).
+local function ram_go(w, u, t)
+  local cmd, wall = ram_order(u, t, w.breach_wall)
+  if wall and w.breach_wall then w.ram_off = math.max(w.ram_off or 0, math.sqrt(d2(wall.position, w.breach_wall))) end
+  return cmd
 end
 local function send_big_bursters(w, s, forces, m, c, now, given)
   local big = {}
@@ -1926,7 +1947,7 @@ local function send_big_bursters(w, s, forces, m, c, now, given)
     if not near then
       k = k + 1
       hit[#hit + 1] = t.position
-      local hit = ram_order(big[k], t, w.breach_wall)
+      local hit = ram_go(w, big[k], t)
       w.big_targets = w.big_targets or {}
       table.insert(w.big_targets, {unit = big[k], target = t})
       w.big_busy = w.big_busy or {}
@@ -1990,7 +2011,9 @@ end
 local function sweep(w, s, from, to, inside)
   local n = w.sweep or 0
   if n <= 0 then return 0 end
-  local spots = herd.sapper_spots(mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP))
+  local mines = mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP)
+  local spots = herd.sapper_spots(mines)
+  w.sweep_mines = #mines
   local made = 0
   for i = 1, math.min(n, #spots) do
     local q = s.find_non_colliding_position("lp-sweeper", {from.x, from.y}, 12, 0.5)
@@ -2269,7 +2292,7 @@ local function sequence(w)
       if b.held then
         b.held = nil
         if b.unit.valid and b.target and b.target.valid then
-          b.unit.commandable.set_command(ram_order(b.unit, b.target, w.breach_wall))
+          b.unit.commandable.set_command(ram_go(w, b.unit, b.target))
           n = n + 1
         end
       end
@@ -2696,7 +2719,8 @@ finish = function(w, outcome)
     under_fire = w.under_fire, downed = w.downed or 0, push_walked = w.push_walked,
     choice = w.choice, goal = w.goal and {w.goal.x, w.goal.y}, heart_near = w.heart_near, razed_worth = w.razed_worth or 0, dead_at = w.dead_at,
     lost_by = w.lost_by, lost_worth_by = w.lost_worth_by, worth = w.worth, big_sent = w.big_sent, big_set_off = w.big_set_off,
-    plan_breach = w.plan and w.plan.breach, made_of = w.made_of, opens = w.opens_learned,
+    plan_breach = w.plan and w.plan.breach, made_of = w.made_of, opens = w.opens_learned, ram_off = w.ram_off,
+    sweep_mines = w.sweep_mines, plan_mines = w.plan and w.plan.mines,
     breach_after = w.breach_after,
     plan = w.plan and {path = w.plan.path, start = w.plan.start, breach = w.plan.breach, cost = w.plan.cost, cover = w.plan.cover}, silenced = w.silenced, clearing = w.clearing, staged = w.staged and true or false,
     breach_cover = w.breach_cover, breach_by = w.breach_by, price = w.price_learned,
