@@ -533,6 +533,8 @@ remote.add_interface("landing-party", {
   end,
   herd_wall_lesson = function(pos) herd.debug_wall_lesson(pos) end,
   herd_state = function() return herd.state() end,
+  -- Tests and the siege lab: the last operation records closed, every faction's, read alike (oplog.lua, attempt.lua).
+  oplog_recent = function() return oplog.recent() end,
   rd_state = function(corp) return rd.state(corp) end,
   -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,

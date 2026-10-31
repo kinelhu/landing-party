@@ -13,11 +13,18 @@ digraph ai {
     "threat" [label="threat\n156 lines", width=0.97, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
   }
-  subgraph cluster_1 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+    "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
+    "valuemap" [label="valuemap\n205 lines", width=1.03, fillcolor="#eef2f7"];
+    "costmap" [label="costmap\n353 lines", width=1.19, fillcolor="#eef2f7"];
+    "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
+    "attempt" [label="attempt\n62 lines", width=0.87, fillcolor="#eef2f7"];
+  }
+  subgraph cluster_2 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "know" [label="know\n233 lines", width=1.06, fillcolor="#d9f0d9"];
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
-  subgraph cluster_2 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "faction" [label="faction\n800 lines", width=1.69, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n409 lines", width=1.25, fillcolor="#eef2f7"];
@@ -30,7 +37,7 @@ digraph ai {
     "phases" [label="phases\n232 lines", width=1.06, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
-  subgraph cluster_3 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "base" [label="base\n834 lines", width=1.73, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n327 lines", width=1.16, fillcolor="#eef2f7"];
@@ -48,7 +55,7 @@ digraph ai {
     "prospect" [label="prospect\n352 lines", width=1.19, fillcolor="#eef2f7"];
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
-  subgraph cluster_4 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n759 lines", width=1.64, fillcolor="#eef2f7"];
     "ops" [label="ops\n1812 lines", width=2.81, fillcolor="#f7dede"];
     "routing" [label="routing\n409 lines", width=1.25, fillcolor="#eef2f7"];
@@ -63,36 +70,32 @@ digraph ai {
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];
   }
-  subgraph cluster_5 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_6 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "jumper" [label="jumper\n314 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n375 lines", width=1.22, fillcolor="#eef2f7"];
     "skim" [label="skim\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "bait" [label="bait\n59 lines", width=0.87, fillcolor="#d9f0d9"];
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
   }
-  subgraph cluster_6 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n3636 lines", width=3.80, fillcolor="#f7dede"];
+  subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+    "herd" [label="herd\n3624 lines", width=3.80, fillcolor="#f7dede"];
     "farm" [label="farm\n2221 lines", width=3.27, fillcolor="#f7dede"];
     "creep" [label="creep\n557 lines", width=1.42, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
-    "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
-    "valuemap" [label="valuemap\n205 lines", width=1.03, fillcolor="#eef2f7"];
-    "costmap" [label="costmap\n353 lines", width=1.19, fillcolor="#eef2f7"];
-    "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
   }
-  subgraph cluster_7 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_8 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
-  subgraph cluster_8 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+  subgraph cluster_9 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "command" [label="command\n576 lines", width=1.44, fillcolor="#d9f0d9"];
     "scanner" [label="scanner\n90 lines", width=0.90, fillcolor="#d9f0d9"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
-  subgraph cluster_9 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n783 lines", width=1.67, fillcolor="#eef2f7"];
+  subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
+    "control" [label="control\n785 lines", width=1.67, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
-    "oplog" [label="oplog\n125 lines", width=0.94, fillcolor="#d9f0d9"];
+    "oplog" [label="oplog\n173 lines", width=0.99, fillcolor="#eef2f7"];
   }
   "army" -> "know";
   "army" -> "ops";
@@ -100,6 +103,7 @@ digraph ai {
   "army" -> "rd";
   "army" -> "rng";
   "army" -> "tune";
+  "attempt" -> "threat";
   "base" -> "army";
   "base" -> "blocks";
   "base" -> "chart";
@@ -152,6 +156,7 @@ digraph ai {
   "feeds" -> "power";
   "feeds" -> "threat";
   "firemap" -> "threat";
+  "herd" -> "attempt";
   "herd" -> "costmap";
   "herd" -> "feeds";
   "herd" -> "firemap";

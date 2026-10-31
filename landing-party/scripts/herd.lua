@@ -20,6 +20,7 @@ local ground = require("__landing-party__.scripts.ground")
 local know = require("__landing-party__.scripts.know")
 local firemap = require("__landing-party__.scripts.firemap")
 local threat = require("__landing-party__.scripts.threat")
+local attempt = require("__landing-party__.scripts.attempt")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local costmap = require("__landing-party__.scripts.costmap")
 local feeds = require("__landing-party__.scripts.feeds")
@@ -368,12 +369,8 @@ end
 -- stronger now than that by over SIG_CHANGE (more guns or more walls): an attempt against a defence since reinforced says
 -- nothing of it. (Weaker, the attempt holds: a hole left open is its to come back through.) The user, 2026-10-30: "are we
 -- not at risk of perpetual identical actions?"; its record of a siege that razed 45 outlived the guns put there after.
-herd.SIG_REACH, herd.SIG_CHANGE = 48, 0.3
-function herd.place_sig(surface, forces, at)
-  local p = {x = at.x or at[1], y = at.y or at[2]}
-  return {guns = surface.count_entities_filtered{position = p, radius = herd.SIG_REACH, type = threat.FIRE, force = forces},
-    walls = surface.count_entities_filtered{position = p, radius = herd.SIG_REACH, type = {"wall", "gate"}, force = forces}}
-end
+herd.SIG_REACH, herd.SIG_CHANGE = attempt.SIG_REACH, 0.3
+herd.place_sig = attempt.sig   -- (one measure for every attacker: attempt.lua)
 local function stronger(now, was)
   if not (now and was) then return false end
   return now.guns > was.guns + herd.SIG_CHANGE * math.max(was.guns, 3)
@@ -1361,16 +1358,7 @@ end
 -- by), not in heads (the user, 2026-10-30): a way priced at 700 heads asked 700 of anything, 9,000 biomass hatched about 90
 -- of its dearest breeds, each with the health of 40 mediums, and every siege on nw's walls was refused (2026-10-29).
 -- Health alone: what a breed resists is left to the prices it learns (know.price, learned in mediums too).
-local worth_of = {}
-function herd.worth(name)
-  local w = worth_of[name]
-  if not w then
-    local p, m = prototypes.entity[name], prototypes.entity["lp-bred-medium-biter"]
-    w = p and m and p.get_max_health() / m.get_max_health() or 1
-    worth_of[name] = w
-  end
-  return w
-end
+herd.worth = attempt.worth   -- (one measure for every attacker: attempt.lua)
 -- Of a list of units (entities or names to hatch), its big bursters left out (spent at the wall: herd.way_cost).
 function herd.strength(units)
   local total = 0

@@ -8858,6 +8858,7 @@ scenarios.herd = function()
         surface().create_entity{name = "land-mine", position = S.at(44, dv), force = "player"}
         surface().create_entity{name = "land-mine", position = S.at(36, dv), force = "player"}
       end
+      lp("set_trace", true)   -- (the operation records, oplog.lua: what the contract reads)
       S.wave1 = lp("herd_wave", S.pen, S.at(38, 0), {planned = true, sweep = 6})
       for t = game.tick - storage.t0 + 60, END - 60, 30 do
         schedule(t, function()
@@ -9064,6 +9065,17 @@ scenarios.herd = function()
         tostring(S.past_at_inside), serpent.line(w and w.kills)))
       local sw = w and w.sweep_mines
       check("herd: wallgoal, its sweep went at the mines before the wall alone", sw ~= nil and sw >= 1 and sw <= 3, tostring(sw))
+      -- The contract, for every attacker (attempt.lua): its own "in" is what the observer sees, from where its units stood.
+      local rec
+      for _, r in ipairs(lp("oplog_recent")) do if r.key == "w" .. tostring(S.wave1) then rec = r end end
+      local a = rec and rec.attempt or {}
+      info("herd wallgoal: its record " .. serpent.line(a))
+      -- (Not before: its own claim no more than 3 s ahead of the observer's, which looks every half second. With the wall
+      -- test off its wave claimed in at once and broke in for real 8 s on: both said in by the end.)
+      local own = w and w.t_inside
+      check("contract: in means in, as the observer sees it", rec ~= nil and a.inside == (own ~= nil)
+        and (own == nil or own >= (a.tick_inside or math.huge) - 180) and (a.sent or 0) > 0 and (a.lost or 0) > 0,
+        serpent.line({observer = a.tick_inside, own = own, sent = a.sent, lost = a.lost, got = a.got}))
       check("herd: wallgoal, through only once past the wall", S.inside_at ~= nil and (S.past_at_inside or 0) >= 1,
         string.format("inside at %s, %s past the wall", tostring(S.inside_at), tostring(S.past_at_inside)))
       return

@@ -77,6 +77,7 @@ def structure(mods):
 # The layers the picture groups modules into. A module missing here fails --check: place it when you add it.
 LAYERS = {
     "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart", "ground", "threat", "unit_prior"],
+    "Perception and attempts (any attacker)": ["firemap", "valuemap", "costmap", "feeds", "attempt"],
     "Knowledge and strategy (per faction)": ["know", "strategy"],
     "Corporation": ["faction", "pods", "war", "standing", "pact", "trade", "ledger", "border", "rd", "phases", "biters"],
     "Settlement": ["base", "construction", "planner", "layout", "wfc", "wfc_serenity", "lots_grubstake", "site", "blocks", "modules", "crew", "cordon", "perimeter",
@@ -84,7 +85,7 @@ LAYERS = {
     "Army and operations": ["army", "ops", "routing", "intel", "siege", "strip", "answers", "cuts", "strike", "jammer", "scorcher", "aim",
                             "power"],
     "Heists (Grubstake)": ["jumper", "tap", "skim", "bait", "marker"],
-    "The biotech": ["herd", "farm", "creep", "cell", "firemap", "valuemap", "costmap", "feeds"],
+    "The biotech": ["herd", "farm", "creep", "cell"],
     "The map": ["map"],
     "The player's army": ["command", "scanner", "roads"],
     "Wiring (edges not drawn)": ["control", "dev", "watch", "oplog"],
