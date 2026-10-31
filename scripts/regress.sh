@@ -3,6 +3,8 @@
 # once per growth code, scripts/fork.sh), short ones run in full. About 2-3 minutes on one seed.
 #   scripts/regress.sh [seed] [--full|--quick]      --full adds the long growth scenarios (grow, assault, faction,
 #                                           uplink, lively, convoy, fall): confirmation at milestones.
+#   --area=a,b and --changed leave out the nightly set (NIGHTLY: the slowest variants of families still run); LP_NIGHTLY=1
+#   keeps it.
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$DIR/env.sh"
@@ -91,12 +93,20 @@ case "$FULL" in
     AREAS=" $(echo $AREAS | tr ' ' '\n' | sort -u | tr '\n' ' ') "
     echo "changed: areas$AREAS";;
 esac
+# The nightly set (the user, 2026-10-31: "keep regressions to a minimum we are losing a lot of time"): the slowest variants
+# of families another variant of which still runs (hazard 60 to 75 game minutes each, the long farm runs, clear culture,
+# system solo), left out of --area and --changed runs; the whole list and LP_NIGHTLY=1 keep them.
+NIGHTLY=" hazard|LP_MIX=pay hazard|LP_MIX=unpaid hazard|LP_MIX=disputed hazard|LP_MIX=clean hazard|LP_MIX=worm
+  hazard|LP_MIX=norails hazard|LP_MIX=research farm|LP_MIX=found farm|LP_MIX=moat farm|LP_MIX=artillery
+  farm|LP_MIX=seedbare farm|LP_MIX=behind clear|LP_MIX=culture system|LP_MIX=solo~LP_SEED=777 "
 if [ -n "$AREAS" ] && [ "${AREAS#* all }" = "$AREAS" ]; then
   QUICK=" $(echo $QUICK) "
+  NIGHTLY=" $(echo $NIGHTLY) "
   kept=()
   for r in "${RUNS[@]}"; do
     IFS='|' read -r sc envs _ <<< "$r"
     case "$QUICK" in *" $sc|$envs "*) kept+=("$r"); continue;; esac
+    [ -z "${LP_NIGHTLY:-}" ] && case "$NIGHTLY" in *" $sc|${envs// /~} "*) continue;; esac
     case "$AREAS" in *" $(area_of_scenario "$sc") "*) kept+=("$r");; esac
   done
   RUNS=("${kept[@]}")
