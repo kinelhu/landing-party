@@ -565,6 +565,13 @@ remote.add_interface("landing-party", {
   debug_unit_owner = function(unit_number) return storage.unit_owner and storage.unit_owner[unit_number] end,
   -- Tests only: where a settlement would set up a siege against pos (siege.lua siege_site), nil if nowhere.
   debug_siege_site = function(id, pos) local b = storage.bases[id]; return b and ops.debug_siege_site(b, pos) end,
+  -- Tests only: a settlement's siege plan against pos (siege.lua siege_plan): its site and piece.
+  debug_siege_plan = function(id, pos)
+    local b = storage.bases[id]
+    if not b then return nil end
+    local site, piece = ops.siege_plan(b, {pos = pos, owner = "player"}, army)
+    return {site = site, piece = piece}
+  end,
   debug_desperate_ok = function(id, n, d) local b = storage.bases[id]; return b and ops.desperate_ok(b, n, d) end,
   debug_raid_want = function(id, pos, defence)
     local b = storage.bases[id]

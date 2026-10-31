@@ -96,6 +96,52 @@ local function siege_site(b, t)
 end
 
 -- At most one siege against a player force at a time, across corporations (a battery excepted).
+-- A howitzer's site against t: out of every gun's own reach, within HOWITZER_REACH of one (it stands off as far as it
+-- needs, no farther), on dry ground.
+local function howitzer_site(b, t)
+  local s = game.surfaces[b.surface]
+  local h = home(b)
+  local foes = enemies(game.forces[b.force])
+  local base = math.atan2(h.position.y - t.pos[2], h.position.x - t.pos[1])
+  for _, turn in ipairs({0, 0.35, -0.35, 0.7, -0.7}) do
+    local a = base + turn
+    for d = 20, HOWITZER_REACH - 5, 2 do
+      local p = {t.pos[1] + math.cos(a) * d, t.pos[2] + math.sin(a) * d}
+      if out_of_reach(s, p, foes) then
+        if s.count_entities_filtered{position = p, radius = HOWITZER_REACH - 5, type = TURRETS, force = foes} > 0
+          and s.count_tiles_filtered{position = p, radius = 4, collision_mask = "water_tile"} == 0 then
+          return p
+        end
+        break
+      end
+    end
+  end
+end
+
+-- Its siege against t: its mortars from out of every gun's reach (siege_site); its howitzer where no mortar's site is
+-- out of reach (rockets and railguns outrange a mortar's 36), or where its sieges there broke nothing twice lately (the
+-- ladder at a third), at its level 2 and up and its howitzer not lost. Its mortars are its bursters: what opens the way;
+-- its howitzer the next step up, slow, lost for a while if killed, and outranged by the player's artillery (the user,
+-- 2026-10-31: escalate to the howitzer, not a mortar that outranges everything). Returns its site and its piece.
+local function siege_plan(b, t, army)
+  local site = siege_site(b, t)
+  local can = army.level(b) >= 2 and (b.howitzer_down or 0) <= game.tick
+  if site and can and t.pos then
+    local failed = tactics.ladder(b.corp, t.owner or "player", t.pos, "siege",
+      attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos), nil, nil, true)
+    if failed <= 1 / 3 + 1e-6 then
+      local hs = howitzer_site(b, t)
+      if hs then return hs, "lp-howitzer" end
+    end
+  end
+  if site then return site, "lp-mortar" end
+  if can then
+    local hs = howitzer_site(b, t)
+    if hs then return hs, "lp-howitzer" end
+  end
+end
+ops.siege_plan = siege_plan
+
 local function besieged(owner)
   for _, o in pairs(storage.bases) do
     local t = o.op and o.op.kind == "siege" and o.intel and o.intel.targets[o.op.target]
@@ -114,7 +160,7 @@ local function choose_siege(b, army, only_battery)
   local n = field(b, army)
   if n < SIEGE_GUARDS then return end
   local h = home(b)
-  local best, bs, site
+  local best, bs, site, piece
   for key, t in pairs(b.intel.targets) do
     if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))
       and not (b.quiescent and against_player(t.owner) and not battery(t))
@@ -127,12 +173,12 @@ local function choose_siege(b, army, only_battery)
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
       if not bs or s > bs then
-        local p = siege_site(b, t)
-        if p then best, bs, site = key, s, p end
+        local p, pc = siege_plan(b, t, army)
+        if p then best, bs, site, piece = key, s, p, pc end
       end
     end
   end
-  return best, site, bs
+  return best, site, bs, piece
 end
 
 -- The tier this settlement can mount against t now: its level, held to a player's era + 1, a grudge one up, then down
@@ -262,6 +308,8 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
     convoys_left = spec.convoys or 0}
+  -- (Its piece, a howitzer where its mortars are outranged or broke nothing there twice: siege_plan.)
+  if piece and not clearance then b.op.piece, b.op.reach = piece, piece == "lp-howitzer" and HOWITZER_REACH or MORTAR_REACH end
   b.op.clearance = clearance
   b.op.with_howitzer = with_howitzer or nil
   b.op.truck = truck or nil

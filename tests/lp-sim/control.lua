@@ -10540,6 +10540,17 @@ scenarios.farm = function()
       local sd = site and math.sqrt((site[1] - tesla.position.x) ^ 2 + (site[2] - tesla.position.y) ^ 2)
       check("ops: a siege set up out of a tesla turret's reach and its guards' room", sd ~= nil and sd > 30 + 2 + 1 - 1e-6,
         serpent.line({site = site, from_tesla = sd}))
+      -- Its howitzer where a rocket turret outranges its mortars (36 to their 36: no mortar site out of its reach), its mortar
+      -- where a tesla does not (the user, 2026-10-31: escalate to the howitzer, not a mortar outranging everything).
+      lp("debug_corp_level", lp("stats", storage.id).corp, 2)
+      local rz = S.at(-200, -120)
+      put("rocket-turret", rz).insert{name = "rocket", count = 20}
+      put("assembling-machine-1", {rz[1] + 6, rz[2]})
+      local plan_r = lp("debug_siege_plan", storage.id, {rz[1] + 6, rz[2]})
+      local plan_t = lp("debug_siege_plan", storage.id, {tz[1] + 6, tz[2]})
+      check("ops: its howitzer where a rocket turret outranges its mortars, its mortar past a tesla",
+        plan_r and plan_r.piece == "lp-howitzer" and plan_t and plan_t.piece == "lp-mortar",
+        serpent.line({rocket = plan_r, tesla = plan_t}))
       -- Desperate, bolder not blind (the consult, 2026-10-31): a raid of 10 at a defence of 50 (the formula's 179) does not
       -- go; one of 150 does (lifted, its raids of 4 to 40 went at a laser wall again and again).
       local dz_few, dz_many = lp("debug_desperate_ok", storage.id, 10, 50), lp("debug_desperate_ok", storage.id, 150, 50)

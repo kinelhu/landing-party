@@ -1784,7 +1784,7 @@ function ops.tick(b, tick, trace, army)
     -- the faction AI's comparison, docs/reviews/2026-10-23-faction-ai-audit.md): a fixed order had a raid on a pylon
     -- always beat a siege on a factory block, and a thief strip before anything.
     local prefer = mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
-    local skey, ssite, ss = choose_siege(b, army)
+    local skey, ssite, ss, spiece = choose_siege(b, army)
     local tkey, tsite, ts = choose_strip(b, army)
     -- (Desperate against a player: its siege weighs DESPERATE_SIEGE times as much, what it saves for.)
     local st_ = skey and b.intel.targets[skey]
@@ -1818,7 +1818,7 @@ function ops.tick(b, tick, trace, army)
     end
     local pick = options[1] and options[1][1]
     if pick == "raid" then launch(b, key, trace, army)
-    elseif pick == "siege" then launch_siege(b, skey, ssite, trace, army)
+    elseif pick == "siege" then launch_siege(b, skey, ssite, trace, army, nil, nil, spiece)
     elseif pick == "strip" then launch_strip(b, tkey, tsite, trace, army) end
   end
 end
