@@ -10048,7 +10048,9 @@ scenarios.farm = function()
         if S.lab_saved or not (f and f.pens >= 8) then return end
         S.lab_saved = game.tick
         game.speed = 1
-        local pens = f.pens
+        -- (LAB_PENS: its culture grown to that many incubators, a late colony; its waves as large, farm.cap_of.)
+        if (params.lab_pens or 0) > f.pens then lp("farm_add_pens", f.id, params.lab_pens - f.pens) end
+        local pens = (farm1() or f).pens
         schedule(game.tick - storage.t0 + 1, function()
           game.server_save("lab")
           helpers.write_file("landing-party/lab-saved.txt", string.format("tick %d, %d incubators", game.tick, pens))
@@ -10481,6 +10483,25 @@ scenarios.farm = function()
       local rw_after = lp("debug_raid_want", storage.id, {1500, 0}, 50)
       check("ops: a corporation's raid sized on what got in there", rw_before and rw_after and rw_after < rw_before / 4,
         serpent.line({corp = corp, before = rw_before, after = rw_after}))
+      -- Three the counters and desperation consult found (2026-10-31): a tesla turret's kills put down to electric, not laser
+      -- (its deaths bought laser plate); a wall piece a corporation breaks does not reset its war ladder, a building does
+      -- (one wall piece ended its desperation); a failure at a target near counts in its ladder (three cells of one wall
+      -- each read as untried).
+      local dmg = lp("debug_damage_of", "tesla-turret")
+      local cf = "lp-" .. lp("stats", storage.id).corp
+      local wall = put("stone-wall", S.at(-90, 60))
+      local key = "player|" .. cf
+      local before = lp("debug_last_raze", key)
+      wall.die(cf)
+      local after_wall = lp("debug_last_raze", key)
+      local asm = put("assembling-machine-1", S.at(-90, 66))
+      asm.die(cf)
+      local after_asm = lp("debug_last_raze", key)
+      lp("debug_tactics_record", "lp-test-near", "player", {1150, 0}, "raid", {sent = 10, spent = 10, got = 0, inside = false, breach = {1150, 0}})
+      local l_near = lp("debug_ladder", "lp-test-near", "player", {1160, 4}, "raid", true)
+      check("ops: tesla kills read as electric; a wall piece keeps the ladder's clock, a building resets it; a failure near counts",
+        dmg == "electric" and after_wall == before and after_asm == game.tick and l_near < 1,
+        serpent.line({dmg = dmg, before = before, after_wall = after_wall, after_asm = after_asm, tick = game.tick, near = l_near}))
       -- A siege that fired and broke nothing at a place: its tier there is what it brings more than next time (tactics.failed_
       -- specialists; a tier-1 mortar's 30 shells broke nothing of a laser wall, and its next siege was tier 1 again).
       lp("debug_tactics_record", "lp-test-corp", "player", {700, 0}, "siege", {sent = 10, spent = 0, got = 0, inside = false, rams = 1})
@@ -10508,6 +10529,15 @@ scenarios.farm = function()
         breach = {S.at(0, 0)[1], S.at(0, 0)[2]}, target = {x = S.at(0, 0)[1], y = S.at(0, 0)[2]}}, 1e6)
       check("farm: a proven siege's herd copied without its rams", pz ~= nil and pz.k == 4 and pz.n + pz.k + (pz.fodder or 0) <= 60,
         serpent.line(pz))
+      -- The most it sends at once by its size (farm.cap_of): its own incubators' 60 or more, three times as many incubators
+      -- three times the wave, at most 200 (the user, 2026-10-31: "huge waves might be a late game occurrence"). Last: the
+      -- incubators added stay.
+      local cap0 = fid and lp("farm_cap", fid.id)
+      local pens0 = (lp("farm_state").farms or {})[1].pens
+      local pens1 = fid and lp("farm_add_pens", fid.id, 3 * math.max(8, pens0) - pens0)
+      local cap1 = fid and lp("farm_cap", fid.id)
+      check("farm: the most it sends at once grows with its incubators", cap0 == math.max(60, math.floor(60 * pens0 / 8))
+        and cap1 == math.min(200, math.floor(60 * pens1 / 8)) and cap1 > cap0, serpent.line({pens0, cap0, pens1, cap1}))
       local now = lp("cell_sites")[1] or {}
       check("farm: it bought technicians as it grew", (now.bought or 0) >= 1, serpent.line({bought = now.bought, techs = now.techs}))
     end

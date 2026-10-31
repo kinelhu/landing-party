@@ -307,7 +307,9 @@ script.on_event(defines.events.on_entity_died, function(e)
   elseif e.force and shared.is_corp(e.force.name) and ent.force.name ~= "neutral" and not shared.is_biters(ent.force.name) then
     -- A player building razed by a corporation, whatever did it, its killer dead or alive: the ladder's clock
     -- (ops.ladder) and the tally (lasers and artillery kept falling on the user's save with the tally still).
-    if not shared.is_corp(ent.force.name) then
+    -- (A building, not a wall piece or a mine: one wall piece a raid broke reset its war ladder, and its desperation with
+    -- it; the counters and desperation consult, 2026-10-31.)
+    if not shared.is_corp(ent.force.name) and ent.type ~= "wall" and ent.type ~= "gate" and ent.type ~= "land-mine" then
       storage.last_raze = storage.last_raze or {}
       storage.last_raze[ent.force.name] = e.tick
       storage.last_raze[ent.force.name .. "|" .. e.force.name] = e.tick
@@ -572,7 +574,10 @@ remote.add_interface("landing-party", {
     storage.corps[corp].level = math.max(storage.corps[corp].level or 0, level)
     return storage.corps[corp].level
   end,
-  debug_ladder = function(faction, foe, pos, method) return tactics.ladder(faction, foe, pos, method, nil) end,
+  debug_ladder = function(faction, foe, pos, method, near) return tactics.ladder(faction, foe, pos, method, nil, nil, nil, near) end,
+  -- Tests only: the damage a killer's kills are put down to (know.lua), and the war ladder's clock for a player force.
+  debug_damage_of = function(name) return know.DAMAGE_BY_NAME[name] end,
+  debug_last_raze = function(key) return storage.last_raze and storage.last_raze[key] end,
   debug_failed_specialists = function(faction, foe, pos, method) return tactics.failed_specialists(faction, foe, pos, method, nil) end,
   -- Tests only: an option weighed as every attacker's are (tactics.expect): whether it is worth weighing, its ladder.
   debug_expect = function(faction, foe, pos, method)
@@ -599,6 +604,9 @@ remote.add_interface("landing-party", {
   -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
   farm_debug_seed = function(id) return farm.debug_seed(id) end,
+  -- Tests and the siege lab: incubators added to a farm, and the most it sends at once (farm.cap_of).
+  farm_add_pens = function(id, n) return farm.debug_add_pens(id, n) end,
+  farm_cap = function(id) return farm.debug_cap(id) end,
   farm_state = function() return farm.state() end,
   -- Tests only: what Synthexis has learned a prototype of `foe`'s costs it (nil: nothing yet).
   -- The siege lab (tests/lp-sim, mix lab): its culture primed for a trial, and its waves' units for the recorder.

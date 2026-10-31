@@ -19,7 +19,9 @@ local DAMAGE = {["ammo-turret"] = "physical", character = "physical", car = "phy
   ["combat-robot"] = "physical"}
 local DAMAGE_BY_NAME = {["lp-trooper"] = "physical", ["lp-breacher"] = "explosion", ["lp-battle-tank"] = "explosion",
   ["lp-rocket-trooper"] = "explosion", ["lp-flame-trooper"] = "fire", ["lp-aegis"] = "lp-rail", ["lp-harrier"] = "physical", ["lp-scavenger"] = "explosion",
-  ["lp-laser-drone"] = "laser"}
+  ["lp-laser-drone"] = "laser",
+  -- (An electric turret by type is a laser; a tesla turret is not: its deaths bought laser plate, the consult, 2026-10-31.)
+  ["tesla-turret"] = "electric"}
 know.DAMAGE, know.DAMAGE_BY_NAME = DAMAGE, DAMAGE_BY_NAME
 
 local function st()

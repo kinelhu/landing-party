@@ -64,7 +64,7 @@ build)
   SEED="${2:-12345}"; FORT="${3:-square}"
   P="$LAB/build-$FORT${LAB_TAG:+-$LAB_TAG}"
   profile "$P"
-  printf 'return {scenario = "farm", minutes = 120, every = 120, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "build", fort = "%s", lane = "%s"}\n' "$FORT" "${LAB_LANE:-}" > "$P/mods/lp-sim/params.lua"
+  printf 'return {scenario = "farm", minutes = 120, every = 120, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "build", fort = "%s", lane = "%s", lab_pens = %s}\n' "$FORT" "${LAB_LANE:-}" "${LAB_PENS:-0}" > "$P/mods/lp-sim/params.lua"
   out="$P/script-output/landing-party"
   rm -rf "$out" "$P/saves/"*.zip
   # A lane: a ribbon map (the base game's ribbon world: a band of its height), HALF either side of the axis.

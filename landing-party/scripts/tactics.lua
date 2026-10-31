@@ -135,11 +135,18 @@ end
 -- specialists: of a method with specialists (a siege's rams), only failures with as many or more count (a bigger siege
 -- is another option). A failure: not in, whatever it broke on its way (Synthexis's raids at a tesla lane broke 7 of its
 -- walls' worth for 888 mediums, read as worth sending, and went again five times).
-function tactics.ladder(faction, foe, pos, method, sig, fade, specialists)
-  local r = tactics.attempt(faction, foe, pos, method, fade)
-  if not r then return 1 end
+-- near: read its attempts within NEAR_BREACH of pos wherever kept (history_near), not its place's alone (a corporation's
+-- raids at three cells of one wall each read as untried; the consult, 2026-10-31).
+function tactics.ladder(faction, foe, pos, method, sig, fade, specialists, near)
+  local hist
+  if near then hist = tactics.history_near(faction, foe, pos, method, sig, fade)
+  else
+    local r = tactics.attempt(faction, foe, pos, method, fade)
+    if not r then return 1 end
+    hist = tactics.history(r, sig)
+  end
   local failed = 0
-  for _, a in ipairs(tactics.history(r, sig)) do
+  for _, a in ipairs(hist) do
     if (a.rams or 0) < (specialists or 0) then goto next end
     -- (Only where it got there: Kessler-Hayashi's raids on an assembler died to the wild nests on their way, its
     -- clearances working through them, and its raid there was set aside as failed; the clear test, worms.)

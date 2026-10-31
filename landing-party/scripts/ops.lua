@@ -827,7 +827,7 @@ local function finish(b, outcome, trace, army)
       -- (Got there: a member within REACHED of its target, a siege that fired, anything razed. Its attack begun was not
       -- enough: a raid of 2 attacked from its staging and died to the nests on its 7 waypoints, none near.)
       reached = ((op.closest or math.huge) <= REACHED or (op.shells_fired or 0) > 0 or got > 0) and true or false,
-      rams = op.kind == "siege" and op.tier or nil})
+      rams = op.kind == "siege" and op.tier or nil, breach = {tpos[1], tpos[2]}})
   end
   -- Its guns' prices from what they cost it (know.learn_price, as Synthexis's): where it got there, the units lost to each
   -- gun type over how many of them stood at its target; a sample a least when none came home; a small operation's moves a
@@ -1060,8 +1060,11 @@ local DEAD_END_RADIUS, DEAD_END_TICKS = 128, 90 * 3600
 function ops.raid_want(b, t)
   local want = needed(defence(b, t))
   if t and t.pos then
+    local near = tactics.history_near(b.corp, t.owner or "player", t.pos, "raid",
+      attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
     local r = tactics.attempt(b.corp, t.owner or "player", t.pos, "raid")
-    local proven = r and tactics.best_size(r, 1, attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
+    if r then for _, h in ipairs(r.hist or {}) do if not h.breach then near[#near + 1] = h end end end
+    local proven = tactics.best_size({hist = near}, 1, nil)
     if proven then
       local per = attempt.worth(shared.variant(b.corp, "lp-infantry"))
       want = math.max(1, math.ceil(proven / math.max(0.1, per)))
@@ -1777,7 +1780,7 @@ function ops.tick(b, tick, trace, army)
       local t = k and b.intel.targets[k]
       if not (t and t.pos) then return 1 end
       return tactics.ladder(b.corp, t.owner or "player", t.pos, method,
-        attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
+        attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos), nil, nil, true)
     end
     local options = {}
     local lr, ls, lt = ladder(key, "raid"), ladder(skey, "siege"), ladder(tkey, "strip")

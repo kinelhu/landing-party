@@ -74,6 +74,17 @@ local function guard_of(f) return math.ceil(GUARD_TOTAL / math.max(PENS, #f.pens
 -- A wave's most (the consult: waves of 20 to 60; the mega wave is an event at the top of its ladder, not the default).
 -- Four full pens sent 135 in the first farm run.
 local WAVE_MAX = shared.WAVE_MAX
+-- The most a culture sends at once, by its size (the user, 2026-10-31: "huge waves might be a late game occurrence for
+-- synthexis"): WAVE_MAX up to CAP_PENS incubators, then as much more for each as WAVE_MAX is to CAP_PENS, at most
+-- WAVE_HUGE. A colony grown large sends large waves, and killing its incubators shrinks them; its prices are learned as
+-- of a full wave of WAVE_MAX whatever it sent (herd.lua), one lesson a wave. (At 60 for every culture, two walls at late
+-- research held 9 of 16 trials and its plans read "none fits"; and a tesla line's chain is soaked by bodies.)
+local CAP_PENS, WAVE_HUGE = 8, 200
+local function cap_of(f)
+  local n = f and #f.pens or 0
+  return math.min(WAVE_HUGE, math.max(WAVE_MAX, math.floor(WAVE_MAX * n / CAP_PENS)))
+end
+farm.cap_of = cap_of
 -- A siege (a context-free review, 2026-10-28: with nothing it can field worth a wave, "change the mission, not go quiet"):
 -- the way in to its best place becomes the job. It orders big bursters and a herd of big biters to cross the hole (the
 -- wall lab: mediums behind them, 2 got in; big biters, 14), the cheapest mix its plan's way in pays for (siege_size). It
@@ -865,7 +876,7 @@ siege_size = function(f, pl, place, floor)
     -- (No bigger than any wave, WAVE_MAX: a place that asks more is not besieged, its farm weighs another.)
     -- (And no more than half of it bursters, RAMS_SHARE: each opener paying for itself where they had opened many, a siege
     -- of the square lab fort was 43 big bursters and 17 others; the user, 2026-10-30, mixed sieges, no floods.)
-    if k <= RAMS_SHARE * (n + k + fodder) and n + k + fodder <= WAVE_MAX and ((budget and price <= budget) or (not budget and n + k + fodder <= count)) then
+    if k <= RAMS_SHARE * (n + k + fodder) and n + k + fodder <= cap_of(f) and ((budget and price <= budget) or (not budget and n + k + fodder <= count)) then
       if not best or price < best[3] then best = {k, n, price} end
     end
   end
@@ -1122,7 +1133,7 @@ local function send(f, tick)
   end
   -- (What it can field is what it sends: it saves up for no bigger wave, its probes learn what a place takes; the design
   -- consult, 2026-10-30, step 2: SAVE_FOR, STALL, WORTH_WAIT, SAVE_WAIT and ESCALATE_WAIT, timers each, gone.)
-  local can = math.min(avail, WAVE_MAX)
+  local can = math.min(avail, cap_of(f))
   -- (What it could field at the most, the bound of any siege it lays, siege_size.) Hatching, what its biomass hatches is
   -- ready as well.
   -- (Its weighing in strength, herd.strength: how strong a wave of n of what it could field would be.)
@@ -1130,7 +1141,7 @@ local function send(f, tick)
   if hatching() then avail = field_n end
   local per = field_n > 0 and field / field_n or 1
   local function ready(n) return n * per end
-  local target, rival, choice = target_from(s, f.pos, f, ready(math.min(avail, WAVE_MAX)), {bursters = bursters, field = field,
+  local target, rival, choice = target_from(s, f.pos, f, ready(math.min(avail, cap_of(f))), {bursters = bursters, field = field,
     budget = budget})
   if not target then return holds(f, tick, string.format("nothing to go for within %d tiles (%d ready)", B.mind.reach, avail)) end
   -- A siege laid: it goes there once its bursters and herd are bred (order: f.siege). It ends when a wave of what it has
@@ -1238,7 +1249,7 @@ local function send(f, tick)
       -- No way in it can take and no siege: it does not send a wave to turn home at the wave's own test.
       herd.stopped("noway|" .. (choice.key or "?"))
       f.escalate_retry = tick + 600
-      return holds(f, tick, string.format("no way in it can take with %d or %d, and no siege (%s)", math.min(avail, WAVE_MAX), can,
+      return holds(f, tick, string.format("no way in it can take with %d or %d, and no siege (%s)", math.min(avail, cap_of(f)), can,
         (c2 or choice).why))
     else
       -- A raid probe: its best place not raided lately (herd.attempt), the least wave sent to learn what it takes, sent
@@ -1249,7 +1260,7 @@ local function send(f, tick)
         f.escalate_retry = tick + 600
         herd.stopped("worthless|" .. (choice.key or "?"))
         return holds(f, tick, string.format("nothing worth a wave of %d (the best wins %.0f): it holds and grows",
-          math.min(avail, WAVE_MAX), choice.gain))
+          math.min(avail, cap_of(f)), choice.gain))
       end
       raid_probe = true
       trace(string.format("farm %d: nothing worth a wave; probes its best place with a raid of %d", f.id, shared.WAVE_MIN))
@@ -1261,10 +1272,10 @@ local function send(f, tick)
   local lesson = herd.lesson_near(target, 128)
   -- (Escalation by method, not headcount: a wave of WAVE_MAX at most, a raid probe the least, a siege its own size. A
   -- defence that held drew waves up to twice WAVE_MAX, waited for: the design consult, 2026-10-30.)
-  local cap = raid_probe and shared.WAVE_MIN or WAVE_MAX
+  local cap = raid_probe and shared.WAVE_MIN or cap_of(f)
   if cut and not strike then
     cap = shared.WAVE_MIN
-    while cap < WAVE_MAX and not herd.affords(ready(cap), cut.plan.cost) do cap = cap + 1 end
+    while cap < cap_of(f) and not herd.affords(ready(cap), cut.plan.cost) do cap = cap + 1 end
   end
   if saving then cap = math.max(cap, saving) end
   -- /lp wave <n> (dev): a wave of that many, past the caps, once.
@@ -1344,7 +1355,7 @@ local function send(f, tick)
     local keep = herd.PROBE_N * shared.BREEDS["lp-runt"].cost + (siege and siege.mines or 0) * shared.BREEDS["lp-sweeper"].cost
     -- (A siege's herd the culture's mix tilted as a raid's, chance: filtered by what beat the last wave there, the user's
     -- fort's lasers and flamethrowers left cinders alone, and its sieges were 270 of them; the siege lab.)
-    local names = compose(f, s, (siege and WAVE_MAX or cap) - #units, want, have,
+    local names = compose(f, s, (siege and cap_of(f) or cap) - #units, want, have,
       total > 0 and function(name) return fit_of(name, lesson.killers, total) end or nil,
       math.max(0, (cul and cul.biomass or 0) - keep),
       siege and siege.need and {need = siege.need, have = herd.strength(units), least = shared.WAVE_MIN - #units} or nil)
@@ -2159,6 +2170,30 @@ function farm.debug_lab_prime(id, biomass)
 end
 
 -- Dev and tests: a farm made ripe to seed at its next look (its field read as filled, its bank full, no wait).
+-- Tests and the siege lab: n incubators more for a farm (LAB_PENS), each as its own are planted, stocked to start.
+function farm.debug_add_pens(id, n)
+  local f = st().list[id]
+  if not f then return 0 end
+  local surface = game.surfaces[f.surface]
+  local added = 0
+  for k = 1, n do
+    local a = k * 2.4
+    local q = surface.find_non_colliding_position("lp-pen", {f.pos.x + math.cos(a) * (30 + k * 3), f.pos.y + math.sin(a) * (30 + k * 3)}, 30, 1)
+    local pen = q and surface.create_entity{name = "lp-pen", position = q, force = B.force}
+    local pid = pen and herd.add_pen(pen)
+    local rec = pid and herd.pen(pid)
+    if rec then
+      rec.farm = f.id
+      table.insert(f.pens, pid)
+      bred_stock(surface, rec.pen, START)
+      added = added + 1
+    end
+  end
+  return #f.pens
+end
+
+function farm.debug_cap(id) return cap_of(st().list[id]) end
+
 function farm.debug_seed(id)
   local f = st().list[id]
   if not f then return false end

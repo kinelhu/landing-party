@@ -19,10 +19,10 @@ digraph ai {
     "costmap" [label="costmap\n407 lines", width=1.25, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n62 lines", width=0.87, fillcolor="#eef2f7"];
-    "tactics" [label="tactics\n240 lines", width=1.07, fillcolor="#eef2f7"];
+    "tactics" [label="tactics\n247 lines", width=1.07, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "know" [label="know\n233 lines", width=1.06, fillcolor="#d9f0d9"];
+    "know" [label="know\n235 lines", width=1.06, fillcolor="#d9f0d9"];
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -58,7 +58,7 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n759 lines", width=1.64, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1911 lines", width=2.92, fillcolor="#f7dede"];
+    "ops" [label="ops\n1914 lines", width=2.93, fillcolor="#f7dede"];
     "routing" [label="routing\n409 lines", width=1.25, fillcolor="#eef2f7"];
     "intel" [label="intel\n256 lines", width=1.08, fillcolor="#eef2f7"];
     "siege" [label="siege\n885 lines", width=1.78, fillcolor="#eef2f7"];
@@ -80,7 +80,7 @@ digraph ai {
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n3549 lines", width=3.80, fillcolor="#f7dede"];
-    "farm" [label="farm\n2229 lines", width=3.28, fillcolor="#f7dede"];
+    "farm" [label="farm\n2264 lines", width=3.32, fillcolor="#f7dede"];
     "creep" [label="creep\n557 lines", width=1.42, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
   }
@@ -93,7 +93,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n850 lines", width=1.74, fillcolor="#eef2f7"];
+    "control" [label="control\n858 lines", width=1.75, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n173 lines", width=0.99, fillcolor="#eef2f7"];
