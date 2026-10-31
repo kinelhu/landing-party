@@ -7,7 +7,7 @@ digraph layers {
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 310 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n11 modules, 2697 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n16 modules, 6084 lines\nlayout 1721", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n13 modules, 5155 lines\nops 1895", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n13 modules, 5171 lines\nops 1911", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1229 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n4 modules, 6704 lines\nherd 3544, farm 2201", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];

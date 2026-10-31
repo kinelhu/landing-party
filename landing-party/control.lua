@@ -553,6 +553,12 @@ remote.add_interface("landing-party", {
   end,
   -- Tests and the siege lab: a settlement's parts at `parts` at least (its siege costs SIEGE_COST: what the lab primes,
   -- as it primes Synthexis's biomass), and what its attempts have done (tactics.lua).
+  -- Tests only: what a settlement's raid at pos would be (ops.raid_want: what got in there, else its formula).
+  debug_raid_want = function(id, pos, defence)
+    local b = storage.bases[id]
+    if not b then return nil end
+    return ops.raid_want(b, {pos = pos, owner = "player", defence = defence})
+  end,
   debug_corp_parts = function(id, parts)
     local b = storage.bases[id]
     if b then b.parts = math.max(b.parts or 0, parts) end

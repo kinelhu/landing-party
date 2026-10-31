@@ -10472,6 +10472,15 @@ scenarios.farm = function()
       local ex_clean = lp("debug_expect", "lp-test-wave", "player", {900, 300}, "raid")
       check("tactics: a raid that failed at a place lately is set aside there in the weighing", ex_fail and ex_fail.ok == false
         and ex_clean and ex_clean.ok == true, serpent.line({failed = ex_fail, clean = ex_clean}))
+      -- A corporation's raid sized on what got in there before its formula (ops.raid_want): at a defence of 50 the formula
+      -- asks 180 or so; a raid of 20 mediums got in there, and that is what it sends (its raids at a laser wall sized by
+      -- the formula alone; the lane, 2026-10-31).
+      local corp = lp("stats", storage.id).corp
+      local rw_before = lp("debug_raid_want", storage.id, {1500, 0}, 50)
+      lp("debug_tactics_record", corp, "player", {1500, 0}, "raid", {sent = 20, spent = 5, got = 3, inside = true})
+      local rw_after = lp("debug_raid_want", storage.id, {1500, 0}, 50)
+      check("ops: a corporation's raid sized on what got in there", rw_before and rw_after and rw_after < rw_before / 4,
+        serpent.line({corp = corp, before = rw_before, after = rw_after}))
       -- A siege that fired and broke nothing at a place: its tier there is what it brings more than next time (tactics.failed_
       -- specialists; a tier-1 mortar's 30 shells broke nothing of a laser wall, and its next siege was tier 1 again).
       lp("debug_tactics_record", "lp-test-corp", "player", {700, 0}, "siege", {sent = 10, spent = 0, got = 0, inside = false, rams = 1})

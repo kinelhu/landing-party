@@ -1054,11 +1054,27 @@ end
 -- 128 and 90 minutes (64 and 30 at first: on nw a fortress's staging points 115 apart each ran dry again every half hour,
 -- 95 to 125 ms a search, nine times in three hours).
 local DEAD_END_RADIUS, DEAD_END_TICKS = 128, 90 * 3600
+-- What a raid at t should be: what got in there lately (tactics.best_size: its size in mediums, in its soldiers), before
+-- the formula a point of defence (needed), as Synthexis copies the siege that worked where it worked (its raids at a laser
+-- wall sized by the formula alone, one share a point set against gun turrets; the lane, 2026-10-31).
+function ops.raid_want(b, t)
+  local want = needed(defence(b, t))
+  if t and t.pos then
+    local r = tactics.attempt(b.corp, t.owner or "player", t.pos, "raid")
+    local proven = r and tactics.best_size(r, 1, attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
+    if proven then
+      local per = attempt.worth(shared.variant(b.corp, "lp-infantry"))
+      want = math.max(1, math.ceil(proven / math.max(0.1, per)))
+    end
+  end
+  return want
+end
+
 local function launch(b, key, trace, army, opts)
   local t = b.intel.targets[key]
   local h = home(b)
   local d = defence(b, t)
-  local want = needed(d)
+  local want = ops.raid_want(b, t)
   local n, reserve = field(b, army)
   local desperate = against_player(t.owner) and ladder(t.owner, b.force) >= 3
   local is_answer = opts and opts.answer
