@@ -300,7 +300,7 @@ local function learn_price(w)
     k.opens[foe] = math.max(herd.OPENS_MIN, old + (broke / w.big_sent - old) * know.PRICE_LEARN)
     w.opens_learned = {sample = broke / w.big_sent, now = k.opens[foe]}
     k.reach = k.reach or {}
-    k.reach[foe] = herd.learn_reach(k.reach[foe] or 1, w.big_set_off or 0, w.big_sent)
+    k.reach[foe] = herd.learn_reach(k.reach[foe] or 1, w.big_set_off or 0, w.big_sent, w.wall_stuck)
   end
   if not w.breach then return end
   local f = foes(w)[1]
@@ -395,7 +395,7 @@ function herd.best_size(r, least, sig)
       if not bv or v > bv then best, bv = a, v end
     end
   end
-  return best and best.sent
+  return best and best.sent, best and best.rams
 end
 -- What its attempts by `method` at this foe have done, on the mean over every place (got, spent; nil: none yet): what a
 -- place it has not tried is expected to give (farm.lua menu, a probe's prior).
@@ -464,12 +464,15 @@ end
 -- The same stop at the same place counts again STOP_AGAIN on, not at each look (its farm looks every ten seconds): once
 -- each ever, the user's fort held sixteen times at one place for one reason, counted once, and waited four trials for a
 -- second stop elsewhere before it developed them (the siege lab, 2026-10-31).
--- The share of its rams that reach the wall, learned from a siege: `set_off` of `sent`. None reached it: twice as many
--- rams next time (by its share alone, 1 ram then 2 then 3, each killed short in five seconds by the square lab fort's
--- lasers, and its record of those sieges kept it from a third; 2026-10-31).
-function herd.learn_reach(r0, set_off, sent)
+-- The share of its rams that reach the wall, learned from a siege: `set_off` of `sent` (its rams a siege, 1 over it).
+-- None reached it: twice as many rams next time (by its share alone, 1 ram then 2 then 3, each killed short in five
+-- seconds by the square lab fort's lasers, and its record of those sieges kept it from a third; 2026-10-31). Every one
+-- set off and still stopped at a wall (`stuck`): twice as many too, learned, not counted (the user: "should this really
+-- be hard coded?"): two walls 4 tiles apart took its one ram's blast at the outer, its herd died at the inner, four
+-- trials, then it held; a wall twice as thick, a maze or a wall researched the same.
+function herd.learn_reach(r0, set_off, sent, stuck)
   local r = math.max(herd.OPENS_MIN, r0 + (set_off / sent - r0) * know.PRICE_LEARN)
-  if set_off == 0 then r = math.max(herd.OPENS_MIN, math.min(r, 1 / (2 * sent))) end
+  if set_off == 0 or stuck then r = math.max(herd.OPENS_MIN, math.min(r, 1 / (2 * sent))) end
   return r
 end
 -- A wave the foe held back: half of it or more lost, and not in, or not one gun broken. (Not in alone: with "in" counted
@@ -2731,6 +2734,11 @@ end
 finish = function(w, outcome)
   stay_end(w)
   clear_marks(w)
+  -- Stopped at a wall: never through, a wall still between it and its target (its own the last to see it, or its walls
+  -- gone at to no end, WALL_TRIES): what its rams learn from, learn_price.
+  if (w.big_sent or 0) > 0 and not w.t_inside and w.goal then
+    w.wall_stuck = (w.wall_tries or 0) > 0 or (alive(w) > 0 and wall_between(w, foremost(w), w.goal) ~= nil)
+  end
   learn_price(w)
   local h = st()
   local p = h.pens[w.pen]

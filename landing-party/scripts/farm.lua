@@ -870,8 +870,13 @@ siege_size = function(f, pl, place, floor)
   -- (Proven by what it razed there, not by getting in: in and razing nothing, five sieges at one breach of the user's fort.
   -- Sized as the one that razed most for what it spent: sized on what a siege spent, its sieges of 34 to 38 lost 230 to 300
   -- and razed 3 to 24, where its probes of 24 had lost 110 and razed up to 41; the siege lab, 2026-10-30.)
-  local proven = mem and wt > ATTEMPT_FADED and herd.best_size(mem, B.mind.min_gain or 0,
-    herd.place_sig(s, place and place.rival or players(), pl.target)) or nil
+  local proven, proven_rams
+  if mem and wt > ATTEMPT_FADED then
+    proven, proven_rams = herd.best_size(mem, B.mind.min_gain or 0, herd.place_sig(s, place and place.rival or players(), pl.target))
+  end
+  -- And as many rams as that siege brought, whatever its share since (one that got in with 4 drew its share up, the next
+  -- brought 2 and stood at the inner of two walls; the lane, 2026-10-31).
+  if proven_rams and rams > 0 then rams = math.min(RAMS_MAX, math.max(rams, proven_rams)) end
   for k = rams, rams do
     local lost = herd.way_cost(base, pl.cover, k, pl.openable, foe)
     -- Its herd pays its way in once and the place's guns once (what its rams leave of them), and is not to come back: a

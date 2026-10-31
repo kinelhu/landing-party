@@ -10225,6 +10225,11 @@ scenarios.farm = function()
         {sent = 60, spent = 300, got = 40, inside = true}, {sent = 30, spent = 100, got = 32, inside = true},
         {sent = 20, spent = 50, got = 5, inside = true}, {sent = 50, spent = 100, got = 45, inside = false}}, 10)
       check("farm: a siege sized by what razed most per biomass", sized == 30, tostring(sized))
+      -- And with as many rams as that siege brought (one that got in with 4 drew its share up, the next brought 2 and stood
+      -- at the inner of two walls; the lane, 2026-10-31).
+      local sized_rams = lp("debug_best_rams", {
+        {sent = 60, spent = 300, got = 40, inside = true, rams = 1}, {sent = 30, spent = 100, got = 32, inside = true, rams = 4}}, 10)
+      check("farm: a proven siege's rams copied with it", sized_rams == 4, tostring(sized_rams))
       -- Against a defence reinforced since (more guns where it went), its attempts there count for nothing: its record of
       -- a siege that razed 45 outlived the guns put there after (the user, 2026-10-30: "perpetual identical actions").
       local was, more = {guns = 5, walls = 20}, {guns = 10, walls = 20}
@@ -10271,6 +10276,11 @@ scenarios.farm = function()
       -- None of its rams reached the wall: twice as many next time (1, 2, 3 by its share alone at the square lab fort, each
       -- killed short, and its record kept it from a fourth; the siege lab, 2026-10-31).
       local r1, r2 = lp("debug_learn_reach", 1, 0, 1), lp("debug_learn_reach", 0.5, 0, 2)
+      -- Every ram set off and still stopped at a wall: twice as many too (two walls, one ram's blast at the outer, its herd
+      -- dead at the inner; the lane, 2026-10-31).
+      local r3, r4 = lp("debug_learn_reach", 1, 1, 1, true), lp("debug_learn_reach", 1, 1, 1, false)
+      check("farm: its rams all set off and stopped at a wall, twice as many next time", r3 <= 0.5 + 1e-9 and r4 > 0.99,
+        serpent.line({r3, r4}))
       -- A wave half lost that never got in was held back, whatever guns it broke over the wall (raids at a saw-toothed lane
       -- broke 12 a wave from outside, and no wall had held them: 16 raids, no bursters; the siege lab, 2026-10-31).
       local hb_out, hb_in = lp("debug_held_back", 10, 40, 12, false), lp("debug_held_back", 10, 40, 12, true)

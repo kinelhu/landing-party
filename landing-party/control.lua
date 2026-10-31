@@ -548,8 +548,9 @@ remote.add_interface("landing-party", {
   lab_waves = function() return herd.lab_waves() end,
   -- Tests only: the size herd.best_size draws from an attempt's history (its sieges sized by what razed most per biomass).
   debug_best_size = function(hist, least, sig) return herd.best_size({hist = hist}, least, sig) end,
+  debug_best_rams = function(hist, least, sig) return select(2, herd.best_size({hist = hist}, least, sig)) end,
   debug_stopped = function(key, tick) herd.stopped(key, tick) return herd.held() end,
-  debug_learn_reach = function(r0, set_off, sent) return herd.learn_reach(r0, set_off, sent) end,
+  debug_learn_reach = function(r0, set_off, sent, stuck) return herd.learn_reach(r0, set_off, sent, stuck) end,
   debug_held_back = function(alive_n, sent, guns, inside) return herd.held_back(alive_n, sent, guns, inside) end,
   -- Tests only: sets what it has learned of its rams' reach at `foe`, returning what it was.
   debug_reach = function(foe, r)
