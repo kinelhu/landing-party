@@ -488,6 +488,8 @@ remote.add_interface("landing-party", {
     if t.bursters ~= nil then know.of("biotech").bursters = t.bursters and game.tick or nil end
     -- No biotech arrival (farm.lua); tests that bring it do so with farm_arrive.
     if t.biotech_off ~= nil then storage.biotech_off = t.biotech_off end
+    -- Tests and the siege lab: its cultures bud no incubator (their waves' size held, farm.cap_of).
+    if t.pens_hold ~= nil then storage.biotech_pens_hold = t.pens_hold end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
     if t.harmless ~= nil then
       for _, k in ipairs({"ops_off", "jump_off", "tap_off", "skim_off", "prospect_off", "sever_off", "cuts_off",

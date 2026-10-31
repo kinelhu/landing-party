@@ -2010,7 +2010,9 @@ function farm.tick(tick)
       breeding(f, cul.biomass > f.reserve)
     end
     -- The creep takes the wild nest it reaches; with none near, it grows an incubator of its own (creep.bud).
-    local take = #left < PENS_MAX and cell.keeps_up(id, f.pens, tick) and creep.bud(id, tick)
+    -- (Held by the siege lab, biotech_pens_hold: its waves grow with its incubators, farm.cap_of, and a culture budding one a
+    -- trial sent 60, 67, 75 ... 97, no two trials alike.)
+    local take = not storage.biotech_pens_hold and #left < PENS_MAX and cell.keeps_up(id, f.pens, tick) and creep.bud(id, tick)
     if take then
       -- A wild spawner to take, or {found = position} (an engine object raises on an unknown key: asked by type).
       local spot = take.object_name == nil and take.found

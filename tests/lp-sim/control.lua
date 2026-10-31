@@ -7386,7 +7386,7 @@ scenarios.lab = function()
   local function begin()
     local L = {run = params.lab_run, trial = 0, step = "prime", snap = {}, ents = {}, hp = {}}
     storage.lab = L
-    lp("debug_tune", {herd_off = CORP})
+    lp("debug_tune", {herd_off = CORP, pens_hold = true})
     -- (A corporation's trial: its army let loose, the culture held.)
     if CORP then lp("debug_tune", {harmless = false, army_off = false, provoke = true}) end
     lp("set_trace", true)
@@ -9797,13 +9797,15 @@ scenarios.farm = function()
     -- wall ... closed off at the final layer"); tech (early, mid, late: its guns' damage and speed research, set at build);
     -- outpost (1: a mining outpost of four drills and a chest, unwalled and unguarded, 80 tiles out from the west front
     -- toward the camps, its pole line back to the fort: the soft target beside a fort, for Grubstake, which should take it
-    -- and leave the wall; the user, 2026-10-31).
+    -- and leave the wall; the user, 2026-10-31); power (in, the fort's own; east, its source 60 tiles out before its wall on
+    -- a line of poles through it, a feed to cut: a tesla line needs a great deal of power, and Synthexis's answer to it is
+    -- that power, the counters consult, 2026-10-31).
     -- Twice as many lasers within a laser's reach of each end: at the water a wall point saw half the guns its middle did
     -- (5 against 8), and three plain waves went in at its end, none of them a siege (the lab, 2026-10-31): a lane whose
     -- every point faces the same guns.
     if params.fort == "lane" then
       local o = {walls = 1, gap = 4, step = 6, inset = 3, mines = "out", half = 64, guns = "laser", shape = "line", amp = 8, period = 32,
-        faces = "east", mgap = 6, outpost = 0}
+        faces = "east", mgap = 6, outpost = 0, power = "in"}
       for k, v in string.gmatch(params.lane or "", "(%w+)=([%w%.%+]+)") do o[k] = tonumber(v) or v end
       -- (The map a ribbon HALF either side of y 0, siegelab.sh's map settings: its edge, out of map, collides as water does,
       -- its cost map's no way and the engine's. The fort's axis along it, its camp east or west.)
@@ -9933,6 +9935,19 @@ scenarios.farm = function()
       end
       S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
       S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
+      if o.power == "east" then
+        local prod, buf = S.power.power_production, S.power.electric_buffer_size
+        S.power.destroy()
+        for u = 28, 40 + 60, 8 do place("medium-electric-pole", at(u, 2)) end
+        S.power = put("electric-energy-interface", at(40 + 62, 2))
+        S.power.power_production, S.power.electric_buffer_size = prod, buf
+        put("medium-electric-pole", at(40 + 62, 0))
+        schedule(game.tick + 300, function()
+          local dark, guns = 0, surface().find_entities_filtered{type = "electric-turret", force = "player"}
+          for _, g in ipairs(guns) do if g.status == defines.entity_status.no_power then dark = dark + 1 end end
+          if dark > 0 then error(string.format("lab: %d of the lane's %d electric turrets dark on its outside power", dark, #guns)) end
+        end)
+      end
       if (o.outpost or 0) > 0 then
         local ou = -(40 + 80)
         local ore = {}

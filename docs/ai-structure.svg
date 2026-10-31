@@ -1407,7 +1407,7 @@
 <title>farm</title>
 <path fill="#f7dede" stroke="black" d="M2903.52,-514.75C2903.52,-514.75 2688.48,-514.75 2688.48,-514.75 2682.48,-514.75 2676.48,-508.75 2676.48,-502.75 2676.48,-502.75 2676.48,-490.75 2676.48,-490.75 2676.48,-484.75 2682.48,-478.75 2688.48,-478.75 2688.48,-478.75 2903.52,-478.75 2903.52,-478.75 2909.52,-478.75 2915.52,-484.75 2915.52,-490.75 2915.52,-490.75 2915.52,-502.75 2915.52,-502.75 2915.52,-508.75 2909.52,-514.75 2903.52,-514.75"/>
 <text xml:space="preserve" text-anchor="middle" x="2796" y="-498.5" font-family="Helvetica,sans-Serif" font-size="10.00">farm</text>
-<text xml:space="preserve" text-anchor="middle" x="2796" y="-487.25" font-family="Helvetica,sans-Serif" font-size="10.00">2264 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="2796" y="-487.25" font-family="Helvetica,sans-Serif" font-size="10.00">2266 lines</text>
 </g>
 <!-- farm&#45;&gt;tune -->
 <g id="edge56" class="edge">
@@ -1568,9 +1568,9 @@
 <!-- control -->
 <g id="node71" class="node">
 <title>control</title>
-<path fill="#eef2f7" stroke="black" d="M4045,-1058C4045,-1058 3943,-1058 3943,-1058 3937,-1058 3931,-1052 3931,-1046 3931,-1046 3931,-1034 3931,-1034 3931,-1028 3937,-1022 3943,-1022 3943,-1022 4045,-1022 4045,-1022 4051,-1022 4057,-1028 4057,-1034 4057,-1034 4057,-1046 4057,-1046 4057,-1052 4051,-1058 4045,-1058"/>
+<path fill="#eef2f7" stroke="black" d="M4045.36,-1058C4045.36,-1058 3942.64,-1058 3942.64,-1058 3936.64,-1058 3930.64,-1052 3930.64,-1046 3930.64,-1046 3930.64,-1034 3930.64,-1034 3930.64,-1028 3936.64,-1022 3942.64,-1022 3942.64,-1022 4045.36,-1022 4045.36,-1022 4051.36,-1022 4057.36,-1028 4057.36,-1034 4057.36,-1034 4057.36,-1046 4057.36,-1046 4057.36,-1052 4051.36,-1058 4045.36,-1058"/>
 <text xml:space="preserve" text-anchor="middle" x="3994" y="-1041.75" font-family="Helvetica,sans-Serif" font-size="10.00">control</text>
-<text xml:space="preserve" text-anchor="middle" x="3994" y="-1030.5" font-family="Helvetica,sans-Serif" font-size="10.00">858 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="3994" y="-1030.5" font-family="Helvetica,sans-Serif" font-size="10.00">860 lines</text>
 </g>
 <!-- dev -->
 <g id="node72" class="node">
