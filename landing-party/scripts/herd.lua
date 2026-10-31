@@ -1308,11 +1308,14 @@ herd.PLAN_CELL = costmap.CELL   -- at the grain its waves read near their target
 -- (Its farm's reading this tick, when it was read from here and reaches the target: the same map, farm.lua ways_from.
 -- Kept for the tick alone, so every game reads the same: a map kept longer would decide differently after a load.)
 herd.shared = nil
+herd.SHARED_FOR = 5 * 3600   -- a reading's map is its plans' while this young (farm.lua's WAYS_FOR)
 function herd.plan(surface, from, target, forces, n)
   from, target = xy(from), xy(target)
   local fmap, cm
   local sm = herd.shared
-  if sm and sm.tick == game.tick and sm.from[1] == from.x and sm.from[2] == from.y and costmap.cost(sm.cm, target) then
+  -- (The reading for as long as it holds, SHARED_FOR, not its tick alone: its sieges and cuts are planned on it a step
+  -- after it, farm.ways_step.)
+  if sm and game.tick - sm.tick < herd.SHARED_FOR and sm.from[1] == from.x and sm.from[2] == from.y and costmap.cost(sm.cm, target) then
     fmap, cm = sm.fmap, sm.cm
   else
     local mid = {x = (from.x + target.x) / 2, y = (from.y + target.y) / 2}
@@ -1974,7 +1977,10 @@ local function mines_along(s, forces, pts, reach, from)
 end
 herd.mines_along = mines_along
 -- Where its sappers set off: a mine, and every mine within its blast of it covered, the next one not, along the way in.
-local SAPPER_REACH = 0.85 * shared.SAPPER.r
+-- (Within its blast less how short of its spot it may set off, SAPPER_AT, and half a tile: at 0.85 of the blast, with
+-- sweepers set off 2.5 short, a mine at a cluster's edge stood 8.45 from a blast of 7, 7 of 8 cleared; `farm` siege.)
+local SAPPER_AT = 1.5
+local SAPPER_REACH = shared.SAPPER.r - SAPPER_AT - 0.5
 function herd.sapper_spots(mines)
   local spots = {}
   for _, m in ipairs(mines) do
@@ -2832,7 +2838,6 @@ local function cut_wait(w)
   end
 end
 -- Its sappers set off at their spots (sweep), or stopped short (a mine's stun, a wall), there.
-local SAPPER_AT = 2.5
 local function sappers(w)
   for _, u in ipairs(w.sweepers or {}) do
     local at = u.valid and w.sapper_at and w.sapper_at[u.unit_number]

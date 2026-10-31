@@ -399,7 +399,10 @@ local function ways_from(surface, pos, f, cells)
     -- (Its foes' hidden costs, the dearest: one reading for all of them.)
     local hidden = 0
     for _, fo in ipairs(forces) do hidden = math.max(hidden, herd.hidden_cost(fo.name)) end
+    -- (LAB_TIME: its parts timed apart, landing-party/timing.txt.)
+    local prof = storage.biotech_time_parts and helpers.create_profiler()
     local fmap = firemap.read(surface, mid, radius * firemap.BOX, herd.hostiles(), herd.price_of, threat.ARMED)
+    if prof then helpers.write_file("landing-party/timing.txt", {"", "  fire map: ", prof, "\n"}, true); prof.reset() end
     -- (Its fire scaled by what crossing has cost against what it expected, when its mind calibrates: know.scale.)
     local scale = 1
     if B.mind.calibrate then for _, fo in ipairs(forces) do scale = math.max(scale, know.scale("biotech", fo.name)) end end
@@ -410,6 +413,7 @@ local function ways_from(surface, pos, f, cells)
     local cm = costmap.read(surface, mid, radius, forces, {fire = fmap, n = WAVE_MAX, deaths = herd.deaths(), blocked = herd.blocked(), hidden = hidden, from = pos, scale = scale,
       cell = storage.biotech_ways_cell or herd.PLAN_CELL, margin = herd.spread(WAVE_MAX), ground_cost = costmap.GROUND_COST,
       wall_forces = herd.hostiles()})
+    if prof then helpers.write_file("landing-party/timing.txt", {"", "  cost map: ", prof, "\n"}, true); prof.reset() end
     herd.shared = {tick = game.tick, from = {pos.x, pos.y}, cm = cm, fmap = fmap}
     -- (And how many guns cover where each way breaks in: what its bursters would be sent at, herd.way_cost.)
     local paths = storage.march_trace and {} or nil
@@ -424,6 +428,7 @@ local function ways_from(surface, pos, f, cells)
           breach = way and {way.breach.x, way.breach.y}}
       end
     end
+    if prof then helpers.write_file("landing-party/timing.txt", {"", string.format("  ways to %d places: ", table_size(cells)), prof, "\n"}, true) end
     -- (Debugging, march_trace: its reading, for scripts/raidmap.py.)
     if paths then
       local cells_out = {}
@@ -571,70 +576,27 @@ local function target_from(surface, pos, f, n, opts)
     if (a.value or 0) ~= (b.value or 0) then return (a.value or 0) > (b.value or 0) end
     return a.key < b.key
   end)
+  -- Its sieges and its cuts, sized and planned on the reading, one a step after it (farm.ways_step: each a plan, 17 ms on
+  -- the user's fort, and in one tick with the reading, 235 ms; the sieges at its SIEGE_LOOKS most valuable places a wave of
+  -- what it has does not win, the cuts round its best place).
   if f.ways and f.ways.tick == game.tick and f.ways.sieges and field > 0 then
-    local looked, said = 0, {}
+    local todo, looked = {}, 0
     for _, c in ipairs(by_worth) do
       if looked >= SIEGE_LOOKS then break end
       -- (Where a raid would win as well: its menu weighs them against each other, menu. Sized only where no raid won, a
       -- siege never met a raid in it.)
       if c.cover > 0 and (c.raw or NO_WAY) < NO_WAY then
         looked = looked + 1
-        local rival = not shared.is_player_force(game.forces[c.force]) and {c.force} or nil
-        local pl = herd.plan(surface, pos, c.at, rival or players(), WAVE_MAX)
-        if not pl then said[#said + 1] = string.format("%.0f,%.0f no plan", c.at.x, c.at.y) end
-        if pl then
-          local k, n, price, breed, need, fodder, proven = siege_size(f, pl, {guns = c.guns, extra = c.extra, value = c.value, rival = rival})
-          said[#said + 1] = string.format("%.0f,%.0f plan %.0f (%d guns, walled %s): %s", c.at.x, c.at.y, pl.cost, pl.cover,
-            tostring(pl.walled), k and string.format("%d rams, %d, %d biomass", k, n, price) or "none fits")
-          if k then
-            f.ways.sieges[c.key] = {at = {x = c.at.x, y = c.at.y}, key = c.key, k = k, n = n, price = price, breed = breed,
-              need = need, fodder = fodder, plan = pl, cover = pl.cover, defence = c.defence, value = c.value or 0,
-              rival = rival, guns = c.guns, extra = c.extra, dist = c.dist, proven = proven}
-          end
-        end
+        todo[#todo + 1] = {kind = "siege", key = c.key, at = {x = c.at.x, y = c.at.y}, force = c.force, guns = c.guns,
+          extra = c.extra, value = c.value, defence = c.defence, dist = c.dist}
       end
     end
-    if #said > 0 then trace(string.format("farm %d sizes its sieges: %s", f.id, table.concat(said, "; "))) end
-    -- Its cuts (the user, 2026-10-30: "a pipe that is free on the cost map is an undefended pipe"): what feeds the guns
-    -- round its best place (feeds.lua: the pipe, pole or belt whose loss parts the most of them from their supply), by
-    -- what the guns it parts cost it over what reaching it costs on the one reading; the CUT_LOOKS best planned, those
-    -- past no wall kept with the reading (f.ways.cuts).
     local top = by_worth[1]
-    local sm = herd.shared
-    if top and sm and sm.tick == game.tick then
-      local rival = not shared.is_player_force(game.forces[top.force]) and {top.force} or nil
-      local list = {}
-      for _, c in pairs(feeds.read(surface, top.at, CUT_R, rival or players(), herd.price_of)) do
-        local reach = c.e.valid and costmap.cost(sm.cm, c.e.position)
-        if reach and reach < NO_WAY then
-          c.reach, c.v = reach, c.price / (1 + reach)
-          list[#list + 1] = c
-        end
-      end
-      table.sort(list, function(a, b)
-        if a.v ~= b.v then return a.v > b.v end
-        return a.e.unit_number < b.e.unit_number
-      end)
-      f.ways.cuts = {}
-      local cut_said = {}
-      for k = 1, math.min(CUT_LOOKS, #list) do
-        local c = list[k]
-        local at = {x = c.e.position.x, y = c.e.position.y}
-        local pl = herd.plan(surface, pos, at, rival or players(), shared.WAVE_MIN)
-        cut_said[#cut_said + 1] = string.format("%s at %.0f,%.0f parts %d guns (%.0f), reached for %.0f%s", c.e.name, at.x,
-          at.y, c.starves, c.price, c.reach, pl and (pl.walled and ", past a wall" or "") or ", no plan")
-        if pl and not pl.walled then
-          -- (What it would win: its best place's worth, in the share of its guns the cut parts; credited with those guns'
-          -- price, a cut scored 70 to a raid's 0.02 on the fed lab fort, the two in different units.)
-          local share = math.min(1, c.price / math.max(1, top.guns or 0))
-          f.ways.cuts[#f.ways.cuts + 1] = {e = c.e, at = at, starves = c.starves, price = c.price, held = c.held, plan = pl,
-            gain = (top.value or 0) * share,
-            strike = {at = {x = top.at.x, y = top.at.y}, value = top.value or 0, defence = top.defence or 0, force = top.force},
-            rival = rival, dist = math.sqrt(d2(at, pos)), key = herd.attempt_key(rival and rival[1] or "player", at)}
-        end
-      end
-      if #cut_said > 0 then trace(string.format("farm %d reads its cuts: %s", f.id, table.concat(cut_said, "; "))) end
+    if top then
+      todo[#todo + 1] = {kind = "cuts", at = {x = top.at.x, y = top.at.y}, force = top.force, guns = top.guns,
+        value = top.value, defence = top.defence}
     end
+    f.ways.todo = todo
   end
   -- Its best siege: by what it wins for each burster, near first (by the fewest bursters alone it laid siege to a place
   -- worth 9).
@@ -1864,7 +1826,73 @@ local function recycle(f, rec, surface)
   end
 end
 
+-- One of its reading's sieges or cuts a step (f.ways.todo, target_from), on the reading its weighing made (herd.shared).
+-- (Its cuts (the user, 2026-10-30: "a pipe that is free on the cost map is an undefended pipe"): what feeds the guns round
+-- its best place (feeds.lua: the pipe, pole or belt whose loss parts the most of them from their supply), by what the guns
+-- it parts cost it over what reaching it costs on the one reading; the CUT_LOOKS best planned, those past no wall kept with
+-- the reading, f.ways.cuts.)
+function farm.ways_step(f)
+  local item = f.ways and f.ways.todo and table.remove(f.ways.todo, 1)
+  if not item then return end
+  local surface = game.surfaces[f.surface]
+  local pos = f.pos
+  local rival = item.force and not shared.is_player_force(game.forces[item.force]) and {item.force} or nil
+  if item.kind == "siege" then
+    local pl = herd.plan(surface, pos, item.at, rival or players(), WAVE_MAX)
+    if not pl then trace(string.format("farm %d sizes its siege at %.0f,%.0f: no plan", f.id, item.at.x, item.at.y)); return end
+    local k, n, price, breed, need, fodder, proven = siege_size(f, pl, {guns = item.guns, extra = item.extra, value = item.value, rival = rival})
+    trace(string.format("farm %d sizes its siege at %.0f,%.0f: plan %.0f (%d guns, walled %s): %s", f.id, item.at.x, item.at.y,
+      pl.cost, pl.cover, tostring(pl.walled), k and string.format("%d rams, %d, %d biomass", k, n, price) or "none fits"))
+    if k then
+      f.ways.sieges[item.key] = {at = item.at, key = item.key, k = k, n = n, price = price, breed = breed,
+        need = need, fodder = fodder, plan = pl, cover = pl.cover, defence = item.defence, value = item.value or 0,
+        rival = rival, guns = item.guns, extra = item.extra, dist = item.dist, proven = proven}
+    end
+  elseif item.kind == "cuts" then
+    local sm = herd.shared
+    if not (sm and sm.cm) then return end
+    local list = {}
+    for _, c in pairs(feeds.read(surface, item.at, CUT_R, rival or players(), herd.price_of)) do
+      local reach = c.e.valid and costmap.cost(sm.cm, c.e.position)
+      if reach and reach < NO_WAY then
+        c.reach, c.v = reach, c.price / (1 + reach)
+        list[#list + 1] = c
+      end
+    end
+    table.sort(list, function(a, b)
+      if a.v ~= b.v then return a.v > b.v end
+      return a.e.unit_number < b.e.unit_number
+    end)
+    f.ways.cuts = {}
+    for k = math.min(CUT_LOOKS, #list), 1, -1 do
+      local c = list[k]
+      table.insert(f.ways.todo, 1, {kind = "cut", e = c.e, starves = c.starves, price = c.price, held = c.held, reach = c.reach,
+        top = item, force = item.force})
+    end
+  elseif item.kind == "cut" and item.e.valid then
+    local at = {x = item.e.position.x, y = item.e.position.y}
+    local pl = herd.plan(surface, pos, at, rival or players(), shared.WAVE_MIN)
+    trace(string.format("farm %d reads its cut: %s at %.0f,%.0f parts %d guns (%.0f), reached for %.0f%s", f.id, item.e.name,
+      at.x, at.y, item.starves, item.price, item.reach, pl and (pl.walled and ", past a wall" or "") or ", no plan"))
+    if pl and not pl.walled then
+      -- (What it would win: its best place's worth, in the share of its guns the cut parts; credited with those guns'
+      -- price, a cut scored 70 to a raid's 0.02 on the fed lab fort, the two in different units.)
+      local top = item.top
+      local share = math.min(1, item.price / math.max(1, top.guns or 0))
+      f.ways.cuts = f.ways.cuts or {}
+      f.ways.cuts[#f.ways.cuts + 1] = {e = item.e, at = at, starves = item.starves, price = item.price, held = item.held, plan = pl,
+        gain = (top.value or 0) * share,
+        strike = {at = {x = top.at.x, y = top.at.y}, value = top.value or 0, defence = top.defence or 0, force = top.force},
+        rival = rival, dist = math.sqrt(d2(at, pos)), key = herd.attempt_key(rival and rival[1] or "player", at)}
+    end
+  end
+end
+
 function farm.tick(tick)
+  -- (Its reading's sieges and cuts, one a second between its steps: farm.ways_step.)
+  if tick % 60 == 30 then
+    for _, f in pairs(st().list) do if f.ways and f.ways.todo and #f.ways.todo > 0 then farm.ways_step(f) end end
+  end
   if tick % 600 ~= 300 then return end
   local s = st()
   local eat = {}
@@ -2102,11 +2130,11 @@ function farm.debug_time_ways(id, cell)
   local f = st().list[id]
   if not f then return false end
   local s = game.surfaces[f.surface]
-  storage.biotech_ways_cell, f.ways = cell, nil
+  storage.biotech_ways_cell, f.ways, storage.biotech_time_parts = cell, nil, true
   local p = helpers.create_profiler()
   local target, rival = target_from(s, f.pos, f, WAVE_MAX, {})
   p.stop()
-  storage.biotech_ways_cell, f.ways = nil, nil
+  storage.biotech_ways_cell, f.ways, storage.biotech_time_parts = nil, nil, nil
   helpers.write_file("landing-party/timing.txt", {"", "weighing, cell " .. cell .. ": ", p, "\n"}, true)
   -- (And one plan, as a wave's: what each wave already pays at its waves' grain.)
   if target and cell == 16 then

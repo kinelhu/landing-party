@@ -219,8 +219,8 @@
 <title>The biotech</title>
 <path fill="#f7dede" stroke="black" d="M408.12,-538.75C408.12,-538.75 311.88,-538.75 311.88,-538.75 305.88,-538.75 299.88,-532.75 299.88,-526.75 299.88,-526.75 299.88,-506.75 299.88,-506.75 299.88,-500.75 305.88,-494.75 311.88,-494.75 311.88,-494.75 408.12,-494.75 408.12,-494.75 414.12,-494.75 420.12,-500.75 420.12,-506.75 420.12,-506.75 420.12,-526.75 420.12,-526.75 420.12,-532.75 414.12,-538.75 408.12,-538.75"/>
 <text xml:space="preserve" text-anchor="middle" x="360" y="-524.3" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="360" y="-512.3" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 6704 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="360" y="-500.3" font-family="Helvetica,sans-Serif" font-size="11.00">herd 3544, farm 2201</text>
+<text xml:space="preserve" text-anchor="middle" x="360" y="-512.3" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 6737 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="360" y="-500.3" font-family="Helvetica,sans-Serif" font-size="11.00">herd 3549, farm 2229</text>
 </g>
 <!-- The biotech&#45;&gt;Seams (leaves) -->
 <g id="edge23" class="edge">
