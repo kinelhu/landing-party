@@ -174,7 +174,8 @@ def export_counters(M, F, kinds, fixed_cols, path):
     def kind(p):
         m = re.match(r"lp-(?:grubstake|serenity)-(.*)", p)
         return "lp-" + m.group(1) if m else p
-    line_key = {"guns": "gun-turret", "lasers": "laser-turret", "flamers": "flamethrower-turret", "biters 0.80": "biter"}
+    line_key = {"guns": "gun-turret", "lasers": "laser-turret", "flamers": "flamethrower-turret", "teslas": "tesla-turret",
+                "biters 0.80": "biter"}
     # (The report shows plain names: back to the batch's labels.)
     def raw(label):
         return UNSHOWN.get(label, label).replace("(Kessler-Hayashi)", "(Serenity)")
@@ -236,7 +237,7 @@ def main():
         else:
             fixed[(r["squad"], r["against"])].append(s)
             if r["against"] not in fixed_cols: fixed_cols.append(r["against"])
-    order_fixed = [c for c in ["biters 0.50", "biters 0.80", "biters 0.95", "guns", "lasers", "flamers"] if c in fixed_cols]
+    order_fixed = [c for c in ["biters 0.50", "biters 0.80", "biters 0.95", "guns", "lasers", "flamers", "teslas"] if c in fixed_cols]
     M = {(a, b): sum(v) / len(v) for (a, b), v in pair.items()}
     F = {(a, c): sum(v) / len(v) for (a, c), v in fixed.items()}
     strength = {k: sum(M.get((k, o), 0) for o in kinds) / len(kinds) for k in kinds}
@@ -252,7 +253,8 @@ def main():
     from matplotlib.colors import TwoSlopeNorm
     counter_scale = plt.get_cmap("RdBu")   # blue: the row's unit wins; red: it loses
     names = {"biters 0.50": "biters\nevo 0.5", "biters 0.80": "biters\nevo 0.8", "biters 0.95": "biters\nevo 0.95",
-             "guns": "6 gun\nturrets", "lasers": "4 laser\nturrets", "flamers": "3 flamers\n+ 2 guns"}
+             "guns": "6 gun\nturrets", "lasers": "4 laser\nturrets", "flamers": "3 flamers\n+ 2 guns",
+             "teslas": "3 tesla\nturrets"}
     n, m = len(order), len(order_fixed)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(0.62 * (n + m) + 4, 0.5 * n + 2.6), dpi=130,
                                    gridspec_kw={"width_ratios": [n, m]})

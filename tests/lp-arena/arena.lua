@@ -14,7 +14,7 @@ local RECOMMAND = 5 * 60         -- idle units are sent at the other side again 
 arena.FORCES = {serenity = "lp-serenity", grubstake = "lp-grubstake", player = "player", biters = "enemy"}
 arena.PLAYER_UNITS = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank"}
 arena.LINES = {guns = "gun turrets (piercing rounds)", lasers = "laser turrets", flamers = "flamethrower turrets",
-  walls = "a wall line"}
+  walls = "a wall line", teslas = "tesla turrets"}
 arena.BITERS = {"small-biter", "medium-biter", "big-biter", "behemoth-biter", "small-spitter", "medium-spitter",
   "big-spitter", "behemoth-spitter"}
 
@@ -133,7 +133,8 @@ local function line(s, kind, n, x, y, out, thick)
     end
     return
   end
-  local name = kind == "guns" and "gun-turret" or kind == "lasers" and "laser-turret" or "flamethrower-turret"
+  local name = kind == "guns" and "gun-turret" or kind == "lasers" and "laser-turret" or kind == "teslas" and "tesla-turret"
+    or "flamethrower-turret"
   for i = 0, n - 1 do
     local p = {x, y + (i - half) * 3}
     local t = s.create_entity{name = name, position = p, force = f, direction = defines.direction.west}
@@ -143,7 +144,7 @@ local function line(s, kind, n, x, y, out, thick)
       table.insert(out, t)
     end
   end
-  if kind == "lasers" then
+  if kind == "lasers" or kind == "teslas" then
     local e = s.create_entity{name = "electric-energy-interface", position = {x + 6, y}, force = f}
     e.power_production = 50e6 / 60
     e.electric_buffer_size = 50e6

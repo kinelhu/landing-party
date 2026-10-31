@@ -92,7 +92,9 @@ local function matchups()
       table.insert(out, {kind = "fixed", squad = a[1], against = string.format("biters %.2f", evo), creep_a = a[3] == "creep",
         a = {{"raw", a[2], n, "lp-serenity"}}, b = {{"biters", "wave", WAVE, evo}}})
     end
-    for _, ln in ipairs({{"guns", 6}, {"lasers", 4}, {"flamers", 3}}) do
+    -- (teslas: Space Age's, its stun what counts against a biter; the counters table had no column for it, and a wave
+    -- killed by teslas tilted no breed; the counters consult, 2026-10-31.)
+    for _, ln in ipairs({{"guns", 6}, {"lasers", 4}, {"flamers", 3}, {"teslas", 3}}) do
       local def = {{"player", ln[1], ln[2]}, {"player", "walls", 14}}
       if ln[1] == "flamers" then table.insert(def, {"player", "guns", 2}) end
       table.insert(out, {kind = "fixed", squad = a[1], against = ln[1], creep_a = a[3] == "creep",

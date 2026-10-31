@@ -1,6 +1,6 @@
 # The arena: who counters whom (generated)
 
-Written by `scripts/arena_report.py` from `docs/arena/results.jsonl` (4536 fights, 3 rounds; `scripts/arena.sh` fights them headless, `tests/lp-arena/batch.lua` says which). Do not edit by hand.
+Written by `scripts/arena_report.py` from `docs/arena/results.jsonl` (4644 fights, 3 rounds; `scripts/arena.sh` fights them headless, `tests/lp-arena/batch.lua` says which). Do not edit by hand.
 
 ![Counter heatmap](arena/counters.png)
 
