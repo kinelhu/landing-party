@@ -57,6 +57,7 @@ local farm = require("__landing-party__.scripts.farm")
 local creep = require("__landing-party__.scripts.creep")
 local cell = require("__landing-party__.scripts.cell")
 local oplog = require("__landing-party__.scripts.oplog")
+local tactics = require("__landing-party__.scripts.tactics")
 script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
 script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
 script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
@@ -545,11 +546,28 @@ remote.add_interface("landing-party", {
       if t.owner == "player" then mine = mine + 1 end
     end
     local f = game.forces[b.force]
-    return {targets = n, player_targets = mine, next_op = b.next_op, tick = game.tick, op = b.op and b.op.kind,
+    return {siege = ops.siege_why(b, army), targets = n, player_targets = mine, next_op = b.next_op, tick = game.tick, op = b.op and b.op.kind,
       enemy = f and f.is_enemy(game.forces.player), ops_off = storage.ops_off, raids_off = storage.raids_off,
       army_off = storage.army_off, choice_off = storage.choice_off, garrison = b.garrison and #b.garrison or 0,
       depot = b.depots and #b.depots or nil, parts = b.parts}
   end,
+  -- Tests and the siege lab: a settlement's parts at `parts` at least (its siege costs SIEGE_COST: what the lab primes,
+  -- as it primes Synthexis's biomass), and what its attempts have done (tactics.lua).
+  debug_corp_parts = function(id, parts)
+    local b = storage.bases[id]
+    if b then b.parts = math.max(b.parts or 0, parts) end
+    return b and b.parts
+  end,
+  -- Tests and the siege lab: a corporation's development level at `level` at least (its siege from 1: the lab's camp sat
+  -- at 0 and never weighed one).
+  debug_corp_level = function(corp, level)
+    storage.corps = storage.corps or {}
+    storage.corps[corp] = storage.corps[corp] or {}
+    storage.corps[corp].level = math.max(storage.corps[corp].level or 0, level)
+    return storage.corps[corp].level
+  end,
+  debug_ladder = function(faction, foe, pos, method) return tactics.ladder(faction, foe, pos, method, nil) end,
+  debug_tactics_record = function(faction, foe, pos, method, e) tactics.record(faction, foe, pos, method, e) end,
   -- Tests and the siege lab: a settlement shown what stands within r of pos, as its radar would (intel.lua, ops.sense_at).
   debug_sense = function(id, pos, r)
     local b = storage.bases[id]

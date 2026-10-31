@@ -7539,9 +7539,14 @@ scenarios.lab = function()
         -- never have sent, stuck the whole trial.)
         L.rec.faction, L.rec.kind = FACTION, params.lab_kind or "auto"
         L.ops_before, L.op_key, L.corp_live = #op_records(), nil, nil
-        -- (Shown the fort, as its radar would: 590 tiles off, unknown to it, it held every trial.)
+        -- (Shown the fort, as its radar would: 590 tiles off, unknown to it, it held every trial. And primed with parts, as
+        -- the culture with biomass, LAB_PARTS: with 10 to 132 it could never afford its siege, 100.)
         for _, b in ipairs(lp("bases_ops") or {}) do
-          if b.corp == FACTION and not b.fallen then lp("debug_sense", b.id, {L.center[1], L.center[2]}, 150) end
+          if b.corp == FACTION and not b.fallen then
+            lp("debug_sense", b.id, {L.center[1], L.center[2]}, 150)
+            lp("debug_corp_parts", b.id, params.lab_parts or 1000)
+            lp("debug_corp_level", FACTION, params.lab_level or 2)
+          end
         end
         if L.rec.kind ~= "auto" then lp("dev", {L.rec.kind}, {L.center[1], L.center[2]}, surface().index) end
         L.step = "corp"
@@ -10385,6 +10390,21 @@ scenarios.farm = function()
       check("farm: a siege no smaller than the least wave", sz ~= nil and sz.k + sz.n + (sz.fodder or 0) >= 24, serpent.line(sz))
       check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
         serpent.line({same = same, reinforced = reinforced}))
+      -- The ladder (tactics.ladder, every attacker's): a method that failed at a place lately is worth less there; one that
+      -- got in is not (Kessler-Hayashi raided a laser wall three times, lost every one, and never weighed its mortar).
+      for _ = 1, 3 do
+        lp("debug_tactics_record", "lp-test-corp", "player", {500, 0}, "raid", {sent = 10, spent = 10, got = 0, inside = false})
+      end
+      lp("debug_tactics_record", "lp-test-corp", "player", {500, 200}, "raid", {sent = 10, spent = 2, got = 3, inside = true})
+      -- (And not one that never got there: raids that died to wild nests on their way to an assembler set its raid aside;
+      -- the clear test, worms.)
+      for _ = 1, 3 do
+        lp("debug_tactics_record", "lp-test-corp", "player", {500, 400}, "raid", {sent = 10, spent = 10, got = 0, inside = false, reached = false})
+      end
+      local l_fail, l_ok = lp("debug_ladder", "lp-test-corp", "player", {500, 0}, "raid"), lp("debug_ladder", "lp-test-corp", "player", {500, 200}, "raid")
+      local l_away = lp("debug_ladder", "lp-test-corp", "player", {500, 400}, "raid")
+      check("tactics: a method that failed at a place lately is worth less there, one that got in or never got there is not",
+        l_fail < 0.3 and l_ok > 0.99 and l_away > 0.99, serpent.line({l_fail, l_ok, l_away}))
       -- (Last of the sizes: its record here would size the others.)
       -- A proven siege's herd copied without its rams (sized apart): one that sent 4 rams and 300 mediums of herd was asked 460 (here: 4 rams and 10 of herd, at this evolution's half a medium a head),
       -- fitted under no 60, and none was laid (the lane, 2026-10-31). Its size here, at a cheap place, proven by it.

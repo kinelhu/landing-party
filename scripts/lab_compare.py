@@ -16,6 +16,9 @@ import statistics
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+import contract  # noqa: E402  (the attacker's contract, read off the same runs)
+
 GUN_KINDS = [("laser", "laser-turret"), ("flame", "flamethrower-turret"), ("gun", "gun-turret"), ("rocket", "rocket-turret"),
              ("tesla", "tesla-turret")]
 
@@ -27,7 +30,31 @@ def load(d):
     run = json.loads(open(d / "lab-run.jsonl").readline())
     m = re.match(r"lab-lab-lane-(.+)-s(\d+)$", d.name) or re.match(r"lab-(.+)-s(\d+)$", d.name)
     variant, seed = (m.group(1), m.group(2)) if m else (d.name, "1")
-    return {"variant": variant, "seed": seed, "trials": trials, "run": run, "replay": replay if replay.exists() else None}
+    for t in trials:
+        t["_path"] = path_after_breach(d, t)
+    return {"variant": variant, "seed": seed, "trials": trials, "run": run, "replay": replay if replay.exists() else None,
+            "contract": contract.check(d)}
+
+
+def path_after_breach(run_dir, t):
+    """Its herd's middle from the breach on (lab-rec frames, every half second): (sideways, forward) in tiles. A wave that
+    walks a maze's corridors goes far sideways; one that breaks straight through goes forward (the user, 2026-10-31: how
+    Synthexis takes a tower-defence maze)."""
+    f = Path(run_dir) / (t.get("rec") or "")
+    if not t.get("rec") or not f.exists():
+        return None
+    mids = []
+    for line in open(f):
+        e = json.loads(line)
+        if e.get("ev") != "frame" or e.get("s") not in ("breach", "inside"):
+            continue
+        pts = [(u[2], u[3]) for u in e.get("u") or [] if len(u) > 5 and u[5] == "herd"]
+        if pts:
+            mids.append((sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)))
+    if len(mids) < 2:
+        return None
+    side = sum(abs(mids[i][1] - mids[i - 1][1]) for i in range(1, len(mids)))
+    return side, abs(mids[-1][0] - mids[0][0])
 
 
 def trial_stats(t):
@@ -40,9 +67,19 @@ def trial_stats(t):
     lost = sum((w.get("lost_worth_by") or {}).values())
     inside = w.get("t_inside") is not None
     held = (w["t_inside"] - w["t_breach"]) / 60 if inside and w.get("t_breach") else None
-    return {"wave": t.get("outcome") == "wave", "inside": inside, "rams": sg.get("k", 0) if sg else 0, "guns": guns,
-            "walls": walls, "lost": lost, "held": held, "size": w.get("size", 0), "breach": w.get("breach"),
-            "dead": w.get("dead_at") or []}
+    # The observer's record where there is one (attempt.lua, oplog.lua): every attacker read alike, a corporation's
+    # trial (no wave) too; its "in" from where its units stood, not from the attacker's own word.
+    a = t.get("attempt") or {}
+    attacked = t.get("outcome") in ("wave", "op")
+    if a:
+        inside, lost = bool(a.get("inside")), a.get("lost", lost)
+        if not w:
+            held = None
+    op = t.get("op") or {}
+    return {"wave": attacked, "inside": inside, "rams": sg.get("k", 0) if sg else 0, "guns": guns,
+            "walls": walls, "lost": lost, "held": held, "size": w.get("size", op.get("size", 0)),
+            "breach": w.get("breach") or op.get("breach"), "dead": w.get("dead_at") or [],
+            "method": a.get("method") or ("siege" if sg else "raid"), "faction": t.get("faction") or "biotech"}
 
 
 def summary(runs):
@@ -54,11 +91,14 @@ def summary(runs):
     guns = sum(s["guns"] for s in waves)
     helds = [s["held"] for s in inside if s["held"] is not None]
     sieges = [s for s in waves if s["rams"] > 0]
+    paths = [t["_path"] for r in runs for t in r["trials"] if t.get("_path")]
     return {"n": n, "waves": len(waves), "held": n - len(waves), "in": len(inside), "in_rate": len(inside) / n if n else 0,
             "rams": statistics.mean(s["rams"] for s in sieges) if sieges else 0, "sieges": len(sieges),
             "guns": guns / len(waves) if waves else 0, "walls": sum(s["walls"] for s in waves) / len(waves) if waves else 0,
             "lost": lost / len(waves) if waves else 0, "exchange": 100 * guns / lost if lost else 0,
-            "wall_s": statistics.median(helds) if helds else None}
+            "wall_s": statistics.median(helds) if helds else None,
+            "side": statistics.mean(p[0] for p in paths) if paths else None,
+            "fwd": statistics.mean(p[1] for p in paths) if paths else None}
 
 
 def front_svg(runs):
@@ -120,13 +160,16 @@ def chips(runs):
             if not s["wave"]:
                 cells.append(f'<span class="chip held" title="trial {t["trial"]}: held, no wave">&ndash;</span>')
             else:
-                label = f'{s["rams"]}' if s["rams"] else "r"
+                label = f'{s["rams"]}' if s["rams"] else ("s" if s["method"] == "siege" else "r")
                 tip = (f'trial {t["trial"]}: {"got in" if s["inside"] else "stopped"}, '
                        f'{s["rams"]} bursters, {s["size"]} units, broke {s["guns"]} guns and {s["walls"]} walls, lost {s["lost"]:.0f}')
                 cells.append(f'<span class="chip {"in" if s["inside"] else "out"}" title="{html.escape(tip)}">{label}</span>')
         watch = (f'<a class="watch" href="replays/{html.escape(r["variant"])}-s{r["seed"]}.html">watch</a>'
                  if r.get("replay") else "")
-        rows.append(f'<div class="chiprow"><span class="seed">seed {r["seed"]}</span>{"".join(cells)}{watch}</div>')
+        verdicts = "".join(f'<span class="ok {"pass" if ok else "fail"}" title="{html.escape(why)}">{name}</span>'
+                           for name, ok, why in r.get("contract") or [])
+        rows.append(f'<div class="chiprow"><span class="seed">seed {r["seed"]}</span>{"".join(cells)}{watch}</div>'
+                    f'<div class="chiprow contract"><span class="seed">contract</span>{verdicts}</div>')
     return "\n".join(rows)
 
 
@@ -143,13 +186,14 @@ def page(groups, src):
     for v in order:
         s = sums[v]
         wall_s = "&ndash;" if s["wall_s"] is None else f'{s["wall_s"]:.0f} s'
+        side = "&ndash;" if s["side"] is None else f'{s["side"]:.0f} / {s["fwd"]:.0f}'
         rows.append(
             f'<tr><th scope="row"><a href="#v-{html.escape(v)}">{html.escape(v)}</a></th>'
             f'<td class="num">{s["in"]}/{s["n"]}</td><td>{bar(s["in_rate"], 1, "b-in")}</td>'
             f'<td class="num">{s["held"]}</td><td class="num">{s["rams"]:.1f}</td>'
             f'<td class="num">{s["guns"]:.1f}</td><td class="num">{s["walls"]:.1f}</td><td class="num">{s["lost"]:.0f}</td>'
             f'<td class="num">{s["exchange"]:.1f}</td><td>{bar(s["exchange"], xmax, "b-x")}</td>'
-            f'<td class="num">{wall_s}</td></tr>')
+            f'<td class="num">{wall_s}</td><td class="num">{side}</td></tr>')
     cards = []
     for v in order:
         s = sums[v]
@@ -244,6 +288,10 @@ tbody th a:hover, tbody th a:focus-visible {{ color: var(--accent); text-decorat
 .chip.in {{ background: var(--in); color: var(--bg); }}
 .chip.out {{ background: transparent; color: var(--out); box-shadow: inset 0 0 0 2px var(--out); }}
 .chip.held {{ color: var(--muted); }}
+.contract {{ gap: 6px; }}
+.ok {{ font: 600 .72rem var(--data); padding: 2px 7px; border-radius: 3px; }}
+.ok.pass {{ color: var(--muted); box-shadow: inset 0 0 0 1px var(--rule); }}
+.ok.fail {{ color: var(--bg); background: var(--g-laser); }}
 .watch {{ margin-left: 8px; font: 600 .8rem var(--data); color: var(--accent); text-decoration: none; padding: 3px 8px;
   border: 1px solid var(--accent); border-radius: 3px; }}
 .watch:hover, .watch:focus-visible {{ background: var(--accent); color: var(--bg); }}
@@ -265,13 +313,14 @@ code {{ font-family: var(--data); font-size: .85em; }}
     <div class="tablewrap"><table>
       <thead><tr><th>variant</th><th class="num">got in</th><th></th><th class="num">held</th><th class="num">bursters</th>
       <th class="num">guns broken</th><th class="num">walls broken</th><th class="num">lost</th>
-      <th class="num">guns / 100 lost</th><th></th><th class="num">wall held</th></tr></thead>
+      <th class="num">guns / 100 lost</th><th></th><th class="num">wall held</th><th class="num">past the breach</th></tr></thead>
       <tbody>{"".join(rows)}</tbody>
     </table></div>
     <p class="lede">Hardest first. <b>Held</b>: trials with no wave. <b>Bursters</b>: the mean a siege brought.
     <b>Guns broken</b>, <b>walls broken</b> and <b>lost</b> (in mediums, a medium biter's health a unit) are means a wave.
     <b>Guns / 100 lost</b>: the exchange, guns broken for every 100 mediums lost. <b>Wall held</b>: the median from the
-    breach to the first unit inside, for waves that got in.</p>
+    breach to the first unit inside, for waves that got in. <b>Past the breach</b>: tiles its herd's middle went sideways,
+    then forward, from the breach on: a wave that walks a maze's corridors goes far sideways.</p>
   </section>
   <section>
     <h2>Variants</h2>
@@ -284,8 +333,10 @@ code {{ font-family: var(--data); font-size: .85em; }}
       <span class="legend">{legend}</span>
     </div>
     <p class="lede">Each map: the front along, the culture beyond the top edge. Below it each trial in order by seed: a filled
-    disc got in, a ring was stopped, the number is the bursters it brought (r: a raid, none). Hover a disc for its numbers;
-    <b>watch</b> opens that run's replay, every wave on a time slider.</p>
+    disc got in, a ring was stopped, the number is the bursters it brought (r: a raid; s: a corporation's siege). Hover a disc for its numbers;
+    <b>watch</b> opens that run's replay, every wave on a time slider. Under each, the attacker's contract
+    (<code>scripts/contract.py</code>): it attacks, it recovers from holds, it changes what it sends after two failures,
+    its own "in" is the observer's, it loses no more than it sent. Hover one for what decided it.</p>
     <div class="variants">{"".join(cards)}</div>
   </section>
   <footer>From <code>{html.escape(src)}</code> by <code>scripts/lab_compare.py</code>.</footer>

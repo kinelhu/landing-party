@@ -850,7 +850,22 @@ local function siege_step(b, trace, army)
     if game.tick - op.phase_at >= (piece and TRUCK_PACK or PACK_TICKS) then return finish(b, op.packing_because, trace, army) end
   end
 end
-return {choose_siege = choose_siege, launch_siege = launch_siege, siege_site = siege_site, siege_step = siege_step, siege_tier = siege_tier}
+-- Tests and the siege lab: why it lays no siege (each of choose_siege's gates, and for its best target a mortar site).
+local function siege_why(b, army)
+  local h = home(b)
+  local why = {parts = b.parts or 0, cost = SIEGE_COST, next_siege = b.next_siege, tick = game.tick,
+    capable = shared.capable(b.corp, "siege", army.level(b)) or b.grudge ~= nil, field = field(b, army), guards = SIEGE_GUARDS,
+    in_flight = ops.player_ops(), quiescent = b.quiescent, camp_hurt = ops.camp_hurt(b), targets = {}}
+  for key, t in pairs(b.intel.targets) do
+    if against_player(t.owner) and #why.targets < 4 then
+      why.targets[#why.targets + 1] = {key = key, defence = t.defence, budget = budget(t.owner), besieged = besieged(t.owner),
+        may = stance.may(b.corp, t.owner, "siege"), marked = t.pos and ops.marked(b, t.pos), site = h and siege_site(b, t) ~= nil}
+    end
+  end
+  return why
+end
+return {choose_siege = choose_siege, launch_siege = launch_siege, siege_site = siege_site, siege_step = siege_step, siege_tier = siege_tier,
+  siege_why = siege_why}
 end
 
 return siege

@@ -19,7 +19,7 @@ digraph ai {
     "costmap" [label="costmap\n353 lines", width=1.19, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n62 lines", width=0.87, fillcolor="#eef2f7"];
-    "tactics" [label="tactics\n168 lines", width=0.99, fillcolor="#eef2f7"];
+    "tactics" [label="tactics\n194 lines", width=1.02, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "know" [label="know\n233 lines", width=1.06, fillcolor="#d9f0d9"];
@@ -58,10 +58,10 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n759 lines", width=1.64, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1812 lines", width=2.81, fillcolor="#f7dede"];
+    "ops" [label="ops\n1870 lines", width=2.88, fillcolor="#f7dede"];
     "routing" [label="routing\n409 lines", width=1.25, fillcolor="#eef2f7"];
     "intel" [label="intel\n250 lines", width=1.08, fillcolor="#eef2f7"];
-    "siege" [label="siege\n856 lines", width=1.75, fillcolor="#d9f0d9"];
+    "siege" [label="siege\n871 lines", width=1.77, fillcolor="#d9f0d9"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
@@ -93,7 +93,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n814 lines", width=1.70, fillcolor="#eef2f7"];
+    "control" [label="control\n832 lines", width=1.72, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n173 lines", width=0.99, fillcolor="#eef2f7"];
@@ -186,6 +186,7 @@ digraph ai {
   "marker" -> "pact";
   "names" -> "rng";
   "ops" -> "answers";
+  "ops" -> "attempt";
   "ops" -> "cuts";
   "ops" -> "ground";
   "ops" -> "intel";
@@ -199,6 +200,7 @@ digraph ai {
   "ops" -> "siege";
   "ops" -> "stance";
   "ops" -> "strip";
+  "ops" -> "tactics";
   "ops" -> "threat";
   "ops" -> "tune";
   "pact" -> "base";

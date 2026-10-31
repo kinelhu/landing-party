@@ -12,6 +12,8 @@ local shared = require("__landing-party__.shared")
 local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
+local attempt = require("__landing-party__.scripts.attempt")
+local tactics = require("__landing-party__.scripts.tactics")
 local ground = require("__landing-party__.scripts.ground")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
@@ -60,6 +62,7 @@ local SIEGE_GUARDS = 6
 local SIEGE_COOL = 15 * 60 * 60
 local DEPLOY_TICKS = 30 * 60
 local PACK_TICKS = 10 * 60
+local REACHED = 30                    -- an operation got to its target: a member came this near it (tactics.record)
 local PLAYER_REACH = 31
 local MORTAR_REACH = 35
 local HOWITZER_REACH, HOWITZER_STAND = 98, 53   -- its reach, and how far from the nest it stands
@@ -812,6 +815,19 @@ local function finish(b, outcome, trace, army)
       end
     end
   end
+  -- Its attempt, in its corporation's memory as Synthexis's are in its own (tactics.lua): what it sent and lost in mediums,
+  -- what it razed, in if it razed anything, the defence it met. Read back by the ladder in its choice (ops.tick).
+  local tpos = t and t.pos or (op.target_pos)
+  if tpos and op.measured then
+    local launched = math.max(1, op.launched or 1)
+    local got = math.max(0, (b.razed or 0) - (op.razed0 or b.razed or 0))
+    tactics.record(b.corp, (t and t.owner) or op.owner or "player", tpos, op.kind, {sent = op.sent_worth or launched,
+      spent = (op.sent_worth or launched) * (launched - alive(op)) / launched, got = got, inside = got > 0, sig = op.sig,
+      -- (Got there: a member within REACHED of its target, a siege that fired, anything razed. Its attack begun was not
+      -- enough: a raid of 2 attacked from its staging and died to the nests on its 7 waypoints, none near.)
+      reached = ((op.closest or math.huge) <= REACHED or (op.shells_fired or 0) > 0 or got > 0) and true or false,
+      rams = op.kind == "siege" and op.tier or nil})
+  end
   b.ops_log = b.ops_log or {}
   -- The owner as at launch (a target destroyed is forgotten, and its raid read as at nobody: nests).
   table.insert(b.ops_log, {op = op.kind, kind = t and t.kind or "gone", owner = t and t.owner or op.owner, outcome = outcome,
@@ -1280,6 +1296,7 @@ local siege_ = require("__landing-party__.scripts.siege").install(ops, {
   sneak_route = sneak_route, stance = stance, threat_bonus = threat_bonus,
   TRUCK_PACK = TRUCK_PACK, truck_down = truck_down, truck_up = truck_up, truck_piece = truck_piece})
 local choose_siege, launch_siege, siege_site, siege_step = siege_.choose_siege, siege_.launch_siege, siege_.siege_site, siege_.siege_step
+function ops.siege_why(b, army) return siege_.siege_why(b, army) end
 local siege_tier = siege_.siege_tier
 
 -- Strip: scripts/strip.lua (split from here, 2026-10-18).
@@ -1291,8 +1308,34 @@ local strip_ = require("__landing-party__.scripts.strip").install(ops, {
   rd = rd, sneak_route = sneak_route, stance = stance})
 local choose_strip, launch_strip, strip_site, strip_step = strip_.choose_strip, strip_.launch_strip, strip_.strip_site, strip_.strip_step
 
+-- What it set out with, measured once as every attacker's is (attempt.lua): its members' worth in mediums, the defence at
+-- its target, what it had razed before (tactics.record at its end).
+local function measure(b, op)
+  op.measured = true
+  local sent = 0
+  for _, m in ipairs(op.members or {}) do if m.valid then sent = sent + attempt.worth(m.name) end end
+  op.sent_worth = sent
+  op.razed0 = op.razed0 or b.razed
+  local t = b.intel.targets[op.target]
+  if t and t.pos then op.sig = attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos) end
+end
+
+-- How near its nearest member has come to its target (op.closest, tiles): whether it got there (tactics.record).
+local function closest(b, op)
+  local t = b.intel.targets[op.target]
+  if not (t and t.pos) then return end
+  for _, m in ipairs(op.members or {}) do
+    if m.valid then
+      local d = math.sqrt((m.position.x - t.pos[1]) ^ 2 + (m.position.y - t.pos[2]) ^ 2)
+      if not op.closest or d < op.closest then op.closest = d end
+    end
+  end
+end
+
 local function step(b, trace, army)
   local op = b.op
+  if not op.measured then measure(b, op) end
+  closest(b, op)
   if op.kind == "siege" then return siege_step(b, trace, army) end
   if op.kind == "strip" then return strip_step(b, trace, army) end
   local t = b.intel.targets[op.target]
@@ -1688,10 +1731,25 @@ function ops.tick(b, tick, trace, army)
     local prefer = mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
     local skey, ssite, ss = choose_siege(b, army)
     local tkey, tsite, ts = choose_strip(b, army)
+    -- Each worth less where it failed lately (tactics.ladder: every attacker's), so the next method up has its turn.
+    local function ladder(k, method)
+      local t = k and b.intel.targets[k]
+      if not (t and t.pos) then return 1 end
+      return tactics.ladder(b.corp, t.owner or "player", t.pos, method,
+        attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
+    end
     local options = {}
-    if key then options[#options + 1] = {"raid", (rs or 0) * (prefer.raid or 1)} end
-    if skey then options[#options + 1] = {"siege", (ss or 0) * (prefer.siege or 0)} end
-    if tkey then options[#options + 1] = {"strip", (ts or 0) * (prefer.strip or 0)} end
+    local lr, ls, lt = ladder(key, "raid"), ladder(skey, "siege"), ladder(tkey, "strip")
+    -- (Set aside where it failed lately, tactics.LADDER_HOLD: it saves for the next method instead.)
+    if lr < tactics.LADDER_HOLD then
+      if key then trace(b, string.format("holds its raid at %s: it failed there lately (ladder %.2f)", key, lr)) end
+      key = nil
+    end
+    if ls < tactics.LADDER_HOLD then skey = nil end
+    if lt < tactics.LADDER_HOLD then tkey = nil end
+    if key then options[#options + 1] = {"raid", (rs or 0) * (prefer.raid or 1) * lr} end
+    if skey then options[#options + 1] = {"siege", (ss or 0) * (prefer.siege or 0) * ls} end
+    if tkey then options[#options + 1] = {"strip", (ts or 0) * (prefer.strip or 0) * lt} end
     table.sort(options, function(x, y) return x[2] > y[2] end)
     if #options > 1 then
       local parts = {}

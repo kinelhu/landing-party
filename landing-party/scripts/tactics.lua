@@ -34,7 +34,8 @@ function tactics.attempt(faction, foe, pos, method, fade)
   return r, math.exp(-(game.tick - r.tick) / (fade or tactics.FADE))
 end
 
--- An attempt made: e = {sent, spent, got, inside, sig, rams, breach, probe}, its last HISTORY kept at its place.
+-- An attempt made: e = {sent, spent, got, inside, sig, rams, breach, probe, reached}, its last HISTORY kept at its place
+-- (reached false: it never got to the place, what met it on the way is not the place's defence).
 function tactics.record(faction, foe, at, method, e)
   local k = know.of(faction)
   k.attempts = k.attempts or {}
@@ -45,7 +46,7 @@ function tactics.record(faction, foe, at, method, e)
   r.tick, r.last = game.tick, {spent = e.spent, got = e.got, inside = e.inside, probe = e.probe}
   r.hist = r.hist or {}
   table.insert(r.hist, {sent = e.sent, spent = e.spent, got = e.got, inside = e.inside, sig = e.sig, tick = game.tick,
-    rams = e.rams or 0, breach = e.breach})
+    rams = e.rams or 0, breach = e.breach, reached = e.reached})
   while #r.hist > tactics.HISTORY do table.remove(r.hist, 1) end
   k.attempts[key] = r
 end
@@ -116,6 +117,31 @@ function tactics.foe_record(faction, foe, method)
   if n == 0 then return nil end
   return got / n, spent / n
 end
+
+-- The ladder (the siege AI design consult, F: escalation as a ladder of methods, not of numbers): a method that failed at
+-- a place lately (not in, nothing got), against a defence no stronger than it met, is worth less there by 1 over 1 + its
+-- failures (faded), so the next method up has its turn. (Kessler-Hayashi raided a laser wall three times with 4, 7 and
+-- 14, lost every one, razed nothing, and never weighed its mortar; the lane, 2026-10-31.)
+function tactics.ladder(faction, foe, pos, method, sig, fade)
+  local r = tactics.attempt(faction, foe, pos, method, fade)
+  if not r then return 1 end
+  local failed = 0
+  for _, a in ipairs(tactics.history(r, sig)) do
+    -- (Only where it got there: Kessler-Hayashi's raids on an assembler died to the wild nests on their way, its
+    -- clearances working through them, and its raid there was set aside as failed; the clear test, worms.)
+    if not a.inside and (a.got or 0) <= 0 and a.reached ~= false then
+      failed = failed + math.exp(-(game.tick - (a.tick or 0)) / (fade or tactics.FADE))
+    end
+  end
+  return 1 / (1 + failed)
+end
+
+-- Below this the method is set aside there for now (about 44 minutes after one fresh failure, 72 after two; at 0.6, 16
+-- minutes, its raids came back before it could save for a siege): with
+-- nothing better on offer it holds and grows, as Synthexis holds when nothing pays, and saves for the next method up.
+-- (Discounted alone, a failing raid that was its only option still went: Kessler-Hayashi's raids took every unit and
+-- every part, and its siege, 6 guards and 100 parts, never came within reach; the lane, 2026-10-31.)
+tactics.LADDER_HOLD = 0.75
 
 -- One option weighed: op = {method, at, gain, lost, sent, dist, specialists}; what its attempts there did in place of
 -- what it reckoned (the one that got most for what it spent, among those with as many specialists or more), less REPEAT
