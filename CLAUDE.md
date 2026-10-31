@@ -21,9 +21,10 @@ at milestones, asked for.
 - **Quick regression: `scripts/regress.sh 12345 --quick`** (44 runs, one or two a layer of the AI graph, about 6
   minutes) while iterating. A scenario whose outcome is settled ends early (`finish_early`, `settle_when` in
   `tests/lp-sim/control.lua`): its final checks run then, and the benchmark's remaining ticks cost almost nothing.
-- **Before a commit: `scripts/regress.sh 12345 --changed`**: the quick set plus every scenario of the areas the
-  uncommitted change touches (biotech, player, perception, growth, ops; a shared module runs everything). About 6 to
-  20 minutes. `--area=biotech,ops` names areas instead; the table is in `regress.sh` (`area_of_scenario`,
+- **At the end of a batch of commits (not before each one; between commits run the scenarios a change touches):
+  `scripts/regress.sh 12345 --changed`**: the quick set plus every scenario of the areas the change touches (biotech,
+  player, perception, growth, ops; a shared module runs everything), less the nightly set (`NIGHTLY` in `regress.sh`, the
+  slowest variants of families another still runs; `LP_NIGHTLY=1` keeps it). About 6 to 35 minutes. `--area=biotech,ops` names areas instead; the table is in `regress.sh` (`area_of_scenario`,
   `areas_of_file`), and a new scenario or module goes in it. A change to the test harness alone selects nothing: name
   its areas. `LP_DRY=1` lists the runs without making them; every regression ends with its time and its slowest runs.
 - **Whole list: `scripts/regress.sh [seed]`** (240 runs, about 37 minutes) at milestones; `--full` adds the long
