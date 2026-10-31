@@ -9651,6 +9651,83 @@ scenarios.farm = function()
       game.forces.player.add_chart_tag(surface(), {position = c, text = "Fortress plot (build within the hazard line)"})
       S.lasers0, S.mines0 = 0, 0
     end
+    -- The siege lab's lane (scripts/siegelab.sh build <seed> lane; the user, 2026-10-31: "an optimized variant with no
+    -- corners ... very limited y axis height, and our base west, enemy base east ... iterate on wall design"): a corridor
+    -- of sand on a ribbon map (the user: "simply use the ribbon map settings"), its edge HALF tiles either side of the axis,
+    -- and one front: a wall from edge to edge, its guns and mines by
+    -- LAB_LANE (key=value, comma-separated): walls (layers, 1), gap (tiles between them, 4), step (a laser every, 6),
+    -- inset (lasers behind the inner wall, 3), mines (out, in, between or none; out), half (the corridor's half-height, 64).
+    -- Twice as many lasers within a laser's reach of each end: at the water a wall point saw half the guns its middle did
+    -- (5 against 8), and three plain waves went in at its end, none of them a siege (the lab, 2026-10-31): a lane whose
+    -- every point faces the same guns.
+    if params.fort == "lane" then
+      local o = {walls = 1, gap = 4, step = 6, inset = 3, mines = "out", half = 64}
+      for k, v in string.gmatch(params.lane or "", "(%w+)=([%w%.]+)") do o[k] = tonumber(v) or v end
+      -- (The map a ribbon HALF either side of y 0, siegelab.sh's map settings: its edge, out of map, collides as water does,
+      -- its cost map's no way and the engine's. The fort's axis along it, its camp east or west.)
+      if uy ~= 0 then error("lab: the lane needs its axis along the ribbon (x); the camp lay north or south") end
+      local HALF, U0, U1 = o.half, -150, 900
+      for d = U0, U1, 32 do surface().request_to_generate_chunks(at(d, 0), 2) end
+      surface().force_generate_chunk_requests()
+      for _, e in ipairs(surface().find_entities_filtered{force = "player", type = {"wall", "gate", "electric-turret", "ammo-turret",
+        "land-mine"}}) do e.destroy() end
+      local function box(u0, v0, u1, v1)
+        local a, b = at(u0, v0), at(u1, v1)
+        return math.floor(math.min(a[1], b[1])), math.floor(math.min(a[2], b[2])), math.floor(math.max(a[1], b[1])), math.floor(math.max(a[2], b[2]))
+      end
+      local function on_map(p) return not surface().get_tile(p[1], p[2]).collides_with("out_of_map") end
+      -- Sand from behind the fort to past the culture's field, nothing standing on it but the fort's own heart.
+      local tiles = {}
+      local x0, y0, x1, y1 = box(U0, -HALF - 2, U1, HALF + 2)
+      for x = x0, x1 do for y = y0, y1 do
+        if on_map({x, y}) then tiles[#tiles + 1] = {name = "sand-1", position = {x, y}} end
+      end end
+      local keep = {}
+      local k0, l0, k1, l1 = box(-36, -36, 36, 36)
+      local function key(e) return e.name .. "@" .. e.position.x .. "," .. e.position.y end
+      for _, e in ipairs(surface().find_entities_filtered{force = "player", area = {{k0, l0}, {k1, l1}}}) do keep[key(e)] = true end
+      for _, e in ipairs(surface().find_entities_filtered{area = {{x0, y0}, {x1 + 1, y1 + 1}}}) do
+        if e.valid and e.type ~= "character" and not (e.force.name == "player" and keep[key(e)]) then e.destroy() end
+      end
+      surface().set_tiles(tiles, true, true, true, false)
+      local function place(name, p)
+        local q = surface().find_non_colliding_position(name, p, 2, 1)
+        return q and put(name, q)
+      end
+      -- Its walls, water to water: the outermost toward the culture.
+      local inner = 40
+      for k = 0, o.walls - 1 do
+        local u = inner + k * o.gap
+        for v = -HALF, HALF do if on_map(at(u, v)) then put("stone-wall", at(u, v)) end end
+      end
+      local outer = inner + (o.walls - 1) * o.gap
+      local REACH = prototypes.entity[L].attack_parameters.range
+      for v = -HALF + o.step / 2, HALF - 1, o.step do
+        place(L, at(inner - o.inset, v))
+        if HALF - math.abs(v) <= REACH then place(L, at(inner - o.inset - 3, v + o.step / 2 * (v < 0 and -1 or 1) / 2)) end
+      end
+      local rows = o.mines == "out" and {outer + 3, outer + 7} or o.mines == "in" and {inner - o.inset - 4}
+        or o.mines == "between" and o.walls > 1 and {inner + o.gap / 2} or {}
+      for _, u in ipairs(rows) do for v = -HALF + 2, HALF - 2, 4 do place("land-mine", at(u, v)) end end
+      for u = 16, 32, 16 do for v = -HALF, HALF, 16 do if math.abs(v) > 32 then place("substation", at(u, v)) end end end
+      S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
+      S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
+      -- No way round: along each wall's line and past its ends, every tile walled or off the map (a tile of it, and a herd
+      -- walks round).
+      local gaps = 0
+      for k = 0, o.walls - 1 do
+        for v = -HALF - 3, HALF + 3 do
+          local p = at(inner + k * o.gap, v)
+          if on_map(p)
+            and surface().count_entities_filtered{position = p, radius = 0.5, type = "wall", force = "player"} == 0 then gaps = gaps + 1 end
+        end
+      end
+      info(string.format("lab: lane %s, %d lasers, %d mines, %d wall pieces, %d gaps past its ends", serpent.line(o), S.lasers0,
+        S.mines0, surface().count_entities_filtered{type = "wall", force = "player"}, gaps))
+      -- (A build writes no results: a gap stops it, or a lane a herd walks round is saved for trials.)
+      if gaps > 0 then error(string.format("lab: the lane's walls leave %d gaps past their ends", gaps)) end
+      game.forces.player.add_chart_tag(surface(), {position = at(outer, -HALF), text = "Lane front (LAB_LANE: " .. (params.lane or "default") .. ")"})
+    end
     -- What any player's base has, and what draws a wave (its smell, farm.target_from): machines that pollute.
     for _, d in ipairs({{-20, -20}, {-20, 20}, {20, -20}, {20, 20}}) do
       local q = surface().find_non_colliding_position("assembling-machine-2", at(d[1], d[2]), 8, 1)

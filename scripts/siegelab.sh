@@ -4,7 +4,7 @@
 # rebuilt between trials and what it learned kept; the save it ends with carries the learning, for the next edit.
 #   scripts/siegelab.sh play <save.zip>            open a copy in the game window (its own profile, this checkout's mod) to
 #                                                  build on; plot: an empty plot to build a fortress on (build ... plot)
-#   scripts/siegelab.sh build [seed] [square|star|plot|fed] grow the lab (the siege test's fortress, a star fort, an empty plot, or the square powered from outside; a culture of 8 or more
+#   scripts/siegelab.sh build [seed] [square|star|plot|fed|lane] grow the lab (the siege test's fortress, a star fort, an empty plot, the square powered from outside, or a lane: a corridor closed by water, one wall from water to water, LAB_LANE="walls=2,gap=4,step=6,inset=3,mines=out|in|between|none", saved as lab-lane[-LAB_TAG].zip; a culture of 8 or more
 #                                                  incubators at full evolution): factorio-lp-lab/lab.zip
 #   scripts/siegelab.sh run <save.zip> [trials]    trials against a COPY of the save (never the original); report and
 #                                                  lab-out.zip (the learning kept) in docs/sim/lab-<save>/
@@ -15,7 +15,7 @@
 # Both run as a headless server at speed (a benchmark cannot save), in their own profile.
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
-CMD="${1:?usage: scripts/siegelab.sh build [seed] [square|star|plot] | run <save.zip> [trials] | play <save.zip>}"
+CMD="${1:?usage: scripts/siegelab.sh build [seed] [square|star|plot|fed|lane] | run <save.zip> [trials] | play <save.zip>}"
 LAB="$HOME/Library/Application Support/factorio-lp-lab"
 mkdir -p "$LAB"
 
@@ -45,6 +45,11 @@ serve() {  # $1 profile, $2 save, $3 file whose appearance ends it, $4 seconds a
   trap "kill $pid 2>/dev/null || true" EXIT
   for _ in $(seq 1 "$MAX"); do
     [ -f "$DONE" ] && break
+    # (A scenario error is a FAIL line, not a stopped server: a lane with gaps waited out the whole limit.)
+    if grep -qs '^FAIL' "$(dirname "$DONE")/results.txt"; then
+      kill $pid 2>/dev/null || true; trap - EXIT
+      echo "LAB FAILED:"; grep -h '^FAIL' "$(dirname "$DONE")/results.txt" | head -5; exit 1
+    fi
     kill -0 $pid 2>/dev/null || { echo "LAB FAILED: the server stopped"; grep -hA8 Error "$P/server.out" | head -20; exit 1; }
     sleep 1
   done
@@ -57,16 +62,24 @@ serve() {  # $1 profile, $2 save, $3 file whose appearance ends it, $4 seconds a
 case "$CMD" in
 build)
   SEED="${2:-12345}"; FORT="${3:-square}"
-  P="$LAB/build-$FORT"
+  P="$LAB/build-$FORT${LAB_TAG:+-$LAB_TAG}"
   profile "$P"
-  printf 'return {scenario = "farm", minutes = 120, every = 120, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "build", fort = "%s"}\n' "$FORT" > "$P/mods/lp-sim/params.lua"
+  printf 'return {scenario = "farm", minutes = 120, every = 120, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "build", fort = "%s", lane = "%s"}\n' "$FORT" "${LAB_LANE:-}" > "$P/mods/lp-sim/params.lua"
   out="$P/script-output/landing-party"
   rm -rf "$out" "$P/saves/"*.zip
+  # A lane: a ribbon map (the base game's ribbon world: a band of its height), HALF either side of the axis.
+  GEN="$REPO/scripts/map-gen.json"
+  if [ "$FORT" = "lane" ]; then
+    HALF="$(printf '%s' "${LAB_LANE:-}" | sed -n 's/.*half=\([0-9]*\).*/\1/p')"
+    GEN="$P/map-gen.json"
+    python3 -I -c 'import json,sys; s=json.load(open(sys.argv[1])); s["height"]=2*int(sys.argv[2]); json.dump(s, open(sys.argv[3],"w"))' \
+      "$REPO/scripts/map-gen.json" "${HALF:-64}" "$GEN"
+  fi
   "$FACTORIO" --config "$P/config/config.ini" --create "$P/saves/start.zip" --map-gen-seed "$SEED" \
-    --map-gen-settings "$REPO/scripts/map-gen.json" > "$P/create.out" 2>&1 || {
+    --map-gen-settings "$GEN" > "$P/create.out" 2>&1 || {
     echo "LAB FAILED: map creation"; grep -A6 Error "$P/create.out" | head -12; exit 1; }
   serve "$P" "$P/saves/start.zip" "$out/lab-saved.txt" 1800
-  OUTSAVE="$LAB/lab.zip"; [ "$FORT" != "square" ] && OUTSAVE="$LAB/lab-$FORT.zip"
+  OUTSAVE="$LAB/lab.zip"; [ "$FORT" != "square" ] && OUTSAVE="$LAB/lab-$FORT${LAB_TAG:+-$LAB_TAG}.zip"
   cp "$P/saves/lab.zip" "$OUTSAVE"
   echo "lab built ($(cat "$out/lab-saved.txt")): $OUTSAVE"
   grep -h "lab: " "$out/results.txt" 2>/dev/null || true
@@ -124,5 +137,5 @@ play)
   cd "$L"
   exec "$FACTORIO" --config "$P/config/config.ini" --load-game "$EDIT"
   ;;
-*) echo "usage: scripts/siegelab.sh build [seed] [square|star|plot] | run <save.zip> [trials] | play <save.zip>"; exit 1;;
+*) echo "usage: scripts/siegelab.sh build [seed] [square|star|plot|fed|lane] | run <save.zip> [trials] | play <save.zip>"; exit 1;;
 esac
