@@ -9,7 +9,7 @@ digraph layers {
   "Settlement" [label="Settlement\n16 modules, 6084 lines\nlayout 1721", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n13 modules, 5270 lines\nops 1930", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n5 modules, 1229 lines", fillcolor="#eef2f7"];
-  "The biotech" [label="The biotech\n4 modules, 6774 lines\nherd 3549, farm 2266", fillcolor="#f7dede"];
+  "The biotech" [label="The biotech\n5 modules, 6801 lines\nherd 3339, farm 2266", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="2", penwidth=1.5];
@@ -32,9 +32,9 @@ digraph layers {
   "Settlement" -> "Corporation" [label="4", penwidth=2.0];
   "Settlement" -> "Seams (leaves)" [label="6", penwidth=2.5];
   "The biotech" -> "Corporation" [label="2", penwidth=1.5];
-  "The biotech" -> "Knowledge and strategy (per faction)" [label="2", penwidth=1.5];
-  "The biotech" -> "Perception and attempts (any attacker)" [label="12", penwidth=4.0];
-  "The biotech" -> "Seams (leaves)" [label="6", penwidth=2.5];
+  "The biotech" -> "Knowledge and strategy (per faction)" [label="3", penwidth=1.8];
+  "The biotech" -> "Perception and attempts (any attacker)" [label="15", penwidth=4.8];
+  "The biotech" -> "Seams (leaves)" [label="7", penwidth=2.8];
   "The map" -> "Corporation" [label="1", penwidth=1.2];
   "The map" -> "Seams (leaves)" [label="2", penwidth=1.5];
   "Army and operations" -> "Corporation" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="2 plug-in"];

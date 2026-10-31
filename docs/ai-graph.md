@@ -16,7 +16,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 3549 | attempt, costmap, feeds, firemap, ground, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `herd` | 3339 | attempt, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
 | `farm` | 2266 | cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
 | `ops` | 1930 | answers, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tactics, threat, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1721 | blocks, rng, site, wfc | base, control, faction |  |  |  |  |
@@ -45,8 +45,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `intel` | 256 | know, threat | ops |  |  |  |  |
-| `tactics` | 247 | know, rng | control, farm, herd, ops, siege |  |  |  |  |
-| `know` | 235 | (leaf) | army, control, farm, herd, intel, ops, rd, strategy, tactics |  | 3600 |  | know |
+| `tactics` | 247 | know, rng | control, farm, herd, herd_learn, ops, siege |  |  |  |  |
+| `herd_learn` | 237 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
+| `know` | 235 | (leaf) | army, control, farm, herd, herd_learn, intel, ops, rd, strategy, tactics |  | 3600 |  | know |
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
 | `strip` | 229 | (leaf) | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
@@ -54,10 +55,10 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `dev` | 196 | army, base, faction, farm, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `oplog` | 180 | attempt, valuemap | control |  |  |  | oplog |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
-| `firemap` | 170 | threat | control, costmap, farm, herd, valuemap |  |  |  |  |
+| `firemap` | 170 | threat | control, costmap, farm, herd, herd_learn, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 162 | modules | base, control, faction, layout |  |  |  |  |
-| `threat` | 156 | unit_prior | attempt, control, costmap, faction, farm, feeds, firemap, herd, intel, jumper, ops, power, routing, siege |  |  |  |  |
+| `threat` | 156 | unit_prior | attempt, control, costmap, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, power, routing, siege |  |  |  |  |
 | `road` | 144 | base, standing | control |  | 60 |  |  |
 | `pool` | 142 | (leaf) | army, control, cuts, ops, prospect, tap, war |  |  |  |  |
 | `watch` | 141 | (leaf) | control |  |  |  | watch |
@@ -79,7 +80,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `map` | 71 | chart, names, standing | control |  | 600 |  |  |
 | `strike` | 67 | (leaf) | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `pods` | 64 | (leaf) | cell, control, faction, farm, war |  | 60 |  | pods |
-| `attempt` | 62 | threat | herd, oplog, ops, siege |  |  |  |  |
+| `attempt` | 62 | threat | herd, herd_learn, oplog, ops, siege |  |  |  |  |
 | `marker` | 61 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
 | `bait` | 59 | (leaf) | control |  | 30 |  | baits, baits_called |
 | `rng` | 56 | (leaf) | army, base, farm, layout, names, tactics, war |  |  |  |  |

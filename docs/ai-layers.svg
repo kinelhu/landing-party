@@ -219,29 +219,29 @@
 <title>The biotech</title>
 <path fill="#f7dede" stroke="black" d="M408.12,-538.75C408.12,-538.75 311.88,-538.75 311.88,-538.75 305.88,-538.75 299.88,-532.75 299.88,-526.75 299.88,-526.75 299.88,-506.75 299.88,-506.75 299.88,-500.75 305.88,-494.75 311.88,-494.75 311.88,-494.75 408.12,-494.75 408.12,-494.75 414.12,-494.75 420.12,-500.75 420.12,-506.75 420.12,-506.75 420.12,-526.75 420.12,-526.75 420.12,-532.75 414.12,-538.75 408.12,-538.75"/>
 <text xml:space="preserve" text-anchor="middle" x="360" y="-524.3" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="360" y="-512.3" font-family="Helvetica,sans-Serif" font-size="11.00">4 modules, 6774 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="360" y="-500.3" font-family="Helvetica,sans-Serif" font-size="11.00">herd 3549, farm 2266</text>
+<text xml:space="preserve" text-anchor="middle" x="360" y="-512.3" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 6801 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="360" y="-500.3" font-family="Helvetica,sans-Serif" font-size="11.00">herd 3339, farm 2266</text>
 </g>
 <!-- The biotech&#45;&gt;Seams (leaves) -->
 <g id="edge23" class="edge">
 <title>The biotech&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.5" d="M299.74,-511.81C197.26,-503.44 0,-479.36 0,-418 0,-418 0,-418 0,-112.75 0,-75.71 99.81,-47.58 171.23,-32.19"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.5" points="171.88,-35.63 180.95,-30.15 170.44,-28.78 171.88,-35.63"/>
-<text xml:space="preserve" text-anchor="middle" x="2.62" y="-261.7" font-family="Helvetica,sans-Serif" font-size="9.00">6</text>
+<path fill="none" stroke="#8899aa" stroke-width="2.8" d="M299.74,-511.81C197.26,-503.44 0,-479.36 0,-418 0,-418 0,-418 0,-112.75 0,-75.79 99.39,-47.7 170.78,-32.29"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.8" points="171.43,-35.73 180.5,-30.25 170,-28.88 171.43,-35.73"/>
+<text xml:space="preserve" text-anchor="middle" x="2.62" y="-261.7" font-family="Helvetica,sans-Serif" font-size="9.00">7</text>
 </g>
 <!-- The biotech&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge22" class="edge">
 <title>The biotech&#45;&gt;Perception and attempts (any attacker)</title>
-<path fill="none" stroke="#8899aa" stroke-width="4" d="M395.77,-494.3C420.71,-479.34 454.11,-459.31 480.42,-443.53"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="4" points="481.87,-446.75 488.64,-438.6 478.27,-440.74 481.87,-446.75"/>
-<text xml:space="preserve" text-anchor="middle" x="456.51" y="-461.2" font-family="Helvetica,sans-Serif" font-size="9.00">12</text>
+<path fill="none" stroke="#8899aa" stroke-width="4.8" d="M395.77,-494.3C420.6,-479.41 453.8,-459.5 480.06,-443.75"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="4.8" points="482.11,-447.42 488.52,-438.68 477.79,-440.22 482.11,-447.42"/>
+<text xml:space="preserve" text-anchor="middle" x="456.51" y="-461.2" font-family="Helvetica,sans-Serif" font-size="9.00">15</text>
 </g>
 <!-- The biotech&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge21" class="edge">
 <title>The biotech&#45;&gt;Knowledge and strategy (per faction)</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M420.25,-498.51C426.22,-497.11 432.21,-495.82 438,-494.75 519.39,-479.68 1179,-500.77 1179,-418 1179,-418 1179,-418 1179,-112.75 1179,-79.67 1150.33,-56.53 1121.02,-41.51"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="1122.82,-38.5 1112.29,-37.33 1119.79,-44.81 1122.82,-38.5"/>
-<text xml:space="preserve" text-anchor="middle" x="1181.62" y="-261.7" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.8" d="M420.25,-498.51C426.22,-497.11 432.21,-495.82 438,-494.75 519.39,-479.68 1179,-500.77 1179,-418 1179,-418 1179,-418 1179,-112.75 1179,-79.81 1150.58,-56.73 1121.4,-41.71"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.8" points="1123.22,-38.7 1112.69,-37.53 1120.19,-45.01 1123.22,-38.7"/>
+<text xml:space="preserve" text-anchor="middle" x="1181.62" y="-261.7" font-family="Helvetica,sans-Serif" font-size="9.00">3</text>
 </g>
 <!-- The biotech&#45;&gt;Corporation -->
 <g id="edge20" class="edge">
