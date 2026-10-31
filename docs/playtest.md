@@ -1,4 +1,11 @@
-# Playtest kit (2026-10-19)
+# Playtest kit (2026-10-19; Synthexis and Kessler-Hayashi brought up to date 2026-10-31)
+
+> Since the 29th, all headless (the siege lab, its lane matrices): Synthexis chooses each attack from a menu (a raid, a
+> siege with big bursters as rams and a screen, a probe, a cut of a power or fluid feed, a strike behind a cut), sweeps
+> mines with sweepers (ochre big biters whose death blast clears mines within 7 tiles), sends twice the rams where the last
+> ones all went off and its wave still stood at a wall, sets aside an attack that failed at a place lately, and sends larger
+> waves as its colony grows (60 up to 8 incubators, up to 200). Kessler-Hayashi learns what each turret costs it, keeps a
+> record of its operations, and when desperate holds and saves for a siege instead of throwing raids it will lose.
 
 > Renamed 2026-10-21: Serenity Perimeter Group is shown as **Kessler-Hayashi**, Grubstake Mineral Recovery as **Grubstake Inc.** (internal ids unchanged).
 
@@ -30,9 +37,12 @@ below are what matters most, the numbered list after them is the full reference.
 
 ### The ten
 1. **Synthexis's waves** (47, 51, 55): a scout, then a herd walking its trail to a face of your base it picked. Does it
-   come where you are weak? After a wave you stopped, does the next one try elsewhere? Can you read it coming?
-2. **Bursters at a wall** (52, 53): glowing biters held back, sent in when the wall is reached. Do they read, and do they
-   matter?
+   come where you are weak? After a wave you stopped, does the next one try elsewhere or come back differently (more
+   rams, a siege, a cut)? Can you read why it chose what it did? Does a big colony's wave of 150 feel earned, or unfair?
+2. **Rams and sweepers at a wall** (52, 53): ochre sweepers go ahead and blow your mines; a screen goes at the wall; big
+   bursters follow and blow it; the herd waits out of reach, then rushes the gap. Do the steps read? Do mines between two
+   walls still feel worth building? Does an exposed power line feel like the weak point it is (it is Synthexis's answer to
+   tesla turrets)?
 3. **It lives on your smoke** (57): it eats your pollution where its creep and incubators meet it. Cut a polluting line:
    does it slow?
 4. **The carrier** (56): a violet, lit biter with an escort crossing the map to found a second culture. Worth chasing?
@@ -41,7 +51,7 @@ below are what matters most, the numbered list after them is the full reference.
    second depot: are its raids the dangerous ones?
 6. **Grubstake by night** (2, 3, 5): trucks skimming your belts, raids that take machines apart. Fair? Readable?
 7. **Kessler-Hayashi's line** (13, 14): at war from landing, its perimeter growing toward you. Does the pressure feel
-   right?
+   right? Against a fort: does it hold, save and come back with a heavier siege (more mortars), and does that read?
 8. **Railgunners** (54): they clear nests; do they still shred Synthexis's waves?
 9. **Readability without chat** (26): could you tell who did what, and why, from the world alone?
 10. **Anything that feels wrong** (27): units stuck, friendly fire, a theft or a raid that seems unfair, a slow game.
