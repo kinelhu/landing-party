@@ -16,7 +16,7 @@ digraph ai {
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
     "valuemap" [label="valuemap\n205 lines", width=1.03, fillcolor="#eef2f7"];
-    "costmap" [label="costmap\n353 lines", width=1.19, fillcolor="#eef2f7"];
+    "costmap" [label="costmap\n407 lines", width=1.25, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n62 lines", width=0.87, fillcolor="#eef2f7"];
     "tactics" [label="tactics\n240 lines", width=1.07, fillcolor="#eef2f7"];

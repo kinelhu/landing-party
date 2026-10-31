@@ -48,27 +48,55 @@ local function xy(p) return p.x or p[1], p.y or p[2] end
 -- The price of a cell: its walk, its fire, its walls (read once each, as the search reaches it).
 local ground   -- below: whether a cell holds the foe's buildings
 
+-- Whether a cell or one round it holds anything of a kind (map.bins, read once over the box): a cell where none does needs
+-- no query of its own for it, the same answer for a fraction of the calls (a weighing of the user's fort read every cell
+-- of 16 tiles with six or seven queries, 92 ms of its 235 in one tick; 2026-10-31).
+local function near(map, kind, i, j)
+  local b = map.bins and map.bins[kind]
+  if not b then return true end
+  local hh = map.h + 2
+  for di = -1, 1 do
+    for dj = -1, 1 do
+      if b[(i + di + 1) * hh + (j + dj + 1)] then return true end
+    end
+  end
+  return false
+end
+
+local cell_cost_
 local function cell_cost(map, i, j)
   local k = i * map.h + j
   local c = map.cell_cost[k]
   if c then return c end
+  -- (Timed apart when its farm's weighing is: storage.biotech_time_parts.)
+  if map.prof then
+    map.prof.restart()
+    c = cell_cost_(map, i, j, k)
+    map.prof.stop()
+    map.cells_read = (map.cells_read or 0) + 1
+    return c
+  end
+  return cell_cost_(map, i, j, k)
+end
+cell_cost_ = function(map, i, j, k)
+  local c
   local size = map.size
   local cx, cy = map.x0 + (i + 0.5) * size, map.y0 + (j + 0.5) * size
   local s = map.surface
   -- No way: ground its herds found none through (opts.blocked), or water at its middle or over WATER_SHARE of it (water at
   -- its middle only, a lake's strait read as open, and a herd sent across it was taken round the lake by the pathfinder;
   -- 2026-10-27).
-  if map.blocked[k] or s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0
+  if map.blocked[k] or (not map.dry and (s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0
     or s.count_tiles_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
-      collision_mask = "water_tile"} > costmap.WATER_SHARE * size * size then
+      collision_mask = "water_tile"} > costmap.WATER_SHARE * size * size)) then
     c = costmap.WATER
-  elseif s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}}, type = "tree"}
+  elseif near(map, "tree", i, j) and s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}}, type = "tree"}
     >= costmap.FOREST * size * size then
     c = costmap.WATER
   -- A cliff line across it (CLIFFS or more cliff pieces): no way, as the engine's pathfinder has none. (Blind to them, its
   -- plans ran straight across a cliff south-east of the user's fort; every herd was walked round the cliff's end by the
   -- engine, past the fort's mined corner, and lost 23 to 27 to the mines on its march; the siege lab, 2026-10-30.)
-  elseif s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}}, type = "cliff"}
+  elseif near(map, "cliff", i, j) and s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}}, type = "cliff"}
     >= costmap.CLIFFS then
     c = costmap.WATER
   else
@@ -81,15 +109,17 @@ local function cell_cost(map, i, j)
       -- (And map.margin more, a herd's spread: its middle kept out of reach, a wave of 91 strung 30 tiles round a base walked
       -- its edges through the mines and lasers by the wall; 2026-10-28.)
       local margin = map.margin
+      if map.prof_fire then map.prof_fire.restart() end
       for _, t in ipairs(firemap.entries_box(map.fire, {cx, cy}, size / 2 + margin)) do
         fire = fire + t.p * size / (2 * (t.r + margin) + size)
       end
+      if map.prof_fire then map.prof_fire.stop() end
     end
     fire = fire * map.scale
-    local walls = s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
+    local walls = near(map, "wall", i, j) and s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
       type = WALLS, force = map.wall_forces or map.forces, limit = 1} > 0
-    local mines = s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
-      type = "land-mine", force = map.forces}
+    local mines = near(map, "mine", i, j) and s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
+      type = "land-mine", force = map.forces} or 0
     c = size * costmap.WALK + fire + costmap.DEATH * (map.deaths[k] or 0) + costmap.MINE * mines
     -- (What of it is standing at the wall to break it, kept apart: a siege whose rams blow the wall while its herd waits out
     -- of reach does not pay it, farm.lua siege_size.)
@@ -111,8 +141,8 @@ ground = function(map, i, j)
   if v == nil then
     local size = map.size
     local cx, cy = map.x0 + (i + 0.5) * size, map.y0 + (j + 0.5) * size
-    v = map.surface.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
-      force = map.forces, type = GROUND, limit = 1} > 0
+    v = near(map, "ground", i, j) and map.surface.count_entities_filtered{area = {{cx - size / 2, cy - size / 2},
+      {cx + size / 2, cy + size / 2}}, force = map.forces, type = GROUND, limit = 1} > 0
     map.ground[k] = v
   end
   return v
@@ -151,6 +181,29 @@ function costmap.read(surface, center, radius, forces, opts)
     -- (Walls of these, not its target's alone: a corporation's camp walls on its way it walks into, and stuck on them under
     -- their flamers its herd lost 66 and left half behind; 2026-10-28.)
     wall_forces = opts.wall_forces}
+  if storage.biotech_time_parts then map.prof, map.prof_fire = helpers.create_profiler(true), helpers.create_profiler(true) end
+  -- What stands in the box, by kind, binned by cell once (near): trees, cliffs, walls, mines, the foe's ground; and
+  -- whether it holds any water at all (none: no cell asks).
+  do
+    local area = {{map.x0 - size, map.y0 - size}, {map.x0 + (w + 1) * size, map.y0 + (w + 1) * size}}
+    local hh = w + 2
+    local function bin(list)
+      local b = {}
+      for _, e in ipairs(list) do
+        local i, j = math.floor((e.position.x - map.x0) / size), math.floor((e.position.y - map.y0) / size)
+        b[(i + 1) * hh + (j + 1)] = true
+      end
+      return b
+    end
+    map.bins = {
+      tree = bin(surface.find_entities_filtered{area = area, type = "tree"}),
+      cliff = bin(surface.find_entities_filtered{area = area, type = "cliff"}),
+      wall = bin(surface.find_entities_filtered{area = area, type = WALLS, force = map.wall_forces or forces}),
+      mine = bin(surface.find_entities_filtered{area = area, type = "land-mine", force = forces}),
+      ground = bin(surface.find_entities_filtered{area = area, type = GROUND, force = forces}),
+    }
+    map.dry = surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = 1} == 0
+  end
   for _, b in ipairs(opts.blocked or {}) do
     local i, j = math.floor((b[1] - map.x0) / size), math.floor((b[2] - map.y0) / size)
     if i >= 0 and j >= 0 and i < w and j < w then map.blocked[i * map.h + j] = true end
@@ -261,6 +314,7 @@ function costmap.read(surface, center, radius, forces, opts)
       end
     end
   end
+  if map.prof then helpers.write_file("landing-party/timing.txt", {"", string.format("    its %d cells' costs: ", map.cells_read or 0), map.prof, ", their fire: ", map.prof_fire, "\n"}, true); map.prof, map.prof_fire = nil, nil end
   return map
 end
 

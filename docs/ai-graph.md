@@ -31,13 +31,13 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `skim` | 420 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 409 | threat | ops |  |  |  | corridors |
 | `war` | 409 | army, base, ops, pods, pool, rd, rng, stance, strategy, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
+| `costmap` | 407 | firemap, threat | control, creep, farm, herd |  |  |  |  |
 | `cell` | 402 | pods | control, farm |  |  |  | cell_sites, cells |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 383 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
-| `costmap` | 353 | firemap, threat | control, creep, farm, herd |  |  |  |  |
 | `prospect` | 352 | base, chart, ops, pool, standing | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `planner` | 327 | rd | base |  |  |  |  |
