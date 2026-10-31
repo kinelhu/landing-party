@@ -86,12 +86,14 @@ build)
   ;;
 run)
   SAVE="${2:?usage: scripts/siegelab.sh run <save.zip> [trials]}"; TRIALS="${3:-3}"
-  NAME="$(basename "$SAVE" .zip)"
+  # (LAB_SEED: its farm's random source reseeded at the start, for replicates of one save: a lane is the same map
+  # whatever its build seed, and its farm seeds by the tick it first chose. LAB_RUN_TAG: the run's own name.)
+  NAME="$(basename "$SAVE" .zip)${LAB_RUN_TAG:+-$LAB_RUN_TAG}"
   P="$LAB/run-$NAME"
   profile "$P"
   RUN="$(date +%s)"
-  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s, lab_rebuild_after = %s, lab_time = %s}\n' \
-    "$RUN" "$TRIALS" "${LAB_BIOMASS:-20000}" "${LAB_HOLD:-15}" "${LAB_REBUILD_AFTER:-0}" "${LAB_TIME:-false}" > "$P/mods/lp-sim/params.lua"
+  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s, lab_rebuild_after = %s, lab_time = %s, lab_seed = %s}\n' \
+    "$RUN" "$TRIALS" "${LAB_BIOMASS:-20000}" "${LAB_HOLD:-15}" "${LAB_REBUILD_AFTER:-0}" "${LAB_TIME:-false}" "${LAB_SEED:-nil}" > "$P/mods/lp-sim/params.lua"
   out="$P/script-output/landing-party"
   rm -rf "$out" "$P/saves/"*.zip
   cp "$SAVE" "$P/saves/in.zip"

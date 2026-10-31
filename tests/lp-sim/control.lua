@@ -7369,7 +7369,7 @@ end
 -- its waves held (herd_off) for the next edit. State in storage, by run: a save that held the test mod before is primed again.
 scenarios.lab = function()
   local TURRET = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true}
-  local AMMO = {["gun-turret"] = "piercing-rounds-magazine"}
+  local AMMO = {["gun-turret"] = "piercing-rounds-magazine", ["rocket-turret"] = "rocket"}
   local FRAME, MAX_TRIAL = 30, 45 * 3600
   local function out(file, t) helpers.write_file("landing-party/" .. file, helpers.table_to_json(t) .. "\n", true) end
   local function farm() return (lp("farm_state").farms or {})[1] end
@@ -7389,6 +7389,7 @@ scenarios.lab = function()
       if e.type ~= "character" and e.health then
         local d = {name = e.name, pos = {e.position.x, e.position.y}, dir = e.direction, max = e.max_health, type = e.type}
         if e.type == "electric-energy-interface" then d.power = {e.power_production, e.electric_buffer_size} end
+        if e.type == "infinity-pipe" then d.filter = e.get_infinity_pipe_filter() end
         L.snap[#L.snap + 1] = d
         L.ents[#L.ents + 1] = e
         L.hp[#L.snap] = e.health
@@ -7408,6 +7409,8 @@ scenarios.lab = function()
     local context = {}
     local f, pens = farm(), {}
     -- (LAB_TIME: one weighing timed at its coarse grain and at its waves', landing-party/timing.txt.)
+    -- (LAB_SEED: its farm's choices drawn anew, for replicates of one save.)
+    if params.lab_seed and f then lp("debug_reseed", f.id, params.lab_seed); L.seed = params.lab_seed end
     if params.lab_time and f then
       for _, cell in ipairs({48, 32, 16}) do lp("lab_time_ways", f.id, cell) end
     end
@@ -7452,6 +7455,7 @@ scenarios.lab = function()
         L.ents[i] = e
         if e then rebuilt[d.name] = (rebuilt[d.name] or 0) + 1 end
         if e and d.power then e.power_production, e.electric_buffer_size = d.power[1], d.power[2] end
+        if e and d.filter then e.set_infinity_pipe_filter(d.filter) end
       end
       if e and e.valid then
         if e.max_health and e.max_health > 0 then e.health = e.max_health end
@@ -9656,13 +9660,14 @@ scenarios.farm = function()
     -- of sand on a ribbon map (the user: "simply use the ribbon map settings"), its edge HALF tiles either side of the axis,
     -- and one front: a wall from edge to edge, its guns and mines by
     -- LAB_LANE (key=value, comma-separated): walls (layers, 1), gap (tiles between them, 4), step (a laser every, 6),
-    -- inset (lasers behind the inner wall, 3), mines (out, in, between or none; out), half (the corridor's half-height, 64).
+    -- inset (guns behind the inner wall, 3), mines (out, in, between or none; out), half (the corridor's half-height, 64),
+    -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), shape (line, saw, bastion; line), amp (8), period (32).
     -- Twice as many lasers within a laser's reach of each end: at the water a wall point saw half the guns its middle did
     -- (5 against 8), and three plain waves went in at its end, none of them a siege (the lab, 2026-10-31): a lane whose
     -- every point faces the same guns.
     if params.fort == "lane" then
-      local o = {walls = 1, gap = 4, step = 6, inset = 3, mines = "out", half = 64}
-      for k, v in string.gmatch(params.lane or "", "(%w+)=([%w%.]+)") do o[k] = tonumber(v) or v end
+      local o = {walls = 1, gap = 4, step = 6, inset = 3, mines = "out", half = 64, guns = "laser", shape = "line", amp = 8, period = 32}
+      for k, v in string.gmatch(params.lane or "", "(%w+)=([%w%.%+]+)") do o[k] = tonumber(v) or v end
       -- (The map a ribbon HALF either side of y 0, siegelab.sh's map settings: its edge, out of map, collides as water does,
       -- its cost map's no way and the engine's. The fort's axis along it, its camp east or west.)
       if uy ~= 0 then error("lab: the lane needs its axis along the ribbon (x); the camp lay north or south") end
@@ -9694,21 +9699,66 @@ scenarios.farm = function()
         local q = surface().find_non_colliding_position(name, p, 2, 1)
         return q and put(name, q)
       end
-      -- Its walls, water to water: the outermost toward the culture.
-      local inner = 40
+      -- Its walls' shape (the user, 2026-10-31: "incorporate various turret types and wall shapes"), how far each row of the
+      -- front stands out toward the culture: line; saw, teeth `amp` deep every `period`; bastion, a point `amp` out over half
+      -- of every `period`, straight between.
+      local function bulge(v)
+        if o.shape == "saw" then
+          local t = ((v + HALF) % o.period) / o.period
+          return o.amp * (1 - math.abs(2 * t - 1))
+        elseif o.shape == "bastion" then
+          local t = ((v + HALF) % o.period) / o.period
+          return t >= 0.25 and t <= 0.75 and o.amp * (1 - math.abs(4 * t - 2)) or 0
+        end
+        return 0
+      end
+      local inner = 40   -- its inner wall, at a straight row (its outer walls `gap` on toward the culture)
+      local function wall_u(k, v) return math.floor(inner + k * o.gap + bulge(v) + 0.5) end
+      -- Edge to edge, each row joined to the last along the row (no two pieces only corner to corner: a herd slips between).
       for k = 0, o.walls - 1 do
-        local u = inner + k * o.gap
-        for v = -HALF, HALF do if on_map(at(u, v)) then put("stone-wall", at(u, v)) end end
+        local last
+        for v = -HALF, HALF do
+          local u = wall_u(k, v)
+          for w = math.min(u, last or u), math.max(u, last or u) do
+            if on_map(at(w, v)) then put("stone-wall", at(w, v)) end
+          end
+          last = u
+        end
       end
       local outer = inner + (o.walls - 1) * o.gap
+      -- Its guns along the inner wall, `inset` behind it, by turns of LAB_LANE guns (laser, gun, flame, rocket, tesla, joined
+      -- by +); twice as many within a laser's reach of each end. Flamethrowers fed by a pipe behind them, infinity pipes on it.
+      local GUN = {laser = L, gun = G, flame = "flamethrower-turret", rocket = "rocket-turret", tesla = "tesla-turret"}
+      local kinds = {}
+      for g in string.gmatch(o.guns, "[^+]+") do kinds[#kinds + 1] = GUN[g] or error("lab: no gun " .. g) end
+      local facing = ux > 0 and defines.direction.east or defines.direction.west
       local REACH = prototypes.entity[L].attack_parameters.range
+      local n = 0
+      local function gun(name, u, v)
+        local q = surface().find_non_colliding_position(name, at(u, v), 3, 1)
+        local e = q and surface().create_entity{name = name, position = q, force = "player", direction = facing}
+        if not e then return end
+        if name == G then e.insert{name = "piercing-rounds-magazine", count = 200} end
+        if name == "rocket-turret" then e.insert{name = "rocket", count = 100} end
+        -- (Its feed an infinity pipe at one of its two inlets, beside its rear row (fire.lua: {-0.5, 1} facing west when it
+        -- faces north): oil kept through every rebuild, lab snapshot. Behind it, every one stood dry.)
+        if name == "flamethrower-turret" then
+          local pp = {e.position.x - ux * 1, e.position.y - ux * 1.5}
+          local pipe = surface().create_entity{name = "infinity-pipe", position = pp, force = "player"}
+          if pipe then pipe.set_infinity_pipe_filter{name = "light-oil", percentage = 1, mode = "at-least"} end
+          S.lane_flames = (S.lane_flames or 0) + 1
+        end
+      end
       for v = -HALF + o.step / 2, HALF - 1, o.step do
-        place(L, at(inner - o.inset, v))
-        if HALF - math.abs(v) <= REACH then place(L, at(inner - o.inset - 3, v + o.step / 2 * (v < 0 and -1 or 1) / 2)) end
+        n = n + 1
+        local name = kinds[(n - 1) % #kinds + 1]
+        local u = inner + bulge(v) - o.inset - (name == "flamethrower-turret" and 1 or 0)
+        gun(name, u, v)
+        if HALF - math.abs(v) <= REACH then gun(L, u - 3, v + o.step / 4 * (v < 0 and -1 or 1)) end
       end
       local rows = o.mines == "out" and {outer + 3, outer + 7} or o.mines == "in" and {inner - o.inset - 4}
         or o.mines == "between" and o.walls > 1 and {inner + o.gap / 2} or {}
-      for _, u in ipairs(rows) do for v = -HALF + 2, HALF - 2, 4 do place("land-mine", at(u, v)) end end
+      for _, u in ipairs(rows) do for v = -HALF + 2, HALF - 2, 4 do place("land-mine", at(u + bulge(v), v)) end end
       for u = 16, 32, 16 do for v = -HALF, HALF, 16 do if math.abs(v) > 32 then place("substation", at(u, v)) end end end
       S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
       S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
@@ -9717,13 +9767,23 @@ scenarios.farm = function()
       local gaps = 0
       for k = 0, o.walls - 1 do
         for v = -HALF - 3, HALF + 3 do
-          local p = at(inner + k * o.gap, v)
+          local p = at(wall_u(k, v), v)
           if on_map(p)
             and surface().count_entities_filtered{position = p, radius = 0.5, type = "wall", force = "player"} == 0 then gaps = gaps + 1 end
         end
       end
       info(string.format("lab: lane %s, %d lasers, %d mines, %d wall pieces, %d gaps past its ends", serpent.line(o), S.lasers0,
         S.mines0, surface().count_entities_filtered{type = "wall", force = "player"}, gaps))
+      -- Its flamethrowers fed (a pipe at the wrong tile, and they stand dry).
+      if (S.lane_flames or 0) > 0 then
+        schedule(game.tick + 120, function()
+          local dry = 0
+          for _, f in ipairs(surface().find_entities_filtered{name = "flamethrower-turret", force = "player"}) do
+            if f.get_fluid_count() <= 0 then dry = dry + 1 end
+          end
+          if dry > 0 then error(string.format("lab: %d of the lane's %d flamethrowers dry", dry, S.lane_flames)) end
+        end)
+      end
       -- (A build writes no results: a gap stops it, or a lane a herd walks round is saved for trials.)
       if gaps > 0 then error(string.format("lab: the lane's walls leave %d gaps past their ends", gaps)) end
       game.forces.player.add_chart_tag(surface(), {position = at(outer, -HALF), text = "Lane front (LAB_LANE: " .. (params.lane or "default") .. ")"})

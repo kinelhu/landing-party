@@ -537,6 +537,7 @@ remote.add_interface("landing-party", {
   lab_time_ways = function(id, cell) return farm.debug_time_ways(id, cell) end,
   debug_siege_size = function(id, pl, floor) return farm.debug_siege_size(id, pl, floor) end,
   debug_chance = function(id, killers) return farm.debug_chance(id, killers) end,
+  debug_reseed = function(id, seed) return farm.debug_reseed(id, seed) end,
   lab_waves = function() return herd.lab_waves() end,
   -- Tests only: the size herd.best_size draws from an attempt's history (its sieges sized by what razed most per biomass).
   debug_best_size = function(hist, least, sig) return herd.best_size({hist = hist}, least, sig) end,

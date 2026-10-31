@@ -2094,6 +2094,13 @@ function farm.debug_chance(id, killers)
 end
 
 -- Tests only: the siege a farm would size against a plan (siege_size): its big bursters, herd and screen, or nil.
+-- Tests only: its random source reseeded (the siege lab's replicates of one save, LAB_SEED).
+function farm.debug_reseed(id, seed)
+  local f = st().list[id]
+  if f then f.rng = rng.new(seed) end
+  return f ~= nil
+end
+
 function farm.debug_siege_size(id, pl, floor)
   local f = st().list[id]
   if not f then return nil end
