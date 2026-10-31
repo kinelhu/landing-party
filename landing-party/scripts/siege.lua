@@ -67,7 +67,9 @@ local truck_down, truck_up, truck_piece = K.truck_down, K.truck_up, K.truck_piec
 local SITE_MARGIN = 1
 local function out_of_reach(s, p, foes)
   for _, e in ipairs(s.find_entities_filtered{position = p, radius = threat.far() + SITE_MARGIN + 3, type = TURRETS, force = foes}) do
-    local r = threat.reach(e) + SITE_MARGIN
+    -- (And never nearer than PLAYER_REACH: its hauler's way in kept that room; at a laser's own 27 its hauler was killed
+    -- on its last leg, every fortress siege intercepted; the regression, 2026-10-31.)
+    local r = math.max(threat.reach(e) + SITE_MARGIN, PLAYER_REACH)
     if (e.position.x - p[1]) ^ 2 + (e.position.y - p[2]) ^ 2 <= r * r then return false end
   end
   return true
