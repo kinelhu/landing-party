@@ -561,6 +561,8 @@ remote.add_interface("landing-party", {
   -- Tests and the siege lab: a corporation's war chest filled to `parts` at least (its reliefs paid from it, war.lua: the
   -- lab's chest was empty, and a desperate corporation could never find its force).
   debug_war_chest = function(corp, parts) return war.debug_chest(corp, parts) end,
+  -- Tests only: the settlement a unit (or a mortar) is credited to (storage.unit_owner), by unit number.
+  debug_unit_owner = function(unit_number) return storage.unit_owner and storage.unit_owner[unit_number] end,
   debug_desperate_ok = function(id, n, d) local b = storage.bases[id]; return b and ops.desperate_ok(b, n, d) end,
   debug_raid_want = function(id, pos, defence)
     local b = storage.bases[id]

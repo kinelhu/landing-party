@@ -855,8 +855,8 @@ local function finish(b, outcome, trace, army)
     launched = op.launched, started = op.started,
     back = alive(op), shells = op.shells_fired, site = op.site, cut = op.cut})
   if #b.ops_log > 10 then table.remove(b.ops_log, 1) end
-  trace(b, string.format("%s %s: %d of %d came back (target %s)", op.kind, outcome, alive(op), op.launched,
-    t and t.kind or "gone"))
+  trace(b, string.format("%s %s: %d of %d came back (target %s; razed %d, %d to %d)", op.kind, outcome, alive(op), op.launched,
+    t and t.kind or "gone", (b.razed or 0) - (op.razed0 or b.razed or 0), op.razed0 or -1, b.razed or -1))
   b.op = nil
 end
 

@@ -61,7 +61,7 @@ digraph ai {
     "ops" [label="ops\n1929 lines", width=2.94, fillcolor="#f7dede"];
     "routing" [label="routing\n409 lines", width=1.25, fillcolor="#eef2f7"];
     "intel" [label="intel\n256 lines", width=1.08, fillcolor="#eef2f7"];
-    "siege" [label="siege\n885 lines", width=1.78, fillcolor="#eef2f7"];
+    "siege" [label="siege\n896 lines", width=1.80, fillcolor="#eef2f7"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
@@ -93,10 +93,10 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n864 lines", width=1.76, fillcolor="#eef2f7"];
+    "control" [label="control\n866 lines", width=1.76, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
-    "oplog" [label="oplog\n173 lines", width=0.99, fillcolor="#eef2f7"];
+    "oplog" [label="oplog\n180 lines", width=1.00, fillcolor="#eef2f7"];
   }
   "army" -> "know";
   "army" -> "ops";

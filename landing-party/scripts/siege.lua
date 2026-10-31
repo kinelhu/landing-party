@@ -568,6 +568,10 @@ local function siege_step(b, trace, army)
           if shells > 0 then m.insert{name = "lp-mortar-shell", count = shells} end
           if not carry then op.loaded = op.loaded + shells end
           table.insert(op.mortars, m)
+          -- (Credited to its settlement as its units are, storage.unit_owner: what its shells break is its razing. Not, a
+          -- tier-1 siege's mortar killed 3 lasers of the lane and its record read nothing razed; the lane, 2026-10-31.)
+          storage.unit_owner = storage.unit_owner or {}
+          if m.unit_number then storage.unit_owner[m.unit_number] = b.id end
         end
       end
       op.mortar = op.mortars[1]
@@ -810,7 +814,14 @@ local function siege_step(b, trace, army)
       -- up and leaving home").
       local over = op.last_target and ((in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE)
         or (left == 0 and not op.convoy))
-      local want = over and t and not op.clearance and needed(defence(b, t))
+      -- (Sized as its raids are, ops.raid_want: what got in near there, else its formula on the prices its losses taught it,
+      -- on its target read again after the barrage, the guns its shells broke gone from it. By the formula on its first
+      -- reading, a siege whose mortar had broken 3 lasers asked an assault of 207 and went home.)
+      if over and t and t.pos and not op.clearance and not op.reread then
+        op.reread = true
+        ops.sense_at(b, {x = t.pos[1], y = t.pos[2]}, 40)
+      end
+      local want = over and t and not op.clearance and ops.raid_want(b, t)
       -- Its reserve too: the barrage paid for and won, the camp commits (with the pool counting the guards out against
       -- the cap, a tier-1 siege's guards and spare came to 21 of the 22 needed, and it went home, bombard).
       local home_n = (function() local f, r = field(b, army) return f + r end)()

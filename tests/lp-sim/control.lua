@@ -1646,6 +1646,13 @@ scenarios.siegetier = function()
       if (params.mix == "2" or params.mix == "convoy") and S.put then S.put() end
       local o = lp("stats", storage.id).ops
       S.max_mortars = math.max(S.max_mortars or 0, o.mortars or 0)
+      -- (Each mortar up, whom it is credited to: storage.unit_owner.)
+      for _, m in ipairs(surface().find_entities_filtered{type = "artillery-turret", force = "lp-" .. lp("stats", storage.id).corp}) do
+        local own = lp("debug_unit_owner", m.unit_number)
+        S.mortar_owner = S.mortar_owner or {}
+        S.mortar_owner[m.unit_number] = own
+        if own then S.mortar_owned = (S.mortar_owned ~= false) and true else S.mortar_owned = false end
+      end
       S.max_fired = math.max(S.max_fired or 0, o.shells_fired or 0)
       S.max_loaded = math.max(S.max_loaded or 0, o.loaded or 0)
       if o.siege_tier then S.tier = o.siege_tier end
@@ -1682,6 +1689,10 @@ scenarios.siegetier = function()
     if params.mix == "2" or params.mix == "" then
       check("siegetier: two mortars", S.max_mortars == 2, tostring(S.max_mortars))
       check("siegetier: more than one mortar's shells fired", (S.max_fired or 0) > 40, tostring(S.max_fired))
+      -- What its shells broke is its razing (a tier-1 siege's mortar killed 3 lasers of the lane and its record read
+      -- nothing razed: its mortars no unit of its, their kills credited to no one; the lane, 2026-10-31). (Its razed count
+      -- alone proved nothing here: its guards break turrets too.)
+      check("siegetier: its mortars credited to it, their kills its razing", S.mortar_owned == true, serpent.line(S.mortar_owner))
     elseif params.mix == "3" then
       check("siegetier: three mortars", S.max_mortars == 3, tostring(S.max_mortars))
       check("siegetier: the assault went in", (o.assaults or 0) > 0, tostring(o.assaults))

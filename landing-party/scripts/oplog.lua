@@ -34,9 +34,16 @@ local function minute() return math.floor(game.tick / 360) / 10 end
 local function corp_view(id, b)
   local op = b.op
   local t = b.intel and b.intel.targets and b.intel.targets[op.target]
+  -- (Its mortars among its members: what their shells break is its own, attempt.lua.)
+  local members = op.members or {}
+  if op.mortars and #op.mortars > 0 then
+    members = {}
+    for _, m in ipairs(op.members or {}) do members[#members + 1] = m end
+    for _, m in ipairs(op.mortars) do members[#members + 1] = m end
+  end
   return {key = "b" .. id .. ":" .. op.started, faction = b.corp, force = b.force, kind = op.kind, camp = xy(b.origin),
     target = t and xy(t.pos) or nil, target_kind = t and t.kind or nil, owner = t and t.owner or op.owner,
-    staging = xy(op.staging or op.site), route = points(op.route or b.op_route), members = op.members or {},
+    staging = xy(op.staging or op.site), route = points(op.route or b.op_route), members = members,
     start = op.started}
 end
 
