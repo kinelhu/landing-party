@@ -301,7 +301,11 @@ local function learn_price(w)
     w.opens_learned = {sample = broke / w.big_sent, now = k.opens[foe]}
     k.reach = k.reach or {}
     local r0 = k.reach[foe] or 1
-    k.reach[foe] = math.max(herd.OPENS_MIN, r0 + ((w.big_set_off or 0) / w.big_sent - r0) * know.PRICE_LEARN)
+    local r = math.max(herd.OPENS_MIN, r0 + ((w.big_set_off or 0) / w.big_sent - r0) * know.PRICE_LEARN)
+    -- None reached the wall: twice as many rams next time (by its share alone, 1 ram then 2 then 3, each killed short in
+    -- five seconds by the square lab fort's lasers, and its record of those sieges kept it from a third; 2026-10-31).
+    if (w.big_set_off or 0) == 0 then r = math.max(herd.OPENS_MIN, math.min(r, 1 / (2 * w.big_sent))) end
+    k.reach[foe] = r
   end
   if not w.breach then return end
   local f = foes(w)[1]
@@ -439,7 +443,7 @@ local function record_attempt(w)
   for _, v in pairs(w.lost_worth_by or {}) do spent = spent + v end
   -- (A cut got what it razed, as any wave: credited with the price of the guns it parted, its record was in other units
   -- than its raids'.)
-  local got, sent = w.razed_worth or 0, w.worth or 0
+  local got, sent = w.razed_worth or 0, (w.worth or 0) + (w.big_sent or 0) * herd.worth("lp-bred-big-burster")
   local cutters = w.wait_cut and st().cutters and st().cutters[w.wait_cut.wave]
   if cutters then
     spent, got, sent = spent + cutters.spent, got + cutters.got, sent + cutters.sent
@@ -451,7 +455,8 @@ local function record_attempt(w)
   -- (Its last HISTORY there, each what it sent, spent and razed: the size that razed most for what it spent is the one it
   -- sends again, farm.lua siege_size.)
   r.hist = r.hist or {}
-  table.insert(r.hist, {sent = sent, spent = spent, got = got, inside = w.t_inside ~= nil, sig = w.sig, tick = game.tick})
+  table.insert(r.hist, {sent = sent, spent = spent, got = got, inside = w.t_inside ~= nil, sig = w.sig, tick = game.tick,
+    rams = w.big_sent or 0})
   while #r.hist > HISTORY do table.remove(r.hist, 1) end
   k.attempts[key] = r
 end
@@ -1387,6 +1392,7 @@ function herd.plan(surface, from, target, forces, n)
   local standing = math.min(costmap.wall_along(cm, target), way.cost)
   return {path = pts, upto = upto, start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y},
     cost = way.cost, cover = #cover, openable = openable, target = {target.x, target.y}, mines = #mines, walled = walled,
+    sappers = #herd.sapper_spots(mines),
     standing = standing, cover_price = cover_price}
 end
 
@@ -1867,6 +1873,26 @@ local BIG_AHEAD = 120
 -- They in turn hold till its sweep is done, on ground it has cleared: sent with it, they crossed the mines first, and 11
 -- broke 23 mines, 52 wall pieces and 5 lasers (the siege test, 2026-10-28).
 -- (guns: the turrets to go at, given: a camp it turns on, every gun of it; else those ahead of it, below.)
+-- A ram's order at its gun: the wall piece on its way there first (where it sets off, detonate: WALL_TOUCH), then the gun.
+-- (Sent at the gun alone, behind the square lab fort's wall 3 tiles in, its path failed and it stood 9 tiles out under the
+-- lasers till it died, 30 rams of 30 short, where at the user's fort, its guns 6 to 16 tiles in, they reached the wall;
+-- 2026-10-31.)
+-- At its breach, where its sweep cleared the mines (sweep): sent at the wall nearest its own gun, its rams crossed the
+-- mines the sweep had left there, stood stunned 9 tiles out and were lasered (the user, 2026-10-31: "they get stunned by
+-- the mines ... our mine sweep is not working"). Of the wall at its breach (RAM_LANE), the piece nearest its gun.
+local RAM_WALL, RAM_LANE = 12, 6
+local function ram_order(u, t, lane)
+  local best, bd
+  local near = lane and u.surface.find_entities_filtered{position = lane, radius = RAM_LANE, type = WALLS, force = t.force} or {}
+  if #near == 0 then near = u.surface.find_entities_filtered{position = t.position, radius = RAM_WALL, type = WALLS, force = t.force} end
+  for _, wl in ipairs(near) do
+    local d = lane and math.sqrt(d2(wl.position, t.position)) or math.sqrt(d2(u.position, wl.position)) + math.sqrt(d2(wl.position, t.position))
+    if not bd or d < bd then best, bd = wl, d end
+  end
+  local at_gun = {type = defines.command.attack, target = t, distraction = defines.distraction.none}
+  if not best then return at_gun end
+  return compound({{type = defines.command.attack, target = best, distraction = defines.distraction.none}, at_gun})
+end
 local function send_big_bursters(w, s, forces, m, c, now, given)
   local big = {}
   for _, u in ipairs(w.members) do
@@ -1900,7 +1926,7 @@ local function send_big_bursters(w, s, forces, m, c, now, given)
     if not near then
       k = k + 1
       hit[#hit + 1] = t.position
-      local hit = {type = defines.command.attack, target = t, distraction = defines.distraction.none}
+      local hit = ram_order(big[k], t, w.breach_wall)
       w.big_targets = w.big_targets or {}
       table.insert(w.big_targets, {unit = big[k], target = t})
       w.big_busy = w.big_busy or {}
@@ -1947,22 +1973,35 @@ local function mines_along(s, forces, pts, reach)
   return out
 end
 herd.mines_along = mines_along
+-- Where its sappers set off: a mine, and every mine within its blast of it covered, the next one not, along the way in.
+local SAPPER_REACH = 0.85 * shared.SAPPER.r
+function herd.sapper_spots(mines)
+  local spots = {}
+  for _, m in ipairs(mines) do
+    local q, covered = m.position, false
+    for _, s in ipairs(spots) do if d2(s, q) <= SAPPER_REACH * SAPPER_REACH then covered = true; break end end
+    if not covered then spots[#spots + 1] = {x = q.x, y = q.y} end
+  end
+  return spots
+end
 
 -- Its sweep: a runt at each of its foe's mines on the last of its way and through the breach (w.sweep of them, paid by its
 -- farm from its plan, herd.plan: mines), nearest first; each walks on to its mine and sets it off.
 local function sweep(w, s, from, to, inside)
   local n = w.sweep or 0
   if n <= 0 then return 0 end
-  local mines = mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP)
+  local spots = herd.sapper_spots(mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP))
   local made = 0
-  for i = 1, math.min(n, #mines) do
-    local q = s.find_non_colliding_position("lp-runt", {from.x, from.y}, 12, 0.5)
-    local u = q and s.create_entity{name = "lp-runt", position = q, force = B.force}
+  for i = 1, math.min(n, #spots) do
+    local q = s.find_non_colliding_position("lp-sweeper", {from.x, from.y}, 12, 0.5)
+    local u = q and s.create_entity{name = "lp-sweeper", position = q, force = B.force}
     if u then
       made = made + 1
-      u.commandable.set_command(go(mines[i].position, defines.distraction.none, 0.5))
+      u.commandable.set_command(go(spots[i], defines.distraction.none, 1))
       w.sweepers = w.sweepers or {}
       table.insert(w.sweepers, u)
+      w.sapper_at = w.sapper_at or {}
+      w.sapper_at[u.unit_number] = spots[i]
     end
   end
   w.swept = made
@@ -2041,11 +2080,13 @@ local function breach(w)
     rest[#rest + 1] = {x = pl.target[1], y = pl.target[2]}
     local h = w.breach_at or rest[1]
     w.breach, w.inside, w.walled, w.silenced = h, after or rest[#rest], 0, 0
+    -- (Its rams' way to the wall, swept with its own: ram_order, released once its sweep is done.)
+    w.breach_wall = h
     w.punch, w.committed = true, true
     local cmds = {}
     for _, q in ipairs(rest) do cmds[#cmds + 1] = go(q, defines.distraction.none, 6) end
     local swept = sweep(w, s, m, h, w.inside)
-    if swept > 0 then log(w, string.format("%d runts sweep the way in ahead of it, one at each mine", swept)) end
+    if swept > 0 then log(w, string.format("%d sweepers sweep the way in ahead of it, one at each cluster of mines", swept)) end
     if led > 0 or swept > 0 then
       w.held_cmds = cmds
       w.group.set_command{type = defines.command.stop, distraction = defines.distraction.none}
@@ -2105,11 +2146,12 @@ local function breach(w)
   w.breach = h
   w.walled = hit and (#cmds - silenced) or 0
   w.silenced = silenced
+  w.breach_wall = hit or h
   hold_bursters(w, hit)
   w.inside = {x = h.x + ux * depth, y = h.y + uy * depth}
   table.insert(cmds, go(w.inside, defines.distraction.none, 4))
   local swept = sweep(w, s, m, h, w.inside)
-  if swept > 0 then log(w, string.format("%d runts sweep the way in ahead of it, one at each mine", swept)) end
+  if swept > 0 then log(w, string.format("%d sweepers sweep the way in ahead of it, one at each cluster of mines", swept)) end
   -- Its sweep and its bursters ahead of it: it holds, fighting nothing, till they are spent (sequence); then in. (By
   -- by_enemy, its string's end in reach of the lasers drew the herd after them into the mines its sweep had only begun on,
   -- 49 lost in five seconds; the siege test, 2026-10-28.)
@@ -2143,7 +2185,7 @@ local function sequence(w)
       if not u.valid then spent = spent + 1
       elseif u.commandable and u.commandable.has_command then return end
     end
-    log(w, string.format("its sweep is done (%d of %d runts spent)", spent, #w.sweepers))
+    log(w, string.format("its sweep is done (%d of %d sweepers spent)", spent, #w.sweepers))
     w.sweepers = nil
   end
   -- Its herd goes at the wall first, and its big bursters behind it once RELEASE_N of it are within RELEASE_R of where it
@@ -2227,7 +2269,7 @@ local function sequence(w)
       if b.held then
         b.held = nil
         if b.unit.valid and b.target and b.target.valid then
-          b.unit.commandable.set_command{type = defines.command.attack, target = b.target, distraction = defines.distraction.none}
+          b.unit.commandable.set_command(ram_order(b.unit, b.target, w.breach_wall))
           n = n + 1
         end
       end
@@ -2781,8 +2823,17 @@ local function cut_wait(w)
     return withdraw(w, "its cut failed")
   end
 end
+-- Its sappers set off at their spots (sweep), or stopped short (a mine's stun, a wall), there.
+local SAPPER_AT = 2.5
+local function sappers(w)
+  for _, u in ipairs(w.sweepers or {}) do
+    local at = u.valid and w.sapper_at and w.sapper_at[u.unit_number]
+    if at and (d2(u.position, at) <= SAPPER_AT * SAPPER_AT or not (u.commandable and u.commandable.has_command)) then u.die() end
+  end
+end
 local function step(w, tick)
   detonate(w)
+  if w.sweepers then sappers(w) end
   if w.cut_hold and w.stage == "march" then return cut_wait(w) end
   -- (And its rams held behind its herd until it is at the wall, whatever stage the herd has gone on to: looked at in the
   -- breach alone, they were never let go once the herd went in; the siege lab, 2026-10-30.)
@@ -3315,7 +3366,9 @@ function herd.on_died(e)
           w.lost_by[key] = (w.lost_by[key] or 0) + 1
           -- (And in mediums, what its prices are learned in: herd.strength.)
           w.lost_worth_by = w.lost_worth_by or {}
-          w.lost_worth_by[key] = (w.lost_worth_by[key] or 0) + herd.strength({ent.name})
+          -- (Its rams at their worth as any unit's: by herd.strength, which leaves them out of a herd's strength, sixteen big
+          -- bursters killed at the square lab fort's wall cost it nothing, its lasers read cheap; 2026-10-31.)
+          w.lost_worth_by[key] = (w.lost_worth_by[key] or 0) + herd.worth(ent.name)
           -- Where (its record: scripts/wavemap.py), at most DEAD_AT.
           w.dead_at = w.dead_at or {}
           if #w.dead_at < DEAD_AT then w.dead_at[#w.dead_at + 1] = {math.floor(ent.position.x), math.floor(ent.position.y), w.stage} end
@@ -3328,7 +3381,7 @@ function herd.on_died(e)
             local key = w.stage .. " " .. c.name
             local mk = w.march_killers[key] or {name = c.name, force = c.force.name, n = 0, worth = 0, x = 0, y = 0}
             mk.n, mk.x, mk.y = mk.n + 1, mk.x + c.position.x, mk.y + c.position.y
-            mk.worth = mk.worth + herd.strength({ent.name})
+            mk.worth = mk.worth + herd.worth(ent.name)
             mk.ids = mk.ids or {}
             mk.ids[c.unit_number or 0] = true
             w.march_killers[key] = mk
@@ -3358,7 +3411,7 @@ function herd.on_died(e)
     for _, w in pairs(h.waves) do
       if w.stage ~= "scout" then
         w.kills[ent.name] = (w.kills[ent.name] or 0) + 1
-        w.razed_worth = (w.razed_worth or 0) + valuemap.worth_of(ent)
+        w.razed_worth = (w.razed_worth or 0) + valuemap.razed_of(ent)
         local m = w.stay_m
         if m and not m.done then
           m.all = (m.all or 0) + (ent.max_health or 0)

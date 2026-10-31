@@ -10081,6 +10081,11 @@ scenarios.farm = function()
       local full = lp("debug_learn_weighted", "player", "lp-test-full", 20, 10, 1)
       check("farm: a probe moves a price less than a full wave", math.abs(small - 11.6) < 0.01 and math.abs(full - 14) < 0.01,
         serpent.line({small = small, full = full}))
+      -- What a siege razed counts the guns and walls it broke at their cost to build: three that broke 14-22 walls and
+      -- guns each read as razing 0, and the farm held forever behind them (the star fort, the siege lab, 2026-10-31).
+      local razed = lp("debug_razed", {{name = "laser-turret", type = "electric-turret"}, {name = "gun-turret", type = "ammo-turret"},
+        {name = "stone-wall", type = "wall"}, {name = "assembling-machine-2", type = "assembling-machine"}})
+      check("farm: the guns and walls a wave broke count as razed", math.abs(razed - 5.1) < 1e-6, tostring(razed))
       check("farm: a siege no smaller than the least wave", sz ~= nil and sz.k + sz.n + (sz.fodder or 0) >= 24, serpent.line(sz))
       check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
         serpent.line({same = same, reinforced = reinforced}))
@@ -10195,9 +10200,22 @@ scenarios.farm = function()
         end
       end
       local opens = (lp("lab_prices").opens or {})["player"]
-      check("farm: siege, its bursters' yield learned below its first reckoning", first ~= nil and opens ~= nil and opens < 0.9,
-        serpent.line({opens = opens, sent = first and first.big_sent, set_off = first and first.big_set_off,
+      -- (Since its rams go at the wall on its swept lane, the wall no longer holds: one ram broke 3 lasers and 11 wall pieces,
+      -- its yield rose past its reckoning and "below" failed; what is checked is that it learned from what they did, the
+      -- siege lab, 2026-10-31.)
+      local o = first and first.opens
+      check("farm: siege, its bursters' yield learned from its first siege", o ~= nil and opens ~= nil
+        and math.abs(o.now - o.sample) < math.abs(0.9 - o.sample), serpent.line({opens = opens, learned = o, sent = first and first.big_sent, set_off = first and first.big_set_off,
           broke = first and first.bursters and first.bursters.broke, lasers = string.format("%d -> %d", S.lasers0 or 0, lasers)}))
+      -- Its big bursters spent count in what it lost, at their health in mediums as any unit's: by herd.strength, which
+      -- leaves them out of a herd's strength, sixteen killed at the square lab fort's wall cost nothing and its lasers read
+      -- cheap (the siege lab, 2026-10-31).
+      local lost, big = 0, prototypes.entity["lp-bred-big-burster"].get_max_health()
+        / prototypes.entity["lp-bred-medium-biter"].get_max_health()
+      for key, v in pairs(first and first.lost_worth_by or {}) do if key:sub(-5) == " none" then lost = lost + v end end
+      check("farm: siege, its big bursters spent counted in what it lost", first ~= nil and (first.big_set_off or 0) > 0
+        and lost >= first.big_set_off * big - 1e-6, string.format("lost %.1f to no killer, %d set off at %.1f each", lost,
+        first and first.big_set_off or 0, big))
       local same = 0
       for k = 2, #sieges do
         local l = sieges[k]
@@ -10212,13 +10230,17 @@ scenarios.farm = function()
         if l.breach and l.mark then staged = math.sqrt((l.mark[1] - l.breach[1]) ^ 2 + (l.mark[2] - l.breach[2]) ^ 2); break end
       end
       check("farm: siege, its wave staged near where it broke in", staged ~= nil and staged <= 200, tostring(staged))
-      -- Its sweep ahead of it: its wave lost few to the mines (set off by the wave itself, 13 went and it lost 36 to them).
+      -- Its sweep ahead of it: its wave lost few to the mines on its way in (set off by the wave itself, 13 went and it lost
+      -- 36 to them). Those inside, where its biters each go for their own target, are past what it swept (11 of them with
+      -- every mine on its way in cleared; the siege lab, 2026-10-31).
       local mines = surface().count_entities_filtered{name = "land-mine", force = "player"}
       local to_mines
       for _, l in ipairs(lp("herd_state").log or {}) do
         if l.breach then
           to_mines = 0
-          for key, n in pairs(l.lost_by or {}) do if key:find("land%-mine") then to_mines = to_mines + n end end
+          for key, n in pairs(l.lost_by or {}) do
+            if key:find("land%-mine") and not key:find("^inside") and not key:find("^withdraw") then to_mines = to_mines + n end
+          end
           break
         end
       end

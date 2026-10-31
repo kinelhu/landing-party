@@ -284,7 +284,7 @@ shared.WAVE_MAX = 60   -- the most a culture sends at once (farm.lua), a full wa
 -- None of them shoots up (air.lua): its class is many, healing and soft.
 shared.BREEDS = {["lp-bred-small-biter"] = {cost = 2}, ["lp-bred-medium-biter"] = {cost = 7},
   ["lp-bred-big-biter"] = {cost = 28}, ["lp-bred-behemoth-biter"] = {cost = 200}, ["lp-bred-medium-spitter"] = {cost = 9},
-  ["lp-runt"] = {cost = 2}, ["lp-bred-cinder"] = {cost = 40}, ["lp-bred-big-burster"] = {cost = 300},
+  ["lp-runt"] = {cost = 2}, ["lp-sweeper"] = {cost = 60}, ["lp-bred-cinder"] = {cost = 40}, ["lp-bred-big-burster"] = {cost = 300},
   -- air: it shoots up (air.lua leaves it whole).
   ["lp-bred-spore"] = {cost = 10, air = true},
   -- A spider-unit (Space Age's small stomper): tier 4, over the wall.
@@ -577,5 +577,10 @@ shared.LEASH = 15
 -- The biotech's big burster (biotech.lua builds it from these; herd.lua sends and sets it off by them): its health, its
 -- blast's radius, the blast's damage, and the core's (half the radius) on top.
 shared.BIG_BURST = {health = 3000, r = 6, amount = 1500, core = 800}
+-- Its sapper (the user, 2026-10-31: "small bursters dedicated to mines (high hp, high range boom that kills mines)"): the
+-- sweep's, sent at the mines on its way in ahead of its herd and set off among them; its death a wide blast that kills a
+-- land mine (15 of health) and little else. The runts it replaced (15 of health) died to the square lab fort's lasers
+-- before they reached a mine, "10 of 10 runts spent" and its rams stunned on the mines they left.
+shared.SAPPER = {health = 2000, speed = 0.3, r = 7, pop = 60}
 
 return shared

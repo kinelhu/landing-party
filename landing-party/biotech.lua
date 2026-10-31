@@ -167,6 +167,32 @@ do
   table.insert(out, r)
 end
 
+-- The sapper (shared.SAPPER): a big biter's body in ochre, spawned by script for the sweep (herd.lua), never bred; its death
+-- the blast that clears the mines round it, wherever it falls.
+do
+  local r
+  for _, p in ipairs(out) do if p.name == "lp-bred-big-biter" then r = table.deepcopy(p) end end
+  local SAP = shared.SAPPER
+  r.name = "lp-sweeper"
+  r.localised_name = {"entity-name.lp-sweeper"}
+  r.localised_description = {"entity-description.lp-sweeper"}
+  r.max_health, r.movement_speed = SAP.health, SAP.speed
+  local OCHRE1, OCHRE2 = {r = 0.85, g = 0.6, b = 0.2, a = 1}, {r = 0.55, g = 0.35, b = 0.1, a = 1}
+  local function ochre(t, n)
+    if type(t) ~= "table" then return n end
+    if t.tint then t.tint = (n % 2 == 0) and OCHRE1 or OCHRE2; n = n + 1 end
+    for _, v in pairs(t) do n = ochre(v, n) end
+    return n
+  end
+  ochre(r.run_animation, 0)
+  ochre(r.attack_parameters.animation, 0)
+  r.dying_trigger_effect = {{type = "create-entity", entity_name = "medium-explosion"},
+    {type = "nested-result", action = {type = "area", radius = SAP.r, force = "not-same", ignore_collision_condition = true,
+      trigger_target_mask = {"common"},
+      action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = SAP.pop, type = "explosion"}}}}}}}
+  table.insert(out, r)
+end
+
 -- The scout (the user, 2026-10-24: "visible scouting", the lone biter that circles the wall before a wave and that the
 -- player learns to read): a small biter's body in pale cyan bands, the fastest of the breeds and frail, lit at night;
 -- made by script when a wave sets out (herd.launch), never bred, so its loss costs the wave no fighter.

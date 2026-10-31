@@ -36,6 +36,16 @@ table.sort(valuemap.CORE)
 
 function valuemap.worth_of(e) return valuemap.NAMES[e.name] or valuemap.WORTH[e.type] or 0 end
 
+-- What a wave razed, in worth: a building's worth, and the defence's at its cost to build (an assembler is 2). A siege
+-- that broke 22 walls and guns had razed 0 by worth_of, its attempts read as worthless and the farm held forever behind
+-- them (the star fort, 2026-10-31; the user: count destroyed defences as gains). Not in WORTH: hearts are where worth
+-- gathers and fire does not, a ring of guns is no heart.
+valuemap.DEFENCE = {
+  ["ammo-turret"] = 1, ["electric-turret"] = 2, ["fluid-turret"] = 2, turret = 2, ["artillery-turret"] = 6,
+  wall = 0.1, gate = 0.2,
+}
+function valuemap.razed_of(e) return valuemap.worth_of(e) + (valuemap.DEFENCE[e.type] or 0) end
+
 local function xy(p) return p.x or p[1], p.y or p[2] end
 
 -- The buildings of `forces` within `radius` of `at`, of `types` (all it weighs by default), on cells of `cell` tiles.
