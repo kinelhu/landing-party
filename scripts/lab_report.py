@@ -67,10 +67,15 @@ def main(src, dest):
              "|---|---|---|---|---|---|---|---|---|---|"]
     for t in trials:
         w, sg = t.get("wave") or {}, t.get("siege") or {}
+        a = t.get("attempt") or {}
         siege = (f"{sg.get('k', 0)} bursters, {sg.get('n', 0) - sg.get('k', 0)} {short(sg.get('breed') or '?')}, "
-                 f"{sg.get('price', 0):.0f} biomass") if sg else "none"
+                 f"{sg.get('price', 0):.0f} biomass") if sg else (f"{t.get('faction')} {a.get('method', '?')}" if t.get("faction") else "none")
         lost = sum((w.get("lost_worth_by") or {}).values())
         broke = sum((w.get("kills") or {}).values())
+        # (A corporation's trial has no wave: its record's attempt block, read as every attacker's is, attempt.lua.)
+        if not w and a:
+            w = {"size": (t.get("op") or {}).get("size", 0), "worth": a.get("sent", 0), "t_inside": a.get("tick_inside")}
+            lost, broke = a.get("lost", 0), a.get("got", 0)
         lines.append(f"| {t['trial']} | {t.get('outcome', '?')} | {siege} | {w.get('size', 0)} | {w.get('worth', 0):.0f} | "
                      f"{w.get('predicted') or 0:.0f} | {lost:.0f} | {'yes' if w.get('t_inside') is not None else 'no'} | {broke} | "
                      f"{prices_moved((t.get('prices_before') or {}).get('price', {}), (t.get('prices_after') or {}).get('price', {}))} |")

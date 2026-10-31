@@ -7368,6 +7368,12 @@ end
 -- params.lab_hold minutes records why its farm held. What it learned stays; the save it ends with (lab-out) keeps it, with
 -- its waves held (herd_off) for the next edit. State in storage, by run: a save that held the test mod before is primed again.
 scenarios.lab = function()
+  -- LAB_FACTION (a corporation, its own choice at war with the player, or LAB_KIND forced at the fort; the culture held) or
+  -- the culture (biotech, its farm's own choice). (Declared after begin, they read as nil in it: the corporation stayed
+  -- switched off, three trials held.)
+  local FACTION = params.lab_faction or "biotech"
+  local CORP = FACTION ~= "biotech"
+  local function op_records() return lp("oplog_recent") or {} end
   local TURRET = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true}
   local AMMO = {["gun-turret"] = "piercing-rounds-magazine", ["rocket-turret"] = "rocket"}
   local FRAME, MAX_TRIAL = 30, 45 * 3600
@@ -7380,7 +7386,9 @@ scenarios.lab = function()
   local function begin()
     local L = {run = params.lab_run, trial = 0, step = "prime", snap = {}, ents = {}, hp = {}}
     storage.lab = L
-    lp("debug_tune", {herd_off = false})
+    lp("debug_tune", {herd_off = CORP})
+    -- (A corporation's trial: its army let loose, the culture held.)
+    if CORP then lp("debug_tune", {harmless = false, army_off = false, provoke = true}) end
     lp("set_trace", true)
     local cx, cy, k = 0, 0, 0
     -- (Everything of the player's, not its defences alone: the first trial razed the soft heart and its power, and the next
@@ -7471,6 +7479,12 @@ scenarios.lab = function()
   local function finish(L, outcome, wave)
     local f = farm()
     L.rec.outcome, L.rec["end"] = outcome, game.tick
+    -- What it did, as every attacker's is read (attempt.lua, oplog.lua): its record's attempt block.
+    local key = wave and ("w" .. tostring(wave.id)) or L.op_key
+    for _, r in ipairs(op_records()) do
+      if key and r.key == key then L.rec.attempt, L.rec.op = r.attempt, {key = r.key, faction = r.faction, kind = r.kind,
+        outcome = r.outcome, back = r.back, size = r.size, breach = r.breach, staging = r.staging, target = r.target} end
+    end
     L.rec.held = outcome ~= "wave" and f and f.held or nil
     L.rec.wave = wave
     L.rec.prices_after = lp("lab_prices")
@@ -7518,6 +7532,42 @@ scenarios.lab = function()
         rec = "lab-rec-" .. L.trial .. ".jsonl"}
       if f then lp("lab_prime", f.id, params.lab_biomass or 20000) end
       L.step, L.recording = "wait", true
+      if CORP then
+        -- Its operation forced at the fort (ops.force by /lp raid|siege at the fort's middle); its record, when it closes.
+        -- (auto: its own choice, at war with the player, the fort all there is to take; raid or siege: forced by /lp at the
+        -- fort's middle, which tops its garrison up to what that needs: 475 for a raid on the laser lane, which it would
+        -- never have sent, stuck the whole trial.)
+        L.rec.faction, L.rec.kind = FACTION, params.lab_kind or "auto"
+        L.ops_before, L.op_key, L.corp_live = #op_records(), nil, nil
+        -- (Shown the fort, as its radar would: 590 tiles off, unknown to it, it held every trial.)
+        for _, b in ipairs(lp("bases_ops") or {}) do
+          if b.corp == FACTION and not b.fallen then lp("debug_sense", b.id, {L.center[1], L.center[2]}, 150) end
+        end
+        if L.rec.kind ~= "auto" then lp("dev", {L.rec.kind}, {L.center[1], L.center[2]}, surface().index) end
+        L.step = "corp"
+      end
+      return
+    end
+    if L.step == "corp" then
+      if (game.tick - L.rec.start) % (5 * 3600) < FRAME then
+        for _, b in ipairs(lp("bases_ops") or {}) do
+          if b.corp == FACTION then out("lab-corp.jsonl", {trial = L.trial, t = game.tick, why = lp("debug_corp_why", b.id)}) end
+        end
+      end
+      local recs = op_records()
+      if #recs > L.ops_before then
+        for i = L.ops_before + 1, #recs do if recs[i].faction ~= "biotech" then L.op_key = recs[i].key end end
+        if L.op_key then return finish(L, "op") end
+        L.ops_before = #recs
+      end
+      if game.tick - L.rec.start > MAX_TRIAL then return finish(L, "timeout") end
+      if L.rec.kind == "auto" and game.tick - L.rec.start > (params.lab_hold or 15) * 3600 and not L.corp_live then
+        -- (No operation of its own begun within LAB_HOLD: held, its reasons in decisions.txt.)
+        local live = false
+        for _, b in pairs(lp("bases_ops") or {}) do if b.corp == FACTION and b.op then live = true end end
+        if not live then return finish(L, "held") end
+        L.corp_live = true
+      end
       return
     end
     if L.step == "wait" or L.step == "wave" then
@@ -9720,12 +9770,14 @@ scenarios.farm = function()
     -- and one front: a wall from edge to edge, its guns and mines by
     -- LAB_LANE (key=value, comma-separated): walls (layers, 1), gap (tiles between them, 4), step (a laser every, 6),
     -- inset (guns behind the inner wall, 3), mines (out, in, between or none; out), half (the corridor's half-height, 64),
-    -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), shape (line, saw, bastion; line), amp (8), period (32).
+    -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), shape (line, saw, bastion; line), amp (8), period (32),
+    -- faces (east, toward the culture; west, toward the corporation camp behind the fort; both).
     -- Twice as many lasers within a laser's reach of each end: at the water a wall point saw half the guns its middle did
     -- (5 against 8), and three plain waves went in at its end, none of them a siege (the lab, 2026-10-31): a lane whose
     -- every point faces the same guns.
     if params.fort == "lane" then
-      local o = {walls = 1, gap = 4, step = 6, inset = 3, mines = "out", half = 64, guns = "laser", shape = "line", amp = 8, period = 32}
+      local o = {walls = 1, gap = 4, step = 6, inset = 3, mines = "out", half = 64, guns = "laser", shape = "line", amp = 8, period = 32,
+        faces = "east"}
       for k, v in string.gmatch(params.lane or "", "(%w+)=([%w%.%+]+)") do o[k] = tonumber(v) or v end
       -- (The map a ribbon HALF either side of y 0, siegelab.sh's map settings: its edge, out of map, collides as water does,
       -- its cost map's no way and the engine's. The fort's axis along it, its camp east or west.)
@@ -9771,66 +9823,71 @@ scenarios.farm = function()
         end
         return 0
       end
-      local inner = 40   -- its inner wall, at a straight row (its outer walls `gap` on toward the culture)
-      local function wall_u(k, v) return math.floor(inner + k * o.gap + bulge(v) + 0.5) end
-      -- Edge to edge, each row joined to the last along the row (no two pieces only corner to corner: a herd slips between).
-      for k = 0, o.walls - 1 do
-        local last
-        for v = -HALF, HALF do
-          local u = wall_u(k, v)
-          for w = math.min(u, last or u), math.max(u, last or u) do
-            if on_map(at(w, v)) then put("stone-wall", at(w, v)) end
+      -- Its front facing the culture (east), and with faces=both the same front mirrored west, facing the corporation camp
+      -- behind the fort (the lab for the corporations: LAB_FACTION).
+      local gaps, outer = 0, 40
+      for _, sg in ipairs(o.faces == "both" and {1, -1} or o.faces == "west" and {-1} or {1}) do
+        local function A(u, v) return at(sg * u, v) end
+        local inner = 40   -- its inner wall, at a straight row (its outer walls `gap` on toward the culture)
+        local function wall_u(k, v) return math.floor(inner + k * o.gap + bulge(v) + 0.5) end
+        -- Edge to edge, each row joined to the last along the row (no two pieces only corner to corner: a herd slips between).
+        for k = 0, o.walls - 1 do
+          local last
+          for v = -HALF, HALF do
+            local u = wall_u(k, v)
+            for w = math.min(u, last or u), math.max(u, last or u) do
+              if on_map(A(w, v)) then put("stone-wall", A(w, v)) end
+            end
+            last = u
           end
-          last = u
+        end
+        outer = inner + (o.walls - 1) * o.gap
+        -- Its guns along the inner wall, `inset` behind it, by turns of LAB_LANE guns (laser, gun, flame, rocket, tesla, joined
+        -- by +); twice as many within a laser's reach of each end. Flamethrowers fed by a pipe behind them, infinity pipes on it.
+        local GUN = {laser = L, gun = G, flame = "flamethrower-turret", rocket = "rocket-turret", tesla = "tesla-turret"}
+        local kinds = {}
+        for g in string.gmatch(o.guns, "[^+]+") do kinds[#kinds + 1] = GUN[g] or error("lab: no gun " .. g) end
+        local facing = sg * ux > 0 and defines.direction.east or defines.direction.west
+        local REACH = prototypes.entity[L].attack_parameters.range
+        local n = 0
+        local function gun(name, u, v)
+          local q = surface().find_non_colliding_position(name, A(u, v), 3, 1)
+          local e = q and surface().create_entity{name = name, position = q, force = "player", direction = facing}
+          if not e then return end
+          if name == G then e.insert{name = "piercing-rounds-magazine", count = 200} end
+          if name == "rocket-turret" then e.insert{name = "rocket", count = 100} end
+          -- (Its feed an infinity pipe at one of its two inlets, beside its rear row (fire.lua: {-0.5, 1} facing west when it
+          -- faces north): oil kept through every rebuild, lab snapshot. Behind it, every one stood dry.)
+          if name == "flamethrower-turret" then
+            local pp = {e.position.x - sg * ux * 1, e.position.y - sg * ux * 1.5}
+            local pipe = surface().create_entity{name = "infinity-pipe", position = pp, force = "player"}
+            if pipe then pipe.set_infinity_pipe_filter{name = "light-oil", percentage = 1, mode = "at-least"} end
+            S.lane_flames = (S.lane_flames or 0) + 1
+          end
+        end
+        for v = -HALF + o.step / 2, HALF - 1, o.step do
+          n = n + 1
+          local name = kinds[(n - 1) % #kinds + 1]
+          local u = inner + bulge(v) - o.inset - (name == "flamethrower-turret" and 1 or 0)
+          gun(name, u, v)
+          if HALF - math.abs(v) <= REACH then gun(L, u - 3, v + o.step / 4 * (v < 0 and -1 or 1)) end
+        end
+        local rows = o.mines == "out" and {outer + 3, outer + 7} or o.mines == "in" and {inner - o.inset - 4}
+          or o.mines == "between" and o.walls > 1 and {inner + o.gap / 2} or {}
+        for _, u in ipairs(rows) do for v = -HALF + 2, HALF - 2, 4 do place("land-mine", A(u + bulge(v), v)) end end
+        for u = 16, 32, 16 do for v = -HALF, HALF, 16 do if math.abs(v) > 32 then place("substation", A(u, v)) end end end
+        -- No way round: along each wall's line and past its ends, every tile walled or off the map (a tile of it, and a herd
+        -- walks round).
+        for k = 0, o.walls - 1 do
+          for v = -HALF - 3, HALF + 3 do
+            local p = A(wall_u(k, v), v)
+            if on_map(p)
+              and surface().count_entities_filtered{position = p, radius = 0.5, type = "wall", force = "player"} == 0 then gaps = gaps + 1 end
+          end
         end
       end
-      local outer = inner + (o.walls - 1) * o.gap
-      -- Its guns along the inner wall, `inset` behind it, by turns of LAB_LANE guns (laser, gun, flame, rocket, tesla, joined
-      -- by +); twice as many within a laser's reach of each end. Flamethrowers fed by a pipe behind them, infinity pipes on it.
-      local GUN = {laser = L, gun = G, flame = "flamethrower-turret", rocket = "rocket-turret", tesla = "tesla-turret"}
-      local kinds = {}
-      for g in string.gmatch(o.guns, "[^+]+") do kinds[#kinds + 1] = GUN[g] or error("lab: no gun " .. g) end
-      local facing = ux > 0 and defines.direction.east or defines.direction.west
-      local REACH = prototypes.entity[L].attack_parameters.range
-      local n = 0
-      local function gun(name, u, v)
-        local q = surface().find_non_colliding_position(name, at(u, v), 3, 1)
-        local e = q and surface().create_entity{name = name, position = q, force = "player", direction = facing}
-        if not e then return end
-        if name == G then e.insert{name = "piercing-rounds-magazine", count = 200} end
-        if name == "rocket-turret" then e.insert{name = "rocket", count = 100} end
-        -- (Its feed an infinity pipe at one of its two inlets, beside its rear row (fire.lua: {-0.5, 1} facing west when it
-        -- faces north): oil kept through every rebuild, lab snapshot. Behind it, every one stood dry.)
-        if name == "flamethrower-turret" then
-          local pp = {e.position.x - ux * 1, e.position.y - ux * 1.5}
-          local pipe = surface().create_entity{name = "infinity-pipe", position = pp, force = "player"}
-          if pipe then pipe.set_infinity_pipe_filter{name = "light-oil", percentage = 1, mode = "at-least"} end
-          S.lane_flames = (S.lane_flames or 0) + 1
-        end
-      end
-      for v = -HALF + o.step / 2, HALF - 1, o.step do
-        n = n + 1
-        local name = kinds[(n - 1) % #kinds + 1]
-        local u = inner + bulge(v) - o.inset - (name == "flamethrower-turret" and 1 or 0)
-        gun(name, u, v)
-        if HALF - math.abs(v) <= REACH then gun(L, u - 3, v + o.step / 4 * (v < 0 and -1 or 1)) end
-      end
-      local rows = o.mines == "out" and {outer + 3, outer + 7} or o.mines == "in" and {inner - o.inset - 4}
-        or o.mines == "between" and o.walls > 1 and {inner + o.gap / 2} or {}
-      for _, u in ipairs(rows) do for v = -HALF + 2, HALF - 2, 4 do place("land-mine", at(u + bulge(v), v)) end end
-      for u = 16, 32, 16 do for v = -HALF, HALF, 16 do if math.abs(v) > 32 then place("substation", at(u, v)) end end end
       S.lasers0 = surface().count_entities_filtered{name = L, force = "player"}
       S.mines0 = surface().count_entities_filtered{name = "land-mine", force = "player"}
-      -- No way round: along each wall's line and past its ends, every tile walled or off the map (a tile of it, and a herd
-      -- walks round).
-      local gaps = 0
-      for k = 0, o.walls - 1 do
-        for v = -HALF - 3, HALF + 3 do
-          local p = at(wall_u(k, v), v)
-          if on_map(p)
-            and surface().count_entities_filtered{position = p, radius = 0.5, type = "wall", force = "player"} == 0 then gaps = gaps + 1 end
-        end
-      end
       info(string.format("lab: lane %s, %d lasers, %d mines, %d wall pieces, %d gaps past its ends", serpent.line(o), S.lasers0,
         S.mines0, surface().count_entities_filtered{type = "wall", force = "player"}, gaps))
       -- Its flamethrowers fed (a pipe at the wrong tile, and they stand dry).

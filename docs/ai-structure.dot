@@ -92,7 +92,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n785 lines", width=1.67, fillcolor="#eef2f7"];
+    "control" [label="control\n814 lines", width=1.70, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n173 lines", width=0.99, fillcolor="#eef2f7"];

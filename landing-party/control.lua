@@ -486,9 +486,9 @@ remote.add_interface("landing-party", {
     -- No biotech arrival (farm.lua); tests that bring it do so with farm_arrive.
     if t.biotech_off ~= nil then storage.biotech_off = t.biotech_off end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
-    if t.harmless then
+    if t.harmless ~= nil then
       for _, k in ipairs({"ops_off", "jump_off", "tap_off", "skim_off", "prospect_off", "sever_off", "cuts_off",
-        "strangle_off", "ledger_off", "raids_off"}) do storage[k] = true end
+        "strangle_off", "ledger_off", "raids_off"}) do storage[k] = t.harmless or nil end
     end
     if t.notices ~= nil then storage.notices = t.notices end
     if t.rd_fast ~= nil then storage.rd_fast = t.rd_fast end
@@ -535,6 +535,35 @@ remote.add_interface("landing-party", {
   herd_state = function() return herd.state() end,
   -- Tests and the siege lab: the last operation records closed, every faction's, read alike (oplog.lua, attempt.lua).
   oplog_recent = function() return oplog.recent() end,
+  -- Tests and the siege lab: why a settlement launches nothing (its targets, its clock, the switches, its war).
+  debug_corp_why = function(id)
+    local b = storage.bases[id]
+    if not b then return nil end
+    local n, mine = 0, 0
+    for _, t in pairs((b.intel and b.intel.targets) or {}) do
+      n = n + 1
+      if t.owner == "player" then mine = mine + 1 end
+    end
+    local f = game.forces[b.force]
+    return {targets = n, player_targets = mine, next_op = b.next_op, tick = game.tick, op = b.op and b.op.kind,
+      enemy = f and f.is_enemy(game.forces.player), ops_off = storage.ops_off, raids_off = storage.raids_off,
+      army_off = storage.army_off, choice_off = storage.choice_off, garrison = b.garrison and #b.garrison or 0,
+      depot = b.depots and #b.depots or nil, parts = b.parts}
+  end,
+  -- Tests and the siege lab: a settlement shown what stands within r of pos, as its radar would (intel.lua, ops.sense_at).
+  debug_sense = function(id, pos, r)
+    local b = storage.bases[id]
+    if b then ops.sense_at(b, {x = pos[1] or pos.x, y = pos[2] or pos.y}, r) end
+    return b ~= nil
+  end,
+  -- Tests and the siege lab: each settlement's corporation and its operation now (kind, started), nil if none.
+  bases_ops = function()
+    local out = {}
+    for id, b in pairs(storage.bases or {}) do
+      out[#out + 1] = {id = id, corp = b.corp, op = b.op and {kind = b.op.kind, started = b.op.started} or nil, fallen = b.fallen}
+    end
+    return out
+  end,
   rd_state = function(corp) return rd.state(corp) end,
   -- Tests only: a farm's arrival now, whatever the evolution (true if a field was found); the farms' state.
   farm_arrive = function(surface_index) return farm.arrive_now(game.surfaces[surface_index]) end,
