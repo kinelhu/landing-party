@@ -870,10 +870,11 @@ siege_size = function(f, pl, place, floor)
   -- (Proven by what it razed there, not by getting in: in and razing nothing, five sieges at one breach of the user's fort.
   -- Sized as the one that razed most for what it spent: sized on what a siege spent, its sieges of 34 to 38 lost 230 to 300
   -- and razed 3 to 24, where its probes of 24 had lost 110 and razed up to 41; the siege lab, 2026-10-30.)
-  local proven, proven_rams
-  if mem and wt > ATTEMPT_FADED then
-    proven, proven_rams = herd.best_size(mem, B.mind.min_gain or 0, herd.place_sig(s, place and place.rival or players(), pl.target))
-  end
+  -- (Of its sieges that broke in near this one's breach, wherever they were kept: herd.history_near.)
+  local sig = herd.place_sig(s, place and place.rival or players(), pl.target)
+  local near = herd.history_near(foe, pl.breach, "siege", sig)
+  if mem and wt > ATTEMPT_FADED then for _, h in ipairs(herd.history(mem, sig)) do near[#near + 1] = h end end
+  local proven, proven_rams = herd.best_size({hist = near}, B.mind.min_gain or 0, nil)
   -- And as many rams as that siege brought, whatever its share since (one that got in with 4 drew its share up, the next
   -- brought 2 and stood at the inner of two walls; the lane, 2026-10-31).
   if proven_rams and rams > 0 then rams = math.min(RAMS_MAX, math.max(rams, proven_rams)) end
@@ -890,7 +891,9 @@ siege_size = function(f, pl, place, floor)
     -- Where its sieges have got in at this breach, what they spent there, not what its prices add up to (herd.attempt,
     -- the design consult's step 3). (Priced from its guns alone, the user's fort read as more than 60 could take, though
     -- sieges of 42 to 60 had got in there four times.)
-    if proven then need = proven end
+    -- (What it sent less its rams, which are sized here apart: with them, a siege through two walls on 4 rams was asked
+    -- 160 mediums more of herd than it had sent, fitted under no 60, and none was laid; the lane, 2026-10-31.)
+    if proven then need = math.max(0, proven - (proven_rams or 0) * herd.worth("lp-bred-big-burster")) end
     -- (No smaller than the least wave it sends, WAVE_MIN: a siege of 4 bursters and 11 at the star fort's cheap corner
     -- waited six trials for a wave it would never send, "13 ready, 24 the least it sends"; the siege lab, 2026-10-31.)
     local n = math.max(math.floor(need / hw) + 1, shared.WAVE_MIN - k - fodder)
@@ -1121,7 +1124,9 @@ local function probe(f, s, choice, tick)
     local foe = rival and rival[1] or "player"
     local _, wt = herd.attempt(foe, at, "siege")
     if pl and pl.walled and wt <= ATTEMPT_FADED then
-      local k = math.min(RAMS_MAX, math.ceil(1 / herd.reach(foe)))
+      -- (As many rams as got a siege in near its breach, if more: herd.history_near.)
+      local _, near_rams = herd.best_size({hist = herd.history_near(foe, pl.breach, "siege", nil)}, 0, nil)
+      local k = math.min(RAMS_MAX, math.max(math.ceil(1 / herd.reach(foe)), near_rams or 0))
       local fodder = math.max(0, math.min(pl.cover or 0, shared.WAVE_MIN - k - 1))
       local n = math.max(1, shared.WAVE_MIN - k - fodder)
       local price = k * bc + fodder * fc + n * hc

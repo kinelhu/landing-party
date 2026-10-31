@@ -10230,6 +10230,13 @@ scenarios.farm = function()
       local sized_rams = lp("debug_best_rams", {
         {sent = 60, spent = 300, got = 40, inside = true, rams = 1}, {sent = 30, spent = 100, got = 32, inside = true, rams = 4}}, 10)
       check("farm: a proven siege's rams copied with it", sized_rams == 4, tostring(sized_rams))
+      -- Its sieges near a breach count wherever they were kept: one at y 0 (cell 0) for a breach at y -6 (cell -1), none
+      -- 100 tiles off (two walls got through with 4 rams at y 0, not copied a cell over; the lane, 2026-10-31).
+      lp("debug_attempt_put", "lp-test|4,0|siege", {{sent = 30, spent = 100, got = 20, inside = true, rams = 4, breach = {290, 2}}})
+      lp("debug_attempt_put", "lp-test|4,2|siege", {{sent = 30, spent = 100, got = 20, inside = true, rams = 2, breach = {290, 140}}})
+      local near_n, far_n = lp("debug_history_near", "lp-test", {290, -6}, "siege"), lp("debug_history_near", "lp-test", {290, 60}, "siege")
+      check("farm: its sieges near a breach count wherever they were kept", near_n == 1 and far_n == 0,
+        serpent.line({near_n, far_n}))
       -- Against a defence reinforced since (more guns where it went), its attempts there count for nothing: its record of
       -- a siege that razed 45 outlived the guns put there after (the user, 2026-10-30: "perpetual identical actions").
       local was, more = {guns = 5, walls = 20}, {guns = 10, walls = 20}
@@ -10298,6 +10305,15 @@ scenarios.farm = function()
       check("farm: a siege no smaller than the least wave", sz ~= nil and sz.k + sz.n + (sz.fodder or 0) >= 24, serpent.line(sz))
       check("farm: attempts against a defence since reinforced not copied", same == 30 and reinforced == 45,
         serpent.line({same = same, reinforced = reinforced}))
+      -- (Last of the sizes: its record here would size the others.)
+      -- A proven siege's herd copied without its rams (sized apart): one that sent 4 rams and 300 mediums of herd was asked 460 (here: 4 rams and 10 of herd, at this evolution's half a medium a head),
+      -- fitted under no 60, and none was laid (the lane, 2026-10-31). Its size here, at a cheap place, proven by it.
+      lp("debug_attempt_put", "player|" .. math.floor(S.at(0, 0)[1] / 64) .. "," .. math.floor(S.at(0, 0)[2] / 64) .. "|siege",
+        {{sent = 170, spent = 100, got = 20, inside = true, rams = 4, breach = {S.at(0, 0)[1], S.at(0, 0)[2]}}})
+      local pz = fid and lp("debug_siege_size", fid.id, {cost = 5, cover = 1, openable = 1, walled = true, standing = 0,
+        breach = {S.at(0, 0)[1], S.at(0, 0)[2]}, target = {x = S.at(0, 0)[1], y = S.at(0, 0)[2]}}, 1e6)
+      check("farm: a proven siege's herd copied without its rams", pz ~= nil and pz.k == 4 and pz.n + pz.k + (pz.fodder or 0) <= 60,
+        serpent.line(pz))
       local now = lp("cell_sites")[1] or {}
       check("farm: it bought technicians as it grew", (now.bought or 0) >= 1, serpent.line({bought = now.bought, techs = now.techs}))
     end

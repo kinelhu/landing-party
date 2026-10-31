@@ -397,6 +397,28 @@ function herd.best_size(r, least, sig)
   end
   return best and best.sent, best and best.rams
 end
+-- Its attempts by `method` at `foe` that broke in within NEAR_BREACH of `breach`, whatever place they were kept by, not
+-- faded nor against a defence since reinforced (sig): what a siege there is sized on. (Kept by its target's 64-tile cell,
+-- a siege that got through two walls with 4 rams at y 0 was not copied at y -6, a cell over, and the next brought 2 and
+-- stood at the inner wall; the lane, 2026-10-31.)
+herd.NEAR_BREACH = 32
+function herd.history_near(foe, breach, method, sig)
+  local out = {}
+  local a = know.of("biotech").attempts
+  if not (a and breach) then return out end
+  local bx, by = breach.x or breach[1], breach.y or breach[2]
+  local head, tail = (type(foe) == "string" and foe or foe.name) .. "|", "|" .. method
+  local fade = B.mind.fade or 40 * 3600
+  for key, r in pairs(a) do
+    if key:sub(1, #head) == head and key:sub(-#tail) == tail then
+      for _, h in ipairs(r.hist or {}) do
+        if h.breach and (h.breach[1] - bx) ^ 2 + (h.breach[2] - by) ^ 2 <= herd.NEAR_BREACH ^ 2
+          and math.exp(-(game.tick - (h.tick or 0)) / fade) > 0.1 and not stronger(sig, h.sig) then out[#out + 1] = h end
+      end
+    end
+  end
+  return out
+end
 -- What its attempts by `method` at this foe have done, on the mean over every place (got, spent; nil: none yet): what a
 -- place it has not tried is expected to give (farm.lua menu, a probe's prior).
 function herd.foe_record(foe, method)
@@ -450,8 +472,9 @@ local function record_attempt(w)
   -- (Its last HISTORY there, each what it sent, spent and razed: the size that razed most for what it spent is the one it
   -- sends again, farm.lua siege_size.)
   r.hist = r.hist or {}
+  local b = w.plan and w.plan.breach or (w.breach and {w.breach.x, w.breach.y})
   table.insert(r.hist, {sent = sent, spent = spent, got = got, inside = w.t_inside ~= nil, sig = w.sig, tick = game.tick,
-    rams = w.big_sent or 0})
+    rams = w.big_sent or 0, breach = b})
   while #r.hist > HISTORY do table.remove(r.hist, 1) end
   k.attempts[key] = r
 end

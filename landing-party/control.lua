@@ -549,6 +549,14 @@ remote.add_interface("landing-party", {
   -- Tests only: the size herd.best_size draws from an attempt's history (its sieges sized by what razed most per biomass).
   debug_best_size = function(hist, least, sig) return herd.best_size({hist = hist}, least, sig) end,
   debug_best_rams = function(hist, least, sig) return select(2, herd.best_size({hist = hist}, least, sig)) end,
+  -- Tests only: attempts kept as a siege's would be (key: foe|cx,cy|method), and those near a breach (herd.history_near).
+  debug_attempt_put = function(key, hist)
+    local k = know.of("biotech")
+    k.attempts = k.attempts or {}
+    for _, h in ipairs(hist) do h.tick = h.tick or game.tick end
+    k.attempts[key] = {n = #hist, spent = 0, got = 0, inside = 0, tick = game.tick, hist = hist}
+  end,
+  debug_history_near = function(foe, breach, method) return #herd.history_near(foe, breach, method, nil) end,
   debug_stopped = function(key, tick) herd.stopped(key, tick) return herd.held() end,
   debug_learn_reach = function(r0, set_off, sent, stuck) return herd.learn_reach(r0, set_off, sent, stuck) end,
   debug_held_back = function(alive_n, sent, guns, inside) return herd.held_back(alive_n, sent, guns, inside) end,
