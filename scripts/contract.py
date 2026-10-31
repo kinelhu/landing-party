@@ -14,10 +14,17 @@ pass or fail:
   honest       its own "in" is the observer's, no more than 3 s ahead of it (through from outside the wall, 0.2.104)
   pays         what it loses in a trial that got nothing is no more than what it sent (lost counted once, 0.2.100)
 
+A faction that takes soft targets alone (Grubstake: a fort is not its to break, docs/corporations.md) holds by design where
+there is none, so in place of recovers:
+
+  soft         none of its attacks on the player went at a walled place (ten wall pieces or more by it, its record's sig)
+
 Prints one line a check a run, PASS or FAIL with what decided it, and exits 1 if any failed.
 """
 import json
 import sys
+
+SOFT_ONLY = {"grubstake"}   # factions whose temper keeps them off a walled place (shared.lua: temper.soft_only)
 from pathlib import Path
 
 
@@ -53,7 +60,14 @@ def check(run):
         else:
             stuck = 0
     recovered = stuck < 3
-    out.append(("recovers", recovered, f"{holds} held, {stuck} at the end in a row"))
+    faction = next((t.get("faction") for t in ts if t.get("faction")), "biotech")
+    if faction in SOFT_ONLY:
+        walled = [t["trial"] for t in ts if (t.get("op") or {}).get("owner") == "player"
+                  and ((t.get("attempt") or {}).get("sig") or {}).get("walls", 0) >= 10]
+        out.append(("soft", not walled, f"at a walled place of the player's at trials {walled}" if walled
+                    else f"no walled place of the player's attacked ({holds} held, by design)"))
+    else:
+        out.append(("recovers", recovered, f"{holds} held, {stuck} at the end in a row"))
     # changes: after two failures in a row, the next attack differs
     same, cases = [], 0
     for i in range(2, len(ts)):

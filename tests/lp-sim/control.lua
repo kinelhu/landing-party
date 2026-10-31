@@ -7494,7 +7494,7 @@ scenarios.lab = function()
     local key = wave and ("w" .. tostring(wave.id)) or L.op_key
     for _, r in ipairs(op_records()) do
       if key and r.key == key then L.rec.attempt, L.rec.op = r.attempt, {key = r.key, faction = r.faction, kind = r.kind,
-        outcome = r.outcome, back = r.back, size = r.size, breach = r.breach, staging = r.staging, target = r.target} end
+        outcome = r.outcome, back = r.back, size = r.size, breach = r.breach, staging = r.staging, target = r.target, owner = r.owner} end
     end
     L.rec.held = outcome ~= "wave" and f and f.held or nil
     L.rec.wave = wave
