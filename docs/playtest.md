@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.129, branch `muster`, rewritten 2026-10-31. Nothing has been played since 2026-10-16; everything below has
+Mod 0.2.130, branch `muster`, rewritten 2026-10-31. Nothing has been played since 2026-10-16; everything below has
 been checked headless only. Chat notices are off: the world should tell you what happens.
 
 ## Start
@@ -34,7 +34,8 @@ mines and let it come again), call Grubstake at dusk, Kessler-Hayashi last.
 3. **The siege against a wall** (build two walls with mines between). Ochre sweepers blow your mines first, a screen
    goes at the wall, big glowing bursters blow it open while the herd waits out of reach, then the herd rushes the gap.
    Do the steps read? Do mines still feel worth building? Is the burst too strong?
-4. **Wave size.** Waves grow with the colony (about 60 up to 8 incubators, up to 200 beyond). Does a 150-biter wave
+4. **Wave size.** Waves grow with the colony (60 up to 8 incubators, 120 at 16; past evolution 0.5 a culture may grow
+   up to 28 incubators and 200). Does a 150-biter wave
    from a big colony feel earned, or unfair? Does killing incubators visibly shrink the next one?
 5. **Tesla turrets.** Synthexis answers them by cutting the power line behind them. Does an exposed line feel like the
    weak point it is? Does a second feed or accumulators feel like the fix?

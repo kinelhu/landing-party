@@ -670,6 +670,14 @@ local function evo_of(f, surface)
   local e = f.evo or game.forces[B.force].get_evolution_factor(surface)
   return cell.clinic_up(f.id) and e or math.min(e, STOCK_EVO)
 end
+-- Its incubators at most, by that evolution: PENS_MAX up to PENS_EVO, then evenly to PENS_TOP at 1 (the user, 2026-11-01:
+-- "why not increase the max incubators per culture? Perhaps scaling to evolution"). Its waves follow (cap_of: 120 at 16,
+-- 200 at 27; at 16 for all, 200 was never reached). Its food should stop it first; its clinic killed, the stock's.
+local PENS_TOP, PENS_EVO = 28, 0.5
+local function pens_max(f, surface)
+  local k = math.max(0, math.min(1, (evo_of(f, surface) - PENS_EVO) / (1 - PENS_EVO)))
+  return PENS_MAX + math.floor(k * (PENS_TOP - PENS_MAX) + 0.5)
+end
 -- Its incubators' chance breeds at that evolution, by name, and their mean price (and mean strength, herd.strength).
 -- tilt(name): a breed's fit against what killed its last wave there (fit_of), its chance times 1 + that, held within
 -- TILT: none left out, none more than doubled (the design consult, 2026-10-30, G: a breed under UNFIT had been left out
@@ -2039,7 +2047,9 @@ function farm.tick(tick)
     -- The creep takes the wild nest it reaches; with none near, it grows an incubator of its own (creep.bud).
     -- (Held by the siege lab, biotech_pens_hold: its waves grow with its incubators, farm.cap_of, and a culture budding one a
     -- trial sent 60, 67, 75 ... 97, no two trials alike.)
-    local take = not storage.biotech_pens_hold and #left < PENS_MAX and cell.keeps_up(id, f.pens, tick) and creep.bud(id, tick)
+    local most = pens_max(f, surface)
+    local take = not storage.biotech_pens_hold and #left < most and cell.keeps_up(id, f.pens, tick)
+      and creep.bud(id, tick, math.floor(creep.TUMORS_MAX * most / PENS_MAX))
     if take then
       -- A wild spawner to take, or {found = position} (an engine object raises on an unknown key: asked by type).
       local spot = take.object_name == nil and take.found
@@ -2188,6 +2198,14 @@ end
 
 -- The siege lab (tests/lp-sim, mix lab; scripts/siegelab.sh): its culture holds `biomass` at least, and the farm weighs
 -- its next wave now (its retries, its waits and its gap since the last wave cleared); what it decides is its own.
+-- Tests only: biomass added to a culture's growth pool, to its hold (farm bigpens).
+function farm.debug_growth(id, amount)
+  local cul = creep.of(id)
+  if not cul then return nil end
+  cul.growth = math.min(creep.GROWTH_HOLD, (cul.growth or 0) + amount)
+  return cul.growth
+end
+
 function farm.debug_lab_prime(id, biomass)
   local f = st().list[id]
   if not f then return false end
@@ -2284,7 +2302,7 @@ function farm.state()
     end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
       landed = f.landed, taken = f.taken or 0, recycled = f.recycled or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
-      lost_to_feed = f.lost_to_feed or 0, refused = f.refused or 0, repeats = f.repeats or 0, order_short = f.order_short or 0, evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0, grown = f.grown or 0,
+      lost_to_feed = f.lost_to_feed or 0, refused = f.refused or 0, repeats = f.repeats or 0, order_short = f.order_short or 0, pens_max = pens_max(f, f.surface and game.surfaces[f.surface]), evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0, grown = f.grown or 0,
       seeded = f.seeded, carrier = f.carrier and f.carrier.unit.valid and {f.carrier.unit.position.x, f.carrier.unit.position.y} or nil,
       bred_evo = game.forces[B.force] and game.forces[B.force].get_evolution_factor(f.surface), biomass = creep.of(id) and {
         now = creep.of(id).biomass, growth = creep.of(id).growth, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled, eaten = creep.of(id).eaten,

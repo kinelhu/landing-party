@@ -10154,7 +10154,7 @@ scenarios.farm = function()
     end
     -- (clinic: the wild at 0.5, so the breeds' cap without a clinic, 0.3, shows.)
     -- (siege: 0.95, its big bursters come at 0.85: its evolution follows the wild's, farm.evolve.)
-    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab") and 0.95 or 0.3, surface())
+    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" or mix == "bigpens") and 0.95 or 0.3, surface())
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
@@ -10254,8 +10254,19 @@ scenarios.farm = function()
         end
         -- (A siege's breeds at its lead from landing: at the old climb, 0.004 a minute, it got there in 12 minutes; at 0.002
         -- it probed instead, its big bursters not bred yet; the playtest's evolution cap, 0.2.127.)
-        if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" then
+        if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" or mix == "bigpens" then
           lp("farm_set_evo", f.id, math.min(1, game.forces.enemy.get_evolution_factor(surface()) + 0.15))
+        end
+        -- bigpens: a culture at evolution 1, its growth fed to its hold every 10 s: it grows past 16, its old most
+        -- (PENS_MAX), toward 28 (farm.lua pens_max; the user, 2026-11-01). (Incubators added by the tests' hook stand off
+        -- its creep and go wild: 24 given came back to 16.)
+        if mix == "bigpens" then
+          for t2 = game.tick - storage.t0 + 60, END - 120, 600 do
+            schedule(t2, function()
+              local g = farm1()
+              if g then lp("farm_growth", g.id, 450); S.pens_most = math.max(S.pens_most or 0, g.pens); S.pens_max = g.pens_max end
+            end)
+          end
         end
         if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" then
           S.min_bio, S.max_near, S.sieges = math.huge, 0, {}
@@ -10713,6 +10724,7 @@ scenarios.farm = function()
       local cap0 = fid and lp("farm_cap", fid.id)
       local pens0 = (lp("farm_state").farms or {})[1].pens
       local pens1 = fid and lp("farm_add_pens", fid.id, 3 * math.max(8, pens0) - pens0)
+      S.pens_added = true
       local cap1 = fid and lp("farm_cap", fid.id)
       check("farm: the most it sends at once grows with its incubators", cap0 == math.max(60, math.floor(60 * pens0 / 8))
         and cap1 == math.min(200, math.floor(60 * pens1 / 8)) and cap1 > cap0, serpent.line({pens0, cap0, pens1, cap1}))
@@ -10735,7 +10747,7 @@ scenarios.farm = function()
     local mins = e.tick and (e.tick - S.landed) / 3600 or 0
     info(string.format("farm: evolution %s at landing, %s %.1f min on (bred at %s), clinic %s", tostring(S.evo_land),
       tostring(e.evo), mins, tostring(e.bred), tostring(e.clinic)))
-    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "siegepoor" and mix ~= "behind" and mix ~= "evocap" then
+    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "siegepoor" and mix ~= "behind" and mix ~= "evocap" and mix ~= "bigpens" then
       -- (0.002 a minute, farm.lua CLIMB, up to its lead over the wild's.)
       check("farm: its clinic stands and its breeds climb", e.clinic == true and S.evo_land and e.evo
         and e.evo - S.evo_land >= math.min(0.002 * (mins - 1) * 0.9, e.wild + 0.15 - S.evo_land - 1e-6)
@@ -10751,6 +10763,17 @@ scenarios.farm = function()
     local short = 0
     for _, g in pairs(lp("farm_state").farms or {}) do short = short + (g.order_short or 0) end
     check("farm: its waves carried the big bursters they ordered", short == 0, tostring(short))
+    -- Its incubators within its most, by its evolution (farm.lua pens_max): 16 to evolution 0.5, 28 at 1.
+    -- (Not where the test added incubators itself: farm_add_pens, past any most.)
+    for _, g in pairs(S.pens_added and {} or lp("farm_state").farms or {}) do
+      check("farm: its incubators within its most", g.pens <= g.pens_max, string.format("%d of %d", g.pens, g.pens_max))
+      if mix ~= "bigpens" and (g.evo or 0) <= 0.5 then check("farm: its most 16 at evolution 0.5 or less", g.pens_max == 16, tostring(g.pens_max)) end
+    end
+    if mix == "bigpens" then
+      check("farm: bigpens, at evolution 1 its most is 28, and it grew past 16", S.pens_max == 28 and (S.pens_most or 0) > 16,
+        serpent.line({most = S.pens_most, max = S.pens_max}))
+      return
+    end
     if mix == "siegepoor" then
       check("farm: siegepoor, laid, its stock rich", #(S.sieges or {}) > 0 and S.stocked == 10, serpent.line({sieges = #(S.sieges or {}), stocked = S.stocked}))
       return

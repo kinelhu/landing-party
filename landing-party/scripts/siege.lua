@@ -33,7 +33,19 @@ local SIEGE_MAX_TICKS = K.SIEGE_MAX_TICKS
 local SIEGE_SHELLS = K.SIEGE_SHELLS
 local SIEGE_TIERS = K.SIEGE_TIERS
 local STUCK_TICKS = K.STUCK_TICKS
-local ROUTE_TRIM = 24     -- a siege's route ends at its site: its points nearer than this go (deploy)
+local HOLD = {type = defines.command.stop, distraction = defines.distraction.none}  -- a truck waits at its site (march)
+local GUARD_CALM = 40      -- its guards on the march answer only what hits them this near its site
+local GUARD_BACK = 8       -- and gather this far behind it, away from its target (march, deploy)
+-- Where its guards gather near its site: GUARD_BACK behind it, away from its target. The site is out of the guns' reach
+-- by SITE_MARGIN alone (or PLAYER_REACH), and gathered round the truck at it, tanks stood at a laser's edge, were shot
+-- and charged it, four of them, the siege called off (fortress 12345).
+local function guard_spot(b, op)
+  local tg = b.intel.targets[op.target]
+  if not (tg and tg.pos) then return {x = op.site[1], y = op.site[2]} end
+  local dx, dy = op.site[1] - tg.pos[1], op.site[2] - tg.pos[2]
+  local dl = math.max(1, math.sqrt(dx * dx + dy * dy))
+  return {x = op.site[1] + dx / dl * GUARD_BACK, y = op.site[2] + dy / dl * GUARD_BACK}
+end
 local TURRETS = K.TURRETS
 local TYPES = K.TYPES
 local against_player = K.against_player
@@ -341,12 +353,6 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     b.next_op = game.tick + 2 * 3600
     return false
   end
-  -- Its route's last points near the site dropped: on the route's grid the last could lie past the site, toward the
-  -- target, and the truck drove through its site to it, into the guns' reach (fortress, seed 12345: 20 tiles past; its
-  -- march's check every 300 ticks had caught it going by, till a railgunner made elsewhere moved it by a second).
-  while #hroute > 0 and (hroute[#hroute][1] - site[1]) ^ 2 + (hroute[#hroute][2] - site[2]) ^ 2 < ROUTE_TRIM ^ 2 do
-    table.remove(hroute)
-  end
   local hcmds = {}
   for _, w in ipairs(hroute) do
     table.insert(hcmds, {type = defines.command.go_to_location, destination = w, radius = 4,
@@ -354,6 +360,9 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   end
   table.insert(hcmds, {type = defines.command.go_to_location, destination = site, radius = 2,
     distraction = defines.distraction.none})
+  -- And it waits there: a unit whose orders are done wanders (the engine's default), and a truck at its site between two
+  -- of its march's looks, 300 ticks apart, wandered 20 tiles on into the guns' reach and died (fortress, seed 12345).
+  table.insert(hcmds, HOLD)
   hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
     commands = hcmds}
   -- A clearance's guards answer only what hits them on the march: on sight, railgunners (vision 34, range 30) walked up
@@ -579,11 +588,19 @@ local function siege_step(b, trace, army)
   if op.phase == "march" then
     local hp = op.hauler.position
     if not op.hauler.commandable.has_command then
-      op.hauler.commandable.set_command{type = defines.command.go_to_location, destination = op.site, radius = 2,
-        distraction = defines.distraction.none}
+      op.hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = {{type = defines.command.go_to_location, destination = op.site, radius = 2,
+          distraction = defines.distraction.none}, HOLD}}
     end
-    order_all(op.members, {type = defines.command.go_to_location, destination = hp, radius = 6,
-      distraction = op.clearance and defines.distraction.by_damage or defines.distraction.by_enemy})
+    -- (Near its site, only what hits them: its site is just out of the guns' reach, inside their sight, and guards that
+    -- engaged what they saw charged the lasers from it and died, four tanks, the siege called off; fortress 12345.)
+    local near_site = (hp.x - op.site[1]) ^ 2 + (hp.y - op.site[2]) ^ 2 < GUARD_CALM ^ 2
+    -- (And then wait, answering what hits them: arrived before its next look, 300 ticks on, they wandered, the engine's
+    -- default, engaging what they saw: its laser drones, first there, flew into the lasers' reach and drew the rest in.)
+    local eye = (op.clearance or near_site) and defines.distraction.by_damage or defines.distraction.by_enemy
+    order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
+      {type = defines.command.go_to_location, destination = near_site and guard_spot(b, op) or hp, radius = 6, distraction = eye},
+      {type = defines.command.stop, distraction = defines.distraction.by_damage}}})
     -- Stuck (a hauler drove at the same spot 21 tiles short of its site for 15 minutes, visit b - rocket): no nearer for a
     -- minute, a clearance deploys where it stands if the nest is in the mortars' reach and it is out of the worms'; else
     -- the siege is called off now.
@@ -611,9 +628,9 @@ local function siege_step(b, trace, army)
       -- A clearance's guards are on guard duty instead (bombard).
       local guard_eye = defines.distraction.by_damage
       order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-        commands = {{type = defines.command.go_to_location, destination = op.site, radius = 8,
+        commands = {{type = defines.command.go_to_location, destination = guard_spot(b, op), radius = 4,
           distraction = guard_eye},
-          {type = defines.command.wander, radius = 8, distraction = guard_eye}}})
+          {type = defines.command.wander, radius = 4, distraction = guard_eye}}})
       op.label = rendering.draw_text{text = "Deploying", surface = op.hauler.surface,
         target = {entity = op.hauler, offset = {0, -2}}, color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
       trace(b, string.format("siege: deploying at %.0f,%.0f", op.site[1], op.site[2]))

@@ -627,6 +627,7 @@ remote.add_interface("landing-party", {
   farm_add_pens = function(id, n) return farm.debug_add_pens(id, n) end,
   farm_cap = function(id) return farm.debug_cap(id) end,
   farm_set_evo = function(id, v) return farm.debug_set_evo(id, v) end,
+  farm_growth = function(id, amount) return farm.debug_growth(id, amount) end,
   farm_state = function() return farm.state() end,
   -- Tests only: what Synthexis has learned a prototype of `foe`'s costs it (nil: nothing yet).
   -- The siege lab (tests/lp-sim, mix lab): its culture primed for a trial, and its waves' units for the recorder.

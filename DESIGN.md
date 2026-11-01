@@ -3641,13 +3641,29 @@ Bugs and surprises the headless runs caught, each kept as a check:
   with its cordon to 275 to 350 tiles. Now railgunners are made by their depot, and one idle or wandering more than 48
   tiles from its lander is sent back to it (its clearances take them out of the garrison first). The 75-minute deathworld
   visit: 79 railgunner kills of the player's without, 0 with; every visit checks it (rail_kills).
-- A siege's truck drove through its site (found by the leash: `fortress` seed 12345 failed with it, its four other seeds
-  passed). Its route's last points could lie past its site toward the target; the truck went on to them, 20 tiles into
-  the guns' reach, and died. The march's check every 300 ticks had caught it going by, till the leash moved its timing
-  by a second. The route's points within 24 tiles of the site are dropped (siege.lua ROUTE_TRIM): `fortress` (and its
-  jammer and howitzer variants) failed without it, pass with it.
+- A unit whose orders are done wanders: the engine's default, engaging what it sees (found by the leash: `fortress` 12345
+  and 31337 failed with it, 0.2.128 passed 5 of 5). Two siege flaws hid behind it, both a march re-ordering every 300
+  ticks and arrivals in between. Its truck, at its site, wandered 20 tiles on into the lasers' reach and died; its
+  guards, arrived round the truck, wandered, and its laser drones, first there, flew into the lasers' reach and drew
+  the rest in (traced: every guard on the default wander, attacking a laser; four tanks lost, the siege called off).
+  Now the truck's orders end with a stop at its site, and the guards' with a stop answering only what hits them; within
+  40 tiles of the site they march answering only that, to a spot 8 behind it away from the target (siege.lua HOLD,
+  GUARD_CALM, guard_spot), and stand there deployed. `fortress` 5 of 5 seeds again, its jammer and howitzer variants
+  pass; 12345 failed with every other change and passes with the guards' stop. The first fix tried, 0.2.129's route
+  trim (its route's points within 24 tiles of the site dropped), was wrong: the route's last point lay short of the site,
+  and dropping points sent a clearance's truck across the worms' reach its route went round (`clear` worms failed on
+  main); removed. `clear` worms: 4 of 5 seeds (3 of 5 at 0.2.128); its failing check, "never truck and howitzer at
+  once", failed at 0.2.128 on another seed.
 - nw with its cultures fed (visit LP_MIX=rich: 50 biomass each 10 s a culture; the user: a megabase is no natural setting
   for a culture's growth; unfed, nw's sieges waited on the biomass, one culture holding 52 of the 378 its siege asked).
   Its first wave at 11 minutes; 11 waves, growing from 24 to 97; 33 lasers and 269 wall pieces broken, nothing behind
   the wall. Fed, its raids escalate; its wall still holds. Kessler-Hayashi's camp fell to wild biters at 84 minutes
   (it lived the three hours unfed; it is weak on nw: an empty garrison in both).
+- A culture's incubators at most by its evolution (0.2.130; the user: "why not increase the max incubators per culture?
+  Perhaps scaling to evolution"). Its waves' cap (cap_of, 0.2.117) reached 200 only at 27 incubators while a culture
+  held 16 at most (PENS_MAX): its biggest wave was 120, and the playtest kit said 200. Now 16 up to evolution 0.5, then
+  evenly to 28 at 1 (farm.lua pens_max: its own evolution, the stock's with its clinic down), so 165 at 0.75 and 200 at
+  1. Its tumors scale with it (40 at 16, creep.bud): at 40 its creep held 15 incubators and a culture allowed 28 stopped
+  there. Seeding is unchanged (at 8 incubators). Check: `farm` LP_MIX=bigpens (evolution 1, its growth fed): 18 in 90
+  minutes with it; 15 with the old 16 (seen failing); every farm run checks its incubators within its most, and 16 at
+  evolution 0.5 or less. Assumed, not measured yet: its cost a tick with five cultures of 28.

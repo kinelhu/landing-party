@@ -44,7 +44,8 @@ local SHY = 48
 local DEAD_TREES = {"dry-tree", "dead-tree-desert", "dead-grey-trunk", "dead-dry-hairy-tree", "dry-hairy-tree"}
 local DEAD_TREE = {}
 for _, n in ipairs(DEAD_TREES) do DEAD_TREE[n] = true end                 -- nor within this of the player's buildings
-local TUMORS_MAX = 40          -- per culture
+local TUMORS_MAX = 40          -- per culture, at its 16 incubators (creep.bud: as many more for each it may have past 16)
+creep.TUMORS_MAX = TUMORS_MAX
 local BONUS_RADIUS = 200       -- round a culture, its units looked at for the bonus
 
 local function st()
@@ -409,7 +410,7 @@ local function found(c, id, surface, mine, tick)
       end
     end
   end
-  if #mine >= TUMORS_MAX then return nil end
+  if #mine >= (c.tumors_max or TUMORS_MAX) then return nil end
   c.wants = BUD_PRICE
   if tick - c.last_bud < BUD_MIN or (c.growth or 0) < BUD_PRICE then return nil end
   local forces = shared.player_forces()
@@ -446,10 +447,13 @@ end
 -- creep's edge (BUD_PRICE, BUD_MIN apart) toward the wild nest within HEDGE that is nearest for the air round it (a nest
 -- with FOOD_HALF of pollution in the chunks round it counts half as far: the creep leans toward the cloud); with none,
 -- an incubator of its own (found). Returns the spawner to take, {found = position}, or nil.
-function creep.bud(id, tick)
+-- tumors: its tumors at most (its farm's, by its incubators at most: at 40 a culture's creep held 15 incubators, and one
+-- allowed 28 stopped there; farm bigpens).
+function creep.bud(id, tick, tumors)
   local s = st()
   local c = s.cultures and s.cultures[id]
   if not c then return nil end
+  c.tumors_max = tumors
   local surface = game.surfaces[c.surface]
   local mine = {}
   for _, rec in pairs(s.tumors) do
@@ -523,7 +527,7 @@ function creep.bud(id, tick)
     if not bd or d < bd then from, bd = rec, d end
   end
   c.wants = BUD_PRICE
-  if tick - c.last_bud < BUD_MIN or #mine >= TUMORS_MAX or (c.growth or 0) < BUD_PRICE then return nil end
+  if tick - c.last_bud < BUD_MIN or #mine >= (c.tumors_max or TUMORS_MAX) or (c.growth or 0) < BUD_PRICE then return nil end
   -- Progress along it: the farthest point of the walk its creep has covered. STALL buds without covering more, it is out
   -- of reach.
   c.aim = c.aim or {}
