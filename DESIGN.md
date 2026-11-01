@@ -3759,3 +3759,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (0.2.132 passing, 0.2.133 with domes off passing). Meant (what lies behind a dome is sheltered); that scenario now
   turns domes off, being Synthexis against artillery alone. Hence pens or nests by a Kessler-Hayashi camp, on its far
   side, are out of the player's artillery until its dome breaks.
+- **Kessler-Hayashi lands armed** (0.2.134; the user: "a late mid-late game foe with high tech units and bases that are
+  armed to the teeth"; shared.CORPS armed_era 3, faction.arrive, base.land). Landing against a player at era 3 or later
+  (its own arrival comes after the first rocket), it comes down as its headquarters' fortress (three wall rings, 52
+  turrets, six generators, 3,000 parts, six entities a build step) without the uplink and not as a headquarters; no
+  square for it, a camp. Scenario `armed`: built in under 7 minutes (70 turrets, 619 walls, hull up, no uplink); `armed
+  era2`: a camp. Measured: artillery base, era 3, two hours: it stood, 13 operations (2 done; 0 unarmed); fed nw, 200
+  minutes: it stood (1,911 lost, 1,451 rebuilt, 133 answers to biters), where the unarmed camp of the earlier fed run fell
+  at about 190. Synthexis's first 200 minutes on fed nw read 19 waves and 1,593 of the player's buildings (the earlier
+  run), 13 and 512 (armed), 16 and 76 (the same code unarmed): one run's Synthexis swings twentyfold, so no effect of
+  the fortress on it is shown; the armed camp killed about 40 of its wave units where the unarmed one had about 470.
+  `fortress` (its siege tactics) pins a camp (`debug_tune armed = false`): armed, its lander stood 11 tiles off and its
+  siege's site moved onto ground where its hauler stuck 15 tiles short, three variants failing (a hauler that sticks
+  short of a site is open). Visit mix `noarmed`.

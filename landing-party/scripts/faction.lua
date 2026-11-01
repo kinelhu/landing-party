@@ -331,6 +331,26 @@ end
 -- A landing now, `distance` from `from` (a table with x, y). opts as for base.land.
 function faction.arrive(surface, from, opts, quiet)
   local f = faction.state()
+  -- An armed landing (the user, 2026-11-01: Kessler-Hayashi "a late mid-late game foe with high tech units and bases that
+  -- are armed to the teeth"): a corporation with armed_era, landing against a player at that era or later, comes down as
+  -- the fortress its headquarters has (base.land: three wall rings, 52 turrets, six generators, its parts and build
+  -- burst), no uplink. It grew from small at the most hostile hour and fell in four of five fed nw runs. debug_tune armed
+  -- = false: never.
+  local corp = (opts and opts.corp) or shared.DEFAULT_CORP
+  local armed_era = (shared.CORPS[corp] or {}).armed_era
+  if armed_era and storage.armed ~= false and not (opts and opts.uplink) then
+    local era = storage.era_override
+    if not era then
+      era = 0
+      for _, pf in pairs(game.forces) do if shared.is_player_force(pf) then era = math.max(era, ops.era(pf)) end end
+    end
+    if era >= armed_era then
+      local o = {}
+      for k, v in pairs(opts or {}) do o[k] = v end
+      o.armed = true
+      opts = o
+    end
+  end
   -- Further rings when the first has no clear, ore-bearing site (seed 12345: two landings blocked their
   -- neighbours at 350 tiles and the other directions were barren).
   -- A site whose pad does not fit (a headquarters' fortress found no free square within 100 tiles of its site

@@ -148,19 +148,23 @@ function base.land(surface, pos, opts)
     modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0, corp = corp, force = f.name,
     rule = "landed", log = {}, waiting = nil, landed = game.tick}
   local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
-  layout.init(b, seed, opts.uplink and "fortress" or opts.doctrine, shared.CORPS[corp].doctrines)
+  layout.init(b, seed, (opts.uplink or opts.armed) and "fortress" or opts.doctrine, shared.CORPS[corp].doctrines)
   army.init(b)
   local at, _, uplink_at
-  if opts.uplink then
+  if opts.uplink or opts.armed then
     at, _, uplink_at = layout.land_fortress(b, surface, pos)
-    b.parts = b.parts + UPLINK_PARTS
-    -- The uplink brings construction capacity: its fortress (~650 entities) took 16 minutes one at a time.
-    b.burst = UPLINK_BURST
-    b.fortress_planned = {}
     if at then
+      b.parts = b.parts + UPLINK_PARTS
+      -- The uplink brings construction capacity: its fortress (~650 entities) took 16 minutes one at a time.
+      b.burst = UPLINK_BURST
+      b.fortress_planned = {}
       for _, e in ipairs(layout.fortress_entities(b.blocks[1].x0, b.blocks[1].y0)) do
         b.fortress_planned[e[1]] = (b.fortress_planned[e[1]] or 0) + 1
       end
+      b.armed = opts.armed or nil
+    elseif opts.armed then
+      -- No square for its fortress: a camp as any other (faction.arrive's armed landing).
+      at = layout.land(b, surface, pos)
     end
   else
     at = layout.land(b, surface, pos)
@@ -171,7 +175,7 @@ function base.land(surface, pos, opts)
   if not lander then return nil end
   storage.next_id = id + 1
   b.lander = lander
-  if uplink_at then
+  if uplink_at and opts.uplink then
     clear_area(surface, shared.variant(corp, "lp-uplink"), uplink_at)
     b.uplink = surface.create_entity{name = shared.variant(corp, "lp-uplink"), position = uplink_at, force = f}
   end
@@ -184,8 +188,8 @@ function base.land(surface, pos, opts)
   -- every lander in every game (seen in the field guide's screenshots, 2026-10-24).
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
     color = {0.7, 0.9, 1}, scale = 1.4, alignment = "center", visible = storage.trace == true}.id
-  trace(b, string.format("landed at %.0f,%.0f: doctrine %s, first hub %s", at[1], at[2], b.doctrine,
-    b.hubs[1].archetype))
+  trace(b, string.format("landed at %.0f,%.0f%s: doctrine %s, first hub %s", at[1], at[2], b.armed and " armed (its fortress)" or "",
+    b.doctrine, b.hubs[1].archetype))
   return b
 end
 

@@ -4465,6 +4465,29 @@ scenarios.dome = function()
   end)
 end
 
+-- Armed (faction.arrive; the user, 2026-11-01: Kessler-Hayashi "armed to the teeth"): a landing at the player's era 3
+-- comes down as its headquarters' fortress, no uplink; built within 6 minutes, its hull up. LP_MIX=era2: a camp.
+scenarios.armed = function()
+  local era2 = params.mix == "era2"
+  schedule(60, function()
+    lp("debug_tune", {era = era2 and 2 or 3, ops_off = true})
+    S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 200, {corp = "serenity"})
+  end)
+  schedule(7 * 3600, function()
+    local st = lp("stats", S.k)
+    local uplinks = surface().count_entities_filtered{name = "lp-uplink"}
+    info(string.format("armed: doctrine %s, turrets %d, walls %d, gens %d, hull %s, uplinks %d", st.doctrine, st.turrets,
+      st.walls, st.gens, tostring(st.hull_up), uplinks))
+    if era2 then
+      check("armed: at era 2 a camp", st.doctrine ~= "fortress" and st.turrets < 20, st.doctrine .. ", " .. st.turrets)
+    else
+      check("armed: at era 3 its fortress, built", st.doctrine == "fortress" and st.turrets >= 50 and st.walls >= 500,
+        string.format("%s, %d turrets, %d walls", st.doctrine, st.turrets, st.walls))
+      check("armed: its hull up, no uplink", st.hull_up and uplinks == 0, tostring(st.hull_up) .. ", " .. uplinks)
+    end
+  end)
+end
+
 scenarios.dismantle = function()
   local ambush = params.mix == "ambush"
   local function toward(id, d)
@@ -7883,6 +7906,8 @@ scenarios.visit = function()
     if params.mix:find("nowayin", 1, true) then lp("debug_tune", {way_in = false}) end
     -- LP_MIX=nodomes: Kessler-Hayashi without its shield (scripts/dome.lua; on by default since 0.2.133).
     if params.mix:find("nodomes", 1, true) then lp("debug_tune", {domes = false}) end
+    -- LP_MIX=noarmed: Kessler-Hayashi lands as a camp at any era (faction.arrive's armed landing off).
+    if params.mix:find("noarmed", 1, true) then lp("debug_tune", {armed = false}) end
     -- LP_MIX=artyrange: the player's artillery reach doubled (range research; corporations land beyond its reach as
     -- built, and a dome's measurement saw no shell, 2026-11-01).
     if params.mix:find("artyrange", 1, true) then game.forces.player.artillery_range_modifier = 1 end
@@ -9041,6 +9066,9 @@ end
 scenarios.fortress = function()
   local old, jam, hw = params.mix == "old", params.mix == "jammer", params.mix == "howitzer"
   schedule(60, function()
+    -- (A camp, not its armed landing: this tests its siege. Armed, its lander stood 11 tiles off, its siege's site moved
+    -- with it onto ground where its hauler stuck 15 tiles short, three variants failing, 0.2.134. Scenario armed.)
+    lp("debug_tune", {armed = false})
     lp("debug_tune", {era = 3, history_off = true, raids_off = true, corp_level = {serenity = 3}, focus_off = old or nil,
       rd_tech = jam and {serenity = {nodes = {jammer = 1}}} or nil})
     S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})

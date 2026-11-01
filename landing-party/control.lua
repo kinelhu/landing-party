@@ -495,6 +495,8 @@ remote.add_interface("landing-party", {
     if t.domes ~= nil then storage.domes = t.domes end
     if t.dome_charge ~= nil then storage.dome_charge = t.dome_charge end
     if t.domes_off then storage.domes = false end
+    if t.armed ~= nil then storage.armed = t.armed end
+    if t.armed_off then storage.armed = false end
     -- Tests and the siege lab: its cultures bud no incubator (their waves' size held, farm.cap_of).
     if t.pens_hold ~= nil then storage.biotech_pens_hold = t.pens_hold end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
