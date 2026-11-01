@@ -58,9 +58,12 @@ local STARVE = 3 * 3600       -- off creep this long, an incubator goes wild
 -- hit calls no wave home (a pen hit does): the quiet kill, a raid on the feed while the herd is out.
 local FED_CAP = 12
 -- Its clinic (scripts/cell.lua; the consult's third weak point): Synthexis's evolution is its own (the culture's
--- learned value, f.evo). While the clinic stands it climbs CLIMB a minute, never behind the wild's; destroyed, it stops,
--- and the incubators breed at STOCK_EVO at the most (small and medium biters) until a new clinic lands.
-local CLIMB = 0.004
+-- learned value, f.evo). While the clinic stands it climbs CLIMB a minute, never behind the wild's and never more than
+-- LEAD past it; destroyed, it stops, and the incubators breed at STOCK_EVO at the most (small and medium biters) until a
+-- new clinic lands. (At 0.004 a minute, uncapped, it went from 0.50 to 0.69 in under an hour while the wild's went to 0.52:
+-- the user's playtest, 2026-10-31; farm test, evocap.)
+local CLIMB = 0.002
+local LEAD = 0.15
 local STOCK_EVO = 0.3
 local UNFED_WILD = 10 * 3600
 local TRICKLE = 3             -- biomass an incubator earns a minute, clean air or not
@@ -1776,7 +1779,8 @@ local function evolve(f, surface)
   f.evo = f.evo or bf.get_evolution_factor(surface)
   local up = cell.clinic_up(f.id)
   if up then
-    f.evo = math.min(1, math.max(enemy and enemy.get_evolution_factor(surface) or 0, f.evo + CLIMB / 6))
+    local wild = enemy and enemy.get_evolution_factor(surface) or 0
+    f.evo = math.min(1, wild + LEAD, math.max(wild, f.evo + CLIMB / 6))
   end
   local best = 0
   for id, g in pairs(st().list) do
@@ -2195,6 +2199,12 @@ function farm.debug_add_pens(id, n)
 end
 
 function farm.debug_cap(id) return cap_of(st().list[id]) end
+-- Tests: its learned evolution set (an older save's, climbed past the lead: farm test, evocap).
+function farm.debug_set_evo(id, v)
+  local f = st().list[id]
+  if f then f.evo = v end
+  return f ~= nil
+end
 
 function farm.debug_seed(id)
   local f = st().list[id]

@@ -538,6 +538,7 @@ remote.add_interface("landing-party", {
   end,
   herd_wall_lesson = function(pos) herd.debug_wall_lesson(pos) end,
   herd_state = function() return herd.state() end,
+  herd_drop_group = function(id) return herd.debug_drop_group(id) end,
   -- Tests and the siege lab: the last operation records closed, every faction's, read alike (oplog.lua, attempt.lua).
   oplog_recent = function() return oplog.recent() end,
   -- Tests and the siege lab: why a settlement launches nothing (its targets, its clock, the switches, its war).
@@ -624,6 +625,7 @@ remote.add_interface("landing-party", {
   -- Tests and the siege lab: incubators added to a farm, and the most it sends at once (farm.cap_of).
   farm_add_pens = function(id, n) return farm.debug_add_pens(id, n) end,
   farm_cap = function(id) return farm.debug_cap(id) end,
+  farm_set_evo = function(id, v) return farm.debug_set_evo(id, v) end,
   farm_state = function() return farm.state() end,
   -- Tests only: what Synthexis has learned a prototype of `foe`'s costs it (nil: nothing yet).
   -- The siege lab (tests/lp-sim, mix lab): its culture primed for a trial, and its waves' units for the recorder.

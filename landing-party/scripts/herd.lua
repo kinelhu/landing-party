@@ -53,6 +53,8 @@ local BIG = {reactor = true, ["fusion-generator"] = true, roboport = true, ["ass
   ["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true}
 local LOOK = 120
 local PUSH_MAX = 60 * 60   -- a push in, at most, before it looks again
+local HOME_NEAR = 30        -- a survivor farther than this from its incubator when its wave ends is sent home
+local DEEP_GO_MAX = 90 * 60  -- a rush for the heart, at most, before it hunts where it stands
 local CLEAR_MAX = 12        -- attack orders, at most, clearing the turrets off its way out
 local DEAD_AT = 300         -- where its own died, at most this many kept (its record)
 local HEART_REACH = 300     -- how far it reads the base round it for its hearts (valuemap), from its breach or inside
@@ -1878,8 +1880,13 @@ local function breach(w)
     rest[#rest + 1] = {x = pl.target[1], y = pl.target[2]}
     local h = w.breach_at or rest[1]
     w.breach, w.inside, w.walled, w.silenced = h, after or rest[#rest], 0, 0
-    -- (Its rams' way to the wall, swept with its own: ram_order, released once its sweep is done.)
-    w.breach_wall = h
+    -- (Its rams' way to the wall, swept with its own: ram_order, released once its sweep is done.) The wall piece nearest its
+    -- breach: a plan's breach is a point of its cost map's coarse cells, and 8 tiles inside the wall no piece stood within
+    -- RAM_LANE of it; its ram went at the wall by its gun, 10 off its lane, and died short (the playtest's slower climb,
+    -- 0.2.127; farm siege).
+    local lane = s.find_entities_filtered{position = h, radius = 2 * RAM_WALL, type = WALLS, force = forces}
+    table.sort(lane, function(a, b) return d2(a.position, h) < d2(b.position, h) end)
+    w.breach_wall = lane[1] and {x = lane[1].position.x, y = lane[1].position.y} or h
     w.punch, w.committed = true, true
     local cmds = {}
     for _, q in ipairs(rest) do cmds[#cmds + 1] = go(q, defines.distraction.none, 6) end
@@ -2328,7 +2335,17 @@ local function quiet_spot(w)
   return best and {x = best.x, y = best.y}
 end
 
-local function hunt(w)
+local hunt
+-- At the heart, or as far as its rush got: it hunts from there.
+local function rush_end(w, how)
+  w.deep.going, w.deep.reached = false, game.tick
+  w.t_progress = game.tick
+  log(w, string.format("at the heart (%s)", how))
+  stay_begin(w)
+  return hunt(w)
+end
+
+function hunt(w)
   -- (Its rush for the heart broken off: it hunts from where it stands.)
   if w.deep and w.deep.going then w.deep.going, w.deep.broken = false, game.tick end
   if not w.individual then
@@ -2344,6 +2361,8 @@ local function hunt(w)
   local claims, busy = {}, 0
   for _, u in ipairs(units) do
     local a = w.aim[u.unit_number]
+    -- (Its order lost while its target stands, by the engine or a distraction: its claim freed, it takes another.)
+    if a and a.e and a.e.valid and u.valid and not u.commandable.has_command then w.aim[u.unit_number], a = nil, nil end
     if a and not (a.e and a.e.valid) then
       if not (w.down or {})[a.id] then
         w.down = w.down or {}
@@ -2487,6 +2506,17 @@ finish = function(w, outcome)
   local p = h.pens[w.pen]
   if p then for _, u in ipairs(w.members) do if u.valid then table.insert(p.stock, u) end end end
   if w.group and w.group.valid then w.group.destroy() end
+  -- Its living walk home: counted back into its incubator's stock where they stood, a wave scattered deep in a base stood
+  -- among the player's assemblers with no order (the user's playtest, 2026-10-31; herd test, deepdrop).
+  if p and p.pen.valid then
+    local home = p.pen.position
+    for _, u in ipairs(w.members) do
+      if u.valid and u.commandable and not u.commandable.parent_group and d2(u.position, home) > HOME_NEAR * HOME_NEAR then
+        u.commandable.set_command{type = defines.command.go_to_location, destination = home, radius = 8,
+          distraction = defines.distraction.by_enemy}
+      end
+    end
+  end
   w.stage = "done"
   table.insert(h.log, {id = w.id, outcome = outcome, blind = w.blind or false, size = w.size, left = alive(w),
     kills = w.kills, loop = w.loop, mark = w.mark and {w.mark.x, w.mark.y}, scout_seen = w.scout_seen,
@@ -2739,6 +2769,15 @@ local function step(w, tick)
     -- deathworld visit, 2026-10-27, four waves of 60 turned at the wall with 2 of their own killed and lost 12 to 17 on
     -- the way out. Its look comes when it gets there, or after PUSH_MAX.)
     if w.pushing and tick - w.pushing >= PUSH_MAX then w.pushing = nil end
+    -- A rush for the heart whose order is gone ends where it stands: the engine disbanded its group on the way, the group
+    -- formed again had no order and no end came, and its biters stood among the player's assemblers, hunting nothing,
+    -- until their time inside ran out (the user's playtest, 2026-10-31; herd test, deepdrop).
+    if w.stage == "inside" and tick % LOOK == 0 and w.deep and w.deep.going then
+      local g = w.group
+      if not (g and g.valid and g.has_command) or tick - (w.deep.t_go or tick) > DEEP_GO_MAX then
+        rush_end(w, "its order lost on the way")
+      end
+    end
     if w.stage == "inside" and tick % LOOK == 0 and not (w.deep and w.deep.going) and not w.pushing then hunt(w) end
   end
   -- Off its leg (DETOUR from the line it was sent along): the engine's pathfinder found the leg's ground unwalkable and went
@@ -3013,6 +3052,14 @@ function herd.tick(tick)
   end
 end
 
+-- Tests: the engine disbanding a wave's group, as it does on the way (herd test, deepdrop).
+function herd.debug_drop_group(id)
+  local w = storage.herd and storage.herd.waves[id]
+  if not (w and w.group and w.group.valid) then return false end
+  w.group.destroy()
+  return true
+end
+
 function herd.on_command_completed(e)
   local h = storage.herd
   if not h then return end
@@ -3074,7 +3121,9 @@ function herd.on_command_completed(e)
       if w.stage == "march" then
         if e.result ~= defines.behavior_result.success then
           w.legs_failed = (w.legs_failed or 0) + 1
-          log(w, string.format("leg %d of %d of its trail failed (%s)", w.leg, #w.trail, tostring(e.result)))
+          local q, at = w.trail[w.leg], where(w)
+          log(w, string.format("leg %d of %d of its trail failed (%s): to %s from %.0f,%.0f", w.leg, #w.trail, tostring(e.result),
+            q and string.format("%.0f,%.0f", q.x, q.y) or "?", at.x, at.y))
         end
         -- A leg walked: its regroups start again (REGROUPS a leg).
         if e.result == defines.behavior_result.success then w.regroups = 0 end
@@ -3124,7 +3173,7 @@ function herd.on_command_completed(e)
         end
         -- A deep strike: past what is near, on to the heart, fighting nothing; there it hunts.
         if w.deep and not w.deep.reached then
-          w.deep.going = true
+          w.deep.going, w.deep.t_go = true, game.tick
           -- Its spitters stay at the breach (sent back from the heart they crossed the base again, late and few).
           hold_breach(w)
           -- Along the way it priced, round the fire (the user, 2026-10-28: "why don't we simply avoid going in a straight
@@ -3141,11 +3190,7 @@ function herd.on_command_completed(e)
         return hunt(w)
       end
       if w.stage == "inside" and w.deep and w.deep.going then
-        w.deep.going, w.deep.reached = false, game.tick
-        w.t_progress = game.tick
-        log(w, string.format("at the heart (%s)", e.result == defines.behavior_result.success and "reached" or "as far as it got"))
-        stay_begin(w)
-        return hunt(w)
+        return rush_end(w, e.result == defines.behavior_result.success and "reached" or "as far as it got")
       end
       if w.stage == "inside" then w.pushing = nil; return hunt(w) end
       if w.stage == "blind" then return withdraw(w, "blind wave spent") end
@@ -3322,7 +3367,7 @@ function herd.state()
       scout = w.scout and w.scout.valid and {w.scout.position.x, w.scout.position.y} or nil,
       group = w.group and w.group.valid and {w.group.position.x, w.group.position.y} or nil,
       mark = w.mark and {w.mark.x, w.mark.y}, trail = w.trail, breach = w.breach and {w.breach.x, w.breach.y},
-      holding = w.holding or false}
+      holding = w.holding or false, deep = w.deep and {going = w.deep.going or nil} or nil}
   end
   local rears = {}
   for id, g in pairs(h.rears or {}) do

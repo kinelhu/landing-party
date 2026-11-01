@@ -61,6 +61,7 @@ Read when something puzzles you; not a checklist.
 - **The culture**: biochambers by each incubator (kill one: that incubator stops), technicians walking from a heating
   tower on Gleba soil (kill them: five minutes without feed), a clinic biolab (kill it: only small and medium biters for
   half an hour). Hitting an incubator calls the wave home; hitting a biochamber does not.
+  While the clinic stands its evolution climbs slowly to at most 0.15 past the wild biters'.
 - **The scout and the trail**: one pale cyan biter before each wave, a mud trail and a dashed map line from the farm.
 - **Choosing**: it reads your base as fire, value and cost, and picks from a menu: raid, siege, probe (eight runts that
   die at a face), cut of a power or fluid feed, strike behind a cut. An attack that failed at a place lately is set

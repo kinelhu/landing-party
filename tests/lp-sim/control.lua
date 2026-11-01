@@ -8969,10 +8969,25 @@ scenarios.herd = function()
       S.damage = S.damage or {}
       return
     end
-    S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or mix == "deep" and {deep = true} or (mix == "edge" or mix == "coreedge") and {deep = false} or nil)
+    S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), mix == "blind" and {sight = 0} or (mix == "deep" or mix == "deepdrop") and {deep = true} or (mix == "edge" or mix == "coreedge") and {deep = false} or nil)
     -- stray: once it marches, eight of its own carried 300 tiles back and out of its group (strays, sent home): its march
     -- keeps a biter's pace (counted in its middle as they walked home, its herd waited 15 times a leg and its cutters took
     -- 23 minutes to a pole 100 seconds off; the fed lab fort, 2026-10-30).
+    -- deepdrop: its group disbanded on its rush for the heart, as the engine does on the way, and again each time it is
+    -- formed until the wave scatters. Scattered, its biters stood idle among the player's assemblers, counted home with no
+    -- order (the user's playtest, 2026-10-31): they walk home.
+    if mix == "deepdrop" then
+      for t = game.tick - storage.t0 + 600, END - 600, 30 do
+        schedule(t, function()
+          for _, wv in ipairs(lp("herd_state").waves) do
+            if wv.id == S.wave1 and (S.dropped or 0) < 8 and ((wv.deep and wv.deep.going) or (S.dropped and (wv.stage == "inside" or wv.stage == "withdraw")))
+              and lp("herd_drop_group", wv.id) then
+              S.dropped = (S.dropped or 0) + 1
+            end
+          end
+        end)
+      end
+    end
     if mix == "stray" then
       for t = game.tick - storage.t0 + 600, END - 600, 60 do
         schedule(t, function()
@@ -9112,6 +9127,26 @@ scenarios.herd = function()
       string.format("%d tallied of %d", tallied, broke))
     -- The deep strike (0.2.30): told (deep), it rushed for the heart and got there; a hard shell round a soft middle
     -- (shell), it chose to; this base's heart too near its breach (the plain herd), it raided the edge.
+    if mix == "deepdrop" then
+      check("herd: deepdrop, its group disbanded on the rush and after", (S.dropped or 0) >= 2, tostring(S.dropped))
+      check("herd: deepdrop, the wave scattered", w and w.outcome == "scattered", tostring(w and w.outcome))
+      -- (Anywhere past 60 tiles from its incubators.)
+      local home, n, idle = S.at(180, 0), 0, 0
+      for _, u in ipairs(surface().find_entities_filtered{type = "unit", force = "lp-biotech"}) do
+        local dx, dy = u.position.x - home[1], u.position.y - home[2]
+        if dx * dx + dy * dy > 60 * 60 then
+          n = n + 1
+          -- (On its way home: its own order, or its group's, a walk. Left with the attack it had inside, it stood idle where
+          -- that target fell, the wave over and no one to give it another.)
+          local c, g = u.commandable, u.commandable.parent_group
+          local cmd = c.command or (g and g.command)
+          if not (cmd and cmd.type == defines.command.go_to_location) then idle = idle + 1 end
+        end
+      end
+      check("herd: deepdrop, its scattered biters all walk home", idle == 0,
+        string.format("%d of %d out not going home", idle, n))
+      return
+    end
     if mix == "deep" or mix == "" then
       local d = w and w.deep
       -- (Or it broke in beside the heart: its way in priced from its own side, costmap, it can land within DEEP_MIN of it,
@@ -9354,6 +9389,9 @@ scenarios.creep = function()
       local f = lp("farm_state").farms[1]
       if f and not S.landed then
         S.landed = game.tick
+        -- (spread: its income at its lead from landing. At the playtest's slower climb, 0.2.127, its creep had not reached
+        -- the far nest by minute 25; at the old one it took it at 22 to 25 of 25 on three seeds.)
+        if mix == "spread" then lp("farm_set_evo", f.id, math.min(1, game.forces.enemy.get_evolution_factor(surface()) + 0.15)) end
         local pen = surface().find_entities_filtered{name = "lp-pen", position = f.pos, radius = 80, limit = 1}[1]
         if pen then
           local q = surface().find_non_colliding_position("stone-wall", {pen.position.x + 6, pen.position.y}, 4, 1)
@@ -9518,6 +9556,8 @@ scenarios.creep = function()
       local f = lp("farm_state").farms[1]
       info(string.format("creep spread: far nest taken at %s (%.1f min after landing), %s", tostring(S.taken),
         S.taken and (S.taken - S.landed) / 3600 or -1, serpent.line(f)))
+      -- (Set aside at once within a grown tumor's reach, its ground still bare, it was never taken: the playtest's slower
+      -- climb, 0.2.127.)
       check("creep: the far nest taken by its creep", S.taken ~= nil, tostring(S.far_at))
       return
     end
@@ -10154,6 +10194,16 @@ scenarios.farm = function()
         S.farm_pos = f.pos
         S.dist = math.sqrt((f.pos.x - S.at(0, 0)[1]) ^ 2 + (f.pos.y - S.at(0, 0)[2]) ^ 2)
         S.evo_land = f.evo
+        -- evocap: its evolution set 0.3 past the wild's (an older save's, climbed at the old rate): held at the lead.
+        if mix == "evocap" then
+          S.evo_set = game.forces.enemy.get_evolution_factor(surface()) + 0.3
+          lp("farm_set_evo", f.id, S.evo_set)
+        end
+        -- (A siege's breeds at its lead from landing: at the old climb, 0.004 a minute, it got there in 12 minutes; at 0.002
+        -- it probed instead, its big bursters not bred yet; the playtest's evolution cap, 0.2.127.)
+        if mix == "siege" or mix == "behind" or mix == "lab" then
+          lp("farm_set_evo", f.id, math.min(1, game.forces.enemy.get_evolution_factor(surface()) + 0.15))
+        end
         if mix == "siege" or mix == "behind" or mix == "lab" then
           S.min_bio, S.max_near, S.sieges = math.huge, 0, {}
           for t2 = game.tick - storage.t0 + 60, END - 120, 600 do
@@ -10268,7 +10318,8 @@ scenarios.farm = function()
           finish_early()
         end
       end
-      if f and S.landed then S.evo_last = {evo = f.evo, bred = f.bred_evo, clinic = f.clinic, tick = game.tick} end
+      if f and S.landed then S.evo_last = {evo = f.evo, bred = f.bred_evo, clinic = f.clinic, tick = game.tick,
+        wild = game.forces.enemy.get_evolution_factor(surface())} end
       if mix == "clinic" and S.clinic_killed and f then
         local since = game.tick - S.clinic_killed
         if since >= 5 * 3600 and not S.frozen then S.frozen = {evo = f.evo, bred = f.bred_evo, clinic = f.clinic} end
@@ -10624,9 +10675,21 @@ scenarios.farm = function()
     local mins = e.tick and (e.tick - S.landed) / 3600 or 0
     info(string.format("farm: evolution %s at landing, %s %.1f min on (bred at %s), clinic %s", tostring(S.evo_land),
       tostring(e.evo), mins, tostring(e.bred), tostring(e.clinic)))
-    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "behind" then
+    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "behind" and mix ~= "evocap" then
+      -- (0.002 a minute, farm.lua CLIMB, up to its lead over the wild's.)
       check("farm: its clinic stands and its breeds climb", e.clinic == true and S.evo_land and e.evo
-        and e.evo - S.evo_land >= 0.004 * (mins - 1) * 0.9 and math.abs(e.bred - e.evo) < 0.001, serpent.line(e))
+        and e.evo - S.evo_land >= math.min(0.002 * (mins - 1) * 0.9, e.wild + 0.15 - S.evo_land - 1e-6)
+        and math.abs(e.bred - e.evo) < 0.001, serpent.line(e))
+    end
+    -- Never more than 0.15 past the wild's (farm.lua LEAD), set past it or climbed: at 0.004 a minute, uncapped, it went from
+    -- 0.50 to 0.69 in under an hour while the wild's went to 0.52 (the user's playtest, 2026-10-31).
+    if e.evo and e.wild then
+      check("farm: its evolution within its lead over the wild's", e.evo <= e.wild + 0.15 + 1e-6, serpent.line(e))
+    end
+    if mix == "evocap" then
+      check("farm: evocap, set 0.3 past the wild's, it came down to its lead", S.evo_set and e.evo
+        and math.abs(e.evo - math.min(1, e.wild + 0.15)) < 0.002, serpent.line({set = S.evo_set, e = e}))
+      return
     end
     if mix == "techs" then
       info(string.format("farm techs: after 7 min %s; after 14 min %s", serpent.line(S.hungry), serpent.line(S.fed_again)))
@@ -10729,8 +10792,11 @@ scenarios.farm = function()
       local lost, big = 0, prototypes.entity["lp-bred-big-burster"].get_max_health()
         / prototypes.entity["lp-bred-medium-biter"].get_max_health()
       for key, v in pairs(first and first.lost_worth_by or {}) do if key:sub(-5) == " none" then lost = lost + v end end
-      check("farm: siege, its big bursters spent counted in what it lost", first ~= nil and (first.big_set_off or 0) > 0
-        and lost >= first.big_set_off * big - 1e-6, string.format("lost %.1f to no killer, %d set off at %.1f each", lost,
+      -- (When they set off: a lone ram lasered short of the wall is counted to its killer, and is what its next siege learns
+      -- from, herd.learn_reach; north of the fort, the playtest's slower climb, 0.2.127.)
+      check("farm: siege, its big bursters spent counted in what it lost", first ~= nil and ((first.big_set_off or 0) == 0
+        and (first.big_sent or 0) > 0 or (first.big_set_off or 0) > 0 and lost >= first.big_set_off * big - 1e-6),
+        string.format("lost %.1f to no killer, %d set off at %.1f each", lost,
         first and first.big_set_off or 0, big))
       -- Its rams go at the wall piece on its swept lane, then their guns (sent at the wall nearest their own gun, they walked
       -- off the lane into mines and stood stunned under the lasers; the square lab fort, 2026-10-31).

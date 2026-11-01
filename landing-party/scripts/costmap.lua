@@ -22,6 +22,11 @@ costmap.WATER_SHARE = 0.4  -- a cell this much water, or more, is no way
 -- drawn through one was walked round the long way: nw's biggest waves, sent at a forest of 0.2 to 0.26 trees a tile,
 -- went round its edge through 0.12 to 0.18 and were turned home as taken off their way (2026-10-28).
 costmap.FOREST = 0.2
+-- And thinner woods dearer to cross from FOREST_SOFT, up to FOREST_DEAR more times the walk at FOREST: read as open, a wood
+-- of 0.14 trees a tile north of the siege test's fort was walked round by the engine to the south, into the lasers' reach,
+-- and the wave broke in there, its rams short of the wall (the playtest's slower climb, 0.2.127, set it out from elsewhere).
+costmap.FOREST_SOFT = 0.05
+costmap.FOREST_DEAR = 4
 -- Cliff pieces in a cell that make it no way: one. (At two, a cliff line crossing cells corner to corner left one piece
 -- in each, read as open: a plan ran along it 500 tiles from the user's fort, and its herd's legs failed one after another
 -- until it scattered; the siege lab, 2026-10-30. A cliff's end closes a cell it need not: the safe side.)
@@ -120,7 +125,10 @@ cell_cost_ = function(map, i, j, k)
       type = WALLS, force = map.wall_forces or map.forces, limit = 1} > 0
     local mines = near(map, "mine", i, j) and s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
       type = "land-mine", force = map.forces} or 0
-    c = size * costmap.WALK + fire + costmap.DEATH * (map.deaths[k] or 0) + costmap.MINE * mines
+    local trees = near(map, "tree", i, j) and s.count_entities_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
+      type = "tree"} or 0
+    local wood = math.max(0, trees / (size * size) - costmap.FOREST_SOFT) / (costmap.FOREST - costmap.FOREST_SOFT)
+    c = size * costmap.WALK * (1 + costmap.FOREST_DEAR * wood) + fire + costmap.DEATH * (map.deaths[k] or 0) + costmap.MINE * mines
     -- (What of it is standing at the wall to break it, kept apart: a siege whose rams blow the wall while its herd waits out
     -- of reach does not pay it, farm.lua siege_size.)
     if walls then map.wallc[k] = costmap.WALL + fire * map.n / costmap.FUNNEL end

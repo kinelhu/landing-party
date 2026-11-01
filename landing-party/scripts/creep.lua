@@ -379,6 +379,14 @@ local function room(surface, pos)
 end
 
 -- Where it could found an incubator of its own now: a grown tumor with no incubator within FOUND_APART and room by it.
+-- A nest set aside, and why (decisions.txt, when the planner's trace is on).
+local function ctrace(n, why)
+  if storage.trace then
+    helpers.write_file("landing-party/decisions.txt", string.format("%8d %s  its creep sets aside the nest at %.0f,%.0f: %s\n",
+      game.tick, "biotech", n.position.x, n.position.y, why), true)
+  end
+end
+
 local function found_spot(surface, mine)
   for _, rec in ipairs(mine) do
     if rec.r >= R_MAX
@@ -476,11 +484,10 @@ function creep.bud(id, tick)
       local d = ((n.position.x - rec.pos.x) ^ 2 + (n.position.y - rec.pos.y) ^ 2) ^ 0.5
       -- Taken only on its creep, as an incubator is fed (creep.covered): within reach and two tiles but off it, a nest was
       -- taken, starved off its creep in three minutes, went wild and was taken again, 172 times in five hours on nw, its
-      -- culture's breeding in debt all the while (2026-10-29). Within reach and still off it, its creep cannot cover it.
-      if d <= rec.r + 2 then
-        if creep.covered(surface, n.position) then return n end
-        if rec.r >= R_MAX then c.blocked[n.unit_number] = true end
-      end
+      -- culture's breeding in debt all the while (2026-10-29). Within reach and still off it, it buds on toward it: its creep
+      -- wanders (0.2.28) and a grown tumor's reach leaves bare ground, and set aside at once there, a nest 65 tiles out was
+      -- never taken (the playtest's slower climb, 0.2.127; creep spread). Its buds no nearer, STALL, set it aside.
+      if d <= rec.r + 2 and creep.covered(surface, n.position) then return n end
     end
     local walk = costmap.cost(land, n.position)
     if walk then
@@ -488,7 +495,7 @@ function creep.bud(id, tick)
       local tiles = walk / costmap.WALK
       if not bs or tiles / pull < bs then best, bs = n, tiles / pull end
     else
-      c.blocked[n.unit_number] = true
+      c.blocked[n.unit_number] = true; ctrace(n, "no walk to it")
     end
   end
   if not best then return found(c, id, surface, mine, tick) end
@@ -525,7 +532,7 @@ function creep.bud(id, tick)
   if not a or k > a.k then c.aim[key] = {k = k, n = 0}
   else
     a.n = a.n + 1
-    if a.n >= STALL then c.blocked[key], c.aim[key] = true, nil return nil end
+    if a.n >= STALL then c.blocked[key], c.aim[key] = true, nil; ctrace(best, string.format("%d buds no nearer (at %d of %d)", STALL, k, #path)) return nil end
   end
   pay(c, tick, BUD_PRICE)
   c.budded = (c.budded or 0) + 1
