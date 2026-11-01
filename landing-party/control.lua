@@ -37,6 +37,7 @@ local road = require("__landing-party__.scripts.road")
 local trade = require("__landing-party__.scripts.trade")
 local ledger = require("__landing-party__.scripts.ledger")
 local skim = require("__landing-party__.scripts.skim")
+local prowl = require("__landing-party__.scripts.prowl")
 local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
@@ -101,7 +102,7 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -489,6 +490,7 @@ remote.add_interface("landing-party", {
     -- No biotech arrival (farm.lua); tests that bring it do so with farm_arrive.
     if t.biotech_off ~= nil then storage.biotech_off = t.biotech_off end
     if t.way_in ~= nil then storage.way_in = t.way_in end
+    if t.prowl ~= nil then storage.prowl = t.prowl end
     -- Tests and the siege lab: its cultures bud no incubator (their waves' size held, farm.cap_of).
     if t.pens_hold ~= nil then storage.biotech_pens_hold = t.pens_hold end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
@@ -709,6 +711,18 @@ remote.add_interface("landing-party", {
     for i, j in ipairs(b.queue) do if i <= 12 then out.queue[#out.queue + 1] = s(j) end end
     for _, j in ipairs(b.rebuild) do out.rebuild[#out.rebuild + 1] = s(j) end
     for _, c in ipairs(b.crews or {}) do out.crews[#out.crews + 1] = #(c.jobs or {}) .. " jobs, at " .. tostring(c.k) end
+    return out
+  end,
+  -- What a camp's intel holds within r of pos (tests: the prowl), and how many prowls it sent.
+  debug_knows = function(id, pos, r)
+    local b = storage.bases[id]
+    if not b then return nil end
+    local out = {prowls = b.prowls or 0, cells = {}}
+    for _, t in pairs(b.intel and b.intel.targets or {}) do
+      if (t.pos[1] - pos[1]) ^ 2 + (t.pos[2] - pos[2]) ^ 2 <= r * r then
+        out.cells[#out.cells + 1] = string.format("%s@%.0f,%.0f loot %s", t.kind, t.pos[1], t.pos[2], tostring(t.loot))
+      end
+    end
     return out
   end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,

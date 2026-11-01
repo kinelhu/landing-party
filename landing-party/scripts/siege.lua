@@ -660,6 +660,12 @@ local function siege_step(b, trace, army)
           or s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
         local m = p and s.create_entity{name = name, position = p, force = force, direction = here and here.dir or nil}
         if m and here then m.health = math.max(1, here.share * m.max_health) end
+        -- A siege's mortar against a player is no military target: the player's artillery does not pick it by itself
+        -- (data.lua). Against nests it stays one (biters go for military targets first: it draws them off its guards).
+        if m and m.name ~= shared.variant(b.corp, "lp-howitzer") and tg and tg.owner ~= "enemy" and against_player(tg.owner) then
+          m.is_military_target = false
+          if k == 1 then trace(b, "siege: its mortars no military target (the player's artillery leaves them alone)") end
+        end
         if m then
           local shells = carry and carry[k] or spec.shells * (op.piece == "lp-howitzer" and 2 or 1)
           if shells > 0 then m.insert{name = "lp-mortar-shell", count = shells} end

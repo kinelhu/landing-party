@@ -4297,6 +4297,127 @@ end
 -- outpost 120 tiles from a Grubstake camp (four assemblers holding plates, two solar panels, a pole, a chest of
 -- circuits), a raid sent at it: the machines taken apart, their ghosts left, the goods home in the yard.
 -- LP_MIX=ambush: the raiders killed once they have taken two; what they carried spills there.
+-- Prowl (scripts/prowl.lua; the user, 2026-11-01: a thief that never learned of the undefended mine on deathworld10x):
+-- a player base round spawn behind a ring of gun turrets, and an outpost of assemblers on its far side, out of the camp's
+-- sensors and its survey's view. Grubstake's buggy circles the base clear of the guns and its camp learns the outpost.
+-- LP_MIX=off: the prowl off, the outpost never known (the check seen failing the other way).
+scenarios.prowl = function()
+  local off = params.mix == "off"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, raids_off = true, prowl = not off})
+    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    for _ = 1, 2 do lp("debug_depot", S.id, 3000) end
+    flatten(-50, -50, 50, 50)
+    for k = 0, 15 do
+      local a = k * 2 * math.pi / 16
+      local t = surface().create_entity{name = "gun-turret", position = {math.floor(40 * math.cos(a)) + 0.5,
+        math.floor(40 * math.sin(a)) + 0.5}, force = "player"}
+      if t then t.insert{name = "firearm-magazine", count = 50} end
+    end
+    for k = 0, 8 do
+      surface().create_entity{name = "assembling-machine-1", position = {-12 + 3 * (k % 3) + 0.5, -3 + 3 * math.floor(k / 3) + 0.5}, force = "player"}
+    end
+    -- The outpost: on the far side of spawn from the camp, 150 tiles out.
+    local o = lp("stats", S.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {math.floor(-o.x / len * 150), math.floor(-o.y / len * 150)}
+    flatten(c[1] - 12, c[2] - 12, c[1] + 12, c[2] + 12)
+    for k = 0, 3 do
+      surface().create_entity{name = "assembling-machine-1", position = {c[1] - 6 + 4 * k + 0.5, c[2] + 0.5}, force = "player"}
+    end
+    surface().create_entity{name = "medium-electric-pole", position = {c[1] + 0.5, c[2] + 3.5}, force = "player"}
+    S.c = c
+    local k = lp("debug_knows", S.id, c, 30)
+    info("prowl: outpost at " .. c[1] .. "," .. c[2] .. "; known at the start: " .. #k.cells)
+    S.known0 = #k.cells
+  end)
+  schedule(END - 60, function()
+    local k = lp("debug_knows", S.id, S.c, 30)
+    info("prowl: " .. k.prowls .. " prowls; known by the outpost: " .. serpent.line(k.cells))
+    if off then
+      check("prowl: off, no prowl and the outpost unknown", k.prowls == 0 and #k.cells == 0, k.prowls .. ", " .. #k.cells)
+    else
+      check("prowl: unknown at the start", S.known0 == 0, S.known0)
+      check("prowl: a buggy went round", k.prowls >= 1, k.prowls)
+      check("prowl: the camp learned the outpost, its loot with it", #k.cells >= 1 and k.cells[1]:find("loot [1-9]") ~= nil,
+        serpent.line(k.cells))
+    end
+  end)
+end
+
+-- Artyprobe (the user, 2026-11-01: "Couldn't we make the mortar not an artillery building ... force players to manually
+-- target if they want it dead"): an artillery turret with shells at spawn, a Kessler-Hayashi mortar 80 tiles off, at war.
+-- A siege's mortar against a player is made no military target (siege.lua; here as it does): the turret leaves it alone
+-- (before, one shell, unprompted). LP_MIX=mil: the prototype's military target, as a camp's mortar: destroyed (the check
+-- seen failing the other way).
+scenarios.artyprobe = function()
+  local mil = params.mix == "mil"
+  schedule(60, function()
+    lp("debug_tune", {ops_off = true})
+    for _, pair in ipairs({{"player", "lp-serenity"}, {"lp-serenity", "player"}}) do game.forces[pair[1]].set_cease_fire(pair[2], false) end
+    flatten(-10, -10, 100, 10)
+    local a = surface().create_entity{name = "artillery-turret", position = {0, 0}, force = "player"}
+    S.loaded = a.insert{name = "artillery-shell", count = 20}
+    local m = surface().create_entity{name = "lp-mortar", position = {80, 0}, force = "lp-serenity"}
+    if not mil then m.is_military_target = false end
+    S.a, S.m = a, m
+  end)
+  schedule(4 * 3600, function()
+    local left = S.a.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("artillery-shell")
+    local fired = S.loaded - left
+    info(string.format("artyprobe: mortar %s, %d shells fired", S.m.valid and "standing" or "destroyed", fired))
+    if mil then
+      check("artyprobe: a military mortar is shelled unprompted", not S.m.valid and fired >= 1, fired)
+    else
+      check("artyprobe: the player's artillery leaves the mortar alone", S.m.valid and fired == 0, fired)
+    end
+  end)
+end
+
+-- Domeprobe (engine question for Kessler-Hayashi's shield domes, 2026-11-01): can a script catch the player's artillery
+-- shells in flight over a point and destroy them before they land? An artillery turret at spawn, a Kessler-Hayashi gun
+-- turret 120 tiles off (a military target), and every 2 ticks the artillery projectiles within R of it: logged, and
+-- destroyed (LP_MIX=catch). LP_MIX=over: the target 40 tiles beyond the dome's centre, the dome on the shells' line (do
+-- shells passing over get caught?).
+scenarios.domeprobe = function()
+  local catch = params.mix == "catch" or params.mix == "over"
+  local over = params.mix == "over"
+  local R = 30
+  schedule(60, function()
+    lp("debug_tune", {ops_off = true})
+    for _, pair in ipairs({{"player", "lp-serenity"}, {"lp-serenity", "player"}}) do game.forces[pair[1]].set_cease_fire(pair[2], false) end
+    flatten(-10, -10, 180, 10)
+    local a = surface().create_entity{name = "artillery-turret", position = {0, 0}, force = "player"}
+    S.loaded = a.insert{name = "artillery-shell", count = 20}
+    S.t = surface().create_entity{name = "gun-turret", position = {over and 160 or 120, 0}, force = "lp-serenity"}
+    S.dome = {120, 0}
+    S.a, S.seen, S.caught = a, 0, 0
+  end)
+  for t = 62, 4 * 3600, 2 do
+    schedule(t, function()
+      if not S.dome then return end
+      for _, pr in pairs(surface().find_entities_filtered{type = "artillery-projectile", position = S.dome, radius = R}) do
+        S.seen = S.seen + 1
+        if S.seen <= 6 then
+          info(string.format("domeprobe tick %d projectile %s at %.1f,%.1f orientation %.3f speed %s", game.tick, pr.name,
+            pr.position.x, pr.position.y, pr.orientation or -1, tostring(pr.speed)))
+        end
+        if catch then
+          surface().create_entity{name = "big-explosion", position = pr.position}
+          pr.destroy()
+          S.caught = S.caught + 1
+        end
+      end
+    end)
+  end
+  schedule(4 * 3600, function()
+    local left = S.a.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("artillery-shell")
+    info(string.format("domeprobe: target %s (health %s), %d shells fired, %d projectile sightings, %d caught",
+      S.t.valid and "standing" or "destroyed", S.t.valid and tostring(S.t.health) or "-", S.loaded - left, S.seen, S.caught))
+    check("domeprobe: ran", true)
+  end)
+end
+
 scenarios.dismantle = function()
   local ambush = params.mix == "ambush"
   local function toward(id, d)
@@ -7709,6 +7830,10 @@ scenarios.visit = function()
     if params.mix:find("nosyn", 1, true) then lp("debug_tune", {biotech_off = true}) end
     -- LP_MIX=wayin: the corporations' raids weigh their way in (ops.way_in; off by default until measured).
     if params.mix:find("wayin", 1, true) then lp("debug_tune", {way_in = true}) end
+    -- LP_MIX=noprowl / nowayin: Grubstake without its prowl and loot (scripts/prowl.lua), every corporation's raids
+    -- without the way in (ops.weighs_way); both on for Grubstake by default since 0.2.132.
+    if params.mix:find("noprowl", 1, true) then lp("debug_tune", {prowl = false}) end
+    if params.mix:find("nowayin", 1, true) then lp("debug_tune", {way_in = false}) end
     -- LP_MIX=era<N>: the corporations at the player's era N whatever the save researched (the reference factories have
     -- 9 to 13 technologies, era 0; a phase visit at era 0 judged every corporation at its weakest).
     local era = tonumber(params.mix:match("era(%d)"))

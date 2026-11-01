@@ -62,6 +62,8 @@ shared.CORPS = {
     },
     -- Its sky is scrap drones, cheap and many (the user, 2026-10-23: "a more scrappy opponent").
     mix = {["lp-infantry"] = 3, ["lp-buggy"] = 4, ["lp-harrier"] = 2}, arch = {pad = "drop", town = true},
+    -- A buggy round the player's base for soft ground (scripts/prowl.lua, behind debug_tune prowl).
+    prowls = true,
     -- Development (docs/campaign.md section 6): the level at which each capability comes; absent, never.
     caps = {["lp-harrier"] = 1, pickets_see = 2, headquarters = 3},
     -- Temper (docs/corporations.md): it never raids the player's guarded ground (player targets with known
@@ -77,6 +79,8 @@ shared.CORPS = {
     -- max_exposure: the most defence it goes up against (a thief keeps off guarded ground; none for a corporation that
     -- goes anywhere).
     mind = {min_odds = 0.6, caution = 2, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 10}, counter = 0.5,
+      loot = 3,   -- a cell's carry-off worth multiplies its score up to 1 + loot (ops choose, with the prowl)
+      way_in = true,   -- its raids weigh the turrets on their way in (ops.way_in): a thief goes round a wall
       max_exposure = 1.0,
       -- Where it lands (faction.site): by ore first and away from its rivals; the way to the player matters less.
       site = {ore = 1.5, approach = 0.5, density = 0.3, rival = 1},

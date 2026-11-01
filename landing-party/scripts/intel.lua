@@ -159,20 +159,22 @@ local function sense(b, surface, pos, r)
         local c = cells[key]
         if not c or v > c.value then
           cells[key] = {pos = {e.position.x, e.position.y}, kind = e.name, value = v, owner = e.force.name, type = e.type,
-            drills = c and c.drills or 0}
+            drills = c and c.drills or 0, loot = c and c.loot or 0}
           c = cells[key]
         end
         -- Drills counted apart: a cell is named for its most valuable structure, and the substation feeding an
         -- outpost outranks its drills, so strip-mining knew none on a factory of drill outposts (factory, 8 seeds).
         if e.type == "mining-drill" then c.drills = c.drills + 1 end
+        -- What a thief could carry off (ops.STEAL_WORTH: what its raids dismantle), for a thief's choice (mind.loot).
+        c.loot = (c.loot or 0) + ((ops.STEAL_WORTH or {})[e.type] or 0)
       end
     end
     for key, c in pairs(cells) do
       local t = b.intel.targets[key] or {tried = 0, cool = 0}
-      t.pos, t.kind, t.value, t.seen, t.owner, t.drills = c.pos, c.kind, c.value, game.tick, c.owner, c.drills
+      t.pos, t.kind, t.value, t.seen, t.owner, t.drills, t.loot = c.pos, c.kind, c.value, game.tick, c.owner, c.drills, c.loot
       t.defence, t.dmg = ops.weigh(surface, c.pos, other, nil, b.corp)
       t.exposure = ops.exposure(surface, c.pos, other)
-      if storage.way_in and b.origin then t.way = ops.way_in(surface, {b.origin.x, b.origin.y}, c.pos, other, b.corp) end
+      if ops.weighs_way(b) and b.origin then t.way = ops.way_in(surface, {b.origin.x, b.origin.y}, c.pos, other, b.corp) end
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
       -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was
       -- raided every ten minutes and its raiders died on the way.

@@ -454,10 +454,17 @@ local function held_by(b, owner)
   if not h then return 0 end
   return h.n * 0.5 ^ ((game.tick - h.at) / HELD_HALF)
 end
+-- Whether its raids weigh their way in: a mind that does (mind.way_in: Grubstake, the thief who goes round a wall;
+-- Kessler-Hayashi's, weighing it, went quiet, and is to bring the force instead), or all with debug_tune way_in = true;
+-- none with way_in = false.
+function ops.weighs_way(b)
+  if storage.way_in ~= nil then return storage.way_in end
+  return ((shared.CORPS[b.corp] or {}).mind or {}).way_in == true
+end
 local function defence(b, t)
   local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
-  -- The way in when it outweighs the target's own (intel's ops.way_in, behind way_in).
-  local guns = storage.way_in and math.max(t.defence or 0, t.way or 0) or (t.defence or 0)
+  -- The way in when it outweighs the target's own (intel's ops.way_in; ops.weighs_way).
+  local guns = ops.weighs_way(b) and math.max(t.defence or 0, t.way or 0) or (t.defence or 0)
   return (guns + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
     + held_by(b, t.owner)) / rd.strength(b.corp, t.dmg)
 end
@@ -489,6 +496,7 @@ function ops.desperate_ok(b, n, d) return odds(n, d) >= mind_of(b).min_odds * DE
 --   grudge       grievance against the owner (know.lua): 1 + grievance / grudge, at most grudge_max (a reprisal: four
 --                lost Line troopers, 40 parts, made x5, as the reprisal's fixed weight did; now buildings lost count too,
 --                and it is the faction's, not one camp's)
+local LOOT_CAP = 24   -- a cell's carry-off worth (WORTH) that counts in full: eight drills
 local WEIGHTS = {pressure = 3, battery = 10, desperate = 10, distracted = 0.2, ground = 2, grudge = 10, grudge_max = 5}
 local function relevance(b, t, c)
   -- A mind sets the weights it differs on; the rest are these.
@@ -561,6 +569,9 @@ local function choose(b, army)
           / (1 + (t.line and 0 or t.tried))
           * relevance(b, t, {player = player, floor = floor, rung = player and ladder(t.owner, b.force) or 0,
             desperate = desperate, pressed = pressed, ground = ground})
+        -- A thief's eye (mind.loot, with the prowl): a cell by what can be carried off from it, not only its most valuable
+        -- building (a mine read as its power pole, 5, below a substation, 6; its drills were never taken, 2026-11-01).
+        if storage.prowl ~= false and mind.loot and t.loot then s = s * (1 + mind.loot * math.min(t.loot, LOOT_CAP) / LOOT_CAP) end
         if not bs or s > bs then best, bs = key, s end
       end
     end
@@ -898,6 +909,7 @@ local DISMANTLE_TYPES = {"assembling-machine", "furnace", "mining-drill", "lab",
 local WORTH = {["assembling-machine"] = 3, furnace = 2, ["mining-drill"] = 3, lab = 3, ["solar-panel"] = 2, accumulator = 2,
   beacon = 8, radar = 2, boiler = 1, generator = 3, inserter = 0.5, ["electric-pole"] = 0.5, pump = 1, ["offshore-pump"] = 1,
   ["storage-tank"] = 1, roboport = 8}
+ops.STEAL_WORTH = WORTH
 local DISMANTLE_MAX, DISMANTLE_REACH = 12, 8
 -- A thief walks in and takes rather than shoots (raiding as an army, it razed three of four assemblers before its first
 -- step could take one, scenario dismantle): with something to carry at the target, its raiders go there answering
@@ -1509,7 +1521,7 @@ local function step(b, trace, army)
         t.units, t.units_at = mobile(s, t.pos, foes), game.tick
         -- And the way in from where it stands (behind way_in): its leg to the target, read now.
         local guns = t.defence
-        if storage.way_in and op.staging then
+        if ops.weighs_way(b) and op.staging then
           t.way = ops.way_in(s, op.staging, t.pos, foes, b.corp)
           guns = math.max(guns, t.way)
         end

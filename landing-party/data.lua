@@ -144,6 +144,12 @@ mortar.collision_box = {{-0.8, -0.8}, {0.8, 0.8}}
 mortar.selection_box = {{-1, -1}, {1, 1}}
 mortar.drawing_box_vertical_extension = 2
 mortar.max_health = 800
+-- A military target as built (a camp's mortars draw biters off its other guns: made none, a hazard clearance's camp
+-- held worse, 2026-11-01), changeable at runtime: a siege's mortar against a player is made none on deployment
+-- (siege.lua), so the player's artillery does not pick it by itself (the user, 2026-11-01: "force players to manually
+-- target if they want it dead"; one shell killed every siege's mortar under artillery in 5 s, phase visit). An
+-- artillery remote still aims at it. The howitzer stays one: outranged by the player's artillery by design.
+mortar.allow_run_time_change_of_is_military_target = true
 mortar.turret_rotation_speed = 0.004
 mortar.cannon_base_shift = {0, 0, mortar.cannon_base_shift[3] * MORTAR_SCALE}
 mortar.gun = "lp-mortar-gun"

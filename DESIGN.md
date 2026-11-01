@@ -3710,3 +3710,28 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - Grubstake alone on deathworld10x with 0.2.131 (three hours): 33,104 parts made (none before the fix), 10 raids, every
   one at the big poles feeding the player's outpost (6 done, 9 gun turrets, walls and poles razed), its skim's first
   load there (60 items).
+- 0.2.132, Grubstake the thief (the user, 2026-11-01: "Grubstake might steal buildings instead of destroying them"):
+  - **The prowl** (`scripts/prowl.lua`, shared.CORPS prowls): every 15 minutes a camp sends one buggy round the
+    player's base on a ring of 12 points at the edge its survey found, each pushed out until no turret covers it (8
+    spare), sensing 60 round it; home, it rejoins the garrison; killed, the next after 20 minutes, its ring keeping 40
+    tiles off where it died for two hours (on deathworld10x one died at its second point ten prowls running). Scenario
+    `prowl`: an outpost on the far side of a ringed base, unknown at the start, known with its loot after two prowls;
+    `prowl off`: never known.
+  - **A thief's eye** (mind.loot 3): a cell's score times 1 + loot x its carry-off worth (the dismantle's WORTH, intel
+    counting it per cell) over 24: a mine read as its power pole (5, below a substation's 6) and its drills were never
+    taken.
+  - **The way in** on for Grubstake (mind.way_in; ops.weighs_way; `debug_tune way_in` sets it for all or none).
+    Kessler-Hayashi keeps the target's reading until its armed redesign (weighing the way it went quiet).
+  - Measured, 180 minutes. Laser base, era 2: 16 raids, none done, 219 lost (before); prowl, loot and way in: 8, 4 done,
+    42 lost. deathworld10x, Grubstake alone: 10 raids, 40 of the player's buildings and 12 items (before); prowl and
+    loot: 15 raids, 9 done, 20 assemblers and 23 inserters carried off among 459 buildings taken or razed, 589 items
+    looted (assemblers at -185,-30 and -120,25 behind no turret); with the way in too, 412 and 137.
+- **The corporations' mortar is no military target** (0.2.132; the user: "Couldn't we make the mortar not an artillery
+  building ... force players to manually target if they want it dead?"). The player's artillery picked it by itself:
+  one shell, 800 health, every siege's mortar under artillery dead in 5 seconds (phase visit, artillery, twice). A
+  siege's mortar against a player is made no military target on deployment (siege.lua; the prototype allows it at
+  runtime); only an artillery remote aims at it. As built the mortar stays one: made none in the prototype, a camp's
+  mortars no longer drew biters off its guns and `hazard` (seed 12345) cleared 2 of 6 nests instead of all (0.2.131
+  passing on the same seed, both failing alike on 777 and 4242: those two are old). The howitzer stays one (outranged
+  by the player's artillery by design). Scenario `artyprobe`: 0 shells fired at it in 4 minutes; `artyprobe mil` (as
+  built): 1 shell, destroyed; `fortress` traces its sieges' mortars made none.

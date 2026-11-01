@@ -1,6 +1,6 @@
 # Playtest kit
 
-Mod 0.2.131, branch `muster`, rewritten 2026-10-31. Nothing has been played since 2026-10-16; everything below has
+Mod 0.2.132, branch `muster`, rewritten 2026-10-31. Nothing has been played since 2026-10-16; everything below has
 been checked headless only. Chat notices are off: the world should tell you what happens.
 
 ## Start

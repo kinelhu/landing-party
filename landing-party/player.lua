@@ -209,6 +209,7 @@ data:extend({
 -- wall's own weapon. Grubstake: its strip drill, twice an electric drill's speed at half the ore drain.
 local mortar = table.deepcopy(data.raw["artillery-turret"]["lp-mortar"])
 mortar.name = "lp-player-mortar"
+mortar.allow_run_time_change_of_is_military_target = false
 mortar.flags = {"placeable-neutral", "placeable-player", "player-creation"}
 mortar.minable = {mining_time = 0.5, result = "lp-player-mortar"}
 mortar.hidden = false
