@@ -52,13 +52,23 @@ they meet.
 5. **What only holding gives.** Rewards that come only from units standing somewhere: capture as now; samples from a
    culture's site held while it is taken apart.
 
+6. **A defence that moves, when turrets stop being enough (the user, same day).** If late attacks outrange turrets
+   (a stronger mortar: Kessler-Hayashi's howitzer and the mortar truck already fire from beyond a wall's guns),
+   the wall stops being the answer and the army becomes it. Soldiers are deployed at a front barracks when a fight
+   comes, each built from a control unit item kept there, and **reclaimed** when it is over: back into items, their
+   bandwidth freed. Bandwidth then limits how many fight at once, not how many the player owns, so a base keeps a
+   reserve at every front and spends its bandwidth where the fight is. Half of it is built: a barracks wired with
+   P > 0 keeps its orders as items, and a muster point turns items into units by its nearest beacon. Missing:
+   reclaiming (a retreat order that packs units back into items at a barracks or muster point), and a trigger a
+   player can wire (the scanner's count, a beacon's E and T).
+
 ## The instrument first
 Before designing more: a visit with a scripted player army (barracks fed, beacons and scanner circuits set up the way
 a player would) on nw and nwa, against the same run without it. That shows what an army does now, so a change can be
 measured against it.
 
 ## Questions for the consult
-- Which two of the five jobs make the army something a player wants, not something the mod forces?
+- Which two of the six jobs make the army something a player wants, not something the mod forces?
 - Eyes: what should see (every unit, scouts only, a vehicle), how far, and what does Synthexis or a corporation do
   about being seen?
 - Shields against artillery: how much should a dome hold, and what takes it down besides an army?
