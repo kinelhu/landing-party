@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M620.12,-339.25C620.12,-339.25 517.88,-339.25 517.88,-339.25 511.88,-339.25 505.88,-333.25 505.88,-327.25 505.88,-327.25 505.88,-307.25 505.88,-307.25 505.88,-301.25 511.88,-295.25 517.88,-295.25 517.88,-295.25 620.12,-295.25 620.12,-295.25 626.12,-295.25 632.12,-301.25 632.12,-307.25 632.12,-307.25 632.12,-327.25 632.12,-327.25 632.12,-333.25 626.12,-339.25 620.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="569" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="569" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 5375 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="569" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1951</text>
+<text xml:space="preserve" text-anchor="middle" x="569" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">14 modules, 5490 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="569" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1951, siege 1006</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge14" class="edge">
@@ -168,9 +168,9 @@
 <!-- Army and operations&#45;&gt;Settlement -->
 <g id="edge5" class="edge">
 <title>Army and operations&#45;&gt;Settlement</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.2" d="M548.41,-294.96C541.52,-287.42 534.01,-278.7 527.75,-270.25 522.07,-262.58 516.46,-253.91 511.5,-245.73"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.2" points="514.63,-244.14 506.53,-237.31 508.6,-247.7 514.63,-244.14"/>
-<text xml:space="preserve" text-anchor="middle" x="530.38" y="-261.7" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M548.41,-294.96C541.52,-287.42 534.01,-278.7 527.75,-270.25 522.19,-262.75 516.71,-254.29 511.84,-246.28"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="514.87,-244.53 506.77,-237.7 508.84,-248.09 514.87,-244.53"/>
+<text xml:space="preserve" text-anchor="middle" x="530.38" y="-261.7" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
 </g>
 <!-- Army and operations&#45;&gt;Settlement -->
 <g id="edge27" class="edge">

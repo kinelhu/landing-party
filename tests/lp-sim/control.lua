@@ -4418,6 +4418,53 @@ scenarios.domeprobe = function()
   end)
 end
 
+-- Dome (scripts/dome.lua; the user, 2026-11-01: Kessler-Hayashi's camps shielded against artillery, to force army
+-- encounters): player artillery 100 tiles from its lander, on auto-target, from minute 2. One turret (15 shells): the
+-- dome catches all and holds (charge 20). LP_MIX=battery, six turrets (90 shells): the dome breaks, and shells land on
+-- the camp. LP_MIX=dark: its generators destroyed first, no dome. LP_MIX=off: domes off (the camp shelled as before).
+scenarios.dome = function()
+  local mix = params.mix or ""
+  schedule(60, function()
+    -- (Its charge 20 here: the scenario's turrets hold 15 shells each.)
+    lp("debug_tune", {ops_off = true, domes = mix ~= "off", dome_charge = 20})
+    for _, pair in ipairs({{"player", "lp-serenity"}, {"lp-serenity", "player"}}) do game.forces[pair[1]].set_cease_fire(pair[2], false) end
+  end)
+  schedule(2 * 3600, function()
+    local o = lp("stats", storage.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local c = {o.x - o.x / len * 100, o.y - o.y / len * 100}
+    flatten(c[1] - 12, c[2] - 12, c[1] + 12, c[2] + 12)
+    if mix == "dark" then
+      for _, g in pairs(surface().find_entities_filtered{force = "lp-serenity", name = "lp-generator"}) do g.die("player") end
+    end
+    -- Its own shell through its dome (an orbital shell of its own falling by its lander): not caught.
+    surface().create_entity{name = "lp-orbital-projectile", position = {o.x, o.y - 20}, force = "lp-serenity",
+      target = {o.x + 20, o.y + 20}, speed = 1}
+    S.turrets, S.loaded = {}, 0
+    for k = 1, (mix == "battery" and 6 or 1) do
+      local t = surface().create_entity{name = "artillery-turret", position = {c[1] + 4 * (k - 1), c[2]}, force = "player"}
+      S.loaded = S.loaded + t.insert{name = "artillery-shell", count = 20}
+      table.insert(S.turrets, t)
+    end
+    S.lost0 = lp("stats", storage.id).lost
+  end)
+  schedule(END - 60, function()
+    local left = 0
+    for _, t in ipairs(S.turrets) do if t.valid then left = left + t.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("artillery-shell") end end
+    local d = lp("debug_dome", storage.id)
+    local lost = lp("stats", storage.id).lost - S.lost0
+    info(string.format("dome: %d shells fired, dome %s, its buildings lost %d", S.loaded - left, serpent.line(d), lost))
+    if mix == "battery" then
+      check("dome: a battery breaks it and its shells land", d.breaks >= 1 and lost > 0, d.breaks .. " breaks, " .. lost .. " lost")
+    elseif mix == "dark" or mix == "off" then
+      check("dome: none, the camp is shelled", d.caught == 0 and lost > 0, d.caught .. " caught, " .. lost .. " lost")
+    else
+      check("dome: one turret's shells all caught (not its own), the dome holds", S.loaded - left >= 5 and d.caught == S.loaded - left
+        and d.breaks == 0 and lost == 0, string.format("%d fired, %d caught, %d lost", S.loaded - left, d.caught, lost))
+    end
+  end)
+end
+
 scenarios.dismantle = function()
   local ambush = params.mix == "ambush"
   local function toward(id, d)
@@ -7834,6 +7881,40 @@ scenarios.visit = function()
     -- without the way in (ops.weighs_way); both on for Grubstake by default since 0.2.132.
     if params.mix:find("noprowl", 1, true) then lp("debug_tune", {prowl = false}) end
     if params.mix:find("nowayin", 1, true) then lp("debug_tune", {way_in = false}) end
+    -- LP_MIX=nodomes: Kessler-Hayashi without its shield (scripts/dome.lua; on by default since 0.2.133).
+    if params.mix:find("nodomes", 1, true) then lp("debug_tune", {domes = false}) end
+    -- LP_MIX=artyrange: the player's artillery reach doubled (range research; corporations land beyond its reach as
+    -- built, and a dome's measurement saw no shell, 2026-11-01).
+    if params.mix:find("artyrange", 1, true) then game.forces.player.artillery_range_modifier = 1 end
+    -- LP_MIX=fwdarty: from minute 10, six of the player's artillery turrets 180 tiles from Kessler-Hayashi's lander, toward
+    -- spawn, kept full every 2 minutes as a supply train would; shells spent and where counted (a corporation lands
+    -- beyond the player's artillery reach, researched or not: only artillery brought forward reaches it, 2026-11-01).
+    if params.mix:find("fwdarty", 1, true) then
+      schedule(10 * 3600, function()
+        local o = lp("stats", storage.id).origin
+        local dx, dy = sp.x - o.x, sp.y - o.y
+        local len = math.sqrt(dx * dx + dy * dy)
+        local c = {o.x + dx / len * 180, o.y + dy / len * 180}
+        S.fwd, S.fwd_shells = {}, 0
+        for k = 0, 5 do
+          local p = surface().find_non_colliding_position("artillery-turret", {c[1] + 4 * (k % 3), c[2] + 4 * math.floor(k / 3)}, 20, 1)
+          local t = p and surface().create_entity{name = "artillery-turret", position = p, force = "player"}
+          if t then table.insert(S.fwd, t) end
+        end
+        info(string.format("visit: %d artillery turrets forward at %.0f,%.0f, 180 from Kessler-Hayashi's lander", #S.fwd, c[1], c[2]))
+      end)
+      for t = 10 * 3600 + 60, params.minutes * 3600, 2 * 3600 do
+        schedule(t, function()
+          for _, a in ipairs(S.fwd or {}) do
+            if a.valid then S.fwd_shells = S.fwd_shells + a.insert{name = "artillery-shell", count = 15} end
+          end
+        end)
+      end
+      schedule(params.minutes * 3600 - 120, function()
+        local d = lp("debug_dome", storage.id) or {}
+        info(string.format("visit: forward artillery spent %d shells; dome %s", S.fwd_shells or 0, serpent.line(d)))
+      end)
+    end
     -- LP_MIX=era<N>: the corporations at the player's era N whatever the save researched (the reference factories have
     -- 9 to 13 technologies, era 0; a phase visit at era 0 judged every corporation at its weakest).
     local era = tonumber(params.mix:match("era(%d)"))
@@ -10557,6 +10638,10 @@ scenarios.farm = function()
           -- open on its doorstep any wave passing broke it, the code before as well: no guard).
           -- (Ten minutes on, once it has bred: placed as it landed, the artillery razed its four pens in seventy seconds.)
           schedule(game.tick - storage.t0 + 10 * 3600, function()
+            -- No Kessler-Hayashi dome: the sim's Kessler-Hayashi camp stood on the shells' way to the pens, and its dome
+            -- caught them all, the pens unshelled and the artillery never answered (0.2.133; the dome sheltering what lies
+            -- behind it is meant, the user, 2026-11-01). This is Synthexis against artillery alone.
+            lp("debug_tune", {domes = false})
             local b = S.at(0, 0)
             local dist = math.sqrt((b[1] - f.pos.x) ^ 2 + (b[2] - f.pos.y) ^ 2)
             game.forces.player.artillery_range_modifier = (dist + 40) / 224 - 1

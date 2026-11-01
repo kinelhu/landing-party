@@ -38,6 +38,7 @@ local trade = require("__landing-party__.scripts.trade")
 local ledger = require("__landing-party__.scripts.ledger")
 local skim = require("__landing-party__.scripts.skim")
 local prowl = require("__landing-party__.scripts.prowl")
+local dome = require("__landing-party__.scripts.dome")
 local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
 local map = require("__landing-party__.scripts.map")
@@ -102,7 +103,7 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -491,6 +492,9 @@ remote.add_interface("landing-party", {
     if t.biotech_off ~= nil then storage.biotech_off = t.biotech_off end
     if t.way_in ~= nil then storage.way_in = t.way_in end
     if t.prowl ~= nil then storage.prowl = t.prowl end
+    if t.domes ~= nil then storage.domes = t.domes end
+    if t.dome_charge ~= nil then storage.dome_charge = t.dome_charge end
+    if t.domes_off then storage.domes = false end
     -- Tests and the siege lab: its cultures bud no incubator (their waves' size held, farm.cap_of).
     if t.pens_hold ~= nil then storage.biotech_pens_hold = t.pens_hold end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
@@ -725,6 +729,7 @@ remote.add_interface("landing-party", {
     end
     return out
   end,
+  debug_dome = function(id) local b = storage.bases[id]; return b and dome.state(b) end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
   -- Tests only: the command tool without a mouse (player index 1 need not exist).

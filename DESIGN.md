@@ -3735,3 +3735,27 @@ Bugs and surprises the headless runs caught, each kept as a check:
   passing on the same seed, both failing alike on 777 and 4242: those two are old). The howitzer stays one (outranged
   by the player's artillery by design). Scenario `artyprobe`: 0 shells fired at it in 4 minutes; `artyprobe mil` (as
   built): 1 shell, destroyed; `fortress` traces its sieges' mortars made none.
+- **Kessler-Hayashi's dome** (0.2.133, `scripts/dome.lua`; the user, 2026-11-01: "making KH camps artillery proof
+  through shield domes? Would force army encounters"; on auto-targeted artillery firing into it for good: "maybe that's
+  not a bug and rather a feature"). Round its lander, 30 tiles, while its hull is up (its generators powered): every
+  artillery shell of its foes that comes into it is destroyed in the air, a burst and a ring where it was caught, one
+  charge spent; 300 charge, 5 mended a minute while up; at none it breaks for 3 minutes. Units pass under it (it stops
+  shells, not bodies: Synthexis's waves fight the camp as before). Shells crossing it to what lies behind are caught too
+  (its ground shelters nests beyond it). Its own shells (mortars, the orbital barrage) pass. The alert where alerts are
+  on; the burst is the tell. Engine (scenario `domeprobe`): an artillery projectile is an entity found by area and
+  destroyed, at a tile a tick seen about 15 times in 30 tiles at a look every 2 ticks; 15 of 15 caught, the target
+  untouched. Scenario `dome` (charge 20): one turret, 15 caught, nothing lost; `battery`, six: broken, 7 lost; `dark`
+  (generators down) and `off`: none caught, 3 lost.
+  Measured on the artillery base, era 3: a corporation lands beyond the player's artillery reach, researched or not
+  (doubled, Kessler-Hayashi came down 695 tiles out instead of 399), so the base's own guns never reached it; only
+  artillery brought forward does (visit LP_MIX=fwdarty: six turrets 180 tiles from its lander from minute 10, refilled
+  every 2 minutes). Without a dome: the camp flattened, lander and all, for 117 shells. Charge 20: the same, for 120 (the
+  dome broke after 20, its generators fell, it never came back). Charge 300: 135 shells, 90 caught, never broken; the
+  45 outside it razed outer buildings the camp rebuilt (155 lost, 135 rebuilt), and Kessler-Hayashi went out and
+  destroyed the battery (103 units lost doing it). Artillery alone no longer takes a camp: protect the battery, or send
+  troops to cut the dome's power.
+  The regression (0.2.133) caught it sheltering: in `farm artillery` the sim's Kessler-Hayashi camp stood on the
+  shells' way to Synthexis's pens and its dome caught them all, the pens unshelled and the artillery never answered
+  (0.2.132 passing, 0.2.133 with domes off passing). Meant (what lies behind a dome is sheltered); that scenario now
+  turns domes off, being Synthexis against artillery alone. Hence pens or nests by a Kessler-Hayashi camp, on its far
+  side, are out of the player's artillery until its dome breaks.
