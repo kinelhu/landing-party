@@ -1,0 +1,246 @@
+<title>nw Siege Replay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a tactical map — the base on a dark plotting table, a side panel of readings, a timeline along the bottom. */
+:root {
+  --table: #0f1316;      /* the plotting table */
+  --panel: #161c20;
+  --line: #27313a;
+  --ink: #d9e1e6;
+  --ink-dim: #8796a1;
+  --syn: #b78cff;        /* Synthexis */
+  --lost: #ff5a4e;       /* lost, not rebuilt */
+  --mended: #c98a3a;     /* lost, rebuilt later */
+  --ghost: #ff7ad9;      /* ghosts waiting for robots */
+  --robot: #5fd39a;      /* robot coverage, robots */
+  --down: #ffb000;       /* roboport without power */
+  --display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--table); color: var(--ink); font-family: var(--display); font-size: 15px; }
+.app { display: grid; grid-template-rows: auto 1fr auto; height: 100%; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 10px; gap: 10px; box-sizing: border-box; }
+header { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: 0.02em; text-wrap: balance; }
+.sub { color: var(--ink-dim); font-size: 14px; }
+.clock { margin-left: auto; font-family: var(--mono); font-size: 26px; font-variant-numeric: tabular-nums; }
+.clock small { font-size: 13px; color: var(--ink-dim); margin-left: 6px; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 10px; min-height: 0; }
+.map { position: relative; min-height: 320px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--table); }
+.map canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.map canvas:active { cursor: grabbing; }
+.hint { position: absolute; left: 10px; bottom: 8px; font-size: 12px; color: var(--ink-dim); pointer-events: none; }
+aside { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; }
+.card h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim); margin: 0 0 8px; }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 14px; }
+.stats b { font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.legend { display: grid; gap: 6px; font-size: 14px; }
+.legend label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.sw { width: 12px; height: 12px; border-radius: 2px; flex: none; }
+.chart svg { width: 100%; height: 54px; display: block; }
+.chart .lbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-dim); margin-top: 6px; }
+.chart .lbl b { color: var(--ink); font-family: var(--mono); font-weight: 400; }
+.waves { font-size: 13px; display: grid; gap: 2px; }
+.waves button { all: unset; display: grid; grid-template-columns: 52px 1fr auto; gap: 6px; padding: 3px 4px; border-radius: 3px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.waves button:hover, .waves button:focus-visible { background: var(--line); outline: none; }
+.waves .now { background: color-mix(in srgb, var(--syn) 22%, transparent); }
+.waves .t { font-family: var(--mono); color: var(--ink-dim); }
+.o-in { color: var(--lost); } .o-out { color: var(--ink-dim); }
+footer { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 10px; align-items: center; }
+footer button, footer select { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; font: inherit; padding: 6px 12px; cursor: pointer; }
+footer button:focus-visible, footer select:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--syn); outline-offset: 2px; }
+.track { position: relative; }
+.track input { width: 100%; accent-color: var(--syn); }
+.ticks { position: absolute; left: 0; right: 0; top: -6px; height: 6px; pointer-events: none; }
+.ticks i { position: absolute; width: 2px; height: 6px; }
+@media (max-width: 760px) {
+  main { grid-template-columns: 1fr; grid-template-rows: 60vh auto; }
+  .app { height: auto; }
+  aside { overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>nw, fed: five hours of Synthexis</h1>
+    <span class="sub" id="sub"></span>
+    <span class="clock" id="clock">0:00<small>h:mm</small></span>
+  </header>
+  <main>
+    <div class="map"><canvas id="map"></canvas><div class="hint">Drag to pan, scroll or pinch to zoom, double-click to reset</div></div>
+    <aside>
+      <div class="card">
+        <h2>At this minute</h2>
+        <div class="stats" id="stats"></div>
+      </div>
+      <div class="card">
+        <h2>Layers</h2>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="card chart" id="charts"></div>
+      <div class="card">
+        <h2>Waves</h2>
+        <div class="waves" id="waves"></div>
+      </div>
+    </aside>
+  </main>
+  <footer>
+    <button id="play" type="button">Play</button>
+    <select id="speed" aria-label="Playback speed"><option value="1">1 min/s</option><option value="3" selected>3 min/s</option><option value="10">10 min/s</option></select>
+    <div class="track"><div class="ticks" id="ticks"></div><input id="time" type="range" min="0" max="300" step="0.5" value="0" aria-label="Minute of the run"></div>
+  </footer>
+</div>
+
+<script>
+const D = /*DATA*/null;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = {lost: css('--lost'), mended: css('--mended'), ghost: css('--ghost'), robot: css('--robot'), down: css('--down'), syn: css('--syn'), ink: css('--ink'), dim: css('--ink-dim'), line: css('--line')};
+const BASE_COL = {wall: '#56616a', gun: '#4fb3ff', make: '#3f6fd8', mine: '#7c8a52', port: '#2f9e6a', power: '#8a7a3a', belt: '#2a333a', other: '#4a4f55'};
+const GROUP_NAME = {wall: 'walls', gun: 'turrets', make: 'assemblers, furnaces, labs', mine: 'drills', port: 'roboports', power: 'power', belt: 'belts, inserters, pipes', other: 'other'};
+const [x0, y0, x1, y1] = D.box;
+const W = x1 - x0 + 1, H = y1 - y0 + 1;
+
+// The base, drawn once at a tile a pixel.
+const baseCv = document.createElement('canvas'); baseCv.width = W; baseCv.height = H;
+{ const g = baseCv.getContext('2d');
+  for (const name of ['belt', 'power', 'other', 'mine', 'make', 'port', 'wall', 'gun']) {
+    const xy = D.base[name] || []; g.fillStyle = BASE_COL[name];
+    for (let i = 0; i < xy.length; i += 2) g.fillRect(xy[i] - x0, xy[i + 1] - y0, name === 'belt' ? 1 : 2, name === 'belt' ? 1 : 2);
+  } }
+const ports = D.base.port || [];
+const PORT = D.groups.indexOf('port');
+
+const layers = {base: true, coverage: true, lost: true, mended: false, ghosts: true, down: true, units: true, waves: true};
+const LAYER_UI = [
+  ['lost', C.lost, 'Lost, not rebuilt (yet)'], ['mended', C.mended, 'Lost, rebuilt later'], ['ghosts', C.ghost, 'Ghosts waiting for robots'],
+  ['down', C.down, 'Roboports without power'], ['coverage', C.robot, 'Robot reach of standing roboports'], ['units', C.syn, "Synthexis's units"],
+  ['waves', C.ink, 'Wave routes and breaches'], ['base', '#56616a', 'The base at the start']];
+const legend = document.getElementById('legend');
+for (const [k, col, txt] of LAYER_UI) {
+  const id = 'ly-' + k;
+  legend.insertAdjacentHTML('beforeend', `<label for="${id}"><input type="checkbox" id="${id}" ${layers[k] ? 'checked' : ''}><span class="sw" style="background:${col}"></span>${txt}</label>`);
+  document.getElementById(id).addEventListener('change', e => { layers[k] = e.target.checked; draw(); });
+}
+
+// Time.
+const maxM = D.minutes || 300;
+const timeIn = document.getElementById('time'); timeIn.max = maxM;
+let T = Math.min(180, maxM); timeIn.value = T;
+const frameAt = t => { let lo = 0, hi = D.frames.length - 1, ans = 0; while (lo <= hi) { const m = (lo + hi) >> 1; if (D.frames[m].m <= t) { ans = m; lo = m + 1; } else hi = m - 1; } return D.frames[ans]; };
+const fmt = m => `${Math.floor(m / 60)}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
+document.getElementById('sub').textContent = `${D.name} · ${D.losses.length.toLocaleString()} buildings lost over the run`;
+
+// Series by minute for the charts: lost and not rebuilt, ghosts, robots free of all.
+const series = {lost: [], ghosts: [], robots: []};
+{ const ev = []; for (const l of D.losses) { ev.push([l[0], 1]); if (l[1] >= 0) ev.push([l[1], -1]); }
+  ev.sort((a, b) => a[0] - b[0]); let k = 0, n = 0;
+  for (const f of D.frames) { while (k < ev.length && ev[k][0] <= f.m) n += ev[k++][1]; series.lost.push([f.m, n]); series.ghosts.push([f.m, f.ng]); series.robots.push([f.m, f.rob[1] ? f.rob[0] / f.rob[1] : 0]); } }
+const charts = document.getElementById('charts');
+const CH = [['lost', 'Buildings down', C.lost, v => v.toLocaleString()], ['ghosts', 'Ghosts', C.ghost, v => v.toLocaleString()], ['robots', 'Construction robots free', C.robot, v => Math.round(v * 100) + '%']];
+charts.innerHTML = '<h2>Over the run</h2>' + CH.map(([k, t]) => `<div><svg id="ch-${k}" viewBox="0 0 300 54" preserveAspectRatio="none" aria-label="${t} over the run"></svg><div class="lbl"><span>${t}</span><b id="chv-${k}"></b></div></div>`).join('');
+for (const [k, , col] of CH) {
+  const s = series[k], mx = Math.max(1e-9, ...s.map(p => p[1]));
+  const pts = s.map(p => `${(p[0] / maxM * 300).toFixed(1)},${(50 - p[1] / mx * 46).toFixed(1)}`).join(' ');
+  document.getElementById('ch-' + k).innerHTML = `<polyline points="0,50 300,50" fill="none" stroke="${C.line}" stroke-width="1"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/><line id="cur-${k}" x1="0" x2="0" y1="0" y2="54" stroke="${C.ink}" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0.6"/>`;
+}
+
+// Waves list and timeline ticks.
+const wavesEl = document.getElementById('waves'), ticks = document.getElementById('ticks');
+const broke = w => w.breach_t != null || w.inside_t != null;
+D.waves.forEach((w, i) => {
+  if (w.start == null) return;
+  const b = document.createElement('button'); b.type = 'button'; b.dataset.i = i;
+  b.innerHTML = `<span class="t">${fmt(w.start)}</span><span>${w.size ?? '?'} sent, ${w.left ?? 0} home${w.kills ? `, ${w.kills} kills` : ''}</span><span class="${broke(w) ? 'o-in' : 'o-out'}">${broke(w) ? 'in' : w.outcome || ''}</span>`;
+  b.addEventListener('click', () => setT(w.breach_t ?? w.start));
+  wavesEl.appendChild(b);
+  ticks.insertAdjacentHTML('beforeend', `<i style="left:${(w.start / maxM * 100).toFixed(2)}%;background:${broke(w) ? C.lost : C.dim}"></i>`);
+});
+
+// View.
+const cv = document.getElementById('map'), ctx = cv.getContext('2d');
+let view = null;
+function fit() { const r = cv.getBoundingClientRect(); const s = Math.min(r.width / W, r.height / H) * 0.95; view = {s, ox: (r.width - W * s) / 2, oy: (r.height - H * s) / 2}; }
+function resize() { const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; cv.width = r.width * dpr; cv.height = r.height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); if (!view) fit(); draw(); }
+const sx = x => view.ox + (x - x0) * view.s, sy = y => view.oy + (y - y0) * view.s;
+
+function draw() {
+  if (!view) return;
+  const r = cv.getBoundingClientRect();
+  ctx.clearRect(0, 0, r.width, r.height);
+  ctx.imageSmoothingEnabled = false;
+  const f = frameAt(T), s = view.s, dot = Math.max(1.5, s * 1.6);
+  // Dead now: lost at or before T, not rebuilt by T.
+  const deadPort = new Set();
+  for (const l of D.losses) if (l[2] === PORT && l[0] <= T && (l[1] < 0 || l[1] > T)) deadPort.add(l[3] + ',' + l[4]);
+  if (layers.coverage) {
+    ctx.fillStyle = C.robot; ctx.globalAlpha = 0.05;
+    for (let i = 0; i < ports.length; i += 2) {
+      // (Roboports at 2 tiles from their centre in the record: matched to losses by tile.)
+      if (deadPort.has(ports[i] + ',' + ports[i + 1])) continue;
+      ctx.beginPath(); ctx.arc(sx(ports[i]), sy(ports[i + 1]), 55 * s, 0, 6.283); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  if (layers.base) { ctx.globalAlpha = 0.9; ctx.drawImage(baseCv, view.ox, view.oy, W * s, H * s); ctx.globalAlpha = 1; }
+  if (layers.mended) { ctx.fillStyle = C.mended; for (const l of D.losses) if (l[0] <= T && l[1] >= 0 && l[1] <= T) ctx.fillRect(sx(l[3]), sy(l[4]), dot, dot); }
+  if (layers.lost) { ctx.fillStyle = C.lost; for (const l of D.losses) if (l[0] <= T && (l[1] < 0 || l[1] > T)) ctx.fillRect(sx(l[3]), sy(l[4]), dot, dot); }
+  if (layers.ghosts) { ctx.strokeStyle = C.ghost; ctx.lineWidth = 1; const g = f.g; for (let i = 0; i < g.length; i += 2) ctx.strokeRect(sx(g[i]), sy(g[i + 1]), dot + 1, dot + 1); }
+  if (layers.down) { ctx.strokeStyle = C.down; ctx.lineWidth = 1.5; const d = f.down; for (let i = 0; i < d.length; i += 2) { ctx.beginPath(); ctx.arc(sx(d[i]), sy(d[i + 1]), Math.max(4, 3 * s), 0, 6.283); ctx.stroke(); } }
+  if (layers.waves) {
+    for (const w of D.waves) {
+      if (w.start == null || w.start > T || (w.end != null && w.end < T - 4)) continue;
+      const pts = w.trail.length ? w.trail : w.path;
+      if (pts.length) { ctx.strokeStyle = C.syn; ctx.globalAlpha = 0.55; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(sx(p[0]), sy(p[1])) : ctx.moveTo(sx(p[0]), sy(p[1]))); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+      if (w.breach && (w.breach_t ?? w.start) <= T) { const bx = sx(w.breach[0]), by = sy(w.breach[1]); ctx.strokeStyle = C.lost; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx - 7, by - 7); ctx.lineTo(bx + 7, by + 7); ctx.moveTo(bx + 7, by - 7); ctx.lineTo(bx - 7, by + 7); ctx.stroke(); }
+    }
+  }
+  if (layers.units) {
+    ctx.fillStyle = C.syn; const u = f.u, us = Math.max(2, s * 1.4);
+    for (let i = 0; i < u.length; i += 2) ctx.fillRect(sx(u[i]) - us / 2, sy(u[i + 1]) - us / 2, us, us);
+    ctx.fillStyle = C.syn; ctx.strokeStyle = '#000'; const p = f.pens;
+    for (let i = 0; i < p.length; i += 2) { ctx.beginPath(); ctx.arc(sx(p[i]), sy(p[i + 1]), Math.max(3, 2.5 * s), 0, 6.283); ctx.fill(); ctx.stroke(); }
+  }
+  // Readings.
+  document.getElementById('clock').innerHTML = `${fmt(T)}<small>h:mm</small>`;
+  let down = 0; const byG = {}; for (const l of D.losses) if (l[0] <= T && (l[1] < 0 || l[1] > T)) { down++; const g = D.groups[l[2]]; byG[g] = (byG[g] || 0) + 1; }
+  const top = Object.entries(f.gby || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ');
+  const rows = [['Buildings down now', down.toLocaleString()], ...['make', 'mine', 'port', 'gun', 'power'].map(g => [`  of which ${GROUP_NAME[g]}`, (byG[g] || 0).toLocaleString()]),
+    ['Ghosts waiting', f.ng.toLocaleString()], ['Roboports without power', (f.down.length / 2).toLocaleString()],
+    ['Construction robots free', `${f.rob[0].toLocaleString()} of ${f.rob[1].toLocaleString()}`], ["Synthexis's units", f.nu.toLocaleString()],
+    ['Incubators', (f.pens.length / 2).toLocaleString()]];
+  document.getElementById('stats').innerHTML = rows.map(([a, b]) => `<span>${a.replace(/^  /, '&emsp;')}</span><b>${b}</b>`).join('') + (top ? `<span style="grid-column:1/-1;color:${C.dim};font-size:12px">Most ghosts: ${top}</span>` : '');
+  for (const [k, , , fm] of CH) { const x = T / maxM * 300; const c = document.getElementById('cur-' + k); c.setAttribute('x1', x); c.setAttribute('x2', x); const p = series[k].find((q, i, a) => i === a.length - 1 || a[i + 1][0] > T); document.getElementById('chv-' + k).textContent = p ? fm(p[1]) : ''; }
+  for (const b of wavesEl.children) { const w = D.waves[b.dataset.i]; b.classList.toggle('now', w.start <= T && (w.end ?? 1e9) >= T); }
+}
+
+function setT(t) { T = Math.max(0, Math.min(maxM, t)); timeIn.value = T; draw(); }
+timeIn.addEventListener('input', () => setT(+timeIn.value));
+
+// Play.
+let playing = false, last = 0;
+const playBtn = document.getElementById('play'), speedSel = document.getElementById('speed');
+function tick(ts) { if (!playing) return; const dt = last ? (ts - last) / 1000 : 0; last = ts; setT(T + dt * +speedSel.value); if (T >= maxM) { playing = false; playBtn.textContent = 'Play'; return; } requestAnimationFrame(tick); }
+playBtn.addEventListener('click', () => { playing = !playing; playBtn.textContent = playing ? 'Pause' : 'Play'; last = 0; if (playing) { if (T >= maxM) T = 0; requestAnimationFrame(tick); } });
+
+// Pan and zoom.
+let drag = null; const pts = new Map();
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.offsetX, e.offsetY]); drag = {x: e.offsetX, y: e.offsetY, ox: view.ox, oy: view.oy}; });
+cv.addEventListener('pointermove', e => {
+  if (!pts.has(e.pointerId)) return;
+  const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.offsetX, e.offsetY]);
+  if (pts.size === 2) { const [a, b] = [...pts.values()]; const d1 = Math.hypot(a[0] - b[0], a[1] - b[1]); const other = [...pts.entries()].find(([k]) => k !== e.pointerId)[1]; const d0 = Math.hypot(prev[0] - other[0], prev[1] - other[1]); if (d0 > 0) zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, d1 / d0); return; }
+  if (drag) { view.ox = drag.ox + e.offsetX - drag.x; view.oy = drag.oy + e.offsetY - drag.y; draw(); }
+});
+const up = e => { pts.delete(e.pointerId); drag = null; };
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+function zoomAt(px, py, k) { const ns = Math.max(0.1, Math.min(40, view.s * k)); k = ns / view.s; view.ox = px - (px - view.ox) * k; view.oy = py - (py - view.oy) * k; view.s = ns; draw(); }
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0015)); }, {passive: false});
+cv.addEventListener('dblclick', () => { fit(); draw(); });
+window.addEventListener('resize', resize);
+resize();
+</script>

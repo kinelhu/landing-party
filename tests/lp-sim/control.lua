@@ -17,6 +17,17 @@ local lp = function(fn, ...) return remote.call("landing-party", fn, ...) end
 local FORCE = "lp-serenity"     -- the default corporation (shared.DEFAULT_CORP)
 
 local lines, failed = {}, 0
+-- LP_MIX containing "record" (visits): the run written down for scripts/visit_map.py, rec.jsonl in script-output (the
+-- user, 2026-11-01: "a visualizer of the 5 hour run ... how exactly the base is breached and how it's not rebuilt").
+local REC = {buf = {}}
+local function rec_flush()
+  if #REC.buf > 0 then helpers.write_file("landing-party/rec.jsonl", table.concat(REC.buf, "\n") .. "\n", true); REC.buf = {} end
+end
+local function rec(t)
+  if not REC.on then return end
+  REC.buf[#REC.buf + 1] = helpers.table_to_json(t)
+  if #REC.buf >= 400 then rec_flush() end
+end
 local function check(name, ok, detail)
   if not ok then failed = failed + 1 end
   table.insert(lines, (ok and "PASS " or "FAIL ") .. name .. "  " .. tostring(detail or ""))
@@ -8014,6 +8025,73 @@ scenarios.visit = function()
       end)
     end
   end
+  -- LP_MIX=record (any mix containing it): the base at the start, then every 30 s Synthexis's units, the player's ghosts,
+  -- its roboports out of power and its construction robots (rec, above; drawn by scripts/visit_map.py).
+  if params.mix:find("record", 1, true) then
+    REC.on = true
+    local KINDS = {"wall", "gate", "electric-turret", "ammo-turret", "fluid-turret", "artillery-turret", "assembling-machine",
+      "furnace", "mining-drill", "roboport", "electric-pole", "solar-panel", "accumulator", "reactor", "lab", "beacon",
+      "generator", "boiler", "transport-belt", "underground-belt", "splitter", "inserter", "pipe", "pipe-to-ground",
+      "storage-tank", "radar", "rocket-silo", "container", "logistic-container"}
+    local function flat(list, cap)
+      local out = {}
+      for i, e in ipairs(list) do
+        if cap and i > cap then break end
+        out[#out + 1] = math.floor(e.position.x); out[#out + 1] = math.floor(e.position.y)
+      end
+      return out
+    end
+    schedule(90, function()
+      local types = {}
+      for _, t in ipairs(KINDS) do types[t] = flat(surface().find_entities_filtered{force = "player", type = t}) end
+      rec({k = "base", t = game.tick, types = types})
+      local w = {}
+      for _, e in pairs(surface().find_entities_filtered{name = {"lp-pen"}}) do w[#w + 1] = math.floor(e.position.x); w[#w + 1] = math.floor(e.position.y) end
+      rec_flush()
+    end)
+    for t = 1800, END - 60, 1800 do
+      schedule(t, function()
+        local units = surface().find_entities_filtered{force = "lp-biotech", type = "unit"}
+        local ghosts = surface().find_entities_filtered{force = "player", type = "entity-ghost"}
+        local gby = {}
+        for _, g in ipairs(ghosts) do gby[g.ghost_type] = (gby[g.ghost_type] or 0) + 1 end
+        local down = {}
+        local ports = surface().find_entities_filtered{force = "player", type = "roboport"}
+        for _, r in ipairs(ports) do
+          if r.status ~= defines.entity_status.working and r.status ~= defines.entity_status.normal then
+            down[#down + 1] = math.floor(r.position.x); down[#down + 1] = math.floor(r.position.y)
+          end
+        end
+        local avail, all, nets = 0, 0, 0
+        for _, net in pairs(game.forces.player.logistic_networks[surface().name] or {}) do
+          nets = nets + 1
+          avail, all = avail + net.available_construction_robots, all + net.all_construction_robots
+        end
+        local pens = {}
+        for _, e in pairs(surface().find_entities_filtered{name = "lp-pen"}) do pens[#pens + 1] = math.floor(e.position.x); pens[#pens + 1] = math.floor(e.position.y) end
+        local live = {}
+        for _, w in ipairs(lp("herd_state").waves or {}) do
+          live[#live + 1] = {id = w.id, stage = w.stage, n = w.alive, size = w.size, at = w.group, mark = w.mark, breach = w.breach,
+            deep = w.deep and w.deep.going or nil}
+        end
+        rec({k = "s", t = game.tick, units = flat(units, 2500), nunits = #units, ghosts = flat(ghosts, 4000), nghosts = #ghosts,
+          gby = gby, down = down, ports = #ports, robots = {avail, all, nets}, pens = pens, waves = live})
+        rec_flush()
+      end)
+    end
+    schedule(END - 30, function()
+      rec({k = "log", t = game.tick, waves = lp("herd_state").log or {}})
+      rec_flush()
+    end)
+  end
+  -- LP_MIX=saveatN (any mix containing it, a server: scripts/siege-save.sh with LP_MIX and LP_SAVE): the game saved at
+  -- minute N of the visit, at speed 1, as _autosave-tN.zip, to watch from there (the user, 2026-11-01).
+  local save_at = tonumber(params.mix:match("saveat(%d+)") or "")
+  if save_at then
+    schedule(30, function() game.speed = 64 end)
+    schedule(save_at * 3600 - 1, function() game.speed = 1 end)
+    schedule(save_at * 3600, function() game.auto_save("t" .. save_at); info("visit: saved at minute " .. save_at) end)
+  end
   -- LP_MIX=growth (any mix containing it): every 5 minutes, Synthexis's culture: its incubators, biomass, what it saves
   -- for, its tumors, the nests its creep gave up on (why a culture does not grow).
   if params.mix:find("growth", 1, true) then
@@ -12733,6 +12811,10 @@ for _, t in ipairs({"mining-drill", "furnace", "assembling-machine", "lab", "roc
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
 script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
+  if REC.on and e.entity.force.name == "player" and e.entity.type ~= "character" then
+    rec({k = "d", t = game.tick, n = e.entity.type, x = math.floor(e.entity.position.x), y = math.floor(e.entity.position.y),
+      by = e.cause and e.cause.valid and e.cause.name or "", f = e.force and e.force.name or ""})
+  end
   -- creep break: who killed the Grubstake rifleman by its tumor (the truce: never Synthexis).
   if S.intruder and e.entity == S.intruder then S.intruder_killer = e.force and e.force.name or "nobody" end
   local by = e.cause and e.cause.valid and e.cause.name or "no cause"
@@ -12885,6 +12967,7 @@ end
 -- The player's robots rebuilding (the visit: does the factory fight back on its own, or only lose?).
 script.on_event(defines.events.on_robot_built_entity, function(e)
   if e.entity.valid and e.entity.force.name == "player" then
+    rec({k = "b", t = game.tick, n = e.entity.type, x = math.floor(e.entity.position.x), y = math.floor(e.entity.position.y)})
     S.robot_built = S.robot_built or {}
     S.robot_built[e.entity.type] = (S.robot_built[e.entity.type] or 0) + 1
   end

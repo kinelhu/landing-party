@@ -82,4 +82,6 @@ cp "$out/results.txt" "$out/decisions.txt" "$dest/" 2>/dev/null || true
 # Each operation followed from launch to end (landing-party/scripts/oplog.lua), drawn by scripts/ops_review.py.
 if [ -s "$out/ops.jsonl" ]; then cp "$out/ops.jsonl" "$dest/"; uv run --quiet --with matplotlib python3 -I "$REPO/scripts/ops_review.py" "$dest/ops.jsonl" "$dest/ops" > /dev/null || echo "ops review skipped"; fi
 [ -s "$out/timeline.jsonl" ] && cp "$out/timeline.jsonl" "$dest/"
+# LP_MIX=record: the run written down for scripts/visit_map.py.
+[ -s "$out/rec.jsonl" ] && cp "$out/rec.jsonl" "$dest/"
 grep -E "INFO visit|PASS|FAIL|METRIC|PROFILE" "$out/results.txt"
