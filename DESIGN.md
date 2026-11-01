@@ -3675,3 +3675,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   gone, 98 of 640 drills, 61 of 577 roboports (net of rebuilds). A grown, fed colony wears a megabase down; three hours
   was not long enough to see it. Script time a tick: 0.53 ms the save alone, 1.25 with Landing Party. Kessler-Hayashi's
   camp fell to wild biters at about 190 minutes (in three of four fed nw runs; unfed it lived).
+- nwa fed and recorded for five hours (0.2.130, visit LP_MIX=rich-record, 300 minutes; replay: `scripts/visit_map.py`).
+  nwa is about three times nw: 166,830 buildings, 2,302 lasers, 59 artillery turrets, 11,230 construction robots. It
+  held where nw fell: 5,983 losses in five hours against nw's 25,776, 1,378 never rebuilt (nw 9,484); its robots stayed
+  near 11,000 (nw's fell from 1,858 to 647), its ghosts under 1,000 (nw 5,500). Most losses were land mines, walls and
+  lasers at the wall; 8 of 59 artillery turrets razed; 6 raids fled on artillery. Its waves (47, to 200) were scattered
+  more often than lost (22 to 11). Only the last waves, from about 263 minutes, broke deep (one razed 7 reactors and 28
+  roboports at 283). What broke nw was its robots used up and its networks split, not its wall: a base with ten times
+  the robots rebuilt as fast as it lost. Kessler-Hayashi's camp again fell to wild behemoths. Script time a tick 1.33 ms
+  alone, 3.52 with Landing Party (benchmark, uncontended).
