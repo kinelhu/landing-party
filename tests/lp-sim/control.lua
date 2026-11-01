@@ -7697,6 +7697,44 @@ scenarios.visit = function()
     if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
     S.sp = sp
   end)
+  -- railtrace: each railgunner of Kessler-Hayashi's past 100 tiles from its lander, its order named, logged as it goes out
+  -- and every 5 minutes after (a deathworld visit: one walked the player's wall 250 to 500 tiles out, 205 kills; 0.2.128).
+  if params.mix == "railtrace" then
+    local names = {}
+    for k, v in pairs(defines.command) do names[v] = k end
+    local function cmd_s(c)
+      if not c then return "none" end
+      local t = names[c.type] or tostring(c.type)
+      if c.type == defines.command.compound and c.commands then
+        local parts = {}
+        for _, x in ipairs(c.commands) do parts[#parts + 1] = names[x.type] or tostring(x.type) end
+        t = t .. "[" .. table.concat(parts, ",") .. "]"
+      end
+      local d = c.destination
+      return d and string.format("%s to %.0f,%.0f", t, d.x, d.y) or t
+    end
+    local seen = {}
+    for t = 3600, 200 * 3600, 600 do
+      schedule(t, function()
+        local lander = surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity", limit = 1}[1]
+        if not lander then return end
+        for _, u in pairs(surface().find_entities_filtered{force = "lp-serenity", type = "unit"}) do
+          if u.name:find("railgunner", 1, true) then
+            local d = math.sqrt((u.position.x - lander.position.x) ^ 2 + (u.position.y - lander.position.y) ^ 2)
+            local last = seen[u.unit_number]
+            if d > 100 and (not last or game.tick - last >= 18000) then
+              seen[u.unit_number] = game.tick
+              local c = u.commandable
+              local g = c and c.parent_group
+              table.insert(lines, string.format("INFO railtrace %d tick %d %s at %.0f,%.0f, %.0f from its lander; order %s; group %s; distraction %s",
+                u.unit_number, game.tick, last and "still out" or "out", u.position.x, u.position.y, d, cmd_s(c and c.command),
+                g and g.valid and (#g.members .. " " .. cmd_s(g.command)) or "none", c and c.distraction_command and cmd_s(c.distraction_command) or "none"))
+            end
+          end
+        end
+      end)
+    end
+  end
   schedule(20 * 3600, function()
     S.g = lp("arrive", 1, S.sp, S.dist, {corp = "grubstake"})
     -- Water round its lander: the first water tile in 16 directions (diagnostic).
@@ -7936,6 +7974,17 @@ scenarios.visit = function()
     for t = 600, END - 60, 600 do
       schedule(t, function()
         for _, f in ipairs(lp("farm_state").farms or {}) do lp("debug_biomass", f.id, 200) end
+      end)
+    end
+  end
+  -- LP_MIX=rich (any mix containing it): Synthexis's cultures paid 50 biomass each 10 s, a culture grown on a megabase's
+  -- smoke, its raids still worked up to (nw at 0.2.128, unfed: its sieges waited on the biomass, one culture held 52 of
+  -- the 378 its siege of 24 asked; seven waves in three hours, none past the wall; the user: a megabase is no natural
+  -- setting for a culture's growth).
+  if params.mix:find("rich", 1, true) then
+    for t = 600, END - 60, 600 do
+      schedule(t, function()
+        for _, f in ipairs(lp("farm_state").farms or {}) do lp("debug_biomass", f.id, 50) end
       end)
     end
   end
@@ -8219,6 +8268,10 @@ scenarios.visit = function()
     metric("robot_rebuilt", rebuilt)
     metric("ghosts_left", ghosts)
     metric("dry_turrets", dry)
+    -- Kessler-Hayashi's railgunners clear nests and leave the player's buildings alone: made past its cordon's walls and
+    -- leashed to its claim, one walked the player's wall on deathworld and broke 205 of them (0.2.128).
+    metric("rail_kills", S.rail_kills or 0)
+    check("visit: Kessler-Hayashi's railgunners broke none of the player's", (S.rail_kills or 0) == 0, tostring(S.rail_kills or 0))
     -- Pollution put out over the run, by source: the corporations' share (Grubstake's drills pollute).
     local corp, all = 0, 0
     for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do
@@ -12701,6 +12754,25 @@ script.on_event(defines.events.on_entity_died, function(e)
   if e.entity.force.name == "player" and e.force and e.force.name == "enemy" and e.entity.type ~= "character" then
     S.biter_razed = S.biter_razed or {}
     S.biter_razed[e.entity.type] = (S.biter_razed[e.entity.type] or 0) + 1
+  end
+  -- A railgunner's kill of the player's (visit): where it stood, its order, its group, and how far from its lander (a
+  -- deathworld visit: 101 gun turrets round the player's ring, 500 tiles from its camp, credited to railgunners; 0.2.128).
+  if e.entity.force.name == "player" and e.cause and e.cause.valid and e.cause.name:find("railgunner", 1, true) then
+    S.rail_kills = (S.rail_kills or 0) + 1
+    local c, cmd, grp = e.cause, nil, nil
+    if c.commandable then
+      cmd = c.commandable.command
+      grp = c.commandable.parent_group
+    end
+    local lander = c.surface.find_entities_filtered{name = "lp-lander", force = c.force, limit = 1}[1]
+    local gcmd = grp and grp.valid and grp.command
+    table.insert(lines, string.format("INFO rail kill %s at %.0f,%.0f tick %d: railgunner at %.0f,%.0f (%.0f off), %.0f from its lander; order %s %s; group %s %s (%d)",
+      e.entity.name, e.entity.position.x, e.entity.position.y, game.tick, c.position.x, c.position.y,
+      math.sqrt((c.position.x - e.entity.position.x) ^ 2 + (c.position.y - e.entity.position.y) ^ 2),
+      lander and math.sqrt((c.position.x - lander.position.x) ^ 2 + (c.position.y - lander.position.y) ^ 2) or -1,
+      cmd and tostring(cmd.type) or "none", cmd and cmd.destination and string.format("to %.0f,%.0f", cmd.destination.x, cmd.destination.y) or "",
+      grp and grp.valid and "yes" or "no", gcmd and string.format("%s to %s", tostring(gcmd.type), gcmd.destination and string.format("%.0f,%.0f", gcmd.destination.x, gcmd.destination.y) or "?") or "",
+      grp and grp.valid and #grp.members or 0))
   end
   if e.entity.name == "gun-turret" then
     table.insert(lines, string.format("INFO gun turret at %.0f,%.0f destroyed by %s (%s)", e.entity.position.x,

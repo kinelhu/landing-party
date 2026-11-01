@@ -173,7 +173,9 @@ local function produce(b, trace)
       -- Out past its own walls, facing the player, where walls stand between (army.muster); else by the depot.
       local spawn = game.forces.player.get_spawn_position(surface)
       local p, out = army.muster(b, depot.position, spawn, proto, 0)
-      if out < 5 then p = surface.find_non_colliding_position(proto, {depot.position.x, depot.position.y + 4}, 12, 0.5) end
+      -- (Railgunners by the depot: no raid takes them, and made past its cordon's walls they stood there, 165 tiles out,
+      -- and shot the player's wall from beyond its guns' reach; a deathworld visit, 0.2.128.)
+      if out < 5 or name == "lp-railgunner" then p = surface.find_non_colliding_position(proto, {depot.position.x, depot.position.y + 4}, 12, 0.5) end
       local u = p and surface.create_entity{name = proto, position = p, force = depot.force}
       if u then
         b.parts = b.parts - cost
@@ -644,15 +646,29 @@ end
 -- sees; biters drawn to a clearance pulled infantry and tanks after them into behemoth worms' reach, 28 to 56 tiles
 -- beyond the site (scenario clear). Not within the claim: leashed at 35 tiles from its first depot, the far side of a
 -- settlement went undefended and biters took 497 of its buildings (visit b - rocket).
+-- Its railgunners on a shorter one, RAIL_LEASH from its lander, idle or wandering: its claim grows with its cordon
+-- (275 to 350 tiles on deathworld) to the player's wall, and one railgunner, outranging the gun turrets, walked it and
+-- broke 205 of the player's buildings (a deathworld visit, 0.2.128). Its clearances take them out of the garrison.
 local LEASH = shared.LEASH
-local function leash(b)
+local RAIL_LEASH = 48
+local function leash(b, trace)
   local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
   if not h then return end
   local hp = h.position
   local r = (b.claim_radius or 60) + LEASH
+  local lp = b.lander.valid and b.lander.position
   for _, u in ipairs(b.garrison) do
+    local rail = u.valid and shared.kind_of(u.name) == "lp-railgunner"
+    local c = u.valid and u.commandable
+    local far = rail and lp and (u.position.x - lp.x) ^ 2 + (u.position.y - lp.y) ^ 2 > RAIL_LEASH * RAIL_LEASH
+      and (not c.has_command or c.command and c.command.type == defines.command.wander)
     -- Idle ones only: re-ordered straight home, raiders coming back round a nest field walked through it (country).
-    if u.valid and not u.commandable.has_command
+    if far then
+      u.commandable.set_command{type = defines.command.go_to_location, destination = lp, radius = 16,
+        distraction = defines.distraction.by_damage}
+      trace(b, string.format("leash: railgunner %d at %.0f,%.0f called back to its lander (%s)", u.unit_number, u.position.x,
+        u.position.y, c.has_command and "wandering" or "idle"))
+    elseif u.valid and not u.commandable.has_command
       and (u.position.x - b.origin.x) ^ 2 + (u.position.y - b.origin.y) ^ 2 > r * r then
       u.commandable.set_command{type = defines.command.go_to_location, destination = hp, radius = 10,
         distraction = defines.distraction.by_damage}
@@ -698,7 +714,7 @@ function army.tick(b, tick, trace)
   -- Raids are operations now (scripts/ops.lua): chosen from intel, sized, staged, aborted when losing.
   ops.tick(b, tick, trace, army)
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
-  if tick % 300 == 250 and not storage.army_off then leash(b) end
+  if tick % 300 == 250 and not storage.army_off then leash(b, trace) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end
 end
 

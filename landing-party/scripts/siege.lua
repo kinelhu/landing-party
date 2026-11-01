@@ -33,6 +33,7 @@ local SIEGE_MAX_TICKS = K.SIEGE_MAX_TICKS
 local SIEGE_SHELLS = K.SIEGE_SHELLS
 local SIEGE_TIERS = K.SIEGE_TIERS
 local STUCK_TICKS = K.STUCK_TICKS
+local ROUTE_TRIM = 24     -- a siege's route ends at its site: its points nearer than this go (deploy)
 local TURRETS = K.TURRETS
 local TYPES = K.TYPES
 local against_player = K.against_player
@@ -339,6 +340,12 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     b.next_siege = game.tick + 2 * 3600
     b.next_op = game.tick + 2 * 3600
     return false
+  end
+  -- Its route's last points near the site dropped: on the route's grid the last could lie past the site, toward the
+  -- target, and the truck drove through its site to it, into the guns' reach (fortress, seed 12345: 20 tiles past; its
+  -- march's check every 300 ticks had caught it going by, till a railgunner made elsewhere moved it by a second).
+  while #hroute > 0 and (hroute[#hroute][1] - site[1]) ^ 2 + (hroute[#hroute][2] - site[2]) ^ 2 < ROUTE_TRIM ^ 2 do
+    table.remove(hroute)
   end
   local hcmds = {}
   for _, w in ipairs(hroute) do

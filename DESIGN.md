@@ -3633,3 +3633,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   be 0), and `farm` LP_MIX=siegepoor puts ten behemoths in an incubator's stock once its siege is laid and feeds it no
   biomass: seen failing without the fix (1 short), passing with it (its wave waited, then went with its burster).
   Script time a tick, the save alone against the visit: nw 0.75 to 1.45 ms, deathworld10x 0.37 to 1.13 ms.
+- Kessler-Hayashi's railgunners on a leash (0.2.129; the user: "maybe we enforce a harder leash around their lander").
+  On the deathworld visit one railgunner, never taken on a raid, walked the player's wall 250 to 500 tiles from its
+  lander and broke 205 of the player's buildings from 31 tiles, beyond the gun turrets' 18 (traced: no group, a wander
+  order). Its new units are made past its outermost wall facing the player (army.muster), and its cordon's walls had put
+  that 165 tiles out; its leash called back only units with no order, at its claim and 15 tiles, and its claim had grown
+  with its cordon to 275 to 350 tiles. Now railgunners are made by their depot, and one idle or wandering more than 48
+  tiles from its lander is sent back to it (its clearances take them out of the garrison first). The 75-minute deathworld
+  visit: 79 railgunner kills of the player's without, 0 with; every visit checks it (rail_kills).
+- A siege's truck drove through its site (found by the leash: `fortress` seed 12345 failed with it, its four other seeds
+  passed). Its route's last points could lie past its site toward the target; the truck went on to them, 20 tiles into
+  the guns' reach, and died. The march's check every 300 ticks had caught it going by, till the leash moved its timing
+  by a second. The route's points within 24 tiles of the site are dropped (siege.lua ROUTE_TRIM): `fortress` (and its
+  jammer and howitzer variants) failed without it, pass with it.
+- nw with its cultures fed (visit LP_MIX=rich: 50 biomass each 10 s a culture; the user: a megabase is no natural setting
+  for a culture's growth; unfed, nw's sieges waited on the biomass, one culture holding 52 of the 378 its siege asked).
+  Its first wave at 11 minutes; 11 waves, growing from 24 to 97; 33 lasers and 269 wall pieces broken, nothing behind
+  the wall. Fed, its raids escalate; its wall still holds. Kessler-Hayashi's camp fell to wild biters at 84 minutes
+  (it lived the three hours unfed; it is weak on nw: an empty garrison in both).
