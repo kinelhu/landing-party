@@ -3666,4 +3666,6 @@ Bugs and surprises the headless runs caught, each kept as a check:
   1. Its tumors scale with it (40 at 16, creep.bud): at 40 its creep held 15 incubators and a culture allowed 28 stopped
   there. Seeding is unchanged (at 8 incubators). Check: `farm` LP_MIX=bigpens (evolution 1, its growth fed): 18 in 90
   minutes with it; 15 with the old 16 (seen failing); every farm run checks its incubators within its most, and 16 at
-  evolution 0.5 or less. Assumed, not measured yet: its cost a tick with five cultures of 28.
+  evolution 0.5 or less. Its cost a tick, measured alone (nw fed, visit LP_MIX=rich, three hours, cultures of 23):
+  0.53 ms the save alone, 1.03 with Landing Party; its waves 118, 157 and 172. That run broke 57 wall pieces and 3
+  mines; the one before at 0.2.129's siege code, the same waves, 49 lasers, 129 wall pieces, a roboport and 3 radars.
