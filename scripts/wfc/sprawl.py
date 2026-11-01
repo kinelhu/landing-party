@@ -217,6 +217,10 @@ def export(path, out):
     tiles = W.parse(path)
     errs = [e for t in tiles for e in W.check_tile(t)]
     if errs: print("\n".join(errs)); sys.exit(1)
+    # A fabricator's lot carries its pylon: corner_yard had none, and a camp that drew it on deathworld10x stood three hours
+    # with its only fabricator unpowered, no part made from 28,688 feedstock (2026-11-01).
+    dark = [t["name"] for t in tiles if any("F" in r for r in t["rows"]) and not any("P" in r for r in t["rows"])]
+    if dark: print("a fabricator with no pylon in its lot:", dark); sys.exit(1)
     vs = W.variants(tiles)
     bad = sorted({e for v in vs if not v["name"].startswith("pier") for e in v["edge"].values()} - {" " * SIZE, " " * 5 + "::" + " " * 5})
     if bad: print("an edge neither bare nor a centred track:", bad); sys.exit(1)

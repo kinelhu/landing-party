@@ -8212,6 +8212,43 @@ scenarios.visit = function()
     end)
   end
   -- LP_MIX=speedprobe: the game's speed as loaded (a watch save made at speed must open at 1).
+  -- fabprobe: every fabricator's state at minutes 25, 35 and 50 (deathworld, Grubstake alone, 2026-11-01: its first camp
+  -- made no part in three hours with 28,688 feedstock mined).
+  if params.mix:find("fabprobe", 1, true) then
+    for t = 20 * 3600 + 600, 24 * 3600, 600 do
+      schedule(t, function()
+        local ps = {}
+        for _, e in pairs(surface().find_entities_filtered{force = "lp-grubstake", type = "electric-pole"}) do
+          ps[#ps + 1] = string.format("%.1f,%.1f", e.position.x, e.position.y)
+        end
+        info("fabprobe tick " .. game.tick .. " pylons " .. table.concat(ps, " "))
+      end)
+    end
+    for _, m in ipairs({25, 35, 50}) do
+      schedule(m * 3600, function()
+        for _, f in pairs(surface().find_entities_filtered{force = "lp-grubstake", type = "assembling-machine"}) do
+          local r = f.get_recipe(); info("fabprobe " .. f.name)
+          info(string.format("fabprobe min %d fab at %.0f,%.0f status %s recipe %s crafting %s energy %.0f net %s input %d output %d",
+            m, f.position.x, f.position.y, tostring(f.status), r and r.name or "none", tostring(f.is_crafting()), f.energy,
+            tostring(f.electric_network_id), f.get_inventory(defines.inventory.crafter_input).get_item_count(),
+            f.get_inventory(defines.inventory.crafter_output).get_item_count()))
+          for k, v in pairs(defines.entity_status) do if v == f.status then info("fabprobe   status " .. k) end end
+        end
+        local function st(e) for k, v in pairs(defines.entity_status) do if v == e.status then return k end end return tostring(e.status) end
+        for _, e in pairs(surface().find_entities_filtered{force = "lp-grubstake", type = {"generator", "electric-energy-interface",
+          "burner-generator", "solar-panel", "accumulator", "electric-pole", "mining-drill", "lab"}}) do
+          if true then
+            info(string.format("fabprobe   %s %s at %.0f,%.0f net %s status %s", e.type, e.name, e.position.x, e.position.y,
+              tostring(e.electric_network_id), e.status and st(e) or "-"))
+          end
+        end
+        if S.g then info("fabprobe   jobs " .. serpent.line(lp("debug_jobs", S.g))) end
+        for _, e in pairs(surface().find_entities_filtered{force = "lp-grubstake", name = "lp-grubstake-lander"}) do
+          info("fabprobe   lander net " .. tostring(e.electric_network_id))
+        end
+      end)
+    end
+  end
   if params.mix:find("speedprobe", 1, true) then schedule(5, function() info("visit: game speed " .. game.speed) end) end
   -- LP_MIX=pathprobe: the cost map's way and price from Synthexis's landing and from the east gap to the middle of nw's base,
   -- at 16, 32 and 48-tile cells (the farm reads 48, its waves 32): why the farm priced a way at 8 its wave priced at 83.

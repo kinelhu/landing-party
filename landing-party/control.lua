@@ -698,6 +698,18 @@ remote.add_interface("landing-party", {
   debug_compose = function(id) local b = storage.bases[id]; local m = army.mix(b); return {mix = m, composed = army.composition(b, m)} end,
   farm_wave = function(n, deep, decide) return farm.debug_wave(n, deep, decide) end,
   bases = function() local t = {} for id in pairs(storage.bases) do table.insert(t, id) end table.sort(t) return t end,
+  -- A camp's pending jobs (tests: what it waits on): queue head first, rebuilds, crews' loads, its fabricators' modules.
+  debug_jobs = function(id)
+    local b = storage.bases[id]
+    if not b then return nil end
+    local function s(j) return string.format("%s@%.0f,%.0f%s", j.name or (j.tiles and "tiles") or "?", j.pos and j.pos[1] or 0,
+      j.pos and j.pos[2] or 0, j.module and (" [" .. tostring(j.module.kind) .. "]") or "") end
+    local out = {queue = {}, rebuild = {}, crews = {}, parts = b.parts, waiting = b.waiting}
+    for i, j in ipairs(b.queue) do if i <= 12 then out.queue[#out.queue + 1] = s(j) end end
+    for _, j in ipairs(b.rebuild) do out.rebuild[#out.rebuild + 1] = s(j) end
+    for _, c in ipairs(b.crews or {}) do out.crews[#out.crews + 1] = #(c.jobs or {}) .. " jobs, at " .. tostring(c.k) end
+    return out
+  end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
   -- Tests only: the command tool without a mouse (player index 1 need not exist).

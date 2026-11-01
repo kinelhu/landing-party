@@ -3684,3 +3684,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   roboports at 283). What broke nw was its robots used up and its networks split, not its wall: a base with ten times
   the robots rebuilt as fast as it lost. Kessler-Hayashi's camp again fell to wild behemoths. Script time a tick 1.33 ms
   alone, 3.52 with Landing Party (benchmark, uncontended).
+- Phase visits (docs/corporations-brief.md; visit LP_MIX=nokh, nosyn, era<N>): the reference factories, 180 minutes,
+  each corporation in its own phase. Belt base, era 1, Grubstake alone: 9 raids at substations and big poles, 3 done, 5
+  gun turrets razed. Laser base, era 2, with Synthexis: Grubstake 16 raids, all at substations, 15 fled; Synthexis broke
+  278 belts and 11 drills. Artillery base, era 3, all three: Kessler-Hayashi survived but its 24 operations (2 to 10
+  units) razed 4 walls and a laser; Grubstake razed nothing; Synthexis 26 lasers and 12 drills. Forcing the era changed
+  little (the bases research 9 to 13 technologies: era 0 before). Why Kessler-Hayashi does nothing, from its trace: a
+  raid weighs only the turrets within 30 of its target (a substation in the core reads defence 0.0 behind a laser wall;
+  4 sent, 4 dead, each time); its siege's one mortar is killed by the player's artillery within 5 seconds (twice); its
+  army goes to wild biters at evolution 0.8 (391 built, 398 lost, 51 responses). Grubstake goes for substations on every
+  base, never the outposts (open: targets by what can be stolen and how exposed).
+- Grubstake's fabricator lot `corner_yard` had no pylon (0.2.131). Its first camp on deathworld10x (alone, three hours)
+  drew it with no other pylon within 9 tiles: its only fabricator stood unpowered (no_power, a network of its own), no
+  part made from 28,688 feedstock, its queue held below the reserve for a lamp, and it stood down at an hour. The tile
+  has its pylon, and `scripts/wfc/sprawl.py export` refuses a lot with a fabricator and no pylon (seen failing on the
+  old tiles). Found with visit LP_MIX=fabprobe (each fabricator's state, the camp's power, `debug_jobs`).
