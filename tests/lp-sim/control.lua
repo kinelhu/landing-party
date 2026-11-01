@@ -7704,8 +7704,13 @@ scenarios.visit = function()
     local chars = 0
     for _, c in pairs(surface().find_entities_filtered{type = "character"}) do c.destructible = false; chars = chars + 1 end
     info("visit: " .. chars .. " character(s) made indestructible")
-    storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
-    if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
+    -- LP_MIX=nokh: no Kessler-Hayashi (a phase of the game before it comes: docs/corporations-brief.md); the final
+    -- checks then read Grubstake's settlement. LP_MIX=nosyn: no Synthexis.
+    if params.mix:find("nosyn", 1, true) then lp("debug_tune", {biotech_off = true}) end
+    if not params.mix:find("nokh", 1, true) then
+      storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
+      if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
+    end
     S.sp = sp
   end)
   -- railtrace: each railgunner of Kessler-Hayashi's past 100 tiles from its lander, its order named, logged as it goes out
@@ -7748,6 +7753,10 @@ scenarios.visit = function()
   end
   schedule(20 * 3600, function()
     S.g = lp("arrive", 1, S.sp, S.dist, {corp = "grubstake"})
+    if params.mix:find("nokh", 1, true) then
+      storage.id = S.g
+      if not storage.id then error("lp-sim visit: no site for Grubstake at " .. S.dist) end
+    end
     -- Water round its lander: the first water tile in 16 directions (diagnostic).
     if S.g then
       local o = lp("stats", S.g).origin
