@@ -7707,6 +7707,10 @@ scenarios.visit = function()
     -- LP_MIX=nokh: no Kessler-Hayashi (a phase of the game before it comes: docs/corporations-brief.md); the final
     -- checks then read Grubstake's settlement. LP_MIX=nosyn: no Synthexis.
     if params.mix:find("nosyn", 1, true) then lp("debug_tune", {biotech_off = true}) end
+    -- LP_MIX=era<N>: the corporations at the player's era N whatever the save researched (the reference factories have
+    -- 9 to 13 technologies, era 0; a phase visit at era 0 judged every corporation at its weakest).
+    local era = tonumber(params.mix:match("era(%d)"))
+    if era then lp("debug_tune", {era = era}); info("visit: era set to " .. era) end
     if not params.mix:find("nokh", 1, true) then
       storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
       if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
