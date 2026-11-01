@@ -3669,3 +3669,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   evolution 0.5 or less. Its cost a tick, measured alone (nw fed, visit LP_MIX=rich, three hours, cultures of 23):
   0.53 ms the save alone, 1.03 with Landing Party; its waves 118, 157 and 172. That run broke 57 wall pieces and 3
   mines; the one before at 0.2.129's siege code, the same waves, 49 lasers, 129 wall pieces, a roboport and 3 radars.
+- nw fed for five hours (0.2.130, visit LP_MIX=rich, 300 minutes): its cultures at 25 incubators by about 206 minutes,
+  28 at the most; its waves to 195 and 200 (42 in all). The wall stood (its lasers and walls kept by the player's robots,
+  16,375 rebuilds), but from about 200 minutes its waves broke in again and again: at 280 minutes 212 of 559 assemblers
+  gone, 98 of 640 drills, 61 of 577 roboports (net of rebuilds). A grown, fed colony wears a megabase down; three hours
+  was not long enough to see it. Script time a tick: 0.53 ms the save alone, 1.25 with Landing Party. Kessler-Hayashi's
+  camp fell to wild biters at about 190 minutes (in three of four fed nw runs; unfed it lived).
