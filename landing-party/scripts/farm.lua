@@ -764,6 +764,24 @@ local function hatch(f, surface, units, at)
 end
 -- The name of a wave's member, hatched or still a name.
 local function name_of(u) return type(u) == "string" and u or u.valid and u.name end
+-- What of its order its stock does not hold (a wave takes its order from every incubator's stock first), at its price:
+-- the biomass a hatch must spend on it. (A siege waited on its stock's worth and its biomass together, then went with
+-- the stock and none of the big bursters it waited for: 3 of 7 sieges on nw, 0.2.127.)
+local function owed_of(f)
+  local left = {}
+  for name, k in pairs(f.want or {}) do left[name] = k end
+  for _, id in ipairs(f.pens) do
+    local rec = herd.pen(id)
+    if rec and rec.pen.valid then
+      for _, u in ipairs(herd.stock(rec)) do
+        if u.valid and (left[u.name] or 0) > 0 then left[u.name] = left[u.name] - 1 end
+      end
+    end
+  end
+  local price = 0
+  for name, k in pairs(left) do if shared.BREEDS[name] then price = price + k * shared.BREEDS[name].cost end end
+  return price
+end
 -- What it could field, how many and how strong (herd.strength): what stands over its guards and, hatching, what its
 -- biomass hatches; else its incubators full. (And, hatching, the biomass that is: what stands over its guards at its
 -- price, and what it holds.)
@@ -1170,13 +1188,16 @@ local function send(f, tick)
     -- (Hatching: on the biomass that hatches its bursters, its herd and its sweep.)
     local need = sweep_price + (siege.price or siege.k * shared.BREEDS["lp-bred-big-burster"].cost
       + math.max(0, siege.n - siege.k) * select(3, chance(f, s)))
-    local hatch_short = hatching() and cul0 and (budget or 0) < need
+    -- (And on the biomass its order's hatch spends, past what its stock holds of it and what it keeps: owed_of.)
+    local keep = herd.PROBE_N * shared.BREEDS["lp-runt"].cost + sweep_price
+    local owed = hatching() and owed_of(f) or 0
+    local hatch_short = hatching() and cul0 and ((budget or 0) < need or cul0.biomass - keep < owed)
     if hatching() and not hatch_short then
     elseif hatch_short or not hatching() and (bursters < siege.k or avail < siege.n or (cul0 and cul0.biomass < sweep_price)) then
       f.escalate_retry = tick + 600
       if hatching() then
-        return holds(f, tick, string.format("lays siege to the way in at %.0f,%.0f: waits for the biomass to hatch %d big bursters and %d in all, and its sweep of %d (%.0f of %.0f)",
-          siege.at.x, siege.at.y, siege.k, siege.n, siege.mines or 0, budget or 0, need))
+        return holds(f, tick, string.format("lays siege to the way in at %.0f,%.0f: waits for the biomass to hatch %d big bursters and %d in all, and its sweep of %d (%.0f of %.0f; %.0f of %.0f for its order)",
+          siege.at.x, siege.at.y, siege.k, siege.n, siege.mines or 0, budget or 0, need, cul0.biomass - keep, owed))
       end
       return holds(f, tick, string.format("lays siege to the way in at %.0f,%.0f: waits for %d big bursters (%d bred) and %d in all (%d ready), and %d biomass for its sweep of %d",
         siege.at.x, siege.at.y, siege.k, bursters, siege.n, avail, sweep_price, siege.mines or 0))
@@ -1456,6 +1477,8 @@ local function send(f, tick)
   if f.want then
     for _, u in ipairs(units) do if f.want[u.name] then made[u.name] = (made[u.name] or 0) + 1 end end
     trace(string.format("farm %d: its wave carries of its order %s (ordered %s)", f.id, serpent.line(made), serpent.line(f.want)))
+    -- (Tests: waves gone short of the big bursters ordered, farm siege.)
+    if (made["lp-bred-big-burster"] or 0) < (f.want["lp-bred-big-burster"] or 0) then f.order_short = (f.order_short or 0) + 1 end
   end
   -- Its probe's runts, if it will throw them (herd.lua), at their price.
   -- Only what it can pay for (it was charged into debt; the faction AI audit, 2026-10-23).
@@ -2261,7 +2284,7 @@ function farm.state()
     end
     table.insert(out.farms, {id = id, pos = f.pos, pens = #f.pens, pen_ids = f.pens, tags = tags, last_wave = f.last_wave,
       landed = f.landed, taken = f.taken or 0, recycled = f.recycled or 0, starved = f.lost_to_starving or 0, unfed = unfed, feral = feral,
-      lost_to_feed = f.lost_to_feed or 0, refused = f.refused or 0, repeats = f.repeats or 0, evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0, grown = f.grown or 0,
+      lost_to_feed = f.lost_to_feed or 0, refused = f.refused or 0, repeats = f.repeats or 0, order_short = f.order_short or 0, evo = f.evo, clinic = cell.clinic_up(id), seeds = f.seeds or 0, grown = f.grown or 0,
       seeded = f.seeded, carrier = f.carrier and f.carrier.unit.valid and {f.carrier.unit.position.x, f.carrier.unit.position.y} or nil,
       bred_evo = game.forces[B.force] and game.forces[B.force].get_evolution_factor(f.surface), biomass = creep.of(id) and {
         now = creep.of(id).biomass, growth = creep.of(id).growth, drunk = creep.of(id).drunk, trickled = creep.of(id).trickled, eaten = creep.of(id).eaten,

@@ -3053,6 +3053,18 @@ function herd.tick(tick)
 end
 
 -- Tests: the engine disbanding a wave's group, as it does on the way (herd test, deepdrop).
+-- Tests only: n units of a breed made at an incubator and put in its stock (farm siegepoor: a stock rich past its biomass).
+function herd.debug_add_stock(id, name, n)
+  local rec = herd.pen(id)
+  if not (rec and rec.pen.valid) then return 0 end
+  local s, k = rec.pen.surface, 0
+  for _ = 1, n do
+    local p = s.find_non_colliding_position(name, rec.pen.position, 32, 0.5)
+    local e = p and s.create_entity{name = name, position = p, force = B.force}
+    if e then table.insert(rec.stock, e); k = k + 1 end
+  end
+  return k
+end
 function herd.debug_drop_group(id)
   local w = storage.herd and storage.herd.waves[id]
   if not (w and w.group and w.group.valid) then return false end

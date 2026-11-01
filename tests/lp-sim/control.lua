@@ -9683,7 +9683,7 @@ scenarios.farm = function()
     -- siege (2026-10-28): a laser wall no wave it fields crosses (a laser every 6 tiles on every face, nw's research): the
     -- chain from its order to the breach in minutes, which on nw took a three-hour visit a fault (its order bred the cheap
     -- breed first, its incubators overspent what it kept back, its wave left most bursters behind, each counted twice).
-    if mix == "siege" or mix == "behind" or mix == "lab" then
+    if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" then
       game.forces.player.set_ammo_damage_modifier("laser", 3)
       game.forces.player.set_gun_speed_modifier("laser", 2.2)
       -- (Every 3 tiles, 107 lasers: no siege of 20 big bursters opens that, and none was laid.)
@@ -10101,7 +10101,7 @@ scenarios.farm = function()
     end
     -- (clinic: the wild at 0.5, so the breeds' cap without a clinic, 0.3, shows.)
     -- (siege: 0.95, its big bursters come at 0.85: its evolution follows the wild's, farm.evolve.)
-    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "behind" or mix == "lab") and 0.95 or 0.3, surface())
+    game.forces.enemy.set_evolution_factor(mix == "clinic" and 0.5 or (mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab") and 0.95 or 0.3, surface())
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
@@ -10201,10 +10201,10 @@ scenarios.farm = function()
         end
         -- (A siege's breeds at its lead from landing: at the old climb, 0.004 a minute, it got there in 12 minutes; at 0.002
         -- it probed instead, its big bursters not bred yet; the playtest's evolution cap, 0.2.127.)
-        if mix == "siege" or mix == "behind" or mix == "lab" then
+        if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" then
           lp("farm_set_evo", f.id, math.min(1, game.forces.enemy.get_evolution_factor(surface()) + 0.15))
         end
-        if mix == "siege" or mix == "behind" or mix == "lab" then
+        if mix == "siege" or mix == "siegepoor" or mix == "behind" or mix == "lab" then
           S.min_bio, S.max_near, S.sieges = math.huge, 0, {}
           for t2 = game.tick - storage.t0 + 60, END - 120, 600 do
             schedule(t2, function()
@@ -10212,10 +10212,17 @@ scenarios.farm = function()
               if not g then return end
               -- (180 a minute: at 600 its order and its reserve could go wrong unseen, there was always enough; nw's
               -- poorest culture earned 23.)
-              lp("debug_biomass", g.id, 30)
+              -- (siegepoor: not fed, its stock's worth past its biomass.)
+              if mix ~= "siegepoor" then lp("debug_biomass", g.id, 30) end
               local b = g.biomass and g.biomass.now
               if b and b < S.min_bio then S.min_bio = b end
               if g.siege then S.sieges[#S.sieges + 1] = g.siege.k end
+              -- siegepoor: its siege laid, ten behemoths in its first incubator's stock (2,000 biomass of them), no biomass
+              -- fed: its wait read their worth with its biomass and its wave went with them, its big bursters never
+              -- hatched (nw, 3 of 7 sieges, 0.2.127).
+              if mix == "siegepoor" and g.siege and not S.stocked then
+                S.stocked = lp("herd_add_stock", g.pen_ids[1], "lp-bred-behemoth-biter", 10)
+              end
             end)
           end
           for t2 = game.tick - storage.t0 + 60, END - 120, 30 do
@@ -10675,7 +10682,7 @@ scenarios.farm = function()
     local mins = e.tick and (e.tick - S.landed) / 3600 or 0
     info(string.format("farm: evolution %s at landing, %s %.1f min on (bred at %s), clinic %s", tostring(S.evo_land),
       tostring(e.evo), mins, tostring(e.bred), tostring(e.clinic)))
-    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "behind" and mix ~= "evocap" then
+    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "siegepoor" and mix ~= "behind" and mix ~= "evocap" then
       -- (0.002 a minute, farm.lua CLIMB, up to its lead over the wild's.)
       check("farm: its clinic stands and its breeds climb", e.clinic == true and S.evo_land and e.evo
         and e.evo - S.evo_land >= math.min(0.002 * (mins - 1) * 0.9, e.wild + 0.15 - S.evo_land - 1e-6)
@@ -10685,6 +10692,15 @@ scenarios.farm = function()
     -- 0.50 to 0.69 in under an hour while the wild's went to 0.52 (the user's playtest, 2026-10-31).
     if e.evo and e.wild then
       check("farm: its evolution within its lead over the wild's", e.evo <= e.wild + 0.15 + 1e-6, serpent.line(e))
+    end
+    -- A wave of a siege goes with the big bursters it ordered: it waited on its stock's worth and its biomass together, and
+    -- went with the stock, none hatched (nw, 3 of 7 sieges, 0.2.127). siegepoor: its stock rich, its biomass poor.
+    local short = 0
+    for _, g in pairs(lp("farm_state").farms or {}) do short = short + (g.order_short or 0) end
+    check("farm: its waves carried the big bursters they ordered", short == 0, tostring(short))
+    if mix == "siegepoor" then
+      check("farm: siegepoor, laid, its stock rich", #(S.sieges or {}) > 0 and S.stocked == 10, serpent.line({sieges = #(S.sieges or {}), stocked = S.stocked}))
+      return
     end
     if mix == "evocap" then
       check("farm: evocap, set 0.3 past the wild's, it came down to its lead", S.evo_set and e.evo

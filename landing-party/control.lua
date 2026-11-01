@@ -539,6 +539,7 @@ remote.add_interface("landing-party", {
   herd_wall_lesson = function(pos) herd.debug_wall_lesson(pos) end,
   herd_state = function() return herd.state() end,
   herd_drop_group = function(id) return herd.debug_drop_group(id) end,
+  herd_add_stock = function(id, name, n) return herd.debug_add_stock(id, name, n) end,
   -- Tests and the siege lab: the last operation records closed, every faction's, read alike (oplog.lua, attempt.lua).
   oplog_recent = function() return oplog.recent() end,
   -- Tests and the siege lab: why a settlement launches nothing (its targets, its clock, the switches, its war).
