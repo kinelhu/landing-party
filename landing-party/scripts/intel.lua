@@ -49,6 +49,36 @@ function ops.weigh(surface, pos, forces, r, corp)
   for dmg, x in pairs(by) do if not tw or x > tw then top, tw = dmg, x end end
   return w, top
 end
+-- The way in (2026-11-01, behind debug_tune way_in): the weighted turrets whose own reach covers any point of the line
+-- from `from` to pos, its last WAY_LEN tiles (the assault's leg: a raid's route ends at its staging point out of reach,
+-- and it goes straight in from there). A substation in a laser base's core weighed 0 within 30 tiles, and Kessler-
+-- Hayashi sent 4 at it again and again, each time all dead at the wall 20 tiles from its lasers (phase visit, artillery).
+local WAY_LEN, WAY_STEP = 150, 6
+function ops.way_in(surface, from, pos, forces, corp)
+  local dx, dy = pos[1] - from[1], pos[2] - from[2]
+  local len = math.sqrt(dx * dx + dy * dy)
+  if len < 1 then return 0 end
+  local span = math.min(len, WAY_LEN)
+  local seen, w = {}, 0
+  for d = 0, span, WAY_STEP do
+    local p = {pos[1] - dx / len * d, pos[2] - dy / len * d}
+    for _, e in pairs(surface.find_entities_filtered{position = p, radius = threat.far(), force = forces, type = threat.FIRE}) do
+      local id = e.unit_number
+      if id and not seen[id] then
+        local r = threat.firing(e) and WEIGHT[e.type] and threat.reach(e)
+        if r and (e.position.x - p[1]) ^ 2 + (e.position.y - p[2]) ^ 2 <= r * r then
+          seen[id] = true
+          local k = WEIGHT[e.type]
+          local learned = corp and know.price(corp, e.force.name, e.name)
+          local f = e.force
+          w = w + (learned and learned / ops.PER_TURRET
+            or k[1] * (1 + f.get_ammo_damage_modifier(k[2])) * (1 + f.get_gun_speed_modifier(k[2])))
+        end
+      end
+    end
+  end
+  return w
+end
 -- Exposure (the megabase consult): the weighted turrets whose own reach covers pos (threat.reach, from each one's
 -- prototype). Grubstake's soft is exposure, not any turret within 30 tiles: a megabase's rails, big poles and far
 -- substations sit just beyond its turrets' reach, and every one of them had counted as defended.
@@ -142,6 +172,7 @@ local function sense(b, surface, pos, r)
       t.pos, t.kind, t.value, t.seen, t.owner, t.drills = c.pos, c.kind, c.value, game.tick, c.owner, c.drills
       t.defence, t.dmg = ops.weigh(surface, c.pos, other, nil, b.corp)
       t.exposure = ops.exposure(surface, c.pos, other)
+      if storage.way_in and b.origin then t.way = ops.way_in(surface, {b.origin.x, b.origin.y}, c.pos, other, b.corp) end
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
       -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was
       -- raided every ten minutes and its raiders died on the way.

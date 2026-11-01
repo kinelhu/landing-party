@@ -3699,3 +3699,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   part made from 28,688 feedstock, its queue held below the reserve for a lamp, and it stood down at an hour. The tile
   has its pylon, and `scripts/wfc/sprawl.py export` refuses a lot with a fabricator and no pylon (seen failing on the
   old tiles). Found with visit LP_MIX=fabprobe (each fabricator's state, the camp's power, `debug_jobs`).
+- The way in (`debug_tune way_in`, visit LP_MIX=wayin; built off, 2026-11-01): a raid weighs the turrets whose reach
+  covers the last 150 tiles of its line from camp to target (ops.way_in), and again from its staging point, and is sized
+  and chosen by the heavier of that and the target's own. Measured (180 minutes): on the artillery base Grubstake went
+  from 18 raids (157 lost, nothing razed) to 2, both at Kessler-Hayashi; Kessler-Hayashi from 24 operations (68 lost) to
+  9 (11 lost, 3 poles razed). On the laser base Grubstake went from 16 raids (219 lost, 2 lasers) to none in three hours:
+  it knew only the core's substations (now read 48 to 72), never the outposts and their exposed lines, since it knows
+  only what its sensors saw near its camp (on deathworld10x, likewise, never the player's undefended mine). Left off: on
+  its own it silences Grubstake. Next: Grubstake seeks soft, stealable ground (a scout on the player's edges).
+- Grubstake alone on deathworld10x with 0.2.131 (three hours): 33,104 parts made (none before the fix), 10 raids, every
+  one at the big poles feeding the player's outpost (6 done, 9 gun turrets, walls and poles razed), its skim's first
+  load there (60 items).

@@ -456,7 +456,9 @@ local function held_by(b, owner)
 end
 local function defence(b, t)
   local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
-  return ((t.defence or 0) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
+  -- The way in when it outweighs the target's own (intel's ops.way_in, behind way_in).
+  local guns = storage.way_in and math.max(t.defence or 0, t.way or 0) or (t.defence or 0)
+  return (guns + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
     + held_by(b, t.owner)) / rd.strength(b.corp, t.dmg)
 end
 
@@ -1321,8 +1323,8 @@ local function launch(b, key, trace, army, opts)
       end
     end
   end
-  trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %.1f, exposure %.1f, rung %d): %d units stage at %.0f,%.0f",
-    t.kind, t.pos[1], t.pos[2], t.value, d, t.exposure or -1, t.owner and ladder(t.owner, b.force) or -1, #members, stage[1], stage[2]))
+  trace(b, string.format("raid on %s at %.0f,%.0f (value %d, defence %.1f, exposure %.1f, way in %.1f, rung %d): %d units stage at %.0f,%.0f",
+    t.kind, t.pos[1], t.pos[2], t.value, d, t.exposure or -1, t.way or -1, t.owner and ladder(t.owner, b.force) or -1, #members, stage[1], stage[2]))
   return true
 end
 
@@ -1505,12 +1507,18 @@ local function step(b, trace, army)
         -- on the defence it believed before); who stands there counts too, for a while.
         t.defence = seen
         t.units, t.units_at = mobile(s, t.pos, foes), game.tick
-        local want = needed((t.defence + (t.resist or 0) + t.units) / rd.strength(b.corp, t.dmg))
+        -- And the way in from where it stands (behind way_in): its leg to the target, read now.
+        local guns = t.defence
+        if storage.way_in and op.staging then
+          t.way = ops.way_in(s, op.staging, t.pos, foes, b.corp)
+          guns = math.max(guns, t.way)
+        end
+        local want = needed((guns + (t.resist or 0) + t.units) / rd.strength(b.corp, t.dmg))
         -- Regrouping after its leader fell (ops.appoint), it goes in again with what it has: it had looked once.
         if want > n and not op.regrouping and not (t.owner and against_player(t.owner) and ladder(t.owner, b.force) >= 3) then
           rd.turned_back(b)
-          trace(b, string.format("raid sees defence %.1f and units %.1f at the target, needs %d, has %d: turns back", seen,
-            t.units, want, n))
+          trace(b, string.format("raid sees defence %.1f (its way in %.1f) and units %.1f at the target, needs %d, has %d: turns back", seen,
+            t.way or 0, t.units, want, n))
           return finish(b, "aborted", trace, army)
         end
       end

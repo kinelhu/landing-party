@@ -7707,6 +7707,8 @@ scenarios.visit = function()
     -- LP_MIX=nokh: no Kessler-Hayashi (a phase of the game before it comes: docs/corporations-brief.md); the final
     -- checks then read Grubstake's settlement. LP_MIX=nosyn: no Synthexis.
     if params.mix:find("nosyn", 1, true) then lp("debug_tune", {biotech_off = true}) end
+    -- LP_MIX=wayin: the corporations' raids weigh their way in (ops.way_in; off by default until measured).
+    if params.mix:find("wayin", 1, true) then lp("debug_tune", {way_in = true}) end
     -- LP_MIX=era<N>: the corporations at the player's era N whatever the save researched (the reference factories have
     -- 9 to 13 technologies, era 0; a phase visit at era 0 judged every corporation at its weakest).
     local era = tonumber(params.mix:match("era(%d)"))
