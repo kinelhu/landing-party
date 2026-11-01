@@ -107,7 +107,12 @@ def main(run_dir, out_path):
     data = {"box": box, "groups": list(GROUPS), "base": groups, "losses": losses, "causes": causes,
             "frames": frames, "waves": waves, "minutes": frames[-1]["m"] if frames else 0,
             "name": os.path.basename(run_dir.rstrip("/"))}
+    # The page opens 5 minutes before the first breach (nw: about 180; nwa: about 85).
+    breaches = [w["breach_t"] for w in waves if w["breach_t"] is not None]
+    data["start"] = max(0, round(min(breaches) - 5)) if breaches else 0
+    save = data["name"].removeprefix("visit-").split("-")[0]
     page = open(os.path.join(os.path.dirname(__file__), "visit_map.html")).read()
+    page = page.replace("/*SAVE*/", save).replace("/*HOURS*/", str(round(data["minutes"] / 60)))
     page = page.replace("/*DATA*/null", json.dumps(data, separators=(",", ":")))
     open(out_path, "w").write(page)
     print(f"{out_path}: {len(losses)} losses ({sum(1 for l in losses if l[1] < 0)} never rebuilt), "

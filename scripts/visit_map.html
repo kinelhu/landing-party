@@ -1,4 +1,4 @@
-<title>nw Siege Replay</title>
+<title>/*SAVE*/ Siege Replay</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -67,7 +67,7 @@ footer button:focus-visible, footer select:focus-visible, input[type=range]:focu
 
 <div class="app">
   <header>
-    <h1>nw, fed: five hours of Synthexis</h1>
+    <h1>/*SAVE*/: /*HOURS*/ hours of Synthexis</h1>
     <span class="sub" id="sub"></span>
     <span class="clock" id="clock">0:00<small>h:mm</small></span>
   </header>
@@ -130,7 +130,7 @@ for (const [k, col, txt] of LAYER_UI) {
 // Time.
 const maxM = D.minutes || 300;
 const timeIn = document.getElementById('time'); timeIn.max = maxM;
-let T = Math.min(180, maxM); timeIn.value = T;
+let T = Math.min(D.start || 0, maxM); timeIn.value = T;
 const frameAt = t => { let lo = 0, hi = D.frames.length - 1, ans = 0; while (lo <= hi) { const m = (lo + hi) >> 1; if (D.frames[m].m <= t) { ans = m; lo = m + 1; } else hi = m - 1; } return D.frames[ans]; };
 const fmt = m => `${Math.floor(m / 60)}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
 document.getElementById('sub').textContent = `${D.name} · ${D.losses.length.toLocaleString()} buildings lost over the run`;
