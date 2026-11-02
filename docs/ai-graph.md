@@ -46,10 +46,10 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `tactics` | 260 | know, rng | control, farm, herd, herd_learn, ops, siege |  |  |  |  |
+| `dome` | 255 | base, threat | control |  | 60, 3600 |  | dome_alert |
 | `threat` | 247 | unit_prior | attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, war |  |  |  |  |
 | `herd_learn` | 237 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `know` | 235 | (leaf) | army, control, farm, herd, herd_learn, intel, ops, rd, strategy, tactics |  | 3600 |  | know |
-| `dome` | 232 | base, threat | control |  | 60, 3600 |  | dome_alert |
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
 | `strip` | 229 | (leaf) | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |

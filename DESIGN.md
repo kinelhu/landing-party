@@ -3919,6 +3919,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   military targets stand; killed, 31 fall to 10 (seen failing with the projectors' domes off: 30 to 14 while it stood).
   The test's first form counted every building within 25 with 60 shells a turret: a turret holds 15, all were caught,
   and the one building lost was the projector itself.
+  On nwa (0.2.146) no projector went up: it waited for its hub's jobs to be done, and a district under the artillery
+  queued again what the shells broke (44 lost in 20 minutes). Put up at once on a spot no queued job is for, it stood
+  dark before its district's pylons and was shelled a minute after. 0.2.147: up once its hub has a block, its dome up
+  while it stands and the camp's hull is (the lander's rule; its power is the camp's generators). nwa, 20 minutes: 0
+  of its buildings lost to the player's artillery (44).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

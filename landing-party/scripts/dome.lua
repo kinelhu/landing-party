@@ -9,8 +9,8 @@
 -- an alert where alerts are on. Engine (scenario domeprobe, 2026-11-01): an artillery projectile is an entity a script finds by area and
 -- destroys; one at a tile a tick is seen about 15 times inside 30 tiles at a look every 2 ticks, none got through.
 -- Its hubs' domes (the user, 2026-11-02, on its camp growing into the player's artillery: "Isn't 2 much more elegant?"):
--- a dome projector at each hub after the first, put up once that hub's jobs are done, a dome over that hub's blocks
--- (their farthest corner from it, RADIUS at least), up while it stands with power, its own charge from the guns that
+-- a dome projector at each hub after the first, put up once it has a block, a dome over that hub's blocks
+-- (their farthest corner from it, RADIUS at least), up while it stands and its hull is up, its own charge from the guns that
 -- reach it; destroyed, put back PROJECTOR_BACK after with its hull up. Landed 588 tiles from nwa's nearest artillery (its
 -- reach 560), its camp grew 95 tiles toward the player and lost 16 depots, radars and turrets to it in 12 minutes, its
 -- lander's dome 30 tiles round (2026-11-02).
@@ -39,13 +39,12 @@ local LOOK_PROJECTORS = 60 * 60
 
 local function trace(b, msg) if base.trace then base.trace(b, "dome: " .. msg) end end
 
--- Up: the lander's while its hull is (its generators powered: base.lua makes it indestructible then); a projector's
--- while it stands with power.
+-- Up while its camp's hull is (its generators powered: base.lua makes the lander indestructible then), a projector's
+-- while it stands too. (By a projector's own power, put up before its district's pylons it stood dark, and nwa's
+-- artillery took it a minute after: 0.2.146.)
 local function powered(b, d)
   local a = d.anchor
-  if not (a and a.valid) then return false end
-  if a == b.lander then return not a.destructible end
-  return a.status ~= defines.entity_status.no_power and a.status ~= defines.entity_status.low_power
+  return a and a.valid and b.lander.valid and not b.lander.destructible or false
 end
 
 -- Shells a second from the foes' artillery that reaches its lander (each gun at its prototype's cooldown, its force's
@@ -143,12 +142,36 @@ local function hub_radius(b, hub, at)
   end
   return r
 end
--- Its hubs' projectors: placed, or put back, where none stands (once the hub's jobs are done: placed early, the relay
--- took a fortress turret's spot); each dome's reach follows its hub's blocks.
+-- Where a hub's projector goes: by its blocks' middle, on no spot a queued job of the camp's is for (placed over one, the
+-- relay took a fortress turret's spot). Waiting for the hub's jobs to be done instead, a district under the player's
+-- artillery never got one: what the shells broke was queued again (nwa, 44 lost in 20 minutes, 0.2.146).
+local function projector_spot(b, hub)
+  local s = b.lander.surface
+  local n, cx, cy = 0, 0, 0
+  for _, k in ipairs(b.blocks or {}) do
+    if k.hub == hub.id then n, cx, cy = n + 1, cx + k.x0 + k.w / 2, cy + k.y0 + k.h / 2 end
+  end
+  if n == 0 then return nil end
+  cx, cy = cx / n, cy / n
+  local jobs = {}
+  for _, job in ipairs(b.queue or {}) do if job.pos then jobs[#jobs + 1] = job.pos end end
+  for r = 0, 24, 4 do
+    for k = 0, (r == 0 and 0 or 7) do
+      local a = k * math.pi / 4
+      local p = s.find_non_colliding_position("lp-dome-projector", {cx + math.cos(a) * r, cy + math.sin(a) * r}, 2, 0.5)
+      if p then
+        local free = true
+        for _, q in ipairs(jobs) do
+          if (q[1] - p.x) ^ 2 + (q[2] - p.y) ^ 2 < 16 then free = false; break end
+        end
+        if free then return p end
+      end
+    end
+  end
+end
+-- Its hubs' projectors: placed, or put back, where none stands; each dome's reach follows its hub's blocks.
 local function projectors(b, tick)
   b.domes = b.domes or {}
-  local busy = {}
-  for _, job in ipairs(b.queue or {}) do if job.module and job.module.hub then busy[job.module.hub] = true end end
   for _, hub in ipairs(b.hubs or {}) do
     if hub.id > 1 then
       local key = "hub" .. hub.id
@@ -159,9 +182,9 @@ local function projectors(b, tick)
         d.ring = nil
         trace(b, string.format("the projector of its %s destroyed: down for %d minutes", key, PROJECTOR_BACK / 3600))
       end
-      if (not d or d.back_at) and tick >= ((d and d.back_at) or 0) and not busy[hub.id] and not b.lander.destructible then
+      if (not d or d.back_at) and tick >= ((d and d.back_at) or 0) and not b.lander.destructible then
         local s = b.lander.surface
-        local p = s.find_non_colliding_position("lp-dome-projector", {hub.x, hub.y}, 20, 1)
+        local p = projector_spot(b, hub)
         local e = p and s.create_entity{name = "lp-dome-projector", position = p, force = b.force}
         if e then
           d = d or fresh()
