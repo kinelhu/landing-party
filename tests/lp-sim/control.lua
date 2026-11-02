@@ -7991,12 +7991,18 @@ scenarios.visit = function()
     end
     table.sort(d)
     local p95 = #d > 0 and d[math.max(1, math.floor(0.95 * #d))] or 0
-    S.dist = math.floor(p95 + 150)
+    S.dist, S.p95 = math.floor(p95 + 150), p95
+    -- The corporations land where the game lands them (faction.site from its own DISTANCE, out in rings until clear of
+    -- the factory and its artillery's reach). Until 0.2.145 visits passed 95% of the buildings' distance from spawn and
+    -- 150: on nwa, lopsided, that put Kessler-Hayashi 1,400 tiles from its nearest building behind behemoth country (17
+    -- of the player's buildings razed in an hour; landed by the game, 588 tiles from the nearest artillery of reach 560,
+    -- 113). LP_MIX=farland: the old distance, to compare with earlier visits.
+    if not params.mix:find("farland", 1, true) then S.dist = nil end
     S.start = census()
     local researched = 0
     for _, t in pairs(f.technologies) do if t.researched then researched = researched + 1 end end
     info(string.format("visit: factory at %.0f,%.0f, %d buildings counted, 95%% within %.0f tiles; %d technologies; landing at %d",
-      sp.x, sp.y, #d, p95, researched, S.dist))
+      sp.x, sp.y, #d, p95, researched, S.dist or -1))
     info("visit: player at start " .. serpent.line(S.start))
     S.poll0 = {}
     for name, v in pairs(game.get_pollution_statistics(surface()).input_counts) do S.poll0[name] = v end
@@ -8082,7 +8088,16 @@ scenarios.visit = function()
     if era then lp("debug_tune", {era = era}); info("visit: era set to " .. era) end
     if not params.mix:find("nokh", 1, true) then
       storage.id = lp("arrive", 1, sp, S.dist, {corp = "serenity"})
-      if not storage.id then error("lp-sim visit: no site for Serenity at " .. S.dist) end
+      if not storage.id then error("lp-sim visit: no site for Serenity at " .. tostring(S.dist)) end
+      -- How far its lander stands from the player's nearest artillery, against that artillery's reach.
+      local o = lp("stats", storage.id).origin
+      local near
+      for _, a in pairs(surface().find_entities_filtered{force = "player", type = {"artillery-turret", "artillery-wagon"}}) do
+        local d = math.sqrt((a.position.x - o.x) ^ 2 + (a.position.y - o.y) ^ 2)
+        if not near or d < near then near = d end
+      end
+      info(string.format("visit: Kessler-Hayashi's lander at %.0f,%.0f, %.0f from the nearest artillery (its reach %.0f)",
+        o.x, o.y, near or -1, lp_threat.artillery_reach(game.forces.player)))
     end
     S.sp = sp
   end)
@@ -8128,7 +8143,7 @@ scenarios.visit = function()
     S.g = lp("arrive", 1, S.sp, S.dist, {corp = "grubstake"})
     if params.mix:find("nokh", 1, true) then
       storage.id = S.g
-      if not storage.id then error("lp-sim visit: no site for Grubstake at " .. S.dist) end
+      if not storage.id then error("lp-sim visit: no site for Grubstake at " .. tostring(S.dist)) end
     end
     -- Water round its lander: the first water tile in 16 directions (diagnostic).
     if S.g then
@@ -8165,7 +8180,7 @@ scenarios.visit = function()
       local st = lp("stats", id)
       if st.corp == "grubstake" and not st.fallen then return end
     end
-    S.g2 = lp("arrive", 1, S.sp, S.dist + 300, {corp = "grubstake"})
+    S.g2 = lp("arrive", 1, S.sp, S.dist and S.dist + 300 or nil, {corp = "grubstake"})
     info("visit: Grubstake again at 30 minutes " .. (S.g2 and ("landed, settlement " .. S.g2) or "found no site"))
   end)
   -- LP_MIX=provoked: an hour in, the factory counts as having attacked both corporations (no live player can).
@@ -8182,7 +8197,7 @@ scenarios.visit = function()
         -- Ore from the map generator's noise, every 16 tiles across the band (as the corporations' site search does):
         -- 48 points round a 1,700-tile circle missed every patch; the chosen spot's chunk is generated afterwards.
         local pts = {}
-        for r = S.dist - 100, S.dist + 300, 16 do
+        for r = (S.p95 or 0) + 50, (S.p95 or 0) + 450, 16 do
           local n = math.floor(2 * math.pi * r / 16)
           for k = 0, n - 1 do
             local a = 2 * math.pi * k / n

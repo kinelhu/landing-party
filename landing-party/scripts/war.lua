@@ -307,6 +307,11 @@ local function relay(b, tick)
     base.trace(b, string.format("its orbital relay destroyed: no sweeps for %d minutes", RELAY_BACK / 3600))
   end
   if (b.relay_down or 0) > tick or not (b.lander.valid and not b.lander.destructible) then return false end
+  -- (Once its fortress's jobs are done: placed at landing, it took a fortress turret's spot and the turret was skipped,
+  -- nwa, 0.2.144. Its queue is never empty for long: the planner fills it again.)
+  for _, job in ipairs(b.queue or {}) do
+    if job.module and job.module.kind == "fortress" then return false end
+  end
   local s = b.lander.surface
   local p = s.find_non_colliding_position("lp-orbital-relay", {b.lander.position.x + 8, b.lander.position.y + 8}, 20, 1)
   b.relay = p and s.create_entity{name = "lp-orbital-relay", position = p, force = b.force} or nil

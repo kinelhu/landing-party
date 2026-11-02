@@ -3899,6 +3899,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   worth at once); the razing apart is one run each, within the swing of KH's sieges. The 9.5 ms of the paid version was
   its camp falling to the waves, not its code. `docs/wip/2026-11-02-camp-guns.patch` holds it (war.camp_guns, the heavy
   shell, the camp howitzer, visit mix guns).
+- **Visits landed the corporations too far** (0.2.145). The visit harness passed each landing a distance of 95% of the
+  factory's buildings from spawn plus 150, and the game's rings went out from there. On nwa (lopsided) Kessler-Hayashi
+  came down 1,400 tiles from the nearest building, behind 85 to 100 nests: its clearances lost their howitzer and
+  railgunners to behemoths, 17 of the player's buildings razed in an hour. Landed by the game's own rule (faction.site
+  from DISTANCE, refused within the player's artillery reach and 20), it came down 588 tiles from the nearest artillery
+  (reach 560) and about 450 from the factory: its raids reached it, 113 razed in an hour (solar panels, accumulators,
+  rails). Visits land by the game's rule now; LP_MIX=farland keeps the old distance. Every megabase visit before this
+  judged the corporations from too far. Also: the orbital relay waits for its fortress's jobs (placed at landing it
+  took a fortress turret's spot, the turret skipped).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
