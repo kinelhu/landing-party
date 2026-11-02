@@ -749,7 +749,7 @@ remote.add_interface("landing-party", {
   end,
   debug_dome = function(id) local b = storage.bases[id]; return b and dome.state(b) end,
   debug_strikes = function(id) local b = storage.bases[id]; return b and {called = b.strikes or 0, shells = b.strike_shells or 0,
-    off = b.strikes_off_called or 0} end,
+    off = b.strikes_off_called or 0, guns = b.strike_guns or 0} end,
   debug_modules = function(id, pos, r) return base.debug_modules(storage.bases[id], pos, r) end,
   -- Tests and showcases only: parts for a settlement (a young one has no surplus to export).
   -- Tests only: the command tool without a mouse (player index 1 need not exist).

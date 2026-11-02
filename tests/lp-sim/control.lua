@@ -4562,6 +4562,8 @@ scenarios.orbital = function()
         serpent.line(st))
     else
       check("orbital: called, its shells walked the wall", st.called >= 1 and st.shells >= 7, serpent.line(st))
+      -- (Seven on the wall alone, whatever stood behind it, before 0.2.141: the lasers covering the gap held the siege off.)
+      check("orbital: the guns covering the lane shelled too", st.guns >= 1 and st.shells > 7, serpent.line(st))
       check("orbital: a lane opened, not the whole wall", S.walls_after and S.walls_after < S.walls0 and S.walls_after > 0,
         tostring(S.walls_after) .. " of " .. S.walls0 .. " right after it")
     end

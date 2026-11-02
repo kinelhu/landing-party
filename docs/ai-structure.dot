@@ -10,7 +10,7 @@ digraph ai {
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
     "ground" [label="ground\n38 lines", width=0.84, fillcolor="#d9f0d9"];
-    "threat" [label="threat\n226 lines", width=1.05, fillcolor="#eef2f7"];
+    "threat" [label="threat\n247 lines", width=1.07, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -28,7 +28,7 @@ digraph ai {
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "faction" [label="faction\n833 lines", width=1.73, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
-    "war" [label="war\n582 lines", width=1.45, fillcolor="#eef2f7"];
+    "war" [label="war\n581 lines", width=1.45, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n107 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
@@ -61,14 +61,14 @@ digraph ai {
     "ops" [label="ops\n1957 lines", width=2.97, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
-    "siege" [label="siege\n1077 lines", width=2.00, fillcolor="#f7dede"];
+    "siege" [label="siege\n1083 lines", width=2.00, fillcolor="#f7dede"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
-    "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
+    "strike" [label="strike\n67 lines", width=0.87, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
     "dome" [label="dome\n149 lines", width=0.97, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n123 lines", width=0.94, fillcolor="#d9f0d9"];
+    "orbital" [label="orbital\n159 lines", width=0.98, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n110 lines", width=0.92, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];
@@ -216,6 +216,7 @@ digraph ai {
   "ops" -> "tactics";
   "ops" -> "threat";
   "ops" -> "tune";
+  "orbital" -> "threat";
   "pact" -> "base";
   "phases" -> "faction";
   "planner" -> "rd";
@@ -245,6 +246,7 @@ digraph ai {
   "stance" -> "tune";
   "standing" -> "ops";
   "strategy" -> "know";
+  "strike" -> "threat";
   "tactics" -> "know";
   "tactics" -> "rng";
   "tap" -> "base";

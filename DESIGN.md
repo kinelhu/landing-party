@@ -3861,6 +3861,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   3 haulers lost on the way despite the corridor strike (to the nests of clearance sites 150 to 370 tiles out); 32 of
   the player's buildings razed (accumulators, lasers). Open: clearances far out cost it its haulers; what it sends at
   the player stays small.
+- **The orbital strike opens what defends the lane** (0.2.141). Seven shells on the wall alone, whatever stood behind it:
+  on the artillery base the lasers covering the gap held every siege off (36 of the player's buildings razed in two
+  hours, mostly walls). Now the strike falls on the lane and on every gun of its foes whose reach covers it (threat.reach),
+  as many shells as each one's health takes, nearest the painted point first. Shell damage is read from the data
+  (lp-blow, data-final-fixes: each artillery shell's damage by type, less the target's resistances: threat.blow), which
+  retires ORBITAL_BLOW (800) in war.lua and strike.lua. `orbital` checks the covering guns are shelled (seen failing with
+  none targeted: 7 shells, 0 guns). Artillery base, era 3, 120 minutes: five strikes of 32 to 36 shells on 14 to 15
+  covering guns, sieges at tiers 1 to 3, 106 of the player's buildings razed (75 lasers). Found on the way: a siege moving
+  site read its hauler after the hauler was shelled at the site, and the run died (now called off, traced).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

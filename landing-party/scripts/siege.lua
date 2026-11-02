@@ -960,6 +960,12 @@ local function siege_step(b, trace, army)
             op.hauler = truck_up(b, piece)
             if not op.hauler then return finish(b, "aborted", trace, army) end
           end
+          -- Its hauler gone while it stood at its site (shelled there), it cannot move: called off. (Read through as if it
+          -- stood, the run died: the artillery base, era 3, 0.2.141.)
+          if not (op.hauler and op.hauler.valid) then
+            trace(b, "siege: its hauler was destroyed at the site; it cannot move")
+            return finish(b, "aborted", trace, army)
+          end
           op.carry = op.carry or {}
           for _, m in ipairs(live) do
             table.insert(op.carry, m.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("lp-mortar-shell"))

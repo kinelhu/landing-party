@@ -223,4 +223,25 @@ function threat.biter_sight()
   return sight
 end
 
+-- What one shell of this artillery projectile does to an entity where it lands: its damage by type (data-final-fixes:
+-- lp-blow) less the entity's resistances (its prototype's). 0 for a shell it does not know.
+local blows
+function threat.blow(proj, e)
+  blows = blows or prototypes.mod_data["lp-blow"].data
+  local d = blows[proj]
+  if not d then return 0 end
+  local res = prototypes.entity[e.name] and prototypes.entity[e.name].resistances or {}
+  local total = 0
+  for t, amount in pairs(d) do
+    local r = res[t]
+    total = total + math.max(0, amount - (r and r.decrease or 0)) * (1 - (r and r.percent or 0))
+  end
+  return total
+end
+-- How many such shells it takes (at least one).
+function threat.shells_for(proj, e)
+  local b = threat.blow(proj, e)
+  return b > 0 and math.max(1, math.ceil(e.health / b)) or 1
+end
+
 return threat

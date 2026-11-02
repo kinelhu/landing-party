@@ -358,7 +358,6 @@ function war.threatening(b)
   end)
   return out
 end
-local ORBITAL_BLOW = 800          -- what a shell does to a spawner or a worm, about (resistances off its 960)
 function war.barrage(b, sweep)
   if not shared.CORPS[b.corp].clears_nests or not (b.lander and b.lander.valid) then return end
   local s = b.lander.surface
@@ -379,7 +378,7 @@ function war.barrage(b, sweep)
   -- As many shells as its health takes (a spawner has 3,500: one shell each left all five standing).
   local queue = {}
   for _, e in ipairs(found) do
-    for _ = 1, math.max(1, math.ceil(e.health / ORBITAL_BLOW)) do table.insert(queue, e) end
+    for _ = 1, threat.shells_for("lp-orbital-projectile", e) do table.insert(queue, e) end
   end
   storage.orbitals = storage.orbitals or {}
   table.insert(storage.orbitals, {base = b.id, surface = s.index, force = b.force, queue = queue, i = 1})
@@ -448,7 +447,7 @@ function war.corridor(b, from, route, to)
   table.sort(found, function(x, y) return x.at < y.at end)
   local queue = {}
   for _, f in ipairs(found) do
-    for _ = 1, math.max(1, math.ceil(f.e.health / ORBITAL_BLOW)) do table.insert(queue, f.e) end
+    for _ = 1, threat.shells_for("lp-orbital-projectile", f.e) do table.insert(queue, f.e) end
   end
   storage.orbitals = storage.orbitals or {}
   table.insert(storage.orbitals, {base = b.id, surface = s.index, force = b.force, queue = queue, i = 1, corridor = true})

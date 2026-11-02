@@ -139,3 +139,36 @@ do
   end
   data:extend{{type = "mod-data", name = "lp-splash", data = splash}}
 end
+
+-- What each artillery shell does where it lands, by damage type (lp-blow, read by threat.blow): its damage effects through
+-- deliveries and nested results, its bomblets (clusters, random) left out. Kessler-Hayashi's orbital shells are counted
+-- out by it against a target's health and resistances (an 800 typed in for the orbital shell against a spawner before).
+do
+  local function list(x) if x == nil then return {} end; if x[1] ~= nil or next(x) == nil then return x end; return {x} end
+  local function walk(a, out, n)
+    for _, item in ipairs(list(a)) do
+      if item.type ~= "cluster" then
+        local m = n * (item.repeat_count or 1)
+        for _, del in ipairs(list(item.action_delivery)) do
+          for _, eff in ipairs(list(del.target_effects)) do
+            local k = m * (eff.repeat_count or 1)
+            if eff.type == "damage" and eff.damage then
+              local t = eff.damage.type or "physical"
+              out[t] = (out[t] or 0) + k * (eff.damage.amount or 0)
+            elseif eff.type == "nested-result" then
+              walk(eff.action, out, k)
+            end
+          end
+        end
+      end
+    end
+  end
+  local blow = {}
+  for name, p in pairs(data.raw["artillery-projectile"] or {}) do
+    local out = {}
+    walk(p.action, out, 1)
+    walk(p.final_action, out, 1)
+    if next(out) then blow[name] = out end
+  end
+  data:extend{{type = "mod-data", name = "lp-blow", data = blow}}
+end

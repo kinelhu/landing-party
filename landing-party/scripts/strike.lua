@@ -3,11 +3,11 @@
 -- target as its health takes) on every nest, worm and corporation building within RADIUS, walls, gates and pylons
 -- spared, and burns out. Striking a corporation is an attack: Serenity counts itself provoked.
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 
 local strike = {}
 
 local RADIUS = 60
-local BLOW = 800                  -- what one orbital shell takes off (war.lua ORBITAL_BLOW)
 local SPARE = {wall = true, gate = true, ["electric-pole"] = true}
 
 local function hostile(force)
@@ -38,7 +38,7 @@ local function fire(st)
   end)
   local queue = {}
   for _, t in ipairs(found) do
-    for _ = 1, math.max(1, math.ceil(t.health / BLOW)) do table.insert(queue, t) end
+    for _ = 1, threat.shells_for("lp-orbital-projectile", t) do table.insert(queue, t) end
   end
   storage.orbitals = storage.orbitals or {}
   if #queue > 0 then

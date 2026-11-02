@@ -3,10 +3,13 @@
 -- siege, its mortars up, calls one strike at the player's wall between its site and its target. A spotter, the guard
 -- nearest that point, paints it for PAINT: a beam from the spotter, rings closing on the point. Killed or gone, the strike
 -- is called off (the counter: an army that kills the spotter; the army brief, eyes). Then shells fall from orbit, the first
--- on the point, then outward along the wall's line STEP apart, a pair every PACE ticks, REACH each way: a lane opened,
--- not a base erased. Once a siege; COOL between a camp's strikes. On for corporations with shared.CORPS orbital_strike
+-- on the point, then outward along the wall's line STEP apart, REACH each way: a lane opened, not a base erased; and on
+-- every gun of its foes whose reach covers that lane (threat.reach), as many shells as its health takes (threat.blow),
+-- nearest the point first, a pair every PACE ticks. Seven shells on the wall alone opened it on the artillery base, and
+-- the lasers behind it, covering the gap, held the siege off all the same: what it opens is read from what defends it. Once a siege; COOL between a camp's strikes. On for corporations with shared.CORPS orbital_strike
 -- (Kessler-Hayashi), armed camps only; debug_tune strikes_off.
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 
 local orbital = {}
 local PAINT = 12 * 60
@@ -81,11 +84,41 @@ local function paint(st, s, tick)
     filled = false, target = st.center, surface = s, time_to_live = 31, draw_on_ground = true}
 end
 
-local function fall(st, s, b, off)
-  local x = st.center[1] + math.cos(st.along) * off
-  local y = st.center[2] + math.sin(st.along) * off
+local function fall(st, s, b, at)
+  local x, y = at[1], at[2]
   s.create_entity{name = "lp-orbital-projectile", position = {x - 10, y - FALL}, target = {x, y}, speed = 1,
     force = st.force, cause = game.forces[st.force], source = b and b.lander.valid and b.lander or nil}
+end
+
+-- Where its shells fall, in order: the lane's points outward from its point, and the guns covering the lane, each as many
+-- times as its health takes, all by distance from the point.
+local function targets(st, s, b)
+  local lane, out = {}, {}
+  for k = 0, math.floor(REACH / STEP) do
+    for _, sign in ipairs(k == 0 and {1} or {1, -1}) do
+      local off = sign * k * STEP
+      local p = {st.center[1] + math.cos(st.along) * off, st.center[2] + math.sin(st.along) * off}
+      table.insert(lane, p)
+      table.insert(out, {pos = p, d = math.abs(off)})
+    end
+  end
+  local fs = b and foes(b) or {}
+  if #fs > 0 then
+    for _, g in ipairs(s.find_entities_filtered{position = st.center, radius = REACH + threat.far(), type = threat.FIRE,
+      force = fs}) do
+      local r, gp = threat.reach(g), g.position
+      for _, p in ipairs(lane) do
+        if (gp.x - p[1]) ^ 2 + (gp.y - p[2]) ^ 2 <= r * r then
+          local d = math.sqrt((gp.x - st.center[1]) ^ 2 + (gp.y - st.center[2]) ^ 2)
+          for _ = 1, threat.shells_for("lp-orbital-projectile", g) do table.insert(out, {pos = {gp.x, gp.y}, d = d, gun = true}) end
+          st.guns = (st.guns or 0) + 1
+          break
+        end
+      end
+    end
+  end
+  table.sort(out, function(x, y) return x.d < y.d end)
+  return out
 end
 
 function orbital.tick(tick)
@@ -102,17 +135,20 @@ function orbital.tick(tick)
         table.remove(storage.kh_strikes, i)
       elseif tick >= st.fire_at then
         st.phase, st.next = "fire", tick
-        if b then trace(b, "falls") end
+        st.queue, st.k = targets(st, s, b), 1
+        if b then b.strike_guns = (b.strike_guns or 0) + (st.guns or 0) end
+        if b then trace(b, string.format("falls: %d shells, on the lane and the %d guns covering it", #st.queue, st.guns or 0)) end
       elseif tick % 30 == 0 then
         paint(st, s, tick)
       end
     elseif tick >= st.next then
-      -- Its point, then a pair outward each PACE.
-      if st.k == 0 then fall(st, s, b, 0) else fall(st, s, b, st.k * STEP); fall(st, s, b, -st.k * STEP) end
-      st.shells = (st.shells or 0) + (st.k == 0 and 1 or 2)
-      st.k = st.k + 1
+      -- Its point, then a pair each PACE, outward.
+      for _ = 1, st.k == 1 and 1 or 2 do
+        local q = st.queue[st.k]
+        if q then fall(st, s, b, q.pos); st.shells = (st.shells or 0) + 1; st.k = st.k + 1 end
+      end
       st.next = tick + PACE
-      if st.k * STEP > REACH then
+      if st.k > #st.queue then
         if b then b.strike_shells = (b.strike_shells or 0) + st.shells; trace(b, string.format("done: %d shells", st.shells)) end
         table.remove(storage.kh_strikes, i)
       end
