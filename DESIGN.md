@@ -3937,6 +3937,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   launch brings the late corporation's next landing 15 minutes sooner, once between landings, and that landing is its
   own; Grubstake keeps the cadence. `launches`: five launches in a row, 15 minutes sooner once, for Kessler-Hayashi (seen
   failing with every launch counted: 75 minutes, the clock at the tick).
+- **Richer ore pays more** (0.2.149; the user: "Simply scaling up income per richness seems good enough to ensure late
+  game landings that end up in patch-poor areas but with rich patches stay relevant"). What a mining module's bin gives
+  is multiplied by the square root of its ore's mean amount a tile over 900 (the starting area's at default settings,
+  scenario orebase, three seeds), never less than once; read once a module. Fed, 60 minutes, one run each: nwa 4,023 to
+  6,425 parts (12 drills both), nw 8,126 to 12,729; razed 118 to 97 and 30 to 47, within the runs' swing. The parts rose
+  60%, not the 2.4 and 3.7 its ore would give: its fabricators cap it. Not the cause of nwa's poverty: its search knows 24
+  mining cells there (6 taken, 9 under its own fortress and walls, 9 reserved) and it matures at two blocks six minutes
+  in (the trace prints its ore cells when mining fails now). Open: an armed camp's site and growth.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

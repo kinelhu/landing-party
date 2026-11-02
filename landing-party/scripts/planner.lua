@@ -315,7 +315,18 @@ local function plan(b, only)
           r[1], did, b.parts, b.feedstock, b.rate_in, fab_cap, demand / 1e6, supply / 1e6))
         return
       end
-      if r[1] ~= "fortify" then trace(b, "rule " .. r[1] .. " applies but no site fits") end
+      if r[1] ~= "fortify" then
+        -- (Its ore cells, for a mining rule: known, taken, bad, free.)
+        local known, taken, bad = 0, 0, 0
+        if r[1] == "grow" or r[1] == "mine" then
+          for key in pairs(b.ore_cells or {}) do
+            known = known + 1
+            if b.cells[key] == "taken" then taken = taken + 1 elseif b.cells[key] == "bad" then bad = bad + 1 end
+          end
+        end
+        trace(b, "rule " .. r[1] .. " applies but no site fits" .. (known > 0 and string.format(
+          " (ore cells %d: %d taken, %d bad, %d free)", known, taken, bad, known - taken - bad) or ""))
+      end
       if r[1] == "grow" then b.grow_failed = (b.grow_failed or 0) + 1 end
     end
   end

@@ -22,6 +22,13 @@ local START_PARTS = 150
 -- fits (a long pylon line out to a distant patch is how it sprawls).
 local REACHES = {40, 90, 160}
 local SEARCH = 200           -- ore search radius around the lander
+-- Richer ore pays more (the user, 2026-11-02: "Simply scaling up income per richness seems good enough to ensure late game
+-- landings that end up in patch-poor areas but with rich patches stay relevant"): what a mining module's bin gives, times
+-- the square root of its ore's mean amount a tile over ORE_REF, never less than once. ORE_REF: the starting area's at the
+-- default settings (scenario orebase, seeds 12345, 777, 4242: solid ores' means 356 to 1,881, about 900 their median).
+-- Factorio's ore grows richer away from spawn, so later landings, further out, earn more a drill. (Linear, nw's patches,
+-- 12,100 a tile, would have paid thirteen times over; the root, 3.7, and nwa's 5,100, 2.4.)
+local ORE_REF = 900
 local SITE_BUDGET = 12       -- candidate mining sites tested per plan
 local UPLINK_PARTS = 3000    -- the uplink lands with these: its fortress is built at once
 local UPLINK_BURST = 6       -- entities placed per build step while the uplink stands
@@ -360,6 +367,20 @@ function base.network(b)
 end
 
 -- Bins on the network empty into feedstock; fabricators are fed feedstock and emptied of parts.
+-- What a mining module's ore pays, a unit mined (ORE_REF above): its ore's mean amount a tile, read once, when its bin
+-- first gives.
+local function richness(bin, own)
+  local m = own.module
+  if not m.richness then
+    local n, sum = 0, 0
+    for _, r in pairs(bin.surface.find_entities_filtered{position = bin.position, radius = 8, type = "resource",
+      name = site.ORES}) do
+      n, sum = n + 1, sum + r.amount
+    end
+    m.richness = n > 0 and math.max(1, math.sqrt(sum / n / ORE_REF)) or 1
+  end
+  return m.richness
+end
 local function economy(b)
   local net = base.network(b)
   local gained, made = 0, 0
@@ -375,7 +396,7 @@ local function economy(b)
     elseif n > 0 and net then
       local p = bin.surface.find_entities_filtered{name = shared.variants("lp-pylon"), position = bin.position, radius = 5,
         limit = 1}[1]
-      if p and p.electric_network_id == net then inv.clear(); gained = gained + n end
+      if p and p.electric_network_id == net then inv.clear(); gained = gained + math.floor(n * richness(bin, own) + 0.5) end
     end
   end
   b.feedstock = b.feedstock + gained
@@ -829,7 +850,7 @@ function base.stats(b)
     launchpads = #b.launchpads, built_by = b.built_by, uplink = b.uplink and b.uplink.valid or false, hq = b.hq,
     lander_health = b.lander.valid and b.lander.health / b.lander.max_health or 0, hull_up = b.lander.valid and not b.lander.destructible,
     setbacks = b.setbacks or 0, held_home = b.held_home or 0,
-    turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0,
+    turrets_n = #b.turrets, fortress_planned = b.fortress_planned, captured = b.captured or 0, refused_by = b.refused_by,
     patrol = #(b.patrol or {}), patrol_loops = b.patrol_legs or 0, route = b.route,
     convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0, convoys_stuck = b.convoys_stuck or 0,
     convoys_lost = b.convoys_lost or 0, cargo_lost = b.cargo_lost or 0, intercepts = b.intercepts or 0,

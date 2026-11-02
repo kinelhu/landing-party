@@ -672,6 +672,21 @@ scenarios.launches = function()
   end)
 end
 
+-- Orebase (a measurement, not a check): the ore near spawn on a fresh map, its mean amount a tile by name; the reference
+-- richness for the corporations' income (shared.ORE_RICHNESS_REF).
+scenarios.orebase = function()
+  schedule(60, function()
+    local by = {}
+    for _, r in pairs(surface().find_entities_filtered{position = {0, 0}, radius = 200, type = "resource"}) do
+      local t = by[r.name] or {n = 0, sum = 0}
+      t.n, t.sum = t.n + 1, t.sum + r.amount
+      by[r.name] = t
+    end
+    for name, t in pairs(by) do info(string.format("orebase: %s %d tiles, mean %.0f", name, t.n, t.sum / t.n)) end
+    check("orebase: ore near spawn", next(by) ~= nil, "none")
+  end)
+end
+
 scenarios.faction = function()
   schedule(30, function()
     lp("debug_tune", {cadence_minutes = 12, tiers = {300, 800, 2000, 4500}, mature_blocks = 4, quiet = true})
@@ -8198,6 +8213,18 @@ scenarios.visit = function()
       end
       info(string.format("visit: Kessler-Hayashi's lander at %.0f,%.0f, %.0f from the nearest artillery (its reach %.0f)",
         o.x, o.y, near or -1, lp_threat.artillery_reach(game.forces.player)))
+      -- And the ore round it (its mining search, base.lua SEARCH 200): patches, amount, and how much lies under the
+      -- player's buildings.
+      local ores, amount, covered = {}, 0, 0
+      for _, r in pairs(surface().find_entities_filtered{position = o, radius = 200, type = "resource"}) do
+        ores[r.name] = (ores[r.name] or 0) + 1
+        amount = amount + r.amount
+        if surface().count_entities_filtered{position = r.position, radius = 0.5, force = "player", limit = 1} > 0 then
+          covered = covered + 1
+        end
+      end
+      info(string.format("visit: ore within 200 of its lander %s, %d units, %d tiles under the player's buildings",
+        serpent.line(ores), amount, covered))
     end
     S.sp = sp
   end)

@@ -38,7 +38,13 @@ function site.fits(surface, b, m, ox, oy)
   if not generated(surface, area) then return false end
   if reserved(b, area) then return false end
   for _, e in pairs(surface.find_entities_filtered{area = area}) do
-    if not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()) then shared.refused(b, e.type == "cliff" and "cliff" or "built") return false end
+    if not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()) then
+      -- (What stood there, by type: the stats' refused_by.)
+      b.refused_by = b.refused_by or {}
+      local key = e.type .. ":" .. (e.force and e.force.name or "")
+      b.refused_by[key] = (b.refused_by[key] or 0) + 1
+      shared.refused(b, e.type == "cliff" and "cliff" or "built") return false
+    end
   end
   local wet = surface.count_tiles_filtered{area = area, collision_mask = "water_tile", limit = shared.LANDFILL_MAX + 1}
   if wet > 0 and not (shared.fills(b) and wet <= shared.LANDFILL_MAX) then
