@@ -3891,6 +3891,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   grow back; put back 30 minutes after if its hull is up. What the camp howitzers were for (a target that keeps its
   ground, killed by troops), at the sweep's firepower. `armed` checks its sweep takes a spawner set 70 tiles out; `armed
   relay`, the relay destroyed first, checks the spawner stands.
+- **Camp howitzers with free shells: kept as a patch, not built** (the user: "what about if we make them free?"). Fed nw,
+  60 minutes, one run each: free heavy shells at the artillery turret's reach (224), flare-aimed, no sweep, against the
+  relay's sweep. Guns: the camp stood, 88 of 88 units lost, every depot gone, 9 hazard calls, 106 of the player's
+  buildings razed (94 lasers), 1.46 ms a tick. Sweep: it stood, 85 of 112 lost, 16 depots standing, 4 hazard calls, 30
+  razed, 1.21 ms. The guns kept the lander but not the ground round it (a gun fires one shell in 6 s, the sweep a nest's
+  worth at once); the razing apart is one run each, within the swing of KH's sieges. The 9.5 ms of the paid version was
+  its camp falling to the waves, not its code. `docs/wip/2026-11-02-camp-guns.patch` holds it (war.camp_guns, the heavy
+  shell, the camp howitzer, visit mix guns).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
