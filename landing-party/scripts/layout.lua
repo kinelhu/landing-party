@@ -1500,13 +1500,32 @@ function layout.fortress_entities(x0, y0)
   return out
 end
 
-function layout.land_fortress(b, surface, pos)
+-- Off the ore: of the first FORT_CANDIDATES free squares nearest its landing point, the one with the least ore under it
+-- (nearest first among equals). Its landing is chosen by ore, and the first free square stood on it: on nwa its fortress
+-- and walls covered 9 of the 24 mining cells round it, and the camp matured at two blocks six minutes in (0.2.149).
+local FORT_CANDIDATES = 12
+-- (Armed landings alone, off_ore: the headquarters' fortress keeps the first free square, which its scenarios' forts
+-- are laid out against.)
+function layout.land_fortress(b, surface, pos, off_ore)
+  local best, best_ore, found = nil, nil, 0
   for r = 0, 100, 4 do
     local steps = math.max(1, math.floor(2 * math.pi * r / 8))
     for k = 0, steps - 1 do
       local a = 2 * math.pi * k / steps
       local x0, y0 = math.floor(pos[1] + r * math.cos(a)) - FORT / 2, math.floor(pos[2] + r * math.sin(a)) - FORT / 2
       if layout.area_free(surface, x0, y0, FORT, FORT, 40) then
+        local ore = off_ore and surface.count_entities_filtered{area = {{x0 - 4, y0 - 4}, {x0 + FORT + 4, y0 + FORT + 4}},
+          type = "resource"} or 0
+        if not best_ore or ore < best_ore then best, best_ore = {x0, y0}, ore end
+        found = found + 1
+        if not off_ore or ore == 0 or found >= FORT_CANDIDATES then goto chosen end
+      end
+    end
+  end
+  ::chosen::
+  if best then
+    local x0, y0 = best[1], best[2]
+    do
         local hub = new_hub(b, x0, y0)
         local cells = {}
         for i = 0, 2 do for j = 0, 2 do table.insert(cells, {i, j}) end end
@@ -1524,7 +1543,6 @@ function layout.land_fortress(b, surface, pos)
         end
         -- The lander sits mid-yard (its box is off-centre), the uplink above it.
         return {x0 + FORT / 2 + 0.9, y0 + FORT / 2 - 0.6 + 2}, block, {x0 + FORT / 2, y0 + 21}
-      end
     end
   end
 end

@@ -22,13 +22,6 @@ local START_PARTS = 150
 -- fits (a long pylon line out to a distant patch is how it sprawls).
 local REACHES = {40, 90, 160}
 local SEARCH = 200           -- ore search radius around the lander
--- Richer ore pays more (the user, 2026-11-02: "Simply scaling up income per richness seems good enough to ensure late game
--- landings that end up in patch-poor areas but with rich patches stay relevant"): what a mining module's bin gives, times
--- the square root of its ore's mean amount a tile over ORE_REF, never less than once. ORE_REF: the starting area's at the
--- default settings (scenario orebase, seeds 12345, 777, 4242: solid ores' means 356 to 1,881, about 900 their median).
--- Factorio's ore grows richer away from spawn, so later landings, further out, earn more a drill. (Linear, nw's patches,
--- 12,100 a tile, would have paid thirteen times over; the root, 3.7, and nwa's 5,100, 2.4.)
-local ORE_REF = 900
 local SITE_BUDGET = 12       -- candidate mining sites tested per plan
 local UPLINK_PARTS = 3000    -- the uplink lands with these: its fortress is built at once
 local UPLINK_BURST = 6       -- entities placed per build step while the uplink stands
@@ -159,7 +152,7 @@ function base.land(surface, pos, opts)
   army.init(b)
   local at, _, uplink_at
   if opts.uplink or opts.armed then
-    at, _, uplink_at = layout.land_fortress(b, surface, pos)
+    at, _, uplink_at = layout.land_fortress(b, surface, pos, opts.armed)
     if at then
       b.parts = b.parts + UPLINK_PARTS
       -- The uplink brings construction capacity: its fortress (~650 entities) took 16 minutes one at a time.
@@ -367,20 +360,6 @@ function base.network(b)
 end
 
 -- Bins on the network empty into feedstock; fabricators are fed feedstock and emptied of parts.
--- What a mining module's ore pays, a unit mined (ORE_REF above): its ore's mean amount a tile, read once, when its bin
--- first gives.
-local function richness(bin, own)
-  local m = own.module
-  if not m.richness then
-    local n, sum = 0, 0
-    for _, r in pairs(bin.surface.find_entities_filtered{position = bin.position, radius = 8, type = "resource",
-      name = site.ORES}) do
-      n, sum = n + 1, sum + r.amount
-    end
-    m.richness = n > 0 and math.max(1, math.sqrt(sum / n / ORE_REF)) or 1
-  end
-  return m.richness
-end
 local function economy(b)
   local net = base.network(b)
   local gained, made = 0, 0
@@ -396,7 +375,7 @@ local function economy(b)
     elseif n > 0 and net then
       local p = bin.surface.find_entities_filtered{name = shared.variants("lp-pylon"), position = bin.position, radius = 5,
         limit = 1}[1]
-      if p and p.electric_network_id == net then inv.clear(); gained = gained + math.floor(n * richness(bin, own) + 0.5) end
+      if p and p.electric_network_id == net then inv.clear(); gained = gained + n end
     end
   end
   b.feedstock = b.feedstock + gained

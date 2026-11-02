@@ -81,6 +81,8 @@ local orbital = require("__landing-party__.scripts.orbital")
 local SITE_MARGIN = 1
 -- Tiles between a siege's howitzer and its mortars (siege_step): out of a shell's blast aimed at either, its foes' widest
 -- (threat.foe_splash) twice and both bodies' widths (a flat 24 before, vanilla's blast of 4 six times over).
+local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
+local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
 local CORRIDOR_LOOK = 60 * 60   -- ticks between an armed camp's corridor strikes on a siege's march (war.corridor)
 local function howitzer_apart(hn, mn)
   local function width(name)
@@ -358,8 +360,13 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   local paid_fund = from_fund
   -- The guards ride out on the hauler: gates open for no unit, and guards walking from home were 33 to 49 tiles off when
   -- the biters broke the mortars (visit b - rocket).
+  -- Behind it, away from its site (ESCORT_BACK): set round it, its tanks stood in its way, and the engine gave its order
+  -- up six seconds out, the truck held 17 tiles short of its site (fortress, 0.2.149).
+  local hdx, hdy = site[1] - hauler.position.x, site[2] - hauler.position.y
+  local hdl = math.max(1, math.sqrt(hdx * hdx + hdy * hdy))
+  local back = {hauler.position.x - hdx / hdl * ESCORT_BACK, hauler.position.y - hdy / hdl * ESCORT_BACK}
   for _, u in ipairs(guards) do
-    local q = u.valid and s.find_non_colliding_position(u.name, hauler.position, 12, 0.5)
+    local q = u.valid and s.find_non_colliding_position(u.name, back, 12, 0.5)
     if q then u.teleport(q) end
   end
   b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
@@ -411,7 +418,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     commands = hcmds}
   -- A clearance's guards answer only what hits them on the march: on sight, railgunners (vision 34, range 30) walked up
   -- to the worms they saw, into a behemoth's 48 (review of scenario clear).
-  order_all(guards, {type = defines.command.go_to_location, destination = hauler.position, radius = 6,
+  order_all(guards, {type = defines.command.go_to_location, destination = back, radius = 6,
     distraction = clearance and defines.distraction.by_damage or defines.distraction.by_enemy})
   b.ops_launched = b.ops_launched + 1
   b.sieges = (b.sieges or 0) + 1
@@ -642,13 +649,45 @@ local function siege_step(b, trace, army)
     -- (And then wait, answering what hits them: arrived before its next look, 300 ticks on, they wandered, the engine's
     -- default, engaging what they saw: its laser drones, first there, flew into the lasers' reach and drew the rest in.)
     local eye = (op.clearance or near_site) and defines.distraction.by_damage or defines.distraction.by_enemy
+    -- (Behind it on the march too, ESCORT_BACK from its way to the site.)
+    local behind = hp
+    if not near_site then
+      local dx, dy = op.site[1] - hp.x, op.site[2] - hp.y
+      local dl = math.max(1, math.sqrt(dx * dx + dy * dy))
+      behind = {x = hp.x - dx / dl * ESCORT_BACK, y = hp.y - dy / dl * ESCORT_BACK}
+    end
     order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
-      {type = defines.command.go_to_location, destination = near_site and guard_spot(b, op) or hp, radius = 6, distraction = eye},
+      {type = defines.command.go_to_location, destination = near_site and guard_spot(b, op) or behind, radius = 6, distraction = eye},
       {type = defines.command.stop, distraction = defines.distraction.by_damage}}})
     -- Stuck (a hauler drove at the same spot 21 tiles short of its site for 15 minutes, visit b - rocket): no nearer for a
     -- minute, a clearance deploys where it stands if the nest is in the mortars' reach and it is out of the worms'; else
     -- the siege is called off now.
     local d2 = (hp.x - op.site[1]) ^ 2 + (hp.y - op.site[2]) ^ 2
+    -- Its order given up short of its site (the engine drops a go-to it is stuck on and runs the rest: its HOLD, and the
+    -- truck stood there for good with its order live; fortress, 0.2.149): sent on to its site again, at most
+    -- REISSUE_MAX times, before the stuck rule below calls it off.
+    local c = op.hauler.commandable
+    local cmd = c.command
+    local held = cmd and cmd.commands and #cmd.commands == 1 and cmd.commands[1].type ~= defines.command.go_to_location
+    if d2 >= 5 * 5 and (held or c.moving_state == defines.moving_state.stuck) and (op.reissued or 0) < REISSUE_MAX then
+      op.reissued = (op.reissued or 0) + 1
+      -- Its own guards out of its way first: sent on into its escort's tanks alone, it stuck again three times
+      -- (fortress, the escort set round it).
+      local dx, dy = op.site[1] - hp.x, op.site[2] - hp.y
+      local dl = math.max(1, math.sqrt(dx * dx + dy * dy))
+      local back = {x = hp.x - dx / dl * math.max(ESCORT_BACK, 8), y = hp.y - dy / dl * math.max(ESCORT_BACK, 8)}
+      local cleared = {}
+      for _, u in ipairs(op.members) do
+        if u.valid and (u.position.x - hp.x) ^ 2 + (u.position.y - hp.y) ^ 2 <= 8 * 8 then table.insert(cleared, u) end
+      end
+      order_all(cleared, {type = defines.command.go_to_location, destination = back, radius = 4,
+        distraction = defines.distraction.by_damage})
+      c.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
+        {type = defines.command.go_to_location, destination = op.site, radius = 2, distraction = defines.distraction.none},
+        HOLD}}
+      trace(b, string.format("siege: the hauler %s %.0f tiles short of its site; %d guards out of its way, sent on (%d)",
+        held and "gave up its way" or "is stuck", math.sqrt(d2), #cleared, op.reissued))
+    end
     -- And the nests by the rest of its way, every CORRIDOR_LOOK (grown, or come since it set out): war.corridor.
     if ops.corridor and op.route and game.tick >= (op.corridor_at or op.started) + CORRIDOR_LOOK then
       op.corridor_at = game.tick

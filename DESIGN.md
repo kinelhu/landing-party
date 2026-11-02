@@ -3945,6 +3945,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   60%, not the 2.4 and 3.7 its ore would give: its fabricators cap it. Not the cause of nwa's poverty: its search knows 24
   mining cells there (6 taken, 9 under its own fortress and walls, 9 reserved) and it matures at two blocks six minutes
   in (the trace prints its ore cells when mining fails now). Open: an armed camp's site and growth.
+- **The stuck siege truck found; richness income taken out again** (0.2.150). The fortress scenarios had failed since
+  0.2.149 (bisected), and with the ops regression (the first since 0.2.138: eleven commits without one, how it went
+  unseen) heist, cordon, tribute and labs too, all passing with richness off. The richer camp changed only its timing and
+  escort, and that was enough. Fortress: the howitzer truck stopped 17 tiles short with its order live. The engine
+  marked it stuck six seconds out: its 16 guards, set round it at its launch and sent to its start, stood in front of it,
+  two tanks on its own square; the engine dropped the go-to and ran the compound's last command, HOLD, and it stood
+  there for good. Ruled out on the way, each tried and reverted: the escort sent back only at the march's looks, trees
+  cut on its line, a new route, an uncached path, a smaller collision box (the user's idea). Fixed in two layers, each
+  tested alone: its guards set and kept ESCORT_BACK (8) behind it, away from its site, at launch and on the march (it
+  deploys 12 s in); and a hauler marked stuck, or whose order has fallen to its HOLD short of its site, is sent on again,
+  its guards within 8 moved behind it first, at most three times (the escort set round it again, it deploys 15 s in;
+  sent on without moving them, it stuck again three times). Richness taken out (the user agreed): the Kessler-Hayashi
+  consult (docs/reviews/2026-11-02-kessler-hayashi-late-game-consult.md) found income not its constraint (nwa's camp
+  spent 6,203 parts on walls, roads and landfill), and it moved four scenarios. Those four, with it on, are kept as
+  cases to look into for what else a timing change exposes. Also: an armed landing lays its fortress on the free square
+  with least ore under it (of the first 12): nwa's camp no longer matured at two blocks with no site (parts 6,425 to
+  7,076 in an hour); the headquarters' fortress keeps the first free square (the fortress scenarios' forts are laid
+  against it). `breach arty` keeps domes off: since 0.2.147 a hub's dome caught its artillery over the research district.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -3808,7 +3808,10 @@ scenarios.breach = function()
   local function lab() return surface().find_entities_filtered{name = "lp-optics-lab", force = FORCE}[1] end
   schedule(60, function()
     -- Its research as a camp this young would have it (none bought: the lab is the target, not its lasers).
-    lp("debug_tune", {era = 2, history_off = true, mature_blocks = 2, raids_off = true})
+    -- (Its domes off with the artillery: since 0.2.147 a hub's dome catches the shells over its research district, and
+    -- the squad, its guns unshelled, died under them. A breach of a domed district, its projector killed by the squad
+    -- first, is the army work's to test.)
+    lp("debug_tune", {era = 2, history_off = true, mature_blocks = 2, raids_off = true, domes = not arty})
     lp("debug_parts", storage.id, 3000)
   end)
   local function setup(l)
