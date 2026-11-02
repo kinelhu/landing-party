@@ -286,12 +286,35 @@ local ORBITAL_RADIUS, ORBITAL_EVERY, ORBITAL_FALL, BARRAGE_RAILS = 120, 15, 30, 
 -- nests 80 to 150 off (2026-11-02). Spawners by their biters' sight alone (0.2.138) left nwa's armed landing with no
 -- barrage, its ground the fortress's box: behemoths took the lander nine minutes on (2026-11-02, the 200 had taken 106
 -- spawners there).
+-- Its sweeps are called through its orbital relay, by its lander under its dome (the user, 2026-11-02, on camp
+-- howitzers: "Would defend from new expansions"; they could not, a6081de): destroyed or without power, no sweep, and the
+-- nests grow back; put back RELAY_BACK after, its hull up.
 -- And it keeps that ground from orbit: a sweep of the same whenever one stands there, looked for every SWEEP_LOOK, and
 -- of the spawners nearest where its last losses to biters fell (its hazard log, siege.lua: learned, wherever they are).
 -- No railgunners, no notice. Once was not enough on fed nw: the wild biters expanded back, 42 nests and worms within 200
 -- at 30 minutes, 135 at 60, every depot (76 to 89 tiles out) gone (2026-11-02). Free: a share of its parts a shell (12)
 -- starved the camp of everything else (the lane, 2026-10-19).
 local SWEEP_LOOK = 60 * 60
+local RELAY_BACK = 30 * 60 * 60
+-- Its relay standing and powered; placed, or put back, where none stands.
+local function relay(b, tick)
+  local r = b.relay
+  if r and r.valid then
+    return r.status ~= defines.entity_status.no_power and r.status ~= defines.entity_status.low_power
+  end
+  if r ~= nil and not b.relay_down then
+    b.relay_down, b.relays_lost = tick + RELAY_BACK, (b.relays_lost or 0) + 1
+    base.trace(b, string.format("its orbital relay destroyed: no sweeps for %d minutes", RELAY_BACK / 3600))
+  end
+  if (b.relay_down or 0) > tick or not (b.lander.valid and not b.lander.destructible) then return false end
+  local s = b.lander.surface
+  local p = s.find_non_colliding_position("lp-orbital-relay", {b.lander.position.x + 8, b.lander.position.y + 8}, 20, 1)
+  b.relay = p and s.create_entity{name = "lp-orbital-relay", position = p, force = b.force} or nil
+  b.relay_down = nil
+  if b.relay then base.trace(b, string.format("orbital relay up at %.0f,%.0f", p.x, p.y)) end
+  return false
+end
+war.relay = relay
 -- Its ground: its blocks' boxes and its depots, and how far from its lander the farthest of them is.
 local function ground(b)
   local boxes, c, far = {}, b.lander.position, 0
@@ -539,7 +562,7 @@ function war.tick(tick)
   -- last is still falling.
   if not storage.sweeps_off then
     for _, b in pairs(storage.bases) do
-      if b.armed and not b.fallen and b.lander and b.lander.valid and tick >= (b.sweep_next or 0) then
+      if b.armed and not b.fallen and b.lander and b.lander.valid and tick >= (b.sweep_next or 0) and relay(b, tick) then
         local falling = false
         for _, o in ipairs(storage.orbitals or {}) do if o.base == b.id then falling = true end end
         if not falling then

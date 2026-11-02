@@ -4477,9 +4477,37 @@ end
 -- comes down as its headquarters' fortress, no uplink; built within 6 minutes, its hull up. LP_MIX=era2: a camp.
 scenarios.armed = function()
   local era2 = params.mix == "era2"
+  local relay_dead = params.mix == "relay"
   schedule(60, function()
     lp("debug_tune", {era = era2 and 2 or 3, ops_off = true})
     S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 200, {corp = "serenity"})
+  end)
+  -- Its orbital relay (war.lua): a spawner set down 70 tiles from its lander once it stands; its sweep takes it. LP_MIX=relay:
+  -- the relay destroyed first, no sweep, the spawner stands.
+  schedule(4 * 3600, function()
+    if era2 then return end
+    if relay_dead then
+      for _, r in pairs(surface().find_entities_filtered{name = "lp-orbital-relay"}) do r.die("player") end
+    end
+    local o = lp("stats", S.k).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local q = surface().find_non_colliding_position("biter-spawner", {o.x + o.x / len * 70, o.y + o.y / len * 70}, 10, 1)
+    S.nest = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+  end)
+  schedule(7 * 3600, function()
+    if not era2 then
+      local relays = surface().count_entities_filtered{name = "lp-orbital-relay"}
+      local standing = S.nest and S.nest.valid
+      info(string.format("armed: relays %d, the spawner %s", relays, standing and "stands" or "gone"))
+      if relay_dead then
+        -- (Seen failing with the sweep ungated: the spawner gone.)
+        check("armed: its relay destroyed, no sweep, the spawner stands", relays == 0 and S.nest ~= nil and standing,
+          relays .. ", " .. tostring(standing))
+      else
+        check("armed: its relay up, its sweep takes the spawner", relays == 1 and S.nest ~= nil and not standing,
+          relays .. ", " .. tostring(standing))
+      end
+    end
   end)
   schedule(7 * 3600, function()
     local st = lp("stats", S.k)

@@ -3886,6 +3886,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   over a mortar shell's (27 parts): the guns ate every part, no part made, every depot gone, 9.5 ms a tick (1.2). Keeping
   200 tiles of nests down takes orbital firepower the camp's economy cannot buy a shell at a time. Next: the sweep from
   a building of the camp's (its orbital relay), under its dome, killed by troops, no sweep while it is down.
+- **The sweep through a building: the orbital relay** (0.2.142). An armed camp's sweeps are called through its orbital
+  relay, by its lander under its dome (a radar's body, 2,000 health): destroyed or without power, no sweep and the nests
+  grow back; put back 30 minutes after if its hull is up. What the camp howitzers were for (a target that keeps its
+  ground, killed by troops), at the sweep's firepower. `armed` checks its sweep takes a spawner set 70 tiles out; `armed
+  relay`, the relay destroyed first, checks the spawner stands.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
