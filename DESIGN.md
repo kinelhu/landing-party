@@ -3848,3 +3848,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   hold and break, the sweep's one-minute look, ORBITAL_BLOW (derivable from the shell's damage, not yet).
   Found on the way: siege.lua requiring base looped (base mid-load when ops installs siege), every run dead at load;
   check.sh stops at the AI graph's freshness before loading the mod, and its tail was cut, so the load error went unseen.
+- **An armed camp's ground: a prior and what it learns** (0.2.139). Spawners by their biters' sight (0.2.138) was the
+  wrong reading: a spawner's waves follow pollution and the engine's attack groups, which no prototype gives. On nwa the
+  armed landing then fired no barrage (its ground the fortress's box, no spawner's sight reaching it) and behemoths took
+  the lander nine minutes on; on nw its camp fell at 145 minutes, its garrison worn down by waves from a nest 63 tiles
+  from its drills. Now, as Synthexis's per_turret: a prior, its mind's ground (200: every spawner within it of its
+  lander), worms by their range to its blocks and depots, and learned, the spawner nearest where its losses to biters
+  fell since its last look and the nests within a biter's sight of it. Learning from its whole 30-minute log walked the
+  sweep outward a nest a minute (seen on nw, fixed). Short visits (5 minutes each, not 200): nwa, 25 minutes, the
+  barrage took 106 spawners and the lander stood; nw, 30 minutes, it stood, its sweeps 11 nests a minute tapering to 1,
+  again only on fresh losses. The camp's standing past 145 minutes on nw is not yet measured.

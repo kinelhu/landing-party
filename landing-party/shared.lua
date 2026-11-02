@@ -191,6 +191,10 @@ shared.CORPS = {
       -- siege_goal its whole). A trait, as min_odds: at 0.3 its sieges on fed nw reached tiers 2 and 3, at none every one
       -- went at tier 1 (2026-11-02).
       siege_save = 0.3,
+      -- Armed, the ground it grows into, round its lander: its landing barrage and sweeps take every spawner there (war.lua;
+      -- a prior, as Synthexis's per_turret: no prototype says how far a spawner's waves come). At 200 its camp stood on fed
+      -- nw and nwa; spawners by their biters' sight alone, nwa's fell nine minutes after landing (2026-11-02).
+      ground = 200,
       -- Where it lands (faction.site): a clear way to the player first; rivals do not move it.
       site = {ore = 1, approach = 1.5, density = 0.5, rival = 0}},
     arrives = "late",

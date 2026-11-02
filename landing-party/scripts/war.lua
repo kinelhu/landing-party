@@ -279,15 +279,18 @@ end
 -- each the howitzer's blow with ten bomblets; BARRAGE_RAILS railgunners join its garrison. Its kills (spawners' evolution
 -- refunded, biters.lua). A howitzer by the lander fired 10 of its 60 shells: its nests were out of its line and reach.
 local ORBITAL_RADIUS, ORBITAL_EVERY, ORBITAL_FALL, BARRAGE_RAILS = 120, 15, 30, 8
--- An armed landing's (faction.arrive) takes every nest that can reach its ground: its blocks and depots, each nest by how
--- far it is a danger (threat.nest_reach). On fed nw its garrison, idle by depots 35 to 150 tiles from its lander, lost 160
--- units in its first hour to the worms and spitters of nests 80 to 150 off (2026-11-02); a flat 200 round its lander took
--- that, and the same 200 on any map, at any size of camp.
--- And it keeps that ground from orbit: a sweep of the same whenever a nest stands within reach of it, looked for every
--- SWEEP_LOOK (no railgunners, no notice). Once was not enough on fed nw: the wild biters expanded back, 42 nests and worms
--- within 200 at 30 minutes, 135 at 60, every depot (76 to 89 tiles out) gone (2026-11-02); a sweep every 10 minutes,
--- whatever stood there, followed. Free: a share of its parts a shell (12) starved the camp of everything else (the lane,
--- 2026-10-19).
+-- An armed landing's (faction.arrive) takes the nests of the ground it grows into: every spawner within its mind's
+-- ground of its lander (a prior: no prototype gives how far a spawner's waves come, which follow pollution and the
+-- engine's attack groups), and every worm whose range reaches its blocks or depots (threat.nest_reach). On fed nw its
+-- garrison, idle by depots 35 to 150 tiles from its lander, lost 160 units in its first hour to the worms and spitters of
+-- nests 80 to 150 off (2026-11-02). Spawners by their biters' sight alone (0.2.138) left nwa's armed landing with no
+-- barrage, its ground the fortress's box: behemoths took the lander nine minutes on (2026-11-02, the 200 had taken 106
+-- spawners there).
+-- And it keeps that ground from orbit: a sweep of the same whenever one stands there, looked for every SWEEP_LOOK, and
+-- of the spawners nearest where its last losses to biters fell (its hazard log, siege.lua: learned, wherever they are).
+-- No railgunners, no notice. Once was not enough on fed nw: the wild biters expanded back, 42 nests and worms within 200
+-- at 30 minutes, 135 at 60, every depot (76 to 89 tiles out) gone (2026-11-02). Free: a share of its parts a shell (12)
+-- starved the camp of everything else (the lane, 2026-10-19).
 local SWEEP_LOOK = 60 * 60
 -- Its ground: its blocks' boxes and its depots, and how far from its lander the farthest of them is.
 local function ground(b)
@@ -308,20 +311,51 @@ local function ground(b)
   end
   return boxes, far
 end
--- The nests within reach of its ground, nearest its lander first.
+-- The nests of its ground (above), nearest its lander first.
 function war.threatening(b)
   local s, c = b.lander.surface, b.lander.position
   local boxes, far = ground(b)
-  local out = {}
-  for _, e in ipairs(s.find_entities_filtered{position = c, radius = far + threat.nest_far(),
+  local reach = (shared.CORPS[b.corp].mind or {}).ground or 0
+  local out, seen = {}, {}
+  local function add(e) if not seen[e.unit_number] then seen[e.unit_number] = true; table.insert(out, e) end end
+  for _, e in ipairs(s.find_entities_filtered{position = c, radius = math.max(reach, far + threat.nest_far()),
     type = {"unit-spawner", "turret"}, force = shared.NEST_FORCES}) do
-    local r, p = threat.nest_reach(e), e.position
-    for _, x in ipairs(boxes) do
-      local dx = math.max(x[1] - p.x, 0, p.x - x[3])
-      local dy = math.max(x[2] - p.y, 0, p.y - x[4])
-      if dx * dx + dy * dy <= r * r then table.insert(out, e); break end
+    local p = e.position
+    if e.type == "unit-spawner" and (p.x - c.x) ^ 2 + (p.y - c.y) ^ 2 <= reach * reach then
+      add(e)
+    else
+      local r = threat.nest_reach(e)
+      for _, x in ipairs(boxes) do
+        local dx = math.max(x[1] - p.x, 0, p.x - x[3])
+        local dy = math.max(x[2] - p.y, 0, p.y - x[4])
+        if dx * dx + dy * dy <= r * r then add(e); break end
+      end
     end
   end
+  -- Learned: the spawner nearest where its losses to biters fell since its last look, and its neighbours within a
+  -- biter's sight. (Its whole log, 30 minutes of it, walked the sweep outward a nest a minute on fed nw: the nearest
+  -- shelled, the next nearest the old losses' middle was taken for theirs.)
+  local h = {}
+  for _, l in ipairs(b.hazard and b.hazard.log or {}) do if l[1] > (b.swept_at or 0) then table.insert(h, l) end end
+  b.swept_at = game.tick
+  if #h > 0 then
+    local mx, my = 0, 0
+    for _, l in ipairs(h) do mx, my = mx + l[2], my + l[3] end
+    mx, my = mx / #h, my / #h
+    local near, nd
+    for _, e in ipairs(s.find_entities_filtered{position = {mx, my}, radius = reach + far, type = "unit-spawner",
+      force = shared.NEST_FORCES}) do
+      local d = (e.position.x - mx) ^ 2 + (e.position.y - my) ^ 2
+      if not nd or d < nd then near, nd = e, d end
+    end
+    if near then
+      for _, e in ipairs(s.find_entities_filtered{position = near.position, radius = threat.biter_sight(),
+        type = {"unit-spawner", "turret"}, force = shared.NEST_FORCES}) do add(e) end
+    end
+  end
+  table.sort(out, function(x, y)
+    return (x.position.x - c.x) ^ 2 + (x.position.y - c.y) ^ 2 < (y.position.x - c.x) ^ 2 + (y.position.y - c.y) ^ 2
+  end)
   return out
 end
 local ORBITAL_BLOW = 800          -- what a shell does to a spawner or a worm, about (resistances off its 960)
