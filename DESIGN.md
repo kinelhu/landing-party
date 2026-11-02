@@ -3908,6 +3908,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   rails). Visits land by the game's rule now; LP_MIX=farland keeps the old distance. Every megabase visit before this
   judged the corporations from too far. Also: the orbital relay waits for its fortress's jobs (placed at landing it
   took a fortress turret's spot, the turret skipped).
+- **A dome over each of Kessler-Hayashi's clusters** (0.2.146; the user, 2026-11-02: "Isn't 2 much more elegant?", over
+  keeping its growth out of the player's artillery reach). Landed by the game's rule 588 tiles from nwa's nearest
+  artillery (reach 560), its camp grew 95 tiles toward the player and lost 16 depots, radars and turrets in 12 minutes,
+  its lander's dome 30 tiles round. Now a dome projector goes up at each hub after the first once that hub's jobs are
+  done (dome.lua), its dome over the hub's blocks (their farthest corner, 30 at least), up while it stands with power,
+  its own charge from the guns that reach it; destroyed, back 30 minutes after with its hull up. The answers: troops or
+  vehicles under it, its power cut, or three minutes of every gun that reaches it. `domehub`: a camp fed parts, two
+  supplied artillery turrets 150 tiles off: while its projector stands its dome catches 90 shells and the cluster's 30
+  military targets stand; killed, 31 fall to 10 (seen failing with the projectors' domes off: 30 to 14 while it stood).
+  The test's first form counted every building within 25 with 60 shells a turret: a turret holds 15, all were caught,
+  and the one building lost was the projector itself.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

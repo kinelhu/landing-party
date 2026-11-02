@@ -49,6 +49,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `threat` | 247 | unit_prior | attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, war |  |  |  |  |
 | `herd_learn` | 237 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `know` | 235 | (leaf) | army, control, farm, herd, herd_learn, intel, ops, rd, strategy, tactics |  | 3600 |  | know |
+| `dome` | 232 | base, threat | control |  | 60, 3600 |  | dome_alert |
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
 | `strip` | 229 | (leaf) | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
@@ -61,7 +62,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `site` | 162 | modules | base, control, faction, layout |  |  |  |  |
 | `orbital` | 159 | threat | control, siege |  | 10, 30 |  | kh_strikes |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
-| `dome` | 149 | base, threat | control |  | 60, 3600 |  | dome_alert |
 | `road` | 144 | base, standing | control |  | 60 |  |  |
 | `pool` | 142 | (leaf) | army, control, cuts, ops, prospect, prowl, tap, war |  |  |  |  |
 | `watch` | 141 | (leaf) | control |  |  |  | watch |

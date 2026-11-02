@@ -47,7 +47,7 @@ end
 
 -- A faction copy of a vanilla prototype: renamed, retinted, not blueprintable. Nothing the faction owns can be mined,
 -- only its ruins once a settlement falls, or what the player captured: to what it is made of (made_of).
-local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-orbital-relay"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
+local MILITARY = {["lp-turret"] = true, ["lp-gun-turret"] = true, ["lp-flamer"] = true, ["lp-gate"] = false, ["lp-mortar"] = true, ["lp-howitzer"] = true, ["lp-orbital-relay"] = true, ["lp-dome-projector"] = true, ["lp-depot"] = true, ["lp-radar"] = true, ["lp-pacifier"] = true, ["lp-lander"] = true,
   ["lp-uplink"] = true, ["lp-launchpad"] = true, ["lp-scrap-cannon"] = true,
   ["lp-optics-lab"] = true, ["lp-line-lab"] = true, ["lp-siege-lab"] = true}
 local function copy(type, name, new)
@@ -317,6 +317,11 @@ local relay = copy("radar", "radar", "lp-orbital-relay")
 relay.energy_usage = watts(shared.power["lp-radar"])
 relay.max_health = 2000
 data:extend({relay})
+-- The dome projector (a Kessler-Hayashi hub's dome, dome.lua): up while it stands with power. (A radar's body for now.)
+local projector = copy("radar", "radar", "lp-dome-projector")
+projector.energy_usage = watts(shared.power["lp-radar"])
+projector.max_health = 1500
+data:extend({projector})
 
 -- Research labs (rd.lua): a vanilla lab, lit as if always researching, one kind a branch of the corporation's tree.
 -- Military targets: what a player's turrets and squads go for.

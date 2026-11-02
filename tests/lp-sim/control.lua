@@ -4422,6 +4422,84 @@ end
 -- encounters): player artillery 100 tiles from its lander, on auto-target, from minute 2. One turret (15 shells): the
 -- dome catches all and holds (charge 20). LP_MIX=battery, six turrets (90 shells): the dome breaks, and shells land on
 -- the camp. LP_MIX=dark: its generators destroyed first, no dome. LP_MIX=off: domes off (the camp shelled as before).
+-- Domehub (dome.lua's projectors; the user, 2026-11-02: a dome over each of Kessler-Hayashi's clusters, not its lander's
+-- alone): a camp fed parts grows a second hub, its projector goes up; two of the player's artillery turrets 150 tiles off
+-- fire on that cluster: its dome catches their shells and the cluster's military targets (what artillery aims at)
+-- stand; its projector killed, they land. (Counted at first as every building within 25 and 60 shells a gun: the guns
+-- held 15 each, all caught, none left when the projector died, and the projector was the one lost.)
+scenarios.domehub = function()
+  schedule(60, function()
+    lp("debug_tune", {ops_off = true, domes = true})
+    for _, pair in ipairs({{"player", "lp-serenity"}, {"lp-serenity", "player"}}) do game.forces[pair[1]].set_cease_fire(pair[2], false) end
+    for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+  end)
+  local function mil(at)
+    local n = 0
+    for _, e in pairs(surface().find_entities_filtered{position = at, radius = 60, force = "lp-serenity"}) do
+      if e.is_military_target and e.name ~= "lp-dome-projector" then n = n + 1 end
+    end
+    return n
+  end
+  local function projector()
+    return surface().find_entities_filtered{name = "lp-dome-projector", force = "lp-serenity", limit = 1}[1]
+  end
+  for t = 2, 40 do
+    schedule(t * 3600, function()
+      if S.turrets then return end
+      local pj = projector()
+      if not pj then return end
+      S.pj, S.at = pj, {pj.position.x, pj.position.y}
+      local o = lp("stats", storage.id).origin
+      local dx, dy = S.at[1] - o.x, S.at[2] - o.y
+      local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+      -- Off its far side from its lander, so its lander's dome is not in their way.
+      local c = {S.at[1] + dx / len * 150, S.at[2] + dy / len * 150}
+      flatten(c[1] - 8, c[2] - 8, c[1] + 8, c[2] + 8)
+      S.turrets = {}
+      for k = 0, 1 do
+        local tt = surface().create_entity{name = "artillery-turret", position = {c[1] + 4 * k, c[2]}, force = "player"}
+        tt.insert{name = "artillery-shell", count = 15}
+        table.insert(S.turrets, tt)
+      end
+      -- Supplied: topped up every minute (a turret holds 15).
+      for m = 1, 8 do
+        schedule(t * 3600 + m * 3600, function()
+          for _, tt in ipairs(S.turrets) do if tt.valid then tt.insert{name = "artillery-shell", count = 15} end end
+        end)
+      end
+      S.built0 = mil(S.at)
+      info(string.format("domehub: projector at %.0f,%.0f at minute %d; %d of its military targets within 60", S.at[1], S.at[2], t, S.built0))
+      schedule(t * 3600 + 3 * 3600, function()
+        S.d1 = lp("debug_dome", storage.id)
+        S.built1 = mil(S.at)
+        if S.pj.valid then S.pj.die("player") end
+        S.built1b = mil(S.at)
+      end)
+      schedule(t * 3600 + 7 * 3600, function()
+        S.built2 = mil(S.at)
+        local ammo = 0
+        for _, tt in ipairs(S.turrets) do if tt.valid then ammo = ammo + tt.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("artillery-shell") end end
+        local mil = 0
+        for _, e in pairs(surface().find_entities_filtered{position = S.at, radius = 60, force = "lp-serenity"}) do
+          if e.is_military_target then mil = mil + 1 end
+        end
+        info(string.format("domehub: after, %d shells left in the turrets, %d military targets of its within 60", ammo, mil))
+      end)
+    end)
+  end
+  schedule(END - 60, function()
+    info(string.format("domehub: %s; its military targets within 60: %s, %s while up, %s after", serpent.line(S.d1), tostring(S.built0),
+      tostring(S.built1), tostring(S.built2)))
+    local pr = S.d1 and S.d1.projectors or {}
+    check("domehub: a projector went up at a second hub", S.at ~= nil, "none")
+    -- (Before 0.2.146 only its lander had a dome: its clusters 95 tiles toward nwa's artillery were shelled.)
+    check("domehub: its dome caught their shells and the cluster stood", (pr.caught or 0) > 0 and S.built1 and S.built0
+      and S.built1 >= S.built0 - 1, string.format("caught %s, %s -> %s", tostring(pr.caught), tostring(S.built0), tostring(S.built1)))
+    check("domehub: its projector killed, their shells land", S.built2 and S.built1b and S.built2 < S.built1b,
+      string.format("%s -> %s", tostring(S.built1b), tostring(S.built2)))
+  end)
+end
+
 scenarios.dome = function()
   local mix = params.mix or ""
   schedule(60, function()
