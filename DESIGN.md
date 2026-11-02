@@ -3772,3 +3772,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   `fortress` (its siege tactics) pins a camp (`debug_tune armed = false`): armed, its lander stood 11 tiles off and its
   siege's site moved onto ground where its hauler stuck 15 tiles short, three variants failing (a hauler that sticks
   short of a site is open). Visit mix `noarmed`.
+- **Kessler-Hayashi brings the force** (0.2.135, measured overnight on targeted visits; the user: "make calls"):
+  - **Its raids weigh their way in** (mind.way_in): artillery base, era 3, two hours: 9 operations for 13, 20 units
+    lost for 31, 13 of the player's buildings for 10 (a walled target goes to a siege instead of four units).
+  - **Armed, armed at level 2** (armed_level): its garrison cap (240), drop escort and units (sieges, walkers) as if it
+    had exported that far. Alone it changed little: on fed nw it built 743 units and lost 635, its 7 sieges intercepted
+    or called off, nothing of the player's razed.
+  - **Where they went** (visit LP_MIX=khdeaths: each of its units killed by role, ring and killer, the role read at the
+    killing blow; its mortars' and howitzers' killers): its garrison, idle by its depots 35 to 150 tiles from its lander,
+    shot by the worms and spitters of the nests round it, 160 in the first hour. Its landing's barrage (120) and burned
+    clearing (80) did not reach them; widened to 200 for an armed landing (36 spawners and 43 worms, 202 shells), the
+    wild biters expanded back (42 nests and worms within 200 at 30 minutes, 135 at 60) and every depot (76 to 89 out)
+    fell. **An armed camp keeps its ground from orbit**: a sweep every 10 minutes of the nests and worms within 200,
+    free (8 to 54 shells a sweep; a share of its parts a shell had starved the lane's camp, 2026-10-19): 10, 16 and 24
+    within 200 at 30, 60 and 90 minutes, its five depots standing, 101 units lost in the first hour. Fed nw, 200 minutes:
+    13 operations, 6 sieges fired out, **330 of the player's buildings razed** (226 walls, 52 roboports, 23 substations)
+    where there had been none, 434 units lost.
+  - **Its siege's howitzer apart from its mortars** (24 tiles across the line of fire, out of reach): a military target,
+    the player's artillery shelled it by itself and the splash killed the mortar 4 tiles off within 10 s, twice (khdeaths:
+    both by the player's artillery turret, explosion). Artillery base: its sieges fired out (30 shells each) instead of
+    being aborted, 16 of the player's buildings for 7 (3 lasers). Its economy there is thin (about 7,000 parts made in two
+    hours against 22,500 on nw): its sieges stay tier 1 and its assaults want 168 to 187 (open).

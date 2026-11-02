@@ -497,6 +497,7 @@ remote.add_interface("landing-party", {
     if t.domes_off then storage.domes = false end
     if t.armed ~= nil then storage.armed = t.armed end
     if t.armed_off then storage.armed = false end
+    if t.sweeps_off ~= nil then storage.sweeps_off = t.sweeps_off end
     -- Tests and the siege lab: its cultures bud no incubator (their waves' size held, farm.cap_of).
     if t.pens_hold ~= nil then storage.biotech_pens_hold = t.pens_hold end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
@@ -574,6 +575,19 @@ remote.add_interface("landing-party", {
   debug_war_chest = function(corp, parts) return war.debug_chest(corp, parts) end,
   -- Tests only: the settlement a unit (or a mortar) is credited to (storage.unit_owner), by unit number.
   debug_unit_owner = function(unit_number) return storage.unit_owner and storage.unit_owner[unit_number] end,
+  -- Tests: what a corporation's unit was doing (its settlement's lists): op:<kind>, response, raid, patrol, garrison, other.
+  debug_role = function(u)
+    local id = storage.unit_owner and u.unit_number and storage.unit_owner[u.unit_number]
+    local b = id and storage.bases[id]
+    if not b then return "unowned" end
+    local function has(list) for _, x in ipairs(list or {}) do if x == u then return true end end end
+    if b.op and (has(b.op.members) or has(b.op.guards)) then return "op:" .. tostring(b.op.kind) end
+    for _, r in ipairs(b.raids or {}) do if has(r.members) then return r.kind or "raid" end end
+    if has(b.patrol) then return "patrol" end
+    if b.prowl and b.prowl.unit == u then return "prowl" end
+    if has(b.garrison) then return "garrison" end
+    return "other"
+  end,
   -- Tests only: where a settlement would set up a siege against pos (siege.lua siege_site), nil if nowhere.
   debug_siege_site = function(id, pos) local b = storage.bases[id]; return b and ops.debug_siege_site(b, pos) end,
   -- Tests only: a settlement's siege plan against pos (siege.lua siege_plan): its site and piece.

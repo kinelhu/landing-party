@@ -276,12 +276,21 @@ end
 -- each the howitzer's blow with ten bomblets; BARRAGE_RAILS railgunners join its garrison. Its kills (spawners' evolution
 -- refunded, biters.lua). A howitzer by the lander fired 10 of its 60 shells: its nests were out of its line and reach.
 local ORBITAL_RADIUS, ORBITAL_EVERY, ORBITAL_FALL, BARRAGE_RAILS = 120, 15, 30, 8
+-- An armed landing's (faction.arrive) reaches the ground its camp grows into: on fed nw its garrison, idle by depots 35 to
+-- 150 tiles from its lander, lost 160 units in its first hour to the worms and spitters of nests 80 to 150 off (2026-11-02).
+local ARMED_RADIUS = 200
+-- And it keeps that ground from orbit: a sweep of the same every ARMED_SWEEP (no railgunners, no notice). Once was not
+-- enough on fed nw: the wild biters expanded back, 42 nests and worms within 200 at 30 minutes, 135 at 60, every depot
+-- (76 to 89 tiles out) gone (2026-11-02). Free: a share of its parts a shell (12) starved the camp of everything else (the
+-- lane, 2026-10-19).
+local ARMED_SWEEP = 10 * 60 * 60
 local ORBITAL_BLOW = 800          -- what a shell does to a spawner or a worm, about (resistances off its 960)
-function war.barrage(b)
+function war.barrage(b, sweep)
   if not shared.CORPS[b.corp].clears_nests or not (b.lander and b.lander.valid) then return end
   local s = b.lander.surface
   local c = b.lander.position
-  local found = s.find_entities_filtered{position = c, radius = ORBITAL_RADIUS, type = {"unit-spawner", "turret"},
+  local radius = b.armed and ARMED_RADIUS or ORBITAL_RADIUS
+  local found = s.find_entities_filtered{position = c, radius = radius, type = {"unit-spawner", "turret"},
     force = "enemy"}
   if #found == 0 then return end
   table.sort(found, function(x, y)
@@ -294,6 +303,10 @@ function war.barrage(b)
   end
   storage.orbitals = storage.orbitals or {}
   table.insert(storage.orbitals, {base = b.id, surface = s.index, force = b.force, queue = queue, i = 1})
+  if sweep then
+    base.trace(b, string.format("orbital sweep: %d nests and worms within %d, %d shells", #found, radius, #queue))
+    return
+  end
   local rails = {}
   for _ = 1, BARRAGE_RAILS do table.insert(rails, "lp-railgunner") end
   local units = spawn(b, rails, {c.x + 6, c.y + 6}, b)
@@ -301,7 +314,7 @@ function war.barrage(b)
   local spawners = 0
   for _, e in ipairs(found) do if e.type == "unit-spawner" then spawners = spawners + 1 end end
   base.trace(b, string.format("orbital barrage: %d spawners and %d worms within %d, %d shells; %d railgunners", spawners,
-    #found - spawners, ORBITAL_RADIUS, #queue, #units))
+    #found - spawners, radius, #queue, #units))
   tell("lp.orbital", b.corp, b)
 end
 
@@ -383,6 +396,19 @@ end
 function war.tick(tick)
   if storage.orbitals and #storage.orbitals > 0 and tick % ORBITAL_EVERY == 0 then orbitals(tick) end
   if tick % 600 ~= 300 then return end
+  -- An armed camp's sweep (war.barrage): one at a time, none while its last is still falling.
+  if not storage.sweeps_off then
+    for _, b in pairs(storage.bases) do
+      if b.armed and not b.fallen and b.lander and b.lander.valid and tick >= (b.sweep_next or (b.landed or 0) + ARMED_SWEEP) then
+        local falling = false
+        for _, o in ipairs(storage.orbitals or {}) do if o.base == b.id then falling = true end end
+        if not falling then
+          b.sweep_next = tick + ARMED_SWEEP
+          war.barrage(b, true)
+        end
+      end
+    end
+  end
   quiet(tick)
   columns()
   if storage.relief_off then return end

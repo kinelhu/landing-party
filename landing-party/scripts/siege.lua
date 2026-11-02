@@ -78,6 +78,7 @@ local truck_down, truck_up, truck_piece = K.truck_down, K.truck_up, K.truck_piec
 -- and chained to death in a minute, its mortar with them, three sieges of three; the lane, 2026-10-31. Synthexis reads
 -- them so already: the perception consult's first lesson, correct perception.)
 local SITE_MARGIN = 1
+local HOWITZER_APART = 24   -- tiles between a siege's howitzer and its mortars (siege_step)
 local function out_of_reach(s, p, foes)
   for _, e in ipairs(s.find_entities_filtered{position = p, radius = threat.far() + SITE_MARGIN + 3, type = TURRETS, force = foes}) do
     -- (And never nearer than PLAYER_REACH: its hauler's way in kept that room; at a laser's own 27 its hauler was killed
@@ -681,7 +682,21 @@ local function siege_step(b, trace, army)
       if not op.mortar then return finish(b, "aborted", trace, army) end
       if op.with_howitzer and not op.howitzer then
         local hn = shared.variant(b.corp, "lp-howitzer")
-        local p = s.find_non_colliding_position(hn, truck and truck.pos or {op.site[1], op.site[2]}, 12, 1)
+        -- Apart from its mortars, HOWITZER_APART across the line of fire, out of every gun's reach: a military target, the
+        -- player's artillery shells it by itself, and beside the mortars its splash killed them within 10 s, twice (the
+        -- artillery base, era 3, 2026-11-02: the mortars no military target since 0.2.132, undone by their neighbour).
+        local at = truck and truck.pos or {op.site[1], op.site[2]}
+        local tg = op.target and b.intel.targets[op.target]
+        -- (Its truck's spot too: the howitzer comes off its truck where that parked, by the mortars.)
+        if tg and tg.pos then
+          local fire = math.atan2(tg.pos[2] - op.site[2], tg.pos[1] - op.site[1])
+          for _, side in ipairs({1, -1}) do
+            local q = {op.site[1] + math.cos(fire + side * math.pi / 2) * HOWITZER_APART,
+              op.site[2] + math.sin(fire + side * math.pi / 2) * HOWITZER_APART}
+            if out_of_reach(s, q, enemies(game.forces[b.force])) then at = q; break end
+          end
+        end
+        local p = s.find_non_colliding_position(hn, at, 12, 1)
         op.howitzer = p and s.create_entity{name = hn, position = p, force = force, direction = truck and truck.dir or nil}
         if op.howitzer then
           -- (Its settlement's, as its mortars: what it breaks is its razing.)

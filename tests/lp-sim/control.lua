@@ -7906,6 +7906,32 @@ scenarios.visit = function()
     if params.mix:find("nowayin", 1, true) then lp("debug_tune", {way_in = false}) end
     -- LP_MIX=nodomes: Kessler-Hayashi without its shield (scripts/dome.lua; on by default since 0.2.133).
     if params.mix:find("nodomes", 1, true) then lp("debug_tune", {domes = false}) end
+    if params.mix:find("khdeaths", 1, true) then
+      S.khdeaths = {}
+      for t = 30 * 3600, params.minutes * 3600, 30 * 3600 do
+        schedule(t, function()
+          local rows = {}
+          for k, n in pairs(S.khdeaths) do rows[#rows + 1] = {k, n} end
+          table.sort(rows, function(x, y) return x[2] > y[2] end)
+          local out = {}
+          for i = 1, math.min(12, #rows) do out[#out + 1] = rows[i][2] .. " " .. rows[i][1] end
+          info(string.format("khdeaths min %d: %d dead; %s", t / 3600, S.khdeath_n or 0, table.concat(out, "; ")))
+          local l = surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity", limit = 1}[1]
+          if l then
+            local n = {}
+            for _, r in ipairs({100, 200, 300}) do
+              n[#n + 1] = string.format("%d within %d", surface().count_entities_filtered{position = l.position, radius = r,
+                force = "enemy", type = {"unit-spawner", "turret"}}, r)
+            end
+            local deps = {}
+            for _, d in pairs(surface().find_entities_filtered{name = "lp-depot", force = "lp-serenity"}) do
+              deps[#deps + 1] = string.format("%.0f", math.sqrt((d.position.x - l.position.x) ^ 2 + (d.position.y - l.position.y) ^ 2))
+            end
+            info("khdeaths   nests and worms: " .. table.concat(n, ", ") .. "; its depots at " .. table.concat(deps, ", "))
+          end
+        end)
+      end
+    end
     -- LP_MIX=noarmed: Kessler-Hayashi lands as a camp at any era (faction.arrive's armed landing off).
     if params.mix:find("noarmed", 1, true) then lp("debug_tune", {armed = false}) end
     -- LP_MIX=artyrange: the player's artillery reach doubled (range research; corporations land beyond its reach as
@@ -13099,8 +13125,35 @@ for _, t in ipairs({"inserter", "transport-belt", "underground-belt", "splitter"
 for _, t in ipairs({"mining-drill", "furnace", "assembling-machine", "lab", "rocket-silo", "radar", "roboport"}) do KILL_KIND[t] = "production" end
 
 -- What kills the player's troopers, and the lander (army scenario diagnostics).
+if (params.mix or ""):find("khdeaths", 1, true) then script.on_event(defines.events.on_entity_damaged, function(e)
+  if S.khdeaths and e.final_health <= 0 and e.entity.valid and e.entity.type == "unit" and e.entity.force.name == "lp-serenity" then
+    S.kh_role = S.kh_role or {}
+    S.kh_role[e.entity.unit_number] = remote.call("landing-party", "debug_role", e.entity)
+  end
+end) end
+
 script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
+  -- LP_MIX khdeaths (visits): each of Kessler-Hayashi's units killed, by its role, how far from its lander, and by what
+  -- (its armed camp lost 80 to 100 units a half hour to biters on fed nw, 2026-11-02).
+  if S.khdeaths and e.entity.force.name == "lp-serenity" and (e.entity.name == "lp-mortar" or e.entity.name == "lp-howitzer") then
+    local c = e.cause and e.cause.valid and e.cause or nil
+    info(string.format("khdeaths: %s at %.0f,%.0f killed by %s (%s) at %s, damage type %s", e.entity.name, e.entity.position.x,
+      e.entity.position.y, c and c.name or "no cause", e.force and e.force.name or "?",
+      c and string.format("%.0f,%.0f", c.position.x, c.position.y) or "-", e.damage_type and e.damage_type.name or "?"))
+  end
+  if S.khdeaths and e.entity.type == "unit" and e.entity.force.name == "lp-serenity" then
+    -- (Its role read at the killing blow, on_entity_damaged: by its death the mod has let go of it.)
+    local role = S.kh_role and S.kh_role[e.entity.unit_number] or "?"
+    if S.kh_role then S.kh_role[e.entity.unit_number] = nil end
+    local l = surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity", limit = 1}[1]
+    local d = l and math.sqrt((e.entity.position.x - l.position.x) ^ 2 + (e.entity.position.y - l.position.y) ^ 2) or -1
+    local ring = d < 0 and "?" or d < 35 and "in its fortress (<35)" or d < 80 and "35-80" or d < 150 and "80-150" or "150+"
+    local killer = e.cause and e.cause.valid and e.cause.name or (e.force and e.force.name) or "?"
+    local key = role .. " | " .. ring .. " | " .. killer
+    S.khdeaths[key] = (S.khdeaths[key] or 0) + 1
+    S.khdeath_n = (S.khdeath_n or 0) + 1
+  end
   if REC.on and e.entity.force.name == "player" and e.entity.type ~= "character" then
     rec({k = "d", t = game.tick, n = e.entity.type, x = math.floor(e.entity.position.x), y = math.floor(e.entity.position.y),
       by = e.cause and e.cause.valid and e.cause.name or "", f = e.force and e.force.name or ""})

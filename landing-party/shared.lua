@@ -105,8 +105,9 @@ shared.CORPS = {
   serenity = {name = "Kessler-Hayashi", force = "lp-serenity", color = {r = 0.55, g = 0.8, b = 0.85},
     -- A shield over its lander that catches its foes' artillery shells (scripts/dome.lua).
     dome = true,
-    -- From this era of the player's it lands armed: its headquarters' fortress, not a camp (faction.arrive).
-    armed_era = 3,
+    -- From this era of the player's it lands armed: its headquarters' fortress, not a camp, its level at least
+    -- armed_level (faction.arrive).
+    armed_era = 3, armed_level = 2,
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
     -- they read as vanilla; all slate-teal felt uniform); slate-teal for machines, vehicles and units.
@@ -181,6 +182,9 @@ shared.CORPS = {
     -- the loss entry below is kept for a temper without `hostile`.
     -- Cuts: it surveys the power behind the turrets facing it and strikes the line (scripts/power.lua).
     mind = {min_odds = 0.5, caution = 1, loss_aversion = 1.5, prefer = {raid = 1, siege = 0.5, strip = 0}, counter = 1,
+      -- Its raids weigh their way in too: a walled target is then a siege's, not four units' (artillery base, era 3,
+      -- 0.2.134: 9 operations for 13, 20 lost for 31, 13 razed for 10).
+      way_in = true,
       -- Where it lands (faction.site): a clear way to the player first; rivals do not move it.
       site = {ore = 1, approach = 1.5, density = 0.5, rival = 0}},
     arrives = "late",

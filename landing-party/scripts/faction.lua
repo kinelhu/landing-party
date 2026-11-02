@@ -349,6 +349,15 @@ function faction.arrive(surface, from, opts, quiet)
       for k, v in pairs(opts or {}) do o[k] = v end
       o.armed = true
       opts = o
+      -- Its army armed too: the corporation at armed_level at least (its garrison cap, drop escort and units: sieges at
+      -- 1, walkers at 2), as if it had exported that far. Landed armed at level 0, its fortress stood and its raids were
+      -- of 2 to 10, 13 of the player's buildings in two hours (artillery base, era 3, 0.2.134).
+      local lvl = (shared.CORPS[corp] or {}).armed_level
+      local d = faction.corp(corp)
+      if lvl and d.level < lvl then
+        d.level = lvl
+        d.exported = math.max(d.exported or 0, shared.LEVELS[lvl] or 0)
+      end
     end
   end
   -- Further rings when the first has no clear, ore-bearing site (seed 12345: two landings blocked their
