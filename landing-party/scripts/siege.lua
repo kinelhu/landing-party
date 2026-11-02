@@ -7,6 +7,10 @@ local shared = require("__landing-party__.shared")
 local attempt = require("__landing-party__.scripts.attempt")
 local tactics = require("__landing-party__.scripts.tactics")
 local threat = require("__landing-party__.scripts.threat")
+local firemap = require("__landing-party__.scripts.firemap")
+local costmap = require("__landing-party__.scripts.costmap")
+local valuemap = require("__landing-party__.scripts.valuemap")
+local know = require("__landing-party__.scripts.know")
 
 local siege = {}
 
@@ -188,6 +192,67 @@ local function besieged(owner)
   end
 end
 
+-- Orbital intelligence's way there (Synthexis's perception, the same skeleton: firemap.lua, costmap.lua): every gun that
+-- would fire on its way, priced by what its own losses taught it (know.price, else the prior), and what reaching any cell
+-- costs from its home. Read fresh at each decision, not kept between ticks (a map held in a module and missing after a
+-- load would part a game from its peers); its launch the same tick reads it back (siege_read). On nwa its sieges went for
+-- the player's artillery 560 tiles off through the base, every hauler killed or stuck on the way (0.2.152).
+local siege_read
+local function read_ways(b, h, targets)
+  local s = game.surfaces[b.surface]
+  local foes = enemies(game.forces[b.force])
+  local far = 0
+  for _, t in pairs(targets) do
+    if t.pos and against_player(t.owner) then
+      far = math.max(far, math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2))
+    end
+  end
+  if far == 0 then return nil end
+  local radius = far + 60
+  local function price(e) return know.price(b.corp, e.force.name, e.name) or threat.prior(e, ops.PER_TURRET) end
+  -- Biter country too, where it is at war with the biters (Synthexis reads none, the biters its allies): worms are guns
+  -- (their prototypes' reach, threat.profile), and the spawners round its way and where its own died to biters lately
+  -- (its hazard log) are what no fire map shows (costmap's deaths). On nw its haulers died to worms and spitters.
+  local shooters, types, deaths = foes, threat.ARMED, nil
+  if not ops.pact(b.force) then
+    shooters, types, deaths = {}, {"ammo-turret", "electric-turret", "fluid-turret", "unit", "turret"}, {}
+    for _, f in ipairs(foes) do shooters[#shooters + 1] = f end
+    for _, n in ipairs(shared.NEST_FORCES) do if game.forces[n] then shooters[#shooters + 1] = game.forces[n] end end
+    for _, e in ipairs(s.find_entities_filtered{position = h.position, radius = radius, type = "unit-spawner",
+      force = shared.NEST_FORCES}) do
+      deaths[#deaths + 1] = {e.position.x, e.position.y, ops.PER_TURRET}
+    end
+    for _, l in ipairs(b.hazard and b.hazard.log or {}) do deaths[#deaths + 1] = {l[2], l[3], 1} end
+  end
+  local fmap = firemap.read(s, h.position, radius, shooters, price, types)
+  local cm = costmap.read(s, h.position, radius, foes, {fire = fmap, n = SIEGE_TIERS[#SIEGE_TIERS].guards, deaths = deaths,
+    from = {h.position.x, h.position.y}, cell = radius > 1200 and costmap.CELL * 3 or costmap.CELL * 2, wall_forces = foes})
+  siege_read = {tick = game.tick, id = b.id, cm = cm}
+  -- Tests: the reading written out (debug_tune dump_ways: scripts/ways_map.py draws it), its first DUMP_WAYS.
+  if storage.dump_ways and (storage.ways_dumped or 0) < 3 then
+    storage.ways_dumped = (storage.ways_dumped or 0) + 1
+    local cells = {}
+    for k, c in pairs(cm.cost) do
+      cells[#cells + 1] = {math.floor(k / cm.h), k % cm.h, math.floor(c * 10) / 10, math.floor((cm.cell_cost[k] or 0) * 10) / 10}
+    end
+    local guns = {}
+    for _, g in ipairs(fmap.list or {}) do guns[#guns + 1] = {math.floor(g.x), math.floor(g.y), math.floor(g.r)} end
+    local tg = {}
+    for key, t in pairs(targets) do
+      if t.pos and against_player(t.owner) then
+        local way = costmap.way_in(cm, {x = t.pos[1], y = t.pos[2]})
+        local path = {}
+        for _, q in ipairs(costmap.path(cm, {x = t.pos[1], y = t.pos[2]}) or {}) do path[#path + 1] = {math.floor(q.x), math.floor(q.y)} end
+        tg[#tg + 1] = {key = key, kind = t.kind, pos = t.pos, value = t.value, start = way and {way.start.x, way.start.y},
+          start_cost = way and costmap.cost(cm, way.start), path = path}
+      end
+    end
+    helpers.write_file("landing-party/ways-" .. storage.ways_dumped .. ".json", helpers.table_to_json({tick = game.tick,
+      home = {h.position.x, h.position.y}, x0 = cm.x0, y0 = cm.y0, size = cm.size, w = cm.w, h = cm.h, cells = cells,
+      guns = guns, targets = tg, spawners = deaths and #deaths or 0}))
+  end
+  return cm
+end
 local function choose_siege(b, army, only_battery)
   if (b.parts or 0) + (b.siege_fund or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
   -- A capability, not every corporation's (Serenity's from level 1; Grubstake never besieges).
@@ -200,6 +265,8 @@ local function choose_siege(b, army, only_battery)
   if n < SIEGE_GUARDS then return end
   local h = home(b)
   local best, bs, site, piece
+  local orbital = (shared.CORPS[b.corp] or {}).orbital_intel and not storage.ways_off
+  local cm = orbital and h and read_ways(b, h, b.intel.targets)
   for key, t in pairs(b.intel.targets) do
     if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))
       and not (b.quiescent and against_player(t.owner) and not battery(t))
@@ -226,7 +293,16 @@ local function choose_siege(b, army, only_battery)
       end
       if not bs or s > bs then
         local p, pc = siege_plan(b, t, army)
-        if p then best, bs, site, piece = key, s, p, pc end
+        -- What it keeps of a siege's guards on the way to its site (the cost map, from its home), its score times the
+        -- share kept, as Synthexis weighs a place; no way there, none. (Measured first to where its way in starts, the
+        -- last cell out of all fire: on nwa, ringed by nests, that was its own doorstep, and every target read 0.98.)
+        if p and cm and against_player(t.owner) then
+          local lost = costmap.cost(cm, {x = p[1], y = p[2]})
+          local keeps = lost and valuemap.keeps_one_way(SIEGE_TIERS[#SIEGE_TIERS].guards, lost) or 0
+          t.way_keeps = keeps
+          s = s * keeps
+        end
+        if p and s > 0 and (not bs or s > bs) then best, bs, site, piece = key, s, p, pc end
       end
     end
   end
@@ -425,7 +501,18 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   b.op.truck = truck or nil
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
   -- A clearance's march keeps out of its worms' reach (straight on, its guards walked into a behemoth's, review).
-  local hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site,
+  local hroute
+  -- An armed camp's siege on a player drives the cheapest way through fire its orbital reading found (read_ways, this
+  -- tick), not round nests alone: its haulers drove through the guns' reach on nwa and died there.
+  if not clearance and siege_read and siege_read.tick == game.tick and siege_read.id == b.id and against_player(t.owner) then
+    local path = costmap.path(siege_read.cm, {x = site[1], y = site[2]})
+    if path then
+      hroute = {}
+      for _, q in ipairs(path) do hroute[#hroute + 1] = {q.x, q.y} end
+      b.op.read_route = true
+    end
+  end
+  hroute = hroute or sneak_route(b, {hauler.position.x, hauler.position.y}, site,
     clearance and {turrets = false, worms = true} or {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
   if not hroute and clearance then hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site, {turrets = false}) end
   if not hroute and b.intel.targets[key] and push_escort(b, b.intel.targets[key], {hauler.position.x, hauler.position.y}, site) then
@@ -471,7 +558,9 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   if against_player(t.owner) then storage.threat_last = game.tick end
   trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f%s): tier %d, %d mortars to %.0f,%.0f, %d guards",
     t.kind, t.pos[1], t.pos[2], t.value, t.defence or 0, t.shells_need and string.format(", %d shells to break its guns",
-    t.shells_need) or "", tier, spec.mortars, site[1], site[2], #guards))
+    t.shells_need) or "", tier, spec.mortars, site[1], site[2], #guards)
+    .. (t.way_keeps and string.format("; its way keeps %.2f", t.way_keeps) or "")
+    .. (b.op.read_route and string.format(", read from orbit (%d waypoints)", #hroute) or ""))
   return true
 end
 

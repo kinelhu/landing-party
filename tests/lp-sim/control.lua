@@ -4638,6 +4638,8 @@ scenarios.armed = function()
       check("armed: at era 3 its fortress, built", st.doctrine == "fortress" and st.turrets >= 50 and st.walls >= 500,
         string.format("%s, %d turrets, %d walls", st.doctrine, st.turrets, st.walls))
       check("armed: its hull up, no uplink", st.hull_up and uplinks == 0, tostring(st.hull_up) .. ", " .. uplinks)
+      -- (Landed by the first rich site before 0.2.154: on nwa across a lake from the factory, no way over land.)
+      check("armed: landed by its way to the player", (lp("faction").by_way or 0) >= 1, tostring(lp("faction").by_way))
     end
   end)
 end
@@ -8314,6 +8316,8 @@ scenarios.visit = function()
     -- 9 to 13 technologies, era 0; a phase visit at era 0 judged every corporation at its weakest).
     -- LP_MIX=seedN: the corporations' and Synthexis's random sources salted with N (base.lua, farm.lua): a visit of one save
     -- is otherwise the same run every time (the Synthexis variance consult: its "twentyfold swing" was three builds).
+    -- LP_MIX=dumpways: Kessler-Hayashi's way readings written out (scripts/ways_map.py).
+    if params.mix:find("dumpways", 1, true) then lp("debug_tune", {dump_ways = true}) end
     local salt = tonumber(params.mix:match("seed(%d+)"))
     if salt then lp("debug_tune", {seed_salt = salt}); info("visit: seed salt " .. salt) end
     local era = tonumber(params.mix:match("era(%d)"))

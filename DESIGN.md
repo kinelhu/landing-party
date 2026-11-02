@@ -3991,6 +3991,25 @@ Bugs and surprises the headless runs caught, each kept as a check:
   mortars against nw's walls of 460). The fast loop: scenario `standsiege` (52 s a run: an armed camp fed parts against a
   wall, two rows of twelve lasers, four roboports, a substation 50 behind ringed by eight lasers; a siege forced at minute
   9): the siege moves up with its dome and razes 49, the deep substation with them; 72 shells read, tier 2.
+- **Kessler-Hayashi reads Synthexis's maps: its sieges and its landing** (0.2.154; the user: "I thought we established we
+  would use the same skeleton as Synthexis. Why wouldn't we use the cost map?"). 0.2.153's verdict, three seeds: nw 66,
+  37, 48 (mean 50; 88 at 0.2.151, 43 at 0.2.152), nwa unchanged (no siege bombarded). Now:
+  - Its sieges on a player read a fire map (every gun of its foes, its units, and, at war with the biters, worms and
+    their spawners and where its own died to biters, as costmap deaths) and a cost map from its home, fresh at each
+    decision (held between ticks it would part a game from its peers after a load). A target's score is times what a
+    siege's guards keep on the way to its site (valuemap.keeps_one_way); no way, no siege. Its hauler drives the cost
+    map's path. Measured first to where the way in starts (the last cell out of all fire), every nwa target read 0.98:
+    ringed by nests, that cell was its doorstep.
+  - Drawn (LP_MIX=dumpways, scripts/ways_map.py): on nwa its landing (525,-611 by the game's rule) lay across a lake from
+    the factory, its cheapest ways 1,500 tiles round through nest country (the user: "right across a huge ocean").
+    With the reading, it besieged nothing in 40 minutes.
+  - An armed landing weighs every ring's rich sites together (nests round them allowed: its barrage's) by its way over land
+    to the player, one cost map from there (water no way; rival camps' guns, worms and spawners priced; the user's own
+    guns not, every site meets them), the cheapest taken; the passes as before if none lands. On nwa ten sites: the lake's
+    had no way at all; it came down at 56,-1123, way 110, 797 from the nearest artillery (reach 560). Ring by ring it
+    had taken the near ring's two sites, both across the lake; with nests refused there was one rich site in seven
+    rings. `armed` checks the landing was by its way (seen failing with it off). Its first 25 minutes there razed
+    nothing: its ground ringed by nests, it clears them first (not yet measured further).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
