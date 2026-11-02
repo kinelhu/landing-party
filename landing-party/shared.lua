@@ -191,6 +191,9 @@ shared.CORPS = {
       -- siege_goal its whole). A trait, as min_odds: at 0.3 its sieges on fed nw reached tiers 2 and 3, at none every one
       -- went at tier 1 (2026-11-02).
       siege_save = 0.3,
+      -- Armed, its preferences (ops.tick): its siege at a raid's weight (0.5 unarmed; the Kessler-Hayashi consult: its
+      -- standing siege is what an armed camp is for).
+      armed_prefer = {raid = 1, siege = 1, strip = 0},
       -- Armed, the ground it grows into, round its lander: its landing barrage and sweeps take every spawner there (war.lua;
       -- a prior, as Synthexis's per_turret: no prototype says how far a spawner's waves come). At 200 its camp stood on fed
       -- nw and nwa; spawners by their biters' sight alone, nwa's fell nine minutes after landing (2026-11-02).

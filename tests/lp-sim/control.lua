@@ -4649,6 +4649,9 @@ end
 -- no shell.
 scenarios.orbital = function()
   local spot = params.mix == "spotter"
+  -- LP_MIX=standing (siege.lua's standing siege): a roboport by the outpost brings the howitzer, a supplied artillery turret
+  -- 60 behind the wall fires on it; the siege's site dome catches its shells.
+  local standing = params.mix == "standing"
   schedule(60, function()
     lp("debug_tune", {era = 3, history_off = true, raids_off = true})
     S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 150, {corp = "serenity"})
@@ -4674,8 +4677,36 @@ scenarios.orbital = function()
     local tgt = {c[1] + ux * 12, c[2] + uy * 12}
     surface().create_entity{name = "assembling-machine-2", position = tgt, force = "player"}
     S.c, S.tgt = c, tgt
+    if standing then
+      surface().create_entity{name = "roboport", position = {tgt[1] + px * 6, tgt[2] + py * 6}, force = "player"}
+    end
     lp("dev", {"siege", tostring(S.k)}, tgt)
   end)
+  -- Standing: once its siege's projector stands (a dome projector 40 tiles or more from its lander), five of the player's
+  -- artillery shells at it from 60 off; its dome's catches counted (the camp's other domes, before and after).
+  if standing then
+    for t = 9 * 3600 + 60, END - 600, 60 do
+      schedule(t, function()
+        if S.fired or not S.c then return end
+        local o = lp("stats", S.k).origin
+        for _, pj in pairs(surface().find_entities_filtered{name = "lp-dome-projector", force = "lp-serenity"}) do
+          local p = pj.position
+          if (p.x - S.tgt[1]) ^ 2 + (p.y - S.tgt[2]) ^ 2 < 60 * 60 then
+            S.fired = true
+            S.caught0 = ((lp("debug_dome", S.k) or {}).projectors or {}).caught or 0
+            for k = 1, 5 do
+              surface().create_entity{name = "artillery-projectile", position = {p.x + 60, p.y - 30 + k}, force = "player",
+                target = {p.x + k, p.y}, speed = 1}
+            end
+            schedule(game.tick + 300, function()
+              S.caught1 = ((lp("debug_dome", S.k) or {}).projectors or {}).caught or 0
+            end)
+            return
+          end
+        end
+      end)
+    end
+  end
   -- The wall right after the strike (by the end its siege's mortar and assault had taken the rest).
   for t = 9 * 3600 + 60, END - 600, 30 do
     schedule(t, function()
@@ -4703,7 +4734,14 @@ scenarios.orbital = function()
     local st = lp("debug_strikes", S.k)
     local walls = surface().count_entities_filtered{name = "stone-wall", position = S.c, radius = 30, force = "player"}
     info(string.format("orbital: strikes %s, walls %d of %d (killed %s)", serpent.line(st), walls, S.walls0, tostring(S.killed)))
-    if spot then
+    if standing then
+      local d = lp("debug_dome", S.k) or {}
+      info("orbital: standing, dome " .. serpent.line(d))
+
+      -- (No site dome before 0.2.152: its howitzer was the player's artillery's to take from afar.)
+      check("orbital: a standing siege's site dome caught the player's artillery", S.fired and S.caught1
+        and S.caught1 - S.caught0 >= 5, string.format("%s -> %s", tostring(S.caught0), tostring(S.caught1)))
+    elseif spot then
       check("orbital: its spotter killed, the strike called off", st.called >= 1 and st.off >= 1 and st.shells == 0,
         serpent.line(st))
     else

@@ -512,6 +512,8 @@ local function relevance(b, t, c)
   return r
 end
 
+ops.relevance = relevance
+ops.FLOOR_TICKS = FLOOR_TICKS
 -- The best target worth the force the settlement can field: value over defence, nearer preferred, tried
 -- targets less, cooling targets not at all.
 local function choose(b, army)
@@ -691,6 +693,7 @@ local function finish(b, outcome, trace, army)
   if op.mortar and op.mortar.valid then op.mortar.destroy() end
   for _, m in ipairs(op.mortars or {}) do if m.valid then m.destroy() end end
   if op.howitzer and op.howitzer.valid then op.howitzer.destroy() end
+  if ops.site_dome_down then ops.site_dome_down(b, op) end
   jammer.lower(op.jammer)
   -- Its hits mended: a siege on a wall kept by robots that ends with their roboports still standing teaches it the
   -- jammer (rd).
@@ -1803,7 +1806,7 @@ function ops.tick(b, tick, trace, army)
     -- Then the best of a raid, a siege and a strip, each weighed by what the corporation prefers (its mind's prefer;
     -- the faction AI's comparison, docs/reviews/2026-10-23-faction-ai-audit.md): a fixed order had a raid on a pylon
     -- always beat a siege on a factory block, and a thief strip before anything.
-    local prefer = mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
+    local prefer = (b.armed and mind_of(b).armed_prefer) or mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
     local skey, ssite, ss, spiece = choose_siege(b, army)
     -- An armed camp sieges no player while a nest can reach its ground (war.lua sets b.ground_clear at each look for its
     -- sweep): its first siege went out 1.8 minutes after landing, and its hauler died to the nests round it every time

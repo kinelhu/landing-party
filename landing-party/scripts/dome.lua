@@ -18,6 +18,7 @@
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local threat = require("__landing-party__.scripts.threat")
+local ops = require("__landing-party__.scripts.ops")
 
 local dome = {}
 local RADIUS = 30
@@ -203,6 +204,36 @@ local function projectors(b, tick)
       end
     end
   end
+end
+
+-- A standing siege's dome (siege.lua, its bombard begun): a projector by its site, its dome over its pieces (the
+-- farthest, and 6, RADIUS at least), the camp's charge rules; gone with the siege (ops.finish). The player's artillery
+-- cannot take the site from afar: troops can.
+function ops.site_dome(b, op)
+  if storage.domes == false or not (shared.CORPS[b.corp] or {}).dome then return end
+  local s = b.lander.surface
+  local p = s.find_non_colliding_position("lp-dome-projector", {op.site[1], op.site[2]}, 12, 1)
+  local e = p and s.create_entity{name = "lp-dome-projector", position = p, force = b.force}
+  if not e then return end
+  local r = RADIUS
+  for _, m in ipairs(op.mortars or {}) do
+    if m.valid then r = math.max(r, math.sqrt((m.position.x - p.x) ^ 2 + (m.position.y - p.y) ^ 2) + 6) end
+  end
+  if op.howitzer and op.howitzer.valid then
+    r = math.max(r, math.sqrt((op.howitzer.position.x - p.x) ^ 2 + (op.howitzer.position.y - p.y) ^ 2) + 6)
+  end
+  b.domes = b.domes or {}
+  local d = fresh()
+  d.anchor, d.radius = e, r
+  b.domes.siege = d
+  op.site_dome = e
+  trace(b, string.format("a projector by its siege at %.0f,%.0f, %d tiles", p.x, p.y, r))
+end
+function ops.site_dome_down(b, op)
+  if op.site_dome and op.site_dome.valid then op.site_dome.destroy() end
+  local d = b.domes and b.domes.siege
+  if d and d.ring and d.ring.valid then d.ring.destroy() end
+  if b.domes then b.domes.siege = nil end
 end
 
 local function run(b, d, tick)

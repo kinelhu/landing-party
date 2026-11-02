@@ -3969,6 +3969,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   17; Synthexis 110, 37, 101. The single runs before were draws: nwa's Kessler-Hayashi 143 (0.2.147) and Synthexis 1,553
   (a census of two unfinished waves, the Synthexis consult) stand against 0 to 36 and 37 to 110 here. Against a megabase
   with 2,300 lasers no faction is a threat; on nw Kessler-Hayashi is, unevenly. The reference for the standing siege.
+- **The standing siege** (0.2.152; the Kessler-Hayashi consult, docs/reviews/2026-11-02-kessler-hayashi-late-game-
+  consult.md: seven of nine changes since 0.2.133 made it survive, none made it hurt; "a camp that cannot be killed and
+  cannot hurt forces no encounter"). An armed camp's siege on a player stands: no 15-minute clock once it bombards;
+  convoys after its tier's paid (40 shells at the cheapest tier's price a shell, 134 parts, from its fund then its parts);
+  its orbital strike called again after the camp's cooldown; a dome projector by its site, its dome over its pieces
+  (dome.lua: ops.site_dome), gone with the siege. It ends as before: its pieces gone, half its guards lost, its shells and
+  money out. Weighed fairly: an armed camp's siege by ops.relevance as its raids are, and at a raid's weight (its mind's
+  armed_prefer; 0.5 before), against nwa's "raid 22.73, siege 1.36" every weighing. `orbital standing`: five of the
+  player's artillery shells at its site, all caught (seen failing with the site dome off). A real artillery turret in the
+  test fired on the camp's other targets in reach first and was spent before the siege dug in; the shells are scripted.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

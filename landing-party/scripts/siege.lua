@@ -81,6 +81,17 @@ local orbital = require("__landing-party__.scripts.orbital")
 local SITE_MARGIN = 1
 -- Tiles between a siege's howitzer and its mortars (siege_step): out of a shell's blast aimed at either, its foes' widest
 -- (threat.foe_splash) twice and both bodies' widths (a flat 24 before, vanilla's blast of 4 six times over).
+-- A standing siege's convoy, after its tier's: RESUPPLY shells at what its cheapest tier pays a shell (SIEGE_TIERS[1]),
+-- from its siege fund, then its parts.
+local function convoy_price() return math.ceil(RESUPPLY * SIEGE_TIERS[1].cost / SIEGE_TIERS[1].shells) end
+local function pay_convoy(b)
+  local price = convoy_price()
+  if (b.siege_fund or 0) + (b.parts or 0) < price then return false end
+  local from_fund = math.min(b.siege_fund or 0, price)
+  b.siege_fund = (b.siege_fund or 0) - from_fund
+  b.parts = b.parts - (price - from_fund)
+  return true
+end
 local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
 local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
 local CORRIDOR_LOOK = 60 * 60   -- ticks between an armed camp's corridor strikes on a siege's march (war.corridor)
@@ -200,6 +211,14 @@ local function choose_siege(b, army, only_battery)
       and not (against_player(t.owner) and not battery(t) and ((t.pos and ops.marked(b, t.pos)) or ops.camp_hurt(b))) then
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
+      -- An armed camp weighs its siege as its raids are weighed (ops.relevance: the pressure on a player, a grudge): its
+      -- raids were, its sieges not, and on nwa every weighing read raid 22.73 against siege 1.36, no siege in 90 minutes
+      -- (the Kessler-Hayashi consult, 2026-11-02).
+      if b.armed and ops.relevance then
+        local player = against_player(t.owner)
+        s = s * ops.relevance(b, t, {player = player, rung = player and stance.rung(t.owner, b.force) or 0,
+          floor = game.tick - (storage.threat_last or 0) > ops.FLOOR_TICKS})
+      end
       if not bs or s > bs then
         local p, pc = siege_plan(b, t, army)
         if p then best, bs, site, piece = key, s, p, pc end
@@ -375,6 +394,11 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   -- (Its piece, a howitzer where its mortars are outranged or broke nothing there twice: siege_plan.)
   if piece and not clearance then b.op.piece, b.op.reach = piece, piece == "lp-howitzer" and HOWITZER_REACH or MORTAR_REACH end
   b.op.clearance = clearance
+  -- A standing siege (an armed camp's, on a player; the Kessler-Hayashi consult, 2026-11-02: "a camp that cannot be
+  -- killed and cannot hurt forces no encounter"): no clock while it can pay, paid convoys after its tier's, a strike
+  -- again after the camp's cooldown, a dome over its site (dome.lua). It ends when its pieces are gone, half its guards
+  -- lost, or its shells and money out.
+  b.op.standing = b.armed and not clearance and t and against_player(t.owner) or nil
   b.op.with_howitzer = with_howitzer or nil
   b.op.truck = truck or nil
   -- Round biter country (the hauler is slow and alone: through a nest field it never arrived).
@@ -619,7 +643,7 @@ end
 local function siege_step(b, trace, army)
   local op = b.op
   local n = alive(op)
-  if game.tick - op.started > SIEGE_MAX_TICKS then
+  if game.tick - op.started > SIEGE_MAX_TICKS and not (op.standing and op.phase == "bombard") then
     if op.hauler and op.hauler.valid then
       local hp = op.hauler.position
       trace(b, string.format("siege: out of time in %s, the hauler at %.0f,%.0f, %.0f tiles from the site (%s)", op.phase, hp.x, hp.y,
@@ -811,6 +835,7 @@ local function siege_step(b, trace, army)
       trace(b, string.format("siege: %d mortars up with %d shells", #op.mortars, op.loaded - op.shells_fired))
       -- An armed camp's siege calls its orbital strike on the wall (scripts/orbital.lua).
       if not op.clearance then orbital.call(b, op) end
+      if op.standing and ops.site_dome then ops.site_dome(b, op) end
       -- Hardened siege (Serenity): the site digs in, a ring of wall open towards home and two gun pillboxes, cleared
       -- when the siege ends (op.works).
       if (rd.has(b.corp, "hardened") or op.clearance) and not op.works then
@@ -899,6 +924,8 @@ local function siege_step(b, trace, army)
     -- shells along a laser wall and its robots mended every one, ten lasers at full health and 32 repair packs spent
     -- (fortress). A flare on the point is how a mortar is told (an artillery remote's flare; a turret's shooting
     -- target cannot be set from script).
+    -- A standing siege calls its strike again once its camp's cooldown is over (orbital.call reads op.standing).
+    if op.standing and op.phase == "bombard" then orbital.call(b, op) end
     if not op.clearance and op.phase == "bombard" and not storage.focus_off and t_owner_player(b, op) then
       local pieces = {}
       for _, m in ipairs(live) do pieces[#pieces + 1] = m end
@@ -939,6 +966,11 @@ local function siege_step(b, trace, army)
         op.convoy = nil
         trace(b, string.format("siege: resupplied, %d shells", each * #to))
       end
+    elseif #empty > 0 and in_reach > 0 and (op.loaded or 0) + RESUPPLY <= SHELLS_CAP and op.standing
+      and (op.convoys_left or 0) <= 0 and pay_convoy(b) then
+      op.convoys_left = 1
+      op.convoys_paid = (op.convoys_paid or 0) + 1
+      trace(b, string.format("siege: a convoy paid (%d parts)", convoy_price()))
     elseif #empty > 0 and in_reach > 0 and (op.convoys_left or 0) > 0 and (op.loaded or 0) + RESUPPLY <= SHELLS_CAP then
       local h = home(b)
       local p = h and s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), h.position, 20, 0.5)
