@@ -3876,6 +3876,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   none targeted: 7 shells, 0 guns). Artillery base, era 3, 120 minutes: five strikes of 32 to 36 shells on 14 to 15
   covering guns, sieges at tiers 1 to 3, 106 of the player's buildings razed (75 lasers). Found on the way: a siege moving
   site read its hauler after the hauler was shelled at the site, and the run died (now called off, traced).
+- **Camp howitzers instead of the sweep: tried, dropped** (the user's idea, 2026-11-02: "static howitzers at the lander for
+  each KH site. Would defend from new expansions"). Three forms, fed nw, 60 minutes each, against the sweep's 90-minute
+  run (camp standing, 100 of the player's buildings razed): (1) a howitzer by the lander and one a hub, 100 tiles, mortar
+  shells at a siege's price a shell, flare-aimed at the nests of its ground (auto-targeting off: it would fire on the
+  player's guns in reach): 121 of 131 units lost to waves, nothing of the player's razed; a spawner of nw's takes 30
+  mortar shells. (2) The same with a heavy shell (the orbital shell's blow): 132 of 165 lost, the nests that sent them
+  110 to 140 tiles out, past every gun. (3) The guns at the artillery turret's reach (224), the shell priced by its blow
+  over a mortar shell's (27 parts): the guns ate every part, no part made, every depot gone, 9.5 ms a tick (1.2). Keeping
+  200 tiles of nests down takes orbital firepower the camp's economy cannot buy a shell at a time. Next: the sweep from
+  a building of the camp's (its orbital relay), under its dome, killed by troops, no sweep while it is down.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
