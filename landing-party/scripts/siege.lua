@@ -77,8 +77,10 @@ local truck_down, truck_up, truck_piece = K.truck_down, K.truck_up, K.truck_piec
 -- set up 31 tiles from tesla turrets, which reach 30 from a body three tiles wide, and its guards round it were stunned
 -- and chained to death in a minute, its mortar with them, three sieges of three; the lane, 2026-10-31. Synthexis reads
 -- them so already: the perception consult's first lesson, correct perception.)
+local orbital = require("__landing-party__.scripts.orbital")
 local SITE_MARGIN = 1
 local HOWITZER_APART = 24   -- tiles between a siege's howitzer and its mortars (siege_step)
+local GATE_CLEAR = 48       -- no foe's unit this near where a siege's hauler starts (launch_siege)
 local function out_of_reach(s, p, foes)
   for _, e in ipairs(s.find_entities_filtered{position = p, radius = threat.far() + SITE_MARGIN + 3, type = TURRETS, force = foes}) do
     -- (And never nearer than PLAYER_REACH: its hauler's way in kept that room; at a laser's own 27 its hauler was killed
@@ -293,6 +295,15 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   local hname = shared.variant(b.corp, truck and "lp-howitzer-truck" or "lp-hauler")
   local p = s.find_non_colliding_position(hname, {hx + (site[1] - hx) * out / dist,
     hy + (site[2] - hy) * out / dist}, 20, 0.5)
+  -- Not into a fight at its own gate: with its foes' units within GATE_CLEAR of where its hauler starts it waits (its
+  -- next decision). On fed nw five sieges of eight lost their hauler on the way, one 16 s out and 44 tiles from its
+  -- lander, to biters attacking its depots (2026-11-02).
+  -- (Not a clearance: biters by its camp are what it goes out against.)
+  if p and not clearance and s.count_entities_filtered{position = p, radius = GATE_CLEAR, type = "unit",
+    force = enemies(game.forces[b.force]), limit = 1} > 0 then
+    trace(b, "siege waits: its foes' units at its gate")
+    return false
+  end
   local hauler = p and s.create_entity{name = hname, position = p, force = h.force}
   if not hauler then return false end
   -- The howitzer leaves its pad now (base.park would hide it at its next look, two seconds on: truck and pad at once).
@@ -716,6 +727,8 @@ local function siege_step(b, trace, army)
       op.phase, op.phase_at = "bombard", game.tick
       alert(b, b.intel.targets[op.target], "lp.alert-siege", op.site)
       trace(b, string.format("siege: %d mortars up with %d shells", #op.mortars, op.loaded - op.shells_fired))
+      -- An armed camp's siege calls its orbital strike on the wall (scripts/orbital.lua).
+      if not op.clearance then orbital.call(b, op) end
       -- Hardened siege (Serenity): the site digs in, a ring of wall open towards home and two gun pillboxes, cleared
       -- when the siege ends (op.works).
       if (rd.has(b.corp, "hardened") or op.clearance) and not op.works then

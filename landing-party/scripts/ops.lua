@@ -37,6 +37,7 @@ local RESERVE = pool.RESERVE           -- share of the garrison cap that never l
 -- defend), and with research now in the weight (x1.8 there) 5 counted it twice. At 3, the 21 sent there won once
 -- and lost once (two thirds dead either way): 3.5 sends 23.
 local PER_TURRET, BASE_FORCE = 3.5, 4
+local ARMED_SETTLE = 10 * 60 * 60   -- an armed camp's first minutes, no siege on a player (ops.tick)
 -- Desperate (the ladder's top rung against a player): its odds rule at this share of its mind's min_odds, not lifted.
 -- Bolder, not blind (the counters and desperation consult, 2026-10-31): lifted, Kessler-Hayashi raided a laser wall with 4
 -- to 40 again and again, lost all, and its learning (prices, the ladder) went for nothing.
@@ -1805,6 +1806,12 @@ function ops.tick(b, tick, trace, army)
     -- always beat a siege on a factory block, and a thief strip before anything.
     local prefer = mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
     local skey, ssite, ss, spiece = choose_siege(b, army)
+    -- An armed camp sieges no player before its fortress stands and its first orbital sweep has cleared its ground
+    -- (ARMED_SETTLE): its first siege went out 1.8 minutes after landing, and its hauler died to the nests round it every
+    -- time (fed nw, 2026-11-02).
+    if skey and b.armed and game.tick < (b.landed or 0) + ARMED_SETTLE and against_player((b.intel.targets[skey] or {}).owner) then
+      skey = nil
+    end
     local tkey, tsite, ts = choose_strip(b, army)
     -- (Desperate against a player: its siege weighs DESPERATE_SIEGE times as much, what it saves for.)
     local st_ = skey and b.intel.targets[skey]

@@ -3793,3 +3793,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
     both by the player's artillery turret, explosion). Artillery base: its sieges fired out (30 shells each) instead of
     being aborted, 16 of the player's buildings for 7 (3 lasers). Its economy there is thin (about 7,000 parts made in two
     hours against 22,500 on nw): its sieges stay tier 1 and its assaults want 168 to 187 (open).
+- **Kessler-Hayashi's orbital strike** (0.2.136, `scripts/orbital.lua`; the user, 2026-11-01: "a targeted (and
+  telegraphed) orbital strike for late game KH sieges ... A line of explosions spreading from a central point could be a
+  scary sight"). An armed camp's siege, its mortars up, calls it on the first of the player's walls or guns on its line
+  from its site toward its target. The guard nearest that point paints it for 12 s (a red beam from the spotter, rings
+  closing on the point, the strike's reach drawn on the ground); the spotter killed or gone, it is called off. Then
+  orbital shells (the barrage's) fall on the point and outward along the wall's line, 6 tiles apart, a pair every 20
+  ticks, 18 tiles each way: 7 shells. Once a siege, 15 minutes between a camp's strikes. Scenario `orbital` (a 40-tile
+  wall, guns, an assembler): called as its mortar went up, 7 shells, 12 of 37 wall pieces down right after (at reach 36,
+  13 shells took the whole wall: halved); `orbital spotter` (its units there killed while it paints): called off, no
+  shell. Fed nw: three strikes in 200 minutes, each in a real siege.
+- **Its sieges reach their site** (0.2.136): a route's corridor (a spawner killed lately, routing.lua) lifts spawners'
+  marks, never worms': its orbital sweeps killed spawners every 10 minutes, worms grew back inside the 30 minutes a
+  corridor lasted, and its haulers routed through them (khdeaths: five of six killed by big worms 105 to 140 out; the
+  routing scenarios clear, country, push, prospect and hazard pass). And an armed camp sieges no player in its first 10
+  minutes (its first siege went 1.8 minutes after landing, its hauler dead to the nests round it each time). A siege
+  waits with its foes' units within 48 of where its hauler starts (never fired on nw: not where they died). Fed nw, 200
+  minutes: 2 of 5 sieges intercepted (were 5 of 8), still to spitters and worms grown in 120 to 175 out (open), 169 of the
+  player's buildings razed, three strikes.
+- **On nwa** (0.2.135, fed, 200 minutes): its armed camp stood (it had fallen to wild behemoths 28 minutes after landing):
+  its landing barrage took 106 spawners and 119 worms within 200 (694 shells). Its sieges there all failed (4 aborted, 2
+  intercepted), nothing of the player's razed; Grubstake razed 466 and Synthexis 1,771 in the same run.

@@ -149,7 +149,14 @@ local function sneak_route(b, from, to, opts, wide)
   end
   -- (opts.margin: a big herd's half-width besides, herd.lua waist: a wave of 200 is a blob 20 tiles wide.)
   local tmark = mark(turrets, function(e) return range(e) + SNEAK_MARGIN + (opts.margin or 0) end)
-  local nmark = mark(nests, function(e) return e.type == "unit-spawner" and NEST_KEEP.spawner or NEST_KEEP.worm end)
+  -- Spawners and worms marked apart: a corridor (a spawner killed lately) lifts the spawners' marks, never the worms'
+  -- (they shoot). Kessler-Hayashi's orbital sweeps (war.lua) kill spawners every 10 minutes, worms grew back inside the
+  -- 30 minutes its corridors lasted, and its siege haulers routed through them: five of six on fed nw killed by big worms
+  -- 105 to 140 tiles out (2026-11-02).
+  local spawners, worms = {}, {}
+  for _, e in ipairs(nests) do table.insert(e.type == "unit-spawner" and spawners or worms, e) end
+  local nmark = mark(spawners, function() return NEST_KEEP.spawner end)
+  local wmark = mark(worms, function() return NEST_KEEP.worm end)
   -- Corridors on this surface within the box, once per route.
   local corr = {}
   for _, c in ipairs(storage.corridors or {}) do
@@ -173,6 +180,7 @@ local function sneak_route(b, from, to, opts, wide)
       local bad = false
       if tmark[k] and (cx - to[1]) ^ 2 + (cy - to[2]) ^ 2 > SNEAK_OPEN ^ 2 then bad = true end
       if not bad and nmark[k] and not in_corridor(cx, cy) then bad = true end
+      if not bad and wmark[k] then bad = true end
       -- (On a coarse grid, opts.cell, over more of the cell: water within 2 of a 16-tile cell's middle missed lakeshores,
       -- and the engine walked Synthexis's herds round lakes and cliffs between waypoints, loops of 500 tiles on the
       -- player's deathworld. opts.solid: cliffs and the foe's buildings block too, where a herd cannot pass.)

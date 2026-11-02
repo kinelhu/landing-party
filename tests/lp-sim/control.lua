@@ -4488,6 +4488,78 @@ scenarios.armed = function()
   end)
 end
 
+-- Orbital (scripts/orbital.lua; the user, 2026-11-01: a telegraphed orbital strike for Kessler-Hayashi's late sieges, "a
+-- line of explosions spreading from a central point"): an armed camp (era 3) besieges a walled outpost of the player's (a
+-- 40-tile wall, gun turrets behind it, an assembler behind them); its siege calls the strike on the wall, its spotter
+-- paints it, the shells walk along the wall. LP_MIX=spotter: its units by the siege killed while it paints: called off,
+-- no shell.
+scenarios.orbital = function()
+  local spot = params.mix == "spotter"
+  schedule(60, function()
+    lp("debug_tune", {era = 3, history_off = true, raids_off = true})
+    S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 150, {corp = "serenity"})
+  end)
+  schedule(9 * 3600, function()
+    local o = lp("stats", S.k).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = -o.x / len, -o.y / len
+    local c = {o.x + ux * 120, o.y + uy * 120}
+    flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
+    local px, py = -uy, ux
+    S.walls0 = 0
+    for k = -20, 19 do
+      if surface().create_entity{name = "stone-wall", position = {c[1] + px * k, c[2] + py * k}, force = "player"} then
+        S.walls0 = S.walls0 + 1
+      end
+    end
+    for k = -2, 2 do
+      local t = surface().create_entity{name = "gun-turret", position = {c[1] + px * 8 * k + ux * 4, c[2] + py * 8 * k + uy * 4},
+        force = "player"}
+      if t then t.insert{name = "piercing-rounds-magazine", count = 100} end
+    end
+    local tgt = {c[1] + ux * 12, c[2] + uy * 12}
+    surface().create_entity{name = "assembling-machine-2", position = tgt, force = "player"}
+    S.c, S.tgt = c, tgt
+    lp("dev", {"siege", tostring(S.k)}, tgt)
+  end)
+  -- The wall right after the strike (by the end its siege's mortar and assault had taken the rest).
+  for t = 9 * 3600 + 60, END - 600, 30 do
+    schedule(t, function()
+      if S.walls_after or not S.c then return end
+      if lp("debug_strikes", S.k).shells > 0 then
+        S.walls_after = surface().count_entities_filtered{name = "stone-wall", position = S.c, radius = 30, force = "player"}
+      end
+    end)
+  end
+  if spot then
+    for t = 9 * 3600 + 60, END - 600, 30 do
+      schedule(t, function()
+        if S.killed or not S.c then return end
+        local st = lp("debug_strikes", S.k)
+        if st.called >= 1 then
+          S.killed = 0
+          for _, u in pairs(surface().find_entities_filtered{position = S.c, radius = 120, force = "lp-serenity", type = "unit"}) do
+            u.die("player"); S.killed = S.killed + 1
+          end
+        end
+      end)
+    end
+  end
+  schedule(END - 60, function()
+    local st = lp("debug_strikes", S.k)
+    local walls = surface().count_entities_filtered{name = "stone-wall", position = S.c, radius = 30, force = "player"}
+    info(string.format("orbital: strikes %s, walls %d of %d (killed %s)", serpent.line(st), walls, S.walls0, tostring(S.killed)))
+    if spot then
+      check("orbital: its spotter killed, the strike called off", st.called >= 1 and st.off >= 1 and st.shells == 0,
+        serpent.line(st))
+    else
+      check("orbital: called, its shells walked the wall", st.called >= 1 and st.shells >= 7, serpent.line(st))
+      check("orbital: a lane opened, not the whole wall", S.walls_after and S.walls_after < S.walls0 and S.walls_after > 0,
+        tostring(S.walls_after) .. " of " .. S.walls0 .. " right after it")
+    end
+  end)
+end
+
 scenarios.dismantle = function()
   local ambush = params.mix == "ambush"
   local function toward(id, d)
@@ -13136,10 +13208,13 @@ script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
   -- LP_MIX khdeaths (visits): each of Kessler-Hayashi's units killed, by its role, how far from its lander, and by what
   -- (its armed camp lost 80 to 100 units a half hour to biters on fed nw, 2026-11-02).
-  if S.khdeaths and e.entity.force.name == "lp-serenity" and (e.entity.name == "lp-mortar" or e.entity.name == "lp-howitzer") then
+  if S.khdeaths and e.entity.force.name == "lp-serenity" and (e.entity.name == "lp-mortar" or e.entity.name == "lp-howitzer"
+    or e.entity.name == "lp-hauler" or e.entity.name == "lp-howitzer-truck") then
     local c = e.cause and e.cause.valid and e.cause or nil
-    info(string.format("khdeaths: %s at %.0f,%.0f killed by %s (%s) at %s, damage type %s", e.entity.name, e.entity.position.x,
-      e.entity.position.y, c and c.name or "no cause", e.force and e.force.name or "?",
+    local l = surface().find_entities_filtered{name = "lp-lander", force = "lp-serenity", limit = 1}[1]
+    info(string.format("khdeaths: %s at %.0f,%.0f (%.0f from its lander) killed by %s (%s) at %s, damage type %s", e.entity.name,
+      e.entity.position.x, e.entity.position.y,
+      l and math.sqrt((e.entity.position.x - l.position.x) ^ 2 + (e.entity.position.y - l.position.y) ^ 2) or -1, c and c.name or "no cause", e.force and e.force.name or "?",
       c and string.format("%.0f,%.0f", c.position.x, c.position.y) or "-", e.damage_type and e.damage_type.name or "?"))
   end
   if S.khdeaths and e.entity.type == "unit" and e.entity.force.name == "lp-serenity" then
