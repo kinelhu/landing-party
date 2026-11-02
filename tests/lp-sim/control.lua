@@ -4647,6 +4647,78 @@ end
 -- 40-tile wall, gun turrets behind it, an assembler behind them); its siege calls the strike on the wall, its spotter
 -- paints it, the shells walk along the wall. LP_MIX=spotter: its units by the siege killed while it paints: called off,
 -- no shell.
+-- Standsiege (the standing siege's fast loop; the user, 2026-11-02: "You need to find a way to iterate faster on this"):
+-- an armed camp (era 3) fed parts against a player's outpost 120 tiles toward spawn, the shape of nw's walls: a 40-tile
+-- wall, two rows of twelve powered lasers behind it, four roboports with robots and repair packs, eight assemblers behind
+-- them. A siege
+-- forced at minute 9 (dev siege). Reports what it razes, how long it stands, strikes, paid convoys, moves.
+scenarios.standsiege = function()
+  schedule(60, function()
+    lp("debug_tune", {era = 3, history_off = true, raids_off = true})
+    S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 150, {corp = "serenity"})
+    for _ = 1, 3 do lp("debug_depot", S.k, 3000) end
+  end)
+  schedule(8 * 3600, function()
+    local o = lp("stats", S.k).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = -o.x / len, -o.y / len
+    local px, py = -uy, ux
+    local c = {o.x + ux * 120, o.y + uy * 120}
+    flatten(c[1] - 34, c[2] - 34, c[1] + 34, c[2] + 34)
+    local function at(along, depth) return {c[1] + px * along + ux * depth, c[2] + py * along + uy * depth} end
+    for k = -20, 19 do surface().create_entity{name = "stone-wall", position = at(k, 0), force = "player"} end
+    local power = surface().create_entity{name = "electric-energy-interface", position = at(0, 14), force = "player"}
+    -- Two rows of twelve lasers (nw's walls read 364 to 460 in its defence; one row of six read 0 and fell in 9 minutes).
+    for k = -6, 5 do
+      for _, depth in ipairs({4, 7}) do
+        surface().create_entity{name = "laser-turret", position = at(k * 3 + 1.5, depth), force = "player"}
+      end
+    end
+    for k = -6, 6 do surface().create_entity{name = "medium-electric-pole", position = at(k * 3, 9), force = "player"} end
+    for k = -2, 2 do surface().create_entity{name = "medium-electric-pole", position = at(k * 6, 11), force = "player"} end
+    surface().create_entity{name = "medium-electric-pole", position = at(0, 13), force = "player"}
+    for _, k in ipairs({-14, -6, 6, 14}) do
+      local r = surface().create_entity{name = "roboport", position = at(k, 12), force = "player"}
+      if r then
+        r.insert{name = "construction-robot", count = 20}
+        r.insert{name = "repair-pack", count = 100}
+      end
+    end
+    surface().create_entity{name = "medium-electric-pole", position = at(-4, 12), force = "player"}
+    surface().create_entity{name = "medium-electric-pole", position = at(4, 12), force = "player"}
+    for k = -4, 3 do surface().create_entity{name = "assembling-machine-2", position = at(k * 4, 22), force = "player"} end
+    -- In depth, as nw's: a substation 50 behind the wall ringed by its own eight lasers, out of a mortar's reach from any
+    -- site before the wall (the siege must move up, where nw's died, 0.2.152).
+    local deep = at(0, 50)
+    flatten(deep[1] - 12, deep[2] - 12, deep[1] + 12, deep[2] + 12)
+    surface().create_entity{name = "substation", position = deep, force = "player"}
+    for k = 0, 7 do
+      local a = k * math.pi / 4
+      surface().create_entity{name = "laser-turret", position = {deep[1] + math.cos(a) * 7, deep[2] + math.sin(a) * 7}, force = "player"}
+    end
+    for d = 14, 46, 8 do surface().create_entity{name = "medium-electric-pole", position = at(0, d), force = "player"} end
+    S.c, S.tgt, S.deep = c, deep, deep
+    S.count0 = surface().count_entities_filtered{position = c, radius = 70, force = "player"}
+    lp("dev", {"siege", tostring(S.k)}, S.tgt)
+  end)
+  schedule(END - 60, function()
+    local left = surface().count_entities_filtered{position = S.c, radius = 70, force = "player"}
+    info("standsiege: the deep substation " .. (surface().count_entities_filtered{position = S.deep, radius = 2, name = "substation"} > 0 and "stands" or "razed"))
+    local st = lp("debug_strikes", S.k)
+    local dec = {}
+    info(string.format("standsiege: the outpost %d -> %d (%d razed); strikes %s", S.count0 or 0, left,
+      (S.count0 or 0) - left, serpent.line(st)))
+    local ops_ = lp("stats", S.k).ops
+    for _, l in ipairs(ops_.log or {}) do
+      if l.op == "siege" then
+        info(string.format("standsiege: siege %s tier %s for %.1f min, %d shells, %d of %d back, razed %s", l.outcome,
+          tostring(l.tier), ((l.ended or game.tick) - l.started) / 3600, l.shells or 0, l.back or 0, l.launched or 0, tostring(l.razed)))
+      end
+    end
+    check("standsiege: the siege ran", (st.called or 0) >= 1, serpent.line(st))
+  end)
+end
+
 scenarios.orbital = function()
   local spot = params.mix == "spotter"
   -- LP_MIX=standing (siege.lua's standing siege): a roboport by the outpost brings the howitzer, a supplied artillery turret

@@ -209,6 +209,11 @@ local function choose_siege(b, army, only_battery)
       -- Marked ground and a hurt camp hold a siege as they hold a raid (it skipped them; the faction AI audit,
       -- 2026-10-23). A grudge siege still ignores the soft rule, as designed.
       and not (against_player(t.owner) and not battery(t) and ((t.pos and ops.marked(b, t.pos)) or ops.camp_hurt(b))) then
+      -- Its defence read now, not when its sensors last looked (orbital intelligence: a substation ringed by 32 lasers
+      -- placed after its survey read 0 and drew a siege of two mortars; standsiege, 0.2.152).
+      if (shared.CORPS[b.corp] or {}).orbital_intel and against_player(t.owner) then
+        t.defence, t.dmg = ops.weigh(game.surfaces[b.surface], t.pos, t.owner, nil, b.corp)
+      end
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
       -- An armed camp weighs its siege as its raids are weighed (ops.relevance: the pressure on a player, a grudge): its
@@ -241,6 +246,23 @@ local function siege_tier(b, t, army)
   local cap_k = #SIEGE_TIERS
   if against_player(t.owner) then
     cap_k = math.min(cap_k, budget(t.owner) + (b.grudge and 1 or 0) + ((b.war_rung or 0) >= 3 and 1 or 0))
+  end
+  -- Read from what defends it (a corporation with orbital intelligence, shared.CORPS orbital_intel; the user, 2026-11-02:
+  -- "Isn't it obvious attack size should vary from read?"): the mortar shells its guards take to break (threat.shells_for,
+  -- each gun within DEFENCE_RADIUS of it), the least tier that carries as many, within its cap. Before, the tier was its
+  -- army's level whatever stood there: two mortars against nw's walls of 460.
+  if against_player(t.owner) and t.pos and (shared.CORPS[b.corp] or {}).orbital_intel and not storage.read_size_off then
+    local need = 0
+    for _, e in pairs(game.surfaces[b.surface].find_entities_filtered{position = t.pos, radius = DEFENCE_RADIUS,
+      type = TURRETS, force = enemies(game.forces[b.force])}) do
+      need = need + threat.shells_for("lp-mortar-projectile", e)
+    end
+    local kr = #SIEGE_TIERS
+    for i = 1, #SIEGE_TIERS do
+      if SIEGE_TIERS[i].mortars * SIEGE_TIERS[i].shells >= need then kr = i; break end
+    end
+    k = math.min(cap_k, kr)
+    t.shells_need = need
   end
   -- A tier up where its sieges lately broke nothing (tactics.failed_specialists, every attacker's: Synthexis's rams double
   -- where every one set off and its wave still stood at a wall). Within its cap above: what the player's era allows.
@@ -447,8 +469,9 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   b.ops_launched = b.ops_launched + 1
   b.sieges = (b.sieges or 0) + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
-  trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f): tier %d, %d mortars to %.0f,%.0f, %d guards",
-    t.kind, t.pos[1], t.pos[2], t.value, t.defence or 0, tier, spec.mortars, site[1], site[2], #guards))
+  trace(b, string.format("siege of %s at %.0f,%.0f (value %d, defence %.1f%s): tier %d, %d mortars to %.0f,%.0f, %d guards",
+    t.kind, t.pos[1], t.pos[2], t.value, t.defence or 0, t.shells_need and string.format(", %d shells to break its guns",
+    t.shells_need) or "", tier, spec.mortars, site[1], site[2], #guards))
   return true
 end
 
@@ -1005,6 +1028,9 @@ local function siege_step(b, trace, army)
         end
         op.moved = true
         if site and (site[1] - op.site[1]) ^ 2 + (site[2] - op.site[2]) ^ 2 > 8 * 8 then
+          -- A standing siege's dome goes with it (up again where it digs in next): left at its first site, its truck
+          -- moving up was shelled on the way, three seeds of three on nw (0.2.152).
+          if op.site_dome and ops.site_dome_down then ops.site_dome_down(b, op); op.site_dome = nil end
           -- The howitzer packs up before it moves (the user: no firing on the move), silent while it does.
           local piece = op.truck and truck_piece(op)
           if piece and not op.pack_site then

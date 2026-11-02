@@ -3979,6 +3979,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   armed_prefer; 0.5 before), against nwa's "raid 22.73, siege 1.36" every weighing. `orbital standing`: five of the
   player's artillery shells at its site, all caught (seen failing with the site dome off). A real artillery turret in the
   test fired on the camp's other targets in reach first and was spent before the siege dug in; the shells are scripted.
+- **The standing siege measured, then sized by what it reads** (0.2.153). Three seeds, 0.2.152 against 0.2.151: nw 43,
+  37, 49 against 176, 38, 51; nwa unchanged to the byte (its sieges went for the player's artillery 560 tiles off,
+  battery x10, and every hauler was killed or stuck on the way: none bombarded, where standing begins). On nw each siege
+  bombarded, domed, struck 11 to 16 guns, then moved up as every siege does, left its dome behind, and its truck was
+  killed on the way. Now its dome goes with it (taken down when it moves, up again where it digs in). And Kessler-Hayashi
+  sees from orbit (shared.CORPS orbital_intel; the user: "KH should probably access the same ground truth as synthexis
+  ... They have satellites and orbital platforms after all"): a siege target's defence is read when it decides (a
+  substation ringed by 32 lasers placed after its survey read 0), and its tier is the least that carries the mortar shells
+  its guards take to break (threat.shells_for, each gun within 30), within its cap (its army level held it before: two
+  mortars against nw's walls of 460). The fast loop: scenario `standsiege` (52 s a run: an armed camp fed parts against a
+  wall, two rows of twelve lasers, four roboports, a substation 50 behind ringed by eight lasers; a siege forced at minute
+  9): the siege moves up with its dome and razes 49, the deep substation with them; 72 shells read, tier 2.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

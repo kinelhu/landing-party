@@ -110,6 +110,9 @@ shared.CORPS = {
     armed_era = 3, armed_level = 2,
     -- An armed camp's siege calls an orbital strike on the wall (scripts/orbital.lua).
     orbital_strike = true,
+    -- What it sees from orbit (siege.lua: a siege target's defence read when it decides, its tier from the shells the
+    -- guns there take); Grubstake learns by scouting and raiding.
+    orbital_intel = true,
     tint = {r = 0.62, g = 0.8, b = 1, a = 1}, lamp = {r = 0.85, g = 0.95, b = 1},
     -- Two colours (user, 2026-10-13): charcoal walls, turrets, poles, lamps and mines on pale concrete (untinted
     -- they read as vanilla; all slate-teal felt uniform); slate-teal for machines, vehicles and units.
