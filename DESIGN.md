@@ -3963,6 +3963,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   with least ore under it (of the first 12): nwa's camp no longer matured at two blocks with no site (parts 6,425 to
   7,076 in an hour); the headquarters' fortress keeps the first free square (the fortress scenarios' forts are laid
   against it). `breach arty` keeps domes off: since 0.2.147 a hub's dome caught its artillery over the research district.
+- **The baseline, three seeds** (0.2.151, fed, 90 minutes, LP_MIX=seed1..3; the player's buildings razed, each faction's
+  own count, the corporations' census beside). nw: Kessler-Hayashi 176, 38, 51 (mean 88; census 125, 44, 47), stood in
+  all; Grubstake 0, 0, 0; Synthexis 11, 14, 0. nwa: Kessler-Hayashi 36, 0, 0 (mean 12), stood in all; Grubstake 0, 8,
+  17; Synthexis 110, 37, 101. The single runs before were draws: nwa's Kessler-Hayashi 143 (0.2.147) and Synthexis 1,553
+  (a census of two unfinished waves, the Synthexis consult) stand against 0 to 36 and 37 to 110 here. Against a megabase
+  with 2,300 lasers no faction is a threat; on nw Kessler-Hayashi is, unevenly. The reference for the standing siege.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
