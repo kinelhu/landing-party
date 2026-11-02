@@ -8202,6 +8202,10 @@ scenarios.visit = function()
     end
     -- LP_MIX=era<N>: the corporations at the player's era N whatever the save researched (the reference factories have
     -- 9 to 13 technologies, era 0; a phase visit at era 0 judged every corporation at its weakest).
+    -- LP_MIX=seedN: the corporations' and Synthexis's random sources salted with N (base.lua, farm.lua): a visit of one save
+    -- is otherwise the same run every time (the Synthexis variance consult: its "twentyfold swing" was three builds).
+    local salt = tonumber(params.mix:match("seed(%d+)"))
+    if salt then lp("debug_tune", {seed_salt = salt}); info("visit: seed salt " .. salt) end
     local era = tonumber(params.mix:match("era(%d)"))
     if era then lp("debug_tune", {era = era}); info("visit: era set to " .. era) end
     if not params.mix:find("nokh", 1, true) then

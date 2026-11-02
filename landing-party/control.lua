@@ -497,6 +497,7 @@ remote.add_interface("landing-party", {
     if t.prowl ~= nil then storage.prowl = t.prowl end
     if t.domes ~= nil then storage.domes = t.domes end
     if t.dome_charge ~= nil then storage.dome_charge = t.dome_charge end
+    if t.seed_salt ~= nil then storage.seed_salt = t.seed_salt end
     if t.domes_off then storage.domes = false end
     if t.armed ~= nil then storage.armed = t.armed end
     if t.armed_off then storage.armed = false end

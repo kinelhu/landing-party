@@ -725,7 +725,7 @@ local function compose(f, surface, n, want, have, tilt, budget, strong)
     end
   end
   local list, total = chance(f, surface, tilt)
-  f.rng = f.rng or rng.new(f.id * 7919 + game.tick)
+  f.rng = f.rng or rng.new(f.id * 7919 + game.tick + 104729 * (storage.seed_salt or 0))
   local got = strong and herd.strength(names) + (strong.have or 0) or 0
   -- (Drawn to its strength, n heads at the most all the same: WAVE_MAX for a siege. And to strong.least heads at the least:
   -- its strength reached with 4 behemoths, a star fort siege came to 22 of the 24 it ever sends, and waited; 2026-10-31.)
@@ -1088,7 +1088,7 @@ local function menu(f, choice, sieges_allowed, s)
       sieges_allowed and "allowed" or "not allowed", ns, table.concat(rejected, "; "))) end
     return nil
   end
-  f.rng = f.rng or rng.new(f.id * 7919 + game.tick)
+  f.rng = f.rng or rng.new(f.id * 7919 + game.tick + 104729 * (storage.seed_salt or 0))
   local pick = tactics.pick(ops, f.rng, tie)
   trace(string.format("farm %d weighs its methods: %s; picks %s at %.0f,%.0f", f.id, table.concat(said, "; "), pick.method,
     pick.at.x, pick.at.y))

@@ -147,7 +147,9 @@ function base.land(surface, pos, opts)
     radars = {}, walls = {}, depots = {}, launchpads = {}, lamps = {}, mines = {}, flamers = {}, pylon_spots = {}, road_tiles = 0,
     modules = {}, cells = {}, queue = {}, rebuild = {}, lost = 0, rebuilt = 0, corp = corp, force = f.name,
     rule = "landed", log = {}, waiting = nil, landed = game.tick}
-  local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2]))
+  -- (storage.seed_salt: tests' replicates of one save, a visit's LP_MIX=seedN; none in play.)
+  local seed = opts.seed or (surface.map_gen_settings.seed + 7919 * id + 31 * math.floor(pos[1]) + math.floor(pos[2])
+    + 104729 * (storage.seed_salt or 0))
   layout.init(b, seed, (opts.uplink or opts.armed) and "fortress" or opts.doctrine, shared.CORPS[corp].doctrines)
   army.init(b)
   local at, _, uplink_at
