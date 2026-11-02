@@ -295,12 +295,18 @@ script.on_event(defines.events.on_entity_died, function(e)
         b.units_lost = b.units_lost + 1
         ops.raider_died(b, ent)
         ops.on_unit_killed(b, e.cause)
-        -- A clearance's losses: what killed them, and how far from the site (diagnostic, first ten an operation).
-        if b.op and b.op.clearance and (b.op.deaths_traced or 0) < 10 then
-          b.op.deaths_traced = (b.op.deaths_traced or 0) + 1
-          base.trace(b, string.format("clearance: %s killed by %s at %.0f tiles from the site", shared.kind_of(ent.name),
-            e.cause and e.cause.valid and e.cause.name or "?", math.sqrt((ent.position.x - b.op.site[1]) ^ 2
-            + (ent.position.y - b.op.site[2]) ^ 2)))
+        -- A siege's losses: what killed them, how far from the site and in which phase (diagnostic, first ten an
+        -- operation; a clearance's first, every siege's since 0.2.155), and by kind of killer (op.killers).
+        if b.op and b.op.kind == "siege" and b.op.site then
+          local killer = e.cause and e.cause.valid and e.cause.name or "?"
+          b.op.killers = b.op.killers or {}
+          b.op.killers[killer] = (b.op.killers[killer] or 0) + 1
+          if (b.op.deaths_traced or 0) < 10 then
+            b.op.deaths_traced = (b.op.deaths_traced or 0) + 1
+            base.trace(b, string.format("%s: %s killed by %s at %.0f tiles from the site (%s)", b.op.clearance and "clearance" or "siege",
+              shared.kind_of(ent.name), killer, math.sqrt((ent.position.x - b.op.site[1]) ^ 2 + (ent.position.y - b.op.site[2]) ^ 2),
+              b.op.phase or "?"))
+          end
         end
         if e.force then ops.provoke(b.force, e.force.name, e.cause and e.cause.valid and e.cause or ent.position) end
       end

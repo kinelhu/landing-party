@@ -4021,7 +4021,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   problem: worms alone, which threaten only what passes them, as on nw). With them: it besieged the deep substation (72
   shells read, tier 2, its guards keeping 0.67 on the way), a corridor strike took 11 worms, its hauler drove the cost
   map's 14 waypoints, its strike fell on the 14 guns covering the lane, it moved up under its dome, and razed 67 (the
-  deep substation with them); called off at 4 of 10 guards, lost to the ring of lasers round the deep target.
+  deep substation with them); called off at 4 of 10 guards.
+  Its losses traced (every siege's now, not a clearance's alone, with its phase; by killer kind, op.killers): not the
+  lasers but big worms 95 to 119 tiles back: its hauler went the cost map's way round the belt, its guards straight at
+  their points through it. Its guards now go its hauler's way (its waypoints, then behind its site), and on its march
+  only those within ESCORT_NEAR (24) of the hauler are kept behind it, the rest going on along the way. 10 of 10 back,
+  68 razed. `standsiege nests` checks half its guards came back at least (seen failing sent straight: 4 of 10).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

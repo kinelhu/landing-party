@@ -97,6 +97,7 @@ local function pay_convoy(b)
   return true
 end
 local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
+local ESCORT_NEAR = 24        -- guards this near its hauler are kept behind it; further, they go on along its way
 local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
 local CORRIDOR_LOOK = 60 * 60   -- ticks between an armed camp's corridor strikes on a siege's march (war.corridor)
 -- (A settlement's trace line, written here as orbital.lua writes its own: base requires ops, which installs this.)
@@ -580,8 +581,20 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     commands = hcmds}
   -- A clearance's guards answer only what hits them on the march: on sight, railgunners (vision 34, range 30) walked up
   -- to the worms they saw, into a behemoth's 48 (review of scenario clear).
-  order_all(guards, {type = defines.command.go_to_location, destination = back, radius = 6,
-    distraction = clearance and defines.distraction.by_damage or defines.distraction.by_enemy})
+  -- Its guards go its hauler's way (its waypoints, then behind its site): sent straight at a point by it, they crossed
+  -- the worm belt its hauler's way went round and all died there, 95 to 119 tiles back (standsiege nests, 0.2.155).
+  do
+    local gcmds = {}
+    for _, w in ipairs(hroute) do
+      gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = w, radius = 6,
+        distraction = defines.distraction.by_damage}
+    end
+    gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = back, radius = 6,
+      distraction = clearance and defines.distraction.by_damage or defines.distraction.by_enemy}
+    order_all(guards, #gcmds > 1 and {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+      commands = gcmds} or gcmds[1])
+  end
+  b.op.route = b.op.route or hroute
   b.ops_launched = b.ops_launched + 1
   b.sieges = (b.sieges or 0) + 1
   if against_player(t.owner) then storage.threat_last = game.tick end
@@ -821,7 +834,15 @@ local function siege_step(b, trace, army)
       local dl = math.max(1, math.sqrt(dx * dx + dy * dy))
       behind = {x = hp.x - dx / dl * ESCORT_BACK, y = hp.y - dy / dl * ESCORT_BACK}
     end
-    order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
+    -- (Those near its hauler kept behind it; the rest go on along its way, their own orders, ESCORT_NEAR.)
+    local close = {}
+    for _, u in ipairs(op.members) do
+      if u.valid and (near_site or (u.position.x - hp.x) ^ 2 + (u.position.y - hp.y) ^ 2 <= ESCORT_NEAR ^ 2
+        or not u.commandable.has_command) then
+        close[#close + 1] = u
+      end
+    end
+    order_all(close, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
       {type = defines.command.go_to_location, destination = near_site and guard_spot(b, op) or behind, radius = 6, distraction = eye},
       {type = defines.command.stop, distraction = defines.distraction.by_damage}}})
     -- Stuck (a hauler drove at the same spot 21 tiles short of its site for 15 minutes, visit b - rocket): no nearer for a

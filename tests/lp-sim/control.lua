@@ -4748,6 +4748,16 @@ scenarios.standsiege = function()
       end
     end
     check("standsiege: the siege ran", (st.called or 0) >= 1, serpent.line(st))
+    if nests then
+      -- (Sent straight at points by its hauler, its guards crossed the worm belt its hauler's way went round: 4 of 10
+      -- came back, the rest killed by big worms 95 to 119 tiles back, 0.2.155.)
+      local back, sent = 0, 0
+      for _, l in ipairs(ops_.log or {}) do
+        if l.op == "siege" and l.owner == "player" then back, sent = back + (l.back or 0), sent + (l.launched or 0) end
+      end
+      check("standsiege nests: its siege's guards kept its hauler's way and came back", sent > 0 and back * 2 >= sent,
+        back .. " of " .. sent)
+    end
   end)
 end
 
