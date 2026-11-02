@@ -99,6 +99,13 @@ end
 local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
 local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
 local CORRIDOR_LOOK = 60 * 60   -- ticks between an armed camp's corridor strikes on a siege's march (war.corridor)
+-- (A settlement's trace line, written here as orbital.lua writes its own: base requires ops, which installs this.)
+local function base_trace(b, msg)
+  local line = string.format("%8d base %d  %s", game.tick, b.id, msg)
+  if storage.trace then helpers.write_file("landing-party/decisions.txt", line .. "\n", true) end
+  table.insert(b.log, line)
+  if #b.log > 30 then table.remove(b.log, 1) end
+end
 local function howitzer_apart(hn, mn)
   local function width(name)
     local box = prototypes.entity[name] and prototypes.entity[name].collision_box
@@ -267,7 +274,14 @@ local function choose_siege(b, army, only_battery)
   local best, bs, site, piece
   local orbital = (shared.CORPS[b.corp] or {}).orbital_intel and not storage.ways_off
   local cm = orbital and h and read_ways(b, h, b.intel.targets)
+  local blocked, blocked_s, blocked_site
   for key, t in pairs(b.intel.targets) do
+    -- Its defence read now, not when its sensors last looked (orbital intelligence: a substation ringed by 32 lasers
+    -- placed after its survey read 0 and drew a siege of two mortars, standsiege 0.2.152), and before the test of it
+    -- below (read after, the stale 0 had already set the target aside: standsiege nests, 0.2.154).
+    if orbital and t.pos and against_player(t.owner) then
+      t.defence, t.dmg = ops.weigh(game.surfaces[b.surface], t.pos, t.owner, nil, b.corp)
+    end
     if (not only_battery or battery(t)) and (capable or (counter and battery(t))) and ((t.defence or 0) >= 2 or battery(t))
       and not (b.quiescent and against_player(t.owner) and not battery(t))
       and not (against_player(t.owner) and in_flight >= budget(t.owner) and not battery(t))
@@ -276,11 +290,6 @@ local function choose_siege(b, army, only_battery)
       -- Marked ground and a hurt camp hold a siege as they hold a raid (it skipped them; the faction AI audit,
       -- 2026-10-23). A grudge siege still ignores the soft rule, as designed.
       and not (against_player(t.owner) and not battery(t) and ((t.pos and ops.marked(b, t.pos)) or ops.camp_hurt(b))) then
-      -- Its defence read now, not when its sensors last looked (orbital intelligence: a substation ringed by 32 lasers
-      -- placed after its survey read 0 and drew a siege of two mortars; standsiege, 0.2.152).
-      if (shared.CORPS[b.corp] or {}).orbital_intel and against_player(t.owner) then
-        t.defence, t.dmg = ops.weigh(game.surfaces[b.surface], t.pos, t.owner, nil, b.corp)
-      end
       local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
       local s = (t.value + threat_bonus(b, t)) / (1 + dist / 300) * (battery(t) and 10 or 1)
       -- An armed camp weighs its siege as its raids are weighed (ops.relevance: the pressure on a player, a grudge): its
@@ -300,9 +309,29 @@ local function choose_siege(b, army, only_battery)
           local lost = costmap.cost(cm, {x = p[1], y = p[2]})
           local keeps = lost and valuemap.keeps_one_way(SIEGE_TIERS[#SIEGE_TIERS].guards, lost) or 0
           t.way_keeps = keeps
+          -- (The best it would take with its way free, for its corridor below.)
+          if lost and (not blocked_s or s > blocked_s) then blocked, blocked_s, blocked_site = t, s, p end
           s = s * keeps
         end
         if p and s > 0 and (not bs or s > bs) then best, bs, site, piece = key, s, p, pc end
+      end
+    end
+  end
+  -- Its best target out of reach for its way alone (a way there, too dear to keep its guards): it clears that way from
+  -- orbit along the cost map's path (war.corridor: the nests by it shelled), once a CORRIDOR_LOOK, and weighs again. Left
+  -- to the weighing alone, a camp behind a belt of thirteen spawners and their worms besieged nothing in 30 minutes
+  -- (standsiege nests, 0.2.154).
+  if not best and blocked and cm and ops.corridor and game.tick >= (b.clear_way_at or 0) then
+    local path = costmap.path(cm, {x = blocked_site[1], y = blocked_site[2]})
+    if path then
+      local route = {}
+      for _, q in ipairs(path) do route[#route + 1] = {q.x, q.y} end
+      b.clear_way_at = game.tick + CORRIDOR_LOOK
+      local shells = ops.corridor(b, {h.position.x, h.position.y}, route, blocked_site)
+      if shells > 0 then
+        b.ways_cleared = (b.ways_cleared or 0) + 1
+        base_trace(b, string.format("clears its way to %s at %.0f,%.0f from orbit (its guards would keep %.2f): %d shells",
+          blocked.kind, blocked.pos[1], blocked.pos[2], blocked.way_keeps or 0, shells))
       end
     end
   end

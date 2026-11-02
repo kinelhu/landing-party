@@ -4010,6 +4010,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
     had taken the near ring's two sites, both across the lake; with nests refused there was one rich site in seven
     rings. `armed` checks the landing was by its way (seen failing with it off). Its first 25 minutes there razed
     nothing: its ground ringed by nests, it clears them first (not yet measured further).
+- **The ladder's second rung: a siege through a worm belt** (0.2.155; the user, 2026-11-02, agreeing a ladder of tests
+  cheapest first: standsiege, a nest belt, the artillery base, nw, nwa last on three seeds). `standsiege nests`: the
+  outpost 300 from an armed camp, a belt of 26 big worms across its way at 230, the camp provoked and left to choose its
+  own siege. Getting there found three faults, each fixed: (1) a target's live defence was read after the test that set
+  stale ones aside (a defence of 0 kept the outpost out of every weighing); (2) a camp whose best target was out of reach
+  for its way alone did nothing: now it clears that way from orbit along the cost map's path (war.corridor), once a
+  minute, and weighs again; (3) the test's own: raids_off holds every decision, sieges with them, and a belt with
+  spawners sent waves at the camp, which counted itself hurt and besieged the nests instead (sensible, and not the route
+  problem: worms alone, which threaten only what passes them, as on nw). With them: it besieged the deep substation (72
+  shells read, tier 2, its guards keeping 0.67 on the way), a corridor strike took 11 worms, its hauler drove the cost
+  map's 14 waypoints, its strike fell on the 14 guns covering the lane, it moved up under its dome, and razed 67 (the
+  deep substation with them); called off at 4 of 10 guards, lost to the ring of lasers round the deep target.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

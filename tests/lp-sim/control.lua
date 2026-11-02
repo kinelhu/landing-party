@@ -4655,6 +4655,10 @@ end
 -- them. A siege
 -- forced at minute 9 (dev siege). Reports what it razes, how long it stands, strikes, paid convoys, moves.
 scenarios.standsiege = function()
+  -- LP_MIX=nests: a belt of big worms across its way, 230 tiles from its lander (the outpost at 300), and the siege
+  -- left to its own
+  -- choosing (its weighing, its cost map, its hauler's path): the trucks on nw died to worms and spitters on the way.
+  local nests = (params.mix or ""):find("nests", 1, true) ~= nil
   schedule(60, function()
     lp("debug_tune", {era = 3, history_off = true, raids_off = true})
     S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 150, {corp = "serenity"})
@@ -4665,7 +4669,10 @@ scenarios.standsiege = function()
     local len = math.sqrt(o.x * o.x + o.y * o.y)
     local ux, uy = -o.x / len, -o.y / len
     local px, py = -uy, ux
-    local c = {o.x + ux * 120, o.y + uy * 120}
+    -- (With nests: the outpost 300 out, the belt at 230, past its ground's 200: a belt at 60 lay on its own ground, and
+    -- its threat kept its army home, 749 kept, no siege.)
+    local out_d = nests and 300 or 120
+    local c = {o.x + ux * out_d, o.y + uy * out_d}
     flatten(c[1] - 34, c[2] - 34, c[1] + 34, c[2] + 34)
     local function at(along, depth) return {c[1] + px * along + ux * depth, c[2] + py * along + uy * depth} end
     for k = -20, 19 do surface().create_entity{name = "stone-wall", position = at(k, 0), force = "player"} end
@@ -4701,7 +4708,24 @@ scenarios.standsiege = function()
     for d = 14, 46, 8 do surface().create_entity{name = "medium-electric-pole", position = at(0, d), force = "player"} end
     S.c, S.tgt, S.deep = c, deep, deep
     S.count0 = surface().count_entities_filtered{position = c, radius = 70, force = "player"}
-    lp("dev", {"siege", tostring(S.k)}, S.tgt)
+    if nests then
+      S.nests = 0
+      for k = -6, 6 do
+        local p = {o.x + ux * 230 + px * k * 14, o.y + uy * 230 + py * k * 14}
+        -- (Worms alone, two deep: spawners there sent waves at its camp, which counted itself hurt and held its sieges
+        -- for the nests; worms threaten only what passes them, as on nw's ways.)
+        for _, depth in ipairs({0, 10}) do
+          local w = surface().find_non_colliding_position("big-worm-turret", {p[1] + ux * depth, p[2] + uy * depth}, 8, 1)
+          if w and surface().create_entity{name = "big-worm-turret", position = w, force = "enemy"} then S.nests = S.nests + 1 end
+        end
+      end
+      info("standsiege: a belt of " .. S.nests .. " big worms across its way")
+      -- (Provoked: it strikes no one first, and nothing here hurts it as a factory's guns do in a visit. Its operations on:
+      -- raids_off holds every decision, its sieges with them.)
+      lp("debug_tune", {provoke = true, raids_off = false})
+    else
+      lp("dev", {"siege", tostring(S.k)}, S.tgt)
+    end
   end)
   schedule(END - 60, function()
     local left = surface().count_entities_filtered{position = S.c, radius = 70, force = "player"}
@@ -4710,6 +4734,12 @@ scenarios.standsiege = function()
     local dec = {}
     info(string.format("standsiege: the outpost %d -> %d (%d razed); strikes %s", S.count0 or 0, left,
       (S.count0 or 0) - left, serpent.line(st)))
+    local stk = lp("stats", S.k)
+    info(string.format("standsiege: its camp: depots %s, garrison %s, op %s, next_op in %s s", tostring(stk.depots), tostring(stk.garrison),
+      tostring(stk.ops and stk.ops.current), tostring(stk.next_op and (stk.next_op - game.tick) / 60)))
+    info(string.format("standsiege: its camp: known %d (player %d) %s; rung %s; posture %s; quiet %s; parts %d, fund %s",
+      stk.ops.known or 0, stk.ops.known_player or 0, serpent.line({(stk.ops.player_targets or {})[1], (stk.ops.player_targets or {})[2]}),
+      tostring(stk.war_rung), serpent.line(stk.posture), tostring(stk.stood_down), stk.parts or 0, tostring(stk.siege_fund)))
     local ops_ = lp("stats", S.k).ops
     for _, l in ipairs(ops_.log or {}) do
       if l.op == "siege" then
@@ -8963,7 +8993,7 @@ scenarios.visit = function()
   end
   if params.mix:find("provoked", 1, true) then
     schedule(60 * 3600, function()
-      lp("debug_tune", {provoke = true})
+      lp("debug_tune", {provoke = true, raids_off = false})
       info("visit: both corporations provoked by the player")
     end)
   end
@@ -12755,7 +12785,7 @@ scenarios.ladder = function()
     lp("debug_tune", {era = 2, ladder_fast = true, history_off = true})
     if desperate then
       S.id = storage.id
-      lp("debug_tune", {provoke = true})
+      lp("debug_tune", {provoke = true, raids_off = false})
     else
       S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
       -- The ladder only: the corporations at peace (a raid on Serenity's radar turned back, and the gap after it outlasted
