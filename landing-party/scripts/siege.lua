@@ -79,8 +79,16 @@ local truck_down, truck_up, truck_piece = K.truck_down, K.truck_up, K.truck_piec
 -- them so already: the perception consult's first lesson, correct perception.)
 local orbital = require("__landing-party__.scripts.orbital")
 local SITE_MARGIN = 1
-local HOWITZER_APART = 24   -- tiles between a siege's howitzer and its mortars (siege_step)
-local GATE_CLEAR = 48       -- no foe's unit this near where a siege's hauler starts (launch_siege)
+-- Tiles between a siege's howitzer and its mortars (siege_step): out of a shell's blast aimed at either, its foes' widest
+-- (threat.foe_splash) twice and both bodies' widths (a flat 24 before, vanilla's blast of 4 six times over).
+local CORRIDOR_LOOK = 60 * 60   -- ticks between an armed camp's corridor strikes on a siege's march (war.corridor)
+local function howitzer_apart(hn, mn)
+  local function width(name)
+    local box = prototypes.entity[name] and prototypes.entity[name].collision_box
+    return box and math.max(box.right_bottom.x - box.left_top.x, box.right_bottom.y - box.left_top.y) or 3
+  end
+  return 2 * threat.foe_splash() + width(hn) + width(mn)
+end
 local function out_of_reach(s, p, foes)
   for _, e in ipairs(s.find_entities_filtered{position = p, radius = threat.far() + SITE_MARGIN + 3, type = TURRETS, force = foes}) do
     -- (And never nearer than PLAYER_REACH: its hauler's way in kept that room; at a laser's own 27 its hauler was killed
@@ -229,6 +237,18 @@ local function siege_tier(b, t, army)
   return k
 end
 ops.siege_tier = siege_tier
+-- What an armed camp saves for (base.lua's siege fund, handed to base by war.lua: requiring base here loops, base being
+-- mid-load when ops installs this): the costliest siege it may send a player, by its cap in siege_tier.
+ops.siege_goal = function(b)
+  local best = 0
+  for _, f in pairs(game.forces) do
+    if shared.is_player_force(f) then
+      local cap_k = math.min(#SIEGE_TIERS, budget(f.name) + (b.grudge and 1 or 0) + ((b.war_rung or 0) >= 3 and 1 or 0))
+      best = math.max(best, SIEGE_TIERS[math.max(1, cap_k)].cost)
+    end
+  end
+  return best
+end
 
 -- Whether a siege is against a player (its target's owner).
 local function t_owner_player(b, op)
@@ -298,11 +318,12 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   local hname = shared.variant(b.corp, truck and "lp-howitzer-truck" or "lp-hauler")
   local p = s.find_non_colliding_position(hname, {hx + (site[1] - hx) * out / dist,
     hy + (site[2] - hy) * out / dist}, 20, 0.5)
-  -- Not into a fight at its own gate: with its foes' units within GATE_CLEAR of where its hauler starts it waits (its
+  -- Not into a fight at its own gate: with its foes' units within a biter's sight (threat.biter_sight; a flat 48 before)
+  -- of where its hauler starts it waits (its
   -- next decision). On fed nw five sieges of eight lost their hauler on the way, one 16 s out and 44 tiles from its
   -- lander, to biters attacking its depots (2026-11-02).
   -- (Not a clearance: biters by its camp are what it goes out against.)
-  if p and not clearance and s.count_entities_filtered{position = p, radius = GATE_CLEAR, type = "unit",
+  if p and not clearance and s.count_entities_filtered{position = p, radius = threat.biter_sight(), type = "unit",
     force = enemies(game.forces[b.force]), limit = 1} > 0 then
     trace(b, "siege waits: its foes' units at its gate")
     return false
@@ -373,6 +394,9 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     b.next_op = game.tick + 2 * 3600
     return false
   end
+  -- An armed camp shells the nests by its way first (war.corridor).
+  b.op.route = hroute
+  if ops.corridor then ops.corridor(b, {hauler.position.x, hauler.position.y}, hroute, site) end
   local hcmds = {}
   for _, w in ipairs(hroute) do
     table.insert(hcmds, {type = defines.command.go_to_location, destination = w, radius = 4,
@@ -625,6 +649,16 @@ local function siege_step(b, trace, army)
     -- minute, a clearance deploys where it stands if the nest is in the mortars' reach and it is out of the worms'; else
     -- the siege is called off now.
     local d2 = (hp.x - op.site[1]) ^ 2 + (hp.y - op.site[2]) ^ 2
+    -- And the nests by the rest of its way, every CORRIDOR_LOOK (grown, or come since it set out): war.corridor.
+    if ops.corridor and op.route and game.tick >= (op.corridor_at or op.started) + CORRIDOR_LOOK then
+      op.corridor_at = game.tick
+      -- (The rest: its waypoints nearer the site than the hauler.)
+      local rest = {}
+      for _, w in ipairs(op.route) do
+        if (w[1] - op.site[1]) ^ 2 + (w[2] - op.site[2]) ^ 2 < d2 then table.insert(rest, w) end
+      end
+      ops.corridor(b, {hp.x, hp.y}, rest, op.site)
+    end
     if not op.best_d2 or d2 < op.best_d2 - 4 then op.best_d2, op.best_at = d2, game.tick end
     if game.tick - op.best_at > STUCK_TICKS and d2 >= 5 * 5 then
       local t = b.intel.targets[op.target]
@@ -701,7 +735,7 @@ local function siege_step(b, trace, army)
       if not op.mortar then return finish(b, "aborted", trace, army) end
       if op.with_howitzer and not op.howitzer then
         local hn = shared.variant(b.corp, "lp-howitzer")
-        -- Apart from its mortars, HOWITZER_APART across the line of fire, out of every gun's reach: a military target, the
+        -- Apart from its mortars, howitzer_apart across the line of fire, out of every gun's reach: a military target, the
         -- player's artillery shells it by itself, and beside the mortars its splash killed them within 10 s, twice (the
         -- artillery base, era 3, 2026-11-02: the mortars no military target since 0.2.132, undone by their neighbour).
         local at = truck and truck.pos or {op.site[1], op.site[2]}
@@ -709,9 +743,10 @@ local function siege_step(b, trace, army)
         -- (Its truck's spot too: the howitzer comes off its truck where that parked, by the mortars.)
         if tg and tg.pos then
           local fire = math.atan2(tg.pos[2] - op.site[2], tg.pos[1] - op.site[1])
+          local apart = howitzer_apart(hn, op.mortar.name)
           for _, side in ipairs({1, -1}) do
-            local q = {op.site[1] + math.cos(fire + side * math.pi / 2) * HOWITZER_APART,
-              op.site[2] + math.sin(fire + side * math.pi / 2) * HOWITZER_APART}
+            local q = {op.site[1] + math.cos(fire + side * math.pi / 2) * apart,
+              op.site[2] + math.sin(fire + side * math.pi / 2) * apart}
             if out_of_reach(s, q, enemies(game.forces[b.force])) then at = q; break end
           end
         end

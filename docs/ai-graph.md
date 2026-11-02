@@ -18,19 +18,19 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 |---|---|---|---|---|---|---|---|
 | `herd` | 3396 | attempt, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
 | `farm` | 2317 | cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
-| `ops` | 1958 | answers, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tactics, threat, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, prowl, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
+| `ops` | 1957 | answers, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tactics, threat, tune | army, base, border, control, cordon, crew, dev, faction, jumper, ledger, prospect, prowl, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1721 | blocks, rng, site, wfc | base, control, faction |  |  |  |  |
-| `siege` | 1042 | attempt, orbital, tactics, threat | ops |  |  |  | threat_last, unit_owner |
+| `siege` | 1077 | attempt, orbital, tactics, threat | ops |  |  |  | threat_last, unit_owner |
 | `control` | 931 | aim, army, bait, base, belts, biters, border, cell, command, cordon, costmap, creep, crew, dev, dome, faction, farm, feeds, firemap, herd, jammer, jumper, know, layout, ledger, map, marker, oplog, ops, orbital, pact, phases, pods, pool, prospect, prowl, rd, road, roads, scanner, scorcher, site, skim, stance, standing, strike, tactics, tap, threat, trade, tune, valuemap, war, watch |  |  |  | ai_command_completed, built_entity, cargo_pod_finished_descending, entity_damaged, entity_died, entity_spawned, player_alt_reverse_selected_area, player_alt_selected_area, player_reverse_selected_area, player_selected_area, robot_built_entity, rocket_launched, script_trigger_effect, tick, script_raised_built | arena_surfaces, armed, army_off, bases, belts_always, biotech_no_hold, biotech_no_orders, biotech_off, biotech_old_stock, biotech_pens_hold, biotech_unlearned, capture_off, choice_off, cmd, cordon_off, corps, crews_off, cuts_off, dome_charge, domes, era_override, focus_off, gates_off, grow_to_line_off, grudge_fast, hazard_hold, hazard_off, herd_off, history_off, hq_fast, labs_off, ladder_fast, last_raze, leader_off, ledger_off, march_trace, mature_blocks, next_id, next_ore_off, night_off, notices, ops_off, owner, pact_off, perimeter_fast, phases_fast, player_razed, pods_off, prospect_home, prospect_pace, prospect_radius, prospect_uncharted, prospect_window, prowl, quiet, quiet_ticks, raids_off, rd_fast, relief_off, relief_ticks, rings, road_haul, road_lapse, sever_off, siege_tier, skim_off, sneak_off, strangle_off, strikes_off, strip_fast, sweeps_off, tap_step, trace, truces, tune_levers, unit_owner, way_in, wfc_core_off |
-| `base` | 848 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
+| `base` | 851 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `faction` | 829 | army, base, layout, names, ops, pact, pods, rd, site, threat, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `army` | 775 | know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
 | `command` | 576 | (leaf) | control |  | 60, 120 |  | cmd |
 | `creep` | 568 | costmap, tune | control, farm |  |  |  | creep |
+| `war` | 548 | army, base, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `crew` | 488 | base, ops, standing | control |  | 30 |  | crew_owner |
-| `war` | 441 | army, base, ops, pods, pool, rd, rng, stance, strategy, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
+| `routing` | 420 | threat | ops |  |  |  | corridors |
 | `skim` | 420 | base, ops, stance, tune | control |  | 60, 600 |  |  |
-| `routing` | 417 | threat | ops |  |  |  | corridors |
 | `costmap` | 415 | firemap, threat | control, creep, farm, herd |  |  |  |  |
 | `cell` | 402 | pods | control, farm |  |  |  | cell_sites, cells |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
@@ -51,6 +51,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
 | `strip` | 229 | (leaf) | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
+| `threat` | 226 | unit_prior | attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, power, prowl, routing, siege, war |  |  |  |  |
 | `valuemap` | 205 | firemap | control, farm, herd, oplog |  |  |  |  |
 | `dev` | 196 | army, base, faction, farm, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `oplog` | 185 | attempt, valuemap | control |  |  |  | oplog |
@@ -58,8 +59,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `firemap` | 170 | threat | control, costmap, farm, herd, herd_learn, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `site` | 162 | modules | base, control, faction, layout |  |  |  |  |
-| `threat` | 156 | unit_prior | attempt, control, costmap, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, power, prowl, routing, siege |  |  |  |  |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
+| `dome` | 149 | base, threat | control |  | 60, 3600 |  | dome_alert |
 | `road` | 144 | base, standing | control |  | 60 |  |  |
 | `pool` | 142 | (leaf) | army, control, cuts, ops, prospect, prowl, tap, war |  |  |  |  |
 | `watch` | 141 | (leaf) | control |  |  |  | watch |
@@ -69,7 +70,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |
 | `chart` | 114 | (leaf) | base, border, map, prospect |  |  |  |  |
 | `scorcher` | 110 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_drains |
-| `dome` | 109 | base | control |  | 60, 3600 |  | dome_alert |
 | `border` | 108 | chart, ops, standing | control |  | 600 |  | borders |
 | `pact` | 107 | base | control, faction, marker |  | 600 |  | pact_broken, pact_state |
 | `scanner` | 90 | (leaf) | control |  |  |  | scanners |
@@ -138,6 +138,7 @@ From `stance.may`, run on the mod's own tables. Yes: allowed. No: forbidden. A d
 | `routing` | 2 | `if worth < PUSH_VALUE and not (t.owner and ladder(t.owner, b.force) >= 2) then return nil, sp, worms end` |
 | `siege` | 3 | `if against_player(t.owner) and (b.war_rung or 0) >= 3 then k = k + 1 end` |
 | `siege` | 3 | `cap_k = math.min(cap_k, budget(t.owner) + (b.grudge and 1 or 0) + ((b.war_rung or 0) >= 3 and 1 or 0))` |
+| `siege` | 3 | `local cap_k = math.min(#SIEGE_TIERS, budget(f.name) + (b.grudge and 1 or 0) + ((b.war_rung or 0) >= 3 and 1 or` |
 | `strategy` | 2 | `local arm = (i.rung >= 2 and w.rung_arm or 1) * (i.grudge and w.grudge_arm or 1) * (1 + w.threat_arm * pressed` |
 | `war` | 1 | `if owner and rung >= 1 and s > 0 and (not pick or rung > prung or (rung == prung and s > short)) then` |
 

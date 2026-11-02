@@ -3821,3 +3821,30 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Measured: artillery base, era 3: tiers 1 to 3, four orbital strikes, 36 of the player's buildings razed (16 before).
   Fed nw, 200 minutes: tiers 1 to 3, it stood, but 5 of its 8 haulers were intercepted on the way (2 of 5 in the run
   before; one run's interceptions swing), 3 lasers razed. Open: its haulers through nw's nest country.
+- **Kessler-Hayashi's numbers read from the game** (0.2.138; the user, 2026-11-02: "we tracked hard coded values like
+  the plague for synthexis"). Last night's fixes rested on flat numbers tuned on three bases; each now comes from what it
+  stood for, threat.lua's way:
+  - Routes keep off each nest by how far it is a danger (threat.nest_reach: a worm's range from its prototype, a
+    spawner's biters' sight), SNEAK_MARGIN and a cell, for every corporation (a flat 50 for any worm, 30 for any spawner,
+    before). At reach and margin alone a raid passed medium worms close enough to lose a raider and turn back (`pact`,
+    seen failing, kept as the check); with a spawner's spawning radius added to its biters' sight (40) the same.
+  - An armed camp's landing barrage and its sweep take the nests that can reach its ground (its blocks and depots, each
+    nest by its reach; war.threatening), the sweep looked for every minute and fired only when one stands there (200
+    tiles round its lander, every 10 minutes, before).
+  - It sieges no player while a nest can reach its ground (b.ground_clear, set at each look; 10 minutes from landing,
+    before).
+  - The dome takes three minutes of the fire of every foe's artillery that reaches it (each gun at its prototype's
+    cooldown and its force's research, at least one gun's), mends a sixtieth a minute; its charge kept as a share of its
+    whole (a flat 300 and 5, before). Six guns: 324 (was 300 by hand). `dome` whole checks it (seen failing at one gun's
+    rate: 54).
+  - Its siege's howitzer sets up twice its foes' widest artillery blast (lp-splash, data-final-fixes: vanilla's 4) and
+    both bodies' widths from its mortars (24, before); its gate waits on foes' units within a biter's sight (48, before).
+  - Its siege fund saves up to the cost of the costliest siege it may send (the player's era, a grudge, the top rung),
+    its share a trait of its mind (siege_save 0.3; a flat 600 and 0.3 in base.lua, before).
+  - New: the corridor strike (war.corridor). At a siege's launch and every minute of its march, the nests that can reach
+    the rest of its hauler's route (their reach and a biter's sight) are shelled from orbit, nearest the hauler first.
+    The answer to its haulers dying in nest country without a bigger escort (a bigger siege at the player's door).
+  Left as design values, not stand-ins for a reading: the strike's 12 s paint and 15-minute cooldown, the dome's 3-minute
+  hold and break, the sweep's one-minute look, ORBITAL_BLOW (derivable from the shell's damage, not yet).
+  Found on the way: siege.lua requiring base looped (base mid-load when ops installs siege), every run dead at load;
+  check.sh stops at the AI graph's freshness before loading the mod, and its tail was cut, so the load error went unseen.

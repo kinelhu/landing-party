@@ -187,6 +187,10 @@ shared.CORPS = {
       -- Its raids weigh their way in too: a walled target is then a siege's, not four units' (artillery base, era 3,
       -- 0.2.134: 9 operations for 13, 20 lost for 31, 13 razed for 10).
       way_in = true,
+      -- Armed (faction.arrive), the share of what it makes kept for its sieges on a player (base.lua's siege fund; ops
+      -- siege_goal its whole). A trait, as min_odds: at 0.3 its sieges on fed nw reached tiers 2 and 3, at none every one
+      -- went at tier 1 (2026-11-02).
+      siege_save = 0.3,
       -- Where it lands (faction.site): a clear way to the player first; rivals do not move it.
       site = {ore = 1, approach = 1.5, density = 0.5, rival = 0}},
     arrives = "late",

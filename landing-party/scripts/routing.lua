@@ -78,9 +78,9 @@ local BREACH_RADIUS = 30
 local function range(e) return threat.reach(e) - threat.MARGIN end
 
 -- Biter country (the user: "raids and sieges will also need to cross biter country to reach us sometimes"): every
--- corporation's marches route round spawners (NEST_KEEP.spawner) and worms (NEST_KEEP.worm: a behemoth worm's reach
--- and a margin); only Grubstake also keeps out of turret reach. opts: {turrets = bool, nests = bool}.
-local NEST_KEEP = {spawner = 30, worm = 50}
+-- corporation's marches route round spawners and worms, each by how far it is a danger (threat.nest_reach: a worm's range,
+-- a spawner's biters' sight round it; a flat 50 for every worm, a behemoth's reach, and 30 for every spawner before) and
+-- SNEAK_MARGIN and a cell; only Grubstake also keeps out of turret reach. opts: {turrets = bool, nests = bool}.
 -- Corridors: where spawners died lately (any force: a clearance, the player's artillery, a landing's burn); within
 -- CORRIDOR_RADIUS of one, nests do not block a cell (Grubstake follows Serenity's survey crews).
 local CORRIDOR_TICKS, CORRIDOR_RADIUS = 30 * 3600, 30
@@ -155,8 +155,11 @@ local function sneak_route(b, from, to, opts, wide)
   -- 105 to 140 tiles out (2026-11-02).
   local spawners, worms = {}, {}
   for _, e in ipairs(nests) do table.insert(e.type == "unit-spawner" and spawners or worms, e) end
-  local nmark = mark(spawners, function() return NEST_KEEP.spawner end)
-  local wmark = mark(worms, function() return NEST_KEEP.worm end)
+  -- (And a cell besides: marks are tested at cells' middles and units cut corners between waypoints; at reach and margin
+  -- alone a raid's route passed medium worms close enough to lose one raider, and it turned back, scenario pact.)
+  local function nest_keep(e) return threat.nest_reach(e) + SNEAK_MARGIN + SNEAK_CELL end
+  local nmark = mark(spawners, nest_keep)
+  local wmark = mark(worms, nest_keep)
   -- Corridors on this surface within the box, once per route.
   local corr = {}
   for _, c in ipairs(storage.corridors or {}) do

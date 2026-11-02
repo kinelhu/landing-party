@@ -10,7 +10,7 @@ digraph ai {
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
     "ground" [label="ground\n38 lines", width=0.84, fillcolor="#d9f0d9"];
-    "threat" [label="threat\n156 lines", width=0.97, fillcolor="#eef2f7"];
+    "threat" [label="threat\n226 lines", width=1.05, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -28,7 +28,7 @@ digraph ai {
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "faction" [label="faction\n829 lines", width=1.72, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
-    "war" [label="war\n441 lines", width=1.29, fillcolor="#eef2f7"];
+    "war" [label="war\n548 lines", width=1.41, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n107 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
@@ -39,7 +39,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n848 lines", width=1.74, fillcolor="#eef2f7"];
+    "base" [label="base\n851 lines", width=1.75, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n327 lines", width=1.16, fillcolor="#eef2f7"];
     "layout" [label="layout\n1721 lines", width=2.71, fillcolor="#f7dede"];
@@ -58,16 +58,16 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n775 lines", width=1.66, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1958 lines", width=2.98, fillcolor="#f7dede"];
-    "routing" [label="routing\n417 lines", width=1.26, fillcolor="#eef2f7"];
+    "ops" [label="ops\n1957 lines", width=2.97, fillcolor="#f7dede"];
+    "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
-    "siege" [label="siege\n1042 lines", width=1.96, fillcolor="#f7dede"];
+    "siege" [label="siege\n1077 lines", width=2.00, fillcolor="#f7dede"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#d9f0d9"];
     "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
-    "dome" [label="dome\n109 lines", width=0.92, fillcolor="#eef2f7"];
+    "dome" [label="dome\n149 lines", width=0.97, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n123 lines", width=0.94, fillcolor="#d9f0d9"];
     "scorcher" [label="scorcher\n110 lines", width=0.92, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
@@ -136,6 +136,7 @@ digraph ai {
   "crew" -> "standing";
   "cuts" -> "pool";
   "dome" -> "base";
+  "dome" -> "threat";
   "faction" -> "army";
   "faction" -> "base";
   "faction" -> "layout";
@@ -265,6 +266,7 @@ digraph ai {
   "war" -> "rng";
   "war" -> "stance";
   "war" -> "strategy";
+  "war" -> "threat";
   "war" -> "tune";
   "ops" -> "base" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="claim_map"];
   "ops" -> "border" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="border_cap"];
@@ -280,5 +282,7 @@ digraph ai {
   "base" -> "faction" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="on_export"];
   "faction" -> "phases" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="gate_open"];
   "ops" -> "trade" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="truce"];
+  "base" -> "ops" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="siege_goal"];
   "base" -> "war" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="footing"];
+  "ops" -> "war" [style=dashed, color="#d2691e", fontcolor="#d2691e", fontsize=8, label="corridor"];
 }

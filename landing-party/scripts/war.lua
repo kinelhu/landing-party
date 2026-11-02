@@ -19,6 +19,9 @@ local base = require("__landing-party__.scripts.base")
 local rd = require("__landing-party__.scripts.rd")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
+local threat = require("__landing-party__.scripts.threat")
+-- (What an armed camp's siege fund saves up to, siege.lua's: base cannot require ops.)
+base.siege_goal = ops.siege_goal
 
 local war = {}
 
@@ -276,22 +279,65 @@ end
 -- each the howitzer's blow with ten bomblets; BARRAGE_RAILS railgunners join its garrison. Its kills (spawners' evolution
 -- refunded, biters.lua). A howitzer by the lander fired 10 of its 60 shells: its nests were out of its line and reach.
 local ORBITAL_RADIUS, ORBITAL_EVERY, ORBITAL_FALL, BARRAGE_RAILS = 120, 15, 30, 8
--- An armed landing's (faction.arrive) reaches the ground its camp grows into: on fed nw its garrison, idle by depots 35 to
--- 150 tiles from its lander, lost 160 units in its first hour to the worms and spitters of nests 80 to 150 off (2026-11-02).
-local ARMED_RADIUS = 200
--- And it keeps that ground from orbit: a sweep of the same every ARMED_SWEEP (no railgunners, no notice). Once was not
--- enough on fed nw: the wild biters expanded back, 42 nests and worms within 200 at 30 minutes, 135 at 60, every depot
--- (76 to 89 tiles out) gone (2026-11-02). Free: a share of its parts a shell (12) starved the camp of everything else (the
--- lane, 2026-10-19).
-local ARMED_SWEEP = 10 * 60 * 60
+-- An armed landing's (faction.arrive) takes every nest that can reach its ground: its blocks and depots, each nest by how
+-- far it is a danger (threat.nest_reach). On fed nw its garrison, idle by depots 35 to 150 tiles from its lander, lost 160
+-- units in its first hour to the worms and spitters of nests 80 to 150 off (2026-11-02); a flat 200 round its lander took
+-- that, and the same 200 on any map, at any size of camp.
+-- And it keeps that ground from orbit: a sweep of the same whenever a nest stands within reach of it, looked for every
+-- SWEEP_LOOK (no railgunners, no notice). Once was not enough on fed nw: the wild biters expanded back, 42 nests and worms
+-- within 200 at 30 minutes, 135 at 60, every depot (76 to 89 tiles out) gone (2026-11-02); a sweep every 10 minutes,
+-- whatever stood there, followed. Free: a share of its parts a shell (12) starved the camp of everything else (the lane,
+-- 2026-10-19).
+local SWEEP_LOOK = 60 * 60
+-- Its ground: its blocks' boxes and its depots, and how far from its lander the farthest of them is.
+local function ground(b)
+  local boxes, c, far = {}, b.lander.position, 0
+  for _, k in ipairs(b.blocks or {}) do
+    table.insert(boxes, {k.x0, k.y0, k.x0 + k.w, k.y0 + k.h})
+  end
+  for _, d in ipairs(b.depots or {}) do
+    if d.valid then
+      local p = d.position
+      table.insert(boxes, {p.x - 2, p.y - 2, p.x + 2, p.y + 2})
+    end
+  end
+  for _, x in ipairs(boxes) do
+    for _, q in ipairs({{x[1], x[2]}, {x[3], x[4]}, {x[1], x[4]}, {x[3], x[2]}}) do
+      far = math.max(far, math.sqrt((q[1] - c.x) ^ 2 + (q[2] - c.y) ^ 2))
+    end
+  end
+  return boxes, far
+end
+-- The nests within reach of its ground, nearest its lander first.
+function war.threatening(b)
+  local s, c = b.lander.surface, b.lander.position
+  local boxes, far = ground(b)
+  local out = {}
+  for _, e in ipairs(s.find_entities_filtered{position = c, radius = far + threat.nest_far(),
+    type = {"unit-spawner", "turret"}, force = shared.NEST_FORCES}) do
+    local r, p = threat.nest_reach(e), e.position
+    for _, x in ipairs(boxes) do
+      local dx = math.max(x[1] - p.x, 0, p.x - x[3])
+      local dy = math.max(x[2] - p.y, 0, p.y - x[4])
+      if dx * dx + dy * dy <= r * r then table.insert(out, e); break end
+    end
+  end
+  return out
+end
 local ORBITAL_BLOW = 800          -- what a shell does to a spawner or a worm, about (resistances off its 960)
 function war.barrage(b, sweep)
   if not shared.CORPS[b.corp].clears_nests or not (b.lander and b.lander.valid) then return end
   local s = b.lander.surface
   local c = b.lander.position
-  local radius = b.armed and ARMED_RADIUS or ORBITAL_RADIUS
-  local found = s.find_entities_filtered{position = c, radius = radius, type = {"unit-spawner", "turret"},
-    force = "enemy"}
+  local radius = ORBITAL_RADIUS
+  local found
+  if b.armed then
+    found = war.threatening(b)
+    -- Its ground clear (ops.tick: an armed camp sieges no player before).
+    b.ground_clear = #found == 0
+  else
+    found = s.find_entities_filtered{position = c, radius = radius, type = {"unit-spawner", "turret"}, force = "enemy"}
+  end
   if #found == 0 then return end
   table.sort(found, function(x, y)
     return (x.position.x - c.x) ^ 2 + (x.position.y - c.y) ^ 2 < (y.position.x - c.x) ^ 2 + (y.position.y - c.y) ^ 2
@@ -304,7 +350,7 @@ function war.barrage(b, sweep)
   storage.orbitals = storage.orbitals or {}
   table.insert(storage.orbitals, {base = b.id, surface = s.index, force = b.force, queue = queue, i = 1})
   if sweep then
-    base.trace(b, string.format("orbital sweep: %d nests and worms within %d, %d shells", #found, radius, #queue))
+    base.trace(b, string.format("orbital sweep: %d nests and worms within reach of its ground, %d shells", #found, #queue))
     return
   end
   local rails = {}
@@ -313,10 +359,70 @@ function war.barrage(b, sweep)
   join(b, units)
   local spawners = 0
   for _, e in ipairs(found) do if e.type == "unit-spawner" then spawners = spawners + 1 end end
-  base.trace(b, string.format("orbital barrage: %d spawners and %d worms within %d, %d shells; %d railgunners", spawners,
-    #found - spawners, radius, #queue, #units))
+  base.trace(b, string.format("orbital barrage: %d spawners and %d worms %s, %d shells; %d railgunners", spawners,
+    #found - spawners, b.armed and "within reach of its ground" or ("within " .. radius), #queue, #units))
   tell("lp.orbital", b.corp, b)
 end
+
+-- The corridor strike (an armed camp's sieges): the nests that can reach the rest of its hauler's route, each by how far it
+-- is a danger and a biter's sight besides (threat.nest_reach, threat.biter_sight: spitters come out at what they see),
+-- shelled from orbit nearest the hauler first, at its launch and at every look of its march (siege.lua). Its haulers on fed
+-- nw died 120 to 175 tiles out to big worms and spitters of nests grown after it set out, 5 sieges of 8 (2026-11-02); a
+-- bigger escort would have made a bigger siege. Shells already falling for that siege are not doubled.
+local CORRIDOR_STEP = 6
+function war.corridor(b, from, route, to)
+  if not (b.armed and b.lander and b.lander.valid and shared.CORPS[b.corp].clears_nests) then return 0 end
+  local s = b.lander.surface
+  local pts, last = {}, from
+  for _, w in ipairs(route or {}) do table.insert(pts, w) end
+  table.insert(pts, to)
+  local samples = {}
+  for _, w in ipairs(pts) do
+    local len = math.sqrt((w[1] - last[1]) ^ 2 + (w[2] - last[2]) ^ 2)
+    for d = 0, len, CORRIDOR_STEP do
+      table.insert(samples, {last[1] + (w[1] - last[1]) * d / math.max(len, 1), last[2] + (w[2] - last[2]) * d / math.max(len, 1)})
+    end
+    last = w
+  end
+  local queued = {}
+  for _, o in ipairs(storage.orbitals or {}) do
+    if o.base == b.id then for n = o.i, #o.queue do local e = o.queue[n]; if e.valid then queued[e.unit_number] = true end end end
+  end
+  local look = threat.nest_far() + threat.biter_sight()
+  local found, seen = {}, {}
+  for n, q in ipairs(samples) do
+    -- (Every third sample for the search, each nest then tested against its own reach from every sample near it.)
+    if n % 3 == 1 then
+      for _, e in ipairs(s.find_entities_filtered{position = q, radius = look, type = {"unit-spawner", "turret"},
+        force = shared.NEST_FORCES}) do
+        local id = e.unit_number
+        if not seen[id] then
+          seen[id] = true
+          local r = threat.nest_reach(e) + threat.biter_sight()
+          for m = math.max(1, n - 12), math.min(#samples, n + 12) do
+            local p = samples[m]
+            if (e.position.x - p[1]) ^ 2 + (e.position.y - p[2]) ^ 2 <= r * r then
+              if not queued[id] then table.insert(found, {e = e, at = m}) end
+              break
+            end
+          end
+        end
+      end
+    end
+  end
+  if #found == 0 then return 0 end
+  table.sort(found, function(x, y) return x.at < y.at end)
+  local queue = {}
+  for _, f in ipairs(found) do
+    for _ = 1, math.max(1, math.ceil(f.e.health / ORBITAL_BLOW)) do table.insert(queue, f.e) end
+  end
+  storage.orbitals = storage.orbitals or {}
+  table.insert(storage.orbitals, {base = b.id, surface = s.index, force = b.force, queue = queue, i = 1, corridor = true})
+  b.corridor_strikes, b.corridor_shells = (b.corridor_strikes or 0) + 1, (b.corridor_shells or 0) + #queue
+  base.trace(b, string.format("corridor strike: %d nests and worms by its hauler's route, %d shells", #found, #queue))
+  return #queue
+end
+ops.corridor = war.corridor
 
 local function orbitals(tick)
   for k = #(storage.orbitals or {}), 1, -1 do
@@ -396,14 +502,15 @@ end
 function war.tick(tick)
   if storage.orbitals and #storage.orbitals > 0 and tick % ORBITAL_EVERY == 0 then orbitals(tick) end
   if tick % 600 ~= 300 then return end
-  -- An armed camp's sweep (war.barrage): one at a time, none while its last is still falling.
+  -- An armed camp's sweep (war.barrage): when a nest stands within reach of its ground, one at a time, none while its
+  -- last is still falling.
   if not storage.sweeps_off then
     for _, b in pairs(storage.bases) do
-      if b.armed and not b.fallen and b.lander and b.lander.valid and tick >= (b.sweep_next or (b.landed or 0) + ARMED_SWEEP) then
+      if b.armed and not b.fallen and b.lander and b.lander.valid and tick >= (b.sweep_next or 0) then
         local falling = false
         for _, o in ipairs(storage.orbitals or {}) do if o.base == b.id then falling = true end end
         if not falling then
-          b.sweep_next = tick + ARMED_SWEEP
+          b.sweep_next = tick + SWEEP_LOOK
           war.barrage(b, true)
         end
       end

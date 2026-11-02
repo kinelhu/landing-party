@@ -106,3 +106,36 @@ do
 end
 
 require("air")
+
+-- How far each artillery shell's blast reaches (lp-splash, read by threat.splash): the runtime reads no action radii. The
+-- widest area action through its deliveries and nested results. Kessler-Hayashi's siege sets its howitzer apart from its
+-- mortars by its foes' widest (a 24 typed in once, for vanilla's 4), its orbital strike spaces its shells by its own.
+do
+  local function list(x) if x == nil then return {} end; if x[1] ~= nil or next(x) == nil then return x end; return {x} end
+  local widest
+  local function action(a, seen)
+    local r = 0
+    for _, item in ipairs(list(a)) do
+      if item.type == "area" and item.radius then r = math.max(r, item.radius) end
+      for _, del in ipairs(list(item.action_delivery)) do
+        for _, eff in ipairs(list(del.target_effects)) do r = math.max(r, widest(eff, seen)) end
+        local via = del.projectile and data.raw.projectile[del.projectile]
+        if via and not seen[via.name] then
+          seen[via.name] = true
+          r = math.max(r, action(via.action, seen), action(via.final_action, seen))
+        end
+      end
+    end
+    return r
+  end
+  widest = function(eff, seen)
+    if eff.type == "nested-result" then return action(eff.action, seen) end
+    return 0
+  end
+  local splash = {}
+  for name, p in pairs(data.raw["artillery-projectile"] or {}) do
+    local r = math.max(action(p.action, {}), action(p.final_action, {}))
+    if r > 0 then splash[name] = r end
+  end
+  data:extend{{type = "mod-data", name = "lp-splash", data = splash}}
+end

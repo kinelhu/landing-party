@@ -4425,8 +4425,9 @@ end
 scenarios.dome = function()
   local mix = params.mix or ""
   schedule(60, function()
-    -- (Its charge 20 here: the scenario's turrets hold 15 shells each.)
-    lp("debug_tune", {ops_off = true, domes = mix ~= "off", dome_charge = 20})
+    -- (Its charge 20 here: the scenario's turrets hold 15 shells each. LP_MIX=whole: its own, three minutes of the six
+    -- guns' fire, more than they carry.)
+    lp("debug_tune", {ops_off = true, domes = mix ~= "off", dome_charge = mix ~= "whole" and 20 or nil})
     for _, pair in ipairs({{"player", "lp-serenity"}, {"lp-serenity", "player"}}) do game.forces[pair[1]].set_cease_fire(pair[2], false) end
   end)
   schedule(2 * 3600, function()
@@ -4441,7 +4442,7 @@ scenarios.dome = function()
     surface().create_entity{name = "lp-orbital-projectile", position = {o.x, o.y - 20}, force = "lp-serenity",
       target = {o.x + 20, o.y + 20}, speed = 1}
     S.turrets, S.loaded = {}, 0
-    for k = 1, (mix == "battery" and 6 or 1) do
+    for k = 1, ((mix == "battery" or mix == "whole") and 6 or 1) do
       local t = surface().create_entity{name = "artillery-turret", position = {c[1] + 4 * (k - 1), c[2]}, force = "player"}
       S.loaded = S.loaded + t.insert{name = "artillery-shell", count = 20}
       table.insert(S.turrets, t)
@@ -4454,7 +4455,14 @@ scenarios.dome = function()
     local d = lp("debug_dome", storage.id)
     local lost = lp("stats", storage.id).lost - S.lost0
     info(string.format("dome: %d shells fired, dome %s, its buildings lost %d", S.loaded - left, serpent.line(d), lost))
-    if mix == "battery" then
+    if mix == "whole" then
+      -- (Caught a flat 300 for any battery before; seen failing with HOLD's guns counted as one: whole 54.)
+      local cd = prototypes.entity["artillery-turret"].attack_parameters.cooldown
+      local want = math.floor(180 * 6 * 60 / cd + 0.5)
+      check("dome: its whole is three minutes of the six guns that reach it, and it holds", d.whole == want and d.breaks == 0
+        and lost == 0 and d.caught == S.loaded - left, string.format("whole %s (want %d), %d caught, %d breaks, %d lost",
+        tostring(d.whole), want, d.caught, d.breaks, lost))
+    elseif mix == "battery" then
       check("dome: a battery breaks it and its shells land", d.breaks >= 1 and lost > 0, d.breaks .. " breaks, " .. lost .. " lost")
     elseif mix == "dark" or mix == "off" then
       check("dome: none, the camp is shelled", d.caught == 0 and lost > 0, d.caught .. " caught, " .. lost .. " lost")

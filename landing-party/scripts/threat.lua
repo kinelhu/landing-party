@@ -153,4 +153,74 @@ function threat.artillery_reach(force)
   return best * (1 + force.artillery_range_modifier)
 end
 
+-- How far an artillery shell's blast reaches (data-final-fixes: lp-splash), 0 for one it does not know.
+local splash
+function threat.splash(name)
+  splash = splash or prototypes.mod_data["lp-splash"].data
+  return splash[name] or 0
+end
+
+local foe_splash
+-- The widest blast of any artillery shell but Landing Party's own: how far a shell aimed at one piece reaches round it.
+function threat.foe_splash()
+  if foe_splash then return foe_splash end
+  foe_splash = 0
+  splash = splash or prototypes.mod_data["lp-splash"].data
+  for name, r in pairs(splash) do
+    if name:sub(1, 3) ~= "lp-" and r > foe_splash then foe_splash = r end
+  end
+  return foe_splash
+end
+
+-- How far round a spawner its biters come at what they see: the farthest sight of its result units, every evolution
+-- (vanilla's 30; its idle biters stand at it). With its spawning radius added (40) routes kept so wide of a line of
+-- spawners that a raid's straggler fell 49 tiles behind and the raid turned back (scenario pact, seed 12345).
+local spawner_reaches = {}
+local function spawner_reach(name)
+  local r = spawner_reaches[name]
+  if r then return r end
+  local proto = prototypes.entity[name]
+  local sight = 0
+  for _, ru in ipairs(proto and proto.result_units or {}) do
+    local u = prototypes.entity[ru.unit]
+    if u and u.vision_distance and u.vision_distance > sight then sight = u.vision_distance end
+  end
+  r = sight
+  spawner_reaches[name] = r
+  return r
+end
+
+-- How far a nest is a danger: a worm by its range (plus MARGIN), a spawner by its biters' (spawner_reach).
+function threat.nest_reach(e)
+  if e.type == "unit-spawner" then return spawner_reach(e.name) end
+  return threat.reach(e)
+end
+
+local nest_far
+-- The farthest any nest is a danger (every spawner and worm prototype): how far round a point to look for one.
+function threat.nest_far()
+  if nest_far then return nest_far end
+  nest_far = 0
+  for name, proto in pairs(prototypes.get_entity_filtered{{filter = "type", type = {"unit-spawner", "turret"}}}) do
+    local r = proto.type == "unit-spawner" and spawner_reach(name) or (threat.profile(name) or {reach = 0}).reach
+    if r > nest_far then nest_far = r end
+  end
+  return nest_far
+end
+
+local sight
+-- The farthest any spawner's biter sees: how near a foe's unit is already in the fight (spawner_reach's widest).
+function threat.biter_sight()
+  if sight then return sight end
+  sight = 0
+  for name in pairs(prototypes.get_entity_filtered{{filter = "type", type = "unit-spawner"}}) do
+    local proto = prototypes.entity[name]
+    for _, ru in ipairs(proto.result_units or {}) do
+      local u = prototypes.entity[ru.unit]
+      if u and u.vision_distance and u.vision_distance > sight then sight = u.vision_distance end
+    end
+  end
+  return sight
+end
+
 return threat
