@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M620.12,-339.25C620.12,-339.25 517.88,-339.25 517.88,-339.25 511.88,-339.25 505.88,-333.25 505.88,-327.25 505.88,-327.25 505.88,-307.25 505.88,-307.25 505.88,-301.25 511.88,-295.25 517.88,-295.25 517.88,-295.25 620.12,-295.25 620.12,-295.25 626.12,-295.25 632.12,-301.25 632.12,-307.25 632.12,-307.25 632.12,-327.25 632.12,-327.25 632.12,-333.25 626.12,-339.25 620.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="569" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="569" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 5656 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="569" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1958, siege 1034</text>
+<text xml:space="preserve" text-anchor="middle" x="569" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 5664 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="569" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1958, siege 1042</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge14" class="edge">
@@ -85,7 +85,7 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M545.12,-235.5C545.12,-235.5 442.88,-235.5 442.88,-235.5 436.88,-235.5 430.88,-229.5 430.88,-223.5 430.88,-223.5 430.88,-203.5 430.88,-203.5 430.88,-197.5 436.88,-191.5 442.88,-191.5 442.88,-191.5 545.12,-191.5 545.12,-191.5 551.12,-191.5 557.12,-197.5 557.12,-203.5 557.12,-203.5 557.12,-223.5 557.12,-223.5 557.12,-229.5 551.12,-235.5 545.12,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="494" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="494" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6088 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="494" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6098 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="494" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1721</text>
 </g>
 <!-- Corporation&#45;&gt;Settlement -->

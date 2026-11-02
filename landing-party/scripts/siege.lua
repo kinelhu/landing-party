@@ -168,7 +168,7 @@ local function besieged(owner)
 end
 
 local function choose_siege(b, army, only_battery)
-  if (b.parts or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
+  if (b.parts or 0) + (b.siege_fund or 0) < SIEGE_COST or game.tick < (b.next_siege or 0) then return end
   -- A capability, not every corporation's (Serenity's from level 1; Grubstake never besieges).
   -- A settlement landed with a grudge besieges whatever its corporation's level or temper (faction.grudge).
   local capable = shared.capable(b.corp, "siege", army.level(b)) or b.grudge ~= nil
@@ -222,7 +222,10 @@ local function siege_tier(b, t, army)
   end
   local n, reserve = field(b, army)
   if battery(t) then n = n + reserve end
-  while k > 1 and ((b.parts or 0) < SIEGE_TIERS[k].cost or n < SIEGE_TIERS[k].guards) do k = k - 1 end
+  -- (Its siege fund for sieges on a player only: drawing on it, an armed camp sent tier-2 clearances at the nests round it
+  -- again and again, lost their guards, and fell to Synthexis, fed nw, 2026-11-02.)
+  local purse = (b.parts or 0) + (against_player(t.owner) and (b.siege_fund or 0) or 0)
+  while k > 1 and (purse < SIEGE_TIERS[k].cost or n < SIEGE_TIERS[k].guards) do k = k - 1 end
   return k
 end
 ops.siege_tier = siege_tier
@@ -327,7 +330,11 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
       table.insert(guards, u)
     end
   end
-  b.parts = math.max(0, b.parts - spec.cost)
+  -- From its siege fund first (an armed camp's, base.lua), then its parts.
+  local from_fund = (not clearance and t and against_player(t.owner)) and math.min(b.siege_fund or 0, spec.cost) or 0
+  b.siege_fund = (b.siege_fund or 0) - from_fund
+  b.parts = math.max(0, b.parts - (spec.cost - from_fund))
+  local paid_fund = from_fund
   -- The guards ride out on the hauler: gates open for no unit, and guards walking from home were 33 to 49 tiles off when
   -- the biters broke the mortars (visit b - rocket).
   for _, u in ipairs(guards) do
@@ -355,7 +362,8 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   if not hroute then
     for _, u in ipairs(guards) do table.insert(b.garrison, u) end
     b.op = nil
-    b.parts = b.parts + spec.cost
+    b.siege_fund = (b.siege_fund or 0) + paid_fund
+    b.parts = b.parts + spec.cost - paid_fund
     hauler.destroy()
     local tt = b.intel.targets[key]
     if tt then tt.cool = game.tick + COOL_TICKS end

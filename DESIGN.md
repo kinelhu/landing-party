@@ -3814,3 +3814,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **On nwa** (0.2.135, fed, 200 minutes): its armed camp stood (it had fallen to wild behemoths 28 minutes after landing):
   its landing barrage took 106 spawners and 119 worms within 200 (694 shells). Its sieges there all failed (4 aborted, 2
   intercepted), nothing of the player's razed; Grubstake razed 466 and Synthexis 1,771 in the same run.
+- **An armed camp's siege fund** (0.2.137): 30% of the parts it makes, up to 600 (a tier-4 siege), kept from its
+  growth and units for its sieges on a player (siege_tier counts it, launch_siege pays from it first). Every siege of its
+  had gone at tier 1 (its parts at launch 32 to 168, a tier 2 costing 220). Clearances do not draw on it: drawing on it,
+  it sent tier-2 clearances at the nests round it again and again, lost their guards, and fell to Synthexis on fed nw.
+  Measured: artillery base, era 3: tiers 1 to 3, four orbital strikes, 36 of the player's buildings razed (16 before).
+  Fed nw, 200 minutes: tiers 1 to 3, it stood, but 5 of its 8 haulers were intercepted on the way (2 of 5 in the run
+  before; one run's interceptions swing), 3 lasers razed. Open: its haulers through nw's nest country.

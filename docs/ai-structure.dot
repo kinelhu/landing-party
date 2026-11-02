@@ -39,7 +39,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n838 lines", width=1.73, fillcolor="#eef2f7"];
+    "base" [label="base\n848 lines", width=1.74, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n327 lines", width=1.16, fillcolor="#eef2f7"];
     "layout" [label="layout\n1721 lines", width=2.71, fillcolor="#f7dede"];
@@ -61,7 +61,7 @@ digraph ai {
     "ops" [label="ops\n1958 lines", width=2.98, fillcolor="#f7dede"];
     "routing" [label="routing\n417 lines", width=1.26, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
-    "siege" [label="siege\n1034 lines", width=1.95, fillcolor="#f7dede"];
+    "siege" [label="siege\n1042 lines", width=1.96, fillcolor="#f7dede"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];

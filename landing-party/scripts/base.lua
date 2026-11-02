@@ -24,6 +24,7 @@ local REACHES = {40, 90, 160}
 local SEARCH = 200           -- ore search radius around the lander
 local SITE_BUDGET = 12       -- candidate mining sites tested per plan
 local UPLINK_PARTS = 3000    -- the uplink lands with these: its fortress is built at once
+local SIEGE_SAVE, SIEGE_FUND_CAP = 0.3, 600   -- an armed camp's siege fund (economy)
 local UPLINK_BURST = 6       -- entities placed per build step while the uplink stands
 local DEFENCE_RADIUS = 14
 -- A destroyed node is rebuilt unless a hostile turret, unit, vehicle, wall or character stands this close.
@@ -405,6 +406,15 @@ local function economy(b)
       end
       made = made + c - idle
     end
+  end
+  -- An armed camp's siege fund (faction.arrive's armed landing): SIEGE_SAVE of what it makes, up to SIEGE_FUND_CAP, kept
+  -- from its growth and units for its sieges (siege.lua siege_tier and launch_siege). Without it every siege of its on
+  -- fed nw went at tier 1, one mortar against a laser wall of 557, its parts at launch 32 to 168 (2026-11-02).
+  if b.armed and made > 0 and (b.siege_fund or 0) < SIEGE_FUND_CAP then
+    local save = math.min(math.floor(made * SIEGE_SAVE + 0.5), SIEGE_FUND_CAP - (b.siege_fund or 0))
+    b.siege_fund = (b.siege_fund or 0) + save
+    made = made - save
+    b.made = b.made + save
   end
   b.parts = b.parts + made
   b.made = b.made + made
