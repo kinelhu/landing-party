@@ -3857,4 +3857,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   fell since its last look and the nests within a biter's sight of it. Learning from its whole 30-minute log walked the
   sweep outward a nest a minute (seen on nw, fixed). Short visits (5 minutes each, not 200): nwa, 25 minutes, the
   barrage took 106 spawners and the lander stood; nw, 30 minutes, it stood, its sweeps 11 nests a minute tapering to 1,
-  again only on fresh losses. The camp's standing past 145 minutes on nw is not yet measured.
+  again only on fresh losses. nw, 160 minutes: it stood (it fell at 145), 127 sweeps; 9 sieges, 5 of them clearances,
+  3 haulers lost on the way despite the corridor strike (to the nests of clearance sites 150 to 370 tiles out); 32 of
+  the player's buildings razed (accumulators, lasers). Open: clearances far out cost it its haulers; what it sends at
+  the player stays small.
