@@ -318,8 +318,7 @@ local function announce(b, surface)
       -- A corporation's first landing is told whatever the setting (the user: the ultimate resort, "pointing the first
       -- landing of a faction"); later ones as any notice.
       storage.landing_told = storage.landing_told or {}
-      local msg = {"lp.landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name),
-        shared.CORPS[b.corp].motto}
+      local msg = {"lp.landed", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", b.origin.x, b.origin.y, surface.name)}
       if not storage.landing_told[b.corp] then f.print(msg) else shared.notice(f, msg) end -- notice-ok: first landing
     end
   end
@@ -739,8 +738,8 @@ function faction.corp(corp)
   return storage.corps[corp]
 end
 
-local CAP_NOTICE = {["lp-harrier"] = "harriers", ["lp-walker"] = "walkers", siege = "siege operations",
-  pickets_see = "pickets that report what they see", headquarters = "a headquarters"}
+local CAP_NOTICE = {["lp-harrier"] = "lp.cap-harrier", ["lp-walker"] = "lp.cap-walker", siege = "lp.cap-siege",
+  pickets_see = "lp.cap-pickets", headquarters = "lp.cap-headquarters"}
 function faction.develop(b, parts)
   local d = faction.corp(b.corp)
   d.exported = d.exported + parts
@@ -754,9 +753,14 @@ function faction.develop(b, parts)
     end
     table.sort(gained)
     base.trace(b, string.format("%s reaches level %d: %s", b.corp, d.level, table.concat(gained, ", ")))
+    local list = {""}
+    for i, key in ipairs(gained) do
+      if i > 1 then list[#list + 1] = ", " end
+      list[#list + 1] = {key}
+    end
     for _, f in pairs(game.forces) do
       if #f.players > 0 and #gained > 0 then
-        shared.notice(f, {"lp.develop", shared.corp_label(b.corp), table.concat(gained, ", ")})
+        shared.notice(f, {"lp.develop", shared.corp_label(b.corp), list})
       end
     end
   end

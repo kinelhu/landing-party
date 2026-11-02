@@ -3861,3 +3861,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   3 haulers lost on the way despite the corridor strike (to the nests of clearance sites 150 to 370 tiles out); 32 of
   the player's buildings razed (accumulators, lasers). Open: clearances far out cost it its haulers; what it sends at
   the player stays small.
+- **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
+  game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
+  "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
+  key (their notice would have read "Unknown key"); every corporation copy (`corps.lua`) and plated unit
+  (`plates.lua`) had no description, so Grubstake's harrier, flak buggy and pacifier showed none. Copies now take
+  `{"?", {"entity-description.<kind>"}, ""}`; `lint_names.py` treats a `"?"` list as optional. Chart tag text is a
+  plain string in the API (`LuaCustomChartTag.text`), so the culture, survey, claim and destroyed-base tags stay
+  untranslatable English. Assumed, not looked at in game: the `"?"` fallback with an empty last alternative shows
+  no description line.

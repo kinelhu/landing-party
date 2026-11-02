@@ -26,6 +26,7 @@ for corp in pairs(shared.CORPS) do
         if not merged then table.insert(res, {type = r.type, percent = r.percent, decrease = r.decrease}) end
         p.resistances = res
         p.localised_name = {"", base.localised_name or {"entity-name." .. kind}, " [", {"lp.plate-" .. plate}, "]"}
+        p.localised_description = base.localised_description or {"?", {"entity-description." .. kind}, ""}
         table.insert(out, p)
       end
     end

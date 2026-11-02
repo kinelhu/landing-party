@@ -113,7 +113,7 @@ end
 
 -- Labelled once in a neighbourhood: a second patch near a labelled one has the icon only (the user's map, 2026-10-21: two
 -- labels written over each other).
-local TEXT = "Mineral rights reassigned"
+local TEXT = "Grubstake claim"
 local LABEL_APART = 80
 local function tag(b, p)
   local s = game.surfaces[b.surface]

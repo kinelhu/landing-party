@@ -640,7 +640,7 @@ function base.fall(lander)
           lander.surface.name), names.of(b)})
       end
       for _, t in pairs(b.tags or {}) do
-        if t.valid then t.text = names.of(b) .. " (fallen)" end
+        if t.valid then t.text = names.of(b) .. " (destroyed)" end
       end
       base.claim_map(b)
       if base.on_fall then base.on_fall(b) end

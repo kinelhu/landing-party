@@ -6,7 +6,7 @@ local shared = {}
 -- tint: the colour their buildings and units are drawn in (docs/corporations.md); lamp: their lamps' light.
 -- tints: a colour per kind where it differs from tint. road, pad: the vanilla tiles their floors are made of
 -- (and a tint); trim: the border of its paved yards and pads (its floor livery). icon: the virtual signal that
--- stands for it on map tags and in notices, with its motto. (Logos on the ground were dropped: scaled icons
+-- stands for it on map tags and in notices. motto: no longer shown in game (docs/wip/flavour.md). (Logos on the ground were dropped: scaled icons
 -- looked pasted on, concrete pixel art merged into blobs; user 2026-10-13.)
 -- What kills from the air, as the research ledger names a killer (rd.lua): the corporations' fliers, the player's
 -- combat robots. Their losses to these buy each corporation its anti-air.
@@ -16,7 +16,7 @@ shared.FLIERS = shared_fliers
 local shared_infantry = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "character"}
 shared.INFANTRY = shared_infantry
 shared.CORPS = {
-  grubstake = {name = "Grubstake Inc.", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
+  grubstake = {name = "Grubstake", force = "lp-grubstake", color = {r = 0.8, g = 0.55, b = 0.2},
     tint = {r = 1, g = 0.72, b = 0.38, a = 1}, lamp = {r = 1, g = 0.75, b = 0.4},
     -- Its depot (a cargo landing pad's art, dark already) washed lighter: the full tint read sad and deflated (the user).
     tints = {["lp-depot"] = {r = 1, g = 0.9, b = 0.78, a = 1}},

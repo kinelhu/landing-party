@@ -17,7 +17,7 @@ for corp, c in pairs(shared.CORPS) do
       if c[floor].map_color then t.map_color = c[floor].map_color end
       t.placeable_by = nil
       if c[floor].tint then t.tint = c[floor].tint end
-      t.localised_name = {"", c.name, " ", floor}
+      t.localised_name = {"lp.floor-" .. floor, c.name}
       table.insert(out, t)
     end
   end

@@ -19,6 +19,9 @@ def keys(ls):
         if re.match(r"^[a-z-]+-(name|description)\.lp-", ls):
             yield ls
     elif isinstance(ls, list):
+        # {"?", a, b, ...} takes the first alternative whose keys all exist: none of them is required.
+        if ls and ls[0] == "?":
+            return
         for x in ls:
             yield from keys(x)
 

@@ -26,7 +26,7 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n829 lines", width=1.72, fillcolor="#eef2f7"];
+    "faction" [label="faction\n833 lines", width=1.73, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n582 lines", width=1.45, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];

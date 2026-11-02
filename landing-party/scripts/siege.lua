@@ -604,7 +604,7 @@ local function quiet_pack(op)
   piece.disabled_by_script = true
   for _, m in ipairs(op.mortars or {}) do if m.valid then m.disabled_by_script = true end end
   if op.label and op.label.valid then op.label.destroy() end
-  op.label = rendering.draw_text{text = "Packing up", surface = piece.surface, target = {entity = piece, offset = {0, -2}},
+  op.label = rendering.draw_text{text = {"lp.siege-packing"}, surface = piece.surface, target = {entity = piece, offset = {0, -2}},
     color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
   return piece
 end
@@ -685,13 +685,13 @@ local function siege_step(b, trace, army)
         commands = {{type = defines.command.go_to_location, destination = guard_spot(b, op), radius = 4,
           distraction = guard_eye},
           {type = defines.command.wander, radius = 4, distraction = guard_eye}}})
-      op.label = rendering.draw_text{text = "Deploying", surface = op.hauler.surface,
+      op.label = rendering.draw_text{text = {"lp.siege-deploying"}, surface = op.hauler.surface,
         target = {entity = op.hauler, offset = {0, -2}}, color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
       trace(b, string.format("siege: deploying at %.0f,%.0f", op.site[1], op.site[2]))
     end
   elseif op.phase == "deploy" then
     local share = (game.tick - op.phase_at) / DEPLOY_TICKS
-    if op.label and op.label.valid then op.label.text = string.format("Deploying %d%%", math.min(100, share * 100)) end
+    if op.label and op.label.valid then op.label.text = {"lp.siege-deploying-percent", string.format("%d", math.min(100, share * 100))} end
     if share >= 1 then
       local s, force = op.hauler.surface, op.hauler.force
       -- The truck gives way to its howitzer (ops.truck_down).
@@ -943,7 +943,7 @@ local function siege_step(b, trace, army)
             return
           elseif piece and game.tick - op.packing < TRUCK_PACK then
             if op.label and op.label.valid then
-              op.label.text = string.format("Packing up %d%%", 100 * (game.tick - op.packing) / TRUCK_PACK)
+              op.label.text = {"lp.siege-packing-percent", string.format("%d", 100 * (game.tick - op.packing) / TRUCK_PACK)}
             end
             return
           end
