@@ -244,7 +244,7 @@ data:extend({
     results = {{type = "item", name = "lp-mortar-shell", amount = 1}}},
   {type = "recipe", name = "lp-strip-drill", enabled = false, energy_required = 4,
     ingredients = {{type = "item", name = "electric-mining-drill", amount = 1}, {type = "item", name = "steel-plate", amount = 10},
-      {type = "item", name = "electronic-circuit", amount = 5}},
+      {type = "item", name = "electronic-circuit", amount = 5}, {type = "item", name = "lp-drill-head", amount = 1}},
     results = {{type = "item", name = "lp-strip-drill", amount = 1}}},
   prize("serenity", {"lp-player-mortar", "lp-mortar-shell"}),
   prize("grubstake", {"lp-strip-drill"}),

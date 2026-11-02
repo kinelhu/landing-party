@@ -3,7 +3,7 @@
 | Salvage | Dropped by | How many | Used for |
 |:--|:--|:--|:--|
 | Pheromone gland | Pacifier antenna; Synthexis incubator | 3 to 5; 1 to 2 | 1 per Pheromone bait; 3 to research Pheromone bait |
-| Drill head | Claim jumper rig | 2 | - |
+| Drill head | Claim jumper rig | 2 | 1 per Strip drill |
 | Rail coil | Railgunner | 1, 20% of the time | 2 to research Rail rifle |
 | Cluster fuze | Mortar; Howitzer (deployed) | 1; 6 | 1 per Cluster artillery shell; 3 to research Cluster shells |
 | Orbital beacon | Lander; Uplink | 1; 2 | 1 per Orbital strike beacon; 1 to research Orbital strike |
