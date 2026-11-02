@@ -194,14 +194,14 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
 |:--|--:|--:|--:|--:|:--|:--|
-| Synthexis Small biter | 15 | 12.0 | 0.5 | 1.7 | yes | 2 biomass |
-| Synthexis Medium biter | 75 | 14.4 | 1 | 1.7 | yes | 7 biomass |
-| Synthexis Big biter | 375 | 13.8 | 1.5 | 1.7 | yes | 28 biomass |
-| Synthexis Behemoth biter | 3,000 | 18.0 | 1.5 | 1.2 | yes | 200 biomass |
+| Small biter (Synthexis) | 15 | 12.0 | 0.5 | 1.7 | yes | 2 biomass |
+| Medium biter (Synthexis) | 75 | 14.4 | 1 | 1.7 | yes | 7 biomass |
+| Big biter (Synthexis) | 375 | 13.8 | 1.5 | 1.7 | yes | 28 biomass |
+| Behemoth biter (Synthexis) | 3,000 | 18.0 | 1.5 | 1.2 | yes | 200 biomass |
 | Synthexis burster | 120 | 19.2 | 1 | 2 | yes | 40 biomass |
 | Synthexis stomper | 2,000 | walks | 5.85 | 1 | yes | 150 biomass |
 | Synthexis spore spitter | 50 | 9.9 | 20 | 0.6 | yes | 10 biomass |
-| Synthexis Medium spitter | 50 | 9.9 | 14 | 0.6 | yes | 9 biomass |
+| Medium spitter (Synthexis) | 50 | 9.9 | 14 | 0.6 | yes | 9 biomass |
 | Synthexis big burster | 3,000 | 18.0 | 1.5 | 1.2 | yes | 300 biomass |
 | Synthexis scout | 30 | 20.4 | 0.5 | 1.7 | yes | - |
 | Synthexis sweeper | 2,000 | 18.0 | 1.5 | 1.7 | yes | 60 biomass |
@@ -209,30 +209,30 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Synthexis technician | 80 | 6.0 | 1 | 1 | yes | - |
 
 ::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-small-biter.png){fig-alt="Synthexis Small biter"}
+![](media/units/lp-bred-small-biter.png){fig-alt="Small biter (Synthexis)"}
 
-**Synthexis Small biter.**  \
+**Small biter (Synthexis).**  \
 *A shot:* 7 bite. *Fielded:* Bred from evolution 0.
 :::
 
 ::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-medium-biter.png){fig-alt="Synthexis Medium biter"}
+![](media/units/lp-bred-medium-biter.png){fig-alt="Medium biter (Synthexis)"}
 
-**Synthexis Medium biter.**  \
+**Medium biter (Synthexis).**  \
 *A shot:* 15 bite. *Resists:* physical -4 10%, explosion 10%. *Fielded:* Bred from evolution 0.2.
 :::
 
 ::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-big-biter.png){fig-alt="Synthexis Big biter"}
+![](media/units/lp-bred-big-biter.png){fig-alt="Big biter (Synthexis)"}
 
-**Synthexis Big biter.**  \
+**Big biter (Synthexis).**  \
 *A shot:* 30 bite. *Resists:* physical -8 10%, explosion 10%. *Fielded:* Bred from evolution 0.5.
 :::
 
 ::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-behemoth-biter.png){fig-alt="Synthexis Behemoth biter"}
+![](media/units/lp-bred-behemoth-biter.png){fig-alt="Behemoth biter (Synthexis)"}
 
-**Synthexis Behemoth biter.**  \
+**Behemoth biter (Synthexis).**  \
 *A shot:* 90 bite. *Resists:* physical -12 10%, explosion -12 10%. *Fielded:* Bred from evolution 0.9.
 :::
 
@@ -258,9 +258,9 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 :::
 
 ::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-medium-spitter.png){fig-alt="Synthexis Medium spitter"}
+![](media/units/lp-bred-medium-spitter.png){fig-alt="Medium spitter (Synthexis)"}
 
-**Synthexis Medium spitter.**  \
+**Medium spitter (Synthexis).**  \
 *Resists:* explosion 10%. *Fielded:* Bred from evolution 0.3.
 :::
 

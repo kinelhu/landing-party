@@ -66,6 +66,7 @@ spoils:
   core_capture: "1"
   core_survey: "1"
 desc:
+  entity_orbital_relay: "Kessler-Hayashi calls orbital strikes on spawners near its base through it."
   entity_pen: "A biter spawner taken over by Synthexis. Drops pheromone glands."
   entity_bred_cinder: "A fast biter that bursts on death, damaging nearby walls and turrets."
   entity_bred_big_burster: "A huge biter that bursts at the nearest turret, damaging all turrets nearby."
@@ -144,6 +145,6 @@ settings:
   high: "1.5"
   very_high: "2"
 mod:
-  version: "0.2.141"
+  version: "0.2.142"
   factorio: "2.1"
   needs: "base, space-age"
