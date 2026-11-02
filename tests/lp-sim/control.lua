@@ -650,6 +650,28 @@ end
 
 -- Faction: several landings, maturity, exports and tiers in one hour, on shortened clocks (a landing every
 -- 12 minutes, maturity at 4 blocks, tier thresholds a tenth of the real ones).
+-- Launches (faction.on_launch; the user, 2026-11-02, on Grubstake landing every 6 minutes on nwa: "I didn't think every
+-- rocket launch should bring grubstake in... that's a different clock"): the clock running, five launches in a row bring
+-- the next landing 15 minutes sooner once, and that landing is the late corporation's.
+scenarios.launches = function()
+  schedule(60, function()
+    lp("debug_tune", {history_off = true, gates_off = true})
+    local f = lp("faction")
+    S.next0 = f.next
+    for k = 1, 5 do lp("debug_launch", 0, 0) end
+    local g = lp("faction")
+    S.next1, S.haste = g.next, g.haste_for
+    info(string.format("launches: next %s -> %s, hastened for %s", tostring(S.next0), tostring(S.next1), tostring(S.haste)))
+  end)
+  schedule(END - 60, function()
+    -- (Before: each launch 15 minutes off the shared clock, whoever came next.)
+    check("launches: five launches, the next landing 15 minutes sooner once", S.next0 and S.next1
+      and S.next0 - S.next1 <= 15 * 3600 and S.next0 - S.next1 > 0,
+      string.format("%s -> %s", tostring(S.next0), tostring(S.next1)))
+    check("launches: hastened for the late corporation", S.haste == "serenity", tostring(S.haste))
+  end)
+end
+
 scenarios.faction = function()
   schedule(30, function()
     lp("debug_tune", {cadence_minutes = 12, tiers = {300, 800, 2000, 4500}, mature_blocks = 4, quiet = true})

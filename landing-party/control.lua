@@ -403,6 +403,8 @@ remote.add_interface("landing-party", {
   end,
   landing_jobs = function() return {queued = #(storage.landing_jobs or {}), last = storage.last_landing} end,
   faction = function() return faction.state() end,
+  -- Tests: a rocket launch at a point (faction.on_launch reads the silo's surface and position only).
+  debug_launch = function(x, y) faction.on_launch({surface = game.surfaces[1], position = {x = x, y = y}, valid = true}) end,
   threat = function() return {player_ops = ops.player_ops(), last = storage.threat_last, holds = storage.budget_holds or 0} end,
   -- The ladder's state: the last raze per player force, its rung, and the player's buildings razed by type.
   pressure = function(force)

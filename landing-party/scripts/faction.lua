@@ -1,6 +1,6 @@
 -- The faction across settlements: when landings come, where they land, and the tier its exports buy.
---   Landings: the first answers the player's first rocket launch; then one every CADENCE, each later launch
---   bringing the next one HASTE sooner; at most MAX_ALIVE settlements stand at once.
+--   Landings: the first answers the player's first rocket launch; then one every CADENCE, a later launch bringing
+--   the late corporation's next one HASTE sooner (once between landings); at most MAX_ALIVE settlements stand at once.
 --   Tier: parts exported by mature settlements, faction-wide. Each tier unlocks units, adds damage and
 --   garrison room (army.lua reads it).
 local shared = require("__landing-party__.shared")
@@ -497,8 +497,17 @@ function faction.on_launch(silo)
   local f = faction.state()
   if not f.surface then
     if faction.on_trigger then faction.on_trigger(silo.surface, silo.position) end
-  elseif f.next then
-    f.next = math.max(game.tick, f.next - HASTE)
+  elseif f.next and not f.haste_for then
+    -- Its late corporation's landing alone, once between landings (the user, 2026-11-02, on Grubstake landing every 6
+    -- minutes on nwa, its launches never stopping: "I didn't think every rocket launch should bring grubstake in...
+    -- that's a different clock"). Grubstake keeps the cadence.
+    local late = faction.late_corp
+    local d = late and faction.corp(late)
+    if late and d and not d.withdrawing and faction.alive(late) < MAX_PER_CORP
+      and (not faction.gate_open or faction.gate_open(late)) then
+      f.next = math.max(game.tick, f.next - HASTE)
+      f.haste_for = late
+    end
   end
 end
 
@@ -625,7 +634,10 @@ function faction.tick(tick)
   end
   local f = faction.state()
   if f.next and tick >= f.next and f.surface then
-    local corp = alive() < MAX_ALIVE and next_corp(f)
+    -- (A landing a launch hastened is its late corporation's: faction.on_launch.)
+    local hasted = f.haste_for
+    f.haste_for = nil
+    local corp = alive() < MAX_ALIVE and (hasted and alive(hasted) < MAX_PER_CORP and hasted or next_corp(f))
     if faction.pending_kind("cadence") then
       -- Its ground is being made (faction.request).
     elseif corp then

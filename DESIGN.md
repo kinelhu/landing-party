@@ -3924,6 +3924,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   dark before its district's pylons and was shelled a minute after. 0.2.147: up once its hub has a block, its dome up
   while it stands and the camp's hull is (the lander's rule; its power is the camp's generators). nwa, 20 minutes: 0
   of its buildings lost to the player's artillery (44).
+- **Re-measured with the game's landings and the hub domes** (0.2.147, fed, 90 minutes, one run each). nw: Kessler-
+  Hayashi stood, 108 of the player's buildings razed (26 lasers, 21 roboports, 24 poles), two strikes of 15 and 18
+  shells, 120 of 222 units lost; Synthexis 2 waves, none in, 1 razed; Grubstake 2 raids, none razed. nwa: Kessler-Hayashi
+  stood, 143 razed (77 solar panels, 56 accumulators), raids only (2 done, 4 aborted), no siege; Synthexis 5 waves, one in
+  (129 by that wave's own count), 1,553 razed by the census; Grubstake five camps, 4 razed. None of Kessler-Hayashi's
+  buildings lost to the player's artillery in either. 1.47 and 3.3 ms a tick. Synthexis swings by whether one or two of
+  a few waves get in: one run a save does not measure it.
+- **Launches bring Kessler-Hayashi, not Grubstake** (0.2.148; the user: "I didn't think every rocket launch should bring
+  grubstake in... that's a different clock"). Each launch took 15 minutes off the one landing clock, whoever came next:
+  nwa launches without pause, and Grubstake landed every 6 minutes (five camps in 90 minutes, 4 razed between them). Now a
+  launch brings the late corporation's next landing 15 minutes sooner, once between landings, and that landing is its
+  own; Grubstake keeps the cadence. `launches`: five launches in a row, 15 minutes sooner once, for Kessler-Hayashi (seen
+  failing with every launch counted: 75 minutes, the clock at the tick).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

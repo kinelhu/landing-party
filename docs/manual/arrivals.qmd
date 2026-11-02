@@ -36,9 +36,9 @@ A faction's first landing is always announced in chat and charted on your map.
 
 ## Landings after the first
 
-The corporations keep landing on a clock. One lands every {{< var arrival.cadence_min >}} minutes, and each rocket you
-launch brings the next landing {{< var arrival.haste_min >}} minutes sooner. The corporation with fewer bases standing
-lands next.
+The corporations keep landing on a clock. One lands every {{< var arrival.cadence_min >}} minutes, and the corporation
+with fewer bases standing lands next. A rocket launch brings Kessler-Hayashi's next landing
+{{< var arrival.haste_min >}} minutes sooner, once between landings.
 
 - At most {{< var arrival.max_alive >}} corporation bases stand at once, and at most {{< var arrival.max_per_corp >}}
   per corporation, its headquarters included.
