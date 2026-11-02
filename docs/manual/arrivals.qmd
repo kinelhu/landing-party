@@ -1,0 +1,95 @@
+# Arrivals
+
+The factions arrive in a fixed order, each one triggered by something you do. After that they keep landing, grow with
+their exports, and match their research to yours.
+
+## The opening
+
+**Signs.** The first time you own a radar, the wreck of an unknown craft appears {{< var arrival.signs_tiles >}} tiles
+from it and is charted on your map. It holds electronic circuits and iron gear wheels.
+
+**Survey party.** When you research Oil processing, a Grubstake survey party lands on ore about
+{{< var arrival.survey_tiles >}} tiles from your spawn: a radar, two drills, a lamp and a few guards. Your map marks it
+*Survey party*. What you do with it changes when Grubstake arrives:
+
+- Destroy its radar and it drops a command core. Grubstake's arrival then comes
+  {{< var arrival.survey_killed_delay_min >}} minutes after your first chemical science pack.
+- Leave it and it leaves after {{< var arrival.survey_stays_min >}} minutes. Grubstake then arrives
+  {{< var arrival.survey_left_min >}} minutes later, whether or not you have made chemical science.
+
+{{< clip media/clips/survey-party.mp4 poster="media/clips/survey-party.jpg" caption="The survey party on an ore field, before Grubstake arrives." >}}
+
+**Grubstake.** Its first camp comes down on your first chemical science pack, or earlier if its survey party left. It
+picks a rich ore field away from Kessler-Hayashi, at least {{< var arrival.squat_tiles >}} tiles from your turrets and
+units.
+
+**Kessler-Hayashi.** It waits for your first rocket launch, then lands within {{< var arrival.late_min >}} minutes. It
+picks a site with a clear way to your base.
+
+**Synthexis.** It follows the biters, not your research. When the wild biters' evolution on a surface reaches
+{{< var synthexis.arrive_evo >}}, a pod comes down on a spawner field with none of your buildings within
+{{< var synthexis.clear_tiles >}} tiles and some within {{< var synthexis.far_tiles >}} (out to
+{{< var synthexis.farthest_tiles >}} if there is no such field). It prefers fields with many spawners and heavy
+pollution, and never lands within reach of your artillery. See [Synthexis](synthexis.qmd).
+
+A faction's first landing is always announced in chat and charted on your map.
+
+## Landings after the first
+
+The corporations keep landing on a clock. One lands every {{< var arrival.cadence_min >}} minutes, and each rocket you
+launch brings the next landing {{< var arrival.haste_min >}} minutes sooner. The corporation with fewer bases standing
+lands next.
+
+- At most {{< var arrival.max_alive >}} corporation bases stand at once, and at most {{< var arrival.max_per_corp >}}
+  per corporation, its headquarters included.
+- A new base lands at least {{< var arrival.apart_tiles >}} tiles from every other.
+- Each landing brings an escort of {{< var arrival.escort_base >}} units, {{< var arrival.escort_level >}} more per
+  level of its corporation, and up to {{< var arrival.escort_evo >}} more at full biter evolution. Turrets go up at the
+  corners of its landing pad.
+- Destroy a corporation's lander and its next landing brings a larger escort: double the units.
+
+## How the corporations grow
+
+A corporation's bases mine, build parts and send the surplus off-world from their launch pads. The parts it has sent
+set its level, and each level unlocks more of what it can do:
+
+{{< include _generated/levels.qmd >}}
+
+**Headquarters.** At level 3, or after {{< var arrival.hq_floor_h >}} hours with two bases standing, a corporation
+prepares to build a headquarters. It lands {{< var arrival.consolidate_min >}} minutes later, about
+{{< var arrival.hq_tiles >}} tiles from its richest base. Its lander cannot be destroyed while its uplink stands.
+
+**Withdrawal.** Destroy a corporation's uplink and it withdraws from the planet. It stops building, and its weakest
+base falls every {{< var arrival.withdraw_min >}} minutes until none is left. The other corporation's next landing comes
+{{< var arrival.vacancy_min >}} minutes sooner, and you get the withdrawn corporation's prize technology (see
+[Spoils](spoils.qmd)).
+
+## The threat curve
+
+The corporations measure your progress by how many technologies you have researched. This manual calls the steps
+*eras*:
+
+{{< include _generated/eras.qmd >}}
+
+**Operations at once.** All corporations together send at most one operation more than your era at you at a time:
+raids, sieges and strip camps. Fights between corporations do not count. If none of their operations has come at you
+for {{< var arrival.floor_min >}} minutes, your buildings move up their list of targets.
+
+**Research.** Each corporation puts {{< var arrival.fund_share_pct >}}% of its exports into research and buys at most
+one item every {{< var arrival.research_every_min >}} minutes. It picks what answers whatever has been killing its units
+over the last {{< var arrival.research_window_min >}} minutes: armor against your bullets, anti-air against your
+combat robots, heavier lasers against your troopers. It never researches past your era:
+
+- Weapon damage goes up a level at a time, to at most one level more than your era
+  ({{< var arrival.weapon_levels >}} at most). For most weapons a level adds {{< var arrival.weapon_level_pct >}}%.
+- New units and abilities each carry an era, and come only once you have reached it.
+
+A corporation that lands in a world already far along arrives with the research such a world would have pushed it to.
+
+**Kessler-Hayashi armed.** From era {{< var arrival.armed_era >}}, Kessler-Hayashi lands as a walled fortress instead of
+a camp, already at level {{< var arrival.armed_level >}}.
+
+**Synthexis** is the exception. Its breeds follow evolution: the wild biters' at first, then its own once its clinic
+stands. See [What it breeds](synthexis.qmd#sec-breeds).
+
+{{< clip media/clips/armed-landing.mp4 poster="media/clips/armed-landing.jpg" caption="Kessler-Hayashi's armed landing: a fortress instead of a camp." >}}

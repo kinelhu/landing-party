@@ -1,0 +1,16 @@
+# Reference
+
+Every table in this chapter is written from the game's prototypes and the mod's code, so it matches the version this
+manual describes ({{< var mod.version >}}).
+
+{{< include _generated/units.qmd >}}
+
+{{< include _generated/buildings.qmd >}}
+
+## Chat commands {#sec-commands}
+
+{{< include _generated/commands.qmd >}}
+
+## Mod settings {#sec-settings}
+
+{{< include _generated/settings.qmd >}}

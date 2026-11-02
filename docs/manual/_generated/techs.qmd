@@ -1,0 +1,16 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+| Technology | What it gives | How you get it | After |
+|:--|:--|:--|:--|
+| Command bandwidth 1 | Unlocks Barracks, Command relay, Rally beacon, Trooper, Breacher, Threat scanner, Muster point. | 100 × (Automation science pack + Logistic science pack) | Military 2, Heavy armor |
+| Command bandwidth 2 | Unlocks Battle tank, Rocket trooper. | 200 × (Automation science pack + Logistic science pack + Chemical science pack) | Command bandwidth 1, Chemical science pack, Tank, Personal battery, Rocketry |
+| Command bandwidth 3 | Unlocks Flamethrower trooper. | 300 × (Automation science pack + Logistic science pack + Chemical science pack + Military science pack) | Command bandwidth 2, Military 3, Flamethrower |
+| Command bandwidth 4 | Increases the number of command relays that control your units. | 150 × L × (Automation science pack + Logistic science pack + Chemical science pack + Military science pack), repeatable | Command bandwidth 3 |
+| Claim marker | A marker that makes Grubstake leave your buildings within 40 tiles alone. | Craft 2 × Pacifier crystal parts | Military |
+| Cluster shells | Artillery shells that burst into bomblets on impact. | Craft Cluster fuze parts | Artillery |
+| Orbital strike | A single-use beacon that calls an orbital barrage on enemies within 60 tiles. | Craft Orbital beacon parts | Rocket silo |
+| Pact breaker | Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim. | Craft Pacifier crystal parts | Pheromone bait |
+| Pheromone bait | Bait that makes nearby biters attack whatever is around it. | Craft Pheromone gland parts | Military |
+| Rail rifle | A rifle whose slugs pierce every enemy in a 30-tile line. | Craft Rail coil parts | Military 3 |
+| Grubstake's strip drill | Unlocks the strip drill. | Granted when Grubstake's headquarters falls | - |
+| Kessler-Hayashi's mortar | Unlocks the mortar and mortar shells. | Granted when Kessler-Hayashi's headquarters falls | - |

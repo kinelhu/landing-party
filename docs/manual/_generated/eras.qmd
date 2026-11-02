@@ -1,0 +1,9 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+| Your era | Technologies you have researched | Corporation operations against you at once | Corporation weapon damage levels |
+|:--|--:|--:|--:|
+| 0 | under 25 | 1 | up to 1 |
+| 1 | 25 | 2 | up to 2 |
+| 2 | 60 | 3 | up to 3 |
+| 3 | 100 | 4 | up to 4 |
+| 4 | 150 | 5 | up to 5 |

@@ -1,0 +1,105 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+## Buildings {#sec-buildings}
+
+### Corporation camps
+
+Both corporations build from the same set, each in its own colors. Grubstake's turret fires bullets, and every
+second turret it builds is a scrap cannon.
+
+| Building | Health (Kessler-Hayashi) | Health (Grubstake) | What it does |
+|:--|--:|--:|:--|
+| Lander | 12,000 | 12,000 | The center of a faction base. Destroying it destroys the base. |
+| Uplink | 6,000 | 6,000 | A faction's headquarters. Destroying it makes the faction withdraw. |
+| Generator | 400 | 400 |  |
+| Pylon | 100 | 100 |  |
+| Drill | 300 | 300 |  |
+| Ore bin | 200 | 200 |  |
+| Fabricator | 350 | 350 |  |
+| Laser turret | 1,000 | 400 |  |
+| Wall | 450 | 225 |  |
+| Gate | 350 | 350 |  |
+| Flamethrower turret | 1,400 | 1,400 |  |
+| Mine | 15 | 15 |  |
+| Mortar | 800 | 800 |  |
+| Howitzer (deployed) | 1,200 | 1,200 |  |
+| Radar | 250 | 250 |  |
+| Depot | 1,000 | 1,000 |  |
+| Launch pad | 2,000 | 2,000 |  |
+| Transport belt | 150 | 150 |  |
+| Lamp | 100 | 100 |  |
+| Post lamp | 100 | 100 |  |
+| Scrap cannon | - | 500 | |
+
+### Kessler-Hayashi only
+
+| Building | Health | What it does |
+|:--|--:|:--|
+| Optics lab | 600 |  |
+| Armory | 600 |  |
+| Siege works | 600 |  |
+| Kessler-Hayashi jamming mast | 1,500 | Destroys construction and logistic robots in range. |
+| Invoice post | 350 | Bills you for biter attacks caused by your pollution. Paying in full with circuits, modules or steel buys a truce of 10 to 60 minutes. |
+
+Each research lab advances one branch of Kessler-Hayashi's research, and only while it stands.
+
+### Grubstake only
+
+| Building | Health | What it does |
+|:--|--:|:--|
+| Pacifier antenna | 1,500 | Keeps biters from attacking Grubstake. Drops pheromone glands, and sometimes a pacifier crystal. |
+| Grubstake yard | 600 | Stores what Grubstake has stolen. Drops its contents when destroyed. |
+| Grubstake claim stake | 150 | Grubstake claims the ore here when the lamp runs out, unless the ore is being mined or the stake is destroyed. |
+| Claim jumper rig | 1,200 | Digs a tunnel toward your base for a Grubstake raiding crew. |
+| Power tap | 150 | Draws power from your electric network. |
+
+### Synthexis
+
+| Building | Health | What it does |
+|:--|--:|:--|
+| Synthexis incubator | 350 | A biter spawner taken over by Synthexis. Drops pheromone glands. |
+| Synthexis biochamber | 300 | Feeds a Synthexis incubator so it can breed. |
+| Synthexis clinic | 1,500 | Makes Synthexis biters stronger. Without it, only small and medium biters are bred. |
+| Synthexis heating tower | 500 |  |
+| Synthexis tumor | 400 | Spreads Synthexis creep around it. Nothing can be built on creep. |
+| Synthexis worm | 500 |  |
+| Synthexis lamp | 100 |  |
+
+### Yours
+
+| Building | Health | What it does |
+|:--|--:|:--|
+| Barracks | 350 | Trains units from orders. |
+| Rally beacon | 120 | Gathers units and gives them orders by signal. |
+| Command relay | 250 | Lets you command 10 more units while powered. Research raises how many relays count. |
+| Muster point | 350 | Turns unit orders into units and sends them to the nearest rally beacon. |
+| Threat scanner | 120 | Outputs the number of faction units and biters within 64 tiles, by type. |
+| Mortar | 800 | Short-range artillery that fires mortar shells. |
+| Strip drill | 300 | Mines twice as fast as an electric mining drill and depletes ore at half the rate. |
+| Border stake | 200 | Sets a border with the nearest Kessler-Hayashi base. Its perimeter stops at the stake. |
+| Trade post | 350 | Grubstake collects the items placed here in exchange for a truce. |
+| Claim marker | 300 | Grubstake leaves your buildings within 40 tiles alone. |
+| Pact breaker | 200 | Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim. |
+| Pheromone bait | 100 | Makes nearby biters attack whatever is around it. |
+| Orbital strike beacon | 300 | Charges from your power, then calls an orbital barrage on enemies within 60 tiles. Single use. |
+
+::: {layout-ncol=3}
+![Optics lab](media/units/lp-optics-lab.png)
+
+![Armory](media/units/lp-line-lab.png)
+
+![Siege works](media/units/lp-siege-lab.png)
+
+![Depot](media/units/lp-depot.png)
+
+![Synthexis incubator](media/units/lp-pen.png)
+
+![Synthexis biochamber](media/units/lp-biochamber.png)
+
+![Synthexis clinic](media/units/lp-clinic.png)
+
+![Synthexis heating tower](media/units/lp-heating-tower.png)
+
+![Synthexis tumor](media/units/lp-tumor.png)
+
+:::

@@ -18,6 +18,9 @@ OUT = os.path.join(REPO, "docs", "guide")
 SHOTS = os.path.expanduser("~/Library/Application Support/factorio-lp-shots/script-output/lp-shots/roster")
 VISTAS = os.path.expanduser("~/Library/Application Support/factorio-lp-vista/script-output/lp-vista")
 
+# --qmd: write the player manual's generated parts (docs/manual: _variables.yml, _generated/*.qmd, media/units,
+# media/vistas) instead of this page, from the portraits and vistas already in docs/guide/img (no screenshot run needed).
+QMD = "--qmd" in sys.argv
 spec = importlib.util.spec_from_file_location("roster", os.path.join(HERE, "roster.py"))
 roster = importlib.util.module_from_spec(spec)
 sys.argv = sys.argv[:1]
@@ -76,7 +79,7 @@ def voice(node_id):
 
 
 # What each node is called on the page: a unit's node by the unit's own name (the locale's), the rest plainly.
-NODE_NAME = {"optics": "Better optics", "railguns": "Heavier railguns", "handloads": "Hand-loaded shells", "warden": "Heavier armour",
+NODE_NAME = {"optics": "Better optics", "railguns": "Heavier railguns", "handloads": "Hand-loaded shells", "warden": "Heavier armor",
              "hardened": "Dug-in siege crews", "jammer": "Jamming mast", "counter": "Counter-battery",
              "salvage": "Salvage rights", "prospector": "Better prospecting", "scrap-plating": "Scrap plating",
              "asbestos": "Asbestos suits"}
@@ -142,7 +145,7 @@ def effect_text(node, corp):
         parts = []
         for k, p in sorted(node["plates"].items()):
             parts.append(f"{ename(corp_kind(corp, k))}: {p}")
-        return "armour plates, " + "; ".join(parts)
+        return "armor plates, " + "; ".join(parts)
     return ""
 
 
@@ -154,7 +157,9 @@ def corp_kind(corp, kind):
 # Portraits: the screenshot run's, made smaller, into docs/guide/img.
 os.makedirs(os.path.join(OUT, "img"), exist_ok=True)
 have = set()
-if os.path.isdir(SHOTS):
+if QMD:
+    have = {f[:-4] for f in os.listdir(os.path.join(OUT, "img")) if f.endswith(".png")}
+elif os.path.isdir(SHOTS):
     for f in sorted(os.listdir(SHOTS)):
         if f.endswith(".png"):
             dst = os.path.join(OUT, "img", f)
@@ -348,7 +353,9 @@ dump = roster.d
 
 # Vistas: the all-factions save's bases, made lighter (jpeg) for the page.
 vistas = set()
-if os.path.isdir(VISTAS):
+if QMD:
+    vistas = {f[6:-4] for f in os.listdir(os.path.join(OUT, "img")) if f.startswith("vista-") and f.endswith(".jpg")}
+elif os.path.isdir(VISTAS):
     for f in sorted(os.listdir(VISTAS)):
         if f.endswith(".png"):
             dst = os.path.join(OUT, "img", "vista-" + f[:-4] + ".jpg")
@@ -668,5 +675,12 @@ footer {{ margin-top: 48px; font-size: 0.8rem; color: var(--muted); font-family:
   <footer>Written by scripts/roster_page.py from the prototypes, shared.lua, farm.lua and the locale. Portraits from the screenshot run; the bases from the all-factions save.</footer>
 </div>
 '''
+if QMD:
+    # (Loaded by path, as roster.py is: python3 -I leaves this folder off sys.path.)
+    mspec = importlib.util.spec_from_file_location("manual_qmd", os.path.join(HERE, "manual_qmd.py"))
+    manual_qmd = importlib.util.module_from_spec(mspec)
+    mspec.loader.exec_module(manual_qmd)
+    manual_qmd.write(sys.modules[__name__])
+    sys.exit(0)
 open(os.path.join(OUT, "index.html"), "w").write(page)
 print(os.path.join(OUT, "index.html"), f"{len(have)} portraits, {len(vistas)} vistas")

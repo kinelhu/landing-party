@@ -1,0 +1,53 @@
+# The Landing Party player manual: a Quarto book, HTML first, a PDF from the same source.
+#   quarto render docs/manual        (both formats, into docs/manual/_book/)
+# The reference tables, technologies, settings and commands are written by scripts/roster_page.py --qmd
+# (into _generated/ and media/units/); run it after a change to the prototypes, shared.lua or the locale.
+#
+# House style: _extensions/kinan, vendored from ~/Dev/project-conventions (see each file's header line).
+# Changes from the conventions copy, all in the vendored files only:
+#   - _extension.yml: revealjs dropped; the PDF template path made relative; the two Lua filters
+#     copied beside it (the conventions copy names them there but keeps them in pandoc/filters/).
+#   - stats-report-template.tex: no abstract, no CONFIDENTIEL footer, no document-type line on the cover;
+#     fonts by name with fallbacks (was an absolute user path); house-style.tex read from this folder
+#     with no fallback to ~/.local/share; include-before and include-after emitted.
+#   - house-style.tex vendored unchanged but for its header line.
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Landing Party"
+  subtitle: "Player manual"
+  author: "kinelhu"
+  chapters:
+    - index.qmd
+    - arrivals.qmd
+    - kessler-hayashi.qmd
+    - grubstake.qmd
+    - synthexis.qmd
+    - rivals.qmd
+    - army.qmd
+    - spoils.qmd
+    - reference.qmd
+    - tips.qmd
+
+number-sections: false
+lang: en-US
+
+format:
+  kinan-html:
+    toc: true
+    toc-depth: 2
+  kinan-pdf:
+    # The house template is the article class: chapters are its sections.
+    top-level-division: section
+    titlepage: true
+    toc: true
+    footer-left: "Landing Party player manual"
+    running-section: true
+    # Each chapter (a section in the article class) starts on a new page; titlesec's hook.
+    include-in-header:
+      text: |
+        \newcommand{\sectionbreak}{\clearpage}
+    keep-tex: false
+    latex-auto-install: false

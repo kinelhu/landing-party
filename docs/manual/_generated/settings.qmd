@@ -1,0 +1,13 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+| Setting | Default | Choices | What it does |
+|:--|:--|:--|:--|
+| Grubstake: strength | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | Maximum units per Grubstake base. |
+| Synthexis: strength | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | How fast Synthexis breeds biters. |
+| Grubstake: aggression | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | How soon and how often Grubstake attacks. |
+| Synthexis: aggression | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | Time before Synthexis's first attack and between attacks. |
+| Kessler-Hayashi: strength | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | Maximum units per Kessler-Hayashi base. |
+| Kessler-Hayashi: aggression | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | How soon and how often Kessler-Hayashi attacks. |
+| Chat notices | Off | On, Off | Show faction activity in chat and as alerts. First landings and destroyed bases are always shown. |
+
+All of them are map settings: an admin can change them in a running game.

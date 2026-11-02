@@ -1,0 +1,13 @@
+# Your army
+
+(written once the Kessler-Hayashi / army work settles)
+
+## The barracks and orders
+
+## Rally beacons
+
+## The command tool
+
+## Command bandwidth
+
+## Circuit control

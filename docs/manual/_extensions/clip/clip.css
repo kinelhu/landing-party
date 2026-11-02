@@ -1,0 +1,12 @@
+/* The clip shortcode (clip.lua). Colours from the house palette (kinan-report.scss). */
+figure.clip { margin: 1.4em 0; }
+figure.clip video { width: 100%; height: auto; display: block; border-radius: 6px; background: #111; }
+figure.clip figcaption { font-size: 0.9em; color: #4D4D4D; margin-top: 0.45em; }
+figure.clip-missing .clip-box {
+  aspect-ratio: 16 / 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4em;
+  border: 1px dashed #27A9BC; border-radius: 6px; background: rgba(39, 169, 188, 0.08); padding: 1em; text-align: center;
+}
+figure.clip-missing .clip-tag {
+  font-family: "Monaspace Neon ExtraBold", "Monaspace Neon", Menlo, monospace; font-weight: 800; color: #27A9BC;
+}
+figure.clip-missing code { font-size: 0.8em; color: #4D4D4D; overflow-wrap: anywhere; }

@@ -1,0 +1,8 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+| Level | Parts sent off-world | Kessler-Hayashi gains | Grubstake gains |
+|:--|--:|:--|:--|
+| 1 | 3,000 | sieges | scrap drones |
+| 2 | 8,000 | walkers, laser drones, scouts | scouts |
+| 3 | 20,000 | a headquarters | a headquarters |
+| 4 | 45,000 | - | - |

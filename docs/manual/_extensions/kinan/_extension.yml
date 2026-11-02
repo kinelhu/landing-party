@@ -1,0 +1,24 @@
+# from project-conventions@8a20642 (pandoc/themes/kinan/_extension.yml); vendored for the Landing Party manual, changes listed in docs/manual/_quarto.yml
+title: Kinan House Style
+author: Kinan El Husseini
+version: 1.0.0
+quarto-required: ">=1.3.0"
+contributes:
+  formats:
+    # revealjs dropped: the manual has no slides, and theme-kinan.scss is not vendored.
+    html:
+      theme:
+        - cosmo
+        - kinan-report.scss
+      toc: true
+      toc-depth: 3
+    pdf:
+      # Relative to this folder (the conventions repo points at ~/.local/share, which does not travel).
+      template: stats-report-template.tex
+      pdf-engine: xelatex
+      toc: true
+      # The conventions repo names these beside _extension.yml but keeps them in pandoc/filters/;
+      # copied here so the names resolve.
+      filters:
+        - table-header-font.lua
+        - table-zebra.lua

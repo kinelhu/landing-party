@@ -18,17 +18,17 @@ PLATES = ("-fire", "-laser", "-physical", "-explosion", "-electric")
 # What each unit is for (words only: every number below comes from the prototypes).
 ROLE = {
     "lp-infantry": "Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding force",
-    "lp-tank": "An armoured tank. Its cannon does three times as much damage to buildings as to units",
+    "lp-tank": "An armored tank. Its cannon does three times as much damage to buildings as to units",
     "lp-walker": "A spider-legged machine that walks over walls and fires rockets",
     "lp-harrier": "A cheap, weak flier with a gun, sent in numbers. Flies over walls, cliffs and water",
-    "lp-laser-drone": "An armoured flier with a laser. Expensive, so there are few of them",
-    "lp-railgunner": "Clears biter nests. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level)",
+    "lp-laser-drone": "An armored flier with a laser. Expensive, so there are few of them",
+    "lp-railgunner": "Clears biter spawners. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level)",
     "lp-hauler": "A lightly armed truck. Carries convoys and Grubstake's building crews",
     "lp-buggy": "A fast buggy with a machine gun. Grubstake's raider and escort",
     "lp-shotgun-hand": "Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line",
     "lp-lance": "A laser trooper with a heavier beam that outranges your troopers",
     "lp-shock": "Its electric beam jumps from target to target and stuns them briefly. Used against groups of troopers",
-    "lp-aegis": "A heavy tank with a rail cannon. Its slug ignores armour; used against your battle tanks",
+    "lp-aegis": "A heavy tank with a rail cannon. Its slug ignores armor; used against your battle tanks",
     "lp-slug": "A buggy with a slug gun, used against your vehicles",
     "lp-sapper": "Throws dynamite over 3 tiles, at groups of units and at walls in its way. Spares its own side",
     "lp-dozer": "Rams walls open for the shotgun hands behind it",
@@ -38,11 +38,11 @@ ROLE = {
     "lp-scorcher": "An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly",
     "lp-skyguard": "Its long laser tracks fliers. Weak against ground targets",
     "lp-flak-buggy": "A buggy with a flak gun against fliers. Weak against ground targets",
-    "lp-bred-scout": "Synthexis's scout: circles your defence before a wave and picks the weakest side. Fast and frail",
+    "lp-bred-scout": "Synthexis's scout: circles your defenses before a wave and picks the weakest side. Fast and frail",
     "lp-trooper": "Your basic soldier, with a rifle",
     "lp-breacher": "Carries demolition charges for walls. Does little to units",
-    "lp-rocket-trooper": "Fires rockets, good against armour and fliers. Slow to kill a crowd",
-    "lp-flame-trooper": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armour",
+    "lp-rocket-trooper": "Fires rockets, good against armor and fliers. Slow to kill a crowd",
+    "lp-flame-trooper": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor",
     "lp-battle-tank": "Your heavy tank, for attacking bases",
 }
 
@@ -132,7 +132,7 @@ def weapon(u):
         else:
             shots.append(f"{amt:g} {typ}{note}")
     if (u.get("name") or "").endswith("railgunner") and len(shots) == 2:
-        shots = [shots[0] + " to biters, nests and worms", shots[1] + " to anything else"]
+        shots = [shots[0] + " to biters, spawners and worms", shots[1] + " to anything else"]
     rate = 60 / ap["cooldown"] if ap.get("cooldown") else 0
     return "; ".join(shots) or "-", ap.get("range", "-"), f"{rate:.2g}/s" if rate else "-"
 

@@ -1,0 +1,13 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+| Breed | Bred from evolution | Biomass |
+|:--|--:|--:|
+| Synthexis Small biter | 0 | 2 |
+| Synthexis Medium biter | 0.2 | 7 |
+| Synthexis spore spitter | 0.25 | 10 |
+| Synthexis Medium spitter | 0.3 | 9 |
+| Synthexis burster | 0.45 | 40 |
+| Synthexis Big biter | 0.5 | 28 |
+| Synthexis stomper | 0.8 | 150 |
+| Synthexis Behemoth biter | 0.9 | 200 |
+| Synthexis big burster | developed | 300 |

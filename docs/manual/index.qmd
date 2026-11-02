@@ -1,0 +1,46 @@
+# Landing Party {.unnumbered}
+
+{{< clip media/clips/landing.mp4 poster="media/clips/landing.jpg" caption="A Kessler-Hayashi lander comes down and its camp starts to build." >}}
+
+Landing Party adds three factions to Nauvis. Two are corporations that land, mine, build factories and field armies of
+their own. The third takes over biter spawners and breeds its own biters. All three compete with you for the planet,
+and with each other.
+
+They do not arrive at the start. Each one comes when your factory reaches a certain point, so the pressure grows with
+you. [Arrivals](arrivals.qmd) has the timeline.
+
+## The factions
+
+**Grubstake** comes first, around chemical science. It is a mining company that lives off your factory. It carries off
+machines, skims your belts, robs your chests, strip-mines the ore under your outposts and claims ore you leave unmined.
+It avoids defended ground, and the wild biters leave it alone. See [Grubstake](grubstake.qmd).
+
+**Kessler-Hayashi** comes when you launch your first rocket. It is a security contractor, at war with you from the day it
+lands. Its camps are walled and paved, and it pushes a line of posts out toward your base. It brings tanks, walkers,
+railgunners and sieges with mortars and howitzers. See [Kessler-Hayashi](kessler-hayashi.qmd).
+
+**Synthexis** comes when the wild biters' evolution reaches {{< var synthexis.arrive_evo >}}. It takes over a spawner
+field far from you, feeds it on your pollution and sends planned waves of bred biters at your defenses. See
+[Synthexis](synthexis.qmd).
+
+The corporations also fight each other. See [Rivals](rivals.qmd).
+
+## What you get
+
+Faction bases can be destroyed. Their wreckage holds parts you cannot make yourself. Crafting those parts unlocks
+technologies built from their designs, and a command core from their wreckage lets you build a barracks and raise
+[your own army](army.qmd). [Spoils](spoils.qmd) lists what drops where and what it unlocks.
+
+## Before you start
+
+- Landing Party needs Factorio {{< var mod.factorio >}} with Space Age. This manual describes version
+  {{< var mod.version >}}.
+- Chat notices are off by default. A faction's first landing and a destroyed faction base are always announced. Turn
+  on **Chat notices** in the map settings to hear about everything else. See [Mod settings](reference.qmd#sec-settings).
+- Each faction has a strength and an aggression setting, from ×{{< var settings.very_low >}} to
+  ×{{< var settings.very_high >}}.
+
+## Using this manual
+
+[Reference](reference.qmd) has every unit and building with its numbers, the chat commands and the settings.
+[Tips](tips.qmd) collects what works against each faction.

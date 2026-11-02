@@ -1,0 +1,58 @@
+# Spoils
+
+Faction buildings and units leave salvage you cannot make yourself. Salvage builds a barracks for your army and unlocks
+technologies taken from the factions' own designs.
+
+## Wrecks
+
+When a faction building or unit with salvage is destroyed, what it leaves goes into a wreck on the spot. Mine the wreck
+by hand, or mark it for deconstruction and your robots bring everything back at once. A wreck disappears after
+{{< var spoils.wreck_min >}} minutes.
+
+{{< clip media/clips/salvage.mp4 poster="media/clips/salvage.jpg" caption="Mining a wreck after a raid on a Kessler-Hayashi camp." >}}
+
+## What drops where
+
+{{< include _generated/salvage.qmd >}}
+
+A few more things are worth taking:
+
+- **Grubstake yard.** Holds what Grubstake has stolen and drops its contents when destroyed, so you get your own goods
+  back.
+- **Destroyed bases.** When a faction base loses its lander, its outposts can be captured and its ruins mined.
+
+The corporations salvage too. Grubstake can research salvage, and once it has, what it destroys funds its research.
+
+## Faction technologies
+
+Each faction technology is researched by crafting something, not with science packs. Salvage disassembles into a
+*parts* item (Pheromone gland parts, Rail coil parts and so on), and crafting that item for the first time completes
+the research. The parts recipes are available from the start.
+
+{{< include _generated/techs.qmd >}}
+
+### What they give you
+
+**From Grubstake** (pheromone glands also drop from Synthexis incubators):
+
+- **Pheromone bait.** {{< var desc.entity_player_bait >}}
+- **Pact breaker.** {{< var desc.entity_pact_breaker >}}
+- **Claim marker.** {{< var desc.entity_claim_marker >}}
+
+**From Kessler-Hayashi:**
+
+- **Rail rifle.** {{< var desc.item_rail_rifle >}}
+- **Cluster artillery shell.** {{< var desc.item_cluster_artillery_shell >}}
+- **Orbital strike beacon.** {{< var desc.entity_strike_beacon >}}
+
+**Prizes.** Destroy a corporation's uplink and it withdraws (see [Arrivals](arrivals.qmd)). You get its prize
+technology at once: Kessler-Hayashi's mortar, or Grubstake's strip drill.
+
+- **Mortar.** {{< var desc.entity_player_mortar >}}
+- **Strip drill.** {{< var desc.entity_strip_drill >}}
+
+## Command cores
+
+A barracks costs a command core. **Command bandwidth 1** gives you your first one. The rest come from faction wreckage:
+{{< var spoils.core_depot >}} from a destroyed depot, {{< var spoils.core_lander >}} from a lander,
+{{< var spoils.core_capture >}} from a captured outpost, and {{< var spoils.core_survey >}} from Grubstake's survey party. See [Your army](army.qmd).

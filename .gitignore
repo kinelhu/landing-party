@@ -5,3 +5,10 @@ docs/sim/
 # written by scripts/sim.sh into each run profile's copy of the test mod
 tests/lp-sim/params.lua
 tests/lp-shots/mode.lua
+# Quarto render output of the player manual (quarto render docs/manual)
+docs/manual/_book/
+docs/manual/.quarto/
+docs/manual/*.tex
+docs/manual/*.log
+docs/manual/*.aux
+docs/manual/*_files/

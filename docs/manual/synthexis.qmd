@@ -1,0 +1,112 @@
+# Synthexis
+
+> Engineered to adapt.
+
+Synthexis is a bioengineering company. It does not mine or build factories. It takes over a field of biter spawners,
+feeds it on your pollution and breeds biters of its own, tinted green and yellow. Its waves are planned: they pick a way
+in, go for what keeps your turrets firing, and change after every attack that fails.
+
+![A Synthexis culture at night.](media/vistas/synthexis-night.jpg)
+
+## Arrival
+
+Synthexis lands when the wild biters' evolution on a surface reaches {{< var synthexis.arrive_evo >}}. Its pod comes
+down on a spawner field between {{< var synthexis.clear_tiles >}} and {{< var synthexis.far_tiles >}} tiles from your
+buildings, never within reach of your artillery. Up to {{< var synthexis.pens >}} of the field's spawners become
+Synthexis incubators, each with bred biters and worms beside it. The landing is announced in chat and marked on your
+map.
+
+Synthexis is at peace with the wild biters: they leave each other alone. It also keeps a lasting truce with Grubstake,
+whose pollution it lives on.
+
+## The culture
+
+A culture is the incubators and everything that keeps them breeding.
+
+- **Synthexis incubator.** A spawner taken over by Synthexis. It holds up to {{< var synthexis.pen_cap >}} bred biters
+  and drops pheromone glands when destroyed.
+- **Synthexis biochamber.** One stands beside each incubator. While it works, the incubator breeds. If it is destroyed,
+  or no technician has come to run it, the incubator stops breeding, keeps {{< var synthexis.fed_cap >}} of its biters
+  and lets the rest go feral. After {{< var synthexis.unfed_wild_min >}} minutes unfed it goes back to the wild.
+- **Synthexis technician.** Walks between the biochambers and keeps them running. The culture buys more as it grows.
+- **Synthexis tumor.** Spreads Synthexis creep. Nothing can be built on creep. An incubator cut off from the creep
+  starves and goes back to the wild after {{< var synthexis.starve_min >}} minutes, taking its biters with it.
+- **Synthexis clinic.** Makes its breeds stronger over time (see [What it breeds](#sec-breeds)).
+- **Synthexis heating tower** and **Synthexis lamp**: the culture's furniture.
+
+{{< clip media/clips/synthexis-creep.mp4 poster="media/clips/synthexis-creep.jpg" caption="Creep spreading from a Synthexis incubator toward a wild spawner." >}}
+
+**Growth.** The creep spreads toward nearby wild spawners, and each one it reaches becomes an incubator, up to
+{{< var synthexis.pens_max >}}. Where there is nothing left to take, the culture founds incubators of its own. A grown
+culture sends a Synthexis carrier with an escort to a wild spawner field farther out to start a new culture there. Kill
+the carrier on the way and the new culture never starts.
+
+**Biomass.** Every birth costs biomass. A culture earns it from the pollution its incubators and creep absorb, plus
+{{< var synthexis.trickle >}} per incubator per minute whatever the air. Its pod brings
+{{< var synthexis.start_biomass >}} to start. With no biomass left, its incubators stop until it earns more. The more
+pollution reaches a culture, the faster it breeds. The **Synthexis: strength** setting scales how fast it breeds.
+
+## What it breeds {#sec-breeds}
+
+What an incubator breeds depends on Synthexis's own evolution:
+
+{{< include _generated/breeds.qmd >}}
+
+Its evolution is its own. While its clinic stands it climbs {{< var synthexis.climb_per_hour >}} an hour, never falls
+behind the wild biters' and never gets more than {{< var synthexis.lead >}} ahead of it. Destroy the clinic and the
+climb stops: its incubators breed as at evolution {{< var synthexis.stock_evo >}} at most until a new clinic lands
+{{< var synthexis.clinic_wait_min >}} minutes later.
+
+Some breeds have a job:
+
+- **Synthexis burster.** A fast biter that bursts on death, damaging nearby walls and turrets.
+- **Synthexis big burster.** A huge biter that walks to the nearest turret and bursts there, damaging every turret
+  nearby. Synthexis develops it once your walls have held its waves {{< var synthexis.develop_held >}} times.
+- **Synthexis stomper.** Steps over walls. Resists bullets.
+- **Synthexis spore spitter.** Its spores hit flying units. Weak against ground targets.
+- **Synthexis sweeper.** Bursts in minefields to clear a path before an attack.
+- **Synthexis scout.** Circles your defenses before an attack.
+
+No other Synthexis breed can hit a flying unit. Full numbers for every breed are in the
+[Reference](reference.qmd#sec-units).
+
+## Waves
+
+The first wave comes {{< var synthexis.first_wave_min >}} minutes after the landing. After that, waves come one at a
+time, at least {{< var synthexis.wave_gap_min >}} minutes apart. The **Synthexis: aggression** setting scales both.
+
+**Size.** A wave is {{< var synthexis.wave_min >}} to {{< var synthexis.wave_max >}} biters. A culture with more than
+{{< var synthexis.cap_pens >}} incubators sends bigger ones, up to {{< var synthexis.wave_huge >}}. A home guard stays behind at the incubators.
+
+**Targets.** You come first. Synthexis attacks Kessler-Hayashi only after Kessler-Hayashi has destroyed one of its
+incubators, tumors or biochambers. It never attacks Grubstake or the wild biters.
+
+**How a wave attacks.**
+
+1. A scout circles your defenses. When you see one, a wave is on its way.
+2. The wave picks its way in. Synthexis knows where your turrets are. It weighs each way in by the turrets that cover it
+   and by what earlier waves lost there, and takes the cheapest.
+3. It gathers out of turret range, then marches to its breach point.
+4. Past your wall it keeps going to what it came for: your power, and the inserters that load your gun turrets. It does
+   not stop to fight every turret on the way.
+
+{{< clip media/clips/synthexis-breach.mp4 poster="media/clips/synthexis-breach.jpg" caption="A Synthexis wave breaks through a wall and heads for the power." >}}
+
+**What it learns.** Every wave leaves a lesson about the defense it hit. A way in that held costs more next time, so the
+next wave may try another side. Where a wall held its last wave, the next wave there brings bursters,
+{{< var synthexis.order_breach_pct >}}% of its biters, and waits up to {{< var synthexis.order_wait_min >}} minutes for
+them. Where mines lie on its way in, it breeds sweepers for them.
+
+## Fighting Synthexis
+
+- **Hit the supply.** Destroy a biochamber and its incubator stops breeding. A biochamber under attack does not call the
+  wave home, so it is the quiet target while a wave is out.
+- **Hit an incubator to call the wave back.** An incubator under attack recalls the wave on its way, and the fight moves
+  back along its trail.
+- **Kill the tumors.** Incubators cut off from the creep go back to the wild.
+- **Kill the clinic** to stop its breeds getting stronger.
+- **Starve it.** Less pollution reaching its field means less biomass and smaller waves.
+- **Shoot the scouts.** A scout killed does not stop the wave, but the base it circles is the target.
+
+When every incubator of a culture is destroyed, the culture is gone. Synthexis lands again on another field
+{{< var synthexis.reland_min >}} minutes later.
