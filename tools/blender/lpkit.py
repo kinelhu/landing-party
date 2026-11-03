@@ -37,6 +37,78 @@ def mat(name, rgb, metal=0.0, rough=0.5, emit=None, strength=0.0, grime=0.5):
         b.inputs["Emission Color"].default_value = (*emit, 1); b.inputs["Emission Strength"].default_value = strength
     return m
 
+def worn(name, rgb, metal=0.3, rough=0.55, seams=6.0, wear=0.5, streaks=0.5, rivets=True):
+    """A plated, used surface (the user, 2026-11-03: the first renders "a little childish"): panel seams and rivets as
+    bump (a brick texture's mortar, a dot grid), edges worn bright and crevices dark (Cycles' pointiness), grime streaking
+    down (noise stretched along z), on a desaturated base."""
+    m = bpy.data.materials.new(name); m.use_nodes = True
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; L = nt.links.new
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    # Seams: a brick texture's mortar on object coordinates.
+    brick = nt.nodes.new("ShaderNodeTexBrick"); brick.inputs["Scale"].default_value = seams
+    brick.inputs["Mortar Size"].default_value = 0.012; brick.inputs["Color1"].default_value = (1, 1, 1, 1)
+    brick.inputs["Color2"].default_value = (1, 1, 1, 1); brick.inputs["Mortar"].default_value = (0, 0, 0, 1)
+    L(tc.outputs["Object"], brick.inputs["Vector"])
+    bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.35
+    L(brick.outputs["Fac"], bump.inputs["Height"])
+    if rivets:
+        dots = nt.nodes.new("ShaderNodeTexVoronoi"); dots.inputs["Scale"].default_value = seams * 4
+        dr = nt.nodes.new("ShaderNodeMapRange"); dr.inputs["From Min"].default_value = 0.0; dr.inputs["From Max"].default_value = 0.08
+        dr.inputs["To Min"].default_value = 1.0; dr.inputs["To Max"].default_value = 0.0
+        L(tc.outputs["Object"], dots.inputs["Vector"]); L(dots.outputs["Distance"], dr.inputs["Value"])
+        bump2 = nt.nodes.new("ShaderNodeBump"); bump2.inputs["Strength"].default_value = 0.25
+        L(dr.outputs["Result"], bump2.inputs["Height"]); L(bump.outputs["Normal"], bump2.inputs["Normal"])
+        L(bump2.outputs["Normal"], b.inputs["Normal"])
+    else:
+        L(bump.outputs["Normal"], b.inputs["Normal"])
+    # Streaks: noise stretched along z.
+    mapn = nt.nodes.new("ShaderNodeMapping"); mapn.inputs["Scale"].default_value = (6, 6, 0.6)
+    L(tc.outputs["Object"], mapn.inputs["Vector"])
+    noise = nt.nodes.new("ShaderNodeTexNoise"); noise.inputs["Scale"].default_value = 3.0; noise.inputs["Detail"].default_value = 10
+    L(mapn.outputs["Vector"], noise.inputs["Vector"])
+    sr = nt.nodes.new("ShaderNodeMapRange"); sr.inputs["From Min"].default_value = 0.4; sr.inputs["From Max"].default_value = 0.7
+    sr.inputs["To Min"].default_value = 1.0; sr.inputs["To Max"].default_value = 1.0 - streaks
+    L(noise.outputs["Fac"], sr.inputs["Value"])
+    # Wear: pointiness, edges bright (bare metal), crevices dark (dirt); and occlusion.
+    # (Edges: the bevel shader's rounded normal against the true one. Pointiness is per vertex, and on low-poly boxes
+    # every vertex is a corner: whole faces read as edges and the worn grey covered everything, the second render.)
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    bev = nt.nodes.new("ShaderNodeBevel"); bev.inputs["Radius"].default_value = 0.025; bev.samples = 8
+    dot = nt.nodes.new("ShaderNodeVectorMath"); dot.operation = "DOT_PRODUCT"
+    L(bev.outputs["Normal"], dot.inputs[0]); L(geo.outputs["Normal"], dot.inputs[1])
+    wr = nt.nodes.new("ShaderNodeMapRange"); wr.inputs["From Min"].default_value = 0.97; wr.inputs["From Max"].default_value = 0.995
+    wr.inputs["To Min"].default_value = 1.0; wr.inputs["To Max"].default_value = 0.0
+    L(dot.outputs["Value"], wr.inputs["Value"])
+    ao = nt.nodes.new("ShaderNodeAmbientOcclusion"); ao.inputs["Distance"].default_value = 0.25
+    base = nt.nodes.new("ShaderNodeMix"); base.data_type = "RGBA"; base.blend_type = "MULTIPLY"; base.inputs["Factor"].default_value = 1.0
+    base.inputs["A"].default_value = (*rgb, 1)
+    srgb = nt.nodes.new("ShaderNodeCombineColor"); L(sr.outputs["Result"], srgb.inputs[0]); L(sr.outputs["Result"], srgb.inputs[1]); L(sr.outputs["Result"], srgb.inputs[2])
+    L(srgb.outputs["Color"], base.inputs["B"])
+    edge = nt.nodes.new("ShaderNodeMix"); edge.data_type = "RGBA"; edge.inputs["B"].default_value = (0.42, 0.42, 0.4, 1)
+    em = nt.nodes.new("ShaderNodeMath"); em.operation = "MULTIPLY"; em.inputs[1].default_value = wear
+    L(wr.outputs["Result"], em.inputs[0]); L(em.outputs[0], edge.inputs["Factor"])
+    L(base.outputs["Result"], edge.inputs["A"])
+    dirt = nt.nodes.new("ShaderNodeMix"); dirt.data_type = "RGBA"; dirt.blend_type = "MULTIPLY"; dirt.inputs["Factor"].default_value = 0.9
+    L(edge.outputs["Result"], dirt.inputs["A"]); L(ao.outputs["AO"], dirt.inputs["B"])
+    L(dirt.outputs["Result"], b.inputs["Base Color"])
+    b.inputs["Metallic"].default_value = metal; b.inputs["Roughness"].default_value = rough
+    return m
+
+def palette_worn():
+    """The used palette: desaturated paint, dull hazard, steel and dirt (in place of palette()'s clean one)."""
+    return {"steel": worn("steel", (0.2, 0.2, 0.2), metal=0.8, rough=0.45, seams=4, rivets=False),
+            "dark": worn("dark", (0.07, 0.07, 0.07), metal=0.5, rough=0.65, seams=5, rivets=False),
+            "paint": worn("paint", (0.2, 0.26, 0.3), metal=0.25, rough=0.6, seams=5),
+            "copper": mat("copper", (0.45, 0.27, 0.15), metal=1.0, rough=0.4),
+            "hazard": worn("hazard", (0.42, 0.34, 0.12), metal=0.2, rough=0.65, seams=8, rivets=False),
+            "rubber": mat("rubber", (0.03, 0.03, 0.03), metal=0.0, rough=0.85, grime=0.3),
+            "glow": mat("glow", (0.5, 0.9, 1.0), emit=(0.45, 0.85, 1.0), strength=2.0, grime=0.0)}
+
+def bevel_all(objs, width=0.015):
+    for o in objs:
+        if o.type == "MESH" and not any(md.type == "BEVEL" for md in o.modifiers):
+            md = o.modifiers.new("b", "BEVEL"); md.width = width; md.segments = 2; md.limit_method = "ANGLE"
+
 def emission(m, v):
     m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = v
 

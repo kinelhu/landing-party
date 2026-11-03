@@ -4288,6 +4288,22 @@ Bugs and surprises the headless runs caught, each kept as a check:
   stands). `tools/blender/lpkit.py`: the shared pieces (materials with grime and occlusion, primitives and rods, the
   camera and sun, the passes, arcs) for the buildings to come (the mortar and howitzer next, the user's). fortress
   jammer and standsiege pass. Not yet seen in game.
+- **Kessler-Hayashi's siege guns, rendered** (0.2.178; the user, 2026-11-03: "The mortar and howitzer are also two
+  candidates"; on the first renders, "Looks a little childish ... howitzer is more toy like"; "One more push. I would
+  give the howitzer feet on all sides"). `tools/blender/kh_guns.py` models each: a static base, and for 64 directions
+  the barrel and the housing, each rendered with the other a holdout (so they hide each other rightly whichever the
+  engine draws first), their shadow together; `gun_sheet.py` sheets them (a second corporation's renders take the first's
+  crops, its gun.json: shadows a pixel apart had made Grubstake's sheets another size). The howitzer: a plated chassis
+  on tyred wheels, four outriggers in an X with rams, jacks and spades (feet on all sides), a sloped housing with a
+  cupola, flank stowage and a railed crew platform, a tapered tube with a fume extractor, recoil cylinders and a slotted
+  muzzle brake. The mortar: an octagonal emplacement ringed by sandbags, ammo crates, a cradle with hydraulic arms, a
+  banded tube. `lpkit.worn` (what made the first pass childish: saturated accents, perfect primitives, no wear): panel
+  seams and rivets as bump, edges worn bright and crevices dark (the bevel shader's normal against the true one:
+  pointiness is per vertex, and on low-poly boxes whole faces read as edges, everything grey), grime streaking down,
+  desaturated paint, dull and thin hazard marks. Grubstake's copies in its rusty amber, the same shapes, pointed at by
+  the manifest (make_sprites maps rendered pairs). The player's mortar (a copy of Kessler-Hayashi's) shows its art. The
+  howitzer's carriage one view (no truck's facing to keep: sieges drop it). 1.1 MB a mortar set, 2.1 MB a howitzer set.
+  siegetier 3, fortress howitzer, clear worms and standsiege nests pass. Not yet seen in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

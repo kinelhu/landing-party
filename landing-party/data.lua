@@ -159,6 +159,25 @@ local function shrink(t, seen)
   end
   for _, v in pairs(t) do shrink(v, seen) end
 end
+-- Kessler-Hayashi's siege guns, modelled and rendered in Blender (tools/blender/kh_guns.py, gun_sheet.py; the user,
+-- 2026-11-03: "The mortar and howitzer are also two candidates"): a static base, and the barrel and housing in 64
+-- directions (each rendered with the other a holdout, so they hide each other rightly), their shadow together. Sizes and
+-- shifts from gun.json; drawn from the entity's centre (cannon_base_shift none: the renders hold the height).
+local function rendered_gun(t, gun, G)
+  local dir = "__landing-party__/graphics/serenity/" .. gun .. "/"
+  local function one(name, extra)
+    local l = {filename = dir .. name .. ".png", width = G[name].width, height = G[name].height, shift = G[name].shift, scale = 0.5}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  local function turn(name, extra)
+    return one(name, {direction_count = 64, line_length = 8, draw_as_shadow = extra and extra.draw_as_shadow})
+  end
+  t.base_picture = {layers = {one("base"), one("base_shadow", {draw_as_shadow = true})}}
+  t.cannon_base_pictures = {layers = {turn("housing"), turn("cannon_shadow", {draw_as_shadow = true})}}
+  t.cannon_barrel_pictures = {layers = {turn("barrel")}}
+  t.cannon_base_shift = {0, 0, 0}
+end
 local mortar = copy("artillery-turret", "artillery-turret", "lp-mortar")
 for _, k in ipairs({"base_picture", "cannon_base_pictures", "cannon_barrel_pictures"}) do shrink(mortar[k], {}) end
 mortar.water_reflection = nil
@@ -173,6 +192,7 @@ mortar.max_health = 800
 -- artillery remote still aims at it. The howitzer stays one: outranged by the player's artillery by design.
 mortar.allow_run_time_change_of_is_military_target = true
 mortar.turret_rotation_speed = 0.004
+rendered_gun(mortar, "mortar", {base = {width = 138, height = 136, shift = {0.0, -0.0546875}}, base_shadow = {width = 148, height = 142, shift = {0.015625, 0.0390625}}, barrel = {width = 84, height = 148, shift = {0.0, -0.9453125}}, housing = {width = 84, height = 148, shift = {0.0, -0.9453125}}, cannon_shadow = {width = 180, height = 187, shift = {0.5, -0.4375}}})
 mortar.cannon_base_shift = {0, 0, mortar.cannon_base_shift[3] * MORTAR_SCALE}
 mortar.gun = "lp-mortar-gun"
 mortar.inventory_size = 1
@@ -293,6 +313,8 @@ local function hull(d)
   return {layers = layers}
 end
 howitzer.base_picture = {north = hull(0), east = hull(16), south = hull(32), west = hull(48)}
+-- (Its own carriage, one view: sieges drop it from orbit now, no truck's facing to keep.)
+rendered_gun(howitzer, "howitzer", {base = {width = 153, height = 159, shift = {0.0, -0.046875}}, base_shadow = {width = 179, height = 156, shift = {0.0, 0.0078125}}, barrel = {width = 303, height = 308, shift = {0.0, -2.0546875}}, housing = {width = 303, height = 308, shift = {0.0, -2.0546875}}, cannon_shadow = {width = 332, height = 354, shift = {1.3359375, -1.3984375}}})
 local howitzer_gun = table.deepcopy(data.raw.gun["artillery-wagon-cannon"])
 howitzer_gun.name = "lp-howitzer-gun"
 howitzer_gun.hidden = true

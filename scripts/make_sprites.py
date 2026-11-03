@@ -218,12 +218,21 @@ def main():
             for corp in CORPS:
                 save(repaint(a, centre, half, CORPS[corp]["body"]), OUT / corp / rel(f))
                 manifest[corp].add(f)
+        # Rendered buildings (tools/blender) another corporation has its own render of, under the same names.
+        for d in sorted((OUT / "serenity").iterdir()):
+            if d.name in ("mortar", "howitzer"):
+                for f in sorted(d.glob("*.png")):
+                    for corp in CORPS:
+                        if corp != "serenity" and (OUT / corp / d.name / f.name).exists():
+                            manifest[corp].add(f"__landing-party__/graphics/serenity/{d.name}/{f.name}")
         lines = ["-- Written by scripts/make_sprites.py: the vanilla files each corporation has its own recolour of.",
                  "return {"]
         for corp, fs in manifest.items():
             lines.append(f"  {corp} = {{")
             for f in sorted(fs):
-                lines.append(f'    ["{f}"] = "__landing-party__/graphics/{corp}/{rel(f)}",')
+                to = f.replace("/graphics/serenity/", f"/graphics/{corp}/") if f.startswith("__landing-party__") \
+                    else f"__landing-party__/graphics/{corp}/{rel(f)}"
+                lines.append(f'    ["{f}"] = "{to}",')
             lines.append("  },")
         lines.append("}")
         (OUT / "manifest.lua").write_text("\n".join(lines) + "\n")
