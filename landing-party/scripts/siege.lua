@@ -102,6 +102,10 @@ local function rails_home(b)
   for _, u in ipairs(b.garrison or {}) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then n = n + 1 end end
   return n
 end
+local RAIL = function(u) return shared.kind_of(u.name) == "lp-railgunner" end
+-- Whether its railgunners go with a siege: an armed camp's on a player whose way has a price (the cost map: nests and
+-- worms on it, or guns), the biter-clearing unit through nest country (the user, 2026-11-02).
+local function rails_go(b, t) return b.armed and against_player(t.owner) and t.way_keeps and t.way_keeps < 1 end
 local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
 local ESCORT_NEAR = 24        -- guards this near its hauler are kept behind it; further, they go on along its way
 local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
@@ -392,7 +396,8 @@ local function siege_tier(b, t, army)
   -- guns): the biter-clearing unit goes with it through nest country (the user, 2026-11-02: "Should the siege move with
   -- railgunners for efficient nest clearing?"). Kept home for clearances, they had been most of its garrison, and on nw
   -- its sieges went at tier 1, 5 or 6 guards in its field against 216 shells read (0.2.157).
-  if b.armed and against_player(t.owner) and t.way_keeps and t.way_keeps < 1 then n = n + rails_home(b) end
+  -- Within what it may take from home (its floor): counted on top of its field, it read 24 where 18 could go.
+  if rails_go(b, t) then n = math.min(n + rails_home(b), math.max(0, pool.home(b) - floor_of(b, army, battery(t)))) end
   -- (Its siege fund for sieges on a player only: drawing on it, an armed camp sent tier-2 clearances at the nests round it
   -- again and again, lost their guards, and fell to Synthexis, fed nw, 2026-11-02.)
   local purse = (b.parts or 0) + (against_player(t.owner) and (b.siege_fund or 0) or 0)
@@ -464,7 +469,9 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   for d = 0, dist, 2 do
     local q = {hx + (site[1] - hx) * d / dist, hy + (site[2] - hy) * d / dist}
     if s.count_entities_filtered{position = q, radius = 2.5, force = h.force, type = {"wall", "gate"}, limit = 1} > 0 then
-      out = math.min(d + 5, dist)
+      -- And its escort's ESCORT_BACK more: its guards set that far behind it stood inside its wall, and the artillery
+      -- reference base's siege stood 71 minutes with its 10 guards stuck at home (0.2.161).
+      out = math.min(d + 5 + ESCORT_BACK, dist)
     end
   end
   -- A wall kept by robots: a howitzer comes too, for the roboports behind it (98 tiles; the mortars' 35 reached the
@@ -517,6 +524,11 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   if not (clearance or t.owner == "enemy") then
     for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, FOOT)) do
       table.insert(guards, u)
+    end
+    -- Its railgunners after, where its tier counted them (siege_tier, rails_go). FOOT leaves them out (ops.fights): its
+    -- tier was read for 24 guards and its truck left with the 1 to 3 that were not railgunners (nw, 0.2.162).
+    if rails_go(b, t) then
+      for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, RAIL)) do table.insert(guards, u) end
     end
   end
   -- From its siege fund first (an armed camp's, base.lua), then its parts.
@@ -895,9 +907,21 @@ local function siege_step(b, trace, army)
       end
       order_all(cleared, {type = defines.command.go_to_location, destination = back, radius = 4,
         distraction = defines.distraction.by_damage})
-      c.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = {
-        {type = defines.command.go_to_location, destination = op.site, radius = 2, distraction = defines.distraction.none},
-        HOLD}}
+      -- On the rest of its way, from its waypoint nearest it: sent straight at its site, it drove across the worm belt its
+      -- way went round, its guards behind it, 6 of 10 killed by big worms (standsiege nests, 0.2.164).
+      local cmds, first, fd = {}, nil, nil
+      for i, w in ipairs(op.route or {}) do
+        local d = (w[1] - hp.x) ^ 2 + (w[2] - hp.y) ^ 2
+        if not fd or d < fd then first, fd = i, d end
+      end
+      for i = first or 1, first and #op.route or 0 do
+        cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = op.route[i], radius = 4,
+          distraction = defines.distraction.none}
+      end
+      cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = op.site, radius = 2,
+        distraction = defines.distraction.none}
+      cmds[#cmds + 1] = HOLD
+      c.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
       trace(b, string.format("siege: the hauler %s %.0f tiles short of its site; %d guards out of its way, sent on (%d)",
         held and "gave up its way" or "is stuck", math.sqrt(d2), #cleared, op.reissued))
     end

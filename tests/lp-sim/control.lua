@@ -4727,6 +4727,19 @@ scenarios.standsiege = function()
       lp("dev", {"siege", tostring(S.k)}, S.tgt)
     end
   end)
+  -- Its siege's guards out past its fortress, sampled: the most at once.
+  for t = 8 * 3600 + 1800, END - 120, 600 do
+    schedule(t, function()
+      local st0 = lp("stats", S.k)
+      local box = st0.fortress_box
+      if not box or not (st0.ops.op or ""):find("siege", 1, true) then return end
+      local n = 0
+      for _, p in ipairs(st0.ops.op_members or {}) do
+        if p[1] < box[1] - 10 or p[1] > box[3] + 10 or p[2] < box[2] - 10 or p[2] > box[4] + 10 then n = n + 1 end
+      end
+      S.out_max = math.max(S.out_max or 0, n)
+    end)
+  end
   schedule(END - 60, function()
     local left = surface().count_entities_filtered{position = S.c, radius = 70, force = "player"}
     info("standsiege: the deep substation " .. (surface().count_entities_filtered{position = S.deep, radius = 2, name = "substation"} > 0 and "stands" or "razed"))
@@ -4748,6 +4761,13 @@ scenarios.standsiege = function()
       end
     end
     check("standsiege: the siege ran", (st.called or 0) >= 1, serpent.line(st))
+    -- (Set ESCORT_BACK behind its hauler, which started 5 past its wall, its guards stood inside it: the artillery
+    -- reference base's siege stood 71 minutes with its 10 guards at home, and they counted as come back, 0.2.161.)
+    local first
+    for _, l in ipairs(ops_.log or {}) do if l.op == "siege" and l.owner == "player" then first = first or l end end
+    local launched = (first and first.launched) or (stk.ops and stk.ops.op_launched) or 0
+    check("standsiege: its siege's guards left its fortress", launched > 0 and (S.out_max or 0) >= launched,
+      tostring(S.out_max) .. " out at once of " .. launched)
     if nests then
       -- (Sent straight at points by its hauler, its guards crossed the worm belt its hauler's way went round: 4 of 10
       -- came back, the rest killed by big worms 95 to 119 tiles back, 0.2.155.)

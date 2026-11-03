@@ -4099,6 +4099,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   seeds: the artillery base 254, 2, 101 (mean 119; 51 before), nw 140, 300, 0 (mean 147; 118), nwa 845, 419, 1409 (mean
   891; 963, within its seeds' spread). The artillery base's seed 2 sent two sieges whose guards never left its fortress
   (next entry).
+- **A siege's guards out of its fortress, its railgunners with it, its re-send on its way** (0.2.164). Three leaks
+  between the army a camp has and the army its siege takes:
+  - Its hauler started 5 tiles past its outer wall and its guards were set ESCORT_BACK (8) behind it, inside the wall:
+    the artillery base's seed 2 sent two sieges whose guards never left (6, then 11 stuck at the wall), and one siege of
+    0.2.161 stood 71 minutes with its 10 guards at home. Its hauler starts ESCORT_BACK further out. `standsiege` checks
+    that every guard got out past its fortress at once (the guards' positions sampled; 8 of 10 with the old start, where
+    the "came back" count passed them all, guards that never left counting as back).
+  - Its tier counted its railgunners for a siege through nest country (0.2.157) and its take left them out (`FOOT`
+    excludes them, ops.fights): tier 4 read for 24 guards, its truck left with 1 to 3 (nw, seed 3). They are taken after
+    its foot units now, and counted only within what its floor lets go.
+  - Its hauler re-sent after it stuck went straight at its site, across the worm belt its way went round, its guards
+    behind it: 4 of 10 back (standsiege nests, with its hauler stuck at the start from the new start point). It goes on
+    from its waypoint nearest it: 10 of 10.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
