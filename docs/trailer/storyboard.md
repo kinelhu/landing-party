@@ -102,9 +102,9 @@ pass (section 6). The factory centre is 0,0; 95% of it within 674 tiles.
 ## 6. Before filming
 
 **The base (nw).** Prepared by script from a copy (never the user's file), so it can be redone:
-- The siege lane (the south face toward KH, round -144,339): thin its lasers so the siege breaks through on camera. A
-  list of entities to remove, a box and kinds, applied by the film helper on load; or edited by the user in the map
-  editor and saved (open: which).
+- The siege lane (the south face toward KH, round -144,339): its lasers thinned so the siege breaks through on camera,
+  by script (the user, 2026-11-03): a box and kinds, applied by the film helper on load, so every take starts from the
+  same thinned lane.
 - Characters out of every frame (moved away or made invisible by the helper).
 - Ghosts and deconstruction marks cleared at load: they show as overlays.
 
@@ -120,5 +120,4 @@ give the same siege. A code change between takes means a fresh save.
 ## 7. Open
 
 - The track (and so the tempo).
-- The siege lane on nw: thinned by script, or by the user in the editor?
 - Captions: as planned, or none?
