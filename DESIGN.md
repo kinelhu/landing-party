@@ -4220,6 +4220,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   `scripts/film.sh`): stills on a schedule, timed from a siege's paint and fall (Landing Party's stats), in a game window;
   `docs/trailer/stills-strike.lua` the strike's 14 stills. Its first run stalled with the window in the background (the
   user away): filming waits for the user at the Mac.
+- **A wall the robots put back asks a raid big enough to break it first** (0.2.172; the user, 2026-11-02: how walls
+  should weigh in a raid, "walls should probably count for something. What do you suggest"; agreed 2026-11-03). Walls are
+  not in the defence (priced flat, 0.2.160, a cut laser line read dearer than the poles round it: blackout). A
+  corporation with orbital intelligence reads the first wall on its way in (ops.mended_floor): no powered roboport covering
+  it with robots to send, it asks nothing more (time only, and a dark lane is cheap again); else enough of its infantry to
+  break a piece before the robots have it back: the piece's health over its infantry's damage to it a tick
+  (threat.unit_dps: lp-unit-hit, each unit's attack by damage type over its cooldown, its projectile's or its beam's, the
+  beam's hits over its duration, its damage modifier; less the wall's resistances) times the robots' way to it (the
+  nearest roboport's distance over the construction robot's speed and the force's bonus). Against stone walls 8 tiles
+  from a roboport: 350 / (0.084 × 132) = 32. A forced raid (ops.force) is sized as its launch sizes it (by the defence
+  alone it fielded 4 where 32 were asked, and launch sent none). `mended` uses real robots now (a roboport in the square,
+  20 construction robots, walls in store; a script had put each piece back in 5 s, which no reading sees): `mended
+  serenity` passes, 32 sent, the assembler razed, 32 of 32 back, 52 rebuilds; `mended` and `provoked`, `blackout` and
+  `fed`, `ladder` soft and desperate, `abort`, `ops` and `weigh` pass. Read without its beam, Kessler-Hayashi's infantry
+  did no damage to a wall. The open question of 0.2.162 closed.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

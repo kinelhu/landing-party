@@ -171,4 +171,30 @@ do
     if next(out) then blow[name] = out end
   end
   data:extend{{type = "mod-data", name = "lp-blow", data = blow}}
+  -- What each unit does with one attack, by damage type, through its projectile where it fires one, and its cooldown
+  -- (lp-unit-hit, read by threat.unit_dps): how fast a raid breaks a wall its owner's robots put back (ops.mended_floor).
+  local hits = {}
+  for name, u in pairs(data.raw.unit or {}) do
+    local ap = u.attack_parameters
+    local action = ap and ap.ammo_type and ap.ammo_type.action
+    if action then
+      local out = {}
+      for _, item in ipairs(list(action)) do
+        for _, del in ipairs(list(item.action_delivery)) do
+          if del.type == "projectile" and data.raw.projectile[del.projectile] then
+            walk(data.raw.projectile[del.projectile].action, out, item.repeat_count or 1)
+          elseif del.type == "beam" and data.raw.beam[del.beam] then
+            -- (A beam hits every damage_interval while it lasts: Kessler-Hayashi's infantry fire one, and read without it,
+            -- their damage to a wall was 0.)
+            local bm = data.raw.beam[del.beam]
+            walk(bm.action, out, math.max(1, math.floor((del.duration or 1) / (bm.damage_interval or 20))))
+          end
+        end
+      end
+      walk(action, out, 1)
+      for t, v in pairs(out) do out[t] = v * (ap.damage_modifier or 1) end
+      if next(out) and (ap.cooldown or 0) > 0 then hits[name] = {dmg = out, cooldown = ap.cooldown} end
+    end
+  end
+  data:extend{{type = "mod-data", name = "lp-unit-hit", data = hits}}
 end

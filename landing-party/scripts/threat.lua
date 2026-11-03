@@ -238,6 +238,21 @@ function threat.blow(proj, e)
   end
   return total
 end
+-- What one unit of this prototype does to an entity a tick (data-final-fixes: lp-unit-hit, its attack by damage type over
+-- its cooldown, less the entity's resistances). 0 for a unit it does not know.
+local hits
+function threat.unit_dps(unit, e)
+  hits = hits or prototypes.mod_data["lp-unit-hit"].data
+  local h = hits[unit]
+  if not h then return 0 end
+  local res = prototypes.entity[e.name] and prototypes.entity[e.name].resistances or {}
+  local total = 0
+  for t, amount in pairs(h.dmg) do
+    local r = res[t]
+    total = total + math.max(0, amount - (r and r.decrease or 0)) * (1 - (r and r.percent or 0))
+  end
+  return total / h.cooldown
+end
 -- How many such shells it takes (at least one).
 function threat.shells_for(proj, e)
   local b = threat.blow(proj, e)

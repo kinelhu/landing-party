@@ -12497,21 +12497,27 @@ scenarios.mended = function()
     for _, d in ipairs({{-6, -6}, {6, 6}, {-6, 6}}) do
       surface().create_entity{name = "medium-electric-pole", position = {c[1] + d[1] + 0.5, c[2] + d[2] + 0.5}, force = "player"}
     end
+    -- The robots, real ones (a script put a piece back 5 s after it went until 2026-11-03; a raid reads the robots, ops.
+    -- mended_floor): a roboport in the square's free corner, powered, 20 construction robots, stone walls in store.
+    game.forces.player.create_ghost_on_entity_death = true
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {c[1] + 3, c[2] - 9}, force = "player"}
+    eei.power_production, eei.electric_buffer_size = 1e9 / 60, 1e9
+    surface().create_entity{name = "medium-electric-pole", position = {c[1] + 3.5, c[2] - 6.5}, force = "player"}
+    local port = surface().create_entity{name = "roboport", position = {c[1] + 7, c[2] - 7}, force = "player"}
+    port.insert{name = "construction-robot", count = 20}
+    local store = surface().create_entity{name = "storage-chest", position = {c[1] - 3.5, c[2] + 3.5}, force = "player"}
+    store.insert{name = "stone-wall", count = 200}
     S.garrison0 = lp("stats", S.id).garrison
     S.standing0 = lp("standing", "grubstake")
     lp("dev", {"raid", tostring(S.id)}, c)
   end)
-  -- The robots: a missing piece is put back 5 s after it went.
+  -- Pieces gone and back (the robots' rebuilds), counted each second.
   for t = 10 * 3600 + 60, END - 120, 60 do
     schedule(t, function()
       for i, p in ipairs(S.walls or {}) do
-        if surface().count_entities_filtered{name = "stone-wall", position = p, radius = 0.4} == 0 then
-          S.gone[i] = S.gone[i] or game.tick
-          if game.tick - S.gone[i] >= 300 and surface().can_place_entity{name = "stone-wall", position = p, force = "player"} then
-            surface().create_entity{name = "stone-wall", position = p, force = "player"}
-            S.gone[i], S.rebuilt = nil, S.rebuilt + 1
-          end
-        end
+        local here = surface().count_entities_filtered{name = "stone-wall", position = p, radius = 0.4} > 0
+        if not here then S.gone[i] = S.gone[i] or game.tick
+        elseif S.gone[i] then S.gone[i], S.rebuilt = nil, S.rebuilt + 1 end
       end
     end)
   end

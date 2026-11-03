@@ -1082,8 +1082,48 @@ local DEAD_END_RADIUS, DEAD_END_TICKS = 128, 90 * 3600
 -- What a raid at t should be: what got in there lately (tactics.best_size: its size in mediums, in its soldiers), before
 -- the formula a point of defence (needed), as Synthexis copies the siege that worked where it worked (its raids at a laser
 -- wall sized by the formula alone, one share a point set against gun turrets; the lane, 2026-10-31).
+-- What a wall its owner's robots put back asks of a raid (a corporation with orbital intelligence; the user, 2026-11-03:
+-- "walls should probably count for something"): enough of its infantry to break a piece of the first wall on its way in
+-- before the robots have it back. Read: the piece's health, its infantry's damage to it (threat.unit_dps), the robots'
+-- way to it (the nearest powered roboport covering it with robots to send, the construction robot's speed). A wall no
+-- powered roboport covers asks nothing more (time only): a cut lane's walls, robots dark, are cheap again (blackout).
+-- With walls priced flat in the defence, a raid of 4 at a mended wall lost the race (mended serenity), and once walls
+-- weighed a cut laser line read dearer than the poles round it (blackout, 0.2.160).
+local WALL_LOOK = 60
+function ops.mended_floor(b, t)
+  if not (b.origin and t and t.pos and t.owner and (shared.CORPS[b.corp] or {}).orbital_intel) then return 0 end
+  local s = game.surfaces[b.surface]
+  local foes = game.forces[t.owner]
+  if not foes then return 0 end
+  local dx, dy = t.pos[1] - b.origin.x, t.pos[2] - b.origin.y
+  local len = math.sqrt(dx * dx + dy * dy)
+  if len < 2 then return 0 end
+  local w
+  for d = math.max(0, len - WALL_LOOK), len - 1 do
+    w = s.find_entities_filtered{position = {b.origin.x + dx / len * d, b.origin.y + dy / len * d}, radius = 0.8,
+      type = {"wall", "gate"}, force = foes, limit = 1}[1]
+    if w then break end
+  end
+  if not w then return 0 end
+  local best
+  for _, r in ipairs(s.find_entities_filtered{position = w.position, radius = 120, type = "roboport", force = foes}) do
+    local cr = r.prototype.construction_radius or 0
+    local d = math.sqrt((r.position.x - w.position.x) ^ 2 + (r.position.y - w.position.y) ^ 2)
+    local net = r.logistic_network
+    if d <= cr and r.energy > 0 and net and net.available_construction_robots > 0 and (not best or d < best) then best = d end
+  end
+  if not best then return 0 end
+  local bot = prototypes.entity["construction-robot"]
+  local speed = (bot and bot.speed or 0.06) * (1 + foes.worker_robots_speed_modifier)
+  local back = math.max(1, best / speed)
+  local proto = shared.variant(b.corp, rd.unit(b.corp, "lp-infantry"))
+  local dps = threat.unit_dps(proto, w)
+  if dps <= 0 then return 0 end
+  return math.ceil(w.max_health / (dps * back))
+end
+
 function ops.raid_want(b, t)
-  local want = needed(defence(b, t))
+  local want = math.max(needed(defence(b, t)), ops.mended_floor(b, t))
   if t and t.pos then
     local near = tactics.history_near(b.corp, t.owner or "player", t.pos, "raid",
       attempt.sig(game.surfaces[b.surface], t.owner or "player", t.pos))
@@ -1902,7 +1942,9 @@ function ops.force(b, kind, pos, trace, army)
     if not site then return "no camp site: ore 15-45 tiles from the drill, beyond your turrets' reach" end
   end
   b.parts = math.max(b.parts or 0, SIEGE_COST)
-  local want = (kind == "raid" and needed(defence(b, t)) or SIEGE_GUARDS) + math.ceil(RESERVE * cap(b, army))
+  -- (A raid as its launch sizes it, ops.raid_want: by the defence alone, a forced raid fielded 4 where a mended wall
+  -- asked 32, and launch, asking 32, sent none; mended serenity.)
+  local want = (kind == "raid" and ops.raid_want(b, t) or SIEGE_GUARDS) + math.ceil(RESERVE * cap(b, army))
   local n = 0
   for _, u in ipairs(b.garrison) do if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then n = n + 1 end end
   local proto = shared.variant(b.corp, "lp-infantry")

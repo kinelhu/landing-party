@@ -10,7 +10,7 @@ digraph ai {
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
     "ground" [label="ground\n38 lines", width=0.84, fillcolor="#d9f0d9"];
-    "threat" [label="threat\n247 lines", width=1.07, fillcolor="#eef2f7"];
+    "threat" [label="threat\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -58,7 +58,7 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n777 lines", width=1.66, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1974 lines", width=2.99, fillcolor="#f7dede"];
+    "ops" [label="ops\n2016 lines", width=3.04, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
     "siege" [label="siege\n1756 lines", width=2.75, fillcolor="#f7dede"];
