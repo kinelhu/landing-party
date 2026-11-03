@@ -59,6 +59,12 @@ local function hold_spot(b, op)
 end
 local HOLD_MARGIN = 6          -- tiles round a point that no gun may cover for its guards to wait there
 local HOLD_READ = 150          -- tiles round its site whose guns a drop siege reads for its hold
+-- A drop siege's guards: this many a piece (its mortars and its howitzer), its escort and its assault both (the user,
+-- 2026-11-03: "almost as many cannons as guards?"; agreed: 6 a piece). Its assault goes in on its strike, STRIKE_AFTER
+-- after its last shell (their flight), with those there: called from its camp, 400 tiles off, reinforcements came
+-- minutes after the robots had mended what the strike broke.
+local GUARDS_PER_PIECE = 6
+local STRIKE_AFTER = 90
 -- Whether a gun of `fire` (firemap.read) covers q or HOLD_MARGIN round it.
 local function exposed(fire, q)
   if firemap.count(fire, q, 1) > 0 then return true end
@@ -432,7 +438,11 @@ ops.siege_goal = function(b) return top_tier(b).cost end
 -- what an operation of choice leaves home (pool.RESERVE) on top. Its cap was its depots' alone, and they come with its
 -- growth: for its first 30 to 50 minutes a cap of 20, its field 14, while parts piled up unspent (7352 on nwa, 5230 on
 -- nw), and its sieges went with 3 to 10 guards against walls read at 216 shells (ladder, 0.2.161).
-ops.siege_garrison = function(b) return math.ceil(top_tier(b).guards / (1 - pool.RESERVE)) end
+ops.siege_garrison = function(b)
+  local top = top_tier(b)
+  local guards = (shared.CORPS[b.corp] or {}).orbital_drop and math.max(top.guards, 6 * (top.mortars + 1)) or top.guards
+  return math.ceil(guards / (1 - pool.RESERVE))
+end
 
 -- Whether a siege is against a player (its target's owner).
 local function t_owner_player(b, op)
@@ -524,6 +534,9 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   -- The howitzer leaves its pad now (base.park would hide it at its next look, two seconds on: truck and pad at once).
   if truck and b.parked and b.parked.valid then b.parked.destroy(); b.parked = nil end
   local guards = {}
+  -- Its escort's size: its tier's, or a drop siege's GUARDS_PER_PIECE for each piece it brings.
+  local want_g = drop and math.max(spec.guards, GUARDS_PER_PIECE * ((piece == "lp-howitzer" and 1 or spec.mortars)
+    + (with_howitzer and 1 or 0))) or spec.guards
   -- Counter-battery (Serenity): against the player's artillery, its Shock troopers go first (up to six).
   local floor = floor_of(b, army, battery(t))
   if battery(t) and rd.has(b.corp, "counter") then
@@ -531,7 +544,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   end
   -- A clearance (nests): its railgunners go first, the biter-clearing unit.
   if clearance or t.owner == "enemy" then
-    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, function(u) return shared.kind_of(u.name) == "lp-railgunner" end)) do
+    for _, u in ipairs(pool.take(b, want_g - #guards, floor, function(u) return shared.kind_of(u.name) == "lp-railgunner" end)) do
       table.insert(guards, u)
     end
   end
@@ -548,14 +561,14 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
       for name in pairs(m) do if name ~= "lp-railgunner" then kinds[#kinds + 1] = name end end
       table.sort(kinds)
       for _, name in ipairs(kinds) do
-        local want = math.floor(spec.guards * m[name] / math.max(1, sum) + 0.5)
-        for _, u in ipairs(pool.take(b, math.min(want, spec.guards - #guards), floor,
+        local want = math.floor(want_g * m[name] / math.max(1, sum) + 0.5)
+        for _, u in ipairs(pool.take(b, math.min(want, want_g - #guards), floor,
           function(u) return SOLDIER(u) and shared.kind_of(u.name) == name end)) do
           table.insert(guards, u)
         end
       end
     end
-    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, drop and SOLDIER or FOOT)) do
+    for _, u in ipairs(pool.take(b, want_g - #guards, floor, drop and SOLDIER or FOOT)) do
       table.insert(guards, u)
     end
   end
@@ -1252,7 +1265,8 @@ local function siege_step(b, trace, army)
           op.howitzer_carry = nil
           trace(b, "siege: a howitzer for the roboports")
         end
-        if rd.has(b.corp, "jammer") and not op.jammer then
+        -- (A drop siege's always: the wall it brings a howitzer for is kept by robots, and they mended all it broke.)
+        if (rd.has(b.corp, "jammer") or op.drop) and not op.jammer then
           op.jammer = jammer.raise(s, {op.site[1], op.site[2]}, force)
           if op.jammer then trace(b, "siege: a jamming mast for their robots") end
         end
@@ -1551,6 +1565,9 @@ local function siege_step(b, trace, army)
       -- up and leaving home").
       local over = op.last_target and ((in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE)
         or (left == 0 and not op.convoy))
+      -- A drop siege's on its strike (orbital.lua sets strike_done), with those there and what follows from home.
+      local on_strike = op.drop and op.strike_done and game.tick >= op.strike_done + STRIKE_AFTER
+      over = over or on_strike
       -- (Sized as its raids are, ops.raid_want: what got in near there, else its formula on the prices its losses taught it,
       -- on its target read again after the barrage, the guns its shells broke gone from it. By the formula on its first
       -- reading, a siege whose mortar had broken 3 lasers asked an assault of 207 and went home.)
@@ -1566,7 +1583,7 @@ local function siege_step(b, trace, army)
         op.told_short = true
         trace(b, string.format("siege: no assault (%d needed, %d guards and %d at home)", want, n, home_n))
       end
-      if want and (spec.assault or n + home_n >= want) then
+      if want and (spec.assault or on_strike or n + home_n >= want) then
         -- (Its living guards: the dead counted, it drew short and its abort at half came early; the review.)
         local live = {}
         for _, u in ipairs(op.members) do if u.valid then live[#live + 1] = u end end
@@ -1593,8 +1610,23 @@ local function siege_step(b, trace, army)
         op.launched = #op.members
         op.phase, op.phase_at, op.last_kill, op.kills_at, op.razed_before = "assault", game.tick, game.tick, b.razed, b.razed
         b.assaults = (b.assaults or 0) + 1
-        order_all(op.members, {type = defines.command.attack_area, destination = t.pos, radius = 16,
-          distraction = defines.distraction.by_anything})
+        -- A drop siege's at its roboports first, nearest its site first, then its target (what makes the damage stay: on
+        -- the artillery base and nw its robots rebuilt nearly all it broke, 0 lost on nw).
+        local acmds = {}
+        if op.drop then
+          local ports = s.find_entities_filtered{position = t.pos, radius = 40, type = "roboport", force = foes}
+          table.sort(ports, function(a, c)
+            return (a.position.x - op.site[1]) ^ 2 + (a.position.y - op.site[2]) ^ 2
+              < (c.position.x - op.site[1]) ^ 2 + (c.position.y - op.site[2]) ^ 2
+          end)
+          for i = 1, math.min(4, #ports) do
+            acmds[#acmds + 1] = {type = defines.command.attack, target = ports[i], distraction = defines.distraction.by_anything}
+          end
+        end
+        acmds[#acmds + 1] = {type = defines.command.attack_area, destination = t.pos, radius = 16,
+          distraction = defines.distraction.by_anything}
+        order_all(op.members, #acmds > 1 and {type = defines.command.compound,
+          structure_type = defines.compound_command.return_last, commands = acmds} or acmds[1])
         alert(b, t, "lp.alert-raid")
         trace(b, string.format("siege: the assault goes in with %d units", #op.members))
         return

@@ -136,9 +136,10 @@ shared.CORPS = {
     stripe = {tile = "black-refined-concrete"},
     icon = "signal-heart", motto = "Please remain behind the line.",
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
-    -- zigzags, corner turrets in walled pillboxes; infantry, tanks and walkers, and from its second level a few laser
-    -- drones (the user, 2026-10-23: "give Kessler the actual high tech fliers").
-    doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-walker"] = 1, ["lp-railgunner"] = 2,
+    -- zigzags, corner turrets in walled pillboxes; infantry and tanks, and from its second level a few laser
+    -- drones (the user, 2026-10-23: "give Kessler the actual high tech fliers"). No walkers until a walker of its own
+    -- (the user, 2026-11-03: "Spidertron are such late game units in vanilla that there is a mismatch that's too much").
+    doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-railgunner"] = 2,
       ["lp-laser-drone"] = 1},
     names = {["lp-infantry"] = "lp-line-trooper"},
     -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.

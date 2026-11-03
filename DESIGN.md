@@ -4167,6 +4167,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Synthexis's). The orbital drop got its sieges to the wall and changed nothing that stayed down: what makes damage
   stick (the roboports first, the assault on the strike, the jammer) is the open question, and every ladder figure in
   this log before this entry is the count, not the loss.
+- **A drop siege's assault on its strike, 6 guards a piece, the jammer always, no walkers** (0.2.167; the user,
+  2026-11-03, watching: "Barrage seemed a little strong compared to the units that came with it.. almost as many cannons
+  as guards?"; "Assault was a waste as robots rebuilt during it ... Units did not capitalize on the shelling"; the walker:
+  "Spidertron are such late game units in vanilla that there is a mismatch"). Its assault waited for the barrage to find
+  nothing in reach for 30 s and called its reinforcements from its camp, 400 tiles off: the strike fell at 35:00, the
+  assault went in at 39:10, the robots had mended the lane. A drop siege's escort is GUARDS_PER_PIECE (6) for each piece
+  (24 at tier 3 with its howitzer; its garrison cap with it), goes in STRIKE_AFTER (1.5 s) after its strike's last
+  shell, at the roboports nearest its site first, then its target, and its jamming mast goes up at every drop siege. No
+  walkers in Kessler-Hayashi's mix until a walker of its own. The touched scenarios pass (fortress: 24 guards, the mast,
+  the assault takes its target, 24 of 24 back). The ladder on what the player lost for good: the artillery base 59, 52,
+  50 (mean 54; 58 at 0.2.165), nw 0, 0, 0 (its robots rebuilt everything, 1 to 4 ghosts left at 90 minutes), nwa mean
+  198. Unchanged: against a base that heals from its storage, what a siege should achieve is a design question for the
+  user (its drain, what the rebuilds cost; or the supply, its roboports, storage and power; or both).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

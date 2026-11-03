@@ -158,6 +158,8 @@ function orbital.tick(tick)
       st.next = tick + PACE
       if st.k > #st.queue then
         if b then b.strike_shells = (b.strike_shells or 0) + st.shells; trace(b, string.format("done: %d shells", st.shells)) end
+        -- Its siege's assault goes in on it (siege.lua: the lane dark before the robots mend it).
+        if b and b.op and b.op.kind == "siege" then b.op.strike_done = tick end
         table.remove(storage.kh_strikes, i)
       end
     end

@@ -4741,6 +4741,8 @@ scenarios.standsiege = function()
         if p[1] < box[1] - 10 or p[1] > box[3] + 10 or p[2] < box[2] - 10 or p[2] > box[4] + 10 then n = n + 1 end
       end
       S.out_max = math.max(S.out_max or 0, n)
+      -- (Its escort as it set out: the log's count is its assault's, reinforced from home, since 0.2.167.)
+      S.escort_n = S.escort_n or st0.ops.op_launched
     end)
   end
   schedule(END - 60, function()
@@ -4768,7 +4770,7 @@ scenarios.standsiege = function()
     -- reference base's siege stood 71 minutes with its 10 guards at home, and they counted as come back, 0.2.161.)
     local first
     for _, l in ipairs(ops_.log or {}) do if l.op == "siege" and l.owner == "player" then first = first or l end end
-    local launched = (first and first.launched) or (stk.ops and stk.ops.op_launched) or 0
+    local launched = S.escort_n or (first and first.launched) or (stk.ops and stk.ops.op_launched) or 0
     check("standsiege: its siege's guards left its fortress", launched > 0 and (S.out_max or 0) >= launched,
       tostring(S.out_max) .. " out at once of " .. launched)
     if nests then
