@@ -4281,6 +4281,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (`tools/blender/dome_ripple.py`, `anim_sheet.py`, 32 px a tile; at emission 4 its cyan saturated to white, 1.6 now),
   drawn as glow with a soft light. The ground ring and the big explosion it replaced are gone. dome, domehub, orbital
   standing and breach arty pass. Not yet seen in game.
+- **The jamming mast, its own** (0.2.177; the graphics pass, carte blanche, 2026-11-03). A big power pole's mast in
+  Kessler-Hayashi's colour until now; a lattice mast on a 2x2 footing, about 4.6 tiles high, three emitter nodes at its
+  crown with arcs jumping between them (and now and then down the mast), new each frame: `tools/blender/jammer_mast.py`
+  (16 frames, body, glow, shadow; about 30 s), `sheet.py`, drawn as its `animations` (a simple entity loops while it
+  stands). `tools/blender/lpkit.py`: the shared pieces (materials with grime and occlusion, primitives and rods, the
+  camera and sun, the passes, arcs) for the buildings to come (the mortar and howitzer next, the user's). fortress
+  jammer and standsiege pass. Not yet seen in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

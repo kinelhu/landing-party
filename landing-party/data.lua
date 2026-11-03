@@ -724,6 +724,22 @@ data:extend({{type = "simple-entity-with-force", name = "lp-jammer", hidden = tr
   selection_box = {{-1, -1}, {1, 1}}, dying_explosion = "big-explosion",
   resistances = {{type = "physical", decrease = 4, percent = 20}, {type = "laser", percent = 20}},
   picture = {layers = mast_layers}, map_color = {r = 0.5, g = 0.75, b = 1}}})
+-- Its own mast, modelled and rendered in Blender (tools/blender/jammer_mast.py, sheet.py; the graphics pass, 2026-11-03):
+-- a lattice mast on a 2x2 footing, arcs jumping between the three nodes at its crown, 16 frames looping while it stands.
+-- Frame size and shift from sheet.json; the big pole above is the fallback.
+do
+  local J = {width = 337, height = 422, shift = {1.3984375, -1.953125}}
+  local function jam(file, extra)
+    local l = {filename = "__landing-party__/graphics/serenity/jammer/" .. file .. ".png", width = J.width, height = J.height,
+      frame_count = 16, line_length = 8, scale = 0.5, shift = J.shift, animation_speed = 0.4}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  local jammer = data.raw["simple-entity-with-force"]["lp-jammer"]
+  jammer.picture = nil
+  jammer.animations = {layers = {jam("body"), jam("glow", {draw_as_glow = true, blend_mode = "additive"}),
+    jam("shadow", {draw_as_shadow = true})}}
+end
 
 -- The power tap (scripts/tap.lua): a small lamp's body as a clamp on the player's line, in Grubstake's colour; an energy
 -- interface drawing what the script sets. Not a military target (turrets pass it by). Its receiver at the end of the
