@@ -4194,6 +4194,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   `standsiege nests` checks half its escort at the breach within 20 s of the fall (5 s; 106 s at 0.2.167). The outpost
   109 to 6 buildings (to 37 at 0.2.167), its escort 18 of 18 back. Fortress (four), siegetier 2 and 3, orbital (both),
   armed and standsiege pass.
+- **A drop siege's assault keeps to its breach and falls back; it moves up again and again** (0.2.169). Through the
+  breach to its target 60 tiles in, 12 of 18 died to the lasers inside (the artillery base, 0.2.168). Its assault's
+  objectives lie within ASSAULT_DEPTH (30) of the breach (its roboports there, then anything); done there, or down to
+  FALL_BACK (0.6) of its launch (Factorio RTS's retreat at 40% lost), it falls back to its jump-off and shells on, its
+  guns standing, an assault of choice not again for ASSAULT_COOL (3 minutes), a later strike's walking barrage at once.
+  It moves up as a clearance does, up to 8 times (once before: after its assault fell back it packed up, the inner
+  lasers standing, standsiege nests). The artillery base, seed 3: the assault on its strike, 12 of 15 back, nothing
+  standing within 30 of the breach, then two moves up. standsiege nests: the deep substation razed, 18 of 18 back.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

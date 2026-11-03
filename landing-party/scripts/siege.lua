@@ -64,6 +64,12 @@ local HOLD_READ = 150          -- tiles round its site whose guns a drop siege r
 -- those there: called from its camp, 400 tiles off, reinforcements came minutes after the robots had mended what the
 -- strike broke.
 local GUARDS_PER_PIECE = 6
+-- Its assault's reach past the breach, and when it falls back (the share of its launch left; Factorio RTS's retreat at
+-- 40% lost, docs/reviews/2026-11-03-factorio-rts-assessment.md), and how long before an assault of choice again. Through
+-- the breach to its target 60 tiles in, 12 of 18 died to the lasers inside (the artillery base, 0.2.168).
+local ASSAULT_DEPTH = 30
+local FALL_BACK = 0.6
+local ASSAULT_COOL = 3 * 3600
 -- Whether a gun of `fire` (firemap.read) covers q or HOLD_MARGIN round it.
 local function exposed(fire, q)
   if firemap.count(fire, q, 1) > 0 then return true end
@@ -1462,7 +1468,9 @@ local function siege_step(b, trace, army)
       -- side of a square and packed up).
       -- A clearance moves on along its way, nest after nest, while its shells last (one clearance per nest, each
       -- home and back, took 40 minutes for seven nests, push); any other siege moves up once.
-      if op.pack_site or (spec.mortars > 1 and (op.clearance or not op.moved) and left > 0
+      -- A drop siege moves up again and again too, as its breaches open (at most 8): after its assault fell back from
+      -- the breach it packed up, the inner lasers standing (standsiege nests, 0.2.169).
+      if op.pack_site or (spec.mortars > 1 and (op.clearance or (op.drop and (op.steps or 0) < 8) or not op.moved) and left > 0
         and (op.drop or op.truck or (op.hauler and op.hauler.valid)) and t and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE) then
         local site
         if op.pack_site then
@@ -1474,6 +1482,7 @@ local function siege_step(b, trace, army)
           if op.steps > 8 then site = nil end
         else
           site = siege_site(b, t)
+          if op.drop then op.steps = (op.steps or 0) + 1 end
         end
         op.moved = true
         if site and (site[1] - op.site[1]) ^ 2 + (site[2] - op.site[2]) ^ 2 > 8 * 8 then
@@ -1591,6 +1600,7 @@ local function siege_step(b, trace, army)
           jump.x, jump.y, math.sqrt((jump.x - c.x) ^ 2 + (jump.y - c.y) ^ 2)))
       end
       local on_strike = op.drop and op.strike_falling and true or false
+      if over and op.drop and game.tick < (op.assault_cool or 0) then over = nil end
       over = over or on_strike
       -- (Sized as its raids are, ops.raid_want: what got in near there, else its formula on the prices its losses taught it,
       -- on its target read again after the barrage, the guns its shells broke gone from it. By the formula on its first
@@ -1648,8 +1658,11 @@ local function siege_step(b, trace, army)
           acmds[#acmds + 1] = {type = defines.command.attack_area, destination = {op.strike_center[1], op.strike_center[2]},
             radius = 12, distraction = defines.distraction.by_anything}
         end
+        local depth = op.drop and op.strike_center and {op.strike_center[1], op.strike_center[2]}
+        op.assault_at = depth
         if op.drop then
-          local ports = s.find_entities_filtered{position = t.pos, radius = 40, type = "roboport", force = foes}
+          local ports = s.find_entities_filtered{position = depth or t.pos, radius = depth and ASSAULT_DEPTH or 40,
+            type = "roboport", force = foes}
           table.sort(ports, function(a, c)
             return (a.position.x - op.site[1]) ^ 2 + (a.position.y - op.site[2]) ^ 2
               < (c.position.x - op.site[1]) ^ 2 + (c.position.y - op.site[2]) ^ 2
@@ -1658,7 +1671,7 @@ local function siege_step(b, trace, army)
             acmds[#acmds + 1] = {type = defines.command.attack, target = ports[i], distraction = defines.distraction.by_anything}
           end
         end
-        acmds[#acmds + 1] = {type = defines.command.attack_area, destination = t.pos, radius = 16,
+        acmds[#acmds + 1] = {type = defines.command.attack_area, destination = depth or t.pos, radius = depth and ASSAULT_DEPTH or 16,
           distraction = defines.distraction.by_anything}
         order_all(op.members, #acmds > 1 and {type = defines.command.compound,
           structure_type = defines.compound_command.return_last, commands = acmds} or acmds[1])
@@ -1679,8 +1692,27 @@ local function siege_step(b, trace, army)
       end
     else
       if b.razed > op.kills_at then op.kills_at, op.last_kill = b.razed, game.tick end
-      local remaining = t and s.count_entities_filtered{position = t.pos, radius = 16, type = TYPES, force = foes} or 0
+      local at = op.assault_at or (t and t.pos)
+      local remaining = at and s.count_entities_filtered{position = at, radius = op.assault_at and ASSAULT_DEPTH or 16,
+        type = TYPES, force = foes} or 0
       local done = remaining == 0 or game.tick - op.last_kill > NO_KILL_TICKS
+      -- A drop siege's falls back to its jump-off and shells on, its guns standing: a later strike sends it in again.
+      local live_guns = 0
+      for _, m in ipairs(op.mortars or {}) do if m.valid then live_guns = live_guns + 1 end end
+      if op.drop and live_guns > 0 and (done or n < FALL_BACK * op.launched) then
+        b.assault_razed = (b.assault_razed or 0) + b.razed - op.razed_before
+        local back = op.jump and {x = op.jump[1], y = op.jump[2]} or hold_spot(b, op)
+        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+          commands = {{type = defines.command.go_to_location, destination = back, radius = 4,
+            distraction = defines.distraction.none},
+            {type = defines.command.stop, distraction = defines.distraction.none}}})
+        trace(b, string.format("siege: the assault falls back (%s; %d of %d left, %d left standing within %d of the breach)",
+          done and "done" or "losses", n, op.launched, remaining, ASSAULT_DEPTH))
+        op.phase, op.phase_at, op.last_target = "bombard", game.tick, game.tick
+        op.launched, op.assault_at, op.assault_cool = n, nil, game.tick + ASSAULT_COOL
+        op.strike_paint, op.strike_falling, op.jumped, op.reread = nil, nil, nil, nil
+        return
+      end
       if done or n < 0.5 * op.launched then
         op.phase, op.phase_at = "pack", game.tick
         op.packing_because = done and "done" or "aborted"
@@ -1692,8 +1724,8 @@ local function siege_step(b, trace, army)
       end
       for _, u in ipairs(op.members) do
         if u.valid and not u.commandable.has_command and t then
-          u.commandable.set_command{type = defines.command.attack_area, destination = t.pos, radius = 16,
-            distraction = defines.distraction.by_anything}
+          u.commandable.set_command{type = defines.command.attack_area, destination = op.assault_at or t.pos,
+            radius = op.assault_at and ASSAULT_DEPTH or 16, distraction = defines.distraction.by_anything}
         end
       end
     end
