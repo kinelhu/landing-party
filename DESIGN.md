@@ -4076,6 +4076,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   from its site, and judged by its distance to the site alone it was called off as stuck: a waypoint done counts as
   progress now. Seed 2 after: one siege stood 71 minutes, five strikes of 34 to 37 shells on the 14 or 15 guns covering
   its lane, and razed 75 lasers, 19 roboports, 14 poles and more.
+  The ladder for 0.2.161, three seeds (Kessler-Hayashi's own count of the player's buildings razed): the artillery base 94,
+  30, 30 (mean 51), strikes 2 to 5 a run; nw 34, 99, 220 (mean 118); nwa 933, 410, 1,545 (mean 963); it stood in all
+  nine. Against the evening's baseline (0.2.151): nw 88, nwa 12. Its own count and the visit's census differ (seed 2 of
+  the artillery base: 30 by its count, 75 lasers and 19 roboports in the census): the ladder reads its own; to settle.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
