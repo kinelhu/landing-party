@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M640.12,-339.25C640.12,-339.25 537.88,-339.25 537.88,-339.25 531.88,-339.25 525.88,-333.25 525.88,-327.25 525.88,-327.25 525.88,-307.25 525.88,-307.25 525.88,-301.25 531.88,-295.25 537.88,-295.25 537.88,-295.25 640.12,-295.25 640.12,-295.25 646.12,-295.25 652.12,-301.25 652.12,-307.25 652.12,-307.25 652.12,-327.25 652.12,-327.25 652.12,-333.25 646.12,-339.25 640.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="589" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6226 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1961, siege 1375</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6376 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1961, siege 1525</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge15" class="edge">
@@ -168,9 +168,9 @@
 <!-- Army and operations&#45;&gt;Corporation -->
 <g id="edge1" class="edge">
 <title>Army and operations&#45;&gt;Corporation</title>
-<path fill="none" stroke="#8899aa" stroke-width="1.5" d="M587.63,-295.07C585.3,-258.96 580.56,-185.42 577.91,-144.29"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.5" points="581.41,-144.18 577.27,-134.43 574.42,-144.63 581.41,-144.18"/>
-<text xml:space="preserve" text-anchor="middle" x="586.2" y="-209.82" font-family="Helvetica,sans-Serif" font-size="9.00">2</text>
+<path fill="none" stroke="#8899aa" stroke-width="1.8" d="M587.63,-295.07C585.31,-259.12 580.6,-186.06 577.94,-144.83"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="1.8" points="581.44,-144.63 577.3,-134.88 574.45,-145.08 581.44,-144.63"/>
+<text xml:space="preserve" text-anchor="middle" x="586.2" y="-209.82" font-family="Helvetica,sans-Serif" font-size="9.00">3</text>
 </g>
 <!-- Army and operations&#45;&gt;Corporation -->
 <g id="edge27" class="edge">

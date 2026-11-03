@@ -11,6 +11,7 @@ local firemap = require("__landing-party__.scripts.firemap")
 local costmap = require("__landing-party__.scripts.costmap")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local know = require("__landing-party__.scripts.know")
+local pods = require("__landing-party__.scripts.pods")
 
 local siege = {}
 
@@ -469,9 +470,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   for d = 0, dist, 2 do
     local q = {hx + (site[1] - hx) * d / dist, hy + (site[2] - hy) * d / dist}
     if s.count_entities_filtered{position = q, radius = 2.5, force = h.force, type = {"wall", "gate"}, limit = 1} > 0 then
-      -- And its escort's ESCORT_BACK more: its guards set that far behind it stood inside its wall, and the artillery
-      -- reference base's siege stood 71 minutes with its 10 guards stuck at home (0.2.161).
-      out = math.min(d + 5 + ESCORT_BACK, dist)
+      out = math.min(d + 5, dist)
     end
   end
   -- A wall kept by robots: a howitzer comes too, for the roboports behind it (98 tiles; the mortars' 35 reached the
@@ -489,7 +488,12 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   -- (A howitzer siege's piece is its howitzer: none besides it for the roboports; two came from one truck, the review.)
   if piece == "lp-howitzer" then with_howitzer = false end
   -- A siege that takes the howitzer goes behind the howitzer truck, its hauler (units.lua).
-  local truck = with_howitzer or piece == "lp-howitzer"
+  -- A corporation that drops its siege from orbit (shared.CORPS orbital_drop; the user, 2026-11-03: "drop their guns from
+  -- orbit seems cool if we use the cargo drop visualization") sends no truck: its guards march, and its pieces come
+  -- down in cargo pods on its site once they hold it (siege_step). Its truck had been most of its sieges' failures:
+  -- stuck at its gate, its escort in its way, its orders given up, its way lost on a re-send.
+  local drop = (shared.CORPS[b.corp] or {}).orbital_drop and not storage.drop_off or false
+  local truck = not drop and (with_howitzer or piece == "lp-howitzer")
   local hname = shared.variant(b.corp, truck and "lp-howitzer-truck" or "lp-hauler")
   local p = s.find_non_colliding_position(hname, {hx + (site[1] - hx) * out / dist,
     hy + (site[2] - hy) * out / dist}, 20, 0.5)
@@ -503,8 +507,10 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     trace(b, "siege waits: its foes' units at its gate")
     return false
   end
-  local hauler = p and s.create_entity{name = hname, position = p, force = h.force}
-  if not hauler then return false end
+  local hauler = p and not drop and s.create_entity{name = hname, position = p, force = h.force}
+  if not (hauler or (drop and p)) then return false end
+  -- Where it sets out from: its hauler, or (a drop) where its hauler would have started.
+  local start = hauler and hauler.position or p
   -- The howitzer leaves its pad now (base.park would hide it at its next look, two seconds on: truck and pad at once).
   if truck and b.parked and b.parked.valid then b.parked.destroy(); b.parked = nil end
   local guards = {}
@@ -538,16 +544,18 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   local paid_fund = from_fund
   -- The guards ride out on the hauler: gates open for no unit, and guards walking from home were 33 to 49 tiles off when
   -- the biters broke the mortars (visit b - rocket).
-  -- Behind it, away from its site (ESCORT_BACK): set round it, its tanks stood in its way, and the engine gave its order
-  -- up six seconds out, the truck held 17 tiles short of its site (fortress, 0.2.149).
-  local hdx, hdy = site[1] - hauler.position.x, site[2] - hauler.position.y
+  -- Beside it, ESCORT_BACK off its way to its site: set round it, its tanks stood in its way, and the engine gave its
+  -- order up six seconds out, the truck held 17 tiles short of its site (fortress, 0.2.149); set behind it, 5 past its
+  -- wall, they stood inside the wall, and the artillery base's siege stood 71 minutes with its 10 guards at home
+  -- (0.2.161); the truck started further out instead lost its way at once on that base (0.2.164).
+  local hdx, hdy = site[1] - start.x, site[2] - start.y
   local hdl = math.max(1, math.sqrt(hdx * hdx + hdy * hdy))
-  local back = {hauler.position.x - hdx / hdl * ESCORT_BACK, hauler.position.y - hdy / hdl * ESCORT_BACK}
+  local beside = {start.x - hdy / hdl * ESCORT_BACK, start.y + hdx / hdl * ESCORT_BACK}
   for _, u in ipairs(guards) do
-    local q = u.valid and s.find_non_colliding_position(u.name, back, 12, 0.5)
+    local q = u.valid and s.find_non_colliding_position(u.name, beside, 12, 0.5)
     if q then u.teleport(q) end
   end
-  b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler,
+  b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler, drop = drop or nil,
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
     convoys_left = spec.convoys or 0}
   -- (Its piece, a howitzer where its mortars are outranged or broke nothing there twice: siege_plan.)
@@ -571,7 +579,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
       -- (From the point of it nearest where its hauler starts, past its outer wall: read from its home, inside its
       -- fortress, the way's first points led the hauler back to a gate that opens for no unit, and it stood 469 tiles
       -- short until called off; the artillery base, seed 2, 0.2.160.)
-      local hp, first, fd = hauler.position, 1, nil
+      local hp, first, fd = start, 1, nil
       for i, q in ipairs(path) do
         local d = (q.x - hp.x) ^ 2 + (q.y - hp.y) ^ 2
         if not fd or d < fd then first, fd = i, d end
@@ -581,10 +589,10 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
       b.op.read_route = true
     end
   end
-  hroute = hroute or sneak_route(b, {hauler.position.x, hauler.position.y}, site,
+  hroute = hroute or sneak_route(b, {start.x, start.y}, site,
     clearance and {turrets = false, worms = true} or {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
-  if not hroute and clearance then hroute = sneak_route(b, {hauler.position.x, hauler.position.y}, site, {turrets = false}) end
-  if not hroute and b.intel.targets[key] and push_escort(b, b.intel.targets[key], {hauler.position.x, hauler.position.y}, site) then
+  if not hroute and clearance then hroute = sneak_route(b, {start.x, start.y}, site, {turrets = false}) end
+  if not hroute and b.intel.targets[key] and push_escort(b, b.intel.targets[key], {start.x, start.y}, site) then
     hroute = {}
     b.op.pushed = true
     trace(b, string.format("hauler pushes through biter country to %.0f,%.0f", site[1], site[2]))
@@ -594,7 +602,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     b.op = nil
     b.siege_fund = (b.siege_fund or 0) + paid_fund
     b.parts = b.parts + spec.cost - paid_fund
-    hauler.destroy()
+    if hauler then hauler.destroy() end
     local tt = b.intel.targets[key]
     if tt then tt.cool = game.tick + COOL_TICKS end
     trace(b, string.format("%s to %.0f,%.0f: no way round biter country; not sent", "siege", site[1], site[2]))
@@ -605,7 +613,7 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   end
   -- An armed camp shells the nests by its way first (war.corridor).
   b.op.route = hroute
-  if ops.corridor then ops.corridor(b, {hauler.position.x, hauler.position.y}, hroute, site) end
+  if ops.corridor then ops.corridor(b, {start.x, start.y}, hroute, site) end
   local hcmds = {}
   for _, w in ipairs(hroute) do
     table.insert(hcmds, {type = defines.command.go_to_location, destination = w, radius = 4,
@@ -616,8 +624,10 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   -- And it waits there: a unit whose orders are done wanders (the engine's default), and a truck at its site between two
   -- of its march's looks, 300 ticks apart, wandered 20 tiles on into the guns' reach and died (fortress, seed 12345).
   table.insert(hcmds, HOLD)
-  hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
-    commands = hcmds}
+  if hauler then
+    hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+      commands = hcmds}
+  end
   -- A clearance's guards answer only what hits them on the march: on sight, railgunners (vision 34, range 30) walked up
   -- to the worms they saw, into a behemoth's 48 (review of scenario clear).
   -- Its guards go its hauler's way (its waypoints, then behind its site): sent straight at a point by it, they crossed
@@ -626,10 +636,14 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     local gcmds = {}
     for _, w in ipairs(hroute) do
       gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = w, radius = 6,
-        distraction = defines.distraction.by_damage}
+        distraction = drop and defines.distraction.none or defines.distraction.by_damage}
     end
-    gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = back, radius = 6,
-      distraction = clearance and defines.distraction.by_damage or defines.distraction.by_enemy}
+    -- (Then behind its site, guard_spot: its start point there since 0.2.149, a guard left behind its hauler walked home.)
+    -- (A drop siege's answer only what hits them, the march's look keeping none of them near its site: on sight, they
+    -- walked on from its site into the lasers' reach and all 10 died before its pods came, standsiege, 0.2.165.)
+    gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = guard_spot(b, b.op), radius = 6,
+      distraction = drop and defines.distraction.none or clearance and defines.distraction.by_damage
+        or defines.distraction.by_enemy}
     order_all(guards, #gcmds > 1 and {type = defines.command.compound, structure_type = defines.compound_command.return_last,
       commands = gcmds} or gcmds[1])
   end
@@ -833,6 +847,93 @@ local function quiet_pack(op)
   return piece
 end
 
+-- A drop siege's march (op.drop, launch_siege): its guards go its way; its lead is the guard nearest its site. Those with
+-- no orders left short of its site go on with the rest of its way, from its waypoint nearest each. Its progress: its lead
+-- nearer its site, or further along its way (on the cost map's way round the guns it goes away from its site first).
+-- Held (half its living guards within DROP_HOLD of its site), its pieces come down (deploy). Returns the lead's
+-- position and its squared distance to its site, or nil when it was called off.
+local DROP_HOLD = 16
+local function rest_of_way(route, from, to)
+  local cmds, first, fd = {}, nil, nil
+  for i, w in ipairs(route or {}) do
+    local d = (w[1] - from.x) ^ 2 + (w[2] - from.y) ^ 2
+    if not fd or d < fd then first, fd = i, d end
+  end
+  for i = first or 1, first and #route or 0 do
+    cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = route[i], radius = 6,
+      distraction = defines.distraction.none}
+  end
+  cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = to, radius = 6,
+    distraction = defines.distraction.none}
+  return cmds, first or 0
+end
+local function drop_march(b, op, trace, army, n)
+  local hp, d2
+  for _, u in ipairs(op.members) do
+    if u.valid then
+      local d = (u.position.x - op.site[1]) ^ 2 + (u.position.y - op.site[2]) ^ 2
+      if not d2 or d < d2 then hp, d2 = u.position, d end
+    end
+  end
+  if not hp then
+    trace(b, "siege: its guards were lost on the way")
+    local t = op.clearance and b.intel.targets[op.target]
+    if t then t.cool = game.tick + 15 * 3600 end
+    finish(b, "intercepted", trace, army)
+    return nil
+  end
+  local spot = guard_spot(b, op)
+  local held = 0
+  for _, u in ipairs(op.members) do
+    if u.valid then
+      local du = (u.position.x - op.site[1]) ^ 2 + (u.position.y - op.site[2]) ^ 2
+      if du <= DROP_HOLD ^ 2 then
+        held = held + 1
+      elseif not u.commandable.has_command then
+        local cmds = rest_of_way(op.route, u.position, spot)
+        u.commandable.set_command(#cmds > 1 and {type = defines.command.compound,
+          structure_type = defines.compound_command.return_last, commands = cmds} or cmds[1])
+      end
+    end
+  end
+  if ops.corridor and op.route and game.tick >= (op.corridor_at or op.started) + CORRIDOR_LOOK then
+    op.corridor_at = game.tick
+    local rest = {}
+    for _, w in ipairs(op.route) do
+      if (w[1] - op.site[1]) ^ 2 + (w[2] - op.site[2]) ^ 2 < d2 then table.insert(rest, w) end
+    end
+    ops.corridor(b, {hp.x, hp.y}, rest, op.site)
+  end
+  local _, idx = rest_of_way(op.route, hp, spot)
+  if not op.best_d2 or d2 < op.best_d2 - 4 or idx > (op.best_idx or 0) then
+    op.best_d2, op.best_idx, op.best_at = math.min(d2, op.best_d2 or d2), math.max(idx, op.best_idx or 0), game.tick
+  end
+  if held * 2 >= n then return hp, 0 end
+  if game.tick - (op.best_at or op.started) > STUCK_TICKS then
+    local t = b.intel.targets[op.target]
+    local s = game.surfaces[b.surface]
+    if op.clearance and t and (hp.x - t.pos[1]) ^ 2 + (hp.y - t.pos[2]) ^ 2 <= (op.reach or MORTAR_REACH) ^ 2
+      and out_of_worms(s, {hp.x, hp.y}) then
+      trace(b, string.format("siege: its guards stopped %.0f tiles short; it drops where they stand", math.sqrt(d2)))
+      op.site = {hp.x, hp.y}
+      return hp, 0
+    end
+    trace(b, string.format("siege: its guards no nearer its site for a minute, %.0f tiles short; called off", math.sqrt(d2)))
+    if t then t.cool = math.max(t.cool or 0, game.tick + 15 * 3600) end
+    finish(b, "aborted", trace, army)
+    return nil
+  end
+  return hp, d2
+end
+-- Its pieces' spots: side by side across its line of fire, 4 apart (deploy places them there).
+local function gun_spot(b, op, spec, k)
+  local tg = op.target and b.intel.targets[op.target]
+  local fire = tg and tg.pos and math.atan2(tg.pos[2] - op.site[2], tg.pos[1] - op.site[1]) or 0
+  local a = fire + math.pi / 2
+  local off = spec.mortars > 1 and 4 * (k - (spec.mortars + 1) / 2) or 0
+  return {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}
+end
+
 local function siege_step(b, trace, army)
   local op = b.op
   local n = alive(op)
@@ -844,7 +945,7 @@ local function siege_step(b, trace, army)
     end
     return finish(b, "aborted", trace, army)
   end
-  if op.phase == "march" or op.phase == "deploy" then
+  if (op.phase == "march" or op.phase == "deploy") and not op.drop then
     if not op.hauler.valid then
       trace(b, "siege: the hauler was destroyed on the way")
       -- A clearance's nest rests 15 minutes (retried every two, it lost a hauler each time, visit).
@@ -853,7 +954,27 @@ local function siege_step(b, trace, army)
       return finish(b, "intercepted", trace, army)
     end
   end
-  if op.phase == "march" then
+  if op.phase == "march" and op.drop then
+    local hp, d2 = drop_march(b, op, trace, army, n)
+    if not hp then return end
+    if d2 == 0 then
+      op.phase, op.phase_at = "deploy", game.tick
+      local s = game.surfaces[b.surface]
+      local spec = SIEGE_TIERS[op.tier or 1]
+      local guns = op.piece == "lp-howitzer" and 1 or (op.carry and #op.carry or spec.mortars)
+      op.drops = {}
+      for k = 1, guns do op.drops[#op.drops + 1] = pods.send(s, gun_spot(b, op, spec, k), b.force) end
+      if op.with_howitzer and not op.howitzer then op.drops[#op.drops + 1] = pods.send(s, {op.site[1], op.site[2] + 6}, b.force) end
+      order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+        commands = {{type = defines.command.go_to_location, destination = guard_spot(b, op), radius = 4,
+          distraction = defines.distraction.by_damage},
+          {type = defines.command.wander, radius = 4, distraction = defines.distraction.by_damage}}})
+      op.label = rendering.draw_text{text = {"lp.siege-deploying"}, surface = s, target = {op.site[1], op.site[2] - 3},
+        color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
+      trace(b, string.format("siege: its guards hold its site at %.0f,%.0f; %d pods drop its pieces", op.site[1], op.site[2],
+        #op.drops))
+    end
+  elseif op.phase == "march" then
     local hp = op.hauler.position
     if not op.hauler.commandable.has_command then
       op.hauler.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
@@ -974,7 +1095,7 @@ local function siege_step(b, trace, army)
     local share = (game.tick - op.phase_at) / DEPLOY_TICKS
     if op.label and op.label.valid then op.label.text = {"lp.siege-deploying-percent", string.format("%d", math.min(100, share * 100))} end
     if share >= 1 then
-      local s, force = op.hauler.surface, op.hauler.force
+      local s, force = game.surfaces[b.surface], game.forces[b.force]
       -- The truck gives way to its howitzer (ops.truck_down).
       local truck = op.truck and truck_down(op)
       local spec = SIEGE_TIERS[op.tier or 1]
@@ -1157,8 +1278,19 @@ local function siege_step(b, trace, army)
         op.flares = (op.flares or 0) + #pieces
       end
     end
-    -- Resupply: a convoy of shells when the mortars are spent and a turret is still in reach.
-    if op.convoy and not op.convoy.valid then
+    -- Resupply: a convoy of shells when the mortars are spent and a turret is still in reach (a drop siege's comes down
+    -- in a pod on its site).
+    if op.supply_pod then
+      if pods.down(s, op.supply_pod) and op.mortar then
+        local to = #empty > 0 and empty or live
+        local each = math.floor(RESUPPLY / math.max(1, #to))
+        for _, m in ipairs(to) do m.insert{name = "lp-mortar-shell", count = each} end
+        op.loaded = op.loaded + each * #to
+        left = left + each * #to
+        op.supply_pod = nil
+        trace(b, string.format("siege: resupplied from orbit, %d shells", each * #to))
+      end
+    elseif op.convoy and not op.convoy.valid then
       trace(b, "siege: the shell convoy was destroyed; no more resupply")
       op.convoy, op.convoys_left = nil, 0
     elseif op.convoy then
@@ -1189,6 +1321,12 @@ local function siege_step(b, trace, army)
       op.convoys_left = 1
       op.convoys_paid = (op.convoys_paid or 0) + 1
       trace(b, string.format("siege: a convoy paid (%d parts)", convoy_price()))
+    elseif op.drop and #empty > 0 and in_reach > 0 and (op.convoys_left or 0) > 0 and (op.loaded or 0) + RESUPPLY <= SHELLS_CAP then
+      op.supply_pod = pods.send(s, {op.site[1], op.site[2] + 3}, b.force)
+      if op.supply_pod then
+        op.convoys_left = op.convoys_left - 1
+        trace(b, "siege: a pod of shells drops")
+      end
     elseif #empty > 0 and in_reach > 0 and (op.convoys_left or 0) > 0 and (op.loaded or 0) + RESUPPLY <= SHELLS_CAP then
       local h = home(b)
       local p = h and s.find_non_colliding_position(shared.variant(b.corp, "lp-hauler"), h.position, 20, 0.5)
@@ -1209,7 +1347,7 @@ local function siege_step(b, trace, army)
       -- A clearance moves on along its way, nest after nest, while its shells last (one clearance per nest, each
       -- home and back, took 40 minutes for seven nests, push); any other siege moves up once.
       if op.pack_site or (spec.mortars > 1 and (op.clearance or not op.moved) and left > 0
-        and (op.truck or (op.hauler and op.hauler.valid)) and t and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE) then
+        and (op.drop or op.truck or (op.hauler and op.hauler.valid)) and t and game.tick - (op.last_target or op.phase_at) > ASSAULT_IDLE) then
         local site
         if op.pack_site then
           site = op.pack_site
@@ -1254,7 +1392,7 @@ local function siege_step(b, trace, army)
           end
           -- Its hauler gone while it stood at its site (shelled there), it cannot move: called off. (Read through as if it
           -- stood, the run died: the artillery base, era 3, 0.2.141.)
-          if not (op.hauler and op.hauler.valid) then
+          if not op.drop and not (op.hauler and op.hauler.valid) then
             trace(b, "siege: its hauler was destroyed at the site; it cannot move")
             return finish(b, "aborted", trace, army)
           end
@@ -1266,6 +1404,18 @@ local function siege_step(b, trace, army)
           op.mortars, op.mortar, op.site = {}, nil, site
           op.phase, op.phase_at, op.last_target = "march", game.tick, nil
           op.best_d2, op.best_at = nil, nil
+          -- A drop siege's guards march; its pieces come down again where they hold (drop_march).
+          if op.drop then
+            local from
+            for _, u in ipairs(op.members) do if u.valid then from = u.position; break end end
+            op.route = from and op.clearance and sneak_route(b, {from.x, from.y}, site, {turrets = false, worms = true}) or {}
+            op.best_idx = nil
+            local cmds = rest_of_way(op.route, from or {x = site[1], y = site[2]}, guard_spot(b, op))
+            order_all(op.members, #cmds > 1 and {type = defines.command.compound,
+              structure_type = defines.compound_command.return_last, commands = cmds} or cmds[1])
+            trace(b, string.format("siege: moving up to %.0f,%.0f with %d shells (its pieces lifted)", site[1], site[2], left))
+            return
+          end
           -- Round the worms too (a bare straight move led the march past them, review).
           local hp = op.hauler.position
           local mroute = op.clearance and sneak_route(b, {hp.x, hp.y}, site, {turrets = false, worms = true}) or {}

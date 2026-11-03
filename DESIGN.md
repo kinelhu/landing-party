@@ -4112,6 +4112,26 @@ Bugs and surprises the headless runs caught, each kept as a check:
   - Its hauler re-sent after it stuck went straight at its site, across the worm belt its way went round, its guards
     behind it: 4 of 10 back (standsiege nests, with its hauler stuck at the start from the new start point). It goes on
     from its waypoint nearest it: 10 of 10.
+- **Kessler-Hayashi's sieges come down from orbit** (0.2.165; the user, 2026-11-03: "maybe we drop [the truck] altogether
+  and have the siege build cannon(s) out of thin air when they reach their staging area, like in rimworld", then "drop
+  their guns from orbit seems cool if we use the cargo drop visualization"). The truck had been most of its sieges'
+  failures: stuck at its gate, its escort in its way or inside its wall, its orders given up, its way lost on a re-send;
+  and on the 0.2.164 ladder, started 13 past its wall, it lost its whole way within 100 ticks on the artillery base (3, 3
+  and 166 razed), and put back at 5 with its guards beside it, it still stuck 300 tiles out on both seeds tried.
+  `orbital_drop` (shared.CORPS, Kessler-Hayashi): no truck; its guards march its way (the cost map's, or round nests);
+  held (half its living guards within DROP_HOLD, 16, of its site), a cargo pod comes down on each piece's spot (pods.send,
+  the engine's own descent, about 7 s) and its pieces stand after the deploy's 30 s; moving up lifts them and drops them
+  again where its guards hold next; its resupply is a pod of shells, paid as a convoy was. Lost: all its guards on the way
+  (intercepted). Stuck: its lead (its guard nearest its site) neither nearer nor further along its way for a minute.
+  Its guards march with no distraction, as its truck drove: answering what hit them, they followed the lasers that
+  reached them on the way and all 10 died before its pods came (standsiege, first try). Grubstake keeps its trucks.
+  `standsiege`: held, 3 pods, its pieces up, moved up and dropped again, 86 razed, 10 of 10 back.
+  `siegetier convoy` and `clear worms` test the truck and convoy Grubstake still sends: `drop_off` (debug_tune) there.
+  The fortress four, orbital (both), siegetier, clear, armed, dome battery, breach arty, push and standsiege nests pass.
+  Fixed on the way: the guards' last march order went to their start point beside the truck (a name reused in 0.2.149),
+  so a guard left behind it walked home after its way's last waypoint.
+  Slip: the mod edited while a batch of six siege scenarios and two visits ran (all with the drop flag off, the edits
+  inert, all passed); the batch's evidence stands for the truck fix only.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

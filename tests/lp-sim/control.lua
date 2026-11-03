@@ -1658,7 +1658,10 @@ scenarios.siegetier = function()
   end)
   local tier = ({["2"] = 2, ["3"] = 3, sally = 1, convoy = 2})[params.mix] or 2
   -- Forced (/lp siege) with raids off: weighted, eight gun turrets need a raid of 28, which a grown garrison affords.
-  schedule(30, function() lp("debug_tune", {corp_level = {serenity = 3}, siege_tier = tier, era = 4, raids_off = true}) end)
+  -- (Its truck and convoys as Grubstake still sends them: Kessler-Hayashi's sieges drop from orbit since 0.2.165, and the
+  -- convoy this kills never set out.)
+  schedule(30, function() lp("debug_tune", {corp_level = {serenity = 3}, siege_tier = tier, era = 4, raids_off = true,
+    drop_off = params.mix == "convoy" or nil}) end)
   schedule(60, function()
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
   end)
@@ -5743,7 +5746,8 @@ local function truck_checks()
 end
 
 scenarios.clear = function()
-  if params.mix == "worms" then truck_watch() end
+  -- (The howitzer truck, as a corporation without orbital drops sends it: Kessler-Hayashi's drop since 0.2.165.)
+  if params.mix == "worms" then truck_watch(); schedule(20, function() lp("debug_tune", {drop_off = true}) end) end
   -- Settled: the target razed.
   settle_when(function()
     return S.c ~= nil and surface().count_entities_filtered{position = S.c, radius = 4, name = "assembling-machine-1"} == 0
