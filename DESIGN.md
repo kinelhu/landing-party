@@ -4045,6 +4045,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   The ladder, three seeds, 90 minutes (the player's buildings razed by Kessler-Hayashi): the artillery base 123, 1, 30
   (mean 51; 45 at 0.2.156); nw 82, 156, 106 (mean 115; 0 at 0.2.156, 88 at 0.2.151, its best yet); nwa 479, 874, 1,209
   (mean 854; 0 at 0.2.156, 12 at 0.2.151). It stood in all nine; strikes 0 to 4 a run.
+- **A siege moves with its railgunners through a way with a price** (0.2.158; the user: "Should the siege move with
+  railgunners for efficient nest clearing?"). Its field (ops field) leaves its railgunners out, kept home for clearances,
+  and they had been most of its garrison: on nw its sieges went at tier 1, 5 or 6 guards against 216 shells read. An armed
+  camp's siege on a player whose way has a price (the cost map: nests, worms or guns on it) counts them now, and they go
+  with it (its guards were already taken from every foot unit). The ladder, three seeds: nw 114, 136, 203 (mean 151; 115),
+  strikes 3 to 5 a run; nwa 479, 874, 1,281 (mean 878; 854); the artillery base 67, 1, 30 (mean 33; 51: seed 1 alone,
+  123 to 67, seeds 2 and 3 the same to the building; watched). Nerfing railgunners against everything else (the user's
+  aside) not done: nothing measured asks for it.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

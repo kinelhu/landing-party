@@ -96,6 +96,12 @@ local function pay_convoy(b)
   b.parts = b.parts - (price - from_fund)
   return true
 end
+-- Its railgunners at home (field leaves them out: kept for clearances).
+local function rails_home(b)
+  local n = 0
+  for _, u in ipairs(b.garrison or {}) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then n = n + 1 end end
+  return n
+end
 local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
 local ESCORT_NEAR = 24        -- guards this near its hauler are kept behind it; further, they go on along its way
 local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
@@ -269,7 +275,7 @@ local function choose_siege(b, army, only_battery)
   -- Against a battery, a corporation that ever besieges does so now (Grubstake never does: it raids).
   local counter = shared.capable(b.corp, "siege", 99)
   local in_flight = ops.player_ops()
-  local n = field(b, army)
+  local n = field(b, army) + (b.armed and rails_home(b) or 0)
   if n < SIEGE_GUARDS then return end
   local h = home(b)
   local best, bs, site, piece
@@ -382,6 +388,11 @@ local function siege_tier(b, t, army)
   end
   local n, reserve = field(b, army)
   if battery(t) then n = n + reserve end
+  -- Its railgunners too, an armed camp's siege on a player whose way has a price (the cost map: nests and worms on it, or
+  -- guns): the biter-clearing unit goes with it through nest country (the user, 2026-11-02: "Should the siege move with
+  -- railgunners for efficient nest clearing?"). Kept home for clearances, they had been most of its garrison, and on nw
+  -- its sieges went at tier 1, 5 or 6 guards in its field against 216 shells read (0.2.157).
+  if b.armed and against_player(t.owner) and t.way_keeps and t.way_keeps < 1 then n = n + rails_home(b) end
   -- (Its siege fund for sieges on a player only: drawing on it, an armed camp sent tier-2 clearances at the nests round it
   -- again and again, lost their guards, and fell to Synthexis, fed nw, 2026-11-02.)
   local purse = (b.parts or 0) + (against_player(t.owner) and (b.siege_fund or 0) or 0)
