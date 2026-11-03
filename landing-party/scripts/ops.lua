@@ -1789,7 +1789,11 @@ function ops.tick(b, tick, trace, army)
     return answer(b, trace, army)
   end
   if b.op then
-    if tick % 300 == 100 then step(b, trace, army) end
+    -- (And when its strike asks, op.step_at: orbital.lua, at its paint and its fall.)
+    if tick % 300 == 100 or (b.op.step_at and tick >= b.op.step_at) then
+      b.op.step_at = nil
+      step(b, trace, army)
+    end
   elseif tick % DECIDE_TICKS == 0 and tick >= (b.next_op or 0) and not storage.raids_off and not storage.army_off
     and not storage.choice_off
     and not army.withdrawing(b) then
@@ -1941,7 +1945,14 @@ function ops.summary(b)
     launched = b.ops_launched or 0, done = b.ops_done or 0, aborted = b.ops_aborted or 0, log = b.ops_log or {},
     op_owner = t and t.owner or nil, reprisal = b.reprisal and game.tick < b.reprisal.till and b.reprisal.owner or nil,
     reprisal_at = b.reprisal and (b.reprisal.since or b.reprisal.till - REPRISAL_TICKS), op_started = b.op and b.op.started, op_launched = b.op and b.op.launched,
-    op_members = b.op and (function() local o = {} for _, u in ipairs(b.op.members or {}) do if u.valid then o[#o + 1] = {u.position.x, u.position.y} end end return o end)(),
+    op_members = b.op and (function() local o = {} for _, u in ipairs(b.op.members or {}) do if u.valid then local c = u.commandable.command
+      o[#o + 1] = {u.position.x, u.position.y, shared.kind_of(u.name), c and c.type or -1, c and c.commands and #c.commands or 0,
+        u.commandable.moving_state, u.commandable.distraction_command and 1 or 0,
+        (function() local d = u.commandable.distraction_command local tg = d and d.target
+          return tg and tg.valid and (tg.name .. "@" .. math.floor(tg.position.x) .. "," .. math.floor(tg.position.y)) or (d and tostring(d.type)) or "" end)()} end end return o end)(),
+    op_phase = b.op and b.op.phase, op_site = b.op and b.op.site, op_hold = b.op and b.op.hold, op_jump = b.op and b.op.jump,
+    strike_center = b.op and b.op.strike_center, strike_paint = b.op and b.op.strike_paint,
+    strike_falling = b.op and b.op.strike_falling,
     held = b.intel and b.intel.held and (function() local o = {} for k in pairs(b.intel.held) do o[k] = held_by(b, k) end
       return o end)() or nil,
     siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,

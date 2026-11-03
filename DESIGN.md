@@ -4180,6 +4180,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   50 (mean 54; 58 at 0.2.165), nw 0, 0, 0 (its robots rebuilt everything, 1 to 4 ghosts left at 90 minutes), nwa mean
   198. Unchanged: against a base that heals from its storage, what a siege should achieve is a design question for the
   user (its drain, what the rebuilds cost; or the supply, its roboports, storage and power; or both).
+- **A walking barrage: a drop siege's escort goes in behind its strike** (0.2.168; the user, 2026-11-03: "a huge timing
+  mismatch where guards did not take advantage of the ongoing shelling, especially the orbital strike which completely
+  razed large parts of the wall"; and "Monitor using test / lab fortresses where you can look at unit position
+  longitudinally"). The strike tells its siege at its paint and its fall (op.step_at: its step ran every 5 s, too coarse
+  for a 12 s paint). On its paint the escort moves to a jump-off: the first point no gun reaches on the line from the
+  strike's centre back to its hold (guard duty holds them there, not at the hold). On its fall it goes in: to the breach
+  undistracted, then anything there, then the roboports nearest its site, then its target; its shells hit only its
+  enemies (force "enemy" on the shell and its bomblets). Its escort alone: from its camp, 330 tiles off, the reinforcements
+  came straight through the worm belt and stalled there. Found with standsiege's march record (march.jsonl,
+  `scripts/march_plot.py`: each guard's distance to the breach over time): engaging anything on the way, its escort stood
+  45 s at its jump-off dueling the lasers round the substation in depth, 33 tiles aside and out of their reach.
+  `standsiege nests` checks half its escort at the breach within 20 s of the fall (5 s; 106 s at 0.2.167). The outpost
+  109 to 6 buildings (to 37 at 0.2.167), its escort 18 of 18 back. Fortress (four), siegetier 2 and 3, orbital (both),
+  armed and standsiege pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

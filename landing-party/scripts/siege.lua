@@ -60,11 +60,10 @@ end
 local HOLD_MARGIN = 6          -- tiles round a point that no gun may cover for its guards to wait there
 local HOLD_READ = 150          -- tiles round its site whose guns a drop siege reads for its hold
 -- A drop siege's guards: this many a piece (its mortars and its howitzer), its escort and its assault both (the user,
--- 2026-11-03: "almost as many cannons as guards?"; agreed: 6 a piece). Its assault goes in on its strike, STRIKE_AFTER
--- after its last shell (their flight), with those there: called from its camp, 400 tiles off, reinforcements came
--- minutes after the robots had mended what the strike broke.
+-- 2026-11-03: "almost as many cannons as guards?"; agreed: 6 a piece). Its assault goes in behind its strike, with
+-- those there: called from its camp, 400 tiles off, reinforcements came minutes after the robots had mended what the
+-- strike broke.
 local GUARDS_PER_PIECE = 6
-local STRIKE_AFTER = 90
 -- Whether a gun of `fire` (firemap.read) covers q or HOLD_MARGIN round it.
 local function exposed(fire, q)
   if firemap.count(fire, q, 1) > 0 then return true end
@@ -1315,7 +1314,9 @@ local function siege_step(b, trace, army)
     -- (Not in its assault: its leash called its assault back to its hold every look, and it razed nothing, siegetier 3.)
     if op.clearance or (op.drop and op.phase == "bombard") then
       local s = game.surfaces[b.surface]
-      local c = op.drop and not op.clearance and hold_spot(b, op) or {x = op.site[1], y = op.site[2]}
+      -- (Round its jump-off once its guards moved up behind its strike: leashed to its hold, they were pulled back.)
+      local c = op.drop and not op.clearance and (op.jump and {x = op.jump[1], y = op.jump[2]} or hold_spot(b, op))
+        or {x = op.site[1], y = op.site[2]}
       -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
       local guard_r = op.drop and not op.clearance and DROP_GUARD or CLEAR_GUARD
       -- A leash: a guard more than LEASH beyond its ring walks back to the site, undistracted. Told to hold the ring,
@@ -1565,8 +1566,31 @@ local function siege_step(b, trace, army)
       -- up and leaving home").
       local over = op.last_target and ((in_reach == 0 and game.tick - op.last_target > ASSAULT_IDLE)
         or (left == 0 and not op.convoy))
-      -- A drop siege's on its strike (orbital.lua sets strike_done), with those there and what follows from home.
-      local on_strike = op.drop and op.strike_done and game.tick >= op.strike_done + STRIKE_AFTER
+      -- A drop siege's guards behind its strike (a walking barrage; the user, 2026-11-03: "guards did not take advantage
+      -- of the ongoing shelling, especially the orbital strike which completely razed large parts of the wall"). On its
+      -- paint, to a jump-off: the first point no gun reaches on the line from the strike's centre back to its hold. On
+      -- its fall, in, at the breach first: its shells fall from the centre outward and hit its enemies only. (Sent after
+      -- its last shell from its hold, 20 to 40 tiles back, they came after the barrage and lost half.)
+      if op.drop and op.strike_paint and not op.jumped and op.strike_center then
+        op.jumped = true
+        local h = hold_spot(b, op)
+        local c = {x = op.strike_center[1], y = op.strike_center[2]}
+        local jump = h
+        if op.fire then
+          for k = 1, 20 do
+            local q = {x = c.x + (h.x - c.x) * k / 20, y = c.y + (h.y - c.y) * k / 20}
+            if not exposed(op.fire, q) then jump = q; break end
+          end
+        end
+        op.jump = {jump.x, jump.y}
+        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+          commands = {{type = defines.command.go_to_location, destination = jump, radius = 4,
+            distraction = defines.distraction.none},
+            {type = defines.command.stop, distraction = defines.distraction.none}}})
+        trace(b, string.format("siege: its guards move up to %.0f,%.0f behind its strike (%.0f from the breach)",
+          jump.x, jump.y, math.sqrt((jump.x - c.x) ^ 2 + (jump.y - c.y) ^ 2)))
+      end
+      local on_strike = op.drop and op.strike_falling and true or false
       over = over or on_strike
       -- (Sized as its raids are, ops.raid_want: what got in near there, else its formula on the prices its losses taught it,
       -- on its target read again after the barrage, the guns its shells broke gone from it. By the formula on its first
@@ -1591,6 +1615,9 @@ local function siege_step(b, trace, army)
         -- (A drop siege's from home by what its composition favours against its killers, army.composition: its escort is its
         -- mix's shares, and an assault of its infantry died to the gun turrets, siegetier 3; the user, 2026-11-03: tanks
         -- for the assault.)
+        -- (Not on its strike: its own escort goes in behind it; from its camp, 330 tiles off, they came straight through
+        -- the worm belt and stalled there, standsiege nests.)
+        if on_strike then want = #op.members end
         if op.drop and army.composition then
           local w, sum = army.composition(b, army.mix(b)), 0
           for name, x in pairs(w) do if name ~= "lp-railgunner" then sum = sum + x end end
@@ -1613,6 +1640,14 @@ local function siege_step(b, trace, army)
         -- A drop siege's at its roboports first, nearest its site first, then its target (what makes the damage stay: on
         -- the artillery base and nw its robots rebuilt nearly all it broke, 0 lost on nw).
         local acmds = {}
+        if op.drop and op.strike_center then
+          -- (To the breach undistracted first: told to engage anything on the way, its escort stood 45 s at its jump-off in
+          -- a duel with the lasers round a substation in depth, 33 tiles aside and out of their reach; standsiege nests.)
+          acmds[#acmds + 1] = {type = defines.command.go_to_location, destination = {op.strike_center[1], op.strike_center[2]},
+            radius = 4, distraction = defines.distraction.none}
+          acmds[#acmds + 1] = {type = defines.command.attack_area, destination = {op.strike_center[1], op.strike_center[2]},
+            radius = 12, distraction = defines.distraction.by_anything}
+        end
         if op.drop then
           local ports = s.find_entities_filtered{position = t.pos, radius = 40, type = "roboport", force = foes}
           table.sort(ports, function(a, c)

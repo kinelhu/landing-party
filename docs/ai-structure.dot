@@ -58,17 +58,17 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n777 lines", width=1.66, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1961 lines", width=2.98, fillcolor="#f7dede"];
+    "ops" [label="ops\n1972 lines", width=2.99, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
-    "siege" [label="siege\n1689 lines", width=2.68, fillcolor="#f7dede"];
+    "siege" [label="siege\n1724 lines", width=2.72, fillcolor="#f7dede"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
     "dome" [label="dome\n291 lines", width=1.12, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n169 lines", width=0.99, fillcolor="#eef2f7"];
+    "orbital" [label="orbital\n171 lines", width=0.99, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n110 lines", width=0.92, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];

@@ -4730,6 +4730,28 @@ scenarios.standsiege = function()
       lp("dev", {"siege", tostring(S.k)}, S.tgt)
     end
   end)
+  -- The march's record (the user, 2026-11-03: "Monitor using test / lab fortresses where you can look at unit position
+  -- longitudinally"): every second of a siege, its guards' positions and its phase and strike, to
+  -- script-output/landing-party/march.jsonl (scripts/march_plot.py draws it).
+  for t = 8 * 3600, END - 120, 60 do
+    schedule(t, function()
+      local o = lp("stats", S.k).ops
+      if not (o.op or ""):find("siege", 1, true) then return end
+      -- When half its escort first stood within 15 of its strike's breach, from the strike's fall.
+      if o.strike_falling and o.strike_center and not S.at_breach then
+        local n, near = 0, 0
+        for _, m in ipairs(o.op_members or {}) do
+          n = n + 1
+          if (m[1] - o.strike_center[1]) ^ 2 + (m[2] - o.strike_center[2]) ^ 2 <= 15 * 15 then near = near + 1 end
+        end
+        S.fall_at = o.strike_falling
+        if n > 0 and near * 2 >= n then S.at_breach = game.tick end
+      end
+      helpers.write_file("landing-party/march.jsonl", helpers.table_to_json({tick = game.tick, phase = o.op_phase,
+        site = o.op_site, hold = o.op_hold, jump = o.op_jump, center = o.strike_center, paint = o.strike_paint,
+        falling = o.strike_falling, members = o.op_members, target = S.tgt}) .. "\n", true)
+    end)
+  end
   -- Its siege's guards out past its fortress, sampled: the most at once.
   for t = 8 * 3600 + 1800, END - 120, 600 do
     schedule(t, function()
@@ -4766,6 +4788,13 @@ scenarios.standsiege = function()
       end
     end
     check("standsiege: the siege ran", (st.called or 0) >= 1, serpent.line(st))
+    if nests then
+      -- (A walking barrage: its escort in behind its strike. Told to engage anything on the way, it stood 45 s at its
+      -- jump-off dueling lasers 33 tiles aside, and came in after the barrage; 0.2.167.)
+      check("standsiege nests: half its escort at the breach within 20 s of its strike's fall", S.fall_at and S.at_breach
+        and S.at_breach - S.fall_at <= 20 * 60, S.fall_at and S.at_breach and string.format("%.0f s", (S.at_breach - S.fall_at) / 60)
+        or tostring(S.fall_at))
+    end
     -- (Set ESCORT_BACK behind its hauler, which started 5 past its wall, its guards stood inside it: the artillery
     -- reference base's siege stood 71 minutes with its 10 guards at home, and they counted as come back, 0.2.161.)
     local first

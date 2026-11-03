@@ -71,6 +71,8 @@ function orbital.call(b, op)
   table.insert(storage.kh_strikes, {base = b.id, surface = s.index, force = b.force, center = center,
     along = math.atan2(dy, dx) + math.pi / 2, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint"})
   b.strikes = (b.strikes or 0) + 1
+  -- Its siege told at once (its step runs every 5 s, too coarse for a 12 s paint): its guards move up behind it.
+  op.strike_center, op.strike_paint, op.step_at = center, game.tick, game.tick + 1
   trace(b, string.format("called on the wall at %.0f,%.0f; its spotter paints it for %d s", center[1], center[2], PAINT / 60))
   return true
 end
@@ -143,6 +145,8 @@ function orbital.tick(tick)
         table.remove(storage.kh_strikes, i)
       elseif tick >= st.fire_at then
         st.phase, st.next = "fire", tick
+        -- Falling: its siege's assault goes in behind it (siege.lua), its shells its enemies' only.
+        if b and b.op and b.op.kind == "siege" then b.op.strike_falling, b.op.step_at = tick, tick + 1 end
         st.queue, st.k = targets(st, s, b), 1
         if b then b.strike_guns = (b.strike_guns or 0) + (st.guns or 0) end
         if b then trace(b, string.format("falls: %d shells, on the lane and the %d guns covering it", #st.queue, st.guns or 0)) end
@@ -158,8 +162,6 @@ function orbital.tick(tick)
       st.next = tick + PACE
       if st.k > #st.queue then
         if b then b.strike_shells = (b.strike_shells or 0) + st.shells; trace(b, string.format("done: %d shells", st.shells)) end
-        -- Its siege's assault goes in on it (siege.lua: the lane dark before the robots mend it).
-        if b and b.op and b.op.kind == "siege" then b.op.strike_done = tick end
         table.remove(storage.kh_strikes, i)
       end
     end
