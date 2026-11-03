@@ -16,6 +16,7 @@
 -- its incubators and creep eat of the pollution (creep.drink), TRICKLE an incubator a minute whatever the air, and START_BIOMASS its
 -- pod brought. Spent at each birth (on_entity_spawned); at nothing left its incubators stop (inactive) until it earns.
 local shared = require("__landing-party__.shared")
+local achievements = require("__landing-party__.scripts.achievements")
 local herd = require("__landing-party__.scripts.herd")
 local tactics = require("__landing-party__.scripts.tactics")
 local pods = require("__landing-party__.scripts.pods")
@@ -2132,6 +2133,8 @@ function farm.on_pen_died(e)
   f.pens_killed = (f.pens_killed or 0) + 1
   trace(string.format("farm %d: an incubator killed (by %s); %.0f of its biomass with it, %.0f left over %d", f.id,
     e.force and e.force.name or "?", share, cul.biomass, standing - 1))
+  -- Its last (the dying pen is still valid here, so 1 standing): Culture shock, to the force that killed it.
+  if standing <= 1 and e.force then achievements.grant("lp-culture-shock", e.force) end
 end
 
 -- A pen hit by anyone at war with it: its farm's wave on its way comes home.

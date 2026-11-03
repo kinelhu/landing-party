@@ -171,10 +171,11 @@ def stage(scene, tiles, margin):
 def render(scene, path):
     scene.render.filepath = path; bpy.ops.render.render(write_still=True)
 
-def passes(scene, out, frames, set_frame, model, glowing, ground, sun, world):
-    """Each frame's body and glow (the lit parts alone: every other part a holdout, no light), then one shadow."""
+def passes(scene, out, frames, set_frame, model, glowing, ground, sun, world, shadow_each=False):
+    """Each frame's body and glow (the lit parts alone: every other part a holdout, no light), then one shadow, or one a
+    frame where the shape moves (shadow_each: a turning dish's)."""
     bg = world.node_tree.nodes["Background"]
-    for k in ("body", "glow"): os.makedirs(f"{out}/{k}", exist_ok=True)
+    for k in ("body", "glow") + (("shadow",) if shadow_each else ()): os.makedirs(f"{out}/{k}", exist_ok=True)
     for f in range(frames):
         set_frame(f)
         ground.hide_render = True; sun.hide_render = False; bg.inputs[1].default_value = 0.55
@@ -185,6 +186,14 @@ def passes(scene, out, frames, set_frame, model, glowing, ground, sun, world):
             ms = [s.material for s in o.material_slots if s.material]
             o.is_holdout = not any(m in glowing for m in ms)
         render(scene, f"{out}/glow/{f:03d}.png")
+        if shadow_each:
+            for o in model: o.is_holdout = False; o.visible_camera = False
+            sun.hide_render = False; bg.inputs[1].default_value = 0.55; ground.hide_render = False
+            render(scene, f"{out}/shadow/{f:03d}.png")
+            for o in model: o.visible_camera = True
+    if shadow_each:
+        for o in model: o.is_holdout = False
+        return
     for o in model: o.is_holdout = False
     sun.hide_render = False; bg.inputs[1].default_value = 0.55; ground.hide_render = False
     for o in model: o.visible_camera = False

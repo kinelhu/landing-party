@@ -12,6 +12,7 @@ local costmap = require("__landing-party__.scripts.costmap")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local know = require("__landing-party__.scripts.know")
 local pods = require("__landing-party__.scripts.pods")
+local achievements = require("__landing-party__.scripts.achievements")
 
 local siege = {}
 
@@ -1359,6 +1360,8 @@ local function siege_step(b, trace, army)
     op.mortars, op.mortar = live, live[1]
     if not op.mortar and op.phase == "bombard" then
       trace(b, "siege: the mortars were destroyed")
+      -- (A standing siege's guns all destroyed before it packed up: Siege broken.)
+      if op.standing then achievements.siege_broken(game.forces[b.force]) end
       return finish(b, "aborted", trace, army)
     end
     local left, empty = 0, {}

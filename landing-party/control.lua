@@ -2,6 +2,7 @@ local shared = require("shared")
 local base = require("scripts.base")
 local site = require("scripts.site")
 local faction = require("scripts.faction")
+local achievements = require("__landing-party__.scripts.achievements")
 local command = require("scripts.command")
 local phases = require("__landing-party__.scripts.phases")
 local biters = require("__landing-party__.scripts.biters")
@@ -214,7 +215,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   -- user, 2026-11-03: "I don't like the units dropping materials... ok for cosmetic wrecks that may disappear over time,
   -- but not items... it's annoying"; a wreck of its plates and circuits since 2026-10-21).
   if shared.is_corp(ent.force.name) and e.loot and not e.loot.is_empty() then e.loot.clear() end
-  if kind == "lp-uplink" then faction.uplink_lost(ent) end
+  if kind == "lp-uplink" then faction.uplink_lost(ent); achievements.uplink(ent, e.force) end
   if kind == "lp-pacifier" then pact.lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).
   if kind == "lp-depot" then command.drop_cores(ent.surface, ent.position, 1) end
@@ -876,6 +877,7 @@ remote.add_interface("landing-party", {
   -- Tests: the /lp dev tools (scripts/dev.lua) at a position, as a player standing there would use them.
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
+  achieved = function() return storage.lp_achieved or {} end,
   pact_state = function() return storage.pact_state end,
   notice_counts = function() return storage.notice_counts or {told = 0, held = 0} end,
   debug_notice = function(key) shared.notice(game.forces.player, {key, "test", "test"}) end,

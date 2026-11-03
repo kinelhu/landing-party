@@ -4914,6 +4914,9 @@ scenarios.orbital = function()
     elseif spot then
       check("orbital: its spotter killed, the strike called off", st.called >= 1 and st.off >= 1 and st.shells == 0,
         serpent.line(st))
+      -- (Achievements, 2026-11-03: Eyes first for the player that called it off.)
+      local got = lp("achieved")
+      check("orbital: Eyes first granted", (got["lp-eyes-first"] or 0) >= 1, serpent.line(got))
     else
       check("orbital: called, its shells walked the wall", st.called >= 1 and st.shells >= 7, serpent.line(st))
       -- (Seven on the wall alone, whatever stood behind it, before 0.2.141: the lasers covering the gap held the siege off.)

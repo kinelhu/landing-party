@@ -378,6 +378,19 @@ radar.energy_usage = watts(shared.power["lp-radar"])
 local relay = copy("radar", "radar", "lp-orbital-relay")
 relay.energy_usage = watts(shared.power["lp-radar"])
 relay.max_health = 2000
+-- Its own body, rendered in Blender (tools/blender/antennas.py relay, sheet.py; the graphics pass, 2026-11-04): a tracking
+-- dish on a yoke over an equipment housing; 64 frames as the radar's directions, its turning the dish's (its shadow
+-- with it). Frame size and shift from sheet.json.
+do
+  local function rl(file, extra)
+    local l = {filename = "__landing-party__/graphics/serenity/relay/" .. file .. ".png", width = 265, height = 302,
+      direction_count = 64, line_length = 8, scale = 0.5, shift = {0.515625, -0.53125}}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  relay.pictures = {layers = {rl("body"), rl("glow", {draw_as_glow = true, blend_mode = "additive"}), rl("shadow", {draw_as_shadow = true})}}
+  relay.rotation_speed = 0.002
+end
 data:extend({relay})
 -- The dome projector (a Kessler-Hayashi hub's dome, dome.lua): up while it stands with power. (A radar's body for now.)
 local projector = copy("radar", "radar", "lp-dome-projector")
@@ -525,6 +538,20 @@ local function grow(t, k, seen)
   for _, v in pairs(t) do grow(v, k, seen) end
 end
 grow(pacifier.pictures, 1.4, {})
+-- Its own body, rendered in Blender (tools/blender/antennas.py pacifier, sheet.py; the graphics pass, 2026-11-04): a
+-- guyed broadcast spire, a pulse of light climbing its three rings; 32 frames as the radar's directions, its turning the
+-- pulse. Grubstake's in its amber (the manifest). Frame size and shift from sheet.json; the radar above the fallback.
+do
+  local function pc(file, extra)
+    local l = {filename = "__landing-party__/graphics/serenity/pacifier/" .. file .. ".png", width = 363,
+      height = 399, direction_count = 32, line_length = 8, scale = 0.5, shift = {0.8984375, -1.15625}}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  pacifier.pictures = {layers = {pc("body"), pc("glow", {draw_as_glow = true, blend_mode = "additive"}),
+    pc("shadow", {draw_as_shadow = true})}}
+  pacifier.rotation_speed = 0.004
+end
 
 -- The scrap cannon (Grubstake's "dirty flak": the user; docs/reviews/2026-10-15-grubstake-flavour-consult.md): a gun
 -- turret's body a size up, lobbing a shell that bursts over the target. Many soft hits over an area (the railgun's
@@ -791,6 +818,7 @@ require("units")
 require("player")
 require("corps")
 require("look")
+require("achievements")
 require("plates")
 require("components")
 require("biotech")

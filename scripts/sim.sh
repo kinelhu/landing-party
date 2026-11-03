@@ -29,6 +29,9 @@ cat > "$SIM/mods/mod-list.json" <<JSON
 JSON
 out="$SIM/script-output/landing-party"
 rm -rf "$out" "$SIM/saves/sim.zip"
+# The last run's results go first: a run that dies at load left them, and read after it they passed for its own
+# (2026-11-04: a runtime require crashed orbital spotter, and its old results read "ALL PASSED").
+rm -f "$REPO/docs/sim/$RUN/results.txt"
 
 run() { "$FACTORIO" --config "$SIM/config/config.ini" "$@" > "$SIM/sim.out" 2>&1 || {
   echo "SIM FAILED ($RUN): factorio exited non-zero"; grep -hnE -A8 "Error" "$SIM/factorio-current.log" "$SIM/sim.out" | head -40; exit 1; }; }

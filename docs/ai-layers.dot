@@ -7,16 +7,17 @@ digraph layers {
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 312 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n11 modules, 3013 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n16 modules, 6135 lines\nlayout 1739", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n15 modules, 6747 lines\nops 2016, siege 1756", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n15 modules, 6752 lines\nops 2016, siege 1759", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1380 lines", fillcolor="#eef2f7"];
-  "The biotech" [label="The biotech\n5 modules, 6920 lines\nherd 3396, farm 2317", fillcolor="#f7dede"];
+  "The biotech" [label="The biotech\n5 modules, 6923 lines\nherd 3396, farm 2320", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
-  "The player's army" [label="The player's army\n3 modules, 694 lines", fillcolor="#eef2f7"];
+  "The player's army" [label="The player's army\n4 modules, 728 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="3", penwidth=1.8];
   "Army and operations" -> "Knowledge and strategy (per faction)" [label="4", penwidth=2.0];
   "Army and operations" -> "Perception and attempts (any attacker)" [label="7", penwidth=2.8];
   "Army and operations" -> "Seams (leaves)" [label="16", penwidth=5.0];
   "Army and operations" -> "Settlement" [label="2", penwidth=1.5];
+  "Army and operations" -> "The player's army" [label="2", penwidth=1.5];
   "Corporation" -> "Army and operations" [label="8", penwidth=3.0];
   "Corporation" -> "Knowledge and strategy (per faction)" [label="2", penwidth=1.5];
   "Corporation" -> "Perception and attempts (any attacker)" [label="2", penwidth=1.5];
@@ -36,6 +37,7 @@ digraph layers {
   "The biotech" -> "Knowledge and strategy (per faction)" [label="3", penwidth=1.8];
   "The biotech" -> "Perception and attempts (any attacker)" [label="15", penwidth=4.8];
   "The biotech" -> "Seams (leaves)" [label="7", penwidth=2.8];
+  "The biotech" -> "The player's army" [label="1", penwidth=1.2];
   "The map" -> "Corporation" [label="1", penwidth=1.2];
   "The map" -> "Seams (leaves)" [label="2", penwidth=1.5];
   "Army and operations" -> "Corporation" [style=dashed, color="#d2691e", fontcolor="#d2691e", label="3 plug-in"];

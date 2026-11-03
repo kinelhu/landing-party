@@ -10,6 +10,7 @@
 -- (Kessler-Hayashi), armed camps only; debug_tune strikes_off.
 local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
+local achievements = require("__landing-party__.scripts.achievements")
 
 local orbital = {}
 local PAINT = 12 * 60
@@ -210,6 +211,7 @@ function orbital.tick(tick)
     elseif st.phase == "paint" then
       if not st.spotter.valid then
         if b then trace(b, "its spotter is down: called off"); b.strikes_off_called = (b.strikes_off_called or 0) + 1 end
+        if b then achievements.spotter(game.forces[b.force]) end
         table.remove(storage.kh_strikes, i)
       elseif tick >= st.fire_at then
         st.phase, st.next = "fire", tick

@@ -220,7 +220,7 @@ def main():
                 manifest[corp].add(f)
         # Rendered buildings (tools/blender) another corporation has its own render of, under the same names.
         for d in sorted((OUT / "serenity").iterdir()):
-            if d.name in ("mortar", "howitzer"):
+            if d.name in ("mortar", "howitzer", "pacifier"):
                 for f in sorted(d.glob("*.png")):
                     for corp in CORPS:
                         if corp != "serenity" and (OUT / corp / d.name / f.name).exists():

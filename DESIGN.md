@@ -4304,6 +4304,22 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the manifest (make_sprites maps rendered pairs). The player's mortar (a copy of Kessler-Hayashi's) shows its art. The
   howitzer's carriage one view (no truck's facing to keep: sieges drop it). 1.1 MB a mortar set, 2.1 MB a howitzer set.
   siegetier 3, fortress howitzer, clear worms and standsiege nests pass. Not yet seen in game.
+- **The orbital relay and the pacifier rendered; achievements; a run's stale results** (0.2.179, overnight 2026-11-04).
+  - The orbital relay: a tracking dish on a yoke over an equipment housing, 64 frames as the radar's directions, its
+    turning the dish's, its shadow with it (`lpkit.passes` shadow_each; `sheet.py` a shadow a frame). The dish an open
+    shallow cone on its elevation axle (a sphere's cap floated above the yoke, the first render). The pacifier: a guyed
+    broadcast spire, a pulse climbing three rings, 32 frames; Grubstake's in amber through the manifest
+    (`tools/blender/antennas.py`). pact (both) and armed relay pass.
+  - Achievements (the user: "Achievements are a def yes"): Claim jumped (Grubstake's uplink destroyed), Uplink down
+    (Kessler-Hayashi's), Culture shock (a Synthexis farm's last incubator), Eyes first (a strike called off at its
+    spotter), Siege broken (a standing siege's guns all destroyed); granted to the force whose deed it was
+    (`scripts/achievements.lua`), recorded in storage for tests (`achieved`); vanilla art stands in. Field work, Egg
+    farmer and Your own orbit wait for what they mark. `orbital spotter` checks Eyes first (it caught a crash first: a
+    `require` at run time, refused by Factorio: any spotter's death would have stopped the game; the module is
+    required at load now in orbital, siege and farm).
+  - `sim.sh` removes the run's last results.txt before it starts: a run that died at load left the previous one's, and
+    read after it "ALL PASSED" (seen with the crash above). Seen in both states: a broken mod, SIM FAILED and no results.
+  - Not yet seen in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
