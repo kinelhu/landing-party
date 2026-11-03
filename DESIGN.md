@@ -4256,6 +4256,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   projector (outside the kinds, its recolour was never applied). Found on the way: reading our own prototypes from a dump
   that already pointed them at their recolours dropped their files from the manifest on the next run (260 to 248); the
   script maps such paths back to their originals. labs, domehub and uplink pass. Not yet seen in game.
+- **A 3D spike: the dome tower in Blender** (2026-11-03; the user: "think the 3d path is something that could be done by
+  you?"). Blender 5.2.3 installed (Homebrew cask, unattended); `tools/blender/tesla_tower.py` models the tower in code and
+  renders it headless (Cycles, about 4 s): an orthographic camera at 45 degrees and the image stretched by sqrt(2)
+  (`factorio_frame.py`: square ground tiles, heights up the screen), the sun from the upper left, 64 px a tile, the
+  shadow its own layer from a shadow catcher at vanilla's strength (0.55). `compare.py` sets it beside the tesla turret,
+  radar and laser turret. Two passes: the silhouette, scale and light match; it reads cleaner than Wube's art (detail
+  lost at 32 px a tile; grime and occlusion help). Not wired into the mod: the dome projector is still the tesla turret
+  kitbash. A judgement for the user.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
