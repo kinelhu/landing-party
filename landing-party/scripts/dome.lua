@@ -250,7 +250,12 @@ local function run(b, d, tick)
     local own = game.forces[b.force]
     for _, pr in pairs(d.anchor.surface.find_entities_filtered{type = "artillery-projectile", position = d.anchor.position,
       radius = d.radius}) do
-      if pr.valid and pr.force ~= own and not pr.force.get_cease_fire(own) then catch(b, d, pr) end
+      -- (An orbital shell passes: a dome stops artillery fired from the ground, not a strike from orbit. The player's
+      -- strike, its counter taken from Kessler-Hayashi's own beacon, fell under a hub's dome and broke nothing, scenario
+      -- strike, 0.2.158.)
+      if pr.valid and pr.force ~= own and not pr.force.get_cease_fire(own) and pr.name ~= "lp-orbital-projectile" then
+        catch(b, d, pr)
+      end
       if d.left <= 0 then break end
     end
   end

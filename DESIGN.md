@@ -4053,6 +4053,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   strikes 3 to 5 a run; nwa 479, 874, 1,281 (mean 878; 854); the artillery base 67, 1, 30 (mean 33; 51: seed 1 alone,
   123 to 67, seeds 2 and 3 the same to the building; watched). Nerfing railgunners against everything else (the user's
   aside) not done: nothing measured asks for it.
+- **The batch's ops regression, two failures** (0.2.159; 141 runs). `strike`: the player's orbital strike broke nothing
+  of Kessler-Hayashi's; since the hub domes (0.2.147) a cluster's dome caught it, the strike firing the orbital shell (a
+  call: a dome stops artillery fired from the ground, not a strike from orbit; the strike is the player's counter, taken
+  from its own beacon; reversible). Orbital shells pass a dome now; 57 of its buildings lost to it again. Its bisection
+  first named 0.2.151: the regression that passed it at 0.2.150 had run with richness on, and the perturbation had
+  hidden it, as it had hidden `mended serenity`, which fails from 0.2.147 (bisected, 0.2.149's richness passing it by
+  chance). That one is a race: a raid of 4 against a square wall whose pieces the "robots" put back in 5 s, 13 put back
+  and it got in (razed the assembler in 3.6 minutes), 22 and it never did; a hub's projector shifts its timing. Its cause
+  is the raid's size: walls with no turret read a defence of 0, the least raid sent. Open: price walls in a raid's way
+  in (the cost map's walls, as Synthexis's), not tweak the test. Left failing, flagged.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
