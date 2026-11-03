@@ -4079,7 +4079,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   The ladder for 0.2.161, three seeds (Kessler-Hayashi's own count of the player's buildings razed): the artillery base 94,
   30, 30 (mean 51), strikes 2 to 5 a run; nw 34, 99, 220 (mean 118); nwa 933, 410, 1,545 (mean 963); it stood in all
   nine. Against the evening's baseline (0.2.151): nw 88, nwa 12. Its own count and the visit's census differ (seed 2 of
-  the artillery base: 30 by its count, 75 lasers and 19 roboports in the census): the ladder reads its own; to settle.
+  the artillery base: 30 by its count, 75 lasers and 19 roboports in the census): the ladder reads its own.
+- **Its strike's razing credited; walls out of a raid's defence again** (0.2.162). The count and the census differed for
+  its orbital strike: a building razed is a camp's when its cause is a unit of the camp's, and the strike's shells had its
+  force as their cause, so what they broke was nobody's (not in its war ladder, not against its standing down after 60
+  minutes razing nothing). Its shells' cause is its lander now, and a lander's kills are its camp's. `orbital` checks it
+  (17 wall pieces broken, its razing 0 to 21; seen failing with the force as cause: 0 to 0). The batch regression then
+  failed `blackout` (bisected to 0.2.160): with walls in a raid's defence, the darkened laser wall behind its one wall
+  read dearer than the poles round it, and the cut was never followed by the raid on the lasers it darkened; priced in
+  turrets (a wall cell's price over PER_TURRET) it still was. Walls taken out of the defence again; `mended serenity`
+  (a raid of 4 racing a wall put back in 5 s, no turret) fails again, flagged. How a wall should weigh in a raid is a
+  design question for the user: a mended wall needs more raiders, a bare one only time.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

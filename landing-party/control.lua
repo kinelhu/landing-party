@@ -331,6 +331,10 @@ script.on_event(defines.events.on_entity_died, function(e)
     -- Razed counts the player's structures only (trees felled by shells once inflated it by half).
     local id = e.cause and e.cause.valid and storage.unit_owner[e.cause.unit_number]
     local b = id and storage.bases[id]
+    -- (Or its lander, the cause of its orbital strike's shells: orbital.lua.)
+    if not b and e.cause and e.cause.valid and e.cause.type ~= "unit" then
+      for _, o in pairs(storage.bases) do if o.lander == e.cause then b = o; break end end
+    end
     if b then
       b.razed = b.razed + 1
       b.razed_at = e.tick

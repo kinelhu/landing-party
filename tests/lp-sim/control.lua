@@ -4791,6 +4791,7 @@ scenarios.orbital = function()
     local tgt = {c[1] + ux * 12, c[2] + uy * 12}
     surface().create_entity{name = "assembling-machine-2", position = tgt, force = "player"}
     S.c, S.tgt = c, tgt
+    S.razed0 = lp("stats", S.k).razed
     if standing then
       surface().create_entity{name = "roboport", position = {tgt[1] + px * 6, tgt[2] + py * 6}, force = "player"}
     end
@@ -4827,6 +4828,7 @@ scenarios.orbital = function()
       if S.walls_after or not S.c then return end
       if lp("debug_strikes", S.k).shells > 0 then
         S.walls_after = surface().count_entities_filtered{name = "stone-wall", position = S.c, radius = 30, force = "player"}
+        S.razed_after = lp("stats", S.k).razed
       end
     end)
   end
@@ -4864,6 +4866,11 @@ scenarios.orbital = function()
       check("orbital: the guns covering the lane shelled too", st.guns >= 1 and st.shells > 7, serpent.line(st))
       check("orbital: a lane opened, not the whole wall", S.walls_after and S.walls_after < S.walls0 and S.walls_after > 0,
         tostring(S.walls_after) .. " of " .. S.walls0 .. " right after it")
+      -- (Its shells caused by its force, its razing was credited to no camp: not in its war ladder, nor against its
+      -- standing down; the ladder's count and the census differed, 0.2.161.)
+      check("orbital: what its strike broke is its camp's razing", S.razed_after and S.razed0 and S.walls_after
+        and (S.razed_after - S.razed0) * 2 >= (S.walls0 - S.walls_after), string.format("%s -> %s, %s walls broken",
+        tostring(S.razed0), tostring(S.razed_after), tostring(S.walls_after and S.walls0 - S.walls_after)))
     end
   end)
 end

@@ -88,7 +88,9 @@ end
 local function fall(st, s, b, at)
   local x, y = at[1], at[2]
   s.create_entity{name = "lp-orbital-projectile", position = {x - 10, y - FALL}, target = {x, y}, speed = 1,
-    force = st.force, cause = game.forces[st.force], source = b and b.lander.valid and b.lander or nil}
+    -- (Its lander the cause: a kill is credited to its camp, control.lua; its force as the cause, the strike's razing
+    -- counted for nothing, not in its war ladder nor against its standing down, 0.2.161.)
+    force = st.force, cause = b and b.lander.valid and b.lander or game.forces[st.force], source = b and b.lander.valid and b.lander or nil}
 end
 
 -- Where its shells fall, in order: the lane's points outward from its point, and the guns covering the lane, each as many

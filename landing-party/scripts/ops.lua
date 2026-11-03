@@ -9,7 +9,6 @@
 --            no kill for 90 s while attacking; or, from the staging point, more turrets seen than the force
 --            can take (it turns back unhurt). An aborted target is remembered (tried, defence seen, cool).
 local shared = require("__landing-party__.shared")
-local costmap = require("__landing-party__.scripts.costmap")
 local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
@@ -462,41 +461,11 @@ function ops.weighs_way(b)
   if storage.way_in ~= nil then return storage.way_in end
   return ((shared.CORPS[b.corp] or {}).mind or {}).way_in == true
 end
--- The walls on its way into a target (a corporation with orbital intelligence): the wall layers its line crosses in its
--- last WALL_LOOK tiles, each Synthexis's price of a wall cell (costmap.WALL: breaking it takes time), twice where a
--- roboport of its owner covers it (its prototype's construction radius: what is broken is put back). Turrets alone were
--- read: a square wall mended every 5 s read a defence of 0, and a raid of 4 broke 22 pieces in 20 minutes and never got
--- in (mended serenity, 0.2.147 on).
-local WALL_LOOK = 60
-local function walls_in(b, t)
-  if not (b.origin and t.pos and (shared.CORPS[b.corp] or {}).orbital_intel) then return 0 end
-  local s = game.surfaces[b.surface]
-  local foes = t.owner and game.forces[t.owner]
-  if not foes then return 0 end
-  local dx, dy = t.pos[1] - b.origin.x, t.pos[2] - b.origin.y
-  local len = math.sqrt(dx * dx + dy * dy)
-  if len < 2 then return 0 end
-  local layers, inside, mended = 0, false, false
-  for d = math.max(0, len - WALL_LOOK), len - 1 do
-    local p = {b.origin.x + dx / len * d, b.origin.y + dy / len * d}
-    local w = s.find_entities_filtered{position = p, radius = 0.8, type = {"wall", "gate"}, force = foes, limit = 1}[1]
-    if w and not inside then
-      layers = layers + 1
-      for _, r in ipairs(s.find_entities_filtered{position = p, radius = 120, type = "roboport", force = foes}) do
-        local cr = r.prototype.construction_radius or 0
-        if (r.position.x - p[1]) ^ 2 + (r.position.y - p[2]) ^ 2 <= cr * cr then mended = true; break end
-      end
-    end
-    inside = w ~= nil
-  end
-  return layers * costmap.WALL * (mended and 2 or 1)
-end
-ops.walls_in = walls_in
 local function defence(b, t)
   local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
   -- The way in when it outweighs the target's own (intel's ops.way_in; ops.weighs_way).
   local guns = ops.weighs_way(b) and math.max(t.defence or 0, t.way or 0) or (t.defence or 0)
-  return (guns + walls_in(b, t) + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
+  return (guns + (t.resist or 0) + units + math.floor(markers_near(b, t.pos, DEFENCE_RADIUS) / 3)
     + held_by(b, t.owner)) / rd.strength(b.corp, t.dmg)
 end
 
