@@ -388,6 +388,14 @@ if bv and bv.animation and bv.animation.layers then
   end
   projector.pictures = {layers = still(layers)}
 end
+-- Its catch (dome.lua): a hemisphere of light spreading from where a shell is caught and fading (the user, 2026-11-03),
+-- rendered in Blender (tools/blender/dome_ripple.py, anim_sheet.py: 16 frames, 32 px a tile, frame size and shift from
+-- sheet.json), drawn as glow.
+data:extend({{type = "explosion", name = "lp-dome-ripple", flags = {"not-on-map"}, hidden = true,
+  animations = {{filename = "__landing-party__/graphics/serenity/ripple/sheet.png", width = 290, height = 335,
+    frame_count = 16, line_length = 8, scale = 1, shift = {0, -0.71875}, draw_as_glow = true, blend_mode = "additive",
+    animation_speed = 0.5}},
+  light = {intensity = 0.5, size = 12, color = {r = 0.3, g = 0.75, b = 1}}}})
 if TOWER_ON then
   projector.pictures = {layers = {tower("body"), tower("glow", {draw_as_glow = true, blend_mode = "additive"}),
     tower("shadow", {draw_as_shadow = true})}}

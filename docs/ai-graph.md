@@ -42,7 +42,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `planner` | 338 | rd | base |  |  |  |  |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `jumper` | 314 | base, ops, threat, tune, war | control, dev |  | 60, 600 |  |  |
-| `dome` | 291 | base, ops, threat | control |  | 60, 3600 |  | dome_alert |
+| `dome` | 299 | base, ops, threat | control |  | 60, 3600 |  | dome_alert |
 | `intel` | 289 | know, threat | ops |  |  |  |  |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |

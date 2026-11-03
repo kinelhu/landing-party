@@ -4273,6 +4273,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   loop (rotation_speed 0.006, about 3 s) while it has power, and it stands still without. Glow drawn as glow, shadow as
   shadow. 2.7 MB; the tesla turret's recolours removed (graphics manifest 252 files). dome, domehub and orbital standing
   pass. Not yet seen in game; the brightest rings saturate white and the arcs are small at normal zoom (to tune).
+- **The dome's catch, seen** (0.2.176; the user, 2026-11-03: "Enlarged Tesla tower ... fires a bolt at the shell when it
+  arrives in its territory"; "A hemisphere effect rippling from the impact"). A caught shell: a tesla bolt
+  (`chain-tesla-turret-beam-start`, a target position only, no damage) from the tower's crown (3.4 tiles up; the
+  lander's, 2, for the camp's dome), a small burst, and `lp-dome-ripple`: a hemisphere of light spreading from 0.5 to 4.5
+  tiles and fading over 16 frames, a cyan rim and a lattice (Voronoi edges), rendered in Blender
+  (`tools/blender/dome_ripple.py`, `anim_sheet.py`, 32 px a tile; at emission 4 its cyan saturated to white, 1.6 now),
+  drawn as glow with a soft light. The ground ring and the big explosion it replaced are gone. dome, domehub, orbital
+  standing and breach arty pass. Not yet seen in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

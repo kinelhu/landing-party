@@ -116,12 +116,20 @@ local function alert(b, pos, d)
   end
 end
 
+-- Its catch, seen (the user, 2026-11-03: "Enlarged Tesla tower, fires a bolt at the shell when it arrives in its territory";
+-- "A hemisphere effect rippling from the impact"): a bolt from its tower's crown (TOWER_CROWN tiles up; the lander's for
+-- the camp's dome) to the shell, a small burst where it dies, and the ripple (data.lua: lp-dome-ripple).
+local TOWER_CROWN, LANDER_CROWN = 3.4, 2
 local function catch(b, d, pr)
   local s, pos = pr.surface, pr.position
   pr.destroy()
-  s.create_entity{name = "big-explosion", position = pos}
-  rendering.draw_circle{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.6}, radius = 3, width = 4, filled = false,
-    target = pos, surface = s, time_to_live = 20}
+  if d.anchor and d.anchor.valid then
+    local crown = d.anchor.name:find("dome-projector", 1, true) and TOWER_CROWN or LANDER_CROWN
+    s.create_entity{name = "chain-tesla-turret-beam-start", position = d.anchor.position, source = d.anchor,
+      source_offset = {0, -crown}, target_position = pos, duration = 12}
+  end
+  s.create_entity{name = "explosion", position = pos}
+  s.create_entity{name = "lp-dome-ripple", position = pos}
   d.left, d.caught = math.max(0, d.left - 1 / full(b, d)), d.caught + 1
   alert(b, pos, d)
   if d.left <= 1e-9 then
