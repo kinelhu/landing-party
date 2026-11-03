@@ -4128,6 +4128,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   `standsiege`: held, 3 pods, its pieces up, moved up and dropped again, 86 razed, 10 of 10 back.
   `siegetier convoy` and `clear worms` test the truck and convoy Grubstake still sends: `drop_off` (debug_tune) there.
   The fortress four, orbital (both), siegetier, clear, armed, dome battery, breach arty, push and standsiege nests pass.
+  The ladder for 0.2.165, three seeds: the artillery base 397, 163, 443 (mean 334; 57 at 0.2.164, 51 at 0.2.161), nw 0,
+  242, 389 (mean 210; 244), nwa 922, 419, 1409 (mean 917; 1073). Its seeds 2 and 3 on nwa read the same since 0.2.163
+  with no siege on the player: what razes there is not its sieges (open). nw's seed 1 razed nothing (open).
   Fixed on the way: the guards' last march order went to their start point beside the truck (a name reused in 0.2.149),
   so a guard left behind it walked home after its way's last waypoint.
   Slip: the mod edited while a batch of six siege scenarios and two visits ran (all with the drop flag off, the edits
