@@ -216,6 +216,24 @@ for _, e in ipairs(blast) do
 end
 orbital.action[2].cluster_count = 10
 orbital.action[2].distance = 6
+-- Its lance (the user, 2026-11-03: the strike "more visual, more orbital"): the laser beam's own graphics, white-cyan and
+-- wider, drawn by script from high above each shell's point to the ground as it falls (orbital.lua); no damage of its own.
+local lance = table.deepcopy(data.raw.beam["laser-beam"])
+lance.name = "lp-orbital-lance"
+lance.working_sound = nil
+lance.action = nil
+lance.width = 1.5
+local LANCE_TINT = {r = 0.75, g = 0.95, b = 1, a = 1}
+local function tint_all(t)
+  for _, v in pairs(t) do
+    if type(v) == "table" then
+      if v.filename or v.filenames then v.tint = LANCE_TINT; v.scale = (v.scale or 0.5) * 2 end
+      tint_all(v)
+    end
+  end
+end
+tint_all(lance.graphics_set or {})
+data:extend({lance})
 
 -- The howitzer (Serenity's clearances; the user, 2026-10-15): the artillery turret's body at full size and a long gun,
 -- 100 tiles, standing out of a behemoth worm's 48, slow (360 ticks), for the nests whose worms outrange the mortar. It fires the

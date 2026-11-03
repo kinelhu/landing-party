@@ -48,6 +48,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `tactics` | 260 | know, rng | control, farm, herd, herd_learn, ops, siege |  |  |  |  |
 | `threat` | 247 | unit_prior | attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, war |  |  |  |  |
+| `orbital` | 239 | threat | control, siege |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `herd_learn` | 237 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `know` | 235 | (leaf) | army, control, farm, herd, herd_learn, intel, ops, rd, siege, strategy, tactics |  | 3600 |  | know |
 | `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
@@ -57,7 +58,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `dev` | 196 | army, base, faction, farm, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `oplog` | 185 | attempt, valuemap | control |  |  |  | oplog |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
-| `orbital` | 171 | threat | control, siege |  | 10, 30 |  | kh_strikes |
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `site` | 168 | modules | base, control, faction, layout |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |

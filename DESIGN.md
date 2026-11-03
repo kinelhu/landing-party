@@ -4210,6 +4210,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   core and the pacifier crystal stay as they were. `loot` checks nothing is dropped; `crew` killed that it drops
   nothing; `dismantle` ambush a wreck for each raider's share (its spread over 3-tile cells had counted loose items);
   `skim` raid and `leader` count the goods in wrecks. `road` cut passes. `tribute` failed on 0.2.161 already: a raid after its truce razed the post, read at the end (-1); it reads the post's last value while it stood.
+- **The orbital strike's look; the film helper** (0.2.171; the user, 2026-11-03: the strike "more visual? more orbital?",
+  for "a beautiful video for the mod page"). Each shell falls straight down inside a lance (`lp-orbital-lance`, the laser
+  beam's graphics white-cyan and wider, from LANCE_H, 60, above), with a white flash and a scorch mark; during the paint an
+  uplink lance from the spotter into the sky, and the platform's shadow (three dark strips, a hull and two wings, moved
+  each tick, its own list `kh_shadows`) crossing the strike to be over its point as the first shell falls; an alert
+  "orbital strike incoming" under the notice setting, as every alert. **Not yet seen in a window** (assumed): built and run
+  headless (orbital, orbital standing, standsiege nests pass), its look unjudged. The film helper (`tests/lp-film`,
+  `scripts/film.sh`): stills on a schedule, timed from a siege's paint and fall (Landing Party's stats), in a game window;
+  `docs/trailer/stills-strike.lua` the strike's 14 stills. Its first run stalled with the window in the background (the
+  user away): filming waits for the user at the Mac.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

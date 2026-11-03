@@ -20,6 +20,20 @@ local COOL = 15 * 60 * 60
 local SEEK = 80                   -- tiles from its site toward its target it looks for the wall
 local WALLS = {"wall", "gate", "ammo-turret", "electric-turret", "fluid-turret"}
 local COLOR = {r = 0.9, g = 0.2, b = 0.15}
+-- Its look (the user, 2026-11-03: "more visual, more orbital"): a lance from LANCE_H above each point as its shell falls
+-- straight down, a flash and a scorch where it lands; during the paint an uplink from the spotter into the sky, and the
+-- platform's shadow crossing the strike, over its point as the first shell falls.
+local LANCE_H = 60
+local LANCE_TICKS = 14
+local LIGHT = {r = 0.8, g = 0.95, b = 1}
+local SHADOW_RUN = 90          -- tiles its shadow travels to reach the point at the fall
+local SHADOW_TAIL = 6 * 60     -- ticks it goes on past it
+-- Its outline in tiles, a hull and two wings (three strips: rendering polygons are triangle strips).
+local SHADOW = {
+  {{-14, -6}, {14, -6}, {-14, 6}, {14, 6}},
+  {{-30, -3}, {-14, -3}, {-30, 3}, {-14, 3}},
+  {{14, -3}, {30, -3}, {14, 3}, {30, 3}},
+}
 
 -- (base.trace's line, written here: base requires the siege, which requires this.)
 local function trace(b, msg)
@@ -71,6 +85,25 @@ function orbital.call(b, op)
   table.insert(storage.kh_strikes, {base = b.id, surface = s.index, force = b.force, center = center,
     along = math.atan2(dy, dx) + math.pi / 2, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint"})
   b.strikes = (b.strikes or 0) + 1
+  -- Its platform's shadow (orbital.shadow_tick moves it), and the alert (ops' rule: under the notice setting).
+  -- (Its own list: a strike called off or done leaves its list while its shadow still crosses.)
+  local sh = {objs = {}, dir = storage.kh_strikes[#storage.kh_strikes].along, center = center, from = game.tick,
+    at = game.tick + PAINT}
+  for _, strip in ipairs(SHADOW) do
+    local v = {}
+    for _ in ipairs(strip) do v[#v + 1] = {x = center[1], y = center[2]} end
+    sh.objs[#sh.objs + 1] = rendering.draw_polygon{color = {r = 0, g = 0, b = 0, a = 0.35}, vertices = v,
+      surface = s, draw_on_ground = true}
+  end
+  storage.kh_shadows = storage.kh_shadows or {}
+  table.insert(storage.kh_shadows, sh)
+  if shared.notices_on() then
+    for _, f in ipairs(fs) do
+      for _, p in pairs(f.players) do
+        p.add_custom_alert(spotter, {type = "virtual", name = "signal-explosion"}, {"lp.alert-orbital", shared.CORPS[b.corp].name}, true) -- notice-ok: gated above
+      end
+    end
+  end
   -- Its siege told at once (its step runs every 5 s, too coarse for a 12 s paint): its guards move up behind it.
   op.strike_center, op.strike_paint, op.step_at = center, game.tick, game.tick + 1
   trace(b, string.format("called on the wall at %.0f,%.0f; its spotter paints it for %d s", center[1], center[2], PAINT / 60))
@@ -79,6 +112,12 @@ end
 
 local function paint(st, s, tick)
   local left = math.max(0, st.fire_at - tick) / PAINT
+  -- The uplink: from the spotter straight up, for its platform.
+  if st.spotter.valid then
+    local sp = st.spotter.position
+    s.create_entity{name = "lp-orbital-lance", position = sp, source_position = {sp.x, sp.y - LANCE_H}, target_position = sp,
+      duration = 31}
+  end
   rendering.draw_line{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.8}, width = 2, from = st.spotter,
     to = st.center, surface = s, time_to_live = 31, dash_length = 1, gap_length = 0.5}
   rendering.draw_circle{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.9}, radius = 2 + 10 * left, width = 3,
@@ -89,7 +128,14 @@ end
 
 local function fall(st, s, b, at)
   local x, y = at[1], at[2]
-  s.create_entity{name = "lp-orbital-projectile", position = {x - 10, y - FALL}, target = {x, y}, speed = 1,
+  -- Its lance, its flash, its scorch.
+  s.create_entity{name = "lp-orbital-lance", position = {x, y}, source_position = {x, y - LANCE_H}, target_position = {x, y},
+    duration = LANCE_TICKS}
+  rendering.draw_light{sprite = "utility/light_medium", scale = 6, intensity = 1, color = LIGHT, target = {x, y},
+    surface = s, time_to_live = LANCE_TICKS}
+  s.create_entity{name = "medium-scorchmark-tintable", position = {x, y}}
+  -- (Straight down and fast, inside its lance: from 10 aside it arced in like a shell from the next screen.)
+  s.create_entity{name = "lp-orbital-projectile", position = {x, y - FALL}, target = {x, y}, speed = 3,
     -- (Its lander the cause: a kill is credited to its camp, control.lua; its force as the cause, the strike's razing
     -- counted for nothing, not in its war ladder nor against its standing down, 0.2.161.)
     force = st.force, cause = b and b.lander.valid and b.lander or game.forces[st.force], source = b and b.lander.valid and b.lander or nil}
@@ -126,7 +172,29 @@ local function targets(st, s, b)
   return out
 end
 
+-- Each tick while a strike's shadow crosses: its outline moved along its line, rotated to it; gone after its tail.
+local function shadow_tick(sh, tick)
+  local t = (tick - sh.from) / (sh.at - sh.from)
+  local ca, sa = math.cos(sh.dir), math.sin(sh.dir)
+  local cx, cy = sh.center[1] + ca * SHADOW_RUN * (t - 1), sh.center[2] + sa * SHADOW_RUN * (t - 1)
+  local done = tick > sh.at + SHADOW_TAIL
+  for i, o in ipairs(sh.objs) do
+    if o.valid then
+      if done then o.destroy() else
+        local v = {}
+        for _, q in ipairs(SHADOW[i]) do v[#v + 1] = {x = cx + q[1] * ca - q[2] * sa, y = cy + q[1] * sa + q[2] * ca} end
+        o.vertices = v
+      end
+    end
+  end
+  return done
+end
+
 function orbital.tick(tick)
+  local shs = storage.kh_shadows
+  if shs then
+    for i = #shs, 1, -1 do if shadow_tick(shs[i], tick) then table.remove(shs, i) end end
+  end
   if not storage.kh_strikes or #storage.kh_strikes == 0 or tick % 10 ~= 0 then return end
   for i = #storage.kh_strikes, 1, -1 do
     local st = storage.kh_strikes[i]
