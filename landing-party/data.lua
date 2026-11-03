@@ -5,6 +5,28 @@ local function watts(w) return tostring(math.abs(w) / 1000) .. "kW" end
 local function one_second(w) return tostring(math.abs(w) / 1000) .. "kJ" end
 
 -- Multiply the tint of every sprite layer in a graphics table, shadows and lights excepted.
+-- Space Age's buildings as the corporations' (the graphics pass, the user, 2026-11-03: "less multipurpose ones, and more
+-- identifiable units/buildings"; the Space Age kitbash chosen): sprite layers copied at a scale, their shifts with them.
+local function scaled(layers, k)
+  local out = {}
+  for _, l in ipairs(layers) do
+    local c = table.deepcopy(l)
+    c.scale = (c.scale or 1) * k
+    if c.shift then c.shift = {c.shift[1] * k, c.shift[2] * k} end
+    out[#out + 1] = c
+  end
+  return out
+end
+-- As one sprite facing one way (a radar's pictures): its first frame, direction_count 1.
+local function still(layers)
+  for _, l in ipairs(layers) do
+    l.frame_count, l.line_length, l.repeat_count, l.animation_speed, l.frame_sequence = nil, nil, nil, nil, nil
+    l.direction_count = 1
+  end
+  return layers
+end
+local function sa(t, n) return data.raw[t] and data.raw[t][n] end
+
 local function tint(t, seen)
   if type(t) ~= "table" or seen[t] then return end
   seen[t] = true
@@ -339,6 +361,21 @@ data:extend({relay})
 local projector = copy("radar", "radar", "lp-dome-projector")
 projector.energy_usage = watts(shared.power["lp-radar"])
 projector.max_health = 1500
+-- Its body: Space Age's tesla turret at three quarters (4x4 to the projector's 3x3), unarmed, the tower its catches will
+-- fire from (the user's idea, 2026-11-03: "Enlarged Tesla tower, fires a bolt at the shell").
+local tesla = sa("electric-turret", "tesla-turret")
+local bv = tesla and tesla.graphics_set and tesla.graphics_set.base_visualisation
+bv = bv and (bv.animation and bv or bv[1])
+if bv and bv.animation and bv.animation.layers then
+  local layers = scaled(bv.animation.layers, 0.75)
+  -- And its coil (the head at rest, its first direction), the tower the base alone was not.
+  for _, h in ipairs((tesla.prepared_animation or {}).layers or {}) do
+    local c = scaled({h}, 0.75)[1]
+    c.x, c.y = 0, 0
+    layers[#layers + 1] = c
+  end
+  projector.pictures = {layers = still(layers)}
+end
 data:extend({projector})
 
 -- Research labs (rd.lua): a vanilla lab, lit as if always researching, one kind a branch of the corporation's tree.
@@ -354,6 +391,40 @@ local function lab_layer(l)
   return c
 end
 local vanilla_lab = data.raw.lab.lab.on_animation.layers
+-- Each its own body, from a Space Age building (the graphics pass): its still layers the plate, its moving ones the busy
+-- animation drawn over it (base.lab_look). Optics: the electromagnetic plant (4x4, at scale); line: the cryogenic plant;
+-- siege: the foundry (both 5x5, at four fifths). Without Space Age, the vanilla lab for all three.
+local function file_of(l) return l.filename or (l.filenames and l.filenames[1]) or "" end
+local function find(layers, pat)
+  for _, l in ipairs(layers or {}) do if file_of(l):find(pat, 1, true) then return l end end
+end
+local function wv(set, pat)
+  for _, v in ipairs(set.working_visualisations or {}) do
+    local a = v.animation
+    for _, l in ipairs(a and (a.layers or {a}) or {}) do if file_of(l):find(pat, 1, true) then return l end end
+  end
+end
+local LAB_BODY = {}
+do
+  local em = sa("assembling-machine", "electromagnetic-plant")
+  if em and em.graphics_set then
+    local g = em.graphics_set
+    LAB_BODY["lp-optics-lab"] = {k = 1, still = g.idle_animation and g.idle_animation.layers or {},
+      moving = {wv(g, "main-rotate-continue"), wv(g, "shadow-rotate-continue")}}
+  end
+  local cryo = sa("assembling-machine", "cryogenic-plant")
+  if cryo and cryo.graphics_set then
+    local g = cryo.graphics_set
+    LAB_BODY["lp-line-lab"] = {k = 0.8, still = {find(g.animation.layers, "cryogenic-plant-main"), find(g.animation.layers, "cryogenic-plant-shadow")},
+      moving = {find(g.animation.layers, "anim1-base"), wv(g, "anim1-working")}}
+  end
+  local foundry = sa("assembling-machine", "foundry")
+  if foundry and foundry.graphics_set then
+    local g = foundry.graphics_set
+    LAB_BODY["lp-siege-lab"] = {k = 0.8, still = {find(g.animation.layers, "foundry-base"), find(g.animation.layers, "foundry-shadow")},
+      moving = {find(g.animation.layers, "foundry-anim-1"), wv(g, "foundry-lights-1")}}
+  end
+end
 local labs = {}
 for _, name in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab"}) do
   local l = copy("lab", "lab", name)
@@ -364,6 +435,15 @@ for _, name in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab"}) do
   local plate = {layers = {}}
   for _, v in ipairs(vanilla_lab) do
     if v.repeat_count then table.insert(plate.layers, lab_layer(v)) end
+  end
+  local body = LAB_BODY[name]
+  if body and #body.still > 0 and #body.moving > 0 then
+    plate = {layers = scaled(body.still, body.k)}
+    for _, s in ipairs(plate.layers) do s.frame_count, s.line_length, s.repeat_count = 1, 1, nil end
+    local moving = scaled(body.moving, body.k)
+    local frames = 1
+    for _, m in ipairs(moving) do frames = math.max(frames, m.frame_count or 1) end
+    table.insert(labs, {type = "animation", name = name .. "-busy", layers = moving})
   end
   tint(plate, {})
   l.on_animation = plate
@@ -516,6 +596,19 @@ local function double(t, seen)
   for _, v in pairs(t) do double(v, seen) end
 end
 double(uplink.pictures, {})
+-- Its body: Space Age's fusion reactor (6x6, at scale), the faction's link home lit as if running (the graphics pass: a
+-- radar dish at twice the size read as a radar).
+local fusion = sa("fusion-reactor", "fusion-reactor")
+if fusion and fusion.graphics_set and fusion.graphics_set.structure then
+  local layers = scaled(fusion.graphics_set.structure.layers, 1)
+  -- (Its glow in Kessler-Hayashi's cyan, the reactor's own magenta read as nobody's.)
+  for _, gl in ipairs((fusion.graphics_set.working_light_pictures or {}).layers or {}) do
+    local c = table.deepcopy(gl)
+    c.tint = {r = 0.45, g = 0.9, b = 1, a = 1}
+    layers[#layers + 1] = c
+  end
+  uplink.pictures = {layers = still(layers)}
+end
 
 local road_of = shared.CORPS[shared.DEFAULT_CORP].road
 local road = table.deepcopy(data.raw.tile[road_of.tile] or data.raw.tile[road_of.fallback or "refined-concrete"])

@@ -95,8 +95,10 @@ function base.lab_look(e)
   storage.lab_look = storage.lab_look or {}
   if storage.lab_look[e.unit_number] then return end
   storage.lab_look[e.unit_number] = true
-  rendering.draw_animation{animation = "lp-lab-busy", target = e, surface = e.surface, render_layer = "object",
-    animation_speed = 1 / 3}
+  -- Its own body at work where it has one (data.lua: <lab>-busy, a Space Age building's moving parts), else the vanilla lab's.
+  local own = shared.kind_of(e.name) .. "-busy"
+  rendering.draw_animation{animation = prototypes.animation[own] and own or "lp-lab-busy", target = e, surface = e.surface,
+    render_layer = "object", animation_speed = prototypes.animation[own] and 1 / 2 or 1 / 3}
   rendering.draw_sprite{sprite = icon, target = {entity = e, offset = {0, -2.8}}, surface = e.surface, x_scale = 1.2,
     y_scale = 1.2, render_layer = "air-object"}
 end

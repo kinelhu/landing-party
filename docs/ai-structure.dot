@@ -39,7 +39,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n854 lines", width=1.75, fillcolor="#eef2f7"];
+    "base" [label="base\n856 lines", width=1.75, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
     "layout" [label="layout\n1739 lines", width=2.73, fillcolor="#f7dede"];

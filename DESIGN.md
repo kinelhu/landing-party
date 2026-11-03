@@ -4235,6 +4235,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   serenity` passes, 32 sent, the assembler razed, 32 of 32 back, 52 rebuilds; `mended` and `provoked`, `blackout` and
   `fed`, `ladder` soft and desperate, `abort`, `ops` and `weigh` pass. Read without its beam, Kessler-Hayashi's infantry
   did no damage to a wall. The open question of 0.2.162 closed.
+- **Graphics pass, first: Space Age's buildings as the corporations'** (0.2.173; the user, 2026-11-03: "less
+  multipurpose ones, and more identifiable units/buildings ... barracks, the various research labs"; the Space Age
+  kitbash chosen over vanilla kitbash and new 3D renders). The radar's sprite stood for five buildings, the vanilla lab for
+  three. Now: the optics lab is the electromagnetic plant (4x4, at scale), the line lab the cryogenic plant and the siege
+  lab the foundry (5x5, at four fifths), each its own busy animation (`<lab>-busy`, base.lab_look); the dome projector
+  the tesla turret's base and coil at three quarters (the tower its catches will fire from); the uplink the fusion
+  reactor (6x6), its glow tinted toward cyan (a tint only darkens: still magenta, a hue-shifted copy for
+  scripts/make_sprites.py to make). The depot was Space Age's landing pad already. **Not yet seen in game** (assumed):
+  previewed headless with `scripts/sprite_preview.py` (true relative scale beside vanilla; masks, emissives and light
+  left out); labs, dome, domehub and uplink pass. Open: dark boxes behind the projector and the uplink in the preview
+  (an artefact of the preview or real), the pacifier and the orbital relay still radars, the walker, the dome's bolts.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
