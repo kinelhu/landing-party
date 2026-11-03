@@ -45,12 +45,13 @@ local function goods_value(goods)
   return v
 end
 
+-- The player's goods back in one wreck, mined once (shared.wreck; spilled over the ground until 2026-11-03).
 local function spill(surface, pos, goods)
+  local stacks = {}
   for _, it in pairs(goods or {}) do
-    if it.count > 0 then
-      surface.spill_item_stack{position = pos, stack = {name = it.name, count = it.count, quality = it.quality}, enable_looted = true}
-    end
+    if it.count > 0 then stacks[#stacks + 1] = {name = it.name, count = it.count, quality = it.quality} end
   end
+  if #stacks > 0 then shared.wreck(surface, pos, stacks) end
 end
 
 -- The camp's yard: a chest by its home, the icon of what it holds most drawn over it.

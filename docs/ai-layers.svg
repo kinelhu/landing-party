@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M640.12,-339.25C640.12,-339.25 537.88,-339.25 537.88,-339.25 531.88,-339.25 525.88,-333.25 525.88,-327.25 525.88,-327.25 525.88,-307.25 525.88,-307.25 525.88,-301.25 531.88,-295.25 537.88,-295.25 537.88,-295.25 640.12,-295.25 640.12,-295.25 646.12,-295.25 652.12,-301.25 652.12,-307.25 652.12,-307.25 652.12,-327.25 652.12,-327.25 652.12,-333.25 646.12,-339.25 640.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="589" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6627 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1972, siege 1756</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6629 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1974, siege 1756</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge15" class="edge">
@@ -92,7 +92,7 @@
 <title>Settlement</title>
 <path fill="#f7dede" stroke="black" d="M520.12,-235.5C520.12,-235.5 417.88,-235.5 417.88,-235.5 411.88,-235.5 405.88,-229.5 405.88,-223.5 405.88,-223.5 405.88,-203.5 405.88,-203.5 405.88,-197.5 411.88,-191.5 417.88,-191.5 417.88,-191.5 520.12,-191.5 520.12,-191.5 526.12,-191.5 532.12,-197.5 532.12,-203.5 532.12,-203.5 532.12,-223.5 532.12,-223.5 532.12,-229.5 526.12,-235.5 520.12,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="469" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Settlement</text>
-<text xml:space="preserve" text-anchor="middle" x="469" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6138 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="469" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 6133 lines</text>
 <text xml:space="preserve" text-anchor="middle" x="469" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">layout 1739</text>
 </g>
 <!-- Corporation&#45;&gt;Settlement -->
@@ -198,7 +198,7 @@
 <title>Heists (Grubstake)</title>
 <path fill="#eef2f7" stroke="black" d="M165.12,-435C165.12,-435 68.88,-435 68.88,-435 62.88,-435 56.88,-429 56.88,-423 56.88,-423 56.88,-411 56.88,-411 56.88,-405 62.88,-399 68.88,-399 68.88,-399 165.12,-399 165.12,-399 171.12,-399 177.12,-405 177.12,-411 177.12,-411 177.12,-423 177.12,-423 177.12,-429 171.12,-435 165.12,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="117" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">Heists (Grubstake)</text>
-<text xml:space="preserve" text-anchor="middle" x="117" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1379 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="117" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1380 lines</text>
 </g>
 <!-- Heists (Grubstake)&#45;&gt;Seams (leaves) -->
 <g id="edge13" class="edge">

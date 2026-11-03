@@ -800,10 +800,12 @@ local function finish(b, outcome, trace, army)
     local s = game.surfaces[b.surface]
     local at = op.last_pos or (t and t.pos and {x = t.pos[1], y = t.pos[2]})
     if at then
+      -- (In one wreck, mined once: spilled over the ground until 2026-11-03.)
+      local stacks = {}
       for _, g in pairs(op.loot.goods) do
-        if g.count > 0 then s.spill_item_stack{position = at, stack = {name = g.name, count = g.count, quality = g.quality},
-          enable_looted = true} end
+        if g.count > 0 then stacks[#stacks + 1] = {name = g.name, count = g.count, quality = g.quality} end
       end
+      if #stacks > 0 then shared.wreck(s, at, stacks) end
       trace(b, "raid lost; its loot spilled")
     end
   end
@@ -1049,7 +1051,7 @@ function ops.raider_died(b, ent)
   for _, g in pairs(op.loot.goods) do
     local share = math.floor(g.count / n + 0.5)
     if share > 0 then
-      s.spill_item_stack{position = ent.position, stack = {name = g.name, count = share, quality = g.quality}, enable_looted = true}
+      shared.wreck(s, ent.position, {{name = g.name, count = share, quality = g.quality}})
       g.count = g.count - share
       op.loot.items = math.max(0, op.loot.items - share)
       op.loot.value = math.max(0, op.loot.value - share * (LOOT[g.name] or 0.1))

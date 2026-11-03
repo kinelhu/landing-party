@@ -78,10 +78,10 @@ local function step(post)
   local b = storage.bases[r.base]
   if not r.unit.valid then
     if r.goods and #r.goods > 0 then
-      for _, it in ipairs(r.goods) do
-        post.entity.surface.spill_item_stack{position = r.last or post.entity.position, stack = {name = it.name, count = math.min(it.count, 200)},
-          enable_looted = true}
-      end
+      -- (In one wreck, mined once: the player's goods, spilled over the ground until 2026-11-03.)
+      local stacks = {}
+      for _, it in ipairs(r.goods) do stacks[#stacks + 1] = {name = it.name, count = math.min(it.count, 200)} end
+      shared.wreck(post.entity.surface, r.last or post.entity.position, stacks)
     end
     if b then standing.incident(b.corp, "tribute lost", r.last and {r.last[1], r.last[2]} or post.entity.position) end
     post.run = nil

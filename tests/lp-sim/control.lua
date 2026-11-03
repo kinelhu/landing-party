@@ -4970,10 +4970,9 @@ scenarios.dismantle = function()
             u.die("player"); S.ambushed = S.ambushed + 1
           end
           local spots = {}
-          for _, it in pairs(surface().find_entities_filtered{type = "item-entity", position = S.c, radius = 60}) do
-            spots[math.floor(it.position.x / 3) .. "," .. math.floor(it.position.y / 3)] = true
-          end
-          S.spots = table_size(spots)
+          -- Its wrecks: the player's goods are left in one where each raider fell, since 2026-11-03 (loose items before,
+          -- counted by the 3-tile cells they spread over; raiders killed together leave wrecks within one cell).
+          S.spots = surface().count_entities_filtered{name = "lp-wreck", position = S.c, radius = 60}
         end
       end)
     end
@@ -4992,17 +4991,15 @@ scenarios.dismantle = function()
       end
     end
     local left = surface().count_entities_filtered{name = "assembling-machine-1", position = S.c, radius = 20}
-    local on_ground = 0
-    for _, e in pairs(surface().find_entities_filtered{type = "item-entity", name = "item-on-ground", position = S.c, radius = 40}) do
-      on_ground = on_ground + e.stack.count
-    end
+    -- (Loose or in its wrecks, the player's goods back.)
+    local on_ground = select(3, dropped(S.c, 40))
     info(string.format("dismantle: ghosts %d, assemblers left %d, yard: %d assemblers, %d plates; on the ground %d (ambushed %s)",
       ghosts(), left, machines, plates, on_ground, tostring(S.ambushed)))
     if ambush then
       -- Each raider drops its share where it falls (killed one by one, the last had carried it all).
       check("dismantle: the raiders killed, what they carried spills", (S.ambushed or 0) > 0 and on_ground > 0 and machines == 0,
         string.format("%d on the ground, yard %d", on_ground, machines))
-      check("dismantle: spilled at more than one spot", (S.spots or 0) >= 2, tostring(S.spots))
+      check("dismantle: a wreck for each raider's share, more than one", (S.spots or 0) >= 2, tostring(S.spots))
       return
     end
     check("dismantle: machines taken apart, their ghosts left", ghosts() >= 3 and left <= 1, string.format("%d ghosts, %d left",
@@ -7150,7 +7147,8 @@ scenarios.crew = function()
     if killed then
       info(string.format("crew: lost at %s, %s iron spilled", tostring(S.lost_at), tostring(S.iron)))
       check("crew: the truck was lost on the road", (c.lost or 0) >= 1, tostring(c.lost))
-      check("crew: it spilled its bill", (S.iron or 0) >= 15, tostring(S.iron))
+      -- (Its parts lost with it, nothing left: no materials dropped, the user, 2026-11-03.)
+      check("crew: it dropped nothing", (S.iron or 0) == 0, tostring(S.iron))
       check("crew: a second truck built it within 3 minutes", S.built_at and S.lost_at and S.built_at - S.lost_at <= 180 * 60,
         tostring(S.built_at and S.lost_at and (S.built_at - S.lost_at) / 60))
       return
@@ -7507,11 +7505,8 @@ scenarios.skim = function()
       if y then y.die("player") end
     end)
     schedule(24 * 3600 + 60, function()
-      local n = 0
-      for _, e in pairs(surface().find_entities_filtered{type = "item-entity", name = "item-on-ground"}) do
-        if e.stack.valid_for_read and e.stack.name == "iron-ore" then n = n + e.stack.count end
-      end
-      S.spilled = n
+      -- (Loose or in its wrecks: the player's goods are left in one since 2026-11-03.)
+      S.spilled = dropped({0, 0}, 100000)["iron-ore"] or 0
     end)
   end
   -- The truck parked by the belt, seen once a minute (its tell).
@@ -7700,9 +7695,9 @@ scenarios.tap = function()
   end)
 end
 
--- Loot (the faction loot consult; the user: Factorio's own items, no salvage currency): a settlement's buildings and
--- units destroyed by the player drop what they are made of. Twenty of its buildings of 8 parts or more and ten units
--- killed: their wrecks hold items (plates, circuits, the kinds' own); walls, worth under 8, drop nothing; no salvage exists.
+-- Loot: a settlement's buildings and units destroyed by the player drop nothing (the user, 2026-11-03: "I don't like the
+-- units dropping materials... ok for cosmetic wrecks that may disappear over time, but not items"; from 2026-10-21 to
+-- then, wrecks of what they were made of). Twenty of its buildings and ten units killed: no wreck, nothing loose.
 scenarios.loot = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})
@@ -7743,14 +7738,11 @@ scenarios.loot = function()
     local c = S.counts or {}
     info(string.format("loot: %d buildings, %d walls and %d units killed; on the ground %s", S.big or 0, S.walls or 0,
       S.units or 0, serpent.line(c)))
-    check("loot: plates and circuits dropped", (c["iron-plate"] or 0) > 0 and (c["electronic-circuit"] or 0) > 0,
-      string.format("%d iron, %d circuits", c["iron-plate"] or 0, c["electronic-circuit"] or 0))
-    check("loot: kinds' own (magazines, engines or gears)", (c["firearm-magazine"] or 0) + (c["engine-unit"] or 0)
-      + (c["iron-gear-wheel"] or 0) > 0, serpent.line(c))
+    check("loot: some killed", (S.big or 0) >= 10 and (S.units or 0) >= 5, string.format("%d buildings, %d units",
+      S.big or 0, S.units or 0))
     check("loot: no salvage item exists", not S.salvage, tostring(S.salvage))
-    -- In wrecks (the user, 2026-10-21: loose items are a hassle to pick up), none loose on the ground.
-    check("loot: left in wrecks, nothing loose", (S.wrecks or 0) >= 10 and (S.loose or 0) == 0,
-      string.format("%d wrecks, %d loose", S.wrecks or 0, S.loose or 0))
+    check("loot: nothing dropped, no wreck, nothing loose", (S.wrecks or 0) == 0 and (S.loose or 0) == 0
+      and next(c) == nil, string.format("%d wrecks, %d loose, %s", S.wrecks or 0, S.loose or 0, serpent.line(c)))
   end)
 end
 

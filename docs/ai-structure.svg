@@ -377,7 +377,7 @@
 <title>base</title>
 <path fill="#eef2f7" stroke="black" d="M1528,-1008.5C1528,-1008.5 1426,-1008.5 1426,-1008.5 1420,-1008.5 1414,-1002.5 1414,-996.5 1414,-996.5 1414,-984.5 1414,-984.5 1414,-978.5 1420,-972.5 1426,-972.5 1426,-972.5 1528,-972.5 1528,-972.5 1534,-972.5 1540,-978.5 1540,-984.5 1540,-984.5 1540,-996.5 1540,-996.5 1540,-1002.5 1534,-1008.5 1528,-1008.5"/>
 <text xml:space="preserve" text-anchor="middle" x="1477" y="-992.25" font-family="Helvetica,sans-Serif" font-size="10.00">base</text>
-<text xml:space="preserve" text-anchor="middle" x="1477" y="-981" font-family="Helvetica,sans-Serif" font-size="10.00">853 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1477" y="-981" font-family="Helvetica,sans-Serif" font-size="10.00">854 lines</text>
 </g>
 <!-- faction&#45;&gt;base -->
 <g id="edge38" class="edge">
@@ -429,7 +429,7 @@
 <title>ops</title>
 <path fill="#f7dede" stroke="black" d="M2759.64,-541C2759.64,-541 2568.36,-541 2568.36,-541 2562.36,-541 2556.36,-535 2556.36,-529 2556.36,-529 2556.36,-517 2556.36,-517 2556.36,-511 2562.36,-505 2568.36,-505 2568.36,-505 2759.64,-505 2759.64,-505 2765.64,-505 2771.64,-511 2771.64,-517 2771.64,-517 2771.64,-529 2771.64,-529 2771.64,-535 2765.64,-541 2759.64,-541"/>
 <text xml:space="preserve" text-anchor="middle" x="2664" y="-524.75" font-family="Helvetica,sans-Serif" font-size="10.00">ops</text>
-<text xml:space="preserve" text-anchor="middle" x="2664" y="-513.5" font-family="Helvetica,sans-Serif" font-size="10.00">1972 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="2664" y="-513.5" font-family="Helvetica,sans-Serif" font-size="10.00">1974 lines</text>
 </g>
 <!-- faction&#45;&gt;ops -->
 <g id="edge43" class="edge">
@@ -731,7 +731,7 @@
 <title>crew</title>
 <path fill="#eef2f7" stroke="black" d="M1397.24,-878.5C1397.24,-878.5 1324.76,-878.5 1324.76,-878.5 1318.76,-878.5 1312.76,-872.5 1312.76,-866.5 1312.76,-866.5 1312.76,-854.5 1312.76,-854.5 1312.76,-848.5 1318.76,-842.5 1324.76,-842.5 1324.76,-842.5 1397.24,-842.5 1397.24,-842.5 1403.24,-842.5 1409.24,-848.5 1409.24,-854.5 1409.24,-854.5 1409.24,-866.5 1409.24,-866.5 1409.24,-872.5 1403.24,-878.5 1397.24,-878.5"/>
 <text xml:space="preserve" text-anchor="middle" x="1361" y="-862.25" font-family="Helvetica,sans-Serif" font-size="10.00">crew</text>
-<text xml:space="preserve" text-anchor="middle" x="1361" y="-851" font-family="Helvetica,sans-Serif" font-size="10.00">488 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1361" y="-851" font-family="Helvetica,sans-Serif" font-size="10.00">483 lines</text>
 </g>
 <!-- base&#45;&gt;crew -->
 <g id="edge185" class="edge">
@@ -899,7 +899,7 @@
 <title>road</title>
 <path fill="#eef2f7" stroke="black" d="M1563.56,-1098.25C1563.56,-1098.25 1518.44,-1098.25 1518.44,-1098.25 1512.44,-1098.25 1506.44,-1092.25 1506.44,-1086.25 1506.44,-1086.25 1506.44,-1074.25 1506.44,-1074.25 1506.44,-1068.25 1512.44,-1062.25 1518.44,-1062.25 1518.44,-1062.25 1563.56,-1062.25 1563.56,-1062.25 1569.56,-1062.25 1575.56,-1068.25 1575.56,-1074.25 1575.56,-1074.25 1575.56,-1086.25 1575.56,-1086.25 1575.56,-1092.25 1569.56,-1098.25 1563.56,-1098.25"/>
 <text xml:space="preserve" text-anchor="middle" x="1541" y="-1082" font-family="Helvetica,sans-Serif" font-size="10.00">road</text>
-<text xml:space="preserve" text-anchor="middle" x="1541" y="-1070.75" font-family="Helvetica,sans-Serif" font-size="10.00">144 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="1541" y="-1070.75" font-family="Helvetica,sans-Serif" font-size="10.00">143 lines</text>
 </g>
 <!-- road&#45;&gt;standing -->
 <g id="edge134" class="edge">
@@ -1413,7 +1413,7 @@
 <title>skim</title>
 <path fill="#eef2f7" stroke="black" d="M3119.72,-1098.25C3119.72,-1098.25 3052.28,-1098.25 3052.28,-1098.25 3046.28,-1098.25 3040.28,-1092.25 3040.28,-1086.25 3040.28,-1086.25 3040.28,-1074.25 3040.28,-1074.25 3040.28,-1068.25 3046.28,-1062.25 3052.28,-1062.25 3052.28,-1062.25 3119.72,-1062.25 3119.72,-1062.25 3125.72,-1062.25 3131.72,-1068.25 3131.72,-1074.25 3131.72,-1074.25 3131.72,-1086.25 3131.72,-1086.25 3131.72,-1092.25 3125.72,-1098.25 3119.72,-1098.25"/>
 <text xml:space="preserve" text-anchor="middle" x="3086" y="-1082" font-family="Helvetica,sans-Serif" font-size="10.00">skim</text>
-<text xml:space="preserve" text-anchor="middle" x="3086" y="-1070.75" font-family="Helvetica,sans-Serif" font-size="10.00">420 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="3086" y="-1070.75" font-family="Helvetica,sans-Serif" font-size="10.00">421 lines</text>
 </g>
 <!-- skim&#45;&gt;stance -->
 <g id="edge148" class="edge">
@@ -1762,7 +1762,7 @@
 <title>control</title>
 <path fill="#eef2f7" stroke="black" d="M4309.6,-1188C4309.6,-1188 4200.4,-1188 4200.4,-1188 4194.4,-1188 4188.4,-1182 4188.4,-1176 4188.4,-1176 4188.4,-1164 4188.4,-1164 4188.4,-1158 4194.4,-1152 4200.4,-1152 4200.4,-1152 4309.6,-1152 4309.6,-1152 4315.6,-1152 4321.6,-1158 4321.6,-1164 4321.6,-1164 4321.6,-1176 4321.6,-1176 4321.6,-1182 4315.6,-1188 4309.6,-1188"/>
 <text xml:space="preserve" text-anchor="middle" x="4255" y="-1171.75" font-family="Helvetica,sans-Serif" font-size="10.00">control</text>
-<text xml:space="preserve" text-anchor="middle" x="4255" y="-1160.5" font-family="Helvetica,sans-Serif" font-size="10.00">947 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="4255" y="-1160.5" font-family="Helvetica,sans-Serif" font-size="10.00">941 lines</text>
 </g>
 <!-- dev -->
 <g id="node76" class="node">

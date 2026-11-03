@@ -626,12 +626,13 @@ function base.fall(lander)
       local y = b.skim_yard
       if y and y.valid then
         local inv = y.get_inventory(defines.inventory.chest)
-        local n = 0
+        local n, stacks = 0, {}
         for _, it in pairs(inv.get_contents()) do
-          y.surface.spill_item_stack{position = y.position, stack = {name = it.name, count = it.count, quality = it.quality},
-            enable_looted = true}
+          stacks[#stacks + 1] = {name = it.name, count = it.count, quality = it.quality}
           n = n + it.count
         end
+        -- (In wrecks, mined once each: spilled over the ground until 2026-11-03.)
+        if #stacks > 0 then shared.wreck(y.surface, y.position, stacks) end
         y.destroy()
         trace(b, string.format("the yard bursts: %d stolen items spill", n))
       end

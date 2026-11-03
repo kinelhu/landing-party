@@ -39,7 +39,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n853 lines", width=1.75, fillcolor="#eef2f7"];
+    "base" [label="base\n854 lines", width=1.75, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
     "layout" [label="layout\n1739 lines", width=2.73, fillcolor="#f7dede"];
@@ -49,16 +49,16 @@ digraph ai {
     "site" [label="site\n168 lines", width=0.99, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
-    "crew" [label="crew\n488 lines", width=1.34, fillcolor="#eef2f7"];
+    "crew" [label="crew\n483 lines", width=1.34, fillcolor="#eef2f7"];
     "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
-    "road" [label="road\n144 lines", width=0.96, fillcolor="#eef2f7"];
+    "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];
     "prospect" [label="prospect\n352 lines", width=1.19, fillcolor="#eef2f7"];
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n777 lines", width=1.66, fillcolor="#eef2f7"];
-    "ops" [label="ops\n1972 lines", width=2.99, fillcolor="#f7dede"];
+    "ops" [label="ops\n1974 lines", width=2.99, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
     "siege" [label="siege\n1756 lines", width=2.75, fillcolor="#f7dede"];
@@ -76,7 +76,7 @@ digraph ai {
   subgraph cluster_6 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "jumper" [label="jumper\n314 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n375 lines", width=1.22, fillcolor="#eef2f7"];
-    "skim" [label="skim\n420 lines", width=1.27, fillcolor="#eef2f7"];
+    "skim" [label="skim\n421 lines", width=1.27, fillcolor="#eef2f7"];
     "prowl" [label="prowl\n150 lines", width=0.97, fillcolor="#eef2f7"];
     "bait" [label="bait\n59 lines", width=0.87, fillcolor="#d9f0d9"];
     "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
@@ -97,7 +97,7 @@ digraph ai {
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n947 lines", width=1.85, fillcolor="#eef2f7"];
+    "control" [label="control\n941 lines", width=1.85, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n185 lines", width=1.01, fillcolor="#eef2f7"];

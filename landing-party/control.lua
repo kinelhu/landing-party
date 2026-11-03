@@ -210,16 +210,10 @@ script.on_event(defines.events.on_entity_died, function(e)
   -- Grubstake's yard (the skim's, the raids'): what it held spills.
   if ent.type == "container" and shared.is_corp(ent.force.name) then skim.died(ent) end
   local kind = shared.kind_of(ent.name)
-  -- What a corporation's building or unit is made of (the engine's loot) goes into a wreck, not over the ground.
-  if shared.is_corp(ent.force.name) and e.loot and not e.loot.is_empty() then
-    local stacks = {}
-    for i = 1, #e.loot do
-      local st = e.loot[i]
-      if st.valid_for_read then table.insert(stacks, {name = st.name, count = st.count, quality = st.quality.name}) end
-    end
-    e.loot.clear()
-    shared.wreck(ent.surface, ent.position, stacks)
-  end
+  -- What a corporation's building or unit is made of (the engine's loot) is not left at all: its remnants are (the
+  -- user, 2026-11-03: "I don't like the units dropping materials... ok for cosmetic wrecks that may disappear over time,
+  -- but not items... it's annoying"; a wreck of its plates and circuits since 2026-10-21).
+  if shared.is_corp(ent.force.name) and e.loot and not e.loot.is_empty() then e.loot.clear() end
   if kind == "lp-uplink" then faction.uplink_lost(ent) end
   if kind == "lp-pacifier" then pact.lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).

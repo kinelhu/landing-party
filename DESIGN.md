@@ -4202,6 +4202,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   It moves up as a clearance does, up to 8 times (once before: after its assault fell back it packed up, the inner
   lasers standing, standsiege nests). The artillery base, seed 3: the assault on its strike, 12 of 15 back, nothing
   standing within 30 of the breach, then two moves up. standsiege nests: the deep substation razed, 18 of 18 back.
+- **No materials dropped; the player's own goods in one wreck** (0.2.170; the user, 2026-11-03: "I don't like the units
+  dropping materials… ok for cosmetic wrecks that may disappear over time, but not items… it's annoying"). What a
+  corporation's building or unit is made of (the engine's loot), a crew's parts and an ore truck's cargo are not left at
+  all: its remnants are, and fade as the base game's do. What it took from the player (a raider's loot, Grubstake's
+  yard, a skim, a tribute post) comes back in a wreck (shared.wreck), mined once, not spilled over the ground. The command
+  core and the pacifier crystal stay as they were. `loot` checks nothing is dropped; `crew` killed that it drops
+  nothing; `dismantle` ambush a wreck for each raider's share (its spread over 3-tile cells had counted loose items);
+  `skim` raid and `leader` count the goods in wrecks. `road` cut passes. `tribute` fails, as it does on 0.2.169 (open).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -187,14 +187,9 @@ function crew.take(b, job)
   return true
 end
 
--- What parts are made of, left in a wreck where a crew fell (the loot rule): iron half, copper a quarter, circuits a tenth.
-local function spill(s, pos, parts)
-  local stacks = {}
-  for _, it in ipairs({{"iron-plate", parts / 2}, {"copper-plate", parts / 4}, {"electronic-circuit", parts / 10}}) do
-    table.insert(stacks, {name = it[1], count = math.floor(it[2])})
-  end
-  shared.wreck(s, pos, stacks)
-end
+-- Where a crew fell its parts are lost, nothing left (the user, 2026-11-03: no materials dropped; a wreck of iron, copper
+-- and circuits until then).
+local function spill(s, pos, parts) end
 
 -- failed: the crew was killed or stuck (counts toward GIVE_UP: a camp sent 24 crews to two sites they could not reach,
 -- visit deathworld10x); returns what was given up, if anything.

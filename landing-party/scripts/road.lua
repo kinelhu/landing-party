@@ -40,8 +40,7 @@ local function lost(b, m, r)
   local at = r.last or m.center
   local s = game.surfaces[b.surface]
   if r.cargo and r.cargo > 0 then
-    s.spill_item_stack{position = {at[1], at[2]}, stack = {name = r.ore or "iron-ore", count = math.min(r.cargo, 500)},
-      enable_looted = true}
+    -- (Its cargo lost with it, none spilled: the user, 2026-11-03, no materials dropped.)
     -- What it cost: the cargo against the camp's own intake a minute.
     local minutes = math.max(1, math.floor(r.cargo / math.max(1, b.rate_in or 1)))
     tell(b, "lp.road-lost", at, tostring(minutes))
