@@ -4042,6 +4042,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and more (13 lasers), a strike; nwa 393 by its own count (3 artillery turrets among them), its sieges at tier 4 on the
   factory's north-west. Every armed landing's way is checked (`armed`, seen failing with the check off). Its sieges on nw
   went at tier 1 against 216 shells read: 5 or 6 guards in its field, tier 2 needing 10 (its army's size, next).
+  The ladder, three seeds, 90 minutes (the player's buildings razed by Kessler-Hayashi): the artillery base 123, 1, 30
+  (mean 51; 45 at 0.2.156); nw 82, 156, 106 (mean 115; 0 at 0.2.156, 88 at 0.2.151, its best yet); nwa 479, 874, 1,209
+  (mean 854; 0 at 0.2.156, 12 at 0.2.151). It stood in all nine; strikes 0 to 4 a run.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
