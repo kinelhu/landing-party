@@ -930,6 +930,42 @@ end
 -- position and its squared distance to its site, or nil when it was called off.
 local DROP_HOLD = 16
 local DROP_GUARD = 20          -- its guards answer its foes' units this near its hold, and come back to it
+-- A line (the user, 2026-11-03: "line up at the site spaced by splash"; Factorio RTS's slotting on arrival, docs/reviews/
+-- 2026-11-03-factorio-rts-assessment.md): its members in staggered ranks facing `toward`, about sqrt(2n) a rank, spaced
+-- by half the widest artillery blast of its foes (threat.foe_splash, within LINE_MIN and LINE_MAX: one shell does not
+-- take the escort); each to a slot matched by its place across the line (their paths do not cross), undistracted,
+-- then a stop. A clump at its hold had stood where one shell's splash covered it.
+local LINE_MIN, LINE_MAX = 1.5, 3
+local LINE_AGAIN = 30 * 60      -- ticks between a guard duty's re-forming of its line
+local function form_line(members, center, toward)
+  local live = {}
+  for _, u in ipairs(members) do if u.valid then live[#live + 1] = u end end
+  if #live == 0 then return end
+  local a = math.atan2(toward.y - center.y, toward.x - center.x)
+  local fx, fy = math.cos(a), math.sin(a)               -- toward the target
+  local sx, sy = -fy, fx                                -- across the line
+  local gap = math.max(LINE_MIN, math.min(LINE_MAX, threat.foe_splash() / 2))
+  local w = math.max(1, math.ceil(math.sqrt(2 * #live)))
+  local slots = {}
+  for i = 0, #live - 1 do
+    local r, c = math.floor(i / w), i % w
+    local across = (c - (math.min(w, #live - r * w) - 1) / 2 + (r % 2) * 0.5) * gap
+    slots[#slots + 1] = {x = center.x + sx * across - fx * r * gap, y = center.y + sy * across - fy * r * gap, across = across, r = r}
+  end
+  table.sort(slots, function(p, q) if p.r ~= q.r then return p.r < q.r end return p.across < q.across end)
+  table.sort(live, function(p, q)
+    local dp = (p.position.x - center.x) * fx + (p.position.y - center.y) * fy
+    local dq = (q.position.x - center.x) * fx + (q.position.y - center.y) * fy
+    if math.abs(dp - dq) > gap then return dp > dq end
+    return (p.position.x - center.x) * sx + (p.position.y - center.y) * sy < (q.position.x - center.x) * sx + (q.position.y - center.y) * sy
+  end)
+  for i, u in ipairs(live) do
+    u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+      commands = {{type = defines.command.go_to_location, destination = {x = slots[i].x, y = slots[i].y}, radius = 0.8,
+        distraction = defines.distraction.none}, {type = defines.command.stop, distraction = defines.distraction.none}}}
+  end
+end
+
 local function rest_of_way(route, from, to)
   local cmds, first, fd = {}, nil, nil
   for i, w in ipairs(route or {}) do
@@ -1073,10 +1109,9 @@ local function siege_step(b, trace, army)
       if op.with_howitzer and not op.howitzer then op.drops[#op.drops + 1] = pods.send(s, {op.site[1], op.site[2] + 6}, b.force) end
       -- (Still, at its hold: wandering, answering what hit them, they followed a laser's hit into the wall; guard duty
       -- below sends them at what comes for the guns.)
-      order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-        commands = {{type = defines.command.go_to_location, destination = hold_spot(b, op), radius = 4,
-          distraction = defines.distraction.none},
-          {type = defines.command.stop, distraction = defines.distraction.none}}})
+      -- In line at its hold, facing its target (form_line).
+      local tg = b.intel.targets[op.target]
+      form_line(op.members, hold_spot(b, op), tg and tg.pos and {x = tg.pos[1], y = tg.pos[2]} or {x = op.site[1], y = op.site[2]})
       op.label = rendering.draw_text{text = {"lp.siege-deploying"}, surface = s, target = {op.site[1], op.site[2] - 3},
         color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
       trace(b, string.format("siege: its guards hold its site at %.0f,%.0f; %d pods drop its pieces", op.site[1], op.site[2],
@@ -1338,6 +1373,13 @@ local function siege_step(b, trace, army)
       local foes = op.clearance and s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
         or s.find_entities_filtered{position = c, radius = guard_r, type = {"unit", "character", "car", "spider-vehicle"},
           force = enemies(game.forces[b.force])}
+      -- (Back in line when the ground is quiet, every LINE_AGAIN at most: guard duty brought them back to its centre, and
+      -- the line its hold had formed was a clump again, standsiege nests.)
+      if #foes == 0 and op.drop and not op.clearance and game.tick - (op.lined_at or 0) >= LINE_AGAIN then
+        op.lined_at = game.tick
+        local tg = b.intel.targets[op.target]
+        form_line(op.members, c, tg and tg.pos and {x = tg.pos[1], y = tg.pos[2]} or {x = op.site[1], y = op.site[2]})
+      end
       if #foes > 0 and not op.clearance then
         order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
           commands = {{type = defines.command.attack_area, destination = c, radius = guard_r,
@@ -1595,10 +1637,7 @@ local function siege_step(b, trace, army)
           end
         end
         op.jump = {jump.x, jump.y}
-        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-          commands = {{type = defines.command.go_to_location, destination = jump, radius = 4,
-            distraction = defines.distraction.none},
-            {type = defines.command.stop, distraction = defines.distraction.none}}})
+        form_line(op.members, jump, c)
         trace(b, string.format("siege: its guards move up to %.0f,%.0f behind its strike (%.0f from the breach)",
           jump.x, jump.y, math.sqrt((jump.x - c.x) ^ 2 + (jump.y - c.y) ^ 2)))
       end

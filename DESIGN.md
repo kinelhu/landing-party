@@ -4332,6 +4332,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   read at the data stage (80% and none: poison, 10.5 a hit). The breach widens while the robots mend it, and the ground
   it burst on is no place to rebuild for a while. `cinder spores` (in the regression list): a cloud rose, the wall
   pieces beyond the blast's core (3.5 to 5 tiles) all lost health after it, its own medium and incubator untouched.
+- **Formations, first: a drop siege's escort in line** (0.2.182, overnight; the user, 2026-11-03, agreed order: "march as
+  one group, line up at the site spaced by splash, attack in staggered rows"). At its hold and at its jump-off, its
+  guards form staggered ranks facing the target (siege.lua form_line, Factorio RTS's slotting on arrival): about
+  sqrt(2n) a rank, spaced by half the widest artillery blast of its foes (threat.foe_splash, 1.5 to 3 tiles: one shell does
+  not take the escort), each guard to the slot matching its place across the line (their paths do not cross),
+  undistracted, then a stop; re-formed when guard duty finds the ground quiet, every 30 s at most. On standsiege nests:
+  three ranks 3 tiles apart, about 10 across, infantry in front, the tanks behind (tanks jostle: a tile of blur). The
+  march itself is still the route's column of individual orders; the assault still a rush (staggered rows to come).
+  Fortress (four), siegetier 2 and 3, orbital (both), standsiege and standsiege nests pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
