@@ -219,3 +219,12 @@ capped by script (refusing the next placement), which is not native and is the r
    Grubstake's gravel, Synthexis's creep as a decorative tile that absorbs no pollution). Cheap, native, no balance,
    and the kind of carrot Factorio players actually put down. Worth a node each at the HQ fall, where the prize used to
    be.
+
+## The user's decisions (2026-11-03, after this consult)
+
+- **S3, the decoy turret: cut** ("Decoy isn't something I find too interesting in the context of this mod especially one
+  time use"). Synthexis's tree is S1, S2 and S4; the Grubstake warning of section 4 goes with it.
+- **Achievements: yes** ("Achievements are a def yes"). Proposed set: first field study; Grubstake withdraws; every
+  incubator of a Synthexis farm destroyed; Kessler-Hayashi's uplink destroyed; a strike called off by killing its spotter;
+  every piece of a standing siege destroyed before it packs up; an incubator captured; the orbital cannon fired.
+- The diagram: the Field Study Tree page (claude.ai artifact, private to the user).
