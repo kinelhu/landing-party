@@ -4068,6 +4068,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   its owner covers it (the prototype's construction radius). `mended serenity` (a square wall put back in 5 s, no turret)
   read 1.0 and sent 8: through the wall, the assembler razed (it had read 0 and sent 4). Raid scenarios as before (ops,
   abort, sneak, weigh, gates, line, grudge, rivals, temper, mended's three, ladder's two, fortress, standsiege nests).
+  The ladder unchanged by it to the building (no raid of these saves met an unguarded wall).
+- **A siege's way read from orbit, started at its hauler, judged along it** (0.2.161). The artillery base, seed 2, razed 1
+  in 90 minutes: its sieges' haulers stood "468 tiles short" and were called off. Two faults: (1) the cost map's way began
+  at its home, inside its fortress, and its first points led the hauler back to a gate that opens for no unit: it starts
+  now at the point of the way nearest the hauler; (2) on the way round the base's guns its hauler drove 160 tiles away
+  from its site, and judged by its distance to the site alone it was called off as stuck: a waypoint done counts as
+  progress now. Seed 2 after: one siege stood 71 minutes, five strikes of 34 to 37 shells on the 14 or 15 guns covering
+  its lane, and razed 75 lasers, 19 roboports, 14 poles and more.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -551,8 +551,16 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   if not clearance and siege_read and siege_read.tick == game.tick and siege_read.id == b.id and against_player(t.owner) then
     local path = costmap.path(siege_read.cm, {x = site[1], y = site[2]})
     if path then
+      -- (From the point of it nearest where its hauler starts, past its outer wall: read from its home, inside its
+      -- fortress, the way's first points led the hauler back to a gate that opens for no unit, and it stood 469 tiles
+      -- short until called off; the artillery base, seed 2, 0.2.160.)
+      local hp, first, fd = hauler.position, 1, nil
+      for i, q in ipairs(path) do
+        local d = (q.x - hp.x) ^ 2 + (q.y - hp.y) ^ 2
+        if not fd or d < fd then first, fd = i, d end
+      end
       hroute = {}
-      for _, q in ipairs(path) do hroute[#hroute + 1] = {q.x, q.y} end
+      for i = first + 1, #path do hroute[#hroute + 1] = {path[i].x, path[i].y} end
       b.op.read_route = true
     end
   end
@@ -899,6 +907,11 @@ local function siege_step(b, trace, army)
       ops.corridor(b, {hp.x, hp.y}, rest, op.site)
     end
     if not op.best_d2 or d2 < op.best_d2 - 4 then op.best_d2, op.best_at = d2, game.tick end
+    -- (Progress along its way too, a waypoint done: on the cost map's way round the guns its hauler drove 160 tiles away
+    -- from its site, and judged by its distance to the site alone it was called off as stuck; the artillery base,
+    -- seed 2, 0.2.160.)
+    local left = cmd and cmd.commands and #cmd.commands
+    if left and (not op.best_left or left < op.best_left) then op.best_left, op.best_at = left, game.tick end
     if game.tick - op.best_at > STUCK_TICKS and d2 >= 5 * 5 then
       local t = b.intel.targets[op.target]
       local s = op.hauler.surface
