@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M640.12,-339.25C640.12,-339.25 537.88,-339.25 537.88,-339.25 531.88,-339.25 525.88,-333.25 525.88,-327.25 525.88,-327.25 525.88,-307.25 525.88,-307.25 525.88,-301.25 531.88,-295.25 537.88,-295.25 537.88,-295.25 640.12,-295.25 640.12,-295.25 646.12,-295.25 652.12,-301.25 652.12,-307.25 652.12,-307.25 652.12,-327.25 652.12,-327.25 652.12,-333.25 646.12,-339.25 640.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="589" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6179 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1960, siege 1333</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6210 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1991, siege 1333</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge15" class="edge">
@@ -154,9 +154,9 @@
 <!-- Army and operations&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge3" class="edge">
 <title>Army and operations&#45;&gt;Perception and attempts (any attacker)</title>
-<path fill="none" stroke="#8899aa" stroke-width="2.8" d="M612.23,-339.67C627.93,-354.15 648.8,-373.39 665.65,-388.93"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="2.8" points="663.21,-391.45 672.93,-395.65 667.96,-386.3 663.21,-391.45"/>
-<text xml:space="preserve" text-anchor="middle" x="650.97" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">7</text>
+<path fill="none" stroke="#8899aa" stroke-width="3" d="M612.23,-339.67C627.93,-354.15 648.8,-373.39 665.65,-388.93"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="3" points="662.99,-391.24 672.71,-395.45 667.73,-386.09 662.99,-391.24"/>
+<text xml:space="preserve" text-anchor="middle" x="650.97" y="-365.45" font-family="Helvetica,sans-Serif" font-size="9.00">8</text>
 </g>
 <!-- Army and operations&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge2" class="edge">

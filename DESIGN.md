@@ -4062,7 +4062,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   chance). That one is a race: a raid of 4 against a square wall whose pieces the "robots" put back in 5 s, 13 put back
   and it got in (razed the assembler in 3.6 minutes), 22 and it never did; a hub's projector shifts its timing. Its cause
   is the raid's size: walls with no turret read a defence of 0, the least raid sent. Open: price walls in a raid's way
-  in (the cost map's walls, as Synthexis's), not tweak the test. Left failing, flagged.
+  in (the cost map's walls, as Synthexis's), not tweak the test.
+- **Walls in a raid's defence** (0.2.160): a corporation with orbital intelligence counts the wall layers its line into a
+  target crosses in its last 60 tiles, each at Synthexis's price of a wall cell (costmap.WALL), twice where a roboport of
+  its owner covers it (the prototype's construction radius). `mended serenity` (a square wall put back in 5 s, no turret)
+  read 1.0 and sent 8: through the wall, the assembler razed (it had read 0 and sent 4). Raid scenarios as before (ops,
+  abort, sneak, weigh, gates, line, grudge, rivals, temper, mended's three, ladder's two, fortress, standsiege nests).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
