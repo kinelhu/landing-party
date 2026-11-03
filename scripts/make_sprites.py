@@ -58,7 +58,7 @@ KINDS = [
     ("lp-line-lab-busy", "animation", "lp-line-lab-busy", "body"),
     # (Not the siege lab: the foundry's animation is 128 frames on two sheets, 35 MB recoloured for two corporations; its
     # dark iron and molten orange read as a siege workshop as they are.)
-    ("lp-dome-projector", "radar", "lp-dome-projector", "body"),
+    # (Not the dome projector: its tower is rendered in Kessler-Hayashi's colours, tools/blender.)
     ("lp-uplink", "radar", "lp-uplink", "body"),
 ]
 # Glows repainted to each corporation's colour (a glow is otherwise left as it is): the fusion reactor's red-pink (hue 342 to

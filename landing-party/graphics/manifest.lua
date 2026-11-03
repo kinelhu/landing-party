@@ -127,10 +127,6 @@ return {
     ["__space-age__/graphics/entity/electromagnetic-plant/electromagnetic-plant-main-rotate-continue.png"] = "__landing-party__/graphics/serenity/space-age/electromagnetic-plant/electromagnetic-plant-main-rotate-continue.png",
     ["__space-age__/graphics/entity/fusion-reactor/fusion-reactor-glow.png"] = "__landing-party__/graphics/serenity/space-age/fusion-reactor/fusion-reactor-glow.png",
     ["__space-age__/graphics/entity/fusion-reactor/fusion-reactor-main.png"] = "__landing-party__/graphics/serenity/space-age/fusion-reactor/fusion-reactor-main.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-base-emit.png"] = "__landing-party__/graphics/serenity/space-age/tesla-turret/tesla-turret-base-emit.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-base.png"] = "__landing-party__/graphics/serenity/space-age/tesla-turret/tesla-turret-base.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-head-attacking-emit.png"] = "__landing-party__/graphics/serenity/space-age/tesla-turret/tesla-turret-head-attacking-emit.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-head-attacking.png"] = "__landing-party__/graphics/serenity/space-age/tesla-turret/tesla-turret-head-attacking.png",
   },
   grubstake = {
     ["__base__/graphics/entity/accumulator/accumulator.png"] = "__landing-party__/graphics/grubstake/accumulator/accumulator.png",
@@ -259,9 +255,5 @@ return {
     ["__space-age__/graphics/entity/electromagnetic-plant/electromagnetic-plant-main-rotate-continue.png"] = "__landing-party__/graphics/grubstake/space-age/electromagnetic-plant/electromagnetic-plant-main-rotate-continue.png",
     ["__space-age__/graphics/entity/fusion-reactor/fusion-reactor-glow.png"] = "__landing-party__/graphics/grubstake/space-age/fusion-reactor/fusion-reactor-glow.png",
     ["__space-age__/graphics/entity/fusion-reactor/fusion-reactor-main.png"] = "__landing-party__/graphics/grubstake/space-age/fusion-reactor/fusion-reactor-main.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-base-emit.png"] = "__landing-party__/graphics/grubstake/space-age/tesla-turret/tesla-turret-base-emit.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-base.png"] = "__landing-party__/graphics/grubstake/space-age/tesla-turret/tesla-turret-base.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-head-attacking-emit.png"] = "__landing-party__/graphics/grubstake/space-age/tesla-turret/tesla-turret-head-attacking-emit.png",
-    ["__space-age__/graphics/entity/tesla-turret/tesla-turret-head-attacking.png"] = "__landing-party__/graphics/grubstake/space-age/tesla-turret/tesla-turret-head-attacking.png",
   },
 }

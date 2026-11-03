@@ -10,7 +10,9 @@ import math
 import sys
 import bpy
 
-out = sys.argv[sys.argv.index("--") + 1]
+args = sys.argv[sys.argv.index("--") + 1:]
+out = args[0]
+FRAMES = int(args[1]) if len(args) > 1 else 0     # 0: one still; else its loop, frame by frame (body, glow, shadow)
 TILES = 3            # footprint
 PX = 64              # pixels a tile
 MARGIN = 2.0         # tiles of room round it (the tower's height and its shadow)
@@ -98,8 +100,12 @@ for k in range(4):
 cyl(0.62, 0.9, 0.34, paint, verts=24, depth_bevel=0.03)
 cyl(0.66, 0.08, 1.24, steel, verts=24)
 cyl(0.32, 1.7, 1.32, dark, verts=20)
+# Each ring its own material: its glow is the pulse climbing the coil (the loop).
+rings = []
 for i in range(6):
-    torus(0.42 - i * 0.02, 0.085, 1.48 + i * 0.26, copper)
+    m = mat(f"ring{i}", (0.55, 0.3, 0.16), metal=1.0, rough=0.35, emit=(0.45, 0.85, 1.0), strength=0.0)
+    rings.append(m)
+    torus(0.42 - i * 0.02, 0.085, 1.48 + i * 0.26, m)
 # Detail (the density Wube's art has): access panels and vents round the housing, a bolt ring, cable runs from the
 # legs to the housing, conduit boxes on the plinth.
 for k in range(8):
@@ -159,12 +165,72 @@ def render(path):
     scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
 
-# Body: the model, no ground.
-ground.hide_render = True
-render(out + "/body.png")
-# Shadow: the ground's catcher, the model casting but unseen.
-ground.hide_render = False
-for o in model:
-    o.visible_camera = False
-render(out + "/shadow.png")
+def emission(m, v):
+    m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = v
+
+import random
+rng = random.Random(7)
+arcs = []
+def set_frame(f):
+    """Frame f of FRAMES: the pulse at height f/FRAMES up the coil, the emitter breathing twice a loop, two to three arcs
+    from the emitter to the collar, new each frame (seeded)."""
+    t = f / FRAMES
+    for i, m in enumerate(rings):
+        d = abs(((t * 6 - i) + 3) % 6 - 3)          # distance of ring i from the pulse, round the loop
+        emission(m, max(0.0, 3.0 - 2.2 * d))
+    emission(glow, 2.0 + 1.2 * math.sin(t * 4 * math.pi))
+    for o in arcs:
+        bpy.data.objects.remove(o, do_unlink=True)
+    arcs.clear()
+    for _ in range(rng.choice((2, 2, 3))):
+        a0 = rng.uniform(0, 2 * math.pi)
+        bpy.ops.curve.primitive_bezier_curve_add(location=(0, 0, 0))
+        c = bpy.context.object
+        c.data.bevel_depth = 0.012
+        sp = c.data.splines[0]
+        sp.bezier_points.add(2)
+        pts = sp.bezier_points
+        z0, z1 = 3.42, 3.08
+        for k, p in enumerate(pts):
+            u = k / (len(pts) - 1)
+            r = 0.3 + 0.25 * u
+            a = a0 + rng.uniform(-0.5, 0.5) * u
+            p.co = (math.cos(a) * r, math.sin(a) * r, z0 + (z1 - z0) * u + rng.uniform(-0.06, 0.06))
+            p.handle_left_type = p.handle_right_type = "VECTOR"
+        c.data.materials.append(glow)
+        arcs.append(c)
+
+if not FRAMES:
+    # Body: the model, no ground.
+    ground.hide_render = True
+    render(out + "/body.png")
+    # Shadow: the ground's catcher, the model casting but unseen.
+    ground.hide_render = False
+    for o in model:
+        o.visible_camera = False
+    render(out + "/shadow.png")
+else:
+    import os
+    for k in ("body", "glow"):
+        os.makedirs(f"{out}/{k}", exist_ok=True)
+    for f in range(FRAMES):
+        set_frame(f)
+        ground.hide_render = True
+        sun.hide_render = False
+        world.node_tree.nodes["Background"].inputs[1].default_value = 0.55
+        for o in model: o.is_holdout = False
+        render(f"{out}/body/{f:03d}.png")
+        # Glow alone: the lit parts, every other part a holdout (it hides what is behind it), no light.
+        sun.hide_render = True
+        world.node_tree.nodes["Background"].inputs[1].default_value = 0.0
+        for o in model:
+            ms = [s.material for s in o.material_slots if s.material]
+            o.is_holdout = not any(m is glow or m in rings for m in ms)
+        render(f"{out}/glow/{f:03d}.png")
+    for o in model: o.is_holdout = False
+    sun.hide_render = False
+    world.node_tree.nodes["Background"].inputs[1].default_value = 0.55
+    ground.hide_render = False
+    for o in model: o.visible_camera = False
+    render(f"{out}/shadow.png")
 print("rendered", out)

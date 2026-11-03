@@ -364,6 +364,18 @@ projector.max_health = 1500
 -- Its body: Space Age's tesla turret at three quarters (4x4 to the projector's 3x3), unarmed, the tower its catches will
 -- fire from (the user's idea, 2026-11-03: "Enlarged Tesla tower, fires a bolt at the shell").
 local tesla = sa("electric-turret", "tesla-turret")
+-- Its own body, modelled and rendered in Blender (tools/blender/tesla_tower.py, sheet.py; the user, 2026-11-03: "Can you
+-- also make its anim sprites?"): 32 frames as a radar's 32 directions, so its turning plays the loop (a pulse climbing
+-- the coil, the emitter breathing, arcs at its crown) while it has power, and it stands still without. Frame size and
+-- shift from sheet.json. The tesla turret kitbash below is the fallback.
+local TOWER = {width = 335, height = 370, shift = {0.8359375, -1.0078125}}
+local function tower(file, extra)
+  local l = {filename = "__landing-party__/graphics/serenity/tower/" .. file .. ".png", width = TOWER.width,
+    height = TOWER.height, direction_count = 32, line_length = 8, scale = 0.5, shift = TOWER.shift}
+  for k, v in pairs(extra or {}) do l[k] = v end
+  return l
+end
+local TOWER_ON = true
 local bv = tesla and tesla.graphics_set and tesla.graphics_set.base_visualisation
 bv = bv and (bv.animation and bv or bv[1])
 if bv and bv.animation and bv.animation.layers then
@@ -375,6 +387,11 @@ if bv and bv.animation and bv.animation.layers then
     layers[#layers + 1] = c
   end
   projector.pictures = {layers = still(layers)}
+end
+if TOWER_ON then
+  projector.pictures = {layers = {tower("body"), tower("glow", {draw_as_glow = true, blend_mode = "additive"}),
+    tower("shadow", {draw_as_shadow = true})}}
+  projector.rotation_speed = 0.006
 end
 data:extend({projector})
 

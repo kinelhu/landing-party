@@ -4264,6 +4264,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   radar and laser turret. Two passes: the silhouette, scale and light match; it reads cleaner than Wube's art (detail
   lost at 32 px a tile; grime and occlusion help). Not wired into the mod: the dome projector is still the tesla turret
   kitbash. A judgement for the user.
+- **The dome projector is a tower of its own, animated** (0.2.175; the user, 2026-11-03, after the 3D spike: "Can you
+  also make its anim sprites?? Probably deserves some"). `tools/blender/tesla_tower.py <dir> 32` renders its loop: a
+  pulse of light climbing the six coil rings, the emitter breathing twice a loop, two or three arcs at its crown new each
+  frame (seeded); each frame a body and a glow pass (the lit parts alone, the rest holdouts), one shadow. `sheet.py`
+  stretches them by sqrt(2), crops all to their union (the shadow catcher's faint alpha over its whole plane had taken
+  the full frame), lays them 8 a row and writes the shift. 32 frames as the radar's 32 directions: its turning plays the
+  loop (rotation_speed 0.006, about 3 s) while it has power, and it stands still without. Glow drawn as glow, shadow as
+  shadow. 2.7 MB; the tesla turret's recolours removed (graphics manifest 252 files). dome, domehub and orbital standing
+  pass. Not yet seen in game; the brightest rings saturate white and the arcs are small at normal zoom (to tune).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
