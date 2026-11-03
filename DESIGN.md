@@ -4209,7 +4209,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   yard, a skim, a tribute post) comes back in a wreck (shared.wreck), mined once, not spilled over the ground. The command
   core and the pacifier crystal stay as they were. `loot` checks nothing is dropped; `crew` killed that it drops
   nothing; `dismantle` ambush a wreck for each raider's share (its spread over 3-tile cells had counted loose items);
-  `skim` raid and `leader` count the goods in wrecks. `road` cut passes. `tribute` fails, as it does on 0.2.169 (open).
+  `skim` raid and `leader` count the goods in wrecks. `road` cut passes. `tribute` failed on 0.2.161 already: a raid after its truce razed the post, read at the end (-1); it reads the post's last value while it stood.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

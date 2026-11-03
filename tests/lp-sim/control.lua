@@ -6312,6 +6312,9 @@ scenarios.tribute = function()
     local p = surface().find_non_colliding_position("lp-trade-post", {S.o.x + 50, S.o.y}, 10, 1)
     S.post = surface().create_entity{name = "lp-trade-post", position = p, force = "player", raise_built = true}
     S.post.insert{name = "iron-plate", count = 500}
+    for t = 60, 200 * 60, 60 do
+      schedule(game.tick - storage.t0 + t * 60, function() if S.post and S.post.valid then S.post_last = S.post.get_item_count() end end)
+    end
   end)
   -- Raids on the player, by the tick each started (the operations log).
   local seen = {}
@@ -6340,7 +6343,8 @@ scenarios.tribute = function()
       if S.truce_from and t >= S.truce_from and t <= S.truce_to then during = during + 1 end
       if S.truce_to and t > S.truce_to then after = after + 1 end
     end
-    local left = S.post and S.post.valid and S.post.get_item_count() or -1
+    -- (Its last reading while it stood: a raid after the truce razed the post, and read at the end it held -1.)
+    local left = S.post and S.post.valid and S.post.get_item_count() or S.post_last or -1
     info(string.format("tribute: %s; truce %s to %s; raids on the player %s (during %d, after %d); the post holds %d; standing %s",
       serpent.line(lp("trade_stats")), tostring(S.truce_from), tostring(S.truce_to), serpent.line(S.raids), during, after, left,
       lp("standing", "grubstake")))
