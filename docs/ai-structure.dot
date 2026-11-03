@@ -57,11 +57,11 @@ digraph ai {
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "army" [label="army\n775 lines", width=1.66, fillcolor="#eef2f7"];
+    "army" [label="army\n777 lines", width=1.66, fillcolor="#eef2f7"];
     "ops" [label="ops\n1960 lines", width=2.98, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
-    "siege" [label="siege\n1346 lines", width=2.30, fillcolor="#f7dede"];
+    "siege" [label="siege\n1351 lines", width=2.30, fillcolor="#f7dede"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];

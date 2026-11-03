@@ -52,6 +52,8 @@ local function cap(b)
   local n = math.max(depots, (b.lander and b.lander.valid) and 1 or 0) * (CAP_PER_DEPOT + GARRISON_PER_TIER * level(b))
   -- Its strength lever (tune.lua).
   n = math.max(1, math.floor(n * tune.strength(b.corp) + 0.5))
+  -- An armed camp holds its costliest siege (ops.siege_garrison, siege.lua).
+  if b.armed and ops.siege_garrison then n = math.max(n, ops.siege_garrison(b)) end
   -- The ladder buys capacity (Fable's pressure-ramp consult, item 4): from its second rung against a player, half as many
   -- again (b.war_rung, war.lua). It had only lowered the price of using what the settlement had.
   -- Its posture (strategy.lua, refreshed every 10 s by war.lua): a rung, a grudge, its recent losses. Before it is

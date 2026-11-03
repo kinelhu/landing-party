@@ -402,16 +402,21 @@ end
 ops.siege_tier = siege_tier
 -- What an armed camp saves for (base.lua's siege fund, handed to base by war.lua: requiring base here loops, base being
 -- mid-load when ops installs this): the costliest siege it may send a player, by its cap in siege_tier.
-ops.siege_goal = function(b)
-  local best = 0
+local function top_tier(b)
+  local best = 1
   for _, f in pairs(game.forces) do
     if shared.is_player_force(f) then
-      local cap_k = math.min(#SIEGE_TIERS, budget(f.name) + (b.grudge and 1 or 0) + ((b.war_rung or 0) >= 3 and 1 or 0))
-      best = math.max(best, SIEGE_TIERS[math.max(1, cap_k)].cost)
+      best = math.max(best, math.min(#SIEGE_TIERS, budget(f.name) + (b.grudge and 1 or 0) + ((b.war_rung or 0) >= 3 and 1 or 0)))
     end
   end
-  return best
+  return SIEGE_TIERS[best]
 end
+ops.siege_goal = function(b) return top_tier(b).cost end
+-- What an armed camp's garrison holds at least (army.cap): the guards of the costliest siege it may send a player, with
+-- what an operation of choice leaves home (pool.RESERVE) on top. Its cap was its depots' alone, and they come with its
+-- growth: for its first 30 to 50 minutes a cap of 20, its field 14, while parts piled up unspent (7352 on nwa, 5230 on
+-- nw), and its sieges went with 3 to 10 guards against walls read at 216 shells (ladder, 0.2.161).
+ops.siege_garrison = function(b) return math.ceil(top_tier(b).guards / (1 - pool.RESERVE)) end
 
 -- Whether a siege is against a player (its target's owner).
 local function t_owner_player(b, op)

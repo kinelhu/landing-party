@@ -4090,6 +4090,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   turrets (a wall cell's price over PER_TURRET) it still was. Walls taken out of the defence again; `mended serenity`
   (a raid of 4 racing a wall put back in 5 s, no turret) fails again, flagged. How a wall should weigh in a raid is a
   design question for the user: a mended wall needs more raiders, a bare one only time.
+- **An armed camp's garrison holds its costliest siege** (0.2.163). Its cap was its depots' alone (10 + 5 a level each,
+  the lander one while none stood), and its depots come with its growth blocks: on the 0.2.161 ladder its cap was 20 for
+  its first 30 to 50 minutes, its field 14, while its parts piled up unspent (7352 on nwa, 5230 on nw) and its sieges went
+  at 3 to 10 guards against walls read at 104 to 216 shells. Its cap is at least the guards of the costliest siege it may
+  send a player (the tier its siege fund already saves for, `ops.siege_goal`) with what an operation of choice leaves home
+  on top: `ops.siege_garrison`, ceil(guards / (1 - pool.RESERVE)), 35 for a tier of 24. The ladder for 0.2.163, three
+  seeds: the artillery base 254, 2, 101 (mean 119; 51 before), nw 140, 300, 0 (mean 147; 118), nwa 845, 419, 1409 (mean
+  891; 963, within its seeds' spread). The artillery base's seed 2 sent two sieges whose guards never left its fortress
+  (next entry).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
