@@ -440,12 +440,11 @@ for _, name in ipairs({"lp-optics-lab", "lp-line-lab", "lp-siege-lab"}) do
   if body and #body.still > 0 and #body.moving > 0 then
     plate = {layers = scaled(body.still, body.k)}
     for _, s in ipairs(plate.layers) do s.frame_count, s.line_length, s.repeat_count = 1, 1, nil end
-    local moving = scaled(body.moving, body.k)
-    local frames = 1
-    for _, m in ipairs(moving) do frames = math.max(frames, m.frame_count or 1) end
-    table.insert(labs, {type = "animation", name = name .. "-busy", layers = moving})
+    table.insert(labs, {type = "animation", name = name .. "-busy", layers = scaled(body.moving, body.k)})
+  else
+    -- (The vanilla lab tinted; a Space Age body is recoloured by corporation, scripts/make_sprites.py, or kept as it is.)
+    tint(plate, {})
   end
-  tint(plate, {})
   l.on_animation = plate
   l.off_animation = table.deepcopy(plate)
   table.insert(labs, l)

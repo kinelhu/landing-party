@@ -50,7 +50,23 @@ KINDS = [
     ("lp-flamer", "fluid-turret", "flamethrower-turret", "defence"),
     ("lp-lamp", "lamp", "small-lamp", "defence"),
     ("lp-gate", "gate", "gate", "defence"),
+    # Space Age's buildings as the corporations' (the graphics pass, 0.2.173): the files these prototypes draw, not the
+    # whole Space Age building (its other states would only add size).
+    ("lp-optics-lab", "lab", "lp-optics-lab", "body"),
+    ("lp-optics-lab-busy", "animation", "lp-optics-lab-busy", "body"),
+    ("lp-line-lab", "lab", "lp-line-lab", "body"),
+    ("lp-line-lab-busy", "animation", "lp-line-lab-busy", "body"),
+    # (Not the siege lab: the foundry's animation is 128 frames on two sheets, 35 MB recoloured for two corporations; its
+    # dark iron and molten orange read as a siege workshop as they are.)
+    ("lp-dome-projector", "radar", "lp-dome-projector", "body"),
+    ("lp-uplink", "radar", "lp-uplink", "body"),
 ]
+# Glows repainted to each corporation's colour (a glow is otherwise left as it is): the fusion reactor's red-pink (hue 342 to
+# 354, measured) as the uplink's, its own colour read as nobody's.
+# Sheets of which only the first frame is drawn (the dome projector: the tesla turret's head at rest), recoloured cropped.
+FIRST_FRAME = ("tesla-turret-head-attacking",)
+GLOWS = [("__space-age__/graphics/entity/fusion-reactor/fusion-reactor-glow.png", 345, 25)]
+ROOTS = {"__base__/graphics/entity/": ("base", ""), "__space-age__/graphics/entity/": ("space-age", "space-age/")}
 SKIP = ("shadow", "light", "glow", "remnants", "reflection", "integration", "circuit-connector", "explosion",
         "visualization", "frozen", "underground", "mask")
 LUM = np.array([0.299, 0.587, 0.114])
@@ -121,17 +137,40 @@ def body_files(proto):
             f = o.get("filename")
             if isinstance(f, str):
                 found.append((f, o))
+            for g in o.get("filenames") or []:
+                if isinstance(g, str):
+                    found.append((g, o))
             for v in o.values():
                 walk(v)
         elif isinstance(o, list):
             for v in o:
                 walk(v)
     walk(proto)
-    return [(f, o) for f, o in found if f.startswith("__base__/graphics/entity") and not any(w in f for w in SKIP)]
+    # (A prototype already pointed at a recolour, as the default corporation's are once corps.lua has run: back to its
+    # original, else its files fell out of the manifest on the next run, 260 to 248.)
+    def original(f):
+        for corp in CORPS:
+            pre = f"__landing-party__/graphics/{corp}/"
+            if f.startswith(pre):
+                r = f[len(pre):]
+                return ("__space-age__/graphics/entity/" + r[len("space-age/"):]) if r.startswith("space-age/") \
+                    else "__base__/graphics/entity/" + r
+        return f
+    found = [(original(f), o) for f, o in found]
+    return [(f, o) for f, o in found if any(f.startswith(r) for r in ROOTS) and not any(w in f for w in SKIP)]
+
+
+def rel(f):
+    """Where a recolour of f goes under graphics/<corp>/: its path below graphics/entity, Space Age's under space-age/."""
+    for r, (_, sub) in ROOTS.items():
+        if f.startswith(r):
+            return sub + f[len(r):]
 
 
 def resolve(f):
-    return DATA / "base" / f[len("__base__/"):]
+    for r, (mod, _) in ROOTS.items():
+        if f.startswith(r):
+            return DATA / mod / "graphics" / "entity" / f[len(r):]
 
 
 def load(f):
@@ -155,10 +194,13 @@ def main():
             print("no body files for", n)
             continue
         if write:
+            size_of = {f: (o.get("width"), o.get("height")) for f, o in files}
             for f in sorted({f for f, _ in files}):
                 a = load(f)
+                if any(k in f for k in FIRST_FRAME) and size_of[f][0]:
+                    a = a[:size_of[f][1], :size_of[f][0]]
                 for corp in CORPS:
-                    save(treat(a, corp, role), OUT / corp / f[len("__base__/graphics/entity/"):])
+                    save(treat(a, corp, role), OUT / corp / rel(f))
                     manifest[corp].add(f)
         framed = [(f, o) for f, o in files if "width" in o]
         f, o = max(framed, key=lambda x: x[1]["width"] * x[1]["height"]) if framed else files[0]
@@ -171,12 +213,17 @@ def main():
         rows.append((kind, cells))
         print(kind, len({f for f, _ in files}), "files")
     if write:
+        for f, centre, half in GLOWS:
+            a = load(f)
+            for corp in CORPS:
+                save(repaint(a, centre, half, CORPS[corp]["body"]), OUT / corp / rel(f))
+                manifest[corp].add(f)
         lines = ["-- Written by scripts/make_sprites.py: the vanilla files each corporation has its own recolour of.",
                  "return {"]
         for corp, fs in manifest.items():
             lines.append(f"  {corp} = {{")
             for f in sorted(fs):
-                lines.append(f'    ["{f}"] = "__landing-party__/graphics/{corp}/{f[len("__base__/graphics/entity/"):]}",')
+                lines.append(f'    ["{f}"] = "__landing-party__/graphics/{corp}/{rel(f)}",')
             lines.append("  },")
         lines.append("}")
         (OUT / "manifest.lua").write_text("\n".join(lines) + "\n")

@@ -4246,6 +4246,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   previewed headless with `scripts/sprite_preview.py` (true relative scale beside vanilla; masks, emissives and light
   left out); labs, dome, domehub and uplink pass. Open: dark boxes behind the projector and the uplink in the preview
   (an artefact of the preview or real), the pacifier and the orbital relay still radars, the walker, the dome's bolts.
+- **The new buildings recoloured by corporation** (0.2.174). `scripts/make_sprites.py` reads Space Age's files and
+  layers with `filenames`, and recolours only the files these prototypes draw (not whole Space Age buildings): the optics
+  and line labs (and their busy animations), the dome projector (the tesla head's first frame alone, cropped: its sheet
+  holds 64 directions) and the uplink; the fusion reactor's glow repainted to each corporation's colour (hue 342 to 354,
+  measured: the first guess of 300 missed it). The siege lab (the foundry) keeps its own colours: its animation is 128
+  frames on two sheets, 35 MB recoloured, and its iron and molten orange read as a siege workshop. +15 MB (graphics 62
+  MB). `corps.lua` repoints `filenames` too, gives each corporation its lab's busy animation, and repoints the dome
+  projector (outside the kinds, its recolour was never applied). Found on the way: reading our own prototypes from a dump
+  that already pointed them at their recolours dropped their files from the manifest on the next run (260 to 248); the
+  script maps such paths back to their originals. labs, domehub and uplink pass. Not yet seen in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -74,7 +74,22 @@ local function repoint(t, files, seen)
     t.filename = files[t.filename]
     t.tint = nil
   end
+  if type(t.filenames) == "table" then
+    for i, f in ipairs(t.filenames) do
+      if files[f] then t.filenames[i] = files[f]; t.tint = nil end
+    end
+  end
   for _, v in pairs(t) do repoint(v, files, seen) end
+end
+-- Buildings of the default corporation's alone, not kinds (no copy for another): repointed to its files too (the dome
+-- projector, Space Age's tesla turret recoloured; outside the kinds its recolour was never applied).
+local OWN = {"lp-dome-projector"}
+do
+  local files = manifest[shared.DEFAULT_CORP]
+  for _, name in ipairs(OWN) do
+    local p = files and find(name)
+    if p then repoint(p, files, {}) end
+  end
 end
 for corp in pairs(shared.CORPS) do
   local files = manifest[corp]
@@ -82,6 +97,15 @@ for corp in pairs(shared.CORPS) do
     for _, kind in ipairs(shared.KINDS) do
       local p = find(shared.variant(corp, kind))
       if p and p.type ~= "unit" and p.type ~= "spider-unit" then repoint(p, files, {}) end
+      -- A lab's busy animation (data.lua, drawn by base.lab_look): its own copy for each corporation, repointed.
+      local busy = data.raw.animation[kind .. "-busy"]
+      if busy then
+        local name = shared.variant(corp, kind) .. "-busy"
+        local a = name == busy.name and busy or table.deepcopy(busy)
+        a.name = name
+        repoint(a, files, {})
+        if a ~= busy then data:extend({a}) end
+      end
     end
   end
 end

@@ -42,22 +42,21 @@ def draw_layers(canvas, cx, cy, layers, frame=0):
             crop.putalpha(crop.split()[3].point(lambda v: v // 2))
         canvas.alpha_composite(crop, (int(cx + sh[0] * PX - crop.width / 2), int(cy + sh[1] * PX - crop.height / 2)))
 def get(t, n): return d.get(t, {}).get(n)
-items = [
-  ("vanilla lab", get("lab", "lab")["on_animation"]["layers"], 3),
-  ("optics lab", get("lab", "lp-optics-lab")["on_animation"]["layers"] + (get("animation", "lp-optics-lab-busy") or {}).get("layers", []), 4),
-  ("line lab", get("lab", "lp-line-lab")["on_animation"]["layers"] + (get("animation", "lp-line-lab-busy") or {}).get("layers", []), 4),
-  ("siege lab", get("lab", "lp-siege-lab")["on_animation"]["layers"] + (get("animation", "lp-siege-lab-busy") or {}).get("layers", []), 4),
-  ("vanilla radar", get("radar", "radar")["pictures"]["layers"], 3),
-  ("dome projector", get("radar", "lp-dome-projector")["pictures"]["layers"], 3),
-  ("uplink", get("radar", "lp-uplink")["pictures"]["layers"], 6),
-  ("laser turret", get("electric-turret", "laser-turret")["graphics_set"]["base_visualisation"]["animation"]["layers"] if isinstance(get("electric-turret", "laser-turret")["graphics_set"]["base_visualisation"], dict) else get("electric-turret", "laser-turret")["graphics_set"]["base_visualisation"][0]["animation"]["layers"], 2),
-]
+def lab(n):
+    return get("lab", n)["on_animation"]["layers"] + (get("animation", n + "-busy") or {}).get("layers", [])
+items = []
+for corp, pre in (("Kessler-Hayashi", "lp-"), ("Grubstake", "lp-grubstake-")):
+    items += [(corp + " optics lab", lab(pre + "optics-lab"), 4), (corp + " line lab", lab(pre + "line-lab"), 4),
+              (corp + " siege lab", lab(pre + "siege-lab"), 4)]
+    for n, k, size in (("dome-projector", "projector", 3), ("uplink", "uplink", 6)):
+        p = get("radar", pre + n)
+        if p: items.append((corp + " " + k, p["pictures"]["layers"], size))
 CELL = 280
-sheet = Image.new("RGBA", (CELL * 4, (CELL + 24) * 2), (74, 66, 54, 255))
+sheet = Image.new("RGBA", (CELL * 5, (CELL + 24) * 2), (74, 66, 54, 255))
 dr = ImageDraw.Draw(sheet)
 for i, (name, layers, size) in enumerate(items):
-    cx, cy = (i % 4) * CELL + CELL // 2, (i // 4) * (CELL + 24) + CELL // 2 + 20
+    cx, cy = (i % 5) * CELL + CELL // 2, (i // 5) * (CELL + 24) + CELL // 2 + 20
     dr.rectangle([cx - size * PX / 2, cy - size * PX / 2, cx + size * PX / 2, cy + size * PX / 2], outline=(110, 100, 80, 255))
     draw_layers(sheet, cx, cy, layers, frame=5)
-    dr.text(((i % 4) * CELL + 6, (i // 4) * (CELL + 24) + CELL + 4), f"{name} ({size}x{size})", fill=(240, 235, 220, 255))
+    dr.text(((i % 5) * CELL + 6, (i // 5) * (CELL + 24) + CELL + 4), f"{name} ({size}x{size})", fill=(240, 235, 220, 255))
 sheet.save(OUT); print("wrote", OUT)
