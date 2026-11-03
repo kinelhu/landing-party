@@ -4639,7 +4639,7 @@ scenarios.armed = function()
         string.format("%s, %d turrets, %d walls", st.doctrine, st.turrets, st.walls))
       check("armed: its hull up, no uplink", st.hull_up and uplinks == 0, tostring(st.hull_up) .. ", " .. uplinks)
       -- (Landed by the first rich site before 0.2.154: on nwa across a lake from the factory, no way over land.)
-      check("armed: landed by its way to the player", (lp("faction").by_way or 0) >= 1, tostring(lp("faction").by_way))
+      check("armed: its landing's way over land checked", (lp("faction").by_way or 0) >= 1, tostring(lp("faction").by_way))
     end
   end)
 end

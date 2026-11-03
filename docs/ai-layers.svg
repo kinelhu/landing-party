@@ -21,7 +21,7 @@
 <title>Perception and attempts (any attacker)</title>
 <path fill="#eef2f7" stroke="black" d="M784,-435C784,-435 606,-435 606,-435 600,-435 594,-429 594,-423 594,-423 594,-411 594,-411 594,-405 600,-399 606,-399 606,-399 784,-399 784,-399 790,-399 796,-405 796,-411 796,-411 796,-423 796,-423 796,-429 790,-435 784,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="695" y="-418.55" font-family="Helvetica,sans-Serif" font-size="11.00">Perception and attempts (any attacker)</text>
-<text xml:space="preserve" text-anchor="middle" x="695" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1339 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="695" y="-406.55" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1342 lines</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Seams (leaves) -->
 <g id="edge17" class="edge">
@@ -49,8 +49,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M640.12,-339.25C640.12,-339.25 537.88,-339.25 537.88,-339.25 531.88,-339.25 525.88,-333.25 525.88,-327.25 525.88,-327.25 525.88,-307.25 525.88,-307.25 525.88,-301.25 531.88,-295.25 537.88,-295.25 537.88,-295.25 640.12,-295.25 640.12,-295.25 646.12,-295.25 652.12,-301.25 652.12,-307.25 652.12,-307.25 652.12,-327.25 652.12,-327.25 652.12,-333.25 646.12,-339.25 640.12,-339.25"/>
 <text xml:space="preserve" text-anchor="middle" x="589" y="-324.8" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6160 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1960, siege 1319</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-312.8" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 6163 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="589" y="-300.8" font-family="Helvetica,sans-Serif" font-size="11.00">ops 1960, siege 1322</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge15" class="edge">
@@ -64,7 +64,7 @@
 <title>Corporation</title>
 <path fill="#eef2f7" stroke="black" d="M627.12,-131.75C627.12,-131.75 524.88,-131.75 524.88,-131.75 518.88,-131.75 512.88,-125.75 512.88,-119.75 512.88,-119.75 512.88,-107.75 512.88,-107.75 512.88,-101.75 518.88,-95.75 524.88,-95.75 524.88,-95.75 627.12,-95.75 627.12,-95.75 633.12,-95.75 639.12,-101.75 639.12,-107.75 639.12,-107.75 639.12,-119.75 639.12,-119.75 639.12,-125.75 633.12,-131.75 627.12,-131.75"/>
 <text xml:space="preserve" text-anchor="middle" x="576" y="-115.3" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="576" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 3046 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="576" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 3013 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge9" class="edge">

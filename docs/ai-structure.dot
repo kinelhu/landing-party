@@ -15,7 +15,7 @@ digraph ai {
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
-    "valuemap" [label="valuemap\n205 lines", width=1.03, fillcolor="#eef2f7"];
+    "valuemap" [label="valuemap\n208 lines", width=1.03, fillcolor="#eef2f7"];
     "costmap" [label="costmap\n415 lines", width=1.26, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n62 lines", width=0.87, fillcolor="#eef2f7"];
@@ -26,9 +26,9 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n949 lines", width=1.85, fillcolor="#eef2f7"];
+    "faction" [label="faction\n911 lines", width=1.81, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
-    "war" [label="war\n609 lines", width=1.48, fillcolor="#eef2f7"];
+    "war" [label="war\n614 lines", width=1.48, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
     "pact" [label="pact\n107 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
@@ -61,7 +61,7 @@ digraph ai {
     "ops" [label="ops\n1960 lines", width=2.98, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
-    "siege" [label="siege\n1319 lines", width=2.27, fillcolor="#f7dede"];
+    "siege" [label="siege\n1322 lines", width=2.27, fillcolor="#f7dede"];
     "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];

@@ -1808,9 +1808,9 @@ function ops.tick(b, tick, trace, army)
     -- always beat a siege on a factory block, and a thief strip before anything.
     local prefer = (b.armed and mind_of(b).armed_prefer) or mind_of(b).prefer or {raid = 1, siege = 0.5, strip = 1}
     local skey, ssite, ss, spiece = choose_siege(b, army)
-    -- An armed camp sieges no player while a nest can reach its ground (war.lua sets b.ground_clear at each look for its
-    -- sweep): its first siege went out 1.8 minutes after landing, and its hauler died to the nests round it every time
-    -- (fed nw, 2026-11-02). (10 minutes from its landing before, whatever stood there.)
+    -- An armed camp sieges no player before its ground first reads clear (war.lua sets b.ground_clear, once): its first
+    -- siege went out 1.8 minutes after landing, and its hauler died to the nests round it every time (fed nw,
+    -- 2026-11-02). (10 minutes from its landing before, whatever stood there.)
     if skey and b.armed and not b.ground_clear and against_player((b.intel.targets[skey] or {}).owner) then
       skey = nil
     end

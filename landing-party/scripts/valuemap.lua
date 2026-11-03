@@ -147,6 +147,9 @@ end
 -- in, and they came home with nothing, while the outpost's drills fell (2026-10-27).
 valuemap.HOLD = 0.5
 -- (lost: what the way there costs it one way, in its own: costmap.lua, firemap.entry_cost.)
+-- What a place keeps of its score however dear its way (Synthexis's culture landing, farm.lua; Kessler-Hayashi's siege
+-- weighing): its score times this and the share kept.
+valuemap.REACH_FLOOR = 0.25
 function valuemap.keeps_lost(n, lost) return math.max(0, 1 - 2 * lost / (n * valuemap.HOLD)) end
 -- What a wave of n keeps going one way at a cost of `lost` (it arrives with the rest): once it is on its way in, the way
 -- back is its stay rule's to weigh, not the target's.

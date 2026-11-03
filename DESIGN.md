@@ -4027,6 +4027,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   their points through it. Its guards now go its hauler's way (its waypoints, then behind its site), and on its march
   only those within ESCORT_NEAR (24) of the hauler are kept behind it, the rest going on along the way. 10 of 10 back,
   68 razed. `standsiege nests` checks half its guards came back at least (seen failing sent straight: 4 of 10).
+- **The ladder on three seeds, and a landing narrowed back** (0.2.157). 0.2.156 on the ladder (fed, 90 minutes, seeds
+  1 to 3; scripts/ladder.py): the artillery base, Kessler-Hayashi 21, 31, 82 (mean 45), 2 to 3 strikes a run; nw 0, 0, 0;
+  nwa 0, 0, 0. On nw two of last night's changes had stopped it: (1) every target past a few nests read "its guards
+  would keep 0.00" (a siege's guards are 10 to 24, each worm and spawner on the way 3.5 of them; Synthexis's waves are
+  hundreds, and its weighing keeps a floor): the siege's score is now times (REACH_FLOOR + kept), the floor Synthexis's
+  (valuemap.REACH_FLOOR, 0.25, shared now), no way at all still none; (2) its ground never read clear in nest country (53
+  sweeps in an hour, a nest or more within reach at each), so its sieges on the player never began: its ground counts as
+  cleared once its landing barrage has fallen. And the landing by its way's price had moved nw's from its south site,
+  where it razed most (a mean of 88 at 0.2.151), to a nest field north, then (the spawners round a site priced) to a
+  far corner, and it razed nothing. Narrowed: the search as before, an armed landing refusing only a site with no way over
+  land to the player (its way's map, read once a landing from the player's edge, 16 rays out from `from`). nw lands
+  south again, nothing refused; nwa refuses the two lake sites and comes down at -1519,-1469. 60 minutes, seed 1: nw 56
+  and more (13 lasers), a strike; nwa 393 by its own count (3 artillery turrets among them), its sieges at tier 4 on the
+  factory's north-west. Every armed landing's way is checked (`armed`, seen failing with the check off). Its sieges on nw
+  went at tier 1 against 216 shells read: 5 or 6 guards in its field, tier 2 needing 10 (its army's size, next).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

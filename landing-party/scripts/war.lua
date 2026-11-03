@@ -394,8 +394,10 @@ function war.barrage(b, sweep)
   local found
   if b.armed then
     found = war.threatening(b)
-    -- Its ground clear (ops.tick: an armed camp sieges no player before).
-    b.ground_clear = #found == 0
+    -- Its ground clear (ops.tick: an armed camp sieges no player before), once: after that its sweeps keep it, and its
+    -- sieges no longer wait (re-read at every look, in nest country it never read clear, 53 sweeps in an hour on nw, and
+    -- it sent no siege on the player; 0.2.156).
+    b.ground_clear = b.ground_clear or #found == 0
   else
     found = s.find_entities_filtered{position = c, radius = radius, type = {"unit-spawner", "turret"}, force = "enemy"}
   end
@@ -495,6 +497,9 @@ local function orbitals(tick)
     if not e or not s then
       local b = storage.bases[o.base]
       if b then base.trace(b, "orbital barrage over") end
+      -- (Its landing barrage fallen, its ground counts as cleared for its sieges, ops.tick: in nest country no look of
+      -- its sweeps ever read none within reach, and it never besieged the player, nw.)
+      if b then b.ground_clear = true end
       table.remove(storage.orbitals, k)
     else
       o.i = o.i + 1

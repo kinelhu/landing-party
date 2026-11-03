@@ -311,8 +311,11 @@ local function choose_siege(b, army, only_battery)
           local keeps = lost and valuemap.keeps_one_way(SIEGE_TIERS[#SIEGE_TIERS].guards, lost) or 0
           t.way_keeps = keeps
           -- (The best it would take with its way free, for its corridor below.)
-          if lost and (not blocked_s or s > blocked_s) then blocked, blocked_s, blocked_site = t, s, p end
-          s = s * keeps
+          if lost and keeps < 1 and (not blocked_s or s > blocked_s) then blocked, blocked_s, blocked_site = t, s, p end
+          -- Synthexis's floor (valuemap.REACH_FLOOR): a dear way makes a target worth less, not nothing. Without it every
+          -- target past a few nests read 0.00 (a siege's guards are 10 to 24, its waves hundreds) and on nw it sent no
+          -- siege in 90 minutes, three seeds (0.2.156); no way at all is still none.
+          s = lost and s * (valuemap.REACH_FLOOR + keeps) or 0
         end
         if p and s > 0 and (not bs or s > bs) then best, bs, site, piece = key, s, p, pc end
       end

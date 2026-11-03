@@ -128,6 +128,26 @@ end
 -- no way), the guns of every faction this corporation is at war with but the player's on the way (rival camps; worms and
 -- the spawners round it unless it has a pact with the biters; the user, 2026-11-02, on landings blind to one another:
 -- "Yeah I'd fix that too"); the player's own guns left out, every site meets them at the end.
+-- The player's edge round `from`: along EDGE_RAYS rays out from it, the last point within EDGE_STEP of a building of
+-- the player's (FACTORY types), to `radius`. The way to the player is the way to its edge (read from its spawn, the
+-- way ran the factory's breadth for free, and on nw a site 467 from its edge read dearer than one beyond it; 0.2.156).
+local EDGE_RAYS, EDGE_STEP = 16, 32
+local function player_edge(surface, from, radius)
+  local pf = {}
+  for _, f in pairs(game.forces) do if shared.is_player_force(f) then pf[#pf + 1] = f end end
+  local out = {}
+  for k = 0, EDGE_RAYS - 1 do
+    local a = 2 * math.pi * k / EDGE_RAYS
+    local last
+    for d = 0, radius, EDGE_STEP do
+      local p = {from.x + math.cos(a) * d, from.y + math.sin(a) * d}
+      if surface.count_entities_filtered{position = p, radius = EDGE_STEP, force = pf, type = FACTORY, limit = 1} > 0 then last = p end
+    end
+    if last then out[#out + 1] = {last[1], last[2]} end
+  end
+  return #out > 0 and out or {{from.x, from.y}}
+end
+
 local function landing_ways(surface, from, radius, corp)
   local own = shared.CORPS[corp] and game.forces[shared.CORPS[corp].force]
   local shooters, types, deaths = {}, {"ammo-turret", "electric-turret", "fluid-turret", "unit"}, nil
@@ -144,8 +164,8 @@ local function landing_ways(surface, from, radius, corp)
     end
   end
   local fmap = #shooters > 0 and firemap.read(surface, from, radius, shooters, function(e) return threat.prior(e, ops.PER_TURRET) end, types) or nil
-  return costmap.read(surface, from, radius, {}, {from = {from.x, from.y}, n = 24, fire = fmap, deaths = deaths,
-    cell = radius > 1200 and costmap.CELL * 3 or costmap.CELL * 2})
+  return costmap.read(surface, from, radius, {}, {sources = player_edge(surface, from, radius), n = 24, fire = fmap,
+    deaths = deaths, cell = radius > 1200 and costmap.CELL * 3 or costmap.CELL * 2})
 end
 
 function faction.site(surface, from, distance, count)
@@ -156,7 +176,6 @@ function faction.site(surface, from, distance, count)
   local avoid = landers()
   local fallback, fallback_n = nil, -1
   local among, among_density, dense, dense_density
-  local reachable = {}
   for i = 0, 7 do
     local a = 2 * math.pi * ((start + i) % 8) / 8
     local p = {from.x + distance * math.cos(a), from.y + distance * math.sin(a)}
@@ -285,8 +304,7 @@ function faction.site(surface, from, distance, count)
       -- allowed (its landing burns them), a nest-free site in the same ring preferred.
       if clear and faction.approach_max and approach(surface, spot, from) > faction.approach_max then clear = false end
       -- A corporation with a pact with the biters (Grubstake) lands among them: they let it be.
-      -- (Collecting for an armed landing's way, faction.site_collect: nests round it are its barrage's, kept.)
-      if clear and nested and not (faction.ignore_nests or faction.dense_ok) and not faction.pact_site and not faction.site_collect then
+      if clear and nested and not (faction.ignore_nests or faction.dense_ok) and not faction.pact_site then
         if faction.approach_max then
           local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
           -- Nests beside it, not a field round it: a field waits for the further rings, then the last pass.
@@ -297,15 +315,13 @@ function faction.site(surface, from, distance, count)
         clear = false
       end
       -- Nests allowed (the last pass): a nest field is still the last choice, the least dense of them.
-      if clear and (faction.ignore_nests or faction.dense_ok) and density > DENSE_MAX and not faction.site_collect then
+      if clear and (faction.ignore_nests or faction.dense_ok) and density > DENSE_MAX then
         if not dense or density < dense_density then dense, dense_density = spot, density end
         clear = false
       end
       if clear then
         local n = surface.count_entities_filtered{position = c, radius = 60, type = "resource", name = site.ORES}
-        if n > SITE_MIN_ORE and faction.site_reach then
-          reachable[#reachable + 1] = spot
-        elseif n > SITE_MIN_ORE then
+        if n > SITE_MIN_ORE then
           if not weigh then return spot end
           local sc = site_score(weigh, surface, spot, n, density, from, faction.site_corp)
           if not best_score or sc > best_score then best, best_score = spot, sc end
@@ -313,25 +329,6 @@ function faction.site(surface, from, distance, count)
         if n > fallback_n then fallback, fallback_n = spot, n end
       end
     end
-  end
-  -- By its way to the player (an armed landing, faction.site_reach; the user, 2026-11-02, on nwa's: "right across a
-  -- huge ocean"): of the rich, clear sites of this ring, the one whose way over land to `from` costs least (one cost map
-  -- read from there, Synthexis's: water no way, trees and walking); none with a way, none from this ring. Landed by the
-  -- first rich site, Kessler-Hayashi came down across a lake from nwa, its cheapest way to the factory 1,500 tiles of
-  -- nest country, and it besieged nothing in 40 minutes once it weighed that way (0.2.153).
-  if faction.site_collect then
-    for _, spot in ipairs(reachable) do table.insert(faction.site_collect, spot) end
-    return nil
-  end
-  if #reachable > 0 then
-    local cm = landing_ways(surface, from, distance + 60, faction.site_corp)
-    local pick, pc
-    for _, spot in ipairs(reachable) do
-      local c = costmap.cost(cm, {x = spot[1], y = spot[2]})
-      if c and (not pc or c < pc) then pick, pc = spot, c end
-    end
-    faction.site_scored = pick and string.format("its way to the player %.0f (of %d rich sites)", pc, #reachable) or nil
-    return pick
   end
   -- No direction rich and clear: the best clear one seen (seed 2024 once landed blind on two drills' worth); by
   -- approach, a site among nests next.
@@ -438,60 +435,10 @@ function faction.arrive(surface, from, opts, quiet)
     b = base.land(surface, opts.at, opts)
     if b then b.approach = approach(surface, opts.at, from) end
   end
-  -- An armed landing first weighs every ring's rich, clear sites together by its way over land to the player (one cost
-  -- map from `from`: water no way): ring by ring it took the nearer ring's, on nwa two sites both across a lake, when the
-  -- next ring held one on the player's side (0.2.153). The older passes after, if none of these lands.
-  if not b and opts and opts.armed and not storage.reach_off then
-    faction.site_collect = {}
-    faction.site_corp, faction.site_reach = (opts and opts.corp) or shared.DEFAULT_CORP, true
-    local rings = storage.rings or {0, 120, 240, 480, 800, 1200, 1800}
-    local far = 0
-    -- (Nests round a site allowed: its landing burns its clearing and its barrage takes the rest, and the way's map prices
-    -- the nests on the way. Refused, nwa left one rich site in seven rings, the one across the lake.)
-    for _, extra in ipairs(rings) do
-      faction.dense_ok, faction.ignore_nests = false, false
-      local d = ((opts and opts.distance) or DISTANCE) + extra
-      faction.site(surface, from, d, f.landings)
-      far = math.max(far, d)
-    end
-    local spots = faction.site_collect
-    faction.site_collect, faction.site_corp, faction.site_reach, faction.dense_ok = nil, nil, nil, false
-    faction.ignore_nests = false
-    faction.reach_note = string.format("%d rich sites over %d rings", #spots, #(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}))
-    if #spots > 0 then
-      local cm = landing_ways(surface, from, far + 60, (opts and opts.corp) or shared.DEFAULT_CORP)
-      local ranked = {}
-      for _, spot in ipairs(spots) do
-        local c = costmap.cost(cm, {x = spot[1], y = spot[2]})
-        if c then ranked[#ranked + 1] = {spot, c} end
-      end
-      table.sort(ranked, function(x, y) return x[2] < y[2] end)
-      for _, r in ipairs(ranked) do
-        -- (Its ground made first on an asynchronous landing, as the passes below: pending until it is; the same site
-        -- comes first again next try, the map's noise and its ground the same.)
-        if faction.dry and wait_for(surface, r[1], 7) then
-          faction.dense_ok = false
-          return nil, "pending"
-        end
-        if faction.site_only then
-          local at = layout.find_pad(surface, r[1])
-          if at then return nil, "site", r[1], at end
-        else
-          b = base.land(surface, r[1], opts)
-          if b then
-            b.approach = approach(surface, r[1], from)
-            local costs = {}
-            for k = 1, math.min(6, #ranked) do costs[k] = string.format("%.0f,%.0f: %.0f", ranked[k][1][1], ranked[k][1][2], ranked[k][2]) end
-            base.trace(b, "landing by its way to the player: " .. faction.reach_note .. "; cheapest " .. table.concat(costs, " | "))
-            f.by_way = (f.by_way or 0) + 1
-            faction.site_scored = string.format("its way to the player %.0f, the least of %d sites with a way (of %d)",
-              r[2], #ranked, #spots)
-            break
-          end
-        end
-      end
-    end
-  end
+  local landing_cm
+  local far_ring = ((opts and opts.distance) or DISTANCE)
+  for _, e in ipairs(storage.rings or {0, 120, 240, 480, 800, 1200, 1800}) do far_ring = math.max(far_ring, ((opts and opts.distance) or DISTANCE) + e) end
+  faction.reach_refused = 0
   for pass = 0, 3 do
     if b then break end
     if pass == 2 and not late then goto next_pass end
@@ -512,9 +459,19 @@ function faction.arrive(surface, from, opts, quiet)
       local extra = ring[1]
       faction.dense_ok = ring[2]
       faction.site_corp = (opts and opts.corp) or shared.DEFAULT_CORP
-      faction.site_reach = opts and opts.armed and not storage.reach_off or nil
       pos = faction.site(surface, from, ((opts and opts.distance) or DISTANCE) + extra, f.landings)
-      faction.site_corp, faction.site_reach = nil, nil
+      faction.site_corp = nil
+      -- An armed landing refuses a site with no way over land to the player (its way's map, read once a landing: water no
+      -- way): nwa's site by this search lay across a lake from the factory, and its sieges besieged nothing. Ranking
+      -- every site by its way's price instead (0.2.154 to 0.2.156) moved nw's from where it had razed most to a nest
+      -- field, then to a far corner, and it razed nothing; only the site that cannot reach is refused now.
+      if pos and opts and opts.armed and not storage.reach_off then
+        landing_cm = landing_cm or landing_ways(surface, from, far_ring + 60, (opts and opts.corp) or shared.DEFAULT_CORP)
+        if not costmap.cost(landing_cm, {x = pos[1], y = pos[2]}) then
+          faction.reach_refused = (faction.reach_refused or 0) + 1
+          pos = nil
+        end
+      end
       -- Dry: the settlement's reach (base.land's 15x15 chunks) made by the engine first.
       if pos and faction.dry and wait_for(surface, pos, 7) then pos = nil end
       if faction.pending then
@@ -541,6 +498,11 @@ function faction.arrive(surface, from, opts, quiet)
     end
     if b then break end
     ::next_pass::
+  end
+  -- (Its way checked: the sites refused for having none, traced; f.by_way counts the landings checked, `armed`.)
+  if b and landing_cm then
+    f.by_way = (f.by_way or 0) + 1
+    base.trace(b, string.format("its way over land to the player checked: %d sites with none refused", faction.reach_refused or 0))
   end
   faction.ignore_nests = false
   faction.under_guns = false
