@@ -10524,7 +10524,50 @@ end
 -- Cinder (Synthexis's tier 3, biotech.lua): a cinder killed against a player wall (seven pieces, a gun turret two tiles
 -- behind), a Synthexis medium and an incubator beside it. Within three seconds: the wall at it and the turret broken or
 -- badly hurt, the Synthexis medium and the incubator untouched (the eruption spares its own force).
+-- LP_MIX=spores: a big burster instead, a wall of fifteen (its spore cloud, biotech.lua, 2026-11-04): a cloud rises
+-- where it dies; the pieces beyond its blast's core (3.5 to 5 tiles off, its core 3) lose health over the cloud's life,
+-- the spores' doing; its medium and incubator untouched.
 scenarios.cinder = function()
+  local spores = params.mix == "spores"
+  if spores then
+    schedule(60, function()
+      lp("debug_tune", {harmless = true, army_off = true, history_off = true})
+      local c = {-200.5, 200.5}
+      surface().request_to_generate_chunks(c, 2); surface().force_generate_chunk_requests()
+      flatten(c[1] - 20, c[2] - 20, c[1] + 20, c[2] + 20)
+      S.walls = {}
+      for i = -7, 7 do table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {c[1] + i, c[2]}, force = "player"}) end
+      S.burster = surface().create_entity{name = "lp-bred-big-burster", position = {c[1], c[2] - 2}, force = "lp-biotech"}
+      S.mate = surface().create_entity{name = "lp-bred-medium-biter", position = {c[1] + 3, c[2] - 3}, force = "lp-biotech"}
+      S.pen = surface().create_entity{name = "lp-pen", position = {c[1] - 3, c[2] - 7}, force = "lp-biotech"}
+      S.mate.disabled_by_script = true
+      S.burster.disabled_by_script = true
+    end)
+    schedule(120, function() if S.burster.valid then S.died_at = S.burster.position; S.burster.die("player") end end)
+    schedule(180, function() S.clouds = surface().count_entities_filtered{name = "lp-spore-cloud"} end)
+    schedule(190, function()
+      S.h0 = {}
+      for i, w in ipairs(S.walls) do S.h0[i] = w.valid and w.health or nil end
+    end)
+    schedule(120 + 660, function()
+      local outer, lost = 0, 0
+      for i, w in ipairs(S.walls) do
+        local d = S.died_at and w.valid and math.sqrt((w.position.x - S.died_at.x) ^ 2 + (w.position.y - S.died_at.y) ^ 2)
+        if d and d > 3.5 and d < 5 and S.h0[i] then
+          outer = outer + 1
+          if w.health < S.h0[i] then lost = lost + 1 end
+        end
+      end
+      info(string.format("cinder: spores, clouds %s; outer pieces %d, %d lost health after the blast; mate %s, incubator %s",
+        tostring(S.clouds), outer, lost, S.mate.valid and string.format("%.0f", S.mate.health) or "dead",
+        S.pen.valid and string.format("%.0f", S.pen.health) or "dead"))
+      check("cinder: spores, a spore cloud rose where it died", (S.clouds or 0) >= 1, tostring(S.clouds))
+      check("cinder: spores, the pieces beyond its core corroded", outer > 0 and lost == outer, lost .. " of " .. outer)
+      check("cinder: spores, its own medium and incubator untouched", S.mate.valid and S.mate.health == S.mate.max_health
+        and S.pen.valid and S.pen.health == S.pen.max_health, "")
+    end)
+    return
+  end
   schedule(60, function()
     lp("debug_tune", {harmless = true, army_off = true, history_off = true})
     local c = {-200.5, 200.5}

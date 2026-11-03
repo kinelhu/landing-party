@@ -345,8 +345,29 @@ do
   c.dying_trigger_effect = {
     {type = "create-entity", entity_name = "lp-cinder-fissure"},
     {type = "create-entity", entity_name = "lp-cinder-fissure-scorchmark"},
+    {type = "create-entity", entity_name = "lp-spore-cloud"},
     area(BIG_BURST.r / 2, BIG_BURST.core)}
   table.insert(out, c)
+  -- Its spores (the user, 2026-11-03: "spore cloud on top of the explosion"): where it bursts, a cloud corroding what its
+  -- foes built for SPORE.ticks, every SPORE.every a hit within SPORE.r, buildings too (the poison cloud hits only what
+  -- breathes): the breach widens while the robots mend it, and the ground it burst on is no place to rebuild for a while.
+  -- Its damage the type the player's stone wall resists least of acid and poison (read: 80% and none, so poison).
+  local SPORE = {r = 5, ticks = 600, every = 30, share = 0.6}
+  local wall = data.raw.wall and data.raw.wall["stone-wall"]
+  local res = {}
+  for _, x in ipairs(wall and wall.resistances or {}) do res[x.type] = x.percent or 0 end
+  local kind = (res.poison or 0) <= (res.acid or 0) and "poison" or "acid"
+  local hp = wall and wall.max_health or 350
+  local per = hp * SPORE.share / (SPORE.ticks / SPORE.every) / (1 - (res[kind] or 0) / 100)
+  local cloud = table.deepcopy(data.raw["smoke-with-trigger"]["poison-cloud"])
+  cloud.name = "lp-spore-cloud"
+  cloud.duration = SPORE.ticks
+  cloud.action_cooldown = SPORE.every
+  cloud.color = {r = 0.62, g = 0.72, b = 0.18, a = 0.6}
+  cloud.action = {type = "direct", action_delivery = {type = "instant", target_effects = {type = "nested-result",
+    action = {type = "area", radius = SPORE.r, force = "enemy", action_delivery = {type = "instant",
+      target_effects = {type = "damage", damage = {amount = per, type = kind}}}}}}}
+  table.insert(out, cloud)
   -- Its blast seen as what it does (the user, 2026-10-28: "we need to add a green explosion FX or something if they're
   -- going to be as strong as this"): the big artillery shell's explosion in the burster's acid green, its blast's breadth
   -- (BIG_BURST.r) across, and a green flash.

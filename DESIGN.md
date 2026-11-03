@@ -4325,6 +4325,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Grubstake's amber): the barracks a hangar with a slatted door, an annex, sandbags, a flagpole; training, its rooftop
   dish turns, its beacon blinks and its windows light (16 frames, its working animation and visualisation); the muster
   point a rally post with a flag, a lamp box and a sign. orders, control, caps and muster pass. Not yet seen in game.
+- **The big burster's spore cloud** (0.2.181, overnight; the user, 2026-11-03: "spore cloud on top of the explosion").
+  Where a big burster dies (set off at its target or shot down short), `lp-spore-cloud` rises with its blast: for 10 s,
+  every 0.5 s, a hit within 5 tiles to what its foes built (buildings too: the poison cloud hits only what breathes), 60%
+  of a stone wall's health over its life. Its damage the type the player's stone wall resists least of acid and poison,
+  read at the data stage (80% and none: poison, 10.5 a hit). The breach widens while the robots mend it, and the ground
+  it burst on is no place to rebuild for a while. `cinder spores` (in the regression list): a cloud rose, the wall
+  pieces beyond the blast's core (3.5 to 5 tiles) all lost health after it, its own medium and incubator untouched.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
