@@ -11,6 +11,20 @@ barracks.crafting_categories = {"lp-training"}
 -- No fixed recipe: troopers, breachers or battle tanks (a new barracks starts on troopers).
 barracks.module_slots = 0
 barracks.allowed_effects = nil
+-- Its own body, rendered in Blender (tools/blender/player_army.py barracks, sheet.py; the user, 2026-11-03: the barracks a
+-- prime candidate of the graphics pass): a hangar in olive drab, a slatted door, sandbags, a flagpole; training, its
+-- rooftop dish turns, its beacon blinks and its windows light (16 frames). Frame size and shift from sheet.json.
+do
+  local function bk(file, extra)
+    local l = {filename = "__landing-party__/graphics/player/barracks/" .. file .. ".png", width = 304,
+      height = 271, frame_count = 16, line_length = 8, scale = 0.5, shift = {0.3203125, -0.2890625},
+      animation_speed = 0.4}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  barracks.graphics_set = {animation = {layers = {bk("body"), bk("shadow", {draw_as_shadow = true})}},
+    working_visualisations = {{animation = bk("glow", {draw_as_glow = true, blend_mode = "additive"})}}}
+end
 
 -- The command relay: a radar's body; each powered relay carries shared.RELAY_CAPACITY units of command
 -- bandwidth, as many relays counting as the research allows (scripts/command.lua).
@@ -65,7 +79,12 @@ muster.minable = {mining_time = 0.3, result = "lp-muster-point"}
 muster.inventory_size = 16
 muster.next_upgrade = nil
 muster.fast_replaceable_group = nil
-muster.picture.layers[1].tint = {r = 0.75, g = 0.9, b = 0.75, a = 1}
+-- Its own body, rendered in Blender (tools/blender/player_army.py muster): a rally post, a flag, a lamp box, a sign.
+muster.picture = {layers = {
+  {filename = "__landing-party__/graphics/player/muster/body.png", width = 119, height = 123, scale = 0.5,
+    shift = {0.4140625, -0.4375}},
+  {filename = "__landing-party__/graphics/player/muster/shadow.png", width = 119, height = 123, scale = 0.5,
+    shift = {0.4140625, -0.4375}, draw_as_shadow = true}}}
 
 -- Roads (scripts/roads.lua; the user, 2026-10-18: "player constructed concrete surfaces that speed up army traversal"):
 -- units walk at one speed whatever the floor (a spike: 33.8 tiles in 5 s on concrete, 33.9 on grass), so the floor's

@@ -4320,6 +4320,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   - `sim.sh` removes the run's last results.txt before it starts: a run that died at load left the previous one's, and
     read after it "ALL PASSED" (seen with the crash above). Seen in both states: a broken mod, SIM FAILED and no results.
   - Not yet seen in game.
+- **The player's barracks and muster point rendered** (0.2.180, overnight; the user: the barracks a prime candidate,
+  the muster point a steel chest). `tools/blender/player_army.py`, in olive drab (apart from Kessler-Hayashi's slate and
+  Grubstake's amber): the barracks a hangar with a slatted door, an annex, sandbags, a flagpole; training, its rooftop
+  dish turns, its beacon blinks and its windows light (16 frames, its working animation and visualisation); the muster
+  point a rally post with a flag, a lamp box and a sign. orders, control, caps and muster pass. Not yet seen in game.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
