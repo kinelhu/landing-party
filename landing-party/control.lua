@@ -514,6 +514,7 @@ remote.add_interface("landing-party", {
     if t.armed_off then storage.armed = false end
     if t.sweeps_off ~= nil then storage.sweeps_off = t.sweeps_off end
     if t.drop_off ~= nil then storage.drop_off = t.drop_off end
+    if t.drop_debug ~= nil then storage.drop_debug = t.drop_debug end
     if t.strikes_off ~= nil then storage.strikes_off = t.strikes_off end
     -- Tests and the siege lab: its cultures bud no incubator (their waves' size held, farm.cap_of).
     if t.pens_hold ~= nil then storage.biotech_pens_hold = t.pens_hold end

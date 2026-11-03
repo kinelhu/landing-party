@@ -24,6 +24,7 @@ local COOL_TICKS = K.COOL_TICKS
 local DEFENCE_RADIUS = K.DEFENCE_RADIUS
 local DEPLOY_TICKS = K.DEPLOY_TICKS
 local FOOT = K.FOOT
+local SOLDIER = K.SOLDIER
 local HOWITZER_REACH = K.HOWITZER_REACH
 local HOWITZER_STAND = K.HOWITZER_STAND
 local MORTAR_REACH = K.MORTAR_REACH
@@ -50,6 +51,22 @@ local function guard_spot(b, op)
   local dx, dy = op.site[1] - tg.pos[1], op.site[2] - tg.pos[2]
   local dl = math.max(1, math.sqrt(dx * dx + dy * dy))
   return {x = op.site[1] + dx / dl * GUARD_BACK, y = op.site[2] + dy / dl * GUARD_BACK}
+end
+-- Where a drop siege's guards wait: its hold (launch_siege, out of every gun's reach), else its guard spot.
+local function hold_spot(b, op)
+  if op.hold then return {x = op.hold[1], y = op.hold[2]} end
+  return guard_spot(b, op)
+end
+local HOLD_MARGIN = 6          -- tiles round a point that no gun may cover for its guards to wait there
+local HOLD_READ = 150          -- tiles round its site whose guns a drop siege reads for its hold
+-- Whether a gun of `fire` (firemap.read) covers q or HOLD_MARGIN round it.
+local function exposed(fire, q)
+  if firemap.count(fire, q, 1) > 0 then return true end
+  for k = 0, 7 do
+    local a = k * math.pi / 4
+    if firemap.count(fire, {x = q.x + math.cos(a) * HOLD_MARGIN, y = q.y + math.sin(a) * HOLD_MARGIN}, 1) > 0 then return true end
+  end
+  return false
 end
 local TURRETS = K.TURRETS
 local TYPES = K.TYPES
@@ -103,10 +120,6 @@ local function rails_home(b)
   for _, u in ipairs(b.garrison or {}) do if u.valid and shared.kind_of(u.name) == "lp-railgunner" then n = n + 1 end end
   return n
 end
-local RAIL = function(u) return shared.kind_of(u.name) == "lp-railgunner" end
--- Whether its railgunners go with a siege: an armed camp's on a player whose way has a price (the cost map: nests and
--- worms on it, or guns), the biter-clearing unit through nest country (the user, 2026-11-02).
-local function rails_go(b, t) return b.armed and against_player(t.owner) and t.way_keeps and t.way_keeps < 1 end
 local REISSUE_MAX = 3          -- times a hauler that gave its way up is sent on (siege_step)
 local ESCORT_NEAR = 24        -- guards this near its hauler are kept behind it; further, they go on along its way
 local ESCORT_BACK = 8          -- tiles behind its hauler its guards keep, at its launch and on its march
@@ -393,12 +406,9 @@ local function siege_tier(b, t, army)
   end
   local n, reserve = field(b, army)
   if battery(t) then n = n + reserve end
-  -- Its railgunners too, an armed camp's siege on a player whose way has a price (the cost map: nests and worms on it, or
-  -- guns): the biter-clearing unit goes with it through nest country (the user, 2026-11-02: "Should the siege move with
-  -- railgunners for efficient nest clearing?"). Kept home for clearances, they had been most of its garrison, and on nw
-  -- its sieges went at tier 1, 5 or 6 guards in its field against 216 shells read (0.2.157).
-  -- Within what it may take from home (its floor): counted on top of its field, it read 24 where 18 could go.
-  if rails_go(b, t) then n = math.min(n + rails_home(b), math.max(0, pool.home(b) - floor_of(b, army, battery(t)))) end
+  -- (No railgunners on a siege of a player's, 0.2.157 to 0.2.165: at its site they shot at the wall from beyond its guns'
+  -- reach, their damage to its buildings cut, and once hit charged into the lasers and died; the user, 2026-11-03,
+  -- watching one: "Not sure railgunners should come with the sieges". Its corridor strikes clear the nests on its way.)
   -- (Its siege fund for sieges on a player only: drawing on it, an armed camp sent tier-2 clearances at the nests round it
   -- again and again, lost their guards, and fell to Synthexis, fed nw, 2026-11-02.)
   local purse = (b.parts or 0) + (against_player(t.owner) and (b.siege_fund or 0) or 0)
@@ -528,13 +538,25 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   -- A clearance takes railgunners only: Line troopers next to them died to the nest's big biters and killed next to
   -- none (nine of them killed one of sixteen, scenario rail).
   if not (clearance or t.owner == "enemy") then
-    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, FOOT)) do
-      table.insert(guards, u)
+    -- A drop siege's escort in its mix's shares (army.mix), walkers too (no truck to keep up with): taken newest first,
+    -- it was what its counter tilt had lately built, against lasers its tanks, and a siege went with 9 tanks of 16
+    -- (the user, 2026-11-03: "unit compo was strange with many tanks"). What a kind lacks, the rest make up.
+    if drop then
+      local m, sum = army.mix(b), 0
+      for name, w in pairs(m) do if name ~= "lp-railgunner" then sum = sum + w end end
+      local kinds = {}
+      for name in pairs(m) do if name ~= "lp-railgunner" then kinds[#kinds + 1] = name end end
+      table.sort(kinds)
+      for _, name in ipairs(kinds) do
+        local want = math.floor(spec.guards * m[name] / math.max(1, sum) + 0.5)
+        for _, u in ipairs(pool.take(b, math.min(want, spec.guards - #guards), floor,
+          function(u) return SOLDIER(u) and shared.kind_of(u.name) == name end)) do
+          table.insert(guards, u)
+        end
+      end
     end
-    -- Its railgunners after, where its tier counted them (siege_tier, rails_go). FOOT leaves them out (ops.fights): its
-    -- tier was read for 24 guards and its truck left with the 1 to 3 that were not railgunners (nw, 0.2.162).
-    if rails_go(b, t) then
-      for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, RAIL)) do table.insert(guards, u) end
+    for _, u in ipairs(pool.take(b, spec.guards - #guards, floor, drop and SOLDIER or FOOT)) do
+      table.insert(guards, u)
     end
   end
   -- From its siege fund first (an armed camp's, base.lua), then its parts.
@@ -589,8 +611,10 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
       b.op.read_route = true
     end
   end
+  -- (A drop siege's guards round the guns too: a truck went through their reach and on; its guards on foot died there,
+  -- 11 of 16 in fortress once its escort was its mix and not its tanks.)
   hroute = hroute or sneak_route(b, {start.x, start.y}, site,
-    clearance and {turrets = false, worms = true} or {turrets = false, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
+    clearance and {turrets = false, worms = true} or {turrets = drop, nests = (b.intel.targets[key] or {}).owner ~= "enemy"})
   if not hroute and clearance then hroute = sneak_route(b, {start.x, start.y}, site, {turrets = false}) end
   if not hroute and b.intel.targets[key] and push_escort(b, b.intel.targets[key], {start.x, start.y}, site) then
     hroute = {}
@@ -610,6 +634,35 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     b.next_siege = game.tick + 2 * 3600
     b.next_op = game.tick + 2 * 3600
     return false
+  end
+  -- A drop siege's guards wait where no gun reaches, as a wave stages (costmap.staging: the last cell of its way before the
+  -- first a gun covers; the user, 2026-11-03: "We already had some code to make sure synthexis waves stay far enough
+  -- while pathing to their staging grounds"). Its way cut there, and its hold its last point; its guard spot where no gun
+  -- covers it or its way. Its site is out of the guns' reach, its way there was not: on the artillery base its guards
+  -- walked its last stretch through the lasers' edge, 9 to 27 killed a run, and charged the wall from there.
+  if drop and not clearance then
+    -- Its foes' guns round its site alone (not its way's worms and biters, which its corridor strikes clear: read with
+    -- them, a worm by its own camp cut its way at its start, its hold 537 tiles from its site, the artillery base).
+    local fire = firemap.read(s, {site[1], site[2]}, HOLD_READ, enemies(game.forces[b.force]), function() return 1 end,
+      {"ammo-turret", "electric-turret", "fluid-turret"})
+    -- (Kept for its moving up: its next hold read on the same guns.)
+    b.op.fire = fire
+    -- Its last stretch under their fire, read back from its site: cut there.
+    local cut
+    for i = #hroute, 1, -1 do
+      if exposed(fire, {x = hroute[i][1], y = hroute[i][2]}) then cut = i else break end
+    end
+    if cut then
+      local keep = {}
+      for i = 1, cut - 1 do keep[i] = hroute[i] end
+      hroute = keep
+    end
+    if cut or exposed(fire, guard_spot(b, b.op)) then
+      local last = hroute[#hroute]
+      b.op.hold = last and {last[1], last[2]} or {start.x, start.y}
+      trace(b, string.format("siege: its guards hold at %.0f,%.0f, out of every gun's reach (%.0f from its site)",
+        b.op.hold[1], b.op.hold[2], math.sqrt((b.op.hold[1] - site[1]) ^ 2 + (b.op.hold[2] - site[2]) ^ 2)))
+    end
   end
   -- An armed camp shells the nests by its way first (war.corridor).
   b.op.route = hroute
@@ -636,14 +689,18 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
     local gcmds = {}
     for _, w in ipairs(hroute) do
       gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = w, radius = 6,
-        distraction = drop and defines.distraction.none or defines.distraction.by_damage}
+        distraction = defines.distraction.by_damage}
     end
     -- (Then behind its site, guard_spot: its start point there since 0.2.149, a guard left behind its hauler walked home.)
     -- (A drop siege's answer only what hits them, the march's look keeping none of them near its site: on sight, they
     -- walked on from its site into the lasers' reach and all 10 died before its pods came, standsiege, 0.2.165.)
-    gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = guard_spot(b, b.op), radius = 6,
+    gcmds[#gcmds + 1] = {type = defines.command.go_to_location, destination = drop and hold_spot(b, b.op) or guard_spot(b, b.op), radius = 6,
       distraction = drop and defines.distraction.none or clearance and defines.distraction.by_damage
         or defines.distraction.by_enemy}
+    -- (And a lasting order at its end: its orders done, the engine set it wandering, its eye on what it saw, and its guards
+    -- walked from their hold into the wall's lasers, fortress; a clearance's guard duty knew this, "idle, a unit attacks
+    -- whatever it sees".)
+    if drop then gcmds[#gcmds + 1] = {type = defines.command.stop, distraction = defines.distraction.none} end
     order_all(guards, #gcmds > 1 and {type = defines.command.compound, structure_type = defines.compound_command.return_last,
       commands = gcmds} or gcmds[1])
   end
@@ -853,6 +910,7 @@ end
 -- Held (half its living guards within DROP_HOLD of its site), its pieces come down (deploy). Returns the lead's
 -- position and its squared distance to its site, or nil when it was called off.
 local DROP_HOLD = 16
+local DROP_GUARD = 20          -- its guards answer its foes' units this near its hold, and come back to it
 local function rest_of_way(route, from, to)
   local cmds, first, fd = {}, nil, nil
   for i, w in ipairs(route or {}) do
@@ -860,18 +918,29 @@ local function rest_of_way(route, from, to)
     if not fd or d < fd then first, fd = i, d end
   end
   for i = first or 1, first and #route or 0 do
+    -- (Its way is cut where the guns' fire begins: on it they answer what hits them. Undistracted, they let biters kill
+    -- 10 of 16 on the march, the artillery base, seed 1.)
     cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = route[i], radius = 6,
-      distraction = defines.distraction.none}
+      distraction = defines.distraction.by_damage}
   end
   cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = to, radius = 6,
     distraction = defines.distraction.none}
+  cmds[#cmds + 1] = {type = defines.command.stop, distraction = defines.distraction.none}
   return cmds, first or 0
+end
+local RESEND_MAX = 3
+-- An order that leaves it where it stands: wandering (the engine's, its orders done), or a stop alone or last.
+local function idle_order(c)
+  if not c then return true end
+  if c.type == defines.command.wander or c.type == defines.command.stop then return true end
+  return c.type == defines.command.compound and #c.commands == 1 and c.commands[1].type == defines.command.stop
 end
 local function drop_march(b, op, trace, army, n)
   local hp, d2
+  local spot = hold_spot(b, op)
   for _, u in ipairs(op.members) do
     if u.valid then
-      local d = (u.position.x - op.site[1]) ^ 2 + (u.position.y - op.site[2]) ^ 2
+      local d = (u.position.x - spot.x) ^ 2 + (u.position.y - spot.y) ^ 2
       if not d2 or d < d2 then hp, d2 = u.position, d end
     end
   end
@@ -882,14 +951,29 @@ local function drop_march(b, op, trace, army, n)
     finish(b, "intercepted", trace, army)
     return nil
   end
-  local spot = guard_spot(b, op)
+  if storage.drop_debug then
+    local ps = {}
+    for _, u in ipairs(op.members) do
+      if u.valid then
+        local c = u.commandable.command
+        ps[#ps + 1] = string.format("%s@%.0f,%.0f:%s", u.name:sub(4, 8), u.position.x, u.position.y,
+          c and (c.type == defines.command.compound and ("c" .. #c.commands) or tostring(c.type)) or "-")
+      end
+    end
+    trace(b, string.format("DROPDBG spot %.0f,%.0f route %d: %s", spot.x, spot.y, #(op.route or {}), table.concat(ps, " ")))
+  end
   local held = 0
   for _, u in ipairs(op.members) do
     if u.valid then
-      local du = (u.position.x - op.site[1]) ^ 2 + (u.position.y - op.site[2]) ^ 2
+      local du = (u.position.x - spot.x) ^ 2 + (u.position.y - spot.y) ^ 2
       if du <= DROP_HOLD ^ 2 then
         held = held + 1
-      elseif not u.commandable.has_command then
+      elseif (op.resent or {})[u.unit_number] ~= RESEND_MAX and (not u.commandable.has_command
+        or idle_order(u.commandable.command)) then
+        -- (Its way given up, short of its hold: the engine drops a go-to it cannot path and runs the rest, its stop, and
+        -- five tanks stood at their start for good, fortress. Sent again, at most RESEND_MAX times.)
+        op.resent = op.resent or {}
+        op.resent[u.unit_number] = (op.resent[u.unit_number] or 0) + 1
         local cmds = rest_of_way(op.route, u.position, spot)
         u.commandable.set_command(#cmds > 1 and {type = defines.command.compound,
           structure_type = defines.compound_command.return_last, commands = cmds} or cmds[1])
@@ -909,6 +993,9 @@ local function drop_march(b, op, trace, army, n)
     op.best_d2, op.best_idx, op.best_at = math.min(d2, op.best_d2 or d2), math.max(idx, op.best_idx or 0), game.tick
   end
   if held * 2 >= n then return hp, 0 end
+  -- Its lead at its hold and no nearer for a minute (the rest held up behind): it drops with those there (called off
+  -- 3 and 6 tiles short, the artillery base, seed 1).
+  if game.tick - (op.best_at or op.started) > STUCK_TICKS and d2 <= DROP_HOLD ^ 2 and held > 0 then return hp, 0 end
   if game.tick - (op.best_at or op.started) > STUCK_TICKS then
     local t = b.intel.targets[op.target]
     local s = game.surfaces[b.surface]
@@ -965,10 +1052,12 @@ local function siege_step(b, trace, army)
       op.drops = {}
       for k = 1, guns do op.drops[#op.drops + 1] = pods.send(s, gun_spot(b, op, spec, k), b.force) end
       if op.with_howitzer and not op.howitzer then op.drops[#op.drops + 1] = pods.send(s, {op.site[1], op.site[2] + 6}, b.force) end
+      -- (Still, at its hold: wandering, answering what hit them, they followed a laser's hit into the wall; guard duty
+      -- below sends them at what comes for the guns.)
       order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-        commands = {{type = defines.command.go_to_location, destination = guard_spot(b, op), radius = 4,
-          distraction = defines.distraction.by_damage},
-          {type = defines.command.wander, radius = 4, distraction = defines.distraction.by_damage}}})
+        commands = {{type = defines.command.go_to_location, destination = hold_spot(b, op), radius = 4,
+          distraction = defines.distraction.none},
+          {type = defines.command.stop, distraction = defines.distraction.none}}})
       op.label = rendering.draw_text{text = {"lp.siege-deploying"}, surface = s, target = {op.site[1], op.site[2] - 3},
         color = {1, 0.6, 0.3}, scale = 1.5, alignment = "center"}
       trace(b, string.format("siege: its guards hold its site at %.0f,%.0f; %d pods drop its pieces", op.site[1], op.site[2],
@@ -1207,21 +1296,33 @@ local function siege_step(b, trace, army)
     -- engage on sight they charged the spawner 32 tiles off and died; told to answer only what hit them, they let the
     -- biters break the mortars (scenario clear, visit b - rocket).
     -- (siege_step runs every 300 ticks.)
-    if op.clearance then
+    -- A drop siege's too, round its hold (the clearance's rule; the user, 2026-11-03, on its guards: dying to the wall's
+    -- lasers while its mortars set up), at what comes for it: its foes' units, biters or the player's.
+    -- (Not in its assault: its leash called its assault back to its hold every look, and it razed nothing, siegetier 3.)
+    if op.clearance or (op.drop and op.phase == "bombard") then
       local s = game.surfaces[b.surface]
+      local c = op.drop and not op.clearance and hold_spot(b, op) or {x = op.site[1], y = op.site[2]}
       -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
-      local guard_r = CLEAR_GUARD
+      local guard_r = op.drop and not op.clearance and DROP_GUARD or CLEAR_GUARD
       -- A leash: a guard more than LEASH beyond its ring walks back to the site, undistracted. Told to hold the ring,
       -- guards still followed what they fought out of it, and behemoth worms killed eight of ten 15 to 36 tiles from the
       -- site (scenario clear, worms, 2026-10-25).
       for _, u in ipairs(op.members) do
-        if u.valid and (u.position.x - op.site[1]) ^ 2 + (u.position.y - op.site[2]) ^ 2 > (guard_r + LEASH) ^ 2 then
-          u.commandable.set_command{type = defines.command.go_to_location, destination = {x = op.site[1], y = op.site[2]},
+        if u.valid and (u.position.x - c.x) ^ 2 + (u.position.y - c.y) ^ 2 > (guard_r + LEASH) ^ 2 then
+          u.commandable.set_command{type = defines.command.go_to_location, destination = c,
             radius = 6, distraction = defines.distraction.none}
         end
       end
-      local foes = s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
-      if #foes > 0 then
+      local foes = op.clearance and s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
+        or s.find_entities_filtered{position = c, radius = guard_r, type = {"unit", "character", "car", "spider-vehicle"},
+          force = enemies(game.forces[b.force])}
+      if #foes > 0 and not op.clearance then
+        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+          commands = {{type = defines.command.attack_area, destination = c, radius = guard_r,
+            distraction = defines.distraction.none},
+            {type = defines.command.go_to_location, destination = c, radius = 6, distraction = defines.distraction.none},
+            {type = defines.command.stop, distraction = defines.distraction.none}}})
+      elseif #foes > 0 then
         -- Within the ring only, undistracted: chasing biters, they followed them into the worms (scenario clear: railgunners
         -- killed by behemoth worms 26 to 31 tiles out).
         order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
@@ -1408,9 +1509,20 @@ local function siege_step(b, trace, army)
           if op.drop then
             local from
             for _, u in ipairs(op.members) do if u.valid then from = u.position; break end end
+            -- Its next hold: its guard spot there, or the first point no gun covers on the line back to its last hold
+            -- (kept at its first, its guards walked to the next and were called off as no nearer it, standsiege nests).
+            local was = op.hold and {x = op.hold[1], y = op.hold[2]} or (from and {x = from.x, y = from.y})
+            op.hold = nil
+            local g = guard_spot(b, op)
+            if op.fire and was and exposed(op.fire, g) then
+              for k = 1, 10 do
+                local q = {x = g.x + (was.x - g.x) * k / 10, y = g.y + (was.y - g.y) * k / 10}
+                if not exposed(op.fire, q) or k == 10 then op.hold = {q.x, q.y}; break end
+              end
+            end
             op.route = from and op.clearance and sneak_route(b, {from.x, from.y}, site, {turrets = false, worms = true}) or {}
             op.best_idx = nil
-            local cmds = rest_of_way(op.route, from or {x = site[1], y = site[2]}, guard_spot(b, op))
+            local cmds = rest_of_way(op.route, from or {x = site[1], y = site[2]}, hold_spot(b, op))
             order_all(op.members, #cmds > 1 and {type = defines.command.compound,
               structure_type = defines.compound_command.return_last, commands = cmds} or cmds[1])
             trace(b, string.format("siege: moving up to %.0f,%.0f with %d shells (its pieces lifted)", site[1], site[2], left))
@@ -1459,6 +1571,24 @@ local function siege_step(b, trace, army)
         local live = {}
         for _, u in ipairs(op.members) do if u.valid then live[#live + 1] = u end end
         op.members = live
+        -- (A drop siege's from home by what its composition favours against its killers, army.composition: its escort is its
+        -- mix's shares, and an assault of its infantry died to the gun turrets, siegetier 3; the user, 2026-11-03: tanks
+        -- for the assault.)
+        if op.drop and army.composition then
+          local w, sum = army.composition(b, army.mix(b)), 0
+          for name, x in pairs(w) do if name ~= "lp-railgunner" then sum = sum + x end end
+          local kinds = {}
+          for name in pairs(w) do if name ~= "lp-railgunner" then kinds[#kinds + 1] = name end end
+          table.sort(kinds, function(a, c) return w[a] > w[c] end)
+          local need = want - #op.members
+          for _, name in ipairs(kinds) do
+            local k = math.floor(need * w[name] / math.max(1e-9, sum) + 0.5)
+            for _, u in ipairs(pool.take(b, math.min(k, want - #op.members), pool.GUARD,
+              function(u) return FOOT(u) and shared.kind_of(u.name) == name end)) do
+              table.insert(op.members, u)
+            end
+          end
+        end
         for _, u in ipairs(pool.take(b, want - #op.members, pool.GUARD, FOOT)) do table.insert(op.members, u) end
         op.launched = #op.members
         op.phase, op.phase_at, op.last_kill, op.kills_at, op.razed_before = "assault", game.tick, game.tick, b.razed, b.razed
@@ -1470,8 +1600,10 @@ local function siege_step(b, trace, army)
         return
       end
       local idle = game.tick - (op.last_target or op.phase_at) > 60 * 60
-      local waiting = op.convoy ~= nil
-      if (left == 0 and not waiting) or idle or n < 0.5 * op.launched then
+      local waiting = op.convoy ~= nil or op.supply_pod ~= nil
+      -- (A drop siege's guns stand while they stand: half its guards lost at the lasers' edge packed up three mortars and
+      -- a howitzer with 117 shells left, the user's watch, 2026-11-03.)
+      if (left == 0 and not waiting) or idle or (not op.drop and n < 0.5 * op.launched) then
         op.phase, op.phase_at = "pack", game.tick
         op.packing_because = left == 0 and "spent" or (idle and "done" or "aborted")
         quiet_pack(op)

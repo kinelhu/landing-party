@@ -9539,8 +9539,10 @@ scenarios.fortress = function()
     -- (A camp, not its armed landing: this tests its siege. Armed, its lander stood 11 tiles off, its siege's site moved
     -- with it onto ground where its hauler stuck 15 tiles short, three variants failing, 0.2.134. Scenario armed.)
     lp("debug_tune", {armed = false})
+    -- (The old siege as it was, its truck and its tanks: dropped from orbit, its escort lived through and its assault took
+    -- every laser and roboport, 0.2.166, and the case it keeps, the fire plan's worth, read nothing.)
     lp("debug_tune", {era = 3, history_off = true, raids_off = true, corp_level = {serenity = 3}, focus_off = old or nil,
-      rd_tech = jam and {serenity = {nodes = {jammer = 1}}} or nil})
+      drop_off = old or nil, rd_tech = jam and {serenity = {nodes = {jammer = 1}}} or nil})
     S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
     for _ = 1, 3 do lp("debug_depot", S.s, 6000) end
     game.forces.player.create_ghost_on_entity_death = true

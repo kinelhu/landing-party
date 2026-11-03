@@ -132,6 +132,11 @@ function orbital.tick(tick)
     local b = storage.bases[st.base]
     if not s then
       table.remove(storage.kh_strikes, i)
+    elseif st.phase == "paint" and b and not (b.op and b.op.kind == "siege") then
+      -- Its siege over before it falls: called off (it fell on the wall after its siege had packed up, the user's watch,
+      -- 2026-11-03).
+      trace(b, "its siege is over: called off")
+      table.remove(storage.kh_strikes, i)
     elseif st.phase == "paint" then
       if not st.spotter.valid then
         if b then trace(b, "its spotter is down: called off"); b.strikes_off_called = (b.strikes_off_called or 0) + 1 end
