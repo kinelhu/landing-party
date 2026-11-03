@@ -4159,6 +4159,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   guards killed by lasers; two sieges back with 10 of 10. The touched scenarios pass; `fortress old` keeps the truck
   (`drop_off`): dropped, its escort lived and its assault took every laser, and its case (the fire plan's worth) read
   nothing. Slip on the way: a waiter matched its own command line (pgrep), and never ended.
+- **The ladder measured churn** (2026-11-03; the user, watching a siege: "The destructions you quote are mostly
+  buildings getting rebuilt live during the assault"). A corporation's razed count counts each building its robots
+  rebuilt and it razed again. `scripts/ladder.py` reports first what the player lost for good: its buildings at the
+  start less at the end (walls apart) and the ghosts left. On it the artillery base lost 57 (0.2.161) and 58 (0.2.165,
+  "334" by the count), nw 0 at both (its robots rebuilt 655 and 853, 0 ghosts left), nwa 259 and 287 (much of it
+  Synthexis's). The orbital drop got its sieges to the wall and changed nothing that stayed down: what makes damage
+  stick (the roboports first, the assault on the strike, the jammer) is the open question, and every ladder figure in
+  this log before this entry is the count, not the loss.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
