@@ -909,6 +909,19 @@ remote.add_interface("landing-party", {
   debug_needed = function(id, pos) return ops.debug_needed(storage.bases[id], {x = pos[1], y = pos[2]}) end,
   -- Tests: the /lp dev tools (scripts/dev.lua) at a position, as a player standing there would use them.
   dev = function(args, pos, surface_index) dev.remote(args, pos, surface_index) end,
+  -- Tests and films only: an operation of settlement id forced now at the structure of `owner` (a rival corporation's
+  -- force, or nil for the player's) nearest pos (ops.force). Returns nil when launched, else why not.
+  debug_force_op = function(id, kind, pos, owner)
+    local b = storage.bases[id]
+    if not b then return "no settlement " .. tostring(id) end
+    return ops.force(b, kind, {x = pos.x or pos[1], y = pos.y or pos[2]}, base.trace, army, owner)
+  end,
+  -- Tests and films only: an orbital strike of settlement id at pos now (orbital.force). Returns nil, else why not.
+  debug_strike = function(id, pos)
+    local b = storage.bases[id]
+    if not b then return "no settlement " .. tostring(id) end
+    return orbital.force(b, {pos.x or pos[1], pos.y or pos[2]})
+  end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   achieved = function() return storage.lp_achieved or {} end,
   pact_state = function() return storage.pact_state end,

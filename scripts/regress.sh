@@ -59,6 +59,8 @@ area_of_scenario() {
     grow|assault|faction|uplink|lively|convoy|fall|phases|budget|develop|evolution|nests|hq|temper|line|snatch|strip|\
       artillery|circuit|caps|techup|plate|arms|unitnode|arc|ability|podland|roads|muster|pads|clearing|country|system|\
       watchdog|async) echo growth;;
+    # A film instrument (the trailer's staged beats): not in the run lists above; run it by hand (sim.sh trailer).
+    trailer) echo ops;;
     *) echo ops;;
   esac
 }

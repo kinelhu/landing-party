@@ -3841,6 +3841,19 @@ scenarios.breach = function()
     lp("debug_tune", {era = 2, history_off = true, mature_blocks = 2, raids_off = true, domes = not arty})
     lp("debug_parts", storage.id, 3000)
   end)
+  -- Finished orders into the barracks, ten at a time. A local, its state in S: a function kept in S is not saved with a
+  -- fork (scripts/fork.sh), and a fork saved between the setup and the go had none after loading: every step after the
+  -- load failed calling it, before the go, and the squad read "trained nil of 53" (LP_MIX=30,15,8 from a fork, 2026-11-04).
+  local function feed()
+    for name, n in pairs(want) do
+      local b = S.barracks[name]
+      local done = S.orders[name] or 0
+      if b and b.valid and done < n then
+        S.orders[name] = done + b.get_inventory(defines.inventory.crafter_output).insert{name = ORDER[name],
+          count = math.min(10, n - done)}
+      end
+    end
+  end
   local function setup(l)
     local lander = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1]
     local c = l.position
@@ -3887,17 +3900,8 @@ scenarios.breach = function()
     S.cc = put("constant-combinator", stage[1] - 2, stage[2])
     S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
     S.orders = {}
-    S.feed = function()
-      for name, n in pairs(want) do
-        local b = S.barracks[name]
-        local done = S.orders[name] or 0
-        if b.valid and done < n then
-          S.orders[name] = done + b.get_inventory(defines.inventory.crafter_output).insert{name = ORDER[name],
-            count = math.min(10, n - done)}
-        end
-      end
-    end
-    S.feed()
+    S.squad = SQUAD
+    feed()
     -- LP_MIX "arty" (an artillery turret at the base, left to choose its own targets) or "flare" (and a flare on the lab,
     -- as a player's artillery remote): no squad.
     if params.mix == "arty" or params.mix == "flare" then
@@ -3917,6 +3921,8 @@ scenarios.breach = function()
     info(string.format("breach: lab at %.0f,%.0f; staging %d tiles out; %d guns and %d walls within 45; garrison %d",
       S.lab_at[1], S.lab_at[2], S.stage_d, S.guns0, S.walls0, S.st0.garrison or -1))
     dump_map("breach-0", S.lab_at, 75)
+    info(string.format("breach: set up at tick %d (a fork saved from here to the go, %d, kept no feed before)", game.tick,
+      game.tick + 4 * 3600))
   end
   local function signals(list)
     local f = {}
@@ -3938,7 +3944,7 @@ scenarios.breach = function()
       if not S.seen and l then S.seen = game.tick end
       if S.seen and not S.stage and game.tick >= S.seen + 4 * 3600 and l then setup(l) end
       if S.stage and not S.go then
-        S.feed()
+        feed()
         local n = 0
         for name, w in pairs(want) do if (S.orders[name] or 0) >= w then n = n + 1 end end
         if alive() >= SQUAD or next(want) == nil then S.go = game.tick; S.trained = alive() end
@@ -3988,6 +3994,7 @@ scenarios.breach = function()
     local walls = S.lab_at and surface().count_entities_filtered{name = "lp-wall", force = FORCE, position = S.lab_at, radius = 45} or -1
     metric("breach_squad", SQUAD)
     metric("breach_trained", S.trained or 0)
+    metric("breach_go_tick", S.go or -1)
     metric("breach_alive", alive())
     metric("breach_guns_before", S.guns0 or -1)
     metric("breach_guns_after", guns)
@@ -3995,7 +4002,15 @@ scenarios.breach = function()
     metric("breach_walls_after", walls)
     metric("breach_lab_fell", S.fell and 1 or 0)
     metric("breach_minutes", S.fell and S.go and (S.fell - S.go) / 3600 or -1)
-    check("breach: the squad was trained", arty or (S.trained or 0) >= SQUAD * 0.8, tostring(S.trained) .. " of " .. SQUAD)
+    -- (A fork is the plain scenario's, sim.sh LP_FORK: saved after the go, its squad is the one it was made with, and a mix
+    -- naming another read "35 of 53" with nothing wrong in the barracks; said so.)
+    check("breach: the squad was trained", arty or (S.trained or 0) >= SQUAD * 0.8, tostring(S.trained) .. " of " .. SQUAD
+      .. ((S.squad and S.squad ~= SQUAD) and string.format(" (the fork was made, and its squad sent, for %d: run this mix in "
+      .. "full, or from a fork with a strike before minute %d)", S.squad, math.floor((S.go or 0) / 3600) + 7) or "")
+      -- (Its barracks go up only once its lab has stood four minutes, minute 19 on 12345: a film of its fork at strike 7,
+      -- whose run ends at minute 8, read "nil of 53", no barracks built, 2026-11-04.)
+      .. (S.stage and "" or string.format(" (never set up: %s by minute %d; its barracks go up 4 minutes after the lab stands)",
+        S.seen and ("the lab stood at minute " .. math.floor(S.seen / 3600)) or "no lab", math.floor(game.tick / 3600))))
     check("breach: the lab fell", S.fell ~= nil, S.fell and string.format("%.1f minutes in, %d units left", (S.fell - S.go) / 3600, alive())
       or string.format("%d units left, guns %d -> %d", alive(), S.guns0 or -1, guns))
     info("breach: " .. serpent.line(lp("army")) .. ", player units lost " .. serpent.line(S.killers or {})
@@ -13745,6 +13760,374 @@ scenarios.siege = function()
   end)
 end
 
+-- Trailer (the user, 2026-11-04: the footage had "barely any battles, player mustering troops, inter-faction
+-- interactions"): one map, five beats staged at known minutes in places at least TRAILER_APART tiles apart, each beat's
+-- start tick and centre written to script-output/landing-party/trailer-beats.txt ("name tick x y", one line a beat) and
+-- as METRIC lines, so a film can be timed and aimed from it. A film instrument (not in the regression's lists):
+--   muster     (minute 8) the player's barracks train an army (troopers, breachers, rocket troopers, battle tanks) that
+--              gathers at a rally beacon 180 tiles short of a Grubstake camp
+--   battle     (minute 11) the beacon's signals send it at that camp, turret by turret (as breach aims): both sides lose
+--   corpwar    (minute 12) Kessler-Hayashi's siege (its top tier: four mortars dropped from orbit, its guards, an assault)
+--              on a second Grubstake camp, landed beside it (ops.force with the rival as owner)
+--   synthexis  (minute 15) 200 bred biters from a captured pen break into a walled, lit outpost of the player's
+--   strike     (minute 18) a second, armed Kessler-Hayashi camp besieges a player wall and calls its orbital strike
+-- The corporations are at truce with the player (the beats, not their own choices, bring the fighting) and choose no
+-- operation of their own (choice_off): each beat is forced at its minute. Fork it at strike 14 (saved at minute 8, the
+-- muster's start): scripts/fork.sh trailer 12345 14; LP_FORK=1 scripts/sim.sh trailer 12345 28 28 14. Everything a step
+-- needs after the save is in S (functions are not saved: none kept there).
+local TRAILER_APART = 150
+local TRAILER = {muster = 8 * 3600, battle = 11 * 3600, corpwar = 12 * 3600, synthexis = 15 * 3600, strike = 18 * 3600,
+  last = 27 * 3600}
+-- The player's army: orders, how many, barracks for them (bandwidth 1 a trooper or breacher, 2 a rocket trooper, 6 a tank:
+-- 128, 13 relays of the 15 that research level 3 allows).
+local TRAILER_ARMY = {{"lp-trooper-order", 44, 3}, {"lp-breacher-order", 12, 1}, {"lp-rocket-trooper-order", 12, 1},
+  {"lp-battle-tank-order", 8, 1}}
+scenarios.trailer = function()
+  local shared_ = require("__landing-party__.shared")
+  local CORPS = shared_.corp_forces()
+  local GS = "lp-grubstake"
+  local red = defines.wire_connector_id.circuit_red
+  local function put(name, p, items)
+    local e = surface().create_entity{name = name, position = p, force = "player", raise_built = true}
+    if e and items then e.insert(items) end
+    return e
+  end
+  local function d2(a, b) return ((a[1] or a.x) - (b[1] or b.x)) ^ 2 + ((a[2] or a.y) - (b[2] or b.y)) ^ 2 end
+  local function rel() return game.tick - (storage.t0 or 0) end
+  local function beat(name, p)
+    S.beats = S.beats or {}
+    S.beats[name] = {rel(), math.floor(p[1]), math.floor(p[2])}
+    helpers.write_file("landing-party/trailer-beats.txt", string.format("%s %d %d %d\n", name, rel(), math.floor(p[1]),
+      math.floor(p[2])), true)
+  end
+  -- Ground with nothing of the corporations' within r (flatten clears whatever stands where it works).
+  local function clear_of_corps(p, r)
+    return surface().count_entities_filtered{position = p, radius = r, force = CORPS, limit = 1} == 0
+  end
+  -- The first clear spot from `from` along `dir` (a unit vector), d0 to d1 tiles out.
+  local function spot_along(from, dir, d0, d1, r)
+    for d = d0, d1, 10 do
+      local p = {math.floor(from[1] + dir[1] * d) + 0.5, math.floor(from[2] + dir[2] * d) + 0.5}
+      surface().request_to_generate_chunks(p, math.ceil(r / 32) + 1)
+      surface().force_generate_chunk_requests()
+      if clear_of_corps(p, r) then return p end
+    end
+  end
+  local function unit(dx, dy) local l = math.max(1e-6, math.sqrt(dx * dx + dy * dy)); return {dx / l, dy / l} end
+  local function origin(id) local st = id and lp("stats", id); return st and {st.origin.x, st.origin.y} end
+
+  schedule(60, function()
+    -- The beats, not their choices: no operation of their own (answers are held by the truce below); the corporations at
+    -- level 3 (sieges and their assaults), every siege at its top tier.
+    lp("debug_tune", {choice_off = true, history_off = true, corp_level = {serenity = 3, grubstake = 3}, siege_tier = 4})
+    for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
+    local k = origin(storage.id)
+    S.u = unit(k[1], k[2])
+    S.v = {-S.u[2], S.u[1]}
+  end)
+  schedule(120, function()
+    local u, v, k = S.u, S.v, origin(storage.id)
+    -- Grubstake twice: one beside Kessler-Hayashi (its siege's target), one across the map (the player's battle).
+    S.g1 = lp("arrive", 1, {x = k[1], y = k[2]}, 200, {corp = "grubstake"})
+    S.g2 = lp("arrive", 1, {x = -u[1] * 300, y = -u[2] * 300}, 60, {corp = "grubstake"})
+    for _, g in ipairs({S.g1, S.g2}) do if g then for _ = 1, 3 do lp("debug_depot", g, 3000) end end end
+    -- An armed Kessler-Hayashi (era 3: its fortress, its orbital strike) on the other flank, for the strike.
+    lp("debug_tune", {era = 3})
+    -- (From spawn, as orbital lands its own: from a point out on the flank, every site was refused, "no site clear of
+    -- other landers".)
+    S.k2 = lp("arrive", 1, {x = 0, y = 0}, params.distance + 150, {corp = "serenity"})
+    if S.k2 then lp("debug_depot", S.k2, 6000) end
+    -- At truce with the player for the hour: what they do to the player is the beats'.
+    for corp in pairs(shared_.CORPS) do lp("debug_truce", corp, "player", 60) end
+    info(string.format("trailer: Kessler-Hayashi %s at %d,%d; Grubstake %s at %s and %s at %s; armed Kessler-Hayashi %s at %s",
+      tostring(storage.id), k[1], k[2], tostring(S.g1), serpent.line(origin(S.g1)), tostring(S.g2), serpent.line(origin(S.g2)),
+      tostring(S.k2), serpent.line(origin(S.k2))))
+  end)
+
+  -- Minute 6: the stages built (before the fork's save at 8: a film loads them standing).
+  schedule(6 * 3600, function()
+    local u, v = S.u, S.v
+    -- The muster ground: 180 tiles from the second Grubstake camp toward spawn, clear of every camp by 60.
+    local g2 = origin(S.g2)
+    if not g2 then check("trailer: a Grubstake camp for the battle", false, "none landed"); return end
+    S.g2_at = g2
+    local m = spot_along(g2, unit(-g2[1], -g2[2]), 180, 300, 60)
+    if not m then check("trailer: a muster ground", false, "none clear"); return end
+    S.m = m
+    flatten(m[1] - 40, m[2] - 30, m[1] + 40, m[2] + 30)
+    S.barracks = {}
+    local x = m[1] - 21
+    for _, o in ipairs(TRAILER_ARMY) do
+      for _ = 1, o[3] do
+        local b = put("lp-barracks", {x, m[2] + 12.5})
+        b.set_recipe(o[1])
+        table.insert(S.barracks, {b, o[1], math.ceil(o[2] / o[3])})
+        put("medium-electric-pole", {x + 2, m[2] + 15.5})
+        x = x + 6
+      end
+    end
+    -- (Its own pole: beyond the barracks' poles' supply, the relays had no power and nothing trained, 2026-11-04.)
+    local eei = put("electric-energy-interface", {m[1] + 24, m[2] + 14})
+    put("medium-electric-pole", {m[1] + 22.5, m[2] + 14.5})
+    eei.power_production, eei.electric_buffer_size = 5e7 / 60, 5e8
+    for n = 1, 3 do game.forces.player.technologies["lp-command-bandwidth-" .. n].researched = true end
+    local pop = 0
+    for _, o in ipairs(TRAILER_ARMY) do pop = pop + o[2] * shared_.POPULATION[shared_.ORDERS[o[1]]] end
+    S.relays = math.ceil(pop / shared_.RELAY_CAPACITY)
+    for n = 1, S.relays do put("lp-command-relay", {m[1] - 27.5 + 4 * n, m[2] + 21.5}) end
+    for xx = -26.5, 30, 7 do put("medium-electric-pole", {m[1] + xx, m[2] + 19.5}) end
+    for xx = -24.5, 30, 6 do put("small-lamp", {m[1] + xx, m[2] + 9.5}) end
+    S.beacon = put("lp-rally-beacon", {m[1] + 0.5, m[2] - 8.5})
+    S.cc = put("constant-combinator", {m[1] - 1.5, m[2] - 8.5})
+    S.cc.get_wire_connector(red, true).connect_to(S.beacon.get_wire_connector(red, true))
+    S.fed = {}
+    S.army_size = 0
+    for _, o in ipairs(TRAILER_ARMY) do S.army_size = S.army_size + o[2] end
+
+    -- Synthexis's target: a walled outpost (herd's ring of radius 40: 7 lasers and 5 gun turrets, heavy toward the pen),
+    -- lit, 300 tiles out on the flank away from the armed camp; the pen 180 tiles beyond it.
+    local c = spot_along({0, 0}, v, 300, 420, 230)
+    if not c then check("trailer: ground for the outpost", false, "none clear"); return end
+    S.c = c
+    local function at(du, dv) return {c[1] + v[1] * du - u[1] * dv, c[2] + v[2] * du - u[2] * dv} end
+    local a, b = at(-60, -60), at(200, 60)
+    surface().request_to_generate_chunks(at(90, 0), 7)
+    surface().force_generate_chunk_requests()
+    flatten(math.min(a[1], b[1]), math.min(a[2], b[2]), math.max(a[1], b[1]), math.max(a[2], b[2]))
+    for i = -40, 40 do
+      put("stone-wall", at(40, i)); put("stone-wall", at(-40, i)); put("stone-wall", at(i, 40)); put("stone-wall", at(i, -40))
+    end
+    local L, G = "laser-turret", "gun-turret"
+    S.out_turrets = 0
+    for _, t in ipairs({{L, 37, -24}, {G, 37, -14}, {L, 37, -5}, {G, 37, 4}, {L, 37, 13}, {G, 37, 22}, {L, 37, 30},
+      {L, -12, -37}, {G, 12, -37}, {L, -12, 37}, {G, 12, 37}, {L, -37, 0}}) do
+      if put(t[1], at(t[2], t[3]), t[1] == G and {name = "piercing-rounds-magazine", count = 200} or nil) then
+        S.out_turrets = S.out_turrets + 1
+      end
+    end
+    for xx = -32, 32, 16 do for yy = -32, 32, 16 do put("substation", at(xx, yy)) end end
+    local pw = put("electric-energy-interface", at(4, 4))
+    pw.power_production, pw.electric_buffer_size = 5e6, 5e7
+    for _, p in ipairs({{-20, -6}, {-20, 6}, {20, -6}, {20, 6}, {-6, 20}, {6, 20}, {-6, -20}, {6, -20}}) do
+      put("assembling-machine-2", at(p[1], p[2]))
+    end
+    -- Lit: lamps inside the wall every eight tiles.
+    for k = -32, 32, 8 do
+      for _, p in ipairs({{34, k}, {-34, k}, {k, 34}, {k, -34}}) do put("small-lamp", at(p[1], p[2])) end
+    end
+    surface().create_entity{name = "biter-spawner", position = at(180, 0), force = "enemy"}
+    S.pen = lp("herd_capture", 1, at(180, 0))
+    lp("debug_tune", {herd_off = true})
+    S.stock = S.pen and lp("herd_fill", S.pen, 200, "lp-bred-medium-biter") or 0
+
+    -- The armed camp's target: a wall of the player's 120 tiles from it toward spawn (fortress's: lasers behind it,
+    -- roboports with robots keeping it), clear of the camps by 50.
+    local k2 = origin(S.k2)
+    if k2 then
+      local w = spot_along(k2, unit(-k2[1], -k2[2]), 120, 220, 50)
+      if w then
+        local wu = unit(k2[1] - w[1], k2[2] - w[2])
+        local wv = {-wu[2], wu[1]}
+        local function wat(du, dv) return {w[1] + wu[1] * du + wv[1] * dv, w[2] + wu[2] * du + wv[2] * dv} end
+        flatten(w[1] - 34, w[2] - 34, w[1] + 34, w[2] + 34)
+        S.w = w
+        for k = -20, 20 do put("stone-wall", wat(0, k)) end
+        for k = -18, 18, 4 do put("laser-turret", wat(-3, k)) end
+        for k = -21, 21, 14 do put("substation", wat(-7, k)); put("substation", wat(-20, k)) end
+        local e = put("electric-energy-interface", wat(-24, 0))
+        e.power_production, e.electric_buffer_size = 1e9 / 60, 1e9
+        for _, k in ipairs({-10, 10}) do put("roboport", wat(-13, k), {name = "construction-robot", count = 30}) end
+        for k = -16, 16, 8 do put("small-lamp", wat(-5, k)) end
+        S.w_target = wat(-3, 2)
+      end
+    end
+    -- Where everything stands, and how far apart (each beat filmed on its own).
+    local spots = {muster = S.m, battle = S.g2_at, corpwar = origin(S.g1), synthexis = S.c, strike = S.w}
+    local names = {}
+    for name in pairs(spots) do table.insert(names, name) end
+    table.sort(names)
+    local near = math.huge
+    for i, a_ in ipairs(names) do
+      for j = i + 1, #names do
+        near = math.min(near, math.sqrt(d2(spots[a_], spots[names[j]])))
+      end
+    end
+    S.apart = #names == 5 and near or 0
+    info("trailer: stages " .. serpent.line(spots) .. string.format("; nearest two %.0f apart", near))
+  end)
+
+  -- MUSTER: orders fed one a barracks every four seconds (a stream of units, not a crowd at once).
+  schedule(TRAILER.muster, function() if S.beacon then beat("muster", {S.beacon.position.x, S.beacon.position.y}) end end)
+  for t = TRAILER.muster, TRAILER.battle + 2 * 3600, 240 do
+    schedule(t, function()
+      if not S.barracks then return end
+      for i, e in ipairs(S.barracks) do
+        local b, order, want = e[1], e[2], e[3]
+        local have = S.fed[i] or 0
+        if b.valid and have < want then
+          S.fed[i] = have + b.get_inventory(defines.inventory.crafter_output).insert{name = order, count = 1}
+        end
+      end
+      local a_ = lp("army")
+      S.trained = a_.trained
+      S.peak = math.max(S.peak or 0, a_.alive)
+    end)
+  end
+
+  -- BATTLE: the beacon aimed at the camp's nearest turret (A, X, Y), the next once it falls; its lander last.
+  for t = TRAILER.battle, TRAILER.last, 300 do
+    schedule(t, function()
+      if not (S.beacon and S.beacon.valid and S.cc.valid and S.g2_at) then return end
+      if not S.go then
+        S.go = rel()
+        S.sent = lp("army").alive
+        S.g2_turrets0 = surface().count_entities_filtered{position = S.g2_at, radius = 90, force = GS, type = "ammo-turret"}
+        beat("battle", S.g2_at)
+      end
+      if S.aim and S.aim.valid then return end
+      local b = S.beacon.position
+      local best, bd
+      for _, x in pairs(surface().find_entities_filtered{position = S.g2_at, radius = 90, force = GS,
+        type = {"ammo-turret", "electric-turret"}}) do
+        local d = d2(x.position, b)
+        if not bd or d < bd then best, bd = x, d end
+      end
+      if not best then
+        best = surface().find_entities_filtered{position = S.g2_at, radius = 30, force = GS, name = "lp-grubstake-lander"}[1]
+      end
+      local cb = S.cc.get_or_create_control_behavior()
+      local sec = cb.get_section(1) or cb.add_section()
+      if not best then sec.filters = {}; S.won = S.won or rel(); return end
+      S.aim = best
+      S.aims = (S.aims or 0) + 1
+      local dx, dy = math.floor(best.position.x - b.x), math.floor(best.position.y - b.y)
+      local function sig(name, val) return {value = {type = "virtual", name = name, quality = "normal"}, min = val} end
+      sec.filters = {sig("signal-A", 1), sig("signal-X", dx), sig("signal-Y", dy)}
+    end)
+  end
+
+  -- CORPS AT WAR: Kessler-Hayashi's siege on the Grubstake camp beside it, units granted for its guards and assault;
+  -- tried every 30 s until it goes (a camp busy refuses).
+  for t = TRAILER.corpwar, TRAILER.corpwar + 5 * 3600, 1800 do
+    schedule(t, function()
+      if S.kh_go or not S.g1 then return end
+      local g1 = origin(S.g1)
+      if not S.kh_granted then
+        S.kh_granted = true
+        lp("debug_units", storage.id, "lp-infantry", 30)
+        lp("debug_units", storage.id, "lp-tank", 8)
+        lp("debug_parts", storage.id, 2000)
+      end
+      -- Grubstake's building nearest Kessler-Hayashi: the face its siege comes at.
+      local k = origin(storage.id)
+      local best, bd
+      for _, e in pairs(surface().find_entities_filtered{position = g1, radius = 70, force = GS, type = {"ammo-turret",
+        "electric-energy-interface", "container", "electric-pole", "assembling-machine", "mining-drill"}}) do
+        local d = d2(e.position, k)
+        if not bd or d < bd then best, bd = e, d end
+      end
+      local pos = best and {best.position.x, best.position.y} or g1
+      local why = lp("debug_force_op", storage.id, "siege", pos, GS)
+      if why then
+        -- No mortar site (no gun of Grubstake's in a mortar's reach of ground out of its guns'): a raid, the same war.
+        local why2 = lp("debug_force_op", storage.id, "raid", pos, GS)
+        info(string.format("trailer: Kessler-Hayashi's siege at %.0f,%.0f: %s; a raid: %s", pos[1], pos[2], why, tostring(why2)))
+        if why2 then return end
+        S.kh_kind = "raid"
+      else
+        S.kh_kind = "siege"
+      end
+      S.kh_go, S.kh_pos, S.g1_at = rel(), pos, g1
+      beat("corpwar", pos)
+    end)
+  end
+
+  -- SYNTHEXIS: the wave sent at the outpost's middle.
+  schedule(TRAILER.synthexis, function()
+    if not (S.pen and S.c) then return end
+    S.wave = lp("herd_wave", S.pen, S.c)
+    beat("synthexis", S.c)
+  end)
+  for t = TRAILER.synthexis + 300, TRAILER.last, 300 do
+    schedule(t, function()
+      if not S.wave or S.breach_at then return end
+      local h = lp("herd_state")
+      for _, w in ipairs(h.waves or {}) do
+        if w.id == S.wave and (w.stage == "inside" or w.breach) then S.breach_at, S.breach = rel(), w.breach end
+      end
+      for _, l in ipairs(h.log or {}) do
+        if l.id == S.wave and l.t_breach then S.breach_at, S.breach = l.t_breach - (storage.t0 or 0), l.breach end
+      end
+    end)
+  end
+
+  -- STRIKE: the armed camp's siege on the wall (it calls its strike once its mortars are up, orbital.call); the strike
+  -- forced if none has come six minutes on.
+  for t = TRAILER.strike, TRAILER.strike + 4 * 3600, 1800 do
+    schedule(t, function()
+      if S.st_go or not (S.k2 and S.w) then return end
+      S.st_why = lp("debug_force_op", S.k2, "siege", S.w_target)
+      if S.st_why then info("trailer: the armed camp's siege on the wall: " .. S.st_why); return end
+      S.st_go = rel()
+      beat("strike", S.w)
+    end)
+  end
+  schedule(TRAILER.strike + 6 * 3600, function()
+    if not (S.k2 and S.w) then return end
+    local st = lp("debug_strikes", S.k2)
+    if st and st.called == 0 then
+      S.st_forced = lp("debug_strike", S.k2, S.w_target) or "forced"
+      if not (S.beats and S.beats.strike) then beat("strike", S.w) end
+    end
+  end)
+
+  schedule(END - 60, function()
+    local army_ = lp("army")
+    local t = S.tally or {}
+    local function n(k) return t[k] or 0 end
+    for _, name in ipairs({"muster", "battle", "corpwar", "synthexis", "strike"}) do
+      local b = (S.beats or {})[name]
+      metric("trailer_" .. name .. "_tick", b and b[1] or -1)
+      metric("trailer_" .. name .. "_x", b and b[2] or 0)
+      metric("trailer_" .. name .. "_y", b and b[3] or 0)
+    end
+    metric("trailer_apart", S.apart and math.floor(S.apart) or -1)
+    metric("trailer_trained", S.trained or 0)
+    metric("trailer_army_peak", S.peak or 0)
+    metric("trailer_sent", S.sent or 0)
+    metric("trailer_breach_tick", S.breach_at or -1)
+    metric("trailer_kh_kind", S.kh_kind or "none")
+    local g2_turrets = S.g2_at and surface().count_entities_filtered{position = S.g2_at, radius = 90, force = GS,
+      type = "ammo-turret"} or -1
+    info("trailer: kills " .. serpent.line(t) .. "; damage " .. serpent.line(S.dealt or {}))
+    info(string.format("trailer: army %s; Grubstake's turrets at the battle %s -> %d; won at %s; aims %s", serpent.line(army_),
+      tostring(S.g2_turrets0), g2_turrets, tostring(S.won), tostring(S.aims)))
+    local strikes = S.k2 and lp("debug_strikes", S.k2)
+    info(string.format("trailer: the strike: siege %s (%s), strikes %s, forced %s", tostring(S.st_go), tostring(S.st_why),
+      serpent.line(strikes), tostring(S.st_forced)))
+    info("trailer: Kessler-Hayashi's log " .. serpent.line(lp("stats", storage.id).ops.log))
+    if S.k2 then info("trailer: the armed camp's log " .. serpent.line(lp("stats", S.k2).ops.log)) end
+    local dealt = S.dealt or {}
+    check("trailer: the stages stand apart", (S.apart or 0) >= TRAILER_APART, string.format("%.0f tiles", S.apart or -1))
+    check("trailer: the muster trained an army", (S.trained or 0) >= 60, string.format("%d trained of %d, %d at most at once",
+      S.trained or 0, S.army_size or 0, S.peak or 0))
+    check("trailer: the battle cost the player units", n("player:unit>" .. GS) >= 5, n("player:unit>" .. GS) .. " lost")
+    check("trailer: and Grubstake units and turrets", n(GS .. ":unit>player") >= 5 and n(GS .. ":turret>player") >= 2,
+      string.format("%d units, %d turrets", n(GS .. ":unit>player"), n(GS .. ":turret>player")))
+    check("trailer: Kessler-Hayashi's operation went at Grubstake", S.kh_go ~= nil, tostring(S.kh_kind))
+    local kh_broke = n(GS .. ":building>lp-serenity") + n(GS .. ":turret>lp-serenity")
+    check("trailer: and broke Grubstake's there", kh_broke >= 1 and n(GS .. ":unit>lp-serenity") >= 5
+      and (dealt["lp-serenity>" .. GS] or 0) > 0,
+      string.format("%d buildings, %d turrets, %d units; %d damage", n(GS .. ":building>lp-serenity"),
+        n(GS .. ":turret>lp-serenity"), n(GS .. ":unit>lp-serenity"), math.floor(dealt["lp-serenity>" .. GS] or 0)))
+    check("trailer: Synthexis's wave breached the outpost", S.breach_at ~= nil,
+      string.format("%s bred, breach at %s", tostring(S.stock), tostring(S.breach_at)))
+    check("trailer: it broke the outpost's turrets", n("player:turret>lp-biotech") >= 3, n("player:turret>lp-biotech") .. " turrets")
+    check("trailer: the armed camp's orbital strike fell on the wall", strikes ~= nil and (strikes.shells or 0) > 0,
+      serpent.line(strikes))
+  end)
+end
+
 local scenario = scenarios[params.scenario]
 if not scenario then error("lp-sim: unknown scenario " .. tostring(params.scenario)) end
 -- Labs (rd.lua) gate research only where a scenario asks for them: the rest test the tree's choices, not where it stands.
@@ -14062,6 +14445,26 @@ if params.scenario == "herd" then
     end
     if e.cause and e.cause.valid and e.cause.name == "lp-bred-stomper" and v == "lp-biotech" then
       S.damage["stomper>own"] = (S.damage["stomper>own"] or 0) + e.final_damage_amount
+    end
+  end)
+end
+
+-- Trailer: damage between forces, and deaths (the killing blow) by the victim's force and kind and the killer's force.
+if params.scenario == "trailer" then
+  local TURRET_TYPES = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true,
+    turret = true}
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    local a, v = e.force and e.force.name, e.entity.force.name
+    if not a or a == v or v == "neutral" then return end
+    S.dealt = S.dealt or {}
+    S.dealt[a .. ">" .. v] = (S.dealt[a .. ">" .. v] or 0) + e.final_damage_amount
+    if e.final_health <= 0 then
+      local t = e.entity.type
+      local kind = (t == "unit" or t == "spider-unit" or t == "car") and "unit" or TURRET_TYPES[t] and "turret"
+        or (t == "wall" or t == "gate") and "wall" or "building"
+      S.tally = S.tally or {}
+      local k = v .. ":" .. kind .. ">" .. a
+      S.tally[k] = (S.tally[k] or 0) + 1
     end
   end)
 end
