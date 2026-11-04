@@ -105,7 +105,9 @@ function orbital.start(b, s, fs, center, along, spotter, dev)
   -- (A silhouette, its nose along its course, over all it crosses: three flat strips read as dark rectangles, the user,
   -- 2026-11-04, the strike's stills.)
   sh.objs[1] = rendering.draw_sprite{sprite = "lp-platform-shadow", target = {center[1], center[2]}, surface = s,
-    orientation = ((sh.dir + math.pi / 2) / (2 * math.pi)) % 1, tint = {r = 0, g = 0, b = 0, a = 0}, render_layer = "smoke",
+    -- (Above what it crosses, below explosions, projectiles and smoke: on the smoke layer it shaded the barrage's own
+    -- fireballs, the user, 2026-11-04.)
+    orientation = ((sh.dir + math.pi / 2) / (2 * math.pi)) % 1, tint = {r = 0, g = 0, b = 0, a = 0}, render_layer = "higher-object-above",
     x_scale = 1 + SHADOW_SPREAD, y_scale = 1 + SHADOW_SPREAD}
   storage.kh_shadows = storage.kh_shadows or {}
   table.insert(storage.kh_shadows, sh)
@@ -161,6 +163,9 @@ local function fall(st, s, b, at)
   rendering.draw_light{sprite = "utility/light_medium", scale = 6, intensity = 1, color = LIGHT, target = {x, y},
     surface = s, time_to_live = LANCE_TICKS}
   s.create_entity{name = "medium-scorchmark-tintable", position = {x, y}}
+  -- Its flash, lighting by day as well (a game light shows only in the dark): additive, over the explosion.
+  rendering.draw_sprite{sprite = "lp-impact-flash", target = {x, y}, surface = s, x_scale = 5, y_scale = 5,
+    render_layer = "explosion", time_to_live = 14}
   -- (Straight down and fast, inside its lance: from 10 aside it arced in like a shell from the next screen.)
   s.create_entity{name = "lp-orbital-projectile", position = {x, y - FALL}, target = {x, y}, speed = 3,
     -- (Its lander the cause: a kill is credited to its camp, control.lua; its force as the cause, the strike's razing

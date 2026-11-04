@@ -4538,7 +4538,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   wings in panels, a radiator cross, an antenna mast), softened at its edges, 64 tiles across its wings; one sprite drawn
   dark over all it crosses (render layer smoke), its nose along its course, moved as the strips were. dev passes; filmed
   (stills-strike2).
-- **The player's shield projector** (0.2.199; the user, 2026-11-04: "Yes" to 45 degrees and 8-way). scripts/shield.lua:
+- **The player's shield projector** (0.2.199; removed in 0.2.202, below; the user, 2026-11-04: "Yes" to 45 degrees and 8-way). scripts/shield.lua:
   an energy interface turned in 8 steps (building-direction-8-way, as Space Age's railgun turret), its buffer its charge
   (100 MJ, filled at 10 MW from the network; shared.SHIELD, priors). A hit on a player's turret, wall or gate within 14
   tiles, from an attacker within 22.5 degrees of its heading (read from the projector: it stands behind the line, facing
@@ -4566,6 +4566,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   siege brought one); now each is its camp's when put up, a dead one counts as its piece lost and is not put up fresh at
   the deploy's end. fork.sh's variant (0.2.196) is opt-in, LP_FORK_MIX: named by LP_MIX it lost the regression's siege
   20-10-10 fork. siegetier 2, fortress howitzer, siege 20-10-10 (from its fork), fortress, standsiege pass.
+- **The field dome replaces the shield projector; the strike's explosions lit, not shaded** (0.2.202; the user,
+  2026-11-04: the projector "was probably a bad idea. Looks like crap. Maybe we do instead a repurposed dome (smaller than
+  KH) that the player can use to protect from shelling?"; and of the strike, the shadow "making the explosions 'shaded'
+  which looks wrong. They should give light instead?"). shield.lua removed, its damage filters too. The field dome
+  (`lp-player-dome`, dome.lua's player_*): Kessler-Hayashi's projector made over (its tower's art), an energy interface
+  drawing 1 MW, a dome of 20 tiles (theirs 30 or more) catching its foes' shells by their rule, as the rewards consult
+  asked (never holding for good): HOLD of the fire of the guns that reach it, then down BREAK, mending while up; up while
+  powered; the orbital strike passes, as bullets, beams and biters do. Research behind energy shield mk2 and military 4.
+  Scenario `pdome` (Kessler-Hayashi's mortar shells on three turrets): under it, untouched, 45 caught; none or
+  unpowered, hit; `pdome break` (its charge three shells): broke, and the shells after reached its turret. Its first
+  run fired faster than one gun (its reckoning with no artillery in reach): it broke after 80 s, the rule working. The
+  strike: its shadow on the layer above what it crosses and below explosions, projectiles and smoke; each impact an
+  additive flash (tools/art/impact_flash.py), which lights by day as a game light cannot. orbital and dev pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -5704,57 +5704,55 @@ end
 -- assemblers, each ringed so, far enough apart for each to be a place of its own (tactics.NEAR_BREACH): it stands down
 -- on its failures in a row. The default run checks too that, stood down, it builds no army past its reserve (its cap
 -- halved) and still answers a gun turret put up on its ground (self-defence).
--- Shield (the user, 2026-11-04: the player's shield projector, 45 degrees, 8-way): four ammo-less gun turrets 60 apart,
--- each with a projector 7 behind it and medium biters coming at it from the north. 1: facing north, powered: the hits taken
--- by the shield, the turret whole, its charge spent. 2: facing south: the hits pass. 3: unpowered: they pass. 4: facing
--- north with a charge of 1 MJ and no power: it breaks, then they pass.
-scenarios.shield = function()
+-- Player dome (the user, 2026-11-04: "a repurposed dome (smaller than KH) that the player can use to protect from
+-- shelling"): Kessler-Hayashi's mortar shells on three gun turrets 60 apart, from 45 tiles north, every 300 ticks (a gun's
+-- pace or slower: with no artillery of its in reach the dome reckons one gun's fire, 55 shells for HOLD, and at every 90
+-- ticks it broke after 80 s, the rule working, the first run). 1 under
+-- a powered field dome: none reaches it, the dome catches them. 2 with none: hit. 3 under an unpowered dome: hit, nothing
+-- caught. LP_MIX=break: the dome's charge three shells (debug_tune dome_charge): it breaks, and the shells after reach
+-- turret 1.
+scenarios.pdome = function()
+  local brk = params.mix == "break"
   schedule(60, function()
-    flatten(-40, -60, 240, 30)
-    local src = surface().create_entity{name = "electric-energy-interface", position = {-30, 10}, force = "player"}
+    if brk then lp("debug_tune", {dome_charge = 3}) end
+    flatten(-40, -60, 160, 30)
+    local src = surface().create_entity{name = "electric-energy-interface", position = {-30, 12}, force = "player"}
     src.power_production, src.electric_buffer_size = 1e9 / 60, 1e9
-    S.t, S.p = {}, {}
-    for k, d in ipairs({defines.direction.north, defines.direction.south, defines.direction.north, defines.direction.north}) do
+    for _, q in ipairs({{-22, 12}, {-6, 12}, {8, 12}}) do surface().create_entity{name = "substation", position = q, force = "player"} end
+    S.t, S.d = {}, {}
+    for k = 1, 3 do
       local x = (k - 1) * 60
       S.t[k] = surface().create_entity{name = "gun-turret", position = {x, 0}, force = "player"}
-      -- (Behind its turret, facing out: its arc is read from the projector, and beside the turret the biters biting it
-      -- stood 36 degrees off its heading, outside its 22.5; the first run.)
-      S.p[k] = surface().create_entity{name = "lp-shield-projector", position = {x, 7}, direction = d, force = "player",
-        raise_built = true}
-      if k == 1 or k == 2 then
-        for _, q in ipairs({{-24, 10}, {x - 12, 10}, {x + 4, 10}}) do
-          surface().create_entity{name = "substation", position = q, force = "player"}
-        end
-      end
-    end
-    S.p[4].energy = 1e6
-  end)
-  schedule(5 * 60, function()
-    game.forces.enemy.set_evolution_factor(0.4, surface())
-    for k = 1, 4 do
-      local x = (k - 1) * 60
-      for j = 1, 4 do
-        local u = surface().create_entity{name = "medium-biter", position = {x - 4 + j * 2, -24}, force = "enemy"}
-        if u then u.commandable.set_command{type = defines.command.attack, target = S.t[k], distraction = defines.distraction.none} end
+      if k ~= 2 then
+        S.d[k] = surface().create_entity{name = "lp-player-dome", position = {x, 6}, force = "player", raise_built = true}
       end
     end
   end)
+  for t = 6 * 60, END - 600, brk and 90 or 300 do
+    schedule(t, function()
+      for k = 1, 3 do
+        local x = (k - 1) * 60
+        surface().create_entity{name = "lp-mortar-projectile", position = {x, -45}, target = {x, 0}, speed = 1,
+          force = FORCE}
+      end
+    end)
+  end
   schedule(END - 60, function()
-    local st = lp("shield_stats")
+    local st = lp("pdome_stats")
+    local function of(k) return S.d[k] and S.d[k].valid and st[S.d[k].unit_number] or {caught = 0, breaks = 0} end
     local hp = {}
-    for k = 1, 4 do hp[k] = S.t[k].valid and string.format("%.0f", S.t[k].health) or "dead" end
-    info("shield: " .. serpent.line(st) .. "; turrets " .. table.concat(hp, ", "))
-    local all = st
-    st = {}
-    for k = 1, 4 do st[k] = S.p[k].valid and all[S.p[k].unit_number] or {caught = 0, energy = 0, breaks = 0} end
+    for k = 1, 3 do hp[k] = S.t[k].valid and string.format("%.0f", S.t[k].health) or "dead" end
+    info("pdome: " .. serpent.line({of(1), of(3)}) .. "; turrets " .. table.concat(hp, ", "))
     local function full(k) return S.t[k].valid and S.t[k].health >= S.t[k].max_health - 1 end
-    check("shield: facing the attack, its turret whole", full(1), hp[1])
-    check("shield: and its hits taken from its charge", (st[1] or {}).caught > 0 and (st[1] or {}).energy < 100e6,
-      serpent.line(st[1]))
-    check("shield: facing away, the hits pass", not full(2), hp[2])
-    check("shield: unpowered, they pass", not full(3), hp[3])
-    check("shield: its charge spent, it breaks and they pass", (st[4] or {}).breaks >= 1 and not full(4),
-      serpent.line(st[4]) .. " " .. hp[4])
+    if brk then
+      check("pdome: break, it broke", of(1).breaks >= 1, serpent.line(of(1)))
+      check("pdome: break, and the shells after reached its turret", not full(1), hp[1])
+      return
+    end
+    check("pdome: under a powered dome, its turret untouched", full(1), hp[1])
+    check("pdome: the shells caught", of(1).caught > 0, serpent.line(of(1)))
+    check("pdome: with no dome, hit", not full(2), hp[2])
+    check("pdome: under an unpowered dome, hit, nothing caught", not full(3) and of(3).caught == 0, hp[3] .. " " .. serpent.line(of(3)))
   end)
 end
 

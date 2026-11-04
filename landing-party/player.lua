@@ -96,11 +96,12 @@ do
       shift = S.shift, draw_as_shadow = true}}}
 end
 
--- The shield projector (scripts/shield.lua; the user, 2026-11-04, a late research): an energy interface, its buffer its
--- charge, turned in 8 steps (as Space Age's railgun turret), its 45-degree arc the way it faces. Its body for now the
--- corporations' dome tower (tools/blender/tesla_tower.py), the arc drawn on the ground by script.
+-- The player's dome (dome.lua; the user, 2026-11-04: "a repurposed dome (smaller than KH) that the player can use to
+-- protect from shelling", in place of a directional shield projector that "looks like crap"): Kessler-Hayashi's
+-- projector made over, an energy interface drawing shared.PLAYER_DOME.draw; its dome catches its foes' shells by their
+-- rule. Its body the corporations' dome tower (tools/blender/tesla_tower.py): their technology, taken apart.
 do
-  local SH = shared.SHIELD
+  local PD = shared.PLAYER_DOME
   local T = SHEETS["serenity/tower"]
   local function tw(file, extra)
     local l = {filename = "__landing-party__/graphics/serenity/tower/" .. file .. ".png", width = T.width, height = T.height,
@@ -108,28 +109,30 @@ do
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
   end
-  local proj = {type = "electric-energy-interface", name = "lp-shield-projector",
+  local proj = {type = "electric-energy-interface", name = "lp-player-dome",
     icon = "__base__/graphics/icons/energy-shield-mk2-equipment.png", icon_size = 64,
-    flags = {"placeable-player", "player-creation", "building-direction-8-way"},
-    minable = {mining_time = 0.5, result = "lp-shield-projector"}, max_health = 800,
+    flags = {"placeable-player", "player-creation"},
+    minable = {mining_time = 0.5, result = "lp-player-dome"}, max_health = 1200,
     collision_box = {{-1.2, -1.2}, {1.2, 1.2}}, selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
-    energy_source = {type = "electric", usage_priority = "secondary-input", buffer_capacity = string.format("%dJ", SH.buffer),
-      input_flow_limit = string.format("%dW", SH.input), output_flow_limit = "0W"},
-    energy_usage = "0W",
+    energy_source = {type = "electric", usage_priority = "secondary-input", buffer_capacity = string.format("%dJ", PD.draw * 2),
+      input_flow_limit = string.format("%dW", PD.draw * 2), output_flow_limit = "0W"},
+    energy_usage = string.format("%dW", PD.draw),
     animation = {layers = {tw("body"), tw("glow", {draw_as_glow = true, blend_mode = "additive"}), tw("shadow", {draw_as_shadow = true})}},
+    radius_visualisation_specification = {sprite = {filename = "__core__/graphics/visualization-construction-radius.png",
+      size = 12}, distance = PD.radius},
     gui_mode = "none"}
   data:extend({proj,
-    {type = "item", name = "lp-shield-projector", icon = proj.icon, icon_size = 64, subgroup = "defensive-structure",
-      order = "z[lp-shield-projector]", place_result = "lp-shield-projector", stack_size = 10},
-    {type = "recipe", name = "lp-shield-projector", enabled = false, energy_required = 20,
+    {type = "item", name = "lp-player-dome", icon = proj.icon, icon_size = 64, subgroup = "defensive-structure",
+      order = "z[lp-player-dome]", place_result = "lp-player-dome", stack_size = 10},
+    {type = "recipe", name = "lp-player-dome", enabled = false, energy_required = 20,
       ingredients = {{type = "item", name = "energy-shield-mk2-equipment", amount = 2}, {type = "item", name = "processing-unit", amount = 20},
-        {type = "item", name = "low-density-structure", amount = 10}, {type = "item", name = "steel-plate", amount = 50}},
-      results = {{type = "item", name = "lp-shield-projector", amount = 1}}},
-    {type = "technology", name = "lp-shield-projector", icon = "__base__/graphics/technology/energy-shield-mk2-equipment.png",
-      icon_size = 256, prerequisites = {"energy-shield-mk2-equipment", "space-science-pack"},
-      effects = {{type = "unlock-recipe", recipe = "lp-shield-projector"}},
-      unit = {count = 1000, time = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1}, {"military-science-pack", 1}, {"utility-science-pack", 1}, {"space-science-pack", 1}}}}})
+        {type = "item", name = "steel-plate", amount = 50}, {type = "item", name = "copper-cable", amount = 100}},
+      results = {{type = "item", name = "lp-player-dome", amount = 1}}},
+    {type = "technology", name = "lp-player-dome", icon = "__base__/graphics/technology/energy-shield-mk2-equipment.png",
+      icon_size = 256, prerequisites = {"energy-shield-mk2-equipment", "military-4"},
+      effects = {{type = "unlock-recipe", recipe = "lp-player-dome"}},
+      unit = {count = 500, time = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1}, {"military-science-pack", 1}, {"utility-science-pack", 1}}}}})
 end
 
 -- Roads (scripts/roads.lua; the user, 2026-10-18: "player constructed concrete surfaces that speed up army traversal"):

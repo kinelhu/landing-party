@@ -475,6 +475,9 @@ for k = 1, DW.dirs do
 end
 -- The orbital platform's shadow crossing a strike (orbital.lua; tools/art/platform_shadow.py: a silhouette, 8 px a tile,
 -- white on alpha, tinted dark where drawn).
+-- Its impact flash (orbital.lua: drawn additively over each impact, so it lights in daylight; tools/art/impact_flash.py).
+data:extend({{type = "sprite", name = "lp-impact-flash", filename = "__landing-party__/graphics/serenity/impact-flash.png",
+  width = 256, height = 256, scale = 0.5, blend_mode = "additive", flags = {"no-crop"}}})
 data:extend({{type = "sprite", name = "lp-platform-shadow", filename = "__landing-party__/graphics/serenity/platform-shadow.png",
   width = 512, height = 640, scale = 4, flags = {"no-crop"}}})
 data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party__/graphics/serenity/ripple/sheet.png",

@@ -333,4 +333,64 @@ function dome.state(b)
     end)()}
 end
 
+-- The player's dome (the user, 2026-11-04: in place of a directional shield projector, "a repurposed dome (smaller than
+-- KH) that the player can use to protect from shelling"): a projector of the player's, shared.PLAYER_DOME.radius round
+-- it, catching its foes' shells as Kessler-Hayashi's do, by their rule (the rewards consult: never holding for good): it
+-- takes HOLD of the fire of the guns that reach it, then is down BREAK, mending while up; up while it has power. Not the
+-- orbital strike. Bullets, beams and biters pass: the army still has to answer the guns.
+local function pd_list() storage.pdomes = storage.pdomes or {} return storage.pdomes end
+function dome.player_built(ent)
+  if not (ent and ent.valid) then return end
+  local d = fresh()
+  d.anchor, d.radius, d.force = ent, shared.PLAYER_DOME.radius, ent.force.name
+  pd_list()[ent.unit_number] = d
+end
+local function pd_catch(d, pr)
+  local s, pos = pr.surface, pr.position
+  pr.destroy()
+  s.create_entity{name = "chain-tesla-turret-beam-start", position = d.anchor.position, source = d.anchor,
+    source_offset = {0, -TOWER_CROWN}, target_position = pos, duration = 12}
+  s.create_entity{name = "explosion", position = pos}
+  dome.wave(d, pos)
+  d.left, d.caught = math.max(0, d.left - 1 / full({force = d.force}, d)), d.caught + 1
+  if d.left <= 1e-9 then d.left, d.down_till, d.breaks = 0, game.tick + BREAK, d.breaks + 1 end
+end
+local function pd_run(d, tick)
+  if d.down_till > 0 and tick >= d.down_till then d.left, d.down_till = 1, 0 end
+  local up = d.down_till == 0 and d.anchor.energy > 0
+  if up and not d.was_up then dome.rise(d) end
+  d.was_up = up
+  if tick % 60 == 0 then show(nil, d, up) end
+  if up and tick % 3600 == 0 then d.left = math.min(1, d.left + MEND) end
+  if not up then return end
+  local own = game.forces[d.force]
+  for _, pr in pairs(d.anchor.surface.find_entities_filtered{type = "artillery-projectile", position = d.anchor.position,
+    radius = d.radius}) do
+    if pr.valid and pr.force ~= own and not pr.force.get_cease_fire(own) and not pr.force.get_friend(own)
+      and pr.name ~= "lp-orbital-projectile" then
+      pd_catch(d, pr)
+    end
+    if d.down_till > 0 then break end
+  end
+end
+function dome.player_tick(tick)
+  if not storage.pdomes or tick % LOOK ~= 0 then return end
+  for n, d in pairs(storage.pdomes) do
+    if not (d.anchor and d.anchor.valid) then
+      if d.ring and d.ring.valid then d.ring.destroy() end
+      storage.pdomes[n] = nil
+    else
+      pd_run(d, tick)
+    end
+  end
+end
+-- Tests: each of the player's domes, by its projector's unit number.
+function dome.player_stats()
+  local out = {}
+  for n, d in pairs(storage.pdomes or {}) do
+    out[n] = {caught = d.caught, breaks = d.breaks, down = d.down_till > 0, left = d.left}
+  end
+  return out
+end
+
 return dome

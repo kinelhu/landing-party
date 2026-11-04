@@ -616,10 +616,9 @@ shared.BIG_BURST = {health = 3000, r = 6, amount = 1500, core = 800}
 -- `px` a tile, `frames` frames played at `speed`, from `dirs` directions of the impact (from the south, counter-clockwise seen
 -- from above; mirrored at a negative x_scale, the game flipped them about another point, a radius aside). The dome going up: the ripple's sheet (its last frame `rise_r` tiles in radius) scaled to its dome.
 shared.DOME_WAVE = {ref = 16, px = 12, frames = 24, speed = 0.5, dirs = 8, rise_r = 4.5, rise_frames = 16, rise_speed = 0.25}
--- The player's shield projector (scripts/shield.lua): its arc (degrees) and reach (tiles); its charge, its own buffer (J),
--- filled at `input` (W) from the network; what a point of damage given back costs (J); back up once its buffer is back to
--- `rearm` of full. Priors, untested in play: 2000 points of damage a full charge, refilled in 10 s.
-shared.SHIELD = {arc = 45, radius = 14, buffer = 100e6, input = 10e6, j_per_hp = 50e3, rearm = 0.5}
+-- The player's dome (dome.lua): its radius in tiles (Kessler-Hayashi's 30 or more) and what its projector draws (W). Its
+-- charge is theirs: HOLD of the guns' fire that reaches it, then down BREAK (dome.lua).
+shared.PLAYER_DOME = {radius = 20, draw = 1e6}
 shared.SAPPER = {health = 2000, speed = 0.3, r = 7, pop = 60}
 
 return shared

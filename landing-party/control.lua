@@ -41,7 +41,6 @@ local skim = require("__landing-party__.scripts.skim")
 local prowl = require("__landing-party__.scripts.prowl")
 local dome = require("__landing-party__.scripts.dome")
 local lights = require("__landing-party__.scripts.lights")
-local shield = require("__landing-party__.scripts.shield")
 local orbital = require("__landing-party__.scripts.orbital")
 local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
@@ -107,14 +106,14 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); shield.tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
 
 local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name", name = "lp-rally-beacon"},
   {filter = "name", name = "lp-command-relay"}, {filter = "name", name = "lp-muster-point"},
-  {filter = "name", name = "lp-shield-projector"}}
+  {filter = "name", name = "lp-player-dome"}}
 -- The player's poles too: one built by a corporation's pylon is not wired to it (base.unwire).
 local BUILT = {{filter = "type", type = "electric-pole"}, {filter = "name", name = "lp-player-bait"},
   {filter = "name", name = "lp-strike-beacon"}, {filter = "name", name = "lp-pact-breaker"},
@@ -132,7 +131,7 @@ local function on_built(e)
   if ent and ent.valid and ent.name == "lp-border-stake" then return border.placed(ent) end
   if ent and ent.valid and ent.name == "lp-trade-post" then return trade.placed(ent) end
   if ent and ent.valid and ent.name == "lp-threat-scanner" then return scanner.placed(ent) end
-  if ent and ent.valid and ent.name == "lp-shield-projector" then return shield.on_built(e) end
+  if ent and ent.valid and ent.name == "lp-player-dome" then return dome.player_built(ent) end
   if ent and ent.valid and ent.type == "electric-pole" then
     if not shared.is_corp(ent.force.name) then base.unwire(ent) end
     return
@@ -161,14 +160,7 @@ table.insert(BUILDINGS, {filter = "name", name = "lp-tumor"})
 for _, t in ipairs({"electric-turret", "accumulator", "roboport", "electric-energy-interface"}) do
   table.insert(BUILDINGS, {filter = "type", type = t})
 end
--- What the player's shield projectors cover (shield.lua): their defences.
-for _, t in ipairs({"ammo-turret", "fluid-turret", "artillery-turret", "wall", "gate"}) do
-  table.insert(BUILDINGS, {filter = "type", type = t})
-end
-script.on_event(defines.events.on_player_rotated_entity, function(e) shield.on_rotated(e) end)
 script.on_event(defines.events.on_entity_damaged, function(e)
-  -- A player's defence under a shield projector's arc: the hit given back (shield.lua).
-  if shared.is_player_force(e.entity.force) and shield.on_damaged(e) then return end
   if e.damage_type and e.damage_type.name == "electric" then scorcher.drain(e) end
   if e.entity.name == "lp-pen" or e.entity.name == "lp-tumor" then return farm.on_damaged(e) end
   if e.entity.name == "lp-runt" then return herd.on_probe_hit(e) end
@@ -901,7 +893,7 @@ remote.add_interface("landing-party", {
   -- The dome's looks on a projector (tests/lp-film): "wave" from an impact at `at`, or "rise"; `radius` its dome's.
   -- The lights its buildings get when the mod builds them (scripts/lights.lua), on one built by other hands (tests/lp-film).
   debug_light = function(ent) lights.attach(ent) end,
-  shield_stats = function() return shield.stats() end,
+  pdome_stats = function() return dome.player_stats() end,
   debug_dome_fx = function(kind, anchor, radius, at)
     local d = {anchor = anchor, radius = radius}
     if kind == "wave" then dome.wave(d, at) else dome.rise(d) end
