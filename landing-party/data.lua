@@ -364,8 +364,30 @@ flamer.circuit_connector = nil
 -- settlement apart, visit b - rocket), and still burns whoever stands in it.
 local flamer_stream = table.deepcopy(data.raw.stream["flamethrower-fire-stream"])
 flamer_stream.name = "lp-flamer-stream"
+-- Its burning ground spares its side too: the base fire's damage_per_tick hurts every force, and a clearance fought
+-- by the camp's gate flamed its own guards (9 of 10 railgunners killed by lp-flamer, clear worms, 0.2.186). Its damage
+-- goes through on_damage_tick_effect at its enemies only, as the biters' acid splash does (base enemy-projectiles.lua).
+-- (The trees it lights too: the tree fire it spawns hurt every force as well, the one loss left after the ground's.)
+local function spared(base, name)
+  local f = table.deepcopy(data.raw.fire[base])
+  f.name = name
+  f.localised_name = {"entity-name.fire-flame"}
+  local hit = f.damage_per_tick
+  f.damage_per_tick = {amount = 0, type = hit.type}
+  f.on_damage_tick_effect = {type = "direct", force = "enemy", ignore_collision_condition = true,
+    action_delivery = {type = "instant", target_effects = {{type = "damage", damage = hit, apply_damage_to_trees = false}}}}
+  return f
+end
+local flamer_fire = spared("fire-flame", "lp-flamer-fire")
+flamer_fire.spawn_entity = "lp-flamer-tree-fire"
+local tree_fire = spared("fire-flame-on-tree", "lp-flamer-tree-fire")
+if tree_fire.spawn_entity then tree_fire.spawn_entity = "lp-flamer-tree-fire" end
+data:extend{flamer_fire, tree_fire}
 for _, a in ipairs(flamer_stream.action) do
   if a.type == "area" then a.force = "not-same" end
+  for _, e in ipairs(a.action_delivery.target_effects or {}) do
+    if e.type == "create-fire" then e.entity_name = "lp-flamer-fire" end
+  end
 end
 flamer.attack_parameters.ammo_type.action.action_delivery.stream = "lp-flamer-stream"
 

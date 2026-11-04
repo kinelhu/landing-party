@@ -4377,6 +4377,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   destroyed by the nest's biters before it packs (24554, "howitzer destroyed by enemy"). Wrecks with items stood
   until 0.2.170 and it passed then: a run shifted onto a losing fight, as farm siege's; the check rests on the
   howitzer surviving behemoth worms. Open, the components kept (the agreed split; fuze needs them).
+- **The camp's flamers spare its own side on the ground too** (0.2.186, overnight). The splash had spared its side since
+  the review; the burning ground (the base `fire-flame`, damage_per_tick on every force) did not, and the trees it lit
+  did not. In `clear worms` a clearance staged within reach of the camp's gate flamers: biters chasing its guards drew
+  their fire, and 9 of the howitzer's 10 railgunners burned (16 lost to `fire:lp-flamer` in the run), the siege aborted
+  and its howitzer was destroyed packing up: this, not the component wrecks, was most of that open failure. The
+  flamer's stream now lays `lp-flamer-fire` (and it lights `lp-flamer-tree-fire`): no base damage, its damage per tick
+  through `on_damage_tick_effect` at its enemies only, as the biters' acid splash does. `clear worms` 12345 passes (16
+  to 0 burned, both clearances done); `clear` checks none lost to its own flamers. Open: the fire's growth with added
+  fuel (maximum_damage_multiplier) is assumed not to scale an on_damage_tick_effect, so a pile of fire may hit biters
+  up to 6 times softer than before; bait, gates, rivals, biters camp, herd flamer and fortress pass. `clear worms` on
+  777 (never in the regression) still fails its last truck check: there the siege loses its fight outright (biters
+  kill 10 of 10 guards by the abort, the howitzer 10 s into its 15 s pack), a fair loss the check cannot tell apart.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

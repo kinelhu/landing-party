@@ -5837,6 +5837,10 @@ scenarios.clear = function()
       (st.units_lost or 0) - S.lost0, st.ops.clearances or 0, target > 0 and "standing" or "razed"))
     check("clear: a way cleared through the nests", left < #S.nests and (st.ops.clearances or 0) > 0, tostring(left))
     check("clear: the assembler razed", target == 0, target > 0 and "standing" or "razed")
+    -- Its own flamers' burning ground killed its clearance's guards (16 of 120 lost, the howitzer's escort broken and
+    -- the howitzer destroyed packing up, worms on 12345 and 777; 0.2.186 spares its side).
+    local burnt = (lp("rd", "serenity").lost_by or {})["fire:lp-flamer"] or 0
+    check("clear: none lost to its own flamers", burnt == 0, tostring(burnt))
     if params.mix == "worms" then truck_checks() end
     if params.mix == "culture" then
       local gone = 0
