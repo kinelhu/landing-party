@@ -14,7 +14,6 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Laser drone | 400 | 12.0 | 16 | 3 | yes | 70 parts |
 | Railgunner | 140 | 6.0 | 30 | 0.67 | no | 22 parts |
 | Tank | 900 | 5.4 | 15 | 0.67 | no | 60 parts |
-| Walker | 1,600 | walks | 15 | 2.4 | yes | 100 parts |
 | Anti-air trooper | 110 | 7.2 | 22 | 2 | yes | 18 parts |
 | Heavy laser trooper | 110 | 7.2 | 17 | 1 | yes | 16 parts |
 | Shock trooper | 160 | 7.2 | 14 | 1.3 | no | 30 parts |
@@ -42,13 +41,6 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 
 **Tank.** An armored tank. Its cannon does three times as much damage to buildings as to units. \
 *A shot:* 40 explosion; 80 explosion over 1.5 tiles to buildings. *Resists:* physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60%. *Fielded:* From landing.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-walker.png){fig-alt="Walker"}
-
-**Walker.** A spider-legged machine that walks over walls and fires rockets. \
-*A shot:* 18 physical. *Resists:* physical -3 20%, fire 60%, explosion -10 30%, acid 50%, laser -5, electric -5, bite 40%. *Fielded:* From its level 2.
 :::
 
 ::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}

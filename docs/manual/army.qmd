@@ -1,13 +1,128 @@
 # Your army
 
-(written once the Kessler-Hayashi / army work settles)
+You can raise an army of your own: troopers, breachers, rocket troopers, flamethrower troopers and battle tanks. They
+are trained from the equipment you already make for yourself. How many you can field is set by command bandwidth, which
+no amount of items can buy. You order them with rally beacons, the command tool or the circuit network.
 
 ## The barracks and orders
 
+**Command bandwidth 1** unlocks the army: the barracks, the rally beacon, the command relay, the threat scanner, the
+muster point, troopers and breachers. It also gives you one command core. A barracks is built from an assembling machine
+2, steel, electronic circuits and a command core. Cores cannot be crafted, so every barracks after the first needs one
+from faction wreckage (see [Command cores](spoils.qmd#command-cores)).
+
+The barracks is a training plant. It works like an assembling machine: it needs power, you pick what it trains as you
+would pick a recipe, and a new barracks starts on troopers. What it makes is an *order*, built from your own kit:
+
+| Order | Made from | Unlocked by |
+|:--|:--|:--|
+| Trooper | Heavy armor, a submachine gun, firearm magazines | Command bandwidth 1 |
+| Breacher | Heavy armor, grenades, electronic circuits | Command bandwidth 1 |
+| Rocket trooper | Heavy armor, a rocket launcher, rockets | Command bandwidth 2 |
+| Battle tank | A tank, cannon shells, personal batteries | Command bandwidth 2 |
+| Flamethrower trooper | Heavy armor, a flamethrower, flamethrower ammo | Command bandwidth 3 |
+
+A finished order steps out of the barracks as a unit and joins the nearest rally beacon. Troopers fight units. Breachers
+throw demolition charges that wreck walls and turrets and do little to units. Rocket troopers kill armor and fliers.
+Flamethrower troopers burn swarms of biters and bunched infantry but are outranged. Battle tanks take bases apart and
+take the longest to train. Every unit's numbers are in the [Reference](reference.qmd#sec-units). While your command
+bandwidth is full, finished orders wait inside the barracks, and it stops once its output is full.
+
+**Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Nothing heals
+them anywhere else, so a barracks near the front works as a forward base. **Roads** help too: your units walk faster on
+stone path, concrete and refined concrete, by the same bonus those floors give you.
+
 ## Rally beacons
+
+A rally beacon is a constant combinator. Each new unit joins the beacon nearest to where it was trained and follows it
+until that beacon is removed; then it joins the nearest one again. A unit with no beacon nearby stands where it is, so
+place a beacon before your first barracks finishes an order.
+
+Open the beacon and set a signal to give its squad a stance. With more than one, R comes first, then A, then O.
+
+- **No signal: hold.** The squad stands at the rally point and fights what comes to it.
+- **A: advance.** The squad attacks the nearest corporation turret within reach of the rally point, then the other
+  military buildings there that no corporation turret covers. With none left, it occupies an outpost within reach, and
+  holds if there is none.
+- **O: occupy.** The squad walks to the nearest corporation outpost and stands on it, fighting back only when hit. A
+  corporation does not rebuild an outpost you occupy. The squad keeps to that outpost until you change the order or move
+  the rally point. Holding an outpost is meant to capture it, but capture does not work yet.
+- **R: retreat.** The squad walks back to the nearest barracks without stopping to fight, and heals there if the
+  barracks has power.
+
+**The rally point.** Signals X and Y move the rally point that many tiles east and south of the beacon (negative values
+move it west and north), up to {{< var army.offset_max >}} tiles. A ring at the rally point shows its reach, gray
+for hold, red for advance, yellow for occupy and blue for retreat, with a dashed line back to the beacon. A unit that
+sees a corporation unit nearby attacks it before any building, but only inside the ring: your squads do not chase a
+garrison back into its turrets.
 
 ## The command tool
 
+The command tool gives orders by hand. Take it from the shortcut bar or press ALT + C, once you have Command
+bandwidth 1.
+
+- **Drag** over your units to select them. Green rings, seen only by you, mark the selection.
+- **Shift + drag** releases units back to their beacons.
+- **Right-click** or right-drag on the ground moves the selection there. The units ignore fire on the way, then hold
+  where they arrive.
+- **Right-click** on a corporation building or unit attacks it. When it falls, the units hold where it stood.
+- **Shift + right-click** attack-moves: the units fight everything they meet on the way, then hold.
+
+A marker flashes where each order went. Selected units obey you over their beacon until you release them; then each
+joins the nearest beacon. The attack order works only on corporation targets. Against Synthexis or the wild biters,
+attack-move onto them.
+
 ## Command bandwidth
 
+A factory makes magazines by the thousand, so items cannot limit an army. Command bandwidth does. Your units are
+remotely commanded, and each takes a share of your command link: troopers and breachers the least, a battle tank the
+most. The *Cost* column in the [Reference](reference.qmd#sec-units) gives each unit's share.
+
+**Command relays.** {{< var desc.entity_command_relay >}} A relay counts only while it has power. Command bandwidth 1, 2
+and 3 let {{< var army.relays_l1 >}}, {{< var army.relays_l2 >}} and {{< var army.relays_l3 >}} relays
+count, and each level of the repeatable Command bandwidth 4 adds {{< var army.relays_extra >}} more. Relays beyond
+that number are spares: they take over when a working relay goes down.
+
+**Going offline.** When a relay is destroyed or loses power, units beyond your bandwidth go offline, newest first. An
+offline unit stops where it is, only fights back and ignores the command tool until bandwidth returns. Raids can reach
+relays like any building, so keep them inside your defenses and on a reliable grid.
+
 ## Circuit control
+
+**Beacons.** Wire a rally beacon and it reads the signals on its wires as well as its own. A decider combinator can then
+set its stance, and a clock on X or Y walks the rally point back and forth as a patrol. The beacon reports on its own
+output: **S** the units in its squad, **E** corporation units and **T** corporation turrets within reach of its rally
+point. A decider that sends A once S reaches the size you want holds a squad until it is full, then attacks.
+
+**Barracks and muster points.** A barracks reports its contents and takes its recipe from the circuit network, as an
+assembling machine does. Send it P above zero and it keeps finished orders in its output instead of turning them into
+units. Inserters take them out, and trains, belts and robots carry them like any other item. A muster point turns the
+orders put into it into units beside it, sent to its nearest rally beacon while your bandwidth has room.
+
+**Threat scanners.** {{< var desc.entity_threat_scanner >}} It updates once a second and cannot be opened. It outputs
+*Corporation infantry*, *tanks*, *walkers*, *flying units*, *railgunners*, *haulers* and *buggies*; *Corporation
+building crews* apart from the army; *Kessler-Hayashi units* and *Grubstake units* as totals; and *Biters*. A
+Kessler-Hayashi jamming mast nearby blinds it: it then outputs only *Scanner jammed*, which a circuit can treat as a
+threat of its own. With **Bred-biter telemetry**, a field study (see [Spoils](spoils.qmd#field-studies)), it adds
+*Synthexis's biters* and *Synthexis's scout*; a scout seen means a wave is on its way. Without it, Synthexis's biters
+count as *Biters*.
+
+A scanner at an outpost wired home through a decider to a rally beacon makes a response force: the squad marches out on
+A when the scanner sees a raid, and comes home when it reads clear.
+
+## Defences of your own
+
+Three defenses come from the factions' own designs. [Spoils](spoils.qmd#field-studies) says how to unlock them.
+
+**Field dome.** {{< var desc.entity_player_dome >}} It is up while it has power. It catches the artillery and mortar
+shells your enemies fire into its radius, including shells passing over it to something behind; your own artillery
+fires out through it. Its charge is sized to the guns that can reach it, so a bigger battery breaks it no sooner. It
+mends slowly while up. Once broken, it stays down for some minutes and comes back whole. Tank shells and the orbital
+strike also pass. A dome buys time, and your army still has to silence the guns. You research it with science packs
+after Energy shield MK2 and Military 4.
+
+**Flak turret.** A powered turret that fires flak at flying units only: Grubstake's scrap drones and bomb drones, and
+Kessler-Hayashi's laser drones. It ignores everything on the ground, so it needs other turrets beside it.
+
+**Defoliant.** {{< var desc.technology_defoliant >}} Throw it like a grenade. Ground it clears can be built on again. A
+tumor left standing spreads its creep back, so finish the tumors.

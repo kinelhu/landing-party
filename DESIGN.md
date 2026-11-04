@@ -4596,6 +4596,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   `studies`: 9 raiders no study, the 10th the claims; 3 drills, an incubator; the scanner's two signals; the defoliant
   (no creep left within the circle, its tumor burnt; first counted in a square, its corners outside the circle); the flak
   turret's harrier down and its shotgun hand left. scanner, prospect, strip, bait, crystal pass.
+- **Manual pass against the code** (2026-11-04; the Kessler-Hayashi, Grubstake, Rivals and Army chapters written from
+  the code, every number a `{{< var >}}` read from it by `scripts/manual_qmd.py`). Where this document and the code
+  disagreed, the manual follows the code; the entries here that it contradicts are stale, not the code:
+  the jamming mast goes up only with a siege's howitzer (`siege.lua`, inside `op.with_howitzer`), not at every drop
+  siege; a border stake is refused by an enemy camp and accepted only under a truce (`border.lua`), not against any
+  Kessler-Hayashi camp; lost generators are rebuilt first by crews (`base.lua`), there is no 90 s timer; a drop siege
+  ends when its guns are destroyed or its shells run out, not at half its guards lost; Synthexis and Grubstake's truce
+  is permanent (`herd.init`, since 0.2.29); a Grubstake truce blocks new taps (`stance.may` counts the tap as theft);
+  Grubstake besieges only when its camp landed with a grudge (`choose_siege`); a rival taps too, not only an enemy;
+  Kessler-Hayashi's reprisals answer only another corporation (`ops.wronged`); the command tool's attack order
+  targets only the corporations (a Synthexis incubator clicked is a move); the trooper's recipe and the battle tank's
+  population are `player.lua`'s and `shared.POPULATION`'s (6), not the player-army section's older list. The flak
+  turret's and its study's locale named units by their ids (harriers, scavengers); now scrap drones and bomb drones.
+  Assumed, not tested: a defoliated incubator starves (its tile no longer creep) unless a standing tumor spreads the
+  creep back.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

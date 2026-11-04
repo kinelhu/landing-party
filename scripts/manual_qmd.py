@@ -53,6 +53,16 @@ def write(rp):
             t *= float(f)
         return t / 3600
 
+    def product(text, pattern, what):
+        """A Lua product of numbers (`30 * 60 * 60`), as a number; 0 when not found (and recorded missed)."""
+        v = grab(text, pattern, what)
+        t = 1.0
+        for f in (v or "0").split("*"):
+            t *= float(f)
+        return t
+
+    dome_src, orbital_src, ledger_src, war_src = src("scripts/dome.lua"), src("scripts/orbital.lua"), src("scripts/ledger.lua"), src("scripts/war.lua")
+
     # ---- the base game's names (science packs, prerequisites, the bred biters' bodies) ----
     vanilla = {}
     app = os.path.expanduser("~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents")
@@ -215,6 +225,41 @@ def write(rp):
             "order_breach_pct": fmt(100 * (num(farm_src, r"^local ORDER_BREACH = ([\d.]+)", "ORDER_BREACH") or 0)),
             "order_wait_min": fmt(minutes(farm_src, "ORDER_WAIT", "ORDER_WAIT")),
             "develop_held": fmt(num(learn_src, r"^local DEVELOP_HELD = (\d+)", "DEVELOP_HELD")),
+        },
+        "grubstake": {
+            "rig_dig_min": fmt(product(src("scripts/jumper.lua"), r"^local DIG = ([\d\s\*]+?)\s*(?:--|$)", "jumper DIG") / 3600),
+            "prospect_window_min": fmt(minutes(src("scripts/prospect.lua"), "WINDOW", "prospect WINDOW")),
+            "pacifier_rebuild_min": fmt(minutes(pact_src, "REBUILD_TICKS", "pact REBUILD_TICKS")),
+        },
+        "kh": {
+            "dome_tiles": fmt(num(dome_src, r"^local RADIUS = (\d+)", "dome RADIUS")),
+            "dome_hold_min": fmt(product(dome_src, r"^local HOLD = ([\d\s\*]+?)\s*(?:--|$)", "dome HOLD") / 60),
+            "dome_down_min": fmt(minutes(dome_src, "BREAK", "dome BREAK")),
+            "projector_back_min": fmt(minutes(dome_src, "PROJECTOR_BACK", "PROJECTOR_BACK")),
+            "line_start_min": fmt(minutes(perim_src, "PERIMETER_START", "PERIMETER_START")),
+            "line_every_min": fmt(minutes(perim_src, "PERIMETER_TICKS", "PERIMETER_TICKS")),
+            "line_step_tiles": fmt(num(perim_src, r"^local PERIMETER_STEP = (\d+)", "PERIMETER_STEP")),
+            "line_max_tiles": fmt(num(perim_src, r"^local PERIMETER_MAX = (\d+)", "PERIMETER_MAX")),
+            "deploy_s": fmt(product(ops_src, r"^local DEPLOY_TICKS = ([\d\s\*]+?)\s*(?:--|$)", "DEPLOY_TICKS") / 60),
+            "howitzer_down_min": fmt(product(shared_src, r"^shared\.HOWITZER_DOWN = ([\d\s\*]+?)\s*(?:--|$)", "HOWITZER_DOWN") / 3600),
+            "jam_tiles": fmt(num(shared_src, r"^shared\.JAM_RADIUS = (\d+)", "JAM_RADIUS")),
+            "paint_s": fmt(product(orbital_src, r"^local PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital PAINT") / 60),
+            "strike_cool_min": fmt(minutes(orbital_src, "COOL", "orbital COOL")),
+            "bill_every_min": fmt(minutes(ledger_src, "BEAT", "ledger BEAT")),
+            "truce_value": fmt(num(ledger_src, r"^local VALUE_PER_MINUTE, MIN_TRUCE, MAX_TRUCE = (\d+)", "VALUE_PER_MINUTE")),
+        },
+        # Standing down (war.lua), for every corporation; aggression scales the streak and the quiet hour.
+        "war": {
+            "fail_streak": fmt(num(war_src, r"^local FAIL_STREAK = (\d+)", "FAIL_STREAK")),
+            "quiet_min": fmt(product(war_src, r"^local QUIET_TICKS, QUIET_HASTE = ([\d\s\*]+?),", "QUIET_TICKS") / 3600),
+            "new_landing_min": fmt(product(war_src, r"^local QUIET_TICKS, QUIET_HASTE = [\d\s\*]+?, ([\d\s\*]+?)\s*(?:--|$)", "QUIET_HASTE") / 3600),
+            "reserve_pct": fmt(100 * (num(src("scripts/army.lua"), r"^army\.RESERVE = ([\d.]+)", "army.RESERVE") or 0)),
+        },
+        "army": {
+            "repair_tiles": fmt(num(src("scripts/command.lua"), r"^local REPAIR_RANGE = (\d+)", "REPAIR_RANGE")),
+            "offset_max": fmt(num(src("scripts/command.lua"), r"^local MAX_OFFSET = (\d+)", "MAX_OFFSET")),
+            **{f"relays_l{i + 1}": fmt(float(x)) for i, x in enumerate(re.findall(r"\d+", grab(shared_src, r"^shared\.RELAYS_BY_LEVEL = \{\[0\] = \d+, ([\d, ]+)\}", "RELAYS_BY_LEVEL") or ""))},
+            "relays_extra": fmt(num(shared_src, r"^shared\.RELAYS_PER_EXTRA_LEVEL = (\d+)", "RELAYS_PER_EXTRA_LEVEL")),
         },
         "spoils": {
             "wreck_min": fmt(minutes(shared_src.replace("shared.WRECK_TICKS", "local WRECK_TICKS"), "WRECK_TICKS", "WRECK_TICKS")),
@@ -456,7 +501,14 @@ def write(rp):
         if t.get("hidden"):
             who = KH["name"] if tk.endswith("serenity") else GS["name"]
             return f"Granted when {who}'s headquarters falls"
+        if tr and tr.get("type") == "capture-spawner":
+            return "Capture a Synthexis incubator (Space Age's capture rocket)"
+        # A field study's node (studies.lua): its study's condition, then its packs.
+        study = next((q for q in (t.get("prerequisites") or []) if q.startswith("lp-study-")), None)
         u = t.get("unit") or {}
+        if study:
+            cond = loc.get(("lp", study[3:]), "")
+            return f"Field study: {cond.rstrip('.')}; then {u.get('count', '?')} × ({packs(u)})"
         if u.get("count"):
             return f"{u['count']} × ({packs(u)})"
         if u.get("count_formula"):
@@ -473,11 +525,13 @@ def write(rp):
     T = ["| Technology | What it gives | How you get it | After |", "|:--|:--|:--|:--|"]
     order = sorted(k for k in d["technology"] if k.startswith("lp-command-bandwidth")) + \
         sorted(k for k in d["technology"] if k.startswith("lp-") and (d["technology"][k].get("research_trigger") or {}).get("type") == "craft-item") + \
+        sorted(k for k in d["technology"] if k.startswith("lp-") and any(q.startswith("lp-study-") for q in (d["technology"][k].get("prerequisites") or []))) + \
+        [k for k in ("lp-player-dome", "lp-incubator-capture") if k in d["technology"]] + \
         sorted(k for k in d["technology"] if k.startswith("lp-prize"))
     for tk in order:
         t = d["technology"][tk]
         pre = ", ".join(rp.tname(p) if p.startswith("lp-") else lname("technology-name." + re.sub(r"-\d+$", "", p)) + (" " + p.rsplit("-", 1)[1] if re.search(r"-\d+$", p) else "")
-                        for p in (t.get("prerequisites") or []))
+                        for p in (t.get("prerequisites") or []) if not p.startswith("lp-study-"))
         T.append(f"| {md(rp.tname(tk))} | {md(tdesc(tk, t))} | {md(how(tk, t))} | {md(pre) or '-'} |")
     out("techs.qmd", T)
 

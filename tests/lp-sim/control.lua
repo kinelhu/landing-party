@@ -9039,12 +9039,21 @@ scenarios.visit = function()
   end
   -- LP_MIX=saveatN (any mix containing it, a server: scripts/siege-save.sh with LP_MIX and LP_SAVE): the game saved at
   -- minute N of the visit, at speed 1, as _autosave-tN.zip, to watch from there (the user, 2026-11-01).
-  local save_at = tonumber(params.mix:match("saveat(%d+)") or "")
-  if save_at then
-    schedule(30, function() game.speed = 64 end)
-    schedule(save_at * 3600 - 1, function() game.speed = 1 end)
-    schedule(save_at * 3600, function() game.auto_save("t" .. save_at); info("visit: saved at minute " .. save_at) end)
+  -- LP_MIX=saveatN (one or more: saveat9-saveat16-...): the visit saved at each of those minutes (_autosave-tN), for films
+  -- from its moments (the trailer, 2026-11-04: several a visit).
+  -- (A benchmark writes no save: scripts/visit_saves.sh runs the visit as a headless server, which game.server_save
+  -- writes, at speed till the last; the first trailer visit saved nothing, 2026-11-04.)
+  local last = 0
+  for m in params.mix:gmatch("saveat(%d+)") do
+    local save_at = tonumber(m)
+    last = math.max(last, save_at)
+    schedule(save_at * 3600, function()
+      if game.is_multiplayer() then game.server_save("t" .. save_at) else game.auto_save("t" .. save_at) end
+      info("visit: saved at minute " .. save_at)
+      helpers.write_file("landing-party/saved-" .. save_at .. ".txt", tostring(game.tick))
+    end)
   end
+  if last > 0 then schedule(30, function() if game.is_multiplayer() then game.speed = 16 end end) end
   -- LP_MIX=growth (any mix containing it): every 5 minutes, Synthexis's culture: its incubators, biomass, what it saves
   -- for, its tumors, the nests its creep gave up on (why a culture does not grow).
   if params.mix:find("growth", 1, true) then

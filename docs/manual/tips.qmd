@@ -1,11 +1,72 @@
 # Tips
 
-(written once the Kessler-Hayashi / army work settles)
-
 ## Early game
+
+- **Decide what to do with the survey party.** Destroy its radar and you get a command core, and Grubstake waits until
+  {{< var arrival.survey_killed_delay_min >}} minutes after your first chemical science pack. Leave it and Grubstake
+  lands {{< var arrival.survey_left_min >}} minutes after the party leaves, whether you are ready or not.
+- **Put turrets on the ore you want next.** Grubstake's first camp lands on a rich field at least
+  {{< var arrival.squat_tiles >}} tiles from your turrets and units. A few gun turrets on your next ore fields keep it
+  off them.
+- **Research Command bandwidth 1 before chemical science.** It needs only automation and logistic science packs, after
+  Military 2 and Heavy armor, and it gives your first command core.
+- **Automate heavy armor.** Every infantry order takes a suit of heavy armor. Make it, submachine guns and magazines on
+  a line before you need troops in a hurry.
+- **Build a relay with your first barracks.** With no working command relay you have no bandwidth, and the barracks
+  holds its finished orders. Put a rally beacon down too, or new units stand where they were trained.
+- **Put a threat scanner at each outpost.** Wired to a programmable speaker or a lamp, it tells you a raid has come
+  before the turrets start firing.
+- **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Only first
+  landings and destroyed bases are announced without it.
 
 ## Against Grubstake
 
+- **Put a drill on every patch you plan to use.** A burner drill is enough. Grubstake prospects only ore that none of
+  your drills works, so one cheap drill keeps the patch yours until you build there.
+- **Run exposed belts underground.** A skim needs a belt tile to park beside. Undergrounds across the stretch your
+  turrets do not cover leave it nothing to take.
+- **Check your outposts before dark.** Its raids, skims and claim jumps leave only at night. Daylight is the time to
+  move turrets and finish an outpost's defenses.
+- **Keep spare machines in your logistic network.** Raiders leave ghosts where they took your machines, and your robots
+  rebuild them at once from what is in storage.
+- **Read your power statistics.** A consumer you never built whose draw climbs every few minutes is a power tap.
+  Follow the amber pylons back to find it.
+- **Pay the trade post in circuits or modules.** Plates are worth little to Grubstake. A few stacks of circuits buy a
+  much longer truce than a chest full of iron.
+- **Do not chase raiders into spawners.** The biters let Grubstake's units through and turn on yours.
+
 ## Against Kessler-Hayashi
 
+- **Keep what matters deep behind your turrets.** A siege's mortars stand just outside your turrets' reach and outrange
+  them only a little. Roboports, substations and assemblers well behind the turret line are out of their reach, and
+  only a howitzer can touch them.
+- **Hit the guns while they are assembled.** The escort holds just outside your turrets while the pods come down, and
+  each gun is defenseless until the deploy ends. A gun destroyed then is lost to that siege.
+- **Put an artillery turret behind each wall that faces its camp.** It kills a siege's howitzer by itself, and the
+  artillery targeting remote lets it reach the mortars.
+- **Give each field dome its own power.** A dome is up only while powered. On the same poles as your turrets, one cut
+  takes down both.
+- **Bring a border stake when you pay an invoice.** The truce is your only chance to set a border, and the border
+  outlasts the truce.
+- **Clear the spawners between your factory and its camp yourself.** Their attacks on Kessler-Hayashi are what it
+  bills you for.
+- **Guard your small outposts too.** Anything an operation destroys resets the count of failures that makes a camp
+  stand down.
+
 ## Against Synthexis
+
+- **Get Bred-biter telemetry early.** Fighting Synthexis unlocks it (see [Spoils](spoils.qmd#field-studies)). Wire the
+  *Synthexis's scout* signal to a speaker and to your rally beacons: a scout comes before every wave.
+- **Attack-move into a culture.** A rally beacon's advance and the command tool's attack order go only for corporation
+  targets. Send squads onto incubators and biochambers with attack-move, flamethrower troopers in front for the swarms.
+- **Defend every side.** A wave takes the way in your turrets cover least, and a way that held costs more next time.
+  A weak side is where the next wave comes.
+- **Leave room behind the wall.** Bursters blow up at the wall and damage the turrets close to it. Turrets set a few
+  tiles back take less.
+- **Spread your turrets out.** A big burster walks to your nearest turret and damages every turret around it, so a tight
+  cluster loses several at once.
+- **Bury the power and the ammo feed.** A wave past your wall heads for your power and the inserters that load your gun
+  turrets. Keep both well inside, behind a second line of turrets.
+- **Defoliate an incubator.** Kill the tumors near it, then throw a defoliant on it. Off the creep, it starves and goes
+  back to the wild after {{< var synthexis.starve_min >}} minutes.
+- **The field dome and the flak turret do nothing here.** No Synthexis breed fires shells or flies.

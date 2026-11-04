@@ -66,6 +66,10 @@ The trailer runs one day's arc. Factorio's day: 0 noon; dusk from 0.25; night (d
 
 At night the surface's `min_brightness` goes from 0.15 to 0.3 while filming (`game.surfaces.nauvis.min_brightness`,
 restored after): the base must still read under the effects, not be a black field with lights.
+(Filmed 2026-11-04: it does not. A screenshot taken with its own `daytime` ignores the surface's `min_brightness`, 0.3
+or 0.5 alike, and shots 9 to 11 at 0.47 to 0.5 came out a black field away from the lights. Kessler-Hayashi is filmed
+at late dusk, 0.37 to 0.42, which keeps the beams and flashes and lets the ground read; night proper is left to shots
+lit by the base's own lamps.)
 
 ## 4. Music and timing
 

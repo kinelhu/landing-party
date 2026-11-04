@@ -13,6 +13,13 @@ if pgrep -f -- "--config $V/config/config.ini" > /dev/null; then echo "refusing:
 FN=$(grep -o 'return {name = "[^"]*"' "$PARAMS" | head -1 | cut -d'"' -f2)
 OUT="${4:-$REPO/docs/sim/film-$FN}"
 cp "$V/saves/$SAVE" "$V/saves/film.zip"
+# (Read before the profile's mods are cleared: LP_FILM_SIM may be this very profile, whose params went with its lp-sim and
+# the harness loaded on none, 2026-11-04.)
+SIMPARAMS=""
+if [ -n "${LP_FILM_SIM:-}" ]; then
+  SIMPARAMS=$(sed 's/, save_at = [0-9]*//; s/-saveat[0-9]*//g' "$LP_FILM_SIM/mods/lp-sim/params.lua")
+  grep -q "return {" <<< "$SIMPARAMS" || { echo "FILM FAILED: no harness params in $LP_FILM_SIM"; exit 1; }
+fi
 rm -rf "$V/mods/lp-sim" "$V/mods/lp-film" "$V/script-output/lp-film/$FN"
 ln -sfn "$REPO/landing-party" "$V/mods/landing-party"
 cp -R "$REPO/tests/lp-film" "$V/mods/lp-film"; cp "$PARAMS" "$V/mods/lp-film/params.lua"
@@ -20,7 +27,7 @@ cp -R "$REPO/tests/lp-film" "$V/mods/lp-film"; cp "$PARAMS" "$V/mods/lp-film/par
 # own steps (a defence built, a siege forced) goes on playing in the window.
 SIMMOD=""
 if [ -n "${LP_FILM_SIM:-}" ]; then
-  cp -R "$REPO/tests/lp-sim" "$V/mods/lp-sim"; sed 's/, save_at = [0-9]*//' "$LP_FILM_SIM/mods/lp-sim/params.lua" > "$V/mods/lp-sim/params.lua"
+  cp -R "$REPO/tests/lp-sim" "$V/mods/lp-sim"; echo "$SIMPARAMS" > "$V/mods/lp-sim/params.lua"
   SIMMOD=', {"name": "lp-sim", "enabled": true}'
 fi
 echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-film", "enabled": true}'"$SIMMOD"']}' > "$V/mods/mod-list.json"
@@ -48,6 +55,10 @@ for _ in $(seq 1 1800); do
   fi
   kill -0 "$PID" 2>/dev/null || { echo "FILM FAILED: the game stopped"; tail -20 "$V/film.out"; exit 1; }
   # (A script error holds the window on its dialog: a dome film waited out its 30 minutes on one, 2026-11-04.)
+  if grep -q "errored when running" "$V/film.out" 2>/dev/null; then
+    echo "FILM FAILED: a mod failed to load"; grep -A3 "errored when running" "$V/film.out" | head -5
+    kill "$PID" 2>/dev/null || true; exit 1
+  fi
   if grep -q "non-recoverable error" "$V/factorio-current.log" 2>/dev/null; then
     echo "FILM FAILED: a script error"; grep -A4 "non-recoverable error" "$V/factorio-current.log" | head -8
     kill "$PID" 2>/dev/null || true; exit 1

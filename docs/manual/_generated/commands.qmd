@@ -10,7 +10,7 @@
 
 `/lp` forces what the mod otherwise times and rolls for. It is for testing, and it spoils a game. Corporation names are the internal ones: `serenity` for Kessler-Hayashi, `grubstake` for Grubstake.
 
-`/lp list | raid | siege | strip | perimeter [id] | land <corp> [tiles] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace`
+`/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace`
 
 Further verbs: `incidents`, `rig`, `tap`, `biotech` (Synthexis lands now), `wave`.
 :::

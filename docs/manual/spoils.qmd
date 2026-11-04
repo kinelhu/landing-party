@@ -25,9 +25,9 @@ The corporations salvage too. Grubstake can research salvage, and once it has, w
 
 ## Faction technologies
 
-Each faction technology is researched by crafting something, not with science packs. Salvage disassembles into a
+The component technologies are researched by crafting something, without science packs. Salvage disassembles into a
 *parts* item (Pheromone gland parts, Rail coil parts and so on), and crafting that item for the first time completes
-the research. The parts recipes are available from the start.
+the research. The parts recipes are available from the start. Field studies (below) are earned by fighting.
 
 {{< include _generated/techs.qmd >}}
 
@@ -44,6 +44,31 @@ the research. The parts recipes are available from the start.
 - **Rail rifle.** {{< var desc.item_rail_rifle >}}
 - **Cluster artillery shell.** {{< var desc.item_cluster_artillery_shell >}}
 - **Orbital strike beacon.** {{< var desc.entity_strike_beacon >}}
+
+## Field studies
+
+Fighting a corporation teaches you about it. Destroy enough of the right things and a **field study** completes on its
+own: the research screen shows each study with what it asks for. A completed study opens a technology you research
+with science packs as usual. Kills by your turrets and artillery count as well as your own and your army's. Once a
+study is done, further kills of that kind give nothing more.
+
+**From Grubstake:**
+
+- **Claims register.** {{< var desc.technology_claims_register >}}
+- **Strip drill.** {{< var desc.technology_strip_drill >}}
+- **Pheromone bait, made.** {{< var desc.technology_bait_made >}}
+- **Flak turret.** {{< var desc.technology_flak_turret >}}
+
+**From Synthexis:**
+
+- **Bred-biter telemetry.** {{< var desc.technology_bred_telemetry >}}
+- **Defoliant.** {{< var desc.technology_defoliant >}}
+- **Incubator capture.** {{< var desc.technology_incubator_capture >}}
+
+The table above gives what each study asks for and what its technology costs.
+
+**Field dome.** {{< var desc.entity_player_dome >}} You research it with science packs; it needs no study. See
+[Your army](army.qmd).
 
 **Prizes.** Destroy a corporation's uplink and it withdraws (see [Arrivals](arrivals.qmd)). You get its prize
 technology at once: Kessler-Hayashi's mortar, or Grubstake's strip drill.
