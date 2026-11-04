@@ -7748,8 +7748,11 @@ scenarios.loot = function()
     check("loot: some killed", (S.big or 0) >= 10 and (S.units or 0) >= 5, string.format("%d buildings, %d units",
       S.big or 0, S.units or 0))
     check("loot: no salvage item exists", not S.salvage, tostring(S.salvage))
-    check("loot: nothing dropped, no wreck, nothing loose", (S.wrecks or 0) == 0 and (S.loose or 0) == 0
-      and next(c) == nil, string.format("%d wrecks, %d loose, %s", S.wrecks or 0, S.loose or 0, serpent.line(c)))
+    -- (Its own items stay, components research reads, in a wreck: no vanilla material, nothing loose.)
+    local vanilla = 0
+    for name, n in pairs(c) do if name:sub(1, 3) ~= "lp-" then vanilla = vanilla + n end end
+    check("loot: no material dropped, nothing loose", vanilla == 0 and (S.loose or 0) == 0,
+      string.format("%d of vanilla's, %d loose, %s", vanilla, S.loose or 0, serpent.line(c)))
   end)
 end
 

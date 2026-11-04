@@ -4341,6 +4341,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   three ranks 3 tiles apart, about 10 across, infantry in front, the tanks behind (tanks jostle: a tile of blur). The
   march itself is still the route's column of individual orders; the assault still a rush (staggered rows to come).
   Fortress (four), siegetier 2 and 3, orbital (both), standsiege and standsiege nests pass.
+- **The batch regression after 0.2.182, and its fixes** (0.2.183). ops, biotech and player areas, 203 runs, 28 minutes:
+  four failures.
+  - `labs` and `breach arty` crashed: a lab's first placement indexed `prototypes.animation`, which the runtime does not
+    have (from 0.2.173). Both had "passed" since on stale results, which sim.sh clears only since 0.2.179. Now
+    `helpers.is_valid_animation_path`.
+  - `fuze`: clearing a corporation's loot (0.2.170) cleared its components too (a mortar's cluster fuze, research
+    reads them): its own `lp-` items stay, in a wreck, as the command core; vanilla materials go. `loot` checks no vanilla
+    material and nothing loose (a rail coil in a wreck is right).
+  - `farm siege`: 7 checks fail, its siege breaking nothing. Not tonight's work: it fails on 0.2.180, 0.2.170 and
+    0.2.162 as well (bisecting).
+  - The jamming mast re-rendered worn (its first render, on the clean palette, read as a toy beside the guns).
+  fuze, loot, labs, breach arty and fortress jammer pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

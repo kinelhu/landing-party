@@ -214,7 +214,19 @@ script.on_event(defines.events.on_entity_died, function(e)
   -- What a corporation's building or unit is made of (the engine's loot) is not left at all: its remnants are (the
   -- user, 2026-11-03: "I don't like the units dropping materials... ok for cosmetic wrecks that may disappear over time,
   -- but not items... it's annoying"; a wreck of its plates and circuits since 2026-10-21).
-  if shared.is_corp(ent.force.name) and e.loot and not e.loot.is_empty() then e.loot.clear() end
+  -- Its own items stay, in a wreck (the components research reads, a cluster fuze from a mortar: mechanic items, as the
+  -- command core; cleared with the materials, fuze failed "a mortar drops a fuze", the regression after 0.2.182).
+  if shared.is_corp(ent.force.name) and e.loot and not e.loot.is_empty() then
+    local keep = {}
+    for i = 1, #e.loot do
+      local st = e.loot[i]
+      if st.valid_for_read and st.name:sub(1, 3) == "lp-" then
+        keep[#keep + 1] = {name = st.name, count = st.count, quality = st.quality.name}
+      end
+    end
+    e.loot.clear()
+    if #keep > 0 then shared.wreck(ent.surface, ent.position, keep) end
+  end
   if kind == "lp-uplink" then faction.uplink_lost(ent); achievements.uplink(ent, e.force) end
   if kind == "lp-pacifier" then pact.lost(ent) end
   -- Command cores from the wreckage: a depot gives one, a lander three (captured outposts: base.lua).

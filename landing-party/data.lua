@@ -777,7 +777,7 @@ data:extend({{type = "simple-entity-with-force", name = "lp-jammer", hidden = tr
 -- a lattice mast on a 2x2 footing, arcs jumping between the three nodes at its crown, 16 frames looping while it stands.
 -- Frame size and shift from sheet.json; the big pole above is the fallback.
 do
-  local J = {width = 337, height = 422, shift = {1.3984375, -1.953125}}
+  local J = {width = 335, height = 419, shift = {1.4140625, -1.9765625}}
   local function jam(file, extra)
     local l = {filename = "__landing-party__/graphics/serenity/jammer/" .. file .. ".png", width = J.width, height = J.height,
       frame_count = 16, line_length = 8, scale = 0.5, shift = J.shift, animation_speed = 0.4}

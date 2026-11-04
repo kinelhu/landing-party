@@ -13,7 +13,8 @@ args = sys.argv[sys.argv.index("--") + 1:]
 out = args[0]
 FRAMES = int(args[1]) if len(args) > 1 else 16
 scene = lpkit.reset()
-P = lpkit.palette()
+# (Worn, as the guns: its first render, on the clean palette, read as a toy beside them; the user, 2026-11-03.)
+P = lpkit.palette_worn()
 H = 4.6                                   # mast height, tiles
 
 # Footing: a pad, a squat base housing with panels and hazard trim.
@@ -23,7 +24,8 @@ lpkit.box(1.16, 1.16, 0.06, 0, 0, 0.6, P["steel"])
 for k in range(4):
     a = k * math.pi / 2
     lpkit.box(0.4, 0.06, 0.25, math.cos(a) * 0.56, math.sin(a) * 0.56, 0.2, P["dark"], rot=a + math.pi / 2)
-    lpkit.box(0.3, 0.3, 0.12, math.cos(a + math.pi / 4) * 0.82, math.sin(a + math.pi / 4) * 0.82, 0.1, P["hazard"], rot=a)
+    lpkit.box(0.22, 0.22, 0.06, math.cos(a + math.pi / 4) * 0.82, math.sin(a + math.pi / 4) * 0.82, 0.1, P["dark"], rot=a)
+    lpkit.box(0.18, 0.03, 0.04, math.cos(a + math.pi / 4) * 0.82, math.sin(a + math.pi / 4) * 0.82, 0.16, P["hazard"], rot=a)
 # The lattice: three legs tapering to the crown, braced every 0.6 tiles.
 legs = []
 for k in range(3):
@@ -54,6 +56,7 @@ for k in range(3):
     lpkit.sphere(0.08, *tip, P["glow"])
     nodes.append(tip)
 model = [o for o in scene.objects]
+lpkit.bevel_all(model)
 ground, sun, world = lpkit.stage(scene, 2, 3.0)
 
 rng = random.Random(11)
