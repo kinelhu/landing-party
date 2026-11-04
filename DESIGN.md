@@ -4398,6 +4398,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   for the user: on 12345 its sweepers are killed by the fort's boosted lasers (damage x3, speed x2.2) 7 tiles short of
   their spots, their death's blast (7) reaches the near mines only, and 2 of 6 stand (same on its second wave).
   Ways out: more health (2000 now), setting off on the near edge of their cluster, or one more sweeper a cluster.
+  (The near edge, 0.2.189, below.)
 - **The flamer's ground fire really spares its side** (0.2.188, overnight; corrects 0.2.186). The batch regression after
   0.2.187 (191 runs of biotech and ops, 189 pass; the other is farm siege 12345, open above) still had one guard of
   `clear worms` burned by its flamers, and a spike on on_entity_damaged showed `lp-flamer-fire` hitting Synthexis's
@@ -4408,6 +4409,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   reach an on_damage_tick_effect, the doubt 0.2.186 left open). Its sticker is its own too (`lp-flamer-sticker`: a
   burning biter drops the spared tree fire, not the base one). Every other force filter in the mod is an `area`
   trigger, which applies it. clear worms 12345, bait, gates, rivals and herd flamer pass.
+- **Sweepers set off on their cluster's near edge** (0.2.189; the user, 2026-11-04, of the three ways out above). Each
+  sweeper's spot (herd.sapper_spots, from where its sweepers come) is pulled back from its cluster's first mine towards
+  them, half a tile at a time from a whole reach, as far as every mine the spot on the mine covered stays within reach:
+  the clusters and their count, what its plan pays for, are as before. Pulled back a whole reach regardless, each spot
+  covered its first mine alone (8 sweepers for 8 mines on 12345, 10 for 10 clusters on 777). farm siege 12345: none
+  left on any of its three waves (its second had left 2), 4 sweepers for 8 mines; 777: 2 left, both in the fifth cluster
+  its plan did not pay for (the allowance), all checks pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

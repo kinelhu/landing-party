@@ -1165,7 +1165,7 @@ function herd.plan(surface, from, target, forces, n)
   local standing = math.min(costmap.wall_along(cm, target), way.cost)
   return {path = pts, upto = upto, start = {way.start.x, way.start.y}, breach = {way.breach.x, way.breach.y},
     cost = way.cost, cover = #cover, openable = openable, target = {target.x, target.y}, mines = #mines, walled = walled,
-    sappers = #herd.sapper_spots(mines),
+    sappers = #herd.sapper_spots(mines, rest[1]),
     standing = standing, cover_price = cover_price}
 end
 
@@ -1771,14 +1771,38 @@ herd.mines_along = mines_along
 -- Where its sappers set off: a mine, and every mine within its blast of it covered, the next one not, along the way in.
 -- (Within its blast less how short of its spot it may set off, SAPPER_AT, and half a tile: at 0.85 of the blast, with
 -- sweepers set off 2.5 short, a mine at a cluster's edge stood 8.45 from a blast of 7, 7 of 8 cleared; `farm` siege.)
+-- Each spot on its cluster's near edge: pulled back from its first mine towards where its sweepers come from as far as
+-- every mine it covered on the mine still stays within reach (the user, 2026-11-04: on the mine itself, the fort's lasers
+-- killed them about 7 short, and 2 of 6 mines stood; farm siege 12345. Pulled back a whole reach, each covered its first
+-- mine alone: 8 sweepers for 8 mines where 4 had done).
 local SAPPER_AT = 1.5
 local SAPPER_REACH = shared.SAPPER.r - SAPPER_AT - 0.5
-function herd.sapper_spots(mines)
-  local spots = {}
-  for _, m in ipairs(mines) do
-    local q, covered = m.position, false
-    for _, s in ipairs(spots) do if d2(s, q) <= SAPPER_REACH * SAPPER_REACH then covered = true; break end end
-    if not covered then spots[#spots + 1] = {x = q.x, y = q.y} end
+local SPOT_STEP = 0.5
+function herd.sapper_spots(mines, from)
+  local spots, r2 = {}, SAPPER_REACH * SAPPER_REACH
+  local covered = {}
+  for i, m in ipairs(mines) do
+    if not covered[i] then
+      local q = m.position
+      local members = {}
+      for j = i, #mines do
+        if not covered[j] and d2(mines[j].position, q) <= r2 then members[#members + 1] = j end
+      end
+      local spot = {x = q.x, y = q.y}
+      if from then
+        local fx, fy = (from.x or from[1]) - q.x, (from.y or from[2]) - q.y
+        local d = math.sqrt(fx * fx + fy * fy)
+        local back = math.min(SAPPER_REACH - SPOT_STEP, d)
+        while d > 0 and back > 0 do
+          local c, fits = {x = q.x + fx / d * back, y = q.y + fy / d * back}, true
+          for _, j in ipairs(members) do if d2(mines[j].position, c) > r2 then fits = false; break end end
+          if fits then spot = c; break end
+          back = back - SPOT_STEP
+        end
+      end
+      for _, j in ipairs(members) do covered[j] = true end
+      spots[#spots + 1] = spot
+    end
   end
   return spots
 end
@@ -1789,7 +1813,7 @@ local function sweep(w, s, from, to, inside)
   local n = w.sweep or 0
   if n <= 0 then return 0 end
   local mines = mines_along(s, foes(w), {from, to, inside}, herd.spread(#herd_units(w)) + SWEEP_GAP, from)
-  local spots = herd.sapper_spots(mines)
+  local spots = herd.sapper_spots(mines, from)
   w.sweep_mines = #mines
   local made = 0
   for i = 1, math.min(n, #spots) do
