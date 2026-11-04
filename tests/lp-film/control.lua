@@ -10,6 +10,9 @@ local session_from, reeled
 
 local function shot(s)
   local pos = s.pos
+  -- (s.freeze = a key: the point is read once, at the first still with that key, and kept: a clip's camera stands still.)
+  storage.frozen = storage.frozen or {}
+  if s.freeze and storage.frozen[s.freeze] then pos = storage.frozen[s.freeze] end
   if pos == "hold" or pos == "jump" or pos == "site" or pos == "escort" then
     local c = (storage.points or {})[pos] or storage.center or {0, 0}
     pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
@@ -17,6 +20,7 @@ local function shot(s)
     local c = storage.center or {0, 0}
     pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
   end
+  if s.freeze and not storage.frozen[s.freeze] then storage.frozen[s.freeze] = pos end
   game.take_screenshot{surface = game.surfaces[1], position = pos, resolution = P.resolution or {1920, 1080},
     zoom = s.zoom or 0.5, path = "lp-film/" .. P.name .. "/" .. s.name .. ".png", show_gui = false,
     show_entity_info = false, anti_alias = P.anti_alias ~= false, daytime = s.daytime, force_render = true,

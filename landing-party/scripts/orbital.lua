@@ -29,6 +29,8 @@ local LANCE_TICKS = 14
 local LIGHT = {r = 0.8, g = 0.95, b = 1}
 local SHADOW_RUN = 90          -- tiles its shadow travels to reach the point at the fall
 local SHADOW_TAIL = 6 * 60     -- ticks it goes on past it
+local SHADOW_ALPHA = 0.42      -- its darkness at its lowest, over the point
+local SHADOW_SPREAD = 0.5      -- how much larger (and so softer) it is from high up
 -- Its outline in tiles, a hull and two wings (three strips: rendering polygons are triangle strips).
 local SHADOW = {
   {{-14, -6}, {14, -6}, {-14, 6}, {14, 6}},
@@ -103,7 +105,8 @@ function orbital.start(b, s, fs, center, along, spotter, dev)
   -- (A silhouette, its nose along its course, over all it crosses: three flat strips read as dark rectangles, the user,
   -- 2026-11-04, the strike's stills.)
   sh.objs[1] = rendering.draw_sprite{sprite = "lp-platform-shadow", target = {center[1], center[2]}, surface = s,
-    orientation = ((sh.dir + math.pi / 2) / (2 * math.pi)) % 1, tint = {r = 0, g = 0, b = 0, a = 0.42}, render_layer = "smoke"}
+    orientation = ((sh.dir + math.pi / 2) / (2 * math.pi)) % 1, tint = {r = 0, g = 0, b = 0, a = 0}, render_layer = "smoke",
+    x_scale = 1 + SHADOW_SPREAD, y_scale = 1 + SHADOW_SPREAD}
   storage.kh_shadows = storage.kh_shadows or {}
   table.insert(storage.kh_shadows, sh)
   if shared.notices_on() then
@@ -205,7 +208,18 @@ local function shadow_tick(sh, tick)
   for i, o in ipairs(sh.objs) do
     if o.valid then
       if done then o.destroy()
-      elseif o.type == "sprite" then o.target = {cx, cy}
+      elseif o.type == "sprite" then
+        -- Its low pass (the user, 2026-11-04: not "just disappearing": "fade into focus and disappear progressively, like
+        -- if the ship made a low pass before rising up again"): faint and spread from high up, full and sharp over the
+        -- strike, then fading and spreading as it climbs away. h: its height, 1 high, 0 at its lowest, over the point.
+        local after = tick - sh.at
+        local h = after <= 0 and (1 - t) or math.min(1, after / SHADOW_TAIL)
+        local ease = h * h * (3 - 2 * h)
+        local a = SHADOW_ALPHA * (1 - ease) ^ 1.5
+        local sc = 1 + SHADOW_SPREAD * ease
+        o.target = {cx, cy}
+        o.color = {r = 0, g = 0, b = 0, a = a}
+        o.x_scale, o.y_scale = sc, sc
       else
         -- (A strike begun before 0.2.198: its strips.)
         local v = {}

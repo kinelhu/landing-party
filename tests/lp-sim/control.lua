@@ -274,10 +274,21 @@ end
 
 -- ---------------------------------------------------------------------------------------------------
 -- Unit spikes. A flat test range near spawn: grass, nothing on it, so lanes differ only in what is tested.
+-- Ground cleared for a test's buildings: what stands there removed, water made land; the map's own ground kept (the user,
+-- 2026-11-04, of the films: "square patches of grass and not natural map gen ground"; it painted every cleared area
+-- grass-1).
 local function flatten(x0, y0, x1, y1)
+  -- (Its ground generated first: set_tiles had done it, and without it the entities put up next stood on chunks the map
+  -- generated after, which took them; shield's power, 2026-11-04.)
+  local c, r = {(x0 + x1) / 2, (y0 + y1) / 2}, math.ceil(math.max(x1 - x0, y1 - y0) / 64) + 1
+  surface().request_to_generate_chunks(c, r)
+  surface().force_generate_chunk_requests()
   local tiles = {}
-  for x = x0, x1 - 1 do for y = y0, y1 - 1 do table.insert(tiles, {name = "grass-1", position = {x, y}}) end end
-  surface().set_tiles(tiles, true, true, true, false)
+  for x = x0, x1 - 1 do for y = y0, y1 - 1 do
+    local t = surface().get_tile(x, y)
+    if t.collides_with("water_tile") then table.insert(tiles, {name = "grass-1", position = {x, y}}) end
+  end end
+  if #tiles > 0 then surface().set_tiles(tiles, true, true, true, false) end
   for _, e in pairs(surface().find_entities_filtered{area = {{x0, y0}, {x1, y1}}}) do
     if e.valid and e.type ~= "character" then e.destroy() end
   end

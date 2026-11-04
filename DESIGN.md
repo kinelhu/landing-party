@@ -4549,6 +4549,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   unpowered, the turret dies; 1 MJ and no power, it breaks on the first hit. First run: projectors beside their turrets,
   the biters at the turret 36 degrees off its heading, nothing caught. Open: balance (four medium biters drain 5 MW of its
   10: it cannot be worn down by them), its own art, whether it stops units passing (not now).
+- **The platform's shadow in a low pass; tests on the map's own ground; clips** (0.2.200; the user, 2026-11-04). The
+  shadow no longer pops in and out ("fade into focus and disappear progressively, like if the ship made a low pass before
+  rising up again"): its height eases from 1 to 0 over the paint and back to 1 over its tail, its darkness 0.42 at its
+  lowest and none high up, its size half again as large high up (softer). Tests' cleared ground keeps the map's tiles
+  (the user: "square patches of grass and not natural map gen ground"; flatten painted grass-1): water alone made land,
+  the area generated first (without set_tiles doing it, shield's projectors stood on chunks generated after them, which
+  took them). Clips, not stills alone (the user: "Any reason why we're not embedding actual short videos?": none, once
+  the stops were the intro dialog): a frame every 2 to 4 ticks, scripts/clip.sh to mp4; the film helper holds a clip's
+  camera (freeze), and runs a scenario from its start in a fresh save (LP_FILM_SIM with a params file). Filmed: the strike
+  with its pass, the drop siege's deploy and assault, the shield projector. Open, seen: the shield's arc a thin band at
+  its edge (a faint wedge would read better), its wave a whole dome for a 45-degree arc.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
