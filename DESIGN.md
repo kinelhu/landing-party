@@ -4349,8 +4349,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   - `fuze`: clearing a corporation's loot (0.2.170) cleared its components too (a mortar's cluster fuze, research
     reads them): its own `lp-` items stay, in a wreck, as the command core; vanilla materials go. `loot` checks no vanilla
     material and nothing loose (a rail coil in a wreck is right).
-  - `farm siege`: 7 checks fail, its siege breaking nothing. Not tonight's work: it fails on 0.2.180, 0.2.170 and
-    0.2.162 as well (bisecting).
+  - `farm siege` (seed 12345): 7 checks fail, its siege breaking nothing. Bisected to 0.2.146 (the hub dome projectors),
+    which only shifts the run: the camp is 1,400 tiles from the farm, and on seed 777 the scenario passes (its wave
+    broke 11 wall pieces, 8 mines and a laser). On 12345 the farm's layout leaves the first legs of its wave's trail
+    blocked by its gate (leg 3 to 1105,12 from 1097,2 failed), its group breaks up three times and the wave scatters 26
+    of 28 home before it leaves. A robustness gap in the herd's march (a wave should not fail three times at its own
+    gate): open, for the herd's routing (re-route a failing first leg from where the group stands).
   - The jamming mast re-rendered worn (its first render, on the clean palette, read as a toy beside the guns).
   fuze, loot, labs, breach arty and fortress jammer pass.
 - **Formations, third: the assault in staggered rows** (0.2.184, overnight; the user's agreed order: "attack in staggered
