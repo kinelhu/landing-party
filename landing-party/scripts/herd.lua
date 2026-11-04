@@ -2713,9 +2713,14 @@ local function step(w, tick)
     -- Its group gone with its members alive (a failed order disbands a group on 2.1): formed again where they stand and
     -- on with what it was doing, up to REGROUPS times; only then scattered.
     local live = herd_units(w)
-    if #live >= 2 and (w.regroups or 0) < REGROUPS and (w.stage == "inside" or w.stage == "breach" or w.stage == "march"
-      or w.stage == "blind" or (w.stage == "withdraw" and w.home)) then
-      w.regroups = (w.regroups or 0) + 1
+    -- (A group the engine disbanded for a leg it could not path is not counted: its next try is the next leg, so the
+    -- trail bounds it. Counted, three blocked legs by its own gate scattered a siege wave 26 of 28 home before it left,
+    -- farm siege on seed 12345 from 0.2.146.)
+    local leg_fail = w.stage == "march" and w.leg_failed_at and tick - w.leg_failed_at <= 120
+    if #live >= 2 and (leg_fail or (w.regroups or 0) < REGROUPS) and (w.stage == "inside" or w.stage == "breach"
+      or w.stage == "march" or w.stage == "blind" or (w.stage == "withdraw" and w.home)) then
+      if not leg_fail then w.regroups = (w.regroups or 0) + 1 end
+      w.leg_failed_at = nil
       w.group = s.create_unit_group{position = where(w), force = B.force}
       for _, u in ipairs(live) do if not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end end
       log(w, string.format("its group broke up with %d alive: formed again (%d of %d)", #live, w.regroups, REGROUPS))
@@ -3133,6 +3138,7 @@ function herd.on_command_completed(e)
       if w.stage == "march" then
         if e.result ~= defines.behavior_result.success then
           w.legs_failed = (w.legs_failed or 0) + 1
+          w.leg_failed_at = game.tick
           local q, at = w.trail[w.leg], where(w)
           log(w, string.format("leg %d of %d of its trail failed (%s): to %s from %.0f,%.0f", w.leg, #w.trail, tostring(e.result),
             q and string.format("%.0f,%.0f", q.x, q.y) or "?", at.x, at.y))

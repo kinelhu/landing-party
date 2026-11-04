@@ -4363,6 +4363,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   waves at the breach, not one rush. standsiege nests: half its escort at the breach 6 s after the fall (5 before),
   18 of 18 back, the outpost 109 to 36; siegetier 3, fortress, orbital standing and standsiege pass. Formations left:
   the march itself (still the route's column of single orders).
+- **A herd's regroups after a leg it cannot path not counted** (0.2.185, overnight). A failed order disbands a group on
+  2.1; a march leg the engine cannot path did so, and the regroup that followed counted against REGROUPS (3, reset only
+  by a leg walked): three blocked legs by its own gate scattered `farm siege`'s wave on seed 12345, 26 of 28 home before
+  it left (since 0.2.146 shifted the run onto that farm layout). Such a regroup is free now (its next try is the next
+  leg, so the trail bounds it); a group broken for any other reason still scatters after three. On 12345 the wave now
+  leaves, crosses and breaks in (11 mines at its breach), 2 of the 7 checks fixed; 5 open: its first wave there is a
+  probe with one big burster, and blocked legs further out (769,236 and on) still slow it; the burster and ram checks
+  want the full siege. herd, herd deep and farm siege on 777 pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
