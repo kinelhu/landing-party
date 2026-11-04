@@ -11,7 +11,7 @@ SCENARIO="${1:-grow}"; SEED="${2:-12345}"; MINUTES="${3:-60}"; EVERY="${4:-10}";
 # spawn, so threat-facing choices (pickets) face something at a realistic distance.
 DISTANCE="${LP_DISTANCE:-300}"; RADIUS="${LP_RADIUS:-220}"
 RUN="$SCENARIO-$SEED${LP_TAG:+-$LP_TAG}"
-SIM="$HOME/Library/Application Support/factorio-lp-sim/$RUN"
+SIM="$HOME/Library/Application Support/factorio-lp-sim/$RUN$WT"
 
 mkdir -p "$SIM/config" "$SIM/mods" "$SIM/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"

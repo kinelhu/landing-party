@@ -1,5 +1,8 @@
 # Shared paths. Sourced by the other scripts.
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# A worktree's runs get profiles of their own: profiles were named by scenario and seed only, and agents' regressions in
+# three worktrees at once ran the same scenarios in one profile, each relinking its mod to its own code (2026-11-05).
+case "$REPO" in */.claude/worktrees/*) WT="-wt-$(basename "$REPO")" ;; *) WT="" ;; esac
 APP="$HOME/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents"
 FACTORIO="$APP/MacOS/factorio"
 # The dev profile is shared with ~/Dev/factorio-mods (Empirical Science): each repository links its own

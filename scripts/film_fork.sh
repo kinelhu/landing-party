@@ -8,7 +8,7 @@ set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SCENARIO="$1"; SEED="$2"; STRIKE="$3"; MIX="${4:-}"
 TAG="$SCENARIO${MIX:+-$MIX}"
-SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-$TAG-$SEED-$STRIKE"
+SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-$TAG-$SEED-$STRIKE$WT"
 if [ ! -f "$SIM/saves/fork.zip" ]; then
   LP_FORK_MIX="$MIX" "$REPO/scripts/fork.sh" "$SCENARIO" "$SEED" "$STRIKE"
 fi
