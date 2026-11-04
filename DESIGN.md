@@ -4384,9 +4384,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and its howitzer was destroyed packing up: this, not the component wrecks, was most of that open failure. The
   flamer's stream now lays `lp-flamer-fire` (and it lights `lp-flamer-tree-fire`): no base damage, its damage per tick
   through `on_damage_tick_effect` at its enemies only, as the biters' acid splash does. `clear worms` 12345 passes (16
-  to 0 burned, both clearances done); `clear` checks none lost to its own flamers. Open: the fire's growth with added
-  fuel (maximum_damage_multiplier) is assumed not to scale an on_damage_tick_effect, so a pile of fire may hit biters
-  up to 6 times softer than before; bait, gates, rivals, biters camp, herd flamer and fortress pass. `clear worms` on
+  to 0 burned, both clearances done); `clear` checks none lost to its own flamers. (Its filter did not work till 0.2.188, below.) Bait, gates, rivals, biters camp, herd flamer and fortress pass. `clear worms` on
   777 (never in the regression) still fails its last truck check: there the siege loses its fight outright (biters
   kill 10 of 10 guards by the abort, the howitzer 10 s into its 15 s pack), a fair loss the check cannot tell apart.
 - **`farm siege` 12345 was settling on a probe** (0.2.187, overnight). Four of its five failures were the scenario's: it
@@ -4400,6 +4398,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   for the user: on 12345 its sweepers are killed by the fort's boosted lasers (damage x3, speed x2.2) 7 tiles short of
   their spots, their death's blast (7) reaches the near mines only, and 2 of 6 stand (same on its second wave).
   Ways out: more health (2000 now), setting off on the near edge of their cluster, or one more sweeper a cluster.
+- **The flamer's ground fire really spares its side** (0.2.188, overnight; corrects 0.2.186). The batch regression after
+  0.2.187 (191 runs of biotech and ops, 189 pass; the other is farm siege 12345, open above) still had one guard of
+  `clear worms` burned by its flamers, and a spike on on_entity_damaged showed `lp-flamer-fire` hitting Synthexis's
+  railgunners every 10 ticks, the fire on Synthexis's side: a `direct` trigger's force condition is not applied
+  without `filter_enabled = true` (undocumented in 2.1's prototype API; the base acid splash sets it). 0.2.186's fall
+  from 16 burned to 1 was its fire's damage through the trigger, not its filter. With the flag: no hit on its own
+  units, its fire on biters still scaled by the fuel it is fed (0.5 to 0.9 a hit as it builds: the multiplier does
+  reach an on_damage_tick_effect, the doubt 0.2.186 left open). Its sticker is its own too (`lp-flamer-sticker`: a
+  burning biter drops the spared tree fire, not the base one). Every other force filter in the mod is an `area`
+  trigger, which applies it. clear worms 12345, bait, gates, rivals and herd flamer pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

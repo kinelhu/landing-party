@@ -374,7 +374,9 @@ local function spared(base, name)
   f.localised_name = {"entity-name.fire-flame"}
   local hit = f.damage_per_tick
   f.damage_per_tick = {amount = 0, type = hit.type}
-  f.on_damage_tick_effect = {type = "direct", force = "enemy", ignore_collision_condition = true,
+  -- (filter_enabled, as the acid splash has it: without it a direct trigger's force condition is not applied, and the
+  -- fire still burned its own guards; a spike on on_entity_damaged, 0.2.188.)
+  f.on_damage_tick_effect = {type = "direct", force = "enemy", ignore_collision_condition = true, filter_enabled = true,
     action_delivery = {type = "instant", target_effects = {{type = "damage", damage = hit, apply_damage_to_trees = false}}}}
   return f
 end
@@ -382,11 +384,16 @@ local flamer_fire = spared("fire-flame", "lp-flamer-fire")
 flamer_fire.spawn_entity = "lp-flamer-tree-fire"
 local tree_fire = spared("fire-flame-on-tree", "lp-flamer-tree-fire")
 if tree_fire.spawn_entity then tree_fire.spawn_entity = "lp-flamer-tree-fire" end
-data:extend{flamer_fire, tree_fire}
+-- (And the fire a burning biter drops as it runs, its sticker's spread: among the guards it ran at, one burned, clear worms.)
+local sticker = table.deepcopy(data.raw.sticker["fire-sticker"])
+sticker.name = "lp-flamer-sticker"
+if sticker.spread_fire_entity then sticker.spread_fire_entity = "lp-flamer-tree-fire" end
+data:extend{flamer_fire, tree_fire, sticker}
 for _, a in ipairs(flamer_stream.action) do
   if a.type == "area" then a.force = "not-same" end
   for _, e in ipairs(a.action_delivery.target_effects or {}) do
     if e.type == "create-fire" then e.entity_name = "lp-flamer-fire" end
+    if e.type == "create-sticker" and e.sticker == "fire-sticker" then e.sticker = "lp-flamer-sticker" end
   end
 end
 flamer.attack_parameters.ammo_type.action.action_delivery.stream = "lp-flamer-stream"
