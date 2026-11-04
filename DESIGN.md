@@ -2985,6 +2985,14 @@ event. The loop needs the settlement readable in game. Park the uplink fight and
 Decisions: see "Operations" above.
 
 ## Open questions and next
+- **A player's shield projector, late in the tree (the user, 2026-11-04, after seeing the dome's hit):** a projector the
+  player places and rotates, a half-dome facing one way, that takes the enemy's fire on the defences behind it, draining
+  power, breaking and recharging; against the corporations' arms, spitters and worms. Engine notes, not yet tested:
+  bullets and beams hit at once (no projectile to catch), so it works as Serenity's shield generators were planned, on
+  on_entity_damaged (health given back, charge drained, the hit shown where it struck), filtered to what it covers and to
+  causes in its arc; spitters' and worms' acid comes as streams, which could be caught as shells are. Questions: its arc
+  and size, its cost in power, whether it stops ground units passing (Kessler-Hayashi's does not), and UPS on a big base
+  under attack (the event filtered by type and force).
 - **The player's orbital strike, rethought (the user, 2026-11-02, for later):** today a beacon taken apart from
   Kessler-Hayashi's equipment calls its barrage on everything within 60 tiles and burns out (strike.lua). Instead, a
   cannon built on a space platform, or an array of them, for stronger strikes with a long recharge: the strike's power
