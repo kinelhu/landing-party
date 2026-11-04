@@ -9,6 +9,8 @@ local P = require("params")
 -- "strike") is read when the move's first frame is taken and held (freeze); to.off moves from it.
 P.shots = P.shots or {}
 for _, m in ipairs(P.moves or {}) do
+  -- (Stills before their event are never taken, and a film waited on them: a breach move given dt = -60, 2026-11-04.)
+  if m.after and (m.dt or 0) < 0 then error("lp-film: move " .. m.name .. " starts before its event " .. m.after) end
   local n, every = m.frames, m.every or 2
   for i = 0, n - 1 do
     local t = n > 1 and i / (n - 1) or 0
@@ -21,7 +23,7 @@ for _, m in ipairs(P.moves or {}) do
       local gp = g.pos or f.pos
       shot.pos = {lerp(f.pos[1], gp[1]), lerp(f.pos[2], gp[2])}
     else
-      shot.pos, shot.freeze = f.pos, m.name
+      shot.pos, shot.freeze = f.pos, (not m.track) and m.name or nil
       local o = g.off or {0, 0}
       shot.off = {o[1] * e, o[2] * e}
     end
@@ -43,7 +45,7 @@ local function shot(s)
     local f = storage.frozen[s.freeze]
     pos = {f[1] + (s.off and s.off[1] or 0), f[2] + (s.off and s.off[2] or 0)}
   end
-  if pos == "hold" or pos == "jump" or pos == "site" or pos == "escort" then
+  if pos == "hold" or pos == "jump" or pos == "site" or pos == "escort" or pos == "wave" or pos == "breach" then
     local c = (storage.points or {})[pos] or storage.center or {0, 0}
     pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
   elseif pos == "strike" then
@@ -209,6 +211,21 @@ script.on_event(defines.events.on_tick, function(e)
     if early > 0 then error("lp-film: " .. early .. " stills timed before this save's tick " .. e.tick) end
   end
   storage.first_tick = storage.first_tick or e.tick
+  -- P.waves: Synthexis's first live wave (herd_state) as points and events: pos = "wave" its centre, eased each tick so a
+  -- tracking move (m.track) glides rather than jumps; pos = "breach" where it broke in; events "wave:<stage>" (gather,
+  -- march, breach, inside, withdraw) for moves timed on them. (The trailer's action, staged in scenarios, 2026-11-04.)
+  if P.waves and e.tick % 2 == 0 then
+    storage.points = storage.points or {}
+    for _, w in ipairs(remote.call("landing-party", "herd_state").waves or {}) do
+      if w.group and w.stage ~= "done" then
+        local p, g = storage.points.wave, w.group
+        storage.points.wave = p and {p[1] + (g[1] - p[1]) * 0.08, p[2] + (g[2] - p[2]) * 0.08} or {g[1], g[2]}
+        if w.breach then storage.points.breach = w.breach end
+        if not storage.seen["wave:" .. w.stage] then storage.seen["wave:" .. w.stage] = e.tick; log("lp-film: wave:" .. w.stage .. " at " .. e.tick) end
+        break
+      end
+    end
+  end
   -- P.each = function(tick): a film's own probe, every 60 ticks (scouting what stands where before framing a shot).
   if P.each and e.tick % 60 == 0 then P.each(e.tick) end
   -- P.stop_after: ticks from the film's first; then it ends with what it took (shots on events that never came are left).

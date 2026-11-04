@@ -1,14 +1,76 @@
-{"bpm": 120, "music": "media/trailer/placeholder.wav",
- "shots": [{"clip": "media/trailer/shot-01.mp4", "bars": 3},
-           {"clip": "media/trailer/shot-02.mp4", "bars": 3, "from": 0.5},
-           {"clip": "media/trailer/shot-04.mp4", "bars": 3},
-           {"clip": "media/trailer/shot-05.mp4", "bars": 4},
-           {"clip": "media/trailer/shot-06.mp4", "bars": 3},
-           {"clip": "media/trailer/shot-07.mp4", "bars": 4},
-           {"clip": "media/trailer/shot-08.mp4", "bars": 3},
-           {"clip": "media/trailer/shot-09.mp4", "bars": 3},
-           {"clip": "media/trailer/shot-10.mp4", "bars": 3, "from": 1.0},
-           {"clip": "media/trailer/shot-11.mp4", "bars": 5},
-           {"clip": "media/trailer/shot-14.mp4", "bars": 3}],
- "titles": [{"text": "Landing Party", "bar": 6, "bars": 1},
-            {"text": "Landing Party", "sub": "A Factorio 2.1 + Space Age mod", "bar": 35, "bars": 3}]}
+{
+ "bpm": 120,
+ "music": "media/trailer/placeholder.wav",
+ "shots": [
+  {
+   "clip": "media/trailer/shot-01.mp4",
+   "bars": 3
+  },
+  {
+   "clip": "media/trailer/shot-02.mp4",
+   "bars": 3,
+   "from": 0.5
+  },
+  {
+   "clip": "media/trailer/shot-04.mp4",
+   "bars": 3
+  },
+  {
+   "clip": "media/trailer/act-gs-deploy.mp4",
+   "bars": 4
+  },
+  {
+   "clip": "media/trailer/shot-06.mp4",
+   "bars": 3
+  },
+  {
+   "clip": "media/trailer/act-herd-march.mp4",
+   "bars": 2,
+   "from": 2.0
+  },
+  {
+   "clip": "media/trailer/act-herd-breach.mp4",
+   "bars": 3,
+   "from": 1.5
+  },
+  {
+   "clip": "media/trailer/act-kh-bombard.mp4",
+   "bars": 3
+  },
+  {
+   "clip": "media/trailer/shot-09.mp4",
+   "bars": 3
+  },
+  {
+   "clip": "media/trailer/shot-10.mp4",
+   "bars": 3,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/shot-11.mp4",
+   "bars": 5
+  },
+  {
+   "clip": "media/trailer/act-kh-assault.mp4",
+   "bars": 3,
+   "from": 2.0
+  },
+  {
+   "clip": "media/trailer/shot-14.mp4",
+   "bars": 3
+  }
+ ],
+ "titles": [
+  {
+   "text": "Landing Party",
+   "bar": 6,
+   "bars": 1
+  },
+  {
+   "text": "Landing Party",
+   "sub": "A Factorio 2.1 + Space Age mod",
+   "bar": 39,
+   "bars": 3
+  }
+ ]
+}
