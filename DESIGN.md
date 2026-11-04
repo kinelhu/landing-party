@@ -2993,6 +2993,12 @@ Decisions: see "Operations" above.
   causes in its arc; spitters' and worms' acid comes as streams, which could be caught as shells are. Questions: its arc
   and size, its cost in power, whether it stops ground units passing (Kessler-Hayashi's does not), and UPS on a big base
   under attack (the event filtered by type and force).
+  Its arc (the user, 2026-11-04: "Maybe not 180 degrees but 90? 45? Considering it can be rotated"): proposed 90. A
+  building turns in four steps; at 90 four projectors tile a full circle with neither gap nor overlap and one covers a
+  defence square's face exactly; at 45 four rotations leave gaps (8-way rotation is possible, rarely met on such a
+  building); at 180 two back to back cover all, and placing it is no decision. A narrower, stronger focus (45 degrees,
+  more absorbed a megawatt) as a later research rather than the base. Flanking fire, outside its arc, passes: what
+  Kessler-Hayashi's siege planner can learn to read (the uncovered face). Its hit: the dome wave on a quarter dome.
 - **The player's orbital strike, rethought (the user, 2026-11-02, for later):** today a beacon taken apart from
   Kessler-Hayashi's equipment calls its barrage on everything within 60 tiles and burns out (strike.lua). Instead, a
   cannon built on a space platform, or an array of them, for stronger strikes with a long recharge: the strike's power
@@ -4484,6 +4490,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   its recipe enabled: recipe_not_researched on a fresh map kept the barracks idle). The howitzer truck kept as
   Grubstake's (the user asked whether it was used): `fortress grubstake` (new) checks its siege's howitzer comes on its
   truck and deploys. muster, fortress and fortress grubstake pass.
+- **The corporations' buildings lit at night; the howitzer's far feet seen** (0.2.194; the user, 2026-11-04, "Go ahead"
+  on both). scripts/lights.lua: a light drawn on each rendered building as the mod builds it (dome projector, jammer,
+  orbital relay, pacifier, uplink; radars and simple entities have no light of their own), in its corporation's lamp
+  colour, going with it. The howitzer's far pair of outriggers splayed to 30 degrees off the axle and longer (at 45 they
+  stood behind its housing seen from the camera); its base frame 153 to 201 px wide. The guns' frame sizes now come from
+  their gun.json through graphics/sheets.lua too. Filmed (docs/review/stills-lights.lua); pact, armed relay, fortress
+  jammer pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

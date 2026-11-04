@@ -6,6 +6,7 @@
 -- and the biters turn on all its camps until one is rebuilt (REBUILD_TICKS after its loss, if the lander stands).
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
+local lights = require("__landing-party__.scripts.lights")
 
 local pact = {}
 
@@ -57,6 +58,7 @@ function pact.place(b)
   local x, y = b.lander.position.x, b.lander.position.y
   local p = s.find_non_colliding_position(name, {x + 8, y - 8}, 12, 1)
   b.pacifier = p and s.create_entity{name = name, position = p, force = b.lander.force}
+  lights.attach(b.pacifier, b.corp)
   b.pacifier_due = nil
   if not b.pacifier then b.pacifier_due = game.tick + 600 end
   if b.pacifier then

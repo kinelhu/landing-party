@@ -52,6 +52,7 @@ local function build()
       raise_built = b.force == "player"})
     if ok and ent then
       storage.built[#storage.built + 1] = ent
+      remote.call("landing-party", "debug_light", ent)
       -- A machine at work (its working animation): its recipe's ingredients for many crafts, its output emptied.
       if ent.type == "assembling-machine" then
         local r = ent.get_recipe()

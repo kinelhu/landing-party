@@ -109,14 +109,15 @@ else:
                 lpkit.cyl(0.13, 0.13, sx - 0.065 * (1 if sx > 0 else -1), sy, 0.29 - 0.065, S, verts=12, rot=(0, math.pi / 2, 0))
         # Feet on all sides (the user, 2026-11-03: "feet on all sides not just bottom"): four outriggers in an X, each a
         # boxed beam, a hydraulic ram above it, a jack and a spade on the ground.
-        for k in range(4):
-            a = math.pi / 4 + k * math.pi / 2
+        # (The far pair, north, splayed to 30 degrees off the axle and longer: at 45 their spades stood behind the housing, seen
+        # from the camera, and read as stubs; the in-game stills, 2026-11-04.)
+        for a, reach in ((math.radians(30), 1.15), (math.radians(150), 1.15), (math.radians(-135), 1.0), (math.radians(-45), 1.0)):
             c, sn = math.cos(a), math.sin(a)
-            lpkit.rod((c * 0.55, sn * 0.45, 0.36), (c * 1.3, sn * 1.25, 0.12), 0.06, K)
-            lpkit.rod((c * 0.45, sn * 0.38, 0.5), (c * 1.0, sn * 0.95, 0.24), 0.025, S)
-            lpkit.cyl(0.05, 0.16, c * 1.32, sn * 1.27, 0.0, S, verts=10)
-            B(0.3, 0.3, 0.05, c * 1.33, sn * 1.28, 0.0, D, rot=a)
-            B(0.2, 0.03, 0.05, c * 1.33, sn * 1.28, 0.05, P["hazard"], rot=a)
+            lpkit.rod((c * 0.55, sn * 0.45, 0.36), (c * 1.3 * reach, sn * 1.25 * reach, 0.12), 0.06, K)
+            lpkit.rod((c * 0.45, sn * 0.38, 0.5), (c * 1.0 * reach, sn * 0.95 * reach, 0.24), 0.025, S)
+            lpkit.cyl(0.05, 0.16, c * 1.32 * reach, sn * 1.27 * reach, 0.0, S, verts=10)
+            B(0.3, 0.3, 0.05, c * 1.33 * reach, sn * 1.28 * reach, 0.0, D, rot=a)
+            B(0.2, 0.03, 0.05, c * 1.33 * reach, sn * 1.28 * reach, 0.05, P["hazard"], rot=a)
         for x in (-0.48, 0.48):                                         # ammo boxes on the deck
             B(0.26, 0.2, 0.15, x, -0.38, 0.55, D); B(0.26, 0.2, 0.025, x, -0.38, 0.7, S)
         B(0.22, 0.14, 0.12, 0.5, 0.42, 0.55, D)                         # a generator box

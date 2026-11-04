@@ -20,6 +20,7 @@ local base = require("__landing-party__.scripts.base")
 local threat = require("__landing-party__.scripts.threat")
 local ops = require("__landing-party__.scripts.ops")
 
+local lights = require("__landing-party__.scripts.lights")
 local dome = {}
 local RADIUS = 30
 -- What a dome takes before it breaks: HOLD of the fire of every foe's artillery that reaches it (its prototype's rate,
@@ -227,6 +228,7 @@ local function projectors(b, tick)
         local s = b.lander.surface
         local p = projector_spot(b, hub)
         local e = p and s.create_entity{name = "lp-dome-projector", position = p, force = b.force}
+        lights.attach(e, b.corp)
         if e then
           d = d or fresh()
           d.anchor, d.back_at, d.left, d.down_till = e, nil, 1, 0
@@ -255,6 +257,7 @@ function ops.site_dome(b, op)
   local p = s.find_non_colliding_position("lp-dome-projector", {op.site[1], op.site[2]}, 12, 1)
   local e = p and s.create_entity{name = "lp-dome-projector", position = p, force = b.force}
   if not e then return end
+  lights.attach(e, b.corp)
   local r = RADIUS
   for _, m in ipairs(op.mortars or {}) do
     if m.valid then r = math.max(r, math.sqrt((m.position.x - p.x) ^ 2 + (m.position.y - p.y) ^ 2) + 6) end

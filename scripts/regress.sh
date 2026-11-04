@@ -76,7 +76,7 @@ areas_of_file() {
         command|aim|bait|marker) echo player;;
         layout|site|planner|blocks|wfc|wfc_serenity|construction|modules|names|phases|roads|lots_grubstake|map|chart) echo growth;;
         answers|cuts|jammer|perimeter|pool|siege|stance|strip|strategy|war|crew|cordon|prospect|skim|prowl|dome|orbital|tap|jumper|ledger|\
-          trade|road|border|standing|pact|belts|strike|oplog|scanner) echo ops;;
+          trade|road|border|standing|pact|belts|strike|oplog|scanner|lights) echo ops;;
         base|faction|army|rd|ops) echo growth ops;;
         *) echo all;;
       esac;;

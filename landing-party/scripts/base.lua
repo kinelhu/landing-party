@@ -10,6 +10,7 @@ local blocks = require("__landing-party__.scripts.blocks")
 local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
 local ops = require("__landing-party__.scripts.ops")
+local lights = require("__landing-party__.scripts.lights")
 
 local base = {}
 
@@ -186,6 +187,7 @@ function base.land(surface, pos, opts)
   if uplink_at and opts.uplink then
     clear_area(surface, shared.variant(corp, "lp-uplink"), uplink_at)
     b.uplink = surface.create_entity{name = shared.variant(corp, "lp-uplink"), position = uplink_at, force = f}
+    lights.attach(b.uplink, corp)
   end
   b.origin = {x = math.floor(lander.position.x), y = math.floor(lander.position.y)}
   base.claim_map(b)

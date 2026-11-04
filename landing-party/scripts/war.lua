@@ -20,6 +20,7 @@ local rd = require("__landing-party__.scripts.rd")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
 local threat = require("__landing-party__.scripts.threat")
+local lights = require("__landing-party__.scripts.lights")
 -- (What an armed camp's siege fund saves up to, siege.lua's: base cannot require ops.)
 base.siege_goal = ops.siege_goal
 
@@ -315,6 +316,7 @@ local function relay(b, tick)
   local s = b.lander.surface
   local p = s.find_non_colliding_position("lp-orbital-relay", {b.lander.position.x + 8, b.lander.position.y + 8}, 20, 1)
   b.relay = p and s.create_entity{name = "lp-orbital-relay", position = p, force = b.force} or nil
+  lights.attach(b.relay, b.corp)
   b.relay_down = nil
   if b.relay then base.trace(b, string.format("orbital relay up at %.0f,%.0f", p.x, p.y)) end
   return false

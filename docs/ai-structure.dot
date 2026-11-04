@@ -12,6 +12,7 @@ digraph ai {
     "ground" [label="ground\n38 lines", width=0.84, fillcolor="#d9f0d9"];
     "threat" [label="threat\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
+    "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
@@ -28,9 +29,9 @@ digraph ai {
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "faction" [label="faction\n911 lines", width=1.81, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
-    "war" [label="war\n626 lines", width=1.50, fillcolor="#eef2f7"];
+    "war" [label="war\n628 lines", width=1.50, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
-    "pact" [label="pact\n107 lines", width=0.92, fillcolor="#eef2f7"];
+    "pact" [label="pact\n109 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
@@ -39,7 +40,7 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n861 lines", width=1.76, fillcolor="#eef2f7"];
+    "base" [label="base\n863 lines", width=1.76, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
     "layout" [label="layout\n1739 lines", width=2.73, fillcolor="#f7dede"];
@@ -66,8 +67,8 @@ digraph ai {
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#eef2f7"];
-    "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
-    "dome" [label="dome\n333 lines", width=1.17, fillcolor="#eef2f7"];
+    "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
+    "dome" [label="dome\n336 lines", width=1.17, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n241 lines", width=1.07, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n110 lines", width=0.92, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
@@ -98,7 +99,7 @@ digraph ai {
     "achievements" [label="achievements\n34 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n961 lines", width=1.87, fillcolor="#eef2f7"];
+    "control" [label="control\n964 lines", width=1.87, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n187 lines", width=1.01, fillcolor="#eef2f7"];
@@ -115,6 +116,7 @@ digraph ai {
   "base" -> "chart";
   "base" -> "construction";
   "base" -> "layout";
+  "base" -> "lights";
   "base" -> "modules";
   "base" -> "names";
   "base" -> "ops";
@@ -137,6 +139,7 @@ digraph ai {
   "crew" -> "standing";
   "cuts" -> "pool";
   "dome" -> "base";
+  "dome" -> "lights";
   "dome" -> "ops";
   "dome" -> "threat";
   "faction" -> "army";
@@ -186,6 +189,7 @@ digraph ai {
   "herd_learn" -> "threat";
   "intel" -> "know";
   "intel" -> "threat";
+  "jammer" -> "lights";
   "jumper" -> "base";
   "jumper" -> "ops";
   "jumper" -> "threat";
@@ -224,6 +228,7 @@ digraph ai {
   "orbital" -> "achievements";
   "orbital" -> "threat";
   "pact" -> "base";
+  "pact" -> "lights";
   "phases" -> "faction";
   "planner" -> "rd";
   "power" -> "threat";
@@ -273,6 +278,7 @@ digraph ai {
   "valuemap" -> "firemap";
   "war" -> "army";
   "war" -> "base";
+  "war" -> "lights";
   "war" -> "ops";
   "war" -> "pods";
   "war" -> "pool";

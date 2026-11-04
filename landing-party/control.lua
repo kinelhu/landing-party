@@ -40,6 +40,7 @@ local ledger = require("__landing-party__.scripts.ledger")
 local skim = require("__landing-party__.scripts.skim")
 local prowl = require("__landing-party__.scripts.prowl")
 local dome = require("__landing-party__.scripts.dome")
+local lights = require("__landing-party__.scripts.lights")
 local orbital = require("__landing-party__.scripts.orbital")
 local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
@@ -885,6 +886,8 @@ remote.add_interface("landing-party", {
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
   debug_depot = function(id, parts) return dev.depot(storage.bases[id], parts) end,
   -- The dome's looks on a projector (tests/lp-film): "wave" from an impact at `at`, or "rise"; `radius` its dome's.
+  -- The lights its buildings get when the mod builds them (scripts/lights.lua), on one built by other hands (tests/lp-film).
+  debug_light = function(ent) lights.attach(ent) end,
   debug_dome_fx = function(kind, anchor, radius, at)
     local d = {anchor = anchor, radius = radius}
     if kind == "wave" then dome.wave(d, at) else dome.rise(d) end

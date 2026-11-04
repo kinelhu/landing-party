@@ -9,6 +9,7 @@ local shared = require("__landing-party__.shared")
 local jammer = {}
 
 local RADIUS = shared.JAM_RADIUS
+local lights = require("__landing-party__.scripts.lights")
 local PER_BEAT = 3               -- robots struck each beat
 local BEAT = 30                  -- ticks
 local CYAN = {r = 0.45, g = 0.85, b = 1, a = 1}
@@ -17,6 +18,7 @@ function jammer.raise(surface, pos, force)
   local p = surface.find_non_colliding_position("lp-jammer", pos, 10, 1)
   local m = p and surface.create_entity{name = "lp-jammer", position = p, force = force}
   if not m then return nil end
+  lights.attach(m)
   for k = 0, 3 do
     rendering.draw_circle{surface = surface, target = {entity = m, offset = {0, -4 - k * 0.6}}, radius = 0.12, filled = true,
       color = CYAN, blink_interval = 20 + k * 5}

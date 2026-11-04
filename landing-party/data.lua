@@ -194,7 +194,7 @@ mortar.max_health = 800
 -- artillery remote still aims at it. The howitzer stays one: outranged by the player's artillery by design.
 mortar.allow_run_time_change_of_is_military_target = true
 mortar.turret_rotation_speed = 0.004
-rendered_gun(mortar, "mortar", {base = {width = 138, height = 136, shift = {0.0, -0.0546875}}, base_shadow = {width = 148, height = 142, shift = {0.015625, 0.0390625}}, barrel = {width = 84, height = 148, shift = {0.0, -0.9453125}}, housing = {width = 84, height = 148, shift = {0.0, -0.9453125}}, cannon_shadow = {width = 180, height = 187, shift = {0.5, -0.4375}}})
+rendered_gun(mortar, "mortar", SHEETS["serenity/mortar"])
 mortar.cannon_base_shift = {0, 0, mortar.cannon_base_shift[3] * MORTAR_SCALE}
 mortar.gun = "lp-mortar-gun"
 mortar.inventory_size = 1
@@ -316,7 +316,7 @@ local function hull(d)
 end
 howitzer.base_picture = {north = hull(0), east = hull(16), south = hull(32), west = hull(48)}
 -- (Its own carriage, one view: sieges drop it from orbit now, no truck's facing to keep.)
-rendered_gun(howitzer, "howitzer", {base = {width = 153, height = 159, shift = {0.0, -0.046875}}, base_shadow = {width = 179, height = 156, shift = {0.0, 0.0078125}}, barrel = {width = 303, height = 308, shift = {0.0, -2.0546875}}, housing = {width = 303, height = 308, shift = {0.0, -2.0546875}}, cannon_shadow = {width = 332, height = 354, shift = {1.3359375, -1.3984375}}})
+rendered_gun(howitzer, "howitzer", SHEETS["serenity/howitzer"])
 local howitzer_gun = table.deepcopy(data.raw.gun["artillery-wagon-cannon"])
 howitzer_gun.name = "lp-howitzer-gun"
 howitzer_gun.hidden = true
