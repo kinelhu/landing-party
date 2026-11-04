@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Grow a scenario to its strike once, on a headless server, and keep the save: scripts/sim.sh with LP_FORK=1
 # then runs only what follows the strike, from it (the growth was half of every siege run).
-#   scripts/fork.sh <scenario> <seed> <strike minute>     (saved FORK_LEAD minutes before the strike; LP_MIX: a variant)
+#   scripts/fork.sh <scenario> <seed> <strike minute>     (saved FORK_LEAD minutes before the strike; LP_FORK_MIX: a variant)
 # The fork holds the settlement as the mod's code grew it then: confirm with full runs (no LP_FORK).
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SCENARIO="$1"; SEED="$2"; STRIKE="$3"
-MIXTAG="${LP_MIX:+-$LP_MIX}"
+# LP_FORK_MIX: a variant forked as itself (its name and its scenario's mix); LP_MIX alone forks the plain scenario, as
+# sim.sh LP_FORK reads it (the regression's siege 20-10-10 fork went missing when LP_MIX named it, 2026-11-04).
+MIXTAG="${LP_FORK_MIX:+-$LP_FORK_MIX}"
 SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-$SCENARIO$MIXTAG-$SEED-$STRIKE"
 mkdir -p "$FORKS" "$SIM/config" "$SIM/mods" "$SIM/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
@@ -14,7 +16,7 @@ ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
 rm -rf "$SIM/mods/lp-sim"; cp -R "$REPO/tests/lp-sim" "$SIM/mods/lp-sim"
 DOCTRINE="nil"; [ -n "${LP_DOCTRINE:-}" ] && DOCTRINE="\"$LP_DOCTRINE\""
 printf 'return {scenario = "%s", minutes = %s, every = %s, strike = %s, distance = 300, radius = 220, doctrine = %s, units = 0, move = false, fast = %s, mix = "%s", save_at = %s}\n' \
-  "$SCENARIO" "$((STRIKE + 1))" "$((STRIKE + 1))" "$STRIKE" "$DOCTRINE" "${LP_FAST:-false}" "${LP_MIX:-}" "$((STRIKE - FORK_LEAD))" > "$SIM/mods/lp-sim/params.lua"
+  "$SCENARIO" "$((STRIKE + 1))" "$((STRIKE + 1))" "$STRIKE" "$DOCTRINE" "${LP_FAST:-false}" "${LP_FORK_MIX:-}" "$((STRIKE - FORK_LEAD))" > "$SIM/mods/lp-sim/params.lua"
 cat > "$SIM/mods/mod-list.json" <<JSON
 {"mods": [{"name": "base", "enabled": true}, {"name": "landing-party", "enabled": true},
   {"name": "lp-sim", "enabled": true}, {"name": "space-age", "enabled": true},

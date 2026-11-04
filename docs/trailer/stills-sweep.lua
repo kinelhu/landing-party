@@ -1,6 +1,6 @@
 -- Synthexis's sweepers (0.2.189: set off on their clusters' near edge) clearing the mines before its first siege wave's
 -- breach, farm siege 12345 (its breach at 241,44, its sweep from tick 131166 to 131700 filmed; 131031 headless), from its
--- fork at minute 35 (LP_MIX=siege scripts/fork.sh farm 12345 41) with its harness:
+-- fork at minute 35 (LP_FORK_MIX=siege scripts/fork.sh farm 12345 41) with its harness:
 --   LP_FILM_SIM=<fork's sim dir> scripts/film.sh farm-film fork.zip docs/trailer/stills-sweep.lua
 local shots = {}
 local B = {241, 44}

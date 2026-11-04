@@ -4560,6 +4560,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   camera (freeze), and runs a scenario from its start in a fresh save (LP_FILM_SIM with a params file). Filmed: the strike
   with its pass, the drop siege's deploy and assault, the shield projector. Open, seen: the shield's arc a thin band at
   its edge (a faint wedge would read better), its wave a whole dome for a 45-degree arc.
+- **The full regression after 0.2.200, and its fixes** (0.2.201). 270 runs, 267 pass. Fixed: a drop siege's guns
+  assembling (0.2.197) were nobody's until switched on (siegetier 2 sampled them: credited to no one) and their loss
+  uncounted (fortress howitzer: the test killed the howitzer as it was assembled, the camp not down a howitzer, the next
+  siege brought one); now each is its camp's when put up, a dead one counts as its piece lost and is not put up fresh at
+  the deploy's end. fork.sh's variant (0.2.196) is opt-in, LP_FORK_MIX: named by LP_MIX it lost the regression's siege
+  20-10-10 fork. siegetier 2, fortress howitzer, siege 20-10-10 (from its fork), fortress, standsiege pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

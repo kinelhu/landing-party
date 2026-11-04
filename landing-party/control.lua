@@ -262,7 +262,10 @@ script.on_event(defines.events.on_entity_died, function(e)
       -- (In the field, or parked at home: base.park; or its truck, on the way or home.)
       local home_run = false
       for _, r in ipairs(o.haulers_home or {}) do if r.unit == ent then home_run = true end end
-      if o.parked == ent or home_run or o.op and (o.op.howitzer == ent or o.op.hauler == ent
+      -- (Or still being assembled where its pod came down: siege.lua's deploy.)
+      local kit = false
+      for _, m in pairs(o.op and o.op.kits or {}) do if m == ent then kit = true end end
+      if o.parked == ent or home_run or kit or o.op and (o.op.howitzer == ent or o.op.hauler == ent
         or (o.op.piece == "lp-howitzer" and o.op.mortars and o.op.mortars[1] == ent)) then
         o.howitzer_down = game.tick + shared.HOWITZER_DOWN
         base.trace(o, string.format("howitzer at %.0f,%.0f destroyed by %s; none for %d minutes", ent.position.x,

@@ -1267,7 +1267,12 @@ local function siege_step(b, trace, army)
           local at = is_hw and op.hw_at or gun_spot(b, op, spec, k)
           local p = s.find_non_colliding_position(name, at, 8, 0.5)
           local m = p and s.create_entity{name = name, position = p, force = b.force}
-          if m then m.disabled_by_script = true; op.kits[k] = m end
+          if m then
+            m.disabled_by_script = true; op.kits[k] = m
+            -- (Its camp's from the moment it stands: what it is credited with, and its loss counted, as its guns'.)
+            storage.unit_owner = storage.unit_owner or {}
+            if m.unit_number then storage.unit_owner[m.unit_number] = b.id end
+          end
         end
         local m = op.kits[k]
         if m and m.valid then
@@ -1304,6 +1309,8 @@ local function siege_step(b, trace, army)
         if kit and kit.valid and kit.name == name then
           kit.disabled_by_script = false
           m, op.kits[k] = kit, nil
+        elseif kit and not kit.valid then
+          m = nil   -- (destroyed while it was assembled: that gun is lost, not put up fresh)
         else
           local p = here and s.find_non_colliding_position(name, here.pos, 8, 0.5)
             or s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
@@ -1350,6 +1357,8 @@ local function siege_step(b, trace, army)
         if kit and kit.valid and kit.name == hn then
           kit.disabled_by_script = false
           op.howitzer, op.kits[#op.drops] = kit, nil
+        elseif kit and not kit.valid then
+          op.howitzer = nil   -- (destroyed while assembled: none this siege)
         else
           local p = s.find_non_colliding_position(hn, at, 12, 1)
           op.howitzer = p and s.create_entity{name = hn, position = p, force = force, direction = truck and truck.dir or nil}
