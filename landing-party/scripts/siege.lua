@@ -1107,7 +1107,22 @@ local function siege_step(b, trace, army)
       local guns = op.piece == "lp-howitzer" and 1 or (op.carry and #op.carry or spec.mortars)
       op.drops = {}
       for k = 1, guns do op.drops[#op.drops + 1] = pods.send(s, gun_spot(b, op, spec, k), b.force) end
-      if op.with_howitzer and not op.howitzer then op.drops[#op.drops + 1] = pods.send(s, {op.site[1], op.site[2] + 6}, b.force) end
+      if op.with_howitzer and not op.howitzer then
+        -- (Its pod where it will stand, apart from the mortars out of every gun's reach, as its deploy puts it: it is
+        -- assembled there.)
+        local hn = shared.variant(b.corp, "lp-howitzer")
+        local tg = op.target and b.intel.targets[op.target]
+        op.hw_at = {op.site[1], op.site[2] + 6}
+        if tg and tg.pos then
+          local fire = math.atan2(tg.pos[2] - op.site[2], tg.pos[1] - op.site[1])
+          local apart = howitzer_apart(hn, shared.variant(b.corp, op.piece or "lp-mortar"))
+          for _, side in ipairs({1, -1}) do
+            local q = {op.site[1] + math.cos(fire + side * math.pi / 2) * apart, op.site[2] + math.sin(fire + side * math.pi / 2) * apart}
+            if out_of_reach(s, q, enemies(game.forces[b.force])) then op.hw_at = q; break end
+          end
+        end
+        op.drops[#op.drops + 1] = pods.send(s, op.hw_at, b.force)
+      end
       -- (Still, at its hold: wandering, answering what hit them, they followed a laser's hit into the wall; guard duty
       -- below sends them at what comes for the guns.)
       -- In line at its hold, facing its target (form_line).
@@ -1238,6 +1253,33 @@ local function siege_step(b, trace, army)
   elseif op.phase == "deploy" then
     local share = (game.tick - op.phase_at) / DEPLOY_TICKS
     if op.label and op.label.valid then op.label.text = {"lp.siege-deploying-percent", string.format("%d", math.min(100, share * 100))} end
+    -- A drop siege's guns assembled where their pods came down (the user, 2026-11-04: between the drops and the guns "a
+    -- big length of time ... where nothing is there. Looks weird"): each gun put up as its pod lands, off till the end of
+    -- the deploy, sparks flying while it is assembled.
+    if op.drop and op.drops and share < 1 then
+      local s = game.surfaces[b.surface]
+      local spec = SIEGE_TIERS[op.tier or 1]
+      op.kits = op.kits or {}
+      for k, n in ipairs(op.drops) do
+        local is_hw = op.with_howitzer and k == #op.drops and not op.howitzer and op.hw_at
+        if not op.kits[k] and pods.down(s, n) then
+          local name = is_hw and shared.variant(b.corp, "lp-howitzer") or shared.variant(b.corp, op.piece or "lp-mortar")
+          local at = is_hw and op.hw_at or gun_spot(b, op, spec, k)
+          local p = s.find_non_colliding_position(name, at, 8, 0.5)
+          local m = p and s.create_entity{name = name, position = p, force = b.force}
+          if m then m.disabled_by_script = true; op.kits[k] = m end
+        end
+        local m = op.kits[k]
+        if m and m.valid then
+          -- (Where on it: from the tick, not the dice, rng.lua's rule for what changes the game; sparks change nothing.)
+          for j = 1, 2 do
+            local h = (game.tick * 7 + k * 13 + j * 29) % 17
+            s.create_entity{name = "spark-explosion", position = {m.position.x + (h % 5) * 0.4 - 0.8,
+              m.position.y + math.floor(h / 5) * 0.5 - 0.8}}
+          end
+        end
+      end
+    end
     if share >= 1 then
       local s, force = game.surfaces[b.surface], game.forces[b.force]
       -- The truck gives way to its howitzer (ops.truck_down).
@@ -1256,9 +1298,17 @@ local function siege_step(b, trace, army)
         local a = fire + math.pi / 2
         local off = spec.mortars > 1 and 4 * (k - (spec.mortars + 1) / 2) or 0
         local here = op.piece == "lp-howitzer" and truck
-        local p = here and s.find_non_colliding_position(name, here.pos, 8, 0.5)
-          or s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
-        local m = p and s.create_entity{name = name, position = p, force = force, direction = here and here.dir or nil}
+        -- (Its gun assembled where its pod came down, switched on: the deploy above.)
+        local kit = op.kits and op.kits[k]
+        local m
+        if kit and kit.valid and kit.name == name then
+          kit.disabled_by_script = false
+          m, op.kits[k] = kit, nil
+        else
+          local p = here and s.find_non_colliding_position(name, here.pos, 8, 0.5)
+            or s.find_non_colliding_position(name, {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}, 8, 0.5)
+          m = p and s.create_entity{name = name, position = p, force = force, direction = here and here.dir or nil}
+        end
         if m and here then m.health = math.max(1, here.share * m.max_health) end
         -- A siege's mortar against a player is no military target: the player's artillery does not pick it by itself
         -- (data.lua). Against nests it stays one (biters go for military targets first: it draws them off its guards).
@@ -1296,8 +1346,14 @@ local function siege_step(b, trace, army)
             if out_of_reach(s, q, enemies(game.forces[b.force])) then at = q; break end
           end
         end
-        local p = s.find_non_colliding_position(hn, at, 12, 1)
-        op.howitzer = p and s.create_entity{name = hn, position = p, force = force, direction = truck and truck.dir or nil}
+        local kit = op.kits and op.kits[#(op.drops or {})]
+        if kit and kit.valid and kit.name == hn then
+          kit.disabled_by_script = false
+          op.howitzer, op.kits[#op.drops] = kit, nil
+        else
+          local p = s.find_non_colliding_position(hn, at, 12, 1)
+          op.howitzer = p and s.create_entity{name = hn, position = p, force = force, direction = truck and truck.dir or nil}
+        end
         if op.howitzer then
           -- (Its settlement's, as its mortars: what it breaks is its razing.)
           storage.unit_owner = storage.unit_owner or {}

@@ -692,6 +692,8 @@ local function finish(b, outcome, trace, army)
   end
   if op.mortar and op.mortar.valid then op.mortar.destroy() end
   for _, m in ipairs(op.mortars or {}) do if m.valid then m.destroy() end end
+  -- (And a drop siege's guns still being assembled: siege.lua's deploy.)
+  for _, m in pairs(op.kits or {}) do if m.valid then m.destroy() end end
   if op.howitzer and op.howitzer.valid then op.howitzer.destroy() end
   if ops.site_dome_down then ops.site_dome_down(b, op) end
   jammer.lower(op.jammer)

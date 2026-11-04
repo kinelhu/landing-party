@@ -4526,6 +4526,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   off). Open, seen: the platform's shadow reads as flat dark rectangles.
   And the sweepers (docs/trailer/stills-sweep.lua, farm siege 12345's fork at minute 35: `LP_MIX` for fork.sh): four
   sweepers into the minefield under the boosted lasers, the wave's path cleared; a still every 8 ticks as a video.
+- **A drop siege's guns assembled where their pods land** (0.2.197; the user, 2026-11-04: between the cargo drops and
+  the cannons "a big length of time ... where nothing is there. Looks weird"). Its deploy is 30 s; its pods land in about
+  7, their remains cleared 3 s after; the guns came at the end, 20 s of empty ground under "Deploying". Now each gun is
+  put up as its pod lands (siege.lua deploy: op.kits), disabled by script, sparks flying while it is assembled, switched
+  on and loaded at the end; the howitzer's spot worked out at the drop (op.hw_at), its pod landing there; kits destroyed
+  with a siege ended early (ops.finish). `fortress` checks guns stand while it deploys (seen failing with it off: nil);
+  fortress, standsiege and orbital pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

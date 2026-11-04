@@ -9708,6 +9708,9 @@ scenarios.fortress = function()
         if S.why2 and #(st0.ops.log or {}) > 1 and not st0.ops.op then finish_early() end
         return
       end
+      -- Its guns standing while it deploys (assembled where their pods came down; before 0.2.197 nothing stood there for
+      -- 20 s of its 30, the user: "Looks weird").
+      if st0.ops.siege_phase == "deploy" and mortars > 0 then S.assembling = (S.assembling or 0) + 1 end
       -- Settled: the siege is over (its log entry written).
       if S.why and #(st0.ops.log or {}) > 0 and not st0.ops.op then finish_early() end
       if mortars > 0 then
@@ -9763,6 +9766,7 @@ scenarios.fortress = function()
       check("fortress: the old siege breaks nothing (the case)", lasers >= 6 and ports == 2 and last and last.outcome == "aborted",
         string.format("%d lasers, %d ports, %s", lasers, ports, last and last.outcome or "no siege"))
     else
+      check("fortress: its guns stood assembling while it deployed", (S.assembling or 0) > 0, tostring(S.assembling))
       check("fortress: half the lasers down", lasers <= 5, tostring(lasers))
       check("fortress: the roboports down", ports == 0, tostring(ports))
     end
