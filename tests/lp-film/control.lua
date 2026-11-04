@@ -25,7 +25,8 @@ for _, m in ipairs(P.moves or {}) do
       local o = g.off or {0, 0}
       shot.off = {o[1] * e, o[2] * e}
     end
-    if m.tick then shot.tick = m.tick + i * every else shot.after, shot.dt = m.after, (m.dt or 0) + i * every end
+    if m.at_load then shot.at_load = 120 + i * every
+    elseif m.tick then shot.tick = m.tick + i * every else shot.after, shot.dt = m.after, (m.dt or 0) + i * every end
     P.shots[#P.shots + 1] = shot
   end
 end
