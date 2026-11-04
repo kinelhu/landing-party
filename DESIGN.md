@@ -4524,6 +4524,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   wall (docs/trailer/stills-strike2.lua), the formations on standsiege (stills-formations.lua: the escort in staggered
   ranks at its hold as the pods deploy, the barrage, the paint, the spotter killed by the lasers and the strike called
   off). Open, seen: the platform's shadow reads as flat dark rectangles.
+  And the sweepers (docs/trailer/stills-sweep.lua, farm siege 12345's fork at minute 35: `LP_MIX` for fork.sh): four
+  sweepers into the minefield under the boosted lasers, the wave's path cleared; a still every 8 ticks as a video.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
