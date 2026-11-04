@@ -4538,6 +4538,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   wings in panels, a radiator cross, an antenna mast), softened at its edges, 64 tiles across its wings; one sprite drawn
   dark over all it crosses (render layer smoke), its nose along its course, moved as the strips were. dev passes; filmed
   (stills-strike2).
+- **The player's shield projector** (0.2.199; the user, 2026-11-04: "Yes" to 45 degrees and 8-way). scripts/shield.lua:
+  an energy interface turned in 8 steps (building-direction-8-way, as Space Age's railgun turret), its buffer its charge
+  (100 MJ, filled at 10 MW from the network; shared.SHIELD, priors). A hit on a player's turret, wall or gate within 14
+  tiles, from an attacker within 22.5 degrees of its heading (read from the projector: it stands behind the line, facing
+  out), is given back, 50 kJ a point; empty, it breaks till half charged. The orbital strike passes. Its arc drawn on the
+  ground (red while down); each catch at most every half second plays the dome's wave. Research behind energy shield mk2
+  and space science (1000 units); its body for now the dome tower's art. Scenario `shield` (four turrets, medium biters
+  from the north): facing, the turret whole, 891 hits caught for 13,365 points, its charge at 99.3 MJ; facing away and
+  unpowered, the turret dies; 1 MJ and no power, it breaks on the first hit. First run: projectors beside their turrets,
+  the biters at the turret 36 degrees off its heading, nothing caught. Open: balance (four medium biters drain 5 MW of its
+  10: it cannot be worn down by them), its own art, whether it stops units passing (not now).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

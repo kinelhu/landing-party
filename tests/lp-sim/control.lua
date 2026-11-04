@@ -5693,6 +5693,60 @@ end
 -- assemblers, each ringed so, far enough apart for each to be a place of its own (tactics.NEAR_BREACH): it stands down
 -- on its failures in a row. The default run checks too that, stood down, it builds no army past its reserve (its cap
 -- halved) and still answers a gun turret put up on its ground (self-defence).
+-- Shield (the user, 2026-11-04: the player's shield projector, 45 degrees, 8-way): four ammo-less gun turrets 60 apart,
+-- each with a projector 7 behind it and medium biters coming at it from the north. 1: facing north, powered: the hits taken
+-- by the shield, the turret whole, its charge spent. 2: facing south: the hits pass. 3: unpowered: they pass. 4: facing
+-- north with a charge of 1 MJ and no power: it breaks, then they pass.
+scenarios.shield = function()
+  schedule(60, function()
+    flatten(-40, -60, 240, 30)
+    local src = surface().create_entity{name = "electric-energy-interface", position = {-30, 10}, force = "player"}
+    src.power_production, src.electric_buffer_size = 1e9 / 60, 1e9
+    S.t, S.p = {}, {}
+    for k, d in ipairs({defines.direction.north, defines.direction.south, defines.direction.north, defines.direction.north}) do
+      local x = (k - 1) * 60
+      S.t[k] = surface().create_entity{name = "gun-turret", position = {x, 0}, force = "player"}
+      -- (Behind its turret, facing out: its arc is read from the projector, and beside the turret the biters biting it
+      -- stood 36 degrees off its heading, outside its 22.5; the first run.)
+      S.p[k] = surface().create_entity{name = "lp-shield-projector", position = {x, 7}, direction = d, force = "player",
+        raise_built = true}
+      if k == 1 or k == 2 then
+        for _, q in ipairs({{-24, 10}, {x - 12, 10}, {x + 4, 10}}) do
+          surface().create_entity{name = "substation", position = q, force = "player"}
+        end
+      end
+    end
+    S.p[4].energy = 1e6
+  end)
+  schedule(5 * 60, function()
+    game.forces.enemy.set_evolution_factor(0.4, surface())
+    for k = 1, 4 do
+      local x = (k - 1) * 60
+      for j = 1, 4 do
+        local u = surface().create_entity{name = "medium-biter", position = {x - 4 + j * 2, -24}, force = "enemy"}
+        if u then u.commandable.set_command{type = defines.command.attack, target = S.t[k], distraction = defines.distraction.none} end
+      end
+    end
+  end)
+  schedule(END - 60, function()
+    local st = lp("shield_stats")
+    local hp = {}
+    for k = 1, 4 do hp[k] = S.t[k].valid and string.format("%.0f", S.t[k].health) or "dead" end
+    info("shield: " .. serpent.line(st) .. "; turrets " .. table.concat(hp, ", "))
+    local all = st
+    st = {}
+    for k = 1, 4 do st[k] = S.p[k].valid and all[S.p[k].unit_number] or {caught = 0, energy = 0, breaks = 0} end
+    local function full(k) return S.t[k].valid and S.t[k].health >= S.t[k].max_health - 1 end
+    check("shield: facing the attack, its turret whole", full(1), hp[1])
+    check("shield: and its hits taken from its charge", (st[1] or {}).caught > 0 and (st[1] or {}).energy < 100e6,
+      serpent.line(st[1]))
+    check("shield: facing away, the hits pass", not full(2), hp[2])
+    check("shield: unpowered, they pass", not full(3), hp[3])
+    check("shield: its charge spent, it breaks and they pass", (st[4] or {}).breaks >= 1 and not full(4),
+      serpent.line(st[4]) .. " " .. hp[4])
+  end)
+end
+
 scenarios.quiet = function()
   local streak = params.mix == "streak"
   schedule(60, function()
