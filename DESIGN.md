@@ -4371,6 +4371,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   leaves, crosses and breaks in (11 mines at its breach), 2 of the 7 checks fixed; 5 open: its first wave there is a
   probe with one big burster, and blocked legs further out (769,236 and on) still slow it; the burster and ram checks
   want the full siege. herd, herd deep and farm siege on 777 pass.
+  The biotech regression after it (94 runs): `farm siege` 12345 (the 5 above) and `clear worms` fail. `clear worms`
+  (the howitzer truck's pack, home and park): bisected to 0.2.183, and with its loot change reverted it passes: keeping
+  a corporation's components in wrecks changes which entities a fight creates, and in this run the howitzer is
+  destroyed by the nest's biters before it packs (24554, "howitzer destroyed by enemy"). Wrecks with items stood
+  until 0.2.170 and it passed then: a run shifted onto a losing fight, as farm siege's; the check rests on the
+  howitzer surviving behemoth worms. Open, the components kept (the agreed split; fuze needs them).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
