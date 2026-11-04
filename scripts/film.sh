@@ -10,7 +10,7 @@ V="$HOME/Library/Application Support/factorio-lp-visit/$NAME"
 case "$V" in *"/factorio/"*) echo "refusing: $V is inside the real profile"; exit 1;; esac
 [ -f "$V/saves/$SAVE" ] || { echo "no $V/saves/$SAVE"; exit 1; }
 if pgrep -f -- "--config $V/config/config.ini" > /dev/null; then echo "refusing: a game is running on $V"; exit 1; fi
-FN=$(grep -o 'name = "[^"]*"' "$PARAMS" | head -1 | cut -d'"' -f2)
+FN=$(grep -o 'return {name = "[^"]*"' "$PARAMS" | head -1 | cut -d'"' -f2)
 OUT="${4:-$REPO/docs/sim/film-$FN}"
 cp "$V/saves/$SAVE" "$V/saves/film.zip"
 rm -rf "$V/mods/lp-sim" "$V/mods/lp-film" "$V/script-output/lp-film/$FN"
