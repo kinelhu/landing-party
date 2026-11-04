@@ -165,6 +165,9 @@ script.on_event(defines.events.on_tick, function(e)
       end
     end
   end
+  -- (The settlement a dev call aims from: P.base, or the siege's once found. base_id here was the global, always nil, and
+  -- a raid forced from Grubstake's camp aimed at the wall nearest Kessler-Hayashi's, 2026-11-04.)
+  local function dev_base() return type(P.base) == "number" and P.base or storage.base_id or 1 end
   -- P.dev = {{tick =, args = {"strike", "1"}, at = {x, y} | {toward = tiles}}}: Landing Party's /lp tools at a tick; toward:
   -- that many tiles from settlement P.base towards spawn (the orbital scenario's wall stands 120 from its camp).
   for _, d in ipairs(P.dev or {}) do
@@ -172,7 +175,7 @@ script.on_event(defines.events.on_tick, function(e)
       local at = d.at
       if at.wall then
         -- The player's wall nearest settlement P.base (its siege's wall in the orbital scenario).
-        local o = remote.call("landing-party", "stats", base_id or 1).origin
+        local o = remote.call("landing-party", "stats", dev_base()).origin
         local best, bd
         for _, w in ipairs(game.surfaces[1].find_entities_filtered{type = "wall", force = "player"}) do
           local dd = (w.position.x - o.x) ^ 2 + (w.position.y - o.y) ^ 2
@@ -181,7 +184,7 @@ script.on_event(defines.events.on_tick, function(e)
         at = best and {best.position.x, best.position.y} or {o.x, o.y}
         log("lp-film: aimed at the wall at " .. at[1] .. "," .. at[2])
       elseif at.toward then
-        local o = remote.call("landing-party", "stats", base_id or 1).origin
+        local o = remote.call("landing-party", "stats", dev_base()).origin
         local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
         at = {o.x - o.x / len * at.toward, o.y - o.y / len * at.toward}
       end
@@ -195,6 +198,13 @@ script.on_event(defines.events.on_tick, function(e)
   storage.seen = storage.seen or {}
   storage.taken = storage.taken or 0
   session_from = session_from or e.tick
+  -- (A still timed before the save's own tick never comes, and the film waited out its 30 minutes on 47 of them: a
+  -- save's tick is when it was written, not minute x 3600, 2026-11-04. Stop at once, naming them.)
+  if not storage.first_tick then
+    local early = 0
+    for _, s in ipairs(P.shots) do if s.tick and s.tick < e.tick then early = early + 1 end end
+    if early > 0 then error("lp-film: " .. early .. " stills timed before this save's tick " .. e.tick) end
+  end
   storage.first_tick = storage.first_tick or e.tick
   -- P.stop_after: ticks from the film's first; then it ends with what it took (shots on events that never came are left).
   if P.stop_after and e.tick - storage.first_tick >= P.stop_after and not storage.stopped then
