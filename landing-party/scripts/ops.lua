@@ -1922,8 +1922,10 @@ end
 
 -- Dev tools (/lp, scripts/dev.lua): an operation of this kind now, at the player structure nearest pos, whatever
 -- the settlement's temper, budget, cadence and stock. Parts and the infantry it lacks are given at its depot.
+-- owner (tests and films: the trailer's corporations at war, 2026-11-04): a rival's structure nearest pos instead, that
+-- force's (a corporation's), the operation as it would go against that rival.
 -- Returns nil when launched, else why not (shown to the player).
-function ops.force(b, kind, pos, trace, army)
+function ops.force(b, kind, pos, trace, army, owner)
   ops.init(b)
   if b.op then return "busy with a " .. b.op.kind end
   local h = home(b)
@@ -1932,12 +1934,14 @@ function ops.force(b, kind, pos, trace, army)
   sense(b, s, pos, 60)
   local best, bd
   for key, t in pairs(b.intel.targets) do
-    if against_player(t.owner) and (kind ~= "strip" or (t.drills or 0) > 0) then
+    local whose = owner and t.owner == owner or (not owner and against_player(t.owner))
+    if whose and (kind ~= "strip" or (t.drills or 0) > 0) then
       local d = (t.pos[1] - pos.x) ^ 2 + (t.pos[2] - pos.y) ^ 2
       if d <= 60 * 60 and (not bd or d < bd) then best, bd = key, d end
     end
   end
   if not best then
+    if owner then return "no structure of " .. owner .. " within 60 tiles" end
     return kind == "strip" and "no drill of yours within 60 tiles" or "no structure of yours within 60 tiles"
   end
   local t = b.intel.targets[best]

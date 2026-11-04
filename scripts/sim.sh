@@ -53,7 +53,7 @@ echo "METRIC ms_per_tick $avg" >> "$out/results.txt"
 dest="$REPO/docs/sim/$RUN"
 mkdir -p "$dest"
 # (A run with no settlement writes no sim.jsonl: system solo, Synthexis alone.)
-for f in decisions.txt sim.jsonl results.txt ops.jsonl growth.jsonl march.jsonl; do [ -f "$out/$f" ] && cp "$out/$f" "$dest/"; done
+for f in decisions.txt sim.jsonl results.txt ops.jsonl growth.jsonl march.jsonl trailer-beats.txt; do [ -f "$out/$f" ] && cp "$out/$f" "$dest/"; done
 if [ -s "$out/timeline.jsonl" ]; then
   cp "$out/timeline.jsonl" "$dest/"
   uv run --quiet --with matplotlib python3 "$REPO/scripts/timeline.py" "$dest" > /dev/null 2>&1 \

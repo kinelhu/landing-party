@@ -38,6 +38,7 @@ document still says Serenity where it records history.
 | Fliers by corporation (the user, 2026-10-23: "give Kessler the actual high tech fliers, whereas Grubstake is a more scrappy opponent ... kamikaze drones"): Grubstake's scrap drone (id lp-harrier: weak, cheap, two in its mix of nine) and bomb drone (id lp-scavenger, its Wheels node: bursts on what it dives on and dies), Kessler-Hayashi's laser drone (armoured, a beam; in its mix from level 2) | built 0.2.1 | arena |
 | The whole system's balance (the user, 2026-10-23: "we now need to think and work on the balance of the whole system"): every faction on one map with a stand-in for the player (`system` sim, two hours, four seeds), judged against five targets (survive, even, shapes, fights, pressure) by `scripts/system_report.py` into `docs/system.md` | measuring 0.2.2 | `system` |
 | Player army, fifth unit: the flamethrower trooper (the user, 2026-10-24: "tackle player units too"; the arena had every unit of the player's losing to biters from evolution 0.8 and to the big breeds): a flamethrower stream, splash 2.5 on enemies only (1 a lick), its own burn on what it hits (4 a second for 4 seconds; vanilla's fire sticker, 10 for 30 on every target, had it beating rifles +95 and tanks +51), no burning ground (it would burn the player's own troops), range 13, bandwidth 2: it beats swarms and infantry, loses to armour, sappers, the Scorcher and fliers; ordered at the barracks (heavy armour, flamethrower, fuel) from command bandwidth 3 (now after vanilla's flamethrower) | built 0.2.5 | arena |
+| Trailer beats (film instrument): the player's muster and battle against a Grubstake camp, Kessler-Hayashi's siege on Grubstake, a 200-biter Synthexis breach, an armed camp's orbital strike on a player wall, at fixed minutes, their ticks and centres to trailer-beats.txt | built 2026-11-04 | `trailer` (by hand, not in the regression lists) |
 | Kessler-Hayashi's Heavy tank (lp-aegis) fires a rail cannon (the user: "Kessler has basically two types of laser tanks. Seems redundant?"): one slug of 38 every 60 ticks at 16, the railgunner's beam, its own damage type (lp-rail) that no armour resists (hulls are built against physical and explosion: at 150 physical it beat all but fliers, at 80 still its counters); it beats armour (tanks, the Laser and Lightning tanks, the Scorcher, the walker), is even with the battle tank and loses to rocket troopers, flamethrower troopers, shotgun swarms and fliers; the Laser tank keeps the splitting beam, the Lightning tank the arc: one weapon each | built 0.2.5 | arena |
 | A crew's occupied site is new work's failure (three and it is given up; a rebuild still waits): a site beside the player's outpost was tried for ever and, the planner planning only with its queue empty, Grubstake's camp sat on 6,600 parts (the system sim's natural opening, 2026-10-24); a unit just researched comes off the line first, once a settlement (the tree bought the Tesla, the counter matrix cut it to a quarter, and none was built) | built 0.2.5 | `crew`, `occupy`, `unitnode` |
 | Plain names everywhere a player reads (the user, 2026-10-24: the field guide had units under their old names): the research messages said Aegis, Prism and Tesla tanks, Lances, Warden armour and Line troopers, and gave the heavy tank a laser cannon after it took the rail; the Scorcher is the flame tank; the guide names a unit's node by the unit's own locale name, so a rename reaches it. In the system sim Grubstake's prospecting waits no longer on a chart: headless runs chart nothing (a force.chart left the run byte for byte the same), so the sim waives the check as the prospecting tests do; it claims on all four seeds | built 0.2.6 | `system` |
@@ -4611,6 +4612,47 @@ Bugs and surprises the headless runs caught, each kept as a check:
   turret's and its study's locale named units by their ids (harriers, scavengers); now scrap drones and bomb drones.
   Assumed, not tested: a defoliated incubator starves (its tile no longer creep) unless a standing tumor spreads the
   creep back.
+- **Trailer scenario: the battles staged** (2026-11-04; the user: the footage had "barely any battles, player mustering
+  troops, inter-faction interactions"). Scenario `trailer` (a film instrument: in `regress.sh`'s area table, ops, not in
+  its run lists) stages five beats on one map at fixed minutes, at least 150 tiles apart, each beat's start tick and
+  centre written to `script-output/landing-party/trailer-beats.txt` ("name tick x y"; sim.sh copies it to
+  `docs/sim/trailer-<seed>/`) and as METRIC lines. The corporations are at truce with the player and choose no operation
+  of their own (`choice_off`): each beat is forced at its minute. Seed 12345 (full run and from its fork alike):
+  muster 28800 at 261,-104 (six barracks fed an order each every 4 s: 77 units, troopers,
+  breachers, rocket troopers, 8 battle tanks, 13 relays at research level 3); battle 39600 at 429,-158 (the beacon aimed
+  turret by turret, as breach aims, at a Grubstake camp 180 tiles off: the whole army of 77 lost, 100 Grubstake units,
+  8 turrets and 27 buildings taken; the camp rebuilt to 10 turrets); corpwar 43200 at -573,33 (Kessler-Hayashi's top-tier
+  siege, 24 guards and four dropped mortars, on a second Grubstake camp landed 200 tiles from it: 39 Grubstake units and
+  2 turrets killed for 24 of its own and 4 of its turrets, then aborted); synthexis 54000 at 2,-300 (200 bred mediums
+  from a captured pen into herd's walled ring, lamps added: breached at 65400, all 12 turrets down); strike 64800 at
+  -16,361 (a second, armed Kessler-Hayashi camp landed at era 3 besieges a player wall, calls its orbital strike: 25
+  shells, all 10 lasers down). Fork at strike 14 (saved at minute 8, the muster's start): `scripts/fork.sh trailer 12345
+  14`, `LP_FORK=1 scripts/sim.sh trailer 12345 28 28 14`; `scripts/film_fork.sh trailer 12345 14`. Its state is in S
+  only, no functions there (lost in a save). Mod side, tests and films only: `ops.force` takes an owner (a rival's
+  structure nearest the point instead of the player's) and the remotes `debug_force_op(id, kind, pos, owner)` and
+  `debug_strike(id, pos)`. Caught building it: the muster's power source stood outside every pole's supply, no relay
+  worked, the capacity read 0 and nothing trained (its own pole now; the check "the muster trained an army" caught it);
+  an armed landing from a point out on the flank found "no site clear of other landers" (it lands from spawn now, as
+  orbital's does). What limits the scale: the player's army by command bandwidth (`shared.RELAYS_BY_LEVEL`, shared.lua:531,
+  15 relays of `RELAY_CAPACITY` 10 at level 3, 150; the endless level adds 2 relays each), a beacon's reach (signals
+  move the rally point at most `MAX_OFFSET` 300, command.lua:192; an advance attacks within `ATTACK_REACH` 50,
+  command.lua:21); a corporation's operation on a rival by one operation a settlement at a time (`ops.force` refuses a
+  busy camp, ops.lua:1930) and the top siege tier (`SIEGE_TIERS[4]`: four mortars, 24 guards, ops.lua:85); left to its
+  own choices, a corporation at war with a player holds every rival's target (ops.lua:555) and weighs them by
+  `distracted` 0.2 otherwise (ops.lua:500), so corporations fight each other on their own only while no player presses
+  them, or by a reprisal. A herd wave has no cap beyond its pen's stock (`herd_fill`).
+- **Breach from a fork: "trained nil of 53" was the run's length, and a fork's saved state** (2026-11-04). The failing
+  run was the film profile of `breach-30,15,8-12345-7` (film_fork.sh): its params end the run at minute 8 (a fork's
+  minutes are its strike + 1), while breach's barracks go up only four minutes after its lab stands (set up at minute
+  19.25 on 12345, the squad sent at 19.42): the checks ran before any barracks existed (research level 0, capacity 0).
+  Not the mod: full runs of 30,15,8 and the default train 53 of 53 and 35 of 35 and pass, and from forks at strikes 7 and
+  20. Two harness faults found on the way and fixed: its feed was a function kept in S, which a fork does not save, so a
+  fork saved between setup and go would have failed every step after loading (a local now, its state in S); and a plain
+  fork (sim.sh LP_FORK takes the scenario's, not the mix's) saved after the go carries the plain squad, which a mix then
+  read as "35 of 53". The check now says which: "never set up: no lab by minute 7" (seen failing on an 8-minute run),
+  or that the fork was made for another squad. Breach is a full-length scenario: fork it, if at all, at a strike of 25
+  or less. Not changed, noted: breach arty's comment says "no squad", but its setup feeds the default squad before
+  clearing the wants (25 trained in its runs).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
