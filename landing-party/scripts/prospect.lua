@@ -6,6 +6,7 @@
 -- drills with their bins, a mining module of the camp (rebuilt, capturable), marked on the map. One patch at a time,
 -- the nearest first, PACE between (tagging everything undrilled at chemical science would be harsh).
 local shared = require("__landing-party__.shared")
+local studies = require("__landing-party__.scripts.studies")
 local chart = require("__landing-party__.scripts.chart")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
@@ -120,8 +121,17 @@ local function tag(b, p)
   local tags = {}
   for _, f in ipairs(player_forces()) do
     local text = TEXT
+    -- Its claims register (a field study, studies.lua): the claim's ore named and its ground charted.
+    local register = studies.has(f, "lp-claims-register")
+    if register then
+      f.chart(s, {{p.x - 24, p.y - 24}, {p.x + 24, p.y + 24}})
+    end
     for _, o in pairs(f.find_chart_tags(s, {{p.x - LABEL_APART, p.y - LABEL_APART}, {p.x + LABEL_APART, p.y + LABEL_APART}})) do
       if o.text == TEXT then text = "" break end
+    end
+    if register and p.ore then
+      local proto = prototypes.entity[p.ore]
+      text = "Grubstake claim: " .. (proto and proto.name:gsub("-", " ") or p.ore)
     end
     local t = f.add_chart_tag(s, {position = {p.x, p.y}, icon = {type = "virtual", name = shared.CORPS[b.corp].icon},
       text = text})

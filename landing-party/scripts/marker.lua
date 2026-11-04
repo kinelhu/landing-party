@@ -30,6 +30,15 @@ function marker.placed(ent)
   end
 end
 
+-- A bait planted in a Grubstake claim by a force with its bait made (a field study, studies.lua): it breaks the pact as
+-- the breaker does, folded in (the rewards consult, G3).
+function marker.as_breaker(ent)
+  if not in_claim(ent) then return false end
+  storage.breakers = storage.breakers or {}
+  table.insert(storage.breakers, {entity = ent})
+  return true
+end
+
 function marker.tick(tick)
   if tick % 60 ~= 47 then return end
   for i = #(storage.claim_markers or {}), 1, -1 do

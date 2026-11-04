@@ -54,7 +54,7 @@ digraph ai {
     "cordon" [label="cordon\n385 lines", width=1.23, fillcolor="#eef2f7"];
     "perimeter" [label="perimeter\n327 lines", width=1.16, fillcolor="#d9f0d9"];
     "road" [label="road\n143 lines", width=0.96, fillcolor="#eef2f7"];
-    "prospect" [label="prospect\n352 lines", width=1.19, fillcolor="#eef2f7"];
+    "prospect" [label="prospect\n362 lines", width=1.20, fillcolor="#eef2f7"];
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -63,7 +63,7 @@ digraph ai {
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
     "siege" [label="siege\n1885 lines", width=2.89, fillcolor="#f7dede"];
-    "strip" [label="strip\n229 lines", width=1.05, fillcolor="#d9f0d9"];
+    "strip" [label="strip\n237 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#eef2f7"];
@@ -80,13 +80,13 @@ digraph ai {
     "skim" [label="skim\n421 lines", width=1.27, fillcolor="#eef2f7"];
     "prowl" [label="prowl\n150 lines", width=0.97, fillcolor="#eef2f7"];
     "bait" [label="bait\n59 lines", width=0.87, fillcolor="#d9f0d9"];
-    "marker" [label="marker\n61 lines", width=0.87, fillcolor="#eef2f7"];
+    "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n3458 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n237 lines", width=1.06, fillcolor="#eef2f7"];
     "farm" [label="farm\n2320 lines", width=3.38, fillcolor="#f7dede"];
-    "creep" [label="creep\n568 lines", width=1.43, fillcolor="#eef2f7"];
+    "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
   }
   subgraph cluster_8 { label="The map"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -94,12 +94,13 @@ digraph ai {
   }
   subgraph cluster_9 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "command" [label="command\n580 lines", width=1.44, fillcolor="#d9f0d9"];
-    "scanner" [label="scanner\n90 lines", width=0.90, fillcolor="#d9f0d9"];
+    "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "achievements" [label="achievements\n34 lines", width=0.84, fillcolor="#d9f0d9"];
+    "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n970 lines", width=1.88, fillcolor="#eef2f7"];
+    "control" [label="control\n976 lines", width=1.88, fillcolor="#eef2f7"];
     "dev" [label="dev\n205 lines", width=1.03, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n187 lines", width=1.01, fillcolor="#eef2f7"];
@@ -237,6 +238,7 @@ digraph ai {
   "prospect" -> "ops";
   "prospect" -> "pool";
   "prospect" -> "standing";
+  "prospect" -> "studies";
   "prowl" -> "base";
   "prowl" -> "ops";
   "prowl" -> "pool";
@@ -245,6 +247,7 @@ digraph ai {
   "road" -> "base";
   "road" -> "standing";
   "routing" -> "threat";
+  "scanner" -> "studies";
   "siege" -> "achievements";
   "siege" -> "attempt";
   "siege" -> "costmap";
@@ -264,6 +267,8 @@ digraph ai {
   "standing" -> "ops";
   "strategy" -> "know";
   "strike" -> "threat";
+  "strip" -> "studies";
+  "studies" -> "creep";
   "tactics" -> "know";
   "tactics" -> "rng";
   "tap" -> "base";

@@ -5756,6 +5756,85 @@ scenarios.pdome = function()
   end)
 end
 
+-- Studies (the rewards consult, part 3; the user, 2026-11-04: "Let's try for all"): field studies by what the player
+-- destroys. 9 of Grubstake's shotgun hands: no study; the 10th: claims. 3 of its drills: strip. A Synthexis incubator:
+-- telemetry; with it researched, a threat scanner reports Synthexis's biters and its scout on their own signals. A
+-- defoliant charge on creep: the creep within 6 back to grass, a tumor there burnt. A flak turret on power: a Grubstake
+-- harrier shot down, a shotgun hand beside it left alone.
+scenarios.studies = function()
+  local P = function() return game.forces.player end
+  local function force(n) return game.forces[n] or game.create_force(n) end
+  local function kill(name, f, at)
+    local e = surface().create_entity{name = name, position = surface().find_non_colliding_position(name, at, 10, 1), force = f}
+    if e then e.die(P()) end
+    return e ~= nil
+  end
+  schedule(60, function()
+    flatten(-60, -60, 120, 60)
+    local g, bio = force("lp-grubstake"), force("lp-biotech")
+    for k = 1, 9 do kill("lp-shotgun-hand", g, {-40, -40}) end
+    S.claims9 = P().technologies["lp-study-claims"].researched
+    kill("lp-shotgun-hand", g, {-40, -40})
+    S.claims10 = P().technologies["lp-study-claims"].researched
+    for k = 1, 3 do kill("lp-grubstake-drill", g, {-20 + k * 4, -40}) end
+    S.strip = P().technologies["lp-study-strip"].researched
+    kill("lp-pen", bio, {10, -40})
+    S.tele = P().technologies["lp-study-telemetry"].researched
+    -- Telemetry researched: a scanner, a bred scout and a bred medium biter in its reach.
+    P().technologies["lp-bred-telemetry"].researched = true
+    S.scanner = surface().create_entity{name = "lp-threat-scanner", position = {0, 20}, force = "player", raise_built = true}
+    bio.set_cease_fire("player", true); P().set_cease_fire(bio, true)
+    for _, n in ipairs({"lp-bred-scout", "lp-bred-medium-biter"}) do
+      local u = surface().create_entity{name = n, position = {12, 20}, force = bio}
+      if u then u.commandable.set_command{type = defines.command.stop, ticks_to_wait = 1000000} end
+    end
+    -- Creep round a tumor, the defoliant thrown at it.
+    local tiles = {}
+    for x = 30, 44 do for y = 10, 24 do tiles[#tiles + 1] = {name = "lp-creep", position = {x, y}} end end
+    surface().set_tiles(tiles)
+    for _, t in ipairs(tiles) do surface().set_hidden_tile(t.position, "grass-1") end
+    S.tumor = surface().create_entity{name = "lp-tumor", position = {37, 17}, force = bio}
+    S.tumor_hp = S.tumor and S.tumor.health
+    surface().create_entity{name = "lp-defoliant-projectile", position = {37, 0}, target = {37, 17}, speed = 0.4, force = "player"}
+    -- The flak turret, powered, a harrier and a shotgun hand of Grubstake's within its reach.
+    local src = surface().create_entity{name = "electric-energy-interface", position = {80, 30}, force = "player"}
+    src.power_production, src.electric_buffer_size = 1e9 / 60, 1e9
+    surface().create_entity{name = "substation", position = {80, 22}, force = "player"}
+    surface().create_entity{name = "lp-flak-turret", position = {80, 18}, force = "player"}
+    g.set_cease_fire("player", false); P().set_cease_fire(g, false)
+    S.harrier = surface().create_entity{name = "lp-grubstake-harrier", position = {80, 4}, force = g}
+    S.hand = surface().create_entity{name = "lp-shotgun-hand", position = {72, 6}, force = g}
+    for _, u in ipairs({S.harrier, S.hand}) do
+      if u then u.commandable.set_command{type = defines.command.stop, ticks_to_wait = 1000000, distraction = defines.distraction.none} end
+    end
+  end)
+  schedule(30 * 60, function()
+    local sig = {}
+    if S.scanner and S.scanner.valid then
+      local sec = S.scanner.get_or_create_control_behavior().get_section(1)
+      for _, f in ipairs(sec and sec.filters or {}) do if f.value then sig[f.value.name] = f.min end end
+    end
+    -- (Inside the circle of 6: a square of 8 round its point. Counted in the 12 square, its corners outside the circle
+    -- kept their creep, 32 of 144, the first run.)
+    local creep_left = surface().count_tiles_filtered{area = {{33, 13}, {41, 21}}, name = "lp-creep"}
+    local creep_far = surface().count_tiles_filtered{area = {{30, 10}, {31, 11}}, name = "lp-creep"}
+    info("studies: " .. serpent.line({claims9 = S.claims9, claims10 = S.claims10, strip = S.strip, tele = S.tele, signals = sig,
+      creep_left = creep_left, tumor = S.tumor and S.tumor.valid and S.tumor.health or "gone", tumor_hp = S.tumor_hp,
+      harrier = S.harrier and S.harrier.valid, hand = S.hand and S.hand.valid, counts = lp("study_counts", "player")}))
+    check("studies: 9 raiders, no study", S.claims9 == false, tostring(S.claims9))
+    check("studies: the 10th, the claims study", S.claims10 == true, tostring(S.claims10))
+    check("studies: 3 drills, the strip study", S.strip == true, tostring(S.strip))
+    check("studies: an incubator, the telemetry study", S.tele == true, tostring(S.tele))
+    check("studies: telemetry, the scanner reports Synthexis's biters and its scout",
+      (sig["lp-scan-synthexis"] or 0) >= 1 and (sig["lp-scan-scout"] or 0) >= 1, serpent.line(sig))
+    check("studies: the defoliant stripped the creep round it", creep_left == 0, tostring(creep_left))
+    check("studies: and burnt its tumor", not (S.tumor and S.tumor.valid) or S.tumor.health < S.tumor_hp,
+      S.tumor and S.tumor.valid and tostring(S.tumor.health) or "gone")
+    check("studies: the flak turret shot the harrier down", not (S.harrier and S.harrier.valid), tostring(S.harrier and S.harrier.valid))
+    check("studies: and left the shotgun hand alone", S.hand and S.hand.valid, tostring(S.hand and S.hand.valid))
+  end)
+end
+
 scenarios.quiet = function()
   local streak = params.mix == "streak"
   schedule(60, function()

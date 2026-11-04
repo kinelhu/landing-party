@@ -4579,6 +4579,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   run fired faster than one gun (its reckoning with no artillery in reach): it broke after 80 s, the rule working. The
   strike: its shadow on the layer above what it crosses and below explosions, projectiles and smoke; each impact an
   additive flash (tools/art/impact_flash.py), which lights by day as a game light cannot. orbital and dev pass.
+- **Field studies: Grubstake's and Synthexis's trees** (0.2.203; the user, 2026-11-04: "think we could wring out a few
+  more technologies from factions other than KH?", then "Let's try for all", of the rewards consult's part 3). A study
+  (studies.lua, scripts/studies.lua) is a technology with a scripted trigger, fired when a player force has destroyed
+  enough of a corporation's kinds (on_entity_died's force: turrets and artillery count; a threshold, not a currency);
+  behind it the node, paid in packs. Grubstake: claims (10 raiders or a hauler) to the claims register (its claims
+  labelled with their ore and their ground charted, its strip camps tagged); strip (3 drills) to the strip drill (its
+  recipe, the HQ prize's too); bait (a pacifier) to the bait made (no gland; planted in a claim it breaks the pact, the
+  breaker's own rule, marker.as_breaker); flak (a scrap cannon, or 5 harriers or scavengers) to the flak turret (on
+  power, fliers only, the flak buggy's burst). Synthexis: telemetry (an incubator, 3 tumors or its scout 3 times) to
+  bred-biter telemetry (the threat scanner watches its force, its biters `lp-scan-synthexis`, its scout `lp-scan-scout`;
+  without it they count with the wild); defoliant (5 tumors) to the defoliant (a thrown charge: creep within 6 back to
+  the ground under it, tumors burnt 200; creep.defoliate); incubator capture: the pen's captured spawner Space Age's
+  captive biter spawner (an assembling machine), its technology a capture trigger behind captivity. Counts and costs the
+  consult's priors. Kessler-Hayashi's three component technologies unchanged (the user asked for the others). Scenario
+  `studies`: 9 raiders no study, the 10th the claims; 3 drills, an incubator; the scanner's two signals; the defoliant
+  (no creep left within the circle, its tumor burnt; first counted in a square, its corners outside the circle); the flak
+  turret's harrier down and its shotgun hand left. scanner, prospect, strip, bait, crystal pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

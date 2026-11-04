@@ -177,6 +177,28 @@ local function recede(rec)
   rec.r = r - 1
 end
 
+-- The player's defoliant (studies.lua): every creep tile within r of `at` back to the ground kept under it, at once,
+-- whatever tumor reaches it (living tumors spread it again as they do).
+function creep.defoliate(s, at, r)
+  local cx, cy = at.x or at[1], at.y or at[2]
+  local tiles, pts = {}, {}
+  for x = math.floor(cx - r), math.ceil(cx + r) do
+    for y = math.floor(cy - r), math.ceil(cy + r) do
+      if (x + 0.5 - cx) ^ 2 + (y + 0.5 - cy) ^ 2 <= r * r and s.get_tile(x, y).name == creep.TILE then
+        table.insert(tiles, {name = s.get_hidden_tile({x, y}) or "dirt-1", position = {x, y}})
+        table.insert(pts, {x, y})
+      end
+    end
+  end
+  if #tiles == 0 then return 0 end
+  s.set_tiles(tiles, true, false, true, false)
+  for _, p in ipairs(pts) do
+    s.set_hidden_tile(p, nil)
+    count(s.index, p[1], p[2], -1)
+  end
+  return #tiles
+end
+
 -- A grown tumor sunk in its creep: Gleba's slime under it and nerve roots round it (decoratives, laid once its creep is
 -- grown: growing, the creep's tiles clear what lies on them).
 -- (Cream, red and grey on its violet: the purple ones were laid and could not be seen, 2026-10-26.)

@@ -41,6 +41,7 @@ local skim = require("__landing-party__.scripts.skim")
 local prowl = require("__landing-party__.scripts.prowl")
 local dome = require("__landing-party__.scripts.dome")
 local lights = require("__landing-party__.scripts.lights")
+local studies = require("__landing-party__.scripts.studies")
 local orbital = require("__landing-party__.scripts.orbital")
 local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
@@ -65,7 +66,7 @@ local oplog = require("__landing-party__.scripts.oplog")
 local tactics = require("__landing-party__.scripts.tactics")
 script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
 script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
-script.on_event(defines.events.on_script_trigger_effect, aim.on_trigger)
+script.on_event(defines.events.on_script_trigger_effect, function(e) aim.on_trigger(e); studies.on_trigger(e) end)
 script.on_nth_tick(3600, aim.sweep)
 war.forgive = standing.forgive
 rd.era = ops.era
@@ -125,7 +126,10 @@ for _, t in ipairs(ops.ENCROACH_TYPES) do table.insert(BUILT, {filter = "type", 
 local function on_built(e)
   local ent = e.entity
   ops.encroached(ent)
-  if ent and ent.valid and ent.name == "lp-player-bait" then return bait.placed(ent) end
+  if ent and ent.valid and ent.name == "lp-player-bait" then
+    if studies.has(ent.force, "lp-bait-made") then marker.as_breaker(ent) end
+    return bait.placed(ent)
+  end
   if ent and ent.valid and ent.name == "lp-strike-beacon" then return strike.placed(ent) end
   if ent and ent.valid and (ent.name == "lp-pact-breaker" or ent.name == "lp-claim-marker") then return marker.placed(ent) end
   if ent and ent.valid and ent.name == "lp-border-stake" then return border.placed(ent) end
@@ -204,6 +208,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
   -- What the factions know: every loss of theirs, by whom (scripts/know.lua).
   know.loss(e)
+  studies.on_died(e)
   biters.on_died(e)
   herd.on_died(e)
   if ent.name == "lp-pen" then farm.on_pen_died(e) end
@@ -894,6 +899,7 @@ remote.add_interface("landing-party", {
   -- The lights its buildings get when the mod builds them (scripts/lights.lua), on one built by other hands (tests/lp-film).
   debug_light = function(ent) lights.attach(ent) end,
   pdome_stats = function() return dome.player_stats() end,
+  study_counts = function(force) return studies.counts(force) end,
   debug_dome_fx = function(kind, anchor, radius, at)
     local d = {anchor = anchor, radius = radius}
     if kind == "wave" then dome.wave(d, at) else dome.rise(d) end

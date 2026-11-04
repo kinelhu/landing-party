@@ -6,6 +6,7 @@
 -- biters, and writes them to its output. Its window does not open: what it says is what it sees.
 -- A leaf: it reads the surface and storage only.
 local shared = require("__landing-party__.shared")
+local studies = require("__landing-party__.scripts.studies")
 
 local scanner = {}
 
@@ -46,12 +47,19 @@ function scanner.count(ent)
   local out = {}
   local forces = {"enemy"}
   for _, c in pairs(shared.CORPS) do if game.forces[c.force] then forces[#forces + 1] = c.force end end
+  -- Synthexis's bred biters: with the wild ones, unless the scanner's force has its telemetry (a field study: then its
+  -- own signal, and its scout apart, the warning before a wave).
+  local bio = shared.BIOTECH.force
+  if game.forces[bio] then forces[#forces + 1] = bio end
+  local tele = studies.has(ent.force, "lp-bred-telemetry")
   local crews = storage.crew_owner or {}
   for _, u in pairs(s.find_entities_filtered{position = ent.position, radius = shared.SCAN_RADIUS, force = forces,
     type = {"unit", "spider-unit"}}) do
     local key
     if u.force.name == "enemy" then
       key = "lp-scan-biters"
+    elseif u.force.name == bio then
+      key = not tele and "lp-scan-biters" or (shared.kind_of(u.name) == "lp-bred-scout" and "lp-scan-scout" or "lp-scan-synthexis")
     else
       local corp = corp_of(u.force.name)
       if corp then out["lp-scan-" .. corp] = (out["lp-scan-" .. corp] or 0) + 1 end

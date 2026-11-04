@@ -2,6 +2,7 @@
 -- guards setting up beside a player's drills, out of the turrets' reach, mining the player's ore and carrying it home.
 -- The code is as it was in ops; install runs it with ops' helpers bound (K) and returns what ops calls.
 local shared = require("__landing-party__.shared")
+local studies = require("__landing-party__.scripts.studies")
 
 local strip = {}
 
@@ -170,6 +171,13 @@ local function strip_step(b, trace, army)
         return p and s.create_entity{name = name, position = p, force = f}
       end
       op.camp = {}
+      -- Its strip camp on the map of a player with its claims register (a field study, studies.lua).
+      for _, pf in pairs(game.forces) do
+        if shared.is_player_force(pf) and studies.has(pf, "lp-claims-register") then
+          pf.add_chart_tag(s, {position = {op.site[1], op.site[2]}, icon = {type = "item", name = "electric-mining-drill"},
+            text = "Grubstake strip camp"})
+        end
+      end
       local pylon = put("lp-pylon", 0, 0)
       table.insert(op.camp, pylon)
       table.insert(op.camp, put("lp-generator", -5, 0))
