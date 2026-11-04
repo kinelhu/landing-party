@@ -4,7 +4,8 @@
  "shots": [
   {
    "clip": "media/trailer/shot-01.mp4",
-   "bars": 3
+   "bars": 2,
+   "from": 0
   },
   {
    "clip": "media/trailer/shot-02.mp4",
@@ -12,64 +13,106 @@
    "from": 0.5
   },
   {
-   "clip": "media/trailer/shot-04.mp4",
-   "bars": 3
+   "clip": "media/trailer/stage-m1-muster.mp4",
+   "bars": 2,
+   "from": 2.5
   },
   {
-   "clip": "media/trailer/act-gs-deploy.mp4",
-   "bars": 4
+   "clip": "media/trailer/stage-m2-move-out.mp4",
+   "bars": 2,
+   "from": 1.0
   },
   {
-   "clip": "media/trailer/shot-06.mp4",
-   "bars": 3
-  },
-  {
-   "clip": "media/trailer/act-herd-march.mp4",
+   "clip": "media/trailer/stage-m3-battle.mp4",
    "bars": 2,
    "from": 2.0
   },
   {
-   "clip": "media/trailer/act-herd-breach.mp4",
-   "bars": 3,
-   "from": 1.5
-  },
-  {
-   "clip": "media/trailer/act-kh-bombard.mp4",
-   "bars": 3
-  },
-  {
-   "clip": "media/trailer/shot-09.mp4",
-   "bars": 3
-  },
-  {
-   "clip": "media/trailer/shot-10.mp4",
-   "bars": 3,
-   "from": 1.0
-  },
-  {
-   "clip": "media/trailer/shot-11.mp4",
-   "bars": 5
-  },
-  {
-   "clip": "media/trailer/act-kh-assault.mp4",
-   "bars": 3,
+   "clip": "media/trailer/stage-m4-battle.mp4",
+   "bars": 2,
    "from": 2.0
   },
   {
+   "clip": "media/trailer/act-gs-deploy.mp4",
+   "bars": 2,
+   "from": 2.0
+  },
+  {
+   "clip": "media/trailer/shot-06.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/stage-s1-march.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/act-herd-breach.mp4",
+   "bars": 2,
+   "from": 3.0
+  },
+  {
+   "clip": "media/trailer/stage-s3-inside.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/act-kh-bombard.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/shot-09.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/shot-10.mp4",
+   "bars": 2,
+   "from": 2.0
+  },
+  {
+   "clip": "media/trailer/stage-c1-drop.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/stage-c2-barrage.mp4",
+   "bars": 2,
+   "from": 2.0
+  },
+  {
+   "clip": "media/trailer/shot-11.mp4",
+   "bars": 4,
+   "from": 2.0
+  },
+  {
+   "clip": "media/trailer/stage-k2-strike.mp4",
+   "bars": 2,
+   "from": 7.0
+  },
+  {
+   "clip": "media/trailer/act-kh-assault.mp4",
+   "bars": 2,
+   "from": 3.0
+  },
+  {
    "clip": "media/trailer/shot-14.mp4",
-   "bars": 3
+   "bars": 3,
+   "from": 0
   }
  ],
  "titles": [
   {
    "text": "Landing Party",
-   "bar": 6,
+   "bar": 4,
    "bars": 1
   },
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 39,
+   "bar": 42,
    "bars": 3
   }
  ]
