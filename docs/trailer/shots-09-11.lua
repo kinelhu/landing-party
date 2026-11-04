@@ -10,7 +10,7 @@ return {name = "shots-09-11", base = "siege", resolution = {1920, 1080}, anti_al
   -- 9: the march reaching its hold, held on its escort, dusk deepening.
   {name = "s09", tick = T0 + 2480, frames = 180, from = {pos = "escort", zoom = 1.0, daytime = 0.37}, to = {off = {0, -4}, daytime = 0.38}},
   -- 10: the drop, the site and the wall in frame, the guns assembled where the pods land.
-  {name = "s10", tick = T0 + 3200, frames = 300, every = 3, from = {pos = {-137, 361}, zoom = 0.85, daytime = 0.39}, to = {pos = {-137, 360}, zoom = 0.88, daytime = 0.4}},
+  {name = "s10", tick = T0 + 3200, frames = 300, every = 3, from = {pos = {-137, 366}, zoom = 0.72, daytime = 0.39}, to = {pos = {-137, 365}, zoom = 0.75, daytime = 0.4}},
   -- 11: the strike, a push-in on the wall through the paint, then the lances.
   {name = "s11", tick = T0 + 5140, frames = 310, from = {pos = {-140, 356}, zoom = 0.5, daytime = 0.41}, to = {pos = {-140, 352}, zoom = 0.85, daytime = 0.42}},
 }}
