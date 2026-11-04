@@ -345,6 +345,7 @@ script.on_event(defines.events.on_entity_died, function(e)
     if b then
       b.razed = b.razed + 1
       b.razed_at = e.tick
+      b.fail_streak = 0
       rd.salvage(b.corp, ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type])
       -- Grubstake's razing pays its next pod too (scripts/war.lua).
       if b.corp == "grubstake" then war.fund(b.corp, 50 + 25 * (ops.VALUE[shared.kind_of(ent.name)] or ops.VALUE[ent.type] or 0)) end

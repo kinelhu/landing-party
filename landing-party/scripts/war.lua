@@ -518,6 +518,9 @@ end
 -- (self-defence excepted) and gets no relief, keeps mining and exporting (its parts fund the others), and leaves its
 -- place to a new landing, due within QUIET_HASTE and away from its site. After QUIET_TICKS it tries again.
 local QUIET_TICKS, QUIET_HASTE = 60 * 3600, 5 * 3600
+-- Or sooner, after FAIL_STREAK operations against the player failed in a row (ops.lua; times its aggression, two at least;
+-- the user, 2026-11-04). A prior: a camp held by its ladder after each failure (tactics.lua) took 30 minutes for one.
+local FAIL_STREAK = 3
 local function quiet(tick)
   local span = storage.quiet_ticks or QUIET_TICKS
   for _, b in pairs(storage.bases) do
@@ -537,7 +540,7 @@ local function quiet(tick)
     if not b.fallen and b.lander.valid then
       if b.quiescent then
         if tick - b.quiescent >= span then
-          b.quiescent, b.woke_at, b.aborted_mark = nil, tick, b.ops_aborted or 0
+          b.quiescent, b.woke_at, b.aborted_mark, b.fail_streak = nil, tick, b.ops_aborted or 0, 0
           base.trace(b, "stood down long enough: it tries again")
         end
       elseif at_war(b) then
@@ -545,8 +548,11 @@ local function quiet(tick)
         local since = math.max(b.razed_at or 0, b.war_since, b.woke_at or 0)
         local aborted = (b.ops_aborted or 0) - (b.aborted_mark or 0)
         -- An aggressive corporation keeps at it longer before it stands down (tune.lua).
-        if tick - since >= span * tune.aggression(b.corp) then
+        local streak = math.max(2, math.floor(FAIL_STREAK * tune.aggression(b.corp) + 0.5))
+        local losing = (b.fail_streak or 0) >= streak
+        if tick - since >= span * tune.aggression(b.corp) or losing then
           b.quiescent = tick
+          b.stood_down_streak = losing and (b.stood_down_streak or 0) + 1 or b.stood_down_streak
           b.stood_down = (b.stood_down or 0) + 1
           -- A rival again (Grubstake; Serenity never forgets): standing.lua.
           if war.forgive then war.forgive(b.corp) end
@@ -554,8 +560,14 @@ local function quiet(tick)
           table.insert(storage.failed_sites, {x = b.origin.x, y = b.origin.y})
           local f = storage.faction
           if f and f.next then f.next = math.min(f.next, tick + QUIET_HASTE) end
-          base.trace(b, string.format("stands down: nothing razed in %d minutes, %d operations failed; a new landing within %d",
-            (tick - since) / 3600, aborted, QUIET_HASTE / 3600))
+          if losing then
+            base.trace(b, string.format("stands down: %d operations failed in a row; a new landing within %d",
+              b.fail_streak, QUIET_HASTE / 3600))
+          else
+            base.trace(b, string.format("stands down: nothing razed in %d minutes, %d operations failed; a new landing within %d",
+              (tick - since) / 3600, aborted, QUIET_HASTE / 3600))
+          end
+          b.fail_streak = 0
           tell("lp.stood-down", b.corp, b)
         end
       else

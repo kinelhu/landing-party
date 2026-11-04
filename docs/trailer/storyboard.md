@@ -2,7 +2,8 @@
 
 About 90 seconds for the mod portal page, filmed on the user's own nw factory (the user, 2026-11-03: "my real base is a
 better example (even if we need to nerf it by removing some defenses or editing its walls!)"). Music in the spirit of
-FTL's soundtrack: bright, wacky, synth-driven sci-fi (the user). No narration; short title cards in the game's register.
+FTL's soundtrack: bright, wacky, synth-driven sci-fi (the user). No narration and no captions: music only (the user,
+2026-11-04); the footage carries it. The title over shot 2 and the end card stay (the mod's name and link, not captions).
 
 Status of each shot: **ready** (filmable now), **planned** (queued work), **scout** (framing to fix on a scouting
 pass), **open** (a decision for the user).
@@ -84,7 +85,7 @@ pass (section 6). The factory centre is 0,0; 95% of it within 674 tiles.
 |---|---|---|---|---|---|---|---|
 | 1 | Cold open | 3 (6 s) | The factory at work: belts, smelter rows, a train passing, robots crossing | Drift over the busiest block, zoom 0.5, west to east, 18 tiles a second | 0.05 | nw at its start (no corporation yet) | scout |
 | 2 | Arrival | 3 (6 s) | A cargo pod streaks down beyond the south wall and lands; the lander unfolds; title **Landing Party** over the last bar | Lock-off at zoom 0.4 on the landing spot (KH's lander at -99,566), the factory edge in frame | 0.15 | Visit start: KH's landing (seed giving the -99,566 spot) | ready |
-| 3 | Not alone | 1 (2 s) | Card: "Three corporations land on your planet." | Still | — | Title card | ready |
+| 3 | ~~Not alone~~ | — | Dropped (no captions, 2026-11-04): its bar goes to shot 2 | — | — | — | cut |
 | 4 | Grubstake | 3 (6 s) | Its camp: buggies parked, a strip drill chewing a patch, a truck hauling out | Push-in, zoom 0.4 to 0.6, on its camp (lander about 3,-654) | 0.2 | Visit, minute 20 or later | scout |
 | 5 | Grubstake raids | 4 (8 s) | Buggies lob smoke on a laser line; the lasers fall silent; the raid crosses | Track the lead buggy, zoom 0.7, then lock-off on the wall | 0.2 | A forced raid (`/lp raid`) at a chosen wall | planned (buggy smoke) |
 | 6 | Synthexis | 3 (6 s) | Its farm: pens, creep spreading, a herd gathering | Drift across the creep's edge, zoom 0.5 | 0.32 | nw: its farm (first at about 700,-280) | scout |
@@ -97,7 +98,7 @@ pass (section 6). The factory centre is 0,0; 95% of it within 674 tiles.
 | 13 | Escalation | 3 (6 s) | Quick cuts, a bar each: a walker striding; a convoy of pods; a fortress dome flickering under fire | Each a lock-off or short track | 0.5 to 0.7 | Several | open (walker art) |
 | 14 | End card | 3 (6 s) | **Landing Party**. "Factorio 2.1 + Space Age." Mod portal link. Behind it, the base at dawn | Slow pull-out, zoom 0.5 to 0.3 | 0.78 | nw, after the siege | ready |
 
-43 bars, about 86 s at 120 BPM. The 60 s cut drops 3, 8 and 13.
+42 bars, about 84 s at 120 BPM (shot 3 cut). The 60 s cut drops 3, 8 and 13.
 
 ## 6. Before filming
 
@@ -119,5 +120,5 @@ give the same siege. A code change between takes means a fresh save.
 
 ## 7. Open
 
-- The track (and so the tempo).
-- Captions: as planned, or none?
+- The track (and so the tempo): the user picks it.
+- Captions: none, music only (the user, 2026-11-04).

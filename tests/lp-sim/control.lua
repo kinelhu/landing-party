@@ -5676,48 +5676,93 @@ end
 -- Quiet: provoked Serenity whose only player target is an assembler ringed by twelve indestructible gun turrets (the ladder ten
 -- times fast, a stand-down after 6 minutes instead of 60). It stands down (war.lua): no operation against the player
 -- after that, and the faction's next landing comes within 6 minutes.
+-- LP_MIX=streak (the user, 2026-11-04: stop after failures in a row): the hour pushed past the run, and three
+-- assemblers, each ringed so, far enough apart for each to be a place of its own (tactics.NEAR_BREACH): it stands down
+-- on its failures in a row. The default run checks too that, stood down, it builds no army past its reserve (its cap
+-- halved) and still answers a gun turret put up on its ground (self-defence).
 scenarios.quiet = function()
+  local streak = params.mix == "streak"
   schedule(60, function()
     -- The gates open (not about the opening: its settlement is Serenity, whose gate would keep any landing away).
-    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true, quiet_minutes = 6, gates_off = true})
+    lp("debug_tune", {era = 2, ladder_fast = true, history_off = true, provoke = true, quiet_minutes = streak and 120 or 6,
+      gates_off = true})
     for _ = 1, 2 do lp("debug_depot", storage.id, 3000) end
   end)
   schedule(2 * 3600, function()
     local o = lp("stats", storage.id).origin
     local len = math.sqrt(o.x * o.x + o.y * o.y)
     local ux, uy = o.x / len, o.y / len
-    local c = {math.floor(o.x - ux * 120), math.floor(o.y - uy * 120)}
-    flatten(c[1] - 16, c[2] - 16, c[1] + 16, c[2] + 16)
-    surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
-    -- Twelve gun turrets with uranium rounds, indestructible: nothing there can be razed but the assembler they guard.
-    for k = 0, 11 do
-      local a = 2 * math.pi * k / 12
-      local t = surface().create_entity{name = "gun-turret", position = {c[1] + 6 * math.cos(a), c[2] + 6 * math.sin(a)}, force = "player"}
-      if t then t.insert{name = "uranium-rounds-magazine", count = 200}; t.destructible = false end
+    for i, side in ipairs(streak and {-1, 0, 1} or {0}) do
+      local c = {math.floor(o.x - ux * 120 - uy * 80 * side), math.floor(o.y - uy * 120 + ux * 80 * side)}
+      flatten(c[1] - 16, c[2] - 16, c[1] + 16, c[2] + 16)
+      surface().create_entity{name = "assembling-machine-1", position = c, force = "player"}
+      -- Twelve gun turrets with uranium rounds, indestructible: nothing there can be razed but the assembler they guard.
+      for k = 0, 11 do
+        local a = 2 * math.pi * k / 12
+        local t = surface().create_entity{name = "gun-turret", position = {c[1] + 6 * math.cos(a), c[2] + 6 * math.sin(a)}, force = "player"}
+        if t then t.insert{name = "uranium-rounds-magazine", count = 200}; t.destructible = false end
+      end
     end
     S.bases0 = #lp("bases")
   end)
   for t = 3 * 3600, END - 120, 600 do
     schedule(t, function()
       local st = lp("stats", storage.id)
+      if not st.quiescent and not S.down then S.cap_up = st.cap end
       if st.quiescent and not S.down then
-        S.down, S.launched_down = game.tick, st.ops.launched
+        S.down, S.launched_down, S.cap_down, S.streak_down = game.tick, st.ops.launched, st.cap, st.stood_down_streak
       end
-      -- What it launched while stood down (until it woke).
+      -- What it launched while stood down (until it woke, or till its ground was hit).
       if S.down and not S.woke then
-        if st.quiescent then S.launched_quiet = st.ops.launched else S.woke = game.tick end
+        if st.quiescent then
+          if not S.creep then S.launched_quiet = st.ops.launched end
+        else S.woke = game.tick end
       end
       if S.down and not S.landed and #lp("bases") > (S.bases0 or 0) then S.landed = game.tick end
+      -- (Before it first woke: counted at any stand-down, a raid made awake read as an answer, seen with the exemption
+      -- removed.)
+      if S.creep and not S.woke and st.quiescent and st.ops.launched > S.launched_creep then S.answered = S.answered or game.tick end
+      -- A gun turret on its ground, a minute after it stood down, in reach of the building of its nearest the player.
+      if S.down and not S.creep and not streak and st.quiescent and game.tick - S.down >= 3600 then
+        local near, nd
+        for _, e in ipairs(surface().find_entities_filtered{force = FORCE, type = {"assembling-machine", "furnace", "lab"}}) do
+          local d = e.position.x * e.position.x + e.position.y * e.position.y
+          if not nd or d < nd then near, nd = e, d end
+        end
+        if near then
+          local len = math.max(1, math.sqrt(nd))
+          local want = {near.position.x - near.position.x / len * 14, near.position.y - near.position.y / len * 14}
+          local q = surface().find_non_colliding_position("gun-turret", want, 8, 1)
+          local tur = q and surface().create_entity{name = "gun-turret", position = q, force = "player"}
+          if tur then
+            tur.insert{name = "firearm-magazine", count = 50}
+            S.creep, S.creep_at, S.launched_creep = tur, game.tick, st.ops.launched
+          end
+        end
+      end
     end)
   end
   schedule(END - 60, function()
     local st = lp("stats", storage.id)
-    info(string.format("quiet: stood down at %s (%d times), operations %s then %d now, a new landing at %s", tostring(S.down),
-      st.stood_down or 0, tostring(S.launched_down), st.ops.launched, tostring(S.landed)))
+    info(string.format("quiet: stood down at %s (%d times, %d on a streak), operations %s then %d now, a new landing at %s, cap %s -> %s, creep at %s %s",
+      tostring(S.down), st.stood_down or 0, st.stood_down_streak or 0, tostring(S.launched_down), st.ops.launched,
+      tostring(S.landed), tostring(S.cap_up), tostring(S.cap_down), tostring(S.creep_at),
+      S.creep and (S.creep.valid and "standing" or "razed") or "none"))
     check("quiet: it stood down", S.down ~= nil, tostring(S.down))
     check("quiet: and launched nothing against the player while stood down", S.down and S.launched_quiet == S.launched_down,
       string.format("%s -> %s", tostring(S.launched_down), tostring(S.launched_quiet)))
     check("quiet: a new landing within 6 minutes", S.landed and S.landed - S.down <= 6 * 3600 + 600, tostring(S.landed))
+    -- (Its reserve: an army cap no more than half what it was at war, army.RESERVE.)
+    check("quiet: stood down, its army cap is its reserve", S.cap_up and S.cap_down and S.cap_down <= math.ceil(S.cap_up / 2),
+      string.format("%s -> %s", tostring(S.cap_up), tostring(S.cap_down)))
+    if streak then
+      check("quiet: streak, it stood down on its failures in a row, not the hour", (S.streak_down or 0) >= 1,
+        string.format("%s on a streak, stood down at %s", tostring(S.streak_down), tostring(S.down)))
+    else
+      check("quiet: stood down, it still answers a gun turret on its ground", S.answered ~= nil,
+        string.format("put at %s, answered at %s, %s, operations %s -> %d", tostring(S.creep_at), tostring(S.answered),
+          S.creep and (S.creep.valid and "standing" or "razed") or "none", tostring(S.launched_creep), st.ops.launched))
+    end
   end)
 end
 

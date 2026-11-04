@@ -58,10 +58,18 @@ local function cap(b)
   -- again (b.war_rung, war.lua). It had only lowered the price of using what the settlement had.
   -- Its posture (strategy.lua, refreshed every 10 s by war.lua): a rung, a grudge, its recent losses. Before it is
   -- first set, the rung and the grudge as they were read here.
-  if b.posture then return math.floor(n * b.posture.arm) end
-  if (b.war_rung or 0) >= 2 then n = math.floor(n * 1.5) end
-  return (b.grudge_till and game.tick < b.grudge_till) and 2 * n or n
+  if b.posture then n = math.floor(n * b.posture.arm)
+  else
+    if (b.war_rung or 0) >= 2 then n = math.floor(n * 1.5) end
+    if b.grudge_till and game.tick < b.grudge_till then n = 2 * n end
+  end
+  -- Stood down (war.lua), it builds no army past a reserve, enough to hold its own ground, and its parts go back into its
+  -- works (the user, 2026-11-04: "stop building past reserve"; strategy.posture leaves the planner nothing for an army
+  -- not short of its cap). What it has it keeps.
+  if b.quiescent then n = math.max(1, math.floor(n * army.RESERVE)) end
+  return n
 end
+army.RESERVE = 0.5
 army.cap = cap
 -- Every unit it owns, out or home (pool.strength): the cap holds them all.
 local function strength(b) return pool.strength(b) end

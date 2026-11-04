@@ -811,6 +811,13 @@ local function finish(b, outcome, trace, army)
   end
   for _, e in ipairs(op.works or {}) do if e.valid then e.destroy() end end
   if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.ops_done = b.ops_done + 1 else b.ops_aborted = b.ops_aborted + 1 end
+  -- Its losing streak (the user, 2026-11-04: stop after failures in a row): operations against a player that failed one
+  -- after another, whatever their target; one done, or anything razed (control.lua), ends it. war.lua stands down on it.
+  local tt_ = b.intel.targets[op.target]
+  if tt_ and against_player(tt_.owner) and not op.clearance then
+    if outcome == "done" or outcome == "spent" or outcome == "claimed" then b.fail_streak = 0
+    else b.fail_streak = (b.fail_streak or 0) + 1 end
+  end
   local lost = op.launched - alive(op)
   b.next_op = game.tick + tune.sooner(b.corp, (outcome == "done" or outcome == "spent" or outcome == "claimed") and GAP_DONE
     or GAP_ABORTED)

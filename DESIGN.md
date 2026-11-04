@@ -140,7 +140,7 @@ document still says Serenity where it records history.
 | Landing by approach (at most 6 spawners on the way), Grubstake 60 tiles from turrets | built | `country` |
 | Each corporation's own ladder (rungs at 10/20/30 min without a raze); rung 2 raises the unit cap by half, rung 3 a siege tier | built | `ladder` (two) |
 | War footing and the war chest: units before rebuilds at war; reliefs (Grubstake's pods, Serenity's columns or drops) | built | `reinforce` (three) |
-| Standing down: an hour at war razing nothing, a camp goes quiet and a new landing comes | built | `quiet` |
+| Standing down: an hour at war razing nothing, or three operations failed in a row, a camp goes quiet (its army cap halved, self-defence kept) and a new landing comes | built | `quiet`, `quiet streak` |
 | Grubstake's pact with the biters through pacifier antennas (cease-fire both ways; break it by destroying them) | built | `pact` (two) |
 | Serenity against nests: railgunners, the howitzer with cluster shells, clearances that hold their site, the orbital barrage on landing | built | `rail` (two), `clear` (three), `clearing` |
 | Convoys leave walled camps (formed past the outermost wall, escorts ride out, stuck ones called off) | built | `convoy` (two, full list) |
@@ -2957,6 +2957,8 @@ camp is being shelled apart.
   facing ten lasers launched one raid in 30 minutes) stands down (`war.lua`): no operation against the player but
   self-defence, no relief; it leaves its place in the settlement limit (`faction.alive`), the next landing comes within
   5 minutes and keeps away from its site (`storage.failed_sites`). After an hour it tries again. Notice `lp.stood-down`.
+- Or sooner, after three operations against the player failed in a row (0.2.190); stood down, it builds no army past
+  half its cap (army.RESERVE).
 - Scenario `quiet` (provoked Serenity, an assembler ringed by twelve indestructible gun turrets, the hour at 6 minutes):
   stood down after 6 quiet minutes, nothing launched while down, a new settlement 5 minutes later, then it woke and tried
   again.
@@ -4416,6 +4418,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   covered its first mine alone (8 sweepers for 8 mines on 12345, 10 for 10 clusters on 777). farm siege 12345: none
   left on any of its three waves (its second had left 2), 4 sweepers for 8 mines; 777: 2 left, both in the fifth cluster
   its plan did not pay for (the allowance), all checks pass.
+- **Losing: standing down sooner, a reserve, and the two it already did** (0.2.190; the user, 2026-11-04, all four
+  of: stop after failures in a row, switch targets, always defend, stop building past a reserve). Two new: a settlement
+  counts its operations against a player that failed one after another (`b.fail_streak`, ops.finish; whatever their
+  target; one done or anything razed ends it) and stands down at FAIL_STREAK, 3 (times its aggression, 2 at least; a
+  prior), without waiting out the hour (war.lua, trace "N operations failed in a row"). Stood down, its army cap is
+  army.RESERVE, half, of what it was: it builds nothing past it, and the planner, its army not short, spends its parts on
+  its works (what it has it keeps). Two it did already, now checked: switching targets (a failed target is tried and its
+  area cools, the ladder sets the method aside there: the streak run raids its three guarded assemblers in turn) and
+  self-defence stood down (a turret or battery on its ground is not held). `quiet` checks the reserve (30 to 15) and that
+  a gun turret put up on its ground a minute after it stood down is raided while it is down (20 s later); `quiet streak`
+  (new: the hour past the run, three assemblers ringed by indestructible turrets 80 apart) stands down on its third
+  failure in a row at 43 minutes. Each check seen failing with its mechanism broken (reserve 1, the exemption removed,
+  FAIL_STREAK 100); the answer was first counted at any stand-down and passed with the exemption removed (a raid made
+  awake, then down again), now before it first wakes.
+- **The dome stops shells only** (the user, 2026-11-04): it is not to block units' direct fire; troops and vehicles under
+  it, its power cut, or sustained fire remain its answers. As built (dome.lua catches artillery projectiles alone).
+- **Trailer: music only** (the user, 2026-11-04): no captions; card 3 cut, the title and end card stay
+  (`docs/trailer/storyboard.md`). The track is the user's pick.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
