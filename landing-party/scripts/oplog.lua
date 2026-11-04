@@ -119,8 +119,10 @@ local function follow(s, view, base_id, seen)
   local a, from = rec.attempt, rec.staging or rec.camp
   a.method = view.method or a.method
   if surface and rec.target and not a.sig then a.sig = attempt.sig(surface, rec.owner or "player", rec.target) end
+  -- (Where the wall crossed its way when it set out, before it broke any: attempt.inside.)
+  if surface and rec.target and from and a.wall_f == nil then a.wall_f = attempt.wall_at(surface, rec.force, from, rec.target) or false end
   if surface and not a.inside and #pts > 0 then
-    a.inside = attempt.inside(surface, rec.force, from, rec.target, pts)
+    a.inside = attempt.inside(surface, rec.force, from, rec.target, pts, a.wall_f or nil)
     if a.inside then a.t_inside, a.tick_inside = minute(), game.tick end
   end
 end
@@ -134,7 +136,7 @@ local function look_inside(s, view)
   for _, u in ipairs(view.members) do
     if u.valid then pts[#pts + 1] = u.position; surface = surface or u.surface end
   end
-  if surface and #pts > 0 and attempt.inside(surface, rec.force, rec.staging or rec.camp, rec.target, pts) then
+  if surface and #pts > 0 and attempt.inside(surface, rec.force, rec.staging or rec.camp, rec.target, pts, rec.attempt.wall_f or nil) then
     rec.attempt.inside, rec.attempt.t_inside, rec.attempt.tick_inside = true, minute(), game.tick
   end
 end

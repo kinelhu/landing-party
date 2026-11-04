@@ -4432,6 +4432,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   failure in a row at 43 minutes. Each check seen failing with its mechanism broken (reserve 1, the exemption removed,
   FAIL_STREAK 100); the answer was first counted at any stand-down and passed with the exemption removed (a raid made
   awake, then down again), now before it first wakes.
+- **The observer sees a wave in through the gap it broke** (0.2.191). The biotech and ops regression after 0.2.190 (192
+  runs, 191 pass) failed `herd` wallgoal's contract: its wave said in at 7001, the test saw 2 of its own past the wall at
+  7020, the observer (attempt.inside) at 9377. 0.2.189's sweep spots had moved its breach: through the gap it broke, the
+  line from where it set out to its unit nearest its target ran through the gap, no wall on it, out. (A better attack
+  than before, too: 6 substations razed, worth 18.2, against 0.2.) The observer now keeps where the wall crossed the
+  line from where it set out to its target when it set out (oplog: `attempt.wall_f`, attempt.wall_at, before any wall
+  broke) and reads in also its unit beyond that crossing by a tile along the line with no wall between it and its
+  target (outside a ring wall at its side it stands beyond the crossing too). Observer 7037; seen failing before.
 - **The dome stops shells only** (the user, 2026-11-04): it is not to block units' direct fire; troops and vehicles under
   it, its power cut, or sustained fire remain its answers. As built (dome.lua catches artillery projectiles alone).
 - **Trailer: music only** (the user, 2026-11-04): no captions; card 3 cut, the title and end card stay

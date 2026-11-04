@@ -18,7 +18,7 @@ digraph ai {
     "valuemap" [label="valuemap\n208 lines", width=1.03, fillcolor="#eef2f7"];
     "costmap" [label="costmap\n415 lines", width=1.26, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
-    "attempt" [label="attempt\n62 lines", width=0.87, fillcolor="#eef2f7"];
+    "attempt" [label="attempt\n91 lines", width=0.90, fillcolor="#eef2f7"];
     "tactics" [label="tactics\n260 lines", width=1.09, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -101,7 +101,7 @@ digraph ai {
     "control" [label="control\n956 lines", width=1.86, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
-    "oplog" [label="oplog\n185 lines", width=1.01, fillcolor="#eef2f7"];
+    "oplog" [label="oplog\n187 lines", width=1.01, fillcolor="#eef2f7"];
   }
   "army" -> "know";
   "army" -> "ops";

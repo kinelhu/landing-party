@@ -56,7 +56,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `valuemap` | 208 | firemap | control, farm, herd, oplog, siege |  |  |  |  |
 | `dev` | 196 | army, base, faction, farm, jumper, names, ops, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
-| `oplog` | 185 | attempt, valuemap | control |  |  |  | oplog |
+| `oplog` | 187 | attempt, valuemap | control |  |  |  | oplog |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `site` | 168 | modules | base, control, faction, layout |  |  |  |  |
@@ -72,6 +72,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `scorcher` | 110 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_drains |
 | `border` | 108 | chart, ops, standing | control |  | 600 |  | borders |
 | `pact` | 107 | base | control, faction, marker |  | 600 |  | pact_broken, pact_state |
+| `attempt` | 91 | threat | herd, herd_learn, oplog, ops, siege |  |  |  |  |
 | `scanner` | 90 | (leaf) | control |  |  |  | scanners |
 | `belts` | 86 | (leaf) | control |  |  |  |  |
 | `cuts` | 86 | pool | ops |  |  |  |  |
@@ -83,7 +84,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `map` | 71 | chart, names, standing | control |  | 600 |  |  |
 | `strike` | 67 | threat | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `pods` | 64 | (leaf) | cell, control, faction, farm, siege, war |  | 60 |  | pods |
-| `attempt` | 62 | threat | herd, herd_learn, oplog, ops, siege |  |  |  |  |
 | `marker` | 61 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
 | `bait` | 59 | (leaf) | control |  | 30 |  | baits, baits_called |
 | `rng` | 56 | (leaf) | army, base, farm, layout, names, tactics, war |  |  |  |  |

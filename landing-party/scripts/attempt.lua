@@ -11,6 +11,7 @@ local attempt = {}
 attempt.WALLS = {"wall", "gate"}
 attempt.SIG_REACH = 48   -- the guns and walls within this of a place: the defence it met (attempt.sig)
 attempt.NEAR = 12        -- an unwalled target reached: a unit this near it
+attempt.PAST = 1         -- past where the wall crossed its way by this many tiles (attempt.inside)
 
 -- A unit's worth in mediums, its health over a medium biter's (the user, 2026-10-30: price and size in health, not heads):
 -- a tank's and a truck's as a biter's.
@@ -45,9 +46,25 @@ function attempt.wall_on_line(surface, own, a, b)
   return false
 end
 
+-- How far along the line from `a` to `b` (0 to 1) the first wall piece not of `own` stands (nil: none).
+function attempt.wall_at(surface, own, a, b)
+  local ax, ay, bx, by = a.x or a[1], a.y or a[2], b.x or b[1], b.y or b[2]
+  local n = math.ceil(math.sqrt((bx - ax) ^ 2 + (by - ay) ^ 2))
+  for i = 1, n - 1 do
+    for _, e in ipairs(surface.find_entities_filtered{position = {ax + (bx - ax) * i / n, ay + (by - ay) * i / n}, radius = 0.8,
+      type = attempt.WALLS}) do
+      if e.force.name ~= own then return i / n end
+    end
+  end
+end
+
 -- Whether it is in, seen from outside: its unit nearest its target stands past a wall from where it set out (`from`),
--- or, with no wall between where it set out and its target, within NEAR of the target.
-function attempt.inside(surface, own, from, target, positions)
+-- or, with no wall between where it set out and its target, within NEAR of the target. wall_f (attempt.wall_at, read
+-- when it set out): also in once that unit stands beyond where the wall crossed its way, along it, no wall between it
+-- and its target. (Through a gap it
+-- broke, the line from where it set out to its unit ran through the gap: a wave razing behind the wall read as out for
+-- 40 s; herd wallgoal, 0.2.189.)
+function attempt.inside(surface, own, from, target, positions, wall_f)
   if not (from and target and positions and #positions > 0) then return false end
   local tx, ty = target.x or target[1], target.y or target[2]
   local best, bd
@@ -56,6 +73,18 @@ function attempt.inside(surface, own, from, target, positions)
     if not bd or d < bd then best, bd = p, d end
   end
   if attempt.wall_on_line(surface, own, from, best) then return true end
+  if wall_f then
+    local fx, fy = from.x or from[1], from.y or from[2]
+    local ex, ey = tx - fx, ty - fy
+    local len2 = ex * ex + ey * ey
+    if len2 > 0 then
+      local along = (((best.x or best[1]) - fx) * ex + ((best.y or best[2]) - fy) * ey) / len2
+      -- (And no wall between it and its target: outside a ring wall at its side it stands beyond the crossing too.)
+      if along > wall_f + attempt.PAST / math.sqrt(len2) and not attempt.wall_on_line(surface, own, best, target) then
+        return true
+      end
+    end
+  end
   return bd <= attempt.NEAR ^ 2 and not attempt.wall_on_line(surface, own, from, target)
 end
 
