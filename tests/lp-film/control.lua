@@ -201,11 +201,16 @@ script.on_event(defines.events.on_tick, function(e)
   -- (A still timed before the save's own tick never comes, and the film waited out its 30 minutes on 47 of them: a
   -- save's tick is when it was written, not minute x 3600, 2026-11-04. Stop at once, naming them.)
   if not storage.first_tick then
+    -- (Settlement labels show while tracing, and a visit traces: a lander's "depot | parts 28 | ..." was in the trailer's
+    -- rough cut, 2026-11-04. P.trace = true keeps it, for scouting runs that read decisions.txt.)
+    if not P.trace then remote.call("landing-party", "set_trace", false) end
     local early = 0
     for _, s in ipairs(P.shots) do if s.tick and s.tick < e.tick then early = early + 1 end end
     if early > 0 then error("lp-film: " .. early .. " stills timed before this save's tick " .. e.tick) end
   end
   storage.first_tick = storage.first_tick or e.tick
+  -- P.each = function(tick): a film's own probe, every 60 ticks (scouting what stands where before framing a shot).
+  if P.each and e.tick % 60 == 0 then P.each(e.tick) end
   -- P.stop_after: ticks from the film's first; then it ends with what it took (shots on events that never came are left).
   if P.stop_after and e.tick - storage.first_tick >= P.stop_after and not storage.stopped then
     storage.stopped = true
