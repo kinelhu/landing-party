@@ -136,7 +136,7 @@ local function line_pylons()
   return out
 end
 
-local S = {}  -- scenario state (the run never saves, so plain locals are enough)
+local S = {}  -- scenario state (a plain table; a fork saves it in storage.fork_S, and on_load brings it back)
 local LAB = {}  -- the siege lab's hooks (scenarios.lab): its recorder's deaths
 
 -- Rates over a window from the cumulative counters: the smoothed rates in stats alias against crafting
@@ -13671,6 +13671,11 @@ if params.save_at then
   -- A second before the strike: saved one tick before, the loaded game never ran the strike.
   schedule(params.save_at * 3600 - 60, function()
     game.speed = 1
+    -- The scenario's state with it (S is a plain table, lost in a save: a fork filmed in a window, its steps after the
+    -- save failed on S.k, 2026-11-04). Functions cannot be saved: left out.
+    local keep = {}
+    for k, v in pairs(S) do if type(v) ~= "function" then keep[k] = v end end
+    storage.fork_S = keep
     game.server_save("fork")
     helpers.write_file("landing-party/saved.txt", tostring(game.tick))
   end)
@@ -13948,6 +13953,10 @@ end)
 -- (scripts/visit.sh; scheduled by absolute tick, nothing ever ran on one).
 -- A step that errors is a failed check, and the results are written all the same: a visit at strength 2 ran its three
 -- hours and wrote nothing, no error in its log (2026-10-18).
+-- A fork loaded: its scenario's state back (the save step above).
+script.on_load(function()
+  for k, v in pairs(storage.fork_S or {}) do S[k] = v end
+end)
 script.on_event(defines.events.on_tick, function(e)
   local f = at[e.tick - (storage.t0 or 0)]
   if not f then return end

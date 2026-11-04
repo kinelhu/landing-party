@@ -3,10 +3,17 @@
 -- dt = ticks after that event of settlement P.base's siege (read from Landing Party's stats, every 10 ticks till seen)}.
 -- The game runs at P.speed until P.fast_until, then at 1. When every still is taken it writes done.txt (film.sh waits).
 local P = require("params")
+-- This session's first tick (a local: it starts again with each load). With P.reel set and stills left that many ticks
+-- into a session, it saves, names the save in reel.txt, and film.sh opens it again in a fresh session. (Written for a stop
+-- that was freeplay's intro dialog, no_intro below; kept for films longer than one session should run.)
+local session_from, reeled
 
 local function shot(s)
   local pos = s.pos
-  if pos == "strike" then
+  if pos == "hold" or pos == "jump" or pos == "site" or pos == "escort" then
+    local c = (storage.points or {})[pos] or storage.center or {0, 0}
+    pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
+  elseif pos == "strike" then
     local c = storage.center or {0, 0}
     pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
   end
@@ -85,6 +92,18 @@ local function build()
   end
 end
 
+-- No freeplay intro for the player a windowed load makes (the user, 2026-11-04: "Isn't it just stopping for the tab
+-- press?"): its crash-site cutscene, then its welcome message as a dialog, which pauses a single-player game till Tab.
+-- Every film stopped about 720 ticks into a fresh session, at one tick a save.
+local function no_intro()
+  if remote.interfaces.freeplay then
+    if remote.interfaces.freeplay.set_skip_intro then remote.call("freeplay", "set_skip_intro", true) end
+    if remote.interfaces.freeplay.set_disable_crashsite then remote.call("freeplay", "set_disable_crashsite", true) end
+  end
+end
+script.on_init(no_intro)
+script.on_configuration_changed(no_intro)
+
 script.on_event(defines.events.on_tick, function(e)
   if P.build and not storage.built then build() end
   for _, ent in ipairs(storage.built or {}) do
@@ -113,8 +132,18 @@ script.on_event(defines.events.on_tick, function(e)
   for _, d in ipairs(P.dev or {}) do
     if e.tick == d.tick then
       local at = d.at
-      if at.toward then
-        local o = remote.call("landing-party", "stats", P.base).origin
+      if at.wall then
+        -- The player's wall nearest settlement P.base (its siege's wall in the orbital scenario).
+        local o = remote.call("landing-party", "stats", base_id or 1).origin
+        local best, bd
+        for _, w in ipairs(game.surfaces[1].find_entities_filtered{type = "wall", force = "player"}) do
+          local dd = (w.position.x - o.x) ^ 2 + (w.position.y - o.y) ^ 2
+          if not bd or dd < bd then best, bd = w, dd end
+        end
+        at = best and {best.position.x, best.position.y} or {o.x, o.y}
+        log("lp-film: aimed at the wall at " .. at[1] .. "," .. at[2])
+      elseif at.toward then
+        local o = remote.call("landing-party", "stats", base_id or 1).origin
         local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
         at = {o.x - o.x / len * at.toward, o.y - o.y / len * at.toward}
       end
@@ -127,19 +156,65 @@ script.on_event(defines.events.on_tick, function(e)
   end
   storage.seen = storage.seen or {}
   storage.taken = storage.taken or 0
+  session_from = session_from or e.tick
+  storage.first_tick = storage.first_tick or e.tick
+  -- P.stop_after: ticks from the film's first; then it ends with what it took (shots on events that never came are left).
+  if P.stop_after and e.tick - storage.first_tick >= P.stop_after and not storage.stopped then
+    storage.stopped = true
+    log("lp-film: stopped after " .. P.stop_after .. " ticks, " .. storage.taken .. " of " .. #P.shots .. " taken")
+    helpers.write_file("lp-film/" .. P.name .. "/done.txt", "done\n")
+  end
+  if P.reel and not reeled and storage.taken < #P.shots and e.tick - session_from >= P.reel then
+    reeled = true
+    storage.reels = (storage.reels or 0) + 1
+    local name = "film-reel-" .. storage.reels
+    game.auto_save(name)
+    helpers.write_file("lp-film/" .. P.name .. "/reel.txt", "_autosave-" .. name)
+    log("lp-film: reel " .. storage.reels .. " saved at tick " .. e.tick)
+  end
   -- (Its clock in the log every 10 s: a film that stops taking stills says whether time still runs.)
   if e.tick % (P.log_every or 600) == 0 then
-    log(string.format("lp-film: tick %d, taken %d of %d, seen %s", e.tick, storage.taken, #P.shots, serpent.line(storage.seen)))
+    -- (And its players: what they are and how they stand, the clock having stopped at one tick in a save, every session.)
+    local who = {}
+    for _, p in pairs(game.players) do
+      local c = p.character
+      who[#who + 1] = string.format("%s ctl %s char %s hp %s at %.0f,%.0f", p.name, tostring(p.controller_type),
+        tostring(c and c.valid), c and c.valid and string.format("%.0f", c.health) or "-", p.position.x, p.position.y)
+    end
+    log(string.format("lp-film: tick %d, taken %d of %d, seen %s; %s", e.tick, storage.taken, #P.shots,
+      serpent.line(storage.seen), table.concat(who, "; ")))
   end
   if P.fast_until then
     -- (Or till the event its stills wait for: P.fast_until = "paint" runs fast until the strike is painted.)
-    local fast = P.fast_until == "paint" and not storage.seen.paint or (type(P.fast_until) == "number" and e.tick < P.fast_until)
+    local fast = type(P.fast_until) == "string" and not storage.seen[P.fast_until]
+      or (type(P.fast_until) == "number" and e.tick < P.fast_until)
     local want = fast and (P.speed or 8) or 1
     if game.speed ~= want then game.speed = want end
   end
-  if e.tick % 10 == 0 and P.base and not (storage.seen.paint and storage.seen.falling) then
-    local st = remote.call("landing-party", "stats", P.base)
+  -- P.base = "siege": the settlement with a siege out, whichever it is (a scenario's camp is not always id 1).
+  if P.base == "siege" and e.tick % 60 == 0 and not storage.base_id then
+    for _, id in ipairs(remote.call("landing-party", "bases") or {}) do
+      local st = remote.call("landing-party", "stats", id)
+      if st and st.ops and st.ops.op_phase then storage.base_id = id; log("lp-film: the siege is base " .. id) end
+    end
+  end
+  local base_id = P.base == "siege" and storage.base_id or (P.base ~= "siege" and P.base or nil)
+  if e.tick % 10 == 0 and base_id then
+    local st = remote.call("landing-party", "stats", base_id)
     local o = st and st.ops or {}
+    -- Its siege's phases as events ("phase:deploy" ...), and the points its stills aim at (pos = "hold" | "jump" | "site").
+    if o.op_phase and not storage.seen["phase:" .. o.op_phase] then storage.seen["phase:" .. o.op_phase] = e.tick end
+    storage.points = storage.points or {}
+    for _, k in ipairs({"hold", "jump", "site"}) do
+      local v = o["op_" .. k]
+      if v then storage.points[k] = {v.x or v[1], v.y or v[2]} end
+    end
+    -- Where its escort stands (pos = "escort"): the centre of its units (a hold point read empty, the escort elsewhere).
+    if o.op_members and #o.op_members > 0 then
+      local sx, sy = 0, 0
+      for _, m in ipairs(o.op_members) do sx, sy = sx + m[1], sy + m[2] end
+      storage.points.escort = {sx / #o.op_members, sy / #o.op_members}
+    end
     storage.seen.paint = storage.seen.paint or o.strike_paint
     storage.seen.falling = storage.seen.falling or o.strike_falling
     -- (Its centre, for stills aimed at the strike: pos = "strike", with off = {dx, dy}.)

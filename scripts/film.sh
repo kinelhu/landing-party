@@ -16,14 +16,36 @@ cp "$V/saves/$SAVE" "$V/saves/film.zip"
 rm -rf "$V/mods/lp-sim" "$V/mods/lp-film" "$V/script-output/lp-film/$FN"
 ln -sfn "$REPO/landing-party" "$V/mods/landing-party"
 cp -R "$REPO/tests/lp-film" "$V/mods/lp-film"; cp "$PARAMS" "$V/mods/lp-film/params.lua"
-echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-film", "enabled": true}]}' > "$V/mods/mod-list.json"
+# LP_FILM_SIM=<a fork's sim dir>: its scenario harness along (lp-sim with the fork's params), so a scenario saved before its
+# own steps (a defence built, a siege forced) goes on playing in the window.
+SIMMOD=""
+if [ -n "${LP_FILM_SIM:-}" ]; then
+  cp -R "$REPO/tests/lp-sim" "$V/mods/lp-sim"; sed 's/, save_at = [0-9]*//' "$LP_FILM_SIM/mods/lp-sim/params.lua" > "$V/mods/lp-sim/params.lua"
+  SIMMOD=', {"name": "lp-sim", "enabled": true}'
+fi
+echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-film", "enabled": true}'"$SIMMOD"']}' > "$V/mods/mod-list.json"
 L="$V/launch"; mkdir -p "$L"; echo 427520 > "$L/steam_appid.txt"
 cd "$L"
-rm -f "$V/factorio-current.log"   # (its error check reads this run's log, not the last)
-"$FACTORIO" --config "$V/config/config.ini" --load-game "$V/saves/film.zip" > "$V/film.out" 2>&1 &
-PID=$!
+# Reels (the user's Mac, 2026-11-04: a windowed game stops advancing about 720 ticks after it loads, every time): the helper
+# saves the game before then while stills remain (reel.txt names the save) and film.sh opens it again in a fresh session.
+REEL="$V/script-output/lp-film/$FN/reel.txt"
+launch() {
+  rm -f "$V/factorio-current.log" "$REEL"   # (its error check reads this run's log, not the last)
+  "$FACTORIO" --config "$V/config/config.ini" --load-game "$1" > "$V/film.out" 2>&1 &
+  PID=$!
+}
+launch "$V/saves/film.zip"
+REELS=1
 for _ in $(seq 1 1800); do
   [ -f "$V/script-output/lp-film/$FN/done.txt" ] && break
+  if [ -f "$REEL" ]; then
+    NEXT="$V/saves/$(cat "$REEL").zip"
+    for _ in $(seq 1 60); do [ -f "$NEXT" ] && break; sleep 1; done
+    sleep 3; kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true
+    [ -f "$NEXT" ] || { echo "FILM FAILED: its reel's save $NEXT never came"; exit 1; }
+    REELS=$((REELS + 1)); launch "$NEXT"
+    continue
+  fi
   kill -0 "$PID" 2>/dev/null || { echo "FILM FAILED: the game stopped"; tail -20 "$V/film.out"; exit 1; }
   # (A script error holds the window on its dialog: a dome film waited out its 30 minutes on one, 2026-11-04.)
   if grep -q "non-recoverable error" "$V/factorio-current.log" 2>/dev/null; then
@@ -35,4 +57,4 @@ done
 sleep 3; kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true
 [ -f "$V/script-output/lp-film/$FN/done.txt" ] || { echo "FILM FAILED: no done.txt within 30 minutes"; exit 1; }
 mkdir -p "$OUT"; cp "$V/script-output/lp-film/$FN/"*.png "$OUT/"
-echo "stills: $OUT ($(ls "$OUT"/*.png | wc -l | tr -d ' '))"
+echo "stills: $OUT ($(ls "$OUT"/*.png | wc -l | tr -d ' '), $REELS reels)"

@@ -4511,6 +4511,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   proposed in its open question. Found filming: a windowed game stops advancing about 720 ticks after it loads, every
   time (its main loop paces frames; nothing in the mod pauses it; not App Nap, tried and undone); films are kept under
   that, and the strike's (paint 720 ticks, then its fall) does not fit. Open: Steam was not running (the Steam build).
+- **Filming fixed: freeplay's intro dialog; forks carry their scenario's state** (0.2.196). Every windowed film stopped at
+  one tick a save, about 720 ticks into a session: freeplay's crash-site cutscene for the player a windowed load makes,
+  then its welcome message as a dialog, which pauses a single-player game till Tab (the user, 2026-11-04: "Isn't it just
+  stopping for the tab press?"; I had chased Steam and App Nap first). The film helper tells freeplay to skip both
+  (set_skip_intro, set_disable_crashsite) as it is added to a save. A fork filmed with its scenario harness
+  (LP_FILM_SIM, film.sh) lost the scenario's state, a plain table: its steps after the save failed on S.k; the harness
+  keeps S in storage.fork_S at its save and brings it back on load. The helper also finds the settlement with a siege out
+  (base = "siege": the scenario's camp was base 2), aims at the strike, the escort's centre or the wall nearest the
+  camp, reads a siege's phases as events, can call /lp tools on a schedule, and ends a film after stop_after ticks with
+  what it took. A forced strike (/lp strike) tells no siege it falls. Filmed: the orbital strike on the orbital scenario's
+  wall (docs/trailer/stills-strike2.lua), the formations on standsiege (stills-formations.lua: the escort in staggered
+  ranks at its hold as the pods deploy, the barrage, the paint, the spotter killed by the lasers and the strike called
+  off). Open, seen: the platform's shadow reads as flat dark rectangles.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

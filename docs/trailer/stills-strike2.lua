@@ -16,5 +16,5 @@ both("5-barrage-late", "falling", 200, 0.6)
 both("6-walking-in", "falling", 300, 0.5)
 both("7-after", "falling", 900, 0.6)
 local fork_tick = 35940
-return {name = "strike2", base = 1, log_every = 10, resolution = {1280, 720}, anti_alias = false, dev = {{tick = fork_tick + 120, args = {"strike", "1"}, at = {toward = 120}}},
+return {name = "strike2", base = 1, resolution = {1280, 720}, anti_alias = false, dev = {{tick = fork_tick + 120, args = {"strike", "1"}, at = {wall = true}}},
   shots = shots}
