@@ -11355,8 +11355,15 @@ scenarios.farm = function()
           finish_early()
         end
       end
+      -- (Siege: once a wave that sent big bursters is done, what its checks judge: on 12345 its first wave is a probe, and
+      -- settled on that, the run ended before its siege came, five checks failing on nothing, 0.2.186.)
+      local done = #st.log > 0
+      if mix == "siege" then
+        done = false
+        for _, l in ipairs(st.log) do if (l.big_sent or 0) > 0 then done = true end end
+      end
       if mix ~= "killed" and mix ~= "starve" and mix ~= "techs" and mix ~= "clinic" and mix ~= "growth" and mix ~= "found"
-        and mix ~= "seedbare" and mix ~= "moat" and #st.log > 0 then finish_early() end
+        and mix ~= "seedbare" and mix ~= "moat" and done then finish_early() end
     end)
   end
   schedule(END - 60, function()
@@ -11790,6 +11797,10 @@ scenarios.farm = function()
           first = first or l
         end
       end
+      for _, l in ipairs(lp("herd_state").log or {}) do
+        info("farm siege: wave " .. serpent.line({id = l.id, big_sent = l.big_sent, set_off = l.big_set_off, plan_mines = l.plan_mines,
+          sweep_mines = l.sweep_mines, sweep_left = l.sweep_left, broke = l.bursters and l.bursters.broke, outcome = l.outcome, ram_off = l.ram_off}))
+      end
       local opens = (lp("lab_prices").opens or {})["player"]
       -- (Since its rams go at the wall on its swept lane, the wall no longer holds: one ram broke 3 lasers and 11 wall pieces,
       -- its yield rose past its reckoning and "below" failed; what is checked is that it learned from what they did, the
@@ -11819,9 +11830,12 @@ scenarios.farm = function()
       local swept_mines = first and first.bursters and first.bursters.broke and first.bursters.broke["land-mine"] or 0
       -- (Those its plan saw, what its farm paid sweepers for: at the breach its sweep reads the herd's whole width and found
       -- 12 where its plan had 10, two clusters past what it paid for.)
+      -- (Counted as those still standing once its sweep is done, at most the ones past what its plan paid for: its bursts'
+      -- kills against its plan's count passed on 777 with two of its paid clusters standing; on 12345 its sweepers die to
+      -- the lasers 7 tiles short of their spots, two mines left, 0.2.187.)
       check("farm: siege, its sweepers cleared the mines on its way in", first ~= nil and (first.plan_mines or 0) > 0
-        and swept_mines >= first.plan_mines, string.format("%d of the %s its plan saw (%s at the breach)", swept_mines,
-        tostring(first and first.plan_mines), tostring(first and first.sweep_mines)))
+        and first.sweep_left ~= nil and first.sweep_left <= math.max(0, (first.sweep_mines or 0) - first.plan_mines), string.format("%s left of the %s at the breach (its plan saw %s; %d broken by its bursts)",
+        tostring(first and first.sweep_left), tostring(first and first.sweep_mines), tostring(first and first.plan_mines), swept_mines))
       local same = 0
       for k = 2, #sieges do
         local l = sieges[k]

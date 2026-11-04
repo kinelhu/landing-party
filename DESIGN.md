@@ -4389,6 +4389,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   up to 6 times softer than before; bait, gates, rivals, biters camp, herd flamer and fortress pass. `clear worms` on
   777 (never in the regression) still fails its last truck check: there the siege loses its fight outright (biters
   kill 10 of 10 guards by the abort, the howitzer 10 s into its 15 s pack), a fair loss the check cannot tell apart.
+- **`farm siege` 12345 was settling on a probe** (0.2.187, overnight). Four of its five failures were the scenario's: it
+  finishes early once a wave is logged, and on 12345 its first wave is a probe (no big burster sent), so the run ended
+  before any siege the checks judge (first = nil). The siege variant now settles once a wave that sent big bursters is
+  done; its third wave is that siege, and laid, learned, counted and rammed pass. Its sweep is measured, not inferred:
+  a wave keeps the mines it swept for and counts those still standing when its sweep is done (`sweep_left` in its log;
+  decisions say which and where each sweeper was last seen against its spot). The check had counted its bursts' kills
+  against its plan's count; it now takes the mines left, at most those past what its plan paid for (on 777 the breach
+  read 10 mines in 5 clusters where its plan paid 4, the allowance an earlier fix gave). Open, and a balance question
+  for the user: on 12345 its sweepers are killed by the fort's boosted lasers (damage x3, speed x2.2) 7 tiles short of
+  their spots, their death's blast (7) reaches the near mines only, and 2 of 6 stand (same on its second wave).
+  Ways out: more health (2000 now), setting off on the near edge of their cluster, or one more sweeper a cluster.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

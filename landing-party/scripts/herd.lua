@@ -1805,6 +1805,12 @@ local function sweep(w, s, from, to, inside)
     end
   end
   w.swept = made
+  -- (What it swept for, to count what still stands once its sweep is done: a mine a sweeper walked onto went off by
+  -- itself, cleared all the same, and counting its bursts' kills read 4 of 6 cleared; farm siege 12345, 0.2.186.)
+  w.sweep_set = made > 0 and mines or nil
+  if #spots > made then
+    log(w, string.format("its sweep: %d mines in %d clusters, %d sweepers", #mines, #spots, made))
+  end
   return made
 end
 
@@ -1990,7 +1996,26 @@ local function sequence(w)
       if not u.valid then spent = spent + 1
       elseif u.commandable and u.commandable.has_command then return end
     end
-    log(w, string.format("its sweep is done (%d of %d sweepers spent)", spent, #w.sweepers))
+    local left, stood = 0, {}
+    for _, m in ipairs(w.sweep_set or {}) do
+      if m.valid then
+        left = left + 1
+        local near = math.huge
+        for _, at in pairs(w.sapper_at or {}) do near = math.min(near, math.sqrt(d2(m.position, at))) end
+        stood[#stood + 1] = string.format("%.0f,%.0f %.1f from a spot", m.position.x, m.position.y, near)
+      end
+    end
+    if left > 0 then log(w, "its sweep left mines at " .. table.concat(stood, "; ")) end
+    w.sweep_left, w.sweep_set = left, nil
+    log(w, string.format("its sweep is done (%d of %d sweepers spent, %d of its mines left)", spent, #w.sweepers, left))
+    if left > 0 then
+      local why = {}
+      for k, at in pairs(w.sapper_at or {}) do
+        local last = w.sapper_last and w.sapper_last[k]
+        why[#why + 1] = string.format("spot %.0f,%.0f last seen %s", at.x, at.y, last and string.format("%.1f off", math.sqrt(d2(last, at))) or "never")
+      end
+      log(w, "its sweep: " .. table.concat(why, "; "))
+    end
     w.sweepers = nil
   end
   -- Its herd goes at the wall first, and its big bursters behind it once RELEASE_N of it are within RELEASE_R of where it
@@ -2530,7 +2555,7 @@ finish = function(w, outcome)
     choice = w.choice, goal = w.goal and {w.goal.x, w.goal.y}, heart_near = w.heart_near, razed_worth = w.razed_worth or 0, dead_at = w.dead_at,
     lost_by = w.lost_by, lost_worth_by = w.lost_worth_by, worth = w.worth, big_sent = w.big_sent, big_set_off = w.big_set_off,
     plan_breach = w.plan and w.plan.breach, made_of = w.made_of, opens = w.opens_learned, ram_off = w.ram_off,
-    sweep_mines = w.sweep_mines, plan_mines = w.plan and w.plan.mines,
+    sweep_mines = w.sweep_mines, sweep_left = w.sweep_left, plan_mines = w.plan and w.plan.mines,
     breach_after = w.breach_after,
     plan = w.plan and {path = w.plan.path, start = w.plan.start, breach = w.plan.breach, cost = w.plan.cost, cover = w.plan.cover}, silenced = w.silenced, clearing = w.clearing, staged = w.staged and true or false,
     breach_cover = w.breach_cover, breach_by = w.breach_by, price = w.price_learned,
@@ -2661,7 +2686,14 @@ end
 local function sappers(w)
   for _, u in ipairs(w.sweepers or {}) do
     local at = u.valid and w.sapper_at and w.sapper_at[u.unit_number]
-    if at and (d2(u.position, at) <= SAPPER_AT * SAPPER_AT or not (u.commandable and u.commandable.has_command)) then u.die() end
+    if u.valid then w.sapper_last = w.sapper_last or {}; w.sapper_last[u.unit_number] = {x = u.position.x, y = u.position.y} end
+    if at and (d2(u.position, at) <= SAPPER_AT * SAPPER_AT or not (u.commandable and u.commandable.has_command)) then
+      local off = math.sqrt(d2(u.position, at))
+      if off > SAPPER_AT then
+        log(w, string.format("a sweeper stopped %.1f short of its spot at %.0f,%.0f: set off there", off, at.x, at.y))
+      end
+      u.die()
+    end
   end
 end
 local function step(w, tick)
