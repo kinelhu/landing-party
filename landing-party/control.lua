@@ -884,6 +884,11 @@ remote.add_interface("landing-party", {
   debug_town = function(id, machines, streets) local b = storage.bases[id]; return b and layout.debug_town(b, machines, streets) end,
   -- Tests only: a depot beside the lander and parts, so a raid comes in minutes instead of half an hour.
   debug_depot = function(id, parts) return dev.depot(storage.bases[id], parts) end,
+  -- The dome's looks on a projector (tests/lp-film): "wave" from an impact at `at`, or "rise"; `radius` its dome's.
+  debug_dome_fx = function(kind, anchor, radius, at)
+    local d = {anchor = anchor, radius = radius}
+    if kind == "wave" then dome.wave(d, at) else dome.rise(d) end
+  end,
   snapshot = snapshot,
   rd = function(corp) return rd.summary(corp) end,
   debug_needed = function(id, pos) return ops.debug_needed(storage.bases[id], {x = pos[1], y = pos[2]}) end,

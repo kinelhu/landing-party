@@ -48,12 +48,23 @@ local function build()
     else log("lp-film: could not place " .. b.name .. ": " .. tostring(ent)) end
   end
   for _, p in pairs(game.players) do if p.character then p.character.teleport({x1 + 40, y1 + 40}) end end
+  -- (The dome's ring on the ground, as dome.lua draws it, round the first building.)
+  if P.ring and storage.built[1] then
+    rendering.draw_circle{color = {r = 0.3, g = 0.75, b = 1, a = 0.5}, radius = P.ring, width = 3, filled = false,
+      target = storage.built[1], surface = s, draw_on_ground = true}
+  end
 end
 
 script.on_event(defines.events.on_tick, function(e)
   if P.build and not storage.built then build() end
   for _, ent in ipairs(storage.built or {}) do
     if ent.valid and ent.electric_buffer_size and ent.electric_buffer_size > 0 then ent.energy = ent.electric_buffer_size end
+  end
+  -- P.fx = {{tick =, kind = "wave" | "rise", at = {x, y}, radius =}}: Landing Party's own dome looks on the first building.
+  for _, f in ipairs(P.fx or {}) do
+    if e.tick == f.tick and storage.built and storage.built[1] and storage.built[1].valid then
+      remote.call("landing-party", "debug_dome_fx", f.kind, storage.built[1], f.radius, f.at)
+    end
   end
   for _, r in ipairs(P.ripples or {}) do
     if e.tick == r.tick then game.surfaces[1].create_entity{name = r.name or "lp-dome-ripple", position = r.pos} end

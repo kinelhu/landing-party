@@ -19,11 +19,17 @@ cp -R "$REPO/tests/lp-film" "$V/mods/lp-film"; cp "$PARAMS" "$V/mods/lp-film/par
 echo '{"mods": [{"name": "base", "enabled": true}, {"name": "space-age", "enabled": true}, {"name": "quality", "enabled": true}, {"name": "elevated-rails", "enabled": true}, {"name": "landing-party", "enabled": true}, {"name": "lp-film", "enabled": true}]}' > "$V/mods/mod-list.json"
 L="$V/launch"; mkdir -p "$L"; echo 427520 > "$L/steam_appid.txt"
 cd "$L"
+rm -f "$V/factorio-current.log"   # (its error check reads this run's log, not the last)
 "$FACTORIO" --config "$V/config/config.ini" --load-game "$V/saves/film.zip" > "$V/film.out" 2>&1 &
 PID=$!
 for _ in $(seq 1 1800); do
   [ -f "$V/script-output/lp-film/$FN/done.txt" ] && break
   kill -0 "$PID" 2>/dev/null || { echo "FILM FAILED: the game stopped"; tail -20 "$V/film.out"; exit 1; }
+  # (A script error holds the window on its dialog: a dome film waited out its 30 minutes on one, 2026-11-04.)
+  if grep -q "non-recoverable error" "$V/factorio-current.log" 2>/dev/null; then
+    echo "FILM FAILED: a script error"; grep -A4 "non-recoverable error" "$V/factorio-current.log" | head -8
+    kill "$PID" 2>/dev/null || true; exit 1
+  fi
   sleep 1
 done
 sleep 3; kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true

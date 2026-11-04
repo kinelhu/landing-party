@@ -120,6 +120,38 @@ end
 -- "A hemisphere effect rippling from the impact"): a bolt from its tower's crown (TOWER_CROWN tiles up; the lander's for
 -- the camp's dome) to the shell, a small burst where it dies, and the ripple (data.lua: lp-dome-ripple).
 local TOWER_CROWN, LANDER_CROWN = 3.4, 2
+-- The hit seen over the whole dome (0.2.192; the user, 2026-11-04: "shouldn't the effect come from the impact and
+-- dissipate over the whole bubble?"): a flash where the shell met its skin and a wave across it from there (data.lua:
+-- lp-dome-wave-k, the impact's direction from the south, counter-clockwise seen from above), scaled to its radius. Its
+-- frame is framed on the dome seen at 45 degrees: its middle WAVE_UP of the radius above the dome's centre on the ground.
+-- Before it, a hemisphere 9 tiles across at the impact, which read as a puff, not the shield (the gallery, 2026-11-04).
+local DW = shared.DOME_WAVE
+local WAVE_UP, RISE_UP = 0.207, 0.16
+local function once(name, frames, speed)
+  return {animation = name, animation_speed = speed, animation_offset = -(game.tick * speed) % frames,
+    time_to_live = math.floor(frames / speed)}
+end
+function dome.wave(d, pos)
+  if not (d.anchor and d.anchor.valid) then return end
+  local c = d.anchor.position
+  local px, py = pos.x or pos[1], pos.y or pos[2]
+  local az = math.atan2(-(py - c.y), px - c.x)              -- from the east, counter-clockwise, north up
+  local k = math.floor((az + math.pi / 2) / (math.pi / 4) + 0.5) % 8 + 1
+  local sc = d.radius / DW.ref
+  local a = once("lp-dome-wave-" .. k, DW.frames, DW.speed)
+  a.target, a.surface = {c.x, c.y - WAVE_UP * d.radius}, d.anchor.surface
+  a.x_scale, a.y_scale = sc, sc
+  rendering.draw_animation(a)
+end
+-- The dome going up (raised, whole again, or its power back): the ripple grown to its radius over its projector.
+function dome.rise(d)
+  if not (d.anchor and d.anchor.valid) then return end
+  local c = d.anchor.position
+  local sc = d.radius / DW.rise_r
+  local a = once("lp-dome-rise", DW.rise_frames, DW.rise_speed)
+  a.target, a.surface, a.x_scale, a.y_scale = {c.x, c.y - RISE_UP * d.radius}, d.anchor.surface, sc, sc
+  rendering.draw_animation(a)
+end
 local function catch(b, d, pr)
   local s, pos = pr.surface, pr.position
   pr.destroy()
@@ -129,7 +161,7 @@ local function catch(b, d, pr)
       source_offset = {0, -crown}, target_position = pos, duration = 12}
   end
   s.create_entity{name = "explosion", position = pos}
-  s.create_entity{name = "lp-dome-ripple", position = pos}
+  dome.wave(d, pos)
   d.left, d.caught = math.max(0, d.left - 1 / full(b, d)), d.caught + 1
   alert(b, pos, d)
   if d.left <= 1e-9 then
@@ -250,6 +282,8 @@ local function run(b, d, tick)
     trace(b, "whole again")
   end
   local up = d.down_till == 0 and powered(b, d)
+  if up and not d.was_up then dome.rise(d) end
+  d.was_up = up
   if tick % 60 == 0 then show(b, d, up) end
   if up and tick % 3600 == 0 then d.left = math.min(1, d.left + MEND) end
   if up then

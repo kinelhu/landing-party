@@ -4445,6 +4445,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   it, its power cut, or sustained fire remain its answers. As built (dome.lua catches artillery projectiles alone).
 - **Trailer: music only** (the user, 2026-11-04): no captions; card 3 cut, the title and end card stay
   (`docs/trailer/storyboard.md`). The track is the user's pick.
+- **The dome's hit seen over the whole bubble; its ripple as the dome going up** (0.2.192; the user, 2026-11-04, on the
+  first in-game look: the ripple "not centered", "shouldn't the effect come from the impact and dissipate over the whole
+  bubble?", and what it showed "looks like a good effect for communicating a dome being built or re-powered"). A catch
+  had played a hemisphere 9 tiles across at the shell: a puff, nothing of the shield (in game a dome is a ring on the
+  ground otherwise). Now `lp-dome-wave-1..8` (tools/blender/dome_wave.py: a unit dome 16 tiles in radius at 12 px a
+  tile, a flash where the shell meets the skin 22 degrees up and a wavefront across the hemisphere lighting its lattice,
+  24 frames; the impact's direction from the south, counter-clockwise from above) drawn by dome.wave over the dome at its
+  radius (rendering.draw_animation, once). Mirrored at a negative x_scale (5 renders for 8) the game flipped them about
+  another point, a radius aside: all 8 rendered, 12 MB. The ripple is `lp-dome-rise`, grown to the dome's radius over its
+  projector when a dome comes up (raised, whole again, power back: dome.lua run). Filmed through the mod's own code
+  (debug_dome_fx; tests/lp-film fx, docs/review/stills-dome*.lua), on the review page. `dome` passes. Film helper: a
+  script error held the window on its dialog for 30 minutes (film.sh now stops on one); a session stalled at 226
+  screenshots twice (reels of about 110 pass).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

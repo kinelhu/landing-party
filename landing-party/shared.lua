@@ -612,6 +612,10 @@ shared.BIG_BURST = {health = 3000, r = 6, amount = 1500, core = 800}
 -- sweep's, sent at the mines on its way in ahead of its herd and set off among them; its death a wide blast that kills a
 -- land mine (15 of health) and little else. The runts it replaced (15 of health) died to the square lab fort's lasers
 -- before they reached a mine, "10 of 10 runts spent" and its rams stunned on the mines they left.
+-- The dome taking a hit (data.lua, dome.lua; tools/blender/dome_wave.py): a unit dome `ref` tiles in radius rendered at
+-- `px` a tile, `frames` frames played at `speed`, from `dirs` directions of the impact (from the south, counter-clockwise seen
+-- from above; mirrored at a negative x_scale, the game flipped them about another point, a radius aside). The dome going up: the ripple's sheet (its last frame `rise_r` tiles in radius) scaled to its dome.
+shared.DOME_WAVE = {ref = 16, px = 12, frames = 24, speed = 0.5, dirs = 8, rise_r = 4.5, rise_frames = 16, rise_speed = 0.25}
 shared.SAPPER = {health = 2000, speed = 0.3, r = 7, pop = 60}
 
 return shared

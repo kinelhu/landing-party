@@ -460,6 +460,18 @@ data:extend({{type = "explosion", name = "lp-dome-ripple", flags = {"not-on-map"
     frame_count = 16, line_length = 8, scale = 1, shift = {0, -0.71875}, draw_as_glow = true, blend_mode = "additive",
     animation_speed = 0.5}},
   light = {intensity = 0.5, size = 12, color = {r = 0.3, g = 0.75, b = 1}}}})
+-- The dome taking a hit, seen whole (dome.lua: drawn over the dome at its radius, from the direction of the impact; the
+-- user, 2026-11-04: the ripple at the impact "looks like a good effect for communicating a dome being built or
+-- re-powered"; the hit should spread from the impact over the whole bubble). Shifts are placed by dome.lua.
+local DW = shared.DOME_WAVE
+local DW_SIZE = {{390, 469}, {390, 469}, {390, 469}, {390, 469}, {390, 469}, {390, 469}, {389, 469}, {390, 469}}   -- anim_sheet.py's
+for k = 1, DW.dirs do
+  data:extend({{type = "animation", name = "lp-dome-wave-" .. k, filename = "__landing-party__/graphics/serenity/wave/d" .. k .. "/sheet.png",
+    width = DW_SIZE[k][1], height = DW_SIZE[k][2], frame_count = DW.frames, line_length = 8, scale = 32 / DW.px,
+    draw_as_glow = true, blend_mode = "additive"}})
+end
+data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party__/graphics/serenity/ripple/sheet.png",
+  width = 290, height = 335, frame_count = DW.rise_frames, line_length = 8, scale = 1, draw_as_glow = true, blend_mode = "additive"}})
 if TOWER_ON then
   projector.pictures = {layers = {tower("body"), tower("glow", {draw_as_glow = true, blend_mode = "additive"}),
     tower("shadow", {draw_as_shadow = true})}}

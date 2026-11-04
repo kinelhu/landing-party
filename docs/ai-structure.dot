@@ -67,7 +67,7 @@ digraph ai {
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n67 lines", width=0.87, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n73 lines", width=0.88, fillcolor="#d9f0d9"];
-    "dome" [label="dome\n299 lines", width=1.13, fillcolor="#eef2f7"];
+    "dome" [label="dome\n333 lines", width=1.17, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n241 lines", width=1.07, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n110 lines", width=0.92, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
@@ -98,7 +98,7 @@ digraph ai {
     "achievements" [label="achievements\n34 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n956 lines", width=1.86, fillcolor="#eef2f7"];
+    "control" [label="control\n961 lines", width=1.87, fillcolor="#eef2f7"];
     "dev" [label="dev\n196 lines", width=1.02, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n187 lines", width=1.01, fillcolor="#eef2f7"];
