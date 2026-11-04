@@ -2002,8 +2002,9 @@ function ops.summary(b)
         (function() local d = u.commandable.distraction_command local tg = d and d.target
           return tg and tg.valid and (tg.name .. "@" .. math.floor(tg.position.x) .. "," .. math.floor(tg.position.y)) or (d and tostring(d.type)) or "" end)()} end end return o end)(),
     op_phase = b.op and b.op.phase, op_site = b.op and b.op.site, op_hold = b.op and b.op.hold, op_jump = b.op and b.op.jump,
-    strike_center = b.op and b.op.strike_center, strike_paint = b.op and b.op.strike_paint,
-    strike_falling = b.op and b.op.strike_falling,
+    strike_center = b.op and b.op.strike_center or b.dev_strike and b.dev_strike.center,
+    strike_paint = b.op and b.op.strike_paint or b.dev_strike and b.dev_strike.paint,
+    strike_falling = b.op and b.op.strike_falling or b.dev_strike and b.dev_strike.falling,
     held = b.intel and b.intel.held and (function() local o = {} for k in pairs(b.intel.held) do o[k] = held_by(b, k) end
       return o end)() or nil,
     siege_tier = b.op and b.op.tier, answers = b.answers or 0, answered = b.answered, cuts_found = b.cuts_found or 0, recons = b.recons or 0, assaults = b.assaults or 0, assault_razed = b.assault_razed or 0,

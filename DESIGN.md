@@ -2997,7 +2997,8 @@ Decisions: see "Operations" above.
   building turns in four steps; at 90 four projectors tile a full circle with neither gap nor overlap and one covers a
   defence square's face exactly; at 45 four rotations leave gaps (8-way rotation is possible, rarely met on such a
   building); at 180 two back to back cover all, and placing it is no decision. A narrower, stronger focus (45 degrees,
-  more absorbed a megawatt) as a later research rather than the base. Flanking fire, outside its arc, passes: what
+  more absorbed a megawatt) as a later research rather than the base. (Then the user: 8-way rotation is met, Space Age's railgun turret;
+  at 45 with 8-way rotation eight tile a ring exactly: proposed 45, 8-way.) Flanking fire, outside its arc, passes: what
   Kessler-Hayashi's siege planner can learn to read (the uncovered face). Its hit: the dome wave on a quarter dome.
 - **The player's orbital strike, rethought (the user, 2026-11-02, for later):** today a beacon taken apart from
   Kessler-Hayashi's equipment calls its barrage on everything within 60 tiles and burns out (strike.lua). Instead, a
@@ -4497,6 +4498,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   stood behind its housing seen from the camera); its base frame 153 to 201 px wide. The guns' frame sizes now come from
   their gun.json through graphics/sheets.lua too. Filmed (docs/review/stills-lights.lua); pact, armed relay, fortress
   jammer pass.
+- **A home-made uplink; /lp strike; the shield's arc at 45** (0.2.195; the user, 2026-11-04). The uplink drawn as its own
+  (tools/blender/uplink.py, both corporations; Space Age's fusion reactor at scale was "not looks matched", and a first
+  try, four houses round a core, "A little too symmetrical and toy like"): the dish off-centre on a heavy pedestal, a tall
+  control block with a stair, a transformer yard with two tanks, a hut, drums, cable trays and pipe runs, a mast with a
+  pulse; turning with the radar, lit by scripts/lights.lua. `/lp strike [id]` ("devise debug commands to force a
+  strike"): an orbital strike now from that camp (Kessler-Hayashi's nearest), centred where the player stands, a spotter
+  of its infantry put down 24 tiles towards its camp; no siege, no armed camp, no cooldown (orbital.force; orbital.start
+  shared with a siege's call; a forced one tells no siege it falls, b.dev_strike its record). Scenario dev checks it
+  painted and fell; orbital passes. The film helper calls /lp tools on a schedule (P.dev). The shield projector: the
+  user pointed out 8-way rotation (Space Age's railgun turret has it, and a firing arc): 45 degrees, 8 for a full ring,
+  proposed in its open question. Found filming: a windowed game stops advancing about 720 ticks after it loads, every
+  time (its main loop paces frames; nothing in the mod pauses it; not App Nap, tried and undone); films are kept under
+  that, and the strike's (paint 720 ticks, then its fall) does not fit. Open: Steam was not running (the Steam build).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

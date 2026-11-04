@@ -82,9 +82,19 @@ function orbital.call(b, op)
   if not spotter then return false end
   op.strike_called = true
   b.strike_next = game.tick + COOL
+  orbital.start(b, s, fs, center, math.atan2(dy, dx) + math.pi / 2, spotter)
+  -- Its siege told at once (its step runs every 5 s, too coarse for a 12 s paint): its guards move up behind it.
+  op.strike_center, op.strike_paint, op.step_at = center, game.tick, game.tick + 1
+  trace(b, string.format("called on the wall at %.0f,%.0f; its spotter paints it for %d s", center[1], center[2], PAINT / 60))
+  return true
+end
+
+-- A strike begun: painted from `spotter` for PAINT, then its shells along `along` through `center`; the platform's shadow
+-- and the alert. dev: a forced one (orbital.force), its own record in place of a siege's.
+function orbital.start(b, s, fs, center, along, spotter, dev)
   storage.kh_strikes = storage.kh_strikes or {}
   table.insert(storage.kh_strikes, {base = b.id, surface = s.index, force = b.force, center = center,
-    along = math.atan2(dy, dx) + math.pi / 2, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint"})
+    along = along, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint", dev = dev})
   b.strikes = (b.strikes or 0) + 1
   -- Its platform's shadow (orbital.shadow_tick moves it), and the alert (ops' rule: under the notice setting).
   -- (Its own list: a strike called off or done leaves its list while its shadow still crosses.)
@@ -105,10 +115,25 @@ function orbital.call(b, op)
       end
     end
   end
-  -- Its siege told at once (its step runs every 5 s, too coarse for a 12 s paint): its guards move up behind it.
-  op.strike_center, op.strike_paint, op.step_at = center, game.tick, game.tick + 1
-  trace(b, string.format("called on the wall at %.0f,%.0f; its spotter paints it for %d s", center[1], center[2], PAINT / 60))
-  return true
+end
+
+-- A strike now (dev: /lp strike; the user, 2026-11-04: "devise debug commands to force a strike"): from settlement b,
+-- centred on `at`, its lane across the line from its camp, painted by a spotter of its infantry put down SPOTTER_OFF tiles
+-- towards its camp. No siege, no armed camp, no cooldown. Its record in b.dev_strike (ops.summary reads it as a siege's).
+local SPOTTER_OFF = 24
+function orbital.force(b, at)
+  local s = b.lander.surface
+  local center = {at.x or at[1], at.y or at[2]}
+  local dx, dy = center[1] - b.origin.x, center[2] - b.origin.y
+  local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+  local name = shared.variant(b.corp, "lp-infantry")
+  local p = s.find_non_colliding_position(name, {center[1] - dx / len * SPOTTER_OFF, center[2] - dy / len * SPOTTER_OFF}, 10, 0.5)
+  local spotter = p and s.create_entity{name = name, position = p, force = b.force}
+  if not spotter then return "no ground for its spotter" end
+  spotter.commandable.set_command{type = defines.command.stop, ticks_to_wait = PAINT + 600, distraction = defines.distraction.none}
+  b.dev_strike = {center = center, paint = game.tick}
+  orbital.start(b, s, foes(b), center, math.atan2(dy, dx) + math.pi / 2, spotter, true)
+  trace(b, string.format("forced at %.0f,%.0f; its spotter paints it for %d s", center[1], center[2], PAINT / 60))
 end
 
 local function paint(st, s, tick)
@@ -203,7 +228,7 @@ function orbital.tick(tick)
     local b = storage.bases[st.base]
     if not s then
       table.remove(storage.kh_strikes, i)
-    elseif st.phase == "paint" and b and not (b.op and b.op.kind == "siege") then
+    elseif st.phase == "paint" and b and not st.dev and not (b.op and b.op.kind == "siege") then
       -- Its siege over before it falls: called off (it fell on the wall after its siege had packed up, the user's watch,
       -- 2026-11-03).
       trace(b, "its siege is over: called off")
@@ -216,7 +241,9 @@ function orbital.tick(tick)
       elseif tick >= st.fire_at then
         st.phase, st.next = "fire", tick
         -- Falling: its siege's assault goes in behind it (siege.lua), its shells its enemies' only.
-        if b and b.op and b.op.kind == "siege" then b.op.strike_falling, b.op.step_at = tick, tick + 1 end
+        -- (A forced one, /lp strike, tells no siege: its assault went in on a strike it had not called.)
+        if not st.dev and b and b.op and b.op.kind == "siege" then b.op.strike_falling, b.op.step_at = tick, tick + 1 end
+        if st.dev and b and b.dev_strike then b.dev_strike.falling = tick end
         st.queue, st.k = targets(st, s, b), 1
         if b then b.strike_guns = (b.strike_guns or 0) + (st.guns or 0) end
         if b then trace(b, string.format("falls: %d shells, on the lane and the %d guns covering it", #st.queue, st.guns or 0)) end

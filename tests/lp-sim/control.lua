@@ -3572,6 +3572,19 @@ scenarios.dev = function()
     check("dev: /lp raid launched a raid", g.ops.launched > 0, tostring(g.ops.op))
     check("dev: /lp strip launched a strip", g2 ~= nil and g2.ops.strips > 0, g2 and tostring(g2.ops.op) or "no base")
   end)
+  -- /lp strike (the user, 2026-11-04: "devise debug commands to force a strike"): Kessler-Hayashi's strike on ground of the
+  -- player's 30 tiles aside from the outpost, painted, then falling.
+  schedule(2 * 3600 + 600, function()
+    local c = toward(S.s, 120)
+    S.strike_at = {c[1] + 30, c[2]}
+    lp("dev", {"strike", tostring(S.s)}, S.strike_at)
+  end)
+  schedule(2 * 3600 + 600 + 15 * 60, function()
+    local o = lp("stats", S.s).ops
+    check("dev: /lp strike painted its point", o.strike_paint ~= nil and o.strike_center ~= nil
+      and math.abs(o.strike_center[1] - S.strike_at[1]) < 1, serpent.line({o.strike_paint, o.strike_center}))
+    check("dev: and its shells fell", o.strike_falling ~= nil, tostring(o.strike_falling))
+  end)
   schedule(END - 60, function()
     local s, g2 = lp("stats", S.s), S.g2 and lp("stats", S.g2)
     check("dev: the forced siege got to its site", s.ops.mortar ~= nil or s.ops.done + s.ops.aborted > 0,

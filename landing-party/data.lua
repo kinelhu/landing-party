@@ -727,6 +727,20 @@ if fusion and fusion.graphics_set and fusion.graphics_set.structure then
   end
   uplink.pictures = {layers = still(layers)}
 end
+-- Its own body, rendered in Blender (tools/blender/uplink.py; the user, 2026-11-04: the fusion reactor "not looks matched",
+-- "We try homemade?"): four equipment houses round an octagonal core, a great dish on a turntable turning with the radar,
+-- a mast whose rings carry a pulse up. 32 frames as the radar's directions. The fusion reactor above is the fallback.
+if SHEETS["serenity/uplink"] then
+  local U = SHEETS["serenity/uplink"]
+  local function up(file, extra)
+    local l = {filename = "__landing-party__/graphics/serenity/uplink/" .. file .. ".png", width = U.width, height = U.height,
+      direction_count = U.frames, line_length = U.line_length, scale = 0.5, shift = U.shift}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  uplink.pictures = {layers = {up("body"), up("glow", {draw_as_glow = true, blend_mode = "additive"}), up("shadow", {draw_as_shadow = true})}}
+  uplink.rotation_speed = 0.002
+end
 
 local road_of = shared.CORPS[shared.DEFAULT_CORP].road
 local road = table.deepcopy(data.raw.tile[road_of.tile] or data.raw.tile[road_of.fallback or "refined-concrete"])

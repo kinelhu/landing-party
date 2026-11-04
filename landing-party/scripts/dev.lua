@@ -13,6 +13,8 @@
 --   tap [id]                 a power tap on the pole nearest you (a pylon line out of turret reach, then the clamp)
 --   biotech                  the biotech's farm lands now on the nearest nest field 600 to 1,500 tiles from your factory
 --   wave                     its farm sends a wave now (its pens topped up to send one)
+--   strike [id]              an orbital strike now, centred where you stand: a spotter of that camp's (Kessler-Hayashi's
+--                            nearest by default) paints it, then its shells fall (no siege, no cooldown)
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
 local names = require("__landing-party__.scripts.names")
@@ -24,6 +26,7 @@ local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
 local standing = require("__landing-party__.scripts.standing")
 local farm = require("__landing-party__.scripts.farm")
+local orbital = require("__landing-party__.scripts.orbital")
 
 local dev = {}
 
@@ -91,6 +94,12 @@ function dev.run(player, args)
     local why = ops.force(b, what, player.position, base.trace, army)
     player.print(why and string.format("%s from %d: %s", what, b.id, why)
       or string.format("%s launched from %d %s (%s)", what, b.id, shared.CORPS[b.corp].name, gps(b)))
+  elseif what == "strike" then
+    local b = pick(player, id, function(b) return (shared.CORPS[b.corp] or {}).orbital_strike end)
+    if not b then return player.print("no corporation with an orbital strike") end
+    local why = orbital.force(b, player.position)
+    player.print(why and ("strike: " .. why) or string.format("strike from %d %s: painted for 12 s, then it falls", b.id,
+      shared.CORPS[b.corp].name))
   elseif what == "incidents" then
     standing.list(player)
   elseif what == "biotech" then
@@ -173,7 +182,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | perimeter [id] | land <corp> [tiles] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace")
   end
 end
 

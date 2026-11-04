@@ -5,7 +5,12 @@
 local P = require("params")
 
 local function shot(s)
-  game.take_screenshot{surface = game.surfaces[1], position = s.pos, resolution = P.resolution or {1920, 1080},
+  local pos = s.pos
+  if pos == "strike" then
+    local c = storage.center or {0, 0}
+    pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
+  end
+  game.take_screenshot{surface = game.surfaces[1], position = pos, resolution = P.resolution or {1920, 1080},
     zoom = s.zoom or 0.5, path = "lp-film/" .. P.name .. "/" .. s.name .. ".png", show_gui = false,
     show_entity_info = false, anti_alias = P.anti_alias ~= false, daytime = s.daytime, force_render = true,
     hide_health_bars = true, hide_clouds = s.hide_clouds, hide_fog = true}
@@ -103,13 +108,33 @@ script.on_event(defines.events.on_tick, function(e)
       end
     end
   end
+  -- P.dev = {{tick =, args = {"strike", "1"}, at = {x, y} | {toward = tiles}}}: Landing Party's /lp tools at a tick; toward:
+  -- that many tiles from settlement P.base towards spawn (the orbital scenario's wall stands 120 from its camp).
+  for _, d in ipairs(P.dev or {}) do
+    if e.tick == d.tick then
+      local at = d.at
+      if at.toward then
+        local o = remote.call("landing-party", "stats", P.base).origin
+        local len = math.max(1, math.sqrt(o.x * o.x + o.y * o.y))
+        at = {o.x - o.x / len * at.toward, o.y - o.y / len * at.toward}
+      end
+      storage.center = {at[1], at[2]}
+      remote.call("landing-party", "dev", d.args, at)
+    end
+  end
   for _, r in ipairs(P.ripples or {}) do
     if e.tick == r.tick then game.surfaces[1].create_entity{name = r.name or "lp-dome-ripple", position = r.pos} end
   end
   storage.seen = storage.seen or {}
   storage.taken = storage.taken or 0
+  -- (Its clock in the log every 10 s: a film that stops taking stills says whether time still runs.)
+  if e.tick % (P.log_every or 600) == 0 then
+    log(string.format("lp-film: tick %d, taken %d of %d, seen %s", e.tick, storage.taken, #P.shots, serpent.line(storage.seen)))
+  end
   if P.fast_until then
-    local want = e.tick < P.fast_until and (P.speed or 8) or 1
+    -- (Or till the event its stills wait for: P.fast_until = "paint" runs fast until the strike is painted.)
+    local fast = P.fast_until == "paint" and not storage.seen.paint or (type(P.fast_until) == "number" and e.tick < P.fast_until)
+    local want = fast and (P.speed or 8) or 1
     if game.speed ~= want then game.speed = want end
   end
   if e.tick % 10 == 0 and P.base and not (storage.seen.paint and storage.seen.falling) then
@@ -117,6 +142,8 @@ script.on_event(defines.events.on_tick, function(e)
     local o = st and st.ops or {}
     storage.seen.paint = storage.seen.paint or o.strike_paint
     storage.seen.falling = storage.seen.falling or o.strike_falling
+    -- (Its centre, for stills aimed at the strike: pos = "strike", with off = {dx, dy}.)
+    if o.strike_center and not storage.center then storage.center = {o.strike_center[1], o.strike_center[2]} end
   end
   for i, s in ipairs(P.shots) do
     local at = s.tick or (storage.seen[s.after] and storage.seen[s.after] + (s.dt or 0))
