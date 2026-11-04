@@ -4440,6 +4440,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   line from where it set out to its target when it set out (oplog: `attempt.wall_f`, attempt.wall_at, before any wall
   broke) and reads in also its unit beyond that crossing by a tile along the line with no wall between it and its
   target (outside a ring wall at its side it stands beyond the crossing too). Observer 7037; seen failing before.
+  Biotech and ops regression after it (0.2.189 to 0.2.191): 192 of 192 pass.
 - **The dome stops shells only** (the user, 2026-11-04): it is not to block units' direct fire; troops and vehicles under
   it, its power cut, or sustained fire remain its answers. As built (dome.lua catches artillery projectiles alone).
 - **Trailer: music only** (the user, 2026-11-04): no captions; card 3 cut, the title and end card stay
