@@ -12,3 +12,4 @@ docs/manual/*.tex
 docs/manual/*.log
 docs/manual/*.aux
 docs/manual/*_files/
+media/

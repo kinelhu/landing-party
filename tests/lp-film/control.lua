@@ -3,6 +3,32 @@
 -- dt = ticks after that event of settlement P.base's siege (read from Landing Party's stats, every 10 ticks till seen)}.
 -- The game runs at P.speed until P.fast_until, then at 1. When every still is taken it writes done.txt (film.sh waits).
 local P = require("params")
+-- Camera moves (docs/trailer/storyboard.md section 2): P.moves = {{name =, tick = | after =, dt =, frames =, every = 2,
+-- from = {pos = {x, y} | "escort" | "strike" ..., zoom =, daytime =}, to = {...}}}, each expanded into stills named
+-- name-00001 ..., position, zoom and daytime eased between from and to (smoothstep, 3t^2 - 2t^3). A named point ("escort",
+-- "strike") is read when the move's first frame is taken and held (freeze); to.off moves from it.
+P.shots = P.shots or {}
+for _, m in ipairs(P.moves or {}) do
+  local n, every = m.frames, m.every or 2
+  for i = 0, n - 1 do
+    local t = n > 1 and i / (n - 1) or 0
+    local e = t * t * (3 - 2 * t)
+    local f, g = m.from, m.to or m.from
+    local function lerp(a, b) return a + (b - a) * e end
+    local shot = {name = string.format("%s-%05d", m.name, i + 1), zoom = lerp(f.zoom, g.zoom or f.zoom),
+      daytime = lerp(f.daytime or 0.1, g.daytime or f.daytime or 0.1), hide_clouds = (f.daytime or 0.1) > 0.3}
+    if type(f.pos) == "table" and type(g.pos or f.pos) == "table" then
+      local gp = g.pos or f.pos
+      shot.pos = {lerp(f.pos[1], gp[1]), lerp(f.pos[2], gp[2])}
+    else
+      shot.pos, shot.freeze = f.pos, m.name
+      local o = g.off or {0, 0}
+      shot.off = {o[1] * e, o[2] * e}
+    end
+    if m.tick then shot.tick = m.tick + i * every else shot.after, shot.dt = m.after, (m.dt or 0) + i * every end
+    P.shots[#P.shots + 1] = shot
+  end
+end
 -- This session's first tick (a local: it starts again with each load). With P.reel set and stills left that many ticks
 -- into a session, it saves, names the save in reel.txt, and film.sh opens it again in a fresh session. (Written for a stop
 -- that was freeplay's intro dialog, no_intro below; kept for films longer than one session should run.)
@@ -12,7 +38,10 @@ local function shot(s)
   local pos = s.pos
   -- (s.freeze = a key: the point is read once, at the first still with that key, and kept: a clip's camera stands still.)
   storage.frozen = storage.frozen or {}
-  if s.freeze and storage.frozen[s.freeze] then pos = storage.frozen[s.freeze] end
+  if s.freeze and storage.frozen[s.freeze] then
+    local f = storage.frozen[s.freeze]
+    pos = {f[1] + (s.off and s.off[1] or 0), f[2] + (s.off and s.off[2] or 0)}
+  end
   if pos == "hold" or pos == "jump" or pos == "site" or pos == "escort" then
     local c = (storage.points or {})[pos] or storage.center or {0, 0}
     pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
@@ -20,7 +49,9 @@ local function shot(s)
     local c = storage.center or {0, 0}
     pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
   end
-  if s.freeze and not storage.frozen[s.freeze] then storage.frozen[s.freeze] = pos end
+  if s.freeze and not storage.frozen[s.freeze] then
+    storage.frozen[s.freeze] = {pos[1] - (s.off and s.off[1] or 0), pos[2] - (s.off and s.off[2] or 0)}
+  end
   game.take_screenshot{surface = game.surfaces[1], position = pos, resolution = P.resolution or {1920, 1080},
     zoom = s.zoom or 0.5, path = "lp-film/" .. P.name .. "/" .. s.name .. ".png", show_gui = false,
     show_entity_info = false, anti_alias = P.anti_alias ~= false, daytime = s.daytime, force_render = true,
@@ -109,6 +140,8 @@ script.on_init(no_intro)
 script.on_configuration_changed(no_intro)
 
 script.on_event(defines.events.on_tick, function(e)
+  -- (P.min_brightness: the night still reads, the storyboard's 0.3 against the game's 0.15.)
+  if P.min_brightness and game.surfaces[1].min_brightness ~= P.min_brightness then game.surfaces[1].min_brightness = P.min_brightness end
   if P.build and not storage.built then build() end
   for _, ent in ipairs(storage.built or {}) do
     if ent.valid and ent.electric_buffer_size and ent.electric_buffer_size > 0 then ent.energy = ent.electric_buffer_size end
@@ -224,8 +257,10 @@ script.on_event(defines.events.on_tick, function(e)
     -- (Its centre, for stills aimed at the strike: pos = "strike", with off = {dx, dy}.)
     if o.strike_center and not storage.center then storage.center = {o.strike_center[1], o.strike_center[2]} end
   end
+  -- (s.at_load: ticks after the film's first, for a save whose tick is not known beforehand.)
+  storage.first_tick = storage.first_tick or e.tick
   for i, s in ipairs(P.shots) do
-    local at = s.tick or (storage.seen[s.after] and storage.seen[s.after] + (s.dt or 0))
+    local at = (s.at_load and storage.first_tick + s.at_load) or s.tick or (storage.seen[s.after] and storage.seen[s.after] + (s.dt or 0))
     if at and e.tick == at then
       shot(s); storage.taken = storage.taken + 1
       if storage.taken == #P.shots then

@@ -57,4 +57,6 @@ done
 sleep 3; kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true
 [ -f "$V/script-output/lp-film/$FN/done.txt" ] || { echo "FILM FAILED: no done.txt within 30 minutes"; exit 1; }
 mkdir -p "$OUT"; cp "$V/script-output/lp-film/$FN/"*.png "$OUT/"
+# (The profile's copy goes once copied out: every frame was kept twice, 5 GB of clip frames a side, 2026-11-04.)
+rm -rf "$V/script-output/lp-film/$FN"
 echo "stills: $OUT ($(ls "$OUT"/*.png | wc -l | tr -d ' '), $REELS reels)"
