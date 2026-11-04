@@ -937,6 +937,7 @@ local DROP_GUARD = 20          -- its guards answer its foes' units this near it
 -- then a stop. A clump at its hold had stood where one shell's splash covered it.
 local LINE_MIN, LINE_MAX = 1.5, 3
 local LINE_AGAIN = 30 * 60      -- ticks between a guard duty's re-forming of its line
+local RANK_STAGGER = 60         -- ticks between one rank of its assault and the next
 local function form_line(members, center, toward)
   local live = {}
   for _, u in ipairs(members) do if u.valid then live[#live + 1] = u end end
@@ -1715,8 +1716,29 @@ local function siege_step(b, trace, army)
         end
         acmds[#acmds + 1] = {type = defines.command.attack_area, destination = depth or t.pos, radius = depth and ASSAULT_DEPTH or 16,
           distraction = defines.distraction.by_anything}
-        order_all(op.members, #acmds > 1 and {type = defines.command.compound,
-          structure_type = defines.compound_command.return_last, commands = acmds} or acmds[1])
+        if op.drop and op.strike_center then
+          -- In staggered rows (the user, 2026-11-03: "attack in staggered rows"): its front rank first, each rank behind
+          -- RANK_STAGGER later (a stop with ticks to wait opens its orders), ranks of about sqrt(2n) by distance to the
+          -- breach: waves at the breach, not one rush.
+          local live = {}
+          for _, u in ipairs(op.members) do if u.valid then live[#live + 1] = u end end
+          local bx, by = op.strike_center[1], op.strike_center[2]
+          table.sort(live, function(p, q)
+            return (p.position.x - bx) ^ 2 + (p.position.y - by) ^ 2 < (q.position.x - bx) ^ 2 + (q.position.y - by) ^ 2
+          end)
+          local w = math.max(1, math.ceil(math.sqrt(2 * #live)))
+          for i, u in ipairs(live) do
+            local r = math.floor((i - 1) / w)
+            local cmds = {}
+            if r > 0 then cmds[1] = {type = defines.command.stop, ticks_to_wait = r * RANK_STAGGER, distraction = defines.distraction.none} end
+            for _, c in ipairs(acmds) do cmds[#cmds + 1] = c end
+            u.commandable.set_command(#cmds > 1 and {type = defines.command.compound,
+              structure_type = defines.compound_command.return_last, commands = cmds} or cmds[1])
+          end
+        else
+          order_all(op.members, #acmds > 1 and {type = defines.command.compound,
+            structure_type = defines.compound_command.return_last, commands = acmds} or acmds[1])
+        end
         alert(b, t, "lp.alert-raid")
         trace(b, string.format("siege: the assault goes in with %d units", #op.members))
         return

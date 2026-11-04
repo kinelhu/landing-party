@@ -4353,6 +4353,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
     0.2.162 as well (bisecting).
   - The jamming mast re-rendered worn (its first render, on the clean palette, read as a toy beside the guns).
   fuze, loot, labs, breach arty and fortress jammer pass.
+- **Formations, third: the assault in staggered rows** (0.2.184, overnight; the user's agreed order: "attack in staggered
+  rows"). A drop siege's assault behind its strike goes rank by rank: its guards sorted by distance to the breach, ranks
+  of about sqrt(2n), each rank RANK_STAGGER (1 s) after the one ahead (a stop with ticks to wait opens its orders):
+  waves at the breach, not one rush. standsiege nests: half its escort at the breach 6 s after the fall (5 before),
+  18 of 18 back, the outpost 109 to 36; siegetier 3, fortress, orbital standing and standsiege pass. Formations left:
+  the march itself (still the route's column of single orders).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
