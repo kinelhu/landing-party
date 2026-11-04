@@ -4466,6 +4466,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (debug_dome_fx; tests/lp-film fx, docs/review/stills-dome*.lua), on the review page. `dome` passes. Film helper: a
   script error held the window on its dialog for 30 minutes (film.sh now stops on one); a session stalled at 226
   screenshots twice (reels of about 110 pass).
+- **The art's second round: no plinth slabs, more colour, a new barracks and muster point** (0.2.193; the user,
+  2026-11-04, on the first in-game stills: "A lot of gray metal disappears on concrete background", "don't like the
+  gray square under some buildings. Doesn't mesh well with different types of grounds", the barracks "the least
+  convincing building ... more factorio like? And less Army Men", the muster point "needs an antenna ... why not a built
+  in light"). The full-footprint slab under the dome projector, jammer, relay and pacifiers is gone: the projector's
+  hexagonal plinth stands on the ground, the jammer and relay on four feet under their housings (lpkit.feet), the
+  pacifier on its housing and guy anchors (feet at its footprint's corners read as four loose blocks). The worn palette:
+  paint slate-teal, not gray, steel lighter, hazard brighter. The barracks a training plant (player_army.py): an
+  assembler's chamfered block in warm steel, plated roof with hazard edges and vents, a roll-up bay door in a dark
+  recess, two roof fans turning, an exhaust stack, a lit control window and an amber lamp; its working visualisation
+  carries a light (glow alone lit nothing at night). The muster point a radio post, a whip antenna with a lit tip and a
+  floodlight, its light drawn on it when built (command.lua: a chest has no light). Frame sizes and shifts now come from
+  graphics/sheets.lua (tools/blender/sheets_lua.py, from each sheet.json), not typed into data.lua and player.lua.
+  Grubstake's pacifier padded to Kessler-Hayashi's frame (it shares the prototype's size). Filmed on concrete, grass,
+  sand and dirt and at night (docs/review/stills-ground.lua, stills-barracks.lua; the film helper runs a machine with
+  its recipe enabled: recipe_not_researched on a fresh map kept the barracks idle). The howitzer truck kept as
+  Grubstake's (the user asked whether it was used): `fortress grubstake` (new) checks its siege's howitzer comes on its
+  truck and deploys. muster, fortress and fortress grubstake pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -11,7 +11,7 @@ digraph layers {
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1380 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n5 modules, 6985 lines\nherd 3458, farm 2320", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
-  "The player's army" [label="The player's army\n4 modules, 728 lines", fillcolor="#eef2f7"];
+  "The player's army" [label="The player's army\n4 modules, 732 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="3", penwidth=1.8];
   "Army and operations" -> "Knowledge and strategy (per faction)" [label="4", penwidth=2.0];
   "Army and operations" -> "Perception and attempts (any attacker)" [label="7", penwidth=2.8];

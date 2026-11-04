@@ -18,7 +18,7 @@ P = lpkit.palette_worn()
 H = 4.6                                   # mast height, tiles
 
 # Footing: a pad, a squat base housing with panels and hazard trim.
-lpkit.box(1.9, 1.9, 0.1, 0, 0, 0, P["dark"])
+lpkit.feet(1.9, P["dark"])
 lpkit.box(1.1, 1.1, 0.5, 0, 0, 0.1, P["paint"])
 lpkit.box(1.16, 1.16, 0.06, 0, 0, 0.6, P["steel"])
 for k in range(4):

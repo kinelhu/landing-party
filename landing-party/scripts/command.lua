@@ -87,6 +87,10 @@ function command.on_built(e)
   if ent.name == "lp-muster-point" then
     storage.cmd.musters = storage.cmd.musters or {}
     storage.cmd.musters[ent.unit_number] = ent
+    -- Its floodlight on the rally ground at night (the user, 2026-11-04: "why not a built in light"): a chest has no light
+    -- of its own; drawn on it, the light goes with it.
+    rendering.draw_light{sprite = "utility/light_medium", target = {entity = ent, offset = {-0.2, 0.9}}, surface = ent.surface,
+      scale = 1.4, intensity = 0.8, color = {r = 1, g = 0.92, b = 0.75}, minimum_darkness = 0.3}
   end
 end
 

@@ -28,6 +28,16 @@ local function build()
     tiles[#tiles + 1] = {name = inner and (P.tile or "refined-concrete") or "grass-1", position = {x, y}}
   end end
   s.set_tiles(tiles)
+  -- A building's own ground (b.ground, b.ground_r tiles round it): the same building on concrete, grass, sand and dirt.
+  for _, b in ipairs(P.build) do
+    if b.ground then
+      local r, g = b.ground_r or 6, {}
+      for x = b.pos[1] - r, b.pos[1] + r do for y = b.pos[2] - r, b.pos[2] + r do
+        g[#g + 1] = {name = b.ground, position = {x, y}}
+      end end
+      s.set_tiles(g)
+    end
+  end
   s.destroy_decoratives{area = {{x0, y0}, {x1, y1}}}
   for _, b in ipairs(P.build) do
     if not game.forces[b.force] then game.create_force(b.force) end
@@ -37,10 +47,24 @@ local function build()
   end end
   storage.built = {}
   for _, b in ipairs(P.build) do
+    -- (The player's built as a player's are, raised: the muster point's light is drawn when it is built.)
     local ok, ent = pcall(s.create_entity, {name = b.name, position = b.pos, force = b.force, direction = b.dir,
-      raise_built = false})
+      raise_built = b.force == "player"})
     if ok and ent then
       storage.built[#storage.built + 1] = ent
+      -- A machine at work (its working animation): its recipe's ingredients for many crafts, its output emptied.
+      if ent.type == "assembling-machine" then
+        local r = ent.get_recipe()
+        if not r and b.recipe then ent.set_recipe(b.recipe); r = ent.get_recipe() end
+        if r then
+          ent.force.recipes[r.name].enabled = true    -- (recipe_not_researched on a fresh map: it stood idle)
+          for _, ing in ipairs(r.ingredients) do
+            if ing.type == "item" then ent.insert{name = ing.name, count = ing.amount * 50} end
+          end
+        end
+        storage.machines = storage.machines or {}
+        storage.machines[#storage.machines + 1] = ent
+      end
       -- (A unit stays where it was put: the howitzer truck drove out of its frame.)
       if ent.type == "unit" and ent.commandable then
         ent.commandable.set_command{type = defines.command.stop, ticks_to_wait = 1000000, distraction = defines.distraction.none}
@@ -64,6 +88,18 @@ script.on_event(defines.events.on_tick, function(e)
   for _, f in ipairs(P.fx or {}) do
     if e.tick == f.tick and storage.built and storage.built[1] and storage.built[1].valid then
       remote.call("landing-party", "debug_dome_fx", f.kind, storage.built[1], f.radius, f.at)
+    end
+  end
+  for _, m in ipairs(storage.machines or {}) do
+    if m.valid then
+      m.get_output_inventory().clear()
+      if e.tick % 120 == 0 then
+        local r = m.get_recipe()
+        local sname = tostring(m.status)
+        for k, v in pairs(defines.entity_status) do if v == m.status then sname = k end end
+        log(string.format("lp-film: %s status %s recipe %s energy %.0f/%.0f input %s", m.name, sname,
+          r and r.name or "none", m.energy, m.electric_buffer_size or 0, serpent.line(m.get_inventory(defines.inventory.crafter_input).get_contents())))
+      end
     end
   end
   for _, r in ipairs(P.ripples or {}) do

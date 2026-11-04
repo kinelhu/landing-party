@@ -27,7 +27,7 @@ def group(fn):
 if WHAT == "relay":
     FRAMES, TILES, MARGIN = int(os.environ.get("LP_FRAMES", 64)), 3, 2.2
     def fixed():
-        B(2.6, 2.6, 0.1, 0, 0, 0, P["dark"])
+        lpkit.feet(1.9, P["dark"])                                        # under the housing's corners
         B(1.6, 1.3, 0.55, 0, -0.15, 0.1, P["paint"])                     # equipment housing
         B(1.65, 1.35, 0.05, 0, -0.15, 0.65, P["steel"])
         for x in (-0.5, 0.0, 0.5):
@@ -73,7 +73,6 @@ else:
     FRAMES, TILES, MARGIN = 32, 4, 2.6
     rings = []
     def build():
-        B(3.6, 3.6, 0.1, 0, 0, 0, P["dark"])
         B(1.9, 1.9, 0.45, 0, 0, 0.1, P["paint"])
         B(1.95, 1.95, 0.05, 0, 0, 0.55, P["steel"])
         for k in range(4):

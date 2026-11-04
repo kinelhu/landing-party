@@ -96,11 +96,12 @@ def worn(name, rgb, metal=0.3, rough=0.55, seams=6.0, wear=0.5, streaks=0.5, riv
 
 def palette_worn():
     """The used palette: desaturated paint, dull hazard, steel and dirt (in place of palette()'s clean one)."""
-    return {"steel": worn("steel", (0.2, 0.2, 0.2), metal=0.8, rough=0.45, seams=4, rivets=False),
+    # (Its gray had read as the concrete under it, the first in-game look, 2026-11-04: paint slate-teal, steel lighter.)
+    return {"steel": worn("steel", (0.27, 0.27, 0.28), metal=0.8, rough=0.42, seams=4, rivets=False),
             "dark": worn("dark", (0.07, 0.07, 0.07), metal=0.5, rough=0.65, seams=5, rivets=False),
-            "paint": worn("paint", (0.2, 0.26, 0.3), metal=0.25, rough=0.6, seams=5),
+            "paint": worn("paint", (0.12, 0.29, 0.37), metal=0.25, rough=0.6, seams=5),
             "copper": mat("copper", (0.45, 0.27, 0.15), metal=1.0, rough=0.4),
-            "hazard": worn("hazard", (0.42, 0.34, 0.12), metal=0.2, rough=0.65, seams=8, rivets=False),
+            "hazard": worn("hazard", (0.6, 0.46, 0.1), metal=0.2, rough=0.6, seams=8, rivets=False),
             "rubber": mat("rubber", (0.03, 0.03, 0.03), metal=0.0, rough=0.85, grime=0.3),
             "glow": mat("glow", (0.5, 0.9, 1.0), emit=(0.45, 0.85, 1.0), strength=2.0, grime=0.0)}
 
@@ -119,6 +120,14 @@ def palette():
             "copper": mat("copper", (0.55, 0.3, 0.16), metal=1.0, rough=0.35),
             "hazard": mat("hazard", (0.75, 0.6, 0.12), metal=0.2, rough=0.6),
             "glow": mat("glow", (0.5, 0.9, 1.0), emit=(0.45, 0.85, 1.0), strength=2.0, grime=0.0)}
+
+def feet(span, m, size=0.38, h=0.12):
+    """Four anchor feet at a footprint's corners, the ground between them its own (a full slab read as a gray square on
+    every ground but concrete, the user, 2026-11-04)."""
+    k = span / 2 - size / 2
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            box(size, size, h, sx * k, sy * k, 0, m)
 
 def _add(o, m):
     o.data.materials.append(m); return o

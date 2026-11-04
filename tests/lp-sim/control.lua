@@ -9615,17 +9615,21 @@ end
 -- was, its mortars left to choose): 117 shells, ten lasers at full health, 32 repair packs spent, nothing destroyed.
 -- LP_MIX=jammer: Serenity has its jammer (rd): a mast goes up in the emplacement and its arcs down the robots.
 -- LP_MIX=howitzer: the player kills the howitzer as it stands; a second siege on the same wall comes without one.
+-- LP_MIX=grubstake (the user, 2026-11-04: "we aren't using the howitzer trucks? Should we?"): Grubstake's siege on the
+-- same wall. It drops nothing from orbit: its howitzer comes on its truck and deploys.
 scenarios.fortress = function()
   local old, jam, hw = params.mix == "old", params.mix == "jammer", params.mix == "howitzer"
+  local gs = params.mix == "grubstake"
+  local corp = gs and "grubstake" or "serenity"
   schedule(60, function()
     -- (A camp, not its armed landing: this tests its siege. Armed, its lander stood 11 tiles off, its siege's site moved
     -- with it onto ground where its hauler stuck 15 tiles short, three variants failing, 0.2.134. Scenario armed.)
     lp("debug_tune", {armed = false})
     -- (The old siege as it was, its truck and its tanks: dropped from orbit, its escort lived through and its assault took
     -- every laser and roboport, 0.2.166, and the case it keeps, the fire plan's worth, read nothing.)
-    lp("debug_tune", {era = 3, history_off = true, raids_off = true, corp_level = {serenity = 3}, focus_off = old or nil,
+    lp("debug_tune", {era = 3, history_off = true, raids_off = true, corp_level = {[corp] = 3}, focus_off = old or nil,
       drop_off = old or nil, rd_tech = jam and {serenity = {nodes = {jammer = 1}}} or nil})
-    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = corp})
     for _ = 1, 3 do lp("debug_depot", S.s, 6000) end
     game.forces.player.create_ghost_on_entity_death = true
   end)
@@ -9673,6 +9677,12 @@ scenarios.fortress = function()
       local mortars = surface().count_entities_filtered{name = "lp-mortar", force = "lp-serenity"}
       S.masts = math.max(S.masts or 0, surface().count_entities_filtered{name = "lp-jammer"})
       local st0 = lp("stats", S.s)
+      if gs then
+        S.trucks = math.max(S.trucks or 0, surface().count_entities_filtered{name = "lp-grubstake-howitzer-truck"})
+        S.guns = math.max(S.guns or 0, surface().count_entities_filtered{name = "lp-grubstake-howitzer"})
+        if S.why and #(st0.ops.log or {}) > 0 and not st0.ops.op then finish_early() end
+        return
+      end
       if hw then
         local hs = surface().find_entities_filtered{name = "lp-howitzer", force = "lp-serenity"}
         if S.killed then S.after = math.max(S.after or 0, #hs)
@@ -9710,6 +9720,13 @@ scenarios.fortress = function()
     S.fortress = {lasers = lasers, ports = ports, walls = walls}
     local js = lp("jammer_stats")
     info("fortress: jammer " .. serpent.line(js) .. ", masts seen " .. tostring(S.masts))
+    if gs then
+      info(string.format("fortress grubstake: siege %s, trucks seen %s, howitzers deployed %s", tostring(S.why),
+        tostring(S.trucks), tostring(S.guns)))
+      check("fortress: Grubstake's howitzer came on its truck", (S.trucks or 0) > 0, tostring(S.trucks))
+      check("fortress: and deployed", (S.guns or 0) > 0, tostring(S.guns))
+      return
+    end
     if hw then
       info(string.format("fortress howitzer: killed at %s, down till %s, second siege %s, howitzers after %s",
         tostring(S.killed), tostring(S.down), tostring(S.why2), tostring(S.after)))

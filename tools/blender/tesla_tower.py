@@ -83,10 +83,10 @@ def torus(R, r, z, m):
     bpy.ops.mesh.primitive_torus_add(major_radius=R, minor_radius=r, location=(0, 0, z), major_segments=48, minor_segments=12)
     return add(bpy.context.object, m)
 
-# Footing: a hexagonal plinth on a square pad, hazard trim.
-box(2.9, 2.9, 0.12, 0, 0, 0, dark)
-cyl(1.35, 0.22, 0.12, steel, verts=6, depth_bevel=0.04)
-cyl(1.38, 0.05, 0.12, hazard, verts=6)
+# Footing: a hexagonal plinth straight on the ground, hazard trim (a square pad under it read as a gray square on any
+# ground but concrete, the user, 2026-11-04).
+cyl(1.35, 0.3, 0.0, steel, verts=6, depth_bevel=0.04)
+cyl(1.38, 0.05, 0.02, hazard, verts=6)
 # Four braced legs to the column, painted.
 for k in range(4):
     a = math.pi / 4 + k * math.pi / 2

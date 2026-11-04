@@ -26,7 +26,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `base` | 861 | army, blocks, chart, construction, layout, modules, names, ops, planner, rng, site | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `army` | 785 | know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  |  |
 | `war` | 626 | army, base, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
-| `command` | 576 | (leaf) | control |  | 60, 120 |  | cmd |
+| `command` | 580 | (leaf) | control |  | 60, 120 |  | cmd |
 | `creep` | 568 | costmap, tune | control, farm |  |  |  | creep |
 | `crew` | 483 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `skim` | 421 | base, ops, stance, tune | control |  | 60, 600 |  |  |

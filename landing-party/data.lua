@@ -1,5 +1,7 @@
 -- Prototypes: the faction's machines are retinted vanilla ones, never craftable by the player.
 local shared = require("shared")
+-- Frame sizes and shifts of the rendered sheets (tools/blender/sheets_lua.py writes it from each sheet.json).
+local SHEETS = require("graphics.sheets")
 
 local function watts(w) return tostring(math.abs(w) / 1000) .. "kW" end
 local function one_second(w) return tostring(math.abs(w) / 1000) .. "kJ" end
@@ -411,9 +413,10 @@ relay.max_health = 2000
 -- dish on a yoke over an equipment housing; 64 frames as the radar's directions, its turning the dish's (its shadow
 -- with it). Frame size and shift from sheet.json.
 do
+  local R = SHEETS["serenity/relay"]
   local function rl(file, extra)
-    local l = {filename = "__landing-party__/graphics/serenity/relay/" .. file .. ".png", width = 265, height = 302,
-      direction_count = 64, line_length = 8, scale = 0.5, shift = {0.515625, -0.53125}}
+    local l = {filename = "__landing-party__/graphics/serenity/relay/" .. file .. ".png", width = R.width, height = R.height,
+      direction_count = R.frames, line_length = R.line_length, scale = 0.5, shift = R.shift}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
   end
@@ -432,7 +435,7 @@ local tesla = sa("electric-turret", "tesla-turret")
 -- also make its anim sprites?"): 32 frames as a radar's 32 directions, so its turning plays the loop (a pulse climbing
 -- the coil, the emitter breathing, arcs at its crown) while it has power, and it stands still without. Frame size and
 -- shift from sheet.json. The tesla turret kitbash below is the fallback.
-local TOWER = {width = 335, height = 370, shift = {0.8359375, -1.0078125}}
+local TOWER = SHEETS["serenity/tower"]
 local function tower(file, extra)
   local l = {filename = "__landing-party__/graphics/serenity/tower/" .. file .. ".png", width = TOWER.width,
     height = TOWER.height, direction_count = 32, line_length = 8, scale = 0.5, shift = TOWER.shift}
@@ -464,10 +467,10 @@ data:extend({{type = "explosion", name = "lp-dome-ripple", flags = {"not-on-map"
 -- user, 2026-11-04: the ripple at the impact "looks like a good effect for communicating a dome being built or
 -- re-powered"; the hit should spread from the impact over the whole bubble). Shifts are placed by dome.lua.
 local DW = shared.DOME_WAVE
-local DW_SIZE = {{390, 469}, {390, 469}, {390, 469}, {390, 469}, {390, 469}, {390, 469}, {389, 469}, {390, 469}}   -- anim_sheet.py's
 for k = 1, DW.dirs do
+  local W = SHEETS["serenity/wave/d" .. k]
   data:extend({{type = "animation", name = "lp-dome-wave-" .. k, filename = "__landing-party__/graphics/serenity/wave/d" .. k .. "/sheet.png",
-    width = DW_SIZE[k][1], height = DW_SIZE[k][2], frame_count = DW.frames, line_length = 8, scale = 32 / DW.px,
+    width = W.width, height = W.height, frame_count = DW.frames, line_length = 8, scale = 32 / DW.px,
     draw_as_glow = true, blend_mode = "additive"}})
 end
 data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party__/graphics/serenity/ripple/sheet.png",
@@ -584,8 +587,9 @@ grow(pacifier.pictures, 1.4, {})
 -- pulse. Grubstake's in its amber (the manifest). Frame size and shift from sheet.json; the radar above the fallback.
 do
   local function pc(file, extra)
-    local l = {filename = "__landing-party__/graphics/serenity/pacifier/" .. file .. ".png", width = 363,
-      height = 399, direction_count = 32, line_length = 8, scale = 0.5, shift = {0.8984375, -1.15625}}
+    local P = SHEETS["serenity/pacifier"]
+    local l = {filename = "__landing-party__/graphics/serenity/pacifier/" .. file .. ".png", width = P.width,
+      height = P.height, direction_count = P.frames, line_length = P.line_length, scale = 0.5, shift = P.shift}
     for k, v in pairs(extra or {}) do l[k] = v end
     return l
   end
@@ -818,7 +822,7 @@ data:extend({{type = "simple-entity-with-force", name = "lp-jammer", hidden = tr
 -- a lattice mast on a 2x2 footing, arcs jumping between the three nodes at its crown, 16 frames looping while it stands.
 -- Frame size and shift from sheet.json; the big pole above is the fallback.
 do
-  local J = {width = 335, height = 419, shift = {1.4140625, -1.9765625}}
+  local J = SHEETS["serenity/jammer"]
   local function jam(file, extra)
     local l = {filename = "__landing-party__/graphics/serenity/jammer/" .. file .. ".png", width = J.width, height = J.height,
       frame_count = 16, line_length = 8, scale = 0.5, shift = J.shift, animation_speed = 0.4}
