@@ -100,12 +100,10 @@ function orbital.start(b, s, fs, center, along, spotter, dev)
   -- (Its own list: a strike called off or done leaves its list while its shadow still crosses.)
   local sh = {objs = {}, dir = storage.kh_strikes[#storage.kh_strikes].along, center = center, from = game.tick,
     at = game.tick + PAINT}
-  for _, strip in ipairs(SHADOW) do
-    local v = {}
-    for _ in ipairs(strip) do v[#v + 1] = {x = center[1], y = center[2]} end
-    sh.objs[#sh.objs + 1] = rendering.draw_polygon{color = {r = 0, g = 0, b = 0, a = 0.35}, vertices = v,
-      surface = s, draw_on_ground = true}
-  end
+  -- (A silhouette, its nose along its course, over all it crosses: three flat strips read as dark rectangles, the user,
+  -- 2026-11-04, the strike's stills.)
+  sh.objs[1] = rendering.draw_sprite{sprite = "lp-platform-shadow", target = {center[1], center[2]}, surface = s,
+    orientation = ((sh.dir + math.pi / 2) / (2 * math.pi)) % 1, tint = {r = 0, g = 0, b = 0, a = 0.42}, render_layer = "smoke"}
   storage.kh_shadows = storage.kh_shadows or {}
   table.insert(storage.kh_shadows, sh)
   if shared.notices_on() then
@@ -206,7 +204,10 @@ local function shadow_tick(sh, tick)
   local done = tick > sh.at + SHADOW_TAIL
   for i, o in ipairs(sh.objs) do
     if o.valid then
-      if done then o.destroy() else
+      if done then o.destroy()
+      elseif o.type == "sprite" then o.target = {cx, cy}
+      else
+        -- (A strike begun before 0.2.198: its strips.)
         local v = {}
         for _, q in ipairs(SHADOW[i]) do v[#v + 1] = {x = cx + q[1] * ca - q[2] * sa, y = cy + q[1] * sa + q[2] * ca} end
         o.vertices = v

@@ -473,6 +473,10 @@ for k = 1, DW.dirs do
     width = W.width, height = W.height, frame_count = DW.frames, line_length = 8, scale = 32 / DW.px,
     draw_as_glow = true, blend_mode = "additive"}})
 end
+-- The orbital platform's shadow crossing a strike (orbital.lua; tools/art/platform_shadow.py: a silhouette, 8 px a tile,
+-- white on alpha, tinted dark where drawn).
+data:extend({{type = "sprite", name = "lp-platform-shadow", filename = "__landing-party__/graphics/serenity/platform-shadow.png",
+  width = 512, height = 640, scale = 4, flags = {"no-crop"}}})
 data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party__/graphics/serenity/ripple/sheet.png",
   width = 290, height = 335, frame_count = DW.rise_frames, line_length = 8, scale = 1, draw_as_glow = true, blend_mode = "additive"}})
 if TOWER_ON then

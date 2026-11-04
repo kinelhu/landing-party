@@ -44,7 +44,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `jumper` | 314 | base, ops, threat, tune, war | control, dev |  | 60, 600 |  |  |
 | `intel` | 289 | know, threat | ops |  |  |  |  |
-| `orbital` | 268 | achievements, threat | control, dev, siege |  | 10, 30 |  | kh_shadows, kh_strikes |
+| `orbital` | 269 | achievements, threat | control, dev, siege |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `threat` | 262 | unit_prior | attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, war |  |  |  |  |

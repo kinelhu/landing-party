@@ -4533,6 +4533,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   on and loaded at the end; the howitzer's spot worked out at the drop (op.hw_at), its pod landing there; kits destroyed
   with a siege ended early (ops.finish). `fortress` checks guns stand while it deploys (seen failing with it off: nil);
   fortress, standsiege and orbital pass.
+- **The orbital platform's shadow a silhouette** (0.2.198; the user, 2026-11-04, of three flat strips: yes to a real
+  silhouette). tools/art/platform_shadow.py: a ship from below (tapered bow, ribbed hull, three engine bells, two solar
+  wings in panels, a radiator cross, an antenna mast), softened at its edges, 64 tiles across its wings; one sprite drawn
+  dark over all it crosses (render layer smoke), its nose along its course, moved as the strips were. dev passes; filmed
+  (stills-strike2).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
