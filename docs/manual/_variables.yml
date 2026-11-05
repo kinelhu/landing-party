@@ -28,6 +28,11 @@ arrival:
   fund_share_pct: "30"
   weapon_levels: "5"
   weapon_level_pct: "20"
+  landing_pods: "6"
+camp:
+  yard_near_tiles: "16"
+  yard_far_tiles: "28"
+  yard_quiet_tiles: "40"
 synthexis:
   arrive_evo: "0.25"
   clear_tiles: "250"
@@ -56,6 +61,8 @@ synthexis:
   order_breach_pct: "12"
   order_wait_min: "5"
   develop_held: "2"
+  cinder_windup_s: "0.5"
+  big_windup_s: "0.75"
 grubstake:
   rig_dig_min: "2.5"
   prospect_window_min: "10"
@@ -74,6 +81,7 @@ kh:
   jam_tiles: "50"
   paint_s: "12"
   strike_cool_min: "15"
+  tesla_drain_pct: "60"
   bill_every_min: "5"
   truce_value: "10"
 war:
@@ -97,6 +105,7 @@ spoils:
   gland_max: "2"
   core_capture: "1"
   core_survey: "1"
+  strike_paint_s: "4"
 desc:
   entity_player_dome: "Raises a dome that catches enemy shells within its radius, as Kessler-Hayashi's does. It holds for a few minutes of the guns' fire, then goes down to recharge. Bullets, lasers and biters pass."
   entity_dome_projector: "Holds a shield over part of a Kessler-Hayashi base that stops artillery shells. Units pass under it."
@@ -193,6 +202,6 @@ settings:
   high: "1.5"
   very_high: "2"
 mod:
-  version: "0.2.203"
+  version: "0.2.212"
   factorio: "2.1"
   needs: "base, space-age"

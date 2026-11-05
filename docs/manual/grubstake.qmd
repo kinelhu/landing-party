@@ -23,7 +23,9 @@ are gun turrets fed with ammunition, alternating with scrap cannons that burst o
 outrange both. Its drills pollute more than your electric drills do.
 
 Its army is buggies, shotgun hands and, from its first level, scrap drones. Its haulers, lightly armed trucks, build its
-new lots, carry its loot and bring ore home from its claims.
+new lots, carry its loot and bring ore home from its claims. Its idle units wait in a yard on open ground outside its
+landing pad, {{< var camp.yard_near_tiles >}} to {{< var camp.yard_far_tiles >}} tiles from its first depot, on the
+side away from your spawn.
 
 - **Grubstake yard.** {{< var desc.entity_skim_yard >}}
 
