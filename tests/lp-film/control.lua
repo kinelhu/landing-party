@@ -194,6 +194,18 @@ script.on_event(defines.events.on_tick, function(e)
       remote.call("landing-party", "dev", d.args, at)
     end
   end
+  -- P.place = {{tick =, name =, pos = {x, y}, force = "player", charge = ticks}}: an entity built (raised, as a player's
+  -- is) at a tick; charge: its buffer filled that many ticks later (the player's strike beacon, 2026-11-05: no pole and
+  -- power plant in frame).
+  storage.placed = storage.placed or {}
+  for i, d in ipairs(P.place or {}) do
+    if e.tick == d.tick then
+      storage.placed[i] = game.surfaces[1].create_entity{name = d.name, position = d.pos, force = d.force or "player",
+        raise_built = true}
+    end
+    local ent = storage.placed[i]
+    if d.charge and e.tick == d.tick + d.charge and ent and ent.valid then ent.energy = ent.electric_buffer_size end
+  end
   for _, r in ipairs(P.ripples or {}) do
     if e.tick == r.tick then game.surfaces[1].create_entity{name = r.name or "lp-dome-ripple", position = r.pos} end
   end

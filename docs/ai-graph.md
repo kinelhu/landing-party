@@ -84,8 +84,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `blocks` | 76 | (leaf) | base, layout |  |  |  |  |
 | `jammer` | 75 | lights | control, ops |  |  |  | jam_beams, jammed, jammers |
 | `map` | 71 | chart, names, standing | control |  | 600 |  |  |
+| `strike` | 71 | threat | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `marker` | 70 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
-| `strike` | 67 | threat | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `pods` | 64 | (leaf) | cell, control, faction, farm, siege, war |  | 60 |  | pods |
 | `bait` | 59 | (leaf) | control |  | 30 |  | baits, baits_called |
 | `rng` | 56 | (leaf) | army, base, farm, landfx, layout, names, tactics, war |  |  |  |  |

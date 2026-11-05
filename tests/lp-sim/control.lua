@@ -4616,15 +4616,23 @@ scenarios.dome = function()
     S.turrets, S.loaded = {}, 0
     if mix == "ring" then
       -- LP_MIX=ring (the trailer, the user on cut 5, 2026-11-05: "the dome stopping a volley of shells from multiple
-      -- directions"): six guns round the camp, 100 tiles out, its own charge (three minutes of six guns): it holds.
-      for k = 0, 5 do
-        local a = k * math.pi / 3
-        local q = {o.x + math.cos(a) * 100, o.y + math.sin(a) * 100}
-        flatten(q[1] - 4, q[2] - 4, q[1] + 4, q[2] + 4)
-        local t = surface().create_entity{name = "artillery-turret", position = q, force = "player"}
-        S.loaded = S.loaded + t.insert{name = "artillery-shell", count = 10}
-        table.insert(S.turrets, t)
+      -- directions"; on cut 6: "a large artillery bank firing before the dome shot"): three banks of six guns round
+      -- the camp, 100 tiles out, its own charge (three minutes of six guns, more than their 180 shells): it holds.
+      S.banks = {}
+      for k = 0, 2 do
+        local a = k * 2 * math.pi / 3 + math.pi / 6
+        local ux, uy = math.cos(a), math.sin(a)
+        local q = {o.x + ux * 100, o.y + uy * 100}
+        S.banks[#S.banks + 1] = q
+        flatten(q[1] - 16, q[2] - 16, q[1] + 16, q[2] + 16)
+        for j = -2.5, 2.5 do
+          local t = surface().create_entity{name = "artillery-turret", position = {q[1] - uy * 4 * j, q[2] + ux * 4 * j},
+            force = "player"}
+          S.loaded = S.loaded + t.insert{name = "artillery-shell", count = 10}
+          table.insert(S.turrets, t)
+        end
       end
+      info("dome: banks at " .. serpent.line(S.banks))
     end
     for k = 1, ((mix == "battery" or mix == "whole") and 6 or mix == "ring" and 0 or 1) do
       local t = surface().create_entity{name = "artillery-turret", position = {c[1] + 4 * (k - 1), c[2]}, force = "player"}
@@ -4651,7 +4659,7 @@ scenarios.dome = function()
       for _, t in ipairs(S.turrets) do
         if t.valid and t.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("artillery-shell") < 10 then fired = fired + 1 end
       end
-      check("dome: six guns round it fire, every shell caught, it holds", fired == 6 and d.caught == S.loaded - left
+      check("dome: eighteen guns in three banks round it fire, every shell caught, it holds", fired == 18 and d.caught == S.loaded - left
         and d.breaks == 0 and lost == 0, string.format("%d guns fired, %d of %d caught, %d breaks, %d lost", fired, d.caught,
         S.loaded - left, d.breaks, lost))
     elseif mix == "battery" then
@@ -11391,6 +11399,25 @@ scenarios.farm = function()
     info(string.format("farm: field of %d spawners at %.0f,%.0f", #S.field, at(750, 0)[1], at(750, 0)[2]))
   end)
   local function farm1() return lp("farm_state").farms[1] end
+  -- strike (the trailer, 2026-11-05): the player's strike beacon set down charged in its culture at 8 minutes: its
+  -- incubators within reach are struck (a strike took none, Synthexis's force not among its targets, strike.lua).
+  if mix == "strike" then
+    schedule(8 * 3600, function()
+      local f = farm1()
+      if not f then return end
+      local p = {f.pos.x, f.pos.y}
+      S.strike_at = p
+      S.strike_pens = surface().count_entities_filtered{name = "lp-pen", position = p, radius = 60}
+      local b = surface().create_entity{name = "lp-strike-beacon", position = surface().find_non_colliding_position(
+        "lp-strike-beacon", p, 20, 1) or p, force = "player", raise_built = true}
+      b.energy = b.electric_buffer_size
+    end)
+    schedule(11 * 3600, function()
+      local pens1 = S.strike_at and surface().count_entities_filtered{name = "lp-pen", position = S.strike_at, radius = 60} or -1
+      check("farm: the player's strike on its culture takes its incubators", S.strike_pens and S.strike_pens > 0 and pens1 < S.strike_pens,
+        string.format("%s -> %d", tostring(S.strike_pens), pens1))
+    end)
+  end
   -- The siege lab (scripts/siegelab.sh build): the siege test's fortress and its culture, grown to 8 incubators and saved;
   -- no wave goes meanwhile (herd_off: its trials send them, scenarios.lab).
   if params.lab == "build" then
@@ -11680,7 +11707,7 @@ scenarios.farm = function()
         for _, l in ipairs(st.log) do if (l.big_sent or 0) > 0 then done = true end end
       end
       if mix ~= "killed" and mix ~= "starve" and mix ~= "techs" and mix ~= "clinic" and mix ~= "growth" and mix ~= "found"
-        and mix ~= "seedbare" and mix ~= "moat" and done then finish_early() end
+        and mix ~= "seedbare" and mix ~= "moat" and mix ~= "strike" and done then finish_early() end
     end)
   end
   schedule(END - 60, function()
@@ -11991,7 +12018,8 @@ scenarios.farm = function()
     local mins = e.tick and (e.tick - S.landed) / 3600 or 0
     info(string.format("farm: evolution %s at landing, %s %.1f min on (bred at %s), clinic %s", tostring(S.evo_land),
       tostring(e.evo), mins, tostring(e.bred), tostring(e.clinic)))
-    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "siegepoor" and mix ~= "behind" and mix ~= "evocap" and mix ~= "bigpens" then
+    if mix ~= "killed" and mix ~= "artillery" and mix ~= "siege" and mix ~= "siegepoor" and mix ~= "behind" and mix ~= "evocap" and mix ~= "bigpens"
+        and mix ~= "strike" then
       -- (0.002 a minute, farm.lua CLIMB, up to its lead over the wild's.)
       check("farm: its clinic stands and its breeds climb", e.clinic == true and S.evo_land and e.evo
         and e.evo - S.evo_land >= math.min(0.002 * (mins - 1) * 0.9, e.wild + 0.15 - S.evo_land - 1e-6)
@@ -12196,6 +12224,8 @@ scenarios.farm = function()
         tostring(lp_price))
       return
     end
+    -- (strike: struck to nothing at 8 minutes, no wave.)
+    if mix == "strike" then return end
     -- (Within 50 minutes, run length in regress.sh: with its growth paid apart from its breeding, half its income to growth
     -- while young, its first wave goes out at about 45, 2026-10-29; 40 before.)
     check("farm: a wave went out", w ~= nil or S.wave_seen ~= nil, "none")

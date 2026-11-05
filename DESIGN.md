@@ -4830,6 +4830,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   clear. After: railguns bought at minute 20 on its 8 losses to biters, fund 1200. Check: hazard research "it exports
   (its launchpad built)", seen failing before the fix (0 exported). Assumed, not tested: a projector already standing
   where a later block is planned (the planner's side, not seen).
+- **The player's strike spared Synthexis** (2026-11-05, filming the player's strike on farm bigpens' culture of 26
+  incubators for the trailer). Four shells fell and every incubator stood. `strike.lua` picks its targets from the wild
+  biters' force and each corporation's (`shared.CORPS`); Synthexis's force is `shared.BIOTECH`, not a corporation, so
+  its incubators, cells, clinic and worms were never targets, though the strike's own description names nests. Now its
+  force is among them when the player's is not its friend. Check: farm strike (a charged beacon set down in its culture
+  at 8 minutes), "the player's strike on its culture takes its incubators": 5 to 5 before the fix, 5 to 0 after.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

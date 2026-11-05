@@ -15,6 +15,10 @@ local function hostile(force)
   for _, c in pairs(shared.CORPS) do
     if game.forces[c.force] and not force.get_friend(c.force) then table.insert(out, c.force) end
   end
+  -- Synthexis's culture too: its incubators are nests (a strike on a culture of 26 took none of them, its force not a
+  -- corporation's: wild nests only, the trailer, 2026-11-05).
+  local bio = shared.BIOTECH.force
+  if game.forces[bio] and not force.get_friend(bio) then table.insert(out, bio) end
   return out
 end
 
