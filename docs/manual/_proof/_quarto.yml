@@ -1,0 +1,5 @@
+# The lp-manual template's proof: a small project of its own, so it renders apart from the book
+#   cd docs/manual/_proof && quarto render proof.qmd
+# _extensions is a link to the book's. The output (proof.pdf, proof.tex, pages/) is not committed.
+project:
+  type: default

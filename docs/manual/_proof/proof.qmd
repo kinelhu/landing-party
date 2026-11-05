@@ -1,0 +1,173 @@
+---
+title: "Landing Party"
+subtitle: "Field manual"
+edition: "Template proof, not the manual"
+lp-data: lp-data.json
+inside-cover: |
+  **Template proof.** This booklet exercises every component of the lp-manual-pdf format with real values for a
+  few units of each faction. The values were copied by hand from the generated tables and the prototype dump
+  for this proof only (lp-data.json); the manual reads them from the file scripts/roster_page.py will write.
+  The narrator's essay is a draft.
+back-blurb: |
+  They came down after your first rocket, or with your first blue science, or when the biters had grown fat on
+  your smoke. A mining concern that strips what it can carry. A security contractor that moves its line a little
+  closer every few minutes. A bioengineering company that has learned to farm the swarm.
+
+  This field guide describes the three companies that landed on your planet, the machines and breeds they field,
+  and how each one is beaten.
+back-small: |
+  Landing Party is a fan-made mod for Factorio. Factorio is a game by Wube Software; this booklet is not
+  affiliated with it. Set in Alegreya and Titillium Web.
+format:
+  lp-manual-pdf:
+    keep-tex: true
+---
+
+# About this proof {kicker="Template proof"}
+
+This booklet is a proof of the manual's PDF template, not the manual. Each component appears at least once with
+real data: a faction opener, unit cards with their stat panels, a narrator's essay with a drop cap and a pull quote,
+a unit tree, a tech tree, a tip and a field note. Values were copied by hand from the generated tables for this
+proof; the chapters will take them from the generator's data file, so no chapter types a number.
+
+The bars in a card's stat panel measure a unit against the strongest of its own faction: a full health bar is the
+faction's toughest unit, not the toughest in the game.
+
+::: {.tip title="reading the booklet"}
+On screen, view two pages side by side with the cover alone: the spreads are laid out as pairs. To print, run
+`impose.sh` on the PDF and print the result double-sided, flipped on the short edge, then fold and staple.
+:::
+
+::: {.fieldnote title="the edge tabs"}
+Each corporation's chapters carry a coloured tab on the fore-edge at a height of their own. With the booklet
+closed, the tabs show where each faction's pages begin.
+:::
+
+# Synthexis {.opener faction="synthexis" kicker="The corporations"}
+
+> Engineered to adapt.
+
+Synthexis is a bioengineering company. It does not mine or build factories. It takes over a field of biter
+spawners, feeds it on your pollution and breeds biters of its own, tinted green and yellow. Its waves are planned:
+they pick a way in, go for what keeps your turrets firing, and change after every attack that fails.
+
+## What it breeds
+
+::: {.unit unit="lp-bred-big-biter"}
+Most of any grown wave. A bred big biter costs the culture a little biomass and nothing else, so the culture
+spends them freely.
+:::
+
+::: {.unit unit="lp-bred-cinder"}
+Bred for walls that have held. It walks up to the wall at a run and bursts there, and a well-aimed group takes the
+corner turrets with it.
+:::
+
+::: {.unit unit="lp-bred-spore"}
+The one breed that looks up. It travels with waves sent against a base that defends itself with drones and
+robots.
+:::
+
+::: {.tip}
+Kill the biochamber beside an incubator and the incubator stops breeding. A biochamber under attack does not call
+the wave home, so it is the quiet target while a wave is out.
+:::
+
+::: {.lore kicker="From the archive" title="The culture" draft="Draft" faction="synthexis"}
+Synthexis came to the planet with no drills and no furnaces. Its pod carried a culture, a store of biomass and a
+few technicians, and it set down where the biters were already thickest. Soon the field's first spawner was no
+longer wild. It went on eating pollution as before, but the biters it bred now were striped in green and yellow,
+and they followed a plan.
+
+The company's engineers farm the swarm. Smoke from your chimneys drifts over the creep and settles there, and the
+creep turns it into the next wave. The more you build, the faster the culture breeds.
+
+Those who held out against the early waves describe them in the same terms. A lone scout circles the wall at a
+distance and leaves. Some time later the wave arrives at a gate other than the last one. It walks past the turrets
+it does not need to fight and goes for the poles and inserters behind them.
+
+::: {.pullquote cite="A survivor's log"}
+The wall held, and the next wave came for the wall.
+:::
+
+When a wall holds, Synthexis remembers it. The next wave sent that way brings bursters bred for the purpose and
+waits for them before it moves. Where mines lie on its way in, the culture breeds sweepers to clear them.
+
+It keeps a truce with the wild biters and with Grubstake, whose drills feed it. A culture that loses its clinic stops
+improving its breeds, and an incubator cut off from the creep goes back to the wild. Somewhere farther out, another
+field of spawners waits for a carrier.
+:::
+
+# Kessler-Hayashi {faction="kessler-hayashi" kicker="The corporations"}
+
+Kessler-Hayashi is a security contractor. It lands late and is at war with you from the day it arrives. Its
+research happens in the world: a lab for each branch of its tree, each in a district of its own. A branch climbs,
+and its units are fielded, only while its lab stands.
+
+## Its units
+
+::: {.unit unit="lp-tank"}
+The backbone of every siege. Tanks come out in staggered ranks and stop just outside your guns' reach.
+:::
+
+::: {.unit unit="lp-railgunner"}
+Its camps are clean of biters because of these. They are poor at anything else, and they are the ones carrying the
+rail coils you want.
+:::
+
+::: {.unit unit="lp-lance"}
+Fielded once your troopers have cost it enough. Its beam reaches past theirs, so a trooper line that won the last
+fight loses the next one.
+:::
+
+::: {.unit unit="lp-laser-drone"}
+Kessler-Hayashi's sky. They come with its second level, in small numbers, and they ignore walls.
+:::
+
+## How its army grows
+
+::: {.tree tree="kh-units" kicker="Unit tree"}
+Each research node is bought with parts once its trigger has fired: the units it answers have cost Kessler-Hayashi
+enough. Dashed nodes are armor and siege abilities, not units. A node is bought, and its units fielded, only while
+its lab stands.
+:::
+
+# Grubstake {faction="grubstake" kicker="The corporations"}
+
+Grubstake is a mining concern that strips your ore and raids what your turrets do not cover. It usually lands
+first, and it keeps coming.
+
+::: {.unit unit="lp-grubstake-buggy"}
+Fast, light and everywhere. Most of what Grubstake takes from you, it takes with buggies.
+:::
+
+::: {.unit unit="lp-grubstake-slug"}
+Grubstake buys slugs after your vehicles have killed enough of its raiders.
+:::
+
+::: {.unit unit="lp-grubstake-dozer"}
+A wall that has stopped Grubstake twice will meet a dozer the third time.
+:::
+
+::: {.fieldnote title="its claims"}
+A claim marker makes Grubstake leave your buildings near it alone. Its pact with the wild biters is real: inside a
+Grubstake claim, the biters do not attack Grubstake's machines.
+:::
+
+# Your army {faction="player"}
+
+You can raise an army of your own. How many units you field is set by command bandwidth, which no amount of items
+can buy.
+
+::: {.unit unit="lp-trooper"}
+Cheap, quick to train and quick to lose. Troopers win against raiders and lose against lasers.
+:::
+
+::: {.unit unit="lp-battle-tank"}
+The answer to a walled camp. It takes the longest to train.
+:::
+
+::: {.tree tree="player-techs" kicker="Tech tree"}
+What the wreckage teaches you. Each column is the company whose wreckage or field study a technology comes from; each
+band is the base-game military technology it waits for. Arrows mark the faction technologies that need another.
+:::

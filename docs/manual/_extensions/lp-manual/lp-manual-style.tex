@@ -1,0 +1,375 @@
+% lp-manual-style.tex: the Landing Party field manual's page and components (LuaLaTeX, A5 booklet).
+% Read into the preamble by lp-manual.lua (which defines \lpextdir, \lptextwidthmm and the factions first).
+% Every macro here is a look; every value a page shows comes from the document or its data file.
+\makeatletter
+
+% ---------------------------------------------------------------- page
+% A5, two-sided. Inner margin a little wider than the outer: the fold eats some, the thumb tabs sit outside.
+% The text block is \lptextwidthmm wide (the tree layout in lp-manual.lua uses the same number).
+\RequirePackage{geometry}
+\geometry{paperwidth=148mm, paperheight=210mm, textwidth=\lptextwidthmm mm, inner=16mm,
+  top=18mm, bottom=20mm, headheight=10pt, headsep=5mm, footskip=10mm, twoside}
+\RequirePackage{eso-pic}
+\RequirePackage{tikz}
+\usetikzlibrary{calc,arrows.meta,positioning}
+\RequirePackage{fancyhdr}
+\RequirePackage{titlesec}
+\RequirePackage{tcolorbox}
+\tcbuselibrary{skins}
+\RequirePackage{lettrine}
+\RequirePackage{enumitem}
+\RequirePackage{etoolbox}
+\RequirePackage{microtype}
+\RequirePackage{colortbl}
+
+% ---------------------------------------------------------------- type
+% Body: Alegreya (TeX Live, OFL). A literary serif built for long text, sturdy enough on screen at A5 sizes and
+% with real small caps and old-style figures: the narrator's voice. Titillium Web (Factorio's own face, OFL,
+% vendored in fonts/) for the machine's voice: headings, stat panels, labels, captions, trees.
+\RequirePackage{fontspec}
+\setmainfont{Alegreya}[Extension=.otf, UprightFont=*-Regular, BoldFont=*-Bold, ItalicFont=*-Italic,
+  BoldItalicFont=*-BoldItalic, FontFace={m}{sc}{AlegreyaSC-Regular}, FontFace={b}{sc}{AlegreyaSC-Bold},
+  Numbers={OldStyle,Proportional}]
+\setsansfont{TitilliumWeb}[Path=\lpextdir/fonts/, Extension=.ttf, UprightFont=*-Regular, BoldFont=*-Bold,
+  ItalicFont=*-Regular, ItalicFeatures={FakeSlant=0.16}, BoldItalicFont=*-Bold, BoldItalicFeatures={FakeSlant=0.16},
+  FontFace={sb}{n}{*-SemiBold}]
+\newfontfamily\lpsemibold{TitilliumWeb-SemiBold}[Path=\lpextdir/fonts/, Extension=.ttf]
+\newfontfamily\lplining{Alegreya}[Extension=.otf, UprightFont=*-Regular, ItalicFont=*-Italic, Numbers=Lining]
+\renewcommand\normalsize{\@setfontsize\normalsize{9.6}{13}\abovedisplayskip 8pt plus 2pt\belowdisplayskip 8pt plus 2pt}
+\renewcommand\small{\@setfontsize\small{8.8}{11.6}}
+\renewcommand\footnotesize{\@setfontsize\footnotesize{8}{10.4}}
+\renewcommand\scriptsize{\@setfontsize\scriptsize{7}{8.8}}
+\normalsize
+\newcommand\lplabel[1]{{\lpsemibold\addfontfeature{LetterSpace=9}\MakeUppercase{#1}}}
+\newcommand\lpkicker[1]{{\lpsemibold\fontsize{6.6}{8}\selectfont\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
+\newcommand\HeaderFont{\sffamily\bfseries}% the clip extension's placeholder asks for it
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt plus 1.5pt minus 1pt}
+\setlength{\emergencystretch}{2.5em}
+\widowpenalty=10000 \clubpenalty=10000 \raggedbottom
+
+% ---------------------------------------------------------------- colour
+% Chrome is neutral and prints on any paper; colour is the factions' (defined from the data by the filter).
+\definecolor{LPInk}{HTML}{1C1E22}
+\definecolor{LPNight}{HTML}{14161A}
+\definecolor{LPMuted}{HTML}{6B6E74}
+\definecolor{LPRule}{HTML}{C9C5BC}
+\definecolor{LPPaper}{HTML}{F5F0E6}
+\definecolor{LPPaperDark}{HTML}{E7DFD0}
+\color{LPInk}
+% The kinan house names that other extensions (clip) draw with.
+\colorlet{AccentPrimary}{LPMuted}\colorlet{AccentLight}{LPPaper}\colorlet{TextSecondary}{LPMuted}
+
+% \lpdefinefaction{id}{HEX}{on: white|ink}{tab index, 0 for none}{display name}
+\newcommand\lpdefinefaction[5]{%
+  \definecolor{lp@#1}{HTML}{#2}%
+  \colorlet{lp@#1@dark}{lp@#1!58!black}%
+  \colorlet{lp@#1@light}{lp@#1!9!white}%
+  \colorlet{lp@#1@mid}{lp@#1!28!white}%
+  \ifstrequal{#3}{white}{\colorlet{lp@#1@on}{white}}{\colorlet{lp@#1@on}{LPInk}}%
+  \expandafter\def\csname lp@#1@tab\endcsname{#4}%
+  \expandafter\def\csname lp@#1@name\endcsname{#5}}
+\lpdefinefaction{neutral}{8A8E94}{white}{0}{}
+% \lpusefaction{id}: the current faction (chapter, card, box). Fac, FacDark, FacLight, FacMid, FacOn.
+\newcommand\lpusefaction[1]{%
+  \ifcsname lp@#1@tab\endcsname\def\lp@fac{#1}\else\def\lp@fac{neutral}\fi
+  \colorlet{Fac}{lp@\lp@fac}\colorlet{FacDark}{lp@\lp@fac @dark}\colorlet{FacLight}{lp@\lp@fac @light}%
+  \colorlet{FacMid}{lp@\lp@fac @mid}\colorlet{FacOn}{lp@\lp@fac @on}%
+  \edef\lp@factab{\csname lp@\lp@fac @tab\endcsname}\edef\lp@facname{\csname lp@\lp@fac @name\endcsname}}
+\newcommand\lpchapterfaction{neutral}
+\lpusefaction{neutral}
+
+% ---------------------------------------------------------------- page furniture
+% Thumb tabs: a faction's chapters carry a tab on the fore-edge at the faction's own height, so the folded
+% booklet can be opened at a faction by its edge. Lore pages are printed on a paper tint.
+\newif\iflplore
+\newif\iflpnotab
+\newcommand\lp@tab{%
+  \begingroup\lpusefaction{\lpchapterfaction}%
+  \ifnum\lp@factab>0\relax\iflpnotab\else
+    \begin{tikzpicture}[x=1mm,y=1mm,remember picture=false]
+      \useasboundingbox (0,0) rectangle (148,210);
+      \pgfmathsetmacro\lp@tabtop{190-(\lp@factab-1)*27}
+      \ifodd\value{page}
+        \fill[Fac] (144.5,\lp@tabtop) rectangle (151,\lp@tabtop-24);
+        \node[rotate=-90, font=\lpsemibold\fontsize{5.2}{6}\selectfont\addfontfeature{LetterSpace=12}, text=FacOn]
+          at (146.4,\lp@tabtop-12) {\MakeUppercase{\lp@facname}};
+      \else
+        \fill[Fac] (-3,\lp@tabtop) rectangle (3.5,\lp@tabtop-24);
+        \node[rotate=90, font=\lpsemibold\fontsize{5.2}{6}\selectfont\addfontfeature{LetterSpace=12}, text=FacOn]
+          at (1.6,\lp@tabtop-12) {\MakeUppercase{\lp@facname}};
+      \fi
+    \end{tikzpicture}%
+  \fi\fi\endgroup}
+\AddToShipoutPictureBG{%
+  \iflplore\AtPageLowerLeft{\color{LPPaper}\rule{\paperwidth}{\paperheight}}\fi
+  \AtPageLowerLeft{\lp@tab}\global\lpnotabfalse}
+% Book matter is one sequence: the folio counts from the cover, as a printed booklet's do.
+\renewcommand\frontmatter{}\renewcommand\mainmatter{\clearpage}\renewcommand\backmatter{}
+
+\newcommand\lp@chaptertitle{}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand\headrulewidth{0pt}
+\newcommand\lp@headmark[1]{{\color{FacDark}\lpkicker{#1}}}
+\newcommand\lp@folio{{\lpsemibold\fontsize{7.5}{9}\selectfont\addfontfeature{Numbers=Lining}\thepage}}
+\fancyhead[LE]{\lpusefaction{\lpchapterfaction}\lp@headmark{\leftmark}}
+\fancyhead[RO]{\lpusefaction{\lpchapterfaction}\lp@headmark{\rightmark}}
+\fancyfoot[LE]{\lpusefaction{\lpchapterfaction}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}\hspace{2mm}\lp@folio}
+\fancyfoot[RO]{\lpusefaction{\lpchapterfaction}\lp@folio\hspace{2mm}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}}
+\fancypagestyle{plain}{\fancyhf{}%
+  \fancyfoot[LE]{\lpusefaction{\lpchapterfaction}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}\hspace{2mm}\lp@folio}%
+  \fancyfoot[RO]{\lpusefaction{\lpchapterfaction}\lp@folio\hspace{2mm}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}}}
+\fancypagestyle{lpbare}{\fancyhf{}}
+
+% ---------------------------------------------------------------- headings
+% A chapter is never numbered (the manual is read by subject, not in order). Sections in Titillium.
+\setcounter{secnumdepth}{-2}
+\titleformat{\section}{\sffamily\bfseries\fontsize{12.5}{15}\selectfont\color{FacDark}}{}{0pt}
+  {\textcolor{Fac}{\rule[0.12ex]{2.2mm}{2.2mm}}\hspace{2.2mm}}
+\titlespacing*{\section}{0pt}{14pt plus 3pt}{5pt}
+\titleformat{\subsection}{\lpsemibold\fontsize{10}{12}\selectfont\color{LPInk}}{}{0pt}{}
+\titlespacing*{\subsection}{0pt}{10pt plus 2pt}{3pt}
+\titleformat{\subsubsection}[runin]{\lpsemibold\fontsize{9}{11}\selectfont\color{FacDark}}{}{0pt}{}[.]
+\titlespacing*{\subsubsection}{0pt}{6pt}{0.6em}
+\renewcommand\sectionmark[1]{\markright{#1}}
+
+% \lpchapter{title}{label}{faction}{kicker}: a chapter that is not a faction's opener.
+\newcommand\lpchapter[4]{%
+  \clearpage\gdef\lpchapterfaction{#3}\lpusefaction{#3}%
+  \markboth{#1}{#1}\thispagestyle{plain}%
+  \phantomsection\addcontentsline{toc}{chapter}{\protect\lptocentry{#3}{#1}}\ifstrempty{#2}{}{\label{#2}}%
+  \AddToShipoutPictureBG*{\AtPageUpperLeft{\color{lp@\lp@fac}\raisebox{-5mm}{\rule{\paperwidth}{5mm}}}}%
+  \vspace*{6mm}%
+  \ifstrempty{#4}{}{{\color{FacDark}\lpkicker{#4}}\par\vspace{1mm}}%
+  {\sffamily\bfseries\fontsize{22}{25}\selectfont\color{LPInk}#1\par}%
+  \vspace{2.5mm}{\color{Fac}\rule{\linewidth}{0.8pt}}\par\vspace{5mm}\@afterheading}
+
+% \lpopener{title}{label}{faction}{vista path}{epigraph}{kicker}: a faction's chapter opens on its land.
+% The vista runs to the trim on three sides, the faction's band under it carries the name.
+\newlength\lp@vistah \setlength\lp@vistah{96mm}
+\newlength\lp@bandh \setlength\lp@bandh{19mm}
+\newcommand\lpopener[6]{%
+  \clearpage\gdef\lpchapterfaction{#3}\lpusefaction{#3}%
+  \markboth{#1}{#1}\thispagestyle{lpbare}\global\lpnotabtrue%
+  \phantomsection\addcontentsline{toc}{chapter}{\protect\lptocentry{#3}{#1}}\ifstrempty{#2}{}{\label{#2}}%
+  \AddToShipoutPictureBG*{\AtPageLowerLeft{\begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,0) rectangle (148,210);
+    \begin{scope}
+      \clip (0,210) rectangle (148,114);
+      \node[inner sep=0pt, anchor=center] at (74,162) {\includegraphics[width=160mm]{#4}};
+    \end{scope}
+    \fill[lp@#3] (0,114) rectangle (148,95);
+    \fill[LPNight, opacity=0.55] (0,114) rectangle (148,113.4);
+    \ifodd\value{page}\def\lp@x{16}\else\def\lp@x{15}\fi
+    \node[anchor=south west, inner sep=0pt, text=lp@#3@on, font=\sffamily\bfseries\fontsize{27}{28}\selectfont]
+      at (\lp@x,99.6) {#1};
+    \ifstrempty{#6}{}{\node[anchor=north west, inner sep=0pt, text=lp@#3@on, opacity=0.85,
+      font=\lpsemibold\fontsize{6.6}{8}\selectfont\addfontfeature{LetterSpace=14}] at (\lp@x,111.4) {\MakeUppercase{#6}};}
+  \end{tikzpicture}}}%
+  \vspace*{\dimexpr 210mm-95mm-18mm+5mm-\topskip\relax}%
+  \ifstrempty{#5}{}{\lpepigraph{#5}}%
+  \@afterheading}
+\newcommand\lpepigraph[1]{%
+  {\fontsize{12}{15}\selectfont\itshape\color{LPInk}\textcolor{FacDark}{\char"201C}#1\textcolor{FacDark}{\char"201D}\par}%
+  \vspace{3mm}{\color{Fac}\rule{18mm}{1.2pt}}\par\vspace{4mm}}
+
+% ---------------------------------------------------------------- contents
+\newcommand\lptocentry[2]{\lpusefaction{#1}\textcolor{Fac}{\rule[0.05ex]{2.4mm}{2.4mm}}\hspace{2.6mm}#2}
+\renewcommand*\l@chapter[2]{%
+  \addpenalty{-\@highpenalty}\vskip 3.2pt plus 1pt
+  {\sffamily\fontsize{10.5}{13}\selectfont\color{LPInk}\noindent#1\nobreak
+    \leaders\hbox{\hbox to 2.4mm{\hss\color{LPRule}.\hss}}\hfill\nobreak
+    {\lpsemibold\addfontfeature{Numbers=Lining}#2}\par}}
+\renewcommand*\l@section[2]{}
+\renewcommand\tableofcontents{%
+  \clearpage\thispagestyle{lpbare}\gdef\lpchapterfaction{neutral}%
+  \vspace*{14mm}{\color{LPMuted}\lpkicker{Landing Party}}\par\vspace{1mm}
+  {\sffamily\bfseries\fontsize{22}{25}\selectfont Contents\par}\vspace{2.5mm}{\color{LPInk}\rule{\linewidth}{0.8pt}}\par\vspace{6mm}
+  \@starttoc{toc}\clearpage}
+
+% ---------------------------------------------------------------- lists, tables, figures
+\setlist{leftmargin=1.15em, itemsep=1.5pt, topsep=3pt, parsep=0pt}
+\setlist[itemize,1]{label={\textcolor{Fac}{\rule[0.32ex]{1.5mm}{1.5mm}}}}
+\setlist[itemize,2]{label={\textcolor{FacDark}{\rule[0.45ex]{1.4mm}{0.5pt}}}}
+\setlist[enumerate,1]{label={\sffamily\bfseries\color{FacDark}\arabic*}, leftmargin=1.3em}
+\AtBeginEnvironment{longtable}{\sffamily\fontsize{7.4}{9.4}\selectfont\addfontfeature{Numbers=Lining}\arrayrulecolor{LPRule}}
+\AtBeginEnvironment{tabular}{\sffamily\fontsize{7.4}{9.4}\selectfont\addfontfeature{Numbers=Lining}}
+\RequirePackage{caption}
+\captionsetup{font={sf,scriptsize}, labelfont={color=LPMuted}, textfont={color=LPMuted}, justification=raggedright,
+  singlelinecheck=false, skip=4pt}
+\renewcommand\texttt[1]{{\fontspec{TitilliumWeb-SemiBold}[Path=\lpextdir/fonts/, Extension=.ttf]\color{FacDark}#1}}
+
+% ---------------------------------------------------------------- the unit card
+% \begin{lpunit}{faction}{name}{tag line}{portrait path or empty} ... \end{lpunit}; inside, in order:
+% \lprole, \lpstat (a bar), \lpstattext (no bar), \lpera, \lpunitlower{counters}{countered by}, then the lore.
+\newlength\lp@portw \setlength\lp@portw{31mm}
+\newlength\lp@barw \setlength\lp@barw{31mm}
+\newenvironment{lpunit}[4]{%
+  \par\addvspace{9pt}\noindent\begin{minipage}{\linewidth}\lpusefaction{#1}%
+  \begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,-1.2) rectangle (\lptextwidthmm,7.2);
+    \fill[Fac] (0,-1.2) rectangle (\lptextwidthmm,-0.6);
+    \fill[Fac] (0,-0.6) rectangle (2.2,7.2);
+    \node[anchor=base west, inner sep=0pt, font=\sffamily\bfseries\fontsize{12.5}{13}\selectfont\addfontfeature{LetterSpace=3}]
+      at (4.2,1.4) {\MakeUppercase{#2}};
+    \node[anchor=base east, inner sep=0pt, text=FacDark] at (\lptextwidthmm,1.4) {\lpkicker{#3}};
+  \end{tikzpicture}\par\vspace{2.6mm}%
+  \noindent\begin{minipage}[t]{\lp@portw}\vspace{0pt}\lp@portrait{#4}{#2}\end{minipage}\hfill
+  \begin{minipage}[t]{\dimexpr\linewidth-\lp@portw-3.5mm\relax}\vspace{-0.8mm}\raggedright}
+ {\par\end{minipage}\par\addvspace{9pt}}
+\newcommand\lp@portrait[2]{%
+  \begin{tikzpicture}[x=1mm,y=1mm]
+    \ifstrempty{#1}{\fill[FacLight] (0,0) rectangle (31,31);
+      \node[text width=26mm, align=center, font=\sffamily\scriptsize, text=LPMuted] at (15.5,15.5) {#2\\portrait to come};}
+     {\node[inner sep=0pt, anchor=south west] at (0,0) {\includegraphics[width=31mm,height=31mm]{#1}};}
+    \draw[LPInk, line width=0.5pt] (0,0) rectangle (31,31);
+    \fill[Fac] (0,0) -- (5,0) -- (0,5) -- cycle;
+  \end{tikzpicture}}
+\newcommand\lprole[1]{{\itshape\fontsize{9}{11.4}\selectfont #1\par}\vspace{2.2mm}}
+\newcommand\lp@statlabel[1]{\makebox[13.5mm][l]{\color{LPMuted}\lpsemibold\fontsize{6}{7}\selectfont\addfontfeature{LetterSpace=10}\MakeUppercase{#1}}}
+\newcommand\lp@statvalue[1]{{\sffamily\fontsize{7.6}{9}\selectfont\addfontfeature{Numbers=Lining}#1}}
+% \lpstat{label}{fraction of the faction's top, 0..1}{value}: the bar is cut in tenths, like a 90s readout.
+\newcommand\lpstat[3]{\noindent\lp@statlabel{#1}%
+  \begin{tikzpicture}[x=\lp@barw,y=1mm,baseline=0.1mm]
+    \fill[FacLight] (0,0) rectangle (1,1.9);
+    \fill[Fac] (0,0) rectangle (#2,1.9);
+    \foreach \i in {0.1,0.2,...,0.95} \draw[white, line width=0.7pt] (\i,-0.1) -- (\i,2.0);
+    \draw[FacDark, line width=0.35pt] (0,0) -- (1,0);
+  \end{tikzpicture}\hspace{2mm}\lp@statvalue{#3}\par\vspace{0.35mm}}
+\newcommand\lpstattext[2]{\noindent\lp@statlabel{#1}\lp@statvalue{#2}\par\vspace{0.35mm}}
+% \lpera{label}{level or -1}{steps}{text}: pips for a corporation's eras, a gauge for an evolution (steps 1).
+\newcommand\lpera[4]{\noindent\lp@statlabel{#1}%
+  \ifdim #2pt<0pt\else
+  \begin{tikzpicture}[x=1mm,y=1mm,baseline=0.1mm]
+    \ifnum#3>1\relax
+      \foreach \i in {0,...,#3}{\ifdim\i pt>#2pt\fill[FacLight] (\i*3.2,0) rectangle (\i*3.2+2.4,1.9);
+        \else\fill[Fac] (\i*3.2,0) rectangle (\i*3.2+2.4,1.9);\fi}
+    \else
+      \fill[FacLight] (0,0) rectangle (\lp@barw,1.9);
+      \fill[Fac] ({#2*\lp@barw/1mm},-0.5) rectangle ({#2*\lp@barw/1mm+0.9},2.4);
+      \draw[FacDark, line width=0.35pt] (0,0) -- (\lp@barw,0);
+    \fi
+  \end{tikzpicture}\hspace{2mm}\fi\lp@statvalue{#4}\par\vspace{0.35mm}}
+\newcommand\lpunitlower[2]{\par\end{minipage}\par\vspace{2.4mm}\noindent
+  \begin{minipage}[t]{0.5\linewidth}\raggedright\lp@vs{Counters}{#1}\end{minipage}\hfill
+  \begin{minipage}[t]{0.47\linewidth}\raggedright\lp@vs{Countered by}{#2}\end{minipage}\par\vspace{2mm}%
+  {\color{LPRule}\rule{\linewidth}{0.4pt}}\par\vspace{1.4mm}%
+  \begin{minipage}{\linewidth}\fontsize{9}{12}\selectfont}
+\newcommand\lp@vs[2]{{\color{FacDark}\lpkicker{#1}}\\[0.6mm]{\fontsize{8.6}{10.8}\selectfont #2}}
+
+% ---------------------------------------------------------------- trees
+% The filter lays a tree out (lp-manual.lua, tree_tex) and draws it with these styles; nothing here places a node.
+\tikzset{
+  lpedge/.style={draw=LPInk!60, line width=0.55pt, rounded corners=1.2mm, -{Stealth[length=1.5mm,width=1.3mm]}},
+  lpband/.style={fill=FacLight},
+  lptlabel/.style={inner sep=0pt, align=center, font=\lpsemibold\fontsize{6.2}{7}\selectfont, text=LPInk},
+  lptnote/.style={inner sep=0pt, align=center, font=\sffamily\fontsize{5.4}{6.2}\selectfont\addfontfeature{Numbers=Lining}, text=LPMuted},
+  lptans/.style={inner sep=0pt, align=center, font=\sffamily\fontsize{5.4}{6.2}\selectfont, text=FacDark},
+  lpbandlabel/.style={inner sep=0pt, rotate=90, font=\lpsemibold\fontsize{5.6}{6.4}\selectfont\addfontfeature{LetterSpace=12}, text=FacDark},
+  lpcolhead/.style={inner sep=0pt, align=center, font=\lpsemibold\fontsize{6}{7}\selectfont\addfontfeature{LetterSpace=8}, text=LPInk},
+}
+\newenvironment{lptree}[3]{% faction, kicker, title
+  \par\addvspace{8pt}\noindent\begin{minipage}{\linewidth}\lpusefaction{#1}%
+  {\color{FacDark}\lpkicker{#2}}\par\vspace{0.6mm}
+  {\sffamily\bfseries\fontsize{12.5}{15}\selectfont #3\par}\vspace{1.6mm}{\color{Fac}\rule{\linewidth}{0.8pt}}\par\vspace{2.4mm}%
+  \noindent}
+ {\par\end{minipage}\par\addvspace{8pt}}
+% \lpbadge{colour}{text colour}{letter}: how a technology is got, a square stamp (no TikZ: it sits inside nodes).
+\newcommand\lpbadge[3]{{\setlength\fboxsep{0.35mm}\colorbox{#1}{\makebox[1.5mm]{\textcolor{#2}{\lpsemibold\fontsize{4.8}{5}\selectfont #3}}}}}
+\newcommand\lptreecaption[1]{\par\vspace{2mm}{\sffamily\fontsize{7}{9}\selectfont\color{LPMuted}#1\par}}
+
+% ---------------------------------------------------------------- lore
+% A lore essay starts a page, prints on the paper tint and ends its page: the narrator's pages read as a set.
+\newenvironment{lpstory}[3]{% kicker, title, draft (empty or a word)
+  \clearpage\global\lploretrue
+  \vspace*{4mm}%
+  {\color{FacDark}\lpkicker{#1}}\ifstrempty{#3}{}{\hspace{2mm}{\color{white}\colorbox{LPMuted}{\lpkicker{#3}}}}\par\vspace{1.4mm}
+  {\fontsize{21}{25}\selectfont\itshape #2\par}\vspace{2.6mm}%
+  \noindent\begin{tikzpicture}[x=1mm,y=1mm]
+    \draw[LPInk!70, line width=0.5pt] (0,0) -- (52,0); \draw[LPInk!70, line width=0.5pt] (65,0) -- (\lptextwidthmm,0);
+    \foreach \x in {55.3,58.5,61.7} \fill[Fac] (\x,0) +(0,1.1) -- +(1.1,0) -- +(0,-1.1) -- +(-1.1,0) -- cycle;
+  \end{tikzpicture}\par\vspace{5mm}%
+  \setlength{\parindent}{1.2em}\setlength{\parskip}{0pt}\fontsize{10}{14}\selectfont}
+ {\par\clearpage\global\lplorefalse}
+\setcounter{DefaultLines}{3}
+\renewcommand\LettrineFontHook{\sffamily\bfseries\color{FacDark}}
+\renewcommand\LettrineTextFont{\scshape}
+\setlength\DefaultFindent{1.2pt}
+\setlength\DefaultNindent{0pt}
+\newenvironment{lppullquote}[1]{% attribution or empty
+  \par\vspace{9pt}\begingroup\centering\def\lp@cite{#1}%
+  {\color{Fac}\rule{24mm}{1.2pt}}\par\vspace{3.5mm}
+  \begin{minipage}{0.84\linewidth}\centering\setlength{\parindent}{0pt}\fontsize{13.5}{17.5}\selectfont\itshape\color{LPInk}}
+ {\par\end{minipage}\par
+  \ifdefempty{\lp@cite}{}{\vspace{2mm}{\color{FacDark}\lpkicker{\lp@cite}}\par}%
+  \vspace{3.5mm}{\color{Fac}\rule{24mm}{1.2pt}}\par\endgroup\vspace{9pt}\noindent\ignorespacesafterend}
+
+% ---------------------------------------------------------------- sidebars
+\newtcolorbox{lptip}[1]{enhanced, arc=0pt, outer arc=0pt, boxrule=0pt, leftrule=2.4pt,
+  colback=FacLight, colframe=Fac, left=3.2mm, right=3mm, top=2.4mm, bottom=2.4mm, before skip=8pt, after skip=8pt,
+  fontupper=\sffamily\fontsize{8.4}{11}\selectfont\addfontfeature{Numbers=Lining},
+  before upper={{\color{FacDark}\lpkicker{\ifstrempty{#1}{Tip}{Tip: #1}}}\par\vspace{1mm}\setlength{\parskip}{3pt}}}
+\newtcolorbox{lpfieldnote}[1]{enhanced, arc=0pt, outer arc=0pt, boxrule=0pt,
+  colback=LPPaper, left=4mm, right=4mm, top=4.6mm, bottom=3mm, before skip=12pt, after skip=8pt,
+  fontupper=\fontsize{9.2}{12.4}\selectfont\itshape,
+  overlay={\draw[LPInk!55, line width=0.4pt, dash pattern=on 1.6pt off 1.2pt] (frame.south west) rectangle (frame.north east);
+    \node[anchor=west, fill=LPInk, text=white, inner xsep=1.8mm, inner ysep=1.1mm] at ([xshift=3mm]frame.north west)
+      {\lpkicker{\ifstrempty{#1}{Field note}{Field note: #1}}};
+    \fill[Fac] ([xshift=-5.5mm,yshift=-0.01mm]frame.north east) rectangle ([xshift=-2mm,yshift=-5mm]frame.north east);},
+  before upper={\setlength{\parskip}{3pt}}}
+
+% ---------------------------------------------------------------- covers
+% \lpcoverstrip{faction}{vista}{motto}: a band of the front cover. \lpcoverfactions is defined by the filter.
+\providecommand\lpcoverfactions{}
+\newcommand\lp@stripy{0}
+\newcommand\lpfrontcover[3]{% title, subtitle, small line
+  \thispagestyle{lpbare}\gdef\lpchapterfaction{neutral}%
+  \AddToShipoutPictureBG*{\AtPageLowerLeft{\begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,0) rectangle (148,210);
+    \fill[LPNight] (-3,-3) rectangle (151,213);
+    \node[anchor=north west, inner sep=0pt, text=white, opacity=0.6] at (16,196) {\lpkicker{A field manual}};
+    \node[anchor=north west, inner sep=0pt, text=white, font=\sffamily\bfseries\fontsize{38}{38}\selectfont\addfontfeature{LetterSpace=2}]
+      at (15,189) {\MakeUppercase{#1}};
+    \node[anchor=north west, inner sep=0pt, text=white, font=\fontsize{14}{16}\selectfont\itshape] at (16,172.5) {#2};
+    \gdef\lp@stripy{156}\lpcoverfactions
+    \node[anchor=south west, inner sep=0pt, text=white, opacity=0.6] at (16,12) {\lpkicker{#3}};
+  \end{tikzpicture}}}%
+  \null\clearpage}
+\newcommand\lpcoverstrip[3]{%
+  \begin{scope}
+    \clip (0,\lp@stripy-38) rectangle (148,\lp@stripy);
+    \node[inner sep=0pt] at (74,\lp@stripy-19) {\includegraphics[width=152mm]{#2}};
+  \end{scope}
+  \fill[lp@#1] (0,\lp@stripy-38) rectangle (9,\lp@stripy);
+  \fill[LPNight, opacity=0.72] (9,\lp@stripy-38) rectangle (82,\lp@stripy-25);
+  \node[anchor=base west, inner sep=0pt, text=white, font=\sffamily\bfseries\fontsize{11.5}{12}\selectfont\addfontfeature{LetterSpace=4}]
+    at (14,\lp@stripy-31.6) {\MakeUppercase{\csname lp@#1@name\endcsname}};
+  \node[anchor=base west, inner sep=0pt, text=white, opacity=0.8, font=\fontsize{7.6}{9}\selectfont\itshape]
+    at (14,\lp@stripy-35.6) {#3};
+  \pgfmathsetmacro\lp@next{\lp@stripy-41}\xdef\lp@stripy{\lp@next}}
+\newcommand\lpinsidecover[1]{\thispagestyle{lpbare}\null\vfill{\sffamily\fontsize{7}{9.5}\selectfont\color{LPMuted}#1\par}\clearpage}
+% The booklet is folded from sheets of four pages: blank pages before the back cover make the count a multiple
+% of four, so the back cover is the last page of the last sheet.
+\newcommand\lpbackcover[2]{% blurb, small print
+  \clearpage\gdef\lpchapterfaction{neutral}%
+  \lp@padtofour
+  \thispagestyle{lpbare}%
+  \AddToShipoutPictureBG*{\AtPageLowerLeft{\begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,0) rectangle (148,210);
+    \fill[LPNight] (-3,-3) rectangle (151,213);
+  \end{tikzpicture}}}%
+  \vspace*{6mm}{\color{white}\raggedright
+    {\color{white!60}\lpkicker{Landing Party}}\par\vspace{3mm}
+    {\fontsize{11}{15.5}\selectfont #1\par}\vspace{8mm}
+    \lpbackfactions
+    \vfill{\sffamily\fontsize{6.6}{8.6}\selectfont\color{white!55}#2\par}}\null}
+\providecommand\lpbackfactions{}
+\RequirePackage{intcalc}
+\newcommand\lp@padtofour{\ifnum\intcalcMod{\the\numexpr\ReadonlyShipoutCounter+1\relax}{4}=0
+  \else\thispagestyle{lpbare}\null\clearpage\expandafter\lp@padtofour\fi}
+\newcommand\lpbackfaction[2]{\noindent{\color{lp@#1}\rule[-0.4mm]{3mm}{3mm}}\hspace{3mm}%
+  {\sffamily\bfseries\fontsize{9}{11}\selectfont\addfontfeature{LetterSpace=4}\MakeUppercase{\csname lp@#1@name\endcsname}}%
+  \hspace{2.5mm}{\itshape\fontsize{9}{11}\selectfont\color{white!75}#2}\par\vspace{2.2mm}}
+
+\makeatother

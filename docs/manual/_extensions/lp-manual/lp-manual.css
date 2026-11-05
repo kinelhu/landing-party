@@ -1,0 +1,33 @@
+/* lp-manual: the HTML book's plain versions of the field manual's components (lp-manual.lua). The PDF is the
+   designed object; these keep the same content readable on the web. --fac is the card's faction colour. */
+.lp-unit { --fac: #8a8e94; border-top: 3px solid var(--fac); margin: 1.6rem 0; padding-top: .4rem; }
+.lp-unit-head { display: flex; justify-content: space-between; align-items: baseline; border-left: 6px solid var(--fac); padding-left: .6rem; }
+.lp-unit-name { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 1.15rem; }
+.lp-unit-tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .14em; opacity: .7; }
+.lp-unit-body { display: flex; gap: 1rem; margin-top: .7rem; align-items: flex-start; }
+.lp-unit-body img { width: 120px; height: 120px; border: 1px solid #1c1e22; flex: none; }
+.lp-unit-stats { flex: 1; min-width: 0; }
+.lp-unit-role { font-style: italic; margin: 0 0 .4rem; }
+.lp-unit table { border-collapse: collapse; font-size: .85rem; width: 100%; }
+.lp-unit th { text-align: left; font-weight: 600; font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; opacity: .7; padding: .1rem .6rem .1rem 0; width: 6.5em; }
+.lp-unit td { padding: .1rem 0; }
+.lp-unit td.lp-bar { width: 38%; padding-right: .6rem; }
+.lp-unit td.lp-bar span { display: block; height: .5rem; background: var(--fac); }
+.lp-unit-vs { display: flex; gap: 1.5rem; margin: .6rem 0 .3rem; font-size: .9rem; }
+.lp-unit-vs b { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .12em; }
+.lp-unit-lore { border-top: 1px solid #c9c5bc; padding-top: .4rem; }
+.lp-tree { margin: 1.6rem 0; }
+.lp-tree-title { font-weight: 700; font-size: 1.1rem; margin-bottom: .5rem; }
+.lp-tree-grid { display: grid; gap: .3rem; font-size: .8rem; }
+.lp-tree-col { font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: .7rem; text-align: center; }
+.lp-tree-band { font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: .7rem; align-self: center; }
+.lp-tree-cell { display: flex; flex-wrap: wrap; gap: .3rem; background: rgba(0,0,0,.03); padding: .3rem; }
+.lp-tree-node { border: 1px solid #9a9a9a; background: #fff; padding: .25rem .4rem; flex: 1 1 8em; }
+.lp-tree-node small { display: block; opacity: .75; }
+.lp-lore { background: #f5f0e6; padding: 1rem 1.4rem; margin: 1.6rem 0; }
+.lp-lore > p:first-of-type::first-letter { float: left; font-size: 3.2em; line-height: .9; font-weight: 700; padding-right: .08em; }
+.lp-pullquote { font-style: italic; font-size: 1.25rem; text-align: center; margin: 1.2rem 2rem; }
+.lp-tip, .lp-fieldnote { padding: .7rem 1rem; margin: 1.2rem 0; }
+.lp-tip { border-left: 4px solid #8a8e94; background: rgba(0,0,0,.04); }
+.lp-fieldnote { border: 1px dashed #777; background: #f5f0e6; font-style: italic; }
+.lp-box-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .14em; font-weight: 700; font-style: normal; margin-bottom: .3rem; }
