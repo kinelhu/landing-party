@@ -505,6 +505,8 @@ remote.add_interface("landing-party", {
     if t.prospect_home ~= nil then storage.prospect_home = t.prospect_home end
     if t.road_haul ~= nil then storage.road_haul = t.road_haul end
     if t.road_lapse ~= nil then storage.road_lapse = t.road_lapse end
+    -- tesla_off: the Tesla's lightning does nothing to what holds a charge (scorcher.lua; the teslawall checks' control).
+    if t.tesla_off ~= nil then storage.tesla_off = t.tesla_off or nil end
     if t.army_off ~= nil then storage.army_off = t.army_off end
     if t.yard_off ~= nil then storage.yard_off = t.yard_off end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end

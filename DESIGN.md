@@ -38,7 +38,7 @@ document still says Serenity where it records history.
 | Fliers by corporation (the user, 2026-10-23: "give Kessler the actual high tech fliers, whereas Grubstake is a more scrappy opponent ... kamikaze drones"): Grubstake's scrap drone (id lp-harrier: weak, cheap, two in its mix of nine) and bomb drone (id lp-scavenger, its Wheels node: bursts on what it dives on and dies), Kessler-Hayashi's laser drone (armoured, a beam; in its mix from level 2) | built 0.2.1 | arena |
 | The whole system's balance (the user, 2026-10-23: "we now need to think and work on the balance of the whole system"): every faction on one map with a stand-in for the player (`system` sim, two hours, four seeds), judged against five targets (survive, even, shapes, fights, pressure) by `scripts/system_report.py` into `docs/system.md` | measuring 0.2.2 | `system` |
 | Player army, fifth unit: the flamethrower trooper (the user, 2026-10-24: "tackle player units too"; the arena had every unit of the player's losing to biters from evolution 0.8 and to the big breeds): a flamethrower stream, splash 2.5 on enemies only (1 a lick), its own burn on what it hits (4 a second for 4 seconds; vanilla's fire sticker, 10 for 30 on every target, had it beating rifles +95 and tanks +51), no burning ground (it would burn the player's own troops), range 13, bandwidth 2: it beats swarms and infantry, loses to armour, sappers, the Scorcher and fliers; ordered at the barracks (heavy armour, flamethrower, fuel) from command bandwidth 3 (now after vanilla's flamethrower) | built 0.2.5 | arena |
-| Trailer stages (film instruments, 2026-11-05): `teslawall` (a Kessler-Hayashi Tesla assault with escort on a laser wall and its fodder), `warfinale` (the player's army and Kessler-Hayashi's engaged, a Synthexis herd rushing in, a nuke), `dome` ring, `herd` megaburst, `farm` strike | built 2026-11-05 | `teslawall`, `warfinale` (by hand); the rest in the regression |
+| Trailer stages (film instruments, 2026-11-05): `teslawall` (a Kessler-Hayashi Tesla assault with escort on a laser wall and its fodder), `warfinale` (the player's army and Kessler-Hayashi's engaged, a Synthexis herd rushing in, a nuke), `dome` ring, `herd` megaburst, `farm` strike | built 2026-11-05 | `teslawall`, `warfinale` (by hand; `teslawall` grid in the regression since 0.2.218); the rest in the regression |
 | Trailer beats (film instrument): the player's muster and battle against a Grubstake camp, Kessler-Hayashi's siege on Grubstake, a 200-biter Synthexis breach, an armed camp's orbital strike on a player wall, at fixed minutes, their ticks and centres to trailer-beats.txt | built 2026-11-04 | `trailer` (by hand, not in the regression lists) |
 | Film toolkit (for any mod): the film helper, film.sh, clip.sh, the cut and the score moved to `~/Dev/factorio-film`; Landing Party's sieges, waves, bursts, `/lp` calls and dome looks as its plugin `tests/lp-film-hooks`; the score's config `docs/trailer/score.json` | built 2026-11-05 | headless: old and new helpers' stills identical on 7 films; score sample-identical (findings log) |
 | A landing's look (the user: "falling cargo pods dropping with the crashed lander"): a landing by pod draws its hull falling onto its pad with its shadow; every landing its crash (blasts, flash, scorch, dust) and six cargo pods streaking down round it, each bursting. Drawn only (no entity the planner sees); `/lp land` now comes by pod as the faction's own landings do (`now` for at once) | built 2026-11-04 | `landfx` (two), `dev`; clip `media/trailer/landing-fx.mp4` |
@@ -185,6 +185,7 @@ document still says Serenity where it records history.
 | Belts in Serenity's districts (fabricator to depot), Grubstake's sushi belt of stolen goods | built 0.1.43; districts' fabricators back to 0.1.42's share 0.1.45 | `belts`, `skim`, `convoy grown`, shots |
 | The unit roster (`docs/units.md`, written from the prototypes by `scripts/roster.py`) | built 2026-10-21 | - |
 | New units from the design sheet: Prism, Tesla (Serenity), Scorcher (Grubstake); every tank with its turret | built 0.1.44 | `heavies`, `unitnode` (three) |
+| The Tesla's hold: a laser or tesla turret its lightning strikes stops for the game's tesla stun (Space Age's `tesla-turret-stun`, 30 ticks, read from the prototype), each strike starting it again, its status "Stunned by lightning"; Synthexis's fire map reads a held turret as firing; the drain kept (the drain alone measured dead on a real supply) | built 0.2.218 | `teslawall` grid (in the regression; `-off` the control, `20mw` and `night` instruments) |
 | The arena: a counter heatmap of every unit kind at equal spend, against biters by evolution and the player's lines; to watch, with a panel | built 0.1.46 | `scripts/arena.sh` (`docs/arena.md`), `scripts/play-arena.sh` |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
@@ -4909,7 +4910,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **A Tesla barely drains a well-fed laser line** (2026-11-05, staging `teslawall` for the trailer). Five Teslas at
   eleven lasers on a 20 MW supply never took the line's mean charge below 82%: its 60% drain is refilled almost at
   once. On 5 MW the line sat at about half charge while they stood at it and the lasers fell. Assumed, not tested: how
-  the drain fares against a real factory's supply and accumulators; the Tesla's worth may hinge on it.
+  the drain fares against a real factory's supply and accumulators; the Tesla's worth may hinge on it. (Measured
+  2026-11-06: dead on a real supply; the Tesla now holds what it strikes, see "The Tesla's drain measured".)
 - **Synthexis at the user's own wall: nwa's north wall holds a siege of 200** (2026-11-05; the user: "make use of my
   wall design on nw/nwa at least to make the synthexis attacks more realistic"). Visit mix `nwwall` (tests/lp-sim): the
   culture the mod lands, a wave of its first incubator sent at minute 12 with its farm's kind of plan at 30 tiles past
@@ -5168,6 +5170,34 @@ Bugs and surprises the headless runs caught, each kept as a check:
   this. Open: the hold's own cost at nwa (its outside members west of the opening, under the flamethrower at the outer
   wall's west end); the harness's "Kessler-Hayashi's railgunners broke none" failing on the full visit (not Synthexis's).
   Assumed, not tested: a rank of its front as the line for through at walls other than these two.
+- **The Tesla's drain measured on a real supply; the hold built** (2026-11-06, 0.2.218; the user: "I would do 2 and 3
+  before 1"; the 11-05 adaptive tactics consult, section 5). What feeds the user's walls, probed from the visit saves:
+  nw's south wall, 298 lasers on one network with 5,771 solar panels, 96 steam turbines and 5,016 accumulators (25 GJ),
+  315 MW drawn of some 900; nwa's 770 lasers south of y 280 likewise, with 16,824 panels, 1,368 turbines, 13,943 accumulators (70 GJ). Scenario
+  `teslawall` by supply (`LP_MIX`: 5 MW as before, `20mw`, `grid` 100 MW and 80 accumulators behind the lasers, `night`
+  the 80 accumulators alone; `-off` each with the lightning doing nothing to what holds a charge, `debug_tune
+  tesla_off`), seed 12345, the lasers' hits on Kessler-Hayashi's while a Tesla stood within reach of the line:
+  5 MW 2.9 a second (6.7 without the drain; Teslas 3 of 5 alive at the end, 1 without; lasers 0 of 11 either way);
+  20 MW 15.9 (15.9); grid 15.6 (15.9; seed 777 15.8 and 16.0), all five Teslas killed and 11 and 10 of 11 lasers
+  standing either way; night 15.5 (15.5). A laser holds 801 kJ and fires on 800, and refills at 9,600 kW: 3 ticks
+  after a strike on any supply that can give it that. The drain is dead on every real supply and matters only on a
+  starved one, where the line falls anyway. So the consult's hold, no longer than its own stun: a laser or tesla turret
+  the lightning strikes is stopped by script for the game's tesla stun (`tesla-turret-stun`, read from the prototype,
+  30 ticks; scorcher.hold), each strike starting it again, its status "Stunned by lightning" (custom_status), and
+  released on the tick it ends (storage.tesla_held); one already stopped by something else is left to it. threat.firing
+  reads a held turret as firing (read as silent, Synthexis's fire map would price a laser line under Kessler-Hayashi's
+  assault at nothing and learn from it). The drain stays (a starved supply, accumulators, roboports). After, grid: the
+  lasers held 27.7% of their time at the line (43.1% on seed 777), 7.2 hits a second (5.1), the Teslas at the line 58 s
+  where they lasted 24; on 12345 all of Kessler-Hayashi's still died and 10 of 11 lasers stood, on 777 the line fell with
+  3 Teslas alive; 20 MW 7.1 a second, the line fell. About half rate, the consult's estimate: the Tesla is now worth
+  answering. Checks (`teslawall` grid, in the regression): the lightning holds the lasers, 10% of their time or more,
+  each held with its status (seen failing with the hold removed: 0.0%); a hold ends within the stun after the last strike
+  (seen failing at three times the stun: 5,707 samples past it, 81.6% held, the consult's "trivialises the defence");
+  Synthexis's fire map reads the held lasers as firing (seen failing with the guard removed: 0 of 2). The node-tesla
+  notice, a new lp-tesla description and the manual (Lightning tanks; the tip "Mix your laser line", in place of "Feed
+  your laser line", which advised what does nothing; the card's counters) say so. Assumed, not tested: the hold against
+  a mixed line (guns and flamethrowers among the lasers) and in the siege lab; the dome is untouched by construction (the
+  hold fires only from a corporation's Tesla on electric turrets; the dome's and the jammer's arcs are not a Tesla's).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

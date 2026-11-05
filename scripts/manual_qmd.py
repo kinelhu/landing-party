@@ -272,6 +272,8 @@ def write(rp):
             "strike_cool_min": fmt(minutes(orbital_src, "COOL", "orbital COOL")),
             # The lightning tank's drain (scorcher.lua): the share of a struck turret's, accumulator's or roboport's charge.
             "tesla_drain_pct": fmt(100 * (num(scorcher_src, r"^local DRAIN = ([\d.]+)", "scorcher DRAIN") or 0)),
+            # The hold of a turret it strikes (scorcher.hold): the game's own tesla stun, Space Age's tesla-turret-stun.
+            "tesla_stun_s": fmt(d["sticker"]["tesla-turret-stun"]["duration_in_ticks"] / 60),
             "bill_every_min": fmt(minutes(ledger_src, "BEAT", "ledger BEAT")),
             "truce_value": fmt(num(ledger_src, r"^local VALUE_PER_MINUTE, MIN_TRUCE, MAX_TRUCE = (\d+)", "VALUE_PER_MINUTE")),
         },

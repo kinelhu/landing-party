@@ -54,8 +54,8 @@
   stand down.
 - **Cover the inside of your wall.** Its assault walks in through the breach and goes for your roboports, then your
   turrets. A second line of turrets behind the wall meets it there.
-- **Give your laser line power to spare.** A lightning tank takes {{< var kh.tesla_drain_pct >}}% of a struck
-  turret's charge. A grid with spare generation and accumulators by the turrets refills it almost at once.
+- **Mix your laser line.** A lightning tank stops each laser or tesla turret it strikes for
+  {{< var kh.tesla_stun_s >}} seconds. Gun turrets and flamethrowers between them keep firing.
 
 ## Against Synthexis
 

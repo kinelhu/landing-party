@@ -37,7 +37,7 @@ On the Laser tank a small laser head rides the turret ring, and its beam splits 
 :::
 
 ::: {.unit unit="lp-tesla"}
-The Lightning tank carries a tesla turret's head, and its bolt jumps along a line of targets. Whatever it strikes that holds a charge, laser turret, accumulator or roboport, loses most of it, so a turret line on a thin grid goes dark while the tank stands at it. Give your laser line power to spare and accumulators behind the turrets.
+The Lightning tank carries a tesla turret's head, and its bolt jumps along a line of targets. Each laser or tesla turret it strikes stops for as long as a tesla turret stuns, and stops again at the next strike, so a laser line fires less often while the tank stands at it. Mix gun turrets and flamethrowers into your laser line: lightning does not stop them.
 :::
 
 ::: {.unit unit="lp-howitzer-truck"}

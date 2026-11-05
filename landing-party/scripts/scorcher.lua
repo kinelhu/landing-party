@@ -3,7 +3,7 @@
 -- bursts of the flamethrower's stream, spent only on what fire is for (a wall, a turret or a gate within REACH, or PACK of
 -- the player's units or characters within PACK_RADIUS), one every GAP, and refilled one every REFILL. Grubstake's pact:
 -- never within NEST_CLEAR of a biter nest while its pact holds. And the Tesla's drain: what its lightning strikes that
--- holds a charge loses DRAIN of it.
+-- holds a charge loses DRAIN of it, and an electric turret it strikes stops for the game's tesla stun (scorcher.hold).
 local shared = require("__landing-party__.shared")
 
 local scorcher = {}
@@ -48,7 +48,9 @@ local function target(u)
   end
 end
 
+local release
 function scorcher.tick(tick)
+  if storage.tesla_held and next(storage.tesla_held) then release(tick) end
   if tick % TICKS ~= 7 or not storage.bases then return end
   local seen, list = {}, {}
   for _, b in pairs(storage.bases) do
@@ -93,7 +95,7 @@ end
 local CHARGED = {["electric-turret"] = true, accumulator = true, roboport = true, ["electric-energy-interface"] = true}
 function scorcher.drain(e)
   local ent = e.entity
-  if not (ent and ent.valid and CHARGED[ent.type]) then return end
+  if storage.tesla_off or not (ent and ent.valid and CHARGED[ent.type]) then return end
   if not (e.force and shared.is_corp(e.force.name)) then return end
   local cause = e.cause
   if cause and cause.valid and shared.kind_of(cause.name) ~= "lp-tesla" then return end
@@ -101,10 +103,58 @@ function scorcher.drain(e)
     ent.energy = ent.energy * (1 - DRAIN)
     storage.tesla_drains = (storage.tesla_drains or 0) + 1
   end
+  if ent.type == "electric-turret" then scorcher.hold(ent) end
+end
+
+-- The Tesla's hold (2026-11-06; the 11-05 adaptive tactics consult, section 5): the drain alone did nothing on a real
+-- supply (teslawall LP_MIX=grid, 100 MW and 80 accumulators, a fraction of what feeds nw's south wall: the lasers hit as
+-- often with it as without, 15.6 a second at the line against 15.9, and killed all five Teslas either way; a laser's
+-- 801 kJ refills at 9,600 kW in 3 ticks). An electric turret its lightning strikes stops for the game's own tesla stun
+-- (Space Age's tesla-turret-stun, read from the prototype: 30 ticks), each strike starting it again; its status says
+-- why. No longer: a longer hold refreshed by a chain of 7 jumps keeps a whole laser line off while the Teslas live.
+-- storage.tesla_held: unit number -> {e, till}; threat.firing reads a held turret as firing (Synthexis must not price a
+-- laser held by Kessler-Hayashi's lightning as silent and learn from it).
+local stun
+local function stun_ticks()
+  if stun == nil then
+    local p = prototypes.entity["tesla-turret-stun"]
+    stun = p and p.get_duration() or 0
+  end
+  return stun
+end
+
+function scorcher.hold(ent)
+  local n = stun_ticks()
+  if n <= 0 or not ent.unit_number then return end
+  storage.tesla_held = storage.tesla_held or {}
+  local h = storage.tesla_held[ent.unit_number]
+  if not h then
+    -- One already stopped by something else (a script, the circuit network) is left to it.
+    if not ent.active then return end
+    h = {e = ent}
+    storage.tesla_held[ent.unit_number] = h
+    ent.disabled_by_script = true
+    ent.custom_status = {diode = defines.entity_status_diode.red, label = {"entity-status.lp-stunned"}}
+    storage.tesla_holds = (storage.tesla_holds or 0) + 1
+  end
+  h.till = game.tick + n
+end
+
+release = function(tick)
+  for k, h in pairs(storage.tesla_held) do
+    if not h.e.valid then
+      storage.tesla_held[k] = nil
+    elseif tick >= h.till then
+      h.e.disabled_by_script = false
+      h.e.custom_status = nil
+      storage.tesla_held[k] = nil
+    end
+  end
 end
 
 function scorcher.stats()
-  return {bursts = storage.scorch_bursts or 0, drains = storage.tesla_drains or 0}
+  return {bursts = storage.scorch_bursts or 0, drains = storage.tesla_drains or 0, holds = storage.tesla_holds or 0,
+    held = table_size(storage.tesla_held or {})}
 end
 
 return scorcher
