@@ -1,9 +1,0 @@
-{
-  "name": "lp-film",
-  "version": "0.1.0",
-  "title": "Landing Party film helper",
-  "author": "Landing Party",
-  "factorio_version": "2.1",
-  "description": "Screenshots on a schedule for the trailer and stills (scripts/film.sh). Never published.",
-  "dependencies": ["base", "landing-party"]
-}

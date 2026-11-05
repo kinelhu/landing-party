@@ -40,6 +40,7 @@ document still says Serenity where it records history.
 | Player army, fifth unit: the flamethrower trooper (the user, 2026-10-24: "tackle player units too"; the arena had every unit of the player's losing to biters from evolution 0.8 and to the big breeds): a flamethrower stream, splash 2.5 on enemies only (1 a lick), its own burn on what it hits (4 a second for 4 seconds; vanilla's fire sticker, 10 for 30 on every target, had it beating rifles +95 and tanks +51), no burning ground (it would burn the player's own troops), range 13, bandwidth 2: it beats swarms and infantry, loses to armour, sappers, the Scorcher and fliers; ordered at the barracks (heavy armour, flamethrower, fuel) from command bandwidth 3 (now after vanilla's flamethrower) | built 0.2.5 | arena |
 | Trailer stages (film instruments, 2026-11-05): `teslawall` (a Kessler-Hayashi Tesla assault with escort on a laser wall and its fodder), `warfinale` (the player's army and Kessler-Hayashi's engaged, a Synthexis herd rushing in, a nuke), `dome` ring, `herd` megaburst, `farm` strike | built 2026-11-05 | `teslawall`, `warfinale` (by hand); the rest in the regression |
 | Trailer beats (film instrument): the player's muster and battle against a Grubstake camp, Kessler-Hayashi's siege on Grubstake, a 200-biter Synthexis breach, an armed camp's orbital strike on a player wall, at fixed minutes, their ticks and centres to trailer-beats.txt | built 2026-11-04 | `trailer` (by hand, not in the regression lists) |
+| Film toolkit (for any mod): the film helper, film.sh, clip.sh, the cut and the score moved to `~/Dev/factorio-film`; Landing Party's sieges, waves, bursts, `/lp` calls and dome looks as its plugin `tests/lp-film-hooks`; the score's config `docs/trailer/score.json` | built 2026-11-05 | headless: old and new helpers' stills identical on 7 films; score sample-identical (findings log) |
 | A landing's look (the user: "falling cargo pods dropping with the crashed lander"): a landing by pod draws its hull falling onto its pad with its shadow; every landing its crash (blasts, flash, scorch, dust) and six cargo pods streaking down round it, each bursting. Drawn only (no entity the planner sees); `/lp land` now comes by pod as the faction's own landings do (`now` for at once) | built 2026-11-04 | `landfx` (two), `dev`; clip `media/trailer/landing-fx.mp4` |
 | Kessler-Hayashi's Heavy tank (lp-aegis) fires a rail cannon (the user: "Kessler has basically two types of laser tanks. Seems redundant?"): one slug of 38 every 60 ticks at 16, the railgunner's beam, its own damage type (lp-rail) that no armour resists (hulls are built against physical and explosion: at 150 physical it beat all but fliers, at 80 still its counters); it beats armour (tanks, the Laser and Lightning tanks, the Scorcher, the walker), is even with the battle tank and loses to rocket troopers, flamethrower troopers, shotgun swarms and fliers; the Laser tank keeps the splitting beam, the Lightning tank the arc: one weapon each | built 0.2.5 | arena |
 | A crew's occupied site is new work's failure (three and it is given up; a rebuild still waits): a site beside the player's outpost was tried for ever and, the planner planning only with its queue empty, Grubstake's camp sat on 6,600 parts (the system sim's natural opening, 2026-10-24); a unit just researched comes off the line first, once a settlement (the tree bought the Tesla, the counter matrix cut it to a quarter, and none was built) | built 0.2.5 | `crew`, `occupy`, `unitnode` |
@@ -4933,6 +4934,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   every two seconds or so (one to five in the air at once). Run from the minute-15 save with Landing Party alone (as a film
   loads it) its ticks are 300 earlier than in the visit (the harness gone), and the same with trace on or off and with a
   read-only observer. A film's save (`docs/trailer/reel-khwall.lua`), not a regression check.
+- **The film toolkit split out** (2026-11-05; the user: "You can go ahead, yes"). The film helper, film.sh, clip.sh, the
+  cut and the score now live in `~/Dev/factorio-film` (its own git repository, no remote; `FILM_HOME`), for any mod.
+  Landing Party keeps its side: `tests/lp-film-hooks`, a plugin (a remote interface with `film_tick`, found by the helper
+  without a param) doing what the helper did through `remote.call("landing-party", ...)`: the siege's phases, paint and
+  fall as events and its hold, jump, site, escort and strike as points (`base`), the wave and breach (`waves`), the first
+  burst (`bursts`), `/lp` calls (`dev`), the dome's looks (`fx`, `ripples`), the trace labels off. Every film's params
+  unchanged. `scripts/film.sh`, `clip.sh`, `trailer_cut.py` and `trailer_score.py` call the toolkit with the same
+  arguments; the score's acts, chords, motif, phrases and hits are in `docs/trailer/score.json` (cut.json names it).
+  Found in the split: load order is part of a film's timing. The old helper (depending on Landing Party) ran each tick
+  after Landing Party and before the scenario harness (`lp-film` sorts before `lp-sim`); the new one made to load after
+  the harness read a siege the harness forced at the film's first tick 10 to 60 ticks sooner (`phase:march` at 50400,
+  not 50460, on fortress grubstake), which would have moved every still timed on it. The toolkit now orders the helper
+  after the game's mods and the mod under test only. Checked headless (`--benchmark`, the old helper against the new on
+  the same saves, every still's tick, position, zoom and daytime logged): identical on the gallery (stills-gallery,
+  stills-dome, stills-ripple), stills-strike2 (orbital fork, `dev` with `wall`), stills-burst (herd megaburst fork,
+  waves and bursts), act-grubstake-siege (`base = "siege"`) and stage (army, waves, the harness). The score rendered by
+  the toolkit from score.json is sample-identical to `media/trailer/score.wav` (cut 16); the cut, byte-identical to the
+  old trailer_cut.py's. Not yet confirmed in a window: a refilm of one reel.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

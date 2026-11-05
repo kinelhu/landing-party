@@ -35,6 +35,12 @@ at milestones, asked for.
   perimeter steps and landings on demand. Prefer them to saves timed so an event happens after loading. The
   playground: `LP_MIX=tour scripts/showcase.sh 12345 20`, then `scripts/play-showcase.sh tour`. A new mechanic
   worth looking at gets a `/lp` verb, and a check in scenario `dev`.
+- **Filming: the toolkit lives at `~/Dev/factorio-film`** (`FILM_HOME`; its README has every film param, the plugin
+  interface, the edit list and the score's config). `scripts/film.sh`, `clip.sh`, `trailer_cut.py` and
+  `trailer_score.py` here call it with the same arguments as before; Landing Party's side is its plugin
+  `tests/lp-film-hooks` (sieges, waves, bursts, `/lp` calls, dome looks as points, events and actions), the films'
+  params (`docs/trailer/*.lua`, `docs/review/stills-*.lua`) and the score's config (`docs/trailer/score.json`). A
+  film opens a game window: at milestones, asked for.
 - **Real factories: `scripts/visit.sh <save.zip> [minutes]`** runs the corporations against a copy of a real save in
   its own profile (never the real profile or the original file; ask the user before copying one of theirs).
 - **Siege lab: `scripts/siegelab.sh build`, then `scripts/siegelab.sh run <save.zip> [trials]`**: trials of Synthexis's real AI against a fortress save, defences rebuilt between trials, learning kept; a replay page per run (`docs/sim/lab-<save>/report.html`) and `lab-out.zip` to edit (map editor, time paused) and run again.
