@@ -1,6 +1,6 @@
 {
  "bpm": 120,
- "music": "media/trailer/placeholder-63.wav",
+ "music": "media/trailer/placeholder-73.wav",
  "shots": [
   {
    "clip": "media/trailer/shot-01.mp4",
@@ -48,6 +48,16 @@
    "from": 1.0
   },
   {
+   "clip": "media/trailer/reel-creep.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/reel-creep.mp4",
+   "bars": 2,
+   "from": 14.0
+  },
+  {
    "clip": "media/trailer/stage-herd.mp4",
    "bars": 2,
    "from": 1.0
@@ -83,9 +93,9 @@
    "from": 3.0
   },
   {
-   "clip": "media/trailer/reel-tesla.mp4",
+   "clip": "media/trailer/reel-teslawall.mp4",
    "bars": 2,
-   "from": 3.0
+   "from": 11.0
   },
   {
    "clip": "media/trailer/reel-dome.mp4",
@@ -138,6 +148,16 @@
    "from": 23.0
   },
   {
+   "clip": "media/trailer/reel-warfinale.mp4",
+   "bars": 3,
+   "from": 16.5
+  },
+  {
+   "clip": "media/trailer/reel-warfinale.mp4",
+   "bars": 3,
+   "from": 34.5
+  },
+  {
    "clip": "media/trailer/shot-14.mp4",
    "bars": 3,
    "from": 0
@@ -152,7 +172,7 @@
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 61,
+   "bar": 71,
    "bars": 3
   }
  ]
