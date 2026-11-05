@@ -1,4 +1,4 @@
-# Arrivals
+# Arrivals {kicker="The timeline"}
 
 The factions arrive in a fixed order, each one triggered by something you do. After that they keep landing, grow with
 their exports, and match their research to yours.
@@ -16,8 +16,6 @@ from it and is charted on your map. It holds electronic circuits and iron gear w
   {{< var arrival.survey_killed_delay_min >}} minutes after your first chemical science pack.
 - Leave it and it leaves after {{< var arrival.survey_stays_min >}} minutes. Grubstake then arrives
   {{< var arrival.survey_left_min >}} minutes later, whether or not you have made chemical science.
-
-{{< clip media/clips/survey-party.mp4 poster="media/clips/survey-party.jpg" caption="The survey party on an ore field, before Grubstake arrives." >}}
 
 **Grubstake.** Its first camp comes down on your first chemical science pack, or earlier if its survey party left. It
 picks a rich ore field away from Kessler-Hayashi, at least {{< var arrival.squat_tiles >}} tiles from your turrets and
@@ -39,6 +37,8 @@ each side. A few seconds later the lander's shadow darkens on the ground, and it
 onto the pad beside them and crashes in a blast of dust. Then {{< var arrival.landing_pods >}} cargo pods streak down
 round it, one after another, and burst where they fall. Those pods and the crash are only the look of it: they damage
 nothing and leave nothing to take.
+
+![A Grubstake lander just down on open ground, before its crews have laid the pad.](media/clips/landing.jpg)
 
 ## Landings after the first
 
@@ -95,7 +95,7 @@ A corporation that lands in a world already far along arrives with the research 
 **Kessler-Hayashi armed.** From era {{< var arrival.armed_era >}}, Kessler-Hayashi lands as a walled fortress instead of
 a camp, already at level {{< var arrival.armed_level >}}.
 
+![An armed Kessler-Hayashi landing at dusk: the lander inside its walls, guns along them and troopers in the yard.](media/clips/armed-landing.jpg)
+
 **Synthexis** is the exception. Its breeds follow evolution: the wild biters' at first, then its own once its clinic
 stands. See [What it breeds](synthexis.qmd#sec-breeds).
-
-{{< clip media/clips/armed-landing.mp4 poster="media/clips/armed-landing.jpg" caption="Kessler-Hayashi's armed landing: a fortress instead of a camp." >}}

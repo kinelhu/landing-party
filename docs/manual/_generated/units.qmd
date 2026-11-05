@@ -11,6 +11,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
 |:--|--:|--:|--:|--:|:--|:--|
+| Laser trooper | 120 | 7.2 | 15 | 2.4 | yes | 10 parts |
 | Laser drone | 400 | 12.0 | 16 | 3 | yes | 70 parts |
 | Railgunner | 140 | 6.0 | 30 | 0.67 | no | 22 parts |
 | Tank | 900 | 5.4 | 15 | 0.67 | no | 60 parts |
@@ -22,75 +23,19 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Lightning tank | 800 | 5.4 | 14 | 0.8 | no | 100 parts |
 | Howitzer truck | 1,200 | 3.9 | 10 | 2 | yes | - |
 
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-laser-drone.png){fig-alt="Laser drone"}
-
-**Laser drone.** An armored flying drone with a laser. Resists bullets. \
-*A shot:* 12 laser. *Resists:* fire 100%, physical -3 40%, laser 20%. *Fielded:* From its level 2.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-railgunner.png){fig-alt="Railgunner"}
-
-**Railgunner.** Clears biter spawners. Its slug pierces a few biters and stops: 250 to spawners, worms, incubators and tumors, 40 to biters on their feet, 10 to anything else; Kessler-Hayashi's railguns research raises both (+60% a level). \
-*A shot:* 250 physical over 0.5 tiles; 40 physical over 0.5 tiles; 10 physical over 0.5 tiles. *Resists:* physical -2 10%, laser 20%. *Fielded:* From landing.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-tank.png){fig-alt="Tank"}
-
-**Tank.** An armored tank. Its cannon does three times as much damage to buildings as to units. \
-*A shot:* 40 explosion; 80 explosion over 1.5 tiles to buildings. *Resists:* physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60%. *Fielded:* From landing.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-skyguard.png){fig-alt="Anti-air trooper"}
-
-**Anti-air trooper.** A trooper with a long-range laser against flying units. Weak against ground targets. \
-*A shot:* 30 laser over 1 tiles; 8 laser over 0.5 tiles. *Resists:* physical -2 10%, laser 20%. *Fielded:* Research: Anti-air troopers (Line, era 1).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-lance.png){fig-alt="Heavy laser trooper"}
-
-**Heavy laser trooper.** A laser trooper with a heavier beam that outranges your troopers. \
-*A shot:* 24 laser. *Resists:* physical -2 10%, laser 20%. *Fielded:* Research: Heavy laser troopers (Optics, era 1).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-shock.png){fig-alt="Shock trooper"}
-
-**Shock trooper.** Its electric beam jumps from target to target and stuns them briefly. Used against groups of troopers. \
-*A shot:* (arcs to the next targets); 10 electric. *Resists:* physical -2 10%, laser 20%, electric 50%. *Fielded:* Research: Shock troopers (Optics, era 3, after Heavy laser troopers).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-aegis.png){fig-alt="Heavy tank"}
-
-**Heavy tank.** A heavy tank with a rail cannon. Its slug ignores armor; used against your battle tanks. \
-*A shot:* 38 rail. *Resists:* physical -5 30%, explosion -5 40%, laser -5, electric -5, bite 60%. *Fielded:* Research: Heavy tanks (Line, era 2, after Heavier armor).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-prism.png){fig-alt="Laser tank"}
-
-**Laser tank.** A tank whose laser splits from its target to the units around it. Used against groups of troopers. \
-*A shot:* (arcs to the next targets); 10 laser; 14 laser. *Resists:* physical -3 20%, laser -5, electric -5, explosion 10%, bite 60%. *Fielded:* Research: Laser tanks (Optics, era 2, after Heavy laser troopers).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-tesla.png){fig-alt="Lightning tank"}
-
-**Lightning tank.** A tank whose lightning jumps along a turret line and drains the turrets it hits. \
-*A shot:* (arcs to the next targets); 10 electric; 20 electric. *Resists:* physical -3 20%, electric -5 80%, explosion 10%, laser -5, bite 60%. *Fielded:* Research: Lightning tanks (Siege, era 3).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-howitzer-truck.png){fig-alt="Howitzer truck"}
-
-**Howitzer truck.**  \
-*A shot:* 4 physical. *Resists:* physical -4 30%, fire 50%, explosion 20%. *Fielded:* Carries the howitzer to a siege.
-:::
+| Unit | A shot | Resists | Fielded |
+|:--|:--|:--|:--|
+| Laser trooper | 7 laser | physical -2 10%, laser 20% | From landing |
+| Laser drone | 12 laser | fire 100%, physical -3 40%, laser 20% | From its level 2 |
+| Railgunner | 250 physical over 0.5 tiles; 40 physical over 0.5 tiles; 10 physical over 0.5 tiles | physical -2 10%, laser 20% | From landing |
+| Tank | 40 explosion; 80 explosion over 1.5 tiles to buildings | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60% | From landing |
+| Anti-air trooper | 30 laser over 1 tiles; 8 laser over 0.5 tiles | physical -2 10%, laser 20% | Research: Anti-air troopers (Line, era 1) |
+| Heavy laser trooper | 24 laser | physical -2 10%, laser 20% | Research: Heavy laser troopers (Optics, era 1) |
+| Shock trooper | (arcs to the next targets); 10 electric | physical -2 10%, laser 20%, electric 50% | Research: Shock troopers (Optics, era 3, after Heavy laser troopers) |
+| Heavy tank | 38 rail | physical -5 30%, explosion -5 40%, laser -5, electric -5, bite 60% | Research: Heavy tanks (Line, era 2, after Heavier armor) |
+| Laser tank | (arcs to the next targets); 10 laser; 14 laser | physical -3 20%, laser -5, electric -5, explosion 10%, bite 60% | Research: Laser tanks (Optics, era 2, after Heavy laser troopers) |
+| Lightning tank | (arcs to the next targets); 10 electric; 20 electric | physical -3 20%, electric -5 80%, explosion 10%, laser -5, bite 60% | Research: Lightning tanks (Siege, era 3) |
+| Howitzer truck | 4 physical | physical -4 30%, fire 50%, explosion 20% | Carries the howitzer to a siege |
 
 ### Grubstake
 
@@ -106,68 +51,17 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Flak buggy | 220 | 12.0 | 22 | 2 | yes | 20 parts |
 | Flame tank | 1,100 | 5.4 | 13 | 6 | no | 70 parts |
 
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-buggy.png){fig-alt="Buggy"}
-
-**Buggy.** A fast buggy with a machine gun. Grubstake's raider and escort. \
-*A shot:* 5 physical. *Resists:* physical -2 15%. *Fielded:* From landing.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-harrier.png){fig-alt="Scrap drone"}
-
-**Scrap drone.** A cheap flying drone that attacks in numbers. \
-*A shot:* 6 physical. *Resists:* fire 100%. *Fielded:* From its level 1.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-shotgun-hand.png){fig-alt="Shotgun hand"}
-
-**Shotgun hand.** Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line. \
-*A shot:* 9 physical (x3). *Resists:* physical -2 10%. *Fielded:* From landing.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-slug.png){fig-alt="Slug buggy"}
-
-**Slug buggy.** A buggy with a slug gun, used against your vehicles. \
-*A shot:* 55 physical. *Resists:* physical -2 15%, explosion 40%. *Fielded:* Research: Slug buggies (Scrap arms, era 1).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-sapper.png){fig-alt="Dynamite sapper"}
-
-**Dynamite sapper.** Throws dynamite over 3 tiles, at groups of units and at walls in its way. Spares its own side. \
-*A shot:* 80 explosion over 3 tiles. *Resists:* physical -2 10%. *Fielded:* Research: Dynamite sappers (Scrap arms, era 2).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-scavenger.png){fig-alt="Bomb drone"}
-
-**Bomb drone.** A flying bomb that targets artillery, mortars and radars. \
-*A shot:* 150 explosion; 150 explosion over 2.5 tiles. *Resists:* fire 100%. *Fielded:* Research: Bomb drones (Wheels, era 2).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-dozer.png){fig-alt="Dozer"}
-
-**Dozer.** Rams walls open for the shotgun hands behind it. \
-*A shot:* 60 physical. *Resists:* physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5, bite 60%. *Fielded:* Research: Dozers (Wheels, era 3, after Slug buggies).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-flak-buggy.png){fig-alt="Flak buggy"}
-
-**Flak buggy.** Fires flak at flying units. Weak against ground targets. \
-*A shot:* 22 explosion over 2 tiles; 3 explosion over 1.5 tiles. *Resists:* physical -2 15%. *Fielded:* Research: Flak buggies (Wheels, era 1).
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-grubstake-scorcher.png){fig-alt="Flame tank"}
-
-**Flame tank.** An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly. \
-*A shot:* 6 physical. *Resists:* physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5, bite 60%. *Fielded:* Research: Flame tanks (Scrap arms, era 2).
-:::
+| Unit | A shot | Resists | Fielded |
+|:--|:--|:--|:--|
+| Buggy | 5 physical | physical -2 15% | From landing |
+| Scrap drone | 6 physical | fire 100% | From its level 1 |
+| Shotgun hand | 9 physical (x3) | physical -2 10% | From landing |
+| Slug buggy | 55 physical | physical -2 15%, explosion 40% | Research: Slug buggies (Scrap arms, era 1) |
+| Dynamite sapper | 80 explosion over 3 tiles | physical -2 10% | Research: Dynamite sappers (Scrap arms, era 2) |
+| Bomb drone | 150 explosion; 150 explosion over 2.5 tiles | fire 100% | Research: Bomb drones (Wheels, era 2) |
+| Dozer | 60 physical | physical -5 40%, fire 50%, explosion -5 20%, laser -5, electric -5, bite 60% | Research: Dozers (Wheels, era 3, after Slug buggies) |
+| Flak buggy | 22 explosion over 2 tiles; 3 explosion over 1.5 tiles | physical -2 15% | Research: Flak buggies (Wheels, era 1) |
+| Flame tank | 6 physical | physical -3 25%, fire 100%, explosion -5 30%, laser -5, electric -5, bite 60% | Research: Flame tanks (Scrap arms, era 2) |
 
 ### Both corporations
 
@@ -175,12 +69,9 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 |:--|--:|--:|--:|--:|:--|:--|
 | Hauler | 1,500 | 3.9 | 10 | 2 | yes | 30 parts |
 
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-hauler.png){fig-alt="Hauler"}
-
-**Hauler.** A lightly armed truck. Carries convoys and Grubstake's building crews. \
-*A shot:* 4 physical. *Resists:* physical -4 30%, fire 50%, explosion 20%. *Fielded:* Both corporations.
-:::
+| Unit | A shot | Resists | Fielded |
+|:--|:--|:--|:--|
+| Hauler | 4 physical | physical -4 30%, fire 50%, explosion 20% | Both corporations |
 
 ### Synthexis
 
@@ -200,84 +91,21 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Synthexis carrier | 600 | 7.2 | 1.5 | 1.7 | yes | - |
 | Synthexis technician | 80 | 6.0 | 1 | 1 | yes | - |
 
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-small-biter.png){fig-alt="Small biter (Synthexis)"}
-
-**Small biter (Synthexis).**  \
-*A shot:* 7 bite. *Fielded:* Bred from evolution 0.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-medium-biter.png){fig-alt="Medium biter (Synthexis)"}
-
-**Medium biter (Synthexis).**  \
-*A shot:* 15 bite. *Resists:* physical -4 10%, explosion 10%. *Fielded:* Bred from evolution 0.2.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-big-biter.png){fig-alt="Big biter (Synthexis)"}
-
-**Big biter (Synthexis).**  \
-*A shot:* 30 bite. *Resists:* physical -8 10%, explosion 10%. *Fielded:* Bred from evolution 0.5.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-behemoth-biter.png){fig-alt="Behemoth biter (Synthexis)"}
-
-**Behemoth biter (Synthexis).**  \
-*A shot:* 90 bite. *Resists:* physical -12 10%, explosion -12 10%. *Fielded:* Bred from evolution 0.9.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-cinder.png){fig-alt="Synthexis burster"}
-
-**Synthexis burster.** A fast biter that bursts on death, damaging nearby walls and turrets. \
-*Fielded:* Bred from evolution 0.45.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-stomper.png){fig-alt="Synthexis stomper"}
-
-**Synthexis stomper.** A bred pentapod that steps over walls. Resists bullets. \
-*Resists:* physical 50%, laser 40%, impact 80%. *Fielded:* Bred from evolution 0.8.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-spore.png){fig-alt="Synthexis spore spitter"}
-
-**Synthexis spore spitter.** Spits spores that hit flying units. Weak against ground targets. \
-*Resists:* explosion 10%. *Fielded:* Bred from evolution 0.25.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-medium-spitter.png){fig-alt="Medium spitter (Synthexis)"}
-
-**Medium spitter (Synthexis).**  \
-*Resists:* explosion 10%. *Fielded:* Bred from evolution 0.3.
-:::
-
-**Synthexis big burster.** A huge biter that bursts at a turret guarding the way in, damaging all turrets nearby. \
-*A shot:* 90 bite. *Resists:* laser 50%, fire 50%. *Fielded:* Developed once your walls have held its waves 2 times.
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-bred-scout.png){fig-alt="Synthexis scout"}
-
-**Synthexis scout.** Circles your defenses before an attack. \
-*A shot:* 7 bite. *Fielded:* Made at an incubator for each wave.
-:::
-
-**Synthexis sweeper.** Bursts in minefields to clear a path before an attack. \
-*A shot:* 30 bite. *Resists:* physical -8 10%, explosion 10%. *Fielded:* Bred when a wave's way in crosses mines.
-
-**Synthexis carrier.** Carries a new Synthexis culture to wild spawners. \
-*A shot:* 30 bite. *Resists:* physical -8 10%, explosion 10%. *Fielded:* Sent by a grown culture.
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-technician.png){fig-alt="Synthexis technician"}
-
-**Synthexis technician.** Walks between the biochambers and keeps them running. \
-*A shot:* 1 physical. *Resists:* physical -2 10%. *Fielded:* Bought with biomass as the culture grows.
-:::
+| Unit | A shot | Resists | Fielded |
+|:--|:--|:--|:--|
+| Small biter (Synthexis) | 7 bite | - | Bred from evolution 0 |
+| Medium biter (Synthexis) | 15 bite | physical -4 10%, explosion 10% | Bred from evolution 0.2 |
+| Big biter (Synthexis) | 30 bite | physical -8 10%, explosion 10% | Bred from evolution 0.5 |
+| Behemoth biter (Synthexis) | 90 bite | physical -12 10%, explosion -12 10% | Bred from evolution 0.9 |
+| Synthexis burster | - | - | Bred from evolution 0.45 |
+| Synthexis stomper | - | physical 50%, laser 40%, impact 80% | Bred from evolution 0.8 |
+| Synthexis spore spitter | - | explosion 10% | Bred from evolution 0.25 |
+| Medium spitter (Synthexis) | - | explosion 10% | Bred from evolution 0.3 |
+| Synthexis big burster | 90 bite | laser 50%, fire 50% | Developed once your walls have held its waves 2 times |
+| Synthexis scout | 7 bite | - | Made at an incubator for each wave |
+| Synthexis sweeper | 30 bite | physical -8 10%, explosion 10% | Bred when a wave's way in crosses mines |
+| Synthexis carrier | 30 bite | physical -8 10%, explosion 10% | Sent by a grown culture |
+| Synthexis technician | 1 physical | physical -2 10% | Bought with biomass as the culture grows |
 
 ### Your army
 
@@ -289,39 +117,12 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Flamethrower trooper | 120 | 7.2 | 13 | 15 | yes | 2 bandwidth |
 | Battle tank | 900 | 5.4 | 18 | 0.67 | no | 6 bandwidth |
 
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-trooper.png){fig-alt="Trooper"}
-
-**Trooper.** Your basic soldier, with a rifle. \
-*A shot:* 8 physical. *Resists:* physical -2 10%. *Fielded:* Research: Command bandwidth 1.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-breacher.png){fig-alt="Breacher"}
-
-**Breacher.** Carries demolition charges for walls. Does little to units. \
-*A shot:* 15 explosion over 2.5 tiles; 85 explosion over 2.5 tiles to buildings. *Resists:* physical -2 10%. *Fielded:* Research: Command bandwidth 1.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-rocket-trooper.png){fig-alt="Rocket trooper"}
-
-**Rocket trooper.** Fires rockets, good against armor and fliers. Slow to kill a crowd. \
-*A shot:* 110 explosion. *Resists:* physical -2 10%. *Fielded:* Research: Command bandwidth 2.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-flame-trooper.png){fig-alt="Flamethrower trooper"}
-
-**Flamethrower trooper.** A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor. \
-*Resists:* physical -2 10%. *Fielded:* Research: Command bandwidth 3.
-:::
-
-::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}
-![](media/units/lp-battle-tank.png){fig-alt="Battle tank"}
-
-**Battle tank.** Your heavy tank, for attacking bases. \
-*A shot:* 50 explosion; 120 explosion over 1.5 tiles to buildings. *Resists:* physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60%. *Fielded:* Research: Command bandwidth 2.
-:::
+| Unit | A shot | Resists | Fielded |
+|:--|:--|:--|:--|
+| Trooper | 8 physical | physical -2 10% | Research: Command bandwidth 1 |
+| Breacher | 15 explosion over 2.5 tiles; 85 explosion over 2.5 tiles to buildings | physical -2 10% | Research: Command bandwidth 1 |
+| Rocket trooper | 110 explosion | physical -2 10% | Research: Command bandwidth 2 |
+| Flamethrower trooper | - | physical -2 10% | Research: Command bandwidth 3 |
+| Battle tank | 50 explosion; 120 explosion over 1.5 tiles to buildings | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60% | Research: Command bandwidth 2 |
 
 <!-- The runt is left out: Synthexis's probe is off in this version (shared.BIOTECH.mind.probe). -->

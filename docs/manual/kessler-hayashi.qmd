@@ -1,12 +1,37 @@
-# Kessler-Hayashi
+# Kessler-Hayashi {.opener faction="kessler-hayashi" kicker="The corporations"}
 
-> Please remain behind the line.
+::: {.epigraph faction="kessler-hayashi"}
+:::
 
 Kessler-Hayashi is a security contractor. It lands late and is at war with you from the day it arrives. It walls its
 camp in and moves a line of posts out toward your base, and its sieges go at whatever stands in the way. It plans from
 orbit: it knows your defenses before it sets out.
 
-![A Kessler-Hayashi camp.](media/vistas/serenity-wide.jpg)
+::: {.lore kicker="From the archive" title="The contract" faction="kessler-hayashi"}
+Kessler-Hayashi owns no world and has never asked for one. Its offices ride a ring of armed platforms that move
+wherever a client is paying, and most of its staff spend their working lives in orbit. Its gunships ride with the
+freighters on the long run out to Aquilo, and round the foundries of Vulcanus it holds cordons while the worms go by.
+
+Nauvis is one contract on its books, and a small one. The company does not say who signed it. The terms show in what
+it does: it claims a perimeter, holds the launch lanes above it, and treats whatever the engineer's factory sends up as
+cargo under its protection. The contract starts with the first rocket. A world that launches has traffic, and traffic
+is what Kessler-Hayashi sells.
+
+Its camps come down whole, the lander in a cargo pod with the escort's pods beside it. Walls go up before the camp is
+finished, and a dome stands over it against artillery. Its research happens in labs on the ground, one to each branch
+of the work, and a branch stops when its lab is gone.
+
+::: {.pullquote cite="Kessler-Hayashi site report"}
+The site hazard has been informed of its obligations.
+:::
+
+In the company's filings the engineer appears as a hazard on a contracted site. The line of posts steps outward on a
+schedule, each step announced beforehand in the same even voice. Biters that wander from the engineer's smoke into its
+camps are billed at an invoice post, and a paid invoice buys a quiet spell. When a wall will not shell down, a spotter
+paints it and the platform overhead does the rest. If the uplink falls, the company writes Nauvis off.
+:::
+
+![A Kessler-Hayashi camp from close in: platform plating, walled blocks and charcoal guns.](media/vistas/serenity-close.jpg)
 
 ## Who they are
 
@@ -79,7 +104,7 @@ Kessler-Hayashi mounts sieges from its first level. Its guns come down from orbi
 A siege ends when its guns are destroyed or its shells run out. An armed camp's siege does not leave on a clock: pods
 bring it more shells.
 
-{{< clip media/clips/drop-siege.mp4 poster="media/clips/drop-siege.jpg" caption="A Kessler-Hayashi siege: the escort in ranks at its hold while its guns come down." >}}
+![A Kessler-Hayashi siege: its guns come down in pods, *Deploying*, while the escort stands in ranks beside them.](media/clips/drop-siege.jpg)
 
 **The howitzer.** Where roboports cover the target, the siege brings a howitzer to reach the roboports behind your wall.
 Your artillery outranges it and fires on it by itself. Destroy it and that camp goes without one for
@@ -96,7 +121,7 @@ of your turrets that covers the gap, and the escort goes in behind them. Kill th
 is called off. A standing siege calls another after {{< var kh.strike_cool_min >}} minutes. Domes do not stop it,
 theirs or yours.
 
-{{< clip media/clips/orbital-strike.mp4 poster="media/clips/orbital-strike.jpg" caption="An orbital strike: the spotter's paint, the platform's shadow, then the lances along the wall." >}}
+![An orbital strike: lances fall on either side of a walled laser bastion while Kessler-Hayashi's troopers wait to go in.](media/clips/orbital-strike.jpg)
 
 **The site dome.** Once an armed camp's siege starts shelling, a dome projector goes up by its guns. Its dome catches
 your artillery shells as a camp's does, and moves with the siege.
@@ -132,6 +157,19 @@ destroy. Each branch has its own, at the heart of a walled district:
 A branch advances only while one of its labs stands in some Kessler-Hayashi camp. Destroy the last one and the branch
 stops: its units are no longer built and its armor and siege abilities are off. Damage levels already researched stay.
 Its crews rebuild the lab like any building. Labs are military targets.
+
+## Its units {#sec-kh-units}
+
+The camp lands with its troopers, tanks and railgunners, and its laser drones come with its second level. Everything
+else is research, bought in one of its three labs once your attacks have called for it.
+
+::: {.tree tree="kessler-hayashi-units"}
+Each node is bought with parts once its trigger has fired: the units it answers have cost Kessler-Hayashi enough. A
+node's era is yours: none comes before you reach it. Dashed nodes are armor and siege abilities. A branch is bought,
+and its units fielded, only while its lab stands.
+:::
+
+{{< include _generated/cards-kessler-hayashi.qmd >}}
 
 ## Fighting Kessler-Hayashi
 

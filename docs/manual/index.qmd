@@ -1,6 +1,4 @@
-# Landing Party {.unnumbered}
-
-{{< clip media/clips/landing.mp4 poster="media/clips/landing.jpg" caption="A Kessler-Hayashi lander comes down and its camp starts to build." >}}
+# Landing Party {.unnumbered kicker="Field manual"}
 
 Landing Party adds three factions to Nauvis. Two are corporations that land, mine, build factories and field armies of
 their own. The third takes over biter spawners and breeds its own biters. All three compete with you for the planet,
@@ -16,7 +14,7 @@ machines, skims your belts, robs your chests, strip-mines the ore under your out
 It avoids defended ground, and the wild biters leave it alone. See [Grubstake](grubstake.qmd).
 
 **Kessler-Hayashi** comes when you launch your first rocket. It is a security contractor, at war with you from the day it
-lands. Its camps are walled and paved, and it pushes a line of posts out toward your base. It brings tanks, walkers,
+lands. Its camps are walled and paved, and it pushes a line of posts out toward your base. It brings tanks,
 railgunners and sieges with mortars and howitzers. See [Kessler-Hayashi](kessler-hayashi.qmd).
 
 **Synthexis** comes when the wild biters' evolution reaches {{< var synthexis.arrive_evo >}}. It takes over a spawner
@@ -24,6 +22,31 @@ field far from you, feeds it on your pollution and sends planned waves of bred b
 [Synthexis](synthexis.qmd).
 
 The corporations also fight each other. See [Rivals](rivals.qmd).
+
+::: {.lore kicker="Before the landings" title="A green world, noticed"}
+The system has five worlds that anyone bothers to name. Vulcanus is ash and basalt, crossed by worms the length of a
+train. On Fulgora the lightning falls on a dead city, and scavengers pick it over between storms. Gleba grows back
+faster than it can be harvested, and Aquilo is ice. Nauvis is the green one, and for a long time nothing lived on it
+but the swarm.
+
+Between the worlds run the platforms, slow freighters on long burns, and the companies that own them keep their books
+in orbit. Nauvis was never in those books. The survey craft that went down there stopped reporting, and their wrecks
+still lie where the biters left them.
+
+Then the engineer came down in the wreck of a ship and started to build. From orbit a factory shows first as a smudge
+on the wind. The smudge widens, the spawners under it grow fat and restless, and the planet begins to read as worked
+ground: a radar sweeping, a refinery lit at night, a rail line where there was grass.
+
+::: {.pullquote cite="Freight register, Nauvis orbit"}
+Surface activity confirmed. Reclassify as commercial.
+:::
+
+What brings the companies is the work the engineer has already done: the cleared ground and the mapped ore, the power
+on the poles, the swarm grown heavy on the smoke. A factory that has paid for its own beginnings is the cheapest thing
+in the system to take over. Grubstake's surveyors land about the time the first oil is cracked. Kessler-Hayashi waits
+for a rocket, since a world that launches has cargo and cargo wants guarding. Synthexis watches the swarm instead, and
+lands when the swarm is worth having.
+:::
 
 ## What you get
 
@@ -42,5 +65,6 @@ technologies built from their designs, and a command core from their wreckage le
 
 ## Using this manual
 
-[Reference](reference.qmd) has every unit and building with its numbers, the chat commands and the settings.
-[Tips](tips.qmd) collects what works against each faction.
+Each faction's chapter opens with its own page of history, then how it lands, fights and grows, its unit tree and a
+card for every unit it fields. [Reference](reference.qmd) has every unit and building in tables, the chat commands and
+the settings. [Tips](tips.qmd) collects what works against each faction.

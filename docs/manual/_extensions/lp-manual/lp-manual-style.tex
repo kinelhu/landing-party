@@ -133,6 +133,10 @@
 \titleformat{\subsubsection}[runin]{\lpsemibold\fontsize{9}{11}\selectfont\color{FacDark}}{}{0pt}{}[.]
 \titlespacing*{\subsubsection}{0pt}{6pt}{0.6em}
 \renewcommand\sectionmark[1]{\markright{#1}}
+% A heading keeps a few lines of its text with it (the manual's first full render left headings at the foot of a page).
+\RequirePackage{needspace}
+\preto\section{\Needspace{7\baselineskip}}
+\preto\subsection{\Needspace{5\baselineskip}}
 
 % \lpchapter{title}{label}{faction}{kicker}: a chapter that is not a faction's opener.
 \newcommand\lpchapter[4]{%

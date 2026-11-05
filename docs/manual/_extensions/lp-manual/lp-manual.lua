@@ -5,7 +5,9 @@ A chapter writes markdown; the numbers come from the data file the generator emi
 relative to the project, default `_generated/lp-data.json`). The components:
 
   # Synthexis {.opener faction="synthexis" kicker="The corporations"}
-  > Engineered to adapt.                 the blockquote right after an opener is its epigraph (or epigraph="...");
+  > Engineered to adapt.                 the blockquote right after an opener is its epigraph (or epigraph="...";
+                                         with neither, the faction's motto from the data; for HTML, where a
+                                         chapter's heading is lifted out, ::: {.epigraph faction="x"} ::: shows it);
                                          vista="media/vistas/x.jpg" overrides the faction's vista from the data
   # Reference {faction="kessler-hayashi"} a chapter without an opener; the faction colours its heads and tab
 
@@ -628,6 +630,12 @@ end
 
 local function Div(div)
   local cls = div.classes
+  if cls:includes("epigraph") then
+    -- The faction's motto under the chapter's title in HTML; in print the opener page carries it already.
+    local motto = (D.factions[div.attributes.faction or ""] or {}).motto
+    if is_html() and motto then return pandoc.BlockQuote({pandoc.Para(pandoc.Emph(pandoc.Str(motto)))}) end
+    return {}
+  end
   if is_latex() then
     if cls:includes("unit") then return unit_latex(div) end
     if cls:includes("tree") then
@@ -673,6 +681,8 @@ local function Div(div)
 end
 
 -- Chapters: a level-1 heading becomes the chapter (and, with .opener, the faction's opening page).
+-- An opener with no epigraph of its own takes its faction's motto from the data. (The HTML book lifts a chapter's
+-- heading out before filters run: there `::: {.epigraph faction="x"}` stands for it, below.)
 local function chapters(blocks)
   if not is_latex() then return nil end
   local out = pandoc.List()
@@ -688,7 +698,8 @@ local function chapters(blocks)
         if not epi and blocks[i + 1] and blocks[i + 1].t == "BlockQuote" then
           epi = pandoc.write(pandoc.Pandoc(blocks[i + 1].content), "latex"):gsub("%s+$", ""):gsub("\n\n", " ")
           i = i + 1
-        elseif epi then epi = tex(epi) end
+        elseif epi then epi = tex(epi)
+        elseif (D.factions[fac] or {}).motto then epi = tex(D.factions[fac].motto) end -- the faction's motto, from the data
         local vista = resolve(a.vista or (D.factions[fac] or {}).vista)
         if not vista or not exists(vista) then error("lp-manual: opener " .. b.identifier .. " has no vista (" .. tostring(vista) .. ")") end
         out:insert(pandoc.RawBlock("latex", string.format("\\lpopener{%s}{%s}{%s}{%s}{%s}{%s}", title, b.identifier,
@@ -726,7 +737,7 @@ return {
       if is_latex() then
         quarto.doc.include_text("in-header", preamble(meta))
         local blurb, small, inside = meta_latex(meta["back-blurb"]), meta_latex(meta["back-small"]), meta_latex(meta["inside-cover"])
-        local edition = str(meta["edition"]) or ""
+        local edition = str(meta["edition"]) or (D.edition and tostring(D.edition)) or "" -- the data's when unset
         quarto.doc.include_text("before-body", string.format("\\lpfrontcover{%s}{%s}{%s}\\lpinsidecover{%s}",
           tex(str(meta.title) or ""), tex(str(meta.subtitle) or ""), tex(edition), inside))
         quarto.doc.include_text("after-body", string.format("\\lpbackcover{%s}{%s}", blurb, small))
