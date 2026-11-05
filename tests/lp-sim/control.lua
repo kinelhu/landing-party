@@ -4599,7 +4599,7 @@ scenarios.dome = function()
   schedule(60, function()
     -- (Its charge 20 here: the scenario's turrets hold 15 shells each. LP_MIX=whole: its own, three minutes of the six
     -- guns' fire, more than they carry.)
-    lp("debug_tune", {ops_off = true, domes = mix ~= "off", dome_charge = mix ~= "whole" and 20 or nil})
+    lp("debug_tune", {ops_off = true, domes = mix ~= "off", dome_charge = mix ~= "whole" and mix ~= "ring" and 20 or nil})
     for _, pair in ipairs({{"player", "lp-serenity"}, {"lp-serenity", "player"}}) do game.forces[pair[1]].set_cease_fire(pair[2], false) end
   end)
   schedule(2 * 3600, function()
@@ -4614,7 +4614,19 @@ scenarios.dome = function()
     surface().create_entity{name = "lp-orbital-projectile", position = {o.x, o.y - 20}, force = "lp-serenity",
       target = {o.x + 20, o.y + 20}, speed = 1}
     S.turrets, S.loaded = {}, 0
-    for k = 1, ((mix == "battery" or mix == "whole") and 6 or 1) do
+    if mix == "ring" then
+      -- LP_MIX=ring (the trailer, the user on cut 5, 2026-11-05: "the dome stopping a volley of shells from multiple
+      -- directions"): six guns round the camp, 100 tiles out, its own charge (three minutes of six guns): it holds.
+      for k = 0, 5 do
+        local a = k * math.pi / 3
+        local q = {o.x + math.cos(a) * 100, o.y + math.sin(a) * 100}
+        flatten(q[1] - 4, q[2] - 4, q[1] + 4, q[2] + 4)
+        local t = surface().create_entity{name = "artillery-turret", position = q, force = "player"}
+        S.loaded = S.loaded + t.insert{name = "artillery-shell", count = 10}
+        table.insert(S.turrets, t)
+      end
+    end
+    for k = 1, ((mix == "battery" or mix == "whole") and 6 or mix == "ring" and 0 or 1) do
       local t = surface().create_entity{name = "artillery-turret", position = {c[1] + 4 * (k - 1), c[2]}, force = "player"}
       S.loaded = S.loaded + t.insert{name = "artillery-shell", count = 20}
       table.insert(S.turrets, t)
@@ -4634,6 +4646,14 @@ scenarios.dome = function()
       check("dome: its whole is three minutes of the six guns that reach it, and it holds", d.whole == want and d.breaks == 0
         and lost == 0 and d.caught == S.loaded - left, string.format("whole %s (want %d), %d caught, %d breaks, %d lost",
         tostring(d.whole), want, d.caught, d.breaks, lost))
+    elseif mix == "ring" then
+      local fired = 0
+      for _, t in ipairs(S.turrets) do
+        if t.valid and t.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("artillery-shell") < 10 then fired = fired + 1 end
+      end
+      check("dome: six guns round it fire, every shell caught, it holds", fired == 6 and d.caught == S.loaded - left
+        and d.breaks == 0 and lost == 0, string.format("%d guns fired, %d of %d caught, %d breaks, %d lost", fired, d.caught,
+        S.loaded - left, d.breaks, lost))
     elseif mix == "battery" then
       check("dome: a battery breaks it and its shells land", d.breaks >= 1 and lost > 0, d.breaks .. " breaks, " .. lost .. " lost")
     elseif mix == "dark" or mix == "off" then
