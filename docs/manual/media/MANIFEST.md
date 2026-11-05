@@ -97,3 +97,26 @@ Close, by day, one subject each.
   (the strike strip's frames and the strike hero are seconds apart on the same bastion; the culture plan and the
   culture still are the same culture: use one in the chapter).
 - `media/clips/*` and `media/units/*` are all replaced and can go once the chapters point here.
+
+## Where they went (wired 2026-11-05)
+
+- **Portraits**: every unit card and tree node (lp-data's `portraits` is `media/portraits`); the back cover sets four
+  side by side (`lp-trooper`, `lp-shotgun-hand`, `lp-infantry`, `lp-bred-big-biter`), one per faction.
+- **Heroes**: the four openers (lp-data's `hero`); in HTML, under each faction chapter's title.
+- **Vistas**: the front cover's three strips only (`serenity-wide`, `grubstake-wide`, `synthexis-night`); the other five
+  are gone.
+- **Plans** (the `.callouts` component: markers drawn from the JSON, the legend under): camp in "The camp and the line",
+  siege in "Sieges" (cropped to the siege, its markers moved off their subjects on leaders), claim in "Claims and the
+  trade post", culture in "The culture" (cropped; callout 5, the technician, is left out of print: its point lies on a
+  tumor, and no technician shows there).
+- **Strips** (the `.strip` component): landing in Arrivals; burster in Synthexis, "The wind-up"; the orbital strike in
+  Spoils, under the strike beacon (the Kessler-Hayashi opener's hero is the same strike, so it stays out of that chapter).
+- **Stills**: `landing` in Grubstake, "The camp" (not in Arrivals beside its own strip); `grubstake-column` in Grubstake,
+  the howitzer; `kh-assault` in Rivals; `synthexis-clinic` in Synthexis, "What it breeds".
+- **Removed, not printed**: `stills/drop-siege.jpg` (its "Deploying" label sits between the pods, so no crop keeps the
+  guns without it, and the siege plan shows the siege), `stills/orbital-strike.jpg` (the hero and the strip),
+  `stills/synthexis-breach.jpg` (seconds after the hero), `stills/synthexis-culture.jpg` (the plan shows that culture);
+  all of `media/clips` and `media/units`. `cut.json` cuts the stills again if wanted.
+- **media/buildings**: the three labs' icons at the head of the corporations' tree columns (the generator copies them
+  from docs/guide/img). The Reference's gallery of building squares is gone.
+- `python3 -I docs/manual/check_images.py`, after a PDF render, fails on any picture printed twice or never.

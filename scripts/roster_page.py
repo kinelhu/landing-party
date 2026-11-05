@@ -18,8 +18,8 @@ OUT = os.path.join(REPO, "docs", "guide")
 SHOTS = os.path.expanduser("~/Library/Application Support/factorio-lp-shots/script-output/lp-shots/roster")
 VISTAS = os.path.expanduser("~/Library/Application Support/factorio-lp-vista/script-output/lp-vista")
 
-# --qmd: write the player manual's generated parts (docs/manual: _variables.yml, _generated/*.qmd, media/units,
-# media/vistas) instead of this page, from the portraits and vistas already in docs/guide/img (no screenshot run needed).
+# --qmd: write the player manual's generated parts (docs/manual: _variables.yml, _generated/*.qmd, _generated/lp-data.json,
+# the cover vistas and the labs' tree icons) instead of this page, from docs/guide/img (no screenshot run needed).
 QMD = "--qmd" in sys.argv
 spec = importlib.util.spec_from_file_location("roster", os.path.join(HERE, "roster.py"))
 roster = importlib.util.module_from_spec(spec)

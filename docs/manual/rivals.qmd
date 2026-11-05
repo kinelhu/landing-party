@@ -32,7 +32,7 @@ Kessler-Hayashi and Grubstake are at war with each other from the start. Grubsta
 but their camps raid each other, and their haulers and convoys get caught on the way. Their fights do not count against
 the operations sent at you (see [Arrivals](arrivals.qmd)).
 
-![Kessler-Hayashi's tanks and troopers go at a Grubstake camp, its mortars and howitzer dropped at the right.](media/clips/kh-assault.jpg)
+![Kessler-Hayashi's tanks and troopers at a Grubstake camp, lasers crossing. The Grubstake lander is at the left.](media/stills/kh-assault.jpg)
 
 Each answers losses its own way. A Kessler-Hayashi camp that loses buildings or units at home to Grubstake in a short
 time sends a punitive raid back soon after. Grubstake remembers who hurt it and keeps stealing, and sends no punitive

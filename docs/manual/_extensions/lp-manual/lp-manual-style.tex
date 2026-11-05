@@ -149,7 +149,12 @@
   {\sffamily\bfseries\fontsize{22}{25}\selectfont\color{LPInk}#1\par}%
   \vspace{2.5mm}{\color{Fac}\rule{\linewidth}{0.8pt}}\par\vspace{5mm}\@afterheading}
 
-% \lpopener{title}{label}{faction}{vista path}{epigraph}{kicker}: a faction's chapter opens on its land.
+% \lp@coverimage{w}{h}{path}: the image scaled to cover a w by h box (the caller clips it), whatever its proportions.
+\newcommand\lp@coverimage[3]{%
+  \setbox\z@\hbox{\includegraphics{#3}}%
+  \pgfmathsetmacro\lp@imgr{\wd\z@/\ht\z@}\pgfmathsetmacro\lp@boxr{#1/#2}%
+  \ifdim\lp@imgr pt<\lp@boxr pt\includegraphics[width=#1]{#3}\else\includegraphics[height=#2]{#3}\fi}
+% \lpopener{title}{label}{faction}{hero path}{epigraph}{kicker}: a faction's chapter opens on its hero, an event.
 % The vista runs to the trim on three sides, the faction's band under it carries the name. An opener is a recto, so
 % the lore spread that follows it starts on the verso overleaf (lpstory below).
 \newlength\lp@vistah \setlength\lp@vistah{96mm}
@@ -162,7 +167,7 @@
     \useasboundingbox (0,0) rectangle (148,210);
     \begin{scope}
       \clip (0,210) rectangle (148,114);
-      \node[inner sep=0pt, anchor=center] at (74,162) {\includegraphics[width=160mm]{#4}};
+      \node[inner sep=0pt, anchor=center] at (74,162) {\lp@coverimage{152mm}{98mm}{#4}};
     \end{scope}
     \fill[lp@#3] (0,114) rectangle (148,95);
     \fill[LPNight, opacity=0.55] (0,114) rectangle (148,113.4);
@@ -202,7 +207,11 @@
 \AtBeginEnvironment{tabular}{\sffamily\fontsize{7.4}{9.4}\selectfont\addfontfeature{Numbers=Lining}}
 \RequirePackage{caption}
 \captionsetup{font={sf,scriptsize}, labelfont={color=LPMuted}, textfont={color=LPMuted}, justification=raggedright,
-  singlelinecheck=false, skip=4pt}
+  singlelinecheck=false, skip=4pt, labelformat=empty, labelsep=none}% no "Figure 3:": the book never cites one by number
+% An A5 page takes a big figure at its top or foot with a few lines of text: let it, rather than leave a page of floats.
+\renewcommand\topfraction{0.86}\renewcommand\bottomfraction{0.75}\renewcommand\textfraction{0.1}
+\renewcommand\floatpagefraction{0.8}\setcounter{topnumber}{2}\setcounter{bottomnumber}{1}\setcounter{totalnumber}{3}
+\setlength\textfloatsep{12pt plus 3pt minus 2pt}\setlength\floatsep{10pt plus 2pt minus 2pt}
 \renewcommand\texttt[1]{{\fontspec{TitilliumWeb-SemiBold}[Path=\lpextdir/fonts/, Extension=.ttf]\color{FacDark}#1}}
 
 % ---------------------------------------------------------------- the unit card
@@ -285,6 +294,42 @@
 % \lpbadge{colour}{text colour}{letter}: how a technology is got, a square stamp (no TikZ: it sits inside nodes).
 \newcommand\lpbadge[3]{{\setlength\fboxsep{0.35mm}\colorbox{#1}{\makebox[1.5mm]{\textcolor{#2}{\lpsemibold\fontsize{4.8}{5}\selectfont #3}}}}}
 \newcommand\lptreecaption[1]{\par\vspace{2mm}{\sffamily\fontsize{7}{9}\selectfont\color{LPMuted}#1\par}}
+
+% ---------------------------------------------------------------- figures: annotated plans and sequence strips
+% The filter places each marker from the plan's JSON (lp-manual.lua, callouts_latex); these are its looks.
+% A marker: the faction's disc, ringed in white over a soft dark halo so it reads on sand, grass or creep.
+\tikzset{
+  lpmark/.style={circle, fill=Fac, draw=white, line width=0.75pt, inner sep=0pt, minimum size=4.1mm, text=FacOn,
+    font=\lpsemibold\fontsize{6.6}{6.6}\selectfont\addfontfeature{Numbers=Lining}},
+  lpmarkhalo/.style={circle, fill=black, opacity=0.38, inner sep=0pt, minimum size=5.3mm},
+}
+\newcommand\lpmark[3]{\node[lpmarkhalo] at (#1,#2) {}; \node[lpmark] at (#1,#2) {#3};}
+% \lpleader{x}{y}{marker x}{marker y}: a nudged marker's line back to its point, and the point's dot.
+\newcommand\lpleader[4]{\draw[black, opacity=0.45, line width=1.5pt] (#1,#2) -- (#3,#4);
+  \draw[white, line width=0.6pt] (#1,#2) -- (#3,#4); \fill[white] (#1,#2) circle (0.75); \fill[Fac] (#1,#2) circle (0.45);}
+% Plans and strips float to the top or foot of a page near where they are cited, as the stills do (fig-pos in
+% _quarto.yml): a big picture held in place left half pages empty.
+\newenvironment{lpcallouts}[1]{% faction
+  \begin{figure}[!htb]\lpusefaction{#1}\noindent}
+ {\par\end{figure}}
+% A legend entry: three to a row, a long label hanging under itself.
+\newcommand\lpcalloutitem[2]{%
+  \parbox[t]{\dimexpr(\linewidth-4mm)/3\relax}{\raggedright\hangindent=4.9mm\hangafter=1\noindent
+    \makebox[4.9mm][l]{\tikz[baseline=-0.75mm]\node[lpmark, minimum size=3.5mm, line width=0pt, draw=none,
+      font=\lpsemibold\fontsize{6}{6}\selectfont\addfontfeature{Numbers=Lining}] {#1};}%
+    {\sffamily\fontsize{7.2}{8.8}\selectfont\addfontfeature{Numbers=Lining}#2}\par\vspace{0.6mm}}\hskip 2mm\relax}
+% \begin{lpstrip}{faction}{frames} \lpstripframe{n}{path}{caption}\hfill... \end{lpstrip}: frames side by side.
+\newcount\lp@frames
+\newenvironment{lpstrip}[2]{%
+  \begin{figure}[!htb]\lpusefaction{#1}\global\lp@frames=#2\relax\noindent}
+ {\par\end{figure}}
+\newcommand\lpstripframe[3]{%
+  \begin{minipage}[t]{\dimexpr(\linewidth-2.5mm*\numexpr\lp@frames-1\relax)/\lp@frames\relax}
+    \vspace{0pt}\includegraphics[width=\linewidth]{#2}\par\vspace{1.3mm}
+    {\color{Fac}\rule{\linewidth}{0.9pt}}\par\vspace{0.9mm}
+    {\sffamily\fontsize{6.9}{8.6}\selectfont\raggedright\addfontfeature{Numbers=Lining}%
+      {\lpsemibold\color{FacDark}#1}\hspace{1.2mm}#3\par}
+  \end{minipage}}
 
 % ---------------------------------------------------------------- lore
 % A lore page is a found document and runs as a spread: it starts on a verso (a blank, bare page first if the next page
@@ -390,8 +435,14 @@
 \RequirePackage{intcalc}
 \newcommand\lp@padtofour{\ifnum\intcalcMod{\the\numexpr\ReadonlyShipoutCounter+1\relax}{4}=0
   \else\thispagestyle{lpbare}\null\clearpage\expandafter\lp@padtofour\fi}
-\newcommand\lpbackfaction[2]{\noindent{\color{lp@#1}\rule[-0.4mm]{3mm}{3mm}}\hspace{3mm}%
-  {\sffamily\bfseries\fontsize{9}{11}\selectfont\addfontfeature{LetterSpace=4}\MakeUppercase{\csname lp@#1@name\endcsname}}%
-  \hspace{2.5mm}{\itshape\fontsize{9}{11}\selectfont\color{white!75}#2}\par\vspace{2.2mm}}
+% \lpbackfaction{faction}{portrait}{motto}: one of the four side by side on the back cover, the faction's own unit on
+% the bestiary's grey ground (the cover vistas are printed once, on the front).
+\newcommand\lpbackfaction[3]{%
+  \begin{minipage}[t]{\dimexpr(\linewidth-9mm)/4\relax}
+    \vspace{0pt}\includegraphics[width=\linewidth]{#2}\par\vspace{0pt}%
+    {\color{lp@#1}\rule{\linewidth}{1.4mm}}\par\vspace{1.8mm}
+    {\sffamily\bfseries\fontsize{7.4}{9}\selectfont\addfontfeature{LetterSpace=6}\MakeUppercase{\csname lp@#1@name\endcsname}\par}%
+    \vspace{0.8mm}{\raggedright\itshape\fontsize{7.6}{9.4}\selectfont\color{white!72}#3\par}
+  \end{minipage}}
 
 \makeatother

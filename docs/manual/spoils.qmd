@@ -62,6 +62,17 @@ another planet's science pack.
   units are spared. The beacon is spent as the first lance falls. A strike on Grubstake's buildings provokes it like
   any other damage.
 
+::: {.strip faction="kessler-hayashi"}
+![The paint: a beam and rings closing on the point.](media/strips/orbital-strike-1-paint.jpg)
+
+![The orbital platform's shadow passes over.](media/strips/orbital-strike-2-shadow.jpg)
+
+![The lances fall.](media/strips/orbital-strike-3-fall.jpg)
+
+A strike Kessler-Hayashi called on a walled laser bastion. A beacon's strike runs through the same three steps on the
+ground it paints.
+:::
+
 ## Field studies
 
 Fighting a corporation teaches you about it. Destroy enough of the right things and a **field study** completes on its
