@@ -172,7 +172,7 @@ document still says Serenity where it records history.
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
 | Raid leaders (an icon over one raider; Grubstake breaks when it falls and its foreman drops the haul, Serenity regroups) | built | `leader` (three) |
 | Shields, gates for the player, anti-air turret | open | |
-| Depletion and relocation | open | |
+| Depletion and relocation | dropped 2026-11-05 (a patch outlasts a session at a camp's rate) | |
 | Serenity spreads: lobed, walled clusters out toward its line (metastases), up to 30 blocks; its line around a rival's claim | built 2026-10-20, seen on maps, not measured | `factory` maps, `gates`, `cordon ring` |
 | Serenity's compounds by wave function collapse (rooms, the curtain round the camp); districts by the keep (the default) | built 2026-10-20, seen on maps and in game; districts measured about even | `factory` maps (`turtlecore` for districts) |
 | Serenity's research in the world: a lab per branch in its own district; a branch climbs and fields only while its lab stands | built 2026-10-21; artillery takes one; tanks now take its guns, its garrison then kills the squad | `labs`, `breach arty`, `factory` maps |
@@ -3095,7 +3095,7 @@ Decisions: see "Operations" above.
   shields on its rings, and a fortress that varies (it is one fixed template now).
 - The player's army and rally beacons; capture by holding a node.
 - Shields (`destructible = false` while powered), jammers, gates in wall openings, an anti-air turret.
-- Depletion and relocation; the second wall ring.
+- ~~Depletion and relocation~~ dropped (the user, 2026-11-05: "Depletion should probably never occur": a grown camp mines about 45,000 ore an hour, a patch lasts hours; an exhausted camp is untested, to end quietly if it ever matters); the second wall ring.
 - Response sizing; tier and export tuning at real clocks.
 - Biter interplay: Serenity emits no pollution; Grubstake's drills do, and under its pact the waves fall on the player.
 - In game, 2026-10-13 (showcase save): patrols "extremely cool"; troopers made biter noises (fixed:
