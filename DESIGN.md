@@ -4836,6 +4836,25 @@ Bugs and surprises the headless runs caught, each kept as a check:
   its incubators, cells, clinic and worms were never targets, though the strike's own description names nests. Now its
   force is among them when the player's is not its friend. Check: farm strike (a charged beacon set down in its culture
   at 8 minutes), "the player's strike on its culture takes its incubators": 5 to 5 before the fix, 5 to 0 after.
+- **The herd's rush for the heart walked out of its own gap** (2026-11-05; the user, on the trailer's film: "it broke
+  the wall but we only show a handful of biters rushing through? Plus it seemed to break the wall from the inside to
+  escape?"). Traced in trailer 12345 from a fork at minute 17, its units sampled every half second from the gap opening
+  and the rush's legs logged. Its heart's way is the cost map's, priced from the breach before the gap opened, round
+  the fire: from the west breach it ran out and round the outpost to the south wall (-85,-287 to 11,-255) to break in
+  there. `inside_legs` dropped only legs whose line crossed a wall, and the first leg's line from the dozen already
+  inside ran out through the gap itself. So the dozen walked back out, the mass followed outside round the walls, and
+  the engine's path from the last leg took them back to the gap: 15 s after the gap opened 0 of 194 were inside, 66
+  walked back out before it withdrew, and the heart 50 tiles in took 27 s (1,605 ticks). Fixed in `herd.lua`: once
+  nothing stands between it and where it goes, a leg that would put a wall between them again is dropped; and the way
+  home goes to the gap first, then the breach outside it (the other way round, from inside it walked out, back to the
+  gap and out). After: legs 11,-271 to the heart, all inside; 189 of 189 inside 15 s after the gap, 13 back out
+  (strays at the hunt's targets by the wall); the heart in 2.4 s; home through the gap, no wall broken. Before, one
+  biter still inside as its group walked home broke a piece of the north wall from inside, the engine's path to its
+  group (seen once; not reproduced after, and not handled: a straggler's own way out is open). Checks: trailer
+  "Synthexis's wave poured in through its gap" (half or more inside 15 s after the gap, at most a tenth walked back out:
+  0 of 194 and 66 before, 189 of 189 and 13 after) and "and left by it, no wall broken from inside" (1 before, 0 after).
+  The full trailer run (no fork) gives the same and passes all its checks; `regress.sh 12345 --area=biotech` 95 of 95
+  (herd's "through its gap" 3 to 11 wall pieces after the gap, 8 to 45% of its bite on walls).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
