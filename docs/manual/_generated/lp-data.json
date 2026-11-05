@@ -57,7 +57,7 @@
    "role": "Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding force.",
    "counters": "raiders, scouts, lone outposts",
    "countered_by": "flamethrower troopers, gun turrets, tanks",
-   "blurb": "The bulk of every raid and every escort. Kessler-Hayashi fields more of them than of anything else, and its heavier armor research makes them harder to kill with bullets."
+   "blurb": "Every Kessler-Hayashi camp lands with Laser troopers, a mech-armor suit with a laser rifle worn by most of its raiders. The rifle's beam is short and quick, and the Armory's Warden plating, once bolted on, turns an ordinary magazine into a slow way to kill one. Hit them with fire or a tank's shell, which the plating does nothing against."
   },
   "lp-tank": {
    "name": "Tank",
@@ -74,7 +74,7 @@
    "role": "An armored tank. Its cannon does three times as much damage to buildings as to units.",
    "counters": "walls, turret pillboxes, troopers in the open",
    "countered_by": "battle tanks, rocket troopers",
-   "blurb": "The backbone of a siege escort. Tanks hold in staggered ranks just outside your guns' reach and go in behind the barrage."
+   "blurb": "A camp's tank is the piece built for masonry, a standard hull whose shell does three times to a building what it does to a unit. Tanks are the body of a siege escort, holding in ranks outside the guns' reach until the mortars have worked, then going in through the breach. Rocket troopers and a battle tank outfight it; your troopers do not."
   },
   "lp-railgunner": {
    "name": "Railgunner",
@@ -91,7 +91,7 @@
    "role": "Clears biter spawners. Its slug pierces a few biters and stops.",
    "counters": "spawners, worms, Synthexis incubators",
    "countered_by": "anything that closes the distance",
-   "blurb": "It keeps the camp clear of biters and never joins a raid. Some of them carry the rail coils your rail rifle is made from."
+   "blurb": "A size up from the Laser trooper and charcoal like the walls, the Railgunner carries a rail cannon on the company's heaviest suit. Its slug goes through everything living on a long line, so a nest field is cleared in an afternoon; it never joins a raid, and a wall barely notices it. Some carry the rail coils your rail rifle is made from."
   },
   "lp-laser-drone": {
    "name": "Laser drone",
@@ -108,7 +108,7 @@
    "role": "An armored flying drone with a laser. Resists bullets.",
    "counters": "anything that cannot shoot up",
    "countered_by": "rocket troopers, flak turrets",
-   "blurb": "Kessler-Hayashi's sky. Laser drones come from the company's second level, a few at a time, and fly over walls. Bullets barely scratch them."
+   "blurb": "Kessler-Hayashi's one flier is the Laser drone, a destroyer's body in the company's colors with armor plate where the destroyer had none and a laser slung under it. The second shipment brings a few to each camp, and they cross walls, cliffs and water while bullets glance off the plate. Rocket troopers and a flak turret bring them down; put your flak where they cross the wall."
   },
   "lp-skyguard": {
    "name": "Anti-air trooper",
@@ -125,7 +125,7 @@
    "role": "A trooper with a long-range laser against flying units. Weak against ground targets.",
    "counters": "fliers, combat robots",
    "countered_by": "anything on the ground",
-   "blurb": "Fielded against fliers and combat robots. Its shot at the ground is weak, so a ground push past it costs little."
+   "blurb": "The Armory refits a Laser trooper into the Anti-air trooper by swapping the rifle for a long tracking laser that follows a flier across the sky and burns it down; pointed at the ground, the same emitter does little. A camp fields them beside its Laser troopers, never instead. Keep your combat robots away from them and walk the ground squads straight past."
   },
   "lp-lance": {
    "name": "Heavy laser trooper",
@@ -142,7 +142,7 @@
    "role": "A laser trooper with a heavier beam that outranges your troopers.",
    "counters": "your infantry",
    "countered_by": "battle tanks, flamethrower troopers at a gate",
-   "blurb": "Fielded once your infantry has cost Kessler-Hayashi enough. Its beam reaches past your troopers', so a trooper line that won the last fight loses the next."
+   "blurb": "Where the Laser trooper's rifle was, the Heavy laser trooper carries the Optics lab's long emitter and a pack that weighs more than the trooper. Its beam reaches past a submachine gun's and goes through flat armor, so a Lance stands off and fires. Close the distance with your vehicles, or put a gun turret in front of it, which still outreaches it."
   },
   "lp-shock": {
    "name": "Shock trooper",
@@ -159,7 +159,7 @@
    "role": "Its electric beam jumps from target to target and stuns them briefly. Used against groups of troopers.",
    "counters": "your infantry",
    "countered_by": "battle tanks, squads that keep apart",
-   "blurb": "Its lightning jumps from one trooper to the next and stuns them. A siege facing your artillery brings them too, once the company has learned to."
+   "blurb": "The Optics lab's answer to a crowd is the Shock trooper, whose emitter throws an arc that jumps from the first body it touches to the next, stunning each briefly; against one hull the small hits do almost nothing. The Siege works borrows them for counter-battery parties. Keep your squads spaced, because each arc spends itself on whatever stands close."
   },
   "lp-aegis": {
    "name": "Heavy tank",
@@ -176,7 +176,7 @@
    "role": "A heavy tank with a rail cannon. Its slug ignores armor; used against your battle tanks.",
    "counters": "your vehicles",
    "countered_by": "rocket troopers, flamethrower troopers, fliers",
-   "blurb": "A rail cannon on an armored hull, fielded when your vehicles have been killing its units. The slug goes through any armor."
+   "blurb": "A Heavy tank is the standard hull plated by the Armory and fitted with a rail cannon, firing one heavy slug at a time. No armor resists the slug, so it is the one Kessler-Hayashi vehicle built to kill a battle tank; against troopers it fires too slowly to matter. Rocket troopers reach it from outside its range, so keep yours at full reach."
   },
   "lp-prism": {
    "name": "Laser tank",
@@ -193,7 +193,7 @@
    "role": "A tank whose laser splits from its target to the units around it. Used against groups of troopers.",
    "counters": "your infantry",
    "countered_by": "battle tanks, rocket troopers",
-   "blurb": "Its laser splits from its target to the units around it. Massed troopers are what it was built for."
+   "blurb": "On the Laser tank a small laser head rides the turret ring, and its beam splits on the first body it touches into forks that find the units round it. Massed troopers are what the Optics lab built it for; a wall takes one beam and a hull one fork, and neither minds. Send a battle tank or rocket troopers at it, never your infantry."
   },
   "lp-tesla": {
    "name": "Lightning tank",
@@ -210,7 +210,7 @@
    "role": "A tank whose lightning jumps along a turret line and drains the turrets it hits.",
    "counters": "turret lines",
    "countered_by": "artillery, battle tanks, power to spare",
-   "blurb": "Fielded against turret lines. Its lightning jumps along the line and drains what it strikes, so a thin power supply runs low while it stands there."
+   "blurb": "The Lightning tank carries a tesla turret's head, and its bolt jumps along a line of targets. Whatever it strikes that holds a charge, laser turret, accumulator or roboport, loses most of it, so a turret line on a thin grid goes dark while the tank stands at it. Give your laser line power to spare and accumulators behind the turrets."
   },
   "lp-howitzer-truck": {
    "name": "Howitzer truck",
@@ -221,10 +221,10 @@
    "damage_text": "4 physical, 2 shots/s",
    "range": 10,
    "speed": 3.9,
-   "role": "Carries a siege's howitzer to where it can reach your roboports.",
+   "role": "An artillery cannon on a tank's hull; carries a siege's howitzer to where it reaches the roboports.",
    "counters": "roboports behind a wall",
    "countered_by": "your artillery, battle tanks",
-   "blurb": "It comes to sieges where roboports cover the target. Your artillery outranges it and fires on it by itself."
+   "blurb": "Any siege that brings the howitzer brings it on the Howitzer truck, an artillery cannon bolted to a tank's hull at a hauler's pace and with a hauler's gun. The truck never fires the cannon; it drives to the site, the howitzer is set up where roboports cover the target, and the truck gives way. Your artillery outreaches the howitzer and fires on it by itself."
   },
   "lp-hauler": {
    "name": "Hauler",
@@ -239,7 +239,7 @@
    "role": "A lightly armed truck. Carries convoys and Grubstake's building crews.",
    "counters": "nothing it is sent to fight",
    "countered_by": "anything that catches it on the road",
-   "blurb": "Kessler-Hayashi's truck. It carries convoys between camps and gets caught on the way."
+   "blurb": "The Hauler is a lightly armed truck on the tank's running gear, slow, roomy and plated. Kessler-Hayashi uses it for convoys between its camps, and a convoy is where it dies, caught between the camp it left and the one it was going to. Set a squad on the road between two camps and the haulers come to it."
   },
   "lp-grubstake-buggy": {
    "name": "Buggy",
@@ -256,7 +256,7 @@
    "role": "A fast buggy with a machine gun. Grubstake's raider and escort.",
    "counters": "lone poles, outposts, trains in the open",
    "countered_by": "gun turrets on its way, walls",
-   "blurb": "Fast, light and everywhere. Most of what Grubstake takes from you, it takes with buggies, and the buggy circling just outside your guns is its prowl."
+   "blurb": "A Grubstake buggy is a car frame with a machine gun on a pintle and whatever panels the yard had that morning. The one circling a factory at dusk just beyond the guns is noting what stands unguarded, and the raid that follows goes where it went. One killed teaches the next driver to keep wider of that spot, so kill it somewhere you can afford to leave open."
   },
   "lp-shotgun-hand": {
    "name": "Shotgun hand",
@@ -273,7 +273,7 @@
    "role": "Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line.",
    "counters": "you on foot, troopers at close range",
    "countered_by": "gun turrets, flamethrowers, anything with reach",
-   "blurb": "Grubstake's infantry, cheap and quick. Shotgun hands do the work of a raid: they take your machines apart and carry them off."
+   "blurb": "Grubstake's soldier is the Shotgun hand, a hired body in heavy armor with a pump shotgun and wrenches. Hands do the work of a raid: they walk up to a machine no gun covers, take it apart and carry it home, fighting only what gets in the way, at close range. Against a turret line they are useless, so a gun turret by each of your outposts is enough."
   },
   "lp-grubstake-harrier": {
    "name": "Scrap drone",
@@ -290,7 +290,7 @@
    "role": "A cheap flying drone that attacks in numbers.",
    "counters": "outposts behind a wall",
    "countered_by": "gun turrets, flak turrets, rocket troopers",
-   "blurb": "Scrap and a gun, sent in numbers over your walls from Grubstake's first level. Gun turrets bring them down before they reach anything."
+   "blurb": "Grubstake's first level buys Scrap drones in numbers, each a distractor's airframe rebuilt from salvage with a light gun under it. They are weak alone and come in swarms over walls, cliffs and water, and against a lone pole or an assembler a swarm is enough. Gun turrets bring them down before they reach anything of yours; a flamethrower turret cannot shoot up."
   },
   "lp-grubstake-slug": {
    "name": "Slug buggy",
@@ -307,7 +307,7 @@
    "role": "A buggy with a slug gun, used against your vehicles.",
    "counters": "your vehicles",
    "countered_by": "troopers, turrets",
-   "blurb": "Grubstake buys them once your vehicles have killed enough of its raiders. A slug hits hard and seldom, so troopers on foot make it work for every kill."
+   "blurb": "The Slug buggy is the buggy's chassis with the machine gun pulled and a single-barrel slug gun in its place, plated across the front. It fires one heavy slug and then nothing for a while, the right rhythm against a hull and the wrong one against a man on foot; the slug goes through a tank's armor. Send your troopers at it rather than your tanks."
   },
   "lp-grubstake-sapper": {
    "name": "Dynamite sapper",
@@ -324,7 +324,7 @@
    "role": "Throws dynamite at groups of units and at walls in its way. Spares its own side.",
    "counters": "your infantry",
    "countered_by": "turrets, tanks",
-   "blurb": "Grubstake fields sappers once your infantry has cost it enough. A squad that keeps its spacing loses less to each throw."
+   "blurb": "The Dynamite sapper walks in among the Shotgun hands with a satchel of sticks instead of a shotgun, and throws them from well outside a shotgun's reach. Each stick goes off over a few tiles and harms only Grubstake's enemies, so sappers keep no distance from their own side. Keep your squads spread, since a stick that lands on one trooper lands on three."
   },
   "lp-grubstake-scavenger": {
    "name": "Bomb drone",
@@ -342,7 +342,7 @@
    "role": "A flying bomb that targets artillery, mortars and radars.",
    "counters": "artillery and explosives",
    "countered_by": "gun turrets, flak turrets",
-   "blurb": "It dies with its target. Gun turrets by your artillery bring it down on the way in."
+   "blurb": "Strip the gun from a Scrap drone, fit a charge and a quicker motor, paint it hazard red, and the result is the Bomb drone. It flies over the wall at one thing, an artillery turret, a mortar or a radar, and bursts on arrival, taking itself with it. A gun turret beside each of your artillery turrets gets it, and a flak turret gets it earlier."
   },
   "lp-grubstake-dozer": {
    "name": "Dozer",
@@ -359,7 +359,7 @@
    "role": "Rams walls open for the shotgun hands behind it.",
    "counters": "walls",
    "countered_by": "rocket troopers, battle tanks, a second wall",
-   "blurb": "A wall that has stopped Grubstake's raids often enough meets a dozer, with shotgun hands behind it."
+   "blurb": "For walls the yard builds the Dozer, a hauler's hull with a blade and heavy plate. It does nothing to a unit and rams a fence or a wall open with the Shotgun hands behind it, bullets ringing off the plate. Rocket troopers and a battle tank stop it; put a second wall behind the first, and it has to make two runs under your rockets."
   },
   "lp-grubstake-flak-buggy": {
    "name": "Flak buggy",
@@ -376,7 +376,7 @@
    "role": "Fires flak at flying units. Weak against ground targets.",
    "counters": "fliers, combat robots",
    "countered_by": "anything on the ground",
-   "blurb": "Scrap flak that bursts in the air. Grubstake buys it once your fliers and combat robots have cost it enough."
+   "blurb": "Mounted on a buggy chassis, the car's gun turret with its belts loaded with scrap flak makes the Flak buggy, whose rounds burst over a couple of tiles and tear a drone or a combat robot apart; on the ground the same burst barely scratches a trooper. Any ground unit of yours walks over it, so keep the drones and robots back and send the troopers."
   },
   "lp-grubstake-scorcher": {
    "name": "Flame tank",
@@ -393,7 +393,7 @@
    "role": "An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly.",
    "counters": "turret lines",
    "countered_by": "rocket troopers, battle tanks, artillery",
-   "blurb": "Grubstake buys it against turret lines. It has to come close to burn, so rockets and artillery get their chance on the way in."
+   "blurb": "An old tank hull, the head of a flamethrower turret and a machine gun for the stretches between bursts make the Flame tank. The gun does most of the work; the flame comes in three bursts, and then the tank waits while it refills. Fire never harms it. It has to come close to burn, so your rockets and artillery get their chance first."
   },
   "lp-grubstake-howitzer-truck": {
    "name": "Howitzer truck",
@@ -404,10 +404,10 @@
    "damage_text": "4 physical, 2 shots/s",
    "range": 10,
    "speed": 3.9,
-   "role": "Carries a howitzer to a wall kept mended by robots.",
+   "role": "The same cannon on the same hull; a grudge camp's answer to a wall that robots keep mending.",
    "counters": "roboports behind a wall",
    "countered_by": "your artillery, battle tanks",
-   "blurb": "Only a camp that landed with a grudge brings one, and only against a wall your robots keep mending."
+   "blurb": "Grubstake's Howitzer truck is the same artillery cannon on a tank's hull that Kessler-Hayashi runs, bought second-hand, and only a camp that landed with a grudge keeps one. It comes out against a wall that robots keep mending, to shell the roboports behind it from far out. Your artillery outreaches it and kills it by itself."
   },
   "lp-grubstake-hauler": {
    "name": "Hauler",
@@ -422,7 +422,7 @@
    "role": "A lightly armed truck. Carries convoys and Grubstake's building crews.",
    "counters": "nothing it is sent to fight",
    "countered_by": "anything that catches it on the road",
-   "blurb": "It builds Grubstake's new lots, carries its loot and drives the ore home from its claims. One killed on the road spills what it carries."
+   "blurb": "Most of Grubstake's civil service is the Hauler, a lightly armed truck that builds the company's new lots, carries its loot, drives the ore in from its claims and parks beside a belt to skim it. One killed on the road spills its load. Hunt them between a claim and its camp; a claim with no ore coming home lapses, and its drills are yours to take."
   },
   "lp-bred-small-biter": {
    "name": "Small biter",
@@ -436,10 +436,10 @@
    "cost": "2 biomass",
    "era": "Evolution 0",
    "era_level": 0,
-   "role": "The first breed and the cheapest. Wave after wave starts with them.",
+   "role": "The wild stock's runt, banded green and yellow; the first and cheapest breed.",
    "counters": "an unguarded line",
    "countered_by": "any turret",
-   "blurb": "Most of a young culture's waves. Its clinic soon moves it on to bigger breeds."
+   "blurb": "An incubator's first clutch is small biters, the wild stock's own runt with the green and yellow bands grown in, and the cheapest animal the culture makes. A young culture's waves are mostly small biters, and the clinic moves it on to heavier breeds as its evolution allows. Any turret of yours kills them, as long as something is feeding it."
   },
   "lp-bred-medium-biter": {
    "name": "Medium biter",
@@ -453,10 +453,10 @@
    "cost": "7 biomass",
    "era": "Evolution 0.2",
    "era_level": 0.2,
-   "role": "A biter with some armor, bred once the culture's evolution climbs.",
+   "role": "The small biter's line with some armor laid on.",
    "counters": "gun turrets on thin ammunition",
    "countered_by": "lasers, flamethrowers",
-   "blurb": "The breed a culture without its clinic falls back to, with the small biter."
+   "blurb": "Armor laid on the small biter's line makes the medium biter, bred once the culture's evolution has climbed. It is also the breed a culture falls back to when its clinic is gone, so a wave of mediums and smalls is a wave from a culture that has lost something. Feed your gun turrets, or set lasers in front of them."
   },
   "lp-bred-spore": {
    "name": "Synthexis spore spitter",
@@ -473,7 +473,7 @@
    "role": "Spits spores that hit flying units. Weak against ground targets.",
    "counters": "fliers, your robots",
    "countered_by": "anything on the ground",
-   "blurb": "The one breed that looks up. It travels with waves sent at a base that defends itself with drones and robots."
+   "blurb": "Only one breed looks up, the Spore spitter, a violet-bodied spitter whose spores burst where they land. The culture breeds a few in every clutch, so some travel with most waves. A combat robot or a drone that crosses a wave dies to them, and on the ground the burst is a nuisance. Keep your robots out of a wave's path and let the turrets have it."
   },
   "lp-bred-medium-spitter": {
    "name": "Medium spitter",
@@ -487,10 +487,10 @@
    "cost": "9 biomass",
    "era": "Evolution 0.3",
    "era_level": 0.3,
-   "role": "Spits acid over a wall at what stands behind it.",
+   "role": "A spitter that lobs acid over a wall at whatever stands close behind it.",
    "counters": "turrets close behind a wall",
    "countered_by": "flamethrowers, gun turrets with reach",
-   "blurb": "It stays back from the wall and spits over it while the biters break through."
+   "blurb": "The medium spitter stays back from the wall and lobs acid over it at whatever stands close behind, from the wild stock's own line. Its spit burns and its body does not last, and it is the breed that makes a turret set hard against the wall a bad bargain. Give your turrets reach past the wall, and they kill it where it stands."
   },
   "lp-bred-cinder": {
    "name": "Synthexis burster",
@@ -507,7 +507,7 @@
    "role": "A fast biter that bursts on death, damaging nearby walls and turrets.",
    "counters": "a wall that held its last wave",
    "countered_by": "turrets that reach past the wall",
-   "blurb": "Bred for walls that have held. It runs to the wall and bursts there, and a well-aimed group takes the corner turrets with it."
+   "blurb": "Bred from the small biter's line with the jaws grown out and the acid gland grown in, the burster is a running sac that cannot bite. It makes for a wall or a turret, stops, swells and goes off, and killed on the way it goes off where it dies. Shoot them while they are running; once one has stopped to swell, nothing you do will stop it."
   },
   "lp-bred-big-biter": {
    "name": "Big biter",
@@ -521,10 +521,10 @@
    "cost": "28 biomass",
    "era": "Evolution 0.5",
    "era_level": 0.5,
-   "role": "The body of a grown wave. Bred, tinted and sent with a plan.",
+   "role": "The wild stock's heavy line; the body of a grown wave.",
    "counters": "gun turrets on thin ammunition",
    "countered_by": "lasers, flamethrowers, splash",
-   "blurb": "Most of any grown wave. A big biter costs the culture little biomass, so it spends them freely."
+   "blurb": "The big biter is the body of a grown wave, the wild stock's heavy line bred cheaply enough that a culture spends them freely. The pack pours past the turrets it has no need to fight, for the poles and the inserters behind them. Bury your power and your ammunition feed behind a second line of turrets, since that is where the pack is going."
   },
   "lp-bred-stomper": {
    "name": "Synthexis stomper",
@@ -538,7 +538,7 @@
    "role": "A bred pentapod that steps over walls. Resists bullets.",
    "counters": "walls",
    "countered_by": "rocket troopers, battle tanks, flamethrowers",
-   "blurb": "A bred pentapod. It steps over walls and shrugs off bullets."
+   "blurb": "The stomper is a pentapod from the Gleba pens, bred small enough to ship and large enough to step over a wall, and nothing about its carapace minds bullets. It steps over the wall the bursters were meant for and goes on to whatever the wave came for. Rocket troopers and a battle tank bring it down; keep your rockets near the wall."
   },
   "lp-bred-behemoth-biter": {
    "name": "Behemoth biter",
@@ -552,10 +552,10 @@
    "cost": "200 biomass",
    "era": "Evolution 0.9",
    "era_level": 0.9,
-   "role": "The heaviest of the bred biters, and the most expensive to breed.",
+   "role": "The heaviest and dearest animal the clinic breeds.",
    "counters": "walls and gun turrets",
    "countered_by": "artillery, massed lasers, battle tanks",
-   "blurb": "The culture breeds few of them and sends them where the wall is thickest."
+   "blurb": "Heaviest of what the clinic breeds and the dearest, the behemoth arrives late, when the culture's evolution is nearly spent, and in small numbers. It shrugs off what kills the rest of the wave and walks on. Artillery, massed lasers and a battle tank are what it respects, so keep your wall deep and let the lasers work on it."
   },
   "lp-bred-big-burster": {
    "name": "Synthexis big burster",
@@ -570,7 +570,7 @@
    "role": "A huge biter that bursts at a turret guarding the way in, damaging all turrets nearby.",
    "counters": "the turrets covering its way in",
    "countered_by": "guns that reach far past the wall, turrets set apart",
-   "blurb": "Sent one rank at a time at the turrets covering a wave's way in. Killed short of them, only its core goes off."
+   "blurb": "A gland the size of its head, grown in a behemoth's body, makes the big burster, sent at one of the turrets covering a wave's way in rather than at the wall. At the turret it stops, swells and goes off, and every turret near it is hurt; killed short, only its core goes off. Spread your turrets out, so that a burst at one is a burst at one."
   },
   "lp-sweeper": {
    "name": "Synthexis sweeper",
@@ -585,7 +585,7 @@
    "role": "Bursts in minefields to clear a path before an attack.",
    "counters": "minefields",
    "countered_by": "turrets that cover the minefield",
-   "blurb": "Bred when a wave's way in crosses your mines. It walks into the minefield and bursts there."
+   "blurb": "Bred for one job, the sweeper walks into a minefield and goes off there, and it is as tough as a behemoth for the few seconds it needs. A wave whose way in crosses mines gets sweepers ahead of it, and the mines they clear stay cleared for the wave behind. Cover your minefields with turrets, or the sweepers clear them for free."
   },
   "lp-bred-scout": {
    "name": "Synthexis scout",
@@ -600,7 +600,7 @@
    "role": "Circles your defenses before an attack.",
    "counters": "nothing; it looks",
    "countered_by": "any turret that reaches it",
-   "blurb": "When you see one circling your wall, a wave is on its way."
+   "blurb": "The scout is a small, quick animal bred for each wave and sent round a defense before the wave sets out, looping just outside the guns. It fights nothing; the wave comes whether or not it does, and a scout killed leaves a skull where it fell and the next loop goes wider. When you see one circling your wall, a wave is on its way."
   },
   "lp-bred-carrier": {
    "name": "Synthexis carrier",
@@ -614,7 +614,7 @@
    "role": "Carries a new Synthexis culture to wild spawners.",
    "counters": "nothing; it carries",
    "countered_by": "anything that catches it on the way",
-   "blurb": "It carries a new culture to a wild spawner field farther out. Kill it on the way and the culture never starts."
+   "blurb": "In deep violet and lit from within, the carrier is a big biter's body that walks an escort of the culture's stock to a wild nest field farther out and founds a new culture there. It fights only what gets in its way and plans its road round cliffs and buildings. Kill it on the road, and the culture it carried never starts."
   },
   "lp-technician": {
    "name": "Synthexis technician",
@@ -626,10 +626,10 @@
    "range": 1,
    "speed": 6,
    "era": "Bought as the culture grows",
-   "role": "Walks between the biochambers and keeps them running.",
+   "role": "Synthexis's only staff on the surface; walks the rounds between the biochambers with the feed.",
    "counters": "nothing; it tends",
    "countered_by": "anything that reaches the culture",
-   "blurb": "Without technicians the biochambers stop, and without biochambers the incubators stop breeding."
+   "blurb": "A Synthexis technician is the only staff the company keeps on the surface, a figure in a sealed suit who walks the rounds between the biochambers with the feed. Without technicians the biochambers stop, and without biochambers the incubators stop breeding, so a technician on the creep is the softest target that matters. Shoot the technicians before the incubators, and send your troopers in behind."
   },
   "lp-breacher": {
    "name": "Breacher",
@@ -646,7 +646,7 @@
    "role": "Carries demolition charges for walls. Does little to units.",
    "counters": "walls, turrets",
    "countered_by": "anything that fights back",
-   "blurb": "It throws demolition charges that wreck walls and turrets and do little to units."
+   "blurb": "The breacher carries demolition charges instead of a rifle, in the trooper's heavy armor, and throws them at walls and turrets, which they wreck; thrown at a unit they do little. A breacher is cheap on the command link and useless on its own. Send them in behind troopers that can hold the garrison off, and point them at the pillboxes first."
   },
   "lp-trooper": {
    "name": "Trooper",
@@ -663,7 +663,7 @@
    "role": "Your basic soldier, with a rifle.",
    "counters": "raiders, scouts, shotgun hands",
    "countered_by": "heavy laser troopers, shock troopers, laser tanks",
-   "blurb": "Cheap, quick to train and quick to lose. Troopers win against raiders and lose against lasers."
+   "blurb": "A trooper is a suit of heavy armor, a submachine gun and a box of magazines, trained at the barracks and the cheapest unit on the command link. Troopers win against raiders, scouts and shotgun hands and lose to lasers with reach, which is why they go out in numbers. Keep them within reach of a powered barracks, since nothing else heals them."
   },
   "lp-rocket-trooper": {
    "name": "Rocket trooper",
@@ -680,7 +680,7 @@
    "role": "Fires rockets, good against armor and fliers. Slow to kill a crowd.",
    "counters": "tanks, fliers",
    "countered_by": "massed infantry, sappers",
-   "blurb": "It kills armor and fliers, and is slow against a crowd."
+   "blurb": "Heavy armor, a rocket launcher and a crate of rockets make the rocket trooper, and each rocket kills armor or a flier and a trooper no faster than a rifle. It takes a larger share of the command link and reaches past a Heavy tank's rail cannon. Keep them behind your troopers against a crowd, and in front against tanks and drones."
   },
   "lp-battle-tank": {
    "name": "Battle tank",
@@ -697,7 +697,7 @@
    "role": "Your heavy tank, for attacking bases.",
    "counters": "walls, turrets, camps",
    "countered_by": "heavy tanks, slug buggies, rocket troopers",
-   "blurb": "The answer to a walled camp. It takes the longest to train and the most bandwidth."
+   "blurb": "The battle tank is a tank with cannon shells and personal batteries, and it takes the longest to train and the largest share of bandwidth. Its shell does more than twice to a building what it does to a unit, so it is the answer to a walled camp and a poor one to a crowd. Keep troopers beside yours; heavy tanks, slug buggies and rocket troopers hunt it."
   },
   "lp-flame-trooper": {
    "name": "Flamethrower trooper",
@@ -714,7 +714,7 @@
    "role": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor.",
    "counters": "biter swarms, bunched infantry",
    "countered_by": "armor, sappers, fliers",
-   "blurb": "It burns swarms of biters and bunched infantry, and is outranged by nearly everything."
+   "blurb": "Of the orders a barracks trains, the flamethrower trooper is the one with the shortest reach and the biggest fire. Its flamethrower burns a swarm of biters or a bunched squad in a few passes, does little to a hull, and is outranged by nearly everything that shoots back. Put them at the front against Synthexis and at the back against Kessler-Hayashi."
   }
  },
  "trees": {

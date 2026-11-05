@@ -1,49 +1,49 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-infantry"}
-The bulk of every raid and every escort. Kessler-Hayashi fields more of them than of anything else, and its heavier armor research makes them harder to kill with bullets.
+Every Kessler-Hayashi camp lands with Laser troopers, a mech-armor suit with a laser rifle worn by most of its raiders. The rifle's beam is short and quick, and the Armory's Warden plating, once bolted on, turns an ordinary magazine into a slow way to kill one. Hit them with fire or a tank's shell, which the plating does nothing against.
 :::
 
 ::: {.unit unit="lp-tank"}
-The backbone of a siege escort. Tanks hold in staggered ranks just outside your guns' reach and go in behind the barrage.
+A camp's tank is the piece built for masonry, a standard hull whose shell does three times to a building what it does to a unit. Tanks are the body of a siege escort, holding in ranks outside the guns' reach until the mortars have worked, then going in through the breach. Rocket troopers and a battle tank outfight it; your troopers do not.
 :::
 
 ::: {.unit unit="lp-railgunner"}
-It keeps the camp clear of biters and never joins a raid. Some of them carry the rail coils your rail rifle is made from.
+A size up from the Laser trooper and charcoal like the walls, the Railgunner carries a rail cannon on the company's heaviest suit. Its slug goes through everything living on a long line, so a nest field is cleared in an afternoon; it never joins a raid, and a wall barely notices it. Some carry the rail coils your rail rifle is made from.
 :::
 
 ::: {.unit unit="lp-laser-drone"}
-Kessler-Hayashi's sky. Laser drones come from the company's second level, a few at a time, and fly over walls. Bullets barely scratch them.
+Kessler-Hayashi's one flier is the Laser drone, a destroyer's body in the company's colors with armor plate where the destroyer had none and a laser slung under it. The second shipment brings a few to each camp, and they cross walls, cliffs and water while bullets glance off the plate. Rocket troopers and a flak turret bring them down; put your flak where they cross the wall.
 :::
 
 ::: {.unit unit="lp-skyguard"}
-Fielded against fliers and combat robots. Its shot at the ground is weak, so a ground push past it costs little.
+The Armory refits a Laser trooper into the Anti-air trooper by swapping the rifle for a long tracking laser that follows a flier across the sky and burns it down; pointed at the ground, the same emitter does little. A camp fields them beside its Laser troopers, never instead. Keep your combat robots away from them and walk the ground squads straight past.
 :::
 
 ::: {.unit unit="lp-lance"}
-Fielded once your infantry has cost Kessler-Hayashi enough. Its beam reaches past your troopers', so a trooper line that won the last fight loses the next.
+Where the Laser trooper's rifle was, the Heavy laser trooper carries the Optics lab's long emitter and a pack that weighs more than the trooper. Its beam reaches past a submachine gun's and goes through flat armor, so a Lance stands off and fires. Close the distance with your vehicles, or put a gun turret in front of it, which still outreaches it.
 :::
 
 ::: {.unit unit="lp-shock"}
-Its lightning jumps from one trooper to the next and stuns them. A siege facing your artillery brings them too, once the company has learned to.
+The Optics lab's answer to a crowd is the Shock trooper, whose emitter throws an arc that jumps from the first body it touches to the next, stunning each briefly; against one hull the small hits do almost nothing. The Siege works borrows them for counter-battery parties. Keep your squads spaced, because each arc spends itself on whatever stands close.
 :::
 
 ::: {.unit unit="lp-aegis"}
-A rail cannon on an armored hull, fielded when your vehicles have been killing its units. The slug goes through any armor.
+A Heavy tank is the standard hull plated by the Armory and fitted with a rail cannon, firing one heavy slug at a time. No armor resists the slug, so it is the one Kessler-Hayashi vehicle built to kill a battle tank; against troopers it fires too slowly to matter. Rocket troopers reach it from outside its range, so keep yours at full reach.
 :::
 
 ::: {.unit unit="lp-prism"}
-Its laser splits from its target to the units around it. Massed troopers are what it was built for.
+On the Laser tank a small laser head rides the turret ring, and its beam splits on the first body it touches into forks that find the units round it. Massed troopers are what the Optics lab built it for; a wall takes one beam and a hull one fork, and neither minds. Send a battle tank or rocket troopers at it, never your infantry.
 :::
 
 ::: {.unit unit="lp-tesla"}
-Fielded against turret lines. Its lightning jumps along the line and drains what it strikes, so a thin power supply runs low while it stands there.
+The Lightning tank carries a tesla turret's head, and its bolt jumps along a line of targets. Whatever it strikes that holds a charge, laser turret, accumulator or roboport, loses most of it, so a turret line on a thin grid goes dark while the tank stands at it. Give your laser line power to spare and accumulators behind the turrets.
 :::
 
 ::: {.unit unit="lp-howitzer-truck"}
-It comes to sieges where roboports cover the target. Your artillery outranges it and fires on it by itself.
+Any siege that brings the howitzer brings it on the Howitzer truck, an artillery cannon bolted to a tank's hull at a hauler's pace and with a hauler's gun. The truck never fires the cannon; it drives to the site, the howitzer is set up where roboports cover the target, and the truck gives way. Your artillery outreaches the howitzer and fires on it by itself.
 :::
 
 ::: {.unit unit="lp-hauler"}
-Kessler-Hayashi's truck. It carries convoys between camps and gets caught on the way.
+The Hauler is a lightly armed truck on the tank's running gear, slow, roomy and plated. Kessler-Hayashi uses it for convoys between its camps, and a convoy is where it dies, caught between the camp it left and the one it was going to. Set a squad on the road between two camps and the haulers come to it.
 :::

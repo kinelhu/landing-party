@@ -3,33 +3,97 @@
 ::: {.epigraph faction="kessler-hayashi"}
 :::
 
+::: {.lore kicker="Freight Authority, operator file 114" title="The contract" faction="kessler-hayashi"}
+
+::: {.dossier}
+KESSLER-HAYASHI SECURITY
+: Commonly K-H; "the landlord" among Grubstake's crews; "the contractor" in the unregistered operator's radio log.
+  The Security Division of Kessler-Hayashi, beside Freight, Orbital Works and Survey. On every letterhead: "A quieter
+  system for everyone."
+
+PARENT
+: Kessler-Hayashi, formerly Hayashi Lane Assurance, an underwriting house on the inner lanes. The Kessler name came
+  with the gunship fleet it bought rather than go on paying out on the Aquilo run. The Hayashi family holds the chair;
+  no Hayashi has sat in a field office.
+
+REGISTERED
+: Serenity Ring, nine armed platforms on a leased orbit that moves to wherever the client is paying. No ground
+  holdings, by policy. Office hull *Clear Title*; on station over Nauvis, *Quiet Enjoyment*.
+
+PRINCIPALS
+: Ilse Kessler, Director of Field Operations (every site report). Tomas Adeyemi, Chief of Siege Works, Nauvis.
+  P. Lindqvist, Surveyor. M. Voss, Fire Controller, *Quiet Enjoyment*. Invoices carry no signature: they issue from
+  Accounts under the company's name.
+
+DIRECTIVES CITED
+: SD 4.1, assets of the first class are restored before personnel are relieved. SD 6.2, no live weapons research
+  aboard a company hull. SD 9, observations of a contracted surface are company property. SD 11, a site without an
+  uplink is written off.
+
+CONTRACTS KNOWN
+: Freighter escort on the Aquilo run, four gunships a convoy, since the second ice season. Cordon duty at the Vulcanus
+  foundries while the demolishers pass, billed by the hour. Nauvis: contract NV-1, client withheld under clause 9.
+
+MILITARY STRENGTH
+: Laser troopers, tanks and railgunners from the first pod; laser drones from the second shipment. Heavier patterns
+  are built on the surface, in three laboratories, and only while those laboratories stand.
+
+SEE ALSO
+: Grubstake Inc. (file 209; dispute, ongoing). Synthexis (file 377; "unlicensed pest control" in K-H's filings).
+  Hazard register H-3, the operator: "site hazard, class three" in every site report since NV-1/1.
+:::
+
+Contract NV-1 was signed the week the operator's first rocket cleared the atmosphere, and the Registry holds a copy
+because Kessler-Hayashi does everything in writing. What it does not hold is the client's name, which clause 9
+withholds and which the company has never waived, on this contract or any other. What the contract buys is plain on
+its face: a surveyed boundary round a landing site, the launch lanes above it, and "protective custody" of any cargo
+that leaves the ground inside the boundary. The operator's rockets are cargo. The operator is a hazard, class three,
+and is billed as one.
+
+The clerk notes what the contract does not buy. Nobody in NV-1 is paid by the launch, and in eleven site reports the
+Ring has not asked for one rocket to be held, searched or turned back. What goes up to *Clear Title* each period is a
+survey. Director Kessler's sieges are drawn up from orbit, from a reading of what defends their target taken at the
+moment the order is given, and the pods that bring her guns down are sized to that reading; her Survey Office has the
+power behind the operator's turrets traced to the one pole that feeds them. Standing Directive 9 makes every
+observation of a contracted surface company property, to be disclosed to no client, operator or registry. The Survey
+Division sells to somebody. The security contract is what puts it close enough to look, and the Registry can find no
+other reason for it to be there.
+
+A K-H site arrives finished. The lander comes down inside a cargo pod with the escort's pods on either side, more pods
+streak in behind it, and by the time the dust has settled there are generators round the hull, a projector humming a
+dome over them and a wall going up. Directive 4.1 ranks the lander and its generators as assets of the first class, to
+be restored before personnel are relieved, and the crews put a dark generator back before anything else, because a
+lander with half its generators gone can be taken apart with hand tools. The laboratories come later, each inside a
+walled district of its own, and they stand on the ground because Keel & Ward, who underwrite the Ring, will not carry
+live weapons work aboard a hull; Directive 6.2 was written to keep their cover. Optics, the Armory and Adeyemi's Siege
+Works each hold one branch of the company's research, and a branch that loses its laboratory stops where it stood.
+
+::: {.pullquote cite="I. Kessler, site report NV-1/3"}
+Site hazard notified of its obligations under clause twelve. No reply. Billing continues.
+:::
+
+The boundary is the Director's instrument, and it moves. Lindqvist's office posts a Schedule B notice naming the
+building the next arc will enclose, and then the drones pour a pad, raise a short wall facing the operator and set two
+guns on it; where the arc crosses a railway it carries a gate, shut. Belts and pipes that cross the surveyed edge
+under her guns are cut as encroachments. Clause 12 bills the operator for every nest that attacks a K-H site out of
+the operator's own smoke, payable in circuits, modules or steel at a post on the boundary with the sum lit above it,
+and a settled invoice buys the one thing the company sells cheaply, which is quiet: no raid, no siege, the line held
+where it stands. When a wall will not come down under Adeyemi's mortars, one member of the escort walks up with a
+painting laser, Voss on *Quiet Enjoyment* countersigns the order, and the lances fall along the wall. The incubators
+of the Synthexis trial it clears as it clears any nest, on its own account, and its reports file the trial under
+hazards.
+
+The company has lost sites before. Where a site's uplink is destroyed, Directive 11 writes the site off: nothing is
+rebuilt, no operation goes out, and the weakest camp is abandoned first, its personnel carried at book value until
+Accounts clears the memorandum. The Nauvis memorandum, when it comes, will issue under the company's name with the
+client still blacked out. Until then the Ring goes on landing, and late in a contract it no longer sends a camp: the
+lander brings its fortress down with it, walls, guns and dome, and the Director's first site report from it runs to
+one line, that the hazard has been notified.
+:::
+
 Kessler-Hayashi is a security contractor. It lands late and is at war with you from the day it arrives. It walls its
 camp in and moves a line of posts out toward your base, and its sieges go at whatever stands in the way. It plans from
-orbit: it knows your defenses before it sets out.
-
-::: {.lore kicker="From the archive" title="The contract" faction="kessler-hayashi"}
-Kessler-Hayashi owns no world and has never asked for one. Its offices ride a ring of armed platforms that move
-wherever a client is paying, and most of its staff spend their working lives in orbit. Its gunships ride with the
-freighters on the long run out to Aquilo, and round the foundries of Vulcanus it holds cordons while the worms go by.
-
-Nauvis is one contract on its books, and a small one. The company does not say who signed it. The terms show in what
-it does: it claims a perimeter, holds the launch lanes above it, and treats whatever the engineer's factory sends up as
-cargo under its protection. The contract starts with the first rocket. A world that launches has traffic, and traffic
-is what Kessler-Hayashi sells.
-
-Its camps come down whole, the lander in a cargo pod with the escort's pods beside it. Walls go up before the camp is
-finished, and a dome stands over it against artillery. Its research happens in labs on the ground, one to each branch
-of the work, and a branch stops when its lab is gone.
-
-::: {.pullquote cite="Kessler-Hayashi site report"}
-The site hazard has been informed of its obligations.
-:::
-
-In the company's filings the engineer appears as a hazard on a contracted site. The line of posts steps outward on a
-schedule, each step announced beforehand in the same even voice. Biters that wander from the engineer's smoke into its
-camps are billed at an invoice post, and a paid invoice buys a quiet spell. When a wall will not shell down, a spotter
-paints it and the platform overhead does the rest. If the uplink falls, the company writes Nauvis off.
-:::
+orbit, so it knows your defenses before it sets out.
 
 ![A Kessler-Hayashi camp from close in: platform plating, walled blocks and charcoal guns.](media/vistas/serenity-close.jpg)
 
@@ -47,7 +111,7 @@ they join its army. Their lightning jumps from turret to turret along your line,
 accumulator or roboport it strikes loses {{< var kh.tesla_drain_pct >}}% of its charge. A network with power to spare refills
 them almost at once, and the lasers keep firing. On a thin supply the line runs low while the tanks stand at it.
 
-It raids what your turrets do not cover, and it cuts power: it finds the pole that feeds the turrets facing it with no
+It raids what your turrets do not cover, and it cuts power. It finds the pole that feeds the turrets facing it with no
 second feed, and destroys it where no turret reaches. Its sieges are its main weapon (see [Sieges](#sec-kh-sieges)).
 Anything you build on its ground, or a turret you put up by its camp, is answered with one. Only a truce bought at its
 invoice post makes it stop for a while.
@@ -58,7 +122,7 @@ A camp is floored with space platform foundation. Each hub stands inside its own
 second wall behind each gate, turrets in walled corner pillboxes and flamethrower turrets at the gates.
 
 - **Lander.** It cannot be destroyed while at least half of the generators round it stand. Generators are not military
-  targets: your turrets and units do not fire on them by themselves. Its crews rebuild lost generators first.
+  targets, so your turrets and units do not fire on them by themselves. Its crews rebuild lost generators first.
 - **Dome projector.** {{< var desc.entity_dome_projector >}}
 - **Parked howitzer.** It stands by the lander. When its spot is empty, a siege has it out.
 
@@ -69,14 +133,15 @@ own. The yard is on the side away from your spawn, where nothing hostile stands 
 
 **The dome.** While the lander holds, a dome stands within {{< var kh.dome_tiles >}} tiles of it, and each hub
 after the first has a projector with a dome over its blocks. A dome catches every artillery shell fired from the ground
-that enters it, including shells on their way to something behind it: a bolt from the projector hits the shell, and a
+that enters it, including shells on their way to something behind it. A bolt from the projector hits the shell, and a
 wave runs across the bubble. Units, bullets, lasers and orbital strikes pass through. It holds for
 {{< var kh.dome_hold_min >}} minutes of fire from all the artillery that reaches it, however many guns, then breaks
 for {{< var kh.dome_down_min >}} minutes. When a dome comes up again, a ripple spreads from its projector to its
 edge. Destroy half the generators round the lander and every dome of that camp goes down (a headquarters answers to its
 uplink instead). A destroyed hub projector is put back after {{< var kh.projector_back_min >}} minutes.
 
-**The line.** From {{< var kh.line_start_min >}} minutes after landing, the camp's claim steps
+**The line.** Its own notices call it the Secured Perimeter, Schedule B of its contract. From
+{{< var kh.line_start_min >}} minutes after landing, the camp's claim steps
 {{< var kh.line_step_tiles >}} tiles outward every {{< var kh.line_every_min >}} minutes, up to
 {{< var kh.line_max_tiles >}} tiles from the camp, toward the outpost of yours easiest to cut off. Each step is an
 arc of posts its drones build first: a concrete pad, a short wall facing you and two gun turrets. Near your buildings
@@ -101,7 +166,7 @@ Kessler-Hayashi mounts sieges from its first level. Its guns come down from orbi
    first, then your turrets, then the rest. Where there is no gap, it breaks the wall in its way. After heavy losses it
    falls back, and its guns move up and drop again.
 
-A siege ends when its guns are destroyed or its shells run out. An armed camp's siege does not leave on a clock: pods
+A siege ends when its guns are destroyed or its shells run out. An armed camp's siege does not leave on a clock, because pods
 bring it more shells.
 
 ![A Kessler-Hayashi siege: its guns come down in pods, *Deploying*, while the escort stands in ranks beside them.](media/clips/drop-siege.jpg)
@@ -129,8 +194,8 @@ your artillery shells as a camp's does, and moves with the siege.
 ## The invoice post and truces {#sec-kh-invoice}
 
 Biters attack Kessler-Hayashi too. When a camp has tried to clear the spawners they come from, and those spawners sit in
-your pollution with one of your drills, furnaces, assemblers or boilers within reach, it bills you for its losses,
-every {{< var kh.bill_every_min >}} minutes while they go on.
+your pollution with one of your drills, furnaces, assemblers or boilers within reach, it bills you for its losses (clause 12, in its own
+filings), every {{< var kh.bill_every_min >}} minutes while they go on.
 
 **Invoice post.** {{< var desc.entity_invoice_post >}} It stands on the line toward your base, with the sum owed over
 it in electronic circuits. Each billed spawner is marked with Kessler-Hayashi's icon, in game and on your map.
@@ -155,7 +220,7 @@ destroy. Each branch has its own, at the heart of a walled district:
 - **Siege works.** Railgun damage, dug-in siege sites, shock troopers against your artillery, and lightning tanks.
 
 A branch advances only while one of its labs stands in some Kessler-Hayashi camp. Destroy the last one and the branch
-stops: its units are no longer built and its armor and siege abilities are off. Damage levels already researched stay.
+stops. Its units are no longer built, and its armor and siege abilities are off. Damage levels already researched stay.
 Its crews rebuild the lab like any building. Labs are military targets.
 
 ## Its units {#sec-kh-units}
@@ -164,8 +229,8 @@ The camp lands with its troopers, tanks and railgunners, and its laser drones co
 else is research, bought in one of its three labs once your attacks have called for it.
 
 ::: {.tree tree="kessler-hayashi-units"}
-Each node is bought with parts once its trigger has fired: the units it answers have cost Kessler-Hayashi enough. A
-node's era is yours: none comes before you reach it. Dashed nodes are armor and siege abilities. A branch is bought,
+Each node is bought with parts once its trigger has fired, which is when the units it answers have cost
+Kessler-Hayashi enough. A node's era is yours, and none comes before you reach it. Dashed nodes are armor and siege abilities. A branch is bought,
 and its units fielded, only while its lab stands.
 :::
 

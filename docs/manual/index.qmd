@@ -4,8 +4,8 @@ Landing Party adds three factions to Nauvis. Two are corporations that land, min
 their own. The third takes over biter spawners and breeds its own biters. All three compete with you for the planet,
 and with each other.
 
-They do not arrive at the start. Each one comes when your factory reaches a certain point, so the pressure grows with
-you. [Arrivals](arrivals.qmd) has the timeline.
+They do not arrive at the start. Each one comes when your factory reaches a certain point, so each meets a factory
+that can answer it. [Arrivals](arrivals.qmd) has the timeline.
 
 ## The factions
 
@@ -18,35 +18,10 @@ lands. Its camps are walled and paved, and it pushes a line of posts out toward 
 railgunners and sieges with mortars and howitzers. See [Kessler-Hayashi](kessler-hayashi.qmd).
 
 **Synthexis** comes when the wild biters' evolution reaches {{< var synthexis.arrive_evo >}}. It takes over a spawner
-field far from you, feeds it on your pollution and sends planned waves of bred biters at your defenses. See
-[Synthexis](synthexis.qmd).
+field far from you, feeds it on your pollution and sends waves of bred biters that pick their way into your defenses.
+See [Synthexis](synthexis.qmd).
 
 The corporations also fight each other. See [Rivals](rivals.qmd).
-
-::: {.lore kicker="Before the landings" title="A green world, noticed"}
-The system has five worlds that anyone bothers to name. Vulcanus is ash and basalt, crossed by worms the length of a
-train. On Fulgora the lightning falls on a dead city, and scavengers pick it over between storms. Gleba grows back
-faster than it can be harvested, and Aquilo is ice. Nauvis is the green one, and for a long time nothing lived on it
-but the swarm.
-
-Between the worlds run the platforms, slow freighters on long burns, and the companies that own them keep their books
-in orbit. Nauvis was never in those books. The survey craft that went down there stopped reporting, and their wrecks
-still lie where the biters left them.
-
-Then the engineer came down in the wreck of a ship and started to build. From orbit a factory shows first as a smudge
-on the wind. The smudge widens, the spawners under it grow fat and restless, and the planet begins to read as worked
-ground: a radar sweeping, a refinery lit at night, a rail line where there was grass.
-
-::: {.pullquote cite="Freight register, Nauvis orbit"}
-Surface activity confirmed. Reclassify as commercial.
-:::
-
-What brings the companies is the work the engineer has already done: the cleared ground and the mapped ore, the power
-on the poles, the swarm grown heavy on the smoke. A factory that has paid for its own beginnings is the cheapest thing
-in the system to take over. Grubstake's surveyors land about the time the first oil is cracked. Kessler-Hayashi waits
-for a rocket, since a world that launches has cargo and cargo wants guarding. Synthexis watches the swarm instead, and
-lands when the swarm is worth having.
-:::
 
 ## What you get
 
@@ -68,3 +43,72 @@ technologies built from their designs, and a command core from their wreckage le
 Each faction's chapter opens with its own page of history, then how it lands, fights and grows, its unit tree and a
 card for every unit it fields. [Reference](reference.qmd) has every unit and building in tables, the chat commands and
 the settings. [Tips](tips.qmd) collects what works against each faction.
+
+::: {.lore kicker="Freight Authority, Lane Registry" title="A surface, reclassified"}
+
+::: {.dossier}
+SURFACE
+: Nauvis, the green one of the five. Charted once, by the Authority's survey tender *Carrow*, which stopped reporting
+  on its third orbit in the Registry's ninth year and is carried as lost with all hands. Entry since: "uncharted,
+  hazard".
+
+LANES
+: None registered. Freight on the inner lanes clears the planet by the margin Lane Rule 3 allows. No fee has ever been
+  collected off it.
+
+HAZARD REGISTER
+: H-1, the indigenous fauna, class one, "breeds from smoke". H-3, "operator, unregistered": one engineer, name not
+  supplied, building without a licence; first noted as a stain on the daylight side from the Aquilo run.
+
+RECLASSIFICATION
+: Form LR-7, "Surface activity confirmed. Reclassify as commercial", signed O. Brandt, Registrar, on the day a cargo
+  rocket left the surface. Objections: none filed.
+
+OPERATORS ON FILE
+: Grubstake Inc. (file 209), Kessler-Hayashi Security (file 114), Synthexis (file 377). None holds a licence for the
+  surface.
+
+THIS HISTORY
+: Compiled by M. Tanase, Clerk second grade, Lane Registry, from the three operators' own filings. The clerk has read
+  all of them and vouches for none.
+:::
+
+The Authority keeps a sheet for every surface the lanes pass, and for most of the Registry's life the Nauvis sheet
+held two lines. The first named the *Carrow*, a survey tender of forty tons that went into orbit there to chart the
+ground and stopped reporting on its third pass; the Registry carries her as lost with all hands and has never been
+able to say to what. The second line was the word *hazard*. Freight clears the planet by the margin Lane Rule 3
+allows, and in nine years no operator asked the Lane Registry for anything closer, because nothing on Nauvis was for
+sale. Vulcanus has its foundries and the demolishers the foundries pay cordons against. Fulgora has its scrap lots and
+the storm season that ends them. On Gleba every living thing is somebody's lease, and Aquilo is an ice run with a
+freighter schedule. Nauvis had the swarm, and the *Carrow*'s wreck.
+
+What changed the sheet was smoke. A platform on the Aquilo run logged a stain on the daylight side, and the next pass
+found it wider, with a radar sweeping under it and a flare at night that the duty officer entered as a refinery. The
+Registry does not act on smoke. It acts on cargo, and when a rocket cleared the atmosphere carrying a manifest nobody
+had filed, Registrar Brandt signed Form LR-7 within the hour. The surface became commercial, which means a place an
+operator may land on with a licence. Three operators have landed on it since. None has applied.
+
+::: {.pullquote cite="Form LR-7, Nauvis sheet, signed O. Brandt, Registrar"}
+Surface activity confirmed. Reclassify as commercial.
+:::
+
+Grubstake's tender *Assay* was first down, with a radar, two drills and a handful of guards, the week the operator's
+refinery lit; its Claims Agent filed a Notice of Intent to Claim from the ground, which the Registry stamped and could
+do nothing about. Kessler-Hayashi waited for the rocket, as its contract says it may, and came down inside a surveyed
+boundary with its guns already on the wall. Synthexis came last and told nobody, so that the Registry learned of its
+trial from a Kessler-Hayashi site report that called it pest control. What the three have in common is in their own
+filings, where each lists the operator's works as something it is entitled to. Grubstake's register carries the works
+as unattended. In Kessler-Hayashi's contract they are cargo under its protection, and Synthexis's protocol, when the
+Registry finally saw a copy, has them down as the control.
+
+What the Registry can count, it counts. Each lander's descent is logged from the lanes, and by the log the two
+corporations take turns, the one with fewer sites standing going next, and a rocket off the surface brings
+Kessler-Hayashi's next lander down sooner than its schedule. The operator's first radar charted a wreck a little
+way off that the Registry takes to be the *Carrow*. Her log has not been sent to the Authority, and the clerk has
+written twice.
+
+The clerk's own view, which the Registrar has asked her to keep off the sheet, is on this page because the sheet has no
+column for it. The *Carrow* was lost to the swarm, the swarm now feeds on the operator's smoke, and two of the three
+companies on file are paying to be near it. The Authority has a form for everything and no guns. It registers what
+lands and collects what it can, and on Nauvis, since Brandt's signature, it has collected nothing.
+:::

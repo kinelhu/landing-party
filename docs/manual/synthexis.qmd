@@ -3,33 +3,72 @@
 ::: {.epigraph faction="synthexis"}
 :::
 
+::: {.lore kicker="Freight Authority, operator file 377" title="The trial" faction="synthexis"}
+
+::: {.dossier}
+SYNTHEXIS
+: Commonly "the lessee" at the Authority; "the growers" in Kessler-Hayashi's field reports and "unlicensed pest
+  control" in its filings; "the greenhouse" in Grubstake's books. Catalogue heading: "adapted stock".
+
+REGISTERED
+: Lessee of record, Gleba, swamp lots GL-22 to GL-26, through an agent on Gleba. Principals not disclosed;
+  correspondence through the agent only. Place of incorporation not supplied. Platform *Cold Chain*.
+
+PRINCIPALS
+: Dr. Anouk Verhaegen, Principal Investigator, Nauvis trial: the one name the company discloses, on every batch
+  release. Ilya Rask, Senior Technician, keeper of the feed roster.
+
+LICENCES
+: Gleba, five lots: yumako, jellystem, pentapod study. Nauvis: none. Surface Registry audit minute 377/A finds that
+  the Gleba leases do not extend to Nauvis, and records no action.
+
+PRODUCT
+: Bred biters, striped green and yellow, raised from wild stock in the swarm's own spawners. Trial Protocol NV/1, "an
+  open-air breeding trial on wild stock against a working defence". The control: "the unregistered operator's works".
+
+STAFF ON SURFACE
+: Technicians. No armed personnel on any manifest. The Authority's inspectors have not been invited to count.
+
+SEE ALSO
+: Kessler-Hayashi (file 114; "the exterminator" in Synthexis's papers). Grubstake (file 209; "the supplier": its smoke
+  feeds the trial). Hazard register H-1, the wild stock, "the hedge" in the protocol.
+:::
+
+Where Synthexis comes from, its filings leave blank, and the Registry has stopped asking the agent on Gleba, who
+answers every letter with the lease numbers. The leases are real. Five swamp lots, GL-22 to GL-26, hold its yumako and
+jellystem plantings and the pens where its technicians study pentapods, and every Synthexis site elsewhere stands on
+a blot of that soil, carried out cold by the platform *Cold Chain* with the seed stock, the substrate and the clinic,
+so that nothing spoils on the way. What the lots do not hold is a licence for anywhere else. Audit minute 377/A, which
+the clerk drafted, finds that the Gleba leases end at Gleba and records no action, because the Surface Registry has
+no officer who could take one.
+
+Protocol NV/1 reached the Registry by way of a Kessler-Hayashi site report that called it pest control. It describes
+an open-air breeding trial on wild stock, run where the stock is thickest and the air dirtiest, with a working defence
+as the control: the unregistered operator's works, whose smoke the trial lives on. *Cold Chain* put the first pod down
+on a nest field at the far edge of that smoke once the wild stock had changed enough for the protocol's purposes. The
+spawners there became incubators, each with a biochamber beside it and a pad of substrate under it, and creep grew
+out from the tumors and drank the smoke off the air. Ilya Rask keeps the feed roster. A biochamber his technicians
+have not reached stops, and the incubator beside it lets its stock loose and goes back to the wild.
+
+::: {.pullquote cite="A. Verhaegen, adverse event report NV/1-7"}
+Batch lost in full at the control's southern wall. Finding: the wall held. Action: the next batch is bred for the wall.
+:::
+
+Every wave is a batch, and every batch has a release note over Verhaegen's signature with the breed, the count, the
+target and the gate. A scout goes round the control first, as the protocol requires, and the release names the gate
+the fewest guns cover. What comes back is written up as an adverse event in the same even hand, and the next release
+answers it. A gate that held costs more in the next note, and a wall that held gets bursters, bred from the small
+biter's line with the acid gland grown in until the animal is a running sac that cannot bite and goes off where it
+stops, or where it is killed. Mines on the way in get sweepers. The stomper, which the Gleba pens produced, walks over
+the wall the bursters were meant for. When a trial site has grown, Verhaegen signs a carrier dispatch, and a
+big-bodied animal in violet, lit so that the technicians can follow it, walks a dozen of the stock to a wild nest
+field farther out and founds a second site there. The company does not land again while a site stands. It has never
+written to the Authority, and the one address it keeps is on Gleba.
+:::
+
 Synthexis is a bioengineering company. It does not mine or build factories. It takes over a field of biter spawners,
-feeds it on your pollution and breeds biters of its own, tinted green and yellow. Its waves are planned: they pick a way
-in, go for what keeps your turrets firing, and change after every attack that fails.
-
-::: {.lore kicker="From the archive" title="The culture" faction="synthexis"}
-Where Synthexis began, the company does not say. Its interests are easiest to see on Gleba, where everything alive is
-already somebody's product, grown fast and spoiling faster. It holds leases in the swamps, and its technicians study
-the pentapods there. Its methods suit Gleba's biology: a Synthexis culture on any other world still stands on a blot
-of Gleba soil, with yumako and jellystem kept warm by a heating tower beside its clinic.
-
-What it wants from Nauvis is the swarm. No other world has biters that breed by themselves, feed on a factory's smoke
-and change as they feed. To a bioengineer that is a laboratory that runs itself, with the engineer supplying the
-pressure free of charge. Synthexis lands when the wild biters have evolved far enough to be worth breeding from, and
-its pod sets down where the spawners are thick.
-
-The field's spawners become incubators, each fed from a biochamber beside it, and technicians walk the rounds between
-them. Creep spreads from the tumors and drinks the pollution from the air. The biters that come out are striped green
-and yellow, and they follow a plan.
-
-::: {.pullquote cite="A survivor's log"}
-The wall held, and the next wave came for the wall.
-:::
-
-A scout circles the engineer's wall at a distance and leaves. The wave that follows comes in at another gate and walks
-past the turrets it has no need to fight, toward the poles and inserters behind them. Where a wall held, the next wave
-brings bursters bred for that wall. A grown culture sends a carrier farther out to start another.
-:::
+feeds it on your pollution and breeds biters of its own, tinted green and yellow. Its waves pick a way in, go for what
+keeps your turrets firing, and change after every attack that fails.
 
 ![A Synthexis clinic beside its heating tower, on its blot of Gleba soil.](media/vistas/synthexis-clinic.jpg)
 
@@ -41,12 +80,12 @@ buildings, never within reach of your artillery. Up to {{< var synthexis.pens >}
 Synthexis incubators, each with bred biters and worms beside it. The landing is announced in chat and marked on your
 map.
 
-Synthexis is at peace with the wild biters: they leave each other alone. It also keeps a lasting truce with Grubstake,
+Synthexis is at peace with the wild biters, and they leave each other alone. It also keeps a lasting truce with Grubstake,
 whose pollution it lives on.
 
 ## The culture
 
-A culture is the incubators and everything that keeps them breeding.
+A culture (a trial site, in the company's own protocol) is the incubators and everything that keeps them breeding.
 
 - **Synthexis incubator.** A spawner taken over by Synthexis. It holds up to {{< var synthexis.pen_cap >}} bred biters
   and drops pheromone glands when destroyed.
@@ -57,7 +96,7 @@ A culture is the incubators and everything that keeps them breeding.
 - **Synthexis tumor.** Spreads Synthexis creep. Nothing can be built on creep. An incubator cut off from the creep
   starves and goes back to the wild after {{< var synthexis.starve_min >}} minutes, taking its biters with it.
 - **Synthexis clinic.** Makes its breeds stronger over time (see [What it breeds](#sec-breeds)).
-- **Synthexis heating tower** and **Synthexis lamp**: the culture's furniture.
+- **Synthexis heating tower** and **Synthexis lamp.** The culture's furniture, with no part in its waves.
 
 ![A Synthexis culture: incubators on the creep, biochambers on their pads beside them, and the bred biters at home.](media/clips/synthexis-creep.jpg)
 
@@ -87,7 +126,7 @@ behind the wild biters' and never gets more than {{< var synthexis.lead >}} ahea
 climb stops: its incubators breed as at evolution {{< var synthexis.stock_evo >}} at most until a new clinic lands
 {{< var synthexis.clinic_wait_min >}} minutes later.
 
-**The bursters.** A burster is a fast biter that does not bite: at a wall or turret it bursts, damaging what stands
+**The bursters.** A burster is a fast biter that does not bite. At a wall or turret it bursts, damaging what stands
 nearby, and it also bursts wherever it is killed. A big burster is sent at one of the turrets covering a wave's way in.
 At the turret, or at a wall on the way, it bursts and damages every turret nearby. Killed short of them, only its core
 goes off, over half the reach. Synthexis develops it once your walls have held its waves
@@ -96,7 +135,7 @@ goes off, over half the reach. Synthexis develops it once your walls have held i
 **The wind-up.** A burster that reaches its target stops where it stands and swells, glowing acid green and pulsing
 faster, while a ring on the ground closes in from the edge of its blast. A burster bursts
 {{< var synthexis.cinder_windup_s >}} seconds after it stops, a big burster {{< var synthexis.big_windup_s >}}
-seconds after. Nothing harms it meanwhile, so it always bursts whole: to stop it, kill it before it gets there.
+seconds after. Nothing harms it meanwhile, so it always bursts whole; to stop it, kill it before it gets there.
 
 Only the spore spitter can hit a flying unit. Every breed has a card at the end of this chapter, and its full numbers
 are in the [Reference](reference.qmd#sec-units).
