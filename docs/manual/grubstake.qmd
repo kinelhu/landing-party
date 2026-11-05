@@ -48,11 +48,10 @@ The company's skill is in its reading of the Salvage Convention. Article 4 lets 
 leaves unattended, and Grubstake reads "unattended" with a generosity the drafters did not intend. A patch of ore no
 drill is working is unclaimed ground. A machine that stands where no gun covers it has, in Pell's deposition to the
 Authority, been abandoned by an operator who could not be bothered to guard it. Marit Holm runs the Nauvis yard after
-dark, and her trucks go out at dusk under headlights and come home at dawn with assemblers in the trunk, taken apart
-where they stood and a ghost of each left for the operator's robots to rebuild. A hauler parks beside a belt no turret
-reaches and lifts the belt's load, the dearest items first. A buggy strings pylons out to an unguarded pole and clamps
-on a tap that the company's books carry as an unmetered connection. The rig that tunnels under the operator's chests
-is Holm's too, and the hands that come up through it empty them and go back down.
+dark. Her trucks go out at dusk under headlights and come home at dawn with assemblers in the trunk, taken apart where
+they stood. A hauler will park beside a belt no turret reaches and lift whatever is dearest off it, and a buggy will
+string pylons out to an unguarded pole and clamp on a tap that the company's books carry as an unmetered connection.
+The rig that tunnels under the operator's chests is Holm's too.
 
 ::: {.pullquote cite="A. Pell, Managing Partner, deposition to the Authority, file 209/2"}
 Unattended means unattended. Nowhere does the Convention ask by whom.
@@ -60,15 +59,14 @@ Unattended means unattended. Nowhere does the Convention ask by whom.
 
 Nauvis came onto Pell's list by the oil. The tender *Assay* set down on ore within sight of the operator's first
 refinery, with a radar, two drills and a few guards, and Nadia Szabo filed a Notice of Intent to Claim from the ground
-before the Registry knew she had landed; *Tailings* brought the first camp down behind it, and the Nauvis book of the
-Register has been in her hand since. Each stake she plants carries a lamp that burns amber while the notice runs and
-red when it is nearly out, and a patch the operator has not answered by then gets her drills. The camps stand among
-the swarm's nests with a fence round the pad and nothing else, which the Authority's inspectors could not account for
-until Dr. Ness, the one scientist on the company's payroll, was found to have built an antenna from a gland that keeps
-the fauna off anything of Grubstake's. The company calls this the Arrangement. No paper exists, and the waves the
-camps' own smoke draws pass them by and fall on the operator. What Grubstake wants it will also buy: a receipt from
-its trade post reads "consideration received", and for as long as the consideration lasts, nothing of the operator's
-goes missing.
+before the Registry knew she had landed. *Tailings* brought the first camp down behind it, and the Nauvis book of the
+Register has been in her hand since. Each stake she plants carries a lamp that burns while the notice runs, and what
+the operator has not answered for by the time it goes out, her drills take. The camps stand among the swarm's nests
+with a fence round the pad and nothing else. The Authority's inspectors could not account for that until Dr. Ness, the
+one scientist on the company's payroll, turned out to have built an antenna from a gland that keeps the fauna off
+anything of Grubstake's. The company calls this the Arrangement, and no paper exists. What Grubstake wants it will
+also buy. A receipt from its trade post reads "consideration received", and while the consideration lasts, Holm's
+trucks stay in the yard.
 :::
 
 Grubstake is a mining company that lives off your factory. It carries off machines, skims belts, taps power lines, robs
