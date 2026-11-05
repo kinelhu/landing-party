@@ -4,6 +4,7 @@
 -- spared, and burns out. Striking a corporation is an attack: Serenity counts itself provoked.
 local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
+local orbital = require("__landing-party__.scripts.orbital")
 
 local strike = {}
 
@@ -42,17 +43,13 @@ local function fire(st)
   end)
   local queue = {}
   for _, t in ipairs(found) do
-    for _ = 1, threat.shells_for("lp-orbital-projectile", t) do table.insert(queue, t) end
+    for _ = 1, threat.shells_for("lp-orbital-projectile", t) do table.insert(queue, {t.position.x, t.position.y}) end
   end
-  storage.orbitals = storage.orbitals or {}
-  if #queue > 0 then
-    table.insert(storage.orbitals, {surface = s.index, force = e.force.name, queue = queue, i = 1})
-  end
+  -- Painted, its platform's shadow over it, then its lances (orbital.player: Kessler-Hayashi's strike's look).
+  orbital.player(s, e.force.name, e, queue, RADIUS)
   storage.strikes_fired = (storage.strikes_fired or 0) + 1
   storage.strike_targets = (storage.strike_targets or 0) + #found
   shared.reply(e.force, c, {"lp.strike", #found, #queue, string.format("[gps=%d,%d,%s]", c.x, c.y, s.name)})
-  s.create_entity{name = "big-explosion", position = c}
-  e.destroy()
 end
 
 function strike.tick(tick)

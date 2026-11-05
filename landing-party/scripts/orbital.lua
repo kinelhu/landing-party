@@ -93,15 +93,10 @@ end
 
 -- A strike begun: painted from `spotter` for PAINT, then its shells along `along` through `center`; the platform's shadow
 -- and the alert. dev: a forced one (orbital.force), its own record in place of a siege's.
-function orbital.start(b, s, fs, center, along, spotter, dev)
-  storage.kh_strikes = storage.kh_strikes or {}
-  table.insert(storage.kh_strikes, {base = b.id, surface = s.index, force = b.force, center = center,
-    along = along, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint", dev = dev})
-  b.strikes = (b.strikes or 0) + 1
-  -- Its platform's shadow (orbital.shadow_tick moves it), and the alert (ops' rule: under the notice setting).
-  -- (Its own list: a strike called off or done leaves its list while its shadow still crosses.)
-  local sh = {objs = {}, dir = storage.kh_strikes[#storage.kh_strikes].along, center = center, from = game.tick,
-    at = game.tick + PAINT}
+-- Its platform's shadow (orbital.shadow_tick moves it), over its point `lead` ticks on.
+-- (Its own list: a strike called off or done leaves its list while its shadow still crosses.)
+local function shadow(s, center, along, lead)
+  local sh = {objs = {}, dir = along, center = center, from = game.tick, at = game.tick + lead}
   -- (A silhouette, its nose along its course, over all it crosses: three flat strips read as dark rectangles, the user,
   -- 2026-11-04, the strike's stills.)
   sh.objs[1] = rendering.draw_sprite{sprite = "lp-platform-shadow", target = {center[1], center[2]}, surface = s,
@@ -111,6 +106,14 @@ function orbital.start(b, s, fs, center, along, spotter, dev)
     x_scale = 1 + SHADOW_SPREAD, y_scale = 1 + SHADOW_SPREAD}
   storage.kh_shadows = storage.kh_shadows or {}
   table.insert(storage.kh_shadows, sh)
+end
+
+function orbital.start(b, s, fs, center, along, spotter, dev)
+  storage.kh_strikes = storage.kh_strikes or {}
+  table.insert(storage.kh_strikes, {base = b.id, surface = s.index, force = b.force, center = center,
+    along = along, spotter = spotter, fire_at = game.tick + PAINT, k = 0, phase = "paint", dev = dev})
+  b.strikes = (b.strikes or 0) + 1
+  shadow(s, center, along, PAINT)
   if shared.notices_on() then
     for _, f in ipairs(fs) do
       for _, p in pairs(f.players) do
@@ -139,19 +142,37 @@ function orbital.force(b, at)
   trace(b, string.format("forced at %.0f,%.0f; its spotter paints it for %d s", center[1], center[2], PAINT / 60))
 end
 
+-- The player's strike (strike.lua; the user, 2026-11-05, on the trailer: "Any reason the player strike looks so
+-- underwhelming compared to" Kessler-Hayashi's): its beacon the spotter, painted PLAYER_PAINT, the platform's shadow over
+-- it as it falls, then its shells in the same lances, flashes and scorches, nearest its beacon first, a pair each PACE.
+-- `at`: its points in order, a point once a shell. Not called off: the beacon is spent as it calls.
+local PLAYER_PAINT = 4 * 60
+function orbital.player(s, force, beacon, at, reach)
+  local c = beacon.position
+  storage.kh_strikes = storage.kh_strikes or {}
+  -- (Its shadow's course: fixed, there is no camp to come from.)
+  local along = math.pi / 4
+  table.insert(storage.kh_strikes, {surface = s.index, force = force, center = {c.x, c.y}, along = along, spotter = beacon,
+    fire_at = game.tick + PLAYER_PAINT, paint_for = PLAYER_PAINT, k = 0, phase = "paint", player = true, preset = at,
+    reach = reach})
+  shadow(s, {c.x, c.y}, along, PLAYER_PAINT)
+end
+
 local function paint(st, s, tick)
-  local left = math.max(0, st.fire_at - tick) / PAINT
+  local left = math.max(0, st.fire_at - tick) / (st.paint_for or PAINT)
   -- The uplink: from the spotter straight up, for its platform.
   if st.spotter.valid then
     local sp = st.spotter.position
     s.create_entity{name = "lp-orbital-lance", position = sp, source_position = {sp.x, sp.y - LANCE_H}, target_position = sp,
       duration = 31}
   end
-  rendering.draw_line{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.8}, width = 2, from = st.spotter,
-    to = st.center, surface = s, time_to_live = 31, dash_length = 1, gap_length = 0.5}
+  if st.spotter.valid then
+    rendering.draw_line{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.8}, width = 2, from = st.spotter,
+      to = st.center, surface = s, time_to_live = 31, dash_length = 1, gap_length = 0.5}
+  end
   rendering.draw_circle{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.9}, radius = 2 + 10 * left, width = 3,
     filled = false, target = st.center, surface = s, time_to_live = 31}
-  rendering.draw_circle{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.35}, radius = REACH, width = 1,
+  rendering.draw_circle{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.35}, radius = st.reach or REACH, width = 1,
     filled = false, target = st.center, surface = s, time_to_live = 31, draw_on_ground = true}
 end
 
@@ -254,7 +275,7 @@ function orbital.tick(tick)
       trace(b, "its siege is over: called off")
       table.remove(storage.kh_strikes, i)
     elseif st.phase == "paint" then
-      if not st.spotter.valid then
+      if not st.spotter.valid and not st.player then
         if b then trace(b, "its spotter is down: called off"); b.strikes_off_called = (b.strikes_off_called or 0) + 1 end
         if b then achievements.spotter(game.forces[b.force]) end
         table.remove(storage.kh_strikes, i)
@@ -264,7 +285,18 @@ function orbital.tick(tick)
         -- (A forced one, /lp strike, tells no siege: its assault went in on a strike it had not called.)
         if not st.dev and b and b.op and b.op.kind == "siege" then b.op.strike_falling, b.op.step_at = tick, tick + 1 end
         if st.dev and b and b.dev_strike then b.dev_strike.falling = tick end
-        st.queue, st.k = targets(st, s, b), 1
+        if st.player then
+          st.queue = {}
+          for _, p in ipairs(st.preset) do st.queue[#st.queue + 1] = {pos = p} end
+          -- Its beacon spent as its first shell falls.
+          if st.spotter.valid then
+            s.create_entity{name = "big-explosion", position = st.spotter.position}
+            st.spotter.destroy()
+          end
+        else
+          st.queue = targets(st, s, b)
+        end
+        st.k = 1
         if b then b.strike_guns = (b.strike_guns or 0) + (st.guns or 0) end
         if b then trace(b, string.format("falls: %d shells, on the lane and the %d guns covering it", #st.queue, st.guns or 0)) end
       elseif tick % 30 == 0 then

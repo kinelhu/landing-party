@@ -42,9 +42,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `planner` | 338 | rd | base |  |  |  |  |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
+| `orbital` | 320 | achievements, threat | control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `jumper` | 314 | base, ops, threat, tune, war | control, dev |  | 60, 600 |  |  |
 | `intel` | 289 | know, threat | ops |  |  |  |  |
-| `orbital` | 288 | achievements, threat | control, dev, siege |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `threat` | 262 | unit_prior | attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, war |  |  |  |  |
@@ -84,8 +84,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `blocks` | 76 | (leaf) | base, layout |  |  |  |  |
 | `jammer` | 75 | lights | control, ops |  |  |  | jam_beams, jammed, jammers |
 | `map` | 71 | chart, names, standing | control |  | 600 |  |  |
-| `strike` | 71 | threat | control |  | 60 |  | orbitals, strike_targets, strikes, strikes_fired |
 | `marker` | 70 | pact | control |  | 60 |  | breakers, claim_markers, pact_breaks, pact_suspended_till |
+| `strike` | 68 | orbital, threat | control |  | 60 |  | strike_targets, strikes, strikes_fired |
 | `pods` | 64 | (leaf) | cell, control, faction, farm, siege, war |  | 60 |  | pods |
 | `bait` | 59 | (leaf) | control |  | 30 |  | baits, baits_called |
 | `rng` | 56 | (leaf) | army, base, farm, landfx, layout, names, tactics, war |  |  |  |  |

@@ -67,10 +67,10 @@ digraph ai {
     "strip" [label="strip\n237 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
-    "strike" [label="strike\n71 lines", width=0.88, fillcolor="#eef2f7"];
+    "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
     "dome" [label="dome\n407 lines", width=1.25, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n288 lines", width=1.12, fillcolor="#eef2f7"];
+    "orbital" [label="orbital\n320 lines", width=1.16, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n110 lines", width=0.92, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];
@@ -270,6 +270,7 @@ digraph ai {
   "stance" -> "tune";
   "standing" -> "ops";
   "strategy" -> "know";
+  "strike" -> "orbital";
   "strike" -> "threat";
   "strip" -> "studies";
   "studies" -> "creep";

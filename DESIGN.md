@@ -2750,7 +2750,8 @@ product is what the technology's research trigger asks for, craft-item); consuma
   character with no player, set shooting along six held medium biters 8 to 23 tiles out: 3 slugs, none left standing.
 - **Orbital strike** (Serenity, one beacon; after the rocket silo): a strike beacon the player places on power (an
   orbital beacon, 10 processing units, 20 steel each), charging 50 MJ at up to 5 MW; charged, it queues Serenity's own
-  orbital shells (`storage.orbitals`, war.lua's barrage; as many a target as its health takes) on every nest, worm and
+  orbital shells (as many a target as its health takes; staged as Kessler-Hayashi's strike since 0.2.210, `orbital.player`;
+  Synthexis's culture among its targets since 0.2.208) on every nest, worm and
   corporation building within 60, walls, gates and pylons spared, and burns out (`scripts/strike.lua`; notice
   `lp.strike`). Striking a corporation provokes it. Scenario `strike`: 45 tiles out from a Serenity camp, 12 targets,
   43 of its buildings lost (the bomblets' splash counts). Its entity count within 60 rose meanwhile (it builds): its
@@ -3037,7 +3038,13 @@ Decisions: see "Operations" above.
   cannon built on a space platform, or an array of them, for stronger strikes with a long recharge: the strike's power
   from what the player has put in orbit. Questions: a platform in orbit over the surface as the condition, the
   ammunition it uses, how the target is chosen (a remote, like artillery's), the telegraph Kessler-Hayashi's own strike
-  already has, and whether a strike on a corporation provokes it (it does now).
+  already has, and whether a strike on a corporation provokes it (it does now). The telegraph is in (0.2.210, the user,
+  2026-11-05: the player's strike "so underwhelming compared to" Kessler-Hayashi's): `orbital.player` paints it from
+  the beacon for 4 s with the platform's shadow crossing, then its shells fall in the same lances, flashes and
+  scorches, nearest the beacon first, a pair every 20 ticks. With the cannon on a platform (the user, the same day:
+  "give the shadow of the platform they built holding the cannon that is firing"), its shadow could be drawn from that
+  platform's own tiles (its surface's tile outline, as one sprite rendered at load or polygons) instead of
+  Kessler-Hayashi's silhouette. Not built.
 - **The siege lab's next steps (the user, 2026-10-31), in order:** (1) why two walls held two trials of one seed with no wave ("none fits" against honest prices?); (2) `tech=` on the lane, damage and speed research for lasers, bullets and fire together at early, mid and late levels; (3) a second lane matrix at mid research: turret types (lasers, guns, flamethrowers, rockets, tesla), density (a laser every 3, 6, 9 tiles), shapes with layers (saw and bastion with two walls; two walls, mines and flamethrowers), a maze (`shape=maze`: layers open at alternate ends, the last closed; 3 and 5 layers; its waves' path inside against the straight line through), one and two walls at early and late research; (4) the wave cap by the colony, read off its late-research rows; (5) the lab for the corporations: Kessler-Hayashi's mortar siege against the lane (how deep guns must stand to outrange it), and a soft target beside a fort for Grubstake (it should take the outpost and leave the wall). (6, the user, 2026-10-31: think modular, Synthexis's lessons for the other factions) Shared so far: attempt.lua (one record of an attack, read from outside), tactics.lua (attempt memory, the menu's weighing and pick, the ladder, specialists up where they broke nothing), the lab for any attacker, the contract (scripts/contract.py). Next for the corporations, each measured in the lab: (a) prices learned from losses, Kessler-Hayashi's fixed turret weights (ops.weigh: a weight a turret type, scaled by the player's research; a raid 3.5 units a point plus 4, set against gun turrets) as the prior, moved by the killers its operations record, as know.learn_price moves Synthexis's; (b) walls in a raid's cost: its defence counts turrets alone, and a raid that must break a wall under fire pays far more (Synthexis's cost map prices standing at a wall); (c) its raid and assault sized on what got in near there (tactics.best_size) before its formula.
 - **Rival corporations (idea, user 2026-10-13, for later):** several landing parties at once, each a
   corporation with a humorous dystopian name, at war with each other as well as the player, for the same
