@@ -1424,13 +1424,25 @@ end
 -- The landing pad: the first hub's two cells (0,0) and (1,0) as one walled area, the lander at its centre.
 -- Returns the lander's position and the pad, or nil when nothing fits near pos.
 -- Where a landing at pos would set its lander (layout.land's search, nothing placed): a cargo pod is sent there first.
-function layout.find_pad(surface, pos)
+-- pods: spots where cargo pods will stand (optional): ground whose ring holds one counts as taken, as it will be once
+-- they are down (a pod's container is no clearable thing). landfx.lua asks it so, to draw the hull's fall onto the pad
+-- the landing will take: its pod and escorts push it off their own pad (15 tiles on seed 12345).
+local POD_BOX = {-0.5, 0, 0.5, 1.3}   -- the base game's cargo-pod-container collision box
+local function holds_pod(pods, x0, y0)
+  for _, p in ipairs(pods or {}) do
+    if p[1] + POD_BOX[3] > x0 - R + 0.1 and p[1] + POD_BOX[1] < x0 + blocks.PAD_W + R - 0.1
+      and p[2] + POD_BOX[4] > y0 - R + 0.1 and p[2] + POD_BOX[2] < y0 + S + R - 0.1 then
+      return true
+    end
+  end
+end
+function layout.find_pad(surface, pos, pods)
   for r = 0, 80, 3 do
     local steps = math.max(1, math.floor(2 * math.pi * r / 6))
     for k = 0, steps - 1 do
       local a = 2 * math.pi * k / steps
       local x0, y0 = math.floor(pos[1] + r * math.cos(a)) - 20, math.floor(pos[2] + r * math.sin(a)) - 9
-      if layout.area_free(surface, x0, y0, blocks.PAD_W, S, 12) then
+      if not holds_pod(pods, x0, y0) and layout.area_free(surface, x0, y0, blocks.PAD_W, S, 12) then
         return {x0 + blocks.PAD_W / 2 + 0.9, y0 + S / 2 - 0.6}
       end
     end

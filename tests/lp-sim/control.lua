@@ -3537,13 +3537,19 @@ scenarios.dev = function()
     lp("debug_tune", {raids_off = true})
     S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
-    local before = lp("bases")
+    S.before = lp("bases")
     lp("dev", {"land", "grubstake", tostring(params.distance)}, {0, 0})
+  end)
+  -- (/lp land comes by pod as the faction's own landings do, since 2026-11-04: its pod 7 s, its ground waited for first.)
+  schedule(120 + 60 * 60, function()
     for _, id in ipairs(lp("bases")) do
       local new = true
-      for _, o in ipairs(before) do if o == id then new = false end end
+      for _, o in ipairs(S.before) do if o == id then new = false end end
       if new then S.g2 = id end
     end
+    local fx = S.g2 and lp("stats", S.g2).landfx
+    -- (landfx.lua: the hull drawn falling onto its spot, its crash and pods after.)
+    check("dev: /lp land came by pod, its hull drawn falling", fx ~= nil and fx.descended == true, serpent.line(fx))
   end)
   local function toward(id, d)
     local o = lp("stats", id).origin
@@ -12590,6 +12596,81 @@ scenarios.podland = function()
     check("podland: it landed once they touched down", S.land_at and S.pod_at and S.land_at - S.pod_at >= 300,
       string.format("pod %s, landing %s", tostring(S.pod_at), tostring(S.land_at)))
     check("podland: no remnants left", rem == 0, tostring(rem))
+  end)
+end
+
+-- Landfx (the user, 2026-11-04, on the trailer's Grubstake landing: "the lack of animation is a little jarring. Perhaps we
+-- could add some falling cargo pods dropping with the crashed lander?"): a landing's look, drawn only (landfx.lua). A
+-- direct Grubstake landing: its crash at once (blast, scorch, flash) and six cargo pods falling round it over the next
+-- seconds, each bursting where it falls. A Serenity landing by pod, as the faction's own come: its hull's shadow and fall
+-- timed to its lander and steered onto where it stands, then its own crash and pods. Nothing left in flight, no
+-- explosion or projectile entity while its pods fall (the planner's free-ground test refuses ground holding one), and the
+-- landings as they were: the direct one's lander in its call's tick, the queued one 420 ticks after its pod. Each
+-- settlement's fingerprint at the end (LP_MIX=off: none of it drawn) to diff on against off: the look changes nothing.
+scenarios.landfx = function()
+  local off = params.mix == "off"
+  schedule(30, function() lp("debug_tune", {ops_off = true, army_off = true, landfx_off = off or nil}) end)
+  schedule(120, function()
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+    local st = S.g and lp("stats", S.g)
+    S.g_landed, S.g_fx, S.g_tick, S.g_at = st and st.landed, st and st.landfx, game.tick, st and st.origin
+    S.n0 = #lp("bases")
+    lp("arrive_async", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+  end)
+  S.ents, S.names = 0, {}
+  for t = 121, 120 + 40 * 60 do
+    schedule(t, function()
+      if not S.pod_at and surface().count_entities_filtered{name = "cargo-pod"} > 0 then S.pod_at = game.tick end
+      -- (After the clearing's own explosion, base.clear_landing's, is over: 114 ticks.)
+      if S.g_at and t >= 240 and t <= 600 then
+        for _, e in pairs(surface().find_entities_filtered{position = S.g_at, radius = 40, type = {"explosion", "projectile"}}) do
+          -- (Bullets' hits are the corner turrets', on and off alike.)
+          if e.name ~= "explosion-hit" then S.ents = S.ents + 1 end
+          S.names[e.name] = (S.names[e.name] or 0) + 1
+        end
+      end
+      if not S.land_at and #lp("bases") > S.n0 then
+        S.land_at = game.tick
+        local ids = lp("bases")
+        S.s = ids[#ids]
+      end
+    end)
+  end
+  schedule(END - 60, function()
+    local g, sr = lp("stats", S.g), S.s and lp("stats", S.s)
+    for _, st in ipairs({g, sr}) do
+      if st then
+        info(string.format("landfx fingerprint %s: origin %d,%d parts %d made %d gens %d turrets %d pylons %d drills %d hubs %d units %s",
+          st.corp, st.origin.x, st.origin.y, st.parts, st.made, st.gens, st.turrets, st.pylons, st.drills or -1, st.hubs,
+          tostring(st.units_built)))
+      end
+    end
+    info(string.format("landfx: direct landing %s at %s (called %s): %s; queued: pod %s, landed %s: %s; entities %d %s",
+      tostring(S.g), tostring(S.g_landed), tostring(S.g_tick), serpent.line(g and g.landfx), tostring(S.pod_at),
+      tostring(S.land_at), serpent.line(sr and sr.landfx), S.ents, serpent.line(S.names)))
+    check("landfx: the direct landing landed in its call's tick", S.g ~= nil and S.g_landed == S.g_tick, tostring(S.g_landed))
+    check("landfx: the queued landing came 420 ticks after its pod (as podland)", S.pod_at and S.land_at
+      and S.land_at - S.pod_at >= 400 and S.land_at - S.pod_at <= 440, string.format("pod %s, lander %s", tostring(S.pod_at), tostring(S.land_at)))
+    check("landfx: no explosion or projectile entity while its pods fell", S.ents == 0, tostring(S.ents))
+    if off then
+      check("landfx: off, nothing drawn", g.landfx == nil and sr and sr.landfx == nil, serpent.line(g.landfx))
+      return
+    end
+    -- (Crash: a massive and five big explosions, its flash and light, four scorch marks, sixteen puffs of dust, all
+    -- drawn; nothing made. Scorch corpses and trivial smoke made the fights of rail and herd turn out otherwise.)
+    check("landfx: the direct landing crashed at once", S.g_fx ~= nil and S.g_fx.tick == S.g_landed and S.g_fx.made == 0
+      and S.g_fx.drawn >= 28, serpent.line(S.g_fx))
+    check("landfx: six pods fell round it, each its own impact", g.landfx and g.landfx.fell == 6 and g.landfx.drawn >= 28 + 6 * 10
+      and g.landfx.made == 0, serpent.line(g.landfx))
+    -- (Its hull drawn 120 ticks before its lander, onto the pad it took: within a tile and a half of it. That pad foreseen
+    -- when its pod was sent (layout.find_pad told where its pods will stand): asked again once they stood, it moved under
+    -- 2 tiles; aimed at its pod's own pad, it lurched 15 in the last quarter second.)
+    local fx = sr and sr.landfx
+    check("landfx: the queued landing's hull fell onto its lander", fx and fx.descended == true and fx.hull_at
+      and S.land_at - fx.hull_at >= 110 and S.land_at - fx.hull_at <= 130 and fx.hull_off <= 1.5 and fx.steered <= 2
+      and fx.fell == 6,
+      string.format("lander %s, %s", tostring(S.land_at), serpent.line(fx)))
+    check("landfx: nothing left in flight", lp("landfx_active") == 0, tostring(lp("landfx_active")) .. " records")
   end)
 end
 

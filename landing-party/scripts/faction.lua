@@ -12,6 +12,7 @@ local firemap = require("__landing-party__.scripts.firemap")
 local base = require("__landing-party__.scripts.base")
 local layout = require("__landing-party__.scripts.layout")
 local pods = require("__landing-party__.scripts.pods")
+local landfx = require("__landing-party__.scripts.landfx")
 local ops = require("__landing-party__.scripts.ops")
 local army = require("__landing-party__.scripts.army")
 local rd = require("__landing-party__.scripts.rd")
@@ -672,7 +673,14 @@ local function landing_jobs()
       if job.pod then
         job.site, job.pod_at = pos, game.tick
         -- Escorts beside it, for the look (a landing party, not a crate).
-        for _, d in ipairs({{-9, 6}, {9, 6}}) do pods.send(surface, {at[1] + d[1], at[2] + d[2]}, shared.CORPS[corp].force) end
+        local spots = {{at[1], at[2]}}
+        for _, d in ipairs({{-9, 6}, {9, 6}}) do
+          spots[#spots + 1] = {at[1] + d[1], at[2] + d[2]}
+          pods.send(surface, spots[#spots], shared.CORPS[corp].force)
+        end
+        -- Its hull's shadow and fall, timed to the landing, onto the pad it will take once its pods stand on this one
+        -- (landfx.lua: drawn only).
+        landfx.descent(surface, pos, layout.find_pad(surface, pos, spots) or at, corp, game.tick + landfx.AFTER_POD)
         return
       end
       job.opts.at = pos
@@ -886,6 +894,8 @@ end
 
 -- Base reports exports through this hook (base cannot require this module: it is required by it).
 base.on_export = faction.export
+-- Where a landing by pod will stand, asked again once its pods are down (landfx.lua: its hull steers onto it).
+landfx.locate = layout.find_pad
 
 -- What follows an asynchronous landing (faction.request), by kind.
 after.cadence = function(job, b)
@@ -902,6 +912,15 @@ after.hq = function(job, hq)
   else
     d.consolidating = game.tick + 5 * 3600
   end
+end
+after.dev = function(job, b)
+  -- /lp land (dev.lua): its parts, and the player told where.
+  local p = job.dev_player and game.get_player(job.dev_player)
+  local corp = job.opts and job.opts.corp or shared.DEFAULT_CORP
+  local msg = b and string.format("%s landed: %d [gps=%d,%d,%s]", shared.CORPS[corp].name, b.id, b.origin.x, b.origin.y,
+    game.surfaces[b.surface].name) or "no site to land on at that distance"
+  if b then b.parts = (b.parts or 0) + (job.dev_parts or 0) end
+  if p then p.print(msg) else log("lp dev: " .. msg) end -- notice-ok: the dev tool's reply to its caller
 end
 after.phases = function(job, b)
   local phases = storage.phases

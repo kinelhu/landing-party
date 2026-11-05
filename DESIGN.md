@@ -39,6 +39,7 @@ document still says Serenity where it records history.
 | The whole system's balance (the user, 2026-10-23: "we now need to think and work on the balance of the whole system"): every faction on one map with a stand-in for the player (`system` sim, two hours, four seeds), judged against five targets (survive, even, shapes, fights, pressure) by `scripts/system_report.py` into `docs/system.md` | measuring 0.2.2 | `system` |
 | Player army, fifth unit: the flamethrower trooper (the user, 2026-10-24: "tackle player units too"; the arena had every unit of the player's losing to biters from evolution 0.8 and to the big breeds): a flamethrower stream, splash 2.5 on enemies only (1 a lick), its own burn on what it hits (4 a second for 4 seconds; vanilla's fire sticker, 10 for 30 on every target, had it beating rifles +95 and tanks +51), no burning ground (it would burn the player's own troops), range 13, bandwidth 2: it beats swarms and infantry, loses to armour, sappers, the Scorcher and fliers; ordered at the barracks (heavy armour, flamethrower, fuel) from command bandwidth 3 (now after vanilla's flamethrower) | built 0.2.5 | arena |
 | Trailer beats (film instrument): the player's muster and battle against a Grubstake camp, Kessler-Hayashi's siege on Grubstake, a 200-biter Synthexis breach, an armed camp's orbital strike on a player wall, at fixed minutes, their ticks and centres to trailer-beats.txt | built 2026-11-04 | `trailer` (by hand, not in the regression lists) |
+| A landing's look (the user: "falling cargo pods dropping with the crashed lander"): a landing by pod draws its hull falling onto its pad with its shadow; every landing its crash (blasts, flash, scorch, dust) and six cargo pods streaking down round it, each bursting. Drawn only (no entity the planner sees); `/lp land` now comes by pod as the faction's own landings do (`now` for at once) | built 2026-11-04 | `landfx` (two), `dev`; clip `media/trailer/landing-fx.mp4` |
 | Kessler-Hayashi's Heavy tank (lp-aegis) fires a rail cannon (the user: "Kessler has basically two types of laser tanks. Seems redundant?"): one slug of 38 every 60 ticks at 16, the railgunner's beam, its own damage type (lp-rail) that no armour resists (hulls are built against physical and explosion: at 150 physical it beat all but fliers, at 80 still its counters); it beats armour (tanks, the Laser and Lightning tanks, the Scorcher, the walker), is even with the battle tank and loses to rocket troopers, flamethrower troopers, shotgun swarms and fliers; the Laser tank keeps the splitting beam, the Lightning tank the arc: one weapon each | built 0.2.5 | arena |
 | A crew's occupied site is new work's failure (three and it is given up; a rebuild still waits): a site beside the player's outpost was tried for ever and, the planner planning only with its queue empty, Grubstake's camp sat on 6,600 parts (the system sim's natural opening, 2026-10-24); a unit just researched comes off the line first, once a settlement (the tree bought the Tesla, the counter matrix cut it to a quarter, and none was built) | built 0.2.5 | `crew`, `occupy`, `unitnode` |
 | Plain names everywhere a player reads (the user, 2026-10-24: the field guide had units under their old names): the research messages said Aegis, Prism and Tesla tanks, Lances, Warden armour and Line troopers, and gave the heavy tank a laser cannon after it took the rail; the Scorcher is the flame tank; the guide names a unit's node by the unit's own locale name, so a rename reaches it. In the system sim Grubstake's prospecting waits no longer on a chart: headless runs chart nothing (a force.chart left the run byte for byte the same), so the sim waives the check as the prospecting tests do; it claims on all four seeds | built 0.2.6 | `system` |
@@ -1411,8 +1412,22 @@ the base game alone). What it brings so far:
   site first (`faction.arrive` site only, `layout.find_pad`: where the lander would stand, nothing placed), sends a pod
   there and two escorts beside it, and lands where they touch down (`opts.at`); a pod lost or later than 20 s, it
   lands all the same. The remnants are cleared 3 s after each touchdown. Scenario `podland`: three pods, the landing
-  420 ticks after them, no remnants; `podland off` (`pods_off`): at once, as before. Direct landings (the tests',
-  `/lp land`) stay immediate.
+  420 ticks after them, no remnants; `podland off` (`pods_off`): at once, as before. Direct landings (the tests'
+  remote `arrive`, `/lp land <corp> [tiles] now`) stay immediate; `/lp land` comes by pod since 2026-11-04.
+- **A landing's look** (`scripts/landfx.lua`, prototypes `descent.lua`; the user, 2026-11-04, on the trailer's Grubstake
+  landing: "the lack of animation is a little jarring. Perhaps we could add some falling cargo pods dropping with the
+  crashed lander?"). Drawn only: nothing of the settlement, its lander or its timings changes. A landing by pod draws its
+  lander's hull (the crash-site ship in its corporation's colours, on three of Space Age's pod thruster flames) falling
+  for the last 2 s onto the pad it will take, slowing as it nears, its ground shadow darkening and tightening from 4 s
+  out. Every landing, on its lander's creation (`base.land`): the base game's massive explosion and five big ones drawn
+  along the hull, a flash, a ring of dust, four scorch marks (3 minutes); then six cargo pods (Space Age's pod body on its
+  flame) streak down round it 12 to 19 tiles out, one every half second or so, each bursting where it falls (blast,
+  flash, scorch, dust, sound). Spots and delays from `rng.lua`, seeded by the settlement. All of it is rendering and
+  sound (one variation), nothing the game makes: no explosion, projectile, corpse, trivial smoke or particle (see the
+  findings of 2026-11-04 and 2026-11-05). Scenario `landfx` (and `landfx off`, the
+  same fingerprint on both: origin, parts, made, gens, turrets, pylons, drills, hubs); `dev` checks `/lp land`'s hull.
+  Clip: `docs/trailer/clip-landing.lua` (`media/trailer/landing-fx.mp4`). Assumed, not tested: how it reads at the
+  player's own zoom in play.
 - **Relief by cargo pod**: a relief with no sister settlement to march from (the drop behind the camp) comes down in
   pods, four units a pod; its units come out where each touches down (`pods.handlers.relief`). `pods_off`: dropped at
   once, as before.
@@ -3246,7 +3261,8 @@ scenario with assertions first; the window is for art, feel and GUI.
   search stops there. Once everything it reads exists it lands as before, on the site the synchronous search would
   have chosen (the same search over the same ground). Past five minutes it lands the old way. What follows a landing
   (the cadence's origin, a headquarters' notice, the phases' arrival) runs by the job's kind. The remote `arrive` and
-  `/lp land` stay synchronous (the scenarios and the developer want the settlement at once); `arrive_async` is the
+  `/lp land ... now` stay synchronous (the scenarios and the developer want the settlement at once; `/lp land` itself
+  queued and by pod since 2026-11-04, its look); `arrive_async` is the
   queued one. Scenario `async`: a landing 900 tiles out on a fresh map waited twice for its ground and landed 3 s
   after it was called, unforced.
   Campaigns on both seeds (6 hours, all of today's work): much as the evening's: three landers killed, two of three
@@ -4653,6 +4669,28 @@ Bugs and surprises the headless runs caught, each kept as a check:
   or that the fork was made for another squad. Breach is a full-length scenario: fork it, if at all, at a strike of 25
   or less. Not changed, noted: breach arty's comment says "no squad", but its setup feeds the default squad before
   clearing the wants (25 trained in its runs).
+- **A landing by pod does not stand where its pod fell** (2026-11-04, found drawing the landing's look). The pod and its
+  two escorts are sent to the pad `layout.find_pad` chose; once down, their containers (no clearable thing to
+  `layout.area_free`) stand in that pad's ring, and `layout.land` takes the next free pad: 15 tiles off on seed 12345
+  (`landfx`), 18 on the trailer visit (the pods came down south-east of the lander). Same with the look off, so not new.
+  Not changed (it moves landing sites): the hull is drawn onto the pad the landing will take, foreseen when its pod is
+  sent (`layout.find_pad` with the pods' spots counted as taken; asked again once they stand, it moved 0 tiles). Aimed
+  at the pod's own pad, the hull lurched 15 tiles in the last quarter second; `landfx` checks it moves under 2. Whether
+  a landing should stand on its pod's pad (the pods cleared first, or sent beside it) is open.
+- **A first look made of entities could have moved hubs** (2026-11-04). Its pods were projectiles and its blasts
+  explosions; both are entities `layout.area_free` refuses, so for the seconds they lasted the planner would have seen
+  the ground round a new lander as built on. Redone as rendering; `landfx` counts explosion and projectile entities
+  within 40 tiles of the lander while its pods fall (bullets' hits aside, the corner turrets' on and off alike): seen
+  failing at 512 with a big explosion put back at each pod's impact.
+- **Scorch corpses, trivial smoke and particles turned other fights** (2026-11-05, the full regression of the landing's
+  look). With them in the look (no entity the planner sees), 271 of 274 runs passed; `rail` (the railgunners killed 1
+  big biter, none stood) and `herd`, `herd spit` (10 of 41 came home; 0 of 10 spitters) failed, and passed with the look
+  switched off. Things the game makes draw on its shared dice, so every later fight on the map plays out otherwise.
+  Redone as rendering alone (scorch marks as sprites, dust as the artillery smoke's animation, one sound variation): all
+  three pass, the quick set too. A look that must change nothing makes nothing.
+- **Regressions of two worktrees shared profiles** (2026-11-04): a run's profile is named by scenario, seed and tag, so
+  two agents regressing at once swapped each other's mod links. `LP_REG_TAG` (regress.sh, fork.sh) gives a regression
+  its own profiles and forks' profiles.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

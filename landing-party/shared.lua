@@ -235,6 +235,12 @@ shared.HOWITZER_DOWN = 30 * 3600
 -- The sign over each research lab: what its branch fields.
 shared.LAB_ICON = {["lp-optics-lab"] = "item/laser-turret", ["lp-line-lab"] = "item/heavy-armor",
   ["lp-siege-lab"] = "item/artillery-shell"}
+-- A landing's look (descent.lua, scripts/landfx.lua), all drawn: the cargo pod's animation, the suffix of each lander's
+-- falling hull ("lp-lander-fall", "lp-grubstake-lander-fall"), its ground shadow, the explosions' animations (copied from
+-- the base game's big and massive explosions: their frames, at half a frame a tick, checked in descent.lua) and sound.
+shared.LANDFX = {pod = "lp-landfx-pod", fall = "-fall", shadow = "lp-landfx-lander-shadow", blast = "lp-landfx-blast",
+  crash = "lp-landfx-crash", sound = "lp-landfx-boom", scorch = "lp-landfx-scorch", scorch_big = "lp-landfx-scorch-big",
+  dust = "lp-landfx-dust", frames = {blast = 47, crash = 57, dust = 16}, speed = 0.5}
 function shared.variant(corp, kind)
   if corp == nil or corp == shared.DEFAULT_CORP then return kind end
   return "lp-" .. corp .. "-" .. kind:sub(4)

@@ -11,6 +11,7 @@ local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
 local ops = require("__landing-party__.scripts.ops")
 local lights = require("__landing-party__.scripts.lights")
+local landfx = require("__landing-party__.scripts.landfx")
 
 local base = {}
 
@@ -194,6 +195,8 @@ function base.land(surface, pos, opts)
   storage.bases[id] = b
   site.scan_init(b, SEARCH)
   if not opts.uplink then base.drop_power(b) end
+  -- Its crash and the pods that follow it down (landfx.lua): drawn, nothing placed.
+  landfx.crash(b)
   -- A developer's readout (its rule, parts, flow, power): shown only while tracing (dev, the sims); it had hung over
   -- every lander in every game (seen in the field guide's screenshots, 2026-10-24).
   b.label = rendering.draw_text{text = "", surface = surface, target = {entity = lander, offset = {0, -5}},
@@ -857,7 +860,7 @@ function base.stats(b)
     fail_streak = b.fail_streak or 0, stood_down_streak = b.stood_down_streak or 0,
     war_rung = b.war_rung or 0, posture = b.posture, map_text = b.map_text, name = b.name,
     refused = b.refused, crews_stuck = b.crews_stuck or 0, blasted = b.blasted or 0, landfilled = b.landfilled or 0, piers = b.piers or 0,
-    claim_marks = #(b.claim_marks or {}), jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0, reprisals = b.reprisals or 0}
+    claim_marks = #(b.claim_marks or {}), jumps = b.jumps or 0, hands_back = b.hands_back or 0, gate_opens = b.gate_opens or 0, landfx = b.landfx, taps = b.taps or 0, tap_watts = b.tap_watts or 0, looted = b.looted or 0, reprisals = b.reprisals or 0}
 end
 
 return base

@@ -16,6 +16,7 @@ local jammer = require("__landing-party__.scripts.jammer")
 local scanner = require("__landing-party__.scripts.scanner")
 local roads = require("__landing-party__.scripts.roads")
 local pods = require("__landing-party__.scripts.pods")
+local landfx = require("__landing-party__.scripts.landfx")
 script.on_event(defines.events.on_cargo_pod_finished_descending, pods.on_landed)
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
@@ -107,7 +108,7 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -507,6 +508,7 @@ remote.add_interface("landing-party", {
     if t.focus_off ~= nil then storage.focus_off = t.focus_off end
     if t.cuts_off ~= nil then storage.cuts_off = t.cuts_off end
     if t.pods_off ~= nil then storage.pods_off = t.pods_off end
+    if t.landfx_off ~= nil then storage.landfx_off = t.landfx_off end
     if t.strangle_off ~= nil then storage.strangle_off = t.strangle_off end
     if t.next_ore_off ~= nil then storage.next_ore_off = t.next_ore_off end
     if t.sever_off ~= nil then storage.sever_off = t.sever_off end
@@ -922,6 +924,7 @@ remote.add_interface("landing-party", {
     if not b then return "no settlement " .. tostring(id) end
     return orbital.force(b, {pos.x or pos[1], pos.y or pos[2]})
   end,
+  landfx_active = function() return landfx.active() end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   achieved = function() return storage.lp_achieved or {} end,
   pact_state = function() return storage.pact_state end,
