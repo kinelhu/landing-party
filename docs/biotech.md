@@ -137,7 +137,10 @@ stays as the skeleton; the identity is a pack, three habits the player can watch
   cover each other (a keep is what a wave of its size cannot take), a mended hole, outposts with guns of their own;
   a second feed apart from the first is untested since 0.2.32 (the herd test's two sources stood within one wave's reach).
 - Inside (0.2.31), each biter picks its own target, the nearest on that list with fewer than 3 already on it (8 on a
-  reactor or a roboport), radars and roboports next after the feed, and looks again every 2 seconds. What stands
+  reactor or a roboport; those left over go at the best target all the same, spread by how many are on it, so none
+  stands idle), radars and roboports next after the feed, and looks again every 2 seconds. Once its first wall piece
+  is down, the gap is its way: a biter with a wall between it and its target walks to the gap first, and its herd's
+  moves inside (a push, the rush for the heart, the way out) go round the walls, not through them. What stands
   under three or more turrets is left alone: an inner keep holds. Sometimes a wave skips the edge and rushes to the
   heart of the base as one before it scatters (its trail runs on inside, its leader marked); it does this less where
   the last deep strike lost half its number. Caught under fire on the march (10% lost in 15 s), it breaks in there.
