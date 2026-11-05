@@ -1791,7 +1791,7 @@ local function ram_go(w, u, t, lane)
   lane = lane or w.breach_wall
   local cmd, wall = ram_order(u, t, lane)
   if wall and lane then w.ram_off = math.max(w.ram_off or 0, math.sqrt(d2(wall.position, lane))) end
-  return cmd
+  return cmd, wall
 end
 -- A spread's rams (the adaptive tactics consult, 2026-11-05, R2): at each of its points (w.spread) in turn, one at a time,
 -- each at the dearest gun covering its point not yet gone at there, or at the wall piece at its point where none covers
@@ -2042,11 +2042,17 @@ burstfx.on_blast.big = big_blast
 function herd.set_off(u) return burstfx.windup(u, "big") end
 local function detonate(w)
   if not w.big_targets then return end
+  herd.rk.release_muster(w)
   local s = game.surfaces[w.surface]
   local kept = {}
   for _, b in ipairs(w.big_targets) do
     local u, t = b.unit, b.target
-    if u.valid then
+    -- (When a released ram of a rank first stands in a gun's reach, and where: its rank's reading, herd.rk.size_next.)
+    if u.valid and b.sent and not b.held and not b.reserve and not b.in_reach and threat.covering(s, u.position, foes(w), 1) > 0 then
+      b.in_reach, b.in_at = game.tick, {x = u.position.x, y = u.position.y}
+    end
+    if u.valid and b.mustering then kept[#kept + 1] = b
+    elseif u.valid then
       -- (Not one held, nor one of a later rank sent at its wall: its gun gone, a held ram was let go at another, ranks.)
       if not (t and t.valid) and not b.retargeted and not b.held and not b.through then
         b.retargeted = true
@@ -2059,7 +2065,7 @@ local function detonate(w)
       end
       -- At its gun, or at the foe's wall it reached on its way (its blast opens a wall wherever it stands; its guns
       -- behind the wall it would never reach alive, and killed it fizzles: the siege test, 2026-10-30).
-      local at_wall = not b.held and s.count_entities_filtered{position = u.position, radius = WALL_TOUCH, type = {"wall", "gate"},
+      local at_wall = not b.held and not b.at_guns and s.count_entities_filtered{position = u.position, radius = WALL_TOUCH, type = {"wall", "gate"},
         force = foes(w), limit = 1} > 0
       -- (A ram of a later rank, sent through its gap at the wall behind it: at that wall, not at the gap's sides it walks
       -- between; its piece gone, at the next on its way to its herd's target. Set off by any wall, it went off in the gap.)
@@ -2235,6 +2241,9 @@ end
 function herd.rk.busy(w)
   for _, u in ipairs(w.winding or {}) do if u.valid then return true end end
   for _, b in ipairs(w.big_targets or {}) do
+    if b.mustering and b.unit.valid then return true end
+  end
+  for _, b in ipairs(w.big_targets or {}) do
     if b.unit.valid and not b.held and b.unit.commandable and b.unit.commandable.has_command and (b.still or 0) < STUCK_LOOKS then
       return true
     end
@@ -2244,8 +2253,192 @@ end
 -- Its herd may go: no rank held back, or its way open, or its rams spent.
 function herd.rk.through(w)
   if not w.ranked then return true end
-  if herd.rk.way_open(w) then return true end
+  -- (Its way open with rams still held: once its last rank at the guns covering its way in is tried and spent,
+  -- herd.rk.gun_rank. Its way opened under the wind-up of a rank's last ram, its herd went before it was tried.)
+  if herd.rk.way_open(w) then
+    if (w.reserve or 0) > 0 and not w.gun_rank and not storage.biotech_no_gun_rank then return false end
+    return not (w.gun_rank and herd.rk.busy(w))
+  end
   return (w.reserve or 0) == 0 and not herd.rk.busy(w)
+end
+-- A rank's rams go together (the nwwallsiege visit, 2026-11-05: sent from where each was held, 70 tiles back, a rank's rams
+-- came into 15 to 18 guns' reach strung out, each killed in about a second alone, whatever its rank's size): first to
+-- its muster, the first point on the line from its gap back through its staging out of every firing gun's reach (threat.covering),
+-- then through the gap together once every one of it stands there (within twice its touch of it, or its order failed where it
+-- stood), held there by a stop: its order done, a ram stood idle at its muster went at the wall in its sight by itself, alone,
+-- and died in the gap (the nwwallsiege visit, 2026-11-05).
+herd.rk.MUSTER_R = WALL_TOUCH
+function herd.rk.muster_point(w, from)
+  local back = w.mark
+  if not (from and back) then return nil end
+  local s = game.surfaces[w.surface]
+  local len = math.sqrt(d2(from, back))
+  -- (On past its staging by the longest reach of any gun, where its staging is itself under fire. Read on a fire map: a
+  -- flamethrower's arc and its least reach honoured, firemap.)
+  local most = len + threat.far()
+  local map = firemap.read(s, from, most, foes(w))
+  for d = 0, most, herd.rk.MUSTER_R do
+    local p = {x = from.x + (back.x - from.x) * d / math.max(1, len), y = from.y + (back.y - from.y) * d / math.max(1, len)}
+    if #firemap.entries_box(map, p, herd.rk.MUSTER_R) == 0 then return p end
+  end
+  return nil
+end
+function herd.rk.go_through(w, b, through, wall)
+  b.sent, b.in_reach, b.in_at, b.mustering = game.tick, nil, nil, nil
+  b.through, b.to = wall, {x = wall.position.x, y = wall.position.y}
+  local cmds = {}
+  if through then cmds[#cmds + 1] = go(through, defines.distraction.none, 1.5) end
+  cmds[#cmds + 1] = {type = defines.command.attack, target = wall, distraction = defines.distraction.none}
+  b.unit.commandable.set_command(#cmds > 1 and compound(cmds) or cmds[1])
+end
+-- A ram of its last rank at a gun covering its way in, through its gap (its way open): set off at its gun alone, not at a
+-- wall it touches (going off at the gap's sides it walked between, 10 of 21 blew the outer wall again; the nwwallsiege
+-- visit, 2026-11-05).
+function herd.rk.go_at_gun(w, b, through)
+  b.sent, b.in_reach, b.in_at, b.mustering, b.through = game.tick, nil, nil, nil, nil
+  local t = b.at_gun
+  b.at_gun = nil
+  if not t.valid then return end
+  b.target, b.to, b.at_guns = t, {x = t.position.x, y = t.position.y}, true
+  local cmds = {}
+  if through then cmds[#cmds + 1] = go(through, defines.distraction.none, 1.5) end
+  cmds[#cmds + 1] = {type = defines.command.attack, target = t, distraction = defines.distraction.none}
+  b.unit.commandable.set_command(#cmds > 1 and compound(cmds) or cmds[1])
+end
+-- Its way open (no wall between its gap and its target) and rams still held: its last rank at the firing guns covering its
+-- way from the gap to its target, the dearest first (herd.price_of: what each costs its herd to cross), each a blast
+-- (BIG_BURST_R) from those already chosen, mustered and through together, its herd going once they are spent (through);
+-- when it holds a ram for each of those guns. Fewer, it leaves guns on its way whatever it breaks and only holds its herd
+-- while the foe's robots mend its gap: its herd goes now. (Rushed through its open gap with 20 rams held, a herd lost 2,413
+-- mediums to the flamethrowers covering its way in; with its last rank at them, 26 at 10, it broke 10 lasers and 3
+-- flamethrowers, lost 99 crossing and got in with 162 (the nwwallsiege visit). With 2 rams at 9, the lab's nwa lane went
+-- from 6 of 16 in to 3.)
+function herd.rk.gun_rank(w)
+  if w.gun_rank or storage.biotech_no_gun_rank or not (w.gap and w.goal) then return end
+  w.gun_rank = true
+  local s = game.surfaces[w.surface]
+  local forces = foes(w)
+  local guns, seen = {}, {}
+  local len = math.sqrt(d2(w.gap, w.goal))
+  for d = 0, len, shared.BIG_BURST.r do
+    local q = {x = w.gap.x + (w.goal.x - w.gap.x) * d / math.max(1, len), y = w.gap.y + (w.goal.y - w.gap.y) * d / math.max(1, len)}
+    for _, t in ipairs(s.find_entities_filtered{position = q, radius = threat.far(), type = threat.FIRE, force = forces}) do
+      local r = threat.reach(t)
+      if not seen[t.unit_number] and threat.firing(t) and d2(t.position, q) <= r * r then seen[t.unit_number] = true; guns[#guns + 1] = t end
+    end
+  end
+  if #guns == 0 then return end
+  local price = {}
+  for _, t in ipairs(guns) do price[t.unit_number] = herd.price_of(t) end
+  table.sort(guns, function(a, b)
+    if math.abs(price[a.unit_number] - price[b.unit_number]) > 1e-6 then return price[a.unit_number] > price[b.unit_number] end
+    return d2(a.position, w.gap) < d2(b.position, w.gap)
+  end)
+  local picked = {}
+  for _, t in ipairs(guns) do
+    local apart = true
+    for _, q in ipairs(picked) do if d2(q.position, t.position) < shared.BIG_BURST.r ^ 2 then apart = false; break end end
+    if apart then picked[#picked + 1] = t end
+  end
+  if (w.reserve or 0) < #picked then
+    log(w, string.format("its way open: %d rams held for the %d guns covering its way in, too few: its herd goes", w.reserve or 0, #picked))
+    return
+  end
+  local muster = not storage.biotech_no_muster and herd.rk.muster_point(w, w.gap)
+  local m = 0
+  for _, b in ipairs(w.big_targets or {}) do
+    if b.reserve and b.unit.valid then
+      b.reserve, b.held, b.still, b.rank = nil, nil, 0, (w.rank_n or 1) + 1
+      b.at_gun = picked[m % #picked + 1]
+      if muster then
+        b.mustering = muster
+        b.unit.commandable.set_command(compound({go(muster, defines.distraction.none, herd.rk.MUSTER_R),
+          {type = defines.command.stop, distraction = defines.distraction.none}}))
+      else
+        herd.rk.go_at_gun(w, b, w.gap)
+      end
+      m = m + 1
+    end
+  end
+  if m == 0 then return end
+  w.reserve = 0
+  w.rank_n = (w.rank_n or 1) + 1
+  w.rams_done = nil
+  w.rank_log = w.rank_log or {}
+  table.insert(w.rank_log, {rank = w.rank_n, n = m, guns = #picked, tick = game.tick})
+  log(w, string.format("its way open: its last rank of %d big bursters goes at the %d guns covering its way in (of %d), the dearest first; its herd holds",
+    m, #picked, #guns))
+end
+-- Its mustered rank, every one of it at its muster: through together, at the wall that stands between its gap and its
+-- target then (its gap may have moved while it gathered).
+function herd.rk.release_muster(w)
+  local any = false
+  for _, b in ipairs(w.big_targets or {}) do
+    if b.mustering and b.unit.valid then
+      any = true
+      local near = d2(b.unit.position, b.mustering) <= (2 * herd.rk.MUSTER_R) ^ 2
+      local busy = b.unit.commandable and b.unit.commandable.has_command
+      -- (Idle at its muster: free to go at what it sees, the test's count.)
+      if near and not busy and w.rank_log and w.rank_log[#w.rank_log] then
+        local l = w.rank_log[#w.rank_log]
+        l.idle = (l.idle or 0) + 1
+      end
+      if not near and busy then return end
+    end
+  end
+  if not any then return end
+  local through = gap_open(w) and w.gap or nil
+  local from = through or w.breach_wall
+  local wall = from and w.goal and wall_between(w, from, w.goal)
+  local n = 0
+  for _, b in ipairs(w.big_targets or {}) do
+    if b.mustering and b.unit.valid then
+      if b.at_gun then herd.rk.go_at_gun(w, b, through)
+      elseif wall then herd.rk.go_through(w, b, through, wall) else b.mustering = nil end
+      n = n + 1
+    end
+  end
+  log(w, string.format("its rank %d mustered: %d go through together%s", w.rank_n or 1, n, wall and "" or " (its way open: none needed)"))
+end
+-- A ram of a rank dead (killed short, never set off: those set off leave big_targets first, detonate): its rank's
+-- reading, for the next rank's size. How long the guns took a ram (its rank's first in reach to its last dead, over its
+-- dead), and for each ram, how long it would have needed in reach to touch its wall (its way from where it entered
+-- their reach to its wall's touch, at its pace in reach).
+function herd.rk.read_death(w, ent)
+  for _, b in ipairs(w.big_targets or {}) do
+    if b.unit == ent then
+      if not (b.rank and b.in_reach and b.in_at and b.to) then return end
+      w.rank_read = w.rank_read or {}
+      local r = w.rank_read[b.rank] or {dead = 0, first = b.in_reach}
+      w.rank_read[b.rank] = r
+      r.dead, r.first, r.last = r.dead + 1, math.min(r.first, b.in_reach), game.tick
+      local t_in = math.max(1, game.tick - b.in_reach) / 60
+      local d_in = math.max(0, math.sqrt(d2(b.in_at, b.to)) - WALL_TOUCH)
+      local d_at = math.max(0, math.sqrt(d2(ent.position, b.to)) - WALL_TOUCH)
+      local went = d_in - d_at
+      -- (No way made toward its wall: no pace to read, its need unknown.)
+      if went > 0 then
+        local need = t_in * d_in / went
+        if not r.need or need < r.need then r.need = need end
+      end
+      return
+    end
+  end
+end
+-- The size of its next rank, its last killed short: as many as the guns that killed its last rank would kill while the
+-- one with the least way to go walks it, and one (the guns' pace on its last rank, its rams dead over the time from its first
+-- in their reach to its last dead), never fewer than its last and one; without a reading, twice its last. (Doubled,
+-- ranks of 1, 2, 4 and 8 were each killed short at the user's north wall, a ram each half second in 15 to 18 guns' reach,
+-- and only the fifth, 15, went off; the nwwallsiege visit, 2026-11-05.)
+function herd.rk.size_next(w)
+  local n = w.rank_size or 1
+  local r = w.rank_read and w.rank_read[w.rank_n or 1]
+  if storage.biotech_rank_doubles or not (r and r.need and r.dead > 0) then return 2 * n end
+  local per = math.max(herd.rk.look_every(), r.last - r.first) / 60 / r.dead
+  local size = math.max(n + 1, math.floor(r.need / per) + 1)
+  w.rank_why = string.format("its last rank's %d dead a ram each %.1f s, its nearest needed %.1f s in reach: %d", r.dead, per,
+    r.need, size)
+  return size
 end
 -- Its next rank, once the last one's blasts have landed (or it was killed short) and its way is still shut.
 function herd.rk.next(w)
@@ -2253,25 +2446,39 @@ function herd.rk.next(w)
   for _, u in ipairs(w.winding or {}) do if u.valid then return end end
   local landed = w.big_set_off or 0
   if landed <= (w.rank_landed or 0) and herd.rk.busy(w) then return end
-  -- (Its last rank spent with no blast, killed short or stood: the next twice as big, as its rams' share is learned
-  -- between sieges, herd.learn_reach. One at a time, thirty of a siege went one by one at nwa's wall, none went off.)
-  if w.rank_sent_at and landed <= w.rank_sent_at then w.rank_size = 2 * w.rank_size end
+  -- (Its last rank spent with no blast, killed short or stood: the next sized by what killed it, herd.rk.size_next, or twice
+  -- as big without a reading. One at a time, thirty of a siege went one by one at nwa's wall, none went off.)
+  if w.rank_sent_at and landed <= w.rank_sent_at then w.rank_size = herd.rk.size_next(w) end
   w.rank_landed = landed
-  if herd.rk.way_open(w) then return end
+  if herd.rk.way_open(w) then return herd.rk.gun_rank(w) end
   local s = game.surfaces[w.surface]
   local through = gap_open(w) and w.gap or nil
   local from = through or w.breach_wall
   local wall = from and w.goal and wall_between(w, from, w.goal)
   if not wall then return end
   local m = 0
+  -- (Mustered first, out of every gun's reach, and through together: herd.rk.muster.)
+  local muster = not storage.biotech_no_muster and herd.rk.muster_point(w, from)
+  if not muster and not storage.biotech_no_muster and from and w.mark then
+    log(w, string.format("its rank finds no muster out of reach between %.0f,%.0f and its staging at %.0f,%.0f (%d guns cover it)",
+      from.x, from.y, w.mark.x, w.mark.y, threat.covering(s, w.mark, foes(w), nil, herd.rk.MUSTER_R)))
+  end
   for _, b in ipairs(w.big_targets or {}) do
     if m >= w.rank_size then break end
     if b.reserve and b.unit.valid then
       b.reserve, b.held, b.through, b.still = nil, nil, wall, 0
-      local cmds = {}
-      if through then cmds[#cmds + 1] = go(through, defines.distraction.none, 1.5) end
-      cmds[#cmds + 1] = {type = defines.command.attack, target = wall, distraction = defines.distraction.none}
-      b.unit.commandable.set_command(#cmds > 1 and compound(cmds) or cmds[1])
+      b.rank, b.to = (w.rank_n or 1) + 1, {x = wall.position.x, y = wall.position.y}
+      if muster then
+        if m == 0 then
+          log(w, string.format("its rank musters at %.0f,%.0f (from %.0f,%.0f), its first ram at %.0f,%.0f", muster.x, muster.y,
+            from.x, from.y, b.unit.position.x, b.unit.position.y))
+        end
+        b.mustering = muster
+        b.unit.commandable.set_command(compound({go(muster, defines.distraction.none, herd.rk.MUSTER_R),
+          {type = defines.command.stop, distraction = defines.distraction.none}}))
+      else
+        herd.rk.go_through(w, b, through, wall)
+      end
       m = m + 1
     end
   end
@@ -2284,10 +2491,12 @@ function herd.rk.next(w)
   w.rams_done = nil
   w.rank_log = w.rank_log or {}
   table.insert(w.rank_log, {rank = w.rank_n, n = m, wall = {wall.position.x, wall.position.y}, through = through ~= nil,
-    tick = game.tick})
+    tick = game.tick, why = w.rank_why, muster = muster and {muster.x, muster.y} or nil,
+    muster_cover = muster and #firemap.entries(firemap.read(s, muster, 0, foes(w)), muster) or nil, idle = 0})
   log(w, string.format("its rank %d of %d big burster%s goes %s at the wall at %.0f,%.0f; %d held; its herd holds", w.rank_n, m,
     m == 1 and "" or "s", through and string.format("through its gap at %.0f,%.0f", through.x, through.y) or "at the same wall",
     wall.position.x, wall.position.y, left))
+  if w.rank_why then log(w, "its rank sized: " .. w.rank_why); w.rank_why = nil end
 end   -- a big burster that has not moved in this many of its wave's looks (a second each) is spent
 local RELEASE_N, RELEASE_R, RELEASE_TICKS   -- below, with its cinders' hold-back: its herd at the wall lets them go
 local function sequence(w)
@@ -2369,6 +2578,11 @@ local function sequence(w)
     end
     log(w, string.format("its herd rushes the gap (%d of its big bursters set off%s)", w.big_set_off or 0,
       w.ranked and string.format(", %d ranks, its way %s", w.rank_n or 1, herd.rk.way_open(w) and "open" or "still shut, its rams spent") or ""))
+    if storage.trace then
+      local legs = {}
+      for _, c in ipairs(cmds) do if c.destination then legs[#legs + 1] = string.format("%.0f,%.0f", c.destination.x, c.destination.y) end end
+      log(w, "its rush's legs " .. table.concat(legs, " ") .. (w.gap and string.format(" (its gap %.0f,%.0f)", w.gap.x, w.gap.y) or ""))
+    end
     -- (Whether its way was open when it went: the ranks test.)
     w.rushed, w.rush_open = game.tick, herd.rk.way_open(w)
     if not w.punch then choose_plan(w) end
@@ -2430,14 +2644,18 @@ local function sequence(w)
         else
           b.held = nil
           local t = b.target and b.target.valid and b.target or (ranked and live)
+          b.rank, b.sent = 1, game.tick
           if b.unit.valid and t then
             b.target = t
-            b.unit.commandable.set_command(ram_go(w, b.unit, t, b.lane_at))
+            local cmd, wl = ram_go(w, b.unit, t, b.lane_at)
+            b.to = wl and {x = wl.position.x, y = wl.position.y} or {x = t.position.x, y = t.position.y}
+            b.unit.commandable.set_command(cmd)
             n = n + 1
           elseif b.unit.valid and ranked and w.breach_wall then
             b.through = game.surfaces[w.surface].find_entities_filtered{position = w.breach_wall, radius = 2, type = WALLS,
               force = foes(w), limit = 1}[1]
             if b.through then
+              b.to = {x = b.through.position.x, y = b.through.position.y}
               b.unit.commandable.set_command{type = defines.command.attack, target = b.through, distraction = defines.distraction.none}
               n = n + 1
             end
@@ -2950,6 +3168,18 @@ finish = function(w, outcome)
   local worth = {}
   for key, v in pairs(w.lost_worth_by or {}) do worth[key] = math.floor(v + 0.5) end
   log(w, string.format("in mediums, of its %.0f: %s", w.worth or 0, serpent.line(worth)))
+  if w.part_lost then
+    local pw = {}
+    for key, v in pairs(w.part_lost) do pw[key] = math.floor(v + 0.5) end
+    log(w, string.format("at the breach, in mediums, by its part: %s", serpent.line(pw)))
+    if w.rush_at then log(w, "its rush's dead by 8x4 cell: " .. serpent.line(w.rush_at)) end
+  end
+  if w.hold_probe then
+    local hp = w.hold_probe
+    log(w, string.format("its herd held %d looks: in a gun's reach %.1f of %.1f a look, at most %d (its middle then %s), its middle last at %.0f,%.0f",
+      hp.looks, hp.sum / hp.looks, hp.n / hp.looks, hp.most, hp.at and string.format("%.0f,%.0f", hp.at[1], hp.at[2]) or "-",
+      hp.last[1], hp.last[2]))
+  end
   for proto, p in pairs(w.price_learned or {}) do
     log(w, string.format("a %s cost it %.1f of its own at the breach (%d covering it): its price now %.1f", proto, p.sample,
       p.n, p.per))
@@ -3088,8 +3318,27 @@ local function vanished(w)
     end
   end
 end
+-- (Traced: where its held herd waits against the guns' reach, each look while it holds at the breach: how many of it
+-- stand in a firing gun's reach, and its middle.)
+function herd.rk.hold_probe(w)
+  local s = game.surfaces[w.surface]
+  local n, inr, cx, cy = 0, 0, 0, 0
+  for _, u in ipairs(w.members) do
+    if u.valid and u.name ~= "lp-bred-big-burster" and not (w.fodder_set and w.fodder_set[u.unit_number]) then
+      n, cx, cy = n + 1, cx + u.position.x, cy + u.position.y
+      if threat.covering(s, u.position, foes(w), 1) > 0 then inr = inr + 1 end
+    end
+  end
+  if n == 0 then return end
+  local hp = w.hold_probe or {looks = 0, most = 0, sum = 0, n = 0}
+  hp.looks, hp.sum, hp.n = hp.looks + 1, hp.sum + inr, hp.n + n
+  if inr > hp.most then hp.most, hp.at = inr, {cx / n, cy / n} end
+  hp.last = {cx / n, cy / n}
+  w.hold_probe = hp
+end
 local function step(w, tick)
   if tick % 60 == 0 then vanished(w) end
+  if storage.trace and tick % 60 == 0 and w.stage == "breach" and w.held_cmds then herd.rk.hold_probe(w) end
   detonate(w)
   if w.sweepers then sappers(w) end
   if w.cut_hold and w.stage == "march" then return cut_wait(w) end
@@ -3456,11 +3705,23 @@ local function step(w, tick)
   if w.stage == "withdraw" and tick - w.t > 10 * 3600 then return finish(w, "home late") end
 end
 
+-- Its rams looked at as often as one crosses its touch of a wall (WALL_TOUCH over its prototype's speed), not with its
+-- wave's look once a second: at the user's north wall (the nwwallsiege visit, 2026-11-05) its rams lived 1 to 2 s in the
+-- reach of 15 to 18 guns, and of 22 killed short, 12 died within a tile or two of a wall between two looks, none gone off.
+function herd.rk.look_every()
+  local p = prototypes.entity["lp-bred-big-burster"]
+  return math.max(1, math.floor(WALL_TOUCH / math.max(0.01, p and p.speed or 0.01)))
+end
 function herd.tick(tick)
   local h = storage.herd
   if not h then return end
+  local every
   for _, w in pairs(h.waves) do
-    if w.stage == "scout" or tick % 60 == 0 then step(w, tick) end
+    if w.stage == "scout" or tick % 60 == 0 then step(w, tick)
+    elseif w.big_targets and not storage.biotech_slow_rams then
+      every = every or herd.rk.look_every()
+      if tick % every == 0 then detonate(w) end
+    end
   end
   if tick % 600 == 0 then
     lift_trails(tick)
@@ -3685,6 +3946,34 @@ function herd.on_died(e)
           -- (Its rams at their worth as any unit's: by herd.strength, which leaves them out of a herd's strength, sixteen big
           -- bursters killed at the square lab fort's wall cost it nothing, its lasers read cheap; 2026-10-31.)
           w.lost_worth_by[key] = (w.lost_worth_by[key] or 0) + herd.worth(ent.name)
+          -- A ram of a rank killed short: its rank's reading (herd.rk.size_next).
+          if ent.name == "lp-bred-big-burster" then herd.rk.read_death(w, ent) end
+          -- (Traced: by its part at the breach, a ram, its screen, its herd held or its herd rushing; and each ram's death.)
+          if storage.trace and w.stage == "breach" then
+            local part = ent.name == "lp-bred-big-burster" and "ram" or (w.fodder_set and w.fodder_set[ent.unit_number]) and "screen"
+              or w.held_cmds and "held" or "rush"
+            local pk = part .. " " .. (c and c.name or "none")
+            w.part_lost = w.part_lost or {}
+            w.part_lost[pk] = (w.part_lost[pk] or 0) + herd.worth(ent.name)
+            if part == "rush" then
+              local bk = string.format("%d,%d", math.floor(ent.position.x / 8) * 8, math.floor(ent.position.y / 4) * 4)
+              w.rush_at = w.rush_at or {}
+              w.rush_at[bk] = (w.rush_at[bk] or 0) + 1
+            end
+            if part == "ram" then
+              for _, b in ipairs(w.big_targets or {}) do
+                if b.unit == ent then
+                  local to = b.through and b.through.valid and b.through.position or b.target and b.target.valid and b.target.position
+                  log(w, string.format("its ram of rank %s killed short by %s #%s (%s) at %.0f,%.0f, %s guns covering it, in reach %s s, %.0f s after it went, %s from its wall, %s from its gap%s",
+                    tostring(b.rank or "-"), c and c.name or "none", tostring(c and c.unit_number), e.damage_type and e.damage_type.name or "?",
+                    ent.position.x, ent.position.y, threat.covering(ent.surface, ent.position, foes(w)),
+                    b.in_reach and string.format("%.1f", (game.tick - b.in_reach) / 60) or "-", b.sent and (game.tick - b.sent) / 60 or -1, to and string.format("%.1f", math.sqrt(d2(ent.position, to))) or "-",
+                    w.gap and string.format("%.1f", math.sqrt(d2(ent.position, w.gap))) or "-", b.held and ", held" or b.reserve and ", in reserve" or ""))
+                  break
+                end
+              end
+            end
+          end
           -- And by what it died of (the event's damage type), at its foes' hands: its share lost to area damage, what it
           -- reads to spread out (tactics.area_share; the adaptive tactics consult, 2026-11-05).
           if e.damage_type and e.force and e.force.name ~= B.force then
