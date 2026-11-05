@@ -9312,6 +9312,35 @@ scenarios.visit = function()
   -- bursters, 30 cinders, 60 behemoths, 80 big biters. (With 20, 20, 40 and 120 big biters: 105 wall pieces and 8 lasers
   -- broken, 9 inside, all dead to its flamethrowers, 173 of 206; 2026-11-05.)
   if params.mix:find("nwwall", 1, true) then
+    if params.mix:find("measure", 1, true) then
+      for t = 12 * 3600, END - 60, 20 do
+        schedule(t, function()
+          local m = S.nwm
+          if not m or m.done then return end
+          local units = {}
+          for _, u in pairs(surface().find_entities_filtered{area = m.box, force = "lp-biotech", type = "unit"}) do
+            local g = u.commandable and u.commandable.parent_group
+            units[#units + 1] = {math.floor(u.position.x * 2) / 2, math.floor(u.position.y * 2) / 2, g and 1 or 0,
+              u.name:sub(10, 14)}
+          end
+          local gone = {}
+          -- (Gone: no wall there now. Its robots rebuild a piece as a new entity: the old one invalid, the wall standing.)
+          for _, w in ipairs(m.walls) do
+            if not w.e.valid then
+              local e = surface().find_entities_filtered{position = {w.x, w.y}, radius = 0.3, force = "player", type = {"wall", "gate"}, limit = 1}[1]
+              if e then w.e = e else gone[#gone + 1] = {w.x, w.y} end
+            end
+          end
+          if #units == 0 and #gone == 0 then return end
+          local groups = {}
+          for _, w in ipairs(lp("herd_state").waves or {}) do
+            if w.group and w.stage ~= "done" then groups[#groups + 1] = {w.group[1], w.group[2], w.stage} end
+          end
+          helpers.write_file("landing-party/nwmeasure.jsonl", helpers.table_to_json({t = game.tick, u = units, gone = gone,
+            g = groups}) .. "\n", true)
+        end)
+      end
+    end
     schedule(90, function()
       local out = {walls = {}, turrets = {}, machines = {}}
       for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"wall", "gate"}}) do
@@ -9371,6 +9400,17 @@ scenarios.visit = function()
           if params.mix:find("doubles", 1, true) then lp("debug_tune", {biotech_rank_doubles = true}) end
           if params.mix:find("noranks", 1, true) then lp("debug_tune", {biotech_no_ranks = true}) end
           if params.mix:find("nomuster", 1, true) then lp("debug_tune", {biotech_no_muster = true}) end
+          -- LP_MIX=...measure: the breach written down (nwmeasure.jsonl, scripts/gap_measure.py): every 20 ticks from the
+          -- send, the wave's units within 60 of its target (position, in its group or not) and the player's wall pieces
+          -- there gone since the send; each of its units dying there, by killer, its place and the damage type. (The corridor
+          -- branch, 0.2.214: which lines its gap opened, and how wide, where its herd went past it, what burned it.)
+          if params.mix:find("measure", 1, true) then
+            local box = {{target.x - 60, target.y - 60}, {target.x + 60, target.y + 40}}
+            S.nwm = {box = box, walls = {}}
+            for _, e in pairs(surface().find_entities_filtered{area = box, force = "player", type = {"wall", "gate"}}) do
+              S.nwm.walls[#S.nwm.walls + 1] = {e = e, x = e.position.x, y = e.position.y}
+            end
+          end
           wave = lp("herd_wave", pen, target, {planned = true, fodder = siege and {name = "lp-bred-small-biter", n = 20} or nil})
           info(string.format("visit: nwwall: wave %s of %d from incubator %d at %.0f,%.0f, minute %.1f", tostring(wave), siege and 220 or heavy and 200 or 206, pen,
             target.x, target.y, (game.tick - storage.t0) / 3600))
@@ -10494,6 +10534,12 @@ end
 --          the same with the hold off (the control, measured)
 scenarios.herd = function()
   local mix = params.mix or ""
+  -- ranks-mend: ranks, and once its herd rushes, the player's robots' work done at once: the outer ring's broken pieces
+  -- back and a way round opened 22 tiles along it (the user's north wall on nwa: its outer wall ends, a 7-tile corridor
+  -- behind it). Its rush keeps its gap's line through the mended piece (herd.rk.keep_line); ranks-mend-off, left to the
+  -- engine's path (the control, biotech_no_keep_line).
+  local mend = (mix == "ranks-mend" or mix == "ranks-mend-off") and mix or nil
+  if mend then mix = "ranks" end
   local L, G = "laser-turret", "gun-turret"
   local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
   schedule(60, function()
@@ -10638,6 +10684,7 @@ scenarios.herd = function()
       -- (Three: the third its last rank, at the guns covering its way in once its way is open, herd.rk.gun_rank.)
       lp("herd_fill", S.pen, 3, "lp-bred-big-burster")
       if mix == "ranks-off" then lp("debug_tune", {biotech_no_ranks = true}) end
+      if mend == "ranks-mend-off" then lp("debug_tune", {biotech_no_keep_line = true}) end
     elseif mix == "burst" or mix == "burst-nohold" then
       lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 4, "lp-bred-cinder")
@@ -10671,6 +10718,60 @@ scenarios.herd = function()
         for v = -66, 66, 12 do
           local ft = surface().create_entity{name = "flamethrower-turret", position = S.at(-92, v), force = "player", direction = dir}
           if ft then ft.insert_fluid{name = "light-oil", amount = 100} end
+        end
+      end
+      if mend then
+        local c, e1, e2 = S.c, S.at(1, 0), S.at(0, 1)
+        local u, v = {e1[1] - c[1], e1[2] - c[2]}, {e2[1] - c[1], e2[2] - c[2]}
+        S.corridor, S.mended = 0, nil
+        for t = game.tick - storage.t0 + 20, END - 120, 20 do
+          schedule(t, function()
+            local w
+            for _, x in ipairs(lp("herd_state").waves or {}) do if x.id == S.wave1 then w = x end end
+            if w and w.rushed and not S.mended then
+              -- (The way round 22 tiles along from its gap, on the side with room.)
+              local g = w.gap and {w.gap[1] - c[1], w.gap[2] - c[2]} or {0, 0}
+              local gv = g[1] * v[1] + g[2] * v[2]
+              -- (Its face: the ring on its gap's side.)
+              S.face = (g[1] * u[1] + g[2] * u[2]) < 0 and -1 or 1
+              S.side = gv <= 0 and 1 or -1
+              S.gap_v = gv
+              S.mended, S.mended_ids = 0, {}
+              for i = -46, 46 do
+                local p = S.at(47 * S.face, i)
+                local along = (i - gv) * S.side
+                if along >= 22 and along <= 25 then
+                  for _, x in ipairs(surface().find_entities_filtered{position = p, radius = 0.3, type = "wall"}) do x.destroy() end
+                elseif surface().count_entities_filtered{position = p, radius = 0.3, type = "wall"} == 0 then
+                  local x = put("stone-wall", p)
+                  if x then S.mended, S.mended_ids[x.unit_number] = S.mended + 1, true end
+                end
+              end
+              info(string.format("herd ranks-mend: at its rush, its outer ring mended (%d pieces) and opened 22 along from its gap at %.0f",
+                S.mended, gv))
+            end
+            if not S.mended then return end
+            -- Its units in the corridor between the rings, 12 tiles or more along it from its gap toward the way round.
+            local n = 0
+            for _, x in ipairs(surface().find_entities_filtered{position = S.at(43 * S.face, S.gap_v + 18 * S.side), radius = 16,
+              force = "lp-biotech", type = "unit"}) do
+              local du = (x.position.x - c[1]) * u[1] + (x.position.y - c[2]) * u[2]
+              local dv = (x.position.x - c[1]) * v[1] + (x.position.y - c[2]) * v[2]
+              if du * S.face > 40.5 and du * S.face < 46.5 and (dv - S.gap_v) * S.side >= 12 then n = n + 1 end
+            end
+            S.corridor = math.max(S.corridor, n)
+            -- And how many of it were still outside its outer ring when it read itself through (its order done): its
+            -- engine group runs ahead of its members, and left at a mended gap they piled outside it.
+            if w and w.stage ~= "breach" and not S.out_at_in then
+              local out, all = 0, 0
+              for _, x in ipairs(surface().find_entities_filtered{position = S.c, radius = 120, force = "lp-biotech", type = "unit"}) do
+                local du = (x.position.x - c[1]) * u[1] + (x.position.y - c[2]) * u[2]
+                all = all + 1
+                if du * S.face > 47.5 and du * S.face < 90 then out = out + 1 end
+              end
+              S.out_at_in, S.all_at_in = out, all
+            end
+          end)
         end
       end
       schedule(game.tick - storage.t0 + 200, function()
@@ -10975,7 +11076,21 @@ scenarios.herd = function()
       info("herd ranks: a spread's points at a flamethrower wall " .. serpent.line(S.spread))
       check("herd: a spread's points share no flamethrower's arc", #pts >= 2 and burnt >= 1 and shared_burn == 0,
         serpent.line({points = #pts, burnt = burnt, shared = shared_burn}))
-      if mix == "ranks" then
+      if mend then
+        -- Its rush through its own gap, mended by the player's robots after it went: at the mended piece on its line and on,
+        -- not round by the engine's path along the corridor behind the outer ring (the user's north wall from the minute-11
+        -- save, 0.2.214: its outer gap of 11 mended to none in the 8 s its herd took to get there, the herd walked round the
+        -- outer wall's end and along the corridor under a flamethrower, 2,333 mediums to fire, 15 in). Here, without it
+        -- (ranks-mend-off), its group's order ran on through the one open tile and read it through with 2 to 5 of its 39
+        -- still outside the ring, and 1 or 2 walked the corridor (seeds 12345, 777, 4242); with it, none outside.
+        info(string.format("herd %s: mended %s, its most in the corridor at once %s, its mends %s, inside at %s", mend,
+          tostring(S.mended), tostring(S.corridor), tostring(w and w.mends), tostring(w and w.t_inside)))
+        check("herd: ranks-mend, its rush keeps its gap's line through a mended piece: none of it left outside when through",
+          (S.mended or 0) >= 1 and S.out_at_in == 0 and w ~= nil
+          and w.t_inside ~= nil, serpent.line({mended = S.mended, corridor = S.corridor, outside_when_in = S.out_at_in,
+          of = S.all_at_in, mends = w and w.mends, inside = w and w.t_inside}))
+      end
+      if mix == "ranks" and not mend then
         -- Its second rank through the gap the first opened, at the inner ring (40), not the outer (47).
         local r2 = rk.log and rk.log[1]
         local du
@@ -15389,6 +15504,17 @@ end) end
 
 script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
+  -- (LP_MIX=...measure on the nwwall visits: each of the wave's deaths at the breach, nwmeasure.jsonl.)
+  if S.nwm and e.entity.force.name == "lp-biotech" and e.entity.type == "unit" then
+    local p, b = e.entity.position, S.nwm.box
+    if p.x >= b[1][1] and p.x <= b[2][1] and p.y >= b[1][2] and p.y <= b[2][2] then
+      local c = e.cause and e.cause.valid and e.cause or nil
+      local g = e.entity.commandable and e.entity.commandable.parent_group
+      helpers.write_file("landing-party/nwmeasure.jsonl", helpers.table_to_json({t = game.tick, died = e.entity.name:sub(10),
+        x = p.x, y = p.y, by = c and c.name or "-", bx = c and c.position.x or nil, by_y = c and c.position.y or nil,
+        dmg = e.damage_type and e.damage_type.name or "?", grp = g and 1 or 0}) .. "\n", true)
+    end
+  end
   -- LP_MIX khdeaths (visits): each of Kessler-Hayashi's units killed, by its role, how far from its lander, and by what
   -- (its armed camp lost 80 to 100 units a half hour to biters on fed nw, 2026-11-02).
   if S.khdeaths and e.entity.force.name == "lp-serenity" and (e.entity.name == "lp-mortar" or e.entity.name == "lp-howitzer"
@@ -15535,7 +15661,7 @@ end
 -- Herd: damage between the wild biters and the bred.
 if params.scenario == "herd" then
   -- ranks: each ram's first touch of the player's wall and its set-off (its wind-up: no longer destructible), tick by tick.
-  if params.mix == "ranks" or params.mix == "ranks-off" then
+  if params.mix == "ranks" or params.mix == "ranks-off" or params.mix == "ranks-mend" or params.mix == "ranks-mend-off" then
     script.on_nth_tick(1, function(e)
       if not S.c then return end
       S.ram_touch, S.ram_off = S.ram_touch or {}, S.ram_off or {}
