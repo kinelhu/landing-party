@@ -489,6 +489,9 @@ remote.add_interface("landing-party", {
     if t.biotech_no_muster ~= nil then storage.biotech_no_muster = t.biotech_no_muster or nil end
     -- biotech_no_gun_rank: its herd through its open gap with its rams still held, as before 0.2.213 (herd.rk.gun_rank).
     if t.biotech_no_gun_rank ~= nil then storage.biotech_no_gun_rank = t.biotech_no_gun_rank or nil end
+    -- biotech_no_keep_line: its rush left to the engine's path past a mended piece of its gap, as before 0.2.215
+    -- (herd.rk.keep_line; its check's control).
+    if t.biotech_no_keep_line ~= nil then storage.biotech_no_keep_line = t.biotech_no_keep_line or nil end
     -- old_stock: Synthexis's army bred by the engine and standing at its incubators, as before 0.2.90 (farm.lua hatching).
     if t.old_stock ~= nil then storage.biotech_old_stock = t.old_stock or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end

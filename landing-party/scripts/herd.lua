@@ -2400,6 +2400,59 @@ function herd.rk.release_muster(w)
   end
   log(w, string.format("its rank %d mustered: %d go through together%s", w.rank_n or 1, n, wall and "" or " (its way open: none needed)"))
 end
+-- Its rush keeps to its gap's line. A piece its rams broke standing again between its herd's front and its gap (the foe's
+-- robots mend what its rams broke while its herd walks there from out of reach), its herd goes at that piece, on its line,
+-- and then on through its gap along the rest of its way. Left to the engine, the group's path went round: at the user's north
+-- wall (nwwallsiege from its minute-11 save, 0.2.214) the outer wall's gap of 11 pieces open when its herd went was mended to
+-- none in the 8 s its herd took to get there, and the engine walked it round the outer wall's end and along the 7-tile
+-- corridor behind it to the inner lines, wide open, under a flamethrower covering that end: 2,333 mediums to fire, 15 got
+-- in. Only a piece it broke (w.broke): a line from its front past the edge of an open gap touches pieces never broken, and
+-- going at those is chewing a wall beside its gap. At most WALL_TRIES pieces.
+function herd.rk.tile_key(p) return string.format("%d,%d", math.floor(p.x), math.floor(p.y)) end
+function herd.rk.keep_line(w)
+  if storage.biotech_no_keep_line or not (w.rushed and w.gap and w.broke and w.goal and w.group and w.group.valid) then return end
+  if (w.mend_at and w.mend_at.valid) or (w.mends or 0) >= WALL_TRIES then return end
+  local front = foremost(w)
+  -- (Its front past its gap toward its target: its gap behind it. Read from there, the line back to its gap ran along the inner
+  -- line, and it went at pieces beside its way; the full nwwallsiege visit, 0.2.215.)
+  if d2(front, w.goal) <= d2(w.gap, w.goal) then return end
+  local wall = wall_between(w, front, w.gap)
+  if not (wall and w.broke[herd.rk.tile_key(wall.position)]) then return end
+  -- (And only where that line's opening is narrower than its herd's own front, herd.spread: a piece mended in the middle of an
+  -- outer gap of 29 open, it went at that one piece under the lasers while the rest stood open, and lost the wave; the full
+  -- visit. Through an opening of three or one, the engine walked it round.)
+  local open, s, q = 0, game.surfaces[w.surface], wall.position
+  local reach = herd.spread(alive(w))
+  for _, dir in ipairs({{1, 0}, {0, 1}}) do
+    local n = 0
+    for k = -reach, reach do
+      local t = {x = q.x + dir[1] * k, y = q.y + dir[2] * k}
+      if w.broke[herd.rk.tile_key(t)] and s.count_entities_filtered{position = t, radius = 0.3, type = WALLS, force = foes(w), limit = 1} == 0 then
+        n = n + 1
+      end
+    end
+    open = math.max(open, n)
+  end
+  if open >= reach then return end
+  w.mend_at, w.mends = wall, (w.mends or 0) + 1
+  -- (On along its rush's legs past its gap: the leg nearest its gap and those after it.)
+  -- (Its distraction none: by_enemy, it was drawn off its piece to the guns within its sight and fought there; herd test,
+  -- ranks-mend.)
+  local cmds, from = {{type = defines.command.attack, target = wall, distraction = defines.distraction.none}}, nil
+  local legs = w.rush_legs or {}
+  for i, c in ipairs(legs) do
+    if c.destination and (not from or d2(c.destination, w.gap) < d2(legs[from].destination, w.gap)) then from = i end
+  end
+  if gap_open(w) then cmds[#cmds + 1] = go(w.gap, defines.distraction.none, 1.5) end
+  for i = from or (#legs + 1), #legs do
+    local c = legs[i]
+    if not c.target or c.target.valid then cmds[#cmds + 1] = c end
+  end
+  if #cmds == 1 then cmds[2] = go(w.goal, defines.distraction.none, 6) end
+  w.group.set_command(compound(cmds))
+  log(w, string.format("a piece of its gap mended at %.0f,%.0f between its herd's front at %.0f,%.0f and its gap at %.0f,%.0f, %d open beside it for a front of %d: it goes at it, on its line (%d)",
+    wall.position.x, wall.position.y, front.x, front.y, w.gap.x, w.gap.y, open, reach, w.mends))
+end
 -- A ram of a rank dead (killed short, never set off: those set off leave big_targets first, detonate): its rank's
 -- reading, for the next rank's size. How long the guns took a ram (its rank's first in reach to its last dead, over its
 -- dead), and for each ram, how long it would have needed in reach to touch its wall (its way from where it entered
@@ -2585,6 +2638,8 @@ local function sequence(w)
     end
     -- (Whether its way was open when it went: the ranks test.)
     w.rushed, w.rush_open = game.tick, herd.rk.way_open(w)
+    -- (Its legs past its gap, for its way kept through a mended piece: herd.rk.keep_line.)
+    w.rush_legs = cmds
     if not w.punch then choose_plan(w) end
   end
   if w.held_cmds and not w.screened then
@@ -3146,7 +3201,7 @@ finish = function(w, outcome)
     plan_breach = w.plan and w.plan.breach, made_of = w.made_of, opens = w.opens_learned, ram_off = w.ram_off,
     sweep_mines = w.sweep_mines, sweep_left = w.sweep_left, plan_mines = w.plan and w.plan.mines,
     breach_after = w.breach_after, ranks = w.ranked and {n = w.rank_n, size = w.rank_size, unused = w.rams_unused, log = w.rank_log,
-      rushed = w.rushed} or nil, rush_open = w.rush_open, spread = w.spread and {points = #w.spread.points,
+      rushed = w.rushed} or nil, rush_open = w.rush_open, mends = w.mends, spread = w.spread and {points = #w.spread.points,
       opened = w.spread.opened} or nil,
     plan = w.plan and {path = w.plan.path, start = w.plan.start, breach = w.plan.breach, cost = w.plan.cost, cover = w.plan.cover}, silenced = w.silenced, clearing = w.clearing, staged = w.staged and true or false,
     breach_cover = w.breach_cover, breach_by = w.breach_by, price = w.price_learned,
@@ -3405,6 +3460,7 @@ local function step(w, tick)
     return finish(w, "scattered")
   end
   if w.stage == "inside" or w.stage == "breach" then release_bursters(w, tick) end
+  if w.stage == "breach" then herd.rk.keep_line(w) end
   if w.stage == "inside" or w.stage == "breach" or w.stage == "blind" then
     -- Half lost, and still losing (any of its own in FIRE_WINDOW): out. Half lost past the guns and losing none, it stays: the
     -- way out is through the fire it paid to cross (a deathworld visit, 2026-10-27: waves lost half in the gap of a turret
@@ -3858,6 +3914,11 @@ function herd.on_command_completed(e)
         probe_read(w); return breach(w)
       end
       if w.stage == "breach" then
+        if storage.trace and w.rushed then
+          local f = foremost(w)
+          log(w, string.format("its rush's order done (%s), its front at %.0f,%.0f", e.result == defines.behavior_result.success
+            and "reached" or "failed", f.x, f.y))
+        end
         -- Through only past the wall: a wall still standing between it and its target, it goes at that wall first. (Its
         -- orders done within 6 tiles of a target 2 tiles behind the wall, its waves were through with no wall broken, from
         -- outside it, and their attempts read as got in; the lane, the siege lab, 2026-10-31.)
@@ -4054,6 +4115,9 @@ function herd.on_died(e)
         elseif (ent.type == "wall" or ent.type == "gate") and w.breach then
           local at = w.breach_wall or w.breach
           local p = ent.position
+          -- (Every piece it broke, by its tile: one standing there again was mended, herd.rk.keep_line.)
+          w.broke = w.broke or {}
+          w.broke[herd.rk.tile_key(p)] = true
           if not w.gap or d2(p, at) < d2(w.gap, at) then
             if not w.gap then log(w, string.format("its gap is open at %.0f,%.0f", p.x, p.y)) end
             w.gap = {x = p.x, y = p.y}
@@ -4151,7 +4215,7 @@ function herd.state()
       group = w.group and w.group.valid and {w.group.position.x, w.group.position.y} or nil,
       mark = w.mark and {w.mark.x, w.mark.y}, trail = w.trail, breach = w.breach and {w.breach.x, w.breach.y},
       holding = w.holding or false, deep = w.deep and {going = w.deep.going or nil} or nil,
-      gap = w.gap and {w.gap.x, w.gap.y}, gap_open = gap_open(w)}
+      gap = w.gap and {w.gap.x, w.gap.y}, gap_open = gap_open(w), rushed = w.rushed, mends = w.mends}
   end
   local rears = {}
   for id, g in pairs(h.rears or {}) do
