@@ -179,10 +179,16 @@ them. Where mines lie on its way in, it breeds sweepers for them.
 
 **Sieges.** Where a wall stands in its way, a wave may come as a siege. A screen of its cheapest biters goes at the
 wall first to draw your fire. Then its big bursters go at the turrets covering its way in, while the rest of the wave
-waits back from the wall. It sends them in ranks, as many at a time as it takes for one to reach the wall alive. When a
-rank's blasts have opened the first wall and another wall still stands between the gap and its target, the next rank
-goes through the gap at that wall. The waiting biters rush in only once the way to the target is open, or once its
-big bursters are spent. A rank killed before any of it bursts makes the next one twice the size.
+waits back from the wall. It sends them in ranks, as many at a time as it takes for one to reach the wall alive. Each
+rank gathers out of your guns' reach and goes in together. When a rank's blasts have opened the first wall and another
+wall still stands between the gap and its target, the next rank goes through the gap at that wall. A rank killed before
+any of it bursts makes the next one bigger, by as many as your guns killed on its way in. With the way open, its last
+big bursters go at the turrets covering it, and the waiting biters rush in behind them, or once its big bursters are
+spent.
+
+**Through the gap.** The rush keeps to its own gap. If your robots have mended a piece of it, the wave breaks that piece
+again rather than walking round to another opening. It only spreads out inside once most of it is past your wall; the
+ones still outside are sent on through the gap after the rest.
 
 **Spread assaults.** Synthexis keeps count of what kills its biters at each place. Where fire and explosions do most
 of the killing (flamethrowers, mines, artillery), it may spread a siege's big bursters over several points of the

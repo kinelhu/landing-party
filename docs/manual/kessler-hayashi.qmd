@@ -141,8 +141,12 @@ Kessler-Hayashi mounts sieges from its first level. Its guns come down from orbi
 3. Its mortars, just outside your turrets' reach, shell one point at a time, your roboports first.
 4. When nothing is left in reach, or right after an orbital strike, the escort goes in rank by rank. It walks in through
    the breach and leaves the wall pieces beside it standing. Inside it goes for what stands behind: your roboports
-   first, then your turrets, then the rest. Where there is no gap, it breaks the wall in its way. After heavy losses it
-   falls back, and its guns move up and drop again.
+   first, then your turrets, then the rest. After heavy losses it falls back, and its guns move up and drop again.
+
+**A closed wall.** When the escort finds no gap and no orbital strike is coming, the siege has two ways in. Its
+escort can break the wall in its way, or its mortars and howitzer can open the wall first, piece by piece on the line
+in, before the escort goes. It only shells the wall where its guns break a piece faster than your robots can mend it,
+and it learns which way works at your wall.
 
 A siege ends when its guns are destroyed or its shells run out. An armed camp's siege does not leave on a clock, because pods
 bring it more shells.
@@ -222,6 +226,7 @@ and its units fielded, only while its lab stands.
 - **Kill the spotter.** Turrets that cover the ground just outside your wall often get it during the paint.
 - **Target the mortars by hand.** A siege's mortars are not military targets, so your artillery leaves them alone.
   Use the artillery targeting remote. Against a site dome, send troops or destroy its projector first.
+- **Keep robots near your walls.** A siege shells a closed wall open only where its guns outpace your robots.
 - **Kill the howitzer and the mast.** Without the howitzer your roboports behind the wall are out of reach, and without
   the mast your robots mend the breach.
 - **Feed your laser line.** Spare generating power and accumulators by the turrets undo a lightning tank's drain.
