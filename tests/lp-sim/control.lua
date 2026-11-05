@@ -10148,13 +10148,19 @@ scenarios.herd = function()
     -- The pen: a wild spawner taken, its stock bred.
     surface().create_entity{name = "biter-spawner", position = at(180, 0), force = "enemy"}
     S.pen = lp("herd_capture", 1, at(180, 0))
-    S.size = mix == "mega" and 200 or 40
+    S.size = (mix == "mega" or mix == "megaburst") and 200 or 40
     if mix == "spit" then
       lp("herd_fill", S.pen, 30, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 10, "lp-bred-medium-spitter")
     elseif mix == "stomp" then
       lp("herd_fill", S.pen, 36, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 2, "lp-bred-stomper")
+    elseif mix == "megaburst" then
+      -- megaburst (the trailer, the user on cut 6, 2026-11-05: "a big biter attack with bursters"): mega's 200 with
+      -- burst's breed, bigs among them.
+      lp("herd_fill", S.pen, 150, "lp-bred-medium-biter")
+      lp("herd_fill", S.pen, 30, "lp-bred-big-biter")
+      lp("herd_fill", S.pen, 20, "lp-bred-cinder")
     elseif mix == "burst" or mix == "burst-nohold" then
       lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 4, "lp-bred-cinder")
@@ -10166,7 +10172,7 @@ scenarios.herd = function()
   end)
   schedule(120, function()
     -- burst: a wall held a wave here before (the bursters are held only where one did).
-    if mix == "burst" or mix == "burst-nohold" then lp("herd_wall_lesson", S.at(0, 0)) end
+    if mix == "burst" or mix == "burst-nohold" or mix == "megaburst" then lp("herd_wall_lesson", S.at(0, 0)) end
     S.t_send = game.tick
     -- wallgoal: its target 2 tiles behind the wall, among the guns (a lane's: the lab's waves said they were through with
     -- no wall broken, from within 6 tiles of it outside the wall; the siege lab, 2026-10-31). Through means past the wall.
@@ -10434,7 +10440,7 @@ scenarios.herd = function()
         string.format("inside at %s, %s past the wall", tostring(S.inside_at), tostring(S.past_at_inside)))
       return
     end
-    if mix == "burst" or mix == "burst-nohold" then
+    if mix == "burst" or mix == "burst-nohold" or mix == "megaburst" then
       local k, walls, guns = w and w.kills or {}, 0, 0
       for name, n in pairs(k) do
         local pr = prototypes.entity[name]
@@ -10444,7 +10450,13 @@ scenarios.herd = function()
       for _, t in ipairs(S.turrets) do if t.valid then alive = alive + 1 end end
       info(string.format("herd %s: bursters %s; broke %d wall pieces, %d turrets (%d of %d standing); kills %s", mix,
         serpent.line(w and w.bursters), walls, guns, alive, #S.turrets, serpent.line(k)))
-      if mix == "burst" then
+      if mix == "megaburst" then
+        local b = w and w.bursters or {}
+        local broke = 0
+        for _, n in pairs(b.broke or {}) do broke = broke + n end
+        check("herd: megaburst, its bursters held, released, and broke something; the wave went in", (b.held or 0) > 0
+          and b.released ~= nil and broke > 0 and w.breach ~= nil, serpent.line({b, w.breach}))
+      elseif mix == "burst" then
         local b = w and w.bursters or {}
         check("herd: burst, the bursters were held and released", (b.held or 0) == 4 and b.released ~= nil, serpent.line(b))
         local broke = 0
@@ -10501,7 +10513,7 @@ scenarios.herd = function()
     -- 18 pieces. (A wave of 40 bites the wall round its breach for 34 to 44% of its bite either way, a spitter's acid
     -- splashing the wall by the gap among it: the count is the test there, the share the big wave's.)
     -- (Not where its bursters or stompers break walls by the blast.)
-    if S.gap_at and mix ~= "burst" and mix ~= "burst-nohold" and mix ~= "stomp" then
+    if S.gap_at and mix ~= "burst" and mix ~= "burst-nohold" and mix ~= "stomp" and mix ~= "megaburst" then
       local GAP_WALLS, GAP_SHARE = 12, 0.5
       local g = S.gap_bite or {wall = 0, inside = 0}
       local share = g.wall / math.max(1, g.wall + g.inside)
