@@ -2626,6 +2626,7 @@ finish = function(w, outcome)
     under_fire = w.under_fire, downed = w.downed or 0, push_walked = w.push_walked,
     choice = w.choice, goal = w.goal and {w.goal.x, w.goal.y}, heart_near = w.heart_near, razed_worth = w.razed_worth or 0, dead_at = w.dead_at,
     lost_by = w.lost_by, lost_worth_by = w.lost_worth_by, worth = w.worth, big_sent = w.big_sent, big_set_off = w.big_set_off,
+    vanished = w.vanished or 0,
     plan_breach = w.plan and w.plan.breach, made_of = w.made_of, opens = w.opens_learned, ram_off = w.ram_off,
     sweep_mines = w.sweep_mines, sweep_left = w.sweep_left, plan_mines = w.plan and w.plan.mines,
     breach_after = w.breach_after,
@@ -2768,7 +2769,27 @@ local function sappers(w)
     end
   end
 end
+-- Its units gone from the map with no death raised, out on its way (not home, where an incubator may take its own back):
+-- the engine destroyed vanilla biters whose commands kept failing, and a big burster stuck among its incubators went 6 s
+-- into the march at full health, uncounted (biotech.lua: destroy_when_commands_fail off; farm siege, 2026-11-05).
+local OUT = {scout = true, gather = true, march = true, blind = true, breach = true, inside = true}
+local function vanished(w)
+  w.known = w.known or {}
+  for _, u in ipairs(w.members) do
+    if u.valid and u.unit_number and not w.known[u.unit_number] then w.known[u.unit_number] = {u = u, name = u.name} end
+  end
+  for n, k in pairs(w.known) do
+    if not k.u.valid then
+      w.known[n] = nil
+      if OUT[w.stage] and not (w.died and w.died[n]) then
+        w.vanished = (w.vanished or 0) + 1
+        log(w, string.format("its %s %d gone from the map with no death (%s)", k.name, n, w.stage))
+      end
+    end
+  end
+end
 local function step(w, tick)
+  if tick % 60 == 0 then vanished(w) end
   detonate(w)
   if w.sweepers then sappers(w) end
   if w.cut_hold and w.stage == "march" then return cut_wait(w) end
@@ -3349,6 +3370,8 @@ function herd.on_died(e)
     for _, w in pairs(h.waves) do
       for _, u in ipairs(w.members) do
         if u == ent then
+          w.died = w.died or {}
+          w.died[ent.unit_number] = true
           local c = e.cause and e.cause.valid and e.cause
           local key = w.stage .. " " .. (c and (c.force.name == "enemy" and "wild " or "") .. c.name or "none")
           w.lost_by = w.lost_by or {}

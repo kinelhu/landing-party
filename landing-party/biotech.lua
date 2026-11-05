@@ -41,6 +41,12 @@ for _, src in ipairs(BREEDS) do
   u.map_color = B.color
   u.enemy_map_color = B.color
   u.hidden_in_factoriopedia = true
+  -- Never taken off the map by the engine (vanilla biters are destroyed when their commands keep failing, and no death is
+  -- raised): its herd counts and orders every unit it sends. A big burster stuck among its incubators, its group's legs
+  -- failing, went 6 s into the march with full health and no death, its siege had no ram, and what it lost was never
+  -- counted (farm LP_MIX=siege, 12345, 2026-11-05). Every breed below is a copy of one of these.
+  u.ai_settings = table.deepcopy(u.ai_settings or {})
+  u.ai_settings.destroy_when_commands_fail = false
   table.insert(out, u)
 end
 
