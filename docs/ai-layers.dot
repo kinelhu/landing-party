@@ -2,14 +2,14 @@ digraph layers {
   graph [rankdir=TB, fontname="Helvetica", nodesep=0.5, ranksep=0.7];
   node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#eef2f7"];
   edge [color="#8899aa", fontname="Helvetica", fontsize=9];
-  "Seams (leaves)" [label="Seams (leaves)\n11 modules, 1072 lines", fillcolor="#d9f0d9"];
+  "Seams (leaves)" [label="Seams (leaves)\n12 modules, 1377 lines", fillcolor="#d9f0d9"];
   "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1371 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 312 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n11 modules, 3048 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n16 modules, 6179 lines\nlayout 1755", fillcolor="#f7dede"];
   "Army and operations" [label="Army and operations\n15 modules, 7388 lines\nops 2031, siege 1996", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1389 lines", fillcolor="#eef2f7"];
-  "The biotech" [label="The biotech\n5 modules, 7110 lines\nherd 3561, farm 2320", fillcolor="#f7dede"];
+  "The biotech" [label="The biotech\n5 modules, 7120 lines\nherd 3571, farm 2320", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n5 modules, 818 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="3", penwidth=1.8];
@@ -37,7 +37,7 @@ digraph layers {
   "The biotech" -> "Corporation" [label="2", penwidth=1.5];
   "The biotech" -> "Knowledge and strategy (per faction)" [label="3", penwidth=1.8];
   "The biotech" -> "Perception and attempts (any attacker)" [label="15", penwidth=4.8];
-  "The biotech" -> "Seams (leaves)" [label="7", penwidth=2.8];
+  "The biotech" -> "Seams (leaves)" [label="8", penwidth=3.0];
   "The biotech" -> "The player's army" [label="1", penwidth=1.2];
   "The map" -> "Corporation" [label="1", penwidth=1.2];
   "The map" -> "Seams (leaves)" [label="2", penwidth=1.5];

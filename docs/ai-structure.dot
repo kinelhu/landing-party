@@ -14,6 +14,7 @@ digraph ai {
     "unit_prior" [label="unit_prior\n29 lines", width=0.83, fillcolor="#d9f0d9"];
     "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "landfx" [label="landfx\n239 lines", width=1.07, fillcolor="#eef2f7"];
+    "burstfx" [label="burstfx\n305 lines", width=1.14, fillcolor="#eef2f7"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
@@ -84,7 +85,7 @@ digraph ai {
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n3561 lines", width=3.80, fillcolor="#f7dede"];
+    "herd" [label="herd\n3571 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n237 lines", width=1.06, fillcolor="#eef2f7"];
     "farm" [label="farm\n2320 lines", width=3.38, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
@@ -101,8 +102,8 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n993 lines", width=1.90, fillcolor="#eef2f7"];
-    "dev" [label="dev\n214 lines", width=1.04, fillcolor="#eef2f7"];
+    "control" [label="control\n1001 lines", width=1.91, fillcolor="#f7dede"];
+    "dev" [label="dev\n228 lines", width=1.05, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n187 lines", width=1.01, fillcolor="#eef2f7"];
   }
@@ -129,6 +130,7 @@ digraph ai {
   "border" -> "chart";
   "border" -> "ops";
   "border" -> "standing";
+  "burstfx" -> "rng";
   "cell" -> "pods";
   "cordon" -> "base";
   "cordon" -> "ops";
@@ -177,6 +179,7 @@ digraph ai {
   "feeds" -> "threat";
   "firemap" -> "threat";
   "herd" -> "attempt";
+  "herd" -> "burstfx";
   "herd" -> "costmap";
   "herd" -> "feeds";
   "herd" -> "firemap";

@@ -17,6 +17,7 @@ local scanner = require("__landing-party__.scripts.scanner")
 local roads = require("__landing-party__.scripts.roads")
 local pods = require("__landing-party__.scripts.pods")
 local landfx = require("__landing-party__.scripts.landfx")
+local burstfx = require("__landing-party__.scripts.burstfx")
 script.on_event(defines.events.on_cargo_pod_finished_descending, pods.on_landed)
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
@@ -67,7 +68,7 @@ local oplog = require("__landing-party__.scripts.oplog")
 local tactics = require("__landing-party__.scripts.tactics")
 script.on_event(defines.events.on_ai_command_completed, herd.on_command_completed)
 script.on_event(defines.events.on_entity_spawned, farm.on_spawned)
-script.on_event(defines.events.on_script_trigger_effect, function(e) aim.on_trigger(e); studies.on_trigger(e) end)
+script.on_event(defines.events.on_script_trigger_effect, function(e) aim.on_trigger(e); studies.on_trigger(e); burstfx.on_trigger(e) end)
 script.on_nth_tick(3600, aim.sweep)
 war.forgive = standing.forgive
 rd.era = ops.era
@@ -108,7 +109,7 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -212,6 +213,7 @@ script.on_event(defines.events.on_entity_died, function(e)
   studies.on_died(e)
   biters.on_died(e)
   herd.on_died(e)
+  burstfx.on_died(e)
   if ent.name == "lp-pen" then farm.on_pen_died(e) end
   oplog.on_died(e)
   -- Cleared ground (docs/reviews/2026-10-14-biter-country-consult.md): a spawner's death, whoever killed it, is a
@@ -926,6 +928,12 @@ remote.add_interface("landing-party", {
     return orbital.force(b, {pos.x or pos[1], pos.y or pos[2]})
   end,
   landfx_active = function() return landfx.active() end,
+  -- A burst's look (scripts/burstfx.lua): its counts, and a burster set off by hand (a big burster's by herd.set_off).
+  burstfx = function() return burstfx.stats() end,
+  burst_set_off = function(unit)
+    if unit and unit.valid and unit.name == "lp-bred-big-burster" then return herd.set_off(unit) end
+    return burstfx.windup(unit)
+  end,
   stats = function(id) return storage.bases[id] and base.stats(storage.bases[id]) end,
   achieved = function() return storage.lp_achieved or {} end,
   pact_state = function() return storage.pact_state end,

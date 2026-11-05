@@ -274,10 +274,13 @@ do
   local c = table.deepcopy(src)
   c.name = "lp-bred-cinder"
   c.max_health, c.movement_speed, c.resistances = BURSTER.health, BURSTER.speed, {}
-  -- Its attack is its end: the hit kills it (as the bomb drone's), and its death is the eruption below.
+  -- Its attack is its end: the hit sets it off, and its death is the eruption below. Set off, it winds up first (the user,
+  -- 2026-11-05: the burster "underwhelming graphically"): its attack raises shared.BURSTFX.windup, and scripts/burstfx.lua
+  -- stops it, swells it in acid green and kills it after its wind-up, past harm meanwhile (set off, it bursts whole, as
+  -- when the hit killed it on the spot, as the bomb drone's, until 0.2.211).
   c.attack_parameters.cooldown = 30
   c.attack_parameters.ammo_type = {target_type = "entity", action = {type = "direct", action_delivery = {type = "instant",
-    source_effects = {{type = "damage", damage = {amount = 10000, type = "physical"}}}}}}
+    source_effects = {{type = "script", effect_id = shared.BURSTFX.windup}}}}}
   c.localised_name = {"entity-name.lp-bred-cinder"}
   c.localised_description = {"entity-description.lp-bred-cinder"}
   ember(c.run_animation, 0)
@@ -292,7 +295,7 @@ do
     {type = "create-entity", entity_name = "lp-cinder-fissure"},
     {type = "create-entity", entity_name = "lp-cinder-fissure-explosion"},
     {type = "create-entity", entity_name = "lp-cinder-fissure-scorchmark"},
-    area(4, 350), area(2, 200)}
+    area(shared.CINDER_BURST.r, shared.CINDER_BURST.amount), area(shared.CINDER_BURST.core_r, shared.CINDER_BURST.core)}
   table.insert(out, c)
   -- The small demolisher's fissure set, renamed and its damage its own.
   local FROM, TO = "small-demolisher-fissure", "lp-cinder-fissure"
