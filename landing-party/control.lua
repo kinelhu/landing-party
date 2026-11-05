@@ -479,6 +479,8 @@ remote.add_interface("landing-party", {
     -- march_trace: each marching herd's group every second to the log (where, its state, its order; debugging).
     if t.march_trace ~= nil then storage.march_trace = t.march_trace or nil end
     if t.biotech_no_hold ~= nil then storage.biotech_no_hold = t.biotech_no_hold or nil end
+    -- biotech_no_ranks: a siege's rams all at once, as before 0.2.212 (herd.lua: herd.rk; the ranks test's control).
+    if t.biotech_no_ranks ~= nil then storage.biotech_no_ranks = t.biotech_no_ranks or nil end
     -- old_stock: Synthexis's army bred by the engine and standing at its incubators, as before 0.2.90 (farm.lua hatching).
     if t.old_stock ~= nil then storage.biotech_old_stock = t.old_stock or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
@@ -670,6 +672,29 @@ remote.add_interface("landing-party", {
     return {ok = ok, ladder = op.ladder}
   end,
   debug_tactics_record = function(faction, foe, pos, method, e) tactics.record(faction, foe, pos, method, e) end,
+  -- Tests only: the share its attempts at a place lost to area damage (tactics.area_share), and a spread's option there
+  -- beside its siege's as its menu weighs them (farm.lua spread_op).
+  debug_area_share = function(faction, foe, pos, methods) return tactics.area_share(faction, foe, pos, methods, nil, nil) end,
+  debug_spread_op = function(sg) return farm.debug_spread_op(sg) end,
+  -- Tests only: a spread's points (herd.spread_points), at most `most`, on the maps of a plan of its farm's kind from `from`
+  -- at `target`, its breach and start those given (the test's wall, not where the plan would go round it).
+  debug_spread_points = function(surface_index, from, target, most, breach, start)
+    local s = game.surfaces[surface_index]
+    local pl = herd.plan(s, from, target, {"player"}, shared.WAVE_MAX)
+    if not pl then return nil end
+    if breach then pl.breach, pl.start, pl.cost = breach, start, math.huge end
+    local pts = herd.spread_points(s, pl, {"player"}, most)
+    if not pts then return {breach = pl.breach, start = pl.start} end
+    -- (And the flamethrowers covering each, for the test: herd.spread_points takes none covering two.)
+    local map = firemap.read(s, pl.breach, 120, {"player"}, nil)
+    local out = {breach = pl.breach, start = pl.start, points = {}}
+    for _, q in ipairs(pts) do
+      local burn = {}
+      for _, t in ipairs(firemap.entries(map, q)) do if t.burn then burn[#burn + 1] = t.e.unit_number end end
+      out.points[#out.points + 1] = {q.x, q.y, burn = burn, cover = q.cover}
+    end
+    return out
+  end,
   -- Tests and the siege lab: a settlement shown what stands within r of pos, as its radar would (intel.lua, ops.sense_at).
   debug_sense = function(id, pos, r)
     local b = storage.bases[id]
@@ -759,6 +784,12 @@ remote.add_interface("landing-party", {
   cell_state = function() return cell.state() end,
   cell_sites = function() return cell.sites() end,
   know_state = function() return know.state() end,
+  -- Tests only: a faction's losses within `window` ticks, what each died of and to whom (know.loss).
+  debug_losses = function(key, window)
+    local out = {}
+    for _, l in ipairs(know.losses(key, window)) do out[#out + 1] = {damage = l.damage, killer = l.killer, kind = l.kind, unit = l.unit} end
+    return out
+  end,
   -- Tests: a settlement's mix as it stands, and as its losses tilt it now (army.composition).
   debug_compose = function(id) local b = storage.bases[id]; local m = army.mix(b); return {mix = m, composed = army.composition(b, m)} end,
   farm_wave = function(n, deep, decide) return farm.debug_wave(n, deep, decide) end,

@@ -22,10 +22,10 @@ digraph ai {
     "costmap" [label="costmap\n415 lines", width=1.26, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n91 lines", width=0.90, fillcolor="#eef2f7"];
-    "tactics" [label="tactics\n260 lines", width=1.09, fillcolor="#eef2f7"];
+    "tactics" [label="tactics\n279 lines", width=1.11, fillcolor="#eef2f7"];
   }
   subgraph cluster_2 { label="Knowledge and strategy (per faction)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "know" [label="know\n235 lines", width=1.06, fillcolor="#d9f0d9"];
+    "know" [label="know\n239 lines", width=1.07, fillcolor="#d9f0d9"];
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -61,7 +61,7 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n963 lines", width=1.87, fillcolor="#eef2f7"];
-    "ops" [label="ops\n2031 lines", width=3.06, fillcolor="#f7dede"];
+    "ops" [label="ops\n2040 lines", width=3.07, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
     "siege" [label="siege\n1996 lines", width=3.02, fillcolor="#f7dede"];
@@ -85,9 +85,9 @@ digraph ai {
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n3571 lines", width=3.80, fillcolor="#f7dede"];
-    "herd_learn" [label="herd_learn\n237 lines", width=1.06, fillcolor="#eef2f7"];
-    "farm" [label="farm\n2320 lines", width=3.38, fillcolor="#f7dede"];
+    "herd" [label="herd\n3879 lines", width=3.80, fillcolor="#f7dede"];
+    "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
+    "farm" [label="farm\n2423 lines", width=3.49, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
   }
@@ -102,10 +102,10 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1001 lines", width=1.91, fillcolor="#f7dede"];
-    "dev" [label="dev\n228 lines", width=1.05, fillcolor="#eef2f7"];
+    "control" [label="control\n1032 lines", width=1.95, fillcolor="#f7dede"];
+    "dev" [label="dev\n234 lines", width=1.06, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
-    "oplog" [label="oplog\n187 lines", width=1.01, fillcolor="#eef2f7"];
+    "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
   }
   "army" -> "know";
   "army" -> "ops";

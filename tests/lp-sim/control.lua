@@ -9353,16 +9353,20 @@ scenarios.visit = function()
             for _, p in ipairs(lp("herd_state").pens) do if p.id == id and p.valid then pen = pen or id end end
           end
           if not pen then info("visit: nwwall: no incubator"); return end
-          local heavy = params.mix:find("nwwallheavy", 1, true)
+          -- LP_MIX=nwwallsiege: nwwallheavy's 200 in a siege's shape, a screen of 20 small biters before them (farm.lua
+          -- siege_size), its herd held while its rams go (in ranks since 0.2.212: herd.rk; the adaptive tactics consult).
+          local siege = params.mix:find("nwwallsiege", 1, true)
+          local heavy = params.mix:find("nwwallheavy", 1, true) or siege
           local stock = heavy and {{"lp-bred-big-biter", 80}, {"lp-bred-behemoth-biter", 60}, {"lp-bred-cinder", 30}, {"lp-bred-big-burster", 30}}
             or {{"lp-bred-medium-biter", 150}, {"lp-bred-big-biter", 30}, {"lp-bred-cinder", 20}, {"lp-bred-big-burster", 6}}
+          if siege then stock[#stock + 1] = {"lp-bred-small-biter", 20} end
           for _, s in ipairs(stock) do
             lp("herd_fill", pen, s[2], s[1])
           end
           lp("herd_wall_lesson", target)
           lp("set_trace", true)
-          wave = lp("herd_wave", pen, target, {planned = true})
-          info(string.format("visit: nwwall: wave %s of %d from incubator %d at %.0f,%.0f, minute %.1f", tostring(wave), heavy and 200 or 206, pen,
+          wave = lp("herd_wave", pen, target, {planned = true, fodder = siege and {name = "lp-bred-small-biter", n = 20} or nil})
+          info(string.format("visit: nwwall: wave %s of %d from incubator %d at %.0f,%.0f, minute %.1f", tostring(wave), siege and 220 or heavy and 200 or 206, pen,
             target.x, target.y, (game.tick - storage.t0) / 3600))
           return
         end
@@ -10508,6 +10512,12 @@ scenarios.herd = function()
     for i = -40, 40 do
       put("stone-wall", at(40, i)); put("stone-wall", at(-40, i)); put("stone-wall", at(i, 40)); put("stone-wall", at(i, -40))
     end
+    -- ranks: a second ring 7 tiles out, past a big burster's blast from the first (the adaptive tactics consult, 2026-11-05).
+    if mix == "ranks" or mix == "ranks-off" then
+      for i = -47, 47 do
+        put("stone-wall", at(47, i)); put("stone-wall", at(-47, i)); put("stone-wall", at(i, 47)); put("stone-wall", at(i, -47))
+      end
+    end
     local layout
     if mix == "belt" then
       layout = {}
@@ -10615,6 +10625,12 @@ scenarios.herd = function()
       lp("herd_fill", S.pen, 150, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 30, "lp-bred-big-biter")
       lp("herd_fill", S.pen, 20, "lp-bred-cinder")
+    elseif mix == "ranks" or mix == "ranks-off" then
+      -- A siege's shape: a herd, its screen and two rams (farm.lua siege_size: rams, a screen of the cheapest breed).
+      lp("herd_fill", S.pen, 30, "lp-bred-medium-biter")
+      lp("herd_fill", S.pen, 8, "lp-bred-small-biter")
+      lp("herd_fill", S.pen, 2, "lp-bred-big-burster")
+      if mix == "ranks-off" then lp("debug_tune", {biotech_no_ranks = true}) end
     elseif mix == "burst" or mix == "burst-nohold" then
       lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 4, "lp-bred-cinder")
@@ -10630,6 +10646,45 @@ scenarios.herd = function()
     S.t_send = game.tick
     -- wallgoal: its target 2 tiles behind the wall, among the guns (a lane's: the lab's waves said they were through with
     -- no wall broken, from within 6 tiles of it outside the wall; the siege lab, 2026-10-31). Through means past the wall.
+    -- ranks (the adaptive tactics consult, 2026-11-05, R1): a siege at two rings, its rams in ranks, its herd held till its
+    -- way is open; ranks-off, its rams all at once (the control). And what its dead died of (know.loss): a unit on a land
+    -- mine and one under a fire sticker away from the base, nothing of the player's to credit either to.
+    if mix == "ranks" or mix == "ranks-off" then
+      lp("set_trace", true)
+      S.wave1 = lp("herd_wave", S.pen, S.at(0, 0), {planned = true, fodder = {name = "lp-bred-small-biter", n = 8}})
+      surface().create_entity{name = "land-mine", position = S.at(-100, 100), force = "player"}
+      -- A spread's points (herd.spread_points): behind the base, a straight wall (du -100) with a flamethrower every 12 tiles 8
+      -- behind it, fed, facing out; its points read on a plan from outside at a target behind it share no flamethrower.
+      do
+        local o, e = S.at(0, 0), S.at(-1, 0)
+        local ex, ey = e[1] - o[1], e[2] - o[2]
+        local dir = ex > 0.5 and defines.direction.east or ex < -0.5 and defines.direction.west
+          or ey > 0.5 and defines.direction.south or defines.direction.north
+        for v = -70, 70 do surface().create_entity{name = "stone-wall", position = S.at(-100, v), force = "player"} end
+        for v = -66, 66, 12 do
+          local ft = surface().create_entity{name = "flamethrower-turret", position = S.at(-92, v), force = "player", direction = dir}
+          if ft then ft.insert_fluid{name = "light-oil", amount = 100} end
+        end
+      end
+      schedule(game.tick - storage.t0 + 200, function()
+        local from, to = S.at(-125, 0), S.at(-85, 0)
+        local br, st = S.at(-100, 0), S.at(-130, 0)
+        S.spread = lp("debug_spread_points", surface().index, {from[1], from[2]}, {to[1], to[2]}, 5, br, st)
+      end)
+      schedule(game.tick - storage.t0 + 300, function()
+        S.mine_unit = surface().create_entity{name = "lp-bred-medium-biter", position = S.at(-100, 100.5), force = "lp-biotech"}
+        local u = surface().create_entity{name = "lp-bred-medium-biter", position = S.at(-100, 115), force = "lp-biotech"}
+        surface().create_entity{name = "fire-sticker", position = u.position, target = u}
+        S.dmg_t0 = game.tick
+      end)
+      schedule(game.tick - storage.t0 + 900, function()
+        S.dmg_seen = {}
+        for _, l in ipairs(lp("debug_losses", "biotech", game.tick - S.dmg_t0)) do
+          if l.kind == "lp-bred-medium-biter" or l.kind == "medium-biter" then S.dmg_seen[#S.dmg_seen + 1] = {l.damage, l.killer} end
+        end
+      end)
+      return
+    end
     if mix == "wallgoal" then
       -- Three mines before the wall and three behind it, on its way: its sweep goes at those before it alone (a sweeper sent
       -- at mines between two walls chewed through the outer to reach them; the lane, 2026-10-31).
@@ -10872,6 +10927,47 @@ scenarios.herd = function()
       check("herd: stomp, a stomper got inside the wall", S.stomp_in ~= nil, tostring(S.stomp_in))
       check("herd: stomp, no Synthexis unit hurt by a stomper", (S.damage["stomper>own"] or 0) == 0,
         tostring(S.damage["stomper>own"]))
+      return
+    end
+    if mix == "ranks" or mix == "ranks-off" then
+      local rk = w and w.ranks or {}
+      info(string.format("herd %s: ranks %s, rushed with its way open %s, inside at %s, lost %s, kills %s", mix, serpent.line(rk),
+        tostring(w and w.rush_open), tostring(w and w.t_inside), serpent.line(w and w.lost_by), serpent.line(w and w.kills)))
+      info(string.format("herd %s: its dead away from the base died of %s", mix, serpent.line(S.dmg_seen)))
+      -- (Read from the killer's type alone, a mine's kill was no damage (land-mine in neither table) and a sticker's with no
+      -- killer left none: the adaptive tactics consult, 2026-11-05.)
+      local mine, fire = false, false
+      for _, d in ipairs(S.dmg_seen or {}) do
+        if d[1] == "explosion" then mine = true end
+        if d[1] == "fire" then fire = true end
+      end
+      check("know: a death to a land mine is recorded as explosion, to a fire sticker as fire", mine and fire, serpent.line(S.dmg_seen))
+      -- (Points a blast apart alone, at a line of flamethrowers 12 apart, every pair would share one's arc.)
+      local pts, shared_burn, burnt = S.spread and S.spread.points or {}, 0, 0
+      for i = 1, #pts do
+        if #pts[i].burn > 0 then burnt = burnt + 1 end
+        for j = i + 1, #pts do
+          for _, a in ipairs(pts[i].burn) do for _, b in ipairs(pts[j].burn) do if a == b then shared_burn = shared_burn + 1 end end end
+        end
+      end
+      info("herd ranks: a spread's points at a flamethrower wall " .. serpent.line(S.spread))
+      check("herd: a spread's points share no flamethrower's arc", #pts >= 2 and burnt >= 1 and shared_burn == 0,
+        serpent.line({points = #pts, burnt = burnt, shared = shared_burn}))
+      if mix == "ranks" then
+        -- Its second rank through the gap the first opened, at the inner ring (40), not the outer (47).
+        local r2 = rk.log and rk.log[1]
+        local du
+        if r2 then
+          local c, e = S.c, S.at(1, 0)
+          du = math.abs((r2.wall[1] - c[1]) * (e[1] - c[1]) + (r2.wall[2] - c[2]) * (e[2] - c[2]))
+        end
+        check("herd: ranks, its second rank of rams goes through its gap at the inner wall", r2 ~= nil and r2.through == true
+          and du ~= nil and du >= 38 and du <= 42, serpent.line({rank = r2, du = du}))
+        -- (Released at its first ram's wind-up, as all its rams went at once, its herd went at a gap not yet open and stood at
+        -- the inner ring: the user's own wall, nwa, 160 of 200 to its flamethrowers there.)
+        check("herd: ranks, its herd held till its way was open, and got in", w ~= nil and w.rush_open == true and w.t_inside ~= nil,
+          serpent.line({rush_open = w and w.rush_open, inside = w and w.t_inside}))
+      end
       return
     end
     if mix == "wallgoal" then
@@ -11679,7 +11775,7 @@ scenarios.farm = function()
     -- and one front: a wall from edge to edge, its guns and mines by
     -- LAB_LANE (key=value, comma-separated): walls (layers, 1), gap (tiles between them, 4), step (a laser every, 6),
     -- inset (guns behind the inner wall, 3), mines (out, in, between or none; out), half (the corridor's half-height, 64),
-    -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), shape (line, saw, bastion; line), amp (8), period (32),
+    -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), shape (line, saw, bastion, nwa: the user's north wall on nwa, below; line), amp (8), period (32),
     -- faces (east, toward the culture; west, toward the corporation camp behind the fort; both); shape maze: its walls
     -- each open mgap tiles (6) at alternate ends but the innermost, closed (the user, 2026-10-31: "a tower defense like maze
     -- wall ... closed off at the final layer"); tech (early, mid, late: its guns' damage and speed research, set at build);
@@ -11761,7 +11857,24 @@ scenarios.farm = function()
         local inner = 40   -- its inner wall, at a straight row (its outer walls `gap` on toward the culture)
         local function wall_u(k, v) return math.floor(inner + k * o.gap + bulge(v) + 0.5) end
         -- Edge to edge, each row joined to the last along the row (no two pieces only corner to corner: a herd slips between).
-        for k = 0, o.walls - 1 do
+        -- shape nwa: the user's own north wall on nwa, as its map reads (nwwall-map.json, the visit mix nwwall: x -40 to 60
+        -- at y -430 to -399), the culture outside: a straight wall 13 tiles out (y -426), a zigzag of two rows 4 and 5 out
+        -- (-417, -418: pieces two by two, the rows offset), a straight wall 3 out (-416), and the inner row itself (-413), wall
+        -- but for an embrasure every 10.5 tiles, two lasers in it and a third 2 tiles behind (-411); flamethrowers every 16
+        -- tiles 10 behind it (-403). (The adaptive tactics consult, 2026-11-05: its own geometry in the lab's matrix, the user:
+        -- a strong layered wall is a legitimate defence.)
+        local NWA_PERIOD, NWA_EMB = 10.5, 2.5
+        if o.shape == "nwa" then
+          local function emb(v) local t = (v + HALF) % NWA_PERIOD; return math.abs(t - NWA_PERIOD / 2) <= NWA_EMB end
+          for v = -HALF, HALF do
+            for _, du in ipairs({13, 3}) do if on_map(A(inner + du, v)) then put("stone-wall", A(inner + du, v)) end end
+            local m = (v + HALF) % 4
+            local zu = (m == 1 or m == 2) and 5 or 4
+            if on_map(A(inner + zu, v)) then put("stone-wall", A(inner + zu, v)) end
+            if not emb(v) and on_map(A(inner, v)) then put("stone-wall", A(inner, v)) end
+          end
+        end
+        for k = 0, (o.shape == "nwa" and -1 or o.walls - 1) do
           local last
           for v = -HALF, HALF do
             local u = wall_u(k, v)
@@ -11776,7 +11889,7 @@ scenarios.farm = function()
             last = u
           end
         end
-        outer = inner + (o.walls - 1) * o.gap
+        outer = o.shape == "nwa" and inner + 13 or inner + (o.walls - 1) * o.gap
         -- Its guns along the inner wall, `inset` behind it, by turns of LAB_LANE guns (laser, gun, flame, rocket, tesla, joined
         -- by +); twice as many within a laser's reach of each end. Flamethrowers fed by a pipe behind them, infinity pipes on it.
         local GUN = {laser = L, gun = G, flame = "flamethrower-turret", rocket = "rocket-turret", tesla = "tesla-turret"}
@@ -11800,7 +11913,15 @@ scenarios.farm = function()
             S.lane_flames = (S.lane_flames or 0) + 1
           end
         end
-        for v = -HALF + o.step / 2, HALF - 1, o.step do
+        if o.shape == "nwa" then
+          for v0 = -HALF + NWA_PERIOD / 2, HALF - 1, NWA_PERIOD do
+            gun(L, inner, v0 - 1); gun(L, inner, v0 + 1); gun(L, inner - 2, v0)
+            if HALF - math.abs(v0) <= REACH then gun(L, inner - 5, v0) end
+          end
+          for v = -HALF + 8, HALF - 1, 16 do gun("flamethrower-turret", inner - 10, v) end
+        end
+        for v = -HALF + o.step / 2, HALF - 1, (o.shape == "nwa" and math.huge or o.step) do
+          if o.shape == "nwa" then break end
           n = n + 1
           local name = kinds[(n - 1) % #kinds + 1]
           local u = inner + bulge(v) - o.inset - (name == "flamethrower-turret" and 1 or 0)
@@ -11813,9 +11934,9 @@ scenarios.farm = function()
         for u = 16, 32, 16 do for v = -HALF, HALF, 16 do if math.abs(v) > 32 then place("substation", A(u, v)) end end end
         -- No way round: along each wall's line and past its ends, every tile walled or off the map (a tile of it, and a herd
         -- walks round).
-        for k = 0, (o.shape == "maze" and 0 or o.walls - 1) do
+        for k = 0, (o.shape == "maze" and 0 or o.shape == "nwa" and 1 or o.walls - 1) do
           for v = -HALF - 3, HALF + 3 do
-            local p = A(wall_u(k, v), v)
+            local p = o.shape == "nwa" and A(inner + (k == 0 and 13 or 3), v) or A(wall_u(k, v), v)
             if on_map(p)
               and surface().count_entities_filtered{position = p, radius = 0.5, type = "wall", force = "player"} == 0 then gaps = gaps + 1 end
           end
@@ -12422,6 +12543,35 @@ scenarios.farm = function()
       for _ = 1, 3 do
         lp("debug_tactics_record", "lp-test-corp", "player", {500, 400}, "raid", {sent = 10, spent = 10, got = 0, inside = false, reached = false})
       end
+      -- The area share (tactics.area_share; the adaptive tactics consult, 2026-11-05): what its attempts at a place lost to
+      -- fire and blasts, a faded mean, never a sum (three attempts that lost 80% there read 0.8, not 2.4), and a spread there
+      -- expected to lose what a siege would less that share (two sieges that lost 80% to area damage: the spread's loss
+      -- under the siege's; where none died to it, the siege's own). Seen failing with the share summed (2.4) and with the
+      -- prior off (equal at both).
+      for _ = 1, 3 do
+        lp("debug_tactics_record", "biotech", "player", {2500, 0}, "siege", {sent = 60, spent = 40, got = 10, inside = true, area = 0.8})
+      end
+      lp("debug_tactics_record", "biotech", "player", {2500, 640}, "siege", {sent = 60, spent = 40, got = 10, inside = true, area = 0})
+      local share = lp("debug_area_share", "biotech", "player", {2500, 0}, {"siege", "raid", "spread"})
+      local share0 = lp("debug_area_share", "biotech", "player", {2500, 640}, {"siege", "raid", "spread"})
+      check("tactics: the area share is a faded mean, never a sum", share and math.abs(share - 0.8) < 0.01 and share0 == 0,
+        serpent.line({share, share0}))
+      local function sg_at(x, y)
+        return {at = {x = x, y = y}, value = 50, need = 100, fodder = 4, k = 2, dist = 100,
+          spread = {points = {{x, y - 20, 2}, {x, y + 20, 2}}, per = 1, k = 2, fodder = 4}}
+      end
+      -- /lp spread and /lp ranks (dev.lua): its farm's next pick that method; ranks with its rams' share at the player halved.
+      local was = lp("debug_reach", "player", 1)
+      lp("dev", {"spread"}, {0, 0})
+      local fs1 = (lp("farm_state").farms or {})[1]
+      lp("dev", {"ranks"}, {0, 0})
+      local fs2 = (lp("farm_state").farms or {})[1]
+      local r_after = lp("debug_reach", "player", was)
+      check("dev: /lp spread and /lp ranks set its farm's next pick", fs1 and fs1.force_method == "spread" and fs2
+        and fs2.force_method == "siege" and r_after == 0.5, serpent.line({fs1 and fs1.force_method, fs2 and fs2.force_method, r_after}))
+      local hot, cold = lp("debug_spread_op", sg_at(2500, 0)), lp("debug_spread_op", sg_at(2500, 640))
+      check("tactics: a place whose deaths were area damage raises the spread over the siege there", hot and cold
+        and hot.lost < 0.5 * hot.siege_lost and math.abs(cold.lost - cold.siege_lost) < 1e-6, serpent.line({hot = hot, cold = cold}))
       local l_fail, l_ok = lp("debug_ladder", "lp-test-corp", "player", {500, 0}, "raid"), lp("debug_ladder", "lp-test-corp", "player", {500, 200}, "raid")
       local l_away = lp("debug_ladder", "lp-test-corp", "player", {500, 400}, "raid")
       check("tactics: a method that failed at a place lately is worth less there, one that got in or never got there is not",

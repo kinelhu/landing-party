@@ -622,6 +622,11 @@ shared.LEASH = 15
 -- The biotech's big burster (biotech.lua builds it from these; herd.lua sends and sets it off by them): its health, its
 -- blast's radius, the blast's damage, and the core's (half the radius) on top.
 shared.BIG_BURST = {health = 3000, r = 6, amount = 1500, core = 800}
+-- The damage types that land on a crowd (the adaptive tactics consult, 2026-11-05): a flamethrower's stream, sticker and
+-- ground fire, a mine's or a shell's blast. What an attacker lost to them, as a share of what it lost, is what it reads to
+-- spread out (tactics.area_share). A named prior: the types could be read from the prototypes (a type whose dealers have a
+-- radius), not done yet.
+shared.AREA_DAMAGE = {fire = true, explosion = true}
 -- The burster's (lp-bred-cinder) eruption: `amount` within `r`, `core` more within `core_r` (biotech.lua), its look's
 -- reach (scripts/burstfx.lua).
 shared.CINDER_BURST = {r = 4, amount = 350, core_r = 2, core = 200}
