@@ -8,7 +8,7 @@ local orbital = require("__landing-party__.scripts.orbital")
 
 local strike = {}
 
-local RADIUS = 60
+local RADIUS = shared.STRIKE_RADIUS
 local SPARE = {wall = true, gate = true, ["electric-pole"] = true}
 
 local function hostile(force)

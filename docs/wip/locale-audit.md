@@ -1,5 +1,8 @@
 # Locale audit: Landing Party 0.2.139 (2026-11-02)
 
+Status: applied in 0.2.140 (DESIGN.md findings, "Locale audit applied"); the strings added up to 0.2.212 brought to it
+in 0.2.213 ("Locale pass, 0.2.213"), and the rules a pattern can see are linted since (`scripts/lint_names.py`).
+
 Sources read: `landing-party/locale/en/locale.cfg` (331 strings), every `{"lp.…"}` key built in Lua (including the
 dynamic ones: `"lp.node-" .. id`, `"lp.plate-" .. plate`, `"lp.withdrawing-" .. corp`, `"lp.hq-down-" .. corp`), and
 the literal English in `draw_text`, `add_chart_tag`, `.text =`, `game.print` and `add_custom_alert` calls (20 strings).

@@ -44,6 +44,8 @@ data:extend({
   node("lp-defoliant", "__base__/graphics/icons/poison-capsule.png", GREEN, {"lp-study-defoliant", "military-3", "explosives"},
     {red, green, blue, mil}, 150, {{type = "unlock-recipe", recipe = "lp-defoliant"}}),
 })
+data.raw.technology["lp-defoliant"].localised_description = {"technology-description.lp-defoliant",
+  tostring(shared.DEFOLIATE_RADIUS)}
 
 -- S4 Incubator capture (the edge): Space Age's capture robot takes a Synthexis incubator, and it breeds biter eggs as a
 -- captured nest does. A native trigger; the capture itself is the reward.
@@ -90,12 +92,13 @@ do
       results = {{type = "item", name = "lp-flak-turret", amount = 1}}}})
 end
 
--- The defoliant (S2): a thrown capsule; where it lands, scripts/studies.lua strips creep within 6 and burns tumors.
+-- The defoliant (S2): a thrown capsule; where it lands, scripts/studies.lua strips creep within shared.DEFOLIATE_RADIUS and burns tumors.
 do
   local c = table.deepcopy(data.raw.capsule["poison-capsule"])
   c.name = "lp-defoliant"
   c.icons = {{icon = "__base__/graphics/icons/poison-capsule.png", tint = GREEN}}
   c.icon = nil
+  c.localised_description = {"item-description.lp-defoliant", tostring(shared.DEFOLIATE_RADIUS)}
   local p = table.deepcopy(data.raw.projectile["poison-capsule"])
   p.name = "lp-defoliant-projectile"
   p.action = {type = "direct", action_delivery = {type = "instant", target_effects = {
