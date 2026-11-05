@@ -4653,6 +4653,31 @@ Bugs and surprises the headless runs caught, each kept as a check:
   or that the fork was made for another squad. Breach is a full-length scenario: fork it, if at all, at a strike of 25
   or less. Not changed, noted: breach arty's comment says "no squad", but its setup feeds the default squad before
   clearing the wants (25 trained in its runs).
+- **The herd chewed the wall beside its open breach** (2026-11-04; the user, watching the trailer's wave of 200: "scary
+  until you see them breach the wall, bugging out, then refocusing on one piece of wall at a time"). Traced in herd mega
+  (each Synthexis unit's order every 2 s after its first wall piece fell, and its damage to walls by who dealt it): once
+  the gap opened it broke 50 more wall pieces, 64% of its bite on walls. Three causes, all ours. Inside, the hunt gave
+  each target at most 3 (8 on big ones): 60 of 200 got one, and the rest stood in a group with no order, where the
+  engine's own distraction (attack_area) set them on the wall round them, a piece at a time. Its push in walked a cost
+  map's legs, which price a wall cell at 1, out through the wall and back (25 pieces in 8 s). And biters still outside
+  sent at a target inside pathed through the wall in front of them, a few tiles from the gap. The trailer's beat showed
+  the same (38 wall pieces). Fixed in `herd.lua`: the wave keeps its gap (of the wall pieces it broke, the one nearest
+  its breach); the hunt's leftovers go at the best target past the caps, spread by the claims on it; a biter with a
+  wall between it and its target walks to the open gap first (`gap_way`); a push and the rush for the heart drop legs
+  that cross a wall (`inside_legs`); the way home runs through the gap; the breach's "a wall between it and its
+  target" goes through the open gap instead of at that wall. Found on the way, by the plain herd (0 of 41 home): with
+  no idle biters left, the group it hunted from stayed in the engine's fight (state attacking_distraction, no
+  distraction_command reported) under its order home, and walked its last 17 on to the east wall's guns; it now goes
+  home in a new group (14 of 41 home, 11 before). After, mega: 4 to 7 wall pieces after the gap, 21 to 28% of its bite
+  on walls, the same razed (5 guns, 7 lasers, 8 assemblers, the power), home 26 s sooner; scout 8 pieces (18 before).
+  Waves of 40 (spit, probe, stray) were 4 to 7 pieces and 34 to 44% either way. Check: herd "through its gap, not
+  chewing the wall beside it" (at most 12 wall pieces after the gap, at most half its bite on walls; not burst or
+  stomp, whose blasts break walls), seen failing before the fix on mega (50, 64%) and scout (18). Assumed, not tested:
+  walls making pockets inside a base (a gap into the outer ring only); the gap is one point. Open: farm siege (12345)
+  fails after this change (no siege counted, its rams never sent). Its first wave now comes home with 9 where it came
+  with 5, the farm's next choices diverge, and its third wave's one big burster is gone on the march, before its
+  breach, with no death recorded (traced: valid at the scout, gone 6 s into the march). Its first wave loses its big
+  burster the same way before and after this change: a fault of the march or the incubators, not found yet.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

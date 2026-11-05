@@ -10429,6 +10429,22 @@ scenarios.herd = function()
       tostring(w.push_walked))
     local wb = (S.damage["enemy>lp-biotech"] or 0) + (S.damage["lp-biotech>enemy"] or 0)
     check("herd: no fight between wild and bred", wb == 0, tostring(wb))
+    -- Through its gap, not chewing the wall beside it (the user, 2026-11-04, watching the trailer's wave of 200: "breach
+    -- the wall, bugging out, then refocusing on one piece of wall at a time"). Once its first wall piece is down, at most
+    -- GAP_WALLS more, and at most GAP_SHARE of its bite on walls. Caught: mega, 50 wall pieces after the gap and 64% of its
+    -- bite on walls, its biters with no target idle in a group the engine set on the wall, its push in walking a cost
+    -- map's legs out through the wall, and those sent at targets from outside pathing through the wall before them; scout,
+    -- 18 pieces. (A wave of 40 bites the wall round its breach for 34 to 44% of its bite either way, a spitter's acid
+    -- splashing the wall by the gap among it: the count is the test there, the share the big wave's.)
+    -- (Not where its bursters or stompers break walls by the blast.)
+    if S.gap_at and mix ~= "burst" and mix ~= "burst-nohold" and mix ~= "stomp" then
+      local GAP_WALLS, GAP_SHARE = 12, 0.5
+      local g = S.gap_bite or {wall = 0, inside = 0}
+      local share = g.wall / math.max(1, g.wall + g.inside)
+      check("herd: through its gap, not chewing the wall beside it", (S.walls_after or 0) <= GAP_WALLS and share <= GAP_SHARE,
+        string.format("%d wall pieces after the gap, %.0f%% of its bite on walls (%d to walls, %d past them)",
+          S.walls_after or 0, 100 * share, g.wall, g.inside))
+    end
     if mix == "" or mix == "wild" or mix == "mega" then
       local s = w.t_launch
       info(string.format("herd: tell: mark %s s after launch, march %s s, breach %s s, first kill %s s, withdraw %s s, end %s s",
@@ -14364,6 +14380,12 @@ script.on_event(defines.events.on_entity_died, function(e)
   if e.entity.force.name == "player" and e.force and e.force.name == "lp-biotech" then
     S.syn_razed = S.syn_razed or {}
     S.syn_razed[e.entity.type] = (S.syn_razed[e.entity.type] or 0) + 1
+    -- (Herd: the first wall piece down opens the gap; the wall pieces it kills after that, and its first kill past it.)
+    if params.scenario == "herd" then
+      if e.entity.type == "wall" or e.entity.type == "gate" then
+        if S.gap_at then S.walls_after = (S.walls_after or 0) + 1 else S.gap_at = game.tick end
+      elseif S.gap_at and not S.first_in then S.first_in = game.tick end
+    end
   end
   -- The player's buildings the biters destroyed (the visit's report: Grubstake's pollution draws them).
   if e.entity.force.name == "player" and e.force and e.force.name == "enemy" and e.entity.type ~= "character" then
@@ -14445,6 +14467,13 @@ if params.scenario == "herd" then
     end
     if e.cause and e.cause.valid and e.cause.name == "lp-bred-stomper" and v == "lp-biotech" then
       S.damage["stomper>own"] = (S.damage["stomper>own"] or 0) + e.final_damage_amount
+    end
+    -- Its bite once a gap is open in the wall (S.gap_at, the first wall piece of the player's it killed): on the wall
+    -- beside the gap, or past it (the gap check, below).
+    if S.gap_at and a == "lp-biotech" and v == "player" then
+      local k = (e.entity.type == "wall" or e.entity.type == "gate") and "wall" or "inside"
+      S.gap_bite = S.gap_bite or {wall = 0, inside = 0}
+      S.gap_bite[k] = S.gap_bite[k] + e.final_damage_amount
     end
   end)
 end

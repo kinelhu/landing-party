@@ -49,6 +49,7 @@ local INSIDE_MAX = 4 * 3600      -- and inside this long at most, however it far
 -- are past the breach. The squads gang up on a single target"): the nearest on the list with fewer than PER_TARGET on it
 -- (BIG_TARGET for what is big), the list read once a look, every LOOK ticks.
 local PER_TARGET, BIG_TARGET = 3, 8
+local OVER_SPREAD = 400   -- past the caps, a claim on a target counts as this much more distance squared (20 tiles)
 local BIG = {reactor = true, ["fusion-generator"] = true, roboport = true, ["assembling-machine"] = false,
   ["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true}
 local LOOK = 120
@@ -522,6 +523,36 @@ local function foremost(w)
     end
   end
   return best or w.center
+end
+-- Through its gap, not the wall beside it (the user, 2026-11-04, the trailer's wave of 200: "breach the wall, bugging
+-- out, then refocusing on one piece of wall at a time"). Its gap open (w.gap: of the wall pieces it broke, the one
+-- nearest its breach, still no wall there), a biter or its group with a wall between it and where it goes walks to the gap first: sent straight at a
+-- target past the wall, the engine's path ran through the wall in front of it and it chewed that, a piece at a time, a
+-- few tiles from the open gap (herd test, mega: 50 wall pieces broken after the gap opened, 64% of its bite on walls).
+local function gap_open(w)
+  if not w.gap then return false end
+  return game.surfaces[w.surface].count_entities_filtered{position = w.gap, radius = 0.9, type = WALLS, force = foes(w),
+    limit = 1} == 0
+end
+-- The leg through the gap from `from` toward `dest`, or nil (no gap open, or no wall between).
+local function gap_way(w, from, dest)
+  if not gap_open(w) or not wall_between(w, from, dest) then return nil end
+  return go(w.gap, defines.distraction.none, 1.5)
+end
+-- A way of legs (a cost map's, round the fire) inside the base: a leg that would cross a wall of the foe's dropped, so its
+-- herd walks its way inside and not out through the wall and back (pushing in along such a way, a herd of 200 broke 25
+-- wall pieces; herd test, mega). The first leg through its gap when a wall stands between.
+local function inside_legs(w, from, pts, radius)
+  local cmds, prev = {}, from
+  local first = pts[1] and gap_way(w, from, pts[#pts])
+  if first then cmds[1] = first; prev = w.gap end
+  for i, q in ipairs(pts) do
+    if i == #pts or not wall_between(w, prev, q) then
+      cmds[#cmds + 1] = go(q, defines.distraction.none, radius or 6)
+      prev = q
+    end
+  end
+  return cmds
 end
 local function where(w)
   local x, y, n = 0, 0, 0
@@ -2429,14 +2460,18 @@ function hunt(w)
   if w.push_to and w.push_to.valid then list[#list + 1] = {e = w.push_to, tier = 4} end
   table.sort(list, function(x, y) return x.tier < y.tier end)
   local given = 0
+  -- Two passes: each its own target within the caps first; then those left over (more of it than its targets hold) each at
+  -- the best of them all the same, spread by the claims on them, so none of its biters stands idle in a group with no
+  -- order (the engine's own distraction drew such a group of 107 on to the wall round it; herd test, mega).
+  for pass = 1, 2 do
   for _, u in ipairs(units) do
     if not w.aim[u.unit_number] and not w.holders[u.unit_number] and u.valid then
       local best, bs
       for _, c in ipairs(list) do
         local id = c.e.unit_number or 0
         local cap = BIG[c.e.type] and BIG_TARGET or PER_TARGET
-        if c.e.valid and (claims[id] or 0) < cap and not (w.unreachable and w.unreachable[id]) then
-          local sc = c.tier * 10000 + d2(c.e.position, u.position)
+        if c.e.valid and (pass == 2 or (claims[id] or 0) < cap) and not (w.unreachable and w.unreachable[id]) then
+          local sc = c.tier * 10000 + d2(c.e.position, u.position) + (pass == 2 and OVER_SPREAD * (claims[id] or 0) or 0)
           if not bs or sc < bs then best, bs = c, sc end
         end
       end
@@ -2450,12 +2485,16 @@ function hunt(w)
           table.insert(w.went_for, best.e.type)
           if math.floor(best.tier) == 4 and not w.havoc then w.havoc = true; log(w, "nothing feeds a gun: breaks what is there") end
         end
-        -- Its own order takes it out of its group: from here each of its biters is on its own.
-        u.commandable.set_command{type = defines.command.attack, target = best.e, distraction = defines.distraction.none}
+        -- Its own order takes it out of its group: from here each of its biters is on its own. Through its gap first when a
+        -- wall stands between it and its target (gap_way).
+        local hit = {type = defines.command.attack, target = best.e, distraction = defines.distraction.none}
+        local via = gap_way(w, u.position, best.e.position)
+        u.commandable.set_command(via and compound({via, hit}) or hit)
         given, busy = given + 1, busy + 1
         w.individual = true
       end
     end
+  end
   end
   if given > 0 then log(w, string.format("%d of its biters each go for their own target (%d targets in sight)", given, #list)) end
   if busy > 0 then return end
@@ -2476,10 +2515,10 @@ function hunt(w)
       return withdraw(w, "nothing in sight feeds a gun")
     end
     -- (Along the way it priced, round the fire, as its rush for the heart.)
-    local cmds = {}
-    for _, q in ipairs(costmap.path(cm, near.position) or {}) do cmds[#cmds + 1] = go(q, defines.distraction.none, 6) end
-    cmds[#cmds + 1] = go(near.position, defines.distraction.none, 6)
-    w.group.set_command(compound(cmds))
+    local pts = {}
+    for _, q in ipairs(costmap.path(cm, near.position) or {}) do pts[#pts + 1] = q end
+    pts[#pts + 1] = near.position
+    w.group.set_command(compound(inside_legs(w, w.group.position, pts)))
     w.push_to = near
     w.pushing = game.tick
     -- (Measured by its group, where the order went: the middle of 186 strung out lagged 40 tiles behind it.)
@@ -2519,6 +2558,13 @@ withdraw = function(w, why)
   stay_end(w)
   -- Its biters back into one group, to go home as it came (inside, each was on its own).
   w.individual = nil
+  -- A new group to go home in. (The group it hunted from stays in the engine's own fight, its state attacking_distraction,
+  -- under a new order with no distraction and none it reports (distraction_command nil): told home, a wave of 17 walked
+  -- on to the guns that had been shooting it and died there, none home; herd test, its hunt's leftovers no longer idle.)
+  if w.group and w.group.valid then
+    w.group.destroy()
+    w.group = nil
+  end
   ensure_group(w)
   local g = w.group
   if not (g and g.valid) then return end
@@ -2531,6 +2577,8 @@ withdraw = function(w, why)
   -- home: the next wave's strays, 2026-10-25).
   w.home = {}
   if w.breach then table.insert(w.home, w.breach) end
+  -- (Out through its gap, not through the wall beside it: gap_way.)
+  if gap_open(w) and w.breach and d2(w.gap, w.breach) > 4 then table.insert(w.home, w.gap) end
   for k = #w.trail, 1, -1 do table.insert(w.home, w.trail[k]) end
   w.home_leg = 1
   cover(w)
@@ -3234,6 +3282,13 @@ function herd.on_command_completed(e)
         local wall = (w.wall_tries or 0) < WALL_TRIES and w.goal and wall_between(w, foremost(w), w.goal)
         if wall and w.group.valid then
           w.wall_tries = (w.wall_tries or 0) + 1
+          -- (Its gap open: through it, not at the wall beside it, gap_way.)
+          if gap_open(w) then
+            log(w, string.format("a wall between it and its target at %.0f,%.0f: through its gap at %.0f,%.0f", wall.position.x,
+              wall.position.y, w.gap.x, w.gap.y))
+            w.group.set_command(compound({go(w.gap, defines.distraction.none, 3), go(w.goal, defines.distraction.none, 6)}))
+            return
+          end
           log(w, string.format("a wall between it and its target at %.0f,%.0f: it goes at it", wall.position.x, wall.position.y))
           w.group.set_command{type = defines.command.attack, target = wall, distraction = defines.distraction.by_enemy}
           return
@@ -3253,9 +3308,11 @@ function herd.on_command_completed(e)
           -- Along the way it priced, round the fire (the user, 2026-10-28: "why don't we simply avoid going in a straight
           -- line?"): told to go straight to it, the engine's shortest way crossed a second laser line and a line of
           -- flamethrowers it had priced its way round, and it lost 54 there.
-          local cmds = {}
-          for _, q in ipairs(w.deep.way or {}) do cmds[#cmds + 1] = go(q, defines.distraction.none, 6) end
-          cmds[#cmds + 1] = go(w.deep.at, defines.distraction.none, 8)
+          local pts = {}
+          for _, q in ipairs(w.deep.way or {}) do pts[#pts + 1] = q end
+          pts[#pts + 1] = w.deep.at
+          local cmds = inside_legs(w, foremost(w), pts)
+          cmds[#cmds] = go(w.deep.at, defines.distraction.none, 8)
           w.group.set_command(compound(cmds))
           log(w, string.format("rushes for the heart at %.0f,%.0f, %d legs round the fire", w.deep.at.x, w.deep.at.y, #cmds))
           return
@@ -3350,6 +3407,17 @@ function herd.on_died(e)
           if valuemap.worth_of(ent) > 0 then m.broke, m.hp = m.broke + 1, m.hp + (ent.max_health or 0) end
         end
         if not w.t_first_kill and ent.type ~= "wall" and ent.type ~= "gate" then w.t_first_kill = game.tick end
+        -- Its gap: of the wall pieces of the foe's it broke from its breach on, the one nearest where it breaks in (gap_way:
+        -- its biters through it). (The first broken can be a stray piece 10 tiles along the wall, chewed by biters strung
+        -- out beside the breach before its own pieces fell; herd test.)
+        if (ent.type == "wall" or ent.type == "gate") and w.breach then
+          local at = w.breach_wall or w.breach
+          local p = ent.position
+          if not w.gap or d2(p, at) < d2(w.gap, at) then
+            if not w.gap then log(w, string.format("its gap is open at %.0f,%.0f", p.x, p.y)) end
+            w.gap = {x = p.x, y = p.y}
+          end
+        end
       end
     end
   end
