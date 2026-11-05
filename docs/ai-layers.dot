@@ -6,8 +6,8 @@ digraph layers {
   "Perception and attempts (any attacker)" [label="Perception and attempts (any attacker)\n6 modules, 1371 lines", fillcolor="#eef2f7"];
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 312 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n11 modules, 3048 lines", fillcolor="#eef2f7"];
-  "Settlement" [label="Settlement\n16 modules, 6167 lines\nlayout 1751", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n15 modules, 7165 lines\nops 2030, siege 1996", fillcolor="#f7dede"];
+  "Settlement" [label="Settlement\n16 modules, 6179 lines\nlayout 1755", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n15 modules, 7344 lines\nops 2031, siege 1996", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1389 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n5 modules, 7007 lines\nherd 3458, farm 2320", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];

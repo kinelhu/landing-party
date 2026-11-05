@@ -1962,7 +1962,8 @@ function ops.force(b, kind, pos, trace, army, owner)
   for _, u in ipairs(b.garrison) do if u.valid and u.type == "unit" and shared.kind_of(u.name) ~= "lp-hauler" then n = n + 1 end end
   local proto = shared.variant(b.corp, "lp-infantry")
   for _ = n + 1, want do
-    local p = s.find_non_colliding_position(proto, {h.position.x, h.position.y + 4}, 20, 0.5)
+    -- Not inside a walled emplacement by the depot (army.spawn_point: a forced raid's hands were made in a scrap cannon's).
+    local p = army.spawn_point(b, proto, {h.position.x, h.position.y + 4}, 20)
     local u = p and s.create_entity{name = proto, position = p, force = h.force}
     if u then
       table.insert(b.garrison, u)

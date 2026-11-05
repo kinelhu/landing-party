@@ -41,14 +41,14 @@ digraph ai {
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n866 lines", width=1.76, fillcolor="#eef2f7"];
+    "base" [label="base\n872 lines", width=1.77, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
-    "layout" [label="layout\n1751 lines", width=2.75, fillcolor="#f7dede"];
+    "layout" [label="layout\n1755 lines", width=2.75, fillcolor="#f7dede"];
     "wfc" [label="wfc\n380 lines", width=1.22, fillcolor="#d9f0d9"];
     "wfc_serenity" [label="wfc_serenity\n134 lines", width=0.95, fillcolor="#d9f0d9"];
     "lots_grubstake" [label="lots_grubstake\n266 lines", width=1.10, fillcolor="#d9f0d9"];
-    "site" [label="site\n168 lines", width=0.99, fillcolor="#eef2f7"];
+    "site" [label="site\n170 lines", width=0.99, fillcolor="#eef2f7"];
     "blocks" [label="blocks\n76 lines", width=0.88, fillcolor="#d9f0d9"];
     "modules" [label="modules\n19 lines", width=0.82, fillcolor="#d9f0d9"];
     "crew" [label="crew\n483 lines", width=1.34, fillcolor="#eef2f7"];
@@ -59,8 +59,8 @@ digraph ai {
     "belts" [label="belts\n86 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "army" [label="army\n785 lines", width=1.67, fillcolor="#eef2f7"];
-    "ops" [label="ops\n2030 lines", width=3.06, fillcolor="#f7dede"];
+    "army" [label="army\n963 lines", width=1.87, fillcolor="#eef2f7"];
+    "ops" [label="ops\n2031 lines", width=3.06, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
     "siege" [label="siege\n1996 lines", width=3.02, fillcolor="#f7dede"];
@@ -101,7 +101,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n992 lines", width=1.90, fillcolor="#eef2f7"];
+    "control" [label="control\n993 lines", width=1.90, fillcolor="#eef2f7"];
     "dev" [label="dev\n214 lines", width=1.04, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n187 lines", width=1.01, fillcolor="#eef2f7"];

@@ -487,6 +487,7 @@ remote.add_interface("landing-party", {
     if t.road_haul ~= nil then storage.road_haul = t.road_haul end
     if t.road_lapse ~= nil then storage.road_lapse = t.road_lapse end
     if t.army_off ~= nil then storage.army_off = t.army_off end
+    if t.yard_off ~= nil then storage.yard_off = t.yard_off end
     if t.raids_off ~= nil then storage.raids_off = t.raids_off end
     if t.ops_off ~= nil then storage.ops_off = t.ops_off end
     if t.phases_fast ~= nil then storage.phases_fast = t.phases_fast end

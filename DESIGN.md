@@ -129,6 +129,8 @@ document still says Serenity where it records history.
 | The fall: a destroyed lander collapses its settlement (cascade, evacuation, ruins that mine to their loot) | built; capture by holding there fails since before 5281d15 (open) | `fall` |
 | Command bandwidth: unit cap from relays and research, cores from the faction's wreckage | built | `caps` |
 | Patrols through settlements | built | `lively` (life animation) |
+| The yard: an idle garrison waits on open ground outside its walled landing pad (and any walled block), each unit on a slot of its own, standing (`army.yard`, 2026-11-04) | built | `idle` (both corporations; `LP_MIX=off` the bug as it was) |
+| Units are made where none of the camp's own walls stand within 3.5 tiles (`army.spawn_point`: production and a forced raid's infantry; 2026-11-04) | built | `idle` `LP_MIX=pillbox` |
 | Convoys carrying exports to the uplink | built | `convoy` (life animation) |
 | Interceptors against player trains | built | `train` |
 | Grudge: a lander the player kills provokes its corporation; the next landing comes angry | built | `grudge` |
@@ -825,6 +827,20 @@ Built in `units.lua`, `scripts/army.lua`.
 - **Patrols.** A few units leave the garrison (bastion 2, sprawl 4, picket and fortress 3) and loop a route of
   up to five stops (outposts, pickets, compounds, the pad), fighting what they meet; the route is redrawn as
   the settlement grows. The settlement looks alive and its soft outposts are visited.
+- **The yard.** Units at home wait at a spot of open ground 16 to 28 tiles from the first depot (else the lander), at
+  least 8 tiles outside every walled block and the landing pad, with no building or water within 6, nothing of an
+  enemy's within 40, and clear of where the camp's trucks come out (12 tiles south of home): the first such spot on
+  rings round home, starting on the side away from the player's spawn (`army.yard_spot`, looked for again each minute
+  and when the first depot changes). Each unit has a slot of its own on a spiral round it, 3 tiles apart at the centre,
+  so vehicles do not stack. An idle, wandering or standing unit away from its slot is sent there (at most once a minute
+  and three times; not while an enemy is within 24), and on it stands (a stop order, distracted only by damage). Every
+  taker draws from the garrison as before (`pool.take`); a walled block's gates open as one of its units leaves for the
+  yard (that block's only, never a cordon's across a rail). Assumed, not tested: a convoy finds its two escorts within
+  30 tiles of the depot (the yard's centre is at most 28 out, its outer slots further).
+- **Where units are made.** At the free spot nearest the depot's spawn point (4 tiles south, or past its walls toward
+  the player) with none of the camp's own walls or gates within 3.5 tiles, looked for by rings out to 12 tiles
+  (`army.spawn_point`); with none, the nearest free spot as before. The infantry a forced raid lacks (`ops.force`) are
+  made the same way.
 - **Convoys (exports travel).** While the uplink stands, a mature settlement's exports go to it as a hauler
   (the car's hull, 1,500 health, 0.065 tiles a tick, slower than any escort, lightly armed) with up to two
   escorts from the units at home. Convoy discipline is kept by the script: the hauler forms up 25-45 tiles
@@ -4714,6 +4730,49 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **Regressions of two worktrees shared profiles** (2026-11-04): a run's profile is named by scenario, seed and tag, so
   two agents regressing at once swapped each other's mod links. `LP_REG_TAG` (regress.sh, fork.sh) gives a regression
   its own profiles and forks' profiles.
+- **Idle garrisons in their landing pads** (2026-11-04; trailer footage, the user: "a ton of units swarming on top of a
+  turret ... blocked in by walls maybe?"): a Grubstake camp's 12 buggies and 3 troopers milled inside its walled pad,
+  on its corner turrets and generators and in the gap of its south wall, for a whole visit; a probe found every one
+  under the engine's wander, never leaving the pad. A unit made by script wanders where it is made: the drop escort
+  steps off inside the pad (`army.escort`, 8 tiles south of the lander), and nothing gave an idle garrison anywhere
+  else to be (the leash acts only beyond the claim). Kessler-Hayashi's camps had it too: scenario `idle` counted 4 of
+  10 of Grubstake's and 3 of 8 of Kessler-Hayashi's idle units in their pads (seed 12345). Now the yard (The army).
+  Found with it: the patrol drafted from the escort never walked (`patrol_legs` 0): it ordered only units with no
+  command, and the escort's wander counts as one; and with fewer than two waypoints it took units and gave them
+  nothing to do. Now a wandering patrol unit is ordered, and none is taken without a route. First yard drafts: a
+  spot 6 tiles out of the pad put outer slots back inside it; units arrived idle took the default wander (10 tiles) and
+  drifted in again (seed 777); stood there by a compound order, the watchdog called them stuck (a compound counts as
+  moving). The regression (growth and ops, 12345) then failed six runs that pass without it, each traced: a yard south of
+  home stood where skimming trucks are made, and the trucks got stuck (skim, 2% of the flow); a yard 19 tiles from the
+  three gun turrets by a crew's road drew their fire and its units razed them before the drone flew past (crew
+  answered); interceptors leaving from open ground reached heist's wagon 110 tiles out and shot it, the laser and the
+  pole's cell with it, before any raid (heist, looted 0); unitnode's cull of ten units at minute 13, the first found by
+  position, took the slugs and prisms already made (built 0). Hence the yard's side and its distance from what is
+  enemy, and two test changes: heist's wagon cannot be destroyed (the heist is what is tested; interceptors off instead,
+  14 raiders razed it before emptying it) and unitnode's cull spares the unit it counts. prospect truck failed with the yard
+  switched off (the patrol change alone) and passed once the yard had moved (not traced). `idle`: at worst 0 to 1 of 5 to 8 garrison units
+  inside their pads on the five seeds; `LP_MIX=off` 4 of 5 and 4 of 6; with the old patrol rule, 0 legs for both.
+  A second pass (the stand order distracted only by damage, the yard's side and three sends at most) failed two more:
+  armed relay's spawner was razed with no sweep and no operation (its army is now off there, assumed its walking
+  patrols) and heist's wagon kept 1 plate of 401 after a 400-item raid (the check allows one). The player area then
+  failed cut and occupy (both pass with the yard off): units standing at the yard refused the ground the camp grew on
+  (`site.fits` and `layout`'s lot and area checks counted any unit as built; refused_by `unit:lp-serenity`), and
+  occupy's camp grew 5 depots instead of 1, a cap of 50 put it on a war footing, and its rebuilds after the strike waited
+  for parts (1 of 16). Units sent to the yard no longer refuse ground (`shared.own_unit`; construction moves them,
+  `make_way`): occupy 1 depot again, cut and occupy pass. Passing over every unit of a camp's own instead changed how
+  other camps grew and failed pool, plate grubstake and crew island (all three pass with it narrowed to the yard's).
+  Whole list (12345, 274 runs with the nightly set, other worktrees' regressions running at the same time): 269 passed;
+  each failure re-run alone: levers passed (a profile shared with another worktree's run), pool, plate grubstake and
+  crew island pass with `own_unit` narrowed, occupy and cut pass. Open: hazard research (nightly) fails, and passes at
+  the commit before: its camp's first clearance took all 4 nests by minute 18 with 31 units lost to biters (447 lost and 1
+  nest left at the commit before), so no losses bought it railguns (railguns level nil). Not traced further.
+- **Units made inside a walled pillbox** (2026-11-04; the user, then film stills of the trailer visit save at minute 38):
+  a Grubstake depot stood 5 tiles north of its walled scrap cannon emplacement; a raid forced with `/lp raid` made its
+  shotgun hands at the depot, and 6 s on the pillbox was packed with them, unable to leave. Production and `ops.force`
+  both made units at the free spot nearest 4 tiles south of the depot, which was inside the pillbox. Now
+  `army.spawn_point`. `idle LP_MIX=pillbox` (16 walls round a 3 by 3 hollow 5 tiles south of the depot, a forced raid):
+  2 units in it at 6 s and at 60 s with the old spot, none with the new. Not changed: the planner still sets pillboxes
+  against depots (an apron kept clear before a depot is the other remedy, not built).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

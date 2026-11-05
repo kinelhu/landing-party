@@ -848,6 +848,12 @@ function base.stats(b)
     convoys_sent = b.convoys_sent or 0, convoys_delivered = b.convoys_delivered or 0, convoys_stuck = b.convoys_stuck or 0,
     convoys_lost = b.convoys_lost or 0, cargo_lost = b.cargo_lost or 0, intercepts = b.intercepts or 0,
     convoy_spread = army.convoy_spread(b), convoy_spread_moving = army.convoy_spread(b, true), convoy_debug = army.convoy_debug(b),
+    -- Its landing pad's box (layout.land) and its idle garrison's yard (army.yard_spot), for scenario idle.
+    yard = b.yard, yard_moves = b.yard_moves or 0,
+    garrison_ids = (function() local t = {} for _, u in ipairs(b.garrison) do
+      if u.valid and u.unit_number then t[#t + 1] = u.unit_number end end return t end)(),
+    pad_box = (function() for _, m in ipairs(b.blocks) do
+      if m.kind == "pad" then return {m.x0, m.y0, m.x0 + m.w, m.y0 + m.h} end end end)(),
     fortress_box = b.blocks[1] and b.blocks[1].kind == "fortress" and
       {b.blocks[1].x0, b.blocks[1].y0, b.blocks[1].x0 + b.blocks[1].w, b.blocks[1].y0 + b.blocks[1].h} or nil,
     archetypes = (function() local t = {} for _, h in ipairs(b.hubs) do
