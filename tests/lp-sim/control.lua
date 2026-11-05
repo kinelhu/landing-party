@@ -9009,6 +9009,95 @@ scenarios.visit = function()
       end)
     end
   end
+  -- LP_MIX=nwwall (the trailer; the user, 2026-11-05: "make use of my wall design on nw/nwa at least to make the synthexis
+  -- attacks more realistic"): a big wave of the culture that landed (the mod's own landing and incubators) at the player's
+  -- own wall. Its target: 30 tiles past the first of the player's walls on the straight line from the culture to the
+  -- factory's spawn (nwa: its north wall of lasers and flamethrowers, the culture landing north of it; on nw that line
+  -- meets no wall, the base open to its east). Staged, as the herd scenario's megaburst is: from minute 12, once no other
+  -- wave is out, its first incubator is stocked with megaburst's 150 mediums, 30 big biters and 20 cinders and
+  -- 6 big bursters, a wall is marked as having held a wave there (its bursters held for the wall), and the wave sent with
+  -- its farm's kind of plan (herd_wave, planned). Its scout, way in, staging, bursts, gap and inside are the mod's.
+  -- Written: the player's walls, turrets and machines at the start (nwwall-map.json); each stage of the wave
+  -- (nwwall-beats.txt: "stage tick x y alive [breach x y] [gap x y]", x y its group's centre) for films
+  -- (docs/trailer/reel-nwwall.lua). (A culture's own sieges on nw, breachlab: one of 64 with one big burster in an hour,
+  -- its plan for the heart "no way" for 27 minutes; 2026-11-05.)
+  -- nwa, 0.2.209: the 206 opened a gap in the wall at minute 15 (41 wall pieces, no turret) and died in it, 3 home, to its
+  -- lasers and flamethrowers; its own culture meanwhile laid a siege of 5 big bursters and 76 in all and read it unpaid.
+  -- LP_MIX=nwwallheavy: a siege's kind of herd (farm behind laid 19 big bursters and 29 behemoths), 200 in all: 30 big
+  -- bursters, 30 cinders, 60 behemoths, 80 big biters. (With 20, 20, 40 and 120 big biters: 105 wall pieces and 8 lasers
+  -- broken, 9 inside, all dead to its flamethrowers, 173 of 206; 2026-11-05.)
+  if params.mix:find("nwwall", 1, true) then
+    schedule(90, function()
+      local out = {walls = {}, turrets = {}, machines = {}}
+      for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"wall", "gate"}}) do
+        out.walls[#out.walls + 1] = {math.floor(e.position.x), math.floor(e.position.y)}
+      end
+      for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"ammo-turret", "electric-turret", "fluid-turret"}}) do
+        out.turrets[#out.turrets + 1] = {math.floor(e.position.x), math.floor(e.position.y), e.type}
+      end
+      for _, e in pairs(surface().find_entities_filtered{force = "player", type = {"assembling-machine", "furnace", "lab",
+        "roboport", "mining-drill", "beacon"}}) do
+        out.machines[#out.machines + 1] = {math.floor(e.position.x), math.floor(e.position.y)}
+      end
+      helpers.write_file("landing-party/nwwall-map.json", helpers.table_to_json(out))
+    end)
+    local sent, wave, seen = false, nil, {}
+    for t = 12 * 3600, END - 60, 120 do
+      schedule(t, function()
+        if not sent then
+          local f = (lp("farm_state").farms or {})[1]
+          if not f then return end
+          for _, w in ipairs(lp("herd_state").waves or {}) do if w.stage ~= "done" then return end end
+          sent = true
+          local sp = game.forces.player.get_spawn_position(surface())
+          local fx, fy = f.pos.x or f.pos[1], f.pos.y or f.pos[2]
+          local len = math.sqrt((sp.x - fx) ^ 2 + (sp.y - fy) ^ 2)
+          local ux, uy = (sp.x - fx) / len, (sp.y - fy) / len
+          local target
+          for d = 0, len, 2 do
+            local p = {fx + ux * d, fy + uy * d}
+            if surface().count_entities_filtered{position = p, radius = 2, force = "player", type = {"wall", "gate"}, limit = 1} > 0 then
+              target = {x = p[1] + ux * 30, y = p[2] + uy * 30}
+              info(string.format("visit: nwwall: the line to spawn meets the player's wall at %.0f,%.0f", p[1], p[2]))
+              break
+            end
+          end
+          if not target then info("visit: nwwall: no wall on the line from its culture to spawn; no wave"); return end
+          local pen
+          for _, id in ipairs(f.pen_ids) do
+            for _, p in ipairs(lp("herd_state").pens) do if p.id == id and p.valid then pen = pen or id end end
+          end
+          if not pen then info("visit: nwwall: no incubator"); return end
+          local heavy = params.mix:find("nwwallheavy", 1, true)
+          local stock = heavy and {{"lp-bred-big-biter", 80}, {"lp-bred-behemoth-biter", 60}, {"lp-bred-cinder", 30}, {"lp-bred-big-burster", 30}}
+            or {{"lp-bred-medium-biter", 150}, {"lp-bred-big-biter", 30}, {"lp-bred-cinder", 20}, {"lp-bred-big-burster", 6}}
+          for _, s in ipairs(stock) do
+            lp("herd_fill", pen, s[2], s[1])
+          end
+          lp("herd_wall_lesson", target)
+          lp("set_trace", true)
+          wave = lp("herd_wave", pen, target, {planned = true})
+          info(string.format("visit: nwwall: wave %s of %d from incubator %d at %.0f,%.0f, minute %.1f", tostring(wave), heavy and 200 or 206, pen,
+            target.x, target.y, (game.tick - storage.t0) / 3600))
+          return
+        end
+        for _, w in ipairs(lp("herd_state").waves or {}) do
+          if w.id == wave then
+            local key = w.stage .. (w.gap_open and "+gap" or "")
+            if not seen[key] then
+              seen[key] = true
+              local g = w.group or {0, 0}
+              local line = string.format("%s %d %.0f %.0f %d%s%s", key, game.tick, g[1], g[2], w.alive or 0,
+                w.breach and string.format(" breach %.0f %.0f", w.breach[1], w.breach[2]) or "",
+                w.gap and string.format(" gap %.0f %.0f", w.gap[1], w.gap[2]) or "")
+              helpers.write_file("landing-party/nwwall-beats.txt", line .. "\n", true)
+              info("visit: nwwall: beat " .. line)
+            end
+          end
+        end
+      end)
+    end
+  end
   -- LP_MIX=rich (any mix containing it): Synthexis's cultures paid 50 biomass each 10 s, a culture grown on a megabase's
   -- smoke, its raids still worked up to (nw at 0.2.128, unfed: its sieges waited on the biomass, one culture held 52 of
   -- the 378 its siege of 24 asked; seven waves in three hours, none past the wall; the user: a megabase is no natural
