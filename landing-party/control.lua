@@ -1,6 +1,7 @@
 local shared = require("shared")
 local base = require("scripts.base")
 local site = require("scripts.site")
+local rng = require("scripts.rng")
 local faction = require("scripts.faction")
 local achievements = require("__landing-party__.scripts.achievements")
 local command = require("scripts.command")
@@ -553,6 +554,10 @@ remote.add_interface("landing-party", {
     if t.drop_off ~= nil then storage.drop_off = t.drop_off end
     if t.drop_debug ~= nil then storage.drop_debug = t.drop_debug end
     if t.strikes_off ~= nil then storage.strikes_off = t.strikes_off end
+    -- A siege's way at a closed wall (assault.lua): its pick forced (walled, wallfire; false: its own), options off by
+    -- name ({wallfire = true}).
+    if t.kh_way ~= nil then storage.kh_way = t.kh_way or nil end
+    if t.kh_tactics_off ~= nil then storage.kh_tactics_off = t.kh_tactics_off or nil end
     -- Tests and the siege lab: its cultures bud no incubator (their waves' size held, farm.cap_of).
     if t.pens_hold ~= nil then storage.biotech_pens_hold = t.pens_hold end
     -- Tests only (the arc's control): the corporations build and grow but do nothing to the player.
@@ -737,6 +742,12 @@ remote.add_interface("landing-party", {
   debug_siege_size = function(id, pl, floor) return farm.debug_siege_size(id, pl, floor) end,
   debug_chance = function(id, killers) return farm.debug_chance(id, killers) end,
   debug_reseed = function(id, seed) return farm.debug_reseed(id, seed) end,
+  -- Tests and the siege lab: a settlement's random source drawn anew (a corporation's replicates of one save).
+  debug_reseed_base = function(id, seed)
+    local b = storage.bases[id]
+    if b then b.rng = rng.new(seed) end
+    return b ~= nil
+  end,
   lab_waves = function() return herd.lab_waves() end,
   -- Tests only: the size herd.best_size draws from an attempt's history (its sieges sized by what razed most per biomass).
   debug_best_size = function(hist, least, sig) return herd.best_size({hist = hist}, least, sig) end,

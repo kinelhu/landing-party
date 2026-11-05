@@ -161,6 +161,7 @@ end
 -- One upvalue for siege_step (at luajit's limit of 60). ORDERS: targets named in one order (the rest by its idle units'
 -- orders, siege_step).
 local assault_by = {way = open_way, targets = assault_targets, ORDERS = 8}
+local assault = require("__landing-party__.scripts.assault")
 local against_player = K.against_player
 local alert = K.alert
 local alive = K.alive
@@ -1046,6 +1047,72 @@ local function form_line(members, center, toward)
   end
 end
 
+-- A siege's assault at a closed wall, its barrage over and no strike falling (assault.lua): whether it goes in now (true)
+-- or its guns are on the wall first (false: it waits a step). Its way read from its guards' middle to where it goes in
+-- (open_way); open, it goes. Closed, its menu once (assault.weigh: walled, or wallfire where its shells beat the
+-- robots, assault.race); with wallfire, every gun in reach flared on the wall piece on its line in (assault.wall_on_way),
+-- piece after piece, until the way is open, its shells are spent, or a piece stands as whole as it was once the race's own
+-- time and a look more have passed (its robots keep it: the race lost after all).
+assault_by.closed = function(b, op, s, foes, mortars, left, t, want, trace)
+  if not (t and t.pos) or (op.way_method and op.way_method ~= "wallfire") then return true end
+  local c = op.drop and op.strike_center
+  local at = c and {x = c[1], y = c[2]} or {x = t.pos[1], y = t.pos[2]}
+  local cx, cy, cn = 0, 0, 0
+  for _, u in ipairs(op.members) do if u.valid then cx, cy, cn = cx + u.position.x, cy + u.position.y, cn + 1 end end
+  local from = cn > 0 and {x = cx / cn, y = cy / cn} or (op.site and {x = op.site[1], y = op.site[2]})
+  if not from then return true end
+  op.way_from = {from.x, from.y}
+  if open_way(s, foes, from, at) then
+    if op.wall_fire then trace(b, "siege: its guns opened the wall; its assault goes in"); op.wall_fire = nil end
+    return true
+  end
+  local guns = {}
+  for _, m in ipairs(mortars) do guns[#guns + 1] = m end
+  if op.howitzer and op.howitzer.valid then guns[#guns + 1] = op.howitzer end
+  local piece = assault.wall_on_way(s, foes, from, at)
+  local function race_line(r)
+    return r and string.format("its guns break the piece at %.0f,%.0f in %.0f s with %d of %d shells, its robots %s",
+      piece.position.x, piece.position.y, r.ticks / 60, r.shells, left, r.mend and string.format("there in %.0f s", r.mend / 60)
+      or "none") or (piece and "none of its guns reaches the wall" or "no piece on its line")
+  end
+  if not op.way_method then
+    local r = piece and assault.race(s, foes, guns, piece)
+    local m, why = assault.weigh(b, t, assault.wins(r, left), want,
+      s.count_entities_filtered{position = at, radius = 16, type = TYPES, force = foes})
+    op.way_method = m
+    trace(b, string.format("siege: walled off, no strike; weighs %s (%s): %s", why, race_line(r), m))
+    if m ~= "wallfire" then return true end
+  end
+  if left <= 0 or not piece then
+    trace(b, "siege: its shells spent on the wall; its assault breaks the rest")
+    op.wall_fire = nil
+    return true
+  end
+  if piece ~= op.wall_piece then
+    local r = assault.race(s, foes, guns, piece)
+    if not assault.wins(r, left) then
+      trace(b, string.format("siege: its guns lose the race at the wall (%s); its assault goes in", race_line(r)))
+      op.wall_fire = nil
+      return true
+    end
+    op.wall_piece, op.wall_hp, op.wall_since, op.wall_due = piece, piece.health, game.tick, r.ticks
+    op.wall_pieces = (op.wall_pieces or 0) + 1
+    trace(b, string.format("siege: its guns on the wall (%s)", race_line(r)))
+  elseif game.tick - op.wall_since > op.wall_due + 300 and piece.health >= op.wall_hp then
+    trace(b, string.format("siege: the piece at %.0f,%.0f stands whole under its shells (its robots keep it); its assault goes in",
+      piece.position.x, piece.position.y))
+    op.wall_fire = nil
+    return true
+  end
+  op.wall_fire, op.last_target = true, game.tick
+  for _ = 1, #guns do
+    s.create_entity{name = "artillery-flare", position = piece.position, force = b.force, movement = {0, 0},
+      height = 0, vertical_speed = 0, frame_speed = 0}
+  end
+  op.flares = (op.flares or 0) + #guns
+  return false
+end
+
 local function rest_of_way(route, from, to)
   local cmds, first, fd = {}, nil, nil
   for i, w in ipairs(route or {}) do
@@ -1789,6 +1856,8 @@ local function siege_step(b, trace, army)
       local on_strike = op.drop and op.strike_falling and true or false
       if over and op.drop and game.tick < (op.assault_cool or 0) then over = nil end
       over = over or on_strike
+      -- (Its guns on the wall: the barrage's end held while they are, assault_by.closed.)
+      if op.wall_fire then over = true end
       -- (Sized as its raids are, ops.raid_want: what got in near there, else its formula on the prices its losses taught it,
       -- on its target read again after the barrage, the guns its shells broke gone from it. By the formula on its first
       -- reading, a siege whose mortar had broken 3 lasers asked an assault of 207 and went home.)
@@ -1805,6 +1874,12 @@ local function siege_step(b, trace, army)
         trace(b, string.format("siege: no assault (%d needed, %d guards and %d at home)", want, n, home_n))
       end
       if want and (spec.assault or on_strike or n + home_n >= want) then
+        -- At a closed wall with no strike falling or painted: its menu (assault.lua), and its guns on the wall first when
+        -- that is its pick.
+        if not on_strike and not op.strike_paint and not op.clearance and t_owner_player(b, op)
+          and not assault_by.closed(b, op, s, foes, live, left, t, want, trace) then
+          return
+        end
         -- (Its living guards: the dead counted, it drew short and its abort at half came early; the review.)
         local live = {}
         for _, u in ipairs(op.members) do if u.valid then live[#live + 1] = u end end
@@ -1844,6 +1919,10 @@ local function siege_step(b, trace, army)
         local cx, cy, cn = 0, 0, 0
         for _, u in ipairs(op.members) do if u.valid then cx, cy, cn = cx + u.position.x, cy + u.position.y, cn + 1 end end
         if cn > 0 then from = {x = cx / cn, y = cy / cn} end
+        -- (Its way read from where its closed-wall step read it, its guards' middle before its reinforcements came: read
+        -- from the middle of all, its camp 300 tiles back, the way its guns had opened read walled off, lab w1. Only after
+        -- its wall fire: read so always, the flamethrower lane's sieges went by a door its barrage had opened and got in less.)
+        if op.way_from and op.wall_pieces then from = {x = op.way_from[1], y = op.way_from[2]} end
         op.door = nil
         if op.drop and op.strike_center then
           -- (To the breach undistracted first: told to engage anything on the way, its escort stood 45 s at its jump-off in
@@ -1854,6 +1933,7 @@ local function siege_step(b, trace, army)
           -- Through the way the barrage opened (open_way), not at the wall beside it.
           local way = from and assault_by.way(s, foes, from, {x = at[1], y = at[2]})
           op.door = way and way.door and {way.door.x, way.door.y} or nil
+          op.way_open = way ~= nil
           if op.door then
             acmds[#acmds + 1] = {type = defines.command.go_to_location, destination = op.door, radius = 3,
               distraction = defines.distraction.by_enemy}
