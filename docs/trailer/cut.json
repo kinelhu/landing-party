@@ -8,9 +8,9 @@
    "from": 0
   },
   {
-   "clip": "media/trailer/shot-02.mp4",
+   "clip": "media/trailer/landing-fx.mp4",
    "bars": 3,
-   "from": 0.5
+   "from": 3.0
   },
   {
    "clip": "media/trailer/stage-m1-muster.mp4",
@@ -48,29 +48,20 @@
    "from": 1.0
   },
   {
-   "clip": "media/trailer/act-herd-breach.mp4",
+   "clip": "media/trailer/stage-s2-breach.mp4",
    "bars": 2,
-   "from": 3.0
+   "from": 4.0
+  },
+  {
+   "clip": "media/trailer/act-herd-burst-close.mp4",
+   "bars": 2,
+   "from": 16.5,
+   "speed": 2.0
   },
   {
    "clip": "media/trailer/stage-s3-inside.mp4",
    "bars": 2,
    "from": 1.0
-  },
-  {
-   "clip": "media/trailer/act-kh-bombard.mp4",
-   "bars": 2,
-   "from": 1.0
-  },
-  {
-   "clip": "media/trailer/shot-09.mp4",
-   "bars": 2,
-   "from": 1.0
-  },
-  {
-   "clip": "media/trailer/shot-10.mp4",
-   "bars": 2,
-   "from": 2.0
   },
   {
    "clip": "media/trailer/stage-c1-drop.mp4",
@@ -83,6 +74,21 @@
    "from": 2.0
   },
   {
+   "clip": "media/trailer/stage-c3-assault.mp4",
+   "bars": 2,
+   "from": 3.0
+  },
+  {
+   "clip": "media/trailer/shot-09.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/shot-10.mp4",
+   "bars": 2,
+   "from": 2.0
+  },
+  {
    "clip": "media/trailer/shot-11.mp4",
    "bars": 4,
    "from": 2.0
@@ -90,12 +96,12 @@
   {
    "clip": "media/trailer/stage-k2-strike.mp4",
    "bars": 2,
-   "from": 7.0
+   "from": 17.0
   },
   {
-   "clip": "media/trailer/act-kh-assault.mp4",
+   "clip": "media/trailer/stage-k2-strike.mp4",
    "bars": 2,
-   "from": 3.0
+   "from": 23.0
   },
   {
    "clip": "media/trailer/shot-14.mp4",
@@ -112,7 +118,7 @@
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 42,
+   "bar": 44,
    "bars": 3
   }
  ]
