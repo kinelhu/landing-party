@@ -7,8 +7,8 @@ Its sections follow the acts the cut's shots belong to (ACTS): the arrival spars
 breathing, wet and low; Kessler-Hayashi ticking like a machine; the finale's drop where its burster attack begins; the bar
 before the nuke cut to silence, the nuke itself, and the end card's ring-out. A four-note motif states the title quietly
 and returns at the drop. Over it, the game's own sounds on what the picture shows, found frame by frame in the clips:
-a lance on each strike's flash, a wet blast on each burster's green flash, the nuke on the nuke's white-out, lightning on
-the Tesla's. Mixed in stereo with a reverb, the music ducked under the kick and the hits, and mastered to -14 LUFS (the
+the nuke on its white-out (the others, a lance on each strike's flash, a blast on each burster's, lightning on
+the Tesla's, found as well but left out since cut 16: GAME_SOUNDS). Mixed in stereo with a reverb, the music ducked under the kick and the hits, and mastered to -14 LUFS (the
 loudness YouTube plays at), peaks under -1 dBFS. Deterministic: its randomness seeded, the same cut gives the same score.
 """
 import json
@@ -35,6 +35,9 @@ ACTS = [("shot-01", "arrival"), ("landing-fx", "arrival"), ("reel-base", "arriva
         ("act-megaburst", "finale"), ("stage-k2-strike", "finale"), ("reel-warfinale", "finale"),
         ("reel-nuke", "nuke"), ("black", "end")]
 # What each clip's flashes are (its hits); clips not named have none.
+# The game's sounds kept on the picture (the user on cut 15, 2026-11-05: "Not a fan of the game sounds except the nuke maybe,
+# as a send off"): the rest are found and left out, ready to come back.
+GAME_SOUNDS = {"nuke"}
 HITS = {"reel-nuke": "nuke", "reel-culture": "lance", "reel-khwall": "lance", "stage-k2-strike": "lance",
         "reel-dome": "shield", "act-megaburst": "burst", "reel-nwwall": "burst", "reel-teslawall": "zap",
         "landing-fx": "crash"}
@@ -152,6 +155,7 @@ def read_cut(path):
         dur = s["bars"] * BAR
         name = s["clip"].split("/")[-1][:-4]
         kind = HITS.get(name)
+        kind = kind if kind in GAME_SOUNDS else None
         hits = [(t + h, kind) for h in hits_of(s, dur, kind)] if kind else []
         shots.append({"name": name, "act": act_of(name), "start": t, "end": t + dur, "hits": hits})
         t += dur
@@ -207,6 +211,14 @@ def music(shots, total, rng):
                 x = np.arange(m) / SR
                 tick = hp(rng.uniform(-1, 1, m), 6000) * np.exp(-x * 90)
                 add(drums, pan(tick, 0.5 if j % 2 else -0.5) * (0.12 if j % 4 == 0 else 0.06), t0 + j * BEAT / 4)
+        # Kessler-Hayashi's engine: a bass on the eighths, building to the drop (without the strike's hits, cut 16, the
+        # middle of the score sat at one level for a minute).
+        if act == "kh":
+            for j in range(8):
+                m = int(BEAT / 2 * SR)
+                x = np.arange(m) / SR
+                v = lp(saw(hz(chord[0] - 24), x), 220 + 80 * (j % 2)) * adsr(m, 0.003, 0.08)
+                add(bass, pan(v, 0.0) * (0.26 if j % 2 == 0 else 0.18), t0 + j * BEAT / 2)
         # Arpeggio: sixteenths up the chord from the army on, an octave up after the drop, bouncing left and right.
         if act in ("army", "kh", "finale") or (act == "synth" and b % 2 == 0):
             notes = [chord[0], chord[1], chord[2], chord[0] + 12]
@@ -232,7 +244,7 @@ def music(shots, total, rng):
             bl = lp(saw(hz(chord[0] - 24), x) + 0.5 * saw(hz(chord[0] - 24) * 1.01, x), 260) * adsr(m, 0.005, 0.1)
             add(bass, pan(bl, 0.0) * 0.32, t0)
     # The motif: a bell under the title (bar 4) and at the end card, a lead at the drop.
-    def phrase(at, lead):
+    def phrase(at, lead, level=0.12):
         k = at
         for semi, beats in MOTIF:
             m = int((beats * BEAT + (1.5 if not lead else 0.2)) * SR)
@@ -241,13 +253,13 @@ def music(shots, total, rng):
             if lead:
                 v = lp(sum(saw(f * d, x) for d in (0.995, 1.005)), 3500) * adsr(m, 0.02, 0.3) * 0.08
             else:   # a bell: FM, a metallic partial dying faster
-                v = np.sin(2 * np.pi * f * x + 2.5 * np.exp(-x * 4) * np.sin(2 * np.pi * f * 3.5 * x)) * np.exp(-x * 1.8) * 0.12
+                v = np.sin(2 * np.pi * f * x + 2.5 * np.exp(-x * 4) * np.sin(2 * np.pi * f * 3.5 * x)) * np.exp(-x * 1.8) * level
             add(keys, pan(v, 0.15), k)
             k += beats * BEAT
-    phrase(3 * BAR, False)
+    phrase(3 * BAR, False, 0.05)   # (0.12 on cut 15: "First bells are a little loud")
     phrase(drop * BAR, True)
     phrase((drop + 4) * BAR, True)
-    phrase((bars - 3) * BAR + 0.5, False)
+    phrase((bars - 3) * BAR + 0.5, False, 0.09)
     return pads, keys, drums, bass, kick_at, drop, nuke
 
 
@@ -287,9 +299,6 @@ def sfx(shots, n, rng, nuke_bar):
         "crash": [game_sound("base/sound/explosions/large-metal-explosion-3.ogg", 0.85)],
         "nuke": [game_sound("base/sound/fight/nuclear-explosion-1.ogg")],
         "aftershock": [game_sound("base/sound/fight/nuclear-explosion-aftershock.ogg")],
-        "roar": [game_sound(f"base/sound/creatures/biter-roar-behemoth-{k}.ogg", 0.85) for k in (1, 4, 7)],
-        "demolisher": [game_sound("space-age/sound/enemies/demolisher/demolisher-hurt-roar-big-1.ogg", 0.9)],
-        "rocket": [game_sound("base/sound/silo-rocket.ogg")],
     }
     level = {"lance": 0.32, "lance_top": 0.14, "burst": 0.45, "burst_wet": 0.3, "shield": 0.25, "zap": 0.35,
              "crash": 0.6, "nuke": 1.0, "aftershock": 0.7}
@@ -311,15 +320,8 @@ def sfx(shots, n, rng, nuke_bar):
                 else:
                     add(bus, x * level[layer] * np.array([np.cos((p + 1) * np.pi / 4), np.sin((p + 1) * np.pi / 4)]) * 1.4, at)
             hit_times.append(at)
-    # Synthexis's voice: a behemoth's roar as its herd breaks in, a demolisher's as the burster attack starts.
-    herd =[s for s in shots if s["name"] == "stage-herd"]
-    if herd:
-        add(bus, snd["roar"][0] * 0.35, herd[0]["start"] + 0.3)
-        add(bus, snd["roar"][1] * 0.3, herd[-1]["start"] + 0.2)
-    mb = [s for s in shots if s["name"] == "act-megaburst"]
-    if mb:
-        add(bus, snd["demolisher"][0] * 0.4, mb[0]["start"])
-    # The riser into the drop: the rocket's launch, reversed, swelling into the bar line.
+    # (Cut 15 had a behemoth's roar as the herd broke in, a demolisher's at the burster attack, and the rocket silo's
+    # launch reversed into the drop: out with the other game sounds.)
     return bus, hit_times, snd
 
 
@@ -329,14 +331,11 @@ def render(cut_path, out):
     n = int(total * SR) + SR
     pads, keys, drums, bass, kicks, drop, nuke_bar = music(shots, total, rng)
     fx, hit_times, snd = sfx(shots, n, rng, nuke_bar)
-    # The riser: the rocket silo's launch reversed, its end on the drop's downbeat; a noise sweep with it.
-    rk = snd["rocket"][0]
-    rk = rk[:int(5 * SR)][::-1]
-    add(fx, rk * np.linspace(0, 1, len(rk))[:, None] ** 2 * 0.5, drop * BAR - len(rk) / SR)
+    # The riser: a noise sweep opening over the two bars into the drop.
     m = int(2 * BAR * SR)
     sweep = rng.uniform(-1, 1, m)
     sweep = np.concatenate([lp(sweep[i:i + 4410], 200 + 9000 * (i / m) ** 2) for i in range(0, m, 4410)])
-    add(fx, pan(sweep * np.linspace(0, 1, len(sweep)) ** 2, 0.0) * 0.1, drop * BAR - 2 * BAR)
+    add(fx, pan(sweep * np.linspace(0, 1, len(sweep)) ** 2, 0.0) * 0.16, drop * BAR - 2 * BAR)
     # The mix: the music in a room, ducked under the kick and the hits.
     wet = reverb(pads + keys * 0.8, 2.8, rng)
     mus = pads + keys + 0.35 * wet + drums + bass
