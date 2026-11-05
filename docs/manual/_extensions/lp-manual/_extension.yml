@@ -1,0 +1,31 @@
+# The Landing Party field manual: an A5 booklet in the manner of a 1990s game-box manual (a bestiary, faction
+# lore, unit and tech trees). Format lp-manual-pdf (LuaLaTeX); the same filter, listed as `filters: [lp-manual]`,
+# gives the HTML book plain versions of the components. Components and data: lp-manual.lua's header.
+# Fonts: Titillium Web (Factorio's own face, fonts/, SIL OFL 1.1, fonts/OFL-TitilliumWeb.txt) and Alegreya
+# (TeX Live, OFL). Print as a folded booklet: impose.sh.
+title: Landing Party field manual
+author: kinelhu
+version: 0.1.0
+quarto-required: ">=1.4.0"
+contributes:
+  filters:
+    - lp-manual.lua
+  formats:
+    pdf:
+      pdf-engine: lualatex
+      latex-auto-install: false
+      documentclass: book
+      classoption: [twoside, openany]
+      fontsize: 10pt
+      top-level-division: chapter
+      number-sections: false
+      toc: true
+      toc-depth: 1
+      colorlinks: false
+      hyperrefoptions:
+        - pdfpagelayout=TwoPageRight
+        - pdfstartview=Fit
+      template-partials:
+        - partials/before-body.tex
+      filters:
+        - lp-manual.lua

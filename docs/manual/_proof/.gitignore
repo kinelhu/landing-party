@@ -1,0 +1,7 @@
+proof.pdf
+proof.tex
+proof.html
+proof_files/
+pages/
+*.log
+.quarto/
