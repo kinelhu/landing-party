@@ -481,6 +481,14 @@ remote.add_interface("landing-party", {
     if t.biotech_no_hold ~= nil then storage.biotech_no_hold = t.biotech_no_hold or nil end
     -- biotech_no_ranks: a siege's rams all at once, as before 0.2.212 (herd.lua: herd.rk; the ranks test's control).
     if t.biotech_no_ranks ~= nil then storage.biotech_no_ranks = t.biotech_no_ranks or nil end
+    -- biotech_slow_rams: its rams looked at once a second, as before 0.2.213 (herd.lua: herd.rk.look_every; its check's control).
+    if t.biotech_slow_rams ~= nil then storage.biotech_slow_rams = t.biotech_slow_rams or nil end
+    -- biotech_rank_doubles: a rank killed short doubles the next, as before 0.2.213 (herd.rk.size_next; its check's control).
+    if t.biotech_rank_doubles ~= nil then storage.biotech_rank_doubles = t.biotech_rank_doubles or nil end
+    -- biotech_no_muster: a rank's rams sent from where each was held, as before 0.2.213 (herd.rk.muster_point; its check's control).
+    if t.biotech_no_muster ~= nil then storage.biotech_no_muster = t.biotech_no_muster or nil end
+    -- biotech_no_gun_rank: its herd through its open gap with its rams still held, as before 0.2.213 (herd.rk.gun_rank).
+    if t.biotech_no_gun_rank ~= nil then storage.biotech_no_gun_rank = t.biotech_no_gun_rank or nil end
     -- old_stock: Synthexis's army bred by the engine and standing at its incubators, as before 0.2.90 (farm.lua hatching).
     if t.old_stock ~= nil then storage.biotech_old_stock = t.old_stock or nil end
     if t.prospect_window ~= nil then storage.prospect_window = t.prospect_window end
@@ -740,6 +748,8 @@ remote.add_interface("landing-party", {
   debug_history_near = function(foe, breach, method) return #herd.history_near(foe, breach, method, nil) end,
   debug_stopped = function(key, tick) herd.stopped(key, tick) return herd.held() end,
   debug_learn_reach = function(r0, set_off, sent, stuck) return herd.learn_reach(r0, set_off, sent, stuck) end,
+  -- Tests only: the size of a siege's next rank after one of `size` killed short, from its reading (herd.rk.size_next).
+  debug_rank_size = function(size, read) return herd.rk.size_next({rank_size = size, rank_n = 1, rank_read = {read}}) end,
   debug_held_back = function(alive_n, sent, guns, inside) return herd.held_back(alive_n, sent, guns, inside) end,
   -- Tests only: sets what it has learned of its rams' reach at `foe`, returning what it was.
   debug_reach = function(foe, r)

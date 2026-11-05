@@ -9365,6 +9365,12 @@ scenarios.visit = function()
           end
           lp("herd_wall_lesson", target)
           lp("set_trace", true)
+          -- (-slowrams, -doubles, -nomuster, -noranks: 0.2.212's ram looks, rank sizes, ranks sent strung out, or 0.2.211's rams all
+          -- at once, for comparison.)
+          if params.mix:find("slowrams", 1, true) then lp("debug_tune", {biotech_slow_rams = true}) end
+          if params.mix:find("doubles", 1, true) then lp("debug_tune", {biotech_rank_doubles = true}) end
+          if params.mix:find("noranks", 1, true) then lp("debug_tune", {biotech_no_ranks = true}) end
+          if params.mix:find("nomuster", 1, true) then lp("debug_tune", {biotech_no_muster = true}) end
           wave = lp("herd_wave", pen, target, {planned = true, fodder = siege and {name = "lp-bred-small-biter", n = 20} or nil})
           info(string.format("visit: nwwall: wave %s of %d from incubator %d at %.0f,%.0f, minute %.1f", tostring(wave), siege and 220 or heavy and 200 or 206, pen,
             target.x, target.y, (game.tick - storage.t0) / 3600))
@@ -10629,7 +10635,8 @@ scenarios.herd = function()
       -- A siege's shape: a herd, its screen and two rams (farm.lua siege_size: rams, a screen of the cheapest breed).
       lp("herd_fill", S.pen, 30, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 8, "lp-bred-small-biter")
-      lp("herd_fill", S.pen, 2, "lp-bred-big-burster")
+      -- (Three: the third its last rank, at the guns covering its way in once its way is open, herd.rk.gun_rank.)
+      lp("herd_fill", S.pen, 3, "lp-bred-big-burster")
       if mix == "ranks-off" then lp("debug_tune", {biotech_no_ranks = true}) end
     elseif mix == "burst" or mix == "burst-nohold" then
       lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
@@ -10942,6 +10949,21 @@ scenarios.herd = function()
         if d[1] == "fire" then fire = true end
       end
       check("know: a death to a land mine is recorded as explosion, to a fire sticker as fire", mine and fire, serpent.line(S.dmg_seen))
+      -- A ram at the wall it touched goes off within its own look (the touch of a wall over its speed), not its wave's look
+      -- once a second: at the user's north wall its rams lived 1 to 2 s in the guns' reach, and 12 of 22 killed short died a
+      -- tile or two from a wall between two looks (the nwwallsiege visit, 2026-11-05).
+      local every = math.max(1, math.floor(2.5 / prototypes.entity["lp-bred-big-burster"].speed))
+      local waits, most = {}, 0
+      for id, t in pairs(S.ram_touch or {}) do
+        local o = (S.ram_off or {})[id]
+        if o and (o[2] - t[2]) ^ 2 + (o[3] - t[3]) ^ 2 <= 2.5 * 2.5 then
+          waits[#waits + 1] = o[1] - t[1]
+          most = math.max(most, o[1] - t[1])
+        end
+      end
+      info(string.format("herd %s: its rams' waits at their wall %s (its look every %d ticks)", mix, serpent.line(waits), every))
+      check("herd: ranks, a ram at its wall goes off within its own look", #waits >= 1 and most <= every,
+        serpent.line({waits = waits, every = every}))
       -- (Points a blast apart alone, at a line of flamethrowers 12 apart, every pair would share one's arc.)
       local pts, shared_burn, burnt = S.spread and S.spread.points or {}, 0, 0
       for i = 1, #pts do
@@ -10967,6 +10989,18 @@ scenarios.herd = function()
         -- the inner ring: the user's own wall, nwa, 160 of 200 to its flamethrowers there.)
         check("herd: ranks, its herd held till its way was open, and got in", w ~= nil and w.rush_open == true and w.t_inside ~= nil,
           serpent.line({rush_open = w and w.rush_open, inside = w and w.t_inside}))
+        -- Its second rank mustered out of every gun's reach, held there by its order till it went (idle at its muster, a ram
+        -- went at the wall in its sight alone and died in the gap; ranks sent from where each was held came into the guns'
+        -- reach strung out, each killed in a second; the nwwallsiege visit, 2026-11-05).
+        check("herd: ranks, a rank musters out of reach and waits there under its order", r2 ~= nil and r2.muster ~= nil
+          and r2.muster_cover == 0 and r2.idle == 0, serpent.line(r2))
+        -- Its way open with a ram held for each gun covering its way in: that rank at those guns before its herd went
+        -- (rushed through the open gap with 20 rams held, a herd lost 2,413 mediums to the flamethrowers covering its way
+        -- in; at them, 26 rams broke 10 lasers and 3 flamethrowers and it got in with 162; the nwwallsiege visit).
+        local gr
+        for _, l in ipairs(rk.log or {}) do if l.guns then gr = l end end
+        check("herd: ranks, its way open, its last rams go at the guns covering its way in before its herd", gr ~= nil and gr.guns >= 1
+          and rk.rushed ~= nil and rk.rushed > gr.tick, serpent.line({gun_rank = gr, rushed = rk.rushed}))
       end
       return
     end
@@ -12522,6 +12556,14 @@ scenarios.farm = function()
         serpent.line({hb_out, hb_in}))
       check("farm: none of its rams reached the wall, twice as many next time", r1 <= 0.5 + 1e-9 and r2 <= 0.25 + 1e-9,
         serpent.line({r1, r2}))
+      -- A rank of 2 killed short, a ram each half second, the nearest of them 4 s in the guns' reach from its wall: the next
+      -- as many as the guns kill in those 4 s, and one (9); without a reading, twice the last. (Doubled, ranks of 1, 2, 4
+      -- and 8 were each killed short at the user's north wall, a ram each half second in 15 to 18 guns' reach; the
+      -- nwwallsiege visit, 2026-11-05.)
+      local rs1 = lp("debug_rank_size", 2, {dead = 2, first = 0, last = 60, need = 4})
+      local rs2 = lp("debug_rank_size", 2, {dead = 2, first = 0, last = 60})
+      check("farm: ranks, a rank killed short is followed by as many as its guns kill on the way, and one", rs1 == 9 and rs2 == 4,
+        serpent.line({rs1, rs2}))
       -- However few have reached it, a handful of rams at most (43 big bursters in one siege of the square lab fort; the
       -- user, 2026-10-31: "at most we shouldn't need more than a handful").
       local was_reach = lp("debug_reach", "player", 0.01)
@@ -15492,6 +15534,19 @@ end
 
 -- Herd: damage between the wild biters and the bred.
 if params.scenario == "herd" then
+  -- ranks: each ram's first touch of the player's wall and its set-off (its wind-up: no longer destructible), tick by tick.
+  if params.mix == "ranks" or params.mix == "ranks-off" then
+    script.on_nth_tick(1, function(e)
+      if not S.c then return end
+      S.ram_touch, S.ram_off = S.ram_touch or {}, S.ram_off or {}
+      for _, u in pairs(surface().find_entities_filtered{name = "lp-bred-big-burster", position = S.c, radius = 90}) do
+        local id = u.unit_number
+        if not S.ram_touch[id] and surface().count_entities_filtered{position = u.position, radius = 2.5, type = {"wall", "gate"},
+          force = "player", limit = 1} > 0 then S.ram_touch[id] = {e.tick, u.position.x, u.position.y} end
+        if not S.ram_off[id] and not u.destructible then S.ram_off[id] = {e.tick, u.position.x, u.position.y} end
+      end
+    end)
+  end
   script.on_event(defines.events.on_entity_damaged, function(e)
     if not (e.force and S.damage) then return end
     local a, v = e.force.name, e.entity.force.name
