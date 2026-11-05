@@ -1,0 +1,56 @@
+{
+ "image": "kessler-hayashi-siege.jpg",
+ "width": 1750,
+ "height": 984,
+ "caption": "A Kessler-Hayashi drop siege in place below the bastion it will strike.",
+ "callouts": [
+  {
+   "n": 1,
+   "x": 804,
+   "y": 461,
+   "label": "Dome projector: the siege's own dome against your artillery"
+  },
+  {
+   "n": 2,
+   "x": 847,
+   "y": 509,
+   "label": "Jamming mast"
+  },
+  {
+   "n": 3,
+   "x": 790,
+   "y": 578,
+   "label": "Mortars, two"
+  },
+  {
+   "n": 4,
+   "x": 1174,
+   "y": 468,
+   "label": "Howitzer"
+  },
+  {
+   "n": 5,
+   "x": 718,
+   "y": 639,
+   "label": "Spotter, painting the strike"
+  },
+  {
+   "n": 6,
+   "x": 854,
+   "y": 854,
+   "label": "Escort: tanks"
+  },
+  {
+   "n": 7,
+   "x": 738,
+   "y": 725,
+   "label": "Escort: troopers"
+  },
+  {
+   "n": 8,
+   "x": 718,
+   "y": 178,
+   "label": "The strike's rings on the target"
+  }
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "image": "grubstake-claim.jpg",
+ "width": 1200,
+ "height": 800,
+ "caption": "A Grubstake claim on an ore patch it staked, built by its hauler.",
+ "callouts": [
+  {
+   "n": 1,
+   "x": 513,
+   "y": 253,
+   "label": "Drill, its ore bin beside it"
+  },
+  {
+   "n": 2,
+   "x": 513,
+   "y": 417,
+   "label": "Pylon"
+  },
+  {
+   "n": 3,
+   "x": 266,
+   "y": 679,
+   "label": "Generator"
+  },
+  {
+   "n": 4,
+   "x": 849,
+   "y": 196,
+   "label": "The staked ore patch"
+  }
+ ]
+}
