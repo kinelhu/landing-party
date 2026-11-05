@@ -1,12 +1,34 @@
-# Grubstake
+# Grubstake {.opener faction="grubstake" kicker="The corporations"}
 
-> Resources in the right hands.
+::: {.epigraph faction="grubstake"}
+:::
 
 Grubstake is a mining company that lives off your factory. It carries off machines, skims belts, taps power lines, robs
 chests and mines the ore you leave alone. It keeps off ground your guns cover, and the wild biters leave it alone. Its
 camps, vehicles and lamps are amber.
 
-![A Grubstake camp grown into a town.](media/vistas/grubstake-wide.jpg)
+::: {.lore kicker="From the archive" title="Rights and claims" faction="grubstake"}
+Grubstake has no home port. It has a charter, a fleet of tired landers and a list of every rush in the system, and it
+goes where the list points. When a foundry company on Vulcanus went under, Grubstake bought the slag heaps and the
+cranes and had both off the planet within the year. It held scrap rights on Fulgora for one season and sold them on
+when the storms began to cost more than the scrap was worth. A claim is worked until it pays no more. Then the crews
+fold the camp and the landers lift for the next one.
+
+The company's whole skill is in the paperwork. It buys salvage rights to whatever a failed venture leaves behind, and
+it reads "left behind" generously. A patch of ore no drill is working is unclaimed ground. A machine that stands where
+no gun covers it has, in the company's view, been abandoned. Its trucks go out after dark, and its raiders take a
+machine apart where it stands and carry the parts home in the morning.
+
+::: {.pullquote cite="Grubstake prospector's log"}
+Everything here is claimed, or about to be.
+:::
+
+Nauvis came onto the list the way most places do, by rumour. One engineer had already wired a planet and laid its
+roads, and a rush that has paid for its own roads is the best kind. A survey party went down once the engineer started
+refining oil, and the first camp followed it in. Grubstake lands among the spawners without fear. Its pacifier
+antennas keep the swarm off its machines, and the biters pass its camps to fall on the engineer's. It will leave
+Nauvis the way it left everywhere else, with the ore gone and the yard full.
+:::
 
 ## Who they are
 
@@ -65,6 +87,8 @@ the hands to fight.
 **The howitzer.** Only a camp that lands with a grudge, after you destroyed one of its landers, besieges your walls.
 Against a wall kept mended by robots, it brings a howitzer on a truck to shell your roboports from far out.
 
+![A Grubstake siege column sets out from its camp: buggies, trucks and shotgun hands, a howitzer truck at the right.](media/clips/grubstake-raid.jpg)
+
 ## Claims and the trade post
 
 **Prospecting.** A grown camp picks the charted ore patch nearest your base that none of your drills works, tags it on
@@ -109,6 +133,18 @@ era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](reference.q
   against your explosives, dozers once its raids keep meeting walls.
 - **Loot.** Salvage rights, once its raids have been turned back: what it destroys of yours funds its research.
   Prospector's eye: its strip camps reach further for your ore and its raiders retreat sooner.
+
+## Its units {#sec-gs-units}
+
+A camp lands with buggies and shotgun hands, and its scrap drones come with its first level. The rest is research, in
+no lab you can raid: Grubstake keeps its books in its head.
+
+::: {.tree tree="grubstake-units"}
+Each node is bought with parts once its trigger has fired: what it answers has cost Grubstake enough. A node's era is
+yours: none comes before you reach it. Dashed nodes are armor and abilities, not units.
+:::
+
+{{< include _generated/cards-grubstake.qmd >}}
 
 ## Fighting Grubstake
 

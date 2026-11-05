@@ -1,0 +1,1581 @@
+{
+ "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
+ "edition": "For Landing Party 0.2.214",
+ "portraits": "media/units",
+ "factions": {
+  "grubstake": {
+   "name": "Grubstake",
+   "color": "CC8C33",
+   "motto": "Resources in the right hands.",
+   "vista": "media/vistas/grubstake-wide.jpg",
+   "tab": 2,
+   "era_label": "Era",
+   "era_max": 3
+  },
+  "kessler-hayashi": {
+   "name": "Kessler-Hayashi",
+   "color": "8CCCD9",
+   "motto": "Please remain behind the line.",
+   "vista": "media/vistas/serenity-wide.jpg",
+   "tab": 3,
+   "era_label": "Era",
+   "era_max": 3
+  },
+  "synthexis": {
+   "name": "Synthexis",
+   "color": "73D933",
+   "motto": "Engineered to adapt.",
+   "vista": "media/vistas/synthexis-night.jpg",
+   "tab": 4,
+   "era_label": "Evolution",
+   "era_max": 1
+  },
+  "player": {
+   "name": "Your army",
+   "color": "B9BEC4",
+   "motto": "Hold the line, then take theirs.",
+   "vista": "media/vistas/player-base.jpg",
+   "tab": 1,
+   "era_label": "Unlock",
+   "era_max": 3,
+   "cover": false
+  }
+ },
+ "units": {
+  "lp-infantry": {
+   "name": "Laser trooper",
+   "faction": "kessler-hayashi",
+   "health": 120,
+   "portrait": "lp-infantry",
+   "damage": 7,
+   "damage_text": "7 laser, 2.4 shots/s",
+   "range": 15,
+   "speed": 7.2,
+   "cost": "10 parts",
+   "era": "From landing",
+   "era_level": 0,
+   "role": "Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding force.",
+   "counters": "raiders, scouts, lone outposts",
+   "countered_by": "flamethrower troopers, gun turrets, tanks",
+   "blurb": "The bulk of every raid and every escort. Kessler-Hayashi fields more of them than of anything else, and its heavier armor research makes them harder to kill with bullets."
+  },
+  "lp-tank": {
+   "name": "Tank",
+   "faction": "kessler-hayashi",
+   "health": 900,
+   "portrait": "lp-tank",
+   "damage": 40,
+   "damage_text": "40 explosion, 80 to buildings",
+   "range": 15,
+   "speed": 5.4,
+   "cost": "60 parts",
+   "era": "From landing",
+   "era_level": 0,
+   "role": "An armored tank. Its cannon does three times as much damage to buildings as to units.",
+   "counters": "walls, turret pillboxes, troopers in the open",
+   "countered_by": "battle tanks, rocket troopers",
+   "blurb": "The backbone of a siege escort. Tanks hold in staggered ranks just outside your guns' reach and go in behind the barrage."
+  },
+  "lp-railgunner": {
+   "name": "Railgunner",
+   "faction": "kessler-hayashi",
+   "health": 140,
+   "portrait": "lp-railgunner",
+   "damage": 250,
+   "damage_text": "250 to nests, 40 to biters",
+   "range": 30,
+   "speed": 6,
+   "cost": "22 parts",
+   "era": "From landing",
+   "era_level": 0,
+   "role": "Clears biter spawners. Its slug pierces a few biters and stops.",
+   "counters": "spawners, worms, Synthexis incubators",
+   "countered_by": "anything that closes the distance",
+   "blurb": "It keeps the camp clear of biters and never joins a raid. Some of them carry the rail coils your rail rifle is made from."
+  },
+  "lp-laser-drone": {
+   "name": "Laser drone",
+   "faction": "kessler-hayashi",
+   "health": 400,
+   "portrait": "lp-laser-drone",
+   "damage": 12,
+   "damage_text": "12 laser, 3 shots/s",
+   "range": 16,
+   "speed": 12,
+   "air": true,
+   "cost": "70 parts",
+   "era": "From its level 2",
+   "role": "An armored flying drone with a laser. Resists bullets.",
+   "counters": "anything that cannot shoot up",
+   "countered_by": "rocket troopers, flak turrets",
+   "blurb": "Kessler-Hayashi's sky. Laser drones come from the company's second level, a few at a time, and fly over walls. Bullets barely scratch them."
+  },
+  "lp-skyguard": {
+   "name": "Anti-air trooper",
+   "faction": "kessler-hayashi",
+   "health": 110,
+   "portrait": "lp-skyguard",
+   "damage": 30,
+   "damage_text": "30 laser, 8 laser, 2 shots/s",
+   "range": 22,
+   "speed": 7.2,
+   "cost": "18 parts",
+   "era": "Era 1, Armory",
+   "era_level": 1,
+   "role": "A trooper with a long-range laser against flying units. Weak against ground targets.",
+   "counters": "fliers, combat robots",
+   "countered_by": "anything on the ground",
+   "blurb": "Fielded against fliers and combat robots. Its shot at the ground is weak, so a ground push past it costs little."
+  },
+  "lp-lance": {
+   "name": "Heavy laser trooper",
+   "faction": "kessler-hayashi",
+   "health": 110,
+   "portrait": "lp-lance",
+   "damage": 24,
+   "damage_text": "24 laser",
+   "range": 17,
+   "speed": 7.2,
+   "cost": "16 parts",
+   "era": "Era 1, Optics lab",
+   "era_level": 1,
+   "role": "A laser trooper with a heavier beam that outranges your troopers.",
+   "counters": "your infantry",
+   "countered_by": "battle tanks, flamethrower troopers at a gate",
+   "blurb": "Fielded once your infantry has cost Kessler-Hayashi enough. Its beam reaches past your troopers', so a trooper line that won the last fight loses the next."
+  },
+  "lp-shock": {
+   "name": "Shock trooper",
+   "faction": "kessler-hayashi",
+   "health": 160,
+   "portrait": "lp-shock",
+   "damage": 10,
+   "damage_text": "10 electric",
+   "range": 14,
+   "speed": 7.2,
+   "cost": "30 parts",
+   "era": "Era 3, Optics lab",
+   "era_level": 3,
+   "role": "Its electric beam jumps from target to target and stuns them briefly. Used against groups of troopers.",
+   "counters": "your infantry",
+   "countered_by": "battle tanks, squads that keep apart",
+   "blurb": "Its lightning jumps from one trooper to the next and stuns them. A siege facing your artillery brings them too, once the company has learned to."
+  },
+  "lp-aegis": {
+   "name": "Heavy tank",
+   "faction": "kessler-hayashi",
+   "health": 1100,
+   "portrait": "lp-aegis",
+   "damage": 38,
+   "damage_text": "38 rail",
+   "range": 16,
+   "speed": 5.4,
+   "cost": "95 parts",
+   "era": "Era 2, Armory",
+   "era_level": 2,
+   "role": "A heavy tank with a rail cannon. Its slug ignores armor; used against your battle tanks.",
+   "counters": "your vehicles",
+   "countered_by": "rocket troopers, flamethrower troopers, fliers",
+   "blurb": "A rail cannon on an armored hull, fielded when your vehicles have been killing its units. The slug goes through any armor."
+  },
+  "lp-prism": {
+   "name": "Laser tank",
+   "faction": "kessler-hayashi",
+   "health": 700,
+   "portrait": "lp-prism",
+   "damage": 10,
+   "damage_text": "10 laser, 14 laser",
+   "range": 16,
+   "speed": 5.4,
+   "cost": "100 parts",
+   "era": "Era 2, Optics lab",
+   "era_level": 2,
+   "role": "A tank whose laser splits from its target to the units around it. Used against groups of troopers.",
+   "counters": "your infantry",
+   "countered_by": "battle tanks, rocket troopers",
+   "blurb": "Its laser splits from its target to the units around it. Massed troopers are what it was built for."
+  },
+  "lp-tesla": {
+   "name": "Lightning tank",
+   "faction": "kessler-hayashi",
+   "health": 800,
+   "portrait": "lp-tesla",
+   "damage": 10,
+   "damage_text": "10 electric, 20 electric",
+   "range": 14,
+   "speed": 5.4,
+   "cost": "100 parts",
+   "era": "Era 3, Siege works",
+   "era_level": 3,
+   "role": "A tank whose lightning jumps along a turret line and drains the turrets it hits.",
+   "counters": "turret lines",
+   "countered_by": "artillery, battle tanks, power to spare",
+   "blurb": "Fielded against turret lines. Its lightning jumps along the line and drains what it strikes, so a thin power supply runs low while it stands there."
+  },
+  "lp-howitzer-truck": {
+   "name": "Howitzer truck",
+   "faction": "kessler-hayashi",
+   "health": 1200,
+   "portrait": "lp-howitzer-truck",
+   "damage": 4,
+   "damage_text": "4 physical, 2 shots/s",
+   "range": 10,
+   "speed": 3.9,
+   "role": "Carries a siege's howitzer to where it can reach your roboports.",
+   "counters": "roboports behind a wall",
+   "countered_by": "your artillery, battle tanks",
+   "blurb": "It comes to sieges where roboports cover the target. Your artillery outranges it and fires on it by itself."
+  },
+  "lp-hauler": {
+   "name": "Hauler",
+   "faction": "kessler-hayashi",
+   "health": 1500,
+   "portrait": "lp-hauler",
+   "damage": 4,
+   "damage_text": "4 physical, 2 shots/s",
+   "range": 10,
+   "speed": 3.9,
+   "cost": "30 parts",
+   "role": "A lightly armed truck. Carries convoys and Grubstake's building crews.",
+   "counters": "nothing it is sent to fight",
+   "countered_by": "anything that catches it on the road",
+   "blurb": "Kessler-Hayashi's truck. It carries convoys between camps and gets caught on the way."
+  },
+  "lp-grubstake-buggy": {
+   "name": "Buggy",
+   "faction": "grubstake",
+   "health": 220,
+   "portrait": "lp-grubstake-buggy",
+   "damage": 5,
+   "damage_text": "5 physical, 6 shots/s",
+   "range": 13,
+   "speed": 12,
+   "cost": "15 parts",
+   "era": "From landing",
+   "era_level": 0,
+   "role": "A fast buggy with a machine gun. Grubstake's raider and escort.",
+   "counters": "lone poles, outposts, trains in the open",
+   "countered_by": "gun turrets on its way, walls",
+   "blurb": "Fast, light and everywhere. Most of what Grubstake takes from you, it takes with buggies, and the buggy circling just outside your guns is its prowl."
+  },
+  "lp-shotgun-hand": {
+   "name": "Shotgun hand",
+   "faction": "grubstake",
+   "health": 120,
+   "portrait": "lp-shotgun-hand",
+   "damage": 9,
+   "damage_text": "9 physical (x3)",
+   "range": 9,
+   "speed": 10.2,
+   "cost": "10 parts",
+   "era": "From landing",
+   "era_level": 0,
+   "role": "Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line.",
+   "counters": "you on foot, troopers at close range",
+   "countered_by": "gun turrets, flamethrowers, anything with reach",
+   "blurb": "Grubstake's infantry, cheap and quick. Shotgun hands do the work of a raid: they take your machines apart and carry them off."
+  },
+  "lp-grubstake-harrier": {
+   "name": "Scrap drone",
+   "faction": "grubstake",
+   "health": 80,
+   "portrait": "lp-grubstake-harrier",
+   "damage": 6,
+   "damage_text": "6 physical, 3 shots/s",
+   "range": 12,
+   "speed": 15,
+   "air": true,
+   "cost": "15 parts",
+   "era": "From its level 1",
+   "role": "A cheap flying drone that attacks in numbers.",
+   "counters": "outposts behind a wall",
+   "countered_by": "gun turrets, flak turrets, rocket troopers",
+   "blurb": "Scrap and a gun, sent in numbers over your walls from Grubstake's first level. Gun turrets bring them down before they reach anything."
+  },
+  "lp-grubstake-slug": {
+   "name": "Slug buggy",
+   "faction": "grubstake",
+   "health": 240,
+   "portrait": "lp-grubstake-slug",
+   "damage": 55,
+   "damage_text": "55 physical",
+   "range": 15,
+   "speed": 12,
+   "cost": "30 parts",
+   "era": "Era 1, Scrap arms",
+   "era_level": 1,
+   "role": "A buggy with a slug gun, used against your vehicles.",
+   "counters": "your vehicles",
+   "countered_by": "troopers, turrets",
+   "blurb": "Grubstake buys them once your vehicles have killed enough of its raiders. A slug hits hard and seldom, so troopers on foot make it work for every kill."
+  },
+  "lp-grubstake-sapper": {
+   "name": "Dynamite sapper",
+   "faction": "grubstake",
+   "health": 120,
+   "portrait": "lp-grubstake-sapper",
+   "damage": 80,
+   "damage_text": "80 explosion",
+   "range": 11,
+   "speed": 7.8,
+   "cost": "30 parts",
+   "era": "Era 2, Scrap arms",
+   "era_level": 2,
+   "role": "Throws dynamite at groups of units and at walls in its way. Spares its own side.",
+   "counters": "your infantry",
+   "countered_by": "turrets, tanks",
+   "blurb": "Grubstake fields sappers once your infantry has cost it enough. A squad that keeps its spacing loses less to each throw."
+  },
+  "lp-grubstake-scavenger": {
+   "name": "Bomb drone",
+   "faction": "grubstake",
+   "health": 60,
+   "portrait": "lp-grubstake-scavenger",
+   "damage": 150,
+   "damage_text": "150 explosion, 2 shots/s",
+   "range": 1.5,
+   "speed": 18,
+   "air": true,
+   "cost": "35 parts",
+   "era": "Era 2, Wheels",
+   "era_level": 2,
+   "role": "A flying bomb that targets artillery, mortars and radars.",
+   "counters": "artillery and explosives",
+   "countered_by": "gun turrets, flak turrets",
+   "blurb": "It dies with its target. Gun turrets by your artillery bring it down on the way in."
+  },
+  "lp-grubstake-dozer": {
+   "name": "Dozer",
+   "faction": "grubstake",
+   "health": 1800,
+   "portrait": "lp-grubstake-dozer",
+   "damage": 60,
+   "damage_text": "60 physical",
+   "range": 2,
+   "speed": 4.2,
+   "cost": "100 parts",
+   "era": "Era 3, Wheels",
+   "era_level": 3,
+   "role": "Rams walls open for the shotgun hands behind it.",
+   "counters": "walls",
+   "countered_by": "rocket troopers, battle tanks, a second wall",
+   "blurb": "A wall that has stopped Grubstake's raids often enough meets a dozer, with shotgun hands behind it."
+  },
+  "lp-grubstake-flak-buggy": {
+   "name": "Flak buggy",
+   "faction": "grubstake",
+   "health": 220,
+   "portrait": "lp-grubstake-flak-buggy",
+   "damage": 22,
+   "damage_text": "22 explosion, 3 explosion, 2 shots/s",
+   "range": 22,
+   "speed": 12,
+   "cost": "20 parts",
+   "era": "Era 1, Wheels",
+   "era_level": 1,
+   "role": "Fires flak at flying units. Weak against ground targets.",
+   "counters": "fliers, combat robots",
+   "countered_by": "anything on the ground",
+   "blurb": "Scrap flak that bursts in the air. Grubstake buys it once your fliers and combat robots have cost it enough."
+  },
+  "lp-grubstake-scorcher": {
+   "name": "Flame tank",
+   "faction": "grubstake",
+   "health": 1100,
+   "portrait": "lp-grubstake-scorcher",
+   "damage": 6,
+   "damage_text": "6 physical, 6 shots/s",
+   "range": 13,
+   "speed": 5.4,
+   "cost": "70 parts",
+   "era": "Era 2, Scrap arms",
+   "era_level": 2,
+   "role": "An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly.",
+   "counters": "turret lines",
+   "countered_by": "rocket troopers, battle tanks, artillery",
+   "blurb": "Grubstake buys it against turret lines. It has to come close to burn, so rockets and artillery get their chance on the way in."
+  },
+  "lp-grubstake-howitzer-truck": {
+   "name": "Howitzer truck",
+   "faction": "grubstake",
+   "health": 1200,
+   "portrait": "lp-grubstake-howitzer-truck",
+   "damage": 4,
+   "damage_text": "4 physical, 2 shots/s",
+   "range": 10,
+   "speed": 3.9,
+   "role": "Carries a howitzer to a wall kept mended by robots.",
+   "counters": "roboports behind a wall",
+   "countered_by": "your artillery, battle tanks",
+   "blurb": "Only a camp that landed with a grudge brings one, and only against a wall your robots keep mending."
+  },
+  "lp-grubstake-hauler": {
+   "name": "Hauler",
+   "faction": "grubstake",
+   "health": 1500,
+   "portrait": "lp-grubstake-hauler",
+   "damage": 4,
+   "damage_text": "4 physical, 2 shots/s",
+   "range": 10,
+   "speed": 3.9,
+   "cost": "30 parts",
+   "role": "A lightly armed truck. Carries convoys and Grubstake's building crews.",
+   "counters": "nothing it is sent to fight",
+   "countered_by": "anything that catches it on the road",
+   "blurb": "It builds Grubstake's new lots, carries its loot and drives the ore home from its claims. One killed on the road spills what it carries."
+  },
+  "lp-bred-small-biter": {
+   "name": "Small biter",
+   "faction": "synthexis",
+   "health": 15,
+   "portrait": "lp-bred-small-biter",
+   "damage": 7,
+   "damage_text": "7 bite",
+   "range": 0.5,
+   "speed": 12,
+   "cost": "2 biomass",
+   "era": "Evolution 0",
+   "era_level": 0,
+   "role": "The first breed and the cheapest. Wave after wave starts with them.",
+   "counters": "an unguarded line",
+   "countered_by": "any turret",
+   "blurb": "Most of a young culture's waves. Its clinic soon moves it on to bigger breeds."
+  },
+  "lp-bred-medium-biter": {
+   "name": "Medium biter",
+   "faction": "synthexis",
+   "health": 75,
+   "portrait": "lp-bred-medium-biter",
+   "damage": 15,
+   "damage_text": "15 bite",
+   "range": 1,
+   "speed": 14.4,
+   "cost": "7 biomass",
+   "era": "Evolution 0.2",
+   "era_level": 0.2,
+   "role": "A biter with some armor, bred once the culture's evolution climbs.",
+   "counters": "gun turrets on thin ammunition",
+   "countered_by": "lasers, flamethrowers",
+   "blurb": "The breed a culture without its clinic falls back to, with the small biter."
+  },
+  "lp-bred-spore": {
+   "name": "Synthexis spore spitter",
+   "faction": "synthexis",
+   "health": 50,
+   "portrait": "lp-bred-spore",
+   "damage": 30,
+   "damage_text": "30 acid a hit",
+   "range": 20,
+   "speed": 9.9,
+   "cost": "10 biomass",
+   "era": "Evolution 0.25",
+   "era_level": 0.25,
+   "role": "Spits spores that hit flying units. Weak against ground targets.",
+   "counters": "fliers, your robots",
+   "countered_by": "anything on the ground",
+   "blurb": "The one breed that looks up. It travels with waves sent at a base that defends itself with drones and robots."
+  },
+  "lp-bred-medium-spitter": {
+   "name": "Medium spitter",
+   "faction": "synthexis",
+   "health": 50,
+   "portrait": "lp-bred-medium-spitter",
+   "damage": 24,
+   "damage_text": "24 acid a hit",
+   "range": 14,
+   "speed": 9.9,
+   "cost": "9 biomass",
+   "era": "Evolution 0.3",
+   "era_level": 0.3,
+   "role": "Spits acid over a wall at what stands behind it.",
+   "counters": "turrets close behind a wall",
+   "countered_by": "flamethrowers, gun turrets with reach",
+   "blurb": "It stays back from the wall and spits over it while the biters break through."
+  },
+  "lp-bred-cinder": {
+   "name": "Synthexis burster",
+   "faction": "synthexis",
+   "health": 120,
+   "portrait": "lp-bred-cinder",
+   "damage": 350,
+   "damage_text": "350 explosion, 200 core",
+   "range": 1,
+   "speed": 19.2,
+   "cost": "40 biomass",
+   "era": "Evolution 0.45",
+   "era_level": 0.45,
+   "role": "A fast biter that bursts on death, damaging nearby walls and turrets.",
+   "counters": "a wall that held its last wave",
+   "countered_by": "turrets that reach past the wall",
+   "blurb": "Bred for walls that have held. It runs to the wall and bursts there, and a well-aimed group takes the corner turrets with it."
+  },
+  "lp-bred-big-biter": {
+   "name": "Big biter",
+   "faction": "synthexis",
+   "health": 375,
+   "portrait": "lp-bred-big-biter",
+   "damage": 30,
+   "damage_text": "30 bite",
+   "range": 1.5,
+   "speed": 13.8,
+   "cost": "28 biomass",
+   "era": "Evolution 0.5",
+   "era_level": 0.5,
+   "role": "The body of a grown wave. Bred, tinted and sent with a plan.",
+   "counters": "gun turrets on thin ammunition",
+   "countered_by": "lasers, flamethrowers, splash",
+   "blurb": "Most of any grown wave. A big biter costs the culture little biomass, so it spends them freely."
+  },
+  "lp-bred-stomper": {
+   "name": "Synthexis stomper",
+   "faction": "synthexis",
+   "health": 2000,
+   "portrait": "lp-bred-stomper",
+   "range": 5.85,
+   "cost": "150 biomass",
+   "era": "Evolution 0.8",
+   "era_level": 0.8,
+   "role": "A bred pentapod that steps over walls. Resists bullets.",
+   "counters": "walls",
+   "countered_by": "rocket troopers, battle tanks, flamethrowers",
+   "blurb": "A bred pentapod. It steps over walls and shrugs off bullets."
+  },
+  "lp-bred-behemoth-biter": {
+   "name": "Behemoth biter",
+   "faction": "synthexis",
+   "health": 3000,
+   "portrait": "lp-bred-behemoth-biter",
+   "damage": 90,
+   "damage_text": "90 bite",
+   "range": 1.5,
+   "speed": 18,
+   "cost": "200 biomass",
+   "era": "Evolution 0.9",
+   "era_level": 0.9,
+   "role": "The heaviest of the bred biters, and the most expensive to breed.",
+   "counters": "walls and gun turrets",
+   "countered_by": "artillery, massed lasers, battle tanks",
+   "blurb": "The culture breeds few of them and sends them where the wall is thickest."
+  },
+  "lp-bred-big-burster": {
+   "name": "Synthexis big burster",
+   "faction": "synthexis",
+   "health": 3000,
+   "damage": 1500,
+   "damage_text": "1,500 explosion, 800 core",
+   "range": 1.5,
+   "speed": 18,
+   "cost": "300 biomass",
+   "era": "Developed after 2 held walls",
+   "role": "A huge biter that bursts at a turret guarding the way in, damaging all turrets nearby.",
+   "counters": "the turrets covering its way in",
+   "countered_by": "guns that reach far past the wall, turrets set apart",
+   "blurb": "Sent one rank at a time at the turrets covering a wave's way in. Killed short of them, only its core goes off."
+  },
+  "lp-sweeper": {
+   "name": "Synthexis sweeper",
+   "faction": "synthexis",
+   "health": 2000,
+   "damage": 60,
+   "damage_text": "60 explosion",
+   "range": 1.5,
+   "speed": 18,
+   "cost": "60 biomass",
+   "era": "Bred against mines",
+   "role": "Bursts in minefields to clear a path before an attack.",
+   "counters": "minefields",
+   "countered_by": "turrets that cover the minefield",
+   "blurb": "Bred when a wave's way in crosses your mines. It walks into the minefield and bursts there."
+  },
+  "lp-bred-scout": {
+   "name": "Synthexis scout",
+   "faction": "synthexis",
+   "health": 30,
+   "portrait": "lp-bred-scout",
+   "damage": 7,
+   "damage_text": "7 bite",
+   "range": 0.5,
+   "speed": 20.4,
+   "era": "Made for each wave",
+   "role": "Circles your defenses before an attack.",
+   "counters": "nothing; it looks",
+   "countered_by": "any turret that reaches it",
+   "blurb": "When you see one circling your wall, a wave is on its way."
+  },
+  "lp-bred-carrier": {
+   "name": "Synthexis carrier",
+   "faction": "synthexis",
+   "health": 600,
+   "damage": 30,
+   "damage_text": "30 bite",
+   "range": 1.5,
+   "speed": 7.2,
+   "era": "Sent by a grown culture",
+   "role": "Carries a new Synthexis culture to wild spawners.",
+   "counters": "nothing; it carries",
+   "countered_by": "anything that catches it on the way",
+   "blurb": "It carries a new culture to a wild spawner field farther out. Kill it on the way and the culture never starts."
+  },
+  "lp-technician": {
+   "name": "Synthexis technician",
+   "faction": "synthexis",
+   "health": 80,
+   "portrait": "lp-technician",
+   "damage": 1,
+   "damage_text": "1 physical",
+   "range": 1,
+   "speed": 6,
+   "era": "Bought as the culture grows",
+   "role": "Walks between the biochambers and keeps them running.",
+   "counters": "nothing; it tends",
+   "countered_by": "anything that reaches the culture",
+   "blurb": "Without technicians the biochambers stop, and without biochambers the incubators stop breeding."
+  },
+  "lp-breacher": {
+   "name": "Breacher",
+   "faction": "player",
+   "health": 120,
+   "portrait": "lp-breacher",
+   "damage": 15,
+   "damage_text": "15 explosion, 85 to buildings",
+   "range": 12,
+   "speed": 7.2,
+   "cost": "1 bandwidth",
+   "era": "Command bandwidth 1",
+   "era_level": 1,
+   "role": "Carries demolition charges for walls. Does little to units.",
+   "counters": "walls, turrets",
+   "countered_by": "anything that fights back",
+   "blurb": "It throws demolition charges that wreck walls and turrets and do little to units."
+  },
+  "lp-trooper": {
+   "name": "Trooper",
+   "faction": "player",
+   "health": 120,
+   "portrait": "lp-trooper",
+   "damage": 8,
+   "damage_text": "8 physical, 3 shots/s",
+   "range": 15,
+   "speed": 7.2,
+   "cost": "1 bandwidth",
+   "era": "Command bandwidth 1",
+   "era_level": 1,
+   "role": "Your basic soldier, with a rifle.",
+   "counters": "raiders, scouts, shotgun hands",
+   "countered_by": "heavy laser troopers, shock troopers, laser tanks",
+   "blurb": "Cheap, quick to train and quick to lose. Troopers win against raiders and lose against lasers."
+  },
+  "lp-rocket-trooper": {
+   "name": "Rocket trooper",
+   "faction": "player",
+   "health": 120,
+   "portrait": "lp-rocket-trooper",
+   "damage": 110,
+   "damage_text": "110 explosion",
+   "range": 18,
+   "speed": 7.2,
+   "cost": "2 bandwidth",
+   "era": "Command bandwidth 2",
+   "era_level": 2,
+   "role": "Fires rockets, good against armor and fliers. Slow to kill a crowd.",
+   "counters": "tanks, fliers",
+   "countered_by": "massed infantry, sappers",
+   "blurb": "It kills armor and fliers, and is slow against a crowd."
+  },
+  "lp-battle-tank": {
+   "name": "Battle tank",
+   "faction": "player",
+   "health": 900,
+   "portrait": "lp-battle-tank",
+   "damage": 50,
+   "damage_text": "50 explosion, 120 to buildings",
+   "range": 18,
+   "speed": 5.4,
+   "cost": "6 bandwidth",
+   "era": "Command bandwidth 2",
+   "era_level": 2,
+   "role": "Your heavy tank, for attacking bases.",
+   "counters": "walls, turrets, camps",
+   "countered_by": "heavy tanks, slug buggies, rocket troopers",
+   "blurb": "The answer to a walled camp. It takes the longest to train and the most bandwidth."
+  },
+  "lp-flame-trooper": {
+   "name": "Flamethrower trooper",
+   "faction": "player",
+   "health": 120,
+   "portrait": "lp-flame-trooper",
+   "damage": 17,
+   "damage_text": "1 fire a hit, then 4/s for 4 s",
+   "range": 13,
+   "speed": 7.2,
+   "cost": "2 bandwidth",
+   "era": "Command bandwidth 3",
+   "era_level": 3,
+   "role": "A flamethrower against swarms of biters and bunched infantry. Outranged, and weak against armor.",
+   "counters": "biter swarms, bunched infantry",
+   "countered_by": "armor, sappers, fliers",
+   "blurb": "It burns swarms of biters and bunched infantry, and is outranged by nearly everything."
+  }
+ },
+ "trees": {
+  "kessler-hayashi-units": {
+   "title": "Kessler-Hayashi's unit tree",
+   "kicker": "Unit tree",
+   "faction": "kessler-hayashi",
+   "columns": [
+    {
+     "id": "optics",
+     "label": "Optics lab",
+     "icon": "lp-optics-lab"
+    },
+    {
+     "id": "siege",
+     "label": "Siege works",
+     "icon": "lp-siege-lab"
+    },
+    {
+     "id": "line",
+     "label": "Armory",
+     "icon": "lp-line-lab"
+    }
+   ],
+   "bands": [
+    {
+     "id": "land",
+     "label": "Landing",
+     "free": true
+    },
+    {
+     "id": "track",
+     "label": "Damage"
+    },
+    {
+     "id": "1",
+     "label": "Era 1"
+    },
+    {
+     "id": "2",
+     "label": "Era 2"
+    },
+    {
+     "id": "3",
+     "label": "Era 3"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "mix-lp-infantry",
+     "band": "land",
+     "label": "Laser trooper",
+     "portrait": "lp-infantry",
+     "note": "from landing"
+    },
+    {
+     "id": "mix-lp-tank",
+     "band": "land",
+     "label": "Tank",
+     "portrait": "lp-tank",
+     "note": "from landing"
+    },
+    {
+     "id": "mix-lp-railgunner",
+     "band": "land",
+     "label": "Railgunner",
+     "portrait": "lp-railgunner",
+     "note": "from landing"
+    },
+    {
+     "id": "mix-lp-laser-drone",
+     "band": "land",
+     "label": "Laser drone",
+     "portrait": "lp-laser-drone",
+     "note": "from its level 2"
+    },
+    {
+     "id": "optics",
+     "band": "track",
+     "column": "optics",
+     "label": "Better optics",
+     "kind": "upgrade",
+     "note": "5 levels, 400 parts each"
+    },
+    {
+     "id": "hardened",
+     "band": "2",
+     "column": "siege",
+     "answers": "artillery and explosives",
+     "label": "Dug-in siege crews",
+     "kind": "ability",
+     "note": "1,200 parts"
+    },
+    {
+     "id": "railguns",
+     "band": "track",
+     "column": "siege",
+     "answers": "biters",
+     "label": "Heavier railguns",
+     "kind": "upgrade",
+     "note": "5 levels, 600 parts each"
+    },
+    {
+     "id": "jammer",
+     "band": "2",
+     "column": "siege",
+     "answers": "repair robots",
+     "label": "Jamming mast",
+     "kind": "ability",
+     "note": "1,500 parts"
+    },
+    {
+     "id": "counter",
+     "band": "3",
+     "column": "siege",
+     "requires": [
+      "hardened"
+     ],
+     "answers": "artillery",
+     "label": "Counter-battery",
+     "kind": "ability",
+     "note": "1,000 parts"
+    },
+    {
+     "id": "warden",
+     "band": "1",
+     "column": "line",
+     "answers": "bullets",
+     "label": "Heavier armor",
+     "kind": "upgrade",
+     "note": "1,500 parts"
+    },
+    {
+     "id": "skyguard",
+     "band": "1",
+     "column": "line",
+     "answers": "fliers, combat robots",
+     "label": "Anti-air trooper",
+     "portrait": "lp-skyguard",
+     "note": "900 parts"
+    },
+    {
+     "id": "lance",
+     "band": "1",
+     "column": "optics",
+     "answers": "your infantry",
+     "label": "Heavy laser trooper",
+     "portrait": "lp-lance",
+     "note": "900 parts"
+    },
+    {
+     "id": "shock",
+     "band": "3",
+     "column": "optics",
+     "requires": [
+      "lance"
+     ],
+     "answers": "your infantry",
+     "label": "Shock trooper",
+     "portrait": "lp-shock",
+     "note": "2,500 parts"
+    },
+    {
+     "id": "aegis",
+     "band": "2",
+     "column": "line",
+     "requires": [
+      "warden"
+     ],
+     "answers": "your vehicles",
+     "label": "Heavy tank",
+     "portrait": "lp-aegis",
+     "note": "2,000 parts"
+    },
+    {
+     "id": "prism",
+     "band": "2",
+     "column": "optics",
+     "requires": [
+      "lance"
+     ],
+     "answers": "your infantry",
+     "label": "Laser tank",
+     "portrait": "lp-prism",
+     "note": "1,800 parts"
+    },
+    {
+     "id": "tesla",
+     "band": "3",
+     "column": "siege",
+     "answers": "turret lines",
+     "label": "Lightning tank",
+     "portrait": "lp-tesla",
+     "note": "2,500 parts"
+    }
+   ],
+   "max_height": 144
+  },
+  "grubstake-units": {
+   "title": "Grubstake's unit tree",
+   "kicker": "Unit tree",
+   "faction": "grubstake",
+   "columns": [
+    {
+     "id": "scrap-arms",
+     "label": "Scrap arms"
+    },
+    {
+     "id": "loot",
+     "label": "Loot"
+    },
+    {
+     "id": "wheels",
+     "label": "Wheels"
+    }
+   ],
+   "bands": [
+    {
+     "id": "land",
+     "label": "Landing",
+     "free": true
+    },
+    {
+     "id": "track",
+     "label": "Damage"
+    },
+    {
+     "id": "1",
+     "label": "Era 1"
+    },
+    {
+     "id": "2",
+     "label": "Era 2"
+    },
+    {
+     "id": "3",
+     "label": "Era 3"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "mix-lp-buggy",
+     "band": "land",
+     "label": "Buggy",
+     "portrait": "lp-grubstake-buggy",
+     "note": "from landing"
+    },
+    {
+     "id": "mix-lp-infantry",
+     "band": "land",
+     "label": "Shotgun hand",
+     "portrait": "lp-shotgun-hand",
+     "note": "from landing"
+    },
+    {
+     "id": "mix-lp-harrier",
+     "band": "land",
+     "label": "Scrap drone",
+     "portrait": "lp-grubstake-harrier",
+     "note": "from its level 1"
+    },
+    {
+     "id": "handloads",
+     "band": "track",
+     "column": "scrap-arms",
+     "label": "Hand-loaded shells",
+     "kind": "upgrade",
+     "note": "5 levels, 400 parts each"
+    },
+    {
+     "id": "salvage",
+     "band": "1",
+     "column": "loot",
+     "answers": "raids turned back",
+     "label": "Salvage rights",
+     "kind": "ability",
+     "note": "800 parts"
+    },
+    {
+     "id": "prospector",
+     "band": "2",
+     "column": "loot",
+     "requires": [
+      "salvage"
+     ],
+     "answers": "raids turned back",
+     "label": "Better prospecting",
+     "kind": "ability",
+     "note": "1,000 parts"
+    },
+    {
+     "id": "scrap-plating",
+     "band": "1",
+     "column": "scrap-arms",
+     "answers": "bullets",
+     "label": "Scrap plating",
+     "kind": "upgrade",
+     "note": "900 parts"
+    },
+    {
+     "id": "asbestos",
+     "band": "1",
+     "column": "scrap-arms",
+     "answers": "flamethrowers",
+     "label": "Asbestos suits",
+     "kind": "upgrade",
+     "note": "900 parts"
+    },
+    {
+     "id": "slug",
+     "band": "1",
+     "column": "scrap-arms",
+     "answers": "your vehicles",
+     "label": "Slug buggy",
+     "portrait": "lp-grubstake-slug",
+     "note": "900 parts"
+    },
+    {
+     "id": "sapper",
+     "band": "2",
+     "column": "scrap-arms",
+     "answers": "your infantry",
+     "label": "Dynamite sapper",
+     "portrait": "lp-grubstake-sapper",
+     "note": "1,500 parts"
+    },
+    {
+     "id": "scavenger",
+     "band": "2",
+     "column": "wheels",
+     "answers": "artillery and explosives",
+     "label": "Bomb drone",
+     "portrait": "lp-grubstake-scavenger",
+     "note": "1,800 parts"
+    },
+    {
+     "id": "dozer",
+     "band": "3",
+     "column": "wheels",
+     "requires": [
+      "slug"
+     ],
+     "answers": "walls",
+     "label": "Dozer",
+     "portrait": "lp-grubstake-dozer",
+     "note": "2,500 parts"
+    },
+    {
+     "id": "flak-buggy",
+     "band": "1",
+     "column": "wheels",
+     "answers": "fliers, combat robots",
+     "label": "Flak buggy",
+     "portrait": "lp-grubstake-flak-buggy",
+     "note": "900 parts"
+    },
+    {
+     "id": "scorcher",
+     "band": "2",
+     "column": "scrap-arms",
+     "answers": "turret lines",
+     "label": "Flame tank",
+     "portrait": "lp-grubstake-scorcher",
+     "note": "2,000 parts"
+    }
+   ],
+   "max_height": 144
+  },
+  "synthexis-breeds": {
+   "title": "What Synthexis breeds",
+   "kicker": "Breeds by evolution",
+   "faction": "synthexis",
+   "columns": [
+    {
+     "id": "biters",
+     "label": "Biters"
+    },
+    {
+     "id": "spitters",
+     "label": "Spitters"
+    },
+    {
+     "id": "special",
+     "label": "Bred for a job"
+    }
+   ],
+   "bands": [
+    {
+     "id": "q0",
+     "label": "0 to 0.5"
+    },
+    {
+     "id": "q1",
+     "label": "0.5 to 1"
+    },
+    {
+     "id": "made",
+     "label": "Developed, made",
+     "free": true
+    }
+   ],
+   "nodes": [
+    {
+     "id": "lp-bred-small-biter",
+     "band": "q0",
+     "column": "biters",
+     "label": "Small biter",
+     "portrait": "lp-bred-small-biter",
+     "note": "from 0"
+    },
+    {
+     "id": "lp-bred-medium-biter",
+     "band": "q0",
+     "column": "biters",
+     "label": "Medium biter",
+     "portrait": "lp-bred-medium-biter",
+     "note": "from 0.2"
+    },
+    {
+     "id": "lp-bred-spore",
+     "band": "q0",
+     "column": "spitters",
+     "label": "Synthexis spore spitter",
+     "portrait": "lp-bred-spore",
+     "note": "from 0.25"
+    },
+    {
+     "id": "lp-bred-medium-spitter",
+     "band": "q0",
+     "column": "spitters",
+     "label": "Medium spitter",
+     "portrait": "lp-bred-medium-spitter",
+     "note": "from 0.3"
+    },
+    {
+     "id": "lp-bred-cinder",
+     "band": "q0",
+     "column": "special",
+     "label": "Synthexis burster",
+     "portrait": "lp-bred-cinder",
+     "note": "from 0.45"
+    },
+    {
+     "id": "lp-bred-big-biter",
+     "band": "q1",
+     "column": "biters",
+     "label": "Big biter",
+     "portrait": "lp-bred-big-biter",
+     "note": "from 0.5"
+    },
+    {
+     "id": "lp-bred-stomper",
+     "band": "q1",
+     "column": "special",
+     "label": "Synthexis stomper",
+     "portrait": "lp-bred-stomper",
+     "note": "from 0.8"
+    },
+    {
+     "id": "lp-bred-behemoth-biter",
+     "band": "q1",
+     "column": "biters",
+     "label": "Behemoth biter",
+     "portrait": "lp-bred-behemoth-biter",
+     "note": "from 0.9"
+    },
+    {
+     "id": "lp-bred-big-burster",
+     "band": "made",
+     "label": "Synthexis big burster",
+     "note": "developed after 2 held walls"
+    },
+    {
+     "id": "lp-sweeper",
+     "band": "made",
+     "label": "Synthexis sweeper",
+     "note": "bred against mines"
+    },
+    {
+     "id": "lp-bred-scout",
+     "band": "made",
+     "label": "Synthexis scout",
+     "portrait": "lp-bred-scout",
+     "note": "made for each wave"
+    },
+    {
+     "id": "lp-bred-carrier",
+     "band": "made",
+     "label": "Synthexis carrier",
+     "note": "sent by a grown culture"
+    },
+    {
+     "id": "lp-technician",
+     "band": "made",
+     "label": "Synthexis technician",
+     "portrait": "lp-technician",
+     "note": "bought as the culture grows"
+    }
+   ],
+   "max_height": 144
+  },
+  "player-army": {
+   "title": "What the barracks trains",
+   "kicker": "Unit tree",
+   "faction": "player",
+   "columns": [
+    {
+     "id": "infantry",
+     "label": "Infantry"
+    },
+    {
+     "id": "vehicles",
+     "label": "Vehicles"
+    }
+   ],
+   "bands": [
+    {
+     "id": "cb1",
+     "label": "Bandwidth 1"
+    },
+    {
+     "id": "cb2",
+     "label": "Bandwidth 2"
+    },
+    {
+     "id": "cb3",
+     "label": "Bandwidth 3"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "lp-breacher",
+     "band": "cb1",
+     "column": "infantry",
+     "label": "Breacher",
+     "portrait": "lp-breacher",
+     "note": "1 bandwidth"
+    },
+    {
+     "id": "lp-trooper",
+     "band": "cb1",
+     "column": "infantry",
+     "label": "Trooper",
+     "portrait": "lp-trooper",
+     "note": "1 bandwidth"
+    },
+    {
+     "id": "lp-rocket-trooper",
+     "band": "cb2",
+     "column": "infantry",
+     "label": "Rocket trooper",
+     "portrait": "lp-rocket-trooper",
+     "note": "2 bandwidth"
+    },
+    {
+     "id": "lp-battle-tank",
+     "band": "cb2",
+     "column": "vehicles",
+     "label": "Battle tank",
+     "portrait": "lp-battle-tank",
+     "note": "6 bandwidth"
+    },
+    {
+     "id": "lp-flame-trooper",
+     "band": "cb3",
+     "column": "infantry",
+     "label": "Flamethrower trooper",
+     "portrait": "lp-flame-trooper",
+     "note": "2 bandwidth"
+    }
+   ]
+  },
+  "player-techs-early": {
+   "title": "Faction technologies, early",
+   "kicker": "Tech tree",
+   "faction": "player",
+   "columns": [
+    {
+     "id": "army",
+     "label": "Your army",
+     "faction": "player"
+    },
+    {
+     "id": "grubstake",
+     "label": "From Grubstake",
+     "faction": "grubstake"
+    },
+    {
+     "id": "synthexis",
+     "label": "From Synthexis",
+     "faction": "synthexis"
+    },
+    {
+     "id": "kessler-hayashi",
+     "label": "From Kessler-Hayashi",
+     "faction": "kessler-hayashi"
+    }
+   ],
+   "bands": [
+    {
+     "id": "0",
+     "label": "Automation"
+    },
+    {
+     "id": "1",
+     "label": "Logistic"
+    },
+    {
+     "id": "2",
+     "label": "Military"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "lp-bait-made",
+     "band": "2",
+     "column": "grubstake",
+     "label": "Synthetic pheromone bait",
+     "kind": "tech",
+     "how": "study",
+     "note": "destroy a Grubstake pacifier antenna"
+    },
+    {
+     "id": "lp-bred-telemetry",
+     "band": "2",
+     "column": "synthexis",
+     "label": "Bred-biter telemetry",
+     "kind": "tech",
+     "how": "study",
+     "note": "destroy a Synthexis incubator or 3 tumors, or kill 3 Synthexis scouts"
+    },
+    {
+     "id": "lp-claim-marker",
+     "band": "0",
+     "column": "grubstake",
+     "label": "Claim marker",
+     "kind": "tech",
+     "how": "teardown",
+     "note": "2 pacifier crystals"
+    },
+    {
+     "id": "lp-claims-register",
+     "band": "2",
+     "column": "grubstake",
+     "label": "Claims register",
+     "kind": "tech",
+     "how": "study",
+     "note": "destroy 10 Grubstake raiders or a hauler"
+    },
+    {
+     "id": "lp-command-bandwidth-1",
+     "band": "1",
+     "column": "army",
+     "label": "Command bandwidth 1",
+     "kind": "tech",
+     "how": "science",
+     "note": "troopers, breachers"
+    },
+    {
+     "id": "lp-flak-turret",
+     "band": "2",
+     "column": "grubstake",
+     "label": "Flak turret",
+     "kind": "tech",
+     "how": "study",
+     "note": "destroy a Grubstake scrap cannon, or 5 scrap drones or bomb drones"
+    },
+    {
+     "id": "lp-pheromone-bait",
+     "band": "0",
+     "column": "grubstake",
+     "label": "Pheromone bait",
+     "kind": "tech",
+     "how": "teardown",
+     "note": "3 pheromone glands"
+    },
+    {
+     "id": "lp-pact-breaker",
+     "band": "0",
+     "column": "grubstake",
+     "label": "Pact breaker",
+     "kind": "tech",
+     "how": "teardown",
+     "note": "a pacifier crystal",
+     "requires": [
+      "lp-pheromone-bait"
+     ]
+    }
+   ],
+   "max_height": 144,
+   "legend": {
+    "teardown": "Teardown: craft its parts",
+    "study": "Field study, then science",
+    "science": "Science packs",
+    "capture": "Capture",
+    "spoils": "Spoils of a fall"
+   }
+  },
+  "player-techs-late": {
+   "title": "Faction technologies, late",
+   "kicker": "Tech tree",
+   "faction": "player",
+   "columns": [
+    {
+     "id": "army",
+     "label": "Your army",
+     "faction": "player"
+    },
+    {
+     "id": "grubstake",
+     "label": "From Grubstake",
+     "faction": "grubstake"
+    },
+    {
+     "id": "synthexis",
+     "label": "From Synthexis",
+     "faction": "synthexis"
+    },
+    {
+     "id": "kessler-hayashi",
+     "label": "From Kessler-Hayashi",
+     "faction": "kessler-hayashi"
+    }
+   ],
+   "bands": [
+    {
+     "id": "3",
+     "label": "Chemical"
+    },
+    {
+     "id": "7",
+     "label": "Other worlds"
+    },
+    {
+     "id": "fall",
+     "label": "A fall"
+    }
+   ],
+   "nodes": [
+    {
+     "id": "lp-cluster-shells",
+     "band": "7",
+     "column": "kessler-hayashi",
+     "label": "Cluster shells",
+     "kind": "tech",
+     "how": "teardown",
+     "note": "3 cluster fuzes"
+    },
+    {
+     "id": "lp-defoliant",
+     "band": "3",
+     "column": "synthexis",
+     "label": "Defoliant",
+     "kind": "tech",
+     "how": "study",
+     "note": "destroy 5 Synthexis tumors"
+    },
+    {
+     "id": "lp-incubator-capture",
+     "band": "7",
+     "column": "synthexis",
+     "label": "Incubator capture",
+     "kind": "tech",
+     "how": "capture",
+     "note": "capture an incubator"
+    },
+    {
+     "id": "lp-orbital-strike",
+     "band": "3",
+     "column": "kessler-hayashi",
+     "label": "Orbital strike",
+     "kind": "tech",
+     "how": "teardown",
+     "note": "an orbital beacon"
+    },
+    {
+     "id": "lp-player-dome",
+     "band": "7",
+     "column": "kessler-hayashi",
+     "label": "Field dome",
+     "kind": "tech",
+     "how": "science"
+    },
+    {
+     "id": "lp-prize-grubstake",
+     "band": "fall",
+     "column": "grubstake",
+     "label": "Grubstake's strip drill",
+     "kind": "tech",
+     "how": "spoils",
+     "note": "its headquarters falls"
+    },
+    {
+     "id": "lp-prize-serenity",
+     "band": "fall",
+     "column": "kessler-hayashi",
+     "label": "Kessler-Hayashi's mortar",
+     "kind": "tech",
+     "how": "spoils",
+     "note": "its headquarters falls"
+    },
+    {
+     "id": "lp-rail-rifle",
+     "band": "3",
+     "column": "kessler-hayashi",
+     "label": "Rail rifle",
+     "kind": "tech",
+     "how": "teardown",
+     "note": "2 rail coils"
+    },
+    {
+     "id": "lp-strip-drill",
+     "band": "3",
+     "column": "grubstake",
+     "label": "Strip drill",
+     "kind": "tech",
+     "how": "study",
+     "note": "destroy 3 Grubstake drills"
+    },
+    {
+     "id": "lp-command-bandwidth-2",
+     "band": "3",
+     "column": "army",
+     "label": "Command bandwidth 2",
+     "kind": "tech",
+     "how": "science",
+     "note": "battle tanks, rocket troopers, after Command bandwidth 1"
+    },
+    {
+     "id": "lp-command-bandwidth-3",
+     "band": "3",
+     "column": "army",
+     "label": "Command bandwidth 3",
+     "kind": "tech",
+     "how": "science",
+     "note": "flamethrower troopers",
+     "requires": [
+      "lp-command-bandwidth-2"
+     ]
+    },
+    {
+     "id": "lp-command-bandwidth-4",
+     "band": "3",
+     "column": "army",
+     "label": "Command bandwidth 4",
+     "kind": "tech",
+     "how": "science",
+     "note": "repeatable",
+     "requires": [
+      "lp-command-bandwidth-3"
+     ]
+    }
+   ],
+   "max_height": 144,
+   "legend": {
+    "teardown": "Teardown: craft its parts",
+    "study": "Field study, then science",
+    "science": "Science packs",
+    "capture": "Capture",
+    "spoils": "Spoils of a fall"
+   }
+  }
+ }
+}

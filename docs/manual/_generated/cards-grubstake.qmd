@@ -1,0 +1,45 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+::: {.unit unit="lp-grubstake-buggy"}
+Fast, light and everywhere. Most of what Grubstake takes from you, it takes with buggies, and the buggy circling just outside your guns is its prowl.
+:::
+
+::: {.unit unit="lp-shotgun-hand"}
+Grubstake's infantry, cheap and quick. Shotgun hands do the work of a raid: they take your machines apart and carry them off.
+:::
+
+::: {.unit unit="lp-grubstake-harrier"}
+Scrap and a gun, sent in numbers over your walls from Grubstake's first level. Gun turrets bring them down before they reach anything.
+:::
+
+::: {.unit unit="lp-grubstake-slug"}
+Grubstake buys them once your vehicles have killed enough of its raiders. A slug hits hard and seldom, so troopers on foot make it work for every kill.
+:::
+
+::: {.unit unit="lp-grubstake-sapper"}
+Grubstake fields sappers once your infantry has cost it enough. A squad that keeps its spacing loses less to each throw.
+:::
+
+::: {.unit unit="lp-grubstake-scavenger"}
+It dies with its target. Gun turrets by your artillery bring it down on the way in.
+:::
+
+::: {.unit unit="lp-grubstake-dozer"}
+A wall that has stopped Grubstake's raids often enough meets a dozer, with shotgun hands behind it.
+:::
+
+::: {.unit unit="lp-grubstake-flak-buggy"}
+Scrap flak that bursts in the air. Grubstake buys it once your fliers and combat robots have cost it enough.
+:::
+
+::: {.unit unit="lp-grubstake-scorcher"}
+Grubstake buys it against turret lines. It has to come close to burn, so rockets and artillery get their chance on the way in.
+:::
+
+::: {.unit unit="lp-grubstake-howitzer-truck"}
+Only a camp that landed with a grudge brings one, and only against a wall your robots keep mending.
+:::
+
+::: {.unit unit="lp-grubstake-hauler"}
+It builds Grubstake's new lots, carries its loot and drives the ore home from its claims. One killed on the road spills what it carries.
+:::

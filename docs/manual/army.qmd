@@ -1,4 +1,7 @@
-# Your army
+# Your army {.opener faction="player" kicker="The engineer"}
+
+::: {.epigraph faction="player"}
+:::
 
 You can raise an army of your own: troopers, breachers, rocket troopers, flamethrower troopers and battle tanks. They
 are trained from the equipment you already make for yourself. How many you can field is set by command bandwidth, which
@@ -31,6 +34,14 @@ bandwidth is full, finished orders wait inside the barracks, and it stops once i
 **Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Nothing heals
 them anywhere else, so a barracks near the front works as a forward base. **Roads** help too: your units walk faster on
 stone path, concrete and refined concrete, by the same bonus those floors give you.
+
+## Your units {#sec-army-units}
+
+::: {.tree tree="player-army"}
+Each level of command bandwidth unlocks orders at the barracks. A unit's share of your bandwidth is under its name.
+:::
+
+{{< include _generated/cards-player.qmd >}}
 
 ## Rally beacons
 

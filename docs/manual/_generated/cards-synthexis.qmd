@@ -1,0 +1,53 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+::: {.unit unit="lp-bred-small-biter"}
+Most of a young culture's waves. Its clinic soon moves it on to bigger breeds.
+:::
+
+::: {.unit unit="lp-bred-medium-biter"}
+The breed a culture without its clinic falls back to, with the small biter.
+:::
+
+::: {.unit unit="lp-bred-spore"}
+The one breed that looks up. It travels with waves sent at a base that defends itself with drones and robots.
+:::
+
+::: {.unit unit="lp-bred-medium-spitter"}
+It stays back from the wall and spits over it while the biters break through.
+:::
+
+::: {.unit unit="lp-bred-cinder"}
+Bred for walls that have held. It runs to the wall and bursts there, and a well-aimed group takes the corner turrets with it.
+:::
+
+::: {.unit unit="lp-bred-big-biter"}
+Most of any grown wave. A big biter costs the culture little biomass, so it spends them freely.
+:::
+
+::: {.unit unit="lp-bred-stomper"}
+A bred pentapod. It steps over walls and shrugs off bullets.
+:::
+
+::: {.unit unit="lp-bred-behemoth-biter"}
+The culture breeds few of them and sends them where the wall is thickest.
+:::
+
+::: {.unit unit="lp-bred-big-burster"}
+Sent one rank at a time at the turrets covering a wave's way in. Killed short of them, only its core goes off.
+:::
+
+::: {.unit unit="lp-sweeper"}
+Bred when a wave's way in crosses your mines. It walks into the minefield and bursts there.
+:::
+
+::: {.unit unit="lp-bred-scout"}
+When you see one circling your wall, a wave is on its way.
+:::
+
+::: {.unit unit="lp-bred-carrier"}
+It carries a new culture to a wild spawner field farther out. Kill it on the way and the culture never starts.
+:::
+
+::: {.unit unit="lp-technician"}
+Without technicians the biochambers stop, and without biochambers the incubators stop breeding.
+:::

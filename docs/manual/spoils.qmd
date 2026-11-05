@@ -1,4 +1,4 @@
-# Spoils
+# Spoils {faction="player" kicker="What you take"}
 
 Faction buildings and units leave salvage you cannot make yourself. Salvage builds a barracks for your army and unlocks
 technologies taken from the factions' own designs.
@@ -8,8 +8,6 @@ technologies taken from the factions' own designs.
 When a faction building or unit with salvage is destroyed, what it leaves goes into a wreck on the spot. Mine the wreck
 by hand, or mark it for deconstruction and your robots bring everything back at once. A wreck disappears after
 {{< var spoils.wreck_min >}} minutes.
-
-{{< clip media/clips/salvage.mp4 poster="media/clips/salvage.jpg" caption="Mining a wreck after a raid on a Kessler-Hayashi camp." >}}
 
 ## What drops where
 
@@ -28,6 +26,20 @@ The corporations salvage too. Grubstake can research salvage, and once it has, w
 The component technologies are researched by crafting something, without science packs. Salvage disassembles into a
 *parts* item (Pheromone gland parts, Rail coil parts and so on), and crafting that item for the first time completes
 the research. The parts recipes are available from the start. Field studies (below) are earned by fighting.
+
+```{=latex}
+\clearpage
+```
+
+::: {.tree tree="player-techs-early"}
+Each column is where a technology comes from; each band is the most advanced science pack on the way to it. The badge
+says how you get it. Arrows mark the faction technologies that need another. The tree goes on from chemical science.
+:::
+
+::: {.tree tree="player-techs-late"}
+From chemical science on. *Other worlds* holds the technologies that wait for a Space Age technology researched with
+another planet's science pack.
+:::
 
 {{< include _generated/techs.qmd >}}
 

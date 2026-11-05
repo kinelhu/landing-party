@@ -1,23 +1,19 @@
-# The Landing Party player manual: a Quarto book, HTML first, a PDF from the same source.
-#   quarto render docs/manual        (both formats, into docs/manual/_book/)
-# The reference tables, technologies, settings and commands are written by scripts/roster_page.py --qmd
-# (into _generated/ and media/units/); run it after a change to the prototypes, shared.lua or the locale.
-#
-# House style: _extensions/kinan, vendored from ~/Dev/project-conventions (see each file's header line).
-# Changes from the conventions copy, all in the vendored files only:
-#   - _extension.yml: revealjs dropped; the PDF template path made relative; the two Lua filters
-#     copied beside it (the conventions copy names them there but keeps them in pandoc/filters/).
-#   - stats-report-template.tex: no abstract, no CONFIDENTIEL footer, no document-type line on the cover;
-#     fonts by name with fallbacks (was an absolute user path); house-style.tex read from this folder
-#     with no fallback to ~/.local/share; include-before and include-after emitted.
-#   - house-style.tex vendored unchanged but for its header line.
+# The Landing Party player manual: a Quarto book. The PDF is an A5 field manual in the manner of a 1990s game-box
+# booklet (_extensions/lp-manual, format lp-manual-pdf); the HTML is the same text with plain versions of its cards,
+# trees and lore pages (the same filter, `filters: [lp-manual]`).
+#   quarto render docs/manual --to lp-manual-pdf      (the booklet, _book/Landing-Party.pdf)
+#   quarto render docs/manual --to kinan-html         (the web book, _book/index.html)
+# The numbers come from scripts/roster_page.py --qmd (scripts/manual_qmd.py): _variables.yml, _generated/*.qmd, and
+# _generated/lp-data.json, the cards' and trees' data, with the words the code does not hold in words.cfg. Run it after a
+# change to the prototypes, shared.lua, the scripts or the locale. No chapter types a number.
+# To print: _extensions/lp-manual/impose.sh on the PDF, double-sided, flipped on the short edge, folded and stapled.
 project:
   type: book
   output-dir: _book
 
 book:
   title: "Landing Party"
-  subtitle: "Player manual"
+  subtitle: "Field manual"
   author: "kinelhu"
   chapters:
     - index.qmd
@@ -34,20 +30,29 @@ book:
 number-sections: false
 lang: en-US
 
+# The cover's edition line ("For Landing Party <version>") comes from the data file (lp-data.json's edition).
+inside-cover: |
+  **Landing Party** is a mod for Factorio with Space Age. This field manual describes the factions that land on your
+  planet and how each one is beaten. Every number in it is read from the mod's own code and prototypes, so it matches
+  the version named on the cover.
+
+  The bars on a unit's card measure it against the strongest of its own side: a full health bar is that faction's
+  toughest unit, not the toughest in the game.
+back-blurb: |
+  The first lander came down soon after your first chemical science. Another waited for your first rocket, and a third
+  set down among the spawners once the biters had grown fat on your smoke. They belong to companies with business across
+  the whole system, and each has found a use for what you built.
+
+  This field guide describes each company that came to your planet: what it fields, and how it is beaten.
+back-small: |
+  Landing Party is a fan-made mod for Factorio. Factorio and Space Age are games by Wube Software; this booklet is not
+  affiliated with them. Set in Alegreya and Titillium Web.
+
 format:
   kinan-html:
     toc: true
     toc-depth: 2
-  kinan-pdf:
-    # The house template is the article class: chapters are its sections.
-    top-level-division: section
-    titlepage: true
-    toc: true
-    footer-left: "Landing Party player manual"
-    running-section: true
-    # Each chapter (a section in the article class) starts on a new page; titlesec's hook.
-    include-in-header:
-      text: |
-        \newcommand{\sectionbreak}{\clearpage}
-    keep-tex: false
-    latex-auto-install: false
+    filters:
+      - lp-manual
+  lp-manual-pdf:
+    keep-tex: true

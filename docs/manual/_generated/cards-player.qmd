@@ -1,0 +1,21 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+::: {.unit unit="lp-breacher"}
+It throws demolition charges that wreck walls and turrets and do little to units.
+:::
+
+::: {.unit unit="lp-trooper"}
+Cheap, quick to train and quick to lose. Troopers win against raiders and lose against lasers.
+:::
+
+::: {.unit unit="lp-rocket-trooper"}
+It kills armor and fliers, and is slow against a crowd.
+:::
+
+::: {.unit unit="lp-battle-tank"}
+The answer to a walled camp. It takes the longest to train and the most bandwidth.
+:::
+
+::: {.unit unit="lp-flame-trooper"}
+It burns swarms of biters and bunched infantry, and is outranged by nearly everything.
+:::

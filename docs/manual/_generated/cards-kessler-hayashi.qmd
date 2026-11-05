@@ -1,0 +1,49 @@
+<!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
+
+::: {.unit unit="lp-infantry"}
+The bulk of every raid and every escort. Kessler-Hayashi fields more of them than of anything else, and its heavier armor research makes them harder to kill with bullets.
+:::
+
+::: {.unit unit="lp-tank"}
+The backbone of a siege escort. Tanks hold in staggered ranks just outside your guns' reach and go in behind the barrage.
+:::
+
+::: {.unit unit="lp-railgunner"}
+It keeps the camp clear of biters and never joins a raid. Some of them carry the rail coils your rail rifle is made from.
+:::
+
+::: {.unit unit="lp-laser-drone"}
+Kessler-Hayashi's sky. Laser drones come from the company's second level, a few at a time, and fly over walls. Bullets barely scratch them.
+:::
+
+::: {.unit unit="lp-skyguard"}
+Fielded against fliers and combat robots. Its shot at the ground is weak, so a ground push past it costs little.
+:::
+
+::: {.unit unit="lp-lance"}
+Fielded once your infantry has cost Kessler-Hayashi enough. Its beam reaches past your troopers', so a trooper line that won the last fight loses the next.
+:::
+
+::: {.unit unit="lp-shock"}
+Its lightning jumps from one trooper to the next and stuns them. A siege facing your artillery brings them too, once the company has learned to.
+:::
+
+::: {.unit unit="lp-aegis"}
+A rail cannon on an armored hull, fielded when your vehicles have been killing its units. The slug goes through any armor.
+:::
+
+::: {.unit unit="lp-prism"}
+Its laser splits from its target to the units around it. Massed troopers are what it was built for.
+:::
+
+::: {.unit unit="lp-tesla"}
+Fielded against turret lines. Its lightning jumps along the line and drains what it strikes, so a thin power supply runs low while it stands there.
+:::
+
+::: {.unit unit="lp-howitzer-truck"}
+It comes to sieges where roboports cover the target. Your artillery outranges it and fires on it by itself.
+:::
+
+::: {.unit unit="lp-hauler"}
+Kessler-Hayashi's truck. It carries convoys between camps and gets caught on the way.
+:::

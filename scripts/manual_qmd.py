@@ -141,14 +141,10 @@ def write(rp):
 
     # ---- media ----
     def copy_png(rel):
-        """docs/guide/img/x.png to media/units/x.png, made smaller; returns the manual's path."""
+        """docs/guide/img/x.png to media/units/x.png at the guide's own size (240 px: a card prints it 31 mm wide, about
+        200 dpi; the 160 px of before printed soft, the template proof found); returns the manual's path."""
         name = os.path.basename(rel)
-        dst = os.path.join(M, "media", "units", name)
-        srcp = os.path.join(rp.OUT, rel)
-        if shutil.which("sips"):
-            subprocess.run(["sips", "-Z", "160", srcp, "--out", dst], capture_output=True, check=True)
-        else:
-            shutil.copy(srcp, dst)
+        shutil.copy(os.path.join(rp.OUT, rel), os.path.join(M, "media", "units", name))
         return f"media/units/{name}"
 
     # ---- sources ----
@@ -346,7 +342,9 @@ def write(rp):
 
     def corp_units(corp):
         c = corps[corp]
-        kinds = [rp.corp_kind(corp, k) for k in sorted(c.get("mix") or {})]  # sorted: LuaJIT dumps tables in no fixed order
+        # sorted: LuaJIT dumps tables in no fixed order. A renamed kind with no prototype of its own (Kessler-Hayashi's
+        # lp-line-trooper) is the original's: the table left Kessler-Hayashi's trooper out until 0.2.214.
+        kinds = [rp.corp_kind(corp, k) if rp.corp_kind(corp, k) in rows else k for k in sorted(c.get("mix") or {})]
         kinds += [n["unit"]["kind"] for n in c["tree"] if n.get("unit")]
         res = []
         for k in kinds:
@@ -377,8 +375,6 @@ def write(rp):
         ("Your army", [(k, rp.portrait(k), f"Research: {player_tech.get(k, '?')}", None)
                        for k in ("lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-battle-tank")]),
     ]
-    EXTRA_DESC = {"lp-technician": "Walks between the biochambers and keeps them running.",
-                  "lp-howitzer-truck": loc.get(("entity-description", "lp-howitzer-truck"), "")}
     L = ["## Units {#sec-units}", "",
          "Numbers are from the game's prototypes, before research. Damage is one shot. A corporation's research raises its",
          "weapons' damage, and its armor research adds resistance to some units. *Hits air* says whether the unit's weapon",
@@ -398,21 +394,10 @@ def write(rp):
             rng_s = f"{rng:.3g}" if isinstance(rng, float) else str(rng)
             cost_s = f"{biomass} biomass" if biomass else cost
             L.append(f"| {md(nm)} | {fmt(hp)} | {speed.replace(' tiles/s', '')} | {rng_s} | {rate.replace('/s', '')} | {air} | {cost_s} |")
-            desc = loc.get(("entity-description", kind)) or rp.roster.ROLE.get(kind) or EXTRA_DESC.get(kind, "")
-            desc = desc.rstrip(".") + "." if desc else ""
-            facts = []
-            if w != "-":
-                facts.append(f"*A shot:* {md(damage_word(w))}.")
-            if res != "-":
-                facts.append(f"*Resists:* {md(damage_word(res))}.")
-            if how:
-                facts.append(f"*Fielded:* {md(how)}.")
-            text = f"**{md(nm)}.** {md(desc)}" + (" \\\n" + " ".join(facts) if facts else "")
-            if img:
-                entries += ['::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}', f"![]({copy_png(img)}){{fig-alt=\"{nm}\"}}", "", text, ":::", ""]
-            else:
-                entries += [text, ""]
-        L += [""] + entries
+            # Each unit's shot, resistances and how it is fielded, in a second table: the faction chapters' cards carry
+            # the portraits and words (the booklet's lp-data.json).
+            entries.append(f"| {md(nm)} | {md(damage_word(w))} | {md(damage_word(res))} | {md(how or '-')} |")
+        L += ["", "| Unit | A shot | Resists | Fielded |", "|:--|:--|:--|:--|"] + entries + [""]
     if not probe:
         L.append("<!-- The runt is left out: Synthexis's probe is off in this version (shared.BIOTECH.mind.probe). -->")
     out("units.qmd", L)
@@ -452,7 +437,7 @@ def write(rp):
                                           "lp-clinic", "lp-heating-tower", "lp-tumor")]
     pics = [(n, p) for n, p in pics if p]
     if pics:
-        B += ["", "::: {layout-ncol=3}"]
+        B += ["", "::: {layout-ncol=3 fig-pos='H'}"]
         for n, p in pics:
             B += [f"![{md(shown(n))}]({copy_png(p)})", ""]
         B.append(":::")
@@ -615,5 +600,590 @@ def write(rp):
           ":::"]
     out("commands.qmd", C)
 
+    booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out)
+
     print(f"{M}: _variables.yml and {len(os.listdir(GEN))} generated parts, "
           f"{len(os.listdir(os.path.join(M, 'media', 'units')))} portraits, {len(rp.vistas)} vistas")
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# The booklet (docs/manual, format lp-manual-pdf): _generated/lp-data.json, the data the lp-manual filter draws unit
+# cards and trees from (its shape: docs/manual/_extensions/lp-manual/lp-manual.lua), and _generated/cards-<faction>.qmd,
+# a card for every unit a faction fields, which its chapter includes.
+#   numbers   the dump (health, weapons, speed, fliers, research, science packs), shared.lua (costs, mixes, unlock levels,
+#             research trees, breeds, the bursters' blasts, colours, mottos), the scripts (breeding thresholds by way of
+#             the incubator's prototype, field studies, what farm.lua breeds a burster for) and the locale (names,
+#             descriptions, study conditions)
+#   words     what the code does not say (counters, blurbs, a few roles, two mottos): docs/manual/words.cfg, words only
+# The book's own furniture (tab order, vistas, the player's chrome colour, how trees are banded) is set here and says so.
+# A unit with no value where one is needed, a trigger with no words, a digit in words.cfg: it stops.
+
+FACTION_IDS = {"serenity": "kessler-hayashi", "grubstake": "grubstake", "biotech": "synthexis", "player": "player"}
+# Book furniture: the thumb tab's place on the fore-edge (from the top) and the opener's vista.
+TABS = {"player": 1, "grubstake": 2, "kessler-hayashi": 3, "synthexis": 4}
+VISTA = {"kessler-hayashi": "serenity-wide", "grubstake": "grubstake-wide", "synthexis": "synthexis-night",
+         "player": "player-base"}
+PLAYER_CHROME = "B9BEC4"  # the player's chapters' colour in the book; the game gives the player no colour of its own
+# What a research trigger answers, in the player's words (shared.lua's trigger fields: killer kinds, damage types, ...).
+KILLED_BY = {"lp-trooper": "your infantry", "lp-breacher": "your infantry", "lp-rocket-trooper": "your infantry",
+             "lp-flame-trooper": "your infantry", "character": "your infantry", "lp-harrier": "fliers",
+             "lp-scavenger": "fliers", "lp-laser-drone": "fliers", "destroyer": "combat robots",
+             "defender": "combat robots", "distractor": "combat robots", "vehicle": "your vehicles",
+             "lp-battle-tank": "your vehicles", "gun-turret": "turret lines", "laser-turret": "turret lines",
+             "flamethrower-turret": "turret lines", "artillery-turret": "artillery", "artillery-wagon": "artillery",
+             "biter": "biters"}
+DAMAGE_FROM = {"physical": "bullets", "fire": "flamethrowers", "explosion": "artillery and explosives"}
+# Synthexis's breeds by line, its tree's columns (a breed missing here stops the generator).
+BREED_LINE = {"lp-bred-small-biter": "biters", "lp-bred-medium-biter": "biters", "lp-bred-big-biter": "biters",
+              "lp-bred-behemoth-biter": "biters", "lp-bred-medium-spitter": "spitters", "lp-bred-spore": "spitters",
+              "lp-bred-cinder": "special", "lp-bred-stomper": "special"}
+
+
+def read_words(path):
+    words, sec, bad = {}, None, []
+    for i, line in enumerate(open(path, encoding="utf-8"), 1):
+        line = line.rstrip("\n")
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        m = re.match(r"^\[(.+)\]$", line)
+        if m:
+            sec = m.group(1)
+            continue
+        k, v = line.split("=", 1)
+        if re.search(r"\d", v):
+            bad.append(f"words.cfg line {i}: a digit in words ({k}); a number belongs to the code")
+        words.setdefault(sec, {})[k] = v.strip()
+    if bad:
+        raise SystemExit("manual_qmd:\n  " + "\n  ".join(bad))
+    return words
+
+
+def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
+    import json
+    W = read_words(os.path.join(M, "words.cfg"))
+    used, missed = set(), []
+
+    def word(sec, key):
+        v = W.get(sec, {}).get(key)
+        if v is not None:
+            used.add((sec, key))
+        else:
+            missed.append(f"words.cfg [{sec}] {key}: no words, and the code has none")
+        return v
+
+    def hexcol(c):
+        return "".join(f"{round(c[k] * 255):02X}" for k in ("r", "g", "b"))
+
+    def num(x):
+        return int(round(x)) if abs(x - round(x)) < 1e-9 else round(x, 2)
+
+    def fmt_n(x):
+        return f"{x:,.0f}" if abs(x - round(x)) < 1e-9 else f"{x:g}"
+
+    def damage_word(t):
+        return {"lp-bite": "bite", "lp-rail": "rail"}.get(t, t)
+
+    corps = rp.data["corps"]
+    shared_src = src("shared.lua")
+    proto = {**d.get("unit", {}), **d.get("spider-unit", {})}
+    breeds = rp.data.get("breeds") or {}
+    unit_cost = {k: v.get("cost") for k, v in (rp.data.get("units") or {}).items()}
+    bandwidth = {k: int(c) for k, c in re.findall(r'\["(lp-[a-z-]+)"\] = (\d+)',
+                                                   re.search(r"shared.POPULATION = \{([^}]*)\}", shared_src).group(1))}
+
+    def bare(name):
+        return re.sub(r" \((Kessler-Hayashi|Grubstake|Synthexis)\)$", "", name)
+
+    def burst(kind):
+        """A burster's blast: shared.lua's BIG_BURST or CINDER_BURST (biotech.lua's death trigger and herd.lua deal it)."""
+        key = {"lp-bred-cinder": "CINDER_BURST", "lp-bred-big-burster": "BIG_BURST"}.get(kind)
+        if not key:
+            return None
+        m = re.search(rf"^shared\.{key} = \{{([^}}]*)\}}", shared_src, re.M)
+        if not m:
+            missed.append(f"shared.lua {key}")
+            return None
+        return {k: float(v) for k, v in re.findall(r"(\w+) = ([\d.]+)", m.group(1))}
+
+    def weapon(kind):
+        """(damage for the bar, the card's damage line, range, speed in tiles a tick) from the prototype."""
+        u = proto[kind]
+        ap = u.get("attack_parameters") or {}
+        rng, spd = ap.get("range"), u.get("movement_speed")
+        b = burst(kind)
+        if b:
+            core = f", {fmt_n(b['core'])} core" if "core" in b else ""
+            return b["amount"], f"{fmt_n(b['amount'])} explosion{core}", rng, spd
+        if kind == "lp-sweeper":
+            for e in u.get("dying_trigger_effect") or []:
+                if isinstance(e, dict) and e.get("type") == "nested-result":
+                    dmg = rp.roster.damage(e.get("action"))
+                    if dmg:
+                        return dmg[0][0], f"{fmt_n(dmg[0][0])} explosion", rng, spd
+        action = (ap.get("ammo_type") or {}).get("action")
+        streams = [a["action_delivery"]["stream"] for a in (action if isinstance(action, list) else [action])
+                   if isinstance(a, dict) and (a.get("action_delivery") or {}).get("type") == "stream"]
+        if streams:
+            # A stream (spitters, the stomper, the flamethrower trooper): its splash's hit, then the sticker it leaves.
+            st = d["stream"][streams[0]]
+            hit, burn = None, None
+            for key in ("initial_action", "action"):
+                for a in st.get(key) or []:
+                    for e in ((a.get("action_delivery") or {}).get("target_effects") or []):
+                        if e.get("type") == "damage" and hit is None:
+                            hit = (e["damage"]["amount"] * ap.get("damage_modifier", 1), e["damage"]["type"])
+                        if e.get("type") == "create-sticker":
+                            s = d["sticker"].get(e["sticker"]) or {}
+                            if s.get("damage_per_tick"):
+                                burn = (s["damage_per_tick"]["amount"] * 60, s["damage_per_tick"]["type"], s.get("duration_in_ticks", 0) / 60)
+            if hit and hit[0] >= 1:  # (the stomper's acid is a token: its weight is its stomp, not given here)
+                text =f"{fmt_n(round(hit[0], 2))} {damage_word(hit[1])} a hit"
+                total = hit[0]
+                if burn:
+                    text += f", then {fmt_n(round(burn[0], 1))}/s for {fmt_n(round(burn[2], 1))} s"
+                    total += burn[0] * burn[2]
+                return total, text, rng, spd
+        hits = rp.roster.damage(action, ap.get("damage_modifier", 1))
+        hits = [(a, t, n) for a, t, n in hits if t != "chain" and a > 0]
+        if not hits:
+            return None, None, rng, spd
+        first = next(((a, t, n) for a, t, n in hits if "to buildings" not in n), hits[0])
+        rep = re.search(r"\(x(\d+)\)", first[2])
+        parts = [f"{fmt_n(first[0])} {damage_word(first[1])}" + (f" (x{rep.group(1)})" if rep else "")]
+        for a, t, n in hits:
+            if (a, t, n) == first:
+                continue
+            if "to buildings" in n:
+                parts.append(f"{fmt_n(a)} to buildings")
+            elif t != first[1] or a != first[0]:
+                parts.append(f"{fmt_n(a)} {damage_word(t)}")
+        if kind.endswith("railgunner") and len(parts) >= 2:
+            parts = [re.sub(r" \w+$", "", parts[0]) + " to nests", re.sub(r" \w+$", "", parts[1]) + " to biters"]
+        rate = 60 / ap["cooldown"] if ap.get("cooldown") else 0
+        text = ", ".join(parts[:2])
+        if rate >= 2:
+            text += f", {fmt_n(round(rate, 1))} shots/s"
+        return first[0], text, rng, spd
+
+    def role_of(kind, base):
+        plain = re.sub(r"^lp-grubstake-", "lp-", base)  # Grubstake's copies share the original's words
+        r = next((x for x in (loc.get(("entity-description", k)) or rp.roster.ROLE.get(k) for k in (base, kind, plain)) if x), None)
+        if r and re.search(r"\d", r):
+            # roster.py's roles carry a few numbers (the railgunner's after a colon, the sapper's reach): the words only;
+            # the card's stat panel gives the numbers.
+            r = re.split(r":\s", re.sub(r" over [\d.]+ tiles,?", "", r))[0]
+        if r and re.search(r"\d", r):
+            missed.append(f"{kind}: its role carries a number: {r}")
+        if r and W.get("role", {}).get(kind):
+            missed.append(f"words.cfg [role] {kind}: the code has one ({r})")
+        if not r:
+            r = word("role", kind)
+        return (r.rstrip(".") + ".") if r else None
+
+    def answers(t):
+        if not t:
+            return None
+        if "killer" in t:
+            out_ = []
+            for k in t["killer"]:
+                w = KILLED_BY.get(k)
+                if not w:
+                    missed.append(f"manual_qmd KILLED_BY: no words for the killer {k}")
+                elif w not in out_:
+                    out_.append(w)
+            return ", ".join(out_)
+        if "damage" in t:
+            w = DAMAGE_FROM.get(t["damage"])
+            if not w:
+                missed.append(f"manual_qmd DAMAGE_FROM: no words for {t['damage']}")
+            return w
+        if "turned_back" in t:
+            return "raids turned back"
+        if "walls_met" in t:
+            return "walls"
+        if "mended" in t:
+            return "repair robots"
+        missed.append(f"manual_qmd answers: a trigger with no words: {t}")
+        return None
+
+    U, order = {}, {}
+
+    def card(uid, fac, base, portrait, era=None, era_level=None, cost=None, counters=None):
+        if base not in proto:
+            missed.append(f"{uid}: no prototype {base} in the dump")
+            return
+        u = proto[base]
+        dmg, dtext, rng, spd = weapon(base)
+        rec = {"name": bare(shown(uid if uid in proto else base)), "faction": fac, "health": num(u["max_health"])}
+        if portrait:
+            rec["portrait"] = portrait
+        if dmg is not None:
+            rec["damage"], rec["damage_text"] = num(dmg), dtext
+        if rng is not None:
+            rec["range"] = num(rng)
+        if spd is not None:
+            rec["speed"] = num(spd * 60)
+        if "lp-air-unit" in (u.get("trigger_target_mask") or []):
+            rec["air"] = True
+        if cost:
+            rec["cost"] = cost
+        if era:
+            rec["era"] = era
+        if era_level is not None:
+            rec["era_level"] = era_level
+        role = role_of(uid, base)
+        if role:
+            rec["role"] = role
+        if counters and W.get("counters", {}).get(uid):
+            missed.append(f"words.cfg [counters] {uid}: the code says it ({counters})")
+        rec["counters"] = counters or word("counters", uid)
+        rec["countered_by"] = word("countered-by", uid)
+        rec["blurb"] = word("blurb", uid)
+        U[uid] = rec
+        order.setdefault(fac, []).append(uid)
+
+    def portrait_of(kind, corp=None):
+        p = rp.portrait(kind, corp)
+        if not p:
+            return None
+        copy_png(p)
+        return os.path.basename(p)[:-4]
+
+    def pic_or_none(stem):
+        return stem if stem and os.path.exists(os.path.join(M, "media", "units", stem + ".png")) else None
+
+    def parts(kind):
+        return f"{unit_cost[kind]} parts" if unit_cost.get(kind) else None
+
+    trees = {}
+
+    # ---- the corporations: cards and unit trees (shared.CORPS: mix, unlock levels, tree; labs; triggers) ----
+    for corp in ("serenity", "grubstake"):
+        c = corps[corp]
+        fac = FACTION_IDS[corp]
+        mix = sorted((c.get("mix") or {}).items(), key=lambda kv: (rp.data["unlock"].get(kv[0], 0), -kv[1], kv[0]))
+        cols, seen = [], set()
+        for n in c["tree"]:
+            if n["branch"] not in seen:
+                seen.add(n["branch"])
+                lab = (c.get("labs") or {}).get(n["branch"])
+                col = {"id": n["branch"], "label": shown(lab) if lab else rp.BRANCH_NAME.get(n["branch"], n["branch"])}
+                icon = lab and portrait_of(lab)
+                if icon:
+                    col["icon"] = icon
+                cols.append(col)
+        max_era = max(n.get("era", 0) for n in c["tree"])
+        bands = [{"id": "land", "label": "Landing", "free": True}, {"id": "track", "label": "Damage"}] + \
+                [{"id": str(e), "label": f"Era {e}"} for e in range(1, max_era + 1)]
+        nodes = []
+
+        def uid_of(kind):
+            if corp == "serenity":
+                return kind
+            renamed = (c.get("names") or {}).get(kind)
+            if renamed and renamed in proto:
+                return renamed
+            return f"lp-grubstake-{kind[3:]}"
+
+        for kind, _ in mix:
+            uid = uid_of(kind)
+            lvl = rp.data["unlock"].get(kind, 0)
+            era = "From landing" if not lvl else f"From its level {lvl}"
+            pic = portrait_of(uid if uid != kind else kind, None if uid != kind else corp)
+            card(uid, fac, uid if uid in proto else kind, pic, era, 0 if not lvl else None, parts(kind))
+            nodes.append({"id": "mix-" + kind, "band": "land", "label": U.get(uid, {}).get("name", kind), "portrait": pic_or_none(pic),
+                          "note": era[0].lower() + era[1:]})
+        for n in c["tree"]:
+            node = {"id": n["id"], "band": "track" if n.get("track") else str(n.get("era", 0)), "column": n["branch"]}
+            if n.get("requires"):
+                node["requires"] = [n["requires"]]
+            ans = answers(n.get("trigger"))
+            if ans:
+                node["answers"] = ans
+            if n.get("unit"):
+                kind = n["unit"]["kind"]
+                uid = uid_of(kind)
+                lab = (c.get("labs") or {}).get(n["branch"])
+                where = shown(lab) if lab else rp.BRANCH_NAME.get(n["branch"], n["branch"])
+                pic = portrait_of(kind, corp)
+                card(uid, fac, uid if uid in proto else kind, pic, f"Era {n['era']}, {where}", n["era"], parts(kind), ans)
+                node.update({"label": U.get(uid, {}).get("name", kind), "portrait": pic_or_none(pic), "note": f"{fmt_n(n['cost'])} parts"})
+            elif n.get("track"):
+                node.update({"label": rp.node_name(n["id"]), "kind": "upgrade",
+                             "note": f"{n.get('levels')} levels, {fmt_n(n['cost'])} parts each"})
+            else:
+                node.update({"label": rp.node_name(n["id"]), "kind": "ability" if n.get("ability") else "upgrade",
+                             "note": f"{fmt_n(n['cost'])} parts"})
+            nodes.append(node)
+        trees[f"{fac}-units"] = {"title": f"{c['name']}'s unit tree", "kicker": "Unit tree", "faction": fac, "columns": cols,
+                                 "bands": bands, "nodes": nodes, "max_height": 144}
+        # Its trucks: the hauler (both corporations), the howitzer truck (Kessler-Hayashi's sieges, a grudge camp's).
+        for kind in ("lp-howitzer-truck", "lp-hauler"):
+            uid = kind if corp == "serenity" else f"lp-grubstake-{kind[3:]}"
+            card(uid, fac, kind, portrait_of(uid), None, None, parts(kind))
+
+    # ---- Synthexis: its breeds by evolution (the incubator's result_units), then what it makes to order ----
+    farm_src = src("scripts/farm.lua")
+    for kind, pts in sorted(rp.PEN, key=lambda x: x[1][0][0]):
+        evo = pts[0][0]
+        cnt = None
+        if kind == "lp-bred-cinder" and re.search(r'walled_held.*can\["lp-bred-cinder"\]', farm_src):
+            cnt = "a wall that held its last wave"  # farm.lua: a wave sent where a wall held orders bursters
+        if kind == "lp-bred-spore" and "flying units" in loc.get(("entity-description", kind), ""):
+            cnt = "fliers, your robots"  # the locale: its spores hit flying units
+        card(kind, "synthexis", kind, portrait_of(kind), f"Evolution {evo:g}", num(evo),
+             f"{breeds[kind]['cost']} biomass" if kind in breeds else None, cnt)
+    held = V["synthexis"]["develop_held"]
+    extra = [("lp-bred-big-burster", f"Developed after {held} held walls",
+              "the turrets covering its way in" if "turret guarding the way in" in loc.get(("entity-description", "lp-bred-big-burster"), "") else None),
+             ("lp-sweeper", "Bred against mines",
+              "minefields" if "minefields" in loc.get(("entity-description", "lp-sweeper"), "") else None),
+             ("lp-bred-scout", "Made for each wave", None), ("lp-bred-carrier", "Sent by a grown culture", None),
+             ("lp-technician", "Bought as the culture grows", None)]
+    if (rp.data["biotech"].get("mind") or {}).get("probe"):
+        extra.append(("lp-runt", "Made for a wave's probe", None))
+    for kind, how, cnt in extra:
+        card(kind, "synthexis", kind, portrait_of(kind), how, None,
+             f"{breeds[kind]['cost']} biomass" if kind in breeds else None, cnt)
+    # Its tree: the breeds by quarter of evolution (furniture: four bands read better than a band a threshold).
+    syn_nodes = []
+    for kind, pts in sorted(rp.PEN, key=lambda x: x[1][0][0]):
+        line = BREED_LINE.get(kind)
+        if not line:
+            missed.append(f"manual_qmd BREED_LINE: no line for the breed {kind}")
+            continue
+        q = min(1, int(pts[0][0] * 2 + 1e-9))  # halves of evolution
+        syn_nodes.append({"id": kind, "band": f"q{q}", "column": line, "label": U[kind]["name"],
+                          "portrait": pic_or_none(U[kind].get("portrait")), "note": f"from {pts[0][0]:g}"})
+    for kind, how, _ in extra:
+        if kind in U:
+            syn_nodes.append({"id": kind, "band": "made",
+                              "label": U[kind]["name"], "portrait": pic_or_none(U[kind].get("portrait")), "note": how[0].lower() + how[1:]})
+    trees["synthexis-breeds"] = {
+        "title": "What Synthexis breeds", "kicker": "Breeds by evolution", "faction": "synthexis",
+        "columns": [{"id": "biters", "label": "Biters"}, {"id": "spitters", "label": "Spitters"},
+                    {"id": "special", "label": "Bred for a job"}],
+        "bands": [{"id": f"q{q}", "label": f"{q / 2:g} to {(q + 1) / 2:g}"} for q in range(2)]
+                 + [{"id": "made", "label": "Developed, made", "free": True}],
+        "nodes": syn_nodes, "max_height": 144}
+
+    # ---- your army: its units by the command bandwidth that unlocks them (the order recipes' technologies) ----
+    cb = sorted((k for k in d["technology"] if re.match(r"lp-command-bandwidth-\d+$", k)), key=lambda k: int(k.rsplit("-", 1)[1]))
+    unlocks = {}
+    for tk in cb:
+        for e in d["technology"][tk].get("effects") or []:
+            if isinstance(e, dict) and (e.get("recipe") or "").endswith("-order"):
+                unlocks[e["recipe"][:-6]] = int(tk.rsplit("-", 1)[1])
+    army_max = max(unlocks.values())
+    army_nodes = []
+    for kind in sorted(unlocks, key=lambda k: (unlocks[k], bandwidth.get(k, 0), k)):
+        lvl = unlocks[kind]
+        card(kind, "player", kind, portrait_of(kind), rp.tname(cb[lvl - 1]), lvl,
+             f"{bandwidth[kind]} bandwidth" if kind in bandwidth else None)
+        if kind not in bandwidth:
+            missed.append(f"shared.POPULATION: no bandwidth for {kind}")
+        order_rec = d["recipe"].get(kind + "-order") or {}
+        vehicle = any(i.get("name") in d.get("car", {}) or i.get("name") in d.get("item-with-entity-data", {})
+                      for i in order_rec.get("ingredients") or [])
+        army_nodes.append({"id": kind, "band": f"cb{lvl}", "column": "vehicles" if vehicle else "infantry", "label": U[kind]["name"],
+                           "portrait": pic_or_none(U[kind].get("portrait")), "note": f"{bandwidth.get(kind)} bandwidth"})
+    trees["player-army"] = {"title": "What the barracks trains", "kicker": "Unit tree", "faction": "player",
+                            "columns": [{"id": "infantry", "label": "Infantry"}, {"id": "vehicles", "label": "Vehicles"}],
+                            "bands": [{"id": f"cb{i}", "label": rp.tname(cb[i - 1]).replace("Command ", "").capitalize()} for i in range(1, army_max + 1)],
+                            "nodes": army_nodes}
+
+    # ---- your faction technologies: banded by the most advanced science pack on the way to each, by source ----
+    # The packs ranked by how deep in the technology tree each is unlocked (the dump holds the technologies, not the
+    # packs' item prototypes).
+    depth_memo = {}
+
+    def depth(tk, stack=()):
+        if tk in depth_memo:
+            return depth_memo[tk]
+        t = d["technology"].get(tk) or {}
+        v = 1 + max([depth(p, stack + (tk,)) for p in t.get("prerequisites") or [] if p not in stack] + [0])
+        depth_memo[tk] = v
+        return v
+
+    unlocked_at = {}
+    for tk, t in d["technology"].items():
+        for e in t.get("effects") or []:
+            if isinstance(e, dict) and (e.get("recipe") or "").endswith("-science-pack"):
+                unlocked_at[e["recipe"]] = min(unlocked_at.get(e["recipe"], 1e9), depth(tk))
+    all_packs = {i[0] for t in d["technology"].values() for i in (t.get("unit") or {}).get("ingredients", [])}
+    pack_order = sorted(all_packs, key=lambda k: (unlocked_at.get(k, 0), k))
+    pack_rank = {k: i for i, k in enumerate(pack_order)}
+
+    def top_pack(tk, seen):
+        if tk in seen or tk not in d["technology"]:
+            return -1
+        seen.add(tk)
+        t = d["technology"][tk]
+        best = max([pack_rank.get(i[0], -1) for i in (t.get("unit") or {}).get("ingredients", [])] + [-1])
+        tr = t.get("research_trigger") or {}
+        if tr.get("type") == "craft-item":
+            best = max(best, pack_rank.get(tr.get("item"), -1))
+        for p in t.get("prerequisites") or []:
+            best = max(best, top_pack(p, seen))
+        return best
+
+    study_force = dict(re.findall(r'tech = "(lp-study-[a-z]+)", force = ("lp-[a-z]+"|[A-Z]+)', src("scripts/studies.lua")))
+    force_col = {'"lp-grubstake"': "grubstake", "BIO": "synthexis", '"lp-serenity"': "kessler-hayashi"}
+    names_col = {corps["serenity"]["name"]: "kessler-hayashi", corps["grubstake"]["name"]: "grubstake",
+                 rp.data["biotech"]["name"]: "synthexis"}
+
+    def schematic_source(item):
+        rec = next((r for r in d["recipe"].values() if any(x.get("name") == item for x in r.get("results") or [])), None)
+        return rec and (rec.get("ingredients") or [None])[0]
+
+    def source_of(tk, t):
+        if tk.startswith("lp-command-bandwidth"):
+            return "army"
+        if tk.startswith("lp-prize-"):
+            return FACTION_IDS.get(tk[len("lp-prize-"):])
+        tr = t.get("research_trigger") or {}
+        if tr.get("type") == "capture-spawner":
+            return "synthexis" if tr.get("entity") == "lp-pen" else None
+        if tr.get("type") == "craft-item":
+            ing = schematic_source(tr["item"])
+            dsc = loc.get(("item-description", ing["name"]), "") if ing else ""
+            m = re.search("|".join(map(re.escape, names_col)), dsc)  # "Salvaged from Kessler-Hayashi railgunners."
+            return names_col[m.group(0)] if m else None
+        study = next((q for q in t.get("prerequisites") or [] if q.startswith("lp-study-")), None)
+        if study:
+            return force_col.get(study_force.get(study, ""))
+        dsc = loc.get(("entity-description", tk), "") + loc.get(("technology-description", tk), "")
+        if tk == "lp-player-dome" and ("dome-projector", "") and "artillery shells" in dsc:
+            return "kessler-hayashi"  # its domes are Kessler-Hayashi's design (the dome projector's, dome.lua)
+        return None
+
+    T_nodes, bands_used = [], set()
+    for tk in sorted(k for k in d["technology"] if k.startswith("lp-") and not k.startswith("lp-study-")):
+        t = d["technology"][tk]
+        col = source_of(tk, t)
+        if not col:
+            missed.append(f"{tk}: no faction it comes from")
+            continue
+        tr = t.get("research_trigger") or {}
+        study = next((q for q in t.get("prerequisites") or [] if q.startswith("lp-study-")), None)
+        band = top_pack(tk, set())
+        if t.get("hidden"):
+            how, band, note = "spoils", "fall", "its headquarters falls"
+        elif tr.get("type") == "craft-item":
+            ing = schematic_source(tr["item"])
+            n = ing.get("amount", 1) * tr.get("count", 1)
+            nm = lname("item-name." + ing["name"]).lower()
+            how, note = "teardown", f"{n} {nm}s" if n > 1 else ("an " if nm[0] in "aeiou" else "a ") + nm
+        elif tr.get("type") == "capture-spawner":
+            how, note = "capture", "capture an " + lname("entity-name." + tr["entity"]).replace(rp.data["biotech"]["name"] + " ", "").lower()
+        elif study:
+            how, note = "study", loc.get(("lp", study[3:]), "").rstrip(".")
+            note = note[:1].lower() + note[1:]
+        else:
+            fx = [e["recipe"] for e in t.get("effects") or [] if isinstance(e, dict) and (e.get("recipe") or "").endswith("-order")]
+            how = "science"
+            note = ", ".join(lname("recipe-name." + r).lower() + "s" for r in fx) if fx else \
+                ("repeatable" if (t.get("unit") or {}).get("count_formula") else None)
+        space = pack_rank.get("space-science-pack")
+        if space is not None and band != "fall" and band > space:
+            band = space + 1  # the planets' packs share one band, "Other worlds" (a band a pack overflowed its label)
+        bands_used.add(band)
+        node = {"id": tk, "band": str(band), "column": col, "label": rp.tname(tk), "kind": "tech", "how": how}
+        if note:
+            node["note"] = note
+        req = [q for q in t.get("prerequisites") or [] if q.startswith("lp-") and not q.startswith("lp-study-")]
+        if req:
+            node["requires"] = req
+        T_nodes.append(node)
+    # Within a cell, a technology after the one it needs (the layout stacks a cell's linked nodes in this order).
+    def chain(n, seen=()):
+        return 1 + max([chain(q, seen + (n,)) for q in d["technology"][n].get("prerequisites") or []
+                        if q.startswith("lp-") and not q.startswith("lp-study-") and q not in seen] + [0])
+    T_nodes.sort(key=lambda n: (chain(n["id"]), n["id"]))
+    space = pack_rank.get("space-science-pack")
+    tbands = [{"id": str(b), "label": "Other worlds" if space is not None and b > space
+               else lname("item-name." + pack_order[b]).replace(" science pack", "")}
+              for b in sorted(b for b in bands_used if b != "fall")] + \
+             ([{"id": "fall", "label": "A fall"}] if "fall" in bands_used else [])
+    tcols = [{"id": "army", "label": "Your army", "faction": "player"},
+             {"id": "grubstake", "label": "From " + corps["grubstake"]["name"], "faction": "grubstake"},
+             {"id": "synthexis", "label": "From " + rp.data["biotech"]["name"], "faction": "synthexis"},
+             {"id": "kessler-hayashi", "label": "From " + corps["serenity"]["name"], "faction": "kessler-hayashi"}]
+    split = pack_rank.get("chemical-science-pack")
+    if split is None:
+        missed.append("the dump: no chemical science pack to split the faction technologies at")
+        split = 0
+    legend = {"teardown": "Teardown: craft its parts", "study": "Field study, then science", "science": "Science packs",
+              "capture": "Capture", "spoils": "Spoils of a fall"}
+    halves = {"early": lambda b: b != "fall" and int(b) < split, "late": lambda b: b == "fall" or int(b) >= split}
+    for half, inside in halves.items():
+        keep = [n for n in T_nodes if inside(n["band"])]
+        ids = {n["id"] for n in keep}
+        nodes_h = []
+        for n in keep:
+            n = dict(n)
+            out_req = [q for q in n.get("requires", []) if q not in ids]
+            n["requires"] = [q for q in n.get("requires", []) if q in ids]
+            if not n["requires"]:
+                del n["requires"]
+            if out_req:
+                n["note"] = (n.get("note", "") + ", " if n.get("note") else "") + "after " + ", ".join(rp.tname(q) for q in out_req)
+            nodes_h.append(n)
+        trees[f"player-techs-{half}"] = {
+            "title": "Faction technologies" + (", early" if half == "early" else ", late"), "kicker": "Tech tree",
+            "faction": "player", "columns": tcols, "bands": [b for b in tbands if inside(b["id"])], "nodes": nodes_h,
+            "max_height": 144, "legend": legend}
+
+    # ---- factions ----
+    def motto(fid, from_code):
+        if from_code:
+            if W.get("motto", {}).get(fid):
+                missed.append(f"words.cfg [motto] {fid}: shared.lua has one")
+            return from_code
+        return word("motto", fid)
+
+    F = {}
+    for corp in ("grubstake", "serenity"):
+        fid = FACTION_IDS[corp]
+        block = re.search(rf"^  {corp} = \{{name = \"[^\"]+\", force = \"[^\"]+\", color = \{{r = ([\d.]+), g = ([\d.]+), b = ([\d.]+)\}}",
+                          shared_src, re.M)
+        mot = re.search(rf"^  {corp} = \{{.*?\bmotto = \"([^\"]+)\"", shared_src, re.M | re.S)
+        if not block:
+            missed.append(f"shared.lua: {corp}'s colour")
+            continue
+        F[fid] = {"name": corps[corp]["name"], "color": hexcol({"r": float(block.group(1)), "g": float(block.group(2)), "b": float(block.group(3))}),
+                  "motto": motto(fid, mot.group(1) if mot else None), "vista": f"media/vistas/{VISTA[fid]}.jpg", "tab": TABS[fid],
+                  "era_label": "Era", "era_max": max(n.get("era", 0) for n in corps[corp]["tree"])}
+    F["synthexis"] = {"name": rp.data["biotech"]["name"], "color": hexcol(rp.data["biotech"]["color"]),
+                      "motto": motto("synthexis", None), "vista": f"media/vistas/{VISTA['synthexis']}.jpg",
+                      "tab": TABS["synthexis"], "era_label": "Evolution", "era_max": 1}
+    F["player"] = {"name": "Your army", "color": PLAYER_CHROME, "motto": motto("player", None),
+                   "vista": f"media/vistas/{VISTA['player']}.jpg", "tab": TABS["player"], "era_label": "Unlock",
+                   "era_max": army_max, "cover": False}
+    for fid, f in F.items():
+        if not os.path.exists(os.path.join(M, f["vista"])):
+            missed.append(f"{fid}: no vista {f['vista']}")
+
+    for sec, keys in W.items():
+        for k in keys:
+            if (sec, k) not in used and not (sec == "motto"):
+                missed.append(f"words.cfg [{sec}] {k}: not a unit of the roster, or the code already says it")
+    for uid, rec in U.items():
+        for k in ("health", "counters", "countered_by", "blurb"):
+            if rec.get(k) in (None, ""):
+                missed.append(f"{uid}: no {k}")
+    if missed:
+        raise SystemExit("manual_qmd (booklet): not found, the booklet's data not written:\n  " + "\n  ".join(dict.fromkeys(missed)))
+
+    for t in trees.values():  # no nulls: the filter reads JSON null as a value (a node with no portrait has none)
+        t["nodes"] = [{k: v for k, v in n.items() if v is not None} for n in t["nodes"]]
+    data = {"_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, "
+                        "shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
+            "edition": f"For Landing Party {V['mod']['version']}", "portraits": "media/units", "factions": F, "units": U,
+            "trees": trees}
+    open(os.path.join(GEN, "lp-data.json"), "w").write(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
+    for fac in ("kessler-hayashi", "grubstake", "synthexis", "player"):
+        L = []
+        for uid in order.get(fac, []):
+            L += [f'::: {{.unit unit="{uid}"}}', U[uid]["blurb"], ":::", ""]
+        out(f"cards-{fac}.qmd", L)
