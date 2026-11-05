@@ -4246,6 +4246,280 @@ scenarios.heavies = function()
   end)
 end
 
+-- Film stages (the trailer, 2026-11-05). Both build their ground before a fork's save at minute 1 (scripts/fork.sh <name>
+-- 12345 7) and start their action at minute 1.5 or 2, so a film loads the stage standing and sees all of it.
+-- A block of n units in rows of `cols`, `gap` apart, round {cx, cy}, each on clear ground near its place.
+local function block(name, cx, cy, n, cols, gap, force)
+  local out = {}
+  local rows = math.ceil(n / cols)
+  for k = 0, n - 1 do
+    local c, r = k % cols, math.floor(k / cols)
+    local p = {cx + (c - (cols - 1) / 2) * gap, cy + (r - (rows - 1) / 2) * gap}
+    local q = surface().find_non_colliding_position(name, p, 8, 0.5)
+    local u = q and surface().create_entity{name = name, position = q, force = force}
+    if u then out[#out + 1] = u end
+  end
+  return out
+end
+local function order_area(units, dest, radius)
+  for _, u in ipairs(units) do
+    if u.valid then
+      u.commandable.set_command{type = defines.command.attack_area, destination = dest, radius = radius,
+        distraction = defines.distraction.by_enemy}
+    end
+  end
+end
+local function append(t, more) for _, u in ipairs(more) do t[#t + 1] = u end; return t end
+local function alive(units) local n = 0; for _, u in ipairs(units or {}) do if u.valid then n = n + 1 end end; return n end
+
+-- The Tesla at a wall (the user on cut 6, 2026-11-05, of heavies LP_MIX=teslas: "the power pole on the side of the attacker
+-- and a pink debug generator in view, no wall... I would set it up with some fodder player units too"). A stone wall
+-- north-south at x 401, eleven lasers 3 apart behind it (x 397), two substations behind them and the power 39 tiles back
+-- (an energy interface at x 362, out of a frame on the wall); twenty of the player's troopers and breachers before the wall;
+-- Kessler-Hayashi's assault from 54 tiles east: five Teslas, sixteen of its infantry, three tanks. Its lightning should
+-- jump along the laser line and drain it while the escort kills the fodder.
+--   Fork: scripts/fork.sh teslawall 12345 7 (saved at minute 1); the assault sets off at minute 1.5 (tick 5400).
+scenarios.teslawall = function()
+  local WX, AT = 401, 5400
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true,
+      herd_off = true})
+  end)
+  schedule(1800, function()
+    flatten(340, -50, 480, 50)
+    for y = -24, 23 do surface().create_entity{name = "stone-wall", position = {WX + 0.5, y + 0.5}, force = "player"} end
+    S.lasers = {}
+    for y = -15, 15, 3 do
+      S.lasers[#S.lasers + 1] = surface().create_entity{name = "laser-turret", position = {WX - 4, y}, force = "player"}
+    end
+    for _, p in ipairs({{392, -9}, {392, 9}, {377, 0}, {362, 0}}) do
+      surface().create_entity{name = "substation", position = p, force = "player"}
+    end
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {362, 5}, force = "player"}
+    -- Five megawatts, a small steam plant's (twenty did not let the drain show: the line was back to full within a tick of
+    -- each strike, its mean charge never below 82% in the first run).
+    eei.power_production, eei.electric_buffer_size = 5e6 / 60, 5e7
+    S.fodder = append(block("lp-trooper", WX + 5, 0, 24, 4, 2.2, "player"), block("lp-breacher", WX + 9, 0, 6, 1, 4, "player"))
+    S.fodder_n = #S.fodder
+    -- (Left to its own will, it runs out some 20 tiles to meet the escort and dies there in the first 9 s, the Teslas' bolts
+    -- among it; held with a stop order and firing back when hit, it went out all the same, and the Teslas came to the line
+    -- 20 s later: 32 drains, not 361. Left to its will.)
+  end)
+  schedule(AT, function()
+    local east = WX + 54
+    -- The Teslas 42 tiles out, the infantry 60, so both reach the wall together (all 54 out, the infantry was there in 4 s,
+    -- the Teslas in 13, and the fodder dead in 8 before a bolt fell on the line).
+    S.teslas = block("lp-tesla", WX + 42, 0, 5, 1, 5, FORCE)
+    S.escort = block("lp-infantry", east + 6, 0, 16, 2, 2, FORCE)
+    -- Three tanks: a flank each and one behind.
+    for _, p in ipairs({{east + 2, -14}, {east + 2, 14}, {east + 8, 0}}) do
+      append(S.escort, block("lp-tank", p[1], p[2], 1, 1, 0, FORCE))
+    end
+    order_area(S.teslas, {WX - 4, 0}, 18)
+    order_area(S.escort, {WX + 4, 0}, 20)
+    S.go = game.tick
+    S.tw = {fodder_hits = 0}
+  end)
+  -- Each second: the first drain, and the lowest charge the line fell to.
+  for t = AT + 60, AT + 2 * 3600, 60 do
+    schedule(t, function()
+      local st = lp("scorcher_stats")
+      if st.drains > 0 and not S.tw.first_drain then S.tw.first_drain = game.tick - S.go end
+      local tot, n = 0, 0
+      for _, l in ipairs(S.lasers) do if l.valid then tot, n = tot + l.energy / l.electric_buffer_size, n + 1 end end
+      local frac = n > 0 and tot / n or 1
+      if not S.tw.low or frac < S.tw.low then S.tw.low, S.tw.low_at = frac, game.tick - S.go end
+      if not S.tw.fodder_gone and alive(S.fodder) == 0 then S.tw.fodder_gone = game.tick - S.go end
+      -- The fight second by second (for the film's ticks): fodder, Teslas, escort standing, drains so far, the line's charge, the
+      -- Teslas' mean x.
+      local tx, tn = 0, 0
+      for _, u in ipairs(S.teslas) do if u.valid then tx, tn = tx + u.position.x, tn + 1 end end
+      if (game.tick - S.go) % 120 == 0 and (game.tick - S.go) <= 3600 then
+        S.tw.series = (S.tw.series or "") .. string.format(" %d:%d/%d/%d/%d/%.0f%%/x%s/%d", (game.tick - S.go) / 60, alive(S.fodder),
+          tn, alive(S.escort), st.drains, 100 * frac, tn > 0 and string.format("%.0f", tx / tn) or "-", alive(S.lasers))
+      end
+    end)
+  end
+  schedule(AT + 2 * 3600 + 60, function()
+    local st, tw = lp("scorcher_stats"), S.tw
+    info(string.format("teslawall: drains %d (first at +%s ticks); lasers' mean charge fell to %.0f%% at +%s; lasers %d of %d standing",
+      st.drains, tostring(tw.first_drain), 100 * (tw.low or 1), tostring(tw.low_at), alive(S.lasers), #S.lasers))
+    info(string.format("teslawall: fodder %d of %d standing (all gone at +%s), hits by the fodder %d; Teslas %d of %d, escort %d of %d",
+      alive(S.fodder), S.fodder_n, tostring(tw.fodder_gone), tw.fodder_hits, alive(S.teslas), #S.teslas, alive(S.escort), #S.escort))
+    info("teslawall: deaths " .. serpent.line(S.tally or {}))
+    info("teslawall: s:fodder/teslas/escort/drains/charge/x/lasers" .. (tw.series or ""))
+    -- (100: the fodder held by a stop order, the Teslas came to the line late and drained it 32 times, a shot with no drain in it.)
+    check("teslawall: the Teslas drained the lasers (100 or more)", st.drains >= 100, tostring(st.drains))
+    check("teslawall: the fodder fought (its shots hit Kessler-Hayashi's)", tw.fodder_hits >= 20, tostring(tw.fodder_hits))
+    check("teslawall: the escort killed the fodder (most of it)", alive(S.fodder) <= S.fodder_n / 2,
+      alive(S.fodder) .. " of " .. S.fodder_n .. " standing")
+  end)
+end
+
+-- The finale (the user on cut 6, 2026-11-05: "an (artificial) shot of an all out war at the end? A biter wave rushing in
+-- perpendicularly to a fight between player and KH, mixing in, then a big nuke going off for the send off"). On open ground
+-- round C = {430, 0}: the player's army (76: troopers, breachers, rocket and flame troopers, battle tanks) from the west and
+-- Kessler-Hayashi's (72: infantry, lances, shock troopers, tanks, Teslas, Prisms) from the east, 24 tiles either side of C,
+-- set on each other at minute 2 (engaged in 2 s); twenty more a side every 4 s from 6 s to 26 s, from 54 tiles out; 12 s
+-- in, 200 of Synthexis's bred biters (150 medium, 40 big, 10 cinders) from 115 tiles north, at war with both (in 5 s later);
+-- 15 s after they are in, the player's atomic bomb on C.
+--   Fork: scripts/fork.sh warfinale 12345 7 (saved at minute 1); the armies at tick 7200, the herd at 7920, the bomb at 9140.
+-- (Reinforcements: the first armies alone, 76 and 72, were dead 22 s after they met, before the herd had been in for 7 s,
+-- and the bomb fell on the herd alone, 2026-11-05.)
+-- (They come in at C itself, only damage turning them aside: sent past it at anything in reach, they stopped at their range,
+-- and at the bomb the player's stood round x 371, Kessler-Hayashi's round 487, 2 of 102 within 25 of C; the armies set 40
+-- either side of C, and the last reinforcements still walking in at the bomb, 6 of the 49 within 30 were theirs.)
+local WF = {c = {430, 0}, at = 7200, herd = 7920, nuke = 9140, gap = 24, waves = {360, 600, 840, 1080, 1320, 1560}}
+scenarios.warfinale = function()
+  local C = WF.c
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true,
+      herd_off = true})
+  end)
+  schedule(1800, function()
+    flatten(C[1] - 110, C[2] - 140, C[1] + 110, C[2] + 70)
+    -- Synthexis at war with both sides here (at peace by design with the wild biters and Grubstake only).
+    local syn = game.forces["lp-biotech"] or game.create_force("lp-biotech")
+    for _, other in ipairs({"player", FORCE}) do
+      local o = game.forces[other]
+      syn.set_friend(o, false); o.set_friend(syn, false)
+      syn.set_cease_fire(o, false); o.set_cease_fire(syn, false)
+    end
+    game.forces.player.set_cease_fire(FORCE, false); game.forces[FORCE].set_cease_fire("player", false)
+  end)
+  schedule(WF.at, function()
+    local W, E = C[1] - WF.gap, C[1] + WF.gap
+    S.p = {}
+    append(S.p, block("lp-trooper", W, C[2], 40, 2, 2.2, "player"))
+    append(S.p, block("lp-breacher", W - 5, C[2], 14, 1, 3, "player"))
+    append(S.p, block("lp-rocket-trooper", W - 9, C[2], 8, 1, 5, "player"))
+    append(S.p, block("lp-flame-trooper", W + 4, C[2], 6, 1, 6, "player"))
+    append(S.p, block("lp-battle-tank", W - 15, C[2], 8, 1, 5.5, "player"))
+    S.k = {}
+    append(S.k, block("lp-infantry", E, C[2], 40, 2, 2.2, FORCE))
+    append(S.k, block("lp-lance", E + 5, C[2], 10, 1, 4, FORCE))
+    append(S.k, block("lp-shock", E + 8, C[2], 6, 1, 6, FORCE))
+    append(S.k, block("lp-tank", E + 14, C[2], 8, 1, 5.5, FORCE))
+    append(S.k, block("lp-tesla", E + 20, C[2], 4, 1, 10, FORCE))
+    append(S.k, block("lp-prism", E + 20, C[2] + 5, 4, 1, 10, FORCE))
+    order_area(S.p, {C[1] + 10, C[2]}, 40)
+    order_area(S.k, {C[1] - 10, C[2]}, 40)
+    S.wf = {go = game.tick}
+    info(string.format("warfinale: the player's army %d, Kessler-Hayashi's %d", #S.p, #S.k))
+  end)
+  for _, dt in ipairs(WF.waves) do
+    schedule(WF.at + dt, function()
+      local W, E = C[1] - 54, C[1] + 54
+      local p = {}
+      append(p, block("lp-trooper", W, C[2], 12, 2, 2.5, "player"))
+      append(p, block("lp-breacher", W - 4, C[2], 4, 1, 4, "player"))
+      append(p, block("lp-rocket-trooper", W - 7, C[2], 2, 1, 6, "player"))
+      append(p, block("lp-battle-tank", W - 12, C[2], 2, 1, 8, "player"))
+      local k = {}
+      append(k, block("lp-infantry", E, C[2], 12, 2, 2.5, FORCE))
+      append(k, block("lp-lance", E + 4, C[2], 3, 1, 4, FORCE))
+      append(k, block("lp-shock", E + 7, C[2], 2, 1, 6, FORCE))
+      append(k, block("lp-tank", E + 12, C[2], 2, 1, 8, FORCE))
+      append(k, block("lp-prism", E + 17, C[2], 1, 1, 0, FORCE))
+      for _, u in ipairs(append(append({}, p), k)) do
+        u.commandable.set_command{type = defines.command.attack_area, destination = C, radius = 20,
+          distraction = defines.distraction.by_damage}
+      end
+      append(S.p, p); append(S.k, k)
+    end)
+  end
+  schedule(WF.herd, function()
+    local N = C[2] - 115
+    S.h = {}
+    append(S.h, block("lp-bred-medium-biter", C[1], N, 150, 25, 1.6, "lp-biotech"))
+    append(S.h, block("lp-bred-big-biter", C[1], N - 10, 40, 20, 2, "lp-biotech"))
+    append(S.h, block("lp-bred-cinder", C[1], N - 15, 10, 10, 3, "lp-biotech"))
+    order_area(S.h, C, 35)
+    S.wf.herd = game.tick
+    info(string.format("warfinale: the herd %d at tick %d", #S.h, game.tick))
+  end)
+  -- Every 10 ticks: engagement (the first hit between the two armies), the herd's arrival (20 of it within 40 of C), the blast.
+  for t = WF.at + 10, WF.nuke + 1200, 10 do
+    schedule(t, function()
+      local wf = S.wf
+      local d = S.dealt or {}
+      if not wf.engaged and ((d["player>" .. FORCE] or 0) > 0 or (d[FORCE .. ">player"] or 0) > 0) then wf.engaged = game.tick end
+      if wf.herd and not wf.arrived and near(S.h, C, 40) >= 20 then wf.arrived = game.tick end
+      if wf.rocket and not wf.boom and not wf.rocket.valid then wf.boom = game.tick end
+      -- Every 2 s, the three standing (for the film's ticks).
+      if (game.tick - wf.go) % 120 == 0 then
+        wf.series = (wf.series or "") .. string.format(" %d:%d/%d/%d", (game.tick - wf.go) / 60, alive(S.p), alive(S.k), alive(S.h))
+      end
+    end)
+  end
+  -- The bomb: from 40 tiles south-west, on the middle of the melee.
+  schedule(WF.nuke, function()
+    local R = 30
+    S.wf.inside = {}
+    for _, set in ipairs({S.p, S.k, S.h}) do
+      for _, u in ipairs(set) do
+        if u.valid and (u.position.x - C[1]) ^ 2 + (u.position.y - C[2]) ^ 2 <= R * R then S.wf.inside[#S.wf.inside + 1] = u end
+      end
+    end
+    S.wf.before = {player = alive(S.p), kh = alive(S.k), herd = alive(S.h)}
+    -- Where each side stood (its middle, and how many within 25, 35 and 50 of C).
+    local where = {}
+    for name, set in pairs({player = S.p, kh = S.k, herd = S.h}) do
+      local x, y, n, r25, r35, r50 = 0, 0, 0, 0, 0, 0
+      for _, u in ipairs(set) do
+        if u.valid then
+          local d = math.sqrt((u.position.x - C[1]) ^ 2 + (u.position.y - C[2]) ^ 2)
+          x, y, n = x + u.position.x, y + u.position.y, n + 1
+          r25, r35, r50 = r25 + (d <= 25 and 1 or 0), r35 + (d <= 35 and 1 or 0), r50 + (d <= 50 and 1 or 0)
+          S.wf.r30 = S.wf.r30 or {}
+          if d <= 30 then S.wf.r30[name] = (S.wf.r30[name] or 0) + 1 end
+        end
+      end
+      where[name] = n > 0 and string.format("%.0f,%.0f n%d r25 %d r35 %d r50 %d", x / n, y / n, n, r25, r35, r50) or "-"
+      -- By x, 10 tiles a bin from C - 80 (the spread of each side along the line).
+      local bins = {}
+      for i = 1, 16 do bins[i] = 0 end
+      for _, u in ipairs(set) do
+        if u.valid then
+          local i = math.floor((u.position.x - C[1] + 80) / 10) + 1
+          if i >= 1 and i <= 16 then bins[i] = bins[i] + 1 end
+        end
+      end
+      where[name] = where[name] .. " x " .. table.concat(bins, ",")
+    end
+    info("warfinale: at the bomb " .. serpent.line(where))
+    S.wf.rocket = surface().create_entity{name = "atomic-rocket", position = {C[1] - 28, C[2] + 28}, target = C, speed = 0.5,
+      force = "player"}
+    S.wf.fired = game.tick
+  end)
+  schedule(WF.nuke + 600, function()
+    local wf = S.wf
+    local t = S.tally or {}
+    local function k(v, a) return t[v .. ":unit>" .. a] or 0 end
+    info(string.format("warfinale: armies at tick %d; relative to it: engaged %s, herd sent %s, arrived %s, bomb fired %s, went off %s",
+      wf.go, tostring(wf.engaged and wf.engaged - wf.go), tostring(wf.herd and wf.herd - wf.go),
+      tostring(wf.arrived and wf.arrived - wf.go), tostring(wf.fired - wf.go), tostring(wf.boom and wf.boom - wf.go)))
+    local left = alive(wf.inside)
+    info(string.format("warfinale: before the bomb %s; after it player %d, KH %d, herd %d; within 30 of the blast %d, %d left",
+      serpent.line(wf.before), alive(S.p), alive(S.k), alive(S.h), #wf.inside, left))
+    info("warfinale: deaths (victim:kind>killer) " .. serpent.line(t))
+    info("warfinale: s:player/KH/herd standing" .. (wf.series or ""))
+    local P, K, H = "player", FORCE, "lp-biotech"
+    check("warfinale: the player's army and Kessler-Hayashi's killed each other", k(K, P) >= 5 and k(P, K) >= 5,
+      string.format("%d KH by the player, %d of the player's by KH", k(K, P), k(P, K)))
+    check("warfinale: the herd killed on both sides", k(P, H) >= 3 and k(K, H) >= 3,
+      string.format("%d of the player's, %d KH", k(P, H), k(K, H)))
+    check("warfinale: both sides killed the herd's", k(H, P) >= 5 and k(H, K) >= 5,
+      string.format("%d by the player, %d by KH", k(H, P), k(H, K)))
+    check("warfinale: the herd came in 12 to 25 s before the bomb", wf.arrived and wf.fired - wf.arrived >= 720
+      and wf.fired - wf.arrived <= 1500, tostring(wf.arrived and wf.fired - wf.arrived))
+    check("warfinale: the bomb went off", wf.boom ~= nil, tostring(wf.boom))
+    check("warfinale: it killed most within 30 tiles (40 or more there, of all three sides)", #wf.inside >= 40
+      and left <= #wf.inside * 0.25 and (wf.r30.player or 0) >= 5 and (wf.r30.kh or 0) >= 5 and (wf.r30.herd or 0) >= 5,
+      string.format("%d of %d left; there %s", left, #wf.inside, serpent.line(wf.r30)))
+  end)
+end
+
 scenarios.unitnode = function()
   local node = params.mix ~= "" and params.mix or "lance"
   local c = NODE_CASES[node]
@@ -14828,6 +15102,27 @@ if params.scenario == "herd" then
       local k = (e.entity.type == "wall" or e.entity.type == "gate") and "wall" or "inside"
       S.gap_bite = S.gap_bite or {wall = 0, inside = 0}
       S.gap_bite[k] = S.gap_bite[k] + e.final_damage_amount
+    end
+  end)
+end
+
+-- Film stages (teslawall, warfinale): damage between forces, deaths (the killing blow) by the victim's force and kind and the
+-- killer's force, and the hits the teslawall's fodder landed on Kessler-Hayashi's.
+if params.scenario == "teslawall" or params.scenario == "warfinale" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    local a, v = e.force and e.force.name, e.entity.force.name
+    if not a or a == v or v == "neutral" then return end
+    S.dealt = S.dealt or {}
+    S.dealt[a .. ">" .. v] = (S.dealt[a .. ">" .. v] or 0) + e.final_damage_amount
+    if S.tw and v == FORCE and e.cause and e.cause.valid and (e.cause.name == "lp-trooper" or e.cause.name == "lp-breacher") then
+      S.tw.fodder_hits = S.tw.fodder_hits + 1
+    end
+    if e.final_health <= 0 then
+      local t = e.entity.type
+      local kind = (t == "unit" or t == "spider-unit" or t == "car") and "unit" or t
+      S.tally = S.tally or {}
+      local k = v .. ":" .. kind .. ">" .. a
+      S.tally[k] = (S.tally[k] or 0) + 1
     end
   end)
 end
