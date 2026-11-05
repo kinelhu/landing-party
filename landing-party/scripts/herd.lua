@@ -25,6 +25,7 @@ local tactics = require("__landing-party__.scripts.tactics")
 local valuemap = require("__landing-party__.scripts.valuemap")
 local costmap = require("__landing-party__.scripts.costmap")
 local feeds = require("__landing-party__.scripts.feeds")
+local burstfx = require("__landing-party__.scripts.burstfx")
 local shared = require("shared")
 local herd = {}
 
@@ -1881,6 +1882,22 @@ end
 -- Its gun gone, it goes at the nearest that can still reach it (threat.far: the longest reach of any gun).
 local BIG_DETONATE = shared.BIG_BURST.r
 local WALL_TOUCH = 2.5   -- a big burster this near the foe's wall has reached it (its own reach, a behemoth's bite)
+-- Its blast, once wound up (burstfx.lua: set off, it stops, swells and is past harm for its wind-up, then this): its death
+-- (its core, biotech.lua: what a killed one fizzles to), and the rest of it here, to all not its force within its reach.
+-- (A blast entity made by script took no force: it killed the burster before it died, and every siege after errored; the
+-- siege lab, 2026-10-30.)
+local function big_blast(u)
+  local surf, pos, force = u.surface, u.position, u.force
+  burstfx.mark_whole(u)
+  u.die(force)
+  surf.create_entity{name = "lp-big-burst-explosion", position = pos}
+  for _, e in ipairs(surf.find_entities_filtered{position = pos, radius = shared.BIG_BURST.r}) do
+    if e.valid and e.force ~= force and e.health and e.destructible then e.damage(shared.BIG_BURST.amount, force, "explosion") end
+  end
+end
+burstfx.on_blast.big = big_blast
+-- A big burster set off (its wind-up, then big_blast). Also the dev tools' and tests'.
+function herd.set_off(u) return burstfx.windup(u, "big") end
 local function detonate(w)
   if not w.big_targets then return end
   local s = game.surfaces[w.surface]
@@ -1909,15 +1926,8 @@ local function detonate(w)
         else
           log(w, string.format("a big burster set off at the %s at %.0f,%.0f (%d of them)", t.name, t.position.x, t.position.y, w.big_set_off))
         end
-        -- Its blast: its death (its core, biotech.lua: what a killed one fizzles to), and the rest of it here, to all not its
-        -- force within its reach. (A blast entity made by script took no force: it killed the burster before it died, and
-        -- every siege after errored; the siege lab, 2026-10-30.)
-        local surf, pos, force = u.surface, u.position, u.force
-        u.die(force)
-        surf.create_entity{name = "lp-big-burst-explosion", position = pos}
-        for _, e in ipairs(surf.find_entities_filtered{position = pos, radius = shared.BIG_BURST.r}) do
-          if e.valid and e.force ~= force and e.health and e.destructible then e.damage(shared.BIG_BURST.amount, force, "explosion") end
-        end
+        -- Its wind-up, then its blast (big_blast).
+        herd.set_off(u)
       elseif t or not b.spent then kept[#kept + 1] = b end
     end
   end

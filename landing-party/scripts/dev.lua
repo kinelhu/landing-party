@@ -17,6 +17,8 @@
 --   wave                     its farm sends a wave now (its pens topped up to send one)
 --   strike [id]              an orbital strike now, centred where you stand: a spotter of that camp's (Kessler-Hayashi's
 --                            nearest by default) paints it, then its shells fall (no siege, no cooldown)
+--   burst [big]              a Synthexis burster (a big burster with `big`) set off 12 tiles east of you: its wind-up and
+--                            its blast (scripts/burstfx.lua). The blast is real: stand clear
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
 local names = require("__landing-party__.scripts.names")
@@ -28,6 +30,7 @@ local jumper = require("__landing-party__.scripts.jumper")
 local tap = require("__landing-party__.scripts.tap")
 local standing = require("__landing-party__.scripts.standing")
 local farm = require("__landing-party__.scripts.farm")
+local burstfx = require("__landing-party__.scripts.burstfx")
 local orbital = require("__landing-party__.scripts.orbital")
 
 local dev = {}
@@ -187,11 +190,22 @@ function dev.run(player, args)
   elseif what == "era" then
     storage.era_override = tonumber(args[2])
     player.print("era " .. tostring(storage.era_override or "from research"))
+  elseif what == "burst" then
+    -- (A big burster's blast is herd.lua's, set as burstfx.on_blast.big when herd loads.)
+    local big = args[2] == "big"
+    local name = big and "lp-bred-big-burster" or "lp-bred-cinder"
+    local s = player.surface
+    local at = s.find_non_colliding_position(name, {player.position.x + 12, player.position.y}, 10, 0.5)
+    if not at then return player.print("no room for a burster east of you") end
+    local u = s.create_entity{name = name, position = at, force = shared.BIOTECH.force}
+    if not (u and burstfx.windup(u, big and "big" or "cinder")) then return player.print("the burster could not be set off") end
+    player.print(string.format("a %s set off at %.0f,%.0f: it bursts in %.1f s", big and "big burster" or "burster", at.x, at.y,
+      burstfx.KIND[big and "big" or "cinder"].windup / 60))
   elseif what == "trace" then
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | provoke | era <n> | trace")
   end
 end
 

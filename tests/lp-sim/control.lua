@@ -3596,6 +3596,17 @@ scenarios.dev = function()
     S.strike_at = {c[1] + 30, c[2]}
     lp("dev", {"strike", tostring(S.s)}, S.strike_at)
   end)
+  -- /lp burst big (scripts/burstfx.lua): a big burster set off 12 tiles east of where the player stands, wound up, burst whole.
+  schedule(2 * 3600 + 300, function()
+    S.fx0 = lp("burstfx")
+    flatten(-80, -70, -40, -50)
+    lp("dev", {"burst", "big"}, {-72, -60})
+  end)
+  schedule(2 * 3600 + 300 + 120, function()
+    local fx = lp("burstfx")
+    check("dev: /lp burst big wound one up and it burst whole", fx.windups == S.fx0.windups + 1
+      and (fx.blasts.big or 0) == (S.fx0.blasts.big or 0) + 1, serpent.line(fx))
+  end)
   schedule(2 * 3600 + 600 + 15 * 60, function()
     local o = lp("stats", S.s).ops
     check("dev: /lp strike painted its point", o.strike_paint ~= nil and o.strike_center ~= nil
@@ -11314,7 +11325,78 @@ end
 -- LP_MIX=spores: a big burster instead, a wall of fifteen (its spore cloud, biotech.lua, 2026-11-04): a cloud rises
 -- where it dies; the pieces beyond its blast's core (3.5 to 5 tiles off, its core 3) lose health over the cloud's life,
 -- the spores' doing; its medium and incubator untouched.
+-- LP_MIX=windup: a burst's wind-up and look (scripts/burstfx.lua; the user, 2026-11-05: "the burster is underwhelming
+-- graphically"). A cinder free to attack a wall of seven (a turret with no ammunition behind it) and a big burster set off
+-- by hand at a wall of fifteen: each stops where it stands, is past harm (a hit of 1,000 in its wind-up leaves it), and
+-- bursts at its wind-up's end, breaking the wall; each blast drawn as its kind (the big burster's whole, not its core's),
+-- and its look gone from the map within 40 seconds (its pools faded, nothing left moving).
 scenarios.cinder = function()
+  if params.mix == "windup" then
+    local c, b = {-200.5, 200.5}, {-160.5, 200.5}
+    schedule(60, function()
+      lp("debug_tune", {harmless = true, army_off = true, history_off = true})
+      surface().request_to_generate_chunks(c, 3); surface().force_generate_chunk_requests()
+      flatten(c[1] - 20, c[2] - 20, b[1] + 20, b[2] + 20)
+      S.walls, S.bwalls = {}, {}
+      for i = -3, 3 do table.insert(S.walls, surface().create_entity{name = "stone-wall", position = {c[1] + i, c[2]}, force = "player"}) end
+      for i = -7, 7 do table.insert(S.bwalls, surface().create_entity{name = "stone-wall", position = {b[1] + i, b[2]}, force = "player"}) end
+      surface().create_entity{name = "gun-turret", position = {c[1], c[2] + 2.5}, force = "player"}
+      S.cinder = surface().create_entity{name = "lp-bred-cinder", position = {c[1], c[2] - 6}, force = "lp-biotech"}
+      S.cinder.commandable.set_command{type = defines.command.attack, target = S.walls[4], distraction = defines.distraction.none}
+      S.big = surface().create_entity{name = "lp-bred-big-burster", position = {b[1], b[2] - 2.5}, force = "lp-biotech"}
+      S.big.disabled_by_script = true
+      S.fx0 = lp("burstfx")
+    end)
+    -- The cinder's wind-up: polled each tick until it starts (its attack raised it), then hit once in it.
+    for t = 61, 600 do
+      schedule(t, function()
+        if S.wound or not (S.cinder and S.cinder.valid) then return end
+        if lp("burstfx").windups > S.fx0.windups then
+          S.wound, S.wound_at = game.tick, {x = S.cinder.position.x, y = S.cinder.position.y}
+          schedule(game.tick + 10, function()
+            if S.cinder.valid then S.hit = S.cinder.damage(1000, "player"); S.after_hit = S.cinder.valid end
+            S.still = S.cinder.valid and math.abs(S.cinder.position.x - S.wound_at.x) + math.abs(S.cinder.position.y - S.wound_at.y)
+          end)
+          schedule(game.tick + 25, function() S.alive_late = S.cinder.valid end)
+          schedule(game.tick + 35, function() S.dead = not S.cinder.valid end)
+        end
+      end)
+    end
+    schedule(700, function()
+      S.fx1 = lp("burstfx")
+      lp("burst_set_off", S.big)
+      S.big_at = game.tick
+    end)
+    schedule(700 + 20, function() S.big_alive = S.big.valid; S.big_hit = S.big.valid and S.big.damage(5000, "player") end)
+    schedule(700 + 20, function() S.big_alive_after = S.big.valid end)
+    schedule(700 + 50, function() S.big_dead = not S.big.valid end)
+    schedule(900, function()
+      local fx = lp("burstfx")
+      local broken, bbroken = 0, 0
+      for _, w in ipairs(S.walls) do if not w.valid then broken = broken + 1 end end
+      for _, w in ipairs(S.bwalls) do if not w.valid then bbroken = bbroken + 1 end end
+      info(string.format("cinder: windup, set off at tick %s at %s, moved %s in it, hit %s (alive after: %s), dead by its end %s; "
+        .. "big burster alive 20 ticks in %s, hit %s, dead 50 in %s; walls broken %d of 7, %d of 15; fx %s",
+        tostring(S.wound), serpent.line(S.wound_at), tostring(S.still), tostring(S.hit), tostring(S.after_hit), tostring(S.dead),
+        tostring(S.big_alive_after), tostring(S.big_hit), tostring(S.big_dead), broken, bbroken, serpent.line(fx)))
+      check("cinder: windup, its attack set it off (a wind-up)", S.wound ~= nil, "")
+      check("cinder: windup, stopped where it stood", type(S.still) == "number" and S.still < 0.05, tostring(S.still))
+      check("cinder: windup, past harm in it", S.after_hit == true and S.alive_late == true, tostring(S.hit))
+      check("cinder: windup, burst at its end", S.dead == true, "")
+      check("cinder: windup, its burst broke the wall", broken >= 2, tostring(broken))
+      check("cinder: windup, the big burster stood its wind-up past harm and burst", S.big_alive_after == true and S.big_dead == true, "")
+      check("cinder: windup, its blast broke the wall", bbroken >= 8, tostring(bbroken))
+      check("cinder: windup, both blasts drawn, the big burster's whole", (fx.blasts.cinder or 0) - (S.fx0.blasts.cinder or 0) >= 1
+        and (fx.blasts.big or 0) - (S.fx0.blasts.big or 0) == 1 and (fx.blasts.fizzle or 0) == (S.fx0.blasts.fizzle or 0)
+        and fx.drawn > S.fx0.drawn + 40, serpent.line(fx.blasts))
+    end)
+    -- (The big burster's pools stay 25 s and fade over 2.)
+    schedule(700 + 45 + 40 * 60, function()
+      local fx = lp("burstfx")
+      check("cinder: windup, its look gone within 40 s", fx.winding == 0 and fx.moving == 0, serpent.line(fx))
+    end)
+    return
+  end
   local spores = params.mix == "spores"
   if spores then
     schedule(60, function()
@@ -11349,6 +11431,10 @@ scenarios.cinder = function()
         tostring(S.clouds), outer, lost, S.mate.valid and string.format("%.0f", S.mate.health) or "dead",
         S.pen.valid and string.format("%.0f", S.pen.health) or "dead"))
       check("cinder: spores, a spore cloud rose where it died", (S.clouds or 0) >= 1, tostring(S.clouds))
+      -- (burstfx.lua: killed short, a big burster's blast drawn as its core's.)
+      local fx = lp("burstfx")
+      check("cinder: spores, killed short its blast drawn as its core's", (fx.blasts.fizzle or 0) == 1 and not fx.blasts.big,
+        serpent.line(fx.blasts))
       check("cinder: spores, the pieces beyond its core corroded", outer > 0 and lost == outer, lost .. " of " .. outer)
       check("cinder: spores, its own medium and incubator untouched", S.mate.valid and S.mate.health == S.mate.max_health
         and S.pen.valid and S.pen.health == S.pen.max_health, "")

@@ -45,7 +45,7 @@ local function shot(s)
     local f = storage.frozen[s.freeze]
     pos = {f[1] + (s.off and s.off[1] or 0), f[2] + (s.off and s.off[2] or 0)}
   end
-  if pos == "hold" or pos == "jump" or pos == "site" or pos == "escort" or pos == "wave" or pos == "breach" or pos == "army" then
+  if pos == "hold" or pos == "jump" or pos == "site" or pos == "escort" or pos == "wave" or pos == "breach" or pos == "army" or pos == "burst" then
     local c = (storage.points or {})[pos] or storage.center or {0, 0}
     pos = {c[1] + (s.off and s.off[1] or 0), c[2] + (s.off and s.off[2] or 0)}
   elseif pos == "strike" then
@@ -240,6 +240,18 @@ script.on_event(defines.events.on_tick, function(e)
   end
   -- P.army: the player's army as a point (pos = "army"): the centre of the player force's units, eased like the wave's;
   -- P.army = {x, y, r} counts only those within r of x, y (the ones gathered or fighting, not the barracks' newest).
+  -- P.bursts: Synthexis's bursts (landing-party scripts/burstfx.lua) as a point and an event: "burst:first" the tick the
+  -- first burster of this film winds up, pos = "burst" where it stands (read each tick: its wind-up is half a second).
+  if P.bursts then
+    local fx = remote.call("landing-party", "burstfx")
+    storage.bursts_before = storage.bursts_before or fx.windups
+    if fx.windups > storage.bursts_before and not storage.seen["burst:first"] and fx.last then
+      storage.points = storage.points or {}
+      storage.points.burst = {fx.last.x, fx.last.y}
+      storage.seen["burst:first"] = e.tick
+      log(string.format("lp-film: burst:first at %d (%s at %.0f,%.0f)", e.tick, fx.last.kind, fx.last.x, fx.last.y))
+    end
+  end
   if P.army and e.tick % 2 == 0 then
     local q = {force = "player", type = "unit"}
     if type(P.army) == "table" then q.position, q.radius = {P.army[1], P.army[2]}, P.army[3] end

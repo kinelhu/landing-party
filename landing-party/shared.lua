@@ -622,6 +622,16 @@ shared.LEASH = 15
 -- The biotech's big burster (biotech.lua builds it from these; herd.lua sends and sets it off by them): its health, its
 -- blast's radius, the blast's damage, and the core's (half the radius) on top.
 shared.BIG_BURST = {health = 3000, r = 6, amount = 1500, core = 800}
+-- The burster's (lp-bred-cinder) eruption: `amount` within `r`, `core` more within `core_r` (biotech.lua), its look's
+-- reach (scripts/burstfx.lua).
+shared.CINDER_BURST = {r = 4, amount = 350, core_r = 2, core = 200}
+-- A burst's look (burstlook.lua, scripts/burstfx.lua; the user, 2026-11-05: "the burster is underwhelming graphically
+-- compared to its usefulness"), all drawn: its wind-up's glow and hiss, its blast's shockwave puffs (the nuke's), thrown
+-- gibs (the biters' guts), acid splashes and the pools they leave (a spitter's acid splash, its last frame), and the
+-- sizzle. `windup` is the script trigger a cinder's attack raises. Frame counts checked in burstlook.lua.
+shared.BURSTFX = {windup = "lp-burst-windup", wave = "lp-burstfx-wave", gib = "lp-burstfx-gib", splash = "lp-burstfx-splash-",
+  pool = "lp-burstfx-pool-", splashes = 4, glow = "lp-burstfx-glow", hiss = "lp-burstfx-hiss", sizzle = "lp-burstfx-sizzle",
+  frames = {wave = 32, gib = 12, splash = {26, 29, 29, 24}}}
 -- Its sapper (the user, 2026-10-31: "small bursters dedicated to mines (high hp, high range boom that kills mines)"): the
 -- sweep's, sent at the mines on its way in ahead of its herd and set off among them; its death a wide blast that kills a
 -- land mine (15 of health) and little else. The runts it replaced (15 of health) died to the square lab fort's lasers
