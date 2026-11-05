@@ -14159,11 +14159,12 @@ scenarios.trailer = function()
     lp("debug_tune", {herd_off = true})
     S.stock = S.pen and lp("herd_fill", S.pen, 200, "lp-bred-medium-biter") or 0
 
-    -- The armed camp's target: a wall of the player's 120 tiles from it toward spawn (fortress's: lasers behind it,
-    -- roboports with robots keeping it), clear of the camps by 50.
+    -- The armed camp's target: a wall of the player's 240 tiles from it toward spawn (fortress's: lasers behind it,
+    -- roboports with robots keeping it), clear of the camps by 50. (At 160 its camp grew a depot within 80 of it, whose
+    -- tanks waiting at its yard, army.yard, fought the wall's lasers and razed it before the strike, 2026-11-05.)
     local k2 = origin(S.k2)
     if k2 then
-      local w = spot_along(k2, unit(-k2[1], -k2[2]), 120, 220, 50)
+      local w = spot_along(k2, unit(-k2[1], -k2[2]), 240, 320, 50)
       if w then
         local wu = unit(k2[1] - w[1], k2[2] - w[2])
         local wv = {-wu[2], wu[1]}
@@ -14253,6 +14254,11 @@ scenarios.trailer = function()
       local g1 = origin(S.g1)
       if not S.kh_granted then
         S.kh_granted = true
+        -- Grubstake's garrison here out on other work but six: with the yard (army.yard, 0.2.205) its idle units stand on
+        -- open ground outside its pad and met the siege's march, which came back with nothing (0 of 24, no shell fired);
+        -- the beat is the siege. (A staging, as the truce is: the corporations' own choices are off.)
+        local hands = surface().find_entities_filtered{position = g1, radius = 90, force = GS, type = "unit"}
+        for i = 7, #hands do hands[i].destroy() end
         lp("debug_units", storage.id, "lp-infantry", 30)
         lp("debug_units", storage.id, "lp-tank", 8)
         lp("debug_parts", storage.id, 2000)
@@ -14306,7 +14312,14 @@ scenarios.trailer = function()
     schedule(t, function()
       if S.st_go or not (S.k2 and S.w) then return end
       S.st_why = lp("debug_force_op", S.k2, "siege", S.w_target)
-      if S.st_why then info("trailer: the armed camp's siege on the wall: " .. S.st_why); return end
+      if S.st_why then
+        local h = S.k2 and lp("stats", S.k2)
+        info(string.format("trailer: the armed camp's siege on the wall: %s (target %.0f,%.0f; camp at %s; lasers at the wall %d; site %s)",
+          S.st_why, S.w_target[1], S.w_target[2], h and serpent.line(h.origin) or "?",
+          surface().count_entities_filtered{position = S.w_target, radius = 30, type = "electric-turret", force = "player"},
+          serpent.line(lp("debug_siege_site", S.k2, {S.w_target[1], S.w_target[2]}))))
+        return
+      end
       S.st_go = rel()
       beat("strike", S.w)
     end)

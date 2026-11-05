@@ -4798,6 +4798,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   with 5, the farm's next choices diverge, and its third wave's one big burster is gone on the march, before its
   breach, with no death recorded (traced: valid at the scout, gone 6 s into the march). Its first wave loses its big
   burster the same way before and after this change: a fault of the march or the incubators, not found yet.
+- **The yard put two of the trailer's beats out** (2026-11-05, re-forking the trailer scenario on 0.2.206). Grubstake's
+  idle garrison, now on open ground outside its pad (army.yard), met Kessler-Hayashi's siege on its march: 0 of 24 came
+  back, no shell fired. And the armed camp grew a depot within 80 tiles of the player's wall staged 160 out; the tanks
+  waiting at its yard fought the wall's lasers from minute 17 and razed it before the strike, so the strike found no
+  mortar site ("lasers at the wall 0", now logged with the refusal). Both are the game playing as built, not bugs; the
+  scenario stages round them: Grubstake's garrison there thinned to six at the beat (as the truce is staged), the wall
+  240 out. All of trailer's checks pass from its fork. Open: whether a yard should keep away from another force's guns
+  when at truce (it keeps 40 tiles from what is hostile; a truce is not).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
