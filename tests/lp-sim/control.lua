@@ -14416,6 +14416,41 @@ scenarios.trailer = function()
     check("trailer: Synthexis's wave breached the outpost", S.breach_at ~= nil,
       string.format("%s bred, breach at %s", tostring(S.stock), tostring(S.breach_at)))
     check("trailer: it broke the outpost's turrets", n("player:turret>lp-biotech") >= 3, n("player:turret>lp-biotech") .. " turrets")
+    -- Through its gap (the user, 2026-11-05, on film: "it broke the wall but we only show a handful of biters rushing
+    -- through? Plus it seemed to break the wall from the inside to escape?"): of its units alive when its gap opened, the
+    -- share that passed within GAP_NEAR of the gap before it withdrew, and the wall pieces it broke on its way out while
+    -- its gap stood open.
+    local via, got = 0, 0
+    for _ in pairs(S.via_gap or {}) do via = via + 1 end
+    for _ in pairs(S.got_in or {}) do got = got + 1 end
+    local out_walls, walls_by = 0, {}
+    for _, k in ipairs(S.syn_walls or {}) do
+      walls_by[k.stage] = (walls_by[k.stage] or 0) + 1
+      if k.stage == "withdraw" and k.gap_open then out_walls = out_walls + 1 end
+    end
+    info("trailer: Synthexis's wave from its gap opening: " .. table.concat(S.herd_samples or {}, "; "))
+    info(string.format("trailer: Synthexis's gap at %s (t %s), %s alive then, %s inside; %d by the gap, %d inside since; walls broken by stage %s; %s",
+      serpent.line(S.gap), tostring(S.gap_t), tostring(S.gap_alive), tostring(S.gap_in0), via, got, serpent.line(walls_by),
+      serpent.line(S.syn_walls or {})))
+    local exits = 0
+    for _ in pairs(S.exits or {}) do exits = exits + 1 end
+    info(string.format("trailer: Synthexis's wave: %d walked back out before withdrawing; inside 15 s after the gap %s; still inside 20 s into its withdrawal %s",
+      exits, serpent.line(S.in15), serpent.line(S.left_in or {})))
+    metric("trailer_herd_exits", exits)
+    metric("trailer_herd_in15", S.in15 and S.in15[1] or -1)
+    metric("trailer_herd_via_gap", via)
+    metric("trailer_herd_gap_alive", S.gap_alive or -1)
+    metric("trailer_herd_got_in", got)
+    metric("trailer_herd_out_walls", out_walls)
+    -- (Caught, 0.2.207: its rush for the heart walked the cost map's way, priced from its breach outside, out through the
+    -- gap and round the walls to the far side; 15 s after its gap opened 0 of 194 were inside, and the dozen that had gone
+    -- in walked back out; it reached the heart 27 s later, back in through the gap.)
+    local alive0 = math.max(1, S.gap_alive or 0)
+    check("trailer: Synthexis's wave poured in through its gap", S.in15 ~= nil and S.in15[1] * 2 >= S.in15[2]
+      and exits * 10 <= alive0, string.format("%s inside 15 s after the gap; %d of %d walked back out before withdrawing",
+        serpent.line(S.in15), exits, alive0))
+    check("trailer: and left by it, no wall broken from inside", S.gap_t ~= nil and out_walls == 0,
+      string.format("%d wall pieces broken withdrawing, its gap open", out_walls))
     check("trailer: the armed camp's orbital strike fell on the wall", strikes ~= nil and (strikes.shells or 0) > 0,
       serpent.line(strikes))
   end)
@@ -14771,6 +14806,70 @@ if params.scenario == "trailer" then
       S.tally = S.tally or {}
       local k = v .. ":" .. kind .. ">" .. a
       S.tally[k] = (S.tally[k] or 0) + 1
+      -- Synthexis's wall kills at the outpost, with the wave's stage then and whether its gap stood open (the herd's
+      -- check, below).
+      if kind == "wall" and a == "lp-biotech" and v == "player" and S.c then
+        local p = e.entity.position
+        S.syn_walls = S.syn_walls or {}
+        table.insert(S.syn_walls, {t = game.tick, x = math.floor(p.x), y = math.floor(p.y), stage = S.herd_stage or "?",
+          gap_open = S.herd_gap_open or false})
+      end
+    end
+  end)
+  -- Synthexis's wave at the outpost (the user, 2026-11-05, on film: "it broke the wall but we only show a handful of
+  -- biters rushing through? Plus it seemed to break the wall from the inside to escape?"): its units sampled every half
+  -- second, from its gap opening on: who passed within GAP_NEAR of the gap, who got inside the walls, and where the rest
+  -- stood (inside: within the wall square, its local coordinates from S.u, S.v).
+  local GAP_NEAR, GAP_IN_TICKS = 5, 15 * 60
+  script.on_nth_tick(30, function()
+    if not (S.wave and S.c and S.u and S.v) or S.herd_over then return end
+    local hw
+    for _, w in ipairs(lp("herd_state").waves or {}) do if w.id == S.wave then hw = w end end
+    if not hw or hw.stage == "done" then S.herd_over = S.gap_t ~= nil; return end
+    S.herd_stage, S.herd_gap_open = hw.stage, hw.gap_open
+    if not hw.gap then return end
+    local c, u, v = S.c, S.u, S.v
+    local function inside(p)
+      local dx, dy = p.x - c[1], p.y - c[2]
+      local du, dv = dx * v[1] + dy * v[2], -(dx * u[1] + dy * u[2])
+      return math.abs(du) < 39.5 and math.abs(dv) < 39.5
+    end
+    local units = surface().find_entities_filtered{position = c, radius = 110, force = "lp-biotech", type = "unit"}
+    if not S.gap_t then
+      S.gap_t, S.gap = game.tick, hw.gap
+      S.gap_alive, S.gap_in0 = #units, 0
+      for _, e in ipairs(units) do if inside(e.position) then S.gap_in0 = S.gap_in0 + 1 end end
+      S.via_gap, S.got_in, S.exits, S.herd_samples = {}, {}, {}, {}
+    end
+    local g = {x = S.gap[1], y = S.gap[2]}
+    local n_in, n_out, n_near, ox, oy = 0, 0, 0, 0, 0
+    local leaving = hw.stage == "withdraw"
+    if leaving and not S.withdraw_t then S.withdraw_t, S.left_in = game.tick, {} end
+    for _, e in ipairs(units) do
+      local p, id = e.position, e.unit_number
+      local near = (p.x - g.x) ^ 2 + (p.y - g.y) ^ 2 <= GAP_NEAR * GAP_NEAR
+      if near then n_near = n_near + 1 end
+      if near and not leaving then S.via_gap[id] = true end
+      if inside(p) then
+        n_in = n_in + 1
+        if not leaving then S.got_in[id] = true end
+        -- (Still inside 20 s into its withdrawal: who, and on what order.)
+        if leaving and game.tick - S.withdraw_t >= 1200 and not S.left_in[id] then
+          local cm = e.commandable
+          S.left_in[id] = string.format("%s at %.0f,%.0f, command %s, group %s", e.name, p.x, p.y,
+            tostring(cm and cm.command and cm.command.type), tostring(cm and cm.parent_group ~= nil))
+        end
+      else
+        n_out, ox, oy = n_out + 1, ox + p.x, oy + p.y
+        -- (In, then out again before it withdrew: walked back out of the walls.)
+        if not leaving and S.got_in[id] then S.exits[id] = true end
+      end
+    end
+    if not S.in15 and game.tick - S.gap_t >= GAP_IN_TICKS then S.in15 = {n_in, n_in + n_out} end
+    if (game.tick - S.gap_t) % 300 == 0 then
+      table.insert(S.herd_samples, string.format("t+%ds %s: %d in, %d out (their middle %s), %d by the gap",
+        math.floor((game.tick - S.gap_t) / 60), hw.stage, n_in, n_out,
+        n_out > 0 and string.format("%.0f,%.0f", ox / n_out, oy / n_out) or "-", n_near))
     end
   end)
 end

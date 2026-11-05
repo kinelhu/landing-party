@@ -542,12 +542,18 @@ end
 -- A way of legs (a cost map's, round the fire) inside the base: a leg that would cross a wall of the foe's dropped, so its
 -- herd walks its way inside and not out through the wall and back (pushing in along such a way, a herd of 200 broke 25
 -- wall pieces; herd test, mega). The first leg through its gap when a wall stands between.
+-- And once in (no wall between it and where it goes), a leg that would put a wall between them again dropped: the cost
+-- map's way, priced from its breach outside before the gap opened, ran back out through the gap and round the walls to
+-- the far side, to break in there (the user, 2026-11-05, on the trailer's film: "it broke the wall but we only show a
+-- handful of biters rushing through? Plus it seemed to break the wall from the inside to escape?": 15 s after its gap
+-- opened 0 of 194 were inside, the dozen that had been walking out again, and it took 27 s to a heart 50 tiles in).
 local function inside_legs(w, from, pts, radius)
   local cmds, prev = {}, from
-  local first = pts[1] and gap_way(w, from, pts[#pts])
+  local dest = pts[#pts]
+  local first = dest and gap_way(w, from, dest)
   if first then cmds[1] = first; prev = w.gap end
   for i, q in ipairs(pts) do
-    if i == #pts or not wall_between(w, prev, q) then
+    if i == #pts or not (wall_between(w, prev, q) or (not wall_between(w, prev, dest) and wall_between(w, q, dest))) then
       cmds[#cmds + 1] = go(q, defines.distraction.none, radius or 6)
       prev = q
     end
@@ -2576,9 +2582,10 @@ withdraw = function(w, why)
   -- leg as it marched (as one compound order it failed at once, and the herd stood at the wall it had broken, counted
   -- home: the next wave's strays, 2026-10-25).
   w.home = {}
-  if w.breach then table.insert(w.home, w.breach) end
-  -- (Out through its gap, not through the wall beside it: gap_way.)
+  -- (Out through its gap, not through the wall beside it: gap_way. The gap first, then its breach outside it: the other
+  -- way round, from inside it walked out to the breach, back to the gap and out again.)
   if gap_open(w) and w.breach and d2(w.gap, w.breach) > 4 then table.insert(w.home, w.gap) end
+  if w.breach then table.insert(w.home, w.breach) end
   for k = #w.trail, 1, -1 do table.insert(w.home, w.trail[k]) end
   w.home_leg = 1
   cover(w)
@@ -3335,7 +3342,11 @@ function herd.on_command_completed(e)
           local cmds = inside_legs(w, foremost(w), pts)
           cmds[#cmds] = go(w.deep.at, defines.distraction.none, 8)
           w.group.set_command(compound(cmds))
-          log(w, string.format("rushes for the heart at %.0f,%.0f, %d legs round the fire", w.deep.at.x, w.deep.at.y, #cmds))
+          -- (Its legs in the log: those of the trailer's wave of 200 had run out and round the walls, inside_legs.)
+          local legs = {}
+          for _, c in ipairs(cmds) do legs[#legs + 1] = string.format("%.0f,%.0f", c.destination.x, c.destination.y) end
+          log(w, string.format("rushes for the heart at %.0f,%.0f, %d legs round the fire (%s, of %d on its way)", w.deep.at.x,
+            w.deep.at.y, #cmds, table.concat(legs, " "), #pts))
           return
         end
         stay_begin(w)
@@ -3532,7 +3543,8 @@ function herd.state()
       scout = w.scout and w.scout.valid and {w.scout.position.x, w.scout.position.y} or nil,
       group = w.group and w.group.valid and {w.group.position.x, w.group.position.y} or nil,
       mark = w.mark and {w.mark.x, w.mark.y}, trail = w.trail, breach = w.breach and {w.breach.x, w.breach.y},
-      holding = w.holding or false, deep = w.deep and {going = w.deep.going or nil} or nil}
+      holding = w.holding or false, deep = w.deep and {going = w.deep.going or nil} or nil,
+      gap = w.gap and {w.gap.x, w.gap.y}, gap_open = gap_open(w)}
   end
   local rears = {}
   for id, g in pairs(h.rears or {}) do
