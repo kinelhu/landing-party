@@ -43,7 +43,12 @@ the research. The parts recipes are available from the start. Field studies (bel
 
 - **Rail rifle.** {{< var desc.item_rail_rifle >}}
 - **Cluster artillery shell.** {{< var desc.item_cluster_artillery_shell >}}
-- **Orbital strike beacon.** {{< var desc.entity_strike_beacon >}}
+- **Orbital strike beacon.** {{< var desc.entity_strike_beacon >}} Once charged it paints its ground for
+  {{< var spoils.strike_paint_s >}} seconds, the orbital platform's shadow crosses, and lances fall on every biter nest,
+  worm, corporation building and Synthexis incubator, biochamber, tumor and clinic in that
+  reach, nearest the beacon first, as many on each as it takes. Walls, gates, poles and
+  units are spared. The beacon is spent as the first lance falls. A strike on Grubstake's buildings provokes it like
+  any other damage.
 
 ## Field studies
 

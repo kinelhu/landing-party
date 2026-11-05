@@ -52,6 +52,10 @@
   bills you for.
 - **Guard your small outposts too.** Anything an operation destroys resets the count of failures that makes a camp
   stand down.
+- **Cover the inside of your wall.** Its assault walks in through the breach and goes for your roboports, then your
+  turrets. A second line of turrets behind the wall meets it there.
+- **Give your laser line power to spare.** A lightning tank takes {{< var kh.tesla_drain_pct >}}% of a struck
+  turret's charge. A grid with spare generation and accumulators by the turrets refills it almost at once.
 
 ## Against Synthexis
 
@@ -63,8 +67,14 @@
   A weak side is where the next wave comes.
 - **Leave room behind the wall.** Bursters blow up at the wall and damage the turrets close to it. Turrets set a few
   tiles back take less.
-- **Spread your turrets out.** A big burster walks to your nearest turret and damages every turret around it, so a tight
+- **Kill bursters before they arrive.** A burster that has stopped and started to swell always bursts. Turrets that
+  reach well past the wall get them on the way, and a big burster killed short of its turret bursts with its core alone.
+- **Spread your turrets out.** A big burster is sent at a turret and damages every turret around it, so a tight
   cluster loses several at once.
+- **Build walls in depth.** Each wall behind the first costs a siege another rank of big bursters, and the rest of its
+  wave waits until all of them are open.
+- **Mix fire with lasers.** Where flamethrowers and mines do most of its killing, it spreads its big bursters over
+  points no one flamethrower covers two of. Lasers along the whole face cover every point.
 - **Bury the power and the ammo feed.** A wave past your wall heads for your power and the inserters that load your gun
   turrets. Keep both well inside, behind a second line of turrets.
 - **Defoliate an incubator.** Kill the tumors near it, then throw a defoliant on it. Off the creep, it starves and goes

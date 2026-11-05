@@ -59,13 +59,20 @@ climb stops: its incubators breed as at evolution {{< var synthexis.stock_evo >}
 
 Some breeds have a job:
 
-- **Synthexis burster.** A fast biter that bursts on death, damaging nearby walls and turrets.
-- **Synthexis big burster.** A huge biter that walks to the nearest turret and bursts there, damaging every turret
-  nearby. Synthexis develops it once your walls have held its waves {{< var synthexis.develop_held >}} times.
+- **Synthexis burster.** A fast biter that does not bite: at a wall or turret it bursts, damaging what stands nearby.
+  It also bursts wherever it is killed.
+- **Synthexis big burster.** A huge biter sent at one of the turrets covering its way in. At the turret, or at a wall
+  on the way, it bursts and damages every turret nearby. Killed short of them, only its core goes off, over half the
+  reach. Synthexis develops it once your walls have held its waves {{< var synthexis.develop_held >}} times.
 - **Synthexis stomper.** Steps over walls. Resists bullets.
 - **Synthexis spore spitter.** Its spores hit flying units. Weak against ground targets.
 - **Synthexis sweeper.** Bursts in minefields to clear a path before an attack.
 - **Synthexis scout.** Circles your defenses before an attack.
+
+**The wind-up.** A burster that reaches its target stops where it stands and swells, glowing acid green and pulsing
+faster, while a ring on the ground closes in from the edge of its blast. A burster bursts
+{{< var synthexis.cinder_windup_s >}} seconds after it stops, a big burster {{< var synthexis.big_windup_s >}}
+seconds after. Nothing harms it meanwhile, so it always bursts whole: to stop it, kill it before it gets there.
 
 No other Synthexis breed can hit a flying unit. Full numbers for every breed are in the
 [Reference](reference.qmd#sec-units).
@@ -87,8 +94,10 @@ incubators, tumors or biochambers. It never attacks Grubstake or the wild biters
 2. The wave picks its way in. Synthexis knows where your turrets are. It weighs each way in by the turrets that cover it
    and by what earlier waves lost there, and takes the cheapest.
 3. It gathers out of turret range, then marches to its breach point.
-4. Past your wall it keeps going to what it came for: your power, and the inserters that load your gun turrets. It does
-   not stop to fight every turret on the way.
+4. Once it has a gap in your wall, the whole wave goes in through it and keeps inside, without chewing the wall beside
+   it. Past your wall it keeps going to what it came for: your power, and the inserters that load your gun turrets. It
+   does not stop to fight every turret on the way.
+5. It goes home by the gap it came in through.
 
 {{< clip media/clips/synthexis-breach.mp4 poster="media/clips/synthexis-breach.jpg" caption="A Synthexis wave breaks through a wall and heads for the power." >}}
 
@@ -96,6 +105,18 @@ incubators, tumors or biochambers. It never attacks Grubstake or the wild biters
 next wave may try another side. Where a wall held its last wave, the next wave there brings bursters,
 {{< var synthexis.order_breach_pct >}}% of its biters, and waits up to {{< var synthexis.order_wait_min >}} minutes for
 them. Where mines lie on its way in, it breeds sweepers for them.
+
+**Sieges.** Where a wall stands in its way, a wave may come as a siege. A screen of its cheapest biters goes at the
+wall first to draw your fire. Then its big bursters go at the turrets covering its way in, while the rest of the wave
+waits back from the wall. It sends them in ranks, as many at a time as it takes for one to reach the wall alive. When a
+rank's blasts have opened the first wall and another wall still stands between the gap and its target, the next rank
+goes through the gap at that wall. The waiting biters rush in only once the way to the target is open, or once its
+big bursters are spent. A rank killed before any of it bursts makes the next one twice the size.
+
+**Spread assaults.** Synthexis keeps count of what kills its biters at each place. Where fire and explosions do most
+of the killing (flamethrowers, mines, artillery), it may spread a siege's big bursters over several points of the
+wall, chosen so no single flamethrower covers two of them, each point with a screen of its own. The waiting biters
+rush the first gap any of them opens. Whether it spreads again at a place depends on how well its spreads there went.
 
 ## Fighting Synthexis
 
@@ -107,6 +128,13 @@ them. Where mines lie on its way in, it breeds sweepers for them.
 - **Kill the clinic** to stop its breeds getting stronger.
 - **Starve it.** Less pollution reaching its field means less biomass and smaller waves.
 - **Shoot the scouts.** A scout killed does not stop the wave, but the base it circles is the target.
+- **Kill bursters at range.** Once one stops and swells, it will burst. A big burster killed before it reaches its
+  turret bursts with its core alone.
+- **Build in depth.** Each wall behind the first costs a siege another rank of big bursters, and its waiting biters
+  hold back until every wall on the way is open. Guns that reach past your outer wall fire on them while they wait.
+- **Do not rely on fire alone.** Against flamethrowers and mines it spreads its big bursters out. Lasers and gun
+  turrets along the whole face still fire on every point.
+- **Cover the inside of the gap.** Once a gap is open the whole wave pours through it, and it leaves the same way.
 
 When every incubator of a culture is destroyed, the culture is gone. Synthexis lands again on another field
 {{< var synthexis.reland_min >}} minutes later.

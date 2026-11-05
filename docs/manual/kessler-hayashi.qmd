@@ -17,6 +17,11 @@ orbital strikes and stay until you break them.
 Its army is troopers, tanks and railgunners, with laser drones from its second level. The railgunners clear the biter
 spawners round its camp. Full numbers are in the [Reference](reference.qmd#sec-units).
 
+**Lightning tanks.** When your turrets have killed enough of its units, its siege works research lightning tanks, and
+they join its army. Their lightning jumps from turret to turret along your line, and each laser or tesla turret,
+accumulator or roboport it strikes loses {{< var kh.tesla_drain_pct >}}% of its charge. A network with power to spare refills
+them almost at once, and the lasers keep firing. On a thin supply the line runs low while the tanks stand at it.
+
 It raids what your turrets do not cover, and it cuts power: it finds the pole that feeds the turrets facing it with no
 second feed, and destroys it where no turret reaches. Its sieges are its main weapon (see [Sieges](#sec-kh-sieges)).
 Anything you build on its ground, or a turret you put up by its camp, is answered with one. Only a truce bought at its
@@ -31,6 +36,11 @@ second wall behind each gate, turrets in walled corner pillboxes and flamethrowe
   targets: your turrets and units do not fire on them by themselves. Its crews rebuild lost generators first.
 - **Dome projector.** {{< var desc.entity_dome_projector >}}
 - **Parked howitzer.** It stands by the lander. When its spot is empty, a siege has it out.
+
+**The yard.** Its idle units wait outside its walls, in a yard on open ground {{< var camp.yard_near_tiles >}} to
+{{< var camp.yard_far_tiles >}} tiles from its first depot (from the lander before it has one), each on a spot of its
+own. The yard is on the side away from your spawn, where nothing hostile stands within
+{{< var camp.yard_quiet_tiles >}} tiles. Raids, sieges and patrols set out from there.
 
 **The dome.** While the lander holds, a dome stands within {{< var kh.dome_tiles >}} tiles of it, and each hub
 after the first has a projector with a dome over its blocks. A dome catches every artillery shell fired from the ground
@@ -61,8 +71,10 @@ Kessler-Hayashi mounts sieges from its first level. Its guns come down from orbi
 2. A cargo pod lands on each gun's spot, and the gun is assembled where it lands, sparks flying. The site reads
    *Deploying* for {{< var kh.deploy_s >}} seconds.
 3. Its mortars, just outside your turrets' reach, shell one point at a time, your roboports first.
-4. When nothing is left in reach, or right after an orbital strike, the escort goes in rank by rank, for the roboports
-   near the breach and then its target. After heavy losses it falls back, and its guns move up and drop again.
+4. When nothing is left in reach, or right after an orbital strike, the escort goes in rank by rank. It walks in through
+   the breach and leaves the wall pieces beside it standing. Inside it goes for what stands behind: your roboports
+   first, then your turrets, then the rest. Where there is no gap, it breaks the wall in its way. After heavy losses it
+   falls back, and its guns move up and drop again.
 
 A siege ends when its guns are destroyed or its shells run out. An armed camp's siege does not leave on a clock: pods
 bring it more shells.
@@ -131,6 +143,7 @@ Its crews rebuild the lab like any building. Labs are military targets.
   Use the artillery targeting remote. Against a site dome, send troops or destroy its projector first.
 - **Kill the howitzer and the mast.** Without the howitzer your roboports behind the wall are out of reach, and without
   the mast your robots mend the breach.
+- **Feed your laser line.** Spare generating power and accumulators by the turrets undo a lightning tank's drain.
 - **Give your turrets a second feed.** A cut needs a pole with nothing behind it. Accumulators by the turrets keep them
   firing through one.
 - **Use a field dome.** {{< var desc.entity_player_dome >}} It does not stop the orbital strike.

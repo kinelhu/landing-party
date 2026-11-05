@@ -144,6 +144,9 @@ def write(rp):
     perim_src, learn_src, comp_src = src("scripts/perimeter.lua"), src("scripts/herd_learn.lua"), src("components.lua")
     pact_src, control_src, biotech_src, dev_src = src("scripts/pact.lua"), src("control.lua"), src("biotech.lua"), src("scripts/dev.lua")
     settings_src = src("settings.lua")
+    army_src, landfx_src, burstfx_src = src("scripts/army.lua"), src("scripts/landfx.lua"), src("scripts/burstfx.lua")
+    scorcher_src = src("scripts/scorcher.lua")
+    yard_rings = [float(x) for x in re.findall(r"\d+", grab(army_src, r"^local YARD_RINGS = \{([\d, ]+)\}", "army YARD_RINGS") or "")]
     import json
     info = json.load(open(os.path.join(rp.MOD, "info.json")))
     corps = rp.data["corps"]
@@ -196,6 +199,15 @@ def write(rp):
             "fund_share_pct": fmt(100 * (num(rd_src, r"^local FUND_SHARE, FUND_CAP = ([\d.]+)", "FUND_SHARE") or 0)),
             "weapon_levels": fmt(num(rd_src, r"^local LEVEL_COST, LEVEL_DAMAGE, MAX_LEVEL = \d+, [\d.]+, (\d+)", "MAX_LEVEL")),
             "weapon_level_pct": fmt(100 * (num(rd_src, r"^local LEVEL_COST, LEVEL_DAMAGE, MAX_LEVEL = \d+, ([\d.]+)", "LEVEL_DAMAGE") or 0)),
+            # A landing's look (landfx.lua): the cargo pods that streak down round a lander as it crashes.
+            "landing_pods": fmt(num(landfx_src, r"^local PODS = (\d+)", "landfx PODS")),
+        },
+        # Both corporations' camps: the yard where an idle garrison waits (army.yard), its rings round the depot and how far
+        # it keeps from anything hostile.
+        "camp": {
+            "yard_near_tiles": fmt(min(yard_rings)) if yard_rings else "?",
+            "yard_far_tiles": fmt(max(yard_rings)) if yard_rings else "?",
+            "yard_quiet_tiles": fmt(num(army_src, r"^local YARD_QUIET = (\d+)", "army YARD_QUIET")),
         },
         "synthexis": {
             "arrive_evo": fmt(num(farm_src, r"^local ARRIVE_EVO = ([\d.]+)", "ARRIVE_EVO")),
@@ -225,6 +237,9 @@ def write(rp):
             "order_breach_pct": fmt(100 * (num(farm_src, r"^local ORDER_BREACH = ([\d.]+)", "ORDER_BREACH") or 0)),
             "order_wait_min": fmt(minutes(farm_src, "ORDER_WAIT", "ORDER_WAIT")),
             "develop_held": fmt(num(learn_src, r"^local DEVELOP_HELD = (\d+)", "DEVELOP_HELD")),
+            # A burster set off winds up this long before it bursts (burstfx.lua KIND, ticks).
+            "cinder_windup_s": fmt((num(burstfx_src, r"^\s*cinder = \{windup = (\d+)", "burstfx cinder windup") or 0) / 60),
+            "big_windup_s": fmt((num(burstfx_src, r"^\s*big = \{windup = (\d+)", "burstfx big windup") or 0) / 60),
         },
         "grubstake": {
             "rig_dig_min": fmt(product(src("scripts/jumper.lua"), r"^local DIG = ([\d\s\*]+?)\s*(?:--|$)", "jumper DIG") / 3600),
@@ -245,6 +260,8 @@ def write(rp):
             "jam_tiles": fmt(num(shared_src, r"^shared\.JAM_RADIUS = (\d+)", "JAM_RADIUS")),
             "paint_s": fmt(product(orbital_src, r"^local PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital PAINT") / 60),
             "strike_cool_min": fmt(minutes(orbital_src, "COOL", "orbital COOL")),
+            # The lightning tank's drain (scorcher.lua): the share of a struck turret's, accumulator's or roboport's charge.
+            "tesla_drain_pct": fmt(100 * (num(scorcher_src, r"^local DRAIN = ([\d.]+)", "scorcher DRAIN") or 0)),
             "bill_every_min": fmt(minutes(ledger_src, "BEAT", "ledger BEAT")),
             "truce_value": fmt(num(ledger_src, r"^local VALUE_PER_MINUTE, MIN_TRUCE, MAX_TRUCE = (\d+)", "VALUE_PER_MINUTE")),
         },
@@ -270,6 +287,8 @@ def write(rp):
             "gland_max": gland.group(2) if gland else "?",
             "core_capture": grab(src("scripts/command.lua"), r"on_capture = function\(surface, pos\)\s*\n\s*command\.drop_cores\(surface, \{x = pos\[1\], y = pos\[2\]\}, (\d+)\)", "command: capture cores"),
             "core_survey": grab(phases_src, r'"lp-command-core", count = (\d+)', "phases: survey core"),
+            # The player's orbital strike beacon (orbital.player): its paint (its reach is in its description).
+            "strike_paint_s": fmt(product(orbital_src, r"^local PLAYER_PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital PLAYER_PAINT") / 60),
         },
         # The locale's descriptions, for prose that quotes what a thing does rather than retyping its numbers.
         "desc": {f"{sec.split('-')[0]}_{k[3:].replace('-', '_')}": v.replace('"', "'")
@@ -563,12 +582,24 @@ def write(rp):
         cmd = f"`/{name} {m.group(1)}`" if m else f"`/{name}`"
         C.append(f"| {cmd} | {md(m.group(2) if m else text)} |")
     verbs = grab(dev_src, r'player\.print\("/lp (list \|[^"]*)"\)', "dev verbs")
+    # The verbs dev.lua answers that its help line leaves out, read from its branches; a gloss for those a name does not
+    # explain (a gloss for a verb that is gone stops it).
+    listed = set(re.findall(r"[a-z]+", verbs or ""))
+    further = [v for v in dict.fromkeys(re.findall(r'what == "([a-z]+)"', dev_src)) if v not in listed]
+    gloss = {"biotech": "Synthexis lands now", "wave": "Synthexis sends a wave now"}
+    for g in gloss:
+        if g not in further:
+            missed.append(f"dev.lua: the verb {g} (glossed in manual_qmd.py) not among its unlisted verbs")
     if missed:
         raise SystemExit("manual_qmd: not found in the code, nothing written:\n  " + "\n  ".join(missed))
     C += ["", "::: {.callout-note collapse=\"true\"}", "## Developer tools (admins only)", "",
           "`/lp` forces what the mod otherwise times and rolls for. It is for testing, and it spoils a game. "
           "Corporation names are the internal ones: `serenity` for Kessler-Hayashi, `grubstake` for Grubstake.", "",
-          f"`/lp {verbs}`", "", "Further verbs: `incidents`, `rig`, `tap`, `biotech` (Synthexis lands now), `wave`.", ":::"]
+          f"`/lp {verbs}`", "",
+          "Further verbs: " + ", ".join(f"`{v}`" + (f" ({gloss[v]})" if v in gloss else "") for v in further) + ".", "",
+          "`burst` sets off a Synthexis burster east of you (`big` for a big burster): its wind-up and its blast, which is "
+          "real. `spread` and `ranks` make Synthexis's next siege a spread assault or a siege in ranks; `wave` sends it.",
+          ":::"]
     out("commands.qmd", C)
 
     print(f"{M}: _variables.yml and {len(os.listdir(GEN))} generated parts, "
