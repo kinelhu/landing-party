@@ -82,6 +82,85 @@ local function exposed(fire, q)
 end
 local TURRETS = K.TURRETS
 local TYPES = K.TYPES
+-- The assault's way in (the user, 2026-11-04, the trailer's Kessler-Hayashi assault: "every laser starts attacking a wall
+-- when there is very clearly a breach already made... plus the lasers barely tickle the wall"). Told to attack an area,
+-- or distracted by anything, its units shot whatever was nearest, the wall pieces beside the breach; a stone wall resists
+-- laser 70% (vanilla's, kept: beams are not for walls), so a line trooper's 7 a shot did 2 (fortress 12345: 449 hits on
+-- pieces beside a gap, 82% of the assault's damage, against 91 on what stood behind). Now it goes through the way the
+-- barrage opened, then at what stands behind by name, distracted only by what fights (walls are no military target).
+-- The way: a search over tiles from `from` to `to` round the foes' wall and gate pieces (WAY_MARGIN beyond both, at most
+-- WAY_SPAN across); its doorway is the first tile on it beside a piece (none when the way meets none). Nil when walled
+-- off: then its attacks go at its targets and the units' own pathing breaks the piece in their way, which is the plan.
+local WAY_MARGIN, WAY_SPAN = 20, 160
+local function open_way(s, foes, from, to)
+  local x0 = math.floor(math.min(from.x, to.x)) - WAY_MARGIN
+  local y0 = math.floor(math.min(from.y, to.y)) - WAY_MARGIN
+  local w = math.min(WAY_SPAN, math.floor(math.max(from.x, to.x)) + WAY_MARGIN - x0 + 1)
+  local h = math.min(WAY_SPAN, math.floor(math.max(from.y, to.y)) + WAY_MARGIN - y0 + 1)
+  local function idx(x, y)
+    local i, j = math.floor(x) - x0, math.floor(y) - y0
+    if i < 0 or j < 0 or i >= w or j >= h then return nil end
+    return j * w + i
+  end
+  local wall = {}
+  for _, e in pairs(s.find_entities_filtered{area = {{x0, y0}, {x0 + w, y0 + h}}, type = {"wall", "gate"}, force = foes}) do
+    local k = idx(e.position.x, e.position.y)
+    if k then wall[k] = true end
+  end
+  local a, z = idx(from.x, from.y), idx(to.x, to.y)
+  if not (a and z) then return nil end
+  if not next(wall) then return {} end
+  local prev, queue, head = {[a] = -1}, {a}, 1
+  while head <= #queue do
+    local k = queue[head]
+    head = head + 1
+    if k == z then break end
+    local i, j = k % w, math.floor(k / w)
+    for _, d in ipairs({{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) do
+      local ni, nj = i + d[1], j + d[2]
+      if ni >= 0 and nj >= 0 and ni < w and nj < h then
+        local nk = nj * w + ni
+        if prev[nk] == nil and not wall[nk] then prev[nk] = k; queue[#queue + 1] = nk end
+      end
+    end
+  end
+  if prev[z] == nil then return nil end
+  local path = {}
+  local k = z
+  while k ~= -1 do table.insert(path, 1, k); k = prev[k] end
+  local function beside(k2)
+    local i, j = k2 % w, math.floor(k2 / w)
+    for di = -1, 1 do
+      for dj = -1, 1 do
+        local ni, nj = i + di, j + dj
+        if ni >= 0 and nj >= 0 and ni < w and nj < h and wall[nj * w + ni] then return true end
+      end
+    end
+    return false
+  end
+  for _, k2 in ipairs(path) do
+    if beside(k2) then return {door = {x = x0 + k2 % w + 0.5, y = y0 + math.floor(k2 / w) + 0.5}} end
+  end
+  return {}
+end
+-- What its assault attacks, by name: the foes' buildings (TYPES: no walls) within r of c, roboports first when `ports`,
+-- then turrets, then the rest, each nearest `from` first.
+local function assault_targets(s, foes, c, r, from, ports)
+  local list = s.find_entities_filtered{position = c, radius = r, type = TYPES, force = foes}
+  local rank = {}
+  for _, t in ipairs(TURRETS) do rank[t] = 1 end
+  if ports then rank.roboport = 0 end
+  local function key(e) return rank[e.type] or 2 end
+  table.sort(list, function(p, q)
+    local kp, kq = key(p), key(q)
+    if kp ~= kq then return kp < kq end
+    return (p.position.x - from.x) ^ 2 + (p.position.y - from.y) ^ 2 < (q.position.x - from.x) ^ 2 + (q.position.y - from.y) ^ 2
+  end)
+  return list
+end
+-- One upvalue for siege_step (at luajit's limit of 60). ORDERS: targets named in one order (the rest by its idle units'
+-- orders, siege_step).
+local assault_by = {way = open_way, targets = assault_targets, ORDERS = 8}
 local against_player = K.against_player
 local alert = K.alert
 local alive = K.alive
@@ -1758,29 +1837,41 @@ local function siege_step(b, trace, army)
         -- A drop siege's at its roboports first, nearest its site first, then its target (what makes the damage stay: on
         -- the artillery base and nw its robots rebuilt nearly all it broke, 0 lost on nw).
         local acmds = {}
+        local depth = op.drop and op.strike_center and {op.strike_center[1], op.strike_center[2]}
+        op.assault_at = depth
+        local at = depth or t.pos
+        local from = op.site and {x = op.site[1], y = op.site[2]}
+        local cx, cy, cn = 0, 0, 0
+        for _, u in ipairs(op.members) do if u.valid then cx, cy, cn = cx + u.position.x, cy + u.position.y, cn + 1 end end
+        if cn > 0 then from = {x = cx / cn, y = cy / cn} end
+        op.door = nil
         if op.drop and op.strike_center then
           -- (To the breach undistracted first: told to engage anything on the way, its escort stood 45 s at its jump-off in
           -- a duel with the lasers round a substation in depth, 33 tiles aside and out of their reach; standsiege nests.)
           acmds[#acmds + 1] = {type = defines.command.go_to_location, destination = {op.strike_center[1], op.strike_center[2]},
             radius = 4, distraction = defines.distraction.none}
-          acmds[#acmds + 1] = {type = defines.command.attack_area, destination = {op.strike_center[1], op.strike_center[2]},
-            radius = 12, distraction = defines.distraction.by_anything}
-        end
-        local depth = op.drop and op.strike_center and {op.strike_center[1], op.strike_center[2]}
-        op.assault_at = depth
-        if op.drop then
-          local ports = s.find_entities_filtered{position = depth or t.pos, radius = depth and ASSAULT_DEPTH or 40,
-            type = "roboport", force = foes}
-          table.sort(ports, function(a, c)
-            return (a.position.x - op.site[1]) ^ 2 + (a.position.y - op.site[2]) ^ 2
-              < (c.position.x - op.site[1]) ^ 2 + (c.position.y - op.site[2]) ^ 2
-          end)
-          for i = 1, math.min(4, #ports) do
-            acmds[#acmds + 1] = {type = defines.command.attack, target = ports[i], distraction = defines.distraction.by_anything}
+        else
+          -- Through the way the barrage opened (open_way), not at the wall beside it.
+          local way = from and assault_by.way(s, foes, from, {x = at[1], y = at[2]})
+          op.door = way and way.door and {way.door.x, way.door.y} or nil
+          if op.door then
+            acmds[#acmds + 1] = {type = defines.command.go_to_location, destination = op.door, radius = 3,
+              distraction = defines.distraction.by_enemy}
           end
+          trace(b, way and (op.door and string.format("siege: its way in by %.0f,%.0f", op.door[1], op.door[2])
+            or "siege: its way in is open") or "siege: walled off; its assault breaks the wall in its way")
         end
-        acmds[#acmds + 1] = {type = defines.command.attack_area, destination = depth or t.pos, radius = depth and ASSAULT_DEPTH or 16,
-          distraction = defines.distraction.by_anything}
+        -- Then what stands behind, by name: a drop siege's roboports first, nearest its site (what makes the damage stay:
+        -- on the artillery base and nw its robots rebuilt nearly all it broke, 0 lost on nw), then turrets.
+        local by = op.door and {x = op.door[1], y = op.door[2]} or (depth and {x = depth[1], y = depth[2]}) or from
+          or {x = at[1], y = at[2]}
+        local targets = assault_by.targets(s, foes, at, depth and ASSAULT_DEPTH or 16, by, op.drop)
+        for i = 1, math.min(assault_by.ORDERS, #targets) do
+          acmds[#acmds + 1] = {type = defines.command.attack, target = targets[i], distraction = defines.distraction.by_enemy}
+        end
+        if #acmds == 0 then
+          acmds[1] = {type = defines.command.go_to_location, destination = at, radius = 6, distraction = defines.distraction.by_enemy}
+        end
         if op.drop and op.strike_center then
           -- In staggered rows (the user, 2026-11-03: "attack in staggered rows"): its front rank first, each rank behind
           -- RANK_STAGGER later (a stop with ticks to wait opens its orders), ranks of about sqrt(2n) by distance to the
@@ -1851,10 +1942,30 @@ local function siege_step(b, trace, army)
           op.packing_because, n, op.launched, remaining))
         return
       end
+      -- Its idle units each at the nearest thing standing there, by name (an area to attack, they shot the wall beside the
+      -- breach: open_way), through the doorway when they are still outside it. Idle: no order, or the wander the engine
+      -- gives a unit whose order is done (has_command reads true then: its first named targets down, the assault stood
+      -- wandering 90 s by a substation it was never told of, fortress 12345).
+      local targets
       for _, u in ipairs(op.members) do
-        if u.valid and not u.commandable.has_command and t then
-          u.commandable.set_command{type = defines.command.attack_area, destination = op.assault_at or t.pos,
-            radius = op.assault_at and ASSAULT_DEPTH or 16, distraction = defines.distraction.by_anything}
+        local c = u.valid and u.commandable.command
+        local idle = u.valid and (not c or c.type == defines.command.wander or c.type == defines.command.stop
+          or (c.type == defines.command.attack and not (c.target and c.target.valid)))
+        if idle and at then
+          targets = targets or s.find_entities_filtered{position = at, radius = op.assault_at and ASSAULT_DEPTH or 16,
+            type = TYPES, force = foes}
+          local e = #targets > 0 and s.get_closest(u.position, targets)
+          if e then
+            local cmds = {}
+            local d = op.door
+            if d and (u.position.x - e.position.x) ^ 2 + (u.position.y - e.position.y) ^ 2
+              > (d[1] - e.position.x) ^ 2 + (d[2] - e.position.y) ^ 2 + 16 then
+              cmds[1] = {type = defines.command.go_to_location, destination = d, radius = 3, distraction = defines.distraction.by_enemy}
+            end
+            cmds[#cmds + 1] = {type = defines.command.attack, target = e, distraction = defines.distraction.by_enemy}
+            u.commandable.set_command(#cmds > 1 and {type = defines.command.compound,
+              structure_type = defines.compound_command.return_last, commands = cmds} or cmds[1])
+          end
         end
       end
     end

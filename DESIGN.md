@@ -4204,7 +4204,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   longitudinally"). The strike tells its siege at its paint and its fall (op.step_at: its step ran every 5 s, too coarse
   for a 12 s paint). On its paint the escort moves to a jump-off: the first point no gun reaches on the line from the
   strike's centre back to its hold (guard duty holds them there, not at the hold). On its fall it goes in: to the breach
-  undistracted, then anything there, then the roboports nearest its site, then its target; its shells hit only its
+  undistracted, then anything there, then the roboports nearest its site, then its target (since 0.2.204 by name, its
+  roboports, turrets, then the rest, never an area: an area took the wall beside the breach, findings); its shells hit only its
   enemies (force "enemy" on the shell and its bomblets). Its escort alone: from its camp, 330 tiles off, the reinforcements
   came straight through the worm belt and stalled there. Found with standsiege's march record (march.jsonl,
   `scripts/march_plot.py`: each guard's distance to the breach over time): engaging anything on the way, its escort stood
@@ -4653,6 +4654,28 @@ Bugs and surprises the headless runs caught, each kept as a check:
   or that the fork was made for another squad. Breach is a full-length scenario: fork it, if at all, at a strike of 25
   or less. Not changed, noted: breach arty's comment says "no squad", but its setup feeds the default squad before
   clearing the wants (25 trained in its runs).
+- **A siege's assault goes through its breach, not at the wall beside it** (0.2.204; the user, 2026-11-04, the trailer's
+  Kessler-Hayashi assault: "every laser starts attacking a wall when there is very clearly a breach already made... plus
+  the lasers barely tickle the wall"). Cause: its orders were `attack_area` (at its target, radius 16; a drop siege's at
+  its strike's centre, 12, then its depth, 30) and `attack` with distraction `by_anything`; an area attack takes every
+  enemy entity in it, walls included, and nearest first, so with the lasers dead the pieces beside the gap were what it
+  shot. Fortress 12345, from its fork: 449 hits on pieces with a gap within 12 tiles, 82% of the assault's damage, 91 on
+  what stood behind; 27 of 41 pieces razed. The low damage is the design, kept: the stone wall resists laser 70%
+  (vanilla's, read in the dump), so a line trooper's beam does about 2 a shot to it. Now (siege.lua `open_way`,
+  `assault_targets`): a search over tiles round the foes' wall and gate pieces from the assault's centre to its target
+  finds its way in and the doorway (the first tile on it beside a piece), its units go there (`by_enemy`: walls are no
+  military target), then `attack` what stands behind by name, roboports first for a drop siege, then turrets, then the
+  rest; a strike's assault goes to the strike's centre undistracted as before, then the same. Its idle units each get the
+  nearest building left, through the doorway when still outside. Idle includes the engine's `wander`, which a unit gets
+  when its order is done and which reads as `has_command`: without it the assault stood 90 s by a substation it had not
+  been told of (the old area order hid that). Walled off (no way), it attacks its targets all the same and the units'
+  own pathing breaks the piece in their way: not yet the right units for walls (its tanks before its lasers), open.
+  Fortress 12345 after: 60 of 942 on pieces beside a gap (6%), done in 20 s, nothing standing within 30, 37 pieces of 41
+  left. Check `fortress: its assault went through the breach, not at the wall beside it` (at most 20%; on the old
+  code from the same fork, "5703 of 6924 on pieces beside a gap", failed). The luajit lint's "more than 60 upvalues"
+  for siege_step was there before this (and in herd.lua); its new helpers take one upvalue between them.
+  `regress.sh 12345 --area=ops`: 142 of 142 pass; fortress (five), standsiege (two), orbital (three) and siegetier (four)
+  run again singly in their own profiles after the batch (another worktree's regression shared its profiles): all pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -9824,7 +9824,9 @@ scenarios.fortress = function()
       math.max(at(-30, -30)[1], at(10, 30)[1]) + 4, math.max(at(-30, -30)[2], at(10, 30)[2]) + 4)
     local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
     S.c, S.lasers, S.ports = c, {}, {}
-    for k = -20, 20 do put("stone-wall", at(0, k)) end
+    -- The wall's spots, for the breach check (its handler below: is a gap open near a piece hit).
+    S.wall_spots = {}
+    for k = -20, 20 do put("stone-wall", at(0, k)); S.wall_spots[#S.wall_spots + 1] = at(0, k) end
     for k = -18, 18, 4 do table.insert(S.lasers, put("laser-turret", at(-3, k))) end
     for k = -21, 21, 14 do put("substation", at(-7, k)) end
     for k = -21, 21, 14 do put("substation", at(-20, k)) end
@@ -9856,6 +9858,7 @@ scenarios.fortress = function()
       local mortars = surface().count_entities_filtered{name = "lp-mortar", force = "lp-serenity"}
       S.masts = math.max(S.masts or 0, surface().count_entities_filtered{name = "lp-jammer"})
       local st0 = lp("stats", S.s)
+      S.in_assault = st0.ops.siege_phase == "assault"
       if gs then
         S.trucks = math.max(S.trucks or 0, surface().count_entities_filtered{name = "lp-grubstake-howitzer-truck"})
         S.guns = math.max(S.guns or 0, surface().count_entities_filtered{name = "lp-grubstake-howitzer"})
@@ -9900,6 +9903,8 @@ scenarios.fortress = function()
     info(string.format("fortress: repair packs left %d of 200; lasers' health %.0f of %.0f; shells fired %s", packs, hp, hpmax,
       tostring(S.fired)))
     S.fortress = {lasers = lasers, ports = ports, walls = walls}
+    info(string.format("fortress: the assault's damage %s, hits %s (on wall pieces with a gap within 12, shut walls, the rest)",
+      serpent.line(S.adealt or {}), serpent.line(S.ahits or {})))
     local js = lp("jammer_stats")
     info("fortress: jammer " .. serpent.line(js) .. ", masts seen " .. tostring(S.masts))
     if gs then
@@ -9935,6 +9940,12 @@ scenarios.fortress = function()
       check("fortress: its guns stood assembling while it deployed", (S.assembling or 0) > 0, tostring(S.assembling))
       check("fortress: half the lasers down", lasers <= 5, tostring(lasers))
       check("fortress: the roboports down", ports == 0, tostring(ports))
+      -- (Caught: before 0.2.204 its assault, told to attack an area, put 82% of its damage on wall pieces beside the
+      -- gaps its barrage had opened, 449 hits, 91 on what stood behind; the user's trailer, 2026-11-04.)
+      local ad = S.adealt or {}
+      local on_wall, total = ad.wall_breached or 0, (ad.wall_breached or 0) + (ad.other or 0)
+      check("fortress: its assault went through the breach, not at the wall beside it", total > 0 and on_wall <= 0.2 * total,
+        string.format("%.0f of %.0f on pieces beside a gap", on_wall, total))
     end
   end)
 end
@@ -14480,6 +14491,38 @@ if params.scenario == "flak" then
       S.thits[k] = (S.thits[k] or 0) + 1
     end
   end, {{filter = "type", type = "wall"}, {filter = "name", name = "lp-infantry"}})
+end
+
+-- Fortress: what the siege's assault shoots once its wall is breached (the user, 2026-11-04, the trailer's KH assault:
+-- "every laser starts attacking a wall when there is very clearly a breach already made... plus the lasers barely tickle
+-- the wall"). Its units' damage in the assault, on wall pieces with a gap open within 12 tiles, and on anything else.
+-- (Stone walls resist laser 70%: its beams were never meant for walls, a laser trooper's 7 a shot does 2.)
+if params.scenario == "fortress" then
+  local function gap_near(p)
+    for _, w in ipairs(S.wall_spots or {}) do
+      if (w[1] - p.x) ^ 2 + (w[2] - p.y) ^ 2 <= 12 * 12
+        and not surface().find_entity("stone-wall", {w[1], w[2]}) then return true end
+    end
+    return false
+  end
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    local c = e.cause
+    if not (c and c.valid and c.type == "unit" and c.force.name == "lp-serenity" and S.s) then return end
+    if not S.in_assault then return end
+    local v = e.entity
+    local key
+    if v.type == "wall" or v.type == "gate" then
+      key = gap_near(v.position) and "wall_breached" or "wall_shut"
+    else
+      key = "other"
+    end
+    S.adealt = S.adealt or {}
+    S.adealt[key] = (S.adealt[key] or 0) + e.final_damage_amount
+    S.ahits = S.ahits or {}
+    S.ahits[key] = (S.ahits[key] or 0) + 1
+  end, {{filter = "type", type = "wall"}, {filter = "type", type = "gate"}, {filter = "type", type = "electric-turret"},
+    {filter = "type", type = "roboport"}, {filter = "type", type = "electric-pole"}, {filter = "type", type = "container"},
+    {filter = "type", type = "logistic-container"}, {filter = "type", type = "electric-energy-interface"}})
 end
 
 -- Siege diagnostics: damage the player's units deal, by unit and target.
