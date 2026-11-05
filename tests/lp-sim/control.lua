@@ -9372,6 +9372,86 @@ scenarios.visit = function()
       end)
     end
   end
+  -- LP_MIX=khwall (the trailer; the user, 2026-11-05, on the fortress shot, a test wall on open ground: "feels too
+  -- tame... the wall in that doesn't reach the bottom of the screen it feels staged"): Kessler-Hayashi's own sieges on
+  -- the user's own wall, as they come, nothing forced. On nw the game lands it at -99,566 as an armed camp (era 4 by
+  -- research), 250 tiles south of the factory's south wall (three rows at y 319 to 321 from x -366 to 447, three lasers
+  -- every 10.5 tiles, a roboport every 32 behind them): its sieges go for that wall by themselves (nw, 0.2.167: the third,
+  -- at minute 34, dropped two mortars and a howitzer, called its strike on the wall and went in with 33).
+  -- Written for films (docs/trailer/reel-khwall.lua), khwall-beats.txt, a line a beat: "tick what ...": each phase of each
+  -- operation (its site, hold, jump-off, its escort's centre and count, the player's lasers, roboports and wall pieces
+  -- within 70 of its site), its pods (cargo pods in the air), each gun as it stands, the first shell and the most in the air
+  -- at once, the strike's paint and fall (its centre), and the player's losses round the site when it ends.
+  if params.mix:find("khwall", 1, true) then
+    local last, guns, pods_seen, shells_max, first_shell, paint, fall = nil, {}, 0, 0, nil, nil, nil
+    local function beat(line)
+      helpers.write_file("landing-party/khwall-beats.txt", game.tick .. " " .. line .. "\n", true)
+      info("visit: khwall: " .. game.tick .. " " .. line)
+    end
+    local function around(site)
+      local q = {position = site, radius = 70, force = "player"}
+      local function n(name) q.name = name; return surface().count_entities_filtered(q) end
+      local lasers, ports = n("laser-turret"), n("roboport")
+      q.name, q.type = nil, {"wall", "gate"}
+      return string.format("lasers %d roboports %d walls %d", lasers, ports, surface().count_entities_filtered(q))
+    end
+    local function xy(p) return p and string.format("%.0f %.0f", p.x or p[1], p.y or p[2]) or "- -" end
+    for t = 120, END - 60, 30 do
+      schedule(t, function()
+        if not storage.id then return end
+        local st = lp("stats", storage.id)
+        if not st or st.fallen then return end
+        local o = st.ops or {}
+        local key = o.op or "idle"
+        if key ~= last then
+          local cx, cy, n = 0, 0, 0
+          for _, m in ipairs(o.op_members or {}) do cx, cy, n = cx + m[1], cy + m[2], n + 1 end
+          beat(string.format("phase %s target %s site %s hold %s jump %s escort %d at %s%s", key, tostring(o.target),
+            xy(o.op_site), xy(o.op_hold), xy(o.op_jump), n, n > 0 and string.format("%.0f %.0f", cx / n, cy / n) or "- -",
+            o.op_site and (" | " .. around(o.op_site)) or ""))
+          if key == "idle" and last then
+            local l = (o.log or {})[#(o.log or {})]
+            if l then beat(string.format("ended %s %s on %s: %s of %s back, shells %s", l.op, l.outcome, tostring(l.kind),
+              tostring(l.back), tostring(l.launched), tostring(l.shells))) end
+          end
+          last = key
+          if key == "idle" then guns, shells_max, first_shell, paint, fall = {}, 0, nil, nil, nil end
+        end
+        if o.op_site then
+          local site = {o.op_site[1], o.op_site[2]}
+          local pods = surface().count_entities_filtered{name = "cargo-pod", force = "lp-serenity", position = site, radius = 80}
+          if pods > 0 and pods ~= pods_seen then beat(string.format("pods %d in the air round the site %s", pods, xy(site))) end
+          pods_seen = pods
+          for _, g in pairs(surface().find_entities_filtered{type = "artillery-turret", force = "lp-serenity", position = site,
+            radius = 60}) do
+            if not guns[g.unit_number] then
+              guns[g.unit_number] = true
+              beat(string.format("gun %s at %s", g.name, xy(g.position)))
+            end
+          end
+          local shells = surface().count_entities_filtered{type = "artillery-projectile", force = "lp-serenity", position = site,
+            radius = 140}
+          if shells > 0 and not first_shell then first_shell = game.tick; beat(string.format("shells first in the air (%d)", shells)) end
+          if shells > shells_max then shells_max = shells; beat(string.format("shells in the air %d (most yet), fired %s", shells,
+            tostring(o.shells_fired))) end
+          -- Its fire plan's point (the flare its guns are told by), each new one.
+          for _, f in pairs(surface().find_entities_filtered{name = "artillery-flare", force = "lp-serenity", position = site, radius = 140,
+            limit = 1}) do
+            local k = math.floor(f.position.x) .. "," .. math.floor(f.position.y)
+            if k ~= S.khwall_flare then
+              S.khwall_flare = k
+              local hit = surface().find_entities_filtered{position = f.position, radius = 1.5, force = "player", limit = 1}[1]
+              beat(string.format("fire plan on %s at %s, fired %s", hit and hit.name or "?", k:gsub(",", " "), tostring(o.shells_fired)))
+            end
+          end
+        end
+        if o.strike_paint and not paint then paint = o.strike_paint; beat(string.format("strike paint at %s, centre %s", paint,
+          xy(o.strike_center))) end
+        if o.strike_falling and not fall then fall = o.strike_falling; beat(string.format("strike falling at %s, centre %s | %s",
+          fall, xy(o.strike_center), o.strike_center and around(o.strike_center) or "")) end
+      end)
+    end
+  end
   -- LP_MIX=rich (any mix containing it): Synthexis's cultures paid 50 biomass each 10 s, a culture grown on a megabase's
   -- smoke, its raids still worked up to (nw at 0.2.128, unfed: its sieges waited on the biomass, one culture held 52 of
   -- the 378 its siege of 24 asked; seven waves in three hours, none past the wall; the user: a megabase is no natural
