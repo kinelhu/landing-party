@@ -4867,6 +4867,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   eleven lasers on a 20 MW supply never took the line's mean charge below 82%: its 60% drain is refilled almost at
   once. On 5 MW the line sat at about half charge while they stood at it and the lasers fell. Assumed, not tested: how
   the drain fares against a real factory's supply and accumulators; the Tesla's worth may hinge on it.
+- **Synthexis at the user's own wall: nwa's north wall holds a siege of 200** (2026-11-05; the user: "make use of my
+  wall design on nw/nwa at least to make the synthexis attacks more realistic"). Visit mix `nwwall` (tests/lp-sim): the
+  culture the mod lands, a wave of its first incubator sent at minute 12 with its farm's kind of plan at 30 tiles past
+  the first wall on its line to spawn; its scout, way in, bursts, gap and rush the mod's, its size and breeds staged
+  (as the herd scenario's megaburst). nw cannot take it: its culture lands east (700,-281), where the base is open north
+  of a short east wall, and its own sieges (breachlab: 200 biomass each 10 s) sent one wave of 64 with one big burster
+  in an hour, its plan for the heart "no way" for 27 minutes. nwa: the culture lands north (16,-923), the line meets the
+  north wall (outer wall, double wall and two more behind, a laser every 6 tiles, flamethrowers 10 tiles back) at
+  8,-427. Megaburst's 206 (150 mediums, 6 big bursters): gap open at minute 15, 41 wall pieces, no gun, 3 home. A
+  siege's kind of 200 (`nwwallheavy`: 30 big bursters, 30 cinders, 60 behemoths, 80 big biters): 118 wall pieces, 9
+  lasers and a flamethrower broken, 4 to 6 inside, all dead, about 160 to the flamethrowers (bursters go off on the
+  walls, short of the flamer line). Its own culture meanwhile laid a siege there of 5 big bursters and 76 and read it
+  unpaid. Not a regression check: a film's save (`docs/trailer/reel-nwwall.lua`). Assumed, not tested: a second wave
+  through the same gap before the robots mend it would get further.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
