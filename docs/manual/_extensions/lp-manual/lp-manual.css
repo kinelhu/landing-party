@@ -26,6 +26,11 @@
 .lp-tree-node small { display: block; opacity: .75; }
 .lp-lore { background: #f5f0e6; padding: 1rem 1.4rem; margin: 1.6rem 0; }
 .lp-lore > p:first-of-type::first-letter { float: left; font-size: 3.2em; line-height: .9; font-weight: 700; padding-right: .08em; }
+.lp-dossier { border-top: 2px solid #1c1e22; border-bottom: 1px solid #1c1e22; background: rgba(0,0,0,.04); padding: .6rem .9rem; margin: 0 0 1.2rem; font-size: .85rem; }
+.lp-dossier dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem; margin: 0; }
+.lp-dossier dt { font-weight: 700; font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; padding-top: .15em; }
+.lp-dossier dd { margin: 0; }
+.lp-dossier dd p { margin: 0 0 .3rem; }
 .lp-pullquote { font-style: italic; font-size: 1.25rem; text-align: center; margin: 1.2rem 2rem; }
 .lp-tip, .lp-fieldnote { padding: .7rem 1rem; margin: 1.2rem 0; }
 .lp-tip { border-left: 4px solid #8a8e94; background: rgba(0,0,0,.04); }

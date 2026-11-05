@@ -5,7 +5,7 @@ in map view. The corporations fight each other on their own account, and Synthex
 
 ## Standing: rival, enemy, truce
 
-- **Rival.** Grubstake starts here. A rival steals: raids where no turret covers, skims, strip camps, power taps and
+- **Rival.** Grubstake starts here. A rival steals, by raids where no turret covers, by skims, strip camps, power taps and
   claims. It does not escalate.
 - **Enemy.** Kessler-Hayashi is your enemy from the day it lands. Grubstake becomes one when you provoke it: you damage
   its buildings, units or trucks, you build on its ground, or you put a turret in reach of its camp. An enemy Grubstake
@@ -21,10 +21,10 @@ The other factions take note of the fight but are not provoked by it.
 **Standing down.** A corporation at war with you that keeps failing stops. A camp whose operations against you fail
 {{< var war.fail_streak >}} times in a row, or that destroys nothing of yours for
 {{< var war.quiet_min >}} minutes, stands down. Its aggression setting scales both, so an aggressive corporation keeps
-at it longer. Stood down, it sends nothing at you, keeps its army to a reserve and only defends its own ground: a turret
+at it longer. Stood down, it sends nothing at you, keeps its army to a reserve and only defends its own ground, so a turret
 you put up there is still answered. It goes on mining and exporting. A new landing comes soon after, away from its site,
 and after {{< var war.quiet_min >}} minutes the camp tries again. A Grubstake camp that stands down forgives you and is
-a rival again. Kessler-Hayashi never forgets.
+a rival again. Kessler-Hayashi stays an enemy.
 
 ## The corporations at war with each other
 
@@ -35,8 +35,8 @@ the operations sent at you (see [Arrivals](arrivals.qmd)).
 ![Kessler-Hayashi's tanks and troopers go at a Grubstake camp, its mortars and howitzer dropped at the right.](media/clips/kh-assault.jpg)
 
 Each answers losses its own way. A Kessler-Hayashi camp that loses buildings or units at home to Grubstake in a short
-time sends a punitive raid back soon after. Grubstake remembers who hurt it and keeps stealing: it sends no punitive
-raids. Only losses at home count: units lost on their own raids are not held against anyone.
+time sends a punitive raid back soon after. Grubstake remembers who hurt it and keeps stealing, and sends no punitive
+raids. Only losses at home count; units lost on their own raids are not held against anyone.
 
 ## Synthexis and the corporations
 
@@ -44,7 +44,7 @@ raids. Only losses at home count: units lost on their own raids are not held aga
 Grubstake's drills put out, and both live by the wild biters' leave. Synthexis never attacks Grubstake.
 
 **Kessler-Hayashi.** Synthexis goes for Kessler-Hayashi only after Kessler-Hayashi has destroyed one of its incubators,
-tumors or biochambers. Kessler-Hayashi treats incubators as it treats biter spawners: a camp that keeps losing units to
+tumors or biochambers. Kessler-Hayashi treats incubators as it treats biter spawners, so a camp that keeps losing units to
 them clears them. A Synthexis wave that takes heavy fire from a Kessler-Hayashi camp on its march turns on that camp
 when it can afford to, then goes on.
 

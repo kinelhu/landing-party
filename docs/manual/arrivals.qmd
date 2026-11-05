@@ -35,7 +35,7 @@ A faction's first landing is always announced in chat and charted on your map.
 **What a landing looks like.** A corporation lands in two steps. A cargo pod comes down first, with an escort pod on
 each side. A few seconds later the lander's shadow darkens on the ground, and its hull falls on its thruster flames
 onto the pad beside them and crashes in a blast of dust. Then {{< var arrival.landing_pods >}} cargo pods streak down
-round it, one after another, and burst where they fall. Those pods and the crash are only the look of it: they damage
+round it, one after another, and burst where they fall. Those pods and the crash are only the look of it; they damage
 nothing and leave nothing to take.
 
 ![A Grubstake lander just down on open ground, before its crews have laid the pad.](media/clips/landing.jpg)

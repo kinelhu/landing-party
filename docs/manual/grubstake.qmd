@@ -3,37 +3,82 @@
 ::: {.epigraph faction="grubstake"}
 :::
 
+::: {.lore kicker="Freight Authority, operator file 209" title="Rights and claims" faction="grubstake"}
+
+::: {.dossier}
+GRUBSTAKE INC.
+: Commonly "the outfit" at the Authority; "the scrap trade" in Kessler-Hayashi's filings; "the supplier" in
+  Synthexis's papers. A partnership under the Articles of Grubstake Inc., "to follow rushes, buy rights and work
+  claims".
+
+REGISTERED
+: Box 2210, *Clearing House*. No home port; the fleet is the company. Lander hull *Tailings*, survey tender *Assay*,
+  both patched, both amber.
+
+PRINCIPALS
+: Augustin Pell, Managing Partner (the Articles, every salvage purchase; not on a claim in years). Nadia Szabo,
+  Claims Agent, Nauvis. Marit Holm, Night Foreman, Nauvis yard. Dr. H. Ness, field biologist, on contract.
+
+CLAIMS WORKED
+: Calder Foundry, Vulcanus, in receivership: the slag heaps and the cranes, bought at the auction and lifted within
+  the year. Fulgora, Lot 9, scrap rights for one storm season, sold on when the storms cost more than the scrap.
+
+CLAIMS CURRENT
+: Nauvis, the whole of the Register of Claims, Nauvis book, in Szabo's hand. Its camps sit on the richest ore and on
+  no ground a gun covers.
+
+LIABILITIES
+: The Salvage Convention, article 4, as the company reads it: a machine no gun covers is abandoned, and ore no drill
+  works is unclaimed. Three objections lodged by Kessler-Hayashi, none heard.
+
+SEE ALSO
+: Kessler-Hayashi (file 114; "the landlord" in Grubstake's books). Synthexis (file 377; a truce, unwritten, kept). The
+  Arrangement with the fauna, of which no paper exists.
+:::
+
+Grubstake Inc. has an address and no port. Its box at *Clearing House* takes the Authority's post, and what the post
+finds there is Augustin Pell's Articles, a partnership "to follow rushes, buy rights and work claims", with the rest of
+the company in flight between one claim and the next. Pell has signed every salvage purchase the Registry holds and
+has not stood on a claim in years. When the Calder Foundry on Vulcanus went into receivership he bought its slag heaps
+and its cranes at the auction, had both off the planet inside the year, and left the receiver a yard swept to the
+rock. On Fulgora he held Lot 9 for one storm season and sold the scrap rights on the morning the storms began to cost
+more than the scrap.
+
+The company's skill is in its reading of the Salvage Convention. Article 4 lets a salvor take what a failed venture
+leaves unattended, and Grubstake reads "unattended" with a generosity the drafters did not intend. A patch of ore no
+drill is working is unclaimed ground. A machine that stands where no gun covers it has, in Pell's deposition to the
+Authority, been abandoned by an operator who could not be bothered to guard it. Marit Holm runs the Nauvis yard after
+dark, and her trucks go out at dusk under headlights and come home at dawn with assemblers in the trunk, taken apart
+where they stood and a ghost of each left for the operator's robots to rebuild. A hauler parks beside a belt no turret
+reaches and lifts the belt's load, the dearest items first. A buggy strings pylons out to an unguarded pole and clamps
+on a tap that the company's books carry as an unmetered connection. The rig that tunnels under the operator's chests
+is Holm's too, and the hands that come up through it empty them and go back down.
+
+::: {.pullquote cite="A. Pell, Managing Partner, deposition to the Authority, file 209/2"}
+Unattended means unattended. Nowhere does the Convention ask by whom.
+:::
+
+Nauvis came onto Pell's list by the oil. The tender *Assay* set down on ore within sight of the operator's first
+refinery, with a radar, two drills and a few guards, and Nadia Szabo filed a Notice of Intent to Claim from the ground
+before the Registry knew she had landed; *Tailings* brought the first camp down behind it, and the Nauvis book of the
+Register has been in her hand since. Each stake she plants carries a lamp that burns amber while the notice runs and
+red when it is nearly out, and a patch the operator has not answered by then gets her drills. The camps stand among
+the swarm's nests with a fence round the pad and nothing else, which the Authority's inspectors could not account for
+until Dr. Ness, the one scientist on the company's payroll, was found to have built an antenna from a gland that keeps
+the fauna off anything of Grubstake's. The company calls this the Arrangement. No paper exists, and the waves the
+camps' own smoke draws pass them by and fall on the operator. What Grubstake wants it will also buy: a receipt from
+its trade post reads "consideration received", and for as long as the consideration lasts, nothing of the operator's
+goes missing.
+:::
+
 Grubstake is a mining company that lives off your factory. It carries off machines, skims belts, taps power lines, robs
 chests and mines the ore you leave alone. It keeps off ground your guns cover, and the wild biters leave it alone. Its
 camps, vehicles and lamps are amber.
 
-::: {.lore kicker="From the archive" title="Rights and claims" faction="grubstake"}
-Grubstake has no home port. It has a charter, a fleet of tired landers and a list of every rush in the system, and it
-goes where the list points. When a foundry company on Vulcanus went under, Grubstake bought the slag heaps and the
-cranes and had both off the planet within the year. It held scrap rights on Fulgora for one season and sold them on
-when the storms began to cost more than the scrap was worth. A claim is worked until it pays no more. Then the crews
-fold the camp and the landers lift for the next one.
-
-The company's whole skill is in the paperwork. It buys salvage rights to whatever a failed venture leaves behind, and
-it reads "left behind" generously. A patch of ore no drill is working is unclaimed ground. A machine that stands where
-no gun covers it has, in the company's view, been abandoned. Its trucks go out after dark, and its raiders take a
-machine apart where it stands and carry the parts home in the morning.
-
-::: {.pullquote cite="Grubstake prospector's log"}
-Everything here is claimed, or about to be.
-:::
-
-Nauvis came onto the list the way most places do, by rumour. One engineer had already wired a planet and laid its
-roads, and a rush that has paid for its own roads is the best kind. A survey party went down once the engineer started
-refining oil, and the first camp followed it in. Grubstake lands among the spawners without fear. Its pacifier
-antennas keep the swarm off its machines, and the biters pass its camps to fall on the engineer's. It will leave
-Nauvis the way it left everywhere else, with the ore gone and the yard full.
-:::
-
 ## Who they are
 
 Grubstake is the first faction you meet, around your first chemical science pack, and it stays to the end of the game
-(see [Arrivals](arrivals.qmd)). It starts as your rival: it steals, and it does not escalate ([Rivals](rivals.qmd)).
+(see [Arrivals](arrivals.qmd)). It starts as your rival, which steals and does not escalate ([Rivals](rivals.qmd)).
 
 ## The camp
 
@@ -75,7 +120,7 @@ as claimed. A second one left alone on the same patch stays as a Grubstake outpo
 
 **Power taps.** A buggy lays a line of Grubstake pylons from the camp to one of your poles that no turret covers, and
 clamps a tap beside it. {{< var desc.entity_power_tap >}} The draw starts small and rises step by step. Nothing
-announces it: you find it in your power statistics, in brownouts, or by its line. Cut the line and the theft stops
+announces it. You find it in your power statistics, in brownouts, or by its line. Cut the line and the theft stops
 until the camp rebuilds the gap. Break the tap and it is over.
 
 **Claim jumpers.** An enemy Grubstake that has gone a while without destroying anything of yours digs a rig in outside
@@ -99,7 +144,7 @@ drills with ore bins. To keep the patch, put a drill on it, set a claim marker b
 on its way). The camp then moves on to the next patch, one at a time, under any standing.
 
 **The road.** A claim has no power line or belt to the camp. Haulers empty its bins and drive the ore home, and one
-killed on the way spills its ore. A claim with no ore reaching home for a while lapses: the camp stops rebuilding it,
+killed on the way spills its ore. A claim with no ore reaching home for a while lapses, so the camp stops rebuilding it
 and its drills are yours to capture.
 
 **The trade post.** You can build one from the start. {{< var desc.entity_trade_post >}} Once it holds enough, the
@@ -109,13 +154,14 @@ destroyed on its way home, by you or by Kessler-Hayashi, there is no truce and t
 
 ## The pact with the biters {#sec-pact}
 
-While any of Grubstake's pacifier antennas stands, it and the wild biters hold fire on each other. It lands among
+While any of Grubstake's pacifier antennas stands, it and the wild biters hold fire on each other (the Arrangement,
+in its own books). It lands among
 spawners and marches its raids through them, and for you and Kessler-Hayashi the biters round its camps are a wall.
 
 **Under the pact the waves fall on you.** The attacks its drills' pollution draws pass its camp by and go for your
 polluting buildings near its cloud. Its pollution also feeds [Synthexis](synthexis.qmd).
 
-**Breaking it.** The pact is the whole corporation's. Destroy every pacifier and it breaks for every camp: the biters
+**Breaking it.** The pact is the whole corporation's. Destroy every pacifier and it breaks for every camp, and the biters
 nearby turn on them at once. A camp rebuilds its pacifier {{< var grubstake.pacifier_rebuild_min >}} minutes after losing
 it, while its lander stands, and the pact holds again.
 
@@ -124,8 +170,8 @@ it, while its lander stands, and the pact holds again.
 
 ## Research
 
-Grubstake researches as the other corporations do: it answers what has been killing its units and never goes past your
-era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](reference.qmd#sec-units).
+Grubstake researches as the other corporations do, answering what has been killing its units and never going past
+your era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](reference.qmd#sec-units).
 
 - **Scrap arms.** Damage for its bullets and shells, scrap plating against your bullets, asbestos against your fire.
   Slug buggies against your vehicles, dynamite sappers against your troopers, flame tanks against turret lines.
@@ -136,12 +182,12 @@ era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](reference.q
 
 ## Its units {#sec-gs-units}
 
-A camp lands with buggies and shotgun hands, and its scrap drones come with its first level. The rest is research, in
-no lab you can raid: Grubstake keeps its books in its head.
+A camp lands with buggies and shotgun hands, and its scrap drones come with its first level. The rest is research, done in
+no lab you can raid.
 
 ::: {.tree tree="grubstake-units"}
-Each node is bought with parts once its trigger has fired: what it answers has cost Grubstake enough. A node's era is
-yours: none comes before you reach it. Dashed nodes are armor and abilities, not units.
+Each node is bought with parts once its trigger has fired, which is when what it answers has cost Grubstake enough.
+A node's era is yours, and none comes before you reach it. Dashed nodes are armor and abilities, not units.
 :::
 
 {{< include _generated/cards-grubstake.qmd >}}

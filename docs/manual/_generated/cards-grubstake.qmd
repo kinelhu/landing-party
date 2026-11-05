@@ -1,45 +1,45 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-grubstake-buggy"}
-Fast, light and everywhere. Most of what Grubstake takes from you, it takes with buggies, and the buggy circling just outside your guns is its prowl.
+A Grubstake buggy is a car frame with a machine gun on a pintle and whatever panels the yard had that morning. The one circling a factory at dusk just beyond the guns is noting what stands unguarded, and the raid that follows goes where it went. One killed teaches the next driver to keep wider of that spot, so kill it somewhere you can afford to leave open.
 :::
 
 ::: {.unit unit="lp-shotgun-hand"}
-Grubstake's infantry, cheap and quick. Shotgun hands do the work of a raid: they take your machines apart and carry them off.
+Grubstake's soldier is the Shotgun hand, a hired body in heavy armor with a pump shotgun and wrenches. Hands do the work of a raid: they walk up to a machine no gun covers, take it apart and carry it home, fighting only what gets in the way, at close range. Against a turret line they are useless, so a gun turret by each of your outposts is enough.
 :::
 
 ::: {.unit unit="lp-grubstake-harrier"}
-Scrap and a gun, sent in numbers over your walls from Grubstake's first level. Gun turrets bring them down before they reach anything.
+Grubstake's first level buys Scrap drones in numbers, each a distractor's airframe rebuilt from salvage with a light gun under it. They are weak alone and come in swarms over walls, cliffs and water, and against a lone pole or an assembler a swarm is enough. Gun turrets bring them down before they reach anything of yours; a flamethrower turret cannot shoot up.
 :::
 
 ::: {.unit unit="lp-grubstake-slug"}
-Grubstake buys them once your vehicles have killed enough of its raiders. A slug hits hard and seldom, so troopers on foot make it work for every kill.
+The Slug buggy is the buggy's chassis with the machine gun pulled and a single-barrel slug gun in its place, plated across the front. It fires one heavy slug and then nothing for a while, the right rhythm against a hull and the wrong one against a man on foot; the slug goes through a tank's armor. Send your troopers at it rather than your tanks.
 :::
 
 ::: {.unit unit="lp-grubstake-sapper"}
-Grubstake fields sappers once your infantry has cost it enough. A squad that keeps its spacing loses less to each throw.
+The Dynamite sapper walks in among the Shotgun hands with a satchel of sticks instead of a shotgun, and throws them from well outside a shotgun's reach. Each stick goes off over a few tiles and harms only Grubstake's enemies, so sappers keep no distance from their own side. Keep your squads spread, since a stick that lands on one trooper lands on three.
 :::
 
 ::: {.unit unit="lp-grubstake-scavenger"}
-It dies with its target. Gun turrets by your artillery bring it down on the way in.
+Strip the gun from a Scrap drone, fit a charge and a quicker motor, paint it hazard red, and the result is the Bomb drone. It flies over the wall at one thing, an artillery turret, a mortar or a radar, and bursts on arrival, taking itself with it. A gun turret beside each of your artillery turrets gets it, and a flak turret gets it earlier.
 :::
 
 ::: {.unit unit="lp-grubstake-dozer"}
-A wall that has stopped Grubstake's raids often enough meets a dozer, with shotgun hands behind it.
+For walls the yard builds the Dozer, a hauler's hull with a blade and heavy plate. It does nothing to a unit and rams a fence or a wall open with the Shotgun hands behind it, bullets ringing off the plate. Rocket troopers and a battle tank stop it; put a second wall behind the first, and it has to make two runs under your rockets.
 :::
 
 ::: {.unit unit="lp-grubstake-flak-buggy"}
-Scrap flak that bursts in the air. Grubstake buys it once your fliers and combat robots have cost it enough.
+Mounted on a buggy chassis, the car's gun turret with its belts loaded with scrap flak makes the Flak buggy, whose rounds burst over a couple of tiles and tear a drone or a combat robot apart; on the ground the same burst barely scratches a trooper. Any ground unit of yours walks over it, so keep the drones and robots back and send the troopers.
 :::
 
 ::: {.unit unit="lp-grubstake-scorcher"}
-Grubstake buys it against turret lines. It has to come close to burn, so rockets and artillery get their chance on the way in.
+An old tank hull, the head of a flamethrower turret and a machine gun for the stretches between bursts make the Flame tank. The gun does most of the work; the flame comes in three bursts, and then the tank waits while it refills. Fire never harms it. It has to come close to burn, so your rockets and artillery get their chance first.
 :::
 
 ::: {.unit unit="lp-grubstake-howitzer-truck"}
-Only a camp that landed with a grudge brings one, and only against a wall your robots keep mending.
+Grubstake's Howitzer truck is the same artillery cannon on a tank's hull that Kessler-Hayashi runs, bought second-hand, and only a camp that landed with a grudge keeps one. It comes out against a wall that robots keep mending, to shell the roboports behind it from far out. Your artillery outreaches it and kills it by itself.
 :::
 
 ::: {.unit unit="lp-grubstake-hauler"}
-It builds Grubstake's new lots, carries its loot and drives the ore home from its claims. One killed on the road spills what it carries.
+Most of Grubstake's civil service is the Hauler, a lightly armed truck that builds the company's new lots, carries its loot, drives the ore in from its claims and parks beside a belt to skim it. One killed on the road spills its load. Hunt them between a claim and its camp; a claim with no ore coming home lapses, and its drills are yours to take.
 :::

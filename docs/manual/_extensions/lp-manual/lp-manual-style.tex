@@ -150,11 +150,12 @@
   \vspace{2.5mm}{\color{Fac}\rule{\linewidth}{0.8pt}}\par\vspace{5mm}\@afterheading}
 
 % \lpopener{title}{label}{faction}{vista path}{epigraph}{kicker}: a faction's chapter opens on its land.
-% The vista runs to the trim on three sides, the faction's band under it carries the name.
+% The vista runs to the trim on three sides, the faction's band under it carries the name. An opener is a recto, so
+% the lore spread that follows it starts on the verso overleaf (lpstory below).
 \newlength\lp@vistah \setlength\lp@vistah{96mm}
 \newlength\lp@bandh \setlength\lp@bandh{19mm}
 \newcommand\lpopener[6]{%
-  \clearpage\gdef\lpchapterfaction{#3}\lpusefaction{#3}%
+  \lp@cleartoodd\gdef\lpchapterfaction{#3}\lpusefaction{#3}%
   \markboth{#1}{#1}\thispagestyle{lpbare}\global\lpnotabtrue%
   \phantomsection\addcontentsline{toc}{chapter}{\protect\lptocentry{#3}{#1}}\ifstrempty{#2}{}{\label{#2}}%
   \AddToShipoutPictureBG*{\AtPageLowerLeft{\begin{tikzpicture}[x=1mm,y=1mm]
@@ -209,8 +210,10 @@
 % \lprole, \lpstat (a bar), \lpstattext (no bar), \lpera, \lpunitlower{counters}{countered by}, then the lore.
 \newlength\lp@portw \setlength\lp@portw{31mm}
 \newlength\lp@barw \setlength\lp@barw{31mm}
+% Two cards to a page: a card with a four-line blurb must stay under half the text height (the voice pass of
+% 2026-11-05 made the blurbs four lines, and at the old spacing each card ran a few millimetres over and sat alone).
 \newenvironment{lpunit}[4]{%
-  \par\addvspace{9pt}\noindent\begin{minipage}{\linewidth}\lpusefaction{#1}%
+  \par\addvspace{7pt}\noindent\begin{minipage}{\linewidth}\lpusefaction{#1}%
   \begin{tikzpicture}[x=1mm,y=1mm]
     \useasboundingbox (0,-1.2) rectangle (\lptextwidthmm,7.2);
     \fill[Fac] (0,-1.2) rectangle (\lptextwidthmm,-0.6);
@@ -218,10 +221,10 @@
     \node[anchor=base west, inner sep=0pt, font=\sffamily\bfseries\fontsize{12.5}{13}\selectfont\addfontfeature{LetterSpace=3}]
       at (4.2,1.4) {\MakeUppercase{#2}};
     \node[anchor=base east, inner sep=0pt, text=FacDark] at (\lptextwidthmm,1.4) {\lpkicker{#3}};
-  \end{tikzpicture}\par\vspace{2.6mm}%
+  \end{tikzpicture}\par\vspace{2mm}%
   \noindent\begin{minipage}[t]{\lp@portw}\vspace{0pt}\lp@portrait{#4}{#2}\end{minipage}\hfill
   \begin{minipage}[t]{\dimexpr\linewidth-\lp@portw-3.5mm\relax}\vspace{-0.8mm}\raggedright}
- {\par\end{minipage}\par\addvspace{9pt}}
+ {\par\end{minipage}\par\addvspace{7pt}}
 \newcommand\lp@portrait[2]{%
   \begin{tikzpicture}[x=1mm,y=1mm]
     \ifstrempty{#1}{\fill[FacLight] (0,0) rectangle (31,31);
@@ -255,10 +258,10 @@
       \draw[FacDark, line width=0.35pt] (0,0) -- (\lp@barw,0);
     \fi
   \end{tikzpicture}\hspace{2mm}\fi\lp@statvalue{#4}\par\vspace{0.35mm}}
-\newcommand\lpunitlower[2]{\par\end{minipage}\par\vspace{2.4mm}\noindent
+\newcommand\lpunitlower[2]{\par\end{minipage}\par\vspace{1.8mm}\noindent
   \begin{minipage}[t]{0.5\linewidth}\raggedright\lp@vs{Counters}{#1}\end{minipage}\hfill
-  \begin{minipage}[t]{0.47\linewidth}\raggedright\lp@vs{Countered by}{#2}\end{minipage}\par\vspace{2mm}%
-  {\color{LPRule}\rule{\linewidth}{0.4pt}}\par\vspace{1.4mm}%
+  \begin{minipage}[t]{0.47\linewidth}\raggedright\lp@vs{Countered by}{#2}\end{minipage}\par\vspace{1.5mm}%
+  {\color{LPRule}\rule{\linewidth}{0.4pt}}\par\vspace{1.2mm}%
   \begin{minipage}{\linewidth}\fontsize{9}{12}\selectfont}
 \newcommand\lp@vs[2]{{\color{FacDark}\lpkicker{#1}}\\[0.6mm]{\fontsize{8.6}{10.8}\selectfont #2}}
 
@@ -284,9 +287,13 @@
 \newcommand\lptreecaption[1]{\par\vspace{2mm}{\sffamily\fontsize{7}{9}\selectfont\color{LPMuted}#1\par}}
 
 % ---------------------------------------------------------------- lore
-% A lore essay starts a page, prints on the paper tint and ends its page: the narrator's pages read as a set.
+% A lore page is a found document and runs as a spread: it starts on a verso (a blank, bare page first if the next page
+% is a recto), prints on the paper tint and ends its page, so the booklet opens flat on it. A dossier block (lpdossier)
+% heads it: the Freight Authority's file on the faction, a field list set in the display face.
+\newcommand\lp@cleartoeven{\clearpage\ifodd\value{page}\thispagestyle{lpbare}\global\lpnotabtrue\null\clearpage\fi}
+\newcommand\lp@cleartoodd{\clearpage\ifodd\value{page}\else\thispagestyle{lpbare}\global\lpnotabtrue\null\clearpage\fi}
 \newenvironment{lpstory}[3]{% kicker, title, draft (empty or a word)
-  \clearpage\global\lploretrue
+  \lp@cleartoeven\global\lploretrue
   \vspace*{4mm}%
   {\color{FacDark}\lpkicker{#1}}\ifstrempty{#3}{}{\hspace{2mm}{\color{white}\colorbox{LPMuted}{\lpkicker{#3}}}}\par\vspace{1.4mm}
   {\fontsize{21}{25}\selectfont\itshape #2\par}\vspace{2.6mm}%
@@ -296,6 +303,17 @@
   \end{tikzpicture}\par\vspace{5mm}%
   \setlength{\parindent}{1.2em}\setlength{\parskip}{0pt}\fontsize{10}{14}\selectfont}
  {\par\clearpage\global\lplorefalse}
+% The dossier: the file's fields (REGISTERED, PRINCIPALS, ...) as a two-column list on the faction's tint, in the
+% display face, ruled top and bottom like a form. A label wider than its column pushes its text to the next line.
+\newenvironment{lpdossier}{%
+  \par\begin{tcolorbox}[enhanced, arc=0pt, outer arc=0pt, boxrule=0pt, colback=FacLight, left=3mm, right=3mm,
+    top=2.8mm, bottom=2.4mm, before skip=1mm, after skip=9pt,
+    overlay={\draw[FacDark, line width=0.9pt] (frame.north west) -- (frame.north east);
+      \draw[FacDark, line width=0.4pt] (frame.south west) -- (frame.south east);}]
+  \sffamily\fontsize{7.5}{9.4}\selectfont\addfontfeature{Numbers=Lining}\setlength{\parindent}{0pt}\setlength{\parskip}{0pt}%
+  \begin{description}[leftmargin=27mm, labelwidth=25mm, labelsep=2mm, style=nextline, itemsep=2pt, parsep=0pt, topsep=0pt,
+    font=\lpsemibold\fontsize{6.3}{8}\selectfont\addfontfeature{LetterSpace=10}\color{FacDark}]}
+ {\end{description}\end{tcolorbox}\par}
 \setcounter{DefaultLines}{3}
 \renewcommand\LettrineFontHook{\sffamily\bfseries\color{FacDark}}
 \renewcommand\LettrineTextFont{\scshape}
