@@ -36,7 +36,7 @@
 <title>Perception and attempts (any attacker)</title>
 <path fill="#eef2f7" stroke="black" d="M561.5,-131.75C561.5,-131.75 383.5,-131.75 383.5,-131.75 377.5,-131.75 371.5,-125.75 371.5,-119.75 371.5,-119.75 371.5,-107.75 371.5,-107.75 371.5,-101.75 377.5,-95.75 383.5,-95.75 383.5,-95.75 561.5,-95.75 561.5,-95.75 567.5,-95.75 573.5,-101.75 573.5,-107.75 573.5,-107.75 573.5,-119.75 573.5,-119.75 573.5,-125.75 567.5,-131.75 561.5,-131.75"/>
 <text xml:space="preserve" text-anchor="middle" x="472.5" y="-115.3" font-family="Helvetica,sans-Serif" font-size="11.00">Perception and attempts (any attacker)</text>
-<text xml:space="preserve" text-anchor="middle" x="472.5" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1371 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="472.5" y="-103.3" font-family="Helvetica,sans-Serif" font-size="11.00">6 modules, 1390 lines</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Seams (leaves) -->
 <g id="edge18" class="edge">
@@ -50,7 +50,7 @@
 <title>Knowledge and strategy (per faction)</title>
 <path fill="#eef2f7" stroke="black" d="M674,-36C674,-36 505,-36 505,-36 499,-36 493,-30 493,-24 493,-24 493,-12 493,-12 493,-6 499,0 505,0 505,0 674,0 674,0 680,0 686,-6 686,-12 686,-12 686,-24 686,-24 686,-30 680,-36 674,-36"/>
 <text xml:space="preserve" text-anchor="middle" x="589.5" y="-19.55" font-family="Helvetica,sans-Serif" font-size="11.00">Knowledge and strategy (per faction)</text>
-<text xml:space="preserve" text-anchor="middle" x="589.5" y="-7.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 312 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="589.5" y="-7.55" font-family="Helvetica,sans-Serif" font-size="11.00">2 modules, 316 lines</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Knowledge and strategy (per faction) -->
 <g id="edge17" class="edge">
@@ -64,8 +64,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M792.62,-235.5C792.62,-235.5 690.38,-235.5 690.38,-235.5 684.38,-235.5 678.38,-229.5 678.38,-223.5 678.38,-223.5 678.38,-203.5 678.38,-203.5 678.38,-197.5 684.38,-191.5 690.38,-191.5 690.38,-191.5 792.62,-191.5 792.62,-191.5 798.62,-191.5 804.62,-197.5 804.62,-203.5 804.62,-203.5 804.62,-223.5 804.62,-223.5 804.62,-229.5 798.62,-235.5 792.62,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="741.5" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="741.5" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 7388 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="741.5" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 2031, siege 1996</text>
+<text xml:space="preserve" text-anchor="middle" x="741.5" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">15 modules, 7397 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="741.5" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">ops 2040, siege 1996</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge16" class="edge">
@@ -261,8 +261,8 @@
 <title>The biotech</title>
 <path fill="#f7dede" stroke="black" d="M632.62,-435C632.62,-435 536.38,-435 536.38,-435 530.38,-435 524.38,-429 524.38,-423 524.38,-423 524.38,-403 524.38,-403 524.38,-397 530.38,-391 536.38,-391 536.38,-391 632.62,-391 632.62,-391 638.62,-391 644.62,-397 644.62,-403 644.62,-403 644.62,-423 644.62,-423 644.62,-429 638.62,-435 632.62,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="584.5" y="-420.55" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="584.5" y="-408.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 7120 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="584.5" y="-396.55" font-family="Helvetica,sans-Serif" font-size="11.00">herd 3571, farm 2320</text>
+<text xml:space="preserve" text-anchor="middle" x="584.5" y="-408.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 7547 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="584.5" y="-396.55" font-family="Helvetica,sans-Serif" font-size="11.00">herd 3879, farm 2423</text>
 </g>
 <!-- The biotech&#45;&gt;Seams (leaves) -->
 <g id="edge26" class="edge">

@@ -463,6 +463,9 @@ end
 -- opts: bursters (big bursters in its stock: its way in priced with them, herd.way_cost), field (the most it could field:
 -- what a siege is sized for).
 local siege_size   -- below: what a siege at a plan costs and holds
+local spread_of    -- below: a spread assault's points and rams at a siege's plan
+-- The methods whose losses at a place speak for spreading out there (tactics.area_share).
+local AREA_METHODS = {"siege", "raid", "spread"}
 local ATTEMPT_FADED = 0.1   -- an attempt faded below this weight (herd.attempt) says nothing: tried long ago, not tried
 local RAMS_SHARE = 0.5   -- of a siege, its big bursters at the most
 local RAMS_MAX = 5       -- its big bursters at a walled breach, at the most
@@ -915,6 +918,46 @@ siege_size = function(f, pl, place, floor)
   return nil, budget and least or nil
 end
 
+-- Its spread assault at a place it would besiege (the adaptive tactics consult, 2026-11-05, R2): its rams at K points of
+-- the wall no single burning turret covers (herd.spread_points), as many at each as it takes for one to reach the wall
+-- (herd.reach_alive), its screen one of its cheapest breed for each gun covering each point; its herd the siege's, not
+-- split, held at the one staging and sent through the first gap any of them opens. Its rams the siege's, or as many more
+-- as two points take (RAMS_MAX at the most: one point is a siege). nil: no two points, or more than it can field.
+spread_of = function(f, pl, rival, k, n, fodder)
+  local foe = rival and rival[1] or "player"
+  local per = math.max(1, math.ceil(1 / math.max(herd.OPENS_MIN, herd.reach_alive(foe))))
+  local most = math.floor(RAMS_MAX / per)
+  if most < 2 then return nil end
+  local pts = herd.spread_points(game.surfaces[f.surface], pl, rival or players(), most)
+  if not pts then return nil end
+  local rams = math.min(RAMS_MAX, math.max(k, #pts * per))
+  local screen = 0
+  for _, p in ipairs(pts) do screen = screen + (p.cover or 0) end
+  if rams + n + screen > cap_of(f) then return nil end
+  local out = {}
+  for _, p in ipairs(pts) do out[#out + 1] = {p.x, p.y, p.cover or 0} end
+  return {points = out, per = per, k = rams, fodder = screen}
+end
+
+-- A spread's option beside its siege's (menu): what the siege would lose, less the share of what its attempts at that
+-- place lost to area damage, and the screen and rams it adds.
+local function spread_op(sg, s)
+  local sp = sg.spread
+  local foe = sg.rival and sg.rival[1] or "player"
+  local forces = foe == "player" and players() or {foe}
+  local a = tactics.area_share("biotech", foe, sg.at, AREA_METHODS,
+    function(p) return herd.place_sig(s, forces, p or sg.at) end, B.mind.fade)
+  local need = (sg.need or 0) + math.max(0, sp.fodder - (sg.fodder or 0)) * herd.strength({herd.FODDER})
+  local extra = math.max(0, sp.k - sg.k) * herd.worth("lp-bred-big-burster")
+  return {method = "spread", at = sg.at, gain = sg.value or 0, lost = need * (1 - a) + extra, sent = need, dist = sg.dist,
+    siege = sg, spread = sp, area = a}
+end
+-- Tests: a spread's option and its siege's at a place, as the menu builds them.
+function farm.debug_spread_op(sg)
+  local op = spread_op(sg, game.surfaces[1])
+  return {lost = op.lost, area = op.area, siege_lost = sg.need}
+end
+
 local function order(f, surface)
   if B.mind.orders == false or storage.biotech_no_orders or not f.aim then return nil end
   local can = unlocked(game.forces[B.force].get_evolution_factor(surface))
@@ -1017,7 +1060,7 @@ local function menu(f, choice, sieges_allowed, s)
   -- Weighed by what its attempts there did (tactics.expect: every attacker's); a siege's rams its specialists.
   local function expect(op, foe)
     local forces = foe == "player" and players() or {foe}
-    op.specialists = op.method == "siege" and op.siege and op.siege.k or nil
+    op.specialists = op.method == "siege" and op.siege and op.siege.k or op.method == "spread" and op.spread and op.spread.k or nil
     -- (The defence now read where each attempt met it: tactics.now_for.)
     local sig_at = function(p) return herd.place_sig(s, forces, p or op.at) end
     if tactics.expect("biotech", op, foe, sig_at, mind, choice.strength, ATTEMPT_FADED) then ops[#ops + 1] = op
@@ -1053,6 +1096,12 @@ local function menu(f, choice, sieges_allowed, s)
     for _, sg in pairs(choice.sieges or {}) do
       expect({method = "siege", at = sg.at, gain = sg.value or 0, lost = sg.need or 0, sent = sg.need, dist = sg.dist, siege = sg},
         sg.rival and sg.rival[1] or "player")
+      -- Its spread beside it (spread_of): before any spread there, what the siege would lose less the share its attempts
+      -- there lost to area damage (tactics.area_share: fire, explosion; faded, never above 1), for the screen it wakes at
+      -- every point and the rams it adds. A place where nothing died to area damage gives it no edge. Then its own record
+      -- (tactics.expect). (The adaptive tactics consult, 2026-11-05: wrong in detail, spreading saves a part of what fire
+      -- took; the record decides.)
+      if sg.spread then expect(spread_op(sg, s), sg.rival and sg.rival[1] or "player") end
     end
     -- A probe at its best place not tried lately: what its sieges at this foe have done on the mean (herd.foe_record),
     -- once it has any. (A probe only when nothing fit, a siege proven at one place was the only choice there ever was,
@@ -1078,8 +1127,10 @@ local function menu(f, choice, sieges_allowed, s)
   local said = {}
   for k = 1, math.min(4, #ops) do
     local o = ops[k]
-    said[#said + 1] = string.format("%s at %.0f,%.0f razes %.0f for %.0f%s%s, score %.3f (%.0f%%)", o.method, o.at.x, o.at.y,
-      o.gain, o.lost, o.known and " (as its attempts did)" or "", o.voided and string.format(", %d attempts void: stronger now (%s)", o.voided, o.void_why or "?") or "",
+    said[#said + 1] = string.format("%s at %.0f,%.0f razes %.0f for %.0f%s%s%s, score %.3f (%.0f%%)", o.method, o.at.x, o.at.y,
+      o.gain, o.lost, o.known and " (as its attempts did)" or "",
+      o.spread and string.format(" (%d points, %d rams; %.0f%% of its losses there to area damage)", #o.spread.points, o.spread.k,
+        100 * (o.area or 0)) or "", o.voided and string.format(", %d attempts void: stronger now (%s)", o.voided, o.void_why or "?") or "",
       o.score, total > 0 and 100 * o.score / total or 0)
   end
   if #ops == 0 then
@@ -1090,6 +1141,13 @@ local function menu(f, choice, sieges_allowed, s)
     return nil
   end
   f.rng = f.rng or rng.new(f.id * 7919 + game.tick + 104729 * (storage.seed_salt or 0))
+  -- (/lp spread, /lp ranks: its next pick that method, when its menu holds one.)
+  if f.force_method then
+    local only = {}
+    for _, o in ipairs(ops) do if o.method == f.force_method then only[#only + 1] = o end end
+    trace(string.format("farm %d: its pick forced to %s (%d on its menu)", f.id, f.force_method, #only))
+    if #only > 0 then ops = only; f.force_method = nil end
+  end
   local pick = tactics.pick(ops, f.rng, tie)
   trace(string.format("farm %d weighs its methods: %s; picks %s at %.0f,%.0f", f.id, table.concat(said, "; "), pick.method,
     pick.at.x, pick.at.y))
@@ -1259,21 +1317,32 @@ local function send(f, tick)
       -- its plan and siege_size on the one reading).
       local pl, k, n, price, breed, need, fodder = sg.plan, sg.k, sg.n, sg.price, sg.breed, sg.need, sg.fodder
       local trust = sg.proven and "proven" or nil
+      -- A spread: its rams and screen the spread's (spread_of), its herd the siege's.
+      local spread = op.method == "spread" and sg.spread or nil
+      if spread then
+        price = price + (spread.k - k) * shared.BREEDS["lp-bred-big-burster"].cost
+          + (spread.fodder - (fodder or 0)) * shared.BREEDS[herd.FODDER].cost
+        need = need + math.max(0, spread.fodder - (fodder or 0)) * herd.strength({herd.FODDER})
+        -- (Its trust the siege's: its herd is the siege's, sized on what got in there. Tested anew at the wave, a spread
+        -- of 4 rams and a herd of 14 sized as a proven siege's was refused for good, "its 32 cannot pay it", two trials
+        -- held; the adaptive tactics lab, 2026-11-05.)
+        k, fodder = spread.k, spread.fodder
+      end
       -- (Hatching, its herd ordered whole, hatched first: by chance, a herd of mediums was not the strength its plan asked.)
       -- (Its rams ordered; its herd hatched by chance, the culture's mix: big 0.)
       f.siege = {at = sg.at, key = sg.key, k = k, n = k + n + (fodder or 0), big = 0, breed = breed, need = need,
         fodder = fodder,
         price = price, guns = sg.guns, extra = sg.extra, cover = pl.cover, defence = sg.defence, rival = sg.rival, value = sg.value, tick = tick,
-        trust = trust,
+        trust = trust, spread = spread,
         mines = math.min(herd.SWEEP_MAX, pl.sappers or 0)}
       f.aim = {x = sg.at.x, y = sg.at.y}
       -- (Its order at once, not at the minute: sized to the biomass it has, a siege was ready at the next weighing, and its
       -- wave hatched by chance with none of the big bursters it was laid for; the siege test, four seeds, 2026-10-30.)
       f.want = order(f, s)
       f.want_key = f.want and serpent.line(f.want) or nil
-      trace(string.format("farm %d: nothing it can field wins anything; lays siege to the way in at %.0f,%.0f (its plan: in at %.0f,%.0f costing %.0f, %d guns cover the breach, %d its bursters can reach; worth %.0f past them): %d big bursters and a herd of %d %s (%d biomass)",
-        f.id, sg.at.x, sg.at.y, pl.breach[1], pl.breach[2], pl.cost, pl.cover, pl.openable or pl.cover, sg.value, k, n,
-        breed, price))
+      trace(string.format("farm %d: nothing it can field wins anything; lays %s to the way in at %.0f,%.0f (its plan: in at %.0f,%.0f costing %.0f, %d guns cover the breach, %d its bursters can reach; worth %.0f past them): %d big bursters and a herd of %d %s (%d biomass)",
+        f.id, spread and string.format("a spread assault of %d points", #spread.points) or "siege", sg.at.x, sg.at.y,
+        pl.breach[1], pl.breach[2], pl.cost, pl.cover, pl.openable or pl.cover, sg.value, k, n, breed, price))
       f.escalate_retry = tick + 600
       return holds(f, tick, "lays siege")
     elseif not choice.passes and probe(f, s, choice, tick) then
@@ -1441,6 +1510,7 @@ local function send(f, tick)
     -- bred on, or, no siege it can field paying it, ended.
     if siege and plan then
       local k2, n2, price2, breed2, need2, fodder2 = siege_size(f, plan, siege)
+      if k2 and siege.spread then k2, fodder2 = math.max(k2, siege.spread.k), math.max(fodder2 or 0, siege.spread.fodder) end
       if k2 then
         siege.k, siege.n, siege.big = k2, k2 + n2 + (fodder2 or 0), 0
         siege.breed, siege.price, siege.need, siege.fodder = breed2, price2, need2, fodder2
@@ -1458,6 +1528,21 @@ local function send(f, tick)
     f.escalate_retry = tick + 600
     return holds(f, tick, plan and string.format("its plan for %.0f,%.0f costs %.0f, %.0f with its %d big bursters at the %d guns covering the breach: its %d (%.0f) cannot pay it",
       target.x, target.y, plan.cost, lost, big, plan.cover, #units, strength) or string.format("no way to %.0f,%.0f", target.x, target.y))
+  end
+  -- A spread: its points read again on the plan it goes on (its breach may have moved a cell since it was laid), as many as
+  -- its rams make; fewer than two, it goes as a siege.
+  local spread
+  if siege and siege.spread and plan then
+    local per = siege.spread.per or 1
+    local pts = herd.spread_points(s, plan, rival or players(), math.floor(big / per))
+    if pts then
+      spread = {points = pts, per = per}
+      trace(string.format("farm %d: its spread goes at %d points (%s), %d big bursters, %d at each", f.id, #pts,
+        table.concat((function() local o = {} for _, q in ipairs(pts) do o[#o + 1] = string.format("%.0f,%.0f", q.x, q.y) end return o end)(), " "),
+        big, per))
+    else
+      trace(string.format("farm %d: no two points for its spread on the plan it goes on: it goes as a siege", f.id))
+    end
   end
   f.siege = nil
   -- It goes: what was a name is hatched now.
@@ -1513,7 +1598,7 @@ local function send(f, tick)
   trials()[choice.key] = {tick = tick, defence = choice.defence}
   herd.launch(origin, target, {units = units, farm = f.id, forces = rival, no_probe = no_probe, deep = f.debug_deep,
     choice = choice and choice.top, plan = plan, sweep = sweep_n,
-    fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil, trust = trust,
+    fodder = siege and (siege.fodder or 0) > 0 and {name = herd.FODDER, n = siege.fodder} or nil, trust = trust, spread = spread,
     cut = cut and not strike and {e = cut.e, worth = cut.price, starves = cut.starves} or nil, wait_cut = wait_cut,
     sig = herd.place_sig(s, rival or players(), plan and plan.target or target)})
   f.debug_deep, f.debug_now = nil, nil
@@ -1893,7 +1978,8 @@ function farm.ways_step(f)
     if k then
       f.ways.sieges[item.key] = {at = item.at, key = item.key, k = k, n = n, price = price, breed = breed,
         need = need, fodder = fodder, plan = pl, cover = pl.cover, defence = item.defence, value = item.value or 0,
-        rival = rival, guns = item.guns, extra = item.extra, dist = item.dist, proven = proven}
+        rival = rival, guns = item.guns, extra = item.extra, dist = item.dist, proven = proven,
+        spread = k > 0 and spread_of(f, pl, rival, k, n, fodder) or nil}
     end
   elseif item.kind == "cuts" then
     local sm = herd.shared
@@ -2243,6 +2329,22 @@ function farm.debug_add_pens(id, n)
 end
 
 function farm.debug_cap(id) return cap_of(st().list[id]) end
+-- /lp spread, /lp ranks (dev.lua): each farm's next pick that method; ranks, its rams' share at the player halved first
+-- (twice the rams: herd.learn_reach's answer to a wall still standing), its siege laid dropped. Returns the farms told.
+function farm.debug_method(what)
+  local k = 0
+  if what == "ranks" then
+    local kn = know.of("biotech")
+    kn.reach = kn.reach or {}
+    kn.reach.player = (kn.reach.player or 1) / 2
+  end
+  for _, f in pairs(st().list) do
+    f.force_method = what == "ranks" and "siege" or "spread"
+    f.siege, f.escalate_retry = nil, nil
+    k = k + 1
+  end
+  return k
+end
 -- Tests: its learned evolution set (an older save's, climbed past the lead: farm test, evocap).
 function farm.debug_set_evo(id, v)
   local f = st().list[id]
@@ -2312,7 +2414,8 @@ function farm.state()
         spent = creep.of(id).spent or 0, bred = creep.of(id).bred or 0, wants = creep.of(id).wants,
         budded = creep.of(id).budded or 0, blocked = table_size(creep.of(id).blocked or {})}, short = f.short, saving = f.saving,
       reserve = f.reserve, siege = f.siege and {k = f.siege.k, at = {f.siege.at.x, f.siege.at.y}, cover = f.siege.cover,
-        n = f.siege.n, breed = f.siege.breed, price = f.siege.price}, held = f.held_why})
+        n = f.siege.n, breed = f.siege.breed, price = f.siege.price, spread = f.siege.spread and #f.siege.spread.points}, held = f.held_why,
+      force_method = f.force_method})
   end
   return out
 end

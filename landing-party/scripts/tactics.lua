@@ -34,8 +34,9 @@ function tactics.attempt(faction, foe, pos, method, fade)
   return r, math.exp(-(game.tick - r.tick) / (fade or tactics.FADE))
 end
 
--- An attempt made: e = {sent, spent, got, inside, sig, rams, breach, probe, reached}, its last HISTORY kept at its place
--- (reached false: it never got to the place, what met it on the way is not the place's defence).
+-- An attempt made: e = {sent, spent, got, inside, sig, rams, breach, probe, reached, area}, its last HISTORY kept at its
+-- place (reached false: it never got to the place, what met it on the way is not the place's defence; area: the share of
+-- what it spent that died to area damage, shared.AREA_DAMAGE, nil where it lost nothing).
 function tactics.record(faction, foe, at, method, e)
   local k = know.of(faction)
   k.attempts = k.attempts or {}
@@ -46,7 +47,7 @@ function tactics.record(faction, foe, at, method, e)
   r.tick, r.last = game.tick, {spent = e.spent, got = e.got, inside = e.inside, probe = e.probe}
   r.hist = r.hist or {}
   table.insert(r.hist, {sent = e.sent, spent = e.spent, got = e.got, inside = e.inside, sig = e.sig, tick = game.tick,
-    rams = e.rams or 0, breach = e.breach, reached = e.reached, at = {at.x or at[1], at.y or at[2]}})
+    rams = e.rams or 0, breach = e.breach, reached = e.reached, area = e.area, at = {at.x or at[1], at.y or at[2]}})
   while #r.hist > tactics.HISTORY do table.remove(r.hist, 1) end
   k.attempts[key] = r
 end
@@ -112,6 +113,24 @@ function tactics.history_near(faction, foe, breach, method, sig, fade)
     end
   end
   return out
+end
+
+-- The share of what its attempts at a place lost to area damage (fire, explosion: shared.AREA_DAMAGE), by any of
+-- `methods`, as their mean faded by age (each weighs e^-age/fade), over those that still speak for it (history: none
+-- against a defence since reinforced). A mean, never a sum: at most 1 however often it went (the adaptive tactics consult,
+-- 2026-11-05: the signal for spreading out, which must not ratchet). 0 with no attempt that lost anything there.
+function tactics.area_share(faction, foe, pos, methods, sig, fade)
+  local sum, wt = 0, 0
+  for _, m in ipairs(methods) do
+    local r = tactics.attempt(faction, foe, pos, m, fade)
+    for _, a in ipairs(r and tactics.history(r, sig) or {}) do
+      if a.area then
+        local w = math.exp(-(game.tick - (a.tick or 0)) / (fade or tactics.FADE))
+        sum, wt = sum + w * a.area, wt + w
+      end
+    end
+  end
+  return wt > 0 and sum / wt or 0
 end
 
 -- What its attempts by `method` at `foe` have done on the mean over every place (got, spent; nil: none yet).

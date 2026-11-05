@@ -15,6 +15,8 @@
 --   tap [id]                 a power tap on the pole nearest you (a pylon line out of turret reach, then the clamp)
 --   biotech                  the biotech's farm lands now on the nearest nest field 600 to 1,500 tiles from your factory
 --   wave                     its farm sends a wave now (its pens topped up to send one)
+--   spread | ranks           its farm's next pick a spread assault if its menu holds one (herd.spread_points), or a
+--                            siege with twice the rams its share asks, in ranks (herd.rk); its siege laid, if any, dropped
 --   strike [id]              an orbital strike now, centred where you stand: a spotter of that camp's (Kessler-Hayashi's
 --                            nearest by default) paints it, then its shells fall (no siege, no cooldown)
 --   burst [big]              a Synthexis burster (a big burster with `big`) set off 12 tiles east of you: its wind-up and
@@ -119,6 +121,10 @@ function dev.run(player, args)
     player.print(farm.debug_wave(n, deep) and string.format("its culture sends %s%s within ten seconds",
       n and string.format("%d", n) or "a wave", deep and ", a deep strike for the heart," or "")
       or "no biotech farm (/lp biotech)")
+  elseif what == "spread" or what == "ranks" then
+    local k = farm.debug_method(what)
+    player.print(k > 0 and string.format("its culture's next pick: %s, %s", what == "spread" and "a spread assault (if two points of the wall no flamethrower covers both)"
+      or "a siege with twice the rams, in ranks", "/lp wave to send it now") or "no biotech farm (/lp biotech)")
   elseif what == "rig" or what == "tap" then
     -- Grubstake's discreet operations on demand (their own triggers wait on the ladder, the pact and intel).
     local temper = ({rig = "jumps", tap = "taps"})[what]
@@ -205,7 +211,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | spread | ranks | provoke | era <n> | trace")
   end
 end
 

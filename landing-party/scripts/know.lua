@@ -163,6 +163,10 @@ function know.loss(e)
     -- Who killed it, for triggers on the killer: a character, a vehicle (cars and tanks), else its kind.
     killer = biter and "biter" or cause.type == "character" and "character" or (cause.type == "car" and "vehicle") or kind
   end
+  -- What it died of, by the event's own damage type where it gives one (the adaptive tactics consult, 2026-11-05: read from
+  -- the killer's type, a land mine's kill was no damage at all, and a unit dead of its fire sticker far from the turret
+  -- was right only by luck): the killer is kept apart, for the counters and the triggers on it.
+  if e.damage_type then dmg = e.damage_type.name end
   local k = know.of(key)
   local value = worth(ent.name)
   table.insert(k.losses, {tick = game.tick, force = by, killer = killer, damage = dmg, kind = shared.kind_of(ent.name),

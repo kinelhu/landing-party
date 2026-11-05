@@ -855,12 +855,21 @@ local function finish(b, outcome, trace, army)
   if tpos and op.measured then
     local launched = math.max(1, op.launched or 1)
     local got = math.max(0, (b.razed or 0) - (op.razed0 or b.razed or 0))
+    -- (The share of its units lost over the operation that died to area damage: the signal every attacker reads, as
+    -- Synthexis's waves' (herd.area_of); the adaptive tactics consult, 2026-11-05.)
+    local all, area = 0, 0
+    for _, l in ipairs(know.losses(b.corp, game.tick - (op.started or game.tick))) do
+      if l.unit then
+        all = all + (l.value or 1)
+        if l.damage and shared.AREA_DAMAGE[l.damage] then area = area + (l.value or 1) end
+      end
+    end
     tactics.record(b.corp, (t and t.owner) or op.owner or "player", tpos, op.kind, {sent = op.sent_worth or launched,
       spent = (op.sent_worth or launched) * (launched - alive(op)) / launched, got = got, inside = got > 0, sig = op.sig,
       -- (Got there: a member within REACHED of its target, a siege that fired, anything razed. Its attack begun was not
       -- enough: a raid of 2 attacked from its staging and died to the nests on its 7 waypoints, none near.)
       reached = ((op.closest or math.huge) <= REACHED or (op.shells_fired or 0) > 0 or got > 0) and true or false,
-      rams = op.kind == "siege" and op.tier or nil, breach = {tpos[1], tpos[2]}})
+      rams = op.kind == "siege" and op.tier or nil, breach = {tpos[1], tpos[2]}, area = all > 0 and area / all or nil})
   end
   -- Its guns' prices from what they cost it (know.learn_price, as Synthexis's): where it got there, the units lost to each
   -- gun type over how many of them stood at its target; a sample a least when none came home; a small operation's moves a

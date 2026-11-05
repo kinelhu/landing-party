@@ -66,7 +66,9 @@ local function learn_price(w)
   learn_scale(w)
   learn_march(w)
   -- What its bursters opened: the guns its bursts broke over the big bursters it sent (herd.opens).
-  if (w.big_sent or 0) > 0 then
+  -- (Of its rams those that went: held for ranks it never needed, they neither opened nor failed to reach anything.)
+  local sent = (w.big_sent or 0) - (w.rams_unused or 0)
+  if sent > 0 then
     local broke = 0
     for kind, n in pairs(w.bursts and w.bursts.broke or {}) do
       if kind == "ammo-turret" or kind == "electric-turret" or kind == "fluid-turret" then broke = broke + n end
@@ -74,10 +76,12 @@ local function learn_price(w)
     local k, foe = know.of("biotech"), foe_name(w)
     k.opens = k.opens or {}
     local old = k.opens[foe] or herd.BURST_OPENS
-    k.opens[foe] = math.max(herd.OPENS_MIN, old + (broke / w.big_sent - old) * know.PRICE_LEARN)
-    w.opens_learned = {sample = broke / w.big_sent, now = k.opens[foe]}
+    k.opens[foe] = math.max(herd.OPENS_MIN, old + (broke / sent - old) * know.PRICE_LEARN)
+    w.opens_learned = {sample = broke / sent, now = k.opens[foe]}
     k.reach = k.reach or {}
-    k.reach[foe] = herd.learn_reach(k.reach[foe] or 1, w.big_set_off or 0, w.big_sent, w.wall_stuck)
+    k.reach[foe] = herd.learn_reach(k.reach[foe] or 1, w.big_set_off or 0, sent, w.wall_stuck)
+    k.reach_alive = k.reach_alive or {}
+    k.reach_alive[foe] = herd.learn_reach(k.reach_alive[foe] or 1, w.big_set_off or 0, sent, false)
   end
   if not w.breach then return end
   local f = foes(w)[1]
@@ -140,6 +144,15 @@ function herd.history_near(foe, breach, method, sig) return tactics.history_near
 function herd.foe_record(foe, method) return tactics.foe_record("biotech", foe, method) end
 herd.place_sig = attempt.sig   -- (one measure for every attacker: attempt.lua)
 herd.SIG_REACH = attempt.SIG_REACH
+-- The share of what a wave lost (in mediums) that died to area damage (shared.AREA_DAMAGE, by the event's damage type),
+-- nil where it lost nothing.
+function herd.area_of(w)
+  local all, area = 0, 0
+  for _, v in pairs(w.lost_worth_by or {}) do all = all + v end
+  if all <= 0 then return nil end
+  for dt, v in pairs(w.lost_dmg or {}) do if shared.AREA_DAMAGE[dt] then area = area + v end end
+  return math.min(1, area / all)
+end
 local function record_attempt(w)
   local at = w.plan and w.plan.target or (w.goal and {w.goal.x, w.goal.y})
   if not at then return end
@@ -153,7 +166,8 @@ local function record_attempt(w)
     st().cutters[w.id] = {spent = spent0, got = w.razed_worth or 0, sent = w.worth or 0}
     return
   end
-  local method = w.cut and "cut" or w.wait_cut and "strike" or ((w.big_sent or 0) > 0 or w.fodder_set) and "siege" or "raid"
+  local method = w.cut and "cut" or w.wait_cut and "strike" or w.spread and "spread"
+    or ((w.big_sent or 0) > 0 or w.fodder_set) and "siege" or "raid"
   local spent = 0
   for _, v in pairs(w.lost_worth_by or {}) do spent = spent + v end
   -- (A cut got what it razed, as any wave: credited with the price of the guns it parted, its record was in other units
@@ -167,8 +181,10 @@ local function record_attempt(w)
   -- (Its last attempts there, each what it sent, spent and razed: the size that razed most for what it spent is the one it
   -- sends again, farm.lua siege_size; tactics.record.)
   tactics.record("biotech", foe_name(w), at, method, {sent = sent, spent = spent, got = got, inside = w.t_inside ~= nil,
-    sig = w.sig, rams = w.big_sent or 0, breach = w.plan and w.plan.breach or (w.breach and {w.breach.x, w.breach.y}),
-    probe = w.trust == "probe"})
+    sig = w.sig, rams = w.big_sent or 0,
+    -- (A spread's: the point whose gap opened, or the plan's breach.)
+    breach = w.spread and w.spread.opened and {w.breach.x, w.breach.y} or w.plan and w.plan.breach or (w.breach and {w.breach.x, w.breach.y}),
+    probe = w.trust == "probe", area = herd.area_of(w)})
 end
 
 -- Its big bursters, developed (farm.lua unlocked) once it has been stopped DEVELOP_HELD times, wherever: walls that held

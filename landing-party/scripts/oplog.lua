@@ -50,7 +50,8 @@ end
 
 local function wave_view(w)
   local p = storage.herd and storage.herd.pens and storage.herd.pens[w.pen]
-  local method = w.cut and "cut" or w.wait_cut and "strike" or ((w.big_sent or 0) > 0 or w.fodder_set) and "siege"
+  local method = w.cut and "cut" or w.wait_cut and "strike" or w.spread and "spread"
+    or ((w.big_sent or 0) > 0 or w.fodder_set) and "siege"
     or w.trust == "probe" and "probe" or "raid"
   return {key = "w" .. w.id, faction = "biotech", force = "lp-biotech", kind = "wave", method = method,
     camp = p and p.pen.valid and xy(p.pen.position) or nil,
