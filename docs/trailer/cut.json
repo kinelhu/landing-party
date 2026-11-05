@@ -1,6 +1,7 @@
 {
  "bpm": 120,
  "music": "media/trailer/score.wav",
+ "score": "docs/trailer/score.json",
  "shots": [
   {
    "clip": "media/trailer/shot-01.mp4",

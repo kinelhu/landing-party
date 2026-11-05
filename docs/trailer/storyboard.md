@@ -10,7 +10,7 @@ pass), **open** (a decision for the user).
 
 ## 1. Capture
 
-Every frame is `game.take_screenshot`, called by a small film helper mod (`tests/lp-film`, planned) in a game window
+Every frame is `game.take_screenshot`, called by a small film helper mod (`tests/lp-film`; since 2026-11-05 the toolkit at `~/Dev/factorio-film` with Landing Party's plugin `tests/lp-film-hooks`) in a game window
 (rendering needs one; a headless run cannot). One shot per run, from a prepared save.
 
 | Setting | Value | Why |

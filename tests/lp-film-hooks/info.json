@@ -1,0 +1,9 @@
+{
+  "name": "lp-film-hooks",
+  "version": "0.1.0",
+  "title": "Landing Party film hooks",
+  "author": "kinelhu",
+  "factorio_version": "2.1",
+  "description": "Landing Party's plugin for the film helper (~/Dev/factorio-film): its sieges, waves and bursts as points and events, its /lp tools and dome looks as actions. Never published.",
+  "dependencies": ["base", "landing-party"]
+}
