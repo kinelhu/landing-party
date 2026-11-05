@@ -38,7 +38,9 @@ function site.fits(surface, b, m, ox, oy)
   if not generated(surface, area) then return false end
   if reserved(b, area) then return false end
   for _, e in pairs(surface.find_entities_filtered{area = area}) do
-    if not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()) then
+    -- Its own units aside (construction moves them, make_way): standing at its yard (army.yard), they refused the ground
+    -- it grew on, and occupy's camp grew five depots instead of one and could not rebuild after the strike.
+    if (not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears())) and not shared.own_unit(b, e) then
       -- (What stood there, by type: the stats' refused_by.)
       b.refused_by = b.refused_by or {}
       local key = e.type .. ":" .. (e.force and e.force.name or "")

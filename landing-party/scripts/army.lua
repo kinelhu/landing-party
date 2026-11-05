@@ -185,7 +185,8 @@ local function produce(b, trace)
       local p, out = army.muster(b, depot.position, spawn, proto, 0)
       -- (Railgunners by the depot: no raid takes them, and made past its cordon's walls they stood there, 165 tiles out,
       -- and shot the player's wall from beyond its guns' reach; a deathworld visit, 0.2.128.)
-      if out < 5 or name == "lp-railgunner" then p = surface.find_non_colliding_position(proto, {depot.position.x, depot.position.y + 4}, 12, 0.5) end
+      if out < 5 or name == "lp-railgunner" then p = army.spawn_point(b, proto, {depot.position.x, depot.position.y + 4}, 12)
+      elseif p and not army.open_spot(b, p) then p = army.spawn_point(b, proto, p, 12) end
       local u = p and surface.create_entity{name = proto, position = p, force = depot.force}
       if u then
         b.parts = b.parts - cost
@@ -331,11 +332,12 @@ local function patrol(b, trace)
   local want = army.PATROL[b.doctrine] or 2
   -- The garrison pruned first: a dead unit moved to the patrol crashed the order loop (siege, seed 4242).
   prune(b.garrison)
-  for _, u in ipairs(pool.take(b, want - #b.patrol, HOME_GUARD)) do table.insert(b.patrol, u) end
-  if #b.patrol == 0 then return end
-  -- A route of up to five stops, drawn once and redrawn when the settlement changes much.
+  -- A route of up to five stops, drawn once and redrawn when the settlement changes much. None yet, none taken (units
+  -- taken with no route stood in the patrol list unordered, wandering in the landing pad: scenario idle).
   local pts = waypoints(b)
   if #pts < 2 then return end
+  for _, u in ipairs(pool.take(b, want - #b.patrol, HOME_GUARD)) do table.insert(b.patrol, u) end
+  if #b.patrol == 0 then return end
   if not b.route or b.route_n ~= #pts then
     local route, used = {}, {}
     for _ = 1, math.min(5, #pts) do
@@ -348,7 +350,10 @@ local function patrol(b, trace)
     trace(b, string.format("patrol route of %d stops for %d units", #route, #b.patrol))
   end
   for i, u in ipairs(b.patrol) do
-    if not u.commandable.has_command then
+    -- Idle or wandering: a unit made by script wanders where it is made, which counts as a command, and the drop escort
+    -- drafted to patrol never walked a loop (patrol_loops 0, scenario idle).
+    local c = u.commandable
+    if not c.has_command or (c.command and c.command.type == defines.command.wander) then
       local cmds = {}
       for k = 0, #b.route - 1 do
         local p = b.route[(i + k - 1) % #b.route + 1]
@@ -686,6 +691,178 @@ local function leash(b, trace)
   end
 end
 
+-- The yard: where its idle garrison waits, on open ground outside its walled blocks, YARD_RINGS tiles from its first
+-- depot (else its lander, as the leash's home), each unit on a slot of its own on a spiral round it so vehicles do not
+-- stack. A unit made by script wanders where it is made: the drop escort (made in the landing pad) and the depot's units
+-- milled inside the pad, on its corner turrets and in the gap of its south wall, for the whole of a visit (trailer
+-- footage, 2026-11-04; scenario idle). Only idle, wandering or standing units are sent, and on its slot a unit stands
+-- (a stop order, distracted only by damage: it waits, and what attacks the camp is answered by responses). Operations,
+-- responses, patrols and convoys take them as before (pool.take).
+local YARD_RINGS = {16, 20, 24, 28}
+local YARD_ANGLES = 12
+local YARD_AT = 3                -- within this of its slot, it stops there
+local YARD_RESEND = 3600         -- a unit sent not again within a minute (a slot it cannot reach)
+local YARD_TRIES = 3             -- nor after three sends that never got it there: it stays where it is
+local YARD_REFRESH = 3600        -- the spot looked for again (the camp builds over it)
+local YARD_CLEAR = 8             -- the spot this far outside any walled block (its slots spread round it)
+-- and this far from anything of an enemy's when it is looked for (each minute)
+local YARD_QUIET = 40
+local YARD_SPAWN = 14            -- and this far from where the camp's trucks come out (12 tiles south of home)
+local function walled_boxes(b)
+  local out = {}
+  for _, m in ipairs(b.blocks or {}) do
+    if m.walls or m.kind == "pad" then table.insert(out, {m.x0 - 1, m.y0 - 1, m.x0 + m.w + 1, m.y0 + m.h + 1}) end
+  end
+  return out
+end
+local function in_boxes(boxes, x, y, margin)
+  local e = margin or 0
+  for _, q in ipairs(boxes) do
+    if x > q[1] - e and x < q[3] + e and y > q[2] - e and y < q[4] + e then return true end
+  end
+  return false
+end
+local function open_ground(s, x, y)
+  for _, e in pairs(s.find_entities_filtered{position = {x, y}, radius = 6}) do
+    if e.type == "cliff" or e.prototype.is_building then return false end
+  end
+  return s.count_tiles_filtered{position = {x, y}, radius = 4, collision_mask = "water_tile", limit = 1} == 0
+end
+-- Its spot: the first open one on rings round home, from the side away from the player's spawn out to either side by
+-- turns (a yard 19 tiles from three gun turrets the player set by a crew's road drew their fire, and its units razed
+-- them: crew answered). Not by what the camp makes south of home (the drop escort 8 tiles, a skimming truck 12, its loot
+-- chest 8 by 8): a truck made among the units standing at a yard there got stuck three runs in four (skim, seed 12345).
+function army.yard_spot(b)
+  local h = b.depots[1] and b.depots[1].valid and b.depots[1] or (b.lander.valid and b.lander)
+  if not h then return nil end
+  local key = h.unit_number
+  if b.yard and b.yard_key == key and game.tick - (b.yard_at or 0) < YARD_REFRESH then return b.yard end
+  local s, hp, boxes = h.surface, h.position, walled_boxes(b)
+  local pf = game.forces.player
+  local sp = pf and pf.get_spawn_position(s)
+  local away = sp and math.atan2(hp.y - sp.y, hp.x - sp.x) or -math.pi / 2
+  local spot
+  for _, r in ipairs(YARD_RINGS) do
+    for k = 0, YARD_ANGLES - 1 do
+      local turn = math.ceil(k / 2) * (k % 2 == 1 and 1 or -1)
+      local a = away + turn * 2 * math.pi / YARD_ANGLES
+      local x, y = hp.x + r * math.cos(a), hp.y + r * math.sin(a)
+      if not in_boxes(boxes, x, y, YARD_CLEAR) and (x - hp.x) ^ 2 + (y - hp.y - 12) ^ 2 > YARD_SPAWN * YARD_SPAWN
+        and open_ground(s, x, y)
+        and not s.find_nearest_enemy{position = {x, y}, max_distance = YARD_QUIET, force = h.force} then
+        spot = {x, y}; break
+      end
+    end
+    if spot then break end
+  end
+  -- Moved: its units sent again, to slots round the new spot.
+  if not (spot and b.yard and spot[1] == b.yard[1] and spot[2] == b.yard[2]) then b.yard_dest = {} end
+  b.yard, b.yard_key, b.yard_at, b.yard_boxes = spot, key, game.tick, boxes
+  return spot
+end
+
+local function yard(b, trace)
+  local spot = army.yard_spot(b)
+  if not spot then return end
+  local s = b.lander.surface
+  local lp = b.lander.valid and b.lander.position
+  local rail_ok = lp and (spot[1] - lp.x) ^ 2 + (spot[2] - lp.y) ^ 2 < (RAIL_LEASH - 10) ^ 2
+  -- Slots kept per unit (the smallest free one for a newcomer), so a unit keeps its place as others come and go.
+  b.yard_slot, b.yard_sent, b.yard_dest, b.yard_tries = b.yard_slot or {}, b.yard_sent or {}, b.yard_dest or {}, b.yard_tries or {}
+  local live, used = {}, {}
+  for _, u in ipairs(b.garrison) do
+    if u.valid and u.unit_number then
+      live[u.unit_number] = true
+      if b.yard_slot[u.unit_number] then used[b.yard_slot[u.unit_number]] = true end
+    end
+  end
+  for n in pairs(b.yard_slot) do
+    if not live[n] then b.yard_slot[n], b.yard_sent[n], b.yard_dest[n], b.yard_tries[n] = nil, nil, nil, nil end
+  end
+  local sent, walled = 0, false
+  for _, u in ipairs(b.garrison) do
+    local c = u.valid and u.commandable
+    local kind = c and shared.kind_of(u.name)
+    if c and (u.type == "unit" or u.type == "spider-unit") and kind ~= "lp-hauler" and (kind ~= "lp-railgunner" or rail_ok)
+      and (not c.has_command or (c.command and (c.command.type == defines.command.wander
+        or c.command.type == defines.command.stop))) then
+      local n = u.unit_number
+      local k = b.yard_slot[n]
+      if not k then
+        k = 0
+        while used[k] do k = k + 1 end
+        used[k], b.yard_slot[n] = true, k
+      end
+      local a, r = k * 2.39996, 3 * math.sqrt(k)
+      local dx, dy = r * math.cos(a), r * math.sin(a)
+      -- A slot in a walled block mirrored to the spot's other side, else the spot itself (one 2 tiles out of the pad,
+      -- the first spiral put its outer slots back inside: scenario idle).
+      if in_boxes(b.yard_boxes, spot[1] + dx, spot[2] + dy, 2) then
+        if in_boxes(b.yard_boxes, spot[1] - dx, spot[2] - dy, 2) then dx, dy = 0, 0 else dx, dy = -dx, -dy end
+      end
+      local x, y = spot[1] + dx, spot[2] + dy
+      -- Where it was sent (its slot, or the free ground nearest it).
+      local t = b.yard_dest[n]
+      if t then x, y = t[1], t[2] end
+      if (u.position.x - x) ^ 2 + (u.position.y - y) ^ 2 <= YARD_AT * YARD_AT then
+        -- On its slot: it stands there (arrived idle, it took the default wander, 10 tiles, and buggies drifted back into
+        -- the pad: scenario idle, seed 777). Not a compound of the two: the watchdog took units at rest under a compound
+        -- for stuck ones.
+        b.yard_tries[n] = nil
+        if not (c.command and c.command.type == defines.command.stop) then
+          c.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
+        end
+      elseif (b.yard_tries[n] or 0) < YARD_TRIES and game.tick - (b.yard_sent[n] or -YARD_RESEND) >= YARD_RESEND
+        -- Not out of a fight (an idle unit fights what it sees).
+        and not s.find_nearest_enemy{position = u.position, max_distance = 24, force = u.force} then
+        local p = s.find_non_colliding_position(u.name, {spot[1] + dx, spot[2] + dy}, 6, 0.5)
+        p = p and {p.x, p.y} or {spot[1] + dx, spot[2] + dy}
+        c.set_command{type = defines.command.go_to_location, destination = p, radius = 1,
+          distraction = defines.distraction.by_damage}
+        b.yard_sent[n], b.yard_dest[n], b.yard_tries[n] = game.tick, p, (b.yard_tries[n] or 0) + 1
+        sent = sent + 1
+        if in_boxes(b.yard_boxes, u.position.x, u.position.y) then walled = true end
+      end
+    end
+  end
+  if sent > 0 then
+    b.yard_moves = (b.yard_moves or 0) + sent
+    -- Out through its own gates, as units leaving on an operation are (pool.take), when one leaves a walled block: only
+    -- that block's gates (not a cordon's across a rail, nor every gate each time a depot makes a unit).
+    if walled and not storage.gates_off then
+      b.gates_until = math.max(b.gates_until or 0, game.tick + 30 * 60)
+      for _, g in ipairs(b.gate_list or {}) do
+        if g.valid and in_boxes(b.yard_boxes, g.position.x, g.position.y, 1) then g.request_to_open(g.force, 15 * 60) end
+      end
+    end
+    trace(b, string.format("yard: %d units sent to %.0f,%.0f", sent, spot[1], spot[2]))
+  end
+end
+
+-- Where a unit is made: the free spot nearest `at`, by rings, with none of its own walls within SPAWN_CLEAR. The first
+-- free spot by the depot (find_non_colliding_position) was inside the walled scrap cannon emplacement five tiles south
+-- of a Grubstake depot, and a forced raid's shotgun hands were made in it and could not leave (trailer visit save,
+-- minute 38; scenario idle LP_MIX=pillbox). Nothing clear within radius: the free spot nearest, as before.
+local SPAWN_CLEAR = 3.5
+function army.open_spot(b, p)
+  local s = game.surfaces[b.surface]
+  return s.count_entities_filtered{position = p, radius = SPAWN_CLEAR, type = {"wall", "gate"}, force = b.force,
+    limit = 1} == 0
+end
+function army.spawn_point(b, proto, at, radius)
+  local s = game.surfaces[b.surface]
+  local x0, y0 = at.x or at[1], at.y or at[2]
+  for r = 0, radius, 2 do
+    local steps = math.max(1, math.floor(2 * math.pi * r / 3))
+    for k = 0, steps - 1 do
+      local a = math.pi / 2 + 2 * math.pi * k / steps
+      local p = s.find_non_colliding_position(proto, {x0 + r * math.cos(a), y0 + r * math.sin(a)}, 1.5, 0.5)
+      if p and army.open_spot(b, p) then return p end
+    end
+  end
+  return s.find_non_colliding_position(proto, {x0, y0}, radius, 0.5)
+end
+
 -- Its own gates open for its own units (no gate opens for a unit by itself): Serenity's camps put a gate in every
 -- opening of every walled block, and on nw its raiders stood at the lander behind 29 to 107 pieces of its own wall, raid
 -- after raid, for three hours. Once a second, each gate with one of its units within GATE_REACH is asked open.
@@ -725,6 +902,7 @@ function army.tick(b, tick, trace)
   ops.tick(b, tick, trace, army)
   if tick % 300 == 150 and not storage.army_off then patrol(b, trace) end
   if tick % 300 == 250 and not storage.army_off then leash(b, trace) end
+  if tick % 300 == 270 and not storage.army_off and not storage.yard_off then yard(b, trace) end
   if tick % BUILD_TICKS == 0 then produce(b, trace) end
 end
 

@@ -386,6 +386,14 @@ shared.DECOR_PROPS = {["wooden-chest"] = true, ["storage-tank"] = true, pipe = t
 for k = 1, 6 do shared.DECOR_PROPS["crash-site-spaceship-wreck-small-" .. k] = true end
 for k = 1, 3 do shared.DECOR_PROPS["crash-site-spaceship-wreck-medium-" .. k] = true end
 
+-- A settlement's own unit sent to its yard (army.yard): site checks pass over it, and construction moves it
+-- (construction.make_way). Standing there, they refused the ground the camp grew on (occupy). Only those: passing over
+-- every unit of its own changed how a dozen scenarios' camps grew (pool, plate grubstake, crew island).
+function shared.own_unit(b, e)
+  return b ~= nil and b.yard_dest ~= nil and (e.type == "unit" or e.type == "spider-unit") and e.force.name == b.force
+    and b.yard_dest[e.unit_number] ~= nil
+end
+
 function shared.refused(b, why)
   if not b then return end
   b.refused = b.refused or {}

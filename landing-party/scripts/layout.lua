@@ -50,7 +50,9 @@ function layout.area_free(surface, x0, y0, w, h, ore)
   local ring = {{x0 - R + 0.1, y0 - R + 0.1}, {x0 + w + R - 0.1, y0 + h + R - 0.1}}
   local b = layout.measuring
   for _, e in pairs(surface.find_entities_filtered{area = ring}) do
-    if not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()) then shared.refused(b, e.type == "cliff" and "cliff" or "built") return false end
+    if (not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears())) and not shared.own_unit(b, e) then
+      shared.refused(b, e.type == "cliff" and "cliff" or "built") return false
+    end
   end
   local inner = {{x0, y0}, {x0 + w, y0 + h}}
   local wet = surface.count_tiles_filtered{area = inner, collision_mask = "water_tile", limit = shared.LANDFILL_MAX + 1}
@@ -244,7 +246,7 @@ local function lot_free(b, hub, i, j)
   local function bad(why) shared.refused(b, why) hub.bad[k] = true return false end
   for _, e in pairs(surface.find_entities_filtered{area = area}) do
     if (not CLEARABLE[e.type] or (e.type == "cliff" and not shared.cliff_clears()))
-      and not (e.force.name == "neutral" and DECOR_NAMES[e.name]) then
+      and not (e.force.name == "neutral" and DECOR_NAMES[e.name]) and not shared.own_unit(b, e) then
       return bad(e.type == "cliff" and "cliff" or "built")
     end
   end
@@ -451,7 +453,9 @@ local function pier_try(b, hub, e)
   local x0, y0 = lot_xy(hub, e.i, e.j)
   if not generated(surface, x0, y0, x0 + LOT, y0 + LOT) then return nil end
   for _, en in pairs(surface.find_entities_filtered{area = {{x0 + 0.1, y0 + 0.1}, {x0 + LOT - 0.1, y0 + LOT - 0.1}}}) do
-    if not CLEARABLE[en.type] and not (en.force.name == "neutral" and DECOR_NAMES[en.name]) then return no("built: " .. en.name) end
+    if not CLEARABLE[en.type] and not (en.force.name == "neutral" and DECOR_NAMES[en.name]) and not shared.own_unit(b, en) then
+      return no("built: " .. en.name)
+    end
   end
   -- Each variant facing back tried against the ground, with no draw (a draw for every end looked at changed every
   -- later choice of its camp, on maps with no water at all: heist, plate grubstake); drawn among those that fit.
