@@ -95,8 +95,6 @@ Kessler-Hayashi is a security contractor. It lands late and is at war with you f
 camp in and moves a line of posts out toward your base, and its sieges go at whatever stands in the way. It plans from
 orbit, so it knows your defenses before it sets out.
 
-![A Kessler-Hayashi camp from close in: platform plating, walled blocks and charcoal guns.](media/vistas/serenity-close.jpg)
-
 ## Who they are
 
 Kessler-Hayashi waits for your first rocket launch, then lands on a site with a clear way to your base (see
@@ -125,6 +123,11 @@ second wall behind each gate, turrets in walled corner pillboxes and flamethrowe
   targets, so your turrets and units do not fire on them by themselves. Its crews rebuild lost generators first.
 - **Dome projector.** {{< var desc.entity_dome_projector >}}
 - **Parked howitzer.** It stands by the lander. When its spot is empty, a siege has it out.
+
+::: {.callouts plan="media/plans/kessler-hayashi-camp.json" faction="kessler-hayashi" nudge="5:-4,-3"}
+An armed camp a few minutes after its landing, inside three rings of wall. It has called for no research yet, so no
+labs stand.
+:::
 
 **The yard.** Its idle units wait outside its walls, in a yard on open ground {{< var camp.yard_near_tiles >}} to
 {{< var camp.yard_far_tiles >}} tiles from its first depot (from the lander before it has one), each on a spot of its
@@ -169,7 +172,9 @@ Kessler-Hayashi mounts sieges from its first level. Its guns come down from orbi
 A siege ends when its guns are destroyed or its shells run out. An armed camp's siege does not leave on a clock, because pods
 bring it more shells.
 
-![A Kessler-Hayashi siege: its guns come down in pods, *Deploying*, while the escort stands in ranks beside them.](media/clips/drop-siege.jpg)
+::: {.callouts plan="media/plans/kessler-hayashi-siege.json" faction="kessler-hayashi" crop="300,90,1560,984" nudge="1:-7,-2 2:7,-3 3:-7,0 5:-7,0 7:-7,2 6:8,0 4:6,-4"}
+A siege in place below the walled bastion it is about to strike, a second into its shelling.
+:::
 
 **The howitzer.** Where roboports cover the target, the siege brings a howitzer to reach the roboports behind your wall.
 Your artillery outranges it and fires on it by itself. Destroy it and that camp goes without one for
@@ -185,8 +190,6 @@ the sky. The orbital platform's shadow passes over. Then lances fall on the poin
 of your turrets that covers the gap, and the escort goes in behind them. Kill the spotter while it paints and the strike
 is called off. A standing siege calls another after {{< var kh.strike_cool_min >}} minutes. Domes do not stop it,
 theirs or yours.
-
-![An orbital strike: lances fall on either side of a walled laser bastion while Kessler-Hayashi's troopers wait to go in.](media/clips/orbital-strike.jpg)
 
 **The site dome.** Once an armed camp's siege starts shelling, a dome projector goes up by its guns. Its dome catches
 your artillery shells as a camp's does, and moves with the siege.

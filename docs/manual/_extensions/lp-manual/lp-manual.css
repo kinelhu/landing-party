@@ -36,3 +36,14 @@
 .lp-tip { border-left: 4px solid #8a8e94; background: rgba(0,0,0,.04); }
 .lp-fieldnote { border: 1px dashed #777; background: #f5f0e6; font-style: italic; }
 .lp-box-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .14em; font-weight: 700; font-style: normal; margin-bottom: .3rem; }
+.lp-hero { width: 100%; display: block; margin: 0 0 1rem; }
+.lp-callouts, .lp-strip { margin: 1.6rem 0; }
+.lp-callouts-img { position: relative; line-height: 0; }
+.lp-callouts-img img { width: 100%; display: block; }
+.lp-mark { position: absolute; transform: translate(-50%, -50%); width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--fac); border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.35); color: #1c1e22; font: 600 .75rem/1.25rem sans-serif; text-align: center; }
+.lp-callouts-legend { columns: 3 12em; font-size: .85rem; margin: .6rem 0 .3rem; padding-left: 1.4rem; }
+.lp-callouts-legend li::marker { color: var(--fac); font-weight: 700; }
+.lp-strip-row { display: flex; gap: .6rem; }
+.lp-strip-row figure { flex: 1 1 0; margin: 0; }
+.lp-strip-row img { width: 100%; display: block; border-bottom: 3px solid var(--fac); }
+.lp-strip-row figcaption, .lp-callouts > figcaption, .lp-strip > figcaption { font-size: .8rem; opacity: .8; margin-top: .3rem; }

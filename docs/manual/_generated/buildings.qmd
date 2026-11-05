@@ -82,24 +82,3 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 | Pact breaker | 200 | Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim. |
 | Pheromone bait | 100 | Makes nearby biters attack whatever is around it. |
 | Orbital strike beacon | 300 | Charges from your power, then calls an orbital barrage on enemies within 60 tiles. Single use. |
-
-::: {layout-ncol=3 fig-pos='H'}
-![Optics lab](media/units/lp-optics-lab.png)
-
-![Armory](media/units/lp-line-lab.png)
-
-![Siege works](media/units/lp-siege-lab.png)
-
-![Depot](media/units/lp-depot.png)
-
-![Synthexis incubator](media/units/lp-pen.png)
-
-![Synthexis biochamber](media/units/lp-biochamber.png)
-
-![Synthexis clinic](media/units/lp-clinic.png)
-
-![Synthexis heating tower](media/units/lp-heating-tower.png)
-
-![Synthexis tumor](media/units/lp-tumor.png)
-
-:::

@@ -56,3 +56,4 @@ format:
       - lp-manual
   lp-manual-pdf:
     keep-tex: true
+    fig-pos: "!htb"

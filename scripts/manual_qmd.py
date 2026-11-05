@@ -5,7 +5,8 @@ scripts/check.sh writes), landing-party/shared.lua, the scripts and the locale, 
   _variables.yml           values the prose reads with {{< var ... >}}
   _generated/*.qmd         tables the chapters include: units, buildings, breeds, eras, levels, salvage, technologies,
                            settings, commands
-  media/units, media/vistas   the field guide's portraits and vistas (docs/guide/img), made smaller
+  media/vistas             the front cover's three vistas (docs/guide/img); media/buildings, the labs' tree icons
+  (the unit portraits, heroes, plans, strips and stills in docs/manual/media are made by docs/manual/shots, not here)
 A value this cannot find stops it with the pattern that missed: a manual quietly missing a number is worse than no
 manual. Names are the game's own (the dump's localised names, the mod's locale, the base game's locale).
 """
@@ -23,7 +24,7 @@ def write(rp):
     M = os.path.join(rp.REPO, "docs", "manual")
     GEN = os.path.join(M, "_generated")
     os.makedirs(GEN, exist_ok=True)
-    os.makedirs(os.path.join(M, "media", "units"), exist_ok=True)
+    os.makedirs(os.path.join(M, "media", "buildings"), exist_ok=True)
     os.makedirs(os.path.join(M, "media", "vistas"), exist_ok=True)
     d = rp.roster.d
     loc = dict(rp.locale)
@@ -141,11 +142,11 @@ def write(rp):
 
     # ---- media ----
     def copy_png(rel):
-        """docs/guide/img/x.png to media/units/x.png at the guide's own size (240 px: a card prints it 31 mm wide, about
-        200 dpi; the 160 px of before printed soft, the template proof found); returns the manual's path."""
+        """docs/guide/img/x.png to media/buildings/x.png (a lab's icon at the head of its tree column); returns the
+        manual's path. Units take their portraits from media/portraits (docs/manual/shots/portraits.py)."""
         name = os.path.basename(rel)
-        shutil.copy(os.path.join(rp.OUT, rel), os.path.join(M, "media", "units", name))
-        return f"media/units/{name}"
+        shutil.copy(os.path.join(rp.OUT, rel), os.path.join(M, "media", "buildings", name))
+        return f"media/buildings/{name}"
 
     # ---- sources ----
     shared_src, phases_src, faction_src = src("shared.lua"), src("scripts/phases.lua"), src("scripts/faction.lua")
@@ -311,7 +312,7 @@ def write(rp):
     if missed:
         raise SystemExit("manual_qmd: not found in the code, nothing written:\n  " + "\n  ".join(missed))
 
-    for v in sorted(rp.vistas):
+    for v in sorted(set(VISTA.values())):  # the front cover's vistas only: each picture is printed once
         shutil.copy(os.path.join(rp.OUT, "img", f"vista-{v}.jpg"), os.path.join(M, "media", "vistas", f"{v}.jpg"))
 
     def yaml(obj, ind=0):
@@ -433,14 +434,8 @@ def write(rp):
               "lp-strip-drill", "lp-border-stake", "lp-trade-post", "lp-claim-marker", "lp-pact-breaker", "lp-player-bait",
               "lp-strike-beacon"):
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")
-    pics = [(n, rp.portrait(n)) for n in ("lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-depot", "lp-pen", "lp-biochamber",
-                                          "lp-clinic", "lp-heating-tower", "lp-tumor")]
-    pics = [(n, p) for n, p in pics if p]
-    if pics:
-        B += ["", "::: {layout-ncol=3 fig-pos='H'}"]
-        for n, p in pics:
-            B += [f"![{md(shown(n))}]({copy_png(p)})", ""]
-        B.append(":::")
+    # No picture gallery here: the labs head their tree columns, and the culture's buildings are on the annotated plan
+    # in the Synthexis chapter (the field guide's top-down squares printed small and unclear, and repeated the labs).
     out("buildings.qmd", B)
 
     # ---- Synthexis's breeds by evolution ----
@@ -603,7 +598,7 @@ def write(rp):
     booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out)
 
     print(f"{M}: _variables.yml and {len(os.listdir(GEN))} generated parts, "
-          f"{len(os.listdir(os.path.join(M, 'media', 'units')))} portraits, {len(rp.vistas)} vistas")
+          f"{len(os.listdir(os.path.join(M, 'media', 'portraits')))} portraits, {len(set(VISTA.values()))} vistas")
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -619,10 +614,12 @@ def write(rp):
 # A unit with no value where one is needed, a trigger with no words, a digit in words.cfg: it stops.
 
 FACTION_IDS = {"serenity": "kessler-hayashi", "grubstake": "grubstake", "biotech": "synthexis", "player": "player"}
-# Book furniture: the thumb tab's place on the fore-edge (from the top) and the opener's vista.
+# Book furniture: the thumb tab's place on the fore-edge (from the top), the front cover strip's vista (the player has
+# none), the opener's hero (media/heroes/<faction>.jpg) and the unit that stands for the faction on the back cover.
 TABS = {"player": 1, "grubstake": 2, "kessler-hayashi": 3, "synthexis": 4}
-VISTA = {"kessler-hayashi": "serenity-wide", "grubstake": "grubstake-wide", "synthexis": "synthexis-night",
-         "player": "player-base"}
+VISTA = {"kessler-hayashi": "serenity-wide", "grubstake": "grubstake-wide", "synthexis": "synthexis-night"}
+EMBLEM = {"player": "lp-trooper", "grubstake": "lp-shotgun-hand", "kessler-hayashi": "lp-infantry",
+          "synthexis": "lp-bred-big-biter"}
 PLAYER_CHROME = "B9BEC4"  # the player's chapters' colour in the book; the game gives the player no colour of its own
 # What a research trigger answers, in the player's words (shared.lua's trigger fields: killer kinds, damage types, ...).
 KILLED_BY = {"lp-trooper": "your infantry", "lp-breacher": "your infantry", "lp-rocket-trooper": "your infantry",
@@ -843,14 +840,19 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
         order.setdefault(fac, []).append(uid)
 
     def portrait_of(kind, corp=None):
-        p = rp.portrait(kind, corp)
-        if not p:
-            return None
-        copy_png(p)
-        return os.path.basename(p)[:-4]
+        # A unit's portrait: media/portraits, by prototype, a corporation's own variant first.
+        for name in ([f"lp-{corp}-{kind[3:]}"] if corp and corp != "serenity" else []) + [kind]:
+            if os.path.exists(os.path.join(M, "media", "portraits", name + ".png")):
+                return name
+        return None
+
+    def icon_of(kind):
+        # A lab's icon at the head of its tree column (media/buildings, from the field guide's pictures).
+        p = rp.portrait(kind)
+        return copy_png(p) if p else None
 
     def pic_or_none(stem):
-        return stem if stem and os.path.exists(os.path.join(M, "media", "units", stem + ".png")) else None
+        return stem if stem and os.path.exists(os.path.join(M, "media", "portraits", stem + ".png")) else None
 
     def parts(kind):
         return f"{unit_cost[kind]} parts" if unit_cost.get(kind) else None
@@ -868,7 +870,7 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
                 seen.add(n["branch"])
                 lab = (c.get("labs") or {}).get(n["branch"])
                 col = {"id": n["branch"], "label": shown(lab) if lab else rp.BRANCH_NAME.get(n["branch"], n["branch"])}
-                icon = lab and portrait_of(lab)
+                icon = lab and icon_of(lab)
                 if icon:
                     col["icon"] = icon
                 cols.append(col)
@@ -1153,16 +1155,21 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
             continue
         F[fid] = {"name": corps[corp]["name"], "color": hexcol({"r": float(block.group(1)), "g": float(block.group(2)), "b": float(block.group(3))}),
                   "motto": motto(fid, mot.group(1) if mot else None), "vista": f"media/vistas/{VISTA[fid]}.jpg", "tab": TABS[fid],
+                  "hero": f"media/heroes/{fid}.jpg", "emblem": EMBLEM[fid],
                   "era_label": "Era", "era_max": max(n.get("era", 0) for n in corps[corp]["tree"])}
     F["synthexis"] = {"name": rp.data["biotech"]["name"], "color": hexcol(rp.data["biotech"]["color"]),
                       "motto": motto("synthexis", None), "vista": f"media/vistas/{VISTA['synthexis']}.jpg",
+                      "hero": "media/heroes/synthexis.jpg", "emblem": EMBLEM["synthexis"],
                       "tab": TABS["synthexis"], "era_label": "Evolution", "era_max": 1}
     F["player"] = {"name": "Your army", "color": PLAYER_CHROME, "motto": motto("player", None),
-                   "vista": f"media/vistas/{VISTA['player']}.jpg", "tab": TABS["player"], "era_label": "Unlock",
+                   "hero": "media/heroes/player-army.jpg", "emblem": EMBLEM["player"], "tab": TABS["player"], "era_label": "Unlock",
                    "era_max": army_max, "cover": False}
     for fid, f in F.items():
-        if not os.path.exists(os.path.join(M, f["vista"])):
-            missed.append(f"{fid}: no vista {f['vista']}")
+        for k in ("vista", "hero"):
+            if k in f and not os.path.exists(os.path.join(M, f[k])):
+                missed.append(f"{fid}: no {k} {f[k]}")
+        if not os.path.exists(os.path.join(M, "media", "portraits", f["emblem"] + ".png")):
+            missed.append(f"{fid}: no portrait for its back-cover emblem {f['emblem']}")
 
     for sec, keys in W.items():
         for k in keys:
@@ -1179,7 +1186,7 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
         t["nodes"] = [{k: v for k, v in n.items() if v is not None} for n in t["nodes"]]
     data = {"_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, "
                         "shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
-            "edition": f"For Landing Party {V['mod']['version']}", "portraits": "media/units", "factions": F, "units": U,
+            "edition": f"For Landing Party {V['mod']['version']}", "portraits": "media/portraits", "factions": F, "units": U,
             "trees": trees}
     open(os.path.join(GEN, "lp-data.json"), "w").write(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
     for fac in ("kessler-hayashi", "grubstake", "synthexis", "player"):

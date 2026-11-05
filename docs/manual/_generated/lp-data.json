@@ -1,7 +1,7 @@
 {
  "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
  "edition": "For Landing Party 0.2.214",
- "portraits": "media/units",
+ "portraits": "media/portraits",
  "factions": {
   "grubstake": {
    "name": "Grubstake",
@@ -9,6 +9,8 @@
    "motto": "Resources in the right hands.",
    "vista": "media/vistas/grubstake-wide.jpg",
    "tab": 2,
+   "hero": "media/heroes/grubstake.jpg",
+   "emblem": "lp-shotgun-hand",
    "era_label": "Era",
    "era_max": 3
   },
@@ -18,6 +20,8 @@
    "motto": "Please remain behind the line.",
    "vista": "media/vistas/serenity-wide.jpg",
    "tab": 3,
+   "hero": "media/heroes/kessler-hayashi.jpg",
+   "emblem": "lp-infantry",
    "era_label": "Era",
    "era_max": 3
   },
@@ -26,6 +30,8 @@
    "color": "73D933",
    "motto": "Engineered to adapt.",
    "vista": "media/vistas/synthexis-night.jpg",
+   "hero": "media/heroes/synthexis.jpg",
+   "emblem": "lp-bred-big-biter",
    "tab": 4,
    "era_label": "Evolution",
    "era_max": 1
@@ -34,7 +40,8 @@
    "name": "Your army",
    "color": "B9BEC4",
    "motto": "Hold the line, then take theirs.",
-   "vista": "media/vistas/player-base.jpg",
+   "hero": "media/heroes/player-army.jpg",
+   "emblem": "lp-trooper",
    "tab": 1,
    "era_label": "Unlock",
    "era_max": 3,
@@ -561,6 +568,7 @@
    "name": "Synthexis big burster",
    "faction": "synthexis",
    "health": 3000,
+   "portrait": "lp-bred-big-burster",
    "damage": 1500,
    "damage_text": "1,500 explosion, 800 core",
    "range": 1.5,
@@ -576,6 +584,7 @@
    "name": "Synthexis sweeper",
    "faction": "synthexis",
    "health": 2000,
+   "portrait": "lp-sweeper",
    "damage": 60,
    "damage_text": "60 explosion",
    "range": 1.5,
@@ -606,6 +615,7 @@
    "name": "Synthexis carrier",
    "faction": "synthexis",
    "health": 600,
+   "portrait": "lp-bred-carrier",
    "damage": 30,
    "damage_text": "30 bite",
    "range": 1.5,
@@ -726,17 +736,17 @@
     {
      "id": "optics",
      "label": "Optics lab",
-     "icon": "lp-optics-lab"
+     "icon": "media/buildings/lp-optics-lab.png"
     },
     {
      "id": "siege",
      "label": "Siege works",
-     "icon": "lp-siege-lab"
+     "icon": "media/buildings/lp-siege-lab.png"
     },
     {
      "id": "line",
      "label": "Armory",
-     "icon": "lp-line-lab"
+     "icon": "media/buildings/lp-line-lab.png"
     }
    ],
    "bands": [
@@ -1185,12 +1195,14 @@
      "id": "lp-bred-big-burster",
      "band": "made",
      "label": "Synthexis big burster",
+     "portrait": "lp-bred-big-burster",
      "note": "developed after 2 held walls"
     },
     {
      "id": "lp-sweeper",
      "band": "made",
      "label": "Synthexis sweeper",
+     "portrait": "lp-sweeper",
      "note": "bred against mines"
     },
     {
@@ -1204,6 +1216,7 @@
      "id": "lp-bred-carrier",
      "band": "made",
      "label": "Synthexis carrier",
+     "portrait": "lp-bred-carrier",
      "note": "sent by a grown culture"
     },
     {

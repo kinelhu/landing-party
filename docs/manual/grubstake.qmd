@@ -89,6 +89,8 @@ them: fabricators, generators, depots, a launch pad, junk yards. Apart from the 
 are gun turrets fed with ammunition, alternating with scrap cannons that burst over a group of units. Your gun turrets
 outrange both. Its drills pollute more than your electric drills do.
 
+![A Grubstake lander just down, before its crews have laid the pad. Its first pylons and guns are going up round it.](media/stills/landing.jpg)
+
 Its army is buggies, shotgun hands and, from its first level, scrap drones. Its haulers, lightly armed trucks, build its
 new lots, carry its loot and bring ore home from its claims. Its idle units wait in a yard on open ground outside its
 landing pad, {{< var camp.yard_near_tiles >}} to {{< var camp.yard_far_tiles >}} tiles from its first depot, on the
@@ -132,7 +134,7 @@ the hands to fight.
 **The howitzer.** Only a camp that lands with a grudge, after you destroyed one of its landers, besieges your walls.
 Against a wall kept mended by robots, it brings a howitzer on a truck to shell your roboports from far out.
 
-![A Grubstake siege column sets out from its camp: buggies, trucks and shotgun hands, a howitzer truck at the right.](media/clips/grubstake-raid.jpg)
+![A Grubstake siege column of buggies leaves its camp along its own road.](media/stills/grubstake-column.jpg)
 
 ## Claims and the trade post
 
@@ -142,6 +144,10 @@ your map (*Mineral rights reassigned*) and sends a buggy to plant a claim stake 
 {{< var grubstake.prospect_window_min >}} minutes after it is planted, a hauler builds a claim: a generator, a pylon and
 drills with ore bins. To keep the patch, put a drill on it, set a claim marker by it or destroy the stake (or the buggy
 on its way). The camp then moves on to the next patch, one at a time, under any standing.
+
+::: {.callouts plan="media/plans/grubstake-claim.json" faction="grubstake" width="0.82"}
+A claim on a patch Grubstake staked, as its hauler built it. The stake is gone once the claim stands.
+:::
 
 **The road.** A claim has no power line or belt to the camp. Haulers empty its bins and drive the ore home, and one
 killed on the way spills its ore. A claim with no ore reaching home for a while lapses, so the camp stops rebuilding it

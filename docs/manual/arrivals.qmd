@@ -38,7 +38,15 @@ onto the pad beside them and crashes in a blast of dust. Then {{< var arrival.la
 round it, one after another, and burst where they fall. Those pods and the crash are only the look of it; they damage
 nothing and leave nothing to take.
 
-![A Grubstake lander just down on open ground, before its crews have laid the pad.](media/clips/landing.jpg)
+::: {.strip faction="grubstake"}
+![The escort pods come down first, on their thrusters.](media/strips/landing-1-pod.jpg)
+
+![The hull falls on three flames over its own shadow.](media/strips/landing-2-hull.jpg)
+
+![The hull is down, and a last cargo pod falls beside it.](media/strips/landing-3-pods.jpg)
+
+A Grubstake landing, a few seconds from first to last.
+:::
 
 ## Landings after the first
 
@@ -94,8 +102,6 @@ A corporation that lands in a world already far along arrives with the research 
 
 **Kessler-Hayashi armed.** From era {{< var arrival.armed_era >}}, Kessler-Hayashi lands as a walled fortress instead of
 a camp, already at level {{< var arrival.armed_level >}}.
-
-![An armed Kessler-Hayashi landing at dusk: the lander inside its walls, guns along them and troopers in the yard.](media/clips/armed-landing.jpg)
 
 **Synthexis** is the exception. Its breeds follow evolution: the wild biters' at first, then its own once its clinic
 stands. See [What it breeds](synthexis.qmd#sec-breeds).

@@ -70,8 +70,6 @@ Synthexis is a bioengineering company. It does not mine or build factories. It t
 feeds it on your pollution and breeds biters of its own, tinted green and yellow. Its waves pick a way in, go for what
 keeps your turrets firing, and change after every attack that fails.
 
-![A Synthexis clinic beside its heating tower, on its blot of Gleba soil.](media/vistas/synthexis-clinic.jpg)
-
 ## Arrival
 
 Synthexis lands when the wild biters' evolution on a surface reaches {{< var synthexis.arrive_evo >}}. Its pod comes
@@ -98,7 +96,9 @@ A culture (a trial site, in the company's own protocol) is the incubators and ev
 - **Synthexis clinic.** Makes its breeds stronger over time (see [What it breeds](#sec-breeds)).
 - **Synthexis heating tower** and **Synthexis lamp.** The culture's furniture, with no part in its waves.
 
-![A Synthexis culture: incubators on the creep, biochambers on their pads beside them, and the bred biters at home.](media/clips/synthexis-creep.jpg)
+::: {.callouts plan="media/plans/synthexis-culture.json" faction="synthexis" crop="420,120,1500,960" drop="5"}
+A young culture by its lake, ten minutes after its landing.
+:::
 
 **Growth.** The creep spreads toward nearby wild spawners, and each one it reaches becomes an incubator, up to
 {{< var synthexis.pens_max >}}. Where there is nothing left to take, the culture founds incubators of its own. A grown
@@ -126,6 +126,8 @@ behind the wild biters' and never gets more than {{< var synthexis.lead >}} ahea
 climb stops: its incubators breed as at evolution {{< var synthexis.stock_evo >}} at most until a new clinic lands
 {{< var synthexis.clinic_wait_min >}} minutes later.
 
+![The clinic on its pad of Gleba soil, beside the heating tower.](media/stills/synthexis-clinic.jpg)
+
 **The bursters.** A burster is a fast biter that does not bite. At a wall or turret it bursts, damaging what stands
 nearby, and it also bursts wherever it is killed. A big burster is sent at one of the turrets covering a wave's way in.
 At the turret, or at a wall on the way, it bursts and damages every turret nearby. Killed short of them, only its core
@@ -136,6 +138,16 @@ goes off, over half the reach. Synthexis develops it once your walls have held i
 faster, while a ring on the ground closes in from the edge of its blast. A burster bursts
 {{< var synthexis.cinder_windup_s >}} seconds after it stops, a big burster {{< var synthexis.big_windup_s >}}
 seconds after. Nothing harms it meanwhile, so it always bursts whole; to stop it, kill it before it gets there.
+
+::: {.strip faction="synthexis"}
+![It stops at the wall, and the ring on the ground closes in.](media/strips/burster-1-windup.jpg)
+
+![It swells, glowing acid green.](media/strips/burster-2-swell.jpg)
+
+![It bursts, and the wall in front of it goes.](media/strips/burster-3-blast.jpg)
+
+A burster at a wall, from the moment it stops to its blast.
+:::
 
 Only the spore spitter can hit a flying unit. Every breed has a card at the end of this chapter, and its full numbers
 are in the [Reference](reference.qmd#sec-units).
@@ -161,8 +173,6 @@ incubators, tumors or biochambers. It never attacks Grubstake or the wild biters
    it. Past your wall it keeps going to what it came for: your power, and the inserters that load your gun turrets. It
    does not stop to fight every turret on the way.
 5. It goes home by the gap it came in through.
-
-![A Synthexis wave through a wall: a burster goes off in the gap while the pack pours past the laser turrets.](media/clips/synthexis-breach.jpg)
 
 **What it learns.** Every wave leaves a lesson about the defense it hit. A way in that held costs more next time, so the
 next wave may try another side. Where a wall held its last wave, the next wave there brings bursters,
