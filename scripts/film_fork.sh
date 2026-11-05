@@ -4,6 +4,9 @@
 #   scripts/film_fork.sh <scenario> <seed> <strike> [mix]     (forks first if the fork is missing)
 # Then: LP_FILM_SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-<scenario>[-mix]-<seed>-<strike>" \
 #   scripts/film.sh <scenario>[-mix]-film fork.zip <params.lua>
+# Its course headless is its rehearsal (FILM_REHEARSE=<ticks> before the same film.sh line), not a sim.sh run of the
+# fork: the window's new player takes an entity number the headless run never does (DESIGN.md, "Films follow their
+# rehearsal"). A sim.sh run of a variant's fork: LP_FORK=1 LP_FORK_MIX=<mix> LP_MIX=<mix>.
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 SCENARIO="$1"; SEED="$2"; STRIKE="$3"; MIX="${4:-}"
