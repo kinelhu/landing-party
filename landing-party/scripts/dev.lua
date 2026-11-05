@@ -5,7 +5,9 @@
 --   raid|siege|strip [id]    that operation now, at your structure nearest you (ops.force: temper, budget,
 --                            cadence and stock waived; the infantry it lacks are given)
 --   perimeter [id]           Serenity's line steps out now (notice every third step, warning one step ahead)
---   land <corp> [tiles]      a corporation arrives this far from you (default 200), with 2000 parts
+--   land <corp> [tiles] [now]  a corporation arrives this far from you (default 200), with 2000 parts: as its own
+--                            landings do, its pod first and its lander after (landfx.lua draws the descent); `now`
+--                            lands it at once
 --   parts <n> [id]           parts for a settlement (growth, units, operations)
 --   fast                     short clocks on or off: perimeter, strip camps, phases, headquarters
 --   grudge [id]              as if you had destroyed that settlement's lander: the grudge without the fall
@@ -152,11 +154,18 @@ function dev.run(player, args)
       return player.print("land which corporation: " .. table.concat(names, ", "))
     end
     local d = tonumber(args[3]) or 200
-    -- The real arrival (notice, map tag, the others hear it), on the ring this far from you.
-    local b = faction.arrive(player.surface, player.position, {corp = corp, distance = d}, false)
-    if not b then return player.print("no site to land on at that distance") end
-    b.parts = (b.parts or 0) + 2000
-    player.print(string.format("%s landed: %d %s", shared.CORPS[corp].name, b.id, gps(b)))
+    -- The real arrival (notice, map tag, the others hear it), on the ring this far from you: by pod, as the
+    -- faction's own landings come (faction.request; the trailer's forced landing appeared at once, the user,
+    -- 2026-11-04: "the lack of animation is a little jarring"); `now`, or pods off, at once.
+    if args[3] == "now" or args[4] == "now" or storage.pods_off then
+      local b = faction.arrive(player.surface, player.position, {corp = corp, distance = d}, false)
+      if not b then return player.print("no site to land on at that distance") end
+      b.parts = (b.parts or 0) + 2000
+      return player.print(string.format("%s landed: %d %s", shared.CORPS[corp].name, b.id, gps(b)))
+    end
+    faction.request(player.surface, player.position, {corp = corp, distance = d}, false, "dev",
+      {dev_player = player.index, dev_parts = 2000})
+    player.print(string.format("%s is coming down about %d tiles from you (its pod, then its lander)", shared.CORPS[corp].name, d))
   elseif what == "parts" then
     local b = pick(player, tonumber(args[3]))
     local n = tonumber(args[2])
@@ -182,7 +191,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | provoke | era <n> | trace")
   end
 end
 

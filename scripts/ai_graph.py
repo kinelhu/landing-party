@@ -76,7 +76,7 @@ def structure(mods):
 
 # The layers the picture groups modules into. A module missing here fails --check: place it when you add it.
 LAYERS = {
-    "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart", "ground", "threat", "unit_prior", "lights"],
+    "Seams (leaves)": ["stance", "pool", "tune", "rng", "names", "chart", "ground", "threat", "unit_prior", "lights", "landfx"],
     "Perception and attempts (any attacker)": ["firemap", "valuemap", "costmap", "feeds", "attempt", "tactics"],
     "Knowledge and strategy (per faction)": ["know", "strategy"],
     "Corporation": ["faction", "pods", "war", "standing", "pact", "trade", "ledger", "border", "rd", "phases", "biters"],

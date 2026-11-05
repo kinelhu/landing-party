@@ -9,7 +9,8 @@ SCENARIO="$1"; SEED="$2"; STRIKE="$3"
 # LP_FORK_MIX: a variant forked as itself (its name and its scenario's mix); LP_MIX alone forks the plain scenario, as
 # sim.sh LP_FORK reads it (the regression's siege 20-10-10 fork went missing when LP_MIX named it, 2026-11-04).
 MIXTAG="${LP_FORK_MIX:+-$LP_FORK_MIX}"
-SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-$SCENARIO$MIXTAG-$SEED-$STRIKE$WT"
+# (LP_REG_TAG, a regression's own tag, regress.sh: its forks grown in their own profiles too.)
+SIM="$HOME/Library/Application Support/factorio-lp-sim/fork-$SCENARIO$MIXTAG-$SEED-$STRIKE${LP_REG_TAG:+-$LP_REG_TAG}$WT"
 mkdir -p "$FORKS" "$SIM/config" "$SIM/mods" "$SIM/saves"
 printf '[path]\nread-data=__PATH__system-read-data__\nwrite-data=%s\n' "$SIM" > "$SIM/config/config.ini"
 ln -sfn "$REPO/landing-party" "$SIM/mods/landing-party"
