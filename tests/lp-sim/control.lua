@@ -4208,8 +4208,12 @@ scenarios.heavies = function()
     surface().create_entity{name = "substation", position = {370, -26}, force = "player"}
     S.lasers = {}
     for k = 0, 3 do table.insert(S.lasers, surface().create_entity{name = "laser-turret", position = {366 + k * 2.5, -23}, force = "player"}) end
-    S.tesla = spawn("lp-tesla", {370, -42}, 1, FORCE)[1]
-    if S.tesla then S.tesla.commandable.set_command{type = defines.command.attack_area, destination = {370, -23}, radius = 8} end
+    -- LP_MIX=teslas (the trailer, 2026-11-05: one Tesla died to the four lasers before its lightning read on film): four.
+    S.teslas = spawn("lp-tesla", {370, -42}, params.mix == "teslas" and 4 or 1, FORCE)
+    S.tesla = S.teslas[1]
+    for _, t in ipairs(S.teslas) do
+      t.commandable.set_command{type = defines.command.attack_area, destination = {370, -23}, radius = 8}
+    end
     -- The prism's pack.
     -- Left active (a chain passes over frozen entities: the first run split to none of eight held with active = false).
     S.pack = spawn("lp-trooper", {372, 35}, 8, "player")

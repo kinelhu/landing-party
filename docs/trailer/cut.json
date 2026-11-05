@@ -1,6 +1,6 @@
 {
  "bpm": 120,
- "music": "media/trailer/placeholder.wav",
+ "music": "media/trailer/placeholder-50.wav",
  "shots": [
   {
    "clip": "media/trailer/shot-01.mp4",
@@ -11,6 +11,16 @@
    "clip": "media/trailer/landing-fx.mp4",
    "bars": 3,
    "from": 3.0
+  },
+  {
+   "clip": "media/trailer/reel-base.mp4",
+   "bars": 2,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/reel-base.mp4",
+   "bars": 2,
+   "from": 14.0
   },
   {
    "clip": "media/trailer/stage-m1-muster.mp4",
@@ -29,11 +39,6 @@
   },
   {
    "clip": "media/trailer/stage-m4-battle.mp4",
-   "bars": 2,
-   "from": 2.0
-  },
-  {
-   "clip": "media/trailer/act-gs-deploy.mp4",
    "bars": 2,
    "from": 2.0
   },
@@ -69,9 +74,14 @@
    "from": 1.0
   },
   {
-   "clip": "media/trailer/stage-c2-barrage.mp4",
+   "clip": "media/trailer/reel-fortress.mp4",
    "bars": 2,
-   "from": 2.0
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/reel-fortress.mp4",
+   "bars": 2,
+   "from": 38.0
   },
   {
    "clip": "media/trailer/stage-c3-assault.mp4",
@@ -79,14 +89,14 @@
    "from": 3.0
   },
   {
+   "clip": "media/trailer/reel-tesla.mp4",
+   "bars": 2,
+   "from": 3.0
+  },
+  {
    "clip": "media/trailer/shot-09.mp4",
    "bars": 2,
    "from": 1.0
-  },
-  {
-   "clip": "media/trailer/shot-10.mp4",
-   "bars": 2,
-   "from": 2.0
   },
   {
    "clip": "media/trailer/shot-11.mp4",
@@ -118,7 +128,7 @@
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 44,
+   "bar": 48,
    "bars": 3
   }
  ]
