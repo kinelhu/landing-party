@@ -48,67 +48,58 @@ the settings. [Tips](tips.qmd) collects what works against each faction.
 
 ::: {.dossier}
 SURFACE
-: Nauvis, the green one of the five. Charted once, by the Authority's survey tender *Carrow*, which stopped reporting
-  on its third orbit in the Registry's ninth year and is carried as lost with all hands. Entry since: "uncharted,
-  hazard".
+: Nauvis, the green one of the five. Charted once, by the survey tender *Carrow*, lost over it with all hands. Entry
+  since: "uncharted, hazard".
 
-LANES
-: None registered. Freight on the inner lanes clears the planet by the margin Lane Rule 3 allows. No fee has ever been
-  collected off it.
-
-HAZARD REGISTER
-: H-1, the indigenous fauna, class one, "breeds from smoke". H-3, "operator, unregistered": one engineer, name not
-  supplied, building without a licence; first noted as a stain on the daylight side from the Aquilo run.
-
-RECLASSIFICATION
-: Form LR-7, "Surface activity confirmed. Reclassify as commercial", signed O. Brandt, Registrar, on the day a cargo
-  rocket left the surface. Objections: none filed.
+RECLASSIFIED
+: Commercial, by order of O. Brandt, Registrar, the day a cargo rocket left the ground. Objections: none filed.
 
 OPERATORS ON FILE
-: Grubstake Inc. (file 209), Kessler-Hayashi Security (file 114), Synthexis (file 377). None holds a licence for the
-  surface.
+: Grubstake Inc., Kessler-Hayashi Security, Synthexis. None holds a licence for the surface.
 
 THIS HISTORY
-: Compiled by M. Tanase, Clerk second grade, Lane Registry, from the three operators' own filings. The clerk has read
-  all of them and vouches for none.
+: M. Tanase, Clerk second grade, from the operators' own filings. She has read all of them and vouches for none.
 :::
 
-The Authority keeps a sheet for every surface the lanes pass, and for most of the Registry's life the Nauvis sheet
-held two lines. The first named the *Carrow*, a survey tender of forty tons that went into orbit there to chart the
-ground and stopped reporting on its third pass; the Registry carries her as lost with all hands and has never been
-able to say to what. The second line was the word *hazard*. Freight clears the planet by the margin Lane Rule 3
-allows, and in nine years no operator asked the Lane Registry for anything closer, because nothing on Nauvis was for
-sale. Vulcanus has its foundries and the demolishers the foundries pay cordons against. Fulgora has its scrap lots and
-the storm season that ends them. On Gleba every living thing is somebody's lease, and Aquilo is an ice run with a
-freighter schedule. Nauvis had the swarm, and the *Carrow*'s wreck.
+Nobody wanted Nauvis. The Registry charts every surface the lanes pass, and when the green planet's turn came it sent
+the *Carrow*, a survey tender with a crew of six, to go round it and draw the map. She reported from her first orbit
+and from her second. On the third she went quiet. Nobody went down to look, and the sheet for Nauvis has carried her
+ever since beside the one word the Registrar allowed it: hazard. The freighters on the Aquilo run gave the planet a
+wide berth after that, and it cost them nothing. Vulcanus has its foundries and Fulgora its scrap lots. Nauvis had a
+swarm that had eaten a survey ship, and no one with a reason to land.
 
-What changed the sheet was smoke. A platform on the Aquilo run logged a stain on the daylight side, and the next pass
-found it wider, with a radar sweeping under it and a flare at night that the duty officer entered as a refinery. The
-Registry does not act on smoke. It acts on cargo, and when a rocket cleared the atmosphere carrying a manifest nobody
-had filed, Registrar Brandt signed Form LR-7 within the hour. The surface became commercial, which means a place an
-operator may land on with a licence. Three operators have landed on it since. None has applied.
+Nine years on, a platform on the ice run logged smoke. There was a stain on the daylight side where nothing should have
+burned, and on the next pass the stain was wider, with a radar turning under it and a light at night that the duty
+officer wrote up as a refinery. Somebody was down there, building. Nobody had filed for it. The clerk wrote to the
+platform for its pictures and to the Registrar for instructions, and got the pictures. What moved Brandt in the end
+was a rocket. A cargo hull cleared the atmosphere one morning with a manifest nobody had seen, and he signed the
+reclassification before lunch. Nauvis became a commercial surface, which means a company may land on it if it holds a
+licence. Three have landed. The clerk is still waiting for the first application.
 
 ::: {.pullquote cite="Form LR-7, Nauvis sheet, signed O. Brandt, Registrar"}
 Surface activity confirmed. Reclassify as commercial.
 :::
 
-Grubstake's tender *Assay* was first down, with a radar, two drills and a handful of guards, the week the operator's
-refinery lit; its Claims Agent filed a Notice of Intent to Claim from the ground, which the Registry stamped and could
-do nothing about. Kessler-Hayashi waited for the rocket, as its contract says it may, and came down inside a surveyed
-boundary with its guns already on the wall. Synthexis came last and told nobody, so that the Registry learned of its
-trial from a Kessler-Hayashi site report that called it pest control. What the three have in common is in their own
-filings, where each lists the operator's works as something it is entitled to. Grubstake's register carries the works
-as unattended. In Kessler-Hayashi's contract they are cargo under its protection, and Synthexis's protocol, when the
-Registry finally saw a copy, has them down as the control.
+The three are on file, and the files are the one part of this story the clerk can vouch for having read.
 
-What the Registry can count, it counts. Each lander's descent is logged from the lanes, and by the log the two
-corporations take turns, the one with fewer sites standing going next, and a rocket off the surface brings
-Kessler-Hayashi's next lander down sooner than its schedule. The operator's first radar charted a wreck a little
-way off that the Registry takes to be the *Carrow*. Her log has not been sent to the Authority, and the clerk has
-written twice.
+Grubstake Inc. is a mining partnership with no home port, a post box at *Clearing House* and a lander called
+*Tailings* that has been patched more often than it has been painted. Augustin Pell, its managing partner, files under
+the Salvage Convention, and by his reading a machine of the engineer's that no gun covers is abandoned property, and
+ore no drill is working belongs to whoever drills it.
 
-The clerk's own view, which the Registrar has asked her to keep off the sheet, is on this page because the sheet has no
-column for it. The *Carrow* was lost to the swarm, the swarm now feeds on the operator's smoke, and two of the three
-companies on file are paying to be near it. The Authority has a form for everything and no guns. It registers what
-lands and collects what it can, and on Nauvis, since Brandt's signature, it has collected nothing.
+Kessler-Hayashi is bigger than that. It began as an insurance house, bought a gunship fleet rather than go on paying
+out on the Aquilo run, and now sells quiet by the contract, with the Hayashi family on the letterhead and nowhere else.
+Its Security Division holds a contract for Nauvis, client unnamed, for the custody of cargo leaving the surface. Its
+site reports carry the engineer as a hazard, class three, and bill accordingly. What its Survey Division sends up to
+the parent each period, the clerk has not seen, and would like to.
+
+Synthexis told nobody it was coming. The Registry knows of it from a Kessler-Hayashi site report that called it pest
+control: a company with five swamp lots on Gleba and one scientist it is willing to name, running a breeding trial on
+the wild swarm in which the engineer's works are written down as the control.
+
+The clerk's own view is kept off the sheet at the Registrar's request. The swarm that took the *Carrow* is still down
+there, grown fat on the engineer's smoke, and two of the three companies on file have paid to sit next to it. The
+engineer's first radar charted a wreck a little way out, and the clerk is as sure as she can be, with no log to read,
+whose it is. The three files follow, one at the head of each company's chapter, as they reached the Registry and with
+her notes beside them.
 :::

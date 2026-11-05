@@ -17,78 +17,53 @@ PARENT
   no Hayashi has sat in a field office.
 
 REGISTERED
-: Serenity Ring, nine armed platforms on a leased orbit that moves to wherever the client is paying. No ground
-  holdings, by policy. Office hull *Clear Title*; on station over Nauvis, *Quiet Enjoyment*.
+: Serenity Ring, nine armed platforms on a leased orbit. No ground holdings, by policy. Office hull *Clear Title*;
+  on station over Nauvis, *Quiet Enjoyment*.
 
 PRINCIPALS
 : Ilse Kessler, Director of Field Operations (every site report). Tomas Adeyemi, Chief of Siege Works, Nauvis.
-  P. Lindqvist, Surveyor. M. Voss, Fire Controller, *Quiet Enjoyment*. Invoices carry no signature: they issue from
-  Accounts under the company's name.
-
-DIRECTIVES CITED
-: SD 4.1, assets of the first class are restored before personnel are relieved. SD 6.2, no live weapons research
-  aboard a company hull. SD 9, observations of a contracted surface are company property. SD 11, a site without an
-  uplink is written off.
+  P. Lindqvist, Surveyor. M. Voss, Fire Controller, *Quiet Enjoyment*.
 
 CONTRACTS KNOWN
-: Freighter escort on the Aquilo run, four gunships a convoy, since the second ice season. Cordon duty at the Vulcanus
-  foundries while the demolishers pass, billed by the hour. Nauvis: contract NV-1, client withheld under clause 9.
-
-MILITARY STRENGTH
-: Laser troopers, tanks and railgunners from the first pod; laser drones from the second shipment. Heavier patterns
-  are built on the surface, in three laboratories, and only while those laboratories stand.
-
-SEE ALSO
-: Grubstake Inc. (file 209; dispute, ongoing). Synthexis (file 377; "unlicensed pest control" in K-H's filings).
-  Hazard register H-3, the operator: "site hazard, class three" in every site report since NV-1/1.
+: Escort on the Aquilo run; cordon duty at the Vulcanus foundries. Nauvis: contract NV-1, client withheld under
+  clause 9.
 :::
 
 Contract NV-1 was signed the week the operator's first rocket cleared the atmosphere, and the Registry holds a copy
-because Kessler-Hayashi does everything in writing. What it does not hold is the client's name, which clause 9
-withholds and which the company has never waived, on this contract or any other. What the contract buys is plain on
-its face: a surveyed boundary round a landing site, the launch lanes above it, and "protective custody" of any cargo
-that leaves the ground inside the boundary. The operator's rockets are cargo. The operator is a hazard, class three,
-and is billed as one.
+because Kessler-Hayashi does everything in writing. What it does not hold is the client's name. Clause 9 withholds
+it, and the company has never waived it. The contract buys a surveyed boundary round a landing site, the launch lanes
+above it, and "protective custody" of any cargo that leaves the ground inside the boundary. The operator's rockets
+are cargo. The operator is a hazard, class three, and is billed as one.
 
 The clerk notes what the contract does not buy. Nobody in NV-1 is paid by the launch, and in eleven site reports the
-Ring has not asked for one rocket to be held, searched or turned back. What goes up to *Clear Title* each period is a
-survey. Director Kessler's sieges are drawn up from orbit, from a reading of what defends their target taken at the
-moment the order is given, and the pods that bring her guns down are sized to that reading; her Survey Office has the
-power behind the operator's turrets traced to the one pole that feeds them. Standing Directive 9 makes every
-observation of a contracted surface company property, to be disclosed to no client, operator or registry. The Survey
-Division sells to somebody. The security contract is what puts it close enough to look, and the Registry can find no
-other reason for it to be there.
+Ring has not asked for one rocket to be held. What goes up to *Clear Title* each period is a survey. Director Kessler
+draws her sieges up from orbit, on the Survey Office's pictures of whatever defends the target. Standing Directive 9 makes every observation of
+a contracted surface company property. The security contract puts the Survey Division close enough to look. Who it
+sells the view to is not on file.
 
-A K-H site arrives finished. The lander comes down inside a cargo pod with the escort's pods on either side, more pods
-streak in behind it, and by the time the dust has settled there are generators round the hull, a projector humming a
-dome over them and a wall going up. Directive 4.1 ranks the lander and its generators as assets of the first class, to
-be restored before personnel are relieved, and the crews put a dark generator back before anything else, because a
-lander with half its generators gone can be taken apart with hand tools. The laboratories come later, each inside a
-walled district of its own, and they stand on the ground because Keel & Ward, who underwrite the Ring, will not carry
-live weapons work aboard a hull; Directive 6.2 was written to keep their cover. Optics, the Armory and Adeyemi's Siege
-Works each hold one branch of the company's research, and a branch that loses its laboratory stops where it stood.
+A K-H site arrives finished. The lander comes down inside a cargo pod with the escort's pods either side, and by the
+time the dust has settled there are generators round the hull and a dome humming over them. Directive 4.1 ranks the
+lander and its generators as assets of the first class, to be restored before personnel are relieved, so a dark
+generator is put back before anything else. The laboratories come later. They stand on the ground because Keel & Ward, who underwrite the Ring, will not carry live weapons work aboard a hull,
+and Directive 6.2 was written to keep their cover. Optics, the Armory and Adeyemi's Siege Works each hold one branch
+of the company's research in one building, and when the building goes, the work in it goes with it.
 
 ::: {.pullquote cite="I. Kessler, site report NV-1/3"}
 Site hazard notified of its obligations under clause twelve. No reply. Billing continues.
 :::
 
 The boundary is the Director's instrument, and it moves. Lindqvist's office posts a Schedule B notice naming the
-building the next arc will enclose, and then the drones pour a pad, raise a short wall facing the operator and set two
-guns on it; where the arc crosses a railway it carries a gate, shut. Belts and pipes that cross the surveyed edge
-under her guns are cut as encroachments. Clause 12 bills the operator for every nest that attacks a K-H site out of
-the operator's own smoke, payable in circuits, modules or steel at a post on the boundary with the sum lit above it,
-and a settled invoice buys the one thing the company sells cheaply, which is quiet: no raid, no siege, the line held
-where it stands. When a wall will not come down under Adeyemi's mortars, one member of the escort walks up with a
-painting laser, Voss on *Quiet Enjoyment* countersigns the order, and the lances fall along the wall. The incubators
-of the Synthexis trial it clears as it clears any nest, on its own account, and its reports file the trial under
-hazards.
+building the next arc will enclose, and the drones pour a pad and raise a short wall facing the operator, with guns on
+it. Clause 12 bills the operator for every nest that attacks a K-H site out of the operator's own smoke, payable at a
+post on the boundary with the sum lit above it, and a settled invoice buys the one thing the company sells cheaply,
+which is quiet. When a wall will not come down under Adeyemi's mortars, one of the escort walks up with a painting
+laser, Voss on *Quiet Enjoyment* countersigns the order, and the lances fall along the wall.
 
-The company has lost sites before. Where a site's uplink is destroyed, Directive 11 writes the site off: nothing is
-rebuilt, no operation goes out, and the weakest camp is abandoned first, its personnel carried at book value until
-Accounts clears the memorandum. The Nauvis memorandum, when it comes, will issue under the company's name with the
-client still blacked out. Until then the Ring goes on landing, and late in a contract it no longer sends a camp: the
-lander brings its fortress down with it, walls, guns and dome, and the Director's first site report from it runs to
-one line, that the hazard has been notified.
+The company has lost sites before. Directive 11 writes a site off the day its
+uplink goes, and the people on it are carried at book value until Accounts clears the memorandum. The Nauvis
+memorandum, when it comes, will issue under the company's name with the client still blacked out. Until then the Ring
+goes on landing, and its latest landers bring the fortress down whole, walls and dome already up, so that the
+Director's first site report from one runs to a single line: the hazard has been notified.
 :::
 
 Kessler-Hayashi is a security contractor. It lands late and is at war with you from the day it arrives. It walls its

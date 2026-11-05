@@ -19,8 +19,8 @@ PRINCIPALS
   release. Ilya Rask, Senior Technician, keeper of the feed roster.
 
 LICENCES
-: Gleba, five lots: yumako, jellystem, pentapod study. Nauvis: none. Surface Registry audit minute 377/A finds that
-  the Gleba leases do not extend to Nauvis, and records no action.
+: Gleba, five lots: yumako, jellystem, pentapod study. Nauvis: none. The Surface Registry's audit finds that the
+  Gleba leases do not extend to Nauvis, and records no action.
 
 PRODUCT
 : Bred biters, striped green and yellow, raised from wild stock in the swarm's own spawners. Trial Protocol NV/1, "an
@@ -31,39 +31,37 @@ STAFF ON SURFACE
 
 SEE ALSO
 : Kessler-Hayashi (file 114; "the exterminator" in Synthexis's papers). Grubstake (file 209; "the supplier": its smoke
-  feeds the trial). Hazard register H-1, the wild stock, "the hedge" in the protocol.
+  feeds the trial). The wild stock: "the hedge" in the protocol.
 :::
 
 Where Synthexis comes from, its filings leave blank, and the Registry has stopped asking the agent on Gleba, who
-answers every letter with the lease numbers. The leases are real. Five swamp lots, GL-22 to GL-26, hold its yumako and
-jellystem plantings and the pens where its technicians study pentapods, and every Synthexis site elsewhere stands on
-a blot of that soil, carried out cold by the platform *Cold Chain* with the seed stock, the substrate and the clinic,
-so that nothing spoils on the way. What the lots do not hold is a licence for anywhere else. Audit minute 377/A, which
-the clerk drafted, finds that the Gleba leases end at Gleba and records no action, because the Surface Registry has
-no officer who could take one.
+answers every letter with the lease numbers. The leases are real. Five swamp lots hold its yumako and jellystem
+plantings and the pens where its technicians study pentapods, and every Synthexis site elsewhere stands on a blot of
+that soil, carried out cold by the platform *Cold Chain* with the seed stock and the clinic so that nothing spoils on
+the way. What the lots do not hold is a licence for anywhere else. The clerk's audit says so, and records no action,
+because the Surface Registry has no officer who could take one.
 
 Protocol NV/1 reached the Registry by way of a Kessler-Hayashi site report that called it pest control. It describes
 an open-air breeding trial on wild stock, run where the stock is thickest and the air dirtiest, with a working defence
 as the control: the unregistered operator's works, whose smoke the trial lives on. *Cold Chain* put the first pod down
-on a nest field at the far edge of that smoke once the wild stock had changed enough for the protocol's purposes. The
-spawners there became incubators, each with a biochamber beside it and a pad of substrate under it, and creep grew
-out from the tumors and drank the smoke off the air. Ilya Rask keeps the feed roster. A biochamber his technicians
-have not reached stops, and the incubator beside it lets its stock loose and goes back to the wild.
+on a nest field at the far edge of that smoke, once the wild stock there had grown into something worth breeding from.
+The spawners became incubators, each with a biochamber beside it and a pad of substrate under it, and creep grew out
+from the tumors and drank the smoke off the air. Ilya Rask keeps the feed roster. An incubator whose biochamber his
+technicians have let go cold lets its stock loose and goes back to the wild.
 
 ::: {.pullquote cite="A. Verhaegen, adverse event report NV/1-7"}
 Batch lost in full at the control's southern wall. Finding: the wall held. Action: the next batch is bred for the wall.
 :::
 
-Every wave is a batch, and every batch has a release note over Verhaegen's signature with the breed, the count, the
-target and the gate. A scout goes round the control first, as the protocol requires, and the release names the gate
-the fewest guns cover. What comes back is written up as an adverse event in the same even hand, and the next release
-answers it. A gate that held costs more in the next note, and a wall that held gets bursters, bred from the small
-biter's line with the acid gland grown in until the animal is a running sac that cannot bite and goes off where it
-stops, or where it is killed. Mines on the way in get sweepers. The stomper, which the Gleba pens produced, walks over
+Each batch goes out under a release note in Verhaegen's hand, with the breed, the count, the target and the gate. The
+protocol wants a scout round the control first, and the note names whichever gate the scout found thinnest. What
+comes back is written up as an adverse event in the same even hand, and the next release answers it. A wall that held
+gets bursters, bred from the small biter's line with the acid gland grown in until the animal is a running sac that
+cannot bite and goes off where it stops, or where it is killed. The stomper, which the Gleba pens produced, walks over
 the wall the bursters were meant for. When a trial site has grown, Verhaegen signs a carrier dispatch, and a
 big-bodied animal in violet, lit so that the technicians can follow it, walks a dozen of the stock to a wild nest
-field farther out and founds a second site there. The company does not land again while a site stands. It has never
-written to the Authority, and the one address it keeps is on Gleba.
+field farther out and founds a second site there. The company has never written to the Authority, and the one address
+it keeps is on Gleba.
 :::
 
 Synthexis is a bioengineering company. It does not mine or build factories. It takes over a field of biter spawners,
