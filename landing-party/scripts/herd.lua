@@ -2409,18 +2409,14 @@ end
 -- in. Only a piece it broke (w.broke): a line from its front past the edge of an open gap touches pieces never broken, and
 -- going at those is chewing a wall beside its gap. At most WALL_TRIES pieces.
 function herd.rk.tile_key(p) return string.format("%d,%d", math.floor(p.x), math.floor(p.y)) end
-function herd.rk.keep_line(w)
-  if storage.biotech_no_keep_line or not (w.rushed and w.gap and w.broke and w.goal and w.group and w.group.valid) then return end
-  if (w.mend_at and w.mend_at.valid) or (w.mends or 0) >= WALL_TRIES then return end
-  local front = foremost(w)
-  -- (Its front past its gap toward its target: its gap behind it. Read from there, the line back to its gap ran along the inner
-  -- line, and it went at pieces beside its way; the full nwwallsiege visit, 0.2.215.)
-  if d2(front, w.goal) <= d2(w.gap, w.goal) then return end
-  local wall = wall_between(w, front, w.gap)
-  if not (wall and w.broke[herd.rk.tile_key(wall.position)]) then return end
-  -- (And only where that line's opening is narrower than its herd's own front, herd.spread: a piece mended in the middle of an
-  -- outer gap of 29 open, it went at that one piece under the lasers while the rest stood open, and lost the wave; the full
-  -- visit. Through an opening of three or one, the engine walked it round.)
+-- The mended piece it broke on the line from `from` to its gap, where that line's opening is narrower than its herd's own
+-- front (herd.spread), or nil.
+-- (Its front wide enough: a piece mended in the middle of an outer gap of 29 open, it went at that one piece under the
+-- lasers while the rest stood open, and lost the wave; the full visit. Through an opening of three or one, the engine
+-- walked it round.)
+function herd.rk.mended_on(w, from)
+  local wall = wall_between(w, from, w.gap)
+  if not (wall and w.broke[herd.rk.tile_key(wall.position)]) then return nil end
   local open, s, q = 0, game.surfaces[w.surface], wall.position
   local reach = herd.spread(alive(w))
   for _, dir in ipairs({{1, 0}, {0, 1}}) do
@@ -2433,25 +2429,159 @@ function herd.rk.keep_line(w)
     end
     open = math.max(open, n)
   end
-  if open >= reach then return end
-  w.mend_at, w.mends = wall, (w.mends or 0) + 1
-  -- (On along its rush's legs past its gap: the leg nearest its gap and those after it.)
-  -- (Its distraction none: by_enemy, it was drawn off its piece to the guns within its sight and fought there; herd test,
-  -- ranks-mend.)
-  local cmds, from = {{type = defines.command.attack, target = wall, distraction = defines.distraction.none}}, nil
+  if open >= reach then return nil end
+  return wall, open, reach
+end
+-- Its rush's order from where it stands: at `wall` first (a mended piece on its line, distraction none: by_enemy, it was
+-- drawn off its piece to the guns within its sight and fought there; herd test, ranks-mend), through its gap, and on along
+-- its rush's legs past it (the leg nearest its gap and those after it).
+-- Its group point past its gap toward its target (`past`): on from there (after its wall), its legs past it only.
+-- (Sent back through its gap each time its order was done while it held its rush, its group point swung between its gap
+-- and its legs' ends, and drew those coming through west along the corridor under the flamethrowers; from the save.)
+function herd.rk.rush_on(w, wall, past)
+  local cmds, from = {}, nil
+  if wall then cmds[1] = {type = defines.command.attack, target = wall, distraction = defines.distraction.none} end
   local legs = w.rush_legs or {}
+  local at = past and w.group.position
+  if at and d2(at, w.goal) >= d2(w.gap, w.goal) then at = nil end
   for i, c in ipairs(legs) do
     if c.destination and (not from or d2(c.destination, w.gap) < d2(legs[from].destination, w.gap)) then from = i end
   end
-  if gap_open(w) then cmds[#cmds + 1] = go(w.gap, defines.distraction.none, 1.5) end
+  if at then
+    from = nil
+    for i, c in ipairs(legs) do
+      if c.destination and not from and d2(c.destination, w.goal) < d2(at, w.goal) then from = i end
+    end
+  end
+  if gap_open(w) and not at then cmds[#cmds + 1] = go(w.gap, defines.distraction.none, 1.5) end
+  -- (Nothing after its wall, or nothing at all: on to its target.)
+  local n = wall and 1 or 0
   for i = from or (#legs + 1), #legs do
     local c = legs[i]
     if not c.target or c.target.valid then cmds[#cmds + 1] = c end
   end
-  if #cmds == 1 then cmds[2] = go(w.goal, defines.distraction.none, 6) end
-  w.group.set_command(compound(cmds))
+  if #cmds == n then cmds[#cmds + 1] = go(w.goal, defines.distraction.none, 6) end
+  w.group.set_command(#cmds > 1 and compound(cmds) or cmds[1])
+end
+function herd.rk.keep_line(w)
+  if storage.biotech_no_keep_line or not (w.rushed and w.gap and w.broke and w.goal and w.group and w.group.valid) then return end
+  if (w.mend_at and w.mend_at.valid) or (w.mends or 0) >= WALL_TRIES then return end
+  local front = foremost(w)
+  -- (Its front past its gap toward its target: its gap behind it. Read from there, the line back to its gap ran along the inner
+  -- line, and it went at pieces beside its way; the full nwwallsiege visit, 0.2.215.)
+  if d2(front, w.goal) <= d2(w.gap, w.goal) then return end
+  local wall, open, reach = herd.rk.mended_on(w, front)
+  if not wall then return end
+  w.mend_at, w.mends = wall, (w.mends or 0) + 1
+  herd.rk.rush_on(w, wall)
   log(w, string.format("a piece of its gap mended at %.0f,%.0f between its herd's front at %.0f,%.0f and its gap at %.0f,%.0f, %d open beside it for a front of %d: it goes at it, on its line (%d)",
     wall.position.x, wall.position.y, front.x, front.y, w.gap.x, w.gap.y, open, reach, w.mends))
+end
+-- Its herd through, read by its herd and not by its front or its group (the user's north wall from the minute-11 save,
+-- 0.2.215: its group's order ended when the engine's group point was a few tiles past the outer wall, ahead of its members,
+-- its front a tile past it and 133 of 168 still outside; it read itself through and hunted, and those outside went at their
+-- targets one by one through the narrow gap, 64 of them burning in the corridor west of it). Of its group's members, those
+-- with a wall of its foe's standing on their line to its target and on their line to its gap (as its front is read,
+-- wall_between): outside. (On the line to its target alone, those in front of the opening, their line crossing the wall
+-- beside it, read as outside while they poured through.)
+function herd.rk.outside(w)
+  local list, x, y = {}, 0, 0
+  -- (Not its rams: those held or going have orders of their own.)
+  local rams = {}
+  for _, b in ipairs(w.big_targets or {}) do if b.unit.valid then rams[b.unit.unit_number] = true end end
+  for _, u in ipairs(herd_units(w)) do
+    if not holds(w, u) and not rams[u.unit_number] and wall_between(w, u.position, w.goal) and wall_between(w, u.position, w.gap) then
+      list[#list + 1] = u
+      x, y = x + u.position.x, y + u.position.y
+    end
+  end
+  return #list, #list > 0 and {x = x / #list, y = y / #list} or nil, list
+end
+-- Those outside on their own orders (out of its group): at a mended piece it broke on their line to its gap first
+-- (herd.rk.mended_on), then to its group, distraction none; its group on along its legs past its gap. (Sent through its gap
+-- first, at the user's wall the inner gap west of the outer wall's opening, they walked the corridor to it under the
+-- flamethrower at its west end; from the save.)
+-- (Its whole group sent at the mended piece, its group point went back out to the wall and drew those inside out with it:
+-- the herd test's crowd, 15 outside to 23 in a look; ranks-crowd.)
+function herd.rk.push_rush(w, mid, list)
+  local wall = mid and w.broke and (w.mends or 0) < WALL_TRIES and herd.rk.mended_on(w, mid) or nil
+  if wall then w.mend_at, w.mends = wall, (w.mends or 0) + 1 end
+  herd.rk.rush_on(w, nil, true)
+  local to = w.group.position
+  if d2(to, w.goal) >= d2(w.gap, w.goal) then to = w.goal end
+  local cmds = {}
+  if wall then cmds[1] = {type = defines.command.attack, target = wall, distraction = defines.distraction.none} end
+  cmds[#cmds + 1] = go(to, defines.distraction.none, 6)
+  w.straggling = w.straggling or {}
+  for _, u in ipairs(list or {}) do
+    if u.valid and not (w.straggling[u.unit_number] and u.commandable.has_command) then
+      u.commandable.set_command(#cmds > 1 and compound(cmds) or cmds[1])
+      w.straggling[u.unit_number] = true
+    end
+  end
+  return wall
+end
+-- Those of it no longer outside and out of its group: back in it.
+function herd.rk.regather(w)
+  if not (w.straggling and w.group and w.group.valid) then return end
+  local out = {}
+  for _, u in ipairs(select(3, herd.rk.outside(w))) do out[u.unit_number] = true end
+  for _, u in ipairs(herd_units(w)) do
+    if w.straggling[u.unit_number] and not out[u.unit_number] and not u.commandable.parent_group then
+      w.group.add_member(u)
+      w.straggling[u.unit_number] = nil
+    end
+  end
+end
+-- Its rush's order done with more of it outside than one rank of its own front (herd.spread: the prior, its own shape, not a
+-- share typed here): not through. Its rush goes on (herd.rk.push_rush), and is looked at every LOOK (herd.rk.watch_rush):
+-- through once no more than a rank is outside, or all the same once a look sees none the fewer outside. (Judged at each
+-- order done, it read none the fewer after 7 ticks: its group point at its legs' ends at once, its order done three times
+-- in 12 ticks; from the save.) True while it holds its rush.
+function herd.rk.hold_rush(w)
+  if storage.biotech_no_herd_through or not (w.rushed and w.gap and w.goal and w.group and w.group.valid) then return false end
+  if w.rush_held then
+    -- (Its order done again while held: on along its legs from where its group point is. Told to wait there for them, its
+    -- group stood under the flamethrowers past the zigzag for four looks: 1,393 mediums at the breach to 321; from the save.)
+    herd.rk.rush_on(w, nil, true)
+    return true
+  end
+  if w.rush_more then return false end
+  local out, mid, list = herd.rk.outside(w)
+  local rank = herd.spread(alive(w))
+  if out <= rank then return false end
+  w.rush_held, w.out_last, w.rush_more = game.tick, out, 1
+  local wall = herd.rk.push_rush(w, mid, list)
+  log(w, string.format("its rush's order done with %d of its %d outside, their middle at %.0f,%.0f, more than a rank of %d: not through, they come on to it%s",
+    out, alive(w), mid.x, mid.y, rank, wall and string.format(", at a mended piece at %.0f,%.0f first", wall.position.x,
+    wall.position.y) or ""))
+  return true
+end
+function herd.rk.watch_rush(w)
+  if not (w.rush_held and w.group and w.group.valid) or game.tick - w.rush_held < LOOK then return end
+  herd.rk.regather(w)
+  local out, mid, list = herd.rk.outside(w)
+  local rank = herd.spread(alive(w))
+  -- (Or none the fewer while it is at a mended piece on its way: opening its way, not stuck.)
+  local chewing = w.mend_at and w.mend_at.valid and w.rush_more < WALL_TRIES
+  if out > rank and (out < w.out_last or chewing) then
+    w.rush_held, w.out_last, w.rush_more = game.tick, math.min(out, w.out_last), w.rush_more + 1
+    local wall = herd.rk.push_rush(w, mid, list)
+    if storage.trace then
+      log(w, string.format("its rush held: %d outside, their middle at %.0f,%.0f%s", out, mid.x, mid.y, wall and
+        string.format(", at a mended piece at %.0f,%.0f", wall.position.x, wall.position.y) or ""))
+    end
+    return
+  end
+  log(w, string.format("its rush held %d looks: %d of it outside (%d at the least), a rank of %d: %s", w.rush_more, out,
+    w.out_last, rank, out <= rank and "through" or "through all the same"))
+  w.rush_held = nil
+  -- (Those still on their own orders back in its group.)
+  for _, u in ipairs(herd_units(w)) do
+    if w.straggling and w.straggling[u.unit_number] and not u.commandable.parent_group and not holds(w, u) then w.group.add_member(u) end
+  end
+  w.straggling = nil
+  return herd.rk.through_now(w)
 end
 -- A ram of a rank dead (killed short, never set off: those set off leave big_targets first, detonate): its rank's
 -- reading, for the next rank's size. How long the guns took a ram (its rank's first in reach to its last dead, over its
@@ -3461,6 +3591,7 @@ local function step(w, tick)
   end
   if w.stage == "inside" or w.stage == "breach" then release_bursters(w, tick) end
   if w.stage == "breach" then herd.rk.keep_line(w) end
+  if w.stage == "breach" and tick % LOOK == 0 then herd.rk.watch_rush(w) end
   if w.stage == "inside" or w.stage == "breach" or w.stage == "blind" then
     -- Half lost, and still losing (any of its own in FIRE_WINDOW): out. Half lost past the guns and losing none, it stays: the
     -- way out is through the fire it paid to cross (a deathworld visit, 2026-10-27: waves lost half in the gap of a turret
@@ -3819,6 +3950,40 @@ function herd.debug_drop_group(id)
   return true
 end
 
+-- Through: inside from here (its rush's order done, and its herd past the wall, herd.rk.hold_rush).
+function herd.rk.through_now(w)
+  w.stage = "inside"; w.t_inside = game.tick
+  -- (Through: its stay rule's again from here, its losses counted from what got there.)
+  if w.committed then
+    w.committed = nil
+    w.size, w.loss_log = alive(w), nil
+    log(w, string.format("through to its target with %d", w.size))
+  end
+  -- A deep strike: past what is near, on to the heart, fighting nothing; there it hunts.
+  if w.deep and not w.deep.reached then
+    w.deep.going, w.deep.t_go = true, game.tick
+    -- Its spitters stay at the breach (sent back from the heart they crossed the base again, late and few).
+    hold_breach(w)
+    -- Along the way it priced, round the fire (the user, 2026-10-28: "why don't we simply avoid going in a straight
+    -- line?"): told to go straight to it, the engine's shortest way crossed a second laser line and a line of
+    -- flamethrowers it had priced its way round, and it lost 54 there.
+    local pts = {}
+    for _, q in ipairs(w.deep.way or {}) do pts[#pts + 1] = q end
+    pts[#pts + 1] = w.deep.at
+    local cmds = inside_legs(w, foremost(w), pts)
+    cmds[#cmds] = go(w.deep.at, defines.distraction.none, 8)
+    w.group.set_command(compound(cmds))
+    -- (Its legs in the log: those of the trailer's wave of 200 had run out and round the walls, inside_legs.)
+    local legs = {}
+    for _, c in ipairs(cmds) do legs[#legs + 1] = string.format("%.0f,%.0f", c.destination.x, c.destination.y) end
+    log(w, string.format("rushes for the heart at %.0f,%.0f, %d legs round the fire (%s, of %d on its way)", w.deep.at.x,
+      w.deep.at.y, #cmds, table.concat(legs, " "), #pts))
+    return
+  end
+  stay_begin(w)
+  return hunt(w)
+end
+
 function herd.on_command_completed(e)
   local h = storage.herd
   if not h then return end
@@ -3936,36 +4101,9 @@ function herd.on_command_completed(e)
           w.group.set_command{type = defines.command.attack, target = wall, distraction = defines.distraction.by_enemy}
           return
         end
-        w.stage = "inside"; w.t_inside = game.tick
-        -- (Through: its stay rule's again from here, its losses counted from what got there.)
-        if w.committed then
-          w.committed = nil
-          w.size, w.loss_log = alive(w), nil
-          log(w, string.format("through to its target with %d", w.size))
-        end
-        -- A deep strike: past what is near, on to the heart, fighting nothing; there it hunts.
-        if w.deep and not w.deep.reached then
-          w.deep.going, w.deep.t_go = true, game.tick
-          -- Its spitters stay at the breach (sent back from the heart they crossed the base again, late and few).
-          hold_breach(w)
-          -- Along the way it priced, round the fire (the user, 2026-10-28: "why don't we simply avoid going in a straight
-          -- line?"): told to go straight to it, the engine's shortest way crossed a second laser line and a line of
-          -- flamethrowers it had priced its way round, and it lost 54 there.
-          local pts = {}
-          for _, q in ipairs(w.deep.way or {}) do pts[#pts + 1] = q end
-          pts[#pts + 1] = w.deep.at
-          local cmds = inside_legs(w, foremost(w), pts)
-          cmds[#cmds] = go(w.deep.at, defines.distraction.none, 8)
-          w.group.set_command(compound(cmds))
-          -- (Its legs in the log: those of the trailer's wave of 200 had run out and round the walls, inside_legs.)
-          local legs = {}
-          for _, c in ipairs(cmds) do legs[#legs + 1] = string.format("%.0f,%.0f", c.destination.x, c.destination.y) end
-          log(w, string.format("rushes for the heart at %.0f,%.0f, %d legs round the fire (%s, of %d on its way)", w.deep.at.x,
-            w.deep.at.y, #cmds, table.concat(legs, " "), #pts))
-          return
-        end
-        stay_begin(w)
-        return hunt(w)
+        -- (Through by its herd, not its front: herd.rk.hold_rush.)
+        if herd.rk.hold_rush(w) then return end
+        return herd.rk.through_now(w)
       end
       if w.stage == "inside" and w.deep and w.deep.going then
         return rush_end(w, e.result == defines.behavior_result.success and "reached" or "as far as it got")
