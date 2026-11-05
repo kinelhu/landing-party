@@ -3,7 +3,10 @@
 # (~/Dev/factorio-film, FILM_HOME; its README has every param), with Landing Party linked, its plugin
 # (tests/lp-film-hooks: sieges, waves, bursts, /lp tools, dome looks) and, given LP_FILM_SIM, its scenario harness.
 #   scripts/film.sh <visit profile name> <save in its saves> <params.lua> [out dir]
-# Frames go to [out dir] (default docs/sim/film-<name>).
+# Frames go to [out dir] (default docs/sim/film-<name>), with film-log.txt (events and each still's tick).
+# FILM_REHEARSE=<ticks>: the same film headless, no window (the toolkit's README, "A rehearsal"): rehearsal-log.txt in
+# [out dir], the course the window will follow. A sim.sh run of the same save is not: the window's new player shifts
+# every later entity's number, and the engine's units move by them (DESIGN.md, "Films follow their rehearsal").
 set -euo pipefail
 source "$(dirname "$0")/env.sh"
 FILM_HOME="${FILM_HOME:-$HOME/Dev/factorio-film}"

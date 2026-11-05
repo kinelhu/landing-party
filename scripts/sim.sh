@@ -37,7 +37,10 @@ run() { "$FACTORIO" --config "$SIM/config/config.ini" "$@" > "$SIM/sim.out" 2>&1
   echo "SIM FAILED ($RUN): factorio exited non-zero"; grep -hnE -A8 "Error" "$SIM/factorio-current.log" "$SIM/sim.out" | head -40; exit 1; }; }
 if [ -n "${LP_FORK:-}" ]; then
   # From the scenario's fork at its strike (scripts/fork.sh, made once): only what follows the strike runs.
-  fork="$FORKS/$SCENARIO-$SEED-$STRIKE-$FORK_HASH.zip"
+  # (LP_FORK_MIX: a variant's own fork, as fork.sh and film_fork.sh make it. LP_MIX alone runs the variant from the plain
+  # scenario's fork, which is not the one its film plays: herd ranks-mend's fork had 52 units at its tick, the plain
+  # one's 49, 2026-11-05.)
+  fork="$FORKS/$SCENARIO${LP_FORK_MIX:+-$LP_FORK_MIX}-$SEED-$STRIKE-$FORK_HASH.zip"
   # A fork that fails to build says so (its output once went to /dev/null and the run ended silently).
   [ -f "$fork" ] || "$(dirname "$0")/fork.sh" "$SCENARIO" "$SEED" "$STRIKE" || { echo "SIM FAILED ($RUN): fork"; exit 1; }
   cp "$fork" "$SIM/saves/sim.zip"

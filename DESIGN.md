@@ -5080,6 +5080,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   narrow gap, and 64 died in the corridor just west of it to the -43,-404 flamethrower and its stickers. Through counted by
   its herd, not by its front, is the next thing to read. Assumed, not tested: that robots mending faster than a herd walks
   is common on real walls (seen on nwa only).
+- **Films follow their rehearsal** (2026-11-05; the toolkit's README, "A rehearsal"). Two films went another way than
+  their headless runs: herd ranks-mend's fork (headless breach 11400, rush 12042; filmed, breach 12192, no rush) and nwa's
+  minute-11 save (corridor branch headless, the wide gap filmed). Headless pairs on the same saves (harness alone; the
+  film's helper, plugin and params; the same with the trace forced on; the trace off without the plugin) were identical
+  to the tick (30-tick herd states, decisions): not the trace, the plugin's reads, load order or the speed. The window
+  is the difference: it joins as a new player (a fork from a server holds none; nwa's holds 'kinanischka', and a window
+  without Steam joins nameless), the engine gives it a character, and that takes an entity number. A chest made at
+  load did the same (a rock, which takes none, did not); in the base game alone, one chest before 40 biters changed their
+  march 2 ticks after its order. The engine's units move by their numbers. First divergence with a character: herd units'
+  positions at 10109, 89 ticks into the march, with no decision of the mod's that tick; nwa's farm's choice at 30879300.
+  With a character made at load headless, each run followed its film: herd every event (gather 4604, march 10020, breach
+  12192); nwa every decision line for 13,000 ticks, past its breach (30889630) to withdraw (30892920), but a ram of rank
+  4 killed by another laser at 30891711, and inside at 30892642 against the film's 30892484. That residual is open (not
+  the stills, an autosave, the character's place or the trace). The fix is in the toolkit: `FILM_REHEARSE=<ticks>` before
+  `scripts/film.sh` runs the film's own setup headless with that stand-in and writes `rehearsal-log.txt` (events, each
+  still's tick and frame); a film writes `film-log.txt` alike, with the player it made at load. Time stills from the
+  rehearsal, not from sim.sh. Also found: `sim.sh LP_FORK=1 LP_MIX=<mix>` ran the plain scenario's fork, not the mix's one
+  film_fork.sh films (ranks-mend's: 52 units at its tick against 49); `LP_FORK_MIX=<mix>` now picks it. No mod change.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
