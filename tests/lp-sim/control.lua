@@ -10579,7 +10579,11 @@ scenarios.herd = function()
   -- back and a way round opened 22 tiles along it (the user's north wall on nwa: its outer wall ends, a 7-tile corridor
   -- behind it). Its rush keeps its gap's line through the mended piece (herd.rk.keep_line); ranks-mend-off, left to the
   -- engine's path (the control, biotech_no_keep_line).
-  local mend = (mix == "ranks-mend" or mix == "ranks-mend-off") and mix or nil
+  -- ranks-crowd: ranks-mend with a herd of 120 (the user's wall: 168 through a gap mended to one or two tiles): its group's
+  -- order is done with most of it still outside the outer ring. Through is read by its herd (herd.rk.hold_rush);
+  -- ranks-crowd-off, by its group's order (the control, biotech_no_herd_through).
+  local crowd = (mix == "ranks-crowd" or mix == "ranks-crowd-off") and mix or nil
+  local mend = (mix == "ranks-mend" or mix == "ranks-mend-off" or crowd) and mix or nil
   if mend then mix = "ranks" end
   local L, G = "laser-turret", "gun-turret"
   local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
@@ -10720,12 +10724,13 @@ scenarios.herd = function()
       lp("herd_fill", S.pen, 20, "lp-bred-cinder")
     elseif mix == "ranks" or mix == "ranks-off" then
       -- A siege's shape: a herd, its screen and two rams (farm.lua siege_size: rams, a screen of the cheapest breed).
-      lp("herd_fill", S.pen, 30, "lp-bred-medium-biter")
+      lp("herd_fill", S.pen, crowd and 120 or 30, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 8, "lp-bred-small-biter")
       -- (Three: the third its last rank, at the guns covering its way in once its way is open, herd.rk.gun_rank.)
       lp("herd_fill", S.pen, 3, "lp-bred-big-burster")
       if mix == "ranks-off" then lp("debug_tune", {biotech_no_ranks = true}) end
       if mend == "ranks-mend-off" then lp("debug_tune", {biotech_no_keep_line = true}) end
+      if mend == "ranks-crowd-off" then lp("debug_tune", {biotech_no_herd_through = true}) end
     elseif mix == "burst" or mix == "burst-nohold" then
       lp("herd_fill", S.pen, 32, "lp-bred-medium-biter")
       lp("herd_fill", S.pen, 4, "lp-bred-cinder")
@@ -11126,10 +11131,25 @@ scenarios.herd = function()
         -- still outside the ring, and 1 or 2 walked the corridor (seeds 12345, 777, 4242); with it, none outside.
         info(string.format("herd %s: mended %s, its most in the corridor at once %s, its mends %s, inside at %s", mend,
           tostring(S.mended), tostring(S.corridor), tostring(w and w.mends), tostring(w and w.t_inside)))
-        check("herd: ranks-mend, its rush keeps its gap's line through a mended piece: none of it left outside when through",
-          (S.mended or 0) >= 1 and S.out_at_in == 0 and w ~= nil
-          and w.t_inside ~= nil, serpent.line({mended = S.mended, corridor = S.corridor, outside_when_in = S.out_at_in,
-          of = S.all_at_in, mends = w and w.mends, inside = w and w.t_inside}))
+        if crowd then
+          -- Through read by its herd (the user's north wall from the minute-11 save, 0.2.215: its group's order done with its
+          -- front a tile past the outer wall and 133 of 168 still outside, it hunted, and those outside went one by one through
+          -- the narrow gap, 64 burning in the corridor beside it): no more of it outside when through than one rank of its
+          -- own front (herd.spread).
+          local rank = math.ceil(math.sqrt(S.all_at_in or 0))
+          info(string.format("herd %s: %s of %s outside when through, a rank %d; its rush went on %s times", crowd,
+            tostring(S.out_at_in), tostring(S.all_at_in), rank, tostring(w and w.rush_more)))
+          check("herd: ranks-crowd, through read by its herd: no more of it outside when through than a rank of its front",
+            (S.mended or 0) >= 1 and S.out_at_in ~= nil and S.out_at_in <= rank and w ~= nil and w.t_inside ~= nil,
+            serpent.line({mended = S.mended, outside_when_in = S.out_at_in, of = S.all_at_in, rank = rank, rush_more = w and w.rush_more,
+            corridor = S.corridor, inside = w and w.t_inside}))
+        end
+        if not crowd then
+          check("herd: ranks-mend, its rush keeps its gap's line through a mended piece: none of it left outside when through",
+            (S.mended or 0) >= 1 and S.out_at_in == 0 and w ~= nil
+            and w.t_inside ~= nil, serpent.line({mended = S.mended, corridor = S.corridor, outside_when_in = S.out_at_in,
+            of = S.all_at_in, mends = w and w.mends, inside = w and w.t_inside}))
+        end
       end
       if mix == "ranks" and not mend then
         -- Its second rank through the gap the first opened, at the inner ring (40), not the outer (47).
@@ -15711,7 +15731,8 @@ end
 -- Herd: damage between the wild biters and the bred.
 if params.scenario == "herd" then
   -- ranks: each ram's first touch of the player's wall and its set-off (its wind-up: no longer destructible), tick by tick.
-  if params.mix == "ranks" or params.mix == "ranks-off" or params.mix == "ranks-mend" or params.mix == "ranks-mend-off" then
+  if params.mix == "ranks" or params.mix == "ranks-off" or params.mix == "ranks-mend" or params.mix == "ranks-mend-off"
+    or params.mix == "ranks-crowd" or params.mix == "ranks-crowd-off" then
     script.on_nth_tick(1, function(e)
       if not S.c then return end
       S.ram_touch, S.ram_off = S.ram_touch or {}, S.ram_off or {}
