@@ -1,0 +1,44 @@
+{
+ "image": "kessler-hayashi-camp.jpg",
+ "width": 1750,
+ "height": 984,
+ "caption": "An armed Kessler-Hayashi camp a few minutes after landing (it has called for no research yet, so no labs stand).",
+ "callouts": [
+  {
+   "n": 1,
+   "x": 875,
+   "y": 477,
+   "label": "Lander"
+  },
+  {
+   "n": 2,
+   "x": 973,
+   "y": 607,
+   "label": "Orbital relay"
+  },
+  {
+   "n": 3,
+   "x": 1203,
+   "y": 479,
+   "label": "Generator"
+  },
+  {
+   "n": 4,
+   "x": 739,
+   "y": 313,
+   "label": "Laser turret"
+  },
+  {
+   "n": 5,
+   "x": 671,
+   "y": 280,
+   "label": "Walls, three rings"
+  },
+  {
+   "n": 6,
+   "x": 1420,
+   "y": 722,
+   "label": "Mine: drills and bins"
+  }
+ ]
+}

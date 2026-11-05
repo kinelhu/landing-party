@@ -1,0 +1,56 @@
+{
+ "image": "synthexis-culture.jpg",
+ "width": 1750,
+ "height": 984,
+ "caption": "A young Synthexis culture ten minutes after its landing.",
+ "callouts": [
+  {
+   "n": 1,
+   "x": 885,
+   "y": 374,
+   "label": "Incubator (a taken spawner)"
+  },
+  {
+   "n": 2,
+   "x": 905,
+   "y": 512,
+   "label": "Biochamber, on its pad"
+  },
+  {
+   "n": 3,
+   "x": 934,
+   "y": 177,
+   "label": "Tumor"
+  },
+  {
+   "n": 4,
+   "x": 1062,
+   "y": 285,
+   "label": "Worm"
+  },
+  {
+   "n": 5,
+   "x": 708,
+   "y": 553,
+   "label": "Technician"
+  },
+  {
+   "n": 6,
+   "x": 885,
+   "y": 817,
+   "label": "Heating tower"
+  },
+  {
+   "n": 7,
+   "x": 964,
+   "y": 900,
+   "label": "Clinic"
+  },
+  {
+   "n": 8,
+   "x": 1141,
+   "y": 256,
+   "label": "The creep's edge"
+  }
+ ]
+}
