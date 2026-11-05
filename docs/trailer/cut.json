@@ -75,7 +75,7 @@
   {
    "clip": "media/trailer/reel-nwwall.mp4",
    "bars": 4,
-   "from": 11.0
+   "from": 17.5
   },
   {
    "clip": "media/trailer/stage-c1-drop.mp4",
@@ -158,9 +158,9 @@
    "from": 16.5
   },
   {
-   "clip": "media/trailer/reel-warfinale.mp4",
+   "clip": "media/trailer/reel-nuke.mp4",
    "bars": 3,
-   "from": 34.5
+   "from": 1.5
   },
   {
    "clip": "media/trailer/shot-14.mp4",
