@@ -212,7 +212,7 @@ data:extend({
 })
 
 -- Orbital strike (Serenity, one beacon; after the rocket silo): a strike beacon the player places on power, charging
--- 50 MJ at up to 5 MW, then calling the orbital barrage within 60 tiles (scripts/strike.lua). One orbital beacon each.
+-- 50 MJ at up to 5 MW, then calling the orbital barrage within shared.STRIKE_RADIUS (scripts/strike.lua). One orbital beacon each.
 data:extend(teardown("lp-orbital-beacon", 1, "lp-beacon-schematic", "__base__/graphics/icons/beacon.png",
   {r = 0.9, g = 0.95, b = 1, a = 1}))
 data:extend({
@@ -222,8 +222,10 @@ data:extend({
     picture = {filename = "__base__/graphics/icons/beacon.png", size = 64, scale = 0.9, tint = S}, gui_mode = "none",
     energy_source = {type = "electric", usage_priority = "secondary-input", buffer_capacity = "50MJ",
       input_flow_limit = "5MW", output_flow_limit = "0W"},
-    energy_production = "0W", energy_usage = "0W"},
-  {type = "item", name = "lp-strike-beacon", icons = {{icon = "__base__/graphics/icons/beacon.png", tint = S}},
+    energy_production = "0W", energy_usage = "0W",
+    localised_description = {"entity-description.lp-strike-beacon", tostring(shared.STRIKE_RADIUS)}},
+  {type = "item", name = "lp-strike-beacon", localised_description = {"entity-description.lp-strike-beacon",
+    tostring(shared.STRIKE_RADIUS)}, icons = {{icon = "__base__/graphics/icons/beacon.png", tint = S}},
     stack_size = 5, place_result = "lp-strike-beacon", subgroup = "lp-components", order = "y-strike"},
   {type = "recipe", name = "lp-strike-beacon", enabled = false, energy_required = 30,
     ingredients = {{type = "item", name = "lp-orbital-beacon", amount = 1}, {type = "item", name = "processing-unit", amount = 10},
@@ -231,7 +233,8 @@ data:extend({
     results = {{type = "item", name = "lp-strike-beacon", amount = 1}}},
   {type = "technology", name = "lp-orbital-strike", icon = "__base__/graphics/technology/military.png", icon_size = 256,
     prerequisites = {"rocket-silo"}, research_trigger = {type = "craft-item", item = "lp-beacon-schematic"},
-    effects = {{type = "unlock-recipe", recipe = "lp-strike-beacon"}}},
+    effects = {{type = "unlock-recipe", recipe = "lp-strike-beacon"}},
+    localised_description = {"technology-description.lp-orbital-strike", tostring(shared.STRIKE_RADIUS)}},
 })
 
 -- Cluster shells (Serenity, three fuzes): the player's artillery shell with a fuze, bursting into ten bomblets of its own

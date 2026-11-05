@@ -4993,6 +4993,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   summed; "a place whose deaths were area damage raises the spread over the siege there", seen equal with the prior off;
   "dev: /lp spread and /lp ranks set its farm's next pick"). Assumed, not tested: that rams ordered at several points from
   one staging walk their own ways (they did in the lab); that the spread's record keeps it off the two-wall lane.
+- **Locale pass, 0.2.213** (2026-11-05; the user: "a pass on the mod strings ... staying in Factorio register"): the
+  54 lines added since the audit (field studies, field dome, flak turret, achievements) had drifted back in three
+  days: a dome description of 190 characters, "defences", "learnt", "labelled", "fliers", "a captured nest", design
+  voice in the study descriptions ("What made the pact: the pacifier's antenna, broken."). 36 strings rewritten and 2
+  added (the flak turret's entity description, the defoliant's item description); study triggers end with a period as
+  vanilla's `[technology-trigger]` lines do; "Pheromone bait, made" / "(made)" is "Synthetic pheromone bait".
+  Three strings said what the code does not (found by the manual pass): `node-tesla` said its lightning "disables
+  turrets" (scorcher.lua drains 60% of a struck turret's, accumulator's or roboport's charge: now "drains power from"),
+  the big burster "bursts at the nearest turret" (the herd sends it at a turret covering its way in: now "a turret
+  guarding the way in"), and the strike beacon's and its technology's "60 tiles" were typed (strike.lua's RADIUS).
+  That radius and the defoliant's (6) now live in `shared.lua` (`STRIKE_RADIUS`, `DEFOLIATE_RADIUS`), given to the
+  descriptions as `__1__` by the prototypes' `localised_description`; `manual_qmd.py` fills the parameter from the
+  dump. The register is now linted: `lint_names.py` (check.sh, and `--register` in regress.sh) fails on British
+  spellings, "round" for around, "nest", "flier", numbers as words before a unit, em dashes, the audit's slogans and a
+  description line over 140 characters; seen failing on 0.2.212's locale (8 hits) and on the pre-audit 0.2.139's (50+).
+  Not moved, by the API (`ChartTagSpec.text` is a plain string in 2.1): the new chart tags "Grubstake strip camp"
+  (strip.lua) and "Grubstake claim: <ore>" (prospect.lua, the ore named from its prototype id). Assumed, not looked at
+  in game: a parametrised description on the strike beacon's item shows as the entity's does.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

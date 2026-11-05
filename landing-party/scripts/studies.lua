@@ -60,7 +60,7 @@ function studies.has(force, tech)
 end
 
 -- The defoliant's charge landed (studies.lua's capsule, its script trigger): creep stripped within 6, tumors burnt.
-local DEFOLIATE_R = 6
+local DEFOLIATE_R = shared.DEFOLIATE_RADIUS
 function studies.on_trigger(e)
   if e.effect_id ~= "lp-defoliant" then return end
   local s = game.surfaces[e.surface_index]

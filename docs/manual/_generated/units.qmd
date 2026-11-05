@@ -256,7 +256,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 *Resists:* explosion 10%. *Fielded:* Bred from evolution 0.3.
 :::
 
-**Synthexis big burster.** A huge biter that bursts at the nearest turret, damaging all turrets nearby. \
+**Synthexis big burster.** A huge biter that bursts at a turret guarding the way in, damaging all turrets nearby. \
 *A shot:* 90 bite. *Resists:* laser 50%, fire 50%. *Fielded:* Developed once your walls have held its waves 2 times.
 
 ::: {.unit-entry layout="[14,-2,84]" layout-valign="top" fig-pos="H"}

@@ -289,6 +289,10 @@ shared.SCAN_GROUPS = {
   {signal = "lp-scan-buggy", icon = "__base__/graphics/icons/car.png", kinds = {"lp-buggy"}},
 }
 shared.SCAN_RADIUS = 64
+-- The player's orbital strike beacon's reach (scripts/strike.lua) and the defoliant's (scripts/studies.lua): their
+-- descriptions take them as __1__ (components.lua, studies.lua), so the text says what the code does.
+shared.STRIKE_RADIUS = 60
+shared.DEFOLIATE_RADIUS = 6
 shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat scanners within this
 
 -- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.

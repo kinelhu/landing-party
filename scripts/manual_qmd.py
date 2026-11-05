@@ -26,7 +26,20 @@ def write(rp):
     os.makedirs(os.path.join(M, "media", "units"), exist_ok=True)
     os.makedirs(os.path.join(M, "media", "vistas"), exist_ok=True)
     d = rp.roster.d
-    loc = rp.locale
+    loc = dict(rp.locale)
+    # A description that takes its numbers from shared.lua (__1__, given by the prototype's localised_description, e.g.
+    # the strike beacon's radius) reads here with them filled in, as the game shows it.
+    for protos in d.values():
+        for p in (protos.values() if isinstance(protos, dict) else []):
+            ls = p.get("localised_description") if isinstance(p, dict) else None
+            if isinstance(ls, list) and ls and isinstance(ls[0], str) and "." in ls[0] \
+                    and all(isinstance(x, str) for x in ls[1:]):
+                k = tuple(ls[0].split(".", 1))
+                if k in loc:
+                    v = loc[k]
+                    for i, x in enumerate(ls[1:], 1):
+                        v = v.replace(f"__{i}__", x)
+                    loc[k] = v
     missed = []
 
     def src(rel):
