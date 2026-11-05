@@ -63,9 +63,10 @@
    "from": 1.0
   },
   {
-   "clip": "media/trailer/reel-creep.mp4",
+   "clip": "media/trailer/reel-growth.mp4",
    "bars": 2,
-   "from": 14.0
+   "from": 0.0,
+   "speed": 2.25
   },
   {
    "clip": "media/trailer/stage-herd.mp4",

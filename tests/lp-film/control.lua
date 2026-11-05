@@ -291,11 +291,17 @@ script.on_event(defines.events.on_tick, function(e)
     log(string.format("lp-film: tick %d, taken %d of %d, seen %s; %s", e.tick, storage.taken, #P.shots,
       serpent.line(storage.seen), table.concat(who, "; ")))
   end
-  if P.fast_until then
+  -- (P.lapse alone runs this too: a film with no fast_until ran its half-hour lapse at speed 1, 2026-11-05.)
+  if P.fast_until or P.lapse then
     -- (Or till the event its stills wait for: P.fast_until = "paint" runs fast until the strike is painted.)
-    local fast = type(P.fast_until) == "string" and not storage.seen[P.fast_until]
-      or (type(P.fast_until) == "number" and e.tick < P.fast_until)
+    local fast = P.fast_until and (type(P.fast_until) == "string" and not storage.seen[P.fast_until]
+      or (type(P.fast_until) == "number" and e.tick < P.fast_until))
     local want = fast and (P.speed or 8) or 1
+    -- P.lapse = {{from = tick, to = tick, speed = n}}: a time-lapse's span run fast as well (each still forces its own
+    -- render; a half-hour of creep at speed 1 took half an hour, 2026-11-05).
+    for _, l in ipairs(P.lapse or {}) do
+      if e.tick >= l.from and e.tick < l.to then want = l.speed or 8 end
+    end
     if game.speed ~= want then game.speed = want end
   end
   -- P.base = "siege": the settlement with a siege out, whichever it is (a scenario's camp is not always id 1).
