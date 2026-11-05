@@ -19,10 +19,14 @@ relative to the project, default `_generated/lp-data.json`). The components:
   Caption, optional.
   :::
 
-  ::: {.lore kicker="From the archive" title="The culture" draft="Draft"}
-  Narrator prose; the first letter becomes a drop cap.
-  ::: {.pullquote cite="..."}
-  A line worth lifting.
+  ::: {.lore kicker="Freight Authority, operator file 114" title="The contract" faction="kessler-hayashi"}
+  ::: {.dossier}                         the file's header: a definition list (TERM, then ": text"), set as a
+  REGISTERED                             two-column field list in the display face on the faction's tint (HTML: a
+  : Serenity Ring, nine platforms.       definition list). A lore page runs as a spread, from a verso.
+  :::
+  Narrator prose; the first letter of the first paragraph after the dossier becomes a drop cap.
+  ::: {.pullquote cite="I. Kessler, site report NV-1/3"}
+  A line worth lifting, attributed.
   :::
   :::
 
@@ -628,6 +632,30 @@ local function wrap_latex(div, begin, finish)
   return out
 end
 
+-- The dossier: its definition list as \item[TERM] rows of the lpdossier environment. Returned as one Div so the lore's
+-- drop cap (dropcap, above: the first Para of the lore) passes over it.
+local function dossier_latex(div)
+  local out = {pandoc.RawBlock("latex", "\\begin{lpdossier}")}
+  local rows = 0
+  for _, b in ipairs(div.content) do
+    if b.t == "DefinitionList" then
+      for _, item in ipairs(b.content) do
+        local term = pandoc.write(pandoc.Pandoc({pandoc.Plain(item[1])}), "latex"):gsub("%s+$", "")
+        out[#out + 1] = pandoc.RawBlock("latex", "\\item[" .. term .. "]")
+        for _, def in ipairs(item[2]) do
+          for _, bb in ipairs(def) do out[#out + 1] = bb end
+        end
+        rows = rows + 1
+      end
+    else
+      out[#out + 1] = b
+    end
+  end
+  if rows == 0 then quarto.log.warning("lp-manual: a dossier with no definition list (TERM, then a line ': text')") end
+  out[#out + 1] = pandoc.RawBlock("latex", "\\end{lpdossier}")
+  return pandoc.Div(out, {class = "lp-dossier"})
+end
+
 local function Div(div)
   local cls = div.classes
   if cls:includes("epigraph") then
@@ -635,6 +663,11 @@ local function Div(div)
     local motto = (D.factions[div.attributes.faction or ""] or {}).motto
     if is_html() and motto then return pandoc.BlockQuote({pandoc.Para(pandoc.Emph(pandoc.Str(motto)))}) end
     return {}
+  end
+  if cls:includes("dossier") then
+    if is_latex() then return dossier_latex(div) end
+    div.classes:insert("lp-dossier")
+    return div
   end
   if is_latex() then
     if cls:includes("unit") then return unit_latex(div) end
