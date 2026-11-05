@@ -7,15 +7,15 @@ digraph layers {
   "Knowledge and strategy (per faction)" [label="Knowledge and strategy (per faction)\n2 modules, 316 lines", fillcolor="#eef2f7"];
   "Corporation" [label="Corporation\n11 modules, 3048 lines", fillcolor="#eef2f7"];
   "Settlement" [label="Settlement\n16 modules, 6179 lines\nlayout 1755", fillcolor="#f7dede"];
-  "Army and operations" [label="Army and operations\n15 modules, 7397 lines\nops 2040, siege 1996", fillcolor="#f7dede"];
+  "Army and operations" [label="Army and operations\n16 modules, 7619 lines\nops 2040, siege 2076", fillcolor="#f7dede"];
   "Heists (Grubstake)" [label="Heists (Grubstake)\n6 modules, 1389 lines", fillcolor="#eef2f7"];
   "The biotech" [label="The biotech\n5 modules, 7836 lines\nherd 4168, farm 2423", fillcolor="#f7dede"];
   "The map" [label="The map\n1 module, 71 lines", fillcolor="#eef2f7"];
   "The player's army" [label="The player's army\n5 modules, 818 lines", fillcolor="#eef2f7"];
   "Army and operations" -> "Corporation" [label="3", penwidth=1.8];
   "Army and operations" -> "Knowledge and strategy (per faction)" [label="4", penwidth=2.0];
-  "Army and operations" -> "Perception and attempts (any attacker)" [label="7", penwidth=2.8];
-  "Army and operations" -> "Seams (leaves)" [label="18", penwidth=5.5];
+  "Army and operations" -> "Perception and attempts (any attacker)" [label="9", penwidth=3.2];
+  "Army and operations" -> "Seams (leaves)" [label="19", penwidth=5.8];
   "Army and operations" -> "Settlement" [label="2", penwidth=1.5];
   "Army and operations" -> "The player's army" [label="3", penwidth=1.8];
   "Corporation" -> "Army and operations" [label="8", penwidth=3.0];

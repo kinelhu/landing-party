@@ -8589,7 +8589,7 @@ scenarios.lab = function()
   local CORP = FACTION ~= "biotech"
   local function op_records() return lp("oplog_recent") or {} end
   local TURRET = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true}
-  local AMMO = {["gun-turret"] = "piercing-rounds-magazine", ["rocket-turret"] = "rocket"}
+  local AMMO = {["gun-turret"] = "piercing-rounds-magazine", ["rocket-turret"] = "rocket", ["artillery-turret"] = "artillery-shell"}
   local FRAME, MAX_TRIAL = 30, 45 * 3600
   local function out(file, t) helpers.write_file("landing-party/" .. file, helpers.table_to_json(t) .. "\n", true) end
   local function farm() return (lp("farm_state").farms or {})[1] end
@@ -8603,6 +8603,8 @@ scenarios.lab = function()
     lp("debug_tune", {herd_off = CORP, pens_hold = true})
     -- (A corporation's trial: its army let loose, the culture held.)
     if CORP then lp("debug_tune", {harmless = false, army_off = false, provoke = true}) end
+    -- (LAB_WAY: a corporation's way at a closed wall forced, assault.lua: walled, wallfire.)
+    if (params.lab_way or "") ~= "" then lp("debug_tune", {kh_way = params.lab_way}) end
     lp("set_trace", true)
     local cx, cy, k = 0, 0, 0
     -- (Everything of the player's, not its defences alone: the first trial razed the soft heart and its power, and the next
@@ -8633,6 +8635,12 @@ scenarios.lab = function()
     -- (LAB_TIME: one weighing timed at its coarse grain and at its waves', landing-party/timing.txt.)
     -- (LAB_SEED: its farm's choices drawn anew, for replicates of one save.)
     if params.lab_seed and f then lp("debug_reseed", f.id, params.lab_seed); L.seed = params.lab_seed end
+    -- (And a corporation's own random source, its army's mix: two seeds of one lane were otherwise one run twice.)
+    if params.lab_seed and CORP then
+      for _, b in ipairs(lp("bases_ops") or {}) do
+        if b.corp == FACTION then lp("debug_reseed_base", b.id, params.lab_seed); L.seed = params.lab_seed end
+      end
+    end
     if params.lab_time and f then
       for _, cell in ipairs({48, 32, 16}) do lp("lab_time_ways", f.id, cell) end
     end
@@ -8682,8 +8690,9 @@ scenarios.lab = function()
       if e and e.valid then
         if e.max_health and e.max_health > 0 then e.health = e.max_health end
         if AMMO[e.name] then
-          local inv = e.get_inventory(defines.inventory.turret_ammo)
-          if inv then inv.clear(); inv.insert{name = AMMO[e.name], count = 200} end
+          local arty = e.type == "artillery-turret"
+          local inv = e.get_inventory(arty and defines.inventory.artillery_turret_ammo or defines.inventory.turret_ammo)
+          if inv then inv.clear(); inv.insert{name = AMMO[e.name], count = arty and 50 or 200} end
         end
         L.hp[i] = e.health
       end
@@ -10313,10 +10322,17 @@ end
 -- LP_MIX=howitzer: the player kills the howitzer as it stands; a second siege on the same wall comes without one.
 -- LP_MIX=grubstake (the user, 2026-11-04: "we aren't using the howitzer trucks? Should we?"): Grubstake's siege on the
 -- same wall. It drops nothing from orbit: its howitzer comes on its truck and deploys.
+-- LP_MIX=closed (Kessler-Hayashi's adaptive tactics, 2026-11-05; assault.lua): the wall WALL_OUT in front of its lasers,
+-- out of its barrage's splash, WALL_LONG each way, and no strike (a camp, not armed): its assault meets a closed wall. Its
+-- menu's pick forced to wallfire: its guns open the wall before its assault goes in. closed-off: forced to walled (the
+-- assault as before), and the check fails.
 scenarios.fortress = function()
   local old, jam, hw = params.mix == "old", params.mix == "jammer", params.mix == "howitzer"
   local gs = params.mix == "grubstake"
   local corp = gs and "grubstake" or "serenity"
+  local closed = params.mix:find("closed", 1, true) ~= nil
+  local mech_off = closed and params.mix:find("-off", 1, true) ~= nil
+  local WALL_OUT, WALL_LONG = closed and 6 or 0, 70
   schedule(60, function()
     -- (A camp, not its armed landing: this tests its siege. Armed, its lander stood 11 tiles off, its siege's site moved
     -- with it onto ground where its hauler stuck 15 tiles short, three variants failing, 0.2.134. Scenario armed.)
@@ -10325,6 +10341,9 @@ scenarios.fortress = function()
     -- every laser and roboport, 0.2.166, and the case it keeps, the fire plan's worth, read nothing.)
     lp("debug_tune", {era = 3, history_off = true, raids_off = true, corp_level = {[corp] = 3}, focus_off = old or nil,
       drop_off = old or nil, rd_tech = jam and {serenity = {nodes = {jammer = 1}}} or nil})
+    if closed then
+      lp("debug_tune", {kh_way = mech_off and "walled" or "wallfire"})
+    end
     S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = corp})
     for _ = 1, 3 do lp("debug_depot", S.s, 6000) end
     game.forces.player.create_ghost_on_entity_death = true
@@ -10337,13 +10356,16 @@ scenarios.fortress = function()
     local vx, vy = -uy, ux
     local c = {math.floor(o.x - ux * 150) + 0.5, math.floor(o.y - uy * 150) + 0.5}
     local function at(du, dv) return {c[1] + ux * du + vx * dv, c[2] + uy * du + vy * dv} end
-    flatten(math.min(at(-30, -30)[1], at(10, 30)[1]) - 4, math.min(at(-30, -30)[2], at(10, 30)[2]) - 4,
-      math.max(at(-30, -30)[1], at(10, 30)[1]) + 4, math.max(at(-30, -30)[2], at(10, 30)[2]) + 4)
+    -- (closed: the wall WALL_LONG each way, past what its way's search reads round its guards and target, siege.lua
+    -- open_way: a wall of 41 on open ground was walked round, its way read open at its end.)
+    local half = closed and WALL_LONG or 20
+    flatten(math.min(at(-30, -half - 10)[1], at(10, half + 10)[1]) - 4, math.min(at(-30, -half - 10)[2], at(10, half + 10)[2]) - 4,
+      math.max(at(-30, -half - 10)[1], at(10, half + 10)[1]) + 4, math.max(at(-30, -half - 10)[2], at(10, half + 10)[2]) + 4)
     local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
     S.c, S.lasers, S.ports = c, {}, {}
     -- The wall's spots, for the breach check (its handler below: is a gap open near a piece hit).
     S.wall_spots = {}
-    for k = -20, 20 do put("stone-wall", at(0, k)); S.wall_spots[#S.wall_spots + 1] = at(0, k) end
+    for k = -half, half do put("stone-wall", at(WALL_OUT, k)); S.wall_spots[#S.wall_spots + 1] = at(WALL_OUT, k) end
     for k = -18, 18, 4 do table.insert(S.lasers, put("laser-turret", at(-3, k))) end
     for k = -21, 21, 14 do put("substation", at(-7, k)) end
     for k = -21, 21, 14 do put("substation", at(-20, k)) end
@@ -10365,6 +10387,18 @@ scenarios.fortress = function()
   schedule(14 * 3600, function()
     S.why = lp("dev", {"siege", tostring(S.s)}, {S.lasers[5].position.x, S.lasers[5].position.y}) or "launched"
   end)
+  -- closed: its way at the assault's launch.
+  if closed then
+    for t = 14 * 3600 + 20, END - 120, 20 do
+      schedule(t, function()
+        local st = lp("stats", S.s)
+        local o = st and st.ops or {}
+        if o.siege_phase == "assault" and not S.launch then
+          S.launch = {way_open = o.way_open, method = o.way_method, pieces = o.wall_pieces}
+        end
+      end)
+    end
+  end
   -- Shells fired: what the siege's mortars hold, sampled (loaded minus held at the lowest).
   for t = 14 * 3600 + 600, END - 120, 300 do
     schedule(t, function()
@@ -10424,6 +10458,13 @@ scenarios.fortress = function()
       serpent.line(S.adealt or {}), serpent.line(S.ahits or {})))
     local js = lp("jammer_stats")
     info("fortress: jammer " .. serpent.line(js) .. ", masts seen " .. tostring(S.masts))
+    if closed then
+      info(string.format("fortress %s: at the launch %s", params.mix, serpent.line(S.launch)))
+      -- (Seen failing walled, closed-off: its assault at a closed wall, its units' own pathing to break the piece in their way.)
+      check("fortress: at a closed wall with no strike its guns open the wall before its assault",
+        S.launch ~= nil and S.launch.way_open == true and (S.launch.pieces or 0) >= 1, serpent.line(S.launch))
+      return
+    end
     if gs then
       info(string.format("fortress grubstake: siege %s, trucks seen %s, howitzers deployed %s", tostring(S.why),
         tostring(S.trucks), tostring(S.guns)))
@@ -11809,7 +11850,7 @@ scenarios.farm = function()
     -- and one front: a wall from edge to edge, its guns and mines by
     -- LAB_LANE (key=value, comma-separated): walls (layers, 1), gap (tiles between them, 4), step (a laser every, 6),
     -- inset (guns behind the inner wall, 3), mines (out, in, between or none; out), half (the corridor's half-height, 64),
-    -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), shape (line, saw, bastion, nwa: the user's north wall on nwa, below; line), amp (8), period (32),
+    -- guns (laser, gun, flame, rocket, tesla by turns, joined by +; laser), art (artillery turrets behind them, 0), shape (line, saw, bastion, nwa: the user's north wall on nwa, below; line), amp (8), period (32),
     -- faces (east, toward the culture; west, toward the corporation camp behind the fort; both); shape maze: its walls
     -- each open mgap tiles (6) at alternate ends but the innermost, closed (the user, 2026-10-31: "a tower defense like maze
     -- wall ... closed off at the final layer"); tech (early, mid, late: its guns' damage and speed research, set at build);
@@ -11961,6 +12002,15 @@ scenarios.farm = function()
           local u = inner + bulge(v) - o.inset - (name == "flamethrower-turret" and 1 or 0)
           gun(name, u, v)
           if HALF - math.abs(v) <= REACH then gun(L, u - 3, v + o.step / 4 * (v < 0 and -1 or 1)) end
+        end
+        -- LAB_LANE art=N: N artillery turrets loaded ART_BACK behind the inner wall, spread along it (the artillery lane for
+        -- Kessler-Hayashi's tactics, 2026-11-05: its siege's guns and guards under the player's shells, area damage).
+        local ART_BACK = 24
+        for i = 1, (o.art or 0) do
+          local v = -HALF + (i - 0.5) * 2 * HALF / o.art
+          local q = surface().find_non_colliding_position("artillery-turret", A(inner - ART_BACK, v), 4, 1)
+          local e = q and surface().create_entity{name = "artillery-turret", position = q, force = "player", direction = facing}
+          if e then e.insert{name = "artillery-shell", count = 50} end
         end
         local rows = o.mines == "out" and {outer + 3, outer + 7} or o.mines == "in" and {inner - o.inset - 4}
           or o.mines == "between" and o.walls > 1 and {inner + o.gap / 2} or {}

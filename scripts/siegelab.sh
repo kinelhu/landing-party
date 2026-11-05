@@ -6,7 +6,7 @@
 #                                                  build on; plot: an empty plot to build a fortress on (build ... plot)
 #   scripts/siegelab.sh build [seed] [square|star|plot|fed|lane] grow the lab (the siege test's fortress, a star fort, an empty plot, the square powered from outside, or a lane: a corridor closed by water, one wall from water to water, LAB_LANE="walls=2,gap=4,step=6,inset=3,mines=out|in|between|none", saved as lab-lane[-LAB_TAG].zip; a culture of 8 or more
 #                                                  incubators at full evolution): factorio-lp-lab/lab.zip
-#   scripts/siegelab.sh run <save.zip> [trials]    trials against a COPY of the save (never the original); report and
+#   scripts/siegelab.sh run <save.zip> [trials]    (LAB_WAY: a corporation's way at a closed wall forced) trials against a COPY of the save (never the original); report and
 #                                                  lab-out.zip (the learning kept) in docs/sim/lab-<save>/
 # Edit a save's defences in the game's map editor (/editor), time paused, and run it again. LAB_BIOMASS: what the
 # culture holds at each trial's start (20000); LAB_HOLD: game minutes a trial waits for a wave before it records why
@@ -93,9 +93,9 @@ run)
   P="$LAB/run-$NAME"
   profile "$P"
   RUN="$(date +%s)"
-  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s, lab_rebuild_after = %s, lab_time = %s, lab_seed = %s, lab_faction = "%s", lab_kind = "%s", lab_parts = %s, lab_level = %s, lab_era = %s, lab_chest = %s}\n' \
+  printf 'return {scenario = "lab", minutes = 600, every = 600, strike = 1, distance = 300, radius = 220, doctrine = nil, units = 0, move = false, fast = false, mix = "lab", lab = "run", lab_run = %s, lab_trials = %s, lab_biomass = %s, lab_hold = %s, lab_rebuild_after = %s, lab_time = %s, lab_seed = %s, lab_faction = "%s", lab_kind = "%s", lab_parts = %s, lab_level = %s, lab_era = %s, lab_chest = %s, lab_way = "%s"}\n' \
     "$RUN" "$TRIALS" "${LAB_BIOMASS:-20000}" "${LAB_HOLD:-15}" "${LAB_REBUILD_AFTER:-0}" "${LAB_TIME:-false}" "${LAB_SEED:-nil}" \
-    "${LAB_FACTION:-biotech}" "${LAB_KIND:-auto}" "${LAB_PARTS:-1000}" "${LAB_LEVEL:-2}" "${LAB_ERA:-2}" "${LAB_CHEST:-3000}" > "$P/mods/lp-sim/params.lua"
+    "${LAB_FACTION:-biotech}" "${LAB_KIND:-auto}" "${LAB_PARTS:-1000}" "${LAB_LEVEL:-2}" "${LAB_ERA:-2}" "${LAB_CHEST:-3000}" "${LAB_WAY:-}" > "$P/mods/lp-sim/params.lua"
   out="$P/script-output/landing-party"
   rm -rf "$out" "$P/saves/"*.zip
   cp "$SAVE" "$P/saves/in.zip"

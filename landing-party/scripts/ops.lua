@@ -14,6 +14,7 @@ local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
 local attempt = require("__landing-party__.scripts.attempt")
 local tactics = require("__landing-party__.scripts.tactics")
+local assault = require("__landing-party__.scripts.assault")
 local ground = require("__landing-party__.scripts.ground")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
@@ -864,12 +865,18 @@ local function finish(b, outcome, trace, army)
         if l.damage and shared.AREA_DAMAGE[l.damage] then area = area + (l.value or 1) end
       end
     end
-    tactics.record(b.corp, (t and t.owner) or op.owner or "player", tpos, op.kind, {sent = op.sent_worth or launched,
+    local e = {sent = op.sent_worth or launched,
       spent = (op.sent_worth or launched) * (launched - alive(op)) / launched, got = got, inside = got > 0, sig = op.sig,
       -- (Got there: a member within REACHED of its target, a siege that fired, anything razed. Its attack begun was not
       -- enough: a raid of 2 attacked from its staging and died to the nests on its 7 waypoints, none near.)
       reached = ((op.closest or math.huge) <= REACHED or (op.shells_fired or 0) > 0 or got > 0) and true or false,
-      rams = op.kind == "siege" and op.tier or nil, breach = {tpos[1], tpos[2]}, area = all > 0 and area / all or nil})
+      rams = op.kind == "siege" and op.tier or nil, breach = {tpos[1], tpos[2]}, area = all > 0 and area / all or nil}
+    tactics.record(b.corp, (t and t.owner) or op.owner or "player", tpos, op.kind, e)
+    -- (And under the way its assault took at a closed wall, its menu's own record: assault.lua.)
+    if op.way_method then
+      e.rams = nil
+      tactics.record(b.corp, (t and t.owner) or op.owner or "player", tpos, op.way_method, e)
+    end
   end
   -- Its guns' prices from what they cost it (know.learn_price, as Synthexis's): where it got there, the units lost to each
   -- gun type over how many of them stood at its target; a sample a least when none came home; a small operation's moves a
@@ -1123,17 +1130,9 @@ function ops.mended_floor(b, t)
     if w then break end
   end
   if not w then return 0 end
-  local best
-  for _, r in ipairs(s.find_entities_filtered{position = w.position, radius = 120, type = "roboport", force = foes}) do
-    local cr = r.prototype.construction_radius or 0
-    local d = math.sqrt((r.position.x - w.position.x) ^ 2 + (r.position.y - w.position.y) ^ 2)
-    local net = r.logistic_network
-    if d <= cr and r.energy > 0 and net and net.available_construction_robots > 0 and (not best or d < best) then best = d end
-  end
-  if not best then return 0 end
-  local bot = prototypes.entity["construction-robot"]
-  local speed = (bot and bot.speed or 0.06) * (1 + foes.worker_robots_speed_modifier)
-  local back = math.max(1, best / speed)
+  -- (The robots' trip, as a siege's wall fire reads its race: assault.mend_ticks.)
+  local back = assault.mend_ticks(s, foes, w)
+  if not back then return 0 end
   local proto = shared.variant(b.corp, rd.unit(b.corp, "lp-infantry"))
   local dps = threat.unit_dps(proto, w)
   if dps <= 0 then return 0 end
@@ -2033,6 +2032,7 @@ function ops.summary(b)
     overflights = b.overflights or 0,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,
+    way_method = b.op and b.op.way_method, wall_pieces = b.op and b.op.wall_pieces, way_open = b.op and b.op.way_open,
     sieges = b.sieges or 0, strips = b.strips or 0, stripped = b.stripped or 0, mortar = b.op and b.op.mortar and b.op.mortar.valid and
       {b.op.mortar.position.x, b.op.mortar.position.y} or nil}
 end
