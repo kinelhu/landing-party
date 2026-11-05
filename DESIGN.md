@@ -4797,7 +4797,31 @@ Bugs and surprises the headless runs caught, each kept as a check:
   fails after this change (no siege counted, its rams never sent). Its first wave now comes home with 9 where it came
   with 5, the farm's next choices diverge, and its third wave's one big burster is gone on the march, before its
   breach, with no death recorded (traced: valid at the scout, gone 6 s into the march). Its first wave loses its big
-  burster the same way before and after this change: a fault of the march or the incubators, not found yet.
+  burster the same way before and after this change: a fault of the march or the incubators, not found yet. (Found:
+  the engine, next entry.)
+- **Synthexis's units taken off the map by the engine; a dome projector on the launchpad** (2026-11-05; two scenarios
+  that failed after the yard and the herd's gap). Farm siege (12345): every vanilla biter has `ai_settings.
+  destroy_when_commands_fail` on, and the engine destroys a unit whose commands keep failing, raising no death. Our bred
+  breeds are copies and kept it. Traced each second of the march (valid, group, last health and neighbours): the one big
+  burster of its first and third waves stood stuck among its incubators at full health, in and out of its group as
+  its legs failed, and was gone, no `on_entity_died`; three big biters went the same way. With no ram at the wall
+  nothing was set off, nothing learned, and the siege was not logged as one (5 checks). Not the herd change: it went
+  the same way on the first wave before it; the herd change only made the farm's later choices meet it again. Now off
+  for every bred breed (`biotech.lua`, as the stomper and every corporation unit already had it; dump checked), and the
+  herd counts a unit of a wave gone from the map with no death while it is out (`vanished`, in the wave's log). Check:
+  farm siege "none of its units gone from the map with no death", 6 before the fix, 0 after; the 5 checks pass.
+  Hazard research (12345): not the yard making clearances cheap (11 guards either way, taken by `pool.take` as
+  before). From the yard its guards reach the site 25 s sooner (34000 against 35500), its mortars are up first and
+  its railgunners kill the four nests by 37833, before the scenario's next wave from them (40200) falls on the site;
+  before, that wave killed 10 railgunners and both mortars, and those losses went to the research. With no nest left the
+  run settled at minute 18, before its second research choice (rd.lua chooses every 10 minutes): the scenario's
+  assumption, changed. It now settles only once railguns are bought. Run to the hour, it still bought nothing: its fund
+  stayed at 0, nothing exported. Its launch block opened at the tick a hub's dome projector was set; `projector_spot`
+  kept 4 tiles off each queued job's middle, the projector stood 4.5 tiles from the launchpad's middle on its 9 by 9,
+  the crew skipped the launchpad ("cannot place"), and the camp never exported. Now each queued job's footprint is kept
+  clear. After: railguns bought at minute 20 on its 8 losses to biters, fund 1200. Check: hazard research "it exports
+  (its launchpad built)", seen failing before the fix (0 exported). Assumed, not tested: a projector already standing
+  where a later block is planned (the planner's side, not seen).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

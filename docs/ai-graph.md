@@ -16,7 +16,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
-| `herd` | 3526 | attempt, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
+| `herd` | 3549 | attempt, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
 | `farm` | 2320 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
 | `ops` | 2031 | answers, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tactics, threat, tune | army, base, border, control, cordon, crew, dev, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `siege` | 1996 | achievements, attempt, costmap, firemap, know, orbital, pods, tactics, threat, valuemap | ops |  |  |  | threat_last, unit_owner, ways_dumped |
@@ -32,8 +32,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `skim` | 421 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
 | `costmap` | 415 | firemap, threat | control, creep, faction, farm, herd, siege |  |  |  |  |
+| `dome` | 407 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `cell` | 402 | pods | control, farm |  |  |  | cell_sites, cells |
-| `dome` | 396 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 383 | (leaf) | base |  |  |  |  |

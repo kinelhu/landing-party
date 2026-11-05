@@ -195,8 +195,17 @@ local function projector_spot(b, hub)
   end
   if n == 0 then return nil end
   cx, cy = cx / n, cy / n
+  -- Each job's footprint, not its middle alone: 4 tiles clear of the launchpad's middle, the projector stood on the
+  -- launchpad's 9 by 9 and the crew skipped it, and the camp never exported (no fund, no research; hazard research).
+  local function half(name)
+    local pr = name and prototypes.entity[name]
+    if not pr then return 0 end
+    local c = pr.collision_box
+    return math.max(-c.left_top.x, c.right_bottom.x, -c.left_top.y, c.right_bottom.y)
+  end
+  local own = half("lp-dome-projector") + 0.5
   local jobs = {}
-  for _, job in ipairs(b.queue or {}) do if job.pos then jobs[#jobs + 1] = job.pos end end
+  for _, job in ipairs(b.queue or {}) do if job.pos then jobs[#jobs + 1] = {job.pos[1], job.pos[2], half(job.name) + own} end end
   for r = 0, 24, 4 do
     for k = 0, (r == 0 and 0 or 7) do
       local a = k * math.pi / 4
@@ -204,7 +213,9 @@ local function projector_spot(b, hub)
       if p then
         local free = true
         for _, q in ipairs(jobs) do
-          if (q[1] - p.x) ^ 2 + (q[2] - p.y) ^ 2 < 16 then free = false; break end
+          if (q[1] - p.x) ^ 2 + (q[2] - p.y) ^ 2 < 16 or math.abs(q[1] - p.x) < q[3] and math.abs(q[2] - p.y) < q[3] then
+            free = false; break
+          end
         end
         if free then return p end
       end

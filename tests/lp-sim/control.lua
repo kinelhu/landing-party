@@ -6099,6 +6099,10 @@ scenarios.hazard = function()
   settle_when(function()
     if not S.nests then return false end
     for _, e in ipairs(S.nests) do if e.valid then return false end end
+    -- research: not before its research has had its say (a choice every 10 minutes, rd.lua). Since the yard its guards
+    -- reach the clearance's site 25 s sooner and its railgunners kill the four nests before the next wave from them lands
+    -- on the site; with no nest left the run settled at minute 18, before its second choice (2026-11-05).
+    if research and (lp("rd_state", "serenity").nodes.railguns or 0) < 1 then return false end
     return S.quiet_since and game.tick - S.quiet_since > 6 * 60 * 60
   end)
   schedule(30, function() game.forces.enemy.set_evolution_factor(0.5, surface()) end)
@@ -6259,6 +6263,12 @@ scenarios.hazard = function()
       local t = lp("rd_state", "serenity")
       info(string.format("hazard research: railguns level %s, %d hazards, %d nests left", tostring(t.nodes.railguns),
         st.ops.hazards or 0, left))
+      info(string.format("hazard research: fund %.0f, saving for %s, exported %d", t.fund or 0, tostring(t.saving), st.exported or 0))
+      -- Its launch block got its launchpad, so it exports and its fund grows (a hub's dome projector was set 4.5 tiles from
+      -- the launchpad's middle, on its 9 by 9: the crew skipped it, nothing was exported in an hour and the fund stayed at
+      -- 0; dome.projector_spot, 2026-11-05).
+      check("hazard: research, it exports (its launchpad built), the fund its research spends", (st.exported or 0) > 0,
+        tostring(st.exported))
       check("hazard: research, its losses to biters bought railguns", (t.nodes.railguns or 0) >= 1, tostring(t.nodes.railguns))
       return
     end
@@ -12082,8 +12092,15 @@ scenarios.farm = function()
       end
       for _, l in ipairs(lp("herd_state").log or {}) do
         info("farm siege: wave " .. serpent.line({id = l.id, big_sent = l.big_sent, set_off = l.big_set_off, plan_mines = l.plan_mines,
-          sweep_mines = l.sweep_mines, sweep_left = l.sweep_left, broke = l.bursters and l.bursters.broke, outcome = l.outcome, ram_off = l.ram_off}))
+          sweep_mines = l.sweep_mines, sweep_left = l.sweep_left, broke = l.bursters and l.bursters.broke, outcome = l.outcome, ram_off = l.ram_off,
+          vanished = l.vanished}))
       end
+      -- None of its units gone from the map out on its way with no death raised: vanilla biters are destroyed by the engine
+      -- when their commands keep failing, and the one big burster of its first and third waves, stuck among its incubators,
+      -- went so on the march (no ram at the wall, nothing learned, what it lost never counted; biotech.lua, 2026-11-05).
+      local gone = 0
+      for _, l in ipairs(lp("herd_state").log or {}) do gone = gone + (l.vanished or 0) end
+      check("farm: siege, none of its units gone from the map with no death", gone == 0, tostring(gone))
       local opens = (lp("lab_prices").opens or {})["player"]
       -- (Since its rams go at the wall on its swept lane, the wall no longer holds: one ram broke 3 lasers and 11 wall pieces,
       -- its yield rose past its reckoning and "below" failed; what is checked is that it learned from what they did, the
