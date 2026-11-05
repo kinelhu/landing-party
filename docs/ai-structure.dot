@@ -67,7 +67,7 @@ digraph ai {
     "strip" [label="strip\n237 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
-    "strike" [label="strike\n67 lines", width=0.87, fillcolor="#eef2f7"];
+    "strike" [label="strike\n71 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
     "dome" [label="dome\n407 lines", width=1.25, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n288 lines", width=1.12, fillcolor="#eef2f7"];
