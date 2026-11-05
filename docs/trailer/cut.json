@@ -1,6 +1,6 @@
 {
  "bpm": 120,
- "music": "media/trailer/placeholder-77.wav",
+ "music": "media/trailer/placeholder-78.wav",
  "shots": [
   {
    "clip": "media/trailer/shot-01.mp4",
@@ -83,14 +83,14 @@
    "from": 1.0
   },
   {
-   "clip": "media/trailer/reel-fortress.mp4",
+   "clip": "media/trailer/reel-khwall.mp4",
    "bars": 2,
-   "from": 1.0
+   "from": 49.0
   },
   {
-   "clip": "media/trailer/reel-fortress.mp4",
-   "bars": 2,
-   "from": 38.0
+   "clip": "media/trailer/reel-khwall.mp4",
+   "bars": 3,
+   "from": 60.0
   },
   {
    "clip": "media/trailer/stage-c3-assault.mp4",
@@ -177,7 +177,7 @@
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 75,
+   "bar": 76,
    "bars": 3
   }
  ]
