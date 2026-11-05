@@ -1,6 +1,6 @@
 {
  "bpm": 120,
- "music": "media/trailer/placeholder-73.wav",
+ "music": "media/trailer/placeholder-77.wav",
  "shots": [
   {
    "clip": "media/trailer/shot-01.mp4",
@@ -71,6 +71,11 @@
    "clip": "media/trailer/stage-herd.mp4",
    "bars": 2,
    "from": 16.0
+  },
+  {
+   "clip": "media/trailer/reel-nwwall.mp4",
+   "bars": 4,
+   "from": 11.0
   },
   {
    "clip": "media/trailer/stage-c1-drop.mp4",
@@ -172,7 +177,7 @@
   {
    "text": "Landing Party",
    "sub": "A Factorio 2.1 + Space Age mod",
-   "bar": 71,
+   "bar": 75,
    "bars": 3
   }
  ]
