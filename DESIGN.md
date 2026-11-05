@@ -4881,6 +4881,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   walls, short of the flamer line). Its own culture meanwhile laid a siege there of 5 big bursters and 76 and read it
   unpaid. Not a regression check: a film's save (`docs/trailer/reel-nwwall.lua`). Assumed, not tested: a second wave
   through the same gap before the robots mend it would get further.
+- **Kessler-Hayashi at the user's own wall: nw's south wall, its own siege** (2026-11-05; the user on the fortress
+  shot: "feels too tame... the wall in that doesn't reach the bottom of the screen it feels staged"). Visit mix `khwall`
+  (tests/lp-sim; it only writes the siege's beats). On nw the game lands Kessler-Hayashi at -99,566 as an armed camp (era
+  4 by research), 250 tiles south of the factory's south wall (three rows at y 319 to 321 over 800 tiles, three lasers
+  every 10.5, a roboport every 32 behind, a walled laser bastion south of it at -145,341). Unforced, its second siege
+  (minute 16; the first, at landing, went with no guards and was intercepted) is a tier 2 drop on the bastion: two
+  mortars and a howitzer by pod at -137,374, a jamming mast, its strike on -142,351 (25 shells on the lane and the 13
+  lasers covering it), an assault of 18 through the bastion's breach (17 back, nothing standing within 30 of it), then it
+  moves up to the bastion's foot and bombards over the wall for 5 minutes, the roboports at y 304 and the lasers at y 317,
+  resupplied from orbit twice: 160 shells, 177 of the player's razed. The player's robots rebuilt most of it (roboports in
+  the box 6, 1, back to 5; lasers 64 to 51). Its assault takes the bastion, not the main wall, and its shells come one
+  every two seconds or so (one to five in the air at once). Run from the minute-15 save with Landing Party alone (as a film
+  loads it) its ticks are 300 earlier than in the visit (the harness gone), and the same with trace on or off and with a
+  read-only observer. A film's save (`docs/trailer/reel-khwall.lua`), not a regression check.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
