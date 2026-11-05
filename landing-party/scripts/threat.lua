@@ -4,7 +4,7 @@
 -- your algorithms are to other turrets ... do they take into account the varying range? how do they treat artillery?").
 -- Profiles come from prototypes alone, identical on every client and every load (memoised here for that reason only);
 -- what changes in play (research, ammunition, power) is read from the entity or its force when asked.
--- A leaf: it reads prototypes, entities and forces only.
+-- A leaf: it reads prototypes, entities and forces only (and storage.tesla_held, which scorcher.lua keeps).
 local threat = {}
 
 threat.MARGIN = 2              -- a point this far past a turret's range still counts as in it (its own size, a biter's lunge)
@@ -75,8 +75,12 @@ function threat.bite(name)
   return bites[name] or 0
 end
 
--- Whether it fires now (not dry, not dark, not idle for want of fluid; a laser short of power still fires, slower).
-function threat.firing(e) return not SILENT[e.status] end
+-- Whether it fires now (not dry, not dark, not idle for want of fluid; a laser short of power still fires, slower). A
+-- turret held by a Tesla's lightning (scorcher.hold, storage.tesla_held; stopped by script for half a second a strike)
+-- fires: read as silent, Synthexis would price a laser line under Kessler-Hayashi's assault at nothing and learn from it.
+function threat.firing(e)
+  return not SILENT[e.status] or (storage.tesla_held ~= nil and e.unit_number ~= nil and storage.tesla_held[e.unit_number] ~= nil)
+end
 
 local far
 -- The longest reach of any turret that fires on units (plus MARGIN): how far round a point to look for what covers it.

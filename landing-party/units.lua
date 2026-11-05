@@ -713,7 +713,8 @@ prism.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "l
 -- Tesla (Serenity's Siege): the tesla turret's head on a tank's hull; lightning of 20 that jumps along seven more targets
 -- (12 each, 8 tiles a jump; 30, five of 18 before the RTS pass, 2026-10-21: smaller hits, which hulls shrug off), every
 -- 75 ticks, range 14. What it strikes that holds a charge (a laser turret, an
--- accumulator, a roboport) loses most of it (control.lua, on_entity_damaged): a turret line goes dark a moment.
+-- accumulator, a roboport) loses most of it, and a laser or tesla turret it strikes stops for the game's tesla stun
+-- (scripts/scorcher.lua, on_entity_damaged).
 local tesla_turret = data.raw["electric-turret"]["tesla-turret"]
 local tesla_head = tesla_turret and tesla_turret.prepared_animation or laser_head
 local tesla = make_tank("lp-tesla", nil, {{tesla_head, 0.6, 0, 0.9}})

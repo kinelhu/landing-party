@@ -4292,6 +4292,8 @@ local function alive(units) local n = 0; for _, u in ipairs(units or {}) do if u
 --   Fork: scripts/fork.sh teslawall 12345 7 (saved at minute 1); the assault sets off at minute 1.5 (tick 5400).
 scenarios.teslawall = function()
   local WX, AT = 401, 5400
+  -- The game's tesla stun (Space Age's tesla-turret-stun), the hold's length (scorcher.hold).
+  S.stun = prototypes.entity["tesla-turret-stun"].get_duration()
   schedule(60, function()
     lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true,
       herd_off = true})
@@ -4306,10 +4308,28 @@ scenarios.teslawall = function()
     for _, p in ipairs({{392, -9}, {392, 9}, {377, 0}, {362, 0}}) do
       surface().create_entity{name = "substation", position = p, force = "player"}
     end
-    local eei = surface().create_entity{name = "electric-energy-interface", position = {362, 5}, force = "player"}
     -- Five megawatts, a small steam plant's (twenty did not let the drain show: the line was back to full within a tick of
-    -- each strike, its mean charge never below 82% in the first run).
-    eei.power_production, eei.electric_buffer_size = 5e6 / 60, 5e7
+    -- each strike, its mean charge never below 82% in the first run). LP_MIX=20mw: that case. LP_MIX=grid: fed like a real
+    -- factory, a fraction of nw's (its south wall's 298 lasers share one network with 5,771 solar panels, 96 steam turbines
+    -- and 5,016 accumulators, 25 GJ, 315 MW drawn of some 900; nwa's 770, 1,368 turbines and 13,943 accumulators: probed
+    -- 2026-11-06): 100 MW and 80 accumulators behind the lasers. LP_MIX=night: a solar base at night, the 80 accumulators
+    -- alone.
+    -- (...-off: the same with the Tesla's lightning doing nothing to what holds a charge, the control.)
+    local supply = params.mix:match("^[^-]*")
+    local mw = ({["20mw"] = 20, grid = 100, night = 0})[supply] or 5
+    if params.mix:find("off", 1, true) then lp("debug_tune", {tesla_off = true}) end
+    if mw > 0 then
+      local eei = surface().create_entity{name = "electric-energy-interface", position = {362, 5}, force = "player"}
+      eei.power_production, eei.electric_buffer_size = mw * 1e6 / 60, 5e7
+    end
+    if supply == "grid" or supply == "night" then
+      for x = 369, 385, 2 do
+        for y = -8, 8, 2 do
+          local a = (math.abs(x - 377) > 1 or math.abs(y) > 1) and surface().create_entity{name = "accumulator", position = {x, y}, force = "player"}
+          if a then a.energy = a.electric_buffer_size end
+        end
+      end
+    end
     S.fodder = append(block("lp-trooper", WX + 5, 0, 24, 4, 2.2, "player"), block("lp-breacher", WX + 9, 0, 6, 1, 4, "player"))
     S.fodder_n = #S.fodder
     -- (Left to its own will, it runs out some 20 tiles to meet the escort and dies there in the first 9 s, the Teslas' bolts
@@ -4351,16 +4371,88 @@ scenarios.teslawall = function()
       end
     end)
   end
+  -- Every third tick while a Tesla stands within reach of the line (its range of 14 and its own and a laser's half-widths):
+  -- the lasers' hits on Kessler-Hayashi's then, and the lasers too drained to fire (a shot takes 800 kJ of a buffer of 801).
+  for t = AT + 3, AT + 2 * 3600, 3 do
+    schedule(t, function()
+      local at = false
+      for _, u in ipairs(S.teslas) do if u.valid and math.abs(u.position.x - (WX - 4)) <= 17 then at = alive(S.lasers) > 0 end end
+      local hits = S.tw.laser_hits or 0
+      if at then
+        S.tw.at_ticks = (S.tw.at_ticks or 0) + 3
+        S.tw.hits_at = (S.tw.hits_at or 0) + hits - (S.tw.hits_seen or 0)
+        for _, l in ipairs(S.lasers) do
+          if l.valid then
+            S.tw.samples = (S.tw.samples or 0) + 1
+            if l.energy < 8e5 then S.tw.dark = (S.tw.dark or 0) + 1 end
+            if l.disabled_by_script then S.tw.held = (S.tw.held or 0) + 1 end
+          end
+        end
+      end
+      S.tw.hits_seen = hits
+      -- Synthexis's fire map read while two or more lasers are held: each held laser in it (threat.firing).
+      if not S.tw.fire_read then
+        local held = {}
+        for _, l in ipairs(S.lasers) do if l.valid and l.disabled_by_script then held[l.position.x .. "," .. l.position.y] = true end end
+        if table_size(held) >= 2 then
+          local seen = 0
+          for _, t in ipairs(lp("debug_base_maps", {WX - 4, 0}, 30, 10).turrets) do
+            if held[t[1] .. "," .. t[2]] then seen = seen + 1 end
+          end
+          S.tw.fire_read = {held = table_size(held), seen = seen}
+        end
+      end
+      -- A laser still held the stun's length after the lightning last struck it (scorcher.hold).
+      for _, l in ipairs(S.lasers) do
+        if l.valid and l.disabled_by_script then
+          local last = S.tw.struck and S.tw.struck[l.unit_number]
+          local since = last and game.tick - last or math.huge
+          if since >= S.stun then S.tw.overheld = (S.tw.overheld or 0) + 1; S.tw.overheld_by = math.max(S.tw.overheld_by or 0, since) end
+          S.tw.held_longest = math.max(S.tw.held_longest or 0, since)
+          if not l.custom_status then S.tw.no_status = (S.tw.no_status or 0) + 1 end
+        end
+      end
+    end)
+  end
   schedule(AT + 2 * 3600 + 60, function()
     local st, tw = lp("scorcher_stats"), S.tw
     info(string.format("teslawall: drains %d (first at +%s ticks); lasers' mean charge fell to %.0f%% at +%s; lasers %d of %d standing",
       st.drains, tostring(tw.first_drain), 100 * (tw.low or 1), tostring(tw.low_at), alive(S.lasers), #S.lasers))
     info(string.format("teslawall: fodder %d of %d standing (all gone at +%s), hits by the fodder %d; Teslas %d of %d, escort %d of %d",
       alive(S.fodder), S.fodder_n, tostring(tw.fodder_gone), tw.fodder_hits, alive(S.teslas), #S.teslas, alive(S.escort), #S.escort))
+    info(string.format("teslawall: Teslas at the line %.1f s; the lasers' hits then %d (%.1f a second), in all %d; lasers too drained to fire %.1f%% of the samples then",
+      (tw.at_ticks or 0) / 60, tw.hits_at or 0, (tw.hits_at or 0) * 60 / math.max(1, tw.at_ticks or 0), tw.laser_hits or 0,
+      100 * (tw.dark or 0) / math.max(1, tw.samples or 0)))
+    local held = (tw.held or 0) / math.max(1, tw.samples or 0)
+    info(string.format("teslawall: holds %d; lasers held %.1f%% of the samples then; held longest %s ticks after a strike (stun %d), %d samples past it; %d held at the end",
+      st.holds or 0, 100 * held, tostring(tw.held_longest), S.stun, tw.overheld or 0, st.held or 0))
     info("teslawall: deaths " .. serpent.line(S.tally or {}))
     info("teslawall: s:fodder/teslas/escort/drains/charge/x/lasers" .. (tw.series or ""))
     -- (100: the fodder held by a stop order, the Teslas came to the line late and drained it 32 times, a shot with no drain in it.)
-    check("teslawall: the Teslas drained the lasers (100 or more)", st.drains >= 100, tostring(st.drains))
+    -- (The 20 MW and night variants are instruments, not checks: their drains and holds are what they measure. -off is
+    -- the control, the Tesla's lightning doing nothing to what holds a charge.)
+    local off = params.mix:find("off", 1, true)
+    local supply = params.mix:match("^[^-]*")
+    if not off and supply ~= "20mw" and supply ~= "night" then
+      check("teslawall: the Teslas drained the lasers (100 or more)", st.drains >= 100, tostring(st.drains))
+    end
+    -- (Caught, 2026-11-06: on a real supply the drain did nothing, the lasers hitting 15.6 times a second at the line
+    -- against 15.9 without it, refilled in 3 ticks of a strike. With the hold, 27.7% and 43.1% of the lasers' time held on
+    -- seeds 12345 and 777, 7.2 and 5.1 hits a second; without it 0.)
+    if supply == "grid" and not off then
+      check("teslawall: the Teslas' lightning holds the lasers it strikes (10% of their time at the line or more), its status saying so",
+        held >= 0.1 and (tw.no_status or 0) == 0,
+        string.format("%.1f%% of the lasers' time at the line; %d samples held with no status", 100 * held, tw.no_status or 0))
+      -- (threat.firing read a turret stopped by script as silent: Synthexis would price the held line at nothing.)
+      local fr = tw.fire_read or {held = 0, seen = 0}
+      check("teslawall: Synthexis's fire map reads the held lasers as firing", fr.held >= 2 and fr.seen == fr.held,
+        string.format("%d of %d held lasers in its fire map", fr.seen, fr.held))
+    end
+    if not off then
+      check("teslawall: a laser's hold ends within the stun's length after the last strike", (st.holds or 0) > 0 and (tw.overheld or 0) == 0 and (alive(S.teslas) > 0 or (st.held or 0) == 0),
+        string.format("%d holds, %d samples held %d+ ticks after a strike (longest %s), %d held at the end", st.holds or 0, tw.overheld or 0, S.stun,
+          tostring(tw.held_longest), st.held or 0))
+    end
     check("teslawall: the fodder fought (its shots hit Kessler-Hayashi's)", tw.fodder_hits >= 20, tostring(tw.fodder_hits))
     check("teslawall: the escort killed the fodder (most of it)", alive(S.fodder) <= S.fodder_n / 2,
       alive(S.fodder) .. " of " .. S.fodder_n .. " standing")
@@ -15773,6 +15865,15 @@ if params.scenario == "teslawall" or params.scenario == "warfinale" then
     S.dealt[a .. ">" .. v] = (S.dealt[a .. ">" .. v] or 0) + e.final_damage_amount
     if S.tw and v == FORCE and e.cause and e.cause.valid and (e.cause.name == "lp-trooper" or e.cause.name == "lp-breacher") then
       S.tw.fodder_hits = S.tw.fodder_hits + 1
+    end
+    -- The lasers' hits on Kessler-Hayashi's (two a shot: the beam strikes every 20 ticks of its 40).
+    if S.tw and v == FORCE and e.cause and e.cause.valid and e.cause.name == "laser-turret" then
+      S.tw.laser_hits = (S.tw.laser_hits or 0) + 1
+    end
+    -- The lightning's last strike on each laser (the hold's end is read against it).
+    if S.tw and a == FORCE and e.entity.type == "electric-turret" and e.damage_type and e.damage_type.name == "electric" then
+      S.tw.struck = S.tw.struck or {}
+      S.tw.struck[e.entity.unit_number] = game.tick
     end
     if e.final_health <= 0 then
       local t = e.entity.type

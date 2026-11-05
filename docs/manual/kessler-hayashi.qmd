@@ -80,9 +80,11 @@ Its army is troopers, tanks and railgunners, with laser drones from its second l
 spawners round its camp. Full numbers are in the [Reference](reference.qmd#sec-units).
 
 **Lightning tanks.** When your turrets have killed enough of its units, its siege works research lightning tanks, and
-they join its army. Their lightning jumps from turret to turret along your line, and each laser or tesla turret,
-accumulator or roboport it strikes loses {{< var kh.tesla_drain_pct >}}% of its charge. A network with power to spare refills
-them almost at once, and the lasers keep firing. On a thin supply the line runs low while the tanks stand at it.
+they join its army. Their lightning jumps from turret to turret along your line. Each laser or tesla turret it strikes
+stops for {{< var kh.tesla_stun_s >}} seconds, the length of a tesla turret's stun, and stops again at the next strike. Each
+of those, and each accumulator or roboport it strikes, also loses {{< var kh.tesla_drain_pct >}}% of its charge, which a network with
+power to spare refills almost at once. A laser line under their lightning fires less often until the tanks are dead or
+out of reach.
 
 It raids what your turrets do not cover, and it cuts power. It finds the pole that feeds the turrets facing it with no
 second feed, and destroys it where no turret reaches. Its sieges are its main weapon (see [Sieges](#sec-kh-sieges)).
@@ -229,7 +231,8 @@ and its units fielded, only while its lab stands.
 - **Keep robots near your walls.** A siege shells a closed wall open only where its guns outpace your robots.
 - **Kill the howitzer and the mast.** Without the howitzer your roboports behind the wall are out of reach, and without
   the mast your robots mend the breach.
-- **Feed your laser line.** Spare generating power and accumulators by the turrets undo a lightning tank's drain.
+- **Mix your turrets.** Lightning stops laser and tesla turrets only. Gun turrets and flamethrowers between them keep
+  firing while it strikes.
 - **Give your turrets a second feed.** A cut needs a pole with nothing behind it. Accumulators by the turrets keep them
   firing through one.
 - **Use a field dome.** {{< var desc.entity_player_dome >}} It does not stop the orbital strike.
