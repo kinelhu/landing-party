@@ -14424,8 +14424,47 @@ local function pillbox()
   end)
 end
 
+-- Idle LP_MIX=truce: Grubstake's yard and the guns of a force it is at cease-fire with (its pact with the biters). Once
+-- it has a yard, a wild medium worm is set 12 tiles from it; the pact holds, so the worm is no enemy to
+-- find_nearest_enemy. A pact ends (a breaker, its antenna lost), and the yard should not wait under the worm then.
+local function yard_truce()
+  schedule(60, function()
+    lp("debug_tune", {ops_off = true, raids_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+  end)
+  for t = 2 * 3600, END - 3 * 3600, 600 do
+    schedule(t, function()
+      if S.worm then return end
+      local st = lp("stats", S.g)
+      if not st.yard then return end
+      local y, o = st.yard, st.origin
+      -- Away from home, so the worm stands outside the camp.
+      local dx, dy = y[1] - o.x, y[2] - o.y
+      local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+      local q = surface().find_non_colliding_position("medium-worm-turret", {y[1] + dx / len * 12, y[2] + dy / len * 12}, 6, 1)
+      S.worm = q and surface().create_entity{name = "medium-worm-turret", position = q, force = "enemy"}
+      S.yard0 = y
+      S.pact = game.forces["lp-grubstake"].get_cease_fire("enemy")
+      S.worm_at = game.tick
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local w, y = S.worm, st.yard
+    local d = (w and w.valid and y) and math.sqrt((y[1] - w.position.x) ^ 2 + (y[2] - w.position.y) ^ 2) or -1
+    info(string.format("idle truce: yard %s, then %s; worm %s at tick %s; pact %s; yard to worm %.0f",
+      serpent.line(S.yard0), serpent.line(y), w and w.valid and serpent.line(w.position) or "none", tostring(S.worm_at),
+      tostring(S.pact), d))
+    check("idle: truce, a worm was set by its yard under the pact", w ~= nil and w.valid and S.pact == true,
+      string.format("worm %s, pact %s", tostring(w and w.valid), tostring(S.pact)))
+    -- (Seen failing before army.truced_gun: the yard stayed 12 tiles from the worm.)
+    check("idle: truce, its yard moved out of the truced worm's reach (40)", y ~= nil and d >= 40, string.format("%.0f", d))
+  end)
+end
+
 scenarios.idle = function()
   if params.mix == "pillbox" then return pillbox() end
+  if params.mix == "truce" then return yard_truce() end
   schedule(60, function()
     -- LP_MIX=off (yard_off): the bug as it was, to see this check fail.
     lp("debug_tune", {ops_off = true, raids_off = true, yard_off = params.mix == "off" or nil})
