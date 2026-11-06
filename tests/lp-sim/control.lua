@@ -13726,6 +13726,11 @@ scenarios.podland = function()
     check("podland: it landed once they touched down", S.land_at and S.pod_at and S.land_at - S.pod_at >= 300,
       string.format("pod %s, landing %s", tostring(S.pod_at), tostring(S.land_at)))
     check("podland: no remnants left", rem == 0, tostring(rem))
+    -- (Its pods' bursts, explosion entities, took the pad's ring, and it stood on the next free pad: 15 tiles off on
+    -- seed 12345 until 2026-11-06.)
+    local L = lp("landing_jobs").last
+    local off_by = L and L.pad and L.lander and math.sqrt((L.pad[1] - L.lander[1]) ^ 2 + (L.pad[2] - L.lander[2]) ^ 2) or -1
+    check("podland: it stood on its pod's pad", off_by >= 0 and off_by < 1, string.format("%.1f tiles off", off_by))
   end)
 end
 
@@ -13792,9 +13797,9 @@ scenarios.landfx = function()
       and S.g_fx.drawn >= 28, serpent.line(S.g_fx))
     check("landfx: six pods fell round it, each its own impact", g.landfx and g.landfx.fell == 6 and g.landfx.drawn >= 28 + 6 * 10
       and g.landfx.made == 0, serpent.line(g.landfx))
-    -- (Its hull drawn 120 ticks before its lander, onto the pad it took: within a tile and a half of it. That pad foreseen
-    -- when its pod was sent (layout.find_pad told where its pods will stand): asked again once they stood, it moved under
-    -- 2 tiles; aimed at its pod's own pad, it lurched 15 in the last quarter second.)
+    -- (Its hull drawn 120 ticks before its lander, onto the pad it took: within a tile and a half of it. That pad is its
+    -- pod's since 2026-11-06 (podland); asked again once its pods stood, it moves under 2 tiles. While the pods' bursts
+    -- pushed the landing a pad over, the hull aimed at the pod's pad lurched 15 tiles in the last quarter second.)
     local fx = sr and sr.landfx
     check("landfx: the queued landing's hull fell onto its lander", fx and fx.descended == true and fx.hull_at
       and S.land_at - fx.hull_at >= 110 and S.land_at - fx.hull_at <= 130 and fx.hull_off <= 1.5 and fx.steered <= 2
