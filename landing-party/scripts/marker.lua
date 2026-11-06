@@ -1,14 +1,14 @@
 -- The player's Grubstake devices from its pacifier crystals (the faction loot consult, technologies 2 and 3).
 -- Pact breaker: set inside a Grubstake camp's claim, it suspends the pact (pact.apply) for BREAK, then burns out: the
 -- biters and Grubstake turn on each other for that long. Set outside every claim it waits, and says so.
--- Claim marker: Grubstake reads the player's buildings within 40 of it as its own claim (ops.marked) and leaves them be.
+-- Claim marker: Grubstake reads the player's buildings within shared.CLAIM_MARK_RADIUS of it as its own claim (ops.marked) and leaves them be.
 -- (A real player pacifier is not possible: the engine's cease-fire is per force, and it would end the biters map-wide.)
 local shared = require("__landing-party__.shared")
 local pact = require("__landing-party__.scripts.pact")
 
 local marker = {}
 
-local BREAK = 3 * 3600
+local BREAK = shared.BREAKER_MINUTES * 3600
 
 local function in_claim(ent)
   for _, b in pairs(storage.bases or {}) do
@@ -62,7 +62,7 @@ function marker.tick(tick)
       storage.pact_breaks = (storage.pact_breaks or 0) + 1
       pact.apply()
       shared.reply(br.entity.force, br.entity.position, {"lp.breaker-lit", string.format("[gps=%d,%d,%s]", br.entity.position.x, br.entity.position.y,
-        br.entity.surface.name)})
+        br.entity.surface.name), tostring(shared.BREAKER_MINUTES)})
     end
   end
 end
