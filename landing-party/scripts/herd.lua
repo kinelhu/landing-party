@@ -2040,6 +2040,13 @@ end
 burstfx.on_blast.big = big_blast
 -- A big burster set off (its wind-up, then big_blast). Also the dev tools' and tests'.
 function herd.set_off(u) return burstfx.windup(u, "big") end
+-- Whether a firing gun of `forces` covers pos as it fires: within its reach, past its least reach and inside its arc (the
+-- fire map, as its muster reads it, herd.rk.muster_point). (threat.covering is arc-blind: on the ranks-mend fork its held
+-- herd stood behind the backs of the spread wall's flamethrowers, facing out, and read 31 of 31 in reach every look, none
+-- of them able to turn on it and nothing shooting; its rams sent past them read in reach from their first step.)
+function herd.rk.in_fire(s, pos, forces)
+  return #firemap.entries(firemap.read(s, pos, 0, forces), pos) > 0
+end
 local function detonate(w)
   if not w.big_targets then return end
   herd.rk.release_muster(w)
@@ -2048,7 +2055,7 @@ local function detonate(w)
   for _, b in ipairs(w.big_targets) do
     local u, t = b.unit, b.target
     -- (When a released ram of a rank first stands in a gun's reach, and where: its rank's reading, herd.rk.size_next.)
-    if u.valid and b.sent and not b.held and not b.reserve and not b.in_reach and threat.covering(s, u.position, foes(w), 1) > 0 then
+    if u.valid and b.sent and not b.held and not b.reserve and not b.in_reach and herd.rk.in_fire(s, u.position, foes(w)) then
       b.in_reach, b.in_at = game.tick, {x = u.position.x, y = u.position.y}
     end
     if u.valid and b.mustering then kept[#kept + 1] = b
@@ -2263,7 +2270,7 @@ function herd.rk.through(w)
 end
 -- A rank's rams go together (the nwwallsiege visit, 2026-11-05: sent from where each was held, 70 tiles back, a rank's rams
 -- came into 15 to 18 guns' reach strung out, each killed in about a second alone, whatever its rank's size): first to
--- its muster, the first point on the line from its gap back through its staging out of every firing gun's reach (threat.covering),
+-- its muster, the first point on the line from its gap back through its staging out of every firing gun's reach (its fire map),
 -- then through the gap together once every one of it stands there (within twice its touch of it, or its order failed where it
 -- stood), held there by a stop: its order done, a ram stood idle at its muster went at the wall in its sight by itself, alone,
 -- and died in the gap (the nwwallsiege visit, 2026-11-05).
@@ -2644,7 +2651,7 @@ function herd.rk.next(w)
   local muster = not storage.biotech_no_muster and herd.rk.muster_point(w, from)
   if not muster and not storage.biotech_no_muster and from and w.mark then
     log(w, string.format("its rank finds no muster out of reach between %.0f,%.0f and its staging at %.0f,%.0f (%d guns cover it)",
-      from.x, from.y, w.mark.x, w.mark.y, threat.covering(s, w.mark, foes(w), nil, herd.rk.MUSTER_R)))
+      from.x, from.y, w.mark.x, w.mark.y, #firemap.entries_box(firemap.read(s, w.mark, herd.rk.MUSTER_R, foes(w)), w.mark, herd.rk.MUSTER_R)))
   end
   for _, b in ipairs(w.big_targets or {}) do
     if m >= w.rank_size then break end
@@ -3331,7 +3338,8 @@ finish = function(w, outcome)
     plan_breach = w.plan and w.plan.breach, made_of = w.made_of, opens = w.opens_learned, ram_off = w.ram_off,
     sweep_mines = w.sweep_mines, sweep_left = w.sweep_left, plan_mines = w.plan and w.plan.mines,
     breach_after = w.breach_after, ranks = w.ranked and {n = w.rank_n, size = w.rank_size, unused = w.rams_unused, log = w.rank_log,
-      rushed = w.rushed} or nil, rush_open = w.rush_open, mends = w.mends, spread = w.spread and {points = #w.spread.points,
+      rushed = w.rushed} or nil, rush_open = w.rush_open, mends = w.mends,
+    hold = w.hold_probe and {looks = w.hold_probe.looks, sum = w.hold_probe.sum, most = w.hold_probe.most, n = w.hold_probe.n} or nil, spread = w.spread and {points = #w.spread.points,
       opened = w.spread.opened} or nil,
     plan = w.plan and {path = w.plan.path, start = w.plan.start, breach = w.plan.breach, cost = w.plan.cost, cover = w.plan.cover}, silenced = w.silenced, clearing = w.clearing, staged = w.staged and true or false,
     breach_cover = w.breach_cover, breach_by = w.breach_by, price = w.price_learned,
@@ -3504,14 +3512,14 @@ local function vanished(w)
   end
 end
 -- (Traced: where its held herd waits against the guns' reach, each look while it holds at the breach: how many of it
--- stand in a firing gun's reach, and its middle.)
+-- stand in a firing gun's fire (herd.rk.in_fire: its arc and least reach honoured), and its middle.)
 function herd.rk.hold_probe(w)
   local s = game.surfaces[w.surface]
   local n, inr, cx, cy = 0, 0, 0, 0
   for _, u in ipairs(w.members) do
     if u.valid and u.name ~= "lp-bred-big-burster" and not (w.fodder_set and w.fodder_set[u.unit_number]) then
       n, cx, cy = n + 1, cx + u.position.x, cy + u.position.y
-      if threat.covering(s, u.position, foes(w), 1) > 0 then inr = inr + 1 end
+      if herd.rk.in_fire(s, u.position, foes(w)) then inr = inr + 1 end
     end
   end
   if n == 0 then return end
@@ -4165,7 +4173,7 @@ function herd.on_died(e)
                   local to = b.through and b.through.valid and b.through.position or b.target and b.target.valid and b.target.position
                   log(w, string.format("its ram of rank %s killed short by %s #%s (%s) at %.0f,%.0f, %s guns covering it, in reach %s s, %.0f s after it went, %s from its wall, %s from its gap%s",
                     tostring(b.rank or "-"), c and c.name or "none", tostring(c and c.unit_number), e.damage_type and e.damage_type.name or "?",
-                    ent.position.x, ent.position.y, threat.covering(ent.surface, ent.position, foes(w)),
+                    ent.position.x, ent.position.y, #firemap.entries(firemap.read(ent.surface, ent.position, 0, foes(w)), ent.position),
                     b.in_reach and string.format("%.1f", (game.tick - b.in_reach) / 60) or "-", b.sent and (game.tick - b.sent) / 60 or -1, to and string.format("%.1f", math.sqrt(d2(ent.position, to))) or "-",
                     w.gap and string.format("%.1f", math.sqrt(d2(ent.position, w.gap))) or "-", b.held and ", held" or b.reserve and ", in reserve" or ""))
                   break

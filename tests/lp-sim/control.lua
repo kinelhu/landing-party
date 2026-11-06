@@ -11292,6 +11292,14 @@ scenarios.herd = function()
       info("herd ranks: a spread's points at a flamethrower wall " .. serpent.line(S.spread))
       check("herd: a spread's points share no flamethrower's arc", #pts >= 2 and burnt >= 1 and shared_burn == 0,
         serpent.line({points = #pts, burnt = burnt, shared = shared_burn}))
+      -- Its held herd waits in no gun's fire, each look while it holds (the hold probe, herd.rk.hold_probe: a firing gun's
+      -- reach past its least reach and inside its arc, as its muster reads it). Caught: read by an arc-blind reach the herd
+      -- held behind the spread wall's flamethrowers read 31 of 31 in reach every look on the ranks-mend fork, with none of
+      -- them able to turn on it (0.2.216 to 0.2.219), so the probe could not tell a hold in fire from one out of it.
+      local hold = w and w.hold
+      info(string.format("herd %s: its held herd in a gun's fire %s", mend or mix, serpent.line(hold)))
+      check("herd: ranks, its held herd waits out of every gun's fire", hold ~= nil and hold.looks >= 1 and hold.most == 0,
+        serpent.line(hold))
       if mend then
         -- Its rush through its own gap, mended by the player's robots after it went: at the mended piece on its line and on,
         -- not round by the engine's path along the corridor behind the outer ring (the user's north wall from the minute-11
