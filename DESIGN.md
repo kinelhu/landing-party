@@ -5204,6 +5204,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   a mixed line (guns and flamethrowers among the lasers) and in the siege lab; the dome is untouched by construction (the
   hold fires only from a corporation's Tesla on electric turrets; the dome's and the jammer's arcs are not a Tesla's).
 - **Leftovers, 0.2.219** (2026-11-06; the user: "the leftovers"). Each with the run that caught it kept as a check.
+  Regression `--area=growth,ops,player` (12345, two at a time): 207 of 207 passed.
   - *A landing by pod stands where its pod fell.* Traced at the landing (podland, seed 12345): 21 ticks after its pods
     touched down their containers had burst, and three cargo-pod-container-explosion entities stood in the pad's ring;
     `layout.area_free` refuses whatever is not clearable, so the lander took the next free pad, 14.9 tiles off. An
