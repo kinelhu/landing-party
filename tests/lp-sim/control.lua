@@ -3607,6 +3607,23 @@ scenarios.dev = function()
     check("dev: /lp burst big wound one up and it burst whole", fx.windups == S.fx0.windups + 1
       and (fx.blasts.big or 0) == (S.fx0.blasts.big or 0) + 1, serpent.line(fx))
   end)
+  -- /lp tesla (scorcher.hold, 0.2.218): a laser turret on its own power, the player 40 tiles west of it; the Tesla set 20
+  -- east of the player, sent at the laser; its lightning holds it.
+  schedule(2 * 3600 + 900, function()
+    flatten(-125, -135, -55, -105)
+    S.laser = surface().create_entity{name = "laser-turret", position = {-70, -120}, force = "player"}
+    surface().create_entity{name = "substation", position = {-66, -120}, force = "player"}
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {-62, -120}, force = "player"}
+    eei.power_production, eei.electric_buffer_size = 1e6, 1e8
+    S.holds0 = lp("scorcher_stats").holds
+    lp("dev", {"tesla"}, {-110, -120})
+    S.teslas = surface().count_entities_filtered{area = {{-100, -130}, {-80, -110}}, name = "lp-tesla"}
+  end)
+  schedule(2 * 3600 + 900 + 40 * 60, function()
+    local st = lp("scorcher_stats")
+    check("dev: /lp tesla set a Tesla and its lightning held the laser", S.teslas == 1 and st.holds > S.holds0,
+      string.format("%d set, holds %d to %d", S.teslas, S.holds0, st.holds))
+  end)
   schedule(2 * 3600 + 600 + 15 * 60, function()
     local o = lp("stats", S.s).ops
     check("dev: /lp strike painted its point", o.strike_paint ~= nil and o.strike_center ~= nil
