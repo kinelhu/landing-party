@@ -497,13 +497,16 @@
 \renewcommand\LettrineTextFont{\scshape}
 \setlength\DefaultFindent{1.2pt}
 \setlength\DefaultNindent{0pt}
+% On a lore page it closes the history in less room (one rule, a smaller hand), so the page holds it and the chapter
+% starts on the facing page (2026-11-06: the full quote alone on a recto read as a page left empty).
 \newenvironment{lppullquote}[1]{% attribution or empty
-  \par\vspace{9pt}\begingroup\centering\def\lp@cite{#1}%
-  \lp@ornrule{36}\par\vspace{3.5mm}
-  \begin{minipage}{0.84\linewidth}\centering\setlength{\parindent}{0pt}\fontsize{13.5}{17.5}\selectfont\itshape\color{LPInk}}
+  \par\begingroup\centering\def\lp@cite{#1}%
+  \iflplore\vspace{4pt}\lp@ornrule{36}\par\nopagebreak\vspace{2mm}\nopagebreak\else\vspace{9pt}\lp@ornrule{36}\par\vspace{3.5mm}\fi
+  \begin{minipage}{0.84\linewidth}\centering\setlength{\parindent}{0pt}%
+  \iflplore\fontsize{11.5}{14.5}\else\fontsize{13.5}{17.5}\fi\selectfont\itshape\color{LPInk}}
  {\par\end{minipage}\par
-  \ifdefempty{\lp@cite}{}{\vspace{2mm}{\color{FacDark}\lpkicker{\lp@cite}}\par}%
-  \vspace{3.5mm}\lp@ornrule{36}\par\endgroup\vspace{9pt}\noindent\ignorespacesafterend}
+  \ifdefempty{\lp@cite}{}{\nopagebreak\vspace{1.5mm}\nopagebreak{\color{FacDark}\lpkicker{\lp@cite}}\par}%
+  \iflplore\else\vspace{3.5mm}\lp@ornrule{36}\par\vspace{9pt}\fi\endgroup\noindent\ignorespacesafterend}
 
 % ---------------------------------------------------------------- sidebars
 % The tip: a plate framed twice, riveted at the corners, its title on a tab with a cut corner standing on the frame.

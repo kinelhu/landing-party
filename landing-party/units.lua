@@ -567,9 +567,9 @@ tint(laser_drone.run_animation, {})
 tint(laser_drone.attack_parameters.animation, {})
 
 -- Railgunner (Serenity; the user: "a biter clearing unit like a hand mounted railgun that's at its best against biters"):
--- a slug that pierces everything on a line 30 tiles long (out of a medium worm's reach), 250 to what carries the lp-biter
--- trigger target (biters, spawners, worms: data-final-fixes.lua; two kill a big biter), 10 to anything else, every 90 ticks; laser, so
--- Serenity's research covers it. 140 health. A packed biter attack dies in a row; a wall barely notices it.
+-- a slug out of a medium worm's reach that pierces a few biters (RAIL_PIERCE below), heavy against what carries the
+-- lp-biter trigger target (biters, spawners, worms: data-final-fixes.lua), light against anything else, every 90 ticks;
+-- laser, so Serenity's research covers it. Its numbers are below and in shared.lua, not here.
 -- Its tracer: the laser turret's beam without the beam's own damage (it did most of the harm to walls).
 local rail_beam = table.deepcopy(data.raw.beam["laser-beam"])
 rail_beam.name = "lp-rail-beam"

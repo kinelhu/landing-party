@@ -638,6 +638,10 @@ BREED_LINE = {"lp-bred-small-biter": "biters", "lp-bred-medium-biter": "biters",
               "lp-bred-cinder": "special", "lp-bred-stomper": "special"}
 
 
+NUMBER_WORDS = re.compile(r"\b(twice|thrice|half|double|triple|two|three|four|five|six|seven|eight|nine|ten|"
+                          r"eleven|twelve|twenty|thirty|fifty|hundred|thousand)\b", re.I)
+
+
 def read_words(path):
     words, sec, bad = {}, None, []
     for i, line in enumerate(open(path, encoding="utf-8"), 1):
@@ -651,6 +655,10 @@ def read_words(path):
         k, v = line.split("=", 1)
         if re.search(r"\d", v):
             bad.append(f"words.cfg line {i}: a digit in words ({k}); a number belongs to the code")
+        # A number spelled out is still typed ("three times to a building", "more than twice": two blurbs, 2026-11-06).
+        n = NUMBER_WORDS.search(v)
+        if n:
+            bad.append(f"words.cfg line {i}: a number in words ({k}: '{n.group(0)}'); a number belongs to the code")
         words.setdefault(sec, {})[k] = v.strip()
     if bad:
         raise SystemExit("manual_qmd:\n  " + "\n  ".join(bad))

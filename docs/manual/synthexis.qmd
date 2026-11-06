@@ -3,65 +3,40 @@
 ::: {.epigraph faction="synthexis"}
 :::
 
-::: {.lore kicker="Freight Authority, operator file 377" title="The trial" faction="synthexis"}
+::: {.lore kicker="Background" title="The breeders" faction="synthexis"}
 
 ::: {.dossier}
 SYNTHEXIS
-: Commonly "the lessee" at the Authority; "the growers" in Kessler-Hayashi's field reports and "unlicensed pest
-  control" in its filings; "the greenhouse" in Grubstake's books. Catalogue heading: "adapted stock".
+: A biotech company. Its owners are not public. Motto: "Engineered to adapt."
 
-REGISTERED
-: Lessee of record, Gleba, swamp lots GL-22 to GL-26, through an agent on Gleba. Principals not disclosed;
-  correspondence through the agent only. Place of incorporation not supplied. Platform *Cold Chain*.
+BASED
+: Five leased swamp lots on Gleba, for crops and pentapod study. Platform *Cold Chain*.
 
-PRINCIPALS
-: Dr. Anouk Verhaegen, Principal Investigator, Nauvis trial: the one name the company discloses, on every batch
-  release. Ilya Rask, Senior Technician, keeper of the feed roster.
+PEOPLE
+: Dr. Anouk Verhaegen, head of the Nauvis program. Ilya Rask, senior technician.
 
-LICENCES
-: Gleba, five lots: yumako, jellystem, pentapod study. Nauvis: none. The Surface Registry's audit finds that the
-  Gleba leases do not extend to Nauvis, and records no action.
-
-PRODUCT
-: Bred biters, striped green and yellow, raised from wild stock in the swarm's own spawners. Trial Protocol NV/1, "an
-  open-air breeding trial on wild stock against a working defence". The control: "the unregistered operator's works".
-
-STAFF ON SURFACE
-: Technicians. No armed personnel on any manifest. The Authority's inspectors have not been invited to count.
-
-SEE ALSO
-: Kessler-Hayashi (file 114; "the exterminator" in Synthexis's papers). Grubstake (file 209; "the supplier": its smoke
-  feeds the trial). The wild stock: "the hedge" in the protocol.
+ON NAUVIS
+: No licence. No armed staff. A breeding program on the native swarm.
 :::
 
-Where Synthexis comes from, its filings leave blank, and the Registry has stopped asking the agent on Gleba, who
-answers every letter with the lease numbers. The leases are real. Five swamp lots hold its yumako and jellystem
-plantings and the pens where its technicians study pentapods, and every Synthexis site elsewhere stands on a blot of
-that soil, carried out cold by the platform *Cold Chain* with the seed stock and the clinic so that nothing spoils on
-the way. What the lots do not hold is a licence for anywhere else. The clerk's audit says so, and records no action,
-because the Surface Registry has no officer who could take one.
+Synthexis keeps a low profile. It leases five swamp lots on Gleba, where it grows crops and studies the pentapods,
+and it deals with the outside world through an agent who answers every question with a lease number. Nobody outside
+the company knows who owns it.
 
-Protocol NV/1 reached the Registry by way of a Kessler-Hayashi site report that called it pest control. It describes
-an open-air breeding trial on wild stock, run where the stock is thickest and the air dirtiest, with a working defence
-as the control: the unregistered operator's works, whose smoke the trial lives on. *Cold Chain* put the first pod down
-on a nest field at the far edge of that smoke, once the wild stock there had grown into something worth breeding from.
-The spawners became incubators, each with a biochamber beside it and a pad of substrate under it, and creep grew out
-from the tumors and drank the smoke off the air. Ilya Rask keeps the feed roster. An incubator whose biochamber his
-technicians have let go cold lets its stock loose and goes back to the wild.
+What Synthexis sells is life made to order: crops that grow faster, animals bred for a purpose. On Nauvis it found
+the best breeding stock it had ever seen. The native biters adapt to whatever hurts them, and the engineer's pollution
+has made them bigger and more aggressive every year.
 
-::: {.pullquote cite="A. Verhaegen, adverse event report NV/1-7"}
-Batch lost in full at the control's southern wall. Finding: the wall held. Action: the next batch is bred for the wall.
+So Synthexis came to breed them. Its platform *Cold Chain* lands a culture on a nest field, its technicians turn the
+nests into incubators, and the biters that hatch wear the company's green and yellow bands. Then they are sent against
+the engineer's walls. Synthexis keeps no soldiers on Nauvis; the biters do its fighting.
+
+Dr. Anouk Verhaegen runs the program, and she does not think of it as a war. To her the engineer's factory is a test,
+the hardest the stock has faced. Every wave that dies at a wall is written up, and the next one is bred for that wall.
+
+::: {.pullquote cite="A. Verhaegen, field report"}
+Batch lost at the southern wall. The wall held. Next batch to be bred for the wall.
 :::
-
-Each batch goes out under a release note in Verhaegen's hand, with the breed, the count, the target and the gate. The
-protocol wants a scout round the control first, and the note names whichever gate the scout found thinnest. What
-comes back is written up as an adverse event in the same even hand, and the next release answers it. A wall that held
-gets bursters, bred from the small biter's line with the acid gland grown in until the animal is a running sac that
-cannot bite and goes off where it stops, or where it is killed. The stomper, which the Gleba pens produced, walks over
-the wall the bursters were meant for. When a trial site has grown, Verhaegen signs a carrier dispatch, and a
-big-bodied animal in violet, lit so that the technicians can follow it, walks a dozen of the stock to a wild nest
-field farther out and founds a second site there. The company has never written to the Authority, and the one address
-it keeps is on Gleba.
 :::
 
 Synthexis is a bioengineering company. It does not mine or build factories. It takes over a field of biter spawners,

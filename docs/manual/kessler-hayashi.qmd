@@ -3,67 +3,40 @@
 ::: {.epigraph faction="kessler-hayashi"}
 :::
 
-::: {.lore kicker="Freight Authority, operator file 114" title="The contract" faction="kessler-hayashi"}
+::: {.lore kicker="Background" title="The contractor" faction="kessler-hayashi"}
 
 ::: {.dossier}
 KESSLER-HAYASHI SECURITY
-: Commonly K-H; "the landlord" among Grubstake's crews; "the contractor" in the unregistered operator's radio log.
-  The Security Division of Kessler-Hayashi, beside Freight, Orbital Works and Survey. On every letterhead: "A quieter
-  system for everyone."
+: The security division of Kessler-Hayashi, an insurance and shipping company with a fleet of its own.
 
-PARENT
-: Kessler-Hayashi, formerly Hayashi Lane Assurance, an underwriting house on the inner lanes. The Kessler name came
-  with the gunship fleet it bought rather than go on paying out on the Aquilo run. The Hayashi family holds the chair;
-  no Hayashi has sat in a field office.
+BASED
+: The Serenity Ring, a station of armed platforms in orbit. The company owns no ground anywhere, by policy.
 
-REGISTERED
-: Serenity Ring, nine armed platforms on a leased orbit. No ground holdings, by policy. Office hull *Clear Title*;
-  on station over Nauvis, *Quiet Enjoyment*.
+PEOPLE
+: Ilse Kessler, Director of Field Operations. Tomas Adeyemi, Chief of Siege Works. M. Voss, fire controller aboard
+  the platform *Quiet Enjoyment*.
 
-PRINCIPALS
-: Ilse Kessler, Director of Field Operations (every site report). Tomas Adeyemi, Chief of Siege Works, Nauvis.
-  P. Lindqvist, Surveyor. M. Voss, Fire Controller, *Quiet Enjoyment*.
-
-CONTRACTS KNOWN
-: Escort on the Aquilo run; cordon duty at the Vulcanus foundries. Nauvis: contract NV-1, client withheld under
-  clause 9.
+ON NAUVIS
+: Contract NV-1: guard the launch lanes and any cargo leaving the surface. The client is not named.
 :::
 
-Contract NV-1 was signed the week the operator's first rocket cleared the atmosphere, and the Registry holds a copy
-because Kessler-Hayashi does everything in writing. What it does not hold is the client's name. Clause 9 withholds
-it, and the company has never waived it. The contract buys a surveyed boundary round a landing site, the launch lanes
-above it, and "protective custody" of any cargo that leaves the ground inside the boundary. The operator's rockets
-are cargo. The operator is a hazard, class three, and is billed as one.
+Kessler-Hayashi began as an insurance house on the inner lanes. Raids on the long run to Aquilo were costing it more
+than it could pay out, so it bought a fleet of gunships and protected the cargo itself. Today it escorts freighters and guards the foundries on Vulcanus. The Hayashi family owns it. Ilse Kessler runs it in the field, from the Serenity Ring: the
+company owns no ground, and goes down to a planet only when a contract sends it.
 
-The clerk notes what the contract does not buy. Nobody in NV-1 is paid by the launch, and in eleven site reports the
-Ring has not asked for one rocket to be held. What goes up to *Clear Title* each period is a survey. Director Kessler
-draws her sieges up from orbit, on the Survey Office's pictures of whatever defends the target. Standing Directive 9 makes every observation of
-a contracted surface company property. The security contract puts the Survey Division close enough to look. Who it
-sells the view to is not on file.
+Contract NV-1 sends them to Nauvis. On paper it is a guard job. In practice Kessler-Hayashi sees the engineer as an armed, unlicensed operator inside
+its contract zone, and it deals with that the way it always has. It draws a line, tells the engineer to stay behind
+it, and when the engineer does not, it besieges them.
 
-A K-H site arrives finished. The lander comes down inside a cargo pod with the escort's pods either side, and by the
-time the dust has settled there are generators round the hull and a dome humming over them. Directive 4.1 ranks the
-lander and its generators as assets of the first class, to be restored before personnel are relieved, so a dark
-generator is put back before anything else. The laboratories come later. They stand on the ground because Keel & Ward, who underwrite the Ring, will not carry live weapons work aboard a hull,
-and Directive 6.2 was written to keep their cover. Optics, the Armory and Adeyemi's Siege Works each hold one branch
-of the company's research in one building, and when the building goes, the work in it goes with it.
+Its troops fight in mech armor, and its sieges are planned on the Ring from the platforms' pictures of the
+engineer's defenses.
 
-::: {.pullquote cite="I. Kessler, site report NV-1/3"}
-Site hazard notified of its obligations under clause twelve. No reply. Billing continues.
+The company's Survey Division has no official role on Nauvis, yet it keeps a team at every camp, studying the
+engineer's factory. Nobody outside the company knows who reads their reports.
+
+::: {.pullquote cite="I. Kessler, Director of Field Operations"}
+We are not at war with anyone. We are enforcing a perimeter.
 :::
-
-The boundary is the Director's instrument, and it moves. Lindqvist's office posts a Schedule B notice naming the
-building the next arc will enclose, and the drones pour a pad and raise a short wall facing the operator, with guns on
-it. Clause 12 bills the operator for every nest that attacks a K-H site out of the operator's own smoke, payable at a
-post on the boundary with the sum lit above it, and a settled invoice buys the one thing the company sells cheaply,
-which is quiet. When a wall will not come down under Adeyemi's mortars, one of the escort walks up with a painting
-laser, Voss on *Quiet Enjoyment* countersigns the order, and the lances fall along the wall.
-
-The company has lost sites before. Directive 11 writes a site off the day its
-uplink goes, and the people on it are carried at book value until Accounts clears the memorandum. The Nauvis
-memorandum, when it comes, will issue under the company's name with the client still blacked out. Until then the Ring
-goes on landing, and its latest landers bring the fortress down whole, walls and dome already up, so that the
-Director's first site report from one runs to a single line: the hazard has been notified.
 :::
 
 Kessler-Hayashi is a security contractor. It lands late and is at war with you from the day it arrives. It walls its

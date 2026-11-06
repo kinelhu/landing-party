@@ -44,62 +44,46 @@ Each faction's chapter opens with its own page of history, then how it lands, fi
 card for every unit it fields. [Reference](reference.qmd) has every unit and building in tables, the chat commands and
 the settings. [Tips](tips.qmd) collects what works against each faction.
 
-::: {.lore kicker="Freight Authority, Lane Registry" title="A surface, reclassified"}
+::: {.lore kicker="Background" title="The story so far"}
 
 ::: {.dossier}
-SURFACE
-: Nauvis, the green one of the five. Charted once, by the survey tender *Carrow*, lost over it with all hands. Entry
-  since: "uncharted, hazard".
+NAUVIS
+: Temperate, forested, home to a native swarm that attacks whatever fouls its air. No settlement before the engineer.
 
-RECLASSIFIED
-: Commercial, by order of O. Brandt, Registrar, the day a cargo rocket left the ground. Objections: none filed.
+VULCANUS
+: Volcanic. The system's foundries, and the cordons that guard them.
 
-OPERATORS ON FILE
-: Grubstake Inc., Kessler-Hayashi Security, Synthexis. None holds a licence for the surface.
+FULGORA
+: Storm-swept ruins. Scrap fields worked between the lightning seasons.
 
-THIS HISTORY
-: M. Tanase, Clerk second grade, from the operators' own filings. She has read all of them and vouches for none.
+GLEBA
+: Swamp. Farms, biolabs and the pentapod pens.
+
+AQUILO
+: Ice, far out at the end of the lanes. Fuel, cold and long escort runs.
 :::
 
-Nobody wanted Nauvis. The Registry charts every surface the lanes pass, and when the green planet's turn came it sent
-the *Carrow*, a survey tender with a crew of six, to go round it and draw the map. She reported from her first orbit
-and from her second. On the third she went quiet. Nobody went down to look, and the sheet for Nauvis has carried her
-ever since beside the one word the Registrar allowed it: hazard. The freighters on the Aquilo run gave the planet a
-wide berth after that, and it cost them nothing. Vulcanus has its foundries and Fulgora its scrap lots. Nauvis had a
-swarm that had eaten a survey ship, and no one with a reason to land.
+Five worlds lie on the shipping lanes, and the companies that run freighters and armed platforms between them do
+most of their business in orbit, where nobody has to fight the weather.
 
-Nine years on, a platform on the ice run logged smoke. There was a stain on the daylight side where nothing should have
-burned, and on the next pass the stain was wider, with a radar turning under it and a light at night that the duty
-officer wrote up as a refinery. Somebody was down there, building. Nobody had filed for it. The clerk wrote to the
-platform for its pictures and to the Registrar for instructions, and got the pictures. What moved Brandt in the end
-was a rocket. A cargo hull cleared the atmosphere one morning with a manifest nobody had seen, and he signed the
-reclassification before lunch. Nauvis became a commercial surface, which means a company may land on it if it holds a
-licence. Three have landed. The clerk is still waiting for the first application.
+Nauvis was never on the lanes. It is green and wet, and it belongs to a native swarm that attacks anything that
+pollutes its air. No company had found a reason to land there.
 
-::: {.pullquote cite="Form LR-7, Nauvis sheet, signed O. Brandt, Registrar"}
-Surface activity confirmed. Reclassify as commercial.
-:::
+Then an engineer crashed on it. With nothing but the wreck of their ship, they began to build: drills, furnaces,
+belts, and in time a factory big enough to be seen from orbit. Its smoke spread across the daylight side and its
+lights burned through the night. One day a rocket rose out of it and reached orbit.
 
-The three are on file, and the files are the one part of this story the clerk can vouch for having read.
+Every company on the lanes took notice. A factory that launches rockets is a market and a threat, and nobody owned
+it. Within months three companies had sent landers.
 
-Grubstake Inc. is a mining partnership with no home port, a post box at *Clearing House* and a lander called
-*Tailings* that has been patched more often than it has been painted. Augustin Pell, its managing partner, files under
-the Salvage Convention, and by his reading a machine of the engineer's that no gun covers is abandoned property, and
-ore no drill is working belongs to whoever drills it.
+Kessler-Hayashi Security came to guard the launch lanes, under contract to a client it will not name. It treats the
+engineer as a hazard to be fenced in.
 
-Kessler-Hayashi is bigger than that. It began as an insurance house, bought a gunship fleet rather than go on paying
-out on the Aquilo run, and now sells quiet by the contract, with the Hayashi family on the letterhead and nowhere else.
-Its Security Division holds a contract for Nauvis, client unnamed, for the custody of cargo leaving the surface. Its
-site reports carry the engineer as a hazard, class three, and bill accordingly. What its Survey Division sends up to
-the parent each period, the clerk has not seen, and would like to.
+Grubstake Inc., an outfit of prospectors and salvagers that follows every new rush, came for the ore and for anything
+the engineer leaves unguarded.
 
-Synthexis told nobody it was coming. The Registry knows of it from a Kessler-Hayashi site report that called it pest
-control: a company with five swamp lots on Gleba and one scientist it is willing to name, running a breeding trial on
-the wild swarm in which the engineer's works are written down as the control.
+Synthexis, a biotech company with farms on Gleba, came for the swarm, which the engineer's pollution has made fiercer
+than anything on the lanes. It wants to breed them, and the engineer's defenses are its proving ground.
 
-The clerk's own view is kept off the sheet at the Registrar's request. The swarm that took the *Carrow* is still down
-there, grown fat on the engineer's smoke, and two of the three companies on file have paid to sit next to it. The
-engineer's first radar charted a wreck a little way out, and the clerk is as sure as she can be, with no log to read,
-whose it is. The three files follow, one at the head of each company's chapter, as they reached the Registry and with
-her notes beside them.
+None of them asked permission, and none of them means to leave.
 :::

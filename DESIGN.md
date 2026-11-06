@@ -5254,6 +5254,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
     `artyreply` "no railgunner with them", 6 before, 0 after, the troopers' group the control. Its other units still go
     at the battery as the engine sends them (open: whether they should, beside its own counter-battery). nwa nwwall
     visit after (45 minutes, from a copy of the save, shelled 16 times): 0 railgunner kills of the player's, all checks pass.
+- **Manual voice, second pass** (2026-11-06): the user on the period-dress manual: the lore "mixing facts from our mod in
+  a weird way, has incredibly AI turn of phrases", and the cards too (the Railgunner's "it never joins a raid, and a
+  wall barely notices it": "Why not say that it simply focuses on defending their base?"). The four lore pages rewritten
+  as a period manual's plain history, one page each, no clerk narrator and no mechanics in the lore (`cast.md` lists
+  what was retired); every blurb in `words.cfg` rewritten plainly: what the unit is, what it does, what to do about it.
+  The consult's blurb rules (a lineage sentence, no two cards opening alike) were the source of the contortions and are
+  dropped. Caught on the way: two blurbs typed numbers in words ("three times to a building", "more than twice"), which
+  the digit check could not see; `manual_qmd.read_words` now stops on a spelled number too (it failed on six lines of
+  the old file). The Railgunner blurb and a stale comment in `units.lua` still said its slug went through everything
+  on a line; it pierces a few biters (`RAIL_PIERCE`). Lore-page pull quotes set smaller and kept with their rule and
+  attribution, so no page runs a lone quote onto the facing page. The manual is 88 pages.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

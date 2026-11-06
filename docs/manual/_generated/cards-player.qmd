@@ -1,21 +1,21 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-breacher"}
-The breacher carries demolition charges instead of a rifle, in the trooper's heavy armor, and throws them at walls and turrets, which they wreck; thrown at a unit they do little. A breacher is cheap on the command link and useless on its own. Send them in behind troopers that can hold the garrison off, and point them at the pillboxes first.
+The breacher carries demolition charges for walls and turrets. Against units the charges do little, and a breacher alone dies quickly. Send breachers in behind troopers and aim them at the pillboxes first.
 :::
 
 ::: {.unit unit="lp-trooper"}
-A trooper is a suit of heavy armor, a submachine gun and a box of magazines, trained at the barracks and the cheapest unit on the command link. Troopers win against raiders, scouts and shotgun hands and lose to lasers with reach, which is why they go out in numbers. Keep them within reach of a powered barracks, since nothing else heals them.
+The trooper is your basic soldier: heavy armor and a submachine gun, and the cheapest unit on the command link. Troopers beat raiders, scouts and Shotgun hands and lose to long-range lasers, so send them in numbers. Only a powered barracks heals them.
 :::
 
 ::: {.unit unit="lp-rocket-trooper"}
-Heavy armor, a rocket launcher and a crate of rockets make the rocket trooper, and each rocket kills armor or a flier and a trooper no faster than a rifle. It takes a larger share of the command link and reaches past a Heavy tank's rail cannon. Keep them behind your troopers against a crowd, and in front against tanks and drones.
+The rocket trooper's rockets are made for armor and fliers; against troopers they are no better than a rifle. It takes more of the command link than a trooper and outranges a Heavy tank's rail cannon. Keep rocket troopers behind your troopers against infantry, and in front against tanks and drones.
 :::
 
 ::: {.unit unit="lp-battle-tank"}
-The battle tank is a tank with cannon shells and personal batteries, and it takes the longest to train and the largest share of bandwidth. Its shell does more than twice to a building what it does to a unit, so it is the answer to a walled camp and a poor one to a crowd. Keep troopers beside yours; heavy tanks, slug buggies and rocket troopers hunt it.
+The battle tank fires cannon shells and carries personal batteries. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it.
 :::
 
 ::: {.unit unit="lp-flame-trooper"}
-Of the orders a barracks trains, the flamethrower trooper is the one with the shortest reach and the biggest fire. Its flamethrower burns a swarm of biters or a bunched squad in a few passes, does little to a hull, and is outranged by nearly everything that shoots back. Put them at the front against Synthexis and at the back against Kessler-Hayashi.
+The flamethrower trooper has the shortest range and the most damage of your infantry. It burns biter swarms and bunched squads quickly but does little to vehicles, and nearly everything outranges it. Lead with it against Synthexis and keep it at the back against Kessler-Hayashi.
 :::

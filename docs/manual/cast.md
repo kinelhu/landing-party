@@ -11,6 +11,15 @@ as a conglomerate whose security division is one arm, with a slogan, numbered di
 behind its Nauvis contract (below, "Kessler-Hayashi"); the Comptroller dropped as a character: invoices go out under
 the company's name, and Hayashi stays on the letterhead as the founding family only.
 
+**Lore pages rewritten (2026-11-06).** The user on the lore pages: "mixing facts from our mod in a weird way, has
+incredibly AI turn of phrases". The pages are now a period manual's plain history ("The story so far", then one page a
+faction, each fitting its page): an omniscient narrator, no clerk, no Registry framing, no numbered directives, no
+mechanics told as paperwork (those stay in the chapters). Retired with it: the Freight Authority as narrator, Tanase,
+Brandt, the *Carrow*, Form LR-7, the operator files, the Standing Directives, Keel & Ward, the Arrangement's paperwork.
+Kept: the companies, their people (Pell, Szabo, Holm, Ness; Kessler, Adeyemi, Voss; Verhaegen, Rask), the Serenity
+Ring, *Quiet Enjoyment*, *Tailings*, *Assay*, *Cold Chain*, the Gleba lots, contract NV-1 with its unnamed client and
+the Survey Division's interest. The tables below are the old cast, for reference.
+
 ## The system: the Freight Authority (keeper of the files)
 
 | Who or what | One line |

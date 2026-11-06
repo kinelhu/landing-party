@@ -1,53 +1,53 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-bred-small-biter"}
-An incubator's first clutch is small biters, the wild stock's own runt with the green and yellow bands grown in, and the cheapest animal the culture makes. A young culture's waves are mostly small biters, and the clinic moves it on to heavier breeds as its evolution allows. Any turret of yours kills them, as long as something is feeding it.
+The small biter is the first and cheapest breed, raised from the wild stock and marked with green and yellow bands. A young culture's waves are mostly small biters. Any turret stops them, as long as it is fed.
 :::
 
 ::: {.unit unit="lp-bred-medium-biter"}
-Armor laid on the small biter's line makes the medium biter, bred once the culture's evolution has climbed. It is also the breed a culture falls back to when its clinic is gone, so a wave of mediums and smalls is a wave from a culture that has lost something. Feed your gun turrets, or set lasers in front of them.
+The medium biter is the small biter with armor added, bred once the culture's evolution has risen. A culture that has lost its clinic falls back to mediums and smalls, so a wave of them means the culture has lost something. Keep your gun turrets well supplied, or add lasers.
 :::
 
 ::: {.unit unit="lp-bred-spore"}
-Only one breed looks up, the Spore spitter, a violet-bodied spitter whose spores burst where they land. The culture breeds a few in every clutch, so some travel with most waves. A combat robot or a drone that crosses a wave dies to them, and on the ground the burst is a nuisance. Keep your robots out of a wave's path and let the turrets have it.
+The Spore spitter is the only breed that attacks fliers, with spores that burst where they land. Most waves bring a few. Combat robots and drones that fly over a wave die to them. Keep your robots out of a wave's path and leave it to the turrets.
 :::
 
 ::: {.unit unit="lp-bred-medium-spitter"}
-The medium spitter stays back from the wall and lobs acid over it at whatever stands close behind, from the wild stock's own line. Its spit burns and its body does not last, and it is the breed that makes a turret set hard against the wall a bad bargain. Give your turrets reach past the wall, and they kill it where it stands.
+The medium spitter stays behind the wall and lobs acid over it at whatever stands close behind. It is fragile, but it punishes turrets placed right against the wall. Give your turrets the reach to hit it beyond the wall.
 :::
 
 ::: {.unit unit="lp-bred-cinder"}
-Bred from the small biter's line with the jaws grown out and the acid gland grown in, the burster is a running sac that cannot bite. It makes for a wall or a turret, stops, swells and goes off, and killed on the way it goes off where it dies. Shoot them while they are running; once one has stopped to swell, nothing you do will stop it.
+The burster is a small biter bred into a walking bomb. It cannot bite. It runs to a wall or turret, stops, swells and explodes, and if killed on the way it explodes where it falls. Shoot bursters while they run: once one has stopped to swell, it will go off.
 :::
 
 ::: {.unit unit="lp-bred-big-biter"}
-The big biter is the body of a grown wave, the wild stock's heavy line bred cheaply enough that a culture spends them freely. The pack pours past the turrets it has no need to fight, for the poles and the inserters behind them. Bury your power and your ammunition feed behind a second line of turrets, since that is where the pack is going.
+The big biter is the bulk of a grown culture's waves. Big biters run past turrets they have no need to fight and go for the poles and inserters behind them. Protect your power and ammunition supply with a second line of turrets.
 :::
 
 ::: {.unit unit="lp-bred-stomper"}
-The stomper is a pentapod from the Gleba pens, bred small enough to ship and large enough to step over a wall, and nothing about its carapace minds bullets. It steps over the wall the bursters were meant for and goes on to whatever the wave came for. Rocket troopers and a battle tank bring it down; keep your rockets near the wall.
+The stomper is a pentapod from the Gleba pens, small enough to ship and tall enough to step over a wall. Bullets do little to it. It steps over your wall and goes for whatever the wave came for. Rocket troopers and battle tanks bring it down; keep rockets near the wall.
 :::
 
 ::: {.unit unit="lp-bred-behemoth-biter"}
-Heaviest of what the clinic breeds and the dearest, the behemoth arrives late, when the culture's evolution is nearly spent, and in small numbers. It shrugs off what kills the rest of the wave and walks on. Artillery, massed lasers and a battle tank are what it respects, so keep your wall deep and let the lasers work on it.
+The behemoth is the heaviest and most expensive breed. It arrives late and in small numbers, and it survives what kills the rest of the wave. Artillery, massed lasers and battle tanks deal with it. Keep your defenses deep.
 :::
 
 ::: {.unit unit="lp-bred-big-burster"}
-A gland the size of its head, grown in a behemoth's body, makes the big burster, sent at one of the turrets covering a wave's way in rather than at the wall. At the turret it stops, swells and goes off, and every turret near it is hurt; killed short, only its core goes off. Spread your turrets out, so that a burst at one is a burst at one.
+The big burster is a behemoth bred around an explosive gland. It goes for one of the turrets covering the wave's approach, not the wall, and its blast damages every turret nearby. Killed early, only part of it goes off. Space your turrets apart.
 :::
 
 ::: {.unit unit="lp-sweeper"}
-Bred for one job, the sweeper walks into a minefield and goes off there, and it is as tough as a behemoth for the few seconds it needs. A wave whose way in crosses mines gets sweepers ahead of it, and the mines they clear stay cleared for the wave behind. Cover your minefields with turrets, or the sweepers clear them for free.
+The sweeper is bred to clear minefields. It walks into the mines and sets them off, tough enough to last the few seconds that takes. Waves whose route crosses mines send sweepers first. Cover your minefields with turrets.
 :::
 
 ::: {.unit unit="lp-bred-scout"}
-The scout is a small, quick animal bred for each wave and sent round a defense before the wave sets out, looping just outside the guns. It fights nothing; the wave comes whether or not it does, and a scout killed leaves a skull where it fell and the next loop goes wider. When you see one circling your wall, a wave is on its way.
+The scout is a small, fast biter sent ahead of each wave to circle your defenses just outside turret range. It does not fight. A killed scout leaves a skull where it fell, and the next one circles wider. A scout at your wall means a wave is coming.
 :::
 
 ::: {.unit unit="lp-bred-carrier"}
-In deep violet and lit from within, the carrier is a big biter's body that walks an escort of the culture's stock to a wild nest field farther out and founds a new culture there. It fights only what gets in its way and plans its road round cliffs and buildings. Kill it on the road, and the culture it carried never starts.
+The carrier is a glowing violet big biter that leads a group of stock to a wild nest field further out and starts a new culture there. It avoids fights and paths around cliffs and buildings. Kill it on the way and the new culture never starts.
 :::
 
 ::: {.unit unit="lp-technician"}
-A Synthexis technician is the only staff the company keeps on the surface, a figure in a sealed suit who walks the rounds between the biochambers with the feed. Without technicians the biochambers stop, and without biochambers the incubators stop breeding, so a technician on the creep is the softest target that matters. Shoot the technicians before the incubators, and send your troopers in behind.
+Technicians are the only Synthexis staff on the ground: workers in sealed suits who carry feed between the biochambers. Without them the biochambers stop, and without the biochambers the incubators stop breeding. Shoot the technicians first.
 :::

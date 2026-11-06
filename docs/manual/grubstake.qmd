@@ -3,70 +3,40 @@
 ::: {.epigraph faction="grubstake"}
 :::
 
-::: {.lore kicker="Freight Authority, operator file 209" title="Rights and claims" faction="grubstake"}
+::: {.lore kicker="Background" title="The prospectors" faction="grubstake"}
 
 ::: {.dossier}
 GRUBSTAKE INC.
-: Commonly "the outfit" at the Authority; "the scrap trade" in Kessler-Hayashi's filings; "the supplier" in
-  Synthexis's papers. A partnership under the Articles of Grubstake Inc., "to follow rushes, buy rights and work
-  claims".
+: A partnership of prospectors and salvagers.
 
-REGISTERED
-: Box 2210, *Clearing House*. No home port; the fleet is the company. Lander hull *Tailings*, survey tender *Assay*,
-  both patched, both amber.
+BASED
+: Nowhere. The company lives aboard its ships, the lander *Tailings* and the tender *Assay*.
 
-PRINCIPALS
-: Augustin Pell, Managing Partner (the Articles, every salvage purchase; not on a claim in years). Nadia Szabo,
-  Claims Agent, Nauvis. Marit Holm, Night Foreman, Nauvis yard. Dr. H. Ness, field biologist, on contract.
+PEOPLE
+: Augustin Pell, Managing Partner. Nadia Szabo, Claims Agent on Nauvis. Marit Holm, Night Foreman. Dr. H. Ness,
+  field biologist.
 
-CLAIMS WORKED
-: Calder Foundry, Vulcanus, in receivership: the slag heaps and the cranes, bought at the auction and lifted within
-  the year. Fulgora, Lot 9, scrap rights for one storm season, sold on when the storms cost more than the scrap.
-
-CLAIMS CURRENT
-: Nauvis, the whole of the Register of Claims, Nauvis book, in Szabo's hand. Its camps sit on the richest ore and on
-  no ground a gun covers.
-
-LIABILITIES
-: The Salvage Convention, article 4, as the company reads it: a machine no gun covers is abandoned, and ore no drill
-  works is unclaimed. Three objections lodged by Kessler-Hayashi, none heard.
-
-SEE ALSO
-: Kessler-Hayashi (file 114; "the landlord" in Grubstake's books). Synthexis (file 377; a truce, unwritten, kept). The
-  Arrangement with the fauna, of which no paper exists.
+ON NAUVIS
+: Claims on every ore field the engineer is not mining, and a generous reading of salvage law.
 :::
 
-Grubstake Inc. has an address and no port. Its box at *Clearing House* takes the Authority's post, and what the post
-finds there is Augustin Pell's Articles, a partnership "to follow rushes, buy rights and work claims", with the rest of
-the company in flight between one claim and the next. Pell has signed every salvage purchase the Registry holds and
-has not stood on a claim in years. When the Calder Foundry on Vulcanus went into receivership he bought its slag heaps
-and its cranes at the auction, had both off the planet inside the year, and left the receiver a yard swept to the
-rock. On Fulgora he held Lot 9 for one storm season and sold the scrap rights on the morning the storms began to cost
-more than the scrap.
+Grubstake Inc. goes wherever there is a rush. Its crews are prospectors, scrappers and hired guns who signed on for a
+share, and its patched ships are the only home the company has.
 
-The company's skill is in its reading of the Salvage Convention. Article 4 lets a salvor take what a failed venture
-leaves unattended, and Grubstake reads "unattended" with a generosity the drafters did not intend. A patch of ore no
-drill is working is unclaimed ground. A machine that stands where no gun covers it has, in Pell's deposition to the
-Authority, been abandoned by an operator who could not be bothered to guard it. Marit Holm runs the Nauvis yard after
-dark. Her trucks go out at dusk under headlights and come home at dawn with assemblers in the trunk, taken apart where
-they stood. A hauler will park beside a belt no turret reaches and lift whatever is dearest off it, and a buggy will
-string pylons out to an unguarded pole and clamp on a tap that the company's books carry as an unmetered connection.
-The rig that tunnels under the operator's chests is Holm's too.
+When the Calder Foundry on Vulcanus went bankrupt, Grubstake bought it and stripped it to the rock. On Fulgora it worked one storm season of scrap rights and sold them on when the storms got worse. Augustin Pell, its managing partner, signed every one of those deals.
 
-::: {.pullquote cite="A. Pell, Managing Partner, deposition to the Authority, file 209/2"}
-Unattended means unattended. Nowhere does the Convention ask by whom.
+Nauvis is the richest rush in a generation: untouched ore fields, and in the middle of them a factory full of
+machines. Grubstake stakes claims on the ore nobody is mining. As for the factory, Pell says the law is on his side.
+Under the Salvage Convention a machine left unattended is abandoned, and abandoned property belongs to whoever picks
+it up. The engineer disagrees.
+
+Grubstake does not want a war. It wants what it can carry. Its crews come at night, take what nobody is guarding and
+are gone by morning. Its camps sit among the biter nests with barely a fence, and the swarm leaves them alone; Dr. Ness will not say why.
+Pay Grubstake, and its trucks stay home.
+
+::: {.pullquote cite="A. Pell, Managing Partner"}
+If you wanted it, you would have guarded it.
 :::
-
-Nauvis came onto Pell's list by the oil. The tender *Assay* set down on ore within sight of the operator's first
-refinery, with a radar, two drills and a few guards, and Nadia Szabo filed a Notice of Intent to Claim from the ground
-before the Registry knew she had landed. *Tailings* brought the first camp down behind it, and the Nauvis book of the
-Register has been in her hand since. Each stake she plants carries a lamp that burns while the notice runs, and what
-the operator has not answered for by the time it goes out, her drills take. The camps stand among the swarm's nests
-with a fence round the pad and nothing else. The Authority's inspectors could not account for that until Dr. Ness, the
-one scientist on the company's payroll, turned out to have built an antenna from a gland that keeps the fauna off
-anything of Grubstake's. The company calls this the Arrangement, and no paper exists. What Grubstake wants it will
-also buy. A receipt from its trade post reads "consideration received", and while the consideration lasts, Holm's
-trucks stay in the yard.
 :::
 
 Grubstake is a mining company that lives off your factory. It carries off machines, skims belts, taps power lines, robs

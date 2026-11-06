@@ -1,49 +1,49 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-infantry"}
-Every Kessler-Hayashi camp lands with Laser troopers, a mech-armor suit with a laser rifle worn by most of its raiders. The rifle's beam is short and quick, and the Armory's Warden plating, once bolted on, turns an ordinary magazine into a slow way to kill one. Hit them with fire or a tank's shell, which the plating does nothing against.
+The Laser trooper is Kessler-Hayashi's standard soldier: mech armor and a short-range laser rifle. Most of its raids and patrols are made of them. Once the Armory has its Warden plating, bullets do much less to them, so switch to fire or tank shells.
 :::
 
 ::: {.unit unit="lp-tank"}
-A camp's tank is the piece built for masonry, a standard hull whose shell does three times to a building what it does to a unit. Tanks are the body of a siege escort, holding in ranks outside the guns' reach until the mortars have worked, then going in through the breach. Rocket troopers and a battle tank outfight it; your troopers do not.
+The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; rifles do not.
 :::
 
 ::: {.unit unit="lp-railgunner"}
-A size up from the Laser trooper and charcoal like the walls, the Railgunner carries a rail cannon on the company's heaviest suit. Its slug goes through everything living on a long line, so a nest field is cleared in an afternoon; it never joins a raid, and a wall barely notices it. Some carry the rail coils your rail rifle is made from.
+The Railgunner is a heavy trooper with a hand-held rail cannon. It stays out of raids and defends its own camp: it guards the base and its siege guns and clears the biter nests nearby. Its slug punches through a few biters at a time and is strong against nests, but does little to walls. Some drop rail coils, which your rail rifle needs.
 :::
 
 ::: {.unit unit="lp-laser-drone"}
-Kessler-Hayashi's one flier is the Laser drone, a destroyer's body in the company's colors with armor plate where the destroyer had none and a laser slung under it. The second shipment brings a few to each camp, and they cross walls, cliffs and water while bullets glance off the plate. Rocket troopers and a flak turret bring them down; put your flak where they cross the wall.
+The Laser drone is Kessler-Hayashi's only flier, an armored combat drone with a laser. A camp gets a few once it reaches its second level. It flies over walls, cliffs and water, and bullets do little to it. Rocket troopers and flak turrets bring it down; put the flak where it crosses your wall.
 :::
 
 ::: {.unit unit="lp-skyguard"}
-The Armory refits a Laser trooper into the Anti-air trooper by swapping the rifle for a long tracking laser that follows a flier across the sky and burns it down; pointed at the ground, the same emitter does little. A camp fields them beside its Laser troopers, never instead. Keep your combat robots away from them and walk the ground squads straight past.
+The Anti-air trooper is a Laser trooper with a tracking laser for shooting down fliers. Against ground targets it does very little, and camps field it alongside Laser troopers, never instead of them. Keep your combat robots away from it and send ground units.
 :::
 
 ::: {.unit unit="lp-lance"}
-Where the Laser trooper's rifle was, the Heavy laser trooper carries the Optics lab's long emitter and a pack that weighs more than the trooper. Its beam reaches past a submachine gun's and goes through flat armor, so a Lance stands off and fires. Close the distance with your vehicles, or put a gun turret in front of it, which still outreaches it.
+The Heavy laser trooper carries a long laser that outranges your submachine guns and cuts through light armor. It stands back and fires. Close the distance with vehicles, or let a gun turret, which still outranges it, deal with it.
 :::
 
 ::: {.unit unit="lp-shock"}
-The Optics lab's answer to a crowd is the Shock trooper, whose emitter throws an arc that jumps from the first body it touches to the next, stunning each briefly; against one hull the small hits do almost nothing. The Siege works borrows them for counter-battery parties. Keep your squads spaced, because each arc spends itself on whatever stands close.
+The Shock trooper fires an arc of lightning that jumps from target to target and stuns each one briefly. It is made for crowds, and does little to a single vehicle. The Siege works also sends them after your artillery. Keep your squads spread out.
 :::
 
 ::: {.unit unit="lp-aegis"}
-A Heavy tank is the standard hull plated by the Armory and fitted with a rail cannon, firing one heavy slug at a time. No armor resists the slug, so it is the one Kessler-Hayashi vehicle built to kill a battle tank; against troopers it fires too slowly to matter. Rocket troopers reach it from outside its range, so keep yours at full reach.
+The Heavy tank is a tank with extra armor and a rail cannon. Its slug ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Your rocket troopers outrange it, so fight it at full range.
 :::
 
 ::: {.unit unit="lp-prism"}
-On the Laser tank a small laser head rides the turret ring, and its beam splits on the first body it touches into forks that find the units round it. Massed troopers are what the Optics lab built it for; a wall takes one beam and a hull one fork, and neither minds. Send a battle tank or rocket troopers at it, never your infantry.
+The Laser tank's beam splits on the first target it hits and forks into the units around it. It is made to break massed troopers and does little to walls or lone vehicles. Send battle tanks or rocket troopers at it, not infantry.
 :::
 
 ::: {.unit unit="lp-tesla"}
-The Lightning tank carries a tesla turret's head, and its bolt jumps along a line of targets. Each laser or tesla turret it strikes stops for as long as a tesla turret stuns, and stops again at the next strike, so a laser line fires less often while the tank stands at it. Mix gun turrets and flamethrowers into your laser line: lightning does not stop them.
+The Lightning tank carries a tesla turret's emitter. Its lightning jumps along your turret line, and every laser or tesla turret it hits stops firing for a moment. A few of them slow a laser line badly. Gun turrets and flamethrowers are not affected, so mix them into the line.
 :::
 
 ::: {.unit unit="lp-howitzer-truck"}
-Any siege that brings the howitzer brings it on the Howitzer truck, an artillery cannon bolted to a tank's hull at a hauler's pace and with a hauler's gun. The truck never fires the cannon; it drives to the site, the howitzer is set up where roboports cover the target, and the truck gives way. Your artillery outreaches the howitzer and fires on it by itself.
+The Howitzer truck is an artillery cannon on a tank hull, used to haul a siege's howitzer into position. It does not fire on the move: it drives to the site, the howitzer is set up there to shell the roboports behind your wall, and the truck pulls back. Your artillery outranges the howitzer and engages it on its own.
 :::
 
 ::: {.unit unit="lp-hauler"}
-The Hauler is a lightly armed truck on the tank's running gear, slow, roomy and plated. Kessler-Hayashi uses it for convoys between its camps, and a convoy is where it dies, caught between the camp it left and the one it was going to. Set a squad on the road between two camps and the haulers come to it.
+The Hauler is a lightly armed, armored truck that carries supplies between Kessler-Hayashi's camps. It is slow and does not fight well. A squad posted on the road between camps will catch them.
 :::
