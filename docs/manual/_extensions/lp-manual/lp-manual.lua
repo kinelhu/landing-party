@@ -46,6 +46,12 @@ relative to the project, default `_generated/lp-data.json`). The components:
 
   ::: {.tip title="..."}     ::: {.fieldnote title="..."}
 
+The period dress needs no markup: a chapter's faction (its heading's faction=, or its opener's) gives its pages the
+faction's emblem as a watermark, corner pieces, the emblem at the running head and the folio's plate, all drawn in
+lp-manual-style.tex and lp-manual-emblems.tex. The paper grounds are media/ornaments/paper.jpg and paper-lore.jpg
+(make_paper.sh); metadata `lp-paper: false` prints on white. A Quarto callout prints as a sidebar (a note as a field
+note, any other kind as a tip).
+
 The data file's shape is written out in the report that introduced this extension and in _proof/lp-data.json.
 ]]
 
@@ -166,6 +172,14 @@ local function preamble(meta)
     local emblem = portrait_path(f.emblem)
     if emblem then backs[#backs + 1] = string.format("\\lpbackfaction{%s}{%s}{%s}", id, emblem, tex(f.motto or "")) end
   end
+  -- The paper grounds (make_paper.sh writes them; metadata lp-paper: false prints on white).
+  local paper, lore = "", ""
+  if str(meta["lp-paper"]) ~= "false" then
+    local p, l = resolve("media/ornaments/paper.jpg"), resolve("media/ornaments/paper-lore.jpg")
+    if exists(p) then paper = p end
+    if exists(l) then lore = l end
+  end
+  out[#out + 1] = "\\lpsetpaper{" .. paper .. "}{" .. lore .. "}"
   out[#out + 1] = "\\def\\lpcoverfactions{" .. table.concat(strips, "") .. "}"
   out[#out + 1] = "\\def\\lpbackfactions{\\noindent" .. table.concat(backs, "\\hfill") .. "\\par}"
   return table.concat(out, "\n")
@@ -631,7 +645,7 @@ local function dropcap(blocks)
         local s = first.text
         local cap, rest = s:match("^([%z\1-\127\194-\244][\128-\191]*)(.*)$")
         if cap then
-          local content = pandoc.List({pandoc.RawInline("latex", "\\lettrine{" .. tex(cap) .. "}{" .. tex(rest) .. "}")})
+          local content = pandoc.List({pandoc.RawInline("latex", "\\lpdropcap{" .. tex(cap) .. "}{" .. tex(rest) .. "}")})
           for j = 2, #b.content do content:insert(b.content[j]) end
           blocks[i] = pandoc.Para(content)
         end
@@ -916,6 +930,24 @@ local function Div(div)
   end
 end
 
+-- A Quarto callout in the booklet is one of its sidebars: a note is a field note under its own title, any other kind a
+-- tip (the HTML book keeps Quarto's own callouts).
+local function Callout(el)
+  if not is_latex() then return nil end
+  local title = el.title and pandoc.utils.stringify(el.title) or ""
+  local blocks = pandoc.List()
+  if el.type == "note" then
+    blocks:insert(pandoc.RawBlock("latex", "\\begin{lpfieldnote}[]{" .. tex(title ~= "" and title or "Note") .. "}"))
+    blocks:extend(el.content)
+    blocks:insert(pandoc.RawBlock("latex", "\\end{lpfieldnote}"))
+  else
+    blocks:insert(pandoc.RawBlock("latex", "\\begin{lptip}{" .. tex(title) .. "}"))
+    blocks:extend(el.content)
+    blocks:insert(pandoc.RawBlock("latex", "\\end{lptip}"))
+  end
+  return blocks
+end
+
 -- Chapters: a level-1 heading becomes the chapter (and, with .opener, the faction's opening page).
 -- An opener with no epigraph of its own takes its faction's motto from the data. (The HTML book lifts a chapter's
 -- heading out before filters run: there `::: {.epigraph faction="x"}` stands for it, below.)
@@ -985,5 +1017,5 @@ return {
     end,
   },
   {Blocks = chapters},
-  {Div = Div},
+  {Div = Div, Callout = Callout},
 }
