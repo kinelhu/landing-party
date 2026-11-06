@@ -539,6 +539,16 @@
     \end{scope}},
   before upper={\setlength{\parskip}{3pt}}}
 
+% \begin{lpdocument}{letterhead}: a faction's own paper (a memo, an invoice, a notice), in its voice: a letterhead in the
+% faction's colour over a rule, upright text, a faint shadow under the sheet.
+\newtcolorbox{lpdocument}[1]{enhanced, arc=0pt, outer arc=0pt, boxrule=0.4pt, colframe=LPInk!35, colback=white!55!LPPaper,
+  left=5mm, right=5mm, top=4mm, bottom=4mm, before skip=12pt, after skip=10pt,
+  fontupper=\fontsize{9}{12.4}\selectfont,
+  shadow={1.1mm}{-1.1mm}{0mm}{black!16},
+  before upper={\setlength{\parskip}{0pt}\setlength{\parindent}{0pt}%
+    {\color{FacDark}\lpsemibold\fontsize{7.4}{9}\selectfont\addfontfeature{LetterSpace=6}#1\par}%
+    \nointerlineskip\vspace{1.6mm}{\color{Fac}\hrule height 0.7pt}\vspace{2.4mm}\setlength{\parskip}{4pt}}}
+
 % ---------------------------------------------------------------- covers
 % \lpcoverstrip{faction}{vista}{motto}: a band of the front cover. \lpcoverfactions is defined by the filter.
 \providecommand\lpcoverfactions{}

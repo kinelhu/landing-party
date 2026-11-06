@@ -103,6 +103,16 @@ grubstake.prospect_window_min >}} minutes after it is planted, a hauler builds a
 drills with ore bins. To keep the patch, put a drill on it, place a claim marker by it, or destroy the stake (or the
 buggy on its way). The camp then moves on to the next patch, one at a time, whatever its standing with you.
 
+::: {.document head="Grubstake Inc. · Notice of claim"}
+Take notice that the mineral deposit at this stake lies unworked, and is claimed by Grubstake Inc. as salvage under
+the Convention, article 4.
+
+Any party with a prior interest in the deposit may assert it by working the deposit while the lamp on this stake
+burns. After that the claim stands, and Grubstake Inc. will work it.
+
+*N. Szabo, Claims Agent, Nauvis*
+:::
+
 ::: {.callouts plan="media/plans/grubstake-claim.json" faction="grubstake" width="0.82"}
 A claim on a patch Grubstake staked, as its hauler built it. The stake is removed once the claim is built.
 :::

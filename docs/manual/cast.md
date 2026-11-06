@@ -20,6 +20,20 @@ Kept: the companies, their people (Pell, Szabo, Holm, Ness; Kessler, Adeyemi, Vo
 Ring, *Quiet Enjoyment*, *Tailings*, *Assay*, *Cold Chain*, the Gleba lots, contract NV-1 with its unnamed client and
 the Survey Division's interest. The tables below are the old cast, for reference.
 
+**Kessler-Hayashi as a corporation (2026-11-06).** The user: "how a 'Hayashi family' could own it while 'Ilse
+Kessler' runs field ops? Then why is the name not just 'Hayashi'?" Now a merger, as Weyland-Yutani's: Hayashi Lane
+Assurance (an insurer on the inner lanes) bought Kessler Escort (gunships on the Aquilo run) rather than keep paying out,
+and kept both names; today a listed conglomerate answering to a board and its shareholders, divisions for assurance,
+freight, security and survey, no founding family in charge. The field director is **Ilse Varga** (was Ilse Kessler).
+
+**In-world documents (2026-11-06).** Allowed, in the author's own voice and prejudices, never restating the rules: the
+user on a draft invoice's "Refusing to pay changes nothing, since we are already at war with you": "what is that?";
+and on "the native biters": call them "the natives" ("Makes the world feel less artificial if its inhabitants have
+their own biases"). A document must read clearly to someone who has not read the chapter (the user on "Operator
+notified of its obligations under the contract. No reply. Billing continues.": "hard to understand what it's about").
+Four in the manual (`::: {.document head="..."}`): the Kessler-Hayashi board's memo to Varga (lore page), its statement
+of account (the invoice post), Grubstake's notice of claim (prospecting), Synthexis's batch release (sieges).
+
 ## The system: the Freight Authority (keeper of the files)
 
 | Who or what | One line |

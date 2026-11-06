@@ -5,24 +5,31 @@
 
 ::: {.lore title="The contractor" faction="kessler-hayashi"}
 
-Kessler-Hayashi began as an insurance company on the inner lanes. Raids on the long run to Aquilo were costing it more
-than it could pay out, so it bought a fleet of gunships and protected the cargo itself. Today it escorts freighters and
-guards the foundries on Vulcanus. The Hayashi family owns it, and Ilse Kessler runs its field operations from the
-Serenity Ring, a station of armed platforms in orbit. The company owns no land anywhere. Its people go down to a
-planet only when a contract sends them.
+Kessler-Hayashi is two companies joined. Hayashi Lane Assurance insured cargo on the inner lanes, and Kessler Escort
+ran gunships on the long run to Aquilo. When raids on that run cost Hayashi more than it could pay out, it bought
+Kessler instead of paying, and the merged company kept both names. Today it is a listed conglomerate that answers to a
+board and its shareholders, with divisions for assurance, freight, security and survey. It escorts freighters and
+guards the foundries on Vulcanus, but owns no land anywhere. Its people live on the Serenity Ring, a station of armed
+platforms in orbit, and go down to a planet only when a contract sends them.
 
-Contract NV-1 sends them to Nauvis. A client the company will not name has paid it to guard the engineer's launch
-lanes and any cargo that leaves the surface. Kessler-Hayashi sees the engineer as an armed, unlicensed operator inside
-its contract zone. It hems the engineer in with a ring of guard posts and besieges whatever stands in its way.
+Contract NV-1 sends the Security Division to Nauvis. A client the company will not name has paid it to guard the
+engineer's launch lanes and any cargo that leaves the surface. Ilse Varga, Director of Field Operations, treats the
+engineer as an armed, unlicensed operator inside the contract zone. Her camps hem the engineer in with guard posts,
+and Tomas Adeyemi, Chief of Siege Works, plans sieges on whatever stands in their way, working from the platforms'
+pictures of the engineer's defenses.
 
-Its troops fight in mech armor, with lasers, railguns and tanks. Tomas Adeyemi, its Chief of Siege Works, plans the
-sieges on the Ring from the platforms' pictures of the engineer's defenses.
+::: {.document head="Kessler-Hayashi · Office of the Board"}
+**To:** Ilse Varga, Director of Field Operations, Nauvis\
+**Re:** Contract NV-1
 
-The company's Survey Division has no official role on Nauvis, but it keeps a team at every camp, studying the
-engineer's factory. Who reads their reports is not known outside the company.
+The Nauvis contract has now cost the Security Division more than it has earned for three quarters running. The board
+expects these losses to be recovered from the operator wherever the contract allows, beginning with personnel lost to
+the natives.
 
-::: {.pullquote cite="I. Kessler, site report"}
-Operator notified of its obligations under the contract. No reply. Billing continues.
+The Survey Division will continue its work at every camp on its own budget. Its findings are the property of the
+company and are not to be shared with the client.
+
+*For the Board*
 :::
 :::
 
@@ -140,6 +147,22 @@ your artillery shells like a camp's dome, and moves with the siege.
 Biters attack Kessler-Hayashi too. If a camp has tried to clear the spawners those biters come from, and those
 spawners sit in your pollution near one of your drills, furnaces, assemblers or boilers, it bills you for its losses
 every {{< var kh.bill_every_min >}} minutes while the attacks continue.
+
+::: {.document head="Kessler-Hayashi Security · Statement of account"}
+**Billed to:** the unlicensed operator, Nauvis\
+**Re:** Contract NV-1, losses to natives
+
+Our personnel at the contract site were engaged by natives issuing from nest fields within your emissions. Under the
+terms of the contract, losses arising from your operations are recoverable from you.
+
+Personnel lost in the engagement · Equipment lost · Clearance of the nest fields concerned
+
+**Amount due:** as displayed at our collection post on the site boundary. Settlement is accepted in electronic circuits
+or goods of equivalent value. Accounts in good standing are extended a suspension of hostilities for the period
+settled.
+
+We thank you for your prompt attention to this matter.
+:::
 
 **Invoice post.** {{< var desc.entity_invoice_post >}} It stands on the line facing your base and shows the amount
 owed, in electronic circuits. Each billed spawner is marked with Kessler-Hayashi's icon, in game and on your map.

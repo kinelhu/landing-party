@@ -916,6 +916,9 @@ local function Div(div)
     if cls:includes("tip") then
       return wrap_latex(div, "\\begin{lptip}{" .. tex(div.attributes.title or "") .. "}", "\\end{lptip}")
     end
+    if cls:includes("document") then
+      return wrap_latex(div, "\\begin{lpdocument}{" .. tex(div.attributes.head or "") .. "}", "\\end{lpdocument}")
+    end
     if cls:includes("fieldnote") then
       return wrap_latex(div, "\\begin{lpfieldnote}{" .. tex(div.attributes.title or "") .. "}", "\\end{lpfieldnote}")
     end

@@ -5289,6 +5289,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and its lore quote all on the line, beside the mechanic of that name). Its motto in `shared.lua` (manual only, not
   shown in game) is now its letterhead's "A quieter system for everyone."; the lore says it hems the engineer in with
   guard posts; the quote is Kessler's invoice note. "The line" stays the perimeter mechanic's name in the chapter.
+  Then Kessler-Hayashi given a corporate identity (the user: why a Hayashi family owner and a Kessler in the field?):
+  a merger, a listed conglomerate under a board, its field director renamed Ilse Varga (`cast.md`). In-world documents
+  added in a new template box (`lpdocument`, letterhead in the faction's colour): the board's memo on the lore page
+  (in place of the obscure invoice note), a statement of account at the invoice post, Grubstake's notice of claim and
+  Synthexis's batch release, each in its author's voice (Kessler-Hayashi calls the biters "the natives"), none
+  restating a rule. 92 pages.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
