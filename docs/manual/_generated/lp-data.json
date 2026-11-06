@@ -219,20 +219,6 @@
    "countered_by": "artillery, battle tanks, gun turrets and flamethrowers among your lasers",
    "blurb": "The Lightning tank carries a tesla turret's emitter. Its lightning jumps along your turret line, and every laser or tesla turret it hits stops firing for a moment. A few of them slow a laser line badly. Gun turrets and flamethrowers are not affected, so mix them into the line."
   },
-  "lp-howitzer-truck": {
-   "name": "Howitzer truck",
-   "faction": "kessler-hayashi",
-   "health": 1200,
-   "portrait": "lp-howitzer-truck",
-   "damage": 4,
-   "damage_text": "4 physical, 2 shots/s",
-   "range": 10,
-   "speed": 3.9,
-   "role": "An artillery cannon on a tank's hull; carries a siege's howitzer to where it reaches the roboports.",
-   "counters": "roboports behind a wall",
-   "countered_by": "your artillery, battle tanks",
-   "blurb": "The Howitzer truck is an artillery cannon on a tank hull, used to haul a siege's howitzer into position. It does not fire on the move: it drives to the site, the howitzer is set up there to shell the roboports behind your wall, and the truck pulls back. Your artillery outranges the howitzer and engages it on its own."
-  },
   "lp-hauler": {
    "name": "Hauler",
    "faction": "kessler-hayashi",
@@ -411,7 +397,7 @@
    "damage_text": "4 physical, 2 shots/s",
    "range": 10,
    "speed": 3.9,
-   "role": "The same cannon on the same hull; a grudge camp's answer to a wall that robots keep mending.",
+   "role": "An artillery cannon on a tank's hull; a grudge camp's answer to a wall that robots keep mending.",
    "counters": "roboports behind a wall",
    "countered_by": "your artillery, battle tanks",
    "blurb": "Grubstake's Howitzer truck is Kessler-Hayashi's model, bought second-hand, and only a camp that landed with a grudge has one. It comes out against walls that robots keep mending, to shell the roboports behind them. Your artillery outranges it and engages it on its own."

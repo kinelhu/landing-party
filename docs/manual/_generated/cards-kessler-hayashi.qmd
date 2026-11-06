@@ -40,10 +40,6 @@ The Laser tank's beam splits on the first target it hits and forks into the unit
 The Lightning tank carries a tesla turret's emitter. Its lightning jumps along your turret line, and every laser or tesla turret it hits stops firing for a moment. A few of them slow a laser line badly. Gun turrets and flamethrowers are not affected, so mix them into the line.
 :::
 
-::: {.unit unit="lp-howitzer-truck"}
-The Howitzer truck is an artillery cannon on a tank hull, used to haul a siege's howitzer into position. It does not fire on the move: it drives to the site, the howitzer is set up there to shell the roboports behind your wall, and the truck pulls back. Your artillery outranges the howitzer and engages it on its own.
-:::
-
 ::: {.unit unit="lp-hauler"}
 The Hauler is a lightly armed, armored truck that carries supplies between Kessler-Hayashi's camps. It is slow and does not fight well. A squad posted on the road between camps will catch them.
 :::

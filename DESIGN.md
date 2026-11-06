@@ -5265,6 +5265,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the old file). The Railgunner blurb and a stale comment in `units.lua` still said its slug went through everything
   on a line; it pierces a few biters (`RAIL_PIERCE`). Lore-page pull quotes set smaller and kept with their rule and
   attribution, so no page runs a lone quote onto the facing page. The manual is 88 pages.
+  Then the user: "Doesn't KH drop their howitzers from orbit?" It does (`orbital_drop`, since 2026-11-03), but the
+  manual still gave Kessler-Hayashi a Howitzer truck card, hard-coded in `manual_qmd.py`. The generator now reads
+  `orbital_drop` (passed through by `roster_page.py`) and gives the truck card only to a corporation that drives its
+  guns in (Grubstake's grudge camps); the stale words for it stopped the build, and the portrait was then unused.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

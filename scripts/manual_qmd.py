@@ -365,7 +365,10 @@ def write(rp):
             if isinstance(e, dict) and e.get("recipe", "").endswith("-order"):
                 player_tech[e["recipe"][:-6]] = rp.tname(tk)
     groups = [
-        ("Kessler-Hayashi", corp_units("serenity") + [("lp-howitzer-truck", rp.portrait("lp-howitzer-truck"), "Carries the howitzer to a siege", None)]),
+        # The howitzer truck only where a siege drives its guns in: a corporation whose guns come down in pods
+        # (shared.CORPS orbital_drop) has none in play (Kessler-Hayashi's card stood after its drops, 2026-11-06).
+        ("Kessler-Hayashi", corp_units("serenity") + ([] if corps["serenity"].get("orbital_drop") else
+                            [("lp-howitzer-truck", rp.portrait("lp-howitzer-truck"), "Carries the howitzer to a siege", None)])),
         ("Grubstake", corp_units("grubstake")),
         ("Both corporations", [("lp-hauler", rp.portrait("lp-hauler"), "Both corporations", None)]),
         ("Synthexis", [(n, rp.portrait(n), f"Bred from evolution {pen_points[n][0][0]:g}", breeds.get(n, {}).get("cost")) for n, _ in rp.PEN]
@@ -930,7 +933,8 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
         trees[f"{fac}-units"] = {"title": f"{c['name']}'s unit tree", "kicker": "Unit tree", "faction": fac, "columns": cols,
                                  "bands": bands, "nodes": nodes, "max_height": 144}
         # Its trucks: the hauler (both corporations), the howitzer truck (Kessler-Hayashi's sieges, a grudge camp's).
-        for kind in ("lp-howitzer-truck", "lp-hauler"):
+        # A corporation that drops its siege guns from orbit (shared.CORPS orbital_drop) runs no howitzer truck.
+        for kind in ("lp-hauler",) if c.get("orbital_drop") else ("lp-howitzer-truck", "lp-hauler"):
             uid = kind if corp == "serenity" else f"lp-grubstake-{kind[3:]}"
             card(uid, fac, kind, portrait_of(uid), None, None, parts(kind))
 

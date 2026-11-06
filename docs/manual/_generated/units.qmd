@@ -21,7 +21,6 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Heavy tank | 1,100 | 5.4 | 16 | 1 | no | 95 parts |
 | Laser tank | 700 | 5.4 | 16 | 1.2 | no | 100 parts |
 | Lightning tank | 800 | 5.4 | 14 | 0.8 | no | 100 parts |
-| Howitzer truck | 1,200 | 3.9 | 10 | 2 | yes | - |
 
 | Unit | A shot | Resists | Fielded |
 |:--|:--|:--|:--|
@@ -35,7 +34,6 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Heavy tank | 38 rail | physical -5 30%, explosion -5 40%, laser -5, electric -5, bite 60% | Research: Heavy tanks (Line, era 2, after Heavier armor) |
 | Laser tank | (arcs to the next targets); 10 laser; 14 laser | physical -3 20%, laser -5, electric -5, explosion 10%, bite 60% | Research: Laser tanks (Optics, era 2, after Heavy laser troopers) |
 | Lightning tank | (arcs to the next targets); 10 electric; 20 electric | physical -3 20%, electric -5 80%, explosion 10%, laser -5, bite 60% | Research: Lightning tanks (Siege, era 3) |
-| Howitzer truck | 4 physical | physical -4 30%, fire 50%, explosion 20% | Carries the howitzer to a siege |
 
 ### Grubstake
 

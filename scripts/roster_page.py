@@ -42,7 +42,8 @@ end
 local out = {corps = {}, unlock = s.UNLOCK, units = s.units, lab_icon = s.LAB_ICON, breeds = s.BREEDS,
   biotech = {name = s.BIOTECH.name, color = s.BIOTECH.color, mind = s.BIOTECH.mind}}
 for corp, c in pairs(s.CORPS) do
-  out.corps[corp] = {name = c.name, tree = c.tree, mix = c.mix, labs = c.labs, tint = c.tint, bases = c.bases, names = c.names}
+  out.corps[corp] = {name = c.name, tree = c.tree, mix = c.mix, labs = c.labs, tint = c.tint, bases = c.bases, names = c.names,
+    orbital_drop = c.orbital_drop}
 end
 print(dump(out))
 '''
