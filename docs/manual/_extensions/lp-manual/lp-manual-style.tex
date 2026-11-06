@@ -43,6 +43,7 @@
 \newcommand\lplabel[1]{{\lpsemibold\addfontfeature{LetterSpace=9}\MakeUppercase{#1}}}
 \newcommand\lpkicker[1]{{\lpsemibold\fontsize{6.6}{8}\selectfont\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 \newcommand\HeaderFont{\sffamily\bfseries}% the clip extension's placeholder asks for it
+\input{\lpextdir/lp-manual-emblems.tex}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt plus 1.5pt minus 1pt}
 \setlength{\emergencystretch}{2.5em}
@@ -101,9 +102,73 @@
       \fi
     \end{tikzpicture}%
   \fi\fi\endgroup}
+% Period dress, after the manuals of the 1990s (StarCraft's race-textured frames and the faint drawing behind its unit
+% pages, C&C's edge tabs): every page on a paper ground (generated, media/ornaments, make_paper.sh); a chapter's pages
+% carry its faction's emblem as a watermark (the filigrane) and corner pieces in its colour; a blank page carries the
+% book's own seal. The watermark stays under 8% of the faction's dark tone: body text over it keeps its contrast, and a
+% greyscale print shows it as a faint line.
+\newif\iflpdecor   % from the first chapter to the back cover
+\newif\iflpblank   % this page is a blank (set by the clears and the padding)
+\newif\iflp@paper \newif\iflp@lorepaper
+\newsavebox\lp@paperbox \newsavebox\lp@lorebox
+% \lpsetpaper{body ground}{lore ground}: image paths, either empty for none (the filter gives them). Each is set in a
+% saved box once, so the PDF holds one copy however many pages print it.
+\newcommand\lpsetpaper[2]{%
+  \ifstrempty{#1}{}{\global\lp@papertrue\global\setbox\lp@paperbox\hbox{\includegraphics[width=\paperwidth,height=\paperheight]{#1}}}%
+  \ifstrempty{#2}{}{\global\lp@lorepapertrue\global\setbox\lp@lorebox\hbox{\includegraphics[width=\paperwidth,height=\paperheight]{#2}}}}
+\newcommand\lp@ground{%
+  \iflplore\iflp@lorepaper\copy\lp@lorebox\else{\color{LPPaper}\rule{\paperwidth}{\paperheight}}\fi
+  \else\iflp@paper\copy\lp@paperbox\fi\fi}
+\newcommand\lpwatermarkopacity{0.075}
+\newcommand\lp@watermark{%
+  \begingroup\lpusefaction{\lpchapterfaction}%
+  \begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,0) rectangle (148,210);
+    \clip (0,0) rectangle (148,210);
+    \ifodd\value{page}\def\lp@wx{110}\else\def\lp@wx{38}\fi
+    \begin{scope}[shift={(\lp@wx,74)}, transparency group, opacity=\lpwatermarkopacity, color=FacDark]
+      \lpemblem{\lp@fac}{58}{1.25}
+    \end{scope}
+  \end{tikzpicture}\endgroup}
+% Corner pieces, 7 mm in from the trim: a bracket in the faction's colour, its finish the faction's own.
+\newcommand\lp@corners{%
+  \begingroup\lpusefaction{\lpchapterfaction}%
+  \begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,0) rectangle (148,210);
+    \foreach \cx/\cy/\sx/\sy in {7/7/1/1, 141/7/-1/1, 7/203/1/-1, 141/203/-1/-1}{%
+      \begin{scope}[shift={(\cx,\cy)}, xscale=\sx, yscale=\sy]
+        \ifcsname lp@corner@\lp@fac\endcsname\csname lp@corner@\lp@fac\endcsname\else\lp@corner@neutral\fi
+      \end{scope}}
+  \end{tikzpicture}\endgroup}
+\tikzset{lpcornerA/.style={draw=Fac, line width=1.15pt, line cap=butt, line join=miter},
+  lpcornerB/.style={draw=FacDark, line width=0.3pt}}
+\def\lp@corner@neutral{\draw[lpcornerA] (0,12) -- (0,0) -- (12,0); \draw[lpcornerB] (1.7,8.5) -- (1.7,1.7) -- (8.5,1.7);
+  \fill[Fac] (0,0) +(0,1.3) -- +(1.3,0) -- +(0,-1.3) -- +(-1.3,0) -- cycle;}
+\expandafter\def\csname lp@corner@kessler-hayashi\endcsname{%
+  \draw[lpcornerA] (0,13) -- (0,3) -- (3,0) -- (13,0); \draw[lpcornerB] (1.7,9.5) -- (1.7,3.7) -- (3.7,1.7) -- (9.5,1.7);
+  \fill[Fac] (-0.6,13) rectangle (0.6,14.6); \fill[Fac] (13,-0.6) rectangle (14.6,0.6);
+  \fill[FacDark] (3.4,3.4) circle (0.45);}
+\def\lp@corner@grubstake{\draw[lpcornerA] (0,13) -- (0,0) -- (13,0); \draw[lpcornerB] (1.7,9.5) -- (1.7,1.7) -- (9.5,1.7);
+  \foreach \p in {(0,13.9),(13.9,0),(0,0)}{\fill[Fac] \p circle (0.85); \fill[FacLight] \p circle (0.3);}
+  \fill[FacDark] (4,4) circle (0.4);}
+\def\lp@corner@synthexis{\draw[lpcornerA, rounded corners=4.5mm] (0,13) -- (0,0) -- (13,0);
+  \draw[lpcornerB, rounded corners=3mm] (1.7,9.5) -- (1.7,1.7) -- (9.5,1.7);
+  \fill[Fac] (0,13.6) circle (0.75); \fill[Fac] (13.6,0) circle (0.75);
+  \draw[FacDark, line width=0.35pt] (4.2,4.2) circle (0.9); \fill[FacDark] (5.9,3.1) circle (0.35); \fill[FacDark] (3.1,5.9) circle (0.25);}
+\def\lp@corner@player{\draw[lpcornerA] (0,13) -- (0,0) -- (13,0); \draw[lpcornerB] (1.7,9.5) -- (1.7,1.7) -- (9.5,1.7);
+  \fill[Fac] (-0.9,-0.9) rectangle (2.3,2.3); \fill[FacOn] (0.7,0.7) circle (0.45);
+  \fill[Fac] (-0.6,12.4) rectangle (0.6,14.2); \fill[Fac] (12.4,-0.6) rectangle (14.2,0.6);}
+% A blank page carries the book's seal, small and faint, as a printer's device.
+\newcommand\lp@blankseal{%
+  \begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,0) rectangle (148,210);
+    \begin{scope}[shift={(74,108)}, transparency group, opacity=0.13, color=LPInk]\lpemblem{neutral}{17}{0.55}\end{scope}
+  \end{tikzpicture}}
 \AddToShipoutPictureBG{%
-  \iflplore\AtPageLowerLeft{\color{LPPaper}\rule{\paperwidth}{\paperheight}}\fi
-  \AtPageLowerLeft{\lp@tab}\global\lpnotabfalse}
+  \AtPageLowerLeft{\lp@ground}%
+  \iflpdecor\iflpnotab\else\AtPageLowerLeft{\lp@watermark}\AtPageLowerLeft{\lp@corners}\fi\fi
+  \iflpblank\AtPageLowerLeft{\lp@blankseal}\fi
+  \AtPageLowerLeft{\lp@tab}\global\lpnotabfalse\global\lpblankfalse}
 % Book matter is one sequence: the folio counts from the cover, as a printed booklet's do.
 \renewcommand\frontmatter{}\renewcommand\mainmatter{\clearpage}\renewcommand\backmatter{}
 
@@ -111,22 +176,36 @@
 \pagestyle{fancy}
 \fancyhf{}
 \renewcommand\headrulewidth{0pt}
+\newcommand\lp@headicon{\tikz[x=1mm,y=1mm,baseline=-0.95mm]{\begin{scope}[color=FacDark]\lpemblem{\lp@fac}{2.9}{0.17}\end{scope}}}
 \newcommand\lp@headmark[1]{{\color{FacDark}\lpkicker{#1}}}
-\newcommand\lp@folio{{\lpsemibold\fontsize{7.5}{9}\selectfont\addfontfeature{Numbers=Lining}\thepage}}
-\fancyhead[LE]{\lpusefaction{\lpchapterfaction}\lp@headmark{\leftmark}}
-\fancyhead[RO]{\lpusefaction{\lpchapterfaction}\lp@headmark{\rightmark}}
-\fancyfoot[LE]{\lpusefaction{\lpchapterfaction}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}\hspace{2mm}\lp@folio}
-\fancyfoot[RO]{\lpusefaction{\lpchapterfaction}\lp@folio\hspace{2mm}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}}
+% The folio sits in a plate of the faction's colour, its shape the faction's: a chamfered plate (Kessler-Hayashi),
+% a round seal (Grubstake), a rounded cell (Synthexis), a square plate (yours and the book's).
+\tikzset{lpfolio/.style={fill=Fac, text=FacOn, inner xsep=1.3mm, inner ysep=0.9mm, minimum height=4.6mm, minimum width=6.4mm},
+  lpfolio@neutral/.style={rectangle},
+  lpfolio@player/.style={rectangle},
+  lpfolio@kessler-hayashi/.style={chamfered rectangle, chamfered rectangle xsep=1.1mm},
+  lpfolio@grubstake/.style={circle, inner sep=0.5mm, minimum size=6.2mm, double=Fac, draw=FacOn, line width=0.35pt, double distance=0.5pt},
+  lpfolio@synthexis/.style={rectangle, rounded corners=2.2mm}}
+\newcommand\lp@folio{\tikz[baseline=(n.base)]{\node[lpfolio, lpfolio@\lp@fac/.try] (n)
+  {\lpsemibold\fontsize{7.3}{8}\selectfont\addfontfeature{Numbers=Lining}\thepage};}}
+\newcommand\lp@footrule{\textcolor{Fac}{\rule[0.62ex]{9mm}{0.5pt}}\hspace{0.6mm}\textcolor{Fac}{\rule[0.42ex]{1.4mm}{1.4mm}}}
+\newcommand\lp@footruleR{\textcolor{Fac}{\rule[0.42ex]{1.4mm}{1.4mm}}\hspace{0.6mm}\textcolor{Fac}{\rule[0.62ex]{9mm}{0.5pt}}}
+\fancyhead[LE]{\lpusefaction{\lpchapterfaction}\lp@headicon\hspace{1.8mm}\lp@headmark{\leftmark}}
+\fancyhead[RO]{\lpusefaction{\lpchapterfaction}\lp@headmark{\rightmark}\hspace{1.8mm}\lp@headicon}
+\fancyfoot[LE]{\lpusefaction{\lpchapterfaction}\lp@folio\hspace{1.6mm}\lp@footruleR}
+\fancyfoot[RO]{\lpusefaction{\lpchapterfaction}\lp@footrule\hspace{1.6mm}\lp@folio}
 \fancypagestyle{plain}{\fancyhf{}%
-  \fancyfoot[LE]{\lpusefaction{\lpchapterfaction}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}\hspace{2mm}\lp@folio}%
-  \fancyfoot[RO]{\lpusefaction{\lpchapterfaction}\lp@folio\hspace{2mm}\textcolor{Fac}{\rule[0.2ex]{6mm}{1.2pt}}}}
+  \fancyfoot[LE]{\lpusefaction{\lpchapterfaction}\lp@folio\hspace{1.6mm}\lp@footruleR}%
+  \fancyfoot[RO]{\lpusefaction{\lpchapterfaction}\lp@footrule\hspace{1.6mm}\lp@folio}}
 \fancypagestyle{lpbare}{\fancyhf{}}
 
 % ---------------------------------------------------------------- headings
 % A chapter is never numbered (the manual is read by subject, not in order). Sections in Titillium.
 \setcounter{secnumdepth}{-2}
-\titleformat{\section}{\sffamily\bfseries\fontsize{12.5}{15}\selectfont\color{FacDark}}{}{0pt}
-  {\textcolor{Fac}{\rule[0.12ex]{2.2mm}{2.2mm}}\hspace{2.2mm}}
+\newcommand\lp@lozenge[1]{\tikz[x=1mm,y=1mm,baseline=-0.5*#1mm+0.5ex]\fill (0,#1) -- (#1,0) -- (0,-#1) -- (-#1,0) -- cycle;}
+\newcommand\lp@sectitle[1]{\textcolor{Fac}{\rule[0.12ex]{2.2mm}{2.2mm}}\hspace{2.2mm}#1\nobreak\hspace{2.6mm}%
+  {\color{FacMid}\leaders\hrule height 0.6ex depth -0.48ex\hfill}\nobreak\hspace{0.9mm}{\color{Fac}\lp@lozenge{0.9}}}
+\titleformat{\section}{\sffamily\bfseries\fontsize{12.5}{15}\selectfont\color{FacDark}}{}{0pt}{\lp@sectitle}
 \titlespacing*{\section}{0pt}{14pt plus 3pt}{5pt}
 \titleformat{\subsection}{\lpsemibold\fontsize{10}{12}\selectfont\color{LPInk}}{}{0pt}{}
 \titlespacing*{\subsection}{0pt}{10pt plus 2pt}{3pt}
@@ -143,11 +222,30 @@
   \clearpage\gdef\lpchapterfaction{#3}\lpusefaction{#3}%
   \markboth{#1}{#1}\thispagestyle{plain}%
   \phantomsection\addcontentsline{toc}{chapter}{\protect\lptocentry{#3}{#1}}\ifstrempty{#2}{}{\label{#2}}%
+  \global\lpdecortrue
   \AddToShipoutPictureBG*{\AtPageUpperLeft{\color{lp@\lp@fac}\raisebox{-5mm}{\rule{\paperwidth}{5mm}}}}%
-  \vspace*{6mm}%
-  \ifstrempty{#4}{}{{\color{FacDark}\lpkicker{#4}}\par\vspace{1mm}}%
-  {\sffamily\bfseries\fontsize{22}{25}\selectfont\color{LPInk}#1\par}%
-  \vspace{2.5mm}{\color{Fac}\rule{\linewidth}{0.8pt}}\par\vspace{5mm}\@afterheading}
+  \vspace*{3mm}%
+  \ifstrempty{#4}{}{{\color{FacDark}\lpkicker{#4}}\par\vspace{2.2mm}}%
+  \noindent\lp@banner{#1}\par\vspace{7mm}\@afterheading}
+% The banner: a ribbon of the faction's colour (the book's slate for its own chapters), its tail folded behind at the
+% left with a swallowtail cut, the title on it, and the faction's emblem in a medallion at its right end.
+\definecolor{LPSlate}{HTML}{3B4048}
+\newcommand\lp@banner[1]{%
+  \ifdefstring{\lp@fac}{neutral}{\colorlet{BanMain}{LPSlate}\colorlet{BanDark}{LPSlate!60!black}\colorlet{BanOn}{white}}
+    {\colorlet{BanMain}{Fac}\colorlet{BanDark}{FacDark}\colorlet{BanOn}{FacOn}}%
+  \begin{tikzpicture}[x=1mm,y=1mm]
+    \useasboundingbox (0,-3) rectangle (\lptextwidthmm,13);% the tail hangs into the margin
+    \fill[BanDark] (-4,-2.6) -- (9,-2.6) -- (9,8.4) -- (-4,8.4) -- (-0.6,2.9) -- cycle;
+    \fill[BanDark!70!black] (4,0) -- (4,-2.6) -- (9,-2.6) -- cycle;
+    \fill[BanMain] (4,0) rectangle (\lptextwidthmm-9,11);
+    \draw[BanOn, opacity=0.55, line width=0.35pt] (5.2,1.2) -- (\lptextwidthmm-9,1.2) (5.2,9.8) -- (\lptextwidthmm-9,9.8);
+    \node[anchor=base west, inner sep=0pt, text=BanOn, font=\sffamily\bfseries\fontsize{19}{20}\selectfont\addfontfeature{LetterSpace=1.5}]
+      at (9,3.3) {#1};
+    \fill[BanDark] (\lptextwidthmm-9,5.5) circle (8.9);
+    \fill[LPPaper] (\lptextwidthmm-9,5.5) circle (8.1);
+    \draw[BanMain, line width=0.6pt] (\lptextwidthmm-9,5.5) circle (7.3);
+    \begin{scope}[shift={(\lptextwidthmm-9,5.5)}, color=BanDark]\lpemblem{\lp@fac}{6.2}{0.26}\end{scope}
+  \end{tikzpicture}}
 
 % \lp@coverimage{w}{h}{path}: the image scaled to cover a w by h box (the caller clips it), whatever its proportions.
 \newcommand\lp@coverimage[3]{%
@@ -176,13 +274,25 @@
       at (\lp@x,99.6) {#1};
     \ifstrempty{#6}{}{\node[anchor=north west, inner sep=0pt, text=lp@#3@on, opacity=0.85,
       font=\lpsemibold\fontsize{6.6}{8}\selectfont\addfontfeature{LetterSpace=14}] at (\lp@x,111.4) {\MakeUppercase{#6}};}
+    \fill[LPNight, opacity=0.3] (121.6,103.7) circle (13.3);
+    \fill[lp@#3@dark] (121,104.5) circle (13);
+    \fill[lp@#3] (121,104.5) circle (12.1);
+    \draw[lp@#3@on, line width=0.5pt] (121,104.5) circle (11.2);
+    \begin{scope}[shift={(121,104.5)}, color=lp@#3@on]\lpemblem{#3}{9.4}{0.34}\end{scope}
   \end{tikzpicture}}}%
+  \global\lpdecortrue
   \vspace*{\dimexpr 210mm-95mm-18mm+5mm-\topskip\relax}%
   \ifstrempty{#5}{}{\lpepigraph{#5}}%
   \@afterheading}
 \newcommand\lpepigraph[1]{%
   {\fontsize{12}{15}\selectfont\itshape\color{LPInk}\textcolor{FacDark}{\char"201C}#1\textcolor{FacDark}{\char"201D}\par}%
-  \vspace{3mm}{\color{Fac}\rule{18mm}{1.2pt}}\par\vspace{4mm}}
+  \vspace{3mm}\lp@ornrule{30}\par\vspace{4mm}}
+% \lp@ornrule{width, mm}: a rule broken by a lozenge between two beads.
+\newcommand\lp@ornrule[1]{\tikz[x=1mm,y=1mm,baseline=-0.6mm]{%
+  \draw[Fac, line width=0.7pt] (0,0) -- ({#1/2-4.2},0) ({#1/2+4.2},0) -- (#1,0);
+  \fill[Fac] ({#1/2},1.5) -- ({#1/2+1.5},0) -- ({#1/2},-1.5) -- ({#1/2-1.5},0) -- cycle;
+  \fill[FacDark] ({#1/2-2.9},0) circle (0.5) ({#1/2+2.9},0) circle (0.5);
+  \fill[Fac] (0,0) circle (0.55) (#1,0) circle (0.55);}}
 
 % ---------------------------------------------------------------- contents
 \newcommand\lptocentry[2]{\lpusefaction{#1}\textcolor{Fac}{\rule[0.05ex]{2.4mm}{2.4mm}}\hspace{2.6mm}#2}
@@ -194,8 +304,8 @@
 \renewcommand*\l@section[2]{}
 \renewcommand\tableofcontents{%
   \clearpage\thispagestyle{lpbare}\gdef\lpchapterfaction{neutral}%
-  \vspace*{14mm}{\color{LPMuted}\lpkicker{Landing Party}}\par\vspace{1mm}
-  {\sffamily\bfseries\fontsize{22}{25}\selectfont Contents\par}\vspace{2.5mm}{\color{LPInk}\rule{\linewidth}{0.8pt}}\par\vspace{6mm}
+  \vspace*{14mm}{\color{LPMuted}\lpkicker{Landing Party}}\par\vspace{2.2mm}
+  \begingroup\lpusefaction{neutral}\noindent\lp@banner{Contents}\par\endgroup\vspace{8mm}
   \@starttoc{toc}\clearpage}
 
 % ---------------------------------------------------------------- lists, tables, figures
@@ -335,8 +445,8 @@
 % A lore page is a found document and runs as a spread: it starts on a verso (a blank, bare page first if the next page
 % is a recto), prints on the paper tint and ends its page, so the booklet opens flat on it. A dossier block (lpdossier)
 % heads it: the Freight Authority's file on the faction, a field list set in the display face.
-\newcommand\lp@cleartoeven{\clearpage\ifodd\value{page}\thispagestyle{lpbare}\global\lpnotabtrue\null\clearpage\fi}
-\newcommand\lp@cleartoodd{\clearpage\ifodd\value{page}\else\thispagestyle{lpbare}\global\lpnotabtrue\null\clearpage\fi}
+\newcommand\lp@cleartoeven{\clearpage\ifodd\value{page}\thispagestyle{lpbare}\global\lpnotabtrue\global\lpblanktrue\null\clearpage\fi}
+\newcommand\lp@cleartoodd{\clearpage\ifodd\value{page}\else\thispagestyle{lpbare}\global\lpnotabtrue\global\lpblanktrue\null\clearpage\fi}
 \newenvironment{lpstory}[3]{% kicker, title, draft (empty or a word)
   \lp@cleartoeven\global\lploretrue
   \vspace*{4mm}%
@@ -354,11 +464,34 @@
   \par\begin{tcolorbox}[enhanced, arc=0pt, outer arc=0pt, boxrule=0pt, colback=FacLight, left=3mm, right=3mm,
     top=2.8mm, bottom=2.4mm, before skip=1mm, after skip=9pt,
     overlay={\draw[FacDark, line width=0.9pt] (frame.north west) -- (frame.north east);
-      \draw[FacDark, line width=0.4pt] (frame.south west) -- (frame.south east);}]
+      \draw[FacDark, line width=0.4pt] (frame.south west) -- (frame.south east);
+      \foreach \c in {north west, north east}\fill[FacDark] ([yshift=0.45pt]frame.\c) ++(0,-1.2mm) -- ++(1.2mm,1.2mm) -- ++(-2.4mm,0) -- cycle;
+      \begin{scope}[x=1mm, y=1mm, shift={([xshift=-10mm,yshift=-0.5mm]frame.north east)}, rotate=-14,
+          transparency group, opacity=0.2, color=FacDark]
+        \lpemblem{\lp@fac}{7.6}{0.4}\draw[line width=0.8pt] (0,0) circle (8.8);
+      \end{scope}}]
   \sffamily\fontsize{7.5}{9.4}\selectfont\addfontfeature{Numbers=Lining}\setlength{\parindent}{0pt}\setlength{\parskip}{0pt}%
   \begin{description}[leftmargin=27mm, labelwidth=25mm, labelsep=2mm, style=nextline, itemsep=2pt, parsep=0pt, topsep=0pt,
     font=\lpsemibold\fontsize{6.3}{8}\selectfont\addfontfeature{LetterSpace=10}\color{FacDark}]}
  {\end{description}\end{tcolorbox}\par}
+% \lpdropcap{letter}{rest of the word}: the lore's first letter in a framed plate of the faction's colour, three
+% lines deep, the rest of the word in small capitals (the illuminated capitals of the 90s manuals' history pages).
+\newcommand\lpdropcap[2]{%
+  \setbox\z@\hbox{\lp@capplate{#1}}%
+  \hangindent=\dimexpr\wd\z@+2.4mm\relax\hangafter=-3
+  \noindent\llap{\raisebox{-2\baselineskip}[0pt][0pt]{\box\z@}\hspace{2.4mm}}{\scshape #2}}
+\newcommand\lp@capplate[1]{%
+  \pgfmathsetmacro\lp@caph{(2*\the\baselineskip+\the\fontcharht\font`\H)/1mm}% two lines and a cap height
+  \begin{tikzpicture}[x=1mm,y=1mm,baseline=0pt]
+    \useasboundingbox (0,0) rectangle (\lp@caph,\lp@caph);
+    \fill[FacDark] (0,0) rectangle (\lp@caph,\lp@caph);
+    \fill[Fac] (0.55,0.55) rectangle (\lp@caph-0.55,\lp@caph-0.55);
+    \draw[FacOn, line width=0.4pt] (1.3,1.3) rectangle (\lp@caph-1.3,\lp@caph-1.3);
+    \foreach \x/\y in {1.3/1.3, 1.3/\lp@caph-1.3, \lp@caph-1.3/1.3, \lp@caph-1.3/\lp@caph-1.3}
+      \fill[FacOn] (\x,\y) +(0,0.8) -- +(0.8,0) -- +(0,-0.8) -- +(-0.8,0) -- cycle;
+    \begin{scope}[shift={(\lp@caph/2,\lp@caph/2)}, color=FacOn, opacity=0.16]\lpemblem{\lp@fac}{\lp@caph*0.42}{0.2}\end{scope}
+    \node[text=FacOn, inner sep=0pt, font=\sffamily\bfseries\fontsize{30}{30}\selectfont] at (\lp@caph/2,\lp@caph/2-0.2) {#1};
+  \end{tikzpicture}}
 \setcounter{DefaultLines}{3}
 \renewcommand\LettrineFontHook{\sffamily\bfseries\color{FacDark}}
 \renewcommand\LettrineTextFont{\scshape}
@@ -366,24 +499,39 @@
 \setlength\DefaultNindent{0pt}
 \newenvironment{lppullquote}[1]{% attribution or empty
   \par\vspace{9pt}\begingroup\centering\def\lp@cite{#1}%
-  {\color{Fac}\rule{24mm}{1.2pt}}\par\vspace{3.5mm}
+  \lp@ornrule{36}\par\vspace{3.5mm}
   \begin{minipage}{0.84\linewidth}\centering\setlength{\parindent}{0pt}\fontsize{13.5}{17.5}\selectfont\itshape\color{LPInk}}
  {\par\end{minipage}\par
   \ifdefempty{\lp@cite}{}{\vspace{2mm}{\color{FacDark}\lpkicker{\lp@cite}}\par}%
-  \vspace{3.5mm}{\color{Fac}\rule{24mm}{1.2pt}}\par\endgroup\vspace{9pt}\noindent\ignorespacesafterend}
+  \vspace{3.5mm}\lp@ornrule{36}\par\endgroup\vspace{9pt}\noindent\ignorespacesafterend}
 
 % ---------------------------------------------------------------- sidebars
-\newtcolorbox{lptip}[1]{enhanced, arc=0pt, outer arc=0pt, boxrule=0pt, leftrule=2.4pt,
-  colback=FacLight, colframe=Fac, left=3.2mm, right=3mm, top=2.4mm, bottom=2.4mm, before skip=8pt, after skip=8pt,
+% The tip: a plate framed twice, riveted at the corners, its title on a tab with a cut corner standing on the frame.
+\newtcolorbox{lptip}[1]{enhanced, arc=0pt, outer arc=0pt, boxrule=0.6pt,
+  colback=FacLight, colframe=FacDark, left=3.6mm, right=3.4mm, top=3.6mm, bottom=2.8mm, before skip=21pt, after skip=9pt,
   fontupper=\sffamily\fontsize{8.4}{11}\selectfont\addfontfeature{Numbers=Lining},
-  before upper={{\color{FacDark}\lpkicker{\ifstrempty{#1}{Tip}{Tip: #1}}}\par\vspace{1mm}\setlength{\parskip}{3pt}}}
-\newtcolorbox{lpfieldnote}[1]{enhanced, arc=0pt, outer arc=0pt, boxrule=0pt,
-  colback=LPPaper, left=4mm, right=4mm, top=4.6mm, bottom=3mm, before skip=12pt, after skip=8pt,
+  overlay={\draw[Fac, line width=0.35pt] ([shift={(0.9mm,0.9mm)}]frame.south west) rectangle ([shift={(-0.9mm,-0.9mm)}]frame.north east);
+    \foreach \c/\dx/\dy in {south west/1/1, south east/-1/1, north west/1/-1, north east/-1/-1}
+      \fill[FacDark] ([shift={(\dx*0.9mm,\dy*0.9mm)}]frame.\c) circle (0.55mm);
+    \node[anchor=south west, chamfered rectangle, chamfered rectangle corners=north east, chamfered rectangle xsep=1.4mm,
+      fill=Fac, text=FacOn, inner xsep=2mm, inner ysep=1.15mm, draw=FacDark, line width=0.6pt]
+      at ([xshift=3.2mm, yshift=-0.3pt]frame.north west) {\lpkicker{\ifstrempty{#1}{Tip}{Tip: #1}}};},
+  before upper={\setlength{\parskip}{3pt}}}
+% The field note: a slip of paper under a paper clip, its edge dashed, its title on an ink tab with a swallowtail end.
+% \begin{lpfieldnote}[prefix]{title}: the tab reads "prefix: title" (prefix "Field note"; an empty prefix, the title).
+\newcommand\lp@notetab[2]{\ifstrempty{#1}{#2}{\ifstrempty{#2}{#1}{#1: #2}}}
+\newtcolorbox{lpfieldnote}[2][Field note]{enhanced, arc=0pt, outer arc=0pt, boxrule=0pt,
+  colback=LPPaper, left=4mm, right=4mm, top=5mm, bottom=3mm, before skip=13pt, after skip=8pt,
   fontupper=\fontsize{9.2}{12.4}\selectfont\itshape,
   overlay={\draw[LPInk!55, line width=0.4pt, dash pattern=on 1.6pt off 1.2pt] (frame.south west) rectangle (frame.north east);
-    \node[anchor=west, fill=LPInk, text=white, inner xsep=1.8mm, inner ysep=1.1mm] at ([xshift=3mm]frame.north west)
-      {\lpkicker{\ifstrempty{#1}{Field note}{Field note: #1}}};
-    \fill[Fac] ([xshift=-5.5mm,yshift=-0.01mm]frame.north east) rectangle ([xshift=-2mm,yshift=-5mm]frame.north east);},
+    \node[anchor=west, fill=LPInk, text=white, inner xsep=1.8mm, inner ysep=1.1mm] (lp@tab) at ([xshift=3mm]frame.north west)
+      {\lpkicker{\lp@notetab{#1}{#2}}};
+    \fill[LPInk] (lp@tab.north east) -- ++(2.6mm,0) -- ([xshift=1.2mm]lp@tab.east) -- ([xshift=2.6mm]lp@tab.south east)
+      -- (lp@tab.south east) -- cycle;
+    \begin{scope}[x=1mm, y=1mm, shift={([xshift=-9mm, yshift=2.8mm]frame.north east)}, rotate=-8]
+      \draw[LPInk!70, line width=0.75pt, rounded corners=1.1mm] (0.9,-4.8) -- (0.9,1.2) -- (3.3,1.2) -- (3.3,-7.4)
+        -- (-0.3,-7.4) -- (-0.3,0.2) -- (2.1,0.2) -- (2.1,-3.6);
+    \end{scope}},
   before upper={\setlength{\parskip}{3pt}}}
 
 % ---------------------------------------------------------------- covers
@@ -419,7 +567,7 @@
 % The booklet is folded from sheets of four pages: blank pages before the back cover make the count a multiple
 % of four, so the back cover is the last page of the last sheet.
 \newcommand\lpbackcover[2]{% blurb, small print
-  \clearpage\gdef\lpchapterfaction{neutral}%
+  \clearpage\gdef\lpchapterfaction{neutral}\global\lpdecorfalse
   \lp@padtofour
   \thispagestyle{lpbare}%
   \AddToShipoutPictureBG*{\AtPageLowerLeft{\begin{tikzpicture}[x=1mm,y=1mm]
@@ -434,7 +582,7 @@
 \providecommand\lpbackfactions{}
 \RequirePackage{intcalc}
 \newcommand\lp@padtofour{\ifnum\intcalcMod{\the\numexpr\ReadonlyShipoutCounter+1\relax}{4}=0
-  \else\thispagestyle{lpbare}\null\clearpage\expandafter\lp@padtofour\fi}
+  \else\thispagestyle{lpbare}\global\lpblanktrue\null\clearpage\expandafter\lp@padtofour\fi}
 % \lpbackfaction{faction}{portrait}{motto}: one of the four side by side on the back cover, the faction's own unit on
 % the bestiary's grey ground (the cover vistas are printed once, on the front).
 \newcommand\lpbackfaction[3]{%

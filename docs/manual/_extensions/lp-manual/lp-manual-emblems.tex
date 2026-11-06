@@ -1,0 +1,150 @@
+% lp-manual-emblems.tex: the factions' emblems, vector line art in TikZ (read by lp-manual-style.tex).
+% Each is drawn about (0,0) in a unit circle, in the current colour, for any size: the watermark behind a chapter's
+% pages (the filigrane of the old manuals), the seal on an opener, the stamp on a dossier, the badge at the head.
+% Made for this booklet; nothing here is traced from another game's manual.
+%   \lpemblem{faction}{radius in mm}{stroke in pt}   inside a tikzpicture whose unit is 1mm
+% Kessler-Hayashi: the Serenity Ring's seal, a planet in its orbital ring with the nine platforms, the name on the band.
+% Grubstake: a claim seal, a pick crossed with a claim stake over an ore nugget, beaded edge, the name on the band.
+% Synthexis: a cell, its membrane round a double helix and a few organelles.
+% Your army: a gear and a heater shield with a chevron.
+% neutral (the book's own, the Freight Authority's): a lander set down in a compass ring.
+\usetikzlibrary{decorations.text,shapes.misc}
+\ExplSyntaxOn
+\cs_new:Npn \lp@upper #1 { \text_uppercase:n {#1} }
+\ExplSyntaxOff
+
+\newcommand\lp@es{1}% the stroke unit, pt (set by \lpemblem)
+\tikzset{
+  lpe/.style={line width=\lp@es pt, line cap=round, line join=round},
+  lpe2/.style={line width=2*\lp@es pt, line cap=round, line join=round},
+  lpe3/.style={line width=3*\lp@es pt, line cap=round, line join=round},
+  lpeh/.style={line width=0.5*\lp@es pt, line cap=round, line join=round},
+}
+\newcommand\lpemblem[3]{%
+  \begingroup\def\lp@es{#3}\pgfmathsetmacro\lp@er{#2}%
+  \begin{scope}[scale=#2]
+    \ifcsname lp@emb@#1\endcsname\csname lp@emb@#1\endcsname\else\lp@emb@neutral\fi
+  \end{scope}\endgroup}
+% the name round the top of a seal's band: \lp@sealname{faction}{radius of the baseline, unit circle}
+\newcommand\lp@sealname[2]{%
+  \ifdim\lp@er pt>12pt\relax
+  \pgfmathsetmacro\lp@sfs{\lp@er*0.36}%
+  \edef\lp@nm{\lp@upper{\csname lp@#1@name\endcsname}}%
+  \begingroup\edef\x{\endgroup\noexpand\path[decorate, decoration={text along path, text align=center,
+      text={|\noexpand\lpsemibold\noexpand\fontsize{\lp@sfs}{\lp@sfs}\noexpand\selectfont|\lp@nm}}]
+    (162:#2) arc[start angle=162, end angle=18, radius=#2];}\x
+  \fi}
+% a four-pointed star of radius #3 at (#1,#2)
+\newcommand\lp@star[3]{\fill (#1,#2) +(90:#3) -- +(45:0.3*#3) -- +(0:#3) -- +(-45:0.3*#3) -- +(-90:#3)
+  -- +(-135:0.3*#3) -- +(180:#3) -- +(135:0.3*#3) -- cycle;}
+
+% ---------------------------------------------------------------- Kessler-Hayashi
+\expandafter\def\csname lp@emb@kessler-hayashi\endcsname{%
+  \draw[lpe3] (0,0) circle (1);
+  \draw[lpe] (0,0) circle (0.935);
+  \draw[lpe] (0,0) circle (0.6);
+  \lp@sealname{kessler-hayashi}{0.72}%
+  % the lower band: a dial, a tick every 5 degrees, a long one every 20
+  \foreach \a in {195,200,...,345}{\draw[lpeh] (\a:0.86) -- (\a:0.905);}
+  \foreach \a in {200,220,...,340}{\draw[lpe] (\a:0.8) -- (\a:0.905);}
+  \foreach \a in {0,180}{\fill (\a:0.77) +(0,0.035) -- +(0.035,0) -- +(0,-0.035) -- +(-0.035,0) -- cycle;}
+  % the planet
+  \draw[lpe2] (0,0) circle (0.26);
+  \draw[lpeh] (-0.255,-0.05) arc[start angle=180, end angle=360, x radius=0.255, y radius=0.07];
+  \draw[lpeh] (-0.22,0.12) arc[start angle=180, end angle=360, x radius=0.22, y radius=0.05];
+  \draw[lpeh] (0,0.26) arc[start angle=90, end angle=270, x radius=0.1, y radius=0.26];
+  % the ring, tilted: its back half hidden by the planet, its front half across it
+  \begin{scope}[rotate=15]
+    \draw[lpe2] (0.5,0) arc[start angle=0, end angle=55, x radius=0.5, y radius=0.13];
+    \draw[lpe2] ({0.5*cos(125)},{0.13*sin(125)}) arc[start angle=125, end angle=180, x radius=0.5, y radius=0.13];
+    \draw[lpe2] (-0.5,0) arc[start angle=180, end angle=360, x radius=0.5, y radius=0.13];
+    \draw[lpeh] (0.44,0) arc[start angle=0, end angle=48, x radius=0.44, y radius=0.105];
+    \draw[lpeh] ({0.44*cos(132)},{0.105*sin(132)}) arc[start angle=132, end angle=180, x radius=0.44, y radius=0.105];
+    \draw[lpeh] (-0.44,0) arc[start angle=180, end angle=360, x radius=0.44, y radius=0.105];
+    \foreach \t in {10,50,130,170,210,250,290,330}{%
+      \fill ({0.5*cos(\t)},{0.13*sin(\t)}) +(-0.032,-0.02) rectangle +(0.032,0.02);}
+  \end{scope}
+  % the crest: a chevron over the planet, stars either side
+  \draw[lpe2] (-0.11,0.37) -- (0,0.45) -- (0.11,0.37);
+  \draw[lpe] (-0.08,0.42) -- (0,0.48) -- (0.08,0.42);
+  \lp@star{-0.3}{0.35}{0.05}\lp@star{0.3}{0.35}{0.05}\lp@star{-0.38}{-0.3}{0.035}\lp@star{0.36}{-0.33}{0.035}%
+}
+
+% ---------------------------------------------------------------- Grubstake
+\def\lp@emb@grubstake{%
+  \foreach \a in {0,6,...,354}{\fill (\a:0.975) circle (0.016);}
+  \draw[lpe3] (0,0) circle (0.925);
+  \draw[lpeh] (0,0) circle (0.885);
+  \draw[lpe] (0,0) circle (0.6);
+  \draw[lpeh] (0,0) circle (0.56);
+  \lp@sealname{grubstake}{0.705}%
+  \foreach \a in {230,270,310}{\lp@star{{0.745*cos(\a)}}{{0.745*sin(\a)}}{0.06}}
+  \foreach \a in {250,290}{\fill (\a:0.745) circle (0.018);}
+  \foreach \a in {0,180}{\fill (\a:0.745) +(0,0.035) -- +(0.035,0) -- +(0,-0.035) -- +(-0.035,0) -- cycle;}
+  % the claim stake: a pointed post with its plate, upper left to lower right
+  \begin{scope}[rotate=-45]
+    \draw[lpe] (-0.5,0) -- (-0.4,0.034) -- (0.4,0.034) -- (0.4,-0.034) -- (-0.4,-0.034) -- cycle;
+    \draw[lpe] (0.4,0.034) -- (0.4,0.2) -- (0.16,0.2) -- (0.16,0.034);
+    \draw[lpeh] (0.2,0.09) -- (0.36,0.09) (0.2,0.14) -- (0.32,0.14);
+  \end{scope}
+  % the pick: handle lower left to upper right, its head across the top
+  \draw[lpe3] (-0.36,-0.36) -- (0.27,0.27);
+  \filldraw[lpe] (0.06,0.5) .. controls (0.27,0.5) and (0.5,0.27) .. (0.5,0.06)
+    .. controls (0.41,0.22) and (0.22,0.41) .. cycle;
+  \draw[lpe] (0.22,0.33) -- (0.33,0.22);
+  % the nugget, faceted
+  \draw[lpe] (-0.12,-0.4) -- (-0.05,-0.33) -- (0.07,-0.34) -- (0.13,-0.41) -- (0.07,-0.48) -- (-0.06,-0.48) -- cycle;
+  \draw[lpeh] (-0.05,-0.33) -- (0,-0.41) -- (0.07,-0.34) (0,-0.41) -- (-0.06,-0.48) (0,-0.41) -- (0.13,-0.41);
+}
+
+% ---------------------------------------------------------------- Synthexis
+\def\lp@emb@synthexis{%
+  \draw[lpe3] plot[smooth cycle, samples=60, domain=0:354, variable=\t] (\t:{1+0.025*sin(7*\t)});
+  \draw[lpe, dash pattern=on 2*\lp@es pt off 2.4*\lp@es pt] plot[smooth cycle, samples=60, domain=0:354, variable=\t]
+    (\t:{0.9+0.02*sin(7*\t+40)});
+  % the double helix
+  \draw[lpe2] plot[smooth, samples=50, domain=-0.7:0.7, variable=\y] ({0.22*sin(\y*514.3)},\y);
+  \draw[lpe2] plot[smooth, samples=50, domain=-0.7:0.7, variable=\y] ({-0.22*sin(\y*514.3)},\y);
+  \foreach \y in {-0.63,-0.56,...,0.66}{\draw[lpeh] ({0.2*sin(\y*514.3)},\y) -- ({-0.2*sin(\y*514.3)},\y);}
+  % organelles
+  \draw[lpe] (0.55,0.32) circle (0.12); \fill (0.57,0.3) circle (0.04);
+  \draw[lpe] (-0.55,-0.3) ellipse (0.15 and 0.1); \draw[lpeh] (-0.65,-0.3) .. controls (-0.6,-0.24) and (-0.5,-0.36) .. (-0.45,-0.3);
+  \draw[lpe] (-0.5,0.45) circle (0.06);
+  \draw[lpe] (0.5,-0.5) circle (0.07);
+  \draw[lpe] (0.6,-0.12) circle (0.035); \draw[lpe] (-0.66,0.12) circle (0.04);
+  \fill (0.32,0.62) circle (0.025); \fill (-0.3,-0.66) circle (0.025); \fill (0.7,0.05) circle (0.02);
+}
+
+% ---------------------------------------------------------------- your army
+\def\lp@emb@player{%
+  \draw[lpe2] (-11:0.86) \foreach \i in {0,...,11}{ -- ({\i*30-11}:0.86) -- ({\i*30-6}:1) -- ({\i*30+6}:1)
+    -- ({\i*30+11}:0.86)} -- cycle;
+  \draw[lpe] (0,0) circle (0.79);
+  \foreach \a in {15,45,...,345}{\fill (\a:0.72) circle (0.022);}
+  \draw[lpe2] (-0.42,0.45) -- (0.42,0.45) -- (0.42,0.05) .. controls (0.42,-0.3) and (0.18,-0.48) .. (0,-0.6)
+    .. controls (-0.18,-0.48) and (-0.42,-0.3) .. (-0.42,0.05) -- cycle;
+  \draw[lpeh] (-0.35,0.385) -- (0.35,0.385) -- (0.35,0.05) .. controls (0.35,-0.26) and (0.15,-0.41) .. (0,-0.515)
+    .. controls (-0.15,-0.41) and (-0.35,-0.26) .. (-0.35,0.05) -- cycle;
+  \draw[lpe3] (-0.24,-0.12) -- (0,0.06) -- (0.24,-0.12);
+  \draw[lpe2] (-0.24,0.06) -- (0,0.24) -- (0.24,0.06);
+}
+
+% ---------------------------------------------------------------- the book's own
+\def\lp@emb@neutral{%
+  \draw[lpe3] (0,0) circle (1);
+  \draw[lpe] (0,0) circle (0.92);
+  \foreach \a in {0,15,...,345}{\draw[lpeh] (\a:0.86) -- (\a:0.92);}
+  \foreach \a in {0,90,180,270}{\fill[rotate=\a] (0.92,0) -- (0.76,0.045) -- (0.76,-0.045) -- cycle;}
+  \draw[lpeh] (0,0) circle (0.72);
+  % the lander: hull, nose, port, legs and feet, on its pad
+  \draw[lpe2] (-0.2,-0.06) -- (0.2,-0.06) -- (0.13,0.28) -- (-0.13,0.28) -- cycle;
+  \draw[lpe2] (-0.13,0.28) arc[start angle=180, end angle=0, radius=0.13];
+  \draw[lpe] (0,0.14) circle (0.055);
+  \draw[lpe2] (-0.17,-0.06) -- (-0.33,-0.34) (0.17,-0.06) -- (0.33,-0.34) (0,-0.06) -- (0,-0.34);
+  \draw[lpe2] (-0.39,-0.34) -- (-0.27,-0.34) (0.27,-0.34) -- (0.39,-0.34) (-0.05,-0.34) -- (0.05,-0.34);
+  \draw[lpe] (-0.6,-0.4) -- (0.6,-0.4);
+  \foreach \x in {-0.5,-0.38,...,0.55}{\draw[lpeh] (\x,-0.4) -- (\x-0.06,-0.47);}
+  % its descent, dashed, from the upper left
+  \draw[lpe, dash pattern=on 2.5*\lp@es pt off 2*\lp@es pt] (-0.62,0.42) .. controls (-0.4,0.62) and (-0.15,0.6) .. (0,0.48);
+  \lp@star{0.42}{0.45}{0.05}\lp@star{0.55}{0.2}{0.03}\lp@star{-0.45}{0.12}{0.03}%
+}
