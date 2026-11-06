@@ -1,38 +1,24 @@
-# Synthexis {.opener faction="synthexis" kicker="The corporations"}
+# Synthexis {.opener faction="synthexis"}
 
 ::: {.epigraph faction="synthexis"}
 :::
 
-::: {.lore kicker="Background" title="The breeders" faction="synthexis"}
+::: {.lore title="The breeders" faction="synthexis"}
 
-::: {.dossier}
-SYNTHEXIS
-: A biotech company. Its owners are not public. Motto: "Engineered to adapt."
+Synthexis leases five swamp lots on Gleba, where it grows crops and studies pentapods. It deals with the outside world
+through an agent, and its owners are not public. Its platform, *Cold Chain*, carries its stock and equipment between
+worlds.
 
-BASED
-: Five leased swamp lots on Gleba, for crops and pentapod study. Platform *Cold Chain*.
+The company sells living things made to order: crops that grow faster, animals bred for a purpose. On Nauvis it found
+better breeding stock than anything it had seen. The native biters adapt to whatever hurts them, and the engineer's
+pollution has made them bigger and more aggressive every year.
 
-PEOPLE
-: Dr. Anouk Verhaegen, head of the Nauvis program. Ilya Rask, senior technician.
+Synthexis came to breed them. *Cold Chain* lands a culture on a nest field, its technicians convert the nests into
+incubators, and the biters that hatch carry the company's green and yellow bands. Then they are sent against the
+engineer's walls. Synthexis has no soldiers on Nauvis and no licence to be there.
 
-ON NAUVIS
-: No licence. No armed staff. A breeding program on the native swarm.
-:::
-
-Synthexis keeps a low profile. It leases five swamp lots on Gleba, where it grows crops and studies the pentapods,
-and it deals with the outside world through an agent who answers every question with a lease number. Nobody outside
-the company knows who owns it.
-
-What Synthexis sells is life made to order: crops that grow faster, animals bred for a purpose. On Nauvis it found
-the best breeding stock it had ever seen. The native biters adapt to whatever hurts them, and the engineer's pollution
-has made them bigger and more aggressive every year.
-
-So Synthexis came to breed them. Its platform *Cold Chain* lands a culture on a nest field, its technicians turn the
-nests into incubators, and the biters that hatch wear the company's green and yellow bands. Then they are sent against
-the engineer's walls. Synthexis keeps no soldiers on Nauvis; the biters do its fighting.
-
-Dr. Anouk Verhaegen runs the program, and she does not think of it as a war. To her the engineer's factory is a test,
-the hardest the stock has faced. Every wave that dies at a wall is written up, and the next one is bred for that wall.
+Dr. Anouk Verhaegen runs the program, with Ilya Rask as her senior technician. She treats the engineer's factory as a
+test for the stock, and writes up every wave that fails.
 
 ::: {.pullquote cite="A. Verhaegen, field report"}
 Batch lost at the southern wall. The wall held. Next batch to be bred for the wall.

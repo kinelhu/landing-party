@@ -1,41 +1,28 @@
-# Kessler-Hayashi {.opener faction="kessler-hayashi" kicker="The corporations"}
+# Kessler-Hayashi {.opener faction="kessler-hayashi"}
 
 ::: {.epigraph faction="kessler-hayashi"}
 :::
 
-::: {.lore kicker="Background" title="The contractor" faction="kessler-hayashi"}
+::: {.lore title="The contractor" faction="kessler-hayashi"}
 
-::: {.dossier}
-KESSLER-HAYASHI SECURITY
-: The security division of Kessler-Hayashi, an insurance and shipping company with a fleet of its own.
+Kessler-Hayashi began as an insurance company on the inner lanes. Raids on the long run to Aquilo were costing it more
+than it could pay out, so it bought a fleet of gunships and protected the cargo itself. Today it escorts freighters and
+guards the foundries on Vulcanus. The Hayashi family owns it, and Ilse Kessler runs its field operations from the
+Serenity Ring, a station of armed platforms in orbit. The company owns no land anywhere. Its people go down to a
+planet only when a contract sends them.
 
-BASED
-: The Serenity Ring, a station of armed platforms in orbit. The company owns no ground anywhere, by policy.
+Contract NV-1 sends them to Nauvis. A client the company will not name has paid it to guard the engineer's launch
+lanes and any cargo that leaves the surface. Kessler-Hayashi sees the engineer as an armed, unlicensed operator inside
+its contract zone. It draws a line, tells the engineer to stay behind it, and besieges them when they do not.
 
-PEOPLE
-: Ilse Kessler, Director of Field Operations. Tomas Adeyemi, Chief of Siege Works. M. Voss, fire controller aboard
-  the platform *Quiet Enjoyment*.
+Its troops fight in mech armor, with lasers, railguns and tanks. Tomas Adeyemi, its Chief of Siege Works, plans the
+sieges on the Ring from the platforms' pictures of the engineer's defenses.
 
-ON NAUVIS
-: Contract NV-1: guard the launch lanes and any cargo leaving the surface. The client is not named.
-:::
-
-Kessler-Hayashi began as an insurance house on the inner lanes. Raids on the long run to Aquilo were costing it more
-than it could pay out, so it bought a fleet of gunships and protected the cargo itself. Today it escorts freighters and guards the foundries on Vulcanus. The Hayashi family owns it. Ilse Kessler runs it in the field, from the Serenity Ring: the
-company owns no ground, and goes down to a planet only when a contract sends it.
-
-Contract NV-1 sends them to Nauvis. On paper it is a guard job. In practice Kessler-Hayashi sees the engineer as an armed, unlicensed operator inside
-its contract zone, and it deals with that the way it always has. It draws a line, tells the engineer to stay behind
-it, and when the engineer does not, it besieges them.
-
-Its troops fight in mech armor, and its sieges are planned on the Ring from the platforms' pictures of the
-engineer's defenses.
-
-The company's Survey Division has no official role on Nauvis, yet it keeps a team at every camp, studying the
-engineer's factory. Nobody outside the company knows who reads their reports.
+The company's Survey Division has no official role on Nauvis, but it keeps a team at every camp, studying the
+engineer's factory. Who reads their reports is not known outside the company.
 
 ::: {.pullquote cite="I. Kessler, Director of Field Operations"}
-We are not at war with anyone. We are enforcing a perimeter.
+The line is there for everyone's safety.
 :::
 :::
 

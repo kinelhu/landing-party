@@ -1,4 +1,4 @@
-# Spoils {faction="player" kicker="What you take"}
+# Spoils {faction="player"}
 
 Faction buildings and units leave salvage you cannot make yourself. Salvage builds a barracks for your army and unlocks
 technologies taken from the factions' own designs.

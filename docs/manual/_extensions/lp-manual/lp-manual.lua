@@ -157,17 +157,19 @@ local function preamble(meta)
   local ids = {}
   for id in pairs(D.factions) do ids[#ids + 1] = id end
   table.sort(ids, function(a, b) return (tonumber(D.factions[a].tab) or 9) < (tonumber(D.factions[b].tab) or 9) end)
-  local strips, backs = {}, {}
+  local strips, backs, crests = {}, {}, {}
   for _, id in ipairs(ids) do
     local f = D.factions[id]
     local hex = tostring(f.color):gsub("#", ""):upper()
     -- Text on the faction's colour: white where it is dark enough, ink where it is pale (contrast 4.5 or better).
     local on = (1.05 / (luminance(hex) + 0.05) >= 4.5) and "white" or "ink"
     out[#out + 1] = string.format("\\lpdefinefaction{%s}{%s}{%s}{%s}{%s}", id, hex, on, string.format("%d", math.floor(tonumber(f.tab) or 0)), tex(f.name))
-    -- The vistas are printed once, on the front cover; the back cover sets each faction's emblem unit side by side.
+    -- The front cover carries the key art and a crest for each faction with a vista; the vistas are printed once, on
+    -- the back cover, as a box's screenshots, above each faction's emblem unit.
     local vista = resolve(f.vista)
     if f.cover ~= false and vista and exists(vista) then
       strips[#strips + 1] = string.format("\\lpcoverstrip{%s}{%s}{%s}", id, vista, tex(f.motto or ""))
+      crests[#crests + 1] = string.format("\\lpcovercrest{%s}", id)
     end
     local emblem = portrait_path(f.emblem)
     if emblem then backs[#backs + 1] = string.format("\\lpbackfaction{%s}{%s}{%s}", id, emblem, tex(f.motto or "")) end
@@ -180,7 +182,13 @@ local function preamble(meta)
     if exists(l) then lore = l end
   end
   out[#out + 1] = "\\lpsetpaper{" .. paper .. "}{" .. lore .. "}"
-  out[#out + 1] = "\\def\\lpcoverfactions{" .. table.concat(strips, "") .. "}"
+  out[#out + 1] = "\\def\\lpcoverfactions{\\noindent" .. table.concat(strips, "\\hfill") .. "\\par}"
+  out[#out + 1] = "\\def\\lpcovercrests{" .. table.concat(crests, "") .. "}"
+  out[#out + 1] = string.format("\\def\\lpcrestfirst{%g}", 74 - 16 * (#crests - 1))
+  -- The front cover's key art (metadata cover-art; a frame of the trailer by default).
+  local ca = str(meta["cover-art"])
+  local art = resolve((ca and ca ~= "") and ca or "media/cover/front.jpg")
+  out[#out + 1] = "\\def\\lpcoverart{" .. ((art and exists(art)) and art or "") .. "}"
   out[#out + 1] = "\\def\\lpbackfactions{\\noindent" .. table.concat(backs, "\\hfill") .. "\\par}"
   return table.concat(out, "\n")
 end
@@ -899,7 +907,7 @@ local function Div(div)
       local a = div.attributes
       div.content = dropcap(div.content)
       local fac = a.faction and ("\\lpusefaction{" .. a.faction .. "}") or ""
-      return wrap_latex(div, string.format("\\begin{lpstory}{%s}{%s}{%s}%s", tex(a.kicker or "From the archive"),
+      return wrap_latex(div, string.format("\\begin{lpstory}{%s}{%s}{%s}%s", tex(a.kicker or ""),
         tex(a.title or ""), tex(a.draft or ""), fac), "\\end{lpstory}")
     end
     if cls:includes("pullquote") then

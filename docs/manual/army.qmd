@@ -1,4 +1,4 @@
-# Your army {.opener faction="player" kicker="The engineer"}
+# Your army {.opener faction="player"}
 
 ::: {.epigraph faction="player"}
 :::

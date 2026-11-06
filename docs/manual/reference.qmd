@@ -1,4 +1,4 @@
-# Reference {kicker="Tables"}
+# Reference
 
 Every table in this chapter is written from the game's prototypes and the mod's code, so it matches the version this
 manual describes ({{< var mod.version >}}).

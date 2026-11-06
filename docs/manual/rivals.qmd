@@ -1,4 +1,4 @@
-# Rivals {kicker="Between the factions"}
+# Rivals
 
 The factions compete with you and with each other. Each corporation camp shows its standing toward you under its name
 in map view. The corporations also fight each other, and Synthexis chooses whom it attacks.

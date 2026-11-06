@@ -1,4 +1,4 @@
-# Arrivals {kicker="The timeline"}
+# Arrivals
 
 The factions arrive in a fixed order, each one triggered by something you do. After that they keep landing, grow with
 their exports, and match their research to yours.

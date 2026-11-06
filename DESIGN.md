@@ -5276,6 +5276,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the chapters, each matching the code but not read from it: the lander's half of its generators (`base.lua hull`),
   an enclosed building's double worth (`perimeter.lua`), a grudge landing's doubled escort (`faction.lua`), the line's
   two turrets a post; wiring them means constants in `shared.lua`.
+  Then the user on the lore pages and cover: the dossier tables ("not clear what the table with all the planets is
+  communicating; reads as infantilizing"), the capped kickers ("BACKGROUND" over "The story so far": "read as extremely
+  AI"), "None of them asked permission, and none of them means to leave" (a closing flourish), and "The cover feels
+  really underbaked". Done: the dossiers gone from all four lore pages and their prose rewritten without closers; every
+  kicker gone (chapters, openers, lore; `lpstory` prints none by default); the back blurb rewritten. The front cover
+  rebuilt as a box manual's: a trailer frame (cut 16, 1:12, a burster siege at a wall) as key art to the trim, a double
+  brass frame, the title in two lines, a ribbon for the subtitle, a crest per faction (its emblem in its colours), the
+  edition at the foot; the three vistas moved to the back cover as its screenshots. The Kessler-Hayashi lore quote
+  changed, since its opener's epigraph is the same motto.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

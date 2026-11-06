@@ -1,4 +1,4 @@
-# Landing Party {.unnumbered kicker="Field manual"}
+# Landing Party {.unnumbered}
 
 Landing Party adds three factions to Nauvis. Two are corporations that land, mine, build factories and field armies of
 their own. The third takes over biter spawners and breeds its own biters. All three compete with you for the planet,
@@ -44,46 +44,27 @@ Each faction's chapter opens with its own page of history, then how it lands, fi
 card for every unit it fields. [Reference](reference.qmd) has every unit and building in tables, the chat commands and
 the settings. [Tips](tips.qmd) collects what works against each faction.
 
-::: {.lore kicker="Background" title="The story so far"}
+::: {.lore title="The story so far"}
 
-::: {.dossier}
-NAUVIS
-: Temperate, forested, home to a native swarm that attacks whatever fouls its air. No settlement before the engineer.
+Five worlds lie on the shipping lanes: Vulcanus with its foundries, Fulgora with its scrap fields, Gleba with its swamp
+farms, Aquilo out on the ice, and Nauvis. Freighters and armed platforms run between them, and the companies that own
+those platforms do most of their business in orbit.
 
-VULCANUS
-: Volcanic. The system's foundries, and the cordons that guard them.
+Nobody went to Nauvis. It is a green, wet planet, and its native swarm attacks anything that pollutes its air. No
+company had a reason to land there.
 
-FULGORA
-: Storm-swept ruins. Scrap fields worked between the lightning seasons.
+Then an engineer crashed on it. Starting from the wreck of their ship, they built drills, furnaces and belts, and in
+time a factory big enough to be seen from orbit. One day a rocket lifted off from it.
 
-GLEBA
-: Swamp. Farms, biolabs and the pentapod pens.
-
-AQUILO
-: Ice, far out at the end of the lanes. Fuel, cold and long escort runs.
-:::
-
-Five worlds lie on the shipping lanes, and the companies that run freighters and armed platforms between them do
-most of their business in orbit, where nobody has to fight the weather.
-
-Nauvis was never on the lanes. It is green and wet, and it belongs to a native swarm that attacks anything that
-pollutes its air. No company had found a reason to land there.
-
-Then an engineer crashed on it. With nothing but the wreck of their ship, they began to build: drills, furnaces,
-belts, and in time a factory big enough to be seen from orbit. Its smoke spread across the daylight side and its
-lights burned through the night. One day a rocket rose out of it and reached orbit.
-
-Every company on the lanes took notice. A factory that launches rockets is a market and a threat, and nobody owned
-it. Within months three companies had sent landers.
+Every company on the lanes took notice, and within months three of them had sent landers.
 
 Kessler-Hayashi Security came to guard the launch lanes, under contract to a client it will not name. It treats the
-engineer as a hazard to be fenced in.
+engineer as a hazard to be contained.
 
 Grubstake Inc., an outfit of prospectors and salvagers that follows every new rush, came for the ore and for anything
 the engineer leaves unguarded.
 
-Synthexis, a biotech company with farms on Gleba, came for the swarm, which the engineer's pollution has made fiercer
-than anything on the lanes. It wants to breed them, and the engineer's defenses are its proving ground.
-
-None of them asked permission, and none of them means to leave.
+Synthexis, a biotech company with farms on Gleba, came for the swarm. The engineer's pollution has made the biters of
+Nauvis bigger and more aggressive than anywhere else, and Synthexis wants to breed them, using the engineer's
+defenses to test the results.
 :::

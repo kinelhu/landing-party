@@ -39,11 +39,11 @@ inside-cover: |
   The bars on a unit's card measure it against the strongest of its own side: a full health bar is that faction's
   toughest unit, not the toughest in the game.
 back-blurb: |
-  The first lander came down soon after your first chemical science. Another waited for your first rocket, and a third
-  set down among the spawners once the biters had grown fat on your smoke. They belong to companies with business across
-  the whole system, and each has found a use for what you built.
+  Three companies have come to Nauvis. Grubstake lands once you make chemical science and takes whatever you leave
+  unguarded. Kessler-Hayashi lands after your first rocket and lays siege to your walls. Synthexis takes over the biter
+  nests and breeds waves to break your defenses.
 
-  This field guide describes each company that came to your planet: what it fields, and how it is beaten.
+  This manual describes each faction, its units, and how to beat it.
 back-small: |
   Landing Party is a fan-made mod for Factorio. Factorio and Space Age are games by Wube Software; this booklet is not
   affiliated with them. Set in Alegreya and Titillium Web.

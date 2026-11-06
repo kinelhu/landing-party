@@ -11,7 +11,7 @@
   top=18mm, bottom=20mm, headheight=10pt, headsep=5mm, footskip=10mm, twoside}
 \RequirePackage{eso-pic}
 \RequirePackage{tikz}
-\usetikzlibrary{calc,arrows.meta,positioning}
+\usetikzlibrary{calc,arrows.meta,positioning,fadings}
 \RequirePackage{fancyhdr}
 \RequirePackage{titlesec}
 \RequirePackage{tcolorbox}
@@ -450,7 +450,9 @@
 \newenvironment{lpstory}[3]{% kicker, title, draft (empty or a word)
   \lp@cleartoeven\global\lploretrue
   \vspace*{4mm}%
-  {\color{FacDark}\lpkicker{#1}}\ifstrempty{#3}{}{\hspace{2mm}{\color{white}\colorbox{LPMuted}{\lpkicker{#3}}}}\par\vspace{1.4mm}
+  % No kicker over a lore page's title by default (the user, 2026-11-06: "BACKGROUND" over "The story so far" read as
+  % machine-made); the draft stamp stays.
+  \ifstrempty{#1}{}{{\color{FacDark}\lpkicker{#1}}\par\vspace{1.4mm}}\ifstrempty{#3}{}{{\color{white}\colorbox{LPMuted}{\lpkicker{#3}}}\par\vspace{1.4mm}}
   {\fontsize{21}{25}\selectfont\itshape #2\par}\vspace{2.6mm}%
   \noindent\begin{tikzpicture}[x=1mm,y=1mm]
     \draw[LPInk!70, line width=0.5pt] (0,0) -- (52,0); \draw[LPInk!70, line width=0.5pt] (65,0) -- (\lptextwidthmm,0);
@@ -540,32 +542,76 @@
 % ---------------------------------------------------------------- covers
 % \lpcoverstrip{faction}{vista}{motto}: a band of the front cover. \lpcoverfactions is defined by the filter.
 \providecommand\lpcoverfactions{}
-\newcommand\lp@stripy{0}
+% The front cover, as a box manual's (2026-11-06; the user: "The cover feels really underbaked compared to the rest of
+% the manual"): the key art to the trim (\lpcoverart, a frame of the trailer), shaded top and bottom; a double brass
+% frame with diamond corners; the title in two lines with a drop shadow; a ribbon for the subtitle; a crest for each
+% faction (\lpcovercrests, its emblem in a medallion of its colours); the edition line at the foot.
+\definecolor{LPBrass}{HTML}{C9A35A}
+\definecolor{LPBrassDark}{HTML}{7E5F28}
+\newcommand\lp@cx{0}
+\newcommand\lp@covertitle[3]{% y, text, size
+  \node[text=black, opacity=0.65, font=\sffamily\bfseries\fontsize{#3}{#3}\selectfont\addfontfeature{LetterSpace=7}]
+    at (74.7,#1-0.8) {\MakeUppercase{#2}};
+  \node[text=white, font=\sffamily\bfseries\fontsize{#3}{#3}\selectfont\addfontfeature{LetterSpace=7}]
+    at (74,#1) {\MakeUppercase{#2}};}
+\newcommand\lp@diamond[3]{\fill (#1,#2) +(0,#3) -- +(#3,0) -- +(0,-#3) -- +(-#3,0) -- cycle;}
 \newcommand\lpfrontcover[3]{% title, subtitle, small line
   \thispagestyle{lpbare}\gdef\lpchapterfaction{neutral}%
   \AddToShipoutPictureBG*{\AtPageLowerLeft{\begin{tikzpicture}[x=1mm,y=1mm]
     \useasboundingbox (0,0) rectangle (148,210);
     \fill[LPNight] (-3,-3) rectangle (151,213);
-    \node[anchor=north west, inner sep=0pt, text=white, opacity=0.6] at (16,196) {\lpkicker{A field manual}};
-    \node[anchor=north west, inner sep=0pt, text=white, font=\sffamily\bfseries\fontsize{38}{38}\selectfont\addfontfeature{LetterSpace=2}]
-      at (15,189) {\MakeUppercase{#1}};
-    \node[anchor=north west, inner sep=0pt, text=white, font=\fontsize{14}{16}\selectfont\itshape] at (16,172.5) {#2};
-    \gdef\lp@stripy{156}\lpcoverfactions
-    \node[anchor=south west, inner sep=0pt, text=white, opacity=0.6] at (16,12) {\lpkicker{#3}};
+    \ifdefempty{\lpcoverart}{}{\begin{scope}\clip (-3,-3) rectangle (151,213);
+      \node[inner sep=0pt] at (74,105) {\lp@coverimage{156mm}{218mm}{\lpcoverart}};\end{scope}}
+    \fill[LPNight, opacity=0.15] (-3,-3) rectangle (151,213);
+    \fill[LPNight, opacity=0.94, path fading=south] (-3,118) rectangle (151,213);
+    \fill[LPNight, opacity=0.97, path fading=north] (-3,-3) rectangle (151,104);
+    \fill[LPNight, opacity=0.45] (-3,-3) rectangle (151,62);
+    % the frame
+    \draw[LPBrass, line width=0.9pt] (6,6) rectangle (142,204);
+    \draw[LPBrass, line width=0.3pt] (7.7,7.7) rectangle (140.3,202.3);
+    \foreach \x/\y in {6/6, 142/6, 6/204, 142/204} {\begin{scope}[color=LPBrass]\lp@diamond{\x}{\y}{2.6}\end{scope}
+      \begin{scope}[color=LPNight]\lp@diamond{\x}{\y}{1.1}\end{scope}}
+    % the title
+    \lp@covertitle{184}{Landing}{44}
+    \lp@covertitle{166.5}{Party}{44}
+    % the ribbon: tails folded behind at both ends, swallowtail cuts, the subtitle on the band
+    \fill[LPBrassDark] (25,140.6) -- (40,140.6) -- (40,149.4) -- (25,149.4) -- (29,145) -- cycle;
+    \fill[LPBrassDark] (123,140.6) -- (108,140.6) -- (108,149.4) -- (123,149.4) -- (119,145) -- cycle;
+    \fill[black!55!LPBrassDark] (40,140.6) -- (35,142.6) -- (40,142.6) -- cycle;
+    \fill[black!55!LPBrassDark] (108,140.6) -- (113,142.6) -- (108,142.6) -- cycle;
+    \fill[LPBrass] (35,142.6) rectangle (113,152.4);
+    \draw[LPBrassDark, line width=0.35pt] (36.2,143.6) -- (111.8,143.6) (36.2,151.4) -- (111.8,151.4);
+    \node[text=LPNight, font=\fontsize{13}{15}\selectfont\itshape] at (74,147.4) {#2};
+    % the crests
+    \gdef\lp@cx{\lpcrestfirst}\lpcovercrests
+    % the foot
+    \begin{scope}[color=LPBrass]\lp@diamond{74}{17.2}{0.9}\end{scope}
+    \draw[LPBrass, line width=0.35pt] (48,17.2) -- (71.5,17.2) (76.5,17.2) -- (100,17.2);
+    \node[text=LPBrass, inner sep=0pt] at (74,12.6) {\lpkicker{#3}};
   \end{tikzpicture}}}%
   \null\clearpage}
+% \lpcovercrest{faction}: a faction's medallion on the front cover, its name under it; \lp@cx steps right.
+\newcommand\lpcovercrest[1]{%
+  \fill[black, opacity=0.5] (\lp@cx+0.6,42.4) circle (12);
+  \fill[LPBrass] (\lp@cx,43) circle (12);
+  \fill[lp@#1@dark] (\lp@cx,43) circle (11.1);
+  \fill[lp@#1] (\lp@cx,43) circle (10.2);
+  \draw[lp@#1@on, line width=0.5pt] (\lp@cx,43) circle (9.3);
+  \begin{scope}[shift={(\lp@cx,43)}, color=lp@#1@on]\lpemblem{#1}{7.7}{0.3}\end{scope}
+  \node[text=white, inner sep=0pt, font=\sffamily\bfseries\fontsize{6.4}{7}\selectfont\addfontfeature{LetterSpace=10}]
+    at (\lp@cx,26.5) {\MakeUppercase{\csname lp@#1@name\endcsname}};
+  \pgfmathsetmacro\lp@nx{\lp@cx+32}\xdef\lp@cx{\lp@nx}}
+\providecommand\lpcrestfirst{42}
+% \lpcoverstrip{faction}{vista}{motto}: one of the back cover's screenshots (the vistas, printed once), its faction's
+% colour under it.
 \newcommand\lpcoverstrip[3]{%
-  \begin{scope}
-    \clip (0,\lp@stripy-38) rectangle (148,\lp@stripy);
-    \node[inner sep=0pt] at (74,\lp@stripy-19) {\includegraphics[width=152mm]{#2}};
-  \end{scope}
-  \fill[lp@#1] (0,\lp@stripy-38) rectangle (9,\lp@stripy);
-  \fill[LPNight, opacity=0.72] (9,\lp@stripy-38) rectangle (82,\lp@stripy-25);
-  \node[anchor=base west, inner sep=0pt, text=white, font=\sffamily\bfseries\fontsize{11.5}{12}\selectfont\addfontfeature{LetterSpace=4}]
-    at (14,\lp@stripy-31.6) {\MakeUppercase{\csname lp@#1@name\endcsname}};
-  \node[anchor=base west, inner sep=0pt, text=white, opacity=0.8, font=\fontsize{7.6}{9}\selectfont\itshape]
-    at (14,\lp@stripy-35.6) {#3};
-  \pgfmathsetmacro\lp@next{\lp@stripy-41}\xdef\lp@stripy{\lp@next}}
+  \pgfmathsetmacro\lp@vw{(\lptextwidthmm-6)/3}%
+  \begin{tikzpicture}[x=1mm,y=1mm]
+    \begin{scope}\clip (0,0) rectangle (\lp@vw,27);
+      \node[inner sep=0pt] at (\lp@vw/2,13.5) {\lp@coverimage{\lp@vw mm}{27mm}{#2}};\end{scope}
+    \draw[white, opacity=0.35, line width=0.4pt] (0,0) rectangle (\lp@vw,27);
+    \fill[lp@#1] (0,-1.6) rectangle (\lp@vw,0);
+  \end{tikzpicture}}
 \newcommand\lpinsidecover[1]{\thispagestyle{lpbare}\null\vfill{\sffamily\fontsize{7}{9.5}\selectfont\color{LPMuted}#1\par}\clearpage}
 % The booklet is folded from sheets of four pages: blank pages before the back cover make the count a multiple
 % of four, so the back cover is the last page of the last sheet.
@@ -578,8 +624,9 @@
     \fill[LPNight] (-3,-3) rectangle (151,213);
   \end{tikzpicture}}}%
   \vspace*{6mm}{\color{white}\raggedright
-    {\color{white!60}\lpkicker{Landing Party}}\par\vspace{3mm}
-    {\fontsize{11}{15.5}\selectfont #1\par}\vspace{8mm}
+    {\fontsize{22}{26}\selectfont\itshape Landing Party\par}\vspace{4mm}
+    {\fontsize{11}{15.5}\selectfont #1\par}\vspace{7mm}
+    \lpcoverfactions\vspace{6mm}
     \lpbackfactions
     \vfill{\sffamily\fontsize{6.6}{8.6}\selectfont\color{white!55}#2\par}}\null}
 \providecommand\lpbackfactions{}
