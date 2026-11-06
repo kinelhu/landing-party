@@ -4308,6 +4308,55 @@ end
 local function append(t, more) for _, u in ipairs(more) do t[#t + 1] = u end; return t end
 local function alive(units) local n = 0; for _, u in ipairs(units or {}) do if u.valid then n = n + 1 end end; return n end
 
+-- Artyreply: the engine's own answer to artillery. Six railgunners and six Laser troopers of Kessler-Hayashi's by a wall
+-- of its own, the player's artillery turret 225 tiles west; three shells on them. The engine forms what survives near the
+-- impact into a group sent at the battery (the mod's planner off), and railgunners are not to be in it: on nwa they so
+-- went 545 tiles to the battery shelling their camp and broke 232 of the player's buildings from beyond its guns
+-- (2026-11-06; army.on_unit_added_to_group). The troopers' group is the control: the engine's answer came.
+scenarios.artyreply = function()
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true, raids_off = true}) end)
+  schedule(600, function()
+    flatten(-700, -60, -380, 60)
+    S.r, S.inf = {}, {}
+    for k = 1, 6 do
+      S.r[k] = surface().create_entity{name = "lp-railgunner", position = {-425, k * 2 - 7}, force = FORCE}
+      S.inf[k] = surface().create_entity{name = "lp-infantry", position = {-428, k * 2 - 7}, force = FORCE}
+    end
+    for y = -4, 4 do surface().create_entity{name = "lp-wall", position = {-421.5, y + 0.5}, force = FORCE} end
+    S.a = surface().create_entity{name = "artillery-turret", position = {-650, 0}, force = "player"}
+  end)
+  for t = 900, 960, 30 do
+    schedule(t, function()
+      surface().create_entity{name = "artillery-projectile", position = S.a.position, force = "player", source = S.a,
+        target = {-426, 0}, speed = 1}
+    end)
+  end
+  local function grouped(list)
+    local n, alive = 0, 0
+    for _, u in ipairs(list) do
+      if u.valid then
+        alive = alive + 1
+        local g = u.commandable.parent_group
+        if g and g.valid then n = n + 1 end
+      end
+    end
+    return n, alive
+  end
+  for t = 1200, 2400, 300 do
+    schedule(t, function()
+      local r, ra = grouped(S.r)
+      local i, ia = grouped(S.inf)
+      S.max_r, S.max_i = math.max(S.max_r or 0, r), math.max(S.max_i or 0, i)
+      info(string.format("artyreply %d: railgunners %d of %d in a group, troopers %d of %d", game.tick - storage.t0, r, ra, i, ia))
+    end)
+  end
+  schedule(END - 60, function()
+    check("artyreply: the engine sent the shelled troopers at the battery (the control)", (S.max_i or 0) > 0, tostring(S.max_i))
+    -- (Seen failing before army.on_unit_added_to_group: 6 of 6 railgunners sent with them.)
+    check("artyreply: and no railgunner with them", (S.max_r or 0) == 0, tostring(S.max_r))
+  end)
+end
+
 -- The Tesla at a wall (the user on cut 6, 2026-11-05, of heavies LP_MIX=teslas: "the power pole on the side of the attacker
 -- and a pink debug generator in view, no wall... I would set it up with some fodder player units too"). A stone wall
 -- north-south at x 401, eleven lasers 3 apart behind it (x 397), two substations behind them and the power 39 tiles back
