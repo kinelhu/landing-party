@@ -1,5 +1,12 @@
 # The manual's voice and pictures: a consult against the 1990s manuals (Fable, 2026-11-05)
 
+> **Superseded in part (2026-11-06).** The user read the result as still AI-like ("mixing facts from our mod in a weird
+> way, has incredibly AI turn of phrases"). Overridden: the blurb rules (a lineage sentence, no two cards opening
+> alike: they forced contorted syntax), the clerk narrator and Registry framing, the dossier tables, kicker lines, and
+> mechanics told as paperwork. In force instead: plain period-manual prose, lore as history without mechanics, and
+> in-world documents only in their authors' own voices, never restating rules. See `docs/manual/cast.md` (its 2026-11-06
+> notes), `docs/manual/words.cfg`'s header and DESIGN.md's "Manual voice, second pass".
+
 Brief: the user, on the manual's first full draft: "Can you look at lore blurbs and manual layout from real game
 manuals from back then? Yours reads quite inauthentic but I can't put my finger on what's wrong. A mix of uncanny
 valley / AI slop maybe. Also some screenshots are reused a lot it seems? And not extra clear." The manual's brief: an
