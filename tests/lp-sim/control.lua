@@ -137,6 +137,14 @@ local function line_pylons()
 end
 
 local S = {}  -- scenario state (a plain table; a fork saves it in storage.fork_S, and on_load brings it back)
+-- Before any save a run means to go on from (a fork, a visit's saveatN): S is a plain table, lost in a save, and the
+-- steps after it read it (a fork filmed in a window failed on S.k, 2026-11-04; a visit run from its minute-2 save failed
+-- at minute 20 on Grubstake's landing, S.sp nil: faction.site's `from`, 2026-11-06). Functions cannot be saved: left out.
+local function keep_S()
+  local keep = {}
+  for k, v in pairs(S) do if type(v) ~= "function" then keep[k] = v end end
+  storage.fork_S = keep
+end
 local LAB = {}  -- the siege lab's hooks (scenarios.lab): its recorder's deaths
 
 -- Rates over a window from the cumulative counters: the smoothed rates in stats alias against crafting
@@ -6699,6 +6707,9 @@ scenarios.hazard = function()
       return
     end
     check("hazard: its losses to biters made it clear the nests", (st.ops.hazards or 0) >= 1 and left == 0, string.format("%d hazards, %d left", st.ops.hazards or 0, left))
+    -- Every nest gone died where the harness saw it (on_entity_died): none taken off the map by script.
+    check("hazard: each nest gone was a death the harness saw", (S.nest_deaths or 0) == #S.nests - left,
+      string.format("%d deaths seen, %d nests gone", S.nest_deaths or 0, #S.nests - left))
   end)
 end
 
@@ -9738,6 +9749,7 @@ scenarios.visit = function()
     local save_at = tonumber(m)
     last = math.max(last, save_at)
     schedule(save_at * 3600, function()
+      keep_S()
       if game.is_multiplayer() then game.server_save("t" .. save_at) else game.auto_save("t" .. save_at) end
       info("visit: saved at minute " .. save_at)
       helpers.write_file("landing-party/saved-" .. save_at .. ".txt", tostring(game.tick))
@@ -15638,11 +15650,7 @@ if params.save_at then
   -- A second before the strike: saved one tick before, the loaded game never ran the strike.
   schedule(params.save_at * 3600 - 60, function()
     game.speed = 1
-    -- The scenario's state with it (S is a plain table, lost in a save: a fork filmed in a window, its steps after the
-    -- save failed on S.k, 2026-11-04). Functions cannot be saved: left out.
-    local keep = {}
-    for k, v in pairs(S) do if type(v) ~= "function" then keep[k] = v end end
-    storage.fork_S = keep
+    keep_S()
     game.server_save("fork")
     helpers.write_file("landing-party/saved.txt", tostring(game.tick))
   end)
@@ -15727,6 +15735,12 @@ end) end
 
 script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
+  -- Hazard: each of its nests' deaths, by what (spawners are in the filter below since 2026-11-06).
+  if params.scenario == "hazard" and e.entity.type == "unit-spawner" then
+    S.nest_deaths = (S.nest_deaths or 0) + 1
+    info(string.format("hazard: nest died at %.0f,%.0f tick %d by %s (%s)", e.entity.position.x, e.entity.position.y,
+      game.tick, e.cause and e.cause.valid and e.cause.name or "no cause", e.force and e.force.name or "?"))
+  end
   -- (LP_MIX=...measure on the nwwall visits: each of the wave's deaths at the breach, nwmeasure.jsonl.)
   if S.nwm and e.entity.force.name == "lp-biotech" and e.entity.type == "unit" then
     local p, b = e.entity.position, S.nwm.box
@@ -15869,7 +15883,10 @@ script.on_event(defines.events.on_entity_died, function(e)
 end, params.scenario ~= "system" and params.scenario ~= "visit" and params.scenario ~= "herd" and params.scenario ~= "lab" and {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
   {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"}, {filter = "type", type = "mining-drill"},
-  {filter = "type", type = "spider-unit"}} or nil)
+  {filter = "type", type = "spider-unit"},
+  -- And spawners (hazard's nests): filtered without them, its check that each nest gone died where the harness saw it
+  -- read 0 deaths for 6 nests the railgunners killed (2026-11-06; a note of 11-05 had it as "not logged in hazard").
+  {filter = "type", type = "unit-spawner"}} or nil)
 
 -- Bait: what the biters it called do to Serenity (12 small biters reach its camp and bite; on 2.1 its flamers kill them
 -- all before anything falls: 42 to a pylon, nothing destroyed).
