@@ -22,7 +22,10 @@ PY
 cp "$REPO/tests/lp-sim/control.lua" "$V/mods/lp-sim/control.lua"
 out="$V/script-output/landing-party"
 rm -f "$out"/saved-*.txt
-"$FACTORIO" --config "$V/config/config.ini" --start-server "$V/saves/visit.zip" --server-settings "$V/server-settings.json" \
+# On a copy: a server saves the map it loaded when it quits, and visit.zip overwritten so made a second run start mid-visit
+# with its harness state gone and its save points past (it ran on and never saved; 2026-11-06).
+cp "$V/saves/visit.zip" "$V/saves/visit-server.zip"
+"$FACTORIO" --config "$V/config/config.ini" --start-server "$V/saves/visit-server.zip" --server-settings "$V/server-settings.json" \
   --port $((34300 + $$ % 3000)) > "$V/server.out" 2>&1 &
 pid=$!
 trap 'kill $pid 2>/dev/null || true' EXIT
