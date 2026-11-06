@@ -46,16 +46,17 @@ camps, vehicles and lamps are amber.
 ## Who they are
 
 Grubstake is the first faction you meet, around your first chemical science pack, and it stays to the end of the game
-(see [Arrivals](arrivals.qmd)). It starts as your rival, which steals and does not escalate ([Rivals](rivals.qmd)).
+(see [Arrivals](arrivals.qmd)). It starts as your rival: it steals from you but does not escalate (see
+[Rivals](rivals.qmd)).
 
 ## The camp
 
 A camp lands on a rich ore field away from Kessler-Hayashi, at least {{< var arrival.squat_tiles >}} tiles from your
-turrets and units, spawner fields or not (see [The pact with the biters](#sec-pact)). Its landing pad is fenced, with
-the lander in the middle and a pacifier antenna beside it. A grown camp lays streets out from the pad and builds along
-them: fabricators, generators, depots, a launch pad, junk yards. Apart from the pad's fence it builds no walls. Its guns
-are gun turrets fed with ammunition, alternating with scrap cannons that burst over a group of units. Your gun turrets
-outrange both. Its drills pollute more than your electric drills do.
+turrets and units, whether or not there are biter spawners nearby (see [The pact with the biters](#sec-pact)). Its
+landing pad is fenced, with the lander in the middle and a pacifier antenna beside it. A grown camp lays streets out
+from the pad and builds along them: fabricators, generators, depots, a launch pad, junk yards. Apart from the pad's
+fence it builds no walls. Its defenses are gun turrets, alternating with scrap cannons whose shells burst over groups
+of units. Your gun turrets outrange both. Its drills pollute more than your electric drills.
 
 ![A Grubstake lander just down, before its crews have laid the pad. Its first pylons and guns are going up round it.](media/stills/landing.jpg)
 
@@ -68,58 +69,60 @@ side away from your spawn.
 
 ## How it steals
 
-**Thieves' hours.** Its raids on you, its skims and its claim jumps set out only after dark, its trucks lit by
-headlights. On a surface with no night, and when it answers your attacks, it comes at any hour.
+**Night work.** Its raids, skims and claim jumps set out only after dark, its trucks running with headlights. On a
+surface with no night, or when it is retaliating, it comes at any hour.
 
-**The prowl.** Every so often a buggy circles your base just outside your turrets' reach to find outposts and loose
-machines. Kill it and the next one keeps clear of that spot.
+**Scouting.** Every so often a buggy circles your base just outside turret range, looking for outposts and unguarded
+machines. If you kill it, the next one keeps away from that spot.
 
-**Raids.** A raid goes for what no turret covers, by a way round your turrets. At the target its raiders take machines
-apart and carry them off with their contents: assemblers, furnaces, drills, labs, solar panels, poles, inserters and
-the like. They leave a ghost of each one, so your robots rebuild it at your cost. Walls, turrets, belts, pipes and rails
-stay. With nothing left to take, the raid destroys what is there. A larger raid has a foreman, marked with Grubstake's
-icon, who carries the haul. Kill the foreman and the raid drops everything and runs home empty. Any other raider killed
-drops its own share where it falls.
+**Raids.** A raid targets what no turret covers, and takes a route around your turrets. At the target its raiders take
+machines apart and carry them off with their contents: assemblers, furnaces, drills, labs, solar panels, poles,
+inserters and the like. They leave a ghost of each one, so your robots rebuild it at your cost. Walls, turrets, belts,
+pipes and rails are left alone. When there is nothing left to take, the raid destroys what is there. A larger raid has
+a foreman, marked with Grubstake's icon, who carries the haul. Kill the foreman and the raid drops everything and runs
+home empty-handed. Any other raider drops its own share where it is killed.
 
 **Skims.** A hauler parks beside one of your belts that no turret reaches and lifts items into its trunk, the most
-valuable first, until the trunk is full, time is up or dawn comes. The tell is the truck and the gaps downstream.
+valuable first, until the trunk is full, its time is up or dawn comes. You can spot a skim by the truck, and by the
+gaps on the belt downstream.
 
 **Strip camps.** A hauler and its guards set up a small mining camp on the ore beside your drills, just out of your
-turrets' reach, mine your patch for a while and pack up. Left alone until it is done, a strip camp registers the patch
-as claimed. A second one left alone on the same patch stays as a Grubstake outpost.
+turrets' reach, mine your patch for a while and pack up. If a strip camp finishes undisturbed, the patch is registered
+as Grubstake's claim. If a second one finishes on the same patch, it stays as a Grubstake outpost.
 
 **Power taps.** A buggy lays a line of Grubstake pylons from the camp to one of your poles that no turret covers, and
-clamps a tap beside it. {{< var desc.entity_power_tap >}} The draw starts small and rises step by step. Nothing
-announces it. You find it in your power statistics, in brownouts, or by its line. Cut the line and the theft stops
-until the camp rebuilds the gap. Break the tap and it is over.
+clamps a tap beside it. {{< var desc.entity_power_tap >}} The draw starts small and rises step by step. There is no
+warning: you find it in your power statistics, through brownouts, or by following its line. Cutting the line stops the
+theft until the camp repairs it; destroying the tap ends it.
 
-**Claim jumpers.** An enemy Grubstake that has gone a while without destroying anything of yours digs a rig in outside
-your turrets' reach. Inside your base a mound of dirt grows by your chests, with dust creeping toward it from the rig.
-After {{< var grubstake.rig_dig_min >}} minutes shotgun hands come up through it, empty the chests nearby, break what stands
-close and go back down. Kill the rig before then and nothing comes up. Kill it after and the tunnel caves in, leaving
-the hands to fight.
+**Claim jumpers.** When an enemy Grubstake has gone a while without destroying anything of yours, it sets up a digging
+rig outside your turrets' range. Inside your base, a mound of dirt grows next to your chests, with a trail of dust
+leading to it from the rig. After {{< var grubstake.rig_dig_min >}} minutes, shotgun hands come up through the mound,
+empty the chests nearby, break what stands close and go back down. Destroy the rig before then and nothing comes up.
+Destroy it after, and the tunnel collapses with the hands still on your side.
 
-**The howitzer.** Only a camp that lands with a grudge, after you destroyed one of its landers, besieges your walls.
-Against a wall kept mended by robots, it brings a howitzer on a truck to shell your roboports from far out.
+**Sieges.** Only a camp that landed with a grudge, after you destroyed one of Grubstake's landers, besieges your
+walls. Against a wall your robots keep repairing, it brings a howitzer on a truck to shell your roboports from long
+range.
 
 ![A Grubstake siege column of buggies leaves its camp along its own road.](media/stills/grubstake-column.jpg)
 
 ## Claims and the trade post
 
-**Prospecting.** A grown camp picks the charted ore patch nearest your base that none of your drills works, tags it on
-your map (*Mineral rights reassigned*) and sends a buggy to plant a claim stake there.
-{{< var desc.entity_claim_stake >}} The stake's lamp burns amber, then red and blinking as time runs out.
-{{< var grubstake.prospect_window_min >}} minutes after it is planted, a hauler builds a claim: a generator, a pylon and
-drills with ore bins. To keep the patch, put a drill on it, set a claim marker by it or destroy the stake (or the buggy
-on its way). The camp then moves on to the next patch, one at a time, under any standing.
+**Prospecting.** A grown camp picks the charted ore patch nearest your base that none of your drills is mining, marks
+it on your map (*Mineral rights reassigned*) and sends a buggy to plant a claim stake there. {{< var
+desc.entity_claim_stake >}} The stake's lamp burns amber, then turns red and blinks as time runs out. {{< var
+grubstake.prospect_window_min >}} minutes after it is planted, a hauler builds a claim: a generator, a pylon and
+drills with ore bins. To keep the patch, put a drill on it, place a claim marker by it, or destroy the stake (or the
+buggy on its way). The camp then moves on to the next patch, one at a time, whatever its standing with you.
 
 ::: {.callouts plan="media/plans/grubstake-claim.json" faction="grubstake" width="0.82"}
-A claim on a patch Grubstake staked, as its hauler built it. The stake is gone once the claim stands.
+A claim on a patch Grubstake staked, as its hauler built it. The stake is removed once the claim is built.
 :::
 
-**The road.** A claim has no power line or belt to the camp. Haulers empty its bins and drive the ore home, and one
-killed on the way spills its ore. A claim with no ore reaching home for a while lapses, so the camp stops rebuilding it
-and its drills are yours to capture.
+**The road.** A claim has no power line or belt to the camp. Haulers empty its bins and drive the ore home, and a
+hauler killed on the way spills its ore. A claim that has sent no ore home for a while lapses: the camp stops
+rebuilding it, and its drills are yours to capture.
 
 **The trade post.** You can build one from the start. {{< var desc.entity_trade_post >}} Once it holds enough, the
 nearest camp sends a hauler for it, and what the goods are worth sets the length of the truce. While it lasts, its lamp
@@ -128,16 +131,16 @@ destroyed on its way home, by you or by Kessler-Hayashi, there is no truce and t
 
 ## The pact with the biters {#sec-pact}
 
-While any of Grubstake's pacifier antennas stands, it and the wild biters hold fire on each other (the Arrangement,
-in its own books). It lands among
-spawners and marches its raids through them, and for you and Kessler-Hayashi the biters round its camps are a wall.
+While any of Grubstake's pacifier antennas stands, Grubstake and the wild biters leave each other alone. It lands
+among spawners and sends its raids through them, while you and Kessler-Hayashi have to fight through the biters around
+its camps.
 
-**Under the pact the waves fall on you.** The attacks its drills' pollution draws pass its camp by and go for your
-polluting buildings near its cloud. Its pollution also feeds [Synthexis](synthexis.qmd).
+**The biters attack you instead.** Attacks drawn by its drills' pollution pass its camps and go for your polluting
+buildings near its cloud. Its pollution also feeds [Synthexis](synthexis.qmd).
 
-**Breaking it.** The pact is the whole corporation's. Destroy every pacifier and it breaks for every camp, and the biters
-nearby turn on them at once. A camp rebuilds its pacifier {{< var grubstake.pacifier_rebuild_min >}} minutes after losing
-it, while its lander stands, and the pact holds again.
+**Breaking it.** The pact covers the whole corporation. Destroy every pacifier and it breaks for every camp, and the
+nearby biters attack them at once. A camp rebuilds its pacifier {{< var grubstake.pacifier_rebuild_min >}} minutes
+after losing it, as long as its lander stands, and the pact holds again.
 
 - **Pact breaker.** {{< var desc.entity_pact_breaker >}}
 - **Pheromone bait.** {{< var desc.entity_player_bait >}} With the pact down, it sets the biters on a Grubstake camp.
@@ -156,12 +159,12 @@ your era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](refere
 
 ## Its units {#sec-gs-units}
 
-A camp lands with buggies and shotgun hands, and its scrap drones come with its first level. The rest is research, done in
-no lab you can raid.
+A camp lands with buggies and shotgun hands, and gets scrap drones at its first level. Everything else is researched,
+with no lab you can raid.
 
 ::: {.tree tree="grubstake-units"}
-Each node is bought with parts once its trigger has fired, which is when what it answers has cost Grubstake enough.
-A node's era is yours, and none comes before you reach it. Dashed nodes are armor and abilities, not units.
+A node can be bought with parts once what it counters has cost Grubstake enough. Eras are yours: no node comes before
+you reach its era. Dashed nodes are armor and abilities, not units.
 :::
 
 {{< include _generated/cards-grubstake.qmd >}}
@@ -173,8 +176,8 @@ A node's era is yours, and none comes before you reach it. Dashed nodes are armo
 - **Hunt the haulers.** Each one killed spills what it carries, and claims without ore coming home lapse.
 - **Raid the yard** to get your goods back.
 - **Break the pact,** then bait the biters onto its camps.
-- **Mind its standing.** Hurt it and it raids with more. Destroy a lander and its next landing comes angry. Destroy its
-  uplink and it withdraws, and you get its prize, the strip drill (see [Arrivals](arrivals.qmd)).
+- **Watch its standing.** Attack it and it raids in greater numbers. Destroy a lander and its next landing comes
+  angry. Destroy its uplink and it withdraws, and you get its prize, the strip drill (see [Arrivals](arrivals.qmd)).
 
 **Field studies.** Destroying its raiders or a hauler teaches you the claims register, its drills the strip drill, a
 pacifier the made pheromone bait, a scrap cannon or its fliers the flak turret. See [Spoils](spoils.qmd).

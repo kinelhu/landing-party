@@ -1,7 +1,7 @@
 # Rivals {kicker="Between the factions"}
 
 The factions compete with you and with each other. Each corporation camp shows its standing toward you under its name
-in map view. The corporations fight each other on their own account, and Synthexis picks its quarrels.
+in map view. The corporations also fight each other, and Synthexis chooses whom it attacks.
 
 ## Standing: rival, enemy, truce
 
@@ -18,13 +18,13 @@ in map view. The corporations fight each other on their own account, and Synthex
 Destroying a lander makes its corporation your enemy, and its next landing comes angry (see [Arrivals](arrivals.qmd)).
 The other factions take note of the fight but are not provoked by it.
 
-**Standing down.** A corporation at war with you that keeps failing stops. A camp whose operations against you fail
-{{< var war.fail_streak >}} times in a row, or that destroys nothing of yours for
-{{< var war.quiet_min >}} minutes, stands down. Its aggression setting scales both, so an aggressive corporation keeps
-at it longer. Stood down, it sends nothing at you, keeps its army to a reserve and only defends its own ground, so a turret
-you put up there is still answered. It goes on mining and exporting. A new landing comes soon after, away from its site,
-and after {{< var war.quiet_min >}} minutes the camp tries again. A Grubstake camp that stands down forgives you and is
-a rival again. Kessler-Hayashi stays an enemy.
+**Standing down.** A corporation at war with you gives up if it keeps failing. A camp whose operations against you
+fail {{< var war.fail_streak >}} times in a row, or that destroys nothing of yours for {{< var war.quiet_min >}}
+minutes, stands down. Its aggression setting scales both, so an aggressive corporation keeps at it longer. While stood
+down, it sends nothing at you, keeps its army to a reserve and only defends its own ground, so a turret you put up
+there is still answered. It goes on mining and exporting. A new landing comes soon after, away from its site, and
+after {{< var war.quiet_min >}} minutes the camp tries again. A Grubstake camp that stands down forgives you and is a
+rival again. Kessler-Hayashi stays an enemy.
 
 ## The corporations at war with each other
 
@@ -41,7 +41,7 @@ raids. Only losses at home count; units lost on their own raids are not held aga
 ## Synthexis and the corporations
 
 **Grubstake.** Synthexis and Grubstake keep a lasting truce that nothing breaks. Synthexis feeds on the pollution
-Grubstake's drills put out, and both live by the wild biters' leave. Synthexis never attacks Grubstake.
+Grubstake's drills put out, and the wild biters leave both of them alone. Synthexis never attacks Grubstake.
 
 **Kessler-Hayashi.** Synthexis goes for Kessler-Hayashi only after Kessler-Hayashi has destroyed one of its incubators,
 tumors or biochambers. Kessler-Hayashi treats incubators as it treats biter spawners, so a camp that keeps losing units to

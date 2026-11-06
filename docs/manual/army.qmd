@@ -4,8 +4,8 @@
 :::
 
 You can raise an army of your own: troopers, breachers, rocket troopers, flamethrower troopers and battle tanks. They
-are trained from the equipment you already make for yourself. How many you can field is set by command bandwidth, which
-no amount of items can buy. You order them with rally beacons, the command tool or the circuit network.
+are trained from the equipment you already make for yourself. How many you can field is limited by command bandwidth,
+not by items. You give them orders with rally beacons, the command tool or the circuit network.
 
 ## The barracks and orders
 
@@ -85,9 +85,9 @@ attack-move onto them.
 
 ## Command bandwidth
 
-A factory makes magazines by the thousand, so items cannot limit an army. Command bandwidth does. Your units are
-remotely commanded, and each takes a share of your command link: troopers and breachers the least, a battle tank the
-most. The *Cost* column in the [Reference](reference.qmd#sec-units) gives each unit's share.
+Your factory can make equipment in any quantity, so the size of your army is limited by command bandwidth instead.
+Your units are remotely commanded, and each takes a share of your command link: troopers and breachers the least, a
+battle tank the most. The *Cost* column in the [Reference](reference.qmd#sec-units) gives each unit's share.
 
 **Command relays.** {{< var desc.entity_command_relay >}} A relay counts only while it has power. Command bandwidth 1, 2
 and 3 let {{< var army.relays_l1 >}}, {{< var army.relays_l2 >}} and {{< var army.relays_l3 >}} relays
@@ -125,12 +125,12 @@ A when the scanner sees a raid, and comes home when it reads clear.
 
 Three defenses come from the factions' own designs. [Spoils](spoils.qmd#field-studies) says how to unlock them.
 
-**Field dome.** {{< var desc.entity_player_dome >}} It is up while it has power. It catches the artillery and mortar
+**Field dome.** {{< var desc.entity_player_dome >}} It is up while it has power. It stops the artillery and mortar
 shells your enemies fire into its radius, including shells passing over it to something behind; your own artillery
-fires out through it. Its charge is sized to the guns that can reach it, so a bigger battery breaks it no sooner. It
-mends slowly while up. Once broken, it stays down for some minutes and comes back whole. Tank shells and the orbital
-strike also pass. A dome buys time, and your army still has to silence the guns. You research it with science packs
-after Energy shield MK2 and Military 4.
+fires out through it. Its strength scales with the guns that can reach it, so more guns do not break it sooner. It
+recovers slowly while up. Once broken, it stays down for some minutes and comes back at full strength. Tank shells and
+the orbital strike pass through. A dome buys time; your army still has to destroy the guns. You research it with
+science packs after Energy shield MK2 and Military 4.
 
 **Flak turret.** A powered turret that fires flak at flying units only: Grubstake's scrap drones and bomb drones, and
 Kessler-Hayashi's laser drones. It ignores everything on the ground, so it needs other turrets beside it.

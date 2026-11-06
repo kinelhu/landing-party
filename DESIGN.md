@@ -5269,6 +5269,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   manual still gave Kessler-Hayashi a Howitzer truck card, hard-coded in `manual_qmd.py`. The generator now reads
   `orbital_drop` (passed through by `roster_page.py`) and gives the truck card only to a corporation that drives its
   guns in (Grubstake's grudge camps); the stale words for it stopped the build, and the portrait was then unused.
+  Then the chapters (the user: "Its guns come down from orbit, so there is no truck to stop ... a horrible turn of
+  phrase ... I was hoping to avoid manual copy editing"): every chapter copy-edited for the same register, 67
+  paragraphs, captions and list items rewritten in plain words (wordplay, in-world asides such as "the Arrangement, in
+  its own books", inverted or clipped syntax such as "Stood down, it sends nothing at you"). Typed multiples left in
+  the chapters, each matching the code but not read from it: the lander's half of its generators (`base.lua hull`),
+  an enclosed building's double worth (`perimeter.lua`), a grudge landing's doubled escort (`faction.lua`), the line's
+  two turrets a post; wiring them means constants in `shared.lua`.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
