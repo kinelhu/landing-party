@@ -5295,6 +5295,22 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (in place of the obscure invoice note), a statement of account at the invoice post, Grubstake's notice of claim and
   Synthexis's batch release, each in its author's voice (Kessler-Hayashi calls the biters "the natives"), none
   restating a rule. 92 pages.
+- **The engine's artillery replies, every corporation unit; the closed-wall prior settled; the manual's worded numbers
+  wired** (2026-11-06, 0.2.220; the user away, the playtest pending). (1) 0.2.219 took only railgunners out of the
+  engine's groups; its other units still went at the player's battery outside the planner (scenario `artyreply`, on
+  0.2.219: 5 of 5 troopers in the engine's group at a look, the new check "and no trooper either" seen failing). Now
+  any corporation unit the engine adds to a group not script-driven (`LuaCommandable.is_script_driven`: every group the
+  mod makes is) is taken out of it, stopped where it is when on one of its operations (its operation orders it again at
+  its next look), sent to its lander when idle (`army.on_unit_added_to_group`). After: 0 of 6 railgunners and 0 of 5
+  troopers in a group at every look, 12 taken out (the control, `debug_ungrouped`). (2) The open item "the menu's
+  prior gives the two ways the same price" closed by the measurement already made (0.2.215's entry above): forced each
+  way on the lab's laser wall, walled got in 2 of 8 (8.9 guns, 188 lost), wall fire 2 of 9 (10.0 guns, 195 lost); no
+  edge to give either, so the equal prior stays and each camp's record decides. (3) The manual's typed multiples are
+  constants in `shared.lua` (`HULL_SHARE`, `HULL_MIN_GENS`, `LINE_WORTH`, `GRUDGE_ESCORT`, `POST_GUNS`), read by
+  `base.lua` (hull), `ops.lua` (choose), `faction.lua` (the drop escort) and `cordon.lua` (a post's guns); the manual says
+  them in words from the code's values (`manual_qmd.worded`: "half", "double", "two"), and stops on a value with no
+  word (HULL_SHARE set to 0.4: the generator exited 1). The values are unchanged. The dome text corrected on the way: the
+  domes fall when more than half the generators are destroyed (`n >= HULL_SHARE * max` holds at exactly half).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

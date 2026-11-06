@@ -4312,7 +4312,8 @@ local function alive(units) local n = 0; for _, u in ipairs(units or {}) do if u
 -- of its own, the player's artillery turret 225 tiles west; three shells on them. The engine forms what survives near the
 -- impact into a group sent at the battery (the mod's planner off), and railgunners are not to be in it: on nwa they so
 -- went 545 tiles to the battery shelling their camp and broke 232 of the player's buildings from beyond its guns
--- (2026-11-06; army.on_unit_added_to_group). The troopers' group is the control: the engine's answer came.
+-- (2026-11-06; army.on_unit_added_to_group). Nor its troopers since 0.2.220: no corporation unit answers the engine's
+-- way; the control is the count of units the mod took out of the engine's groups.
 scenarios.artyreply = function()
   schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true, raids_off = true}) end)
   schedule(600, function()
@@ -4351,9 +4352,14 @@ scenarios.artyreply = function()
     end)
   end
   schedule(END - 60, function()
-    check("artyreply: the engine sent the shelled troopers at the battery (the control)", (S.max_i or 0) > 0, tostring(S.max_i))
+    -- The control: the engine did try to send them (each taken out of its group, army.on_unit_added_to_group).
+    local all, rails = lp("debug_ungrouped")
+    check("artyreply: the engine sent the shelled units at the battery (the control)", all > 0,
+      string.format("%d taken out, %d of them railgunners", all, rails))
     -- (Seen failing before army.on_unit_added_to_group: 6 of 6 railgunners sent with them.)
     check("artyreply: and no railgunner with them", (S.max_r or 0) == 0, tostring(S.max_r))
+    -- (Seen failing on 0.2.219, railgunners only: the troopers' group went, 6 of 6 at a look.)
+    check("artyreply: and no trooper either", (S.max_i or 0) == 0, tostring(S.max_i))
   end)
 end
 

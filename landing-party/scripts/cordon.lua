@@ -68,7 +68,7 @@ local function post_jobs(b, m, p, a)
   for _, q in ipairs(wall_line({p[1] + rx * 4 - tx * h, p[2] + ry * 4 - ty * h}, {p[1] + rx * 4 + tx * h, p[2] + ry * 4 + ty * h})) do
     table.insert(jobs, {name = "lp-wall", pos = q, module = m})
   end
-  for _, s in ipairs({-2, 2}) do
+  for _, s in ipairs(shared.POST_GUNS) do
     table.insert(jobs, {name = "lp-gun-turret", pos = {p[1] + tx * s, p[2] + ty * s}, module = m})
   end
   -- The lit line (Fable's look consult): a lamp between its guns.

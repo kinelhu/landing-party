@@ -229,6 +229,16 @@ shared.KINDS = {"lp-lander", "lp-generator", "lp-pylon", "lp-drill", "lp-bin", "
   "lp-walker", "lp-harrier", "lp-hauler", "lp-buggy", "lp-gate", "lp-flamer", "lp-lance", "lp-slug", "lp-shock",
   "lp-sapper", "lp-aegis", "lp-dozer", "lp-scavenger", "lp-laser-drone", "lp-railgunner", "lp-prism", "lp-tesla", "lp-scorcher", "lp-howitzer", "lp-scrap-cannon",
   "lp-optics-lab", "lp-line-lab", "lp-siege-lab", "lp-parked-howitzer", "lp-howitzer-truck", "lp-skyguard", "lp-flak-buggy"}
+-- A lander stands while this share of its counted generators stands, and at least HULL_MIN_GENS (base.lua hull; the
+-- manual: "more than half").
+shared.HULL_SHARE = 0.5
+shared.HULL_MIN_GENS = 2
+-- A player's building its line has enclosed is worth this many times as much to its raids and sieges (ops.choose).
+shared.LINE_WORTH = 2
+-- A landing that comes angry (a lander of its corporation destroyed) brings this many times its escort (faction.lua).
+shared.GRUDGE_ESCORT = 2
+-- A line post's gun turrets, along its front from its middle, in tiles (cordon.lua; the manual counts them).
+shared.POST_GUNS = {-2, 2}
 -- A howitzer destroyed in the field leaves its camp without one this long (sieges go with mortars only).
 shared.HOWITZER_DOWN = 30 * 3600
 -- The sign over each research lab: what its branch fields.

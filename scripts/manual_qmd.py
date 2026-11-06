@@ -77,6 +77,19 @@ def write(rp):
 
     dome_src, orbital_src, ledger_src, war_src = src("scripts/dome.lua"), src("scripts/orbital.lua"), src("scripts/ledger.lua"), src("scripts/war.lua")
 
+    # A share, a multiple or a small count the prose says in words ("more than half", "worth double", "two gun
+    # turrets"), the word from the code's value; a value with no word here stops the build (2026-11-06: these were typed).
+    WORDS = {"share": {0.5: "half", 0.25: "a quarter", 0.75: "three quarters"},
+             "times": {2: "double", 3: "triple"},
+             "count": {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}}
+
+    def worded(kind, v, what):
+        w = WORDS[kind].get(float(v)) if kind == "share" else WORDS[kind].get(int(v)) if v == int(v) else None
+        if w is None:
+            missed.append(f"{what}: {v} has no word for '{kind}' in manual_qmd.WORDS")
+            return "?"
+        return w
+
     # ---- the base game's names (science packs, prerequisites, the bred biters' bodies) ----
     vanilla = {}
     app = os.path.expanduser("~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents")
@@ -194,6 +207,7 @@ def write(rp):
             "apart_tiles": fmt(num(faction_src, r"^local APART = (\d+)", "APART")),
             "squat_tiles": fmt(num(faction_src, r"^local SQUAT_DISTANCE = (\d+)", "SQUAT_DISTANCE")),
             "escort_base": esc_m.group(1) if esc_m else "?",
+            "grudge_escort": worded("times", num(shared_src, r"^shared\.GRUDGE_ESCORT = ([\d.]+)", "GRUDGE_ESCORT"), "GRUDGE_ESCORT"),
             "escort_level": esc_m.group(2) if esc_m else "?",
             "escort_evo": esc_m.group(3) if esc_m else "?",
             "hq_floor_h": fmt((minutes(faction_src, "HQ_FLOOR", "HQ_FLOOR") or 0) / 60),
@@ -267,6 +281,9 @@ def write(rp):
             "line_max_tiles": fmt(num(perim_src, r"^local PERIMETER_MAX = (\d+)", "PERIMETER_MAX")),
             "deploy_s": fmt(product(ops_src, r"^local DEPLOY_TICKS = ([\d\s\*]+?)\s*(?:--|$)", "DEPLOY_TICKS") / 60),
             "howitzer_down_min": fmt(product(shared_src, r"^shared\.HOWITZER_DOWN = ([\d\s\*]+?)\s*(?:--|$)", "HOWITZER_DOWN") / 3600),
+            "hull_share": worded("share", num(shared_src, r"^shared\.HULL_SHARE = ([\d.]+)", "HULL_SHARE"), "HULL_SHARE"),
+            "line_worth": worded("times", num(shared_src, r"^shared\.LINE_WORTH = ([\d.]+)", "LINE_WORTH"), "LINE_WORTH"),
+            "post_guns": worded("count", len(re.findall(r"-?\d+", grab(shared_src, r"^shared\.POST_GUNS = \{([^}]*)\}", "POST_GUNS") or "")), "POST_GUNS"),
             "jam_tiles": fmt(num(shared_src, r"^shared\.JAM_RADIUS = (\d+)", "JAM_RADIUS")),
             "paint_s": fmt(product(orbital_src, r"^local PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital PAINT") / 60),
             "strike_cool_min": fmt(minutes(orbital_src, "COOL", "orbital COOL")),

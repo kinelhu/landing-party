@@ -64,8 +64,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M817.38,-235.5C817.38,-235.5 665.62,-235.5 665.62,-235.5 659.62,-235.5 653.62,-229.5 653.62,-223.5 653.62,-223.5 653.62,-203.5 653.62,-203.5 653.62,-197.5 659.62,-191.5 665.62,-191.5 665.62,-191.5 817.38,-191.5 817.38,-191.5 823.38,-191.5 829.38,-197.5 829.38,-203.5 829.38,-203.5 829.38,-223.5 829.38,-223.5 829.38,-229.5 823.38,-235.5 817.38,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="741.5" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="741.5" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 7707 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="741.5" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1001, ops 2040, siege 2076</text>
+<text xml:space="preserve" text-anchor="middle" x="741.5" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">16 modules, 7728 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="741.5" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1022, ops 2040, siege 2076</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge16" class="edge">

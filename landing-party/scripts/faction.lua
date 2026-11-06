@@ -533,7 +533,7 @@ function faction.arrive(surface, from, opts, quiet)
     -- Evolution: up to ten more at full (at maximum evolution, a biter or two ate the camps).
     local evo = game.forces.enemy and game.forces.enemy.get_evolution_factor(surface) or 0
     local n = 6 + 4 * (faction.corp(b.corp).level or 0) + math.floor(10 * evo)
-    b.escort_due = b.grudge and 2 * n or n
+    b.escort_due = b.grudge and shared.GRUDGE_ESCORT * n or n
   end
   ops.heard_landing(b)
   local d = faction.corp(b.corp)

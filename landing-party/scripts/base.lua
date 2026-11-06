@@ -680,7 +680,7 @@ local function hull(b)
   end
   b.gens_max = math.max(b.gens_max or 0, n)
   b.gens_counted = n
-  local held = n >= 2 and 2 * n >= b.gens_max
+  local held = n >= shared.HULL_MIN_GENS and n >= shared.HULL_SHARE * b.gens_max
   if b.lander.destructible == held then
     b.lander.destructible = not held
     b.hull_down = (b.hull_down or 0) + (held and 0 or 1)

@@ -905,12 +905,34 @@ end
 -- sent at the battery, whatever the planner does (scenario artyreply: all 6 railgunners and 5 troopers sent 225 tiles at
 -- the turret; the prototype's ai_settings.join_attacks = false changed nothing). On nwa Kessler-Hayashi's railgunners so
 -- went 545 tiles to the battery shelling its camp and broke 232 of the player's buildings from beyond its guns' reach,
--- where its sieges no longer take them (siege_tier, 0.2.165; 2026-11-06). The mod never groups railgunners (responses
--- leave them out, clearances order each), so one added to a group is the engine's: it is sent back to its lander,
--- which takes it out of the group. Its other units still answer the battery as the engine sends them.
+-- where its sieges no longer take them (siege_tier, 0.2.165; 2026-11-06). Its other units went the same way (the
+-- troopers of scenario artyreply, 6 of 6 sent at the battery), outside its planner: a corporation answers the player's
+-- artillery with its own operations (its counter-battery research, ops). So any of its units the engine adds to a group
+-- (one not script-driven: every group the mod makes is) is taken out of it: one on an operation stopped where it is, for
+-- its operation to order again at its next look; one idle sent back to its lander. (Was railgunners only, 0.2.219.)
+local function on_operation(u)
+  local n = u.unit_number
+  for _, b in pairs(storage.bases or {}) do
+    if b.force == u.force.name then
+      for _, m in ipairs(b.op and b.op.members or {}) do if m.valid and m.unit_number == n then return true end end
+      for _, r in ipairs(b.raids or {}) do
+        for _, m in ipairs(r.members or {}) do if m.valid and m.unit_number == n then return true end end
+      end
+    end
+  end
+  return false
+end
+
 function army.on_unit_added_to_group(e)
-  local u = e.unit
-  if not (u and u.valid and shared.is_corp(u.force.name) and shared.kind_of(u.name) == "lp-railgunner") then return end
+  local u, g = e.unit, e.group
+  if not (u and u.valid and shared.is_corp(u.force.name)) then return end
+  if g and g.valid and g.is_script_driven then return end
+  storage.engine_ungrouped = (storage.engine_ungrouped or 0) + 1
+  if shared.kind_of(u.name) == "lp-railgunner" then storage.rails_ungrouped = (storage.rails_ungrouped or 0) + 1 end
+  if on_operation(u) then
+    u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_enemy}
+    return
+  end
   local home, hd
   for _, b in pairs(storage.bases or {}) do
     if b.force == u.force.name and not b.fallen and b.lander and b.lander.valid and b.surface == u.surface.index then
@@ -924,7 +946,6 @@ function army.on_unit_added_to_group(e)
   else
     u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
   end
-  storage.rails_ungrouped = (storage.rails_ungrouped or 0) + 1
 end
 
 function army.tick(b, tick, trace)

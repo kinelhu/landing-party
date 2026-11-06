@@ -567,7 +567,7 @@ local function choose(b, army)
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local ground = player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
           and (t.pos[1] - b.origin.x) ^ 2 + (t.pos[2] - b.origin.y) ^ 2 <= b.claim_radius ^ 2
-        local s = (t.value * (t.line and 2 or 1) + threat_bonus(b, t)) * p ^ mind.caution / (1 + d) ^ mind.loss_aversion
+        local s = (t.value * (t.line and shared.LINE_WORTH or 1) + threat_bonus(b, t)) * p ^ mind.caution / (1 + d) ^ mind.loss_aversion
           / (1 + dist / 300)
           / (1 + (t.line and 0 or t.tried))
           * relevance(b, t, {player = player, floor = floor, rung = player and ladder(t.owner, b.force) or 0,

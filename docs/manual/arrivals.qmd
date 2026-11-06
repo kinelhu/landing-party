@@ -60,7 +60,7 @@ with fewer bases standing lands next. A rocket launch brings Kessler-Hayashi's n
 - Each landing brings an escort of {{< var arrival.escort_base >}} units, {{< var arrival.escort_level >}} more per
   level of its corporation, and up to {{< var arrival.escort_evo >}} more at full biter evolution. Turrets go up at the
   corners of its landing pad.
-- Destroy a corporation's lander and its next landing brings a larger escort: double the units.
+- Destroy a corporation's lander and its next landing brings {{< var arrival.grudge_escort >}} the escort.
 
 ## How the corporations grow
 

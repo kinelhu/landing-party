@@ -63,7 +63,7 @@ truce, paid for at its invoice post, stops it for a while.
 A camp is floored with space platform foundation. Each hub stands inside its own wall, with a gate in every opening, a
 second wall behind each gate, turrets in walled corner pillboxes and flamethrower turrets at the gates.
 
-- **Lander.** It cannot be destroyed while at least half of the generators round it stand. Generators are not military
+- **Lander.** It cannot be destroyed while at least {{< var kh.hull_share >}} of the generators around it stand. Generators are not military
   targets, so your turrets and units do not fire on them by themselves. Its crews rebuild lost generators first.
 - **Dome projector.** {{< var desc.entity_dome_projector >}}
 - **Parked howitzer.** It stands next to the lander. If it is gone, a siege is using it.
@@ -83,17 +83,15 @@ later hub has a projector with a dome of its own. A dome stops every artillery s
 it, including shells aimed at something beyond it: a bolt from the projector hits the shell, and a ripple runs across
 the dome. Units, bullets, lasers and orbital strikes pass through. A dome can take {{< var kh.dome_hold_min >}}
 minutes of fire from all the artillery that reaches it, however many guns, and then goes down for {{< var
-kh.dome_down_min >}} minutes. Destroy half the generators around the lander and every dome of that camp goes down (a
+kh.dome_down_min >}} minutes. Destroy more than {{< var kh.hull_share >}} the generators around the lander and every dome of that camp goes down (a
 headquarters' domes depend on its uplink instead). A destroyed hub projector is rebuilt after {{< var
 kh.projector_back_min >}} minutes.
 
 **The line.** Kessler-Hayashi calls it the Secured Perimeter. From {{< var kh.line_start_min >}} minutes after
 landing, the camp's claim moves {{< var kh.line_step_tiles >}} tiles outward every {{< var kh.line_every_min >}}
 minutes, up to {{< var kh.line_max_tiles >}} tiles from the camp, toward whichever of your outposts is easiest to cut
-off. Each step begins with an arc of posts built by its drones: a concrete pad, a short wall facing you and two gun
-turrets. Near your buildings the middle of the arc is closed with wall; where it crosses your straight rails it puts
-gates, and your trains stop there. A warning names the building of yours that the next step will enclose. An enclosed
-building is worth double to its raids and sieges.
+off. Each step begins with an arc of posts built by its drones: a concrete pad, a short wall facing you and {{< var kh.post_guns >}} gun turrets. Near your buildings the middle of the arc is closed with wall; where it crosses your straight rails it puts
+gates, and your trains stop there. A warning names the building of yours that the next step will enclose. An enclosed building is worth {{< var kh.line_worth >}} to its raids and sieges.
 
 Where the line has turrets, they destroy your belts and pipes that cross it. Underground belts and pipes pass if their
 ends are off the line. Destroy the posts along a stretch and the line stays open there for a while.
