@@ -32,9 +32,12 @@ layout.DOCTRINES = {
 }
 layout.ARCHETYPES = {grid = 3, street = 2, cross = 2}
 
--- (Cliffs too: blown up when it builds, shared.blast.)
+-- (Cliffs too: blown up when it builds, shared.blast.) And explosions: an explosion is a look that lasts a moment, never
+-- ground taken. A landing by pod stood one pad off its pod's (15 tiles on seed 12345): its three pods' containers had
+-- burst into cargo-pod-container-explosion entities, still there when the lander was placed 21 ticks after they touched
+-- down, and the pad's ring was refused for them (2026-11-06; podland checks it stands on its pod's pad).
 local CLEARABLE = {tree = true, ["simple-entity"] = true, resource = true, corpse = true, ["rail-remnants"] = true, cliff = true,
-  fish = true}
+  fish = true, explosion = true}
 
 local function generated(surface, x0, y0, x1, y1)
   for _, c in ipairs({{x0, y0}, {x1, y1}, {x0, y1}, {x1, y0}}) do
@@ -1427,26 +1430,15 @@ end
 
 -- The landing pad: the first hub's two cells (0,0) and (1,0) as one walled area, the lander at its centre.
 -- Returns the lander's position and the pad, or nil when nothing fits near pos.
--- Where a landing at pos would set its lander (layout.land's search, nothing placed): a cargo pod is sent there first.
--- pods: spots where cargo pods will stand (optional): ground whose ring holds one counts as taken, as it will be once
--- they are down (a pod's container is no clearable thing). landfx.lua asks it so, to draw the hull's fall onto the pad
--- the landing will take: its pod and escorts push it off their own pad (15 tiles on seed 12345).
-local POD_BOX = {-0.5, 0, 0.5, 1.3}   -- the base game's cargo-pod-container collision box
-local function holds_pod(pods, x0, y0)
-  for _, p in ipairs(pods or {}) do
-    if p[1] + POD_BOX[3] > x0 - R + 0.1 and p[1] + POD_BOX[1] < x0 + blocks.PAD_W + R - 0.1
-      and p[2] + POD_BOX[4] > y0 - R + 0.1 and p[2] + POD_BOX[2] < y0 + S + R - 0.1 then
-      return true
-    end
-  end
-end
-function layout.find_pad(surface, pos, pods)
+-- Where a landing at pos would set its lander (layout.land's search, nothing placed): a cargo pod is sent there first,
+-- and the lander stands where it fell (its pods' bursts are explosions, which take no ground).
+function layout.find_pad(surface, pos)
   for r = 0, 80, 3 do
     local steps = math.max(1, math.floor(2 * math.pi * r / 6))
     for k = 0, steps - 1 do
       local a = 2 * math.pi * k / steps
       local x0, y0 = math.floor(pos[1] + r * math.cos(a)) - 20, math.floor(pos[2] + r * math.sin(a)) - 9
-      if not holds_pod(pods, x0, y0) and layout.area_free(surface, x0, y0, blocks.PAD_W, S, 12) then
+      if layout.area_free(surface, x0, y0, blocks.PAD_W, S, 12) then
         return {x0 + blocks.PAD_W / 2 + 0.9, y0 + S / 2 - 0.6}
       end
     end

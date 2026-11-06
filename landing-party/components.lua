@@ -68,8 +68,9 @@ data:extend({
 })
 
 -- Pact breaker (Grubstake, one crystal; after Pheromone bait) and claim marker (two crystals): devices the player places
--- (scripts/marker.lua). The breaker suspends Grubstake's pact for 3 minutes where it stands in a Grubstake claim (a
--- crystal each); the marker makes Grubstake leave the player's buildings within 40 alone (two crystals each).
+-- (scripts/marker.lua). The breaker suspends Grubstake's pact for shared.BREAKER_MINUTES where it stands in a Grubstake
+-- claim (a crystal each); the marker makes Grubstake leave the player's buildings within shared.CLAIM_MARK_RADIUS alone
+-- (two crystals each). Their descriptions take those numbers as __1__.
 data:extend(teardown("lp-pacifier-crystal", 1, "lp-crystal-schematic", "__base__/graphics/icons/advanced-circuit.png",
   {r = 1, g = 0.85, b = 0.6, a = 1}))
 local function device(name, icon, health, extra)
@@ -81,13 +82,16 @@ local function device(name, icon, health, extra)
   for k, v in pairs(extra or {}) do d[k] = v end
   return d
 end
+local BREAKER_DESC = {"entity-description.lp-pact-breaker", tostring(shared.BREAKER_MINUTES)}
+local MARKER_DESC = {"entity-description.lp-claim-marker", tostring(shared.CLAIM_MARK_RADIUS)}
 data:extend({
-  device("lp-pact-breaker", "__base__/graphics/icons/radar.png", 200, {minable = nil}),
-  device("lp-claim-marker", "__base__/graphics/icons/small-lamp.png", 300),
+  device("lp-pact-breaker", "__base__/graphics/icons/radar.png", 200, {minable = nil, localised_description = BREAKER_DESC}),
+  device("lp-claim-marker", "__base__/graphics/icons/small-lamp.png", 300, {localised_description = MARKER_DESC}),
   {type = "item", name = "lp-pact-breaker", icons = {{icon = "__base__/graphics/icons/radar.png", tint = G}}, stack_size = 10,
-    place_result = "lp-pact-breaker", subgroup = "lp-components", order = "y-breaker"},
+    place_result = "lp-pact-breaker", subgroup = "lp-components", order = "y-breaker", localised_description = BREAKER_DESC},
   {type = "item", name = "lp-claim-marker", icons = {{icon = "__base__/graphics/icons/small-lamp.png", tint = G}},
-    stack_size = 10, place_result = "lp-claim-marker", subgroup = "lp-components", order = "y-marker"},
+    stack_size = 10, place_result = "lp-claim-marker", subgroup = "lp-components", order = "y-marker",
+    localised_description = MARKER_DESC},
   {type = "recipe", name = "lp-pact-breaker", enabled = false, energy_required = 10,
     ingredients = {{type = "item", name = "lp-pacifier-crystal", amount = 1}, {type = "item", name = "electronic-circuit", amount = 10},
       {type = "item", name = "steel-plate", amount = 5}},
@@ -97,10 +101,12 @@ data:extend({
     results = {{type = "item", name = "lp-claim-marker", amount = 1}}},
   {type = "technology", name = "lp-pact-breaker", icon = "__base__/graphics/technology/military.png", icon_size = 256,
     prerequisites = {"lp-pheromone-bait"}, research_trigger = {type = "craft-item", item = "lp-crystal-schematic"},
-    effects = {{type = "unlock-recipe", recipe = "lp-pact-breaker"}}},
+    effects = {{type = "unlock-recipe", recipe = "lp-pact-breaker"}},
+    localised_description = {"technology-description.lp-pact-breaker", tostring(shared.BREAKER_MINUTES)}},
   {type = "technology", name = "lp-claim-marker", icon = "__base__/graphics/technology/military.png", icon_size = 256,
     prerequisites = {"military"}, research_trigger = {type = "craft-item", item = "lp-crystal-schematic", count = 2},
-    effects = {{type = "unlock-recipe", recipe = "lp-claim-marker"}}},
+    effects = {{type = "unlock-recipe", recipe = "lp-claim-marker"}},
+    localised_description = {"technology-description.lp-claim-marker", tostring(shared.CLAIM_MARK_RADIUS)}},
 })
 
 -- The border stake (border.lua): ordinary items, from the start (conceding ground must be possible early): a signal post
@@ -155,6 +161,8 @@ invoice.icons = {{icon = invoice.icon or invoice.icons[1].icon, icon_size = invo
 invoice.icon = nil
 invoice.next_upgrade = nil
 invoice.fast_replaceable_group = nil
+invoice.localised_description = {"entity-description.lp-invoice-post", tostring(shared.TRUCE_MINUTES[1]),
+  tostring(shared.TRUCE_MINUTES[2])}
 invoice.flags = {"placeable-neutral", "not-blueprintable", "not-deconstructable", "not-upgradable"}
 if invoice.picture and invoice.picture.layers then
   for _, l in ipairs(invoice.picture.layers) do if not l.draw_as_shadow then l.tint = S end end
@@ -190,11 +198,13 @@ data:extend({
   {type = "ammo-category", name = "lp-rail"},
   {type = "gun", name = "lp-rail-rifle", icons = {{icon = "__base__/graphics/icons/submachine-gun.png", tint = S}},
     subgroup = "gun", order = "z[landing-party]-rail-rifle", stack_size = 5,
+    localised_description = {"item-description.lp-rail-rifle", tostring(shared.RAIL_RANGE)},
     attack_parameters = {type = "projectile", ammo_category = "lp-rail", cooldown = 90, movement_slow_down_factor = 0.5,
-      range = 30, sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound)}},
+      range = shared.RAIL_RANGE, sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound)}},
   {type = "ammo", name = "lp-rail-slug", icons = {{icon = "__base__/graphics/icons/piercing-rounds-magazine.png", tint = S}},
     ammo_category = "lp-rail", magazine_size = 1, stack_size = 50, subgroup = "ammo", order = "z[landing-party]-rail-slug",
-    ammo_type = {target_type = "direction", clamp_position = true, action = {type = "line", range = 30, width = 1.5,
+    localised_description = {"item-description.lp-rail-slug", tostring(shared.RAIL_RANGE)},
+    ammo_type = {target_type = "direction", clamp_position = true, action = {type = "line", range = shared.RAIL_RANGE, width = 1.5,
       force = "enemy", action_delivery = {type = "instant",
         target_effects = {{type = "damage", damage = {amount = 150, type = "physical"}},
           {type = "create-entity", entity_name = "explosion-hit"}},
@@ -208,7 +218,8 @@ data:extend({
     results = {{type = "item", name = "lp-rail-slug", amount = 1}}},
   {type = "technology", name = "lp-rail-rifle", icon = "__base__/graphics/technology/military.png", icon_size = 256,
     prerequisites = {"military-3"}, research_trigger = {type = "craft-item", item = "lp-coil-schematic"},
-    effects = {{type = "unlock-recipe", recipe = "lp-rail-rifle"}, {type = "unlock-recipe", recipe = "lp-rail-slug"}}},
+    effects = {{type = "unlock-recipe", recipe = "lp-rail-rifle"}, {type = "unlock-recipe", recipe = "lp-rail-slug"}},
+    localised_description = {"technology-description.lp-rail-rifle", tostring(shared.RAIL_RANGE)}},
 })
 
 -- Orbital strike (Serenity, one beacon; after the rocket silo): a strike beacon the player places on power, charging
@@ -248,10 +259,11 @@ shell.name = "lp-cluster-artillery-shell"
 shell.icons = {{icon = shell.icon or shell.icons[1].icon, icon_size = shell.icon_size, tint = S}}
 shell.icon = nil
 shell.order = (shell.order or "") .. "-lp-cluster"
+shell.localised_description = {"item-description.lp-cluster-artillery-shell", tostring(shared.CLUSTER_BOMBLETS)}
 shell.ammo_type.action.action_delivery.projectile = "lp-cluster-artillery-projectile"
 local projectile = table.deepcopy(data.raw["artillery-projectile"]["artillery-projectile"])
 projectile.name = "lp-cluster-artillery-projectile"
-projectile.action = {projectile.action, {type = "cluster", cluster_count = 10, distance = 6, distance_deviation = 3,
+projectile.action = {projectile.action, {type = "cluster", cluster_count = shared.CLUSTER_BOMBLETS, distance = 6, distance_deviation = 3,
   action_delivery = {type = "projectile", projectile = "lp-player-bomblet", direction_deviation = 0.6, starting_speed = 0.25,
     starting_speed_deviation = 0.3}}}
 data:extend(teardown("lp-cluster-fuze", 3, "lp-fuze-schematic", "__base__/graphics/icons/cluster-grenade.png",

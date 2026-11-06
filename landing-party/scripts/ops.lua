@@ -353,7 +353,7 @@ ops.rival_holds = stance.rival_holds
 
 -- The player's claim markers (marker.lua): Grubstake reads the player's buildings within MARK_RADIUS of one as its own
 -- claim, and leaves them alone (raids, strips, flares, rigs, taps).
-local MARK_RADIUS = 40
+local MARK_RADIUS = shared.CLAIM_MARK_RADIUS
 function ops.marked(b, pos)
   if not (shared.CORPS[b.corp].temper or {}).pact or not storage.claim_markers then return false end
   local x, y = pos[1] or pos.x, pos[2] or pos.y

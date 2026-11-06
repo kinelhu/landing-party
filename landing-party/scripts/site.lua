@@ -5,8 +5,9 @@ local modules = require("__landing-party__.scripts.modules")
 local site = {}
 
 site.ORES = {"iron-ore", "copper-ore", "coal", "stone"}
+-- (Explosions as layout.lua's: a moment's look, never ground taken.)
 local CLEARABLE = {tree = true, ["simple-entity"] = true, resource = true, corpse = true, cliff = true,
-  ["rail-remnants"] = true, fish = true}
+  ["rail-remnants"] = true, fish = true, explosion = true}
 
 local function box_at(m, ox, oy, margin)
   return {{ox + m.box[1] - margin, oy + m.box[2] - margin}, {ox + m.box[3] + margin, oy + m.box[4] + margin}}

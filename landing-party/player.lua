@@ -39,6 +39,7 @@ relay.next_upgrade = nil
 relay.energy_usage = "2MW"
 relay.max_distance_of_sector_revealed = 0
 relay.max_distance_of_nearby_sector_revealed = 3
+relay.localised_description = {"entity-description.lp-command-relay", tostring(shared.RELAY_CAPACITY)}
 
 -- The rally beacon: a constant combinator. Its own signals give orders (opened like any combinator); wired, it
 -- reads its network as well, for automation. A small lamp with a combinator wired to it once confused the
@@ -57,6 +58,7 @@ local scanner = table.deepcopy(data.raw["constant-combinator"]["constant-combina
 scanner.name = "lp-threat-scanner"
 scanner.icon = "__base__/graphics/icons/radar.png"
 scanner.minable = {mining_time = 0.2, result = "lp-threat-scanner"}
+scanner.localised_description = {"entity-description.lp-threat-scanner", tostring(shared.SCAN_RADIUS)}
 scanner.next_upgrade = nil
 scanner.fast_replaceable_group = nil
 local signals = {}
@@ -158,12 +160,20 @@ data:extend({
     ingredients = {{type = "item", name = "steel-chest", amount = 1}, {type = "item", name = "radar", amount = 1},
       {type = "item", name = "electronic-circuit", amount = 10}},
     results = {{type = "item", name = "lp-muster-point", amount = 1}}},
-  item("lp-threat-scanner", "__base__/graphics/icons/radar.png", "lp-threat-scanner"),
+  (function()
+    local it = item("lp-threat-scanner", "__base__/graphics/icons/radar.png", "lp-threat-scanner")
+    it.localised_description = scanner.localised_description
+    return it
+  end)(),
   {type = "recipe", name = "lp-threat-scanner", enabled = false, energy_required = 5,
     ingredients = {{type = "item", name = "radar", amount = 1}, {type = "item", name = "constant-combinator", amount = 1},
       {type = "item", name = "electronic-circuit", amount = 10}},
     results = {{type = "item", name = "lp-threat-scanner", amount = 1}}},
-  item("lp-command-relay", "__base__/graphics/icons/radar.png", "lp-command-relay"),
+  (function()
+    local it = item("lp-command-relay", "__base__/graphics/icons/radar.png", "lp-command-relay")
+    it.localised_description = relay.localised_description
+    return it
+  end)(),
   -- Salvaged from the faction (a depot destroyed, an outpost captured, a lander destroyed) or granted once by
   -- research: what a barracks is built around. Not craftable.
   {type = "item", name = "lp-command-core", icon = "__base__/graphics/icons/processing-unit.png", stack_size = 10,

@@ -141,7 +141,6 @@ shared.CORPS = {
     -- (the user, 2026-11-03: "Spidertron are such late game units in vanilla that there is a mismatch that's too much").
     doctrines = {bastion = 2, picket = 1}, mix = {["lp-infantry"] = 4, ["lp-tank"] = 3, ["lp-railgunner"] = 2,
       ["lp-laser-drone"] = 1},
-    names = {["lp-infantry"] = "lp-line-trooper"},
     -- Its tech tree (scripts/rd.lua): energy weapons, range, discipline.
     tree = {
       {id = "optics", branch = "optics", track = {"laser", "electric"}, levels = 5, cost = 400},
@@ -293,6 +292,15 @@ shared.SCAN_RADIUS = 64
 -- descriptions take them as __1__ (components.lua, studies.lua), so the text says what the code does.
 shared.STRIKE_RADIUS = 60
 shared.DEFOLIATE_RADIUS = 6
+-- And the player's other devices and weapons, likewise read by their descriptions (__1__, __2__; 2026-11-06: the
+-- numbers had been typed in the locale): the claim marker's reach (ops.marked), the pact breaker's minutes
+-- (marker.lua), the invoice post's truce bounds in minutes (ledger.lua), the rail rifle's line (components.lua) and
+-- the cluster shell's bomblets.
+shared.CLAIM_MARK_RADIUS = 40
+shared.BREAKER_MINUTES = 3
+shared.TRUCE_MINUTES = {10, 60}
+shared.RAIL_RANGE = 30
+shared.CLUSTER_BOMBLETS = 10
 shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat scanners within this
 
 -- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.

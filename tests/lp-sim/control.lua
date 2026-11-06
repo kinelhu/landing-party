@@ -137,6 +137,14 @@ local function line_pylons()
 end
 
 local S = {}  -- scenario state (a plain table; a fork saves it in storage.fork_S, and on_load brings it back)
+-- Before any save a run means to go on from (a fork, a visit's saveatN): S is a plain table, lost in a save, and the
+-- steps after it read it (a fork filmed in a window failed on S.k, 2026-11-04; a visit run from its minute-2 save failed
+-- at minute 20 on Grubstake's landing, S.sp nil: faction.site's `from`, 2026-11-06). Functions cannot be saved: left out.
+local function keep_S()
+  local keep = {}
+  for k, v in pairs(S) do if type(v) ~= "function" then keep[k] = v end end
+  storage.fork_S = keep
+end
 local LAB = {}  -- the siege lab's hooks (scenarios.lab): its recorder's deaths
 
 -- Rates over a window from the cumulative counters: the smoothed rates in stats alias against crafting
@@ -3607,6 +3615,23 @@ scenarios.dev = function()
     check("dev: /lp burst big wound one up and it burst whole", fx.windups == S.fx0.windups + 1
       and (fx.blasts.big or 0) == (S.fx0.blasts.big or 0) + 1, serpent.line(fx))
   end)
+  -- /lp tesla (scorcher.hold, 0.2.218): a laser turret on its own power, the player 40 tiles west of it; the Tesla set 20
+  -- east of the player, sent at the laser; its lightning holds it.
+  schedule(2 * 3600 + 900, function()
+    flatten(-125, -135, -55, -105)
+    S.laser = surface().create_entity{name = "laser-turret", position = {-70, -120}, force = "player"}
+    surface().create_entity{name = "substation", position = {-66, -120}, force = "player"}
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {-62, -120}, force = "player"}
+    eei.power_production, eei.electric_buffer_size = 1e6, 1e8
+    S.holds0 = lp("scorcher_stats").holds
+    lp("dev", {"tesla"}, {-110, -120})
+    S.teslas = surface().count_entities_filtered{area = {{-100, -130}, {-80, -110}}, name = "lp-tesla"}
+  end)
+  schedule(2 * 3600 + 900 + 40 * 60, function()
+    local st = lp("scorcher_stats")
+    check("dev: /lp tesla set a Tesla and its lightning held the laser", S.teslas == 1 and st.holds > S.holds0,
+      string.format("%d set, holds %d to %d", S.teslas, S.holds0, st.holds))
+  end)
   schedule(2 * 3600 + 600 + 15 * 60, function()
     local o = lp("stats", S.s).ops
     check("dev: /lp strike painted its point", o.strike_paint ~= nil and o.strike_center ~= nil
@@ -4282,6 +4307,55 @@ local function order_area(units, dest, radius)
 end
 local function append(t, more) for _, u in ipairs(more) do t[#t + 1] = u end; return t end
 local function alive(units) local n = 0; for _, u in ipairs(units or {}) do if u.valid then n = n + 1 end end; return n end
+
+-- Artyreply: the engine's own answer to artillery. Six railgunners and six Laser troopers of Kessler-Hayashi's by a wall
+-- of its own, the player's artillery turret 225 tiles west; three shells on them. The engine forms what survives near the
+-- impact into a group sent at the battery (the mod's planner off), and railgunners are not to be in it: on nwa they so
+-- went 545 tiles to the battery shelling their camp and broke 232 of the player's buildings from beyond its guns
+-- (2026-11-06; army.on_unit_added_to_group). The troopers' group is the control: the engine's answer came.
+scenarios.artyreply = function()
+  schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true, raids_off = true}) end)
+  schedule(600, function()
+    flatten(-700, -60, -380, 60)
+    S.r, S.inf = {}, {}
+    for k = 1, 6 do
+      S.r[k] = surface().create_entity{name = "lp-railgunner", position = {-425, k * 2 - 7}, force = FORCE}
+      S.inf[k] = surface().create_entity{name = "lp-infantry", position = {-428, k * 2 - 7}, force = FORCE}
+    end
+    for y = -4, 4 do surface().create_entity{name = "lp-wall", position = {-421.5, y + 0.5}, force = FORCE} end
+    S.a = surface().create_entity{name = "artillery-turret", position = {-650, 0}, force = "player"}
+  end)
+  for t = 900, 960, 30 do
+    schedule(t, function()
+      surface().create_entity{name = "artillery-projectile", position = S.a.position, force = "player", source = S.a,
+        target = {-426, 0}, speed = 1}
+    end)
+  end
+  local function grouped(list)
+    local n, alive = 0, 0
+    for _, u in ipairs(list) do
+      if u.valid then
+        alive = alive + 1
+        local g = u.commandable.parent_group
+        if g and g.valid then n = n + 1 end
+      end
+    end
+    return n, alive
+  end
+  for t = 1200, 2400, 300 do
+    schedule(t, function()
+      local r, ra = grouped(S.r)
+      local i, ia = grouped(S.inf)
+      S.max_r, S.max_i = math.max(S.max_r or 0, r), math.max(S.max_i or 0, i)
+      info(string.format("artyreply %d: railgunners %d of %d in a group, troopers %d of %d", game.tick - storage.t0, r, ra, i, ia))
+    end)
+  end
+  schedule(END - 60, function()
+    check("artyreply: the engine sent the shelled troopers at the battery (the control)", (S.max_i or 0) > 0, tostring(S.max_i))
+    -- (Seen failing before army.on_unit_added_to_group: 6 of 6 railgunners sent with them.)
+    check("artyreply: and no railgunner with them", (S.max_r or 0) == 0, tostring(S.max_r))
+  end)
+end
 
 -- The Tesla at a wall (the user on cut 6, 2026-11-05, of heavies LP_MIX=teslas: "the power pole on the side of the attacker
 -- and a pink debug generator in view, no wall... I would set it up with some fodder player units too"). A stone wall
@@ -6682,6 +6756,9 @@ scenarios.hazard = function()
       return
     end
     check("hazard: its losses to biters made it clear the nests", (st.ops.hazards or 0) >= 1 and left == 0, string.format("%d hazards, %d left", st.ops.hazards or 0, left))
+    -- Every nest gone died where the harness saw it (on_entity_died): none taken off the map by script.
+    check("hazard: each nest gone was a death the harness saw", (S.nest_deaths or 0) == #S.nests - left,
+      string.format("%d deaths seen, %d nests gone", S.nest_deaths or 0, #S.nests - left))
   end)
 end
 
@@ -9721,6 +9798,7 @@ scenarios.visit = function()
     local save_at = tonumber(m)
     last = math.max(last, save_at)
     schedule(save_at * 3600, function()
+      keep_S()
       if game.is_multiplayer() then game.server_save("t" .. save_at) else game.auto_save("t" .. save_at) end
       info("visit: saved at minute " .. save_at)
       helpers.write_file("landing-party/saved-" .. save_at .. ".txt", tostring(game.tick))
@@ -13709,6 +13787,11 @@ scenarios.podland = function()
     check("podland: it landed once they touched down", S.land_at and S.pod_at and S.land_at - S.pod_at >= 300,
       string.format("pod %s, landing %s", tostring(S.pod_at), tostring(S.land_at)))
     check("podland: no remnants left", rem == 0, tostring(rem))
+    -- (Its pods' bursts, explosion entities, took the pad's ring, and it stood on the next free pad: 15 tiles off on
+    -- seed 12345 until 2026-11-06.)
+    local L = lp("landing_jobs").last
+    local off_by = L and L.pad and L.lander and math.sqrt((L.pad[1] - L.lander[1]) ^ 2 + (L.pad[2] - L.lander[2]) ^ 2) or -1
+    check("podland: it stood on its pod's pad", off_by >= 0 and off_by < 1, string.format("%.1f tiles off", off_by))
   end)
 end
 
@@ -13775,9 +13858,9 @@ scenarios.landfx = function()
       and S.g_fx.drawn >= 28, serpent.line(S.g_fx))
     check("landfx: six pods fell round it, each its own impact", g.landfx and g.landfx.fell == 6 and g.landfx.drawn >= 28 + 6 * 10
       and g.landfx.made == 0, serpent.line(g.landfx))
-    -- (Its hull drawn 120 ticks before its lander, onto the pad it took: within a tile and a half of it. That pad foreseen
-    -- when its pod was sent (layout.find_pad told where its pods will stand): asked again once they stood, it moved under
-    -- 2 tiles; aimed at its pod's own pad, it lurched 15 in the last quarter second.)
+    -- (Its hull drawn 120 ticks before its lander, onto the pad it took: within a tile and a half of it. That pad is its
+    -- pod's since 2026-11-06 (podland); asked again once its pods stood, it moves under 2 tiles. While the pods' bursts
+    -- pushed the landing a pad over, the hull aimed at the pod's pad lurched 15 tiles in the last quarter second.)
     local fx = sr and sr.landfx
     check("landfx: the queued landing's hull fell onto its lander", fx and fx.descended == true and fx.hull_at
       and S.land_at - fx.hull_at >= 110 and S.land_at - fx.hull_at <= 130 and fx.hull_off <= 1.5 and fx.steered <= 2
@@ -14424,8 +14507,47 @@ local function pillbox()
   end)
 end
 
+-- Idle LP_MIX=truce: Grubstake's yard and the guns of a force it is at cease-fire with (its pact with the biters). Once
+-- it has a yard, a wild medium worm is set 12 tiles from it; the pact holds, so the worm is no enemy to
+-- find_nearest_enemy. A pact ends (a breaker, its antenna lost), and the yard should not wait under the worm then.
+local function yard_truce()
+  schedule(60, function()
+    lp("debug_tune", {ops_off = true, raids_off = true})
+    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
+  end)
+  for t = 2 * 3600, END - 3 * 3600, 600 do
+    schedule(t, function()
+      if S.worm then return end
+      local st = lp("stats", S.g)
+      if not st.yard then return end
+      local y, o = st.yard, st.origin
+      -- Away from home, so the worm stands outside the camp.
+      local dx, dy = y[1] - o.x, y[2] - o.y
+      local len = math.max(1, math.sqrt(dx * dx + dy * dy))
+      local q = surface().find_non_colliding_position("medium-worm-turret", {y[1] + dx / len * 12, y[2] + dy / len * 12}, 6, 1)
+      S.worm = q and surface().create_entity{name = "medium-worm-turret", position = q, force = "enemy"}
+      S.yard0 = y
+      S.pact = game.forces["lp-grubstake"].get_cease_fire("enemy")
+      S.worm_at = game.tick
+    end)
+  end
+  schedule(END - 60, function()
+    local st = lp("stats", S.g)
+    local w, y = S.worm, st.yard
+    local d = (w and w.valid and y) and math.sqrt((y[1] - w.position.x) ^ 2 + (y[2] - w.position.y) ^ 2) or -1
+    info(string.format("idle truce: yard %s, then %s; worm %s at tick %s; pact %s; yard to worm %.0f",
+      serpent.line(S.yard0), serpent.line(y), w and w.valid and serpent.line(w.position) or "none", tostring(S.worm_at),
+      tostring(S.pact), d))
+    check("idle: truce, a worm was set by its yard under the pact", w ~= nil and w.valid and S.pact == true,
+      string.format("worm %s, pact %s", tostring(w and w.valid), tostring(S.pact)))
+    -- (Seen failing before army.truced_gun: the yard stayed 12 tiles from the worm.)
+    check("idle: truce, its yard moved out of the truced worm's reach (40)", y ~= nil and d >= 40, string.format("%.0f", d))
+  end)
+end
+
 scenarios.idle = function()
   if params.mix == "pillbox" then return pillbox() end
+  if params.mix == "truce" then return yard_truce() end
   schedule(60, function()
     -- LP_MIX=off (yard_off): the bug as it was, to see this check fail.
     lp("debug_tune", {ops_off = true, raids_off = true, yard_off = params.mix == "off" or nil})
@@ -15577,11 +15699,7 @@ if params.save_at then
   -- A second before the strike: saved one tick before, the loaded game never ran the strike.
   schedule(params.save_at * 3600 - 60, function()
     game.speed = 1
-    -- The scenario's state with it (S is a plain table, lost in a save: a fork filmed in a window, its steps after the
-    -- save failed on S.k, 2026-11-04). Functions cannot be saved: left out.
-    local keep = {}
-    for k, v in pairs(S) do if type(v) ~= "function" then keep[k] = v end end
-    storage.fork_S = keep
+    keep_S()
     game.server_save("fork")
     helpers.write_file("landing-party/saved.txt", tostring(game.tick))
   end)
@@ -15666,6 +15784,12 @@ end) end
 
 script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
+  -- Hazard: each of its nests' deaths, by what (spawners are in the filter below since 2026-11-06).
+  if params.scenario == "hazard" and e.entity.type == "unit-spawner" then
+    S.nest_deaths = (S.nest_deaths or 0) + 1
+    info(string.format("hazard: nest died at %.0f,%.0f tick %d by %s (%s)", e.entity.position.x, e.entity.position.y,
+      game.tick, e.cause and e.cause.valid and e.cause.name or "no cause", e.force and e.force.name or "?"))
+  end
   -- (LP_MIX=...measure on the nwwall visits: each of the wave's deaths at the breach, nwmeasure.jsonl.)
   if S.nwm and e.entity.force.name == "lp-biotech" and e.entity.type == "unit" then
     local p, b = e.entity.position, S.nwm.box
@@ -15808,7 +15932,10 @@ script.on_event(defines.events.on_entity_died, function(e)
 end, params.scenario ~= "system" and params.scenario ~= "visit" and params.scenario ~= "herd" and params.scenario ~= "lab" and {{filter = "name", name = "lp-trooper"}, {filter = "name", name = "lp-breacher"},
   {filter = "name", name = "lp-battle-tank"}, {filter = "name", name = "lp-lander"}, {filter = "name", name = "gun-turret"},
   {filter = "name", name = "artillery-turret"}, {filter = "type", type = "unit"}, {filter = "type", type = "mining-drill"},
-  {filter = "type", type = "spider-unit"}} or nil)
+  {filter = "type", type = "spider-unit"},
+  -- And spawners (hazard's nests): filtered without them, its check that each nest gone died where the harness saw it
+  -- read 0 deaths for 6 nests the railgunners killed (2026-11-06; a note of 11-05 had it as "not logged in hazard").
+  {filter = "type", type = "unit-spawner"}} or nil)
 
 -- Bait: what the biters it called do to Serenity (12 small biters reach its camp and bite; on 2.1 its flamers kill them
 -- all before anything falls: 42 to a pylon, nothing destroyed).

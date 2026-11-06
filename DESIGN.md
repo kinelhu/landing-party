@@ -186,6 +186,7 @@ document still says Serenity where it records history.
 | The unit roster (`docs/units.md`, written from the prototypes by `scripts/roster.py`) | built 2026-10-21 | - |
 | New units from the design sheet: Prism, Tesla (Serenity), Scorcher (Grubstake); every tank with its turret | built 0.1.44 | `heavies`, `unitnode` (three) |
 | The Tesla's hold: a laser or tesla turret its lightning strikes stops for the game's tesla stun (Space Age's `tesla-turret-stun`, 30 ticks, read from the prototype), each strike starting it again, its status "Stunned by lightning"; Synthexis's fire map reads a held turret as firing; the drain kept (the drain alone measured dead on a real supply) | built 0.2.218 | `teslawall` grid (in the regression; `-off` the control, `20mw` and `night` instruments) |
+| A corporation's railgunners out of the engine's groups (shelled, the engine sends the units near the impact at the battery; on nwa railgunners so broke 232 of the player's buildings): one added to a group goes home. The yard keeps 40 tiles from the guns of a force at cease-fire with it. A landing by pod stands on its pod's pad (explosions take no ground) | built 0.2.219 | `artyreply`, `idle` truce, `podland` |
 | The arena: a counter heatmap of every unit kind at equal spend, against biters by evolution and the player's lines; to watch, with a panel | built 0.1.46 | `scripts/arena.sh` (`docs/arena.md`), `scripts/play-arena.sh` |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
 | Art beyond tinted vanilla; seen in game | first session 2026-10-13; Serenity's clearances watched 2026-10-15; today's Grubstake pieces not yet played | `scripts/showcase.sh` save, `docs/playtest.md` |
@@ -3141,7 +3142,8 @@ scenario with assertions first; the window is for art, feel and GUI.
   nearest you (`ops.force`: temper, threat budget, cadence and stock waived; a depot, parts and the infantry it
   lacks are given; otherwise the operation runs as a real one); `perimeter [id]` steps Serenity's line;
   `land <corp> [tiles]` is the real arrival at that distance; `parts`, `fast` (short clocks for perimeter,
-  strip camps, phases and HQ), `provoke`, `era`, `trace`. The remote `dev(args, pos)` is the same for a player
+  strip camps, phases and HQ), `provoke`, `era`, `trace`; `tesla [n]` (0.2.219) sets Kessler-Hayashi Teslas 20 tiles
+  east of you, sent at your laser or tesla turret nearest you, to see the Tesla's hold. The remote `dev(args, pos)` is the same for a player
   that need not exist; scenario `dev` (quick regression) drives each.
   `LP_MIX=tour scripts/showcase.sh 12345 20` then `scripts/play-showcase.sh tour`: both corporations grown, your
   army, an outpost with a turret by Serenity, drills on iron by Grubstake, an empty artillery turret within reach
@@ -4767,7 +4769,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Not changed (it moves landing sites): the hull is drawn onto the pad the landing will take, foreseen when its pod is
   sent (`layout.find_pad` with the pods' spots counted as taken; asked again once they stand, it moved 0 tiles). Aimed
   at the pod's own pad, the hull lurched 15 tiles in the last quarter second; `landfx` checks it moves under 2. Whether
-  a landing should stand on its pod's pad (the pods cleared first, or sent beside it) is open.
+  a landing should stand on its pod's pad (the pods cleared first, or sent beside it) was open. (Resolved 2026-11-06,
+  0.2.219: it does; what took the pad was its pods' bursts, explosion entities, below.)
 - **A first look made of entities could have moved hubs** (2026-11-04). Its pods were projectiles and its blasts
   explosions; both are entities `layout.area_free` refuses, so for the seconds they lasted the planner would have seen
   the ground round a new lander as built on. Redone as rendering; `landfx` counts explosion and projectile entities
@@ -4858,7 +4861,7 @@ Bugs and surprises the headless runs caught, each kept as a check:
   mortar site ("lasers at the wall 0", now logged with the refusal). Both are the game playing as built, not bugs; the
   scenario stages round them: Grubstake's garrison there thinned to six at the beat (as the truce is staged), the wall
   240 out. All of trailer's checks pass from its fork. Open: whether a yard should keep away from another force's guns
-  when at truce (it keeps 40 tiles from what is hostile; a truce is not).
+  when at truce (it keeps 40 tiles from what is hostile; a truce is not). (Resolved 2026-11-06, 0.2.219: it does, below.)
 - **Synthexis's units taken off the map by the engine; a dome projector on the launchpad** (2026-11-05; two scenarios
   that failed after the yard and the herd's gap). Farm siege (12345): every vanilla biter has `ai_settings.
   destroy_when_commands_fail` on, and the engine destroys a unit whose commands keep failing, raising no death. Our bred
@@ -5030,7 +5033,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   kept open: from a minute-11 save the same wave took another branch (its way opened a rank later), and its herd, rushing
   through one narrow gap, poured west along the corridor between the outer wall and the zigzag and burned there (2,348 to
   fire, 15 to 25 tiles from its gap); the gap's width, not the herd's place, is the next thing to read. The harness's
-  KH landing (faction.lua:182, `from` nil) errors when a visit runs from a save; not this change's. Assumed, not tested:
+  KH landing (faction.lua:182, `from` nil) errors when a visit runs from a save; not this change's. (Resolved 2026-11-06,
+  0.2.219: Grubstake's landing at minute 20, the harness's S lost in the save, below.) Assumed, not tested:
   the gun rank's gate (a ram per gun point) at walls other than these two.
 - **Locale pass, 0.2.213** (2026-11-05; the user: "a pass on the mod strings ... staying in Factorio register"): the
   54 lines added since the audit (field studies, field dome, flak turret, achievements) had drifted back in three
@@ -5168,7 +5172,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   14340 is its gun rank's wait). Its held herd was in a gun's reach 31 of 31 a look: open. The fork's ranks-mend check
   fails because the test's mending is scheduled at its start and does not run from a fork (mended nil): the harness, not
   this. Open: the hold's own cost at nwa (its outside members west of the opening, under the flamethrower at the outer
-  wall's west end); the harness's "Kessler-Hayashi's railgunners broke none" failing on the full visit (not Synthexis's).
+  wall's west end); the harness's "Kessler-Hayashi's railgunners broke none" failing on the full visit (not Synthexis's; resolved
+  2026-11-06, 0.2.219: the engine's answer to artillery, below).
   Assumed, not tested: a rank of its front as the line for through at walls other than these two.
 - **The Tesla's drain measured on a real supply; the hold built** (2026-11-06, 0.2.218; the user: "I would do 2 and 3
   before 1"; the 11-05 adaptive tactics consult, section 5). What feeds the user's walls, probed from the visit saves:
@@ -5198,6 +5203,57 @@ Bugs and surprises the headless runs caught, each kept as a check:
   your laser line", which advised what does nothing; the card's counters) say so. Assumed, not tested: the hold against
   a mixed line (guns and flamethrowers among the lasers) and in the siege lab; the dome is untouched by construction (the
   hold fires only from a corporation's Tesla on electric turrets; the dome's and the jammer's arcs are not a Tesla's).
+- **Leftovers, 0.2.219** (2026-11-06; the user: "the leftovers"). Each with the run that caught it kept as a check.
+  Regression `--area=growth,ops,player` (12345, two at a time): 207 of 207 passed.
+  - *A landing by pod stands where its pod fell.* Traced at the landing (podland, seed 12345): 21 ticks after its pods
+    touched down their containers had burst, and three cargo-pod-container-explosion entities stood in the pad's ring;
+    `layout.area_free` refuses whatever is not clearable, so the lander took the next free pad, 14.9 tiles off. An
+    explosion is a look that lasts a moment, never ground taken: layout's and site's clearable types count it now (the
+    planner also stops refusing ground for a fight's explosions in it, the class the first landing look was redone to
+    avoid). The hull's descent aims at the pod's pad (find_pad's pods argument gone). Check: podland "it stood on its
+    pod's pad", 14.9 tiles off with explosions refused, 0.4 after; landfx and landfx off pass.
+  - *The yard keeps out of a truced force's guns.* `army.yard_spot` kept 40 tiles from what `find_nearest_enemy` finds,
+    and that passes over a force at cease-fire. A cease-fire ends (Grubstake's pact with the biters: a pact breaker, its
+    pacifier lost), and a yard under that force's guns is shot when it does. Now a spot within 40 of a turret of a force
+    it is at cease-fire with and not friends is refused too (Synthexis's worms by Grubstake's yard as well: their truce
+    is lasting, the guard harmless). Check: idle LP_MIX=truce (a wild worm set 12 tiles from Grubstake's yard under the
+    pact): its yard moves to 52; with the guard off it stayed at 12. In the regression list.
+  - *Numbers in descriptions wired from the code.* The claim marker's 40 tiles, the command relay's 10 units, the
+    invoice post's 10 to 60 minutes, the pact breaker's 3 minutes (its notice too), the rail rifle's and slug's 30
+    tiles, the cluster shell's 10 bomblets and the threat scanner's 64 tiles come from shared.lua (CLAIM_MARK_RADIUS,
+    RELAY_CAPACITY, TRUCE_MINUTES, BREAKER_MINUTES, RAIL_RANGE, CLUSTER_BOMBLETS, SCAN_RADIUS) as __1__ through each
+    prototype's localised_description, as the strike radius does; the code reads the same constants (ops.marked,
+    marker.lua, ledger.lua, the gun's and slug's ranges, the cluster count). Checked in the dump. `lint_names.py` now
+    fails a prototype whose description takes __n__ and is given fewer, or none (seen failing on a dump with three
+    removed); the manual fills them from the dump as before.
+  - *Kessler-Hayashi's trooper named once.* lp-infantry's locale said "Drone trooper" and KH's `names` mapped it to an
+    lp-line-trooper key saying "Laser trooper". Its weapon is a laser beam and the manual calls it the Laser trooper, so
+    lp-infantry's own entry says so and the indirection is gone (the manual's tables unchanged).
+  - */lp tesla [n]*: CLAUDE.md asks a verb of a mechanic worth looking at, and the Tesla's hold is one. Check in scenario
+    `dev`: a powered laser, the verb from 40 west of it, one Tesla set and its lightning held the laser (holds 0 to 32).
+  - *The harness's error from a visit's save.* Reproduced on a small save (the belt reference factory): a visit saved at
+    minute 2 (LP_MIX=saveat2, `visit_saves.sh`), then run from that save, failed at minute 20 on Grubstake's landing
+    (S.sp nil, faction.site's `from`; not Kessler-Hayashi's, as the 0.2.213 note had it). S, a plain table, is not in a
+    save; the fork's keep_S now runs before each saveatN save too, and the same visit from the new save passes. Found on
+    the way: `visit_saves.sh` ran its server on visit.zip, and a server saves the map it loaded when it quits, so a second
+    run started mid-visit with its save points past and ran on without saving; it runs on a copy now. The check is the
+    harness's own ("a scheduled step ran without error").
+  - *Nest deaths the harness did not see.* Outside system, visit, herd and lab the harness's on_entity_died is filtered
+    (by names and types), and spawners were not in its filter: hazard's six nests, killed by railgunners (traced by
+    on_entity_damaged), raised no death to it while landing-party's own handler saw each with entity and cause valid.
+    Spawners are in its filter now. Check: hazard "each nest gone was a death the harness saw", 0 of 6 before, 6 of 6
+    after.
+  - *Kessler-Hayashi's railgunners broke the player's buildings on nwa* (232 on the nwwall visit, 212 on another; failing
+    since 0.2.157). Not a stale check: its premise (a nest clearer, never taken against the player since its sieges left
+    them out in 0.2.165) still holds. Each kill line had the railgunner in a group no code of the mod makes, its order
+    attack_area at -1047,-1105, the player's artillery shelling the camp ("shelled: a battery at -1047,-1105"), 545 tiles
+    out. The engine's: scenario `artyreply` (the planner off) shells six railgunners and six Laser troopers by a wall of
+    theirs, and the engine forms the survivors into a group sent at the battery 225 tiles away (6 of 6 railgunners, 5 of
+    5 troopers). The prototype's ai_settings.join_attacks = false changed nothing. Now a corporation's railgunner added
+    to a group (on_unit_added_to_group; the mod never groups railgunners) is sent back to its lander, which takes it out:
+    `artyreply` "no railgunner with them", 6 before, 0 after, the troopers' group the control. Its other units still go
+    at the battery as the engine sends them (open: whether they should, beside its own counter-battery). nwa nwwall
+    visit after (45 minutes, from a copy of the save, shelled 16 times): 0 railgunner kills of the player's, all checks pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

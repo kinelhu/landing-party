@@ -94,3 +94,36 @@ if missing:
         print(f"missing locale key {k} (named by {name})")
     sys.exit(1)
 print("locale names ok")
+
+# A description that takes its numbers from the code (__1__, given by the prototype's localised_description from
+# shared.lua, as the strike beacon's radius) shows "__1__" in game if a prototype that reads it gives none: its own
+# description key read by default, or an item whose placed entity's description takes one (2026-11-06, when the
+# numbers typed in the descriptions were wired).
+value = {sec + "." + k: v for sec, k, v in values}
+
+
+def wants(key):
+    return max([int(n) for n in re.findall(r"__(\d+)__", value.get(key, ""))] or [0])
+
+
+unfed = []
+for kind, protos in dump.items():
+    for name, p in protos.items():
+        if not isinstance(p, dict) or not name.startswith("lp-") or kind == "recipe":
+            continue
+        sec = "technology" if kind == "technology" else "item" if "stack_size" in p else "entity"
+        ls = p.get("localised_description")
+        if ls is None:
+            n = wants(sec + "-description." + name)
+            if n == 0 and sec == "item" and p.get("place_result"):
+                n = wants("entity-description." + p["place_result"])
+            if n:
+                unfed.append(f"{kind}.{name}: its description takes __{n}__, none given")
+        elif isinstance(ls, list) and ls and isinstance(ls[0], str) and wants(ls[0]) > len(ls) - 1:
+            unfed.append(f"{kind}.{name}: {ls[0]} takes __{wants(ls[0])}__, {len(ls) - 1} given")
+if unfed:
+    print("LOCALE PARAMETERS LINT FAILED:")
+    for u in unfed:
+        print("  " + u)
+    sys.exit(1)
+print("locale parameters ok")

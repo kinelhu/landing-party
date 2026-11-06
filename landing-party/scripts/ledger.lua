@@ -25,7 +25,7 @@ local BILL_MIN = 5                 -- losses before a bill
 local NEST_REACH = 300             -- the losses' middle to the nest whose waves they were
 local POLLUTER_REACH = 1000        -- a player's polluting building this near that nest: its cloud
 local POLLUTERS = {"mining-drill", "furnace", "assembling-machine", "boiler"}
-local VALUE_PER_MINUTE, MIN_TRUCE, MAX_TRUCE = 10, 10, 60
+local VALUE_PER_MINUTE, MIN_TRUCE, MAX_TRUCE = 10, shared.TRUCE_MINUTES[1], shared.TRUCE_MINUTES[2]
 local ITEM = "electronic-circuit"  -- what the sum is written in (worth 1)
 local AMBER = {r = 1, g = 0.62, b = 0.15}
 

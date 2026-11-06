@@ -21,6 +21,9 @@
 --                            nearest by default) paints it, then its shells fall (no siege, no cooldown)
 --   burst [big]              a Synthexis burster (a big burster with `big`) set off 12 tiles east of you: its wind-up and
 --                            its blast (scripts/burstfx.lua). The blast is real: stand clear
+--   tesla [n]                n Kessler-Hayashi Teslas (default 1) set 20 tiles east of you, sent at your laser or tesla
+--                            turret nearest you within 60: its lightning holds what it strikes (scorcher.hold, the status
+--                            "Stunned by lightning"). They are real and stay: kill them or let them be
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
 local names = require("__landing-party__.scripts.names")
@@ -207,11 +210,37 @@ function dev.run(player, args)
     if not (u and burstfx.windup(u, big and "big" or "cinder")) then return player.print("the burster could not be set off") end
     player.print(string.format("a %s set off at %.0f,%.0f: it bursts in %.1f s", big and "big burster" or "burster", at.x, at.y,
       burstfx.KIND[big and "big" or "cinder"].windup / 60))
+  elseif what == "tesla" then
+    local s, n = player.surface, math.max(1, math.min(10, tonumber(args[2]) or 1))
+    local name = shared.variant(shared.DEFAULT_CORP, "lp-tesla")
+    local force = game.forces[shared.CORPS[shared.DEFAULT_CORP].force]
+    if not force then return player.print("no Kessler-Hayashi force yet") end
+    local t = s.find_entities_filtered{position = player.position, radius = 60, type = "electric-turret",
+      force = player.force}
+    local target
+    for _, e in ipairs(t) do
+      if not target or (e.position.x - player.position.x) ^ 2 + (e.position.y - player.position.y) ^ 2
+        < (target.position.x - player.position.x) ^ 2 + (target.position.y - player.position.y) ^ 2 then target = e end
+    end
+    local made = 0
+    for k = 1, n do
+      local at = s.find_non_colliding_position(name, {player.position.x + 20, player.position.y + (k - 1) * 4}, 10, 0.5)
+      local u = at and s.create_entity{name = name, position = at, force = force}
+      if u then
+        made = made + 1
+        if target then
+          u.commandable.set_command{type = defines.command.attack, target = target, distraction = defines.distraction.by_damage}
+        end
+      end
+    end
+    player.print(string.format("%d Tesla%s set east of you, %s", made, made == 1 and "" or "s",
+      target and string.format("sent at the %s at %.0f,%.0f", target.name, target.position.x, target.position.y)
+        or "no laser or tesla turret of yours within 60 to send them at"))
   elseif what == "trace" then
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 

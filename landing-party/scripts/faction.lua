@@ -671,16 +671,13 @@ local function landing_jobs()
       local corp = (job.opts and job.opts.corp) or shared.DEFAULT_CORP
       job.pod = pods.send(surface, at, shared.CORPS[corp].force)
       if job.pod then
-        job.site, job.pod_at = pos, game.tick
+        job.site, job.pod_at, job.pad = pos, game.tick, at
         -- Escorts beside it, for the look (a landing party, not a crate).
-        local spots = {{at[1], at[2]}}
         for _, d in ipairs({{-9, 6}, {9, 6}}) do
-          spots[#spots + 1] = {at[1] + d[1], at[2] + d[2]}
-          pods.send(surface, spots[#spots], shared.CORPS[corp].force)
+          pods.send(surface, {at[1] + d[1], at[2] + d[2]}, shared.CORPS[corp].force)
         end
-        -- Its hull's shadow and fall, timed to the landing, onto the pad it will take once its pods stand on this one
-        -- (landfx.lua: drawn only).
-        landfx.descent(surface, pos, layout.find_pad(surface, pos, spots) or at, corp, game.tick + landfx.AFTER_POD)
+        -- Its hull's shadow and fall, timed to the landing, onto its pod's pad (landfx.lua: drawn only).
+        landfx.descent(surface, pos, at, corp, game.tick + landfx.AFTER_POD)
         return
       end
       job.opts.at = pos
@@ -692,7 +689,8 @@ local function landing_jobs()
   job.opts.at = nil
   if why == "pending" then job.waits = job.waits + 1; return end
   table.remove(jobs, 1)
-  storage.last_landing = {id = b and b.id, waits = job.waits, ticks = game.tick - job.since, forced = late}
+  storage.last_landing = {id = b and b.id, waits = job.waits, ticks = game.tick - job.since, forced = late, pad = job.pad,
+    lander = b and b.lander.valid and {b.lander.position.x, b.lander.position.y} or nil}
   if b then
     base.trace(b, string.format("landed %d s after it was called (%d waits for ground)%s",
       math.floor((game.tick - job.since) / 60), job.waits, late and ", the last forced" or ""))

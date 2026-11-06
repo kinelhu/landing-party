@@ -20,6 +20,8 @@ local pods = require("__landing-party__.scripts.pods")
 local landfx = require("__landing-party__.scripts.landfx")
 local burstfx = require("__landing-party__.scripts.burstfx")
 script.on_event(defines.events.on_cargo_pod_finished_descending, pods.on_landed)
+-- The engine's groups (its answer to artillery) take no railgunner of a corporation's (army.lua).
+script.on_event(defines.events.on_unit_added_to_group, army.on_unit_added_to_group)
 local stance = require("__landing-party__.scripts.stance")
 local dev = require("__landing-party__.scripts.dev")
 local layout = require("__landing-party__.scripts.layout")

@@ -6,9 +6,9 @@
 -- descent.lua.
 --   descent: a landing that comes by cargo pod (faction's landing jobs) knows when its lander will appear: the hull's
 --     shadow darkens and tightens on the spot and the hull comes down on its flames, to touch as the lander is created.
---     The lander does not stand where its pod fell (its pod and escorts on the pad push it to the next free one, 15 tiles
---     off on seed 12345): the pad is foreseen when the pod is sent (layout.find_pad told where the pods will stand), and
---     asked again once they are down (landfx.locate), the hull steering onto it.
+--     The lander stands where its pod fell (until 2026-11-06 its pods' bursts pushed it to the next free pad, 15 tiles off
+--     on seed 12345); the pad is asked again once they are down (landfx.locate), the hull steering onto it if the ground
+--     changed meanwhile.
 --   crash: the lander created (base.land, every landing): its blast, flash, scorch and dust, then PODS cargo pods
 --     streaking down round it over the next few seconds (the camp's first parts), each bursting where it falls.
 -- Spots and delays from rng.lua, seeded by the settlement; the state in storage.landfx, its counts in b.landfx (scenario
@@ -90,7 +90,7 @@ function landfx.descent(surface, site, at, corp, eta)
 end
 
 local function descent_tick(d, tick, s)
-  -- Its spot asked again once its pods are down (they push the landing to the next free pad).
+  -- Its spot asked again once its pods are down (something built there meanwhile moves the landing).
   if not d.asked and tick >= d.eta - RETARGET then
     d.asked = true
     local now = landfx.locate and landfx.locate(s, d.site)

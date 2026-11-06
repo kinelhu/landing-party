@@ -728,6 +728,17 @@ local function open_ground(s, x, y)
   end
   return s.count_tiles_filtered{position = {x, y}, radius = 4, collision_mask = "water_tile", limit = 1} == 0
 end
+-- A gun of a force it is only at cease-fire with (not its friend) within YARD_QUIET: find_nearest_enemy passes over it,
+-- but a cease-fire ends (Grubstake's pact with the biters, broken by a pact breaker or its antenna lost), and a yard
+-- under that force's guns is shot the moment it does (2026-11-06; scenario idle LP_MIX=truce, a wild worm set by its
+-- yard: the yard stayed beside it).
+local GUNS = {"turret", "ammo-turret", "electric-turret", "fluid-turret"}
+local function truced_gun(s, x, y, force)
+  for _, e in pairs(s.find_entities_filtered{position = {x, y}, radius = YARD_QUIET, type = GUNS}) do
+    if e.force ~= force and not force.get_friend(e.force) and force.get_cease_fire(e.force) then return true end
+  end
+  return false
+end
 -- Its spot: the first open one on rings round home, from the side away from the player's spawn out to either side by
 -- turns (a yard 19 tiles from three gun turrets the player set by a crew's road drew their fire, and its units razed
 -- them: crew answered). Not by what the camp makes south of home (the drop escort 8 tiles, a skimming truck 12, its loot
@@ -749,7 +760,8 @@ function army.yard_spot(b)
       local x, y = hp.x + r * math.cos(a), hp.y + r * math.sin(a)
       if not in_boxes(boxes, x, y, YARD_CLEAR) and (x - hp.x) ^ 2 + (y - hp.y - 12) ^ 2 > YARD_SPAWN * YARD_SPAWN
         and open_ground(s, x, y)
-        and not s.find_nearest_enemy{position = {x, y}, max_distance = YARD_QUIET, force = h.force} then
+        and not s.find_nearest_enemy{position = {x, y}, max_distance = YARD_QUIET, force = h.force}
+        and not truced_gun(s, x, y, h.force) then
         spot = {x, y}; break
       end
     end
@@ -887,6 +899,32 @@ local function gates(b, tick)
       b.gate_opens = (b.gate_opens or 0) + 1
     end
   end
+end
+
+-- Railgunners out of the engine's groups. Shelled, a force's units near the impact are formed by the engine into a group
+-- sent at the battery, whatever the planner does (scenario artyreply: all 6 railgunners and 5 troopers sent 225 tiles at
+-- the turret; the prototype's ai_settings.join_attacks = false changed nothing). On nwa Kessler-Hayashi's railgunners so
+-- went 545 tiles to the battery shelling its camp and broke 232 of the player's buildings from beyond its guns' reach,
+-- where its sieges no longer take them (siege_tier, 0.2.165; 2026-11-06). The mod never groups railgunners (responses
+-- leave them out, clearances order each), so one added to a group is the engine's: it is sent back to its lander,
+-- which takes it out of the group. Its other units still answer the battery as the engine sends them.
+function army.on_unit_added_to_group(e)
+  local u = e.unit
+  if not (u and u.valid and shared.is_corp(u.force.name) and shared.kind_of(u.name) == "lp-railgunner") then return end
+  local home, hd
+  for _, b in pairs(storage.bases or {}) do
+    if b.force == u.force.name and not b.fallen and b.lander and b.lander.valid and b.surface == u.surface.index then
+      local d = (b.lander.position.x - u.position.x) ^ 2 + (b.lander.position.y - u.position.y) ^ 2
+      if not hd or d < hd then home, hd = b.lander, d end
+    end
+  end
+  if home then
+    u.commandable.set_command{type = defines.command.go_to_location, destination = home.position, radius = 16,
+      distraction = defines.distraction.by_damage}
+  else
+    u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.by_damage}
+  end
+  storage.rails_ungrouped = (storage.rails_ungrouped or 0) + 1
 end
 
 function army.tick(b, tick, trace)
