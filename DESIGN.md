@@ -5285,6 +5285,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   brass frame, the title in two lines, a ribbon for the subtitle, a crest per faction (its emblem in its colours), the
   edition at the foot; the three vistas moved to the back cover as its screenshots. The Kessler-Hayashi lore quote
   changed, since its opener's epigraph is the same motto.
+  Then: "The whole obsession with 'the line' ... doesn't feel like it lands" (Kessler-Hayashi's opener motto, its lore
+  and its lore quote all on the line, beside the mechanic of that name). Its motto in `shared.lua` (manual only, not
+  shown in game) is now its letterhead's "A quieter system for everyone."; the lore says it hems the engineer in with
+  guard posts; the quote is Kessler's invoice note. "The line" stays the perimeter mechanic's name in the chapter.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

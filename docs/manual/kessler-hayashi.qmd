@@ -13,7 +13,7 @@ planet only when a contract sends them.
 
 Contract NV-1 sends them to Nauvis. A client the company will not name has paid it to guard the engineer's launch
 lanes and any cargo that leaves the surface. Kessler-Hayashi sees the engineer as an armed, unlicensed operator inside
-its contract zone. It draws a line, tells the engineer to stay behind it, and besieges them when they do not.
+its contract zone. It hems the engineer in with a ring of guard posts and besieges whatever stands in its way.
 
 Its troops fight in mech armor, with lasers, railguns and tanks. Tomas Adeyemi, its Chief of Siege Works, plans the
 sieges on the Ring from the platforms' pictures of the engineer's defenses.
@@ -21,8 +21,8 @@ sieges on the Ring from the platforms' pictures of the engineer's defenses.
 The company's Survey Division has no official role on Nauvis, but it keeps a team at every camp, studying the
 engineer's factory. Who reads their reports is not known outside the company.
 
-::: {.pullquote cite="I. Kessler, Director of Field Operations"}
-The line is there for everyone's safety.
+::: {.pullquote cite="I. Kessler, site report"}
+Operator notified of its obligations under the contract. No reply. Billing continues.
 :::
 :::
 

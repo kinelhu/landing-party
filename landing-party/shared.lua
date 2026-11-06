@@ -134,7 +134,7 @@ shared.CORPS = {
     -- The line's painted stripe (cordon.lua): its own tile, not a floor (shared.FLOORS), so a camp grown out to its
     -- old arcs builds over it.
     stripe = {tile = "black-refined-concrete"},
-    icon = "signal-heart", motto = "Please remain behind the line.",
+    icon = "signal-heart", motto = "A quieter system for everyone.",
     -- Architecture: walled bastions and picket lines; gates in every opening, a baffle wall behind each so entry
     -- zigzags, corner turrets in walled pillboxes; infantry and tanks, and from its second level a few laser
     -- drones (the user, 2026-10-23: "give Kessler the actual high tech fliers"). No walkers until a walker of its own
