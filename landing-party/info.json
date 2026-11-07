@@ -3,7 +3,7 @@
   "version": "0.2.221",
   "title": "Landing Party",
   "author": "kinelhu",
-  "description": "A rival machine faction lands and builds a factory of its own. Prototype.",
+  "description": "Three rival factions land on Nauvis and build settlements, armies and biter farms of their own.",
   "factorio_version": "2.1",
   "dependencies": [
     "base >= 2.1",
