@@ -5347,6 +5347,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   after it stood (4 of 4 back, the battery razed); with raids off it stood (both checks seen failing), the engine's
   answer from 156 tiles not enough alone. The held herd's check (above) bounded at a twentieth of a look's herd, not none:
   ranks-crowd held 45 looks with 1 of its 119 once in fire (the arc-blind reading had 31 of 31).
+- **Multiplayer: no desync seen** (2026-11-07, 0.2.221; first ever run with a second peer). `scripts/mp.sh`: a headless
+  server on a copy of the playtest save (nw at minute 45, all three factions standing; the visit profile's copy, copied
+  again into factorio-lp-mp) and one client in a window, Landing Party linked into both; first heavy mode with the
+  server alone (save and load every tick, compared: 43 to 80 ticks a run at about 2.7 s a tick, short of the planners'
+  300- and 600-tick looks, so a first pass only), then events forced over RCON (`scripts/rcon.py`; the remote `dev`
+  verbs, no player needed) every 30 s while the client plays. Run 1, 8 minutes at the save's own speed (about 8x:
+  246,000 ticks, 68 game minutes): Kessler-Hayashi's siege, two orbital strikes, two perimeter steps, a raid and a
+  landing by pod; a Synthexis wave twice; Grubstake raiding on its own. Run 2, 4 minutes, the same. Neither log has a
+  desync, a CRC mismatch or a script error; no desync report written; the client kept pace at 8x. Not covered: two or
+  more clients, a client joining mid-siege's paint, the player's army (barracks, command tool) used from a client, and
+  a client's own GUI (the invoice post, the command tool): those want a person at the client.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
