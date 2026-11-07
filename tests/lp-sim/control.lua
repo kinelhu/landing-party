@@ -4312,8 +4312,8 @@ local function alive(units) local n = 0; for _, u in ipairs(units or {}) do if u
 -- of its own, the player's artillery turret 225 tiles west; three shells on them. The engine forms what survives near the
 -- impact into a group sent at the battery (the mod's planner off), and railgunners are not to be in it: on nwa they so
 -- went 545 tiles to the battery shelling their camp and broke 232 of the player's buildings from beyond its guns
--- (2026-11-06; army.on_unit_added_to_group). Nor its troopers since 0.2.220: no corporation unit answers the engine's
--- way; the control is the count of units the mod took out of the engine's groups.
+-- (2026-11-06; army.on_unit_added_to_group). Its idle troopers keep the engine's answer, the camp's own (0.2.220 took
+-- them out too, and three scenarios lost the only answer their camps had); the control is the count the engine grouped.
 scenarios.artyreply = function()
   schedule(60, function() lp("debug_tune", {ops_off = true, army_off = true, raids_off = true}) end)
   schedule(600, function()
@@ -4353,13 +4353,13 @@ scenarios.artyreply = function()
   end
   schedule(END - 60, function()
     -- The control: the engine did try to send them (each taken out of its group, army.on_unit_added_to_group).
-    local all, rails = lp("debug_ungrouped")
-    check("artyreply: the engine sent the shelled units at the battery (the control)", all > 0,
-      string.format("%d taken out, %d of them railgunners", all, rails))
+    local all, rails, grouped_ = lp("debug_ungrouped")
+    check("artyreply: the engine sent the shelled units at the battery (the control)", grouped_ > 0 and rails > 0,
+      string.format("%d grouped, %d taken out, %d of them railgunners", grouped_, all, rails))
     -- (Seen failing before army.on_unit_added_to_group: 6 of 6 railgunners sent with them.)
     check("artyreply: and no railgunner with them", (S.max_r or 0) == 0, tostring(S.max_r))
-    -- (Seen failing on 0.2.219, railgunners only: the troopers' group went, 6 of 6 at a look.)
-    check("artyreply: and no trooper either", (S.max_i or 0) == 0, tostring(S.max_i))
+    -- Its idle troopers do go: the camp's answer (0.2.220 kept them home; farm artillery's battery then stood).
+    check("artyreply: its idle troopers answer the shelling", (S.max_i or 0) > 0, tostring(S.max_i))
   end)
 end
 
@@ -11298,6 +11298,15 @@ scenarios.herd = function()
       info("herd ranks: a spread's points at a flamethrower wall " .. serpent.line(S.spread))
       check("herd: a spread's points share no flamethrower's arc", #pts >= 2 and burnt >= 1 and shared_burn == 0,
         serpent.line({points = #pts, burnt = burnt, shared = shared_burn}))
+      -- Its held herd waits in no gun's fire (bar a straggler), each look while it holds (the hold probe, herd.rk.hold_probe: a firing gun's
+      -- reach past its least reach and inside its arc, as its muster reads it). Caught: read by an arc-blind reach the herd
+      -- held behind the spread wall's flamethrowers read 31 of 31 in reach every look on the ranks-mend fork, with none of
+      -- them able to turn on it (0.2.216 to 0.2.219), so the probe could not tell a hold in fire from one out of it.
+      local hold = w and w.hold
+      info(string.format("herd %s: its held herd in a gun's fire %s", mend or mix, serpent.line(hold)))
+      -- (ranks-crowd: 1 of its 119 once in 45 looks, a straggler at the edge; so a twentieth of a look's herd at most.)
+      check("herd: ranks, its held herd waits out of every gun's fire", hold ~= nil and hold.looks >= 1
+        and hold.most <= 0.05 * hold.n / hold.looks, serpent.line(hold))
       if mend then
         -- Its rush through its own gap, mended by the player's robots after it went: at the mended piece on its line and on,
         -- not round by the engine's path along the corridor behind the outer ring (the user's north wall from the minute-11

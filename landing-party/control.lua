@@ -643,8 +643,11 @@ remote.add_interface("landing-party", {
   -- Tests only: the settlement a unit (or a mortar) is credited to (storage.unit_owner), by unit number.
   debug_unit_owner = function(unit_number) return storage.unit_owner and storage.unit_owner[unit_number] end,
   -- Tests: what a corporation's unit was doing (its settlement's lists): op:<kind>, response, raid, patrol, garrison, other.
-  -- The corporation units taken out of the engine's groups (army.on_unit_added_to_group), and of them railgunners.
-  debug_ungrouped = function() return storage.engine_ungrouped or 0, storage.rails_ungrouped or 0 end,
+  -- The corporation units taken out of the engine's groups (army.on_unit_added_to_group), of them railgunners, and all
+  -- the engine grouped.
+  debug_ungrouped = function()
+    return storage.engine_ungrouped or 0, storage.rails_ungrouped or 0, storage.engine_grouped or 0
+  end,
   debug_role = function(u)
     local id = storage.unit_owner and u.unit_number and storage.unit_owner[u.unit_number]
     local b = id and storage.bases[id]
