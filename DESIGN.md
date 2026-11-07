@@ -20,6 +20,7 @@ document still says Serenity where it records history.
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
 | Levers: strength and aggression per corporation (settings) | built, uncalibrated | `levers` |
+| On/off per faction (settings `lp-<id>-enabled`, runtime-global; the user, 2026-11-08): off, it never lands again, its standing camps stay; Grubstake off, no survey party and Kessler-Hayashi makes the first landing at its gate | built 0.2.222 | `phases` (nogrubstake, noserenity), `farm` (off) |
 | Answers by corporation: Grubstake a snatch raid where no turret covers (its flare retired 2026-10-22); Serenity, at war, answers trespass only (a siege), its losses fair war | built (trespass only 2026-10-20) | `snatch` (two), `line turret`, `crew answered`, `remembered` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
 | Biters: clean, evolution refund for corporations' kills, landings off nests, Serenity clears its nests | built | `evolution`, `nests` |
@@ -5358,6 +5359,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   desync, a CRC mismatch or a script error; no desync report written; the client kept pace at 8x. Not covered: two or
   more clients, a client joining mid-siege's paint, the player's army (barracks, command tool) used from a client, and
   a client's own GUI (the invoice post, the command tool): those want a person at the client.
+- **An on/off switch per faction** (2026-11-08, 0.2.222; the user: "We do need an on/off switch"). A runtime-global bool
+  setting each (`lp-grubstake-enabled`, `lp-serenity-enabled`, `lp-biotech-enabled`, on by default), read by
+  `shared.enabled`: off, a corporation is never chosen to land (`faction.next_corp`, both passes; the launch's haste),
+  Synthexis never arrives (`farm.tick`'s arrival); camps already standing stay (turned off mid-game it stops the next
+  landing, nothing more). The opening is Grubstake's: off, no survey party and no landing on chemical science;
+  Kessler-Hayashi makes the first landing once its gate opens (phases.tick picks the corporation that lands, the early
+  one or, off, the late one at its gate). Signs only while one of the two is on. Checks: `phases` LP_MIX=nogrubstake
+  (no survey, no landing before the gate, Kessler-Hayashi after it, no Grubstake ever), LP_MIX=noserenity (Grubstake
+  first as before, no Kessler-Hayashi), `farm` LP_MIX=off (no culture; it lands at 0.3 minutes when on); each seen
+  failing with `shared.enabled` forced on (Grubstake landed and surveyed, Kessler-Hayashi landed, a culture at tick
+  900). Not built: an off switch that removes standing camps.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -10,7 +10,11 @@ data:extend{
 local levels = {"very-low", "low", "normal", "high", "very-high"}
 local order = 0
 -- Synthexis (id biotech) too: its strength is its biomass income, its aggression the gap between its waves (farm.lua).
+-- Each first switched on or off (shared.enabled): off, it never lands again; camps already standing stay.
 for _, corp in ipairs({"grubstake", "serenity", "biotech"}) do
+  order = order + 1
+  data:extend{{type = "bool-setting", name = "lp-" .. corp .. "-enabled", setting_type = "runtime-global",
+    default_value = true, order = "b" .. order}}
   for _, lever in ipairs({"strength", "aggression"}) do
     order = order + 1
     data:extend{{type = "string-setting", name = "lp-" .. corp .. "-" .. lever, setting_type = "runtime-global",

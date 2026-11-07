@@ -3114,7 +3114,10 @@ end
 scenarios.phases = function()
   if params.mix == "left" then return phases_left() end
   local pf = game and nil
+  -- LP_MIX=nogrubstake / noserenity: that corporation switched off (its setting, shared.enabled) from the start.
+  local off = ({nogrubstake = "grubstake", noserenity = "serenity"})[params.mix or ""]
   schedule(60, function()
+    if off then lp("debug_setting", "lp-" .. off .. "-enabled", false) end
     flatten(-10, -10, 10, 10)
     surface().create_entity{name = "radar", position = {0, 0}, force = "player"}
   end)
@@ -3163,6 +3166,25 @@ scenarios.phases = function()
   schedule(9 * 3600 + 32 * 3600, function()
     for _, id in ipairs(lp("bases")) do if lp("stats", id).corp == "serenity" then S.serenity = true end end
   end)
+  if off then
+    schedule(END - 60, function()
+      local corps = {}
+      -- (The harness's own check reads storage.id: with Grubstake off the first camp lands after the 33-minute look.)
+      if not storage.id then storage.id = lp("bases")[1] end
+      for _, id in ipairs(lp("bases")) do corps[lp("stats", id).corp] = true end
+      info("phases " .. params.mix .. ": " .. serpent.line({survey = S.survey and S.survey.corp, early = S.early, late = S.late,
+        first = S.first_corp, corps = corps}))
+      check("phases: switched off, " .. off .. " never landed", not corps[off], serpent.line(corps))
+      if off == "grubstake" then
+        check("phases: Grubstake off, no survey party", S.survey == nil, serpent.line(S.survey))
+        check("phases: Grubstake off, no landing before Kessler-Hayashi's gate", S.late == 0, tostring(S.late))
+        check("phases: Grubstake off, Kessler-Hayashi came once its gate opened", S.serenity == true, tostring(S.serenity))
+      else
+        check("phases: Kessler-Hayashi off, Grubstake came as before", S.first_corp == "grubstake", tostring(S.first_corp))
+      end
+    end)
+    return
+  end
   schedule(END - 60, function()
     local p = lp("phases")
     if not storage.id then storage.id = lp("bases")[1] end
@@ -12022,6 +12044,8 @@ scenarios.farm = function()
   local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
   schedule(60, function()
     lp("debug_tune", {harmless = true, army_off = true, history_off = true})
+    -- LP_MIX=off: Synthexis switched off (lp-biotech-enabled, shared.enabled) before its landing at 0.3 minutes.
+    if mix == "off" then lp("debug_setting", "lp-biotech-enabled", false) end
     local o = lp("stats", storage.id).origin
     local ux, uy = 0, 0
     if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
@@ -12815,6 +12839,13 @@ scenarios.farm = function()
     end)
   end
   schedule(END - 60, function()
+    if mix == "off" then
+      local n = 0
+      for _ in pairs(lp("farm_state").farms or {}) do n = n + 1 end
+      check("farm: switched off, Synthexis never landed", not S.landed and n == 0,
+        string.format("landed %s, %d cultures", tostring(S.landed), n))
+      return
+    end
     local st = lp("herd_state")
     local w = st.log[1]
     info("farm: " .. serpent.line(lp("farm_state")))

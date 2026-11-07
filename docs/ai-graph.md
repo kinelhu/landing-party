@@ -17,7 +17,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | Module | Lines | Requires | Required by | Calls in by plug-in | Tick cadences | Events | Storage keys written |
 |---|---|---|---|---|---|---|---|
 | `herd` | 4378 | attempt, burstfx, costmap, feeds, firemap, ground, herd_learn, know, tactics, threat, valuemap | control, farm |  | 60, 600, 3600 |  | biotech_priced_in_health, herd |
-| `farm` | 2423 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
+| `farm` | 2424 | achievements, cell, costmap, creep, feeds, firemap, herd, know, pods, rng, tactics, threat, tune, valuemap | control, dev |  | 60, 600, 3600, 36000 |  | biotech_time_parts, carrying, farms |
 | `siege` | 2076 | achievements, assault, attempt, costmap, firemap, know, orbital, pods, tactics, threat, valuemap | ops |  |  |  | threat_last, unit_owner, ways_dumped |
 | `ops` | 2040 | answers, assault, attempt, cuts, ground, intel, jammer, know, perimeter, pool, power, rd, routing, siege, stance, strip, tactics, threat, tune | army, base, border, control, cordon, crew, dev, dome, faction, jumper, ledger, prospect, prowl, skim, standing, tap, trade, war | base.claim_map, border.border_cap, cordon.cordon_check, cordon.cordon_step, trade.truce, war.corridor | 60, 300, 600, 1800, 3600 |  | alerts, budget_holds, corps, threat_last |
 | `layout` | 1747 | blocks, rng, site, wfc | base, control, faction |  |  |  |  |
@@ -54,8 +54,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `herd_learn` | 253 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `know` | 239 | (leaf) | army, control, farm, herd, herd_learn, intel, ops, rd, siege, strategy, tactics |  | 3600 |  | know |
 | `landfx` | 239 | rng | base, control, faction | layout.locate | 4, 7 |  | landfx, landfx_descents |
+| `phases` | 238 | faction | control |  | 360, 3600 |  | phases |
 | `strip` | 237 | studies | ops |  |  |  | threat_last |
-| `phases` | 232 | faction | control |  | 360, 3600 |  | phases |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `valuemap` | 208 | firemap | control, farm, herd, oplog, siege |  |  |  |  |
 | `oplog` | 188 | attempt, valuemap | control |  |  |  | oplog |

@@ -198,11 +198,13 @@ function phases.tick(tick)
   if arrived() then return end
   local s = state()
   for _, f in ipairs(players()) do
-    if not s.signs then
+    -- (No signs, no survey, for a corporation switched off: shared.enabled. Without the early one the late one makes the
+    -- first landing once its gate opens.)
+    if not s.signs and (shared.enabled(EARLY_CORP) or shared.enabled(LATE_CORP)) then
       local radar = game.surfaces[1].find_entities_filtered{force = f, type = "radar", limit = 1}[1]
       if radar then signs(f, radar) end
     end
-    if not s.survey and f.technologies["oil-processing"] and f.technologies["oil-processing"].researched then
+    if not s.survey and shared.enabled(EARLY_CORP) and f.technologies["oil-processing"] and f.technologies["oil-processing"].researched then
       survey(f, game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
     end
     local stats = f.get_item_production_statistics(game.surfaces[1])
@@ -215,14 +217,18 @@ function phases.tick(tick)
   local due
   if s.triggered then due = s.triggered.tick + (s.delay or 0) end
   if s.early and (not due or s.early < due) then due = s.early end
-  if due and tick >= due and not faction.pending_kind("phases") then
+  local corp = s.corp or EARLY_CORP
+  if not shared.enabled(corp) then corp = shared.enabled(LATE_CORP) and LATE_CORP or nil end
+  if corp and corp ~= EARLY_CORP and not phases.gate_open(corp) then corp = nil end
+  if due and corp and tick >= due and not faction.pending_kind("phases") then
+    s.corp = corp
     local t = s.triggered or {surface = s.survey.surface, from = {x = 0, y = 0}}
     if not s.triggered then
       local spawn = game.forces.player.get_spawn_position(game.surfaces[t.surface])
       t.from = {x = spawn.x, y = spawn.y}
     end
     -- Asynchronous (faction.request): s.arrived is set when it lands.
-    faction.request(game.surfaces[t.surface], t.from, {corp = s.corp or first_corp(game.surfaces[t.surface])}, false,
+    faction.request(game.surfaces[t.surface], t.from, {corp = corp}, false,
       "phases")
   end
 end

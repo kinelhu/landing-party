@@ -570,7 +570,7 @@ function faction.on_launch(silo)
     -- that's a different clock"). Grubstake keeps the cadence.
     local late = faction.late_corp
     local d = late and faction.corp(late)
-    if late and d and not d.withdrawing and faction.alive(late) < MAX_PER_CORP
+    if late and d and shared.enabled(late) and not d.withdrawing and faction.alive(late) < MAX_PER_CORP
       and (not faction.gate_open or faction.gate_open(late)) then
       f.next = math.max(game.tick, f.next - HASTE)
       f.haste_for = late
@@ -606,11 +606,11 @@ local function next_corp(f)
     -- The late corporation as soon as its gate is open (phases.gate_open), whatever the count; the others from the
     -- second landing (with the gate open, the second landing went to Grubstake again, and Serenity waited a third).
     local gated = faction.gate_open and faction.late_corp == corp
-    local entered
+    local entered = false
     if gated then entered = faction.gate_open(corp)
     else entered = (corp == first or f.landings >= SECOND_CORP_LANDING) and (not faction.gate_open or faction.gate_open(corp)) end
     local n = alive(corp)
-    if entered and not d.withdrawing and n < MAX_PER_CORP then
+    if entered and shared.enabled(corp) and not d.withdrawing and n < MAX_PER_CORP then
       local t = d.landed or -1
       if not best or n < bn or (n == bn and t < bt) then best, bn, bt = corp, n, t end
     end
@@ -621,7 +621,7 @@ local function next_corp(f)
     for _, corp in ipairs(names) do
       local d = faction.corp(corp)
       local gated = faction.gate_open and faction.late_corp == corp
-      if not gated and not d.withdrawing and alive(corp) < MAX_PER_CORP then return corp end
+      if not gated and shared.enabled(corp) and not d.withdrawing and alive(corp) < MAX_PER_CORP then return corp end
     end
   end
   return best

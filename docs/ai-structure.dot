@@ -38,7 +38,7 @@ digraph ai {
     "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
     "rd" [label="rd\n396 lines", width=1.24, fillcolor="#eef2f7"];
-    "phases" [label="phases\n232 lines", width=1.06, fillcolor="#eef2f7"];
+    "phases" [label="phases\n238 lines", width=1.06, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
@@ -88,7 +88,7 @@ digraph ai {
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "herd" [label="herd\n4378 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
-    "farm" [label="farm\n2423 lines", width=3.49, fillcolor="#f7dede"];
+    "farm" [label="farm\n2424 lines", width=3.49, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
   }

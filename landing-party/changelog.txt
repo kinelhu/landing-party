@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.221
-Date: 2026-11-07
+Version: 0.2.222
+Date: 2026-11-08
   Features:
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
     - Grubstake lands once you make chemical science: a prospecting outfit that raids what you leave unguarded, skims your belts and strips your ore.
@@ -8,4 +8,4 @@ Date: 2026-11-07
     - Synthexis takes over the biter nests and breeds waves that learn from what kills them.
     - Each faction researches, fields its own units and answers what you do to it; the rivals fight each other and the biters too.
     - Player army: barracks, a command tool, rally beacons and a muster point.
-    - Settings: strength and aggression for each faction.
+    - Settings: each faction switched on or off, and its strength and aggression.

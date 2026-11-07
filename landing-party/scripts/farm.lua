@@ -2172,7 +2172,8 @@ function farm.tick(tick)
   if s.landing and tick - s.landing.sent > POD_WAIT then
     farm.land(game.surfaces[s.landing.surface], s.landing.at)
   end
-  if next(s.list) == nil and not s.landing and not storage.biotech_off and tick >= (s.next_arrival or 0) then
+  if next(s.list) == nil and not s.landing and not storage.biotech_off and shared.enabled("biotech")
+    and tick >= (s.next_arrival or 0) then
     local enemy = game.forces.enemy
     local came = false
     for _, surface in pairs(game.surfaces) do

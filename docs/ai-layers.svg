@@ -79,7 +79,7 @@
 <title>Corporation</title>
 <path fill="#eef2f7" stroke="black" d="M446.62,-331.25C446.62,-331.25 344.38,-331.25 344.38,-331.25 338.38,-331.25 332.38,-325.25 332.38,-319.25 332.38,-319.25 332.38,-307.25 332.38,-307.25 332.38,-301.25 338.38,-295.25 344.38,-295.25 344.38,-295.25 446.62,-295.25 446.62,-295.25 452.62,-295.25 458.62,-301.25 458.62,-307.25 458.62,-307.25 458.62,-319.25 458.62,-319.25 458.62,-325.25 452.62,-331.25 446.62,-331.25"/>
 <text xml:space="preserve" text-anchor="middle" x="395.5" y="-314.8" font-family="Helvetica,sans-Serif" font-size="11.00">Corporation</text>
-<text xml:space="preserve" text-anchor="middle" x="395.5" y="-302.8" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 3046 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="395.5" y="-302.8" font-family="Helvetica,sans-Serif" font-size="11.00">11 modules, 3052 lines</text>
 </g>
 <!-- Corporation&#45;&gt;Seams (leaves) -->
 <g id="edge10" class="edge">
@@ -261,8 +261,8 @@
 <title>The biotech</title>
 <path fill="#f7dede" stroke="black" d="M632.62,-435C632.62,-435 536.38,-435 536.38,-435 530.38,-435 524.38,-429 524.38,-423 524.38,-423 524.38,-403 524.38,-403 524.38,-397 530.38,-391 536.38,-391 536.38,-391 632.62,-391 632.62,-391 638.62,-391 644.62,-397 644.62,-403 644.62,-403 644.62,-423 644.62,-423 644.62,-429 638.62,-435 632.62,-435"/>
 <text xml:space="preserve" text-anchor="middle" x="584.5" y="-420.55" font-family="Helvetica,sans-Serif" font-size="11.00">The biotech</text>
-<text xml:space="preserve" text-anchor="middle" x="584.5" y="-408.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 8046 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="584.5" y="-396.55" font-family="Helvetica,sans-Serif" font-size="11.00">herd 4378, farm 2423</text>
+<text xml:space="preserve" text-anchor="middle" x="584.5" y="-408.55" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 8047 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="584.5" y="-396.55" font-family="Helvetica,sans-Serif" font-size="11.00">herd 4378, farm 2424</text>
 </g>
 <!-- The biotech&#45;&gt;Seams (leaves) -->
 <g id="edge26" class="edge">
