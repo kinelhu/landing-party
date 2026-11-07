@@ -1631,6 +1631,44 @@ scenarios.ops = function()
   end)
 end
 
+-- Counterbattery: the player's artillery turret shelling the camp, its planner on (every scenario that shelled a camp
+-- before ran it off: farm army_off, dome ops_off, artyreply). It should send an operation at the battery and bring it
+-- down (ops.counter_battery marks it; choose_siege's battery pass, then choose's). Its idle units still answer the
+-- engine's way (army.on_unit_added_to_group), so the check is on its operations' log, not on the battery alone.
+scenarios.counterbattery = function()
+  schedule(60, function()
+    lp("debug_depot", storage.id, 4000)
+    lp("debug_depot", storage.id, 0)
+  end)
+  schedule(2 * 3600, function()
+    local L = surface().find_entities_filtered{name = "lp-lander", force = FORCE}[1].position
+    local len = math.sqrt(L.x * L.x + L.y * L.y)
+    local reach = prototypes.entity["artillery-turret"].attack_parameters.range
+    local d = math.floor(reach * 0.7)
+    local c = {math.floor(L.x - L.x / len * d), math.floor(L.y - L.y / len * d)}
+    flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
+    S.art = surface().create_entity{name = "artillery-turret", position = c, force = "player"}
+    S.fed = S.art.insert{name = "artillery-shell", count = 30}
+    S.art_at = c
+    info(string.format("counterbattery: a battery at %d,%d, %d tiles from its lander (reach %d)", c[1], c[2], d, reach))
+  end)
+  schedule(END - 60, function()
+    local o = lp("stats", storage.id).ops
+    local left = S.art and S.art.valid and S.art.get_inventory(defines.inventory.artillery_turret_ammo).get_item_count("artillery-shell") or 0
+    local at, kinds = 0, {}
+    for _, l in ipairs(o.log) do
+      table.insert(kinds, l.op .. " " .. l.kind .. " " .. l.outcome .. " " .. l.back .. "/" .. l.launched)
+      if l.kind == "artillery-turret" then at = at + 1 end
+    end
+    if o.op then table.insert(kinds, "under way: " .. tostring(o.op)) end
+    info("counterbattery: " .. table.concat(kinds, "; "))
+    check("counterbattery: the battery fired on the camp (the control)", S.art_at ~= nil and (not S.art.valid or left < S.fed),
+      S.art_at and string.format("%s of %d left", S.art.valid and tostring(left) or "gone", S.fed) or "not placed")
+    check("counterbattery: an operation went at the battery", at >= 1, table.concat(kinds, "; "))
+    check("counterbattery: and it was brought down", S.art_at ~= nil and not S.art.valid, "standing")
+  end)
+end
+
 scenarios.abort = function()
   ops_setup(false)
   for t = 600, END - 3600, 60 do

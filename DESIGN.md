@@ -5337,13 +5337,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   said its answers to artillery came from its own operations; they did not. Three scenarios that passed on 0.2.219 lost
   the only answer their camps had: farm artillery's battery stood (on 0.2.219 its camp's units went, 7 lost, 11 of the
   player's buildings razed, the battery with them; on 0.2.220 2 lost, 0 razed: ops.counter_battery traced "shelled" and no
-  raid went), dome dark's lander fell to one turret at tick 10395 (its planner off), rivals' Grubstake built 235 of its
+  raid went: its planner was off, army_off), dome dark's lander fell to one turret at tick 10395 (its planner off), rivals' Grubstake built 235 of its
   own and 3 plain against 337 and 0. Now a railgunner and any unit on an operation are taken out (0.2.219's rule, and the
   planner's units kept); an idle unit answers the shelling of its camp. After: all three pass, rivals at 337 and 0 again;
   artyreply 0 of 5 railgunners and 5 of 5 troopers in the engine's group, its trooper check now "its idle troopers answer
-  the shelling" (failing on 0.2.220: 0). Open: why counter-battery sends no raid at a battery it has traced (farm
-  artillery); until it does, the engine's answer is the camp's. Not tested: a unit on an operation taken out (artyreply
-  runs with the planner off). The held herd's check (above) bounded at a twentieth of a look's herd, not none:
+  the shelling" (failing on 0.2.220: 0). Not tested: a unit on an operation taken out (artyreply runs with the planner
+  off). Counter-battery itself is not the gap this entry first said it was (every scenario that shelled a camp ran its
+  planner off): new scenario `counterbattery`, a battery at 0.7 of its reach from the lander, planner on, raided 30 s
+  after it stood (4 of 4 back, the battery razed); with raids off it stood (both checks seen failing), the engine's
+  answer from 156 tiles not enough alone. The held herd's check (above) bounded at a twentieth of a look's herd, not none:
   ranks-crowd held 45 looks with 1 of its 119 once in fire (the arc-blind reading had 31 of 31).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
