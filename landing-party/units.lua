@@ -942,6 +942,19 @@ do
   layered(prism, "serenity/tank", {{"prism", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {"prism", {"body", "glow"}}})
   headlights(prism)
 end
+-- The Tesla and the Aegis on the same hull, after the genre's tesla tank (twin coils, crowned) and its heavy tank (twin
+-- rail guns, the user's "doubling the cannon"); Grubstake's copies keep theirs as the tank's do. Each wired once its
+-- sheet is in sheets.lua.
+for _, pair in ipairs({{tesla, "tesla"}, {aegis, "aegis"}}) do
+  local u, head = pair[1], pair[2]
+  if SHEETS["serenity/tank/" .. head] then
+    local c = shared.CORPS.grubstake
+    c.props = c.props or {}
+    c.props[u.name] = {run_animation = table.deepcopy(u.run_animation), attack_parameters = table.deepcopy(u.attack_parameters)}
+    layered(u, "serenity/tank", {{head, {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {head, {"body", "glow"}}})
+    headlights(u)
+  end
+end
 -- Kinds both corporations field get Grubstake's rendered look on Grubstake's copy alone, through its props in
 -- shared.CORPS (corps.lua applies them to the copy it makes, plates.lua copies that); Kessler-Hayashi's keeps the
 -- old look until it has its own.

@@ -5498,8 +5498,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   The lasers (the user: "recolor every laser from KH from red (to blue? Or green?)"): a copy of the laser beam tinted
   cyan-blue, Kessler-Hayashi's lights' colour (green read as Synthexis's), its damage kept, fired by every lp- prototype
   that fired the red one (its laser turrets, Line troopers, Lances, laser drones, the Prism's main beam through its
-  ground copy) before corps.lua copies them; the player's lasers stay red, whose beam is whose at a glance. Open: the
-  laser turret's own charge glow (art), still red.
+  ground copy) before corps.lua copies them; the player's lasers stay red, whose beam is whose at a glance. (The laser
+  turret's charge glow followed in 0.2.234.)
+- **Kessler-Hayashi's tank family done: the Tesla and the Aegis** (0.2.234). On the same hull as the cannon tank and the
+  Prism, each its own layer. The Tesla after the genre's tesla tank: twin copper coils on ceramic insulators, a fifth
+  larger than first (small at game scale), crowned with graphite prongs round a cyan orb (the shiny grey toroid and cap:
+  the user, "not a fan of the top of the Tesla coils"), set wider apart (facing north or south they merged into one
+  stack), an arc between them. The Aegis: its rail cannon doubled (the user: "what do you think about doubling the
+  cannon?": the heavy tank's read), two glowing gaps in shared magnet frames (whole collars cut one gap into "a toy laser"),
+  a fifth shorter, its turret roof dressed as the cannon tank's. Grubstake's copies keep their old looks. And
+  Kessler-Hayashi's laser turret glows cyan too (`scripts/kh_glow.py`: its red-orange glow image hue-turned; a tint only
+  darkened it). The mod at 153 MB.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

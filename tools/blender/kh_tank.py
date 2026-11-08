@@ -308,7 +308,7 @@ def tesla():
     # ring under each, the glow low enough to stay cyan.)
     COIL = 1.2                     # (a little small at game scale, the Prism's crystal's size: a fifth larger, the user's go)
     for sx in (-1, 1):
-        x, y = sx * 0.28, TY + 0.06
+        x, y = sx * 0.38, TY + 0.06          # (at 0.28 they merged into one stack facing north or south)
         _b4 = set(V.scene.objects)
         cyl(0.16, 0.05, x, y, top, M["kgraph"], bevel=0.012)                                     # its foot
         for k in range(3):                                                                       # insulators
@@ -320,17 +320,23 @@ def tesla():
             z = top + 0.22 + k * 0.08; r = 0.13 - (z - top - 0.19) * 0.19
             bpy.ops.mesh.primitive_torus_add(major_radius=r + 0.004, minor_radius=0.008, location=(x, y, z), major_segments=40, minor_segments=6)
             V.obj().data.materials.append(M["kgraph"])
-        bpy.ops.mesh.primitive_torus_add(major_radius=0.15, minor_radius=0.05, location=(x, y, top + 0.56), major_segments=48, minor_segments=16)
-        V.obj().data.materials.append(M["kgraph"])
-        bpy.ops.mesh.primitive_torus_add(major_radius=0.15, minor_radius=0.012, location=(x, y, top + 0.5), major_segments=48, minor_segments=8)
+        # Its top a crown (the shiny grey toroid and cap read badly, the user: "not a fan of the top of the Tesla coils"):
+        # a graphite collar, six prongs curling up and in round a small cyan orb, the discharge's.
+        cyl(0.085, 0.04, x, y, top + 0.5, M["kgraph"], bevel=0.01)
+        for k in range(6):
+            a = k * math.pi / 3
+            p0 = (x + math.cos(a) * 0.07, y + math.sin(a) * 0.07, top + 0.54)
+            p1 = (x + math.cos(a) * 0.1, y + math.sin(a) * 0.1, top + 0.62)
+            p2 = (x + math.cos(a) * 0.05, y + math.sin(a) * 0.05, top + 0.7)
+            rod(p0, p1, 0.011, M["kgraph"]); rod(p1, p2, 0.009, M["kgraph"])
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.045, location=(x, y, top + 0.62), segments=24, ring_count=12)
         V.obj().data.materials.append(M["kglow_soft"])
-        cyl(0.05, 0.05, x, y, top + 0.55, M["steel"], bevel=0.008)
         for o in set(V.scene.objects) - _b4:                                                     # the coil scaled at its foot
             o.location = mathutils.Vector((x, y, top)) + (o.location - mathutils.Vector((x, y, top))) * COIL
             o.scale = o.scale * COIL
     import lpkit
     for k in range(2):
-        lpkit.arc((-0.12, TY + 0.06, TZ + H + 0.69), (0.12, TY + 0.06, TZ + H + 0.69 + 0.02 * k), M["kglow_soft"], rnd, kinks=5, jitter=0.06, r=0.007)
+        lpkit.arc((-0.34, TY + 0.06, TZ + H + 0.75), (0.34, TY + 0.06, TZ + H + 0.75 + 0.02 * k), M["kglow_soft"], rnd, kinks=7, jitter=0.07, r=0.007)
     # Capacitor drums on the turret's back, cables to the coils' feet.
     for sx in (-1, 1):
         bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.09, depth=0.3, location=(sx * 0.22, TY - 0.48, TZ + 0.14), rotation=(0, math.pi / 2, 0))
@@ -339,13 +345,94 @@ def tesla():
             bpy.ops.mesh.primitive_torus_add(major_radius=0.092, minor_radius=0.008, location=(sx * 0.22 + dx, TY - 0.48, TZ + 0.14),
                                              rotation=(0, math.pi / 2, 0), major_segments=32, minor_segments=6)
             V.obj().data.materials.append(M["khazard"])
-        rod((sx * 0.22, TY - 0.4, TZ + 0.22), (sx * 0.24, TY + 0.02, top + 0.02), 0.018, M["rubber"])
+        rod((sx * 0.22, TY - 0.4, TZ + 0.22), (sx * 0.36, TY + 0.02, top + 0.02), 0.018, M["rubber"])
     box(0.82, 0.02, 0.03, 0, TY - 0.6, TZ + 0.06, M["khazard"], bevel=0.003)
     box(0.3, 0.006, 0.08, 0.1, TY - 0.6, TZ + 0.12, M["kwhite"], bevel=0.0)
 
+def aegis():
+    """The Aegis (Kessler-Hayashi's heavy tank: a rail cannon, one slug no armour resists, its answer to armour): the
+    heaviest gun on the field and none of the cannon's round barrel. A big flat-sided turret, a heavy wedge front; the
+    rail cannon two flat rails with a gap between them, magnet collars along them, a cyan glow in the gap, a heavy breech;
+    capacitor banks on the turret's back, cables to the breech."""
+    import bmesh
+    TZ, TY, H = ZD + 0.04, -0.05, 0.36
+    pts = [(-0.5, 0.56), (0.5, 0.56), (0.7, 0.1), (0.66, -0.56), (-0.66, -0.56), (-0.7, 0.1)]
+    top = [(-0.34, 0.36), (0.34, 0.36), (0.52, 0.06), (0.5, -0.44), (-0.5, -0.44), (-0.52, 0.06)]
+    me = bpy.data.meshes.new("aegis"); bm = bmesh.new()
+    lo = [bm.verts.new((x, TY + y, TZ)) for x, y in pts]; hi = [bm.verts.new((x, TY + y, TZ + H)) for x, y in top]
+    bm.faces.new(lo[::-1]); bm.faces.new(hi)
+    for k in range(len(pts)):
+        bm.faces.new((lo[k], lo[(k + 1) % len(pts)], hi[(k + 1) % len(pts)], hi[k]))
+    bm.to_mesh(me); bm.free()
+    o = bpy.data.objects.new("aegis", me); V.scene.collection.objects.link(o); me.materials.append(M["kpaint"])
+    md = o.modifiers.new("b", "BEVEL"); md.width = 0.018; md.segments = 2
+    cyl(0.56, 0.03, 0, TY, TZ - 0.02, M["kdark"])
+    box(0.8, 0.64, 0.02, 0, TY - 0.05, TZ + H, M["kgraph"], bevel=0.008)
+    # The wedge front: two thick plates angled forward to a point under the gun.
+    for sx in (-1, 1):
+        V.panel([(sx * 0.12, TY + 0.72, TZ + 0.02), (sx * 0.74, TY + 0.14, TZ + 0.02), (sx * 0.56, TY + 0.1, TZ + H - 0.03),
+                 (sx * 0.12, TY + 0.5, TZ + H - 0.03)], M["kpaint3"], t=0.07, bevel=0.015)
+    # Twin rail cannons (the user, 2026-11-08: "what do you think about doubling the cannon?", the heavy tank's read): a
+    # wide breech block, two guns side by side, each two rails with its own glowing gap; magnet frames across both (one
+    # weapon, not two lasers); the muzzles in one frame. A fifth shorter than the first single gun.
+    box(0.56, 0.34, 0.26, 0, TY + 0.48, TZ + 0.08, M["kgraph"], bevel=0.03)
+    GZ = TZ + 0.2
+    for gx in (-0.15, 0.15):
+        for sx in (-1, 1):
+            box(0.045, 1.04, 0.1, gx + sx * 0.055, TY + 1.07, GZ, M["kpaint2"], bevel=0.01)
+            box(0.018, 1.0, 0.05, gx + sx * 0.034, TY + 1.07, GZ + 0.025, M["steel"], bevel=0.004)
+        box(0.034, 0.98, 0.03, gx, TY + 1.07, GZ + 0.035, M["kglow_soft"], bevel=0.0)
+    for k in range(4):
+        y = TY + 0.72 + k * 0.22
+        for sx in (-1, 1):                                                                       # frames' outer posts
+            box(0.07, 0.07, 0.17, sx * 0.25, y, GZ - 0.035, M["kgraph"], bevel=0.012)
+        box(0.1, 0.07, 0.17, 0, y, GZ - 0.035, M["kgraph"], bevel=0.012)                        # its middle post
+        for gx in (-0.15, 0.15):                                                                 # bridges under each gap
+            box(0.2, 0.07, 0.03, gx, y, GZ - 0.06, M["kgraph"], bevel=0.006)
+        for sx in (-1, 1):
+            box(0.03, 0.06, 0.02, sx * 0.25, y, GZ + 0.135, M["copper"], bevel=0.003)
+    box(0.58, 0.06, 0.18, 0, TY + 1.6, GZ - 0.04, M["kgraph"], bevel=0.015)                      # muzzle frame
+    # Capacitors on the back, cables, the commander's cupola and sights.
+    for sx in (-1, 1):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.1, depth=0.42, location=(sx * 0.3, TY - 0.66, TZ + 0.14), rotation=(0, math.pi / 2, 0))
+        V.obj().data.materials.append(M["kgraph"])
+        for dx in (-0.16, 0.0, 0.16):
+            bpy.ops.mesh.primitive_torus_add(major_radius=0.102, minor_radius=0.008, location=(sx * 0.3 + dx, TY - 0.66, TZ + 0.14),
+                                             rotation=(0, math.pi / 2, 0), major_segments=32, minor_segments=6)
+            V.obj().data.materials.append(M["khazard"] if dx == 0 else M["steel"])
+        rod((sx * 0.3, TY - 0.56, TZ + 0.24), (sx * 0.2, TY + 0.36, TZ + 0.3), 0.022, M["rubber"])
+    cyl(0.14, 0.09, 0.26, TY - 0.2, TZ + H, M["kpaint2"], bevel=0.012)
+    for k in range(6):
+        a = k * math.pi / 3
+        box(0.05, 0.03, 0.035, 0.26 + math.cos(a) * 0.135, TY - 0.2 + math.sin(a) * 0.135, TZ + H + 0.04, M["glass"], rot=a + math.pi / 2, bevel=0.004)
+    box(0.14, 0.16, 0.11, -0.3, TY + 0.14, TZ + H, M["kdark"], bevel=0.012)
+    box(0.09, 0.02, 0.05, -0.3, TY + 0.23, TZ + H + 0.035, M["glass"], bevel=0.004)
+    box(0.36, 0.006, 0.1, 0.0, TY - 0.57, TZ + 0.24, M["kwhite"], bevel=0.0)
+    cyl(0.022, 0.006, 0.44, TY + 0.2, TZ + H + 0.004, M["kglow"])
+    # Its roof dressed as the cannon tank's (plain, it was the family's plainest part): a remote weapon station, smoke
+    # launchers on the cheeks, laser warning receivers, a hatch, a stowage basket, panel lines.
+    cyl(0.08, 0.06, -0.12, TY - 0.32, TZ + H + 0.02, M["kgraph"], bevel=0.008)
+    box(0.12, 0.16, 0.09, -0.12, TY - 0.29, TZ + H + 0.08, M["kgraph"], bevel=0.015)
+    box(0.07, 0.03, 0.05, -0.12, TY - 0.2, TZ + H + 0.1, M["glass"], bevel=0.005)
+    rod((-0.05, TY - 0.26, TZ + H + 0.12), (-0.05, TY + 0.16, TZ + H + 0.12), 0.014, M["kdark"])
+    for sx in (-1, 1):
+        for k in range(4):
+            bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.024, depth=0.1, location=(sx * (0.58 - k * 0.045), TY + 0.16, TZ + H - 0.04),
+                                                rotation=(math.radians(-50), 0, sx * 0.4))
+            V.obj().data.materials.append(M["kgraph"])
+        box(0.05, 0.04, 0.03, sx * 0.5, TY - 0.4, TZ + H + 0.02, M["kdark"], bevel=0.005)
+        cyl(0.012, 0.004, sx * 0.5, TY - 0.38, TZ + H + 0.045, M["kglow"])
+    cyl(0.1, 0.03, 0.04, TY + 0.1, TZ + H, M["kpaint"], bevel=0.008)
+    for y in (TY - 0.05, TY + 0.25):
+        box(0.7, 0.012, 0.006, 0, y, TZ + H + 0.012, M["kdark"], bevel=0.0)
+    for k in range(5):                                                                          # stowage basket rails
+        rod((-0.4 + k * 0.2, TY - 0.82, TZ + 0.3), (-0.4 + k * 0.2, TY - 0.82, TZ + 0.42), 0.008, M["steel"])
+    rod((-0.42, TY - 0.82, TZ + 0.42), (0.42, TY - 0.82, TZ + 0.42), 0.01, M["steel"])
+    box(0.6, 0.1, 0.08, 0, TY - 0.86, TZ + 0.32, M["canvas"], bevel=0.02)
+
 base = V.group(hull)
 anim, pose = V.tracks(TX, TW, IDL, SPR, frames=4)
-MODULES = {"cannon": cannon, "prism": prism, "tesla": tesla}
+MODULES = {"cannon": cannon, "prism": prism, "tesla": tesla, "aegis": aegis}
 which = os.environ.get("LP_MODULES", ",".join(MODULES)).split(",")
 modules = {n: V.group(MODULES[n]) for n in which if n}
 V.finish(grime=0.6, mud=0.5, mud_top=0.4)             # maintained: less grime than Grubstake's; mud on the tracks

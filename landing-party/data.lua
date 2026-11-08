@@ -146,6 +146,9 @@ fabricator.module_slots = 0
 fabricator.allowed_effects = nil
 
 local turret = copy("electric-turret", "laser-turret", "lp-turret")
+-- Its charge glow cyan, as its beam (scripts/kh_glow.py: the red-orange image's hue turned, a tint could only darken it).
+turret.energy_glow_animation.filename = "__landing-party__/graphics/serenity/laser-turret/laser-turret-shooting-light.png"
+turret.energy_glow_animation.tint = nil
 
 -- The mortar: a siege emplacement (scripts/ops.lua), the artillery turret's body at 60%, its own short gun
 -- (36 tiles, beyond gun 18, laser 24 and flamethrower 30 turrets) and a light shell, hitting the player only.
