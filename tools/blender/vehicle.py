@@ -279,3 +279,105 @@ def wheel(x, y, side, WR, WT):
         axle_cyl(0.013, 0.03, ox + side * 0.045, y + math.cos(a) * RR * 0.28, WR + math.sin(a) * RR * 0.28, M["bright"], verts=6)
     bpy.ops.mesh.primitive_uv_sphere_add(radius=RR * 0.18, location=(ox + side * 0.045, y, WR), segments=16, ring_count=8)
     o = obj(); o.scale = (0.6, 1, 1); o.data.materials.append(M["steel"])
+
+
+def blur_mat(name, rgb, alpha, streaks=6.0):
+    """(harrier.py's; its rotors.) A disc of motion blur: the colour at `alpha`, faint radial streaks (a wave texture round its centre)."""
+    m = bpy.data.materials.new(name); m.use_nodes = True
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; L = nt.links.new
+    b.inputs["Base Color"].default_value = (*rgb, 1); b.inputs["Roughness"].default_value = 0.6
+    tc = nt.nodes.new("ShaderNodeTexCoord"); gr = nt.nodes.new("ShaderNodeTexGradient"); gr.gradient_type = "RADIAL"
+    L(tc.outputs["Object"], gr.inputs["Vector"])
+    mr = nt.nodes.new("ShaderNodeMath"); mr.operation = "MULTIPLY"; mr.inputs[1].default_value = streaks; L(gr.outputs["Fac"], mr.inputs[0])
+    fr = nt.nodes.new("ShaderNodeMath"); fr.operation = "FRACT"; L(mr.outputs[0], fr.inputs[0])
+    rmp = nt.nodes.new("ShaderNodeMapRange"); rmp.inputs["From Min"].default_value = 0.0; rmp.inputs["From Max"].default_value = 0.25
+    rmp.inputs["To Min"].default_value = alpha * 1.6; rmp.inputs["To Max"].default_value = alpha * 0.8
+    L(fr.outputs[0], rmp.inputs["Value"])
+    L(rmp.outputs["Result"], b.inputs["Alpha"])
+    return m
+
+
+def char(m, burn=0.78):
+    """A material burnt: its colour pulled to soot in patches (noise), a little rust showing through, rougher."""
+    if not m.use_nodes:
+        return
+    nt = m.node_tree; b = nt.nodes.get("Principled BSDF")
+    if not b:
+        return
+    inp = b.inputs["Base Color"]; L = nt.links.new
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    n = nt.nodes.new("ShaderNodeTexNoise"); n.inputs["Scale"].default_value = 7.0; n.inputs["Detail"].default_value = 8
+    L(tc.outputs["Object"], n.inputs["Vector"])
+    r = nt.nodes.new("ShaderNodeMapRange"); r.inputs["From Min"].default_value = 0.35; r.inputs["From Max"].default_value = 0.6
+    r.inputs["To Min"].default_value = burn; r.inputs["To Max"].default_value = burn * 0.55; L(n.outputs["Fac"], r.inputs["Value"])
+    x = nt.nodes.new("ShaderNodeMix"); x.data_type = "RGBA"
+    if inp.links:
+        L(inp.links[0].from_socket, x.inputs["A"])
+    else:
+        x.inputs["A"].default_value = inp.default_value
+    x.inputs["B"].default_value = (0.035, 0.028, 0.022, 1); L(r.outputs["Result"], x.inputs["Factor"])
+    L(x.outputs["Result"], inp)
+    b.inputs["Roughness"].default_value = 0.85; b.inputs["Metallic"].default_value = 0.2
+
+def wreck(objs, out, seed=1, lose=0.35, thrown=0.35, keep=(), tilt=(4, -3), sink=0.06, N=4, tiles=3, margin=1.2,
+          strip=None, scorch=1.8):
+    """A unit's wreck (a corpse's picture, as vanilla's car and tank remnants: N directions, the shadow in the picture):
+    every material charred, a share of the small parts lost and a share thrown onto the ground round it (seeded; the
+    largest and those named in keep stay), thin uprights (whips, masts) gone, the objects strip(o) says gone (a run of
+    track), the rest slumped (tilted, sunk), glows dark, a scorch on the ground under it; rendered with the ground's
+    shadow, out/wreck/body/NNN.png, for sheet.py. (Charred alone, the first dozer's read as a dark dozer, not a wreck.)"""
+    import random
+    rnd = random.Random(seed)
+    for m in bpy.data.materials:
+        if m.name in GLOWS:
+            m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 0.0
+        char(m, burn=0.9)
+    sized = sorted(objs, key=lambda o: o.dimensions.length)
+    small = sized[: int(len(sized) * 0.7)]
+    debris = []
+    for o in objs:
+        dx, dy, dz = o.dimensions
+        if (dz > 0.45 and max(dx, dy) < 0.06) or (strip and strip(o)):
+            o.hide_render = True
+    for o in small:
+        if o.name in keep or o.hide_render:
+            continue
+        r = rnd.random()
+        if r < lose:
+            o.hide_render = True
+        elif r < lose + thrown and o.dimensions.length < 0.5:
+            debris.append(o)
+    for o in debris:                                                     # onto the ground round it
+        a = rnd.uniform(0, 2 * math.pi); d = rnd.uniform(0.9, 1.5)
+        o.parent = None
+        o.location = (math.cos(a) * d, math.sin(a) * d * 1.2, o.dimensions.z * 0.3)
+        o.rotation_mode = "XYZ"; o.rotation_euler = (rnd.uniform(-1.2, 1.2), rnd.uniform(-1.2, 1.2), rnd.uniform(0, 6.28))
+    # The scorch: a soot disc on the ground, its edge broken by noise, fading out.
+    if scorch:
+        bpy.ops.mesh.primitive_circle_add(vertices=64, radius=scorch, fill_type="NGON", location=(0, 0, 0.004))
+        sc = obj(); sc.scale = (1.0, 1.25, 1.0)
+        m = bpy.data.materials.new("scorch"); m.use_nodes = True; nt = m.node_tree; b = nt.nodes["Principled BSDF"]; L = nt.links.new
+        b.inputs["Base Color"].default_value = (0.03, 0.025, 0.02, 1); b.inputs["Roughness"].default_value = 1.0
+        # (The gradient on object coordinates ends a tile out whatever the disc's size, under the hull: scaled to it.)
+        tc = nt.nodes.new("ShaderNodeTexCoord"); gr = nt.nodes.new("ShaderNodeTexGradient"); gr.gradient_type = "SPHERICAL"
+        mp = nt.nodes.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (1 / scorch, 1 / scorch, 1)
+        L(tc.outputs["Object"], mp.inputs["Vector"]); L(mp.outputs["Vector"], gr.inputs["Vector"])
+        nz = nt.nodes.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = 3.0; L(tc.outputs["Object"], nz.inputs["Vector"])
+        mx = nt.nodes.new("ShaderNodeMath"); mx.operation = "MULTIPLY"; L(gr.outputs["Fac"], mx.inputs[0]); L(nz.outputs["Fac"], mx.inputs[1])
+        # (Faded from 0.05 to 0.4 it hardly showed beyond the hull, the first: it reaches out, darker.)
+        rr = nt.nodes.new("ShaderNodeMapRange"); rr.inputs["From Min"].default_value = 0.0; rr.inputs["From Max"].default_value = 0.18
+        rr.inputs["To Min"].default_value = 0.0; rr.inputs["To Max"].default_value = 0.85; L(mx.outputs[0], rr.inputs["Value"])
+        L(rr.outputs["Result"], b.inputs["Alpha"])
+        sc.data.materials.append(m)
+    pivot = bpy.data.objects.new("wreck_pivot", None); scene.collection.objects.link(pivot)
+    for o in objs:
+        o.parent = pivot; o.matrix_parent_inverse = pivot.matrix_world.inverted()
+    ground, sun, world = light(tiles, margin)
+    world.node_tree.nodes["Background"].inputs[1].default_value = 0.04          # the passes' fill
+    os.makedirs(f"{out}/wreck/body", exist_ok=True)
+    for d in range(N):
+        pivot.rotation_euler = (math.radians(tilt[0]), math.radians(tilt[1]), -2 * math.pi * d / N)
+        pivot.location = (0, 0, -sink)
+        ground.hide_render = False
+        lpkit.render(scene, f"{out}/wreck/body/{d:03d}.png")
+    return pivot

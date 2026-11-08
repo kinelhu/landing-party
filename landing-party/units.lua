@@ -881,12 +881,27 @@ local function headlights(u, ahead)
   u.light = table.deepcopy(data.raw.car.car.light)
   for _, l in ipairs(u.light) do l.shift = {l.shift[1], -(ahead or 14)} end
 end
+-- Wrecks (the unit pass, 2026-11-08: they left the car's and the tank's): each rendered unit's own corpse, charred,
+-- slumped, a share of its parts thrown round it and a scorch under it, 4 directions as vanilla's remnants, its shadow
+-- in the picture. The dying unit's direction picks the nearest of the four.
+local function wreck(name, sheet)
+  local W = SHEETS[sheet]
+  local c = table.deepcopy(data.raw.corpse["car-remnants"])
+  c.name = name
+  c.animation = {filename = "__landing-party__/graphics/" .. sheet .. "/body.png", width = W.width, height = W.height,
+    direction_count = W.frames, line_length = W.line_length, scale = 0.5, shift = W.shift}
+  c.localised_name = nil
+  data:extend({c})
+  return name
+end
+local BUGGY_WRECK = wreck("lp-buggy-wreck", "grubstake/buggy/wreck")
 local function rendered_buggy(u, module)
   layered(u, "grubstake/buggy", {{module, {"shadow"}}, {"chassis", {"body", "glow"}}, {module, {"body", "glow"}},
     {"antenna", {"body"}}})
   headlights(u)
   -- It is longer than the car it replaced (2.3 tiles to 2): its selection box follows the sprite.
   u.selection_box = {{-0.8, -1.25}, {0.8, 1.25}}
+  u.corpse = BUGGY_WRECK
 end
 rendered_buggy(buggy, "mg")
 rendered_buggy(slug, "slug")
@@ -901,21 +916,37 @@ local function rendered_crawler(u, module)
   headlights(u)
 end
 rendered_crawler(dozer, "dozer")
+dozer.corpse = wreck("lp-dozer-wreck", "grubstake/crawler/wreck-dozer")
 dozer.selection_box = {{-1.1, -1.5}, {1.1, 1.8}}
 rendered_crawler(scorcher, "scorcher")
+scorcher.corpse = wreck("lp-scorcher-wreck", "grubstake/crawler/wreck-scorcher")
 scorcher.selection_box = {{-1.1, -1.4}, {1.1, 1.4}}
--- The hauler (tools/blender/hauler.py): a six-wheeled scrap bonnet truck, its hood amber, a tarped load on its bed.
--- Both corporations run haulers (convoys, crews), so the truck goes on Grubstake's copy alone, through its props in
--- shared.CORPS (corps.lua applies them to the copy it makes); Kessler-Hayashi's keeps the car for now.
-do
-  local g = {attack_parameters = table.deepcopy(hauler.attack_parameters)}
-  layered(g, "grubstake/hauler", {{"bed", {"shadow"}}, {"base", {"body", "glow"}}, {"bed", {"body", "glow"}}})
-  headlights(g, 16)
+-- Kinds both corporations field get Grubstake's rendered look on Grubstake's copy alone, through its props in
+-- shared.CORPS (corps.lua applies them to the copy it makes, plates.lua copies that); Kessler-Hayashi's keeps the
+-- old look until it has its own.
+local function grubstake_look(u, root, parts, extra)
+  local g = {attack_parameters = table.deepcopy(u.attack_parameters)}
+  layered(g, root, parts)
   local c = shared.CORPS.grubstake
   c.props = c.props or {}
-  c.props["lp-hauler"] = {run_animation = g.run_animation, attack_parameters = g.attack_parameters, light = g.light,
-    selection_box = {{-0.85, -1.45}, {0.85, 1.55}}}
+  local p = {run_animation = g.run_animation, attack_parameters = g.attack_parameters}
+  for k, v in pairs(extra or {}) do p[k] = v end
+  c.props[u.name] = p
+  return p
 end
+-- The hauler (tools/blender/hauler.py): a six-wheeled scrap bonnet truck, its hood amber, a tarped load on its bed.
+do
+  local p = grubstake_look(hauler, "grubstake/hauler", {{"bed", {"shadow"}}, {"base", {"body", "glow"}}, {"bed", {"body", "glow"}}},
+    {selection_box = {{-0.85, -1.45}, {0.85, 1.55}}, corpse = wreck("lp-hauler-wreck", "grubstake/hauler/wreck")})
+  headlights(p, 16)
+end
+-- The harrier (tools/blender/harrier.py): a scrap autogyro, a pilot and a gunner, its rotor and pusher prop discs of
+-- motion blur (a run animation holds when a unit stops: a modelled rotor would freeze while it hovers). And the bomb
+-- drone (tools/blender/scavenger.py): a scrap quadcopter with its bomb slung under it, a red gas cylinder.
+grubstake_look(harrier, "grubstake/harrier", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}},
+  {corpse = wreck("lp-harrier-wreck", "grubstake/harrier/wreck")})
+-- (It bursts on its target: its corpse stays the defender's small remnants.)
+grubstake_look(scavenger, "grubstake/scavenger", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}})
 
 local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},
   [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"iron-gear-wheel", 1, 2}}, [laser_drone] = {{"advanced-circuit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},

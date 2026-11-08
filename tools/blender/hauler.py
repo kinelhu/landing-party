@@ -200,6 +200,10 @@ def bed():
 base = V.group(chassis)
 modules = {"bed": V.group(bed)}
 V.finish(mud=0.6, mud_top=0.45)
+# LP_WRECK=1: its wreck (4 directions, its shadow in the picture), then stop.
+if os.environ.get("LP_WRECK"):
+    V.wreck(base + modules["bed"], out, seed=11, tiles=3, margin=1.2)
+    print("hauler wreck to", out); sys.exit(0)
 rig = V.light(3, 1.2)
 _z = float(os.environ.get("LP_ZOOM", 1))
 V.scene.camera.data.ortho_scale /= _z

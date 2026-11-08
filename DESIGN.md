@@ -5457,6 +5457,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   cabin" the user had called cartoonish), a roof gun, a stake bed (its own layer) of crates and drums under a lashed
   tarp. Both corporations run haulers, so the truck goes on Grubstake's copy alone, through its `props` in shared.CORPS
   (corps.lua applies them to the copy it makes); Kessler-Hayashi's keeps the car until its own. 6 MB.
+- **The unit pass, fourth: Grubstake's fliers and its wrecks** (0.2.228; the user gave carte blanche for a few hours,
+  2026-11-08). The harrier (`tools/blender/harrier.py`): a scrap autogyro after Mad Max's, a pilot and a gunner, amber
+  side armour, a finned engine and a banded red tank, its rotor and pusher prop discs of motion blur with a faint rim (a
+  unit's run animation holds when it stops: a modelled rotor would freeze on a hovering harrier); spindly at first,
+  fainter than vanilla's distractor at game scale, bulked up. The bomb drone (`tools/blender/scavenger.py`, lp-scavenger):
+  a scrap quadcopter, its bomb slung under it (a red gas cylinder, fins, a detonator, dynamite strapped on); its four
+  rings too bright at first over a hidden bomb. Both on Grubstake's copies alone (`grubstake_look` in units.lua, through
+  shared.CORPS props), Kessler-Hayashi's keep the robots. Wrecks (`vehicle.wreck`): each rendered unit's own corpse,
+  every material charred, small parts lost or thrown onto the ground round it, thin uprights gone, the dozer and Scorcher
+  a track thrown, slumped, a scorch under it, 4 directions with their shadow (charred alone, the first read as a dark
+  dozer; the scorch's gradient ended a tile out whatever its size, under the hull). The buggies share one wreck; the bomb
+  drone keeps the defender's remnants (it bursts on its target). About 4 MB for the two fliers, 1.7 for the five wrecks.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

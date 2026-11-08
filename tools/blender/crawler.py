@@ -503,6 +503,12 @@ MODULES = {"dozer": dozer, "scorcher": scorcher}
 which = os.environ.get("LP_MODULES", ",".join(MODULES)).split(",")
 modules = {n: V.group(MODULES[n]) for n in which if n}
 V.finish(mud=0.85, mud_top=0.55)          # mud on the tracks, the blade's foot, the underside (a dozer's is never clean)
+# LP_WRECK=<module>: that unit's wreck (4 directions, its shadow in the picture), then stop.
+if os.environ.get("LP_WRECK"):
+    # The left track thrown: its shoes gone, the frame on its road wheels.
+    left = {id(o) for o, sx, k in shoes if sx < 0}
+    V.wreck(base + anim + modules[os.environ["LP_WRECK"]], out, seed=7, tiles=3, margin=1.2, strip=lambda o: id(o) in left)
+    print("crawler wreck:", os.environ["LP_WRECK"], "to", out); sys.exit(0)
 rig = V.light(3, 1.2)
 # LP_ZOOM=k: the camera k times closer (close looks; the sheets want 1).
 _z = float(os.environ.get("LP_ZOOM", 1))
