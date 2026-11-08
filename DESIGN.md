@@ -5555,6 +5555,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   dark in a wreck and the Prism's crystals are gone (the first renders still had a lit arc and whole crystals). The
   fliers' wrecks, Grubstake's harrier's too, lie in a faint smudge (`vehicle.wreck`'s `soot`, `fade`; a tank's soot under
   them made a hard dark oval round a small drone, seen on film). +1.6 MB.
+- **The scenes' third pass** (0.2.239; the user's notes on the second takes). Dozers: the buggies "rush to the wall and
+  wait under fire before the dozers even appear": `ram.follow` now keeps followers 9 tiles behind their lead, abreast,
+  until its breach (a lead lost or given up on lets them go at the wall); `ram.stats().early` counts a follower nearer
+  the wall than its lead, and scenario `dev` wants none (152 with the second takes' orders back). Bombers: "attack from
+  multiple angles", "have the soldiers actually be on the move", "a more natural looking map": the drones come from all
+  round the squad, a beat apart, while it marches 40 tiles south (`dev` checks it moved; 0.5 tiles with the march off);
+  the stage is four grasses and dirt by a smooth hash noise, clumps of trees off the lanes, a stream the drones cross.
+  Prism: "a mix of units on both sides": two Kessler-Hayashi tanks and a Tesla with the Prisms (`dev` counts them), two
+  battle tanks and rocket troopers with the squad, the frame between them; its split beam the beam's own cyan ("why is
+  the bounced laser not simply the same color as the original?"; the violet copies gone, -1 MB). Flak: "underwhelming
+  ... black puffs of smoke jittered around spots the flak fires on": three black puffs a burst (`lp-flak-puff`, at a
+  flier's height, within its 2-tile burst), two waves of eight drones. Open (the user): fliers do not collide with
+  each other (`not_colliding_with_itself` on `lp-air`), so a swarm may stack; measuring both ways before choosing.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

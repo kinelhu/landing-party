@@ -35,11 +35,11 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `dome` | 407 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `cell` | 402 | pods | control, farm |  |  |  | cell_sites, cells |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
+| `dev` | 391 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 383 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
-| `dev` | 374 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `planner` | 338 | rd | base |  |  |  |  |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
@@ -63,13 +63,13 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `site` | 171 | modules | base, control, faction, layout |  |  |  |  |
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
+| `ram` | 164 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `scorcher` | 160 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_drains, tesla_held, tesla_holds |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
 | `road` | 143 | base, standing | control |  | 60 |  |  |
 | `assault` | 142 | attempt, tactics, threat | ops, siege |  |  |  |  |
 | `pool` | 142 | (leaf) | army, control, cuts, ops, prospect, prowl, tap, war |  |  |  |  |
 | `watch` | 141 | (leaf) | control |  |  |  | watch |
-| `ram` | 134 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_followers, rams |
 | `wfc_serenity` | 134 | (leaf) |  |  |  |  |  |
 | `answers` | 130 | (leaf) | ops |  |  |  |  |
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |

@@ -696,16 +696,17 @@ local function beam_copy(src, name, color, damage, dtype)
     {type = "damage", damage = {amount = damage, type = dtype}}}}} or nil
   return b
 end
-local prism_split = beam_copy("laser-beam", "lp-prism-split", {r = 0.85, g = 0.45, b = 1, a = 1}, 10, "laser")
--- Its own violet images (scripts/kh_glow.py): the violet tint over the red beam read red on film (the user, 2026-11-08:
--- "Prism bounced lasers are red").
+local prism_split = beam_copy("laser-beam", "lp-prism-split", {r = 0.35, g = 0.75, b = 1, a = 1}, 10, "laser")
+-- The beam's own cyan images (scripts/kh_glow.py): a tint over the red beam read red on film (the user, 2026-11-08:
+-- "Prism bounced lasers are red"), and a violet split beside a cyan beam read as another weapon ("why is the bounced
+-- laser not simply the same color as the original?").
 do
   local seen = {}
   local function repoint(t)
     if type(t) ~= "table" or seen[t] then return end
     seen[t] = true
     if type(t.filename) == "string" and t.filename:find("__base__/graphics/entity/laser-turret/", 1, true) then
-      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party__/graphics/serenity/laser-turret-violet/")
+      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party__/graphics/serenity/laser-turret/")
       t.tint = nil
     end
     for _, v in pairs(t) do repoint(v) end
@@ -809,13 +810,26 @@ data:extend({technician})
 -- splash and every breed by 100 and armour by 67, small arms its only answer). Each hits a flier hard and the ground
 -- lightly (the user: "kinda attack ground units also ... flak could be a sort of weak ground splash"): a masked area at the target (an area honours trigger_target_mask, a direct hit does not: air.lua), so it is a
 -- counter, not a better rifle. Each outranges the fliers' 15.
-local function anti_air(air, ground, dtype, radius, look, ground_radius)
+local flak_puff = table.deepcopy(data.raw["trivial-smoke"]["smoke"])
+flak_puff.name = "lp-flak-puff"
+flak_puff.color = {r = 0.05, g = 0.05, b = 0.05, a = 0.8}
+flak_puff.duration, flak_puff.fade_in_duration, flak_puff.fade_away_duration = 150, 3, 90
+flak_puff.start_scale, flak_puff.end_scale = 0.45, 1.3
+flak_puff.render_layer = "air-object"
+data:extend({flak_puff})
+local function anti_air(air, ground, dtype, radius, look, ground_radius, puffs)
   local function hit(amount, mask, r)
     return {type = "nested-result", action = {type = "area", radius = r, force = "enemy", trigger_target_mask = mask,
       action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = amount, type = dtype}}}}}}
   end
   local fx = {hit(air, {"lp-air-unit"}, radius), hit(ground, {"common"}, ground_radius or 0.5)}
   if look then table.insert(fx, 1, {type = "create-entity", entity_name = look}) end
+  if puffs then
+    -- Black puffs round the burst, at a flier's height (the user, on the flak scene: "underwhelming. Perhaps we add
+    -- black puffs of smoke jittered around spots the flak fires on?").
+    table.insert(fx, 1, {type = "create-trivial-smoke", smoke_name = "lp-flak-puff", repeat_count = 3, initial_height = 1.2,
+      offset_deviation = {{-1.6, -1.2}, {1.6, 1.2}}, speed_from_center = 0.004, speed_from_center_deviation = 0.003})
+  end
   return {type = "direct", action_delivery = {type = "instant", target_effects = fx}}
 end
 -- Anti-air trooper (lp-skyguard; Kessler-Hayashi's Line): a Laser trooper's body with a long tracking laser, 30 to a flier and 8 to the ground
@@ -843,7 +857,7 @@ flak_buggy.attack_parameters = {
   type = "projectile", ammo_category = "bullet", cooldown = 30, range = 22, range_mode = "bounding-box-to-bounding-box",
   sound = table.deepcopy(data.raw.gun["submachine-gun"].attack_parameters.sound),
   animation = table.deepcopy(flak_buggy.run_animation),
-  ammo_type = {action = anti_air(22, 3, "explosion", 2, "explosion", 1.5)},
+  ammo_type = {action = anti_air(22, 3, "explosion", 2, "explosion", 1.5, true)},
 }
 data:extend({skyguard, flak_buggy})
 

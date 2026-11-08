@@ -244,15 +244,18 @@ function dev.run(player, args)
     -- start OFF (60) tiles east, out of a close shot, and come in (the first takes showed every unit appear in frame);
     -- the defenders are those already standing within 16 of the call (the stage's, LP_MIX=scenes), else made there:
     --   dozers [n]   n Killdozers (2) ram through your wall nearest you within 60 (scripts/ram.lua); twice as many
-    --                buggies wait for the breach and go in (they had fired over the wall)
-    --   bombers [n]  n bomb drones (8) dive on your troopers, each a beat after the last (all at once, one blast)
-    --   prism [n]    n Prisms (2) at your troopers, fighting the whole area (on one trooper, one went home when it died)
-    --   flak [n]     12 Kessler-Hayashi scout drones at Grubstake's flak buggies (n, 4) (the user: "more flying units")
+    --                buggies behind them go in through the breach (they had fired over the wall, then got there first)
+    --   bombers [n]  your troopers march south and n bomb drones (8) dive on them from all round, a beat apart (all at
+    --                once, one blast; the user: "attack from multiple angles", "have the soldiers actually be on the move")
+    --   prism [n]    n Prisms (2), two of its tanks and a Tesla at your troops, fighting the whole area (on one trooper,
+    --                one went home when it died; Prisms alone read staged, the user: "a mix of units on both sides")
+    --   flak [n]     16 Kessler-Hayashi scout drones in two waves at Grubstake's flak buggies (n, 4)
     local s, n0 = player.surface, tonumber(args[2])
     local px, py = player.position.x, player.position.y
     -- Just out of a close shot's frame (half a 1080p frame is 30 tiles over the zoom: 1.4 gives 21): the slow ones closer
     -- (a dozer at 0.07 a tick takes 11 s for 45 tiles, a Prism 0.09), the fliers further.
     local OFF = ({dozers = 45, prism = 32, bombers = 60, flak = 60})[what]
+    local MARCH = 40
     local function corp(id) return game.forces[shared.CORPS[id].force] end
     local function put(name, force, x, y)
       local at = s.find_non_colliding_position(name, {x, y}, 8, 0.5)
@@ -296,15 +299,11 @@ function dev.run(player, args)
         local piece = near and #near > 0 and s.get_closest({w.position.x, y}, near) or w
         if u and ram.order(u, piece) then made = made + 1; first = first or u end
       end
+      -- Behind the dozers, kept behind them until the breach (ram.follow).
       local buggies = {}
       for k = 1, 2 * n do
-        local u = put(shared.variant("grubstake", "lp-buggy"), g, w.position.x + OFF + 8, py + (k - 1) * 3 - n * 1.5)
-        if u then
-          buggies[#buggies + 1] = u
-          -- Up behind the dozers, then wait for the breach (ram.follow).
-          u.commandable.set_command{type = defines.command.go_to_location, destination = {w.position.x + 14, py + (k - 1) * 3 - n * 1.5},
-            radius = 2, distraction = defines.distraction.by_damage}
-        end
+        local u = put(shared.variant("grubstake", "lp-buggy"), g, w.position.x + OFF + 10, py + (k - 1) * 3 - n * 1.5)
+        if u then buggies[#buggies + 1] = u end
       end
       if first then ram.follow(buggies, first) end
       player.print(string.format("%d Killdozer%s ram the %s at %.0f,%.0f, %d buggies behind", made, made == 1 and "" or "s",
@@ -317,17 +316,33 @@ function dev.run(player, args)
       local f = corp(id)
       if not f then return player.print("no " .. shared.CORPS[id].name .. " force yet") end
       local n, made = math.max(1, math.min(12, n0 or nd)), 0
+      if what == "bombers" then
+        -- The squad on the march, MARCH tiles south in step (a trooper walks 7 a second: a tracking shot; the stage's next
+        -- squad stands 60 south).
+        for _, t in ipairs(troops) do
+          t.commandable.set_command{type = defines.command.go_to_location, destination = {t.position.x, t.position.y + MARCH},
+            radius = 1, distraction = defines.distraction.by_damage}
+        end
+      end
       for k = 1, n do
-        -- The drones a beat apart: each a few tiles further out than the last, so they arrive one after another.
-        local far = what == "bombers" and OFF + (k - 1) * 5 or OFF
-        local u = put(shared.variant(id, kind), f, c[1] + far, c[2] + (k - 1) * 3 - n * 1.5)
-        if u then
-          made = made + 1
-          if what == "bombers" then
-            u.commandable.set_command{type = defines.command.attack, target = troops[(k - 1) % #troops + 1], distraction = defines.distraction.none}
-          else
-            fight(u, c, 12)
-          end
+        local u
+        if what == "bombers" then
+          -- From all round the squad, each a few tiles further out than the last, so they arrive one after another; led
+          -- by MARCH / 2 (the squad's middle on its march).
+          local a, far = 0.4 + (k - 1) * 2 * math.pi / n, OFF + (k - 1) * 5
+          u = put(shared.variant(id, kind), f, c[1] + math.cos(a) * far, c[2] + MARCH / 2 + math.sin(a) * far)
+          if u then u.commandable.set_command{type = defines.command.attack, target = troops[(k - 1) % #troops + 1], distraction = defines.distraction.none} end
+        else
+          u = put(shared.variant(id, kind), f, c[1] + OFF, c[2] + (k - 1) * 3 - n * 1.5)
+          if u then fight(u, c, 12) end
+        end
+        if u then made = made + 1 end
+      end
+      if what == "prism" then
+        -- Its company: two of its tanks on the flanks, a Tesla behind.
+        for _, e in ipairs({{"lp-tank", 6, -8}, {"lp-tank", 6, 8}, {"lp-tesla", 10, 0}}) do
+          local u = put(shared.variant(id, e[1]), f, c[1] + OFF + e[2], c[2] + e[3])
+          if u then fight(u, c, 14) end
         end
       end
       player.print(string.format("%d troopers, %d %s coming at them", #troops, made, kind))
@@ -340,8 +355,10 @@ function dev.run(player, args)
         if u then flak[#flak + 1] = u end
       end
       local c, made = centre(flak), 0
-      for k = 1, 12 do
-        local u = put(shared.variant(shared.DEFAULT_CORP, "lp-harrier"), k_, c[1] + OFF + (k % 4) * 4, c[2] + (k - 1) * 1.8 - 11)
+      -- Two waves of eight, the second 25 tiles behind the first.
+      for k = 1, 16 do
+        local w2 = k > 8 and 25 or 0
+        local u = put(shared.variant(shared.DEFAULT_CORP, "lp-harrier"), k_, c[1] + OFF + w2 + (k % 4) * 4, c[2] + ((k - 1) % 8) * 2.8 - 10)
         if u then fight(u, c, 12); made = made + 1 end
       end
       player.print(string.format("%d flak buggies, %d scout drones coming at them%s", #flak, made,

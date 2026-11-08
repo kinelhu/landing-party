@@ -1275,10 +1275,42 @@ scenarios.showcase = function()
         return e
       end
       flatten(40, -40, 200, 220)
-      -- Grass under each stage (on the desert the units read poorly, the user: "Hard to see on desert ground").
+      -- Grassland under the stages (on the desert the units read poorly, the user: "Hard to see on desert ground"), not
+      -- one grass (the user, the second takes: "a more natural looking map (not uniformly grass, some trees, or even some
+      -- water getting crossed by the flyers)"): four grasses and dirt patches by a smooth hash noise, a stream across the
+      -- bombers' stage east of the squad's march (shallow banks, deep middle), trees in clumps off the lanes.
+      local function hash(x, y) local v = math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - math.floor(v) end
+      local function noise(x, y, cell)
+        local gx, gy = math.floor(x / cell), math.floor(y / cell)
+        local fx, fy = x / cell - gx, y / cell - gy
+        fx, fy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
+        local a, b = hash(gx, gy) + (hash(gx + 1, gy) - hash(gx, gy)) * fx, hash(gx, gy + 1) + (hash(gx + 1, gy + 1) - hash(gx, gy + 1)) * fx
+        return a + (b - a) * fy
+      end
+      local function stream(y) return 82 + 4 * math.sin(y / 9) end           -- its middle's x at y (the bombers' stage)
+      local function lane(x, y)                                                -- where the scenes play: no trees
+        return (x >= 50 and x <= 135 and y >= -22 and y <= 22) or (x >= 52 and x <= 76 and y >= 50 and y <= 106)
+          or (x >= 52 and x <= 106 and y >= 108 and y <= 132) or (x >= 52 and x <= 110 and y >= 168 and y <= 192)
+      end
       local tiles = {}
-      for x = 40, 199 do for y = -40, 219 do tiles[#tiles + 1] = {name = "grass-1", position = {x, y}} end end
+      for x = 40, 199 do for y = -40, 219 do
+        local n, name = noise(x, y, 9) * 0.7 + noise(x, y, 3) * 0.3, "grass-1"
+        if n > 0.72 then name = "dry-dirt" elseif n > 0.6 then name = "grass-3" elseif n > 0.45 then name = "grass-2" elseif n < 0.22 then name = "grass-4" end
+        if y >= 30 and y <= 105 then
+          local d = math.abs(x - stream(y))
+          if d < 1.5 then name = "deepwater" elseif d < 3 then name = "water" elseif d < 4.2 then name = "water-shallow" elseif d < 5 then name = "water-mud" end
+        end
+        tiles[#tiles + 1] = {name = name, position = {x, y}}
+      end end
       surface().set_tiles(tiles)
+      local TREES = {"tree-01", "tree-02", "tree-03", "tree-05", "tree-08", "tree-09"}
+      for x = 40, 199, 2 do for y = -40, 219, 2 do
+        local jx, jy = x + hash(x, y + 7) * 2, y + hash(x + 3, y) * 2
+        local wet = jy >= 28 and jy <= 107 and math.abs(jx - stream(jy)) < 6
+        if not lane(jx, jy) and not wet and noise(x + 500, y, 12) > 0.62 and hash(x + 11, y + 5) < 0.55 then
+          surface().create_entity{name = TREES[1 + math.floor(hash(x, y) * #TREES)], position = {jx, jy}}
+        end
+      end end
       -- The dozers' stage: an outpost shut inside a stone wall all round (a short line, the dozers went round its end,
       -- the user's first take), assemblers, two gun turrets with ammunition, lamps.
       for x = 56, 80 do put("stone-wall", x + 0.5, -17.5); put("stone-wall", x + 0.5, 17.5) end
@@ -1292,6 +1324,10 @@ scenarios.showcase = function()
         for _, d in ipairs({{-4, -3}, {-4, 3}, {10, -4}}) do put("wooden-chest", c[1] + d[1], c[2] + d[2]) end
         put("small-lamp", c[1] - 3, c[2])
       end
+      -- The Prism's: the player's side mixed (the user: "Adding a mix of units on both sides might make it less
+      -- artificial"): two battle tanks on the squad's flanks, four rocket troopers behind it.
+      for _, y in ipairs({113, 127}) do put("lp-battle-tank", 64, y) end
+      for k = 0, 3 do put("lp-rocket-trooper", 55, 116 + k * 2.5) end
       -- The flak's: four flak buggies of Grubstake's in a square.
       for k = 0, 3 do put("lp-grubstake-flak-buggy", 60 + (k % 2) * 6, 177 + math.floor(k / 2) * 6, nil, "lp-grubstake") end
       info("scenes: stages at 80,0 (dozers), 60,60 (bombers), 60,120 (prism), 60,180 (flak)")
@@ -3802,12 +3838,13 @@ scenarios.dev = function()
   -- The staged scenes (/lp dozers, bombers, prism, flak; for the trailer, 2026-11-08), each in its own clearing west of
   -- spawn: what each must show happens. Dozers: a stone wall line, two dozers and four buggies at it: a wall piece falls.
   -- Bombers and prism: the troopers set lose men to them. Flak: the scout drones sent at the flak buggies are shot down.
-  local scenes = {{"dozers", -360, 150}, {"bombers", -360, 210}, {"prism", -360, 270}, {"flak", -360, 330}}
+  -- (The bombers' squad marches 40 south: the clearings 80 to 100 apart, the bombers' 70 deep.)
+  local scenes = {{"dozers", -360, 150}, {"bombers", -360, 230}, {"prism", -360, 330}, {"flak", -360, 410}}
   schedule(2 * 3600 + 1200, function()
     S.scene = {}
     for _, sc in ipairs(scenes) do
       local what, x, y = sc[1], sc[2], sc[3]
-      flatten(x - 10, y - 14, x + 140, y + 14)
+      flatten(x - 10, y - 14, x + 140, y + (what == "bombers" and 75 or 14))
       if what == "dozers" then
         -- Shut all round (a line alone, they went round its end): the only way in is through.
         for k = -6, 6 do
@@ -3820,14 +3857,26 @@ scenarios.dev = function()
         end
         S.ram0 = lp("ram_stats")
       end
-      local box = {{x - 10, y - 14}, {x + 140, y + 14}}
+      local box = {{x - 10, y - 14}, {x + 140, y + (what == "bombers" and 75 or 14)}}
       S.scene[what] = {box = box, walls = surface().count_entities_filtered{area = box, name = "stone-wall"}}
       lp("dev", {what}, what == "dozers" and {x + 20, y} or {x, y})          -- (east of the square: its east wall the nearest)
       local st = S.scene[what]
       st.troopers = surface().count_entities_filtered{area = box, name = "lp-trooper"}
       st.drones = surface().count_entities_filtered{area = box, name = "lp-harrier"}
       st.dozers = surface().count_entities_filtered{area = box, name = "lp-grubstake-dozer"}
-      st.bombs = surface().count_entities_filtered{area = box, name = "lp-grubstake-scavenger"}
+      -- (From all round the squad, up to 95 tiles out.)
+      st.bombs = surface().count_entities_filtered{position = {x, y + 30}, radius = 130, name = "lp-grubstake-scavenger"}
+      st.company = surface().count_entities_filtered{area = box, name = {"lp-tank", "lp-tesla"}}
+      if what == "bombers" then
+        -- (The second takes' squad stood still: it marches now.)
+        local function mid()
+          local t, sy = surface().find_entities_filtered{area = box, name = "lp-trooper"}, 0
+          for _, u in ipairs(t) do sy = sy + u.position.y end
+          return #t > 0 and sy / #t or 0
+        end
+        st.y0 = mid()
+        schedule(game.tick + 90, function() st.y1 = mid() end)
+      end
     end
   end)
   schedule(2 * 3600 + 1200 + 60 * 60, function()
@@ -3839,14 +3888,18 @@ scenarios.dev = function()
     check("dev: /lp dozers rammed through and the buggies went in", d.dozers == 2 and r.breaches > S.ram0.breaches and inside > 0,
       string.format("%d dozers, walls %d to %d, breaches %d, buggies inside %d", d.dozers, d.walls, now("dozers", "stone-wall"),
         r.breaches - S.ram0.breaches, inside))
+    -- (The second takes: the buggies drove to the wall and waited under fire before the dozers were in sight.)
+    check("dev: and the buggies kept behind the dozers until the breach", r.early == S.ram0.early,
+      string.format("%d follower-steps ahead of their lead", r.early - S.ram0.early))
     local b = S.scene.bombers
     check("dev: /lp bombers dove on the troopers", b.bombs == 8 and b.troopers == 15 and now("bombers", "lp-trooper") < 15,
       string.format("%d drones, troopers %d to %d", b.bombs, b.troopers, now("bombers", "lp-trooper")))
+    check("dev: and the troopers were on the march", b.y1 - b.y0 > 4, string.format("%.1f tiles south in 1.5 s", b.y1 - b.y0))
     local p = S.scene.prism
-    check("dev: /lp prism cut into the troopers", p.troopers == 15 and now("prism", "lp-trooper") < 15,
-      string.format("troopers %d to %d", p.troopers, now("prism", "lp-trooper")))
+    check("dev: /lp prism cut into the troopers", p.troopers == 15 and now("prism", "lp-trooper") < 15 and p.company == 3,
+      string.format("troopers %d to %d, its company %d", p.troopers, now("prism", "lp-trooper"), p.company))
     local f = S.scene.flak
-    check("dev: /lp flak shot scout drones down", f.drones == 12 and now("flak", "lp-harrier") < 12,
+    check("dev: /lp flak shot scout drones down", f.drones == 16 and now("flak", "lp-harrier") < 16,
       string.format("drones %d to %d", f.drones, now("flak", "lp-harrier")))
   end)
   schedule(2 * 3600 + 600 + 15 * 60, function()

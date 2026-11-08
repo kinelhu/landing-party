@@ -13,6 +13,8 @@ local STEP = 10
 local THROUGH = 9
 local CLOSE = 2.4                  -- at the wall: its centre this near the face
 local GIVE_UP = 60 * 60            -- an approach that never gets there
+local ESCORT = 9                   -- followers this far behind their lead until its breach
+local ESCORT_EVERY = 30
 
 local function st()
   storage.rams = storage.rams or {}
@@ -34,7 +36,8 @@ function ram.order(u, wall)
   return true
 end
 
--- Units that wait for u's breach and then go in through it.
+-- Units that keep ESCORT behind u, abreast, until its breach, then go in through it (the user, on the second takes:
+-- "the buggies rush to the wall and wait under fire before the dozers even appear").
 function ram.follow(units, u)
   local f = storage.ram_followers or {}
   storage.ram_followers = f
@@ -82,11 +85,35 @@ local function release(lead, at, dir)
   end
 end
 
+-- Its followers behind it, abreast across its line; one nearer the wall than its lead is counted (ram.stats().early: a
+-- follower that got there first, the second takes' fault).
+local function escort(k, r, tick)
+  local u = r.unit
+  local lead = (r.wall[1] - u.position.x) * r.dir[1] + (r.wall[2] - u.position.y) * r.dir[2]
+  for _, f in ipairs(storage.ram_followers or {}) do
+    if f.lead == k then
+      for i, v in ipairs(f.units) do
+        if v.valid then
+          if tick % ESCORT_EVERY == 0 then
+            local off = (i - (#f.units + 1) / 2) * 3
+            v.commandable.set_command{type = defines.command.go_to_location, radius = 1.5, distraction = defines.distraction.none,
+              destination = {u.position.x - r.dir[1] * ESCORT - r.dir[2] * off, u.position.y - r.dir[2] * ESCORT + r.dir[1] * off}}
+          end
+          local d = (r.wall[1] - v.position.x) * r.dir[1] + (r.wall[2] - v.position.y) * r.dir[2]
+          if d < lead - 1 then storage.ram_early = (storage.ram_early or 0) + 1 end
+        end
+      end
+    end
+  end
+end
+
 function ram.tick(tick)
   if tick % STEP ~= 0 or not storage.rams then return end
   for k, r in pairs(storage.rams) do
     local u = r.unit
     if not u.valid then
+      -- Its lead lost before a breach: its followers go at the wall themselves.
+      release(k, r.wall, {0, 0})
       storage.rams[k] = nil
     elseif r.phase == "approach" then
       local dx, dy = r.wall[1] - u.position.x, r.wall[2] - u.position.y
@@ -96,8 +123,11 @@ function ram.tick(tick)
         u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
       elseif tick - r.at > GIVE_UP then
         r.phase = "done"
+        release(k, r.wall, {0, 0})
       end
+      if r.phase == "approach" then escort(k, r, tick) end
     elseif r.phase == "ram" then
+      escort(k, r, tick)
       local hit = ahead(r)
       if #hit > 0 then
         for _, e in ipairs(hit) do
@@ -128,7 +158,7 @@ end
 function ram.stats()
   local n = 0
   for _ in pairs(storage.rams or {}) do n = n + 1 end
-  return {active = n, crushed = storage.ram_crushed or 0, breaches = storage.ram_breaches or 0}
+  return {active = n, crushed = storage.ram_crushed or 0, breaches = storage.ram_breaches or 0, early = storage.ram_early or 0}
 end
 
 return ram

@@ -15,9 +15,9 @@ OUT = os.path.join(os.path.dirname(__file__), "..", "landing-party", "graphics",
 FILES = ["laser-turret-shooting-light.png", "laser-body.png", "laser-body-light.png", "laser-end.png", "laser-end-light.png",
          "laser-ground-light-body.png", "laser-ground-light-head.png", "laser-ground-light-tail.png"]
 CYAN = np.array((0.35, 0.75, 1.0))                     # the beam's colour (data.lua, KH_LASER)
-# And the Prism's split beam violet (units.lua, lp-prism-split: its tint over the red image read red on film too).
-VIOLET = np.array((0.85, 0.45, 1.0))
-JOBS = [(OUT, CYAN, FILES), (OUT + "-violet", VIOLET, [f for f in FILES if f != "laser-turret-shooting-light.png"])]
+# (The Prism's split beam had violet copies here; the user, 2026-11-08: "why is the bounced laser not simply the same
+# color as the original?". It draws these.)
+JOBS = [(OUT, CYAN, FILES)]
 for OUT, CYAN, FILES in JOBS:
   os.makedirs(OUT, exist_ok=True)
   for f in FILES:
