@@ -436,6 +436,12 @@ MODULES = {"cannon": cannon, "prism": prism, "tesla": tesla, "aegis": aegis}
 which = os.environ.get("LP_MODULES", ",".join(MODULES)).split(",")
 modules = {n: V.group(MODULES[n]) for n in which if n}
 V.finish(grime=0.6, mud=0.5, mud_top=0.4)             # maintained: less grime than Grubstake's; mud on the tracks
+# LP_WRECK=<module>: that head's wreck on the hull (4 directions, its shadow in the picture; the left track thrown), then
+# stop (the user, 2026-11-08: "We didn't do KH wrecks also").
+if os.environ.get("LP_WRECK"):
+    left = set(anim[:len(anim) // 2])
+    V.wreck(base + anim + modules[os.environ["LP_WRECK"]], out, seed=19, tiles=3, margin=1.2, strip=lambda o: o in left)
+    print("kh tank wreck:", os.environ["LP_WRECK"], "to", out); sys.exit(0)
 rig = V.light(3, 1.2)
 _z = float(os.environ.get("LP_ZOOM", 1))
 V.scene.camera.data.ortho_scale /= _z

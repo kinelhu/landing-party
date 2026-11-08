@@ -8,18 +8,23 @@
 local T = 11160            -- the save's first tick plus a beat (showcase.sh saves at 11100)
 return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, speed = 1, fast_until = T - 60,
   dev = {
-    {tick = T + 60, args = {"dozers", "2"}, at = {80, 0}},
-    {tick = T + 1260, args = {"bombers", "6"}, at = {60, 60}},
-    {tick = T + 2460, args = {"prism", "1"}, at = {60, 120}},
-    {tick = T + 3660, args = {"flak", "2"}, at = {60, 180}},
+    {tick = T + 30, args = {"dozers", "2"}, at = {80, 0}},
+    {tick = T + 2430, args = {"bombers", "8"}, at = {60, 60}},
+    {tick = T + 3330, args = {"prism", "2"}, at = {60, 120}},
+    {tick = T + 4530, args = {"flak", "4"}, at = {60, 180}},
   },
   moves = {
-    -- The Killdozers ram the wall, the buggies pour through after 10 s: a slow push-in on the wall.
-    {name = "sc1-dozers", tick = T, frames = 1200, every = 1, from = {pos = {92, 0}, zoom = 0.7, daytime = 0.25}, to = {pos = {84, 0}, zoom = 0.9, daytime = 0.25}},
-    -- The bomb drones dive into the block of troopers: a lock-off a little low, the troopers in the lower third.
-    {name = "sc2-bombers", tick = T + 1200, frames = 600, every = 1, from = {pos = {78, 58}, zoom = 0.9, daytime = 0.3}, to = {pos = {76, 58}, zoom = 0.95, daytime = 0.3}},
-    -- The Prism's beam splitting into the troopers: close.
-    {name = "sc3-prism", tick = T + 2400, frames = 600, every = 1, from = {pos = {80, 120}, zoom = 1.1, daytime = 0.3}, to = {pos = {78, 120}, zoom = 1.2, daytime = 0.3}},
-    -- The scout drones come in over the flak buggies and fall: a lock-off wide enough for the drones' run.
-    {name = "sc4-flak", tick = T + 3600, frames = 720, every = 1, from = {pos = {85, 180}, zoom = 0.75, daytime = 0.35}, to = {pos = {80, 180}, zoom = 0.8, daytime = 0.35}},
+    -- (The first takes, zoom 0.7 to 1.1, showed the units too small; every unit appeared in frame: now the defenders stand
+    -- on the stage before the shot and the attackers drive in from off-screen.)
+    -- The Killdozers come in over 11 s, ram through, the buggies follow the breach in: a slow push-in on the wall, 40 s.
+    {name = "sc1-dozers", tick = T, frames = 2400, every = 1, from = {pos = {94, 0}, zoom = 1.4, daytime = 0.2}, to = {pos = {80, 0}, zoom = 1.7, daytime = 0.2}},
+    -- The squad marches south (7 tiles a second, 40 tiles) by the stream, the camera with it; the bomb drones dive in from
+    -- all round, one after another, over the water and the trees; then a hold where it stops.
+    {name = "sc2-bombers", tick = T + 2400, frames = 380, every = 1, from = {pos = {70, 62}, zoom = 1.3, daytime = 0.2}, to = {pos = {68, 97}, zoom = 1.4, daytime = 0.2}},
+    {name = "sc2-bombers-hold", tick = T + 2780, frames = 520, every = 1, from = {pos = {68, 97}, zoom = 1.4, daytime = 0.2}, to = {pos = {67, 99}, zoom = 1.5, daytime = 0.2}},
+    -- Two Prisms with two tanks and a Tesla come at the squad, two battle tanks and rocket troopers with it; the frame
+    -- between the two sides (the second takes' was on the squad, the Prisms at its edge).
+    {name = "sc3-prism", tick = T + 3300, frames = 1200, every = 1, from = {pos = {84, 120}, zoom = 1.3, daytime = 0.2}, to = {pos = {78, 120}, zoom = 1.45, daytime = 0.2}},
+    -- Two waves of scout drones come in over the four flak buggies, black puffs round the bursts, and fall.
+    {name = "sc4-flak", tick = T + 4500, frames = 720, every = 1, from = {pos = {82, 180}, zoom = 1.3, daytime = 0.2}, to = {pos = {74, 180}, zoom = 1.5, daytime = 0.2}},
   }}

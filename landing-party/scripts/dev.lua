@@ -38,6 +38,7 @@ local standing = require("__landing-party__.scripts.standing")
 local farm = require("__landing-party__.scripts.farm")
 local burstfx = require("__landing-party__.scripts.burstfx")
 local orbital = require("__landing-party__.scripts.orbital")
+local ram = require("__landing-party__.scripts.ram")
 
 local dev = {}
 
@@ -239,30 +240,44 @@ function dev.run(player, args)
         or "no laser or tesla turret of yours within 60 to send them at"))
   elseif what == "dozers" or what == "bombers" or what == "prism" or what == "flak" then
     -- Staged scenes for the trailer (the user, 2026-11-08: "new scenes including a dozer siege and bomber drones diving on
-    -- a mass of troopers"; and the Prism and Tesla in action, flak buggies on fliers), east of where you stand, the same
-    -- each take:
-    --   dozers [n]   n Killdozers (2) and twice as many buggies at your wall nearest you within 60: the dozers ram it,
-    --                the buggies hold 10 s behind them and pour through
-    --   bombers [n]  15 of your troopers in a block 10 east, n bomb drones (6) 45 east diving on them
-    --   prism [n]    15 of your troopers in a block 10 east, n Prisms (1) 30 east sent at them
-    --   flak [n]     n flak buggies (2) 10 east, three times as many Kessler-Hayashi scout drones 40 east sent at them
+    -- a mass of troopers"; and the Prism and Tesla in action, flak buggies on fliers), the same each take. The attackers
+    -- start OFF (60) tiles east, out of a close shot, and come in (the first takes showed every unit appear in frame);
+    -- the defenders are those already standing within 16 of the call (the stage's, LP_MIX=scenes), else made there:
+    --   dozers [n]   n Killdozers (2) ram through your wall nearest you within 60 (scripts/ram.lua); twice as many
+    --                buggies wait for the breach and go in (they had fired over the wall)
+    --   bombers [n]  n bomb drones (8) dive on your troopers, each a beat after the last (all at once, one blast)
+    --   prism [n]    n Prisms (2) at your troopers, fighting the whole area (on one trooper, one went home when it died)
+    --   flak [n]     12 Kessler-Hayashi scout drones at Grubstake's flak buggies (n, 4) (the user: "more flying units")
     local s, n0 = player.surface, tonumber(args[2])
     local px, py = player.position.x, player.position.y
+    -- Just out of a close shot's frame (half a 1080p frame is 30 tiles over the zoom: 1.4 gives 21): the slow ones closer
+    -- (a dozer at 0.07 a tick takes 11 s for 45 tiles, a Prism 0.09), the fliers further.
+    local OFF = ({dozers = 45, prism = 32, bombers = 60, flak = 60})[what]
     local function corp(id) return game.forces[shared.CORPS[id].force] end
     local function put(name, force, x, y)
       local at = s.find_non_colliding_position(name, {x, y}, 8, 0.5)
       return at and s.create_entity{name = name, position = at, force = force}
     end
-    local function block(n, x, y)
-      local out = {}
-      for k = 0, n - 1 do
-        local u = put("lp-trooper", player.force, x + (k % 5) * 1.6, y + math.floor(k / 5) * 1.6 - 1.6)
-        if u then out[#out + 1] = u end
-      end
-      return out
+    local function standing(name, force)
+      return s.find_entities_filtered{position = {px, py}, radius = 16, name = name, force = force}
     end
-    local function attack(u, t)
-      u.commandable.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
+    local function troopers()
+      local t = standing("lp-trooper", player.force)
+      if #t >= 5 then return t end
+      for k = 0, 14 do
+        local u = put("lp-trooper", player.force, px + (k % 5) * 1.6, py + math.floor(k / 5) * 1.6 - 1.6)
+        if u then t[#t + 1] = u end
+      end
+      return t
+    end
+    local function centre(list)
+      local x, y = 0, 0
+      for _, u in ipairs(list) do x, y = x + u.position.x, y + u.position.y end
+      return {x / #list, y / #list}
+    end
+    local function fight(u, at, radius)
+      u.commandable.set_command{type = defines.command.attack_area, destination = at, radius = radius or 10,
+        distraction = defines.distraction.by_enemy}
     end
     if what == "dozers" then
       local g = corp("grubstake")
@@ -273,46 +288,63 @@ function dev.run(player, args)
         if not w or (e.position.x - px) ^ 2 + (e.position.y - py) ^ 2 < (w.position.x - px) ^ 2 + (w.position.y - py) ^ 2 then w = e end
       end
       if not w then return player.print("no wall of yours within 60 to ram") end
-      local n, made = math.max(1, math.min(6, n0 or 2)), 0
+      local n, made, first = math.max(1, math.min(6, n0 or 2)), 0, nil
       for k = 1, n do
-        local u = put(shared.variant("grubstake", "lp-dozer"), g, px + 25, py + (k - 1) * 4)
-        if u then attack(u, w); made = made + 1 end
+        local y = py + (k - 1) * 4 - (n - 1) * 2
+        local u = put(shared.variant("grubstake", "lp-dozer"), g, w.position.x + OFF, y)
+        local near = u and s.find_entities_filtered{position = {w.position.x, y}, radius = 3, type = {"wall", "gate"}, force = player.force}
+        local piece = near and #near > 0 and s.get_closest({w.position.x, y}, near) or w
+        if u and ram.order(u, piece) then made = made + 1; first = first or u end
       end
+      local buggies = {}
       for k = 1, 2 * n do
-        local u = put(shared.variant("grubstake", "lp-buggy"), g, px + 32, py + (k - 1) * 3 - 2)
+        local u = put(shared.variant("grubstake", "lp-buggy"), g, w.position.x + OFF + 8, py + (k - 1) * 3 - n * 1.5)
         if u then
-          u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
-            commands = {{type = defines.command.stop, ticks_to_wait = 600, distraction = defines.distraction.none},
-              {type = defines.command.attack_area, destination = w.position, radius = 14, distraction = defines.distraction.by_enemy}}}
+          buggies[#buggies + 1] = u
+          -- Up behind the dozers, then wait for the breach (ram.follow).
+          u.commandable.set_command{type = defines.command.go_to_location, destination = {w.position.x + 14, py + (k - 1) * 3 - n * 1.5},
+            radius = 2, distraction = defines.distraction.by_damage}
         end
       end
-      player.print(string.format("%d Killdozer%s at the %s at %.0f,%.0f, %d buggies behind", made, made == 1 and "" or "s",
-        w.name, w.position.x, w.position.y, 2 * n))
+      if first then ram.follow(buggies, first) end
+      player.print(string.format("%d Killdozer%s ram the %s at %.0f,%.0f, %d buggies behind", made, made == 1 and "" or "s",
+        w.name, w.position.x, w.position.y, #buggies))
     elseif what == "bombers" or what == "prism" then
-      local troops = block(15, px + 10, py)
-      local id, kind, far, nd = "grubstake", "lp-scavenger", 45, 6
-      if what == "prism" then id, kind, far, nd = shared.DEFAULT_CORP, "lp-prism", 30, 1 end
+      local troops = troopers()
+      local c = centre(troops)
+      local id, kind, nd = "grubstake", "lp-scavenger", 8
+      if what == "prism" then id, kind, nd = shared.DEFAULT_CORP, "lp-prism", 2 end
       local f = corp(id)
       if not f then return player.print("no " .. shared.CORPS[id].name .. " force yet") end
       local n, made = math.max(1, math.min(12, n0 or nd)), 0
       for k = 1, n do
-        local u = put(shared.variant(id, kind), f, px + far, py + (k - 1) * 2.5 - n)
-        if u and #troops > 0 then attack(u, troops[(k - 1) % #troops + 1]); made = made + 1 end
+        -- The drones a beat apart: each a few tiles further out than the last, so they arrive one after another.
+        local far = what == "bombers" and OFF + (k - 1) * 5 or OFF
+        local u = put(shared.variant(id, kind), f, c[1] + far, c[2] + (k - 1) * 3 - n * 1.5)
+        if u then
+          made = made + 1
+          if what == "bombers" then
+            u.commandable.set_command{type = defines.command.attack, target = troops[(k - 1) % #troops + 1], distraction = defines.distraction.none}
+          else
+            fight(u, c, 12)
+          end
+        end
       end
-      player.print(string.format("%d troopers 10 east, %d %s sent at them", #troops, made, kind))
+      player.print(string.format("%d troopers, %d %s coming at them", #troops, made, kind))
     else
       local g, k_ = corp("grubstake"), corp(shared.DEFAULT_CORP)
       if not (g and k_) then return player.print("flak needs both Grubstake and Kessler-Hayashi") end
-      local n, flak, made = math.max(1, math.min(6, n0 or 2)), {}, 0
-      for k = 1, n do
-        local u = put(shared.variant("grubstake", "lp-flak-buggy"), g, px + 10, py + (k - 1) * 4)
+      local flak = standing(shared.variant("grubstake", "lp-flak-buggy"), g)
+      for k = #flak + 1, math.max(1, math.min(6, n0 or 4)) do
+        local u = put(shared.variant("grubstake", "lp-flak-buggy"), g, px + (k % 2) * 5, py + math.floor(k / 2) * 5 - 4)
         if u then flak[#flak + 1] = u end
       end
-      for k = 1, 3 * n do
-        local u = put(shared.variant(shared.DEFAULT_CORP, "lp-harrier"), k_, px + 40, py + (k - 1) * 2 - n)
-        if u and #flak > 0 then attack(u, flak[(k - 1) % #flak + 1]); made = made + 1 end
+      local c, made = centre(flak), 0
+      for k = 1, 12 do
+        local u = put(shared.variant(shared.DEFAULT_CORP, "lp-harrier"), k_, c[1] + OFF + (k % 4) * 4, c[2] + (k - 1) * 1.8 - 11)
+        if u then fight(u, c, 12); made = made + 1 end
       end
-      player.print(string.format("%d flak buggies 10 east, %d scout drones sent at them%s", #flak, made,
+      player.print(string.format("%d flak buggies, %d scout drones coming at them%s", #flak, made,
         g.is_enemy(k_) and "" or " (the two are not at war: no fight)"))
     end
   elseif what == "trace" then

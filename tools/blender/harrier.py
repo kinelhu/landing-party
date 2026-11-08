@@ -138,7 +138,8 @@ V.finish(mud=0.0)
 # LP_WRECK=1: its wreck (4 directions, its shadow in the picture; the rotor gone), then stop.
 if os.environ.get("LP_WRECK"):
     for o in modules["rotor"]: o.hide_render = True
-    V.wreck(base, out, seed=13, tilt=(9, -14), sink=0.02, tiles=2, margin=1.0, scorch=1.2)
+    V.wreck(base, out, seed=13, tilt=(9, -14), sink=0.02, tiles=2, margin=1.0, scorch=0.75, soot=0.5, fade=0.55)
+    # (A tank's soot under it, the first: a hard dark oval round a small flier. A faint smudge where it fell.)
     print("harrier wreck to", out); sys.exit(0)
 rig = V.light(2, 2.4)                  # (at 1.6 the rotor, a tile and a half up, ran off the frame)
 _z = float(os.environ.get("LP_ZOOM", 1))

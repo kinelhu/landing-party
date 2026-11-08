@@ -5533,6 +5533,28 @@ Bugs and surprises the headless runs caught, each kept as a check:
   dozers set; troopers lost; drones shot down), all four seen failing with the verbs' orders disconnected (the buggies
   alone broke walls then: the dozer check rests on its dozers being set). `LP_MIX=scenes` builds their stages;
   `docs/trailer/reel-scenes.lua` films them (framings to fix at scouting).
+- **The Killdozer rams** (0.2.238; the user on the first takes: "they stop in front of the wall and attack it from
+  afar.. they should align with the wall, and ram through!"). `scripts/ram.lua`: a dozer told at a wall drives to its
+  face (the line from it to the piece), stops square, and its blade crushes every enemy wall and gate in a strip 3.2
+  wide ahead of it (60 a piece every 10 ticks, a stone wall in a second); once the strip is clear it drives 9 tiles on,
+  and the units following it (`ram.follow`) go through the breach and attack 12 tiles inside. Its gun had made it stop
+  at range like any gun. Raids' breach phase rams with it (ops.lua); `/lp dozers` too. Scenario `dev` checks breaches
+  and buggies inside (seen failing with the ram off: 0 breaches, the buggies firing over the wall). The scenes reworked
+  on the same takes: attackers set off screen (the user: "we see all units spawning"), defenders those standing at the
+  call (the stage, `LP_MIX=scenes`, places them: a walled outpost, trooper blocks, flak buggies, on grass where the
+  desert hid the fliers), bomb drones staggered 5 tiles apart, the Prisms on `attack_area` (one, on a single target,
+  had turned for home after its kill), 12 scout drones at the flak. Finding: the bomb drones are not underpowered
+  (scenario `bombtest`: 9 of 15 troopers dead in 2 s); eight bursts at one instant over grey remains read as nothing.
+- **Kessler-Hayashi's lasers were yellow** (found in the first takes, 0.2.233 to 0.2.237): a cyan tint over the red-orange
+  laser images multiplies to yellow. The beam (`lp-kh-laser-beam`) and the turrets' glows now draw recoloured copies of
+  vanilla's images (`scripts/kh_glow.py`: the light masks take the colour whole, the core stays white), the Prism's
+  split violet copies of them; damage untouched; +2.0 MB. A tint only darkens: recolour by image, never by tint.
+- **Kessler-Hayashi's wrecks** (0.2.238; the user: "We didn't do KH wrecks also"): the tank, Prism, Tesla, Aegis, scout
+  and laser drones each leave their own charred wreck (`LP_WRECK` in `kh_tank.py` and `kh_drone.py`, the kit's
+  `vehicle.wreck`), plated variants with them; Grubstake's copies keep theirs through their props. Whatever glowed is
+  dark in a wreck and the Prism's crystals are gone (the first renders still had a lit arc and whole crystals). The
+  fliers' wrecks, Grubstake's harrier's too, lie in a faint smudge (`vehicle.wreck`'s `soot`, `fade`; a tank's soot under
+  them made a hard dark oval round a small drone, seen on film). +1.6 MB.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -26,6 +26,8 @@ M["kglow_dim"] = lpkit.mat("kglow_dim", (0.05, 0.12, 0.17), emit=(0.2, 0.5, 0.8)
 V.GLOW_NAMES.add("kglow_dim")
 M["kduct"] = lpkit.worn("kduct", (0.06, 0.07, 0.075), metal=0.45, rough=0.45, seams=3, rivets=False, wear=0.12, streaks=0.3)
 H = 1.0
+if os.environ.get("LP_WRECK"):
+    H = 0.25                           # a wreck down on the ground
 
 def hull(sec, y0, y1, z, m, taper=0.55, bevel=0.012):
     """A faceted body from nose (y1) to tail (y0): its cross-section sec [(x, z)...] at the middle, the ends narrowed by
@@ -126,6 +128,12 @@ def fans():
 base = V.group(body)
 modules = {"fans": V.group(fans)}
 V.finish(grime=0.4, mud=0.0)
+# LP_WRECK=1: its wreck (4 directions, its shadow in the picture; the fans gone), then stop.
+if os.environ.get("LP_WRECK"):
+    for o in modules["fans"]: o.hide_render = True
+    V.wreck(base, out, seed=23, tilt=(10, -12), sink=0.03, tiles=2, margin=1.0, scorch=0.75, soot=0.5, fade=0.55)
+    # (A tank's soot under it, the first: a hard dark oval round a small flier. A faint smudge where it fell.)
+    print("kh drone wreck to", out); sys.exit(0)
 rig = V.light(2, 2.2)
 _z = float(os.environ.get("LP_ZOOM", 1))
 V.scene.camera.data.ortho_scale /= _z

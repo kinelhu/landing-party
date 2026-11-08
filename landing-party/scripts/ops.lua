@@ -9,6 +9,7 @@
 --            no kill for 90 s while attacking; or, from the staging point, more turrets seen than the force
 --            can take (it turns back unhurt). An aborted target is remembered (tried, defence seen, cool).
 local shared = require("__landing-party__.shared")
+local ram = require("__landing-party__.scripts.ram")
 local tune = require("__landing-party__.scripts.tune")
 local rd = require("__landing-party__.scripts.rd")
 local know = require("__landing-party__.scripts.know")
@@ -1694,9 +1695,12 @@ local function step(b, trace, army)
       trace(b, string.format("raid %s the wall at %.0f,%.0f and goes in with %d of %d",
         standing and "gave up on" or "breached", op.breach_at[1], op.breach_at[2], n, op.launched))
     else
-      -- Each raider on a piece still standing: idle, wandering or its piece gone, it is told again.
+      -- Each raider on a piece still standing: idle, wandering or its piece gone, it is told again. A dozer rams it
+      -- (scripts/ram.lua: at its gun's 2 tiles it had stopped short and shot the wall like any gun, the user's trailer).
       for _, u in ipairs(op.members) do
-        if u.valid and not busy(u) then
+        if u.valid and shared.kind_of(u.name) == "lp-dozer" then
+          if not ram.busy(u) then ram.order(u, standing) end
+        elseif u.valid and not busy(u) then
           u.commandable.set_command{type = defines.command.attack, target = standing, distraction = defines.distraction.by_damage}
         end
       end

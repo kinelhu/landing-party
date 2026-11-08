@@ -339,7 +339,7 @@ def char(m, burn=0.78):
     b.inputs["Roughness"].default_value = 0.85; b.inputs["Metallic"].default_value = 0.2
 
 def wreck(objs, out, seed=1, lose=0.35, thrown=0.35, keep=(), tilt=(4, -3), sink=0.06, N=4, tiles=3, margin=1.2,
-          strip=None, scorch=1.8):
+          strip=None, scorch=1.8, soot=0.85, fade=0.18):
     """A unit's wreck (a corpse's picture, as vanilla's car and tank remnants: N directions, the shadow in the picture):
     every material charred, a share of the small parts lost and a share thrown onto the ground round it (seeded; the
     largest and those named in keep stay), thin uprights (whips, masts) gone, the objects strip(o) says gone (a run of
@@ -351,6 +351,11 @@ def wreck(objs, out, seed=1, lose=0.35, thrown=0.35, keep=(), tilt=(4, -3), sink
         if m.name in GLOW_NAMES:
             m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 0.0
         char(m, burn=0.9)
+    # Whatever glowed or held a charge is gone with its power (the Tesla's arc, a running light), and the Prism's crystals
+    # shattered (on the first wrecks the arc still crackled and the crystals stood whole).
+    for o in objs:
+        if any(sl.material and (sl.material.name in GLOW_NAMES or sl.material.name == "kcrystal") for sl in o.material_slots):
+            o.hide_render = True
     sized = sorted(objs, key=lambda o: o.dimensions.length)
     small = sized[: int(len(sized) * 0.7)]
     debris = []
@@ -384,8 +389,8 @@ def wreck(objs, out, seed=1, lose=0.35, thrown=0.35, keep=(), tilt=(4, -3), sink
         nz = nt.nodes.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = 3.0; L(tc.outputs["Object"], nz.inputs["Vector"])
         mx = nt.nodes.new("ShaderNodeMath"); mx.operation = "MULTIPLY"; L(gr.outputs["Fac"], mx.inputs[0]); L(nz.outputs["Fac"], mx.inputs[1])
         # (Faded from 0.05 to 0.4 it hardly showed beyond the hull, the first: it reaches out, darker.)
-        rr = nt.nodes.new("ShaderNodeMapRange"); rr.inputs["From Min"].default_value = 0.0; rr.inputs["From Max"].default_value = 0.18
-        rr.inputs["To Min"].default_value = 0.0; rr.inputs["To Max"].default_value = 0.85; L(mx.outputs[0], rr.inputs["Value"])
+        rr = nt.nodes.new("ShaderNodeMapRange"); rr.inputs["From Min"].default_value = 0.0; rr.inputs["From Max"].default_value = fade
+        rr.inputs["To Min"].default_value = 0.0; rr.inputs["To Max"].default_value = soot; L(mx.outputs[0], rr.inputs["Value"])
         L(rr.outputs["Result"], b.inputs["Alpha"])
         sc.data.materials.append(m)
     pivot = bpy.data.objects.new("wreck_pivot", None); scene.collection.objects.link(pivot)

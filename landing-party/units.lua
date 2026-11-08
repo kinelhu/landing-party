@@ -697,6 +697,21 @@ local function beam_copy(src, name, color, damage, dtype)
   return b
 end
 local prism_split = beam_copy("laser-beam", "lp-prism-split", {r = 0.85, g = 0.45, b = 1, a = 1}, 10, "laser")
+-- Its own violet images (scripts/kh_glow.py): the violet tint over the red beam read red on film (the user, 2026-11-08:
+-- "Prism bounced lasers are red").
+do
+  local seen = {}
+  local function repoint(t)
+    if type(t) ~= "table" or seen[t] then return end
+    seen[t] = true
+    if type(t.filename) == "string" and t.filename:find("__base__/graphics/entity/laser-turret/", 1, true) then
+      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party__/graphics/serenity/laser-turret-violet/")
+      t.tint = nil
+    end
+    for _, v in pairs(t) do repoint(v) end
+  end
+  repoint(prism_split.graphics_set)
+end
 local prism_chain = {type = "chain-active-trigger", name = "lp-prism-chain", max_jumps = 5, max_range_per_jump = 6,
   jump_delay_ticks = 3, fork_chance = 0.6, fork_chance_increase_per_quality_level = 0,
   action = {type = "direct", action_delivery = {type = "beam", beam = "lp-prism-split", max_length = 6.5, duration = 18,
@@ -933,14 +948,20 @@ scorcher.selection_box = {{-1.1, -1.4}, {1.1, 1.4}}
 do
   local c = shared.CORPS.grubstake
   c.props = c.props or {}
-  c.props["lp-tank"] = {run_animation = table.deepcopy(tank.run_animation), attack_parameters = table.deepcopy(tank.attack_parameters)}
+  c.props["lp-tank"] = {run_animation = table.deepcopy(tank.run_animation), attack_parameters = table.deepcopy(tank.attack_parameters),
+    corpse = tank.corpse}
   layered(tank, "serenity/tank", {{"cannon", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {"cannon", {"body", "glow"}}})
   headlights(tank)
+  -- Its wrecks (the user, 2026-11-08: "We didn't do KH wrecks also"), the head each carried on the hull: power gone, so
+  -- no glow, the Prism's crystals shattered.
+  tank.corpse = wreck("lp-kh-tank-wreck", "serenity/tank/wreck-cannon")
   -- The Prism on the same hull: no turret, a finned pylon carrying violet crystals (after the genre's prism tank: the
   -- user, "To avoid having such similar designs"). Grubstake's copy keeps its old look as the tank's does.
-  c.props["lp-prism"] = {run_animation = table.deepcopy(prism.run_animation), attack_parameters = table.deepcopy(prism.attack_parameters)}
+  c.props["lp-prism"] = {run_animation = table.deepcopy(prism.run_animation), attack_parameters = table.deepcopy(prism.attack_parameters),
+    corpse = prism.corpse}
   layered(prism, "serenity/tank", {{"prism", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {"prism", {"body", "glow"}}})
   headlights(prism)
+  prism.corpse = wreck("lp-prism-wreck", "serenity/tank/wreck-prism")
 end
 -- The Tesla and the Aegis on the same hull, after the genre's tesla tank (twin coils, crowned) and its heavy tank (twin
 -- rail guns, the user's "doubling the cannon"); Grubstake's copies keep theirs as the tank's do. Each wired once its
@@ -950,9 +971,11 @@ for _, pair in ipairs({{tesla, "tesla"}, {aegis, "aegis"}}) do
   if SHEETS["serenity/tank/" .. head] then
     local c = shared.CORPS.grubstake
     c.props = c.props or {}
-    c.props[u.name] = {run_animation = table.deepcopy(u.run_animation), attack_parameters = table.deepcopy(u.attack_parameters)}
+    c.props[u.name] = {run_animation = table.deepcopy(u.run_animation), attack_parameters = table.deepcopy(u.attack_parameters),
+      corpse = u.corpse}
     layered(u, "serenity/tank", {{head, {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {head, {"body", "glow"}}})
     headlights(u)
+    if SHEETS["serenity/tank/wreck-" .. head] then u.corpse = wreck("lp-" .. head .. "-wreck", "serenity/tank/wreck-" .. head) end
   end
 end
 -- Kinds both corporations field get Grubstake's rendered look on Grubstake's copy alone, through its props in
@@ -996,12 +1019,14 @@ grubstake_look(harrier, "grubstake/harrier", {{"rotor", {"shadow"}}, {"base", {"
 -- keeps the old look. Each wired once its sheet is in sheets.lua.
 if SHEETS["serenity/drone-scout/base"] then
   layered(harrier, "serenity/drone-scout", {{"fans", {"shadow"}}, {"base", {"body", "glow"}}, {"fans", {"body"}}})
+  harrier.corpse = wreck("lp-kh-drone-wreck", "serenity/drone-scout/wreck")
 end
 if SHEETS["serenity/drone-laser/base"] then
   local c = shared.CORPS.grubstake
   c.props["lp-laser-drone"] = {run_animation = table.deepcopy(laser_drone.run_animation),
-    attack_parameters = table.deepcopy(laser_drone.attack_parameters)}
+    attack_parameters = table.deepcopy(laser_drone.attack_parameters), corpse = laser_drone.corpse}
   layered(laser_drone, "serenity/drone-laser", {{"fans", {"shadow"}}, {"base", {"body", "glow"}}, {"fans", {"body"}}})
+  laser_drone.corpse = wreck("lp-laser-drone-wreck", "serenity/drone-laser/wreck")
 end
 -- (It bursts on its target: its corpse stays the defender's small remnants.)
 grubstake_look(scavenger, "grubstake/scavenger", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}})

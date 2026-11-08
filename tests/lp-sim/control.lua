@@ -1269,16 +1269,31 @@ scenarios.showcase = function()
   -- ground. Each stage's call point is its STAGES entry; the film params read the same numbers.
   if params.mix == "scenes" then
     schedule(STRIKE - 60, function()
-      local function put(name, x, y, items)
-        local e = surface().create_entity{name = name, position = {x, y}, force = "player"}
+      local function put(name, x, y, items, force)
+        local e = surface().create_entity{name = name, position = {x, y}, force = force or "player"}
         if e and items then e.insert(items) end
         return e
       end
-      flatten(40, -30, 150, 220)
-      for k = -14, 14 do put("stone-wall", 80.5, k + 0.5) end
-      for k = -2, 2 do put("assembling-machine-2", 70.5, k * 4 + 0.5) end
+      flatten(40, -40, 200, 220)
+      -- Grass under each stage (on the desert the units read poorly, the user: "Hard to see on desert ground").
+      local tiles = {}
+      for x = 40, 199 do for y = -40, 219 do tiles[#tiles + 1] = {name = "grass-1", position = {x, y}} end end
+      surface().set_tiles(tiles)
+      -- The dozers' stage: an outpost shut inside a stone wall all round (a short line, the dozers went round its end,
+      -- the user's first take), assemblers, two gun turrets with ammunition, lamps.
+      for x = 56, 80 do put("stone-wall", x + 0.5, -17.5); put("stone-wall", x + 0.5, 17.5) end
+      for y = -17, 17 do put("stone-wall", 56.5, y + 0.5); put("stone-wall", 80.5, y + 0.5) end
+      for k = -2, 2 do put("assembling-machine-2", 68.5, k * 4 + 0.5) end
       for _, y in ipairs({-6, 6}) do put("gun-turret", 76, y, {name = "firearm-magazine", count = 50}) end
       for _, y in ipairs({-12, 0, 12}) do put("small-lamp", 74.5, y + 0.5) end
+      -- The bombers' and the Prism's: a squad of troopers at its post (crates, a lamp), standing before the shot.
+      for _, c in ipairs({{60, 60}, {60, 120}}) do
+        for k = 0, 14 do put("lp-trooper", c[1] + (k % 5) * 1.6, c[2] + math.floor(k / 5) * 1.6 - 1.6) end
+        for _, d in ipairs({{-4, -3}, {-4, 3}, {10, -4}}) do put("wooden-chest", c[1] + d[1], c[2] + d[2]) end
+        put("small-lamp", c[1] - 3, c[2])
+      end
+      -- The flak's: four flak buggies of Grubstake's in a square.
+      for k = 0, 3 do put("lp-grubstake-flak-buggy", 60 + (k % 2) * 6, 177 + math.floor(k / 2) * 6, nil, "lp-grubstake") end
       info("scenes: stages at 80,0 (dozers), 60,60 (bombers), 60,120 (prism), 60,180 (flak)")
     end)
   end
@@ -3787,18 +3802,27 @@ scenarios.dev = function()
   -- The staged scenes (/lp dozers, bombers, prism, flak; for the trailer, 2026-11-08), each in its own clearing west of
   -- spawn: what each must show happens. Dozers: a stone wall line, two dozers and four buggies at it: a wall piece falls.
   -- Bombers and prism: the troopers set lose men to them. Flak: the scout drones sent at the flak buggies are shot down.
-  local scenes = {{"dozers", -260, 150}, {"bombers", -260, 210}, {"prism", -260, 270}, {"flak", -260, 330}}
+  local scenes = {{"dozers", -360, 150}, {"bombers", -360, 210}, {"prism", -360, 270}, {"flak", -360, 330}}
   schedule(2 * 3600 + 1200, function()
     S.scene = {}
     for _, sc in ipairs(scenes) do
       local what, x, y = sc[1], sc[2], sc[3]
-      flatten(x - 10, y - 12, x + 60, y + 12)
+      flatten(x - 10, y - 14, x + 140, y + 14)
       if what == "dozers" then
-        for k = -6, 6 do surface().create_entity{name = "stone-wall", position = {x + 15.5, y + k + 0.5}, force = "player"} end
+        -- Shut all round (a line alone, they went round its end): the only way in is through.
+        for k = -6, 6 do
+          surface().create_entity{name = "stone-wall", position = {x + 15.5, y + k + 0.5}, force = "player"}
+          surface().create_entity{name = "stone-wall", position = {x + 3.5, y + k + 0.5}, force = "player"}
+        end
+        for k = 4, 15 do
+          surface().create_entity{name = "stone-wall", position = {x + k + 0.5, y - 6.5}, force = "player"}
+          surface().create_entity{name = "stone-wall", position = {x + k + 0.5, y + 6.5}, force = "player"}
+        end
+        S.ram0 = lp("ram_stats")
       end
-      local box = {{x + 5, y - 12}, {x + 60, y + 12}}
+      local box = {{x - 10, y - 14}, {x + 140, y + 14}}
       S.scene[what] = {box = box, walls = surface().count_entities_filtered{area = box, name = "stone-wall"}}
-      lp("dev", {what}, {x, y})
+      lp("dev", {what}, what == "dozers" and {x + 20, y} or {x, y})          -- (east of the square: its east wall the nearest)
       local st = S.scene[what]
       st.troopers = surface().count_entities_filtered{area = box, name = "lp-trooper"}
       st.drones = surface().count_entities_filtered{area = box, name = "lp-harrier"}
@@ -3809,16 +3833,20 @@ scenarios.dev = function()
   schedule(2 * 3600 + 1200 + 60 * 60, function()
     local function now(what, name) return surface().count_entities_filtered{area = S.scene[what].box, name = name} end
     local d = S.scene.dozers
-    check("dev: /lp dozers set its dozers and they broke the wall", d.dozers == 2 and now("dozers", "stone-wall") < d.walls,
-      string.format("%d dozers, walls %d to %d", d.dozers, d.walls, now("dozers", "stone-wall")))
+    local r = lp("ram_stats")
+    -- (They shot it from 2 tiles before: ram.lua's breach counts only a blade's strip cleared, and a buggy inside the square.)
+    local inside = surface().count_entities_filtered{area = {{-360 + 4, 150 - 6}, {-360 + 15, 150 + 6}}, name = "lp-grubstake-buggy"}
+    check("dev: /lp dozers rammed through and the buggies went in", d.dozers == 2 and r.breaches > S.ram0.breaches and inside > 0,
+      string.format("%d dozers, walls %d to %d, breaches %d, buggies inside %d", d.dozers, d.walls, now("dozers", "stone-wall"),
+        r.breaches - S.ram0.breaches, inside))
     local b = S.scene.bombers
-    check("dev: /lp bombers dove on the troopers", b.bombs == 6 and b.troopers == 15 and now("bombers", "lp-trooper") < 15,
+    check("dev: /lp bombers dove on the troopers", b.bombs == 8 and b.troopers == 15 and now("bombers", "lp-trooper") < 15,
       string.format("%d drones, troopers %d to %d", b.bombs, b.troopers, now("bombers", "lp-trooper")))
     local p = S.scene.prism
     check("dev: /lp prism cut into the troopers", p.troopers == 15 and now("prism", "lp-trooper") < 15,
       string.format("troopers %d to %d", p.troopers, now("prism", "lp-trooper")))
     local f = S.scene.flak
-    check("dev: /lp flak shot scout drones down", f.drones == 6 and now("flak", "lp-harrier") < 6,
+    check("dev: /lp flak shot scout drones down", f.drones == 12 and now("flak", "lp-harrier") < 12,
       string.format("drones %d to %d", f.drones, now("flak", "lp-harrier")))
   end)
   schedule(2 * 3600 + 600 + 15 * 60, function()
@@ -3834,6 +3862,24 @@ scenarios.dev = function()
     check("dev: the forced strip put up its camp", g2 ~= nil and (g2.ops.op == "strip:mine" or g2.ops.done > 0),
       g2 and tostring(g2.ops.op) or "no base")
   end)
+end
+
+-- Bombtest (a measurement, 2026-11-08: the user, "the bombers don't seem to make any victims? Are they underpowered?"):
+-- /lp bombers on open ground, the troopers and drones counted each second for 30 s, each drone's end (burst on a target
+-- or shot down) told by whether a trooper took damage within 3 tiles in the tick it went.
+scenarios.bombtest = function()
+  schedule(120, function()
+    flatten(-20, -20, 80, 20)
+    lp("dev", {"bombers", "6"}, {0, 0})
+  end)
+  for k = 0, 30 do
+    schedule(120 + k * 60, function()
+      local t = surface().count_entities_filtered{area = {{-10, -20}, {80, 20}}, name = "lp-trooper"}
+      local d = surface().count_entities_filtered{area = {{-10, -20}, {80, 20}}, name = "lp-grubstake-scavenger"}
+      info(string.format("bombtest %2d s: troopers %d, drones %d", k, t, d))
+    end)
+  end
+  schedule(120 + 31 * 60, function() check("bombtest ran", true, "") end)
 end
 
 -- Grudge: the player destroys Grubstake's lander. Grubstake must count the player hostile and Serenity must not

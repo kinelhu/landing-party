@@ -893,11 +893,15 @@ do
   local KH_LASER = {r = 0.35, g = 0.75, b = 1, a = 1}
   local b = table.deepcopy(data.raw.beam["laser-beam"])
   b.name = "lp-kh-laser-beam"
+  -- Its images recoloured (scripts/kh_glow.py): a cyan tint over the red-orange beam read yellow-white on film.
   local seen = {}
   local function paint(t)
     if type(t) ~= "table" or seen[t] then return end
     seen[t] = true
-    if t.filename or t.filenames then t.tint = KH_LASER end
+    if type(t.filename) == "string" and t.filename:find("__base__/graphics/entity/laser-turret/", 1, true) then
+      t.filename = t.filename:gsub("__base__/graphics/entity/laser%-turret/", "__landing-party__/graphics/serenity/laser-turret/")
+      t.tint = nil
+    end
     for _, v in pairs(t) do paint(v) end
   end
   paint(b.graphics_set)
