@@ -1290,7 +1290,8 @@ scenarios.showcase = function()
       local function stream(y) return 82 + 4 * math.sin(y / 9) end           -- its middle's x at y (the bombers' stage)
       local function lane(x, y)                                                -- where the scenes play: no trees
         return (x >= 50 and x <= 135 and y >= -22 and y <= 22) or (x >= 52 and x <= 76 and y >= 50 and y <= 106)
-          or (x >= 52 and x <= 106 and y >= 108 and y <= 132) or (x >= 52 and x <= 110 and y >= 168 and y <= 192)
+          -- (The Prism's and the flak's wider: their fights spread, and trees hid the flak's drones, the fourth takes.)
+          or (x >= 40 and x <= 125 and y >= 100 and y <= 150) or (x >= 40 and x <= 130 and y >= 150 and y <= 212)
       end
       local tiles = {}
       for x = 40, 199 do for y = -40, 219 do
@@ -3857,6 +3858,12 @@ scenarios.dev = function()
           surface().create_entity{name = "stone-wall", position = {x + k + 0.5, y - 6.5}, force = "player"}
           surface().create_entity{name = "stone-wall", position = {x + k + 0.5, y + 6.5}, force = "player"}
         end
+        -- A gun turret and an assembler inside, for what the dozer and its buggies take once through (the fourth takes: the
+        -- dozer sat facing a turret, the buggies shot the walls).
+        local gun = surface().create_entity{name = "gun-turret", position = {x + 9, y - 2}, force = "player"}
+        gun.insert{name = "firearm-magazine", count = 20}
+        surface().create_entity{name = "assembling-machine-1", position = {x + 7.5, y + 3.5}, force = "player"}
+        S.wall_by_buggy = 0
         S.ram0 = lp("ram_stats")
       end
       local box = {{x - 10, y - 14}, {x + 140, y + (what == "bombers" and 75 or 14)}}
@@ -3893,6 +3900,9 @@ scenarios.dev = function()
     -- (The third takes: a breach a dozer wide, then the dozer drove off; it widens it now, four pieces each.)
     check("dev: and the dozers widened their breaches", r.breaches - S.ram0.breaches > d.dozers,
       string.format("%d strips cleared by %d dozers", r.breaches - S.ram0.breaches, d.dozers))
+    local inner = surface().count_entities_filtered{area = {{-360 + 4, 150 - 6}, {-360 + 15, 150 + 6}}, name = {"gun-turret", "assembling-machine-1"}}
+    check("dev: and they took what stood inside, never the walls", inner == 0 and (S.wall_by_buggy or 0) < 1,
+      string.format("%d of the turret and assembler left, %.0f damage to walls by buggies", inner, S.wall_by_buggy or 0))
     -- (The second takes: the buggies drove to the wall and waited under fire before the dozers were in sight.)
     check("dev: and the buggies kept behind the dozers until the breach", r.early == S.ram0.early,
       string.format("%d follower-steps ahead of their lead", r.early - S.ram0.early))
@@ -16751,3 +16761,12 @@ script.on_event(defines.events.on_tick, function(e)
     helpers.write_file("landing-party/results.txt", table.concat(lines, "\n") .. "\nDONE " .. failed .. " FAILED\n")
   end
 end)
+
+-- Scenario dev: what Grubstake's buggies do to walls (the fourth takes: through a breach, they turned and shot the walls).
+if params.scenario == "dev" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    if e.cause and e.cause.valid and e.cause.name == "lp-grubstake-buggy" then
+      S.wall_by_buggy = (S.wall_by_buggy or 0) + e.final_damage_amount
+    end
+  end, {{filter = "type", type = "wall"}})
+end

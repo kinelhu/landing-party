@@ -5588,6 +5588,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   buggy could go deeper into the base"). The squad marches 24 tiles, the stream narrows out at its ends. The flak's
   puffs are an explosion now (a near-black smoke burst at a flier's height; a trivial smoke read as faint wisps). Wrecks'
   scorch softer (soot 0.6 over 0.4; a hard dark oval under the tanks on film), the eight ground wrecks rendered again.
+- **The scenes' fifth pass** (0.2.241; the user on the fourth takes: "The camera panning is super abrupt and not smooth
+  at all"; "after breaking the wall, the dozer stares down a turret ... The buggies penetrate the base but start shooting
+  the walls. The whole target priority is fucked"). Camera: a film is deterministic, so its path is known before it is
+  shot: `scripts/film_smooth.py` rehearses it with the plugin's fight point logged, smooths each move's own stretch (a
+  Gaussian of 100 ticks, under 0.09 tiles a tick, smoothed again a third as wide), and writes params that play it back as
+  point "cam" (a move on the live point had shaken: it stepped each 6 ticks and jumped as units joined the fight). A
+  fight that stays in one place (the Prism's, the flak's) gets a fixed push-in: their points were drawn off by units at
+  their edges. `/lp clear [r]` empties a stage once its shot is done (survivors had walked into the next scene). Targets:
+  through a breach, the followers and then the dozer take what stands inside by direct attacks, guns first (nearest the
+  gap), then buildings, never a wall (`ram.targets`); an area attack had taken the nearest enemy, the wall, and the last
+  one, 20 tiles past the gap, the far wall. Scenario `dev` puts a turret and an assembler inside its square: both fall,
+  and 0 of the buggies' fire lands on walls (1,456 with the area attack). Rehearsal frames take 4 to 5 MB each: a
+  take is 15 to 25 GB until encoded (the disk filled with six takes kept).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

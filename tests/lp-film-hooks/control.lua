@@ -10,7 +10,8 @@
 --   waves = true          Synthexis's first live wave: point "wave" (its centre, eased), "breach"; events "wave:<stage>".
 --   bursts = true         event "burst:first" the tick the film's first burster winds up; point "burst" where it stands.
 --   fight = true          point "fight": the eased middle of the units near it with an enemy in reach, from each dev
---                         call's aim (a move tracks it: pos = "fight", track = true).
+--                         call's aim. fight_log = true (a rehearsal) writes it to script-output/lp-film-fight.txt.
+--   path = {{t0 =, every =, xy = {x, y, ...}}}   point "cam": a smoothed camera path (scripts/film_smooth.py).
 --   dev = {{tick =, args = {...}, at = {x, y} | {toward = tiles} | {wall = true}}}   /lp tools at a tick.
 --   fx = {{tick =, kind = "wave" | "rise", at = {x, y}, radius =}}   the dome's looks on the gallery's first building.
 --   ripples = {{tick =, pos = {x, y}, name = "lp-dome-ripple"}}      the dome's catch played there.
@@ -69,18 +70,42 @@ local function tick(t)
   end
   -- The fight (P.fight; the user, 2026-11-08, of the staged scenes: "the camera is not centered on the fight", "missing
   -- almost all of the action"; framed by guess, each shot had missed): the middle of the units within 40 of it that have
-  -- an enemy within 20 (of every unit there while none has), eased each 6 ticks; set to each dev call's aim when it is
+  -- an enemy within 20 (of every unit within 20 while none has), eased each 6 ticks; set to each dev call's aim when it is
   -- made. A move with `pos = "fight", track = true` follows it.
   if P.fight and S.points.fight and t % 6 == 0 then
     local s, here = game.surfaces[1], S.points.fight
     local ex, ey, en, ax, ay, an = 0, 0, 0, 0, 0, 0
+    -- (Every unit within 40 while none fought drew it to the next stage's idle troops, 60 tiles off, in the rehearsal: those
+    -- within 20 only.)
     for _, u in ipairs(s.find_entities_filtered{position = here, radius = 40, type = "unit"}) do
       local x, y = u.position.x, u.position.y
-      ax, ay, an = ax + x, ay + y, an + 1
+      if (x - here[1]) ^ 2 + (y - here[2]) ^ 2 < 400 then ax, ay, an = ax + x, ay + y, an + 1 end
       if s.find_nearest_enemy{position = u.position, max_distance = 20, force = u.force} then ex, ey, en = ex + x, ey + y, en + 1 end
     end
     local g = en > 0 and {ex / en, ey / en} or an > 0 and {ax / an, ay / an}
     if g then S.points.fight = {here[1] + (g[1] - here[1]) * 0.12, here[2] + (g[2] - here[2]) * 0.12} end
+    -- (P.fight_log, in a rehearsal: the point each 6 ticks to script-output/lp-film-fight.txt, for scripts/film_smooth.py.)
+    if P.fight_log then
+      S.fight_lines = S.fight_lines or {}
+      S.fight_lines[#S.fight_lines + 1] = string.format("%d %.3f %.3f", t, S.points.fight[1], S.points.fight[2])
+      if #S.fight_lines >= 50 then
+        helpers.write_file("lp-film-fight.txt", table.concat(S.fight_lines, "\n") .. "\n", S.fight_written)
+        S.fight_lines, S.fight_written = {}, true
+      end
+    end
+  end
+  -- The camera's path (P.path, written by scripts/film_smooth.py from a rehearsal's fight points, smoothed: the fight
+  -- point itself moved in steps and jumped as units joined the fight, and a camera on it shook, the user, fourth takes:
+  -- "The camera panning is super abrupt and not smooth at all"): point "cam", read between its samples each tick.
+  for _, seg in ipairs(P.path or {}) do
+    if t >= seg.t0 and t <= seg.t0 + (#seg.xy / 2 - 1) * seg.every then
+      local f = (t - seg.t0) / seg.every
+      local i = math.floor(f)
+      local a = f - i
+      local j = math.min(i + 1, #seg.xy / 2 - 1)
+      S.points.cam = {seg.xy[2 * i + 1] + (seg.xy[2 * j + 1] - seg.xy[2 * i + 1]) * a,
+        seg.xy[2 * i + 2] + (seg.xy[2 * j + 2] - seg.xy[2 * i + 2]) * a}
+    end
   end
   -- The wave, eased each 2 ticks so a tracking move glides rather than jumps.
   if P.waves and t % 2 == 0 then

@@ -13,11 +13,21 @@ local function shot(name, call, frames, z0, z1)
   return {name = name, tick = call + 10, frames = frames, every = 1, track = true,
     from = {pos = "fight", zoom = z0, daytime = 0.2}, to = {zoom = z1, daytime = 0.2}}
 end
+-- A fixed framing, pushed in slowly, for a fight that stays where it is (the Prism's and the flak's: their fight points
+-- were drawn south by units at their edges, and a camera on them drifted off the fight, the fifth takes).
+local function fixed(name, call, frames, pos, z0, z1)
+  return {name = name, tick = call + 10, frames = frames, every = 1,
+    from = {pos = pos, zoom = z0, daytime = 0.2}, to = {zoom = z1, daytime = 0.2}}
+end
 return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, speed = 1, fast_until = T - 60, fight = true,
   dev = {
+    -- (Each stage cleared once its shot is done: a scene's survivors walked into the next one's, the fifth takes.)
     {tick = T + 30, args = {"dozers", "1"}, at = {80, 0}},
+    {tick = T + 1900, args = {"clear", "45"}, at = {80, 0}},
     {tick = T + 1930, args = {"bombers", "8"}, at = {60, 60}},
+    {tick = T + 2600, args = {"clear", "25"}, at = {62, 85}},
     {tick = T + 2630, args = {"prism", "2"}, at = {60, 120}},
+    {tick = T + 3370, args = {"clear", "38"}, at = {68, 125}},
     {tick = T + 3930, args = {"flak", "4"}, at = {60, 180}},
   },
   moves = {
@@ -27,7 +37,7 @@ return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, spee
     -- The squad marches by the stream; the bomb drones dive in from all round.
     shot("sc2-bombers", T + 1930, 660, 1.4, 1.6),
     -- Two Prisms, two tanks and a Tesla against the squad, its battle tanks and rocket troopers.
-    shot("sc3-prism", T + 2630, 1260, 1.3, 1.45),
+    fixed("sc3-prism", T + 2630, 720, {72, 118}, 1.3, 1.42),
     -- Two waves of scout drones over the four flak buggies, black puffs round the bursts.
-    shot("sc4-flak", T + 3930, 720, 1.3, 1.5),
+    fixed("sc4-flak", T + 3930, 600, {70, 178}, 1.3, 1.42),
   }}

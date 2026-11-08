@@ -29,7 +29,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `command` | 596 | (leaf) | control |  | 60, 120 |  | cmd |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `crew` | 483 | base, ops, standing | control |  | 30 |  | crew_owner |
-| `dev` | 428 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
+| `dev` | 437 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
 | `costmap` | 415 | firemap, threat | control, creep, faction, farm, herd, siege |  |  |  |  |
@@ -57,9 +57,9 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `landfx` | 239 | rng | base, control, faction | layout.locate | 4, 7 |  | landfx, landfx_descents |
 | `strip` | 238 | studies | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
+| `ram` | 221 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `valuemap` | 208 | firemap | control, farm, herd, oplog, siege |  |  |  |  |
 | `oplog` | 188 | attempt, valuemap | control |  |  |  | oplog |
-| `ram` | 186 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
 | `site` | 171 | modules | base, control, faction, layout |  |  |  |  |
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |

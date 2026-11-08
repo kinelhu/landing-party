@@ -71,21 +71,54 @@ local function ahead(r)
   return out
 end
 
-local function release(lead, at, dir)
+-- What to take inside a breach, in order: the guns nearest the gap, then the rest of what stands there, never a wall (an
+-- area attack takes the nearest enemy, and inside a breach that is the wall: the buggies turned round on it, the fourth
+-- takes). Up to TAKE of them, nearest first, within REACH of the ground inside.
+local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
+local REACH, TAKE = 22, 10
+local function targets(surface, force, at, inside)
+  local guns, rest = {}, {}
+  for _, e in ipairs(surface.find_entities_filtered{position = inside, radius = REACH, force = force}) do
+    if e.valid and e.destructible and e.type ~= "wall" and e.type ~= "gate" and e.prototype.is_building then
+      local list = rest
+      for _, t in ipairs(TURRETS) do if e.type == t then list = guns end end
+      list[#list + 1] = e
+    end
+  end
+  local function d(e) return (e.position.x - at[1]) ^ 2 + (e.position.y - at[2]) ^ 2 end
+  table.sort(guns, function(a, b) return d(a) < d(b) end)
+  table.sort(rest, function(a, b) return d(a) < d(b) end)
+  for _, e in ipairs(rest) do guns[#guns + 1] = e end
+  local out = {}
+  for k = 1, math.min(TAKE, #guns) do out[k] = guns[k] end
+  return out
+end
+ram.targets = targets
+
+-- An order to take what is inside, one target after another (each a direct attack, so nothing else draws its fire).
+local function take(surface, force, at, dir, first)
+  local inside = {at[1] + dir[1] * 10, at[2] + dir[2] * 10}
+  local cmds = {}
+  if first then cmds[1] = first end
+  for _, e in ipairs(targets(surface, force, at, inside)) do
+    cmds[#cmds + 1] = {type = defines.command.attack, target = e, distraction = defines.distraction.none}
+  end
+  -- (It ended on an area attack 20 tiles past the gap: in a small compound that is the far wall, 1,456 of the buggies'
+  -- fire on walls in scenario dev. Done, they stand where they are; a raid's own orders take them on.)
+  cmds[#cmds + 1] = {type = defines.command.wander, radius = 4, distraction = defines.distraction.by_damage}
+  return {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
+end
+
+local function release(lead, at, dir, force)
   for i = #(storage.ram_followers or {}), 1, -1 do
     local f = storage.ram_followers[i]
     if f.lead == lead then
-      -- In through the gap, the ground inside it, then deeper (the user, on the third takes: "the buggy could go deeper
-      -- into the base ... once the turrets are dead").
+      -- In through the gap, then what stands inside, guns first, then deeper (the user, on the third takes: "the buggy
+      -- could go deeper into the base ... once the turrets are dead").
       for _, v in ipairs(f.units) do
         if v.valid then
-          v.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
-            commands = {{type = defines.command.go_to_location, destination = {at[1] + dir[1] * 3, at[2] + dir[2] * 3}, radius = 2,
-              distraction = defines.distraction.by_damage},
-              {type = defines.command.attack_area, destination = {at[1] + dir[1] * 10, at[2] + dir[2] * 10}, radius = 10,
-                distraction = defines.distraction.by_enemy},
-              {type = defines.command.attack_area, destination = {at[1] + dir[1] * 20, at[2] + dir[2] * 20}, radius = 14,
-                distraction = defines.distraction.by_enemy}}}
+          v.commandable.set_command(take(v.surface, force, at, dir, {type = defines.command.go_to_location,
+            destination = {at[1] + dir[1] * 3, at[2] + dir[2] * 3}, radius = 2, distraction = defines.distraction.by_damage}))
         end
       end
       table.remove(storage.ram_followers, i)
@@ -121,7 +154,7 @@ function ram.tick(tick)
     local u = r.unit
     if not u.valid then
       -- Its lead lost before a breach: its followers go at the wall themselves.
-      release(k, r.wall, {0, 0})
+      release(k, r.wall, {0, 0}, r.force)
       storage.rams[k] = nil
     elseif r.phase == "approach" then
       local dx, dy = r.wall[1] - u.position.x, r.wall[2] - u.position.y
@@ -131,7 +164,7 @@ function ram.tick(tick)
         u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
       elseif tick - r.at > GIVE_UP then
         r.phase = "done"
-        release(k, r.wall, {0, 0})
+        release(k, r.wall, {0, 0}, r.force)
       end
       if r.phase == "approach" then escort(k, r, tick) end
     elseif r.phase == "ram" then
@@ -144,7 +177,7 @@ function ram.tick(tick)
         storage.ram_crushed = (storage.ram_crushed or 0) + 1
       else
         storage.ram_breaches = (storage.ram_breaches or 0) + 1
-        release(k, {u.position.x, u.position.y}, r.dir)
+        release(k, {u.position.x, u.position.y}, r.dir, r.force)
         -- Widening: the next piece beside the gap, rammed from where it stands.
         local next_piece
         if (r.widen or 0) > 0 then
@@ -170,6 +203,8 @@ function ram.tick(tick)
       if not u.commandable.has_command or tick - r.at > 15 * 60 then
         r.phase = "done"
         storage.rams[k] = nil
+        -- Then it takes what stands inside as its followers do (it sat facing a turret with no order, the fourth takes).
+        u.commandable.set_command(take(u.surface, r.force, {u.position.x, u.position.y}, r.dir))
       end
     else
       storage.rams[k] = nil

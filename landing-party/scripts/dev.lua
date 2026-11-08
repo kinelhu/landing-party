@@ -24,6 +24,7 @@
 --   tesla [n]                n Kessler-Hayashi Teslas (default 1) set 20 tiles east of you, sent at your laser or tesla
 --                            turret nearest you within 60: its lightning holds what it strikes (scorcher.hold, the status
 --                            "Stunned by lightning"). They are real and stay: kill them or let them be
+--   clear [r]                every unit within r (30) of you removed, no wrecks (between staged scenes)
 --   parade [ring <kind>]     each infantry kind walking each of the 8 ways, a row a kind east of you; or eight of one
 --                            kind walking out of a ring round you (facings: all face away)
 --   dozers | bombers | prism | flak [n]   staged scenes for the trailer, east of you (see dev.run)
@@ -214,6 +215,14 @@ function dev.run(player, args)
     if not (u and burstfx.windup(u, big and "big" or "cinder")) then return player.print("the burster could not be set off") end
     player.print(string.format("a %s set off at %.0f,%.0f: it bursts in %.1f s", big and "big burster" or "burster", at.x, at.y,
       burstfx.KIND[big and "big" or "cinder"].windup / 60))
+  elseif what == "clear" then
+    -- Every unit within r (30) of you gone, no wrecks (the user, 2026-11-09: a staged scene's survivors walked into the
+    -- next one's shot): a film clears each stage once its shot is done.
+    local r, n = tonumber(args[2]) or 30, 0
+    for _, u in ipairs(player.surface.find_entities_filtered{position = player.position, radius = r, type = "unit"}) do
+      u.destroy(); n = n + 1
+    end
+    player.print(string.format("%d units cleared within %d", n, r))
   elseif what == "parade" then
     -- Each infantry kind walking each of the 8 ways, a row a kind east of you, all yours (the user, 2026-11-08: troopers
     -- "moonskating ... their model is turned to the left"): a still mid-walk shows each body facing where it goes.
@@ -405,7 +414,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | clear [r] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 
