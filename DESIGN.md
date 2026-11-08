@@ -5525,6 +5525,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   collision box stays the tank's (pathing and siege placement are not the look's), its wreck the hauler's. The
   player's units keep vanilla's chassis (the user). +2.3 MB. Found on the way: objects scaled after they are made, read
   before a view-layer update, carried unit cubes' matrices (a black block over the cab).
+- **Staged scenes for the trailer** (0.2.237; the user, 2026-11-08: "new scenes including a dozer siege and bomber drones
+  diving on a mass of troopers", and the Prism and Tesla in action, flak on fliers). `/lp dozers | bombers | prism |
+  flak [n]` (dev.lua) set each scene east of where they are called, the same each take: Killdozers at the player's
+  nearest wall with buggies behind (holding 10 s, then pouring through), bomb drones or a Prism on a block of 15
+  troopers, Kessler-Hayashi's scout drones at flak buggies. Scenario `dev` checks each (a wall piece down with the
+  dozers set; troopers lost; drones shot down), all four seen failing with the verbs' orders disconnected (the buggies
+  alone broke walls then: the dozer check rests on its dozers being set). `LP_MIX=scenes` builds their stages;
+  `docs/trailer/reel-scenes.lua` films them (framings to fix at scouting).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

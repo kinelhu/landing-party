@@ -1262,6 +1262,26 @@ scenarios.showcase = function()
   for t = 1200, 6000, 600 do schedule(t, function() if S.feed then S.feed() end end) end
   local tour = params.mix == "tour" or params.mix == "units" or params.mix == "all"
   if tour then schedule(STRIKE - 120, tour_outposts) end
+  -- LP_MIX=scenes (the trailer's new scenes, 2026-11-08: the user, "a dozer siege and bomber drones diving on a mass of
+  -- troopers", the Prism and the flak buggies): four stages east of spawn, built at the save, for the film params
+  -- (docs/trailer/reel-scenes.lua) to fire /lp dozers, bombers, prism and flak at, the same each take. The dozers' stage
+  -- a player outpost behind a stone wall (an assembler row, two gun turrets with ammunition, lamps); the others open
+  -- ground. Each stage's call point is its STAGES entry; the film params read the same numbers.
+  if params.mix == "scenes" then
+    schedule(STRIKE - 60, function()
+      local function put(name, x, y, items)
+        local e = surface().create_entity{name = name, position = {x, y}, force = "player"}
+        if e and items then e.insert(items) end
+        return e
+      end
+      flatten(40, -30, 150, 220)
+      for k = -14, 14 do put("stone-wall", 80.5, k + 0.5) end
+      for k = -2, 2 do put("assembling-machine-2", 70.5, k * 4 + 0.5) end
+      for _, y in ipairs({-6, 6}) do put("gun-turret", 76, y, {name = "firearm-magazine", count = 50}) end
+      for _, y in ipairs({-12, 0, 12}) do put("small-lamp", 74.5, y + 0.5) end
+      info("scenes: stages at 80,0 (dozers), 60,60 (bombers), 60,120 (prism), 60,180 (flak)")
+    end)
+  end
   -- LP_MIX=buggies (the unit pass, 2026-11-08): Grubstake's rendered vehicles to look at in a window: a row of each (buggy,
   -- slug buggy, flak buggy, dozer, Scorcher) parked in eight headings south of spawn, one of each driving round, a
   -- vanilla car and tank beside them for scale. On a force of their own at peace with everyone, which nothing commands.
@@ -3763,6 +3783,43 @@ scenarios.dev = function()
     local st = lp("scorcher_stats")
     check("dev: /lp tesla set a Tesla and its lightning held the laser", S.teslas == 1 and st.holds > S.holds0,
       string.format("%d set, holds %d to %d", S.teslas, S.holds0, st.holds))
+  end)
+  -- The staged scenes (/lp dozers, bombers, prism, flak; for the trailer, 2026-11-08), each in its own clearing west of
+  -- spawn: what each must show happens. Dozers: a stone wall line, two dozers and four buggies at it: a wall piece falls.
+  -- Bombers and prism: the troopers set lose men to them. Flak: the scout drones sent at the flak buggies are shot down.
+  local scenes = {{"dozers", -260, 150}, {"bombers", -260, 210}, {"prism", -260, 270}, {"flak", -260, 330}}
+  schedule(2 * 3600 + 1200, function()
+    S.scene = {}
+    for _, sc in ipairs(scenes) do
+      local what, x, y = sc[1], sc[2], sc[3]
+      flatten(x - 10, y - 12, x + 60, y + 12)
+      if what == "dozers" then
+        for k = -6, 6 do surface().create_entity{name = "stone-wall", position = {x + 15.5, y + k + 0.5}, force = "player"} end
+      end
+      local box = {{x + 5, y - 12}, {x + 60, y + 12}}
+      S.scene[what] = {box = box, walls = surface().count_entities_filtered{area = box, name = "stone-wall"}}
+      lp("dev", {what}, {x, y})
+      local st = S.scene[what]
+      st.troopers = surface().count_entities_filtered{area = box, name = "lp-trooper"}
+      st.drones = surface().count_entities_filtered{area = box, name = "lp-harrier"}
+      st.dozers = surface().count_entities_filtered{area = box, name = "lp-grubstake-dozer"}
+      st.bombs = surface().count_entities_filtered{area = box, name = "lp-grubstake-scavenger"}
+    end
+  end)
+  schedule(2 * 3600 + 1200 + 60 * 60, function()
+    local function now(what, name) return surface().count_entities_filtered{area = S.scene[what].box, name = name} end
+    local d = S.scene.dozers
+    check("dev: /lp dozers set its dozers and they broke the wall", d.dozers == 2 and now("dozers", "stone-wall") < d.walls,
+      string.format("%d dozers, walls %d to %d", d.dozers, d.walls, now("dozers", "stone-wall")))
+    local b = S.scene.bombers
+    check("dev: /lp bombers dove on the troopers", b.bombs == 6 and b.troopers == 15 and now("bombers", "lp-trooper") < 15,
+      string.format("%d drones, troopers %d to %d", b.bombs, b.troopers, now("bombers", "lp-trooper")))
+    local p = S.scene.prism
+    check("dev: /lp prism cut into the troopers", p.troopers == 15 and now("prism", "lp-trooper") < 15,
+      string.format("troopers %d to %d", p.troopers, now("prism", "lp-trooper")))
+    local f = S.scene.flak
+    check("dev: /lp flak shot scout drones down", f.drones == 6 and now("flak", "lp-harrier") < 6,
+      string.format("drones %d to %d", f.drones, now("flak", "lp-harrier")))
   end)
   schedule(2 * 3600 + 600 + 15 * 60, function()
     local o = lp("stats", S.s).ops

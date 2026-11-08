@@ -40,6 +40,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
+| `dev` | 342 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `planner` | 338 | rd | base |  |  |  |  |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `orbital` | 322 | achievements, threat | control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
@@ -50,7 +51,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `phases` | 269 | faction | control |  | 360, 3600 |  | phases |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `threat` | 266 | unit_prior | assault, attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, war |  |  |  |  |
-| `dev` | 263 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `ledger` | 262 | base, ops, standing | control |  | 60, 600 |  | truces |
 | `herd_learn` | 253 | attempt, firemap, know, tactics, threat | herd |  |  |  |  |
 | `know` | 239 | (leaf) | army, control, farm, herd, herd_learn, intel, ops, rd, siege, strategy, tactics |  | 3600 |  | know |

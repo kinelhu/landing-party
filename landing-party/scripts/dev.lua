@@ -24,6 +24,7 @@
 --   tesla [n]                n Kessler-Hayashi Teslas (default 1) set 20 tiles east of you, sent at your laser or tesla
 --                            turret nearest you within 60: its lightning holds what it strikes (scorcher.hold, the status
 --                            "Stunned by lightning"). They are real and stay: kill them or let them be
+--   dozers | bombers | prism | flak [n]   staged scenes for the trailer, east of you (see dev.run)
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
 local names = require("__landing-party__.scripts.names")
@@ -236,11 +237,89 @@ function dev.run(player, args)
     player.print(string.format("%d Tesla%s set east of you, %s", made, made == 1 and "" or "s",
       target and string.format("sent at the %s at %.0f,%.0f", target.name, target.position.x, target.position.y)
         or "no laser or tesla turret of yours within 60 to send them at"))
+  elseif what == "dozers" or what == "bombers" or what == "prism" or what == "flak" then
+    -- Staged scenes for the trailer (the user, 2026-11-08: "new scenes including a dozer siege and bomber drones diving on
+    -- a mass of troopers"; and the Prism and Tesla in action, flak buggies on fliers), east of where you stand, the same
+    -- each take:
+    --   dozers [n]   n Killdozers (2) and twice as many buggies at your wall nearest you within 60: the dozers ram it,
+    --                the buggies hold 10 s behind them and pour through
+    --   bombers [n]  15 of your troopers in a block 10 east, n bomb drones (6) 45 east diving on them
+    --   prism [n]    15 of your troopers in a block 10 east, n Prisms (1) 30 east sent at them
+    --   flak [n]     n flak buggies (2) 10 east, three times as many Kessler-Hayashi scout drones 40 east sent at them
+    local s, n0 = player.surface, tonumber(args[2])
+    local px, py = player.position.x, player.position.y
+    local function corp(id) return game.forces[shared.CORPS[id].force] end
+    local function put(name, force, x, y)
+      local at = s.find_non_colliding_position(name, {x, y}, 8, 0.5)
+      return at and s.create_entity{name = name, position = at, force = force}
+    end
+    local function block(n, x, y)
+      local out = {}
+      for k = 0, n - 1 do
+        local u = put("lp-trooper", player.force, x + (k % 5) * 1.6, y + math.floor(k / 5) * 1.6 - 1.6)
+        if u then out[#out + 1] = u end
+      end
+      return out
+    end
+    local function attack(u, t)
+      u.commandable.set_command{type = defines.command.attack, target = t, distraction = defines.distraction.none}
+    end
+    if what == "dozers" then
+      local g = corp("grubstake")
+      if not g then return player.print("no Grubstake force yet") end
+      local walls = s.find_entities_filtered{position = player.position, radius = 60, type = {"wall", "gate"}, force = player.force}
+      local w
+      for _, e in ipairs(walls) do
+        if not w or (e.position.x - px) ^ 2 + (e.position.y - py) ^ 2 < (w.position.x - px) ^ 2 + (w.position.y - py) ^ 2 then w = e end
+      end
+      if not w then return player.print("no wall of yours within 60 to ram") end
+      local n, made = math.max(1, math.min(6, n0 or 2)), 0
+      for k = 1, n do
+        local u = put(shared.variant("grubstake", "lp-dozer"), g, px + 25, py + (k - 1) * 4)
+        if u then attack(u, w); made = made + 1 end
+      end
+      for k = 1, 2 * n do
+        local u = put(shared.variant("grubstake", "lp-buggy"), g, px + 32, py + (k - 1) * 3 - 2)
+        if u then
+          u.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+            commands = {{type = defines.command.stop, ticks_to_wait = 600, distraction = defines.distraction.none},
+              {type = defines.command.attack_area, destination = w.position, radius = 14, distraction = defines.distraction.by_enemy}}}
+        end
+      end
+      player.print(string.format("%d Killdozer%s at the %s at %.0f,%.0f, %d buggies behind", made, made == 1 and "" or "s",
+        w.name, w.position.x, w.position.y, 2 * n))
+    elseif what == "bombers" or what == "prism" then
+      local troops = block(15, px + 10, py)
+      local id, kind, far, nd = "grubstake", "lp-scavenger", 45, 6
+      if what == "prism" then id, kind, far, nd = shared.DEFAULT_CORP, "lp-prism", 30, 1 end
+      local f = corp(id)
+      if not f then return player.print("no " .. shared.CORPS[id].name .. " force yet") end
+      local n, made = math.max(1, math.min(12, n0 or nd)), 0
+      for k = 1, n do
+        local u = put(shared.variant(id, kind), f, px + far, py + (k - 1) * 2.5 - n)
+        if u and #troops > 0 then attack(u, troops[(k - 1) % #troops + 1]); made = made + 1 end
+      end
+      player.print(string.format("%d troopers 10 east, %d %s sent at them", #troops, made, kind))
+    else
+      local g, k_ = corp("grubstake"), corp(shared.DEFAULT_CORP)
+      if not (g and k_) then return player.print("flak needs both Grubstake and Kessler-Hayashi") end
+      local n, flak, made = math.max(1, math.min(6, n0 or 2)), {}, 0
+      for k = 1, n do
+        local u = put(shared.variant("grubstake", "lp-flak-buggy"), g, px + 10, py + (k - 1) * 4)
+        if u then flak[#flak + 1] = u end
+      end
+      for k = 1, 3 * n do
+        local u = put(shared.variant(shared.DEFAULT_CORP, "lp-harrier"), k_, px + 40, py + (k - 1) * 2 - n)
+        if u and #flak > 0 then attack(u, flak[(k - 1) % #flak + 1]); made = made + 1 end
+      end
+      player.print(string.format("%d flak buggies 10 east, %d scout drones sent at them%s", #flak, made,
+        g.is_enemy(k_) and "" or " (the two are not at war: no fight)"))
+    end
   elseif what == "trace" then
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 
