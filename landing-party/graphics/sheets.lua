@@ -1,5 +1,10 @@
 -- Written by tools/blender/sheets_lua.py from each sheet.json: frame size, count and shift in tiles.
 return {
+  ["grubstake/buggy/antenna"] = {width = 219, height = 250, frames = 512, line_length = 8, shift = {0.0, -1.1796875}, files = 2, lines_per_file = 32},
+  ["grubstake/buggy/chassis"] = {width = 177, height = 205, frames = 64, line_length = 8, shift = {0.0, -0.40625}},
+  ["grubstake/buggy/flak"] = {width = 233, height = 248, frames = 64, line_length = 8, shift = {0.40625, -0.7421875}},
+  ["grubstake/buggy/mg"] = {width = 194, height = 201, frames = 64, line_length = 8, shift = {0.3203125, -0.375}},
+  ["grubstake/buggy/slug"] = {width = 213, height = 217, frames = 64, line_length = 8, shift = {0.390625, -0.5}},
   ["grubstake/howitzer"] = {barrel = {width = 303, height = 308, shift = {0.0, -2.0546875}}, base = {width = 201, height = 159, shift = {0.0, -0.046875}}, base_shadow = {width = 206, height = 154, shift = {0.0078125, 0.0078125}}, cannon_shadow = {width = 331, height = 354, shift = {1.34375, -1.3984375}}, housing = {width = 303, height = 308, shift = {0.0, -2.0546875}}},
   ["grubstake/mortar"] = {barrel = {width = 84, height = 148, shift = {0.0, -0.9453125}}, base = {width = 138, height = 136, shift = {0.0, -0.0546875}}, base_shadow = {width = 148, height = 142, shift = {0.015625, 0.0390625}}, cannon_shadow = {width = 180, height = 187, shift = {0.5, -0.4375}}, housing = {width = 84, height = 148, shift = {0.0, -0.9453125}}},
   ["grubstake/pacifier"] = {width = 334, height = 373, frames = 32, line_length = 8, shift = {1.125, -1.3671875}},

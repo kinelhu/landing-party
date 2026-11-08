@@ -5415,6 +5415,29 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the trooper's force's gates within 40 tiles for the order's reissue time, and each pass of the lead holds open those
   within 6 of a trooper (`command.lua`): 6 of 6 through the gates, 0 of 6 still through the wall. Assumed, not tested:
   tanks and the larger units through a three-wide gate; an enemy slipping in while the gates stand open for an order.
+- **The unit pass, first: Grubstake's buggies rendered** (0.2.225; the user, 2026-11-08: units first, a silhouette a
+  role and the faction's dress on it). The inventory found the shared sprites in the units, not the buildings: 14 on the
+  car, 12 on the character, 12 on the mech armour, 11 on the tank, 8 on the distractor. `tools/blender/buggy.py` models
+  one scrap desert buggy and renders it in 64 directions as layers: the chassis, then each weapon module with the chassis
+  as its holdout (so the cage hides the gun where it passes behind, and stacked the two are right) and the shadow of both.
+  A unit has one picture a direction, so a weapon faces where the hull does; the modules sit on one turret ring and bring
+  their own kit (the machine gun and ammo cans; the slug gun, a red ammo crate banded yellow "to remind the player of
+  actual slugs" and a ram plate; the flak as a Wirbelwind, an open nine-sided turret with four barrels seated on the deck
+  over the engine, "a little too raised" on the cage at first, its accents sky blue as anti-air's have been since
+  2026-10-23, and a ranging radar). A whip antenna on the tail is its own layer of 8 frames a direction: a run animation
+  steps with the distance covered, so it sways driving and stands parked. The user's calls on the way, each kept
+  as a comment where it changed the model: wheels like vanilla's (a third of the length, wide, dark; then real pneumatic
+  wheels, a tyre spun from its section, a rim, nuts), "much more detail and asymmetry", grime ("vanilla reads far more
+  grimy", `lpkit.dirty`, opt-in), the tone measured against the car (the first renders had half its contrast: less sky,
+  more sun, the High Contrast look), smooth fenders and none in front (four pale fenders on the corners read as vanilla's
+  car), a dune buggy's proportions without the dragster stance, stretched toward a desert buggy's 2 to 1 (2.3 tiles; its
+  selection box grown to match), the front and then the back an open tube frame with exposed coil-overs, the cage painted
+  amber for a mass at game scale; then "toy like ... too polygonal again": every material grimed (the modules' were made
+  after the grime pass and had none), colours muted, every mesh shaded smooth with sharp edges kept, tubes and cylinders
+  given more sides. A tapered nose was tried twice and dropped ("reads a lot like a toy"). **Not yet seen in
+  game** (assumed): headless previews at game scale beside the vanilla car only; `LP_MIX=buggies scripts/showcase.sh`
+  parks them for a look. Open: the other shared families (character, mech armour, tank, distractor), the plated
+  variants' look (identical to their base today), the hauler and dozer on a truck chassis.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

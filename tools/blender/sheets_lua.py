@@ -16,8 +16,9 @@ for d, _, files in sorted(os.walk(root)):
     if "sheet.json" in files:
         key = os.path.relpath(d, root).replace(os.sep, "/")
         m = json.load(open(os.path.join(d, "sheet.json")))
-        rows.append('  ["%s"] = {width = %d, height = %d, frames = %d, line_length = %d, shift = {%r, %r}},' % (
-            key, m["width"], m["height"], m["frames"], m["line_length"], m["shift"][0], m["shift"][1]))
+        split = ", files = %d, lines_per_file = %d" % (m["files"], m["lines_per_file"]) if "files" in m else ""
+        rows.append('  ["%s"] = {width = %d, height = %d, frames = %d, line_length = %d, shift = {%r, %r}%s},' % (
+            key, m["width"], m["height"], m["frames"], m["line_length"], m["shift"][0], m["shift"][1], split))
 with open(os.path.join(root, "sheets.lua"), "w") as f:
     f.write("-- Written by tools/blender/sheets_lua.py from each sheet.json: frame size, count and shift in tiles.\nreturn {\n")
     f.write("\n".join(rows) + "\n}\n")

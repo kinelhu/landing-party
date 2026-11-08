@@ -832,20 +832,64 @@ data:extend({skyguard, flak_buggy})
 -- breacher, rocket trooper, battle tank) drop nothing: they are the player's. The bomb drone neither: it dies in every
 -- blow (a drop a hit).
 -- Grubstake's vehicles told apart from afar (the user, 2026-10-23: "Grubstake buggies also very much all look alike
--- from afar"): by outline first, then colour. The buggy small and plain in its amber, the slug buggy with a long barrel
--- in rust, the flak buggy with a big turret in sky blue (anti-air; olive was lost on grass), the dozer a size up in construction yellow. Each drawn afresh from
--- the car (a second tint on a tinted animation darkens all of it).
-local RUST, SKY, YELLOW = {r = 0.85, g = 0.38, b = 0.22, a = 1}, {r = 0.6, g = 0.78, b = 1, a = 1},
-  {r = 1, g = 0.84, b = 0.2, a = 1}
+-- from afar"): by outline first, then colour. The buggies now by their weapon modules (rendered_buggy below: a short gun,
+-- a long barrel and a shell rack, twin raised barrels and a radar mast) and their accents (the slug's rust shield, the
+-- flak's sky blue: anti-air; olive was lost on grass); the dozer a size up in construction yellow, drawn afresh from the
+-- car (a second tint on a tinted animation darkens all of it).
+local YELLOW = {r = 1, g = 0.84, b = 0.2, a = 1}
 local function look(u, anim, color, k)
   u.run_animation = table.deepcopy(anim)
   tint(u.run_animation, {}, color)
   if k then grow(u.run_animation, k, {}) end
   u.attack_parameters.animation = table.deepcopy(u.run_animation)
 end
-look(buggy, car.animation, nil, 0.85)
-look(slug, crowned(car.animation, {{tank_car.turret_animation, 0.9, 0, 0.15}}), RUST)
-look(flak_buggy, crowned(car.animation, {{car.turret_animation, 1.4}}), SKY)
+-- Grubstake's buggies, rendered in Blender (tools/blender/buggy.py, sheet.py; the unit pass, 2026-11-08): one scrap desert
+-- buggy for a chassis (a tube frame nose to tail, its cage painted amber, the engine hung at the back), and on its turret
+-- ring a weapon module with its kit, a layer of its own: the machine gun and ammo cans (buggy), the slug gun, its shell
+-- rack and ram plate (slug buggy), the twin flak and its drums and ranging radar (flak buggy). A unit has one picture a
+-- direction, so the weapon faces where the hull does: 64 directions, one frame each. The module's sheet carries the
+-- shadow of both. Frame sizes and shifts from each sheet.json. Only Grubstake fields them, so the kinds' own copies
+-- draw them too.
+local SHEETS = require("graphics.sheets")
+local function rendered_buggy(u, module)
+  -- The antenna (the user, 2026-11-08: "An antenna in the back? ... animate it while moving?") is its own layer of SWAY
+  -- frames a direction: a run animation steps with the distance a unit covers and holds when it stops, so the whip sways
+  -- driving and stands parked. The single-frame layers repeat to match it.
+  local DIRS = SHEETS["grubstake/buggy/chassis"].frames          -- one frame a direction
+  local SWAY = SHEETS["grubstake/buggy/antenna"].frames / DIRS
+  local function layers(part, files)
+    local B = SHEETS["grubstake/buggy/" .. part]
+    local out = {}
+    for _, f in ipairs(files) do
+      local fc = B.frames / DIRS
+      local dir = "__landing-party__/graphics/grubstake/buggy/" .. part .. "/"
+      local l = {width = B.width, height = B.height, direction_count = DIRS, frame_count = fc, repeat_count = SWAY / fc,
+        line_length = B.line_length, scale = 0.5, shift = B.shift}
+      if B.files then                                  -- a tall sheet on several files (sheet.py)
+        l.filenames, l.lines_per_file = {}, B.lines_per_file
+        for k = 1, B.files do l.filenames[k] = dir .. f .. "-" .. k .. ".png" end
+      else
+        l.filename = dir .. f .. ".png"
+      end
+      if f == "glow" then l.draw_as_glow = true; l.blend_mode = "additive" end
+      if f == "shadow" then l.draw_as_shadow = true end
+      out[#out + 1] = l
+    end
+    return out
+  end
+  local all = {}
+  for _, l in ipairs(layers(module, {"shadow"})) do all[#all + 1] = l end
+  for _, l in ipairs(layers("chassis", {"body", "glow"})) do all[#all + 1] = l end
+  for _, l in ipairs(layers(module, {"body", "glow"})) do all[#all + 1] = l end
+  for _, l in ipairs(layers("antenna", {"body"})) do all[#all + 1] = l end
+  u.run_animation = {layers = all}
+  u.attack_parameters.animation = table.deepcopy(u.run_animation)
+  -- It is longer than the car it replaced (2.3 tiles to 2): its selection box follows the sprite.
+  u.selection_box = {{-0.8, -1.25}, {0.8, 1.25}}
+end
+rendered_buggy(buggy, "mg")
+rendered_buggy(slug, "slug")
+rendered_buggy(flak_buggy, "flak")
 look(dozer, car.animation, YELLOW, 1.25)
 dozer.selection_box = {{-1.25, -1.5}, {1.25, 1.5}}
 

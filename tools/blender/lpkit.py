@@ -180,14 +180,14 @@ def stage(scene, tiles, margin):
 def render(scene, path):
     scene.render.filepath = path; bpy.ops.render.render(write_still=True)
 
-def passes(scene, out, frames, set_frame, model, glowing, ground, sun, world, shadow_each=False):
+def passes(scene, out, frames, set_frame, model, glowing, ground, sun, world, shadow_each=False, fill=0.55):
     """Each frame's body and glow (the lit parts alone: every other part a holdout, no light), then one shadow, or one a
     frame where the shape moves (shadow_each: a turning dish's)."""
     bg = world.node_tree.nodes["Background"]
     for k in ("body", "glow") + (("shadow",) if shadow_each else ()): os.makedirs(f"{out}/{k}", exist_ok=True)
     for f in range(frames):
         set_frame(f)
-        ground.hide_render = True; sun.hide_render = False; bg.inputs[1].default_value = 0.55
+        ground.hide_render = True; sun.hide_render = False; bg.inputs[1].default_value = fill
         for o in model: o.is_holdout = False
         render(scene, f"{out}/body/{f:03d}.png")
         sun.hide_render = True; bg.inputs[1].default_value = 0.0
@@ -197,14 +197,14 @@ def passes(scene, out, frames, set_frame, model, glowing, ground, sun, world, sh
         render(scene, f"{out}/glow/{f:03d}.png")
         if shadow_each:
             for o in model: o.is_holdout = False; o.visible_camera = False
-            sun.hide_render = False; bg.inputs[1].default_value = 0.55; ground.hide_render = False
+            sun.hide_render = False; bg.inputs[1].default_value = fill; ground.hide_render = False
             render(scene, f"{out}/shadow/{f:03d}.png")
             for o in model: o.visible_camera = True
     if shadow_each:
         for o in model: o.is_holdout = False
         return
     for o in model: o.is_holdout = False
-    sun.hide_render = False; bg.inputs[1].default_value = 0.55; ground.hide_render = False
+    sun.hide_render = False; bg.inputs[1].default_value = fill; ground.hide_render = False
     for o in model: o.visible_camera = False
     render(scene, f"{out}/shadow.png")
 
@@ -219,3 +219,43 @@ def arc(p0, p1, m, rng, kinks=3, jitter=0.08, r=0.012):
         p.handle_left_type = p.handle_right_type = "VECTOR"
     c.data.materials.append(m)
     return c
+
+def dirty(m, dirt=0.6, dust=0.5, rust=0.6, dirt_rgb=(0.1, 0.08, 0.05), dust_rgb=(0.5, 0.46, 0.4), scale=4.0):
+    """Grime over a material's colour, for units (the user, 2026-11-08: vanilla's car "reads far more grimy and dirty than
+    our Grubstake buggy, which feels quite wrong"): dirt in patches (noise on object coordinates), dust settled on what
+    faces up (the normal's z, broken by noise), and a fine speckle over all. Opt-in: the buildings' renders do not call it."""
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]; L = nt.links.new
+    inp = b.inputs["Base Color"]
+    if not inp.links:
+        return
+    src = inp.links[0].from_socket
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    def noise(sc, detail=10, rough=0.65):
+        n = nt.nodes.new("ShaderNodeTexNoise"); n.inputs["Scale"].default_value = sc
+        n.inputs["Detail"].default_value = detail; n.inputs["Roughness"].default_value = rough
+        L(tc.outputs["Object"], n.inputs["Vector"]); return n
+    def ramp(sock, lo, hi, to_lo=0.0, to_hi=1.0):
+        r = nt.nodes.new("ShaderNodeMapRange"); r.inputs["From Min"].default_value = lo; r.inputs["From Max"].default_value = hi
+        r.inputs["To Min"].default_value = to_lo; r.inputs["To Max"].default_value = to_hi; L(sock, r.inputs["Value"]); return r.outputs["Result"]
+    def mix(a, bcol, fac, blend="MIX"):
+        x = nt.nodes.new("ShaderNodeMix"); x.data_type = "RGBA"; x.blend_type = blend
+        L(a, x.inputs["A"]); x.inputs["B"].default_value = (*bcol, 1) if isinstance(bcol, tuple) else (0, 0, 0, 1)
+        if not isinstance(bcol, tuple): L(bcol, x.inputs["B"])
+        L(fac, x.inputs["Factor"]); return x.outputs["Result"]
+    # Dirt in patches.
+    dmask = ramp(noise(scale).outputs["Fac"], 0.42, 0.62, 0.0, dirt)
+    c = mix(src, dirt_rgb, dmask)
+    # Dust on upward faces.
+    geo = nt.nodes.new("ShaderNodeNewGeometry"); sep = nt.nodes.new("ShaderNodeSeparateXYZ"); L(geo.outputs["Normal"], sep.inputs[0])
+    up = ramp(sep.outputs["Z"], 0.4, 0.95)
+    dn = ramp(noise(scale * 3).outputs["Fac"], 0.35, 0.65, 0.0, dust)
+    mul = nt.nodes.new("ShaderNodeMath"); mul.operation = "MULTIPLY"; L(up, mul.inputs[0]); L(dn, mul.inputs[1])
+    c = mix(c, dust_rgb, mul.outputs[0])
+    # Rust spots: small, where a finer noise peaks.
+    rmask = ramp(noise(scale * 5, detail=6).outputs["Fac"], 0.6, 0.72, 0.0, rust)
+    c = mix(c, (0.28, 0.12, 0.05), rmask)
+    # Speckle: value broken up at a fine scale.
+    sp = ramp(noise(scale * 18, detail=4).outputs["Fac"], 0.3, 0.7, 0.55, 1.25)
+    comb = nt.nodes.new("ShaderNodeCombineColor"); [L(sp, comb.inputs[i]) for i in range(3)]
+    c = mix(c, comb.outputs["Color"], ramp(sep.outputs["Z"], -2, -1, 1.0, 1.0), blend="MULTIPLY")
+    L(c, inp)
