@@ -5517,6 +5517,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   shells, faceted hulls); the ducts' lips, all edge, took the worn-edge shader's bare metal (a low-wear finish); dark
   ducts read as empty rings (a motor glow in each, its liner opened: a capped cylinder's lids had hidden it; at full it
   read as headlights, dimmed). Grubstake's harrier keeps its autogyro, its laser drone copy the old look. 2.2 MB.
+- **Grubstake's howitzer truck rendered** (0.2.236; Grubstake's alone, the user correcting: "KH does not have a howitzer
+  truck"; "we need to be careful that it coheres with the deployed howitzer"): the hauler's chassis (its base and
+  wheels shared) carrying the deployed howitzer's own housing and barrel, read from `tools/blender/kh_guns.py` rather than
+  copied (`hauler.py LP_LOAD=howitzer`: its prefix run into this scene), at 0.8, the barrel down 26 degrees into a travel
+  lock over the cab, its spades stowed on the bed; the truck and the gun it becomes in a siege one machine. Its
+  collision box stays the tank's (pathing and siege placement are not the look's), its wreck the hauler's. The
+  player's units keep vanilla's chassis (the user). +2.3 MB. Found on the way: objects scaled after they are made, read
+  before a view-layer update, carried unit cubes' matrices (a black block over the cab).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

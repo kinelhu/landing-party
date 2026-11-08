@@ -200,12 +200,56 @@ def bed():
         rod((-0.3, y, zb + 0.54), (0.3, y, zb + 0.36), 0.009, M["canvas"])
         rod((0.3, y, zb + 0.36), (0.68, y, zb + 0.22), 0.009, M["canvas"])
 
+def howitzer_load():
+    """The howitzer truck's load (LP_LOAD=howitzer; the user, 2026-11-08: "careful that it coheres with the deployed
+    howitzer": it becomes the deployed gun in a siege, siege.lua, and back): the deployed howitzer's own housing and
+    barrel, Grubstake's (tools/blender/kh_guns.py howitzer grubstake: its geometry read from there, not copied), at 0.8,
+    on a flatbed, its barrel brought down from its firing elevation to point forward over the cab, held in a travel lock
+    on the cab's roof; its spades stowed on the bed's sides."""
+    import mathutils as mu
+    here = os.path.dirname(os.path.abspath(__file__))
+    prefix = open(os.path.join(here, "kh_guns.py")).read().split("base_objs = group(base)")[0]
+    import lpkit as _lk
+    keep_reset, argv = _lk.reset, sys.argv
+    _lk.reset = lambda: V.scene                                              # its materials into this scene
+    sys.argv = ["blender", "--", "howitzer", out, "64", "grubstake"]
+    env = {"__file__": os.path.join(here, "kh_guns.py"), "__name__": "kh_guns_load"}
+    exec(compile(prefix, "kh_guns.py", "exec"), env)
+    sys.argv, _lk.reset = argv, keep_reset
+    Y0, Y1, ZB = -1.42, -0.08, ZF + 0.06
+    box(1.36, Y1 - Y0, 0.05, 0, (Y0 + Y1) / 2, ZB, M["plate"], bevel=0.008)                     # the flatbed
+    for sx in (-1, 1):
+        box(0.04, Y1 - Y0, 0.1, sx * 0.66, (Y0 + Y1) / 2, ZB + 0.05, M["rust2"], bevel=0.006)
+        for k in range(2):                                                                      # stowed spades
+            box(0.03, 0.3, 0.2, sx * 0.7, -1.2 + k * 0.4, ZB + 0.1, M["dark"], bevel=0.006)
+            box(0.035, 0.22, 0.04, sx * 0.71, -1.2 + k * 0.4, ZB + 0.12, M["yellow"], bevel=0.004)
+    house = env["group"](env["housing"]); barrel = env["group"](env["barrel"])
+    # (Their scales are set after they are made: read before an update, a muzzle brake's matrix was a unit cube's, a
+    # black block over the cab, the first.)
+    bpy.context.view_layer.update()
+    K, Z = 0.8, env["Z"]
+    # Down 26 degrees about its trunnion (kh_guns' y0, zc: 30 degrees up to 4), then all of it to the bed at K.
+    tr = mu.Vector((0, 0.45, Z + 0.38))
+    rot = mu.Matrix.Rotation(math.radians(-26), 4, "X")
+    for o in barrel:
+        o.matrix_world = mu.Matrix.Translation(tr) @ rot @ mu.Matrix.Translation(-tr) @ o.matrix_world
+    place = mu.Matrix.Translation((0, -0.78, ZB + 0.05 - (Z - 0.06) * K)) @ mu.Matrix.Scale(K, 4)
+    for o in house + barrel:
+        o.matrix_world = place @ o.matrix_world
+    # The travel lock: a crutch on the cab's roof the barrel rests in.
+    y = YC1 - 0.3
+    for sx in (-1, 1):
+        rod((sx * 0.1, y, 1.02), (sx * 0.06, y, 1.2), 0.02, M["plate"])
+    box(0.2, 0.06, 0.04, 0, y, 1.2, M["dark"], bevel=0.008)
+    box(0.14, 0.03, 0.02, 0, y + 0.03, 1.215, M["yellow"], bevel=0.004)
+
 base = V.group(chassis)
-modules = {"bed": V.group(bed)}
+LOAD = os.environ.get("LP_LOAD", "bed")
+modules = {LOAD: V.group(howitzer_load if LOAD == "howitzer" else bed)}
 V.finish(mud=0.6, mud_top=0.45)
 # LP_WRECK=1: its wreck (4 directions, its shadow in the picture), then stop.
 if os.environ.get("LP_WRECK"):
-    V.wreck(base + modules["bed"], out, seed=11, tiles=3, margin=1.2)
+    V.wreck(base + modules[LOAD], out, seed=11, tiles=3, margin=1.2)
     print("hauler wreck to", out); sys.exit(0)
 rig = V.light(3, 1.2)
 _z = float(os.environ.get("LP_ZOOM", 1))

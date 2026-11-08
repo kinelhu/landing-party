@@ -976,6 +976,15 @@ do
     {selection_box = {{-0.85, -1.45}, {0.85, 1.55}}, corpse = wreck("lp-hauler-wreck", "grubstake/hauler/wreck")})
   headlights(p, 16)
 end
+-- The howitzer truck (Grubstake's alone; tools/blender/hauler.py LP_LOAD=howitzer): the hauler's chassis carrying the
+-- deployed howitzer's own housing and barrel (kh_guns.py's, read from there), its barrel down in a travel lock over the
+-- cab, so the truck and the gun it becomes in a siege (siege.lua) are one machine (the user: "careful that it coheres
+-- with the deployed howitzer"). Wired once its sheet is in sheets.lua.
+if SHEETS["grubstake/hauler/howitzer"] then
+  grubstake_look(truck, "grubstake/hauler", {{"howitzer", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}},
+    {"howitzer", {"body", "glow"}}}, {selection_box = {{-0.85, -1.45}, {0.85, 1.55}}, corpse = "lp-hauler-wreck"})
+  -- (Its collision box stays the tank's it had: how it paths and where a siege sets it down are not the look's to change.)
+end
 -- The harrier (tools/blender/harrier.py): a scrap autogyro, a pilot and a gunner, its rotor and pusher prop discs of
 -- motion blur (a run animation holds when a unit stops: a modelled rotor would freeze while it hovers). And the bomb
 -- drone (tools/blender/scavenger.py): a scrap quadcopter with its bomb slung under it, a red gas cylinder.

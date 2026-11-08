@@ -19,6 +19,7 @@ return {
   ["grubstake/hauler/anim"] = {width = 207, height = 223, frames = 256, line_length = 8, shift = {0.0, -0.265625}},
   ["grubstake/hauler/base"] = {width = 218, height = 264, frames = 64, line_length = 8, shift = {0.0078125, -0.4921875}},
   ["grubstake/hauler/bed"] = {width = 259, height = 256, frames = 64, line_length = 8, shift = {0.296875, -0.4296875}},
+  ["grubstake/hauler/howitzer"] = {width = 251, height = 249, frames = 64, line_length = 8, shift = {0.34375, -0.375}},
   ["grubstake/hauler/wreck"] = {width = 265, height = 307, frames = 4, line_length = 4, shift = {0.25, -0.140625}},
   ["grubstake/howitzer"] = {barrel = {width = 303, height = 308, shift = {0.0, -2.0546875}}, base = {width = 201, height = 159, shift = {0.0, -0.046875}}, base_shadow = {width = 206, height = 154, shift = {0.0078125, 0.0078125}}, cannon_shadow = {width = 331, height = 354, shift = {1.34375, -1.3984375}}, housing = {width = 303, height = 308, shift = {0.0, -2.0546875}}},
   ["grubstake/mortar"] = {barrel = {width = 84, height = 148, shift = {0.0, -0.9453125}}, base = {width = 138, height = 136, shift = {0.0, -0.0546875}}, base_shadow = {width = 148, height = 142, shift = {0.015625, 0.0390625}}, cannon_shadow = {width = 180, height = 187, shift = {0.5, -0.4375}}, housing = {width = 84, height = 148, shift = {0.0, -0.9453125}}},
