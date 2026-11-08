@@ -21,6 +21,11 @@ local ADVANCE_RANGE = 200          -- outposts an occupy order looks for
 local ATTACK_REACH = 50
 local TURRET_COVER = 25            -- a laser's 24 and a little
 local REISSUE_TICKS = 600          -- an idle trooper is given its orders again after this long
+-- The player's own gates (scenario owngates: six troopers behind the player's gates never left, as many through a gap
+-- did). A unit plans its path when ordered and takes a shut gate for wall, so an order opens its force's gates within
+-- GATE_PLAN for its reissue time, and each pass of lead holds open those within GATE_NEAR of a trooper.
+local GATE_PLAN = 40
+local GATE_NEAR = 6
 -- Every corporation's prototypes of these kinds.
 local MILITARY = shared.variants({"lp-turret", "lp-mortar", "lp-depot", "lp-radar", "lp-lander", "lp-uplink", "lp-launchpad",
   "lp-optics-lab", "lp-line-lab", "lp-siege-lab"})
@@ -245,6 +250,9 @@ end
 local function order(t, cmd, key)
   local u = t.unit
   if t.key == key and u.commandable.has_command and game.tick - (t.at or 0) < REISSUE_TICKS then return end
+  for _, g in pairs(u.surface.find_entities_filtered{type = "gate", force = u.force, position = u.position, radius = GATE_PLAN}) do
+    g.request_to_open(u.force, REISSUE_TICKS)
+  end
   u.commandable.set_command(cmd)
   t.key, t.at = key, game.tick
 end
@@ -359,6 +367,12 @@ local function manual(t)
   end
 end
 
+local function open_near(u)
+  for _, g in pairs(u.surface.find_entities_filtered{type = "gate", force = u.force, position = u.position, radius = GATE_NEAR}) do
+    g.request_to_open(u.force, 180)
+  end
+end
+
 local function lead()
   local objectives = {}
   local plans = {}
@@ -392,8 +406,10 @@ local function lead()
     elseif t.manual then
       t.offline = nil
       manual(t)
+      open_near(u)
     else
       t.offline = nil
+      open_near(u)
       local beacon = t.beacon and storage.cmd.beacons[t.beacon]
       if not (beacon and beacon.valid) then
         beacon = nearest(storage.cmd.beacons, u.position, u.force, ASSIGN_RANGE)

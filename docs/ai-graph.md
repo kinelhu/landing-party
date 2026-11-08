@@ -26,8 +26,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `faction` | 937 | army, base, costmap, firemap, landfx, layout, names, ops, pact, pods, rd, site, threat, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `base` | 880 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
+| `command` | 596 | (leaf) | control |  | 60, 120 |  | cmd |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
-| `command` | 580 | (leaf) | control |  | 60, 120 |  | cmd |
 | `crew` | 483 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |

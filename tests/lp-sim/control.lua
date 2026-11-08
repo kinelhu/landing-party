@@ -14118,6 +14118,43 @@ scenarios.scanresponse = function()
   end)
 end
 
+-- The player's own gates (the user, 2026-11-08: shields, gates and anti-air out of the first release, "check gates":
+-- an army stuck behind its own walls would be a bug). Six troopers in a box of the player's stone walls, its east side a
+-- three-tile opening; their rally beacon 40 tiles east. LP_MIX: gate (default, vanilla gates in the opening), gap
+-- (nothing in it: they can leave at all), shut (walls in it: none may leave, the check's own control).
+scenarios.owngates = function()
+  local mode = params.mix ~= "" and params.mix or "gate"
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true,
+      direction = defines.direction.north}
+  end
+  schedule(30, function() lp("debug_tune", {ops_off = true, army_off = true, raids_off = true}) end)
+  schedule(60, function()
+    flatten(-20, -20, 60, 20)
+    for k = -8, 8 do
+      put("stone-wall", k + 0.5, -7.5); put("stone-wall", k + 0.5, 8.5); put("stone-wall", -7.5, k + 0.5)
+      if k < -1 or k > 1 then put("stone-wall", 8.5, k + 0.5)
+      elseif mode == "gate" then S.gates = (S.gates or 0) + (put("gate", 8.5, k + 0.5) and 1 or 0)
+      elseif mode == "shut" then put("stone-wall", 8.5, k + 0.5) end
+    end
+    -- Bandwidth for them (past it they go offline and stand): research, a powered relay.
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    put("electric-energy-interface", -3, 4)
+    put("medium-electric-pole", -0.5, 4.5)
+    put("lp-command-relay", 2.5, 4.5)
+    S.beacon = put("lp-rally-beacon", 40.5, 0.5)
+    for k = 1, 6 do lp("debug_trooper", "lp-trooper", {k * 1.5 - 5, -2}) end
+  end)
+  schedule(END - 60, function()
+    local out = surface().count_entities_filtered{name = "lp-trooper", force = "player", position = {40, 0}, radius = 12}
+    local all = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    info(string.format("owngates %s: %d of %d troopers at the rally point", mode, out, all))
+    if mode == "gate" then check("owngates: three gates in the opening", S.gates == 3, tostring(S.gates)) end
+    if mode == "shut" then check("owngates: shut, none out", out == 0, out .. " of " .. all)
+    else check("owngates: " .. mode .. ", every trooper at the rally point", all == 6 and out == 6, out .. " of " .. all) end
+  end)
+end
+
 scenarios.levers = function()
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})

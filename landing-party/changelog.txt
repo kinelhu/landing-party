@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.223
+Version: 0.2.224
 Date: 2026-11-08
   Features:
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.

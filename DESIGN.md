@@ -177,7 +177,8 @@ document still says Serenity where it records history.
 | Grubstake's skim (a truck parks at an exposed belt and fills its trunk, home to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
 | Raid leaders (an icon over one raider; Grubstake breaks when it falls and its foreman drops the haul, Serenity regroups) | built | `leader` (three) |
-| Shields, gates for the player, anti-air turret | open | |
+| The player's army through the player's own gates (an order opens its force's gates within 40 tiles for its time, a trooper holds open those within 6) | built 0.2.224 | `owngates` (gate, gap, shut) |
+| Shields and an anti-air turret for the player | out of the first release (the user, 2026-11-08; vanilla turrets already shoot the fliers down) | |
 | Depletion and relocation | dropped 2026-11-05 (a patch outlasts a session at a camp's rate) | |
 | Serenity spreads: lobed, walled clusters out toward its line (metastases), up to 30 blocks; its line around a rival's claim | built 2026-10-20, seen on maps, not measured | `factory` maps, `gates`, `cordon ring` |
 | Serenity's compounds by wave function collapse (rooms, the curtain round the camp); districts by the keep (the default) | built 2026-10-20, seen on maps and in game; districts measured about even | `factory` maps (`turtlecore` for districts) |
@@ -5406,6 +5407,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   under gates_off now, passing. Uncalibrated: what each level means in razed buildings, after the playtest.
   On the way, the three math.random calls left (base.lua's idle runs, pact.lua's crystal, jumper.lua's hands) on the
   settlement's rng.
+- **The player's army could not cross the player's own gates** (0.2.223; scenario `owngates`, asked for by the user
+  on 2026-11-08 while settling the release's scope). Six troopers in a box of stone walls, their beacon 40 tiles out:
+  with a gap in the wall all six reached it, with a wall none did (the control), and with three vanilla gates in the gap
+  none did either. A unit plans its path when it is ordered and takes a shut gate for wall, as Kessler-Hayashi's camps
+  had found (`wayout`), and no gate opened for them. Now each order opens
+  the trooper's force's gates within 40 tiles for the order's reissue time, and each pass of the lead holds open those
+  within 6 of a trooper (`command.lua`): 6 of 6 through the gates, 0 of 6 still through the wall. Assumed, not tested:
+  tanks and the larger units through a three-wide gate; an enemy slipping in while the gates stand open for an order.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
