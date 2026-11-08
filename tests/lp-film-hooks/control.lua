@@ -9,6 +9,8 @@
 --                         "center" = "strike" (the strike's centre, or the last dev call's aim).
 --   waves = true          Synthexis's first live wave: point "wave" (its centre, eased), "breach"; events "wave:<stage>".
 --   bursts = true         event "burst:first" the tick the film's first burster winds up; point "burst" where it stands.
+--   fight = true          point "fight": the eased middle of the units near it with an enemy in reach, from each dev
+--                         call's aim (a move tracks it: pos = "fight", track = true).
 --   dev = {{tick =, args = {...}, at = {x, y} | {toward = tiles} | {wall = true}}}   /lp tools at a tick.
 --   fx = {{tick =, kind = "wave" | "rise", at = {x, y}, radius =}}   the dome's looks on the gallery's first building.
 --   ripples = {{tick =, pos = {x, y}, name = "lp-dome-ripple"}}      the dome's catch played there.
@@ -57,12 +59,28 @@ local function tick(t)
         at = {o.x - o.x / len * at.toward, o.y - o.y / len * at.toward}
       end
       S.center = {at[1], at[2]}
+      S.points.fight = {at[1], at[2]}
       lp("dev", d.args, at)
       log("lp-film-hooks: /lp " .. table.concat(d.args, " ") .. " at " .. at[1] .. "," .. at[2] .. ", tick " .. t)
     end
   end
   for _, r in ipairs(P.ripples or {}) do
     if t == r.tick then game.surfaces[1].create_entity{name = r.name or "lp-dome-ripple", position = r.pos} end
+  end
+  -- The fight (P.fight; the user, 2026-11-08, of the staged scenes: "the camera is not centered on the fight", "missing
+  -- almost all of the action"; framed by guess, each shot had missed): the middle of the units within 40 of it that have
+  -- an enemy within 20 (of every unit there while none has), eased each 6 ticks; set to each dev call's aim when it is
+  -- made. A move with `pos = "fight", track = true` follows it.
+  if P.fight and S.points.fight and t % 6 == 0 then
+    local s, here = game.surfaces[1], S.points.fight
+    local ex, ey, en, ax, ay, an = 0, 0, 0, 0, 0, 0
+    for _, u in ipairs(s.find_entities_filtered{position = here, radius = 40, type = "unit"}) do
+      local x, y = u.position.x, u.position.y
+      ax, ay, an = ax + x, ay + y, an + 1
+      if s.find_nearest_enemy{position = u.position, max_distance = 20, force = u.force} then ex, ey, en = ex + x, ey + y, en + 1 end
+    end
+    local g = en > 0 and {ex / en, ey / en} or an > 0 and {ax / an, ay / an}
+    if g then S.points.fight = {here[1] + (g[1] - here[1]) * 0.12, here[2] + (g[2] - here[2]) * 0.12} end
   end
   -- The wave, eased each 2 ticks so a tracking move glides rather than jumps.
   if P.waves and t % 2 == 0 then

@@ -29,13 +29,13 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `command` | 596 | (leaf) | control |  | 60, 120 |  | cmd |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `crew` | 483 | base, ops, standing | control |  | 30 |  | crew_owner |
+| `dev` | 428 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
 | `costmap` | 415 | firemap, threat | control, creep, faction, farm, herd, siege |  |  |  |  |
 | `dome` | 407 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `cell` | 402 | pods | control, farm |  |  |  | cell_sites, cells |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
-| `dev` | 391 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, trace |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 383 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
@@ -59,11 +59,11 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `valuemap` | 208 | firemap | control, farm, herd, oplog, siege |  |  |  |  |
 | `oplog` | 188 | attempt, valuemap | control |  |  |  | oplog |
+| `ram` | 186 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
 | `site` | 171 | modules | base, control, faction, layout |  |  |  |  |
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
-| `ram` | 164 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `scorcher` | 160 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_drains, tesla_held, tesla_holds |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
 | `road` | 143 | base, standing | control |  | 60 |  |  |

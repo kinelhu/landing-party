@@ -5568,6 +5568,26 @@ Bugs and surprises the headless runs caught, each kept as a check:
   ... black puffs of smoke jittered around spots the flak fires on": three black puffs a burst (`lp-flak-puff`, at a
   flier's height, within its 2-tile burst), two waves of eight drones. Open (the user): fliers do not collide with
   each other (`not_colliding_with_itself` on `lp-air`), so a swarm may stack; measuring both ways before choosing.
+- **Fliers collide with each other** (0.2.240; the user: "the fact they don't collide with each other was bothering
+  me"). `lp-air` units passed through each other (`not_colliding_with_itself`); scenario `airspace` measured both ways
+  (`LP_AIR=pass` restores the old mask through the test mod's data-final-fixes): 12 harriers strafing sat in one pile
+  for 15 s, 35% overlapping (28% raiding troopers, 23% of laser drones); colliding, 0 to 2%, the same arrival times, none
+  stuck. The cost: colliding harriers finished undefended chests 10 to 30% slower over three seeds (without the engine's
+  separation 68 to 92%, no clearer); their damage and the flak's 2-tile burst go to the arena's refresh together.
+- **Infantry faced where it walks** (0.2.240; the user: troopers "moonskating ... their model is turned to the left",
+  long seen). Their run was the engineer's running with a gun: 18 directions of gun against legs, north to south by the
+  east only (the engine plays them in reverse for the rest), read by a unit as 18 headings round the compass. They run
+  on the engineer's plain running now (8 directions). The mech armour has no plain run: its 40 are kept and unchecked
+  (8 picked by stripes read no better). `/lp parade [ring <kind>]` sets them walking each way to look at; scenario
+  `parade` checks every kind walks every way.
+- **The scenes' fourth pass** (0.2.240; the user on the third takes: "the camera is not centered on the fight", "missing
+  almost all of the action", "You used to be better at film making!"). The framing had been guessed: the film plugin
+  gives a point `fight` now (the eased middle of the units near it with an enemy in reach, from each dev call's aim), and
+  each shot tracks it. One Killdozer ("1 dozer seems enough") widens its breach by four pieces (`ram.order`'s `widen`;
+  `dev` checks more strips than dozers, seen failing at 2 of 2), the buggies behind it go through and on deeper ("the
+  buggy could go deeper into the base"). The squad marches 24 tiles, the stream narrows out at its ends. The flak's
+  puffs are an explosion now (a near-black smoke burst at a flier's height; a trivial smoke read as faint wisps). Wrecks'
+  scorch softer (soot 0.6 over 0.4; a hard dark oval under the tanks on film), the eight ground wrecks rendered again.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

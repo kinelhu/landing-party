@@ -24,6 +24,8 @@
 --   tesla [n]                n Kessler-Hayashi Teslas (default 1) set 20 tiles east of you, sent at your laser or tesla
 --                            turret nearest you within 60: its lightning holds what it strikes (scorcher.hold, the status
 --                            "Stunned by lightning"). They are real and stay: kill them or let them be
+--   parade [ring <kind>]     each infantry kind walking each of the 8 ways, a row a kind east of you; or eight of one
+--                            kind walking out of a ring round you (facings: all face away)
 --   dozers | bombers | prism | flak [n]   staged scenes for the trailer, east of you (see dev.run)
 --   provoke | era <n> | trace
 local shared = require("__landing-party__.shared")
@@ -212,6 +214,40 @@ function dev.run(player, args)
     if not (u and burstfx.windup(u, big and "big" or "cinder")) then return player.print("the burster could not be set off") end
     player.print(string.format("a %s set off at %.0f,%.0f: it bursts in %.1f s", big and "big burster" or "burster", at.x, at.y,
       burstfx.KIND[big and "big" or "cinder"].windup / 60))
+  elseif what == "parade" then
+    -- Each infantry kind walking each of the 8 ways, a row a kind east of you, all yours (the user, 2026-11-08: troopers
+    -- "moonskating ... their model is turned to the left"): a still mid-walk shows each body facing where it goes.
+    local KINDS = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-infantry", "lp-railgunner",
+      "lp-shotgun-hand", "lp-sapper", "lp-lance", "lp-shock"}
+    local s, made = player.surface, 0
+    if args[2] == "ring" then
+      -- `parade ring <kind>`: eight of one kind in a ring 3 tiles out, each walking straight out: all face away.
+      local kind = args[3] or "lp-trooper"
+      for j = 0, 7 do
+        local a = j * math.pi / 4
+        local x, y = player.position.x + math.sin(a) * 3, player.position.y - math.cos(a) * 3
+        local u = s.create_entity{name = kind, position = {x, y}, force = player.force}
+        if u then
+          u.commandable.set_command{type = defines.command.go_to_location, destination = {x + math.sin(a) * 30, y - math.cos(a) * 30},
+            radius = 1, distraction = defines.distraction.none}
+          made = made + 1
+        end
+      end
+      return player.print(string.format("%d %s walking out of a ring", made, kind))
+    end
+    for r, kind in ipairs(KINDS) do
+      for j = 0, 7 do
+        local x, y = player.position.x + 10 + j * 7, player.position.y + (r - 1) * 5
+        local u = s.create_entity{name = kind, position = {x, y}, force = player.force}
+        if u then
+          local a = j * math.pi / 4
+          u.commandable.set_command{type = defines.command.go_to_location, destination = {x + math.sin(a) * 40, y - math.cos(a) * 40},
+            radius = 1, distraction = defines.distraction.none}
+          made = made + 1
+        end
+      end
+    end
+    player.print(string.format("%d on parade: each row a kind, its columns north, north-east ... north-west", made))
   elseif what == "tesla" then
     local s, n = player.surface, math.max(1, math.min(10, tonumber(args[2]) or 1))
     local name = shared.variant(shared.DEFAULT_CORP, "lp-tesla")
@@ -255,7 +291,7 @@ function dev.run(player, args)
     -- Just out of a close shot's frame (half a 1080p frame is 30 tiles over the zoom: 1.4 gives 21): the slow ones closer
     -- (a dozer at 0.07 a tick takes 11 s for 45 tiles, a Prism 0.09), the fliers further.
     local OFF = ({dozers = 45, prism = 32, bombers = 60, flak = 60})[what]
-    local MARCH = 40
+    local MARCH = 24             -- (40: the squad was gone before the drones came, the third takes)
     local function corp(id) return game.forces[shared.CORPS[id].force] end
     local function put(name, force, x, y)
       local at = s.find_non_colliding_position(name, {x, y}, 8, 0.5)
@@ -297,7 +333,8 @@ function dev.run(player, args)
         local u = put(shared.variant("grubstake", "lp-dozer"), g, w.position.x + OFF, y)
         local near = u and s.find_entities_filtered{position = {w.position.x, y}, radius = 3, type = {"wall", "gate"}, force = player.force}
         local piece = near and #near > 0 and s.get_closest({w.position.x, y}, near) or w
-        if u and ram.order(u, piece) then made = made + 1; first = first or u end
+        -- Each widens its breach by four pieces (the user, on the third takes: "the dozers keep working on the walls").
+        if u and ram.order(u, piece, {widen = 4}) then made = made + 1; first = first or u end
       end
       -- Behind the dozers, kept behind them until the breach (ram.follow).
       local buggies = {}
@@ -368,7 +405,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 

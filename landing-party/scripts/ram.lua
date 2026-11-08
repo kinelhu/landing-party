@@ -22,15 +22,19 @@ local function st()
   return storage.rams
 end
 
--- Order u to ram through the wall piece `wall`, along the line from u to it.
-function ram.order(u, wall)
+-- Order u to ram through the wall piece `wall`, along the line from u to it. opts.widen: after its breach, it rams that
+-- many more pieces beside the gap, each the nearest left within WIDEN of it (the user, on the third takes: "the dozers keep
+-- working on the walls"), where without it it drives on through.
+local WIDEN = 6
+function ram.order(u, wall, opts)
   if not (u and u.valid and wall and wall.valid) then return false end
   local dx, dy = wall.position.x - u.position.x, wall.position.y - u.position.y
   local len = math.max(0.01, math.sqrt(dx * dx + dy * dy))
   local d = {dx / len, dy / len}
   local face = {wall.position.x - d[1] * 1.6, wall.position.y - d[2] * 1.6}
+  local old = st()[u.unit_number]
   st()[u.unit_number] = {unit = u, dir = d, wall = {wall.position.x, wall.position.y}, phase = "approach", at = game.tick,
-    force = wall.force.name}
+    force = wall.force.name, widen = opts and opts.widen or old and old.widen}
   u.commandable.set_command{type = defines.command.go_to_location, destination = face, radius = 0.6,
     distraction = defines.distraction.none}
   return true
@@ -71,13 +75,17 @@ local function release(lead, at, dir)
   for i = #(storage.ram_followers or {}), 1, -1 do
     local f = storage.ram_followers[i]
     if f.lead == lead then
-      local inside = {at[1] + dir[1] * 12, at[2] + dir[2] * 12}
+      -- In through the gap, the ground inside it, then deeper (the user, on the third takes: "the buggy could go deeper
+      -- into the base ... once the turrets are dead").
       for _, v in ipairs(f.units) do
         if v.valid then
           v.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
             commands = {{type = defines.command.go_to_location, destination = {at[1] + dir[1] * 3, at[2] + dir[2] * 3}, radius = 2,
               distraction = defines.distraction.by_damage},
-              {type = defines.command.attack_area, destination = inside, radius = 14, distraction = defines.distraction.by_enemy}}}
+              {type = defines.command.attack_area, destination = {at[1] + dir[1] * 10, at[2] + dir[2] * 10}, radius = 10,
+                distraction = defines.distraction.by_enemy},
+              {type = defines.command.attack_area, destination = {at[1] + dir[1] * 20, at[2] + dir[2] * 20}, radius = 14,
+                distraction = defines.distraction.by_enemy}}}
         end
       end
       table.remove(storage.ram_followers, i)
@@ -135,14 +143,28 @@ function ram.tick(tick)
         end
         storage.ram_crushed = (storage.ram_crushed or 0) + 1
       else
-        -- Clear: on through, its followers behind it.
-        r.phase = "through"
-        local to = {u.position.x + r.dir[1] * THROUGH, u.position.y + r.dir[2] * THROUGH}
-        u.commandable.set_command{type = defines.command.go_to_location, destination = to, radius = 1.5,
-          distraction = defines.distraction.none}
         storage.ram_breaches = (storage.ram_breaches or 0) + 1
         release(k, {u.position.x, u.position.y}, r.dir)
-        r.at = tick
+        -- Widening: the next piece beside the gap, rammed from where it stands.
+        local next_piece
+        if (r.widen or 0) > 0 then
+          local best
+          for _, e in ipairs(u.surface.find_entities_filtered{position = u.position, radius = WIDEN, type = {"wall", "gate"}}) do
+            local dd = (u.position.x - e.position.x) ^ 2 + (u.position.y - e.position.y) ^ 2
+            if e.force ~= u.force and u.force.is_enemy(e.force) and (not best or dd < best) then next_piece, best = e, dd end
+          end
+        end
+        if next_piece then
+          r.widen = r.widen - 1
+          ram.order(u, next_piece)
+        else
+          -- Clear: on through, its followers behind it.
+          r.phase = "through"
+          local to = {u.position.x + r.dir[1] * THROUGH, u.position.y + r.dir[2] * THROUGH}
+          u.commandable.set_command{type = defines.command.go_to_location, destination = to, radius = 1.5,
+            distraction = defines.distraction.none}
+          r.at = tick
+        end
       end
     elseif r.phase == "through" then
       if not u.commandable.has_command or tick - r.at > 15 * 60 then

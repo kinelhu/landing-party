@@ -1296,8 +1296,10 @@ scenarios.showcase = function()
       for x = 40, 199 do for y = -40, 219 do
         local n, name = noise(x, y, 9) * 0.7 + noise(x, y, 3) * 0.3, "grass-1"
         if n > 0.72 then name = "dry-dirt" elseif n > 0.6 then name = "grass-3" elseif n > 0.45 then name = "grass-2" elseif n < 0.22 then name = "grass-4" end
-        if y >= 30 and y <= 105 then
-          local d = math.abs(x - stream(y))
+        -- Its banks narrow to nothing at each end (cut square at y 105, the third takes).
+        local w = math.max(0, math.min(1, (y - 30) / 14, (105 - y) / 14))
+        if w > 0 then
+          local d = math.abs(x - stream(y)) / w
           if d < 1.5 then name = "deepwater" elseif d < 3 then name = "water" elseif d < 4.2 then name = "water-shallow" elseif d < 5 then name = "water-mud" end
         end
         tiles[#tiles + 1] = {name = name, position = {x, y}}
@@ -3888,6 +3890,9 @@ scenarios.dev = function()
     check("dev: /lp dozers rammed through and the buggies went in", d.dozers == 2 and r.breaches > S.ram0.breaches and inside > 0,
       string.format("%d dozers, walls %d to %d, breaches %d, buggies inside %d", d.dozers, d.walls, now("dozers", "stone-wall"),
         r.breaches - S.ram0.breaches, inside))
+    -- (The third takes: a breach a dozer wide, then the dozer drove off; it widens it now, four pieces each.)
+    check("dev: and the dozers widened their breaches", r.breaches - S.ram0.breaches > d.dozers,
+      string.format("%d strips cleared by %d dozers", r.breaches - S.ram0.breaches, d.dozers))
     -- (The second takes: the buggies drove to the wall and waited under fire before the dozers were in sight.)
     check("dev: and the buggies kept behind the dozers until the breach", r.early == S.ram0.early,
       string.format("%d follower-steps ahead of their lead", r.early - S.ram0.early))
@@ -3933,6 +3938,143 @@ scenarios.bombtest = function()
     end)
   end
   schedule(120 + 31 * 60, function() check("bombtest ran", true, "") end)
+end
+
+-- Airspace (a measurement, 2026-11-08: the user, of the fliers, "the fact they don't collide with each other was
+-- bothering me"): how fliers crowd as they ship (colliding with each other, from 0.2.240) and with LP_AIR=pass (as
+-- they were, passing through each other: the test mod's data-final-fixes), in six cases (LP_MIX): flak (16 scout drones at 4 flak buggies, /lp flak), dive (8 bomb
+-- drones at a marching squad, /lp bombers), raid (12 of Grubstake's harriers at 10 troopers), park (12 scout drones sent
+-- to one spot, then idle), strafe and lasers (12 harriers or laser drones at undefended chests: crowding while they
+-- attack, not while they die). Every half second for 40 s: each flier's nearest neighbour; the share overlapping (nearer
+-- than a body, 0.6); fliers further than 18 from the target that moved under 0.1 tiles (jammed); when three quarters
+-- were within 20 of it (arrival). Tag the runs (LP_TAG) by LP_AIR.
+scenarios.airspace = function()
+  local mix = params.mix ~= "" and params.mix or "flak"
+  local NAMES = {"lp-harrier", "lp-grubstake-harrier", "lp-grubstake-scavenger", "lp-laser-drone"}
+  local A = {{-140, -140}, {180, 180}}
+  local T0 = 120
+  local M = {samples = 0, overlap = 0, nn = 0, jam = 0, arrival = nil, n0 = nil, n1 = 0, t0 = nil, t1 = 0}
+  local last = {}
+  local function targets()
+    local t = surface().find_entities_filtered{area = A, force = "player", type = {"unit", "container"}}
+    if mix == "flak" then t = surface().find_entities_filtered{area = A, name = "lp-grubstake-flak-buggy"} end
+    return t
+  end
+  local function centre(list)
+    if #list == 0 then return {0, 0} end
+    local x, y = 0, 0
+    for _, u in ipairs(list) do x, y = x + u.position.x, y + u.position.y end
+    return {x / #list, y / #list}
+  end
+  schedule(T0, function()
+    flatten(-40, -40, 140, 60)
+    if mix == "flak" then
+      lp("dev", {"flak", "4"}, {0, 0})
+    elseif mix == "dive" then
+      lp("dev", {"bombers", "8"}, {0, 0})
+    else
+      local kh, g = game.forces["lp-serenity"], game.forces["lp-grubstake"]
+      if mix == "raid" then
+        for k = 0, 9 do surface().create_entity{name = "lp-trooper", position = {(k % 5) * 1.6, math.floor(k / 5) * 1.6}, force = "player"} end
+      elseif mix == "strafe" or mix == "lasers" then
+        -- Undefended (steel chests, a long fight): how they crowd while they attack, not while they die.
+        for k = 0, 9 do surface().create_entity{name = "steel-chest", position = {(k % 5) * 2 + 0.5, math.floor(k / 5) * 2 + 0.5}, force = "player"} end
+      end
+      local attack = mix == "raid" or mix == "strafe" or mix == "lasers"
+      local kind = ({raid = "lp-grubstake-harrier", strafe = "lp-grubstake-harrier", lasers = "lp-laser-drone"})[mix] or "lp-harrier"
+      for k = 0, 11 do
+        local u = surface().create_entity{name = kind, position = {60 + (k % 4) * 4, (k - 6) * 1.8},
+          force = (mix == "raid" or mix == "strafe") and g or kh}
+        if attack then
+          u.commandable.set_command{type = defines.command.attack_area, destination = {3, 1}, radius = 10, distraction = defines.distraction.by_enemy}
+        else
+          u.commandable.set_command{type = defines.command.go_to_location, destination = {0, 0}, radius = 2, distraction = defines.distraction.none}
+        end
+      end
+    end
+    M.t0 = #targets()
+  end)
+  for k = 1, 80 do
+    schedule(T0 + k * 30, function()
+      local fl = surface().find_entities_filtered{area = A, name = NAMES}
+      M.n0 = M.n0 or #fl
+      M.n1 = #fl
+      if #fl < 2 then return end
+      local c = mix == "park" and {0, 0} or centre(targets())
+      local over, near, jam, nns, moving = 0, 0, 0, {}, 0
+      for i, u in ipairs(fl) do
+        local best = math.huge
+        for j, v in ipairs(fl) do
+          if i ~= j then
+            local d = (u.position.x - v.position.x) ^ 2 + (u.position.y - v.position.y) ^ 2
+            if d < best then best = d end
+          end
+        end
+        best = math.sqrt(best)
+        nns[#nns + 1] = best
+        if best < 0.6 then over = over + 1 end
+        local dc = math.sqrt((u.position.x - c[1]) ^ 2 + (u.position.y - c[2]) ^ 2)
+        if dc < 20 then near = near + 1 end
+        local p = last[u.unit_number]
+        if p and dc > 18 and (u.position.x - p[1]) ^ 2 + (u.position.y - p[2]) ^ 2 < 0.01 then jam = jam + 1 end
+        if p and dc < 14 and (u.position.x - p[1]) ^ 2 + (u.position.y - p[2]) ^ 2 > 0.01 then moving = moving + 1 end
+        last[u.unit_number] = {u.position.x, u.position.y}
+      end
+      table.sort(nns)
+      if not M.arrival and near >= 0.75 * #fl then M.arrival = k * 30 / 60 end
+      if near >= 3 then
+        M.samples = M.samples + 1
+        M.overlap = M.overlap + over / #fl
+        M.nn = M.nn + nns[math.ceil(#nns / 2)]
+        M.moving = (M.moving or 0) + moving / #fl
+      end
+      M.jam = math.max(M.jam, jam)
+      if k % 4 == 0 then
+        info(string.format("airspace %s %4.1f s: fliers %d, near %d, overlapping %d, median gap %.2f, jammed %d", mix, k / 2, #fl, near, over, nns[math.ceil(#nns / 2)], jam))
+      end
+    end)
+  end
+  schedule(T0 + 81 * 30, function()
+    M.t1 = #targets()
+    local hp = 0
+    for _, e in ipairs(targets()) do hp = hp + e.health end
+    local s = math.max(1, M.samples)
+    info(string.format("airspace summary %s air=%s: overlapping %.0f%%, median gap %.2f tiles, arrival %s s, jammed at most %d, moving in range %.0f%%, fliers %d to %d, targets %d to %d (%.0f health left)",
+      mix, params.air ~= "" and params.air or "collide", 100 * M.overlap / s, M.nn / s, tostring(M.arrival), M.jam, 100 * (M.moving or 0) / s, M.n0 or 0, M.n1, M.t0 or 0, M.t1, hp))
+    check("airspace ran", M.samples > 0, string.format("%d samples near the target", M.samples))
+  end)
+end
+
+-- Parade (2026-11-08: the user's troopers "moonskating"; /lp parade's stills had a row of mech armour standing where it
+-- was made): every infantry kind sent each of the 8 ways walks; how far each kind got in 2 s.
+scenarios.parade = function()
+  local KINDS = {"lp-trooper", "lp-breacher", "lp-rocket-trooper", "lp-flame-trooper", "lp-infantry", "lp-railgunner",
+    "lp-shotgun-hand", "lp-sapper", "lp-lance", "lp-shock"}
+  local start = {}
+  schedule(120, function()
+    flatten(-10, -50, 130, 100)
+    lp("dev", {"parade"}, {0, 0})
+    for _, u in ipairs(surface().find_entities_filtered{area = {{-10, -50}, {130, 100}}, type = "unit"}) do
+      start[u.unit_number] = {u.name, u.position.x, u.position.y}
+    end
+  end)
+  schedule(240, function()
+    local by, still = {}, {}
+    for _, u in ipairs(surface().find_entities_filtered{area = {{-60, -100}, {180, 150}}, type = "unit"}) do
+      local s0 = start[u.unit_number]
+      if s0 then
+        local d = math.sqrt((u.position.x - s0[2]) ^ 2 + (u.position.y - s0[3]) ^ 2)
+        by[s0[1]] = (by[s0[1]] or 0) + d / 8
+        if d < 1 then still[s0[1]] = (still[s0[1]] or 0) + 1 end
+      end
+    end
+    local bad = {}
+    for _, k in ipairs(KINDS) do
+      info(string.format("parade %-18s walked %.1f tiles in 2 s (%d of 8 still)", k, by[k] or 0, still[k] or 0))
+      if (still[k] or 0) > 0 or not by[k] then bad[#bad + 1] = k end
+    end
+    check("parade: every kind walked every way", #bad == 0, table.concat(bad, ", "))
+  end)
 end
 
 -- Grudge: the player destroys Grubstake's lander. Grubstake must count the player hostile and Serenity must not

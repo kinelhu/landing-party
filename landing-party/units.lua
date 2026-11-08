@@ -94,7 +94,12 @@ local function make_infantry(name, color, armor)
   u.vision_distance = 30
   u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
   u.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
-  u.run_animation = table.deepcopy(look.running_with_gun)
+  -- Its run: the engineer's running, 8 directions round the compass as a unit reads them. Running with a gun has 18,
+  -- the gun's direction against the legs', north to south by the east only (the engine plays them backwards for the
+  -- rest): read as 18 headings round the compass, a trooper walking south faced west (the user, 2026-11-08: "the
+  -- troopers are basically moonskating ... their model is turned to the left"). The mech armour has no plain run: its 40 kept, its facings not yet
+  -- checked (its 8 picked by stripes did not read right either; /lp parade ring).
+  u.run_animation = table.deepcopy(look.running or look.running_with_gun)
   -- Ranges stay at most a turret's 18 less the wall in front of it (~3): anything shooting a wall stands
   -- in turret range. A tank at 22, then 17, shelled walls from outside the turrets' reach.
   local a = gun(6, 15, 20)
@@ -369,7 +374,10 @@ harrier.movement_speed = 0.25
 harrier.vision_distance = 30
 harrier.collision_box = {{-0.3, -0.3}, {0.3, 0.3}}
 harrier.selection_box = {{-0.5, -1.5}, {0.5, -0.5}}
-harrier.collision_mask = {layers = {["lp-air"] = true}, not_colliding_with_itself = true}
+-- Fliers collide with each other (the user, 2026-11-08: "the fact they don't collide with each other was bothering me").
+-- Measured both ways (scenario airspace): passing through each other, 12 harriers strafing sat in one pile for 15 s, 35%
+-- of them overlapping (28% in a raid, 23% of laser drones); colliding, 0 to 2%, the same arrival, none stuck.
+harrier.collision_mask = {layers = {["lp-air"] = true}}
 harrier.trigger_target_mask = {"lp-air-unit"}
 harrier.render_layer = "air-object"
 -- Airborne: the destroyer's body drawn a tile up, over its own shadow on the ground (a combat robot is lifted by the
@@ -810,13 +818,11 @@ data:extend({technician})
 -- splash and every breed by 100 and armour by 67, small arms its only answer). Each hits a flier hard and the ground
 -- lightly (the user: "kinda attack ground units also ... flak could be a sort of weak ground splash"): a masked area at the target (an area honours trigger_target_mask, a direct hit does not: air.lua), so it is a
 -- counter, not a better rifle. Each outranges the fliers' 15.
-local flak_puff = table.deepcopy(data.raw["trivial-smoke"]["smoke"])
-flak_puff.name = "lp-flak-puff"
-flak_puff.color = {r = 0.05, g = 0.05, b = 0.05, a = 0.8}
-flak_puff.duration, flak_puff.fade_in_duration, flak_puff.fade_away_duration = 150, 3, 90
-flak_puff.start_scale, flak_puff.end_scale = 0.45, 1.3
-flak_puff.render_layer = "air-object"
-data:extend({flak_puff})
+-- A flak puff: the fast smoke's burst, tinted near black, at a flier's height, held a beat (a trivial smoke in its place,
+-- the third takes, read as faint grey wisps if at all).
+data:extend({{type = "explosion", name = "lp-flak-puff", flags = {"not-on-map"}, hidden = true, render_layer = "air-object",
+  animations = {{filename = "__base__/graphics/entity/smoke-fast/smoke-fast.png", priority = "high", width = 50, height = 50,
+    frame_count = 16, animation_speed = 0.2, scale = 1.5, shift = {0, -1.2}, tint = {r = 0.07, g = 0.065, b = 0.06, a = 0.95}}}}})
 local function anti_air(air, ground, dtype, radius, look, ground_radius, puffs)
   local function hit(amount, mask, r)
     return {type = "nested-result", action = {type = "area", radius = r, force = "enemy", trigger_target_mask = mask,
@@ -827,8 +833,8 @@ local function anti_air(air, ground, dtype, radius, look, ground_radius, puffs)
   if puffs then
     -- Black puffs round the burst, at a flier's height (the user, on the flak scene: "underwhelming. Perhaps we add
     -- black puffs of smoke jittered around spots the flak fires on?").
-    table.insert(fx, 1, {type = "create-trivial-smoke", smoke_name = "lp-flak-puff", repeat_count = 3, initial_height = 1.2,
-      offset_deviation = {{-1.6, -1.2}, {1.6, 1.2}}, speed_from_center = 0.004, speed_from_center_deviation = 0.003})
+    table.insert(fx, 1, {type = "create-entity", entity_name = "lp-flak-puff", repeat_count = 3,
+      offset_deviation = {{-1.6, -1.2}, {1.6, 1.2}}})
   end
   return {type = "direct", action_delivery = {type = "instant", target_effects = fx}}
 end
