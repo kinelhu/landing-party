@@ -1262,25 +1262,27 @@ scenarios.showcase = function()
   for t = 1200, 6000, 600 do schedule(t, function() if S.feed then S.feed() end end) end
   local tour = params.mix == "tour" or params.mix == "units" or params.mix == "all"
   if tour then schedule(STRIKE - 120, tour_outposts) end
-  -- LP_MIX=buggies (the unit pass, 2026-11-08): Grubstake's rendered buggies to look at in a window: a row of each (buggy,
-  -- slug buggy, flak buggy) parked in eight headings south of spawn, one of each driving round, a vanilla car beside them
-  -- for scale. On a force of their own at peace with everyone, which nothing commands.
+  -- LP_MIX=buggies (the unit pass, 2026-11-08): Grubstake's rendered vehicles to look at in a window: a row of each (buggy,
+  -- slug buggy, flak buggy, dozer, Scorcher) parked in eight headings south of spawn, one of each driving round, a
+  -- vanilla car and tank beside them for scale. On a force of their own at peace with everyone, which nothing commands.
   if params.mix == "buggies" then
     schedule(STRIKE - 60, function()
       local f = game.forces["lp-parade"] or game.create_force("lp-parade")
       for _, o in pairs(game.forces) do
         if o ~= f then f.set_cease_fire(o, true); o.set_cease_fire(f, true); f.set_friend(o, true); o.set_friend(f, true) end
       end
-      flatten(-10, 8, 40, 40)
-      for r, kind in ipairs({"lp-grubstake-buggy", "lp-grubstake-slug", "lp-grubstake-flak-buggy"}) do
+      flatten(-10, 8, 44, 52)
+      for r, kind in ipairs({"lp-grubstake-buggy", "lp-grubstake-slug", "lp-grubstake-flak-buggy", "lp-grubstake-dozer",
+        "lp-grubstake-scorcher"}) do
         for k = 0, 7 do
-          local u = surface().create_entity{name = kind, position = {-6 + k * 4, 10 + r * 6}, force = f}
+          local u = surface().create_entity{name = kind, position = {-6 + k * 4.5, 10 + r * 6}, force = f}
           if u then u.orientation = k / 8 end
         end
-        local w = surface().create_entity{name = kind, position = {28, 10 + r * 6}, force = f}
+        local w = surface().create_entity{name = kind, position = {34, 10 + r * 6}, force = f}
         if w then w.commandable.set_command{type = defines.command.wander, radius = 8, distraction = defines.distraction.none} end
       end
-      surface().create_entity{name = "car", position = {-6, 34}, force = "player"}
+      surface().create_entity{name = "car", position = {-6, 46}, force = "player"}
+      surface().create_entity{name = "tank", position = {0, 46}, force = "player"}
       info("buggies: parked south of spawn")
     end)
   end

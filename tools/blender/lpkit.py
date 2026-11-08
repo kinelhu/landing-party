@@ -220,7 +220,8 @@ def arc(p0, p1, m, rng, kinks=3, jitter=0.08, r=0.012):
     c.data.materials.append(m)
     return c
 
-def dirty(m, dirt=0.6, dust=0.5, rust=0.6, dirt_rgb=(0.1, 0.08, 0.05), dust_rgb=(0.5, 0.46, 0.4), scale=4.0):
+def dirty(m, dirt=0.6, dust=0.5, rust=0.6, dirt_rgb=(0.1, 0.08, 0.05), dust_rgb=(0.5, 0.46, 0.4), scale=4.0, mud=0.0, mud_top=0.5,
+          mud_rgb=(0.2, 0.16, 0.11)):
     """Grime over a material's colour, for units (the user, 2026-11-08: vanilla's car "reads far more grimy and dirty than
     our Grubstake buggy, which feels quite wrong"): dirt in patches (noise on object coordinates), dust settled on what
     faces up (the normal's z, broken by noise), and a fine speckle over all. Opt-in: the buildings' renders do not call it."""
@@ -251,6 +252,14 @@ def dirty(m, dirt=0.6, dust=0.5, rust=0.6, dirt_rgb=(0.1, 0.08, 0.05), dust_rgb=
     dn = ramp(noise(scale * 3).outputs["Fac"], 0.35, 0.65, 0.0, dust)
     mul = nt.nodes.new("ShaderNodeMath"); mul.operation = "MULTIPLY"; L(up, mul.inputs[0]); L(dn, mul.inputs[1])
     c = mix(c, dust_rgb, mul.outputs[0])
+    # Mud by height (opt-in, mud > 0: the crawler, 2026-11-08): thick at the ground, gone by mud_top tiles up, broken by
+    # noise; world height, which a turn about the vertical leaves alone, so every direction carries the same mud.
+    if mud > 0:
+        pz = nt.nodes.new("ShaderNodeSeparateXYZ"); L(geo.outputs["Position"], pz.inputs[0])
+        low = ramp(pz.outputs["Z"], mud_top, 0.02, 0.0, mud)
+        mn = ramp(noise(scale * 1.5, detail=8).outputs["Fac"], 0.3, 0.6, 0.35, 1.0)
+        mm = nt.nodes.new("ShaderNodeMath"); mm.operation = "MULTIPLY"; L(low, mm.inputs[0]); L(mn, mm.inputs[1])
+        c = mix(c, mud_rgb, mm.outputs[0])
     # Rust spots: small, where a finer noise peaks.
     rmask = ramp(noise(scale * 5, detail=6).outputs["Fac"], 0.6, 0.72, 0.0, rust)
     c = mix(c, (0.28, 0.12, 0.05), rmask)

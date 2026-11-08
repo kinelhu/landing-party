@@ -5438,6 +5438,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   game** (assumed): headless previews at game scale beside the vanilla car only; `LP_MIX=buggies scripts/showcase.sh`
   parks them for a look. Open: the other shared families (character, mech armour, tank, distractor), the plated
   variants' look (identical to their base today), the hauler and dozer on a truck chassis.
+- **The unit pass, second: Grubstake's crawler** (0.2.226; the user, 2026-11-08: "The kill dozer is a genius pull",
+  "Mad Max as a general inspiration"). `tools/blender/crawler.py` on the shared kit `tools/blender/vehicle.py` (buggy.py's
+  lessons: smooth shading, more sides, grime on every material, mud by height, the light measured against vanilla, plated
+  faces, layered passes): one bulldozer chassis, its engine in the open, its tracks an animated layer of 4 frames a
+  direction (they run driving, stand parked), and two modules: the Killdozer (an armoured cab, the blade on its rams, a
+  ripper) and the Scorcher (a fighting compartment, the flamer, its machine gun, three fuel tanks, a beak glacis hung with
+  spare track). The user's calls on the way, each a comment where it changed the model: the first box "a block of
+  cheddar", the exposed machine over the armoured box ("Maybe we try B"), "the cube cabin looks a little cartoonish" (a
+  low casemate), the plates' "checkerboard ... a little exaggerated" (close shades, random heights), "the back looks
+  quite bad" (a real ripper), the Scorcher's "triangle grill ... looks goofy" then "a beak horizontally, with angles like a
+  real tank"; shorter tracks for it dropped, "if this risks inflating mod size". Found on the way: plated() built half
+  its faces' plates inside the solid (the normal from the corners' order). 18 MB, 7 of them the track animation (the first
+  to trim). The rendered units have the car's headlights: **assumed, not seen**, as no vanilla unit carries a light (to
+  look at in game at night). Open: their own wrecks (they leave the car's and the tank's), the buggies' wheels rolling,
+  the hauler (`tools/blender/hauler.py`, in progress).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -834,15 +834,7 @@ data:extend({skyguard, flak_buggy})
 -- Grubstake's vehicles told apart from afar (the user, 2026-10-23: "Grubstake buggies also very much all look alike
 -- from afar"): by outline first, then colour. The buggies now by their weapon modules (rendered_buggy below: a short gun,
 -- a long barrel and a shell rack, twin raised barrels and a radar mast) and their accents (the slug's rust shield, the
--- flak's sky blue: anti-air; olive was lost on grass); the dozer a size up in construction yellow, drawn afresh from the
--- car (a second tint on a tinted animation darkens all of it).
-local YELLOW = {r = 1, g = 0.84, b = 0.2, a = 1}
-local function look(u, anim, color, k)
-  u.run_animation = table.deepcopy(anim)
-  tint(u.run_animation, {}, color)
-  if k then grow(u.run_animation, k, {}) end
-  u.attack_parameters.animation = table.deepcopy(u.run_animation)
-end
+-- flak's sky blue: anti-air; olive was lost on grass); the dozer and the Scorcher on the crawler (rendered_crawler).
 -- Grubstake's buggies, rendered in Blender (tools/blender/buggy.py, sheet.py; the unit pass, 2026-11-08): one scrap desert
 -- buggy for a chassis (a tube frame nose to tail, its cage painted amber, the engine hung at the back), and on its turret
 -- ring a weapon module with its kit, a layer of its own: the machine gun and ammo cans (buggy), the slug gun, its shell
@@ -851,19 +843,20 @@ end
 -- shadow of both. Frame sizes and shifts from each sheet.json. Only Grubstake fields them, so the kinds' own copies
 -- draw them too.
 local SHEETS = require("graphics.sheets")
-local function rendered_buggy(u, module)
-  -- The antenna (the user, 2026-11-08: "An antenna in the back? ... animate it while moving?") is its own layer of SWAY
-  -- frames a direction: a run animation steps with the distance a unit covers and holds when it stops, so the whip sways
-  -- driving and stands parked. The single-frame layers repeat to match it.
-  local DIRS = SHEETS["grubstake/buggy/chassis"].frames          -- one frame a direction
-  local SWAY = SHEETS["grubstake/buggy/antenna"].frames / DIRS
-  local function layers(part, files)
-    local B = SHEETS["grubstake/buggy/" .. part]
-    local out = {}
-    for _, f in ipairs(files) do
-      local fc = B.frames / DIRS
-      local dir = "__landing-party__/graphics/grubstake/buggy/" .. part .. "/"
-      local l = {width = B.width, height = B.height, direction_count = DIRS, frame_count = fc, repeat_count = SWAY / fc,
+-- A unit drawn from rendered layers (tools/blender: buggy.py, crawler.py): parts, bottom first, each {sheet, files}, under
+-- graphics/<root>/<sheet>. One frame a direction, or an animated part's few (the buggy's antenna, the crawler's tracks):
+-- the single-frame layers repeat to match. The direction count from the first part's sheet.
+local function layered(u, root, parts)
+  local DIRS = SHEETS[root .. "/" .. parts[1][1]].frames
+  local most = 1
+  for _, p in ipairs(parts) do most = math.max(most, SHEETS[root .. "/" .. p[1]].frames / DIRS) end
+  local all = {}
+  for _, p in ipairs(parts) do
+    local B = SHEETS[root .. "/" .. p[1]]
+    local fc = B.frames / DIRS
+    for _, f in ipairs(p[2]) do
+      local dir = "__landing-party__/graphics/" .. root .. "/" .. p[1] .. "/"
+      local l = {width = B.width, height = B.height, direction_count = DIRS, frame_count = fc, repeat_count = most / fc,
         line_length = B.line_length, scale = 0.5, shift = B.shift}
       if B.files then                                  -- a tall sheet on several files (sheet.py)
         l.filenames, l.lines_per_file = {}, B.lines_per_file
@@ -873,25 +866,44 @@ local function rendered_buggy(u, module)
       end
       if f == "glow" then l.draw_as_glow = true; l.blend_mode = "additive" end
       if f == "shadow" then l.draw_as_shadow = true end
-      out[#out + 1] = l
+      all[#all + 1] = l
     end
-    return out
   end
-  local all = {}
-  for _, l in ipairs(layers(module, {"shadow"})) do all[#all + 1] = l end
-  for _, l in ipairs(layers("chassis", {"body", "glow"})) do all[#all + 1] = l end
-  for _, l in ipairs(layers(module, {"body", "glow"})) do all[#all + 1] = l end
-  for _, l in ipairs(layers("antenna", {"body"})) do all[#all + 1] = l end
   u.run_animation = {layers = all}
   u.attack_parameters.animation = table.deepcopy(u.run_animation)
+end
+-- The buggies: the module's shadow, the chassis, the module, the antenna (the user, 2026-11-08: "An antenna in the back?
+-- ... animate it while moving?": its own layer of frames a direction; a run animation steps with the distance a unit
+-- covers and holds when it stops, so the whip sways driving and stands parked).
+-- Headlights at night (the unit pass, 2026-11-08): the car's two cones. Assumed, not seen: no vanilla unit carries a
+-- light, so whether an oriented one turns with a unit is to be looked at in game (LP_MIX=buggies, at night).
+local function headlights(u, ahead)
+  u.light = table.deepcopy(data.raw.car.car.light)
+  for _, l in ipairs(u.light) do l.shift = {l.shift[1], -(ahead or 14)} end
+end
+local function rendered_buggy(u, module)
+  layered(u, "grubstake/buggy", {{module, {"shadow"}}, {"chassis", {"body", "glow"}}, {module, {"body", "glow"}},
+    {"antenna", {"body"}}})
+  headlights(u)
   -- It is longer than the car it replaced (2.3 tiles to 2): its selection box follows the sprite.
   u.selection_box = {{-0.8, -1.25}, {0.8, 1.25}}
 end
 rendered_buggy(buggy, "mg")
 rendered_buggy(slug, "slug")
 rendered_buggy(flak_buggy, "flak")
-look(dozer, car.animation, YELLOW, 1.25)
-dozer.selection_box = {{-1.25, -1.5}, {1.25, 1.5}}
+-- The crawler (tools/blender/crawler.py; the unit pass, 2026-11-08: Grubstake's tracked units on one bulldozer chassis,
+-- "The kill dozer is a genius pull", "Mad Max as a general inspiration"): the module's shadow, the chassis with its
+-- engine in the open, the tracks (4 frames a direction: they run driving, stand parked), the module. The dozer a
+-- Killdozer (an armoured cab, the blade, the ripper), the Scorcher a beaked fighting compartment with its flamer, its
+-- machine gun and three fuel tanks.
+local function rendered_crawler(u, module)
+  layered(u, "grubstake/crawler", {{module, {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {module, {"body", "glow"}}})
+  headlights(u)
+end
+rendered_crawler(dozer, "dozer")
+dozer.selection_box = {{-1.1, -1.5}, {1.1, 1.8}}
+rendered_crawler(scorcher, "scorcher")
+scorcher.selection_box = {{-1.1, -1.4}, {1.1, 1.4}}
 
 local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},
   [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"iron-gear-wheel", 1, 2}}, [laser_drone] = {{"advanced-circuit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},
