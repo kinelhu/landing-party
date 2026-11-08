@@ -1,10 +1,11 @@
 -- Written by tools/blender/sheets_lua.py from each sheet.json: frame size, count and shift in tiles.
 return {
   ["grubstake/buggy/antenna"] = {width = 219, height = 250, frames = 512, line_length = 8, shift = {0.0, -1.1796875}, files = 2, lines_per_file = 32},
-  ["grubstake/buggy/chassis"] = {width = 177, height = 205, frames = 64, line_length = 8, shift = {0.0, -0.40625}},
+  ["grubstake/buggy/chassis"] = {width = 177, height = 203, frames = 64, line_length = 8, shift = {0.0, -0.421875}},
   ["grubstake/buggy/flak"] = {width = 233, height = 248, frames = 64, line_length = 8, shift = {0.40625, -0.7421875}},
   ["grubstake/buggy/mg"] = {width = 194, height = 201, frames = 64, line_length = 8, shift = {0.3203125, -0.375}},
   ["grubstake/buggy/slug"] = {width = 213, height = 217, frames = 64, line_length = 8, shift = {0.390625, -0.5}},
+  ["grubstake/buggy/wheels"] = {width = 171, height = 184, frames = 256, line_length = 8, shift = {0.0, -0.2421875}},
   ["grubstake/buggy/wreck"] = {width = 227, height = 233, frames = 4, line_length = 4, shift = {0.0625, -0.046875}},
   ["grubstake/crawler/anim"] = {width = 205, height = 226, frames = 256, line_length = 8, shift = {0.0, -0.2421875}},
   ["grubstake/crawler/base"] = {width = 205, height = 229, frames = 64, line_length = 8, shift = {0.0, -0.375}},

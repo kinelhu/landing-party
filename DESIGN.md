@@ -5469,6 +5469,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   a track thrown, slumped, a scorch under it, 4 directions with their shadow (charred alone, the first read as a dark
   dozer; the scorch's gradient ended a tile out whatever its size, under the hull). The buggies share one wreck; the bomb
   drone keeps the defender's remnants (it bursts on its target). About 4 MB for the two fliers, 1.7 for the five wrecks.
+  Then the buggies' wheels rolling (0.2.229; the user had asked "Do wheels turn when turning?": no unit steers, a unit is
+  one picture a direction, but its wheels can roll): each wheel on a hub of its own at its axle, rendered as a layer of
+  4 frames a direction, one turn over them, the chassis rendered again without them; the antenna's 8 frames beside them
+  (repeat_count repeats a whole layer: the wheels turn twice in its cycle, one turn every 2 tiles at 0.5 a frame, near a
+  tyre's 1.6). +1.8 MB. `vehicle.rolling` gives the kit's vehicles the same (the hauler next).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

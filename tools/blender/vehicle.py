@@ -148,7 +148,21 @@ def light(tiles, margin):
     scene.view_settings.look = os.environ.get("LP_LOOK", "High Contrast")
     return ground, sun, world
 
-def passes(out, N, base, modules, animated=None, frames=1, rebuild=None, fill=0.04, light_rig=None):
+def rolling(wheels):
+    """Wheels [(objects, hub)] each set on a hub of its own at its axle, for passes' rebuild to turn; returns
+    (objects, hubs, rebuild). One turn forward over a cycle of F frames: rebuild(f, F)."""
+    objs, hubs = [], []
+    for wo, (hx, hy, hz) in wheels:
+        hub = bpy.data.objects.new("hub", None); scene.collection.objects.link(hub); hub.location = (hx, hy, hz)
+        bpy.context.view_layer.update()
+        for o in wo:
+            o.parent = hub; o.matrix_parent_inverse = hub.matrix_world.inverted()
+        objs += wo; hubs.append(hub)
+    def rebuild(f, F):
+        for h in hubs: h.rotation_euler = (-2 * math.pi * f / F, 0, 0)
+    return objs, hubs, rebuild
+
+def passes(out, N, base, modules, animated=None, frames=1, rebuild=None, fill=0.04, light_rig=None, hubs=()):
     """Each direction: the base alone (body, glow); each module with the base a holdout (body, glow) and the shadow of base
     and module; the animated layer (rebuild(f) poses it for frame f) with the base a holdout, `frames` a direction.
     out/base, out/<module>, out/anim: one sheet.py run each. LP_ONLY=<part> renders that part alone."""
@@ -157,8 +171,12 @@ def passes(out, N, base, modules, animated=None, frames=1, rebuild=None, fill=0.
     only = os.environ.get("LP_ONLY")
     pivot = bpy.data.objects.new("pivot", None); scene.collection.objects.link(pivot)
     allobjs = base + [o for objs in modules.values() for o in objs] + (animated or [])
+    on_hubs = {id(o) for o in allobjs if o.parent in hubs}
     for o in allobjs:
-        o.parent = pivot; o.matrix_parent_inverse = pivot.matrix_world.inverted()
+        if id(o) not in on_hubs:
+            o.parent = pivot; o.matrix_parent_inverse = pivot.matrix_world.inverted()
+    for h in hubs:                                                       # wheels on their hubs, the hubs on the pivot
+        h.parent = pivot; h.matrix_parent_inverse = pivot.matrix_world.inverted()
     def lit(on):
         sun.hide_render = not on; bg.inputs[1].default_value = fill if on else 0.0
     def show(objs, on):

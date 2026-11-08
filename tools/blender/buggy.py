@@ -179,10 +179,11 @@ def fender(x, y, a0=55, a1=125):          # (35 to 145 read as buckets on the st
 # at the nose. wheel() and fender() read WR and WT, set here an axle at a time.
 # (Front 0.22 by 0.18 against rear 0.3 by 0.32 read "a little too much dragster", the user: closer.)
 AXLES = ((AX + 0.02, 0.98, 0.25, 0.22, False), (-AX + 0.04, 1.18, 0.28, 0.28, True))
+WHEELS = []                              # (objects, hub): each wheel, for the rolling layer (LP_ONLY=wheels)
 for y0, track, WR, WT, covered in AXLES:
     for sx in (-1, 1):
         x, y, sy = sx * track / 2, y0, 1 if y0 > 0 else -1
-        wheel(x, y, sx)
+        _b4 = set(scene.objects); wheel(x, y, sx); WHEELS.append(([o for o in scene.objects if o not in _b4], (x, y, WR)))
         lpkit.rod((sx * 0.22, y - sy * 0.14, ZC), (x - sx * WT / 2, y, WR), 0.028, tube)
         lpkit.rod((sx * 0.22, y + sy * 0.1, ZC - 0.04), (x - sx * WT / 2, y, WR), 0.022, tube)
         if sy < 0:                                       # the front's are coil-overs on its frame
@@ -538,10 +539,30 @@ for m in bpy.data.materials:
 for o in scene.objects:
     if o.type == "MESH":
         o.data.shade_smooth(); o.data.set_sharp_from_angle(angle=math.radians(35))
+# LP_WRECK=1: the buggies' wreck (one for the three: the chassis, its gun gone; 4 directions, its shadow in the
+# picture), through the vehicle kit's wreck pass (this script predates the kit), then stop.
+if os.environ.get("LP_WRECK"):
+    import vehicle
+    vehicle.scene = scene
+    for objs in modules.values():
+        for o in objs: o.hide_render = True
+    vehicle.wreck(chassis, out, seed=5, tilt=(6, -5), sink=0.05, tiles=2, margin=1.2, scorch=1.4)
+    print("buggy wreck to", out); sys.exit(0)
 model = chassis + [o for objs in modules.values() for o in objs]
 pivot = bpy.data.objects.new("pivot", None); scene.collection.objects.link(pivot)
+wheel_objs = {id(o) for objs, _ in WHEELS for o in objs}
 for o in model:
-    o.parent = pivot; o.matrix_parent_inverse = pivot.matrix_world.inverted()
+    if id(o) not in wheel_objs:
+        o.parent = pivot; o.matrix_parent_inverse = pivot.matrix_world.inverted()
+# Each wheel on a hub of its own at its axle (turned for the rolling layer), the hubs on the pivot.
+hubs = []
+for objs, (hx, hy, hz) in WHEELS:
+    hub = bpy.data.objects.new("hub", None); scene.collection.objects.link(hub); hub.location = (hx, hy, hz)
+    bpy.context.view_layer.update()
+    for o in objs:
+        o.parent = hub; o.matrix_parent_inverse = hub.matrix_world.inverted()
+    hub.parent = pivot; hub.matrix_parent_inverse = pivot.matrix_world.inverted()
+    hubs.append(hub)
 
 ground, sun, world = lpkit.stage(scene, 2, 1.2)
 # Light: the stage's sky fill read flat and pale beside vanilla's car at game scale (the first look, 2026-11-08: the user,
@@ -576,6 +597,32 @@ def lit(on):
     sun.hide_render = not on; bg.inputs[1].default_value = FILL if on else 0.0
 for k in ["chassis/body", "chassis/glow"] + [f"{n}/{p}" for n in modules for p in ("body", "glow", "shadow")]:
     if os.environ.get("LP_ONLY") != "antenna": os.makedirs(f"{out}/{k}", exist_ok=True)
+# LP_ONLY=wheels: the wheels rolling, their own layer of ROLL frames a direction, one turn over the cycle (forward, the
+# top of a wheel going ahead), the rest of the chassis a holdout; and the chassis again without them (the user,
+# 2026-11-08, on animation: "Do wheels turn when turning?": no unit steers, but its wheels can roll). A run animation
+# steps with the distance covered: they roll driving, stand parked. out/wheels/body holds direction * ROLL + frame.
+ROLL = 4
+if os.environ.get("LP_ONLY") == "wheels":
+    rest = [o for o in chassis if id(o) not in wheel_objs]
+    wobjs = [o for objs, _ in WHEELS for o in objs]
+    for k in ("chassis/body", "chassis/glow", "wheels/body"): os.makedirs(f"{out}/{k}", exist_ok=True)
+    for objs in modules.values(): show(objs, False)
+    for d in range(N):
+        pivot.rotation_euler = (0, 0, -2 * math.pi * d / N)
+        ground.hide_render = True
+        for h in hubs: h.rotation_euler = (0, 0, 0)
+        show(wobjs, False)
+        for o in rest: o.is_holdout = False
+        lit(True); lpkit.render(scene, f"{out}/chassis/body/{d:03d}.png")
+        for o in rest: o.is_holdout = not any(s.material and s.material.name in GLOWS for s in o.material_slots)
+        lit(False); lpkit.render(scene, f"{out}/chassis/glow/{d:03d}.png")
+        show(wobjs, True)
+        for o in rest: o.is_holdout = True
+        for o in wobjs: o.is_holdout = False
+        for f in range(ROLL):
+            for h in hubs: h.rotation_euler = (-2 * math.pi * f / ROLL, 0, 0)
+            lit(True); lpkit.render(scene, f"{out}/wheels/body/{d * ROLL + f:04d}.png")
+    print("buggy wheels:", N, "directions,", ROLL, "frames, to", out); sys.exit(0)
 # LP_ONLY=antenna: the antenna layer alone (the rest rendered before).
 for d in range(0 if os.environ.get("LP_ONLY") == "antenna" else N):
     pivot.rotation_euler = (0, 0, -2 * math.pi * d / N)          # north first, clockwise seen from above

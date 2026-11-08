@@ -896,8 +896,10 @@ local function wreck(name, sheet)
 end
 local BUGGY_WRECK = wreck("lp-buggy-wreck", "grubstake/buggy/wreck")
 local function rendered_buggy(u, module)
-  layered(u, "grubstake/buggy", {{module, {"shadow"}}, {"chassis", {"body", "glow"}}, {module, {"body", "glow"}},
-    {"antenna", {"body"}}})
+  -- Its wheels a layer of their own, 4 frames a direction, one turn over them: they roll driving, stand parked (no unit
+  -- steers; the user asked, 2026-11-08, "Do wheels turn when turning?").
+  layered(u, "grubstake/buggy", {{module, {"shadow"}}, {"chassis", {"body", "glow"}}, {"wheels", {"body"}},
+    {module, {"body", "glow"}}, {"antenna", {"body"}}})
   headlights(u)
   -- It is longer than the car it replaced (2.3 tiles to 2): its selection box follows the sprite.
   u.selection_box = {{-0.8, -1.25}, {0.8, 1.25}}
