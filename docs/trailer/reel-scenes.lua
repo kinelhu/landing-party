@@ -9,9 +9,9 @@ local T = 11160            -- the save's first tick plus a beat (showcase.sh sav
 -- Each shot follows the plugin's point "fight" (fight = true: the eased middle of the units near it with an enemy in
 -- reach, from the call's aim), from 10 ticks after its call (the user, on the third takes: "the camera is not centered
 -- on the fight", "missing almost all of the action": framed by guess, each shot had missed).
-local function shot(name, call, frames, z0, z1)
+local function shot(name, call, frames, z0, z1, daytime)
   return {name = name, tick = call + 10, frames = frames, every = 1, track = true,
-    from = {pos = "fight", zoom = z0, daytime = 0.2}, to = {zoom = z1, daytime = 0.2}}
+    from = {pos = "fight", zoom = z0, daytime = daytime or 0.2}, to = {zoom = z1, daytime = daytime or 0.2}}
 end
 -- A fixed framing, pushed in slowly, for a fight that stays where it is (the Prism's and the flak's: their fight points
 -- were drawn south by units at their edges, and a camera on them drifted off the fight, the fifth takes).
@@ -22,7 +22,7 @@ end
 return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, speed = 1, fast_until = T - 60, fight = true,
   dev = {
     -- (Each stage cleared once its shot is done: a scene's survivors walked into the next one's, the fifth takes.)
-    {tick = T + 30, args = {"dozers", "1"}, at = {80, 0}},
+    {tick = T + 30, args = {"dozers", "2"}, at = {80, 0}},
     {tick = T + 1900, args = {"clear", "45"}, at = {80, 0}},
     {tick = T + 1930, args = {"bombers", "8"}, at = {60, 60}},
     {tick = T + 2600, args = {"clear", "25"}, at = {62, 85}},
@@ -31,9 +31,9 @@ return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, spee
     {tick = T + 3930, args = {"flak", "4"}, at = {60, 180}},
   },
   moves = {
-    -- One Killdozer (the user: "1 dozer seems enough for these defences") comes in, rams through, widens the gap; the
+    -- At night, on the bigger lit outpost: two Killdozers (one was enough for the small one) come in, rams through, widens the gap; the
     -- buggies behind it go in and on into the outpost.
-    shot("sc1-dozers", T + 30, 1860, 1.35, 1.6),
+    shot("sc1-dozers", T + 30, 1860, 1.15, 1.35, 0.42),
     -- The squad marches by the stream; the bomb drones dive in from all round.
     shot("sc2-bombers", T + 1930, 660, 1.4, 1.6),
     -- Two Prisms, two tanks and a Tesla against the squad, its battle tanks and rocket troopers.

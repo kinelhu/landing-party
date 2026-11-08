@@ -76,12 +76,12 @@ end
 -- takes). Up to TAKE of them, nearest first, within REACH of the ground inside.
 local TURRETS = {"ammo-turret", "electric-turret", "fluid-turret", "artillery-turret"}
 local REACH, TAKE = 22, 10
-local function targets(surface, force, at, inside)
+local function targets(surface, force, at, inside, no_guns)
   local guns, rest = {}, {}
   for _, e in ipairs(surface.find_entities_filtered{position = inside, radius = REACH, force = force}) do
     if e.valid and e.destructible and e.type ~= "wall" and e.type ~= "gate" and e.prototype.is_building then
       local list = rest
-      for _, t in ipairs(TURRETS) do if e.type == t then list = guns end end
+      for _, t in ipairs(TURRETS) do if e.type == t then list = no_guns and {} or guns end end
       list[#list + 1] = e
     end
   end
@@ -96,11 +96,11 @@ end
 ram.targets = targets
 
 -- An order to take what is inside, one target after another (each a direct attack, so nothing else draws its fire).
-local function take(surface, force, at, dir, first)
+local function take(surface, force, at, dir, first, no_guns)
   local inside = {at[1] + dir[1] * 10, at[2] + dir[2] * 10}
   local cmds = {}
   if first then cmds[1] = first end
-  for _, e in ipairs(targets(surface, force, at, inside)) do
+  for _, e in ipairs(targets(surface, force, at, inside, no_guns)) do
     cmds[#cmds + 1] = {type = defines.command.attack, target = e, distraction = defines.distraction.none}
   end
   -- (It ended on an area attack 20 tiles past the gap: in a small compound that is the far wall, 1,456 of the buggies'
@@ -117,8 +117,10 @@ local function release(lead, at, dir, force)
       -- could go deeper into the base ... once the turrets are dead").
       for _, v in ipairs(f.units) do
         if v.valid then
+          -- (Undistracted on the way in: hit by a turret from outside, a buggy turned on it through the wall, 414 of its
+          -- fire on walls with six.)
           v.commandable.set_command(take(v.surface, force, at, dir, {type = defines.command.go_to_location,
-            destination = {at[1] + dir[1] * 3, at[2] + dir[2] * 3}, radius = 2, distraction = defines.distraction.by_damage}))
+            destination = {at[1] + dir[1] * 3, at[2] + dir[2] * 3}, radius = 2, distraction = defines.distraction.none}))
         end
       end
       table.remove(storage.ram_followers, i)
@@ -203,8 +205,9 @@ function ram.tick(tick)
       if not u.commandable.has_command or tick - r.at > 15 * 60 then
         r.phase = "done"
         storage.rams[k] = nil
-        -- Then it takes what stands inside as its followers do (it sat facing a turret with no order, the fourth takes).
-        u.commandable.set_command(take(u.surface, r.force, {u.position.x, u.position.y}, r.dir))
+        -- Then the buildings inside, never the guns: its followers take those (it sat facing a turret with no order, the
+        -- fourth takes; sent at the guns, it left the walls, the user: "the dozer again focuses on the turrets").
+        u.commandable.set_command(take(u.surface, r.force, {u.position.x, u.position.y}, r.dir, nil, true))
       end
     else
       storage.rams[k] = nil

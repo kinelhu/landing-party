@@ -74,7 +74,7 @@ digraph ai {
     "dome" [label="dome\n407 lines", width=1.25, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n322 lines", width=1.16, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n160 lines", width=0.98, fillcolor="#d9f0d9"];
-    "ram" [label="ram\n221 lines", width=1.05, fillcolor="#d9f0d9"];
+    "ram" [label="ram\n224 lines", width=1.05, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];
   }

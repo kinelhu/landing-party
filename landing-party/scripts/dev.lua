@@ -288,7 +288,7 @@ function dev.run(player, args)
     -- a mass of troopers"; and the Prism and Tesla in action, flak buggies on fliers), the same each take. The attackers
     -- start OFF (60) tiles east, out of a close shot, and come in (the first takes showed every unit appear in frame);
     -- the defenders are those already standing within 16 of the call (the stage's, LP_MIX=scenes), else made there:
-    --   dozers [n]   n Killdozers (2) ram through your wall nearest you within 60 (scripts/ram.lua); twice as many
+    --   dozers [n]   n Killdozers (2) ram through your wall nearest you within 60 (scripts/ram.lua); three times as many
     --                buggies behind them go in through the breach (they had fired over the wall, then got there first)
     --   bombers [n]  your troopers march south and n bomb drones (8) dive on them from all round, a beat apart (all at
     --                once, one blast; the user: "attack from multiple angles", "have the soldiers actually be on the move")
@@ -342,13 +342,13 @@ function dev.run(player, args)
         local u = put(shared.variant("grubstake", "lp-dozer"), g, w.position.x + OFF, y)
         local near = u and s.find_entities_filtered{position = {w.position.x, y}, radius = 3, type = {"wall", "gate"}, force = player.force}
         local piece = near and #near > 0 and s.get_closest({w.position.x, y}, near) or w
-        -- Each widens its breach by four pieces (the user, on the third takes: "the dozers keep working on the walls").
-        if u and ram.order(u, piece, {widen = 4}) then made = made + 1; first = first or u end
+        -- Each widens its breach by eight pieces (the user, on the third takes: "the dozers keep working on the walls").
+        if u and ram.order(u, piece, {widen = 8}) then made = made + 1; first = first or u end
       end
       -- Behind the dozers, kept behind them until the breach (ram.follow).
       local buggies = {}
-      for k = 1, 2 * n do
-        local u = put(shared.variant("grubstake", "lp-buggy"), g, w.position.x + OFF + 10, py + (k - 1) * 3 - n * 1.5)
+      for k = 1, 3 * n do
+        local u = put(shared.variant("grubstake", "lp-buggy"), g, w.position.x + OFF + 10, py + (k - 1) * 3 - n * 2)
         if u then buggies[#buggies + 1] = u end
       end
       if first then ram.follow(buggies, first) end

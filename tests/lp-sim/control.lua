@@ -1315,16 +1315,29 @@ scenarios.showcase = function()
         end
       end end
       -- The dozers' stage: an outpost shut inside a stone wall all round (a short line, the dozers went round its end,
-      -- the user's first take), assemblers, two gun turrets with ammunition, lamps.
-      for x = 56, 80 do put("stone-wall", x + 0.5, -17.5); put("stone-wall", x + 0.5, 17.5) end
-      for y = -17, 17 do put("stone-wall", 56.5, y + 0.5); put("stone-wall", 80.5, y + 0.5) end
-      for k = -2, 2 do put("assembling-machine-2", 68.5, k * 4 + 0.5) end
-      for _, y in ipairs({-6, 6}) do put("gun-turret", 76, y, {name = "firearm-magazine", count = 50}) end
-      for _, y in ipairs({-12, 0, 12}) do put("small-lamp", 74.5, y + 0.5) end
+      -- the user's first take), its east wall at x 80. Bigger and lit for a night shot (the user, 2026-11-09: "extremely
+      -- underwhelming (low action, few defenses few buildings few units...)", "should we set it at night with some
+      -- lights?"): 46 by 50 inside, eight gun turrets with ammunition, three rows of assemblers, furnaces, a radar, six
+      -- of the player's troopers, lamps on poles powered from an energy interface out of the shot.
+      for x = 34, 80 do put("stone-wall", x + 0.5, -25.5); put("stone-wall", x + 0.5, 25.5) end
+      for y = -25, 25 do put("stone-wall", 34.5, y + 0.5); put("stone-wall", 80.5, y + 0.5) end
+      for _, y in ipairs({-20, -12, -4, 4, 12, 20}) do put("gun-turret", 77, y, {name = "piercing-rounds-magazine", count = 100}) end
+      for _, x in ipairs({70, 58}) do put("gun-turret", x, -22, {name = "firearm-magazine", count = 50}); put("gun-turret", x, 22, {name = "firearm-magazine", count = 50}) end
+      for _, x in ipairs({70.5, 64.5, 58.5}) do for k = -4, 4 do put("assembling-machine-2", x, k * 4 + 0.5) end end
+      for k = -4, 4 do put("stone-furnace", 52, k * 4) end
+      put("radar", 45.5, -15.5)
+      local eei = put("electric-energy-interface", 20, 0)
+      if eei then eei.power_production = 1e9; eei.electric_buffer_size = 1e9 end
+      for x = 24, 74, 7 do put("medium-electric-pole", x + 0.5, 0.5) end
+      for _, x in ipairs({74.5, 67.5, 61.5, 55.5}) do
+        for _, y in ipairs({-17.5, -9.5, 8.5, 16.5}) do put("medium-electric-pole", x, y); put("small-lamp", x - 1, y) end
+        for _, y in ipairs({-24.5, 24.5}) do put("small-lamp", x, y) end
+      end
+      for k = 0, 5 do put("lp-trooper", 73 + (k % 2) * 2, -6 + math.floor(k / 2) * 6) end
       -- The bombers' and the Prism's: a squad of troopers at its post (crates, a lamp), standing before the shot.
       for _, c in ipairs({{60, 60}, {60, 120}}) do
         for k = 0, 14 do put("lp-trooper", c[1] + (k % 5) * 1.6, c[2] + math.floor(k / 5) * 1.6 - 1.6) end
-        for _, d in ipairs({{-4, -3}, {-4, 3}, {10, -4}}) do put("wooden-chest", c[1] + d[1], c[2] + d[2]) end
+        -- (Crates round them read as litter, the user: "why the wooden crates litter?")
         put("small-lamp", c[1] - 3, c[2])
       end
       -- The Prism's: the player's side mixed (the user: "Adding a mix of units on both sides might make it less

@@ -5601,6 +5601,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   one, 20 tiles past the gap, the far wall. Scenario `dev` puts a turret and an assembler inside its square: both fall,
   and 0 of the buggies' fire lands on walls (1,456 with the area attack). Rehearsal frames take 4 to 5 MB each: a
   take is 15 to 25 GB until encoded (the disk filled with six takes kept).
+- **The scenes' sixth pass** (0.2.242; the user on the fifth takes). The dozers' stage at night and bigger ("extremely
+  underwhelming ... few defenses few buildings few units"; "set it at night with some lights?"): a 46 by 50 outpost, eight
+  gun turrets, assemblers, furnaces, a radar, six troopers, lamps on poles; two Killdozers, six buggies. After a breach the
+  dozer widens it by eight and then takes buildings, never the guns ("the dozer again focuses on the turrets"); its
+  followers come in undistracted (hit from outside, a buggy turned on the turret through the wall: 414 of its fire on
+  walls in `dev` with six). Every unit sparks when hit, as the car does: the medium biter's purple blood had come with
+  the body ("everyone bleeds purple??"). Infantry collide with each other (a unit's default mask passes through other
+  units: squads stood in heaps; the raid and `dev` scenarios pass with it, not measured further). The flak buggy has its
+  gun's flash at the muzzle (it had none). Crates gone from the stages. The ram as such is real: raids use it in their
+  breach phase (ops.lua); the escort, the widening and the scene's numbers are `/lp dozers`'s.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

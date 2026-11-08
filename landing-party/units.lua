@@ -58,6 +58,9 @@ local function base_unit(name)
   u.factoriopedia_simulation = nil
   u.flags = {"placeable-enemy", "placeable-off-grid", "not-repairable"}
   u.ai_settings = {destroy_when_commands_fail = false, allow_try_return_to_spawner = false, do_separation = true}
+  -- Struck, it sparks as the car does (the medium biter's hit, purple blood, had come with its body: the user, 2026-11-09,
+  -- "everyone bleeds purple??").
+  u.damaged_trigger_effect = table.deepcopy(data.raw.car.car.damaged_trigger_effect)
   u.absorptions_to_join_attack = nil
   u.healing_per_tick = 0
   -- Machines, not biters: no growls, no hisses.
@@ -93,6 +96,9 @@ local function make_infantry(name, color, armor)
   u.distance_per_frame = 0.13
   u.vision_distance = 30
   u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
+  -- Infantry collide with each other (a unit's mask passes through other units, so a squad stood in heaps: the user,
+  -- 2026-11-09, "the infantry has no self collision, just like the flyers? ... they bunch up too much").
+  u.collision_mask = {layers = {player = true, train = true, is_object = true}}
   u.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
   -- Its run: the engineer's running, 8 directions round the compass as a unit reads them. Running with a gun has 18,
   -- the gun's direction against the legs', north to south by the east only (the engine plays them backwards for the
@@ -830,13 +836,16 @@ local function anti_air(air, ground, dtype, radius, look, ground_radius, puffs)
   end
   local fx = {hit(air, {"lp-air-unit"}, radius), hit(ground, {"common"}, ground_radius or 0.5)}
   if look then table.insert(fx, 1, {type = "create-entity", entity_name = look}) end
+  local delivery = {type = "instant", target_effects = fx}
   if puffs then
+    -- The gun's flash at its muzzle (the user, 2026-11-09: "muzzle flash rarely show from the flak buggies": it had none).
+    delivery.source_effects = {{type = "create-explosion", entity_name = "explosion-gunshot"}}
     -- Black puffs round the burst, at a flier's height (the user, on the flak scene: "underwhelming. Perhaps we add
     -- black puffs of smoke jittered around spots the flak fires on?").
     table.insert(fx, 1, {type = "create-entity", entity_name = "lp-flak-puff", repeat_count = 3,
       offset_deviation = {{-1.6, -1.2}, {1.6, 1.2}}})
   end
-  return {type = "direct", action_delivery = {type = "instant", target_effects = fx}}
+  return {type = "direct", action_delivery = delivery}
 end
 -- Anti-air trooper (lp-skyguard; Kessler-Hayashi's Line): a Laser trooper's body with a long tracking laser, 30 to a flier and 8 to the ground
 -- every 30 ticks, range 22. Bought when fliers kill its units (shared.CORPS tree).
@@ -861,6 +870,7 @@ flak_buggy.run_animation = crowned(car.animation, {{car.turret_animation}})
 tint(flak_buggy.run_animation, {})
 flak_buggy.attack_parameters = {
   type = "projectile", ammo_category = "bullet", cooldown = 30, range = 22, range_mode = "bounding-box-to-bounding-box",
+  projectile_center = {0, -0.7}, projectile_creation_distance = 0.9,
   sound = table.deepcopy(data.raw.gun["submachine-gun"].attack_parameters.sound),
   animation = table.deepcopy(flak_buggy.run_animation),
   ammo_type = {action = anti_air(22, 3, "explosion", 2, "explosion", 1.5, true)},
