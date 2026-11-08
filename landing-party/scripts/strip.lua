@@ -52,7 +52,8 @@ end
 
 local function choose_strip(b, army)
   local temper = shared.CORPS[b.corp].temper or {}
-  if not temper.strips or game.tick < (b.next_strip or 0) then return end
+  -- (Its theft lever, lp-<corp>-theft: off, it strips no ore and skims no belt, skim.lua.)
+  if not temper.strips or not shared.setting("lp-" .. b.corp .. "-theft", true) or game.tick < (b.next_strip or 0) then return end
   -- Why none, traced once in a while (the factory scenario: no strip in hours, and no word why).
   local said = game.tick >= (b.strip_said or 0)
   local function why(text)

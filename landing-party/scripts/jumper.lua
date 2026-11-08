@@ -8,6 +8,7 @@
 local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
 local tune = require("__landing-party__.scripts.tune")
+local rng = require("__landing-party__.scripts.rng")
 local base = require("__landing-party__.scripts.base")
 local ops = require("__landing-party__.scripts.ops")
 local war = require("__landing-party__.scripts.war")
@@ -122,7 +123,7 @@ end
 local function emerge(b, j)
   local s = game.surfaces[b.surface]
   local name = shared.variant(b.corp, "lp-infantry")
-  local n = math.random(HANDS_MIN, HANDS_MAX)
+  local n = rng.int(b.rng, HANDS_MIN, HANDS_MAX)
   if storage.jump_hands then n = storage.jump_hands end
   j.hands = {}
   for _ = 1, n do

@@ -3116,8 +3116,15 @@ scenarios.phases = function()
   local pf = game and nil
   -- LP_MIX=nogrubstake / noserenity: that corporation switched off (its setting, shared.enabled) from the start.
   local off = ({nogrubstake = "grubstake", noserenity = "serenity"})[params.mix or ""]
+  -- LP_MIX=grubprod: Grubstake's arrival at the production science pack (lp-grubstake-arrival), one made at 12 minutes.
+  -- LP_MIX=interval: 30 minutes between landings (lp-landing-interval). LP_MIX=camps: one Grubstake camp at most
+  -- (lp-grubstake-camps), landings every two minutes once the first is down.
+  local mix = params.mix or ""
   schedule(60, function()
     if off then lp("debug_setting", "lp-" .. off .. "-enabled", false) end
+    if mix == "grubprod" then lp("debug_setting", "lp-grubstake-arrival", "production-science-pack") end
+    if mix == "interval" then lp("debug_setting", "lp-landing-interval", 30) end
+    if mix == "camps" then lp("debug_setting", "lp-grubstake-camps", 1) end
     flatten(-10, -10, 10, 10)
     surface().create_entity{name = "radar", position = {0, 0}, force = "player"}
   end)
@@ -3151,6 +3158,12 @@ scenarios.phases = function()
     game.forces.player.get_item_production_statistics(surface()).on_flow("chemical-science-pack", 1)
     S.trigger_at = game.tick
   end)
+  if mix == "grubprod" then
+    schedule(12 * 3600, function()
+      game.forces.player.get_item_production_statistics(surface()).on_flow("production-science-pack", 1)
+      S.prod_at = game.tick
+    end)
+  end
   schedule(9 * 3600 + 12 * 3600, function() S.early = #lp("bases") end)
   schedule(9 * 3600 + 24 * 3600, function()
     local ids = lp("bases")
@@ -3160,12 +3173,39 @@ scenarios.phases = function()
     -- Serenity's gate (staggered arrival): none of its settlements yet; a utility science pack opens it, or with Space
     -- Age the first rocket launch (as one would: debug_late_gate).
     for _, id in ipairs(ids) do if lp("stats", id).corp == "serenity" then S.serenity_early = true end end
-    if script.active_mods["space-age"] then lp("debug_late_gate")
+    -- (Read before the launch below, which brings the late corporation's landing sooner.)
+    local fs, d = lp("faction"), lp("corp", "grubstake")
+    S.next_after = fs.next and d.landed and fs.next - d.landed
+    if mix == "camps" then lp("debug_tune", {cadence_minutes = 2}) end
+    -- (A launch as the game makes one, not debug_late_gate: a launch after the first landing never opened the gate,
+    -- faction.on_launch calling the gate only before any landing, so Kessler-Hayashi came to no game that reached a
+    -- rocket after Grubstake; the visits ran gates_off, 2026-11-08.)
+    if script.active_mods["space-age"] then lp("debug_launch", 0, 0)
     else game.forces.player.get_item_production_statistics(surface()).on_flow("utility-science-pack", 1) end
   end)
   schedule(9 * 3600 + 32 * 3600, function()
     for _, id in ipairs(lp("bases")) do if lp("stats", id).corp == "serenity" then S.serenity = true end end
   end)
+  if mix == "grubprod" or mix == "interval" or mix == "camps" then
+    schedule(END - 60, function()
+      if not storage.id then storage.id = lp("bases")[1] end
+      local p, n, by = lp("phases"), 0, {}
+      for _, id in ipairs(lp("bases")) do local c = lp("stats", id).corp; by[c] = (by[c] or 0) + 1; n = n + 1 end
+      info("phases " .. mix .. ": " .. serpent.line({triggered = p.triggered, prod = S.prod_at,
+        next_after = S.next_after, bases = by, landings = lp("faction").landings}))
+      if mix == "grubprod" then
+        check("phases: Grubstake's arrival the production pack, chemical science brought nothing", p.triggered ~= nil
+          and S.prod_at ~= nil and p.triggered >= S.prod_at, serpent.line({p.triggered, S.prod_at}))
+        check("phases: and it came after it", (by.grubstake or 0) >= 1, serpent.line(by))
+      elseif mix == "interval" then
+        check("phases: its next landing the interval after its first", S.next_after == 30 * 3600, tostring(S.next_after))
+      else
+        check("phases: one Grubstake camp at most, others landing", (by.grubstake or 0) == 1 and lp("faction").landings >= 3,
+          serpent.line({bases = by, landings = lp("faction").landings}))
+      end
+    end)
+    return
+  end
   if off then
     schedule(END - 60, function()
       local corps = {}
@@ -3547,7 +3587,11 @@ end
 scenarios.strip = function()
   -- Serenity at war from landing raided the player's drill this scenario watches: a truce with it (Grubstake is the
   -- subject).
-  schedule(30, function() lp("debug_tune", {strip_fast = true}); lp("debug_truce", "serenity", "player", params.minutes + 5) end)
+  -- LP_MIX=notheft: Grubstake's theft off (lp-grubstake-theft): no strip.
+  schedule(30, function()
+    lp("debug_tune", {strip_fast = true}); lp("debug_truce", "serenity", "player", params.minutes + 5)
+    if params.mix == "notheft" then lp("debug_setting", "lp-grubstake-theft", false) end
+  end)
   schedule(120, function()
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     if S.g then lp("debug_depot", S.g, 3000) end
@@ -3582,6 +3626,10 @@ scenarios.strip = function()
     local st = lp("stats", S.g)
     local sum = 0
     for _, r in pairs(surface().find_entities_filtered{position = S.patch, radius = 30, name = "iron-ore"}) do sum = sum + r.amount end
+    if params.mix == "notheft" then
+      check("strip: theft off, no strip-mining operation", st.ops.strips == 0, st.ops.strips .. " strips")
+      return
+    end
     check("strip: Grubstake mounted a strip-mining operation", st.ops.strips > 0, st.ops.strips .. " strips")
     check("strip: it mined the player's patch", sum < S.ore0, S.ore0 - sum .. " ore taken")
     check("strip: and brought it home", st.ops.stripped > 0, st.ops.stripped .. " ore delivered")
@@ -3711,7 +3759,12 @@ end
 -- (it takes note, unprovoked); Grubstake's next landing comes angry: the grudge, a doubled drop escort, double the
 -- garrison cap for 30 minutes from its first depot, then the cap as before.
 scenarios.grudge = function()
-  schedule(60, function() lp("debug_tune", {grudge_fast = true}) end)
+  -- LP_MIX=norevenge: revenge landings off (lp-revenge-landings): provoked as before, its next landing as any other.
+  local norevenge = params.mix == "norevenge"
+  schedule(60, function()
+    lp("debug_tune", {grudge_fast = true})
+    if norevenge then lp("debug_setting", "lp-revenge-landings", false) end
+  end)
   schedule(120, function()
     S.s = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
@@ -3729,12 +3782,18 @@ scenarios.grudge = function()
     S.g2 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     lp("debug_depot", S.g2, 0)
     local st = S.g2 and lp("stats", S.g2)
+    if norevenge then
+      check("grudge: revenge off, the next landing came as any other", st and st.grudge == nil,
+        st and tostring(st.grudge) or "no landing")
+      return
+    end
     check("grudge: the next Grubstake landing came angry", st and st.grudge == "player", st and tostring(st.grudge) or "no landing")
     S.g3 = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     local st3 = S.g3 and lp("stats", S.g3)
     check("grudge: only the next one", st3 and st3.grudge == nil, st3 and tostring(st3.grudge) or "no landing")
   end)
   schedule(3700 + 600, function()
+    if norevenge then return end
     S.cap = S.g2 and lp("stats", S.g2).cap
     -- The escort steps off once each pad is laid.
     local st, st3 = S.g2 and lp("stats", S.g2), S.g3 and lp("stats", S.g3)
@@ -3742,6 +3801,7 @@ scenarios.grudge = function()
       string.format("%s against %s", st and tostring(st.escort), st3 and tostring(st3.escort)))
   end)
   schedule(3700 + 2 * 3600 + 900, function()
+    if norevenge then return end
     local st = S.g2 and lp("stats", S.g2)
     check("grudge: the cap was doubled, then not", st and S.cap and st.cap * 2 == S.cap,
       tostring(S.cap) .. " then " .. tostring(st and st.cap))
@@ -5419,8 +5479,11 @@ scenarios.orbital = function()
   -- LP_MIX=standing (siege.lua's standing siege): a roboport by the outpost brings the howitzer, a supplied artillery turret
   -- 60 behind the wall fires on it; the siege's site dome catches its shells.
   local standing = params.mix == "standing"
+  -- LP_MIX=nostrike: its orbital strikes off (lp-serenity-orbital-strikes): its siege calls none.
+  local nostrike = params.mix == "nostrike"
   schedule(60, function()
     lp("debug_tune", {era = 3, history_off = true, raids_off = true})
+    if nostrike then lp("debug_setting", "lp-serenity-orbital-strikes", false) end
     S.k = lp("arrive", 1, {x = 0, y = 0}, params.distance + 150, {corp = "serenity"})
   end)
   schedule(9 * 3600, function()
@@ -5510,6 +5573,8 @@ scenarios.orbital = function()
       -- (No site dome before 0.2.152: its howitzer was the player's artillery's to take from afar.)
       check("orbital: a standing siege's site dome caught the player's artillery", S.fired and S.caught1
         and S.caught1 - S.caught0 >= 5, string.format("%s -> %s", tostring(S.caught0), tostring(S.caught1)))
+    elseif nostrike then
+      check("orbital: strikes off, none called", st.called == 0 and st.shells == 0, serpent.line(st))
     elseif spot then
       check("orbital: its spotter killed, the strike called off", st.called >= 1 and st.off >= 1 and st.shells == 0,
         serpent.line(st))
@@ -8248,6 +8313,8 @@ end
 -- truck; LP_MIX=raid: the yard destroyed at minute 24, what it held spills.
 scenarios.skim = function()
   local guarded, raid, night = params.mix == "guarded", params.mix == "raid", params.mix == "night"
+  -- LP_MIX=notheft: Grubstake's theft off (lp-grubstake-theft): no truck sets out.
+  local notheft = params.mix == "notheft"
   -- LP_MIX=night: a day of 6 minutes from noon; each truck must set out after dark (Grubstake's thieves' hours).
   if night then
     schedule(30, function() surface().always_day = false; surface().ticks_per_day = 6 * 3600; surface().daytime = 0 end)
@@ -8261,6 +8328,7 @@ scenarios.skim = function()
   end
   schedule(60, function()
     lp("debug_tune", {era = 1, history_off = true, raids_off = true})
+    if notheft then lp("debug_setting", "lp-grubstake-theft", false) end
     S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
     for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
   end)
@@ -8325,6 +8393,10 @@ scenarios.skim = function()
       S.fed or 0, S.delivered or 0, k.skims, k.taken, k.skimmed, k.yard, serpent.line(S.parked), tostring(S.near_turret)))
     if guarded then
       check("skim: a guarded belt is not skimmed", k.skims == 0, tostring(k.skims))
+      return
+    end
+    if notheft then
+      check("skim: theft off, nothing skimmed", k.skims == 0, tostring(k.skims))
       return
     end
     if night then
@@ -11629,7 +11701,7 @@ scenarios.creep = function()
   local mix = params.mix or ""
   schedule(60, function()
     lp("debug_tune", {harmless = true, army_off = true, history_off = true, herd_off = true,
-      levers = mix == "strong" and {biotech = {strength = 2}} or nil})
+      levers = mix == "strong" and {biotech = {income = 2}} or nil})
     local o = lp("stats", storage.id).origin
     local ux, uy = 0, 0
     if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
@@ -12044,8 +12116,13 @@ scenarios.farm = function()
   local function put(name, p) return surface().create_entity{name = name, position = p, force = "player"} end
   schedule(60, function()
     lp("debug_tune", {harmless = true, army_off = true, history_off = true})
-    -- LP_MIX=off: Synthexis switched off (lp-biotech-enabled, shared.enabled) before its landing at 0.3 minutes.
+    -- LP_MIX=off: Synthexis switched off (lp-biotech-enabled, shared.enabled) before its landing at 0.3 minutes. LP_MIX=late:
+    -- its arrival's evolution above the map's (lp-biotech-arrival-evolution). LP_MIX=smallwaves: its largest wave the least
+    -- (lp-biotech-wave-max). LP_MIX=unlearned: its learning off (lp-biotech-learning).
     if mix == "off" then lp("debug_setting", "lp-biotech-enabled", false) end
+    if mix == "late" then lp("debug_setting", "lp-biotech-arrival-evolution", 0.95) end
+    if mix == "smallwaves" then lp("debug_setting", "lp-biotech-wave-max", 24) end
+    if mix == "unlearned" then lp("debug_setting", "lp-biotech-learning", false) end
     local o = lp("stats", storage.id).origin
     local ux, uy = 0, 0
     if math.abs(o.x) > math.abs(o.y) then ux = o.x > 0 and -1 or 1 else uy = o.y > 0 and -1 or 1 end
@@ -12512,7 +12589,9 @@ scenarios.farm = function()
       info(string.format("farm moat: nest %s at %.0f,%.0f", tostring(S.moat_nest and S.moat_nest.valid), c[1], c[2]))
     end
     -- seed, seedkill: a second wild field 400 tiles from the first, where its carrier goes (0.2.22).
-    if mix == "seed" or mix == "seedkill" then
+    -- seedcap: as seed, its cultures' most one (lp-biotech-cultures): no carrier goes.
+    if mix == "seedcap" then lp("debug_setting", "lp-biotech-cultures", 1) end
+    if mix == "seed" or mix == "seedkill" or mix == "seedcap" then
       for d = -40, 440, 32 do surface().request_to_generate_chunks(at(750, d), 3) end
       surface().force_generate_chunk_requests()
       S.field2 = {}
@@ -12608,7 +12687,7 @@ scenarios.farm = function()
       end)
     end
   end
-  if mix == "seed" or mix == "seedkill" or mix == "seedbare" then
+  if mix == "seed" or mix == "seedkill" or mix == "seedbare" or mix == "seedcap" then
     for t = 600, END - 120, 120 do
       schedule(t, function()
         local cs = surface().find_entities_filtered{name = "lp-bred-carrier"}
@@ -12712,7 +12791,7 @@ scenarios.farm = function()
         if mix == "wave" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave") and game.tick end) end
         -- wave200 (0.2.30): /lp wave 200, a mega wave on demand, past the caps.
         if mix == "wave200" then schedule(game.tick - storage.t0 + 3600, function() S.asked = lp("farm_wave", 200) and game.tick end) end
-        if mix == "seed" or mix == "seedkill" or mix == "seedbare" then
+        if mix == "seed" or mix == "seedkill" or mix == "seedbare" or mix == "seedcap" then
           schedule(game.tick - storage.t0 + 3600, function()
             if mix == "seedbare" then
               for _, sp in ipairs(surface().find_entities_filtered{type = "unit-spawner", force = "enemy", position = f.pos,
@@ -12839,11 +12918,24 @@ scenarios.farm = function()
     end)
   end
   schedule(END - 60, function()
-    if mix == "off" then
+    if mix == "off" or mix == "late" then
       local n = 0
       for _ in pairs(lp("farm_state").farms or {}) do n = n + 1 end
-      check("farm: switched off, Synthexis never landed", not S.landed and n == 0,
-        string.format("landed %s, %d cultures", tostring(S.landed), n))
+      check("farm: " .. (mix == "off" and "switched off" or "its arrival's evolution not reached") .. ", Synthexis never landed",
+        not S.landed and n == 0, string.format("landed %s, %d cultures", tostring(S.landed), n))
+      return
+    end
+    local fid = next(lp("farm_state").farms or {})
+    local cap = fid and lp("farm_cap", fid)
+    info(string.format("farm: its waves' most %s, lessons %d", tostring(cap), lp("herd_lessons")))
+    if mix == "smallwaves" then
+      check("farm: its largest wave set to the least, its waves' most that", cap == 24, tostring(cap))
+      return
+    end
+    if mix == "unlearned" then
+      local w1 = lp("herd_state").log[1]
+      check("farm: learning off, a wave went and it kept no lesson", w1 ~= nil and lp("herd_lessons") == 0,
+        string.format("wave %s, lessons %d", tostring(w1 and w1.outcome), lp("herd_lessons")))
       return
     end
     local st = lp("herd_state")
@@ -12891,7 +12983,7 @@ scenarios.farm = function()
       and site.soil == "artificial-yumako-soil" and (site.plants or 0) >= 4 and (site.techs or 0) >= 2, serpent.line(site))
     -- Seeding (0.2.22): its carrier walked to the second field and a young culture began there; shot on the way, none.
     -- seedbare: on the bare ground in the cloud, an incubator of its own.
-    if mix == "seed" or mix == "seedkill" or mix == "seedbare" then
+    if mix == "seed" or mix == "seedkill" or mix == "seedbare" or mix == "seedcap" then
       local st_ = lp("farm_state")
       local g2 = (mix == "seedbare" or S.field2 and S.field2[1]) and S.at(750, 400)
       local young
@@ -12901,6 +12993,11 @@ scenarios.farm = function()
       info(string.format("farm %s: ripe at %s, carrier seen %s, killed %s; cultures %d; young %s", mix, tostring(S.ripe),
         tostring(S.carrier_seen), tostring(S.carrier_killed), #st_.farms, serpent.line(young and {pens = young.pens,
         clinic = young.clinic, pos = young.pos})))
+      if mix == "seedcap" then
+        check("farm: seedcap, its cultures' most one, no carrier set out", S.carrier_seen == nil and #st_.farms == 1,
+          string.format("carrier %s, cultures %d", tostring(S.carrier_seen), #st_.farms))
+        return
+      end
       check("farm: " .. mix .. ", a carrier set out", S.carrier_seen ~= nil, tostring(S.carrier_seen))
       if mix == "seed" then
         -- (A seeded culture there, its clinic by pod 30 minutes on: with its sieges waiting for their order, no early wave
@@ -14040,8 +14137,36 @@ scenarios.levers = function()
     lp("debug_setting", "lp-grubstake-strength", "normal")
     lp("debug_setting", "lp-grubstake-aggression", "normal")
   end)
+  -- Income (the user, 2026-11-08: "a lever for income"): Grubstake's parts made in three minutes at very high income
+  -- against the three before, over Kessler-Hayashi's at normal in the same minutes (its growth's own trend cancelled).
+  schedule(11 * 3600, function()
+    S.g11, S.s11 = lp("debug_levers", S.g), lp("debug_levers", S.s)
+    lp("debug_setting", "lp-grubstake-income", "very-high")
+  end)
+  schedule(14 * 3600, function()
+    S.g14, S.s14 = lp("debug_levers", S.g), lp("debug_levers", S.s)
+    lp("debug_setting", "lp-grubstake-income", "normal")
+    -- The difficulty preset: times every faction's levers, its own on top.
+    lp("debug_setting", "lp-difficulty", "hard")
+    lp("debug_setting", "lp-grubstake-strength", "low")
+    S.g15, S.s15 = lp("debug_levers", S.g), lp("debug_levers", S.s)
+    lp("debug_setting", "lp-difficulty", "normal")
+    lp("debug_setting", "lp-grubstake-strength", "normal")
+  end)
   schedule(END - 60, function()
     info("levers: grubstake " .. serpent.line({S.g1, S.g2, S.g3}) .. "; serenity " .. serpent.line({S.s0, S.s2, S.s3}))
+    local a8, b8 = S.g3 and S.g3.made, S.s3 and S.s3.made
+    local ga, sa = (S.g11.made - a8), (S.s11.made - b8)
+    local gb, sb = (S.g14.made - S.g11.made), (S.s14.made - S.s11.made)
+    -- (Its own ratio: Kessler-Hayashi's, the control for its growth's trend, swung 266 to 216 and put the corrected ratio at
+    -- 2.50 where Grubstake's own was 2.03; logged, not divided by.)
+    local ratio = ga > 0 and gb / ga or 0
+    info(string.format("levers income: grubstake %d then %d (%.2f), serenity at normal %d then %d (%.2f)", ga, gb, ratio,
+      sa, sb, sa > 0 and sb / sa or 0))
+    check("levers: very high income, about twice the parts made", ratio > 1.6 and ratio < 2.6, string.format("%.2f", ratio))
+    local g15, s15 = S.g15 or {}, S.s15 or {}
+    check("levers: hard difficulty times every faction, its own lever on top", s15.strength == 1.5 and s15.income == 1.5
+      and s15.aggression == 1.5 and g15.strength == 1.5 * 0.75, serpent.line({g = g15, s = s15}))
     local g1, g2, g3, s2, s3 = S.g1 or {}, S.g2 or {}, S.g3 or {}, S.s2 or {}, S.s3 or {}
     check("levers: normal reads 1", g1.strength == 1 and g1.aggression == 1, serpent.line(g1))
     check("levers: very high strength doubles the cap", g2.strength == 2 and g2.cap == 2 * g1.cap,

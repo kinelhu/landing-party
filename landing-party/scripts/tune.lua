@@ -5,7 +5,9 @@
 --   aggression   how soon it acts: its ladder's clock runs faster (stance.rung), the gaps after an operation, between
 --                answers and between heists (rig, tap) are shorter, and it keeps at a hopeless front longer
 --                before standing down (war.quiet)
--- Synthexis (corp "biotech", not in shared.CORPS) has the two as well: biomass income and the gap between waves.
+--   income       what it makes: its fabricators' parts (base.lua), Synthexis's biomass (creep.lua, farm.lua)
+-- Synthexis (corp "biotech", not in shared.CORPS) has aggression (the gap between waves) and income; its strength is the
+-- most a wave sends (lp-biotech-wave-max, farm.cap_of). Each is times the difficulty preset (lp-difficulty).
 -- Tests and sweeps set storage.tune_levers[corp][lever] (debug_tune levers) over the settings.
 -- A leaf: it reads settings and storage only.
 local shared = require("__landing-party__.shared")
@@ -16,11 +18,13 @@ local function lever(corp, name)
   local o = storage.tune_levers and storage.tune_levers[corp]
   if o and o[name] then return o[name] end
   local s = corp and settings.global["lp-" .. corp .. "-" .. name]
-  return s and shared.TUNE[s.value] or 1
+  local d = shared.DIFFICULTY[shared.setting("lp-difficulty", "normal")] or 1
+  return (s and shared.TUNE[s.value] or 1) * d
 end
 
 function tune.strength(corp) return lever(corp, "strength") end
 function tune.aggression(corp) return lever(corp, "aggression") end
+function tune.income(corp) return lever(corp, "income") end
 
 -- A span of ticks shortened by aggression (at least one tick).
 function tune.sooner(corp, ticks) return math.max(1, math.floor(ticks / tune.aggression(corp))) end

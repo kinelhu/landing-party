@@ -1,6 +1,7 @@
 -- The faction across settlements: when landings come, where they land, and the tier its exports buy.
---   Landings: the first answers the player's first rocket launch; then one every CADENCE, a later launch bringing
---   the late corporation's next one HASTE sooner (once between landings); at most MAX_ALIVE settlements stand at once.
+--   Landings: the first answers the player's first rocket launch; then one every landing interval (cadence), a later
+--   launch bringing the late corporation's next one HASTE sooner (once between landings); at most its camps setting of a
+--   corporation's settlements stand at once.
 --   Tier: parts exported by mature settlements, faction-wide. Each tier unlocks units, adds damage and
 --   garrison room (army.lua reads it).
 local shared = require("__landing-party__.shared")
@@ -21,10 +22,12 @@ local pact = require("__landing-party__.scripts.pact")
 
 local faction = {}
 
-local CADENCE = 90 * 3600
 local HASTE = 15 * 3600
-local MAX_ALIVE = 6              -- standing settlements, all corporations
-local MAX_PER_CORP = 3           -- per corporation, its headquarters counted
+-- The levers (settings, shared.lua's defaults): the time between landings (f.cadence a test's own), and a corporation's
+-- standing camps, its headquarters counted. (Six standing in all was a cap of its own, MAX_ALIVE: the two corporations'
+-- three each; the camps settings bound it now.)
+local function cadence(f) return f.cadence or shared.setting("lp-landing-interval", shared.LANDING_MINUTES.default) * 3600 end
+local function camps(corp) return shared.setting("lp-" .. corp .. "-camps", shared.MAX_CAMPS.default) end
 local SECOND_CORP_LANDING = 2    -- the second corporation enters at the third landing
 -- Headquarters (docs/reviews/2026-10-13-headquarters-consult.md): at level 3, or after HQ_FLOOR standing with two
 -- settlements (an announced floor: a player who starves its exports must not freeze the arc), a corporation
@@ -52,8 +55,7 @@ local ARTILLERY_SPARE = 20       -- past its artillery's reach (threat.artillery
 faction.TIERS = {3000, 8000, 20000, 45000}           -- parts exported to reach tiers 1..4
 
 function faction.state()
-  storage.faction = storage.faction or {tier = 0, exported = 0, landings = 0, cadence = CADENCE,
-    tiers = faction.TIERS}
+  storage.faction = storage.faction or {tier = 0, exported = 0, landings = 0, tiers = faction.TIERS}
   return storage.faction
 end
 
@@ -547,7 +549,7 @@ function faction.arrive(surface, from, opts, quiet)
   -- A headquarters lands off the clock: the faction's origin and next landing stay as they were.
   if not (opts and opts.hq) then
     f.surface, f.from = surface.index, {x = from.x, y = from.y}
-    f.next = game.tick + f.cadence
+    f.next = game.tick + cadence(f)
   end
   base.trace(b, string.format("landing %d of the faction (tier %d): %d candidate sites, %d on new ground; %s%s", f.landings,
     f.tier, faction.candidates, faction.generated, b.approach and (b.approach .. " nests on the way to the player")
@@ -562,15 +564,17 @@ end
 -- landing sooner.
 function faction.on_launch(silo)
   local f = faction.state()
-  if not f.surface then
-    if faction.on_trigger then faction.on_trigger(silo.surface, silo.position) end
-  elseif f.next and not f.haste_for then
+  -- The opening's (phases.on_launch): before any landing a launch triggers the first; and, when its arrival is the
+  -- rocket, it opens the late corporation's gate. (Called before the first landing only until 0.2.223: a launch after
+  -- Grubstake's landing never opened the gate, and Kessler-Hayashi came to no real game; the visits ran gates_off.)
+  local opened = faction.on_trigger and faction.on_trigger(silo.surface, silo.position)
+  if f.surface and not opened and f.next and not f.haste_for then
     -- Its late corporation's landing alone, once between landings (the user, 2026-11-02, on Grubstake landing every 6
     -- minutes on nwa, its launches never stopping: "I didn't think every rocket launch should bring grubstake in...
     -- that's a different clock"). Grubstake keeps the cadence.
     local late = faction.late_corp
     local d = late and faction.corp(late)
-    if late and d and shared.enabled(late) and not d.withdrawing and faction.alive(late) < MAX_PER_CORP
+    if late and d and shared.enabled(late) and not d.withdrawing and faction.alive(late) < camps(late)
       and (not faction.gate_open or faction.gate_open(late)) then
       f.next = math.max(game.tick, f.next - HASTE)
       f.haste_for = late
@@ -610,7 +614,7 @@ local function next_corp(f)
     if gated then entered = faction.gate_open(corp)
     else entered = (corp == first or f.landings >= SECOND_CORP_LANDING) and (not faction.gate_open or faction.gate_open(corp)) end
     local n = alive(corp)
-    if entered and shared.enabled(corp) and not d.withdrawing and n < MAX_PER_CORP then
+    if entered and shared.enabled(corp) and not d.withdrawing and n < camps(corp) then
       local t = d.landed or -1
       if not best or n < bn or (n == bn and t < bt) then best, bn, bt = corp, n, t end
     end
@@ -621,7 +625,7 @@ local function next_corp(f)
     for _, corp in ipairs(names) do
       local d = faction.corp(corp)
       local gated = faction.gate_open and faction.late_corp == corp
-      if not gated and shared.enabled(corp) and not d.withdrawing and alive(corp) < MAX_PER_CORP then return corp end
+      if not gated and shared.enabled(corp) and not d.withdrawing and alive(corp) < camps(corp) then return corp end
     end
   end
   return best
@@ -709,7 +713,7 @@ function faction.tick(tick)
     -- (A landing a launch hastened is its late corporation's: faction.on_launch.)
     local hasted = f.haste_for
     f.haste_for = nil
-    local corp = alive() < MAX_ALIVE and (hasted and alive(hasted) < MAX_PER_CORP and hasted or next_corp(f))
+    local corp = hasted and alive(hasted) < camps(hasted) and hasted or next_corp(f)
     if faction.pending_kind("cadence") then
       -- Its ground is being made (faction.request).
     elseif corp then
@@ -719,7 +723,7 @@ function faction.tick(tick)
       if f.vacancy and f.vacancy.corp ~= corp then from = f.vacancy.pos; f.vacancy = nil end
       faction.request(game.surfaces[f.surface], from, {corp = corp}, storage.quiet, "cadence", {origin = origin})
     else
-      f.next = tick + f.cadence
+      f.next = tick + cadence(f)
     end
   end
   faction.headquarters(tick)
@@ -795,8 +799,13 @@ function faction.grudge(b, by, at)
     end
   end
   local d = faction.corp(b.corp)
-  d.grudge = by
   d.grudges = (d.grudges or 0) + 1
+  -- Its revenge (setting lp-revenge-landings): off, its corporation is provoked, its next landing comes as any other.
+  if not shared.setting("lp-revenge-landings", true) then
+    base.trace(b, "grudge: every corporation provoked by " .. by .. "; no revenge landing (off)")
+    return
+  end
+  d.grudge = by
   base.trace(b, "grudge: every corporation provoked by " .. by .. "; the next landing comes angry")
   local f = game.forces[by]
   if f and #f.players > 0 then shared.notice(f, {"lp.grudge", shared.corp_label(b.corp)}) end

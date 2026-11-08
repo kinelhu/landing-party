@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.222
+Version: 0.2.223
 Date: 2026-11-08
   Features:
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
@@ -8,4 +8,4 @@ Date: 2026-11-08
     - Synthexis takes over the biter nests and breeds waves that learn from what kills them.
     - Each faction researches, fields its own units and answers what you do to it; the rivals fight each other and the biters too.
     - Player army: barracks, a command tool, rally beacons and a muster point.
-    - Settings: each faction switched on or off, and its strength and aggression.
+    - Settings: a difficulty preset, and under it each faction on or off, when it arrives, its most bases, its strength, aggression and income; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest attack and learning.

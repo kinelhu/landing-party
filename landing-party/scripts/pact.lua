@@ -7,10 +7,13 @@
 local shared = require("__landing-party__.shared")
 local base = require("__landing-party__.scripts.base")
 local lights = require("__landing-party__.scripts.lights")
+local rng = require("__landing-party__.scripts.rng")
 
 local pact = {}
 
 local REBUILD_TICKS = 5 * 60 * 60
+-- A rebuilt pacifier drops its crystal this share of the time (the landing's own always).
+local REBUILT_CRYSTAL = 0.25
 
 local function has_pact(corp) return (shared.CORPS[corp].temper or {}).pact and not storage.pact_off end
 pact.has = has_pact
@@ -74,7 +77,7 @@ function pact.lost(ent)
   for _, b in pairs(storage.bases or {}) do
     if b.pacifier == ent then
       -- Its crystal (the faction loot consult): the landing's own pacifier always, a rebuilt one a quarter of the time.
-      if (b.pacifiers_lost or 0) == 0 or math.random() < 0.25 then
+      if (b.pacifiers_lost or 0) == 0 or rng.next(b.rng) < REBUILT_CRYSTAL then
         shared.wreck(ent.surface, ent.position, {{name = "lp-pacifier-crystal", count = 1}})
       end
       b.pacifiers_lost = (b.pacifiers_lost or 0) + 1

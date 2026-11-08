@@ -315,6 +315,22 @@ shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat sca
 
 -- The strength and aggression presets (settings.lua, scripts/tune.lua): a multiplier each.
 shared.TUNE = {["very-low"] = 0.5, low = 0.75, normal = 1, high = 1.5, ["very-high"] = 2}
+-- The difficulty preset (setting lp-difficulty, the user, 2026-11-08: presets and the levers under them, as vanilla's
+-- biters): a multiplier on every faction's strength, aggression and income (tune.lua), its own levers on top.
+shared.DIFFICULTY = {easy = 0.5, normal = 1, hard = 1.5, ["very-hard"] = 2}
+shared.DIFFICULTY_LEVELS = {"easy", "normal", "hard", "very-hard"}
+-- The levers' defaults and ranges (settings.lua makes the settings from them; the code reads the settings):
+shared.LANDING_MINUTES = {default = 90, min = 15, max = 600}  -- between a corporation's landings (faction.lua's cadence)
+shared.MAX_CAMPS = {default = 3, min = 1, max = 10}           -- a corporation's standing camps, its headquarters counted
+shared.ARRIVE_EVO = {default = 0.25, min = 0, max = 0.95}     -- the wild evolution Synthexis comes at (farm.lua)
+shared.MAX_CULTURES = {default = 5, min = 1, max = 10}        -- Synthexis's cultures at once, its seeding's (farm.lua)
+-- What each corporation's first landing answers (phases.lua): a technology researched, a science pack made, or the first
+-- rocket launched. Grubstake's at oil processing comes without its survey party.
+shared.ARRIVALS = {
+  grubstake = {default = "chemical-science-pack",
+    allowed = {"oil-processing", "chemical-science-pack", "production-science-pack", "utility-science-pack"}},
+  serenity = {default = "rocket",
+    allowed = {"chemical-science-pack", "production-science-pack", "utility-science-pack", "rocket"}}}
 -- The biotech (docs/biotech.md; the third corporation, its first slice): bred biters on their own force, at peace with
 -- the wild ones. Not one of CORPS yet (no settlements, ladder or tree): its pens and herds are scripts/herd.lua's.
 shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g = 0.85, b = 0.2}, icon = "item/biter-egg",
@@ -338,6 +354,8 @@ shared.BIOTECH = {name = "Synthexis", force = "lp-biotech", color = {r = 0.45, g
 shared.PEN_CAP = 40
 shared.WAVE_MIN = 24
 shared.WAVE_MAX = 60   -- the most a culture sends at once (farm.lua), a full wave (herd.lua: what a price is learned from)
+-- The largest wave a culture sends (farm.cap_of; a lever, setting lp-biotech-wave-max): at least a wave's least stock.
+shared.WAVE_HUGE = {default = 200, min = shared.WAVE_MIN, max = 400}
 -- Its breeds: what each costs, in parts in the arena (weighed against the corporations' units, a rifleman's 10;
 -- docs/arena.md) and in biomass in the game (an incubator breeds only while its culture can pay: farm.lua).
 -- None of them shoots up (air.lua): its class is many, healing and soft.
@@ -593,6 +611,12 @@ local KEEP = {["lp.fallen"] = true}
 function shared.enabled(corp)
   local s = settings.global["lp-" .. corp .. "-enabled"]
   return s == nil or s.value ~= false
+end
+-- A lever's value (settings.lua): its runtime-global setting, or the default given when it is absent.
+function shared.setting(name, default)
+  local s = settings.global[name]
+  if s == nil then return default end
+  return s.value
 end
 function shared.notices_on()
   if storage.notices ~= nil then return storage.notices end

@@ -5,7 +5,7 @@ digraph ai {
   subgraph cluster_0 { label="Seams (leaves)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "stance" [label="stance\n78 lines", width=0.89, fillcolor="#eef2f7"];
     "pool" [label="pool\n142 lines", width=0.96, fillcolor="#d9f0d9"];
-    "tune" [label="tune\n32 lines", width=0.84, fillcolor="#d9f0d9"];
+    "tune" [label="tune\n36 lines", width=0.84, fillcolor="#d9f0d9"];
     "rng" [label="rng\n56 lines", width=0.86, fillcolor="#d9f0d9"];
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
     "chart" [label="chart\n114 lines", width=0.93, fillcolor="#d9f0d9"];
@@ -29,20 +29,20 @@ digraph ai {
     "strategy" [label="strategy\n77 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_3 { label="Corporation"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "faction" [label="faction\n928 lines", width=1.83, fillcolor="#eef2f7"];
+    "faction" [label="faction\n937 lines", width=1.84, fillcolor="#eef2f7"];
     "pods" [label="pods\n64 lines", width=0.87, fillcolor="#d9f0d9"];
     "war" [label="war\n628 lines", width=1.50, fillcolor="#eef2f7"];
     "standing" [label="standing\n115 lines", width=0.93, fillcolor="#eef2f7"];
-    "pact" [label="pact\n109 lines", width=0.92, fillcolor="#eef2f7"];
+    "pact" [label="pact\n112 lines", width=0.92, fillcolor="#eef2f7"];
     "trade" [label="trade\n168 lines", width=0.99, fillcolor="#eef2f7"];
     "ledger" [label="ledger\n262 lines", width=1.09, fillcolor="#eef2f7"];
     "border" [label="border\n108 lines", width=0.92, fillcolor="#eef2f7"];
     "rd" [label="rd\n396 lines", width=1.24, fillcolor="#eef2f7"];
-    "phases" [label="phases\n238 lines", width=1.06, fillcolor="#eef2f7"];
+    "phases" [label="phases\n269 lines", width=1.10, fillcolor="#eef2f7"];
     "biters" [label="biters\n36 lines", width=0.84, fillcolor="#d9f0d9"];
   }
   subgraph cluster_4 { label="Settlement"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "base" [label="base\n872 lines", width=1.77, fillcolor="#eef2f7"];
+    "base" [label="base\n880 lines", width=1.78, fillcolor="#eef2f7"];
     "construction" [label="construction\n383 lines", width=1.23, fillcolor="#d9f0d9"];
     "planner" [label="planner\n338 lines", width=1.18, fillcolor="#eef2f7"];
     "layout" [label="layout\n1747 lines", width=2.74, fillcolor="#f7dede"];
@@ -66,29 +66,29 @@ digraph ai {
     "intel" [label="intel\n289 lines", width=1.12, fillcolor="#eef2f7"];
     "siege" [label="siege\n2076 lines", width=3.11, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
-    "strip" [label="strip\n237 lines", width=1.06, fillcolor="#eef2f7"];
+    "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
     "answers" [label="answers\n130 lines", width=0.94, fillcolor="#d9f0d9"];
     "cuts" [label="cuts\n86 lines", width=0.90, fillcolor="#eef2f7"];
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
     "dome" [label="dome\n407 lines", width=1.25, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n320 lines", width=1.16, fillcolor="#eef2f7"];
+    "orbital" [label="orbital\n322 lines", width=1.16, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n160 lines", width=0.98, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];
   }
   subgraph cluster_6 { label="Heists (Grubstake)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "jumper" [label="jumper\n314 lines", width=1.15, fillcolor="#eef2f7"];
+    "jumper" [label="jumper\n315 lines", width=1.15, fillcolor="#eef2f7"];
     "tap" [label="tap\n375 lines", width=1.22, fillcolor="#eef2f7"];
-    "skim" [label="skim\n421 lines", width=1.27, fillcolor="#eef2f7"];
+    "skim" [label="skim\n422 lines", width=1.27, fillcolor="#eef2f7"];
     "prowl" [label="prowl\n150 lines", width=0.97, fillcolor="#eef2f7"];
     "bait" [label="bait\n59 lines", width=0.87, fillcolor="#d9f0d9"];
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n4378 lines", width=3.80, fillcolor="#f7dede"];
+    "herd" [label="herd\n4380 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
-    "farm" [label="farm\n2424 lines", width=3.49, fillcolor="#f7dede"];
+    "farm" [label="farm\n2428 lines", width=3.50, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
     "cell" [label="cell\n402 lines", width=1.25, fillcolor="#eef2f7"];
   }
@@ -103,7 +103,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1068 lines", width=1.99, fillcolor="#f7dede"];
+    "control" [label="control\n1074 lines", width=1.99, fillcolor="#f7dede"];
     "dev" [label="dev\n263 lines", width=1.09, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
@@ -131,6 +131,7 @@ digraph ai {
   "base" -> "planner";
   "base" -> "rng";
   "base" -> "site";
+  "base" -> "tune";
   "border" -> "chart";
   "border" -> "ops";
   "border" -> "standing";
@@ -203,6 +204,7 @@ digraph ai {
   "jammer" -> "lights";
   "jumper" -> "base";
   "jumper" -> "ops";
+  "jumper" -> "rng";
   "jumper" -> "threat";
   "jumper" -> "tune";
   "jumper" -> "war";
@@ -242,6 +244,7 @@ digraph ai {
   "orbital" -> "threat";
   "pact" -> "base";
   "pact" -> "lights";
+  "pact" -> "rng";
   "phases" -> "faction";
   "planner" -> "rd";
   "power" -> "threat";

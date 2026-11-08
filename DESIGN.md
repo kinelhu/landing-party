@@ -19,7 +19,7 @@ document still says Serenity where it records history.
 | Arrival on first launch, repeated landings, sites apart | built | `faction` |
 | Opening: signs (radar), survey party (oil), arrival (launch or blue science) | built | `phases` (two) |
 | Territory on the map (corporation colour, grows, grey after a fall) | built | `rivals` |
-| Levers: strength and aggression per corporation (settings) | built, uncalibrated | `levers` |
+| Levers (settings; the user, 2026-11-08: "expose some levers... That's how vanilla does it with biters"): a difficulty preset times every faction's strength, aggression and income; each faction's own on top; when each arrives; its most camps; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest wave and learning | built 0.2.223, uncalibrated (after the playtest) | `levers`, `phases` (grubprod, interval, camps), `farm` (late, smallwaves, unlearned, seedcap), `grudge` norevenge, `orbital` nostrike, `skim`/`strip` notheft |
 | On/off per faction (settings `lp-<id>-enabled`, runtime-global; the user, 2026-11-08): off, it never lands again, its standing camps stay; Grubstake off, no survey party and Kessler-Hayashi makes the first landing at its gate | built 0.2.222 | `phases` (nogrubstake, noserenity), `farm` (off) |
 | Answers by corporation: Grubstake a snatch raid where no turret covers (its flare retired 2026-10-22); Serenity, at war, answers trespass only (a siege), its losses fair war | built (trespass only 2026-10-20) | `snatch` (two), `line turret`, `crew answered`, `remembered` |
 | Development per corporation (capabilities by level), threat budget with a floor | built | `budget`, `develop` |
@@ -5370,6 +5370,42 @@ Bugs and surprises the headless runs caught, each kept as a check:
   first as before, no Kessler-Hayashi), `farm` LP_MIX=off (no culture; it lands at 0.3 minutes when on); each seen
   failing with `shared.enabled` forced on (Grubstake landed and surveyed, Kessler-Hayashi landed, a culture at tick
   900). Not built: an off switch that removes standing camps.
+- **Kessler-Hayashi came to no real Space Age game** (found 2026-11-08 wiring the arrival lever; fixed 0.2.223). Its gate
+  (phases.late) opened on a rocket launch only through faction.on_launch's first branch, taken while no corporation had
+  landed; in a real game Grubstake lands at chemical science long before a rocket, so a launch after it only hastened a
+  landing whose gate stayed shut, and next_corp never chose Kessler-Hayashi. Unseen because `phases` opened the gate with
+  debug_late_gate and the visits (the playtest save among them) ran gates_off. Now every launch goes to phases.on_launch
+  (the first landing's trigger before any landing, as before; the gate when Kessler-Hayashi's arrival is the rocket), and
+  `phases` launches as the game does (debug_launch; not under gates_off, where the gate is open already): on 0.2.222 "and soon after it opened" failed (nil), on 0.2.223 it
+  passes. The playtest save is unaffected (gates_off), so is every visit; a new game from 0.2.223 is the first to meet
+  Kessler-Hayashi as a player would.
+- **The levers** (2026-11-08, 0.2.223; the user: "expose some levers for the players to customize the difficulty, not just
+  single presets. That's how vanilla does it with biters", and "Is there a lever for income anywhere? seems like it
+  conditions a lot of what a faction can do"). Runtime-global settings, defaults and ranges in shared.lua
+  (`DIFFICULTY`, `LANDING_MINUTES`, `MAX_CAMPS`, `ARRIVE_EVO`, `WAVE_HUGE`, `ARRIVALS`), read through `shared.setting`
+  and tune.lua: the difficulty preset (easy to very hard) times every faction's strength, aggression and income, each
+  faction's own levers on top (mod settings cannot move each other's sliders, so a preset is a multiplier); income, new,
+  scales what a corporation's fabricators make (base.lua, the fraction carried, no rounding by chance) and Synthexis's
+  biomass (its old "strength", which was its income; its strength is its largest wave); arrival (Grubstake: oil
+  processing, which skips its survey party, or a science pack; Kessler-Hayashi: a science pack or the rocket; Synthexis:
+  the wild evolution); most camps per corporation (MAX_ALIVE's six in all gone, the camps bound it); the time between
+  landings; revenge landings (off: provoked, its next landing as any other); Kessler-Hayashi's orbital strikes;
+  Grubstake's theft (skims and strips); Synthexis's most cultures (its seeding's cap, CULTURE_CAP's 5 before: the user,
+  2026-11-08, after "I had not realized we were limited to 1 culture", which it is not: one by pod, more by its carriers),
+  its largest wave (farm.cap_of) and its learning (its lessons). The
+  dropdowns' labels are written from shared.lua (`scripts/settings_locale.py`, checked by check.sh, seen failing on a
+  changed multiplier): the old hand-typed "(×0.5)" labels broke the locale's rule. Checks, each seen failing with the
+  levers made inert (shared.setting returning its default, tune.income 1): levers (very high income: Grubstake's parts
+  250 then 508 in three minutes, ×2.03, Kessler-Hayashi's at normal ×0.81; hard difficulty 1.5 on every lever, a low own
+  lever 1.125), phases grubprod (triggered at the production pack's tick, 45000, after it, 43200; chemical science at
+  34200 brought nothing), interval (its next landing 30 minutes on), camps (one Grubstake, three Kessler-Hayashi), farm
+  late, smallwaves (its waves' most 24), unlearned (a wave home, no lesson; 1 with learning on), grudge norevenge,
+  orbital nostrike, skim and strip notheft, farm seedcap (most cultures one: no carrier; with the lever inert a carrier
+  at tick 5160 and a second culture). Whole list on 0.2.223: 300 of 301, `launches` failing (its next landing 324000 to
+  60): with the gates held open (gates_off) the first launch still went through the gate's opening and its haste; not
+  under gates_off now, passing. Uncalibrated: what each level means in razed buildings, after the playtest.
+  On the way, the three math.random calls left (base.lua's idle runs, pact.lua's crystal, jumper.lua's hands) on the
+  settlement's rng.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

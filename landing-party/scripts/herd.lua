@@ -3379,7 +3379,9 @@ finish = function(w, outcome)
   end
   -- Its lesson: the face it tried and whether it broke anything past the wall there; what killed its units round it.
   -- (Its personality: B.mind.learns; off, it keeps none, which is how the system sim measures what learning is worth.)
-  if w.mark_sector and not w.blind and B.mind.learns ~= false and not storage.biotech_unlearned then
+  -- (And its learning lever, lp-biotech-learning: off, as the system sim's unlearned.)
+  if w.mark_sector and not w.blind and B.mind.learns ~= false and not storage.biotech_unlearned
+    and shared.setting("lp-biotech-learning", true) then
     local key = lesson_key(w.center)
     local l = lessons()[key] or {faces = {}, killers = {}, waves = 0}
     lessons()[key] = l

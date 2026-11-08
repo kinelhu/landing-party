@@ -157,7 +157,7 @@ local function survey_step(s)
   end
 end
 
--- The early corporation's trigger: the first chemical science pack (found in the production statistics).
+-- The early corporation's trigger: its arrival lever's (the first chemical science pack by default).
 function phases.trigger(surface, from)
   local s = state()
   if s.triggered then return end
@@ -175,6 +175,38 @@ function phases.late(surface, from)
   tell("lp.late-gate", shared.corp_label(LATE_CORP))
 end
 
+-- What a corporation's first landing answers (its arrival lever, shared.ARRIVALS): "oil-processing" researched, a science
+-- pack made, or "rocket" (a launch: phases.on_launch). Kessler-Hayashi's rocket in the base game, where a launch ends it,
+-- is the utility science pack, as before the lever.
+local function arrival(corp)
+  local a = shared.ARRIVALS[corp]
+  local v = shared.setting("lp-" .. corp .. "-arrival", a.default)
+  if v == "rocket" and not script.active_mods["space-age"] then v = "utility-science-pack" end
+  return v
+end
+local function reached(f, what)
+  if what == "rocket" then return false end
+  if what == "oil-processing" then
+    local t = f.technologies["oil-processing"]
+    return t ~= nil and t.researched
+  end
+  return f.get_item_production_statistics(game.surfaces[1]).get_input_count(what) > 0
+end
+
+-- A rocket launched (faction.on_launch): before any landing it triggers the first; and it opens the late gate when the
+-- late corporation's arrival is the rocket. True when this launch opened it.
+function phases.on_launch(surface, from)
+  local s = state()
+  if not faction.state().surface then phases.trigger(surface, from) end
+  -- (Not with the gates held open, gates_off: the gate is open already, and its opening's haste came on top of the
+  -- launch's own, scenario launches.)
+  if not s.late and not storage.gates_off and arrival(LATE_CORP) == "rocket" then
+    phases.late(surface, from)
+    return true
+  end
+  return false
+end
+
 -- Whether a corporation may land yet (faction's choice of the next one).
 function phases.gate_open(corp)
   return corp ~= LATE_CORP or state().late ~= nil or storage.gates_off
@@ -186,13 +218,12 @@ local function arrived() return faction.state().surface ~= nil end
 
 function phases.tick(tick)
   if tick % 3600 ~= 1800 then return end
-  -- The late gate in the base game, after the first arrival too.
+  -- The late gate on what its arrival lever names (a launch opens it in phases.on_launch), after the first arrival too.
   local st = state()
-  if not st.late and not script.active_mods["space-age"] then
+  if not st.late then
+    local what = arrival(LATE_CORP)
     for _, f in ipairs(players()) do
-      if not st.late and f.get_item_production_statistics(game.surfaces[1]).get_input_count("utility-science-pack") > 0 then
-        phases.late(game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
-      end
+      if not st.late and reached(f, what) then phases.late(game.surfaces[1], f.get_spawn_position(game.surfaces[1])) end
     end
   end
   if arrived() then return end
@@ -204,11 +235,11 @@ function phases.tick(tick)
       local radar = game.surfaces[1].find_entities_filtered{force = f, type = "radar", limit = 1}[1]
       if radar then signs(f, radar) end
     end
-    if not s.survey and shared.enabled(EARLY_CORP) and f.technologies["oil-processing"] and f.technologies["oil-processing"].researched then
+    -- (No survey party when its arrival is oil processing itself: it lands then.)
+    if not s.survey and shared.enabled(EARLY_CORP) and arrival(EARLY_CORP) ~= "oil-processing" and f.technologies["oil-processing"] and f.technologies["oil-processing"].researched then
       survey(f, game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
     end
-    local stats = f.get_item_production_statistics(game.surfaces[1])
-    if not s.triggered and stats.get_input_count("chemical-science-pack") > 0 then
+    if not s.triggered and reached(f, arrival(EARLY_CORP)) then
       phases.trigger(game.surfaces[1], f.get_spawn_position(game.surfaces[1]))
     end
 

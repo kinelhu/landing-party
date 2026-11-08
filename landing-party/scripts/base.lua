@@ -9,6 +9,7 @@ local names = require("__landing-party__.scripts.names")
 local blocks = require("__landing-party__.scripts.blocks")
 local army = require("__landing-party__.scripts.army")
 local rng = require("__landing-party__.scripts.rng")
+local tune = require("__landing-party__.scripts.tune")
 local ops = require("__landing-party__.scripts.ops")
 local lights = require("__landing-party__.scripts.lights")
 local landfx = require("__landing-party__.scripts.landfx")
@@ -403,7 +404,7 @@ local function economy(b)
     local want = per - have
     local give = math.min(want, b.feedstock)
     if give > 0 then b.feedstock = b.feedstock - input.insert{name = "lp-feedstock", count = give}
-    elseif have == 0 and not fab.is_crafting() and math.random() < IDLE_RUN then
+    elseif have == 0 and not fab.is_crafting() and rng.next(b.rng) < IDLE_RUN then
       if input.insert{name = "lp-feedstock", count = shared.FEEDSTOCK_PER_PART} > 0 then
         b.idle_runs[fab.unit_number] = (b.idle_runs[fab.unit_number] or 0) + 1
       end
@@ -431,6 +432,13 @@ local function economy(b)
     b.siege_fund = (b.siege_fund or 0) + save
     made = made - save
     b.made = b.made + save
+  end
+  -- Its income lever (tune.income, times the difficulty preset): what its fabricators make, scaled, the fraction carried
+  -- to the next look (no rounding by chance).
+  if made > 0 then
+    local scaled = made * tune.income(b.corp) + (b.income_carry or 0)
+    made = math.floor(scaled)
+    b.income_carry = scaled - made
   end
   b.parts = b.parts + made
   b.made = b.made + made

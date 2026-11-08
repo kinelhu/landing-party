@@ -57,6 +57,8 @@ end
 -- A siege's call (siege.lua, its mortars up). Called or not.
 function orbital.call(b, op)
   if storage.kh_strikes_off or not b.armed or not (shared.CORPS[b.corp] or {}).orbital_strike then return false end
+  -- (Its lever, lp-<corp>-orbital-strikes: off, its sieges go without them.)
+  if not shared.setting("lp-" .. b.corp .. "-orbital-strikes", true) then return false end
   -- (Once a siege; a standing siege again after the cooldown.)
   if game.tick < (b.strike_next or 0) or (op.strike_called and not op.standing) or not op.site then return false end
   local t = op.target and b.intel and b.intel.targets[op.target]

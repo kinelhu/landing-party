@@ -319,6 +319,7 @@ end
 
 local function consider(b)
   if storage.skim_off or not (shared.CORPS[b.corp].temper or {}).skims then return end
+  if not shared.setting("lp-" .. b.corp .. "-theft", true) then return end
   if b.fallen or b.quiescent or not b.mature or game.tick < (b.next_skim or 0) then return end
   if not ops.thief_hours(b) then return end
   -- Any player force it may steal from (stance), whether or not its intel knows one of its targets: it finds the belts

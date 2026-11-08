@@ -35,7 +35,7 @@ local rng = require("__landing-party__.scripts.rng")
 local farm = {}
 
 local B = shared.BIOTECH
-local ARRIVE_EVO = 0.25
+-- (Its arrival's evolution: a lever, lp-biotech-arrival-evolution, shared.ARRIVE_EVO's default.)
 local FAR, FARTHEST = 1000, 1500   -- NEAR (600) until 0.2.25: the pod now weighs every field FED_NEAR out
 local SEARCH = 2500           -- nests looked at round the player's spawn, nearest first
 local FED_NEAR = 250          -- a field in the cloud: none of the player's buildings within this
@@ -83,10 +83,12 @@ local WAVE_MAX = shared.WAVE_MAX
 -- WAVE_HUGE. A colony grown large sends large waves, and killing its incubators shrinks them; its prices are learned as
 -- of a full wave of WAVE_MAX whatever it sent (herd.lua), one lesson a wave. (At 60 for every culture, two walls at late
 -- research held 9 of 16 trials and its plans read "none fits"; and a tesla line's chain is soaked by bodies.)
-local CAP_PENS, WAVE_HUGE = 8, 200
+-- WAVE_HUGE is a lever (lp-biotech-wave-max, shared.WAVE_HUGE): below WAVE_MAX it caps every culture's waves.
+local CAP_PENS = 8
 local function cap_of(f)
   local n = f and #f.pens or 0
-  return math.min(WAVE_HUGE, math.max(WAVE_MAX, math.floor(WAVE_MAX * n / CAP_PENS)))
+  local huge = shared.setting("lp-biotech-wave-max", shared.WAVE_HUGE.default)
+  return math.min(huge, math.max(WAVE_MAX, math.floor(WAVE_MAX * n / CAP_PENS)))
 end
 farm.cap_of = cap_of
 -- A siege (a context-free review, 2026-10-28: with nothing it can field worth a wave, "change the mission, not go quiet"):
@@ -308,7 +310,7 @@ function farm.land(surface, pos, seeded)
   -- Its substrate and technicians (scripts/cell.lua).
   cell.site(f.id, surface, f.pos, seeded ~= nil)
   -- (Split as any income, young: its first buds from it, as when growth came first; creep.earn.)
-  creep.earn(creep.of(f.id), seeded and seeded.biomass or START_BIOMASS * tune.strength("biotech"))
+  creep.earn(creep.of(f.id), seeded and seeded.biomass or START_BIOMASS * tune.income("biotech"))
   f.seeded = seeded and game.tick or nil
   tag(f)
   trace(string.format("farm %d %s at %.0f,%.0f: %d pens", f.id, seeded and "seeded by a carrier" or "landed", pos.x, pos.y,
@@ -1030,7 +1032,8 @@ local SEED_NEAR, SEED_FAR, SEED_APART, SEED_CLEAR = 300, 600, 300, 200
 local SEED_FARTHEST = 1000
 local SEED_WEIGHED = 40   -- fields weighed for their air, nearest first
 local STUCK, REPLANS = 2 * 3600, 3   -- a carrier no nearer its field this long plans a new way, so many times at most
-local ESCORT, CULTURE_CAP, YOUNG_WAVES = 12, 5, 3
+-- (Its cultures' most is a lever: lp-biotech-cultures, shared.MAX_CULTURES's default.)
+local ESCORT, YOUNG_WAVES = 12, 3
 local CARRY_LIMIT = 30 * 3600   -- a carrier still walking this long has lost its way
 local FILLED_WAIT = 30 * 3600   -- no nest taken this long: its field is filled
 
@@ -1675,7 +1678,7 @@ local function seed(f, tick)
       trace(string.format("farm %d: mature (%d incubators), not seeding yet: %s", f.id, #f.pens, text))
     end
   end
-  if n >= (B.mind.culture_cap or CULTURE_CAP) then f.saving = nil; return why(string.format("%d cultures, the most", n)) end
+  if n >= shared.setting("lp-biotech-cultures", shared.MAX_CULTURES.default) then f.saving = nil; return why(string.format("%d cultures, the most", n)) end
   local cul = creep.of(f.id)
   if not cul then return end
   if not cell.keeps_up(f.id, f.pens, tick) then return why("its cells hungry") end
@@ -2116,7 +2119,7 @@ function farm.tick(tick)
     elseif have then f.short = short(want, have) elseif tick % 3600 == 300 then f.short = nil end
     local cul = creep.of(id)
     if cul then
-      local t = #f.pens * TRICKLE / 6 * tune.strength("biotech") * creep.evo_rate(surface)
+      local t = #f.pens * TRICKLE / 6 * tune.income("biotech") * creep.evo_rate(surface)
       creep.earn(cul, t)
       cul.trickled = (cul.trickled or 0) + t
       -- An order short: chance breeding waits while the biomass is kept for it, and a siege's sweep (its runts, one a mine on
@@ -2177,7 +2180,8 @@ function farm.tick(tick)
     local enemy = game.forces.enemy
     local came = false
     for _, surface in pairs(game.surfaces) do
-      if not came and enemy and enemy.get_evolution_factor(surface) >= ARRIVE_EVO then
+      if not came and enemy and enemy.get_evolution_factor(surface)
+        >= shared.setting("lp-biotech-arrival-evolution", shared.ARRIVE_EVO.default) then
         came = arrive(surface, FAR) or arrive(surface, FARTHEST)
       end
     end

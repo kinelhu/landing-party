@@ -300,7 +300,7 @@ function creep.drink(seconds, pens)
         + p * math.min(1, c.pens * shared.PEN_SHARE * seconds))
       if took > 0 then
         surface.pollute({c.x, c.y}, -took, c.pens > 0 and "lp-pen" or nil)
-        local got = took * shared.YIELD * tune.strength("biotech") * creep.evo_rate(surface)
+        local got = took * shared.YIELD * tune.income("biotech") * creep.evo_rate(surface)
         creep.earn(cul, got)
         cul.drunk = (cul.drunk or 0) + got
         cul.eaten = (cul.eaten or 0) + took

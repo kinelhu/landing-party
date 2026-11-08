@@ -7,7 +7,7 @@ local achievements = require("__landing-party__.scripts.achievements")
 local command = require("scripts.command")
 local phases = require("__landing-party__.scripts.phases")
 local biters = require("__landing-party__.scripts.biters")
-faction.on_trigger = phases.late
+faction.on_trigger = phases.on_launch
 local ops = require("__landing-party__.scripts.ops")
 local pool = require("__landing-party__.scripts.pool")
 local army = require("__landing-party__.scripts.army")
@@ -820,6 +820,12 @@ remote.add_interface("landing-party", {
   cell_state = function() return cell.state() end,
   cell_sites = function() return cell.sites() end,
   know_state = function() return know.state() end,
+  -- Tests: how many places Synthexis keeps a lesson of (herd.lua's lessons; its learning lever).
+  herd_lessons = function()
+    local n = 0
+    for _ in pairs(know.of("biotech").lessons or {}) do n = n + 1 end
+    return n
+  end,
   -- Tests only: a faction's losses within `window` ticks, what each died of and to whom (know.loss).
   debug_losses = function(key, window)
     local out = {}
@@ -959,8 +965,8 @@ remote.add_interface("landing-party", {
   -- Tests only: what the levers read and drive for a settlement (tune.lua).
   debug_levers = function(id)
     local b = storage.bases[id]
-    return {strength = tune.strength(b.corp), aggression = tune.aggression(b.corp), cap = army.cap(b),
-      hour = tune.sooner(b.corp, 3600 * 60), rung = stance.rung("player", b.force)}
+    return {strength = tune.strength(b.corp), aggression = tune.aggression(b.corp), income = tune.income(b.corp),
+      cap = army.cap(b), hour = tune.sooner(b.corp, 3600 * 60), rung = stance.rung("player", b.force), made = b.made}
   end,
   debug_parts = function(id, parts) local b = storage.bases[id]; if b then b.parts = b.parts + parts end end,
   -- A town grown at once, for pictures (scripts/shots.sh town): machine lots with their machines queued, then streets.
