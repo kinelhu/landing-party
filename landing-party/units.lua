@@ -927,6 +927,16 @@ dozer.selection_box = {{-1.1, -1.5}, {1.1, 1.8}}
 rendered_crawler(scorcher, "scorcher")
 scorcher.corpse = wreck("lp-scorcher-wreck", "grubstake/crawler/wreck-scorcher")
 scorcher.selection_box = {{-1.1, -1.4}, {1.1, 1.4}}
+-- Kessler-Hayashi's tank (tools/blender/kh_tank.py; the unit pass, 2026-11-08): its own hull, slate teal and graphite,
+-- maintained, the cannon head on it, the tracks running driving. Grubstake fields tanks too (its sprawl doctrine), so its
+-- copy keeps the old look through its props until a tank of its own. (The player's battle tank keeps vanilla's.)
+do
+  local c = shared.CORPS.grubstake
+  c.props = c.props or {}
+  c.props["lp-tank"] = {run_animation = table.deepcopy(tank.run_animation), attack_parameters = table.deepcopy(tank.attack_parameters)}
+  layered(tank, "serenity/tank", {{"cannon", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {"cannon", {"body", "glow"}}})
+  headlights(tank)
+end
 -- Kinds both corporations field get Grubstake's rendered look on Grubstake's copy alone, through its props in
 -- shared.CORPS (corps.lua applies them to the copy it makes, plates.lua copies that); Kessler-Hayashi's keeps the
 -- old look until it has its own.

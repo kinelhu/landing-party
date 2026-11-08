@@ -5480,6 +5480,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Grubstake's sapper wears none (a light runner; it and the Shotgun hand had been one look), the player's breacher and
   flame trooper the power armour (told apart by their tints), the rocket trooper none, the trooper the heavy as before.
   The mech armour stays Kessler-Hayashi's. No art, no size.
+- **The unit pass, fifth: Kessler-Hayashi's tank** (0.2.232; `tools/blender/kh_tank.py`, the kit's `tracks` and
+  `kh_palette`): one hull, its heads as modules, as the buggies and the crawler. A contractor's machine, maintained,
+  against Grubstake's scrap: slate teal (darkened: its buildings' paint came out pale and plastic under a unit's sun) and
+  graphite, cyan lights, white corporate markings, hazard stripes. The user's calls: "Agreed, the armour modules look toy
+  like" (tiles with bolt rows: large smooth slabs instead, a few panel lines), "both too plain and a little too uniformly
+  teal" (functional detail and colour from function: graphite skirts with rubber flaps and roof, a remote weapon station,
+  smoke launchers, sights, a tool rack, jerrycans, markings), the hull narrower and taller and the turret bigger and
+  central (a wide slab with a small turret), "very slightly longer barrel", its muzzle brake gone ("a little too stubby").
+  On lp-tank and its plates; Grubstake's copy (its sprawl doctrine fields tanks) keeps the old look through its props,
+  the player's battle tank vanilla's. 8.5 MB. The Prism and the Tesla heads next, after the genre's prism and tesla
+  tanks ("take some inspiration from the prism tank in C&C RA2? To avoid having such similar designs").
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

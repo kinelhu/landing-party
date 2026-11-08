@@ -15,6 +15,7 @@ import lpkit
 scene = None
 M = {}
 GLOWS = ("lamp", "tail", "pilot")
+GLOW_NAMES = set(GLOWS)          # GLOWS and what palettes add (kh_palette's kglow)
 
 def setup(samples=64):
     """A fresh scene, Grubstake's materials in M."""
@@ -132,7 +133,7 @@ def group(fn):
 def finish(grime=1.0, scale=13, mud=0.0, mud_top=0.5):
     """Grime on every material but the lamps; every mesh smooth, sharp past 35 degrees."""
     for m in bpy.data.materials:
-        if m.name in GLOWS or not m.use_nodes:
+        if m.name in GLOW_NAMES or not m.use_nodes:
             continue
         rubberish = m.name in ("tyre", "dust", "rubber")
         lpkit.dirty(m, dirt=(0.4 if rubberish else 0.8) * grime, dust=(0.0 if rubberish else 0.3) * grime,
@@ -182,7 +183,7 @@ def passes(out, N, base, modules, animated=None, frames=1, rebuild=None, fill=0.
     def show(objs, on):
         for o in objs: o.hide_render = not on
     def glowing(o):
-        return any(s.material and s.material.name in GLOWS for s in o.material_slots)
+        return any(s.material and s.material.name in GLOW_NAMES for s in o.material_slots)
     parts = ["base"] + list(modules) + (["anim"] if animated else [])
     for p in parts:
         if not only or only == p:
@@ -347,7 +348,7 @@ def wreck(objs, out, seed=1, lose=0.35, thrown=0.35, keep=(), tilt=(4, -3), sink
     import random
     rnd = random.Random(seed)
     for m in bpy.data.materials:
-        if m.name in GLOWS:
+        if m.name in GLOW_NAMES:
             m.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 0.0
         char(m, burn=0.9)
     sized = sorted(objs, key=lambda o: o.dimensions.length)
@@ -399,3 +400,66 @@ def wreck(objs, out, seed=1, lose=0.35, thrown=0.35, keep=(), tilt=(4, -3), sink
         ground.hide_render = False
         lpkit.render(scene, f"{out}/wreck/body/{d:03d}.png")
     return pivot
+
+
+def tracks(TX, TW, IDL, SPR, frames=4, pitch=0.11):
+    """Two runs of track shoes round the idler IDL and the sprocket SPR (each (y, z, radius)), TX out from the middle,
+    TW wide (crawler.py's, for the kit's tracked vehicles). Returns (shoes, pose): pose(f) moves every shoe f / frames
+    of a pitch along its loop, the bottom run going rearward, so `frames` loop seamlessly."""
+    (yi, zi, ri), (ys, zs, rs) = IDL, SPR
+    ri += 0.02; rs += 0.02
+    pts, steps = [], 200
+    for k in range(steps):
+        f = k / steps; pts.append((yi + (ys - yi) * f, (zi - ri) + ((zs - rs) - (zi - ri)) * f))
+    for k in range(steps):
+        a = math.radians(270 - 180 * k / steps); pts.append((ys + math.cos(a) * rs, zs + math.sin(a) * rs))
+    for k in range(steps):
+        f = k / steps; pts.append((ys + (yi - ys) * f, (zs + rs) + ((zi + ri) - (zs + rs)) * f))
+    for k in range(steps):
+        a = math.radians(90 - 180 * k / steps); pts.append((yi + math.cos(a) * ri, zi + math.sin(a) * ri))
+    seg = [math.dist(pts[k], pts[(k + 1) % len(pts)]) for k in range(len(pts))]
+    L = sum(seg); n = int(L / pitch); P = L / n
+    def at(s):
+        s %= L; k = 0
+        while s > seg[k]:
+            s -= seg[k]; k += 1
+        (y0, z0), (y1, z1) = pts[k], pts[(k + 1) % len(pts)]
+        f = s / seg[k]
+        return (y0 + (y1 - y0) * f, z0 + (z1 - z0) * f), math.atan2(z1 - z0, y1 - y0)
+    a = box(TW, P * 0.86, 0.026, 0, 0, -0.013, M["tread"], bevel=0.004)
+    b = box(TW * 0.96, 0.02, 0.022, 0, 0, 0.013, M["steel"], bevel=0.003)
+    bpy.ops.object.select_all(action="DESELECT"); a.select_set(True); b.select_set(True)
+    bpy.context.view_layer.objects.active = a; bpy.ops.object.join()
+    shoes = []
+    for sx in (-1, 1):
+        for k in range(n):
+            o = a.copy(); scene.collection.objects.link(o); shoes.append((o, sx, k))
+    bpy.data.objects.remove(a)
+    def pose(f):
+        for o, sx, k in shoes:
+            (y, z), ang = at((k + f / frames) * P)
+            o.location = (sx * TX, y, z); o.rotation_euler = (ang, 0, 0)
+    pose(0)
+    return [o for o, _, _ in shoes], pose
+
+def kh_palette():
+    """Kessler-Hayashi's materials into M (its buildings' worn palette, tools/blender/lpkit.py: slate teal, dull hazard,
+    lighter steel; the user, 2026-11-04, its gray had read as concrete): a contractor's kit, maintained, not scrap."""
+    P = lpkit.palette_worn()
+    # (Its buildings' slate teal came out pale and plastic on a unit under the units' strong sun, the first tank: darker,
+    # three close shades for its plates, as the crawler's rusts.)
+    M["kpaint"] = lpkit.worn("kpaint", (0.065, 0.14, 0.18), metal=0.3, rough=0.5, seams=5, wear=0.7)
+    M["kpaint2"] = lpkit.worn("kpaint2", (0.05, 0.11, 0.145), metal=0.3, rough=0.55, seams=5, wear=0.7)
+    M["kpaint3"] = lpkit.worn("kpaint3", (0.08, 0.13, 0.15), metal=0.35, rough=0.5, seams=5, wear=0.7)
+    M["khazard"] = P["hazard"]
+    M["kdark"] = lpkit.worn("kdark", (0.05, 0.06, 0.065), metal=0.5, rough=0.5, seams=4, rivets=False)
+    M["kglow"] = lpkit.mat("kglow", (0.5, 0.9, 1.0), emit=(0.45, 0.85, 1.0), strength=3.0, grime=0.0)
+    M["kwhite"] = lpkit.worn("kwhite", (0.6, 0.62, 0.6), metal=0.2, rough=0.5, seams=6, rivets=False, wear=0.5)
+    # Graphite for its running gear, skirts and roof modules, a second colour (all teal was "a little too uniformly teal").
+    M["kgraph"] = lpkit.worn("kgraph", (0.07, 0.075, 0.08), metal=0.45, rough=0.5, seams=4, rivets=False, wear=0.8)
+    M["kwood"] = lpkit.mat("kwood", (0.3, 0.2, 0.11), rough=0.8, grime=0.5)
+    # The Prism's crystal: dark violet glass, a lit core (its beam's colour in the game).
+    M["kcrystal"] = lpkit.mat("kcrystal", (0.2, 0.08, 0.3), metal=0.1, rough=0.08, grime=0.0)
+    M["kviolet"] = lpkit.mat("kviolet", (0.85, 0.45, 1.0), emit=(0.85, 0.45, 1.0), strength=5.0, grime=0.0)
+    M["kglow_soft"] = lpkit.mat("kglow_soft", (0.3, 0.75, 1.0), emit=(0.3, 0.75, 1.0), strength=1.2, grime=0.0)
+    GLOW_NAMES.add("kglow"); GLOW_NAMES.add("kviolet"); GLOW_NAMES.add("kglow_soft")

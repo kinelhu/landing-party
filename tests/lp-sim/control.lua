@@ -1271,9 +1271,9 @@ scenarios.showcase = function()
       for _, o in pairs(game.forces) do
         if o ~= f then f.set_cease_fire(o, true); o.set_cease_fire(f, true); f.set_friend(o, true); o.set_friend(f, true) end
       end
-      flatten(-10, 8, 44, 70)
+      flatten(-10, 8, 44, 76)
       for r, kind in ipairs({"lp-grubstake-buggy", "lp-grubstake-slug", "lp-grubstake-flak-buggy", "lp-grubstake-dozer",
-        "lp-grubstake-scorcher", "lp-grubstake-hauler", "lp-grubstake-harrier", "lp-grubstake-scavenger"}) do
+        "lp-grubstake-scorcher", "lp-grubstake-hauler", "lp-grubstake-harrier", "lp-grubstake-scavenger", "lp-tank"}) do
         for k = 0, 7 do
           local u = surface().create_entity{name = kind, position = {-6 + k * 4.5, 10 + r * 6}, force = f}
           if u then u.orientation = k / 8 end
@@ -1281,8 +1281,8 @@ scenarios.showcase = function()
         local w = surface().create_entity{name = kind, position = {34, 10 + r * 6}, force = f}
         if w then w.commandable.set_command{type = defines.command.wander, radius = 8, distraction = defines.distraction.none} end
       end
-      surface().create_entity{name = "car", position = {-6, 64}, force = "player"}
-      surface().create_entity{name = "tank", position = {0, 64}, force = "player"}
+      surface().create_entity{name = "car", position = {-6, 70}, force = "player"}
+      surface().create_entity{name = "tank", position = {0, 70}, force = "player"}
       info("buggies: parked south of spawn")
     end)
   end
