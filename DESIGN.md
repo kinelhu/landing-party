@@ -5473,7 +5473,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   one picture a direction, but its wheels can roll): each wheel on a hub of its own at its axle, rendered as a layer of
   4 frames a direction, one turn over them, the chassis rendered again without them; the antenna's 8 frames beside them
   (repeat_count repeats a whole layer: the wheels turn twice in its cycle, one turn every 2 tiles at 0.5 a frame, near a
-  tyre's 1.6). +1.8 MB. `vehicle.rolling` gives the kit's vehicles the same (the hauler next).
+  tyre's 1.6). +1.8 MB. `vehicle.rolling` gives the kit's vehicles the same: the hauler's six roll too (0.2.230, +2.8
+  MB, its base without them).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -28,10 +28,13 @@ ZF = 0.36                              # the frame's rails
 YC0, YC1 = 0.0, 0.5                    # the cab's back and front
 YH1 = 1.36                             # the hood's front (the grille)
 
+WHEELS = []                            # (objects, hub): each wheel, its own animated layer (they roll driving)
+
 def chassis():
     for y in AXLES:
         for sx in (-1, 1):
-            V.wheel(sx * TRACK / 2, y, sx, WR, WT)
+            _b4 = set(V.scene.objects); V.wheel(sx * TRACK / 2, y, sx, WR, WT)
+            WHEELS.append(([o for o in V.scene.objects if o not in _b4], (sx * TRACK / 2, y, WR)))
         rod((-TRACK / 2 + WT / 2, y, WR), (TRACK / 2 - WT / 2, y, WR), 0.035, M["dark"])          # the axle
         box(0.5, 0.16, 0.1, 0, y, WR - 0.04, M["dark"], bevel=0.02)                              # its diff
         for sx in (-1, 1):                                                                       # leaf springs
@@ -207,5 +210,8 @@ if os.environ.get("LP_WRECK"):
 rig = V.light(3, 1.2)
 _z = float(os.environ.get("LP_ZOOM", 1))
 V.scene.camera.data.ortho_scale /= _z
-V.passes(out, N, base, modules, light_rig=rig)
+# The wheels out of the base into an animated layer, 4 frames a direction, one turn over them.
+wobjs, hubs, roll = V.rolling(WHEELS)
+base = [o for o in base if o not in set(wobjs)]
+V.passes(out, N, base, modules, animated=wobjs, frames=4, rebuild=lambda f: roll(f, 4), light_rig=rig, hubs=hubs)
 print("hauler:", N, "directions to", out)

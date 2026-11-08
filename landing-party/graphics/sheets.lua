@@ -16,6 +16,7 @@ return {
   ["grubstake/harrier/base"] = {width = 149, height = 173, frames = 64, line_length = 8, shift = {0.0, -1.375}},
   ["grubstake/harrier/rotor"] = {width = 205, height = 169, frames = 64, line_length = 8, shift = {0.90625, -1.1875}},
   ["grubstake/harrier/wreck"] = {width = 230, height = 301, frames = 4, line_length = 4, shift = {0.234375, 0.5078125}},
+  ["grubstake/hauler/anim"] = {width = 207, height = 223, frames = 256, line_length = 8, shift = {0.0, -0.265625}},
   ["grubstake/hauler/base"] = {width = 218, height = 264, frames = 64, line_length = 8, shift = {0.0078125, -0.4921875}},
   ["grubstake/hauler/bed"] = {width = 259, height = 256, frames = 64, line_length = 8, shift = {0.296875, -0.4296875}},
   ["grubstake/hauler/wreck"] = {width = 265, height = 307, frames = 4, line_length = 4, shift = {0.25, -0.140625}},

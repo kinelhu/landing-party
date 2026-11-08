@@ -938,7 +938,9 @@ local function grubstake_look(u, root, parts, extra)
 end
 -- The hauler (tools/blender/hauler.py): a six-wheeled scrap bonnet truck, its hood amber, a tarped load on its bed.
 do
-  local p = grubstake_look(hauler, "grubstake/hauler", {{"bed", {"shadow"}}, {"base", {"body", "glow"}}, {"bed", {"body", "glow"}}},
+  -- Its wheels a layer of 4 frames a direction (vehicle.rolling): they roll driving, stand parked.
+  local p = grubstake_look(hauler, "grubstake/hauler", {{"bed", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}},
+    {"bed", {"body", "glow"}}},
     {selection_box = {{-0.85, -1.45}, {0.85, 1.55}}, corpse = wreck("lp-hauler-wreck", "grubstake/hauler/wreck")})
   headlights(p, 16)
 end
