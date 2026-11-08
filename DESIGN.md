@@ -5451,8 +5451,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   real tank"; shorter tracks for it dropped, "if this risks inflating mod size". Found on the way: plated() built half
   its faces' plates inside the solid (the normal from the corners' order). 18 MB, 7 of them the track animation (the first
   to trim). The rendered units have the car's headlights: **assumed, not seen**, as no vanilla unit carries a light (to
-  look at in game at night). Open: their own wrecks (they leave the car's and the tank's), the buggies' wheels rolling,
-  the hauler (`tools/blender/hauler.py`, in progress).
+  look at in game at night). Open: their own wrecks (they leave the car's and the tank's), the buggies' wheels rolling.
+- **The unit pass, third: Grubstake's hauler** (0.2.227; `tools/blender/hauler.py`): a six-wheeled scrap bonnet truck,
+  the engine under a long amber hood over the front axle, the cab set back and lower (a cab-over box read as the "cube
+  cabin" the user had called cartoonish), a roof gun, a stake bed (its own layer) of crates and drums under a lashed
+  tarp. Both corporations run haulers, so the truck goes on Grubstake's copy alone, through its `props` in shared.CORPS
+  (corps.lua applies them to the copy it makes); Kessler-Hayashi's keeps the car until its own. 6 MB.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

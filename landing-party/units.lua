@@ -904,6 +904,18 @@ rendered_crawler(dozer, "dozer")
 dozer.selection_box = {{-1.1, -1.5}, {1.1, 1.8}}
 rendered_crawler(scorcher, "scorcher")
 scorcher.selection_box = {{-1.1, -1.4}, {1.1, 1.4}}
+-- The hauler (tools/blender/hauler.py): a six-wheeled scrap bonnet truck, its hood amber, a tarped load on its bed.
+-- Both corporations run haulers (convoys, crews), so the truck goes on Grubstake's copy alone, through its props in
+-- shared.CORPS (corps.lua applies them to the copy it makes); Kessler-Hayashi's keeps the car for now.
+do
+  local g = {attack_parameters = table.deepcopy(hauler.attack_parameters)}
+  layered(g, "grubstake/hauler", {{"bed", {"shadow"}}, {"base", {"body", "glow"}}, {"bed", {"body", "glow"}}})
+  headlights(g, 16)
+  local c = shared.CORPS.grubstake
+  c.props = c.props or {}
+  c.props["lp-hauler"] = {run_animation = g.run_animation, attack_parameters = g.attack_parameters, light = g.light,
+    selection_box = {{-0.85, -1.45}, {0.85, 1.55}}}
+end
 
 local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},
   [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"iron-gear-wheel", 1, 2}}, [laser_drone] = {{"advanced-circuit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},
