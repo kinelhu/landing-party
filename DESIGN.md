@@ -5509,6 +5509,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   a fifth shorter, its turret roof dressed as the cannon tank's. Grubstake's copies keep their old looks. And
   Kessler-Hayashi's laser turret glows cyan too (`scripts/kh_glow.py`: its red-orange glow image hue-turned; a tint only
   darkened it). The mod at 153 MB.
+- **Kessler-Hayashi's fliers rendered** (0.2.235; `tools/blender/kh_drone.py`, the user's call of 2026-10-23, "give
+  Kessler the actual high tech fliers"): ducted-fan drones in teal and graphite against Grubstake's scrap autogyro, their
+  fans blur discs as the harrier's rotor. The scout drone (on the harrier kind, its light flier): a slim faceted
+  fuselage, a canopy, four ducts on swept arms, a gun pod; the laser drone: a broad armoured lifting body, two big side
+  ducts, a chin emitter with a cyan lens. On the way: fat ducts read as inner tubes and plain boxes as toys (thin duct
+  shells, faceted hulls); the ducts' lips, all edge, took the worn-edge shader's bare metal (a low-wear finish); dark
+  ducts read as empty rings (a motor glow in each, its liner opened: a capped cylinder's lids had hidden it; at full it
+  read as headlights, dimmed). Grubstake's harrier keeps its autogyro, its laser drone copy the old look. 2.2 MB.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

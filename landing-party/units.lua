@@ -981,6 +981,19 @@ end
 -- drone (tools/blender/scavenger.py): a scrap quadcopter with its bomb slung under it, a red gas cylinder.
 grubstake_look(harrier, "grubstake/harrier", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}},
   {corpse = wreck("lp-harrier-wreck", "grubstake/harrier/wreck")})
+-- Kessler-Hayashi's fliers (tools/blender/kh_drone.py): ducted-fan drones in teal and graphite, a soft blue glow in
+-- their ducts (the user, 2026-10-23: "give Kessler the actual high tech fliers"): its scout drone on the harrier kind
+-- (Grubstake's harrier has its autogyro through its props, set above), its laser drone; Grubstake's laser drone copy
+-- keeps the old look. Each wired once its sheet is in sheets.lua.
+if SHEETS["serenity/drone-scout/base"] then
+  layered(harrier, "serenity/drone-scout", {{"fans", {"shadow"}}, {"base", {"body", "glow"}}, {"fans", {"body"}}})
+end
+if SHEETS["serenity/drone-laser/base"] then
+  local c = shared.CORPS.grubstake
+  c.props["lp-laser-drone"] = {run_animation = table.deepcopy(laser_drone.run_animation),
+    attack_parameters = table.deepcopy(laser_drone.attack_parameters)}
+  layered(laser_drone, "serenity/drone-laser", {{"fans", {"shadow"}}, {"base", {"body", "glow"}}, {"fans", {"body"}}})
+end
 -- (It bursts on its target: its corpse stays the defender's small remnants.)
 grubstake_look(scavenger, "grubstake/scavenger", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}})
 
