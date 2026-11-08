@@ -110,7 +110,11 @@ local function make_infantry(name, color, armor)
   return u
 end
 -- Who wears what (Space Age): Serenity's Line troopers and railgunners the mech armour, the player's troopers the heavy
--- armour their recipe takes, Grubstake's Shotgun hands heavy armour too, in its colours.
+-- armour their recipe takes, Grubstake's Shotgun hands heavy armour too, in its colours. Roles told apart by vanilla's
+-- own armour sets (the unit pass, 2026-11-08: the user chose them, "Probably A", over a body of our own; each is drawn
+-- frame by frame over the engineer, so it follows the run): Grubstake's sapper none (a light runner with its charges),
+-- the player's breacher and flame trooper the power armour (bulky; told apart by their tints), the rocket trooper none.
+-- The mech armour stays Kessler-Hayashi's look.
 local infantry = make_infantry("lp-infantry", nil, "mech-armor")
 local trooper = make_infantry("lp-trooper", {r = 1, g = 0.82, b = 0.55, a = 1}, "heavy-armor")
 -- 8 a round (6 until the RTS pass, 2026-10-21: a bandwidth of troopers lost to every rifle squad of the corporations).
@@ -157,7 +161,7 @@ pellet.force_condition = "not-same"
 -- Breacher: the player's infantry with demolition charges. Bullets barely scratch walls (2.4 of 6 damage), so
 -- troopers alone died in front of walled lasers (siege). A charge bursts over 2.5 (enemies
 -- only), thrown 12 tiles: walls take 63 of 100 (a segment in 8 throws, several at once), a turret 100.
-local breacher = make_infantry("lp-breacher", {r = 0.75, g = 0.9, b = 0.45, a = 1}, "heavy-armor")
+local breacher = make_infantry("lp-breacher", {r = 0.75, g = 0.9, b = 0.45, a = 1}, "power-armor")
 -- Thrown from 12: from 8 they crossed 16 tiles of laser fire to reach a wall.
 breacher.attack_parameters.range = 12
 breacher.attack_parameters.cooldown = 180
@@ -179,7 +183,7 @@ breacher.attack_parameters.ammo_type.action.action_delivery.target_effects = {
 -- (beyond a tank's 15), the rocket launcher's own sound and round, flying to its target only (as the tanks' shells do);
 -- it hits fliers too. Slow to fire and weak against a crowd: a rifleman (120) takes two rockets, 5 seconds; a hull loses
 -- 70 or more to each. (At 100 every 2 s it beat light infantry as well as a trooper did; at 80 it lost to tanks.)
-local rocket_trooper = make_infantry("lp-rocket-trooper", {r = 0.95, g = 0.6, b = 0.4, a = 1}, "heavy-armor")
+local rocket_trooper = make_infantry("lp-rocket-trooper", {r = 0.95, g = 0.6, b = 0.4, a = 1})
 local rocket = table.deepcopy(data.raw.projectile["rocket"])
 rocket.name = "lp-trooper-rocket"
 rocket.direction_only = false
@@ -203,7 +207,7 @@ data:extend({rocket_trooper, rocket})
 -- swarm. The handheld flamethrower's stream, its splash (2.5, its enemies only) and the burning it leaves on what it hits
 -- (the fire sticker), but no burning ground: ground fire burns its own side as well, and the corporations' flamers had
 -- killed eight to eleven of their own a run that way. Range 15: rifles and lances outrange it; armour shrugs it off.
-local flame_trooper = make_infantry("lp-flame-trooper", {r = 0.95, g = 0.4, b = 0.18, a = 1}, "heavy-armor")
+local flame_trooper = make_infantry("lp-flame-trooper", {r = 0.95, g = 0.4, b = 0.18, a = 1}, "power-armor")
 local trooper_stream = table.deepcopy(data.raw.stream["handheld-flamethrower-fire-stream"])
 trooper_stream.name = "lp-trooper-fire-stream"
 -- Its own burn: 4 fire a second for 4 seconds (vanilla's fire sticker, 10 a second for 30, on every target of the
@@ -488,7 +492,7 @@ table.insert(shock.resistances, {type = "electric", percent = 50})
 -- Dynamite sapper (Grubstake's Scrap arms; the user chose it over a flamethrower buggy): a Shotgun hand's body that
 -- throws dynamite, 80 explosion over 3 tiles, enemies only (the breacher's charge), from 11 tiles every 3 seconds.
 -- Against a blob of troopers, and against the fence or wall in the way.
-local sapper = make_infantry("lp-sapper", nil, "heavy-armor")
+local sapper = make_infantry("lp-sapper", nil)
 sapper.max_health = shared.units["lp-sapper"].health
 sapper.movement_speed = 0.13
 sapper.attack_parameters.range = 11

@@ -5475,6 +5475,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (repeat_count repeats a whole layer: the wheels turn twice in its cycle, one turn every 2 tiles at 0.5 a frame, near a
   tyre's 1.6). +1.8 MB. `vehicle.rolling` gives the kit's vehicles the same: the hauler's six roll too (0.2.230, +2.8
   MB, its base without them).
+- **Infantry told apart by vanilla's armour sets** (0.2.231; the user chose them, "Probably A", over a soldier of our
+  own in Blender: each set is drawn frame by frame over the engineer and follows the run, an overlay of ours could not).
+  Grubstake's sapper wears none (a light runner; it and the Shotgun hand had been one look), the player's breacher and
+  flame trooper the power armour (told apart by their tints), the rocket trooper none, the trooper the heavy as before.
+  The mech armour stays Kessler-Hayashi's. No art, no size.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
