@@ -5491,6 +5491,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   On lp-tank and its plates; Grubstake's copy (its sprawl doctrine fields tanks) keeps the old look through its props,
   the player's battle tank vanilla's. 8.5 MB. The Prism and the Tesla heads next, after the genre's prism and tesla
   tanks ("take some inspiration from the prism tank in C&C RA2? To avoid having such similar designs").
+- **Kessler-Hayashi's Prism rendered, its lasers cyan** (0.2.233). The Prism after the genre's prism tank (the user:
+  "take some inspiration from the prism tank in C&C RA2? To avoid having such similar designs"; an emitter in a cannon
+  turret's mantlet read as the cannon tank again): no turret, a finned pylon on an armoured plinth carrying a cluster of
+  violet crystals (its beam's colour), kept to about a tile over the deck; on the tank's hull, its own layer (+1.6 MB).
+  The lasers (the user: "recolor every laser from KH from red (to blue? Or green?)"): a copy of the laser beam tinted
+  cyan-blue, Kessler-Hayashi's lights' colour (green read as Synthexis's), its damage kept, fired by every lp- prototype
+  that fired the red one (its laser turrets, Line troopers, Lances, laser drones, the Prism's main beam through its
+  ground copy) before corps.lua copies them; the player's lasers stay red, whose beam is whose at a glance. Open: the
+  laser turret's own charge glow (art), still red.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

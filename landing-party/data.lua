@@ -882,6 +882,37 @@ data:extend({power_tap, power_receiver})
 
 require("units")
 require("player")
+-- Kessler-Hayashi's lasers cyan-blue (the user, 2026-11-08: "recolor every laser from KH from red (to blue? Or green?)"):
+-- a copy of the laser beam, its graphics tinted to the faction's lights, its damage kept, fired by every lp- prototype
+-- that fired the red one (its laser turrets, Line troopers, Lances, laser drones), before corps.lua copies them. The
+-- player's own lasers stay red: whose beam is whose, at a glance. (The Prism's split stays violet.)
+do
+  local KH_LASER = {r = 0.35, g = 0.75, b = 1, a = 1}
+  local b = table.deepcopy(data.raw.beam["laser-beam"])
+  b.name = "lp-kh-laser-beam"
+  local seen = {}
+  local function paint(t)
+    if type(t) ~= "table" or seen[t] then return end
+    seen[t] = true
+    if t.filename or t.filenames then t.tint = KH_LASER end
+    for _, v in pairs(t) do paint(v) end
+  end
+  paint(b.graphics_set)
+  data:extend({b})
+  local function swap(t, seen2)
+    if type(t) ~= "table" or seen2[t] then return end
+    seen2[t] = true
+    if t.type == "beam" and t.beam == "laser-beam" then t.beam = b.name end
+    for _, v in pairs(t) do swap(v, seen2) end
+  end
+  for kind, protos in pairs(data.raw) do
+    if kind ~= "beam" then
+      for name, p in pairs(protos) do
+        if name:sub(1, 3) == "lp-" then swap(p, {}) end
+      end
+    end
+  end
+end
 require("corps")
 require("look")
 require("achievements")

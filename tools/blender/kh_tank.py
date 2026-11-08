@@ -306,25 +306,31 @@ def tesla():
     top = TZ + H
     # (Thin, they read as two smokestacks with white blobs, the first: fat conical coils, big dark toroids, a thin lit
     # ring under each, the glow low enough to stay cyan.)
+    COIL = 1.2                     # (a little small at game scale, the Prism's crystal's size: a fifth larger, the user's go)
     for sx in (-1, 1):
-        x, y = sx * 0.26, TY + 0.06
+        x, y = sx * 0.28, TY + 0.06
+        _b4 = set(V.scene.objects)
         cyl(0.16, 0.05, x, y, top, M["kgraph"], bevel=0.012)                                     # its foot
         for k in range(3):                                                                       # insulators
             cyl(0.11 if k % 2 else 0.09, 0.045, x, y, top + 0.05 + k * 0.045, M["kwhite"], bevel=0.012)
         bpy.ops.mesh.primitive_cone_add(vertices=48, radius1=0.13, radius2=0.07, depth=0.32, location=(x, y, top + 0.35))
         V.obj().data.materials.append(M["copper"])                                               # the winding's cone
-        for k in range(12):
-            z = top + 0.2 + k * 0.026; r = 0.13 - (z - top - 0.19) * 0.19
-            bpy.ops.mesh.primitive_torus_add(major_radius=r + 0.004, minor_radius=0.007, location=(x, y, z), major_segments=40, minor_segments=6)
-            V.obj().data.materials.append(M["kdark"])
+        # (Twelve dark rings hid the copper, the second: four bands, the windings showing between.)
+        for k in range(4):
+            z = top + 0.22 + k * 0.08; r = 0.13 - (z - top - 0.19) * 0.19
+            bpy.ops.mesh.primitive_torus_add(major_radius=r + 0.004, minor_radius=0.008, location=(x, y, z), major_segments=40, minor_segments=6)
+            V.obj().data.materials.append(M["kgraph"])
         bpy.ops.mesh.primitive_torus_add(major_radius=0.15, minor_radius=0.05, location=(x, y, top + 0.56), major_segments=48, minor_segments=16)
         V.obj().data.materials.append(M["kgraph"])
         bpy.ops.mesh.primitive_torus_add(major_radius=0.15, minor_radius=0.012, location=(x, y, top + 0.5), major_segments=48, minor_segments=8)
         V.obj().data.materials.append(M["kglow_soft"])
         cyl(0.05, 0.05, x, y, top + 0.55, M["steel"], bevel=0.008)
+        for o in set(V.scene.objects) - _b4:                                                     # the coil scaled at its foot
+            o.location = mathutils.Vector((x, y, top)) + (o.location - mathutils.Vector((x, y, top))) * COIL
+            o.scale = o.scale * COIL
     import lpkit
     for k in range(2):
-        lpkit.arc((-0.12, TY + 0.06, TZ + H + 0.58), (0.12, TY + 0.06, TZ + H + 0.58 + 0.02 * k), M["kglow_soft"], rnd, kinks=5, jitter=0.06, r=0.006)
+        lpkit.arc((-0.12, TY + 0.06, TZ + H + 0.69), (0.12, TY + 0.06, TZ + H + 0.69 + 0.02 * k), M["kglow_soft"], rnd, kinks=5, jitter=0.06, r=0.007)
     # Capacitor drums on the turret's back, cables to the coils' feet.
     for sx in (-1, 1):
         bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.09, depth=0.3, location=(sx * 0.22, TY - 0.48, TZ + 0.14), rotation=(0, math.pi / 2, 0))

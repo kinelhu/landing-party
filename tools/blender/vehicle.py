@@ -459,6 +459,7 @@ def kh_palette():
     M["kgraph"] = lpkit.worn("kgraph", (0.07, 0.075, 0.08), metal=0.45, rough=0.5, seams=4, rivets=False, wear=0.8)
     M["kwood"] = lpkit.mat("kwood", (0.3, 0.2, 0.11), rough=0.8, grime=0.5)
     # The Prism's crystal: dark violet glass, a lit core (its beam's colour in the game).
+    M["copper"] = lpkit.worn("copper_w", (0.55, 0.3, 0.14), metal=0.85, rough=0.35, seams=12, rivets=False, wear=0.4, streaks=0.3)
     M["kcrystal"] = lpkit.mat("kcrystal", (0.2, 0.08, 0.3), metal=0.1, rough=0.08, grime=0.0)
     M["kviolet"] = lpkit.mat("kviolet", (0.85, 0.45, 1.0), emit=(0.85, 0.45, 1.0), strength=5.0, grime=0.0)
     M["kglow_soft"] = lpkit.mat("kglow_soft", (0.3, 0.75, 1.0), emit=(0.3, 0.75, 1.0), strength=1.2, grime=0.0)

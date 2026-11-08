@@ -936,6 +936,11 @@ do
   c.props["lp-tank"] = {run_animation = table.deepcopy(tank.run_animation), attack_parameters = table.deepcopy(tank.attack_parameters)}
   layered(tank, "serenity/tank", {{"cannon", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {"cannon", {"body", "glow"}}})
   headlights(tank)
+  -- The Prism on the same hull: no turret, a finned pylon carrying violet crystals (after the genre's prism tank: the
+  -- user, "To avoid having such similar designs"). Grubstake's copy keeps its old look as the tank's does.
+  c.props["lp-prism"] = {run_animation = table.deepcopy(prism.run_animation), attack_parameters = table.deepcopy(prism.attack_parameters)}
+  layered(prism, "serenity/tank", {{"prism", {"shadow"}}, {"base", {"body", "glow"}}, {"anim", {"body"}}, {"prism", {"body", "glow"}}})
+  headlights(prism)
 end
 -- Kinds both corporations field get Grubstake's rendered look on Grubstake's copy alone, through its props in
 -- shared.CORPS (corps.lua applies them to the copy it makes, plates.lua copies that); Kessler-Hayashi's keeps the

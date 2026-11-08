@@ -37,6 +37,7 @@ return {
   ["serenity/tank/anim"] = {width = 201, height = 215, frames = 256, line_length = 8, shift = {0.0, -0.265625}},
   ["serenity/tank/base"] = {width = 193, height = 268, frames = 64, line_length = 8, shift = {0.0, -0.7890625}},
   ["serenity/tank/cannon"] = {width = 289, height = 271, frames = 64, line_length = 8, shift = {0.390625, -0.6875}},
+  ["serenity/tank/prism"] = {width = 257, height = 257, frames = 64, line_length = 8, shift = {0.578125, -0.578125}},
   ["serenity/tower"] = {width = 331, height = 367, frames = 32, line_length = 8, shift = {0.8671875, -1.03125}},
   ["serenity/uplink"] = {width = 589, height = 632, frames = 32, line_length = 8, shift = {0.7421875, -1.390625}},
   ["serenity/wave/d1"] = {width = 390, height = 469, frames = 24, line_length = 8, shift = {0.0, -0.041666666666666664}},
