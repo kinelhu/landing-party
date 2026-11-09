@@ -39,7 +39,8 @@ local CREW_BATCH = 40          -- jobs a crew takes at most (crew.take)
 local KEEP = 200               -- parts a compound's or the curtain's crews leave the camp (for rebuilds and sieges)
 local ECONOMY = {["lp-fabricator"] = true, ["lp-generator"] = true, ["lp-pylon"] = true, ["lp-drill"] = true}
 local function corp_crews(b) return shared.CORPS[b.corp].crews end
-local function body(b) return shared.variant(b.corp, corp_crews(b) == "drone" and "lp-harrier" or "lp-hauler") end
+-- (The drone its own prototype, lp-constructor: the scout drone passing through other fliers, units.lua.)
+local function body(b) return corp_crews(b) == "drone" and "lp-constructor" or shared.variant(b.corp, "lp-hauler") end
 
 local function yards(b)
   local out = {}

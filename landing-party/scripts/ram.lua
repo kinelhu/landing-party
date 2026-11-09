@@ -109,7 +109,8 @@ local function take(surface, force, at, dir, first, no_guns)
   end
   -- (It ended on an area attack 20 tiles past the gap: in a small compound that is the far wall, 1,456 of the buggies'
   -- fire on walls in scenario dev. Done, they stand where they are; a raid's own orders take them on.)
-  cmds[#cmds + 1] = {type = defines.command.wander, radius = 4, distraction = defines.distraction.by_damage}
+  -- (A wander ran out and, idle, a buggy shot the far wall, 350 in scenario dev: it holds, answering only fire.)
+  cmds[#cmds + 1] = {type = defines.command.stop, ticks_to_wait = 36000, distraction = defines.distraction.by_damage}
   return {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds}
 end
 
@@ -200,6 +201,20 @@ function ram.tick(tick)
         r.piece, r.wall = touching[1], {touching[1].position.x, touching[1].position.y}
         dx, dy = 0, 0
       end
+      -- (Its piece already down, another's blade on it: it goes on to its next strip. The second of two dozers side by
+      -- side drove at the gap its neighbour had made and never got there, once vehicles passed through each other.)
+      if r.piece and not r.piece.valid then dx, dy = 0, 0 end
+      -- Past the wall's line (in through another's gap, the second of two dozers wandered inside, driving at the outer
+      -- face of a piece it stood behind): it turns and rams its piece from where it is.
+      local p = r.piece
+      if p and p.valid and not r.turned and (u.position.x - r.wall[1]) * r.dir[1] + (u.position.y - r.wall[2]) * r.dir[2] > 0.5 then
+        local ex, ey = p.position.x - u.position.x, p.position.y - u.position.y
+        local len = math.max(0.01, math.sqrt(ex * ex + ey * ey))
+        r.dir, r.turned = {ex / len, ey / len}, true
+        u.commandable.set_command{type = defines.command.go_to_location, radius = 0.6, distraction = defines.distraction.none,
+          destination = {p.position.x - r.dir[1] * 1.6, p.position.y - r.dir[2] * 1.6}}
+        trace(k, r, "turned")
+      end
       if dx * dx + dy * dy <= CLOSE * CLOSE or not u.commandable.has_command then
         r.phase = "ram"
         trace(k, r, dx * dx + dy * dy <= CLOSE * CLOSE and "at the wall" or "stopped short")
@@ -243,7 +258,8 @@ function ram.tick(tick)
         local next_piece, pass
         local tx, ty = -r.dir[2], r.dir[1]
         for p = r.pass + 1, (r.widen or 0) do
-          local off = math.ceil(p / 2) * BLADE * (p % 2 == 1 and 1 or -1)
+          -- (A blade's width less a little: at the full width a piece on the strips' edge stood between them.)
+          local off = math.ceil(p / 2) * (BLADE - 0.7) * (p % 2 == 1 and 1 or -1)
           local at = {r.base[1] + tx * off, r.base[2] + ty * off}
           for _, e in ipairs(u.surface.find_entities_filtered{position = at, radius = 1.6, type = {"wall", "gate"}}) do
             if e.force ~= u.force and u.force.is_enemy(e.force) then next_piece, pass = e, p; break end

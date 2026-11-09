@@ -28,7 +28,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `command` | 596 | (leaf) | control |  | 60, 120 |  | cmd |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
-| `crew` | 483 | base, ops, standing | control |  | 30 |  | crew_owner |
+| `crew` | 484 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `dev` | 444 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, ram_trace, trace |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
@@ -46,8 +46,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `orbital` | 322 | achievements, threat | control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `jumper` | 315 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
+| `ram` | 303 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `intel` | 289 | know, threat | ops |  |  |  |  |
-| `ram` | 287 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `tactics` | 279 | know, rng | assault, control, farm, herd, herd_learn, ops, siege |  |  |  |  |
 | `phases` | 269 | faction | control |  | 360, 3600 |  | phases |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |

@@ -18,9 +18,25 @@ arena.LINES = {guns = "gun turrets (piercing rounds)", lasers = "laser turrets",
 arena.BITERS = {"small-biter", "medium-biter", "big-biter", "behemoth-biter", "small-spitter", "medium-spitter",
   "big-spitter", "behemoth-spitter"}
 
+-- Play mode (arena.play, set by control.lua): a surface of real ground (the user, 2026-11-09: "the arena (make it concrete
+-- and not editor blank space)"): Nauvis's own generation without ore, biters, cliffs or water, the pen paved in concrete
+-- inside a hazard border (arena.ground). The batch keeps its lab tiles: its numbers are set against them.
+local PAVE = {52, 32}             -- the pen's paving, half its width and height: the sides start 30 either side of it
 function arena.surface()
   local s = game.surfaces[arena.SURFACE]
-  if not s then
+  if not s and arena.play then
+    local mgs = game.surfaces.nauvis.map_gen_settings
+    mgs.seed = 4242
+    for name, c in pairs(mgs.autoplace_controls or {}) do
+      local proto = prototypes.autoplace_control[name]
+      if (proto and proto.category == "resource") or name == "enemy-base" or name == "water" then c.size = 0 end
+    end
+    mgs.cliff_settings = mgs.cliff_settings or {}
+    mgs.cliff_settings.richness = 0
+    s = game.create_surface(arena.SURFACE, mgs)
+    s.always_day = true
+    remote.call("landing-party", "debug_tune", {arena_surface = arena.SURFACE, biotech_off = true})
+  elseif not s then
     s = game.create_surface(arena.SURFACE, {width = 0, height = 0, peaceful_mode = false})
     s.generate_with_lab_tiles = true
     s.always_day = true
@@ -30,11 +46,30 @@ function arena.surface()
   return s
 end
 
--- Ground for a pen centred on c (lab tiles, generated now).
+-- Ground for a pen centred on c (lab tiles, generated now; in play mode real ground, the pen paved once and cleared of
+-- trees and rocks round it).
 function arena.ground(c, radius_chunks)
   local s = arena.surface()
   s.request_to_generate_chunks(c, radius_chunks or 3)
   s.force_generate_chunk_requests()
+  storage.paved = storage.paved or {}
+  local key = c[1] .. "," .. c[2]
+  if arena.play and not storage.paved[key] then
+    storage.paved[key] = true
+    for _, e in pairs(s.find_entities_filtered{area = {{c[1] - 90, c[2] - 90}, {c[1] + 90, c[2] + 90}}, type = {"tree", "simple-entity"}}) do
+      e.destroy()
+    end
+    local tiles = {}
+    for x = -PAVE[1], PAVE[1] - 1 do
+      for y = -PAVE[2], PAVE[2] - 1 do
+        local edge = x == -PAVE[1] or x == PAVE[1] - 1 or y == -PAVE[2] or y == PAVE[2] - 1
+        tiles[#tiles + 1] = {name = edge and "hazard-concrete-left" or "concrete", position = {c[1] + x, c[2] + y}}
+      end
+    end
+    s.set_tiles(tiles)
+    -- (Grass tufts stayed on the concrete: a tile change keeps the decoratives.)
+    s.destroy_decoratives{area = {{c[1] - PAVE[1], c[2] - PAVE[2]}, {c[1] + PAVE[1], c[2] + PAVE[2]}}}
+  end
   return s
 end
 

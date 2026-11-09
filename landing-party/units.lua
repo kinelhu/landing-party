@@ -61,10 +61,7 @@ local function base_unit(name)
   -- Struck, it sparks as the car does (the medium biter's hit, purple blood, had come with its body: the user, 2026-11-09,
   -- "everyone bleeds purple??").
   u.damaged_trigger_effect = table.deepcopy(data.raw.car.car.damaged_trigger_effect)
-  -- Every unit collides with the others: a unit's default mask passes through other units (not_colliding_with_itself),
-  -- and squads stood in heaps, dozers drove through each other (the user, 2026-11-09: "we should just enable self collision
-  -- for every unit, it looks like shit currently"). The fliers have their own layer (lp-air), colliding too.
-  u.collision_mask = {layers = {player = true, train = true, is_object = true}}
+
   u.absorptions_to_join_attack = nil
   u.healing_per_tick = 0
   -- Machines, not biters: no growls, no hisses.
@@ -100,6 +97,10 @@ local function make_infantry(name, color, armor)
   u.distance_per_frame = 0.13
   u.vision_distance = 30
   u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
+  -- Infantry collide with each other (a unit's default mask passes through other units: squads stood in heaps, the user,
+  -- 2026-11-09, "the infantry has no self collision ... they bunch up too much"). Every unit colliding broke 11 scenarios
+  -- (raids stuck in gaps, tanks in their blocks, herds: the full regression, 0.2.244); vehicles pass as before.
+  u.collision_mask = {layers = {player = true, train = true, is_object = true}}
   u.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
   -- Its run: the engineer's running, 8 directions round the compass as a unit reads them. Running with a gun has 18,
   -- the gun's direction against the legs', north to south by the east only (the engine plays them backwards for the
@@ -1058,6 +1059,16 @@ if SHEETS["serenity/drone-laser/base"] then
     attack_parameters = table.deepcopy(laser_drone.attack_parameters), corpse = laser_drone.corpse}
   layered(laser_drone, "serenity/drone-laser", {{"fans", {"shadow"}}, {"base", {"body", "glow"}}, {"fans", {"body"}}})
   laser_drone.corpse = wreck("lp-laser-drone-wreck", "serenity/drone-laser/wreck")
+end
+-- Kessler-Hayashi's constructor drone (crew.lua's drone body): the scout drone's airframe and look, passing through other
+-- fliers. A site's crew hover over it together, and colliding they jammed: 4 of 50 crews stuck in scenario cordon, once
+-- fliers collided (0.2.240). Combat fliers keep colliding.
+do
+  local c = table.deepcopy(harrier)
+  c.name = "lp-constructor"
+  c.collision_mask = {layers = {["lp-air"] = true}, not_colliding_with_itself = true}
+  c.localised_name = {"entity-name.lp-harrier"}
+  data:extend({c})
 end
 -- (It bursts on its target: its corpse stays the defender's small remnants.)
 grubstake_look(scavenger, "grubstake/scavenger", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}})

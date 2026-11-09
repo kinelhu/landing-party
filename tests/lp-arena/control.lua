@@ -6,6 +6,7 @@
 --   mode = "guitest": the panel driven through every pick, its text and a screenshot written (scripts/arena-gui.sh)
 local params = require("params")
 local arena = require("arena")
+arena.play = params.mode == "play" or params.mode == "guitest"
 local batch = require("batch")
 local gui = require("gui")
 local wall = require("nwwall")
