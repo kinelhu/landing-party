@@ -3,6 +3,8 @@ the unit has it now and as proposed, each fired at the unit's rate, as one video
 can). The game's recordings at the proposal's speed (pitch and pace together, as the Sound prototype's speed) and volume.
 
     uv run --with pillow scripts/sound_board.py [out.mp4]      (default media/sound/board.mp4)
+    uv run --with pillow scripts/sound_board.py --clips <dir>   each sound's two clips as mp3 and a manifest.json there
+                                                                (the feedback page, docs/sound/board.html)
 """
 import json, os, subprocess, sys, tempfile
 from PIL import Image, ImageDraw, ImageFont
@@ -35,19 +37,25 @@ def card(path, title, sub):
     im.save(path)
 
 
-def burst(out, files, speed, volume, every, shots):
-    """shots of the files in turn, every ticks apart, at speed and volume, to a wav (silence for "none")."""
+def burst(out, files, speed, volume, every, shots, layers=(), rounds=1, gap=0):
+    """shots of the files in turn, every ticks apart, at speed and volume, to a wav (silence for "none"). Each shot may be
+    rounds rounds gap ticks apart (a burst), and each round may lay more sounds over it: layers, a list of
+    {files, speed, volume, offset (ticks)}."""
     if files == ["none"]:
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "anullsrc=r=%d:cl=stereo" % RATE, "-t",
                         "%.2f" % max(1.5, shots * every / 60), out], check=True)
         return
-    args, parts = ["ffmpeg", "-loglevel", "error", "-y"], []
+    args, parts, n = ["ffmpeg", "-loglevel", "error", "-y"], [], 0
+    voices = [{"files": files, "speed": speed, "volume": volume, "offset": 0}] + list(layers)
     for i in range(shots):
-        args += ["-i", os.path.join(DATA, files[i % len(files)])]
-        delay = int(i * every / 60 * 1000)
-        parts.append("[%d:a]aresample=%d,asetrate=%d,aresample=%d,volume=%.2f,adelay=%d|%d[a%d]"
-                     % (i, RATE, int(RATE * speed), RATE, volume, delay, delay, i))
-    mix = ";".join(parts) + ";" + "".join("[a%d]" % i for i in range(shots)) + "amix=inputs=%d:normalize=0[o]" % shots
+        for r in range(rounds):
+            for v in voices:
+                args += ["-i", os.path.join(DATA, v["files"][(i * rounds + r) % len(v["files"])])]
+                delay = int((i * every + r * gap + v.get("offset", 0)) / 60 * 1000)
+                parts.append("[%d:a]aresample=%d,asetrate=%d,aresample=%d,volume=%.2f,adelay=%d|%d[a%d]"
+                             % (n, RATE, int(RATE * v["speed"]), RATE, v["volume"], delay, delay, n))
+                n += 1
+    mix = ";".join(parts) + ";" + "".join("[a%d]" % i for i in range(n)) + "amix=inputs=%d:normalize=0[o]" % n
     subprocess.run(args + ["-filter_complex", mix, "-map", "[o]", "-ac", "2", out], check=True)
 
 
@@ -57,7 +65,36 @@ def segment(out, image, wav, pad=0.6):
                     "-r", "30", out], check=True)
 
 
+def clips(d):
+    os.makedirs(d, exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix="lp-clips-")
+    man = []
+    for e in table():
+        now = [e["was"]] if e.get("was") else e["files"]
+        row = {k: e[k] for k in ("id", "label", "speed", "volume", "every")}
+        row["round"] = e.get("round", 1)
+        row["detail"] = e.get("detail", "")
+        row["decided"] = e.get("decided", "")
+        row["file"] = os.path.basename(e["files"][0]).rsplit("-", 1)[0].replace(".ogg", "")
+        row["now"] = "silent" if now == ["none"] else os.path.basename(now[0]).rsplit("-", 1)[0].replace(".ogg", "")
+        for tag, files, speed, vol in (("now", now, 1.0, 1.0), ("proposed", e["files"], e["speed"], e["volume"])):
+            wav = os.path.join(tmp, e["id"] + "-" + tag + ".wav")
+            if tag == "now":
+                we = e.get("was_every", e["every"])
+                burst(wav, files, speed, vol, we, max(e["shots"], int(e["shots"] * e["every"] / we)))
+            else:
+                burst(wav, files, speed, vol, e["every"], e["shots"], e.get("layers", []), e.get("rounds", 1), e.get("gap", 0))
+            mp3 = os.path.join(d, e["id"] + "-" + tag + ".mp3")
+            subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", wav, "-af", "apad=pad_dur=0.3", "-c:a", "libmp3lame",
+                            "-b:a", "96k", mp3], check=True)
+        man.append(row)
+    json.dump(man, open(os.path.join(d, "manifest.json"), "w"), indent=1)
+    print("clips: %s (%d sounds)" % (d, len(man)))
+
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "--clips":
+        return clips(sys.argv[2])
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "media", "sound", "board.mp4")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     tmp = tempfile.mkdtemp(prefix="lp-board-")
