@@ -4935,6 +4935,45 @@ scenarios.chartprobe = function()
   end)
 end
 
+-- Suppression (units.lua, suppressing; 2026-11-09): Grubstake's machine-gun buggies at the player's troopers and two of its
+-- tanks on open ground. Sampled every 10 ticks: troopers and tanks wearing the slow (lp-suppressed). Checks: troopers
+-- under fire are slowed; tanks never.
+scenarios.suppress = function()
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true,
+      herd_off = true})
+  end)
+  schedule(1800, function()
+    flatten(330, -40, 470, 40)
+    S.sp_troopers = block("lp-trooper", 380, 0, 12, 4, 2.2, "player")
+    S.sp_tanks = block("lp-tank", 372, 0, 2, 2, 6, "player")
+    S.sp_buggies = block("lp-grubstake-buggy", 420, 0, 4, 2, 4, "lp-grubstake")
+    order_area(S.sp_buggies, {380, 0}, 20)
+    S.sp = {troopers = 0, tanks = 0, samples = 0}
+  end)
+  for t = 1810, 1800 + 40 * 60, 10 do
+    schedule(t, function()
+      if not S.sp then return end
+      S.sp.samples = S.sp.samples + 1
+      local function slowed(list)
+        local n = 0
+        for _, u in ipairs(list) do
+          if u.valid then for _, st in ipairs(u.stickers or {}) do if st.name == "lp-suppressed" then n = n + 1; break end end end
+        end
+        return n
+      end
+      S.sp.troopers = S.sp.troopers + slowed(S.sp_troopers)
+      S.sp.tanks = S.sp.tanks + slowed(S.sp_tanks)
+    end)
+  end
+  schedule(1800 + 40 * 60 + 30, function()
+    info("suppress: " .. serpent.line(S.sp) .. string.format("; standing: troopers %d, tanks %d, buggies %d",
+      alive(S.sp_troopers), alive(S.sp_tanks), alive(S.sp_buggies)))
+    check("suppress: the buggies' machine guns slow the troopers", S.sp.troopers > 0, S.sp.troopers .. " trooper-samples slowed")
+    check("suppress: never a tank", S.sp.tanks == 0, S.sp.tanks .. " tank-samples slowed")
+  end)
+end
+
 local STUN = require("__landing-party__.shared").STUN
 scenarios.stun = function()
   local AT = 2400
@@ -5393,6 +5432,17 @@ scenarios.unitnode = function()
     check("unitnode: it bought the node", (r.nodes or {})[node] ~= nil, serpent.line(r.nodes))
     if c.made then check("unitnode: the depots build the new unit", built > 0, built .. " " .. c.made) end
   end)
+  -- (The Scorcher's fuel going up, 2026-11-09: one it built killed; the flames round its wreck a tick on.)
+  if node == "scorcher" then
+    schedule(END - 40, function()
+      local sc = surface().find_entities_filtered{force = force, name = c.made, limit = 1}[1]
+      if sc then S.sc_at = sc.position; sc.die("player") end
+    end)
+    schedule(END - 38, function()
+      local fires = S.sc_at and surface().count_entities_filtered{position = S.sc_at, radius = 5, type = "fire"} or 0
+      check("unitnode: a Scorcher killed leaves its fuel burning", fires > 0, S.sc_at and (fires .. " flames round its wreck") or "none built")
+    end)
+  end
 end
 
 -- Ability: the trees' abilities. LP_MIX=loot: Grubstake, with Salvage rights, raids an undefended assembler beside a chest

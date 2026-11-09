@@ -5729,6 +5729,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   chunks the army's units stand in, and one round each, charted for their force, but for those a radar shows; one call a
   chunk, not a unit. Checked headless by its calls (chartprobe: 40 round two units 600 tiles out, 0 with it switched
   off); its map in a game not yet seen.
+- **Two units set apart by how they fight and die** (2026-11-09; the user: "flamer units ... could explode a little more
+  forcefully on death and leave a pool of fire, to reflect the fuel tanks", and "OK on your proposals"). The Scorcher's
+  death a big explosion, 60 explosive within 4 tiles (its own escort too) and the flamethrower's ground fire at its wreck
+  and six more within 2.5: no script, its dying effects (unitnode scorcher: one killed leaves fire round its wreck, none
+  with the effect taken off). Suppression: the machine-gun buggy's and the Scorcher's rounds slow infantry to 45% for 40
+  ticks, one round in five; infantry alone, by a trigger target of its own (lp-soft, make_infantry), so hulls, biters and
+  the player's character shrug it off. A "direct" nested action takes no mask: the first run slowed the tanks too (8
+  samples), so a 0.3 circle at the hit, as air.lua does for fliers (scenario suppress: troopers slowed, tanks 0).
+  raid, occupy, defend, sneak, stun and dev pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

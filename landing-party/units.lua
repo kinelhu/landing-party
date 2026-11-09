@@ -48,6 +48,26 @@ local function gun(damage, range, cooldown, category)
   }
 end
 
+-- Suppression (2026-11-09, the user's "OK on your proposals"): a machine gun's rounds slow infantry caught under them, a
+-- round in SUPPRESS_CHANCE to SUPPRESS_SPEED for SUPPRESS_TICKS. Infantry alone (the lp-soft trigger target, make_infantry):
+-- a hull, a biter and the player's character shrug it off.
+local SUPPRESS_CHANCE, SUPPRESS_SPEED, SUPPRESS_TICKS = 0.2, 0.45, 40
+data:extend({{type = "trigger-target-type", name = "lp-soft"},
+  {type = "sticker", name = "lp-suppressed", flags = {"not-on-map"}, hidden = true, duration_in_ticks = SUPPRESS_TICKS,
+    target_movement_modifier = SUPPRESS_SPEED, vehicle_speed_modifier = 1}})
+local function suppressing(a)
+  local effects = a.ammo_type.action.action_delivery.target_effects
+  -- (A small circle at the hit, not "direct": a direct action takes no mask, and the tanks were slowed with the troopers,
+  -- scenario suppress; air.lua does the same for fliers.)
+  effects[#effects + 1] = {type = "nested-result", action = {type = "area", radius = 0.3, force = "not-same",
+    trigger_target_mask = {"lp-soft"}, action_delivery = {type = "instant", target_effects = {{type = "create-sticker", sticker = "lp-suppressed",
+      probability = SUPPRESS_CHANCE}}}}}
+  return a
+end
+local SOFT_MASK = table.deepcopy((data.raw["utility-constants"].default.default_trigger_target_mask_by_type or {}).unit
+  or {"common", "ground-unit"})
+table.insert(SOFT_MASK, "lp-soft")
+
 local function base_unit(name)
   local u = table.deepcopy(data.raw.unit["medium-biter"])
   u.name = name
@@ -97,6 +117,8 @@ local function make_infantry(name, color, armor)
   u.distance_per_frame = 0.13
   u.vision_distance = 30
   u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
+  -- Infantry: what a machine gun suppresses (lp-soft).
+  u.trigger_target_mask = table.deepcopy(SOFT_MASK)
   -- (Ground units pass through each other, vanilla's unit mask: tried colliding, 2026-11-09, at the user's ask, "the
   -- infantry has no self collision ... they bunch up too much". Every unit colliding failed 13 of 305 runs (raids stuck
   -- at gaps, tanks in their blocks, herds through the camps); infantry alone failed 5 more, as a unit without
@@ -445,7 +467,7 @@ buggy.vision_distance = 30
 buggy.collision_box = {{-0.7, -0.7}, {0.7, 0.7}}
 buggy.selection_box = {{-0.9, -1.1}, {0.9, 1.1}}
 buggy.run_animation = table.deepcopy(car.animation)
-local ba = gun(5, 13, 10)
+local ba = suppressing(gun(5, 13, 10))
 ba.animation = table.deepcopy(car.animation)
 buggy.attack_parameters = ba
 buggy.dying_explosion = "medium-explosion"
@@ -781,11 +803,27 @@ tesla.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "e
 local flamer_head = data.raw["fluid-turret"]["flamethrower-turret"].prepared_animation.north
 local scorcher = make_tank("lp-scorcher", nil, {{flamer_head, 0.95, 0, -0.2}})
 scorcher.max_health = shared.units["lp-scorcher"].health
-local sca = gun(6, 13, 10)
+local sca = suppressing(gun(6, 13, 10))
 sca.animation = table.deepcopy(scorcher.run_animation)
 scorcher.attack_parameters = sca
 scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type = "fire", percent = 100},
   {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
+-- Its fuel goes up when it dies (the user, 2026-11-09: "flamer units ... could explode a little more forcefully on death
+-- and leave a pool of fire, to reflect the fuel tanks"): a big explosion, BLAST explosive within BLAST_R (its own escort
+-- too), and burning fuel round its wreck: the flamethrower's own ground fire at its middle and FIRES more within FIRE_R.
+-- Kill it at range.
+do
+  local BLAST, BLAST_R, FIRES, FIRE_R = 60, 4, 6, 2.5
+  scorcher.dying_explosion = "big-explosion"
+  local effects = {{type = "create-fire", entity_name = "fire-flame", initial_ground_flame_count = 4}}
+  for _ = 1, FIRES do
+    effects[#effects + 1] = {type = "create-fire", entity_name = "fire-flame", initial_ground_flame_count = 2,
+      offset_deviation = {{-FIRE_R, -FIRE_R}, {FIRE_R, FIRE_R}}}
+  end
+  effects[#effects + 1] = {type = "nested-result", action = {type = "area", radius = BLAST_R,
+    action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = BLAST, type = "explosion"}}}}}}
+  scorcher.dying_trigger_effect = effects
+end
 data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 
 -- The lightning's stun (scripts/stun.lua): a glow over the unit while it lasts, Space Age's lightning strike's hit, its
