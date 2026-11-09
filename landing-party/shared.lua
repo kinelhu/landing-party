@@ -570,8 +570,12 @@ shared.cost = {
 shared.units = {
   -- Grubstake's are its Shotgun hands, at 8 (the RTS pass, 2026-10-21: at 10 a squad of them lost to every rifle squad,
   -- only its front rank in reach at 9; at 6, a trial of the first price pass, they beat nearly everything).
+  -- Costs tuned by the arena's counter matrix (equal spend, 2026-11-09, the user: "cost tuning was the whole point of the
+  -- arena"): the hulls had won 61 to 71% of their fights, the lance 30% (docs/arena.md). Aegis 95 to 120, Tesla 100 to
+  -- 125, Scorcher 70 to 90, dozer 100 to 120, Prism 100 to 115, tank 60 to 70, lance 16 to 12; then, the second
+  -- matrix, the tank and Tesla overshot to 42%, the lance to 69%: tank 65, Tesla 115, Scorcher 100, lance 14.
   ["lp-infantry"] = {health = 120, cost = 10, by = {grubstake = 8}},
-  ["lp-tank"] = {health = 900, cost = 60, ground_only = true},
+  ["lp-tank"] = {health = 900, cost = 65, ground_only = true},
   ["lp-walker"] = {health = 1600, cost = 100},
   -- The fliers (units.lua): Grubstake's scrap drone (id lp-harrier) and bomb drone (lp-scavenger), Kessler-Hayashi's
   -- laser drone.
@@ -580,20 +584,20 @@ shared.units = {
   ["lp-hauler"] = {health = 1500, cost = 30},
   ["lp-buggy"] = {health = 220, cost = 15},      -- Grubstake's raider and escort (docs/corporations.md)
   -- Tree units (scripts/rd.lua): bought into a corporation's mix.
-  ["lp-lance"] = {health = 110, cost = 16},
+  ["lp-lance"] = {health = 110, cost = 14},
   ["lp-slug"] = {health = 240, cost = 30},
   ["lp-shock"] = {health = 160, cost = 30, ground_only = true},
   ["lp-railgunner"] = {health = 140, cost = 22, ground_only = true},
   ["lp-sapper"] = {health = 120, cost = 30, ground_only = true},
-  ["lp-aegis"] = {health = 1100, cost = 95, ground_only = true},
-  ["lp-dozer"] = {health = 1800, cost = 100, ground_only = true},
+  ["lp-aegis"] = {health = 1100, cost = 120, ground_only = true},
+  ["lp-dozer"] = {health = 1800, cost = 120, ground_only = true},
   ["lp-scavenger"] = {health = 60, cost = 35},
   -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
-  ["lp-prism"] = {health = 700, cost = 100, ground_only = true},
-  ["lp-tesla"] = {health = 800, cost = 100, ground_only = true},
+  ["lp-prism"] = {health = 700, cost = 115, ground_only = true},
+  ["lp-tesla"] = {health = 800, cost = 115, ground_only = true},
   -- (700, not 1100, since 0.2.261: flaming any foe on a 6 s cooldown it beat Kessler-Hayashi's tanks by far in the
   -- arena; fragile for its fuel, the user: "why not just make it more fragile?". A first guess, tuned in the arena.)
-  ["lp-scorcher"] = {health = 700, cost = 70, ground_only = true},
+  ["lp-scorcher"] = {health = 700, cost = 100, ground_only = true},
   -- Anti-air, one per side (units.lua): hard on fliers, light on the ground.
   ["lp-skyguard"] = {health = 110, cost = 18},
   ["lp-flak-buggy"] = {health = 220, cost = 20},

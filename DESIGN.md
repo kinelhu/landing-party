@@ -5853,6 +5853,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and larger with a smoke trail. The Prism, the Tesla and the Aegis had armour of their own with no fire in it: the
   tank's fire (2 flat, 60%) added. The arena at 420 parts: Aegis against Scorchers every round both sides, five of five
   left in five of six; the tank 4 of 6 against them, the player's battle tank 3 of 3.
+- **Costs tuned by the counter matrix** (0.2.264; the user: "I love KH tank's for flavor but they seem quite powerful",
+  "every type of tank too", and "cost tuning was the whole point of the arena"). The matrix (scripts/arena.sh, every
+  kind against every other at 420 parts a side, three rounds each way; last run 31 October) on 0.2.263: Aegis 71%, Tesla
+  68% (55 on 31 Oct: the stun, its aim, its fire armour), dozer 65, Prism 64, Scorcher 64 (33: its flame's cooldown),
+  tank 61, lance 30. Two passes on cost alone (what equal spend measures; damage would change who counters whom): Aegis
+  95 to 120, Tesla 100 to 115, Scorcher 70 to 100, dozer 100 to 120, Prism 100 to 115, tank 60 to 65, lance 16 to 14
+  (the first pass had the tank and the Tesla at 125 and 70 overshoot to 42%, the lance at 12 to 69%). After: every hull
+  48 to 56%, the lance 53. Left for the user: the player's battle tank 84% (priced by command bandwidth), Kessler-
+  Hayashi's line trooper 13% at 10 parts, the specialists (railgunner, anti-air, bomb drone) low by design.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
