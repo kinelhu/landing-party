@@ -5862,6 +5862,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (the first pass had the tank and the Tesla at 125 and 70 overshoot to 42%, the lance at 12 to 69%). After: every hull
   48 to 56%, the lance 53. Left for the user: the player's battle tank 84% (priced by command bandwidth), Kessler-
   Hayashi's line trooper 13% at 10 parts, the specialists (railgunner, anti-air, bomb drone) low by design.
+- **The player's troops' effects** (0.2.265; the user: "I feel like we could do a FX pass on player troops", six
+  proposals taken, "Tank needs oomph too, like the aegis"). data-final-fixes.lua, by final name: every player infantry
+  kind leaves a body (the character's own dead picture, two poses, its mask in the kind's colour) and no explosion, where
+  it had died as a small vehicle into scrap; red blood when hit (the biters' small blood, tinted), not a car's sparks; the
+  trooper's rifle a tracer to its target (the cannon shell's streak, small and warm; no longer an instant hit); the
+  breacher lobs the game's grenade, its blast where it lands, the throw's sound (it was silent and instant: its action a
+  list once air.lua has passed over it); the flame trooper the flamethrower's sounds; the Skyguard a small fast missile
+  with a flak puff where it bursts and the rocket launcher's sound higher, its hit still instant (it drew the
+  railgunner's red tracer, silent); the battle tank's shell the Aegis's (three times the size, lit, smoke, a big
+  explosion where it lands). Kessler-Hayashi's and Grubstake's infantry untouched. 13 player-army scenarios pass; the
+  looks not yet seen on film. Its sounds, the breacher's, the flamer's, the Skyguard's, for the next sound sheet.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

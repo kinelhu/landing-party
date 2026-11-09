@@ -299,3 +299,167 @@ do
   end
   data:extend{{type = "mod-data", name = "lp-unit-hit", data = hits}}
 end
+
+-- The player's troops' effects (the user, 2026-11-09: "I feel like we could do a FX pass on player troops", the six
+-- proposals taken, and "Tank needs oomph too, like the aegis"). By final name, so the anti-air passes above have run.
+do
+  local util = require("collision-mask-util")
+  local COLOR = {["lp-trooper"] = {r = 1, g = 0.82, b = 0.55}, ["lp-breacher"] = {r = 0.75, g = 0.9, b = 0.45},
+    ["lp-rocket-trooper"] = {r = 0.95, g = 0.6, b = 0.4}, ["lp-flame-trooper"] = {r = 0.95, g = 0.4, b = 0.18},
+    ["lp-skyguard"] = {r = 0.85, g = 0.9, b = 1}, ["lp-technician"] = {r = 0.85, g = 1, b = 0.8}}
+  local function sound(files, speed, volume)
+    local v = {}
+    for _, f in ipairs(files) do v[#v + 1] = {filename = f, volume = volume} end
+    return {variations = v, speed = speed, category = "weapon"}
+  end
+  -- (A shot to its target only, never what stands between: the tank's shell's rule, units.lua.)
+  local function to_target(p)
+    p.collision_box, p.hit_collision_mask, p.force_condition = nil, {layers = {}}, "not-same"
+    p.direction_only, p.piercing_damage = false, 0
+    return p
+  end
+
+  -- Red blood, the biters' tinted, for the troopers when hit (they sparked as a vehicle does, since every unit lost the
+  -- biters' purple: units.lua base_unit).
+  local blood = table.deepcopy(data.raw.explosion["blood-explosion-small"])
+  blood.name = "lp-red-blood"
+  local function redden(t, seen)
+    if type(t) ~= "table" or seen[t] then return end
+    seen[t] = true
+    if t.filename or t.filenames then t.tint = {r = 0.75, g = 0.12, b = 0.1, a = 1} end
+    for _, v in pairs(t) do redden(v, seen) end
+  end
+  redden(blood, {})
+  data:extend({blood})
+
+  -- A body where a trooper falls (the character's own dead picture, its mask in the trooper's colour), not a small
+  -- vehicle's explosion and scrap. Two lying poses, the picture's two frames.
+  local dead = data.raw["character-corpse"]["character-corpse"].pictures
+  dead = dead and (dead[1] or dead)
+  for name, color in pairs(COLOR) do
+    for _, plate in ipairs({"", "-physical", "-fire", "-laser"}) do
+      local u = data.raw.unit[name .. plate]
+      if u and dead and dead.layers then
+        local poses = {}
+        for f = 0, 1 do
+          local layers = {}
+          for _, l in ipairs(dead.layers) do
+            local c = table.deepcopy(l)
+            c.frame_count, c.direction_count, c.x = nil, 1, f * c.width
+            c.usage, c.apply_runtime_tint = nil, nil
+            if c.filename:find("mask", 1, true) then c.tint = {r = color.r, g = color.g, b = color.b, a = 1} end
+            layers[#layers + 1] = c
+          end
+          poses[#poses + 1] = {layers = layers}
+        end
+        local body = table.deepcopy(data.raw.corpse["small-remnants"])
+        body.name, body.animation = name .. "-body", poses
+        body.localised_name = {"entity-name." .. name}
+        if not data.raw.corpse[body.name] then data:extend({body}) end
+        u.corpse = body.name
+        u.dying_explosion = nil
+        u.damaged_trigger_effect = {type = "create-entity", entity_name = "lp-red-blood", offset_deviation = {{-0.3, -0.3}, {0.3, 0.3}},
+          offsets = {{0, -0.6}}, damage_type_filters = "fire"}
+      end
+    end
+  end
+
+  -- The trooper's rifle: a tracer to its target, not an instant hit.
+  local tracer = to_target(table.deepcopy(data.raw.projectile["cannon-projectile"]))
+  tracer.name = "lp-trooper-tracer"
+  tracer.animation = {filename = "__base__/graphics/entity/bullet/bullet.png", draw_as_glow = true, width = 3, height = 50,
+    priority = "high", scale = 0.7, tint = {r = 1, g = 0.9, b = 0.55, a = 1}}
+  tracer.final_action, tracer.smoke = nil, nil
+  data:extend({tracer})
+  for _, plate in ipairs({"", "-physical", "-fire", "-laser"}) do
+    local u = data.raw.unit["lp-trooper" .. plate]
+    local d = u and u.attack_parameters.ammo_type.action.action_delivery
+    if d and d.type == "instant" then
+      local p = table.deepcopy(tracer)
+      p.name = "lp-trooper-shot" .. plate
+      p.action = {type = "direct", action_delivery = {type = "instant", target_effects = table.deepcopy(d.target_effects)}}
+      data:extend({p})
+      u.attack_parameters.ammo_type.action.action_delivery = {type = "projectile", projectile = p.name, starting_speed = 1.6,
+        max_range = 20, source_effects = d.source_effects}
+    end
+  end
+
+  -- The breacher throws its grenade (the game's grenade, lobbed), its blast where it lands; the throw's sound.
+  for _, plate in ipairs({"", "-physical", "-fire", "-laser"}) do
+    local u = data.raw.unit["lp-breacher" .. plate]
+    -- (Its action a list once air.lua has passed over it: the first is the throw.)
+    local act = u and u.attack_parameters.ammo_type.action
+    local first = act and (act[1] or act)
+    local d = first and first.action_delivery
+    if d and d.type == "instant" then
+      local g = table.deepcopy(data.raw.projectile.grenade)
+      g.name = "lp-breacher-grenade" .. plate
+      g.action = {type = "direct", action_delivery = {type = "instant", target_effects = table.deepcopy(d.target_effects)}}
+      g.final_action = nil
+      data:extend({g})
+      first.action_delivery = {type = "projectile", projectile = g.name, starting_speed = 0.35}
+      local t = {}
+      for k = 1, 5 do t[#t + 1] = "__base__/sound/fight/throw-grenade-" .. k .. ".ogg" end
+      u.attack_parameters.sound = sound(t, 1, 0.6)
+    end
+  end
+
+  -- The flame trooper sounds as the flamethrower does.
+  local ft = data.raw.gun.flamethrower and data.raw.gun.flamethrower.attack_parameters
+  for _, plate in ipairs({"", "-physical", "-fire", "-laser"}) do
+    local u = data.raw.unit["lp-flame-trooper" .. plate]
+    if u and ft then
+      u.attack_parameters.cyclic_sound = table.deepcopy(ft.cyclic_sound)
+      u.attack_parameters.sound = table.deepcopy(ft.sound)
+    end
+  end
+
+  -- The Skyguard's shot a small fast missile and a flak puff where it bursts (its hit stays the instant one): not the
+  -- railgunner's red tracer; the rocket launcher's sound, higher.
+  local missile = to_target(table.deepcopy(data.raw.projectile.rocket))
+  missile.name = "lp-skyguard-missile"
+  local function shrink(t, seen)
+    if type(t) ~= "table" or seen[t] then return end
+    seen[t] = true
+    if t.filename or t.filenames then t.scale = (t.scale or 1) * 0.6 end
+    for _, v in pairs(t) do shrink(v, seen) end
+  end
+  shrink(missile.animation, {}); shrink(missile.shadow, {})
+  missile.acceleration = 0.02
+  missile.action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "create-entity", entity_name = data.raw.explosion["lp-flak-puff"] and "lp-flak-puff" or "explosion"}}}}
+  missile.final_action = nil
+  data:extend({missile})
+  local rl = data.raw.gun["rocket-launcher"] and data.raw.gun["rocket-launcher"].attack_parameters.sound
+  for _, plate in ipairs({"", "-physical", "-fire", "-laser"}) do
+    local u = data.raw.unit["lp-skyguard" .. plate]
+    local acts = u and u.attack_parameters.ammo_type.action
+    if acts and acts[1] and acts[1].action_delivery and acts[1].action_delivery.type == "beam" then
+      acts[1] = {type = "direct", action_delivery = {type = "projectile", projectile = missile.name, starting_speed = 0.6,
+        source_effects = {{type = "create-explosion", entity_name = "explosion-gunshot-small"}}}}
+      if rl then
+        local s = table.deepcopy(rl)
+        s.speed = 1.4
+        u.attack_parameters.sound = s
+      end
+    end
+  end
+
+  -- The battle tank's shell, the Aegis's: twice the size, warm, lit, a smoke trail, a big explosion where it lands.
+  for name, p in pairs(data.raw.projectile) do
+    if name:find("^lp%-battle%-tank%-heavy%-shell") then
+      p.animation = {filename = "__base__/graphics/entity/bullet/bullet.png", draw_as_glow = true, width = 3, height = 50,
+        priority = "high", scale = 3, tint = {r = 1, g = 0.8, b = 0.45, a = 1}}
+      p.light = {intensity = 0.6, size = 5, color = {r = 1, g = 0.7, b = 0.35}}
+      p.smoke = {{name = "smoke-fast", deviation = {0.15, 0.15}, frequency = 1, position = {0, 0}, starting_frame = 3,
+        starting_frame_deviation = 5}}
+      local function bigger(t, seen)
+        if type(t) ~= "table" or seen[t] then return end
+        seen[t] = true
+        if t.type == "create-entity" and t.entity_name == "explosion" then t.entity_name = "big-explosion" end
+        for _, v in pairs(t) do bigger(v, seen) end
+      end
+      bigger(p.action, {})
+    end
+  end
+end
