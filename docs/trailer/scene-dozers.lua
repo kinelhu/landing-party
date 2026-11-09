@@ -7,8 +7,9 @@ local T = 11160
 return {name = "scene-dozers", resolution = {1920, 1080}, anti_alias = true, speed = 1, fast_until = T - 60, fight = true,
   dev = {{tick = T + 30, args = {"dozers", "2"}, at = {80, 0}}},
   moves = {
-    -- (From the call, the first take spent 15 s on the labs inside while the dozers drove 45 tiles in: from their
-    -- approach to the wall, through the breach and the buggies' rush.)
-    {name = "sc1-dozers", tick = 11900, frames = 1620, every = 1, track = true,
-      from = {pos = "fight", zoom = 1.3, daytime = 0.3}, to = {zoom = 1.5, daytime = 0.3}},
+    -- (From the call, the first take spent 15 s on the labs inside while the dozers drove 45 tiles in. Then with the
+    -- charge, 0.2.270, at 24 tiles a second it outran the camera that tracked the fight, and the shot began after it: a
+    -- fixed framing on the wall and the two lanes, from the dozers' approach.)
+    {name = "sc1-dozers", tick = 11500, frames = 900, every = 1,
+      from = {pos = {76, 1}, zoom = 1.15, daytime = 0.3}, to = {pos = {74, 1}, zoom = 1.25, daytime = 0.3}},
   }}
