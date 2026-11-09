@@ -1,16 +1,17 @@
 -- The Scorcher's flame (units.lua; the user, 2026-10-21: "fire is quite OP in this game, probably they would have limited
--- flame autonomy ... and use their machine gun most of the time"): its own weapon is a machine gun; this gives it BURSTS
--- bursts of the flamethrower's stream, spent only on what fire is for (a wall, a turret or a gate within REACH, or PACK of
--- the player's units or characters within PACK_RADIUS), one every GAP, and refilled one every REFILL. Grubstake's pact:
+-- flame autonomy ... and use their machine gun most of the time"): its own weapon is a machine gun; this gives it a burst
+-- of the flamethrower's stream every COOLDOWN, spent only on what fire is for (a wall, a turret or a gate within REACH, or
+-- PACK of a foe's units or characters within PACK_RADIUS). Grubstake's pact:
 -- never within NEST_CLEAR of a biter nest while its pact holds. And the Tesla's drain: what its lightning strikes that
 -- holds a charge loses DRAIN of it, and an electric turret it strikes stops for the game's tesla stun (scorcher.hold).
 local shared = require("__landing-party__.shared")
 
 local scorcher = {}
 
-local BURSTS = 3
-local REFILL = 20 * 60
-local GAP = 2 * 60
+-- A cooldown, not a store (the user, 2026-11-09: "3 flame bursts is a little sad also... why not make it a cooldown
+-- ability?"): a burst whenever it has a target and COOLDOWN has passed since the last. Three in store refilled one every
+-- 20 s had flamed once in 20 s once spent; this is three times that, still a machine gun most of the time.
+local COOLDOWN = 6 * 60
 local REACH = 15                   -- past its machine gun's 13: it shoots from there
 local PACK, PACK_RADIUS = 3, 9
 local NEST_CLEAR = 30
@@ -23,7 +24,7 @@ local function state(u)
   storage.scorch = storage.scorch or {}
   local s = storage.scorch[u.unit_number]
   if not s then
-    s = {fuel = BURSTS, next = 0, refill = game.tick + REFILL}
+    s = {next = 0}
     storage.scorch[u.unit_number] = s
   end
   return s
@@ -39,9 +40,10 @@ local function target(u)
     end
   end
   if best then return best end
-  -- A pack: the player's units or characters close together.
+  -- A pack: any foe's units or characters close together, not the player's alone (the user, 2026-11-09, in the arena:
+  -- "Our flame tanks also don't fire any flames": against Kessler-Hayashi's tanks it had only its machine gun).
   for _, e in pairs(s.find_entities_filtered{position = p, radius = REACH, type = {"unit", "character"}}) do
-    if e.valid and e.force ~= f and shared.is_player_force(e.force) then
+    if e.valid and e.force ~= f and e.force.name ~= "neutral" and not f.get_cease_fire(e.force) then
       local n = s.count_entities_filtered{position = e.position, radius = PACK_RADIUS, force = e.force, type = {"unit", "character"}}
       if n >= PACK then return e.position end
     end
@@ -65,8 +67,7 @@ function scorcher.tick(tick)
       local s = game.surfaces[name]
       for _, u in pairs(s and s.find_entities_filtered{name = shared.variants("lp-scorcher")} or {}) do
         local st = state(u)
-        if st.fuel < BURSTS and tick >= st.refill then st.fuel, st.refill = st.fuel + 1, tick + REFILL end
-        if st.fuel > 0 and tick >= st.next then
+        if tick >= st.next then
           local holds = false
           for corp, c in pairs(shared.CORPS) do
             if c.force == u.force.name and storage.pact_state and storage.pact_state[corp] then holds = true end
@@ -76,8 +77,7 @@ function scorcher.tick(tick)
           local at = not pact and target(u)
           if at then
             s.create_entity{name = "flamethrower-fire-stream", position = u.position, source = u, target = at, force = u.force}
-            st.fuel, st.next = st.fuel - 1, tick + GAP
-            if st.fuel == BURSTS - 1 then st.refill = tick + REFILL end
+            st.next = tick + COOLDOWN
             storage.scorch_bursts = (storage.scorch_bursts or 0) + 1
           end
         end

@@ -272,11 +272,11 @@ shared.FALL = {TICKS = 40, crash = "lp-crash", kinds = {
   -- target (its attack kills it) it does not fall (fall.skip).
   ["lp-scavenger-wreck"] = {sheet = "grubstake/scavenger", rotor = "rotor", sprite = "lp-fall-scavenger", crash = "lp-scavenger-bomb"},
 }}
--- Hulls collide (data-final-fixes.lua; the user, 2026-11-09: "having 2 columns of huge tanks just standing on each other
--- looks terrible"): a unit of ours wider than HULL_WIDTH, not a flier, on its own mask: buildings, walls, trees and cliffs
--- (meltable), water (water_tile), and each other (lp-hull), never infantry or biters (squads squeeze past, herds go
--- through), and an open gate (it drops water_tile). The player's character and cars carry lp-hull, so they meet a hull.
-shared.HULL = {WIDTH = 0.6, layer = "lp-hull", BOX = 0.65}
+-- Hulls kept apart (scripts/separate.lua; the user, 2026-11-09: "having 2 columns of huge tanks just standing on each
+-- other looks terrible"): a unit of ours wider than WIDTH either side, not a flier, nudged off another closer than GAP
+-- times their widths, at most STEP a look, every EVERY ticks, onto free ground only. Colliding outright (a layer of our
+-- own, 0.2.258) they wedged in crowds: a unit plans no way round another (blockexit, four of five in one block).
+shared.HULL = {WIDTH = 0.6, GAP = 0.9, STEP = 0.2, EVERY = 20}
 -- The lightning's stun on units (scripts/stun.lua; the user, 2026-11-09: "a stun effect with Tesla weapons ... also
 -- affecting units? Would have to not be 100% to be fair"): each electric hit charges its target by one, less its electric
 -- resistance; the charge halves every HALF ticks; a hit stuns with chance (charge - 1) / SPAN, at most MAX; stunned for

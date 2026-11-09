@@ -5805,6 +5805,24 @@ Bugs and surprises the headless runs caught, each kept as a check:
   after the laser, an order naming a target dead since was refused ("value for required field 'target' is missing").
   Its order given back only if the game takes it, else the laser alone; the drain's bar 50 (aimed at lasers, its bolts
   chain less through the accumulators: seed 777 93).
+- **Hulls kept apart, not colliding** (0.2.259; the user, offered hard collision or kept apart: "Soft separation").
+  0.2.258's layer of our own jammed in crowds whatever the box (blockexit four of five in one block at 0.49, the dozer's
+  buggies, the crews; a unit plans no way round another), and the game exposes no lever for it (UnitAISettings has
+  do_separation, on or off, already on). So hulls take the game's unit mask again (buildings, water, the character; not
+  other units), the layer gone, and scripts/separate.lua nudges two hulls apart, at most 0.2 a look every 20 ticks onto
+  ground where they could stand, to 0.9 of their half widths summed: standing ones always, moving ones only nearer than
+  0.6 (nudged on its way a unit lost its path, and the dozers' buggies never got through their breach), none ram.lua
+  steers. Its first version found hulls with find_units over a box a million tiles either side: the game walked it at
+  every look, its memory grew until macOS killed it, and the batch that ran it took the user's Mac down. Now by name,
+  every 10 s, over the map's chunks alone. Its effect is not shown headless: sent to one spot, stacked idle, stacked and
+  firing, stacked and marching, tanks spread by themselves without it (2.6, 3.9, 7.2, 3.5 apart); the user's stacked
+  groups came from the arena's units set down where another stood (find_non_colliding_position takes no account of
+  units). The user's look in the arena decides. blockexit, crew, dev, hulls and 24 fight scenarios pass.
+- **The Scorcher's flame, a cooldown and any foe** (0.2.259; the user, in the arena: "Our flame tanks also don't fire
+  any flames", then "3 flame bursts is a little sad also... why not make it a cooldown ability?"). Its packs were the
+  player's alone, so against Kessler-Hayashi's tanks it had only its gun: any foe's now (not at cease-fire; its pact
+  near nests holds). And a burst whenever it has a target and 6 s have passed, not three in store refilled one each
+  20 s. suppress: 4 bursts on Kessler-Hayashi's pack; heavies: 11 on the wall line in a minute (its cap 7 to 11).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

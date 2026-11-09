@@ -79,6 +79,7 @@ areas_of_file() {
       m="${1##*/}"; m="${m%.lua}"
       case "$m" in
         herd|farm|creep|cell|pods|costmap|valuemap|biters|scorcher|stun|fall|burstfx) echo biotech;;
+        separate) echo all;;
         command|aim|bait|marker|studies) echo player;;
         layout|site|planner|blocks|wfc|wfc_serenity|construction|modules|names|phases|roads|lots_grubstake|map|chart) echo growth;;
         answers|assault|cuts|jammer|perimeter|pool|siege|stance|strip|strategy|war|crew|cordon|prospect|skim|prowl|dome|orbital|tap|jumper|ledger|\

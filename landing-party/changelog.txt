@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.258
+Version: 0.2.259
 Date: 2026-11-09
   Features:
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
@@ -9,8 +9,8 @@ Date: 2026-11-09
     - Each faction researches, fields its own units and answers what you do to it; the rivals fight each other and the biters too.
     - Player army: barracks, a command tool, rally beacons and a muster point.
     - Your army charts the map round it as it goes, so far operations are not blind.
-    - Grubstake's Scorcher goes up when it dies, leaving its fuel burning; machine-gun fire slows infantry caught under it.
+    - Grubstake's Scorcher flames any packed foe every few seconds and goes up when it dies, leaving its fuel burning; machine-gun fire slows infantry caught under it.
     - Fliers shot down tumble out and crash nearby, hurting what they land on; a tank's ammunition cooks off in its burning wreck.
-    - Tanks and other vehicles collide with each other and with buildings, never with infantry; each faction's guns sound their own.
+    - Tanks and other vehicles keep apart instead of standing on each other; each faction's guns sound their own.
     - Lightning stuns: repeated tesla hits build a charge that can stun a unit for a moment, yours and theirs alike; tanks resist it.
     - Settings: a difficulty preset, and under it each faction on or off, when it arrives, its most bases, its strength, aggression and income; the time between landings; revenge landings; Kessler-Hayashi's orbital strikes, Grubstake's theft, Synthexis's most cultures, largest attack and learning.

@@ -4740,7 +4740,7 @@ local NODE_CASES = {
 }
 -- Heavies (the design sheet's picks, the user, 2026-10-21): each against what it is for, far from the camps.
 --   A Scorcher (Grubstake's) before a player wall with gun turrets behind it: it spends flame bursts, and not more than
---   its three plus what refilled.
+--   one each 6 s cooldown.
 --   A Tesla (Serenity's) at a line of powered laser turrets: its lightning drains them.
 --   A Prism (Serenity's) at a pack of eight troopers held still: its beam splits, more than one trooper hurt by a shot.
 scenarios.heavies = function()
@@ -4790,8 +4790,9 @@ scenarios.heavies = function()
       sc and sc.valid and serpent.line({sc.position.x, sc.position.y}) or "-", sc and sc.valid and sc.health or "-",
       tostring(S.prism and S.prism.valid), serpent.line((function() local o = {} for _, u in ipairs(S.pack or {}) do
         table.insert(o, u.valid and math.floor(u.health) or "dead") end return o end)())))
-    -- Three, and one more each 20 s it refilled in the minute (and one at its edge).
-    check("heavies: the scorcher spent flame on the wall line", st.bursts >= 1 and st.bursts <= 7, tostring(st.bursts))
+    -- One each 6 s cooldown in the minute, and one at its edge (since 0.2.259; three in store, refilled one each 20 s,
+    -- had allowed 7).
+    check("heavies: the scorcher spent flame on the wall line", st.bursts >= 1 and st.bursts <= 11, tostring(st.bursts))
     check("heavies: the tesla drained the lasers", st.drains >= 1, tostring(st.drains))
     check("heavies: the prism's beam split (more than one trooper hurt by its first shot)", (S.first_hurt or 0) >= 2,
       tostring(S.first_hurt))
@@ -4950,6 +4951,13 @@ scenarios.suppress = function()
     S.sp_buggies = block("lp-grubstake-buggy", 420, 0, 4, 2, 4, "lp-grubstake")
     order_area(S.sp_buggies, {380, 0}, 20)
     S.sp = {troopers = 0, tanks = 0, samples = 0}
+    -- And a Scorcher at a pack of Kessler-Hayashi's troopers (its flame was for the player's packs alone: the user, in the
+    -- arena, "Our flame tanks also don't fire any flames").
+    S.sp_bursts0 = lp("scorcher_stats").bursts
+    S.sp_kh = block("lp-infantry", 400, 30, 6, 3, 1.5, FORCE)
+    local sc = surface().create_entity{name = "lp-grubstake-scorcher", position = {412, 30}, force = "lp-grubstake"}
+    if sc then sc.commandable.set_command{type = defines.command.attack_area, destination = {400, 30}, radius = 15,
+      distraction = defines.distraction.by_enemy} end
   end)
   for t = 1810, 1800 + 40 * 60, 10 do
     schedule(t, function()
@@ -4971,6 +4979,8 @@ scenarios.suppress = function()
       alive(S.sp_troopers), alive(S.sp_tanks), alive(S.sp_buggies)))
     check("suppress: the buggies' machine guns slow the troopers", S.sp.troopers > 0, S.sp.troopers .. " trooper-samples slowed")
     check("suppress: never a tank", S.sp.tanks == 0, S.sp.tanks .. " tank-samples slowed")
+    local bursts = lp("scorcher_stats").bursts - S.sp_bursts0
+    check("suppress: the Scorcher flames Kessler-Hayashi's pack", bursts > 0, bursts .. " bursts")
   end)
 end
 
@@ -5049,10 +5059,11 @@ scenarios.shotdown = function()
   end)
 end
 
--- Hulls collide (data-final-fixes.lua, shared.HULL; 2026-11-09): six of Kessler-Hayashi's tanks sent onto one spot on open
+-- Hulls kept apart (scripts/separate.lua, shared.HULL; 2026-11-09): six of Kessler-Hayashi's tanks sent onto one spot on open
 -- ground, and a squad of its infantry through them; then three tanks out of a walled pen by its open gate. Checks: the
 -- tanks end apart (none closer than a hull's width); the infantry walked through them; the tanks left by the gate.
 local HULL = require("__landing-party__.shared").HULL
+local DEEP_MIN = 0.6   -- separate.lua's DEEP: on the move, pulled apart only when nearer
 scenarios.hulls = function()
   schedule(60, function()
     lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true, herd_off = true})
@@ -5063,6 +5074,19 @@ scenarios.hulls = function()
     for _, t in ipairs(S.hl_tanks) do
       t.commandable.set_command{type = defines.command.go_to_location, destination = {380, -30}, radius = 1,
         distraction = defines.distraction.none}
+    end
+    -- And four set down on one point, then marching off together (the user's arena: its units set down where another
+    -- stood, find_non_colliding_position taking no account of units, and sent on one order; sent to one spot, idle on one
+    -- point, or firing from one, the engine's own spreading had them apart without separate.lua, so none of those proved
+    -- anything). Read on the march, 6 s out.
+    S.hl_stack = {}
+    for _ = 1, 4 do
+      local t = surface().create_entity{name = "lp-tank", position = {350, 30}, force = FORCE}
+      if t then
+        t.commandable.set_command{type = defines.command.go_to_location, destination = {350, -40}, radius = 2,
+          distraction = defines.distraction.none}
+        S.hl_stack[#S.hl_stack + 1] = t
+      end
     end
     S.hl_inf = block("lp-infantry", 360, -30, 8, 4, 1.5, FORCE)
     for _, u in ipairs(S.hl_inf) do
@@ -5088,6 +5112,15 @@ scenarios.hulls = function()
   schedule(1860, function()
     for _, g in ipairs(S.hl_gates) do if g.valid then g.request_to_open(FORCE, 3600) end end
   end)
+  schedule(1800 + 360, function()
+    local gap = 99
+    for i, a in ipairs(S.hl_stack) do for j, b in ipairs(S.hl_stack) do
+      if i < j and a.valid and b.valid then
+        gap = math.min(gap, math.sqrt((a.position.x - b.position.x) ^ 2 + (a.position.y - b.position.y) ^ 2))
+      end
+    end end
+    S.hl_stack_gap = gap
+  end)
   -- (Ordered once the gate stands open: a unit plans its path when ordered, and a shut gate is wall to it.)
   schedule(1980, function()
     S.hl_open = 0
@@ -5104,6 +5137,7 @@ scenarios.hulls = function()
         close = math.min(close, math.sqrt((a.position.x - b.position.x) ^ 2 + (a.position.y - b.position.y) ^ 2))
       end
     end end
+    local stack = S.hl_stack_gap or 99
     local through = 0
     for _, u in ipairs(S.hl_inf) do if u.valid and u.position.x > 420 then through = through + 1 end end
     local out = 0
@@ -5114,9 +5148,11 @@ scenarios.hulls = function()
       if t.valid then info(string.format("hulls: a pen tank at %.1f,%.1f, its command %s", t.position.x, t.position.y,
         tostring(t.commandable.command and t.commandable.command.type))) end
     end
-    -- (Their boxes, shared.HULL.BOX either side, smaller than their pictures: apart means a box's width.)
-    local box = 2 * HULL.BOX
-    check("hulls: tanks sent to one spot end apart", close >= box - 0.05, string.format("closest %.2f (a box %.2f)", close, box))
+    -- (Kept apart by separate.lua: a tank's half width 1, apart means HULL.GAP times two, less a nudge's step.)
+    local want = 2 * HULL.GAP - HULL.STEP
+    check("hulls: tanks sent to one spot end apart", close >= want, string.format("closest %.2f (want %.2f; %s)", close, want,
+      serpent.line(lp("separate_stats"))))
+    check("hulls: tanks set down on one point march apart", stack >= DEEP_MIN, string.format("closest %.2f on the march, 6 s out (want %.2f)", stack, DEEP_MIN))
     check("hulls: infantry walks through them", through >= #S.hl_inf - 1, through .. " of " .. #S.hl_inf)
     check("hulls: tanks leave a pen by its open gate", out == #S.hl_pen, out .. " of " .. #S.hl_pen)
   end)
