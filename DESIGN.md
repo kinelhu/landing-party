@@ -5900,9 +5900,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   at a crawl up to 15 ticks, its foes' units 150; its own side's buildings, cliffs and water stop it. It goes 18 tiles past
   the wall's line, then its buggies go in by its lane and it takes what stands inside, as before. A widening pass still
   grinds. Scenario dev: 2 charges, both through, 15 pieces down (a gun turret stopped the first 3 tiles in until a
-  survivor slowed it instead of ending it). Raids use the same order (ops.lua's breach): no scenario yet sends dozers at a
-  wall by a raid, so that path is assumed, not tested. Its balance at a real wall (a lane of 3 by 18 razed, lasers in it
-  included) not yet weighed.
+  survivor slowed it instead of ending it). By a raid (ops.lua's breach), scenario mended LP_MIX=dozers: a provoked
+  Grubstake raid of 15 with two dozers in it at a walled assembler with two gun turrets inside, robots mending: 2 charges,
+  both through, 14 things crushed (8 grinding, the charge off: the check then fails), the assembler razed, 15 of 15 back;
+  both turrets killed by its buggies, neither by a charge, with or without it. Its balance at a laser line (a lane of 3 by 18
+  razed, lasers in it included) not yet weighed.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

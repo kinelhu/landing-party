@@ -15125,8 +15125,13 @@ end
 -- at the user's poles from camps of 30 to 50).
 -- LP_MIX=serenity: a provoked Serenity's raid instead (it does not sneak): straight at the wall, through it, the
 -- assembler razed (its raids on walled substations walked the wall's length and gave up 360 tiles off, visit nw).
+-- LP_MIX=dozers (the Killdozer's charge, 0.2.270, the user: "Yes you can build it"): a provoked Grubstake raid with two
+-- dozers and four buggies put in its garrison, at the same wall with two gun turrets with ammunition inside it on the
+-- camp's side: a dozer charges through by the raid's own order (ops.lua's breach, not /lp dozers), and what its charges
+-- crushed is logged (its balance at a defended wall, to weigh).
 scenarios.mended = function()
-  local provoked = params.mix == "provoked"
+  local dozers = params.mix == "dozers"
+  local provoked = params.mix == "provoked" or dozers
   local serenity = params.mix == "serenity"
   schedule(60, function()
     lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = (provoked or serenity) or nil})
@@ -15161,6 +15166,16 @@ scenarios.mended = function()
     port.insert{name = "construction-robot", count = 20}
     local store = surface().create_entity{name = "storage-chest", position = {c[1] - 3.5, c[2] + 3.5}, force = "player"}
     store.insert{name = "stone-wall", count = 200}
+    if dozers then
+      lp("debug_units", S.id, "lp-dozer", 2)
+      lp("debug_units", S.id, "lp-buggy", 4)
+      for _, k in ipairs({-4, 4}) do
+        local t = surface().create_entity{name = "gun-turret", position = {c[1] + ux * 8 - uy * k, c[2] + uy * 8 + ux * k}, force = "player"}
+        t.insert{name = "firearm-magazine", count = 100}
+      end
+      S.ram0 = lp("ram_stats")
+      S.turrets0 = 2
+    end
     S.garrison0 = lp("stats", S.id).garrison
     S.standing0 = lp("standing", "grubstake")
     lp("dev", {"raid", tostring(S.id)}, c)
@@ -15183,7 +15198,17 @@ scenarios.mended = function()
       serpent.line(first)))
     info("mended: Grubstake's standing at the raid " .. tostring(S.standing0))
     info("mended: provoked at " .. serpent.line((lp("corp", "grubstake") or {}).provoked))
-    if provoked then
+    if dozers then
+      local r = lp("ram_stats")
+      local turrets = surface().count_entities_filtered{name = "gun-turret", position = S.c, radius = 14, force = "player"}
+      info(string.format("mended dozers: %d charges, %d through the wall's line, %d crushed; turrets %d of %d left; target %s; first raid %s",
+        r.charges - S.ram0.charges, r.breaches - S.ram0.breaches, r.crushed - S.ram0.crushed, turrets, S.turrets0,
+        S.target.valid and "standing" or "razed", serpent.line(first)))
+      info("mended dozers: killed by a dozer " .. serpent.line(S.dozer_kills or {}))
+      check("mended: dozers: a dozer in the raid charged through the wall", r.charges > S.ram0.charges
+        and r.breaches > S.ram0.breaches, string.format("%d charges, %d through", r.charges - S.ram0.charges, r.breaches - S.ram0.breaches))
+      check("mended: dozers: it razed the assembler", not S.target.valid, serpent.line(first))
+    elseif provoked then
       -- A quarter of its garrison at least (the bug: raids of 4 from camps of 31 to 54). Until 0.2.27, 10 or more: a town
       -- camp has almost no walls, loses more to the attack here, and raided with 9 of 36 (a walled camp: 12 of 42).
       check("mended: a provoked Grubstake raids with a quarter of its garrison or more",
@@ -16852,6 +16877,11 @@ end) end
 
 script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
+  -- (mended dozers: what a dozer killed, by name; its charge's toll at a defended wall.)
+  if S.ram0 and S.turrets0 and e.cause and e.cause.valid and e.cause.name == "lp-grubstake-dozer" then
+    S.dozer_kills = S.dozer_kills or {}
+    S.dozer_kills[e.entity.name] = (S.dozer_kills[e.entity.name] or 0) + 1
+  end
   if S.raiders and e.entity.name == "lp-trooper" then
     local c = e.cause and e.cause.valid and e.cause
     info(string.format("fortress: a raider died %.1f s after it landed, by %s", (game.tick - S.raided_at) / 60, c and c.name or "no cause"))
