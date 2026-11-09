@@ -4255,7 +4255,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
     on moving up. (Read with its way's worms, a worm by its camp cut its way at its start: its hold 537 from its site.)
   - On its way they answer what hits them (its way never under the guns now: undistracted, biters killed 10 of 16); its
     last leg and its hold, undistracted. At its hold, the clearance's guard duty: its foes' units within DROP_GUARD (20)
-    shot, then back (in bombard only: in the assault its leash recalled the assault, which razed nothing, siegetier 3).
+    shot, then back (in its deploy and bombard: in the assault its leash recalled the assault, which razed nothing,
+    siegetier 3; in bombard alone till 0.2.268, its guards stood shot at while its guns went up).
   - Its lead at its hold a minute with the rest held up: it drops with those there (it had called off 3 tiles short).
   - Its escort in its mix's shares, walkers too; its assault reinforced from home by its composition (army.composition,
     its counter tilt: tanks against turrets). No railgunners on a siege of a player's (their nest clearing is the
@@ -5878,6 +5879,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   100 to what it hits and 240 to buildings within 1.5, every 180 ticks (50 and 120 every 90): its damage a second the
   same, each shot the heavy one its new shell looks. The arena: it beat Kessler-Hayashi's tank, the Aegis and the
   Scorcher 3 of 3 each (it stood at 84% overall, priced by command bandwidth: open).
+- **A drop siege's guards stood shot at while it deployed** (0.2.268; the user, on trailer cut 22 at 0:28: "a buggy starts
+  firing on the waiting infantry which is frozen and does not respond while the mortars land"). At its hold they are
+  held undistracted, then stopped, so they do not walk into a wall's lasers; guard duty, which answers its foes' units
+  within DROP_GUARD and leashes them back, ran in its bombard alone, and through the deploy they fired only at what
+  stood in their own reach. Guard duty now runs in the deploy too (siege.lua `guard_duty`). Check: fortress sets three
+  of the player's troopers down 10 tiles beyond a gun going up; all three dead in 8 s (2.4 to 2.8 s; 23 s before).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

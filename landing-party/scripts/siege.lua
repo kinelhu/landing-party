@@ -678,7 +678,10 @@ local function launch_siege(b, key, site, trace, army, tier_override, clearance,
   end
   b.op = {kind = "siege", target = key, phase = "march", members = guards, launched = #guards, hauler = hauler, drop = drop or nil,
     site = site, started = game.tick, phase_at = game.tick, shells_fired = 0, tier = tier,
-    convoys_left = spec.convoys or 0}
+    convoys_left = spec.convoys or 0,
+    -- Whose (oplog reads it once its target is gone from intel: razed before the siege ended, its entry named no owner,
+    -- and standsiege nests counted none of its 17 guards back, 0.2.268).
+    owner = t and t.owner or nil}
   -- (Its piece, a howitzer where its mortars are outranged or broke nothing there twice: siege_plan.)
   if piece and not clearance then b.op.piece, b.op.reach = piece, piece == "lp-howitzer" and HOWITZER_REACH or MORTAR_REACH end
   b.op.clearance = clearance
@@ -1223,6 +1226,54 @@ local function gun_spot(b, op, spec, k)
   return {op.site[1] + math.cos(a) * off, op.site[2] + math.sin(a) * off}
 end
 
+-- Guard duty round a siege's hold or a clearance's site (siege_step): its foes' units within the ring are answered, the
+-- guards leashed back to it. Run in a drop siege's bombard, and in its deploy too (the user, 2026-11-09, on the trailer:
+-- "a buggy starts firing on the waiting infantry which is frozen and does not respond while the mortars land": held at
+-- its hold, undistracted, they let a buggy shoot them).
+local function guard_duty(b, op)
+  local s = game.surfaces[b.surface]
+  -- (Round its jump-off once its guards moved up behind its strike: leashed to its hold, they were pulled back.)
+  local c = op.drop and not op.clearance and (op.jump and {x = op.jump[1], y = op.jump[2]} or hold_spot(b, op))
+    or {x = op.site[1], y = op.site[2]}
+  -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
+  local guard_r = op.drop and not op.clearance and DROP_GUARD or CLEAR_GUARD
+  -- A leash: a guard more than LEASH beyond its ring walks back to the site, undistracted. Told to hold the ring,
+  -- guards still followed what they fought out of it, and behemoth worms killed eight of ten 15 to 36 tiles from the
+  -- site (scenario clear, worms, 2026-10-25).
+  for _, u in ipairs(op.members) do
+    if u.valid and (u.position.x - c.x) ^ 2 + (u.position.y - c.y) ^ 2 > (guard_r + LEASH) ^ 2 then
+      u.commandable.set_command{type = defines.command.go_to_location, destination = c,
+        radius = 6, distraction = defines.distraction.none}
+    end
+  end
+  local foes = op.clearance and s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
+    or s.find_entities_filtered{position = c, radius = guard_r, type = {"unit", "character", "car", "spider-vehicle"},
+      force = enemies(game.forces[b.force])}
+  -- (Back in line when the ground is quiet, every LINE_AGAIN at most: guard duty brought them back to its centre, and
+  -- the line its hold had formed was a clump again, standsiege nests.)
+  if #foes == 0 and op.drop and not op.clearance and game.tick - (op.lined_at or 0) >= LINE_AGAIN then
+    op.lined_at = game.tick
+    local tg = b.intel.targets[op.target]
+    form_line(op.members, c, tg and tg.pos and {x = tg.pos[1], y = tg.pos[2]} or {x = op.site[1], y = op.site[2]})
+  end
+  if #foes > 0 and not op.clearance then
+    order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+      commands = {{type = defines.command.attack_area, destination = c, radius = guard_r,
+        distraction = defines.distraction.none},
+        {type = defines.command.go_to_location, destination = c, radius = 6, distraction = defines.distraction.none},
+        {type = defines.command.stop, distraction = defines.distraction.none}}})
+  elseif #foes > 0 then
+    -- Within the ring only, undistracted: chasing biters, they followed them into the worms (scenario clear: railgunners
+    -- killed by behemoth worms 26 to 31 tiles out).
+    order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+      commands = {{type = defines.command.attack_area, destination = op.site, radius = guard_r,
+        distraction = defines.distraction.none},
+        {type = defines.command.go_to_location, destination = op.site, radius = 6, distraction = defines.distraction.none},
+        -- A lasting order at the end: idle, a unit attacks whatever it sees, and guards walked into the worms.
+        {type = defines.command.wander, radius = 5, distraction = defines.distraction.by_damage}}})
+  end
+end
+
 local function siege_step(b, trace, army)
   local op = b.op
   local n = alive(op)
@@ -1397,6 +1448,7 @@ local function siege_step(b, trace, army)
       trace(b, string.format("siege: deploying at %.0f,%.0f", op.site[1], op.site[2]))
     end
   elseif op.phase == "deploy" then
+    if op.drop and not op.clearance then guard_duty(b, op) end
     local share = (game.tick - op.phase_at) / DEPLOY_TICKS
     if op.label and op.label.valid then op.label.text = {"lp.siege-deploying-percent", string.format("%d", math.min(100, share * 100))} end
     -- A drop siege's guns assembled where their pods came down (the user, 2026-11-04: between the drops and the guns "a
@@ -1566,49 +1618,7 @@ local function siege_step(b, trace, army)
     -- A drop siege's too, round its hold (the clearance's rule; the user, 2026-11-03, on its guards: dying to the wall's
     -- lasers while its mortars set up), at what comes for it: its foes' units, biters or the player's.
     -- (Not in its assault: its leash called its assault back to its hold every look, and it razed nothing, siegetier 3.)
-    if op.clearance or (op.drop and op.phase == "bombard") then
-      local s = game.surfaces[b.surface]
-      -- (Round its jump-off once its guards moved up behind its strike: leashed to its hold, they were pulled back.)
-      local c = op.drop and not op.clearance and (op.jump and {x = op.jump[1], y = op.jump[2]} or hold_spot(b, op))
-        or {x = op.site[1], y = op.site[2]}
-      -- Tighter at a howitzer's site: 24 out from it, guards stood in behemoth worms' reach (82 of 111 lost to acid).
-      local guard_r = op.drop and not op.clearance and DROP_GUARD or CLEAR_GUARD
-      -- A leash: a guard more than LEASH beyond its ring walks back to the site, undistracted. Told to hold the ring,
-      -- guards still followed what they fought out of it, and behemoth worms killed eight of ten 15 to 36 tiles from the
-      -- site (scenario clear, worms, 2026-10-25).
-      for _, u in ipairs(op.members) do
-        if u.valid and (u.position.x - c.x) ^ 2 + (u.position.y - c.y) ^ 2 > (guard_r + LEASH) ^ 2 then
-          u.commandable.set_command{type = defines.command.go_to_location, destination = c,
-            radius = 6, distraction = defines.distraction.none}
-        end
-      end
-      local foes = op.clearance and s.find_entities_filtered{position = op.site, radius = guard_r, type = "unit", force = shared.NEST_FORCES}
-        or s.find_entities_filtered{position = c, radius = guard_r, type = {"unit", "character", "car", "spider-vehicle"},
-          force = enemies(game.forces[b.force])}
-      -- (Back in line when the ground is quiet, every LINE_AGAIN at most: guard duty brought them back to its centre, and
-      -- the line its hold had formed was a clump again, standsiege nests.)
-      if #foes == 0 and op.drop and not op.clearance and game.tick - (op.lined_at or 0) >= LINE_AGAIN then
-        op.lined_at = game.tick
-        local tg = b.intel.targets[op.target]
-        form_line(op.members, c, tg and tg.pos and {x = tg.pos[1], y = tg.pos[2]} or {x = op.site[1], y = op.site[2]})
-      end
-      if #foes > 0 and not op.clearance then
-        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-          commands = {{type = defines.command.attack_area, destination = c, radius = guard_r,
-            distraction = defines.distraction.none},
-            {type = defines.command.go_to_location, destination = c, radius = 6, distraction = defines.distraction.none},
-            {type = defines.command.stop, distraction = defines.distraction.none}}})
-      elseif #foes > 0 then
-        -- Within the ring only, undistracted: chasing biters, they followed them into the worms (scenario clear: railgunners
-        -- killed by behemoth worms 26 to 31 tiles out).
-        order_all(op.members, {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-          commands = {{type = defines.command.attack_area, destination = op.site, radius = guard_r,
-            distraction = defines.distraction.none},
-            {type = defines.command.go_to_location, destination = op.site, radius = 6, distraction = defines.distraction.none},
-            -- A lasting order at the end: idle, a unit attacks whatever it sees, and guards walked into the worms.
-            {type = defines.command.wander, radius = 5, distraction = defines.distraction.by_damage}}})
-      end
-    end
+    if op.clearance or (op.drop and op.phase == "bombard") then guard_duty(b, op) end
     local live = {}
     for _, m in ipairs(op.mortars or {op.mortar}) do if m.valid then table.insert(live, m) end end
     op.mortars, op.mortar = live, live[1]

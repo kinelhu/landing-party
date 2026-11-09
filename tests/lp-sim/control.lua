@@ -11562,6 +11562,26 @@ scenarios.fortress = function()
       -- Its guns standing while it deploys (assembled where their pods came down; before 0.2.197 nothing stood there for
       -- 20 s of its 30, the user: "Looks weird").
       if st0.ops.siege_phase == "deploy" and mortars > 0 then S.assembling = (S.assembling or 0) + 1 end
+      -- Its guards answer what shoots them while it deploys (the user, 2026-11-09, cut 22 at 0:28: "a buggy starts firing
+      -- on the waiting infantry which is frozen and does not respond while the mortars land"; guard duty ran in its
+      -- bombard alone). Three of the player's troopers set down beside a gun going up, its far side from the fortress.
+      if st0.ops.siege_phase == "deploy" and mortars > 0 and not S.raiders and not closed then
+        local m = surface().find_entities_filtered{name = "lp-mortar", force = "lp-serenity", limit = 1}[1]
+        local dx, dy = m.position.x - S.c[1], m.position.y - S.c[2]
+        local d = math.max(1, math.sqrt(dx * dx + dy * dy))
+        S.raiders, S.raided_at = {}, game.tick
+        for k = 1, 3 do
+          local at = surface().find_non_colliding_position("lp-trooper", {m.position.x + dx / d * 10 + k, m.position.y + dy / d * 10}, 6, 0.5)
+          S.raiders[k] = at and surface().create_entity{name = "lp-trooper", position = at, force = "player"}
+        end
+        schedule(game.tick + 8 * 60, function()
+          local left = 0
+          for _, u in pairs(S.raiders) do if u and u.valid then left = left + 1 end end
+          S.raiders_left = left
+          check("fortress: its guards answer troopers shooting them while it deploys (all three dead in 8 s; 23 s before 0.2.268)", left == 0,
+            left .. " of 3 alive")
+        end)
+      end
       -- Settled: the siege is over (its log entry written).
       if S.why and #(st0.ops.log or {}) > 0 and not st0.ops.op then finish_early() end
       if mortars > 0 then
@@ -16823,6 +16843,10 @@ end) end
 
 script.on_event(defines.events.on_entity_died, function(e)
   if LAB.died then LAB.died(e) end
+  if S.raiders and e.entity.name == "lp-trooper" then
+    local c = e.cause and e.cause.valid and e.cause
+    info(string.format("fortress: a raider died %.1f s after it landed, by %s", (game.tick - S.raided_at) / 60, c and c.name or "no cause"))
+  end
   -- Hazard: each of its nests' deaths, by what (spawners are in the filter below since 2026-11-06).
   if params.scenario == "hazard" and e.entity.type == "unit-spawner" then
     S.nest_deaths = (S.nest_deaths or 0) + 1
