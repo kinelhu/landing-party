@@ -5663,6 +5663,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   teslawall grid, the Teslas holding the lasers 1.1% of their time at the line (27.7% at 0.2.237 and 0.2.240, 18.7% at
   0.2.243, 0% at 0.2.245 by direct runs of its worktrees; not the constructor drones, not the fliers). Scenario trailer
   (not in the list): Synthexis's wave poured in through its gap and 184 of 197 walked back out before withdrawing.
+- **Cut 17 still showed the old Kessler-Hayashi units** (2026-11-09; the user: "I still see shots with old KH tanks and
+  red KH lasers"). Only the four new scenes had been filmed on the redrawn art; a frame from every shot of the cut found
+  four more filmed before it (reel-khwall, reel-warfinale, stage-c1-drop, stage-k2-strike). Cut 18 films them again on
+  0.2.246: reel-khwall's beats held to the tick from its save, the finale from its rebuilt fork, the drop at 44800 as
+  before (`docs/trailer/stage-kh.lua`). stage-k2-strike could not be: in the trailer fork the armed camp's siege on the
+  player's wall no longer comes (rehearsed to tick 71300, nothing after its first siege packs at 53800 but the herd's
+  wave; it came at 65800 on 0.2.206), so its two slots take reel-khwall's later moves (the battery moved up under the
+  lasers, the wall's roboports shelled). Open: why that siege stopped coming. The old clips are kept as `*-1105.mp4`.
+  Check a frame of every shot against the current art before calling a cut current.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
