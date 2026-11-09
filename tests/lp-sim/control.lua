@@ -5624,15 +5624,20 @@ scenarios.unitnode = function()
     check("unitnode: it bought the node", (r.nodes or {})[node] ~= nil, serpent.line(r.nodes))
     if c.made then check("unitnode: the depots build the new unit", built > 0, built .. " " .. c.made) end
   end)
-  -- (The Scorcher's fuel going up, 2026-11-09: one it built killed; the flames round its wreck a tick on.)
+  -- (The Scorcher's fuel going up, 2026-11-09: one it built killed; the flames round its wreck a tick on, and still
+  -- burning 10 s on: its fuel fire lives 20 s, the user: "could be more dramatic".)
   if node == "scorcher" then
-    schedule(END - 40, function()
+    schedule(END - 700, function()
       local sc = surface().find_entities_filtered{force = force, name = c.made, limit = 1}[1]
       if sc then S.sc_at = sc.position; sc.die("player") end
     end)
-    schedule(END - 38, function()
-      local fires = S.sc_at and surface().count_entities_filtered{position = S.sc_at, radius = 5, type = "fire"} or 0
-      check("unitnode: a Scorcher killed leaves its fuel burning", fires > 0, S.sc_at and (fires .. " flames round its wreck") or "none built")
+    schedule(END - 698, function()
+      S.sc_fires = S.sc_at and surface().count_entities_filtered{position = S.sc_at, radius = 6, name = "lp-fuel-fire"} or 0
+    end)
+    schedule(END - 100, function()
+      local later = S.sc_at and surface().count_entities_filtered{position = S.sc_at, radius = 8, name = "lp-fuel-fire"} or 0
+      check("unitnode: a Scorcher killed leaves its fuel burning, 10 s on still", (S.sc_fires or 0) > 0 and later > 0,
+        S.sc_at and string.format("%d fires round its wreck, %d 10 s on", S.sc_fires, later) or "none built")
     end)
   end
 end

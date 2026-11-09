@@ -5823,6 +5823,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   player's alone, so against Kessler-Hayashi's tanks it had only its gun: any foe's now (not at cease-fire; its pact
   near nests holds). And a burst whenever it has a target and 6 s have passed, not three in store refilled one each
   20 s. suppress: 4 bursts on Kessler-Hayashi's pack; heavies: 11 on the wall line in a minute (its cap 7 to 11).
+- **The Scorcher's fuel, more dramatic** (0.2.260; the user: "the flame pool from scorcher explosions could be more
+  dramatic"). The game's massive explosion for its death; its fuel a fire of its own (lp-fuel-fire: 20 s, spreading a
+  little, its scorch fading 30 s after), eight flames at the wreck and twelve fires out to 4 tiles (was the ground
+  fire's few seconds, six within 2.5). unitnode scorcher: fire round the wreck at once and 10 s on.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

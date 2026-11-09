@@ -861,15 +861,24 @@ scorcher.attack_parameters = sca
 scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type = "fire", percent = 100},
   {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 -- Its fuel goes up when it dies (the user, 2026-11-09: "flamer units ... could explode a little more forcefully on death
--- and leave a pool of fire, to reflect the fuel tanks"): a big explosion, BLAST explosive within BLAST_R (its own escort
--- too), and burning fuel round its wreck: the flamethrower's own ground fire at its middle and FIRES more within FIRE_R.
--- Kill it at range.
+-- and leave a pool of fire, to reflect the fuel tanks"; then "the flame pool from scorcher explosions could be more
+-- dramatic"): the game's massive explosion, BLAST explosive within BLAST_R (its own escort too), and its fuel burning
+-- round its wreck, a fire of its own (lp-fuel-fire: FUEL_TICKS, spreading a little) at its middle and FIRES more out to
+-- FIRE_R. (The first: a big explosion, the ground fire's few seconds, six within 2.5.) Kill it at range.
 do
-  local BLAST, BLAST_R, FIRES, FIRE_R = 60, 4, 6, 2.5
-  scorcher.dying_explosion = "big-explosion"
-  local effects = {{type = "create-fire", entity_name = "fire-flame", initial_ground_flame_count = 4}}
+  local BLAST, BLAST_R, FIRES, FIRE_R, FUEL_TICKS = 60, 4, 12, 4, 20 * 60
+  local f = table.deepcopy(data.raw.fire["fire-flame"])
+  f.name = "lp-fuel-fire"
+  f.initial_lifetime, f.maximum_lifetime = FUEL_TICKS, FUEL_TICKS + 300
+  f.maximum_spread_count = 8
+  f.burnt_patch_lifetime = FUEL_TICKS + 1800
+  f.emissions_per_second = nil
+  f.hidden = true
+  data:extend({f})
+  scorcher.dying_explosion = "massive-explosion"
+  local effects = {{type = "create-fire", entity_name = "lp-fuel-fire", initial_ground_flame_count = 8}}
   for _ = 1, FIRES do
-    effects[#effects + 1] = {type = "create-fire", entity_name = "fire-flame", initial_ground_flame_count = 2,
+    effects[#effects + 1] = {type = "create-fire", entity_name = "lp-fuel-fire", initial_ground_flame_count = 3,
       offset_deviation = {{-FIRE_R, -FIRE_R}, {FIRE_R, FIRE_R}}}
   end
   effects[#effects + 1] = {type = "nested-result", action = {type = "area", radius = BLAST_R,
