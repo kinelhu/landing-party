@@ -5780,6 +5780,31 @@ Bugs and surprises the headless runs caught, each kept as a check:
   0.2.253, 0.2.254 and 0.2.255: tipped by 0.2.256's cook-off, whose parts roll a chance at every hull's death and shift
   the map's random numbers, but the overlap it shows is a fault of its own. Open. hazard norails: fails on 12345 and
   4242 (on 4242 no hazard seen at all, no railgunners made), passes on 777, and on 12345 up to 0.2.255. Open.
+- **Hulls collide** (2026-11-09; the user, in the arena: "having 2 columns of huge tanks just standing on each other
+  looks terrible"; infantry passing through each other tolerated). data-final-fixes.lua, shared.HULL: a unit of ours wider
+  than 0.6, not a flier, collides on a layer of our own, lp-hull, alone; that layer goes on everything whose mask has
+  player (every building, wall, closed gate, tree, cliff, nest, the character, cars), units and spider legs aside, and on
+  the tiles with player (water, lava, out of map). So a hull meets buildings, water and other hulls, never infantry or
+  biters, and drives over belts and rails and through an open gate (no player in its opened mask). Tried first: meltable
+  and water_tile (on every building and tree, on no unit; an open gate's water_tile dropped): belts carry meltable, and
+  tanks stuck behind them (blockexit 39 of 41 out). At their full 2 tiles hulls jammed at block exits and breaches
+  (defend, dev's buggies, gates shut failed: a unit plans no way round another); their boxes now 0.65 either side,
+  smaller than their pictures, packed close rather than stacked; the dozer keeps its width (its ram). Scenario hulls:
+  six tanks sent to one spot end 1.88 apart, eight infantry walk through them, three tanks leave a walled pen by its
+  open gate. 25 vehicle scenarios: 22 pass. Open: blockexit (two tanks of 41 held at a south gate), crew (one of eight
+  crews stuck: its body Grubstake's hauler, a hull), dev (13 wall pieces for 7 strips, the check two a strip).
+- **Weapon sounds, chosen by the user** (2026-11-09, three rounds on a sheet that plays each "as now" and "proposed"
+  and keeps a verdict and a note per sound: docs/sound/board_page, scripts/sound_board.py). landing-party/sounds.lua
+  names each sound's units; data-final-fixes gives them, plated variants included: Grubstake's machine-gun buggy and
+  Scorcher a heavy gunshot at 0.9, its slug buggy two deep pump blasts 3 ticks apart (a delayed trigger), its tank's
+  cannon at 0.85, its harrier a light gunshot at 1.1; Kessler-Hayashi's tank's cannon at 1.1, the Tesla's chain beam at
+  0.35, the laser drone a laser at 1.2 on a beam without its hum, the rail units the railgun; its trooper's laser three
+  pulses in a beam of 13 ticks hitting every 5, 8.8 a hit, a burst every 66 (its damage a second as before: round two had
+  given it a gunshot burst, the board taking the trooper for a rifleman). The player's units keep vanilla's.
+- **A Tesla's turn crashed the game** (0.2.255 to 0.2.257; teslawall grid on the hulls batch): sent back to its order
+  after the laser, an order naming a target dead since was refused ("value for required field 'target' is missing").
+  Its order given back only if the game takes it, else the laser alone; the drain's bar 50 (aimed at lasers, its bolts
+  chain less through the accumulators: seed 777 93).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

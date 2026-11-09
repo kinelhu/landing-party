@@ -1,3 +1,151 @@
+-- The weapon sounds (sounds.lua; the user chose them on the sheet, 2026-11-09): each decided entry to its units and their
+-- plated variants, by final name (Grubstake's copies are made from Kessler-Hayashi's in corps.lua). A gun's attack sound
+-- is its sound's files at its speed and volume; layers play beside it a few ticks later (a delayed trigger: the slug
+-- buggy's second barrel); a burst (rounds, gap) is its beam hitting that many times as it lasts, each hit its sound and
+-- its share of the damage (the trooper's laser: 3 hits in a beam of 13 ticks, a burst every 66, its damage a second as
+-- before). A beam fired with its own sound gets a copy of its beam without the beam's hum (the laser drone's, the
+-- trooper's: lp-kh-laser-beam hums for the turrets that keep it).
+do
+  local list = require("__landing-party__.sounds")
+  local PLATES = {"", "-physical", "-fire", "-laser"}
+  local function path(f) return "__" .. f:match("^([^/]+)") .. "__/" .. f:gsub("^[^/]+/", "") end
+  local function sound(files, speed, volume)
+    local v = {}
+    for _, f in ipairs(files) do v[#v + 1] = {filename = path(f), volume = volume} end
+    return {variations = v, speed = speed, category = "weapon"}
+  end
+  local function beam_of(a)
+    local d = a.ammo_type and a.ammo_type.action and a.ammo_type.action.action_delivery
+    return d and d.type == "beam" and d or nil
+  end
+  local made = {}
+  for _, e in ipairs(list) do
+    if e.decided == "keep" and e.units then
+      for _, base in ipairs(e.units) do
+        for _, plate in ipairs(PLATES) do
+          local u = data.raw.unit[base .. plate]
+          local a = u and u.attack_parameters
+          if a then
+            local s = sound(e.files, e.speed, e.volume)
+            local d = beam_of(a)
+            if d and (e.rounds or 1) > 1 then
+              -- The burst: its own beam, hitting rounds times gap apart, each hit the sound and its share.
+              local name = d.beam .. "-" .. e.id
+              if not made[name] then
+                local b = table.deepcopy(data.raw.beam[d.beam])
+                b.name, b.working_sound = name, nil
+                b.damage_interval = e.gap
+                local hit = b.action.action_delivery.target_effects
+                local per = 0
+                for _, t in ipairs(hit) do
+                  if t.type == "damage" then
+                    -- Per hit: the old damage a second over the new burst's rounds (old: a hit every cooldown).
+                    t.damage.amount = t.damage.amount * e.every / (a.cooldown * e.rounds)
+                    per = t.damage.amount
+                  end
+                end
+                hit[#hit + 1] = {type = "play-sound", sound = s}
+                data:extend({b})
+                made[name] = per
+              end
+              d.beam, d.duration = name, e.gap * (e.rounds - 1) + 3
+              a.cooldown = e.every
+              a.sound = nil
+            elseif d then
+              local name = d.beam .. "-quiet"
+              if not made[name] then
+                local b = table.deepcopy(data.raw.beam[d.beam])
+                b.name, b.working_sound = name, nil
+                data:extend({b})
+                made[name] = true
+              end
+              d.beam = name
+              a.sound = s
+            else
+              a.sound = s
+            end
+            -- Layers: a delayed trigger beside the shot, offset ticks on.
+            for i, l in ipairs(e.layers or {}) do
+              local tname = "lp-sound-" .. e.id .. "-" .. i
+              if not made[tname] then
+                data:extend({{type = "delayed-active-trigger", name = tname, delay = math.max(1, l.offset or 0),
+                  action = {type = "direct", action_delivery = {type = "instant",
+                    target_effects = {{type = "play-sound", sound = sound(l.files, l.speed, l.volume)}}}}}})
+                made[tname] = true
+              end
+              local del = a.ammo_type.action.action_delivery
+              del.source_effects = del.source_effects or {}
+              if del.source_effects.type then del.source_effects = {del.source_effects} end
+              table.insert(del.source_effects, {type = "nested-result", action = {type = "direct",
+                action_delivery = {type = "delayed", delayed_trigger = tname}}})
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
+-- Hulls collide (shared.HULL; the user, 2026-11-09). Every unit collided once, then infantry alone, and both failed the
+-- regression (raids jammed at gaps, tanks shut in their blocks, herds shoved through squads): a unit's mask shares player
+-- with infantry, biters and the character, and an open gate keeps object. No layer of the game's is on every building,
+-- wall, tree, cliff and water tile and on none of belts, rails, an open gate and infantry (meltable, tried first, is on
+-- belts: tanks stuck behind them, blockexit 39 of 41 out). So a layer of our own (lp-hull) goes on whatever blocks a
+-- person (its mask has player), units aside, and on water: a hull's mask is that layer alone. It drives over belts and
+-- rails, through an open gate (its opened mask has no player), past infantry and biters; meets buildings, closed gates,
+-- trees, cliffs, nests, water, the character, cars and other hulls. And its box smaller than its picture (BOX either
+-- side): at their full 2 tiles they jammed at block exits and breaches, a unit planning no way round another.
+do
+  local shared = require("__landing-party__.shared")
+  local util = require("collision-mask-util")
+  local L = shared.HULL.layer
+  data:extend({{type = "collision-layer", name = L}})
+  local hull = {layers = {[L] = true}}
+  for name, u in pairs(data.raw.unit) do
+    local box = u.collision_box
+    local m = u.collision_mask
+    local flier = m and m.layers and m.layers["lp-air"]
+    if name:sub(1, 3) == "lp-" and box and not flier then
+      local half = math.max(math.abs(box[2][1] - box[1][1]), math.abs(box[2][2] - box[1][2])) / 2
+      if half > shared.HULL.WIDTH then
+        u.collision_mask = table.deepcopy(hull)
+        -- (The dozer keeps its whole width: it rams a strip of wall as wide as its blade, ram.lua; shrunk, it broke 14
+        -- pieces for 9 strips.)
+        if not name:find("dozer", 1, true) then
+          local b = math.min(half, shared.HULL.BOX)
+          u.collision_box = {{-b, -b}, {b, b}}
+        end
+      end
+    end
+  end
+  -- What blocks a person blocks a hull: every entity whose mask has player (units aside), and the tiles that do.
+  -- (Spider legs aside: a leg's mask is where it may step.)
+  local TYPES = {"unit", "spider-leg", "corpse", "explosion", "smoke-with-trigger", "particle", "projectile", "beam", "sticker", "fire",
+    "stream", "arrow", "flying-text", "highlight-box", "speech-bubble", "item-entity", "entity-ghost", "tile-ghost",
+    "deconstructible-tile-proxy", "item-request-proxy"}
+  local skip = {}
+  for _, t in ipairs(TYPES) do skip[t] = true end
+  for t, protos in pairs(data.raw) do
+    -- (Only entity types have a default mask: get_default_mask raises for the rest, items and recipes among them.)
+    if not skip[t] and pcall(util.get_default_mask, t) then
+      for _, p in pairs(protos) do
+        if not (p.collision_mask and p.collision_mask.layers and p.collision_mask.layers[L]) then
+          local m = util.get_mask(p)
+          if m and m.layers and m.layers.player then
+            m = table.deepcopy(m)
+            m.layers[L] = true
+            p.collision_mask = m
+          end
+        end
+      end
+    end
+  end
+  for _, tile in pairs(data.raw.tile) do
+    local m = tile.collision_mask
+    if m and m.layers and m.layers.player then m.layers[L] = true end
+  end
+end
+
 -- Turrets that cannot shoot up ignore air units: flamethrowers (fluid turrets) and artillery. Gun and laser
 -- turrets keep the default (they hit everything); a dedicated anti-air turret comes later.
 for _, type in ipairs({"fluid-turret", "artillery-turret"}) do

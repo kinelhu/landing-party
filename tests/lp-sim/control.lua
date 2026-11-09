@@ -5049,6 +5049,79 @@ scenarios.shotdown = function()
   end)
 end
 
+-- Hulls collide (data-final-fixes.lua, shared.HULL; 2026-11-09): six of Kessler-Hayashi's tanks sent onto one spot on open
+-- ground, and a squad of its infantry through them; then three tanks out of a walled pen by its open gate. Checks: the
+-- tanks end apart (none closer than a hull's width); the infantry walked through them; the tanks left by the gate.
+local HULL = require("__landing-party__.shared").HULL
+scenarios.hulls = function()
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true, herd_off = true})
+  end)
+  schedule(1800, function()
+    flatten(330, -60, 470, 60)
+    S.hl_tanks = block("lp-tank", 420, -30, 6, 3, 6, FORCE)
+    for _, t in ipairs(S.hl_tanks) do
+      t.commandable.set_command{type = defines.command.go_to_location, destination = {380, -30}, radius = 1,
+        distraction = defines.distraction.none}
+    end
+    S.hl_inf = block("lp-infantry", 360, -30, 8, 4, 1.5, FORCE)
+    for _, u in ipairs(S.hl_inf) do
+      u.commandable.set_command{type = defines.command.go_to_location, destination = {430, -30}, radius = 2,
+        distraction = defines.distraction.none}
+    end
+    -- A pen of stone wall, x 395..405, y 20..30, a gate in its east side, three tanks in it.
+    for x = 395, 405 do for _, y in ipairs({20, 30}) do surface().create_entity{name = "stone-wall", position = {x + 0.5, y + 0.5}, force = FORCE} end end
+    for y = 21, 29 do
+      surface().create_entity{name = "stone-wall", position = {395.5, y + 0.5}, force = FORCE}
+      if y < 24 or y > 26 then surface().create_entity{name = "stone-wall", position = {405.5, y + 0.5}, force = FORCE} end
+    end
+    S.hl_gates = {}
+    for y = 24, 26 do
+      S.hl_gates[#S.hl_gates + 1] = surface().create_entity{name = "gate", position = {405.5, y + 0.5}, force = FORCE, direction = defines.direction.north}
+    end
+    S.hl_pen = {}
+    for k = 0, 2 do
+      local t = surface().create_entity{name = "lp-tank", position = {398 + k * 2.5, 25.5}, force = FORCE}
+      if t then S.hl_pen[#S.hl_pen + 1] = t end
+    end
+  end)
+  schedule(1860, function()
+    for _, g in ipairs(S.hl_gates) do if g.valid then g.request_to_open(FORCE, 3600) end end
+  end)
+  -- (Ordered once the gate stands open: a unit plans its path when ordered, and a shut gate is wall to it.)
+  schedule(1980, function()
+    S.hl_open = 0
+    for _, g in ipairs(S.hl_gates) do if g.valid and g.is_opened() then S.hl_open = S.hl_open + 1 end end
+    for _, t in ipairs(S.hl_pen) do
+      t.commandable.set_command{type = defines.command.go_to_location, destination = {425, 25}, radius = 3,
+        distraction = defines.distraction.none}
+    end
+  end)
+  schedule(1800 + 30 * 60, function()
+    local close = 99
+    for i, a in ipairs(S.hl_tanks) do for j, b in ipairs(S.hl_tanks) do
+      if i < j and a.valid and b.valid then
+        close = math.min(close, math.sqrt((a.position.x - b.position.x) ^ 2 + (a.position.y - b.position.y) ^ 2))
+      end
+    end end
+    local through = 0
+    for _, u in ipairs(S.hl_inf) do if u.valid and u.position.x > 420 then through = through + 1 end end
+    local out = 0
+    for _, t in ipairs(S.hl_pen) do if t.valid and t.position.x > 407 then out = out + 1 end end
+    info(string.format("hulls: closest two tanks %.2f apart; infantry through the tanks %d of %d; out of the pen %d of %d (gate pieces open %s)",
+      close, through, #S.hl_inf, out, #S.hl_pen, tostring(S.hl_open)))
+    for _, t in ipairs(S.hl_pen) do
+      if t.valid then info(string.format("hulls: a pen tank at %.1f,%.1f, its command %s", t.position.x, t.position.y,
+        tostring(t.commandable.command and t.commandable.command.type))) end
+    end
+    -- (Their boxes, shared.HULL.BOX either side, smaller than their pictures: apart means a box's width.)
+    local box = 2 * HULL.BOX
+    check("hulls: tanks sent to one spot end apart", close >= box - 0.05, string.format("closest %.2f (a box %.2f)", close, box))
+    check("hulls: infantry walks through them", through >= #S.hl_inf - 1, through .. " of " .. #S.hl_inf)
+    check("hulls: tanks leave a pen by its open gate", out == #S.hl_pen, out .. " of " .. #S.hl_pen)
+  end)
+end
+
 local STUN = require("__landing-party__.shared").STUN
 scenarios.stun = function()
   local AT = 2400
@@ -5271,7 +5344,9 @@ scenarios.teslawall = function()
     local off = params.mix:find("off", 1, true)
     local supply = params.mix:match("^[^-]*")
     if not off and supply ~= "20mw" and supply ~= "night" then
-      check("teslawall: the Teslas drained the lasers (100 or more)", st.drains >= 100, tostring(st.drains))
+      -- (50, not 100, since 0.2.255: a Tesla turned on a laser spends its bolts on lasers, not chained through the
+      -- accumulators behind them, so fewer drains in all; the hold, checked below, is what it is for. Seed 777: 93.)
+      check("teslawall: the Teslas drained the lasers (50 or more)", st.drains >= 50, tostring(st.drains))
     end
     -- (Caught, 2026-11-06: on a real supply the drain did nothing, the lasers hitting 15.6 times a second at the line
     -- against 15.9 without it, refilled in 3 ticks of a strike. With the hold, 27.7% and 43.1% of the lasers' time held on
@@ -11272,6 +11347,18 @@ scenarios.blockexit = function()
       local at = {}
       for _, u in ipairs(m.tanks) do if u.valid then at[#at + 1] = string.format("%.0f,%.0f", u.position.x - m.x0, u.position.y - m.y0) end end
       info(string.format("blockexit %s: %d of %d tanks out (%s)", m.label, out, #m.tanks, table.concat(at, " ")))
+      -- (What stands round a tank left inside: hulls collide, 2026-11-09.)
+      for _, u in ipairs(m.tanks) do
+        local q = u.valid and u.position
+        if q and not (q.x < m.x0 - 1 or q.x > m.x0 + m.w + 1 or q.y < m.y0 - 1 or q.y > m.y0 + BLOCKS.SIZE + 1) then
+          local near = {}
+          for _, e in ipairs(surface().find_entities_filtered{position = q, radius = 2.5}) do
+            if e ~= u then near[#near + 1] = string.format("%s@%.1f,%.1f", e.name, e.position.x - m.x0, e.position.y - m.y0) end
+          end
+          info(string.format("blockexit %s: inside at %.1f,%.1f, command %s; near: %s", m.label, q.x - m.x0, q.y - m.y0,
+            tostring(u.commandable.command and u.commandable.command.type), table.concat(near, " ")))
+        end
+      end
       if out < #m.tanks or #m.tanks == 0 then table.insert(stuck, m.label) end
     end
     check("blockexit: every tank out of every block", #stuck == 0, table.concat(stuck, ", "))

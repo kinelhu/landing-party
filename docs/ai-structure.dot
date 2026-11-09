@@ -73,7 +73,7 @@ digraph ai {
     "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
     "dome" [label="dome\n407 lines", width=1.25, fillcolor="#eef2f7"];
     "orbital" [label="orbital\n322 lines", width=1.16, fillcolor="#eef2f7"];
-    "scorcher" [label="scorcher\n212 lines", width=1.04, fillcolor="#d9f0d9"];
+    "scorcher" [label="scorcher\n217 lines", width=1.04, fillcolor="#d9f0d9"];
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
     "fall" [label="fall\n101 lines", width=0.91, fillcolor="#eef2f7"];
     "ram" [label="ram\n315 lines", width=1.15, fillcolor="#d9f0d9"];

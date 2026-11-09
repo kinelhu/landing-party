@@ -1,4 +1,4 @@
-"""A board to listen to the units' weapon sounds (docs/sound/weapons.lua): for each, a card naming it, then its sound as
+"""A board to listen to the units' weapon sounds (landing-party/sounds.lua): for each, a card naming it, then its sound as
 the unit has it now and as proposed, each fired at the unit's rate, as one video to send (the user listens; nothing here
 can). The game's recordings at the proposal's speed (pitch and pace together, as the Sound prototype's speed) and volume.
 
@@ -21,7 +21,7 @@ def table():
             'for k, x in pairs(v) do parts[#parts + 1] = (arr and "" or string.format("%%q:", k)) .. enc(x) end '
             'return (arr and "[" or "{") .. table.concat(parts, ",") .. (arr and "]" or "}") '
             'elseif type(v) == "string" then return string.format("%%q", v) else return tostring(v) end end '
-            'print(enc(out))') % os.path.join(REPO, "docs", "sound", "weapons.lua")
+            'print(enc(out))') % os.path.join(REPO, "landing-party", "sounds.lua")
     return json.loads(subprocess.run(["luajit", "-e", code], capture_output=True, text=True, check=True).stdout)
 
 

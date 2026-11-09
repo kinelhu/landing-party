@@ -140,8 +140,13 @@ function scorcher.aim(u, struck)
   end
   if not best then return end
   local hit = {type = defines.command.attack, target = best, distraction = defines.distraction.none}
-  cm.set_command(now and {type = defines.command.compound, structure_type = defines.compound_command.return_last,
-    commands = {hit, now}} or hit)
+  -- Back to its order after, if that order still stands: one read back names a target that may have died since, and
+  -- given again it is refused (the game stopped: "value for required field 'target' is missing", teslawall grid,
+  -- 0.2.257). Then the laser alone.
+  if not (now and pcall(cm.set_command, {type = defines.command.compound,
+    structure_type = defines.compound_command.return_last, commands = {hit, now}})) then
+    cm.set_command(hit)
+  end
   storage.tesla_aims = (storage.tesla_aims or 0) + 1
 end
 

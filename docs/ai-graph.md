@@ -58,7 +58,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `landfx` | 239 | rng | base, control, faction | layout.locate | 4, 7 |  | landfx, landfx_descents |
 | `strip` | 238 | studies | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
-| `scorcher` | 212 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_aim, tesla_aims, tesla_drains, tesla_held, tesla_holds, tesla_seen |
+| `scorcher` | 217 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_aim, tesla_aims, tesla_drains, tesla_held, tesla_holds, tesla_seen |
 | `valuemap` | 208 | firemap | control, farm, herd, oplog, siege |  |  |  |  |
 | `oplog` | 188 | attempt, valuemap | control |  |  |  | oplog |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
