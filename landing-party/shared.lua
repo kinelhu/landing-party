@@ -588,7 +588,9 @@ shared.units = {
   -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
   ["lp-prism"] = {health = 700, cost = 100, ground_only = true},
   ["lp-tesla"] = {health = 800, cost = 100, ground_only = true},
-  ["lp-scorcher"] = {health = 1100, cost = 70, ground_only = true},
+  -- (700, not 1100, since 0.2.261: flaming any foe on a 6 s cooldown it beat Kessler-Hayashi's tanks by far in the
+  -- arena; fragile for its fuel, the user: "why not just make it more fragile?". A first guess, tuned in the arena.)
+  ["lp-scorcher"] = {health = 700, cost = 70, ground_only = true},
   -- Anti-air, one per side (units.lua): hard on fliers, light on the ground.
   ["lp-skyguard"] = {health = 110, cost = 18},
   ["lp-flak-buggy"] = {health = 220, cost = 20},

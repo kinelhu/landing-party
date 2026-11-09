@@ -5633,11 +5633,18 @@ scenarios.unitnode = function()
     end)
     schedule(END - 698, function()
       S.sc_fires = S.sc_at and surface().count_entities_filtered{position = S.sc_at, radius = 6, name = "lp-fuel-fire"} or 0
+      -- (Spread round the wreck: the farthest of them from its middle.)
+      S.sc_far = 0
+      for _, f in pairs(S.sc_at and surface().find_entities_filtered{position = S.sc_at, radius = 8, name = "lp-fuel-fire"} or {}) do
+        S.sc_far = math.max(S.sc_far, math.sqrt((f.position.x - S.sc_at.x) ^ 2 + (f.position.y - S.sc_at.y) ^ 2))
+      end
     end)
     schedule(END - 100, function()
       local later = S.sc_at and surface().count_entities_filtered{position = S.sc_at, radius = 8, name = "lp-fuel-fire"} or 0
       check("unitnode: a Scorcher killed leaves its fuel burning, 10 s on still", (S.sc_fires or 0) > 0 and later > 0,
         S.sc_at and string.format("%d fires round its wreck, %d 10 s on", S.sc_fires, later) or "none built")
+      check("unitnode: its fuel fire spread round the wreck (6 fires or more, one 2 tiles out or farther)",
+        (S.sc_fires or 0) >= 6 and (S.sc_far or 0) >= 2, string.format("%d fires, the farthest %.1f out", S.sc_fires or 0, S.sc_far or 0))
     end)
   end
 end

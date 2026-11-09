@@ -116,7 +116,10 @@ local function side_flow(parent, s, key, title)
   row.add{type = "drop-down", name = "lpa_kind_" .. key, items = items, selected_index = pick.kind}
   local row2 = col.add{type = "flow", direction = "horizontal"}
   row2.add{type = "textfield", name = "lpa_n_" .. key, text = tostring(pick.n or 5), numeric = true, style = "short_number_textfield"}
-  row2.add{type = "button", name = "lpa_add_" .. key, caption = "Add"}
+  row2.add{type = "button", name = "lpa_add_" .. key, caption = "Add", tooltip = "Add that many of the unit"}
+  -- (The number as a budget: as many of the unit as that many parts buy. The user, 2026-11-09: "Can we set up arena to
+  -- create 'X parts worth' of a unit?")
+  row2.add{type = "button", name = "lpa_parts_" .. key, caption = "Parts", tooltip = "Add as many of the unit as that many parts buy"}
   row2.add{type = "button", name = "lpa_empty_" .. key, caption = "Empty"}
   -- The picked unit's numbers.
   local name = proto_of(WHO[pick.who], ks[pick.kind])
@@ -131,7 +134,8 @@ local function side_flow(parent, s, key, title)
   end
   for _, en in ipairs(s.sides[key]) do
     local extra = en[1] == "biters" and en[2] == "wave" and string.format(" at %.2f", en[4]) or ""
-    col.add{type = "label", caption = {"", en[3], " x ", caption(en[1], en[2]), " (", who_label(en[1]), ")", extra}}
+    local cost = en.cost and string.format(", %d parts", en.cost * en[3]) or ""
+    col.add{type = "label", caption = {"", en[3], " x ", caption(en[1], en[2]), " (", who_label(en[1]), ")", extra, cost}}
   end
 end
 
@@ -186,14 +190,29 @@ function gui.on_click(e)
   if not (el and el.valid and el.name:sub(1, 4) == "lpa_") then return end
   local s = state(player)
   local key = el.name:sub(-1)
-  if el.name:find("^lpa_add_") then
+  if el.name:find("^lpa_add_") or el.name:find("^lpa_parts_") then
     read_pick(player, key)
     local pick = s.pick[key]
     local who = WHO[pick.who]
     local kind = kinds(who)[pick.kind]
     local n = math.max(1, math.min(500, pick.n or 5))
+    -- Its price in parts (arena.cost: a corporation's at its own price, the player's by command bandwidth, a breed's
+    -- provisional one); the Parts button spends the number on it.
+    local name = (who == "serenity" or who == "grubstake") and shared.variant(who, kind) or kind
+    local cost = arena.cost(shared.kind_of(name), name)
+    if el.name:find("^lpa_parts_") then
+      if not (cost and cost > 0) then
+        s.status = "That unit has no price in parts: add it by count."
+        gui.build(player)
+        return
+      end
+      n = math.max(1, math.min(500, math.floor((pick.n or 0) / cost)))
+      s.status = string.format("%d parts buy %d of it (%d each).", pick.n or 0, n, cost)
+    end
     -- Synthexis's breeds go in as raw prototypes on its force (arena.lua's spawn).
-    table.insert(s.sides[key], who == "biotech" and {"raw", kind, n, shared.BIOTECH.force} or {who, kind, n, s.evo})
+    local en = who == "biotech" and {"raw", kind, n, shared.BIOTECH.force} or {who, kind, n, s.evo}
+    en.cost = cost
+    table.insert(s.sides[key], en)
   elseif el.name:find("^lpa_empty_") then
     s.sides[key] = {}
   elseif el.name == "lpa_fight" then

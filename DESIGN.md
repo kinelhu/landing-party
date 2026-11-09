@@ -5827,6 +5827,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   dramatic"). The game's massive explosion for its death; its fuel a fire of its own (lp-fuel-fire: 20 s, spreading a
   little, its scorch fading 30 s after), eight flames at the wreck and twelve fires out to 4 tiles (was the ground
   fire's few seconds, six within 2.5). unitnode scorcher: fire round the wreck at once and 10 s on.
+- **The Scorcher, more fragile; its fuel spread** (0.2.261; the user, in the arena: "the scorchers win by far. Did we
+  overtune them?"; on my first answer, its flame limited to infantry: "in what world is that the solution? why not just
+  make it more fragile?"). It flames any foe on its cooldown, as asked an hour before, and pays for it: health 1100 to
+  700, a first guess to tune in the arena (Kessler-Hayashi's tank 900, cost 60; the Scorcher 70). On guns alone the two
+  had been even, a minute each to kill the other; the overtuning was mine, 0.2.259's flame at tanks on a 6 s cooldown.
+  Its fuel fires set down by a cluster (given offsets, the twelve had merged into the one at the wreck): unitnode
+  scorcher, 6 fires, the farthest 3.8 out, all burning 10 s on. The arena's panel buys by parts (Parts: the number as a
+  budget, as many of the unit as it buys; each entry shows its parts), for the face-offs that tune it.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

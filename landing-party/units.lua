@@ -876,11 +876,12 @@ do
   f.hidden = true
   data:extend({f})
   scorcher.dying_explosion = "massive-explosion"
-  local effects = {{type = "create-fire", entity_name = "lp-fuel-fire", initial_ground_flame_count = 8}}
-  for _ = 1, FIRES do
-    effects[#effects + 1] = {type = "create-fire", entity_name = "lp-fuel-fire", initial_ground_flame_count = 3,
-      offset_deviation = {{-FIRE_R, -FIRE_R}, {FIRE_R, FIRE_R}}}
-  end
+  -- (The fires set down by a cluster, as a cluster grenade's: given offsets, the twelve merged into the one at the wreck,
+  -- unitnode counting 1, the user: "it's just so small and doesn't spread around the wreck".)
+  local effects = {{type = "create-fire", entity_name = "lp-fuel-fire", initial_ground_flame_count = 8},
+    {type = "nested-result", action = {type = "cluster", cluster_count = FIRES, distance = FIRE_R * 0.6,
+      distance_deviation = FIRE_R * 0.8, action_delivery = {type = "instant", target_effects = {
+        {type = "create-fire", entity_name = "lp-fuel-fire", initial_ground_flame_count = 3}}}}}}
   effects[#effects + 1] = {type = "nested-result", action = {type = "area", radius = BLAST_R,
     action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = BLAST, type = "explosion"}}}}}}
   scorcher.dying_trigger_effect = effects
