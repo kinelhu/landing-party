@@ -4974,6 +4974,46 @@ scenarios.suppress = function()
   end)
 end
 
+-- Fliers shot down fall (scripts/fall.lua; 2026-11-09): one of each falling kind killed in the air over open ground, a wall
+-- under the first. Checks: no wreck on the ground the tick after (it is falling); each down and its wreck there once the
+-- fall is over; the crash hurts what is under it. (Scenario fall is a siege's.)
+scenarios.shotdown = function()
+  local kinds = {{"lp-harrier", "lp-kh-drone-wreck"}, {"lp-grubstake-harrier", "lp-harrier-wreck"}, {"lp-laser-drone", "lp-laser-drone-wreck"}}
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true, herd_off = true})
+  end)
+  schedule(1800, function()
+    flatten(380, -30, 440, 30)
+    S.fl = {}
+    for i, k in ipairs(kinds) do
+      local p = {400 + i * 10, 0}
+      if i == 1 then S.fl_wall = surface().create_entity{name = "stone-wall", position = p, force = "player"} end
+      local u = surface().create_entity{name = k[1], position = p, force = i == 2 and "lp-grubstake" or FORCE}
+      S.fl[i] = {p = p, wreck = k[2]}
+      if u then u.die("player") end
+    end
+  end)
+  local function wrecks(i)
+    return surface().count_entities_filtered{position = S.fl[i].p, radius = 2, name = S.fl[i].wreck}
+  end
+  schedule(1802, function()
+    local n = 0
+    for i = 1, #kinds do n = n + wrecks(i) end
+    S.fl_early = n
+  end)
+  schedule(1800 + 60, function()
+    local st, n = lp("fall_stats"), 0
+    for i = 1, #kinds do n = n + wrecks(i) end
+    info("shotdown: " .. serpent.line(st) .. string.format("; wrecks on the ground at once %d, after %d; the wall %s",
+      S.fl_early, n, S.fl_wall.valid and string.format("%.0f of %.0f", S.fl_wall.health, S.fl_wall.max_health) or "gone"))
+    check("shotdown: no wreck on the ground while it falls", S.fl_early == 0, S.fl_early .. " at once")
+    check("shotdown: each down, its wreck where it fell", st.crashed == #kinds and n == #kinds,
+      string.format("%d crashed, %d wrecks of %d", st.crashed, n, #kinds))
+    check("shotdown: the crash hurts what is under it", not S.fl_wall.valid or S.fl_wall.health < S.fl_wall.max_health,
+      S.fl_wall.valid and string.format("%.0f of %.0f", S.fl_wall.health, S.fl_wall.max_health) or "gone")
+  end)
+end
+
 local STUN = require("__landing-party__.shared").STUN
 scenarios.stun = function()
   local AT = 2400

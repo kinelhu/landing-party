@@ -51,6 +51,7 @@ local orbital = require("__landing-party__.scripts.orbital")
 local belts = require("__landing-party__.scripts.belts")
 local scorcher = require("__landing-party__.scripts.scorcher")
 local stun = require("__landing-party__.scripts.stun")
+local fall = require("__landing-party__.scripts.fall")
 local ram = require("__landing-party__.scripts.ram")
 local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
@@ -114,7 +115,7 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); ram.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); ram.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -200,6 +201,9 @@ script.on_event(defines.events.on_entity_damaged, function(e)
     base.on_damaged(e.entity)
   end
 end, BUILDINGS)
+
+-- A flier shot down falls (fall.lua): its wreck, left by its death, taken up again to fall.
+script.on_event(defines.events.on_post_entity_died, function(e) fall.on_post_died(e) end, {{filter = "type", type = "unit"}})
 
 -- The command tool: select (drag), release (shift-drag), order (right-click or right-drag; shift: attack-move).
 local TOOL = "lp-command-tool"
@@ -1030,6 +1034,7 @@ remote.add_interface("landing-party", {
   scorcher_stats = function() return scorcher.stats() end,
   stun_stats = function() return stun.stats() end,
   stun_since = function(k) return stun.since(k) end,
+  fall_stats = function() return fall.stats() end,
   belt_stats = function(id) return storage.bases[id] and belts.stats(storage.bases[id]) end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,

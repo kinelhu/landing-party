@@ -82,7 +82,7 @@ LAYERS = {
     "Corporation": ["faction", "pods", "war", "standing", "pact", "trade", "ledger", "border", "rd", "phases", "biters"],
     "Settlement": ["base", "construction", "planner", "layout", "wfc", "wfc_serenity", "lots_grubstake", "site", "blocks", "modules", "crew", "cordon", "perimeter",
                    "road", "prospect", "belts"],
-    "Army and operations": ["army", "ops", "routing", "intel", "siege", "assault", "strip", "answers", "cuts", "strike", "jammer", "dome", "orbital", "scorcher", "stun", "ram", "aim",
+    "Army and operations": ["army", "ops", "routing", "intel", "siege", "assault", "strip", "answers", "cuts", "strike", "jammer", "dome", "orbital", "scorcher", "stun", "fall", "ram", "aim",
                             "power"],
     "Heists (Grubstake)": ["jumper", "tap", "skim", "prowl", "bait", "marker"],
     "The biotech": ["herd", "herd_learn", "farm", "creep", "cell"],

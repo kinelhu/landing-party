@@ -5738,6 +5738,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the player's character shrug it off. A "direct" nested action takes no mask: the first run slowed the tanks too (8
   samples), so a 0.3 circle at the hit, as air.lua does for fliers (scenario suppress: troopers slowed, tanks 0).
   raid, occupy, defend, sneak, stun and dev pass.
+- **Fliers shot down fall** (2026-11-09; the user: "could we make fliers spin out and fall to the ground instead of
+  disappearing where they stand upon death? something a little more graphically interesting?"). `scripts/fall.lua`: a
+  flier's death leaves its wreck on the ground at once; on_post_entity_died names it, and for the three rendered kinds
+  (Grubstake's harrier, Kessler-Hayashi's scout and laser drones, plated variants by their wreck) it is taken up again
+  and the flier's own still (its sheet's body, glow and rotor at heading 0, a sprite of each kind, shared.FALL) spins
+  down over 40 ticks from its sheet's flying height, faster as it falls, its shadow closing under it; where it lands a
+  small blast (20 explosive within 1.5) and the wreck. Nothing runs but while one falls. Scenario shotdown: no wreck on
+  the ground while it falls, three down with their wrecks, the wall under one hurt; all three fail with the handler
+  off. flak and cordon pass. Seen on film (docs/trailer/fall-fx.lua, /lp flak); its spin read only on the clip, not
+  frame by frame. The bomb drone bursts on its target and keeps its death; Grubstake's old-look laser drone too.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

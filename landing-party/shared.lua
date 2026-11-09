@@ -260,6 +260,15 @@ shared.PLATED = {"lp-infantry", "lp-tank", "lp-walker", "lp-harrier", "lp-buggy"
 shared.PLATES = {physical = {type = "physical", percent = 25, decrease = 2}, fire = {type = "fire", percent = 70},
   laser = {type = "laser", percent = 40}}
 shared.PLATE_HEALTH = 1.15
+-- Fliers shot down fall (scripts/fall.lua; the user, 2026-11-09: "could we make fliers spin out and fall to the ground
+-- instead of disappearing where they stand upon death?"): by the wreck a death leaves, the flier's own still (its sheet's
+-- body, glow and rotor at one heading, sprite) spinning down over TICKS with its shadow closing under it, then CRASH where it
+-- lands and its wreck there.
+shared.FALL = {TICKS = 40, crash = "lp-crash", kinds = {
+  ["lp-harrier-wreck"] = {sheet = "grubstake/harrier", rotor = "rotor", sprite = "lp-fall-harrier"},
+  ["lp-kh-drone-wreck"] = {sheet = "serenity/drone-scout", rotor = "fans", sprite = "lp-fall-kh-drone"},
+  ["lp-laser-drone-wreck"] = {sheet = "serenity/drone-laser", rotor = "fans", sprite = "lp-fall-laser-drone"},
+}}
 -- The lightning's stun on units (scripts/stun.lua; the user, 2026-11-09: "a stun effect with Tesla weapons ... also
 -- affecting units? Would have to not be 100% to be fair"): each electric hit charges its target by one, less its electric
 -- resistance; the charge halves every HALF ticks; a hit stuns with chance (charge - 1) / SPAN, at most MAX; stunned for

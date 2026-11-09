@@ -1128,6 +1128,34 @@ do
   c.localised_name = {"entity-name.lp-harrier"}
   data:extend({c})
 end
+-- Their fall (scripts/fall.lua, shared.FALL): each kind's body, glow and rotor at heading 0 as one sprite, the body's middle
+-- at the sprite's (the flier's height comes from the script), and its shadow apart; a small crash where it lands, 20
+-- explosive within 1.5.
+for _, k in pairs(shared.FALL.kinds) do
+  local B, R = SHEETS[k.sheet .. "/base"], SHEETS[k.sheet .. "/" .. k.rotor]
+  if B and R then
+    local function layer(sheet, S, file, rel, extra)
+      local l = {filename = "__landing-party__/graphics/" .. k.sheet .. "/" .. sheet .. "/" .. file .. ".png", width = S.width,
+        height = S.height, x = 0, y = 0, scale = 0.5, shift = rel}
+      for a, v in pairs(extra or {}) do l[a] = v end
+      return l
+    end
+    local rel = {R.shift[1] - B.shift[1], R.shift[2] - B.shift[2]}
+    data:extend({
+      {type = "sprite", name = k.sprite, layers = {layer("base", B, "body", {0, 0}),
+        layer("base", B, "glow", {0, 0}, {draw_as_glow = true, blend_mode = "additive"}), layer(k.rotor, R, "body", rel)}},
+      {type = "sprite", name = k.sprite .. "-shadow", layers = {layer(k.rotor, R, "shadow", {0, 0}, {draw_as_shadow = true})}},
+    })
+  end
+end
+do
+  local c = table.deepcopy(data.raw.explosion["medium-explosion"])
+  c.name = shared.FALL.crash
+  c.created_effect = {type = "direct", action_delivery = {type = "instant", target_effects = {{type = "nested-result",
+    action = {type = "area", radius = 1.5, action_delivery = {type = "instant", target_effects = {
+      {type = "damage", damage = {amount = 20, type = "explosion"}}}}}}}}}
+  data:extend({c})
+end
 -- (It bursts on its target: its corpse stays the defender's small remnants.)
 grubstake_look(scavenger, "grubstake/scavenger", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}})
 
