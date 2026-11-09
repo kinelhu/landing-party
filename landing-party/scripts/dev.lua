@@ -412,8 +412,10 @@ function dev.run(player, args)
         local u = put(shared.variant("grubstake", "lp-dozer"), g, w.position.x + OFF, y)
         local near = u and s.find_entities_filtered{position = {w.position.x, y}, radius = 3, type = {"wall", "gate"}, force = player.force}
         local piece = near and #near > 0 and s.get_closest({w.position.x, y}, near) or w
-        -- Each widens its breach by six strips (the user, on the third takes: "the dozers keep working on the walls").
-        if u and ram.order(u, piece, {widen = 6}) then made = made + 1; first = first or u end
+        -- Each widens its breach by one strip (six, after the user on the third takes, "the dozers keep working on the
+        -- walls": in cut 23 that was most of the scene, two dozers turning along the wall strip by strip, the user,
+        -- 2026-11-09: "dozers derping around their broken walls"). Two side by side open a gap of about ten.
+        if u and ram.order(u, piece, {widen = 1}) then made = made + 1; first = first or u end
       end
       -- Behind the dozers, kept behind them until the breach (ram.follow).
       local buggies = {}

@@ -5885,6 +5885,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   within DROP_GUARD and leashes them back, ran in its bombard alone, and through the deploy they fired only at what
   stood in their own reach. Guard duty now runs in the deploy too (siege.lua `guard_duty`). Check: fortress sets three
   of the player's troopers down 10 tiles beyond a gun going up; all three dead in 8 s (2.4 to 2.8 s; 23 s before).
+- **The dozer scene's derp** (0.2.269; the user, of trailer cut 23: "the dozer scene is a little underwhelming ... dozers
+  derping around their broken walls and buggies spazzing out at the back"). /lp dozers sent each dozer to widen its
+  breach by six strips, and each strip turned it along the wall; its buggies' spots were kept behind it, and every turn
+  moved them. Now one strip a dozer (two side by side open about ten tiles), and once at the wall the buggies' spots are
+  anchored on the breach (ram.lua `escort`): with six strips, 12 re-orders after the first strip fell before, 0 after
+  (scenario dev, `ram_stats().moved`). The blade's bite seen: sparks each step, a burst where a piece gives way. The scene's
+  east-wall turrets hold fifty rounds, not twelve (they ran dry before the breach); filmed at dusk, closer, from the
+  dozers' approach (`docs/trailer/scene-dozers.lua`, cut 24).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

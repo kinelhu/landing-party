@@ -151,11 +151,20 @@ local function escort(k, r, tick)
             -- (Ordered afresh each half second, each twitch of the dozer's was the buggies' too: "dancing around giving
             -- everybody epilepsis", the sixth takes. Ordered again only when its spot has moved 3 tiles.)
             local off = (i - (#f.units + 1) / 2) * 3
-            local to = {u.position.x - dir[1] * ESCORT - dir[2] * off, u.position.y - dir[2] * ESCORT + dir[1] * off}
+            -- Behind its lead on its way in; once at the wall, behind its breach (r.base), where it stays while its lead
+            -- widens: kept behind the lead itself, each strip along the wall moved the spots and the buggies with them
+            -- (the user, 2026-11-09, of trailer cut 23: "buggies spazzing out at the back").
+            local ax, ay = u.position.x, u.position.y
+            if r.phase ~= "approach" or (r.pass or 0) > 0 then
+              ax, ay = r.base[1] - dir[1] * CLOSE, r.base[2] - dir[2] * CLOSE
+            end
+            local to = {ax - dir[1] * ESCORT - dir[2] * off, ay - dir[2] * ESCORT + dir[1] * off}
             f.spots = f.spots or {}
             local was = f.spots[i]
             if not was or (was[1] - to[1]) ^ 2 + (was[2] - to[2]) ^ 2 > 9 then
               f.spots[i] = to
+              -- (Moved after its lead's first strip fell: what the escort's anchor on the breach stops, scenario dev.)
+              if was and r.first_clear then storage.ram_moved = (storage.ram_moved or 0) + 1 end
               -- (Then held there undistracted: arrived and idle, a buggy shot the wall in front of it, 26 in scenario dev.)
               v.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
                 commands = {{type = defines.command.go_to_location, radius = 2, distraction = defines.distraction.none, destination = to},
@@ -257,8 +266,15 @@ function ram.tick(tick)
       if hit == nil then
         -- (Back to its approach: nothing more this step.)
       elseif #hit > 0 then
+        -- Its blade's bite seen (the user, of cut 23: "underwhelming"): sparks where it bites each step, and a burst of
+        -- rubble where a piece gives way.
         for _, e in ipairs(hit) do
-          if e.valid then e.damage(DAMAGE, u.force, "physical", u) end
+          if e.valid then
+            local at = e.position
+            e.damage(DAMAGE, u.force, "physical", u)
+            u.surface.create_entity{name = "spark-explosion", position = {at.x - r.dir[1] * 0.6, at.y - r.dir[2] * 0.6}}
+            if not e.valid then u.surface.create_entity{name = "medium-explosion", position = at} end
+          end
         end
         storage.ram_crushed = (storage.ram_crushed or 0) + 1
       else
@@ -309,7 +325,8 @@ end
 function ram.stats()
   local n = 0
   for _ in pairs(storage.rams or {}) do n = n + 1 end
-  return {active = n, crushed = storage.ram_crushed or 0, breaches = storage.ram_breaches or 0, early = storage.ram_early or 0}
+  return {active = n, crushed = storage.ram_crushed or 0, breaches = storage.ram_breaches or 0, early = storage.ram_early or 0,
+    moved = storage.ram_moved or 0}
 end
 
 return ram

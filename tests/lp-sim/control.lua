@@ -1323,7 +1323,9 @@ scenarios.showcase = function()
       for y = -25, 25 do put("stone-wall", 34.5, y + 0.5); put("stone-wall", 80.5, y + 0.5) end
       -- (Six with piercing rounds on the east wall killed both dozers at it, the sixth takes: four, at its ends, with plain
       -- rounds and a short supply.)
-      for _, y in ipairs({-20, -12, 12, 20}) do put("gun-turret", 77, y, {name = "firearm-magazine", count = 12}) end
+      -- (Fifty each, cut 23: with twelve they ran dry before the breach, and the scene had little fire in it, the user:
+      -- "underwhelming". Plain rounds barely scratch a dozer, 5 against its 5 flat.)
+      for _, y in ipairs({-20, -12, 12, 20}) do put("gun-turret", 77, y, {name = "firearm-magazine", count = 50}) end
       for _, x in ipairs({70, 58}) do put("gun-turret", x, -22, {name = "firearm-magazine", count = 50}); put("gun-turret", x, 22, {name = "firearm-magazine", count = 50}) end
       -- Inside, a lab district (rows of assemblers read as artificial, the user: "perhaps make a little lab district with
       -- a sushi belt of science?"): a belt loop carrying red, green and grey science round two rows of labs, inserters
@@ -3967,6 +3969,10 @@ scenarios.dev = function()
     -- (The second takes: the buggies drove to the wall and waited under fire before the dozers were in sight.)
     check("dev: and the buggies kept behind the dozers until the breach", r.early == S.ram0.early,
       string.format("%d follower-steps ahead of their lead", r.early - S.ram0.early))
+    -- (Cut 23: each strip along the wall moved their spots behind their lead, and the buggies twitched behind the
+    -- breach the whole scene, the user: "buggies spazzing out at the back". Anchored on the breach since.)
+    check("dev: and the buggies held their spots while the dozers widened", r.moved == S.ram0.moved,
+      string.format("%d re-orders after a first strip fell", r.moved - (S.ram0.moved or 0)))
     local b = S.scene.bombers
     check("dev: /lp bombers dove on the troopers", b.bombs == 8 and b.troopers == 15 and now("bombers", "lp-trooper") < 15,
       string.format("%d drones, troopers %d to %d", b.bombs, b.troopers, now("bombers", "lp-trooper")))

@@ -28,7 +28,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `command` | 628 | (leaf) | control, dev |  | 60, 120 |  | cmd |
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
-| `dev` | 513 | army, base, burstfx, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, era_override, hq_fast, ram_trace, trace |
+| `dev` | 515 | army, base, burstfx, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, era_override, hq_fast, ram_trace, trace |
 | `crew` | 484 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
@@ -42,10 +42,10 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `planner` | 338 | rd | base |  |  |  |  |
+| `ram` | 332 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `orbital` | 322 | achievements, threat | control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `jumper` | 315 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
-| `ram` | 315 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
 | `intel` | 289 | know, threat | ops |  |  |  |  |
 | `tactics` | 279 | know, rng | assault, control, farm, herd, herd_learn, ops, siege |  |  |  |  |
