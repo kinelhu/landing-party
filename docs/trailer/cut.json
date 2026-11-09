@@ -57,12 +57,12 @@
   {
    "clip": "media/trailer/pre-scene-sc2-bombers.mp4",
    "bars": 1,
-   "from": 1.5
+   "from": 5.0
   },
   {
    "clip": "media/trailer/drop-scene-sc2-bombers.mp4",
    "bars": 1,
-   "from": 3.5
+   "from": 7.0
   },
   {
    "clip": "media/trailer/drop-scene-sc1-dozers.mp4",
@@ -93,6 +93,16 @@
    "clip": "media/trailer/drop-scene-sc3-prism.mp4",
    "bars": 1,
    "from": 7.0
+  },
+  {
+   "clip": "media/trailer/drop-stage-m3-battle.mp4",
+   "bars": 1,
+   "from": 2.5
+  },
+  {
+   "clip": "media/trailer/drop-stage-m4-battle.mp4",
+   "bars": 1,
+   "from": 4.5
   },
   {
    "clip": "media/trailer/drop-reel-nwwall.mp4",
@@ -127,7 +137,7 @@
   {
    "clip": "media/trailer/drop-scene-sc4-flak.mp4",
    "bars": 1,
-   "from": 3.5
+   "from": 11.0
   },
   {
    "clip": "media/trailer/drop-reel-khwall3.mp4",
