@@ -97,10 +97,12 @@ local function make_infantry(name, color, armor)
   u.distance_per_frame = 0.13
   u.vision_distance = 30
   u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
-  -- Infantry collide with each other (a unit's default mask passes through other units: squads stood in heaps, the user,
-  -- 2026-11-09, "the infantry has no self collision ... they bunch up too much"). Every unit colliding broke 11 scenarios
-  -- (raids stuck in gaps, tanks in their blocks, herds: the full regression, 0.2.244); vehicles pass as before.
-  u.collision_mask = {layers = {player = true, train = true, is_object = true}}
+  -- (Ground units pass through each other, vanilla's unit mask: tried colliding, 2026-11-09, at the user's ask, "the
+  -- infantry has no self collision ... they bunch up too much". Every unit colliding failed 13 of 305 runs (raids stuck
+  -- at gaps, tanks in their blocks, herds through the camps); infantry alone failed 5 more, as a unit without
+  -- not_colliding_with_itself collides with every unit that has it, biters and vehicles too: herds shoved through
+  -- squads, crews blocked. A layer of their own (object, water_tile) keeps biters out but an open gate still blocks
+  -- object: tanks shut in their blocks. Open: DESIGN.md.)
   u.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
   -- Its run: the engineer's running, 8 directions round the compass as a unit reads them. Running with a gun has 18,
   -- the gun's direction against the legs', north to south by the east only (the engine plays them backwards for the

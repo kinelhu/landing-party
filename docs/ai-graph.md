@@ -45,8 +45,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `orbital` | 322 | achievements, threat | control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `jumper` | 315 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
+| `ram` | 315 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
-| `ram` | 303 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `intel` | 289 | know, threat | ops |  |  |  |  |
 | `tactics` | 279 | know, rng | assault, control, farm, herd, herd_learn, ops, siege |  |  |  |  |
 | `phases` | 269 | faction | control |  | 360, 3600 |  | phases |

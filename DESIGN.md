@@ -5630,20 +5630,32 @@ Bugs and surprises the headless runs caught, each kept as a check:
   front of it: 26 in `dev`, found by logging each buggy hit on a wall); a stuck dozer takes for its piece only a wall
   within 4 of the one it was sent at (through its gap and stuck on the far wall, the lead took that and never let its
   followers go). The Prism shot pans along its fight as rehearsed (placed from the stage, it was 7 tiles west of it).
-- **Collision, after the full regression** (0.2.245; the user, going to bed: "including regressions which no doubt will
-  uncover problems due to our collision changes"). Every unit colliding (0.2.243) failed 13 of 305 runs, all 13 passing
-  with it off (seen both ways): 11 from ground units (gates shut, push, skim, blockexit, prospect, cordon, blackout,
-  artyreply, three herd variants: raids stuck at gaps, tanks in their blocks, camps' units in each other's way; the herds
-  fail through the camps, not through biters, the same with the units on a layer of their own) and 2 from fliers
-  (fortress grubstake, strike). Kept: infantry colliding (what the user saw in heaps; all 11 pass with it), vehicles
-  passing through each other as before, fliers colliding. Kessler-Hayashi's constructor drones are their own prototype
-  (`lp-constructor`, the scout drone's airframe and look, not colliding: a site's crew hover together and 4 of 50 stuck).
-  Scenario strike may lose its lander (the player's strike took it among its targets once the camp's layout moved).
-  The ram: an approaching dozer whose piece another's blade took goes on to its next strip; one past the wall's line
-  (in through another's gap, it wandered inside) turns and rams its piece from there; strips a blade less 0.7 apart (a
-  piece on two strips' edge stood); followers done hold, answering only fire (a wander ran out and, idle, a buggy shot
-  the far wall). Open: one buggy fighting inside put 222 into the wall behind it, by its own direct fire, cause not
-  found; `dev` bounds it at one wall piece (350; the faults it was written for put 414 and 1,456 into walls).
+- **Collision, after two full regressions** (0.2.245 and 0.2.246; the user, going to bed: "including regressions which
+  no doubt will uncover problems due to our collision changes"). Tried and measured:
+  - every unit colliding (0.2.243): 13 of 305 runs failed, all 13 passing with it off. 11 from ground units (gates shut,
+    push, skim, blockexit, prospect, cordon, blackout, artyreply, three herd variants: raids stuck at gaps, tanks in
+    their blocks, crews and herds in the camps' way), 2 from fliers (fortress grubstake, strike);
+  - ground units on a layer of their own (lp-unit, object, water_tile: no biter shares it): blockexit worse, no tank out
+    of any block (an opened gate's mask still has object), the herds unchanged;
+  - infantry alone colliding: 11 of the 13 pass, 5 others fail (scanresponse, blackout, crew grown, herd scout, herd
+    ranks-mend). A unit without not_colliding_with_itself collides with every unit that has it: troopers with every
+    biter and vehicle, herds shoving through squads, crews blocked.
+  Kept: ground units passing through each other (vanilla's unit mask), fliers colliding (35% overlap to 0 to 2%, the
+  airspace scenario). **Open, a design to make:** infantry that collide with infantry alone need a layer biters do not
+  have that buildings and open gates both block; none of the engine's do both (object is kept by an open gate,
+  player and is_object are biters'). Candidates: a custom layer added to walls, buildings and gates' closed masks only
+  (data-final-fixes, every entity with player), or spacing by command (formations) instead of collision.
+  Kessler-Hayashi's constructor drones are their own prototype (`lp-constructor`, the scout drone's look, not
+  colliding: a site's crew hover together, 4 of 50 stuck); the harness's crew and cordon checks look for it. Scenario
+  strike may lose its lander (the player's strike took it among its targets once the camp's layout moved).
+  The ram (`dev`, all found by its trace and a log of each buggy hit on a wall with the buggy's command):
+  - an approaching dozer whose piece another's blade took goes on to its next strip;
+  - one past the wall's line (in through another's gap, it wandered inside) turns and rams its piece from there;
+  - strips a blade less 0.7 apart (a piece on two strips' edge stood);
+  - the escort keeps behind the dozer's first line of attack (turned inside, its facing put the spot inside and a
+    parked buggy fired on the far wall: 222, 362);
+  - followers go in 20 s after the first strip, the widening done or not (a lead stuck at a corner kept them out);
+  - followers done hold, answering only fire.
   The arena's play mode on real ground: Nauvis's generation without ore, biters, cliffs or water, the pen paved in
   concrete inside a hazard border (the user: "make it concrete and not editor blank space"); its batch keeps lab tiles.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):

@@ -3960,10 +3960,9 @@ scenarios.dev = function()
     check("dev: and every strip it counted was a strip of wall down", lost >= 2 * (r.breaches - S.ram0.breaches),
       string.format("%d pieces down for %d strips", lost, r.breaches - S.ram0.breaches))
     local inner = surface().count_entities_filtered{area = {{-360 + 4, 150 - 6}, {-360 + 15, 150 + 6}}, name = {"gun-turret", "assembling-machine-1"}}
-    -- (Under one wall piece's 350: the faults it caught put 414 and 1,456 into walls. With the vehicles passing through
-    -- each other again, one buggy fighting inside put 222 into the wall behind it, its direct fire, from what not found:
-    -- open, DESIGN.md.)
-    check("dev: and they took what stood inside, never the walls", inner == 0 and (S.wall_by_buggy or 0) < 350,
+    -- (It caught 414 and 1,456 into walls, then 222 and 362: an escort's spot behind a dozer that had turned inside the
+    -- wall, a parked buggy firing on the far wall; found by logging each hit's buggy and command.)
+    check("dev: and they took what stood inside, never the walls", inner == 0 and (S.wall_by_buggy or 0) < 1,
       string.format("%d of the turret and assembler left, %.0f damage to walls by buggies", inner, S.wall_by_buggy or 0))
     -- (The second takes: the buggies drove to the wall and waited under fire before the dozers were in sight.)
     check("dev: and the buggies kept behind the dozers until the breach", r.early == S.ram0.early,
@@ -7995,7 +7994,7 @@ scenarios.cordon = function()
       schedule(t, function()
         local o = lp("stats", storage.id).origin
         local r = (lp("cordon_stats", storage.id).perimeter or 0) + 8
-        for _, u in pairs(surface().find_entities_filtered{name = "lp-harrier", force = FORCE}) do
+        for _, u in pairs(surface().find_entities_filtered{name = {"lp-harrier", "lp-constructor"}, force = FORCE}) do
           if (u.position.x - o.x) ^ 2 + (u.position.y - o.y) ^ 2 > r * r then u.die("player"); S.shot = (S.shot or 0) + 1 end
         end
       end)
@@ -8303,13 +8302,13 @@ scenarios.crew = function()
       if not S.pad_at and surface().count_tiles_filtered{position = {S.site[1], S.site[2] - 8}, radius = 3,
         name = corp == "serenity" and "lp-pad" or "lp-" .. corp .. "-pad"} > 0 then S.pad_at = game.tick end
       if not S.crew_at and surface().count_entities_filtered{position = S.site, radius = 15, force = "lp-" .. corp,
-        name = corp == "serenity" and "lp-harrier" or "lp-" .. corp .. "-hauler"} > 0 then S.crew_at = game.tick end
+        name = corp == "serenity" and "lp-constructor" or "lp-" .. corp .. "-hauler"} > 0 then S.crew_at = game.tick end
       if answered then
         if not S.lost_at and (lp("crew_stats", S.g).lost or 0) > 0 then S.lost_at = game.tick; S.before = S.before or "rival" end
         if not S.answer_at and (lp("stats", S.g).ops.answers or 0) > 0 then S.answer_at = game.tick end
       end
       if dronekill and not S.shot then
-        local d = surface().find_entities_filtered{name = "lp-harrier", force = "lp-serenity", position = S.mid, radius = 25, limit = 1}[1]
+        local d = surface().find_entities_filtered{name = "lp-constructor", force = "lp-serenity", position = S.mid, radius = 25, limit = 1}[1]
         if d then S.before = lp("standing", "serenity"); d.die("player"); S.shot = game.tick end
       end
       if killed and (doomed or not S.shot) then
@@ -16833,8 +16832,10 @@ if params.scenario == "dev" then
       S.wall_by_buggy = (S.wall_by_buggy or 0) + e.final_damage_amount
       if (S.wall_hits or 0) < 5 then
         S.wall_hits = (S.wall_hits or 0) + 1
-        info(string.format("buggy hit a wall at %d: buggy %.1f,%.1f, wall %.1f,%.1f, %s, %.0f", game.tick, e.cause.position.x,
-          e.cause.position.y, e.entity.position.x, e.entity.position.y, e.damage_type.name, e.final_damage_amount))
+        local cmd = e.cause.commandable and e.cause.commandable.command
+        info(string.format("buggy hit a wall at %d: buggy %.1f,%.1f, wall %.1f,%.1f, %s, %.0f, unit %d, command %s", game.tick,
+          e.cause.position.x, e.cause.position.y, e.entity.position.x, e.entity.position.y, e.damage_type.name,
+          e.final_damage_amount, e.cause.unit_number, cmd and serpent.line(cmd, {maxlevel = 2}) or "none"))
       end
     end
   end, {{filter = "type", type = "wall"}})

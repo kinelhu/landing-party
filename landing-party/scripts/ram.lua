@@ -15,6 +15,7 @@ local CLOSE = 2.4                  -- at the wall: its centre this near the face
 local GIVE_UP = 60 * 60            -- an approach that never gets there
 local ESCORT = 9                   -- followers this far behind their lead until its breach
 local ESCORT_EVERY = 30
+local WAIT_WIDEN = 20 * 60         -- followers go in this long after the first strip, its widening done or not
 
 local function st()
   storage.rams = storage.rams or {}
@@ -38,7 +39,8 @@ function ram.order(u, wall, opts)
   end
   local face = {wall.position.x - d[1] * 1.6, wall.position.y - d[2] * 1.6}
   st()[u.unit_number] = {unit = u, dir = d, wall = {wall.position.x, wall.position.y}, piece = wall, phase = "approach", at = game.tick,
-    force = wall.force.name, widen = opts.widen, base = opts.base or {wall.position.x, wall.position.y}, pass = opts.pass or 0}
+    force = wall.force.name, widen = opts.widen, base = opts.base or {wall.position.x, wall.position.y}, pass = opts.pass or 0,
+    dir0 = opts.dir0 or d}
   u.commandable.set_command{type = defines.command.go_to_location, destination = face, radius = 0.6,
     distraction = defines.distraction.none}
   return true
@@ -137,7 +139,10 @@ end
 -- follower that got there first, the second takes' fault).
 local function escort(k, r, tick)
   local u = r.unit
-  local lead = (r.wall[1] - u.position.x) * r.dir[1] + (r.wall[2] - u.position.y) * r.dir[2]
+  -- (Behind it along its first line of attack: turned inside the wall, its own facing put the escort's spot inside, and a
+  -- parked buggy there fired on the far wall, 362 in scenario dev.)
+  local dir = r.dir0 or r.dir
+  local lead = (r.wall[1] - u.position.x) * dir[1] + (r.wall[2] - u.position.y) * dir[2]
   for _, f in ipairs(storage.ram_followers or {}) do
     if f.lead == k then
       for i, v in ipairs(f.units) do
@@ -146,7 +151,7 @@ local function escort(k, r, tick)
             -- (Ordered afresh each half second, each twitch of the dozer's was the buggies' too: "dancing around giving
             -- everybody epilepsis", the sixth takes. Ordered again only when its spot has moved 3 tiles.)
             local off = (i - (#f.units + 1) / 2) * 3
-            local to = {u.position.x - r.dir[1] * ESCORT - r.dir[2] * off, u.position.y - r.dir[2] * ESCORT + r.dir[1] * off}
+            local to = {u.position.x - dir[1] * ESCORT - dir[2] * off, u.position.y - dir[2] * ESCORT + dir[1] * off}
             f.spots = f.spots or {}
             local was = f.spots[i]
             if not was or (was[1] - to[1]) ^ 2 + (was[2] - to[2]) ^ 2 > 9 then
@@ -157,7 +162,7 @@ local function escort(k, r, tick)
                   {type = defines.command.stop, ticks_to_wait = 36000, distraction = defines.distraction.none}}}
             end
           end
-          local d = (r.wall[1] - v.position.x) * r.dir[1] + (r.wall[2] - v.position.y) * r.dir[2]
+          local d = (r.wall[1] - v.position.x) * dir[1] + (r.wall[2] - v.position.y) * dir[2]
           -- (Before its first strip falls: after, the lead backs off the wall between strips.)
           if d < lead - 1 and (r.pass or 0) == 0 then storage.ram_early = (storage.ram_early or 0) + 1 end
         end
@@ -182,6 +187,11 @@ function ram.tick(tick)
       -- Its lead lost before a breach: its followers go at the wall themselves.
       release(k, r.wall, {0, 0}, r.force)
       storage.rams[k] = nil
+    elseif r.first_clear and tick - r.first_clear > WAIT_WIDEN and r.phase ~= "through" and not r.let_go then
+      -- Its widening long after its first strip (stuck at a corner piece, the lead kept its buggies waiting outside for
+      -- good in scenario dev): they go in through what is open.
+      r.let_go = true
+      release(k, r.base, r.dir0 or r.dir, r.force)
     elseif r.phase == "approach" then
       local dx, dy = r.wall[1] - u.position.x, r.wall[2] - u.position.y
       -- Its blade on any wall: it rams there (jostled by the others, two dozers slid 6 and 18 tiles along the wall from
@@ -253,6 +263,7 @@ function ram.tick(tick)
         storage.ram_crushed = (storage.ram_crushed or 0) + 1
       else
         storage.ram_breaches = (storage.ram_breaches or 0) + 1
+        r.first_clear = r.first_clear or tick
         trace(k, r, "clear")
         -- Widening: the next strip along the wall, a blade's width from the last on alternate sides, rammed straight on.
         local next_piece, pass
@@ -267,7 +278,8 @@ function ram.tick(tick)
           if next_piece then break end
         end
         if next_piece then
-          ram.order(u, next_piece, {dir = r.dir, base = r.base, pass = pass, widen = r.widen})
+          ram.order(u, next_piece, {dir = r.dir0, dir0 = r.dir0, base = r.base, pass = pass, widen = r.widen})
+          st()[k].first_clear = r.first_clear
         else
           -- Clear: on through, its followers behind it, let go only now: let go at the first strip, they crowded into
           -- a gap three wide that the dozer still stood in (the user, 2026-11-09: "they are blocking the way for the
