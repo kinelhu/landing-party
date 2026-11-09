@@ -5666,12 +5666,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **Cut 17 still showed the old Kessler-Hayashi units** (2026-11-09; the user: "I still see shots with old KH tanks and
   red KH lasers"). Only the four new scenes had been filmed on the redrawn art; a frame from every shot of the cut found
   four more filmed before it (reel-khwall, reel-warfinale, stage-c1-drop, stage-k2-strike). Cut 18 films them again on
-  0.2.246: reel-khwall's beats held to the tick from its save, the finale from its rebuilt fork, the drop at 44800 as
-  before (`docs/trailer/stage-kh.lua`). stage-k2-strike could not be: in the trailer fork the armed camp's siege on the
-  player's wall no longer comes (rehearsed to tick 71300, nothing after its first siege packs at 53800 but the herd's
-  wave; it came at 65800 on 0.2.206), so its two slots take reel-khwall's later moves (the battery moved up under the
-  lasers, the wall's roboports shelled). Open: why that siege stopped coming. The old clips are kept as `*-1105.mp4`.
-  Check a frame of every shot against the current art before calling a cut current.
+  0.2.246: reel-khwall's beats held to the tick from its save, the finale from its rebuilt fork, the drop at 44800 and
+  the armed camp's strike on the wall (deploy 65800, paint 67600, the fall 68320) as before (`docs/trailer/stage-kh.lua`).
+  The old clips are kept as `*-1105.mp4`. Check a frame of every shot against the current art before calling a cut
+  current. A false alarm on the way: a rehearsal with `base = 1` logs only settlement 1's phases, and the armed camp is
+  settlement 4, so its siege looked gone (the user: "Did we bork balance?"); with `base = 4` its beats were all there.
+  Read a rehearsal's silence against the settlement it watches.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
