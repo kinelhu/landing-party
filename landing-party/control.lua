@@ -232,6 +232,7 @@ end)
 -- destroy is counted razed (attributed through the unit that did it).
 script.on_event(defines.events.on_entity_died, function(e)
   local ent = e.entity
+  fall.skip(e)
   -- What the factions know: every loss of theirs, by whom (scripts/know.lua).
   know.loss(e)
   studies.on_died(e)

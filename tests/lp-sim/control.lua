@@ -4978,7 +4978,8 @@ end
 -- under the first. Checks: no wreck on the ground the tick after (it is falling); each down and its wreck there once the
 -- fall is over; the crash hurts what is under it. (Scenario fall is a siege's.)
 scenarios.shotdown = function()
-  local kinds = {{"lp-harrier", "lp-kh-drone-wreck"}, {"lp-grubstake-harrier", "lp-harrier-wreck"}, {"lp-laser-drone", "lp-laser-drone-wreck"}}
+  local kinds = {{"lp-harrier", "lp-kh-drone-wreck"}, {"lp-grubstake-harrier", "lp-harrier-wreck"}, {"lp-laser-drone", "lp-laser-drone-wreck"},
+    {"lp-grubstake-scavenger", "lp-scavenger-wreck"}}
   schedule(60, function()
     lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true, herd_off = true})
   end)
@@ -4994,24 +4995,32 @@ scenarios.shotdown = function()
           S.fl_walls[#S.fl_walls + 1] = surface().create_entity{name = "stone-wall", position = {p[1] + x, p[2] + y}, force = "player"}
         end end
       end
-      local u = surface().create_entity{name = k[1], position = p, force = i == 2 and "lp-grubstake" or FORCE}
+      local u = surface().create_entity{name = k[1], position = p, force = k[1]:find("grubstake", 1, true) and "lp-grubstake" or FORCE}
       S.fl[i] = {p = p, wreck = k[2]}
       if u then u.die("player") end
     end
-    -- And a tank, its ammunition cooking off (units.lua, COOKOFF): its wreck burns a while, the fire going out unspread.
+    -- A bomb drone bursting on its target (a wall far off): its attack kills it, and it does not fall.
+    S.bd_wall = surface().create_entity{name = "stone-wall", position = {460, -20}, force = "player"}
+    S.bd = surface().create_entity{name = "lp-grubstake-scavenger", position = {460, -16}, force = "lp-grubstake"}
+    S.bd.commandable.set_command{type = defines.command.attack, target = S.bd_wall, distraction = defines.distraction.none}
+    S.bd_fallen0 = lp("fall_stats").fallen
+    -- And six tanks, their ammunition cooking off (units.lua, COOKOFF; each part on its chance, half of them burning):
+    -- some wrecks burn a while, every fire going out unspread.
     S.ck_at = {430, 20}
-    local t = surface().create_entity{name = "lp-tank", position = S.ck_at, force = FORCE}
-    if t then t.die("player") end
+    for k = 0, 5 do
+      local t = surface().create_entity{name = "lp-tank", position = {S.ck_at[1] + (k % 3) * 4 - 4, S.ck_at[2] + math.floor(k / 3) * 4}, force = FORCE}
+      if t then t.die("player") end
+    end
   end)
   schedule(1805, function()
-    S.ck_fire = surface().count_entities_filtered{position = S.ck_at, radius = 3, name = "lp-cookoff-fire"}
+    S.ck_fire = surface().count_entities_filtered{position = S.ck_at, radius = 9, name = "lp-cookoff-fire"}
   end)
   schedule(1800 + 900, function()
     local left = surface().count_entities_filtered{position = S.ck_at, radius = 20, type = "fire"}
     for _, f in ipairs(surface().find_entities_filtered{position = S.ck_at, radius = 20, type = "fire"}) do
       info(string.format("shotdown: fire left %s at %.1f,%.1f", f.name, f.position.x, f.position.y))
     end
-    check("shotdown: a tank's wreck burns, then the fire goes out", S.ck_fire > 0 and left == 0,
+    check("shotdown: tanks' wrecks burn, not all, then the fires go out", S.ck_fire > 0 and S.ck_fire < 6 and left == 0,
       string.format("%d fires at once, %d left after 15 s", S.ck_fire, left))
   end)
   -- (Within 5: each lands 1.5 to 4 tiles off, fall.lua.)
@@ -5034,6 +5043,9 @@ scenarios.shotdown = function()
     check("shotdown: each down, its wreck where it fell", st.crashed == #kinds and n == #kinds,
       string.format("%d crashed, %d wrecks of %d", st.crashed, n, #kinds))
     check("shotdown: the crash hurts what is under it", hurt > 0, hurt .. " of " .. #S.fl_walls .. " walls")
+    -- (Four kinds fall; the burst drone none of them.)
+    check("shotdown: a bomb drone bursting on its target does not fall", not S.bd.valid and st.fallen == #kinds,
+      string.format("drone %s, %d fell (of %d shot down)", S.bd.valid and "still flying" or "burst", st.fallen, #kinds))
   end)
 end
 

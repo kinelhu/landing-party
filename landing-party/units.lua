@@ -331,10 +331,19 @@ end
 
 -- heads: the turning heads on its hull; by default the tank's own cannon turret (the units had the hull only).
 -- A hull's ammunition cooking off when it dies (the user, 2026-11-09: "exploding tanks could show the scorcher burn effect
--- from their turret for a short time? (representing ammo cooking off inside)"): its wreck burns, a fire of its own that
--- lives COOK_TICKS and does not spread, and COOK_POPS small blasts pop off it, one every COOK_GAP ticks, round its turret.
--- Looks: no damage beyond the fire's own. The Scorcher's fuel blast replaces it (its dying effects, below).
-local COOK_TICKS, COOK_POPS, COOK_GAP = 200, 5, 22
+-- from their turret for a short time? (representing ammo cooking off inside)", then, on the first: "a little overdramatic
+-- perhaps? or maybe we could have multiple versions of it?"). Each part on its own chance, so wrecks differ: a flame in
+-- the hull (half of them; a fire of its own, COOK_TICKS, no spread), a couple of pops round the turret, a longer string
+-- of them starting later, and now and then the turret going up a second and a half on. Looks: no damage beyond the
+-- fire's own. The Scorcher's fuel blast replaces it (its dying effects, below). (The first: three flames, five pops on
+-- every hull, a column of fire on each wreck.)
+local COOK_TICKS = 150
+local COOK = {
+  {name = "lp-cookoff-short", chance = 0.6, delay = 6, pops = 2, gap = 25, blast = "explosion"},
+  {name = "lp-cookoff-long", chance = 0.3, delay = 40, pops = 4, gap = 35, blast = "explosion"},
+  {name = "lp-cookoff-turret", chance = 0.12, delay = 90, pops = 1, gap = 1, blast = "medium-explosion"},
+}
+local COOK_FIRE = 0.5
 do
   local f = table.deepcopy(data.raw.fire["fire-flame"])
   f.name = "lp-cookoff-fire"
@@ -345,13 +354,20 @@ do
   f.damage_per_tick = {amount = 4 / 60, type = "fire"}
   f.emissions_per_second = nil
   f.hidden = true
-  data:extend({f, {type = "delayed-active-trigger", name = "lp-cookoff", delay = 8, repeat_count = COOK_POPS,
-    repeat_delay = COOK_GAP, cancel_when_source_is_destroyed = false,
-    action = {type = "direct", action_delivery = {type = "instant", target_effects = {
-      {type = "create-explosion", entity_name = "explosion", offset_deviation = {{-0.7, -0.7}, {0.7, 0.7}}, offsets = {{0, -0.6}}}}}}}})
+  data:extend({f})
+  for _, c in ipairs(COOK) do
+    data:extend({{type = "delayed-active-trigger", name = c.name, delay = c.delay, repeat_count = c.pops,
+      repeat_delay = c.gap, cancel_when_source_is_destroyed = false,
+      action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+        {type = "create-explosion", entity_name = c.blast, offset_deviation = {{-0.6, -0.6}, {0.6, 0.6}}, offsets = {{0, -0.6}}}}}}}})
+  end
 end
-local COOKOFF = {{type = "create-fire", entity_name = "lp-cookoff-fire", initial_ground_flame_count = 3, offsets = {{0, -0.3}}},
-  {type = "nested-result", action = {type = "direct", action_delivery = {type = "delayed", delayed_trigger = "lp-cookoff"}}}}
+local COOKOFF = {{type = "create-fire", entity_name = "lp-cookoff-fire", initial_ground_flame_count = 1, offsets = {{0, -0.3}},
+  probability = COOK_FIRE}}
+for _, c in ipairs(COOK) do
+  COOKOFF[#COOKOFF + 1] = {type = "nested-result", probability = c.chance,
+    action = {type = "direct", action_delivery = {type = "delayed", delayed_trigger = c.name}}}
+end
 
 local function make_tank(name, color, heads)
 local tank = base_unit(name)
@@ -615,6 +631,18 @@ scavenger.attack_parameters = {type = "projectile", ammo_category = "rocket", ra
       {type = "nested-result", action = {type = "area", radius = BOMB_R, force = "not-same", action_delivery = {
         type = "instant", target_effects = {{type = "damage", damage = {amount = BOMB, type = "explosion"}}}}}}},
     source_effects = {{type = "damage", damage = {amount = 10000, type = "physical"}}}}}}}
+-- Shot down, its bomb goes off where it lands (fall.lua, shared.FALL): the same blast, from no one. Its wreck its own
+-- (defender-remnants is the player's defenders' too, and the fall goes by the wreck).
+do
+  local b = table.deepcopy(data.raw.explosion["big-explosion"])
+  b.name = "lp-scavenger-bomb"
+  b.created_effect = {type = "direct", action_delivery = {type = "instant", target_effects = {{type = "nested-result",
+    action = {type = "area", radius = BOMB_R, action_delivery = {type = "instant", target_effects = {
+      {type = "damage", damage = {amount = BOMB, type = "explosion"}}}}}}}}}
+  local w = table.deepcopy(data.raw.corpse["defender-remnants"])
+  w.name = "lp-scavenger-wreck"
+  data:extend({b, w})
+end
 
 -- Laser drone (Kessler-Hayashi's garrisons, in the harrier's place: army.lua): the destroyer's body in its colours,
 -- armoured against small arms, a laser beam of about 12 every 20 ticks, range 16. Its sky is few and dear.
@@ -1181,7 +1209,8 @@ do
   data:extend({c})
 end
 -- (It bursts on its target: its corpse stays the defender's small remnants.)
-grubstake_look(scavenger, "grubstake/scavenger", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}})
+grubstake_look(scavenger, "grubstake/scavenger", {{"rotor", {"shadow"}}, {"base", {"body", "glow"}}, {"rotor", {"body"}}},
+  {corpse = "lp-scavenger-wreck"})
 
 local UNIT_LOOT = {[infantry] = {{"electronic-circuit", 1, 1}}, [shotgun_hand] = {{"shotgun-shell", 1, 3}},
   [buggy] = {{"engine-unit", 1, 1}}, [harrier] = {{"iron-gear-wheel", 1, 2}}, [laser_drone] = {{"advanced-circuit", 1, 1}}, [tank] = {{"steel-plate", 4, 4}, {"engine-unit", 1, 1}},

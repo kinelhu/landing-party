@@ -268,6 +268,9 @@ shared.FALL = {TICKS = 40, crash = "lp-crash", kinds = {
   ["lp-harrier-wreck"] = {sheet = "grubstake/harrier", rotor = "rotor", sprite = "lp-fall-harrier"},
   ["lp-kh-drone-wreck"] = {sheet = "serenity/drone-scout", rotor = "fans", sprite = "lp-fall-kh-drone"},
   ["lp-laser-drone-wreck"] = {sheet = "serenity/drone-laser", rotor = "fans", sprite = "lp-fall-laser-drone"},
+  -- Grubstake's bomb drone shot down: its bomb goes off where it lands (crash), not where it was hit; bursting on its
+  -- target (its attack kills it) it does not fall (fall.skip).
+  ["lp-scavenger-wreck"] = {sheet = "grubstake/scavenger", rotor = "rotor", sprite = "lp-fall-scavenger", crash = "lp-scavenger-bomb"},
 }}
 -- The lightning's stun on units (scripts/stun.lua; the user, 2026-11-09: "a stun effect with Tesla weapons ... also
 -- affecting units? Would have to not be 100% to be fair"): each electric hit charges its target by one, less its electric

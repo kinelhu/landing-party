@@ -5759,7 +5759,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   burns, a fire of its own (lp-cookoff-fire: 200 ticks, no spread, 4 a second), and five small blasts pop round its
   turret 22 ticks apart (a delayed trigger), no damage of their own. A fire stays an entity while its burnt patch shows
   (fire-flame's 30 s): the check read it as still burning until the patch was cut to 500 ticks (shotdown: the wreck burns,
-  nothing left after 15 s). Seen on film (docs/trailer/cookoff-fx.lua, /lp kill).
+  nothing left after 15 s). Seen on film (docs/trailer/cookoff-fx.lua, /lp kill). 0.2.256, the user on it: "a little
+  overdramatic perhaps? or maybe we could have multiple versions of it?": each part on its own chance, so wrecks differ:
+  a single flame half the time (150 ticks), two pops 60%, a later string of four 30%, the turret going up in one medium
+  blast at 1.5 s 12% (shotdown: six tanks, four burning, none after 15 s). And the bomb drone shot down falls (its own
+  wreck, lp-scavenger-wreck: defender-remnants is the player's defenders' too) and its bomb goes off where it lands, its
+  full 150 within 2.5 from no one; bursting on its target (its attack kills it, its cause itself) it does not fall
+  (fall.skip; shotdown: 4 fell of 4 shot down, the burst drone not, 5 with the skip taken out). Seen together on film
+  with the Scorcher's fuel (docs/trailer/deaths2-fx.lua).
 - **The Tesla's aim, wider** (2026-11-09; teslawall grid failed again on 0.2.254, 0 turns, the lasers held 0%). Its turn
   came only off a bolt on an accumulator or roboport that named the Tesla as its cause, and in that run its bolts went
   into the troopers and the wall, then the accumulators by its chain (no cause). Now any bolt of a Tesla on a unit or a

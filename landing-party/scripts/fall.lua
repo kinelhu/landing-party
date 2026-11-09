@@ -18,8 +18,21 @@ local SPIN = 0.5            -- turns in all
 local fall = {}
 local F = shared.FALL
 
+-- A death its own attack dealt (the bomb drone bursting on its target): no fall (on_entity_died, before this).
+function fall.skip(e)
+  local u = e.entity
+  if e.cause == u and u.unit_number then
+    storage.fall_skip = storage.fall_skip or {}
+    storage.fall_skip[u.unit_number] = game.tick
+  end
+end
+
 function fall.on_post_died(e)
   if not e.corpses then return end
+  if storage.fall_skip and e.unit_number and storage.fall_skip[e.unit_number] then
+    storage.fall_skip[e.unit_number] = nil
+    return
+  end
   for _, c in ipairs(e.corpses) do
     local k = c.valid and F.kinds[c.name]
     if k and SHEETS[k.sheet .. "/base"] then
@@ -55,7 +68,7 @@ function fall.tick(tick)
       if f.shadow.valid then f.shadow.destroy() end
       local s = game.surfaces[f.s]
       if s then
-        s.create_entity{name = F.crash, position = {f.lx, f.ly}}
+        s.create_entity{name = f.k.crash or F.crash, position = {f.lx, f.ly}}
         s.create_entity{name = f.corpse, position = {f.lx, f.ly}, direction = f.dir}
       end
       storage.crashed = (storage.crashed or 0) + 1
