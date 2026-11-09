@@ -405,7 +405,10 @@ local battle_tank = make_tank("lp-battle-tank", {r = 1, g = 0.82, b = 0.55, a = 
 battle_tank.attack_parameters.range = 18
 -- 50 to what it hits (70 until the RTS pass, 2026-10-21: at 4 then 6 of bandwidth it beat every ground kind in the
 -- arena); its siege blast unchanged: the player's siege weapon, not a better aegis.
-battle_tank.attack_parameters.ammo_type = shell("lp-battle-tank-heavy", 50, 120)
+-- Heavier and slower since 0.2.266, its damage a second the same (the user, 2026-11-09: "halve the fire rate of our tank
+-- and double its damage"): 100 and 240 every 180 ticks, not 50 and 120 every 90.
+battle_tank.attack_parameters.cooldown = 180
+battle_tank.attack_parameters.ammo_type = shell("lp-battle-tank-heavy", 100, 240)
 
 -- Walker: a spider-unit on the spidertron's body and legs (own copies of the legs, tinted). Steps over walls.
 local spidertron = data.raw["spider-vehicle"].spidertron

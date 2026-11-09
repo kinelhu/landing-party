@@ -5873,6 +5873,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   railgunner's red tracer, silent); the battle tank's shell the Aegis's (three times the size, lit, smoke, a big
   explosion where it lands). Kessler-Hayashi's and Grubstake's infantry untouched. 13 player-army scenarios pass; the
   looks not yet seen on film. Its sounds, the breacher's, the flamer's, the Skyguard's, for the next sound sheet.
+- **The battle tank heavier and slower** (0.2.266; the user: "halve the fire rate of our tank and double its damage"):
+  100 to what it hits and 240 to buildings within 1.5, every 180 ticks (50 and 120 every 90): its damage a second the
+  same, each shot the heavy one its new shell looks. The arena: it beat Kessler-Hayashi's tank, the Aegis and the
+  Scorcher 3 of 3 each (it stood at 84% overall, priced by command bandwidth: open).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
