@@ -60,8 +60,19 @@ function stun.on_hit(e)
   local p = math.min(S.MAX, (h.c - 1) / S.SPAN)
   if p > (b.pmax or 0) then b.pmax = p end
   if p <= 0 or rng.next(storage.stun_rng) >= p then return end
+  stun.apply(u, h, b)
+end
+
+-- The stun itself: switched off, the current over it, the list to switch it on again. (/lp stun: on demand, for its look.)
+function stun.apply(u, h, b)
+  local tick, k = game.tick, u.unit_number
+  if not h then
+    st()
+    h = storage.stun[k] or {c = 0, t = tick, free = 0, n = 0}
+    storage.stun[k] = h
+  end
   h.till, h.free = tick + S.TICKS, tick + S.TICKS + S.IMMUNE
-  b.stuns = b.stuns + 1
+  if b then b.stuns = b.stuns + 1 end
   if h.n == 1 then storage.stun_first = (storage.stun_first or 0) + 1 end
   if h.last and (not storage.stun_gap or tick - h.last < storage.stun_gap) then storage.stun_gap = tick - h.last end
   h.last = tick
@@ -71,12 +82,29 @@ function stun.on_hit(e)
   storage.stuns = (storage.stuns or 0) + 1
 end
 
+-- Arcs of current between points on a stunned unit (its look; the user: "electrical currents flowing all over the unit").
+local function arcs(u, at)
+  -- (Its own random source: drawn from the stun's, the look changed which hits stunned.)
+  storage.stun_arc_rng = storage.stun_arc_rng or rng.new(1109)
+  local r = storage.stun_arc_rng
+  local w = is_hull(u) and 1.0 or 0.35
+  local h = is_hull(u) and 0.5 or 0.9      -- a trooper's body stands above its feet
+  local p = u.position
+  local function pt() return {p.x + (rng.next(r) * 2 - 1) * w, p.y - h * rng.next(r) - (is_hull(u) and 0 or 0.2)} end
+  for _ = 1, S.ARCS do
+    u.surface.create_entity{name = S.arc, position = p, source_position = pt(), target_position = pt(),
+      duration = S.ARC_EVERY + 1}
+  end
+end
+
 function stun.tick(tick)
   local list = storage.stunned
   if not list or next(list) == nil then return end
   for k, s in pairs(list) do
     if not s.e.valid then
       list[k] = nil
+    elseif tick < s.till and (tick - s.at) % S.ARC_EVERY == 0 then
+      arcs(s.e)
     elseif tick >= s.till then
       s.e.disabled_by_script = false
       list[k] = nil

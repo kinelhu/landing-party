@@ -5716,7 +5716,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the turret stuns little: its build-up checked by the chance it gives a hull (0.05 at most), the stun mattering for
   steady small fire (the Tesla's 20, the tesla gun's 30). Scenario stun: the Teslas stun 20 of the player's troopers in
   190 hits; never a first hit; none again within the immunity; every unit on again. dev: the Prism scene's Tesla
-  stuns its troopers. Assumed, not tested: the stun's look in game before the Prism shot's re-take.
+  stuns its troopers. Its look, seen on film (docs/trailer/stun-fx.lua, /lp stun): the lightning hit's whole animation at
+  0.3 was a pixel-thin line, its first and last frames near empty, invisible at game zoom; now its arcing frames alone,
+  larger and additive, and two arcs of the Tesla's cyan beam (one that does nothing) jumping between points on the unit
+  every 5 ticks. The arcs drew on the stun's random source at first and changed which hits stunned (tanks 2 of 80):
+  their own now.
+- **The player's units do not chart the map** (2026-11-09; the user: "are player units giving map view to the player? I
+  think they should to allow far ops"). In a benchmark run nothing charts, not a powered radar and not force.chart
+  itself (chartprobe: all four false after a minute), so the question needed a game: /lp chartcheck in a film (the scenes
+  save, docs/trailer/stun-close.lua) put a trooper and a tank 600 tiles out, and 1,700 ticks on neither spot was charted
+  nor in sight. Far operations are blind without a radar there. Planned: the ground round each of the player's squads
+  charted every few seconds.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

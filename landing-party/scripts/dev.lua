@@ -23,7 +23,12 @@
 --                            its blast (scripts/burstfx.lua). The blast is real: stand clear
 --   tesla [n]                n Kessler-Hayashi Teslas (default 1) set 20 tiles east of you, sent at your laser or tesla
 --                            turret nearest you within 60: its lightning holds what it strikes (scorcher.hold, the status
---                            "Stunned by lightning"). They are real and stay: kill them or let them be
+--                            "Stunned by lightning"). With none, at your units within 60: its lightning stuns them
+--                            (scripts/stun.lua). They are real and stay: kill them or let them be
+--   stun [r]                 your units within r (15) of you stunned at once, chance aside: the lightning's stun's look
+--   chartcheck               once: one of your troopers and one of your tanks set 600 tiles east of you, on ground you
+--                            have not seen; again: whether that ground is charted and in sight, to script-output
+--                            landing-party/chartcheck.txt (a benchmark run charts nothing: it needs a game)
 --   clear [r]                every unit within r (30) of you removed, no wrecks (between staged scenes)
 --   parade [ring <kind>]     each infantry kind walking each of the 8 ways, a row a kind east of you; or eight of one
 --                            kind walking out of a ring round you (facings: all face away)
@@ -42,6 +47,7 @@ local farm = require("__landing-party__.scripts.farm")
 local burstfx = require("__landing-party__.scripts.burstfx")
 local orbital = require("__landing-party__.scripts.orbital")
 local ram = require("__landing-party__.scripts.ram")
+local stun = require("__landing-party__.scripts.stun")
 
 local dev = {}
 
@@ -269,6 +275,15 @@ function dev.run(player, args)
       if not target or (e.position.x - player.position.x) ^ 2 + (e.position.y - player.position.y) ^ 2
         < (target.position.x - player.position.x) ^ 2 + (target.position.y - player.position.y) ^ 2 then target = e end
     end
+    -- None: at your units within 60, their middle (the stun's look, 2026-11-09).
+    local troops = not target and s.find_entities_filtered{position = player.position, radius = 60, type = "unit",
+      force = player.force} or {}
+    local mid
+    if #troops > 0 then
+      local x, y = 0, 0
+      for _, t in ipairs(troops) do x, y = x + t.position.x, y + t.position.y end
+      mid = {x / #troops, y / #troops}
+    end
     local made = 0
     for k = 1, n do
       local at = s.find_non_colliding_position(name, {player.position.x + 20, player.position.y + (k - 1) * 4}, 10, 0.5)
@@ -277,12 +292,48 @@ function dev.run(player, args)
         made = made + 1
         if target then
           u.commandable.set_command{type = defines.command.attack, target = target, distraction = defines.distraction.by_damage}
+        elseif mid then
+          u.commandable.set_command{type = defines.command.attack_area, destination = mid, radius = 20,
+            distraction = defines.distraction.by_enemy}
         end
       end
     end
     player.print(string.format("%d Tesla%s set east of you, %s", made, made == 1 and "" or "s",
       target and string.format("sent at the %s at %.0f,%.0f", target.name, target.position.x, target.position.y)
-        or "no laser or tesla turret of yours within 60 to send them at"))
+        or mid and string.format("sent at your %d units round %.0f,%.0f", #troops, mid[1], mid[2])
+        or "no laser, tesla turret or unit of yours within 60 to send them at"))
+  elseif what == "stun" then
+    local n = 0
+    for _, u in ipairs(player.surface.find_entities_filtered{position = player.position, radius = tonumber(args[2]) or 15,
+      type = "unit", force = player.force}) do
+      stun.apply(u); n = n + 1
+    end
+    player.print(n .. " of your units stunned")
+  elseif what == "chartcheck" then
+    local s, pf = player.surface, player.force
+    local cc = storage.chartcheck
+    if not cc then
+      local x, y = player.position.x + 600, player.position.y
+      s.request_to_generate_chunks({x, y}, 2)
+      s.force_generate_chunk_requests()
+      cc = {at = game.tick, spots = {}}
+      for k, name in ipairs({"lp-trooper", "lp-tank"}) do
+        local p = {x, y + (k - 1) * 200}
+        local c = {math.floor(p[1] / 32), math.floor(p[2] / 32)}
+        cc.spots[#cc.spots + 1] = {name = name, p = p, before = pf.is_chunk_charted(s, c)}
+        s.create_entity{name = name, position = p, force = pf}
+      end
+      storage.chartcheck = cc
+      return player.print("a trooper and a tank set 600 tiles east of you; /lp chartcheck again to read the map")
+    end
+    local lines = {}
+    for _, sp in ipairs(cc.spots) do
+      local c = {math.floor(sp.p[1] / 32), math.floor(sp.p[2] / 32)}
+      lines[#lines + 1] = string.format("%d ticks on: %s at %.0f,%.0f: charted before %s, now %s, in sight %s", game.tick - cc.at,
+        sp.name, sp.p[1], sp.p[2], tostring(sp.before), tostring(pf.is_chunk_charted(s, c)), tostring(pf.is_chunk_visible(s, c)))
+    end
+    helpers.write_file("landing-party/chartcheck.txt", table.concat(lines, "\n") .. "\n", true)
+    player.print(table.concat(lines, "; "))
   elseif what == "dozers" or what == "bombers" or what == "prism" or what == "flak" then
     -- Staged scenes for the trailer (the user, 2026-11-08: "new scenes including a dozer siege and bomber drones diving on
     -- a mass of troopers"; and the Prism and Tesla in action, flak buggies on fliers), the same each take. The attackers
@@ -421,7 +472,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | clear [r] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | chartcheck | clear [r] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 

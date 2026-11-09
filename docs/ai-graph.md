@@ -28,8 +28,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `command` | 596 | (leaf) | control |  | 60, 120 |  | cmd |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
+| `dev` | 495 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, era_override, hq_fast, ram_trace, trace |
 | `crew` | 484 | base, ops, standing | control |  | 30 |  | crew_owner |
-| `dev` | 444 | army, base, burstfx, faction, farm, jumper, names, ops, orbital, ram, standing, tap | control |  |  |  | cordon_off, era_override, hq_fast, ram_trace, trace |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
 | `costmap` | 415 | firemap, threat | control, creep, faction, farm, herd, siege |  |  |  |  |
@@ -70,13 +70,13 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `assault` | 142 | attempt, tactics, threat | ops, siege |  |  |  |  |
 | `pool` | 142 | (leaf) | army, control, cuts, ops, prospect, prowl, tap, war |  |  |  |  |
 | `watch` | 141 | (leaf) | control |  |  |  | watch |
+| `stun` | 134 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `wfc_serenity` | 134 | (leaf) |  |  |  |  |  |
 | `answers` | 130 | (leaf) | ops |  |  |  |  |
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |
 | `chart` | 114 | (leaf) | base, border, map, prospect |  |  |  |  |
 | `pact` | 112 | base, lights, rng | control, faction, marker |  | 600 |  | pact_broken, pact_state |
 | `border` | 108 | chart, ops, standing | control |  | 600 |  | borders |
-| `stun` | 106 | rng | control |  | 3600 |  | stun, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `scanner` | 98 | studies | control |  |  |  | scanners |
 | `attempt` | 91 | threat | assault, herd, herd_learn, oplog, ops, siege |  |  |  |  |
 | `belts` | 86 | (leaf) | control |  |  |  |  |

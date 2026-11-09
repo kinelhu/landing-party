@@ -265,8 +265,10 @@ shared.PLATE_HEALTH = 1.15
 -- resistance; the charge halves every HALF ticks; a hit stuns with chance (charge - 1) / SPAN, at most MAX; stunned for
 -- TICKS, it cannot be stunned again for IMMUNE after. Both sides' tesla weapons alike. A hull (a unit wider than HULL_WIDTH)
 -- takes HULL of the charge on top: its electric resistance alone left a tank with none stunned on a quarter of its hits.
+-- Its look: the sticker's glow, and ARCS arcs of current (arc, a beam that does nothing) jumping between points on the
+-- unit every ARC_EVERY ticks while it lasts.
 shared.STUN = {HALF = 240, SPAN = 6, MAX = 0.6, TICKS = 60, IMMUNE = 240, HULL = 0.25, HULL_WIDTH = 0.6,
-  fx = "lp-stun-fx", fx_big = "lp-stun-fx-big"}
+  fx = "lp-stun-fx", fx_big = "lp-stun-fx-big", arc = "lp-stun-arc", ARCS = 2, ARC_EVERY = 5}
 function shared.plated(corp, kind, plate)
   local n = shared.variant(corp, kind)
   return plate and (n .. "-" .. plate) or n

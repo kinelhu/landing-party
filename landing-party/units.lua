@@ -788,17 +788,22 @@ scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type =
   {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 
--- The lightning's stun (scripts/stun.lua): current arcing over the unit while it lasts, Space Age's lightning strike's hit
--- (36 frames, its 308 by 220 at scale 0.3 over infantry, 0.6 over a hull), looped over the stun's length. Movement and speed
--- untouched: the script switches the unit off.
+-- The lightning's stun (scripts/stun.lua): a glow over the unit while it lasts, Space Age's lightning strike's hit, its
+-- arcing frames alone (13 to 24 of 36, there and back: the whole of it at 0.3 was a pixel-thin line on film, its first and
+-- last frames near empty), at 0.45 over infantry, 0.9 over a hull. And arcs of current over it (stun.lua): the electric
+-- beam in the Tesla's cyan, doing nothing. Movement and speed untouched: the script switches the unit off.
 local util = require("util")
-for _, fx in ipairs({{shared.STUN.fx, 0.3}, {shared.STUN.fx_big, 0.6}}) do
+local arc_seq = {}
+for i = 13, 24 do arc_seq[#arc_seq + 1] = i end
+for i = 23, 14, -1 do arc_seq[#arc_seq + 1] = i end
+data:extend({beam_copy("electric-beam-no-sound", shared.STUN.arc, {r = 0.7, g = 0.85, b = 1, a = 1})})
+for _, fx in ipairs({{shared.STUN.fx, 0.45}, {shared.STUN.fx_big, 0.9}}) do
   data:extend({{type = "sticker", name = fx[1], flags = {"not-on-map"}, hidden = true,
     duration_in_ticks = shared.STUN.TICKS, target_movement_modifier = 1, vehicle_speed_modifier = 1,
     render_layer = "air-object", single_particle = true,
     animation = util.sprite_load("__space-age__/graphics/entity/lightning/lightning-attractor-hit-anim", {
-      draw_as_glow = true, scale = fx[2], frame_count = 36, animation_speed = 36 / shared.STUN.TICKS * 2,
-      tint = {r = 0.75, g = 0.9, b = 1, a = 1}})}})
+      draw_as_glow = true, blend_mode = "additive", scale = fx[2], frame_count = 36, frame_sequence = arc_seq,
+      animation_speed = 0.5, tint = {r = 0.75, g = 0.9, b = 1, a = 1}})}})
 end
 
 -- The howitzer truck (the user, 2026-10-23: "the take-away howitzer a mortar truck ... the arty sprites but stuck onto
