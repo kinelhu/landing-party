@@ -16248,8 +16248,9 @@ scenarios.trailer = function()
     -- in walked back out; it reached the heart 27 s later, back in through the gap.)
     local alive0 = math.max(1, S.gap_alive or 0)
     check("trailer: Synthexis's wave poured in through its gap", S.in15 ~= nil and S.in15[1] * 2 >= S.in15[2]
-      and exits * 10 <= alive0, string.format("%s inside 15 s after the gap; %d of %d walked back out before withdrawing",
-        serpent.line(S.in15), exits, alive0))
+      and exits * 10 <= alive0, string.format("%s inside 15 s after the gap; %d of %d walked back out before %s",
+        serpent.line(S.in15), exits, alive0, S.push_t and string.format("its push on (t+%ds)",
+        math.floor((S.push_t - (S.gap_t or S.push_t)) / 60)) or "withdrawing"))
     check("trailer: and left by it, no wall broken from inside", S.gap_t ~= nil and out_walls == 0,
       string.format("%d wall pieces broken withdrawing, its gap open", out_walls))
     check("trailer: the armed camp's orbital strike fell on the wall", strikes ~= nil and (strikes.shells or 0) > 0,
@@ -16690,6 +16691,10 @@ if params.scenario == "trailer" then
     for _, w in ipairs(lp("herd_state").waves or {}) do if w.id == S.wave then hw = w end end
     if not hw or hw.stage == "done" then S.herd_over = S.gap_t ~= nil; return end
     S.herd_stage, S.herd_gap_open = hw.stage, hw.gap_open
+    -- (Its push on, once nothing inside is left in sight, may take it out again on purpose: through the far wall, 296 tiles
+    -- to the player's barracks on 0.2.246, 184 of 197 counted as walking back out. Real saves push 85 to 280 tiles inside
+    -- their walls. From the push on, leaving is the push's, not the old fault this counts.)
+    if hw.pushed and not S.push_t then S.push_t = game.tick end
     if not hw.gap then return end
     local c, u, v = S.c, S.u, S.v
     local function inside(p)
@@ -16725,7 +16730,7 @@ if params.scenario == "trailer" then
       else
         n_out, ox, oy = n_out + 1, ox + p.x, oy + p.y
         -- (In, then out again before it withdrew: walked back out of the walls.)
-        if not leaving and S.got_in[id] then S.exits[id] = true end
+        if not leaving and not S.push_t and S.got_in[id] then S.exits[id] = true end
       end
     end
     if not S.in15 and game.tick - S.gap_t >= GAP_IN_TICKS then S.in15 = {n_in, n_in + n_out} end

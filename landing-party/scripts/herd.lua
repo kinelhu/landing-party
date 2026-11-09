@@ -4363,7 +4363,8 @@ function herd.state()
       group = w.group and w.group.valid and {w.group.position.x, w.group.position.y} or nil,
       mark = w.mark and {w.mark.x, w.mark.y}, trail = w.trail, breach = w.breach and {w.breach.x, w.breach.y},
       holding = w.holding or false, deep = w.deep and {going = w.deep.going or nil} or nil,
-      gap = w.gap and {w.gap.x, w.gap.y}, gap_open = gap_open(w), rushed = w.rushed, mends = w.mends}
+      gap = w.gap and {w.gap.x, w.gap.y}, gap_open = gap_open(w), rushed = w.rushed, mends = w.mends,
+      pushed = w.pushed or nil}
   end
   local rears = {}
   for id, g in pairs(h.rears or {}) do

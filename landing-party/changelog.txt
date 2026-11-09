@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.246
-Date: 2026-11-08
+Version: 0.2.247
+Date: 2026-11-09
   Features:
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
     - Grubstake lands once you make chemical science: a prospecting outfit that raids what you leave unguarded, skims your belts and strips your ore.
