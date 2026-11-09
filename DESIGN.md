@@ -5659,7 +5659,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   The arena's play mode on real ground: Nauvis's generation without ore, biters, cliffs or water, the pen paved in
   concrete inside a hazard border (the user: "make it concrete and not editor blank space"); its batch keeps lab tiles.
   The third full regression on 0.2.246: 302 of 305. **Open:** fortress and fortress jammer, its assault 382 of 1,301
-  on wall pieces beside its gap (fliers colliding: both pass with them passing through each other, seen both ways);
+  on wall pieces beside its gap (fliers colliding: both pass with them passing through each other, seen both ways; the
+  wall left over once the defences fell: "The fortress assault 'at the wall' was the wall left over");
   teslawall grid, the Teslas holding the lasers 1.1% of their time at the line (27.7% at 0.2.237 and 0.2.240, 18.7% at
   0.2.243, 0% at 0.2.245 by direct runs of its worktrees; not the constructor drones, not the fliers; the seed, and the
   Teslas' aim: "The Tesla's hold hung on the seed", 0.2.248). Scenario trailer
@@ -5693,6 +5694,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   on what holds a charge but cannot shoot, with a laser in its reach (its range and a tile), sends it at the nearest
   laser, then back to its order, once per 75 ticks; on the same damage event as the drain, so free when no Tesla
   fights. After, seeds 12345, 777, 4242: 21.4%, 32.5%, 22.4%, with 3, 1 and 2 turns. unitnode tesla and dev pass.
+- **The fortress assault "at the wall" was the wall left over** (2026-11-09; fortress and fortress jammer in the third
+  full regression, 382 of 1,301 on wall pieces beside the gap, passing with fliers passing through each other). Not the
+  fliers: the damage by who fired put none of the laser drones' 714 on a wall, 238 of the tanks' and 114 of the
+  infantry's, and every one of the 63 hits came after the last laser and roboport fell, the wall all there was left to
+  shoot. The fliers had only changed the fight's course. Seed 777 put 0 of 891 there; 4242 had no assault, its shells
+  taking all ten lasers and both roboports. The check now counts the wall beside the gap only while a laser or roboport
+  stands, and passes a siege its shells won alone: 12345, its jammer, 777 and 4242 pass. The fault it caught (82% on
+  the wall with what stood behind it, before 0.2.204) counts in full still. Fliers keep colliding.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -11197,6 +11197,8 @@ scenarios.fortress = function()
     S.fortress = {lasers = lasers, ports = ports, walls = walls}
     info(string.format("fortress: the assault's damage %s, hits %s (on wall pieces with a gap within 12, shut walls, the rest)",
       serpent.line(S.adealt or {}), serpent.line(S.ahits or {})))
+    info("fortress: the assault's damage by who fired " .. serpent.line(S.adealt_by or {}))
+    info("fortress: hits on the wall beside the gap, by lasers and roboports still standing then " .. serpent.line(S.wall_left or {}))
     local js = lp("jammer_stats")
     info("fortress: jammer " .. serpent.line(js) .. ", masts seen " .. tostring(S.masts))
     if closed then
@@ -11241,10 +11243,15 @@ scenarios.fortress = function()
       check("fortress: the roboports down", ports == 0, tostring(ports))
       -- (Caught: before 0.2.204 its assault, told to attack an area, put 82% of its damage on wall pieces beside the
       -- gaps its barrage had opened, 449 hits, 91 on what stood behind; the user's trailer, 2026-11-04.)
+      -- Counted while a laser or a roboport stood: once none did, the wall was all there was left to shoot (fortress 12345,
+      -- 0.2.248: 382 of 1,301 on the wall beside the gap, every hit after the last laser and roboport fell). And none to
+      -- count when the shells won alone (4242: its fire plan took all ten lasers and both roboports, no assault).
       local ad = S.adealt or {}
-      local on_wall, total = ad.wall_breached or 0, (ad.wall_breached or 0) + (ad.other or 0)
-      check("fortress: its assault went through the breach, not at the wall beside it", total > 0 and on_wall <= 0.2 * total,
-        string.format("%.0f of %.0f on pieces beside a gap", on_wall, total))
+      local on_wall, total = (ad.wall_breached or 0) - (S.wall_after or 0), (ad.wall_breached or 0) - (S.wall_after or 0) + (ad.other or 0)
+      local shelled = total == 0 and lasers == 0 and ports == 0
+      check("fortress: its assault went through the breach, not at the wall beside it", shelled or (total > 0 and on_wall <= 0.2 * total),
+        shelled and "no assault: its shells took every laser and roboport" or string.format(
+          "%.0f of %.0f on pieces beside a gap while a laser or roboport stood (%.0f after)", on_wall, total, S.wall_after or 0))
     end
   end)
 end
@@ -16782,6 +16789,17 @@ if params.scenario == "fortress" then
     S.adealt[key] = (S.adealt[key] or 0) + e.final_damage_amount
     S.ahits = S.ahits or {}
     S.ahits[key] = (S.ahits[key] or 0) + 1
+    -- By who fired (fliers colliding, 0.2.240: 382 of 1,301 on the wall beside the gap; whose?).
+    local who = c.name:gsub("^lp%-serenity%-", ""):gsub("^lp%-", "")
+    -- (And what still stood when the wall beside the gap was hit: lasers and roboports within 40.)
+    if key == "wall_breached" then
+      local left = surface().count_entities_filtered{position = S.c, radius = 40, force = "player", type = {"electric-turret", "roboport"}}
+      S.wall_left = S.wall_left or {}
+      S.wall_left[left] = (S.wall_left[left] or 0) + 1
+      if left == 0 then S.wall_after = (S.wall_after or 0) + e.final_damage_amount end
+    end
+    S.adealt_by = S.adealt_by or {}
+    S.adealt_by[who .. ":" .. key] = (S.adealt_by[who .. ":" .. key] or 0) + math.floor(e.final_damage_amount)
   end, {{filter = "type", type = "wall"}, {filter = "type", type = "gate"}, {filter = "type", type = "electric-turret"},
     {filter = "type", type = "roboport"}, {filter = "type", type = "electric-pole"}, {filter = "type", type = "container"},
     {filter = "type", type = "logistic-container"}, {filter = "type", type = "electric-energy-interface"}})
