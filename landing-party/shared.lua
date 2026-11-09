@@ -276,7 +276,10 @@ shared.FALL = {TICKS = 40, crash = "lp-crash", kinds = {
 -- other looks terrible"): a unit of ours wider than WIDTH either side, not a flier, nudged off another closer than GAP
 -- times their widths, at most STEP a look, every EVERY ticks, onto free ground only. Colliding outright (a layer of our
 -- own, 0.2.258) they wedged in crowds: a unit plans no way round another (blockexit, four of five in one block).
-shared.HULL = {WIDTH = 0.6, GAP = 0.9, STEP = 0.2, EVERY = 20}
+-- And a hull turns at TURN of a turn a tick (data-final-fixes.lua), not a unit's 0.025: a unit turns its whole body to
+-- shoot (one heading: no turret of its own), and at 0.025 a tank snapped round in a third of a second (the user,
+-- 2026-11-09: "all our units rotate completely when firing"; a drawn turret deferred, the slower turn tried first).
+shared.HULL = {WIDTH = 0.6, GAP = 0.9, STEP = 0.2, EVERY = 20, TURN = 0.008}
 -- The lightning's stun on units (scripts/stun.lua; the user, 2026-11-09: "a stun effect with Tesla weapons ... also
 -- affecting units? Would have to not be 100% to be fair"): each electric hit charges its target by one, less its electric
 -- resistance; the charge halves every HALF ticks; a hit stuns with chance (charge - 1) / SPAN, at most MAX; stunned for

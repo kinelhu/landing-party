@@ -76,7 +76,7 @@ function scorcher.tick(tick)
               force = "enemy", limit = 1} > 0
           local at = not pact and target(u)
           if at then
-            s.create_entity{name = "flamethrower-fire-stream", position = u.position, source = u, target = at, force = u.force}
+            s.create_entity{name = "lp-scorcher-stream", position = u.position, source = u, target = at, force = u.force}
             st.next = tick + COOLDOWN
             storage.scorch_bursts = (storage.scorch_bursts or 0) + 1
           end

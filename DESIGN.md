@@ -5835,6 +5835,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   Its fuel fires set down by a cluster (given offsets, the twelve had merged into the one at the wreck): unitnode
   scorcher, 6 fires, the farthest 3.8 out, all burning 10 s on. The arena's panel buys by parts (Parts: the number as a
   budget, as many of the unit as it buys; each entry shows its parts), for the face-offs that tune it.
+- **The Scorcher's flame, measured; hulls turn slower; the Aegis's shell** (0.2.262; the user: "the scorchers still win
+  by far", "the heavy tank has quite underwhelming FX... big shells instead of the puny red laser", and on units turning
+  whole to fire, a drawn turret deferred: "Try slower turning first"). The arena at 420 parts a side, both sides, three
+  rounds: Scorchers (700 health) beat Kessler-Hayashi's tanks every round, seven dead in 20 to 25 s to one to three of
+  six; a flat 2 on the tanks' fire armour (burning ground) moved little (still every round). The cause: its stream was
+  the player's flamethrower's, whose sticker burns 30 s at 16.7 every 10 ticks on all within 2.5, 35 a second through a
+  tank's armour from one burst. Now its own stream (lp-scorcher-stream) and burn (lp-scorch-sticker: 4 s at 8 every 10
+  ticks): tanks win 4 of 6, Scorchers wipe 42 riflemen in 12 to 17 s untouched and take lances 2 rounds of 3. The flat 2
+  kept. Hulls turn at 0.008 a tick, not a unit's 0.025 (half a turn in a second, not a third): a unit turns its whole
+  body to shoot, the game giving a unit no turret of its own. The Aegis fires a shell (the explosive cannon shell's,
+  twice the size, warm, lit), a muzzle flash, a medium explosion where it lands, its 38 of lp-rail unchanged.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

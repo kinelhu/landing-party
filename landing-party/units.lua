@@ -388,7 +388,11 @@ tank.dying_trigger_effect = table.deepcopy(COOKOFF)
 tank.corpse = "tank-remnants"
 -- Armour that yellow ammo still hurts: a flat 10 made a gun turret's 5-damage rounds useless (seed 4242:
 -- seven raids, no unit lost).
-tank.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "fire", percent = 60},
+-- Fire: a flat 2 as well as 60% (the user, 2026-11-09, Scorchers against Kessler-Hayashi's tanks: "Perhaps some fire
+-- resistance for all vehicles that deserve it?"): a hull shrugs off burning ground, its small ticks, and still takes the
+-- stream's hit (the arena at 420 parts: seven tanks dead in 20 to 25 s to one to three Scorchers of six, its gun alone
+-- doing about 14 a second).
+tank.resistances = {{type = "physical", decrease = 3, percent = 20}, {type = "fire", decrease = 2, percent = 60},
   {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 tint(tank.run_animation, {}, color)
 tint(tank.attack_parameters.animation, {}, color)
@@ -757,13 +761,24 @@ aegis.attack_parameters = {
   range_mode = "bounding-box-to-bounding-box",
   sound = table.deepcopy((data.raw.gun["railgun"] or data.raw.gun["tank-cannon"]).attack_parameters.sound),
   animation = table.deepcopy(aegis.attack_parameters.animation),
-  ammo_type = {action = {
-    {type = "direct", action_delivery = {type = "beam", beam = "lp-rail-beam", max_length = 17, duration = 8,
-      source_offset = {0, -1.2}}},
-    {type = "direct", action_delivery = {type = "instant", target_effects = {
-      {type = "damage", damage = {amount = 38, type = "lp-rail"}}, {type = "create-entity", entity_name = "explosion-hit"}}}},
-  }},
+  -- Its round a big shell in flight (the user, 2026-11-09: "the heavy tank has quite underwhelming FX... can we not
+  -- give it big shells instead of the puny red laser?"): the explosive cannon shell's, drawn twice the size, warmer,
+  -- a light round it, a muzzle flash, a medium explosion where it lands, to its target only. Its 38 of lp-rail as before.
+  ammo_type = {action = {type = "direct", action_delivery = {type = "projectile", projectile = "lp-aegis-shell",
+    starting_speed = 1.4, source_effects = {{type = "create-explosion", entity_name = "explosion-gunshot"}}}}},
 }
+do
+  local sh = table.deepcopy(data.raw.projectile["explosive-cannon-projectile"])
+  sh.name = "lp-aegis-shell"
+  sh.direction_only, sh.piercing_damage = false, 0
+  sh.action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+    {type = "damage", damage = {amount = 38, type = "lp-rail"}}, {type = "create-entity", entity_name = "medium-explosion"}}}}
+  sh.final_action = nil
+  sh.animation = {filename = "__base__/graphics/entity/bullet/bullet.png", draw_as_glow = true, width = 3, height = 50,
+    priority = "high", scale = 2.2, tint = {r = 1, g = 0.8, b = 0.45, a = 1}}
+  sh.light = {intensity = 0.6, size = 5, color = {r = 1, g = 0.7, b = 0.35}}
+  data:extend({sh})
+end
 
 -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua mocks them).
 -- Prism (Serenity's Optics, after Lances): a tank with its turret and a small laser head on top; a laser of 14 (and the
@@ -860,6 +875,27 @@ sca.animation = table.deepcopy(scorcher.run_animation)
 scorcher.attack_parameters = sca
 scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type = "fire", percent = 100},
   {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
+-- Its flame its own (scripts/scorcher.lua fires it): the flamethrower's stream with a burn of its own, BURN_TICKS at
+-- BURN every 10 ticks, not vanilla's fire sticker, 30 s at 16.7 every 10 ticks (made for the player's flamethrower on
+-- biters): one burst set a group of tanks burning half a minute, 35 a second through their armour, and Scorchers beat
+-- tanks at equal spend in every round (the arena, 2026-11-09). Still enough for packed infantry; a sting on a hull.
+do
+  local BURN_TICKS, BURN = 240, 8
+  local st = table.deepcopy(data.raw.sticker["fire-sticker"])
+  st.name, st.duration_in_ticks = "lp-scorch-sticker", BURN_TICKS
+  st.damage_per_tick = {amount = BURN, type = "fire"}
+  st.hidden = true
+  local stream = table.deepcopy(data.raw.stream["flamethrower-fire-stream"])
+  stream.name = "lp-scorcher-stream"
+  local function repoint(t, seen)
+    if type(t) ~= "table" or seen[t] then return end
+    seen[t] = true
+    if t.type == "create-sticker" and t.sticker == "fire-sticker" then t.sticker = st.name end
+    for _, v in pairs(t) do repoint(v, seen) end
+  end
+  repoint(stream.action, {})
+  data:extend({st, stream})
+end
 -- Its fuel goes up when it dies (the user, 2026-11-09: "flamer units ... could explode a little more forcefully on death
 -- and leave a pool of fire, to reflect the fuel tanks"; then "the flame pool from scorcher explosions could be more
 -- dramatic"): the game's massive explosion, BLAST explosive within BLAST_R (its own escort too), and its fuel burning

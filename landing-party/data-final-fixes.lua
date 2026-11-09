@@ -86,6 +86,19 @@ do
   end
 end
 
+-- Hulls turn slower (shared.HULL.TURN): a unit of ours wider than HULL.WIDTH, not a flier.
+do
+  local shared = require("__landing-party__.shared")
+  for name, u in pairs(data.raw.unit) do
+    local box, m = u.collision_box, u.collision_mask
+    local flier = m and m.layers and m.layers["lp-air"]
+    if name:sub(1, 3) == "lp-" and box and not flier then
+      local half = math.max(math.abs(box[2][1] - box[1][1]), math.abs(box[2][2] - box[1][2])) / 2
+      if half > shared.HULL.WIDTH then u.rotation_speed = shared.HULL.TURN end
+    end
+  end
+end
+
 -- Turrets that cannot shoot up ignore air units: flamethrowers (fluid turrets) and artillery. Gun and laser
 -- turrets keep the default (they hit everything); a dedicated anti-air turret comes later.
 for _, type in ipairs({"fluid-turret", "artillery-turret"}) do
