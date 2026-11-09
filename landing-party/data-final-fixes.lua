@@ -319,18 +319,8 @@ do
     return p
   end
 
-  -- Red blood, the biters' tinted, for the troopers when hit (they sparked as a vehicle does, since every unit lost the
-  -- biters' purple: units.lua base_unit).
-  local blood = table.deepcopy(data.raw.explosion["blood-explosion-small"])
-  blood.name = "lp-red-blood"
-  local function redden(t, seen)
-    if type(t) ~= "table" or seen[t] then return end
-    seen[t] = true
-    if t.filename or t.filenames then t.tint = {r = 0.75, g = 0.12, b = 0.1, a = 1} end
-    for _, v in pairs(t) do redden(v, seen) end
-  end
-  redden(blood, {})
-  data:extend({blood})
+  -- (Red blood was tried, the biters' small blood tinted: its particles and ground splats keep their own purple, and every
+  -- trooper hit sprayed purple on film, the finale, 0.2.266. The troopers spark as before.)
 
   -- A body where a trooper falls (the character's own dead picture, its mask in the trooper's colour), not a small
   -- vehicle's explosion and scrap. Two lying poses, the picture's two frames.
@@ -358,8 +348,6 @@ do
         if not data.raw.corpse[body.name] then data:extend({body}) end
         u.corpse = body.name
         u.dying_explosion = nil
-        u.damaged_trigger_effect = {type = "create-entity", entity_name = "lp-red-blood", offset_deviation = {{-0.3, -0.3}, {0.3, 0.3}},
-          offsets = {{0, -0.6}}, damage_type_filters = "fire"}
       end
     end
   end

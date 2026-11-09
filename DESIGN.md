@@ -5865,7 +5865,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **The player's troops' effects** (0.2.265; the user: "I feel like we could do a FX pass on player troops", six
   proposals taken, "Tank needs oomph too, like the aegis"). data-final-fixes.lua, by final name: every player infantry
   kind leaves a body (the character's own dead picture, two poses, its mask in the kind's colour) and no explosion, where
-  it had died as a small vehicle into scrap; red blood when hit (the biters' small blood, tinted), not a car's sparks; the
+  it had died as a small vehicle into scrap; (red blood, the biters' tinted, sprayed purple on film: its particles and
+  splats keep their own colour; taken out in 0.2.267, the car's sparks again); the
   trooper's rifle a tracer to its target (the cannon shell's streak, small and warm; no longer an instant hit); the
   breacher lobs the game's grenade, its blast where it lands, the throw's sound (it was silent and instant: its action a
   list once air.lua has passed over it); the flame trooper the flamethrower's sounds; the Skyguard a small fast missile
