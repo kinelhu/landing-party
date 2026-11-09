@@ -4908,6 +4908,8 @@ scenarios.chartprobe = function()
     S.cp0 = {}
     for k, p in pairs(spots) do S.cp0[k] = pf.is_chunk_charted(surface(), {math.floor(p[1] / 32), math.floor(p[2] / 32)}) end
     pf.chart(surface(), {{spots.scripted[1] - 16, spots.scripted[2] - 16}, {spots.scripted[1] + 16, spots.scripted[2] + 16}})
+    S.cp_charted0 = lp("army").charted
+    lp("dev", {"chartcheck"}, {1000, 1200})
     surface().create_entity{name = "lp-trooper", position = spots.trooper, force = "player"}
     surface().create_entity{name = "lp-tank", position = spots.tank, force = "player"}
     local eei = surface().create_entity{name = "electric-energy-interface", position = {spots.radar[1] - 3, spots.radar[2]}, force = "player"}
@@ -4925,7 +4927,11 @@ scenarios.chartprobe = function()
     end
     table.sort(out)
     info("chartprobe: " .. table.concat(out, "; "))
-    check("chartprobe ran", true)
+    -- (The army's map, command.lua: a unit enlisted far out has its ground charted, by the call; whether the chart shows
+    -- it needs a game, /lp chartcheck.)
+    local a = lp("army")
+    check("chartprobe: the army's ground charted round its units", a.charted > S.cp_charted0,
+      string.format("%d chart calls (%d before its units)", a.charted, S.cp_charted0))
   end)
 end
 

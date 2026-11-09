@@ -560,9 +560,41 @@ function command.order(player_index, surface, area, attackmove)
   return n, target and "attack" or (attackmove and "attackmove" or "move")
 end
 
+-- The map round the army (the user, 2026-11-09: "are player units giving map view to the player? I think they should to
+-- allow far ops"; they do not, read in a game with /lp chartcheck): every CHART_EVERY ticks, the chunks the player's units
+-- stand in, and SIGHT chunks round each, charted for their force, but for those a radar already shows. One chart call a
+-- chunk the army stands in, not a unit.
+local CHART_EVERY = 180
+local SIGHT = 1
+local function chart_army()
+  local seen = {}
+  for _, t in pairs(storage.cmd.troopers) do
+    local u = t.unit
+    if u.valid then
+      local s, p = u.surface, u.position
+      local cx, cy = math.floor(p.x / 32), math.floor(p.y / 32)
+      local key = s.index .. ":" .. cx .. ":" .. cy
+      if not seen[key] then
+        seen[key] = true
+        local f = u.force
+        if not f.is_chunk_visible(s, {cx, cy}) then
+          f.chart(s, {{(cx - SIGHT) * 32, (cy - SIGHT) * 32}, {(cx + SIGHT + 1) * 32, (cy + SIGHT + 1) * 32}})
+          storage.cmd.charted = (storage.cmd.charted or 0) + 1
+        end
+      end
+    end
+  end
+end
+
 function command.tick(tick)
   if tick % 60 == 0 then train(); repair() end
   if tick % 120 == 30 then lead() end
+  if tick % CHART_EVERY == 75 then chart_army() end
+end
+
+-- A unit of the player's made by script, enlisted as if trained (/lp chartcheck).
+function command.enlist(u)
+  storage.cmd.troopers[u.unit_number] = {unit = u}
 end
 
 function command.stats()
@@ -579,7 +611,7 @@ function command.stats()
     end
   end
   return {trained = storage.cmd.trained or 0, alive = alive, offline = offline, capacity = command.capacity(f),
-    level = research_level(f), orders = orders, locks = storage.cmd.locks}
+    level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
 end
 
 -- Command cores dropped by the faction's wreckage, lootable.

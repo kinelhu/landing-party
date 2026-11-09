@@ -5725,8 +5725,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   think they should to allow far ops"). In a benchmark run nothing charts, not a powered radar and not force.chart
   itself (chartprobe: all four false after a minute), so the question needed a game: /lp chartcheck in a film (the scenes
   save, docs/trailer/stun-close.lua) put a trooper and a tank 600 tiles out, and 1,700 ticks on neither spot was charted
-  nor in sight. Far operations are blind without a radar there. Planned: the ground round each of the player's squads
-  charted every few seconds.
+  nor in sight. Far operations are blind without a radar there. Since 0.2.251 (command.lua, chart_army): every 3 s the
+  chunks the army's units stand in, and one round each, charted for their force, but for those a radar shows; one call a
+  chunk, not a unit. Checked headless by its calls (chartprobe: 40 round two units 600 tiles out, 0 with it switched
+  off); its map in a game not yet seen.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

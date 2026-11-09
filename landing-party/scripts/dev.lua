@@ -48,6 +48,7 @@ local burstfx = require("__landing-party__.scripts.burstfx")
 local orbital = require("__landing-party__.scripts.orbital")
 local ram = require("__landing-party__.scripts.ram")
 local stun = require("__landing-party__.scripts.stun")
+local command = require("__landing-party__.scripts.command")
 
 local dev = {}
 
@@ -321,7 +322,9 @@ function dev.run(player, args)
         local p = {x, y + (k - 1) * 200}
         local c = {math.floor(p[1] / 32), math.floor(p[2] / 32)}
         cc.spots[#cc.spots + 1] = {name = name, p = p, before = pf.is_chunk_charted(s, c)}
-        s.create_entity{name = name, position = p, force = pf}
+        -- (Enlisted as a trained one is: the army's map is read from the army's list, command.lua.)
+        local u = s.create_entity{name = name, position = p, force = pf}
+        if u then command.enlist(u) end
       end
       storage.chartcheck = cc
       return player.print("a trooper and a tank set 600 tiles east of you; /lp chartcheck again to read the map")
