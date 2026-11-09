@@ -88,6 +88,9 @@ function scorcher.tick(tick)
     for k in pairs(storage.scorch or {}) do
       if not game.get_entity_by_unit_number(k) then storage.scorch[k] = nil end
     end
+    for k in pairs(storage.tesla_aim or {}) do
+      if not game.get_entity_by_unit_number(k) then storage.tesla_aim[k] = nil end
+    end
   end
 end
 
@@ -103,7 +106,37 @@ function scorcher.drain(e)
     ent.energy = ent.energy * (1 - DRAIN)
     storage.tesla_drains = (storage.tesla_drains or 0) + 1
   end
-  if ent.type == "electric-turret" then scorcher.hold(ent) end
+  if ent.type == "electric-turret" then scorcher.hold(ent) else scorcher.aim(cause, ent) end
+end
+
+-- The Tesla's aim: its lightning on what holds a charge but cannot shoot (an accumulator, a roboport) while a laser stands
+-- in its reach, it goes for the laser, then back to its order. Left to the engine's choice, a Tesla through a laser line
+-- spent its bolts on the accumulators behind it: the lasers held 0 to 43% of their time at the line by the seed (teslawall
+-- grid, seeds 12345, 777, 4242, 2026-11-09), the stun working whenever a bolt fell on one. Once per AIM_GAP a Tesla.
+local AIM_GAP = 75
+function scorcher.aim(u, struck)
+  if not (u and u.valid and u.type == "unit") then return end
+  storage.tesla_aim = storage.tesla_aim or {}
+  local k = u.unit_number
+  if (storage.tesla_aim[k] or -AIM_GAP) + AIM_GAP > game.tick then return end
+  storage.tesla_aim[k] = game.tick
+  local cm = u.commandable
+  local now = cm and cm.command
+  if now and now.type == defines.command.attack and now.target and now.target.valid and now.target.type == "electric-turret" then
+    return
+  end
+  local reach = u.prototype.attack_parameters.range + 1
+  local best, bd
+  for _, t in ipairs(u.surface.find_entities_filtered{position = u.position, radius = reach, type = "electric-turret",
+    force = struck.force}) do
+    local d = (t.position.x - u.position.x) ^ 2 + (t.position.y - u.position.y) ^ 2
+    if not bd or d < bd then best, bd = t, d end
+  end
+  if not best then return end
+  local hit = {type = defines.command.attack, target = best, distraction = defines.distraction.none}
+  cm.set_command(now and {type = defines.command.compound, structure_type = defines.compound_command.return_last,
+    commands = {hit, now}} or hit)
+  storage.tesla_aims = (storage.tesla_aims or 0) + 1
 end
 
 -- The Tesla's hold (2026-11-06; the 11-05 adaptive tactics consult, section 5): the drain alone did nothing on a real
@@ -154,7 +187,7 @@ end
 
 function scorcher.stats()
   return {bursts = storage.scorch_bursts or 0, drains = storage.tesla_drains or 0, holds = storage.tesla_holds or 0,
-    held = table_size(storage.tesla_held or {})}
+    held = table_size(storage.tesla_held or {}), aims = storage.tesla_aims or 0}
 end
 
 return scorcher

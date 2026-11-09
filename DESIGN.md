@@ -5661,7 +5661,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   The third full regression on 0.2.246: 302 of 305. **Open:** fortress and fortress jammer, its assault 382 of 1,301
   on wall pieces beside its gap (fliers colliding: both pass with them passing through each other, seen both ways);
   teslawall grid, the Teslas holding the lasers 1.1% of their time at the line (27.7% at 0.2.237 and 0.2.240, 18.7% at
-  0.2.243, 0% at 0.2.245 by direct runs of its worktrees; not the constructor drones, not the fliers). Scenario trailer
+  0.2.243, 0% at 0.2.245 by direct runs of its worktrees; not the constructor drones, not the fliers; the seed, and the
+  Teslas' aim: "The Tesla's hold hung on the seed", 0.2.248). Scenario trailer
   (not in the list): Synthexis's wave poured in through its gap and 184 of 197 walked back out before withdrawing
   (its push on to the player's barracks, not a fault: "The trailer's herd 'walked back out' by pushing on", 0.2.247).
 - **Cut 17 still showed the old Kessler-Hayashi units** (2026-11-09; the user: "I still see shots with old KH tanks and
@@ -5684,6 +5685,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   trailer's lone walled outpost with an unguarded barracks in the open is the staged exception. The check now counts
   walking out only until its push on (`pushed` in `herd.state`): 15 of 197 then, passing; the 0.2.207 fault walked out
   in its first rush, before any push, so it still fails on that.
+- **The Tesla's hold hung on the seed** (2026-11-09; teslawall grid in the third full regression, 1.1% against 10%).
+  Bisected to 0.2.242 and to one line of it, the car's hit sparks on every unit (27.7% without them on the same code).
+  Not the sparks: each draws on the map's random numbers, and the fight tipped. Three seeds, sparks and none: 1.1/27.7,
+  27.0/43.1, 3.6/0.0. The stun worked whenever a bolt fell on a laser; left to the engine's choice, the Teslas through
+  the line spent their bolts on the accumulators behind it (6 to 33 of them razed). `scorcher.aim`: a Tesla's lightning
+  on what holds a charge but cannot shoot, with a laser in its reach (its range and a tile), sends it at the nearest
+  laser, then back to its order, once per 75 ticks; on the same damage event as the drain, so free when no Tesla
+  fights. After, seeds 12345, 777, 4242: 21.4%, 32.5%, 22.4%, with 3, 1 and 2 turns. unitnode tesla and dev pass.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

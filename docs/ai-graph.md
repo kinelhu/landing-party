@@ -59,12 +59,12 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `strip` | 238 | studies | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `valuemap` | 208 | firemap | control, farm, herd, oplog, siege |  |  |  |  |
+| `scorcher` | 193 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_aim, tesla_aims, tesla_drains, tesla_held, tesla_holds |
 | `oplog` | 188 | attempt, valuemap | control |  |  |  | oplog |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
 | `site` | 171 | modules | base, control, faction, layout |  |  |  |  |
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
-| `scorcher` | 160 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, tesla_drains, tesla_held, tesla_holds |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
 | `road` | 143 | base, standing | control |  | 60 |  |  |
 | `assault` | 142 | attempt, tactics, threat | ops, siege |  |  |  |  |

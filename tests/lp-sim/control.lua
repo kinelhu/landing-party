@@ -5017,8 +5017,8 @@ scenarios.teslawall = function()
       (tw.at_ticks or 0) / 60, tw.hits_at or 0, (tw.hits_at or 0) * 60 / math.max(1, tw.at_ticks or 0), tw.laser_hits or 0,
       100 * (tw.dark or 0) / math.max(1, tw.samples or 0)))
     local held = (tw.held or 0) / math.max(1, tw.samples or 0)
-    info(string.format("teslawall: holds %d; lasers held %.1f%% of the samples then; held longest %s ticks after a strike (stun %d), %d samples past it; %d held at the end",
-      st.holds or 0, 100 * held, tostring(tw.held_longest), S.stun, tw.overheld or 0, st.held or 0))
+    info(string.format("teslawall: holds %d; lasers held %.1f%% of the samples then; held longest %s ticks after a strike (stun %d), %d samples past it; %d held at the end; Teslas turned on a laser %d times",
+      st.holds or 0, 100 * held, tostring(tw.held_longest), S.stun, tw.overheld or 0, st.held or 0, st.aims or 0))
     info("teslawall: deaths " .. serpent.line(S.tally or {}))
     info("teslawall: s:fodder/teslas/escort/drains/charge/x/lasers" .. (tw.series or ""))
     -- (100: the fodder held by a stop order, the Teslas came to the line late and drained it 32 times, a shot with no drain in it.)
