@@ -765,17 +765,25 @@ aegis.attack_parameters = {
   -- give it big shells instead of the puny red laser?"): the explosive cannon shell's, drawn twice the size, warmer,
   -- a light round it, a muzzle flash, a medium explosion where it lands, to its target only. Its 38 of lp-rail as before.
   ammo_type = {action = {type = "direct", action_delivery = {type = "projectile", projectile = "lp-aegis-shell",
-    starting_speed = 1.4, source_effects = {{type = "create-explosion", entity_name = "explosion-gunshot"}}}}},
+    starting_speed = 0.9, max_range = 30, source_effects = {{type = "create-explosion", entity_name = "explosion-gunshot"}}}}},
 }
 do
   local sh = table.deepcopy(data.raw.projectile["explosive-cannon-projectile"])
   sh.name = "lp-aegis-shell"
   sh.direction_only, sh.piercing_damage = false, 0
+  -- To its target only, as the tank's shell (shell above): the explosive shell's collision stopped it on whatever stood in
+  -- its way, the tank ahead in a column, and most never showed (the user: "1 every 10 shots or so? ... the shots from
+  -- every tank behind the first one is stopped by a tank in front").
+  sh.collision_box = nil
+  sh.hit_collision_mask = {layers = {}}
+  sh.force_condition = "not-same"
   sh.action = {type = "direct", action_delivery = {type = "instant", target_effects = {
     {type = "damage", damage = {amount = 38, type = "lp-rail"}}, {type = "create-entity", entity_name = "medium-explosion"}}}}
   sh.final_action = nil
   sh.animation = {filename = "__base__/graphics/entity/bullet/bullet.png", draw_as_glow = true, width = 3, height = 50,
-    priority = "high", scale = 2.2, tint = {r = 1, g = 0.8, b = 0.45, a = 1}}
+    priority = "high", scale = 3, tint = {r = 1, g = 0.8, b = 0.45, a = 1}}
+  sh.smoke = {{name = "smoke-fast", deviation = {0.15, 0.15}, frequency = 1, position = {0, 0}, starting_frame = 3,
+    starting_frame_deviation = 5}}
   sh.light = {intensity = 0.6, size = 5, color = {r = 1, g = 0.7, b = 0.35}}
   data:extend({sh})
 end
@@ -921,6 +929,17 @@ do
   effects[#effects + 1] = {type = "nested-result", action = {type = "area", radius = BLAST_R,
     action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = BLAST, type = "explosion"}}}}}}
   scorcher.dying_trigger_effect = effects
+end
+-- Kessler-Hayashi's hulls resist fire as its tank does: the Prism, the Tesla and the Aegis had armour of their own with
+-- no fire in it, and the Scorcher's burn took them whole (the user, 2026-11-09: "5 heavy tanks still lost to 5
+-- scorchers"; "some fire resistance for all vehicles that deserve it?"). Grubstake's buggies stay soft.
+for _, u in ipairs({prism, tesla, aegis}) do
+  local has = false
+  for _, r in ipairs(u.resistances or {}) do if r.type == "fire" then has = true end end
+  if not has then
+    u.resistances = u.resistances or {}
+    table.insert(u.resistances, {type = "fire", decrease = 2, percent = 60})
+  end
 end
 data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 

@@ -5846,6 +5846,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   kept. Hulls turn at 0.008 a tick, not a unit's 0.025 (half a turn in a second, not a third): a unit turns its whole
   body to shoot, the game giving a unit no turret of its own. The Aegis fires a shell (the explosive cannon shell's,
   twice the size, warm, lit), a muzzle flash, a medium explosion where it lands, its 38 of lp-rail unchanged.
+- **The Aegis's shell to its target; Kessler-Hayashi's hulls resist fire** (0.2.263; the user: "aegis shells barely
+  register, 1 every 10 shots or so? ... the shots from every tank behind the first one is stopped by a tank in front";
+  "5 heavy tanks still lost to 5 scorchers"). The shell, the explosive cannon shell's copy, kept its collision: it burst
+  on whatever stood in its way. Now as the tank's (no collision box, an empty hit mask, other forces only), slower (0.9)
+  and larger with a smoke trail. The Prism, the Tesla and the Aegis had armour of their own with no fire in it: the
+  tank's fire (2 flat, 60%) added. The arena at 420 parts: Aegis against Scorchers every round both sides, five of five
+  left in five of six; the tank 4 of 6 against them, the player's battle tank 3 of 3.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
