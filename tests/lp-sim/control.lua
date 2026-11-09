@@ -4987,14 +4987,36 @@ scenarios.shotdown = function()
     S.fl = {}
     for i, k in ipairs(kinds) do
       local p = {400 + i * 10, 0}
-      if i == 1 then S.fl_wall = surface().create_entity{name = "stone-wall", position = p, force = "player"} end
+      -- (A block of wall round the first: it lands 1.5 to 4 tiles off, somewhere in it.)
+      if i == 1 then
+        S.fl_walls = {}
+        for x = -4, 4 do for y = -4, 4 do
+          S.fl_walls[#S.fl_walls + 1] = surface().create_entity{name = "stone-wall", position = {p[1] + x, p[2] + y}, force = "player"}
+        end end
+      end
       local u = surface().create_entity{name = k[1], position = p, force = i == 2 and "lp-grubstake" or FORCE}
       S.fl[i] = {p = p, wreck = k[2]}
       if u then u.die("player") end
     end
+    -- And a tank, its ammunition cooking off (units.lua, COOKOFF): its wreck burns a while, the fire going out unspread.
+    S.ck_at = {430, 20}
+    local t = surface().create_entity{name = "lp-tank", position = S.ck_at, force = FORCE}
+    if t then t.die("player") end
   end)
+  schedule(1805, function()
+    S.ck_fire = surface().count_entities_filtered{position = S.ck_at, radius = 3, name = "lp-cookoff-fire"}
+  end)
+  schedule(1800 + 900, function()
+    local left = surface().count_entities_filtered{position = S.ck_at, radius = 20, type = "fire"}
+    for _, f in ipairs(surface().find_entities_filtered{position = S.ck_at, radius = 20, type = "fire"}) do
+      info(string.format("shotdown: fire left %s at %.1f,%.1f", f.name, f.position.x, f.position.y))
+    end
+    check("shotdown: a tank's wreck burns, then the fire goes out", S.ck_fire > 0 and left == 0,
+      string.format("%d fires at once, %d left after 15 s", S.ck_fire, left))
+  end)
+  -- (Within 5: each lands 1.5 to 4 tiles off, fall.lua.)
   local function wrecks(i)
-    return surface().count_entities_filtered{position = S.fl[i].p, radius = 2, name = S.fl[i].wreck}
+    return surface().count_entities_filtered{position = S.fl[i].p, radius = 5, name = S.fl[i].wreck}
   end
   schedule(1802, function()
     local n = 0
@@ -5004,13 +5026,14 @@ scenarios.shotdown = function()
   schedule(1800 + 60, function()
     local st, n = lp("fall_stats"), 0
     for i = 1, #kinds do n = n + wrecks(i) end
-    info("shotdown: " .. serpent.line(st) .. string.format("; wrecks on the ground at once %d, after %d; the wall %s",
-      S.fl_early, n, S.fl_wall.valid and string.format("%.0f of %.0f", S.fl_wall.health, S.fl_wall.max_health) or "gone"))
+    local hurt = 0
+    for _, w in ipairs(S.fl_walls) do if not w.valid or w.health < w.max_health then hurt = hurt + 1 end end
+    info("shotdown: " .. serpent.line(st) .. string.format("; wrecks on the ground at once %d, after %d; walls hurt %d of %d",
+      S.fl_early, n, hurt, #S.fl_walls))
     check("shotdown: no wreck on the ground while it falls", S.fl_early == 0, S.fl_early .. " at once")
     check("shotdown: each down, its wreck where it fell", st.crashed == #kinds and n == #kinds,
       string.format("%d crashed, %d wrecks of %d", st.crashed, n, #kinds))
-    check("shotdown: the crash hurts what is under it", not S.fl_wall.valid or S.fl_wall.health < S.fl_wall.max_health,
-      S.fl_wall.valid and string.format("%.0f of %.0f", S.fl_wall.health, S.fl_wall.max_health) or "gone")
+    check("shotdown: the crash hurts what is under it", hurt > 0, hurt .. " of " .. #S.fl_walls .. " walls")
   end)
 end
 

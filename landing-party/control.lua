@@ -172,13 +172,21 @@ table.insert(BUILDINGS, {filter = "name", name = "lp-tumor"})
 for _, t in ipairs({"electric-turret", "accumulator", "roboport", "electric-energy-interface"}) do
   table.insert(BUILDINGS, {filter = "type", type = t})
 end
--- Units, electric hits only: the lightning's stun (stun.lua). (A unit's other hits stay unseen: every bullet on a biter.)
-table.insert(BUILDINGS, {filter = "type", type = "unit"})
-table.insert(BUILDINGS, {filter = "damage-type", type = "electric", mode = "and"})
+-- Units and walls, electric hits only ("and" binds before "or"): the lightning's stun on units (stun.lua), and a Tesla's
+-- aim at a laser in its reach whatever its bolt struck (scorcher.aim: on what holds a charge alone, it never turned in a
+-- run where its bolts went into troopers and the wall). (A unit's other hits stay unseen: every bullet on a biter.)
+for _, t in ipairs({"unit", "wall"}) do
+  table.insert(BUILDINGS, {filter = "type", type = t})
+  table.insert(BUILDINGS, {filter = "damage-type", type = "electric", mode = "and"})
+end
 script.on_event(defines.events.on_entity_damaged, function(e)
-  if e.entity.type == "unit" then
-    if e.damage_type and e.damage_type.name == "electric" then stun.on_hit(e) end
-    return
+  local et = e.entity.type
+  if et == "unit" or et == "wall" then
+    if e.damage_type and e.damage_type.name == "electric" then
+      if et == "unit" then stun.on_hit(e) end
+      if e.cause and e.cause.valid and shared.kind_of(e.cause.name) == "lp-tesla" then scorcher.aim(e.cause, e.entity) end
+    end
+    if et == "unit" then return end
   end
   if e.damage_type and e.damage_type.name == "electric" then scorcher.drain(e) end
   if e.entity.name == "lp-pen" or e.entity.name == "lp-tumor" then return farm.on_damaged(e) end

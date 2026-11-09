@@ -5749,6 +5749,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the ground while it falls, three down with their wrecks, the wall under one hurt; all three fail with the handler
   off. flak and cordon pass. Seen on film (docs/trailer/fall-fx.lua, /lp flak); its spin read only on the clip, not
   frame by frame. The bomb drone bursts on its target and keeps its death; Grubstake's old-look laser drone too.
+  0.2.255, after the user saw it ("Spin looks kinda weird as it is a pure spin in place... I was picturing a small spin
+  from the death spot landing them randomly somewhere close"): each lands 1.5 to 4 tiles off (its own random source),
+  bowed 0.6 to one side, half a turn of spin; the crash and the wreck there (shotdown: a block of wall round the first,
+  16 of 81 hurt).
+- **A hull's ammunition cooks off** (2026-11-09; the user: "exploding tanks could show the scorcher burn effect from
+  their turret for a short time? (representing ammo cooking off inside)"). Every hull from make_tank (Kessler-Hayashi's
+  tank, Prism, Tesla, Aegis, the player's battle tank, the howitzer truck; the Scorcher keeps its fuel blast): its wreck
+  burns, a fire of its own (lp-cookoff-fire: 200 ticks, no spread, 4 a second), and five small blasts pop round its
+  turret 22 ticks apart (a delayed trigger), no damage of their own. A fire stays an entity while its burnt patch shows
+  (fire-flame's 30 s): the check read it as still burning until the patch was cut to 500 ticks (shotdown: the wreck burns,
+  nothing left after 15 s). Seen on film (docs/trailer/cookoff-fx.lua, /lp kill).
+- **The Tesla's aim, wider** (2026-11-09; teslawall grid failed again on 0.2.254, 0 turns, the lasers held 0%). Its turn
+  came only off a bolt on an accumulator or roboport that named the Tesla as its cause, and in that run its bolts went
+  into the troopers and the wall, then the accumulators by its chain (no cause). Now any bolt of a Tesla on a unit or a
+  wall counts too (the damage event: units and walls, electric alone; "and" binds before "or", checked in the API after
+  a false alarm that the filter had swallowed every building's damage), and each Tesla seen fighting is looked at every
+  30 ticks for a laser in its reach (scorcher.look). Seeds 12345, 777, 4242: 31.1%, 45.6%, 29.0%, 49 to 75 turns.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

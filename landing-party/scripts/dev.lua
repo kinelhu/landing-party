@@ -26,6 +26,9 @@
 --                            "Stunned by lightning"). With none, at your units within 60: its lightning stuns them
 --                            (scripts/stun.lua). They are real and stay: kill them or let them be
 --   stun [r]                 your units within r (15) of you stunned at once, chance aside: the lightning's stun's look
+--   kill <unit> [n]          n (1) of a unit set 8 tiles east of you, a tile apart, and killed there: how it dies (a
+--                            hull's cook-off, a flier's fall, the Scorcher's fuel). Kessler-Hayashi's unless it is
+--                            Grubstake's name
 --   chartcheck               once: one of your troopers and one of your tanks set 600 tiles east of you, on ground you
 --                            have not seen; again: whether that ground is charted and in sight, to script-output
 --                            landing-party/chartcheck.txt (a benchmark run charts nothing: it needs a game)
@@ -310,6 +313,18 @@ function dev.run(player, args)
       stun.apply(u); n = n + 1
     end
     player.print(n .. " of your units stunned")
+  elseif what == "kill" then
+    local name, n = args[2], math.max(1, math.min(10, tonumber(args[3]) or 1))
+    if not (name and prototypes.entity[name]) then return player.print("no unit " .. tostring(name)) end
+    local id = name:find("grubstake", 1, true) and "grubstake" or shared.DEFAULT_CORP
+    local force = game.forces[shared.CORPS[id].force] or game.forces.enemy
+    local s, p, made = player.surface, player.position, 0
+    for k = 1, n do
+      local at = s.find_non_colliding_position(name, {p.x + 8 + (k - 1) * 3, p.y}, 6, 0.5)
+      local u = at and s.create_entity{name = name, position = at, force = force}
+      if u then u.die(player.force); made = made + 1 end
+    end
+    player.print(string.format("%d %s killed east of you", made, name))
   elseif what == "chartcheck" then
     local s, pf = player.surface, player.force
     local cc = storage.chartcheck
@@ -475,7 +490,7 @@ function dev.run(player, args)
     storage.trace = not storage.trace
     player.print("trace to script-output/landing-party/decisions.txt: " .. tostring(storage.trace))
   else
-    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | chartcheck | clear [r] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
+    player.print("/lp list | raid | siege | strip | strike | perimeter [id] | land <corp> [tiles] [now] | parts <n> [id] | fast | grudge [id] | burst [big] | tesla [n] | stun [r] | kill <unit> [n] | chartcheck | clear [r] | parade | dozers [n] | bombers [n] | prism [n] | flak [n] | spread | ranks | provoke | era <n> | trace")
   end
 end
 

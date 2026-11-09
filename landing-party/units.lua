@@ -330,6 +330,29 @@ local function crowned(hull, heads)
 end
 
 -- heads: the turning heads on its hull; by default the tank's own cannon turret (the units had the hull only).
+-- A hull's ammunition cooking off when it dies (the user, 2026-11-09: "exploding tanks could show the scorcher burn effect
+-- from their turret for a short time? (representing ammo cooking off inside)"): its wreck burns, a fire of its own that
+-- lives COOK_TICKS and does not spread, and COOK_POPS small blasts pop off it, one every COOK_GAP ticks, round its turret.
+-- Looks: no damage beyond the fire's own. The Scorcher's fuel blast replaces it (its dying effects, below).
+local COOK_TICKS, COOK_POPS, COOK_GAP = 200, 5, 22
+do
+  local f = table.deepcopy(data.raw.fire["fire-flame"])
+  f.name = "lp-cookoff-fire"
+  f.initial_lifetime, f.maximum_lifetime, f.lifetime_increase_by = COOK_TICKS, COOK_TICKS, 0
+  f.spread_delay, f.maximum_spread_count = 1e6, 0
+  -- (Its scorch fades soon after: a fire stays an entity while its burnt patch shows, fire-flame's 30 s.)
+  f.burnt_patch_lifetime = COOK_TICKS + 300
+  f.damage_per_tick = {amount = 4 / 60, type = "fire"}
+  f.emissions_per_second = nil
+  f.hidden = true
+  data:extend({f, {type = "delayed-active-trigger", name = "lp-cookoff", delay = 8, repeat_count = COOK_POPS,
+    repeat_delay = COOK_GAP, cancel_when_source_is_destroyed = false,
+    action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+      {type = "create-explosion", entity_name = "explosion", offset_deviation = {{-0.7, -0.7}, {0.7, 0.7}}, offsets = {{0, -0.6}}}}}}}})
+end
+local COOKOFF = {{type = "create-fire", entity_name = "lp-cookoff-fire", initial_ground_flame_count = 3, offsets = {{0, -0.3}}},
+  {type = "nested-result", action = {type = "direct", action_delivery = {type = "delayed", delayed_trigger = "lp-cookoff"}}}}
+
 local function make_tank(name, color, heads)
 local tank = base_unit(name)
 tank.max_health = shared.units["lp-tank"].health
@@ -345,6 +368,7 @@ ta.sound = table.deepcopy(data.raw.gun["tank-cannon"].attack_parameters.sound)
 ta.animation = table.deepcopy(tank.run_animation)
 tank.attack_parameters = ta
 tank.dying_explosion = "medium-explosion"
+tank.dying_trigger_effect = table.deepcopy(COOKOFF)
 tank.corpse = "tank-remnants"
 -- Armour that yellow ammo still hurts: a flat 10 made a gun turret's 5-damage rounds useless (seed 4242:
 -- seven raids, no unit lost).

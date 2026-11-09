@@ -51,6 +51,7 @@ end
 local release
 function scorcher.tick(tick)
   if storage.tesla_held and next(storage.tesla_held) then release(tick) end
+  scorcher.look(tick)
   if tick % TICKS ~= 7 or not storage.bases then return end
   local seen, list = {}, {}
   for _, b in pairs(storage.bases) do
@@ -113,11 +114,16 @@ end
 -- in its reach, it goes for the laser, then back to its order. Left to the engine's choice, a Tesla through a laser line
 -- spent its bolts on the accumulators behind it: the lasers held 0 to 43% of their time at the line by the seed (teslawall
 -- grid, seeds 12345, 777, 4242, 2026-11-09), the stun working whenever a bolt fell on one. Once per AIM_GAP a Tesla.
-local AIM_GAP = 75
+-- And once seen fighting, each Tesla is looked at every AIM_LOOK ticks while it lives (storage.tesla_seen): its bolts into
+-- troopers and a wall, then the accumulators behind the line it had broken, set it off seldom (8 turns in 26 s, the
+-- lasers held 4.7%, seed 12345, 0.2.254).
+local AIM_GAP, AIM_LOOK = 75, 30
 function scorcher.aim(u, struck)
   if not (u and u.valid and u.type == "unit") then return end
   storage.tesla_aim = storage.tesla_aim or {}
+  storage.tesla_seen = storage.tesla_seen or {}
   local k = u.unit_number
+  storage.tesla_seen[k] = {u = u, foe = struck.force}
   if (storage.tesla_aim[k] or -AIM_GAP) + AIM_GAP > game.tick then return end
   storage.tesla_aim[k] = game.tick
   local cm = u.commandable
@@ -171,6 +177,19 @@ function scorcher.hold(ent)
     storage.tesla_holds = (storage.tesla_holds or 0) + 1
   end
   h.till = game.tick + n
+end
+
+function scorcher.look(tick)
+  if tick % AIM_LOOK ~= 13 or not storage.tesla_seen then return end
+  for k, t in pairs(storage.tesla_seen) do
+    if not t.u.valid or not t.foe.valid then
+      storage.tesla_seen[k] = nil
+    else
+      local foe = t.u.surface.find_entities_filtered{position = t.u.position, radius = t.u.prototype.attack_parameters.range + 1,
+        type = "electric-turret", force = t.foe, limit = 1}[1]
+      if foe then scorcher.aim(t.u, foe) end
+    end
+  end
 end
 
 release = function(tick)
