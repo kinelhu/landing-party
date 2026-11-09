@@ -5658,6 +5658,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   - followers done hold, answering only fire.
   The arena's play mode on real ground: Nauvis's generation without ore, biters, cliffs or water, the pen paved in
   concrete inside a hazard border (the user: "make it concrete and not editor blank space"); its batch keeps lab tiles.
+  The third full regression on 0.2.246: 302 of 305. **Open:** fortress and fortress jammer, its assault 382 of 1,301
+  on wall pieces beside its gap (fliers colliding: both pass with them passing through each other, seen both ways);
+  teslawall grid, the Teslas holding the lasers 1.1% of their time at the line (27.7% at 0.2.237 and 0.2.240, 18.7% at
+  0.2.243, 0% at 0.2.245 by direct runs of its worktrees; not the constructor drones, not the fliers). Scenario trailer
+  (not in the list): Synthexis's wave poured in through its gap and 184 of 197 walked back out before withdrawing.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
