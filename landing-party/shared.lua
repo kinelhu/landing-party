@@ -260,6 +260,13 @@ shared.PLATED = {"lp-infantry", "lp-tank", "lp-walker", "lp-harrier", "lp-buggy"
 shared.PLATES = {physical = {type = "physical", percent = 25, decrease = 2}, fire = {type = "fire", percent = 70},
   laser = {type = "laser", percent = 40}}
 shared.PLATE_HEALTH = 1.15
+-- The lightning's stun on units (scripts/stun.lua; the user, 2026-11-09: "a stun effect with Tesla weapons ... also
+-- affecting units? Would have to not be 100% to be fair"): each electric hit charges its target by one, less its electric
+-- resistance; the charge halves every HALF ticks; a hit stuns with chance (charge - 1) / SPAN, at most MAX; stunned for
+-- TICKS, it cannot be stunned again for IMMUNE after. Both sides' tesla weapons alike. A hull (a unit wider than HULL_WIDTH)
+-- takes HULL of the charge on top: its electric resistance alone left a tank with none stunned on a quarter of its hits.
+shared.STUN = {HALF = 240, SPAN = 6, MAX = 0.6, TICKS = 60, IMMUNE = 240, HULL = 0.25, HULL_WIDTH = 0.6,
+  fx = "lp-stun-fx", fx_big = "lp-stun-fx-big"}
 function shared.plated(corp, kind, plate)
   local n = shared.variant(corp, kind)
   return plate and (n .. "-" .. plate) or n

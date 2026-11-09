@@ -788,6 +788,19 @@ scorcher.resistances = {{type = "physical", decrease = 3, percent = 25}, {type =
   {type = "explosion", decrease = 5, percent = 30}, {type = "laser", decrease = 5}, {type = "electric", decrease = 5}}
 data:extend({prism, prism_split, prism_chain, tesla, tesla_jump, tesla_chain, scorcher})
 
+-- The lightning's stun (scripts/stun.lua): current arcing over the unit while it lasts, Space Age's lightning strike's hit
+-- (36 frames, its 308 by 220 at scale 0.3 over infantry, 0.6 over a hull), looped over the stun's length. Movement and speed
+-- untouched: the script switches the unit off.
+local util = require("util")
+for _, fx in ipairs({{shared.STUN.fx, 0.3}, {shared.STUN.fx_big, 0.6}}) do
+  data:extend({{type = "sticker", name = fx[1], flags = {"not-on-map"}, hidden = true,
+    duration_in_ticks = shared.STUN.TICKS, target_movement_modifier = 1, vehicle_speed_modifier = 1,
+    render_layer = "air-object", single_particle = true,
+    animation = util.sprite_load("__space-age__/graphics/entity/lightning/lightning-attractor-hit-anim", {
+      draw_as_glow = true, scale = fx[2], frame_count = 36, animation_speed = 36 / shared.STUN.TICKS * 2,
+      tint = {r = 0.75, g = 0.9, b = 1, a = 1}})}})
+end
+
 -- The howitzer truck (the user, 2026-10-23: "the take-away howitzer a mortar truck ... the arty sprites but stuck onto
 -- a tank"): the artillery's cannon on a tank's hull, a hauler's pace and gun. It is the hauler of any siege that takes
 -- the howitzer, and gives way to the howitzer turret once deployed (siege.lua); it never fires the cannon.

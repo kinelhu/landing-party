@@ -188,6 +188,7 @@ document still says Serenity where it records history.
 | The unit roster (`docs/units.md`, written from the prototypes by `scripts/roster.py`) | built 2026-10-21 | - |
 | New units from the design sheet: Prism, Tesla (Serenity), Scorcher (Grubstake); every tank with its turret | built 0.1.44 | `heavies`, `unitnode` (three) |
 | The Tesla's hold: a laser or tesla turret its lightning strikes stops for the game's tesla stun (Space Age's `tesla-turret-stun`, 30 ticks, read from the prototype), each strike starting it again, its status "Stunned by lightning"; Synthexis's fire map reads a held turret as firing; the drain kept (the drain alone measured dead on a real supply) | built 0.2.218 | `teslawall` grid (in the regression; `-off` the control, `20mw` and `night` instruments) |
+| The lightning's stun on units (`scripts/stun.lua`): every electric hit on a unit, either side's (Kessler-Hayashi's Tesla and shock trooper, the player's tesla turret and gun), charges it by one less its electric resistance, a hull a quarter of that; the charge halves every 4 s, worked out at the next hit; a hit stuns with chance (charge - 1) / 6, at most 60%, never the first; stunned it is switched off (no move, no shot) for 1 s under Space Age's lightning hit looped over it, then immune for 4 s; Space Age's own slow kept. A tesla turret's 120 kills most infantry before it builds | built 0.2.249 | `stun` (in the regression), `dev` (the Prism scene's Tesla) |
 | A corporation's railgunners out of the engine's groups (shelled, the engine sends the units near the impact at the battery; on nwa railgunners so broke 232 of the player's buildings): one added to a group goes home. The yard keeps 40 tiles from the guns of a force at cease-fire with it. A landing by pod stands on its pod's pad (explosions take no ground) | built 0.2.219 | `artyreply`, `idle` truce, `podland` |
 | The arena: a counter heatmap of every unit kind at equal spend, against biters by evolution and the player's lines; to watch, with a panel | built 0.1.46 | `scripts/arena.sh` (`docs/arena.md`), `scripts/play-arena.sh` |
 | Legibility: every mechanic told in the world (audit below) | audited 2026-10-20; gaps open | |
@@ -5702,6 +5703,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   taking all ten lasers and both roboports. The check now counts the wall beside the gap only while a laser or roboport
   stands, and passes a siege its shells won alone: 12345, its jammer, 777 and 4242 pass. The fault it caught (82% on
   the wall with what stood behind it, before 0.2.204) counts in full still. Fliers keep colliding.
+- **The lightning stuns units** (2026-11-09; the user: "a stun effect with Tesla weapons in the mod also affecting
+  units? Would have to not be 100% to be fair though ... increasing with repeating attacks until stunned, with passive
+  decrease", then "same build-up for my tesla weapons" and "electrical currents flowing all over the unit"). Engine
+  facts first: a sticker moves and slows, never stops a shot (StickerPrototype has no attack modifier), Space Age's own
+  tesla stun is 30 ticks at 5% speed and leaves the unit firing; a unit switched off by script stops both (scenario
+  stun: 39 hits by stunned units with the switch-off taken out, 0 with it). Electric hits only reach the script (the
+  damage event filtered to units and electric damage: no bullet on a biter is seen), the charge's decay computed at the
+  next hit, a short list of the stunned to switch on again: nothing runs between hits. First run: a tank with no
+  electric resistance was stunned on a quarter of its hits, so a hull takes a quarter of the charge on top (0 of 80
+  after). Second: a tesla turret's 120 is Kessler-Hayashi's trooper's health, and it kills shock troopers in three, so
+  the turret stuns little: its build-up checked by the chance it gives a hull (0.05 at most), the stun mattering for
+  steady small fire (the Tesla's 20, the tesla gun's 30). Scenario stun: the Teslas stun 20 of the player's troopers in
+  190 hits; never a first hit; none again within the immunity; every unit on again. dev: the Prism scene's Tesla
+  stuns its troopers. Assumed, not tested: the stun's look in game before the Prism shot's re-take.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

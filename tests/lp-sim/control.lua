@@ -3974,6 +3974,9 @@ scenarios.dev = function()
     local p = S.scene.prism
     check("dev: /lp prism cut into the troopers", p.troopers == 15 and now("prism", "lp-trooper") < 15 and p.company == 3,
       string.format("troopers %d to %d, its company %d", p.troopers, now("prism", "lp-trooper"), p.company))
+    -- (Its company's Tesla on the troopers: the lightning's stun, scripts/stun.lua, seen in game through this scene.)
+    local sb = (lp("stun_stats").by or {})["lp-trooper"] or {stuns = 0, hits = 0}
+    check("dev: and its Tesla stunned troopers", sb.stuns > 0, string.format("%d of %d hits", sb.stuns, sb.hits))
     local f = S.scene.flak
     check("dev: /lp flak shot scout drones down", f.drones == 16 and now("flak", "lp-harrier") < 16,
       string.format("drones %d to %d", f.drones, now("flak", "lp-harrier")))
@@ -4883,6 +4886,121 @@ end
 -- Kessler-Hayashi's assault from 54 tiles east: five Teslas, sixteen of its infantry, three tanks. Its lightning should
 -- jump along the laser line and drain it while the escort kills the fodder.
 --   Fork: scripts/fork.sh teslawall 12345 7 (saved at minute 1); the assault sets off at minute 1.5 (tick 5400).
+-- The lightning's stun on units (scripts/stun.lua; the user, 2026-11-09: "a stun effect with Tesla weapons ... also
+-- affecting units? ... not 100% ... increasing with repeating attacks"; "same build-up for my tesla weapons"). Two fights
+-- on open ground: Kessler-Hayashi's Teslas on the player's troopers (north), and the player's tesla turrets on its
+-- infantry and tanks marching at them (south). Checks: stuns land both ways; none on a unit's first hit; none again within
+-- the immunity; tanks far harder to stun than infantry; a stunned unit lands no hit of its own while stunned (past a
+-- beam's 20 ticks already in the air); every stunned unit back on at the end.
+-- Engine probe (the user, 2026-11-09: "are player units giving map view to the player? I think they should to allow far
+-- ops"): one of the player's troopers and one of its tanks set far out in ground the player has never seen; after ten
+-- seconds, is the ground round each charted, and in sight? The control a powered radar (a character no player controls
+-- charted nothing, the first run). Unanswered here: in a benchmark run nothing charts, not the radar, not force.chart
+-- itself (2026-11-09: all four false after a minute); the question needs a game with its window.
+scenarios.chartprobe = function()
+  local spots = {trooper = {1600, 0}, tank = {1600, 400}, radar = {1600, 800}, scripted = {1600, -400}}
+  schedule(60, function()
+    for _, p in pairs(spots) do surface().request_to_generate_chunks(p, 2) end
+    surface().force_generate_chunk_requests()
+  end)
+  schedule(120, function()
+    local pf = game.forces.player
+    S.cp0 = {}
+    for k, p in pairs(spots) do S.cp0[k] = pf.is_chunk_charted(surface(), {math.floor(p[1] / 32), math.floor(p[2] / 32)}) end
+    pf.chart(surface(), {{spots.scripted[1] - 16, spots.scripted[2] - 16}, {spots.scripted[1] + 16, spots.scripted[2] + 16}})
+    surface().create_entity{name = "lp-trooper", position = spots.trooper, force = "player"}
+    surface().create_entity{name = "lp-tank", position = spots.tank, force = "player"}
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {spots.radar[1] - 3, spots.radar[2]}, force = "player"}
+    eei.power_production, eei.electric_buffer_size = 1e6 / 60, 1e7
+    surface().create_entity{name = "substation", position = {spots.radar[1], spots.radar[2] + 3}, force = "player"}
+    surface().create_entity{name = "radar", position = spots.radar, force = "player"}
+  end)
+  schedule(120 + 3600, function()
+    local pf = game.forces.player
+    local out = {}
+    for k, p in pairs(spots) do
+      local c = {math.floor(p[1] / 32), math.floor(p[2] / 32)}
+      out[#out + 1] = string.format("%s: charted before %s, after %s, in sight %s", k, tostring(S.cp0[k]),
+        tostring(pf.is_chunk_charted(surface(), c)), tostring(pf.is_chunk_visible(surface(), c)))
+    end
+    table.sort(out)
+    info("chartprobe: " .. table.concat(out, "; "))
+    check("chartprobe ran", true)
+  end)
+end
+
+local STUN = require("__landing-party__.shared").STUN
+scenarios.stun = function()
+  local AT = 2400
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true, army_off = true, history_off = true, biotech_off = true,
+      herd_off = true})
+  end)
+  schedule(1800, function()
+    flatten(330, -70, 490, 70)
+    -- South: three tesla turrets fed by an interface, the player's.
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {372, 40}, force = "player"}
+    eei.power_production, eei.electric_buffer_size = 50e6 / 60, 1e8
+    surface().create_entity{name = "substation", position = {376, 40}, force = "player"}
+    S.st_turrets = {}
+    for _, y in ipairs({34, 40, 46}) do
+      S.st_turrets[#S.st_turrets + 1] = surface().create_entity{name = "tesla-turret", position = {381, y}, force = "player"}
+    end
+  end)
+  schedule(AT, function()
+    -- North: four Teslas at twenty of the player's troopers.
+    S.st_troopers = block("lp-trooper", 400, -40, 20, 5, 2.2, "player")
+    S.st_teslas = block("lp-tesla", 440, -40, 4, 4, 5, FORCE)
+    order_area(S.st_teslas, {400, -40}, 20)
+    -- South: its shock troopers and tanks marching at the turrets. (Its plain infantry has a tesla turret's 120 in health:
+    -- one hit each, nothing to stun, the first run.)
+    S.st_inf = block("lp-shock", 440, 40, 12, 4, 2.2, FORCE)
+    S.st_tanks = block("lp-tank", 448, 40, 10, 2, 5, FORCE)
+    order_area(S.st_inf, {381, 40}, 12)
+    order_area(S.st_tanks, {381, 40}, 12)
+    S.st_go = game.tick
+  end)
+  schedule(AT + 60 * 60, function()
+    local st = lp("stun_stats")
+    local function by(name)
+      local b = st.by[name] or {hits = 0, stuns = 0}
+      return b.hits, b.stuns, b.pmax or 0
+    end
+    local th, ts = by("lp-trooper")
+    local ih, is = by("lp-shock")
+    local kh, ks, kp = by("lp-tank")
+    local function where(list)
+      local n, x, y = 0, 0, 0
+      for _, u in ipairs(list or {}) do if u.valid then n, x, y = n + 1, x + u.position.x, y + u.position.y end end
+      return n > 0 and string.format("%d at %.0f,%.0f", n, x / n, y / n) or "0"
+    end
+    info(string.format("stun: standing: troopers %s, Teslas %s, its infantry %s, its tanks %s, turrets %d",
+      where(S.st_troopers), where(S.st_teslas), where(S.st_inf), where(S.st_tanks), alive(S.st_turrets)))
+    info(string.format("stun: %d stuns; troopers %d of %d hits, shock troopers %d of %d, tanks %d of %d; first-hit stuns %d; shortest gap %s; hits by the stunned %d (%d within 20 ticks of the stun)",
+      st.stuns, ts, th, is, ih, ks, kh, st.first, tostring(st.gap), S.st_shots or 0, S.st_shots_early or 0))
+    check("stun: Kessler-Hayashi's Teslas stun the player's troopers", ts > 0, ts .. " of " .. th .. " hits")
+    -- (Its stun, not only its kill: a tesla turret's 120 kills a shock trooper in three hits, before the charge gives a chance;
+    -- on a hull its hits build one, the same build-up as the Tesla's.)
+    check("stun: the player's tesla turrets build the same charge on its units", kp > 0,
+      string.format("its tanks' chance at most %.2f; stuns: shock troopers %d of %d hits, tanks %d of %d", kp, is, ih, ks, kh))
+    check("stun: never on a unit's first hit", st.first == 0, tostring(st.first))
+    check("stun: none again within its immunity", st.gap == nil or st.gap >= STUN.TICKS + STUN.IMMUNE, tostring(st.gap))
+    -- (A hull's 80% electric resistance: a fifth of the charge a hit.)
+    local rate = function(n, h) return h > 0 and n / h or 0 end
+    check("stun: tanks far harder to stun than infantry", kh == 0 or rate(ks, kh) <= 0.25 * rate(is + ts, ih + th),
+      string.format("tanks %.3f a hit, infantry %.3f", rate(ks, kh), rate(is + ts, ih + th)))
+    check("stun: a stunned unit lands no hit while stunned", (S.st_shots or 0) == 0,
+      string.format("%d hits, %d more within 20 ticks of the stun", S.st_shots or 0, S.st_shots_early or 0))
+  end)
+  schedule(AT + 60 * 60 + 120, function()
+    local off = 0
+    for _, list in ipairs({S.st_troopers, S.st_teslas, S.st_inf, S.st_tanks}) do
+      for _, u in ipairs(list or {}) do if u.valid and u.disabled_by_script then off = off + 1 end end
+    end
+    check("stun: every stunned unit back on", off == 0 and lp("stun_stats").stunned == 0, off .. " still off")
+  end)
+end
+
 scenarios.teslawall = function()
   local WX, AT = 401, 5400
   -- The game's tesla stun (Space Age's tesla-turret-stun), the hold's length (scorcher.hold).
@@ -16633,6 +16751,17 @@ end
 
 -- Film stages (teslawall, warfinale): damage between forces, deaths (the killing blow) by the victim's force and kind and the
 -- killer's force, and the hits the teslawall's fodder landed on Kessler-Hayashi's.
+-- Scenario stun: hits landed by a unit while it is stunned (past a beam's 20 ticks already in the air: counted apart).
+if params.scenario == "stun" then
+  script.on_event(defines.events.on_entity_damaged, function(e)
+    local c = e.cause
+    -- (Asked of the stun, not read from the unit: a unit the stun forgot to switch off counts too.)
+    if not (c and c.valid and c.type == "unit") then return end
+    local at = lp("stun_since", c.unit_number)
+    if not at then return end
+    if game.tick - at > 20 then S.st_shots = (S.st_shots or 0) + 1 else S.st_shots_early = (S.st_shots_early or 0) + 1 end
+  end)
+end
 if params.scenario == "teslawall" or params.scenario == "warfinale" then
   script.on_event(defines.events.on_entity_damaged, function(e)
     local a, v = e.force and e.force.name, e.entity.force.name
