@@ -1227,7 +1227,7 @@ local function gun_spot(b, op, spec, k)
 end
 
 -- Guard duty round a siege's hold or a clearance's site (siege_step): its foes' units within the ring are answered, the
--- guards leashed back to it. Run in a drop siege's bombard, and in its deploy too (the user, 2026-11-09, on the trailer:
+-- guards leashed back to it. Run in a drop siege's and a clearance's bombard, and in their deploy too (the user, 2026-11-09, on the trailer:
 -- "a buggy starts firing on the waiting infantry which is frozen and does not respond while the mortars land": held at
 -- its hold, undistracted, they let a buggy shoot them).
 local function guard_duty(b, op)
@@ -1448,7 +1448,9 @@ local function siege_step(b, trace, army)
       trace(b, string.format("siege: deploying at %.0f,%.0f", op.site[1], op.site[2]))
     end
   elseif op.phase == "deploy" then
-    if op.drop and not op.clearance then guard_duty(b, op) end
+    -- (A clearance's too: its guards stood while biters killed its railgunners 8 to 11 tiles from the site and its mortars
+    -- as they went up, the last nest never cleared, hazard, once the Line trooper hit as hard as before, 0.2.271.)
+    if op.drop or op.clearance then guard_duty(b, op) end
     local share = (game.tick - op.phase_at) / DEPLOY_TICKS
     if op.label and op.label.valid then op.label.text = {"lp.siege-deploying-percent", string.format("%d", math.min(100, share * 100))} end
     -- A drop siege's guns assembled where their pods came down (the user, 2026-11-04: between the drops and the guns "a

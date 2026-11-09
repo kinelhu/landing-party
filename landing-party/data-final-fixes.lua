@@ -1,9 +1,8 @@
 -- The weapon sounds (sounds.lua; the user chose them on the sheet, 2026-11-09): each decided entry to its units and their
 -- plated variants, by final name (Grubstake's copies are made from Kessler-Hayashi's in corps.lua). A gun's attack sound
 -- is its sound's files at its speed and volume; layers play beside it a few ticks later (a delayed trigger: the slug
--- buggy's second barrel); a burst (rounds, gap) is its beam hitting that many times as it lasts, each hit its sound and
--- its share of the damage (the trooper's laser: 3 hits in a beam of 13 ticks, a burst every 66, its damage a second as
--- before). A beam fired with its own sound gets a copy of its beam without the beam's hum (the laser drone's, the
+-- buggy's second barrel); a burst (rounds, gap) is one hit a shot and that many pulses of its sound gap ticks apart (the
+-- trooper's laser: a shot every 66 ticks, three pulses 5 apart, its damage a second as before). A beam fired with its own sound gets a copy of its beam without the beam's hum (the laser drone's, the
 -- trooper's: lp-kh-laser-beam hums for the turrets that keep it).
 do
   local list = require("__landing-party__.sounds")
@@ -29,28 +28,37 @@ do
             local s = sound(e.files, e.speed, e.volume)
             local d = beam_of(a)
             if d and (e.rounds or 1) > 1 then
-              -- The burst: its own beam, hitting rounds times gap apart, each hit the sound and its share.
+              -- The burst: one hit a shot, its old damage a second (one hit of its beam every cooldown: measured, arms,
+              -- 840 ticks), the pulses its sounds, the first with the shot and the rest gap ticks apart (delayed
+              -- triggers, as the layers). (Its beam set to hit rounds times gap apart landed about one of them, its damage
+              -- cut to 40% and two of its pulses unheard: arms 840 ticks to 2,040, the arena's 13%, 0.2.258 to 0.2.270.)
               local name = d.beam .. "-" .. e.id
               if not made[name] then
                 local b = table.deepcopy(data.raw.beam[d.beam])
                 b.name, b.working_sound = name, nil
-                b.damage_interval = e.gap
-                local hit = b.action.action_delivery.target_effects
-                local per = 0
-                for _, t in ipairs(hit) do
-                  if t.type == "damage" then
-                    -- Per hit: the old damage a second over the new burst's rounds (old: a hit every cooldown).
-                    t.damage.amount = t.damage.amount * e.every / (a.cooldown * e.rounds)
-                    per = t.damage.amount
-                  end
+                for _, t in ipairs(b.action.action_delivery.target_effects) do
+                  if t.type == "damage" then t.damage.amount = t.damage.amount * e.every / a.cooldown end
                 end
-                hit[#hit + 1] = {type = "play-sound", sound = s}
                 data:extend({b})
-                made[name] = per
+                made[name] = true
               end
-              d.beam, d.duration = name, e.gap * (e.rounds - 1) + 3
+              -- Shorter than its damage interval: one hit.
+              d.beam, d.duration = name, math.min(e.gap * (e.rounds - 1) + 3, data.raw.beam[name].damage_interval)
               a.cooldown = e.every
-              a.sound = nil
+              a.sound = s
+              for r = 2, e.rounds do
+                local tname = "lp-sound-" .. e.id .. "-pulse-" .. r
+                if not made[tname] then
+                  data:extend({{type = "delayed-active-trigger", name = tname, delay = e.gap * (r - 1),
+                    action = {type = "direct", action_delivery = {type = "instant",
+                      target_effects = {{type = "play-sound", sound = s}}}}}})
+                  made[tname] = true
+                end
+                d.source_effects = d.source_effects or {}
+                if d.source_effects.type then d.source_effects = {d.source_effects} end
+                table.insert(d.source_effects, {type = "nested-result", action = {type = "direct",
+                  action_delivery = {type = "delayed", delayed_trigger = tname}}})
+              end
             elseif d then
               local name = d.beam .. "-quiet"
               if not made[name] then

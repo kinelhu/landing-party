@@ -3205,10 +3205,16 @@ scenarios.rivals = function()
     info("rivals: " .. table.concat(lines_, "; "))
     -- Each builds its own prototypes (its colour): Grubstake's are lp-grubstake-*.
     local own, plain = 0, 0
+    -- (Units and buildings only: effects are shared prototypes, the Scorcher's stream and its fires among them, and one
+    -- alive at the count read as 3 plain, 0.2.271's ops regression.)
+    local EFFECT = {stream = true, fire = true, sticker = true, beam = true, explosion = true, projectile = true,
+      ["smoke-with-trigger"] = true, corpse = true, ["artillery-projectile"] = true, ["highlight-box"] = true}
     for _, e in pairs(surface().find_entities_filtered{force = "lp-grubstake"}) do
-      if e.name:sub(1, 13) == "lp-grubstake-" then own = own + 1 elseif e.name:sub(1, 3) == "lp-" then plain = plain + 1 end
+      if EFFECT[e.type] then
+      elseif e.name:sub(1, 13) == "lp-grubstake-" then own = own + 1
+      elseif e.name:sub(1, 3) == "lp-" then plain = plain + 1; S.plain_names = (S.plain_names or "") .. " " .. e.name end
     end
-    check("rivals: Grubstake builds its own prototypes", own > 20 and plain == 0, own .. " its own, " .. plain .. " plain")
+    check("rivals: Grubstake builds its own prototypes", own > 20 and plain == 0, own .. " its own, " .. plain .. " plain" .. (S.plain_names or ""))
     local gravel = surface().count_tiles_filtered{name = "lp-grubstake-road"}
     -- Floor livery: each corporation's trim round its paved yards and depots (Serenity black, Grubstake hazard).
     local s_trim = surface().count_tiles_filtered{name = "lp-trim"}
@@ -4763,6 +4769,7 @@ scenarios.heavies = function()
       t.insert{name = "firearm-magazine", count = 10}
     end
     S.scorcher = spawn("lp-grubstake-scorcher", {316, 0}, 1, "lp-grubstake")[1]
+    S.scorcher_id = S.scorcher and S.scorcher.unit_number
     if S.scorcher then S.scorcher.commandable.set_command{type = defines.command.attack_area, destination = {331, 0}, radius = 8} end
     -- The tesla's lasers, powered.
     local eei = surface().create_entity{name = "electric-energy-interface", position = {372, -30}, force = "player"}
@@ -4791,8 +4798,8 @@ scenarios.heavies = function()
     end)
   end
   schedule(2 * 3600 + 3600 + 60, function()
-    local st = lp("scorcher_stats")
-    info(string.format("heavies: bursts %d, drains %d, troopers hurt at first %s, at most %s", st.bursts, st.drains,
+    local st = lp("scorcher_stats", S.scorcher_id)
+    info(string.format("heavies: bursts %d (its own %d), drains %d, troopers hurt at first %s, at most %s", st.bursts, st.own, st.drains,
       tostring(S.first_hurt), tostring(S.most_hurt)))
     local sc = S.scorcher
     info(string.format("heavies: scorcher %s at %s, health %s; prism %s; pack health %s", tostring(sc and sc.valid),
@@ -4801,7 +4808,9 @@ scenarios.heavies = function()
         table.insert(o, u.valid and math.floor(u.health) or "dead") end return o end)())))
     -- One each 6 s cooldown in the minute, and one at its edge (since 0.2.259; three in store, refilled one each 20 s,
     -- had allowed 7).
-    check("heavies: the scorcher spent flame on the wall line", st.bursts >= 1 and st.bursts <= 11, tostring(st.bursts))
+    -- (Its own: the map's count, any Scorcher's, read 12 once a camp had its own, 0.2.271.)
+    check("heavies: the scorcher spent flame on the wall line", st.own >= 1 and st.own <= 11,
+      string.format("%d of the map's %d", st.own, st.bursts))
     check("heavies: the tesla drained the lasers", st.drains >= 1, tostring(st.drains))
     check("heavies: the prism's beam split (more than one trooper hurt by its first shot)", (S.first_hurt or 0) >= 2,
       tostring(S.first_hurt))
@@ -12410,12 +12419,28 @@ scenarios.herd = function()
     -- splashing the wall by the gap among it: the count is the test there, the share the big wave's.)
     -- (Not where its bursters or stompers break walls by the blast.)
     if S.gap_at and mix ~= "burst" and mix ~= "burst-nohold" and mix ~= "stomp" and mix ~= "megaburst" then
-      local GAP_WALLS, GAP_SHARE = 12, 0.5
+      local GAP_WALLS, GAP_SHARE, BESIDE, QUIET = 12, 0.5, 12, 3600
       local g = S.gap_bite or {wall = 0, inside = 0}
       local share = g.wall / math.max(1, g.wall + g.inside)
-      check("herd: through its gap, not chewing the wall beside it", (S.walls_after or 0) <= GAP_WALLS and share <= GAP_SHARE,
-        string.format("%d wall pieces after the gap, %.0f%% of its bite on walls (%d to walls, %d past them)",
-          S.walls_after or 0, 100 * share, g.wall, g.inside))
+      -- By breach (2026-11-10: every piece after the first gap counted, and scout's second wave, 14 minutes on, breaking in
+      -- elsewhere, 7 to 40 tiles off, read as the first chewing beside its gap: 8 to 27 over the five seeds): a breach
+      -- starts at a piece after QUIET ticks with none falling, its first piece its gap; beside it, its pieces within BESIDE.
+      local breaches, last = {}, nil
+      for _, d in ipairs(S.wall_deaths or {}) do
+        if not last or d[1] - last > QUIET then breaches[#breaches + 1] = {gap = d, beside = 0, off = 0} else
+          local b = breaches[#breaches]
+          if (d[2] - b.gap[2]) ^ 2 + (d[3] - b.gap[3]) ^ 2 <= BESIDE * BESIDE then b.beside = b.beside + 1 else b.off = b.off + 1 end
+        end
+        last = d[1]
+      end
+      local worst, parts = 0, {}
+      for _, b in ipairs(breaches) do
+        worst = math.max(worst, b.beside)
+        parts[#parts + 1] = string.format("%d beside its gap at %.0f,%.0f (%d further off)", b.beside, b.gap[2], b.gap[3], b.off)
+      end
+      check("herd: through its gap, not chewing the wall beside it", worst <= GAP_WALLS and share <= GAP_SHARE,
+        string.format("%s; %.0f%% of its bite on walls (%d to walls, %d past them); %d pieces after the first gap in all",
+          table.concat(parts, "; "), 100 * share, g.wall, g.inside, S.walls_after or 0))
     end
     if mix == "" or mix == "wild" or mix == "mega" then
       local s = w.t_launch
@@ -15118,6 +15143,77 @@ scenarios.pool = function()
   end)
 end
 
+-- Air raid (airraid.lua; the user, 2026-11-09: "flyers literally bypass walls, mines, flamethrower and water"): a provoked
+-- Kessler-Hayashi camp with eight laser drones put in its garrison; 140 tiles toward spawn, the player's radar and an
+-- assembler inside a ring of stone wall, four flamethrower turrets (with oil) on it: hard on foot, nothing that shoots up.
+-- The camp senses it and chooses for itself: by air. LP_MIX=aa: six gun turrets with ammunition instead of the flamers,
+-- the air no cheaper than the ground: not by air. LP_MIX=off: air raids off (debug_tune air_off), the check seen failing.
+scenarios.airraid = function()
+  local aa, off = params.mix == "aa", params.mix == "off"
+  schedule(60, function()
+    lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true, air_off = off or nil})
+    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
+  end)
+  schedule(8 * 3600, function()
+    local o = lp("stats", S.id).origin
+    local len = math.sqrt(o.x * o.x + o.y * o.y)
+    local ux, uy = o.x / len, o.y / len
+    local c = {math.floor(o.x - ux * 140), math.floor(o.y - uy * 140)}
+    flatten(c[1] - 30, c[2] - 30, c[1] + 30, c[2] + 30)
+    S.c = c
+    for x = -12, 12 do for y = -12, 12 do
+      if math.abs(x) == 12 or math.abs(y) == 12 then
+        surface().create_entity{name = "stone-wall", position = {c[1] + x + 0.5, c[2] + y + 0.5}, force = "player"}
+      end
+    end end
+    S.radar = surface().create_entity{name = "radar", position = {c[1] + 0.5, c[2] + 0.5}, force = "player"}
+    surface().create_entity{name = "assembling-machine-2", position = {c[1] + 5.5, c[2] + 0.5}, force = "player"}
+    local eei = surface().create_entity{name = "electric-energy-interface", position = {c[1] - 5, c[2] + 5}, force = "player"}
+    eei.power_production, eei.electric_buffer_size = 1e9 / 60, 1e9
+    surface().create_entity{name = "medium-electric-pole", position = {c[1] - 2.5, c[2] + 2.5}, force = "player"}
+    for _, d in ipairs(aa and {} or {{9, 0}, {-9, 0}, {0, 9}, {0, -9}}) do
+      local f = surface().create_entity{name = "flamethrower-turret", position = {c[1] + d[1], c[2] + d[2]}, force = "player"}
+      if f then f.insert_fluid{name = "crude-oil", amount = 100} end
+    end
+    if aa then
+      for k = 0, 5 do
+        local a = k * math.pi / 3
+        local t = surface().create_entity{name = "gun-turret", position = {c[1] + math.cos(a) * 7, c[2] + math.sin(a) * 7}, force = "player"}
+        if t then t.insert{name = "firearm-magazine", count = 200} end
+      end
+    end
+    lp("debug_units", S.id, "lp-laser-drone", 8)
+  end)
+  -- (Sensed two seconds on: on the tick they were placed the flamers' oil had not settled, and they read as silent, 0.)
+  schedule(8 * 3600 + 120, function()
+    S.sensed = lp("debug_needed", S.id, S.c)
+    lp("debug_tune", {raids_off = false})
+  end)
+  for t = 8 * 3600 + 600, END - 120, 600 do
+    schedule(t, function()
+      local o = lp("stats", S.id).ops
+      S.air = o.air_raids or 0
+      S.raids = o.launched or 0
+      if S.air > 0 and not S.air_at then S.air_at = game.tick end
+      if S.radar and not S.radar.valid and not S.razed_at then S.razed_at = game.tick end
+    end)
+  end
+  settle_when(function() return (aa and (S.raids or 0) > 0) or (not aa and S.razed_at ~= nil) end)
+  schedule(END - 60, function()
+    local st = lp("stats", S.id)
+    info(string.format("airraid%s: sensed %s; %d raids, %d by air (first at %s); the radar %s; log %s", aa and " aa" or off and " off" or "",
+      serpent.line(S.sensed), S.raids or 0, S.air or 0, S.air_at and string.format("%.1f min", S.air_at / 3600) or "-",
+      S.radar and S.radar.valid and "standing" or "razed", serpent.line(st.ops.log)))
+    if aa then
+      check("airraid: aa, its fliers kept home where guns shoot up", (S.air or 0) == 0, tostring(S.air))
+    else
+      check("airraid: it went by air at the walled, flamer-held radar", (S.air or 0) >= 1, tostring(S.air))
+      check("airraid: and razed the radar", S.razed_at ~= nil, tostring(S.razed_at))
+    end
+  end)
+end
+
 -- Mended: the user's save (2026-10-17), Grubstake raids on poles behind a wall the player's robots rebuild. The player's
 -- assembler and three poles inside a square of stone wall (12 from it), no turret; a destroyed wall piece comes back 5 s
 -- later (robots). A forced raid breaches, keeps breaking the rebuilt pieces (it wandered by the first one for 3 minutes),
@@ -16888,7 +16984,10 @@ script.on_event(defines.events.on_entity_died, function(e)
   end
   -- Hazard: each of its nests' deaths, by what (spawners are in the filter below since 2026-11-06).
   if params.scenario == "hazard" and e.entity.type == "unit-spawner" then
-    S.nest_deaths = (S.nest_deaths or 0) + 1
+    -- (Its own nests only: the biters' expansion nests died too, and 8 deaths read against 5 of its six gone, 0.2.271.)
+    local own = false
+    for _, n in ipairs(type(S.nests) == "table" and S.nests or {}) do if n == e.entity then own = true end end
+    if own then S.nest_deaths = (S.nest_deaths or 0) + 1 end
     info(string.format("hazard: nest died at %.0f,%.0f tick %d by %s (%s)", e.entity.position.x, e.entity.position.y,
       game.tick, e.cause and e.cause.valid and e.cause.name or "no cause", e.force and e.force.name or "?"))
   end
@@ -16973,6 +17072,9 @@ script.on_event(defines.events.on_entity_died, function(e)
     if params.scenario == "herd" then
       if e.entity.type == "wall" or e.entity.type == "gate" then
         if S.gap_at then S.walls_after = (S.walls_after or 0) + 1 else S.gap_at = game.tick end
+        -- Each piece, for the check by breach (a wave's own gap; scout's second wave breaks in elsewhere).
+        S.wall_deaths = S.wall_deaths or {}
+        table.insert(S.wall_deaths, {game.tick, e.entity.position.x, e.entity.position.y})
       elseif S.gap_at and not S.first_in then S.first_in = game.tick end
     end
   end

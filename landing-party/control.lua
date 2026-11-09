@@ -492,7 +492,7 @@ remote.add_interface("landing-party", {
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
     if t.crews_off ~= nil then storage.crews_off = t.crews_off or nil end
     -- (0.2.29's ground handling, each off: bisecting what it changed.)
-    for _, k in ipairs({"blast_off", "landfill_off", "pier_off"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
+    for _, k in ipairs({"blast_off", "landfill_off", "pier_off", "air_trace"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
     if t.grow_to_line_off ~= nil then storage.grow_to_line_off = t.grow_to_line_off or nil end
     if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
@@ -563,6 +563,7 @@ remote.add_interface("landing-party", {
     if t.sever_off ~= nil then storage.sever_off = t.sever_off end
     if t.hazard_off ~= nil then storage.hazard_off = t.hazard_off end
     if t.hazard_hold ~= nil then storage.hazard_hold = t.hazard_hold end
+    if t.air_off ~= nil then storage.air_off = t.air_off or nil end
     if t.ledger_off ~= nil then storage.ledger_off = t.ledger_off end
     if t.skim_off ~= nil then storage.skim_off = t.skim_off end
     if t.night_off ~= nil then storage.night_off = t.night_off end
@@ -1043,7 +1044,7 @@ remote.add_interface("landing-party", {
     local e = b and base.place_job(b, {name = name, pos = pos})
     return e and e.unit_number
   end,
-  scorcher_stats = function() return scorcher.stats() end,
+  scorcher_stats = function(unit_number) return scorcher.stats(unit_number) end,
   stun_stats = function() return stun.stats() end,
   stun_since = function(k) return stun.since(k) end,
   fall_stats = function() return fall.stats() end,

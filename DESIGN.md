@@ -179,6 +179,7 @@ document still says Serenity where it records history.
 | Raid leaders (an icon over one raider; Grubstake breaks when it falls and its foreman drops the haul, Serenity regroups) | built | `leader` (three) |
 | The player's army through the player's own gates (an order opens its force's gates within 40 tiles for its time, a trooper holds open those within 6) | built 0.2.224 | `owngates` (gate, gap, shut) |
 | Shields and an anti-air turret for the player | out of the first release (the user, 2026-11-08; vanilla turrets already shoot the fliers down) | |
+| Air units for the player | parked (2026-11-10; the user: "I'm not sure that's desirable", then "Agreed, park it"): the player is the factory (turrets, walls, logistics, a few elite troops), the factions bring fliers, and the camps' defences and planning are built on the ground; vanilla's combat robots are the player's fliers. If testers miss it, the smallest try is one late, costly gunship | |
 | Depletion and relocation | dropped 2026-11-05 (a patch outlasts a session at a camp's rate) | |
 | Serenity spreads: lobed, walled clusters out toward its line (metastases), up to 30 blocks; its line around a rival's claim | built 2026-10-20, seen on maps, not measured | `factory` maps, `gates`, `cordon ring` |
 | Serenity's compounds by wave function collapse (rooms, the curtain round the camp); districts by the keep (the default) | built 2026-10-20, seen on maps and in game; districts measured about even | `factory` maps (`turtlecore` for districts) |
@@ -5905,6 +5906,53 @@ Bugs and surprises the headless runs caught, each kept as a check:
   both through, 14 things crushed (8 grinding, the charge off: the check then fails), the assembler razed, 15 of 15 back;
   both turrets killed by its buggies, neither by a charge, with or without it. Its balance at a laser line (a lane of 3 by 18
   razed, lasers in it included) not yet weighed.
+- **Air raids chosen** (0.2.271; the user, 2026-11-09: "flyers literally bypass walls, mines, flamethrower and water ...
+  it might be worth it to think about a few situations where launching a flying heavy raid is worth it"). A target is
+  weighed by air as well as on foot (scripts/airraid.lua; ops.choose): its air defence is what shoots up, gun and laser
+  turrets and worms whose reach covers the straight line's last 400 tiles from the camp or that stand within 30 of the
+  target (walls, mines, water, flamethrowers and artillery nothing), plus its mobile defenders, over the corporation's
+  strength; the camp's fliers at home (3 at least) are its force, by worth in infantry. It goes by air where that score
+  beats the ground's by 1.5 (EDGE), then a soft target is worth SNIPE more among them (artillery, radars, reactors 2;
+  poles, accumulators, generators 1.5; solar 1.3). The launch: its fliers, as many as the air defence needs and three at
+  least, on the target building itself, then round it; home round the worms (op.overflight). An air weighing is cached
+  10 minutes a target, at most four new a choice. Scenario airraid (Kessler-Hayashi, eight laser drones): a walled radar
+  held by four flamethrowers (on foot 10, by air 0) taken by air in 30 s, three seeds; LP_MIX=aa (six gun turrets, no
+  flamers: by air 6, on foot 6): on foot, never by air. Caught on the way: the launch sized by worth sent two drones
+  under the minimum and never went; weighed with SNIPE, a radar went by air whatever shot up round it; sensed on the
+  tick they were placed, the flamers read silent. Assumed, not tested: Grubstake's (harriers, bomb drones) by the same
+  rule; building more fliers against weak anti-air (next); whether a flier raid's losses teach know.price apart from a
+  ground raid's.
+- **The Line trooper's burst cut its damage to 40%** (0.2.271, the ops regression; arms: Kessler-Hayashi's troopers took
+  2,040 ticks to its four radars, 840 before 0.2.258, the Shotgun hands 600). Round three of the sounds made its beam a
+  burst, hitting three times 5 ticks apart: about one hit landed (its damage a second 40% of the old, two of its three
+  pulses unheard), and push (its raid through) failed from 0.2.258 on; likely the arena's 13% for the Line trooper too.
+  Now one hit a shot of its old damage a second (26.4 every 66 ticks, its beam shorter than its 20-tick damage interval),
+  the pulses its sound, the first with the shot, two delayed triggers 5 and 10 ticks on (data-final-fixes.lua). Bisected
+  0.2.257 to 0.2.258. The arena's costs (0.2.264) were tuned against the weakened trooper: its cost to weigh again.
+- **A live Scorcher's cooldown forgotten each minute** (0.2.271, heavies: 12 bursts in 61 s, at most 11). The tick's
+  clean-up forgot the dead by game.get_entity_by_unit_number, which finds no unit (their prototypes lack the
+  get-by-unit-number flag): every Scorcher was forgotten each minute and fired again 30 ticks on. Now by the unit kept in
+  its state; the Tesla aims' clean-up had the same fault (by storage.tesla_seen now). heavies reads its own Scorcher's
+  bursts (scorcher.stats(unit_number)). Seen elsewhere, not fixed: pool.lua's roster rebuild for saves from before the
+  roster finds no unit either (an old save would start with an empty roster).
+- **Herd scout: a wave chews the wall beside its gap on most seeds** (2026-11-09; answered below: the check's fault). The check (at most 12 wall
+  pieces after the gap) failed at seed 12345 from 0.2.267 (14), a change that only drops an effect entity and so shifts
+  unit numbers (the engine's units move by them); bisected, 0.2.266 passes with 10. Across the five seeds today 14, 8, 14,
+  16, 27 pieces, and 0.2.265 already 17 and 20 on 101 and 31337: an older weakness of the herd's breach, seed 12345 at
+  its edge, not today's work. The bug the check was set against read 18. To fix in the herd's breach, not by the bound.
+- **A clearance's guards stood while it deployed** (0.2.271, hazard: once the Line trooper hit as hard as before, its last
+  nest at -594,35 had two clearances overrun in their deploy, railgunners killed by biters 8 to 11 tiles from the site,
+  mortars as they went up, and was never cleared: 1 of 6 left). Guard duty, run in a drop siege's deploy since 0.2.268,
+  runs in a clearance's too (siege.lua). hazard 12345: 2 clearances, 0 left; every hazard variant and the clearance
+  scenarios pass, hazard norails (open since 0.2.24x) among them. Seed 777 is short a nest (1 left), as it was before
+  (0.2.270: 6 left). The nest-death check counts its own six only: the biters' expansion nests died too (8 seen, 5 gone).
+- **Herd scout's gap check counted two breaches as one** (0.2.271): every wall piece after the first gap counted, and its
+  second wave, 14 minutes on, breaks in on its own 7 to 40 tiles off. By breach now (a breach after a minute with none
+  falling, its first piece its gap; beside it, within 12): at most 9 beside a gap over the five seeds, where the whole
+  count read 8 to 27. Seen failing at a bound of 3. The entry above is answered: no herd fault, the check's.
+- **rivals' plain units** (0.2.271): 3 of Grubstake's entities read as plain lp- prototypes once, 0 on the rerun; the check
+  counted effects too (the Scorcher's stream and fires are shared prototypes). Units and buildings only now, and it names
+  any plain one; the 3 not identified.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

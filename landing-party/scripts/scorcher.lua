@@ -24,7 +24,7 @@ local function state(u)
   storage.scorch = storage.scorch or {}
   local s = storage.scorch[u.unit_number]
   if not s then
-    s = {next = 0}
+    s = {next = 0, u = u}
     storage.scorch[u.unit_number] = s
   end
   return s
@@ -79,18 +79,25 @@ function scorcher.tick(tick)
             s.create_entity{name = "lp-scorcher-stream", position = u.position, source = u, target = at, force = u.force}
             st.next = tick + COOLDOWN
             storage.scorch_bursts = (storage.scorch_bursts or 0) + 1
+            -- (By unit too, kept after it dies: heavies read the map's count for its one Scorcher, and a camp's own made
+            -- it 12.)
+            storage.scorch_by = storage.scorch_by or {}
+            storage.scorch_by[u.unit_number] = (storage.scorch_by[u.unit_number] or 0) + 1
           end
         end
       end
     end
   end
-  -- Forget the dead.
+  -- Forget the dead, by the unit kept (game.get_entity_by_unit_number finds no unit, whose prototype lacks the
+  -- get-by-unit-number flag: every live Scorcher was forgotten each minute, its cooldown with it, and fired twice in 30
+  -- ticks, heavies 12 bursts in 61 s, 0.2.271). Teslas' aims by storage.tesla_seen, which keeps the unit.
   if tick % 3600 == 7 then
-    for k in pairs(storage.scorch or {}) do
-      if not game.get_entity_by_unit_number(k) then storage.scorch[k] = nil end
+    for k, st in pairs(storage.scorch or {}) do
+      if not (st.u and st.u.valid) then storage.scorch[k] = nil end
     end
     for k in pairs(storage.tesla_aim or {}) do
-      if not game.get_entity_by_unit_number(k) then storage.tesla_aim[k] = nil end
+      local seen = storage.tesla_seen and storage.tesla_seen[k]
+      if not (seen and seen.u.valid) then storage.tesla_aim[k] = nil end
     end
   end
 end
@@ -209,8 +216,8 @@ release = function(tick)
   end
 end
 
-function scorcher.stats()
-  return {bursts = storage.scorch_bursts or 0, drains = storage.tesla_drains or 0, holds = storage.tesla_holds or 0,
+function scorcher.stats(unit_number)
+  return {bursts = storage.scorch_bursts or 0, own = unit_number and (storage.scorch_by or {})[unit_number] or 0, drains = storage.tesla_drains or 0, holds = storage.tesla_holds or 0,
     held = table_size(storage.tesla_held or {}), aims = storage.tesla_aims or 0}
 end
 

@@ -22,6 +22,7 @@ local pool = require("__landing-party__.scripts.pool")
 local jammer = require("__landing-party__.scripts.jammer")
 local power = require("__landing-party__.scripts.power")
 local threat = require("__landing-party__.scripts.threat")
+local airraid = require("__landing-party__.scripts.airraid")
 
 local ops = {}
 
@@ -44,6 +45,7 @@ local PER_TURRET, BASE_FORCE = 3.5, 4
 -- to 40 again and again, lost all, and its learning (prices, the ladder) went for nothing.
 local DESPERATE_ODDS, DESPERATE_SIEGE = 0.5, 2
 ops.PER_TURRET = PER_TURRET
+airraid.PER_TURRET = PER_TURRET
 local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground stays a priority this long
 local THREAT_BONUS = 10               -- value added to targets by it
 -- Staging this far from the target: the longest reach of any turret (threat.far, from the prototypes: a flat 34 was a
@@ -473,6 +475,24 @@ end
 
 local function needed(d) return math.ceil(PER_TURRET * d - 1e-9) + BASE_FORCE end
 
+-- Its defence against fliers (airraid.lua): what shoots up on the straight way in and round the target, its mobile
+-- defenders as on foot, over the corporation's strength. Weighed again after AIR_TICKS, at most AIR_NEW a choice (each
+-- weighing looks along 400 tiles of line).
+local AIR_TICKS, AIR_NEW = 10 * 3600, 4
+local function air_defence(b, t, quota)
+  if not t.air or game.tick - (t.air_at or 0) > AIR_TICKS then
+    if quota.n <= 0 then return nil end
+    quota.n = quota.n - 1
+    local h = b.lander and b.lander.valid and b.lander.position or b.origin
+    if not h then return nil end
+    t.air = airraid.weigh(game.surfaces[b.surface], {h.x, h.y}, t.pos, t.owner and game.forces[t.owner] or enemies(game.forces[b.force]),
+      b.corp, DEFENCE_RADIUS)
+    t.air_at = game.tick
+  end
+  local units = (t.units and game.tick - (t.units_at or 0) < UNITS_TICKS) and t.units or 0
+  return (t.air + units) / rd.strength(b.corp, t.dmg)
+end
+
 -- Its odds against a defence (the faction AI's chance of winning; docs/reviews/2026-10-23-faction-ai-audit.md): the
 -- force it can send over the force that defence needs, r, and the odds r^2 / (1 + r^2) (0.5 at an even match, 0.8 at
 -- twice). A corporation commits at its mind's min_odds and discounts a target by odds^caution (they replaced a hard
@@ -537,6 +557,12 @@ local function choose(b, army)
   end
   local in_flight = ops.player_ops()
   local floor = game.tick - (storage.threat_last or 0) > FLOOR_TICKS
+  -- Its fliers at home: by air only with AIRRAID.MIN at least (airraid.lua).
+  local fliers, air_worth = airraid.fliers(b)
+  local by_air = not storage.air_off and #fliers >= airraid.MIN
+  if storage.air_trace then log(string.format("AIRDBG b%d fliers %d worth %.1f by_air %s", b.id, #fliers, air_worth, tostring(by_air))) end
+  local air_budget = {n = AIR_NEW}
+  local mode
   -- A player force it is at war with and has not hurt for 40 minutes comes before rivals and nests (a rival's lander,
   -- worth 8, was always chosen over the player's buildings, and the ladder never applied, visit).
   local pressed = false
@@ -564,23 +590,43 @@ local function choose(b, army)
       local desperate = player and ladder(t.owner, b.force) >= 3
       local mind = mind_of(b)
       local p = odds((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field, d)
-      if p >= mind.min_odds * (desperate and DESPERATE_ODDS or 1) - 1e-9 then
+      -- (On foot below its odds, it may still go by air: weighed both ways, s 0 for a way it cannot take.)
+      local on_foot = p >= mind.min_odds * (desperate and DESPERATE_ODDS or 1) - 1e-9
+      if on_foot or by_air then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local ground = player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
           and (t.pos[1] - b.origin.x) ^ 2 + (t.pos[2] - b.origin.y) ^ 2 <= b.claim_radius ^ 2
-        local s = (t.value * (t.line and shared.LINE_WORTH or 1) + threat_bonus(b, t)) * p ^ mind.caution / (1 + d) ^ mind.loss_aversion
-          / (1 + dist / 300)
-          / (1 + (t.line and 0 or t.tried))
-          * relevance(b, t, {player = player, floor = floor, rung = player and ladder(t.owner, b.force) or 0,
-            desperate = desperate, pressed = pressed, ground = ground})
+        local rel = relevance(b, t, {player = player, floor = floor, rung = player and ladder(t.owner, b.force) or 0,
+          desperate = desperate, pressed = pressed, ground = ground})
+        local function score(pp, dd)
+          return (t.value * (t.line and shared.LINE_WORTH or 1) + threat_bonus(b, t)) * pp ^ mind.caution
+            / (1 + dd) ^ mind.loss_aversion / (1 + dist / 300) / (1 + (t.line and 0 or t.tried)) * rel
+        end
+        local s = on_foot and score(p, d) or 0
         -- A thief's eye (mind.loot, with the prowl): a cell by what can be carried off from it, not only its most valuable
         -- building (a mine read as its power pole, 5, below a substation, 6; its drills were never taken, 2026-11-01).
         if storage.prowl ~= false and mind.loot and t.loot then s = s * (1 + mind.loot * math.min(t.loot, LOOT_CAP) / LOOT_CAP) end
-        if not bs or s > bs then best, bs = key, s end
+        local m
+        -- By air (airraid.lua): its fliers' odds against what shoots up, and what fliers are for (SNIPE) the more.
+        local da = by_air and t.owner ~= "enemy" and air_defence(b, t, air_budget)
+        if storage.air_trace then log(string.format("AIRDBG b%d %s %s on_foot %s p %.2f d %.1f s %.3f air %s worth %.1f n %d", b.id, key, t.kind, tostring(on_foot), p, d, s, tostring(da), air_worth, #fliers)) end
+        if da then
+          local pa = odds(air_worth, da)
+          if pa >= mind.min_odds - 1e-9 then
+            -- (By air where that alone is clearly the better way, then worth SNIPE more among targets: weighed with it,
+            -- a radar went by air whatever shot up round it, airraid aa.)
+            local sa = score(pa, da)
+            if sa > s * airraid.EDGE then
+              local proto = prototypes.entity[t.kind]
+              s, m = sa * ((proto and airraid.SNIPE[proto.type]) or 1), "air"
+            end
+          end
+        end
+        if s > 0 and (not bs or s > bs) then best, bs, mode = key, s, m end
       end
     end
   end
-  return best, bs
+  return best, bs, mode
 end
 
 -- Alerts (readability): an operation going in against a player puts a custom alert, with the corporation's icon,
@@ -1156,7 +1202,53 @@ function ops.raid_want(b, t)
   return want
 end
 
+-- An air raid (airraid.lua; ops.choose weighed it): its fliers at home, as many as its air defence needs and at least
+-- airraid.MIN, straight at the target (each flier on the target building itself first, then round it), home round the
+-- worms after (finish: op.overflight).
+local function launch_air(b, key, trace, army)
+  local t = b.intel.targets[key]
+  local h = home(b)
+  local s = game.surfaces[b.surface]
+  local da = t.air and air_defence(b, t, {n = 0}) or 0
+  local want = needed(da)
+  local inf = attempt.worth(shared.variant(b.corp, "lp-infantry"))
+  local members, worth = {}, 0
+  for _, u in ipairs(pool.take(b, #b.garrison, 0, function(u) return airraid.is_flier(u.name) end)) do
+    -- (Till its worth covers what it needs, and airraid.MIN at least: two drones covered a raid's 4, and under the
+    -- minimum it never went, airraid.)
+    if worth < want or #members < airraid.MIN then
+      members[#members + 1] = u
+      worth = worth + attempt.worth(u.name) / math.max(0.1, inf)
+    else
+      pool.give_one(b, u)
+    end
+  end
+  if #members < airraid.MIN then
+    for _, u in ipairs(members) do pool.give_one(b, u) end
+    return false
+  end
+  local target = s.find_entities_filtered{name = t.kind, position = t.pos, radius = 1.5, limit = 1}[1]
+  local cmds = {}
+  if target then cmds[1] = {type = defines.command.attack, target = target, distraction = defines.distraction.none} end
+  cmds[#cmds + 1] = {type = defines.command.attack_area, destination = {t.pos[1], t.pos[2]}, radius = 12,
+    distraction = defines.distraction.by_anything}
+  order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds})
+  b.op = {kind = "raid", air = true, overflight = true, target = key, phase = "attack", members = members, launched = #members,
+    staging = {h.position.x, h.position.y}, owner = t.owner, pos = {t.pos[1], t.pos[2]}, started = game.tick,
+    phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed, attacked = true}
+  ops.appoint(b, b.op)
+  alert(b, t, "lp.alert-raid")
+  b.air_raids = (b.air_raids or 0) + 1
+  b.ops_launched = b.ops_launched + 1
+  b.raids_sent = b.raids_sent + 1
+  storage.threat_last = game.tick
+  trace(b, string.format("air raid on %s at %.0f,%.0f: %d fliers (worth %.1f) against air defence %.1f (on foot %.1f)",
+    t.kind, t.pos[1], t.pos[2], #members, worth, da, defence(b, t)))
+  return true
+end
+
 local function launch(b, key, trace, army, opts)
+  if opts and opts.air then return launch_air(b, key, trace, army) end
   local t = b.intel.targets[key]
   local h = home(b)
   local d = defence(b, t)
@@ -1868,8 +1960,9 @@ function ops.tick(b, tick, trace, army)
     if bkey then return launch_siege(b, bkey, bsite, trace, army) end
     -- Then a hazard on its ground: the nests whose waves it keeps losing to (siege.lua).
     if ops.hazard_clear(b, trace, army) then return end
-    local key, rs = choose(b, army)
-    if key and battery(b.intel.targets[key]) then return launch(b, key, trace, army) end
+    local key, rs, rmode = choose(b, army)
+    local ropts = rmode == "air" and {air = true} or nil
+    if key and battery(b.intel.targets[key]) then return launch(b, key, trace, army, ropts) end
     -- Then the best of a raid, a siege and a strip, each weighed by what the corporation prefers (its mind's prefer;
     -- the faction AI's comparison, docs/reviews/2026-10-23-faction-ai-audit.md): a fixed order had a raid on a pylon
     -- always beat a siege on a factory block, and a thief strip before anything.
@@ -1914,7 +2007,7 @@ function ops.tick(b, tick, trace, army)
       trace(b, "weighs " .. table.concat(parts, ", "))
     end
     local pick = options[1] and options[1][1]
-    if pick == "raid" then launch(b, key, trace, army)
+    if pick == "raid" then launch(b, key, trace, army, ropts)
     elseif pick == "siege" then launch_siege(b, skey, ssite, trace, army, nil, nil, spiece)
     elseif pick == "strip" then launch_strip(b, tkey, tsite, trace, army) end
   end
@@ -2034,6 +2127,7 @@ function ops.summary(b)
     leader = b.op and b.op.leader and b.op.leader.valid and b.op.leader.unit_number or nil, phase = b.op and b.op.phase,
     leaders_lost = b.leaders_lost or 0, broken = b.broken or 0, regrouped = b.regrouped or 0, dismantled = b.dismantled or 0,
     overflights = b.overflights or 0,
+    air_raids = b.air_raids or 0,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,
     way_method = b.op and b.op.way_method, wall_pieces = b.op and b.op.wall_pieces, way_open = b.op and b.op.way_open,
