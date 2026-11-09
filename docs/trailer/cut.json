@@ -19,47 +19,7 @@
    "from": 1.0
   },
   {
-   "clip": "media/trailer/reel-base.mp4",
-   "bars": 2,
-   "from": 14.0
-  },
-  {
-   "clip": "media/trailer/stage-m1-muster.mp4",
-   "bars": 2,
-   "from": 2.5
-  },
-  {
-   "clip": "media/trailer/stage-m2-move-out.mp4",
-   "bars": 2,
-   "from": 1.0
-  },
-  {
-   "clip": "media/trailer/scene-sc1-dozers.mp4",
-   "bars": 2,
-   "from": 13.5
-  },
-  {
-   "clip": "media/trailer/scene-sc2-bombers.mp4",
-   "bars": 3,
-   "from": 1.5
-  },
-  {
-   "clip": "media/trailer/stage-c1-drop.mp4",
-   "bars": 2,
-   "from": 1.0
-  },
-  {
-   "clip": "media/trailer/scene-sc3-prism.mp4",
-   "bars": 2,
-   "from": 3.0
-  },
-  {
    "clip": "media/trailer/shot-06.mp4",
-   "bars": 2,
-   "from": 1.0
-  },
-  {
-   "clip": "media/trailer/reel-creep.mp4",
    "bars": 2,
    "from": 1.0
   },
@@ -75,19 +35,9 @@
    "from": 1.0
   },
   {
-   "clip": "media/trailer/stage-herd.mp4",
+   "clip": "media/trailer/stage-c1-drop.mp4",
    "bars": 2,
-   "from": 9.0
-  },
-  {
-   "clip": "media/trailer/stage-herd.mp4",
-   "bars": 2,
-   "from": 16.0
-  },
-  {
-   "clip": "media/trailer/reel-nwwall.mp4",
-   "bars": 4,
-   "from": 17.5
+   "from": 1.0
   },
   {
    "clip": "media/trailer/reel-khwall.mp4",
@@ -95,59 +45,114 @@
    "from": 15.0
   },
   {
-   "clip": "media/trailer/reel-khwall.mp4",
+   "clip": "media/trailer/stage-m1-muster.mp4",
    "bars": 2,
-   "from": 23.0
+   "from": 2.5
   },
   {
-   "clip": "media/trailer/reel-khwall.mp4",
-   "bars": 2,
-   "from": 27.0
-  },
-  {
-   "clip": "media/trailer/scene-sc4-flak.mp4",
-   "bars": 2,
-   "from": 3.5
-  },
-  {
-   "clip": "media/trailer/reel-dome.mp4",
-   "bars": 2,
-   "from": 3.0
-  },
-  {
-   "clip": "media/trailer/reel-dome.mp4",
-   "bars": 3,
-   "from": 17.0
-  },
-  {
-   "clip": "media/trailer/reel-culture.mp4",
+   "clip": "media/trailer/stage-m2-move-out.mp4",
    "bars": 2,
    "from": 1.0
   },
   {
-   "clip": "media/trailer/reel-culture.mp4",
-   "bars": 3,
-   "from": 12.0
+   "clip": "media/trailer/pre-scene-sc2-bombers.mp4",
+   "bars": 1,
+   "from": 1.5
   },
   {
-   "clip": "media/trailer/act-megaburst.mp4",
-   "bars": 3,
-   "from": 10.0
+   "clip": "media/trailer/drop-scene-sc2-bombers.mp4",
+   "bars": 1,
+   "from": 3.5
   },
   {
-   "clip": "media/trailer/act-megaburst.mp4",
-   "bars": 2,
-   "from": 19.0
+   "clip": "media/trailer/drop-scene-sc1-dozers.mp4",
+   "bars": 1,
+   "from": 13.5
   },
   {
-   "clip": "media/trailer/stage-k2-strike.mp4",
-   "bars": 2,
+   "clip": "media/trailer/drop-scene-sc1-dozers.mp4",
+   "bars": 1,
+   "from": 20.0
+  },
+  {
+   "clip": "media/trailer/drop-reel-khwall.mp4",
+   "bars": 1,
+   "from": 23.0
+  },
+  {
+   "clip": "media/trailer/drop-reel-khwall.mp4",
+   "bars": 1,
+   "from": 27.0
+  },
+  {
+   "clip": "media/trailer/drop-scene-sc3-prism.mp4",
+   "bars": 1,
+   "from": 3.0
+  },
+  {
+   "clip": "media/trailer/drop-scene-sc3-prism.mp4",
+   "bars": 1,
+   "from": 7.0
+  },
+  {
+   "clip": "media/trailer/drop-reel-nwwall.mp4",
+   "bars": 1,
+   "from": 17.5
+  },
+  {
+   "clip": "media/trailer/drop-reel-nwwall.mp4",
+   "bars": 1,
+   "from": 21.0
+  },
+  {
+   "clip": "media/trailer/drop-stage-k2-strike.mp4",
+   "bars": 1,
    "from": 17.0
   },
   {
-   "clip": "media/trailer/stage-k2-strike.mp4",
-   "bars": 2,
+   "clip": "media/trailer/drop-stage-k2-strike.mp4",
+   "bars": 1,
    "from": 23.0
+  },
+  {
+   "clip": "media/trailer/drop-act-megaburst.mp4",
+   "bars": 1,
+   "from": 13.0
+  },
+  {
+   "clip": "media/trailer/drop-act-megaburst.mp4",
+   "bars": 1,
+   "from": 19.0
+  },
+  {
+   "clip": "media/trailer/drop-scene-sc4-flak.mp4",
+   "bars": 1,
+   "from": 3.5
+  },
+  {
+   "clip": "media/trailer/drop-reel-khwall3.mp4",
+   "bars": 1,
+   "from": 1.0
+  },
+  {
+   "clip": "media/trailer/drop-reel-dome.mp4",
+   "bars": 1,
+   "from": 17.0
+  },
+  {
+   "clip": "media/trailer/drop-reel-culture.mp4",
+   "bars": 1,
+   "from": 12.0
+  },
+  {
+   "clip": "media/trailer/drop-stage-herd.mp4",
+   "bars": 1,
+   "from": 9.0
+  },
+  {
+   "clip": "media/trailer/reel-warfinale.mp4",
+   "bars": 2,
+   "from": 1.0
   },
   {
    "clip": "media/trailer/reel-warfinale.mp4",
