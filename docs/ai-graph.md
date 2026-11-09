@@ -47,8 +47,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `jumper` | 315 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
 | `intel` | 289 | know, threat | ops |  |  |  |  |
+| `ram` | 287 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `tactics` | 279 | know, rng | assault, control, farm, herd, herd_learn, ops, siege |  |  |  |  |
-| `ram` | 277 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, rams |
 | `phases` | 269 | faction | control |  | 360, 3600 |  | phases |
 | `lots_grubstake` | 266 | (leaf) |  |  |  |  |  |
 | `threat` | 266 | unit_prior | assault, attempt, control, costmap, dome, faction, farm, feeds, firemap, herd, herd_learn, intel, jumper, ops, orbital, power, prowl, routing, siege, strike, war |  |  |  |  |

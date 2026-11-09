@@ -15,9 +15,9 @@ local function shot(name, call, frames, z0, z1, daytime)
 end
 -- A fixed framing, pushed in slowly, for a fight that stays where it is (the Prism's and the flak's: their fight points
 -- were drawn south by units at their edges, and a camera on them drifted off the fight, the fifth takes).
-local function fixed(name, call, frames, pos, z0, z1)
+local function fixed(name, call, frames, pos, z0, z1, pos1)
   return {name = name, tick = call + 10, frames = frames, every = 1,
-    from = {pos = pos, zoom = z0, daytime = 0.2}, to = {zoom = z1, daytime = 0.2}}
+    from = {pos = pos, zoom = z0, daytime = 0.2}, to = {pos = pos1 or pos, zoom = z1, daytime = 0.2}}
 end
 return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, speed = 1, fast_until = T - 60, fight = true,
   dev = {
@@ -37,7 +37,8 @@ return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, spee
     -- The squad marches by the stream; the bomb drones dive in from all round.
     shot("sc2-bombers", T + 1930, 660, 1.4, 1.6),
     -- Two Prisms, two tanks and a Tesla against the squad, its battle tanks and rocket troopers.
-    fixed("sc3-prism", T + 2630, 720, {72, 118}, 1.3, 1.42),
+    -- (Placed from the stage at 72,118, it was 7 tiles west of the fight: the rehearsal's fight point, 77.5,117.5 to 84,115.5.)
+    fixed("sc3-prism", T + 2630, 720, {77.5, 117.5}, 1.3, 1.42, {84, 115.5}),
     -- Two waves of scout drones over the four flak buggies, black puffs round the bursts.
     fixed("sc4-flak", T + 3930, 600, {70, 178}, 1.3, 1.42),
   }}

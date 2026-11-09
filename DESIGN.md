@@ -5624,6 +5624,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   gun turrets with plain rounds on its east wall (six with piercing rounds killed both dozers at it), inside a lab
   district ("make a little lab district with a sushi belt of science?"): a belt loop of red, green and grey science,
   eight labs fed by inserters, the force researching; furnaces, a few assemblers and chests; at dusk (0.36).
+  Then (0.2.244; "the dozers should also destroy more than 3 walls ... they are blocking the way for the buggies"): six
+  strips each, and its followers let go only when its widening is done (let go at the first strip, they crowded into a
+  gap three wide that the dozer stood in); an escort that has arrived holds undistracted (idle, a buggy shot the wall in
+  front of it: 26 in `dev`, found by logging each buggy hit on a wall); a stuck dozer takes for its piece only a wall
+  within 4 of the one it was sent at (through its gap and stuck on the far wall, the lead took that and never let its
+  followers go). The Prism shot pans along its fight as rehearsed (placed from the stage, it was 7 tiles west of it).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

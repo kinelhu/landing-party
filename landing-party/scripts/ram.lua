@@ -150,12 +150,15 @@ local function escort(k, r, tick)
             local was = f.spots[i]
             if not was or (was[1] - to[1]) ^ 2 + (was[2] - to[2]) ^ 2 > 9 then
               f.spots[i] = to
-              v.commandable.set_command{type = defines.command.go_to_location, radius = 2, distraction = defines.distraction.none,
-                destination = to}
+              -- (Then held there undistracted: arrived and idle, a buggy shot the wall in front of it, 26 in scenario dev.)
+              v.commandable.set_command{type = defines.command.compound, structure_type = defines.compound_command.return_last,
+                commands = {{type = defines.command.go_to_location, radius = 2, distraction = defines.distraction.none, destination = to},
+                  {type = defines.command.stop, ticks_to_wait = 36000, distraction = defines.distraction.none}}}
             end
           end
           local d = (r.wall[1] - v.position.x) * r.dir[1] + (r.wall[2] - v.position.y) * r.dir[2]
-          if d < lead - 1 then storage.ram_early = (storage.ram_early or 0) + 1 end
+          -- (Before its first strip falls: after, the lead backs off the wall between strips.)
+          if d < lead - 1 and (r.pass or 0) == 0 then storage.ram_early = (storage.ram_early or 0) + 1 end
         end
       end
     end
@@ -187,7 +190,12 @@ function ram.tick(tick)
       local was = r.last
       r.last = {u.position.x, u.position.y}
       local still = was and (was[1] - u.position.x) ^ 2 + (was[2] - u.position.y) ^ 2 < 0.01
-      local touching = still and ahead(r) or {}
+      local touching = {}
+      -- (Its own stretch of wall only: through its gap and stuck on the far wall, the lead took that for its piece and
+      -- never let its followers go, scenario dev.)
+      for _, e in ipairs(still and ahead(r) or {}) do
+        if (e.position.x - r.wall[1]) ^ 2 + (e.position.y - r.wall[2]) ^ 2 <= 16 then touching[#touching + 1] = e end
+      end
       if #touching > 0 and dx * dx + dy * dy > CLOSE * CLOSE then
         r.piece, r.wall = touching[1], {touching[1].position.x, touching[1].position.y}
         dx, dy = 0, 0
@@ -231,7 +239,6 @@ function ram.tick(tick)
       else
         storage.ram_breaches = (storage.ram_breaches or 0) + 1
         trace(k, r, "clear")
-        release(k, {u.position.x, u.position.y}, r.dir, r.force)
         -- Widening: the next strip along the wall, a blade's width from the last on alternate sides, rammed straight on.
         local next_piece, pass
         local tx, ty = -r.dir[2], r.dir[1]
@@ -246,7 +253,10 @@ function ram.tick(tick)
         if next_piece then
           ram.order(u, next_piece, {dir = r.dir, base = r.base, pass = pass, widen = r.widen})
         else
-          -- Clear: on through, its followers behind it.
+          -- Clear: on through, its followers behind it, let go only now: let go at the first strip, they crowded into
+          -- a gap three wide that the dozer still stood in (the user, 2026-11-09: "they are blocking the way for the
+          -- buggies once the 3 sections are broken").
+          release(k, r.base or {u.position.x, u.position.y}, r.dir, r.force)
           r.phase = "through"
           local to = {u.position.x + r.dir[1] * THROUGH, u.position.y + r.dir[2] * THROUGH}
           u.commandable.set_command{type = defines.command.go_to_location, destination = to, radius = 1.5,

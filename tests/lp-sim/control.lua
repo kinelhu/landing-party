@@ -16826,6 +16826,11 @@ if params.scenario == "dev" then
   script.on_event(defines.events.on_entity_damaged, function(e)
     if e.cause and e.cause.valid and e.cause.name == "lp-grubstake-buggy" then
       S.wall_by_buggy = (S.wall_by_buggy or 0) + e.final_damage_amount
+      if (S.wall_hits or 0) < 5 then
+        S.wall_hits = (S.wall_hits or 0) + 1
+        info(string.format("buggy hit a wall at %d: buggy %.1f,%.1f, wall %.1f,%.1f, %s, %.0f", game.tick, e.cause.position.x,
+          e.cause.position.y, e.entity.position.x, e.entity.position.y, e.damage_type.name, e.final_damage_amount))
+      end
     end
   end, {{filter = "type", type = "wall"}})
 end
