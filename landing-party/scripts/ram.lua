@@ -16,6 +16,14 @@ local GIVE_UP = 60 * 60            -- an approach that never gets there
 local ESCORT = 9                   -- followers this far behind their lead until its breach
 local ESCORT_EVERY = 30
 local WAIT_WIDEN = 20 * 60         -- followers go in this long after the first strip, its widening done or not
+-- The charge (the user, 2026-11-09, of trailer cut 24: "the dozer suddenly accelerating and violently destroying
+-- buildings in a straight line without steering"): it stops CHARGE_FROM short of the wall, revs REV ticks, then drives
+-- straight on, script-moved, from V0 up by ACCEL a tick to V_MAX, crushing what stands in its lane (walls, gates, trees and
+-- rocks outright, buildings CRUSH a tick, its foes' units HIT a tick) for CHARGE_LEN past the wall's line, or till
+-- something it cannot crush stops it (a building that survives a tick's crush, water, a cliff, its own side's building).
+local CHARGE_FROM, CHARGE_LEN, REV = 9, 18, 30
+local V0, ACCEL, V_MAX = 0.05, 0.025, 0.4
+local CRUSH, HIT, STALL = 400, 150, 15
 
 local function st()
   storage.rams = storage.rams or {}
@@ -37,10 +45,13 @@ function ram.order(u, wall, opts)
     local len = math.max(0.01, math.sqrt(dx * dx + dy * dy))
     d = {dx / len, dy / len}
   end
-  local face = {wall.position.x - d[1] * 1.6, wall.position.y - d[2] * 1.6}
+  -- (A charge unless told to grind: a widening pass grinds, from the gap its charge made.)
+  local charge = not opts.grind and (opts.pass or 0) == 0
+  local back = charge and CHARGE_FROM or 1.6
+  local face = {wall.position.x - d[1] * back, wall.position.y - d[2] * back}
   st()[u.unit_number] = {unit = u, dir = d, wall = {wall.position.x, wall.position.y}, piece = wall, phase = "approach", at = game.tick,
-    force = wall.force.name, widen = opts.widen, base = opts.base or {wall.position.x, wall.position.y}, pass = opts.pass or 0,
-    dir0 = opts.dir0 or d}
+    force = wall.force.name, widen = not charge and opts.widen or nil, base = opts.base or {wall.position.x, wall.position.y},
+    pass = opts.pass or 0, dir0 = opts.dir0 or d, charge = charge or nil}
   u.commandable.set_command{type = defines.command.go_to_location, destination = face, radius = 0.6,
     distraction = defines.distraction.none}
   return true
@@ -234,7 +245,21 @@ function ram.tick(tick)
           destination = {p.position.x - r.dir[1] * 1.6, p.position.y - r.dir[2] * 1.6}}
         trace(k, r, "turned")
       end
-      if dx * dx + dy * dy <= CLOSE * CLOSE or not u.commandable.has_command then
+      if r.charge and (dx * dx + dy * dy <= (CHARGE_FROM + 1.5) ^ 2 or not u.commandable.has_command) then
+        -- Square to its line, then it revs: a puff of smoke, and the charge (ram.charge_tick). Its line from where it
+        -- stands to its piece (set at the order, from its spawn, a dozer jostled 4 tiles aside on its way charged past
+        -- its piece, scenario dev).
+        local p = r.piece
+        if p and p.valid then
+          local ex, ey = p.position.x - u.position.x, p.position.y - u.position.y
+          local len = math.max(0.01, math.sqrt(ex * ex + ey * ey))
+          r.dir = {ex / len, ey / len}
+          r.wall = {p.position.x, p.position.y}
+        end
+        r.phase, r.rev_at = "rev", tick
+        trace(k, r, "revs")
+        u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
+      elseif dx * dx + dy * dy <= CLOSE * CLOSE or not u.commandable.has_command then
         r.phase = "ram"
         trace(k, r, dx * dx + dy * dy <= CLOSE * CLOSE and "at the wall" or "stopped short")
         -- Square to the wall: the last of its turn, its blade along the wall.
@@ -308,6 +333,8 @@ function ram.tick(tick)
           r.at = tick
         end
       end
+    elseif r.phase == "rev" or r.phase == "charge" then
+      escort(k, r, tick)
     elseif r.phase == "through" then
       if not u.commandable.has_command or tick - r.at > 15 * 60 then
         r.phase = "done"
@@ -322,11 +349,106 @@ function ram.tick(tick)
   end
 end
 
+-- The charge, every tick for a dozer revving or charging (ram.tick's step is 10).
+local SOLID = {wall = true, gate = true, tree = true, ["simple-entity"] = true, ["simple-entity-with-owner"] = false}
+local function charge_step(k, r, tick)
+  local stop_by
+  local u = r.unit
+  local s = u.surface
+  if r.phase == "rev" then
+    if tick % 6 == 0 then
+      s.create_trivial_smoke{name = "smoke-fast", position = {u.position.x - r.dir[1] * 1.5, u.position.y - r.dir[2] * 1.5}}
+    end
+    if tick - r.rev_at >= REV then
+      r.phase, r.v, r.went, r.from = "charge", V0, 0, {u.position.x, u.position.y}
+      -- How far: to the wall's line, then CHARGE_LEN past it.
+      r.len = (r.wall[1] - u.position.x) * r.dir[1] + (r.wall[2] - u.position.y) * r.dir[2] + CHARGE_LEN
+      storage.ram_charges = (storage.ram_charges or 0) + 1
+      -- Square to its line (orientation 0 north, a quarter east).
+      u.orientation = (math.atan2(r.dir[1], -r.dir[2]) / (2 * math.pi)) % 1
+      trace(k, r, "charges")
+    end
+    return
+  end
+  -- Its lane ahead of where it will be: as wide as it is, a tile deep past its front.
+  r.v = math.min(V_MAX, r.v + ACCEL)
+  local nx, ny = u.position.x + r.dir[1] * r.v, u.position.y + r.dir[2] * r.v
+  local hw, hl = r.hw, r.hl
+  if not hw then
+    local cb = u.prototype.collision_box
+    hw = math.max(-cb.left_top.x, cb.right_bottom.x, -cb.left_top.y, cb.right_bottom.y)
+    hl, r.hw, r.hl = hw, hw + 0.3, hw
+    hw = r.hw
+  end
+  local cx, cy = nx + r.dir[1] * (hl + 0.5), ny + r.dir[2] * (hl + 0.5)
+  local blocked, held = false, false
+  for _, e in ipairs(s.find_entities_filtered{position = {cx, cy}, radius = hw + 1.2}) do
+    if e.valid and e ~= u then
+      local ox, oy = e.position.x - cx, e.position.y - cy
+      local across = math.abs(ox * -r.dir[2] + oy * r.dir[1])
+      local along = ox * r.dir[1] + oy * r.dir[2]
+      if across <= hw + 0.4 and along <= 1.2 and along >= -hl - 1 then
+        local foe = e.force ~= u.force and (e.force.name == "neutral" or u.force.is_enemy(e.force))
+        if e.type == "cliff" or e.type == "character" and not foe then
+          blocked, stop_by = true, e.name
+        elseif e.type == "unit" or e.type == "character" or e.type == "car" then
+          if foe and e.destructible then e.damage(HIT, u.force, "impact", u) end
+        elseif SOLID[e.type] and foe and e.destructible then
+          e.die(u.force, u)
+          storage.ram_crushed = (storage.ram_crushed or 0) + 1
+        elseif e.prototype.is_building and e.destructible then
+          if not foe then
+            blocked, stop_by = true, e.name
+          else
+            local at = e.position
+            e.damage(CRUSH, u.force, "impact", u)
+            -- (Standing after a tick's crush, it holds the dozer, slowed to a grind, up to STALL ticks: stopped at once, a
+            -- gun turret in its lane ended a charge 3 tiles inside, scenario dev.)
+            if e.valid then held, stop_by = true, e.name else
+              s.create_entity{name = "medium-explosion", position = at}
+              storage.ram_crushed = (storage.ram_crushed or 0) + 1
+            end
+          end
+        end
+      end
+    end
+  end
+  local tile = s.get_tile(nx + r.dir[1] * hl, ny + r.dir[2] * hl)
+  if tile.valid and tile.collides_with("water_tile") then blocked, stop_by = true, tile.name end
+  if held and not blocked then
+    r.v, r.stall = V0, (r.stall or 0) + 1
+    if r.stall > STALL then blocked = true end
+  elseif not blocked then
+    r.stall = 0
+    u.teleport({nx, ny})
+    r.went = r.went + r.v
+    if tick % 3 == 0 then
+      s.create_trivial_smoke{name = "smoke-fast", position = {u.position.x - r.dir[1] * hl, u.position.y - r.dir[2] * hl}}
+    end
+  end
+  if blocked or r.went >= r.len then
+    -- Its lane open behind it: its followers through it, and it on to what stands inside (the "through" phase).
+    local crossed = r.went >= r.len - CHARGE_LEN + 1
+    if crossed then storage.ram_breaches = (storage.ram_breaches or 0) + 1 end
+    r.first_clear = r.first_clear or tick
+    trace(k, r, string.format("charged %.1f of %.1f%s", r.went, r.len, blocked and ", stopped by " .. tostring(stop_by) or ""))
+    release(k, r.base or {u.position.x, u.position.y}, r.dir, r.force)
+    r.phase, r.at = "through", tick
+    u.commandable.set_command{type = defines.command.stop, ticks_to_wait = 1, distraction = defines.distraction.none}
+  end
+end
+
+function ram.charge_tick(tick)
+  for k, r in pairs(storage.rams or {}) do
+    if (r.phase == "rev" or r.phase == "charge") and r.unit.valid then charge_step(k, r, tick) end
+  end
+end
+
 function ram.stats()
   local n = 0
   for _ in pairs(storage.rams or {}) do n = n + 1 end
   return {active = n, crushed = storage.ram_crushed or 0, breaches = storage.ram_breaches or 0, early = storage.ram_early or 0,
-    moved = storage.ram_moved or 0}
+    moved = storage.ram_moved or 0, charges = storage.ram_charges or 0}
 end
 
 return ram

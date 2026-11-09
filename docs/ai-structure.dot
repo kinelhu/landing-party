@@ -77,7 +77,7 @@ digraph ai {
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
     "fall" [label="fall\n101 lines", width=0.91, fillcolor="#eef2f7"];
     "separate" [label="separate\n131 lines", width=0.95, fillcolor="#eef2f7"];
-    "ram" [label="ram\n332 lines", width=1.17, fillcolor="#d9f0d9"];
+    "ram" [label="ram\n454 lines", width=1.30, fillcolor="#d9f0d9"];
     "aim" [label="aim\n81 lines", width=0.89, fillcolor="#d9f0d9"];
     "power" [label="power\n175 lines", width=0.99, fillcolor="#eef2f7"];
   }

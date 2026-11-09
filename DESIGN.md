@@ -5893,6 +5893,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (scenario dev, `ram_stats().moved`). The blade's bite seen: sparks each step, a burst where a piece gives way. The scene's
   east-wall turrets hold fifty rounds, not twelve (they ran dry before the breach); filmed at dusk, closer, from the
   dozers' approach (`docs/trailer/scene-dozers.lua`, cut 24).
+- **The Killdozer charges** (0.2.270; the user, of trailer cut 24: "the dozer suddenly accelerating and violently
+  destroying buildings in a straight line without steering"). Sent at a wall, it stops 9 tiles short, aims at its piece
+  from where it stands, revs half a second (smoke), then is moved by script straight on, from 0.05 to 0.4 tiles a tick:
+  walls, gates, trees and rocks in a lane its width die outright, buildings take 400 a tick and one that survives holds it
+  at a crawl up to 15 ticks, its foes' units 150; its own side's buildings, cliffs and water stop it. It goes 18 tiles past
+  the wall's line, then its buggies go in by its lane and it takes what stands inside, as before. A widening pass still
+  grinds. Scenario dev: 2 charges, both through, 15 pieces down (a gun turret stopped the first 3 tiles in until a
+  survivor slowed it instead of ending it). Raids use the same order (ops.lua's breach): no scenario yet sends dozers at a
+  wall by a raid, so that path is assumed, not tested. Its balance at a real wall (a lane of 3 by 18 razed, lasers in it
+  included) not yet weighed.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -30,6 +30,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `dev` | 515 | army, base, burstfx, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, era_override, hq_fast, ram_trace, trace |
 | `crew` | 484 | base, ops, standing | control |  | 30 |  | crew_owner |
+| `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
 | `routing` | 420 | threat | ops |  |  |  | corridors |
 | `costmap` | 415 | firemap, threat | control, creep, faction, farm, herd, siege |  |  |  |  |
@@ -42,7 +43,6 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `planner` | 338 | rd | base |  |  |  |  |
-| `ram` | 332 | (leaf) | control, dev, ops |  |  |  | ram_breaches, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `orbital` | 322 | achievements, threat | control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `jumper` | 315 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |

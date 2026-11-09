@@ -3953,9 +3953,12 @@ scenarios.dev = function()
     check("dev: /lp dozers rammed through and the buggies went in", d.dozers == 2 and r.breaches > S.ram0.breaches and inside > 0,
       string.format("%d dozers, walls %d to %d, breaches %d, buggies inside %d", d.dozers, d.walls, now("dozers", "stone-wall"),
         r.breaches - S.ram0.breaches, inside))
-    -- (The third takes: a breach a dozer wide, then the dozer drove off; it widens it now, four pieces each.)
-    check("dev: and the dozers widened their breaches", r.breaches - S.ram0.breaches > d.dozers,
-      string.format("%d strips cleared by %d dozers", r.breaches - S.ram0.breaches, d.dozers))
+    -- (The third takes: a breach a dozer wide, then the dozer drove off; it widened it then. Since 0.2.270 each charges
+    -- through, the user of cut 24: "suddenly accelerating and violently destroying buildings in a straight line".)
+    check("dev: and each dozer charged through its wall", r.charges - (S.ram0.charges or 0) == d.dozers
+      and r.breaches - S.ram0.breaches >= d.dozers,
+      string.format("%d charges, %d through the wall's line, by %d dozers", r.charges - (S.ram0.charges or 0),
+        r.breaches - S.ram0.breaches, d.dozers))
     -- (The sixth takes: stopped short of the wall, a dozer counted a strip clear with nothing under its blade, 5 strips
     -- for 9 pieces here: each strip takes two pieces at least.)
     local lost = d.walls - now("dozers", "stone-wall")
