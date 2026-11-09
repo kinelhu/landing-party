@@ -63,16 +63,27 @@ function stun.on_hit(e)
   stun.apply(u, h, b)
 end
 
+local flier = {}
+local function is_flier(u)
+  local name = u.name
+  if flier[name] == nil then
+    local m = u.prototype.collision_mask
+    flier[name] = m and m.layers and m.layers["lp-air"] == true or false
+  end
+  return flier[name]
+end
+
 -- The stun itself: switched off, the current over it, the list to switch it on again. (/lp stun: on demand, for its look.)
 function stun.apply(u, h, b)
   local tick, k = game.tick, u.unit_number
+  local len = S.TICKS * (is_flier(u) and S.FLIER or 1)
   if not h then
     st()
     h = storage.stun[k] or {c = 0, t = tick, free = 0, n = 0}
     storage.stun[k] = h
   end
-  h.till, h.free = tick + S.TICKS, tick + S.TICKS + S.IMMUNE
-  if b then b.stuns = b.stuns + 1 end
+  h.till, h.free = tick + len, tick + len + S.IMMUNE
+  if b then b.stuns = b.stuns + 1; b.len = math.max(b.len or 0, len) end
   if h.n == 1 then storage.stun_first = (storage.stun_first or 0) + 1 end
   if h.last and (not storage.stun_gap or tick - h.last < storage.stun_gap) then storage.stun_gap = tick - h.last end
   h.last = tick

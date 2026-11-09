@@ -66,11 +66,11 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
+| `stun` | 145 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `road` | 143 | base, standing | control |  | 60 |  |  |
 | `assault` | 142 | attempt, tactics, threat | ops, siege |  |  |  |  |
 | `pool` | 142 | (leaf) | army, control, cuts, ops, prospect, prowl, tap, war |  |  |  |  |
 | `watch` | 141 | (leaf) | control |  |  |  | watch |
-| `stun` | 134 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `wfc_serenity` | 134 | (leaf) |  |  |  |  |  |
 | `answers` | 130 | (leaf) | ops |  |  |  |  |
 | `standing` | 115 | ops | border, control, crew, dev, ledger, map, prospect, road, trade |  | 3600 |  | corps, incidents, standing_seen |

@@ -5720,7 +5720,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   0.3 was a pixel-thin line, its first and last frames near empty, invisible at game zoom; now its arcing frames alone,
   larger and additive, and two arcs of the Tesla's cyan beam (one that does nothing) jumping between points on the unit
   every 5 ticks. The arcs drew on the stun's random source at first and changed which hits stunned (tanks 2 of 80):
-  their own now.
+  their own now. A flier (on the lp-air layer) is held twice as long (0.2.254: electric fire, the shock trooper's chain
+  above all, the answer to drones; stun: 5 of 24 hits on laser drones, held 120 ticks).
 - **The player's units do not chart the map** (2026-11-09; the user: "are player units giving map view to the player? I
   think they should to allow far ops"). In a benchmark run nothing charts, not a powered radar and not force.chart
   itself (chartprobe: all four false after a minute), so the question needed a game: /lp chartcheck in a film (the scenes

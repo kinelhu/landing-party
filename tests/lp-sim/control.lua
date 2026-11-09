@@ -5041,6 +5041,9 @@ scenarios.stun = function()
     -- one hit each, nothing to stun, the first run.)
     S.st_inf = block("lp-shock", 440, 40, 12, 4, 2.2, FORCE)
     S.st_tanks = block("lp-tank", 448, 40, 10, 2, 5, FORCE)
+    -- And its laser drones at the turrets: a flier held twice as long (shared.STUN.FLIER).
+    S.st_drones = block("lp-laser-drone", 436, 40, 6, 3, 3, FORCE)
+    order_area(S.st_drones, {381, 40}, 12)
     order_area(S.st_inf, {381, 40}, 12)
     order_area(S.st_tanks, {381, 40}, 12)
     S.st_go = game.tick
@@ -5079,10 +5082,13 @@ scenarios.stun = function()
   end)
   schedule(AT + 60 * 60 + 120, function()
     local off = 0
-    for _, list in ipairs({S.st_troopers, S.st_teslas, S.st_inf, S.st_tanks}) do
+    for _, list in ipairs({S.st_troopers, S.st_teslas, S.st_inf, S.st_tanks, S.st_drones}) do
       for _, u in ipairs(list or {}) do if u.valid and u.disabled_by_script then off = off + 1 end end
     end
     check("stun: every stunned unit back on", off == 0 and lp("stun_stats").stunned == 0, off .. " still off")
+    local d = (lp("stun_stats").by or {})["lp-laser-drone"] or {}
+    check("stun: a drone stunned is held twice as long", (d.stuns or 0) == 0 or d.len == STUN.TICKS * STUN.FLIER,
+      string.format("%d of %d hits, held %s ticks", d.stuns or 0, d.hits or 0, tostring(d.len)))
   end)
 end
 

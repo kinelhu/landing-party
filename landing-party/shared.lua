@@ -276,7 +276,9 @@ shared.FALL = {TICKS = 40, crash = "lp-crash", kinds = {
 -- takes HULL of the charge on top: its electric resistance alone left a tank with none stunned on a quarter of its hits.
 -- Its look: the sticker's glow, and ARCS arcs of current (arc, a beam that does nothing) jumping between points on the
 -- unit every ARC_EVERY ticks while it lasts.
-shared.STUN = {HALF = 240, SPAN = 6, MAX = 0.6, TICKS = 60, IMMUNE = 240, HULL = 0.25, HULL_WIDTH = 0.6,
+-- A flier (on the lp-air layer) is held FLIER times as long: electric fire, the shock trooper's chain above all, the
+-- answer to drones (2026-11-09).
+shared.STUN = {HALF = 240, SPAN = 6, MAX = 0.6, TICKS = 60, IMMUNE = 240, HULL = 0.25, HULL_WIDTH = 0.6, FLIER = 2,
   fx = "lp-stun-fx", fx_big = "lp-stun-fx-big", arc = "lp-stun-arc", ARCS = 2, ARC_EVERY = 5}
 function shared.plated(corp, kind, plate)
   local n = shared.variant(corp, kind)
