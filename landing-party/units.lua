@@ -61,6 +61,10 @@ local function base_unit(name)
   -- Struck, it sparks as the car does (the medium biter's hit, purple blood, had come with its body: the user, 2026-11-09,
   -- "everyone bleeds purple??").
   u.damaged_trigger_effect = table.deepcopy(data.raw.car.car.damaged_trigger_effect)
+  -- Every unit collides with the others: a unit's default mask passes through other units (not_colliding_with_itself),
+  -- and squads stood in heaps, dozers drove through each other (the user, 2026-11-09: "we should just enable self collision
+  -- for every unit, it looks like shit currently"). The fliers have their own layer (lp-air), colliding too.
+  u.collision_mask = {layers = {player = true, train = true, is_object = true}}
   u.absorptions_to_join_attack = nil
   u.healing_per_tick = 0
   -- Machines, not biters: no growls, no hisses.
@@ -96,9 +100,6 @@ local function make_infantry(name, color, armor)
   u.distance_per_frame = 0.13
   u.vision_distance = 30
   u.collision_box = {{-0.2, -0.2}, {0.2, 0.2}}
-  -- Infantry collide with each other (a unit's mask passes through other units, so a squad stood in heaps: the user,
-  -- 2026-11-09, "the infantry has no self collision, just like the flyers? ... they bunch up too much").
-  u.collision_mask = {layers = {player = true, train = true, is_object = true}}
   u.selection_box = {{-0.4, -1.4}, {0.4, 0.2}}
   -- Its run: the engineer's running, 8 directions round the compass as a unit reads them. Running with a gun has 18,
   -- the gun's direction against the legs', north to south by the east only (the engine plays them backwards for the

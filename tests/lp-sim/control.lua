@@ -1321,11 +1321,52 @@ scenarios.showcase = function()
       -- of the player's troopers, lamps on poles powered from an energy interface out of the shot.
       for x = 34, 80 do put("stone-wall", x + 0.5, -25.5); put("stone-wall", x + 0.5, 25.5) end
       for y = -25, 25 do put("stone-wall", 34.5, y + 0.5); put("stone-wall", 80.5, y + 0.5) end
-      for _, y in ipairs({-20, -12, -4, 4, 12, 20}) do put("gun-turret", 77, y, {name = "piercing-rounds-magazine", count = 100}) end
+      -- (Six with piercing rounds on the east wall killed both dozers at it, the sixth takes: four, at its ends, with plain
+      -- rounds and a short supply.)
+      for _, y in ipairs({-20, -12, 12, 20}) do put("gun-turret", 77, y, {name = "firearm-magazine", count = 12}) end
       for _, x in ipairs({70, 58}) do put("gun-turret", x, -22, {name = "firearm-magazine", count = 50}); put("gun-turret", x, 22, {name = "firearm-magazine", count = 50}) end
-      for _, x in ipairs({70.5, 64.5, 58.5}) do for k = -4, 4 do put("assembling-machine-2", x, k * 4 + 0.5) end end
-      for k = -4, 4 do put("stone-furnace", 52, k * 4) end
-      put("radar", 45.5, -15.5)
+      -- Inside, a lab district (rows of assemblers read as artificial, the user: "perhaps make a little lab district with
+      -- a sushi belt of science?"): a belt loop carrying red, green and grey science round two rows of labs, inserters
+      -- feeding each from it, the force researching; west of it a furnace line, a few assemblers and chests, a radar.
+      local LX0, LX1, LY0, LY1 = 52, 70, -10, 10
+      local belts = {}
+      local function belt(x, y, dir)
+        local b = surface().create_entity{name = "transport-belt", position = {x + 0.5, y + 0.5}, direction = dir, force = "player"}
+        if b then belts[#belts + 1] = b end
+      end
+      for x = LX0, LX1 - 1 do belt(x, LY0, defines.direction.east) end
+      for y = LY0, LY1 - 1 do belt(LX1, y, defines.direction.south) end
+      for x = LX1, LX0 + 1, -1 do belt(x, LY1, defines.direction.west) end
+      for y = LY1, LY0 + 1, -1 do belt(LX0, y, defines.direction.north) end
+      local PACKS = {"automation-science-pack", "logistic-science-pack", "military-science-pack"}
+      for i, b in ipairs(belts) do
+        for line = 1, 2 do
+          if (i + line) % 2 == 0 then b.get_transport_line(line).insert_at_back({name = PACKS[1 + (i + line) % 3], count = 1}) end
+        end
+      end
+      -- Labs inside the loop, along its top and bottom runs, an inserter between each and the belt.
+      for x = LX0 + 3, LX1 - 3, 4 do
+        for _, row in ipairs({{LY0 + 3, defines.direction.north}, {LY1 - 2, defines.direction.south}}) do
+          local lab = put("lab", x + 0.5, row[1] + 0.5)
+          if lab then for _, pk in ipairs(PACKS) do lab.insert{name = pk, count = 20} end end
+          local iy = row[2] == defines.direction.north and LY0 + 1 or LY1 - 1
+          surface().create_entity{name = "inserter", position = {x + 0.5, iy + 0.5}, direction = row[2], force = "player"}
+        end
+      end
+      for _, t in ipairs({"automation", "logistic-science-pack", "military", "military-science-pack"}) do
+        local tech = game.forces.player.technologies[t]
+        if tech and not tech.researched then
+          for _, pre in pairs(tech.prerequisites) do pre.researched = true end
+          tech.researched = true
+        end
+      end
+      local tech = game.forces.player.technologies["military-2"]
+      if tech then for _, pre in pairs(tech.prerequisites) do pre.researched = true end end
+      game.forces.player.add_research("military-2")
+      for k = -5, 5 do put("stone-furnace", 40, k * 2.5) end
+      for _, pos in ipairs({{45.5, -18.5}, {45.5, 18.5}, {49.5, 16.5}}) do put("assembling-machine-1", pos[1], pos[2]) end
+      for _, pos in ipairs({{44.5, -12.5}, {44.5, 12.5}, {48.5, -14.5}}) do put("steel-chest", pos[1], pos[2]) end
+      put("radar", 45.5, -4.5)
       local eei = put("electric-energy-interface", 20, 0)
       if eei then eei.power_production = 1e9; eei.electric_buffer_size = 1e9 end
       for x = 24, 74, 7 do put("medium-electric-pole", x + 0.5, 0.5) end
@@ -3913,6 +3954,11 @@ scenarios.dev = function()
     -- (The third takes: a breach a dozer wide, then the dozer drove off; it widens it now, four pieces each.)
     check("dev: and the dozers widened their breaches", r.breaches - S.ram0.breaches > d.dozers,
       string.format("%d strips cleared by %d dozers", r.breaches - S.ram0.breaches, d.dozers))
+    -- (The sixth takes: stopped short of the wall, a dozer counted a strip clear with nothing under its blade, 5 strips
+    -- for 9 pieces here: each strip takes two pieces at least.)
+    local lost = d.walls - now("dozers", "stone-wall")
+    check("dev: and every strip it counted was a strip of wall down", lost >= 2 * (r.breaches - S.ram0.breaches),
+      string.format("%d pieces down for %d strips", lost, r.breaches - S.ram0.breaches))
     local inner = surface().count_entities_filtered{area = {{-360 + 4, 150 - 6}, {-360 + 15, 150 + 6}}, name = {"gun-turret", "assembling-machine-1"}}
     check("dev: and they took what stood inside, never the walls", inner == 0 and (S.wall_by_buggy or 0) < 1,
       string.format("%d of the turret and assembler left, %.0f damage to walls by buggies", inner, S.wall_by_buggy or 0))

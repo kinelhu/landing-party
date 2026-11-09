@@ -23,18 +23,22 @@ local function st()
 end
 
 -- Order u to ram through the wall piece `wall`, along the line from u to it. opts.widen: after its breach, it rams that
--- many more pieces beside the gap, each the nearest left within WIDEN of it (the user, on the third takes: "the dozers keep
--- working on the walls"), where without it it drives on through.
-local WIDEN = 6
+-- many more strips beside the gap, a blade's width along the wall each, alternately either side, straight on as the first
+-- (the user, on the third takes: "the dozers keep working on the walls"), where without it it drives on through.
+-- (Sent at the nearest piece from inside the gap, it turned to each and its blade caught one at a time: "last time they
+-- razed multiple at once", the sixth takes.)
 function ram.order(u, wall, opts)
   if not (u and u.valid and wall and wall.valid) then return false end
-  local dx, dy = wall.position.x - u.position.x, wall.position.y - u.position.y
-  local len = math.max(0.01, math.sqrt(dx * dx + dy * dy))
-  local d = {dx / len, dy / len}
+  opts = opts or {}
+  local d = opts.dir
+  if not d then
+    local dx, dy = wall.position.x - u.position.x, wall.position.y - u.position.y
+    local len = math.max(0.01, math.sqrt(dx * dx + dy * dy))
+    d = {dx / len, dy / len}
+  end
   local face = {wall.position.x - d[1] * 1.6, wall.position.y - d[2] * 1.6}
-  local old = st()[u.unit_number]
-  st()[u.unit_number] = {unit = u, dir = d, wall = {wall.position.x, wall.position.y}, phase = "approach", at = game.tick,
-    force = wall.force.name, widen = opts and opts.widen or old and old.widen}
+  st()[u.unit_number] = {unit = u, dir = d, wall = {wall.position.x, wall.position.y}, piece = wall, phase = "approach", at = game.tick,
+    force = wall.force.name, widen = opts.widen, base = opts.base or {wall.position.x, wall.position.y}, pass = opts.pass or 0}
   u.commandable.set_command{type = defines.command.go_to_location, destination = face, radius = 0.6,
     distraction = defines.distraction.none}
   return true
@@ -138,9 +142,17 @@ local function escort(k, r, tick)
       for i, v in ipairs(f.units) do
         if v.valid then
           if tick % ESCORT_EVERY == 0 then
+            -- (Ordered afresh each half second, each twitch of the dozer's was the buggies' too: "dancing around giving
+            -- everybody epilepsis", the sixth takes. Ordered again only when its spot has moved 3 tiles.)
             local off = (i - (#f.units + 1) / 2) * 3
-            v.commandable.set_command{type = defines.command.go_to_location, radius = 1.5, distraction = defines.distraction.none,
-              destination = {u.position.x - r.dir[1] * ESCORT - r.dir[2] * off, u.position.y - r.dir[2] * ESCORT + r.dir[1] * off}}
+            local to = {u.position.x - r.dir[1] * ESCORT - r.dir[2] * off, u.position.y - r.dir[2] * ESCORT + r.dir[1] * off}
+            f.spots = f.spots or {}
+            local was = f.spots[i]
+            if not was or (was[1] - to[1]) ^ 2 + (was[2] - to[2]) ^ 2 > 9 then
+              f.spots[i] = to
+              v.commandable.set_command{type = defines.command.go_to_location, radius = 2, distraction = defines.distraction.none,
+                destination = to}
+            end
           end
           local d = (r.wall[1] - v.position.x) * r.dir[1] + (r.wall[2] - v.position.y) * r.dir[2]
           if d < lead - 1 then storage.ram_early = (storage.ram_early or 0) + 1 end
@@ -148,6 +160,14 @@ local function escort(k, r, tick)
       end
     end
   end
+end
+
+-- A dozer's phases logged when storage.ram_trace is set (/lp dozers sets it): where it is, the piece it was sent at.
+local function trace(k, r, what)
+  if not storage.ram_trace or not r.unit.valid then return end
+  local u = r.unit
+  log(string.format("ram %d %s: at %.1f,%.1f, piece %s at %.1f,%.1f, pass %d", k, what, u.position.x, u.position.y,
+    tostring(r.piece and r.piece.valid), r.wall[1], r.wall[2], r.pass or 0))
 end
 
 function ram.tick(tick)
@@ -160,8 +180,21 @@ function ram.tick(tick)
       storage.rams[k] = nil
     elseif r.phase == "approach" then
       local dx, dy = r.wall[1] - u.position.x, r.wall[2] - u.position.y
+      -- Its blade on any wall: it rams there (jostled by the others, two dozers slid 6 and 18 tiles along the wall from
+      -- their pieces, never within CLOSE of them, and circled: the sixth takes' night outpost).
+      -- (Stuck only: still moving, it brushed walls at an angle on its way and counted one piece a strip, 8 strips for 11
+      -- pieces in scenario dev.)
+      local was = r.last
+      r.last = {u.position.x, u.position.y}
+      local still = was and (was[1] - u.position.x) ^ 2 + (was[2] - u.position.y) ^ 2 < 0.01
+      local touching = still and ahead(r) or {}
+      if #touching > 0 and dx * dx + dy * dy > CLOSE * CLOSE then
+        r.piece, r.wall = touching[1], {touching[1].position.x, touching[1].position.y}
+        dx, dy = 0, 0
+      end
       if dx * dx + dy * dy <= CLOSE * CLOSE or not u.commandable.has_command then
         r.phase = "ram"
+        trace(k, r, dx * dx + dy * dy <= CLOSE * CLOSE and "at the wall" or "stopped short")
         -- Square to the wall: the last of its turn, its blade along the wall.
         u.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
       elseif tick - r.at > GIVE_UP then
@@ -172,26 +205,46 @@ function ram.tick(tick)
     elseif r.phase == "ram" then
       escort(k, r, tick)
       local hit = ahead(r)
-      if #hit > 0 then
+      -- Its piece still standing: rammed itself if the blade is at it, else driven up to again. (Stopped short, jostled
+      -- by the others, a dozer found nothing under its blade and counted the wall breached: it stood, the dozer wheeled
+      -- about under fire, the sixth takes. A strip is clear when the piece it was sent at is gone.)
+      local p = r.piece
+      if #hit == 0 and p and p.valid then
+        local dx, dy = p.position.x - u.position.x, p.position.y - u.position.y
+        if dx * dx + dy * dy <= 3.6 * 3.6 then
+          hit = {p}
+        elseif tick - r.at <= GIVE_UP then
+          r.phase = "approach"
+          trace(k, r, "again")
+          u.commandable.set_command{type = defines.command.go_to_location, radius = 0.6, distraction = defines.distraction.none,
+            destination = {p.position.x - r.dir[1] * 1.6, p.position.y - r.dir[2] * 1.6}}
+          hit = nil
+        end
+      end
+      if hit == nil then
+        -- (Back to its approach: nothing more this step.)
+      elseif #hit > 0 then
         for _, e in ipairs(hit) do
           if e.valid then e.damage(DAMAGE, u.force, "physical", u) end
         end
         storage.ram_crushed = (storage.ram_crushed or 0) + 1
       else
         storage.ram_breaches = (storage.ram_breaches or 0) + 1
+        trace(k, r, "clear")
         release(k, {u.position.x, u.position.y}, r.dir, r.force)
-        -- Widening: the next piece beside the gap, rammed from where it stands.
-        local next_piece
-        if (r.widen or 0) > 0 then
-          local best
-          for _, e in ipairs(u.surface.find_entities_filtered{position = u.position, radius = WIDEN, type = {"wall", "gate"}}) do
-            local dd = (u.position.x - e.position.x) ^ 2 + (u.position.y - e.position.y) ^ 2
-            if e.force ~= u.force and u.force.is_enemy(e.force) and (not best or dd < best) then next_piece, best = e, dd end
+        -- Widening: the next strip along the wall, a blade's width from the last on alternate sides, rammed straight on.
+        local next_piece, pass
+        local tx, ty = -r.dir[2], r.dir[1]
+        for p = r.pass + 1, (r.widen or 0) do
+          local off = math.ceil(p / 2) * BLADE * (p % 2 == 1 and 1 or -1)
+          local at = {r.base[1] + tx * off, r.base[2] + ty * off}
+          for _, e in ipairs(u.surface.find_entities_filtered{position = at, radius = 1.6, type = {"wall", "gate"}}) do
+            if e.force ~= u.force and u.force.is_enemy(e.force) then next_piece, pass = e, p; break end
           end
+          if next_piece then break end
         end
         if next_piece then
-          r.widen = r.widen - 1
-          ram.order(u, next_piece)
+          ram.order(u, next_piece, {dir = r.dir, base = r.base, pass = pass, widen = r.widen})
         else
           -- Clear: on through, its followers behind it.
           r.phase = "through"

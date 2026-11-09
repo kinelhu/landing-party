@@ -337,13 +337,14 @@ function dev.run(player, args)
       end
       if not w then return player.print("no wall of yours within 60 to ram") end
       local n, made, first = math.max(1, math.min(6, n0 or 2)), 0, nil
+      storage.ram_trace = true             -- (its dozers' phases to the log: scripts/ram.lua)
       for k = 1, n do
         local y = py + (k - 1) * 4 - (n - 1) * 2
         local u = put(shared.variant("grubstake", "lp-dozer"), g, w.position.x + OFF, y)
         local near = u and s.find_entities_filtered{position = {w.position.x, y}, radius = 3, type = {"wall", "gate"}, force = player.force}
         local piece = near and #near > 0 and s.get_closest({w.position.x, y}, near) or w
-        -- Each widens its breach by eight pieces (the user, on the third takes: "the dozers keep working on the walls").
-        if u and ram.order(u, piece, {widen = 8}) then made = made + 1; first = first or u end
+        -- Each widens its breach by four strips (the user, on the third takes: "the dozers keep working on the walls").
+        if u and ram.order(u, piece, {widen = 4}) then made = made + 1; first = first or u end
       end
       -- Behind the dozers, kept behind them until the breach (ram.follow).
       local buggies = {}
@@ -385,6 +386,12 @@ function dev.run(player, args)
         if u then made = made + 1 end
       end
       if what == "prism" then
+        -- Your side holds where it stands and fights (idle, a trooper walked off and a tank chased it out of the shot, the
+        -- sixth takes).
+        for _, d in ipairs(s.find_entities_filtered{position = c, radius = 20, type = "unit", force = player.force}) do
+          d.commandable.set_command{type = defines.command.attack_area, destination = d.position, radius = 20,
+            distraction = defines.distraction.by_enemy}
+        end
         -- Its company: two of its tanks on the flanks, a Tesla behind.
         for _, e in ipairs({{"lp-tank", 6, -8}, {"lp-tank", 6, 8}, {"lp-tesla", 10, 0}}) do
           local u = put(shared.variant(id, e[1]), f, c[1] + OFF + e[2], c[2] + e[3])

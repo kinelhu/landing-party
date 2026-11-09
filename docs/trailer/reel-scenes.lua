@@ -33,7 +33,7 @@ return {name = "reel-scenes", resolution = {1920, 1080}, anti_alias = true, spee
   moves = {
     -- At night, on the bigger lit outpost: two Killdozers (one was enough for the small one) come in, rams through, widens the gap; the
     -- buggies behind it go in and on into the outpost.
-    shot("sc1-dozers", T + 30, 1860, 1.15, 1.35, 0.42),
+    shot("sc1-dozers", T + 30, 1860, 1.15, 1.35, 0.36),
     -- The squad marches by the stream; the bomb drones dive in from all round.
     shot("sc2-bombers", T + 1930, 660, 1.4, 1.6),
     -- Two Prisms, two tanks and a Tesla against the squad, its battle tanks and rocket troopers.

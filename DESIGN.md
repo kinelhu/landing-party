@@ -5611,6 +5611,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   units: squads stood in heaps; the raid and `dev` scenarios pass with it, not measured further). The flak buggy has its
   gun's flash at the muzzle (it had none). Crates gone from the stages. The ram as such is real: raids use it in their
   breach phase (ops.lua); the escort, the widening and the scene's numbers are `/lp dozers`'s.
+- **The scenes' seventh pass** (0.2.243; the user on the sixth takes: "the two dozers only attack a single wall piece at a
+  time ... the buggies are dancing ... the dozers don't collide with each other"). Every unit collides with the others
+  now (`base_unit`; Synthexis's runt and sweeper stay biters). Widening rams a strip a blade's width along the wall each
+  pass, straight on (sent at single pieces from inside the gap, a dozer turned to each and took one at a time). A strip
+  counts clear only when the piece it was sent at is gone, and a dozer stuck against the wall rams where it stands: with
+  collision, two dozers slid 6 and 18 tiles along the wall from their pieces and circled, a rammed nothing counted as a
+  breach (`dev` checks two pieces down a strip: 9 for 5, then 11 for 8 with a touch rule that fired while moving; 19 for
+  6 now). The escort orders a buggy again only when its spot has moved 3 tiles (each twitch of the dozer's was theirs).
+  `storage.ram_trace` (set by /lp dozers) logs each dozer's phases: how the circling was found. The Prism's defenders hold
+  and fight where they stand (idle, a trooper walked off and a tank chased it out of shot). The dozers' outpost: four
+  gun turrets with plain rounds on its east wall (six with piercing rounds killed both dozers at it), inside a lab
+  district ("make a little lab district with a sushi belt of science?"): a belt loop of red, green and grey science,
+  eight labs fed by inserters, the force researching; furnaces, a few assemblers and chests; at dusk (0.36).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
