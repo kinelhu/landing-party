@@ -186,7 +186,9 @@ script.on_event(defines.events.on_entity_damaged, function(e)
       if et == "unit" then stun.on_hit(e) end
       if e.cause and e.cause.valid and shared.kind_of(e.cause.name) == "lp-tesla" then scorcher.aim(e.cause, e.entity) end
     end
-    if et == "unit" then return end
+    -- (Units came through for these alone: the rest of a unit's hits belong to the handlers below only for the probe's
+    -- runts, filtered by name; returning for every unit blinded Synthexis's probe to the turrets, herd probe, 0.2.249.)
+    if et == "unit" and e.entity.name ~= "lp-runt" then return end
   end
   if e.damage_type and e.damage_type.name == "electric" then scorcher.drain(e) end
   if e.entity.name == "lp-pen" or e.entity.name == "lp-tumor" then return farm.on_damaged(e) end

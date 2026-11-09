@@ -5773,6 +5773,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   wall counts too (the damage event: units and walls, electric alone; "and" binds before "or", checked in the API after
   a false alarm that the filter had swallowed every building's damage), and each Tesla seen fighting is looked at every
   30 ticks for a laser in its reach (scorcher.look). Seeds 12345, 777, 4242: 31.1%, 45.6%, 29.0%, 49 to 75 turns.
+- **The fourth full regression, 0.2.256: 305 of 308** (2026-11-09). herd probe: "the probe saw turrets fire" 0, the
+  stun's damage branch returning for every unit, the probe's runts among them (they were watched there by name since
+  long before): fixed, 0.2.257, 5 fired. clear worms: on 12345 a second clearance's truck out while the first's howitzer
+  stood, and that howitzer never packed for home (both at once 25 samples); passes on 777 and 4242, and on 12345 at 0.2.250,
+  0.2.253, 0.2.254 and 0.2.255: tipped by 0.2.256's cook-off, whose parts roll a chance at every hull's death and shift
+  the map's random numbers, but the overlap it shows is a fault of its own. Open. hazard norails: fails on 12345 and
+  4242 (on 4242 no hazard seen at all, no railgunners made), passes on 777, and on 12345 up to 0.2.255. Open.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
