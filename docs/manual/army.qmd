@@ -4,8 +4,8 @@
 :::
 
 You can raise an army of your own: troopers, breachers, rocket troopers, flamethrower troopers and battle tanks. They
-are trained from the equipment you already make for yourself. How many you can field is limited by command bandwidth,
-not by items. You give them orders with rally beacons, the command tool or the circuit network.
+are trained from the equipment you already make for yourself, and how many you can field is set by your command
+bandwidth. You give them orders with rally beacons, the command tool or the circuit network.
 
 ## The barracks and orders
 
@@ -34,6 +34,9 @@ bandwidth is full, finished orders wait inside the barracks, and it stops once i
 **Field repair.** Your units within {{< var army.repair_tiles >}} tiles of a powered barracks heal. Nothing heals
 them anywhere else, so a barracks near the front works as a forward base. **Roads** help too: your units walk faster on
 stone path, concrete and refined concrete, by the same bonus those floors give you.
+
+**Gates and the map.** Your units open your own gates as they come to them, so a squad can march out of a walled base
+and back in. They also chart the ground around them as they go, so you can follow a squad far beyond your radars.
 
 ## Your units {#sec-army-units}
 
@@ -67,7 +70,7 @@ for hold, red for advance, yellow for occupy and blue for retreat, with a dashed
 sees a corporation unit nearby attacks it before any building, but only inside the ring: your squads do not chase a
 garrison back into its turrets.
 
-## The command tool
+## The command tool {#sec-command-tool}
 
 The command tool gives orders by hand. Take it from the shortcut bar or press ALT + C, once you have Command
 bandwidth 1.
@@ -83,11 +86,22 @@ A marker flashes where each order went. Selected units obey you over their beaco
 joins the nearest beacon. The attack order works only on corporation targets. Against Synthexis or the wild biters,
 attack-move onto them.
 
+**Retiring units.** Select units with the command tool, then press ALT + R or the Retire button on the army panel (see
+below). Each one walks back to the nearest barracks without stopping to fight and hands in its order beside it. The
+order is marked for deconstruction, so your robots carry it to storage, and a muster point can turn it into a unit
+again later. A retired unit no longer takes any of your command bandwidth. With no barracks, a unit hands in its order
+where it stands.
+
 ## Command bandwidth
 
 Your factory can make equipment in any quantity, so the size of your army is limited by command bandwidth instead.
 Your units are remotely commanded, and each takes a share of your command link: troopers and breachers the least, a
 battle tank the most. The *Cost* column in the [Reference](reference.qmd#sec-units) gives each unit's share.
+
+**The army panel.** Once you have Command bandwidth 1, a panel at the top of the screen shows *Units*: the bandwidth
+your units take against the bandwidth you have, and how many units are offline. Its tooltip gives the command relays
+working, how many of them count, and the orders waiting at your barracks. The panel's Retire button sends the units you
+have selected home (see [Retiring units](#sec-command-tool)).
 
 **Command relays.** {{< var desc.entity_command_relay >}} A relay counts only while it has power. Command bandwidth 1, 2
 and 3 let {{< var army.relays_l1 >}}, {{< var army.relays_l2 >}} and {{< var army.relays_l3 >}} relays
@@ -115,13 +129,13 @@ orders put into it into units beside it, sent to its nearest rally beacon while 
 building crews* apart from the army; *Kessler-Hayashi units* and *Grubstake units* as totals; and *Biters*. A
 Kessler-Hayashi jamming mast nearby blinds it: it then outputs only *Scanner jammed*, which a circuit can treat as a
 threat of its own. With **Bred-biter telemetry**, a field study (see [Spoils](spoils.qmd#field-studies)), it adds
-*Synthexis's biters* and *Synthexis's scout*; a scout seen means a wave is on its way. Without it, Synthexis's biters
+*Synthexis biters* and *Synthexis scouts*; a scout seen means a wave is on its way. Without it, Synthexis's biters
 count as *Biters*.
 
 A scanner at an outpost wired home through a decider to a rally beacon makes a response force: the squad marches out on
 A when the scanner sees a raid, and comes home when it reads clear.
 
-## Defences of your own
+## Defenses of your own
 
 Three defenses come from the factions' own designs. [Spoils](spoils.qmd#field-studies) says how to unlock them.
 
@@ -129,11 +143,45 @@ Three defenses come from the factions' own designs. [Spoils](spoils.qmd#field-st
 shells your enemies fire into its radius, including shells passing over it to something behind; your own artillery
 fires out through it. Its strength scales with the guns that can reach it, so more guns do not break it sooner. It
 recovers slowly while up. Once broken, it stays down for some minutes and comes back at full strength. Tank shells and
-the orbital strike pass through. A dome buys time; your army still has to destroy the guns. You research it with
+orbital strikes pass through. A dome buys time; your army still has to destroy the guns. You research it with
 science packs after Energy shield MK2 and Military 4.
 
-**Flak turret.** A powered turret that fires flak at flying units only: Grubstake's scrap drones and bomb drones, and
-Kessler-Hayashi's laser drones. It ignores everything on the ground, so it needs other turrets beside it.
+**Flak turret.** {{< var desc.technology_flak_turret >}} It shoots down Grubstake's scrap copters and bomb drones and
+Kessler-Hayashi's laser drones, and ignores everything on the ground, so it needs other turrets beside it.
 
 **Defoliant.** {{< var desc.technology_defoliant >}} Throw it like a grenade. Ground it clears can be built on again. A
 tumor left standing spreads its creep back, so finish the tumors.
+
+## Orbital cannons {#sec-cannons}
+
+Late in the game you can strike from orbit. The **Orbital cannon** technology comes after Artillery and Space platform.
+It unlocks the orbital cannon, the orbital shell and the targeting array.
+
+**The cannons.** Orbital cannons are built on a space platform. A cannon works like an assembling machine with one
+fixed recipe: it takes an orbital shell and {{< var cannon.fuel >}} thruster fuel and turns them into a charge in
+{{< var cannon.cycle_min >}} minutes. It holds {{< var cannon.store >}} charges and stops when it is full. Orbital shells
+are made only in space, from steel, explosives and low density structure. Thruster fuel reaches a cannon by pipe, as it
+reaches the platform's thrusters.
+
+**The targeting array.** {{< var desc.entity_targeting_array >}} One array serves every cannon on its platform. It is
+built round an orbital beacon salvaged from a Kessler-Hayashi lander or uplink. In a game without Kessler-Hayashi, build
+it from a targeting core instead, made from processing units, low density structure and space science packs.
+
+![A battery on a platform over Nauvis: the targeting array at the left, then a row of cannons.](media/stills/orbital-cannons.jpg)
+
+**Calling a strike.** On Nauvis, take the orbital strike remote from the shortcut bar, or press ALT + O, and click the
+point to strike, on the ground or on the map. Every charged cannon on every platform stopped over Nauvis fires and
+spends one charge. Rings close in on the point for {{< var cannon.paint_s >}} seconds and the platform's shadow passes
+over, then the shells fall, {{< var cannon.shells_word >}} for each cannon that fired. The first shells go to the enemy
+buildings, spawners and worms within {{< var cannon.radius_tiles >}} tiles of the point, one to each, nearest first.
+The rest fall spread across that circle. Walls, gates and poles are left alone, and units are hit only where the shells
+land.
+
+![A strike from the cannons falling on a field of biter spawners.](media/stills/orbital-cannon-strike.jpg)
+
+After a strike the cannons realign for {{< var cannon.realign_s >}} seconds before they can fire again. More cannons
+make each strike heavier, and the wait between strikes stays the same. A panel at the top of the screen shows how many
+cannons over Nauvis are ready and, while they realign, how long is left. Its tooltip gives the platforms over Nauvis
+with an array and the charges they hold.
+
+Kessler-Hayashi's domes do not stop the shells. A strike on Grubstake's buildings provokes it like any other attack.

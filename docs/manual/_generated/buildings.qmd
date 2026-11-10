@@ -81,4 +81,6 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 | Claim marker | 300 | Grubstake leaves your buildings within 40 tiles alone. |
 | Pact breaker | 200 | Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim. |
 | Pheromone bait | 100 | Makes nearby biters attack whatever is around it. |
-| Orbital strike beacon | 300 | Charges from your power, then calls an orbital barrage on enemies within 60 tiles. Single use. |
+| Field dome | 1,200 | Stops enemy artillery shells within its radius while powered. Goes down for a time after too many hits. |
+| Orbital cannon | 800 | Charges a strike from a shell and thruster fuel, up to 2, one each 3 minutes. Space platforms only. |
+| Targeting array | 400 | Lets the cannons of its platform fire on Nauvis while the platform is stopped there. |

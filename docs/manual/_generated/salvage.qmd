@@ -6,6 +6,6 @@
 | Drill head | Claim jumper rig | 2 | 1 per Strip drill |
 | Rail coil | Railgunner | 1, 20% of the time | 2 to research Rail rifle |
 | Cluster fuze | Mortar; Howitzer (deployed) | 1; 6 | 1 per Cluster artillery shell; 3 to research Cluster shells |
-| Orbital beacon | Lander; Uplink | 1; 2 | 1 per Orbital strike beacon; 1 to research Orbital strike |
+| Orbital beacon | Lander; Uplink | 1; 2 | 1 per Targeting array |
 | Pacifier crystal | Pacifier antenna | 1 from the first; 25% of rebuilt ones | 1 per Pact breaker; 1 to research Pact breaker; 2 per Claim marker; 2 to research Claim marker |
 | Command core | Depot; Lander; a captured outpost; the survey party | 1; 3; 1; 1 | 1 per Barracks |

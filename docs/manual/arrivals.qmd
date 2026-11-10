@@ -1,7 +1,8 @@
 # Arrivals
 
 The factions arrive in a fixed order, each one triggered by something you do. After that they keep landing, grow with
-their exports, and match their research to yours.
+their exports, and match their research to yours. This chapter gives the default timings. The map settings can change
+what brings each faction, or keep one away for the whole game (see [Mod settings](reference.qmd#sec-settings)).
 
 ## The opening
 
@@ -9,7 +10,7 @@ their exports, and match their research to yours.
 from it and is charted on your map. It holds electronic circuits and iron gear wheels.
 
 **Survey party.** When you research Oil processing, a Grubstake survey party lands on ore about
-{{< var arrival.survey_tiles >}} tiles from your spawn: a radar, two drills, a lamp and a few guards. Your map marks it
+{{< var arrival.survey_tiles >}} tiles from your spawn: a radar, a few drills, a lamp and guards. Your map marks it
 *Survey party*. What you do with it changes when Grubstake arrives:
 
 - Destroy its radar and it drops a command core. Grubstake's arrival then comes
@@ -54,13 +55,13 @@ The corporations keep landing on a clock. One lands every {{< var arrival.cadenc
 with fewer bases standing lands next. A rocket launch brings Kessler-Hayashi's next landing
 {{< var arrival.haste_min >}} minutes sooner, once between landings.
 
-- At most {{< var arrival.max_alive >}} corporation bases stand at once, and at most {{< var arrival.max_per_corp >}}
-  per corporation, its headquarters included.
+- At most {{< var arrival.max_per_corp >}} bases of each corporation stand at once, its headquarters included.
 - A new base lands at least {{< var arrival.apart_tiles >}} tiles from every other.
 - Each landing brings an escort of {{< var arrival.escort_base >}} units, {{< var arrival.escort_level >}} more per
   level of its corporation, and up to {{< var arrival.escort_evo >}} more at full biter evolution. Turrets go up at the
   corners of its landing pad.
-- Destroy a corporation's lander and its next landing brings {{< var arrival.grudge_escort >}} the escort.
+- Destroy a corporation's lander and its next landing brings {{< var arrival.grudge_escort >}} the escort, unless the
+  **Revenge landings** setting is off.
 
 ## How the corporations grow
 
@@ -69,7 +70,8 @@ set its level, and each level unlocks more of what it can do:
 
 {{< include _generated/levels.qmd >}}
 
-**Headquarters.** At level 3, or after {{< var arrival.hq_floor_h >}} hours with two bases standing, a corporation
+**Headquarters.** At level {{< var arrival.hq_level >}}, or after {{< var arrival.hq_floor_h >}} hours with
+{{< var arrival.hq_floor_bases >}} bases standing, a corporation
 prepares to build a headquarters. It lands {{< var arrival.consolidate_min >}} minutes later, about
 {{< var arrival.hq_tiles >}} tiles from its richest base. Its lander cannot be destroyed while its uplink stands.
 

@@ -14,6 +14,8 @@
   a line before you need troops in a hurry.
 - **Build a relay with your first barracks.** With no working command relay you have no bandwidth, and the barracks
   holds its finished orders. Put a rally beacon down too, or new units stand where they were trained.
+- **Retire units to make room.** When your bandwidth is full, select the units you can spare and press ALT + R. They
+  walk back to a barracks and hand in their orders, and the bandwidth they took is free again.
 - **Put a threat scanner at each outpost.** Wired to a programmable speaker or a lamp, it tells you a raid has come
   before the turrets start firing.
 - **Turn on Chat notices** in the map settings if you want to hear about raids and sieges as they start. Only first
@@ -34,14 +36,19 @@
 - **Pay the trade post in circuits or modules.** Plates are worth little to Grubstake. A few stacks of circuits buy a
   much longer truce than a chest full of iron.
 - **Do not chase raiders into spawners.** The biters let Grubstake's units through and turn on yours.
+- **Double the wall where dozers come.** A dozer's charge crushes the walls in its lane until some way past the first.
+  A second wall and line of turrets set further back are still standing when it stops.
+- **Shoot fliers down short of what you value.** A flier shot down crashes a few tiles away and damages what it lands
+  on, and a bomb drone's bomb goes off where it falls. Gun, laser and flak turrets placed out in front catch them early.
 
 ## Against Kessler-Hayashi
 
 - **Keep what matters deep behind your turrets.** A siege's mortars stand just outside your turrets' reach and outrange
   them only a little. Roboports, substations and assemblers well behind the turret line are out of their reach, and
   only a howitzer can touch them.
-- **Hit the guns while they are assembled.** The escort holds just outside your turrets while the pods come down, and
-  each gun is defenseless until the deploy ends. A gun destroyed then is lost to that siege.
+- **Hit the guns while they are assembled.** The escort holds just outside your turrets while the pods come down. It
+  fires back at whatever shoots at it, but each gun is defenseless until the deploy ends. A gun destroyed then is lost
+  to that siege.
 - **Put an artillery turret behind each wall that faces its camp.** It kills a siege's howitzer by itself, and the
   artillery targeting remote lets it reach the mortars.
 - **Give each field dome its own power.** A dome is up only while powered. On the same poles as your turrets, one cut
@@ -56,11 +63,16 @@
   turrets. A second line of turrets behind the wall meets it there.
 - **Mix your laser line.** A lightning tank stops each laser or tesla turret it strikes for
   {{< var kh.tesla_stun_s >}} seconds. Gun turrets and flamethrowers between them keep firing.
+- **Keep a cannon strike for a siege.** Your orbital cannons send their first shells one to each enemy building in the
+  circle, so a strike on a siege site goes to its guns, its mast and its dome projector, nearest first.
+- **Lead with tanks against lightning.** Each hit from a lightning tank or a shock trooper adds to a unit's charge, and
+  a charged unit can be stunned. Tanks take little of the charge, and the lightning jumps less between units kept
+  apart.
 
 ## Against Synthexis
 
 - **Get Bred-biter telemetry early.** Fighting Synthexis unlocks it (see [Spoils](spoils.qmd#field-studies)). Wire the
-  *Synthexis's scout* signal to a speaker and to your rally beacons: a scout comes before every wave.
+  *Synthexis scouts* signal to a speaker and to your rally beacons: a scout comes before every wave.
 - **Attack-move into a culture.** A rally beacon's advance and the command tool's attack order go only for corporation
   targets. Send squads onto incubators and biochambers with attack-move, flamethrower troopers in front for the swarms.
 - **Defend every side.** A wave takes the way in your turrets cover least, and a way that held costs more next time.
@@ -79,4 +91,6 @@
   turrets. Keep both well inside, behind a second line of turrets.
 - **Defoliate an incubator.** Kill the tumors near it, then throw a defoliant on it. Off the creep, it starves and goes
   back to the wild after {{< var synthexis.starve_min >}} minutes.
+- **Strike a culture from orbit.** A cannon strike on a culture sends a shell to each incubator, biochamber, tumor and
+  worm in its circle, as far as its shells go.
 - **The field dome and the flak turret do nothing here.** No Synthexis breed fires shells or flies.

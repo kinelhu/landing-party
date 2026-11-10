@@ -27,7 +27,8 @@ The corporations also fight each other. See [Rivals](rivals.qmd).
 
 Faction bases can be destroyed. Their wreckage holds parts you cannot make yourself. Crafting those parts unlocks
 technologies built from their designs, and a command core from their wreckage lets you build a barracks and raise
-[your own army](army.qmd). [Spoils](spoils.qmd) lists what drops where and what it unlocks.
+[your own army](army.qmd). Late in the game, after artillery and space platforms, you can build orbital cannons on a
+platform over Nauvis. [Spoils](spoils.qmd) lists what drops where and what it unlocks.
 
 ## Before you start
 
@@ -35,8 +36,10 @@ technologies built from their designs, and a command core from their wreckage le
   {{< var mod.version >}}.
 - Chat notices are off by default. A faction's first landing and a destroyed faction base are always announced. Turn
   on **Chat notices** in the map settings to hear about everything else. See [Mod settings](reference.qmd#sec-settings).
-- Each faction has a strength and an aggression setting, from ×{{< var settings.very_low >}} to
-  ×{{< var settings.very_high >}}.
+- The map settings have a difficulty for all three factions, and settings for each faction under it. A faction can be
+  turned off or made to arrive at another point. Its aggression and income range from ×{{< var settings.very_low >}}
+  to ×{{< var settings.very_high >}}, as does each corporation's strength. See
+  [Mod settings](reference.qmd#sec-settings).
 
 ## Using this manual
 

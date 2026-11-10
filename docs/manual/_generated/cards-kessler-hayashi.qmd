@@ -1,11 +1,11 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-infantry"}
-The Laser trooper is Kessler-Hayashi's standard soldier: mech armor and a short-range laser rifle. Most of its raids and patrols are made of them. Once the Armory has its Warden plating, bullets do much less to them, so switch to fire or tank shells.
+The Laser trooper is Kessler-Hayashi's standard soldier: mech armor and a short-range laser rifle. Most of its raids and patrols are made of them. Once the Armory has researched heavier armor for them, bullets do much less, so switch to fire or tank shells.
 :::
 
 ::: {.unit unit="lp-tank"}
-The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; rifles do not.
+The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; rifles do little.
 :::
 
 ::: {.unit unit="lp-railgunner"}
@@ -13,11 +13,11 @@ The Railgunner is a heavy trooper with a hand-held rail cannon. It stays out of 
 :::
 
 ::: {.unit unit="lp-laser-drone"}
-The Laser drone is Kessler-Hayashi's only flier, an armored combat drone with a laser. A camp gets a few once it reaches its second level. It flies over walls, cliffs and water, and bullets do little to it. Rocket troopers and flak turrets bring it down; put the flak where it crosses your wall.
+The Laser drone is Kessler-Hayashi's only flier, an armored combat drone with a laser. A camp gets a few as it grows. It flies over walls, cliffs and water, and bullets do little to it. Where nothing of yours shoots up, the camp sends its drones alone. Flak turrets, laser turrets and rocket troopers bring it down.
 :::
 
 ::: {.unit unit="lp-skyguard"}
-The Anti-air trooper is a Laser trooper with a tracking laser for shooting down fliers. Against ground targets it does very little, and camps field it alongside Laser troopers, never instead of them. Keep your combat robots away from it and send ground units.
+The Anti-air trooper is a Laser trooper armed for shooting down fliers. Against ground targets it does very little, and camps field it alongside Laser troopers, never instead of them. Keep your combat robots away from it and send ground units.
 :::
 
 ::: {.unit unit="lp-lance"}
@@ -25,19 +25,19 @@ The Heavy laser trooper carries a long laser that outranges your submachine guns
 :::
 
 ::: {.unit unit="lp-shock"}
-The Shock trooper fires an arc of lightning that jumps from target to target and stuns each one briefly. It is made for crowds, and does little to a single vehicle. The Siege works also sends them after your artillery. Keep your squads spread out.
+The Shock trooper fires an arc of lightning that jumps from target to target. Each hit builds a charge on the unit it strikes, and a unit hit often enough is stunned for a moment. It is made for crowds, and does little to a single vehicle. The Siege works also sends them after your artillery. Keep your squads spread out.
 :::
 
 ::: {.unit unit="lp-aegis"}
-The Heavy tank is a tank with extra armor and a rail cannon. Its slug ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Your rocket troopers outrange it, so fight it at full range.
+The Heavy tank is a tank with extra armor and a rail cannon. Its large shell ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Fire does little to it. Your rocket troopers outrange it, so fight it at full range.
 :::
 
 ::: {.unit unit="lp-prism"}
-The Laser tank's beam splits on the first target it hits and forks into the units around it. It is made to break massed troopers and does little to walls or lone vehicles. Send battle tanks or rocket troopers at it, not infantry.
+The Laser tank's beam splits on the first target it hits and forks into the units around it. It is made to break massed troopers and does little to walls or lone vehicles. Send battle tanks or rocket troopers at it; troopers fare badly.
 :::
 
 ::: {.unit unit="lp-tesla"}
-The Lightning tank carries a tesla turret's emitter. Its lightning jumps along your turret line, and every laser or tesla turret it hits stops firing for a moment. A few of them slow a laser line badly. Gun turrets and flamethrowers are not affected, so mix them into the line.
+The Lightning tank carries a tesla turret's emitter. Its lightning jumps along your turret line, and every laser or tesla turret it hits stops firing for a moment. A few of them slow a laser line badly. Its hits also build a charge on your units until they are stunned. Gun turrets and flamethrowers are not affected, so mix them into the line.
 :::
 
 ::: {.unit unit="lp-hauler"}

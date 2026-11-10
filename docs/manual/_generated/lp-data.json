@@ -1,6 +1,6 @@
 {
  "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
- "edition": "For Landing Party 0.2.220",
+ "edition": "For Landing Party 0.2.278",
  "portraits": "media/portraits",
  "factions": {
   "grubstake": {
@@ -54,17 +54,17 @@
    "faction": "kessler-hayashi",
    "health": 120,
    "portrait": "lp-infantry",
-   "damage": 7,
-   "damage_text": "7 laser, 2.4 shots/s",
+   "damage": 18.48,
+   "damage_text": "18.48 laser",
    "range": 15,
    "speed": 7.2,
-   "cost": "10 parts",
+   "cost": "11 parts",
    "era": "From landing",
    "era_level": 0,
    "role": "Kessler-Hayashi's basic soldier, armed with a laser rifle. Most of its raiding force.",
    "counters": "raiders, scouts, lone outposts",
    "countered_by": "flamethrower troopers, gun turrets, tanks",
-   "blurb": "The Laser trooper is Kessler-Hayashi's standard soldier: mech armor and a short-range laser rifle. Most of its raids and patrols are made of them. Once the Armory has its Warden plating, bullets do much less to them, so switch to fire or tank shells."
+   "blurb": "The Laser trooper is Kessler-Hayashi's standard soldier: mech armor and a short-range laser rifle. Most of its raids and patrols are made of them. Once the Armory has researched heavier armor for them, bullets do much less, so switch to fire or tank shells."
   },
   "lp-tank": {
    "name": "Tank",
@@ -75,13 +75,13 @@
    "damage_text": "40 explosion, 80 to buildings",
    "range": 15,
    "speed": 5.4,
-   "cost": "60 parts",
+   "cost": "65 parts",
    "era": "From landing",
    "era_level": 0,
    "role": "An armored tank. Its cannon does three times as much damage to buildings as to units.",
    "counters": "walls, turret pillboxes, troopers in the open",
    "countered_by": "battle tanks, rocket troopers",
-   "blurb": "The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; rifles do not."
+   "blurb": "The Tank is Kessler-Hayashi's siege vehicle, and its shell is made for walls and buildings. Tanks make up most of a siege escort: they wait out of range while the mortars work, then drive in through the breach. Rocket troopers and battle tanks beat it; rifles do little."
   },
   "lp-railgunner": {
    "name": "Railgunner",
@@ -114,8 +114,8 @@
    "era": "From its level 2",
    "role": "An armored flying drone with a laser. Resists bullets.",
    "counters": "anything that cannot shoot up",
-   "countered_by": "rocket troopers, flak turrets",
-   "blurb": "The Laser drone is Kessler-Hayashi's only flier, an armored combat drone with a laser. A camp gets a few once it reaches its second level. It flies over walls, cliffs and water, and bullets do little to it. Rocket troopers and flak turrets bring it down; put the flak where it crosses your wall."
+   "countered_by": "rocket troopers, flak turrets, laser turrets",
+   "blurb": "The Laser drone is Kessler-Hayashi's only flier, an armored combat drone with a laser. A camp gets a few as it grows. It flies over walls, cliffs and water, and bullets do little to it. Where nothing of yours shoots up, the camp sends its drones alone. Flak turrets, laser turrets and rocket troopers bring it down."
   },
   "lp-skyguard": {
    "name": "Anti-air trooper",
@@ -132,7 +132,7 @@
    "role": "A trooper with a long-range laser against flying units. Weak against ground targets.",
    "counters": "fliers, combat robots",
    "countered_by": "anything on the ground",
-   "blurb": "The Anti-air trooper is a Laser trooper with a tracking laser for shooting down fliers. Against ground targets it does very little, and camps field it alongside Laser troopers, never instead of them. Keep your combat robots away from it and send ground units."
+   "blurb": "The Anti-air trooper is a Laser trooper armed for shooting down fliers. Against ground targets it does very little, and camps field it alongside Laser troopers, never instead of them. Keep your combat robots away from it and send ground units."
   },
   "lp-lance": {
    "name": "Heavy laser trooper",
@@ -143,7 +143,7 @@
    "damage_text": "24 laser",
    "range": 17,
    "speed": 7.2,
-   "cost": "16 parts",
+   "cost": "14 parts",
    "era": "Era 1, Optics lab",
    "era_level": 1,
    "role": "A laser trooper with a heavier beam that outranges your troopers.",
@@ -166,7 +166,7 @@
    "role": "Its electric beam jumps from target to target and stuns them briefly. Used against groups of troopers.",
    "counters": "your infantry",
    "countered_by": "battle tanks, squads that keep apart",
-   "blurb": "The Shock trooper fires an arc of lightning that jumps from target to target and stuns each one briefly. It is made for crowds, and does little to a single vehicle. The Siege works also sends them after your artillery. Keep your squads spread out."
+   "blurb": "The Shock trooper fires an arc of lightning that jumps from target to target. Each hit builds a charge on the unit it strikes, and a unit hit often enough is stunned for a moment. It is made for crowds, and does little to a single vehicle. The Siege works also sends them after your artillery. Keep your squads spread out."
   },
   "lp-aegis": {
    "name": "Heavy tank",
@@ -177,13 +177,13 @@
    "damage_text": "38 rail",
    "range": 16,
    "speed": 5.4,
-   "cost": "95 parts",
+   "cost": "120 parts",
    "era": "Era 2, Armory",
    "era_level": 2,
-   "role": "A heavy tank with a rail cannon. Its slug ignores armor; used against your battle tanks.",
+   "role": "A heavy tank with a rail cannon whose large shells ignore armor; used against your battle tanks.",
    "counters": "your vehicles",
    "countered_by": "rocket troopers, flamethrower troopers, fliers",
-   "blurb": "The Heavy tank is a tank with extra armor and a rail cannon. Its slug ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Your rocket troopers outrange it, so fight it at full range."
+   "blurb": "The Heavy tank is a tank with extra armor and a rail cannon. Its large shell ignores armor, which makes it Kessler-Hayashi's answer to your battle tanks, but it fires too slowly to matter against troopers. Fire does little to it. Your rocket troopers outrange it, so fight it at full range."
   },
   "lp-prism": {
    "name": "Laser tank",
@@ -194,13 +194,13 @@
    "damage_text": "10 laser, 14 laser",
    "range": 16,
    "speed": 5.4,
-   "cost": "100 parts",
+   "cost": "115 parts",
    "era": "Era 2, Optics lab",
    "era_level": 2,
    "role": "A tank whose laser splits from its target to the units around it. Used against groups of troopers.",
    "counters": "your infantry",
    "countered_by": "battle tanks, rocket troopers",
-   "blurb": "The Laser tank's beam splits on the first target it hits and forks into the units around it. It is made to break massed troopers and does little to walls or lone vehicles. Send battle tanks or rocket troopers at it, not infantry."
+   "blurb": "The Laser tank's beam splits on the first target it hits and forks into the units around it. It is made to break massed troopers and does little to walls or lone vehicles. Send battle tanks or rocket troopers at it; troopers fare badly."
   },
   "lp-tesla": {
    "name": "Lightning tank",
@@ -211,13 +211,13 @@
    "damage_text": "10 electric, 20 electric",
    "range": 14,
    "speed": 5.4,
-   "cost": "100 parts",
+   "cost": "115 parts",
    "era": "Era 3, Siege works",
    "era_level": 3,
    "role": "Its lightning jumps between targets and briefly stops the laser and tesla turrets it hits.",
    "counters": "turret lines",
    "countered_by": "artillery, battle tanks, gun turrets and flamethrowers among your lasers",
-   "blurb": "The Lightning tank carries a tesla turret's emitter. Its lightning jumps along your turret line, and every laser or tesla turret it hits stops firing for a moment. A few of them slow a laser line badly. Gun turrets and flamethrowers are not affected, so mix them into the line."
+   "blurb": "The Lightning tank carries a tesla turret's emitter. Its lightning jumps along your turret line, and every laser or tesla turret it hits stops firing for a moment. A few of them slow a laser line badly. Its hits also build a charge on your units until they are stunned. Gun turrets and flamethrowers are not affected, so mix them into the line."
   },
   "lp-hauler": {
    "name": "Hauler",
@@ -249,7 +249,7 @@
    "role": "A fast buggy with a machine gun. Grubstake's raider and escort.",
    "counters": "lone poles, outposts, trains in the open",
    "countered_by": "gun turrets on its way, walls",
-   "blurb": "The Buggy is a scrap-plated car with a machine gun, and Grubstake's scout. One circling your base just outside turret range is looking for something unguarded, and the next raid goes where it went. Where a buggy is killed, the next one keeps further away."
+   "blurb": "The Buggy is a scrap-plated car with a machine gun, and Grubstake's scout. One circling your base just outside turret range is looking for something unguarded, and the next raid goes where it went. Where a buggy is killed, the next one keeps further away. Its machine gun slows the infantry it hits."
   },
   "lp-shotgun-hand": {
    "name": "Shotgun hand",
@@ -260,7 +260,7 @@
    "damage_text": "9 physical (x3)",
    "range": 9,
    "speed": 10.2,
-   "cost": "10 parts",
+   "cost": "11 parts",
    "era": "From landing",
    "era_level": 0,
    "role": "Grubstake's soldier, with a shotgun. Deadly up close, useless against a turret line.",
@@ -269,7 +269,7 @@
    "blurb": "The Shotgun hand is Grubstake's basic soldier: heavy armor, a pump shotgun and a set of wrenches. Hands do the looting. They walk up to machines no turret covers, take them apart and carry them home, and fight only at close range. A gun turret at each outpost keeps them off."
   },
   "lp-grubstake-harrier": {
-   "name": "Scrap drone",
+   "name": "Scrap copter",
    "faction": "grubstake",
    "health": 80,
    "portrait": "lp-grubstake-harrier",
@@ -280,10 +280,10 @@
    "air": true,
    "cost": "15 parts",
    "era": "From its level 1",
-   "role": "A cheap flying drone that attacks in numbers.",
+   "role": "A cheap scrap helicopter that attacks in numbers.",
    "counters": "outposts behind a wall",
    "countered_by": "gun turrets, flak turrets, rocket troopers",
-   "blurb": "The Scrap drone is a small flier built from salvage, with a light gun. Alone it is weak; Grubstake sends them in swarms over walls, cliffs and water, at lone poles and machines. Gun turrets shoot them down. Flamethrower turrets cannot."
+   "blurb": "The Scrap copter is a small helicopter built from salvage, with a light gun. Alone it is weak; Grubstake sends them in swarms over walls, cliffs and water, at lone poles and machines. Gun turrets shoot them down. Flamethrower turrets cannot. A copter shot down crashes a few tiles away and damages what it lands on."
   },
   "lp-grubstake-slug": {
    "name": "Slug buggy",
@@ -300,7 +300,7 @@
    "role": "A buggy with a slug gun, used against your vehicles.",
    "counters": "your vehicles",
    "countered_by": "troopers, turrets",
-   "blurb": "The Slug buggy trades the buggy's machine gun for a heavy slug gun and adds armor at the front. It fires slowly, which is fine against tanks, whose armor the slug pierces, and poor against infantry. Send troopers at it, not tanks."
+   "blurb": "The Slug buggy trades the buggy's machine gun for a heavy slug gun and adds armor at the front. It fires slowly, which is fine against tanks, whose armor the slug pierces, and poor against infantry. Send troopers at it and keep your tanks away."
   },
   "lp-grubstake-sapper": {
    "name": "Dynamite sapper",
@@ -329,13 +329,13 @@
    "range": 1.5,
    "speed": 18,
    "air": true,
-   "cost": "35 parts",
+   "cost": "28 parts",
    "era": "Era 2, Wheels",
    "era_level": 2,
    "role": "A flying bomb that targets artillery, mortars and radars.",
    "counters": "artillery and explosives",
    "countered_by": "gun turrets, flak turrets",
-   "blurb": "The Bomb drone is a Scrap drone with its gun swapped for an explosive charge. It flies straight at one target, usually an artillery turret, a mortar or a radar, and blows up when it gets there. A gun turret beside each artillery turret stops it; a flak turret stops it sooner."
+   "blurb": "The Bomb drone is a small quadcopter with a bomb slung under it. It flies straight at one target, usually an artillery turret, a mortar or a radar, and blows up when it gets there. Shot down, it falls and its bomb goes off where it lands. A gun turret set out in front of each artillery turret stops it short; a flak turret stops it sooner."
   },
   "lp-grubstake-dozer": {
    "name": "Dozer",
@@ -346,13 +346,13 @@
    "damage_text": "60 physical",
    "range": 2,
    "speed": 4.2,
-   "cost": "100 parts",
+   "cost": "120 parts",
    "era": "Era 3, Wheels",
    "era_level": 3,
-   "role": "Rams walls open for the shotgun hands behind it.",
+   "role": "A bulldozer with an armored cab that charges walls and drives through them.",
    "counters": "walls",
    "countered_by": "rocket troopers, battle tanks, a second wall",
-   "blurb": "The Dozer is an armored hauler with a blade. It cannot hurt units, but it rams walls open for the Shotgun hands behind it. Rocket troopers and battle tanks stop it. A second wall behind the first makes it do the job again under fire."
+   "blurb": "The Dozer is a bulldozer with an armored cab. Sent at a wall, it stops short, revs its engine and charges straight through, crushing walls, gates and buildings in its lane, and the buggies follow it in. Rocket troopers and battle tanks stop it. Its charge ends some way past the wall, so a second wall set further back is still standing when it stops."
   },
   "lp-grubstake-flak-buggy": {
    "name": "Flak buggy",
@@ -369,24 +369,24 @@
    "role": "Fires flak at flying units. Weak against ground targets.",
    "counters": "fliers, combat robots",
    "countered_by": "anything on the ground",
-   "blurb": "The Flak buggy is a buggy with a turret that fires scrap flak. The bursts shred drones and combat robots but barely hurt anything on the ground. Keep your fliers back and send ground units."
+   "blurb": "The Flak buggy is a buggy with a turret that fires scrap flak. The bursts shred drones and combat robots but barely hurt anything on the ground. Keep your combat robots back and send ground units."
   },
   "lp-grubstake-scorcher": {
    "name": "Flame tank",
    "faction": "grubstake",
-   "health": 1100,
+   "health": 700,
    "portrait": "lp-grubstake-scorcher",
    "damage": 6,
    "damage_text": "6 physical, 6 shots/s",
    "range": 13,
    "speed": 5.4,
-   "cost": "70 parts",
+   "cost": "100 parts",
    "era": "Era 2, Scrap arms",
    "era_level": 2,
-   "role": "An old tank hull with a machine gun and a flamethrower that fires three bursts, then reloads slowly.",
+   "role": "An old tank hull with a machine gun and a flamethrower that fires a burst every few seconds.",
    "counters": "turret lines",
    "countered_by": "rocket troopers, battle tanks, artillery",
-   "blurb": "The Flame tank is an old tank hull with a flamethrower and a machine gun. The machine gun does most of the fighting; the flamethrower fires in short bursts, then has to refill. Fire does not harm it, but it has to get close to use it, so hit it with rockets and artillery on the way in."
+   "blurb": "The Flame tank is an old tank hull with a flamethrower and a machine gun. The machine gun does most of the fighting and slows the infantry it hits. Every few seconds the flamethrower burns a group of units in front of it. Fire does not harm it, but it is lightly armored for a tank and has to get close. When it is destroyed, its fuel explodes and burns around the wreck. Hit it with rockets and artillery on the way in."
   },
   "lp-grubstake-howitzer-truck": {
    "name": "Howitzer truck",
@@ -397,10 +397,10 @@
    "damage_text": "4 physical, 2 shots/s",
    "range": 10,
    "speed": 3.9,
-   "role": "An artillery cannon on a tank's hull; a grudge camp's answer to a wall that robots keep mending.",
+   "role": "A howitzer carried on a truck; a grudge camp's answer to a wall that robots keep mending.",
    "counters": "roboports behind a wall",
    "countered_by": "your artillery, battle tanks",
-   "blurb": "Grubstake's Howitzer truck is Kessler-Hayashi's model, bought second-hand, and only a camp that landed with a grudge has one. It comes out against walls that robots keep mending, to shell the roboports behind them. Your artillery outranges it and engages it on its own."
+   "blurb": "The Howitzer truck carries a howitzer on a hauler's chassis, and only a camp that landed with a grudge has one. It comes out against walls that robots keep mending, to shell the roboports behind them. Your artillery outranges it and engages it on its own."
   },
   "lp-grubstake-hauler": {
    "name": "Hauler",
@@ -564,7 +564,7 @@
    "role": "A huge biter that bursts at a turret guarding the way in, damaging all turrets nearby.",
    "counters": "the turrets covering its way in",
    "countered_by": "guns that reach far past the wall, turrets set apart",
-   "blurb": "The big burster is a behemoth bred around an explosive gland. It goes for one of the turrets covering the wave's approach, not the wall, and its blast damages every turret nearby. Killed early, only part of it goes off. Space your turrets apart."
+   "blurb": "The big burster is a behemoth bred around an explosive gland. It is sent at one of the turrets covering the wave's approach, and its blast damages every turret nearby. Killed early, only part of it goes off. Space your turrets apart."
   },
   "lp-sweeper": {
    "name": "Synthexis sweeper",
@@ -683,8 +683,8 @@
    "faction": "player",
    "health": 900,
    "portrait": "lp-battle-tank",
-   "damage": 50,
-   "damage_text": "50 explosion, 120 to buildings",
+   "damage": 100,
+   "damage_text": "100 explosion, 240 to buildings",
    "range": 18,
    "speed": 5.4,
    "cost": "6 bandwidth",
@@ -693,7 +693,7 @@
    "role": "Your heavy tank, for attacking bases.",
    "counters": "walls, turrets, camps",
    "countered_by": "heavy tanks, slug buggies, rocket troopers",
-   "blurb": "The battle tank fires cannon shells and carries personal batteries. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it."
+   "blurb": "The battle tank fires a slow, heavy shell. It takes the longest to train and the most bandwidth. Its shell is made for buildings, so it is the tool for a walled camp and a poor one against crowds. Keep troopers with it."
   },
   "lp-flame-trooper": {
    "name": "Flamethrower trooper",
@@ -968,7 +968,7 @@
     {
      "id": "mix-lp-harrier",
      "band": "land",
-     "label": "Scrap drone",
+     "label": "Scrap copter",
      "portrait": "lp-grubstake-harrier",
      "note": "from its level 1"
     },
@@ -1379,7 +1379,7 @@
      "label": "Flak turret",
      "kind": "tech",
      "how": "study",
-     "note": "destroy a Grubstake scrap cannon, or 5 scrap drones or bomb drones"
+     "note": "destroy a Grubstake scrap cannon, or 5 scrap copters or bomb drones"
     },
     {
      "id": "lp-pheromone-bait",
@@ -1481,13 +1481,12 @@
      "note": "capture an incubator"
     },
     {
-     "id": "lp-orbital-strike",
-     "band": "3",
+     "id": "lp-orbital-cannon",
+     "band": "7",
      "column": "kessler-hayashi",
-     "label": "Orbital strike",
+     "label": "Orbital cannon",
      "kind": "tech",
-     "how": "teardown",
-     "note": "an orbital beacon"
+     "how": "science"
     },
     {
      "id": "lp-player-dome",

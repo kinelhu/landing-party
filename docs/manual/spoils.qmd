@@ -55,23 +55,8 @@ another planet's science pack.
 
 - **Rail rifle.** {{< var desc.item_rail_rifle >}}
 - **Cluster artillery shell.** {{< var desc.item_cluster_artillery_shell >}}
-- **Orbital strike beacon.** {{< var desc.entity_strike_beacon >}} Once charged it paints its ground for
-  {{< var spoils.strike_paint_s >}} seconds, the orbital platform's shadow crosses, and lances fall on every biter nest,
-  worm, corporation building and Synthexis incubator, biochamber, tumor and clinic in that
-  reach, nearest the beacon first, as many on each as it takes. Walls, gates, poles and
-  units are spared. The beacon is spent as the first lance falls. A strike on Grubstake's buildings provokes it like
-  any other damage.
-
-::: {.strip faction="kessler-hayashi"}
-![The paint: a beam and rings closing on the point.](media/strips/orbital-strike-1-paint.jpg)
-
-![The orbital platform's shadow passes over.](media/strips/orbital-strike-2-shadow.jpg)
-
-![The lances fall.](media/strips/orbital-strike-3-fall.jpg)
-
-A strike Kessler-Hayashi called on a walled laser bastion. A beacon's strike runs through the same three steps on the
-ground it paints.
-:::
+- **Orbital beacon.** {{< var desc.item_orbital_beacon >}} It goes into the targeting array that lets your orbital
+  cannons fire on Nauvis (see [Orbital cannons](army.qmd#sec-cannons)).
 
 ## Field studies
 
@@ -84,7 +69,7 @@ study is done, further kills of that kind give nothing more.
 
 - **Claims register.** {{< var desc.technology_claims_register >}}
 - **Strip drill.** {{< var desc.technology_strip_drill >}}
-- **Pheromone bait, made.** {{< var desc.technology_bait_made >}}
+- **Synthetic pheromone bait.** {{< var desc.technology_bait_made >}}
 - **Flak turret.** {{< var desc.technology_flak_turret >}}
 
 **From Synthexis:**
@@ -97,6 +82,10 @@ The table above gives what each study asks for and what its technology costs.
 
 **Field dome.** {{< var desc.entity_player_dome >}} You research it with science packs; it needs no study. See
 [Your army](army.qmd).
+
+**Orbital cannon.** You research it with science packs after Artillery and Space platform. Its targeting array is
+built round Kessler-Hayashi's orbital beacon, or a targeting core where there is none. See
+[Orbital cannons](army.qmd#sec-cannons).
 
 **Prizes.** Destroy a corporation's uplink and it withdraws (see [Arrivals](arrivals.qmd)). You get its prize
 technology at once: Kessler-Hayashi's mortar, or Grubstake's strip drill.

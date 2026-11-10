@@ -8,7 +8,6 @@
 | Command bandwidth 4 | Increases the number of command relays that control your units. | 150 × L × (Automation science pack + Logistic science pack + Chemical science pack + Military science pack), repeatable | Command bandwidth 3 |
 | Claim marker | A marker that makes Grubstake leave your buildings within 40 tiles alone. | Craft 2 × Pacifier crystal parts | Military |
 | Cluster shells | Artillery shells that burst into bomblets on impact. | Craft Cluster fuze parts | Artillery |
-| Orbital strike | A single-use beacon that calls an orbital barrage on enemies within 60 tiles. | Craft Orbital beacon parts | Rocket silo |
 | Pact breaker | Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim. | Craft Pacifier crystal parts | Pheromone bait |
 | Pheromone bait | Bait that makes nearby biters attack whatever is around it. | Craft Pheromone gland parts | Military |
 | Rail rifle | A rifle whose slugs pierce every enemy in a 30-tile line. | Craft Rail coil parts | Military 3 |
@@ -16,9 +15,10 @@
 | Bred-biter telemetry | Threat scanners report Synthexis biters and scouts apart from wild biters. | Field study: Destroy a Synthexis incubator or 3 tumors, or kill 3 Synthexis scouts; then 100 × (Automation science pack + Logistic science pack + Military science pack) | Military 2 |
 | Claims register | Labels Grubstake's claims with their ore, reveals the ground around them and marks its strip camps on the map. | Field study: Destroy 10 Grubstake raiders or a hauler; then 100 × (Automation science pack + Logistic science pack + Military science pack) | Military 2 |
 | Defoliant | A thrown capsule that removes creep within 6 tiles and damages tumors. | Field study: Destroy 5 Synthexis tumors; then 150 × (Automation science pack + Logistic science pack + Chemical science pack + Military science pack) | Military 3, Explosives |
-| Flak turret | A powered turret that fires flak at flying units only. | Field study: Destroy a Grubstake scrap cannon, or 5 scrap drones or bomb drones; then 150 × (Automation science pack + Logistic science pack + Military science pack) | Gun turret, Military 2 |
+| Flak turret | A powered turret that fires flak at flying units only. | Field study: Destroy a Grubstake scrap cannon, or 5 scrap copters or bomb drones; then 150 × (Automation science pack + Logistic science pack + Military science pack) | Gun turret, Military 2 |
 | Strip drill | A drill that mines twice as fast as an electric mining drill and depletes ore at half the rate. | Field study: Destroy 3 Grubstake drills; then 150 × (Automation science pack + Logistic science pack + Chemical science pack) | Steel processing, Chemical science pack |
 | Field dome | A powered dome that stops enemy artillery shells over your defenses. | 500 × (Automation science pack + Logistic science pack + Chemical science pack + Military science pack + Utility science pack) | Energy shield MK2 equipment, Military 4 |
 | Incubator capture | Synthexis incubators can be captured like biter spawners. | Capture a Synthexis incubator (Space Age's capture rocket) | Captivity |
+| Orbital cannon | Cannons on a space platform over Nauvis, called by remote. Each strike spends a charge from every ready cannon, within 20 tiles. | 1000 × (Automation science pack + Logistic science pack + Military science pack + Chemical science pack + Utility science pack + Space science pack) | Artillery, Space platform |
 | Grubstake's strip drill | Unlocks the strip drill. | Granted when Grubstake's headquarters falls | - |
 | Kessler-Hayashi's mortar | Unlocks the mortar and mortar shells. | Granted when Kessler-Hayashi's headquarters falls | - |

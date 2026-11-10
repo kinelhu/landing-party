@@ -15,7 +15,7 @@ pollution has made them bigger and more aggressive every year.
 
 Synthexis came to breed them. *Cold Chain* lands a culture on a nest field, its technicians convert the nests into
 incubators, and the biters that hatch carry the company's green and yellow bands. Then they are sent against the
-engineer's walls. Synthexis has no soldiers on Nauvis and no licence to be there.
+engineer's walls. Synthexis has no soldiers on Nauvis and no license to be there.
 
 Dr. Anouk Verhaegen runs the program, with Ilya Rask as her senior technician. She treats the engineer's factory as a
 test for the stock, and writes up every wave that fails.
@@ -31,14 +31,15 @@ for what keeps your turrets firing, and adapt after every failed attack.
 
 ## Arrival
 
-Synthexis lands when the wild biters' evolution on a surface reaches {{< var synthexis.arrive_evo >}}. Its pod comes
+Synthexis lands when the wild biters' evolution on a surface reaches {{< var synthexis.arrive_evo >}} (the **Synthexis:
+arrives at evolution** setting). Its pod comes
 down on a spawner field between {{< var synthexis.clear_tiles >}} and {{< var synthexis.far_tiles >}} tiles from your
 buildings, never within reach of your artillery. Up to {{< var synthexis.pens >}} of the field's spawners become
 Synthexis incubators, each with bred biters and worms beside it. The landing is announced in chat and marked on your
 map.
 
-Synthexis is at peace with the wild biters, and they leave each other alone. It also keeps a lasting truce with Grubstake,
-whose pollution it lives on.
+Synthexis and the wild biters leave each other alone. It also keeps a lasting truce with Grubstake, whose pollution it
+lives on.
 
 ## The culture
 
@@ -62,13 +63,14 @@ A young culture by a lake, shortly after landing.
 **Growth.** The creep spreads toward nearby wild spawners, and each one it reaches becomes an incubator, up to
 {{< var synthexis.pens_max >}}. Where there is nothing left to take, the culture founds incubators of its own. A grown
 culture sends a Synthexis carrier with an escort to a wild spawner field farther out to start a new culture there. Kill
-the carrier on the way and the new culture never starts. When every incubator of a culture is destroyed, the culture is
+the carrier on the way and the new culture never starts. Synthexis keeps at most
+{{< var synthexis.max_cultures >}} cultures at once. When every incubator of a culture is destroyed, the culture is
 gone, and Synthexis lands again on another field {{< var synthexis.reland_min >}} minutes later.
 
 **Biomass.** Every birth costs biomass. A culture earns it from the pollution its incubators and creep absorb, plus
 {{< var synthexis.trickle >}} per incubator per minute whatever the air. Its pod brings
 {{< var synthexis.start_biomass >}} to start. With no biomass left, its incubators stop until it earns more. The more
-pollution reaches a culture, the faster it breeds. The **Synthexis: strength** setting scales how fast it breeds.
+pollution reaches a culture, the faster it breeds. The **Synthexis: income** setting scales how fast it earns biomass.
 
 ## What it breeds {#sec-breeds}
 
@@ -116,7 +118,8 @@ The first wave comes {{< var synthexis.first_wave_min >}} minutes after the land
 time, at least {{< var synthexis.wave_gap_min >}} minutes apart. The **Synthexis: aggression** setting scales both.
 
 **Size.** A wave is {{< var synthexis.wave_min >}} to {{< var synthexis.wave_max >}} biters. A culture with more than
-{{< var synthexis.cap_pens >}} incubators sends bigger ones, up to {{< var synthexis.wave_huge >}}. A home guard stays behind at the incubators.
+{{< var synthexis.cap_pens >}} incubators sends bigger ones, up to {{< var synthexis.wave_huge >}}. The **Synthexis:
+largest attack** setting changes that limit. A home guard stays behind at the incubators.
 
 **Targets.** You come first. Synthexis attacks Kessler-Hayashi only after Kessler-Hayashi has destroyed one of its
 incubators, tumors or biochambers. It never attacks Grubstake or the wild biters.
@@ -133,9 +136,10 @@ incubators, tumors or biochambers. It never attacks Grubstake or the wild biters
 5. It goes home by the gap it came in through.
 
 **What it learns.** Synthexis remembers how each wave fared. A way in where a wave failed counts as more costly next
-time, so the next wave may try another side. Where a wall held its last wave, the next wave there brings bursters, {{<
-var synthexis.order_breach_pct >}}% of its biters, and waits up to {{< var synthexis.order_wait_min >}} minutes for
-them. Where mines lie on its way in, it breeds sweepers for them.
+time, so the next wave may try another side. With the **Synthexis: learns** setting off, it keeps no such memory. Where
+a wall held its last wave, the next wave there brings bursters, {{< var synthexis.order_breach_pct >}}% of its biters,
+and waits up to {{< var synthexis.order_wait_min >}} minutes for them. Where mines lie on its way in, it breeds sweepers
+for them.
 
 ::: {.document head="Synthexis · Trial NV/1 · Batch release"}
 **Stock:** mixed, from the lakeside incubators, bursters added\
@@ -153,11 +157,11 @@ waits back from the wall. It sends them in ranks, as many at a time as it takes 
 rank gathers out of your guns' reach and goes in together. When a rank's blasts have opened the first wall and another
 wall still stands between the gap and its target, the next rank goes through the gap at that wall. A rank killed before
 any of it bursts makes the next one bigger, by as many as your guns killed on its way in. With the way open, its last
-big bursters go at the turrets covering it, and the waiting biters rush in behind them, or once its big bursters are
+big bursters go at the turrets covering it. The waiting biters rush in behind them, or once the big bursters are
 spent.
 
 **Through the gap.** The rush keeps to its own gap. If your robots have mended a piece of it, the wave breaks that piece
-again rather than walking round to another opening. It only spreads out inside once most of it is past your wall; the
+again. It only spreads out inside once most of it is past your wall; the
 ones still outside are sent on through the gap after the rest.
 
 **Spread assaults.** Synthexis keeps count of what kills its biters at each place. Where fire and explosions do most
@@ -178,7 +182,7 @@ rush the first gap any of them opens. Whether it spreads again at a place depend
 - **Kill the tumors.** Incubators cut off from the creep go back to the wild.
 - **Kill the clinic** to stop its breeds getting stronger.
 - **Starve it.** Less pollution reaching its field means less biomass and smaller waves.
-- **Watch the scouts.** Killing a scout does not stop the wave, but the base it circles is the wave's target.
+- **Watch the scouts.** Killing a scout does not stop the wave. The base it circles is the wave's target.
 - **Kill bursters at range.** Once one stops and swells, it will burst. A big burster killed before it reaches its
   turret bursts with its core alone.
 - **Build in depth.** Each wall behind the first costs a siege another rank of big bursters, and its waiting biters

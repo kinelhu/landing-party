@@ -11,48 +11,48 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
 |:--|--:|--:|--:|--:|:--|:--|
-| Laser trooper | 120 | 7.2 | 15 | 2.4 | yes | 10 parts |
+| Laser trooper | 120 | 7.2 | 15 | 0.91 | yes | 11 parts |
 | Laser drone | 400 | 12.0 | 16 | 3 | yes | 70 parts |
 | Railgunner | 140 | 6.0 | 30 | 0.67 | no | 22 parts |
-| Tank | 900 | 5.4 | 15 | 0.67 | no | 60 parts |
+| Tank | 900 | 5.4 | 15 | 0.67 | no | 65 parts |
 | Anti-air trooper | 110 | 7.2 | 22 | 2 | yes | 18 parts |
-| Heavy laser trooper | 110 | 7.2 | 17 | 1 | yes | 16 parts |
+| Heavy laser trooper | 110 | 7.2 | 17 | 1 | yes | 14 parts |
 | Shock trooper | 160 | 7.2 | 14 | 1.3 | no | 30 parts |
-| Heavy tank | 1,100 | 5.4 | 16 | 1 | no | 95 parts |
-| Laser tank | 700 | 5.4 | 16 | 1.2 | no | 100 parts |
-| Lightning tank | 800 | 5.4 | 14 | 0.8 | no | 100 parts |
+| Heavy tank | 1,100 | 5.4 | 16 | 1 | no | 120 parts |
+| Laser tank | 700 | 5.4 | 16 | 1.2 | no | 115 parts |
+| Lightning tank | 800 | 5.4 | 14 | 0.8 | no | 115 parts |
 
 | Unit | A shot | Resists | Fielded |
 |:--|:--|:--|:--|
-| Laser trooper | 7 laser | physical -2 10%, laser 20% | From landing |
+| Laser trooper | 18.48 laser | physical -2 10%, laser 20% | From landing |
 | Laser drone | 12 laser | fire 100%, physical -3 40%, laser 20% | From its level 2 |
 | Railgunner | 250 physical over 0.5 tiles; 40 physical over 0.5 tiles; 10 physical over 0.5 tiles | physical -2 10%, laser 20% | From landing |
-| Tank | 40 explosion; 80 explosion over 1.5 tiles to buildings | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60% | From landing |
+| Tank | 40 explosion; 80 explosion over 1.5 tiles to buildings | physical -3 20%, fire -2 60%, explosion -5 30%, laser -5, electric -5, bite 60% | From landing |
 | Anti-air trooper | 30 laser over 1 tiles; 8 laser over 0.5 tiles | physical -2 10%, laser 20% | Research: Anti-air troopers (Line, era 1) |
 | Heavy laser trooper | 24 laser | physical -2 10%, laser 20% | Research: Heavy laser troopers (Optics, era 1) |
 | Shock trooper | (arcs to the next targets); 10 electric | physical -2 10%, laser 20%, electric 50% | Research: Shock troopers (Optics, era 3, after Heavy laser troopers) |
-| Heavy tank | 38 rail | physical -5 30%, explosion -5 40%, laser -5, electric -5, bite 60% | Research: Heavy tanks (Line, era 2, after Heavier armor) |
-| Laser tank | (arcs to the next targets); 10 laser; 14 laser | physical -3 20%, laser -5, electric -5, explosion 10%, bite 60% | Research: Laser tanks (Optics, era 2, after Heavy laser troopers) |
-| Lightning tank | (arcs to the next targets); 10 electric; 20 electric | physical -3 20%, electric -5 80%, explosion 10%, laser -5, bite 60% | Research: Lightning tanks (Siege, era 3) |
+| Heavy tank | 38 rail | physical -5 30%, explosion -5 40%, laser -5, electric -5, fire -2 60%, bite 60% | Research: Heavy tanks (Line, era 2, after Heavier armor) |
+| Laser tank | (arcs to the next targets); 10 laser; 14 laser | physical -3 20%, laser -5, electric -5, explosion 10%, fire -2 60%, bite 60% | Research: Laser tanks (Optics, era 2, after Heavy laser troopers) |
+| Lightning tank | (arcs to the next targets); 10 electric; 20 electric | physical -3 20%, electric -5 80%, explosion 10%, laser -5, fire -2 60%, bite 60% | Research: Lightning tanks (Siege, era 3) |
 
 ### Grubstake
 
 | Unit | Health | Speed | Range | Rate | Hits air | Cost |
 |:--|--:|--:|--:|--:|:--|:--|
 | Buggy | 220 | 12.0 | 13 | 6 | yes | 15 parts |
-| Scrap drone | 80 | 15.0 | 12 | 3 | yes | 15 parts |
+| Scrap copter | 80 | 15.0 | 12 | 3 | yes | 15 parts |
 | Shotgun hand | 120 | 10.2 | 9 | 0.94 | yes | - |
 | Slug buggy | 240 | 12.0 | 15 | 1.2 | yes | 30 parts |
 | Dynamite sapper | 120 | 7.8 | 11 | 0.33 | no | 30 parts |
-| Bomb drone | 60 | 18.0 | 1.5 | 2 | yes | 35 parts |
-| Dozer | 1,800 | 4.2 | 2 | 1 | no | 100 parts |
+| Bomb drone | 60 | 18.0 | 1.5 | 2 | yes | 28 parts |
+| Dozer | 1,800 | 4.2 | 2 | 1 | no | 120 parts |
 | Flak buggy | 220 | 12.0 | 22 | 2 | yes | 20 parts |
-| Flame tank | 1,100 | 5.4 | 13 | 6 | no | 70 parts |
+| Flame tank | 700 | 5.4 | 13 | 6 | no | 100 parts |
 
 | Unit | A shot | Resists | Fielded |
 |:--|:--|:--|:--|
 | Buggy | 5 physical | physical -2 15% | From landing |
-| Scrap drone | 6 physical | fire 100% | From its level 1 |
+| Scrap copter | 6 physical | fire 100% | From its level 1 |
 | Shotgun hand | 9 physical (x3) | physical -2 10% | From landing |
 | Slug buggy | 55 physical | physical -2 15%, explosion 40% | Research: Slug buggies (Scrap arms, era 1) |
 | Dynamite sapper | 80 explosion over 3 tiles | physical -2 10% | Research: Dynamite sappers (Scrap arms, era 2) |
@@ -113,7 +113,7 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Breacher | 120 | 7.2 | 12 | 0.33 | no | 1 bandwidth |
 | Rocket trooper | 120 | 7.2 | 18 | 0.4 | yes | 2 bandwidth |
 | Flamethrower trooper | 120 | 7.2 | 13 | 15 | yes | 2 bandwidth |
-| Battle tank | 900 | 5.4 | 18 | 0.67 | no | 6 bandwidth |
+| Battle tank | 900 | 5.4 | 18 | 0.33 | no | 6 bandwidth |
 
 | Unit | A shot | Resists | Fielded |
 |:--|:--|:--|:--|
@@ -121,6 +121,6 @@ for units in parts, Synthexis in biomass, and you in command bandwidth.
 | Breacher | 15 explosion over 2.5 tiles; 85 explosion over 2.5 tiles to buildings | physical -2 10% | Research: Command bandwidth 1 |
 | Rocket trooper | 110 explosion | physical -2 10% | Research: Command bandwidth 2 |
 | Flamethrower trooper | - | physical -2 10% | Research: Command bandwidth 3 |
-| Battle tank | 50 explosion; 120 explosion over 1.5 tiles to buildings | physical -3 20%, fire 60%, explosion -5 30%, laser -5, electric -5, bite 60% | Research: Command bandwidth 2 |
+| Battle tank | 100 explosion; 240 explosion over 1.5 tiles to buildings | physical -3 20%, fire -2 60%, explosion -5 30%, laser -5, electric -5, bite 60% | Research: Command bandwidth 2 |
 
 <!-- The runt is left out: Synthexis's probe is off in this version (shared.BIOTECH.mind.probe). -->

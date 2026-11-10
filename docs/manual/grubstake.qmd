@@ -47,7 +47,7 @@ of units. Your gun turrets outrange both. Its drills pollute more than your elec
 
 ![A Grubstake lander just down, before its crews have laid the pad. Its first pylons and guns are going up round it.](media/stills/landing.jpg)
 
-Its army is buggies, shotgun hands and, from its first level, scrap drones. Its haulers, lightly armed trucks, build its
+Its army is buggies, shotgun hands and, from its {{< var grubstake.copter_level_nth >}} level, scrap copters. Its haulers, lightly armed trucks, build its
 new lots, carry its loot and bring ore home from its claims. Its idle units wait in a yard on open ground outside its
 landing pad, {{< var camp.yard_near_tiles >}} to {{< var camp.yard_far_tiles >}} tiles from its first depot, on the
 side away from your spawn.
@@ -69,13 +69,24 @@ pipes and rails are left alone. When there is nothing left to take, the raid des
 a foreman, marked with Grubstake's icon, who carries the haul. Kill the foreman and the raid drops everything and runs
 home empty-handed. Any other raider drops its own share where it is killed.
 
+**Dozers.** Once Grubstake fields dozers, a raid that meets a wall sends them at it. A dozer stops a short way from the
+wall, revs its engine, then drives straight at it, gathering speed. Walls, gates, trees and rocks in its lane go down at
+once, buildings in its way are crushed, and units in its path are struck. It drives on well past the wall's line, and
+the buggies follow it in through its lane.
+
+![A dozer has charged through the wall, and a second one comes up behind it. Buggies wait for the way in.](media/stills/dozer-charge.jpg)
+
+**Fliers.** Where little of yours can shoot up at a target, such as artillery, a radar or power behind walls and
+flamethrowers, Grubstake may send its scrap copters and bomb drones alone. Where your defenses have few guns that shoot
+up, it builds more fliers.
+
 **Skims.** A hauler parks beside one of your belts that no turret reaches and lifts items into its trunk, the most
 valuable first, until the trunk is full, its time is up or dawn comes. You can spot a skim by the truck, and by the
 gaps on the belt downstream.
 
 **Strip camps.** A hauler and its guards set up a small mining camp on the ore beside your drills, just out of your
 turrets' reach, mine your patch for a while and pack up. If a strip camp finishes undisturbed, the patch is registered
-as Grubstake's claim. If a second one finishes on the same patch, it stays as a Grubstake outpost.
+as Grubstake's claim. If a {{< var grubstake.outpost_nth >}} one finishes on the same patch, it stays as a Grubstake outpost.
 
 **Power taps.** A buggy lays a line of Grubstake pylons from the camp to one of your poles that no turret covers, and
 clamps a tap beside it. {{< var desc.entity_power_tap >}} The draw starts small and rises step by step. There is no
@@ -156,7 +167,7 @@ your era (see [Arrivals](arrivals.qmd)). Its units are in the [Reference](refere
 
 ## Its units {#sec-gs-units}
 
-A camp lands with buggies and shotgun hands, and gets scrap drones at its first level. Everything else is researched,
+A camp lands with buggies and shotgun hands, and gets scrap copters at its {{< var grubstake.copter_level_nth >}} level. Everything else is researched,
 with no lab you can raid.
 
 ::: {.tree tree="grubstake-units"}
@@ -170,11 +181,14 @@ you reach its era. Dashed nodes are armor and abilities, not units.
 
 - **Cover what you own.** A turret by an outpost, a belt or a power line sends its raids, skims and taps elsewhere.
 - **Kill the foreman.** The raid drops its whole haul and runs.
+- **Stop dozers short of the wall.** A dozer's charge goes through the wall and whatever stands in its lane behind it.
+  Rocket troopers and battle tanks kill it. Its charge ends some way past the wall, so a second wall set further back
+  is still standing when it stops.
 - **Hunt the haulers.** Each one killed spills what it carries, and claims without ore coming home lapse.
 - **Raid the yard** to get your goods back.
 - **Break the pact,** then bait the biters onto its camps.
-- **Watch its standing.** Attack it and it raids in greater numbers. Destroy a lander and its next landing comes
-  angry. Destroy its uplink and it withdraws, and you get its prize, the strip drill (see [Arrivals](arrivals.qmd)).
+- **Watch its standing.** Attack it and it raids in greater numbers. Destroy a lander and its next landing brings
+  a larger escort. Destroy its uplink and it withdraws, and you get its prize, the strip drill (see [Arrivals](arrivals.qmd)).
 
 **Field studies.** Destroying its raiders or a hauler teaches you the claims register, its drills the strip drill, a
-pacifier the made pheromone bait, a scrap cannon or its fliers the flak turret. See [Spoils](spoils.qmd).
+pacifier the synthetic pheromone bait, and a scrap cannon or its fliers the flak turret. See [Spoils](spoils.qmd).

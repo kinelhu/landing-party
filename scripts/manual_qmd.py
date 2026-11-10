@@ -81,7 +81,8 @@ def write(rp):
     # turrets"), the word from the code's value; a value with no word here stops the build (2026-11-06: these were typed).
     WORDS = {"share": {0.5: "half", 0.25: "a quarter", 0.75: "three quarters"},
              "times": {2: "double", 3: "triple"},
-             "count": {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}}
+             "count": {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"},
+             "nth": {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth"}}
 
     def worded(kind, v, what):
         w = WORDS[kind].get(float(v)) if kind == "share" else WORDS[kind].get(int(v)) if v == int(v) else None
@@ -186,11 +187,26 @@ def write(rp):
         missed.append("faction.lua: the drop escort's formula")
     core_depot = num(control_src, r'kind == "lp-depot" then command\.drop_cores\(ent\.surface, ent\.position, (\d+)\)', "control: depot cores")
     core_lander = num(control_src, r'kind == "lp-lander" then\s*\n\s*command\.drop_cores\(ent\.surface, ent\.position, (\d+)\)', "control: lander cores")
-    crystal_p = num(pact_src, r"math\.random\(\) < ([\d.]+)", "pact: crystal chance")
+    crystal_p = num(pact_src, r"^local REBUILT_CRYSTAL = ([\d.]+)", "pact REBUILT_CRYSTAL")
     gland = re.search(r'pen\.loot = \{\{type = "item", name = "lp-pheromone-gland".*?amount_min = (\d+), amount_max = (\d+)', biotech_src)
     if not gland:
         missed.append("biotech.lua: the incubator's glands")
     climb = num(farm_src, r"^local CLIMB = ([\d.]+)", "farm CLIMB")
+
+    def cannon_v(key):
+        return num(shared_src, rf"^shared\.CANNON = \{{[^}}]*\b{key} = ([\d.]+)", f"shared.CANNON {key}")
+    # A corporation's capabilities by level (shared.CORPS caps): the level that brings each, for the prose's "from its
+    # first level" (2026-11-10: typed until then, as was the headquarters' level 3).
+    def cap_level(corp, key):
+        m = re.search(rf"^  {corp} = \{{[\s\S]*?^    caps = \{{([^}}]*)\}}", shared_src, re.M)
+        caps = dict(re.findall(r'\[?"?([a-z_-]+)"?\]? = (\d+)', m.group(1))) if m else {}
+        if key not in caps:
+            missed.append(f"shared.CORPS.{corp}.caps: no {key}")
+            return None
+        return int(caps[key])
+    hq_levels = {cap_level(c, "headquarters") for c in ("serenity", "grubstake")}
+    if len(hq_levels) != 1:
+        missed.append(f"the corporations' headquarters levels differ ({hq_levels}): the prose says one")
     tune = dict(re.findall(r'\[?"?([a-z-]+)"?\]? = ([\d.]+)', grab(shared_src, r"^shared\.TUNE = \{([^}]*)\}", "TUNE") or ""))
     V = {
         "arrival": {
@@ -200,10 +216,10 @@ def write(rp):
             "survey_killed_delay_min": fmt(minutes(phases_src, "DELAY", "DELAY")),
             "survey_left_min": fmt(minutes(phases_src, "EARLY", "EARLY")),
             "late_min": fmt(minutes(phases_src, "LATE_HASTE", "LATE_HASTE")),
-            "cadence_min": fmt(minutes(faction_src, "CADENCE", "CADENCE")),
+            # The levers (settings.lua; their defaults in shared.lua): the time between landings, a corporation's most camps.
+            "cadence_min": fmt(num(shared_src, r"^shared\.LANDING_MINUTES = \{default = (\d+)", "LANDING_MINUTES")),
             "haste_min": fmt(minutes(faction_src, "HASTE", "HASTE")),
-            "max_alive": fmt(num(faction_src, r"^local MAX_ALIVE = (\d+)", "MAX_ALIVE")),
-            "max_per_corp": fmt(num(faction_src, r"^local MAX_PER_CORP = (\d+)", "MAX_PER_CORP")),
+            "max_per_corp": fmt(num(shared_src, r"^shared\.MAX_CAMPS = \{default = (\d+)", "MAX_CAMPS")),
             "apart_tiles": fmt(num(faction_src, r"^local APART = (\d+)", "APART")),
             "squat_tiles": fmt(num(faction_src, r"^local SQUAT_DISTANCE = (\d+)", "SQUAT_DISTANCE")),
             "escort_base": esc_m.group(1) if esc_m else "?",
@@ -211,6 +227,8 @@ def write(rp):
             "escort_level": esc_m.group(2) if esc_m else "?",
             "escort_evo": esc_m.group(3) if esc_m else "?",
             "hq_floor_h": fmt((minutes(faction_src, "HQ_FLOOR", "HQ_FLOOR") or 0) / 60),
+            "hq_level": fmt(min(hq_levels) if None not in hq_levels else None),
+            "hq_floor_bases": worded("count", num(faction_src, r"HQ_FLOOR\) and standing >= (\d+)", "faction: the floor's bases"), "HQ floor bases"),
             "consolidate_min": fmt(minutes(faction_src, "CONSOLIDATE", "CONSOLIDATE")),
             "hq_tiles": fmt(num(faction_src, r"^local HQ_DISTANCE = (\d+)", "HQ_DISTANCE")),
             "withdraw_min": fmt(minutes(faction_src, "WITHDRAW", "WITHDRAW")),
@@ -234,7 +252,7 @@ def write(rp):
             "yard_quiet_tiles": fmt(num(army_src, r"^local YARD_QUIET = (\d+)", "army YARD_QUIET")),
         },
         "synthexis": {
-            "arrive_evo": fmt(num(farm_src, r"^local ARRIVE_EVO = ([\d.]+)", "ARRIVE_EVO")),
+            "arrive_evo": fmt(num(shared_src, r"^shared\.ARRIVE_EVO = \{default = ([\d.]+)", "ARRIVE_EVO")),
             "clear_tiles": fmt(num(farm_src, r"^local FED_NEAR = (\d+)", "FED_NEAR")),
             "far_tiles": fmt(num(farm_src, r"^local FAR, FARTHEST = (\d+)", "FAR")),
             "farthest_tiles": fmt(num(farm_src, r"^local FAR, FARTHEST = \d+, (\d+)", "FARTHEST")),
@@ -245,8 +263,9 @@ def write(rp):
             "wave_gap_min": fmt(minutes(farm_src, "WAVE_GAP", "WAVE_GAP")),
             "wave_min": fmt(num(shared_src, r"^shared\.WAVE_MIN = (\d+)", "WAVE_MIN")),
             "wave_max": fmt(num(shared_src, r"^shared\.WAVE_MAX = (\d+)", "WAVE_MAX")),
-            "wave_huge": fmt(num(farm_src, r"^local CAP_PENS, WAVE_HUGE = \d+, (\d+)", "WAVE_HUGE")),
-            "cap_pens": fmt(num(farm_src, r"^local CAP_PENS, WAVE_HUGE = (\d+)", "CAP_PENS")),
+            "wave_huge": fmt(num(shared_src, r"^shared\.WAVE_HUGE = \{default = (\d+)", "WAVE_HUGE")),
+            "cap_pens": fmt(num(farm_src, r"^local CAP_PENS = (\d+)", "CAP_PENS")),
+            "max_cultures": fmt(num(shared_src, r"^shared\.MAX_CULTURES = \{default = (\d+)", "MAX_CULTURES")),
             "home_guard": fmt(num(farm_src, r"^local HOME_GUARD = (\d+)", "HOME_GUARD")),
             "reland_min": fmt(minutes(farm_src, "RELAND", "RELAND")),
             "starve_min": fmt(minutes(farm_src, "STARVE", "STARVE")),
@@ -269,8 +288,13 @@ def write(rp):
             "rig_dig_min": fmt(product(src("scripts/jumper.lua"), r"^local DIG = ([\d\s\*]+?)\s*(?:--|$)", "jumper DIG") / 3600),
             "prospect_window_min": fmt(minutes(src("scripts/prospect.lua"), "WINDOW", "prospect WINDOW")),
             "pacifier_rebuild_min": fmt(minutes(pact_src, "REBUILD_TICKS", "pact REBUILD_TICKS")),
+            "copter_level_nth": worded("nth", cap_level("grubstake", "lp-harrier") or 0, "grubstake caps lp-harrier"),
+            # The strip camp that, finished on a patch already claimed, stays as an outpost (strip.lua).
+            "outpost_nth": worded("nth", num(src("scripts/strip.lua"), r'times >= (\d+) and "lp\.claim-outpost"', "strip: outpost after") or 0, "strip outpost"),
         },
         "kh": {
+            "siege_level_nth": worded("nth", cap_level("serenity", "siege") or 0, "serenity caps siege"),
+            "drone_level_nth": worded("nth", cap_level("serenity", "lp-laser-drone") or 0, "serenity caps lp-laser-drone"),
             "dome_tiles": fmt(num(dome_src, r"^local RADIUS = (\d+)", "dome RADIUS")),
             "dome_hold_min": fmt(product(dome_src, r"^local HOLD = ([\d\s\*]+?)\s*(?:--|$)", "dome HOLD") / 60),
             "dome_down_min": fmt(minutes(dome_src, "BREAK", "dome BREAK")),
@@ -316,8 +340,18 @@ def write(rp):
             "gland_max": gland.group(2) if gland else "?",
             "core_capture": grab(src("scripts/command.lua"), r"on_capture = function\(surface, pos\)\s*\n\s*command\.drop_cores\(surface, \{x = pos\[1\], y = pos\[2\]\}, (\d+)\)", "command: capture cores"),
             "core_survey": grab(phases_src, r'"lp-command-core", count = (\d+)', "phases: survey core"),
-            # The player's orbital strike beacon (orbital.player): its paint (its reach is in its description).
-            "strike_paint_s": fmt(product(orbital_src, r"^local PLAYER_PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital PLAYER_PAINT") / 60),
+        },
+        # The player's orbital cannons (shared.CANNON; scripts/cannon.lua; the strike's look, orbital.from_orbit). They
+        # replaced the one-shot strike beacon in 0.2.274.
+        "cannon": {
+            "store": worded("count", cannon_v("STORE"), "CANNON.STORE"),
+            "cycle_min": fmt((cannon_v("CYCLE") or 0) / 60),  # (energy_required, seconds at speed 1)
+            "fuel": fmt(cannon_v("FUEL")),
+            "radius_tiles": fmt(cannon_v("RADIUS")),
+            "shells": fmt(cannon_v("SHELLS")),
+            "shells_word": worded("count", cannon_v("SHELLS"), "CANNON.SHELLS"),
+            "realign_s": fmt(product(shared_src, r"^shared\.CANNON = \{[^}]*COOLDOWN = ([\d\s\*]+?)[,}]", "CANNON.COOLDOWN") / 60),
+            "paint_s": fmt(product(orbital_src, r"^local CANNON_PAINT = ([\d\s\*]+?)\s*(?:--|$)", "orbital CANNON_PAINT") / 60),
         },
         # The locale's descriptions, for prose that quotes what a thing does rather than retyping its numbers.
         "desc": {f"{sec.split('-')[0]}_{k[3:].replace('-', '_')}": v.replace('"', "'")
@@ -454,7 +488,7 @@ def write(rp):
     B += ["", "### Yours", "", "| Building | Health | What it does |", "|:--|--:|:--|"]
     for n in ("lp-barracks", "lp-rally-beacon", "lp-command-relay", "lp-muster-point", "lp-threat-scanner", "lp-player-mortar",
               "lp-strip-drill", "lp-border-stake", "lp-trade-post", "lp-claim-marker", "lp-pact-breaker", "lp-player-bait",
-              "lp-strike-beacon"):
+              "lp-player-dome", "lp-orbital-cannon", "lp-targeting-array"):  # (the strike beacon retired, 0.2.274)
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")
     # No picture gallery here: the labs head their tree columns, and the culture's buildings are on the annotated plan
     # in the Synthexis chapter (the field guide's top-down squares printed small and unclear, and repeated the labs).
@@ -495,19 +529,21 @@ def write(rp):
     def used_in(item):
         uses = []
         for rk, r in d["recipe"].items():
-            if not rk.startswith("lp-") or rk.endswith("-recycling"):
-                continue
+            if not rk.startswith("lp-") or rk.endswith("-recycling") or r.get("hidden"):
+                continue  # (hidden: retired, as the one-shot strike beacon's recipe since 0.2.274)
             if any(i.get("name") == item for i in r.get("ingredients") or []):
                 if any(x.get("name", "").endswith("-schematic") for x in r.get("results") or []):
                     sch = r["results"][0]["name"]
                     for tk, t in d["technology"].items():
                         tr = t.get("research_trigger") or {}
-                        if tr.get("item") == sch:
+                        if tr.get("item") == sch and not t.get("hidden"):
                             cnt = next(i["amount"] for i in r["ingredients"] if i["name"] == item) * tr.get("count", 1)
                             uses.append(f"{cnt} to research {rp.tname(tk)}")
                 else:
                     n = next(i["amount"] for i in r["ingredients"] if i["name"] == item)
-                    uses.append(f"{n} per {lname('recipe-name.' + rk) if ('recipe-name', rk) in loc else lname('item-name.' + rk)}")
+                    rn = next((loc[(sec, rk)] for sec in ("recipe-name", "item-name", "entity-name") if (sec, rk) in loc), None) \
+                        or lname("item-name." + rk)
+                    uses.append(f"{n} per {rn}")
         return "; ".join(sorted(uses)) or "-"
     S = ["| Salvage | Dropped by | How many | Used for |", "|:--|:--|:--|:--|"]
     seen = {}
@@ -560,8 +596,12 @@ def write(rp):
     order = sorted(k for k in d["technology"] if k.startswith("lp-command-bandwidth")) + \
         sorted(k for k in d["technology"] if k.startswith("lp-") and (d["technology"][k].get("research_trigger") or {}).get("type") == "craft-item") + \
         sorted(k for k in d["technology"] if k.startswith("lp-") and any(q.startswith("lp-study-") for q in (d["technology"][k].get("prerequisites") or []))) + \
-        [k for k in ("lp-player-dome", "lp-incubator-capture") if k in d["technology"]] + \
-        sorted(k for k in d["technology"] if k.startswith("lp-prize"))
+        [k for k in ("lp-player-dome", "lp-incubator-capture") if k in d["technology"]]
+    # Then any other of ours (the orbital cannon, 0.2.274), the prizes last; none retired (hidden but not a prize: the
+    # one-shot strike beacon's Orbital strike, kept in the game for old saves).
+    order += sorted(k for k in d["technology"] if k.startswith("lp-") and k not in order and not k.startswith(("lp-study-", "lp-prize")))
+    order += sorted(k for k in d["technology"] if k.startswith("lp-prize"))
+    order = [k for k in order if k.startswith("lp-prize") or not d["technology"][k].get("hidden")]
     for tk in order:
         t = d["technology"][tk]
         pre = ", ".join(rp.tname(p) if p.startswith("lp-") else lname("technology-name." + re.sub(r"-\d+$", "", p)) + (" " + p.rsplit("-", 1)[1] if re.search(r"-\d+$", p) else "")
@@ -570,17 +610,40 @@ def write(rp):
     out("techs.qmd", T)
 
     # ---- settings ----
+    # Every setting as the game made it (scripts/check.sh's mod-settings-dump.json: type, default, range or choices,
+    # order), in the game's order, named and described by the locale. (Read from settings.lua's text until 0.2.223's
+    # levers: a bool, a range and a preset each needed a pattern of their own.)
+    sdump = json.load(open(os.path.join(os.path.dirname(rp.roster.DUMP), "mod-settings-dump.json")))
     St = ["| Setting | Default | Choices | What it does |", "|:--|:--|:--|:--|"]
-    for key in [k for (sec, k) in loc if sec == "mod-setting-name"]:
-        nm, dsc = loc[("mod-setting-name", key)], loc.get(("mod-setting-description", key), "")
-        if key == "lp-chat-notices":
-            dflt = grab(settings_src, r'name = "lp-chat-notices".*?default_value = (\w+)', "chat default")
-            St.append(f"| {md(nm)} | {'On' if dflt == 'true' else 'Off'} | On, Off | {md(dsc)} |")
+    level_names = re.findall(r'"([a-z-]+)"', grab(settings_src, r"^local levels = \{([^}]*)\}", "settings.lua levels") or "")
+    settings_all = sorted(((e.get("order", ""), k, t, e) for t, v in sdump.items() for k, e in v.items() if k.startswith("lp-")))
+    for _, key, typ, e in settings_all:
+        nm, dsc = loc.get(("mod-setting-name", key)), loc.get(("mod-setting-description", key), "")
+        if nm is None:
+            missed.append(f"locale: no name for the setting {key}")
+            continue
+        dv = e.get("default_value")
+        if typ == "bool-setting":
+            dflt, choices = ("On" if dv else "Off"), "On, Off"
+        elif typ == "string-setting":
+            def opt(v):
+                w = loc.get(("string-mod-setting", f"{key}-{v}"))
+                if w is None:
+                    missed.append(f"locale: no [string-mod-setting] {key}-{v}")
+                return w or v
+            av = e.get("allowed_values") or []
+            # A scale (settings.lua's levels, very low to very high): its ends, the rest in between (the table ran to
+            # two pages listing all five for each of eight settings).
+            if av == level_names and len(av) > 2:
+                dflt, choices = opt(dv), f"{opt(av[0])} to {opt(av[-1])}"
+            else:
+                dflt, choices = opt(dv), ", ".join(opt(v) for v in av)
+        elif typ in ("int-setting", "double-setting"):
+            dflt, choices = fmt(dv), f"{fmt(e.get('minimum_value'))} to {fmt(e.get('maximum_value'))}"
         else:
-            lv = re.findall(r'"([a-z-]+)"', grab(settings_src, r"local levels = \{([^}]*)\}", "levels") or "")
-            dflt = grab(settings_src, r'default_value = "([a-z-]+)", allowed_values = levels', "lever default")
-            choices = ", ".join(loc.get(("string-mod-setting", f"{key}-{l}"), l) for l in lv)
-            St.append(f"| {md(nm)} | {loc.get(('string-mod-setting', f'{key}-{dflt}'), dflt)} | {md(choices)} | {md(dsc)} |")
+            missed.append(f"setting {key}: a type the manual does not show ({typ})")
+            continue
+        St.append(f"| {md(nm)} | {md(dflt)} | {md(choices)} | {md(dsc)} |")
     if missed:
         raise SystemExit("manual_qmd: not found in the code, nothing written:\n  " + "\n  ".join(missed))
     out("settings.qmd", St + ["", "All of them are map settings: an admin can change them in a running game."])
@@ -794,15 +857,20 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
 
     def role_of(kind, base):
         plain = re.sub(r"^lp-grubstake-", "lp-", base)  # Grubstake's copies share the original's words
-        r = next((x for x in (loc.get(("entity-description", k)) or rp.roster.ROLE.get(k) for k in (base, kind, plain)) if x), None)
+        in_game = next((loc[("entity-description", k)] for k in (base, kind, plain) if loc.get(("entity-description", k))), None)
+        if in_game and W.get("role", {}).get(kind):
+            missed.append(f"words.cfg [role] {kind}: the game's own description says it ({in_game})")
+        # The game's description first; then words.cfg, over scripts/roster.py's ROLE (a field-guide line, not the
+        # game's: the flame tank's "three bursts, then reloads" and the dozer's ram outlived 0.2.259 and 0.2.270 there).
+        if not in_game and W.get("role", {}).get(kind):
+            return word("role", kind).rstrip(".") + "."
+        r = in_game or next((rp.roster.ROLE.get(k) for k in (base, kind, plain) if rp.roster.ROLE.get(k)), None)
         if r and re.search(r"\d", r):
             # roster.py's roles carry a few numbers (the railgunner's after a colon, the sapper's reach): the words only;
             # the card's stat panel gives the numbers.
             r = re.split(r":\s", re.sub(r" over [\d.]+ tiles,?", "", r))[0]
         if r and re.search(r"\d", r):
             missed.append(f"{kind}: its role carries a number: {r}")
-        if r and W.get("role", {}).get(kind):
-            missed.append(f"words.cfg [role] {kind}: the code has one ({r})")
         if not r:
             r = word("role", kind)
         return (r.rstrip(".") + ".") if r else None
@@ -1088,6 +1156,14 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
         dsc = loc.get(("entity-description", tk), "") + loc.get(("technology-description", tk), "")
         if tk == "lp-player-dome" and ("dome-projector", "") and "artillery shells" in dsc:
             return "kessler-hayashi"  # its domes are Kessler-Hayashi's design (the dome projector's, dome.lua)
+        # A technology whose recipes take a faction's salvage (the orbital cannon's targeting array, Kessler-Hayashi's
+        # orbital beacon): that faction's, by the salvage's description.
+        for e in t.get("effects") or []:
+            r = d["recipe"].get(e.get("recipe") or "") if isinstance(e, dict) else None
+            for ing in (r or {}).get("ingredients") or []:
+                m = re.search("|".join(map(re.escape, names_col)), loc.get(("item-description", ing.get("name", "")), ""))
+                if m and loc.get(("item-description", ing["name"]), "").startswith("Salvaged from"):
+                    return names_col[m.group(0)]
         return None
 
     T_nodes, bands_used = [], set()
@@ -1100,6 +1176,8 @@ def booklet(rp, M, GEN, d, loc, V, shown, lname, copy_png, src, out):
         tr = t.get("research_trigger") or {}
         study = next((q for q in t.get("prerequisites") or [] if q.startswith("lp-study-")), None)
         band = top_pack(tk, set())
+        if t.get("hidden") and not tk.startswith("lp-prize-"):
+            continue  # retired, hidden in the game (the one-shot strike beacon's Orbital strike, 0.2.274)
         if t.get("hidden"):
             how, band, note = "spoils", "fall", "its headquarters falls"
         elif tr.get("type") == "craft-item":

@@ -2,7 +2,7 @@
 
 | Level | Parts sent off-world | Kessler-Hayashi gains | Grubstake gains |
 |:--|--:|:--|:--|
-| 1 | 3,000 | sieges | scrap drones |
+| 1 | 3,000 | sieges | scrap copters |
 | 2 | 8,000 | walkers, laser drones, scouts | scouts |
 | 3 | 20,000 | a headquarters | a headquarters |
 | 4 | 45,000 | - | - |

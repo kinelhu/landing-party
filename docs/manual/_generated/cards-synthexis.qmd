@@ -33,7 +33,7 @@ The behemoth is the heaviest and most expensive breed. It arrives late and in sm
 :::
 
 ::: {.unit unit="lp-bred-big-burster"}
-The big burster is a behemoth bred around an explosive gland. It goes for one of the turrets covering the wave's approach, not the wall, and its blast damages every turret nearby. Killed early, only part of it goes off. Space your turrets apart.
+The big burster is a behemoth bred around an explosive gland. It is sent at one of the turrets covering the wave's approach, and its blast damages every turret nearby. Killed early, only part of it goes off. Space your turrets apart.
 :::
 
 ::: {.unit unit="lp-sweeper"}

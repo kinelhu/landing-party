@@ -43,8 +43,17 @@ Kessler-Hayashi waits for your first rocket launch, then lands on a site with a 
 [Arrivals](arrivals.qmd)). From era {{< var arrival.armed_era >}} it lands armed: a walled fortress whose sieges call
 orbital strikes and stay until you break them.
 
-Its army is troopers, tanks and railgunners, with laser drones from its second level. The railgunners clear the biter
+Its army is troopers, tanks and railgunners, with laser drones from its {{< var kh.drone_level_nth >}} level. The railgunners clear the biter
 spawners round its camp. Full numbers are in the [Reference](reference.qmd#sec-units).
+
+It raids whatever your turrets do not cover, and it cuts your power: it looks for a pole that feeds the turrets facing
+it and has no second feed, and destroys it from where no turret reaches. Sieges are its main weapon (see
+[Sieges](#sec-kh-sieges)). If you build on its ground or put a turret near its camp, it answers with a siege. Only a
+truce, paid for at its invoice post, stops it for a while.
+
+**Air raids.** Where little of yours can shoot up at a target, such as artillery, a radar or power behind walls and
+flamethrowers, it sends its laser drones alone, straight at the target. Where your defenses have few guns that shoot up,
+it builds more drones.
 
 **Lightning tanks.** When your turrets have killed enough of its units, its Siege works lab researches lightning
 tanks. Their lightning jumps from turret to turret along your line. Each laser or tesla turret it hits stops firing
@@ -53,10 +62,10 @@ any accumulator or roboport it hits, also lose {{< var kh.tesla_drain_pct >}}% o
 spare power refills almost at once. Under their lightning, a laser line fires less often until the tanks are killed or
 driven off.
 
-It raids whatever your turrets do not cover, and it cuts your power: it looks for a pole that feeds the turrets facing
-it and has no second feed, and destroys it from where no turret reaches. Sieges are its main weapon (see
-[Sieges](#sec-kh-sieges)). If you build on its ground or put a turret near its camp, it answers with a siege. Only a
-truce, paid for at its invoice post, stops it for a while.
+**Lightning on units.** Each hit from a lightning tank or a shock trooper leaves a charge on the unit it strikes, and
+the charge fades with time. Once a unit has taken a few hits, each further hit may stun it for a moment, so that it can
+neither move nor fire. Tanks take little of the charge. Your tesla turrets, tesla guns and destroyer robots do the same
+to every enemy unit, biters included, and a flier they stun stays stunned longer.
 
 ## The camp and the line
 
@@ -69,7 +78,7 @@ second wall behind each gate, turrets in walled corner pillboxes and flamethrowe
 - **Parked howitzer.** It stands next to the lander. If it is gone, a siege is using it.
 
 ::: {.callouts plan="media/plans/kessler-hayashi-camp.json" faction="kessler-hayashi" nudge="5:-4,-3"}
-An armed camp a few minutes after landing, inside three rings of wall. It has not started research yet, so it has no
+An armed camp a few minutes after landing, inside its rings of wall. It has not started research yet, so it has no
 labs.
 :::
 
@@ -98,12 +107,12 @@ ends are off the line. Destroy the posts along a stretch and the line stays open
 
 ## Sieges {#sec-kh-sieges}
 
-Kessler-Hayashi can besiege you from its first level. Its siege guns are dropped from orbit in cargo pods.
+Kessler-Hayashi can besiege you from its {{< var kh.siege_level_nth >}} level. Its siege guns are dropped from orbit in cargo pods.
 
 1. The escort marches out and stops just outside your guns' reach, in staggered ranks spaced so one shell cannot catch
    many.
 2. A cargo pod lands on each gun's spot, and the gun is assembled where it lands. The site shows *Deploying* for {{<
-   var kh.deploy_s >}} seconds.
+   var kh.deploy_s >}} seconds. The escort fires back at anything that shoots at it while the guns go up.
 3. Its mortars, just outside your turrets' reach, shell one point at a time, your roboports first.
 4. When nothing is left in reach, or right after an orbital strike, the escort goes in rank by rank. It goes in
    through the breach without breaking more of the wall. Inside, it goes for your roboports first, then your turrets,
@@ -129,13 +138,23 @@ behind your wall. Your artillery outranges it and fires on it by itself. Destroy
 within {{< var kh.jam_tiles >}} tiles, so they cannot repair the breach. Threat scanners within its range read
 nothing.
 
-**The orbital strike.** Once an armed camp's mortars are set up, it calls one strike on the first of your walls or
+**The orbital strike.** Once an armed camp's mortars are set up, it calls a strike on the first of your walls or
 turrets on the way to its target. The escort member nearest that point marks it for {{< var kh.paint_s >}} seconds: a
 red beam, rings closing in on the point, and a column of light from the spotter into the sky. The orbital platform's
 shadow passes over. Then lances fall on the point, along the wall on either side, and on each of your turrets that
 covers the gap, and the escort goes in behind them. Kill the spotter while it marks the point and the strike is called
 off. A siege that stays calls another after {{< var kh.strike_cool_min >}} minutes. Domes, theirs or yours, do not
-stop it.
+stop it. The **Kessler-Hayashi: orbital strikes** setting turns them off.
+
+::: {.strip faction="kessler-hayashi"}
+![The spotter marks the point: a beam and rings closing in.](media/strips/orbital-strike-1-paint.jpg)
+
+![The orbital platform's shadow passes over.](media/strips/orbital-strike-2-shadow.jpg)
+
+![The lances fall.](media/strips/orbital-strike-3-fall.jpg)
+
+A strike Kessler-Hayashi called on a walled laser bastion.
+:::
 
 **The site dome.** Once an armed camp's siege starts shelling, a dome projector is set up by its guns. Its dome stops
 your artillery shells like a camp's dome, and moves with the siege.
@@ -170,7 +189,8 @@ owed, in electronic circuits. Each billed spawner is marked with Kessler-Hayashi
   >}} electronic circuits' worth paid since the last truce.
 - **Disputing.** Destroy a billed spawner yourself while its bill is open, and its amount is removed from the bill.
   When nothing is owed, the post is removed.
-- **Ignoring it.** Nothing changes: Kessler-Hayashi is at war with you already.
+- **Not paying.** The bill stays on the post. There is no other penalty, since Kessler-Hayashi is already at war with
+  you.
 
 A truce covers every Kessler-Hayashi camp: no raids, sieges or cuts, and the line holds. It is also the only time
 Kessler-Hayashi accepts a border stake. The border then holds after the truce ends, until you build on its side.
@@ -190,7 +210,7 @@ Its crews rebuild the lab like any building. Labs are military targets.
 
 ## Its units {#sec-kh-units}
 
-A camp lands with troopers, tanks and railgunners, and gets laser drones at its second level. Everything else is
+A camp lands with troopers, tanks and railgunners, and gets laser drones at its {{< var kh.drone_level_nth >}} level. Everything else is
 researched in one of its three labs, once your attacks call for it.
 
 ::: {.tree tree="kessler-hayashi-units"}
@@ -214,6 +234,8 @@ fielded, only while its lab stands.
   the mast your robots mend the breach.
 - **Mix your turrets.** Lightning stops laser and tesla turrets only. Gun turrets and flamethrowers between them keep
   firing while it strikes.
+- **Give your artillery and radars guns that shoot up.** A gun or laser turret beside each one leaves its laser drones
+  no easy target for an air raid.
 - **Give your turrets a second power feed.** It only cuts a pole with no second feed behind it, and accumulators next
   to the turrets keep them firing through a cut.
 - **Use a field dome.** {{< var desc.entity_player_dome >}} It does not stop the orbital strike.

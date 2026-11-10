@@ -2,12 +2,30 @@
 
 | Setting | Default | Choices | What it does |
 |:--|:--|:--|:--|
-| Grubstake: strength | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | Maximum units per Grubstake base. |
-| Synthexis: strength | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | How fast Synthexis breeds biters. |
-| Grubstake: aggression | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | How soon and how often Grubstake attacks. |
-| Synthexis: aggression | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | Time before Synthexis's first attack and between attacks. |
-| Kessler-Hayashi: strength | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | Maximum units per Kessler-Hayashi base. |
-| Kessler-Hayashi: aggression | Normal | Very low (×0.5), Low (×0.75), Normal, High (×1.5), Very high (×2) | How soon and how often Kessler-Hayashi attacks. |
 | Chat notices | Off | On, Off | Show faction activity in chat and as alerts. First landings and destroyed bases are always shown. |
+| Difficulty | Normal | Easy (×0.5), Normal, Hard (×1.5), Very hard (×2) | Scales every faction's strength, aggression and income. Each faction's own settings apply on top. |
+| Time between landings (minutes) | 90 | 15 to 600 | Time between a faction's landings once the first has come. |
+| Revenge landings | On | On, Off | A faction whose base you destroy sends its next landing with a larger escort. |
+| Grubstake | On | On, Off | Grubstake lands in this game. Turned off, it never lands again; its bases already standing stay. |
+| Grubstake: arrives | On the first chemical science pack | On researching oil processing, On the first chemical science pack, On the first production science pack, On the first utility science pack | What brings Grubstake's first landing. |
+| Grubstake: most bases | 3 | 1 to 10 | Most Grubstake bases standing at once, its headquarters counted. |
+| Grubstake: strength | Normal | Very low (×0.5) to Very high (×2) | Maximum units per Grubstake base. |
+| Grubstake: aggression | Normal | Very low (×0.5) to Very high (×2) | How soon and how often Grubstake attacks. |
+| Grubstake: income | Normal | Very low (×0.5) to Very high (×2) | How fast Grubstake's bases make the parts they build and train with. |
+| Grubstake: theft | On | On, Off | Grubstake skims items from your belts and mines your ore. |
+| Kessler-Hayashi | On | On, Off | Kessler-Hayashi lands in this game. Turned off, it never lands again; its bases already standing stay. |
+| Kessler-Hayashi: arrives | On the first rocket launch | On the first chemical science pack, On the first production science pack, On the first utility science pack, On the first rocket launch | What brings Kessler-Hayashi's first landing. |
+| Kessler-Hayashi: most bases | 3 | 1 to 10 | Most Kessler-Hayashi bases standing at once, its headquarters counted. |
+| Kessler-Hayashi: strength | Normal | Very low (×0.5) to Very high (×2) | Maximum units per Kessler-Hayashi base. |
+| Kessler-Hayashi: aggression | Normal | Very low (×0.5) to Very high (×2) | How soon and how often Kessler-Hayashi attacks. |
+| Kessler-Hayashi: income | Normal | Very low (×0.5) to Very high (×2) | How fast Kessler-Hayashi's bases make the parts they build and train with. |
+| Kessler-Hayashi: orbital strikes | On | On, Off | Kessler-Hayashi calls orbital strikes on your walls during its sieges. |
+| Synthexis | On | On, Off | Synthexis takes over biter spawners in this game. Turned off, it never arrives; a culture already standing stays. |
+| Synthexis: arrives at evolution | 0.25 | 0 to 0.95 | Synthexis arrives once the biters' evolution reaches this value. |
+| Synthexis: aggression | Normal | Very low (×0.5) to Very high (×2) | Time before Synthexis's first attack and between attacks. |
+| Synthexis: income | Normal | Very low (×0.5) to Very high (×2) | How fast Synthexis gains the biomass it breeds biters with. |
+| Synthexis: most cultures | 5 | 1 to 10 | Most Synthexis cultures at once. A grown culture sends a carrier to found another. |
+| Synthexis: largest attack | 200 | 24 to 400 | Most biters in one Synthexis attack. |
+| Synthexis: learns | On | On, Off | Synthexis remembers where its attacks failed and changes how it attacks there. |
 
 All of them are map settings: an admin can change them in a running game.

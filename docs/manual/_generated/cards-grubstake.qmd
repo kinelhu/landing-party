@@ -1,7 +1,7 @@
 <!-- Written by scripts/roster_page.py --qmd from the prototypes, shared.lua and the locale. Do not edit. -->
 
 ::: {.unit unit="lp-grubstake-buggy"}
-The Buggy is a scrap-plated car with a machine gun, and Grubstake's scout. One circling your base just outside turret range is looking for something unguarded, and the next raid goes where it went. Where a buggy is killed, the next one keeps further away.
+The Buggy is a scrap-plated car with a machine gun, and Grubstake's scout. One circling your base just outside turret range is looking for something unguarded, and the next raid goes where it went. Where a buggy is killed, the next one keeps further away. Its machine gun slows the infantry it hits.
 :::
 
 ::: {.unit unit="lp-shotgun-hand"}
@@ -9,11 +9,11 @@ The Shotgun hand is Grubstake's basic soldier: heavy armor, a pump shotgun and a
 :::
 
 ::: {.unit unit="lp-grubstake-harrier"}
-The Scrap drone is a small flier built from salvage, with a light gun. Alone it is weak; Grubstake sends them in swarms over walls, cliffs and water, at lone poles and machines. Gun turrets shoot them down. Flamethrower turrets cannot.
+The Scrap copter is a small helicopter built from salvage, with a light gun. Alone it is weak; Grubstake sends them in swarms over walls, cliffs and water, at lone poles and machines. Gun turrets shoot them down. Flamethrower turrets cannot. A copter shot down crashes a few tiles away and damages what it lands on.
 :::
 
 ::: {.unit unit="lp-grubstake-slug"}
-The Slug buggy trades the buggy's machine gun for a heavy slug gun and adds armor at the front. It fires slowly, which is fine against tanks, whose armor the slug pierces, and poor against infantry. Send troopers at it, not tanks.
+The Slug buggy trades the buggy's machine gun for a heavy slug gun and adds armor at the front. It fires slowly, which is fine against tanks, whose armor the slug pierces, and poor against infantry. Send troopers at it and keep your tanks away.
 :::
 
 ::: {.unit unit="lp-grubstake-sapper"}
@@ -21,23 +21,23 @@ The Dynamite sapper throws sticks of dynamite from beyond shotgun range. The bla
 :::
 
 ::: {.unit unit="lp-grubstake-scavenger"}
-The Bomb drone is a Scrap drone with its gun swapped for an explosive charge. It flies straight at one target, usually an artillery turret, a mortar or a radar, and blows up when it gets there. A gun turret beside each artillery turret stops it; a flak turret stops it sooner.
+The Bomb drone is a small quadcopter with a bomb slung under it. It flies straight at one target, usually an artillery turret, a mortar or a radar, and blows up when it gets there. Shot down, it falls and its bomb goes off where it lands. A gun turret set out in front of each artillery turret stops it short; a flak turret stops it sooner.
 :::
 
 ::: {.unit unit="lp-grubstake-dozer"}
-The Dozer is an armored hauler with a blade. It cannot hurt units, but it rams walls open for the Shotgun hands behind it. Rocket troopers and battle tanks stop it. A second wall behind the first makes it do the job again under fire.
+The Dozer is a bulldozer with an armored cab. Sent at a wall, it stops short, revs its engine and charges straight through, crushing walls, gates and buildings in its lane, and the buggies follow it in. Rocket troopers and battle tanks stop it. Its charge ends some way past the wall, so a second wall set further back is still standing when it stops.
 :::
 
 ::: {.unit unit="lp-grubstake-flak-buggy"}
-The Flak buggy is a buggy with a turret that fires scrap flak. The bursts shred drones and combat robots but barely hurt anything on the ground. Keep your fliers back and send ground units.
+The Flak buggy is a buggy with a turret that fires scrap flak. The bursts shred drones and combat robots but barely hurt anything on the ground. Keep your combat robots back and send ground units.
 :::
 
 ::: {.unit unit="lp-grubstake-scorcher"}
-The Flame tank is an old tank hull with a flamethrower and a machine gun. The machine gun does most of the fighting; the flamethrower fires in short bursts, then has to refill. Fire does not harm it, but it has to get close to use it, so hit it with rockets and artillery on the way in.
+The Flame tank is an old tank hull with a flamethrower and a machine gun. The machine gun does most of the fighting and slows the infantry it hits. Every few seconds the flamethrower burns a group of units in front of it. Fire does not harm it, but it is lightly armored for a tank and has to get close. When it is destroyed, its fuel explodes and burns around the wreck. Hit it with rockets and artillery on the way in.
 :::
 
 ::: {.unit unit="lp-grubstake-howitzer-truck"}
-Grubstake's Howitzer truck is Kessler-Hayashi's model, bought second-hand, and only a camp that landed with a grudge has one. It comes out against walls that robots keep mending, to shell the roboports behind them. Your artillery outranges it and engages it on its own.
+The Howitzer truck carries a howitzer on a hauler's chassis, and only a camp that landed with a grudge has one. It comes out against walls that robots keep mending, to shell the roboports behind them. Your artillery outranges it and engages it on its own.
 :::
 
 ::: {.unit unit="lp-grubstake-hauler"}

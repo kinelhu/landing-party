@@ -73,7 +73,7 @@ Three frames set across the page, left to right.
 | `strips/landing-1-pod.jpg`, `-2-hull.jpg`, `-3-pods.jpg` | Grubstake's landing: its pods coming down on their thrusters; the hull falling on three flames over its own shadow; the hull down, a last pod falling beside it | original-rich-trailer t19 `t19.zip` (`/lp land grubstake 654`), `m-landing.lua`, stills `land-00310`, `land-00430`, `land-00610` | Arrivals, landings | (new; pairs with the landing still below) |
 | `strips/burster-1-windup.jpg`, `-2-swell.jpg`, `-3-blast.jpg` | A burster stopped at a wall: its ring closing, its glow swelling, its blast opening the wall | herd megaburst fork (`scripts/film_fork.sh herd 12345 7 megaburst`), `m-burst.lua`, stills `burst-006`, `burst-027`, `burst-039` (after its wind-up starts) | Synthexis, the burster (and its unit card's chapter mention) | `clips/synthexis-breach.jpg` (p. 126 of the qmd: its caption is about a burster in the gap) |
 
-## Chapter stills: `stills/*.jpg` (8)
+## Chapter stills: `stills/*.jpg` (11)
 
 Close, by day, one subject each.
 
@@ -87,6 +87,9 @@ Close, by day, one subject each.
 | `stills/synthexis-clinic.jpg` (1400 x 900) | The clinic on its pad beside the heating tower | `m-culture.lua`, `clinic-z15` | Synthexis, the clinic | `vistas/synthexis-clinic.jpg` (p. 42) |
 | `stills/synthexis-breach.jpg` (1750 x 984) | The herd breaking in at the user's wall under flame, a moment after the hero | `m-nwwall.lua`, `breach-z10-0600` | Synthexis, waves, only if the burster strip is not used there (it is close to the hero) | `clips/synthexis-breach.jpg` |
 | `stills/orbital-strike.jpg` (1600 x 900) | The lances falling on the bastion, two beams still coming down | `m-khwall.lua`, `fall-170` | Kessler-Hayashi, only if the strike strip is not used | `clips/orbital-strike.jpg` |
+| `stills/orbital-cannons.jpg` (1600 x 900) | A battery on a platform over Nauvis: the targeting array and a row of orbital cannons (0.2.276's models) | `docs/release/gallery/09-orbital-cannon-battery.jpg` (the cannon's first film, `docs/trailer/scene-cannon.lua`), cropped 140,150 to 1740,1050 | Your army, orbital cannons | (new, 2026-11-10) |
+| `stills/orbital-cannon-strike.jpg` (1400 x 788) | The cannons' lances falling on a spawner field | `docs/release/gallery/10-orbital-cannon-strike.jpg`, cropped 380,0 to 1780,788 | Your army, orbital cannons | (new, 2026-11-10) |
+| `stills/dozer-charge.jpg` (1600 x 900) | A dozer through the wall after its charge, a second coming up, buggies behind (0.2.270's charge) | `docs/release/gallery/08-killdozer-charge.jpg`, cropped 250,180 to 1850,1080 | Grubstake, dozers | (new, 2026-11-10) |
 
 ## What should no longer repeat
 

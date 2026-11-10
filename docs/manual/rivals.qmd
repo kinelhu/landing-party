@@ -9,13 +9,13 @@ in map view. The corporations also fight each other, and Synthexis chooses whom 
   claims. It does not escalate.
 - **Enemy.** Kessler-Hayashi is your enemy from the day it lands. Grubstake becomes one when you provoke it: you damage
   its buildings, units or trucks, you build on its ground, or you put a turret in reach of its camp. An enemy Grubstake
-  raids with more of its army, and the longer it goes without destroying anything of yours, the harder it comes: claim
-  jumpers, then guarded ground.
+  raids with more of its army. If it goes a while without destroying anything of yours, it escalates, first with claim
+  jumpers, then by guarding its ground.
 - **Truce.** Bought: Grubstake's at your trade post, Kessler-Hayashi's at its invoice post. While it lasts the
   corporation sends nothing at you (Grubstake still prospects). When it runs out, its standing goes back to what it
   was.
 
-Destroying a lander makes its corporation your enemy, and its next landing comes angry (see [Arrivals](arrivals.qmd)).
+Destroying a lander makes its corporation your enemy, and its next landing brings a larger escort (see [Arrivals](arrivals.qmd)).
 The other factions take note of the fight but are not provoked by it.
 
 **Standing down.** A corporation at war with you gives up if it keeps failing. A camp whose operations against you
