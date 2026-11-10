@@ -6148,6 +6148,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   to a barracks, hands in its order, marked for the robots). Wired, the caps follow a circuit (the threat scanner's
   counts, a train's cargo). Scenario squad: a cap of 4, four deployed and two waiting; lowered to 2, two handed in;
   cleared, the waiting deployed (seen failing with the caps off: six deployed, none retired). Manual: Rally beacons.
+- **The units cut out: difference matting** (2026-11-10; the user: "Why not film the portraits for the manual?", then "can
+  we do something cute with a greenscreen?"). Not a green screen (green spills onto the units; a shadow cannot be
+  keyed): each unit filmed twice, alike, on lab-dark-2 and lab-white; alpha = 1 - mean((white - dark) / (white ground -
+  dark ground)), the colour unmixed from the dark still; a shadow comes out a soft see-through dark
+  (docs/manual/shots/portraits-matte.lua, matte.py; filmed on the Mac Studio, 1,928 stills). Each unit at eight facings
+  from the portraits' three-quarter view. Out (media/release/units, not in the repo): transparent cut-outs at 96 px a
+  tile, turntables (animated PNG with full alpha; GIF on the mod page's dark), a class photo a faction (smallest at the
+  ends). The manual's portraits re-cut from the dark facing-0 stills by portraits.py unchanged: 33 of 40 now show the
+  rendered models (they predated them, 0.2.225 to 0.2.236). Its check_images caught a portrait made for a unit the book
+  never prints (the Kessler-Hayashi howitzer truck), removed.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
