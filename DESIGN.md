@@ -6350,6 +6350,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   east, south and west came out empty), and a part hidden from the camera still casts its shadow (the turrets' bases
   carried their heads' shadows; the player's flak turret has it too, and its head sheet is turned 180 degrees: its first
   frame aims south, a rotated sprite's first faces north).
+- **The factions' turrets modelled** (0.2.304; faction_works.py turret, gun-turret). Each a base drawn once and a head in
+  64 directions (north first, clockwise: checked on the first frames, north, east, south, west), the same head for every
+  state (it does not rise out of the ground as the laser turret does), its lights a glow layer. Kessler-Hayashi's laser
+  turret a lens turret (a rounded armoured housing, a finned emitter tube, its lens lit) and its gun turret a twin
+  autocannon (an ammunition drum and its feed, muzzle brakes), both on a hexagonal armoured ring; Grubstake's turret a
+  gun nest (a ring of scrap plate and oil drums, sandbags; a welded box behind a patched shield, one heavy barrel, an
+  amber lamp). Rendered at 1.25 times the footprint (at 1 they stood a quarter smaller than vanilla's). Each part's pass
+  without the other's shadow (visible_shadow: hidden from the camera alone, the head's shadow had gone into the base's,
+  a ghost aiming north under every heading). Wired in corps.lua (turret()); the laser turret's energy glow dropped.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
