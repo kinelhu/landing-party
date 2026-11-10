@@ -1055,14 +1055,19 @@ Kessler-Hayashi camp given merit raided six undefended assemblers and four raide
 LP_MIX=off (debug_tune vet_off) fails the merit and promotion checks. Merit for a kill: health over the killer's (the
 strength measure of attempt.worth), at most 4; replaced in 0.2.300 (below).
 
-**Merit's balance** (0.2.300; the user, 2026-11-10: "Merit should earn careful balancing. Seems like a huge wave of small
+**Merit's balance** (0.2.300, turrets 0.2.302; the user, 2026-11-10: "Merit should earn careful balancing. Seems like a huge wave of small
 biters should not give 1 point each if the max a behemoth will give is 4?"). Health alone, capped at 4, made a small
 biter 0.125 to a trooper and a behemoth no more than a big biter. Now a kill is worth the victim's fighting value over
 the killer's, health times damage a tick (`lp-unit-hit`, the prototypes' own attacks; Lanchester's measure), and one kill
 lifts a unit to its next rank at most (a last shot on what a turret line wore down is not a career). Measured (vetprobe),
 to a trooper: a small biter 0.06 (48 for a Veteran), a medium 0.67, a peer 1 (three for a Veteran), a big biter 6.7, a
-tank 25, a behemoth 113 (each one rank); to a tank, a trooper 0.04 and a tank 1. A turret or a worm its health over the
-killer's (at most 2), a spawner 1, another building 0.1, walls, belts, poles, pipes and rails nothing. Checked in
+tank 25, a behemoth 113 (each one rank); to a tank, a trooper 0.04 and a tank 1. A spawner 1, another building 0.1, walls, belts,
+poles, pipes and rails nothing. Turrets earn (0.2.302; the user: "Turrets should earn though!"): what crossing one costs,
+in medium biters lost (`threat.prior_of`, its owner's research in it; `shared.PER_TURRET`, 3.5, for a gun, moved there
+from ops), each a medium's kill to this killer; a worm, which has no price by kind (the gun's flat one read a small and a
+behemoth alike, 2.34), its health in mediums. To a trooper: a gun turret 2.34, an unresearched laser 0.8, a flamethrower
+11.4, a small worm 1.8, a big one 13.4, a behemoth 26.8 (one rank a kill still); to a tank a tenth of that or less.
+Checked in veteran (a gun turret over a peer; a behemoth worm over four small ones, seen failing at the flat price). Checked in
 scenario veteran (a small biter under 0.1, a peer 1, a behemoth's last shot lifting a fresh trooper to 3), the cap seen
 failing (112.5 without it). A spider unit has no attack read: its health alone (walker kills read low).
 

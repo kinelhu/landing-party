@@ -4,16 +4,17 @@
 -- at home: a corporation's unit back in its garrison (pool), the player's idle at its rally point (command). A unit is
 -- not raised a quality in place (order_upgrade refuses units), so a promotion is a swap, done where no job holds it.
 --   merit       storage.merit[unit_number]: points banked, carried across a swap
---   on_died     credits the killer: a unit killed its value over the killer's (kill_merit), a turret its health's,
+--   on_died     credits the killer: a unit killed its value over the killer's (kill_merit), a turret its price's,
 --               a spawner 1, another building BUILDING; at most to its next rank a kill
 --   promote     the unit, or its promoted copy (the caller puts it where the old one was)
--- A leaf (pool reads it): shared only.
+-- A leaf (pool reads it): shared and threat (a leaf) only.
 local shared = require("__landing-party__.shared")
+local threat = require("__landing-party__.scripts.threat")
 local veterancy = {}
 
 veterancy.RANKS = {{quality = "uncommon", merit = 3}, {quality = "rare", merit = 8}, {quality = "epic", merit = 16}}
 local LEVEL = {normal = 0, uncommon = 1, rare = 2, epic = 3, legendary = 4}
-local SPAWNER, BUILDING, TURRET_CAP = 1, 0.1, 2
+local SPAWNER, BUILDING = 1, 0.1
 -- What is not worth merit: what holds and carries (walls, belts, poles, pipes, rails), a corpse's worth of nothing.
 local WORTHLESS = {wall = true, gate = true, ["transport-belt"] = true, ["underground-belt"] = true, splitter = true,
   ["electric-pole"] = true, pipe = true, ["pipe-to-ground"] = true, ["straight-rail"] = true, ["curved-rail-a"] = true,
@@ -37,6 +38,18 @@ local function value(name)
   if h then for _, a in pairs(h.dmg) do dps = dps + a end; dps = dps / h.cooldown end
   return hp, dps
 end
+-- A turret's (or a worm's) merit (the user, 2026-11-10: "Turrets should earn though!"): what crossing one costs, in medium
+-- biters lost (threat.prior_of: by kind, scaled by its owner's research; shared.PER_TURRET for a gun), each worth a
+-- medium's kill to this killer. A gun turret to a trooper about two, a researched laser more.
+-- A worm has no price by kind (a gun's flat one read a small worm as a behemoth's): its health in mediums, the measure
+-- attempt.worth prices units by.
+function veterancy.turret_merit(dead_name, dead_force, by_name)
+  local p, med = prototypes.entity[dead_name], prototypes.entity["medium-biter"]
+  local mediums = (p and p.type == "turret" and med) and p.get_max_health() / med.get_max_health()
+    or threat.prior_of(dead_name, dead_force, shared.PER_TURRET)
+  return mediums * veterancy.kill_merit("medium-biter", by_name)
+end
+
 -- A kill's merit: the victim's value over the killer's (measured, scenario vetprobe; to a trooper: a small biter 0.06, a
 -- medium 0.67, a peer 1, a tank 25, a behemoth 113; to a tank, a trooper 0.04).
 -- One kill raises a unit one rank at most (on_died): a last shot on what a turret line wore down is not a career.
@@ -65,8 +78,7 @@ function veterancy.on_died(e)
   elseif dead.type == "unit-spawner" then
     m = SPAWNER
   elseif TURRETS[dead.type] then
-    -- (A turret or a worm: its health over the killer's, at most TURRET_CAP.)
-    m = math.min(TURRET_CAP, dead.max_health / math.max(1, by.max_health))
+    m = veterancy.turret_merit(dead.name, dead.force, by.name)
   elseif dead.prototype.is_building and not WORTHLESS[dead.type] then
     m = BUILDING
   else

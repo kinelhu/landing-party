@@ -200,6 +200,12 @@ scenarios.vetprobe = function()
       local row = {}
       for _, v in ipairs(V) do row[#row + 1] = string.format("%s %.3g", v, lp("kill_merit", v, by)) end
       table.insert(lines, "INFO vetprobe merit by " .. by .. ": " .. table.concat(row, ", "))
+      local tr = {}
+      for _, t in ipairs({"gun-turret", "laser-turret", "flamethrower-turret", "small-worm-turret", "big-worm-turret",
+        "behemoth-worm-turret", "lp-turret", "lp-gun-turret"}) do
+        tr[#tr + 1] = string.format("%s %.3g", t, lp("turret_merit", t, t:find("worm") and "enemy" or "player", by))
+      end
+      table.insert(lines, "INFO vetprobe turret merit by " .. by .. ": " .. table.concat(tr, ", "))
     end
   end)
   schedule(300, function()
@@ -2399,6 +2405,12 @@ scenarios.veteran = function()
       tostring(lp("kill_merit", "small-biter", "lp-trooper")))
     check("veteran: a peer is worth one", math.abs(lp("kill_merit", "lp-trooper", "lp-trooper") - 1) < 1e-9,
       tostring(lp("kill_merit", "lp-trooper", "lp-trooper")))
+    -- Turrets earn (the user: "Turrets should earn though!"): a gun turret more than a peer to a trooper, a behemoth
+    -- worm more than a small (a gun's flat price had read them alike).
+    local gun = lp("turret_merit", "gun-turret", "player", "lp-trooper")
+    check("veteran: a gun turret earns a trooper more than a peer", gun > 1, tostring(gun))
+    local sw, bw = lp("turret_merit", "small-worm-turret", "enemy", "lp-trooper"), lp("turret_merit", "behemoth-worm-turret", "enemy", "lp-trooper")
+    check("veteran: a behemoth worm earns more than a small one", bw > 4 * sw, string.format("%.2f against %.2f", bw, sw))
     local tr = surface().create_entity{name = "lp-trooper", position = {56, 30}, force = "player"}
     local bh = surface().create_entity{name = "behemoth-biter", position = {60, 30}, force = "enemy"}
     bh.die("player", tr)

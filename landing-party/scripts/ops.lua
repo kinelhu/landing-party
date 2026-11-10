@@ -40,7 +40,7 @@ local RESERVE = pool.RESERVE           -- share of the garrison cap that never l
 -- lost to upgraded ammunition (18 units against three creeping turrets with bullet damage +0.8 lost two thirds,
 -- defend), and with research now in the weight (x1.8 there) 5 counted it twice. At 3, the 21 sent there won once
 -- and lost once (two thirds dead either way): 3.5 sends 23.
-local PER_TURRET, BASE_FORCE = 3.5, 4
+local PER_TURRET, BASE_FORCE = shared.PER_TURRET, 4
 -- Desperate (the ladder's top rung against a player): its odds rule at this share of its mind's min_odds, not lifted.
 -- Bolder, not blind (the counters and desperation consult, 2026-10-31): lifted, Kessler-Hayashi raided a laser wall with 4
 -- to 40 again and again, lost all, and its learning (prices, the ladder) went for nothing.

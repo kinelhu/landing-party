@@ -15,7 +15,7 @@ digraph ai {
     "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "landfx" [label="landfx\n239 lines", width=1.07, fillcolor="#eef2f7"];
     "burstfx" [label="burstfx\n305 lines", width=1.14, fillcolor="#eef2f7"];
-    "veterancy" [label="veterancy\n137 lines", width=0.95, fillcolor="#d9f0d9"];
+    "veterancy" [label="veterancy\n149 lines", width=0.97, fillcolor="#eef2f7"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
@@ -110,7 +110,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1161 lines", width=2.09, fillcolor="#f7dede"];
+    "control" [label="control\n1162 lines", width=2.09, fillcolor="#f7dede"];
     "dev" [label="dev\n566 lines", width=1.43, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
@@ -321,6 +321,7 @@ digraph ai {
   "trade" -> "ops";
   "trade" -> "standing";
   "valuemap" -> "firemap";
+  "veterancy" -> "threat";
   "war" -> "army";
   "war" -> "base";
   "war" -> "lights";

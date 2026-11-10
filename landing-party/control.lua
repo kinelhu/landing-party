@@ -1006,6 +1006,7 @@ remote.add_interface("landing-party", {
   debug_abort_share = function(members, share) return {veterancy.abort_share(members, share), veterancy.scale(members[1])} end,
   -- Tests: a kill's merit, the victim's name and the killer's (veterancy.kill_merit).
   kill_merit = function(dead, by) return veterancy.kill_merit(dead, by) end,
+  turret_merit = function(dead, force, by) return veterancy.turret_merit(dead, force, by) end,
   -- A unit's merit banked (veterancy.lua).
   merit = function(unit_number) return storage.merit and storage.merit[unit_number] end,
   -- Veterancy: promotions, the highest merit banked, and each force's units by rank (quality).

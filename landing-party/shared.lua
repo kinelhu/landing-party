@@ -332,6 +332,9 @@ shared.SCAN_GROUPS = {
   {signal = "lp-scan-buggy", icon = U .. "lp-buggy.png", kinds = {"lp-buggy"}},
 }
 shared.SCAN_RADIUS = 64
+-- What a turret costs to cross before any is learned, in medium biters lost (ops.lua's force needed; threat.prior_of's
+-- base): also what killing one earns its killer (veterancy.lua).
+shared.PER_TURRET = 3.5
 -- The player's orbital strike beacon's reach (scripts/strike.lua) and the defoliant's (scripts/studies.lua): their
 -- descriptions take them as __1__ (components.lua, studies.lua), so the text says what the code does.
 shared.STRIKE_RADIUS = 60
