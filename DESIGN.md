@@ -6207,11 +6207,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (Grubstake's open gantry, its drill head turning while it mines, four directions; its first closed box hid the head),
   the flak turret (an armoured ring, a twin-barrelled flak head in 64 directions for every state, no laser glow).
   Ochre stays lpkit's grimed paint: a CC0 paint's hue turned, its rust turned with it, purple. Phase 1 done: the
-  player's buildings are the mod's own. Phase 2 (the factions') stopped at its first model: both landers modelled
+  player's buildings are the mod's own. Phase 2 (the factions') paused after its first model, the landers alone set aside
+  (the user, after: the lander "was exceptionally detailed and hard to do", not a call against remodelling the rest; the
+  fabricators, generators, drills, depots, launchpads, labs and turrets still to model): both landers modelled
   (tools/blender/faction_buildings.py, a drop ship and a patched hulk) read as smooth loaves beside vanilla's
   hand-made crash ship, which make_sprites.py's masked repaint keeps; the user: "Lander repaints look pretty good
   honestly you're not going to top that". A repaint with the steel's cast cut (0.3 for 0.9) changed little, reverted.
-  The faction buildings keep their repaints; make_sprites.py mended (a rendered building's own file, the uplink's,
+  The landers keep their repaints; make_sprites.py mended (a rendered building's own file, the uplink's,
   mapped to a vanilla path that is not there, and the run failed).
 - **Units' icons, the scanner's signals, the studies' tag, the cannon's detail** (0.2.292; the user, 2026-11-10: "The
   magnifier looks horrible. Also did you make icons for enemy units too? Those are going to show up in the threat scanner,
