@@ -136,3 +136,9 @@ data:extend({
 -- The strike beacon retired (the cannons replace it): its technology and recipe hidden; a placed one fires as before.
 if data.raw.technology["lp-orbital-strike"] then data.raw.technology["lp-orbital-strike"].hidden = true end
 if data.raw.recipe["lp-strike-beacon"] then data.raw.recipe["lp-strike-beacon"].hidden = true end
+-- And its beacon's teardown (crafting the schematic researched the retired technology): a salvaged beacon is the targeting
+-- array's now, and the teardown would have used one up for nothing (the manual's review, 2026-11-10).
+if data.raw.recipe["lp-beacon-schematic"] then
+  data.raw.recipe["lp-beacon-schematic"].hidden = true
+  data.raw.recipe["lp-beacon-schematic"].enabled = false
+end

@@ -6065,6 +6065,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (ground + 1) / (air + 1) over the player's sensed targets (three at least), over airraid.EDGE, at most 3. Scenario
   airraid with three outposts: walls of flamethrowers (nothing shooting up) tilt it to 3, the cap; guns (which shoot up)
   leave it at 1. Which corporations field fliers is unchanged (their mixes and research); only how many.
+- **Two checks that measured the wrong thing** (0.2.279; the ops regression on 0.2.278, both failing from 0.2.272, the
+  price re-tune, bisected): standsiege's "the siege ran" read Kessler-Hayashi's strikes called, and a siege that found
+  its way in open called none (its siege ran: 69 razed, 6 of 6 back): it reads its log entry now (strikes are scenario
+  orbital's). unitnode scorcher's fuel fire needed 6 fires two ticks on; its twelve scattered fires land by the engine's
+  dice and overlapping ones merge, 6 at 0.2.271 and 4 at 0.2.272 on cleared ground: 4 now (the old single fire read 1),
+  and the Scorcher killed on cleared ground (in its camp, buildings by it took some). From the manual's review: the
+  salvaged beacon's teardown hidden (it researched the retired strike and would use up a beacon the array needs); the
+  Skyguard's description says missiles (it has fired them since 0.2.265).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
