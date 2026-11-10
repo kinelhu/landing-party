@@ -15,6 +15,12 @@ local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
 local veterancy = {}
 
+-- Raised as a unit is promoted, before the old one goes ({old = the unit, new = its copy, rank}): a mod holding our
+-- units (the test harness, a mod of the player's) puts the copy where it held the old one; the rewiring reaches only
+-- this mod's storage (scenario rail: the harness's own list of railgunners read the promoted ones as dead). Its id:
+-- remote.call("landing-party", "promoted_event").
+veterancy.PROMOTED = script.generate_event_name()
+
 veterancy.RANKS = {{quality = "uncommon", merit = 3}, {quality = "rare", merit = 8}, {quality = "epic", merit = 16}}
 local LEVEL = {normal = 0, uncommon = 1, rare = 2, epic = 3, legendary = 4}
 local SPAWNER, BUILDING = 1, 0.1
@@ -319,6 +325,7 @@ local function promote_all(units)
   for _, p in ipairs(moved) do st.moved[p] = (st.moved[p] or 0) + 1 end
   for _, m in ipairs(made) do
     local n = m.new
+    script.raise_event(veterancy.PROMOTED, {old = m.old, new = n, rank = m.rank})
     m.old.destroy()
     storage.promoted = (storage.promoted or 0) + 1
     if m.before then

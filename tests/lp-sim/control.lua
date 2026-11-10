@@ -8113,6 +8113,9 @@ scenarios.hazard = function()
     -- The ledger's mixes without spread: its walled clusters held the waves off before the losses that bill them came.
     lp("debug_tune", {wfc_core_off = true, era = 2, history_off = true, hazard_off = off or nil, hazard_hold = billing or nil,
       grow_to_line_off = billing or nil, rd_tech = not research and {serenity = {weapons = {["lp-rail"] = 5}, nodes = {railguns = 5}}} or nil})
+    -- research: veterancy off. What it tests is losses to biters buying railguns; three Veterans of the first waves
+    -- cut its losses from 34 to 27, under the trigger, and it saved for optics instead (the regression after 0.2.311).
+    if research then lp("debug_tune", {vet_off = true}) end
     for _ = 1, 3 do lp("debug_depot", storage.id, 3000) end
     if norails then lp("debug_units", storage.id, "lp-infantry", 80) else lp("debug_units", storage.id, "lp-railgunner", 10) end
   end)
@@ -17518,7 +17521,26 @@ if AFTER[params.scenario] and not params.save_at and END < STRIKE + AFTER[params
     STRIKE / 3600 + AFTER[params.scenario]))
 end
 
+-- A unit promoted (veterancy.lua: a new entity at the next quality, the old one destroyed): the copy put wherever the
+-- scenario's state held the old one (scenario rail: its own list of railgunners read the promoted ones as dead).
+local function on_promoted(e)
+  local seen = {}
+  local function walk(t)
+    if seen[t] then return end
+    seen[t] = true
+    for k, v in pairs(t) do
+      if type(v) == "table" then walk(v) elseif v == e.old then t[k] = e.new end
+    end
+  end
+  walk(S)
+end
+local function listen_promoted()
+  local id = remote.interfaces["landing-party"] and remote.interfaces["landing-party"].promoted_event
+    and remote.call("landing-party", "promoted_event")
+  if id then script.on_event(id, on_promoted) end
+end
 script.on_init(function()
+  listen_promoted()
   storage.t0 = game.tick
   helpers.remove_path("landing-party")
   lp("set_trace", true)
@@ -18098,6 +18120,7 @@ end)
 -- A fork loaded: its scenario's state back (the save step above).
 script.on_load(function()
   for k, v in pairs(storage.fork_S or {}) do S[k] = v end
+  listen_promoted()
 end)
 script.on_event(defines.events.on_tick, function(e)
   local f = at[e.tick - (storage.t0 or 0)]

@@ -6468,6 +6468,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lost the trooper. Caught by the scenario's trace (paths before and after differed). Keys now move only in the tables
   listed in `veterancy.KEYED`; the trace counts a unit's number elsewhere apart (10 such in the camp run, none a reference).
   A new table keyed by unit number goes in that list, or the trace shows it missed.
+- **Field promotion's regression** (0.2.316; the whole list on 0.2.311, 320 runs, 67 min on the Studio). The four known
+  failures, and three new. `rail`: "one stood at least" 0, passing with promotion off. The harness, a mod of its own,
+  kept its list of railgunners, and those promoted read as dead: the rewiring reaches this mod's storage only. Now a
+  promotion raises an event (`veterancy.PROMOTED`, {old, new, rank}, before the old one goes; its id by
+  remote.call("landing-party", "promoted_event")), and the harness puts the copy where its state held the old one, as
+  any mod holding our units can. `hazard` LP_MIX=research: railguns never bought, passing with promotion off: three
+  Veterans cut its losses to biters from 34 to 27, under the trigger, and it saved for optics. A real shift, not a fault
+  (veterans live); the variant tests losses buying research, so it runs with veterancy off. `herd` LP_MIX=spit (two of
+  three spitters home): passes on 0.2.314, Synthexis no longer ranking.
 - **The flak turret's model wore the repaint's ochre, and fired no flak** (0.2.315; the user, 2026-11-10: "Does the flak
   turret have the black puffs like the buggy btw?"). Its base was still dyed Grubstake's ochre by the tint loop of its
   repainted days (the dump: the base tinted, the head not, so the two halves differed), and its shot made vanilla's plain

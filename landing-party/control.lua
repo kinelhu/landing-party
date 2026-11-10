@@ -1009,6 +1009,9 @@ remote.add_interface("landing-party", {
   -- Tests: a kill's merit, the victim's name and the killer's (veterancy.kill_merit).
   kill_merit = function(dead, by) return veterancy.kill_merit(dead, by) end,
   turret_merit = function(dead, force, by) return veterancy.turret_merit(dead, force, by) end,
+  -- The event raised as a unit is promoted (veterancy.PROMOTED: {old, new, rank}, before the old one goes): for a mod
+  -- that holds our units to put the copy where it held the old one.
+  promoted_event = function() return veterancy.PROMOTED end,
   -- A unit's merit banked (veterancy.lua).
   merit = function(unit_number) return storage.merit and storage.merit[unit_number] end,
   -- Veterancy: promotions, the highest merit banked, and each force's units by rank (quality).
