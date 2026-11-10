@@ -1095,6 +1095,13 @@ failing (112.5 without it). A spider unit has no attack read: its health alone (
 every one Kessler-Hayashi's and a Veteran, the highest merit 4.5 to 6.5 (an Elite needs 8): one to three an hour, the
 rate assumed. No Elite yet in two hours; none of the player's army, Grubstake's or Synthexis's biters (whether its herds pass the pool's
 homecoming: not checked). `contact.sh` prints it (veterancy, and metric promoted).
+At 0.2.311 (field promotion, turret merit, Lanchester merit; same seed and variants): 0, 0 and 3, all Kessler-Hayashi
+Veterans in the walled variant (33 turrets to kill); the highest merit 2.2 in the passive and robots variants, 7.5 in
+the walled. Under the rate assumed (one or two an hour): to settle at the post-playtest calibration (thresholds, or
+what a kill earns). The rewiring's cost, per promotion, in those runs: 4045 tables 6.1 ms, 7750 11.2 ms, 12597 17.4 ms
+(three timelines at once on the Studio: contended). Linear in storage, about 1.4 microseconds a table: a frame's hitch
+at two hours, more later. Not yet acted on (a promotion is rare); a skip list of the large subtrees that hold no unit,
+or an index of where units are held, would cut it.
 
 **What the AI does with it** (0.2.297, the first two in part):
 - an air raid's worth (airraid.fliers, launch_air) counts a flier at its rank, `veterancy.scale`: health times damage,
