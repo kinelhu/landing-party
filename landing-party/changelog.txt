@@ -1,10 +1,10 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.293
+Version: 0.2.294
 Date: 2026-11-10
   Features:
     - Its own icons for every item, technology and unit, the rivals' too; the threat scanner's signals show the units they count.
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
-    - Grubstake lands once you make chemical science: a prospecting outfit that raids what you leave unguarded, skims your belts and strips your ore.
+    - Grubstake lands once you make chemical science: a prospecting outfit that raids what you leave unguarded, flies its scrap drones over walls where nothing shoots up, skims your belts and strips your ore.
     - Kessler-Hayashi lands after your first rocket: an armed contractor that pushes its perimeter toward you, lays siege to your walls and calls orbital strikes.
     - Synthexis takes over the biter nests and breeds waves that learn from what kills them.
     - Each faction researches, fields its own units and answers what you do to it; the rivals fight each other and the biters too.

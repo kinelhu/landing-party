@@ -415,15 +415,17 @@ function ops.thief_hours(b)
   return s.darkness >= NIGHT
 end
 
--- Whether a corporation's temper lets it go for this target at all.
-local function temper_allows(b, t)
+-- Whether a corporation's temper lets it go for this target at all; by air (air), what its turrets reach on the ground
+-- (exposure) is not asked: a thief flies over a wall (the user, 2026-11-10: "Grubstake should get air raids indeed"),
+-- and choose holds it to what shoots up instead (its max_exposure, of the air defence).
+local function temper_allows(b, t, air)
   if not against_player(t.owner) then
     -- A soft-only corporation keeps off a rival's guarded ground as off the player's (the system sim, 2026-10-23:
     -- Grubstake raided Kessler-Hayashi's walls and flamers 2 to 6 times in two hours and lost 4 to 78 units to it, 0 to
     -- 8 the other way): its rivals' drills, pylons and convoys, not their fortress. No ladder for a rival: 1.0 holds.
     -- (The higher of its exposure and defence: a rival's exposure is often 0, and its depot of defence 1.6 was raided.)
     local cap_ = ((shared.CORPS[b.corp] or {}).mind or {}).max_exposure
-    if cap_ and math.max(t.exposure or 0, t.defence or 0) > cap_ then return false end
+    if cap_ and not air and math.max(t.exposure or 0, t.defence or 0) > cap_ then return false end
     return true
   end
   if t.pos and ops.marked(b, t.pos) then return false end
@@ -441,7 +443,7 @@ local function temper_allows(b, t)
   -- How much defence it will go up against (its mind's max_exposure; was the temper's soft_only at 1.0), relaxed to
   -- LADDER_SOFT from the first rung and lifted at the top.
   local cap_ = ((shared.CORPS[b.corp] or {}).mind or {}).max_exposure
-  if cap_ and rung < 3 and (t.exposure or t.defence or 0) > (rung >= 1 and math.max(cap_, LADDER_SOFT) or cap_) then return false end
+  if cap_ and not air and rung < 3 and (t.exposure or t.defence or 0) > (rung >= 1 and math.max(cap_, LADDER_SOFT) or cap_) then return false end
   -- A thief does not break the drills that show it where the ore is: those are for strip-mining (it raided them
   -- instead, and had nothing left to strip).
   if temper.strips and t.value == ops.VALUE["mining-drill"] then return false end
@@ -578,7 +580,10 @@ local function choose(b, army)
     local player = against_player(t.owner)
     local held = player and in_flight >= budget(t.owner) and not battery(t)
     if held and game.tick >= (t.cool or 0) then storage.budget_holds = (storage.budget_holds or 0) + 1 end
-    if not temper_allows(b, t) then held = true end
+    -- (Its temper by ground and by air apart: a guarded target a thief would not walk into it may still fly at.)
+    local ground_ok = temper_allows(b, t)
+    local air_only = not ground_ok and by_air and temper_allows(b, t, true)
+    if not ground_ok and not air_only then held = true end
     -- Pressed (the ladder's second rung against a player it is at war with): that player's targets only, self-defence
     -- excepted (weighted 0.2, a rival's lander still won every choice on the user's save: 48 raids on landers, none on
     -- the player, visit).
@@ -593,7 +598,7 @@ local function choose(b, army)
       local mind = mind_of(b)
       local p = odds((battery(t) or threat_bonus(b, t) > 0) and cap(b, army) or max_field, d)
       -- (On foot below its odds, it may still go by air: weighed both ways, s 0 for a way it cannot take.)
-      local on_foot = p >= mind.min_odds * (desperate and DESPERATE_ODDS or 1) - 1e-9
+      local on_foot = ground_ok and p >= mind.min_odds * (desperate and DESPERATE_ODDS or 1) - 1e-9
       if on_foot or by_air then
         local dist = math.sqrt((t.pos[1] - h.position.x) ^ 2 + (t.pos[2] - h.position.y) ^ 2)
         local ground = player and b.claim_radius and not storage.strangle_off and stance.standing(b.corp, t.owner) == "enemy"
@@ -611,6 +616,9 @@ local function choose(b, army)
         local m
         -- By air (airraid.lua): its fliers' odds against what shoots up, and what fliers are for (SNIPE) the more.
         local da = by_air and t.owner ~= "enemy" and air_defence(b, t, air_budget)
+        -- (Over a wall its temper keeps it off on foot, a thief flies only where little shoots up: its max_exposure,
+        -- of the air defence now.)
+        if da and air_only and da > (mind.max_exposure or math.huge) then da = nil end
         if storage.air_trace then log(string.format("AIRDBG b%d %s %s on_foot %s p %.2f d %.1f s %.3f air %s worth %.1f n %d", b.id, key, t.kind, tostring(on_foot), p, d, s, tostring(da), air_worth, #fliers)) end
         if da then
           local pa = odds(air_worth, da)

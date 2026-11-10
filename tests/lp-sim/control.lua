@@ -15478,8 +15478,9 @@ end
 -- The camp senses it and chooses for itself: by air. LP_MIX=aa: six gun turrets with ammunition instead of the flamers,
 -- the air no cheaper than the ground: not by air. LP_MIX=off: air raids off (debug_tune air_off), the check seen failing.
 -- LP_MIX=grubstake: a Grubstake camp with eight scrap copters instead (its air raids by the same rule, a thief's camp).
--- Open, not in regress.sh (2026-11-10): provoked, it raided a rival's fabricator and a drill and never weighed the walled
--- radar, by air or on foot: a thief's choice puts other targets first. Grubstake's air raids wait on the user's call.
+-- Its temper kept a thief off the walled radar before air was weighed (2026-11-10: it raided a rival's fabricator and a
+-- drill, never the radar); now by air it asks only what shoots up (ops.temper_allows air), the user: "Grubstake should
+-- get air raids indeed". Seen failing before that change.
 -- LP_MIX=detour (its way by air, airraid.route; the user, 2026-11-10: "a flight path that avoids ground defenses"): a
 -- picket of nine gun turrets with ammunition across the straight line, halfway, 64 tiles wide; round its ends nothing
 -- shoots up. It goes by air round the picket, no flier within its guns' reach. Seen failing with the straight line's
@@ -15561,10 +15562,12 @@ scenarios.airraid = function()
     lp("debug_tune", {raids_off = false})
   end)
   -- Its build's tilt read a minute on (army.composition runs as it builds).
-  schedule(9 * 3600, function() S.tilt = lp("stats", S.id).ops.air_tilt end)
+  schedule(9 * 3600, function() S.tilt = math.max(S.tilt or 1, lp("stats", S.id).ops.air_tilt or 1) end)
   for t = 8 * 3600 + 600, END - 120, 600 do
     schedule(t, function()
       local o = lp("stats", S.id).ops
+      -- (The highest tilt seen: Grubstake senses the player's targets later than its fixed read at 9 minutes, at 9.2.)
+      S.tilt = math.max(S.tilt or 1, o.air_tilt or 1)
       S.air = o.air_raids or 0
       S.raids = o.launched or 0
       if S.air > 0 and not S.air_at then S.air_at = game.tick end

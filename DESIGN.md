@@ -6073,10 +6073,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and the Scorcher killed on cleared ground (in its camp, buildings by it took some). From the manual's review: the
   salvaged beacon's teardown hidden (it researched the retired strike and would use up a beacon the array needs); the
   Skyguard's description says missiles (it has fired them since 0.2.265).
-- **Grubstake's air raids, open** (2026-11-10): scenario airraid LP_MIX=grubstake, the same walled, flamer-held radar and
-  a provoked Grubstake camp with eight scrap copters: it raided a rival's fabricator, then a drill, and never weighed the
-  radar, by air or on foot (a thief's choice and its rivals first). Its air rule is Kessler-Hayashi's, unexercised. For the
-  user: whether a thief should fly at a walled target at all (its bomb drones on artillery fit its character).
+- **Grubstake's air raids** (0.2.294; the user, 2026-11-10: "Grubstake should get air raids indeed"). Scenario airraid
+  LP_MIX=grubstake, the same walled, flamer-held radar and a provoked Grubstake camp with eight scrap copters: it raided a
+  rival's fabricator, then a drill, and never weighed the radar. Its temper (mind.max_exposure, a thief off guarded
+  ground) held the radar before air was weighed. Now `ops.temper_allows(b, t, air)` leaves out the ground's exposure by
+  air, and choose holds a target only the air may take (`air_only`) to the same cap on its air defence: a thief flies over
+  a wall where little shoots up, never into guns. The run: an air raid on the radar at 29.5 minutes, 8 fliers against air
+  defence 0, razed. Its build's tilt to fliers was read at 9 minutes, before Grubstake first senses the player's targets
+  (9.2): the scenario keeps the highest seen. In regress.sh (35 minutes); seen failing before the change (3 checks); the
+  other three airraid variants and Grubstake's temper, snatch, skim guarded, fortress and heist pass.
 - **farm siege and farm wave200 fail from 0.2.272, cause open** (2026-11-10, the full regression on the Mac Studio,
   bisected there: both pass at 0.2.271 and before, both fail at 0.2.272, the price re-tune). Not counters.lua alone: the
   current code with 0.2.271's counters still fails both; nothing in farm.lua or herd.lua reads the re-priced units (Line
