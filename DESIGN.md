@@ -1026,6 +1026,40 @@ The aim: the player answers the faction with factory output, not clicks.
 - Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
   blocks; a fought capture that a sensible army wins.
 
+## Veterancy (designed 2026-11-10, to build)
+The user, 2026-11-10: "Veterancy system for individual units à la C&C. Rewards the AI mechanics we implemented that aim for
+attackers to return home. Incentivizes an alternative playstyle of preserving highly elite units vs throwing mass prod in
+the grinder."
+
+**The rank is the unit's quality.** The engine's own: probed (scenario `vetprobe`, a trooper at each quality), a unit's
+max health rises 30% a level (120, 156, 192, 228, 300) and its damage about 48% a level (60, 89, 118, 146, 204 in the same
+5 s on a frozen tank: legendary 3.4 times normal, two seeds). No prototype more (93 units, not 372), its icon the engine's
+quality badge. Three ranks, C&C's: Veteran (uncommon), Elite (rare), Heroic (epic); legendary is never earned.
+
+**Earned by kills, given at home.** Each kill credits its killer (on_entity_died's cause) with merit: a unit killed is
+worth its strength over the killer's (attempt.worth: a trooper killing a tank earns more than the reverse), a building
+half a point, a spawner one, a biter its own worth. Ranks at 3, 8 and 16 points (assumed: to calibrate on the contact
+timelines, a veteran or two an hour of a careful game). Merit is banked in the field; the rank comes only once the unit is
+home, which is what makes coming home matter:
+- the corporations' units at the pool's homecoming (pool.tick: back in the garrison, from b.returning), never mid-job;
+- the player's units when idle by one of its rally beacons or its muster point (no command, not hit for 10 s).
+A unit cannot be raised a quality in place (order_upgrade refuses units, probed), so a promotion is a swap: a new unit of
+the same name at the next quality, at the same place and health share, its merit carried, put where the old one was
+(roster, storage.unit_owner, the garrison, a player squad) and the old one removed. At home, no operation holds it.
+
+**What the AI does with it** (to build after the ranks):
+- its odds count a veteran at its rank (worth times health times damage: a Veteran about 1.9 a normal unit, an Elite 3.1);
+- loss aversion: a raid with veterans in it turns home sooner (abort share 0.6 for an Elite), and they are the last
+  taken for a desperate raid; Grubstake's prospector doctrine already leaves at 70%;
+- its counters and learning read unit names, unchanged: a veteran is the same kind.
+
+**What the player sees:** the quality badge on a ranked unit, a promotion notice (a short flying text, "Veteran", at the
+unit), and the army panel counts its ranks. Retire keeps a rank only if the order item can carry quality (assumed: an
+order item at the unit's quality; probe before relying on it).
+
+**Not doing:** rank from damage dealt (kills are legible), self-heal (C&C's heroic heal: maybe later, cheap at home), a
+rank lost on retreat.
+
 ## Orbital cannons (built 2026-11-10; the big cannon and its logistics: findings, "The orbital cannon, big")
 The user, on the strike beacon: "tacked on and unrewarding. I propose that the player has to build actual orbital cannons on
 a space platform above Nauvis. These cannons need fuel and munitions that are challenging to craft in space, and represent

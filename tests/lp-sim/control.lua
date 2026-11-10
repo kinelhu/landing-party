@@ -186,6 +186,53 @@ scenarios.probe = function()
   end)
 end
 
+-- Veterancy spike (the user, 2026-11-10: "Veterancy system for individual units à la C&C"): does a unit's quality raise
+-- its health, its damage, and can a live unit be raised a quality in place (order_upgrade, apply_upgrade) keeping its
+-- entity, its unit number and its command? A trooper at each quality, its max health; two troopers, normal and
+-- legendary, each against a lone stone wall chunk, the damage each deals in 10 seconds; a walking trooper upgraded.
+scenarios.vetprobe = function()
+  local Q = {"normal", "uncommon", "rare", "epic", "legendary"}
+  schedule(300, function()
+    for k, q in ipairs(Q) do
+      local u = surface().create_entity{name = "lp-trooper", position = {k * 4, -40}, force = "player", quality = q}
+      table.insert(lines, string.format("INFO vetprobe %s: max health %s, quality %s", q, u and tostring(u.max_health) or "-",
+        u and u.quality.name or "-"))
+    end
+    S.walls = {}
+    for k, q in ipairs(Q) do
+      local x = k * 30
+      local w = surface().create_entity{name = "lp-tank", position = {x, 0}, force = "enemy"}
+      w.health = w.max_health
+      local u = surface().create_entity{name = "lp-trooper", position = {x, 8}, force = "player", quality = q}
+      u.commandable.set_command{type = defines.command.attack, target = w, distraction = defines.distraction.none}
+      w.disabled_by_script = true
+      S.walls[q] = {w = w, h0 = w.health, u = u}
+    end
+    S.walker = surface().create_entity{name = "lp-trooper", position = {0, 40}, force = "player"}
+    S.walker.commandable.set_command{type = defines.command.go_to_location, destination = {200, 40}, radius = 2}
+    S.walker_no = S.walker.unit_number
+  end)
+  schedule(300 + 300, function() for _, r in pairs(S.walls) do r.h0 = r.w.valid and r.w.health or r.h0 end end)
+  schedule(300 + 600, function()
+    for q, r in pairs(S.walls) do
+      table.insert(lines, string.format("INFO vetprobe damage %s: %.1f in the last 5 s (target %s)", q,
+        r.w.valid and (r.h0 - r.w.health) or -1, r.w.valid and "alive" or "dead"))
+    end
+    local u = S.walker
+    local ok, marked = pcall(function() return u.order_upgrade{force = "player", target = {name = "lp-trooper", quality = "rare"}} end)
+    table.insert(lines, "INFO vetprobe order_upgrade: " .. tostring(ok) .. " " .. tostring(marked))
+    local ok2, n = pcall(function() return u.apply_upgrade() end)
+    table.insert(lines, string.format("INFO vetprobe apply_upgrade: %s %s; old valid %s", tostring(ok2),
+      ok2 and n and (n.unit_number .. " q " .. n.quality.name .. " (was " .. S.walker_no .. ")") or tostring(n), tostring(u.valid)))
+    S.new = ok2 and n or nil
+  end)
+  schedule(300 + 900, function()
+    local n = S.new
+    table.insert(lines, string.format("INFO vetprobe after: %s at %s, command %s", n and n.valid and n.quality.name or "-",
+      n and n.valid and serpent.line(n.position) or "-", n and n.valid and n.commandable and serpent.line(n.commandable.command) or "-"))
+  end)
+end
+
 scenarios.cut = function()
   window_rate("mined", STRIKE, "before")
   window_rate("mined", END, "after")
