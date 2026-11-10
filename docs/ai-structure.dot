@@ -65,7 +65,7 @@ digraph ai {
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n291 lines", width=1.12, fillcolor="#eef2f7"];
     "airraid" [label="airraid\n126 lines", width=0.94, fillcolor="#eef2f7"];
-    "cannon" [label="cannon\n164 lines", width=0.98, fillcolor="#eef2f7"];
+    "cannon" [label="cannon\n210 lines", width=1.03, fillcolor="#eef2f7"];
     "siege" [label="siege\n2088 lines", width=3.12, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
     "strip" [label="strip\n238 lines", width=1.06, fillcolor="#eef2f7"];
@@ -74,7 +74,7 @@ digraph ai {
     "strike" [label="strike\n68 lines", width=0.88, fillcolor="#eef2f7"];
     "jammer" [label="jammer\n75 lines", width=0.88, fillcolor="#eef2f7"];
     "dome" [label="dome\n407 lines", width=1.25, fillcolor="#eef2f7"];
-    "orbital" [label="orbital\n334 lines", width=1.17, fillcolor="#eef2f7"];
+    "orbital" [label="orbital\n338 lines", width=1.18, fillcolor="#eef2f7"];
     "scorcher" [label="scorcher\n224 lines", width=1.05, fillcolor="#d9f0d9"];
     "stun" [label="stun\n145 lines", width=0.96, fillcolor="#eef2f7"];
     "fall" [label="fall\n101 lines", width=0.91, fillcolor="#eef2f7"];
@@ -110,7 +110,7 @@ digraph ai {
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "control" [label="control\n1125 lines", width=2.05, fillcolor="#f7dede"];
-    "dev" [label="dev\n565 lines", width=1.43, fillcolor="#eef2f7"];
+    "dev" [label="dev\n566 lines", width=1.43, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
   }

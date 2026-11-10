@@ -11,7 +11,12 @@ Sister project: `~/Dev/factorio-mods` (Empirical Science); the two share the dev
   `~/Dev/landing-party` (rsync the working tree to it, `--exclude docs/sim --exclude media --exclude .claude`; never git
   push). Long regressions run there (`nohup env LP_JOBS=8 scripts/regress.sh ... > ~/lp-regress.log &`; at 8 its load
   reaches 28: 6 may be as fast), Blender renders too (`~/lp-render`). In zsh, brace the host in rsync paths: `${H}:path`
-  (`$H:lp-render` reads `:l` as zsh's lowercase modifier and the copy lands in a local folder).
+  (`$H:lp-render` reads `:l` as zsh's lowercase modifier and the copy lands in a local folder). **ssh to it always exits
+  0** (2026-11-10: `ssh $H false` exits 0), so a remote test's exit status means nothing: wait on what a remote command
+  prints (`grep -c`, `wc -l`), never on `ssh $H 'test ...'` or `grep -q`. Blender renders there on the GPU (Metal, lpkit.gpu;
+  the first run compiles kernels for a few minutes): about ten times the CPU's pace. Its CC0 art sources live there, not
+  in the repo: ambientCG textures in `~/lp-tex` (LP_TEX; ids in tools/blender/orbital_cannon.py) and Poly Haven models in
+  `~/lp-props` (LP_PROPS; fetch with `python3 tools/blender/polyhaven_get.py ~/lp-props <asset>...`).
 - Game data (the best examples of how things are really done): `$APP/data/{core,base,space-age,quality,elevated-rails}`.
 - **API reference, version-matched:** `$APP/doc-html/runtime-api.json` and `prototype-api.json`.
   Look up every API before using it. Memory mixes the 1.1 and 2.0 APIs, which differ a lot.

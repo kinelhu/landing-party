@@ -1,0 +1,71 @@
+"""The big orbital cannon's renders (orbital_cannon.py) to sheets, a set a direction: body.png (one frame), glow.png
+(its frames, at half size: a glow needs no detail, and four directions of a sprite 8 by 23 tiles are a lot of memory),
+shadow.png (one frame), each frame stretched by sqrt(2) and cropped to the union of body, glow and shadow, so all three
+share a frame size and a shift. Writes dirs.json (sheets_lua.py reads it): per direction width, height, shift (tiles at 64 px a tile), glow
+frames and line length. And a preview of each direction over a platform's grey.
+
+    uv run --with pillow python tools/blender/cannon_sheets.py <render dir> <out dir>
+"""
+import json, math, os, sys
+from PIL import Image
+
+src, out = sys.argv[1], sys.argv[2]
+os.makedirs(out, exist_ok=True)
+LINE = 4
+meta = {}
+def stretch(im):
+    return im.resize((im.width, int(im.height * math.sqrt(2))), Image.LANCZOS)
+for d in sorted(os.listdir(src)):
+    base = f"{src}/{d}"
+    if not os.path.isdir(f"{base}/body"):
+        continue
+    body = stretch(Image.open(f"{base}/body/000.png").convert("RGBA"))
+    glows = [stretch(Image.open(f"{base}/glow/{n}").convert("RGBA")) for n in sorted(os.listdir(f"{base}/glow"))]
+    # (The catcher's faint alpha over the whole plane cut before the stretch, and after it: stretched first, its ringing
+    # read as shadow to the frame's edge and the crop took all of it.)
+    shadow = Image.open(f"{base}/shadow.png").convert("RGBA")
+    shadow.putalpha(shadow.split()[3].point(lambda v: v if v > 12 else 0))
+    shadow = stretch(shadow)
+    shadow.putalpha(shadow.split()[3].point(lambda v: int(v * 0.55) if v > 12 else 0))
+    for im in [body] + glows:
+        im.putalpha(im.split()[3].point(lambda v: v if v > 3 else 0))
+    box = None
+    for im in [body, shadow] + glows:
+        b = im.getbbox()
+        if b: box = b if not box else (min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3]))
+    # (Even, so the half-size glow's frame is exactly half.)
+    box = (box[0] - 2, box[1] - 2, box[2] + 2 + (box[2] - box[0]) % 2, box[3] + 2 + (box[3] - box[1]) % 2)
+    fw, fh = box[2] - box[0], box[3] - box[1]
+    body.crop(box).save(f"{out}/{d}-body.png", optimize=True)
+    shadow.crop(box).save(f"{out}/{d}-shadow.png", optimize=True)
+    gw, gh = fw // 2, fh // 2
+    rows = math.ceil(len(glows) / LINE)
+    sheet = Image.new("RGBA", (gw * LINE, gh * rows), (0, 0, 0, 0))
+    for i, im in enumerate(glows):
+        sheet.paste(im.crop(box).resize((gw, gh), Image.LANCZOS), ((i % LINE) * gw, (i // LINE) * gh))
+    sheet.save(f"{out}/{d}-glow.png", optimize=True)
+    W, H = body.size
+    cx, cy = (box[0] + box[2]) / 2 - W / 2, (box[1] + box[3]) / 2 - H / 2
+    meta[d] = {"width": fw, "height": fh, "shift": [cx / 64, cy / 64], "glow_frames": len(glows), "line_length": LINE}
+    # The fans: full size, cropped to their own box over all frames (a small sheet laid over the body).
+    if os.path.isdir(f"{base}/fans"):
+        fans = [stretch(Image.open(f"{base}/fans/{n}").convert("RGBA")) for n in sorted(os.listdir(f"{base}/fans"))]
+        fb = None
+        for im in fans:
+            im.putalpha(im.split()[3].point(lambda v: v if v > 3 else 0))
+            b2 = im.getbbox()
+            if b2: fb = b2 if not fb else (min(fb[0], b2[0]), min(fb[1], b2[1]), max(fb[2], b2[2]), max(fb[3], b2[3]))
+        fb = (fb[0] - 2, fb[1] - 2, fb[2] + 2, fb[3] + 2)
+        ww, hh = fb[2] - fb[0], fb[3] - fb[1]
+        sheet = Image.new("RGBA", (ww * LINE, hh * math.ceil(len(fans) / LINE)), (0, 0, 0, 0))
+        for i, im in enumerate(fans):
+            sheet.paste(im.crop(fb), ((i % LINE) * ww, (i // LINE) * hh))
+        sheet.save(f"{out}/{d}-fans.png", optimize=True)
+        fx, fy = (fb[0] + fb[2]) / 2 - W / 2, (fb[1] + fb[3]) / 2 - H / 2
+        meta[d]["fans"] = {"width": ww, "height": hh, "shift": [fx / 64, fy / 64], "frames": len(fans)}
+    prev = Image.new("RGBA", (fw, fh), (78, 80, 84, 255))
+    prev.alpha_composite(shadow.crop(box)); prev.alpha_composite(body.crop(box))
+    g = glows[len(glows) // 2].crop(box); g.putalpha(g.split()[3].point(lambda v: v // 2)); prev.alpha_composite(g)
+    prev.convert("RGB").save(f"{src}/preview-{d}.jpg", quality=85)
+json.dump(meta, open(f"{out}/dirs.json", "w"), indent=1)
+print(json.dumps(meta))

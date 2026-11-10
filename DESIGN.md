@@ -1026,7 +1026,7 @@ The aim: the player answers the faction with factory output, not clicks.
 - Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
   blocks; a fought capture that a sensible army wins.
 
-## Orbital cannons (proposed, 2026-11-10)
+## Orbital cannons (built 2026-11-10; the big cannon and its logistics: findings, "The orbital cannon, big")
 The user, on the strike beacon: "tacked on and unrewarding. I propose that the player has to build actual orbital cannons on
 a space platform above Nauvis. These cannons need fuel and munitions that are challenging to craft in space, and represent
 a logistic hurdle. Orbital strikes should be callable through a button, like artillery. As it is stronger than artillery,
@@ -6098,6 +6098,35 @@ Bugs and surprises the headless runs caught, each kept as a check:
   air defence 0.3 where the straight line priced 5.0 and sent 7. Frequency, first-contact runs (three variants, seed
   12345): Kessler-Hayashi built 13 to 25 laser drones a game and made no air raid, every target it chose undefended
   (defence 0, so on foot as cheap): air raids are a strong base's problem, as meant.
+- **The orbital cannon, big** (2026-11-10; the user: "Do the orbital cannons scream super weapon to you? ... structures you
+  build on the side of a platform, pointing down? Something big is needed"; of a first box-built model: "That cannon looks
+  terrible. Why are we settling"; then "more dramatic details? Larger coils? This needs a big footprint and animations
+  too"). Three clay outlines (tools/blender/cannon_concepts.py: railgun spine, naval turret, mass driver) judged at game
+  zoom beside the vanilla railgun turret; the spine kept (one dominant barrel, Space Age's railgun's family). Now 12 by 18
+  tiles at the platform's edge, its barrel 16 tiles out over the void (tile_buildability_rules, the thruster's way: the void
+  ahead of it, its barrel's width), four directions; five wound copper coils round the barrel lit in turn as it charges,
+  capacitor towers with arcs over the hull, fans spinning while it works. Its strike: a 5 s warning with the railgun's
+  charge sound, a shock on screen at each shell (a camera effect), the big artillery explosion and a huge scorch; on the
+  platform its shot and a muzzle flash. Its logistics (the user: "How did you end up setting that up for it to be a
+  challenge for the player?"), read against the game's recipes: steel is easy in orbit, thruster fuel is a platform's
+  cheapest product; the explosives (sulfur from advanced asteroid crushing, coal from no asteroid: shipped up until coal
+  synthesis) and low density structure are the load, by rocket, in proportion to use (eight cannons at the full rate,
+  160 shells an hour: 1,600 explosives, 320 LDS). Made a load: 4 MW a cannon while it charges (eight: 32 MW, some 530
+  space solar panels), 500 thruster fuel a charge (firing against flying), the cannon four times dearer (2 artillery
+  turrets, 100 processing units, 100 LDS, 50 electric engines, 50 tungsten plate, 400 steel), 10 shells a charge for 6.
+  And tungsten (the user: "Should we perhaps require calcite or tungsten?"): the shell's penetrator is tungsten carbide (4
+  a shell; its LDS out), the cannon's barrel tungsten plate, the technology after tungsten carbide: a post-Vulcanus weapon
+  on a standing supply line from Vulcanus to Nauvis's orbit (eight cannons at the full rate: some 640 tungsten carbide an
+  hour). Calcite not: in orbit only from advanced oxide crushing (Gleba's science), else a Vulcanus flux with no tie to a
+  gun, a second gate for friction alone. First numbers, to tune in play. The art (tools/blender/orbital_cannon.py, rendered on the Mac Studio's GPU): CC0 textures (ambientCG:
+  PaintedMetal006 recoloured blue-grey, PaintedMetal004 as chipped matte hazard paint, MetalPlates013, Metal038) and
+  kitbashed Poly Haven props (CC0: tanks, utility and power boxes, a compressor, an air-conditioning unit, valves, pipe
+  fittings, cables; tools/blender/polyhaven_get.py), fat capacitor columns on round pads out of the plinth's rear corners,
+  the two sides unlike; the user's notes on the way: rounder base plates, no strictly square base, the gold-and-black read
+  as a luxury item (now matte paint, steel rails, dull dark steel). Its arcs are the game's own Tesla lightning, drawn
+  by script between the towers' terminals and the first coil's contact posts while it charges (in the sprite they read
+  as scribbles). Scenario cannon: its arcs (seen failing with them off, 0) and the edge rule (seen failing without it:
+  mid-deck allowed); its fuel three charges' worth (500 a charge). Not yet seen in a window; the manual to follow.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

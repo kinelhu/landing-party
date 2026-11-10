@@ -14,7 +14,52 @@ def reset():
     s = bpy.context.scene
     s.render.engine = "CYCLES"; s.cycles.samples = 96; s.cycles.use_denoising = True
     s.render.film_transparent = True; s.view_settings.view_transform = "Standard"
+    gpu(s)
     return s
+
+def gpu(s):
+    """Cycles on the GPU (Metal on Apple silicon) when there is one: it rendered on the CPU by default, the Mac Studio's
+    GPU idle (2026-11-10). LP_DEVICE=CPU to force the CPU."""
+    if os.environ.get("LP_DEVICE", "GPU") != "GPU":
+        return False
+    try:
+        prefs = bpy.context.preferences.addons["cycles"].preferences
+        for kind in ("METAL", "OPTIX", "CUDA", "HIP"):
+            try:
+                prefs.compute_device_type = kind
+            except TypeError:
+                continue
+            prefs.get_devices()
+            devs = [d for d in prefs.devices if d.type == kind]
+            if devs:
+                for d in prefs.devices: d.use = d.type == kind
+                s.cycles.device = "GPU"
+                print("lpkit: rendering on", kind, [d.name for d in devs])
+                return True
+    except Exception as e:
+        print("lpkit: no GPU,", e)
+    return False
+
+def border(scene, objs, pad=0.02):
+    """The render's border round what objs cover in the camera's view (the frame's size kept: offsets unchanged, the rest
+    left transparent), or off when objs is None."""
+    r = scene.render
+    if objs is None:
+        r.use_border = False; return
+    from bpy_extras.object_utils import world_to_camera_view
+    import mathutils
+    xs, ys = [], []
+    dg = bpy.context.evaluated_depsgraph_get()
+    for o in objs:
+        if o.type not in ("MESH", "CURVE"): continue
+        for c in o.bound_box:
+            v = world_to_camera_view(scene, scene.camera, o.matrix_world @ mathutils.Vector(c))
+            xs.append(v.x); ys.append(v.y)
+    if not xs:
+        r.use_border = False; return
+    r.use_border = True; r.use_crop_to_border = False
+    r.border_min_x, r.border_max_x = max(0, min(xs) - pad), min(1, max(xs) + pad)
+    r.border_min_y, r.border_max_y = max(0, min(ys) - pad), min(1, max(ys) + pad)
 
 def mat(name, rgb, metal=0.0, rough=0.5, emit=None, strength=0.0, grime=0.5):
     m = bpy.data.materials.new(name); m.use_nodes = True

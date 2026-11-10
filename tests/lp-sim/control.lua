@@ -2140,16 +2140,21 @@ scenarios.cannon = function()
     local tiles = {}
     for x = -30, 30 do for y = 8, 30 do tiles[#tiles + 1] = {name = "space-platform-foundation", position = {x, y}} end end
     ps.set_tiles(tiles)
+    -- Where the big cannon may stand, by its rule alone (asked on the bare deck): at the edge facing the void, yes; mid-deck,
+    -- the deck ahead of it, no.
+    S.mid_ok = ps.can_place_entity{name = "lp-orbital-cannon", position = {22, 17}, direction = defines.direction.south, force = "player"}
+    S.edge_ok = ps.can_place_entity{name = "lp-orbital-cannon", position = {22, 22}, direction = defines.direction.south, force = "player"}
     local eei = ps.create_entity{name = "electric-energy-interface", position = {-20, 20}, force = "player"}
     if eei then eei.power_production, eei.electric_buffer_size = 1e8 / 60, 1e8 end
-    for x = -16, 16, 6 do ps.create_entity{name = "medium-electric-pole", position = {x + 0.5, 15.5}, force = "player"} end
-    S.array = ps.create_entity{name = "lp-targeting-array", position = {-8, 22}, force = "player"}
+    for x = -16, 28, 6 do ps.create_entity{name = "medium-electric-pole", position = {x + 0.5, 11.5}, force = "player"} end
+    S.array = ps.create_entity{name = "lp-targeting-array", position = {-20.5, 26.5}, force = "player"}
     S.cannons = {}
-    for k, x in ipairs({0, 8}) do
-      local c = ps.create_entity{name = "lp-orbital-cannon", position = {x + 0.5, 20.5}, force = "player"}
+    -- (The big cannon, 12 by 18: at the deck's south edge, facing the void.)
+    for k, x in ipairs({-6, 7}) do
+      local c = ps.create_entity{name = "lp-orbital-cannon", position = {x, 22}, force = "player", direction = defines.direction.south}
       if c then
         c.insert{name = "lp-orbital-shell", count = 4}
-        c.insert_fluid{name = "thruster-fuel", amount = 1000}
+        c.insert_fluid{name = "thruster-fuel", amount = 1500}   -- (three charges at 500: a third craft starts and holds, its shell taken)
         S.cannons[k] = c
       end
     end
@@ -2165,6 +2170,13 @@ scenarios.cannon = function()
     end
     S.target = {209, 4.5}
   end)
+  -- Its arcs while it charges (the game's lightning, scripts/cannon.lua arcs), counted a minute in.
+  for t = 3600, 3600 + 120, 10 do
+    schedule(t, function()
+      local ps = S.pl and S.pl.valid and S.pl.surface
+      if ps then S.arcs = math.max(S.arcs or 0, ps.count_entities_filtered{name = "lp-cannon-arc"}) end
+    end)
+  end
   schedule(60 + 600 * 60, function()
     S.full = lp("cannon_readout")
     S.held, S.shells_left = {}, {}
@@ -2195,7 +2207,7 @@ scenarios.cannon = function()
     S.noarray = lp("debug_cannon_fire", S.target)
     -- The array back, charged, and the platform sent to Vulcanus: refused (not over Nauvis).
     local ps = S.pl and S.pl.surface
-    if ps then ps.create_entity{name = "lp-targeting-array", position = {-8, 22}, force = "player"} end
+    if ps then ps.create_entity{name = "lp-targeting-array", position = {-20.5, 26.5}, force = "player"} end
     S.back = lp("cannon_readout")
     S.pl.space_location = "vulcanus"
   end)
@@ -2206,6 +2218,9 @@ scenarios.cannon = function()
     info("cannon: " .. serpent.line({made = S.made, surface = S.surface_ok, loc = S.loc, built = S.built, ground = S.ground,
       full = S.full, held = S.held, shot1 = S.shot1, shot1b = S.shot1b, nests_left = S.nests_left, shot2 = S.shot2,
       shot3 = S.shot3, noarray = S.noarray, stats = lp("cannon_stats")}))
+    check("cannon: its arcs strike while it charges", (S.arcs or 0) > 0, tostring(S.arcs))
+    check("cannon: buildable at the deck's edge facing the void, not mid-deck", S.edge_ok == true and S.mid_ok == false,
+      string.format("edge %s, mid %s", tostring(S.edge_ok), tostring(S.mid_ok)))
     check("cannon: a platform over Nauvis with two cannons on it, none buildable on Nauvis", S.surface_ok and S.loc == "nauvis"
       and S.built == 2 and S.ground == false, serpent.line({S.surface_ok, S.loc, S.built, S.ground}))
     -- (Not three: its third craft, begun before the script stopped it, holds; its shell taken, so one of four left. Without

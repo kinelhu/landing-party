@@ -94,6 +94,12 @@ function cannon.fire(force, s, pos, player)
       if charges_in(e) > 0 then
         e.get_inventory(defines.inventory.crafter_output).remove{name = "lp-orbital-charge", count = 1}
         spent = spent + 1
+        -- Its shot on the platform: the sound, a flash at the muzzle (C.MUZZLE tiles out its barrel's way).
+        local d = ({[defines.direction.north] = {0, -1}, [defines.direction.east] = {1, 0}, [defines.direction.south] = {0, 1},
+          [defines.direction.west] = {-1, 0}})[e.direction] or {0, -1}
+        local m = {e.position.x + d[1] * C.MUZZLE, e.position.y + d[2] * C.MUZZLE}
+        e.surface.play_sound{path = "lp-cannon-fire", position = m}
+        e.surface.create_entity{name = "big-explosion", position = m}
       end
     end
   end
@@ -152,9 +158,49 @@ store = function()
 end
 cannon.store = store
 
+-- Its arcs while it charges (the user: "the arcs look like crap. Can't we add those at the game level?"): the game's own
+-- lightning between the two capacitor towers' terminals, and from each to the first coil's contact post. Points from the
+-- model (tools/blender/orbital_cannon.py, 1.5 times its units), for a cannon whose barrel points north: {x, y, height};
+-- drawn at y less its height (the camera's 45 degrees, the sheet's stretch: a height of h is h tiles up the screen).
+local TOWERS = {{-4.725, 6.825, 7.875}, {4.725, 6.825, 6.825}}   -- (the left one taller, TOWER_LIFT)
+local POSTS = {{-3.29, -5.57, 5.47}, {3.29, -5.57, 5.47}}
+local TURN = {[defines.direction.north] = function(x, y) return x, y end,
+  [defines.direction.east] = function(x, y) return -y, x end,
+  [defines.direction.south] = function(x, y) return -x, -y end,
+  [defines.direction.west] = function(x, y) return y, -x end}
+local function drawn(e, p)
+  local x, y = (TURN[e.direction] or TURN[defines.direction.north])(p[1], p[2])
+  return {e.position.x + x, e.position.y + y - p[3]}
+end
+local function arcs(tick)
+  for _, f in pairs(game.forces) do
+    for _, pl in pairs(f.platforms) do
+      local s = pl.valid and pl.surface
+      if s and s.valid then
+        for _, e in pairs(s.find_entities_filtered{name = "lp-orbital-cannon"}) do
+          if e.status == defines.entity_status.working then
+            -- (Which arcs strike, by the tick and the cannon: no dice.)
+            local k = (math.floor(tick / 30) + (e.unit_number or 0)) % 3
+            local a, b = drawn(e, TOWERS[1]), drawn(e, TOWERS[2])
+            if k ~= 2 then s.create_entity{name = "lp-cannon-arc", position = a, source_position = a, target_position = b, duration = 20} end
+            for i = 1, 2 do
+              if k == 0 or k == i then
+                local t, q = drawn(e, TOWERS[i]), drawn(e, POSTS[i])
+                s.create_entity{name = "lp-cannon-arc", position = t, source_position = t, target_position = q, duration = 16}
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+cannon.arcs = arcs
+
 function cannon.tick(tick)
   if tick % 60 == 25 then cannon.gui_tick() end
   if tick % 30 == 10 then store() end
+  if tick % 30 == 20 then arcs(tick) end
 end
 
 function cannon.stats()

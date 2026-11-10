@@ -162,9 +162,11 @@ end
 
 -- From the player's orbital cannons (scripts/cannon.lua): centred on a point of the map, no beacon on the ground, painted
 -- for CANNON_PAINT, the platform's shadow over it, then its shells (`at`, its points).
-local CANNON_PAINT = 2 * 60
+-- (5 s: a superweapon's warning, the railgun's charge heard over it, lp-cannon-charge.)
+local CANNON_PAINT = 5 * 60
 function orbital.from_orbit(s, force, center, at, reach)
   storage.kh_strikes = storage.kh_strikes or {}
+  s.play_sound{path = "lp-cannon-charge", position = {center[1], center[2]}}
   local along = math.pi / 4
   table.insert(storage.kh_strikes, {surface = s.index, force = force, center = {center[1], center[2]}, along = along,
     fire_at = game.tick + CANNON_PAINT, paint_for = CANNON_PAINT, k = 0, phase = "paint", player = true, preset = at,
@@ -197,7 +199,9 @@ local function fall(st, s, b, at)
     duration = LANCE_TICKS}
   rendering.draw_light{sprite = "utility/light_medium", scale = 6, intensity = 1, color = LIGHT, target = {x, y},
     surface = s, time_to_live = LANCE_TICKS}
-  s.create_entity{name = "medium-scorchmark-tintable", position = {x, y}}
+  -- (The cannon's: a shock on screen, the big explosion, a huge scorch, lp-cannon-shock.)
+  if st.cannon then s.create_entity{name = "lp-cannon-shock", position = {x, y}}
+  else s.create_entity{name = "medium-scorchmark-tintable", position = {x, y}} end
   -- Its flash, lighting by day as well (a game light shows only in the dark): additive, over the explosion.
   rendering.draw_sprite{sprite = "lp-impact-flash", target = {x, y}, surface = s, x_scale = 5, y_scale = 5,
     render_layer = "explosion", time_to_live = 14}

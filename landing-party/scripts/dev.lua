@@ -336,7 +336,7 @@ function dev.run(player, args)
       player.print(n and string.format("orbital strike: %d cannons fired", n) or ("no strike: " .. tostring(why)))
       return
     end
-    local n = math.max(1, math.min(16, tonumber(args[2]) or 4))
+    local n = math.max(1, math.min(5, tonumber(args[2]) or 4))
     local t = f.technologies["lp-orbital-cannon"]
     if t then t.researched = true end
     local pl = storage.dev_platform
@@ -351,18 +351,19 @@ function dev.run(player, args)
     for x = -36, 36 do for y = 8, 36 do tiles[#tiles + 1] = {name = "space-platform-foundation", position = {x, y}} end end
     ps.set_tiles(tiles)
     if ps.count_entities_filtered{name = "electric-energy-interface", limit = 1} == 0 then
-      local e = ps.create_entity{name = "electric-energy-interface", position = {-30, 30}, force = f}
+      local e = ps.create_entity{name = "electric-energy-interface", position = {-30, 9}, force = f}
       if e then e.power_production, e.electric_buffer_size = 1e9 / 60, 1e9 end
       for x = -30, 30, 6 do ps.create_entity{name = "substation", position = {x + 1, 18}, force = f} end
     end
     if ps.count_entities_filtered{name = "lp-targeting-array", limit = 1} == 0 then
-      ps.create_entity{name = "lp-targeting-array", position = {-24.5, 25.5}, force = f}
+      ps.create_entity{name = "lp-targeting-array", position = {33.5, 12.5}, force = f}
     end
     local made = 0
     for k = 0, n - 1 do
-      local p = {-17.5 + (k % 8) * 5, 24.5 + math.floor(k / 8) * 6}
+      -- (Along the deck's south edge, barrels out over the void: 12 by 18 each, 13 apart.)
+      local p = {-30 + k * 13, 28}
       local c = ps.find_entities_filtered{name = "lp-orbital-cannon", position = p, radius = 1, limit = 1}[1]
-        or ps.create_entity{name = "lp-orbital-cannon", position = p, force = f}
+        or ps.create_entity{name = "lp-orbital-cannon", position = p, force = f, direction = defines.direction.south}
       if c then
         c.insert{name = "lp-orbital-shell", count = 4}
         c.insert_fluid{name = "thruster-fuel", amount = 1000}

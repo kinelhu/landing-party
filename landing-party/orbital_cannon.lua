@@ -33,17 +33,21 @@ data:extend({
     results = {{type = "item", name = "lp-orbital-charge", amount = 1}}},
 })
 
--- The shell: made in space only, of steel, explosives (sulfur shipped up) and low density structure.
+-- The shell: made in space only, its penetrator tungsten carbide (Vulcanus's, shipped to Nauvis's orbit), its charge
+-- explosives (coal from no asteroid: shipped up until coal synthesis), its case steel.
 data:extend({
   {type = "item", name = "lp-orbital-shell", icons = {{icon = "__base__/graphics/icons/artillery-shell.png", tint = TINT}},
     stack_size = 10, weight = 100000, subgroup = "lp-components", order = "y-orbital-a"},
   {type = "recipe", name = "lp-orbital-shell", enabled = false, energy_required = 30, surface_conditions = SPACE,
-    ingredients = {{type = "item", name = "steel-plate", amount = 10}, {type = "item", name = "explosives", amount = 10},
-      {type = "item", name = "low-density-structure", amount = 2}},
+    ingredients = {{type = "item", name = "tungsten-carbide", amount = 4}, {type = "item", name = "explosives", amount = 10},
+      {type = "item", name = "steel-plate", amount = 5}},
     results = {{type = "item", name = "lp-orbital-shell", amount = 1}}},
 })
 
--- The cannon: the assembling machine 3's body, fixed to its charge, platform only.
+-- The cannon: the assembling machine 3's body, fixed to its charge, platform only. Big (the user, 2026-11-10: "structures
+-- you build on the side of a platform, pointing down? Something big is needed"): 12 by 18 on the deck at its edge, its
+-- barrel out over the void (tools/blender/orbital_cannon.py), built only where the void is ahead of it (the asteroid
+-- collector's and the thruster's rule: tile_buildability_rules). Its direction is the barrel's.
 local cannon = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 cannon.name = "lp-orbital-cannon"
 cannon.icons = {{icon = "__base__/graphics/icons/artillery-turret.png", tint = TINT}}
@@ -57,27 +61,94 @@ cannon.allowed_effects = {}
 cannon.surface_conditions = SPACE
 cannon.next_upgrade = nil
 cannon.fast_replaceable_group = nil
-cannon.max_health = 800
-cannon.energy_usage = "1MW"
+cannon.max_health = 3000
+cannon.energy_usage = C.POWER
 cannon.disabled_when_recipe_not_researched = false
--- Its own body (the cannon's model): the charge climbs its rings while it charges.
-cannon.graphics_set = {animation = {layers = {layer("player/orbital-cannon", "body", 0.25),
-  layer("player/orbital-cannon", "shadow", 0.25, {draw_as_shadow = true})}},
-  working_visualisations = {{animation = layer("player/orbital-cannon", "glow", 0.25, {draw_as_glow = true, blend_mode = "additive"}),
-    light = {intensity = 0.5, size = 8, color = {r = 0.45, g = 0.85, b = 1}}}}}
+-- Its own body, a set a direction (cannon_sheets.py: the body and shadow one frame, the glow at half size, its coils lit in
+-- turn while it charges).
+local DIRS = SHEETS["player/orbital-cannon"]
+local function dir_file(d, part) return "__landing-party__/graphics/player/orbital-cannon/" .. d .. "-" .. part .. ".png" end
+local function still(d)
+  local S = DIRS[d]
+  return {layers = {
+    {filename = dir_file(d, "body"), width = S.width, height = S.height, frame_count = 1, scale = 0.5, shift = S.shift},
+    {filename = dir_file(d, "shadow"), width = S.width, height = S.height, frame_count = 1, scale = 0.5, shift = S.shift,
+      draw_as_shadow = true}}}
+end
+local function glowing(d)
+  local S = DIRS[d]
+  return {filename = dir_file(d, "glow"), width = S.width / 2, height = S.height / 2, frame_count = S.frames,
+    line_length = S.line_length, scale = 1, shift = S.shift, animation_speed = 0.2, draw_as_glow = true, blend_mode = "additive"}
+end
+-- Its fans, spinning while it works: a small sheet laid over the body's own.
+local function fans(d)
+  local F = DIRS[d].fans
+  return {filename = dir_file(d, "fans"), width = F.width, height = F.height, frame_count = F.frames, line_length = 4,
+    scale = 0.5, shift = F.shift, animation_speed = 0.5}
+end
+cannon.graphics_set = {animation = {north = still("north"), east = still("east"), south = still("south"), west = still("west")},
+  working_visualisations = {
+    {north_animation = fans("north"), east_animation = fans("east"), south_animation = fans("south"), west_animation = fans("west")},
+    {north_animation = glowing("north"), east_animation = glowing("east"),
+      south_animation = glowing("south"), west_animation = glowing("west"),
+      light = {intensity = 0.6, size = 24, color = {r = 0.45, g = 0.85, b = 1}}}}}
 cannon.graphics_set_flipped = nil
-cannon.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-cannon.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+cannon.collision_box = {{-5.9, -8.9}, {5.9, 8.9}}
+cannon.selection_box = {{-6, -9}, {6, 9}}
+-- On the deck, and the void ahead of its muzzle's side, its barrel's width, as far as it reaches.
+cannon.tile_buildability_rules = {
+  {area = {{-5.9, -8.9}, {5.9, 8.9}}, required_tiles = {layers = {ground_tile = true}}, colliding_tiles = {layers = {empty_space = true}},
+    remove_on_collision = true},
+  {area = {{-2.9, -8.9 - C.REACH}, {2.9, -9.1}}, required_tiles = {layers = {empty_space = true}}, remove_on_collision = true},
+}
+-- Its thruster fuel from behind (the side away from the void).
+local fb = table.deepcopy(cannon.fluid_boxes[1])
+fb.production_type = "input"
+fb.volume = 1000
+fb.pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {-4.5, 8.5}},
+  {flow_direction = "input", direction = defines.direction.south, position = {4.5, 8.5}}}
+cannon.fluid_boxes = {fb}
+cannon.fluid_boxes_off_when_no_fluid_recipe = false
+cannon.icon_draw_specification = {shift = {0, 1.5}, scale = 2}
 cannon.localised_description = {"entity-description.lp-orbital-cannon", tostring(C.STORE), tostring(math.floor(C.CYCLE / 60))}
 data:extend({cannon,
-  {type = "item", name = "lp-orbital-cannon", icons = cannon.icons, place_result = "lp-orbital-cannon", stack_size = 5,
+  {type = "item", name = "lp-orbital-cannon", icons = cannon.icons, place_result = "lp-orbital-cannon", stack_size = 1,
     weight = 1000000, subgroup = "lp-components", order = "y-orbital-b",
     localised_description = cannon.localised_description},
-  {type = "recipe", name = "lp-orbital-cannon", enabled = false, energy_required = 30,
-    ingredients = {{type = "item", name = "artillery-turret", amount = 1}, {type = "item", name = "processing-unit", amount = 20},
-      {type = "item", name = "low-density-structure", amount = 20}, {type = "item", name = "steel-plate", amount = 50}},
+  {type = "recipe", name = "lp-orbital-cannon", enabled = false, energy_required = 120,
+    ingredients = {{type = "item", name = "artillery-turret", amount = 2}, {type = "item", name = "processing-unit", amount = 100},
+      {type = "item", name = "low-density-structure", amount = 100}, {type = "item", name = "electric-engine-unit", amount = 50},
+      {type = "item", name = "tungsten-plate", amount = 50}, {type = "item", name = "steel-plate", amount = 400}},
     results = {{type = "item", name = "lp-orbital-cannon", amount = 1}}},
 })
+
+-- The strike's sound and weight (the user: "Do the orbital cannons scream super weapon to you?"): the railgun's charge as its
+-- warning on the ground and its shot on the platform; each shell a shock felt on screen (the nuke's camera effect, much
+-- less), the artillery's big explosion and a huge scorch.
+data:extend({
+  {type = "sound", name = "lp-cannon-charge", filename = "__space-age__/sound/entity/railgun-turret/railgun-turret-activate-1.ogg",
+    volume = 1, audible_distance_modifier = 4},
+  {type = "sound", name = "lp-cannon-fire", variations = {
+    {filename = "__space-age__/sound/entity/railgun-turret/railgun-turret-gunshot-1.ogg", volume = 1},
+    {filename = "__space-age__/sound/entity/railgun-turret/railgun-turret-gunshot-2.ogg", volume = 1},
+    {filename = "__space-age__/sound/entity/railgun-turret/railgun-turret-gunshot-3.ogg", volume = 1}},
+    audible_distance_modifier = 4},
+})
+local shock = table.deepcopy(data.raw.explosion["big-artillery-explosion"])
+shock.name = "lp-cannon-shock"
+shock.created_effect = {type = "direct", action_delivery = {type = "instant", source_effects = {
+  {type = "camera-effect", duration = 24, ease_in_duration = 2, ease_out_duration = 22, strength = 2.2,
+    full_strength_max_distance = 40, max_distance = 220},
+  {type = "create-entity", entity_name = "huge-scorchmark-tintable", check_buildability = true}}}}
+data:extend({shock})
+-- Its arcs while it charges: Space Age's Tesla lightning, harmless and silent (scripts/cannon.lua draws them between its
+-- towers' terminals and its first coil's contact posts; drawn into the sprite they read as scribbles, the user).
+local arc = table.deepcopy(data.raw.beam["chain-tesla-turret-beam-start"])
+arc.name = "lp-cannon-arc"
+arc.action = nil
+arc.working_sound = nil
+arc.damage_interval = 1e6
+data:extend({arc})
 
 -- The targeting array: one a platform; Kessler-Hayashi's salvaged orbital beacon in it, or a targeting core made of
 -- space science (a game without Kessler-Hayashi).
@@ -124,7 +195,7 @@ data:extend({
 -- The technology: after artillery and the space platform.
 data:extend({
   {type = "technology", name = "lp-orbital-cannon", icon = "__base__/graphics/technology/artillery.png", icon_size = 256,
-    prerequisites = {"artillery", "space-platform"},
+    prerequisites = {"artillery", "space-platform", "tungsten-carbide"},
     unit = {count = 1000, time = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1},
       {"military-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"space-science-pack", 1}}},
     effects = {{type = "unlock-recipe", recipe = "lp-orbital-cannon"}, {type = "unlock-recipe", recipe = "lp-orbital-shell"},

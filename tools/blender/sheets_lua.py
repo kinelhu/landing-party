@@ -13,6 +13,16 @@ for d, _, files in sorted(os.walk(root)):
         parts = ", ".join('%s = {width = %d, height = %d, shift = {%r, %r}}' % (n, v["width"], v["height"], v["shift"][0], v["shift"][1])
                           for n, v in sorted(g.items()))
         rows.append('  ["%s"] = {%s},' % (key, parts))
+    if "dirs.json" in files:                    # cannon_sheets.py's: a sheet set a direction
+        key = os.path.relpath(d, root).replace(os.sep, "/")
+        g = json.load(open(os.path.join(d, "dirs.json")))
+        def fans(v):
+            f = v.get("fans")
+            return (", fans = {width = %d, height = %d, shift = {%r, %r}, frames = %d}" % (f["width"], f["height"], f["shift"][0],
+                    f["shift"][1], f["frames"])) if f else ""
+        parts = ", ".join('%s = {width = %d, height = %d, shift = {%r, %r}, frames = %d, line_length = %d%s}' % (
+            n, v["width"], v["height"], v["shift"][0], v["shift"][1], v["glow_frames"], v["line_length"], fans(v)) for n, v in sorted(g.items()))
+        rows.append('  ["%s"] = {%s},' % (key, parts))
     if "sheet.json" in files:
         key = os.path.relpath(d, root).replace(os.sep, "/")
         m = json.load(open(os.path.join(d, "sheet.json")))

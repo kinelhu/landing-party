@@ -335,7 +335,12 @@ shared.STRIKE_RADIUS = 60
 -- Orbital cannons (orbital_cannon.lua, scripts/cannon.lua; DESIGN.md, decided 2026-11-10): a cannon's store of charges, a
 -- charge's cycle in seconds (a recipe's time) and its thruster fuel, a strike's radius, the shells each charge spent drops,
 -- and the remote's cooldown in ticks.
-shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 200, RADIUS = 20, SHELLS = 6, COOLDOWN = 30 * 60}
+-- (REACH: its barrel past the deck's edge, tiles; POWER: its draw while it charges; MUZZLE: its muzzle from its middle. The
+-- big cannon, 2026-11-10: 12 by 18, four times the first's cost, SHELLS 10 for 6; the logistics made a load (the user: "How
+-- did you end up setting that up for it to be a challenge?"): 4 MW a cannon, a platform's solar field, and FUEL 500 for
+-- 200, firing against flying. First numbers, to tune in play.)
+shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 500, RADIUS = 20, SHELLS = 10, COOLDOWN = 30 * 60, REACH = 16, POWER = "4MW",
+  MUZZLE = 25}
 shared.DEFOLIATE_RADIUS = 6
 -- And the player's other devices and weapons, likewise read by their descriptions (__1__, __2__; 2026-11-06: the
 -- numbers had been typed in the locale): the claim marker's reach (ops.marked), the pact breaker's minutes

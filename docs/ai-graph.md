@@ -28,7 +28,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `command` | 775 | (leaf) | control, dev |  | 30, 60, 120 |  | cmd |
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
-| `dev` | 565 | army, base, burstfx, cannon, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, ram_trace, trace |
+| `dev` | 566 | army, base, burstfx, cannon, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, ram_trace, trace |
 | `crew` | 484 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `costmap` | 451 | firemap, threat | airraid, control, creep, faction, farm, herd, siege |  |  |  |  |
@@ -42,8 +42,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
+| `orbital` | 338 | achievements, threat | cannon, control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `planner` | 338 | rd | base |  |  |  |  |
-| `orbital` | 334 | achievements, threat | cannon, control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `jumper` | 315 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
@@ -59,13 +59,13 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `strip` | 238 | studies | ops |  |  |  | threat_last |
 | `feeds` | 227 | power, threat | control, farm, herd |  |  |  |  |
 | `scorcher` | 224 | (leaf) | control |  | 3600 |  | scorch, scorch_bursts, scorch_by, tesla_aim, tesla_aims, tesla_drains, tesla_held, tesla_holds, tesla_seen |
+| `cannon` | 210 | orbital | control, dev |  | 30, 60 |  | cannon_next, cannon_shells, cannon_strikes |
 | `valuemap` | 208 | firemap | control, farm, herd, oplog, siege |  |  |  |  |
 | `oplog` | 188 | attempt, valuemap | control |  |  |  | oplog |
 | `power` | 175 | threat | feeds, ops |  |  |  |  |
 | `site` | 171 | modules | base, control, faction, layout |  |  |  |  |
 | `firemap` | 170 | threat | airraid, control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
-| `cannon` | 164 | orbital | control, dev |  | 30, 60 |  | cannon_next, cannon_shells, cannon_strikes |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
 | `stun` | 145 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `road` | 143 | base, standing | control |  | 60 |  |  |

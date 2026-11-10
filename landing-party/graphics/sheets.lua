@@ -29,7 +29,7 @@ return {
   ["grubstake/uplink"] = {width = 589, height = 632, frames = 32, line_length = 8, shift = {0.7421875, -1.390625}},
   ["player/barracks"] = {width = 267, height = 293, frames = 16, line_length = 8, shift = {0.234375, -0.1640625}},
   ["player/muster"] = {width = 141, height = 146, frames = 1, line_length = 8, shift = {0.6484375, -0.6796875}},
-  ["player/orbital-cannon"] = {width = 426, height = 397, frames = 16, line_length = 8, shift = {-0.203125, -0.15625}},
+  ["player/orbital-cannon"] = {east = {width = 2360, height = 1422, shift = {8.609375, -2.9140625}, frames = 16, line_length = 4, fans = {width = 127, height = 293, shift = {-5.8515625, -5.234375}, frames = 16}}, north = {width = 1252, height = 2494, shift = {2.171875, -9.3046875}, frames = 16, line_length = 4, fans = {width = 290, height = 133, shift = {0.0, 0.609375}, frames = 16}}, south = {width = 1298, height = 2690, shift = {2.703125, 4.8515625}, frames = 16, line_length = 4, fans = {width = 288, height = 130, shift = {0.0, -11.1015625}, frames = 16}}, west = {width = 2608, height = 1326, shift = {-5.421875, -2.6484375}, frames = 16, line_length = 4, fans = {width = 126, height = 293, shift = {5.84375, -5.234375}, frames = 16}}},
   ["player/targeting-array"] = {width = 317, height = 325, frames = 8, line_length = 8, shift = {0.53125, -0.6875}},
   ["serenity/drone-laser/base"] = {width = 93, height = 99, frames = 64, line_length = 8, shift = {0.0, -0.9921875}},
   ["serenity/drone-laser/fans"] = {width = 145, height = 103, frames = 64, line_length = 8, shift = {0.484375, -0.8671875}},
