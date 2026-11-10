@@ -81,7 +81,7 @@ def write(rp):
     # turrets"), the word from the code's value; a value with no word here stops the build (2026-11-06: these were typed).
     WORDS = {"share": {0.5: "half", 0.25: "a quarter", 0.75: "three quarters"},
              "times": {2: "double", 3: "triple"},
-             "count": {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"},
+             "count": {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"},
              "nth": {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth"}}
 
     def worded(kind, v, what):
@@ -347,6 +347,8 @@ def write(rp):
             "store": worded("count", cannon_v("STORE"), "CANNON.STORE"),
             "cycle_min": fmt((cannon_v("CYCLE") or 0) / 60),  # (energy_required, seconds at speed 1)
             "fuel": fmt(cannon_v("FUEL")),
+            "reach": fmt(cannon_v("REACH")),
+            "power": (re.search(r'^shared\.CANNON = \{[^}]*\bPOWER = "(\d+)MW"', shared_src, re.M) or [None, "?"])[1],
             "radius_tiles": fmt(cannon_v("RADIUS")),
             "shells": fmt(cannon_v("SHELLS")),
             "shells_word": worded("count", cannon_v("SHELLS"), "CANNON.SHELLS"),

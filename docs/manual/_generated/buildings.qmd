@@ -82,5 +82,5 @@ Each research lab advances one branch of Kessler-Hayashi's research, and only wh
 | Pact breaker | 200 | Jams Grubstake's pact with the biters for 3 minutes. Works only inside a Grubstake claim. |
 | Pheromone bait | 100 | Makes nearby biters attack whatever is around it. |
 | Field dome | 1,200 | Stops enemy artillery shells within its radius while powered. Goes down for a time after too many hits. |
-| Orbital cannon | 800 | Charges a strike from a shell and thruster fuel, up to 2, one each 3 minutes. Space platforms only. |
+| Orbital cannon | 3,000 | Charges a strike from a shell and thruster fuel, up to 2, one each 3 minutes. Space platforms only, at the deck's edge with its barrel over the void. |
 | Targeting array | 400 | Lets the cannons of its platform fire on Nauvis while the platform is stopped there. |

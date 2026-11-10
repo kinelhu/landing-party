@@ -1,6 +1,6 @@
 {
  "_comment": "Written by scripts/roster_page.py --qmd (scripts/manual_qmd.py, booklet) from the prototype dump, shared.lua, the scripts, the locale and docs/manual/words.cfg. Do not edit: run it again.",
- "edition": "For Landing Party 0.2.278",
+ "edition": "For Landing Party 0.2.281",
  "portraits": "media/portraits",
  "factions": {
   "grubstake": {
@@ -129,7 +129,7 @@
    "cost": "18 parts",
    "era": "Era 1, Armory",
    "era_level": 1,
-   "role": "A trooper with a long-range laser against flying units. Weak against ground targets.",
+   "role": "A trooper firing missiles at flying units. Weak against ground targets.",
    "counters": "fliers, combat robots",
    "countered_by": "anything on the ground",
    "blurb": "The Anti-air trooper is a Laser trooper armed for shooting down fliers. Against ground targets it does very little, and camps field it alongside Laser troopers, never instead of them. Keep your combat robots away from it and send ground units."

@@ -8,10 +8,14 @@ local NESTS = {{70, 186}, {80, 190}, {90, 184}, {100, 189}, {85, 196}}
 local place = {}
 for _, p in ipairs(NESTS) do place[#place + 1] = {tick = T + 10, name = "biter-spawner", pos = p, force = "enemy"} end
 return {name = "scene-cannon", resolution = {1920, 1080}, anti_alias = true, speed = 1, fast_until = T - 60, place = place,
-  dev = {{tick = T + 20, args = {"cannon", "8"}, at = {0, 0}}, {tick = T + 600, args = {"cannon", "fire"}, at = {85, 190}}},
+  -- (The big cannon, 0.2.281: /lp cannon 5 lays them along the deck's south edge, 13 apart, barrels south over the void;
+  -- charged full they stand idle, so the platform is filmed after the strike, recharging: coils lit, fans, arcs.)
+  dev = {{tick = T + 20, args = {"cannon", "5"}, at = {0, 0}}, {tick = T + 600, args = {"cannon", "fire"}, at = {85, 190}}},
   moves = {
-    {name = "platform", tick = T + 60, frames = 300, every = 1, surface = "platform-1",
-      from = {pos = {-12, 26}, zoom = 0.85}, to = {pos = {4, 27}, zoom = 1.0}},
+    {name = "battery", tick = T + 60, frames = 240, every = 1, surface = "platform-1",
+      from = {pos = {-20, 36}, zoom = 0.32}, to = {pos = {0, 38}, zoom = 0.36}},
     {name = "strike", tick = T + 560, frames = 480, every = 1,
       from = {pos = {85, 190}, zoom = 0.55, daytime = 0.2}, to = {pos = {85, 190}, zoom = 0.62, daytime = 0.2}},
+    {name = "recharge", tick = T + 1100, frames = 360, every = 1, surface = "platform-1",
+      from = {pos = {-4, 34}, zoom = 0.55}, to = {pos = {-4, 36}, zoom = 0.62}},
   }}

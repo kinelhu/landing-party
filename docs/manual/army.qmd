@@ -154,27 +154,35 @@ tumor left standing spreads its creep back, so finish the tumors.
 
 ## Orbital cannons {#sec-cannons}
 
-Late in the game you can strike from orbit. The **Orbital cannon** technology comes after Artillery and Space platform.
-It unlocks the orbital cannon, the orbital shell and the targeting array.
+Late in the game you can strike from orbit. The **Orbital cannon** technology comes after Artillery, Space platform and
+Tungsten carbide, so after a landing on Vulcanus. It unlocks the orbital cannon, the orbital shell and the targeting
+array.
 
-**The cannons.** Orbital cannons are built on a space platform. A cannon works like an assembling machine with one
-fixed recipe: it takes an orbital shell and {{< var cannon.fuel >}} thruster fuel and turns them into a charge in
-{{< var cannon.cycle_min >}} minutes. It holds {{< var cannon.store >}} charges and stops when it is full. Orbital shells
-are made only in space, from steel, explosives and low density structure. Thruster fuel reaches a cannon by pipe, as it
-reaches the platform's thrusters.
+**The cannons.** An orbital cannon is a rail gun 12 tiles wide and 18 deep, built at the edge of a space platform with
+its barrel out over the void. It can only stand where the void lies ahead of its muzzle for
+{{< var cannon.reach >}} tiles, so build it facing out from the deck's edge and turn it before you place it. A cannon
+works like an assembling machine with one fixed recipe: it takes an orbital shell and {{< var cannon.fuel >}} thruster
+fuel and turns them into a charge in {{< var cannon.cycle_min >}} minutes, drawing {{< var cannon.power >}} MW while it
+works. It holds {{< var cannon.store >}} charges and stops when it is full. While it charges, its coils light along the
+barrel and lightning leaps between its capacitor towers.
+
+Orbital shells are made only in space, from tungsten carbide, explosives and steel. The tungsten comes from Vulcanus,
+and the explosives need coal, which no asteroid gives, so both are shipped up until you can make them in orbit. Thruster
+fuel reaches a cannon by pipe, as it reaches the platform's thrusters, and every charge comes out of what the platform
+would burn to fly.
 
 **The targeting array.** {{< var desc.entity_targeting_array >}} One array serves every cannon on its platform. It is
 built round an orbital beacon salvaged from a Kessler-Hayashi lander or uplink. In a game without Kessler-Hayashi, build
 it from a targeting core instead, made from processing units, low density structure and space science packs.
 
-![A battery on a platform over Nauvis: the targeting array at the left, then a row of cannons.](media/stills/orbital-cannons.jpg)
+![Cannons along a platform's edge over Nauvis, recharging: lightning between their capacitor towers.](media/stills/orbital-cannons.jpg)
 
 **Calling a strike.** On Nauvis, take the orbital strike remote from the shortcut bar, or press ALT + O, and click the
 point to strike, on the ground or on the map. Every charged cannon on every platform stopped over Nauvis fires and
-spends one charge. Rings close in on the point for {{< var cannon.paint_s >}} seconds and the platform's shadow passes
-over, then the shells fall, {{< var cannon.shells_word >}} for each cannon that fired. The first shells go to the enemy
+spends one charge. Rings close in on the point for {{< var cannon.paint_s >}} seconds, the charging whine of the guns
+above carries over the ground and the platform's shadow passes over, then the shells fall, {{< var cannon.shells_word >}} for each cannon that fired. The first shells go to the enemy
 buildings, spawners and worms within {{< var cannon.radius_tiles >}} tiles of the point, one to each, nearest first.
-The rest fall spread across that circle. Walls, gates and poles are left alone, and units are hit only where the shells
+The rest fall spread across that circle. Each one shakes the ground where it lands and leaves a deep scorch. Walls, gates and poles are left alone, and units are hit only where the shells
 land.
 
 ![A strike from the cannons falling on a field of biter spawners.](media/stills/orbital-cannon-strike.jpg)
