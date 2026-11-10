@@ -76,10 +76,10 @@ local function points(s, force, c, n)
   return out, #found
 end
 
--- Its platform's silhouette, for the strike's shadow (orbital.lua shadow): its foundation's tiles in cells of CELL, each
--- row's runs of them one strip, and its cannons' barrels over the void; {x, y, w, h} in tiles from the middle of its
--- tiles, -y its bow. Coarser cells while it would take more than MAX strips.
-local SIL_CELL, SIL_MAX = 2, 400
+-- Its platform's silhouette, for the strike's shadow (orbital.lua shadow): the middles of the cells of CELL tiles its
+-- foundation covers, and of its cannons' barrels over the void; {x, y} in tiles from the middle of its tiles, -y its bow,
+-- and the cell's size (each a soft splat there). Coarser cells while it would take more than MAX splats.
+local SIL_CELL, SIL_MAX = 3, 350
 function cannon.silhouette(pl, cannons)
   local s = pl and pl.valid and pl.surface
   if not (s and s.valid) then return nil end
@@ -92,42 +92,38 @@ function cannon.silhouette(pl, cannons)
     if p.x > x1 then x1 = p.x end; if p.y > y1 then y1 = p.y end
   end
   local mx, my = (x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2
-  local cell = SIL_CELL
-  local out
-  repeat
-    local rows = {}
-    for _, t in ipairs(tiles) do
-      local i, j = math.floor((t.position.x - x0) / cell), math.floor((t.position.y - y0) / cell)
-      rows[j] = rows[j] or {}
-      rows[j][i] = true
-    end
-    out = {}
-    for j, row in pairs(rows) do
-      local cols = {}
-      for i in pairs(row) do cols[#cols + 1] = i end
-      table.sort(cols)
-      local a = 1
-      while a <= #cols do
-        local b = a
-        while b < #cols and cols[b + 1] == cols[b] + 1 do b = b + 1 end
-        local w = (cols[b] - cols[a] + 1) * cell
-        out[#out + 1] = {x0 + cols[a] * cell + w / 2 - mx, y0 + j * cell + cell / 2 - my, w, cell}
-        a = b + 1
-      end
-    end
-    cell = cell * 2
-  until #out <= SIL_MAX
-  -- Its cannons' barrels, out over the void (C.REACH past the deck's edge, 4 tiles wide).
+  -- Its barrels' rectangles (C.REACH past the deck's edge, 4 tiles wide), as tiles of their own.
   local DIR = {[defines.direction.north] = {0, -1}, [defines.direction.east] = {1, 0}, [defines.direction.south] = {0, 1},
     [defines.direction.west] = {-1, 0}}
+  local extra = {}
   for _, e in ipairs(cannons or {}) do
     local d = e.valid and DIR[e.direction]
     if d then
-      local c = {e.position.x + d[1] * (9 + C.REACH / 2) - mx, e.position.y + d[2] * (9 + C.REACH / 2) - my}
-      out[#out + 1] = {c[1], c[2], d[1] ~= 0 and C.REACH or 4, d[2] ~= 0 and C.REACH or 4}
+      for u = 9, 9 + C.REACH - 1 do
+        for v = -2, 1 do
+          extra[#extra + 1] = {x = e.position.x + d[1] * u + d[2] * v, y = e.position.y + d[2] * u + d[1] * v}
+        end
+      end
     end
   end
-  return out
+  local cell = SIL_CELL
+  local pts
+  repeat
+    local seen = {}
+    pts = {}
+    local function add(x, y)
+      local i, j = math.floor((x - x0) / cell), math.floor((y - y0) / cell)
+      local key = i .. "," .. j
+      if not seen[key] then
+        seen[key] = true
+        pts[#pts + 1] = {x0 + (i + 0.5) * cell - mx, y0 + (j + 0.5) * cell - my}
+      end
+    end
+    for _, t in ipairs(tiles) do add(t.position.x, t.position.y) end
+    for _, p in ipairs(extra) do add(p.x, p.y) end
+    cell = cell + 1
+  until #pts <= SIL_MAX
+  return {cell = cell - 1, pts = pts}
 end
 
 local store   -- (below: a cannon's store, stopped when full)
@@ -173,7 +169,7 @@ function cannon.fire(force, s, pos, player)
   local at, targets = points(s, force, c, spent * C.SHELLS)
   -- (The shadow is the platform that fired the most.)
   local sil = lead and cannon.silhouette(lead.platform, lead.cannons)
-  storage.cannon_silhouette = sil and #sil or 0
+  storage.cannon_silhouette = sil and #sil.pts or 0
   orbital.from_orbit(s, force.name, c, at, C.RADIUS, sil)
   storage.cannon_strikes = (storage.cannon_strikes or 0) + 1
   storage.cannon_shells = (storage.cannon_shells or 0) + #at

@@ -483,9 +483,10 @@ data:extend({{type = "sprite", name = "lp-impact-flash", filename = "__landing-p
   width = 256, height = 256, scale = 0.5, blend_mode = "additive", flags = {"no-crop"}}})
 data:extend({{type = "sprite", name = "lp-platform-shadow", filename = "__landing-party__/graphics/serenity/platform-shadow.png",
   width = 512, height = 640, scale = 4, flags = {"no-crop"}}})
--- A tile of a silhouette (orbital.lua: the player's own platform's shadow, strips of it scaled and turned; white, tinted).
-data:extend({{type = "sprite", name = "lp-shadow-cell", filename = "__landing-party__/graphics/serenity/shadow-cell.png",
-  width = 32, height = 32, scale = 1, flags = {"no-crop"}}})
+-- A splat of a silhouette (orbital.lua: the player's own platform's shadow, a Gaussian blob a cell, overlapping into one
+-- soft shape; white, tinted; one tile at scale 1; sigma a quarter of its width).
+data:extend({{type = "sprite", name = "lp-shadow-blob", filename = "__landing-party__/graphics/serenity/shadow-blob.png",
+  width = 64, height = 64, scale = 0.5, flags = {"no-crop"}}})
 data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party__/graphics/serenity/ripple/sheet.png",
   width = 290, height = 335, frame_count = DW.rise_frames, line_length = 8, scale = 1, draw_as_glow = true, blend_mode = "additive"}})
 if TOWER_ON then

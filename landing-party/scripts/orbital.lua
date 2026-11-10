@@ -97,20 +97,25 @@ end
 -- and the alert. dev: a forced one (orbital.force), its own record in place of a siege's.
 -- Its platform's shadow (orbital.shadow_tick moves it), over its point `lead` ticks on.
 -- (Its own list: a strike called off or done leaves its list while its shadow still crosses.)
--- A silhouette's scale over the ground (the player's platform, drawn from its tiles: larger than life, from orbit).
-local SILHOUETTE_SCALE = 1.5
+-- A silhouette's scale over the ground (the player's platform, drawn from its tiles): life size, so the whole deck and its
+-- barrels read in view (1.5 filled the screen with slabs, the first film). Its splats (the user, 2026-11-10: "smooth out
+-- the shadow? there are probably FX techniques for this"): a Gaussian blob a cell, SPLAT cells wide, overlapping into one
+-- soft shape; each blob's alpha from the cells' spacing so the inside comes to the shadow's darkness (a grid of Gaussians
+-- of sigma s sums to about 2 pi s^2 per cell squared); and wider and fainter the higher the platform (BLUR at its
+-- highest): a penumbra, soft from high up, sharp over the point.
+local SILHOUETTE_SCALE, SPLAT, BLUR = 1.0, 2.2, 1.2
+local SPLAT_SUM = 2 * math.pi * (SPLAT / 4) ^ 2
 local function shadow(s, center, along, lead, silhouette)
   local sh = {objs = {}, dir = along, center = center, from = game.tick, at = game.tick + lead}
   -- The player's own platform (the user, 2026-11-10: "could we customize the looming shadow to represent our actual
   -- platform?"): its strips (cannon.silhouette: {x, y, w, h} in tiles from its middle, -y its bow), each a cell sprite
   -- scaled to its size and turned to the course, placed each tick by shadow_tick.
-  if silhouette and #silhouette > 0 then
-    sh.offs = {}
-    for i, q in ipairs(silhouette) do
+  if silhouette and silhouette.pts and #silhouette.pts > 0 then
+    sh.offs, sh.cell = {}, silhouette.cell
+    for i, q in ipairs(silhouette.pts) do
       sh.offs[i] = q
-      sh.objs[i] = rendering.draw_sprite{sprite = "lp-shadow-cell", target = {center[1], center[2]}, surface = s,
-        orientation = ((sh.dir + math.pi / 2) / (2 * math.pi)) % 1, tint = {r = 0, g = 0, b = 0, a = 0},
-        render_layer = "higher-object-above", x_scale = q[3], y_scale = q[4]}
+      sh.objs[i] = rendering.draw_sprite{sprite = "lp-shadow-blob", target = {center[1], center[2]}, surface = s,
+        tint = {r = 0, g = 0, b = 0, a = 0}, render_layer = "higher-object-above", x_scale = 1, y_scale = 1}
     end
     storage.kh_shadows = storage.kh_shadows or {}
     table.insert(storage.kh_shadows, sh)
@@ -280,17 +285,20 @@ local function shadow_tick(sh, tick)
         local sc = 1 + SHADOW_SPREAD * ease
         local q = sh.offs and sh.offs[i]
         if q then
-          -- A strip of the player's platform: its place turned to the course (-y the bow, along it; x to its right).
+          -- A splat of the player's platform: its place turned to the course (-y the bow, along it; x to its right), wider
+          -- and fainter the higher it is (its alpha over the blur's area, the darkness kept).
           local k = sc * SILHOUETTE_SCALE
-          local fx, fy = ca, sa
-          local rx, ry = -sa, ca
-          o.target = {cx + (-q[2] * fx + q[1] * rx) * k, cy + (-q[2] * fy + q[1] * ry) * k}
-          o.x_scale, o.y_scale = q[3] * k, q[4] * k
+          o.target = {cx + (-q[2] * ca + q[1] * -sa) * k, cy + (-q[2] * sa + q[1] * ca) * k}
+          local blur = 1 + BLUR * ease
+          local size = sh.cell * SPLAT * k * blur
+          o.x_scale, o.y_scale = size, size
+          local per = -math.log(1 - math.min(0.95, a)) / SPLAT_SUM / (blur * blur)
+          o.color = {r = 0, g = 0, b = 0, a = math.min(1, per)}
         else
           o.target = {cx, cy}
           o.x_scale, o.y_scale = sc, sc
+          o.color = {r = 0, g = 0, b = 0, a = a}
         end
-        o.color = {r = 0, g = 0, b = 0, a = a}
       else
         -- (A strike begun before 0.2.198: its strips.)
         local v = {}

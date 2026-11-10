@@ -6134,7 +6134,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   blast at the muzzle that shakes the deck. The strike's shadow, for the player's cannons, is the platform that fired the
   most: its foundation in cells of 2 (coarser past 400 strips), each row's runs a strip, and its barrels over the void,
   each a cell sprite scaled and turned to the course, 1.5 times life size. Scenario cannon: its barrels drawn and
-  recoiling (4 recoils, full travel), its shadow 19 strips.
+  recoiling (4 recoils, full travel), its shadow 19 strips. Smoothed (0.2.285; the user: "smooth out the shadow? there are
+  probably FX techniques for this"): splatted, a Gaussian blob (sigma a quarter of its width) at the middle of each cell
+  of 3 tiles of its foundation and barrels (coarser past 350), 2.2 cells wide, each blob's alpha from the spacing so the
+  overlap comes to the shadow's darkness, and wider and fainter the higher the platform (a penumbra: soft from high up,
+  sharp over the point); life size now (at 1.5 the hard strips filled the screen with slabs). Filmed: one soft shape, its
+  five barrels its prongs. Its shadow 208 splats in scenario cannon.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
