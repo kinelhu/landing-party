@@ -7,6 +7,15 @@
 -- strike. Graphics provisional (the assembling machine 3 and the radar, tinted) until the cannon's model is rendered.
 local shared = require("shared")
 local util = require("util")
+local SHEETS = require("graphics.sheets")
+-- A rendered sheet's layer (tools/blender/orbital_cannon.py, targeting_array.py; the barracks' way, player.lua).
+local function layer(key, file, speed, extra)
+  local S = SHEETS[key]
+  local l = {filename = "__landing-party__/graphics/" .. key .. "/" .. file .. ".png", width = S.width, height = S.height,
+    frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift, animation_speed = speed}
+  for k, v in pairs(extra or {}) do l[k] = v end
+  return l
+end
 local C = shared.CANNON
 local TINT = {r = 0.75, g = 0.85, b = 1, a = 1}
 local SPACE = {{property = "gravity", min = 0, max = 0}}
@@ -51,6 +60,14 @@ cannon.fast_replaceable_group = nil
 cannon.max_health = 800
 cannon.energy_usage = "1MW"
 cannon.disabled_when_recipe_not_researched = false
+-- Its own body (the cannon's model): the charge climbs its rings while it charges.
+cannon.graphics_set = {animation = {layers = {layer("player/orbital-cannon", "body", 0.25),
+  layer("player/orbital-cannon", "shadow", 0.25, {draw_as_shadow = true})}},
+  working_visualisations = {{animation = layer("player/orbital-cannon", "glow", 0.25, {draw_as_glow = true, blend_mode = "additive"}),
+    light = {intensity = 0.5, size = 8, color = {r = 0.45, g = 0.85, b = 1}}}}}
+cannon.graphics_set_flipped = nil
+cannon.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+cannon.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 cannon.localised_description = {"entity-description.lp-orbital-cannon", tostring(C.STORE), tostring(math.floor(C.CYCLE / 60))}
 data:extend({cannon,
   {type = "item", name = "lp-orbital-cannon", icons = cannon.icons, place_result = "lp-orbital-cannon", stack_size = 5,
@@ -69,8 +86,9 @@ data:extend({
     flags = {"placeable-player", "player-creation"}, minable = {mining_time = 1, result = "lp-targeting-array"},
     max_health = 400, surface_conditions = SPACE, collision_box = {{-1.2, -1.2}, {1.2, 1.2}},
     selection_box = {{-1.5, -1.5}, {1.5, 1.5}}, dying_explosion = "medium-explosion",
-    picture = {filename = "__base__/graphics/entity/radar/radar.png", width = 196, height = 254, scale = 0.5,
-      shift = util.by_pixel(1, -16), tint = TINT}, localised_description = {"entity-description.lp-targeting-array"}},
+    animations = {layers = {layer("player/targeting-array", "body", 0.15), layer("player/targeting-array", "glow", 0.15,
+      {draw_as_glow = true, blend_mode = "additive"}), layer("player/targeting-array", "shadow", 0.15, {draw_as_shadow = true})}},
+    localised_description = {"entity-description.lp-targeting-array"}},
   {type = "item", name = "lp-targeting-array", icons = {{icon = "__base__/graphics/icons/radar.png", tint = TINT}},
     place_result = "lp-targeting-array", stack_size = 5, weight = 500000, subgroup = "lp-components", order = "y-orbital-c"},
   {type = "recipe", name = "lp-targeting-array", enabled = false, energy_required = 20,

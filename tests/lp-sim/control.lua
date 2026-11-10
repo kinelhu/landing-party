@@ -4166,6 +4166,26 @@ scenarios.dev = function()
     check("dev: /lp flak shot scout drones down", f.drones == 16 and now("flak", "lp-harrier") < 16,
       string.format("drones %d to %d", f.drones, now("flak", "lp-harrier")))
   end)
+  -- /lp cannon (the player's orbital cannons): three charged over Nauvis, then fired on three spawners 120 tiles south.
+  schedule(2 * 3600 + 30, function()
+    S.cannon_nests = {}
+    for k = 0, 2 do
+      local q = surface().find_non_colliding_position("biter-spawner", {k * 9, 520}, 8, 1)
+      local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+      if e then S.cannon_nests[#S.cannon_nests + 1] = e end
+    end
+    lp("dev", {"cannon", "3"}, {0, 0})
+    S.cannon_ready = lp("cannon_readout")
+    lp("dev", {"cannon", "fire"}, {9, 522})
+    S.cannon_after = lp("cannon_readout")
+  end)
+  schedule(2 * 3600 + 30 + 20 * 60, function()
+    local left = 0
+    for _, e in ipairs(S.cannon_nests or {}) do if e.valid then left = left + 1 end end
+    check("dev: /lp cannon charged three over Nauvis and /lp cannon fire took the nests", S.cannon_ready.ready == 3
+      and S.cannon_after.ready == 3 and S.cannon_after.charges == 3 and left == 0,
+      serpent.line({ready = S.cannon_ready, after = S.cannon_after, left = left}))
+  end)
   schedule(2 * 3600 + 600 + 15 * 60, function()
     local o = lp("stats", S.s).ops
     check("dev: /lp strike painted its point", o.strike_paint ~= nil and o.strike_center ~= nil

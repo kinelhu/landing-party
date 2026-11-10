@@ -29,6 +29,8 @@ return {
   ["grubstake/uplink"] = {width = 589, height = 632, frames = 32, line_length = 8, shift = {0.7421875, -1.390625}},
   ["player/barracks"] = {width = 267, height = 293, frames = 16, line_length = 8, shift = {0.234375, -0.1640625}},
   ["player/muster"] = {width = 141, height = 146, frames = 1, line_length = 8, shift = {0.6484375, -0.6796875}},
+  ["player/orbital-cannon"] = {width = 329, height = 307, frames = 16, line_length = 8, shift = {-0.1640625, -0.109375}},
+  ["player/targeting-array"] = {width = 317, height = 325, frames = 8, line_length = 8, shift = {0.53125, -0.6875}},
   ["serenity/drone-laser/base"] = {width = 93, height = 99, frames = 64, line_length = 8, shift = {0.0, -0.9921875}},
   ["serenity/drone-laser/fans"] = {width = 145, height = 103, frames = 64, line_length = 8, shift = {0.484375, -0.8671875}},
   ["serenity/drone-laser/wreck"] = {width = 260, height = 366, frames = 4, line_length = 4, shift = {0.0, 0.0}},

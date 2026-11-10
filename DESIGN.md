@@ -163,7 +163,7 @@ document still says Serenity where it records history.
 | Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
-| Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and space-made shells, fired by remote, after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | built 0.2.274 (art provisional: the cannon's model to come); not seen in a window yet | `cannon` |
+| Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and space-made shells, fired by remote, after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | built 0.2.274; its models 0.2.275 (tools/blender/orbital_cannon.py, targeting_array.py); `/lp cannon [n]`, `/lp cannon fire` | `cannon`, `dev` |
 | The player's unit cap shown (a panel at the top: units / cap, offline, relays and waiting orders in its tooltip); units retired (ALT + R or the panel's button: home to a barracks, the order handed in beside it for the robots) | built 0.2.273 | `retire` |
 | `/lp rig`, `/lp tap` on demand (`/lp flare` retired) | built | `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |

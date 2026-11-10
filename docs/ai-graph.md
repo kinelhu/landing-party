@@ -28,7 +28,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `command` | 775 | (leaf) | control, dev |  | 30, 60, 120 |  | cmd |
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
-| `dev` | 515 | army, base, burstfx, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, era_override, hq_fast, ram_trace, trace |
+| `dev` | 565 | army, base, burstfx, cannon, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, ram_trace, trace |
 | `crew` | 484 | base, ops, standing | control |  | 30 |  | crew_owner |
 | `ram` | 454 | (leaf) | control, dev, ops |  | 3, 6 |  | ram_breaches, ram_charges, ram_crushed, ram_early, ram_followers, ram_moved, rams |
 | `skim` | 422 | base, ops, stance, tune | control |  | 60, 600 |  |  |
@@ -65,7 +65,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `site` | 171 | modules | base, control, faction, layout |  |  |  |  |
 | `firemap` | 170 | threat | control, costmap, faction, farm, herd, herd_learn, siege, valuemap |  |  |  |  |
 | `trade` | 168 | base, ops, standing | control |  | 60 |  | posts, tributes, truces |
-| `cannon` | 164 | orbital | control |  | 30, 60 |  | cannon_next, cannon_shells, cannon_strikes |
+| `cannon` | 164 | orbital | control, dev |  | 30, 60 |  | cannon_next, cannon_shells, cannon_strikes |
 | `prowl` | 150 | base, ops, pool, threat | control |  |  |  |  |
 | `stun` | 145 | rng | control, dev |  | 3600 |  | stun, stun_arc_rng, stun_by, stun_first, stun_gap, stun_rng, stunned, stuns |
 | `road` | 143 | base, standing | control |  | 60 |  |  |

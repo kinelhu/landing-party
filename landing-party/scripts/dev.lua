@@ -52,6 +52,7 @@ local orbital = require("__landing-party__.scripts.orbital")
 local ram = require("__landing-party__.scripts.ram")
 local stun = require("__landing-party__.scripts.stun")
 local command = require("__landing-party__.scripts.command")
+local cannon = require("__landing-party__.scripts.cannon")
 
 local dev = {}
 
@@ -325,6 +326,55 @@ function dev.run(player, args)
       if u then u.die(player.force); made = made + 1 end
     end
     player.print(string.format("%d %s killed east of you", made, name))
+  elseif what == "cannon" then
+    -- /lp cannon [n]: a platform over Nauvis (made once, kept in storage.dev_platform) with a targeting array and n orbital
+    -- cannons (4), each charged to its store and stocked; /lp cannon fire: a strike where the player stands (DESIGN.md,
+    -- "Orbital cannons").
+    local f = player.force
+    if args[2] == "fire" then
+      local n, why = cannon.fire(f, player.surface, player.position, player.valid ~= nil and player or nil)
+      player.print(n and string.format("orbital strike: %d cannons fired", n) or ("no strike: " .. tostring(why)))
+      return
+    end
+    local n = math.max(1, math.min(16, tonumber(args[2]) or 4))
+    local t = f.technologies["lp-orbital-cannon"]
+    if t then t.researched = true end
+    local pl = storage.dev_platform
+    if not (pl and pl.valid) then
+      pl = f.create_space_platform{name = "Landing Party dev", planet = "nauvis", starter_pack = "space-platform-starter-pack"}
+      if not pl then return player.print("no platform: Space Age's platforms unavailable") end
+      pl.apply_starter_pack()
+      storage.dev_platform = pl
+    end
+    local ps = pl.surface
+    local tiles = {}
+    for x = -36, 36 do for y = 8, 36 do tiles[#tiles + 1] = {name = "space-platform-foundation", position = {x, y}} end end
+    ps.set_tiles(tiles)
+    if ps.count_entities_filtered{name = "electric-energy-interface", limit = 1} == 0 then
+      local e = ps.create_entity{name = "electric-energy-interface", position = {-30, 30}, force = f}
+      if e then e.power_production, e.electric_buffer_size = 1e9 / 60, 1e9 end
+      for x = -30, 30, 6 do ps.create_entity{name = "substation", position = {x + 1, 18}, force = f} end
+    end
+    if ps.count_entities_filtered{name = "lp-targeting-array", limit = 1} == 0 then
+      ps.create_entity{name = "lp-targeting-array", position = {-24.5, 25.5}, force = f}
+    end
+    local made = 0
+    for k = 0, n - 1 do
+      local p = {-17.5 + (k % 8) * 5, 24.5 + math.floor(k / 8) * 6}
+      local c = ps.find_entities_filtered{name = "lp-orbital-cannon", position = p, radius = 1, limit = 1}[1]
+        or ps.create_entity{name = "lp-orbital-cannon", position = p, force = f}
+      if c then
+        c.insert{name = "lp-orbital-shell", count = 4}
+        c.insert_fluid{name = "thruster-fuel", amount = 1000}
+        local out = c.get_inventory(defines.inventory.crafter_output)
+        local want = shared.CANNON.STORE - out.get_item_count("lp-orbital-charge")
+        if want > 0 then out.insert{name = "lp-orbital-charge", count = want} end
+        made = made + 1
+      end
+    end
+    cannon.store()
+    storage.dev_cannon = {surface = ps.name, cannons = made}
+    player.print(string.format("%d orbital cannons charged over Nauvis (surface %s); /lp cannon fire where you stand", made, ps.name))
   elseif what == "chartcheck" then
     local s, pf = player.surface, player.force
     local cc = storage.chartcheck
