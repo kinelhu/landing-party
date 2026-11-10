@@ -12,6 +12,13 @@ from PIL import Image
 
 SIDE = 760
 src, out = sys.argv[1], sys.argv[2]
+# Light cards (the user, 2026-11-10: "For the manual, a lighter background would be better for portraits, no?"): with
+# the white twins of the stills in <src>/white (the matte film's, matte.py), each unit cut out by difference matting and
+# set, with its own shadow, on the manual's paper: LPPaper at the centre to LPPaperDark at the corners (its style's
+# colours). Without them, the old dark vignette.
+WHITE = os.path.join(src, "white")
+LIGHT = os.path.isdir(WHITE)
+PAPER, PAPER_DARK = np.array([0xF5, 0xF0, 0xE6], np.float32), np.array([0xE7, 0xDF, 0xD0], np.float32)
 os.makedirs(out, exist_ok=True)
 ground = np.asarray(Image.open(glob.glob(os.path.join(src, "ground-z3.png"))[0]).convert("RGB")).astype(np.float32)
 BG = np.median(ground.reshape(-1, 3), axis=0)
@@ -78,9 +85,22 @@ for n in names:
     # The vignette: the ground (and the shadow on it) scaled from 1.35 at the centre to 0.85 in the corners.
     yy, xx = np.mgrid[0:s, 0:s]
     r = np.sqrt((xx - s / 2) ** 2 + (yy - s / 2) ** 2) / (s / 2 * 1.414)
-    g = 1.35 - 0.5 * r ** 1.5
-    lifted = np.clip(crop * g[..., None], 0, 255)
-    res = np.where(bm[..., None], crop, lifted).astype(np.uint8)
+    wf = os.path.join(WHITE, os.path.basename(f))
+    if LIGHT and os.path.exists(wf):
+        # Its alpha from the two stills, its colour unmixed from the dark one; over the paper's vignette.
+        wbg = np.median(np.asarray(Image.open(os.path.join(WHITE, "ground-z3.png")).convert("RGB")).astype(np.float32).reshape(-1, 3), axis=0)
+        white = np.asarray(Image.open(wf).convert("RGB")).astype(np.float32)[y0:y0 + s, x0:x0 + s]
+        span = np.maximum(1.0, wbg - BG)
+        al = 1 - np.clip(((white - crop) / span).mean(axis=2), 0, 1)
+        al = np.where(al < 0.02, 0, al)[..., None]
+        col = (crop - (1 - al) * BG) / np.maximum(al, 1e-3)
+        k = np.clip(r ** 1.6, 0, 1)[..., None]
+        paper = PAPER * (1 - k) + PAPER_DARK * k
+        res = np.clip(col * al + paper * (1 - al), 0, 255).astype(np.uint8)
+    else:
+        g = 1.35 - 0.5 * r ** 1.5
+        lifted = np.clip(crop * g[..., None], 0, 255)
+        res = np.where(bm[..., None], crop, lifted).astype(np.uint8)
     im = Image.fromarray(res).resize((SIDE, SIDE), Image.LANCZOS)
     dst = os.path.join(out, n + ".png")
     im.save(dst, optimize=True)

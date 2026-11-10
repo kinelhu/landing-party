@@ -64,7 +64,10 @@ for line in lua.splitlines():
     for u, k in __import__("re").findall(r'\{"(lp-[a-z-]+)", "(kh|gs|sx|pl)"\}', line):
         faction_of[u] = k
 faction_of["lp-bred-stomper"] = "sx"
-for d in ("cutouts", "turntables", "class", "portraits-in"):
+# (The units the book prints a card for: its own LaTeX, as check_images reads it.)
+_tex = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Landing-Party.tex")).read()
+CARDS = set(__import__("re").findall(r"portraits/(lp-[a-z-]+)", _tex))
+for d in ("cutouts", "turntables", "class", "portraits-in", "portraits-in/white"):
     os.makedirs(os.path.join(out, d), exist_ok=True)
 missing, cut = [], {}
 for u in units:
@@ -95,30 +98,50 @@ for u in units:
     if pick is None:
         missing.append(u); print("NO CUT", u); continue
     z, frames = pick
-    # One box for every facing (the turntable does not jump), as tight as their union.
-    boxes = [bbox(m[..., 3]) for m in frames]
-    x0, y0 = min(b[0] for b in boxes) - 6, min(b[1] for b in boxes) - 6
-    x1, y1 = max(b[2] for b in boxes) + 6, max(b[3] for b in boxes) + 6
+    # The cut-out: as tight as the unit and its shadow.
     k = PX_TILE / (32 * z)                            # a screenshot at zoom z draws a tile in 32 z px
-    ims = []
-    for m in frames:
-        im = Image.fromarray(m[y0:y1, x0:x1], "RGBA")
-        ims.append(im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.LANCZOS))
+    def crop(m, b):
+        im = Image.fromarray(m[b[1]:b[3], b[0]:b[2]], "RGBA")
+        return im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.LANCZOS)
+    b0 = bbox(frames[0][..., 3])
+    ims = [crop(frames[0], (b0[0] - 6, b0[1] - 6, b0[2] + 6, b0[3] + 6))]
     ims[0].save(os.path.join(out, "cutouts", u + ".png"), optimize=True)
-    if len(ims) > 1:
-        ims[0].save(os.path.join(out, "turntables", u + ".png"), save_all=True, append_images=ims[1:], duration=160,
-                    loop=0, disposal=1)
+    # The turntable: one square for every facing (it does not jump), centred on the unit's solid body (alpha near 1: not
+    # its shadow, which pulled it off centre, the user: "the gifs are not centered on the unit (they cut to the
+    # shadow)"), round the body with a margin and as much shadow as fits in 1.6 times the body's half-size.
+    bodies = [bbox(m[..., 3], thr=235) or bbox(m[..., 3]) for m in frames]
+    alls = [bbox(m[..., 3]) for m in frames]
+    bx0, by0 = min(b[0] for b in bodies), min(b[1] for b in bodies)
+    bx1, by1 = max(b[2] for b in bodies), max(b[3] for b in bodies)
+    cx, cy = (bx0 + bx1) / 2, (by0 + by1) / 2
+    bhalf = max(bx1 - bx0, by1 - by0) / 2
+    shalf = max(max(cx - a[0], a[2] - cx, cy - a[1], a[3] - cy) for a in alls)
+    half = int(max(bhalf * 1.3, min(shalf * 1.05, bhalf * 1.6)) + 8)
+    Hf, Wf = frames[0].shape[:2]
+    half = int(min(half, cx, cy, Wf - cx, Hf - cy))
+    sq = (int(cx - half), int(cy - half), int(cx + half), int(cy + half))
+    turn = [crop(m, sq) for m in frames]
+    if len(turn) > 1:
+        turn[0].save(os.path.join(out, "turntables", u + ".png"), save_all=True, append_images=turn[1:], duration=160,
+                     loop=0, disposal=1)
         gif = []
-        for im in ims:
+        for im in turn:
             bg = Image.new("RGBA", im.size, MODPAGE + (255,)); bg.alpha_composite(im)
             gif.append(bg.convert("P", palette=Image.ADAPTIVE))
         gif[0].save(os.path.join(out, "turntables", u + ".gif"), save_all=True, append_images=gif[1:], duration=160, loop=0)
     cut[u] = ims[0]
-    # For the manual's cards (portraits.py, unchanged): the dark facing-0 stills under its names.
+    # For the manual's cards (portraits.py): the dark facing-0 stills under its names, of the units its cards show only
+    # (a portrait the book never prints fails its check_images).
+    if u not in CARDS:
+        print(f"{u}: no card in the manual"); continue
     for f in glob.glob(os.path.join(src, f"{u}-f0-dark-z*.png")):
         shutil.copy(f, os.path.join(out, "portraits-in", u + "-z" + f.rsplit("-z", 1)[1]))
+    # (And their white twins, for portraits.py's light cards.)
+    for f in glob.glob(os.path.join(src, f"{u}-f0-white-z*.png")):
+        shutil.copy(f, os.path.join(out, "portraits-in", "white", u + "-z" + f.rsplit("-z", 1)[1]))
     print(f"{u}: zoom {z}, {len(ims)} facings, {ims[0].width}x{ims[0].height}")
 shutil.copy(os.path.join(src, "ground-dark-z3.png"), os.path.join(out, "portraits-in", "ground-z3.png"))
+shutil.copy(os.path.join(src, "ground-white-z3.png"), os.path.join(out, "portraits-in", "white", "ground-z3.png"))
 # Class photos: each faction's units at one scale, the tallest in the middle, smaller to each end, overlapping a little.
 for key, fname in FACTION.items():
     row = sorted([u for u in cut if faction_of.get(u) == key], key=lambda u: cut[u].height)

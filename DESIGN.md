@@ -6157,7 +6157,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   tile, turntables (animated PNG with full alpha; GIF on the mod page's dark), a class photo a faction (smallest at the
   ends). The manual's portraits re-cut from the dark facing-0 stills by portraits.py unchanged: 33 of 40 now show the
   rendered models (they predated them, 0.2.225 to 0.2.236). Its check_images caught a portrait made for a unit the book
-  never prints (the Kessler-Hayashi howitzer truck), removed.
+  never prints (the Kessler-Hayashi howitzer truck), removed; matte.py now hands portraits.py only the units the book's
+  LaTeX prints. Then (the user: "a lighter background would be better for portraits, no?"): the cards matted too, each
+  unit and its shadow on the manual's paper (LPPaper at the centre to LPPaperDark at the corners, its style's colours);
+  and the turntables centred on the unit's solid body (alpha near 1), not on body and shadow (the user: "the gifs are
+  not centered on the unit (they cut to the shadow)").
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
