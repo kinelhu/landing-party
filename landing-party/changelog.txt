@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.290
+Version: 0.2.291
 Date: 2026-11-10
   Features:
     - Its own icons for every item and technology.

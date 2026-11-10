@@ -6201,7 +6201,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   ochre flag, guy ropes, a lantern), the pact breaker (a crate, its pacifier crystal glowing in a cage, a jamming
   antenna) and the pheromone bait (a gland sac in a cage on a tripod sprayer); three had been drawn in the world with
   their items' icons, the bait an empty barrel, the post a tinted steel chest. Their lights animate where the entity can
-  (a simple entity's animations), still on the post (a container's picture).
+  (a simple entity's animations), still on the post (a container's picture). Then (0.2.291) the three that turn or
+  work (tools/blender/turning_buildings.py, a whole sprite a frame): the command relay (a lattice mast on a pad, its
+  cabinets, its antenna head turning in 32 steps, a radar's sprite, its shadow turning with it), the strip drill
+  (Grubstake's open gantry, its drill head turning while it mines, four directions; its first closed box hid the head),
+  the flak turret (an armoured ring, a twin-barrelled flak head in 64 directions for every state, no laser glow).
+  Ochre stays lpkit's grimed paint: a CC0 paint's hue turned, its rust turned with it, purple. Phase 1 done: the
+  player's buildings are the mod's own; phase 2 next, the factions'.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

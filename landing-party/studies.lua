@@ -66,6 +66,27 @@ data:extend({{type = "recipe", name = "lp-bait-made", enabled = false, energy_re
 do
   local t = table.deepcopy(data.raw["electric-turret"]["laser-turret"])
   t.name = "lp-flak-turret"
+  -- Its own model (tools/blender/turning_buildings.py; the user, 2026-11-10: "I still see some gross recolors"): an
+  -- armoured ring for its base, its twin-barrelled flak head in 64 directions for every state (it does not rise out of
+  -- the ground as the laser turret does), no laser's energy glow.
+  local SHEETS = require("graphics.sheets")
+  local function part(p, extra)
+    local K = SHEETS["player/flak-turret/" .. p]
+    local l = {filename = "__landing-party__/graphics/player/flak-turret/" .. p .. "/body.png", width = K.width, height = K.height,
+      scale = 0.5, shift = K.shift}
+    if p == "head" then l.direction_count, l.line_length = K.frames, K.line_length end
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  local function shadow(p)
+    local l = part(p, {draw_as_shadow = true})
+    l.filename = "__landing-party__/graphics/player/flak-turret/" .. p .. "/shadow.png"
+    return l
+  end
+  local head = {layers = {part("head"), shadow("head")}}
+  t.folded_animation, t.preparing_animation, t.prepared_animation, t.folding_animation = head, head, head, head
+  t.energy_glow_animation = nil
+  t.graphics_set = {base_visualisation = {animation = {layers = {part("base"), shadow("base")}}}}
   t.minable = {mining_time = 0.5, result = "lp-flak-turret"}
   t.attack_target_mask = {"lp-air-unit"}
   t.next_upgrade = nil

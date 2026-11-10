@@ -40,6 +40,26 @@ relay.energy_usage = "2MW"
 relay.max_distance_of_sector_revealed = 0
 relay.max_distance_of_nearby_sector_revealed = 3
 relay.localised_description = {"entity-description.lp-command-relay", tostring(shared.RELAY_CAPACITY)}
+-- Its own model (tools/blender/turning_buildings.py; the user, 2026-11-10: "I still see some gross recolors"): a lattice
+-- mast, its antenna head turning, 32 steps (a radar's sprite turns whole), its lights and its shadow turning with it.
+do
+  local function sheet(key, part, extra)
+    local S = SHEETS[key]
+    local base = "__landing-party__/graphics/" .. key .. "/" .. part
+    local l = {width = S.width, height = S.height, direction_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift}
+    if S.files then
+      l.filenames, l.lines_per_file = {}, S.lines_per_file
+      for k = 1, S.files do l.filenames[k] = base .. "-" .. k .. ".png" end
+    else
+      l.filename = base .. ".png"
+    end
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  relay.pictures = {layers = {sheet("player/command-relay", "body"),
+    sheet("player/command-relay", "glow", {draw_as_glow = true, blend_mode = "additive"}),
+    sheet("player/command-relay", "shadow", {draw_as_shadow = true})}}
+end
 
 -- The rally beacon: a constant combinator. Its own signals give orders (opened like any combinator); wired, it
 -- reads its network as well, for automation. A small lamp with a combinator wired to it once confused the
@@ -340,6 +360,24 @@ strip.mining_speed = 1
 strip.resource_drain_rate_percent = 50
 strip.next_upgrade = nil
 strip.fast_replaceable_group = nil
+-- Its own model (tools/blender/turning_buildings.py): Grubstake's open gantry, its drill head turning while it mines, four
+-- directions; vanilla's wet-mining look (its own model's) gone with it.
+do
+  local function anim(d, part, extra)
+    local S = SHEETS["player/strip-drill/" .. d]
+    local l = {filename = "__landing-party__/graphics/player/strip-drill/" .. d .. "/" .. part .. ".png", width = S.width,
+      height = S.height, frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift, animation_speed = 0.5}
+    for k, v in pairs(extra or {}) do l[k] = v end
+    return l
+  end
+  local a = {}
+  for _, d in ipairs({"north", "east", "south", "west"}) do
+    a[d] = {layers = {anim(d, "body"), anim(d, "glow", {draw_as_glow = true, blend_mode = "additive"}),
+      anim(d, "shadow", {draw_as_shadow = true})}}
+  end
+  strip.graphics_set = {animation = a}
+  strip.wet_mining_graphics_set = nil
+end
 local function prize(corp, recipes)
   local effects = {}
   for _, r in ipairs(recipes) do table.insert(effects, {type = "unlock-recipe", recipe = r}) end
