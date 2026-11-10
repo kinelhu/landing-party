@@ -36,8 +36,8 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `routing` | 420 | threat | ops |  |  |  | corridors |
 | `dome` | 407 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `cell` | 402 | pods | control, farm |  |  |  | cell_sites, cells |
+| `veterancy` | 400 | threat | airraid, control, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
-| `veterancy` | 396 | threat | airraid, control, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 383 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |

@@ -2493,6 +2493,16 @@ scenarios.veteran = function()
     check("veteran: a behemoth's last shot, one rank and no more", lp("merit", tr.unit_number) == 3,
       tostring(lp("merit", tr.unit_number)))
     tr.destroy()
+    -- Synthexis does not rank (the user: "Yeah exempt"): its bred biter, and one the player owns, credited nothing for
+    -- the same last shot.
+    for _, f in ipairs({"lp-biotech", "player"}) do
+      local bb = surface().create_entity{name = "lp-bred-big-biter", position = {56, 34}, force = f}
+      local bh2 = surface().create_entity{name = "behemoth-biter", position = {60, 34}, force = "enemy"}
+      bh2.die("player", bb)
+      check("veteran: Synthexis's bred biter earns no merit (" .. f .. "'s)", lp("merit", bb.unit_number) == nil,
+        tostring(lp("merit", bb.unit_number)))
+      bb.destroy()
+    end
     -- The AI's care for them: a raid with an Elite in it turns home at 60% of its launched units, with a Hero at 70%, a
     -- raid of Veterans at its own share (0.5); an Elite counts (1 + 0.3 * 2) * (1 + 0.48 * 2) its normal worth.
     local made = {}

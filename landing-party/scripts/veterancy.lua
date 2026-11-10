@@ -65,9 +65,13 @@ end
 
 function veterancy.rank(u) return LEVEL[u.quality and u.quality.name or "normal"] or 0 end
 
--- Whose units rank: the mod's own units (the corporations' and the player's), not the corporations' builders.
+-- Whose units rank: the mod's own units (the corporations' and the player's), not the corporations' builders, and not
+-- Synthexis's (the user, 2026-11-10: "Doesn't seem so thematic for synthexis no?"; "Yeah exempt"): a hive learns as a
+-- whole (its waves adapt to what kills them) and breeds its biters to be spent. Its force's units, and a bred biter
+-- whoever owns it (the player's, captured from an incubator), are neither credited nor promoted.
 local function ranks(u)
   return u and u.valid and u.unit_number and (u.type == "unit" or u.type == "spider-unit") and u.name:sub(1, 3) == "lp-"
+    and u.name:sub(1, 8) ~= "lp-bred-" and u.force.name ~= shared.BIOTECH.force
     and not (storage.crew_owner and storage.crew_owner[u.unit_number])
 end
 

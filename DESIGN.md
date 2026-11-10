@@ -1058,6 +1058,16 @@ It wears its rank from then on: one to three gold chevrons over it (`lp-rank-1..
 mods keep a badge on the entity, our label faded and left nothing), its rank's name flies over it, and a chime
 (`utility/new_objective`, as Quality Turrets).
 
+**Not Synthexis** (0.2.314; the user, 2026-11-10: "Doesn't seem so thematic for synthexis no? I'm split"; "Yeah
+exempt"). A rank is an individual's story; Synthexis is a hive that learns as a whole (its waves adapt to what kills
+them) and breeds its biters to be spent, and an Elite's caution would slow a swarm. Its force's units and any bred
+biter (the player's, captured from an incubator, too) are neither credited nor promoted (veterancy's `ranks`). Checked in
+scenario veteran (a bred big biter's last shot on a behemoth, its own and the player's: no merit), seen failing without
+the exemption (3 each). The cost: of the factions, the one whose units the player kills most has no elites to hunt.
+Proposed, not built (after the playtest): Synthexis breeds from its survivors instead. A biter that kills and comes
+home to its pen raises the quality of what that pen breeds next: a long-lived pen turns out tougher stock, and the
+player's answer is to stop survivors getting home (the return-home behaviour rewarded, at the level of a population).
+
 **Field promotion built (0.2.311):** veterancy.promote (rewire, take_place, the badge), veterancy.tick; the pool's and
 the command's promotions at home removed. Scenario `veteran` reworked: troopers given 2.9 of 3 before two infantry walk
 at them, a kill promotes one with a foe still standing, as many troopers after as deployed less those killed; LP_MIX=camp,
