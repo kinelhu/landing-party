@@ -26,6 +26,13 @@ for d, _, files in sorted(os.walk(root)):
             return out
         parts = ", ".join('%s = {width = %d, height = %d, shift = {%r, %r}, frames = %d, line_length = %d%s}' % (
             n, v["width"], v["height"], v["shift"][0], v["shift"][1], v["glow_frames"], v["line_length"], fans(v)) for n, v in sorted(g.items()))
+        # (A combinator's wire posts, posts.json: player_buildings.py projects their tips.)
+        if "posts.json" in files:
+            pj = json.load(open(os.path.join(d, "posts.json")))
+            def pt(v): return "{%r, %r}" % (v[0], v[1])
+            parts += ", posts = {" + ", ".join("%s = {wire = {red = %s, green = %s}, shadow = {red = %s, green = %s}}" % (
+                n, pt(v["red"]["wire"]), pt(v["green"]["wire"]), pt(v["red"]["shadow"]), pt(v["green"]["shadow"]))
+                for n, v in sorted(pj.items())) + "}"
         rows.append('  ["%s"] = {%s},' % (key, parts))
     if "sheet.json" in files:
         key = os.path.relpath(d, root).replace(os.sep, "/")

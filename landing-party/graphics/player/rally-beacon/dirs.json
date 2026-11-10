@@ -1,0 +1,42 @@
+{
+ "east": {
+  "width": 142,
+  "height": 158,
+  "shift": [
+   0.609375,
+   -0.6875
+  ],
+  "glow_frames": 8,
+  "line_length": 4
+ },
+ "north": {
+  "width": 162,
+  "height": 162,
+  "shift": [
+   0.75,
+   -0.734375
+  ],
+  "glow_frames": 8,
+  "line_length": 4
+ },
+ "south": {
+  "width": 140,
+  "height": 176,
+  "shift": [
+   0.53125,
+   -0.828125
+  ],
+  "glow_frames": 8,
+  "line_length": 4
+ },
+ "west": {
+  "width": 156,
+  "height": 180,
+  "shift": [
+   0.703125,
+   -0.875
+  ],
+  "glow_frames": 8,
+  "line_length": 4
+ }
+}

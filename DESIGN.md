@@ -6184,8 +6184,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   data-final-fixes) to the item, the entity it places, its recipe, and an order's unit; an icon whose prototype is gone
   fails the load. In the dump: 41 of 41 visible items, 27 of 27 technologies, no visible recipe on a vanilla icon. Weak:
   the smallest entities' icons (claim marker, border stake) upscaled from small sprites read soft at 256; the threat
-  scanner and the rally beacon share a combinator's look. The faction buildings' recoloured vanilla sprites stay (the art
+  scanner and the rally beacon shared vanilla's constant combinator (0.2.289: modelled, below). The faction buildings' recoloured vanilla sprites stay (the art
   direction pass).
+- **The player's buildings modelled, first two** (0.2.289; the user, 2026-11-10: "I still see some gross recolors. Why
+  not use blender again?"). Of the mod's buildings, 17 had their own art, 34 repainted vanilla sheets, 36 vanilla sprites
+  (the dump). Phase 1 the player's 12 (in the player's own factory and its icons), phase 2 the factions' signature
+  buildings (landers, fabricators, generators, drills, depots, launchpads, labs, turrets); Synthexis's organics, walls,
+  gates, belts and mines keep vanilla's shapes on purpose. First: the rally beacon (a mast, a triangular pennant in the
+  army's green, an amber lamp; read tall, the rally point) and the threat scanner (low, a sensor head with a red sweep
+  light, two antennae), tools/blender/player_buildings.py: four directions, their wire posts' tips projected to the
+  screen (posts.json, read by sheets_lua.py into the registry) for circuit_wire_connection_points; filmed wired on the
+  Studio in every direction, the wires meeting the posts (docs/release/wires-film.lua). A combinator's sprite does not
+  animate: their lights lit, still. Their icons and the scanner's technologies re-cut from the renders.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

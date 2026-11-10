@@ -110,6 +110,9 @@ canvas.alpha_composite(br, (bx, by))
 cb = canvas.getbbox()
 canvas = canvas.crop((cb[0], cb[1] + int((cb[3] - cb[1]) * 0.38), cb[2], cb[3]))
 write("lp-orbital-cannon", canvas); done.append("lp-orbital-cannon")
+# Modelled buildings (tools/blender/player_buildings.py): their north sprite, not the film's old vanilla one.
+for item, key in (("lp-rally-beacon", "rally-beacon"), ("lp-threat-scanner", "threat-scanner")):
+    write(item, Image.open(os.path.join(REPO, "landing-party", "graphics", "player", key, "north-body.png")).convert("RGBA"), thr=120)
 # Stand-ins: the bait is a splat on the ground (its item: the gland it is made of); the retired strike beacon's sprite is
 # its charge's sparks (its item: the orbital beacon it was built round).
 for item, like in (("lp-bait", "pheromone-gland"), ("lp-strike-beacon", "orbital-beacon")):

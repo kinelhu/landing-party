@@ -51,6 +51,31 @@ beacon.minable = {mining_time = 0.2, result = "lp-rally-beacon"}
 beacon.next_upgrade = nil
 beacon.fast_replaceable_group = nil
 
+-- Their own models (tools/blender/player_buildings.py; the user, 2026-11-10: "I still see some gross recolors. Why not use
+-- blender again?"): the beacon a mast with a pennant and an amber lamp, the scanner a low sensor head with a red sweep
+-- light; four directions each, a still body with its shadow and its lights (a combinator's sprite does not animate), its
+-- wire posts where the render put them (posts in the sheet's registry), no vanilla activity lamp.
+local function combinator_look(e, key)
+  local D = SHEETS[key]
+  local function f(d, part) return "__landing-party__/graphics/" .. key .. "/" .. d .. "-" .. part .. ".png" end
+  local sprites, points = {}, {}
+  for _, d in ipairs({"north", "east", "south", "west"}) do
+    local S = D[d]
+    sprites[d] = {layers = {
+      {filename = f(d, "body"), width = S.width, height = S.height, scale = 0.5, shift = S.shift},
+      {filename = f(d, "glow"), width = S.width / 2, height = S.height / 2, scale = 1, shift = S.shift, draw_as_glow = true,
+        blend_mode = "additive"},
+      {filename = f(d, "shadow"), width = S.width, height = S.height, scale = 0.5, shift = S.shift, draw_as_shadow = true}}}
+    local P = D.posts[d]
+    points[#points + 1] = {wire = {red = P.wire.red, green = P.wire.green}, shadow = {red = P.shadow.red, green = P.shadow.green}}
+  end
+  e.sprites = sprites
+  e.circuit_wire_connection_points = points
+  e.activity_led_sprites = {filename = "__core__/graphics/empty.png", width = 1, height = 1}
+  e.activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}}
+end
+combinator_look(beacon, "player/rally-beacon")
+
 -- The threat scanner (scripts/scanner.lua; the user, 2026-10-18: "a building that scans for enemy units in a radius and
 -- gives signals for each unit type"): a constant combinator the mod writes, a radar's icon; one virtual signal a role,
 -- a total a corporation, the crews (builders, apart from the army) and the biters.
@@ -60,6 +85,7 @@ scanner.icon = "__base__/graphics/icons/radar.png"
 scanner.minable = {mining_time = 0.2, result = "lp-threat-scanner"}
 scanner.localised_description = {"entity-description.lp-threat-scanner", tostring(shared.SCAN_RADIUS)}
 scanner.next_upgrade = nil
+combinator_look(scanner, "player/threat-scanner")
 scanner.fast_replaceable_group = nil
 local signals = {}
 local function signal(name, icon, tint, order)
