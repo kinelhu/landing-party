@@ -128,6 +128,13 @@ local function matchups()
     for _, m in ipairs(out) do if (m.squad .. " vs " .. m.against):find(params.only, 1, true) then table.insert(kept, m) end end
     out = kept
   end
+  -- A shard (LP_ARENA_JOBS, scripts/arena.sh): every n-th matchup from the i-th, each shard its own game, in parallel
+  -- (one game fought the matrix's 4,700 fights in 17 minutes on one core, 2026-11-10).
+  if params.shard then
+    local kept = {}
+    for k, m in ipairs(out) do if (k - 1) % params.shard[2] == params.shard[1] then table.insert(kept, m) end end
+    out = kept
+  end
   return out
 end
 

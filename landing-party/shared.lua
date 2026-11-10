@@ -574,7 +574,7 @@ shared.units = {
   -- arena"): the hulls had won 61 to 71% of their fights, the lance 30% (docs/arena.md). Aegis 95 to 120, Tesla 100 to
   -- 125, Scorcher 70 to 90, dozer 100 to 120, Prism 100 to 115, tank 60 to 70, lance 16 to 12; then, the second
   -- matrix, the tank and Tesla overshot to 42%, the lance to 69%: tank 65, Tesla 115, Scorcher 100, lance 14.
-  ["lp-infantry"] = {health = 120, cost = 10, by = {grubstake = 8}},
+  ["lp-infantry"] = {health = 120, cost = 11, by = {grubstake = 8}},
   ["lp-tank"] = {health = 900, cost = 65, ground_only = true},
   ["lp-walker"] = {health = 1600, cost = 100},
   -- The fliers (units.lua): Grubstake's scrap drone (id lp-harrier) and bomb drone (lp-scavenger), Kessler-Hayashi's
@@ -591,7 +591,7 @@ shared.units = {
   ["lp-sapper"] = {health = 120, cost = 30, ground_only = true},
   ["lp-aegis"] = {health = 1100, cost = 120, ground_only = true},
   ["lp-dozer"] = {health = 1800, cost = 120, ground_only = true},
-  ["lp-scavenger"] = {health = 60, cost = 35},
+  ["lp-scavenger"] = {health = 60, cost = 28},
   -- The design sheet's picks (the user, 2026-10-21; tests/lp-shots/data.lua).
   ["lp-prism"] = {health = 700, cost = 115, ground_only = true},
   ["lp-tesla"] = {health = 800, cost = 115, ground_only = true},

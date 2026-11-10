@@ -163,6 +163,8 @@ document still says Serenity where it records history.
 | Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
+| Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and space-made shells, fired by remote, after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | proposed (2026-11-10), engine spikes first | |
+| The player's unit cap shown; units retired to orders | approved (2026-11-10), next after the cost re-tune | |
 | `/lp rig`, `/lp tap` on demand (`/lp flare` retired) | built | `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
 | Serenity's cordon: arcs of posts built by drones (on plating, lit, painted post to post), a ring round a grown camp that does not spread, the claim behind them; old arcs recovered; mended when breached; a contact wall near the player; gate posts across the player's rails; ore it crosses claimed | built | `cordon` (six) |
@@ -1023,6 +1025,70 @@ The aim: the player answers the faction with factory output, not clicks.
   ground (captured, contested).
 - Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
   blocks; a fought capture that a sensible army wins.
+
+## Orbital cannons (proposed, 2026-11-10)
+The user, on the strike beacon: "tacked on and unrewarding. I propose that the player has to build actual orbital cannons on
+a space platform above Nauvis. These cannons need fuel and munitions that are challenging to craft in space, and represent
+a logistic hurdle. Orbital strikes should be callable through a button, like artillery. As it is stronger than artillery,
+it should not be possible to use orbital strikes before artillery. The number of orbital cannons built could scale the
+strength of the strikes. The cannons do not use ammo like machinery but build up readiness like a rocket silo, preventing
+pure spam." Agreed, with one change (the user's go: "write it up"): Kessler-Hayashi's salvaged orbital beacon stays in it,
+as a part of the targeting array, so the fight with Kessler-Hayashi is still what opens it, its own weapon turned on it.
+Everything below is a proposal; numbers are first guesses to be priced (arena, scenarios), marked so.
+
+- **What it replaces.** The strike beacon (scripts/strike.lua, lp-strike-beacon): one salvaged beacon, a schematic, a
+  placed beacon that charges 50 MJ and burns out. Retired once the cannons stand; saves keep a placed one working until it
+  fires (migration: the recipe and technology hidden, the item kept).
+- **The buildings, on a platform only** (surface conditions: zero gravity, as Space Age's thrusters and crushers).
+  - *Orbital cannon:* a crafting machine whose one recipe makes **readiness**, not an item it hands out: each cycle takes
+    a shell and thruster fuel and adds one charge to the cannon, up to its store (1 charge a cycle, a cycle 3 minutes,
+    a store of 2: decided, 2 below). Readiness is what a strike spends; nothing is fired as ammunition, and a full cannon stops (no spam: the
+    rocket silo's rhythm, the user's own image).
+  - *Targeting array:* one a platform, needed for its cannons to fire at all; made with Kessler-Hayashi's **orbital
+    beacon** (salvaged from a lander, 1, or an uplink, 2: components.lua already drops them), processing units and steel.
+    Lost with the platform, rebuilt only with another beacon: the faction's hardware is the scarce part, not the iron.
+- **Supplies (the logistic hurdle).**
+  - *Orbital shell:* made in space only (a platform recipe): steel, explosives, low density structure (proposed amounts
+    to price). Explosives need sulfur, which a platform does not mine: shipped up from a planet, rockets' worth a strike.
+  - *Fuel:* thruster fuel, the platform's own, a cycle's worth from the same stock its thrusters burn: firing and flying
+    draw on one supply, a choice for the player.
+- **Gating.** Technology *Orbital cannon* after Artillery and Space platform (both vanilla), and the salvaged-beacon
+  schematic as now (crafting it the research trigger), so: artillery first, a platform, and a Kessler-Hayashi lander or
+  uplink destroyed. Kessler-Hayashi lands after the first rocket, so the order holds in every game that has it; a game
+  without Kessler-Hayashi (its levers off) has no beacon: a targeting core instead (decided, 5 below).
+- **Firing.** A remote (a capsule or selection tool, artillery remote's look), and a shortcut: used on Nauvis, on a point
+  in reach of a platform with a targeting array **stationed over Nauvis** (not in transit: the platform must be there).
+  The strike draws one charge from every ready cannon of that platform (or of all platforms over Nauvis: to settle) and
+  falls as Kessler-Hayashi's does (lances from the sky, a line or a cluster: the look exists, scripts/orbital.lua):
+  - *Scaling:* each charge spent adds shells: its strength is the cannons fired, so ten cannons hit ten times as hard, a
+    store of three lets three strikes in a row before the wait.
+  - *Its reach:* a radius (proposed 20 a strike, its shells spread inside it) anywhere on Nauvis the player has charted;
+    a cooldown between remote uses (proposed 30 s) so a stack of charges is not spent in one second unless chosen.
+  - *Stronger than artillery,* but not a map wipe: a shell is one strike's worth of damage (proposed: an orbital shell
+    of Kessler-Hayashi's, ORBITAL_BLOW in war.lua) and buildings round the point take what they take.
+- **The factions' answer.** Struck, a corporation counts it an attack (as the beacon does: provoked); Synthexis learns
+  from what kills its waves as from any weapon (know.loss: the strike its own damage key, so its tactics can spread
+  against it). No answer of its own beyond that (decided, 4 below).
+- **What players see.** The cannon's readiness on its own entity (like the silo's progress) and a count in the remote's
+  tooltip: charges ready over Nauvis, cannons, platforms; the strike's warning on the map (its painted point, as the
+  faction's); the alert when charges are full.
+- **Engine questions first, each a spike** (never memory): can a modded crafting machine be built on a platform and read
+  by script; can a platform's position (stationed over Nauvis, `LuaSpacePlatform.space_location`) and its entities be read
+  from a remote used on Nauvis; does a crafting machine whose result is a script counter (an invisible item kept in its
+  output, the readiness) stop on its own when full; how a capsule or selection tool targets a far point in map view (the
+  artillery remote's way). Then a scenario: a platform over Nauvis with cannons and supplies, the remote used on a nest,
+  the nest gone and the charges spent; and its failing cases (in transit, no array, no charges).
+- **Decided (2026-11-10; recommended, the user agreed bar the fourth, which was changed on the user's word: "another
+  constraint on a tightly balanced system"):**
+  1. *Pooled:* the remote fires every ready cannon of every platform stationed over Nauvis; no platform picker (a player
+     who wants one held back flies it elsewhere).
+  2. *A store of 2, a cycle of 3 minutes* (first numbers, to tune in play): a strike and a follow-up, never a stack spent
+     at once; more cannons make a strike stronger, not more often. Artillery the everyday tool, the cannon the planned one.
+  3. *One shell* for the first release; cluster and incendiary later, the cluster from Kessler-Hayashi's fuze.
+  4. *No special answer:* a strike is an attack (provoked, its grievance, know.lua), and the corporations' own raids and
+     sieges answer it where their choice sends them. Revisited only if play shows strikes going unpunished.
+  5. *Without Kessler-Hayashi* (its lever off): the array takes a targeting core, made of processing units, low density
+     structure and space science, instead of the salvaged beacon; with it, the beacon's way stays the one with flavour.
 
 ## Balance
 Measured in the `assault` scenario (fast mode: a depot and parts granted at the start; replay GIF and
@@ -5953,6 +6019,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
 - **rivals' plain units** (0.2.271): 3 of Grubstake's entities read as plain lp- prototypes once, 0 on the rerun; the check
   counted effects too (the Scorcher's stream and fires are shared prototypes). Units and buildings only now, and it names
   any plain one; the 3 not identified.
+- **Costs re-tuned after the Line trooper's fix** (0.2.272; the user, in the arena: "Bomber drones have no chance to close
+  the gap against laser trooper / heavy laser troopers"). The matrix on 0.2.271 (the trooper at full damage): Kessler-
+  Hayashi's Line trooper 64% against units at 10 parts (15% before its fix), the bomb drone 31%, the laser drone 67%,
+  the harrier 60%. Line trooper 10 to 11 (12 overshot to 36%; at 11, 47% over its own matchups); bomb drone 35 to 28
+  (43%: a strike unit, judged on its chance against infantry, not overall); laser drone and harrier kept at 70 and 15.
+  The laser drone is a hard counter, measured: every fight won against what cannot shoot up (every hull, biter bites,
+  breachers, sappers, railgunners), every fight lost against what can (infantry of all sides, rocket troopers, anti-air,
+  buggies, slugs, lances, walkers, gun and laser turrets, spore spitters, waves at 0.80 and over). Its overall share is
+  the matrix's mix of ground-only kinds, not its strength: priced by role, not by the overall (80 and 95 were tried and
+  left it losing every fight it lost at 70, with fewer drones). Units not re-priced moved by up to 10 between runs
+  (three rounds; the knock-on of their opponents' prices): a single row's move of that size is noise. The matrix now runs
+  as four games (scripts/arena.sh, LP_ARENA_JOBS), 13 minutes for 4,692 fights where one game took 26. The full matrix at
+  the final prices: Line trooper 49%, bomb drone 47%, harrier 60%, laser drone 66% (by role, above); the hulls 44 to 54.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
