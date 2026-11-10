@@ -23,9 +23,14 @@ return {name = "showcase", resolution = {1920, 1080}, anti_alias = true, speed =
     {tick = T + 2040, args = {"clear", "38"}, at = {68, 125}},
     {tick = T + 2080, args = {"flak", "4"}, at = {60, 180}},
   },
-  moves = {
+  -- (Refilm: the moves named in ONLY; nil for all.)
+  moves = (function(all) local ONLY = {bombers = true, flak = true}; local out = {}
+    for _, m in ipairs(all) do if not ONLY or ONLY[m.name] then out[#out + 1] = m end end; return out end)({
     shot("tesla", T + 30, 480, 1.9, 2.0),
-    shot("bombers", T + 600, 600, 1.7, 1.8),
+    -- (Fixed, gliding south with the squad's march: tracked on the fight's eased middle, the camera jittered as units fell,
+    -- the user: "bomber.mp4 has a jittery camera"; the squad walks MARCH 24 tiles south from the stage.)
+    fixed("bombers", T + 600, 600, {64, 62}, 1.45, 1.5, {64, 78}),
     fixed("prism", T + 1300, 700, {79, 117}, 1.8, 1.95, {84, 115.5}),
-    fixed("flak", T + 2080, 560, {70, 178}, 1.7, 1.8),
-  }}
+    -- (Wider and east of the buggies, where the drones come in: on the buggies, "we barely see the drones", the user.)
+    fixed("flak", T + 2080, 560, {84, 176}, 1.2, 1.3, {78, 177}),
+  })}
