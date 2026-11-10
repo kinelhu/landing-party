@@ -14,8 +14,9 @@ manual revisited after calibration; an art direction pass before the playtest.
 
 ## For the user to decide
 - **Version number** for the first upload (1.0.0, or 0.3.0 as a public beta).
-- **The zip's size**: PNGs are 154 of its 163 MB. Lossless recompression (oxipng) changes no pixel and saves some; lossy
-  (pngquant) about half, at a risk to the art. Not done.
+- **The zip's size**: PNGs are 154 of its 163 MB. Lossless recompression (oxipng -o 3, no pixel changed) saved 12% on the
+  twelve largest sheets (25 to 22 MB), so the zip would be about 145 MB; lossy (pngquant) about half, at a risk to the
+  art. Not done: the art's files are untouched.
 - **The music credit** in the trailer's description and on the page.
 - **Multiplayer**: `scripts/mp.sh` showed no desync in two runs (2026-11-07); two clients using the army and the faction
   GUIs are not yet covered.
