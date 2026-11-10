@@ -190,12 +190,15 @@ elif name == "flak-turret":
     base, head, p = flak()
     ground, sun, world = lpkit.stage(scene, 2, 1.4)
     sun.data.energy = 3.4; sun.data.angle = math.radians(1.5)
-    for o in head: o.visible_camera = False
+    # (Each part's pass without the other's shadow: hidden from the camera alone, the head cast its shadow into the base's
+    # and the base its own again into each of the head's, faction_works.py's turrets, 2026-11-10.)
+    for o in head: o.visible_camera = False; o.visible_shadow = False
     lpkit.passes(scene, f"{out}/flak-base", 1, lambda f: None, base, {AMBER}, ground, sun, world, fill=FILL)
-    for o in head: o.visible_camera = True
-    for o in base: o.visible_camera = False
+    for o in head: o.visible_camera = True; o.visible_shadow = True
+    for o in base: o.visible_camera = False; o.visible_shadow = False
     N = int(os.environ.get("LP_FRAMES", 64))
-    # (Clockwise from north, as the game counts a rotated sprite's directions.)
-    def set_frame(f): p.rotation_euler = (0, 0, -f * 2 * math.pi / N); bpy.context.view_layer.update()
+    # (Clockwise from north, as the game counts a rotated sprite's directions. Its barrels are modelled to the south:
+    # half a turn on, or its first frame aimed south and it fired backwards, 2026-11-10.)
+    def set_frame(f): p.rotation_euler = (0, 0, math.pi - f * 2 * math.pi / N); bpy.context.view_layer.update()
     lpkit.passes(scene, f"{out}/flak-head", N, set_frame, head, {AMBER}, ground, sun, world, shadow_each=True, fill=FILL)
 print("rendered", name)

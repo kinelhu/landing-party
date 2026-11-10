@@ -6371,6 +6371,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the mod's graphics (the models added about 25). --prune reads the dump and deletes every manifest target no prototype
   draws, with its manifest line; run after every --write (a --write alone brings them back). Checked: no script names a
   recolour by path (the runtime draws prototypes), and after the prune the check passes with 0 of 125 targets unused.
+- **The flak turret faced the wrong way** (0.2.307; found while modelling the factions' turrets). Its head sheet's first
+  frame aimed south (the barrels are modelled to the south and the head turned from 0), so in the game it aimed
+  backwards: a rotated sprite's first frame faces north. Re-rendered half a turn on (turning_buildings.py), checked on
+  frames 0, 16, 32 and 48 (north, east, south, west); its base no longer carries the head's shadow (visible_shadow off
+  for the part not rendered; the base 213 px tall then, 191 now).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
