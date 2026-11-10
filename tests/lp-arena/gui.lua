@@ -7,6 +7,7 @@ local gui = {}
 
 local PEN = {0, 0}
 local shared = require("__landing-party__.shared")
+local rng = require("__landing-party__.scripts.rng")
 local WHO = {"serenity", "grubstake", "biotech", "player", "biters"}
 local WHO_LABEL = {"Kessler-Hayashi", "Grubstake Inc.", "Synthexis", "You", "Biters"}
 
@@ -120,6 +121,10 @@ local function side_flow(parent, s, key, title)
   -- (The number as a budget: as many of the unit as that many parts buy. The user, 2026-11-09: "Can we set up arena to
   -- create 'X parts worth' of a unit?")
   row2.add{type = "button", name = "lpa_parts_" .. key, caption = "Parts", tooltip = "Add as many of the unit as that many parts buy"}
+  -- (A random army of the side's faction for that many parts: the user, 2026-11-10, "a 'mixed units' selection, worth X
+  -- parts, to test various random armies".)
+  row2.add{type = "button", name = "lpa_mixed_" .. key, caption = "Mixed",
+    tooltip = "Add a random army of this faction's units worth that many parts"}
   row2.add{type = "button", name = "lpa_empty_" .. key, caption = "Empty"}
   -- The picked unit's numbers.
   local name = proto_of(WHO[pick.who], ks[pick.kind])
@@ -185,6 +190,39 @@ local function read_pick(player, key)
   s.evo = math.max(0, math.min(1, tonumber(evo and evo.text) or s.evo))
 end
 
+-- A random army of who's units with a price, for budget parts (rng.lua, seeded by the caller: a new army each click), one
+-- draw after another among those it can still afford, until it affords none; each kind one entry. Returns the status.
+function gui.mixed(s, key, who, budget, seed)
+  local menu = {}
+  for _, kind in ipairs(kinds(who)) do
+    local name = (who == "serenity" or who == "grubstake") and shared.variant(who, kind) or kind
+    local cost = arena.cost(shared.kind_of(name), name)
+    if cost and cost > 0 then menu[#menu + 1] = {kind = kind, cost = cost} end
+  end
+  if #menu == 0 then return "That side has no units with a price in parts." end
+  local r = rng.new(seed)
+  local count, spent, left = {}, 0, budget
+  while spent < 5000 do
+    local can = {}
+    for _, m in ipairs(menu) do if m.cost <= left then can[#can + 1] = m end end
+    if #can == 0 then break end
+    local m = can[1 + math.floor(rng.next(r) * #can)]
+    count[m.kind] = (count[m.kind] or 0) + 1
+    left, spent = left - m.cost, spent + m.cost
+  end
+  local kinds_n = 0
+  for _, m in ipairs(menu) do
+    local c = count[m.kind]
+    if c then
+      local en = who == "biotech" and {"raw", m.kind, c, shared.BIOTECH.force} or {who, m.kind, c, s.evo}
+      en.cost = m.cost
+      table.insert(s.sides[key], en)
+      kinds_n = kinds_n + 1
+    end
+  end
+  return string.format("A mixed army: %d kinds for %d of %d parts.", kinds_n, spent, budget)
+end
+
 function gui.on_click(e)
   local el, player = e.element, game.get_player(e.player_index)
   if not (el and el.valid and el.name:sub(1, 4) == "lpa_") then return end
@@ -213,6 +251,10 @@ function gui.on_click(e)
     local en = who == "biotech" and {"raw", kind, n, shared.BIOTECH.force} or {who, kind, n, s.evo}
     en.cost = cost
     table.insert(s.sides[key], en)
+  elseif el.name:find("^lpa_mixed_") then
+    read_pick(player, key)
+    local pick = s.pick[key]
+    s.status = gui.mixed(s, key, WHO[pick.who], math.max(0, pick.n or 0), game.tick * 7919 + player.index)
   elseif el.name:find("^lpa_empty_") then
     s.sides[key] = {}
   elseif el.name == "lpa_fight" then
@@ -303,6 +345,15 @@ function gui.test_tick(tick)
     end
     helpers.write_file("lp-arena/gui.txt", string.format("built %d panels, %d errors\n%s\n", built, #errors,
       table.concat(errors, "\n")))
+    -- Mixed (gui.mixed): 300 parts of each side's units, within its budget, each entry priced.
+    for w = 1, #WHO do
+      local t0 = {sides = {a = {}}, evo = 0.5}
+      local msg = gui.mixed(t0, "a", WHO[w], 300, 1234 + w)
+      local sum = 0
+      for _, en in ipairs(t0.sides.a) do sum = sum + (en.cost or 0) * en[3] end
+      helpers.write_file("lp-arena/gui.txt", string.format("mixed %s: %s (%d entries, %d parts)%s\n", WHO[w], msg,
+        #t0.sides.a, sum, sum > 300 and " OVER BUDGET" or ""), true)
+    end
     s.pick.a = {who = 4, kind = index_of(kinds("player"), "lp-trooper") or 1, n = 10}
     s.pick.b = {who = 3, kind = index_of(kinds("biotech"), "lp-bred-cinder") or 1, n = 1}
     gui.build(p)
