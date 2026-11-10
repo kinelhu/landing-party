@@ -4,7 +4,7 @@ digraph ai {
   edge [color="#8899aa", arrowsize=0.6];
   subgraph cluster_0 { label="Seams (leaves)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "stance" [label="stance\n78 lines", width=0.89, fillcolor="#eef2f7"];
-    "pool" [label="pool\n142 lines", width=0.96, fillcolor="#d9f0d9"];
+    "pool" [label="pool\n156 lines", width=0.97, fillcolor="#eef2f7"];
     "tune" [label="tune\n36 lines", width=0.84, fillcolor="#d9f0d9"];
     "rng" [label="rng\n56 lines", width=0.86, fillcolor="#d9f0d9"];
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
@@ -15,6 +15,7 @@ digraph ai {
     "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "landfx" [label="landfx\n239 lines", width=1.07, fillcolor="#eef2f7"];
     "burstfx" [label="burstfx\n305 lines", width=1.14, fillcolor="#eef2f7"];
+    "veterancy" [label="veterancy\n89 lines", width=0.90, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
@@ -102,14 +103,14 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_9 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n899 lines", width=1.80, fillcolor="#d9f0d9"];
+    "command" [label="command\n912 lines", width=1.81, fillcolor="#eef2f7"];
     "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "achievements" [label="achievements\n34 lines", width=0.84, fillcolor="#d9f0d9"];
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1125 lines", width=2.05, fillcolor="#f7dede"];
+    "control" [label="control\n1156 lines", width=2.08, fillcolor="#f7dede"];
     "dev" [label="dev\n566 lines", width=1.43, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
@@ -150,6 +151,7 @@ digraph ai {
   "burstfx" -> "rng";
   "cannon" -> "orbital";
   "cell" -> "pods";
+  "command" -> "veterancy";
   "cordon" -> "base";
   "cordon" -> "ops";
   "cordon" -> "prospect";
@@ -263,6 +265,7 @@ digraph ai {
   "pact" -> "rng";
   "phases" -> "faction";
   "planner" -> "rd";
+  "pool" -> "veterancy";
   "power" -> "threat";
   "prospect" -> "base";
   "prospect" -> "chart";

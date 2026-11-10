@@ -6,8 +6,9 @@
 --   strength    the roster's live count: what the cap holds
 --   give        units done with a job: into the garrison when home, else on their way back (b.returning) until they are
 --   take        units for a job, from the garrison, never below a floor
--- A leaf: it reads storage and the settlement only.
+-- A leaf: it reads storage and the settlement only, and promotes at the homecoming (veterancy.lua, a leaf too).
 local shared = require("__landing-party__.shared")
+local veterancy = require("__landing-party__.scripts.veterancy")
 local pool = {}
 
 local HOME = 40                    -- a unit within this of the lander or a depot is home
@@ -104,12 +105,25 @@ local function home_near(b, p)
   return false
 end
 
+-- Home: a unit its merit has earned a rank is promoted here (veterancy.lua: a rank comes only at home, where no job
+-- holds it), its copy enlisted in its place.
+local function homecoming(b, u)
+  local old = u.unit_number
+  local n = veterancy.promote(u)
+  if n ~= u then
+    storage.unit_owner[old] = nil
+    if b.roster then b.roster[old] = nil end
+    pool.enlist(b, n)
+  end
+  return n
+end
+
 -- Units done with a job: home already, into the garrison; else on their way back until they are (pool.tick).
 function pool.give(b, units)
   b.returning = b.returning or {}
   for _, u in ipairs(units) do
     if u.valid then
-      if home_near(b, u.position) then table.insert(b.garrison, u) else table.insert(b.returning, u) end
+      if home_near(b, u.position) then table.insert(b.garrison, homecoming(b, u)) else table.insert(b.returning, u) end
     end
   end
 end
@@ -133,7 +147,7 @@ function pool.tick(b)
       if home_near(b, u.position) or game.tick - since > RETURN_MAX then
         table.remove(r, i)
         b.returning_since[u.unit_number] = nil
-        table.insert(b.garrison, u)
+        table.insert(b.garrison, homecoming(b, u))
       end
     end
   end

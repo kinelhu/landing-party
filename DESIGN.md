@@ -1026,7 +1026,7 @@ The aim: the player answers the faction with factory output, not clicks.
 - Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
   blocks; a fought capture that a sensible army wins.
 
-## Veterancy (designed 2026-11-10, to build)
+## Veterancy (designed 2026-11-10; ranks built 0.2.296, the AI's use of them to build)
 The user, 2026-11-10: "Veterancy system for individual units à la C&C. Rewards the AI mechanics we implemented that aim for
 attackers to return home. Incentivizes an alternative playstyle of preserving highly elite units vs throwing mass prod in
 the grinder."
@@ -1046,6 +1046,14 @@ home, which is what makes coming home matter:
 A unit cannot be raised a quality in place (order_upgrade refuses units, probed), so a promotion is a swap: a new unit of
 the same name at the next quality, at the same place and health share, its merit carried, put where the old one was
 (roster, storage.unit_owner, the garrison, a player squad) and the old one removed. At home, no operation holds it.
+
+**Built (0.2.296):** `scripts/veterancy.lua` (a leaf): merit on every death by its cause, the swap; pool's homecoming
+promotes (give and tick), the player's troopers at their rally point when holding (command.lead, swapped after its walk
+over the troopers). A rank's name flies over the unit ("Veteran", "Elite", "Heroic"). Scenario `veteran`: four troopers,
+two infantry killed (merit 2 banked), merit given, the three left promoted where they held, none lost; LP_MIX=camp, a
+Kessler-Hayashi camp given merit raided six undefended assemblers and four raiders came home Veterans, none before;
+LP_MIX=off (debug_tune vet_off) fails the merit and promotion checks. Merit for a kill: health over the killer's (the
+strength measure of attempt.worth), at most 4.
 
 **What the AI does with it** (to build after the ranks):
 - its odds count a veteran at its rank (worth times health times damage: a Veteran about 1.9 a normal unit, an Elite 3.1);

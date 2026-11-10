@@ -2300,6 +2300,91 @@ end
 -- (10 of bandwidth), a rally beacon 21 tiles off, six troopers. The readout says 6 of 10; three picked and retired walk to
 -- the barracks and hand in three orders there (on the ground, marked for the robots), three left, the readout 3 of 10,
 -- and the barracks deploys none of them again.
+-- Veterancy (veterancy.lua; the user, 2026-11-10: "Veterancy system for individual units à la C&C"): four of the
+-- player's troopers at a rally beacon; two Kessler-Hayashi infantry walk at them. Their kills earn merit (credited, its
+-- highest banked above 0); merit enough given (debug_merit), each is promoted where it holds, at the rally point: a
+-- Veteran (uncommon), as many troopers after as before. LP_MIX=camp: a Kessler-Hayashi camp, its units given merit, raids
+-- an undefended outpost of assemblers and comes home: its units are promoted at the homecoming (the pool), none before.
+-- LP_MIX=off: veterancy off (debug_tune vet_off), the checks seen failing.
+scenarios.veteran = function()
+  local camp, off = params.mix == "camp", params.mix == "off"
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  if camp then
+    schedule(60, function()
+      lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true})
+      S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+      for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
+    end)
+    schedule(8 * 3600, function()
+      local o = lp("stats", S.id).origin
+      local len = math.sqrt(o.x * o.x + o.y * o.y)
+      local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
+      flatten(c[1] - 14, c[2] - 14, c[1] + 14, c[2] + 14)
+      for k = 0, 5 do put("assembling-machine-2", c[1] + (k % 3) * 5 - 5, c[2] + math.floor(k / 3) * 5 - 2) end
+      S.given = lp("debug_merit", S.id, 3.5)
+      S.before = (lp("veterancy").by_force[FORCE] or {}).uncommon or 0
+      lp("debug_tune", {raids_off = false})
+    end)
+    settle_when(function() return ((lp("veterancy").by_force[FORCE] or {}).uncommon or 0) > 0 end)
+    schedule(END - 60, function()
+      local v = lp("veterancy")
+      local st = lp("stats", S.id)
+      info(string.format("veteran: camp, merit given %s; %d raids; promoted %d; by force %s", tostring(S.given),
+        st.ops.launched or 0, v.promoted, serpent.line(v.by_force)))
+      check("veteran: camp, none promoted before a homecoming", S.before == 0, tostring(S.before))
+      check("veteran: camp, its raiders promoted coming home", ((v.by_force[FORCE] or {}).uncommon or 0) > 0,
+        serpent.line(v.by_force[FORCE]))
+    end)
+    return
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, vet_off = off or nil})
+    flatten(-30, -40, 60, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    put("lp-rally-beacon", 10.5, -18.5)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 4}
+  end)
+  schedule(60 + 40 * 60, function()
+    S.troopers = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    S.foe_list = {}
+    for k = 1, 2 do
+      local u = put("lp-infantry", 40 + k * 2, -18, FORCE)
+      if u then
+        u.commandable.set_command{type = defines.command.attack_area, destination = {10, -18}, radius = 10}
+        S.foe_list[#S.foe_list + 1] = u
+      end
+    end
+  end)
+  schedule(60 + 100 * 60, function()
+    S.merit = 0
+    for _, u in pairs(surface().find_entities_filtered{name = "lp-trooper", force = "player"}) do
+      S.merit = math.max(S.merit, lp("merit", u.unit_number) or 0)
+    end
+    S.foes = 0
+    for _, u in ipairs(S.foe_list) do if u.valid then S.foes = S.foes + 1 end end
+    S.given = lp("debug_merit", "player", 3.5)
+  end)
+  schedule(60 + 140 * 60, function()
+    local v = lp("veterancy")
+    local q = v.by_force.player or {}
+    local after = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    info(string.format("veteran: %s troopers, %s foes left, merit banked %s, given %s; promoted %d; by rank %s",
+      tostring(S.troopers), tostring(S.foes), tostring(S.merit), tostring(S.given), v.promoted, serpent.line(q)))
+    check("veteran: the fight ran (troopers deployed, the infantry killed)", (S.troopers or 0) >= 3 and S.foes == 0,
+      string.format("%s troopers, %s left", tostring(S.troopers), tostring(S.foes)))
+    check("veteran: their kills earned merit", (S.merit or 0) > 0, tostring(S.merit))
+    check("veteran: promoted at the rally point", (q.uncommon or 0) >= 1, serpent.line(q))
+    check("veteran: none lost to the swap", after == (S.given or -1), string.format("%d after, %s given", after, tostring(S.given)))
+  end)
+end
+
 scenarios.retire = function()
   local function put(name, x, y, force)
     return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
@@ -17388,7 +17473,7 @@ schedule(END, function()
       info(string.format("watch %d base %d %s: %s", l.tick, l.base, l.kind, l.text))
     end
   end
-  local CHECKLESS = {grow = true, probe = true, cost = true, showcase = true}
+  local CHECKLESS = {grow = true, probe = true, cost = true, showcase = true, vetprobe = true}
   if not CHECKLESS[params.scenario] then
     local ran = 0
     for _, l in ipairs(lines) do

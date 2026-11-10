@@ -9,6 +9,7 @@ local phases = require("__landing-party__.scripts.phases")
 local biters = require("__landing-party__.scripts.biters")
 faction.on_trigger = phases.on_launch
 local ops = require("__landing-party__.scripts.ops")
+local veterancy = require("__landing-party__.scripts.veterancy")
 local pool = require("__landing-party__.scripts.pool")
 local army = require("__landing-party__.scripts.army")
 local watch = require("__landing-party__.scripts.watch")
@@ -252,6 +253,8 @@ script.on_event(defines.events.on_entity_died, function(e)
   fall.skip(e)
   -- What the factions know: every loss of theirs, by whom (scripts/know.lua).
   know.loss(e)
+  -- Merit for the killer (veterancy.lua).
+  veterancy.on_died(e)
   studies.on_died(e)
   biters.on_died(e)
   herd.on_died(e)
@@ -506,7 +509,7 @@ remote.add_interface("landing-party", {
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
     if t.crews_off ~= nil then storage.crews_off = t.crews_off or nil end
     -- (0.2.29's ground handling, each off: bisecting what it changed.)
-    for _, k in ipairs({"blast_off", "landfill_off", "pier_off", "air_trace", "air_straight", "dismantle_off"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
+    for _, k in ipairs({"blast_off", "landfill_off", "pier_off", "air_trace", "air_straight", "dismantle_off", "vet_off"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
     if t.grow_to_line_off ~= nil then storage.grow_to_line_off = t.grow_to_line_off or nil end
     if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
@@ -984,6 +987,34 @@ remote.add_interface("landing-party", {
   debug_herd_route = function(from, to, opts)
     local r = ops.route({surface = 1, force = shared.BIOTECH.force}, from, to, opts)
     return {waypoints = r and #r or 0, last = ops.last_route, route = r}
+  end,
+  -- Tests only: merit (veterancy.lua) for every unit a settlement owns, or (id "player") the player's army.
+  debug_merit = function(id, n)
+    storage.merit = storage.merit or {}
+    local list = {}
+    if id == "player" then
+      for _, t in pairs(storage.cmd.troopers) do list[#list + 1] = t.unit end
+    else
+      for _, u in pairs(pool.roster(storage.bases[id])) do list[#list + 1] = u end
+    end
+    local k = 0
+    for _, u in ipairs(list) do if u.valid then storage.merit[u.unit_number] = n; k = k + 1 end end
+    return k
+  end,
+  -- A unit's merit banked (veterancy.lua).
+  merit = function(unit_number) return storage.merit and storage.merit[unit_number] end,
+  -- Veterancy: promotions, the highest merit banked, and each force's units by rank (quality).
+  veterancy = function()
+    local out = veterancy.stats()
+    out.by_force = {}
+    for _, f in pairs(game.forces) do
+      local q = {}
+      for _, u in pairs(game.surfaces[1].find_entities_filtered{type = {"unit", "spider-unit"}, force = f}) do
+        if u.name:sub(1, 3) == "lp-" then q[u.quality.name] = (q[u.quality.name] or 0) + 1 end
+      end
+      if next(q) then out.by_force[f.name] = q end
+    end
+    return out
   end,
   -- Tests only: units of a kind straight into a settlement's garrison.
   debug_units = function(id, kind, n)
