@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.279
+Version: 0.2.280
 Date: 2026-11-10
   Features:
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
@@ -9,7 +9,7 @@ Date: 2026-11-10
     - Each faction researches, fields its own units and answers what you do to it; the rivals fight each other and the biters too.
     - Player army: barracks, a command tool, rally beacons and a muster point. A panel at the top of the screen shows your units against your command cap; select units and retire them (ALT + R) to hand their orders back in at a barracks.
     - Orbital cannons: after artillery and space platforms, build cannons on a platform over Nauvis, keep them in orbital shells and thruster fuel, and call a strike with the remote (ALT + O). Every charged cannon over Nauvis fires; each needs a few minutes to charge again. Its targeting array is built round a beacon salvaged from Kessler-Hayashi, or a targeting core.
-    - The factions send their fliers alone where little can shoot them down: artillery, radars and power behind walls and flamethrowers.
+    - The factions send their fliers alone where little can shoot them down: artillery, radars and power behind walls and flamethrowers, and fly round your anti-air on the way.
     - Grubstake's Killdozer revs short of your wall and charges straight through it, crushing what stands in its lane.
     - Your army charts the map round it as it goes, so far operations are not blind.
     - Grubstake's Scorcher flames any packed foe every few seconds and goes up when it dies, leaving its fuel burning; machine-gun fire slows infantry caught under it.

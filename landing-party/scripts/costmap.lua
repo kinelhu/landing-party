@@ -91,7 +91,14 @@ cell_cost_ = function(map, i, j, k)
   -- No way: ground its herds found none through (opts.blocked), or water at its middle or over WATER_SHARE of it (water at
   -- its middle only, a lake's strait read as open, and a herd sent across it was taken round the lake by the pathfinder;
   -- 2026-10-27).
-  if map.blocked[k] or (not map.dry and (s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0
+  -- (By air, opts.air: what shoots up alone; water, woods, cliffs, walls and mines are nothing to a flier.)
+  if map.air then
+    local fire = 0
+    for _, t in ipairs(firemap.entries_box(map.fire, {cx, cy}, size / 2 + map.margin)) do
+      fire = fire + t.p * size / (2 * (t.r + map.margin) + size)
+    end
+    c = size * costmap.WALK + fire * map.scale + costmap.DEATH * (map.deaths[k] or 0)
+  elseif map.blocked[k] or (not map.dry and (s.count_tiles_filtered{position = {cx, cy}, radius = 2, collision_mask = "water_tile", limit = 1} > 0
     or s.count_tiles_filtered{area = {{cx - size / 2, cy - size / 2}, {cx + size / 2, cy + size / 2}},
       collision_mask = "water_tile"} > costmap.WATER_SHARE * size * size)) then
     c = costmap.WATER
@@ -188,11 +195,11 @@ function costmap.read(surface, center, radius, forces, opts)
     ground_cost = opts.ground_cost or 0, wallc = {},
     -- (Walls of these, not its target's alone: a corporation's camp walls on its way it walks into, and stuck on them under
     -- their flamers its herd lost 66 and left half behind; 2026-10-28.)
-    wall_forces = opts.wall_forces}
+    wall_forces = opts.wall_forces, air = opts.air}
   if storage.biotech_time_parts then map.prof, map.prof_fire = helpers.create_profiler(true), helpers.create_profiler(true) end
   -- What stands in the box, by kind, binned by cell once (near): trees, cliffs, walls, mines, the foe's ground; and
   -- whether it holds any water at all (none: no cell asks).
-  do
+  if not map.air then
     local area = {{map.x0 - size, map.y0 - size}, {map.x0 + (w + 1) * size, map.y0 + (w + 1) * size}}
     local hh = w + 2
     local function bin(list)
@@ -351,6 +358,35 @@ function costmap.path(map, pos)
   while k do
     table.insert(out, 1, centre(map, k))
     k = map.came[k]
+  end
+  return out
+end
+
+-- A way (costmap.path) cut to its turns: from each point kept, the farthest point of the way the straight line to which
+-- crosses no cell dearer than the dearest the way itself crossed between them (a grid's way is a staircase of cell middles;
+-- its fliers fly the straight legs, air raids).
+function costmap.straighten(map, path)
+  if not path or #path <= 2 then return path end
+  local function dear(p)
+    local k = key_of(map, p)
+    return k and (map.cell_cost[k] or costmap.WATER) or costmap.WATER
+  end
+  local out, a = {path[1]}, 1
+  while a < #path do
+    local best = a + 1
+    local worst = dear(path[a + 1])
+    for j = a + 2, #path do
+      worst = math.max(worst, dear(path[j]))
+      local ax, ay, bx, by = path[a].x, path[a].y, path[j].x, path[j].y
+      local len = math.sqrt((bx - ax) ^ 2 + (by - ay) ^ 2)
+      local ok = true
+      for d = 0, len, map.size / 2 do
+        if dear({ax + (bx - ax) * d / len, ay + (by - ay) * d / len}) > worst + 1e-9 then ok = false; break end
+      end
+      if ok then best = j end
+    end
+    out[#out + 1] = path[best]
+    a = best
   end
   return out
 end

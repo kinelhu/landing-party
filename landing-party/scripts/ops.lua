@@ -487,7 +487,7 @@ local function air_defence(b, t, quota)
     quota.n = quota.n - 1
     local h = b.lander and b.lander.valid and b.lander.position or b.origin
     if not h then return nil end
-    t.air = airraid.weigh(game.surfaces[b.surface], {h.x, h.y}, t.pos, t.owner and game.forces[t.owner] or enemies(game.forces[b.force]),
+    t.air, t.air_way = airraid.route(game.surfaces[b.surface], {h.x, h.y}, t.pos, t.owner and game.forces[t.owner] or enemies(game.forces[b.force]),
       b.corp, DEFENCE_RADIUS)
     t.air_at = game.tick
   end
@@ -1231,7 +1231,12 @@ local function launch_air(b, key, trace, army)
   end
   local target = s.find_entities_filtered{name = t.kind, position = t.pos, radius = 1.5, limit = 1}[1]
   local cmds = {}
-  if target then cmds[1] = {type = defines.command.attack, target = target, distraction = defines.distraction.none} end
+  -- (Its way's turns first, airraid.route: round what shoots up, not straight over it.)
+  for _, p in ipairs(t.air_way or {}) do
+    cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = {p[1], p[2]}, radius = 6,
+      distraction = defines.distraction.none}
+  end
+  if target then cmds[#cmds + 1] = {type = defines.command.attack, target = target, distraction = defines.distraction.none} end
   cmds[#cmds + 1] = {type = defines.command.attack_area, destination = {t.pos[1], t.pos[2]}, radius = 12,
     distraction = defines.distraction.by_anything}
   order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds})
@@ -1244,8 +1249,9 @@ local function launch_air(b, key, trace, army)
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
   storage.threat_last = game.tick
-  trace(b, string.format("air raid on %s at %.0f,%.0f: %d fliers (worth %.1f) against air defence %.1f (on foot %.1f)",
-    t.kind, t.pos[1], t.pos[2], #members, worth, da, defence(b, t)))
+  b.op.way = t.air_way
+  trace(b, string.format("air raid on %s at %.0f,%.0f: %d fliers (worth %.1f) against air defence %.1f (on foot %.1f), %d turns",
+    t.kind, t.pos[1], t.pos[2], #members, worth, da, defence(b, t), #(t.air_way or {})))
   return true
 end
 

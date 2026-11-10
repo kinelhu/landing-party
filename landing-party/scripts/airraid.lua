@@ -9,6 +9,8 @@ local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
 local know = require("__landing-party__.scripts.know")
 local attempt = require("__landing-party__.scripts.attempt")
+local costmap = require("__landing-party__.scripts.costmap")
+local firemap = require("__landing-party__.scripts.firemap")
 
 local airraid = {}
 
@@ -71,6 +73,40 @@ function airraid.weigh(surface, from, pos, forces, corp, r)
     end
   end
   return w
+end
+
+-- Its way by air (the user, 2026-11-10: "allow for air exclusive raids, when there is a flight path that avoids ground
+-- defenses"; "the flight paths seem like an obvious use of our cost map"): the cost map searched by air (costmap opts.air:
+-- what shoots up alone, its price a gun's weight here) from `from` to pos. What covers the target (within r) is paid
+-- whatever the way; the rest only where the cheapest way crosses it, and a detour costs its walk past the straight line's.
+-- Returns its weight and the way's turns ({x, y}..., its start and the target left out). From no more than AIR_FAR back
+-- (the far leg flown free, as the straight line's past AIR_LEN was).
+local AIR_FAR, AIR_PAD, AIR_MARGIN = 600, 64, 4
+function airraid.route(surface, from, pos, forces, corp, r)
+  if storage.air_straight then return airraid.weigh(surface, from, pos, forces, corp, r), {} end
+  local at, w = {}, 0
+  for _, e in pairs(surface.find_entities_filtered{position = pos, radius = r, force = forces, type = TYPES}) do
+    if e.unit_number and threat.firing(e) then at[e.unit_number] = true; w = w + weight(e, corp) end
+  end
+  local dx, dy = pos[1] - from[1], pos[2] - from[2]
+  local len = math.sqrt(dx * dx + dy * dy)
+  if len < costmap.CELL then return w, {} end
+  if len > AIR_FAR then
+    from = {pos[1] - dx / len * AIR_FAR, pos[2] - dy / len * AIR_FAR}
+    len = AIR_FAR
+  end
+  local mid = {(from[1] + pos[1]) / 2, (from[2] + pos[2]) / 2}
+  local radius = len / 2 + AIR_PAD
+  local fm = firemap.read(surface, mid, radius * firemap.BOX, forces, function(e)
+    return at[e.unit_number] and 0 or weight(e, corp)
+  end, TYPES)
+  local map = costmap.read(surface, mid, radius, forces, {air = true, fire = fm, from = from, margin = AIR_MARGIN})
+  local c = costmap.cost(map, pos)
+  if not c then return airraid.weigh(surface, from, pos, forces, corp, r), {} end
+  local way = costmap.straighten(map, costmap.path(map, pos)) or {}
+  local turns = {}
+  for i = 2, #way - 1 do turns[#turns + 1] = {way[i].x, way[i].y} end
+  return w + math.max(0, c - len * costmap.WALK), turns
 end
 
 -- The camp's fliers at home (its garrison), and what they are worth in its infantry (a raid's force is counted in

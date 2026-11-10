@@ -6086,6 +6086,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   checks found no siege; wave200 asked 200 and got 176 (its check 180). To settle: why a siege waits on one hatch by
   chance and gives up rather than breeding the burster it needs. herd core and herd ranks-mend fail at the pre-tonight
   commit as now, identically: older, also open.
+- **Air raids fly the cost map** (0.2.280; the user, 2026-11-10: "allow for air exclusive raids, when there is a flight path
+  that avoids ground defenses"; "The flight paths seem like an obvious use of our cost map"). Air raids already went with
+  fliers alone (by air where its score beat the ground's by EDGE); their way was priced as a straight line. Now
+  `airraid.route` searches the cost map by air (`costmap.read` opts.air: what shoots up alone, priced at a gun's weight;
+  water, woods, cliffs, walls and mines nothing to a flier) from the camp to the target: what covers the target is paid
+  whatever the way, the rest only where the cheapest way crosses it, a detour its walk past the straight line's. The way is
+  cut to its turns (`costmap.straighten`) and flown as go-to-location legs before the attack. Scenario airraid
+  LP_MIX=detour: nine gun turrets across the straight line, halfway: it flew round them (no flier within their reach, 0
+  sightings; with the straight line's weighing, LP_MIX=detour-straight, 251: seen failing), and needed 3 fliers against
+  air defence 0.3 where the straight line priced 5.0 and sent 7. Frequency, first-contact runs (three variants, seed
+  12345): Kessler-Hayashi built 13 to 25 laser drones a game and made no air raid, every target it chose undefended
+  (defence 0, so on foot as cheap): air raids are a strong base's problem, as meant.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

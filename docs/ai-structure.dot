@@ -19,7 +19,7 @@ digraph ai {
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
     "valuemap" [label="valuemap\n208 lines", width=1.03, fillcolor="#eef2f7"];
-    "costmap" [label="costmap\n415 lines", width=1.26, fillcolor="#eef2f7"];
+    "costmap" [label="costmap\n451 lines", width=1.30, fillcolor="#eef2f7"];
     "feeds" [label="feeds\n227 lines", width=1.05, fillcolor="#eef2f7"];
     "attempt" [label="attempt\n91 lines", width=0.90, fillcolor="#eef2f7"];
     "tactics" [label="tactics\n279 lines", width=1.11, fillcolor="#eef2f7"];
@@ -61,10 +61,10 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1055 lines", width=1.97, fillcolor="#f7dede"];
-    "ops" [label="ops\n2141 lines", width=3.18, fillcolor="#f7dede"];
+    "ops" [label="ops\n2147 lines", width=3.19, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n291 lines", width=1.12, fillcolor="#eef2f7"];
-    "airraid" [label="airraid\n90 lines", width=0.90, fillcolor="#eef2f7"];
+    "airraid" [label="airraid\n126 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n164 lines", width=0.98, fillcolor="#eef2f7"];
     "siege" [label="siege\n2088 lines", width=3.12, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
@@ -115,6 +115,8 @@ digraph ai {
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
   }
   "airraid" -> "attempt";
+  "airraid" -> "costmap";
+  "airraid" -> "firemap";
   "airraid" -> "know";
   "airraid" -> "threat";
   "army" -> "airraid";

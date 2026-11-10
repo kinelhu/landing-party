@@ -9091,7 +9091,8 @@ scenarios.crystal = function()
   end)
 end
 
--- Strike (the faction loot consult, technology 6): an orbital beacon taken apart researches Orbital strike; a strike
+-- Strike (the faction loot consult, technology 6; retired 0.2.279 for the orbital cannons): an orbital beacon in the
+-- teardown's machine no longer researches Orbital strike (the recipe hidden); a strike
 -- beacon placed (raise_built) 45 tiles out from a Serenity camp, on a player power source: charged, it fires, Serenity
 -- loses buildings within 60 of it, and the beacon is gone.
 scenarios.strike = function()
@@ -9131,8 +9132,10 @@ scenarios.strike = function()
     info(string.format("strike: researched %s, unlocked %s; fired %s at %s targets; Serenity's buildings lost %d -> %d; beacon %s",
       tostring(S.researched), tostring(S.unlocked), tostring(fired.fired), tostring(fired.targets), S.before or -1, after,
       S.beacon and S.beacon.valid and "standing" or "gone"))
-    check("strike: the teardown researched it", S.researched == true, tostring(S.researched))
-    check("strike: the beacon's recipe unlocked", S.unlocked == true, tostring(S.unlocked))
+    -- (Retired, 0.2.279: the cannons replace it, the teardown hidden so a salvaged beacon goes to the targeting array; a
+    -- placed strike beacon, a save's, still fires. The two checks below read true until then.)
+    check("strike: retired, the teardown no longer researches it", S.researched == false, tostring(S.researched))
+    check("strike: retired, its recipe stays locked", S.unlocked == false, tostring(S.unlocked))
     check("strike: it fired once charged", (fired.fired or 0) == 1, tostring(fired.fired))
     check("strike: Serenity lost buildings", after > (S.before or 0), string.format("%d -> %d", S.before or -1, after))
     check("strike: the beacon is used up", not (S.beacon and S.beacon.valid), "")
@@ -15355,11 +15358,17 @@ end
 -- LP_MIX=grubstake: a Grubstake camp with eight scrap copters instead (its air raids by the same rule, a thief's camp).
 -- Open, not in regress.sh (2026-11-10): provoked, it raided a rival's fabricator and a drill and never weighed the walled
 -- radar, by air or on foot: a thief's choice puts other targets first. Grubstake's air raids wait on the user's call.
+-- LP_MIX=detour (its way by air, airraid.route; the user, 2026-11-10: "a flight path that avoids ground defenses"): a
+-- picket of nine gun turrets with ammunition across the straight line, halfway, 64 tiles wide; round its ends nothing
+-- shoots up. It goes by air round the picket, no flier within its guns' reach. Seen failing with the straight line's
+-- weighing (debug_tune air_straight, LP_MIX=detour-straight): priced straight over the picket, it never went by air.
 scenarios.airraid = function()
   local aa, off = params.mix == "aa", params.mix == "off"
+  local detour = params.mix == "detour" or params.mix == "detour-straight"
   local gs = params.mix == "grubstake"
   schedule(60, function()
-    lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true, air_off = off or nil})
+    lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true, air_off = off or nil,
+      air_straight = params.mix == "detour-straight" or nil})
     S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = gs and "grubstake" or "serenity"})
     for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
   end)
@@ -15392,6 +15401,17 @@ scenarios.airraid = function()
       end
     end
     lp("debug_units", S.id, gs and "lp-harrier" or "lp-laser-drone", 8)
+    if detour then
+      local m = {o.x - ux * 70, o.y - uy * 70}
+      S.picket = {}
+      for k = -4, 4 do
+        local p = {math.floor(m[1] - uy * k * 8) + 0.5, math.floor(m[2] + ux * k * 8) + 0.5}
+        flatten(p[1] - 2, p[2] - 2, p[1] + 2, p[2] + 2)
+        local t = surface().create_entity{name = "gun-turret", position = p, force = "player"}
+        if t then t.insert{name = "firearm-magazine", count = 200}; S.picket[#S.picket + 1] = t end
+      end
+      S.picket_in = 0
+    end
     -- Three outposts 40 tiles out, held as the radar is (flamers, or guns in aa): for its build's tilt to fliers
     -- (army.air_tilt: three of the player's targets sensed at least).
     S.outposts = {}
@@ -15429,6 +15449,21 @@ scenarios.airraid = function()
       if S.radar and not S.radar.valid and not S.razed_at then S.razed_at = game.tick end
     end)
   end
+  if detour then
+    -- Its fliers within a picket gun's reach (and 2), looked at every 20 ticks once it went by air.
+    for t = 8 * 3600 + 600, END - 120, 20 do
+      schedule(t, function()
+        if not S.air_at then return end
+        for _, g in ipairs(S.picket) do
+          if g.valid then
+            for _, u in ipairs(surface().find_entities_filtered{position = g.position, radius = 20, type = "unit"}) do
+              if u.name:find("drone") or u.name:find("harrier") then S.picket_in = S.picket_in + 1 end
+            end
+          end
+        end
+      end)
+    end
+  end
   settle_when(function() return (aa and (S.raids or 0) > 0) or (not aa and S.razed_at ~= nil) end)
   schedule(END - 60, function()
     local st = lp("stats", S.id)
@@ -15442,7 +15477,11 @@ scenarios.airraid = function()
     else
       check("airraid: it went by air at the walled, flamer-held radar", (S.air or 0) >= 1, tostring(S.air))
       check("airraid: and razed the radar", S.razed_at ~= nil, tostring(S.razed_at))
-      if not off then
+      if detour then
+        check("airraid: detour, round the picket (no flier within its guns' reach)", S.picket_in == 0, tostring(S.picket_in))
+      end
+      -- (Not in detour: the picket's guns shoot up, and its build reads them.)
+      if not off and not detour then
         check("airraid: and its build tilted to fliers (flamers on foot, nothing shooting up)", (S.tilt or 1) > 1.5,
           tostring(S.tilt))
       end
