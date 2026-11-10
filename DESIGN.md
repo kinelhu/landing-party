@@ -6077,6 +6077,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   a provoked Grubstake camp with eight scrap copters: it raided a rival's fabricator, then a drill, and never weighed the
   radar, by air or on foot (a thief's choice and its rivals first). Its air rule is Kessler-Hayashi's, unexercised. For the
   user: whether a thief should fly at a walled target at all (its bomb drones on artillery fit its character).
+- **farm siege and farm wave200 fail from 0.2.272, cause open** (2026-11-10, the full regression on the Mac Studio,
+  bisected there: both pass at 0.2.271 and before, both fail at 0.2.272, the price re-tune). Not counters.lua alone: the
+  current code with 0.2.271's counters still fails both; nothing in farm.lua or herd.lua reads the re-priced units (Line
+  trooper 11, bomb drone 28), so the likeliest road is a cascade over the 90-minute game into the engine's hatching dice.
+  What fails: farm siege planned its siege at the walled base (plan 376, 13 guns, one big burster wanted), held its wave
+  for the big burster to hatch, none did, weighed "0 big bursters at 13 guns" and sent a plain wave, so its six siege
+  checks found no siege; wave200 asked 200 and got 176 (its check 180). To settle: why a siege waits on one hatch by
+  chance and gives up rather than breeding the burster it needs. herd core and herd ranks-mend fail at the pre-tonight
+  commit as now, identically: older, also open.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
