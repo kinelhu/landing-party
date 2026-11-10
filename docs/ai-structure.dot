@@ -15,7 +15,7 @@ digraph ai {
     "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "landfx" [label="landfx\n239 lines", width=1.07, fillcolor="#eef2f7"];
     "burstfx" [label="burstfx\n305 lines", width=1.14, fillcolor="#eef2f7"];
-    "veterancy" [label="veterancy\n313 lines", width=1.15, fillcolor="#eef2f7"];
+    "veterancy" [label="veterancy\n372 lines", width=1.21, fillcolor="#eef2f7"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];

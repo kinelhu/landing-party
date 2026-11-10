@@ -1099,9 +1099,16 @@ At 0.2.311 (field promotion, turret merit, Lanchester merit; same seed and varia
 Veterans in the walled variant (33 turrets to kill); the highest merit 2.2 in the passive and robots variants, 7.5 in
 the walled. Under the rate assumed (one or two an hour): to settle at the post-playtest calibration (thresholds, or
 what a kill earns). The rewiring's cost, per promotion, in those runs: 4045 tables 6.1 ms, 7750 11.2 ms, 12597 17.4 ms
-(three timelines at once on the Studio: contended). Linear in storage, about 1.4 microseconds a table: a frame's hitch
-at two hours, more later. Not yet acted on (a promotion is rare); a skip list of the large subtrees that hold no unit,
-or an index of where units are held, would cut it.
+(three timelines at once on the Studio: contended; alone, 5.8, 10.2 and 15.9 ms). Linear in storage, about 1.3
+microseconds a table: a frame's hitch at two hours, more later (the user: "Did we solve the stutter?"). Cut in 0.2.312:
+- the walk skips storage's largest subtrees, which hold no unit (`veterancy.SKIP`: operations' records, buildings' owner
+  records, build queues, a cordon's history, ore scans and cells, pylon spots, arcs drawn; at two hours 11672 of the
+  12597 tables, measured by subtree on the walled timeline). The trace still walks them all, so a unit held in one would
+  fail scenario veteran;
+- one pass a table and a table's pattern made once, not a path string each;
+- one walk a tick for all its promotions (a whole roster at once had been one 3 ms walk each: 12 in a tick, 37 ms).
+Walled timeline, two hours: 598, 1063 and 1548 tables, 1.3, 1.9 and 2.7 ms (from 16). The camp's 39 promoted at once:
+one walk, 1.6 ms.
 
 **What the AI does with it** (0.2.297, the first two in part):
 - an air raid's worth (airraid.fliers, launch_air) counts a flier at its rank, `veterancy.scale`: health times damage,
@@ -6441,6 +6448,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lost the trooper. Caught by the scenario's trace (paths before and after differed). Keys now move only in the tables
   listed in `veterancy.KEYED`; the trace counts a unit's number elsewhere apart (10 such in the camp run, none a reference).
   A new table keyed by unit number goes in that list, or the trace shows it missed.
+- **The yard's tables were missing from KEYED** (0.2.312). A settlement's yard keeps each garrison unit's slot, when it
+  was sent and where (`b.yard_slot`, `yard_sent`, `yard_dest`, `yard_tries`), keyed by unit number. A unit promoted
+  in the yard lost its slot to its old number. Found reading what the walk visits, not by the trace: no test had
+  promoted a garrison unit. Scenario veteran's camp now promotes the whole roster after the raid (39 units, garrison and
+  yard among them), every one traced.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

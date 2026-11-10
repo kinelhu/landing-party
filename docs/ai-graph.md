@@ -42,12 +42,12 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `orbital` | 373 | achievements, threat | cannon, control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
+| `veterancy` | 372 | threat | airraid, control, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `planner` | 338 | rd | base |  |  |  |  |
 | `cannon` | 333 | orbital | control, dev |  | 30, 60 |  | cannon_barrel, cannon_next, cannon_recoil, cannon_recoil_max, cannon_recoils, cannon_shells, cannon_silhouette, cannon_strikes |
 | `perimeter` | 327 | (leaf) | ops |  |  |  |  |
 | `jumper` | 315 | base, ops, rng, threat, tune, war | control, dev |  | 60, 600 |  |  |
-| `veterancy` | 313 | threat | airraid, control, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `burstfx` | 305 | rng | control, dev, herd |  |  |  | burstfx, burstfx_stats |
 | `intel` | 291 | know, threat | ops |  |  |  |  |
 | `tactics` | 279 | know, rng | assault, control, farm, herd, herd_learn, ops, siege |  |  |  |  |

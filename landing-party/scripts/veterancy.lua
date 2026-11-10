@@ -126,11 +126,21 @@ for _, p in ipairs({"merit", "unit_owner", "crew_owner", "carrying", "scorch", "
   "owner", "cmd.troopers", "cmd.selected.*", "oplog.member", "sep.at", "watch.units", "bases.*.roster",
   "bases.*.returning_since", "bases.*.op.resent", "herd.waves.*.units", "herd.waves.*.straggling", "herd.waves.*.holders",
   "herd.waves.*.known", "herd.waves.*.left_behind", "herd.waves.*.big_busy", "herd.waves.*.fodder_set", "herd.waves.*.aim",
-  "herd.waves.*.sapper_at", "herd.waves.*.sapper_last", "herd.waves.*.seen"}) do KEYED[p] = true end
+  "herd.waves.*.sapper_at", "herd.waves.*.sapper_last", "herd.waves.*.seen", "bases.*.yard_slot", "bases.*.yard_sent",
+  "bases.*.yard_dest", "bases.*.yard_tries"}) do KEYED[p] = true end
 veterancy.KEYED = KEYED
 
--- Walks storage: each table with its path, numbers as * (KEYED's form) and as written (`mark`, a unit number, as # where
--- it keys a KEYED table, so a unit's paths and its copy's compare).
+-- What the rewiring does not walk: storage's largest subtrees, which hold no unit (the stutter: at two hours of the
+-- walled contact timeline a promotion walked 12597 tables, 16 ms, a frame's hitch, and these were 11672 of them):
+-- closed and live operations' records (unit numbers, not units), a building's owner record ({base, module}), a build
+-- queue, a cordon's history, ore scans and cells, pylon spots, arcs drawn. The trace (refs) still walks them all: a
+-- unit held in one would show in scenario veteran as a reference left behind.
+local SKIP = {}
+for _, p in ipairs({"oplog.recent", "oplog.live", "owner.*", "bases.*.queue", "bases.*.cordon_history", "bases.*.ore_scan",
+  "bases.*.ore_cells", "bases.*.pylon_spots", "bases.*.arcs_drawn"}) do SKIP[p] = true end
+
+-- Walks all of storage (the trace's: SKIP too), each table with its path, numbers as * (KEYED's form) and as written
+-- (`mark`, a unit number, as # where it keys a KEYED table, so a unit's paths and its copy's compare).
 local function each_table(fn, mark)
   local seen = {}
   local function walk(t, norm, path)
@@ -171,24 +181,54 @@ local function refs(u)
   return out, stray
 end
 
--- Every reference storage holds to the old unit, to the new one: any LuaEntity equal to it (a raid's members, a
--- herd's, a garrison, the player's troopers, a scout, a carrier), and its number as a key of the KEYED tables (owners,
--- merit, a selection, a herd's sets), moved to the new number.
-local function rewire(old, new)
+-- Every reference storage holds to the old units, to their copies (swaps: an old unit's number to its copy), in one
+-- walk however many swap this tick: any LuaEntity among them (a raid's members, a herd's, a garrison, the player's
+-- troopers, a scout, a carrier), and their numbers as keys of the KEYED tables (owners, merit, a selection, a herd's
+-- sets, the yard's slots), moved to the copies' numbers. Its own walker, not each_table: one pass a table, a table's
+-- pattern made once (CHILD) and no path strings (the cost: a whole roster promoted at once, twelve walks of 3 ms each,
+-- 37 ms in one tick, 0.2.311's camp run).
+local CHILD = {}   -- a pattern's children's patterns, by key (numbers: one, "*"); not storage: rebuilt on load
+local function child(norm, k)
+  local c = CHILD[norm]
+  if not c then c = {}; CHILD[norm] = c end
+  local key = type(k) == "number" and "*" or k
+  local cn = c[key]
+  if not cn then cn = norm .. "." .. tostring(key); c[key] = cn end
+  return cn
+end
+
+local function rewire(swaps)
   if storage.rewire_off then return 0, {} end   -- (tests only: the trace's check seen failing)
-  local on, nn = old.unit_number, new.unit_number
-  local nodes, moved = 0, {}
-  each_table(function(t, norm)
+  local seen, nodes, moved = {}, 0, {}
+  local function walk(t, norm)
+    seen[t] = true
     nodes = nodes + 1
     for k, v in pairs(t) do
-      if is_unit(v, on) then t[k] = new end
+      local tv = type(v)
+      if tv == "table" then
+        if not seen[v] then
+          local cn = child(norm, k)
+          if not SKIP[cn] then walk(v, cn) end
+        end
+      elseif tv == "userdata" and v.object_name == "LuaEntity" and v.valid then
+        local un = v.unit_number
+        local n = un and swaps[un]
+        if n then t[k] = n end
+      end
     end
-    -- (Values first, then the key: a key is not added while pairs runs.)
-    if KEYED[norm] and t[on] ~= nil then
-      t[nn], t[on] = t[on], nil
-      moved[#moved + 1] = norm
+    -- (Values first, then the keys: a key is not added while pairs runs.)
+    if KEYED[norm] then
+      for on, n in pairs(swaps) do
+        if t[on] ~= nil then
+          t[n.unit_number], t[on] = t[on], nil
+          moved[#moved + 1] = norm
+        end
+      end
     end
-  end)
+  end
+  for k, v in pairs(storage) do
+    if type(v) == "table" and k ~= "vet_stats" and not SKIP[k] then walk(v, k) end
+  end
   return nodes, moved
 end
 
@@ -214,77 +254,96 @@ local function badge(n, r)
     x_scale = 0.5, y_scale = 0.5, render_layer = "air-entity-info-icon"}
 end
 
--- Its promoted copy (at the rank it has earned, the same place, the same share of its health, its merit carried), the
--- old one gone; or the unit itself when it has earned nothing more, or the copy could not be placed.
-function veterancy.promote(u)
-  if storage.vet_off or not ranks(u) then return u end
-  local r = earned(u)
-  if r <= veterancy.rank(u) then return u end
-  local q = veterancy.RANKS[r].quality
-  local share = u.health / u.max_health
-  local s, name, force, at = u.surface, u.name, u.force, u.position
-  local n = s.create_entity{name = name, position = at, force = force, quality = q}
-  if not n then return u end
-  n.health = n.max_health * share
-  if u.orientation then pcall(function() n.orientation = u.orientation end) end
-  local before, stray = nil, 0
-  if storage.vet_trace then before, stray = refs(u) end
-  local had_group, had_command = u.commandable and u.commandable.parent_group ~= nil, u.commandable and u.commandable.has_command
-  take_place(u, n)
+-- Promotes these units together (each at the rank it has earned, the same place, the same share of its health, its
+-- merit carried, the old one gone; one walk for all). Returns what became of each: its copy, or the unit itself when it
+-- has earned nothing more or its copy could not be placed.
+local function promote_all(units)
+  local out, made, swaps, any = {}, {}, {}, false
+  for i, u in ipairs(units) do
+    out[i] = u
+    if not storage.vet_off and ranks(u) and earned(u) > veterancy.rank(u) then
+      local r = earned(u)
+      local share = u.health / u.max_health
+      local n = u.surface.create_entity{name = u.name, position = u.position, force = u.force, quality = veterancy.RANKS[r].quality}
+      if n then
+        n.health = n.max_health * share
+        if u.orientation then pcall(function() n.orientation = u.orientation end) end
+        local m = {old = u, new = n, rank = r, had_group = u.commandable and u.commandable.parent_group ~= nil,
+          had_command = u.commandable and u.commandable.has_command}
+        if storage.vet_trace then m.before, m.stray = refs(u) end
+        take_place(u, n)
+        made[#made + 1] = m
+        swaps[u.unit_number] = n
+        out[i] = n
+        any = true
+      end
+    end
+  end
+  if not any then return out end
   local clock = helpers.create_profiler()
-  local nodes, moved = rewire(u, n)
+  local nodes, moved = rewire(swaps)
   clock.stop()
-  -- (Its cost in the log, a promotion a line: the walk grows with storage; read on the contact timelines.)
-  log({"", "[lp] promotion: rewired over ", nodes, " tables, ", clock})
-  u.destroy()
-  storage.promoted = (storage.promoted or 0) + 1
+  -- (Its cost in the log, a walk a line: it grows with storage; read on the contact timelines.)
+  log({"", "[lp] promotion: ", #made, " rewired over ", nodes, " tables, ", clock})
   local st = storage.vet_stats or {walk_max = 0, moved = {}}
   storage.vet_stats = st
-  if before then
-    local after = refs(n)
-    st.traced = (st.traced or 0) + 1
-    if table.concat(before, " ") ~= table.concat(after, " ") then
-      st.lost = st.lost or {}
-      st.lost[#st.lost + 1] = {before = before, after = after}
-    end
-    st.where = st.where or {}
-    local nc = n.commandable
-    st.where[#st.where + 1] = {name = n.name, force = n.force.name, x = n.position.x, y = n.position.y, tick = game.tick,
-      had_group = had_group, group = nc and nc.parent_group ~= nil, had_command = had_command,
-      command = nc and nc.has_command, refs = #before, stray = stray}
-  end
   st.walk_max = math.max(st.walk_max, nodes)
   for _, p in ipairs(moved) do st.moved[p] = (st.moved[p] or 0) + 1 end
-  badge(n, r)
-  if shared.notices_on() then
-    rendering.draw_text{text = {"lp.rank-" .. r}, surface = s, target = {entity = n, offset = {0, -2}}, color = {1, 0.85, 0.3},
-      scale = 1.2, alignment = "center", time_to_live = 180}
-    s.play_sound{path = "utility/new_objective", position = n.position, volume_modifier = 0.6}
+  for _, m in ipairs(made) do
+    local n = m.new
+    m.old.destroy()
+    storage.promoted = (storage.promoted or 0) + 1
+    if m.before then
+      local after = refs(n)
+      st.traced = (st.traced or 0) + 1
+      if table.concat(m.before, " ") ~= table.concat(after, " ") then
+        st.lost = st.lost or {}
+        st.lost[#st.lost + 1] = {before = m.before, after = after}
+      end
+      st.where = st.where or {}
+      local nc = n.commandable
+      st.where[#st.where + 1] = {name = n.name, force = n.force.name, x = n.position.x, y = n.position.y, tick = game.tick,
+        had_group = m.had_group, group = nc and nc.parent_group ~= nil, had_command = m.had_command,
+        command = nc and nc.has_command, refs = #m.before, stray = m.stray}
+    end
+    badge(n, m.rank)
+    if shared.notices_on() then
+      rendering.draw_text{text = {"lp.rank-" .. m.rank}, surface = n.surface, target = {entity = n, offset = {0, -2}},
+        color = {1, 0.85, 0.3}, scale = 1.2, alignment = "center", time_to_live = 180}
+      n.surface.play_sound{path = "utility/new_objective", position = n.position, volume_modifier = 0.6}
+    end
   end
-  return n
+  return out
 end
 
--- The queue on_died fills: promoted the next tick, in unit-number order. A copy that could not be placed (crowded)
--- tries again a second later, ten times.
+-- Its promoted copy, or the unit itself (promote_all, of one).
+function veterancy.promote(u) return promote_all({u})[1] end
+
+-- The queue on_died fills: promoted the next tick, in unit-number order, together. A copy that could not be placed
+-- (crowded) tries again a second later, ten times.
 local TRIES = 10
 function veterancy.tick(tick)
   local q = storage.vet_due
   if not q or not next(q) or (q.at and tick < q.at) then return end
   storage.vet_due = nil
-  local keys = {}
+  local keys, units = {}, {}
   for k in pairs(q.units) do keys[#keys + 1] = k end
   table.sort(keys)
   for _, k in ipairs(keys) do
-    local e = q.units[k]
-    if e.unit.valid and veterancy.promote(e.unit) == e.unit and earned(e.unit) > veterancy.rank(e.unit)
-      and e.tries < TRIES then
+    if q.units[k].unit.valid then units[#units + 1] = q.units[k] end
+  end
+  local list = {}
+  for i, e in ipairs(units) do list[i] = e.unit end
+  local out = promote_all(list)
+  for i, e in ipairs(units) do
+    local u = e.unit
+    if out[i] == u and u.valid and earned(u) > veterancy.rank(u) and e.tries < TRIES then
       local due = storage.vet_due or {units = {}, at = tick + 60}
       storage.vet_due = due
-      due.units[k] = {unit = e.unit, tries = e.tries + 1}
+      due.units[u.unit_number] = {unit = u, tries = e.tries + 1}
     end
   end
 end
-
 
 -- A ranked unit's strength over its rank's normal (health times damage, the probe's: 1.3 and 1.48 a level): what the
 -- AI's sums of worth count it as.

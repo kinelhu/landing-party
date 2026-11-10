@@ -2353,11 +2353,18 @@ scenarios.veteran = function()
       S.given = lp("debug_merit", S.id, 2.9)
       lp("debug_tune", {raids_off = false})
     end)
-    -- (Settled two minutes after the first promotion: time for the raid to come home.)
-    settle_when(function()
-      local w = lp("veterancy").where[1]
-      return w and game.tick > w.tick + 2 * 3600
-    end)
+    -- A minute after the raid's promotion, the whole roster given a rank (the garrison and the yard too: their tables,
+    -- the yard's slots, were missing from KEYED and no raider's promotion showed it). Settled two minutes after: time for
+    -- the raid to come home.
+    for t = 8 * 3600, 22 * 3600, 600 do
+      schedule(t, function()
+        local w = lp("veterancy").where[1]
+        if w and not S.all_at and game.tick > w.tick + 3600 then
+          S.all_at, S.all = game.tick, lp("debug_merit", S.id, 3)
+        end
+      end)
+    end
+    settle_when(function() return S.all_at and game.tick > S.all_at + 2 * 3600 end)
     schedule(END - 60, function()
       local v = lp("veterancy")
       local st = lp("stats", S.id)
@@ -2371,6 +2378,8 @@ scenarios.veteran = function()
       -- in no group, commanded alone.)
       check("veteran: camp, the copy in its group and under its command as the original was", w and w.group == w.had_group
         and (w.command or not w.had_command), serpent.line(w))
+      check("veteran: camp, its whole roster then promoted, every one rewired", (S.all or 0) >= 4 and v.traced >= S.all,
+        string.format("%s given, %d traced", tostring(S.all), v.traced))
       check("veteran: camp, its ranked units still its own", v.ranked >= 1 and v.ranked_owned == v.ranked,
         string.format("%d ranked, %d owned", v.ranked, v.ranked_owned))
       traced("camp, ")
