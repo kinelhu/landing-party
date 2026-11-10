@@ -6207,7 +6207,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (Grubstake's open gantry, its drill head turning while it mines, four directions; its first closed box hid the head),
   the flak turret (an armoured ring, a twin-barrelled flak head in 64 directions for every state, no laser glow).
   Ochre stays lpkit's grimed paint: a CC0 paint's hue turned, its rust turned with it, purple. Phase 1 done: the
-  player's buildings are the mod's own; phase 2 next, the factions'.
+  player's buildings are the mod's own. Phase 2 (the factions') stopped at its first model: both landers modelled
+  (tools/blender/faction_buildings.py, a drop ship and a patched hulk) read as smooth loaves beside vanilla's
+  hand-made crash ship, which make_sprites.py's masked repaint keeps; the user: "Lander repaints look pretty good
+  honestly you're not going to top that". A repaint with the steel's cast cut (0.3 for 0.9) changed little, reverted.
+  The faction buildings keep their repaints; make_sprites.py mended (a rendered building's own file, the uplink's,
+  mapped to a vanilla path that is not there, and the run failed).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

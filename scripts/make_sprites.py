@@ -157,7 +157,10 @@ def body_files(proto):
                     else "__base__/graphics/entity/" + r
         return f
     found = [(original(f), o) for f, o in found]
-    return [(f, o) for f, o in found if any(f.startswith(r) for r in ROOTS) and not any(w in f for w in SKIP)]
+    # (And only those with a vanilla original on disk: a rendered building's own file under the corporation's folder, the
+    # uplink's, mapped to a vanilla path that is not there, and the run failed on it, 2026-11-10.)
+    return [(f, o) for f, o in found if any(f.startswith(r) for r in ROOTS) and not any(w in f for w in SKIP)
+            and resolve(f).exists()]
 
 
 def rel(f):
