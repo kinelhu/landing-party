@@ -1108,7 +1108,17 @@ microseconds a table: a frame's hitch at two hours, more later (the user: "Did w
 - one pass a table and a table's pattern made once, not a path string each;
 - one walk a tick for all its promotions (a whole roster at once had been one 3 ms walk each: 12 in a tick, 37 ms).
 Walled timeline, two hours: 598, 1063 and 1548 tables, 1.3, 1.9 and 2.7 ms (from 16). The camp's 39 promoted at once:
-one walk, 1.6 ms.
+one walk, 1.6 ms. Cut again in 0.2.313 (the user: "A game six times bigger doesn't seem so far fetched?"; it is not: one
+Kessler-Hayashi settlement at two hours is a small game). What was left was mostly the engine asking, not the tables:
+3700 references to a settlement's buildings, its walls (1578) and modules (1340) most, each read three times
+(object_name, valid, unit_number) to tell it from a unit. So
+- the settlement's building lists are skipped too (walls, modules, turrets, pylons, drills and the rest, its cordon):
+  what grows as it builds. What is walked now grows with its units and its plans;
+- a reference is told to be a promoted unit by `==` against the old ones, while a tick promotes 12 or fewer (scenario
+  vetprobe: `==` is safe on a dead entity, a commandable, a surface and a render object; 24 ns, against 370 ns for the
+  three reads).
+Walled timeline, two hours: 463, 634 and 995 tables, 0.49, 0.62 and 0.90 ms (four runs sharing the machine); the
+camp's 39 at once 1.5 ms. Whether a herd's lists, Synthexis's hundreds of biters, keep it there: not measured.
 
 **What the AI does with it** (0.2.297, the first two in part):
 - an air raid's worth (airraid.fliers, launch_air) counts a flier at its rank, `veterancy.scale`: health times damage,

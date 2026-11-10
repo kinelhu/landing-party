@@ -37,12 +37,12 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `dome` | 407 | base, lights, ops, threat | control |  | 60, 3600 |  | dome_alert, pdomes |
 | `cell` | 402 | pods | control, farm |  |  |  | cell_sites, cells |
 | `rd` | 396 | know | army, control, faction, ops, planner, war | ops.era |  |  | corps |
+| `veterancy` | 396 | threat | airraid, control, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `cordon` | 385 | base, ops, prospect | control |  |  |  |  |
 | `construction` | 383 | (leaf) | base |  |  |  |  |
 | `wfc` | 380 | (leaf) | layout |  |  |  |  |
 | `tap` | 375 | base, ops, pool, tune, war | control, dev |  | 60, 600 |  |  |
 | `orbital` | 373 | achievements, threat | cannon, control, dev, siege, strike |  | 10, 30 |  | kh_shadows, kh_strikes |
-| `veterancy` | 372 | threat | airraid, control, ops |  |  |  | merit, promoted, vet_due, vet_stats |
 | `prospect` | 362 | base, chart, ops, pool, standing, studies | control, cordon |  | 60, 3600 |  | prospect_failed |
 | `planner` | 338 | rd | base |  |  |  |  |
 | `cannon` | 333 | orbital | control, dev |  | 30, 60 |  | cannon_barrel, cannon_next, cannon_recoil, cannon_recoil_max, cannon_recoils, cannon_shells, cannon_silhouette, cannon_strikes |

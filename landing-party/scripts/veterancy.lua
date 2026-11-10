@@ -130,14 +130,22 @@ for _, p in ipairs({"merit", "unit_owner", "crew_owner", "carrying", "scorch", "
   "bases.*.yard_dest", "bases.*.yard_tries"}) do KEYED[p] = true end
 veterancy.KEYED = KEYED
 
--- What the rewiring does not walk: storage's largest subtrees, which hold no unit (the stutter: at two hours of the
--- walled contact timeline a promotion walked 12597 tables, 16 ms, a frame's hitch, and these were 11672 of them):
--- closed and live operations' records (unit numbers, not units), a building's owner record ({base, module}), a build
--- queue, a cordon's history, ore scans and cells, pylon spots, arcs drawn. The trace (refs) still walks them all: a
+-- What the rewiring does not walk: what in storage holds no unit, and grows with a game (the stutter: at two hours of
+-- the walled contact timeline a promotion walked 12597 tables, 16 ms, a frame's hitch; the user: "A game six times
+-- bigger doesn't seem so far fetched?"). Records: closed and live operations' (unit numbers, not units), a building's
+-- owner ({base, module}), a build queue, a cordon's history, ore scans and cells, pylon spots, arcs drawn (11672 of those
+-- 12597 tables). And a settlement's buildings: its lists of walls, modules, turrets, pylons and the rest, each a
+-- reference the walk had to ask the engine about, three calls each (3700 of them left at two hours, growing with what
+-- it builds, its walls most). What is left grows with its units and its plans. The trace (refs) still walks it all: a
 -- unit held in one would show in scenario veteran as a reference left behind.
 local SKIP = {}
 for _, p in ipairs({"oplog.recent", "oplog.live", "owner.*", "bases.*.queue", "bases.*.cordon_history", "bases.*.ore_scan",
-  "bases.*.ore_cells", "bases.*.pylon_spots", "bases.*.arcs_drawn"}) do SKIP[p] = true end
+  "bases.*.ore_cells", "bases.*.pylon_spots", "bases.*.arcs_drawn", "bases.*.cordon", "bases.*.pylons", "bases.*.bins",
+  "bases.*.drills", "bases.*.fabs", "bases.*.gens", "bases.*.turrets", "bases.*.radars", "bases.*.walls", "bases.*.depots",
+  "bases.*.launchpads", "bases.*.lamps", "bases.*.mines", "bases.*.flamers", "bases.*.modules", "bases.*.cells",
+  "bases.*.rebuild", "bases.*.gate_list", "bases.*.domes", "bases.*.drop_gens", "bases.*.camp_turrets"}) do
+  SKIP[p] = true
+end
 
 -- Walks all of storage (the trace's: SKIP too), each table with its path, numbers as * (KEYED's form) and as written
 -- (`mark`, a unit number, as # where it keys a KEYED table, so a unit's paths and its copy's compare).
@@ -181,7 +189,7 @@ local function refs(u)
   return out, stray
 end
 
--- Every reference storage holds to the old units, to their copies (swaps: an old unit's number to its copy), in one
+-- Every reference storage holds to the old units, to their copies (made: each old unit and its copy), in one
 -- walk however many swap this tick: any LuaEntity among them (a raid's members, a herd's, a garrison, the player's
 -- troopers, a scout, a carrier), and their numbers as keys of the KEYED tables (owners, merit, a selection, a herd's
 -- sets, the yard's slots), moved to the copies' numbers. Its own walker, not each_table: one pass a table, a table's
@@ -197,9 +205,27 @@ local function child(norm, k)
   return cn
 end
 
-local function rewire(swaps)
+-- A reference is told to be one of the old units by `==` while they are few (vetprobe: 24 ns, safe on a dead entity, a
+-- commandable, a surface, a render object), by its unit number past that (object_name, valid, unit_number: 370 ns).
+local EQ_MAX = 12
+-- (made: {old, new} pairs.)
+local function rewire(made)
   if storage.rewire_off then return 0, {} end   -- (tests only: the trace's check seen failing)
   local seen, nodes, moved = {}, 0, {}
+  local swaps = {}   -- an old unit's number: its copy
+  for _, m in ipairs(made) do swaps[m.old.unit_number] = m.new end
+  local count = #made
+  local few = count <= EQ_MAX
+  local function copy_of(v)
+    if few then
+      for i = 1, count do if v == made[i].old then return made[i].new end end
+      return nil
+    end
+    if v.object_name == "LuaEntity" and v.valid then
+      local un = v.unit_number
+      return un and swaps[un]
+    end
+  end
   local function walk(t, norm)
     seen[t] = true
     nodes = nodes + 1
@@ -210,9 +236,8 @@ local function rewire(swaps)
           local cn = child(norm, k)
           if not SKIP[cn] then walk(v, cn) end
         end
-      elseif tv == "userdata" and v.object_name == "LuaEntity" and v.valid then
-        local un = v.unit_number
-        local n = un and swaps[un]
+      elseif tv == "userdata" then
+        local n = copy_of(v)
         if n then t[k] = n end
       end
     end
@@ -258,7 +283,7 @@ end
 -- merit carried, the old one gone; one walk for all). Returns what became of each: its copy, or the unit itself when it
 -- has earned nothing more or its copy could not be placed.
 local function promote_all(units)
-  local out, made, swaps, any = {}, {}, {}, false
+  local out, made, any = {}, {}, false
   for i, u in ipairs(units) do
     out[i] = u
     if not storage.vet_off and ranks(u) and earned(u) > veterancy.rank(u) then
@@ -273,7 +298,6 @@ local function promote_all(units)
         if storage.vet_trace then m.before, m.stray = refs(u) end
         take_place(u, n)
         made[#made + 1] = m
-        swaps[u.unit_number] = n
         out[i] = n
         any = true
       end
@@ -281,7 +305,7 @@ local function promote_all(units)
   end
   if not any then return out end
   local clock = helpers.create_profiler()
-  local nodes, moved = rewire(swaps)
+  local nodes, moved = rewire(made)
   clock.stop()
   -- (Its cost in the log, a walk a line: it grows with storage; read on the contact timelines.)
   log({"", "[lp] promotion: ", #made, " rewired over ", nodes, " tables, ", clock})

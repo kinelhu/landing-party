@@ -192,6 +192,41 @@ end
 -- legendary, each against a lone stone wall chunk, the damage each deals in 10 seconds; a walking trooper upgraded.
 scenarios.vetprobe = function()
   local Q = {"normal", "uncommon", "rare", "epic", "legendary"}
+  -- (The rewiring's cost: is `==` between Lua objects a safe test of "this is that unit", one engine call where the
+  -- object_name, valid and unit_number reads are three? Against a dead entity, a commandable, a surface, a render object,
+  -- and how long a million of each takes.)
+  schedule(60, function()
+    local s = surface()
+    local a = s.create_entity{name = "lp-trooper", position = {0, 40}, force = "player"}
+    local b = s.create_entity{name = "lp-trooper", position = {3, 40}, force = "player"}
+    local dead = s.create_entity{name = "lp-trooper", position = {6, 40}, force = "player"}
+    local a2 = s.find_entities_filtered{name = "lp-trooper", position = {0, 40}, radius = 0.5}[1]
+    dead.destroy()
+    local r = rendering.draw_circle{color = {1, 1, 1}, radius = 1, target = {0, 40}, surface = s}
+    local out = {}
+    local function try(tag, f) local ok, v = pcall(f); out[#out + 1] = tag .. "=" .. (ok and tostring(v) or ("ERR " .. tostring(v))) end
+    try("same", function() return a == a2 end)
+    try("other", function() return a == b end)
+    try("dead_vs_live", function() return dead == a end)
+    try("live_vs_dead", function() return a == dead end)
+    try("commandable", function() return a.commandable == a end)
+    try("surface", function() return s == a end)
+    try("render", function() return r == a end)
+    local N = 200000
+    local p = helpers.create_profiler()
+    local hits = 0
+    for _ = 1, N do if b == a then hits = hits + 1 end end
+    p.stop()
+    local q = helpers.create_profiler()
+    for _ = 1, N do if b.object_name == "LuaEntity" and b.valid and b.unit_number == 0 then hits = hits + 1 end end
+    q.stop()
+    local w = helpers.create_profiler()
+    for _ = 1, N do if b.unit_number == 0 then hits = hits + 1 end end
+    w.stop()
+    log({"", "[vetprobe] eq: " .. table.concat(out, " ") .. "; ", N, " of ==: ", p, "; of three reads: ", q, "; of one read: ", w})
+    for _, e in ipairs({a, b}) do e.destroy() end
+    r.destroy()
+  end)
   -- A kill's merit (veterancy.kill_merit), each killer against each victim.
   schedule(120, function()
     local V = {"small-biter", "medium-biter", "big-biter", "behemoth-biter", "small-spitter", "lp-bred-small-biter",
