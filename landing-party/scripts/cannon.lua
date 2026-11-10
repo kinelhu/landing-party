@@ -76,6 +76,60 @@ local function points(s, force, c, n)
   return out, #found
 end
 
+-- Its platform's silhouette, for the strike's shadow (orbital.lua shadow): its foundation's tiles in cells of CELL, each
+-- row's runs of them one strip, and its cannons' barrels over the void; {x, y, w, h} in tiles from the middle of its
+-- tiles, -y its bow. Coarser cells while it would take more than MAX strips.
+local SIL_CELL, SIL_MAX = 2, 400
+function cannon.silhouette(pl, cannons)
+  local s = pl and pl.valid and pl.surface
+  if not (s and s.valid) then return nil end
+  local tiles = s.find_tiles_filtered{name = "space-platform-foundation"}
+  if #tiles == 0 then return nil end
+  local x0, y0, x1, y1 = math.huge, math.huge, -math.huge, -math.huge
+  for _, t in ipairs(tiles) do
+    local p = t.position
+    if p.x < x0 then x0 = p.x end; if p.y < y0 then y0 = p.y end
+    if p.x > x1 then x1 = p.x end; if p.y > y1 then y1 = p.y end
+  end
+  local mx, my = (x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2
+  local cell = SIL_CELL
+  local out
+  repeat
+    local rows = {}
+    for _, t in ipairs(tiles) do
+      local i, j = math.floor((t.position.x - x0) / cell), math.floor((t.position.y - y0) / cell)
+      rows[j] = rows[j] or {}
+      rows[j][i] = true
+    end
+    out = {}
+    for j, row in pairs(rows) do
+      local cols = {}
+      for i in pairs(row) do cols[#cols + 1] = i end
+      table.sort(cols)
+      local a = 1
+      while a <= #cols do
+        local b = a
+        while b < #cols and cols[b + 1] == cols[b] + 1 do b = b + 1 end
+        local w = (cols[b] - cols[a] + 1) * cell
+        out[#out + 1] = {x0 + cols[a] * cell + w / 2 - mx, y0 + j * cell + cell / 2 - my, w, cell}
+        a = b + 1
+      end
+    end
+    cell = cell * 2
+  until #out <= SIL_MAX
+  -- Its cannons' barrels, out over the void (C.REACH past the deck's edge, 4 tiles wide).
+  local DIR = {[defines.direction.north] = {0, -1}, [defines.direction.east] = {1, 0}, [defines.direction.south] = {0, 1},
+    [defines.direction.west] = {-1, 0}}
+  for _, e in ipairs(cannons or {}) do
+    local d = e.valid and DIR[e.direction]
+    if d then
+      local c = {e.position.x + d[1] * (9 + C.REACH / 2) - mx, e.position.y + d[2] * (9 + C.REACH / 2) - my}
+      out[#out + 1] = {c[1], c[2], d[1] ~= 0 and C.REACH or 4, d[2] ~= 0 and C.REACH or 4}
+    end
+  end
+  return out
+end
+
 local store   -- (below: a cannon's store, stopped when full)
 
 -- A strike at pos (the remote). Returns nil and why not, or the charges spent.
@@ -89,7 +143,11 @@ function cannon.fire(force, s, pos, player)
   local wait = (storage.cannon_next[force.name] or 0) - game.tick
   if wait > 0 then return no("lp.cannon-cooldown", math.ceil(wait / 60)) end
   local spent = 0
+  local lead, lead_n
   for _, b in ipairs(cannon.batteries(force)) do
+    local n = 0
+    for _, e in ipairs(b.cannons) do if charges_in(e) > 0 then n = n + 1 end end
+    if n > 0 and (not lead_n or n > lead_n) then lead, lead_n = b, n end
     for _, e in ipairs(b.cannons) do
       if charges_in(e) > 0 then
         e.get_inventory(defines.inventory.crafter_output).remove{name = "lp-orbital-charge", count = 1}
@@ -99,7 +157,12 @@ function cannon.fire(force, s, pos, player)
           [defines.direction.west] = {-1, 0}})[e.direction] or {0, -1}
         local m = {e.position.x + d[1] * C.MUZZLE, e.position.y + d[2] * C.MUZZLE}
         e.surface.play_sound{path = "lp-cannon-fire", position = m}
-        e.surface.create_entity{name = "big-explosion", position = m}
+        e.surface.create_entity{name = "lp-cannon-blast", position = m}
+        rendering.draw_sprite{sprite = "lp-impact-flash", target = m, surface = e.surface, x_scale = 9, y_scale = 9,
+          render_layer = "explosion", time_to_live = 8}
+        rendering.draw_light{sprite = "utility/light_medium", scale = 10, intensity = 1, color = {r = 0.55, g = 0.85, b = 1},
+          target = m, surface = e.surface, time_to_live = 10}
+        cannon.recoil(e)
       end
     end
   end
@@ -108,7 +171,10 @@ function cannon.fire(force, s, pos, player)
   storage.cannon_next[force.name] = game.tick + C.COOLDOWN
   local c = {pos.x or pos[1], pos.y or pos[2]}
   local at, targets = points(s, force, c, spent * C.SHELLS)
-  orbital.from_orbit(s, force.name, c, at, C.RADIUS)
+  -- (The shadow is the platform that fired the most.)
+  local sil = lead and cannon.silhouette(lead.platform, lead.cannons)
+  storage.cannon_silhouette = sil and #sil or 0
+  orbital.from_orbit(s, force.name, c, at, C.RADIUS, sil)
   storage.cannon_strikes = (storage.cannon_strikes or 0) + 1
   storage.cannon_shells = (storage.cannon_shells or 0) + #at
   shared.reply(force, {x = c[1], y = c[2]}, {"lp.cannon-fired", spent, #at, targets,
@@ -140,14 +206,71 @@ end
 
 -- Its store: a cannon holding STORE charges stops (disabled by script, its status saying why) and goes on after a strike;
 -- a craft under way keeps its progress.
+-- Its barrel (the cannon's own sprite, apart: lp-cannon-barrel-<direction>), drawn over it, made again if gone or turned.
+local DIRNAME = {[defines.direction.north] = "north", [defines.direction.east] = "east", [defines.direction.south] = "south",
+  [defines.direction.west] = "west"}
+local function barrel(e)
+  storage.cannon_barrel = storage.cannon_barrel or {}
+  local id = e.unit_number
+  local b = storage.cannon_barrel[id]
+  local d = DIRNAME[e.direction] or "north"
+  if b and b.obj and b.obj.valid and b.dir == d then return b end
+  if b and b.obj and b.obj.valid then b.obj.destroy() end
+  local sprite = "lp-cannon-barrel-" .. d
+  if not helpers.is_valid_sprite_path(sprite) then return nil end
+  b = {obj = rendering.draw_sprite{sprite = sprite, target = {entity = e, offset = {0, 0}}, surface = e.surface,
+    render_layer = "higher-object-under"}, dir = d}
+  storage.cannon_barrel[id] = b
+  return b
+end
+cannon.barrel = barrel
+
+-- Its recoil (the user: "No firing animation? no recoil?"): the barrel slammed back RECOIL tiles in KICK ticks, eased
+-- home over SETTLE; its coils' glow (the body's, which stays put) off meanwhile, the cannon held for the length of it.
+local RECOIL, KICK, SETTLE = 1.4, 4, 50
+local BACK = {north = {0, 1}, east = {-1, 0}, south = {0, -1}, west = {1, 0}}
+function cannon.recoil(e)
+  local b = barrel(e)
+  if not b then return end
+  storage.cannon_recoil = storage.cannon_recoil or {}
+  storage.cannon_recoil[e.unit_number] = {e = e, t0 = game.tick, dir = b.dir}
+  e.disabled_by_script = true
+  storage.cannon_recoils = (storage.cannon_recoils or 0) + 1
+end
+local function recoil_tick(tick)
+  for id, r in pairs(storage.cannon_recoil or {}) do
+    local e = r.e
+    local b = storage.cannon_barrel and storage.cannon_barrel[id]
+    if not (e and e.valid and b and b.obj.valid) then
+      storage.cannon_recoil[id] = nil
+    else
+      local t = tick - r.t0
+      local k
+      if t <= KICK then k = t / KICK
+      elseif t <= KICK + SETTLE then local u = (t - KICK) / SETTLE; k = 1 - u * u * (3 - 2 * u)
+      else k = 0 end
+      local v = BACK[r.dir]
+      b.obj.target = {entity = e, offset = {v[1] * RECOIL * k, v[2] * RECOIL * k}}
+      if k > (storage.cannon_recoil_max or 0) then storage.cannon_recoil_max = k end
+      if t > KICK + SETTLE then
+        storage.cannon_recoil[id] = nil
+        e.disabled_by_script = charges_in(e) >= C.STORE
+      end
+    end
+  end
+end
+
 store = function()
   for _, f in pairs(game.forces) do
     for _, pl in pairs(f.platforms) do
       local s = pl.valid and pl.surface
       if s and s.valid then
         for _, e in pairs(s.find_entities_filtered{name = "lp-orbital-cannon"}) do
+          barrel(e)
           local full = charges_in(e) >= C.STORE
-          if full ~= e.disabled_by_script then
+          if storage.cannon_recoil and storage.cannon_recoil[e.unit_number] then
+            -- (Recoiling: held till it is home, recoil_tick.)
+          elseif full ~= e.disabled_by_script then
             e.disabled_by_script = full
             e.custom_status = full and {diode = defines.entity_status_diode.green, label = {"lp.cannon-full"}} or nil
           end
@@ -201,10 +324,14 @@ function cannon.tick(tick)
   if tick % 60 == 25 then cannon.gui_tick() end
   if tick % 30 == 10 then store() end
   if tick % 30 == 20 then arcs(tick) end
+  if storage.cannon_recoil and next(storage.cannon_recoil) then recoil_tick(tick) end
 end
 
 function cannon.stats()
-  return {strikes = storage.cannon_strikes or 0, shells = storage.cannon_shells or 0}
+  local barrels = 0
+  for _, b in pairs(storage.cannon_barrel or {}) do if b.obj and b.obj.valid then barrels = barrels + 1 end end
+  return {strikes = storage.cannon_strikes or 0, shells = storage.cannon_shells or 0, silhouette = storage.cannon_silhouette or 0,
+    barrels = barrels, recoils = storage.cannon_recoils or 0, recoil_max = storage.cannon_recoil_max or 0}
 end
 
 return cannon

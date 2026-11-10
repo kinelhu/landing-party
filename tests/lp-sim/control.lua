@@ -2185,6 +2185,8 @@ scenarios.cannon = function()
       S.shells_left[k] = c.valid and c.get_inventory(defines.inventory.crafter_input).get_item_count("lp-orbital-shell") or -1
     end
     S.shot1 = lp("debug_cannon_fire", S.target)
+    S.sil = lp("cannon_stats").silhouette
+    S.cstats0 = lp("cannon_stats")
     S.shot1b = lp("debug_cannon_fire", S.target)
   end)
   schedule(60 + 600 * 60 + 20 * 60, function()
@@ -2219,6 +2221,12 @@ scenarios.cannon = function()
       full = S.full, held = S.held, shot1 = S.shot1, shot1b = S.shot1b, nests_left = S.nests_left, shot2 = S.shot2,
       shot3 = S.shot3, noarray = S.noarray, stats = lp("cannon_stats")}))
     check("cannon: its arcs strike while it charges", (S.arcs or 0) > 0, tostring(S.arcs))
+    -- (Its barrel its own sprite over each cannon, slid back as it fires and home again.)
+    local cs = lp("cannon_stats")
+    check("cannon: each barrel drawn over its cannon, recoiling as it fires", (S.cstats0 and S.cstats0.barrels or 0) == 2
+      and cs.recoils >= 4 and (cs.recoil_max or 0) > 0.99, serpent.line({before = S.cstats0, after = cs}))
+    -- (Its shadow is its own platform's: the deck's strips and the two barrels, 60 by 23 tiles in cells of 2.)
+    check("cannon: the strike's shadow drawn from its own platform", (S.sil or 0) >= 12, tostring(S.sil))
     check("cannon: buildable at the deck's edge facing the void, not mid-deck", S.edge_ok == true and S.mid_ok == false,
       string.format("edge %s, mid %s", tostring(S.edge_ok), tostring(S.mid_ok)))
     check("cannon: a platform over Nauvis with two cannons on it, none buildable on Nauvis", S.surface_ok and S.loc == "nauvis"

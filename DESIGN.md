@@ -6126,7 +6126,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   as a luxury item (now matte paint, steel rails, dull dark steel). Its arcs are the game's own Tesla lightning, drawn
   by script between the towers' terminals and the first coil's contact posts while it charges (in the sprite they read
   as scribbles). Scenario cannon: its arcs (seen failing with them off, 0) and the edge rule (seen failing without it:
-  mid-deck allowed); its fuel three charges' worth (500 a charge). Not yet seen in a window; the manual to follow.
+  mid-deck allowed); its fuel three charges' worth (500 a charge). Filmed in game on the Studio (0.2.281,
+  media/review/orbital-cannon-big.mp4). Then (the user: "No firing animation? no recoil?"; "could we customize the looming
+  shadow to represent our actual platform?"): its barrel rendered apart (what lies along its axis past the breech, less
+  the rams and props), a sprite a direction the script draws over the cannon and, as it fires, slams back 1.4 tiles in 4
+  ticks and eases home over 50, the cannon held meanwhile (its coils' glow stays put on the body); a flash, a light and a
+  blast at the muzzle that shakes the deck. The strike's shadow, for the player's cannons, is the platform that fired the
+  most: its foundation in cells of 2 (coarser past 400 strips), each row's runs a strip, and its barrels over the void,
+  each a cell sprite scaled and turned to the course, 1.5 times life size. Scenario cannon: its barrels drawn and
+  recoiling (4 recoils, full travel), its shadow 19 strips.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

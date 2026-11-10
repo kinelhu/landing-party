@@ -97,8 +97,25 @@ end
 -- and the alert. dev: a forced one (orbital.force), its own record in place of a siege's.
 -- Its platform's shadow (orbital.shadow_tick moves it), over its point `lead` ticks on.
 -- (Its own list: a strike called off or done leaves its list while its shadow still crosses.)
-local function shadow(s, center, along, lead)
+-- A silhouette's scale over the ground (the player's platform, drawn from its tiles: larger than life, from orbit).
+local SILHOUETTE_SCALE = 1.5
+local function shadow(s, center, along, lead, silhouette)
   local sh = {objs = {}, dir = along, center = center, from = game.tick, at = game.tick + lead}
+  -- The player's own platform (the user, 2026-11-10: "could we customize the looming shadow to represent our actual
+  -- platform?"): its strips (cannon.silhouette: {x, y, w, h} in tiles from its middle, -y its bow), each a cell sprite
+  -- scaled to its size and turned to the course, placed each tick by shadow_tick.
+  if silhouette and #silhouette > 0 then
+    sh.offs = {}
+    for i, q in ipairs(silhouette) do
+      sh.offs[i] = q
+      sh.objs[i] = rendering.draw_sprite{sprite = "lp-shadow-cell", target = {center[1], center[2]}, surface = s,
+        orientation = ((sh.dir + math.pi / 2) / (2 * math.pi)) % 1, tint = {r = 0, g = 0, b = 0, a = 0},
+        render_layer = "higher-object-above", x_scale = q[3], y_scale = q[4]}
+    end
+    storage.kh_shadows = storage.kh_shadows or {}
+    table.insert(storage.kh_shadows, sh)
+    return
+  end
   -- (A silhouette, its nose along its course, over all it crosses: three flat strips read as dark rectangles, the user,
   -- 2026-11-04, the strike's stills.)
   sh.objs[1] = rendering.draw_sprite{sprite = "lp-platform-shadow", target = {center[1], center[2]}, surface = s,
@@ -164,14 +181,14 @@ end
 -- for CANNON_PAINT, the platform's shadow over it, then its shells (`at`, its points).
 -- (5 s: a superweapon's warning, the railgun's charge heard over it, lp-cannon-charge.)
 local CANNON_PAINT = 5 * 60
-function orbital.from_orbit(s, force, center, at, reach)
+function orbital.from_orbit(s, force, center, at, reach, silhouette)
   storage.kh_strikes = storage.kh_strikes or {}
   s.play_sound{path = "lp-cannon-charge", position = {center[1], center[2]}}
   local along = math.pi / 4
   table.insert(storage.kh_strikes, {surface = s.index, force = force, center = {center[1], center[2]}, along = along,
     fire_at = game.tick + CANNON_PAINT, paint_for = CANNON_PAINT, k = 0, phase = "paint", player = true, preset = at,
     reach = reach, cannon = true})
-  shadow(s, {center[1], center[2]}, along, CANNON_PAINT)
+  shadow(s, {center[1], center[2]}, along, CANNON_PAINT, silhouette)
 end
 
 local function paint(st, s, tick)
@@ -261,9 +278,19 @@ local function shadow_tick(sh, tick)
         local ease = h * h * (3 - 2 * h)
         local a = SHADOW_ALPHA * (1 - ease) ^ 1.5
         local sc = 1 + SHADOW_SPREAD * ease
-        o.target = {cx, cy}
+        local q = sh.offs and sh.offs[i]
+        if q then
+          -- A strip of the player's platform: its place turned to the course (-y the bow, along it; x to its right).
+          local k = sc * SILHOUETTE_SCALE
+          local fx, fy = ca, sa
+          local rx, ry = -sa, ca
+          o.target = {cx + (-q[2] * fx + q[1] * rx) * k, cy + (-q[2] * fy + q[1] * ry) * k}
+          o.x_scale, o.y_scale = q[3] * k, q[4] * k
+        else
+          o.target = {cx, cy}
+          o.x_scale, o.y_scale = sc, sc
+        end
         o.color = {r = 0, g = 0, b = 0, a = a}
-        o.x_scale, o.y_scale = sc, sc
       else
         -- (A strike begun before 0.2.198: its strips.)
         local v = {}

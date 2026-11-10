@@ -194,6 +194,7 @@ WIND = winding("winding")
 SLOT = glow_mat("slot", 0.6)
 
 # --- Builders ---------------------------------------------------------------------------------------------------
+FIXED = set()          # what stays when the barrel recoils, whatever its place (the rams, the kitbashed props)
 PROPS = os.path.expanduser(os.environ.get("LP_PROPS", "~/lp-props"))
 _props = {}
 def prop(name, asset):
@@ -223,8 +224,10 @@ def prop(name, asset):
             m["lp_toned"] = True
         base.parent = None
         scene.collection.objects.link(base)
+        FIXED.add(base)
         return base
     o = _props[key].copy(); scene.collection.objects.link(o)
+    FIXED.add(o)
     return o
 
 def obj_from_bm(bm, name, m):
@@ -452,13 +455,15 @@ def build():
     barrel_section(0.94, 0.955, 1.55, 1.55, 1.12, 1.12, HAZ, chamfer=0.42)
     on_barrel(1.1, 0.25, 0.7, 1.0, 0.0, 0, DARK)
     on_barrel(0.7, 0.28, 0.35, 1.0, 0.0, 0, GLOW)
-    # Hydraulic rams from the plinth's front to the barrel's belly.
+    # Hydraulic rams from the plinth's front to the barrel's belly (fixed: they stay when the barrel recoils).
+    before_rams = set(scene.objects)
     for sx in (-1, 1):
         a = V((sx * 0.9, 4.4, H + 0.1)); b = along(0.34, -0.75, sx * 0.9)
         mid = a + (b - a) * 0.55
         lpkit.rod(tuple(a), tuple(mid), 0.32, GUN, verts=16)
         lpkit.rod(tuple(mid), tuple(b), 0.2, COPPER, verts=12)
         lpkit.cyl(0.5, 0.35, a.x, a.y, H, DARK, verts=16)
+    FIXED.update(o for o in scene.objects if o not in before_rams)
     # Hoses and pipe bundles from the hull to the cheeks and the barrel's root.
     for sx in (-1, 1):
         if sx < 0:
@@ -648,6 +653,20 @@ def group(fn):
 
 rig = bpy.data.objects.new("rig", None); scene.collection.objects.link(rig)
 model = group(build)
+# The barrel (the user, 2026-11-10: "No firing animation? no recoil?"): what lies along its axis from just past the breech
+# to the muzzle, within its coils' reach and not below its belly, less FIXED; rendered apart (its own sprite, which the
+# script draws over the cannon and slides back as it fires), hidden from the body's render.
+def barrel_part(o):
+    if o in FIXED or o.type not in ("MESH", "CURVE"): return False
+    c = sum((o.matrix_world @ V(b) for b in o.bound_box), V((0, 0, 0))) / 8
+    t = (c - BASE).dot(AXIS) / LEN
+    if t < 0.1 or t > 1.05: return False
+    q = BASE + AXIS * (LEN * t)
+    d = c - q
+    return d.length <= 2.6 and d.z > -1.4
+bpy.context.view_layer.update()
+BARREL = set(o for o in model if barrel_part(o))
+print("barrel parts", len(BARREL), "of", len(model))
 for o in model:
     if o.parent is None: o.parent = rig
 rig.scale = (SCALE, SCALE, SCALE)
@@ -711,8 +730,13 @@ for d in DIRS:
         if f == 0:
             scene.cycles.samples = SAMPLES
             ground.hide_render = True; sun.hide_render = False; bg.inputs[1].default_value = FILL
-            for m in model: m.is_holdout = False
+            for m in model: m.is_holdout = False; m.visible_camera = m not in BARREL
             lpkit.render(scene, f"{o}/body/000.png")
+            # The barrel alone, lit as the body, every other part hidden (not held out: it is drawn over the body).
+            os.makedirs(f"{o}/barrel", exist_ok=True)
+            for m in model: m.visible_camera = m in BARREL
+            lpkit.render(scene, f"{o}/barrel/000.png")
+            for m in model: m.visible_camera = True
         # The glow (lit parts and the frame's arcs), every other part a holdout.
         made = arcs(f)
         scene.cycles.samples = max(8, SAMPLES // 5)

@@ -18,8 +18,12 @@ for d, _, files in sorted(os.walk(root)):
         g = json.load(open(os.path.join(d, "dirs.json")))
         def fans(v):
             f = v.get("fans")
-            return (", fans = {width = %d, height = %d, shift = {%r, %r}, frames = %d}" % (f["width"], f["height"], f["shift"][0],
-                    f["shift"][1], f["frames"])) if f else ""
+            out = (", fans = {width = %d, height = %d, shift = {%r, %r}, frames = %d}" % (f["width"], f["height"], f["shift"][0],
+                   f["shift"][1], f["frames"])) if f else ""
+            b = v.get("barrel")
+            if b:
+                out += ", barrel = {width = %d, height = %d, shift = {%r, %r}}" % (b["width"], b["height"], b["shift"][0], b["shift"][1])
+            return out
         parts = ", ".join('%s = {width = %d, height = %d, shift = {%r, %r}, frames = %d, line_length = %d%s}' % (
             n, v["width"], v["height"], v["shift"][0], v["shift"][1], v["glow_frames"], v["line_length"], fans(v)) for n, v in sorted(g.items()))
         rows.append('  ["%s"] = {%s},' % (key, parts))

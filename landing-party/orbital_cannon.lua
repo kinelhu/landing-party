@@ -80,6 +80,22 @@ local function glowing(d)
   return {filename = dir_file(d, "glow"), width = S.width / 2, height = S.height / 2, frame_count = S.frames,
     line_length = S.line_length, scale = 1, shift = S.shift, animation_speed = 0.2, draw_as_glow = true, blend_mode = "additive"}
 end
+-- Its barrel, apart (the user, 2026-11-10: "No firing animation? no recoil?"): a sprite a direction, drawn over the body by
+-- scripts/cannon.lua and slid back along its axis as it fires.
+for d, S in pairs(DIRS) do
+  local B = S.barrel
+  if B then
+    data:extend({{type = "sprite", name = "lp-cannon-barrel-" .. d, filename = dir_file(d, "barrel"), width = B.width,
+      height = B.height, scale = 0.5, shift = B.shift, flags = {"no-crop"}}})
+  end
+end
+-- Its shot on the platform: the big explosion at the muzzle, the deck shaken (the strike's shock, lighter, no scorch).
+local blast = table.deepcopy(data.raw.explosion["big-artillery-explosion"])
+blast.name = "lp-cannon-blast"
+blast.created_effect = {type = "direct", action_delivery = {type = "instant", source_effects = {
+  {type = "camera-effect", duration = 18, ease_in_duration = 1, ease_out_duration = 17, strength = 1.4,
+    full_strength_max_distance = 30, max_distance = 120}}}}
+data:extend({blast})
 -- Its fans, spinning while it works: a small sheet laid over the body's own.
 local function fans(d)
   local F = DIRS[d].fans

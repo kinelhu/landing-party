@@ -47,6 +47,14 @@ for d in sorted(os.listdir(src)):
     W, H = body.size
     cx, cy = (box[0] + box[2]) / 2 - W / 2, (box[1] + box[3]) / 2 - H / 2
     meta[d] = {"width": fw, "height": fh, "shift": [cx / 64, cy / 64], "glow_frames": len(glows), "line_length": LINE}
+    # The barrel: its own still, cropped to its own box (the script draws it over the body and slides it as it fires).
+    if os.path.exists(f"{base}/barrel/000.png"):
+        br = stretch(Image.open(f"{base}/barrel/000.png").convert("RGBA"))
+        br.putalpha(br.split()[3].point(lambda v: v if v > 3 else 0))
+        bb = br.getbbox(); bb = (bb[0] - 2, bb[1] - 2, bb[2] + 2, bb[3] + 2)
+        br.crop(bb).save(f"{out}/{d}-barrel.png", optimize=True)
+        meta[d]["barrel"] = {"width": bb[2] - bb[0], "height": bb[3] - bb[1],
+                             "shift": [((bb[0] + bb[2]) / 2 - W / 2) / 64, ((bb[1] + bb[3]) / 2 - H / 2) / 64]}
     # The fans: full size, cropped to their own box over all frames (a small sheet laid over the body).
     if os.path.isdir(f"{base}/fans"):
         fans = [stretch(Image.open(f"{base}/fans/{n}").convert("RGBA")) for n in sorted(os.listdir(f"{base}/fans"))]
@@ -65,6 +73,8 @@ for d in sorted(os.listdir(src)):
         meta[d]["fans"] = {"width": ww, "height": hh, "shift": [fx / 64, fy / 64], "frames": len(fans)}
     prev = Image.new("RGBA", (fw, fh), (78, 80, 84, 255))
     prev.alpha_composite(shadow.crop(box)); prev.alpha_composite(body.crop(box))
+    if os.path.exists(f"{base}/barrel/000.png"):
+        bfull = stretch(Image.open(f"{base}/barrel/000.png").convert("RGBA")); prev.alpha_composite(bfull.crop(box))
     g = glows[len(glows) // 2].crop(box); g.putalpha(g.split()[3].point(lambda v: v // 2)); prev.alpha_composite(g)
     prev.convert("RGB").save(f"{src}/preview-{d}.jpg", quality=85)
 json.dump(meta, open(f"{out}/dirs.json", "w"), indent=1)
