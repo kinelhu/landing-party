@@ -734,20 +734,30 @@ def pylon_kh():
         B(0.42, 0.42, 0.12, 0, 0, 0, P["dark"], bevel=0.02)
         B(0.16, 0.08, 0.22, 0, -0.2, 0.12, P["hull"], bevel=0.01)
         B(0.06, 0.02, 0.04, 0, -0.245, 0.27, P["light"], bevel=0.0)
-        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.15, radius2=0.075, depth=3.0, location=(0, 0, 1.62))
+        # (Its mass: a mast this thick, a transformer can and a cable riser on it; first rendered at 0.15 it still
+        # read as a stick beside vanilla's lattice tower.)
+        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.22, radius2=0.1, depth=3.0, location=(0, 0, 1.62))
         bpy.context.object.data.materials.append(P["hull"])
         for a in (0.4, 2.5, 4.6):
             rod((math.cos(a) * 0.26, math.sin(a) * 0.26, 0.12), (0, 0, 0.75), 0.022, P["trim"])
         for z in (0.55, 1.15, 1.75, 2.35):
-            cyl(0.14 - z * 0.022, 0.05, 0, 0, z, P["trim"], verts=12)
+            cyl(0.2 - z * 0.035, 0.06, 0, 0, z, P["trim"], verts=12)
+        cyl(0.13, 0.42, 0.24, -0.06, 1.6, P["trim"], verts=16, bevel=0.02)
+        for z in (1.68, 1.9):
+            tor(0.13, 0.015, 0.24, -0.06, z, P["dark"])
+        cyl(0.05, 0.08, 0.24, -0.06, 2.02, P["glass"], verts=10)
+        B(0.12, 0.08, 0.1, 0.1, -0.06, 1.65, P["dark"], bevel=0.01)
+        rod((0.0, -0.17, 0.25), (0.0, -0.1, 2.5), 0.025, P["rubber"])
+        for z in (0.9, 1.3, 2.1):
+            B(0.08, 0.06, 0.04, 0.0, -0.13, z, P["steel"], bevel=0.0)
         # The crossarms: the lower carries the circuit wires, the upper two more strings; braces under each.
-        for z, w in ((2.55, 0.42), (2.9, 0.3)):
-            B(2 * w + 0.12, 0.08, 0.08, 0, 0, z, P["trim"], bevel=0.01)
+        for z, w in ((2.55, 0.48), (2.9, 0.36)):
+            B(2 * w + 0.14, 0.1, 0.1, 0, 0, z, P["trim"], bevel=0.015)
             for sx in (-1, 1):
                 rod((sx * w * 0.7, 0, z), (0, 0, z - 0.3), 0.015, P["steel"])
-        tips["red"] = string(-0.42, 0, 2.55)
-        tips["green"] = string(0.42, 0, 2.55)
-        string(-0.3, 0, 2.9, 3); string(0.3, 0, 2.9, 3)
+        tips["red"] = string(-0.48, 0, 2.55)
+        tips["green"] = string(0.48, 0, 2.55)
+        string(-0.36, 0, 2.9, 3); string(0.36, 0, 2.9, 3)
         for k in range(4):                                          # the top insulator, standing; the copper on it
             cyl(0.05, 0.03, 0, 0, 3.12 + k * 0.05, P["glass"], verts=12)
         cyl(0.025, 0.06, 0, 0, 3.32, P["steel"], verts=8)

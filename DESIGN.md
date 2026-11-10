@@ -6391,6 +6391,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   frame by sqrt(2) (the game's projection): unstretched they read about 0.7 tall, and corrected the first pick stood tall
   and narrow (1.6 by 2.4 tiles against vanilla's 2.3 by 2.1); rendered at 1.3 across and 1.0 up. Still simpler than
   vanilla's art, larger by a little; read as weapons at half scale (contact sheet in the report).
+- **The factions' flamers and Kessler-Hayashi's pylon redone** (0.2.309; the coordinator's review: the flamers "a box with
+  barrels", the pylon "a bare stick"). Flamers from four clay concepts (faction_works.py fconcept): a nozzle on an
+  articulated arm (a shoulder housing, the raised upper arm, an elbow, the forearm and its nozzle housing, a hose along
+  it, the pilot light lit at the tip) or on a turret ring, for each faction; the arms read, and stand on a neck: the first
+  clay hid its head behind the tanks, which sit at the back where the inlets are, nearer the camera. Kessler-Hayashi's
+  two banded fuel tanks and Grubstake's three oil drums, lower now, their fuel lines running up the neck (a banded column;
+  Grubstake's a braced pipe mast). Rendered 1.15 across. The pylon a composite mast with vanilla's medium pole's mass: a
+  tapered banded tube (0.22 at its foot), braced, two crossarms with hanging insulator strings (the circuit wires on the
+  lower arm's, the copper on a standing insulator at the top), a transformer can and a cable riser; its wire points
+  projected from the model as before (copper 0, -3.36; red and green -0.48 and 0.48, -2.21; checked in the dump).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
