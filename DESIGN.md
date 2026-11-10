@@ -6289,6 +6289,18 @@ Bugs and surprises the headless runs caught, each kept as a check:
   studies' technologies wear a blueprint tag at the upper left (the schematics' look) in place of a drawn magnifier.
   The orbital cannon's model gained scattered detail (rivets and small parts seeded over its large faces, 4575 in 8
   meshes, `scatter()` in `tools/blender/orbital_cannon.py`), re-rendered in four directions.
+- **The factions' fabricators modelled** (0.2.298; phase 2 of the graphics pass, resumed: the user, 2026-11-10, of
+  the landers, "exceptionally detailed and hard to do", not a call against the rest). `tools/blender/faction_works.py`: a
+  building a role, each corporation its own build. Kessler-Hayashi's a sealed fab module (a chamfered blue-grey block,
+  a fab drum lit cyan round its middle, a ring of six print heads turning on its crown while it works, a motor and
+  gearbox, a coolant pair and its manifold, a control cabinet's screens, a loading bay under a hazard band); Grubstake's
+  an open scrap press (a welded girder frame on skids, its ram stamping and its flywheel turning while it works, a hopper
+  of scrap, scrap heaped by the die, an old compressor and a gas bottle bolted on, an amber lamp). 16 frames each, on the
+  Studio's GPU; small parts seeded over their large faces (scatter, the cannon's at a 3x3 machine's scale); Poly Haven
+  props. Wired in corps.lua (MODELLED: a kind with a sheet under graphics/<corp>/<dir> drawn in place of the repaint).
+  The first passes read flat beside vanilla's dense assembler: a pale concrete deck (the KH paint at 0.8 texture scale),
+  a cartoon-blue glass slab, a solid ochre crown hiding the press; clay, then four passes judged beside vanilla at game
+  scale. Contact sheet: vanilla, KH repaint, KH model, Grubstake repaint, Grubstake model.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

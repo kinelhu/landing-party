@@ -109,3 +109,33 @@ for corp in pairs(shared.CORPS) do
     end
   end
 end
+
+-- Each corporation's own models (tools/blender/faction_works.py; phase 2 of the graphics pass, the user, 2026-11-10: "I
+-- still see some gross recolors. Why not use blender again?"; the landers alone keep their repaint): a kind with a sheet
+-- under graphics/<corp>/<dir> (sheets.lua) draws it in place of the repainted vanilla art, each corporation its own build.
+local SHEETS = require("graphics.sheets")
+local function sheet_layer(key, file, extra)
+  local S = SHEETS[key]
+  local l = {filename = "__landing-party__/graphics/" .. key .. "/" .. file .. ".png", width = S.width, height = S.height,
+    frame_count = S.frames, line_length = S.line_length, scale = 0.5, shift = S.shift}
+  for k, v in pairs(extra or {}) do l[k] = v end
+  return l
+end
+local MODELLED = {
+  -- The fabricator: its working animation, its lights lit while it works.
+  ["lp-fabricator"] = {dir = "fabricator", apply = function(p, key, corp)
+    local lit = corp == "grubstake" and {r = 1, g = 0.7, b = 0.35} or {r = 0.5, g = 0.85, b = 1}
+    p.graphics_set = {
+      animation = {layers = {sheet_layer(key, "body", {animation_speed = 0.5}),
+        sheet_layer(key, "shadow", {draw_as_shadow = true, animation_speed = 0.5})}},
+      working_visualisations = {{fadeout = true, animation = sheet_layer(key, "glow", {draw_as_glow = true, blend_mode = "additive",
+        animation_speed = 0.5}), light = {intensity = 0.5, size = 8, shift = {0, 0}, color = lit}}}}
+  end},
+}
+for corp in pairs(shared.CORPS) do
+  for kind, m in pairs(MODELLED) do
+    local key = corp .. "/" .. m.dir
+    local p = SHEETS[key] and find(shared.variant(corp, kind))
+    if p then m.apply(p, key, corp) end
+  end
+end
