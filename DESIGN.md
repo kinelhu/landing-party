@@ -6468,6 +6468,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lost the trooper. Caught by the scenario's trace (paths before and after differed). Keys now move only in the tables
   listed in `veterancy.KEYED`; the trace counts a unit's number elsewhere apart (10 such in the camp run, none a reference).
   A new table keyed by unit number goes in that list, or the trace shows it missed.
+- **The strip drill drew as its shadow in three directions** (0.2.317; found filming the factions' buildings beside
+  vanilla's, docs/review/stills-factions.lua). Its east, south and west body sheets were empty since it was modelled
+  (0.2.291): lpkit.passes hid the model from the camera for a direction's shadow and never showed it again, so a script
+  rendering several directions in one run rendered every body after the first empty. The player's strip drill and
+  Grubstake's drill (the same model) stood as black shadows in those facings; its film had only shown it facing north.
+  The kit mended, the drill re-rendered on the Studio; of the mod's 82 body sheets, only its three were empty.
+  `tools/blender/sheet.py` now stops on a body frame with nothing in it (seen failing on a blank render). The same film:
+  the flak turret's puffs round the harriers it downed, both flamers' streams from their nozzles, the pylon's wires on
+  its posts.
 - **Field promotion's regression** (0.2.316; the whole list on 0.2.311, 320 runs, 67 min on the Studio). The four known
   failures, and three new. `rail`: "one stood at least" 0, passing with promotion off. The harness, a mod of its own,
   kept its list of railgunners, and those promoted read as dead: the rewiring reaches this mod's storage only. Now a

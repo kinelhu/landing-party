@@ -252,6 +252,9 @@ def passes(scene, out, frames, set_frame, model, glowing, ground, sun, world, sh
     sun.hide_render = False; bg.inputs[1].default_value = fill; ground.hide_render = False
     for o in model: o.visible_camera = False
     render(scene, f"{out}/shadow.png")
+    # (Shown again: a script rendering several directions in one run calls this once a direction, and the model left
+    # hidden made every body after the first empty: the strip drill's east, south and west, 0.2.291 to 0.2.316.)
+    for o in model: o.visible_camera = True
 
 def arc(p0, p1, m, rng, kinks=3, jitter=0.08, r=0.012):
     """A crooked bright line from p0 to p1 (a lightning arc), new kinks each call."""

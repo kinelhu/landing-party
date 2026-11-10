@@ -9,7 +9,7 @@ local rows = {
   {y = 0, force = "lp-serenity", list = {"lp-lander", "lp-fabricator", "lp-generator", "lp-radar", "lp-drill", "lp-turret",
     "lp-gun-turret", "lp-flamer", "lp-depot", "lp-launchpad", "lp-lamp"}},
   {y = 22, force = "lp-grubstake", list = {"lp-grubstake-lander", "lp-grubstake-fabricator", "lp-grubstake-generator",
-    "lp-radar", "lp-grubstake-drill", "lp-grubstake-turret", "lp-grubstake-scrap-cannon", "lp-grubstake-flamer",
+    "lp-grubstake-radar", "lp-grubstake-drill", "lp-grubstake-turret", "lp-grubstake-scrap-cannon", "lp-grubstake-flamer",
     "lp-grubstake-depot", "lp-grubstake-launchpad", "lp-grubstake-lamp"}},
   {y = 44, force = "player", list = {"crash-site-spaceship", "assembling-machine-2", "accumulator", "radar",
     "electric-mining-drill", "laser-turret", "gun-turret", "flamethrower-turret", "steel-chest", "iron-chest", "small-lamp"}},

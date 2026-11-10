@@ -29,6 +29,11 @@ else:
 for frames in (body, glow):
     for im in frames:
         im.putalpha(im.split()[3].point(lambda v: v if v > 3 else 0))
+# A body with nothing in it is a render that went wrong (lpkit.passes left the model hidden after a direction's shadow:
+# the strip drill's east, south and west shipped as shadows alone, 0.2.291 to 0.2.316). Stop, do not write it.
+empty = [n for n, im in zip(names, body) if not im.getbbox()]
+if empty:
+    sys.exit(f"sheet.py: {len(empty)} of {len(names)} body frames in {src} are empty (first {empty[0]}): the model did not render")
 W, H = body[0].size
 box = None
 for im in body + glow + shadows:
