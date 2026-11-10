@@ -192,6 +192,16 @@ end
 -- legendary, each against a lone stone wall chunk, the damage each deals in 10 seconds; a walking trooper upgraded.
 scenarios.vetprobe = function()
   local Q = {"normal", "uncommon", "rare", "epic", "legendary"}
+  -- A kill's merit (veterancy.kill_merit), each killer against each victim.
+  schedule(120, function()
+    local V = {"small-biter", "medium-biter", "big-biter", "behemoth-biter", "small-spitter", "lp-bred-small-biter",
+      "lp-trooper", "lp-infantry", "lp-rocket-trooper", "lp-tank", "lp-battle-tank", "lp-harrier", "lp-walker", "lp-buggy"}
+    for _, by in ipairs({"lp-trooper", "lp-infantry", "lp-tank", "lp-battle-tank", "lp-harrier", "lp-buggy", "lp-walker"}) do
+      local row = {}
+      for _, v in ipairs(V) do row[#row + 1] = string.format("%s %.3g", v, lp("kill_merit", v, by)) end
+      table.insert(lines, "INFO vetprobe merit by " .. by .. ": " .. table.concat(row, ", "))
+    end
+  end)
   schedule(300, function()
     for k, q in ipairs(Q) do
       local u = surface().create_entity{name = "lp-trooper", position = {k * 4, -40}, force = "player", quality = q}
@@ -2382,6 +2392,19 @@ scenarios.veteran = function()
     check("veteran: their kills earned merit", (S.merit or 0) > 0, tostring(S.merit))
     check("veteran: promoted at the rally point", (q.uncommon or 0) >= 1, serpent.line(q))
     check("veteran: none lost to the swap", after == (S.given or -1), string.format("%d after, %s given", after, tostring(S.given)))
+    -- Merit's balance (the user: "a huge wave of small biters should not give 1 point each if the max a behemoth will
+    -- give is 4?"): a kill worth the victim's health times damage over the killer's; a small biter to a trooper under a
+    -- tenth, a peer one; a behemoth's last shot lifts a fresh trooper to its next rank (3), no more.
+    check("veteran: a small biter is worth little to a trooper", lp("kill_merit", "small-biter", "lp-trooper") < 0.1,
+      tostring(lp("kill_merit", "small-biter", "lp-trooper")))
+    check("veteran: a peer is worth one", math.abs(lp("kill_merit", "lp-trooper", "lp-trooper") - 1) < 1e-9,
+      tostring(lp("kill_merit", "lp-trooper", "lp-trooper")))
+    local tr = surface().create_entity{name = "lp-trooper", position = {56, 30}, force = "player"}
+    local bh = surface().create_entity{name = "behemoth-biter", position = {60, 30}, force = "enemy"}
+    bh.die("player", tr)
+    check("veteran: a behemoth's last shot, one rank and no more", lp("merit", tr.unit_number) == 3,
+      tostring(lp("merit", tr.unit_number)))
+    tr.destroy()
     -- The AI's care for them: a raid with an Elite in it turns home at 60% of its launched units, with a Hero at 70%, a
     -- raid of Veterans at its own share (0.5); an Elite counts (1 + 0.3 * 2) * (1 + 0.48 * 2) its normal worth.
     local made = {}

@@ -4,7 +4,8 @@
 -- at home: a corporation's unit back in its garrison (pool), the player's idle at its rally point (command). A unit is
 -- not raised a quality in place (order_upgrade refuses units), so a promotion is a swap, done where no job holds it.
 --   merit       storage.merit[unit_number]: points banked, carried across a swap
---   on_died     credits the killer: a unit killed its strength over the killer's, a building HALF, a spawner 1
+--   on_died     credits the killer: a unit killed its value over the killer's (kill_merit), a turret its health's,
+--               a spawner 1, another building BUILDING; at most to its next rank a kill
 --   promote     the unit, or its promoted copy (the caller puts it where the old one was)
 -- A leaf (pool reads it): shared only.
 local shared = require("__landing-party__.shared")
@@ -12,14 +13,38 @@ local veterancy = {}
 
 veterancy.RANKS = {{quality = "uncommon", merit = 3}, {quality = "rare", merit = 8}, {quality = "epic", merit = 16}}
 local LEVEL = {normal = 0, uncommon = 1, rare = 2, epic = 3, legendary = 4}
-local BUILDING, SPAWNER, CAP = 0.5, 1, 4     -- merit for a building, a spawner; at most CAP for one kill
+local SPAWNER, BUILDING, TURRET_CAP = 1, 0.1, 2
+-- What is not worth merit: what holds and carries (walls, belts, poles, pipes, rails), a corpse's worth of nothing.
+local WORTHLESS = {wall = true, gate = true, ["transport-belt"] = true, ["underground-belt"] = true, splitter = true,
+  ["electric-pole"] = true, pipe = true, ["pipe-to-ground"] = true, ["straight-rail"] = true, ["curved-rail-a"] = true,
+  ["curved-rail-b"] = true, ["half-diagonal-rail"] = true, ["legacy-straight-rail"] = true, lamp = true}
+local TURRETS = {["ammo-turret"] = true, ["electric-turret"] = true, ["fluid-turret"] = true, ["artillery-turret"] = true,
+  turret = true}
 
 local function merit() storage.merit = storage.merit or {}; return storage.merit end
 
--- A unit's strength: its prototype's health (attempt.worth's measure, without its medium-biter scale, which cancels).
-local function strength(name)
+-- A unit's fighting value (the user, 2026-11-10: "Merit should earn careful balancing. Seems like a huge wave of small
+-- biters should not give 1 point each if the max a behemoth will give is 4?"): its health times its damage a tick
+-- (lp-unit-hit, the prototypes' own attack read in data-final-fixes), Lanchester's measure of what it takes to beat it.
+-- A unit with no attack read (a spider unit) its health alone, against the killer's health alone.
+local hits
+local function value(name)
+  hits = hits or prototypes.mod_data["lp-unit-hit"].data
   local p = prototypes.entity[name]
-  return p and p.get_max_health() or 1
+  local hp = p and p.get_max_health() or 1
+  local h = hits[name]
+  local dps = 0
+  if h then for _, a in pairs(h.dmg) do dps = dps + a end; dps = dps / h.cooldown end
+  return hp, dps
+end
+-- A kill's merit: the victim's value over the killer's (measured, scenario vetprobe; to a trooper: a small biter 0.06, a
+-- medium 0.67, a peer 1, a tank 25, a behemoth 113; to a tank, a trooper 0.04).
+-- One kill raises a unit one rank at most (on_died): a last shot on what a turret line wore down is not a career.
+function veterancy.kill_merit(dead_name, by_name)
+  local vh, vd = value(dead_name)
+  local kh, kd = value(by_name)
+  if vd > 0 and kd > 0 then return (vh * vd) / (kh * kd) end
+  return vh / math.max(1, kh)
 end
 
 function veterancy.rank(u) return LEVEL[u.quality and u.quality.name or "normal"] or 0 end
@@ -36,16 +61,23 @@ function veterancy.on_died(e)
   if storage.vet_off or not ranks(by) or dead.force == by.force then return end
   local m
   if dead.type == "unit" or dead.type == "spider-unit" then
-    m = math.min(CAP, strength(dead.name) / math.max(1, strength(by.name)))
+    m = veterancy.kill_merit(dead.name, by.name)
   elseif dead.type == "unit-spawner" then
     m = SPAWNER
-  elseif dead.prototype.is_building then
+  elseif TURRETS[dead.type] then
+    -- (A turret or a worm: its health over the killer's, at most TURRET_CAP.)
+    m = math.min(TURRET_CAP, dead.max_health / math.max(1, by.max_health))
+  elseif dead.prototype.is_building and not WORTHLESS[dead.type] then
     m = BUILDING
   else
     return
   end
   local t = merit()
-  t[by.unit_number] = (t[by.unit_number] or 0) + m
+  local had = t[by.unit_number] or 0
+  -- (At most to the next rank above what it has banked.)
+  local next_at
+  for _, rk in ipairs(veterancy.RANKS) do if rk.merit > had then next_at = rk.merit; break end end
+  t[by.unit_number] = next_at and math.min(had + m, next_at) or had + m
 end
 
 -- The rank its merit has earned: 0 to #RANKS.
