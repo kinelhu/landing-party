@@ -487,6 +487,11 @@ data:extend({{type = "sprite", name = "lp-platform-shadow", filename = "__landin
 -- soft shape; white, tinted; one tile at scale 1; sigma a quarter of its width).
 data:extend({{type = "sprite", name = "lp-shadow-blob", filename = "__landing-party__/graphics/serenity/shadow-blob.png",
   width = 64, height = 64, scale = 0.5, flags = {"no-crop"}}})
+-- A ranked unit's badge (veterancy.lua: one to three chevrons, tools/icons/ranks.py), worn from its promotion on.
+for r = 1, 3 do
+  data:extend({{type = "sprite", name = "lp-rank-" .. r, filename = "__landing-party__/graphics/icons/ranks/rank-" .. r .. ".png",
+    width = 64, height = 64, scale = 0.5, flags = {"gui-icon"}}})
+end
 data:extend({{type = "animation", name = "lp-dome-rise", filename = "__landing-party__/graphics/serenity/ripple/sheet.png",
   width = 290, height = 335, frame_count = DW.rise_frames, line_length = 8, scale = 1, draw_as_glow = true, blend_mode = "additive"}})
 if TOWER_ON then

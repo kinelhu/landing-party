@@ -11,7 +11,6 @@
 -- It reports on its own output: S its squad, E faction units and T faction turrets within reach of the
 -- rally point.
 local shared = require("__landing-party__.shared")
-local veterancy = require("__landing-party__.scripts.veterancy")
 
 local command = {}
 
@@ -487,7 +486,6 @@ local function lead()
     if not plans[k] then m.ring.destroy(); m.line.destroy(); storage.cmd.marks[k] = nil end
   end
   local offline = offline_set()
-  local promoted = {}
   for k, t in pairs(storage.cmd.troopers) do
     local u = t.unit
     if not u.valid then
@@ -521,9 +519,6 @@ local function lead()
       local function hold()
         if (u.position.x - p.pos.x) ^ 2 + (u.position.y - p.pos.y) ^ 2 > 12 * 12 then
           order(t, stay(p.pos, 6, defines.distraction.by_enemy), string.format("hold:%d,%d", p.pos.x, p.pos.y))
-        elseif veterancy.earned(u) > veterancy.rank(u) then
-          -- Home at its rally point, nothing to fight: a rank its kills earned (veterancy.lua), swapped after the walk.
-          promoted[#promoted + 1] = {k = k, t = t}
         end
       end
       if foe then
@@ -569,18 +564,6 @@ local function lead()
             hold()
           end
         end
-      end
-    end
-  end
-  for _, pr in ipairs(promoted) do
-    local n = veterancy.promote(pr.t.unit)
-    if n ~= pr.t.unit then
-      storage.cmd.troopers[pr.k] = nil
-      pr.t.unit, pr.t.key = n, nil
-      storage.cmd.troopers[n.unit_number] = pr.t
-      -- (Still selected where it was: a selection is by unit number.)
-      for _, sel in pairs(storage.cmd.selected or {}) do
-        if sel[pr.k] then sel[pr.k], sel[n.unit_number] = nil, true end
       end
     end
   end

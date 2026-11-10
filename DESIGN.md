@@ -1036,16 +1036,36 @@ max health rises 30% a level (120, 156, 192, 228, 300) and its damage about 48% 
 5 s on a frozen tank: legendary 3.4 times normal, two seeds). No prototype more (93 units, not 372), its icon the engine's
 quality badge. Three ranks, C&C's: Veteran (uncommon), Elite (rare), Heroic (epic); legendary is never earned.
 
-**Earned by kills, given at home.** Each kill credits its killer (on_entity_died's cause) with merit: a unit killed is
-worth its strength over the killer's (attempt.worth: a trooper killing a tank earns more than the reverse), a building
-half a point, a spawner one, a biter its own worth. Ranks at 3, 8 and 16 points (assumed: to calibrate on the contact
-timelines, a veteran or two an hour of a careful game). Merit is banked in the field; the rank comes only once the unit is
-home, which is what makes coming home matter:
-- the corporations' units at the pool's homecoming (pool.tick: back in the garrison, from b.returning), never mid-job;
-- the player's units when idle by one of its rally beacons or its muster point (no command, not hit for 10 s).
-A unit cannot be raised a quality in place (order_upgrade refuses units, probed), so a promotion is a swap: a new unit of
-the same name at the next quality, at the same place and health share, its merit carried, put where the old one was
-(roster, storage.unit_owner, the garrison, a player squad) and the old one removed. At home, no operation holds it.
+**Earned by kills, given on the spot** (field promotion, 0.2.311; at home before). Each kill credits its killer
+(on_entity_died's cause) with merit (its balance below). Ranks at 3, 8 and 16 points (assumed: to calibrate on the
+contact timelines, a veteran or two an hour of a careful game). The rank comes the tick after the kill that earned it,
+mid-fight (the user, 2026-11-10: "Weird to promote back at camp. Why not promote during fights?"). It had come only at
+home (the pool's homecoming, the player's rally point), meant as what makes coming home matter; but keeping an elite
+alive already is its reward, and the moment of a C&C promotion is most of it. Every turret-rank mod on the portal
+promotes on the kill (Hero Turrets and its 2.1 fork, Quality Turrets Reworked, Factorio+, Turret XP, read 2026-11-10).
+A unit cannot be raised a quality in place (order_upgrade refuses units, probed; 2.1 has no other way), so a promotion
+is a swap: a new unit of the same name at the next quality, at the same place and health share, then
+- its place in the fight: the old one's unit group (joined before the old one leaves it), else its command, and its AI
+  settings;
+- every reference storage holds: any LuaEntity equal to the old one becomes the copy (a raid's members, a herd's, the
+  garrison, the troopers, a scout), and its number as a key of the tables that key units by number (`veterancy.KEYED`,
+  paths in storage: owners, merit, the oplog, separation, the watch, a roster, the player's troopers and selection, a
+  herd's sets) moves to the copy's number;
+- then the old one is destroyed (no death: nothing counts it a loss).
+Queued in the death event and done at the start of the next tick (veterancy.tick, first in on_tick), so no caller is
+holding the unit mid-loop (the crash 0.2.310 fixed). A copy that cannot be placed tries again a second later, ten times.
+It wears its rank from then on: one to three gold chevrons over it (`lp-rank-1..3`, tools/icons/ranks.py; the turret
+mods keep a badge on the entity, our label faded and left nothing), its rank's name flies over it, and a chime
+(`utility/new_objective`, as Quality Turrets).
+
+**Field promotion built (0.2.311):** veterancy.promote (rewire, take_place, the badge), veterancy.tick; the pool's and
+the command's promotions at home removed. Scenario `veteran` reworked: troopers given 2.9 of 3 before two infantry walk
+at them, a kill promotes one with a foe still standing, as many troopers after as deployed less those killed; LP_MIX=camp,
+a Kessler-Hayashi raider promoted 103 tiles out, the copy under the command the original had (a tank, in no group), both
+ranked units still owned. A trace (debug_tune vet_trace) lists every path storage holds a unit at, before the swap and
+the copy's after: the same in both (7304 tables walked in the camp's 25 minutes, 561 in the player's run). LP_MIX=norewire
+(the swap without rewire) fails the trace: the trooper list and merit left on the old unit. The walk's cost a promotion
+is logged ("[lp] promotion: rewired over"): to read on the contact timelines.
 
 **Built (0.2.296):** `scripts/veterancy.lua` (a leaf): merit on every death by its cause, the swap; pool's homecoming
 promotes (give and tick), the player's troopers at their rally point when holding (command.lead, swapped after its walk
@@ -6407,6 +6427,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   over the garrison, where no caller holds a unit; the player's promoted troopers keep their place in a selection. The
   six fork failures of that run (cut, raid, occupy, defend, army, train) were the restart's: the first run, stopped,
   still held the forks' profile locks.
+- **A key moved by rule went to the wrong tables** (0.2.311, field promotion's first run). The swap first moved a
+  unit's number as a key in any table, past the array part. A unit number in a new map is small (13, a trooper's), and
+  other tables key by integers of their own: a settlement's log, its build queue, tile lists, claim marks, walls. Those
+  keys went to the copy's number, while the player's trooper list, its keys read as its array part, kept the old one and
+  lost the trooper. Caught by the scenario's trace (paths before and after differed). Keys now move only in the tables
+  listed in `veterancy.KEYED`; the trace counts a unit's number elsewhere apart (10 such in the camp run, none a reference).
+  A new table keyed by unit number goes in that list, or the trace shows it missed.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

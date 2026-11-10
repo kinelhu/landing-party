@@ -2316,47 +2316,70 @@ end
 -- (10 of bandwidth), a rally beacon 21 tiles off, six troopers. The readout says 6 of 10; three picked and retired walk to
 -- the barracks and hand in three orders there (on the ground, marked for the robots), three left, the readout 3 of 10,
 -- and the barracks deploys none of them again.
--- Veterancy (veterancy.lua; the user, 2026-11-10: "Veterancy system for individual units à la C&C"): four of the
--- player's troopers at a rally beacon; two Kessler-Hayashi infantry walk at them. Their kills earn merit (credited, its
--- highest banked above 0); merit enough given (debug_merit), each is promoted where it holds, at the rally point: a
--- Veteran (uncommon), as many troopers after as before. LP_MIX=camp: a Kessler-Hayashi camp, its units given merit, raids
--- an undefended outpost of assemblers and comes home: its units are promoted at the homecoming (the pool), none before.
--- LP_MIX=off: veterancy off (debug_tune vet_off), the checks seen failing.
+-- Veterancy (veterancy.lua; the user, 2026-11-10: "Veterancy system for individual units à la C&C"; "Why not promote
+-- during fights?"): four of the player's troopers at a rally beacon, given merit just short of a rank (2.9 of 3); two
+-- Kessler-Hayashi infantry walk at them. A kill tops one up and it is promoted on the spot, the fight still on: a Veteran
+-- (uncommon), as many troopers after as before, every reference storage held to it now held to its copy (the trace:
+-- its paths before the swap and the copy's after, the same). LP_MIX=camp: a Kessler-Hayashi camp, its units given the
+-- same, raids an undefended outpost of assemblers 120 tiles out: promoted there, in the raid, the copy in the group and
+-- under the command the original had, and home again its settlement's own. LP_MIX=off: veterancy off (debug_tune vet_off); LP_MIX=norewire: the
+-- swap without its rewiring (debug_tune rewire_off): the checks seen failing.
 scenarios.veteran = function()
   local camp, off = params.mix == "camp", params.mix == "off"
+  local trace = {vet_trace = true, vet_off = off or nil, rewire_off = params.mix == "norewire" or nil}
   local function put(name, x, y, force)
     return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  local function traced(tag)
+    local v = lp("veterancy")
+    check("veteran: " .. tag .. "every reference to a promoted unit moved to its copy", v.traced >= 1 and #v.lost == 0,
+      string.format("%d traced; lost %s", v.traced, serpent.line(v.lost[1])))
+    return v
   end
   if camp then
     schedule(60, function()
       lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true})
+      lp("debug_tune", trace)
       S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
       for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
     end)
     schedule(8 * 3600, function()
       local o = lp("stats", S.id).origin
+      S.origin = o
       local len = math.sqrt(o.x * o.x + o.y * o.y)
       local c = {math.floor(o.x - o.x / len * 120), math.floor(o.y - o.y / len * 120)}
       flatten(c[1] - 14, c[2] - 14, c[1] + 14, c[2] + 14)
       for k = 0, 5 do put("assembling-machine-2", c[1] + (k % 3) * 5 - 5, c[2] + math.floor(k / 3) * 5 - 2) end
-      S.given = lp("debug_merit", S.id, 3.5)
-      S.before = (lp("veterancy").by_force[FORCE] or {}).uncommon or 0
+      S.given = lp("debug_merit", S.id, 2.9)
       lp("debug_tune", {raids_off = false})
     end)
-    settle_when(function() return ((lp("veterancy").by_force[FORCE] or {}).uncommon or 0) > 0 end)
+    -- (Settled two minutes after the first promotion: time for the raid to come home.)
+    settle_when(function()
+      local w = lp("veterancy").where[1]
+      return w and game.tick > w.tick + 2 * 3600
+    end)
     schedule(END - 60, function()
       local v = lp("veterancy")
       local st = lp("stats", S.id)
-      info(string.format("veteran: camp, merit given %s; %d raids; promoted %d; by force %s", tostring(S.given),
-        st.ops.launched or 0, v.promoted, serpent.line(v.by_force)))
-      check("veteran: camp, none promoted before a homecoming", S.before == 0, tostring(S.before))
-      check("veteran: camp, its raiders promoted coming home", ((v.by_force[FORCE] or {}).uncommon or 0) > 0,
-        serpent.line(v.by_force[FORCE]))
+      local w = v.where[1]
+      local far = w and S.origin and math.sqrt((w.x - S.origin.x) ^ 2 + (w.y - S.origin.y) ^ 2) or 0
+      info(string.format("veteran: camp, merit given %s; %d raids; promoted %d, the first %.0f tiles from home %s; ranked %d, "
+        .. "owned %d; walk %d tables; keys moved %s", tostring(S.given), st.ops.launched or 0, v.promoted, far,
+        serpent.line(w), v.ranked, v.ranked_owned, v.walk_max, serpent.line(v.moved)))
+      check("veteran: camp, a raider promoted out in its raid", far > 60, string.format("%.0f tiles", far))
+      -- (Its place in the fight: its group if it had one, its command if it had one. A tank of 0.2.311's first run was
+      -- in no group, commanded alone.)
+      check("veteran: camp, the copy in its group and under its command as the original was", w and w.group == w.had_group
+        and (w.command or not w.had_command), serpent.line(w))
+      check("veteran: camp, its ranked units still its own", v.ranked >= 1 and v.ranked_owned == v.ranked,
+        string.format("%d ranked, %d owned", v.ranked, v.ranked_owned))
+      traced("camp, ")
     end)
     return
   end
   schedule(60, function()
-    lp("debug_tune", {raids_off = true, vet_off = off or nil})
+    lp("debug_tune", {raids_off = true})
+    lp("debug_tune", trace)
     flatten(-30, -40, 60, 30)
     game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
     S.barracks = put("lp-barracks", 0.5, 0.5)
@@ -2369,6 +2392,7 @@ scenarios.veteran = function()
   end)
   schedule(60 + 40 * 60, function()
     S.troopers = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    S.given = lp("debug_merit", "player", 2.9)
     S.foe_list = {}
     for k = 1, 2 do
       local u = put("lp-infantry", 40 + k * 2, -18, FORCE)
@@ -2378,26 +2402,34 @@ scenarios.veteran = function()
       end
     end
   end)
+  -- (Watched each half second: how many of the infantry stood when the first promotion came.)
+  for t = 60 + 40 * 60, 60 + 100 * 60, 30 do
+    schedule(t, function()
+      if S.foes_at == nil and lp("veterancy").promoted > 0 then
+        S.foes_at = 0
+        for _, u in ipairs(S.foe_list or {}) do if u.valid then S.foes_at = S.foes_at + 1 end end
+      end
+    end)
+  end
   schedule(60 + 100 * 60, function()
-    S.merit = 0
-    for _, u in pairs(surface().find_entities_filtered{name = "lp-trooper", force = "player"}) do
-      S.merit = math.max(S.merit, lp("merit", u.unit_number) or 0)
-    end
     S.foes = 0
     for _, u in ipairs(S.foe_list) do if u.valid then S.foes = S.foes + 1 end end
-    S.given = lp("debug_merit", "player", 3.5)
   end)
   schedule(60 + 140 * 60, function()
     local v = lp("veterancy")
     local q = v.by_force.player or {}
     local after = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
-    info(string.format("veteran: %s troopers, %s foes left, merit banked %s, given %s; promoted %d; by rank %s",
-      tostring(S.troopers), tostring(S.foes), tostring(S.merit), tostring(S.given), v.promoted, serpent.line(q)))
+    info(string.format("veteran: %s troopers, %s foes left, %s standing at the first promotion, merit given %s; promoted %d; "
+      .. "by rank %s; walk %d tables; keys moved %s", tostring(S.troopers), tostring(S.foes), tostring(S.foes_at),
+      tostring(S.given), v.promoted, serpent.line(q), v.walk_max, serpent.line(v.moved)))
     check("veteran: the fight ran (troopers deployed, the infantry killed)", (S.troopers or 0) >= 3 and S.foes == 0,
       string.format("%s troopers, %s left", tostring(S.troopers), tostring(S.foes)))
-    check("veteran: their kills earned merit", (S.merit or 0) > 0, tostring(S.merit))
-    check("veteran: promoted at the rally point", (q.uncommon or 0) >= 1, serpent.line(q))
-    check("veteran: none lost to the swap", after == (S.given or -1), string.format("%d after, %s given", after, tostring(S.given)))
+    check("veteran: a kill promoted a trooper in the fight, a foe still standing", (q.uncommon or 0) >= 1
+      and (S.foes_at or 0) >= 1, string.format("%s; %s standing", serpent.line(q), tostring(S.foes_at)))
+    -- (Against the troopers deployed less those killed: one counted lost before the deaths were counted had died.)
+    check("veteran: none lost to the swap", after == (S.troopers or -1) - (S.trooper_deaths or 0),
+      string.format("%d after, %s before, %d killed", after, tostring(S.troopers), S.trooper_deaths or 0))
+    traced("")
     -- Merit's balance (the user: "a huge wave of small biters should not give 1 point each if the max a behemoth will
     -- give is 4?"): a kill worth the victim's health times damage over the killer's; a small biter to a trooper under a
     -- tenth, a peer one; a behemoth's last shot lifts a fresh trooper to its next rank (3), no more.
@@ -17582,6 +17614,10 @@ script.on_event(defines.events.on_entity_died, function(e)
   if S.ram0 and S.turrets0 and e.cause and e.cause.valid and e.cause.name == "lp-grubstake-dozer" then
     S.dozer_kills = S.dozer_kills or {}
     S.dozer_kills[e.entity.name] = (S.dozer_kills[e.entity.name] or 0) + 1
+  end
+  -- (Veteran: the player's troopers that died in the fight, told apart from one lost to a swap.)
+  if params.scenario == "veteran" and e.entity.name == "lp-trooper" and e.entity.force.name == "player" then
+    S.trooper_deaths = (S.trooper_deaths or 0) + 1
   end
   if S.raiders and e.entity.name == "lp-trooper" then
     local c = e.cause and e.cause.valid and e.cause

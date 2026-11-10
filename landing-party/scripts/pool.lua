@@ -6,9 +6,8 @@
 --   strength    the roster's live count: what the cap holds
 --   give        units done with a job: into the garrison when home, else on their way back (b.returning) until they are
 --   take        units for a job, from the garrison, never below a floor
--- A leaf: it reads storage and the settlement only, and promotes at the homecoming (veterancy.lua, a leaf too).
+-- A leaf: it reads storage and the settlement only.
 local shared = require("__landing-party__.shared")
-local veterancy = require("__landing-party__.scripts.veterancy")
 local pool = {}
 
 local HOME = 40                    -- a unit within this of the lander or a depot is home
@@ -105,21 +104,6 @@ local function home_near(b, p)
   return false
 end
 
--- Home: a unit its merit has earned a rank is promoted in the garrison (veterancy.lua: a rank comes only at home, where
--- no job holds it), its copy enlisted in its place. Only from pool.tick, never as a unit is given: a caller goes on with
--- the units it gave (finish orders them home), and a promoted one was gone under it (the regression after 0.2.299:
--- clear worms and culture crashed in ops.finish, LuaEntity invalid).
-local function homecoming(b, u)
-  local old = u.unit_number
-  local n = veterancy.promote(u)
-  if n ~= u then
-    storage.unit_owner[old] = nil
-    if b.roster then b.roster[old] = nil end
-    pool.enlist(b, n)
-  end
-  return n
-end
-
 -- Units done with a job: home already, into the garrison; else on their way back until they are (pool.tick).
 function pool.give(b, units)
   b.returning = b.returning or {}
@@ -136,9 +120,6 @@ function pool.give_one(b, u) pool.give(b, {u}) end
 -- leash and its order home take care of it) rejoins after RETURN_MAX regardless, where it stands.
 local RETURN_MAX = 5 * 3600
 function pool.tick(b)
-  for i, u in ipairs(b.garrison) do
-    if u.valid and veterancy.earned(u) > veterancy.rank(u) then b.garrison[i] = homecoming(b, u) end
-  end
   local r = b.returning
   if not r or #r == 0 then return end
   b.returning_since = b.returning_since or {}

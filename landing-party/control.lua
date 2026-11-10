@@ -118,6 +118,8 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
+  -- (First: a promotion swaps a unit before any module walks its lists this tick.)
+  veterancy.tick(e.tick)
   biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
@@ -509,7 +511,7 @@ remote.add_interface("landing-party", {
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
     if t.crews_off ~= nil then storage.crews_off = t.crews_off or nil end
     -- (0.2.29's ground handling, each off: bisecting what it changed.)
-    for _, k in ipairs({"blast_off", "landfill_off", "pier_off", "air_trace", "air_straight", "dismantle_off", "vet_off"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
+    for _, k in ipairs({"blast_off", "landfill_off", "pier_off", "air_trace", "air_straight", "dismantle_off", "vet_off", "vet_trace", "rewire_off"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
     if t.grow_to_line_off ~= nil then storage.grow_to_line_off = t.grow_to_line_off or nil end
     if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end
@@ -998,7 +1000,7 @@ remote.add_interface("landing-party", {
       for _, u in pairs(pool.roster(storage.bases[id])) do list[#list + 1] = u end
     end
     local k = 0
-    for _, u in ipairs(list) do if u.valid then storage.merit[u.unit_number] = n; k = k + 1 end end
+    for _, u in ipairs(list) do if u.valid then storage.merit[u.unit_number] = n; veterancy.check(u); k = k + 1 end end
     return k
   end,
   -- Tests only: the share a raid of these units turns home below, from `share` (veterancy.abort_share), and the first's
@@ -1019,6 +1021,14 @@ remote.add_interface("landing-party", {
         if u.name:sub(1, 3) == "lp-" then q[u.quality.name] = (q[u.quality.name] or 0) + 1 end
       end
       if next(q) then out.by_force[f.name] = q end
+    end
+    -- (And how many of the corporations' ranked units a settlement still owns: a promoted raider came home its own.)
+    out.ranked_owned, out.ranked = 0, 0
+    for _, u in pairs(game.surfaces[1].find_entities_filtered{type = {"unit", "spider-unit"}}) do
+      if u.name:sub(1, 3) == "lp-" and u.quality.level > 0 and shared.is_corp(u.force.name) then
+        out.ranked = out.ranked + 1
+        if storage.unit_owner and storage.unit_owner[u.unit_number] then out.ranked_owned = out.ranked_owned + 1 end
+      end
     end
     return out
   end,
