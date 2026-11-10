@@ -1001,6 +1001,9 @@ remote.add_interface("landing-party", {
     for _, u in ipairs(list) do if u.valid then storage.merit[u.unit_number] = n; k = k + 1 end end
     return k
   end,
+  -- Tests only: the share a raid of these units turns home below, from `share` (veterancy.abort_share), and the first's
+  -- scale.
+  debug_abort_share = function(members, share) return {veterancy.abort_share(members, share), veterancy.scale(members[1])} end,
   -- A unit's merit banked (veterancy.lua).
   merit = function(unit_number) return storage.merit and storage.merit[unit_number] end,
   -- Veterancy: promotions, the highest merit banked, and each force's units by rank (quality).

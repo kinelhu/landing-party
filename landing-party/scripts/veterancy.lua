@@ -80,6 +80,22 @@ function veterancy.promote(u)
   return n
 end
 
+-- A ranked unit's strength over its rank's normal (health times damage, the probe's: 1.3 and 1.48 a level): what the
+-- AI's sums of worth count it as.
+function veterancy.scale(u)
+  local r = veterancy.rank(u)
+  return (1 + 0.3 * r) * (1 + 0.48 * r)
+end
+
+-- The share of a raid's launched units it turns home below (ops: 0.5, a prospector's 0.7): with an Elite or a Hero in
+-- it, at least ELITE_SHARE (the user: "preserving highly elite units vs throwing mass prod in the grinder").
+veterancy.ELITE_SHARE = {[2] = 0.6, [3] = 0.7}
+function veterancy.abort_share(members, share)
+  local top = 0
+  for _, u in ipairs(members or {}) do if u.valid then top = math.max(top, veterancy.rank(u)) end end
+  return math.max(share, veterancy.ELITE_SHARE[math.min(top, 3)] or 0)
+end
+
 function veterancy.stats()
   local out = {promoted = storage.promoted or 0, merit_max = 0}
   for _, m in pairs(storage.merit or {}) do out.merit_max = math.max(out.merit_max, m) end

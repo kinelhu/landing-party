@@ -15,7 +15,7 @@ digraph ai {
     "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "landfx" [label="landfx\n239 lines", width=1.07, fillcolor="#eef2f7"];
     "burstfx" [label="burstfx\n305 lines", width=1.14, fillcolor="#eef2f7"];
-    "veterancy" [label="veterancy\n89 lines", width=0.90, fillcolor="#d9f0d9"];
+    "veterancy" [label="veterancy\n105 lines", width=0.92, fillcolor="#d9f0d9"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
@@ -62,10 +62,10 @@ digraph ai {
   }
   subgraph cluster_5 { label="Army and operations"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "army" [label="army\n1055 lines", width=1.97, fillcolor="#f7dede"];
-    "ops" [label="ops\n2166 lines", width=3.21, fillcolor="#f7dede"];
+    "ops" [label="ops\n2168 lines", width=3.21, fillcolor="#f7dede"];
     "routing" [label="routing\n420 lines", width=1.27, fillcolor="#eef2f7"];
     "intel" [label="intel\n291 lines", width=1.12, fillcolor="#eef2f7"];
-    "airraid" [label="airraid\n126 lines", width=0.94, fillcolor="#eef2f7"];
+    "airraid" [label="airraid\n127 lines", width=0.94, fillcolor="#eef2f7"];
     "cannon" [label="cannon\n333 lines", width=1.17, fillcolor="#eef2f7"];
     "siege" [label="siege\n2088 lines", width=3.12, fillcolor="#f7dede"];
     "assault" [label="assault\n142 lines", width=0.96, fillcolor="#eef2f7"];
@@ -110,7 +110,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1156 lines", width=2.08, fillcolor="#f7dede"];
+    "control" [label="control\n1159 lines", width=2.09, fillcolor="#f7dede"];
     "dev" [label="dev\n566 lines", width=1.43, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];
@@ -120,6 +120,7 @@ digraph ai {
   "airraid" -> "firemap";
   "airraid" -> "know";
   "airraid" -> "threat";
+  "airraid" -> "veterancy";
   "army" -> "airraid";
   "army" -> "know";
   "army" -> "ops";
@@ -258,6 +259,7 @@ digraph ai {
   "ops" -> "tactics";
   "ops" -> "threat";
   "ops" -> "tune";
+  "ops" -> "veterancy";
   "orbital" -> "achievements";
   "orbital" -> "threat";
   "pact" -> "base";

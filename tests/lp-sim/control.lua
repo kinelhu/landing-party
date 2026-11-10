@@ -2382,6 +2382,22 @@ scenarios.veteran = function()
     check("veteran: their kills earned merit", (S.merit or 0) > 0, tostring(S.merit))
     check("veteran: promoted at the rally point", (q.uncommon or 0) >= 1, serpent.line(q))
     check("veteran: none lost to the swap", after == (S.given or -1), string.format("%d after, %s given", after, tostring(S.given)))
+    -- The AI's care for them: a raid with an Elite in it turns home at 60% of its launched units, with a Hero at 70%, a
+    -- raid of Veterans at its own share (0.5); an Elite counts (1 + 0.3 * 2) * (1 + 0.48 * 2) its normal worth.
+    local made = {}
+    for _, q in ipairs({"uncommon", "rare", "epic"}) do
+      made[q] = surface().create_entity{name = "lp-infantry", position = {50, 20 + #made * 3}, force = FORCE, quality = q}
+    end
+    local vet = lp("debug_abort_share", {made.uncommon}, 0.5)
+    local elite = lp("debug_abort_share", {made.uncommon, made.rare}, 0.5)
+    local hero = lp("debug_abort_share", {made.epic}, 0.5)
+    info(string.format("veteran: abort shares %s %s %s", serpent.line(vet), serpent.line(elite), serpent.line(hero)))
+    check("veteran: a raid of Veterans turns home at its own share", math.abs(vet[1] - 0.5) < 1e-9, tostring(vet[1]))
+    check("veteran: with an Elite in it, at 60%", math.abs(elite[1] - 0.6) < 1e-9, tostring(elite[1]))
+    check("veteran: with a Hero, at 70%", math.abs(hero[1] - 0.7) < 1e-9, tostring(hero[1]))
+    check("veteran: an Elite's worth, 3.1 a normal's", math.abs(lp("debug_abort_share", {made.rare}, 0)[2] - 1.6 * 1.96) < 1e-6,
+      tostring(lp("debug_abort_share", {made.rare}, 0)[2]))
+    for _, u in pairs(made) do if u.valid then u.destroy() end end
   end)
 end
 

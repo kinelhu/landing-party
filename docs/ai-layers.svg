@@ -14,7 +14,7 @@
 <title>Seams (leaves)</title>
 <path fill="#d9f0d9" stroke="black" d="M643.25,-730.25C643.25,-730.25 541,-730.25 541,-730.25 535,-730.25 529,-724.25 529,-718.25 529,-718.25 529,-706.25 529,-706.25 529,-700.25 535,-694.25 541,-694.25 541,-694.25 643.25,-694.25 643.25,-694.25 649.25,-694.25 655.25,-700.25 655.25,-706.25 655.25,-706.25 655.25,-718.25 655.25,-718.25 655.25,-724.25 649.25,-730.25 643.25,-730.25"/>
 <text xml:space="preserve" text-anchor="middle" x="592.12" y="-713.8" font-family="Helvetica,sans-Serif" font-size="11.00">Seams (leaves)</text>
-<text xml:space="preserve" text-anchor="middle" x="592.12" y="-701.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1488 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="592.12" y="-701.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1504 lines</text>
 </g>
 <!-- Settlement -->
 <g id="node5" class="node">
@@ -64,8 +64,8 @@
 <title>Army and operations</title>
 <path fill="#f7dede" stroke="black" d="M688,-235.5C688,-235.5 536.25,-235.5 536.25,-235.5 530.25,-235.5 524.25,-229.5 524.25,-223.5 524.25,-223.5 524.25,-203.5 524.25,-203.5 524.25,-197.5 530.25,-191.5 536.25,-191.5 536.25,-191.5 688,-191.5 688,-191.5 694,-191.5 700,-197.5 700,-203.5 700,-203.5 700,-223.5 700,-223.5 700,-229.5 694,-235.5 688,-235.5"/>
 <text xml:space="preserve" text-anchor="middle" x="612.12" y="-221.05" font-family="Helvetica,sans-Serif" font-size="11.00">Army and operations</text>
-<text xml:space="preserve" text-anchor="middle" x="612.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9309 lines</text>
-<text xml:space="preserve" text-anchor="middle" x="612.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1055, ops 2166, siege 2088</text>
+<text xml:space="preserve" text-anchor="middle" x="612.12" y="-209.05" font-family="Helvetica,sans-Serif" font-size="11.00">22 modules, 9312 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="612.12" y="-197.05" font-family="Helvetica,sans-Serif" font-size="11.00">army 1055, ops 2168, siege 2088</text>
 </g>
 <!-- Perception and attempts (any attacker)&#45;&gt;Army and operations -->
 <g id="edge16" class="edge">
@@ -168,9 +168,9 @@
 <!-- Army and operations&#45;&gt;Seams (leaves) -->
 <g id="edge4" class="edge">
 <title>Army and operations&#45;&gt;Seams (leaves)</title>
-<path fill="none" stroke="#8899aa" stroke-width="6.8" d="M700.34,-214.73C770.79,-217.64 870.83,-227.98 952.12,-260.5 1028.97,-291.24 1025.63,-352.68 1017.12,-435 1012.66,-478.24 1020.77,-494.27 997.12,-530.75 925.27,-641.62 767.72,-684.96 671.68,-701.48"/>
-<polygon fill="#8899aa" stroke="#8899aa" stroke-width="6.8" points="670.85,-695.59 661.93,-703.07 672.76,-707.34 670.85,-695.59"/>
-<text xml:space="preserve" text-anchor="middle" x="1020.78" y="-461.2" font-family="Helvetica,sans-Serif" font-size="9.00">23</text>
+<path fill="none" stroke="#8899aa" stroke-width="7.2" d="M700.34,-214.73C770.79,-217.64 870.83,-227.98 952.12,-260.5 1028.97,-291.24 1025.63,-352.68 1017.12,-435 1012.66,-478.24 1020.77,-494.27 997.12,-530.75 925.27,-641.62 767.72,-684.96 671.68,-701.48"/>
+<polygon fill="#8899aa" stroke="#8899aa" stroke-width="7.2" points="670.89,-695.23 662.03,-703.05 672.91,-707.67 670.89,-695.23"/>
+<text xml:space="preserve" text-anchor="middle" x="1020.78" y="-461.2" font-family="Helvetica,sans-Serif" font-size="9.00">25</text>
 </g>
 <!-- Army and operations&#45;&gt;Perception and attempts (any attacker) -->
 <g id="edge3" class="edge">

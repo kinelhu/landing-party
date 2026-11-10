@@ -1026,7 +1026,7 @@ The aim: the player answers the faction with factory output, not clicks.
 - Next: tanks and walkers for the player; supply (healing near a powered beacon); capture of generator
   blocks; a fought capture that a sensible army wins.
 
-## Veterancy (designed 2026-11-10; ranks built 0.2.296, the AI's use of them to build)
+## Veterancy (designed 2026-11-10; ranks built 0.2.296, the AI's care for them 0.2.297)
 The user, 2026-11-10: "Veterancy system for individual units à la C&C. Rewards the AI mechanics we implemented that aim for
 attackers to return home. Incentivizes an alternative playstyle of preserving highly elite units vs throwing mass prod in
 the grinder."
@@ -1055,10 +1055,14 @@ Kessler-Hayashi camp given merit raided six undefended assemblers and four raide
 LP_MIX=off (debug_tune vet_off) fails the merit and promotion checks. Merit for a kill: health over the killer's (the
 strength measure of attempt.worth), at most 4.
 
-**What the AI does with it** (to build after the ranks):
-- its odds count a veteran at its rank (worth times health times damage: a Veteran about 1.9 a normal unit, an Elite 3.1);
-- loss aversion: a raid with veterans in it turns home sooner (abort share 0.6 for an Elite), and they are the last
-  taken for a desperate raid; Grubstake's prospector doctrine already leaves at 70%;
+**What the AI does with it** (0.2.297, the first two in part):
+- an air raid's worth (airraid.fliers, launch_air) counts a flier at its rank, `veterancy.scale`: health times damage,
+  1.3 and 1.48 a level (a Veteran 1.9 a normal unit, an Elite 3.1, a Hero 4.3). Ground odds still count heads (cap,
+  field: every regression number reads them); weighting them waits on a calibration pass;
+- loss aversion: a raid with an Elite in it turns home below 60% of its launched units, with a Hero 70%
+  (`veterancy.abort_share`; Grubstake's prospector doctrine already leaves at 70%). Checked in scenario veteran (0.5,
+  0.6, 0.7, an Elite's scale 3.136), seen failing with the shares removed. Veterans the last taken for a desperate raid:
+  not built;
 - its counters and learning read unit names, unchanged: a veteran is the same kind.
 
 **What the player sees:** the quality badge on a ranked unit, a promotion notice (a short flying text, "Veteran", at the

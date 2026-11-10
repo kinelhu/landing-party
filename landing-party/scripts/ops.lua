@@ -19,6 +19,7 @@ local assault = require("__landing-party__.scripts.assault")
 local ground = require("__landing-party__.scripts.ground")
 local stance = require("__landing-party__.scripts.stance")
 local pool = require("__landing-party__.scripts.pool")
+local veterancy = require("__landing-party__.scripts.veterancy")
 local jammer = require("__landing-party__.scripts.jammer")
 local power = require("__landing-party__.scripts.power")
 local threat = require("__landing-party__.scripts.threat")
@@ -1229,7 +1230,7 @@ local function launch_air(b, key, trace, army)
     -- minimum it never went, airraid.)
     if worth < want or #members < airraid.MIN then
       members[#members + 1] = u
-      worth = worth + attempt.worth(u.name) / math.max(0.1, inf)
+      worth = worth + attempt.worth(u.name) * veterancy.scale(u) / math.max(0.1, inf)
     else
       pool.give_one(b, u)
     end
@@ -1839,7 +1840,8 @@ local function step(b, trace, army)
         force = enemies(game.forces[b.force])}
     end
     -- Prospector's eye (Grubstake): cowardice as doctrine, it leaves at 70% strength.
-    local share = rd.has(b.corp, "prospector") and 0.7 or 0.5
+    -- (And sooner with its Elites in it: veterancy.abort_share.)
+    local share = veterancy.abort_share(op.members, rd.has(b.corp, "prospector") and 0.7 or 0.5)
     if n < share * op.launched and turrets > 0 then return finish(b, "aborted", trace, army) end
     loot(b, op, t, pos, surface, trace)
     if op.loot then op.last_pos = {x = pos[1] or pos.x, y = pos[2] or pos.y} end

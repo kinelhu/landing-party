@@ -9,6 +9,7 @@ local shared = require("__landing-party__.shared")
 local threat = require("__landing-party__.scripts.threat")
 local know = require("__landing-party__.scripts.know")
 local attempt = require("__landing-party__.scripts.attempt")
+local veterancy = require("__landing-party__.scripts.veterancy")
 local costmap = require("__landing-party__.scripts.costmap")
 local firemap = require("__landing-party__.scripts.firemap")
 
@@ -117,7 +118,7 @@ function airraid.fliers(b)
   for _, u in ipairs(b.garrison or {}) do
     if u.valid and is_flier(u.name) then
       list[#list + 1] = u
-      worth = worth + attempt.worth(u.name) / math.max(0.1, inf)
+      worth = worth + attempt.worth(u.name) * veterancy.scale(u) / math.max(0.1, inf)
     end
   end
   return list, worth
