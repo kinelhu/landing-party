@@ -4,6 +4,24 @@
 -- Grubstake's are smelly, cheap and many; Serenity's precise and few. Loaded after corps.lua, so each corporation's own
 -- prototypes carry its own (Grubstake's are copies of Serenity's, made before this).
 local shared = require("shared")
+local SHEETS = require("graphics.sheets")
+-- The player's devices modelled (tools/blender/player_buildings.py; the user, 2026-11-10: "I still see some gross
+-- recolors"): three had been drawn in the world with their items' icons, the bait as an empty barrel, the trade post a
+-- tinted steel chest. A still body and shadow and its lights' frames (an entity that can animate), or the lights' first
+-- frame (a container's picture is a sprite).
+local function modelled(key, still)
+  local S = SHEETS["player/" .. key].north
+  local function f(part) return "__landing-party__/graphics/player/" .. key .. "/north-" .. part .. ".png" end
+  local body = {filename = f("body"), width = S.width, height = S.height, scale = 0.5, shift = S.shift}
+  local shadow = {filename = f("shadow"), width = S.width, height = S.height, scale = 0.5, shift = S.shift, draw_as_shadow = true}
+  local glow = {filename = f("glow"), width = S.width / 2, height = S.height / 2, scale = 1, shift = S.shift, draw_as_glow = true,
+    blend_mode = "additive"}
+  if still then return {layers = {body, glow, shadow}} end
+  body.repeat_count, shadow.repeat_count = S.frames, S.frames
+  glow.frame_count, glow.line_length, glow.animation_speed = S.frames, S.line_length, 0.15
+  body.animation_speed, shadow.animation_speed = 0.15, 0.15
+  return {layers = {body, glow, shadow}}
+end
 
 local G, S = shared.CORPS.grubstake.tint, {r = 0.62, g = 0.8, b = 1, a = 1}
 local COMPONENTS = {
@@ -56,7 +74,7 @@ data:extend({
     icon_size = 64, flags = {"placeable-neutral", "placeable-player", "player-creation", "placeable-off-grid"},
     max_health = 100, is_military_target = false, collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
     selection_box = {{-0.5, -0.7}, {0.5, 0.4}}, dying_explosion = "explosion",
-    picture = {filename = "__base__/graphics/icons/fluid/barreling/barrel-empty.png", size = 64, scale = 0.5, tint = G}},
+    animations = modelled("pheromone-bait")},
   {type = "item", name = "lp-bait", icons = {{icon = "__base__/graphics/icons/poison-capsule.png", tint = G}}, stack_size = 20,
     place_result = "lp-player-bait", subgroup = "lp-components", order = "y-bait"},
   {type = "recipe", name = "lp-bait", enabled = false, energy_required = 5,
@@ -80,6 +98,8 @@ local function device(name, icon, health, extra)
     collision_box = {{-0.4, -0.4}, {0.4, 0.4}}, selection_box = {{-0.5, -0.5}, {0.5, 0.5}}, dying_explosion = "explosion",
     picture = {filename = icon, size = 64, scale = 0.5, tint = G}}
   for k, v in pairs(extra or {}) do d[k] = v end
+  local key = name:gsub("^lp%-", "")
+  if SHEETS["player/" .. key] then d.picture, d.animations = nil, modelled(key) end
   return d
 end
 local BREAKER_DESC = {"entity-description.lp-pact-breaker", tostring(shared.BREAKER_MINUTES)}
@@ -116,7 +136,7 @@ data:extend({
     flags = {"placeable-neutral", "placeable-player", "player-creation"}, max_health = 200,
     minable = {mining_time = 0.5, result = "lp-border-stake"}, is_military_target = false,
     collision_box = {{-0.3, -0.3}, {0.3, 0.3}}, selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-    picture = {filename = "__base__/graphics/icons/rail-signal.png", size = 64, scale = 0.5, tint = S}},
+    animations = modelled("border-stake")},
   {type = "item", name = "lp-border-stake", icons = {{icon = "__base__/graphics/icons/rail-signal.png", tint = S}},
     stack_size = 10, place_result = "lp-border-stake", subgroup = "lp-components", order = "y-border"},
   {type = "recipe", name = "lp-border-stake", enabled = true, energy_required = 2,
@@ -144,6 +164,7 @@ post.fast_replaceable_group = nil
 if post.picture and post.picture.layers then
   for _, l in ipairs(post.picture.layers) do if not l.draw_as_shadow then l.tint = G end end
 end
+post.picture = modelled("trade-post", true)
 data:extend({post,
   {type = "item", name = "lp-trade-post", icons = {{icon = "__base__/graphics/icons/steel-chest.png", tint = G}}, stack_size = 10,
     place_result = "lp-trade-post", subgroup = "lp-components", order = "y-trade"},

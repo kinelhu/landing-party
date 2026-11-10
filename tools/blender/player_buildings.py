@@ -119,13 +119,130 @@ def threat_scanner(f):
     return posts(0.26, 0.22, 0.38)
 
 
+OCHRE = M("ochre", (0.52, 0.33, 0.1), 0.3, 0.6)
+RUST = M("rust", (0.25, 0.11, 0.05), 0.5, 0.7)
+WOOD = M("wood", (0.28, 0.17, 0.08), 0.0, 0.8)
+KHBLUE = M("khblue", (0.12, 0.17, 0.24), 0.5, 0.5)
+WHITE = M("white", (0.42, 0.43, 0.42), 0.2, 0.6)
+GREEN = M("greenlight", (0.2, 0.5, 0.1), 0.1, 0.2, emit=(0.6, 1.0, 0.25), strength=0.0)
+VIOLET = M("violet", (0.4, 0.2, 0.6), 0.1, 0.1, emit=(0.65, 0.35, 1.0), strength=0.0)
+BLUE = M("bluelight", (0.1, 0.2, 0.5), 0.1, 0.3, emit=(0.3, 0.55, 1.0), strength=0.0)
+GLASS = M("glass", (0.6, 0.7, 0.75), 0.0, 0.05)
+if os.path.isdir(lptex.TEX):
+    OCHRE = lptex.textured("ochre-t", "PaintedMetal004", hue=0.62, sat=0.7, val=0.55, scale=2.5, edge=(0.45, 0.4, 0.33), rough_add=0.15)
+    RUST = lptex.textured("rust-t", "MetalPlates013", val=0.55, scale=2.0, edge=(0.4, 0.33, 0.25))
+    KHBLUE = lptex.textured("khblue-t", "PaintedMetal006", hue=0.62, sat=0.35, val=0.45, scale=2.5, edge=(0.45, 0.46, 0.47))
+GLOWING |= {GREEN, VIOLET, BLUE}
+
+
+def lantern(x, y, z, m=AMBER):
+    cyl(0.05, 0.03, x, y, z, DARK, verts=12)
+    sph(0.045, x, y, z + 0.08, m)
+    for k in range(4):
+        a = k * math.pi / 2 + 0.4
+        rod((x + math.cos(a) * 0.055, y + math.sin(a) * 0.055, z + 0.03), (x + math.cos(a) * 0.055, y + math.sin(a) * 0.055, z + 0.14), 0.006, STEEL, verts=5)
+    cyl(0.06, 0.02, x, y, z + 0.14, DARK, verts=12)
+
+
+def trade_post(f):
+    # Grubstake's trading kiosk: a patched crate, an awning on two posts, a pay hatch, a lantern, a tally board.
+    bevel(B(0.74, 0.6, 0.5, 0, 0.05, 0, RUST), 0.02)
+    for k in range(3):
+        B(0.76, 0.02, 0.05, 0, -0.26, 0.08 + k * 0.17, WOOD, bevel=0.005)
+    bevel(B(0.3, 0.03, 0.18, -0.12, -0.27, 0.22, DARK), 0.01)
+    B(0.12, 0.01, 0.02, -0.12, -0.285, 0.33, AMBER, bevel=0.0)
+    for x in (-0.36, 0.36):
+        rod((x, -0.32, 0.0), (x, -0.32, 0.85), 0.022, WOOD, verts=6)
+    o = B(0.86, 0.36, 0.03, 0, -0.18, 0.82, OCHRE, bevel=0.005); o.rotation_euler = (math.radians(-14), 0, 0)
+    for k in range(4):
+        B(0.2, 0.37, 0.032, -0.32 + k * 0.215, -0.18, 0.822, RUST if k % 2 else OCHRE, bevel=0.0).rotation_euler = (math.radians(-14), 0, 0)
+    bevel(B(0.26, 0.02, 0.16, 0.18, -0.28, 0.5, WOOD), 0.005)
+    lantern(0.3, -0.32, 0.86)
+    cyl(0.1, 0.12, 0.25, 0.22, 0.5, STEEL, verts=16)
+
+
+def border_stake(f):
+    # Kessler-Hayashi's survey stake: a driven pile, banded, a survey plate, a blinking blue light on top.
+    cyl(0.16, 0.06, 0, 0, 0, DARK, verts=16)
+    for k in range(6):
+        cyl(0.07, 0.2, 0, 0, 0.06 + k * 0.2, KHBLUE if k % 2 == 0 else WHITE, verts=16)
+    lpkit.torus(0.075, 0.015, 0, 0, 0.7, HAZ)
+    bevel(B(0.3, 0.02, 0.22, 0.1, -0.08, 0.55, KHBLUE), 0.01)
+    B(0.22, 0.022, 0.03, 0.1, -0.09, 0.7, HAZ, bevel=0.0)
+    B(0.18, 0.022, 0.08, 0.1, -0.09, 0.6, WHITE, bevel=0.0)
+    cyl(0.05, 0.05, 0, 0, 1.26, DARK, verts=12)
+    sph(0.05, 0, 0, 1.34, BLUE)
+    for a in (0.3, 2.4, 4.4):
+        rod((0, 0, 0.0), (math.cos(a) * 0.3, math.sin(a) * 0.3, 0.0), 0.01, DARK, verts=4)
+
+
+def claim_marker(f):
+    # A Grubstake claim: a stake with its ochre flag, a claim plaque nailed on, a lantern at its foot, guy ropes.
+    rod((0, 0, 0), (0, 0, 1.4), 0.03, WOOD, verts=8)
+    import bmesh
+    bm = bmesh.new()
+    vs = [bm.verts.new(p) for p in ((0.0, 0, 1.38), (0.0, 0, 1.08), (0.38, 0, 1.2), (0.34, 0, 1.33))]
+    bm.faces.new(vs)
+    me = bpy.data.meshes.new("flag"); bm.to_mesh(me); bm.free()
+    o = bpy.data.objects.new("flag", me); scene.collection.objects.link(o); o.location = (0.03, 0, 0)
+    o.rotation_euler = (0, 0, math.radians(-20)); o.modifiers.new("t", "SOLIDIFY").thickness = 0.012; me.materials.append(OCHRE)
+    bevel(B(0.24, 0.02, 0.16, 0, -0.035, 0.6, WOOD), 0.005)
+    B(0.16, 0.022, 0.03, 0, -0.04, 0.64, OCHRE, bevel=0.0)
+    lantern(0.18, -0.12, 0.0)
+    for a in (0.8, 2.6, 4.6):
+        rod((0, 0, 0.9), (math.cos(a) * 0.42, math.sin(a) * 0.42, 0.0), 0.006, RUBBER, verts=4)
+        cyl(0.02, 0.05, math.cos(a) * 0.42, math.sin(a) * 0.42, 0.0, STEEL, verts=6)
+
+
+def pact_breaker(f):
+    # A jammer: a crate, its pacifier crystal glowing in a cage, a tall jamming antenna, cables.
+    bevel(B(0.7, 0.6, 0.36, 0, 0.05, 0, OCHRE), 0.03)
+    bevel(B(0.62, 0.52, 0.04, 0, 0.05, 0.36, DARK), 0.01)
+    for k in range(5):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.05 - 0.005 * k, depth=0.2 + 0.05 * (k % 2),
+                                            location=(-0.12 + (k % 3) * 0.06, -0.05 + (k // 3) * 0.06, 0.5), rotation=(0.2 * (k - 2), 0.15 * k, 0))
+        bpy.context.object.data.materials.append(VIOLET)
+    for k in range(6):
+        a = k * math.pi / 3
+        rod((-0.06 + math.cos(a) * 0.17, -0.02 + math.sin(a) * 0.17, 0.4), (-0.06 + math.cos(a) * 0.15, -0.02 + math.sin(a) * 0.15, 0.68), 0.01, STEEL, verts=5)
+    lpkit.torus(0.17, 0.02, -0.06, -0.02, 0.68, DARK)
+    rod((0.22, 0.18, 0.4), (0.24, 0.2, 1.35), 0.018, STEEL, verts=6)
+    for z in (0.75, 1.0, 1.2):
+        rod((0.13, 0.2, z), (0.35, 0.2, z), 0.008, STEEL, verts=4)
+    sph(0.03, 0.24, 0.2, 1.37, RED)
+    rod((0.22, -0.25, 0.1), (0.36, -0.36, 0.0), 0.02, RUBBER, verts=6)
+    B(0.2, 0.02, 0.08, 0.15, -0.25, 0.14, HAZ, bevel=0.0)
+
+
+def pheromone_bait(f):
+    # A pheromone sprayer: a gland sac in a cage on a tripod, its nozzle, a tank, the sac glowing green.
+    for a in (0.3, 2.4, 4.5):
+        rod((math.cos(a) * 0.3, math.sin(a) * 0.3, 0.0), (0, 0, 0.45), 0.018, STEEL, verts=6)
+    cyl(0.1, 0.06, 0, 0, 0.42, DARK, verts=16)
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.17, location=(0, 0, 0.62), segments=24, ring_count=12)
+    o = bpy.context.object; o.scale = (1, 0.85, 1.1); o.data.materials.append(GREEN)
+    for k in range(6):
+        a = k * math.pi / 3
+        rod((math.cos(a) * 0.2, math.sin(a) * 0.2, 0.47), (math.cos(a) * 0.2, math.sin(a) * 0.2, 0.8), 0.008, STEEL, verts=4)
+    lpkit.torus(0.2, 0.012, 0, 0, 0.8, STEEL)
+    rod((0, 0, 0.82), (0.05, -0.1, 0.95), 0.02, DARK, verts=6)
+    cyl(0.03, 0.05, 0.05, -0.1, 0.95, DARK, verts=8)
+    cyl(0.08, 0.28, 0.24, 0.12, 0.0, HAZ, verts=16)
+
+
 MODELS = {"rally-beacon": (rally_beacon, ["north", "east", "south", "west"]),
-          "threat-scanner": (threat_scanner, ["north", "east", "south", "west"])}
+          "threat-scanner": (threat_scanner, ["north", "east", "south", "west"]),
+          "trade-post": (trade_post, ["north"]), "border-stake": (border_stake, ["north"]),
+          "claim-marker": (claim_marker, ["north"]), "pact-breaker": (pact_breaker, ["north"]),
+          "pheromone-bait": (pheromone_bait, ["north"])}
 # Each frame's glow: the beacon's lamp pulses round (a rotating beacon's flash), the scanner's sweep light pulses.
 def glow(name, f):
     t = f / GLOW_FRAMES
     lpkit.emission(AMBER, 4.0 * max(0.0, math.cos(t * 2 * math.pi)) ** 2 + 0.4)
     lpkit.emission(RED, 3.0 * (0.5 + 0.5 * math.sin(t * 2 * math.pi)) + 0.3)
+    lpkit.emission(GREEN, 0.5 + 0.3 * math.sin(t * 2 * math.pi))
+    lpkit.emission(VIOLET, 2.0 + 1.0 * math.sin(t * 4 * math.pi))
+    lpkit.emission(BLUE, 4.0 * max(0.0, math.sin(t * 2 * math.pi)) ** 4 + 0.2)
 
 
 YAW = {"north": 0, "east": 270, "south": 180, "west": 90}

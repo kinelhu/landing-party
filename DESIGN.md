@@ -6195,7 +6195,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   light, two antennae), tools/blender/player_buildings.py: four directions, their wire posts' tips projected to the
   screen (posts.json, read by sheets_lua.py into the registry) for circuit_wire_connection_points; filmed wired on the
   Studio in every direction, the wires meeting the posts (docs/release/wires-film.lua). A combinator's sprite does not
-  animate: their lights lit, still. Their icons and the scanner's technologies re-cut from the renders.
+  animate: their lights lit, still. Their icons and the scanner's technologies re-cut from the renders. Then (0.2.290)
+  five more: the trade post (a patched Grubstake kiosk under an awning, a pay hatch, a lantern), the border stake (a
+  banded Kessler-Hayashi survey pile, its plate, a blinking blue light), the claim marker (a stake flying Grubstake's
+  ochre flag, guy ropes, a lantern), the pact breaker (a crate, its pacifier crystal glowing in a cage, a jamming
+  antenna) and the pheromone bait (a gland sac in a cage on a tripod sprayer); three had been drawn in the world with
+  their items' icons, the bait an empty barrel, the post a tinted steel chest. Their lights animate where the entity can
+  (a simple entity's animations), still on the post (a container's picture).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

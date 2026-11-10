@@ -1,0 +1,12 @@
+{
+ "north": {
+  "width": 98,
+  "height": 116,
+  "shift": [
+   0.484375,
+   -0.546875
+  ],
+  "glow_frames": 8,
+  "line_length": 4
+ }
+}
