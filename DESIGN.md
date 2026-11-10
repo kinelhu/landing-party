@@ -6468,6 +6468,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lost the trooper. Caught by the scenario's trace (paths before and after differed). Keys now move only in the tables
   listed in `veterancy.KEYED`; the trace counts a unit's number elsewhere apart (10 such in the camp run, none a reference).
   A new table keyed by unit number goes in that list, or the trace shows it missed.
+- **The flak turret's model wore the repaint's ochre, and fired no flak** (0.2.315; the user, 2026-11-10: "Does the flak
+  turret have the black puffs like the buggy btw?"). Its base was still dyed Grubstake's ochre by the tint loop of its
+  repainted days (the dump: the base tinted, the head not, so the two halves differed), and its shot made vanilla's plain
+  explosion only. Now untinted, and it fires as the flak buggy does (units.lua anti_air): three black puffs jittered round
+  the burst at a flier's height, and the gun's flash at its muzzle. Checked in the dump; seen in game: not yet (the
+  settlement film).
 - **The yard's tables were missing from KEYED** (0.2.312). A settlement's yard keeps each garrison unit's slot, when it
   was sent and where (`b.yard_slot`, `yard_sent`, `yard_dest`, `yard_tries`), keyed by unit number. A unit promoted
   in the yard lost its slot to its old number. Found reading what the walk visits, not by the trace: no test had

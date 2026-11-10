@@ -95,15 +95,14 @@ do
     action_delivery = {type = "instant", target_effects = {{type = "damage", damage = {amount = 22, type = "explosion"}}}}}}
   t.attack_parameters = {type = "projectile", ammo_category = "laser", cooldown = 30, range = 26,
     sound = table.deepcopy(data.raw.gun["submachine-gun"].attack_parameters.sound),
+    -- The flak buggy's look (units.lua anti_air; the user, 2026-11-10: "Does the flak turret have the black puffs like
+    -- the buggy btw?": it had vanilla's plain explosion only): three black puffs jittered round the burst at a flier's
+    -- height, and the gun's flash at its muzzle.
     ammo_type = {energy_consumption = "300kJ", action = {type = "direct", action_delivery = {type = "instant",
-      target_effects = {{type = "create-entity", entity_name = "explosion"}, burst}}}}}
-  local function tint(v, seen)
-    if type(v) ~= "table" or seen[v] then return end
-    seen[v] = true
-    if v.filename or v.filenames then v.tint = G end
-    for _, w in pairs(v) do tint(w, seen) end
-  end
-  tint(t.graphics_set, {})
+      source_effects = {{type = "create-explosion", entity_name = "explosion-gunshot"}},
+      target_effects = {{type = "create-entity", entity_name = "lp-flak-puff", repeat_count = 3,
+        offset_deviation = {{-1.6, -1.2}, {1.6, 1.2}}}, {type = "create-entity", entity_name = "explosion"}, burst}}}}}
+  -- (No tint: the repaint's, left on the model's base, had dyed it ochre under an untinted head; the dump showed it.)
   data:extend({t,
     {type = "item", name = "lp-flak-turret", icons = {{icon = "__base__/graphics/icons/laser-turret.png", tint = G}},
       subgroup = "turret", order = "z[lp-flak-turret]", place_result = "lp-flak-turret", stack_size = 50},
