@@ -6366,6 +6366,11 @@ Bugs and surprises the headless runs caught, each kept as a check:
   a turret ring, a squat nozzle block with its pilot light); Grubstake's a drum-fed scrap flamer (two oil drums lashed
   over the inlets, a pressure bottle and hose, a patched shield, a long nozzle, its igniter amber). The muzzle shifts
   are vanilla's still (assumed close enough, not checked in a game).
+- **Unused recolours pruned** (0.2.306; scripts/make_sprites.py --prune). The repaints of the buildings now modelled, and
+  some no prototype had drawn before (the wet drill's, the lander's ground), were still shipped: 143 files, 37.7 MB of
+  the mod's graphics (the models added about 25). --prune reads the dump and deletes every manifest target no prototype
+  draws, with its manifest line; run after every --write (a --write alone brings them back). Checked: no script names a
+  recolour by path (the runtime draws prototypes), and after the prune the check passes with 0 of 125 targets unused.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -16,6 +16,9 @@ looks flat. The user chose a mixed treatment (2026-10-14):
 are) into landing-party/graphics/<corp>/<path under graphics/entity> and writes landing-party/graphics/manifest.lua,
 which corps.lua reads to point each corporation's prototypes at its files (and drop the whole-sprite tint on them).
 --sheet draws a review sheet: vanilla, today's tint, the new recolour, for each corporation.
+--prune (after scripts/check.sh has dumped the prototypes) deletes the recolours no prototype draws any more and their
+manifest lines: a building modelled in Blender (tools/blender/faction_works.py, corps.lua MODELLED) draws its own sheet,
+and its repaint was 22 MB unused (2026-11-10). Run it after every --write.
 """
 import json
 import sys
@@ -258,5 +261,33 @@ def main():
         print("sheet:", sheet, out.size)
 
 
+def prune():
+    import re
+    d = json.load(open(DUMP))
+    used = set()
+    def walk(x):
+        if isinstance(x, dict):
+            for v in x.values(): walk(v)
+        elif isinstance(x, list):
+            for v in x: walk(v)
+        elif isinstance(x, str) and x.startswith("__landing-party__/"):
+            used.add(x)
+    walk(d)
+    path = OUT / "manifest.lua"
+    lines = path.read_text().splitlines()
+    keep, gone, size = [], 0, 0
+    for line in lines:
+        m = re.search(r'= "(__landing-party__/graphics/[^"]+)",$', line)
+        if m and m[1] not in used:
+            f = OUT.parent / m[1][len("__landing-party__/"):]
+            if f.exists():
+                size += f.stat().st_size; f.unlink()
+            gone += 1
+            continue
+        keep.append(line)
+    path.write_text("\n".join(keep) + "\n")
+    print("pruned", gone, "recolours,", round(size / 1e6, 1), "MB")
+
+
 if __name__ == "__main__":
-    main()
+    prune() if "--prune" in sys.argv else main()
