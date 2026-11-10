@@ -6140,6 +6140,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   overlap comes to the shadow's darkness, and wider and fainter the higher the platform (a penumbra: soft from high up,
   sharp over the point); life size now (at 1.5 the hard strips filled the screen with slabs). Filmed: one soft shape, its
   five barrels its prongs. Its shadow 208 splats in scenario cannon.
+- **Squad sizes: retiring by signal** (0.2.286; the user, 2026-11-10: "Retiring: no signal for this? Manual only is not
+  good"). A rally beacon's lp-squad-<unit> virtual signals (one a unit, shared.SQUAD_SIGNALS) cap how many of that unit
+  its squad keeps. command.squad_room: a new unit joins the nearest beacon in reach with room for it (no cap for it is
+  room); every beacon in reach full, its order waits (a barracks' output fills and it stops; a muster point holds it).
+  command.enforce, every 2 s: above a cap, the surplus, farthest from the rally point first, retires as Alt+R's do (walks
+  to a barracks, hands in its order, marked for the robots). Wired, the caps follow a circuit (the threat scanner's
+  counts, a train's cargo). Scenario squad: a cap of 4, four deployed and two waiting; lowered to 2, two handed in;
+  cleared, the waiting deployed (seen failing with the caps off: six deployed, none retired). Manual: Rally beacons.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

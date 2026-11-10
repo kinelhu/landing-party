@@ -46,9 +46,9 @@ Each level of command bandwidth unlocks orders at the barracks. A unit's share o
 
 {{< include _generated/cards-player.qmd >}}
 
-## Rally beacons
+## Rally beacons {#sec-beacons}
 
-A rally beacon is a constant combinator. Each new unit joins the beacon nearest to where it was trained and follows it
+A rally beacon is a constant combinator. Each new unit joins the nearest beacon with room for it and follows it
 until that beacon is removed; then it joins the nearest one again. A unit with no beacon nearby stands where it is, so
 place a beacon before your first barracks finishes an order.
 
@@ -63,6 +63,14 @@ Open the beacon and set a signal to give its squad a stance. With more than one,
   the rally point. Holding an outpost is meant to capture it, but capture does not work yet.
 - **R: retreat.** The squad walks back to the nearest barracks without stopping to fight, and heals there if the
   barracks has power.
+
+**Squad sizes.** Each kind of unit has a squad size signal, such as *Squad size: troopers*. Set one on a beacon and its
+squad keeps at most that many of that unit. New units join the nearest beacon that still has room for them. When every
+beacon in reach is full for a unit, its orders wait in the barracks, and a barracks whose output fills stops training.
+Lower a squad size and the surplus, those farthest from the rally point first, walk back to a barracks and hand in their
+orders, as retired units do. Raise it or clear it and the waiting orders deploy. A beacon with no squad size for a unit
+takes as many as come. Wired to a circuit, the sizes can follow the factory, for example more tanks when the threat
+scanner sees more corporation armour.
 
 **The rally point.** Signals X and Y move the rally point that many tiles east and south of the beacon (negative values
 move it west and north), up to {{< var army.offset_max >}} tiles. A ring at the rally point shows its reach, gray
@@ -90,7 +98,8 @@ attack-move onto them.
 below). Each one walks back to the nearest barracks without stopping to fight and hands in its order beside it. The
 order is marked for deconstruction, so your robots carry it to storage, and a muster point can turn it into a unit
 again later. A retired unit no longer takes any of your command bandwidth. With no barracks, a unit hands in its order
-where it stands.
+where it stands. To keep a squad at a size without picking units by hand, use squad sizes on its beacon (see
+[Rally beacons](#sec-beacons)).
 
 ## Command bandwidth
 

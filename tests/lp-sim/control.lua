@@ -2307,6 +2307,63 @@ scenarios.retire = function()
   end)
 end
 
+-- Squad sizes (command.lua squad_room and enforce; the user, 2026-11-10: "Retiring: no signal for this? Manual only is not
+-- good"): a barracks holding six trooper orders, a rally beacon set to a squad of 4 troopers (its lp-squad-trooper
+-- signal): four deploy, two wait in the barracks. The cap lowered to 2: two walk home and hand their orders in. The cap
+-- cleared: every order left deploys.
+scenarios.squad = function()
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  local function cap(n)
+    local cb = S.beacon.get_control_behavior()
+    local sec = cb.get_section(1) or cb.add_section()
+    if n then sec.set_slot(1, {value = {type = "virtual", name = "lp-squad-trooper", quality = "normal"}, min = n})
+    else sec.clear_slot(1) end
+  end
+  local function waiting()
+    return S.barracks.get_inventory(defines.inventory.crafter_output).get_item_count("lp-trooper-order")
+  end
+  local function handed()
+    local n = 0
+    for _, e in pairs(surface().find_entities_filtered{type = "item-entity", position = {0.5, 3}, radius = 8}) do
+      if e.stack.name == "lp-trooper-order" then n = n + e.stack.count end
+    end
+    return n
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -40, 40, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    S.beacon = put("lp-rally-beacon", 10.5, -18.5)
+    cap(4)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 6}
+  end)
+  schedule(60 + 30 * 60, function()
+    S.first = {units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}, waiting = waiting()}
+    cap(2)
+  end)
+  schedule(60 + 90 * 60, function()
+    S.second = {units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}, waiting = waiting(),
+      handed = handed(), auto = lp("army").auto_retired}
+    cap(nil)
+  end)
+  schedule(60 + 120 * 60, function()
+    S.third = {units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}, waiting = waiting()}
+    info("squad: " .. serpent.line({S.first, S.second, S.third}))
+    check("squad: a squad of 4: four deployed, two waiting in the barracks", S.first.units == 4 and S.first.waiting == 2,
+      serpent.line(S.first))
+    check("squad: lowered to 2: two walked home and handed their orders in", S.second.units == 2 and S.second.handed == 2
+      and S.second.auto == 2, serpent.line(S.second))
+    check("squad: cleared: the orders waiting deployed", S.third.units == 4 and S.third.waiting == 0, serpent.line(S.third))
+  end)
+end
+
 -- The campaign's player (contact, LP_MIX=campaign): three rules, every 5 minutes, through what a player has.
 --   answer  each place it lost something (a ghost its robots have not rebuilt, or anything outside their reach,
 --           seen as a ghost) gets two laser turrets once, at most 6 + 4 per era in all

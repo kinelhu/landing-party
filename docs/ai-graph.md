@@ -25,7 +25,7 @@ Boxes are modules, sized by lines, in their layers (green: a leaf, it requires n
 | `army` | 1055 | airraid, know, ops, pool, rd, rng, tune | base, control, dev, faction, war |  | 60, 300, 600 |  | engine_grouped, engine_ungrouped, rails_ungrouped |
 | `faction` | 937 | army, base, costmap, firemap, landfx, layout, names, ops, pact, pods, rd, site, threat, war | control, dev, phases | phases.gate_open, phases.on_trigger | 60, 600 |  | corps, faction, landing_jobs, landing_told, last_landing |
 | `base` | 880 | army, blocks, chart, construction, landfx, layout, lights, modules, names, ops, planner, rng, site, tune | control, cordon, crew, dev, dome, faction, jumper, ledger, pact, prospect, prowl, road, skim, tap, trade, war | cordon.cordon_ring, crew.crew_far, crew.crew_rebuild, crew.crew_take, faction.on_export, ops.siege_goal, war.footing | 7, 60, 120, 600, 3600, 7200 |  | lab_look, next_id, wrecks |
-| `command` | 775 | (leaf) | control, dev |  | 30, 60, 120 |  | cmd |
+| `command` | 878 | (leaf) | control, dev |  | 30, 60, 120 |  | cmd |
 | `war` | 628 | army, base, lights, ops, pods, pool, rd, rng, stance, strategy, threat, tune | control, faction, jumper, tap | standing.forgive | 600 |  | corps, failed_sites, orbitals, reliefs |
 | `creep` | 590 | costmap, tune | control, farm, studies |  |  |  | creep |
 | `dev` | 566 | army, base, burstfx, cannon, command, faction, farm, jumper, names, ops, orbital, ram, standing, stun, tap | control |  |  |  | chartcheck, cordon_off, dev_cannon, dev_platform, era_override, hq_fast, ram_trace, trace |

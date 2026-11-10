@@ -118,20 +118,32 @@ local function nearest(list, pos, force, range)
   return best
 end
 
--- Orders in `inv` become units beside `at` (a barracks or a muster point), assigned to the nearest beacon, while the
--- force's bandwidth has room.
-local function deploy(at, inv, room)
+-- Squad sizes (the user, 2026-11-10: "Retiring: no signal for this? Manual only is not good"): a rally beacon's
+-- lp-squad-<unit> signals (shared.SQUAD_SIGNALS) cap how many of that unit its squad keeps. An order deploys to the nearest
+-- beacon in reach with room for its unit (one without a cap for it has room); with every beacon in reach full, it waits
+-- where it is (a barracks' output fills and the barracks stops; a muster point holds it). Above a cap, the surplus walks
+-- to a barracks and hands its orders in (enforce, below). squad_room: below, after signals.
+local squad_room
+-- Orders in `inv` become units beside `at` (a barracks or a muster point), assigned to the nearest beacon with room for
+-- them, while the force's bandwidth has room.
+local function deploy(at, inv, room, squads)
   local f = at.force
   for item, name in pairs(shared.ORDERS) do
     for _ = 1, inv and inv.get_item_count(item) or 0 do
       local need = shared.POPULATION[name]
       if room[f.index] < need then break end
+      local beacon, full = squad_room(at.position, f, name, squads)
+      if full then break end
       local p = at.surface.find_non_colliding_position(name, {at.position.x, at.position.y + 3}, 10, 0.5)
       local u = p and at.surface.create_entity{name = name, position = p, force = f}
       if u then
         room[f.index] = room[f.index] - need
         inv.remove{name = item, count = 1}
-        local beacon = nearest(storage.cmd.beacons, at.position, f, ASSIGN_RANGE)
+        if beacon then
+          local c = squads.count[beacon.unit_number] or {}
+          c[name] = (c[name] or 0) + 1
+          squads.count[beacon.unit_number] = c
+        end
         storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
         storage.cmd.trained = (storage.cmd.trained or 0) + 1
       end
@@ -151,8 +163,10 @@ end
 
 -- Finished orders become units beside the barracks (unless it packs) and from what a muster point holds.
 -- A finished order waits in the barracks while bandwidth is full; with its output full, the barracks stops.
+local squad_counts   -- (below)
 local function train()
   local room = {}
+  local squads = squad_counts()
   local function has_room(f)
     if room[f.index] == nil then room[f.index] = command.capacity(f) - population(f) end
   end
@@ -161,7 +175,7 @@ local function train()
       storage.cmd.barracks[k] = nil
     elseif not packing(b) then
       has_room(b.force)
-      deploy(b, b.get_inventory(defines.inventory.crafter_output), room)
+      deploy(b, b.get_inventory(defines.inventory.crafter_output), room, squads)
     end
   end
   for k, m in pairs(storage.cmd.musters or {}) do
@@ -169,7 +183,7 @@ local function train()
       storage.cmd.musters[k] = nil
     else
       has_room(m.force)
-      deploy(m, m.get_inventory(defines.inventory.chest), room)
+      deploy(m, m.get_inventory(defines.inventory.chest), room, squads)
     end
   end
 end
@@ -196,6 +210,52 @@ local function signals(beacon)
     end
   end
   return out
+end
+
+-- A beacon's squad sizes: unit name to its cap, nil where it sets none.
+local function caps(beacon)
+  local sig, out = signals(beacon), nil
+  for unit, s in pairs(shared.SQUAD_SIGNALS) do
+    if sig[s] then out = out or {}; out[unit] = math.max(0, sig[s]) end
+  end
+  return out
+end
+command.caps = caps
+
+-- Each beacon's units by name (alive, not on their way to retire), and its caps, read once a pass.
+squad_counts = function()
+  local count, cap = {}, {}
+  for _, t in pairs(storage.cmd.troopers) do
+    if t.beacon and t.unit.valid and not (t.manual and t.manual.kind == "retire") then
+      local c = count[t.beacon] or {}
+      c[t.unit.name] = (c[t.unit.name] or 0) + 1
+      count[t.beacon] = c
+    end
+  end
+  return {count = count, cap = cap}
+end
+
+-- The beacon a new unit of `name` joins: the nearest in reach with room for it. Returns it (nil: none in reach), and
+-- whether every beacon in reach is full for it (the order then waits).
+squad_room = function(pos, force, name, squads)
+  local list = {}
+  for k, b in pairs(storage.cmd.beacons) do
+    if not b.valid then
+      storage.cmd.beacons[k] = nil
+    elseif b.force == force then
+      local d = (b.position.x - pos.x) ^ 2 + (b.position.y - pos.y) ^ 2
+      if d <= ASSIGN_RANGE * ASSIGN_RANGE then list[#list + 1] = {b = b, d = d} end
+    end
+  end
+  if #list == 0 then return nil, false end
+  table.sort(list, function(x, y) return x.d < y.d end)
+  for _, e in ipairs(list) do
+    local id = e.b.unit_number
+    if squads.cap[id] == nil then squads.cap[id] = caps(e.b) or false end
+    local c = squads.cap[id] and squads.cap[id][name]
+    if not c or ((squads.count[id] or {})[name] or 0) < c then return e.b, false end
+  end
+  return nil, true
 end
 
 -- A beacon's orders: the stance, and the rally point, the beacon moved by signals X and Y (tiles, capped):
@@ -680,6 +740,48 @@ local function retire_step()
   end
 end
 
+-- Squad sizes kept (see squad_room): above a beacon's cap for a unit, the surplus, farthest from its rally point first,
+-- walks to the nearest barracks and hands in its orders, as a retired unit does.
+local function enforce()
+  local units = {}
+  for k, t in pairs(storage.cmd.troopers) do
+    if t.beacon and t.unit.valid and not (t.manual and t.manual.kind == "retire") then
+      units[t.beacon] = units[t.beacon] or {}
+      local list = units[t.beacon][t.unit.name] or {}
+      list[#list + 1] = {k = k, t = t}
+      units[t.beacon][t.unit.name] = list
+    end
+  end
+  for id, by in pairs(units) do
+    local b = storage.cmd.beacons[id]
+    local cap = b and b.valid and caps(b)
+    if cap then
+      local rally = plan(b).pos
+      for name, list in pairs(by) do
+        local c = cap[name]
+        if c and #list > c then
+          table.sort(list, function(x, y)
+            local px, py = x.t.unit.position, y.t.unit.position
+            return (px.x - rally.x) ^ 2 + (px.y - rally.y) ^ 2 > (py.x - rally.x) ^ 2 + (py.y - rally.y) ^ 2
+          end)
+          storage.cmd.seq = (storage.cmd.seq or 0) + 1
+          for i = 1, #list - c do
+            local e = list[i]
+            local home = home_for(e.t.unit)
+            if home then
+              e.t.manual, e.t.key = {kind = "retire", target = home, seq = storage.cmd.seq}, nil
+              manual(e.t)
+            else
+              unit_to_order(e.k, e.t, nil)
+            end
+            storage.cmd.auto_retired = (storage.cmd.auto_retired or 0) + 1
+          end
+        end
+      end
+    end
+  end
+end
+
 -- The cap shown (the user, 2026-11-10: "Where is the unit cap displayed?", nowhere): a small panel at the top of the screen
 -- for each player whose force has the army (command bandwidth 1), its units against the cap, the offline, and a button to
 -- retire the selection.
@@ -733,6 +835,7 @@ end
 
 function command.tick(tick)
   if tick % 30 == 15 then retire_step() end
+  if tick % 120 == 75 then enforce() end
   if tick % 60 == 20 then command.gui_tick() end
   if tick % 60 == 0 then train(); repair() end
   if tick % 120 == 30 then lead() end
@@ -757,7 +860,7 @@ function command.stats()
       orders[k] = (orders[k] or 0) + 1
     end
   end
-  return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, alive = alive, offline = offline, capacity = command.capacity(f),
+  return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, auto_retired = storage.cmd.auto_retired or 0, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
 end
 

@@ -160,7 +160,7 @@ desc:
   entity_jammer: "Destroys construction and logistic robots in range."
   entity_claim_stake: "Grubstake claims the ore here when the lamp runs out, unless the ore is being mined or the stake is destroyed."
   entity_barracks: "Trains units from orders."
-  entity_rally_beacon: "Gathers units and gives them orders by signal."
+  entity_rally_beacon: "Gathers units and gives them orders by signal. Squad size signals cap how many of each unit it keeps."
   entity_command_relay: "Lets you command 10 more units while powered. Research raises how many relays count."
   entity_border_stake: "Sets a border with the nearest Kessler-Hayashi base. Its perimeter stops at the stake."
   entity_trade_post: "Grubstake collects the items placed here in exchange for a truce."
@@ -229,6 +229,6 @@ settings:
   high: "1.5"
   very_high: "2"
 mod:
-  version: "0.2.282"
+  version: "0.2.285"
   factorio: "2.1"
   needs: "base, space-age"

@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.285
+Version: 0.2.286
 Date: 2026-11-10
   Features:
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
@@ -7,7 +7,7 @@ Date: 2026-11-10
     - Kessler-Hayashi lands after your first rocket: an armed contractor that pushes its perimeter toward you, lays siege to your walls and calls orbital strikes.
     - Synthexis takes over the biter nests and breeds waves that learn from what kills them.
     - Each faction researches, fields its own units and answers what you do to it; the rivals fight each other and the biters too.
-    - Player army: barracks, a command tool, rally beacons and a muster point. A panel at the top of the screen shows your units against your command cap; select units and retire them (ALT + R) to hand their orders back in at a barracks.
+    - Player army: barracks, a command tool, rally beacons and a muster point. A panel at the top of the screen shows your units against your command cap; select units and retire them (ALT + R) to hand their orders back in at a barracks, or set squad sizes on a rally beacon to keep each squad at a size by signal.
     - Orbital cannons: after artillery, space platforms and tungsten carbide, build huge rail cannons at the edge of a platform over Nauvis, their barrels out over the void. Feed them orbital shells (tungsten carbide from Vulcanus, explosives, steel), thruster fuel and power, and call a strike with the remote (ALT + O). Every charged cannon over Nauvis fires; each needs a few minutes to charge again. Its targeting array is built round a beacon salvaged from Kessler-Hayashi, or a targeting core.
     - The factions send their fliers alone where little can shoot them down: artillery, radars and power behind walls and flamethrowers, and fly round your anti-air on the way.
     - Grubstake's Killdozer revs short of your wall and charges straight through it, crushing what stands in its lane.

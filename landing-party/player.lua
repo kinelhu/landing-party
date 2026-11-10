@@ -76,6 +76,14 @@ signal("lp-scan-jammed", "__space-age__/graphics/icons/tesla-turret.png", S_TINT
 -- With bred-biter telemetry (a field study, studies.lua): Synthexis's biters, and its scout.
 signal("lp-scan-synthexis", "__base__/graphics/icons/small-biter.png", shared.BIOTECH.tint1, "g")
 signal("lp-scan-scout", "__base__/graphics/icons/small-biter.png", shared.BIOTECH.tint2, "h")
+-- A squad's size by unit, set on a rally beacon (scripts/command.lua): the order's icon, the army's green.
+local SQUAD_ICON = {["lp-trooper"] = "__base__/graphics/icons/firearm-magazine.png", ["lp-breacher"] = "__base__/graphics/icons/grenade.png",
+  ["lp-rocket-trooper"] = "__base__/graphics/icons/rocket-launcher.png", ["lp-flame-trooper"] = "__base__/graphics/icons/flamethrower.png",
+  ["lp-battle-tank"] = "__base__/graphics/icons/tank.png"}
+local SQUAD_ORDER = {["lp-trooper"] = "a", ["lp-breacher"] = "b", ["lp-rocket-trooper"] = "c", ["lp-flame-trooper"] = "d", ["lp-battle-tank"] = "e"}
+for unit, sig in pairs(shared.SQUAD_SIGNALS) do
+  signal(sig, SQUAD_ICON[unit] or "__base__/graphics/icons/signal/signal_S.png", {r = 0.55, g = 1, b = 0.55, a = 1}, "s" .. (SQUAD_ORDER[unit] or "z"))
+end
 data:extend(signals)
 
 -- The muster point (scripts/command.lua; the user, 2026-10-18: "Trains could even play into the mix"): a steel chest's

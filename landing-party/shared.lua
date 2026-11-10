@@ -627,6 +627,10 @@ shared.POPULATION = {["lp-trooper"] = 1, ["lp-breacher"] = 1, ["lp-rocket-troope
 shared.ORDERS = {["lp-trooper-order"] = "lp-trooper", ["lp-breacher-order"] = "lp-breacher",
   ["lp-battle-tank-order"] = "lp-battle-tank", ["lp-rocket-trooper-order"] = "lp-rocket-trooper",
   ["lp-flame-trooper-order"] = "lp-flame-trooper"}
+-- A rally beacon's squad sizes (scripts/command.lua): a virtual signal a unit, its count the most of that unit the
+-- beacon's squad keeps.
+shared.SQUAD_SIGNALS = {}
+for _, name in pairs(shared.ORDERS) do shared.SQUAD_SIGNALS[name] = "lp-squad-" .. name:gsub("^lp%-", "") end
 shared.RELAY_CAPACITY = 10
 shared.RELAYS_BY_LEVEL = {[0] = 2, 4, 8, 15}
 shared.RELAYS_PER_EXTRA_LEVEL = 2
