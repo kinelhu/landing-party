@@ -57,7 +57,8 @@ local function research_level(force)
   return level
 end
 
-function command.capacity(force)
+-- Relays working and how many count (research), for the cap and its readout.
+local function relays(force)
   local level = research_level(force)
   local allowed = shared.RELAYS_BY_LEVEL[math.min(level, 3)]
   if level > 3 then allowed = allowed + (level - 3) * shared.RELAYS_PER_EXTRA_LEVEL end
@@ -69,6 +70,11 @@ function command.capacity(force)
       working = working + 1
     end
   end
+  return working, allowed, level
+end
+
+function command.capacity(force)
+  local working, allowed = relays(force)
   return math.min(working, allowed) * shared.RELAY_CAPACITY
 end
 
@@ -348,6 +354,14 @@ end
 local function manual(t)
   local m = t.manual
   local key = "m" .. m.seq
+  if m.kind == "retire" then
+    -- (Home to its barracks, undistracted: a retired unit is no longer the army's, retire_step.)
+    if m.target and m.target.valid then
+      return order(t, {type = defines.command.go_to_location, destination = m.target.position, radius = 4,
+        distraction = defines.distraction.none}, key)
+    end
+    return
+  end
   if m.kind == "attack" then
     if m.target and m.target.valid then
       return order(t, {type = defines.command.attack, target = m.target, distraction = defines.distraction.by_enemy}, key)
@@ -397,6 +411,10 @@ local function lead()
     local u = t.unit
     if not u.valid then
       storage.cmd.troopers[k] = nil
+    elseif t.manual and t.manual.kind == "retire" then
+      -- (Before offline: retiring is how a player over the cap frees it.)
+      t.offline = nil
+      manual(t)
     elseif offline[k] then
       if not t.offline then
         t.offline = true
@@ -586,7 +604,136 @@ local function chart_army()
   end
 end
 
+-- Retiring (the user, 2026-11-10: "How do you retire units?", there was no way): the selection walks to the nearest
+-- barracks of its force on its surface and there hands in its order, laid beside it and marked for deconstruction (robots
+-- carry it to storage; a muster point or a barracks' output deploys it again later), its bandwidth freed. Not into the
+-- barracks' output: the barracks deploys what it holds there, and the order was back on the field a second later. With
+-- no barracks, it hands in its order where it stands.
+local ORDER_OF = {}
+for item, name in pairs(shared.ORDERS) do ORDER_OF[name] = item end
+local RETIRE_AT = 6
+
+local function home_for(u)
+  local best, bd
+  for k, b in pairs(storage.cmd.barracks) do
+    if not b.valid then
+      storage.cmd.barracks[k] = nil
+    elseif b.force == u.force and b.surface == u.surface then
+      local d = (b.position.x - u.position.x) ^ 2 + (b.position.y - u.position.y) ^ 2
+      if not bd or d < bd then best, bd = b, d end
+    end
+  end
+  return best
+end
+
+local function unit_to_order(k, t, at)
+  local u = t.unit
+  local item = ORDER_OF[u.name]
+  if item then
+    u.surface.spill_item_stack{position = at and at.valid and {at.position.x, at.position.y + 2.5} or u.position,
+      stack = {name = item, count = 1}, force = u.force, allow_belts = false}
+  end
+  storage.cmd.troopers[k] = nil
+  for _, sel in pairs(storage.cmd.selected or {}) do sel[k] = nil end
+  u.destroy()
+  storage.cmd.retired = (storage.cmd.retired or 0) + 1
+end
+
+function command.retire(player_index)
+  storage.cmd.selected = storage.cmd.selected or {}
+  local sel = storage.cmd.selected[player_index] or {}
+  storage.cmd.seq = (storage.cmd.seq or 0) + 1
+  local n = 0
+  for k in pairs(sel) do
+    local t = storage.cmd.troopers[k]
+    if t and t.unit.valid then
+      local home = home_for(t.unit)
+      if home then
+        t.manual, t.key = {kind = "retire", target = home, seq = storage.cmd.seq}, nil
+        manual(t)
+      else
+        unit_to_order(k, t, nil)
+      end
+      n = n + 1
+    end
+  end
+  storage.cmd.selected[player_index] = {}
+  rings(player_index)
+  return n
+end
+
+local function retire_step()
+  for k, t in pairs(storage.cmd.troopers) do
+    local m = t.manual
+    if m and m.kind == "retire" and t.unit.valid then
+      if not (m.target and m.target.valid) then
+        m.target = home_for(t.unit)
+        if m.target then t.key = nil; manual(t) end
+      end
+      local h = m.target
+      if not h then
+        unit_to_order(k, t, nil)
+      elseif (h.position.x - t.unit.position.x) ^ 2 + (h.position.y - t.unit.position.y) ^ 2 <= RETIRE_AT * RETIRE_AT then
+        unit_to_order(k, t, h)
+      end
+    end
+  end
+end
+
+-- The cap shown (the user, 2026-11-10: "Where is the unit cap displayed?", nowhere): a small panel at the top of the screen
+-- for each player whose force has the army (command bandwidth 1), its units against the cap, the offline, and a button to
+-- retire the selection.
+local function waiting(force)
+  local n = 0
+  for _, b in pairs(storage.cmd.barracks) do
+    if b.valid and b.force == force then
+      local inv = b.get_inventory(defines.inventory.crafter_output)
+      for item in pairs(shared.ORDERS) do n = n + (inv and inv.get_item_count(item) or 0) end
+    end
+  end
+  return n
+end
+
+-- The readout's numbers (a function: the panel's, and scenario retire's, headless with no player to show it to).
+function command.readout(f)
+  local working, allowed, level = relays(f)
+  local off = 0
+  for _, t in pairs(storage.cmd.troopers) do if t.unit.valid and t.unit.force == f and t.offline then off = off + 1 end end
+  return {units = population(f), cap = math.min(working, allowed) * shared.RELAY_CAPACITY, offline = off, working = working,
+    allowed = allowed, level = level, waiting = waiting(f)}
+end
+
+function command.gui_tick()
+  for _, p in pairs(game.connected_players) do
+    local f = p.force
+    local frame = p.gui.top.lp_army
+    local r = command.readout(f)
+    if r.level < 1 then
+      if frame then frame.destroy() end
+    else
+      if not frame then
+        frame = p.gui.top.add{type = "frame", name = "lp_army", direction = "horizontal", style = "slot_window_frame"}
+        frame.style.padding = 4
+        frame.add{type = "label", name = "lp_army_units", style = "caption_label"}
+        frame.add{type = "button", name = "lp_army_retire", style = "tool_button"}
+      end
+      local units = frame.lp_army_units
+      units.caption = r.offline > 0 and {"lp.army-units-offline", r.units, r.cap, r.offline} or {"lp.army-units", r.units, r.cap}
+      units.tooltip = {"lp.army-tooltip", r.working, r.allowed, r.waiting}
+      local sel = 0
+      for k in pairs((storage.cmd.selected or {})[p.index] or {}) do if storage.cmd.troopers[k] then sel = sel + 1 end end
+      local b = frame.lp_army_retire
+      b.caption = {"lp.army-retire", sel}
+      b.tooltip = {"lp.army-retire-tooltip"}
+      b.enabled = sel > 0
+      b.style.width = 110
+    end
+  end
+end
+
 function command.tick(tick)
+  if tick % 30 == 15 then retire_step() end
+  if tick % 60 == 20 then command.gui_tick() end
   if tick % 60 == 0 then train(); repair() end
   if tick % 120 == 30 then lead() end
   if tick % CHART_EVERY == 75 then chart_army() end
@@ -610,7 +757,7 @@ function command.stats()
       orders[k] = (orders[k] or 0) + 1
     end
   end
-  return {trained = storage.cmd.trained or 0, alive = alive, offline = offline, capacity = command.capacity(f),
+  return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
 end
 

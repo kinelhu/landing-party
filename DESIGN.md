@@ -164,7 +164,7 @@ document still says Serenity where it records history.
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
 | Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and space-made shells, fired by remote, after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | proposed (2026-11-10), engine spikes first | |
-| The player's unit cap shown; units retired to orders | approved (2026-11-10), next after the cost re-tune | |
+| The player's unit cap shown (a panel at the top: units / cap, offline, relays and waiting orders in its tooltip); units retired (ALT + R or the panel's button: home to a barracks, the order handed in beside it for the robots) | built 0.2.273 | `retire` |
 | `/lp rig`, `/lp tap` on demand (`/lp flare` retired) | built | `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
 | Serenity's cordon: arcs of posts built by drones (on plating, lit, painted post to post), a ring round a grown camp that does not spread, the claim behind them; old arcs recovered; mended when breached; a contact wall near the player; gate posts across the player's rails; ore it crosses claimed | built | `cordon` (six) |
@@ -6032,6 +6032,16 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (three rounds; the knock-on of their opponents' prices): a single row's move of that size is noise. The matrix now runs
   as four games (scripts/arena.sh, LP_ARENA_JOBS), 13 minutes for 4,692 fights where one game took 26. The full matrix at
   the final prices: Line trooper 49%, bomb drone 47%, harrier 60%, laser drone 66% (by role, above); the hulls 44 to 54.
+- **The cap shown, units retired** (0.2.273; the user, 2026-11-10: "How do you retire units? Where is the unit cap
+  displayed?": neither existed). A panel at the top of the screen once the force has command bandwidth 1: "Units: 6 / 10"
+  (and the offline), its tooltip the relays working and counted and the orders waiting at barracks; a Retire button with
+  the selection's count. Retiring (that button or ALT + R, command.retire): the selection walks home to the nearest barracks,
+  undistracted, before any offline rule (retiring is how a player over the cap frees it), and there hands in its order,
+  laid beside the barracks and marked for deconstruction, so the robots carry it to storage and a muster point deploys it
+  again later. Into the barracks' output first: the barracks deployed it a second later (scenario retire, seen failing: 6
+  troopers left of 6). Scenario retire: 6 of 10 read, 3 retired, 3 orders on the ground and marked, 3 of 10 read, none
+  deployed again. The panel itself unseen in a window yet (benchmarks have no player): the readout's numbers are checked.
+  Grubstake's harrier named Scrap copter (its rotor art said helicopter; the user looked for "the grubstake copter").
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

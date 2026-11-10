@@ -230,6 +230,11 @@ end)
 script.on_event(defines.events.on_player_alt_reverse_selected_area, function(e)
   if e.item == TOOL then command.order(e.player_index, e.surface, e.area, true) end
 end)
+-- Retiring the selection: the key, or the army panel's button (scripts/command.lua).
+script.on_event("lp-retire", function(e) command.retire(e.player_index); command.gui_tick() end)
+script.on_event(defines.events.on_gui_click, function(e)
+  if e.element and e.element.valid and e.element.name == "lp_army_retire" then command.retire(e.player_index); command.gui_tick() end
+end)
 
 -- Deaths: the faction's buildings are queued for rebuild, its units counted lost, and what its units
 -- destroy is counted razed (attributed through the unit that did it).
@@ -900,6 +905,8 @@ remote.add_interface("landing-party", {
     return command.release(1, game.surfaces[1].find_entities_filtered{area = area, force = "player", type = "unit"})
   end,
   debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
+  debug_retire = function() return command.retire(1) end,
+  army_readout = function() return command.readout(game.forces.player) end,
   -- Tests only: the route planner from a settlement's home to pos (nests and turrets as for a sneaking march).
   debug_route = function(id, to)
     local b = storage.bases[id]

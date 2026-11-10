@@ -256,6 +256,8 @@ data:extend({
     small_icon = "__base__/graphics/icons/shortcut-toolbar/mip/new-rts-tool-x24.png", small_icon_size = 24},
   {type = "custom-input", name = "lp-command-tool", key_sequence = "ALT + C", action = "spawn-item",
     item_to_spawn = "lp-command-tool", consuming = "game-only"},
+  -- Retire the selection (scripts/command.lua: home to a barracks, its order again).
+  {type = "custom-input", name = "lp-retire", key_sequence = "ALT + R", consuming = "game-only"},
 })
 
 -- Command bandwidth: how many relays count. Level 1 unlocks the army and grants the first command core.

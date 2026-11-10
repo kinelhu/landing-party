@@ -2114,6 +2114,64 @@ scenarios.control = function()
   end)
 end
 
+-- Retire (the user, 2026-11-10: "How do you retire units? Where is the unit cap displayed?"): a barracks, one powered relay
+-- (10 of bandwidth), a rally beacon 21 tiles off, six troopers. The readout says 6 of 10; three picked and retired walk to
+-- the barracks and hand in three orders there (on the ground, marked for the robots), three left, the readout 3 of 10,
+-- and the barracks deploys none of them again.
+scenarios.retire = function()
+  local function put(name, x, y, force)
+    return surface().create_entity{name = name, position = {x, y}, force = force or "player", raise_built = true}
+  end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -40, 40, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+    put("lp-rally-beacon", 10.5, -18.5)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 6}
+  end)
+  schedule(60 + 30 * 60, function()
+    S.before = lp("army_readout")
+    -- Three of them: the three nearest the beacon's west side.
+    local us = surface().find_entities_filtered{name = "lp-trooper", force = "player"}
+    table.sort(us, function(a, b) return a.position.x < b.position.x end)
+    local pick = {}
+    for k = 1, 3 do pick[k] = us[k] end
+    local xs = {}
+    for _, u in ipairs(pick) do xs[#xs + 1] = u.position.x end
+    S.picked = lp("debug_select", {{math.min(table.unpack(xs)) - 0.2, -40}, {math.max(table.unpack(xs)) + 0.2, 30}})
+    S.sent = lp("debug_retire")
+  end)
+  schedule(60 + 75 * 60, function()
+    S.after = lp("army_readout")
+    S.left = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    S.orders = 0
+    for _, e in pairs(surface().find_entities_filtered{type = "item-entity", position = {0.5, 3}, radius = 8}) do
+      if e.stack.name == "lp-trooper-order" then
+        S.orders = S.orders + e.stack.count
+        S.marked = (S.marked or 0) + (e.to_be_deconstructed() and 1 or 0)
+      end
+    end
+  end)
+  schedule(60 + 110 * 60, function()
+    S.later = surface().count_entities_filtered{name = "lp-trooper", force = "player"}
+    local st = lp("army")
+    info("retire: before " .. serpent.line(S.before) .. ", after " .. serpent.line(S.after) .. ", " .. serpent.line(st))
+    check("retire: the readout counted six of ten", S.before.units == 6 and S.before.cap == 10 and S.before.working == 1,
+      serpent.line(S.before))
+    check("retire: three picked and sent home", S.picked == 3 and S.sent == 3, string.format("%s picked, %s sent",
+      tostring(S.picked), tostring(S.sent)))
+    check("retire: three left, three orders handed in at the barracks, marked for the robots", S.left == 3 and S.orders == 3
+      and (S.marked or 0) >= 1, string.format("%d left, %d orders, %d stacks marked", S.left, S.orders, S.marked or 0))
+    check("retire: the readout says three of ten", S.after.units == 3 and S.after.cap == 10, serpent.line(S.after))
+    check("retire: and the barracks did not deploy them again", S.later == 3, S.later .. " troopers")
+  end)
+end
+
 -- The campaign's player (contact, LP_MIX=campaign): three rules, every 5 minutes, through what a player has.
 --   answer  each place it lost something (a ghost its robots have not rebuilt, or anything outside their reach,
 --           seen as a ghost) gets two laser turrets once, at most 6 + 4 per era in all
