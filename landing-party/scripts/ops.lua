@@ -612,7 +612,8 @@ local function choose(b, army)
         local s = on_foot and score(p, d) or 0
         -- A thief's eye (mind.loot, with the prowl): a cell by what can be carried off from it, not only its most valuable
         -- building (a mine read as its power pole, 5, below a substation, 6; its drills were never taken, 2026-11-01).
-        if storage.prowl ~= false and mind.loot and t.loot then s = s * (1 + mind.loot * math.min(t.loot, LOOT_CAP) / LOOT_CAP) end
+        local thief_eye = (storage.prowl ~= false and mind.loot and t.loot) and (1 + mind.loot * math.min(t.loot, LOOT_CAP) / LOOT_CAP) or 1
+        s = s * thief_eye
         local m
         -- By air (airraid.lua): its fliers' odds against what shoots up, and what fliers are for (SNIPE) the more.
         local da = by_air and t.owner ~= "enemy" and air_defence(b, t, air_budget)
@@ -623,9 +624,9 @@ local function choose(b, army)
         if da then
           local pa = odds(air_worth, da)
           if pa >= mind.min_odds - 1e-9 then
-            -- (By air where that alone is clearly the better way, then worth SNIPE more among targets: weighed with it,
+            -- (A thief's eye by air too, what it can carry off.) (By air where that alone is clearly the better way, then worth SNIPE more among targets: weighed with it,
             -- a radar went by air whatever shot up round it, airraid aa.)
-            local sa = score(pa, da)
+            local sa = score(pa, da) * thief_eye
             if sa > s * airraid.EDGE then
               local proto = prototypes.entity[t.kind]
               s, m = sa * ((proto and airraid.SNIPE[proto.type]) or 1), "air"
@@ -1244,22 +1245,31 @@ local function launch_air(b, key, trace, army)
     cmds[#cmds + 1] = {type = defines.command.go_to_location, destination = {p[1], p[2]}, radius = 6,
       distraction = defines.distraction.none}
   end
-  if target then cmds[#cmds + 1] = {type = defines.command.attack, target = target, distraction = defines.distraction.none} end
-  cmds[#cmds + 1] = {type = defines.command.attack_area, destination = {t.pos[1], t.pos[2]}, radius = 12,
-    distraction = defines.distraction.by_anything}
+  -- A thief's fliers (Grubstake's scrap drones; the user, 2026-11-10: "They could perhaps do some air theft too?") land
+  -- among what it can carry and take it (ops.loot, the attack phase, as on foot), shooting only what hits them; with
+  -- nothing left, they attack (dismantle turns them).
+  local tcmd, thief = thief_cmd(b, t, t.pos, s)
+  if thief then
+    cmds[#cmds + 1] = tcmd
+  else
+    if target then cmds[#cmds + 1] = {type = defines.command.attack, target = target, distraction = defines.distraction.none} end
+    cmds[#cmds + 1] = {type = defines.command.attack_area, destination = {t.pos[1], t.pos[2]}, radius = 12,
+      distraction = defines.distraction.by_anything}
+  end
   order_all(members, {type = defines.command.compound, structure_type = defines.compound_command.return_last, commands = cmds})
   b.op = {kind = "raid", air = true, overflight = true, target = key, phase = "attack", members = members, launched = #members,
     staging = {h.position.x, h.position.y}, owner = t.owner, pos = {t.pos[1], t.pos[2]}, started = game.tick,
-    phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed, attacked = true}
+    phase_at = game.tick, kills_at = b.razed, last_kill = game.tick, razed0 = b.razed, attacked = true, thieving = thief}
   ops.appoint(b, b.op)
   alert(b, t, "lp.alert-raid")
   b.air_raids = (b.air_raids or 0) + 1
+  if thief then b.air_thefts = (b.air_thefts or 0) + 1 end
   b.ops_launched = b.ops_launched + 1
   b.raids_sent = b.raids_sent + 1
   storage.threat_last = game.tick
   b.op.way = t.air_way
-  trace(b, string.format("air raid on %s at %.0f,%.0f: %d fliers (worth %.1f) against air defence %.1f (on foot %.1f), %d turns",
-    t.kind, t.pos[1], t.pos[2], #members, worth, da, defence(b, t), #(t.air_way or {})))
+  trace(b, string.format("air raid on %s at %.0f,%.0f: %d fliers (worth %.1f) against air defence %.1f (on foot %.1f), %d turns%s",
+    t.kind, t.pos[1], t.pos[2], #members, worth, da, defence(b, t), #(t.air_way or {}), thief and ", to take what it can carry" or ""))
   return true
 end
 
@@ -2144,6 +2154,7 @@ function ops.summary(b)
     leaders_lost = b.leaders_lost or 0, broken = b.broken or 0, regrouped = b.regrouped or 0, dismantled = b.dismantled or 0,
     overflights = b.overflights or 0,
     air_raids = b.air_raids or 0,
+    air_thefts = b.air_thefts or 0,
     air_tilt = b.air_tilt,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,

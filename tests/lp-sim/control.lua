@@ -15512,6 +15512,11 @@ scenarios.airraid = function()
     local eei = surface().create_entity{name = "electric-energy-interface", position = {c[1] - 5, c[2] + 5}, force = "player"}
     eei.power_production, eei.electric_buffer_size = 1e9 / 60, 1e9
     surface().create_entity{name = "medium-electric-pole", position = {c[1] - 2.5, c[2] + 2.5}, force = "player"}
+    -- (A thief's: a chest of circuits by the radar, for its fliers to take.)
+    if gs then
+      S.chest = surface().create_entity{name = "iron-chest", position = {c[1] - 3.5, c[2] - 3.5}, force = "player"}
+      S.chest.insert{name = "advanced-circuit", count = 100}
+    end
     for _, d in ipairs(aa and {} or {{9, 0}, {-9, 0}, {0, 9}, {0, -9}}) do
       local f = surface().create_entity{name = "flamethrower-turret", position = {c[1] + d[1], c[2] + d[2]}, force = "player"}
       if f then f.insert_fluid{name = "crude-oil", amount = 100} end
@@ -15602,6 +15607,18 @@ scenarios.airraid = function()
     else
       check("airraid: it went by air at the walled, flamer-held radar", (S.air or 0) >= 1, tostring(S.air))
       check("airraid: and razed the radar", S.razed_at ~= nil, tostring(S.razed_at))
+      -- Air theft (the user, 2026-11-10: "They could perhaps do some air theft too?"): a thief's fliers land and take,
+      -- the radar and the assembler carried off (their ghosts left), the chest emptied. The first two seen failing with
+      -- its fliers ordered to attack (debug_tune dismantle_off); the chest is emptied either way (ops.loot takes from a
+      -- chest any of its units stands by, attacking or not).
+      if gs then
+        local o = st.ops
+        check("airraid: grubstake, its fliers went to take (an air theft)", (o.air_thefts or 0) >= 1, tostring(o.air_thefts))
+        check("airraid: grubstake, and carried buildings off", (o.dismantled or 0) >= 1, tostring(o.dismantled))
+        check("airraid: grubstake, and emptied the chest", S.chest and S.chest.valid
+          and S.chest.get_inventory(defines.inventory.chest).get_item_count("advanced-circuit") == 0,
+          S.chest and S.chest.valid and tostring(S.chest.get_inventory(defines.inventory.chest).get_item_count("advanced-circuit")) or "gone")
+      end
       if detour then
         check("airraid: detour, round the picket (no flier within its guns' reach)", S.picket_in == 0, tostring(S.picket_in))
       end

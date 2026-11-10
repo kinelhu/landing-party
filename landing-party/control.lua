@@ -506,7 +506,7 @@ remote.add_interface("landing-party", {
     if t.mature_blocks then storage.mature_blocks = t.mature_blocks end
     if t.crews_off ~= nil then storage.crews_off = t.crews_off or nil end
     -- (0.2.29's ground handling, each off: bisecting what it changed.)
-    for _, k in ipairs({"blast_off", "landfill_off", "pier_off", "air_trace", "air_straight"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
+    for _, k in ipairs({"blast_off", "landfill_off", "pier_off", "air_trace", "air_straight", "dismantle_off"}) do if t[k] ~= nil then storage[k] = t[k] or nil end end
     if t.grow_to_line_off ~= nil then storage.grow_to_line_off = t.grow_to_line_off or nil end
     if t.wfc_core_off ~= nil then storage.wfc_core_off = t.wfc_core_off or nil end
     if t.cordon_off ~= nil then storage.cordon_off = t.cordon_off or nil end

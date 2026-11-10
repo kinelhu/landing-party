@@ -6082,6 +6082,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   defence 0, razed. Its build's tilt to fliers was read at 9 minutes, before Grubstake first senses the player's targets
   (9.2): the scenario keeps the highest seen. In regress.sh (35 minutes); seen failing before the change (3 checks); the
   other three airraid variants and Grubstake's temper, snatch, skim guarded, fortress and heist pass.
+- **Air theft** (0.2.295; the user, 2026-11-10: "They could perhaps do some air theft too?"). A thief's air raid
+  (temper.loots: Grubstake) is ordered as its ground raids are (`thief_cmd`): its fliers go in among what it can carry,
+  shooting only what hits them, and the attack phase's `ops.loot` empties chests and dismantles machines by them, as on
+  foot; with nothing left, they attack. Its choice weighs what it can carry by air too (the thief's eye, `mind.loot`, on
+  the air score). Scenario airraid LP_MIX=grubstake, a chest of 100 advanced circuits by the walled radar: an air raid at
+  19.5 minutes (29.5 without the chest), the chest emptied, the radar, the assembler and a pole carried off, their ghosts
+  left. The two theft checks seen failing with the fliers ordered to attack (`debug_tune dismantle_off`, wired for it:
+  storage.dismantle_off had no setter); the chest is emptied either way.
 - **farm siege and farm wave200 fail from 0.2.272, cause open** (2026-11-10, the full regression on the Mac Studio,
   bisected there: both pass at 0.2.271 and before, both fail at 0.2.272, the price re-tune). Not counters.lua alone: the
   current code with 0.2.271's counters still fails both; nothing in farm.lua or herd.lua reads the re-priced units (Line
