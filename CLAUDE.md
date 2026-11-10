@@ -5,7 +5,13 @@ Prototype stage. Design: `DESIGN.md` (read it first). Mod folder: `landing-party
 Sister project: `~/Dev/factorio-mods` (Empirical Science); the two share the dev profile, nothing else.
 
 ## Environment
-- Factorio **2.1.23** + Space Age (Steam moved from 2.0.77 on 2026-10-23; the port is 0.2.0), Steam install, macOS arm64. Paths live in `scripts/env.sh`.
+- Factorio **2.1.24** + Space Age (Steam moved from 2.0.77 on 2026-10-23; the port is 0.2.0; 2.1.24 by 2026-11-10), Steam install, macOS arm64. Paths live in `scripts/env.sh`.
+- **The Mac Studio** (since 2026-11-10; 16 cores, 64 GB): `ssh macstudio-de-kinan.tail365951.ts.net` (the Tailscale name; the
+  bare name is refused). It has Factorio (Steam, same version), Blender, uv, luajit and a copy of the repo at
+  `~/Dev/landing-party` (rsync the working tree to it, `--exclude docs/sim --exclude media --exclude .claude`; never git
+  push). Long regressions run there (`nohup env LP_JOBS=8 scripts/regress.sh ... > ~/lp-regress.log &`; at 8 its load
+  reaches 28: 6 may be as fast), Blender renders too (`~/lp-render`). In zsh, brace the host in rsync paths: `${H}:path`
+  (`$H:lp-render` reads `:l` as zsh's lowercase modifier and the copy lands in a local folder).
 - Game data (the best examples of how things are really done): `$APP/data/{core,base,space-age,quality,elevated-rails}`.
 - **API reference, version-matched:** `$APP/doc-html/runtime-api.json` and `prototype-api.json`.
   Look up every API before using it. Memory mixes the 1.1 and 2.0 APIs, which differ a lot.
