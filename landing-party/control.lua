@@ -1012,6 +1012,22 @@ remote.add_interface("landing-party", {
   -- The event raised as a unit is promoted (veterancy.PROMOTED: {old, new, rank}, before the old one goes): for a mod
   -- that holds our units to put the copy where it held the old one.
   promoted_event = function() return veterancy.PROMOTED end,
+  -- Tests and films: a unit given this much merit, promoted the next tick if it has earned a rank (veterancy.check).
+  debug_promote = function(unit_number, n)
+    -- (Searched: get_entity_by_unit_number finds only prototypes flagged get-by-unit-number, never a unit.)
+    local u
+    for _, s in pairs(game.surfaces) do
+      for _, e in ipairs(s.find_entities_filtered{type = {"unit", "spider-unit"}}) do
+        if e.unit_number == unit_number then u = e; break end
+      end
+      if u then break end
+    end
+    if not (u and u.valid) then return false end
+    storage.merit = storage.merit or {}
+    storage.merit[unit_number] = n
+    veterancy.check(u)
+    return true
+  end,
   -- A unit's merit banked (veterancy.lua).
   merit = function(unit_number) return storage.merit and storage.merit[unit_number] end,
   -- Veterancy: promotions, the highest merit banked, and each force's units by rank (quality).

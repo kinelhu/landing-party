@@ -284,9 +284,13 @@ local function take_place(old, new)
   end
 end
 
+-- At its outline's upper right, about a tile across (first drawn at half a tile beside a trooper's shoulder: in the ranks
+-- film, 2026-11-11, a third of a tile at a close zoom, lost on a tank's hull and gone at play zoom).
 local function badge(n, r)
-  rendering.draw_sprite{sprite = "lp-rank-" .. r, surface = n.surface, target = {entity = n, offset = {0.55, -0.9}},
-    x_scale = 0.5, y_scale = 0.5, render_layer = "air-entity-info-icon"}
+  local b = n.prototype.collision_box
+  local off = {b.right_bottom.x + 0.35, b.left_top.y - 0.55}
+  rendering.draw_sprite{sprite = "lp-rank-" .. r, surface = n.surface, target = {entity = n, offset = off},
+    x_scale = 0.95, y_scale = 0.95, render_layer = "air-entity-info-icon"}
 end
 
 -- Promotes these units together (each at the rank it has earned, the same place, the same share of its health, its

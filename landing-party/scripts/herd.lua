@@ -2490,14 +2490,20 @@ end
 -- targets one by one through the narrow gap, 64 of them burning in the corridor west of it). Of its group's members, those
 -- with a wall of its foe's standing on their line to its target and on their line to its gap (as its front is read,
 -- wall_between): outside. (On the line to its target alone, those in front of the opening, their line crossing the wall
--- beside it, read as outside while they poured through.)
+-- beside it, read as outside while they poured through.) And those farther from its target than its gap is by more than a
+-- rank's depth (herd.spread), a wall on their line or not: sent at a mended piece on their line, they broke it, the gap
+-- was open, no wall stood between them and it, and 11 of 38 still 30 tiles out read as none outside; it read itself
+-- through and they came on alone (herd ranks-mend, failing since 0.2.258, 2026-11-11). (Those at the opening are within
+-- the rank's depth of it.)
 function herd.rk.outside(w)
   local list, x, y = {}, 0, 0
   -- (Not its rams: those held or going have orders of their own.)
   local rams = {}
   for _, b in ipairs(w.big_targets or {}) do if b.unit.valid then rams[b.unit.unit_number] = true end end
+  local far = w.gap and w.goal and (math.sqrt(d2(w.gap, w.goal)) + herd.spread(alive(w))) ^ 2
   for _, u in ipairs(herd_units(w)) do
-    if not holds(w, u) and not rams[u.unit_number] and wall_between(w, u.position, w.goal) and wall_between(w, u.position, w.gap) then
+    if not holds(w, u) and not rams[u.unit_number] and ((wall_between(w, u.position, w.goal) and wall_between(w, u.position, w.gap))
+      or (far and d2(u.position, w.goal) > far)) then
       list[#list + 1] = u
       x, y = x + u.position.x, y + u.position.y
     end

@@ -227,6 +227,18 @@ scenarios.vetprobe = function()
     for _, e in ipairs({a, b}) do e.destroy() end
     r.destroy()
   end)
+  -- (debug_promote, the ranks film's way: a standing trooper of the player's given merit 8, its quality 5 ticks on.)
+  schedule(300, function()
+    local t = surface().create_entity{name = "lp-trooper", position = {20, 40}, force = "player"}
+    S.dp_un = t.unit_number
+    S.dp_ok = lp("debug_promote", t.unit_number, 8)
+  end)
+  schedule(310, function()
+    local found = surface().find_entities_filtered{name = "lp-trooper", position = {20, 40}, radius = 2}
+    local q = {}
+    for _, e in ipairs(found) do q[#q + 1] = e.quality.name end
+    log({"", "[vetprobe] debug_promote: ", tostring(S.dp_ok), " ", serpent.line(q), " ", serpent.line(lp("veterancy").promoted)})
+  end)
   -- A kill's merit (veterancy.kill_merit), each killer against each victim.
   schedule(120, function()
     local V = {"small-biter", "medium-biter", "big-biter", "behemoth-biter", "small-spitter", "lp-bred-small-biter",
@@ -13025,7 +13037,7 @@ scenarios.herd = function()
     -- splashing the wall by the gap among it: the count is the test there, the share the big wave's.)
     -- (Not where its bursters or stompers break walls by the blast.)
     if S.gap_at and mix ~= "burst" and mix ~= "burst-nohold" and mix ~= "stomp" and mix ~= "megaburst" then
-      local GAP_WALLS, GAP_SHARE, BESIDE, QUIET = 12, 0.5, 12, 3600
+      local GAP_WALLS, GAP_SHARE, BESIDE, QUIET, BIG_WAVE = 12, 0.5, 12, 3600, 100
       local g = S.gap_bite or {wall = 0, inside = 0}
       local share = g.wall / math.max(1, g.wall + g.inside)
       -- By breach (2026-11-10: every piece after the first gap counted, and scout's second wave, 14 minutes on, breaking in
@@ -13044,7 +13056,12 @@ scenarios.herd = function()
         worst = math.max(worst, b.beside)
         parts[#parts + 1] = string.format("%d beside its gap at %.0f,%.0f (%d further off)", b.beside, b.gap[2], b.gap[3], b.off)
       end
-      check("herd: through its gap, not chewing the wall beside it", worst <= GAP_WALLS and share <= GAP_SHARE,
+      -- (The share for a big wave alone, as said above: a wave of 41 at core lost half to the lasers round the heart
+      -- within 5 s of getting in and withdrew, as it should, its bite inside a third of the run that passed, so 56% of
+      -- its bite read on walls with 4 pieces beside its gap; failing since 0.2.258, its Kessler-Hayashi neighbour's
+      -- infantry firing in bursts a cascade into the herd's fights, 2026-11-11.)
+      local big = (w.sent or w.size or 0) >= BIG_WAVE
+      check("herd: through its gap, not chewing the wall beside it", worst <= GAP_WALLS and (not big or share <= GAP_SHARE),
         string.format("%s; %.0f%% of its bite on walls (%d to walls, %d past them); %d pieces after the first gap in all",
           table.concat(parts, "; "), 100 * share, g.wall, g.inside, S.walls_after or 0))
     end

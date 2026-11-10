@@ -15,7 +15,7 @@ digraph ai {
     "lights" [label="lights\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "landfx" [label="landfx\n239 lines", width=1.07, fillcolor="#eef2f7"];
     "burstfx" [label="burstfx\n305 lines", width=1.14, fillcolor="#eef2f7"];
-    "veterancy" [label="veterancy\n407 lines", width=1.25, fillcolor="#eef2f7"];
+    "veterancy" [label="veterancy\n411 lines", width=1.26, fillcolor="#eef2f7"];
   }
   subgraph cluster_1 { label="Perception and attempts (any attacker)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "firemap" [label="firemap\n170 lines", width=0.99, fillcolor="#eef2f7"];
@@ -93,7 +93,7 @@ digraph ai {
     "marker" [label="marker\n70 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_7 { label="The biotech"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "herd" [label="herd\n4382 lines", width=3.80, fillcolor="#f7dede"];
+    "herd" [label="herd\n4388 lines", width=3.80, fillcolor="#f7dede"];
     "herd_learn" [label="herd_learn\n253 lines", width=1.08, fillcolor="#eef2f7"];
     "farm" [label="farm\n2440 lines", width=3.51, fillcolor="#f7dede"];
     "creep" [label="creep\n590 lines", width=1.46, fillcolor="#eef2f7"];
@@ -110,7 +110,7 @@ digraph ai {
     "studies" [label="studies\n78 lines", width=0.89, fillcolor="#eef2f7"];
   }
   subgraph cluster_10 { label="Wiring (edges not drawn)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "control" [label="control\n1175 lines", width=2.11, fillcolor="#f7dede"];
+    "control" [label="control\n1191 lines", width=2.12, fillcolor="#f7dede"];
     "dev" [label="dev\n566 lines", width=1.43, fillcolor="#eef2f7"];
     "watch" [label="watch\n141 lines", width=0.96, fillcolor="#d9f0d9"];
     "oplog" [label="oplog\n188 lines", width=1.01, fillcolor="#eef2f7"];

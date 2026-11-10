@@ -1054,9 +1054,13 @@ is a swap: a new unit of the same name at the next quality, at the same place an
 - then the old one is destroyed (no death: nothing counts it a loss).
 Queued in the death event and done at the start of the next tick (veterancy.tick, first in on_tick), so no caller is
 holding the unit mid-loop (the crash 0.2.310 fixed). A copy that cannot be placed tries again a second later, ten times.
-It wears its rank from then on: one to three gold chevrons over it (`lp-rank-1..3`, tools/icons/ranks.py; the turret
-mods keep a badge on the entity, our label faded and left nothing), its rank's name flies over it, and a chime
-(`utility/new_objective`, as Quality Turrets).
+It wears its rank from then on: one to three gold chevrons at its outline's upper right, about a tile across
+(`lp-rank-1..3`, tools/icons/ranks.py; the turret mods keep a badge on the entity, our label faded and left nothing),
+its rank's name flies over it, and a chime (`utility/new_objective`, as Quality Turrets). Filmed (docs/review/
+stills-ranks.lua, 0.2.320: a trooper, a battle tank, Kessler-Hayashi's infantry and tank, Grubstake's infantry and buggy
+at each rank, by `debug_promote`): first drawn at half a tile beside a shoulder, a third of a tile at a close zoom and
+lost on a tank's hull, now enlarged and placed by the unit's box. (`debug_promote` searches units by number:
+get_entity_by_unit_number finds only prototypes flagged get-by-unit-number, never a unit; vetprobe checks it.)
 
 **Not Synthexis** (0.2.314; the user, 2026-11-10: "Doesn't seem so thematic for synthexis no? I'm split"; "Yeah
 exempt"). A rank is an individual's story; Synthexis is a hive that learns as a whole (its waves adapt to what kills
@@ -6469,6 +6473,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lost the trooper. Caught by the scenario's trace (paths before and after differed). Keys now move only in the tables
   listed in `veterancy.KEYED`; the trace counts a unit's number elsewhere apart (10 such in the camp run, none a reference).
   A new table keyed by unit number goes in that list, or the trace shows it missed.
+- **herd core and ranks-mend, bisected to 0.2.258** (0.2.320; both "known failures" through three regressions, passing
+  when their checks came in, 0.2.203 and 0.2.215). Bisected on the Studio (git bisect run, 7 steps each): both first fail
+  at 0.2.258, whose collision layer 0.2.259 took out again and whose sounds touch no Synthexis unit; what stays is its
+  Kessler-Hayashi infantry firing in bursts, a cascade through the fights beside the herd's (each scenario has a
+  Kessler-Hayashi settlement). What each now showed:
+  - core: a wave of 41 broke in, lost half to the lasers round the heart within 5 s and withdrew, as it should; its bite
+    inside a third of the passing run's, so 56% of it read on walls with 4 pieces beside its gap (12 allowed). The share
+    was the big wave's measure by the check's own comment; it applies now to waves of 100 or more sent (the log keeps
+    `sent`, 0.2.319), the piece count to all. Passing.
+  - ranks-mend: a real fault. Its rush read itself through with 11 of 38 still 30 tiles out: sent at a mended piece on
+    their line, they broke it, no wall then stood between them and the gap, and herd.rk.outside (a wall on their line)
+    counted none. Now those farther from its target than its gap by more than a rank's depth count too; it held, 11 to 8
+    to 6 outside, and went through at 6, its rule's rank of 7. The check asks none outside and reads 10 when it goes:
+    open, a call for the user (hold until none trail, or a rank may, as herd.rk.watch_rush says).
+  The biotech area after it (108 runs): those two open (ranks-mend above; farm siege's sweep, 0.2.187), the rest pass.
 - **A farm weighed its sieges before they were sized** (0.2.319; farm LP_MIX=siege, failing since 0.2.272, six checks).
   A fresh reading of the ways in sizes its sieges over the seconds after it (farm.ways_step, one a second; all at once
   cost 235 ms), but the farm weighed at once on it: its menu held no siege ("no method worth it (sieges allowed, 0
