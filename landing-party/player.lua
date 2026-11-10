@@ -114,7 +114,7 @@ local function signal(name, icon, tint, order)
 end
 local S_TINT, G_TINT = {r = 0.62, g = 0.8, b = 1, a = 1}, {r = 1, g = 0.75, b = 0.35, a = 1}
 for k, g in ipairs(shared.SCAN_GROUPS) do signal(g.signal, g.icon, nil, string.format("a%02d", k)) end
-signal("lp-scan-crew", "__landing-party__/graphics/icons/units/lp-constructor.png", nil, "b")
+signal("lp-scan-crew", "__landing-party__/graphics/icons/units/lp-technician.png", nil, "b")
 signal("lp-scan-serenity", "__base__/graphics/icons/signal/signal_S.png", S_TINT, "c")
 signal("lp-scan-grubstake", "__base__/graphics/icons/signal/signal_G.png", G_TINT, "d")
 signal("lp-scan-biters", "__base__/graphics/icons/small-biter.png", nil, "e")

@@ -6223,7 +6223,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   dark and the white still, so the matte ghosted; frozen from the first tick (`disabled_by_script`) and the ground turned
   white under the same entity, they cut cleanly. The stomper's old cut-out has its body near see-through and its shadow
   near opaque: keyed on colour instead. The threat scanner's signals show the units they count (infantry, tank, walker,
-  harrier, railgunner, hauler, buggy; crews the constructor, Synthexis a bred biter, its scout the scout), untinted. Field
+  harrier, hauler, buggy; the railgunner Space Age's railgun, its unit wearing the infantry's body; crews the technician,
+  not the constructor, the harrier's twin; Synthexis a bred biter, its scout the scout), untinted. Field
   studies' technologies wear a blueprint tag at the upper left (the schematics' look) in place of a drawn magnifier.
   The orbital cannon's model gained scattered detail (rivets and small parts seeded over its large faces, 4575 in 8
   meshes, `scatter()` in `tools/blender/orbital_cannon.py`), re-rendered in four directions.
