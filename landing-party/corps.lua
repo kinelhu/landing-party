@@ -131,6 +131,15 @@ local MODELLED = {
       working_visualisations = {{fadeout = true, animation = sheet_layer(key, "glow", {draw_as_glow = true, blend_mode = "additive",
         animation_speed = 0.5}), light = {intensity = 0.5, size = 8, shift = {0, 0}, color = lit}}}}
   end},
+  -- The generator: always running while the camp stands (an energy interface: one animation, its glow a layer of it).
+  ["lp-generator"] = {dir = "generator", apply = function(p, key, corp)
+    p.picture, p.pictures, p.animations = nil, nil, nil
+    p.animation = {layers = {sheet_layer(key, "body", {animation_speed = 0.4}),
+      sheet_layer(key, "glow", {draw_as_glow = true, blend_mode = "additive", animation_speed = 0.4}),
+      sheet_layer(key, "shadow", {draw_as_shadow = true, animation_speed = 0.4})}}
+    p.continuous_animation = true
+    p.light = {intensity = 0.4, size = 6, color = corp == "grubstake" and {r = 1, g = 0.7, b = 0.35} or {r = 0.5, g = 0.85, b = 1}}
+  end},
 }
 for corp in pairs(shared.CORPS) do
   for kind, m in pairs(MODELLED) do

@@ -4,6 +4,8 @@ Grubstake's builds of it apart, KH clean corporate blue-grey with cyan lights, G
 (palette() in faction_buildings.py; ochre lpkit's grimed paint).
   fabricator  3x3, the parts maker: KH a sealed fab module, a print gantry crossing under its glazed roof; Grubstake an
               open scrap press, its ram stamping (16 frames: its working animation).
+  generator   2x2, the camp's power: KH a fusion cell, its core lit, vanes turning on its crown; Grubstake a scrap
+              genset, its radiator fan turning (16 frames, always running).
 
     Blender -b -P tools/blender/faction_works.py -- <what> <kh|gs> <out_dir>      (LP_CLAY=1: one grey, for silhouettes)
     then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/<serenity|grubstake>/<what>
@@ -25,9 +27,9 @@ def palette(f):
     """A faction's materials: hull, trim, dark, steel, accent, light, glass."""
     W = lpkit.palette_worn()
     if f == "kh":
-        # (The player buildings' Kessler-Hayashi blue, at their texture scale: at 0.8 it read as pale concrete.)
-        hull = lptex.textured("kh-hull", "PaintedMetal006", hue=0.62, sat=0.65, val=0.62, scale=2.5, edge=(0.5, 0.52, 0.55)) if TEX \
-            else lpkit.worn("kh-hull", (0.12, 0.17, 0.24), metal=0.35, rough=0.5, seams=3, rivets=False, wear=0.25)
+        # (lpkit's worn paint in the corporation's blue: PaintedMetal006 is a white paint, and a hue turned on it stayed
+        # grey, a pale concrete at 0.8 texture scale and near black at 0.42 value.)
+        hull = lpkit.worn("kh-hull", (0.13, 0.19, 0.27), metal=0.35, rough=0.5, seams=3, rivets=False, wear=0.3)
         trim = lpkit.worn("kh-trim", (0.42, 0.43, 0.42), metal=0.3, rough=0.5, seams=2, rivets=False, wear=0.3)
         accent = lpkit.worn("kh-haz", (0.62, 0.5, 0.1), metal=0.2, rough=0.6, seams=8, rivets=False, wear=0.3)
         light = lpkit.mat("kh-light", (0.2, 0.5, 0.6), metal=0.2, rough=0.3, emit=(0.45, 0.85, 1.0), strength=0.0, grime=0.0)
@@ -396,10 +398,132 @@ def fabricator_gs():
     return model + ram + fly, set_frame
 
 
-BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs}
+def generator_kh():
+    """A fusion cell: a squat reactor vessel on a dark pad, a lit ring of its core showing through a band of glass, its
+    coolant fins round it, two terminal posts to the grid with their insulators, a pump and its pipe loop, a status lamp;
+    the core's glow pulses and a ring of vanes turns on its crown (always: it runs while the camp stands)."""
+    def build():
+        B(1.85, 1.85, 0.12, 0, 0, 0, P["dark"])
+        octa(0.95, 0.16, 0, 0.05, 0.12, P["trim"])
+        cyl(0.66, 0.38, 0, 0.05, 0.28, P["hull"], verts=48)
+        cyl(0.67, 0.1, 0, 0.05, 0.42, P["glass"], verts=48)
+        cyl(0.6, 0.18, 0, 0.05, 0.66, P["hull"], verts=48)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.58, location=(0, 0.05, 0.84), segments=48, ring_count=24)
+        o = bpy.context.object; o.scale = (1, 1, 0.42); o.data.materials.append(P["trim"])
+        cyl(0.18, 0.12, 0, 0.05, 1.04, P["dark"], verts=24)
+        for k in range(16):
+            a = k * 2 * math.pi / 16
+            o = B(0.04, 0.16, 0.42, math.cos(a) * 0.7, 0.05 + math.sin(a) * 0.7, 0.28, P["steel"], bevel=0.005)
+            o.rotation_euler = (0, 0, a)
+        # Terminal posts north-east and north-west, insulator stacks, the cable from each down into the vessel.
+        for sx in (-1, 1):
+            x, y = sx * 0.72, 0.72
+            B(0.18, 0.18, 0.4, x, y, 0.12, P["dark"])
+            for k in range(4):
+                cyl(0.06 - k * 0.005, 0.05, x, y, 0.55 + k * 0.07, P["trim"], verts=12)
+            sph(0.05, x, y, 0.85, P["steel"])
+            rod((x, y, 0.5), (sx * 0.4, 0.4, 0.6), 0.025, P["rubber"])
+        # A pump south-east and its coolant loop round to the vessel; a lamp and a gauge south-west.
+        B(0.32, 0.26, 0.26, 0.62, -0.62, 0.12, P["hull"])
+        motor(0.62, -0.62, 0.38, 0.09, 0.3, P["trim"], P["steel"], axis="x")
+        pipe([(0.62, -0.5, 0.3), (0.45, -0.3, 0.32), (0.3, -0.45, 0.45)], 0.035, P["steel"], P["dark"])
+        cyl(0.04, 0.35, -0.72, -0.7, 0.12, P["dark"], verts=10)
+        cyl(0.06, 0.06, -0.72, -0.7, 0.47, P["light"], verts=12)
+        gauge(-0.4, -0.62, 0.36, P["dark"], P["trim"])
+        for k in range(5):
+            B(0.18, 0.04, 0.05, -0.36 + k * 0.18, -0.9, 0.12, P["accent"] if k % 2 == 0 else P["dark"])
+        prop("power_box_01_box", "power_box_01", (-0.82, 0.0, 0.12), 90, 0.35)
+    def build_vanes():
+        for k in range(8):
+            a = k * 2 * math.pi / 8
+            o = B(0.26, 0.05, 0.03, math.cos(a) * 0.3, 0.05 + math.sin(a) * 0.3, 1.0, P["steel"], rot=a, bevel=0.0)
+    model = group(build)
+    vanes = group(build_vanes)
+    bpy.ops.object.empty_add(location=(0, 0.05, 1.0)); pv = bpy.context.object
+    for o in vanes:
+        o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    model += scatter(model, {P["hull"], P["trim"]}, P["dark"], P["steel"], 3, density=10.0)
+    def set_frame(f, frames):
+        t = f / frames
+        pv.rotation_euler = (0, 0, t * math.pi / 4)
+        lpkit.emission(P["glass"], 2.0 + 1.0 * math.sin(t * 2 * math.pi))
+        lpkit.emission(P["light"], 3.0 if (f % 8) < 4 else 1.0)
+        bpy.context.view_layer.update()
+    return model + vanes, set_frame
+
+
+def generator_gs():
+    """A scrap genset: an engine block on skids, its radiator grille south with the fan turning behind it, a flywheel
+    and belt to the dynamo, an exhaust stack, fuel drums lashed on, a cable reel, an amber lamp."""
+    import random as _r
+    rr = _r.Random(11)
+    def build():
+        for sx in (-1, 1):
+            B(1.8, 0.22, 0.12, 0, sx * 0.7, 0, P["dark"])
+        B(1.7, 1.55, 0.08, 0, 0, 0.12, P["trim"])
+        # The engine block: ochre, its cylinder heads, the exhaust manifold.
+        B(0.9, 0.9, 0.5, -0.15, 0.15, 0.2, P["hull"])
+        for k in range(4):
+            B(0.18, 0.7, 0.12, -0.5 + k * 0.23, 0.15, 0.7, P["hull"] if k % 2 else P["trim"], bevel=0.01)
+            cyl(0.03, 0.05, -0.5 + k * 0.23, -0.15, 0.82, P["dark"], verts=8)
+        pipe([(-0.5, 0.55, 0.75), (-0.5, 0.62, 0.9), (0.6, 0.62, 0.95)], 0.05, P["dark"], P["steel"])
+        cyl(0.09, 0.9, 0.6, 0.62, 0.2, P["dark"], verts=12)
+        cyl(0.11, 0.08, 0.6, 0.62, 1.1, P["rubber"], verts=12)
+        # The radiator south: a frame, its grille, the fan behind it.
+        B(0.9, 0.12, 0.6, -0.15, -0.42, 0.2, P["hull"])
+        for k in range(8):
+            B(0.75, 0.02, 0.03, -0.15, -0.49, 0.26 + k * 0.06, P["dark"], bevel=0.0)
+        # The dynamo east, its flywheel and belt.
+        lie(0.2, 0.5, 0.55, -0.05, 0.42, P["trim"], "x", 24)
+        for k in range(6):
+            lie(0.205, 0.03, 0.35 + k * 0.08, -0.05, 0.42, P["dark"], "x", 24)
+        rod((0.32, -0.05, 0.62), (-0.55, -0.05, 0.62), 0.02, P["rubber"])
+        # Fuel drums lashed on north-east, a cable reel south-east, scrap plates welded on.
+        for k, (x, y) in enumerate(((0.55, 0.15), (0.75, 0.38))):
+            cyl(0.15, 0.4, x, y + 0.05, 0.2, P["accent"] if k else P["steel"], verts=20)
+            tor(0.15, 0.015, x, y + 0.05, 0.35, P["dark"])
+        lie(0.18, 0.12, 0.6, -0.55, 0.3, P["dark"], "x", 20)
+        lie(0.13, 0.13, 0.6, -0.55, 0.3, P["rubber"], "x", 20)
+        for x, y, z, r in ((-0.6, -0.2, 0.3, 6), (0.2, 0.62, 0.3, -8)):
+            o = B(0.3, 0.05, 0.25, x, y, z, P["trim"], bevel=0.01); o.rotation_euler = (0, math.radians(r), 0)
+        rod((-0.75, 0.6, 0.2), (-0.75, 0.6, 1.2), 0.025, P["steel"])
+        sph(0.06, -0.75, 0.6, 1.24, P["light"])
+        for k in range(8):
+            B(rr.uniform(0.05, 0.12), rr.uniform(0.05, 0.12), rr.uniform(0.03, 0.07), rr.uniform(-0.8, -0.3),
+              rr.uniform(-0.75, -0.55), 0.2, rr.choice((P["steel"], P["dark"], P["accent"])), rot=rr.uniform(0, 3), bevel=0.005)
+        prop("small_lpg_tank", "small_lpg_tank", (-0.72, 0.1, 0.2), 0, 0.3)
+    FX, FY, FZ = -0.15, -0.35, 0.5
+    def build_fan():
+        for k in range(4):
+            o = B(0.55, 0.03, 0.09, FX, FY, FZ - 0.045, P["steel"], bevel=0.0); o.rotation_euler = (0, k * math.pi / 4, 0)
+            o.location = (FX, FY, FZ)
+    model = group(build)
+    fan = group(build_fan)
+    bpy.ops.object.empty_add(location=(FX, FY, FZ)); fv = bpy.context.object
+    for o in fan:
+        o.parent = fv; o.matrix_parent_inverse = fv.matrix_world.inverted()
+    model += scatter(model, {P["hull"], P["trim"]}, P["dark"], P["steel"], 4, density=9.0)
+    def set_frame(f, frames):
+        t = f / frames
+        fv.rotation_euler = (0, t * math.pi / 4, 0)
+        lpkit.emission(P["light"], 3.5 if (f % 8) < 4 else 1.0)
+        bpy.context.view_layer.update()
+    return model + fan, set_frame
+
+
+BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs,
+         ("generator", "kh"): generator_kh, ("generator", "gs"): generator_gs}
 FRAMES = int(os.environ.get("LP_FRAMES", 16))
-TILES = {"fabricator": 3}[WHAT]
+TILES = {"fabricator": 3, "generator": 2}[WHAT]
 objs, set_frame = BUILD[(WHAT, F)]()
+# (Taller, where vanilla's sprite of the same footprint stands taller: the generators read squat beside the accumulator.)
+LIFT = {"generator": 1.35}.get(WHAT, 1.0)
+if LIFT != 1.0:
+    for o in objs:
+        if o.parent is None:
+            o.location.z *= LIFT; o.scale.z *= LIFT
+    for o in scene.objects:
+        if o.type == "EMPTY": o.location.z *= LIFT; o.scale.z *= LIFT
 lpkit.bevel_all(objs)
 ground, sun, world = lpkit.stage(scene, TILES, 2.2)
 lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun, world)

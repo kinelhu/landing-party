@@ -6306,6 +6306,14 @@ Bugs and surprises the headless runs caught, each kept as a check:
   The first passes read flat beside vanilla's dense assembler: a pale concrete deck (the KH paint at 0.8 texture scale),
   a cartoon-blue glass slab, a solid ochre crown hiding the press; clay, then four passes judged beside vanilla at game
   scale. Contact sheet: vanilla, KH repaint, KH model, Grubstake repaint, Grubstake model.
+- **The factions' generators modelled** (0.2.299; faction_works.py generator). They had been the accumulator repainted.
+  Kessler-Hayashi's a fusion cell (a domed vessel on a pad, its core lit cyan through a band round its middle, coolant
+  fins, two terminal posts with insulator stacks, a pump and its loop, vanes turning on its crown); Grubstake's a scrap
+  genset (an ochre engine block on skids, its radiator south with the fan turning behind the grille, a dynamo and belt,
+  fuel drums, a cable reel, an amber lamp). Always running (continuous_animation: an energy interface has one animation,
+  its glow a layer of it), 16 frames. Raised 1.35 times (LIFT): first rendered at the fabricator's proportions they read
+  squat beside the accumulator they replace. Kessler-Hayashi's paint is lpkit's worn paint in its blue: PaintedMetal006 is
+  a white paint, and a hue turned on it stayed grey (the fabricator re-rendered with it).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
