@@ -15374,12 +15374,34 @@ scenarios.airraid = function()
       end
     end
     lp("debug_units", S.id, "lp-laser-drone", 8)
+    -- Three outposts 40 tiles out, held as the radar is (flamers, or guns in aa): for its build's tilt to fliers
+    -- (army.air_tilt: three of the player's targets sensed at least).
+    S.outposts = {}
+    for _, o in ipairs({{-40, 0}, {40, 0}, {0, 40}}) do
+      local p = {c[1] + o[1], c[2] + o[2]}
+      flatten(p[1] - 8, p[2] - 8, p[1] + 8, p[2] + 8)
+      surface().create_entity{name = "assembling-machine-2", position = {p[1] + 0.5, p[2] + 0.5}, force = "player"}
+      for _, d in ipairs({{4, 0}, {-4, 0}}) do
+        if aa then
+          local t = surface().create_entity{name = "gun-turret", position = {p[1] + d[1], p[2] + d[2]}, force = "player"}
+          if t then t.insert{name = "firearm-magazine", count = 100} end
+        else
+          local f = surface().create_entity{name = "flamethrower-turret", position = {p[1] + d[1], p[2] + d[2]}, force = "player"}
+          if f then f.insert_fluid{name = "crude-oil", amount = 100} end
+        end
+      end
+      S.outposts[#S.outposts + 1] = p
+    end
   end)
   -- (Sensed two seconds on: on the tick they were placed the flamers' oil had not settled, and they read as silent, 0.)
   schedule(8 * 3600 + 120, function()
     S.sensed = lp("debug_needed", S.id, S.c)
+    for _, p in ipairs(S.outposts) do lp("debug_needed", S.id, p) end
+    S.tilt = lp("stats", S.id).ops.air_tilt
     lp("debug_tune", {raids_off = false})
   end)
+  -- Its build's tilt read a minute on (army.composition runs as it builds).
+  schedule(9 * 3600, function() S.tilt = lp("stats", S.id).ops.air_tilt end)
   for t = 8 * 3600 + 600, END - 120, 600 do
     schedule(t, function()
       local o = lp("stats", S.id).ops
@@ -15395,11 +15417,17 @@ scenarios.airraid = function()
     info(string.format("airraid%s: sensed %s; %d raids, %d by air (first at %s); the radar %s; log %s", aa and " aa" or off and " off" or "",
       serpent.line(S.sensed), S.raids or 0, S.air or 0, S.air_at and string.format("%.1f min", S.air_at / 3600) or "-",
       S.radar and S.radar.valid and "standing" or "razed", serpent.line(st.ops.log)))
+    info("airraid: its build's tilt to fliers " .. tostring(S.tilt))
     if aa then
       check("airraid: aa, its fliers kept home where guns shoot up", (S.air or 0) == 0, tostring(S.air))
+      check("airraid: aa, and its build not tilted to fliers", S.tilt == 1, tostring(S.tilt))
     else
       check("airraid: it went by air at the walled, flamer-held radar", (S.air or 0) >= 1, tostring(S.air))
       check("airraid: and razed the radar", S.razed_at ~= nil, tostring(S.razed_at))
+      if not off then
+        check("airraid: and its build tilted to fliers (flamers on foot, nothing shooting up)", (S.tilt or 1) > 1.5,
+          tostring(S.tilt))
+      end
     end
   end)
 end

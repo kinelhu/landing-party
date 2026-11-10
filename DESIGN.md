@@ -6059,6 +6059,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   once refused; a second spends two; a third refused; no array refused; the platform sent to Vulcanus refused; none
   placeable on Nauvis. Learnt on the way (the 2.1 API, from the error, not memory): a recipe's `category` is `categories`.
   Not yet seen in a window: the remote's feel, the readout, the art (provisional: the assembling machine 3, a radar).
+- **Fliers built where the air is open** (0.2.278; the approved air-raid work's second part, the user, 2026-11-09:
+  "build more fliers against weak-AA defences"). Intel records, for each target it senses, what shoots up within 30 of
+  it (t.air_near: airraid.weigh with no line, one search); army.composition multiplies every flier's weight by
+  (ground + 1) / (air + 1) over the player's sensed targets (three at least), over airraid.EDGE, at most 3. Scenario
+  airraid with three outposts: walls of flamethrowers (nothing shooting up) tilt it to 3, the cap; guns (which shoot up)
+  leave it at 1. Which corporations field fliers is unchanged (their mixes and research); only how many.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

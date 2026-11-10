@@ -119,7 +119,27 @@ army.withdrawing = withdrawing
 local COUNTERS = require("__landing-party__.counters")
 local COMPOSE_WINDOW = 20 * 3600
 local KILLER_COLUMN = {vehicle = "lp-battle-tank", character = "lp-trooper"}
-local function composition(b, m)
+-- Fliers where the air is open (the user, 2026-11-09, on air raids: "build more fliers against weak-AA defences"): over
+-- the player's targets it has sensed (AIR_SEEN at least), what defends them on foot against what shoots up round them
+-- (intel's t.air_near, airraid.weigh), (ground + 1) / (air + 1) over airraid.EDGE, at most AIR_TILT, times every flier's
+-- weight. Walls of flamethrowers and artillery tilt it; a defence of guns and lasers, which shoot up, leaves it at 1.
+local airraid = require("__landing-party__.scripts.airraid")
+local AIR_SEEN, AIR_TILT = 3, 3
+local function air_tilt(b)
+  local g, a, n = 0, 0, 0
+  for _, t in pairs((b.intel or {}).targets or {}) do
+    local f = t.air_near and t.owner and game.forces[t.owner]
+    if f and shared.is_player_force(f) then
+      g, a, n = g + (t.defence or 0), a + t.air_near, n + 1
+    end
+  end
+  local tilt = n >= AIR_SEEN and math.max(1, math.min(AIR_TILT, (g + 1) / (a + 1) / airraid.EDGE)) or 1
+  b.air_tilt = tilt
+  return tilt
+end
+army.air_tilt = air_tilt
+
+local function counter_composition(b, m)
   local mind = (shared.CORPS[b.corp] or {}).mind or {}
   local k = mind.counter or 0
   if k == 0 then return m end
@@ -139,6 +159,14 @@ local function composition(b, m)
   end
   b.composed = out
   return out
+end
+local function composition(b, m)
+  local out = counter_composition(b, m)
+  local tilt = air_tilt(b)
+  if tilt <= 1 then return out end
+  local t = {}
+  for name, w in pairs(out) do t[name] = airraid.is_flier(shared.variant(b.corp, name)) and w * tilt or w end
+  return t
 end
 army.composition = composition
 

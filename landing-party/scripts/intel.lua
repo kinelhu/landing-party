@@ -174,6 +174,8 @@ local function sense(b, surface, pos, r)
       t.pos, t.kind, t.value, t.seen, t.owner, t.drills, t.loot = c.pos, c.kind, c.value, game.tick, c.owner, c.drills, c.loot
       t.defence, t.dmg = ops.weigh(surface, c.pos, other, nil, b.corp)
       t.exposure = ops.exposure(surface, c.pos, other)
+      -- What shoots up round it (army.air_tilt: fliers where the air is open).
+      t.air_near = ops.air_near and ops.air_near(surface, c.pos, other, b.corp) or nil
       if ops.weighs_way(b) and b.origin then t.way = ops.way_in(surface, {b.origin.x, b.origin.y}, c.pos, other, b.corp) end
       -- A line cell: a pole or rail with no turret within 60 tiles and little else round it (transit far from
       -- defences: cheap to cut). Isolated: a substation inside a base, 66 tiles from its corner turrets, was

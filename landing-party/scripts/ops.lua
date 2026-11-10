@@ -46,6 +46,8 @@ local PER_TURRET, BASE_FORCE = 3.5, 4
 local DESPERATE_ODDS, DESPERATE_SIEGE = 0.5, 2
 ops.PER_TURRET = PER_TURRET
 airraid.PER_TURRET = PER_TURRET
+-- What shoots up within DEFENCE_RADIUS of a target (intel's sense; army.air_tilt).
+function ops.air_near(s, pos, forces, corp) return airraid.weigh(s, pos, pos, forces, corp, DEFENCE_RADIUS) end
 local THREAT_TICKS = 10 * 60 * 60     -- a static threat on the faction's ground stays a priority this long
 local THREAT_BONUS = 10               -- value added to targets by it
 -- Staging this far from the target: the longest reach of any turret (threat.far, from the prototypes: a flat 34 was a
@@ -2128,6 +2130,7 @@ function ops.summary(b)
     leaders_lost = b.leaders_lost or 0, broken = b.broken or 0, regrouped = b.regrouped or 0, dismantled = b.dismantled or 0,
     overflights = b.overflights or 0,
     air_raids = b.air_raids or 0,
+    air_tilt = b.air_tilt,
     route = b.op and b.op.route and #b.op.route or nil, breach_at = b.op and b.op.breach_at, route_points = b.op_route,
     breached = b.op and b.op.breached,
     way_method = b.op and b.op.way_method, wall_pieces = b.op and b.op.wall_pieces, way_open = b.op and b.op.way_open,
