@@ -38,6 +38,12 @@ for d, _, files in sorted(os.walk(root)):
         key = os.path.relpath(d, root).replace(os.sep, "/")
         m = json.load(open(os.path.join(d, "sheet.json")))
         split = ", files = %d, lines_per_file = %d" % (m["files"], m["lines_per_file"]) if "files" in m else ""
+        # (A pole's wire points, posts.json beside its sheet: faction_works.py projects its insulators' tips.)
+        if "posts.json" in files:
+            pj = json.load(open(os.path.join(d, "posts.json")))
+            def pt(v): return "{%r, %r}" % (v[0], v[1])
+            split += ", posts = {" + ", ".join("%s = {%s}" % (k, ", ".join("%s = %s" % (c, pt(v)) for c, v in sorted(pj[k].items())))
+                                               for k in ("wire", "shadow")) + "}"
         rows.append('  ["%s"] = {width = %d, height = %d, frames = %d, line_length = %d, shift = {%r, %r}%s},' % (
             key, m["width"], m["height"], m["frames"], m["line_length"], m["shift"][0], m["shift"][1], split))
 with open(os.path.join(root, "sheets.lua"), "w") as f:

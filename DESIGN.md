@@ -6337,6 +6337,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   scrap hut (its rim, three struts to the feed horn, patches welded on). The dish first faced north and down: its back
   read as a ball; its emitters first lit at full strength blew out white. Kessler-Hayashi's trim darkened to a steel
   grey (the fabricator and generator re-rendered with it: its pale trim had read as concrete).
+- **The factions' drills and Kessler-Hayashi's pylon modelled** (0.2.303; faction_works.py drill, pylon). Kessler-
+  Hayashi's drill a sealed bore unit (a chamfered housing, its bore tower and its collar turning while it mines behind a
+  ring of glass, the ore chute out to the north), four directions of 16 frames. Grubstake's drill takes the strip drill's
+  gantry (the player's strip drill is Grubstake's, salvaged): the same footprint and output (vector_to_place_result 0,
+  -1.85, checked in the dump). Kessler-Hayashi's pylon a composite mast (a tapered banded shaft, a crossarm of three
+  insulator stacks, a cyan beacon), one direction; its wire points are the insulators' tips projected to the screen and
+  along the sun to the ground (posts.json beside its sheet, carried into sheets.lua and set as its one connection point;
+  marked on the render, they sat on the insulator and on its shadow's end). Grubstake's pole was modelled (a rail tie, an
+  angle-iron crossbar, glass insulators, a lantern) and read worse than the repainted lattice tower, a thin dark stick:
+  it keeps the repaint. Found on the way: lpkit.passes leaves the model hidden after its shadow render (the drill's
+  east, south and west came out empty), and a part hidden from the camera still casts its shadow (the turrets' bases
+  carried their heads' shadows; the player's flak turret has it too, and its head sheet is turned 180 degrees: its first
+  frame aims south, a rotated sprite's first faces north).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

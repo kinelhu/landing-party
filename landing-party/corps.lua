@@ -151,10 +151,83 @@ local MODELLED = {
       turn("shadow", {draw_as_shadow = true})}}
   end},
 }
+-- Turrets: the base once, the head in 64 directions for every state (it does not rise out of the ground as vanilla's
+-- laser turret does), its lights a glow layer of it.
+local function turret(p, key)
+  local function head(file, extra)
+    local l = sheet_layer(key .. "/head", file, extra)
+    l.direction_count, l.frame_count = l.frame_count, nil
+    return l
+  end
+  local h = {layers = {head("body"), head("glow", {draw_as_glow = true, blend_mode = "additive"}),
+    head("shadow", {draw_as_shadow = true})}}
+  p.folded_animation, p.preparing_animation, p.prepared_animation, p.folding_animation = h, h, h, h
+  if p.attacking_animation then p.attacking_animation = h end
+  if p.type == "electric-turret" then p.energy_glow_animation = nil end
+  local base = function(file, extra)
+    local l = sheet_layer(key .. "/base", file, extra); l.frame_count, l.line_length = nil, nil; return l
+  end
+  p.graphics_set = {base_visualisation = {animation = {layers = {base("body"),
+    base("glow", {draw_as_glow = true, blend_mode = "additive"}), base("shadow", {draw_as_shadow = true})}}}}
+end
+-- Drills: four directions, each its working animation (an Animation4Way). Grubstake's is the strip drill's gantry (the
+-- player's strip drill is Grubstake's own, salvaged: tools/blender/turning_buildings.py).
+local function drill(prefix)
+  return function(p)
+    local a = {}
+    for _, d in ipairs({"north", "east", "south", "west"}) do
+      local key = prefix .. "/" .. d
+      a[d] = {layers = {sheet_layer(key, "body", {animation_speed = 0.5}),
+        sheet_layer(key, "glow", {draw_as_glow = true, blend_mode = "additive", animation_speed = 0.5}),
+        sheet_layer(key, "shadow", {draw_as_shadow = true, animation_speed = 0.5})}}
+    end
+    p.graphics_set = {animation = a}
+    p.wet_mining_graphics_set = nil
+  end
+end
+local DRILL_ART = {grubstake = "player/strip-drill", serenity = "serenity/drill"}
+for corp, prefix in pairs(DRILL_ART) do
+  local p = SHEETS[prefix .. "/north"] and find(shared.variant(corp, "lp-drill"))
+  if p then drill(prefix)(p) end
+end
+-- The pylon: one direction, its wire points the model's insulator tips (posts.json, projected by faction_works.py).
+MODELLED["lp-pylon"] = {dir = "pylon", apply = function(p, key)
+  local function pic(file, extra)
+    local l = sheet_layer(key, file, extra); l.direction_count, l.frame_count = 1, nil; return l
+  end
+  p.pictures = {layers = {pic("body"), pic("glow", {draw_as_glow = true, blend_mode = "additive"}), pic("shadow", {draw_as_shadow = true})}}
+  p.connection_points = {table.deepcopy(SHEETS[key].posts)}
+end}
+-- The flamer: its base in four directions, its head in 64 for every base direction and state (an 8-way set of one head:
+-- its pivot is the entity's centre).
+MODELLED["lp-flamer"] = {dir = "flamer", head = true, apply = function(p, key)
+  local function head(file, extra)
+    local l = sheet_layer(key .. "/head", file, extra)
+    l.direction_count, l.frame_count = l.frame_count, nil
+    return l
+  end
+  local h = {layers = {head("body"), head("glow", {draw_as_glow = true, blend_mode = "additive"}), head("shadow", {draw_as_shadow = true})}}
+  local eight = {}
+  for _, d in ipairs({"north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west"}) do eight[d] = h end
+  for _, k in ipairs({"folded_animation", "preparing_animation", "prepared_animation", "attacking_animation",
+      "ending_attack_animation", "folding_animation"}) do
+    if p[k] then p[k] = eight end
+  end
+  local four = {}
+  for _, d in ipairs({"north", "east", "south", "west"}) do
+    local function base(file, extra)
+      local l = sheet_layer(key .. "/base-" .. d, file, extra); l.frame_count, l.line_length = nil, nil; return l
+    end
+    four[d] = {layers = {base("body"), base("glow", {draw_as_glow = true, blend_mode = "additive"}), base("shadow", {draw_as_shadow = true})}}
+  end
+  p.graphics_set = {base_visualisation = {animation = four}}
+end}
+MODELLED["lp-turret"] = {dir = "turret", head = true, apply = turret}
+MODELLED["lp-gun-turret"] = {dir = "gun-turret", head = true, apply = turret}
 for corp in pairs(shared.CORPS) do
   for kind, m in pairs(MODELLED) do
     local key = corp .. "/" .. m.dir
-    local p = SHEETS[key] and find(shared.variant(corp, kind))
+    local p = SHEETS[key .. (m.head and "/head" or "")] and find(shared.variant(corp, kind))
     if p then m.apply(p, key, corp) end
   end
 end

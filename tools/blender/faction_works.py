@@ -6,6 +6,11 @@ Grubstake's builds of it apart, KH clean corporate blue-grey with cyan lights, G
               open scrap press, its ram stamping (16 frames: its working animation).
   radar       3x3, its head turning through 32 steps (a radar's sprite turns whole): KH a phased-array mast, Grubstake a
               patched dish on a tripod.
+  drill       3x3, four directions (its output north at yaw 0), 16 frames each: KH's sealed bore unit, its collar turning
+              (Grubstake's drill is the strip drill's gantry, turning_buildings.py).
+  flamer      2x3, its base in four directions and its head in 64 on a pivot at the centre: KH an armoured fuel-fed
+              flame turret, Grubstake a drum-fed scrap flamer.
+  pylon       1x1, one direction and its wire points (posts.json): KH a composite mast, Grubstake a scrap pole.
   turret      2x2, a base once and a head in 64 directions (north first, clockwise): KH's laser turret (a lens turret on
               a hexagonal ring) and gun-turret (twin autocannon), Grubstake's turret (a gun nest of scrap, one barrel).
   generator   2x2, the camp's power: KH a fusion cell, its core lit, vanes turning on its crown; Grubstake a scrap
@@ -645,6 +650,117 @@ def radar_gs():
     return model + head, set_frame
 
 
+def drill_kh():
+    """A sealed bore unit: a chamfered blue-grey housing on a dark skirt, the bore tower at its middle and its collar
+    turning while it mines (seen through a ring of glass), the ore chute out to the north (the game puts the ore there),
+    its conveyor and lamps, a motor and a cable run on its flanks."""
+    def build():
+        octa(1.55, 0.12, 0, 0, 0, P["dark"])
+        octa(1.45, 0.42, 0, 0, 0.12, P["hull"])
+        octa(1.47, 0.05, 0, 0, 0.54, P["dark"])
+        for k in range(16):
+            a = (k + 0.5) * 2 * math.pi / 16
+            x, y = math.cos(a) * 1.41, math.sin(a) * 1.41
+            if y > 1.1 and abs(x) < 0.6: continue
+            o = B(0.06, 0.06, 0.38, x, y, 0.15, P["trim"], bevel=0.01); o.rotation_euler = (0, 0, a)
+        cyl(0.7, 0.08, 0, 0, 0.59, P["trim"], verts=40)
+        cyl(0.6, 0.12, 0, 0, 0.67, P["glass"], verts=40)
+        cyl(0.42, 0.75, 0, 0, 0.79, P["hull"], verts=32)
+        for z in (0.95, 1.25):
+            tor(0.43, 0.03, 0, 0, z, P["trim"])
+        cyl(0.3, 0.12, 0, 0, 1.54, P["dark"], verts=24)
+        cyl(0.12, 0.3, 0, 0, 1.66, P["steel"], verts=16)
+        # The chute north and its conveyor out over the edge, its lamps.
+        B(0.62, 0.7, 0.28, 0, 1.05, 0.59, P["trim"])
+        B(0.5, 0.75, 0.06, 0, 1.15, 0.87, P["dark"])
+        for k in range(5):
+            lie(0.03, 0.46, 0, 1.0 + k * 0.12, 0.6, P["steel"], "x", 8)
+        for sx in (-1, 1):
+            B(0.08, 0.05, 0.08, sx * 0.36, 1.42, 0.62, P["light"], bevel=0.0)
+        # A drive motor east, a cable run west to a power box, the hazard band south, a status mast.
+        B(0.45, 0.6, 0.08, 1.0, -0.2, 0.59, P["dark"])
+        motor(1.0, -0.2, 0.67, 0.15, 0.55, P["hull"], P["steel"], axis="y")
+        lie(0.05, 0.5, 0.62, -0.2, 0.82, P["steel"], "x")
+        B(0.4, 0.3, 0.36, -1.0, -0.55, 0.59, P["trim"])
+        B(0.25, 0.02, 0.14, -1.0, -0.71, 0.75, P["light"])
+        for k in range(3):
+            rod((-0.85 + k * 0.05, -0.4, 0.95), (-0.42, -0.1 + k * 0.05, 1.0), 0.022, P["rubber"])
+        for k in range(8):
+            B(0.15, 0.04, 0.06, -0.6 + k * 0.17, -1.42, 0.45, P["accent"] if k % 2 == 0 else P["dark"])
+        cyl(0.04, 0.55, -1.05, 0.95, 0.59, P["dark"], verts=10)
+        for k in range(2):
+            cyl(0.065, 0.06, -1.05, 0.95, 1.14 + k * 0.09, P["light"], verts=14)
+        prop("power_box_01_box", "power_box_01", (-1.45, 0.1, 0.25), 90, 0.45)
+    def build_collar():
+        for k in range(8):
+            a = k * 2 * math.pi / 8
+            B(0.12, 0.16, 0.08, math.cos(a) * 0.55, math.sin(a) * 0.55, 0.69, P["steel"], rot=a, bevel=0.005)
+        for k in range(4):
+            a = k * math.pi / 2 + 0.3
+            B(0.08, 0.24, 0.05, math.cos(a) * 0.5, math.sin(a) * 0.5, 1.4, P["dark"], rot=a, bevel=0.005)
+    model = group(build)
+    collar = group(build_collar)
+    bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
+    for o in collar:
+        o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    model += scatter(model, {P["hull"], P["trim"]}, P["dark"], P["steel"], 8, density=9.0)
+    def set_frame(f, frames):
+        t = f / frames
+        pv.rotation_euler = (0, 0, t * math.pi / 4)
+        lpkit.emission(P["glass"], 0.45 + 0.25 * math.sin(t * 4 * math.pi))
+        lpkit.emission(P["light"], 3.0 if (f % 4) < 2 else 1.2)
+        bpy.context.view_layer.update()
+    return model + collar, set_frame
+
+
+def pylon_kh():
+    """A composite mast: a dark foot, a tapered blue-grey shaft banded, a crossarm with three insulator stacks (the
+    copper wire at the middle one's tip, the circuit wires at the arm's ends), a cyan beacon on top."""
+    import mathutils as _mu
+    V = _mu.Vector
+    def build():
+        cyl(0.26, 0.1, 0, 0, 0, P["dark"], verts=8)
+        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.12, radius2=0.07, depth=2.6, location=(0, 0, 1.4))
+        bpy.context.object.data.materials.append(P["hull"])
+        for z in (0.5, 1.2, 1.9):
+            cyl(0.115 - z * 0.02, 0.06, 0, 0, z, P["trim"], verts=12)
+        B(0.7, 0.08, 0.08, 0, 0, 2.45, P["trim"], bevel=0.01)
+        for x in (-0.3, 0.0, 0.3):
+            for k in range(3):
+                cyl(0.04, 0.035, x, 0, 2.53 + k * 0.045, P["glass"] if x == 0 else P["steel"], verts=10)
+        cyl(0.05, 0.08, 0, 0, 2.7, P["dark"], verts=10)
+        sph(0.045, 0, 0, 2.82, P["light"])
+        B(0.14, 0.04, 0.16, 0, -0.1, 0.55, P["dark"], bevel=0.005)
+        B(0.06, 0.02, 0.04, 0, -0.125, 0.65, P["light"], bevel=0.0)
+    tips = {"copper": V((0, 0, 2.67)), "red": V((-0.3, 0, 2.67)), "green": V((0.3, 0, 2.67))}
+    return group(build), tips
+
+
+def pylon_gs():
+    """A scrap pole: a rail tie for a post, banded with wire, a crossbar of angle iron, glass insulators on pins, a
+    lantern hung off it, a bucket of rocks for a foot."""
+    import mathutils as _mu
+    V = _mu.Vector
+    def build():
+        cyl(0.2, 0.22, 0, 0, 0, P["accent"], verts=12)
+        tor(0.2, 0.02, 0, 0, 0.2, P["dark"])
+        B(0.15, 0.13, 2.55, 0, 0, 0.1, P["trim"], bevel=0.01)
+        for z in (0.6, 1.4):
+            tor(0.11, 0.012, 0, 0, z, P["steel"])
+        o = B(0.8, 0.06, 0.06, 0, 0.02, 2.35, P["steel"], bevel=0.0); o.rotation_euler.y = math.radians(4)
+        rod((-0.25, 0.02, 2.36), (0, 0.02, 2.0), 0.015, P["steel"]); rod((0.25, 0.02, 2.38), (0, 0.02, 2.0), 0.015, P["steel"])
+        for x in (-0.33, 0.0, 0.33):
+            cyl(0.012, 0.1, x, 0.02, 2.41, P["steel"], verts=6)
+            cyl(0.04, 0.07, x, 0.02, 2.48, P["glass"], verts=10)
+        rod((0.33, 0.02, 2.38), (0.36, 0.02, 2.2), 0.008, P["steel"])
+        cyl(0.04, 0.08, 0.36, 0.02, 2.1, P["dark"], verts=8)
+        sph(0.035, 0.36, 0.02, 2.15, P["light"])
+        for k in range(3):
+            B(0.08, 0.06, 0.05, -0.08 + k * 0.08, 0.15, 0.1 + k * 0.03, P["dark"], rot=k, bevel=0.005)
+    tips = {"copper": V((0, 0.02, 2.56)), "red": V((-0.33, 0.02, 2.56)), "green": V((0.33, 0.02, 2.56))}
+    return group(build), tips
+
+
 # --- Turrets: a base (once) and a head in 64 directions, north at the first, clockwise (a rotated sprite's), the same
 # head for every state (it does not rise out of the ground). Each builder returns (base, head, its pivot).
 def turret_base_kh():
@@ -745,12 +861,122 @@ def turret_gs():
     return b, h
 
 
+def flamer_kh():
+    """A fuel-fed flame turret: a long armoured housing (2x3, facing north), its fuel tank at the back with the two pipe
+    inlets, a turret ring at its middle; the head a squat armoured nozzle block, the nozzle and its pilot light."""
+    def base():
+        B(1.4, 2.35, 0.12, 0, 0, 0, P["dark"])
+        B(1.3, 2.2, 0.3, 0, 0, 0.12, P["hull"], bevel=0.05)
+        B(1.32, 0.05, 0.05, 0, 0.6, 0.42, P["accent"], bevel=0.0)
+        lie(0.3, 1.0, 0, -0.65, 0.62, P["trim"], "x", 24)                         # the fuel tank, across the back
+        for x in (-0.35, 0.35):
+            tor(0.3, 0.025, x, -0.65, 0.62, P["dark"]).rotation_euler = (0, math.pi / 2, 0)
+        for x in (-0.5, 0.5):
+            lie(0.1, 0.25, x, -1.05, 0.25, P["steel"], "y", 12)                   # the inlets at the back
+            lie(0.13, 0.04, x, -1.17, 0.25, P["dark"], "y", 12)
+        pipe([(-0.5, -0.95, 0.3), (-0.5, -0.65, 0.35)], 0.05, P["steel"])
+        gauge(0.42, -0.98, 0.55, P["dark"], P["trim"])
+        cyl(0.45, 0.08, 0, 0.25, 0.42, P["trim"], verts=32)
+        for sx in (-1, 1):
+            B(0.08, 0.04, 0.08, sx * 0.55, 1.1, 0.3, P["light"], bevel=0.0)
+    def head():
+        cyl(0.36, 0.1, 0, 0, 0.5, P["dark"], verts=24)
+        B(0.5, 0.55, 0.28, 0, -0.05, 0.6, P["hull"], bevel=0.05)
+        lie(0.07, 0.55, 0, 0.5, 0.74, P["steel"], "y", 14)
+        lie(0.1, 0.12, 0, 0.78, 0.74, P["dark"], "y", 14)
+        lie(0.04, 0.06, 0, 0.86, 0.66, P["glass"], "y", 10)                        # the pilot light, under the muzzle
+        rod((0.18, -0.15, 0.75), (0.08, 0.3, 0.78), 0.025, P["rubber"])
+        B(0.5, 0.04, 0.04, 0, -0.33, 0.88, P["accent"], bevel=0.0)
+    return group(base), group(head)
+
+
+def flamer_gs():
+    """A drum-fed scrap flamer: a welded skid, two oil drums lashed at the back over the inlets, a pressure bottle and its
+    hose, a ring; the head a patched box behind a shield, a long nozzle, its igniter lit amber."""
+    def base():
+        for sx in (-1, 1):
+            B(0.2, 2.4, 0.12, sx * 0.6, 0, 0, P["dark"])
+        B(1.3, 2.2, 0.08, 0, 0, 0.12, P["trim"])
+        for x in (-0.33, 0.33):
+            cyl(0.27, 0.75, x, -0.65, 0.2, P["accent"] if x < 0 else P["hull"], verts=20)
+            for z in (0.4, 0.75):
+                tor(0.27, 0.02, x, -0.65, z, P["dark"])
+        rod((-0.6, -0.95, 0.75), (0.6, -0.95, 0.75), 0.015, P["rubber"])
+        for x in (-0.5, 0.5):
+            lie(0.09, 0.25, x, -1.05, 0.22, P["steel"], "y", 12)
+        lie(0.12, 0.55, 0.45, 0.4, 0.35, P["steel"], "y", 16)                      # a pressure bottle
+        rod((0.45, 0.1, 0.4), (0.15, 0.1, 0.5), 0.025, P["rubber"])
+        cyl(0.4, 0.08, 0, 0.25, 0.2, P["steel"], verts=12)
+        for k, (x, y) in enumerate(((-0.45, 0.6), (-0.4, 0.95))):
+            B(0.25, 0.2, 0.15, x, y, 0.2, P["trim"] if k else P["accent"], rot=0.3 * k, bevel=0.005)
+    def head():
+        cyl(0.3, 0.12, 0, 0, 0.28, P["dark"], verts=12)
+        B(0.45, 0.5, 0.3, 0, -0.05, 0.4, P["hull"], bevel=0.01)
+        o = B(0.6, 0.05, 0.38, 0, 0.25, 0.38, P["trim"], bevel=0.005); o.rotation_euler.x = math.radians(-10)
+        lie(0.05, 0.85, 0, 0.6, 0.58, P["steel"], "y", 12)
+        lie(0.08, 0.1, 0, 1.0, 0.58, P["dark"], "y", 12)
+        sph(0.04, 0.0, 1.05, 0.5, P["light"])
+        rod((0.15, -0.2, 0.55), (0.05, 0.3, 0.6), 0.025, P["rubber"])
+    return group(base), group(head)
+
+
 TURRETS = {("turret", "kh"): turret_kh_laser, ("gun-turret", "kh"): turret_kh_gun, ("turret", "gs"): turret_gs}
 
 
 BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs,
          ("generator", "kh"): generator_kh, ("generator", "gs"): generator_gs,
-         ("radar", "kh"): radar_kh, ("radar", "gs"): radar_gs}
+         ("radar", "kh"): radar_kh, ("radar", "gs"): radar_gs, ("drill", "kh"): drill_kh}
+if WHAT == "pylon":
+    # One direction (a pole's pictures and its wire points, one set), its wire tips projected to the screen (posts.json,
+    # tiles from the entity's centre after the sheet's sqrt(2) stretch; and on its shadow, along the sun).
+    from bpy_extras.object_utils import world_to_camera_view
+    import json, mathutils as _mu
+    model, tips = (pylon_kh if F == "kh" else pylon_gs)()
+    lpkit.bevel_all(model, 0.006)
+    ground, sun, world = lpkit.stage(scene, 1, 2.4)
+    lpkit.emission(P["light"], 3.0); lpkit.emission(P["glass"], 0.15)
+    lpkit.passes(scene, out, 1, lambda f: None, model, {P["light"]}, ground, sun, world)
+    span = scene.camera.data.ortho_scale
+    light = sun.matrix_world.to_quaternion() @ _mu.Vector((0, 0, -1))
+    pts = {"wire": {}, "shadow": {}}
+    for col, wp in tips.items():
+        c = world_to_camera_view(scene, scene.camera, wp)
+        pts["wire"][col] = [round((c.x - 0.5) * span, 3), round(-(c.y - 0.5) * span * math.sqrt(2), 3)]
+        gp = wp + light * (wp.z / max(1e-3, -light.z))
+        g = world_to_camera_view(scene, scene.camera, gp)
+        pts["shadow"][col] = [round((g.x - 0.5) * span, 3), round(-(g.y - 0.5) * span * math.sqrt(2), 3)]
+    json.dump(pts, open(f"{out}/posts.json", "w"), indent=1)
+    print("rendered", WHAT, F, out, pts)
+    sys.exit(0)
+if WHAT == "flamer":
+    # Its base in four directions (north: its nozzle north, its inlets south), the head in 64 directions on a pivot at
+    # the entity's centre (so one head serves every base direction), each without the other's shadow.
+    base, head = (flamer_kh if F == "kh" else flamer_gs)()
+    base += scatter(base, {P["hull"], P["trim"]}, P["dark"], P["steel"], 9, density=8.0)
+    bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
+    for o in head:
+        if o.parent is None:
+            o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    bpy.ops.object.empty_add(location=(0, 0, 0)); rig = bpy.context.object
+    for o in base:
+        if o.parent is None: o.parent = rig
+    lpkit.bevel_all(base + head)
+    ground, sun, world = lpkit.stage(scene, 3, 1.6)
+    glowing = {P["light"], P["glass"]}
+    lpkit.emission(P["light"], 2.5); lpkit.emission(P["glass"], 2.0)
+    for o in head: o.visible_camera = False; o.visible_shadow = False
+    for d, yaw in (("north", 0), ("east", 270), ("south", 180), ("west", 90)):
+        rig.rotation_euler = (0, 0, math.radians(yaw)); bpy.context.view_layer.update()
+        for o in base: o.visible_camera = True
+        lpkit.passes(scene, f"{out}/base-{d}", 1, lambda f: None, base, glowing, ground, sun, world)
+    for o in head: o.visible_camera = True; o.visible_shadow = True
+    for o in base: o.visible_camera = False; o.visible_shadow = False
+    N = int(os.environ.get("LP_FRAMES", 64))
+    def turn(f):
+        pv.rotation_euler = (0, 0, -f * 2 * math.pi / N); bpy.context.view_layer.update()
+    lpkit.passes(scene, f"{out}/head", N, turn, head, glowing, ground, sun, world, shadow_each=True)
+    print("rendered", WHAT, F, out)
+    sys.exit(0)
 if (WHAT, F) in TURRETS:
     base, head = TURRETS[(WHAT, F)]()
     base += scatter(base, {P["hull"], P["trim"]}, P["dark"], P["steel"], 7, density=8.0)
@@ -766,11 +992,13 @@ if (WHAT, F) in TURRETS:
     lpkit.bevel_all(base + head)
     ground, sun, world = lpkit.stage(scene, 2, 1.9)
     glowing = {P["light"], P["glass"]}
-    for o in head: o.visible_camera = False
+    # (Each part's pass without the other's shadow: hidden from the camera alone, the head had cast its shadow into the
+    # base's, a ghost pointing north under every heading, and the base its own again into each of the head's.)
+    for o in head: o.visible_camera = False; o.visible_shadow = False
     lpkit.emission(P["light"], 2.0)
     lpkit.passes(scene, f"{out}/base", 1, lambda f: None, base, glowing, ground, sun, world)
-    for o in head: o.visible_camera = True
-    for o in base: o.visible_camera = False
+    for o in head: o.visible_camera = True; o.visible_shadow = True
+    for o in base: o.visible_camera = False; o.visible_shadow = False
     N = int(os.environ.get("LP_FRAMES", 64))
     def turn(f):
         pv.rotation_euler = (0, 0, -f * 2 * math.pi / N); bpy.context.view_layer.update()
@@ -778,7 +1006,7 @@ if (WHAT, F) in TURRETS:
     print("rendered", WHAT, F, out)
     sys.exit(0)
 FRAMES = int(os.environ.get("LP_FRAMES", 16))
-TILES = {"fabricator": 3, "generator": 2, "radar": 3}[WHAT]
+TILES = {"fabricator": 3, "generator": 2, "radar": 3, "drill": 3}[WHAT]
 objs, set_frame = BUILD[(WHAT, F)]()
 # (Taller, where vanilla's sprite of the same footprint stands taller: the generators read squat beside the accumulator.)
 LIFT = {"generator": 1.35}.get(WHAT, 1.0)
@@ -792,6 +1020,19 @@ lpkit.bevel_all(objs)
 # (A turning head: its shadow turns with it, one a frame.)
 TURNS = WHAT in ("radar",)
 ground, sun, world = lpkit.stage(scene, TILES, 3.2 if TURNS else 2.2)
-lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun, world,
-             shadow_each=TURNS)
+if WHAT == "drill":
+    # Four directions, the model turned whole on a rig (its chute faces the direction: north at yaw 0), each its frames.
+    bpy.ops.object.empty_add(location=(0, 0, 0)); rig = bpy.context.object
+    for o in objs:
+        if o.parent is None: o.parent = rig
+    for o in scene.objects:
+        if o.type == "EMPTY" and o is not rig and o.parent is None: o.parent = rig
+    for d, yaw in (("north", 0), ("east", 270), ("south", 180), ("west", 90)):
+        rig.rotation_euler = (0, 0, math.radians(yaw)); bpy.context.view_layer.update()
+        for o in objs: o.visible_camera = True        # (passes hides the model for its shadow and leaves it hidden)
+        lpkit.passes(scene, f"{out}/{d}", FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun,
+                     world)
+else:
+    lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun, world,
+                 shadow_each=TURNS)
 print("rendered", WHAT, F, out)
