@@ -124,6 +124,7 @@ end
 -- where it is (a barracks' output fills and the barracks stops; a muster point holds it). Above a cap, the surplus walks
 -- to a barracks and hands its orders in (enforce, below). squad_room: below, after signals.
 local squad_room
+local hint            -- (below: a stuck player's hint)
 -- Orders in `inv` become units beside `at` (a barracks or a muster point), assigned to the nearest beacon with room for
 -- them, while the force's bandwidth has room.
 local function deploy(at, inv, room, squads)
@@ -145,6 +146,8 @@ local function deploy(at, inv, room, squads)
           squads.count[beacon.unit_number] = c
         end
         storage.cmd.troopers[u.unit_number] = {unit = u, beacon = beacon and beacon.unit_number}
+        -- The first unit a force deploys with no beacon in reach stands where it is: told once why (the tutorial).
+        if not beacon then hint(f, "no-beacon", at) end
         storage.cmd.trained = (storage.cmd.trained or 0) + 1
       end
     end
@@ -163,6 +166,19 @@ end
 
 -- Finished orders become units beside the barracks (unless it packs) and from what a muster point holds.
 -- A finished order waits in the barracks while bandwidth is full; with its output full, the barracks stops.
+-- A stuck player's hint (the user, 2026-11-10: "Yes to tutorial"), once a force: at the building, and in chat.
+hint = function(f, key, at)
+  storage.cmd.hints = storage.cmd.hints or {}
+  local k = f.index .. ":" .. key
+  if storage.cmd.hints[k] then return end
+  storage.cmd.hints[k] = game.tick
+  for _, p in pairs(f.connected_players) do
+    p.create_local_flying_text{text = {"lp.hint-" .. key, ""}, position = at.position, time_to_live = 600, speed = 0.3}
+  end
+  shared.notice(f, {"lp.hint-" .. key, string.format("[gps=%d,%d,%s]", at.position.x, at.position.y, at.surface.name)})
+end
+command.hint = hint
+
 local squad_counts   -- (below)
 local function train()
   local room = {}
@@ -175,7 +191,10 @@ local function train()
       storage.cmd.barracks[k] = nil
     elseif not packing(b) then
       has_room(b.force)
-      deploy(b, b.get_inventory(defines.inventory.crafter_output), room, squads)
+      -- A finished order waiting with no bandwidth at all (no powered relay): told once why.
+      local out = b.get_inventory(defines.inventory.crafter_output)
+      if command.capacity(b.force) <= 0 and out and not out.is_empty() then hint(b.force, "no-relay", b) end
+      deploy(b, out, room, squads)
     end
   end
   for k, m in pairs(storage.cmd.musters or {}) do
@@ -860,7 +879,9 @@ function command.stats()
       orders[k] = (orders[k] or 0) + 1
     end
   end
-  return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, auto_retired = storage.cmd.auto_retired or 0, alive = alive, offline = offline, capacity = command.capacity(f),
+  local hints = {}
+  for k, t in pairs(storage.cmd.hints or {}) do hints[k] = t end
+  return {trained = storage.cmd.trained or 0, retired = storage.cmd.retired or 0, auto_retired = storage.cmd.auto_retired or 0, hints = hints, alive = alive, offline = offline, capacity = command.capacity(f),
     level = research_level(f), orders = orders, locks = storage.cmd.locks, charted = storage.cmd.charted or 0}
 end
 

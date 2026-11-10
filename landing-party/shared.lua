@@ -654,7 +654,8 @@ shared.TINT = {r = 0.62, g = 0.8, b = 1, a = 1}
 -- Also kept until the world shows them (docs/reviews/2026-10-17-notices-consult.md): the warnings that are the only fair
 -- notice before a loss the player cannot see coming. None left: the perimeter's warning guards none since enclosure no
 -- longer provokes (ops.encroached); the rig's dig is 2.5 minutes with a dust line; a prospect plants a lit stake.
-local KEEP = {["lp.fallen"] = true}
+-- (Always told: the army's two stuck-player hints, once each a force, command.lua; a tutorial's, not chatter.)
+local KEEP = {["lp.fallen"] = true, ["lp.hint-no-beacon"] = true, ["lp.hint-no-relay"] = true}
 -- Whether a faction may land (its setting lp-<id>-enabled, runtime-global, on by default): off, it never lands again
 -- (phases, faction.next_corp, farm's arrival); camps already standing stay. (The user, 2026-11-08: "We do need an on/off
 -- switch".)

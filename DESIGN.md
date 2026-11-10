@@ -6162,6 +6162,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   unit and its shadow on the manual's paper (LPPaper at the centre to LPPaperDark at the corners, its style's colours);
   and the turntables centred on the unit's solid body (alpha near 1), not on body and shadow (the user: "the gifs are
   not centered on the unit (they cut to the shadow)").
+- **The army's tutorial** (0.2.287; the user, 2026-11-10: "Yes to tutorial", after a walk through what a player goes
+  through from a vanilla factory to an army, the controls found only in the manual). Tips and tricks (the game's own
+  help panel, tips.lua): a category "Landing Party: your army", a title and eight tips, each unlocked at the moment it is
+  needed: Command bandwidth 1 researched (the army, barracks and orders), the first relay (bandwidth; its numbers from
+  shared.lua as parameters), the first beacon (its signals), the first barracks (the command tool, retiring), the second
+  beacon (squad sizes), the first threat scanner (a response force, a decider spelled out), the first muster point
+  (orders by train), the cannon researched. The rally beacon's tooltip lists its signals. Two hints for a stuck player,
+  once a force, at the building and in chat (always, not with the chat notices): a unit deployed with no beacon in reach,
+  orders waiting with no powered relay. The locale lint's 140-character line no longer applies to tips (a page the game
+  wraps, not a tooltip; vanilla's run past 300). Scenario tutorial: both hints told, each once (seen failing with them
+  off). Not yet seen in a window.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

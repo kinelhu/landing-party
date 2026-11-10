@@ -154,9 +154,9 @@
 <!-- The player&#39;s army -->
 <g id="node10" class="node">
 <title>The player&#39;s army</title>
-<path fill="#eef2f7" stroke="black" d="M711.25,-530.75C711.25,-530.75 615.75,-530.75 615.75,-530.75 609.75,-530.75 603.75,-524.75 603.75,-518.75 603.75,-518.75 603.75,-506.75 603.75,-506.75 603.75,-500.75 609.75,-494.75 615.75,-494.75 615.75,-494.75 711.25,-494.75 711.25,-494.75 717.25,-494.75 723.25,-500.75 723.25,-506.75 723.25,-506.75 723.25,-518.75 723.25,-518.75 723.25,-524.75 717.25,-530.75 711.25,-530.75"/>
+<path fill="#eef2f7" stroke="black" d="M711.62,-530.75C711.62,-530.75 615.38,-530.75 615.38,-530.75 609.38,-530.75 603.38,-524.75 603.38,-518.75 603.38,-518.75 603.38,-506.75 603.38,-506.75 603.38,-500.75 609.38,-494.75 615.38,-494.75 615.38,-494.75 711.62,-494.75 711.62,-494.75 717.62,-494.75 723.62,-500.75 723.62,-506.75 723.62,-506.75 723.62,-518.75 723.62,-518.75 723.62,-524.75 717.62,-530.75 711.62,-530.75"/>
 <text xml:space="preserve" text-anchor="middle" x="663.5" y="-514.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="663.5" y="-502.3" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 1116 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="663.5" y="-502.3" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 1137 lines</text>
 </g>
 <!-- Settlement&#45;&gt;The player&#39;s army -->
 <g id="edge22" class="edge">

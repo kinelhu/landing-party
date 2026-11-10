@@ -55,7 +55,9 @@ for sec, k, v in values:
         m = re.search(pat, v, re.I)
         if m:
             bad.append(f"{sec}.{k}: {why}: \"{m.group(0)}\"")
-    if sec.endswith("-description"):
+    # (Not a tip's: the Tips and tricks panel is a page, not a tooltip, wrapped by the game; vanilla's own tip lines run
+    # past 300 characters. The register's other rules still apply to it.)
+    if sec.endswith("-description") and sec != "tips-and-tricks-item-description":
         for part in v.split("\\n"):
             n = len(re.sub(r"__CONTROL[A-Z_]*__|\[[^\]]*\]", "", part))
             if n > DESC_MAX:

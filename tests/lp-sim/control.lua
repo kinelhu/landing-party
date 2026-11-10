@@ -2364,6 +2364,48 @@ scenarios.squad = function()
   end)
 end
 
+-- The army's tutorial hints (command.lua hint; the user, 2026-11-10: "Yes to tutorial"): a powered barracks holding a
+-- trooper order and no command relay: the order waits and the no-relay hint is told; a relay built: the unit deploys
+-- with no rally beacon in reach, and the no-beacon hint is told; a second order deploys and neither is told again.
+-- (The Tips and tricks themselves: data, loaded by check.sh; the runtime has no table of them to read.)
+scenarios.tutorial = function()
+  local function put(name, x, y)
+    return surface().create_entity{name = name, position = {x, y}, force = "player", raise_built = true}
+  end
+  local function hints() return lp("army").hints end
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true})
+    flatten(-30, -30, 30, 30)
+    game.forces.player.technologies["lp-command-bandwidth-1"].researched = true
+    S.barracks = put("lp-barracks", 0.5, 0.5)
+    put("electric-energy-interface", 4, 1)
+    put("medium-electric-pole", 2.5, 2.5)
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 1}
+  end)
+  schedule(60 + 5 * 60, function()
+    S.first = {hints = hints(), units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}}
+    put("lp-command-relay", 0.5, 6.5)
+    put("medium-electric-pole", 2.5, 5.5)
+  end)
+  schedule(60 + 12 * 60, function()
+    S.second = {hints = hints(), units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}}
+    S.barracks.get_inventory(defines.inventory.crafter_output).insert{name = "lp-trooper-order", count = 1}
+  end)
+  schedule(60 + 20 * 60, function()
+    S.third = {hints = hints(), units = surface().count_entities_filtered{name = "lp-trooper", force = "player"}}
+    local function n(h) local k = 0; for _ in pairs(h or {}) do k = k + 1 end; return k end
+    info("tutorial: " .. serpent.line({S.first, S.second, S.third}))
+    local f = game.forces.player.index
+    local relay, beacon = f .. ":no-relay", f .. ":no-beacon"
+    check("tutorial: no relay: the order waits, the no-relay hint told", S.first.units == 0 and S.first.hints[relay] ~= nil
+      and S.first.hints[beacon] == nil, serpent.line(S.first))
+    check("tutorial: a relay: the unit deployed with no beacon, the no-beacon hint told", S.second.units == 1
+      and S.second.hints[beacon] ~= nil, serpent.line(S.second))
+    check("tutorial: each told once", S.third.units == 2 and n(S.third.hints) == 2 and S.third.hints[relay] == S.first.hints[relay]
+      and S.third.hints[beacon] == S.second.hints[beacon], serpent.line(S.third))
+  end)
+end
+
 -- The campaign's player (contact, LP_MIX=campaign): three rules, every 5 minutes, through what a player has.
 --   answer  each place it lost something (a ghost its robots have not rebuilt, or anything outside their reach,
 --           seen as a ghost) gets two laser turrets once, at most 6 + 4 per era in all
