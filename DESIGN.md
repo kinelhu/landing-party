@@ -1057,8 +1057,8 @@ strength measure of attempt.worth), at most 4.
 
 **Calibration, first look** (contact.sh 12345, three player variants, 2 hours, 0.2.297): 2, 2 and 7 promotions,
 every one Kessler-Hayashi's and a Veteran, the highest merit 4.5 to 6.5 (an Elite needs 8): one to three an hour, the
-rate assumed. No Elite yet in two hours; the player's army, Grubstake and Synthexis's biters (not ranked: herd units are
-not in a pool) none. `contact.sh` prints it (veterancy, and metric promoted).
+rate assumed. No Elite yet in two hours; none of the player's army, Grubstake's or Synthexis's biters (whether its herds pass the pool's
+homecoming: not checked). `contact.sh` prints it (veterancy, and metric promoted).
 
 **What the AI does with it** (0.2.297, the first two in part):
 - an air raid's worth (airraid.fliers, launch_air) counts a flier at its rank, `veterancy.scale`: health times damage,
