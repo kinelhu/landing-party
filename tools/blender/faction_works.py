@@ -4,6 +4,10 @@ Grubstake's builds of it apart, KH clean corporate blue-grey with cyan lights, G
 (palette() in faction_buildings.py; ochre lpkit's grimed paint).
   fabricator  3x3, the parts maker: KH a sealed fab module, a print gantry crossing under its glazed roof; Grubstake an
               open scrap press, its ram stamping (16 frames: its working animation).
+  radar       3x3, its head turning through 32 steps (a radar's sprite turns whole): KH a phased-array mast, Grubstake a
+              patched dish on a tripod.
+  turret      2x2, a base once and a head in 64 directions (north first, clockwise): KH's laser turret (a lens turret on
+              a hexagonal ring) and gun-turret (twin autocannon), Grubstake's turret (a gun nest of scrap, one barrel).
   generator   2x2, the camp's power: KH a fusion cell, its core lit, vanes turning on its crown; Grubstake a scrap
               genset, its radiator fan turning (16 frames, always running).
 
@@ -30,7 +34,7 @@ def palette(f):
         # (lpkit's worn paint in the corporation's blue: PaintedMetal006 is a white paint, and a hue turned on it stayed
         # grey, a pale concrete at 0.8 texture scale and near black at 0.42 value.)
         hull = lpkit.worn("kh-hull", (0.13, 0.19, 0.27), metal=0.35, rough=0.5, seams=3, rivets=False, wear=0.3)
-        trim = lpkit.worn("kh-trim", (0.42, 0.43, 0.42), metal=0.3, rough=0.5, seams=2, rivets=False, wear=0.3)
+        trim = lpkit.worn("kh-trim", (0.28, 0.3, 0.32), metal=0.4, rough=0.5, seams=2, rivets=False, wear=0.35)
         accent = lpkit.worn("kh-haz", (0.62, 0.5, 0.1), metal=0.2, rough=0.6, seams=8, rivets=False, wear=0.3)
         light = lpkit.mat("kh-light", (0.2, 0.5, 0.6), metal=0.2, rough=0.3, emit=(0.45, 0.85, 1.0), strength=0.0, grime=0.0)
         glass = lpkit.mat("kh-glass", (0.02, 0.035, 0.045), metal=0.6, rough=0.12, emit=(0.3, 0.7, 0.9), strength=0.0, grime=0.0)
@@ -38,7 +42,7 @@ def palette(f):
         hull = lpkit.mat("gs-hull", (0.3, 0.18, 0.045), metal=0.3, rough=0.65, grime=0.85)
         trim = lptex.textured("gs-rust", "MetalPlates013", val=0.6, scale=0.8, edge=(0.4, 0.33, 0.25)) if TEX \
             else lpkit.worn("gs-rust", (0.25, 0.11, 0.05), metal=0.5, rough=0.7, seams=6)
-        accent = lpkit.worn("gs-red", (0.22, 0.07, 0.04), metal=0.3, rough=0.7, seams=6, rivets=True, wear=0.7)
+        accent = lpkit.worn("gs-red", (0.13, 0.05, 0.03), metal=0.35, rough=0.7, seams=6, rivets=True, wear=0.4)
         light = lpkit.mat("gs-light", (0.6, 0.4, 0.05), metal=0.1, rough=0.3, emit=(1.0, 0.62, 0.15), strength=0.0, grime=0.0)
         glass = lpkit.mat("gs-glass", (0.08, 0.06, 0.03), metal=0.1, rough=0.2, emit=(1.0, 0.55, 0.15), strength=0.0, grime=0.0)
     P = {"hull": hull, "trim": trim, "dark": W["dark"], "steel": W["steel"], "accent": accent, "light": light,
@@ -511,10 +515,270 @@ def generator_gs():
     return model + fan, set_frame
 
 
+def radar_kh():
+    """A phased-array mast: a square plinth, a tapered blue-grey tower with a ribbed service cabinet, a turntable on its
+    top and the array on it, a dark panel gridded with cyan emitters, two aerials behind; the whole head turns (a radar's
+    sprite turns through its directions), its emitters sweeping."""
+    def build():
+        B(2.2, 2.2, 0.14, 0, 0, 0, P["dark"])
+        octa(1.0, 0.2, 0, 0, 0.14, P["trim"])
+        bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=0.72, radius2=0.42, depth=1.2, location=(0, 0, 0.94),
+                                        rotation=(0, 0, math.pi / 8))
+        bpy.context.object.data.materials.append(P["hull"])
+        for k in range(8):
+            a = (k + 0.5) * 2 * math.pi / 8
+            rod((math.cos(a) * 0.66, math.sin(a) * 0.66, 0.36), (math.cos(a) * 0.4, math.sin(a) * 0.4, 1.5), 0.025, P["trim"])
+        B(0.5, 0.3, 0.55, 0.0, -0.75, 0.14, P["hull"])
+        for k in range(4):
+            B(0.4, 0.03, 0.04, 0.0, -0.91, 0.25 + k * 0.1, P["dark"], bevel=0.0)
+        B(0.16, 0.03, 0.08, 0.0, -0.91, 0.62, P["light"])
+        for sx in (-1, 1):
+            B(0.35, 0.35, 0.3, sx * 0.8, -0.65, 0.14, P["trim"])
+            lie(0.05, 0.5, sx * 0.6, -0.4, 0.3, P["steel"], "y")
+        cyl(0.46, 0.1, 0, 0, 1.54, P["dark"], verts=32)
+        prop("power_box_01_box", "power_box_01", (0.9, 0.35, 0.14), -90, 0.35)
+    def build_head():
+        cyl(0.36, 0.12, 0, 0, 1.64, P["steel"], verts=32)
+        B(0.3, 0.3, 0.35, 0, 0, 1.76, P["hull"])
+        # The array: a dark panel tilted back, gridded, framed; its back braced.
+        arr = []
+        o = B(1.5, 0.08, 0.9, 0, 0, 0, P["dark"], bevel=0.01); arr.append(o)
+        for k in range(6):
+            for j in range(4):
+                arr.append(B(0.16, 0.02, 0.12, -0.6 + k * 0.24, -0.05, 0.12 + j * 0.2, P["glass"], bevel=0.0))
+        for x in (-0.76, 0.76):
+            arr.append(B(0.05, 0.1, 0.94, x, 0, -0.02, P["trim"], bevel=0.005))
+        for z in (-0.02, 0.9):
+            arr.append(B(1.56, 0.1, 0.05, 0, 0, z, P["trim"], bevel=0.005))
+        bpy.ops.object.empty_add(location=(0, 0, 0)); g = bpy.context.object
+        for o in arr:
+            o.parent = g
+        g.location = (0, -0.1, 1.95); g.rotation_euler = (math.radians(-20), 0, 0)
+        rod((0, 0.05, 2.0), (0, 0.35, 2.6), 0.03, P["steel"])
+        for sx in (-1, 1):
+            rod((sx * 0.12, 0.15, 2.05), (sx * 0.12, 0.2, 2.75), 0.012, P["steel"])
+            sph(0.03, sx * 0.12, 0.2, 2.77, P["light"])
+    model = group(build)
+    head = group(build_head)
+    bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
+    for o in head:
+        if o.parent is None:
+            o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    model += scatter(model, {P["hull"], P["trim"]}, P["dark"], P["steel"], 5, density=8.0)
+    def set_frame(f, frames):
+        pv.rotation_euler = (0, 0, f * 2 * math.pi / frames)
+        lpkit.emission(P["light"], 2.0 + 1.2 * math.sin(f * 2 * math.pi / 8))
+        lpkit.emission(P["glass"], 0.5 + 0.3 * math.sin(f * 2 * math.pi / 8))
+        bpy.context.view_layer.update()
+    return model + head, set_frame
+
+
+def radar_gs():
+    """A scavenged dish: a scrap-plated hut on skids, a lattice tripod over it, a patched parabolic dish on a turntable,
+    its feed horn on struts, a counterweight of scrap, an amber lamp; the dish and its yoke turn."""
+    def build():
+        for sx in (-1, 1):
+            B(2.3, 0.26, 0.12, 0, sx * 0.85, 0, P["dark"])
+        B(2.1, 2.0, 0.08, 0, 0, 0.12, P["trim"])
+        B(1.0, 0.9, 0.6, -0.45, -0.35, 0.2, P["hull"])
+        B(1.06, 0.96, 0.05, -0.45, -0.35, 0.8, P["trim"])
+        B(0.3, 0.04, 0.4, -0.25, -0.81, 0.2, P["dark"])
+        B(0.2, 0.04, 0.12, -0.7, -0.81, 0.5, P["glass"])
+        for k, (x, y, z, r) in enumerate(((-0.9, -0.8, 0.3, 8), (0.05, -0.81, 0.45, -6))):
+            o = B(0.35, 0.05, 0.3, x, y, z, P["trim"] if k else P["accent"], bevel=0.01); o.rotation_euler = (0, math.radians(r), 0)
+        for a in (0, 2.1, 4.2):
+            rod((0.35 + math.cos(a) * 0.75, 0.25 + math.sin(a) * 0.75, 0.2), (0.35, 0.25, 1.5), 0.04, P["steel"])
+        for z in (0.6, 1.0):
+            k = 1 - (z - 0.2) / 1.3
+            tor(0.75 * k, 0.02, 0.35, 0.25, z, P["steel"])
+        cyl(0.22, 0.12, 0.35, 0.25, 1.48, P["dark"], verts=24)
+        for k in range(6):
+            cyl(0.07, 0.2, 0.75 + (k % 3) * 0.16, -0.65 + (k // 3) * 0.16, 0.2, P["accent"] if k % 2 else P["steel"], verts=12)
+        rod((-1.0, 0.8, 0.2), (-1.0, 0.8, 1.4), 0.025, P["steel"]); sph(0.06, -1.0, 0.8, 1.44, P["light"])
+        prop("utility_box_01", "utility_box_01", (-1.05, 0.2, 0.2), 90, 0.32)
+    def build_head():
+        X, Y, Z = 0.35, 0.25, 1.6
+        cyl(0.18, 0.1, X, Y, Z, P["steel"], verts=24)
+        for sx in (-1, 1):
+            B(0.06, 0.12, 0.45, X + sx * 0.25, Y, Z + 0.05, P["hull"], bevel=0.005)
+        # The dish: a bowl (a sphere's cap) opening south and up (n), its rim, ribs on its back, its feed horn on three
+        # struts at its focus. (First turned the other way: its back faced the camera and read as a ball.)
+        import mathutils as _mu
+        R, CUT = 0.95, -0.6
+        n = _mu.Vector((0, -0.6, 0.8))
+        cap = _mu.Vector((X, Y, Z + 0.45)); loc = cap + n * R
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=R, location=(0, 0, 0), segments=40, ring_count=20)
+        d = bpy.context.object
+        import bmesh as _bm
+        bm = _bm.new(); bm.from_mesh(d.data)
+        _bm.ops.delete(bm, geom=[v for v in bm.verts if v.co.z > CUT], context="VERTS")
+        bm.to_mesh(d.data); bm.free()
+        d.modifiers.new("t", "SOLIDIFY").thickness = 0.03
+        d.data.materials.append(P["trim"])
+        rot = _mu.Vector((0, 0, 1)).rotation_difference(n)
+        d.rotation_mode = "QUATERNION"; d.rotation_quaternion = rot; d.location = loc
+        rr = math.sqrt(R * R - CUT * CUT)
+        rim = tor(rr, 0.03, *(loc + rot @ _mu.Vector((0, 0, CUT))), P["steel"])
+        rim.rotation_mode = "QUATERNION"; rim.rotation_quaternion = rot
+        horn = loc + rot @ _mu.Vector((0, 0, CUT)) + n * 0.55
+        for a in (0.3, 2.4, 4.5):
+            p_ = loc + rot @ _mu.Vector((math.cos(a) * rr, math.sin(a) * rr, CUT))
+            rod(tuple(p_), tuple(horn), 0.012, P["steel"])
+        sph(0.06, *horn, P["dark"])
+        for a in (0.0, 1.05, 2.1, 3.15, 4.2, 5.25):                                  # patches welded on its face
+            p_ = loc + rot @ _mu.Vector((math.cos(a) * rr * 0.55, math.sin(a) * rr * 0.55, -math.sqrt(R * R - (rr * 0.55) ** 2) + 0.03))
+            if a in (1.05, 4.2):
+                o = B(0.22, 0.2, 0.015, *p_, P["accent"] if a < 3 else P["hull"], bevel=0.0)
+                o.rotation_mode = "QUATERNION"; o.rotation_quaternion = rot
+        B(0.3, 0.3, 0.25, X, Y + 0.35, Z + 0.05, P["dark"])
+    model = group(build)
+    head = group(build_head)
+    bpy.ops.object.empty_add(location=(0.35, 0.25, 0)); pv = bpy.context.object
+    for o in head:
+        if o.parent is None:
+            o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    model += scatter(model, {P["hull"], P["trim"]}, P["dark"], P["steel"], 6, density=8.0)
+    def set_frame(f, frames):
+        pv.rotation_euler = (0, 0, f * 2 * math.pi / frames)
+        lpkit.emission(P["light"], 3.0 if (f % 8) < 4 else 1.0)
+        bpy.context.view_layer.update()
+    return model + head, set_frame
+
+
+# --- Turrets: a base (once) and a head in 64 directions, north at the first, clockwise (a rotated sprite's), the same
+# head for every state (it does not rise out of the ground). Each builder returns (base, head, its pivot).
+def turret_base_kh():
+    """Kessler-Hayashi's turret ring: a hexagonal armoured plinth, its plates bolted, a cyan lamp each side, a cable
+    into it."""
+    octa(0.95, 0.12, 0, 0, 0, P["dark"])
+    bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.85, depth=0.34, location=(0, 0, 0.29))
+    bpy.context.object.data.materials.append(P["hull"])
+    bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.88, depth=0.05, location=(0, 0, 0.47))
+    bpy.context.object.data.materials.append(P["trim"])
+    # (Its deck dark plate: the worn paint's top read pale, a grey hexagon under the head.)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=6, radius=0.8, depth=0.03, location=(0, 0, 0.5))
+    bpy.context.object.data.materials.append(P["dark"])
+    for k in range(6):
+        a = k * math.pi / 3 + math.pi / 6
+        B(0.32, 0.04, 0.2, math.cos(a) * 0.74, math.sin(a) * 0.74, 0.18, P["trim"], rot=a + math.pi / 2, bevel=0.01)
+    for sx in (-1, 1):
+        B(0.08, 0.04, 0.06, sx * 0.45, -0.73, 0.34, P["light"], bevel=0.0)
+    B(0.12, 0.06, 0.06, 0, -0.75, 0.3, P["accent"], bevel=0.0)
+    cyl(0.5, 0.06, 0, 0, 0.5, P["dark"], verts=32)
+
+
+def turret_kh_laser():
+    """A lens turret: a rounded armoured housing, a long emitter tube finned for cooling, its lens lit at the muzzle, a
+    sensor block on its side."""
+    def base(): turret_base_kh()
+    def head():
+        cyl(0.42, 0.14, 0, 0, 0.56, P["trim"], verts=32)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.42, location=(0, -0.05, 0.82), segments=32, ring_count=16)
+        o = bpy.context.object; o.scale = (1.0, 1.15, 0.62); o.data.materials.append(P["hull"])
+        lie(0.09, 0.75, 0, 0.62, 0.86, P["steel"], "y", 16)
+        for k in range(5):
+            lie(0.13, 0.03, 0, 0.36 + k * 0.08, 0.86, P["dark"], "y", 16)
+        lie(0.1, 0.06, 0, 1.0, 0.86, P["trim"], "y", 16)
+        lie(0.075, 0.03, 0, 1.04, 0.86, P["light"], "y", 16)
+        B(0.16, 0.24, 0.16, 0.36, 0.0, 0.8, P["dark"], bevel=0.01)
+        B(0.04, 0.03, 0.04, 0.44, 0.13, 0.88, P["light"], bevel=0.0)
+        B(0.5, 0.04, 0.04, 0, -0.5, 0.95, P["accent"], bevel=0.0)
+    b = group(base); h = group(head)
+    return b, h
+
+
+def turret_kh_gun():
+    """An autocannon turret: a squared armoured head, twin barrels with muzzle brakes, an ammunition drum on its flank,
+    its feed chute, a sight on top."""
+    def base(): turret_base_kh()
+    def head():
+        cyl(0.42, 0.14, 0, 0, 0.56, P["trim"], verts=32)
+        B(0.62, 0.7, 0.32, 0, -0.05, 0.68, P["hull"], bevel=0.05)
+        B(0.5, 0.25, 0.12, 0, 0.18, 1.0, P["hull"], bevel=0.03)
+        for sx in (-1, 1):
+            lie(0.05, 0.75, sx * 0.13, 0.65, 0.84, P["steel"], "y", 12)
+            lie(0.075, 0.12, sx * 0.13, 1.0, 0.84, P["dark"], "y", 12)
+            lie(0.07, 0.12, sx * 0.13, 0.3, 0.84, P["dark"], "y", 12)
+        lie(0.18, 0.2, 0.42, -0.1, 0.8, P["trim"], "x", 20)
+        tor(0.18, 0.02, 0.48, -0.1, 0.8, P["dark"]).rotation_euler = (0, math.pi / 2, 0)
+        rod((0.38, -0.05, 0.92), (0.2, 0.15, 0.92), 0.03, P["dark"])
+        B(0.12, 0.2, 0.1, -0.18, 0.0, 1.0, P["dark"], bevel=0.01)
+        B(0.04, 0.03, 0.03, -0.18, 0.11, 1.05, P["light"], bevel=0.0)
+        B(0.5, 0.04, 0.04, 0, -0.42, 0.95, P["accent"], bevel=0.0)
+    b = group(base); h = group(head)
+    return b, h
+
+
+def turret_gs():
+    """Grubstake's gun nest: a ring of scrap plate and oil drums on a skid, sandbags; the head a welded box behind a
+    patched gun shield, one heavy barrel, its ammo can, an amber lamp."""
+    import random as _r
+    rr = _r.Random(13)
+    def base():
+        B(1.75, 1.75, 0.1, 0, 0, 0, P["dark"])
+        cyl(0.8, 0.32, 0, 0, 0.1, P["trim"], verts=10)
+        for k in range(10):
+            a = k * 2 * math.pi / 10 + rr.uniform(-0.1, 0.1)
+            o = B(0.48, 0.05, 0.26 + rr.uniform(0, 0.08), math.cos(a) * 0.8, math.sin(a) * 0.8, 0.1,
+                  rr.choice((P["hull"], P["trim"], P["accent"])), rot=a + math.pi / 2, bevel=0.005)
+            o.rotation_euler.x = rr.uniform(-0.08, 0.08)
+        for x, y in ((0.75, -0.7), (-0.78, 0.72)):
+            cyl(0.15, 0.4, x, y, 0.1, P["accent"] if x > 0 else P["steel"], verts=16)
+            tor(0.15, 0.015, x, y, 0.3, P["dark"])
+        for k in range(5):
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.14, location=(-0.6 + k * 0.17, -0.82, 0.16), segments=12, ring_count=8)
+            o = bpy.context.object; o.scale = (1.3, 0.8, 0.5); o.data.materials.append(P["hull"])
+        cyl(0.48, 0.05, 0, 0, 0.42, P["dark"], verts=24)
+    def head():
+        cyl(0.36, 0.12, 0, 0, 0.47, P["steel"], verts=20)
+        B(0.5, 0.55, 0.34, 0, -0.08, 0.59, P["hull"], bevel=0.01)
+        o = B(0.8, 0.06, 0.5, 0, 0.3, 0.55, P["trim"], bevel=0.01); o.rotation_euler.x = math.radians(-12)
+        B(0.3, 0.07, 0.2, 0.18, 0.31, 0.75, P["accent"], bevel=0.005)
+        lie(0.06, 0.95, 0, 0.75, 0.78, P["steel"], "y", 12)
+        lie(0.085, 0.2, 0, 0.45, 0.78, P["dark"], "y", 12)
+        lie(0.08, 0.1, 0, 1.2, 0.78, P["dark"], "y", 12)
+        B(0.2, 0.16, 0.16, 0.33, -0.15, 0.62, P["accent"], bevel=0.01)
+        rod((0.25, -0.1, 0.78), (0.05, 0.25, 0.8), 0.02, P["steel"])
+        rod((-0.2, -0.3, 0.93), (-0.2, -0.3, 1.25), 0.015, P["steel"])
+        sph(0.045, -0.2, -0.3, 1.27, P["light"])
+    b = group(base); h = group(head)
+    return b, h
+
+
+TURRETS = {("turret", "kh"): turret_kh_laser, ("gun-turret", "kh"): turret_kh_gun, ("turret", "gs"): turret_gs}
+
+
 BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs,
-         ("generator", "kh"): generator_kh, ("generator", "gs"): generator_gs}
+         ("generator", "kh"): generator_kh, ("generator", "gs"): generator_gs,
+         ("radar", "kh"): radar_kh, ("radar", "gs"): radar_gs}
+if (WHAT, F) in TURRETS:
+    base, head = TURRETS[(WHAT, F)]()
+    base += scatter(base, {P["hull"], P["trim"]}, P["dark"], P["steel"], 7, density=8.0)
+    bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
+    for o in head:
+        if o.parent is None:
+            o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    # (At 1.25: first rendered at the footprint, they stood a quarter smaller than vanilla's turrets of the same size.)
+    bpy.ops.object.empty_add(location=(0, 0, 0)); root = bpy.context.object
+    for o in base + [pv]:
+        if o.parent is None: o.parent = root
+    root.scale = (1.25, 1.25, 1.25); bpy.context.view_layer.update()
+    lpkit.bevel_all(base + head)
+    ground, sun, world = lpkit.stage(scene, 2, 1.9)
+    glowing = {P["light"], P["glass"]}
+    for o in head: o.visible_camera = False
+    lpkit.emission(P["light"], 2.0)
+    lpkit.passes(scene, f"{out}/base", 1, lambda f: None, base, glowing, ground, sun, world)
+    for o in head: o.visible_camera = True
+    for o in base: o.visible_camera = False
+    N = int(os.environ.get("LP_FRAMES", 64))
+    def turn(f):
+        pv.rotation_euler = (0, 0, -f * 2 * math.pi / N); bpy.context.view_layer.update()
+    lpkit.passes(scene, f"{out}/head", N, turn, head, glowing, ground, sun, world, shadow_each=True)
+    print("rendered", WHAT, F, out)
+    sys.exit(0)
 FRAMES = int(os.environ.get("LP_FRAMES", 16))
-TILES = {"fabricator": 3, "generator": 2}[WHAT]
+TILES = {"fabricator": 3, "generator": 2, "radar": 3}[WHAT]
 objs, set_frame = BUILD[(WHAT, F)]()
 # (Taller, where vanilla's sprite of the same footprint stands taller: the generators read squat beside the accumulator.)
 LIFT = {"generator": 1.35}.get(WHAT, 1.0)
@@ -525,6 +789,9 @@ if LIFT != 1.0:
     for o in scene.objects:
         if o.type == "EMPTY": o.location.z *= LIFT; o.scale.z *= LIFT
 lpkit.bevel_all(objs)
-ground, sun, world = lpkit.stage(scene, TILES, 2.2)
-lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun, world)
+# (A turning head: its shadow turns with it, one a frame.)
+TURNS = WHAT in ("radar",)
+ground, sun, world = lpkit.stage(scene, TILES, 3.2 if TURNS else 2.2)
+lpkit.passes(scene, out, FRAMES, lambda f: set_frame(f, FRAMES), objs, {P["light"], P["glass"]}, ground, sun, world,
+             shadow_each=TURNS)
 print("rendered", WHAT, F, out)

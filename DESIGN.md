@@ -6325,6 +6325,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   its glow a layer of it), 16 frames. Raised 1.35 times (LIFT): first rendered at the fabricator's proportions they read
   squat beside the accumulator they replace. Kessler-Hayashi's paint is lpkit's worn paint in its blue: PaintedMetal006 is
   a white paint, and a hue turned on it stayed grey (the fabricator re-rendered with it).
+- **The factions' radars modelled** (0.2.301; faction_works.py radar), in place of the repainted vanilla radar: their
+  heads turn, the whole sprite through 32 directions (a radar's pictures), the shadow turning with them (one a frame).
+  Kessler-Hayashi's a phased-array mast (a tapered blue-grey tower braced on a plinth, a service cabinet, a turntable,
+  the array panel gridded with dim cyan emitters, aerials behind); Grubstake's a patched dish on a lattice tripod over a
+  scrap hut (its rim, three struts to the feed horn, patches welded on). The dish first faced north and down: its back
+  read as a ball; its emitters first lit at full strength blew out white. Kessler-Hayashi's trim darkened to a steel
+  grey (the fabricator and generator re-rendered with it: its pale trim had read as concrete).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -140,6 +140,16 @@ local MODELLED = {
     p.continuous_animation = true
     p.light = {intensity = 0.4, size = 6, color = corp == "grubstake" and {r = 1, g = 0.7, b = 0.35} or {r = 0.5, g = 0.85, b = 1}}
   end},
+  -- The radar: its head turns, the sprite whole through its directions (a radar's pictures), its shadow with it.
+  ["lp-radar"] = {dir = "radar", apply = function(p, key)
+    local function turn(file, extra)
+      local l = sheet_layer(key, file, extra)
+      l.direction_count, l.frame_count = l.frame_count, nil
+      return l
+    end
+    p.pictures = {layers = {turn("body"), turn("glow", {draw_as_glow = true, blend_mode = "additive"}),
+      turn("shadow", {draw_as_shadow = true})}}
+  end},
 }
 for corp in pairs(shared.CORPS) do
   for kind, m in pairs(MODELLED) do
