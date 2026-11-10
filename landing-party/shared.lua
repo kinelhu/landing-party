@@ -332,6 +332,10 @@ shared.SCAN_RADIUS = 64
 -- The player's orbital strike beacon's reach (scripts/strike.lua) and the defoliant's (scripts/studies.lua): their
 -- descriptions take them as __1__ (components.lua, studies.lua), so the text says what the code does.
 shared.STRIKE_RADIUS = 60
+-- Orbital cannons (orbital_cannon.lua, scripts/cannon.lua; DESIGN.md, decided 2026-11-10): a cannon's store of charges, a
+-- charge's cycle in seconds (a recipe's time) and its thruster fuel, a strike's radius, the shells each charge spent drops,
+-- and the remote's cooldown in ticks.
+shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 200, RADIUS = 20, SHELLS = 6, COOLDOWN = 30 * 60}
 shared.DEFOLIATE_RADIUS = 6
 -- And the player's other devices and weapons, likewise read by their descriptions (__1__, __2__; 2026-11-06: the
 -- numbers had been typed in the locale): the claim marker's reach (ops.marked), the pact breaker's minutes

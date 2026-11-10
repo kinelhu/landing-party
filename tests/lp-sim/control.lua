@@ -2114,6 +2114,118 @@ scenarios.control = function()
   end)
 end
 
+-- Cannon (the player's orbital cannons, DESIGN.md "Orbital cannons"): a platform over Nauvis (made by script, the starter
+-- pack applied), a targeting array and two cannons on it, powered, each given four shells and thruster fuel. At 10
+-- minutes each holds its store of two charges and has stopped (a silo's rhythm). Six spawners 200 tiles from spawn:
+-- the remote's call spends one charge from each cannon, the nests fall; called again at once, refused (realigning); at
+-- 40 s a second strike spends the rest; a third, refused (empty). The array taken away, a strike is refused; the platform
+-- sent off Nauvis, refused.
+scenarios.cannon = function()
+  schedule(60, function()
+    lp("debug_tune", {raids_off = true, ops_off = true})
+    local f = game.forces.player
+    f.technologies["lp-orbital-cannon"].researched = true
+    local pl = f.create_space_platform{name = "lp-test", planet = "nauvis", starter_pack = "space-platform-starter-pack"}
+    S.made = pl ~= nil
+    if pl then pl.apply_starter_pack() end
+    S.pl = pl
+  end)
+  schedule(120, function()
+    local pl = S.pl
+    local ps = pl and pl.surface
+    S.surface_ok = ps ~= nil and ps.valid
+    S.loc = pl and pl.space_location and pl.space_location.name
+    if not S.surface_ok then return end
+    S.tiles = {}
+    local tiles = {}
+    for x = -30, 30 do for y = 8, 30 do tiles[#tiles + 1] = {name = "space-platform-foundation", position = {x, y}} end end
+    ps.set_tiles(tiles)
+    local eei = ps.create_entity{name = "electric-energy-interface", position = {-20, 20}, force = "player"}
+    if eei then eei.power_production, eei.electric_buffer_size = 1e8 / 60, 1e8 end
+    for x = -16, 16, 6 do ps.create_entity{name = "medium-electric-pole", position = {x + 0.5, 15.5}, force = "player"} end
+    S.array = ps.create_entity{name = "lp-targeting-array", position = {-8, 22}, force = "player"}
+    S.cannons = {}
+    for k, x in ipairs({0, 8}) do
+      local c = ps.create_entity{name = "lp-orbital-cannon", position = {x + 0.5, 20.5}, force = "player"}
+      if c then
+        c.insert{name = "lp-orbital-shell", count = 4}
+        c.insert_fluid{name = "thruster-fuel", amount = 1000}
+        S.cannons[k] = c
+      end
+    end
+    -- And one on Nauvis: refused there (its surface conditions).
+    S.ground = surface().can_place_entity{name = "lp-orbital-cannon", position = {0, 40}, force = "player"}
+    S.built = #S.cannons
+    -- The nests.
+    S.nests = {}
+    for k = 0, 5 do
+      local q = surface().find_non_colliding_position("biter-spawner", {200 + (k % 3) * 9, math.floor(k / 3) * 9}, 8, 1)
+      local e = q and surface().create_entity{name = "biter-spawner", position = q, force = "enemy"}
+      if e then S.nests[#S.nests + 1] = e end
+    end
+    S.target = {209, 4.5}
+  end)
+  schedule(60 + 600 * 60, function()
+    S.full = lp("cannon_readout")
+    S.held, S.shells_left = {}, {}
+    for k, c in ipairs(S.cannons or {}) do
+      S.held[k] = c.valid and c.get_inventory(defines.inventory.crafter_output).get_item_count("lp-orbital-charge") or -1
+      S.shells_left[k] = c.valid and c.get_inventory(defines.inventory.crafter_input).get_item_count("lp-orbital-shell") or -1
+    end
+    S.shot1 = lp("debug_cannon_fire", S.target)
+    S.shot1b = lp("debug_cannon_fire", S.target)
+  end)
+  schedule(60 + 600 * 60 + 20 * 60, function()
+    local left = 0
+    for _, e in ipairs(S.nests) do if e.valid then left = left + 1 end end
+    S.nests_left = left
+  end)
+  schedule(60 + 600 * 60 + 40 * 60, function()
+    S.shot2 = lp("debug_cannon_fire", S.target)
+  end)
+  schedule(60 + 600 * 60 + 75 * 60, function()
+    S.shot3 = lp("debug_cannon_fire", S.target)
+    -- Charged again? (no: their shells are spent, two of four kept for a second cycle pair; so the empty refusal reads now.)
+    if S.array and S.array.valid then S.array.destroy() end
+  end)
+  schedule(60 + 600 * 60 + 80 * 60, function()
+    for _, c in ipairs(S.cannons or {}) do
+      if c.valid then c.get_inventory(defines.inventory.crafter_output).insert{name = "lp-orbital-charge", count = 1} end
+    end
+    S.noarray = lp("debug_cannon_fire", S.target)
+    -- The array back, charged, and the platform sent to Vulcanus: refused (not over Nauvis).
+    local ps = S.pl and S.pl.surface
+    if ps then ps.create_entity{name = "lp-targeting-array", position = {-8, 22}, force = "player"} end
+    S.back = lp("cannon_readout")
+    S.pl.space_location = "vulcanus"
+  end)
+  schedule(60 + 600 * 60 + 82 * 60, function()
+    S.away = lp("debug_cannon_fire", S.target)
+  end)
+  schedule(END - 60, function()
+    info("cannon: " .. serpent.line({made = S.made, surface = S.surface_ok, loc = S.loc, built = S.built, ground = S.ground,
+      full = S.full, held = S.held, shot1 = S.shot1, shot1b = S.shot1b, nests_left = S.nests_left, shot2 = S.shot2,
+      shot3 = S.shot3, noarray = S.noarray, stats = lp("cannon_stats")}))
+    check("cannon: a platform over Nauvis with two cannons on it, none buildable on Nauvis", S.surface_ok and S.loc == "nauvis"
+      and S.built == 2 and S.ground == false, serpent.line({S.surface_ok, S.loc, S.built, S.ground}))
+    -- (Not three: its third craft, begun before the script stopped it, holds; its shell taken, so one of four left. Without
+    -- the stop it held three and gave one at once to the next strike, a third strike not refused.)
+    check("cannon: each charged its store of two and stopped", S.held and S.held[1] == 2 and S.held[2] == 2
+      and S.shells_left[1] == 1 and S.shells_left[2] == 1 and S.full.ready == 2 and S.full.cannons == 2,
+      serpent.line({held = S.held, shells = S.shells_left, full = S.full}))
+    check("cannon: the remote's strike spent one charge each and took the nests", S.shot1 and S.shot1.spent == 2
+      and S.nests_left == 0, serpent.line({shot = S.shot1, left = S.nests_left}))
+    check("cannon: called again at once, refused (realigning)", S.shot1b and S.shot1b.spent == nil
+      and S.shot1b.why == "lp.cannon-cooldown", serpent.line(S.shot1b))
+    check("cannon: a second strike spent the rest, a third was refused (empty)", S.shot2 and S.shot2.spent == 2
+      and S.shot3 and S.shot3.why == "lp.cannon-empty", serpent.line({S.shot2, S.shot3}))
+    check("cannon: without its targeting array, refused", S.noarray and S.noarray.why == "lp.cannon-empty",
+      serpent.line(S.noarray))
+    check("cannon: its platform away from Nauvis, refused", S.back and S.back.ready == 2 and S.away
+      and S.away.why == "lp.cannon-empty", serpent.line({back = S.back, away = S.away}))
+  end)
+end
+
 -- Retire (the user, 2026-11-10: "How do you retire units? Where is the unit cap displayed?"): a barracks, one powered relay
 -- (10 of bandwidth), a rally beacon 21 tiles off, six troopers. The readout says 6 of 10; three picked and retired walk to
 -- the barracks and hand in three orders there (on the ground, marked for the robots), three left, the readout 3 of 10,

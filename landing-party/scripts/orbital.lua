@@ -160,15 +160,27 @@ function orbital.player(s, force, beacon, at, reach)
   shadow(s, {c.x, c.y}, along, PLAYER_PAINT)
 end
 
+-- From the player's orbital cannons (scripts/cannon.lua): centred on a point of the map, no beacon on the ground, painted
+-- for CANNON_PAINT, the platform's shadow over it, then its shells (`at`, its points).
+local CANNON_PAINT = 2 * 60
+function orbital.from_orbit(s, force, center, at, reach)
+  storage.kh_strikes = storage.kh_strikes or {}
+  local along = math.pi / 4
+  table.insert(storage.kh_strikes, {surface = s.index, force = force, center = {center[1], center[2]}, along = along,
+    fire_at = game.tick + CANNON_PAINT, paint_for = CANNON_PAINT, k = 0, phase = "paint", player = true, preset = at,
+    reach = reach, cannon = true})
+  shadow(s, {center[1], center[2]}, along, CANNON_PAINT)
+end
+
 local function paint(st, s, tick)
   local left = math.max(0, st.fire_at - tick) / (st.paint_for or PAINT)
   -- The uplink: from the spotter straight up, for its platform.
-  if st.spotter.valid then
+  if st.spotter and st.spotter.valid then
     local sp = st.spotter.position
     s.create_entity{name = "lp-orbital-lance", position = sp, source_position = {sp.x, sp.y - LANCE_H}, target_position = sp,
       duration = 31}
   end
-  if st.spotter.valid then
+  if st.spotter and st.spotter.valid then
     rendering.draw_line{color = {r = COLOR.r, g = COLOR.g, b = COLOR.b, a = 0.8}, width = 2, from = st.spotter,
       to = st.center, surface = s, time_to_live = 31, dash_length = 1, gap_length = 0.5}
   end
@@ -277,7 +289,7 @@ function orbital.tick(tick)
       trace(b, "its siege is over: called off")
       table.remove(storage.kh_strikes, i)
     elseif st.phase == "paint" then
-      if not st.spotter.valid and not st.player then
+      if not (st.spotter and st.spotter.valid) and not st.player then
         if b then trace(b, "its spotter is down: called off"); b.strikes_off_called = (b.strikes_off_called or 0) + 1 end
         if b then achievements.spotter(game.forces[b.force]) end
         table.remove(storage.kh_strikes, i)
@@ -291,7 +303,7 @@ function orbital.tick(tick)
           st.queue = {}
           for _, p in ipairs(st.preset) do st.queue[#st.queue + 1] = {pos = p} end
           -- Its beacon spent as its first shell falls.
-          if st.spotter.valid then
+          if st.spotter and st.spotter.valid then
             s.create_entity{name = "big-explosion", position = st.spotter.position}
             st.spotter.destroy()
           end

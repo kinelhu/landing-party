@@ -163,7 +163,7 @@ document still says Serenity where it records history.
 | Loot instead of salvage: buildings and units drop what they are made of | built | `loot`, `fall` |
 | Faction components (six) and the first faction technology, Cluster shells | built | `fuze` (two) |
 | Faction technologies: Pheromone bait, Pact breaker, Claim marker, Cluster shells, Rail rifle, Orbital strike | built | `bait`, `crystal` (two), `fuze` (two), `rifle`, `strike` |
-| Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and space-made shells, fired by remote, after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | proposed (2026-11-10), engine spikes first | |
+| Orbital cannons for the player: cannons on a platform over Nauvis, charged like a silo, fed thruster fuel and space-made shells, fired by remote, after artillery; Kessler-Hayashi's salvaged beacon a part of the targeting array (replaces the one-shot strike beacon) | built 0.2.274 (art provisional: the cannon's model to come); not seen in a window yet | `cannon` |
 | The player's unit cap shown (a panel at the top: units / cap, offline, relays and waiting orders in its tooltip); units retired (ALT + R or the panel's button: home to a barracks, the order handed in beside it for the robots) | built 0.2.273 | `retire` |
 | `/lp rig`, `/lp tap` on demand (`/lp flare` retired) | built | `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
@@ -6042,6 +6042,23 @@ Bugs and surprises the headless runs caught, each kept as a check:
   troopers left of 6). Scenario retire: 6 of 10 read, 3 retired, 3 orders on the ground and marked, 3 of 10 read, none
   deployed again. The panel itself unseen in a window yet (benchmarks have no player): the readout's numbers are checked.
   Grubstake's harrier named Scrap copter (its rotor art said helicopter; the user looked for "the grubstake copter").
+- **Orbital cannons built** (0.2.274, DESIGN.md "Orbital cannons"; the user, 2026-11-10: "Work overnight on the player
+  orbital strike"). orbital_cannon.lua (prototypes), scripts/cannon.lua (charges, the strike, the readout),
+  orbital.from_orbit (the strike centred on a point, no beacon on the ground). A cannon is a crafting machine, platform
+  only (gravity 0, as Space Age's crusher), its one recipe a charge from a shell and 200 thruster fuel in 180 s; at two
+  charges the script stops it (its status: charged). The engine's own limit did not hold the store: a crafting machine
+  starts its next craft with its output full, finishes it and holds it, and a strike's charge taken let the held one fall
+  in at once (three stored, a third strike not refused, scenario cannon, seen failing). The shell a platform recipe (steel,
+  explosives, low density structure); the array two recipes, the salvaged orbital beacon's or a targeting core's (space
+  science); the technology after Artillery and Space platform (1,000 of six sciences); the old strike beacon's technology
+  and recipe hidden, a placed one still fires. The remote: a selection tool (ALT + O, a shortcut), a click or drag on
+  Nauvis; every ready cannon over Nauvis with an array spends one charge, six shells each, first one on each nest or hostile
+  building within 20 nearest first, the rest spread on a sunflower (no dice); 30 s between strikes. A readout at the top
+  of the screen: cannons ready, realigning. Scenario cannon (a platform made by script: create_space_platform, the
+  starter pack applied): two cannons, each charged two and stopped; a strike spends two and takes six spawners; again at
+  once refused; a second spends two; a third refused; no array refused; the platform sent to Vulcanus refused; none
+  placeable on Nauvis. Learnt on the way (the 2.1 API, from the error, not memory): a recipe's `category` is `categories`.
+  Not yet seen in a window: the remote's feel, the readout, the art (provisional: the assembling machine 3, a radar).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

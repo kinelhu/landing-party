@@ -53,6 +53,7 @@ local scorcher = require("__landing-party__.scripts.scorcher")
 local stun = require("__landing-party__.scripts.stun")
 local fall = require("__landing-party__.scripts.fall")
 local separate = require("__landing-party__.scripts.separate")
+local cannon = require("__landing-party__.scripts.cannon")
 local ram = require("__landing-party__.scripts.ram")
 local map = require("__landing-party__.scripts.map")
 local aim = require("__landing-party__.scripts.aim")
@@ -116,7 +117,7 @@ local WATCH_DEPS = {
   end,
 }
 script.on_event(defines.events.on_tick, function(e)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -218,11 +219,19 @@ script.on_event(defines.events.on_post_entity_died, function(e) fall.on_post_die
 
 -- The command tool: select (drag), release (shift-drag), order (right-click or right-drag; shift: attack-move).
 local TOOL = "lp-command-tool"
+-- The orbital remote (scripts/cannon.lua): a click or a drag, its middle the strike's point.
+local function remote_fire(e)
+  local p = game.get_player(e.player_index)
+  local a = e.area
+  cannon.fire(p.force, e.surface, {x = (a.left_top.x + a.right_bottom.x) / 2, y = (a.left_top.y + a.right_bottom.y) / 2}, p)
+end
 script.on_event(defines.events.on_player_selected_area, function(e)
   if e.item == TOOL then command.select(e.player_index, e.entities) end
+  if e.item == "lp-orbital-remote" then remote_fire(e) end
 end)
 script.on_event(defines.events.on_player_alt_selected_area, function(e)
   if e.item == TOOL then command.release(e.player_index, e.entities) end
+  if e.item == "lp-orbital-remote" then remote_fire(e) end
 end)
 script.on_event(defines.events.on_player_reverse_selected_area, function(e)
   if e.item == TOOL then command.order(e.player_index, e.surface, e.area, false) end
@@ -906,6 +915,10 @@ remote.add_interface("landing-party", {
   end,
   debug_order = function(area, attackmove) return command.order(1, game.surfaces[1], area, attackmove) end,
   debug_retire = function() return command.retire(1) end,
+  cannon_readout = function() return cannon.readout(game.forces.player) end,
+  cannon_stats = function() return cannon.stats() end,
+  -- Tests only: a strike called at pos (as the remote), and why not.
+  debug_cannon_fire = function(pos) local n, why = cannon.fire(game.forces.player, game.surfaces.nauvis, {x = pos[1], y = pos[2]}); return {spent = n, why = why} end,
   army_readout = function() return command.readout(game.forces.player) end,
   -- Tests only: the route planner from a settlement's home to pos (nests and turrets as for a sneaking march).
   debug_route = function(id, to)
