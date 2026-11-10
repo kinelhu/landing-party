@@ -6497,6 +6497,30 @@ Bugs and surprises the headless runs caught, each kept as a check:
   in the yard lost its slot to its old number. Found reading what the walk visits, not by the trace: no test had
   promoted a garrison unit. Scenario veteran's camp now promotes the whole roster after the raid (39 units, garrison and
   yard among them), every one traced.
+- **Grubstake's pole, the depots and the launch pads modelled** (0.2.318; phase 2 of the graphics pass,
+  tools/blender/faction_works.py, wired in corps.lua's MODELLED; filmed beside vanilla's, docs/review/stills-depots.lua).
+  From clay concepts, judged at game scale beside vanilla's (a sheet at 32 px a tile):
+  - Grubstake's pole (it had worn vanilla's medium pole, recoloured): a welded pipe tripod, X-braced in every bay, a
+    ladder up one leg, a channel-iron crossarm with amber glass insulators, a junction box, a lantern. Of three concepts:
+    the scrap post read as the bare stick the KH mast's review turned down, an I-beam in welded drums busy, its drums a
+    bollard. First rendered at legs of 0.035 and 2.55 tall it read light and short beside the medium pole; heavier,
+    wider and to 2.95 it stands with it and the KH mast. Its wire points projected from its insulators (posts.json): in
+    game the copper wire meets the top one.
+  - The depots (4x4; Space Age's cargo landing pad at half size, tinted, until now): Kessler-Hayashi's a sealed landing
+    pad (a chamfered deck, a lit landing ring round a shut cargo iris, corner bollards with beacons, a service crane, a
+    dish on a cabinet, pumps, manifolds and a tank round the deck); Grubstake's a pad of welded plates on oil-drum stilts
+    (a worn landing circle, tyre bumpers, an A-frame hoist, crates and drums, a compressor, a floodlight). Of four
+    concepts: a pod catcher's ring on four towers read odd, a tyre-ring pit toylike. Scatter's parts had heaped on the KH
+    iris, which read as junk: its leaves now of materials scatter leaves alone.
+  - The launch pads (9x9; the rocket silo, tinted, until now; an export leaves as a beam straight up from it): Kessler-
+    Hayashi's an electromagnetic launch tube, coil-ringed and lit at its mouth, in a ring of capacitor banks, a ribbed
+    gantry with its swing arm, two spherical tanks; Grubstake's a lattice derrick over a plate-lined pit, its lid a
+    ship's hull section propped on a hinge, a hazard ring, a winch house, tanks, drums, tyres and a scrap heap. Of four
+    concepts: a domed silo cap plain, a raked launch rail read as a ladder lying down.
+  The clay concepts read sparse beside vanilla's cargo pad and silo, dense with pipes and machines; the finals carry
+  machine clusters (faction_works.py kit: a pump, a cabinet, a manifold, a tank), props and scattered small parts, and
+  are still a little plainer than vanilla's. Not done: the shadows of every modelled building fall north-east, vanilla's
+  east (lpkit.stage's sun, all of phase 2's). The pole's old recolour pruned (make_sprites.py --prune).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

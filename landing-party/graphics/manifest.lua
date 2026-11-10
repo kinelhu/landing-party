@@ -88,7 +88,6 @@ return {
     ["__base__/graphics/entity/gun-turret/gun-turret-shooting-3.png"] = "__landing-party__/graphics/grubstake/gun-turret/gun-turret-shooting-3.png",
     ["__base__/graphics/entity/gun-turret/gun-turret-shooting-4.png"] = "__landing-party__/graphics/grubstake/gun-turret/gun-turret-shooting-4.png",
     ["__base__/graphics/entity/iron-chest/iron-chest.png"] = "__landing-party__/graphics/grubstake/iron-chest/iron-chest.png",
-    ["__base__/graphics/entity/medium-electric-pole/medium-electric-pole.png"] = "__landing-party__/graphics/grubstake/medium-electric-pole/medium-electric-pole.png",
     ["__base__/graphics/entity/pipe-covers/pipe-cover-east.png"] = "__landing-party__/graphics/grubstake/pipe-covers/pipe-cover-east.png",
     ["__base__/graphics/entity/pipe-covers/pipe-cover-north.png"] = "__landing-party__/graphics/grubstake/pipe-covers/pipe-cover-north.png",
     ["__base__/graphics/entity/pipe-covers/pipe-cover-south.png"] = "__landing-party__/graphics/grubstake/pipe-covers/pipe-cover-south.png",

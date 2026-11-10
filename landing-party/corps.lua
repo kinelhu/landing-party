@@ -222,6 +222,16 @@ MODELLED["lp-flamer"] = {dir = "flamer", head = true, apply = function(p, key)
   end
   p.graphics_set = {base_visualisation = {animation = four}}
 end}
+-- The depot and the launch pad: containers, one picture each (faction_works.py depot and launchpad: KH a sealed
+-- landing pad and an electromagnetic launch tube, Grubstake a plated pad on drum stilts and a derrick over a pit).
+local function still(p, key)
+  local function pic(file, extra)
+    local l = sheet_layer(key, file, extra); l.frame_count, l.line_length = nil, nil; return l
+  end
+  p.picture = {layers = {pic("body"), pic("glow", {draw_as_glow = true, blend_mode = "additive"}), pic("shadow", {draw_as_shadow = true})}}
+end
+MODELLED["lp-depot"] = {dir = "depot", apply = still}
+MODELLED["lp-launchpad"] = {dir = "launchpad", apply = still}
 MODELLED["lp-turret"] = {dir = "turret", head = true, apply = turret}
 MODELLED["lp-gun-turret"] = {dir = "gun-turret", head = true, apply = turret}
 for corp in pairs(shared.CORPS) do

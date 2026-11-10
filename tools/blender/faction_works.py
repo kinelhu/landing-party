@@ -10,11 +10,15 @@ Grubstake's builds of it apart, KH clean corporate blue-grey with cyan lights, G
               (Grubstake's drill is the strip drill's gantry, turning_buildings.py).
   flamer      2x3, its base in four directions and its head in 64 on a pivot at the centre: KH an armoured fuel-fed
               flame turret, Grubstake a drum-fed scrap flamer.
-  pylon       1x1, one direction and its wire points (posts.json): KH a composite mast, Grubstake a scrap pole.
+  pylon       1x1, one direction and its wire points (posts.json): KH a composite mast, Grubstake a welded pipe tripod.
   turret      2x2, a base once and a head in 64 directions (north first, clockwise): KH's laser turret (a lens turret on
               a hexagonal ring) and gun-turret (twin autocannon), Grubstake's turret (a gun nest of scrap, one barrel).
   generator   2x2, the camp's power: KH a fusion cell, its core lit, vanes turning on its crown; Grubstake a scrap
               genset, its radiator fan turning (16 frames, always running).
+  depot       4x4, one picture (a container): KH a sealed landing pad, its cargo iris, a crane; Grubstake a plated pad on
+              oil-drum stilts, an A-frame hoist, tyre bumpers, crates (clay concepts: kh-a, kh-b, gs-a, gs-b).
+  launchpad   9x9, one picture: KH an electromagnetic launch tube in a ring of capacitor banks, its gantry; Grubstake a
+              lattice derrick over a pit whose lid is a ship's hull section (concepts as the depot's).
 
     Blender -b -P tools/blender/faction_works.py -- <what> <kh|gs> <out_dir>      (LP_CLAY=1: one grey, for silhouettes)
     then: uv run --with pillow python tools/blender/sheet.py <out_dir> landing-party/graphics/<serenity|grubstake>/<what>
@@ -60,7 +64,7 @@ def palette(f):
     return P
 
 
-P = palette(F.split("-")[0] if WHAT == "concept" else F)   # (a concept is named for its faction: kh-..., gs-...)
+P = palette(F.split("-")[0])   # (a concept is named for its faction: kh-..., gs-...)
 
 
 def group(fn):
@@ -793,6 +797,449 @@ def pylon_gs():
     return group(build), tips
 
 
+def pylon_gs_concept(name):
+    """Grubstake's pole, three clay concepts (phase 2, its pylon; the KH mast's review: "a bare stick" is what to avoid):
+    gs-a the scrap pole above; gs-b a welded pipe tripod, braced, a channel-iron crossarm; gs-c a steel I-beam stood in
+    two welded oil drums, guyed, two angle-iron crossarms, a gas bottle for a transformer."""
+    import mathutils as _mu
+    V = _mu.Vector
+    if name == "gs-a":
+        return pylon_gs()
+    tips = {}
+    def b_build():
+        # (Its mass: first rendered at legs of 0.035, 0.36 apart and 2.55 tall, it read light and short beside vanilla's
+        # medium pole and the KH mast, its bays empty.)
+        R, TOP = 0.46, 2.95
+        legs = [(math.cos(a) * R, math.sin(a) * R) for a in (math.radians(90), math.radians(210), math.radians(330))]
+        top = (0.0, 0.0, TOP)
+        def at(i, z):
+            k = 1 - z / (TOP + 0.35); x, y = legs[i]; return (x * k, y * k, z)
+        for i, (x, y) in enumerate(legs):
+            rod((x, y, 0.0), at(i, TOP), 0.05, P["trim"])
+            B(0.2, 0.2, 0.12, x, y, 0, P["dark"], bevel=0.015)                     # a block of concrete each foot
+            B(0.12, 0.12, 0.03, x, y, 0.12, P["steel"], bevel=0.0)                  # its base plate
+        zs = (0.12, 0.65, 1.2, 1.75, 2.3, TOP - 0.05)
+        for z in zs[1:]:
+            for i in range(3):
+                rod(at(i, z), at((i + 1) % 3, z), 0.022, P["steel"])
+        for j in range(len(zs) - 1):                                                # X braces in every bay
+            z0, z1 = zs[j], zs[j + 1]
+            for i in range(3):
+                n = (i + 1) % 3
+                rod(at(i, z0), at(n, z1), 0.013, P["steel"]); rod(at(n, z0), at(i, z1), 0.013, P["steel"])
+        cz = TOP + 0.02
+        B(1.15, 0.1, 0.12, 0, 0, cz, P["hull"], bevel=0.012)                         # a channel-iron crossarm
+        B(1.15, 0.03, 0.04, 0, 0.06, cz + 0.08, P["dark"], bevel=0.0)
+        rod((-0.42, 0, cz), (0, 0, cz - 0.45), 0.018, P["steel"]); rod((0.42, 0, cz), (0, 0, cz - 0.45), 0.018, P["steel"])
+        for x in (-0.5, 0.5):
+            cyl(0.014, 0.08, x, 0, cz + 0.12, P["steel"], verts=6)
+            for k in range(3): cyl(0.045 - k * 0.006, 0.03, x, 0, cz + 0.16 + k * 0.035, P["glass"], verts=10)
+        for k in range(4): cyl(0.05 - k * 0.006, 0.035, 0, 0, cz + 0.14 + k * 0.04, P["glass"], verts=10)
+        cyl(0.02, 0.05, 0, 0, cz + 0.3, P["steel"], verts=8)
+        x0, y0 = legs[0]
+        for k in range(11):                                                         # ladder rungs up one leg
+            z = 0.25 + k * 0.24; px, py, _ = at(0, z)
+            rod((px - 0.08, py, z), (px + 0.08, py, z), 0.009, P["steel"])
+        px, py, _ = at(1, 1.0)
+        o = B(0.24, 0.025, 0.2, px * 0.95, py * 0.95, 0.9, P["hull"], bevel=0.005)  # a patch plate welded on
+        o.rotation_euler = (0, 0, math.radians(300))
+        B(0.22, 0.15, 0.28, 0.14, -0.16, 1.0, P["accent"], bevel=0.012)              # a junction box on a leg
+        B(0.14, 0.02, 0.1, 0.14, -0.24, 1.14, P["hazard"], bevel=0.0)
+        rod((0.14, -0.16, 1.28), (0.02, 0, cz - 0.05), 0.014, P["rubber"])
+        lie(0.16, 0.14, 0.42, -0.2, 0.16, P["dark"], "x", 20)                        # a cable reel beside a leg
+        lie(0.11, 0.15, 0.42, -0.2, 0.16, P["rubber"], "x", 20)
+        rod((-0.48, 0, cz), (-0.5, 0, cz - 0.2), 0.006, P["steel"])
+        cyl(0.045, 0.09, -0.5, 0, cz - 0.32, P["dark"], verts=8); sph(0.04, -0.5, 0, cz - 0.26, P["light"])
+        tips.update(copper=V((0, 0, cz + 0.33)), red=V((-0.5, 0, cz + 0.25)), green=V((0.5, 0, cz + 0.25)))
+    def c_build():
+        for k, z in enumerate((0.0, 0.42)):                                        # two oil drums, welded
+            cyl(0.22, 0.42, 0, 0, z, P["accent"] if k else P["hull"], verts=20)
+            for zz in (z + 0.12, z + 0.3): tor(0.22, 0.012, 0, 0, zz, P["dark"])
+        cyl(0.2, 0.03, 0, 0, 0.84, P["dark"], verts=20)
+        mast = B(0.09, 0.14, 2.2, 0, 0, 0.84, P["trim"], bevel=0.005)               # the I-beam
+        mast.rotation_euler = (math.radians(2), math.radians(-1.5), 0)
+        for x in (-0.06, 0.06): B(0.02, 0.16, 2.2, x, 0, 0.84, P["steel"], bevel=0.0).rotation_euler = mast.rotation_euler
+        tz = 3.0
+        for z, w in ((2.75, 0.5), (2.98, 0.34)):                                    # angle-iron crossarms
+            o = B(2 * w + 0.1, 0.06, 0.06, 0.0, 0.0, z, P["steel"], bevel=0.0); o.rotation_euler.y = math.radians(3)
+            for sx in (-1, 1): rod((sx * w * 0.8, 0, z), (0, 0, z - 0.28), 0.012, P["steel"])
+        for x in (-0.5, 0.5):
+            cyl(0.012, 0.08, x, 0, 2.81, P["steel"], verts=6)
+            for k in range(3): cyl(0.05 - k * 0.006, 0.035, x, 0, 2.85 + k * 0.04, P["glass"], verts=10)
+        for x in (-0.34, 0.34):
+            cyl(0.04, 0.06, x, 0, 3.04, P["glass"], verts=10)
+        for k in range(4): cyl(0.055 - k * 0.006, 0.04, 0, 0, tz + 0.05 + k * 0.045, P["glass"], verts=10)
+        cyl(0.02, 0.05, 0, 0, tz + 0.24, P["steel"], verts=8)
+        cyl(0.11, 0.5, 0.0, -0.18, 1.65, P["accent"], verts=16); sph(0.11, 0.0, -0.18, 2.15, P["accent"])
+        for z in (1.72, 2.05): tor(0.12, 0.012, 0.0, -0.18, z, P["dark"])
+        rod((0.0, -0.18, 2.25), (0.0, -0.05, 2.7), 0.012, P["rubber"])
+        rod((0.0, 0.07, 2.3), (0.55, 0.65, 0.0), 0.006, P["steel"])                  # a guy wire to its stake
+        cyl(0.025, 0.18, 0.55, 0.65, 0.0, P["dark"], verts=6)
+        B(0.2, 0.02, 0.14, 0.0, -0.09, 1.25, P["hazard"], bevel=0.0)                 # a plate: danger
+        rod((0.5, 0, 2.75), (0.52, 0, 2.55), 0.006, P["steel"])
+        cyl(0.04, 0.08, 0.52, 0, 2.45, P["dark"], verts=8); sph(0.035, 0.52, 0, 2.5, P["light"])
+        tips.update(copper=V((0, 0, tz + 0.27)), red=V((-0.5, 0, 2.97)), green=V((0.5, 0, 2.97)))
+    model = group(b_build if name == "gs-b" else c_build)
+    return model, tips
+
+
+# --- Depots (4x4, the camp's store, where its army comes home and its cargo pods come down; Space Age's cargo landing
+# pad at half size and tinted until now) and launchpads (9x9, its exports leave from it as a beam straight up; the
+# tinted rocket silo until now). Static: a container's one picture. Two clay concepts a faction each, a: and b:.
+def _still(fn):
+    objs = group(fn)
+    return objs, lambda f, n: None
+
+
+def depot_kh_a():
+    """A sealed landing pad: a chamfered deck on a plinth, a recessed landing ring lit cyan, four corner bollards with
+    beacons, a cargo iris at its middle, a service crane on its north-east corner, a loading ramp south."""
+    def build():
+        octa(1.95, 0.14, 0, 0, 0, P["dark"], sx=1.0, sy=1.0)
+        octa(1.8, 0.16, 0, 0, 0.14, P["hull"])
+        tor(1.05, 0.06, 0, 0, 0.31, P["trim"]); tor(0.92, 0.03, 0, 0, 0.31, P["glass"])
+        cyl(0.82, 0.04, 0, 0, 0.28, P["dark"], verts=48)
+        for k in range(8):                                                    # the iris's leaves, shut
+            a = k * math.pi / 4
+            o = B(0.6, 0.3, 0.03, math.cos(a) * 0.35, math.sin(a) * 0.35, 0.31, P["dark"] if k % 2 else P["steel"], rot=a + 0.4,
+                  bevel=0.005)   # (not hull or trim: scatter's parts had heaped on the leaves and the iris read as junk)
+        cyl(0.14, 0.05, 0, 0, 0.33, P["steel"], verts=16)
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                x, y = sx * 1.45, sy * 1.45
+                octa(0.14, 0.45, x, y, 0.3, P["trim"]); cyl(0.07, 0.07, x, y, 0.75, P["light"], verts=12)
+        for k in range(16):                                                   # chevrons on the deck round the ring
+            a = k * 2 * math.pi / 16
+            B(0.14, 0.05, 0.01, math.cos(a) * 1.3, math.sin(a) * 1.3, 0.3, P["accent"], rot=a, bevel=0.0)
+        # The crane: a mast north-east, its boom over the deck, a hook block.
+        cyl(0.13, 1.6, 1.35, 1.35, 0.3, P["trim"], verts=12)
+        B(0.3, 0.3, 0.2, 1.35, 1.35, 1.9, P["hull"], bevel=0.02)
+        rod((1.35, 1.35, 2.0), (0.2, 0.2, 2.15), 0.05, P["trim"])
+        rod((0.2, 0.2, 2.15), (0.2, 0.2, 1.4), 0.008, P["steel"]); B(0.12, 0.12, 0.12, 0.2, 0.2, 1.3, P["dark"], bevel=0.01)
+        B(0.9, 0.5, 0.12, 0, -2.0, 0.0, P["trim"], bevel=0.01)                   # a ramp south
+        B(0.5, 0.3, 0.5, -1.4, 1.2, 0.3, P["hull"], bevel=0.03)                 # a control cabinet, its screen
+        B(0.3, 0.02, 0.18, -1.4, 1.04, 0.6, P["glass"], bevel=0.0)
+    return _still(build)
+
+
+def depot_kh_b():
+    """A pod catcher: a square cargo bay, low, its roof a receiving well; four guide towers at its corners hold a ring
+    over the well (where a pod is caught), cyan lit; conduits down the towers, a hatch bay south."""
+    def build():
+        B(3.5, 3.5, 0.12, 0, 0, 0, P["dark"], bevel=0.03)
+        B(3.2, 3.2, 0.5, 0, 0, 0.12, P["hull"], bevel=0.05)
+        cyl(1.0, 0.06, 0, 0, 0.6, P["dark"], verts=48); tor(1.0, 0.07, 0, 0, 0.64, P["trim"])
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                x, y = sx * 1.35, sy * 1.35
+                B(0.32, 0.32, 1.9, x, y, 0.12, P["trim"], bevel=0.03)
+                B(0.36, 0.36, 0.14, x, y, 2.0, P["hull"], bevel=0.02)
+                cyl(0.06, 0.08, x, y, 2.14, P["light"], verts=12)
+                rod((x, y, 2.0), (x * 0.6, y * 0.6, 2.0), 0.06, P["trim"])
+                rod((x * 0.98, y * 0.98, 0.6), (x * 0.98, y * 0.98, 1.9), 0.02, P["rubber"])
+        tor(1.15, 0.07, 0, 0, 2.0, P["trim"]); tor(1.15, 0.025, 0, 0, 2.06, P["glass"])
+        B(1.2, 0.2, 0.42, 0, -1.65, 0.12, P["trim"], bevel=0.02)
+        B(1.0, 0.02, 0.3, 0, -1.76, 0.16, P["accent"], bevel=0.0)
+    return _still(build)
+
+
+def depot_gs_a():
+    """A scrap landing pad: a deck of welded plates on oil-drum stilts, its landing circle painted and worn, tyre
+    bumpers at its corners, an A-frame hoist with its chain, crates and barrels stacked on the west side, a floodlight."""
+    import random as _r
+    rr = _r.Random(21)
+    def build():
+        for x in (-1.3, 0, 1.3):
+            for y in (-1.3, 0, 1.3):
+                cyl(0.18, 0.28, x, y, 0, P["accent"] if (x + y) % 2 else P["hull"], verts=14)
+        for i in range(4):
+            for j in range(4):
+                o = B(0.86, 0.86, 0.06, -1.3 + i * 0.87, -1.3 + j * 0.87, 0.28 + rr.uniform(0, 0.02),
+                      P["trim"] if (i + j) % 3 else P["hull"], bevel=0.005)
+                o.rotation_euler = (rr.uniform(-0.01, 0.01), rr.uniform(-0.01, 0.01), rr.uniform(-0.03, 0.03))
+        tor(0.95, 0.03, 0, 0, 0.35, P["hazard"])
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                tor(0.2, 0.08, sx * 1.6, sy * 1.6, 0.42, P["rubber"]); tor(0.2, 0.08, sx * 1.6, sy * 1.6, 0.56, P["rubber"])
+        for sx in (-1, 1):                                                    # the A-frame hoist, east to west over the pad
+            rod((sx * 1.5, 1.6, 0.3), (sx * 0.9, 1.6, 2.3), 0.05, P["trim"]); rod((sx * 1.5, 1.0, 0.3), (sx * 0.9, 1.6, 2.3), 0.04, P["trim"])
+        rod((-0.9, 1.6, 2.3), (0.9, 1.6, 2.3), 0.06, P["hull"])
+        rod((0.1, 1.6, 2.3), (0.1, 1.2, 1.1), 0.01, P["steel"]); B(0.15, 0.1, 0.18, 0.1, 1.2, 0.95, P["dark"], bevel=0.01)
+        for k in range(6):                                                    # crates and barrels on the west side
+            B(0.42, 0.42, 0.38, -1.55 + (k % 2) * 0.1, -1.0 + k * 0.32, 0.34, P["hull"] if k % 2 else P["trim"], rot=rr.uniform(-0.2, 0.2), bevel=0.02)
+        for k in range(3): cyl(0.15, 0.4, -0.9, -1.55 + k * 0.32, 0.34, P["accent"], verts=16)
+        rod((1.7, -1.7, 0.0), (1.7, -1.7, 2.0), 0.035, P["steel"])
+        B(0.25, 0.12, 0.16, 1.62, -1.62, 2.0, P["dark"], bevel=0.01); B(0.2, 0.02, 0.1, 1.6, -1.55, 2.02, P["light"], bevel=0.0)
+    return _still(build)
+
+
+def depot_gs_b():
+    """A catch pit: a ring wall of stacked tyres and scrap sheet round a sandbagged pit, a cargo net strung between four
+    leaning poles over it, a hand winch, a lantern on a pole, a shack of patched sheet in the south-west corner."""
+    import random as _r
+    rr = _r.Random(22)
+    def build():
+        cyl(1.25, 0.06, 0, 0, 0, P["dark"], verts=40)
+        for k in range(22):                                                   # the tyre ring, two high
+            a = k * 2 * math.pi / 22
+            for z in (0.1, 0.26):
+                o = tor(0.2, 0.07, math.cos(a) * 1.45, math.sin(a) * 1.45, z, P["rubber"]); o.rotation_euler = (0, 0, a)
+        for k in range(10):                                                   # scrap sheets leaning on it
+            a = k * 2 * math.pi / 10 + rr.uniform(0, 0.3)
+            o = B(0.5, 0.04, 0.5, math.cos(a) * 1.68, math.sin(a) * 1.68, 0.0, P["trim"] if k % 2 else P["hull"], rot=a + math.pi / 2, bevel=0.005)
+            o.rotation_euler.x = math.radians(rr.uniform(-15, 15))
+        tops = []
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                b = (sx * 1.7, sy * 1.7, 0.0); t = (sx * 1.35, sy * 1.35, 1.9)
+                rod(b, t, 0.045, P["steel"]); tops.append(t)
+        for i in range(4):
+            for j in range(5):
+                u = j / 4
+                p0 = [tops[0][q] + (tops[1][q] - tops[0][q]) * u for q in range(3)]
+                p1 = [tops[2][q] + (tops[3][q] - tops[2][q]) * u for q in range(3)]
+                p0[2] -= 0.25 * math.sin(u * math.pi); p1[2] -= 0.25 * math.sin(u * math.pi)
+                rod(tuple(p0), tuple(p1), 0.01, P["cloth"])
+                q0 = [tops[0][q] + (tops[2][q] - tops[0][q]) * u for q in range(3)]
+                q1 = [tops[1][q] + (tops[3][q] - tops[1][q]) * u for q in range(3)]
+                q0[2] -= 0.25 * math.sin(u * math.pi); q1[2] -= 0.25 * math.sin(u * math.pi)
+                rod(tuple(q0), tuple(q1), 0.01, P["cloth"])
+        lie(0.12, 0.35, 1.2, -1.9, 0.35, P["dark"], "x", 16); B(0.3, 0.2, 0.3, 1.2, -1.9, 0.05, P["trim"], bevel=0.01)
+        B(0.9, 0.8, 0.7, -1.45, -1.45, 0.0, P["hull"], bevel=0.02)
+        o = B(1.0, 0.9, 0.05, -1.45, -1.45, 0.72, P["trim"], bevel=0.005); o.rotation_euler.x = math.radians(8)
+        rod((1.85, 1.85, 0.0), (1.85, 1.85, 1.5), 0.025, P["steel"]); sph(0.06, 1.85, 1.85, 1.45, P["light"])
+    return _still(build)
+
+
+def launchpad_kh_a():
+    """An electromagnetic launcher: an octagonal deck, at its middle a launch tube rising from a ring of capacitor banks,
+    its mouth ringed with coils lit cyan (where the beam leaves), a gantry tower beside it with a swing arm to the tube,
+    two spherical tanks, conduit runs across the deck, cyan perimeter lamps."""
+    def build():
+        octa(4.4, 0.16, 0, 0, 0, P["dark"])
+        octa(4.1, 0.14, 0, 0, 0.16, P["hull"])
+        for k in range(8):                                                    # capacitor banks round the tube
+            a = k * math.pi / 4 + math.pi / 8
+            B(0.9, 0.55, 0.7, math.cos(a) * 1.9, math.sin(a) * 1.9, 0.3, P["trim"], rot=a, bevel=0.04)
+            for j in range(3):
+                cyl(0.1, 0.12, math.cos(a) * 1.9 + math.cos(a + 1.57) * (j - 1) * 0.25, math.sin(a) * 1.9 + math.sin(a + 1.57) * (j - 1) * 0.25,
+                    1.0, P["steel"], verts=10)
+        cyl(1.05, 0.5, 0, 0, 0.3, P["trim"], verts=48)
+        cyl(0.8, 2.8, 0, 0, 0.8, P["hull"], verts=48)
+        for z in (1.2, 1.8, 2.4, 3.0, 3.45):
+            tor(0.86, 0.08, 0, 0, z, P["trim"])
+        tor(0.82, 0.05, 0, 0, 3.62, P["glass"])
+        cyl(0.62, 0.05, 0, 0, 3.58, P["dark"], verts=48)
+        # The gantry: a ribbed tower north-west, a swing arm to the tube's top.
+        B(0.8, 0.8, 4.2, -2.8, 2.8, 0.3, P["hull"], bevel=0.05)
+        for z in (1.0, 1.8, 2.6, 3.4): B(0.84, 0.84, 0.08, -2.8, 2.8, z, P["trim"], bevel=0.01)
+        for d in (-0.25, 0.0, 0.25):                                           # ribs up its faces, a ladder
+            B(0.06, 0.86, 3.9, -2.8 + d, 2.8, 0.4, P["trim"], bevel=0.005); B(0.86, 0.06, 3.9, -2.8, 2.8 + d, 0.4, P["trim"], bevel=0.005)
+        for k in range(14): rod((-2.35, 2.62, 0.5 + k * 0.27), (-2.35, 2.98, 0.5 + k * 0.27), 0.012, P["steel"])
+        cyl(0.08, 0.1, -2.8, 2.8, 4.5, P["light"], verts=12)
+        B(2.2, 0.25, 0.2, -1.7, 1.7, 3.6, P["trim"], rot=-math.pi / 4, bevel=0.02)
+        for x, y in ((2.9, 2.9), (3.1, 1.6)):                                  # tanks north-east
+            sph(0.62, x, y, 0.95, P["trim"]); cyl(0.25, 0.35, x, y, 0.3, P["dark"], verts=16)
+        pipe([(2.9, 2.9, 0.4), (1.4, 1.4, 0.4), (0.9, 0.9, 0.5)], 0.08, P["steel"], P["dark"])
+        for k in range(12):
+            a = k * 2 * math.pi / 12
+            cyl(0.08, 0.12, math.cos(a) * 3.9, math.sin(a) * 3.9, 0.3, P["light"], verts=10)
+        for k in range(4): B(1.6, 0.18, 0.06, 0, -2.6 - k * 0.32, 0.3, P["accent"] if k % 2 == 0 else P["dark"], bevel=0.0)
+    return _still(build)
+
+
+def launchpad_kh_b():
+    """A sealed silo cap: a round raised rim, a segmented dome shut over the launch well, three service towers round it
+    joined by a ring walkway, cyan lights in the dome's seams."""
+    def build():
+        octa(4.4, 0.16, 0, 0, 0, P["dark"])
+        cyl(3.2, 0.6, 0, 0, 0.16, P["hull"], verts=64)
+        tor(3.2, 0.12, 0, 0, 0.76, P["trim"])
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=2.5, location=(0, 0, 0.76), segments=48, ring_count=24)
+        o = bpy.context.object; o.scale = (1, 1, 0.45); o.data.materials.append(P["trim"])
+        for k in range(8):
+            a = k * math.pi / 4
+            rod((0, 0, 1.9), (math.cos(a) * 2.5, math.sin(a) * 2.5, 0.8), 0.03, P["glass"])
+        for k in range(3):
+            a = k * 2 * math.pi / 3 + 0.5
+            x, y = math.cos(a) * 3.6, math.sin(a) * 3.6
+            B(0.7, 0.7, 2.6, x, y, 0.16, P["hull"], rot=a, bevel=0.04); cyl(0.07, 0.1, x, y, 2.76, P["light"], verts=12)
+        tor(3.6, 0.06, 0, 0, 1.9, P["steel"])
+    return _still(build)
+
+
+def launchpad_gs_a():
+    """A scrap launch rail: a scorched slab, a girder ramp raked up to the north from a sled on rails, its launch end on
+    an A-frame; a gantry crane of welded girders over the sled, salvaged tanks and drums, a blast shield of plate."""
+    import random as _r
+    rr = _r.Random(31)
+    def build():
+        B(8.2, 8.2, 0.12, 0, 0, 0, P["dark"], bevel=0.05)
+        cyl(1.6, 0.02, 0, 0, 0.12, P["rubber"], verts=40)                      # the scorch
+        for sx in (-1, 1):                                                    # the rails, raked up north
+            o = B(0.12, 6.0, 0.14, sx * 0.45, 0.2, 0.9, P["trim"], bevel=0.01); o.rotation_euler.x = math.radians(22)
+        for k in range(8):
+            y = -2.3 + k * 0.7; z = 0.2 + (y + 2.7) * math.tan(math.radians(22))
+            o = B(1.2, 0.1, 0.08, 0, y, z - 0.08, P["hull"], bevel=0.005); o.rotation_euler.x = math.radians(22)
+            if k % 2 == 0:
+                for sx in (-1, 1): rod((sx * 0.5, y, 0.12), (sx * 0.5, y, z - 0.05), 0.05, P["steel"])
+        B(1.0, 1.4, 0.4, 0, -2.4, 0.2, P["accent"], bevel=0.03)                 # the sled, a cradle on it
+        for sx in (-1, 1):                                                    # a gantry crane over it
+            rod((sx * 1.6, -3.2, 0.12), (sx * 1.6, -3.2, 3.0), 0.08, P["trim"]); rod((sx * 1.6, -1.4, 0.12), (sx * 1.6, -1.4, 3.0), 0.08, P["trim"])
+            rod((sx * 1.6, -3.2, 3.0), (sx * 1.6, -1.4, 3.0), 0.07, P["hull"])
+        rod((-1.6, -2.3, 3.0), (1.6, -2.3, 3.0), 0.09, P["hull"])
+        for k in range(3):
+            x, y = 2.6 + (k % 2) * 0.4, 1.5 + k * 1.0
+            lie(0.4, 1.4, x, y, 0.55, P["hull"] if k % 2 else P["trim"], "y", 20)
+        for k in range(9): cyl(0.18, 0.45, -2.8 + (k % 3) * 0.4, 2.0 + (k // 3) * 0.4, 0.12, P["accent"] if k % 2 else P["steel"], verts=14)
+        for k in range(5):
+            o = B(0.8, 0.06, 1.2, -3.2 + k * 0.82, -3.6, 0.12, P["trim"] if k % 2 else P["hull"], bevel=0.005)
+            o.rotation_euler = (math.radians(rr.uniform(-8, 8)), 0, math.radians(rr.uniform(-6, 6)))
+    return _still(build)
+
+
+def launchpad_gs_b():
+    """A hull hatch: a pit lined with welded plate, its lid a ship's hull section on a hinge, propped; a lattice derrick
+    over it, a winch house, fuel tanks on cradles, cable runs, an amber beacon on the derrick."""
+    def build():
+        B(8.2, 8.2, 0.12, 0, 0, 0, P["dark"], bevel=0.05)
+        cyl(2.3, 0.4, 0, 0, 0.12, P["trim"], verts=40); cyl(2.0, 0.42, 0, 0, 0.12, P["rubber"], verts=40)
+        tor(2.15, 0.06, 0, 0, 0.53, P["hazard"])                                # the well's hazard ring
+        cyl(3.0, 0.015, 0, 0, 0.12, P["rubber"], verts=48)                      # scorched round it
+        o = B(4.2, 2.2, 0.18, 0, 1.6, 1.2, P["hull"], bevel=0.08); o.rotation_euler.x = math.radians(-55)
+        rod((-1.2, 0.8, 0.5), (-1.2, 1.7, 2.4), 0.06, P["steel"]); rod((1.2, 0.8, 0.5), (1.2, 1.7, 2.4), 0.06, P["steel"])
+        legs = [(-2.0, -2.0), (2.0, -2.0), (2.0, 2.0), (-2.0, 2.0)]
+        for x, y in legs: rod((x * 1.3, y * 1.3, 0.12), (x * 0.25, y * 0.25, 5.0), 0.07, P["trim"])
+        for z in (1.2, 2.4, 3.6):
+            k = 1 - (z - 0.12) / 4.88 * 0.81
+            for i in range(4):
+                a, b2 = legs[i], legs[(i + 1) % 4]
+                rod((a[0] * 1.3 * k, a[1] * 1.3 * k, z), (b2[0] * 1.3 * k, b2[1] * 1.3 * k, z), 0.035, P["steel"])
+        sph(0.09, 0, 0, 5.05, P["light"])
+        B(1.2, 1.0, 0.9, 3.0, -2.8, 0.12, P["hull"], bevel=0.03); lie(0.3, 0.8, 3.0, -2.0, 0.6, P["dark"], "x", 18)
+        for k in range(2): lie(0.45, 1.8, -3.0, -1.0 + k * 1.1, 0.6, P["accent"] if k else P["trim"], "y", 20)
+    return _still(build)
+
+
+# The finals: the chosen concept (kh-a for KH's depot and launchpad; gs-a for Grubstake's depot, gs-b its launchpad) and
+# the machinery that makes it read made beside vanilla's dense cargo pad and silo (the clay concepts read sparse there):
+# pumps, motors, cabinets, gauges, pipe and cable runs, props, then small parts scattered over its large faces.
+def kit(x, y, z, rot, kind, k=1.0):
+    """A machine cluster at (x, y, z) facing rot: 'pump' a motor on a pump body and its pipe stub, 'cab' a cabinet with
+    its screen, gauge and conduit, 'manifold' a pipe manifold with valves, 'tank' a small upright tank on legs."""
+    c, sn = math.cos(rot), math.sin(rot)
+    def at(dx, dy): return x + dx * c - dy * sn, y + dx * sn + dy * c
+    if kind == "pump":
+        B(0.4 * k, 0.3 * k, 0.22 * k, x, y, z, P["trim"], rot=rot, bevel=0.02)
+        mx, my = at(0.05, 0)
+        motor(mx, my, z + 0.34 * k, 0.1 * k, 0.32 * k, P["hull"], P["steel"], axis="x" if abs(c) > abs(sn) else "y")
+        px, py = at(-0.25 * k, 0.1 * k)
+        pipe([(px, py, z + 0.1), (px, py, z + 0.4 * k), at(-0.25 * k, 0.4 * k) + (z + 0.45 * k,)], 0.035 * k, P["steel"], P["dark"])
+    elif kind == "cab":
+        B(0.5 * k, 0.28 * k, 0.55 * k, x, y, z, P["hull"], rot=rot, bevel=0.02)
+        gx, gy = at(0, -0.15 * k)
+        B(0.3 * k, 0.02, 0.18 * k, gx, gy, z + 0.3 * k, P["glass"], rot=rot, bevel=0.0)
+        gauge(*at(0.18 * k, -0.15 * k), z + 0.15 * k, P["dark"], P["trim"])
+        rod((x, y, z + 0.55 * k), (x, y, z + 0.75 * k), 0.02, P["rubber"])
+    elif kind == "manifold":
+        ax, ay = at(-0.35 * k, 0); bx, by = at(0.35 * k, 0)
+        pipe([(ax, ay, z + 0.15), (bx, by, z + 0.15)], 0.05 * k, P["steel"], P["dark"])
+        for d in (-0.2, 0.0, 0.2):
+            vx, vy = at(d * k, 0)
+            rod((vx, vy, z + 0.15), (vx, vy, z + 0.35 * k), 0.025 * k, P["steel"])
+            cyl(0.05 * k, 0.02, vx, vy, z + 0.35 * k, P["accent"], verts=10)
+    elif kind == "tank":
+        cyl(0.2 * k, 0.5 * k, x, y, z + 0.12 * k, P["trim"], verts=18); sph(0.2 * k, x, y, z + 0.62 * k, P["trim"])
+        for a in (0.5, 2.6, 4.7):
+            rod((x + math.cos(a) * 0.18 * k, y + math.sin(a) * 0.18 * k, z), (x + math.cos(a) * 0.15 * k, y + math.sin(a) * 0.15 * k, z + 0.2 * k), 0.015, P["dark"])
+
+
+def depot_kh():
+    objs, _ = depot_kh_a()
+    def more():
+        R = 1.62
+        for k, (a, kind) in enumerate(((0.4, "pump"), (1.15, "cab"), (2.0, "manifold"), (2.75, "pump"), (3.55, "tank"),
+                                       (4.35, "manifold"), (5.6, "pump"))):
+            kit(math.cos(a) * R, math.sin(a) * R, 0.3, a + math.pi / 2, kind, 0.85)
+        pipe([(1.35, 1.35, 0.35), (1.0, 0.35, 0.35), (0.95, -0.6, 0.35), (0.4, -1.3, 0.35)], 0.04, P["steel"], P["dark"])
+        rod((-1.4, 1.2, 0.85), (1.3, 1.35, 1.95), 0.015, P["rubber"])
+        cyl(0.05, 0.3, -1.4, 1.2, 0.85, P["steel"], verts=8)                       # a dish on the cabinet's mast
+        # (A dish: a shallow steel cone, not a sphere, which read as a white ball; its feed horn on a strut.)
+        bpy.ops.mesh.primitive_cone_add(vertices=24, radius1=0.3, radius2=0.04, depth=0.1, location=(-1.4, 1.2, 1.25))
+        o = bpy.context.object; o.rotation_euler = (math.radians(130), 0, math.radians(-30)); o.data.materials.append(P["steel"])
+        rod((-1.4, 1.2, 1.25), (-1.33, 1.05, 1.42), 0.01, P["dark"]); sph(0.03, -1.33, 1.05, 1.42, P["dark"])
+        prop("power_box_01_box", "power_box_01", (1.55, -0.9, 0.3), 270, 0.35)
+        prop("exterior_aircon_unit", "exterior_aircon_unit", (-1.55, -0.4, 0.3), 90, 0.3)
+    objs += group(more)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 41, density=12.0)
+    return objs, lambda f, n: None
+
+
+def depot_gs():
+    objs, _ = depot_gs_a()
+    def more():
+        kit(1.3, -0.9, 0.34, 0.0, "pump", 0.9); kit(0.5, -1.55, 0.34, 0.0, "manifold", 0.9)
+        kit(1.45, 0.4, 0.34, math.pi / 2, "cab", 0.85); kit(-0.2, 1.3, 0.34, 0.0, "tank", 0.9)
+        prop("old_military_compressor", "old_military_compressor", (0.7, 0.75, 0.34), 30, 0.32)
+        prop("small_lpg_tank", "small_lpg_tank", (-0.5, -1.5, 0.34), 90, 0.3)
+        prop("security_light", "security_light", (1.7, -1.7, 2.0), 225, 0.4)
+        rod((1.3, -0.9, 0.6), (0.1, 1.6, 2.3), 0.012, P["rubber"])
+        import random as _r
+        rr = _r.Random(23)
+        for k in range(14):                                                   # scrap on the deck's edge
+            B(rr.uniform(0.06, 0.18), rr.uniform(0.06, 0.18), rr.uniform(0.03, 0.08), rr.uniform(-1.7, 1.7),
+              rr.choice((-1.75, 1.75)), 0.34, rr.choice((P["steel"], P["dark"], P["accent"], P["trim"])), rot=rr.uniform(0, 3), bevel=0.005)
+    objs += group(more)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 42, density=10.0)
+    return objs, lambda f, n: None
+
+
+def launchpad_kh():
+    objs, _ = launchpad_kh_a()
+    def more():
+        for k in range(8):
+            a = k * math.pi / 4
+            kit(math.cos(a) * 3.2, math.sin(a) * 3.2, 0.3, a + math.pi / 2, ("pump", "cab", "manifold", "tank")[k % 4], 1.2)
+        for k in range(8):                                                    # conduits from the banks to the tube
+            a = k * math.pi / 4 + math.pi / 8
+            rod((math.cos(a) * 1.45, math.sin(a) * 1.45, 0.75), (math.cos(a) * 0.95, math.sin(a) * 0.95, 1.1), 0.05, P["rubber"])
+        for k in range(4):
+            a = k * math.pi / 2 + math.pi / 4
+            pipe([(math.cos(a) * 3.7, math.sin(a) * 3.7, 0.32), (math.cos(a) * 2.5, math.sin(a) * 2.5, 0.32)], 0.07, P["steel"], P["dark"])
+        prop("exterior_aircon_unit", "exterior_aircon_unit", (3.0, -2.6, 0.3), 0, 0.6)
+        prop("power_box_01_box", "power_box_01", (-3.2, -2.4, 0.3), 90, 0.6)
+        prop("utility_box_02", "utility_box_02", (-2.0, -3.4, 0.3), 0, 0.6)
+    objs += group(more)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 43, density=8.0)
+    return objs, lambda f, n: None
+
+
+def launchpad_gs():
+    objs, _ = launchpad_gs_b()
+    def more():
+        import random as _r
+        rr = _r.Random(33)
+        for k in range(10):                                                   # welded plates round the pit's rim
+            a = k * 2 * math.pi / 10 + rr.uniform(0, 0.2)
+            o = B(1.2, 0.5, 0.06, math.cos(a) * 2.6, math.sin(a) * 2.6, 0.12, P["trim"] if k % 2 else P["hull"], rot=a + math.pi / 2, bevel=0.01)
+        kit(3.2, 1.2, 0.12, 0.0, "pump", 1.2); kit(3.4, 2.8, 0.12, 0.0, "tank", 1.3); kit(-3.4, 2.8, 0.12, 0.0, "cab", 1.2)
+        kit(0.0, -3.5, 0.12, 0.0, "manifold", 1.4); kit(-1.6, -3.4, 0.12, 0.0, "pump", 1.1)
+        gear(3.0, -1.7, 0.9, 0.35, P["steel"], teeth=16, axis="x")
+        prop("old_military_compressor", "old_military_compressor", (1.8, -3.2, 0.12), 0, 0.6)
+        prop("propane_tank", "propane_tank", (-3.4, 1.6, 0.12), 90, 0.5)
+        prop("small_lpg_tank", "small_lpg_tank", (3.4, 0.2, 0.12), 0, 0.5)
+        for k in range(3): rod((0.0, 0.0, 5.0), (2.9, -2.1 - k * 0.15, 0.9), 0.012, P["steel"])
+        for k in range(4):                                                    # tyre stacks, a scrap heap
+            for z in range(3): tor(0.3, 0.11, -3.5 + k * 0.8, -3.6, 0.2 + z * 0.2, P["rubber"])
+        for k in range(18):
+            B(rr.uniform(0.15, 0.45), rr.uniform(0.15, 0.45), rr.uniform(0.05, 0.2), rr.uniform(2.2, 3.8), rr.uniform(-3.8, -2.6),
+              0.12 + rr.uniform(0, 0.25), rr.choice((P["steel"], P["dark"], P["accent"], P["trim"], P["hull"])), rot=rr.uniform(0, 3), bevel=0.01)
+        cyl(0.12, 1.4, -3.6, -1.0, 0.12, P["steel"], verts=10); sph(0.12, -3.6, -1.0, 1.6, P["light"])
+    objs += group(more)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 44, density=8.0)
+    return objs, lambda f, n: None
+
+
 # --- Turrets: a base (once) and a head in 64 directions, north at the first, clockwise (a rotated sprite's), the same
 # head for every state (it does not rise out of the ground). Each builder returns (base, head, its pivot).
 def turret_base_kh():
@@ -1270,7 +1717,11 @@ TURRETS = {("turret", "kh"): lambda: concept("kh-laser-neck"), ("gun-turret", "k
 
 BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs,
          ("generator", "kh"): generator_kh, ("generator", "gs"): generator_gs,
-         ("radar", "kh"): radar_kh, ("radar", "gs"): radar_gs, ("drill", "kh"): drill_kh}
+         ("radar", "kh"): radar_kh, ("radar", "gs"): radar_gs, ("drill", "kh"): drill_kh,
+         ("depot", "kh-a"): depot_kh_a, ("depot", "kh-b"): depot_kh_b, ("depot", "gs-a"): depot_gs_a,
+         ("depot", "gs-b"): depot_gs_b, ("launchpad", "kh-a"): launchpad_kh_a, ("launchpad", "kh-b"): launchpad_kh_b,
+         ("launchpad", "gs-a"): launchpad_gs_a, ("launchpad", "gs-b"): launchpad_gs_b,
+         ("depot", "kh"): depot_kh, ("depot", "gs"): depot_gs, ("launchpad", "kh"): launchpad_kh, ("launchpad", "gs"): launchpad_gs}
 if WHAT == "concept":
     # Clay at two headings (south-west and north-east: k 40 and 8 of 64), base and head together, its shadow with it.
     base, head = (fconcept if "flame" in F else concept)(F)
@@ -1297,7 +1748,9 @@ if WHAT == "pylon":
     # tiles from the entity's centre after the sheet's sqrt(2) stretch; and on its shadow, along the sun).
     from bpy_extras.object_utils import world_to_camera_view
     import json, mathutils as _mu
-    model, tips = (pylon_kh if F == "kh" else pylon_gs)()
+    # (Grubstake's: the welded tripod, gs-b of three clay concepts; the scrap post, gs-a, read as the bare stick the KH
+    # mast's review turned down, the I-beam in drums, gs-c, busy and its drums a bollard.)
+    model, tips = pylon_kh() if F == "kh" else pylon_gs_concept(F if F.startswith("gs-") else "gs-b")
     lpkit.bevel_all(model, 0.006)
     ground, sun, world = lpkit.stage(scene, 1, 2.4)
     lpkit.emission(P["light"], 3.0); lpkit.emission(P["glass"], 0.15)
@@ -1377,7 +1830,8 @@ if (WHAT, F) in TURRETS:
     print("rendered", WHAT, F, out)
     sys.exit(0)
 FRAMES = int(os.environ.get("LP_FRAMES", 16))
-TILES = {"fabricator": 3, "generator": 2, "radar": 3, "drill": 3}[WHAT]
+TILES = {"fabricator": 3, "generator": 2, "radar": 3, "drill": 3, "depot": 4, "launchpad": 9}[WHAT]
+if WHAT in ("depot", "launchpad"): FRAMES = 1   # (a container's one picture)
 objs, set_frame = BUILD[(WHAT, F)]()
 # (Taller, where vanilla's sprite of the same footprint stands taller: the generators read squat beside the accumulator.)
 LIFT = {"generator": 1.35}.get(WHAT, 1.0)
