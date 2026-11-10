@@ -1,18 +1,18 @@
 {
  "east": {
   "width": 2360,
-  "height": 1422,
+  "height": 1426,
   "shift": [
-   8.609375,
-   -2.9140625
+   8.59375,
+   -2.8828125
   ],
   "glow_frames": 16,
   "line_length": 4,
   "barrel": {
-   "width": 1602,
+   "width": 1608,
    "height": 714,
    "shift": [
-    13.28125,
+    13.328125,
     -3.8046875
    ]
   },
@@ -27,20 +27,20 @@
   }
  },
  "north": {
-  "width": 1252,
-  "height": 2466,
+  "width": 1256,
+  "height": 2472,
   "shift": [
-   2.171875,
-   -9.0859375
+   2.125,
+   -9.0390625
   ],
   "glow_frames": 16,
   "line_length": 4,
   "barrel": {
    "width": 480,
-   "height": 1507,
+   "height": 1508,
    "shift": [
     0.0,
-    -17.015625
+    -17.0234375
    ]
   },
   "fans": {
@@ -54,11 +54,11 @@
   }
  },
  "south": {
-  "width": 1298,
-  "height": 2690,
+  "width": 1300,
+  "height": 2696,
   "shift": [
    2.703125,
-   4.8515625
+   4.8984375
   ],
   "glow_frames": 16,
   "line_length": 4,
@@ -81,19 +81,19 @@
   }
  },
  "west": {
-  "width": 2604,
-  "height": 1326,
+  "width": 2614,
+  "height": 1330,
   "shift": [
-   -5.40625,
-   -2.6484375
+   -5.46875,
+   -2.6171875
   ],
   "glow_frames": 16,
   "line_length": 4,
   "barrel": {
-   "width": 1602,
+   "width": 1608,
    "height": 713,
    "shift": [
-    -13.28125,
+    -13.328125,
     -3.8125
    ]
   },

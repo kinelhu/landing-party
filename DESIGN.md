@@ -6213,6 +6213,20 @@ Bugs and surprises the headless runs caught, each kept as a check:
   honestly you're not going to top that". A repaint with the steel's cast cut (0.3 for 0.9) changed little, reverted.
   The faction buildings keep their repaints; make_sprites.py mended (a rendered building's own file, the uplink's,
   mapped to a vanilla path that is not there, and the run failed).
+- **Units' icons, the scanner's signals, the studies' tag, the cannon's detail** (0.2.292; the user, 2026-11-10: "The
+  magnifier looks horrible. Also did you make icons for enemy units too? Those are going to show up in the threat scanner,
+  no?"). Every unit of every faction has an icon of its own (`tools/icons/units.py`, `graphics/icons/units/`, 63), cut from
+  the matte films; a resistance variant wears its base unit's (`icons.lua`; not by `shared.kind_of`, which reads a Grubstake unit as its Kessler-Hayashi kind: the dump showed Grubstake's tanks wearing Kessler-Hayashi's), and an order's unit its
+  own picture, not the order's ammo badge. The 22 units the first matte film lacked were filmed one facing each
+  (`docs/release/units-extra-matte.lua`). The walkers needed a film of their own (`docs/release/walkers-matte.lua`): spider
+  units walked off their stills after the other forces' units, and held by teleport their legs re-stepped between the
+  dark and the white still, so the matte ghosted; frozen from the first tick (`disabled_by_script`) and the ground turned
+  white under the same entity, they cut cleanly. The stomper's old cut-out has its body near see-through and its shadow
+  near opaque: keyed on colour instead. The threat scanner's signals show the units they count (infantry, tank, walker,
+  harrier, railgunner, hauler, buggy; crews the constructor, Synthexis a bred biter, its scout the scout), untinted. Field
+  studies' technologies wear a blueprint tag at the upper left (the schematics' look) in place of a drawn magnifier.
+  The orbital cannon's model gained scattered detail (rivets and small parts seeded over its large faces, 4575 in 8
+  meshes, `scatter()` in `tools/blender/orbital_cannon.py`), re-rendered in four directions.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

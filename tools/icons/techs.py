@@ -1,16 +1,18 @@
 """The mod's technology icons, 256 px, as vanilla's are: a large render of what it unlocks, on transparency (the research
 screen draws the frame). Composed from the item icons' 256 px sources (tools/icons/cut.py) and the units' cut-outs: one
 subject, or two (the second smaller, in front and to the right), and a field study (a technology a salvaged part
-researches) badged with a magnifier in its corner, so a study is not taken for what it unlocks.
+researches) tagged with a blueprint behind it at the upper left (the schematics' look), so a study is not taken for what it unlocks.
 
     uv run --with pillow python tools/icons/techs.py <icon sources> <unit cut-outs> <out dir>
 """
 import os, sys
-from PIL import Image, ImageDraw
+from PIL import Image
 
 src, units, out = sys.argv[1:4]
 os.makedirs(out, exist_ok=True)
 S = 256
+# The blueprint the schematics' icons are drawn on (cut.py writes it, the component render squared): a study's tag.
+BLUEPRINT = Image.open(os.path.join(src, "blueprint.png")).convert("RGBA").resize((int(256 * 0.5), int(256 * 0.5)), Image.LANCZOS)
 
 
 def get(name):
@@ -44,13 +46,13 @@ def two(a, b):
 
 
 def badge(c):
-    """A magnifier, its lens over the lower left: a field study."""
-    d = ImageDraw.Draw(c)
-    cx, cy, r = int(S * 0.24), int(S * 0.76), int(S * 0.15)
-    d.line((cx + r * 0.7, cy - r * 0.7, cx + r * 1.6, cy - r * 1.6), fill=(70, 50, 30, 255), width=int(S * 0.06))
-    d.ellipse((cx - r - 6, cy - r - 6, cx + r + 6, cy + r + 6), fill=(30, 30, 32, 255))
-    d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(170, 210, 235, 170), outline=(200, 170, 90, 255), width=int(S * 0.025))
-    return c
+    """A field study: the subject over a blueprint tag in the upper left, the schematics' look (a study is research into a
+    salvaged design; a drawn magnifier read as clip art, the user: "The magnifier looks horrible")."""
+    out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    out.alpha_composite(BLUEPRINT, (2, 2))
+    sub = c.resize((int(S * 0.8), int(S * 0.8)), Image.LANCZOS)
+    out.alpha_composite(sub, (S - sub.width, S - sub.height))
+    return out
 
 
 T = {

@@ -318,15 +318,18 @@ function shared.variants(kinds)
 end
 -- The threat scanner's signals (player.lua, scripts/scanner.lua; the user, 2026-10-18): the corporations' unit kinds by
 -- role, one virtual signal each, and its icon.
+-- (Each signal the icon of a unit of its role, tools/icons/units.py: the user, 2026-11-10, of the units' icons: "Those are
+-- going to show up in the threat scanner, no?")
+local U = "__landing-party__/graphics/icons/units/"
 shared.SCAN_GROUPS = {
-  {signal = "lp-scan-infantry", icon = "__base__/graphics/icons/heavy-armor.png",
+  {signal = "lp-scan-infantry", icon = U .. "lp-infantry.png",
     kinds = {"lp-infantry", "lp-lance", "lp-shock", "lp-sapper", "lp-slug"}},
-  {signal = "lp-scan-armour", icon = "__base__/graphics/icons/tank.png", kinds = {"lp-tank", "lp-aegis", "lp-dozer", "lp-prism", "lp-tesla", "lp-scorcher"}},
-  {signal = "lp-scan-walker", icon = "__base__/graphics/icons/spidertron.png", kinds = {"lp-walker"}},
-  {signal = "lp-scan-air", icon = "__base__/graphics/icons/destroyer.png", kinds = {"lp-harrier", "lp-scavenger", "lp-laser-drone"}},
-  {signal = "lp-scan-railgunner", icon = "__base__/graphics/icons/rocket-launcher.png", kinds = {"lp-railgunner"}},
-  {signal = "lp-scan-hauler", icon = "__base__/graphics/icons/car.png", kinds = {"lp-hauler"}},
-  {signal = "lp-scan-buggy", icon = "__base__/graphics/icons/car.png", kinds = {"lp-buggy"}},
+  {signal = "lp-scan-armour", icon = U .. "lp-tank.png", kinds = {"lp-tank", "lp-aegis", "lp-dozer", "lp-prism", "lp-tesla", "lp-scorcher"}},
+  {signal = "lp-scan-walker", icon = U .. "lp-walker.png", kinds = {"lp-walker"}},
+  {signal = "lp-scan-air", icon = U .. "lp-harrier.png", kinds = {"lp-harrier", "lp-scavenger", "lp-laser-drone"}},
+  {signal = "lp-scan-railgunner", icon = U .. "lp-railgunner.png", kinds = {"lp-railgunner"}},
+  {signal = "lp-scan-hauler", icon = U .. "lp-hauler.png", kinds = {"lp-hauler"}},
+  {signal = "lp-scan-buggy", icon = U .. "lp-buggy.png", kinds = {"lp-buggy"}},
 }
 shared.SCAN_RADIUS = 64
 -- The player's orbital strike beacon's reach (scripts/strike.lua) and the defoliant's (scripts/studies.lua): their

@@ -667,6 +667,101 @@ def barrel_part(o):
 bpy.context.view_layer.update()
 BARREL = set(o for o in model if barrel_part(o))
 print("barrel parts", len(BARREL), "of", len(model))
+
+# The scattered detail (the user, 2026-11-10: "Go for 1 and 2", the cannon's dense small parts, Space Age's way): over
+# every large face of the armour, the hull, the cheeks, the plinth and the barrel, rivet rows along its two long edges
+# and small parts (vents, boxes, hatches, pipe stubs, clamps) at seeded places, a few painted marks (seams, hazard
+# squares). Built straight into one mesh a material, apart for the barrel and the rest (the barrel recoils, with its own).
+def scatter():
+    import bmesh as _bm
+    srng = random.Random(20261110)
+    SURF = {GUN, PAINT, PLATE, DARK}
+    acc = {}                                      # (is_barrel, material) -> bmesh
+    def bm_for(barrel, m):
+        k = (barrel, m.name)
+        if k not in acc: acc[k] = (_bm.new(), m)
+        return acc[k][0]
+    def place(bm, kind, centre, normal, spin, size):
+        q = normal.to_track_quat("Z", "Y") @ mathutils.Quaternion(V((0, 0, 1)), spin)
+        mat = mathutils.Matrix.Translation(centre) @ q.to_matrix().to_4x4()
+        if kind == "box":
+            r = _bm.ops.create_cube(bm, size=1.0)
+            sc = mathutils.Matrix.Diagonal((size[0], size[1], size[2], 1))
+            _bm.ops.transform(bm, matrix=mat @ mathutils.Matrix.Translation((0, 0, size[2] / 2)) @ sc, verts=r["verts"])
+        else:
+            r = _bm.ops.create_cone(bm, cap_ends=True, segments=8 if kind == "rivet" else 12, radius1=size[0], radius2=size[0],
+                                    depth=size[2])
+            _bm.ops.transform(bm, matrix=mat @ mathutils.Matrix.Translation((0, 0, size[2] / 2)), verts=r["verts"])
+    count = 0
+    for o in list(model):
+        if o.type != "MESH" or o in FIXED:
+            continue
+        ms = [sl.material for sl in o.material_slots if sl.material]
+        if not ms or ms[0] not in SURF:
+            continue
+        barrel = o in BARREL
+        mw = o.matrix_world
+        rot = mw.to_quaternion()
+        for f in o.data.polygons:
+            vs = [mw @ o.data.vertices[i].co for i in f.vertices]
+            n = (rot @ f.normal).normalized()
+            if n.z < -0.25 or len(vs) < 3:
+                continue
+            # (Its area in the world: the mesh scaled by its object.)
+            area = 0.0
+            for i in range(1, len(vs) - 1):
+                area += ((vs[i] - vs[0]).cross(vs[i + 1] - vs[0])).length / 2
+            if area < 0.5:
+                continue
+            c = sum(vs, V((0, 0, 0))) / len(vs)
+            edges = sorted(((vs[i] - vs[(i + 1) % len(vs)]).length, i) for i in range(len(vs)))
+            # Rivets along its two longest edges, a little in from them.
+            for _, i in edges[-2:]:
+                a0, a1 = vs[i], vs[(i + 1) % len(vs)]
+                L = (a1 - a0).length
+                k = max(2, int(L / 0.2))
+                for j in range(1, k):
+                    p0 = a0 + (a1 - a0) * (j / k)
+                    p0 = p0 + (c - p0).normalized() * 0.07
+                    place(bm_for(barrel, DARK), "rivet", p0 + n * 0.003, n, 0, (0.022, 0, 0.018))
+                    count += 1
+            # Its small parts, seeded, kept off its edges.
+            for _ in range(int(area * 2.6)):
+                t = [srng.random() for _ in vs]
+                tot = sum(t)
+                p0 = sum((v * (w / tot) for v, w in zip(vs, t)), V((0, 0, 0)))
+                p0 = c + (p0 - c) * 0.75
+                spin = srng.choice((0, math.pi / 2)) + srng.uniform(-0.05, 0.05)
+                kind = srng.random()
+                if kind < 0.3:      # a junction box
+                    place(bm_for(barrel, DARK), "box", p0, n, spin, (srng.uniform(0.12, 0.28), srng.uniform(0.1, 0.22), srng.uniform(0.05, 0.12)))
+                elif kind < 0.5:    # a vent: a plate and three slats
+                    w, h = srng.uniform(0.2, 0.35), srng.uniform(0.15, 0.25)
+                    place(bm_for(barrel, DARK), "box", p0, n, spin, (w, h, 0.02))
+                    for s_ in (-1, 0, 1):
+                        off = (n.to_track_quat("Z", "Y") @ mathutils.Quaternion(V((0, 0, 1)), spin)) @ V((0, s_ * h * 0.28, 0))
+                        place(bm_for(barrel, GUN), "box", p0 + off + n * 0.02, n, spin, (w * 0.85, h * 0.12, 0.015))
+                elif kind < 0.65:   # a hatch: a thin plate, a darker rim
+                    w = srng.uniform(0.2, 0.4)
+                    place(bm_for(barrel, DARK), "box", p0, n, spin, (w + 0.03, w * 0.8 + 0.03, 0.012))
+                    place(bm_for(barrel, PLATE), "box", p0 + n * 0.012, n, spin, (w, w * 0.8, 0.012))
+                elif kind < 0.8:    # a pipe stub and its collar
+                    place(bm_for(barrel, GUN), "cyl", p0, n, 0, (srng.uniform(0.03, 0.06), 0, srng.uniform(0.06, 0.14)))
+                    place(bm_for(barrel, DARK), "cyl", p0, n, 0, (0.07, 0, 0.025))
+                elif kind < 0.92:   # a painted seam
+                    place(bm_for(barrel, DARK), "box", p0, n, spin, (srng.uniform(0.3, 0.7), 0.012, 0.004))
+                else:               # a hazard square
+                    place(bm_for(barrel, HAZ), "box", p0, n, spin, (0.12, 0.12, 0.006))
+                count += 1
+    made = []
+    for (barrel, _), (bm, m) in acc.items():
+        me = bpy.data.meshes.new("scatter"); bm.to_mesh(me); bm.free()
+        ob = bpy.data.objects.new("scatter", me); scene.collection.objects.link(ob); me.materials.append(m)
+        made.append(ob)
+        if barrel: BARREL.add(ob)
+    print("scattered", count, "parts in", len(made), "meshes")
+    return made
+model += scatter()
 for o in model:
     if o.parent is None: o.parent = rig
 rig.scale = (SCALE, SCALE, SCALE)

@@ -113,15 +113,15 @@ local function signal(name, icon, tint, order)
     subgroup = "virtual-signal", order = "z[landing-party]-" .. order})
 end
 local S_TINT, G_TINT = {r = 0.62, g = 0.8, b = 1, a = 1}, {r = 1, g = 0.75, b = 0.35, a = 1}
-for k, g in ipairs(shared.SCAN_GROUPS) do signal(g.signal, g.icon, {r = 1, g = 0.45, b = 0.4, a = 1}, string.format("a%02d", k)) end
-signal("lp-scan-crew", "__base__/graphics/icons/construction-robot.png", {r = 1, g = 0.45, b = 0.4, a = 1}, "b")
+for k, g in ipairs(shared.SCAN_GROUPS) do signal(g.signal, g.icon, nil, string.format("a%02d", k)) end
+signal("lp-scan-crew", "__landing-party__/graphics/icons/units/lp-constructor.png", nil, "b")
 signal("lp-scan-serenity", "__base__/graphics/icons/signal/signal_S.png", S_TINT, "c")
 signal("lp-scan-grubstake", "__base__/graphics/icons/signal/signal_G.png", G_TINT, "d")
 signal("lp-scan-biters", "__base__/graphics/icons/small-biter.png", nil, "e")
 signal("lp-scan-jammed", "__space-age__/graphics/icons/tesla-turret.png", S_TINT, "f")
 -- With bred-biter telemetry (a field study, studies.lua): Synthexis's biters, and its scout.
-signal("lp-scan-synthexis", "__base__/graphics/icons/small-biter.png", shared.BIOTECH.tint1, "g")
-signal("lp-scan-scout", "__base__/graphics/icons/small-biter.png", shared.BIOTECH.tint2, "h")
+signal("lp-scan-synthexis", "__landing-party__/graphics/icons/units/lp-bred-medium-biter.png", nil, "g")
+signal("lp-scan-scout", "__landing-party__/graphics/icons/units/lp-bred-scout.png", nil, "h")
 -- A squad's size by unit, set on a rally beacon (scripts/command.lua): the order's icon, the army's green.
 local SQUAD_ICON = {["lp-trooper"] = "__base__/graphics/icons/firearm-magazine.png", ["lp-breacher"] = "__base__/graphics/icons/grenade.png",
   ["lp-rocket-trooper"] = "__base__/graphics/icons/rocket-launcher.png", ["lp-flame-trooper"] = "__base__/graphics/icons/flamethrower.png",

@@ -1,11 +1,8 @@
 -- The mod's own icons (tools/icons/cut.py, graphics/icons/<name>.png, 64 px): each set on the item of that name, on the
--- entity it places, on a recipe of that name, and an order's on its unit too (the user, 2026-11-10: every item, recipe
+-- entity it places and on a recipe of that name (the user, 2026-11-10: every item, recipe
 -- and technology reused a vanilla icon; "Do all"). Read last (data-final-fixes), so no file's own icon wins over it.
 -- An icon whose prototype is gone is an error: the list and the prototypes kept in step.
 local ITEM_TYPES = {"item", "item-with-entity-data", "capsule", "ammo", "gun", "tool", "selection-tool"}
-local ORDERS = {["lp-trooper-order"] = "lp-trooper", ["lp-breacher-order"] = "lp-breacher",
-  ["lp-rocket-trooper-order"] = "lp-rocket-trooper", ["lp-flame-trooper-order"] = "lp-flame-trooper",
-  ["lp-battle-tank-order"] = "lp-battle-tank"}
 local NAMES = {"lp-bait", "lp-barracks", "lp-battle-tank-order", "lp-beacon-schematic", "lp-border-stake", "lp-breacher-order",
   "lp-claim-marker", "lp-cluster-artillery-shell", "lp-cluster-fuze", "lp-coil-schematic", "lp-command-core", "lp-command-relay",
   "lp-crystal-schematic", "lp-defoliant", "lp-drill-head", "lp-flak-turret", "lp-flame-trooper-order", "lp-fuze-schematic",
@@ -23,11 +20,29 @@ for _, name in ipairs(NAMES) do
   assert(item, "icons.lua: no item " .. name)
   set(item, file)
   if data.raw.recipe[name] then set(data.raw.recipe[name], file) end
-  local placed = item.place_result or ORDERS[name]
+  local placed = item.place_result
   if placed then
     for _, protos in pairs(data.raw) do
       if protos[placed] and protos[placed].collision_box then set(protos[placed], file) end
     end
+  end
+end
+
+-- Every unit its own (tools/icons/units.py, graphics/icons/units/<unit>.png: the kill statistics, the threat scanner's
+-- signals; an order's unit no longer wears the order's ammo badge), a resistance variant its base unit's (the same faction's). A unit with no
+-- icon file fails the game's load (check.sh).
+-- (The plate's suffix stripped alone: shared.kind_of also reads a Grubstake unit as its Kessler-Hayashi kind, and the
+-- Grubstake tanks had worn Kessler-Hayashi's.)
+local shared = require("shared")
+local function base(name)
+  for p in pairs(shared.PLATES) do
+    if name:sub(-#p - 1) == "-" .. p then return name:sub(1, -#p - 2) end
+  end
+  return name
+end
+for _, ty in ipairs({"unit", "spider-unit"}) do
+  for name, u in pairs(data.raw[ty]) do
+    if name:sub(1, 3) == "lp-" then set(u, "__landing-party__/graphics/icons/units/" .. base(name) .. ".png") end
   end
 end
 

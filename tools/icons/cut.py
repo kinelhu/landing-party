@@ -76,9 +76,34 @@ for d in sorted(glob.glob(os.path.join(film, "lp-*-dark.png"))):
 # Orders, from their units.
 ORDERS = {"lp-trooper-order": "lp-trooper", "lp-breacher-order": "lp-breacher", "lp-rocket-trooper-order": "lp-rocket-trooper",
           "lp-flame-trooper-order": "lp-flame-trooper", "lp-battle-tank-order": "lp-battle-tank"}
+# Each with a corner badge of the vanilla ammunition it is armed with, on a dark disc (vanilla's barrels' way): five small
+# soldiers read alike at 64 px (the user, 2026-11-10: "Go for 1 and 2").
+APP = os.path.expanduser("~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/data/base/graphics/icons")
+AMMO = {"lp-trooper-order": "firearm-magazine", "lp-breacher-order": "grenade", "lp-rocket-trooper-order": "rocket",
+        "lp-flame-trooper-order": "flamethrower-ammo", "lp-battle-tank-order": "cannon-shell"}
+
+
+def badged(im, badge, at=0.42):
+    """im squared, a badge at `at` of its size on a dark disc in its lower right."""
+    from PIL import ImageDraw
+    im = square(im, pad=0.1)
+    s = im.width
+    b = Image.open(badge).convert("RGBA")
+    b = b.crop((0, 0, min(b.width, b.height), min(b.width, b.height)))       # (vanilla's icons carry their mipmaps beside)
+    bs = int(s * at)
+    disc = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    ImageDraw.Draw(disc).ellipse((s - bs - 2, s - bs - 2, s - 2, s - 2), fill=(24, 24, 26, 230))
+    im.alpha_composite(disc)
+    b = b.resize((int(bs * 0.82), int(bs * 0.82)), Image.LANCZOS)
+    im.alpha_composite(b, (s - bs - 2 + (bs - b.width) // 2, s - bs - 2 + (bs - b.height) // 2))
+    return im
+
+
 for item, unit in ORDERS.items():
     src = os.path.join(units, unit + ".png")
-    write(item, Image.fromarray(unshadow(np.asarray(Image.open(src).convert("RGBA"))), "RGBA"), thr=200); done.append(item)
+    body = Image.fromarray(unshadow(np.asarray(Image.open(src).convert("RGBA"))), "RGBA")
+    body = body.crop(body.split()[3].point(lambda v: 255 if v > 200 else 0).getbbox())
+    write(item, badged(body, os.path.join(APP, AMMO[item] + ".png"))); done.append(item)
 # Components, from the renders.
 COMP = {"lp-command-core": "command-core", "lp-pheromone-gland": "pheromone-gland", "lp-pacifier-crystal": "pacifier-crystal",
         "lp-drill-head": "drill-head", "lp-rail-coil": "rail-coil", "lp-cluster-fuze": "cluster-fuze",
@@ -90,11 +115,14 @@ for item, f in COMP.items():
 # Schematics: the blueprint, its part over its lower right.
 SCHEM = {"lp-gland-schematic": "pheromone-gland", "lp-crystal-schematic": "pacifier-crystal", "lp-coil-schematic": "rail-coil",
          "lp-beacon-schematic": "orbital-beacon", "lp-fuze-schematic": "cluster-fuze"}
-base = square(Image.open(os.path.join(comps, "schematic.png")).convert("RGBA")).resize((512, 512), Image.LANCZOS)
+# (Its part first, large, the blueprint a tag behind it in the upper left: the blueprint first, five alike at 64 px.)
+base = square(Image.open(os.path.join(comps, "schematic.png")).convert("RGBA")).resize((250, 250), Image.LANCZOS)
+base.save(os.path.join(out, "src", "blueprint.png"))     # (techs.py's study tag)
 for item, part in SCHEM.items():
-    im = base.copy()
-    p = square(Image.open(os.path.join(comps, part + ".png")).convert("RGBA")).resize((300, 300), Image.LANCZOS)
-    im.alpha_composite(p, (512 - 300 - 4, 512 - 300 - 4))
+    im = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+    im.alpha_composite(base, (6, 6))
+    p = square(Image.open(os.path.join(comps, part + ".png")).convert("RGBA")).resize((380, 380), Image.LANCZOS)
+    im.alpha_composite(p, (512 - 380 - 2, 512 - 380 - 2))
     write(item, im); done.append(item)
 # The cannon and the array, from their sprites (the cannon's body with its barrel laid on, north).
 oc = os.path.join(REPO, "landing-party", "graphics", "player", "orbital-cannon")
