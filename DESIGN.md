@@ -6359,6 +6359,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   amber lamp). Rendered at 1.25 times the footprint (at 1 they stood a quarter smaller than vanilla's). Each part's pass
   without the other's shadow (visible_shadow: hidden from the camera alone, the head's shadow had gone into the base's,
   a ghost aiming north under every heading). Wired in corps.lua (turret()); the laser turret's energy glow dropped.
+- **The factions' flamers modelled** (0.2.305; faction_works.py flamer). The base in four directions (north: the nozzle
+  north, the two fuel inlets south where the fluid box's connections are), the head in 64 directions on a pivot at the
+  entity's centre, so one head serves every base direction and state (an 8-way set of one RotatedAnimation; vanilla's
+  per-direction gun shifts no longer needed). Kessler-Hayashi's an armoured fuel-fed housing (its tank across the back,
+  a turret ring, a squat nozzle block with its pilot light); Grubstake's a drum-fed scrap flamer (two oil drums lashed
+  over the inlets, a pressure bottle and hose, a patched shield, a long nozzle, its igniter amber). The muzzle shifts
+  are vanilla's still (assumed close enough, not checked in a game).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
