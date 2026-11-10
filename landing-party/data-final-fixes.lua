@@ -459,3 +459,6 @@ do
     end
   end
 end
+
+-- The mod's own icons, last (icons.lua).
+require("icons")

@@ -6173,6 +6173,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   orders waiting with no powered relay. The locale lint's 140-character line no longer applies to tips (a page the game
   wraps, not a tooltip; vanilla's run past 300). Scenario tutorial: both hints told, each once (seen failing with them
   off). Not yet seen in a window.
+- **Icons of its own** (0.2.288; the user, 2026-11-10: "Did we ever work on unit, building, item, technology graphics?",
+  then "Do all"). Every visible item, recipe and technology had reused a vanilla icon. Now: buildings filmed in game on
+  the Mac Studio and difference-matted (docs/release/icons-film.lua, generated from the dump by tools/icons/make_film.py:
+  each at the zoom that fills its frame), their shadows dropped as vanilla's icons have none; orders from their units'
+  cut-outs; 15 components modelled in Blender (tools/blender/component_icons.py, the cannon's CC0 textures through
+  lptex.py), the five schematics a blueprint with their part on it; the cannon and the array from their own sprites
+  (platform only). Cut to 64 px by tools/icons/cut.py; technologies composed at 256 px by tools/icons/techs.py, vanilla's
+  way (a large render on transparency), a field study badged with a magnifier. Applied last (icons.lua, from
+  data-final-fixes) to the item, the entity it places, its recipe, and an order's unit; an icon whose prototype is gone
+  fails the load. In the dump: 41 of 41 visible items, 27 of 27 technologies, no visible recipe on a vanilla icon. Weak:
+  the smallest entities' icons (claim marker, border stake) upscaled from small sprites read soft at 256; the threat
+  scanner and the rally beacon share a combinator's look. The faction buildings' recoloured vanilla sprites stay (the art
+  direction pass).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

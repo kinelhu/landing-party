@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.287
+Version: 0.2.288
 Date: 2026-11-10
   Features:
+    - Its own icons for every item and technology.
     - Three rival factions come to Nauvis and build settlements of their own: drills on real ore, fabricators, power, walls and guns.
     - Grubstake lands once you make chemical science: a prospecting outfit that raids what you leave unguarded, skims your belts and strips your ore.
     - Kessler-Hayashi lands after your first rocket: an armed contractor that pushes its perimeter toward you, lays siege to your walls and calls orbital strikes.
