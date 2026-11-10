@@ -15352,11 +15352,15 @@ end
 -- assembler inside a ring of stone wall, four flamethrower turrets (with oil) on it: hard on foot, nothing that shoots up.
 -- The camp senses it and chooses for itself: by air. LP_MIX=aa: six gun turrets with ammunition instead of the flamers,
 -- the air no cheaper than the ground: not by air. LP_MIX=off: air raids off (debug_tune air_off), the check seen failing.
+-- LP_MIX=grubstake: a Grubstake camp with eight scrap copters instead (its air raids by the same rule, a thief's camp).
+-- Open, not in regress.sh (2026-11-10): provoked, it raided a rival's fabricator and a drill and never weighed the walled
+-- radar, by air or on foot: a thief's choice puts other targets first. Grubstake's air raids wait on the user's call.
 scenarios.airraid = function()
   local aa, off = params.mix == "aa", params.mix == "off"
+  local gs = params.mix == "grubstake"
   schedule(60, function()
     lp("debug_tune", {era = 2, raids_off = true, history_off = true, provoke = true, air_off = off or nil})
-    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "serenity"})
+    S.id = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = gs and "grubstake" or "serenity"})
     for _ = 1, 3 do lp("debug_depot", S.id, 4000) end
   end)
   schedule(8 * 3600, function()
@@ -15387,7 +15391,7 @@ scenarios.airraid = function()
         if t then t.insert{name = "firearm-magazine", count = 200} end
       end
     end
-    lp("debug_units", S.id, "lp-laser-drone", 8)
+    lp("debug_units", S.id, gs and "lp-harrier" or "lp-laser-drone", 8)
     -- Three outposts 40 tiles out, held as the radar is (flamers, or guns in aa): for its build's tilt to fliers
     -- (army.air_tilt: three of the player's targets sensed at least).
     S.outposts = {}

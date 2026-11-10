@@ -6073,6 +6073,10 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and the Scorcher killed on cleared ground (in its camp, buildings by it took some). From the manual's review: the
   salvaged beacon's teardown hidden (it researched the retired strike and would use up a beacon the array needs); the
   Skyguard's description says missiles (it has fired them since 0.2.265).
+- **Grubstake's air raids, open** (2026-11-10): scenario airraid LP_MIX=grubstake, the same walled, flamer-held radar and
+  a provoked Grubstake camp with eight scrap copters: it raided a rival's fabricator, then a drill, and never weighed the
+  radar, by air or on foot (a thief's choice and its rivals first). Its air rule is Kessler-Hayashi's, unexercised. For the
+  user: whether a thief should fly at a walled target at all (its bomb drones on artillery fit its character).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
