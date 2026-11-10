@@ -4,7 +4,7 @@ digraph ai {
   edge [color="#8899aa", arrowsize=0.6];
   subgraph cluster_0 { label="Seams (leaves)"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
     "stance" [label="stance\n78 lines", width=0.89, fillcolor="#eef2f7"];
-    "pool" [label="pool\n156 lines", width=0.97, fillcolor="#eef2f7"];
+    "pool" [label="pool\n161 lines", width=0.98, fillcolor="#eef2f7"];
     "tune" [label="tune\n36 lines", width=0.84, fillcolor="#d9f0d9"];
     "rng" [label="rng\n56 lines", width=0.86, fillcolor="#d9f0d9"];
     "names" [label="names\n54 lines", width=0.86, fillcolor="#eef2f7"];
@@ -103,7 +103,7 @@ digraph ai {
     "map" [label="map\n71 lines", width=0.88, fillcolor="#eef2f7"];
   }
   subgraph cluster_9 { label="The player's army"; style="rounded,dashed"; color="#bbbbbb"; fontcolor="#666666";
-    "command" [label="command\n912 lines", width=1.81, fillcolor="#eef2f7"];
+    "command" [label="command\n916 lines", width=1.82, fillcolor="#eef2f7"];
     "scanner" [label="scanner\n98 lines", width=0.91, fillcolor="#eef2f7"];
     "roads" [label="roads\n28 lines", width=0.83, fillcolor="#d9f0d9"];
     "achievements" [label="achievements\n34 lines", width=0.84, fillcolor="#d9f0d9"];

@@ -105,8 +105,10 @@ local function home_near(b, p)
   return false
 end
 
--- Home: a unit its merit has earned a rank is promoted here (veterancy.lua: a rank comes only at home, where no job
--- holds it), its copy enlisted in its place.
+-- Home: a unit its merit has earned a rank is promoted in the garrison (veterancy.lua: a rank comes only at home, where
+-- no job holds it), its copy enlisted in its place. Only from pool.tick, never as a unit is given: a caller goes on with
+-- the units it gave (finish orders them home), and a promoted one was gone under it (the regression after 0.2.299:
+-- clear worms and culture crashed in ops.finish, LuaEntity invalid).
 local function homecoming(b, u)
   local old = u.unit_number
   local n = veterancy.promote(u)
@@ -123,7 +125,7 @@ function pool.give(b, units)
   b.returning = b.returning or {}
   for _, u in ipairs(units) do
     if u.valid then
-      if home_near(b, u.position) then table.insert(b.garrison, homecoming(b, u)) else table.insert(b.returning, u) end
+      if home_near(b, u.position) then table.insert(b.garrison, u) else table.insert(b.returning, u) end
     end
   end
 end
@@ -134,6 +136,9 @@ function pool.give_one(b, u) pool.give(b, {u}) end
 -- leash and its order home take care of it) rejoins after RETURN_MAX regardless, where it stands.
 local RETURN_MAX = 5 * 3600
 function pool.tick(b)
+  for i, u in ipairs(b.garrison) do
+    if u.valid and veterancy.earned(u) > veterancy.rank(u) then b.garrison[i] = homecoming(b, u) end
+  end
   local r = b.returning
   if not r or #r == 0 then return end
   b.returning_since = b.returning_since or {}
@@ -147,7 +152,7 @@ function pool.tick(b)
       if home_near(b, u.position) or game.tick - since > RETURN_MAX then
         table.remove(r, i)
         b.returning_since[u.unit_number] = nil
-        table.insert(b.garrison, homecoming(b, u))
+        table.insert(b.garrison, u)
       end
     end
   end

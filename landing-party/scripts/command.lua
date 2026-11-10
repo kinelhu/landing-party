@@ -578,6 +578,10 @@ local function lead()
       storage.cmd.troopers[pr.k] = nil
       pr.t.unit, pr.t.key = n, nil
       storage.cmd.troopers[n.unit_number] = pr.t
+      -- (Still selected where it was: a selection is by unit number.)
+      for _, sel in pairs(storage.cmd.selected or {}) do
+        if sel[pr.k] then sel[pr.k], sel[n.unit_number] = nil, true end
+      end
     end
   end
 end

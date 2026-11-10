@@ -14,7 +14,7 @@
 <title>Seams (leaves)</title>
 <path fill="#d9f0d9" stroke="black" d="M643.25,-730.25C643.25,-730.25 541,-730.25 541,-730.25 535,-730.25 529,-724.25 529,-718.25 529,-718.25 529,-706.25 529,-706.25 529,-700.25 535,-694.25 541,-694.25 541,-694.25 643.25,-694.25 643.25,-694.25 649.25,-694.25 655.25,-700.25 655.25,-706.25 655.25,-706.25 655.25,-718.25 655.25,-718.25 655.25,-724.25 649.25,-730.25 643.25,-730.25"/>
 <text xml:space="preserve" text-anchor="middle" x="592.12" y="-713.8" font-family="Helvetica,sans-Serif" font-size="11.00">Seams (leaves)</text>
-<text xml:space="preserve" text-anchor="middle" x="592.12" y="-701.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1548 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="592.12" y="-701.8" font-family="Helvetica,sans-Serif" font-size="11.00">13 modules, 1553 lines</text>
 </g>
 <!-- Settlement -->
 <g id="node5" class="node">
@@ -156,7 +156,7 @@
 <title>The player&#39;s army</title>
 <path fill="#eef2f7" stroke="black" d="M182.25,-530.75C182.25,-530.75 86,-530.75 86,-530.75 80,-530.75 74,-524.75 74,-518.75 74,-518.75 74,-506.75 74,-506.75 74,-500.75 80,-494.75 86,-494.75 86,-494.75 182.25,-494.75 182.25,-494.75 188.25,-494.75 194.25,-500.75 194.25,-506.75 194.25,-506.75 194.25,-518.75 194.25,-518.75 194.25,-524.75 188.25,-530.75 182.25,-530.75"/>
 <text xml:space="preserve" text-anchor="middle" x="134.12" y="-514.3" font-family="Helvetica,sans-Serif" font-size="11.00">The player&#39;s army</text>
-<text xml:space="preserve" text-anchor="middle" x="134.12" y="-502.3" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 1150 lines</text>
+<text xml:space="preserve" text-anchor="middle" x="134.12" y="-502.3" font-family="Helvetica,sans-Serif" font-size="11.00">5 modules, 1154 lines</text>
 </g>
 <!-- Settlement&#45;&gt;The player&#39;s army -->
 <g id="edge22" class="edge">

@@ -6401,6 +6401,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   tapered banded tube (0.22 at its foot), braced, two crossarms with hanging insulator strings (the circuit wires on the
   lower arm's, the copper on a standing insulator at the top), a transformer can and a cable riser; its wire points
   projected from the model as before (copper 0, -3.36; red and green -0.48 and 0.48, -2.21; checked in the dump).
+- **A promotion swapped a unit out from under its caller** (0.2.310; the full regression after 0.2.299: clear LP_MIX=worms
+  and culture crashed, LuaEntity invalid in ops.finish). The pool promoted a unit as it was given back home (pool.give),
+  and finish went on to order the units it had given: the promoted one was gone. Promotion now runs only in pool.tick,
+  over the garrison, where no caller holds a unit; the player's promoted troopers keep their place in a selection. The
+  six fork failures of that run (cut, raid, occupy, defend, army, train) were the restart's: the first run, stopped,
+  still held the forks' profile locks.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
