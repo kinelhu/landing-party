@@ -50,15 +50,17 @@ def palette(f):
         accent = lpkit.worn("gs-red", (0.13, 0.05, 0.03), metal=0.35, rough=0.7, seams=6, rivets=True, wear=0.4)
         light = lpkit.mat("gs-light", (0.6, 0.4, 0.05), metal=0.1, rough=0.3, emit=(1.0, 0.62, 0.15), strength=0.0, grime=0.0)
         glass = lpkit.mat("gs-glass", (0.08, 0.06, 0.03), metal=0.1, rough=0.2, emit=(1.0, 0.55, 0.15), strength=0.0, grime=0.0)
+    # Burlap for sandbags: a coarse cloth (rough, dull, a brick-bond seam for its weave), tan, dirtied.
+    cloth = lpkit.worn(f + "-cloth", (0.3, 0.25, 0.16), metal=0.0, rough=0.95, seams=14, wear=0.3, streaks=0.6, rivets=False)
     P = {"hull": hull, "trim": trim, "dark": W["dark"], "steel": W["steel"], "accent": accent, "light": light,
-         "glass": glass, "rubber": W["rubber"], "hazard": W["hazard"]}
+         "glass": glass, "rubber": W["rubber"], "hazard": W["hazard"], "cloth": cloth}
     if CLAY:
         clay = lpkit.mat("clay", (0.5, 0.5, 0.5), metal=0.0, rough=0.7, grime=0.0)
         P = {k: (v if k in ("light", "glass") else clay) for k, v in P.items()}
     return P
 
 
-P = palette(F)
+P = palette(F.split("-")[0] if WHAT == "concept" else F)   # (a concept is named for its faction: kh-..., gs-...)
 
 
 def group(fn):
@@ -714,26 +716,46 @@ def drill_kh():
 
 
 def pylon_kh():
-    """A composite mast: a dark foot, a tapered blue-grey shaft banded, a crossarm with three insulator stacks (the
-    copper wire at the middle one's tip, the circuit wires at the arm's ends), a cyan beacon on top."""
+    """A composite mast with the mass of vanilla's medium pole (the coordinator's review: the first was "a bare stick"):
+    a plinth and its cable box, a tapered banded tubular mast braced at its foot, two crossarms, insulator strings
+    hanging from each arm's ends and standing on its top (the copper wire on the top one, the circuit wires on the
+    lower arm's), a cyan beacon."""
     import mathutils as _mu
     V = _mu.Vector
+    def string(x, y, z, n=4):
+        """An insulator string hanging from (x, y, z): its discs, its fitting; returns where the wire clamps."""
+        rod((x, y, z), (x, y, z - 0.05), 0.012, P["steel"])
+        for k in range(n):
+            cyl(0.045, 0.025, x, y, z - 0.08 - k * 0.055, P["glass"], verts=12)
+        sph(0.02, x, y, z - 0.12 - n * 0.055, P["steel"])
+        return V((x, y, z - 0.12 - n * 0.055))
+    tips = {}
     def build():
-        cyl(0.26, 0.1, 0, 0, 0, P["dark"], verts=8)
-        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.12, radius2=0.07, depth=2.6, location=(0, 0, 1.4))
+        B(0.42, 0.42, 0.12, 0, 0, 0, P["dark"], bevel=0.02)
+        B(0.16, 0.08, 0.22, 0, -0.2, 0.12, P["hull"], bevel=0.01)
+        B(0.06, 0.02, 0.04, 0, -0.245, 0.27, P["light"], bevel=0.0)
+        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.15, radius2=0.075, depth=3.0, location=(0, 0, 1.62))
         bpy.context.object.data.materials.append(P["hull"])
-        for z in (0.5, 1.2, 1.9):
-            cyl(0.115 - z * 0.02, 0.06, 0, 0, z, P["trim"], verts=12)
-        B(0.7, 0.08, 0.08, 0, 0, 2.45, P["trim"], bevel=0.01)
-        for x in (-0.3, 0.0, 0.3):
-            for k in range(3):
-                cyl(0.04, 0.035, x, 0, 2.53 + k * 0.045, P["glass"] if x == 0 else P["steel"], verts=10)
-        cyl(0.05, 0.08, 0, 0, 2.7, P["dark"], verts=10)
-        sph(0.045, 0, 0, 2.82, P["light"])
-        B(0.14, 0.04, 0.16, 0, -0.1, 0.55, P["dark"], bevel=0.005)
-        B(0.06, 0.02, 0.04, 0, -0.125, 0.65, P["light"], bevel=0.0)
-    tips = {"copper": V((0, 0, 2.67)), "red": V((-0.3, 0, 2.67)), "green": V((0.3, 0, 2.67))}
-    return group(build), tips
+        for a in (0.4, 2.5, 4.6):
+            rod((math.cos(a) * 0.26, math.sin(a) * 0.26, 0.12), (0, 0, 0.75), 0.022, P["trim"])
+        for z in (0.55, 1.15, 1.75, 2.35):
+            cyl(0.14 - z * 0.022, 0.05, 0, 0, z, P["trim"], verts=12)
+        # The crossarms: the lower carries the circuit wires, the upper two more strings; braces under each.
+        for z, w in ((2.55, 0.42), (2.9, 0.3)):
+            B(2 * w + 0.12, 0.08, 0.08, 0, 0, z, P["trim"], bevel=0.01)
+            for sx in (-1, 1):
+                rod((sx * w * 0.7, 0, z), (0, 0, z - 0.3), 0.015, P["steel"])
+        tips["red"] = string(-0.42, 0, 2.55)
+        tips["green"] = string(0.42, 0, 2.55)
+        string(-0.3, 0, 2.9, 3); string(0.3, 0, 2.9, 3)
+        for k in range(4):                                          # the top insulator, standing; the copper on it
+            cyl(0.05, 0.03, 0, 0, 3.12 + k * 0.05, P["glass"], verts=12)
+        cyl(0.025, 0.06, 0, 0, 3.32, P["steel"], verts=8)
+        tips["copper"] = V((0, 0, 3.36))
+        rod((0.06, 0, 2.98), (0.16, 0, 3.15), 0.012, P["steel"])
+        sph(0.04, 0.16, 0, 3.17, P["light"])
+    model = group(build)
+    return model, tips
 
 
 def pylon_gs():
@@ -920,12 +942,346 @@ def flamer_gs():
     return group(base), group(head)
 
 
-TURRETS = {("turret", "kh"): turret_kh_laser, ("gun-turret", "kh"): turret_kh_gun, ("turret", "gs"): turret_gs}
+# --- Turret concepts (the coordinator's review, 2026-11-10: the first turrets "read as box kit-bash beside vanilla";
+# vanilla's have a readable mechanism, a yoke or trunnion holding the weapon, the barrel's mass, a layered base with
+# cabling). Clay first, three a turret, shot at the game's zoom beside vanilla: WHAT concept, F its name.
+def kh_base_layered():
+    """A layered base: an octagonal footplate, four buttress feet, a skirt, a geared turntable ring (vanilla's gun turret
+    shows its ring's teeth), cable conduits curving up into the turntable."""
+    # (Lower and more open than the first: a heavy plain octagon outweighed the weapon, vanilla's base is a geared ring.)
+    octa(0.8, 0.08, 0, 0, 0, P["dark"])
+    for k in range(4):
+        a = k * math.pi / 2 + math.pi / 4
+        o = B(0.22, 0.42, 0.24, math.cos(a) * 0.6, math.sin(a) * 0.6, 0.08, P["hull"], rot=a + math.pi / 2, bevel=0.05)
+        cyl(0.04, 0.04, math.cos(a) * 0.72, math.sin(a) * 0.72, 0.32, P["steel"], verts=8)
+    cyl(0.5, 0.3, 0, 0, 0.08, P["trim"], verts=32, bevel=0.04)
+    cyl(0.66, 0.05, 0, 0, 0.38, P["trim"], verts=40)
+    cyl(0.56, 0.1, 0, 0, 0.43, P["dark"], verts=40)
+    for k in range(32):
+        a = k * 2 * math.pi / 32
+        B(0.05, 0.07, 0.08, math.cos(a) * 0.57, math.sin(a) * 0.57, 0.43, P["steel"], rot=a, bevel=0.0)
+    for sx in (-1, 1):
+        pipe([(sx * 0.8, -0.3, 0.12), (sx * 0.78, -0.3, 0.32), (sx * 0.55, -0.15, 0.42)], 0.04, P["rubber"])
+    B(0.3, 0.06, 0.16, 0, -0.66, 0.14, P["accent"], bevel=0.01)
+    for sx in (-1, 1):
+        B(0.07, 0.04, 0.07, sx * 0.25, -0.69, 0.2, P["light"], bevel=0.0)
+
+
+def gs_base_sandbags():
+    """Stacked sandbags round a scrap ring: two courses of modelled bags, the top course staggered, an open gap behind,
+    an ammo crate and a drum inside."""
+    import random as _r
+    rr = _r.Random(21)
+    B(1.7, 1.7, 0.06, 0, 0, 0, P["dark"])
+    cyl(0.46, 0.38, 0, 0, 0.06, P["trim"], verts=10)
+    for course, (R, z, n, off) in enumerate(((0.74, 0.06, 13, 0.0), (0.72, 0.19, 12, 0.5), (0.7, 0.32, 12, 0.0))):
+        for k in range(n):
+            a = (k + off) * 2 * math.pi / n + rr.uniform(-0.04, 0.04)
+            if math.sin(a) < -0.85: continue                       # (an opening to the south, behind the gun)
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=1, location=(math.cos(a) * R, math.sin(a) * R, z + 0.07),
+                                                 segments=14, ring_count=8)
+            o = bpy.context.object; o.scale = (0.2, 0.11, 0.075); o.rotation_euler = (rr.uniform(-0.1, 0.1), 0, a + math.pi / 2)
+            o.data.materials.append(P["cloth"])
+            # (A tie across each bag's end: a sandbag, not a pebble.)
+            tor(0.045, 0.008, math.cos(a) * R + math.cos(a + math.pi / 2) * 0.17, math.sin(a) * R + math.sin(a + math.pi / 2) * 0.17,
+                z + 0.07, P["rubber"]).rotation_euler = (math.pi / 2, 0, a + math.pi / 2)
+    B(0.3, 0.2, 0.18, 0.35, -0.45, 0.06, P["trim"], rot=0.3, bevel=0.01)
+    cyl(0.12, 0.3, -0.42, -0.4, 0.06, P["accent"], verts=14)
+
+
+def concept(name):
+    """(base, head) of a concept; the head's weapon along +y (north), its pivot the origin."""
+    if name.startswith("kh-"):
+        base = group(kh_base_layered)
+    else:
+        base = group(gs_base_sandbags)
+    def h():
+        if name == "kh-laser-yoke":
+            # A finned emitter pod held between two cheeks on trunnions, its lens hood at the front, a power pack and
+            # heat sinks at the back, cables looping from the cheeks into it.
+            cyl(0.4, 0.1, 0, 0, 0.53, P["hull"], verts=24, bevel=0.02)
+            for sx in (-1, 1):
+                B(0.1, 0.34, 0.62, sx * 0.3, 0, 0.6, P["hull"], bevel=0.04)
+                lie(0.08, 0.12, sx * 0.3, 0, 1.08, P["trim"], "x", 16)
+            lie(0.2, 0.85, 0, 0.08, 1.08, P["trim"], "y", 8)
+            for k in range(4):
+                lie(0.225, 0.04, 0, -0.22 + k * 0.12, 1.08, P["dark"], "y", 8)
+            bpy.ops.mesh.primitive_cone_add(vertices=16, radius1=0.2, radius2=0.25, depth=0.22, location=(0, 0.6, 1.08),
+                                            rotation=(-math.pi / 2, 0, 0))
+            bpy.context.object.data.materials.append(P["dark"])
+            lie(0.15, 0.02, 0, 0.7, 1.08, P["glass"], "y", 16)
+            B(0.34, 0.28, 0.26, 0, -0.45, 0.97, P["hull"], bevel=0.04)
+            for k in range(5):
+                B(0.04, 0.24, 0.2, -0.12 + k * 0.06, -0.62, 0.99, P["steel"], bevel=0.0)
+            for sx in (-1, 1):
+                pipe([(sx * 0.3, -0.15, 0.8), (sx * 0.24, -0.35, 0.85), (sx * 0.12, -0.5, 1.0)], 0.03, P["rubber"])
+        elif name == "kh-laser-neck":
+            # A tall ribbed neck (vanilla's laser stands its emitter up), a long chamfered emitter housing on a
+            # trunnion at its top, twin rails along its sides, a focusing ring and lens at the front, heat-sink fins on
+            # its back, a cable coiled down the neck into the base.
+            cyl(0.34, 0.1, 0, 0, 0.53, P["hull"], verts=24, bevel=0.02)
+            bpy.ops.mesh.primitive_cone_add(vertices=8, radius1=0.25, radius2=0.13, depth=0.8, location=(0, -0.08, 1.03))
+            bpy.context.object.data.materials.append(P["hull"])
+            for z in (0.72, 0.92, 1.12, 1.3):
+                tor(0.22 - (z - 0.7) * 0.15, 0.025, 0, -0.08, z, P["dark"])
+            for sx in (-1, 1):
+                B(0.07, 0.22, 0.3, sx * 0.17, -0.05, 1.3, P["hull"], bevel=0.03)
+            lie(0.06, 0.42, 0, -0.05, 1.5, P["trim"], "x", 14)
+            B(0.3, 1.0, 0.3, 0, 0.12, 1.42, P["trim"], bevel=0.08)
+            B(0.32, 0.5, 0.06, 0, 0.0, 1.72, P["hull"], bevel=0.02)
+            for sx in (-1, 1):
+                lie(0.035, 1.0, sx * 0.17, 0.22, 1.56, P["steel"], "y", 10)
+            tor(0.16, 0.045, 0, 0.64, 1.57, P["dark"]).rotation_euler = (math.pi / 2, 0, 0)
+            lie(0.12, 0.03, 0, 0.67, 1.57, P["glass"], "y", 16)
+            for k in range(5):
+                B(0.26, 0.03, 0.12, 0, -0.32 + k * 0.07, 1.75, P["dark"], bevel=0.0)
+            for k in range(7):
+                tor(0.075, 0.02, 0.3, -0.18, 0.62 + k * 0.09, P["rubber"])
+            pipe([(0.3, -0.18, 1.25), (0.22, -0.25, 1.45), (0.1, -0.35, 1.5)], 0.03, P["rubber"])
+        elif name == "kh-laser-triple":
+            # Three emitter tubes in a triangle, clamped by collars, on a yoke; a power cell behind.
+            cyl(0.4, 0.1, 0, 0, 0.53, P["hull"], verts=24, bevel=0.02)
+            for sx in (-1, 1):
+                B(0.1, 0.3, 0.55, sx * 0.32, 0, 0.6, P["hull"], bevel=0.04)
+            for a in (math.pi / 2, math.pi / 2 + 2.1, math.pi / 2 - 2.1):
+                lie(0.07, 1.0, math.cos(a) * 0.13, 0.15, 1.05 + math.sin(a) * 0.13, P["steel"], "y", 12)
+                lie(0.05, 0.03, math.cos(a) * 0.13, 0.66, 1.05 + math.sin(a) * 0.13, P["glass"], "y", 12)
+            for y in (-0.15, 0.25, 0.55):
+                lie(0.25, 0.08, 0, y, 1.05, P["trim"], "y", 16)
+            B(0.4, 0.3, 0.3, 0, -0.45, 0.92, P["hull"], bevel=0.05)
+        elif name == "kh-gun-twin":
+            # A mantlet block on trunnions between two tall cheeks, twin long barrels with recoil sleeves and muzzle
+            # brakes, an ammunition drum on the right cheek and its belt up into the breech, a sight on top.
+            cyl(0.42, 0.12, 0, 0, 0.53, P["hull"], verts=24, bevel=0.02)
+            for sx in (-1, 1):
+                B(0.1, 0.46, 0.72, sx * 0.34, -0.05, 0.62, P["hull"], bevel=0.05)
+                lie(0.09, 0.14, sx * 0.34, 0.0, 1.18, P["trim"], "x", 16)
+            B(0.56, 0.46, 0.38, 0, 0.02, 1.0, P["trim"], bevel=0.09)
+            for sx in (-1, 1):
+                lie(0.075, 0.32, sx * 0.13, 0.4, 1.2, P["dark"], "y", 12)
+                lie(0.045, 0.85, sx * 0.13, 0.9, 1.2, P["steel"], "y", 12)
+                B(0.12, 0.13, 0.11, sx * 0.13, 1.33, 1.145, P["dark"], bevel=0.02)
+            lie(0.24, 0.18, 0.52, -0.1, 0.92, P["trim"], "x", 22)
+            tor(0.24, 0.025, 0.62, -0.1, 0.92, P["dark"]).rotation_euler = (0, math.pi / 2, 0)
+            for k in range(9):
+                t = k / 8
+                B(0.1, 0.05, 0.03, 0.52 - t * 0.35, -0.1 + t * 0.15, 1.12 + math.sin(t * math.pi) * 0.14, P["accent"], bevel=0.0)
+            B(0.14, 0.22, 0.13, -0.15, -0.05, 1.38, P["dark"], bevel=0.02)
+            B(0.05, 0.03, 0.04, -0.15, 0.07, 1.44, P["light"], bevel=0.0)
+        elif name == "kh-gun-rotary":
+            # A six-barrel rotary cluster on a yoke, front and middle clamps, its motor behind, a big ammo box on the
+            # side and its belt curving up into the breech.
+            cyl(0.42, 0.1, 0, 0, 0.53, P["hull"], verts=24, bevel=0.02)
+            for sx in (-1, 1):
+                B(0.1, 0.36, 0.48, sx * 0.3, 0, 0.6, P["hull"], bevel=0.04)
+            lie(0.18, 0.4, 0, -0.05, 0.95, P["trim"], "y", 16)
+            for k in range(6):
+                a = k * math.pi / 3
+                lie(0.035, 0.85, math.cos(a) * 0.1, 0.55, 0.95 + math.sin(a) * 0.1, P["steel"], "y", 8)
+            for y in (0.45, 0.9):
+                lie(0.15, 0.05, 0, y, 0.95, P["dark"], "y", 16)
+            lie(0.14, 0.25, 0, -0.38, 0.95, P["dark"], "y", 16)
+            B(0.3, 0.4, 0.3, 0.52, -0.1, 0.6, P["trim"], bevel=0.04)
+            for k in range(8):
+                t = k / 7
+                B(0.1, 0.05, 0.03, 0.5 - t * 0.35, -0.05 + t * 0.15, 0.92 + math.sin(t * math.pi) * 0.12, P["accent"], bevel=0.0)
+        elif name == "kh-gun-heavy":
+            # A low wide armoured housing, one long heavy barrel with its fume extractor and muzzle brake, a cupola.
+            cyl(0.48, 0.1, 0, 0, 0.53, P["hull"], verts=24, bevel=0.02)
+            bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.45, depth=0.36, location=(0, -0.05, 0.81), rotation=(0, 0, math.pi / 8))
+            o = bpy.context.object; o.scale = (0.9, 1.1, 1); o.data.materials.append(P["trim"])
+            lie(0.08, 1.15, 0, 0.85, 0.85, P["steel"], "y", 14)
+            lie(0.11, 0.2, 0, 0.75, 0.85, P["dark"], "y", 14)
+            B(0.2, 0.18, 0.14, 0, 1.45, 0.78, P["dark"], bevel=0.03)
+            cyl(0.14, 0.14, -0.15, -0.15, 0.99, P["hull"], verts=16, bevel=0.03)
+        elif name == "gs-pintle":
+            # A salvaged heavy machine gun on a tall pintle post: its cradle, the receiver, a perforated barrel jacket
+            # and flash hider, an ammo can and its belt, spade grips; a shield of two plates welded at an angle, a
+            # slit between them, bolts along their edges.
+            cyl(0.2, 0.1, 0, 0, 0.44, P["steel"], verts=12)
+            cyl(0.08, 0.75, 0, 0, 0.54, P["steel"], verts=12)
+            B(0.3, 0.34, 0.1, 0, 0, 1.25, P["dark"], bevel=0.02)
+            B(0.22, 0.62, 0.22, 0, -0.02, 1.33, P["trim"], bevel=0.04)
+            lie(0.065, 0.85, 0, 0.7, 1.44, P["steel"], "y", 12)
+            for k in range(6):
+                tor(0.07, 0.016, 0, 0.36 + k * 0.1, 1.44, P["dark"]).rotation_euler = (math.pi / 2, 0, 0)
+            lie(0.075, 0.12, 0, 1.15, 1.44, P["dark"], "y", 12)
+            B(0.2, 0.26, 0.2, 0.24, -0.08, 1.24, P["accent"], bevel=0.02)
+            for k in range(6):
+                t = k / 5
+                B(0.06, 0.05, 0.025, 0.2 - t * 0.12, -0.05 + t * 0.12, 1.45 + math.sin(t * math.pi) * 0.06, P["steel"], bevel=0.0)
+            for sx in (-1, 1):
+                rod((sx * 0.08, -0.32, 1.42), (sx * 0.12, -0.5, 1.4), 0.022, P["steel"])
+            for sx in (-1, 1):
+                o = B(0.46, 0.05, 0.5, sx * 0.24, 0.36, 1.12, P["hull"], bevel=0.01)
+                o.rotation_euler = (math.radians(-8), 0, sx * math.radians(18))
+                for k in range(4):
+                    cyl(0.02, 0.03, sx * (0.06 + k * 0.12), 0.33, 1.57, P["steel"], verts=6)
+        elif name == "gs-twin-seat":
+            # Two machine guns side by side on a tractor-seat mount, a bent shield over them, a box of belts.
+            cyl(0.32, 0.12, 0, 0, 0.44, P["steel"], verts=12)
+            B(0.5, 0.35, 0.12, 0, -0.05, 0.56, P["trim"], bevel=0.02)
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=0.16, location=(0, -0.3, 0.8), segments=16, ring_count=8)
+            o = bpy.context.object; o.scale = (1, 0.8, 0.3); o.data.materials.append(P["dark"])
+            rod((0, -0.25, 0.68), (0, -0.3, 0.78), 0.03, P["steel"])
+            for sx in (-1, 1):
+                B(0.14, 0.4, 0.14, sx * 0.17, 0.12, 0.7, P["hull"], bevel=0.02)
+                lie(0.045, 0.6, sx * 0.17, 0.6, 0.78, P["steel"], "y", 10)
+            o = B(0.7, 0.04, 0.32, 0, 0.36, 0.62, P["accent"], bevel=0.01); o.rotation_euler.x = math.radians(-15)
+            B(0.24, 0.18, 0.16, 0.38, -0.1, 0.56, P["trim"], bevel=0.02)
+        elif name == "gs-tripod":
+            # A salvaged autocannon on a heavy tripod pintle, a drum magazine on top, a single plate shield, its
+            # recoil spring.
+            for a in (0.5, 2.6, 4.7):
+                rod((0, 0, 0.75), (math.cos(a) * 0.4, math.sin(a) * 0.4, 0.44), 0.035, P["steel"])
+            cyl(0.07, 0.35, 0, 0, 0.55, P["steel"], verts=12)
+            B(0.24, 0.6, 0.22, 0, 0.0, 0.88, P["hull"], bevel=0.03)
+            lie(0.07, 0.75, 0, 0.65, 1.0, P["steel"], "y", 12)
+            lie(0.09, 0.14, 0, 1.02, 1.0, P["dark"], "y", 12)
+            cyl(0.17, 0.08, 0, -0.08, 1.1, P["accent"], verts=20)
+            o = B(0.55, 0.04, 0.45, 0, 0.3, 0.75, P["trim"], bevel=0.01); o.rotation_euler.x = math.radians(-10)
+    head = group(h)
+    return base, head
+
+
+# (The second turrets, from the clay concepts the coordinator's review asked for; the first, turret_kh_laser and the
+# rest above, read as box kit-bash.)
+def fconcept(name):
+    """(base, head) of a flamer concept: the base 2x3 facing north (its inlets south), the head on a pivot at the entity's
+    centre, its nozzle north; a pilot light (glass) at the nozzle's tip."""
+    kh = name.startswith("kh-")
+    def base():
+        if kh:
+            # An armoured plinth, two banded fuel tanks standing at the back over the inlets, their fuel lines curving
+            # up into a raised turret ring, a pump between them, lamps at the front.
+            B(1.4, 2.35, 0.1, 0, 0, 0, P["dark"])
+            B(1.25, 2.15, 0.22, 0, 0.05, 0.1, P["hull"], bevel=0.06)
+            for x in (-0.36, 0.36):
+                cyl(0.27, 0.42, x, -0.62, 0.32, P["trim"], verts=24, bevel=0.03)
+                for z in (0.42, 0.66):
+                    tor(0.27, 0.025, x, -0.62, z, P["dark"])
+                bpy.ops.mesh.primitive_uv_sphere_add(radius=0.27, location=(x, -0.62, 0.74), segments=24, ring_count=12)
+                o = bpy.context.object; o.scale = (1, 1, 0.45); o.data.materials.append(P["trim"])
+                lie(0.09, 0.3, x, -1.07, 0.25, P["steel"], "y", 12)
+                pipe([(x, -0.45, 0.75), (x * 0.5, -0.15, 0.7), (x * 0.25, 0.0, 0.85), (x * 0.25, 0.05, 1.3)], 0.04, P["steel"], P["dark"])
+            B(0.3, 0.3, 0.3, 0, -0.95, 0.32, P["dark"], bevel=0.03)
+            cyl(0.4, 0.2, 0, 0.0, 0.32, P["hull"], verts=32, bevel=0.03)
+            # (The neck: the head stands up over the tanks, as vanilla's does; nearer the camera than the head, the
+            # tanks hid it, the first clay.)
+            cyl(0.17, 0.85, 0, 0.0, 0.52, P["hull"], verts=16, bevel=0.02)
+            for z in (0.7, 0.95, 1.2):
+                tor(0.18, 0.025, 0, 0.0, z, P["dark"])
+            cyl(0.3, 0.05, 0, 0.0, 1.37, P["trim"], verts=32)
+            for sx in (-1, 1):
+                B(0.08, 0.04, 0.08, sx * 0.5, 1.12, 0.22, P["light"], bevel=0.0)
+            B(1.27, 0.05, 0.05, 0, 0.75, 0.3, P["accent"], bevel=0.0)
+        else:
+            # A welded skid, three oil drums lashed upright at the back over the inlets, hoses from them into a ring on
+            # a short drum stand, a hand pump, scrap.
+            for sx in (-1, 1):
+                B(0.2, 2.4, 0.12, sx * 0.6, 0, 0, P["dark"])
+            B(1.3, 2.2, 0.08, 0, 0, 0.12, P["trim"])
+            for k, x in enumerate((-0.42, 0.0, 0.42)):
+                cyl(0.19, 0.48, x, -0.7, 0.2, (P["accent"], P["hull"], P["steel"])[k], verts=20, bevel=0.02)
+                for z in (0.32, 0.6):
+                    tor(0.19, 0.018, x, -0.7, z, P["dark"])
+                pipe([(x, -0.6, 0.68), (x * 0.6, -0.3, 0.7), (x * 0.2, -0.06, 0.9), (x * 0.15, -0.06, 1.3)], 0.03, P["rubber"])
+            rod((-0.65, -0.92, 0.6), (0.65, -0.92, 0.6), 0.014, P["rubber"])
+            for x in (-0.5, 0.5):
+                lie(0.09, 0.25, x, -1.05, 0.22, P["steel"], "y", 12)
+            cyl(0.3, 0.3, 0, 0.0, 0.2, P["steel"], verts=14)
+            # (A pipe mast for its neck, braced, the boom's ring on top.)
+            cyl(0.1, 0.9, 0, 0.0, 0.5, P["steel"], verts=12)
+            for a in (0.8, 2.9, 5.0):
+                rod((math.cos(a) * 0.35, math.sin(a) * 0.35, 0.5), (0, 0, 1.1), 0.025, P["steel"])
+            cyl(0.26, 0.05, 0, 0.0, 1.38, P["dark"], verts=14)
+            B(0.12, 0.12, 0.35, 0.5, 0.5, 0.2, P["steel"], bevel=0.01)
+            rod((0.5, 0.5, 0.55), (0.62, 0.62, 0.7), 0.02, P["steel"])
+    def head():
+        if name == "kh-flame-arm":
+            # An articulated arm: a shoulder housing on the ring, the upper arm raised, an elbow, the forearm level with
+            # the nozzle and its flared tip, a hose along it, the pilot light lit under the tip.
+            B(0.52, 0.52, 0.38, 0, 0.0, 0.6, P["hull"], bevel=0.08)
+            lie(0.14, 0.6, 0, 0.08, 0.9, P["trim"], "x", 16)
+            o = B(0.24, 0.24, 0.62, 0, 0.12, 0.85, P["trim"], bevel=0.06); o.rotation_euler.x = math.radians(-35)
+            lie(0.12, 0.32, 0, 0.45, 1.3, P["dark"], "x", 16)
+            B(0.3, 0.55, 0.28, 0, 0.75, 1.16, P["hull"], bevel=0.07)
+            lie(0.075, 0.5, 0, 1.0, 1.3, P["steel"], "y", 14)
+            bpy.ops.mesh.primitive_cone_add(vertices=16, radius1=0.08, radius2=0.12, depth=0.16, location=(0, 1.22, 1.3),
+                                            rotation=(-math.pi / 2, 0, 0))
+            bpy.context.object.data.materials.append(P["dark"])
+            sph(0.045, 0, 1.25, 1.2, P["glass"])
+            pipe([(0.15, -0.05, 0.7), (0.15, 0.25, 1.15), (0.1, 0.6, 1.36), (0.05, 1.0, 1.36)], 0.03, P["rubber"])
+            B(0.24, 0.04, 0.04, 0, -0.16, 0.9, P["accent"], bevel=0.0)
+        elif name == "kh-flame-ring":
+            # A projector housing on the ring, its nozzle out under a shroud, a fuel manifold on its back, the pilot
+            # light under the nozzle.
+            B(0.5, 0.6, 0.36, 0, 0.0, 0.62, P["hull"], bevel=0.08)
+            lie(0.1, 0.8, 0, 0.6, 0.82, P["steel"], "y", 14)
+            o = B(0.3, 0.5, 0.06, 0, 0.6, 0.96, P["trim"], bevel=0.02)
+            lie(0.13, 0.08, 0, 1.0, 0.82, P["dark"], "y", 16)
+            sph(0.045, 0, 1.02, 0.7, P["glass"])
+            for sx in (-1, 1):
+                pipe([(sx * 0.2, -0.3, 0.7), (sx * 0.22, -0.2, 1.05), (sx * 0.1, 0.1, 1.0)], 0.03, P["steel"])
+        elif name == "gs-flame-arm":
+            # A scrap boom: a pipe shoulder on the ring, a pipe arm raised, a clamp elbow, a flame lance level with a
+            # welded tip, the igniter lit, a rubber hose taped along it, a crank wheel.
+            cyl(0.26, 0.3, 0, 0.05, 0.6, P["hull"], verts=10, bevel=0.01)
+            B(0.3, 0.3, 0.2, 0, -0.25, 0.65, P["accent"], bevel=0.01)
+            o = B(0.18, 0.18, 0.7, 0, 0.12, 0.85, P["steel"], bevel=0.01); o.rotation_euler.x = math.radians(-30)
+            B(0.26, 0.3, 0.22, 0, 0.47, 1.32, P["trim"], bevel=0.01)
+            lie(0.11, 0.35, 0, 0.75, 1.42, P["hull"], "y", 10)
+            lie(0.055, 0.8, 0, 0.85, 1.42, P["steel"], "y", 10)
+            lie(0.08, 0.1, 0, 1.28, 1.42, P["dark"], "y", 10)
+            sph(0.05, 0, 1.32, 1.32, P["glass"])
+            pipe([(0.12, 0.0, 0.7), (0.12, 0.3, 1.2), (0.08, 0.7, 1.48), (0.05, 1.1, 1.48)], 0.03, P["rubber"])
+            tor(0.12, 0.02, -0.2, 0.05, 0.8, P["steel"]).rotation_euler = (0, math.pi / 2, 0)
+            o = B(0.4, 0.04, 0.3, 0, 0.6, 1.2, P["accent"], bevel=0.01); o.rotation_euler.x = math.radians(-20)
+        elif name == "gs-flame-lance":
+            # A tall pintle with a flame lance on it, a shield plate, a pressure bottle strapped to the pintle, the
+            # igniter lit.
+            cyl(0.07, 0.65, 0, 0, 0.6, P["steel"], verts=10)
+            B(0.2, 0.5, 0.18, 0, 0.0, 1.2, P["trim"], bevel=0.02)
+            lie(0.05, 0.9, 0, 0.65, 1.3, P["steel"], "y", 10)
+            sph(0.05, 0, 1.12, 1.22, P["glass"])
+            o = B(0.5, 0.04, 0.4, 0, 0.32, 1.05, P["hull"], bevel=0.01); o.rotation_euler.x = math.radians(-10)
+            cyl(0.1, 0.45, 0.15, -0.1, 0.65, P["accent"], verts=14)
+            pipe([(0.15, -0.1, 1.1), (0.1, 0.0, 1.3)], 0.025, P["rubber"])
+    b = group(base); h = group(head)
+    # (The arms on the neck's top: built from the ring at 0.6, raised to the neck's 1.4.)
+    if name.endswith("-arm"):
+        for o in h: o.location.z += 0.8
+    return b, h
+
+
+TURRETS = {("turret", "kh"): lambda: concept("kh-laser-neck"), ("gun-turret", "kh"): lambda: concept("kh-gun-twin"),
+           ("turret", "gs"): lambda: concept("gs-pintle")}
 
 
 BUILD = {("fabricator", "kh"): fabricator_kh, ("fabricator", "gs"): fabricator_gs,
          ("generator", "kh"): generator_kh, ("generator", "gs"): generator_gs,
          ("radar", "kh"): radar_kh, ("radar", "gs"): radar_gs, ("drill", "kh"): drill_kh}
+if WHAT == "concept":
+    # Clay at two headings (south-west and north-east: k 40 and 8 of 64), base and head together, its shadow with it.
+    base, head = (fconcept if "flame" in F else concept)(F)
+    bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
+    for o in head:
+        if o.parent is None:
+            o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
+    bpy.ops.object.empty_add(location=(0, 0, 0)); root = bpy.context.object
+    for o in base + [pv]:
+        if o.parent is None: o.parent = root
+    k = 1.15 if "flame" in F else 1.3
+    root.scale = (k, k, 1.0); bpy.context.view_layer.update()   # (wide, not tall: stretched as the game draws it, 1.1 read tall and narrow beside vanilla)
+    lpkit.bevel_all(base + head, 0.02)
+    ground, sun, world = lpkit.stage(scene, 3 if "flame" in F else 2, 1.9)
+    lpkit.emission(P["glass"], 3.0)
+    HEAD = (40, 8)
+    def turn(f):
+        pv.rotation_euler = (0, 0, -HEAD[f] * 2 * math.pi / 64); bpy.context.view_layer.update()
+    lpkit.passes(scene, out, len(HEAD), turn, base + head, {P["light"], P["glass"]}, ground, sun, world, shadow_each=True)
+    print("rendered", WHAT, F, out)
+    sys.exit(0)
 if WHAT == "pylon":
     # One direction (a pole's pictures and its wire points, one set), its wire tips projected to the screen (posts.json,
     # tiles from the entity's centre after the sheet's sqrt(2) stretch; and on its shadow, along the sun).
@@ -951,7 +1307,8 @@ if WHAT == "pylon":
 if WHAT == "flamer":
     # Its base in four directions (north: its nozzle north, its inlets south), the head in 64 directions on a pivot at
     # the entity's centre (so one head serves every base direction), each without the other's shadow.
-    base, head = (flamer_kh if F == "kh" else flamer_gs)()
+    # (The second flamers, from clay concepts: the first, flamer_kh and flamer_gs, read as a box with barrels.)
+    base, head = fconcept("kh-flame-arm" if F == "kh" else "gs-flame-arm")
     base += scatter(base, {P["hull"], P["trim"]}, P["dark"], P["steel"], 9, density=8.0)
     bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
     for o in head:
@@ -960,10 +1317,14 @@ if WHAT == "flamer":
     bpy.ops.object.empty_add(location=(0, 0, 0)); rig = bpy.context.object
     for o in base:
         if o.parent is None: o.parent = rig
-    lpkit.bevel_all(base + head)
-    ground, sun, world = lpkit.stage(scene, 3, 1.6)
+    # (1.15 across: at the footprint it read narrow beside vanilla's flamer, stretched as the game draws it.)
+    bpy.ops.object.empty_add(location=(0, 0, 0)); root = bpy.context.object
+    rig.parent = root; pv.parent = root
+    root.scale = (1.15, 1.15, 1.0); bpy.context.view_layer.update()
+    lpkit.bevel_all(base + head, 0.02)
+    ground, sun, world = lpkit.stage(scene, 3, 2.2)
     glowing = {P["light"], P["glass"]}
-    lpkit.emission(P["light"], 2.5); lpkit.emission(P["glass"], 2.0)
+    lpkit.emission(P["light"], 2.5); lpkit.emission(P["glass"], 3.0)
     for o in head: o.visible_camera = False; o.visible_shadow = False
     for d, yaw in (("north", 0), ("east", 270), ("south", 180), ("west", 90)):
         rig.rotation_euler = (0, 0, math.radians(yaw)); bpy.context.view_layer.update()
@@ -984,12 +1345,12 @@ if (WHAT, F) in TURRETS:
     for o in head:
         if o.parent is None:
             o.parent = pv; o.matrix_parent_inverse = pv.matrix_world.inverted()
-    # (At 1.25: first rendered at the footprint, they stood a quarter smaller than vanilla's turrets of the same size.)
+    # (At 1.1: at the footprint they stood smaller than vanilla's turrets of the same size, at 1.25 larger.)
     bpy.ops.object.empty_add(location=(0, 0, 0)); root = bpy.context.object
     for o in base + [pv]:
         if o.parent is None: o.parent = root
-    root.scale = (1.25, 1.25, 1.25); bpy.context.view_layer.update()
-    lpkit.bevel_all(base + head)
+    root.scale = (1.3, 1.3, 1.0); bpy.context.view_layer.update()   # (wide, not tall: stretched as the game draws it, 1.1 read tall and narrow beside vanilla)
+    lpkit.bevel_all(base + head, 0.02)
     ground, sun, world = lpkit.stage(scene, 2, 1.9)
     glowing = {P["light"], P["glass"]}
     # (Each part's pass without the other's shadow: hidden from the camera alone, the head had cast its shadow into the

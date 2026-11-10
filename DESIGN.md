@@ -6376,6 +6376,21 @@ Bugs and surprises the headless runs caught, each kept as a check:
   backwards: a rotated sprite's first frame faces north. Re-rendered half a turn on (turning_buildings.py), checked on
   frames 0, 16, 32 and 48 (north, east, south, west); its base no longer carries the head's shadow (visible_shadow off
   for the part not rendered; the base 213 px tall then, 191 now).
+- **The factions' turrets redone from clay** (0.2.308; the coordinator's review of 0.2.304: "box kit-bash beside
+  vanilla", a dome or a box on a hex plate with a stub barrel, Grubstake's noisy textured cubes; vanilla's turrets have
+  a readable mechanism). Nine clay concepts, three a turret, at two headings beside vanilla at the game's scale and at
+  half (faction_works.py concept): Kessler-Hayashi's laser on a yoke, on a tall neck, as three tubes; its autocannon twin
+  on trunnions, rotary, a heavy single; Grubstake's gun on a pintle behind a shield, twin guns on a seat mount, an
+  autocannon on a tripod. Picked by what read as a weapon at half scale: the laser's chamfered emitter housing on a
+  ribbed neck and trunnion (rails, a focusing ring and lens, heat-sink fins, a cable coiled down the neck), the twin
+  autocannon on tall cheeks (recoil sleeves, muzzle brakes, an ammunition drum and its belt into the breech, a sight),
+  and Grubstake's salvaged heavy machine gun on a pintle (a perforated jacket, an ammo can and belt, spade grips, a
+  shield of two plates welded at an angle and bolted) behind three courses of modelled sandbags (burlap, each bag tied)
+  on a scrap ring. Kessler-Hayashi's base lower and more open (four buttress feet, a geared turntable ring, cables up
+  into it). Proportion found on the way: the concept sheets had shown the raw renders, and sheet.py stretches every
+  frame by sqrt(2) (the game's projection): unstretched they read about 0.7 tall, and corrected the first pick stood tall
+  and narrow (1.6 by 2.4 tiles against vanilla's 2.3 by 2.1); rendered at 1.3 across and 1.0 up. Still simpler than
+  vanilla's art, larger by a little; read as weapons at half scale (contact sheet in the report).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
