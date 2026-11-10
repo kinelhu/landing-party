@@ -73,6 +73,12 @@ def body():
     lpkit.sphere(0.06, -0.55, 0.55, 1.35, P["glow"])
 
 model = group(body)
+# (A third larger: at its first size it drew two tiles of its three, small beside its own footprint, the first film.)
+SCALE = 1.3
+for o in model:
+    if o.parent is None:
+        o.location = tuple(v * SCALE for v in o.location)
+        o.scale = tuple(v * SCALE for v in o.scale)
 def set_frame(f):
     t = f / FRAMES
     for i, m in enumerate(rings):
