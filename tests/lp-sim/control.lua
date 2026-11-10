@@ -14959,9 +14959,11 @@ scenarios.farm = function()
       return
     end
     if mix == "wave200" then
+      -- (Its size sent, not w.size, which a wave resets to those through once inside: 200 sent read 176 when 24 died at
+      -- the breach, failing from 0.2.272, 2026-11-11.)
       check("farm: /lp wave 200 sent a wave of 180 or more within a minute", S.asked and w.t_launch - S.asked <= 3600
-        and (w.size or 0) >= 180, string.format("asked %s, launched %s, size %s", tostring(S.asked), tostring(w.t_launch),
-        tostring(w.size)))
+        and (w.sent or 0) >= 180, string.format("asked %s, launched %s, sent %s (%s through)", tostring(S.asked),
+        tostring(w.t_launch), tostring(w.sent), tostring(w.size)))
       check("farm: a wave that pushed in got there before it turned", w.push_walked == nil or w.push_walked >= 10,
         tostring(w.push_walked))
       return

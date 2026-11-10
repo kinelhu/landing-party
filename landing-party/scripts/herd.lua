@@ -3323,7 +3323,8 @@ finish = function(w, outcome)
     end
   end
   w.stage = "done"
-  table.insert(h.log, {id = w.id, outcome = outcome, blind = w.blind or false, size = w.size, left = alive(w),
+  -- (size: what it had last counted, reset to those through once inside; sent: what went out, the farm wave200 check's.)
+  table.insert(h.log, {id = w.id, outcome = outcome, blind = w.blind or false, size = w.size, sent = w.sent, left = alive(w),
     kills = w.kills, loop = w.loop, mark = w.mark and {w.mark.x, w.mark.y}, scout_seen = w.scout_seen,
     t_launch = w.t0, t_mark = w.t_mark, t_march = w.t_march, t_breach = w.t_breach, t_inside = w.t_inside,
     t_first_kill = w.t_first_kill, t_withdraw = w.t_withdraw, t_end = game.tick, center = {w.center.x, w.center.y},

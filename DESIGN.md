@@ -6215,7 +6215,8 @@ Bugs and surprises the headless runs caught, each kept as a check:
   bisected there: both pass at 0.2.271 and before, both fail at 0.2.272, the price re-tune). Not counters.lua alone: the
   current code with 0.2.271's counters still fails both; nothing in farm.lua or herd.lua reads the re-priced units (Line
   trooper 11, bomb drone 28), so the likeliest road is a cascade over the 90-minute game into the engine's hatching dice.
-  What fails: farm siege planned its siege at the walled base (plan 376, 13 guns, one big burster wanted), held its wave
+  (Resolved 2026-11-11, 0.2.319: both below, "A farm weighed its sieges before they were sized" and "wave200 read the size
+  after the breach".) What fails: farm siege planned its siege at the walled base (plan 376, 13 guns, one big burster wanted), held its wave
   for the big burster to hatch, none did, weighed "0 big bursters at 13 guns" and sent a plain wave, so its six siege
   checks found no siege; wave200 asked 200 and got 176 (its check 180). To settle: why a siege waits on one hatch by
   chance and gives up rather than breeding the burster it needs. herd core and herd ranks-mend fail at the pre-tonight
@@ -6468,6 +6469,19 @@ Bugs and surprises the headless runs caught, each kept as a check:
   lost the trooper. Caught by the scenario's trace (paths before and after differed). Keys now move only in the tables
   listed in `veterancy.KEYED`; the trace counts a unit's number elsewhere apart (10 such in the camp run, none a reference).
   A new table keyed by unit number goes in that list, or the trace shows it missed.
+- **A farm weighed its sieges before they were sized** (0.2.319; farm LP_MIX=siege, failing since 0.2.272, six checks).
+  A fresh reading of the ways in sizes its sieges over the seconds after it (farm.ways_step, one a second; all at once
+  cost 235 ms), but the farm weighed at once on it: its menu held no siege ("no method worth it (sieges allowed, 0
+  sized)") and it went with a probe or a raid, a siege only when chance and a later weighing let it. 0.2.272's price
+  re-tune, nothing in the farm, tipped seed 12345 that way, hence the bisect's puzzle (above). Now a farm on a fresh
+  reading whose sieges are queued holds once ("sizes its sieges before it weighs them") and weighs on the sized reading
+  ten seconds on. The siege variant lays its siege at 288,1 and passes five of its six failing checks; the sixth is the
+  sweep's open balance question (0.2.187: on 12345 the boosted lasers kill its sweepers short of their spots, 2 of 13
+  mines left where one past its plan's 12 is allowed). Farm (plain) passes as before.
+- **wave200 read the size after the breach** (0.2.319, failing since 0.2.272). A wave resets `w.size` to those through
+  once inside (herd.lua), and the herd's log kept that: 200 sent read 176 when 24 died at the breach (the re-priced
+  armies' cascade made it 24 where it had been fewer than 20). The log now keeps `sent` too and the check reads it: 200
+  sent, 176 through, passing; asked 150, it fails (150 sent).
 - **The strip drill drew as its shadow in three directions** (0.2.317; found filming the factions' buildings beside
   vanilla's, docs/review/stills-factions.lua). Its east, south and west body sheets were empty since it was modelled
   (0.2.291): lpkit.passes hid the model from the camera for a direction's shadow and never showed it again, so a script

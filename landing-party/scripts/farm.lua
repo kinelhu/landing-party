@@ -1235,6 +1235,18 @@ local function send(f, tick)
   local target, rival, choice = target_from(s, f.pos, f, ready(math.min(avail, cap_of(f))), {bursters = bursters, field = field,
     budget = budget})
   if not target then return holds(f, tick, string.format("nothing to go for within %d tiles (%d ready)", B.mind.reach, avail)) end
+  -- A fresh reading's sieges are sized over the seconds after it (farm.ways_step, one a second, kept with the reading
+  -- WAYS_FOR): weighed at once, its menu held none of them ("no method worth it (sieges allowed, 0 sized)") and it sent a
+  -- probe or a raid in place of the siege it was about to size (farm LP_MIX=siege, 2026-11-11, failing since 0.2.272 as
+  -- chance tipped the menu its way). It weighs again on the reading once they are sized.
+  if not f.siege and not f.debug_size and not f.debug_now and f.ways and f.ways.tick == game.tick then
+    for _, it in ipairs(f.ways.todo or {}) do
+      if it.kind == "siege" then
+        f.escalate_retry = tick + 60 * (#f.ways.todo + 1)
+        return holds(f, tick, "sizes its sieges before it weighs them")
+      end
+    end
+  end
   -- A siege laid: it goes there once its bursters and herd are bred (order: f.siege). It ends when a wave of what it has
   -- pays somewhere (the weighing's best passes and wins something), or when nothing of its foe's stands where it aimed.
   if f.siege then
