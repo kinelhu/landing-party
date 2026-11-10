@@ -2986,6 +2986,11 @@ scenarios.contact = function()
   schedule(END - 60, function()
     local now = census()
     info("contact: player at the end " .. serpent.line(now))
+    -- Veterancy's calibration (DESIGN.md, "Veterancy": a veteran or two an hour of a careful game, assumed).
+    local v = lp("veterancy")
+    info(string.format("contact: veterancy, %d promoted, highest merit %.1f, by force %s", v.promoted, v.merit_max,
+      serpent.line(v.by_force)))
+    metric("promoted", v.promoted)
     check("contact: a timeline was written", true, "")
     if campaign then campaign_checks() end
   end)

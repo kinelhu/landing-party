@@ -1055,6 +1055,11 @@ Kessler-Hayashi camp given merit raided six undefended assemblers and four raide
 LP_MIX=off (debug_tune vet_off) fails the merit and promotion checks. Merit for a kill: health over the killer's (the
 strength measure of attempt.worth), at most 4.
 
+**Calibration, first look** (contact.sh 12345, three player variants, 2 hours, 0.2.297): 2, 2 and 7 promotions,
+every one Kessler-Hayashi's and a Veteran, the highest merit 4.5 to 6.5 (an Elite needs 8): one to three an hour, the
+rate assumed. No Elite yet in two hours; the player's army, Grubstake and Synthexis's biters (not ranked: herd units are
+not in a pool) none. `contact.sh` prints it (veterancy, and metric promoted).
+
 **What the AI does with it** (0.2.297, the first two in part):
 - an air raid's worth (airraid.fliers, launch_air) counts a flier at its rank, `veterancy.scale`: health times damage,
   1.3 and 1.48 a level (a Veteran 1.9 a normal unit, an Elite 3.1, a Hero 4.3). Ground odds still count heads (cap,
