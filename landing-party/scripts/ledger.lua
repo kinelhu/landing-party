@@ -6,10 +6,12 @@
 -- by it) and a player's polluting building stands within POLLUTER_REACH of it. The bill goes up on an invoice post at
 -- its line on the bearing to that player: a chest of the player's force (so it opens), in Serenity's colour, the sum
 -- owed written over it. What is put in it is taken by its worth (ops.LOOT_VALUE: circuits, modules, steel; the rest is
--- left) and becomes parts. Paid off, the bill buys a truce, the only quiet Serenity gives: a minute for every
--- VALUE_PER_MINUTE paid since the last one, MIN_TRUCE to MAX_TRUCE; no raid, siege or cut while it lasts, and its line
--- holds (stance: "truce"). Unpaid, nothing changes: it is at war already.
--- Counters: pay, clear the nests yourself, or keep the cloud off its ground. Disputed (Fable's engagement consult:
+-- left) and becomes parts. Paid off, the bills are closed, and nothing more: no truce (the user, 2026-11-11: "maybe we
+-- just drop the idea of a truce? ... the hostility is the most fun part"; until 0.2.325 paying bought 10 to 60 minutes of
+-- quiet). A bill unpaid OVERDUE after it went up is collected by force: one raid, its next operation within COLLECT_SOON,
+-- weighing the billed player's buildings within COLLECT_REACH of the polluter that bill named COLLECT_WEIGHT times
+-- (ops.collect); when that raid goes, the open bills are closed as collected, the post comes down.
+-- Counters: pay, clear the nests yourself, keep the cloud off its ground, or defend what it will come for. Disputed (Fable's engagement consult:
 -- "invoices disputed in the field"): each bill names the nest whose waves it was; the billed player who kills that nest
 -- while the bill is open strikes it (its sum off what is owed; nothing left owed, the post comes down). A nest Serenity
 -- or anything else kills strikes nothing.
@@ -25,18 +27,18 @@ local BILL_MIN = 5                 -- losses before a bill
 local NEST_REACH = 300             -- the losses' middle to the nest whose waves they were
 local POLLUTER_REACH = 1000        -- a player's polluting building this near that nest: its cloud
 local POLLUTERS = {"mining-drill", "furnace", "assembling-machine", "boiler"}
-local VALUE_PER_MINUTE, MIN_TRUCE, MAX_TRUCE = 10, shared.TRUCE_MINUTES[1], shared.TRUCE_MINUTES[2]
+-- Priors (no prototype says how patient a creditor is): a bill's grace (shared: the post's description reads it), the
+-- collection's pace, reach and weight.
+local OVERDUE = shared.INVOICE_GRACE * 3600
+local COLLECT_SOON = 2 * 3600
+local COLLECT_TICKS = 20 * 3600
+local COLLECT_REACH, COLLECT_WEIGHT = 150, 10
 local ITEM = "electronic-circuit"  -- what the sum is written in (worth 1)
 local AMBER = {r = 1, g = 0.62, b = 0.15}
 
-local function truce_left(b, L)
-  local t = storage.truces and storage.truces[b.corp .. "|" .. L.owner]
-  return t and t > game.tick and math.ceil((t - game.tick) / 3600) or nil
-end
-
 local function owed_text(b, L)
-  local left = truce_left(b, L)
-  if left and L.owed <= 0 then return {"lp.invoice-truce", shared.corp_label(b.corp), tostring(left)} end
+  local due = L.due and math.ceil((L.due - game.tick) / 3600)
+  if due and due > 0 then return {"lp.invoice-due", shared.corp_label(b.corp), ITEM, tostring(math.ceil(L.owed)), tostring(due)} end
   return {"lp.invoice", shared.corp_label(b.corp), ITEM, tostring(math.ceil(L.owed))}
 end
 
@@ -83,8 +85,8 @@ local function draw(b, L)
       color = shared.CORPS[b.corp].color, scale = 1.1, alignment = "center", use_rich_text = true, forces = {L.owner}}}
   end
   L.draw[1].text = owed_text(b, L)
-  -- A truce it bought: an amber light by night, as the trade post's.
-  local lit = truce_left(b, L) ~= nil
+  -- Overdue, a collection on its way: an amber light by night.
+  local lit = b.collect ~= nil and b.collect.owner == L.owner and game.tick < b.collect.till
   local on = L.draw[2] and L.draw[2].valid
   if lit and not on then
     L.draw[2] = rendering.draw_light{surface = e.surface, target = e, sprite = "utility/light_small", scale = 1, intensity = 0.8,
@@ -144,12 +146,15 @@ local function bill(b)
     base.trace(b, string.format("ledger: %d lost to biters round %.0f,%.0f not billed (%s)", u.n, mx, my, why))
     return
   end
-  local L = b.ledger or {owner = owner, owed = 0, billed = 0, paid = 0, bills = 0, total_bills = 0, round = 0, truces = 0}
+  local L = b.ledger or {owner = owner, owed = 0, billed = 0, paid = 0, bills = 0, total_bills = 0, round = 0, paid_off = 0,
+    collections = 0}
   b.ledger = L
+  local from = select(2, polluter(b, near))
+  L.due = L.due or game.tick + OVERDUE
   L.owed, L.billed = L.owed + u.cost, L.billed + u.cost
   L.bills, L.total_bills = L.bills + 1, L.total_bills + 1
   L.open = L.open or {}
-  table.insert(L.open, {nest = near, at = {near.position.x, near.position.y}, cost = u.cost})
+  table.insert(L.open, {nest = near, at = {near.position.x, near.position.y}, cost = u.cost, from = from and {from.x, from.y}})
   mark(b, L, L.open[#L.open])
   raise_post(b, L)
   draw(b, L)
@@ -161,7 +166,10 @@ end
 
 local function pay(b, L)
   local e = L.post
-  if not (e and e.valid) then return raise_post(b, L) and draw(b, L) end
+  if not (e and e.valid) then
+    if L.owed <= 0 then return end
+    return raise_post(b, L) and draw(b, L)
+  end
   local inv = e.get_inventory(defines.inventory.chest)
   local took = 0
   for _, it in pairs(inv.get_contents()) do
@@ -176,16 +184,13 @@ local function pay(b, L)
   L.paid, L.round = L.paid + took, L.round + took
   b.parts = (b.parts or 0) + math.floor(took)
   if L.owed <= 0 then
-    -- Paid off: a truce, by what this round paid.
-    local minutes = math.max(MIN_TRUCE, math.min(MAX_TRUCE, math.floor(L.round / VALUE_PER_MINUTE)))
-    storage.truces = storage.truces or {}
-    local k = b.corp .. "|" .. L.owner
-    storage.truces[k] = math.max(storage.truces[k] or 0, game.tick) + minutes * 3600
-    L.owed, L.bills, L.round, L.truces, L.open = 0, 0, 0, L.truces + 1, {}
+    -- Paid off: the bills closed, no collection; nothing more (no truce since 0.2.325).
+    L.owed, L.bills, L.round, L.paid_off, L.open, L.due = 0, 0, 0, L.paid_off + 1, {}, nil
     unmark(L)
-    shared.reply(game.forces[L.owner], e.position, {"lp.invoice-paid", shared.corp_label(b.corp), tostring(minutes)})
-    standing.incident(b.corp, "invoice paid", e.position, string.format("%d minutes of truce", minutes))
-    base.trace(b, string.format("ledger: paid off; a truce of %d minutes", minutes))
+    if b.collect and b.collect.owner == L.owner then b.collect = nil end
+    shared.reply(game.forces[L.owner], e.position, {"lp.invoice-paid", shared.corp_label(b.corp)})
+    standing.incident(b.corp, "invoice paid", e.position, string.format("%d paid", math.floor(L.paid)))
+    base.trace(b, "ledger: paid off; no collection")
   end
   base.trace(b, string.format("ledger: %s paid %d (owed %d)", L.owner, math.floor(took), math.ceil(L.owed)))
   draw(b, L)
@@ -202,7 +207,8 @@ function ledger.tick(tick)
         close(b, "the camp is gone")
       elseif L then
         pay(b, L)
-        if tick % 600 == 41 then draw(b, L) end
+        if b.ledger and L.owed > 0 and L.due and tick >= L.due and not b.collect then ledger.collect(b, L) end
+        if b.ledger and tick % 600 == 41 then draw(b, L) end
       end
       if beat and not b.fallen and b.lander and b.lander.valid then bill(b) end
     end
@@ -233,16 +239,62 @@ function ledger.nest_died(nest, force)
         standing.incident(b.corp, "invoice disputed", nest.position, string.format("%d struck", math.ceil(before - L.owed)))
         base.trace(b, string.format("ledger: %s killed the nest at %.0f,%.0f its bill named; %d struck (owed %d)", force.name,
           nest.position.x, nest.position.y, math.ceil(before - L.owed), math.ceil(L.owed)))
-        if L.owed <= 0 and not truce_left(b, L) then close(b, "disputed: nothing owed") else draw(b, L) end
+        if L.owed <= 0 then close(b, "disputed: nothing owed") else draw(b, L) end
       end
     end
   end
 end
 
+-- Overdue: a collection, by force. Its raid weighs the billed player's buildings by the polluter the oldest open bill
+-- named (ops.collect_weight), comes within COLLECT_SOON, and closes the bills when it goes (ops.on_collect).
+function ledger.collect(b, L)
+  local at
+  for _, o in ipairs(L.open or {}) do if o.from then at = o.from break end end
+  if not at then
+    local sp = game.forces[L.owner].get_spawn_position(game.surfaces[b.surface])
+    at = {sp.x, sp.y}
+  end
+  b.collect = {owner = L.owner, at = at, since = game.tick, till = game.tick + COLLECT_TICKS}
+  b.next_op = math.min(b.next_op or 0, game.tick + COLLECT_SOON)
+  L.collections = L.collections + 1
+  b.collections = (b.collections or 0) + 1
+  local f = game.forces[L.owner]
+  if f then shared.notice(f, {"lp.invoice-overdue", shared.corp_label(b.corp), string.format("[gps=%d,%d,%s]", at[1], at[2],
+    game.surfaces[b.surface].name)}) end
+  standing.incident(b.corp, "invoice overdue", {x = at[1], y = at[2]}, string.format("%d owed: a collection", math.ceil(L.owed)))
+  base.trace(b, string.format("ledger: overdue (%d owed); a collection on %s round %.0f,%.0f", math.ceil(L.owed), L.owner, at[1], at[2]))
+  draw(b, L)
+end
+
+-- The target weight a collection gives (ops.relevance): the billed player's, within reach of the polluter.
+function ops.collect_weight(b, t)
+  local c = b.collect
+  if not (c and game.tick < c.till and t.owner == c.owner and t.pos) then return 1 end
+  local x, y = t.pos[1] or t.pos.x, t.pos[2] or t.pos.y
+  if (x - c.at[1]) ^ 2 + (y - c.at[2]) ^ 2 > COLLECT_REACH * COLLECT_REACH then return 1 end
+  return COLLECT_WEIGHT
+end
+
+-- The collection's raid went (ops.launch): the bills are collected.
+function ops.on_collect(b)
+  local L = b.ledger
+  b.collect = nil
+  b.collected = (b.collected or 0) + 1
+  if not L then return end
+  base.trace(b, string.format("ledger: the collection raid goes; %d owed collected", math.ceil(L.owed)))
+  L.owed, L.bills, L.open, L.due = 0, 0, {}, nil
+  unmark(L)
+  if L.post and L.post.valid then L.post.destroy() end
+  for _, o in ipairs(L.draw or {}) do if o.valid then o.destroy() end end
+  L.post, L.draw = nil, nil
+end
+
 -- Tests and screenshots: a bill of `cost` to `owner` now, the post raised.
 function ledger.debug(b, owner, cost)
-  local L = b.ledger or {owner = owner, owed = 0, billed = 0, paid = 0, bills = 0, total_bills = 0, round = 0, truces = 0}
+  local L = b.ledger or {owner = owner, owed = 0, billed = 0, paid = 0, bills = 0, total_bills = 0, round = 0, paid_off = 0,
+    collections = 0}
   b.ledger = L
+  L.due = L.due or game.tick + OVERDUE
   L.owed, L.billed, L.bills, L.total_bills = L.owed + cost, L.billed + cost, L.bills + 1, L.total_bills + 1
   raise_post(b, L)
   draw(b, L)
@@ -252,7 +304,9 @@ end
 function ledger.stats(b)
   local L = b.ledger
   return {owed = L and math.ceil(L.owed) or 0, billed = L and L.billed or 0, paid = L and L.paid or 0,
-    bills = L and L.total_bills or 0, open = L and L.bills or 0, truces = L and L.truces or 0,
+    bills = L and L.total_bills or 0, open = L and L.bills or 0, paid_off = L and L.paid_off or 0,
+    collections = b.collections or 0, collecting = b.collect ~= nil and game.tick < b.collect.till,
+    collected = b.collected or 0,
     post = L and L.post and L.post.valid and L.post.position or nil, owner = L and L.owner,
     open_bills = L and L.open and table_size(L.open) or 0, disputed = b.disputed or 0,
     marked = (function() local n = 0 for _, list in pairs(L and L.marks or {}) do if list[1] and list[1].valid then n = n + 1 end end return n end)(),

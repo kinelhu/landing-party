@@ -3,7 +3,7 @@
 --   scripts/film.sh gallery fresh.zip docs/review/stills-redo.lua
 local row = {
   {"lab", "player"}, {"lp-optics-lab", "lp-serenity"}, {"lp-grubstake-optics-lab", "lp-grubstake"},
-  {"small-lamp", "player"}, {"lp-pact-breaker", "player"}, {"lp-trade-post", "player"}, {"lp-claim-marker", "player"},
+  {"small-lamp", "player"}, {"lp-pact-breaker", "player"}, {"lp-claim-marker", "player"},
   {"lp-rally-beacon", "player"}, {"lp-muster-point", "player"}, {"steel-chest", "player"}, {"lp-barracks", "player"},
   {"medium-electric-pole", "player"}, {"lp-pylon", "lp-serenity"}, {"lp-grubstake-pylon", "lp-grubstake"},
   {"lp-jammer", "lp-serenity"}, {"lp-orbital-relay", "lp-serenity"}, {"lp-pacifier", "lp-serenity"},

@@ -139,8 +139,8 @@ cb = canvas.getbbox()
 canvas = canvas.crop((cb[0], cb[1] + int((cb[3] - cb[1]) * 0.38), cb[2], cb[3]))
 write("lp-orbital-cannon", canvas); done.append("lp-orbital-cannon")
 # Modelled buildings (tools/blender/player_buildings.py): their north sprite, not the film's old vanilla one.
-for item, key in (("lp-rally-beacon", "rally-beacon"), ("lp-threat-scanner", "threat-scanner"), ("lp-trade-post", "trade-post"),
-                  ("lp-border-stake", "border-stake"), ("lp-claim-marker", "claim-marker"), ("lp-pact-breaker", "pact-breaker")):
+for item, key in (("lp-rally-beacon", "rally-beacon"), ("lp-threat-scanner", "threat-scanner"),
+                  ("lp-claim-marker", "claim-marker"), ("lp-pact-breaker", "pact-breaker")):
     write(item, Image.open(os.path.join(REPO, "landing-party", "graphics", "player", key, "north-body.png")).convert("RGBA"), thr=120)
 # The muster point: its mast and floodlight are thin and dark, and the film's matte lost the mast (a light floating free
 # of a box, 0.2.322): its own sprite, as the small modelled buildings above.

@@ -18,8 +18,7 @@ and abandoned property belongs to whoever takes it.
 
 Grubstake does not want a war. Nadia Szabo files its claims on Nauvis, and Marit Holm sends its crews out at night to
 take what nobody is guarding. Its camps sit among the biter nests with barely a fence, and the swarm leaves them alone;
-Dr. H. Ness, the company's biologist, has not said why. A payment at its trade post keeps its trucks at home for a
-while.
+Dr. H. Ness, the company's biologist, has not said why. It cannot be bought off.
 
 ::: {.pullquote cite="A. Pell, Managing Partner"}
 If you wanted it, you would have guarded it.
@@ -105,7 +104,7 @@ range.
 
 ![A Grubstake siege column of buggies leaves its camp along its own road.](media/stills/grubstake-column.jpg)
 
-## Claims and the trade post
+## Claims and the road
 
 **Prospecting.** A grown camp picks the charted ore patch nearest your base that none of your drills is mining, marks
 it on your map (*Mineral rights reassigned*) and sends a buggy to plant a claim stake there. {{< var
@@ -131,11 +130,6 @@ A claim on a patch Grubstake staked, as its hauler built it. The stake is remove
 **The road.** A claim has no power line or belt to the camp. Haulers empty its bins and drive the ore home, and a
 hauler killed on the way spills its ore. A claim that has sent no ore home for a while lapses: the camp stops
 rebuilding it, and its drills are yours to capture.
-
-**The trade post.** You can build one from the start. {{< var desc.entity_trade_post >}} Once it holds enough, the
-nearest camp sends a hauler for it, and what the goods are worth sets the length of the truce. While it lasts, its lamp
-is lit and Grubstake sends no raid, skim, strip camp or claim jumper at you and lays no new tap. If the hauler is
-destroyed on its way home, by you or by Kessler-Hayashi, there is no truce and the goods spill.
 
 ## The pact with the biters {#sec-pact}
 

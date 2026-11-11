@@ -350,11 +350,11 @@ shared.CANNON = {STORE = 2, CYCLE = 180, FUEL = 500, RADIUS = 20, SHELLS = 10, C
 shared.DEFOLIATE_RADIUS = 6
 -- And the player's other devices and weapons, likewise read by their descriptions (__1__, __2__; 2026-11-06: the
 -- numbers had been typed in the locale): the claim marker's reach (ops.marked), the pact breaker's minutes
--- (marker.lua), the invoice post's truce bounds in minutes (ledger.lua), the rail rifle's line (components.lua) and
+-- (marker.lua), the invoice post's grace before a collection in minutes (ledger.lua), the rail rifle's line (components.lua) and
 -- the cluster shell's bomblets.
 shared.CLAIM_MARK_RADIUS = 40
 shared.BREAKER_MINUTES = 3
-shared.TRUCE_MINUTES = {10, 60}
+shared.INVOICE_GRACE = 10
 shared.RAIL_RANGE = 30
 shared.CLUSTER_BOMBLETS = 10
 shared.JAM_RADIUS = 50       -- a jammer mast downs robots and blinds threat scanners within this

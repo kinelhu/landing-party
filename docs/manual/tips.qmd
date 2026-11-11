@@ -33,8 +33,6 @@
   rebuild them at once from what is in storage.
 - **Read your power statistics.** A consumer you never built whose draw climbs every few minutes is a power tap.
   Follow the amber pylons back to find it.
-- **Pay the trade post in circuits or modules.** Plates are worth little to Grubstake. A few stacks of circuits buy a
-  much longer truce than a chest full of iron.
 - **Do not chase raiders into spawners.** The biters let Grubstake's units through and turn on yours.
 - **Double the wall where dozers come.** A dozer's charge crushes the walls in its lane until some way past the first.
   A second wall and line of turrets set further back are still standing when it stops.
@@ -53,8 +51,8 @@
   artillery targeting remote lets it reach the mortars.
 - **Give each field dome its own power.** A dome is up only while powered. On the same poles as your turrets, one cut
   takes down both.
-- **Bring a border stake when you pay an invoice.** The truce is your only chance to set a border, and the border
-  outlasts the truce.
+- **Pay an invoice or defend its polluter.** An unpaid bill brings a raid on the buildings near the polluter it names.
+  Pay it in circuits before the time runs out, or put turrets there first.
 - **Clear the spawners between your factory and its camp yourself.** Their attacks on Kessler-Hayashi are what it
   bills you for.
 - **Guard your small outposts too.** Anything an operation destroys resets the count of failures that makes a camp

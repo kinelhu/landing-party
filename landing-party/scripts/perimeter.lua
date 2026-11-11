@@ -135,7 +135,7 @@ function ops.perimeter(b, tick)
   local fast = storage.perimeter_fast
   local start, every = fast and 3600 or PERIMETER_START, fast and 3600 or PERIMETER_TICKS
   if tick - b.landed < start then return end
-  -- A truce bought at the invoice post (ledger.lua): the line holds.
+  -- A staged hold (debug_truce: tests and films only; the player buys no truce since 0.2.325): the line holds.
   for _, f in ipairs(shared.player_forces()) do
     if stance.standing(b.corp, f.name) == "truce" then return end
   end
@@ -180,13 +180,10 @@ function ops.perimeter(b, tick)
       end
     end
   end
-  -- How far it may step toward a target: short of the target, a border, a rival's claim in the way.
+  -- How far it may step toward a target: short of the target, a rival's claim in the way.
   local function cap_toward(t, td)
     local c, why = PERIMETER_MAX, "max"
     if td and td + 40 < c then c, why = td + 40, "target" end
-    -- A border the player set and keeps (border.lua): the line holds short of it.
-    local bc = ops.border_cap and ops.border_cap(b)
-    if bc and bc < c then c, why = bc, "border" end
     -- A rival's claim caps it only where the step goes: the arc faces its target (cordon.lua, 60 degrees either side),
     -- and Grubstake's camp 150 tiles off to one side held Serenity's line still in every direction for three hours (12345).
     local ta = t and t.valid and math.atan2(t.position.y - b.origin.y, t.position.x - b.origin.x)

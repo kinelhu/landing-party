@@ -7592,11 +7592,11 @@ scenarios.factory = function()
     local sk = lp("skim", S.g) or {}
     local L = lp("ledger", storage.id) or {}
     info(string.format("factory %s: income %d ore; lost %d, rebuilt %d, turrets added %d; Grubstake raids %d (razed %d, looted %d, "
-      .. "dismantled %d), skims %d (%d items), trucks killed %d; Serenity raids %d (razed %d), sieges %d, bills %d (paid %d, truces %d), "
+      .. "dismantled %d), skims %d (%d items), trucks killed %d; Serenity raids %d (razed %d), sieges %d, bills %d (paid %d, collections %d), "
       .. "leaders killed %d, broken %d, regrouped %d",
       label, A.income, A.lost, A.rebuilt, A.turrets, g.ops.launched or 0, g.razed or 0, g.ops.looted or 0, g.ops.dismantled or 0,
       sk.skims or 0, sk.skimmed or 0, A.trucks, s.ops.launched or 0, s.razed or 0, s.ops.sieges or 0, L.bills or 0, A.paid,
-      L.truces or 0, A.leaders, g.ops.broken or 0, s.ops.regrouped or 0))
+      L.collections or 0, A.leaders, g.ops.broken or 0, s.ops.regrouped or 0))
     -- Every mechanic's count so far (what fires, to prune by): Grubstake's, then Serenity's.
     local gb, sb = g, s
     local pr = lp("prospect_stats", S.g) or {}
@@ -8199,6 +8199,16 @@ scenarios.hazard = function()
           end
           if S.d1 and not S.d1_tick then S.d1_tick = game.tick + 5 * 3600 end
         end
+        -- unpaid: once a collection is called, three assemblers by the furnace for it to come for (the furnace alone is
+        -- kept standing, and an aborted raid on it cooled it: the collection was called and found no target, 0.2.325).
+        if unpaid and L and L.collecting and not S.bait and S.furnace then
+          S.bait = {}
+          for k = 1, 3 do
+            local q = surface().find_non_colliding_position("assembling-machine-1", {S.furnace.position.x + 12 + 4 * k, S.furnace.position.y}, 10, 1)
+            local e = q and surface().create_entity{name = "assembling-machine-1", position = q, force = "player"}
+            if e then table.insert(S.bait, e) end
+          end
+        end
         if pay and L and L.owed > 0 and L.post then
           local post = surface().find_entities_filtered{name = "lp-invoice-post", position = L.post, radius = 1}[1]
           if post then S.paid_in = S.paid_in + post.insert{name = "electronic-circuit", count = L.owed} end
@@ -8253,9 +8263,11 @@ scenarios.hazard = function()
     if billing then
       local L = lp("ledger", storage.id)
       local now = lp("standing", "serenity", "player")
-      info(string.format("ledger: bills %d, billed %d, paid %d (put in %d), owed %d, truces %d (seen %s), standing %s, furnace %s",
-        L.bills, L.billed, L.paid, S.paid_in, L.owed, L.truces, tostring(S.saw_truce), now, S.furnace and "placed" or "none"))
-      -- Serenity is at war from landing (the user, 2026-10-19): paying off buys a truce, the only quiet.
+      info(string.format("ledger: bills %d, billed %d, paid %d (put in %d), owed %d, paid off %d, collections %d (raids %d), "
+        .. "truce seen %s, standing %s, furnace %s", L.bills, L.billed, L.paid, S.paid_in, L.owed, L.paid_off, L.collections,
+        L.collected, tostring(S.saw_truce), now, S.furnace and "placed" or "none"))
+      -- Serenity is at war from landing (the user, 2026-10-19) and sells no quiet (0.2.325, the user: "the hostility is the
+      -- most fun part"): paying closes the bills; unpaid past its grace, a bill is collected by a raid.
       if clean then
         check("hazard: ledger, no cloud on the nests, no bill", L.bills == 0 and now == "enemy", string.format("%d bills, %s", L.bills, now))
       elseif disputed then
@@ -8266,13 +8278,17 @@ scenarios.hazard = function()
           and math.abs(S.d2.after - math.max(0, S.d2.owed - S.d2.due)) <= 1 and S.d2.disputed >= 1, serpent.line(S.d2))
         check("hazard: disputed, the billed nest was marked for the player", (S.d2 and S.d2.marked or 0) >= 1, serpent.line(S.d2))
       elseif pay then
-        check("hazard: ledger, billed three times or more, paid off, a truce bought", L.bills >= 3 and L.paid > 0
-          and L.truces >= 1 and S.saw_truce, string.format("%d bills, paid %d, %d truces", L.bills, L.paid, L.truces))
+        check("hazard: ledger, billed three times or more, paid off, nothing collected, no truce", L.bills >= 3 and L.paid > 0
+          and L.paid_off >= 1 and L.collections == 0 and not S.saw_truce, string.format("%d bills, paid %d, paid off %d, %d collections, truce %s",
+          L.bills, L.paid, L.paid_off, L.collections, tostring(S.saw_truce)))
       else
         -- Two bills at least (three until 2026-10-20: its line now steps, and the third losses fell by nests the
         -- player's cloud does not reach, rightly not billed).
-        check("hazard: ledger, unpaid, no truce, still at war", L.bills >= 2 and L.owed > 0 and L.truces == 0 and not S.saw_truce
-          and now == "enemy", string.format("%d bills, owed %d, %s", L.bills, L.owed, now))
+        check("hazard: ledger, unpaid, still at war, no truce", L.bills >= 2 and not S.saw_truce and now == "enemy",
+          string.format("%d bills, owed %d, %s, truce %s", L.bills, L.owed, now, tostring(S.saw_truce)))
+        -- Overdue (0.2.325): a collection called, and its raid went.
+        check("hazard: ledger, unpaid past its grace, a collection raid went", L.collections >= 1 and L.collected >= 1,
+          string.format("%d collections, %d raids", L.collections, L.collected))
       end
       return
     end
@@ -8550,87 +8566,6 @@ scenarios.bend = function()
   end)
 end
 
--- Tribute (the rivals consult, slice 5): an enemy Grubstake camp (provoked at the start), three undefended player
--- assemblers 100 tiles out; at 4 minutes a trade post 50 out with 500 iron (worth 5 minutes of truce). The post emptied,
--- a truce; no raid on the player starts while it lasts; afterwards an enemy again, and raids on the player resume.
-scenarios.tribute = function()
-  schedule(60, function()
-    lp("debug_tune", {era = 1, history_off = true})
-    S.g = lp("arrive", 1, {x = 0, y = 0}, params.distance, {corp = "grubstake"})
-    for _ = 1, 2 do lp("debug_depot", S.g, 3000) end
-  end)
-  schedule(2 * 3600, function()
-    local o = lp("stats", S.g).origin
-    S.o = o
-    local len = math.sqrt(o.x * o.x + o.y * o.y)
-    local ux, uy = -o.x / len, -o.y / len
-    for k = -1, 1 do
-      local p = surface().find_non_colliding_position("assembling-machine-1", {o.x + ux * 100 - uy * 12 * k, o.y + uy * 100 + ux * 12 * k}, 8, 1)
-      surface().create_entity{name = "assembling-machine-1", position = p, force = "player"}
-    end
-  end)
-  -- Built again before the truce runs out, as a player would (Serenity's raid took the last of the first three during the
-  -- truce, a reprisal having brought its operation forward, and Grubstake found nothing of the player's to raid after).
-  schedule(9 * 3600, function()
-    local o = S.o
-    local len = math.sqrt(o.x * o.x + o.y * o.y)
-    local ux, uy = -o.x / len, -o.y / len
-    for k = -1, 1 do
-      local p = surface().find_non_colliding_position("assembling-machine-1", {o.x + ux * 90 - uy * 12 * k, o.y + uy * 90 + ux * 12 * k}, 8, 1)
-      surface().create_entity{name = "assembling-machine-1", position = p, force = "player"}
-    end
-  end)
-  schedule(4 * 3600, function()
-    local p = surface().find_non_colliding_position("lp-trade-post", {S.o.x + 50, S.o.y}, 10, 1)
-    S.post = surface().create_entity{name = "lp-trade-post", position = p, force = "player", raise_built = true}
-    S.post.insert{name = "iron-plate", count = 500}
-    for t = 60, 200 * 60, 60 do
-      schedule(game.tick - storage.t0 + t * 60, function() if S.post and S.post.valid then S.post_last = S.post.get_item_count() end end)
-    end
-  end)
-  -- Raids on the player, by the tick each started (the operations log).
-  local seen = {}
-  S.raids = {}
-  for t = 2 * 3600, END - 120, 300 do
-    schedule(t, function()
-      for _, o in ipairs(lp("stats", S.g).ops.log or {}) do
-        local k = tostring(o.started) .. o.kind
-        if o.owner == "player" and not seen[k] then seen[k] = true; table.insert(S.raids, o.started) end
-      end
-      local st = lp("standing", "grubstake")
-      local lit = (lp("trade_stats").lit or 0) > 0
-      if st == "truce" then
-        S.truce_from = S.truce_from or game.tick
-        S.truce_to = game.tick
-        S.lit_during = (S.lit_during or 0) + (lit and 1 or 0)
-        S.samples_during = (S.samples_during or 0) + 1
-      elseif S.truce_to then
-        S.lit_after = (S.lit_after or 0) + (lit and 1 or 0)
-      end
-    end)
-  end
-  schedule(END - 60, function()
-    local during, after = 0, 0
-    for _, t in ipairs(S.raids) do
-      if S.truce_from and t >= S.truce_from and t <= S.truce_to then during = during + 1 end
-      if S.truce_to and t > S.truce_to then after = after + 1 end
-    end
-    -- (Its last reading while it stood: a raid after the truce razed the post, and read at the end it held -1.)
-    local left = S.post and S.post.valid and S.post.get_item_count() or S.post_last or -1
-    info(string.format("tribute: %s; truce %s to %s; raids on the player %s (during %d, after %d); the post holds %d; standing %s",
-      serpent.line(lp("trade_stats")), tostring(S.truce_from), tostring(S.truce_to), serpent.line(S.raids), during, after, left,
-      lp("standing", "grubstake")))
-    check("tribute: the post was emptied, a truce", left == 0 and S.truce_from ~= nil, tostring(left))
-    check("tribute: no raid on the player during the truce", during == 0, tostring(during))
-    check("tribute: an enemy again after it", lp("standing", "grubstake") == "enemy", lp("standing", "grubstake"))
-    -- The post's lamp (Fable's notices consult): lit while the truce holds, dark after (a sample may straddle the edge).
-    check("tribute: the post lit during the truce, dark after", S.samples_during and S.lit_during >= S.samples_during - 1
-      and (S.lit_after or 0) <= 1, string.format("lit %s of %s during, %s after", tostring(S.lit_during),
-      tostring(S.samples_during), tostring(S.lit_after)))
-    check("tribute: raids on the player resumed", after >= 1, tostring(after))
-  end)
-end
-
 -- Road (the rivals consult, slice 4): the prospect setup (three iron patches, the nearest drilled by the player); a haul
 -- every 2 minutes, a claim lapsing after 6 without ore home. Uncut: ore goes home from the claims. LP_MIX=cut: once a
 -- claim stands every Grubstake truck near it is destroyed: ore spilled, the delay told, the claim lapses.
@@ -8697,64 +8632,6 @@ scenarios.road = function()
     end
     check("road: ore went home from the claims", (rs.hauls or 0) >= 1 and (rs.hauled or 0) > 0, serpent.line(rs))
     check("road: nothing lapsed", (rs.lapsed or 0) == 0, serpent.line(rs))
-  end)
-end
-
--- Border (the rivals consult, slice 3): an unprovoked Serenity camp, its line a step a minute, a player relay 300 out
--- (lasting); a border stake 200 out toward it at 2 minutes: accepted (a rival), the line never past it in 20 minutes.
--- LP_MIX=breach: at 10 minutes an assembler of the player's at 160, on Serenity's side: the treaty broken, Serenity an
--- enemy, the treaty void.
-scenarios.border = function()
-  local breach = params.mix == "breach"
-  schedule(30, function() lp("debug_tune", {perimeter_fast = true}) end)
-  schedule(60, function() for _ = 1, 2 do lp("debug_depot", storage.id, 4000) end end)
-  schedule(90, function()
-    local o = lp("stats", storage.id).origin
-    S.o = o
-    local len = math.sqrt(o.x * o.x + o.y * o.y)
-    S.u = {-o.x / len, -o.y / len}
-    local c = {math.floor(o.x + S.u[1] * 300), math.floor(o.y + S.u[2] * 300)}
-    flatten(c[1] - 6, c[2] - 6, c[1] + 6, c[2] + 6)
-    S.relay = surface().create_entity{name = "lp-command-relay", position = c, force = "player"}
-    S.relay.destructible = false
-  end)
-  -- Serenity is at war from landing (the user, 2026-10-19): it treats only under a truce (bought at its invoice post;
-  -- set here), and the border holds after the truce ends.
-  schedule(2 * 3600 - 60, function() lp("debug_truce", "serenity", "player", 5) end)
-  schedule(2 * 3600, function()
-    local p = {S.o.x + S.u[1] * 200, S.o.y + S.u[2] * 200}
-    flatten(p[1] - 3, p[2] - 3, p[1] + 3, p[2] + 3)
-    S.stake = surface().create_entity{name = "lp-border-stake", position = p, force = "player", raise_built = true}
-    S.stake.destructible = false
-    S.held0 = lp("borders").held
-  end)
-  if breach then
-    schedule(10 * 3600, function()
-      local p = surface().find_non_colliding_position("assembling-machine-1", {S.o.x + S.u[1] * 160, S.o.y + S.u[2] * 160}, 10, 1)
-      S.intruder = surface().create_entity{name = "assembling-machine-1", position = p, force = "player"}
-      S.intruder.destructible = false
-    end)
-  end
-  local maxp = 0
-  for t = 2 * 3600 + 600, END - 120, 600 do
-    schedule(t, function() maxp = math.max(maxp, lp("stats", storage.id).perimeter or 0); S.maxp = maxp end)
-  end
-  schedule(END - 60, function()
-    local st = lp("stats", storage.id)
-    local standing_now = lp("standing", "serenity")
-    info(string.format("border: accepted %s; perimeter at most %.0f (now %.0f); standing %s; borders %s", tostring(S.held0),
-      S.maxp or -1, st.perimeter or -1, standing_now, serpent.line(lp("borders"))))
-    check("border: accepted", S.held0 == 1, tostring(S.held0))
-    if breach then
-      check("border: built on its side, the treaty broke, at war", standing_now == "enemy", standing_now)
-      -- The treaty void (the line itself has nowhere to go: it stops 40 past the player's nearest building, the
-      -- intruder inside its claim; the enemy raids it instead).
-      check("border: the treaty is void", lp("borders").held == 0, serpent.line(lp("borders")))
-      return
-    end
-    check("border: the line held short of the stake", (S.maxp or 999) <= 200, string.format("%.0f", S.maxp or -1))
-    check("border: the truce over, at war, the border held", standing_now == "enemy" and lp("borders").held == 1,
-      standing_now .. " " .. serpent.line(lp("borders")))
   end)
 end
 
@@ -17604,7 +17481,7 @@ script.on_init(function()
   if not storage.id then error("lp-sim: landing failed") end
   -- Operations' mechanics are tested here, not tempers (Serenity only strikes once provoked): provoked from the
   -- start, except where tempers are the subject.
-  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, border = true, gate = true,
+  local TEMPERS = {temper = true, strip = true, contact = true, line = true, grudge = true, visit = true, standing = true, gate = true,
     mended = true, pool = true, remembered = true, factory = true}
   -- Crews killed provoke (the user, 2026-10-17): those mixes start unprovoked, or the check proves nothing.
   -- And crystal marker: provoked, Serenity (whom claim markers do not hold) raided the marked outpost the test watches.

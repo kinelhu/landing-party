@@ -7,7 +7,7 @@ local rows = {
    "radar", "lp-radar", "lp-grubstake-radar", "electric-mining-drill", "lp-drill", "lp-strip-drill"},
   {"gun-turret", "lp-turret", "lp-gun-turret", "lp-grubstake-turret", "flamethrower-turret", "lp-flamer", "lp-grubstake-flamer",
    "lp-flak-turret", "medium-electric-pole", "lp-pylon", "lp-grubstake-pylon", "lp-rally-beacon"},
-  {"lp-barracks", "lp-muster-point", "lp-command-relay", "lp-threat-scanner", "lp-trade-post", "lp-border-stake",
+  {"lp-barracks", "lp-muster-point", "lp-command-relay", "lp-threat-scanner",
    "lp-claim-marker", "lp-pact-breaker", "lp-player-bait", "lp-jammer", "lp-orbital-relay", "lp-pacifier"},
 }
 local FORCE = function(n)

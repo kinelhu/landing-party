@@ -39,9 +39,7 @@ local crew = require("__landing-party__.scripts.crew")
 local cordon = require("__landing-party__.scripts.cordon")
 local prospect = require("__landing-party__.scripts.prospect")
 local standing = require("__landing-party__.scripts.standing")
-local border = require("__landing-party__.scripts.border")
 local road = require("__landing-party__.scripts.road")
-local trade = require("__landing-party__.scripts.trade")
 local ledger = require("__landing-party__.scripts.ledger")
 local skim = require("__landing-party__.scripts.skim")
 local prowl = require("__landing-party__.scripts.prowl")
@@ -120,7 +118,7 @@ local WATCH_DEPS = {
 script.on_event(defines.events.on_tick, function(e)
   -- (First: a promotion swaps a unit before any module walks its lists this tick.)
   veterancy.tick(e.tick)
-  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); border.tick(e.tick); road.tick(e.tick); trade.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
+  biters.tick(); base.tick(e.tick); faction.tick(e.tick); command.tick(e.tick); phases.tick(e.tick); rd.tick(e.tick); war.tick(e.tick); pact.tick(e.tick); jumper.tick(e.tick); tap.tick(e.tick); bait.tick(e.tick); strike.tick(e.tick); marker.tick(e.tick); crew.tick(e.tick); prospect.tick(e.tick); standing.tick(e.tick); road.tick(e.tick); ledger.tick(e.tick); skim.tick(e.tick); prowl.tick(e.tick); dome.tick(e.tick); dome.player_tick(e.tick); orbital.tick(e.tick); map.tick(e.tick); jammer.tick(e.tick); scanner.tick(e.tick); roads.tick(e.tick); pods.tick(e.tick); landfx.tick(e.tick); burstfx.tick(e.tick); belts.tick(e.tick); scorcher.tick(e.tick); stun.tick(e.tick); fall.tick(e.tick); separate.tick(e.tick); ram.tick(e.tick); ram.charge_tick(e.tick); cannon.tick(e.tick); herd.tick(e.tick); farm.tick(e.tick); creep.tick(e.tick); know.tick(e.tick)
   oplog.tick(e.tick)
   watch.tick(e.tick, WATCH_DEPS)
 end)
@@ -131,8 +129,7 @@ local PLAYER_BUILT = {{filter = "name", name = "lp-barracks"}, {filter = "name",
 -- The player's poles too: one built by a corporation's pylon is not wired to it (base.unwire).
 local BUILT = {{filter = "type", type = "electric-pole"}, {filter = "name", name = "lp-player-bait"},
   {filter = "name", name = "lp-strike-beacon"}, {filter = "name", name = "lp-pact-breaker"},
-  {filter = "name", name = "lp-claim-marker"}, {filter = "name", name = "lp-border-stake"},
-  {filter = "name", name = "lp-trade-post"}, {filter = "name", name = "lp-threat-scanner"}}
+  {filter = "name", name = "lp-claim-marker"}, {filter = "name", name = "lp-threat-scanner"}}
 for _, f in ipairs(PLAYER_BUILT) do table.insert(BUILT, f) end
 -- What a player builds inside Serenity's territory provokes it (ops.encroached).
 for _, t in ipairs(ops.ENCROACH_TYPES) do table.insert(BUILT, {filter = "type", type = t}) end
@@ -145,8 +142,6 @@ local function on_built(e)
   end
   if ent and ent.valid and ent.name == "lp-strike-beacon" then return strike.placed(ent) end
   if ent and ent.valid and (ent.name == "lp-pact-breaker" or ent.name == "lp-claim-marker") then return marker.placed(ent) end
-  if ent and ent.valid and ent.name == "lp-border-stake" then return border.placed(ent) end
-  if ent and ent.valid and ent.name == "lp-trade-post" then return trade.placed(ent) end
   if ent and ent.valid and ent.name == "lp-threat-scanner" then return scanner.placed(ent) end
   if ent and ent.valid and ent.name == "lp-player-dome" then return dome.player_built(ent) end
   if ent and ent.valid and ent.type == "electric-pole" then
@@ -1138,7 +1133,6 @@ remote.add_interface("landing-party", {
   belt_stats = function(id) return storage.bases[id] and belts.stats(storage.bases[id]) end,
   debug_crew = function(id, pos, names) return storage.bases[id] and crew.debug_module(storage.bases[id], pos, names) end,
   standing = function(corp, owner) return standing.get(corp, owner or "player") end,
-  trade_stats = function() return trade.stats() end,
   -- Tests only: a mast of `corp` raised at `pos`, as a siege raises it.
   debug_jammer = function(corp, pos) local m = jammer.raise(game.surfaces[1], pos, game.forces[shared.CORPS[corp].force]); return m and m.unit_number end,
   ram_stats = function() return ram.stats() end,
@@ -1165,7 +1159,6 @@ remote.add_interface("landing-party", {
   -- Tests only: the unit numbers of the crews out (a Serenity drone flies on a harrier's body).
   crew_units = function() local out = {} for n in pairs(storage.crew_owner or {}) do out[n] = true end return out end,
   road_stats = function(id) return storage.bases[id] and road.stats(storage.bases[id]) end,
-  borders = function() return border.stats() end,
   incidents = function() return storage.incidents or {} end,
   prospect_stats = function(id) return storage.bases[id] and prospect.stats(storage.bases[id]) end,
   cordon_stats = function(id) return storage.bases[id] and cordon.stats(storage.bases[id]) end,
@@ -1173,12 +1166,15 @@ remote.add_interface("landing-party", {
   debug_sever = function(id) local b = storage.bases[id]; return b and ops.sever(b) end,
   debug_skim = function(id, pos) local b = storage.bases[id]; return b and skim.debug(b, pos) end,
   skim = function(id) local b = storage.bases[id]; return b and skim.state(b) end,
-  -- Tests only: a truce between a corporation and a player force, as the invoice post (ledger.lua) or the trade post sells.
+  -- Tests and films only: a staged hold between a corporation and a player force (stance "truce"); the player buys none
+  -- since 0.2.325.
   debug_truce = function(corp, owner, minutes)
     storage.truces = storage.truces or {}
     storage.truces[corp .. "|" .. owner] = game.tick + minutes * 3600
   end,
   debug_bill = function(id, owner, cost) local b = storage.bases[id]; return b and ledger.debug(b, owner, cost) end,
+  -- Tests and screenshots: its open bill overdue now, a collection called.
+  debug_overdue = function(id) local b = storage.bases[id]; if b and b.ledger then ledger.collect(b, b.ledger) return true end end,
   ledger = function(id) local b = storage.bases[id]; return b and ledger.stats(b) end,
   next_ore = function(id) local b = storage.bases[id]; return b and {at = b.next_ore, targets = b.ore_targets or 0} end,
   crew_stats = function(id) return storage.bases[id] and crew.stats(storage.bases[id]) end,

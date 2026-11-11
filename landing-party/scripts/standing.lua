@@ -1,5 +1,5 @@
 -- Standing (the rivals consult, slice 2; docs/arc.md: the corporations are rivals who become enemies). Toward each
--- player force a corporation is a rival or an enemy (a truce comes later), shown in notices and the incidents list:
+-- player force a corporation is a rival or an enemy, shown in notices and the incidents list:
 -- enemy once provoked (ops.provoke: its buildings or units hurt, its claim encroached; and, the user: "even a tolerant
 -- rival should not accept turrets in firing range. That's an aggression": a player turret within RANGE of its ground).
 -- A rival Grubstake still steals (soft raids, prospects, taps) but does not climb its ladder (ops.ladder: no flares,
@@ -20,7 +20,6 @@ local function corp_state(corp)
 end
 
 function standing.get(corp, owner)
-  if standing.truce and standing.truce(corp, owner) then return "truce" end
   if (shared.CORPS[corp].temper or {}).hostile then return "enemy" end
   local d = corp_state(corp)
   if d.provoked and d.provoked[owner] then return "enemy" end

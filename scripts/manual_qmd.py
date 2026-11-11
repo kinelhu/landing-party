@@ -316,7 +316,6 @@ def write(rp):
             # The hold of a turret it strikes (scorcher.hold): the game's own tesla stun, Space Age's tesla-turret-stun.
             "tesla_stun_s": fmt(d["sticker"]["tesla-turret-stun"]["duration_in_ticks"] / 60),
             "bill_every_min": fmt(minutes(ledger_src, "BEAT", "ledger BEAT")),
-            "truce_value": fmt(num(ledger_src, r"^local VALUE_PER_MINUTE, MIN_TRUCE, MAX_TRUCE = (\d+)", "VALUE_PER_MINUTE")),
         },
         # Standing down (war.lua), for every corporation; aggression scales the streak and the quiet hour.
         "war": {
@@ -489,7 +488,7 @@ def write(rp):
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")
     B += ["", "### Yours", "", "| Building | Health | What it does |", "|:--|--:|:--|"]
     for n in ("lp-barracks", "lp-rally-beacon", "lp-command-relay", "lp-muster-point", "lp-threat-scanner", "lp-player-mortar",
-              "lp-strip-drill", "lp-border-stake", "lp-trade-post", "lp-claim-marker", "lp-pact-breaker", "lp-player-bait",
+              "lp-strip-drill", "lp-claim-marker", "lp-pact-breaker", "lp-player-bait",
               "lp-player-dome", "lp-orbital-cannon", "lp-targeting-array"):  # (the strike beacon retired, 0.2.274)
         B.append(f"| {md(shown(n))} | {health(n)} | {desc_of(n)} |")
     # No picture gallery here: the labs head their tree columns, and the culture's buildings are on the annotated plan

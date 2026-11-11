@@ -17,12 +17,6 @@ shots[#shots + 1] = {name = "03-threat-scanner", tick = 246, pos = {132.0, -0.2}
 build[#build + 1] = {name = "lp-command-relay", force = "player", pos = {173.8, 0}}
 build[#build + 1] = {name = "radar", force = "player", pos = {178.2, 0}}
 shots[#shots + 1] = {name = "04-command-relay", tick = 248, pos = {176.0, -0.8}, zoom = 2.40, daytime = 0.05, hide_clouds = true}
-build[#build + 1] = {name = "lp-trade-post", force = "player", pos = {218.7, 0}}
-build[#build + 1] = {name = "wooden-chest", force = "player", pos = {221.3, 0}}
-shots[#shots + 1] = {name = "05-trade-post", tick = 250, pos = {220.0, -0.2}, zoom = 2.40, daytime = 0.05, hide_clouds = true}
-build[#build + 1] = {name = "lp-border-stake", force = "player", pos = {262.9, 0}}
-build[#build + 1] = {name = "small-electric-pole", force = "player", pos = {265.3, 0}}
-shots[#shots + 1] = {name = "06-border-stake", tick = 252, pos = {264.0, -0.2}, zoom = 2.40, daytime = 0.05, hide_clouds = true}
 build[#build + 1] = {name = "lp-claim-marker", force = "player", pos = {-1.1, 44}}
 build[#build + 1] = {name = "small-electric-pole", force = "player", pos = {1.4, 44}}
 shots[#shots + 1] = {name = "07-claim-marker", tick = 254, pos = {0.0, 43.7}, zoom = 2.40, daytime = 0.05, hide_clouds = true}

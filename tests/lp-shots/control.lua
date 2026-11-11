@@ -256,16 +256,16 @@ poll(4 * 3600 + 30, 20 * 3600, 20, function()
   end
 end)
 
--- 4. Serenity's invoice post, by day and, under a truce, by night.
+-- 4. Serenity's invoice post, by day and, overdue (a collection on its way), by night.
 schedule(5 * 3600, function()
   S.post = lp("debug_bill", S.ser, "player", 240)
   if S.post then shot("07-invoice", S.post, 1.8, false, "the invoice post at Serenity's line: a chest in its colour, the sum owed over it") end
 end)
 schedule(5 * 3600 + 120, function()
-  lp("debug_truce", "serenity", "player", 10)
+  lp("debug_overdue", S.ser)
 end)
 schedule(5 * 3600 + 800, function()
-  if S.post then shot("08-invoice-truce-night", S.post, 1.8, true, "by night under a truce: the amber light, the minutes left") end
+  if S.post then shot("08-invoice-overdue-night", S.post, 1.8, true, "by night, overdue: the amber light, a collection on its way") end
 end)
 
 -- 4b. Close up (the user's feedback, 2026-10-21): a lab at work (animated, a size up), a depot (Space Age's cargo bay),

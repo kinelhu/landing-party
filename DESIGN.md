@@ -168,14 +168,14 @@ document still says Serenity where it records history.
 | `/lp rig`, `/lp tap` on demand (`/lp flare` retired) | built | `jumper`, `tap` (`cmd`) |
 | Builders: yards build what they reach, crews the rest (Grubstake's truck, Serenity's drone), rebuilds too | built | `crew` (five), `pace` |
 | Serenity's cordon: arcs of posts built by drones (on plating, lit, painted post to post), a ring round a grown camp that does not spread, the claim behind them; old arcs recovered; mended when breached; a contact wall near the player; gate posts across the player's rails; ore it crosses claimed | built | `cordon` (six) |
-| Rivals: standing (rival, enemy, truce), incidents, map labels | built | `standing` |
+| Rivals: standing (rival, enemy; no truce since 0.2.325), incidents, map labels | built | `standing` |
 | Grubstake prospects the player's frontier; its road (claim trucks, lapse) | built | `prospect` (two), `road` (two) |
-| Serenity's border stake; Grubstake's trade post (truce); bending the line with a decoy | built | `border` (two), `tribute`, `bend` |
+| Bending the line with a decoy (the border stake and the trade post removed, 0.2.325: no truces) | built | `bend` |
 | The gate (decision 3): a scripted player that engages against one that turtles | instrument built, measuring | `gate` (LP_MIX=turtle, engage) |
 | Serenity against a fortress: fire plans, the howitzer against robot-kept walls, escalation; the jammer mast (downs robots, blinds threat scanners) | built | `fortress` (four), `scanner` |
 | Serenity's power strike: the cut pole behind the player's lasers, scouts first; dark turrets weigh nothing | built | `blackout` (two) |
 | Strangling: the line goes for outposts, then the next ore; at war it cuts belts and pipes on its edge | built | `strangle` (five) |
-| Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid off, a truce) | built; the ledger's price a guess; disputed by killing the billed nest | `hazard` (eight) |
+| Hazard removal (a camp losing to biters clears their nest) and the ledger (Serenity bills the waves the player's cloud draws; paid, closed; unpaid past its grace, a collection raid on the polluter's ground) | built; the ledger's price and grace guesses; disputed by killing the billed nest | `hazard` (eight) |
 | Grubstake's skim (a truck parks at an exposed belt and fills its trunk, home to its yard) and dismantling (raids take machines apart, ghosts left, loot kept as items) | built | `skim` (three), `dismantle` (two) |
 | Space Age: landings and reliefs by cargo pod, tesla arcs, armour; the threat scanner, the muster point | built; armour and pods not seen in game | `podland` (two), `scanner`, `scanresponse`, `muster` |
 | Raid leaders (an icon over one raider; Grubstake breaks when it falls and its foreman drops the haul, Serenity regroups) | built | `leader` (three) |
@@ -1502,10 +1502,13 @@ strangling (the line walls off outposts and ore).
   First built for a provoked-only Serenity: unpaid 20 minutes after the third open bill, the player became an enemy. On
   nw unprovoked (3 hours) it billed five times, 355 to 614 a bill, 2,170 owed within half an hour, and turned enemy 20
   minutes after the third; losses whose nest had no cloud on it went unbilled. Since Serenity is at war from landing
-  (below), paying off buys a truce instead, the only quiet it gives: a minute for every 10 paid since the last truce, 10
-  to 60; no raid, siege or cut and its line holds while it lasts (stance "truce"); the post says how long is left and
-  shows an amber light by night. Unpaid, nothing changes. Counters: pay, clear the nests yourself, keep the cloud off
-  its ground.
+  (below), paying off bought a truce instead until 0.2.325 (a minute for every 10 paid, 10 to 60). **Since 0.2.325 no
+  truce** (the user, 2026-11-11: "Maybe we just drop the idea of a truce? Feels like a big hassle and the hostility is
+  the most fun part"): paid, the bills close and nothing else; unpaid `shared.INVOICE_GRACE` (10) minutes after the
+  first open bill, a collection: its next operation within 2 minutes, the billed player's buildings within 150 of the
+  polluter the bill named weighed 10 times (`ops.collect_weight`, a prior), and when its first raid on that player goes
+  the bills count as collected and the post comes down (an amber light on the post while a collection is on its way).
+  Counters: pay, clear the nests yourself, keep the cloud off its ground, or defend what it will come for.
   Scenarios (the `hazard` waves, 40 a wave, the clearance held, a furnace by spawn the test keeps standing): `hazard pay`
   (the test puts what is owed in the post each minute): 5 bills, 440 paid, 5 truces, a truce seen; `hazard unpaid`: 6
   bills, 407 owed, no truce, at war; `hazard clean` (no cloud on the nests): no bill. The price is a guess.
@@ -2656,7 +2659,7 @@ minutes is abandoned (its truck turned back each time). Headless runs chart noth
   strip drills draining faster, the "expansion delayed" notice.
 
 ### Rivals, slices 5 and 6, and the corporate map (built 2026-10-16, overnight)
-**The trade post** (`scripts/trade.lua`; pay the thief). A steel chest in Grubstake's colour, from the start. Filled
+**The trade post** (removed at 0.2.325 with every truce the player could buy; kept here as the record) (`scripts/trade.lua`; pay the thief). A steel chest in Grubstake's colour, from the start. Filled
 (worth 50 or more, valued as loot is: `ops.LOOT_VALUE`), the nearest Grubstake camp sends a truck to empty it; the
 goods buy a truce, a minute for each 10 of value (5 to 120 minutes): no raid (`temper_allows`), flare or heist on that
 player while it lasts; prospecting and the tap go on (it still takes what you are not using). Standing reads "truce".
@@ -2677,7 +2680,7 @@ places: the tap takes idle power (a rival's theft), the rig breaks into chests (
 second rung). Both rarely fired on deathworld because that base offered no target, not because they overlap.
 
 ### Rivals, slices 3 and 4: the border stake and the road (built 2026-10-16, overnight)
-**The border stake** (`scripts/border.lua`; Serenity takes a direction, the player may concede it). A separate item from
+**The border stake** (removed at 0.2.325: Serenity is at war from landing and treated only under a bought truce, so with no truce it did nothing; kept here as the record) (`scripts/border.lua`; Serenity takes a direction, the player may concede it). A separate item from
 the claim marker (the call: two names read better than one entity with two meanings, and conceding must be possible
 early: 10 stone bricks and 5 iron, from the start). Set toward a Serenity camp that holds the player a rival, outside its
 claim: the camp acknowledges a border at the stake's distance, drawn on the map, and its line (`ops.perimeter`, the
@@ -6652,6 +6655,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   a picture, which the simulation never reads. Four seeds, with the model and without: 12345 1 and 10, 777 4 and 5, 4242
   2 and 2, 101 15 and 6. No side: the trailer's battle on seed 12345 is on a knife's edge that any change to that
   prototype tips (how a picture reaches the simulation unexplained). Veterancy cleared too (off: 1).
+- **No truces** (0.2.325; the user, 2026-11-11, of the trade post's rating: "Maybe we just drop the idea of a truce?
+  Feels like a big hassle and the hostility is the most fun part"). Removed: Grubstake's trade post (scripts/trade.lua,
+  its item, model, icon, the `tribute` scenario) and the invoice post's truce; and Kessler-Hayashi's border stake
+  (scripts/border.lua, `border` and its `breach` mix), which KH, at war from landing, accepted only under a bought truce:
+  with none it did nothing. The rival stage (Grubstake before it is provoked) stays: that is the slow start, not bought
+  quiet. stance's "truce" stays only as a staged hold for tests and films (debug_truce). The ledger now ends in a fight:
+  paid, its bills close; unpaid `shared.INVOICE_GRACE` minutes, a collection raid on the polluter's ground (ledger.lua).
+  Found on the way, in `hazard unpaid` (seen failing twice): the collection was called at minute 21 and no raid went in
+  the hour. The scenario's only target was its indestructible furnace, which an aborted raid had cooled, and the
+  planner held its raid there ("failed there lately", tactics.LADDER_HOLD). A collection is not held by that ladder now,
+  and the scenario sets three assemblers by the furnace once one is called: 2 collections, 2 raids, one razed.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

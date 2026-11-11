@@ -17,7 +17,13 @@ local function modelled(key, still)
   local glow = {filename = f("glow"), width = S.width / 2, height = S.height / 2, scale = 1, shift = S.shift, draw_as_glow = true,
     blend_mode = "additive"}
   if still then return {layers = {body, glow, shadow}} end
-  body.repeat_count, shadow.repeat_count = S.frames, S.frames
+  if S.body_frames then
+    -- (A body that moves, the claim marker's flag and the bait's cloud: its frames and its shadow's, the glow's count.)
+    body.frame_count, body.line_length = S.body_frames, S.line_length
+    shadow.frame_count, shadow.line_length = S.body_frames, S.line_length
+  else
+    body.repeat_count, shadow.repeat_count = S.frames, S.frames
+  end
   glow.frame_count, glow.line_length, glow.animation_speed = S.frames, S.line_length, 0.15
   body.animation_speed, shadow.animation_speed = 0.15, 0.15
   return {layers = {body, glow, shadow}}
@@ -129,21 +135,6 @@ data:extend({
     localised_description = {"technology-description.lp-claim-marker", tostring(shared.CLAIM_MARK_RADIUS)}},
 })
 
--- The border stake (border.lua): ordinary items, from the start (conceding ground must be possible early): a signal post
--- in Serenity's colour.
-data:extend({
-  {type = "simple-entity-with-owner", name = "lp-border-stake", icons = {{icon = "__base__/graphics/icons/rail-signal.png", tint = S}},
-    flags = {"placeable-neutral", "placeable-player", "player-creation"}, max_health = 200,
-    minable = {mining_time = 0.5, result = "lp-border-stake"}, is_military_target = false,
-    collision_box = {{-0.3, -0.3}, {0.3, 0.3}}, selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-    animations = modelled("border-stake")},
-  {type = "item", name = "lp-border-stake", icons = {{icon = "__base__/graphics/icons/rail-signal.png", tint = S}},
-    stack_size = 10, place_result = "lp-border-stake", subgroup = "lp-components", order = "y-border"},
-  {type = "recipe", name = "lp-border-stake", enabled = true, energy_required = 2,
-    ingredients = {{type = "item", name = "stone-brick", amount = 10}, {type = "item", name = "iron-plate", amount = 5}},
-    results = {{type = "item", name = "lp-border-stake", amount = 1}}},
-})
-
 -- Grubstake's claim stake (prospect.lua; Fable's notices consult): planted on a prospected patch, a signal post in its
 -- colour with a lamp (drawn: amber, red in the last minutes); pulled down, the claim is off.
 data:extend({
@@ -151,26 +142,6 @@ data:extend({
     flags = {"placeable-neutral", "placeable-off-grid"}, max_health = 150, is_military_target = false,
     collision_box = {{-0.3, -0.3}, {0.3, 0.3}}, selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
     picture = {filename = "__base__/graphics/icons/rail-signal.png", size = 64, scale = 0.5, tint = G}},
-})
-
--- The trade post (trade.lua): a steel chest in Grubstake's colour, from the start; what it holds buys a truce.
-local post = table.deepcopy(data.raw.container["steel-chest"])
-post.name = "lp-trade-post"
-post.minable = {mining_time = 0.5, result = "lp-trade-post"}
-post.icons = {{icon = post.icon or post.icons[1].icon, icon_size = post.icon_size, tint = G}}
-post.icon = nil
-post.next_upgrade = nil
-post.fast_replaceable_group = nil
-if post.picture and post.picture.layers then
-  for _, l in ipairs(post.picture.layers) do if not l.draw_as_shadow then l.tint = G end end
-end
-post.picture = modelled("trade-post", true)
-data:extend({post,
-  {type = "item", name = "lp-trade-post", icons = {{icon = "__base__/graphics/icons/steel-chest.png", tint = G}}, stack_size = 10,
-    place_result = "lp-trade-post", subgroup = "lp-components", order = "y-trade"},
-  {type = "recipe", name = "lp-trade-post", enabled = true, energy_required = 2,
-    ingredients = {{type = "item", name = "steel-chest", amount = 1}, {type = "item", name = "electronic-circuit", amount = 5}},
-    results = {{type = "item", name = "lp-trade-post", amount = 1}}},
 })
 
 -- Serenity's invoice post (ledger.lua): a steel chest in its colour, raised by script at its line, of the player's force
@@ -182,8 +153,7 @@ invoice.icons = {{icon = invoice.icon or invoice.icons[1].icon, icon_size = invo
 invoice.icon = nil
 invoice.next_upgrade = nil
 invoice.fast_replaceable_group = nil
-invoice.localised_description = {"entity-description.lp-invoice-post", tostring(shared.TRUCE_MINUTES[1]),
-  tostring(shared.TRUCE_MINUTES[2])}
+invoice.localised_description = {"entity-description.lp-invoice-post", tostring(shared.INVOICE_GRACE)}
 invoice.flags = {"placeable-neutral", "not-blueprintable", "not-deconstructable", "not-upgradable"}
 if invoice.picture and invoice.picture.layers then
   for _, l in ipairs(invoice.picture.layers) do if not l.draw_as_shadow then l.tint = S end end

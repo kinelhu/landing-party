@@ -94,7 +94,6 @@ kh:
   tesla_drain_pct: "60"
   tesla_stun_s: "0.5"
   bill_every_min: "5"
-  truce_value: "10"
 war:
   fail_streak: "3"
   quiet_min: "60"

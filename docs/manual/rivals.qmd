@@ -3,7 +3,7 @@
 The factions compete with you and with each other. Each corporation camp shows its standing toward you under its name
 in map view. The corporations also fight each other, and Synthexis chooses whom it attacks.
 
-## Standing: rival, enemy, truce
+## Standing: rival or enemy
 
 - **Rival.** Grubstake starts here. A rival steals, by raids where no turret covers, by skims, strip camps, power taps and
   claims. It does not escalate.
@@ -11,9 +11,6 @@ in map view. The corporations also fight each other, and Synthexis chooses whom 
   its buildings, units or trucks, you build on its ground, or you put a turret in reach of its camp. An enemy Grubstake
   raids with more of its army. If it goes a while without destroying anything of yours, it escalates, first with claim
   jumpers, then by guarding its ground.
-- **Truce.** Bought: Grubstake's at your trade post, Kessler-Hayashi's at its invoice post. While it lasts the
-  corporation sends nothing at you (Grubstake still prospects). When it runs out, its standing goes back to what it
-  was.
 
 Destroying a lander makes its corporation your enemy, and its next landing brings a larger escort (see [Arrivals](arrivals.qmd)).
 The other factions take note of the fight but are not provoked by it.
@@ -50,9 +47,6 @@ when it can afford to, then goes on.
 
 ## Playing them off
 
-- **Pay one, fight the other.** A truce from Grubstake's trade post keeps its thieves off while you deal with
-  Kessler-Hayashi, and the invoice post does the same the other way round. Place the trade post where its hauler will
-  not cross Kessler-Hayashi's ground.
 - **Let Kessler-Hayashi meet Synthexis.** A Kessler-Hayashi camp that loses units to a Synthexis culture clears its
   incubators, and from then on Synthexis sends waves at it as well as at you.
 - **Set the biters on them.** Pheromone bait sends idle biters at a Kessler-Hayashi camp at any time, and at a Grubstake

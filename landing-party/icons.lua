@@ -3,13 +3,13 @@
 -- and technology reused a vanilla icon; "Do all"). Read last (data-final-fixes), so no file's own icon wins over it.
 -- An icon whose prototype is gone is an error: the list and the prototypes kept in step.
 local ITEM_TYPES = {"item", "item-with-entity-data", "capsule", "ammo", "gun", "tool", "selection-tool"}
-local NAMES = {"lp-bait", "lp-barracks", "lp-battle-tank-order", "lp-beacon-schematic", "lp-border-stake", "lp-breacher-order",
+local NAMES = {"lp-bait", "lp-barracks", "lp-battle-tank-order", "lp-beacon-schematic", "lp-breacher-order",
   "lp-claim-marker", "lp-cluster-artillery-shell", "lp-cluster-fuze", "lp-coil-schematic", "lp-command-core", "lp-command-relay",
   "lp-crystal-schematic", "lp-defoliant", "lp-drill-head", "lp-flak-turret", "lp-flame-trooper-order", "lp-fuze-schematic",
   "lp-gland-schematic", "lp-mortar-shell", "lp-muster-point", "lp-orbital-beacon", "lp-orbital-cannon", "lp-orbital-shell",
   "lp-pacifier-crystal", "lp-pact-breaker", "lp-pheromone-gland", "lp-player-dome", "lp-player-mortar", "lp-rail-coil",
   "lp-rail-rifle", "lp-rail-slug", "lp-rally-beacon", "lp-rocket-trooper-order", "lp-strike-beacon", "lp-strip-drill",
-  "lp-targeting-array", "lp-targeting-core", "lp-threat-scanner", "lp-trade-post", "lp-trooper-order"}
+  "lp-targeting-array", "lp-targeting-core", "lp-threat-scanner", "lp-trooper-order"}
 local function set(p, file)
   p.icon, p.icon_size, p.icons = file, 64, nil
 end

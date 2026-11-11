@@ -430,8 +430,8 @@ local function temper_allows(b, t, air)
     return true
   end
   if t.pos and ops.marked(b, t.pos) then return false end
-  -- A paid truce (trade.lua): no raid on that player while it lasts; a battery shelling it is answered regardless of
-  -- temper (counter-battery provokes anyway); else the stance (a provoked_only corporation once provoked).
+  -- A staged hold (debug_truce, tests and films only): no raid on that player while it lasts; a battery shelling it is
+  -- answered regardless of temper (counter-battery provokes anyway); else the stance (a provoked_only corporation once provoked).
   if stance.standing(b.corp, t.owner) == "truce" then return false end
   if battery(t) then return true end
   if not stance.may(b.corp, t.owner, "raid") then return false end
@@ -536,6 +536,8 @@ local function relevance(b, t, c)
   if not c.player and c.pressed and not reprisal(b, t) then r = r * w.distracted end
   if c.ground then r = r * w.ground end
   if t.owner then r = r * math.min(w.grudge_max, 1 + know.grievance(b.corp, t.owner) / w.grudge) end
+  -- An overdue bill's collection (ledger.lua): the polluter's ground.
+  if ops.collect_weight then r = r * ops.collect_weight(b, t) end
   return r
 end
 
@@ -1509,6 +1511,8 @@ local function launch(b, key, trace, army, opts)
     b.reprisal.till = game.tick
     if ops.trace then ops.trace(b, "reprisal: the punitive raid goes; paid") end
   end
+  -- An overdue bill's collection (ledger.lua): the first raid on that player after it is the collection.
+  if b.collect and t.owner == b.collect.owner and game.tick < b.collect.till and ops.on_collect then ops.on_collect(b) end
   if t.owner == "enemy" then
     for _, f in pairs(game.forces) do
       if #f.players > 0 then
@@ -2018,7 +2022,11 @@ function ops.tick(b, tick, trace, army)
     local options = {}
     local lr, ls, lt = ladder(key, "raid"), ladder(skey, "siege"), ladder(tkey, "strip")
     -- (Set aside where it failed lately, tactics.LADDER_HOLD: it saves for the next method instead.)
-    if lr < tactics.LADDER_HOLD then
+    -- (Not a collection's (ledger.lua): an overdue bill is collected where it failed before; the hazard's collection was
+    -- called and held there for the rest of the hour, 0.2.325.)
+    local kt = key and b.intel.targets[key]
+    local collecting = kt and ops.collect_weight and ops.collect_weight(b, kt) > 1
+    if lr < tactics.LADDER_HOLD and not collecting then
       if key then trace(b, string.format("holds its raid at %s: it failed there lately (ladder %.2f)", key, lr)) end
       key = nil
     end

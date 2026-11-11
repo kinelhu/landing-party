@@ -1,7 +1,9 @@
 -- Stance (docs/ai.md, section 4): how a corporation treats a player force right now, asked by every system that acts
 -- against a player. One answer where there were three (ops.temper_allows, war.at_war and choose_siege's own checks
 -- disagreed: an unprovoked Grubstake tapped under a paid truce and held its rebuilds on a war footing).
---   standing   rival, truce (tribute paid) or enemy (provoked: its buildings, units or crews hurt, its ground built on)
+--   standing   rival or enemy (provoked: its buildings, units or crews hurt, its ground built on); "truce" only under a
+--              staged hold (debug_truce, tests and films): the player buys no truce (the user, 2026-11-11: "the hostility
+--              is the most fun part"; the trade post and the invoice post's truce gone at 0.2.325)
 --   rung       the ladder, 0 to 3: minutes since it last razed something of that force (10, 20, 30); a rival thief's
 --              stays at 0 (it steals, it does not escalate)
 --   may(act)   whether its temper lets it do that act to that force now
@@ -28,7 +30,7 @@ function stance.standing(corp, owner)
   local t = storage.truces and storage.truces[corp .. "|" .. owner]
   if t and game.tick < t then return "truce" end
   -- Serenity is at war from landing (the user, 2026-10-19: "what's the point of serenity being non hostile sometimes",
-  -- then "no grace"); a truce bought at its invoice post (ledger.lua) is the only quiet.
+  -- then "no grace").
   if (shared.CORPS[corp].temper or {}).hostile then return "enemy" end
   if provoked(corp, owner) then return "enemy" end
   return "rival"
@@ -57,8 +59,8 @@ function stance.rung(owner, corp_force)
 end
 
 -- What a corporation's temper lets it do to a player force (the user's storyboard calls, 2026-10-17, docs/ai.md):
---   raid, siege, answer   not under a truce; a provoked_only corporation (Serenity) only once provoked
---   strip, tap, jump         theft: not under a truce (bought peace leaves the player's things alone)
+--   raid, siege, answer   not under a staged hold; a provoked_only corporation (Serenity) only once provoked
+--   strip, tap, jump         theft: not under a staged hold
 --   prospect   claims unworked ground, not the player's: always
 --   war        the war footing, relief and the stand-down clock: an enemy only (an unprovoked rival is not at war)
 -- The ladder's thresholds (a rig at 2) stay with each system.

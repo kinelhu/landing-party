@@ -48,8 +48,8 @@ spawners round its camp. Full numbers are in the [Reference](reference.qmd#sec-u
 
 It raids whatever your turrets do not cover, and it cuts your power: it looks for a pole that feeds the turrets facing
 it and has no second feed, and destroys it from where no turret reaches. Sieges are its main weapon (see
-[Sieges](#sec-kh-sieges)). If you build on its ground or put a turret near its camp, it answers with a siege. Only a
-truce, paid for at its invoice post, stops it for a while.
+[Sieges](#sec-kh-sieges)). If you build on its ground or put a turret near its camp, it answers with a siege. Nothing
+you can pay stops it.
 
 **Air raids.** Where little of yours can shoot up at a target, such as artillery, a radar or power behind walls and
 flamethrowers, it sends its laser drones alone, straight at the target. Where your defenses have few guns that shoot up,
@@ -159,7 +159,7 @@ A strike Kessler-Hayashi called on a walled laser bastion.
 **The site dome.** Once an armed camp's siege starts shelling, a dome projector is set up by its guns. Its dome stops
 your artillery shells like a camp's dome, and moves with the siege.
 
-## The invoice post and truces {#sec-kh-invoice}
+## The invoice post {#sec-kh-invoice}
 
 Biters attack Kessler-Hayashi too. If a camp has tried to clear the spawners those biters come from, and those
 spawners sit in your pollution near one of your drills, furnaces, assemblers or boilers, it bills you for its losses
@@ -175,8 +175,8 @@ terms of the contract, losses arising from your operations are recoverable from 
 Personnel lost in the engagement · Equipment lost · Clearance of the nest fields concerned
 
 **Amount due:** as displayed at our collection post on the site boundary. Settlement is accepted in electronic circuits
-or goods of equivalent value. Accounts in good standing are extended a suspension of hostilities for the period
-settled.
+or goods of equivalent value. Accounts unsettled at the end of the stated term are recovered from the debtor's assets
+on site.
 
 We thank you for your prompt attention to this matter.
 :::
@@ -185,15 +185,13 @@ We thank you for your prompt attention to this matter.
 owed, in electronic circuits. Each billed spawner is marked with Kessler-Hayashi's icon, in game and on your map.
 
 - **Paying.** Put items in the post. It accepts circuits, modules, steel and other valuable intermediates at their
-  value, up to the amount owed. Once the bill is paid, you get one minute of truce for every {{< var kh.truce_value
-  >}} electronic circuits' worth paid since the last truce.
+  value, up to the amount owed. Once the bill is paid in full it is closed, and nothing else changes: Kessler-Hayashi
+  stays at war with you.
 - **Disputing.** Destroy a billed spawner yourself while its bill is open, and its amount is removed from the bill.
   When nothing is owed, the post is removed.
-- **Not paying.** The bill stays on the post. There is no other penalty, since Kessler-Hayashi is already at war with
-  you.
-
-A truce covers every Kessler-Hayashi camp: no raids, sieges or cuts, and the line holds. It is also the only time
-Kessler-Hayashi accepts a border stake. The border then holds after the truce ends, until you build on its side.
+- **Not paying.** When the time on the post runs out, the camp sends a collection: its next raid comes within a couple
+  of minutes and goes for your buildings near the polluter the bill named. When that raid sets out, the bill counts as
+  collected and the post comes down. The post's light turns on while a collection is on its way.
 
 ## Research {#sec-kh-research}
 

@@ -71,7 +71,7 @@ T = {
     "lp-cluster-shells": two("lp-cluster-artillery-shell", "lp-cluster-fuze"),
     "lp-orbital-cannon": two("lp-orbital-cannon", "lp-orbital-shell"),
     "lp-study-claims": badge(one("lp-border-stake")),
-    "lp-claims-register": two("lp-border-stake", "lp-trade-post"),
+    "lp-claims-register": two("lp-claim-marker", "lp-strip-drill"),
     "lp-study-strip": badge(one("lp-drill-head")),
     "lp-strip-drill": two("lp-strip-drill", "lp-drill-head"),
     "lp-study-bait": badge(one("lp-pheromone-gland")),
