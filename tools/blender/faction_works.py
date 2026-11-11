@@ -1882,8 +1882,10 @@ def fconcept(name):
                 B(0.16, 0.1, 0.1, math.cos(a) * 0.68, math.sin(a) * 0.68, 0.18, P["trim"], bevel=0.02).rotation_euler.z = a
             for x in (-0.42, 0.42):
                 B(0.34, 0.42, 0.46, x, -0.5, 0.32, P["trim"], bevel=0.05)
-                for z in (0.42, 0.6):
-                    B(0.36, 0.44, 0.035, x, -0.5, z, P["light"], bevel=0.0)
+                # (One lit band a bank, one lit ring a coil: with two and three, the glow layer blew them white by day,
+                # its first still beside vanilla's flamethrower, 2026-11-12.)
+                B(0.36, 0.44, 0.035, x, -0.5, 0.42, P["dark"], bevel=0.0)
+                B(0.36, 0.44, 0.035, x, -0.5, 0.6, P["light"], bevel=0.0)
                 B(0.3, 0.38, 0.06, x, -0.5, 0.78, P["dark"], bevel=0.02)
                 rod((x, -0.3, 0.7), (x * 0.4, -0.08, 0.78), 0.035, P["steel"])
             cyl(0.36, 0.22, 0, 0.0, 0.32, P["hull"], verts=32, bevel=0.03)
@@ -1953,7 +1955,7 @@ def fconcept(name):
             for sx in (-1, 1):
                 cyl(0.13, 0.34, sx * 0.33, 0.12, 0.62, P["trim"], verts=20, bevel=0.02)
                 for z in (0.7, 0.82, 0.94):
-                    tor(0.14, 0.022, sx * 0.33, 0.12, z, P["light"])
+                    tor(0.14, 0.022, sx * 0.33, 0.12, z, P["light"] if z == 0.82 else P["steel"])
                 sph(0.06, sx * 0.33, 0.12, 0.98, P["glass"])
             lie(0.1, 0.62, 0, 0.5, 0.8, P["dark"], "y", 18)
             for y in (0.36, 0.52, 0.68):
@@ -2105,7 +2107,9 @@ if WHAT == "flamer":
     lpkit.bevel_all(base + head, 0.02)
     ground, sun, world = lpkit.stage(scene, 3, 2.2)
     glowing = {P["light"], P["glass"]}
-    lpkit.emission(P["light"], 2.5); lpkit.emission(P["glass"], 3.0)
+    # (The arc flamer's lights lower: its first still had them blown white by day.)
+    arcf = F == "kh-arc"
+    lpkit.emission(P["light"], 1.2 if arcf else 2.5); lpkit.emission(P["glass"], 1.5 if arcf else 3.0)
     for o in head: o.visible_camera = False; o.visible_shadow = False; o.hide_render = True
     for d, yaw in (("north", 0), ("east", 270), ("south", 180), ("west", 90)):
         rig.rotation_euler = (0, 0, math.radians(yaw)); bpy.context.view_layer.update()

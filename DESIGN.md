@@ -6872,7 +6872,9 @@ Bugs and surprises the headless runs caught, each kept as a check:
     bus bars into a raised ring; on it a projector between two field coils, a short focusing barrel, a heat sink.
     Clay first, beside vanilla's laser turret (its 2x2 neighbour): the head sat low on its plinth, a puck with coils,
     so it stands 0.22 higher on a longer neck, a fifth larger. Rendered on the laptop's GPU (51 s a clay, Metal),
-    packed, its base shadows made solid and cut under the body, the head's masked off the base.
+    packed, its base shadows made solid and cut under the body, the head's masked off the base. (0.2.343: its first
+    still beside vanilla's flamethrower had its coils and banks blown white by day, the glow layer of three lit rings
+    a coil and two bands a bank: one each now, its lights at half strength.)
   - **Arcs** (data.lua, shared.ARC_FLAMER): Space Age's tesla turret's bolt and chain, restyled and re-armed. One
     bolt a second at 30 tiles, two jumps of 6, each hit 40 (20 a jump) fire, the blue burn (lp-arc-sticker, 150 a
     second for 3 s), a patch of blue ground fire, a flash of violet light where it strikes. Twice the tesla's scale
