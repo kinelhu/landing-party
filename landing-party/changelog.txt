@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.341
+Version: 0.2.342
 Date: 2026-11-11
   Features:
     - Its own icons for every item, technology and unit, the rivals' too; the threat scanner's signals show the units they count.
@@ -9,6 +9,7 @@ Date: 2026-11-11
     - Synthexis takes over the biter nests and breeds waves that learn from what kills them.
     - Each faction researches, fields its own units and answers what you do to it; the rivals fight each other and the biters too.
     - Player army: barracks, a command tool, rally beacons and a muster point. A panel at the top of the screen shows your units against your command cap; select units and retire them (ALT + R) to hand their orders back in at a barracks, or set squad sizes on a rally beacon to keep each squad at a size by signal. Tips and tricks walk you through it as you unlock each part.
+    - Kessler-Hayashi's arc flamer fires heavy electric arcs that jump to two more targets and set each alight in a blue burn.
     - Selection cards: the units you select wear health bars, and a panel above the quickbar shows a card for each, with its health and rank (a card per kind past 24); click to narrow the selection, SHIFT + click to drop, right-click to follow. One unit selected shows its own card. Control groups: CONTROL + 1-9 keeps a selection, ALT + 1-9 selects it again. The army panel's All and Idle buttons select your whole army, or the units standing about. A move order spreads the selection in a formation round the point, keeping its shape.
     - Veterancy: units that kill earn ranks (Veteran, Elite, Heroic: more health and damage), promoted on the spot in the middle of a fight, wearing gold chevrons from then on; the rivals pull a raid back sooner to keep their elites alive. Synthexis's biters never rank: the hive learns as a whole.
     - The rivals grow stronger against biters as the biters evolve: more railgunners to clear a nest, a site dug in with more pillboxes the moment they arrive, uranium rounds in their gun turrets late.

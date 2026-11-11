@@ -453,13 +453,72 @@ arc.prepare_range = 70
 arc.preparing_animation, arc.preparing_speed = table.deepcopy(flamer.preparing_animation), flamer.preparing_speed
 arc.folding_animation, arc.folding_speed = table.deepcopy(flamer.folding_animation), flamer.folding_speed
 arc.circuit_connector = nil
-local ap = table.deepcopy(flamer.attack_parameters)
-ap.fluids, ap.fluid_consumption = nil, nil
+-- Its arcs (the user, 2026-11-12: "Should we make the arc flamer actually fire high power electric arcs that set targets
+-- on (blue) fire?", then "How do we differentiate from regular Tesla? Can we do thicker electric arcs? A lighting
+-- effect?"): Space Age's tesla turret's bolt and chain, restyled and re-armed. The tesla holds a crowd (a fast crackle
+-- of thin bolts, ten jumps, stunning); this burns what it touches: one heavy bolt a second (ARC.cooldown), at most
+-- two short jumps, each hit setting its target alight in the blue burn (lp-arc-sticker) over a patch of blue ground
+-- fire, and a flash of light where it strikes. All fire, the electricity its look's: any electric hit builds a unit's
+-- stun (stun.lua, whatever its size) and drains what holds a charge (scorcher.lua), and a turret stunning whole waves
+-- was not the idea. The bolt twice
+-- the tesla's in scale and width, violet-blue round a white core (ARC.tint), the ground lit along it.
+local ARC = shared.ARC_FLAMER
+local VIOLET = {r = ARC.tint[1], g = ARC.tint[2], b = ARC.tint[3], a = 1}
+local function restyle(t, light_scale)
+  if type(t) ~= "table" then return end
+  if t.filename or t.filenames or t.stripes then
+    t.tint = t.draw_as_light and {r = VIOLET.r, g = VIOLET.g, b = VIOLET.b, a = 1} or VIOLET
+    t.scale = (t.scale or 1) * ARC.scale
+  end
+  for _, v in pairs(t) do restyle(v) end
+end
+local flash = {type = "explosion", name = "lp-arcflamer-flash", flags = {"not-on-map"}, hidden = true,
+  animations = table.deepcopy(data.raw.explosion["explosion-hit"].animations),
+  light = {intensity = ARC.flash_intensity, size = ARC.flash_size, color = {r = VIOLET.r, g = VIOLET.g, b = 1}},
+  smoke = nil}
+restyle(flash.animations)
+local function arc_effects(damage)
+  return {
+    {type = "damage", damage = {amount = damage, type = "fire"}},
+    {type = "create-sticker", sticker = "lp-arc-sticker"},
+    {type = "create-fire", entity_name = "lp-arc-fire", initial_ground_flame_count = 1},
+    {type = "create-explosion", entity_name = "lp-arcflamer-flash"}}
+end
+local function arc_beam(from, name, damage)
+  local b = table.deepcopy(data.raw.beam[from])
+  b.name = name
+  b.width = (b.width or 0.5) * ARC.scale
+  b.action = {type = "direct", action_delivery = {type = "instant", target_effects = arc_effects(damage)}}
+  -- (The beam deals its damage each damage_interval while it lasts: one interval a bolt, so a bolt is one hit.)
+  b.damage_interval = ARC.bolt_ticks
+  restyle(b.graphics_set)
+  return b
+end
+-- (lp-arcflamer-*: the shock trooper's own chain and bounce are lp-arc-chain and lp-arc-bounce, units.lua, loaded later;
+-- named so at first, this turret fired the shock trooper's six-jump chain, 2026-11-12.)
+local bolt = arc_beam("chain-tesla-turret-beam-start", "lp-arcflamer-bolt", ARC.bolt_damage)
+local bounce = arc_beam("chain-tesla-turret-beam-bounce", "lp-arcflamer-bounce", ARC.jump_damage)
+local chain = table.deepcopy(data.raw["chain-active-trigger"]["chain-tesla-turret-chain"])
+chain.name = "lp-arcflamer-chain"
+chain.max_jumps, chain.max_range_per_jump = ARC.jumps, ARC.jump_range
+chain.fork_chance, chain.fork_chance_increase_per_quality_level = 0, 0
+chain.action.action_delivery.beam = "lp-arcflamer-bounce"
+chain.action.action_delivery.max_length = ARC.jump_range + 0.5
+chain.action.action_delivery.duration = ARC.bolt_ticks
+local ap = table.deepcopy(data.raw["electric-turret"]["laser-turret"].attack_parameters)
 ap.ammo_category = "lp-arc-flame"
+ap.cooldown = ARC.cooldown
+ap.range = ARC.range
 ap.turn_range = 1
-ap.min_range = 2
-ap.ammo_type.energy_consumption = "1J"
-ap.ammo_type.action.action_delivery.stream = "lp-arc-stream"
+ap.damage_modifier = nil
+ap.source_direction_count = 64
+ap.source_offset = {0, -1.2}
+ap.ammo_type = {energy_consumption = "1J", action = {type = "direct", action_delivery = {type = "instant", target_effects = {
+  -- (The chain first: the bolt may kill its target, as the tesla's own order says.)
+  {type = "nested-result", action = {type = "direct", action_delivery = {type = "chain", chain = "lp-arcflamer-chain"}}},
+  {type = "nested-result", action = {type = "direct", action_delivery = {type = "beam", beam = "lp-arcflamer-bolt",
+    max_length = ARC.range + 4, duration = ARC.bolt_ticks, add_to_shooter = false, destroy_with_source_or_target = false,
+    source_offset = {0, -1.2}}}}}}}}
 arc.attack_parameters = ap
 local BLUE = {r = 0.45, g = 0.75, b = 1, a = 1}
 local function blued(t)
@@ -467,8 +526,6 @@ local function blued(t)
   if t.filename or t.filenames or t.stripes then t.tint = BLUE end
   for _, v in pairs(t) do blued(v) end
 end
-local arc_stream = table.deepcopy(flamer_stream)
-arc_stream.name = "lp-arc-stream"
 local arc_fire = table.deepcopy(flamer_fire)
 arc_fire.name = "lp-arc-fire"
 arc_fire.initial_lifetime, arc_fire.lifetime_increase_by, arc_fire.maximum_lifetime = 30, 30, 120
@@ -479,15 +536,18 @@ arc_sticker.name = "lp-arc-sticker"
 arc_sticker.duration_in_ticks = 180
 arc_sticker.damage_per_tick = {amount = 25, type = "fire"}
 arc_sticker.spread_fire_entity = nil
-for _, a in ipairs(arc_stream.action) do
-  for _, e in ipairs(a.action_delivery.target_effects or {}) do
-    if e.type == "create-fire" then e.entity_name = "lp-arc-fire" end
-    if e.type == "create-sticker" then e.sticker = "lp-arc-sticker" end
-    if e.type == "damage" then e.damage = {amount = 8, type = "fire"} end
+for _, p in ipairs({arc_fire, arc_sticker}) do blued(p) end
+-- (Its lights blue too: the flame's own light stayed vanilla's orange, a warm halo round a blue fire, 2026-11-12.)
+local function blue_light(t)
+  if type(t) ~= "table" then return end
+  for k, v in pairs(t) do
+    if k == "light" and type(v) == "table" then
+      for _, l in ipairs(v[1] and v or {v}) do l.color = {r = VIOLET.r, g = VIOLET.g, b = 1} end
+    elseif type(v) == "table" then blue_light(v) end
   end
 end
-for _, p in ipairs({arc_stream, arc_fire, arc_sticker}) do blued(p) end
-data:extend{{type = "ammo-category", name = "lp-arc-flame", hidden = true}, {type = "ammo-category", name = "lp-oil-flame", hidden = true}, arc, arc_stream, arc_fire, arc_sticker}
+blue_light(arc_fire); blue_light(arc_sticker)
+data:extend{{type = "ammo-category", name = "lp-arc-flame", hidden = true}, {type = "ammo-category", name = "lp-oil-flame", hidden = true}, arc, arc_fire, arc_sticker, flash, bolt, bounce, chain}
 
 local wall = copy("wall", "stone-wall", "lp-wall")
 wall.max_health = 450

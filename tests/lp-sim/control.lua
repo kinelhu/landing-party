@@ -4091,6 +4091,10 @@ scenarios.arcflamer = function()
     if S.oil.type == "fluid-turret" then S.oil.insert_fluid{name = "light-oil", amount = 1000} end
     S.oil_boxes = S.oil.fluids_count
     x = x + 100
+    -- Its arcs' chain (0.2.342: a bolt, then at most two jumps of 6): three biters standing 5 apart, 20 tiles off (3 apart, its ground fire reached them alone).
+    S.chain_t = surface().create_entity{name = "lp-flamer", position = {x, 1000}, force = "lp-serenity"}
+    S.chain_x = x
+    x = x + 100
     S.groups = {}
     for _, kind in ipairs({"lp-flamer", "lp-grubstake-flamer"}) do
       local t = surface().create_entity{name = kind, position = {x, 1000}, force = "lp-serenity"}
@@ -4105,6 +4109,12 @@ scenarios.arcflamer = function()
       r.hp = r.b.health
       -- (Sent at it, as a wave comes: idle at 45 tiles they never came.)
       r.b.commandable.set_command{type = defines.command.attack, target = r.t, distraction = defines.distraction.none}
+    end
+    S.chain = {}
+    for i = 0, 2 do
+      local bb = surface().create_entity{name = "medium-biter", position = {S.chain_x + 20 + i * 5, 1000}, force = "enemy"}
+      bb.commandable.set_command{type = defines.command.stop, ticks_to_wait = 3000, distraction = defines.distraction.none}
+      S.chain[#S.chain + 1] = {b = bb, hp = bb.health}
     end
     -- (Worms, which stay put: a biter behind it would come round to bite it; 15 tiles, well inside its 30 either way.)
     S.oil_b = {}
@@ -4124,6 +4134,9 @@ scenarios.arcflamer = function()
     schedule(tick, function()
       for _, r in ipairs(S.r) do
         if r.b and not r.hit and (not r.b.valid or r.b.health < r.hp) then r.hit = tick - 400 end
+      end
+      for _, c in ipairs(S.chain or {}) do
+        if not c.hit and (not c.b.valid or c.b.health < c.hp) then c.hit = tick end
       end
       for _, g in ipairs(S.groups) do
         if g.b and not g.done then
@@ -4146,6 +4159,12 @@ scenarios.arcflamer = function()
     end
     local arc = S.groups[1]
     check("arcflamer: it kills six medium biters", arc.done ~= nil, tostring(arc.done))
+    local first, last, hit = math.huge, 0, 0
+    for _, c in ipairs(S.chain) do
+      if c.hit then hit = hit + 1; first = math.min(first, c.hit); last = math.max(last, c.hit) end
+    end
+    check("arcflamer: one bolt's chain reaches three biters 5 apart", hit == 3 and last - first <= 40,
+      string.format("%d hit, %s ticks apart", hit, hit > 0 and tostring(last - first) or "-"))
     check("arcflamer: Grubstake's flamer has no fluid box (no pipes drawn)", S.oil_boxes == 0, S.oil_boxes .. " boxes")
     local function burnt(k) local o = S.oil_b[k]; return not o.b.valid or o.b.health < o.hp end
     check("arcflamer: Grubstake's flamer burns the biter it faces", burnt("front"), tostring(burnt("front")))

@@ -1871,6 +1871,32 @@ def fconcept(name):
     centre, its nozzle north; a pilot light (glass) at the nozzle's tip."""
     kh = name.startswith("kh-")
     def base():
+        if name == "kh-arc":
+            # The arc flamer (0.2.331, an electric turret burning nothing): a round armoured plinth, no fuel; two
+            # capacitor banks standing at the back where the oil flamer's tanks stood, each banded with lit field rings,
+            # bus bars from them into a raised turret ring, an emitter collar lit round the ring.
+            cyl(0.78, 0.12, 0, 0, 0, P["dark"], verts=40)
+            cyl(0.7, 0.2, 0, 0, 0.12, P["hull"], verts=40, bevel=0.05)
+            for k in range(8):
+                a = k * math.pi / 4 + math.pi / 8
+                B(0.16, 0.1, 0.1, math.cos(a) * 0.68, math.sin(a) * 0.68, 0.18, P["trim"], bevel=0.02).rotation_euler.z = a
+            for x in (-0.42, 0.42):
+                B(0.34, 0.42, 0.46, x, -0.5, 0.32, P["trim"], bevel=0.05)
+                for z in (0.42, 0.6):
+                    B(0.36, 0.44, 0.035, x, -0.5, z, P["light"], bevel=0.0)
+                B(0.3, 0.38, 0.06, x, -0.5, 0.78, P["dark"], bevel=0.02)
+                rod((x, -0.3, 0.7), (x * 0.4, -0.08, 0.78), 0.035, P["steel"])
+            cyl(0.36, 0.22, 0, 0.0, 0.32, P["hull"], verts=32, bevel=0.03)
+            # (A taller neck, the head 0.22 higher and a fifth larger: at the first clay, beside vanilla's laser
+            # turret, it sat low on its plinth, a puck with coils, 2026-11-12.)
+            cyl(0.26, 0.52, 0, 0.0, 0.54, P["hull"], verts=24, bevel=0.02)
+            tor(0.3, 0.03, 0, 0.0, 0.74, P["light"])
+            tor(0.28, 0.025, 0, 0.0, 0.92, P["dark"])
+            cyl(0.33, 0.05, 0, 0.0, 1.06, P["trim"], verts=32)
+            for k in range(4):
+                a = k * math.pi / 2 + math.pi / 4
+                B(0.07, 0.07, 0.05, math.cos(a) * 0.62, math.sin(a) * 0.62, 0.34, P["light"], bevel=0.0)
+            return
         if kh:
             # An armoured plinth, two banded fuel tanks standing at the back over the inlets, their fuel lines curving
             # up into a raised turret ring, a pump between them, lamps at the front.
@@ -1920,6 +1946,26 @@ def fconcept(name):
             B(0.12, 0.12, 0.35, 0.5, 0.5, 0.2, P["steel"], bevel=0.01)
             rod((0.5, 0.5, 0.55), (0.62, 0.62, 0.7), 0.02, P["steel"])
     def head():
+        if name == "kh-arc":
+            # A projector between two field coils: a low housing on the ring, the coils standing either side lit blue, a
+            # short focusing barrel with a flared emitter, the pilot (glass) at its lip, a heat sink on the back.
+            B(0.5, 0.56, 0.3, 0, 0.0, 0.62, P["hull"], bevel=0.08)
+            for sx in (-1, 1):
+                cyl(0.13, 0.34, sx * 0.33, 0.12, 0.62, P["trim"], verts=20, bevel=0.02)
+                for z in (0.7, 0.82, 0.94):
+                    tor(0.14, 0.022, sx * 0.33, 0.12, z, P["light"])
+                sph(0.06, sx * 0.33, 0.12, 0.98, P["glass"])
+            lie(0.1, 0.62, 0, 0.5, 0.8, P["dark"], "y", 18)
+            for y in (0.36, 0.52, 0.68):
+                tor(0.11, 0.02, 0, y, 0.8, P["steel"]).rotation_euler = (math.pi / 2, 0, 0)
+            bpy.ops.mesh.primitive_cone_add(vertices=20, radius1=0.09, radius2=0.16, depth=0.14, location=(0, 0.88, 0.8),
+                                            rotation=(-math.pi / 2, 0, 0))
+            bpy.context.object.data.materials.append(P["trim"])
+            sph(0.06, 0, 0.93, 0.8, P["glass"])
+            for k in range(4):
+                B(0.42, 0.03, 0.12, 0, -0.28 - k * 0.05, 0.82, P["steel"], bevel=0.0)
+            B(0.24, 0.04, 0.04, 0, -0.06, 0.92, P["accent"], bevel=0.0)
+            return
         if name == "kh-flame-arm":
             # An articulated arm: a shoulder housing on the ring, the upper arm raised, an elbow, the forearm level with
             # the nozzle and its flared tip, a hose along it, the pilot light lit under the tip.
@@ -1970,6 +2016,11 @@ def fconcept(name):
             cyl(0.1, 0.45, 0.15, -0.1, 0.65, P["accent"], verts=14)
             pipe([(0.15, -0.1, 1.1), (0.1, 0.0, 1.3)], 0.025, P["rubber"])
     b = group(base); h = group(head)
+    if name == "kh-arc":
+        for o in h:
+            if o.parent is None:
+                o.location.x *= 1.2; o.location.y *= 1.2; o.location.z = (o.location.z - 0.6) * 1.2 + 0.6 + 0.22
+                o.scale = (o.scale.x * 1.2, o.scale.y * 1.2, o.scale.z * 1.2)
     # (The arms on the neck's top: built from the ring at 0.6, raised to the neck's 1.4.)
     if name == "kh-flame-arm":
         for o in h:
@@ -2037,7 +2088,8 @@ if WHAT == "flamer":
     # Its base in four directions (north: its nozzle north, its inlets south), the head in 64 directions on a pivot at
     # the entity's centre (so one head serves every base direction), each without the other's shadow.
     # (The second flamers, from clay concepts: the first, flamer_kh and flamer_gs, read as a box with barrels.)
-    base, head = fconcept("kh-flame-arm" if F == "kh" else "gs-flame-arm")
+    # (kh-arc: Kessler-Hayashi's arc flamer, its own model, 2026-11-12; until then it wore the oil flamer's tanks.)
+    base, head = fconcept("kh-arc" if F == "kh-arc" else ("kh-flame-arm" if F == "kh" else "gs-flame-arm"))
     base += scatter(base, {P["hull"], P["trim"]}, P["dark"], P["steel"], 9, density=8.0)
     bpy.ops.object.empty_add(location=(0, 0, 0)); pv = bpy.context.object
     for o in head:

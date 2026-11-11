@@ -637,6 +637,10 @@ shared.ORDERS = {["lp-trooper-order"] = "lp-trooper", ["lp-breacher-order"] = "l
 -- beacon's squad keeps.
 shared.SQUAD_SIGNALS = {}
 for _, name in pairs(shared.ORDERS) do shared.SQUAD_SIGNALS[name] = "lp-squad-" .. name:gsub("^lp%-", "") end
+-- Kessler-Hayashi's arc flamer's arcs (data.lua): a bolt a second at 30 tiles, two jumps of 6, its damage fire (an
+-- electric hit stuns units, stun.lua), its look twice the tesla's, violet-blue, a flash of light a strike.
+shared.ARC_FLAMER = {cooldown = 60, range = 30, bolt_ticks = 20, bolt_damage = 40, jump_damage = 20, jumps = 2,
+  jump_range = 6, scale = 2.0, tint = {0.55, 0.45, 1.0}, flash_intensity = 0.8, flash_size = 14}
 shared.RELAY_CAPACITY = 10
 shared.RELAYS_BY_LEVEL = {[0] = 2, 4, 8, 15}
 shared.RELAYS_PER_EXTRA_LEVEL = 2

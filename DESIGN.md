@@ -6864,6 +6864,33 @@ Bugs and surprises the headless runs caught, each kept as a check:
   and wandering 1.5. An attack on a target is unchanged. Checked, scenario cards: 16 troopers sent to one point all
   arrive, each at its own slot (16 distinct, 0.9 tiles off on average); seen failing with every slot the point (one
   slot, 4.2 tiles off). Not yet seen in game.
+- **The arc flamer fires arcs, in a model of its own** (0.2.342; the user, 2026-11-12: "Should we make the arc flamer
+  actually fire high power electric arcs that set targets on (blue) fire?", "How do we differentiate from regular
+  Tesla? Can we do thicker electric arcs? A lighting effect?", "Good proposals all around").
+  - **Model** (tools/blender/faction_works.py flamer kh-arc): it had worn the oil flamer's fuel tanks with only its
+    fire blue. Now a round armoured plinth, two capacitor banks banded with lit field rings where the tanks stood,
+    bus bars into a raised ring; on it a projector between two field coils, a short focusing barrel, a heat sink.
+    Clay first, beside vanilla's laser turret (its 2x2 neighbour): the head sat low on its plinth, a puck with coils,
+    so it stands 0.22 higher on a longer neck, a fifth larger. Rendered on the laptop's GPU (51 s a clay, Metal),
+    packed, its base shadows made solid and cut under the body, the head's masked off the base.
+  - **Arcs** (data.lua, shared.ARC_FLAMER): Space Age's tesla turret's bolt and chain, restyled and re-armed. One
+    bolt a second at 30 tiles, two jumps of 6, each hit 40 (20 a jump) fire, the blue burn (lp-arc-sticker, 150 a
+    second for 3 s), a patch of blue ground fire, a flash of violet light where it strikes. Twice the tesla's scale
+    and width, violet-blue round a white core; the ground lit along it (a violet light on the olive grass reads
+    warm brown, as the laser turret's red does). All fire: any electric hit builds a unit's stun (stun.lua), whatever
+    its size, so a 10 % electric share would have let it stun waves.
+  - **Caught:** its chain and bounce were first named lp-arc-chain and lp-arc-bounce, the shock trooper's own
+    (units.lua, loaded later, won), so it fired the shock trooper's six-jump chain, and its chain check passed with
+    no jumps of its own; named lp-arcflamer-* now, the shock trooper's scenario unchanged. The check's biters stood
+    3 apart and its ground fire reached them alone; 5 apart, it fails with one jump (the third hit 60 ticks later,
+    the next bolt) and passes with two (12 ticks).
+  - Checked, scenario arcflamer: every side hit, its own unit spared, six medium biters killed in 287 ticks (the
+    stream's 273), one bolt's chain over three biters 5 apart. Seen in stills (docs/review/stills-arcflamer.lua),
+    at night: the bolt, the chain's jump, the burn. **Open:** its sound is the tesla's for now (options for the
+    user: below); the burn's flames on a biter read greenish where the vanilla fire sprite's orange takes the tint.
+  - **The film toolkit's build-once bug** (found on the way): a save made with the helper loaded kept storage.built,
+    and every gallery film from it skipped its own build (this film's first stills: black, unbuilt ground). It
+    rebuilds now whenever the film's name is not the one it built for.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
