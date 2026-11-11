@@ -2054,13 +2054,13 @@ if WHAT == "flamer":
     ground, sun, world = lpkit.stage(scene, 3, 2.2)
     glowing = {P["light"], P["glass"]}
     lpkit.emission(P["light"], 2.5); lpkit.emission(P["glass"], 3.0)
-    for o in head: o.visible_camera = False; o.visible_shadow = False
+    for o in head: o.visible_camera = False; o.visible_shadow = False; o.hide_render = True
     for d, yaw in (("north", 0), ("east", 270), ("south", 180), ("west", 90)):
         rig.rotation_euler = (0, 0, math.radians(yaw)); bpy.context.view_layer.update()
         for o in base: o.visible_camera = True
         lpkit.passes(scene, f"{out}/base-{d}", 1, lambda f: None, base, glowing, ground, sun, world)
-    for o in head: o.visible_camera = True; o.visible_shadow = True
-    for o in base: o.visible_camera = False; o.visible_shadow = False
+    for o in head: o.visible_camera = True; o.visible_shadow = True; o.hide_render = False
+    for o in base: o.visible_camera = False; o.visible_shadow = False; o.hide_render = True
     N = int(os.environ.get("LP_FRAMES", 64))
     def turn(f):
         pv.rotation_euler = (0, 0, -f * 2 * math.pi / N); bpy.context.view_layer.update()
@@ -2084,11 +2084,14 @@ if (WHAT, F) in TURRETS:
     glowing = {P["light"], P["glass"]}
     # (Each part's pass without the other's shadow: hidden from the camera alone, the head had cast its shadow into the
     # base's, a ghost pointing north under every heading, and the base its own again into each of the head's.)
-    for o in head: o.visible_camera = False; o.visible_shadow = False
+    # (And out of the render altogether: hidden from camera and shadow, the base still took the ambient light off the
+    # ground under it, and every head frame carried a square of shadow the size of the base, solid once shadows were
+    # made solid, 0.2.333, showing as a dark column beside the plate; the user: "???", 2026-11-11.)
+    for o in head: o.visible_camera = False; o.visible_shadow = False; o.hide_render = True
     lpkit.emission(P["light"], 2.0)
     lpkit.passes(scene, f"{out}/base", 1, lambda f: None, base, glowing, ground, sun, world)
-    for o in head: o.visible_camera = True; o.visible_shadow = True
-    for o in base: o.visible_camera = False; o.visible_shadow = False
+    for o in head: o.visible_camera = True; o.visible_shadow = True; o.hide_render = False
+    for o in base: o.visible_camera = False; o.visible_shadow = False; o.hide_render = True
     N = int(os.environ.get("LP_FRAMES", 64))
     def turn(f):
         pv.rotation_euler = (0, 0, -f * 2 * math.pi / N); bpy.context.view_layer.update()

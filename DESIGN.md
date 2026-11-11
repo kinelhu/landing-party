@@ -6715,6 +6715,12 @@ Bugs and surprises the headless runs caught, each kept as a check:
   sun comes from the west; the flamers' heads carried a band 64 px west of the head, the hidden base's occlusion). The four
   turrets (Grubstake's gun nest and flamer, KH's autocannon and flamer): 94 to 100 % near solid, filmed beside vanilla's.
   Every other building's shadow is still a gradient (the KH fabricator 48 %): open.
+  **0.2.334, a ghost of the base in every head frame** (the user's screenshot of 0.2.333's gun nest: "???", a dark column
+  beside the plate). Each part's shadow pass hid the other from camera and shadow only, so the base still took the
+  ambient light off the ground under it and every head frame carried a square of the base's size, faint before and solid
+  once shadows were made solid. faction_works.py takes the other part out of the render (hide_render) in both its
+  turret and flamer passes; the four turrets re-rendered (the heads' raw shadow cores 146 to 198, their halo 15 to 42),
+  repacked, made solid, filmed: what lies east of the gun nest is now its sandbags', shield's and barrel's own shadow.
 - **Turret bases read as shadows; the bait under its smoke** (0.2.332; the user's ratings, 2026-11-11: gun nest and flamer
   2, "Seems like the base plate shadow is applied on top of the turret?"; bait 2, "Nothing changed in the still with this
   cloud!"). 0.2.329's skids were near-black, darker than the shadow beside them, so they read as a shadow laid over the
