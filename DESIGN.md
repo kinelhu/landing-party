@@ -6682,6 +6682,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   rising up slowly and hitting the ground fast", 2): a guide frame over the bore, a crosshead and lift cylinder, the ram
   a hazard-banded block lifted over three quarters of the cycle and dropped in an eighth (32 frames, its shadow each
   frame). Both factions' depots and launch pads were not re-rated: they still carry their first stars.
+- **Full regression at 0.2.326** (317 runs, Mac Studio, LP_JOBS 6): 312 pass. Open for the user: herd ranks-mend, farm
+  siege (as at 0.2.322). New since 0.2.322, and already in the 0.2.324 regression (misread then: its failures were read
+  from the log's tail): `hazard`, `hazard worm` and `hazard research`. Bisected: 0.2.323 passes both hazard and research,
+  0.2.324 fails, 0.2.325 and 0.2.326 fail alike. The turrets' vanilla deploy time (0.2.324) is the cause: at 0.2.323
+  Kessler-Hayashi lost 68 to the hazard's waves and cleared all six nests; now 610 (117 gun turrets, 76 lasers, 213
+  walls), its parts spent on rebuilds, and the last nest "waits (parts 2 of 220)" for the rest of the run. Its turrets'
+  prepare range is vanilla's. Open: a balance call (KH's turrets as slow as the player's, or a faction trait).
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
