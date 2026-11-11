@@ -6703,6 +6703,15 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the site by biters, 30 minutes for the next, its guards not holding) and `hazard research` (never exports, so never
   funds railguns). Flamers beyond the gates considered and set aside with the user (their fixed arc, fire on its own
   sorties). Quick regression: 42 of 42.
+- **Turret bases read as shadows; the bait under its smoke** (0.2.332; the user's ratings, 2026-11-11: gun nest and flamer
+  2, "Seems like the base plate shadow is applied on top of the turret?"; bait 2, "Nothing changed in the still with this
+  cloud!"). 0.2.329's skids were near-black, darker than the shadow beside them, so they read as a shadow laid over the
+  turret: now weathered mid-grey steel with a lit rim (faction_works.py P["skid"], skid_lip), lighter than their shadows.
+  Kessler-Hayashi's twin autocannon and flamer floated as Grubstake's had (heads high on thin necks): the flamer's neck
+  0.35 not 0.85 and its arm lifted 0.3 not 0.8, the autocannon's head 0.28 lower; their shadows join their bases (its
+  laser turret shares the base, not re-rendered). The bait's cloud was not its sprite but the gameplay smoke
+  lp-flare-smoke bait.lua puffs every 30 ticks, at 0.7 alpha swelling to 3 times: thinner (0.4), smaller (0.35 to 1.8), a
+  300-tick life, carried off by the wind (data.lua, its look only; that change went out in 0.2.331's commit, unnamed).
 - **Kessler-Hayashi's arc flamer; the flamers split** (0.2.331; the user, 2026-11-11: "a flamer turret for KH too.
   Perhaps with blue flames with short duration but high damage ... a 360 degrees turret, and KH units could be immune to
   their own formulation?", "Is fuel entirely necessary?", "Go with the electric version if the engine allows it", "Split

@@ -61,7 +61,11 @@ def palette(f):
     # pedestal and lance carried the deck's tone, so both read as holes onto what lay under them.)
     gunmetal = lpkit.worn(f + "-gunmetal", (0.06, 0.06, 0.065), metal=0.25, rough=0.7, seams=3, rivets=False, wear=0.25)
     shield = lpkit.worn(f + "-shield", (0.05, 0.045, 0.04), metal=0.45, rough=0.6, seams=4, rivets=True, wear=0.3)
-    P = {"gunmetal": gunmetal, "shield": shield, "hull": hull, "trim": trim, "dark": W["dark"], "steel": W["steel"], "accent": accent, "light": light,
+    # (A skid in weathered mid-grey steel, lighter than its shadow: near black, the gun nest's and flamer's plates read as
+    # a shadow laid over the turret, "Seems like the base plate shadow is applied on top of the turret?", the user's
+    # rating, 2026-11-11.)
+    skid = lpkit.worn(f + "-skid", (0.3, 0.28, 0.24), metal=0.5, rough=0.6, seams=4, rivets=True, wear=0.45)
+    P = {"skid": skid, "gunmetal": gunmetal, "shield": shield, "hull": hull, "trim": trim, "dark": W["dark"], "steel": W["steel"], "accent": accent, "light": light,
          "glass": glass, "rubber": W["rubber"], "hazard": W["hazard"], "cloth": cloth}
     if CLAY:
         clay = lpkit.mat("clay", (0.5, 0.5, 0.5), metal=0.0, rough=0.7, grime=0.0)
@@ -1655,6 +1659,14 @@ def kh_base_layered():
         B(0.07, 0.04, 0.07, sx * 0.25, -0.69, 0.2, P["light"], bevel=0.0)
 
 
+def skid_lip(w, d, h):
+    """A lit top edge round a skid: a worn steel angle on its rim, catching the sun (the skid reads as a raised object)."""
+    for sy in (-1, 1):
+        B(w, 0.06, 0.03, 0, sy * (d / 2 - 0.03), h, P["steel"], bevel=0.0)
+    for sx in (-1, 1):
+        B(0.06, d, 0.03, sx * (w / 2 - 0.03), 0, h, P["steel"], bevel=0.0)
+
+
 def gs_base_sandbags():
     """Stacked sandbags round a scrap ring: two courses of modelled bags, the top course staggered, an open gap behind,
     an ammo crate and a drum inside."""
@@ -1662,7 +1674,8 @@ def gs_base_sandbags():
     rr = _r.Random(21)
     # (A skid 0.2 deep, its load lifted onto it after: at 0.06 the plate cast nothing past its edge and showed no side, and
     # the nest read as a decal on the grass, "transparent", the user, 2026-11-11.)
-    plate = B(1.7, 1.7, 0.2, 0, 0, 0, P["dark"])
+    plate = B(1.7, 1.7, 0.2, 0, 0, 0, P["skid"])
+    skid_lip(1.7, 1.7, 0.2)
     before = set(scene.objects)
     cyl(0.46, 0.38, 0, 0, 0.06, P["trim"], verts=10)
     for course, (R, z, n, off) in enumerate(((0.74, 0.06, 13, 0.0), (0.72, 0.19, 12, 0.5), (0.7, 0.32, 12, 0.0))):
@@ -1843,6 +1856,11 @@ def concept(name):
     if not name.startswith("kh-"):
         for o in head:
             if o.parent is None: o.location.z += GS_SKID
+    if name == "kh-gun-twin":
+        # (Its mantlet, barrels and drum 0.28 lower, the cheeks sunk into the ring: at 1.2 its barrels' shadow fell apart
+        # from the base's, as Grubstake's gun's did, a decal on the grass, 2026-11-11.)
+        for o in head:
+            if o.parent is None and o.location.z > 0.6: o.location.z -= 0.28
     return base, head
 
 
@@ -1865,24 +1883,27 @@ def fconcept(name):
                 bpy.ops.mesh.primitive_uv_sphere_add(radius=0.27, location=(x, -0.62, 0.74), segments=24, ring_count=12)
                 o = bpy.context.object; o.scale = (1, 1, 0.45); o.data.materials.append(P["trim"])
                 lie(0.09, 0.3, x, -1.07, 0.25, P["steel"], "y", 12)
-                pipe([(x, -0.45, 0.75), (x * 0.5, -0.15, 0.7), (x * 0.25, 0.0, 0.85), (x * 0.25, 0.05, 1.3)], 0.04, P["steel"], P["dark"])
+                pipe([(x, -0.45, 0.75), (x * 0.5, -0.15, 0.7), (x * 0.3, 0.0, 0.8), (x * 0.3, 0.05, 0.85)], 0.04, P["steel"], P["dark"])
             B(0.3, 0.3, 0.3, 0, -0.95, 0.32, P["dark"], bevel=0.03)
             cyl(0.4, 0.2, 0, 0.0, 0.32, P["hull"], verts=32, bevel=0.03)
             # (The neck: the head stands up over the tanks, as vanilla's does; nearer the camera than the head, the
             # tanks hid it, the first clay.)
-            cyl(0.17, 0.85, 0, 0.0, 0.52, P["hull"], verts=16, bevel=0.02)
-            for z in (0.7, 0.95, 1.2):
-                tor(0.18, 0.025, 0, 0.0, z, P["dark"])
-            cyl(0.3, 0.05, 0, 0.0, 1.37, P["trim"], verts=32)
+            # (A short thick neck: at 0.85 its arm's nozzle stood at 2.1 and its shadow fell apart from the plinth's, the
+            # flamer a decal on the grass, as Grubstake's were, 2026-11-11.)
+            cyl(0.26, 0.35, 0, 0.0, 0.52, P["hull"], verts=16, bevel=0.02)
+            tor(0.27, 0.025, 0, 0.0, 0.7, P["dark"])
+            cyl(0.32, 0.05, 0, 0.0, 0.87, P["trim"], verts=32)
             for sx in (-1, 1):
                 B(0.08, 0.04, 0.08, sx * 0.5, 1.12, 0.22, P["light"], bevel=0.0)
             B(1.27, 0.05, 0.05, 0, 0.75, 0.3, P["accent"], bevel=0.0)
         else:
             # A welded skid, three oil drums lashed upright at the back over the inlets, hoses from them into a ring on
             # a short drum stand, a hand pump, scrap.
+            # (Its skid lighter than its shadow, a lit edge: near black, the user saw a shadow over it, 2026-11-11.)
             for sx in (-1, 1):
-                B(0.2, 2.4, 0.12, sx * 0.6, 0, 0, P["dark"])
-            B(1.3, 2.2, 0.08, 0, 0, 0.12, P["trim"])
+                B(0.2, 2.4, 0.12, sx * 0.6, 0, 0, P["skid"])
+            B(1.3, 2.2, 0.08, 0, 0, 0.12, P["skid"])
+            skid_lip(1.3, 2.2, 0.2)
             for k, x in enumerate((-0.42, 0.0, 0.42)):
                 cyl(0.19, 0.48, x, -0.7, 0.2, (P["accent"], P["hull"], P["trim"])[k], verts=20, bevel=0.02)
                 for z in (0.32, 0.6):
@@ -1951,7 +1972,8 @@ def fconcept(name):
     b = group(base); h = group(head)
     # (The arms on the neck's top: built from the ring at 0.6, raised to the neck's 1.4.)
     if name == "kh-flame-arm":
-        for o in h: o.location.z += 0.8
+        for o in h:
+            if o.parent is None: o.location.z += 0.3   # (onto the short neck's 0.9; 0.8 onto the old one)
     return b, h
 
 
