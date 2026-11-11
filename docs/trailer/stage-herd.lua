@@ -9,7 +9,9 @@
 return {name = "stage-herd", base = 1, waves = true, resolution = {1920, 1080}, anti_alias = true, speed = 8,
   fast_until = 64200, moves = {
   {name = "s1-march", tick = 64300, frames = 180, track = true, from = {pos = "wave", zoom = 0.6, daytime = 0.33}, to = {daytime = 0.33}},
-  {name = "s2-breach", tick = 64960, frames = 300, from = {pos = {-41, -290}, zoom = 0.75, daytime = 0.34}, to = {pos = {-36, -292}, zoom = 0.8, daytime = 0.34}},
+  -- (Later and further north on 0.2.320's fork: at 64960 on -41,-290 its scouting take showed the wall empty till its
+  -- last frame, the herd reaching it at the top edge.)
+  {name = "s2-breach", tick = 65400, frames = 300, from = {pos = {-40, -300}, zoom = 0.75, daytime = 0.34}, to = {pos = {-36, -302}, zoom = 0.8, daytime = 0.34}},
   -- Through the gap and on to the heart: held on the gap, drifting toward the heart.
   {name = "s3-inside", tick = 65640, frames = 300, from = {pos = {-34, -290}, zoom = 0.6, daytime = 0.35}, to = {pos = {-10, -298}, zoom = 0.6, daytime = 0.35}},
 }}
