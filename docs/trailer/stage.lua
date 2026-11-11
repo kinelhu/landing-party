@@ -8,6 +8,9 @@
 --   (site -30,269, wall -28,243) deploys 65800, paints 67600, its lances fall 68320, its assault 68321.
 --   (Refilmed 2026-11-05 on 0.2.206: the yard, the assault through the breach, the herd through its gap.)
 --   LP_FILM_SIM=<fork's sim dir> scripts/film.sh trailer-film fork.zip docs/trailer/stage.lua
+-- (Re-timed 2026-11-11 for the reshoot at 0.2.320, from the fork's rehearsal (FILM_REHEARSE, trace on, settlements 1
+-- and 4): its herd breaches at 65112 (-38,-270), its gap open 65411 (-38,-288), its rush 65635; the drop's assault 49000;
+-- the armed camp deploys 66400, paints 68200, its lances fall 68920.)
 return {name = "stage", base = 1, army = true, waves = true, resolution = {1920, 1080}, anti_alias = true, speed = 8,
   fast_until = 29300, moves = {
   -- Muster: the barracks turning out the army, a timelapse (a frame every 15 ticks: 3000 ticks in 6.7 s).
@@ -21,12 +24,12 @@ return {name = "stage", base = 1, army = true, waves = true, resolution = {1920,
   {name = "c1-drop", tick = 44750, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
   {name = "c2-barrage", tick = 47000, frames = 240, from = {pos = {-560, 31}, zoom = 0.6, daytime = 0.26}, to = {pos = {-566, 32}, zoom = 0.7, daytime = 0.26}},
   -- Its assault through the breach (siege.lua open_way: at what stands behind, not the wall beside the gap).
-  {name = "c3-assault", tick = 49250, frames = 360, from = {pos = {-556, 32}, zoom = 0.75, daytime = 0.27}, to = {pos = {-568, 33}, zoom = 0.8, daytime = 0.27}},
+  {name = "c3-assault", tick = 48950, frames = 360, from = {pos = {-556, 32}, zoom = 0.75, daytime = 0.27}, to = {pos = {-568, 33}, zoom = 0.8, daytime = 0.27}},
   -- Synthexis: the herd marching (tracked), its breach, inside.
   {name = "s1-march", tick = 64300, frames = 180, track = true, from = {pos = "wave", zoom = 0.6, daytime = 0.33}, to = {daytime = 0.33}},
-  {name = "s2-breach", tick = 65250, frames = 300, from = {pos = {-41, -290}, zoom = 0.75, daytime = 0.34}, to = {pos = {-36, -292}, zoom = 0.8, daytime = 0.34}},
-  {name = "s3-inside", tick = 65800, frames = 180, track = true, from = {pos = "wave", zoom = 0.75, daytime = 0.35}, to = {daytime = 0.35}},
+  {name = "s2-breach", tick = 64960, frames = 300, from = {pos = {-41, -290}, zoom = 0.75, daytime = 0.34}, to = {pos = {-36, -292}, zoom = 0.8, daytime = 0.34}},
+  {name = "s3-inside", tick = 65590, frames = 180, track = true, from = {pos = "wave", zoom = 0.75, daytime = 0.35}, to = {daytime = 0.35}},
   -- The strike on the player's wall: the deploy, then the paint and the lances.
-  {name = "k1-deploy", tick = 65850, frames = 180, every = 3, from = {pos = {-30, 262}, zoom = 0.65, daytime = 0.36}, to = {pos = {-30, 260}, zoom = 0.68, daytime = 0.36}},
-  {name = "k2-strike", tick = 67700, frames = 1000, from = {pos = {-29, 258}, zoom = 0.5, daytime = 0.38}, to = {pos = {-28, 250}, zoom = 0.75, daytime = 0.38}},
+  {name = "k1-deploy", tick = 66450, frames = 180, every = 3, from = {pos = {-30, 262}, zoom = 0.65, daytime = 0.36}, to = {pos = {-30, 260}, zoom = 0.68, daytime = 0.36}},
+  {name = "k2-strike", tick = 68300, frames = 1000, from = {pos = {-29, 258}, zoom = 0.5, daytime = 0.38}, to = {pos = {-28, 250}, zoom = 0.75, daytime = 0.38}},
 }}

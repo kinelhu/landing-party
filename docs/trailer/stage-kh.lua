@@ -4,8 +4,11 @@
 -- siege on the wall at 65800, paints 67600, its lances fall 68320. The plugin's events come from one settlement
 -- (`base`): the armed camp is settlement 4, so its beats are rehearsed with base = 4 (with base = 1 it looked gone).
 --   LP_FILM_SIM=<fork's sim dir> scripts/film.sh trailer-film fork.zip docs/trailer/stage-kh.lua
+-- (Re-timed 2026-11-11 for the reshoot at 0.2.320, from the fork's rehearsal (FILM_REHEARSE, trace on, settlements 1
+-- and 4): its herd breaches at 65112 (-38,-270), its gap open 65411 (-38,-288), its rush 65635; the drop's assault 49000;
+-- the armed camp deploys 66400, paints 68200, its lances fall 68920.)
 return {name = "stage-kh", base = 1, army = true, waves = true, resolution = {1920, 1080}, anti_alias = true, speed = 8,
   fast_until = 44600, moves = {
   {name = "c1-drop", tick = 44750, frames = 180, every = 3, from = {pos = {-548, 31}, zoom = 0.7, daytime = 0.25}, to = {pos = {-550, 31}, zoom = 0.72, daytime = 0.25}},
-  {name = "k2-strike", tick = 67700, frames = 1000, from = {pos = {-29, 247}, zoom = 0.55, daytime = 0.3}, to = {pos = {-28, 241}, zoom = 0.75, daytime = 0.31}},
+  {name = "k2-strike", tick = 68300, frames = 1000, from = {pos = {-29, 247}, zoom = 0.55, daytime = 0.3}, to = {pos = {-28, 241}, zoom = 0.75, daytime = 0.31}},
 }}
