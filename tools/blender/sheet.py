@@ -1,6 +1,6 @@
 """Blender frames to Factorio sprite sheets (tesla_tower.py with FRAMES): each frame stretched by sqrt(2), all cropped
 to their union's bounding box, 8 a row; the shadow (one render) repeated for every frame (a rotated sprite's layers
-share their direction count) at vanilla's strength. Writes body.png, glow.png, shadow.png and sheet.json (frame size,
+share their direction count) at full strength, as vanilla's. Writes body.png, glow.png, shadow.png and sheet.json (frame size,
 count, line length, shift in tiles at 64 px a tile), and a preview GIF.
 
     uv run --with pillow python tools/blender/sheet.py <frames dir> <out dir> [gif]
@@ -18,7 +18,9 @@ glow = [stretch(Image.open(f"{src}/glow/{n}").convert("RGBA")) for n in names]
 # One shadow, or one a frame (a shadow/ folder: a shape that moves).
 def shade(im):
     # (Below 12 of 255 nothing: the catcher leaves a faint alpha over its whole plane, and the crop took the full frame.)
-    im.putalpha(im.split()[3].point(lambda v: int(v * 0.55) if v > 12 else 0)); return im
+    # (Full strength, as vanilla's shadow sprites are, alpha 255 where solid: the game draws every shadow at its own opacity. At
+    # 0.55 of it, "vanilla's strength" as first assumed, ours drew at half of that, faint beside vanilla's, 0.2.321.)
+    im.putalpha(im.split()[3].point(lambda v: v if v > 12 else 0)); return im
 # None: a layer drawn over another's shadow (buggy.py's chassis: each weapon module's sheet carries the whole shadow).
 if os.path.isdir(f"{src}/shadow"):
     shadows = [shade(stretch(Image.open(f"{src}/shadow/{n}").convert("RGBA"))) for n in names]
@@ -26,6 +28,14 @@ elif os.path.exists(f"{src}/shadow.png"):
     shadows = [shade(stretch(Image.open(f"{src}/shadow.png").convert("RGBA")))] * len(names)
 else:
     shadows = []
+# A shadow reaching the frame's edge is cut there (vanilla's sun casts long and east: lpkit.stage's frame widened for
+# it, 0.2.319). Stop, do not write a clipped shadow.
+for n, im in zip(names, shadows):
+    a = im.split()[3]
+    edge = max(a.crop((0, 0, 2, im.height)).getextrema()[1], a.crop((im.width - 2, 0, im.width, im.height)).getextrema()[1],
+               a.crop((0, 0, im.width, 2)).getextrema()[1], a.crop((0, im.height - 2, im.width, im.height)).getextrema()[1])
+    if edge > 0:
+        sys.exit(f"sheet.py: the shadow in {src} reaches the frame's edge (frame {n}): cut; give the render more margin")
 for frames in (body, glow):
     for im in frames:
         im.putalpha(im.split()[3].point(lambda v: v if v > 3 else 0))

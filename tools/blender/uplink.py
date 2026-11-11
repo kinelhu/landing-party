@@ -19,13 +19,12 @@ out = args[0]
 CORP = args[1] if len(args) > 1 else "serenity"
 FRAMES, TILES, MARGIN = int(os.environ.get("LP_FRAMES", 32)), 6, 3.0
 scene = lpkit.reset(); scene.cycles.samples = 64
-P = lpkit.palette_worn()
-LIGHT = (0.45, 0.85, 1.0) if CORP == "serenity" else (1.0, 0.72, 0.35)
-if CORP == "grubstake":
-    P["paint"] = lpkit.worn("paint_g", (0.4, 0.27, 0.13), metal=0.25, rough=0.65, seams=5)
-    P["glow"] = lpkit.mat("glow_g", (1.0, 0.8, 0.5), emit=LIGHT, strength=2.0, grime=0.0)
-P["window"] = lpkit.mat("window", (0.1, 0.1, 0.08), emit=LIGHT, strength=1.3, grime=0.0)
-rust = lpkit.worn("rust", (0.3, 0.16, 0.08), metal=0.2, rough=0.8, seams=8, rivets=False)
+# (The corporations' palette of their clay-first buildings: on the bright worn one it rated 2, "bit too toy like", the
+# user, 2026-11-10.)
+P = lpkit.palette_faction(CORP)
+LIGHT = (0.25, 0.7, 1.0) if CORP == "serenity" else (1.0, 0.55, 0.12)
+P["window"] = lpkit.mat("window", (0.05, 0.05, 0.04), emit=LIGHT, strength=0.9, grime=0.0)
+rust = P["rust"]
 B = lpkit.box
 rnd = random.Random(7)
 
@@ -94,7 +93,7 @@ def fixed():
     for z in (0.5, 1.1, 1.7, 2.2):
         lpkit.rod((mx - 0.2, my, mz + z), (mx + 0.2, my, mz + z), 0.013, P["steel"])
     for i, z in enumerate((1.4, 1.95, 2.45)):
-        m = lpkit.mat(f"ring{i}", (0.3, 0.32, 0.34), metal=0.8, rough=0.4, emit=LIGHT, strength=0.0)
+        m = lpkit.mat(f"ring{i}", (0.06, 0.08, 0.09), metal=0.5, rough=0.4, emit=LIGHT, strength=0.0)
         rings.append(m)
         lpkit.torus(0.18 - i * 0.03, 0.03, mx, my, mz + z, m)
     lpkit.sphere(0.07, mx, my, mz + 2.7, P["glow"])
@@ -111,11 +110,17 @@ def moving():
                                     location=c, rotation=(math.radians(-145), 0, 0))
     d = bpy.context.object
     md = d.modifiers.new("s", "SOLIDIFY"); md.thickness = 0.05
-    d.data.materials.append(P["steel"])
+    d.data.materials.append(P["paint"])
     bpy.ops.mesh.primitive_torus_add(major_radius=1.9, minor_radius=0.06, location=tuple(axle[i] + n[i] * 0.6 for i in range(3)),
                                      rotation=(math.radians(-145), 0, 0))
-    bpy.context.object.data.materials.append(P["paint"])
+    bpy.context.object.data.materials.append(P["dark"])
     focus = tuple(axle[i] + n[i] * 1.8 for i in range(3))
+    # Ribs on its back, hub to rim (a plain cone read as a toy's dish).
+    for k in range(12):
+        ang = k * math.pi / 6
+        uu = tuple(math.cos(ang) * (1, 0, 0)[i] + math.sin(ang) * (0, n[2], -n[1])[i] for i in range(3))
+        p0 = tuple(c[i] - n[i] * 0.3 + uu[i] * 0.3 for i in range(3)); p1 = tuple(c[i] + n[i] * 0.28 + uu[i] * 1.85 for i in range(3))
+        lpkit.rod(p0, p1, 0.035, P["dark"])
     rc = tuple(axle[i] + n[i] * 0.55 for i in range(3))
     u, v = (1, 0, 0), (0, n[2], -n[1])
     for ang in (math.pi / 2, math.pi / 2 + 2.1, math.pi / 2 + 4.2):
@@ -126,6 +131,7 @@ def moving():
     lpkit.rod((DX - 0.5, DY, 2.65), (DX + 0.5, DY, 2.65), 0.06, P["steel"])
 
 still_objs = group(fixed)
+still_objs += lpkit.scatter(still_objs, {P["paint"], P["trim"]}, P["dark"], P["steel"], seed=9, density=3.0)
 turn_objs = group(moving)
 bpy.ops.object.empty_add(location=(DX, DY, 0)); pivot = bpy.context.object
 for o in turn_objs:
@@ -135,8 +141,8 @@ def set_frame(f):
     pivot.rotation_euler = (0, 0, -2 * math.pi * t)
     for i, m in enumerate(rings):
         dd = abs(((t * 3 - i) + 1.5) % 3 - 1.5)
-        lpkit.emission(m, max(0.0, 2.5 - 2.4 * dd))
-    lpkit.emission(P["glow"], 1.6 + 0.8 * math.sin(t * 4 * math.pi))
+        lpkit.emission(m, max(0.0, 1.8 - 1.7 * dd))
+    lpkit.emission(P["glow"], 0.9 + 0.5 * math.sin(t * 4 * math.pi))
     bpy.context.view_layer.update()
 model = still_objs + turn_objs
 lpkit.bevel_all(model)

@@ -104,13 +104,27 @@ def drill():
     def frame():
         # An open gantry: four legs, beams round the top, the motor on a cross-girder, so the turning head shows.
         bevel(B(2.8, 2.8, 0.22, 0, 0, 0, RUST), 0.05)
+        # (Steel girders: its legs and beams in ochre paint read as wood, "is that supposed to be wood?", the user's
+        # rating, 2026-11-10. Now I-section legs, dark, flanged in steel, a hazard band at each foot; the top beams steel
+        # with riveted gussets, hazard chevrons along the front one.)
         for sx in (-1, 1):
             for sy in (-1, 1):
-                bevel(B(0.4, 0.4, 1.7, sx * 1.15, sy * 1.15, 0.22, OCHRE), 0.04)
-                B(0.5, 0.5, 0.1, sx * 1.15, sy * 1.15, 0.22, DARK, bevel=0.01)
+                x, y = sx * 1.15, sy * 1.15
+                B(0.14, 0.36, 1.7, x, y, 0.22, DARK, bevel=0.01)                       # the web
+                for fx in (-1, 1):
+                    B(0.38, 0.05, 1.7, x, y + fx * 0.17, 0.22, STEEL, bevel=0.008)     # the flanges
+                for z in (0.3, 0.42):
+                    B(0.4, 0.4, 0.07, x, y, z, HAZ if z == 0.3 else DARK, bevel=0.0)
+                B(0.5, 0.5, 0.1, x, y, 0.22, DARK, bevel=0.01)
+                for k in range(2):
+                    B(0.42, 0.42, 0.04, x, y, 0.9 + k * 0.6, DARK, bevel=0.0)          # rivet bands
         for sy in (-1, 1):
-            bevel(B(2.7, 0.3, 0.28, 0, sy * 1.15, 1.92, OCHRE), 0.03)
-            bevel(B(0.3, 2.7, 0.28, sy * 1.15, 0, 1.92, OCHRE), 0.03)
+            bevel(B(2.7, 0.3, 0.28, 0, sy * 1.15, 1.92, STEEL), 0.02)
+            bevel(B(0.3, 2.7, 0.28, sy * 1.15, 0, 1.92, STEEL), 0.02)
+            for k in range(5):
+                B(0.04, 0.32, 0.3, -1.0 + k * 0.5, sy * 1.15, 1.91, DARK, bevel=0.0)  # riveted gussets
+        for k in range(9):
+            B(0.26, 0.05, 0.24, -1.05 + k * 0.26, -1.31, 1.94, HAZ if k % 2 == 0 else DARK, bevel=0.0)
         bevel(B(2.4, 0.5, 0.3, 0, 0.2, 2.05, DARK), 0.03)
         bevel(B(0.9, 0.8, 0.7, 0, 0.2, 2.35, RUST), 0.05)
         cyl(0.22, 0.4, 0.5, 0.35, 2.35, STEEL, verts=16)

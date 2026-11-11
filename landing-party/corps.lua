@@ -67,10 +67,20 @@ data:extend(out)
 -- sprites ... instead of just tinting the full thing"): every layer of its prototypes whose vanilla file has a recolour
 -- in graphics/manifest.lua points at it and drops its whole-sprite tint. What has none keeps the tint.
 local manifest = require("graphics.manifest")
+local SHEETS_ALL = require("graphics.sheets")
+local function sheet_key(f) return f:match("^__landing%-party__/graphics/(.+)/[a-z]+%.png$") end
 local function repoint(t, files, seen)
   if type(t) ~= "table" or seen[t] then return end
   seen[t] = true
   if type(t.filename) == "string" and files[t.filename] then
+    -- A modelled sheet takes its own frame size and shift: each corporation's render crops its own (Grubstake's uplink
+    -- re-rendered a pixel narrower than Kessler-Hayashi's, 0.2.321, and its frames ran off its sheet: the game held at
+    -- a sprite error before loading a save).
+    local from, to = SHEETS_ALL[sheet_key(t.filename)], SHEETS_ALL[sheet_key(files[t.filename])]
+    if from and to and t.width == from.width and t.height == from.height then
+      t.width, t.height = to.width, to.height
+      if t.shift then t.shift = {to.shift[1], to.shift[2]} end
+    end
     t.filename = files[t.filename]
     t.tint = nil
   end

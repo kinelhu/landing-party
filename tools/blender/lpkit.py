@@ -209,17 +209,31 @@ def torus(R, r, x, y, z, m):
     bpy.ops.mesh.primitive_torus_add(major_radius=R, minor_radius=r, location=(x, y, z), major_segments=48, minor_segments=12)
     return _add(bpy.context.object, m)
 
+# The sun's direction, the way light travels: vanilla's, measured from its own poles' sprites (a pole's shadow tip from
+# its foot, per tile of its height: medium 1.09 east 0.15 north, big 1.06 and 0.14, small 1.19 and 0.02, substation
+# 1.28 and 0.21). The kit's first sun, (50, 0, -45) degrees, cast them north-east, 0.84 and 0.84: every building it made
+# stood with its shadow off vanilla's (the coordinator, 2026-11-10, of the factions' depots' film).
+SUN_DIR = (1.1, 0.13, -1.0)
+
+def aim_sun(sun):
+    import mathutils
+    d = mathutils.Vector(SUN_DIR).normalized()
+    sun.rotation_euler = (-d).to_track_quat("Z", "Y").to_euler()
+
 def stage(scene, tiles, margin):
     """Shadow catcher, the sun from the upper left, a warm sky, the camera from the south at 45 degrees; returns them."""
     bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0)); ground = bpy.context.object; ground.is_shadow_catcher = True
     bpy.ops.object.light_add(type="SUN", location=(0, 0, 10)); sun = bpy.context.object
     sun.data.energy = 2.6; sun.data.color = (1.0, 0.96, 0.9); sun.data.angle = math.radians(3)
-    sun.rotation_euler = (math.radians(50), 0, math.radians(-45))
+    aim_sun(sun)
     world = bpy.data.worlds.new("w"); scene.world = world; world.use_nodes = True
     bg = world.node_tree.nodes["Background"]; bg.inputs[0].default_value = (0.75, 0.72, 0.68, 1); bg.inputs[1].default_value = 0.55
     bpy.ops.object.camera_add(location=(0, -20, 20), rotation=(math.radians(45), 0, 0)); cam = bpy.context.object
-    cam.data.type = "ORTHO"; span = tiles + 2 * margin; cam.data.ortho_scale = span; scene.camera = cam
-    scene.render.resolution_x = scene.render.resolution_y = int(span * PX)
+    # (Wider than tall by the margin each side: vanilla's sun casts long and east, and the first pole rendered under it
+    # had its shadow cut at the frame's right edge. Centred still: sheet.py reads the render's centre as the entity's.)
+    cam.data.type = "ORTHO"; span = tiles + 2 * margin; wide = span + 2 * margin
+    cam.data.ortho_scale = wide; cam.data.sensor_fit = "HORIZONTAL"; scene.camera = cam
+    scene.render.resolution_x = int(wide * PX); scene.render.resolution_y = int(span * PX)
     return ground, sun, world
 
 def render(scene, path):
@@ -316,3 +330,92 @@ def dirty(m, dirt=0.6, dust=0.5, rust=0.6, dirt_rgb=(0.1, 0.08, 0.05), dust_rgb=
     comb = nt.nodes.new("ShaderNodeCombineColor"); [L(sp, comb.inputs[i]) for i in range(3)]
     c = mix(c, comb.outputs["Color"], ramp(sep.outputs["Z"], -2, -1, 1.0, 1.0), blend="MULTIPLY")
     L(c, inp)
+
+
+def palette_faction(corp):
+    """The corporations' palette of their clay-first buildings (faction_works.palette, rated 4 and 5 by the user,
+    2026-11-10), for the scripts that came before it (antennas, uplink, jammer, rated 2: "bit too toy like"): a dark
+    worn steel in place of the bright one, the corporation's hull for paint, its accent, a glow tuned down and
+    saturated (white-hot emitters read as toys by day). Keys as palette_worn's, so a script swaps one line."""
+    import lptex
+    W = palette_worn()
+    tex = os.path.isdir(lptex.TEX)
+    P = dict(W)
+    P["steel"] = worn("steel-f", (0.16, 0.165, 0.17), metal=0.65, rough=0.55, seams=4, rivets=False, wear=0.35)
+    P["dark"] = worn("dark-f", (0.045, 0.045, 0.05), metal=0.5, rough=0.65, seams=5, rivets=True, wear=0.3)
+    if corp in ("serenity", "kh"):
+        P["paint"] = worn("kh-hull", (0.11, 0.16, 0.23), metal=0.35, rough=0.55, seams=3, rivets=False, wear=0.3)
+        P["trim"] = worn("kh-trim", (0.22, 0.235, 0.25), metal=0.4, rough=0.55, seams=2, rivets=False, wear=0.35)
+        P["hazard"] = worn("kh-haz", (0.55, 0.42, 0.08), metal=0.2, rough=0.6, seams=8, rivets=False, wear=0.3)
+        P["glow"] = mat("glow-f", (0.08, 0.3, 0.42), emit=(0.25, 0.7, 1.0), strength=1.2, grime=0.0)
+        P["rust"] = worn("rust-f", (0.2, 0.12, 0.07), metal=0.3, rough=0.75, seams=8, rivets=False)
+    else:
+        P["paint"] = mat("gs-hull", (0.26, 0.15, 0.04), metal=0.3, rough=0.65, grime=0.85)
+        P["trim"] = lptex.textured("gs-rust", "MetalPlates013", val=0.55, scale=0.8, edge=(0.4, 0.33, 0.25)) if tex \
+            else worn("gs-rust", (0.22, 0.1, 0.05), metal=0.5, rough=0.7, seams=6)
+        P["hazard"] = worn("gs-red", (0.14, 0.05, 0.03), metal=0.35, rough=0.7, seams=6, rivets=True, wear=0.4)
+        P["glow"] = mat("glow-f", (0.4, 0.2, 0.03), emit=(1.0, 0.55, 0.12), strength=1.2, grime=0.0)
+        P["rust"] = P["trim"]
+    return P
+
+def scatter(objs, mats, dark, metal, seed, density=5.0):
+    """Small parts seeded over the large upward and outward faces of objs whose material is in mats (junction boxes, vents,
+    hatches, bolts), at a 3x3 machine's scale: what made the cannon read made, not modelled."""
+    import bmesh as _bm, random as _r, mathutils as _mu
+    V = _mu.Vector
+    rng = _r.Random(seed)
+    acc = {}
+    def bm_for(m):
+        if m.name not in acc: acc[m.name] = (_bm.new(), m)
+        return acc[m.name][0]
+    def place(bm, centre, normal, spin, size, cylinder=False):
+        q = normal.to_track_quat("Z", "Y") @ _mu.Quaternion(V((0, 0, 1)), spin)
+        mat = _mu.Matrix.Translation(centre) @ q.to_matrix().to_4x4()
+        if cylinder:
+            r = _bm.ops.create_cone(bm, cap_ends=True, segments=8, radius1=size[0], radius2=size[0], depth=size[2])
+            _bm.ops.transform(bm, matrix=mat @ _mu.Matrix.Translation((0, 0, size[2] / 2)), verts=r["verts"])
+        else:
+            r = _bm.ops.create_cube(bm, size=1.0)
+            sc = _mu.Matrix.Diagonal((size[0], size[1], size[2], 1))
+            _bm.ops.transform(bm, matrix=mat @ _mu.Matrix.Translation((0, 0, size[2] / 2)) @ sc, verts=r["verts"])
+    n_ = 0
+    for o in objs:
+        if o.type != "MESH": continue
+        ms = [sl.material for sl in o.material_slots if sl.material]
+        if not ms or ms[0] not in mats: continue
+        mw = o.matrix_world; rot = mw.to_quaternion()
+        for f in o.data.polygons:
+            vs = [mw @ o.data.vertices[i].co for i in f.vertices]
+            n = (rot @ f.normal).normalized()
+            if n.z < -0.2 or n.y > 0.5 or len(vs) < 3: continue      # (not the faces the camera cannot see)
+            area = sum(((vs[i] - vs[0]).cross(vs[i + 1] - vs[0])).length / 2 for i in range(1, len(vs) - 1))
+            if area < 0.12: continue
+            c = sum(vs, V((0, 0, 0))) / len(vs)
+            for _ in range(max(1, int(area * density))):
+                t = [rng.random() for _ in vs]; tot = sum(t)
+                p0 = c + (sum((v * (w / tot) for v, w in zip(vs, t)), V((0, 0, 0))) - c) * 0.8
+                spin = rng.choice((0, math.pi / 2)); kind = rng.random()
+                if kind < 0.35:
+                    place(bm_for(dark), p0, n, spin, (rng.uniform(0.08, 0.2), rng.uniform(0.06, 0.14), rng.uniform(0.03, 0.08)))
+                elif kind < 0.55:
+                    w, h = rng.uniform(0.14, 0.26), rng.uniform(0.1, 0.18)
+                    place(bm_for(dark), p0, n, spin, (w, h, 0.015))
+                    for s_ in (-1, 0, 1):
+                        off = (n.to_track_quat("Z", "Y") @ _mu.Quaternion(V((0, 0, 1)), spin)) @ V((0, s_ * h * 0.28, 0))
+                        place(bm_for(metal), p0 + off + n * 0.015, n, spin, (w * 0.85, h * 0.12, 0.012))
+                elif kind < 0.75:
+                    place(bm_for(metal), p0, n, spin, (rng.uniform(0.12, 0.3), rng.uniform(0.12, 0.3), 0.012))
+                else:
+                    for b_ in range(4):
+                        a = b_ * math.pi / 2 + spin
+                        place(bm_for(metal), p0 + (n.to_track_quat("Z", "Y") @ V((math.cos(a) * 0.06, math.sin(a) * 0.06, 0))),
+                              n, 0, (0.018, 0, 0.02), cylinder=True)
+                n_ += 1
+    out = []
+    for name, (bm, m) in acc.items():
+        me = bpy.data.meshes.new("scatter-" + name); bm.to_mesh(me); bm.free()
+        o = bpy.data.objects.new("scatter-" + name, me); bpy.context.scene.collection.objects.link(o); me.materials.append(m); out.append(o)
+    print("scattered", n_, "parts")
+    return out
+
+

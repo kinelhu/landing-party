@@ -14,7 +14,9 @@ prev = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != "-" else None
 like = json.load(open(sys.argv[4])) if len(sys.argv) > 4 else None
 def load(p, shadow=False):
     im = Image.open(p).convert("RGBA"); im = im.resize((im.width, int(im.height * math.sqrt(2))), Image.LANCZOS)
-    im.putalpha(im.split()[3].point((lambda v: int(v * 0.55) if v > 12 else 0) if shadow else (lambda v: v if v > 3 else 0)))
+    # (Full strength, as vanilla's shadow sprites are, alpha 255 where solid: the game draws every shadow at its own opacity. At
+    # 0.55 of it, "vanilla's strength" as first assumed, ours drew at half of that, faint beside vanilla's, 0.2.321.)
+    im.putalpha(im.split()[3].point((lambda v: v if v > 12 else 0) if shadow else (lambda v: v if v > 3 else 0)))
     return im
 def union(ims):
     box = None

@@ -532,8 +532,15 @@ do
   local em = sa("assembling-machine", "electromagnetic-plant")
   if em and em.graphics_set then
     local g = em.graphics_set
-    LAB_BODY["lp-optics-lab"] = {k = 1, still = g.idle_animation and g.idle_animation.layers or {},
-      moving = {wv(g, "main-rotate-continue"), wv(g, "shadow-rotate-continue")}}
+    -- (The plate holds the coil head's first frame too: the plant's idle base alone is its pit, and an idle lab read as a
+    -- black hole, "it's a... hole?", the user's rating, 2026-11-10.)
+    local plate_l = {}
+    for _, l in ipairs(g.idle_animation and g.idle_animation.layers or {}) do plate_l[#plate_l + 1] = l end
+    local head, head_shadow = wv(g, "main-rotate-continue"), wv(g, "shadow-rotate-continue")
+    if head and head_shadow then
+      table.insert(plate_l, 1, table.deepcopy(head_shadow)); plate_l[#plate_l + 1] = table.deepcopy(head)
+    end
+    LAB_BODY["lp-optics-lab"] = {k = 1, still = plate_l, moving = {head, head_shadow}}
   end
   local cryo = sa("assembling-machine", "cryogenic-plant")
   if cryo and cryo.graphics_set then

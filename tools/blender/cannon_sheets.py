@@ -26,7 +26,9 @@ for d in sorted(os.listdir(src)):
     shadow = Image.open(f"{base}/shadow.png").convert("RGBA")
     shadow.putalpha(shadow.split()[3].point(lambda v: v if v > 12 else 0))
     shadow = stretch(shadow)
-    shadow.putalpha(shadow.split()[3].point(lambda v: int(v * 0.55) if v > 12 else 0))
+    # (Full strength, as vanilla's shadow sprites are, alpha 255 where solid: the game draws every shadow at its own opacity. At
+    # 0.55 of it, "vanilla's strength" as first assumed, ours drew at half of that, faint beside vanilla's, 0.2.321.)
+    shadow.putalpha(shadow.split()[3].point(lambda v: v if v > 12 else 0))
     for im in [body] + glows:
         im.putalpha(im.split()[3].point(lambda v: v if v > 3 else 0))
     box = None

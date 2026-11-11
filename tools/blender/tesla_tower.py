@@ -7,8 +7,11 @@ square, heights up the screen; tools/blender/factorio_frame.py does the stretch)
 tile, the shadow as its own layer (a shadow catcher with the model hidden from the camera).
 """
 import math
+import os
 import sys
 import bpy
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lpkit
 
 args = sys.argv[sys.argv.index("--") + 1:]
 out = args[0]
@@ -145,7 +148,7 @@ sun = bpy.context.object
 sun.data.energy = 2.6
 sun.data.color = (1.0, 0.96, 0.9)
 sun.data.angle = math.radians(3)
-sun.rotation_euler = (math.radians(50), 0, math.radians(-45))
+lpkit.aim_sun(sun)   # (vanilla's sun, lpkit.SUN_DIR)
 world = bpy.data.worlds.new("w"); scene.world = world
 world.use_nodes = True
 world.node_tree.nodes["Background"].inputs[0].default_value = (0.75, 0.72, 0.68, 1)
@@ -156,9 +159,12 @@ bpy.ops.object.camera_add(location=(0, -20, 20), rotation=(math.radians(45), 0, 
 cam = bpy.context.object
 cam.data.type = "ORTHO"
 span = TILES + 2 * MARGIN
-cam.data.ortho_scale = span
+# (Wider than tall by the margin each side, as lpkit.stage: vanilla's sun casts long and east, and the tower's shadow
+# reached the frame's edge, 0.2.319; sheet.py stopped on it.)
+wide = span + 2 * MARGIN
+cam.data.ortho_scale = wide; cam.data.sensor_fit = "HORIZONTAL"
 scene.camera = cam
-scene.render.resolution_x = int(span * PX)
+scene.render.resolution_x = int(wide * PX)
 scene.render.resolution_y = int(span * PX)          # stretched by sqrt(2) afterwards
 
 def render(path):

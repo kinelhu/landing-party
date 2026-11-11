@@ -14,7 +14,8 @@ out = args[0]
 FRAMES = int(args[1]) if len(args) > 1 else 16
 scene = lpkit.reset()
 # (Worn, as the guns: its first render, on the clean palette, read as a toy beside them; the user, 2026-11-03.)
-P = lpkit.palette_worn()
+# (Now the corporation's palette of its clay-first buildings: on the worn one it rated 2, "bit too toy like", 2026-11-10.)
+P = lpkit.palette_faction("serenity")
 H = 4.6                                   # mast height, tiles
 
 # Footing: a pad, a squat base housing with panels and hazard trim.
@@ -47,15 +48,24 @@ while z < H - 0.3:
 lpkit.box(0.22, 0.18, 0.4, leg_at(0, 2.0)[0] * 1.4, leg_at(0, 2.0)[1] * 1.4, 1.8, P["paint"])
 # The crown: a collar, three arms, three emitter nodes.
 lpkit.cyl(0.2, 0.1, 0, 0, H, P["steel"], verts=16)
-lpkit.torus(0.16, 0.035, 0, 0, H + 0.14, P["copper"])
+lpkit.torus(0.16, 0.035, 0, 0, H + 0.14, P["dark"])
 nodes = []
 for k in range(3):
     a = k * 2 * math.pi / 3 - math.pi / 2
     tip = (math.cos(a) * 0.45, math.sin(a) * 0.45, H + 0.25)
     lpkit.rod((0, 0, H + 0.08), tip, 0.025, P["steel"])
-    lpkit.sphere(0.08, *tip, P["glow"])
+    lpkit.cyl(0.07, 0.06, tip[0], tip[1], tip[2] - 0.1, P["dark"], verts=10)
+    lpkit.sphere(0.06, *tip, P["glow"])
     nodes.append(tip)
+# Ladder rungs up one leg, conduit boxes on the base (its first, plain boxes and a bare mast, read as a toy).
+for k in range(int((H - 0.8) / 0.25)):
+    z = 0.8 + k * 0.25
+    lpkit.rod(leg_at(1, z), tuple(v * 1.0 for v in (leg_at(1, z)[0] * 1.35, leg_at(1, z)[1] * 1.35, z)), 0.008, P["steel"])
+for k in range(4):
+    a = k * math.pi / 2 + 0.3
+    lpkit.rod((math.cos(a) * 0.5, math.sin(a) * 0.5, 0.15), (math.cos(a) * 0.9, math.sin(a) * 0.9, 0.08), 0.025, P["rubber"])
 model = [o for o in scene.objects]
+model += lpkit.scatter(model, {P["paint"], P["steel"]}, P["dark"], P["steel"], seed=4, density=5.0)
 lpkit.bevel_all(model)
 ground, sun, world = lpkit.stage(scene, 2, 3.0)
 
@@ -64,7 +74,7 @@ arcs = []
 import bpy
 def set_frame(f):
     t = f / FRAMES
-    lpkit.emission(P["glow"], 1.6 + 0.8 * math.sin(t * 2 * math.pi * 2))
+    lpkit.emission(P["glow"], 1.0 + 0.5 * math.sin(t * 2 * math.pi * 2))
     for o in arcs: bpy.data.objects.remove(o, do_unlink=True)
     arcs.clear()
     for _ in range(rng.choice((1, 2, 2, 3))):

@@ -32,7 +32,8 @@ if WHAT == "barracks":
     # in warm steel, a roll-up bay door to the south its troopers walk out of, two roof fans, an exhaust stack, a lit
     # control window; training, its fans turn, the strip over its door runs and its amber lamp sweeps (16 frames).
     FRAMES, TILES, MARGIN = 16, 3, 2.2
-    tan = lpkit.worn("tan", (0.34, 0.31, 0.26), metal=0.35, rough=0.55, seams=1.5, rivets=False)   # (seams 6 read as planks)
+    # (Darker, a gunmetal warm grey: the pale tan roof read plain and flat at game scale, rated 2, the user, 2026-11-10.)
+    tan = lpkit.worn("tan", (0.2, 0.19, 0.165), metal=0.4, rough=0.55, seams=1.5, rivets=False)   # (seams 6 read as planks)
     rust = lpkit.worn("rust", (0.32, 0.17, 0.08), metal=0.2, rough=0.8, seams=8, rivets=False)
     P["strip"] = lpkit.mat("strip", (0.2, 0.15, 0.05), emit=(1.0, 0.65, 0.2), strength=0.0, grime=0.0)
     P["lamp"] = lpkit.mat("lamp", (0.4, 0.25, 0.05), emit=(1.0, 0.6, 0.1), strength=0.0, grime=0.0)
@@ -88,7 +89,19 @@ if WHAT == "barracks":
                 a = k2 * math.pi / 2
                 B(0.6, 0.11, 0.02, fx + math.cos(a) * 0.15, 0.55 + math.sin(a) * 0.15, 1.38, P["steel"], rot=a)
             lpkit.cyl(0.06, 0.05, fx, 0.55, 1.38, P["dark"], verts=12)
-    model = group(build)
+    def build_more():
+        # A comms mast on the machinery box with a red beacon, a hose reel and crates by the door, conduit on the walls.
+        lpkit.rod((0.85, 0.75, 1.32), (0.85, 0.75, 2.2), 0.025, P["steel"])
+        for z in (1.6, 1.9):
+            lpkit.rod((0.72, 0.75, z), (0.98, 0.75, z), 0.01, P["steel"])
+        lpkit.sphere(0.05, 0.85, 0.75, 2.24, P["beacon"])
+        for k2, (x, y) in enumerate(((-1.25, -1.5), (-1.05, -1.62), (1.2, -1.55))):
+            B(0.22, 0.2, 0.18 + 0.04 * k2, x, y, 0.0, P["paint"] if k2 != 1 else P["dark"])
+        lpkit.cyl(0.12, 0.3, 1.45, -1.0, 0.0, P["hazard"], verts=16)
+        for z in (0.35, 0.6):
+            lpkit.rod((-1.45, -0.6, z), (-1.45, 0.7, z), 0.025, P["dark"])
+    model = group(build) + group(build_more)
+    model += lpkit.scatter(model, {tan, P["steel"]}, P["dark"], P["steel"], seed=12, density=3.5)
     blades = group(build_fans)
     pivots = []
     for fx in (-0.5, 0.5):
@@ -100,32 +113,50 @@ if WHAT == "barracks":
         t = f / FRAMES
         for i, pv in enumerate(pivots):
             pv.rotation_euler = (0, 0, (1 if i else -1) * t * math.pi / 2)            # a quarter turn: four blades loop
-        lpkit.emission(P["strip"], 1.2 + 1.0 * math.sin(t * 2 * math.pi))
-        lpkit.emission(P["lamp"], 4.0 if (f % 8) < 3 else 0.6)
+        lpkit.emission(P["strip"], 0.7 + 0.5 * math.sin(t * 2 * math.pi))
+        lpkit.emission(P["lamp"], 3.0 if (f % 8) < 3 else 0.5)
+        lpkit.emission(P["beacon"], 2.5 if (f % 16) < 4 else 0.3)
         bpy.context.view_layer.update()
     allm = model + blades
     lpkit.bevel_all(allm)
     ground, sun, world = lpkit.stage(scene, TILES, MARGIN)
-    lpkit.passes(scene, out, FRAMES, set_frame, allm, {P["window"], P["strip"], P["lamp"]}, ground, sun, world)
+    lpkit.passes(scene, out, FRAMES, set_frame, allm, {P["window"], P["strip"], P["lamp"], P["beacon"]}, ground, sun, world)
 else:
-    # The muster point (the user, 2026-11-04: "Probably needs an antenna of some kind. And why not a built in light"): a
-    # post on a small foot, a radio box, a whip antenna with a lit tip, and a floodlight head facing the rally ground.
+    # The muster point (the user, 2026-11-04: "Probably needs an antenna of some kind. And why not a built in light"; of
+    # its post and radio box, rated 2, 2026-11-10: "Too small, not visible"): it is a container, orders in, units out, so
+    # an armoured locker filling its tile, dark, hazard chevrons on its doors, a mast over it carrying a floodlight, a
+    # whip antenna and a green signal lamp (the army's), a cable down to the locker.
     FRAMES, TILES, MARGIN = 1, 1, 1.6
-    tan = lpkit.worn("tan", (0.36, 0.32, 0.25), metal=0.3, rough=0.6, seams=6)
+    GREEN = lpkit.mat("signal", (0.1, 0.35, 0.08), emit=(0.35, 1.0, 0.25), strength=0.0, grime=0.0)
+    olive = lpkit.worn("olive-d", (0.12, 0.14, 0.09), metal=0.3, rough=0.6, seams=4, rivets=True, wear=0.35)
     def build():
-        lpkit.cyl(0.3, 0.1, 0, 0, 0, P["dark"], verts=8)                         # foot
-        lpkit.cyl(0.07, 1.0, 0, 0, 0.1, P["steel"], verts=12)                    # post
-        B(0.3, 0.2, 0.32, 0, -0.12, 0.3, tan)                                    # radio box
-        B(0.2, 0.02, 0.08, 0, -0.23, 0.5, P["window"])                           # its lit dial
-        B(0.32, 0.22, 0.04, 0, -0.12, 0.63, P["steel"])
-        lpkit.rod((0.1, -0.05, 0.63), (0.12, -0.04, 1.75), 0.008, P["steel"])    # whip antenna
-        lpkit.sphere(0.035, 0.12, -0.04, 1.77, P["window"])                      # its tip, lit
-        B(0.28, 0.12, 0.05, 0, 0, 1.1, P["steel"])                               # floodlight arm
-        B(0.2, 0.16, 0.14, -0.12, -0.08, 1.08, P["dark"], rot=math.radians(-20))  # its head
-        B(0.16, 0.02, 0.1, -0.12, -0.17, 1.06, P["window"], rot=math.radians(-20))
-        B(0.06, 0.04, 0.14, 0.0, -0.22, 0.12, P["hazard"])                       # a hazard band on the foot
+        B(0.94, 0.9, 0.06, 0, 0, 0, P["dark"])                                   # its skid
+        B(0.84, 0.66, 0.52, 0, 0.06, 0.06, olive)                                # the locker
+        B(0.88, 0.7, 0.05, 0, 0.06, 0.58, P["dark"])                             # its lid
+        for k in range(2):                                                       # two doors, chevrons, handles
+            x = -0.2 + 0.4 * k
+            B(0.36, 0.02, 0.44, x, -0.28, 0.1, P["dark"])
+            for j in range(4):
+                B(0.3, 0.025, 0.05, x, -0.29, 0.16 + j * 0.1, P["hazard"] if j % 2 == 0 else P["dark"])
+            B(0.03, 0.04, 0.12, x + (0.14 if k == 0 else -0.14), -0.3, 0.28, P["steel"])
+        for x in (-0.44, 0.44):                                                  # corner posts
+            for y in (-0.27, 0.39):
+                B(0.06, 0.06, 0.6, x, y, 0.04, P["steel"])
+        lpkit.rod((0.3, 0.3, 0.63), (0.3, 0.3, 1.9), 0.035, P["steel"])         # the mast
+        for z in (0.95, 1.4):
+            lpkit.rod((0.18, 0.3, z), (0.42, 0.3, z), 0.012, P["steel"])
+        B(0.36, 0.14, 0.06, 0.2, 0.22, 1.62, P["steel"])                         # floodlight arm
+        B(0.22, 0.2, 0.17, 0.08, 0.12, 1.56, P["dark"], rot=math.radians(-25))   # its head
+        B(0.18, 0.02, 0.12, 0.06, 0.02, 1.58, P["window"], rot=math.radians(-25))
+        lpkit.cyl(0.06, 0.05, 0.3, 0.3, 1.9, P["dark"], verts=12)                # the signal lamp
+        lpkit.sphere(0.065, 0.3, 0.3, 2.0, GREEN)
+        lpkit.rod((0.4, 0.36, 0.63), (0.44, 0.38, 2.3), 0.008, P["steel"])       # whip antenna
+        lpkit.rod((0.3, 0.24, 0.9), (0.15, -0.0, 0.63), 0.02, P["rubber"])       # cable to the locker
+        B(0.22, 0.03, 0.08, -0.25, -0.3, 0.62, P["window"])                      # a lit status strip on the lid
     model = group(build)
+    model += lpkit.scatter(model, {olive}, P["dark"], P["steel"], seed=21, density=8.0)
     lpkit.bevel_all(model)
+    lpkit.emission(GREEN, 2.5)
     ground, sun, world = lpkit.stage(scene, TILES, MARGIN)
-    lpkit.passes(scene, out, FRAMES, lambda f: None, model, {P["window"]}, ground, sun, world)
+    lpkit.passes(scene, out, FRAMES, lambda f: None, model, {P["window"], GREEN}, ground, sun, world)
 print("rendered", WHAT, out)

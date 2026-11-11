@@ -6552,8 +6552,46 @@ Bugs and surprises the headless runs caught, each kept as a check:
     concepts: a domed silo cap plain, a raked launch rail read as a ladder lying down.
   The clay concepts read sparse beside vanilla's cargo pad and silo, dense with pipes and machines; the finals carry
   machine clusters (faction_works.py kit: a pump, a cabinet, a manifold, a tank), props and scattered small parts, and
-  are still a little plainer than vanilla's. Not done: the shadows of every modelled building fall north-east, vanilla's
-  east (lpkit.stage's sun, all of phase 2's). The pole's old recolour pruned (make_sprites.py --prune).
+  are still a little plainer than vanilla's. The shadows of every modelled building fell north-east, vanilla's east
+  (lpkit.stage's sun, all of phase 2's): re-rendered under vanilla's sun in 0.2.321. The pole's old recolour pruned (make_sprites.py --prune).
+- **Shadows under vanilla's sun, at vanilla's strength; the redo round's first groups** (0.2.321; the user's ratings,
+  2026-11-10, rating page docs/review/stills-rating.lua; filmed on grass and desert, docs/review/stills-redo.lua):
+  - Every building the kit made re-rendered under vanilla's sun (lpkit.SUN_DIR, measured from vanilla's poles: long and
+    east), its frame widened for the longer shadow; sheet.py stops on a shadow that reaches its frame's edge (it caught
+    the dome tower, whose script builds its own camera). The depots and launch pads densified (kit, props, scatter).
+  - **Our shadows drew at about half of vanilla's.** The sheet tools packed a shadow at 0.55 of its alpha, "vanilla's
+    strength" as first assumed; vanilla's shadow sprites are solid (alpha 255) and the game draws every shadow at its own
+    opacity, so ours came out at half of that: faint, a lattice's nearly gone (seen in the redo film, a vanilla radar's
+    shadow dark beside a pacifier's none). Packed at full alpha now (sheet.py, cannon_sheets.py, gun_sheet.py); every
+    building repacked from its renders. The units' sheets (anim_sheet.py and the vehicles') are not yet repacked.
+  - **A corporation's repointed sheet kept the other's frame size.** Grubstake's uplink and pacifier are Kessler-
+    Hayashi's prototypes with their files repointed (graphics/manifest.lua); each render crops its own frame, and
+    Grubstake's uplink came out a pixel narrower: its frames ran off its sheet and the game held at a sprite error before
+    loading any save (a film waited out its timeout). corps.lua's repoint now takes the target sheet's size and shift.
+  - Optics labs ("it's a... hole?", rated 1): the electromagnetic plant's idle base alone is its pit; the plate now
+    carries the coil head's first frame, the busy animation over it as before.
+  - Pact breaker ("What is this supposed to be?", 1): a dish on a dark tripod, upturned, the pacifier's crystal glowing
+    violet at its focus, on a hazard-edged skid with a battery box and its strobe. Trade post ("It's a box?", 2): a
+    stall, a striped awning on steel posts over a dark counter, goods on it and beside it, a lantern, a price board.
+    Claim marker ("bright flag, dark pole?", 2): a two-tile black pole banded at its foot, a large rippled flag in a
+    vivid red-orange, a lantern, guy wires. Rally beacon (3, "Perhaps we include a speaker?"): two loudspeaker horns
+    under its lamp, a larger red pennant.
+  - The toy-like set (rated 2, "bit too toy like"; Kessler-Hayashi's jammer, relay, pacifier and uplink, Grubstake's
+    pacifier and uplink): on the corporations' palette of their clay-first buildings (lpkit.palette_faction: dark worn
+    steel, the corporation's hull, its accent) in place of the bright worn one, emitters tuned down and saturated (they
+    read white-hot by day), scatter's small parts over their housings (lpkit.scatter, from faction_works). The pacifier's
+    solid cone, ringed in white on a flat box, is now an open braced lattice over a core with four cabinets, dark collars
+    with a thin lit band the pulse climbs. The dishes (relay, uplink) dark-faced and ribbed behind. The pylons: Kessler-
+    Hayashi's mast near black with blue bands and one hazard band ("too bright! toy like"); Grubstake's tripod near black
+    with hazard bands and a hazard-yellow crossarm ("more contrast, disappears against the ground").
+  - Muster point ("Too small, not visible", 2): it is a container, orders in and units out, so now an armoured locker
+    filling its tile, dark olive, hazard chevrons on its doors, under a mast with a floodlight, a whip antenna and a
+    green signal lamp. Barracks (2): its pale tan, plain and flat at game scale, a dark warm gunmetal now, scatter's
+    parts on its roof and walls, a comms mast with a red beacon, crates and a hose reel by the door, its door strip
+    tuned down. Strip drill and Grubstake's drill ("is that supposed to be wood?", 2): its ochre legs and beams are
+    steel girders now, dark I-sections flanged in steel, hazard bands at the feet, riveted gussets, hazard chevrons on
+    the front beam. Grubstake's flamer (3, "darken the bright metal of the cannon"): its barrel dark, a worn ring at
+    the muzzle.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

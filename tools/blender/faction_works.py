@@ -740,13 +740,15 @@ def pylon_kh():
         B(0.06, 0.02, 0.04, 0, -0.245, 0.27, P["light"], bevel=0.0)
         # (Its mass: a mast this thick, a transformer can and a cable riser on it; first rendered at 0.15 it still
         # read as a stick beside vanilla's lattice tower.)
+        # (Dark, its bands the corporation's blue and one hazard: in its blue hull it read "too bright! toy like", the
+        # user's rating, 2026-11-10.)
         bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.22, radius2=0.1, depth=3.0, location=(0, 0, 1.62))
-        bpy.context.object.data.materials.append(P["hull"])
+        bpy.context.object.data.materials.append(P["dark"])
         for a in (0.4, 2.5, 4.6):
-            rod((math.cos(a) * 0.26, math.sin(a) * 0.26, 0.12), (0, 0, 0.75), 0.022, P["trim"])
+            rod((math.cos(a) * 0.26, math.sin(a) * 0.26, 0.12), (0, 0, 0.75), 0.022, P["steel"])
         for z in (0.55, 1.15, 1.75, 2.35):
-            cyl(0.2 - z * 0.035, 0.06, 0, 0, z, P["trim"], verts=12)
-        cyl(0.13, 0.42, 0.24, -0.06, 1.6, P["trim"], verts=16, bevel=0.02)
+            cyl(0.2 - z * 0.035, 0.06, 0, 0, z, P["accent"] if z == 1.15 else P["hull"], verts=12)
+        cyl(0.13, 0.42, 0.24, -0.06, 1.6, P["hull"], verts=16, bevel=0.02)
         for z in (1.68, 1.9):
             tor(0.13, 0.015, 0.24, -0.06, z, P["dark"])
         cyl(0.05, 0.08, 0.24, -0.06, 2.02, P["glass"], verts=10)
@@ -756,7 +758,7 @@ def pylon_kh():
             B(0.08, 0.06, 0.04, 0.0, -0.13, z, P["steel"], bevel=0.0)
         # The crossarms: the lower carries the circuit wires, the upper two more strings; braces under each.
         for z, w in ((2.55, 0.48), (2.9, 0.36)):
-            B(2 * w + 0.14, 0.1, 0.1, 0, 0, z, P["trim"], bevel=0.015)
+            B(2 * w + 0.14, 0.1, 0.1, 0, 0, z, P["dark"], bevel=0.015)
             for sx in (-1, 1):
                 rod((sx * w * 0.7, 0, z), (0, 0, z - 0.3), 0.015, P["steel"])
         tips["red"] = string(-0.48, 0, 2.55)
@@ -814,8 +816,13 @@ def pylon_gs_concept(name):
         top = (0.0, 0.0, TOP)
         def at(i, z):
             k = 1 - z / (TOP + 0.35); x, y = legs[i]; return (x * k, y * k, z)
+        # (Legs near black, a hazard band on each, its crossarm hazard yellow: in rust plate it went into the ground,
+        # "more contrast, disappears against the ground", the user's rating, 2026-11-10.)
         for i, (x, y) in enumerate(legs):
-            rod((x, y, 0.0), at(i, TOP), 0.05, P["trim"])
+            rod((x, y, 0.0), at(i, TOP), 0.05, P["dark"])
+            for z0 in (0.75, 1.85):
+                a0, a1 = at(i, z0), at(i, z0 + 0.16)
+                rod(a0, a1, 0.058, P["hazard"])
             B(0.2, 0.2, 0.12, x, y, 0, P["dark"], bevel=0.015)                     # a block of concrete each foot
             B(0.12, 0.12, 0.03, x, y, 0.12, P["steel"], bevel=0.0)                  # its base plate
         zs = (0.12, 0.65, 1.2, 1.75, 2.3, TOP - 0.05)
@@ -828,7 +835,7 @@ def pylon_gs_concept(name):
                 n = (i + 1) % 3
                 rod(at(i, z0), at(n, z1), 0.013, P["steel"]); rod(at(n, z0), at(i, z1), 0.013, P["steel"])
         cz = TOP + 0.02
-        B(1.15, 0.1, 0.12, 0, 0, cz, P["hull"], bevel=0.012)                         # a channel-iron crossarm
+        B(1.15, 0.1, 0.12, 0, 0, cz, P["hazard"], bevel=0.012)                       # a channel-iron crossarm
         B(1.15, 0.03, 0.04, 0, 0.06, cz + 0.08, P["dark"], bevel=0.0)
         rod((-0.42, 0, cz), (0, 0, cz - 0.45), 0.018, P["steel"]); rod((0.42, 0, cz), (0, 0, cz - 0.45), 0.018, P["steel"])
         for x in (-0.5, 0.5):
@@ -1154,6 +1161,86 @@ def kit(x, y, z, rot, kind, k=1.0):
             rod((x + math.cos(a) * 0.18 * k, y + math.sin(a) * 0.18 * k, z), (x + math.cos(a) * 0.15 * k, y + math.sin(a) * 0.15 * k, z + 0.2 * k), 0.015, P["dark"])
 
 
+def crates(x, y, z, n, rng, mats, k=1.0):
+    """A stack of crates at (x, y, z): n of them, two courses, turned a little."""
+    for i in range(n):
+        cx, cy = x + (i % 2) * 0.32 * k + rng.uniform(-0.03, 0.03), y + ((i // 2) % 2) * 0.32 * k
+        cz = z + (i // 4) * 0.28 * k
+        B(0.3 * k, 0.3 * k, 0.27 * k, cx, cy, cz, rng.choice(mats), rot=rng.uniform(-0.25, 0.25), bevel=0.012)
+
+
+def drums(x, y, z, n, rng, mats, k=1.0):
+    for i in range(n):
+        a = i * 2.4
+        cx, cy = x + math.cos(a) * 0.18 * k * (i > 0), y + math.sin(a) * 0.18 * k * (i > 0)
+        cyl(0.11 * k, 0.32 * k, cx, cy, z, rng.choice(mats), verts=14); tor(0.11 * k, 0.008, cx, cy, z + 0.22 * k, P["dark"])
+
+
+def railing(pts, z, m, post=0.5):
+    """A pipe railing along points at height z above each point's base: a top rail, a mid rail, posts."""
+    for (x0, y0, b0), (x1, y1, b1) in zip(pts, pts[1:]):
+        rod((x0, y0, b0 + z), (x1, y1, b1 + z), 0.015, m); rod((x0, y0, b0 + z * 0.5), (x1, y1, b1 + z * 0.5), 0.01, m)
+        L = math.hypot(x1 - x0, y1 - y0); n = max(1, int(L / post))
+        for j in range(n + 1):
+            u = j / n; rod((x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, b0), (x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, b0 + z), 0.012, m)
+
+
+def cable(p0, p1, sag, m, r=0.012, n=8):
+    """A cable hung from p0 to p1, sagging."""
+    pts = []
+    for j in range(n + 1):
+        u = j / n
+        pts.append(tuple(p0[q] + (p1[q] - p0[q]) * u for q in range(3)))
+        pts[-1] = (pts[-1][0], pts[-1][1], pts[-1][2] - sag * math.sin(u * math.pi))
+    for a, b in zip(pts, pts[1:]): rod(a, b, r, m)
+
+
+def coil(x, y, z, R, m, turns=4):
+    for t in range(turns): tor(R - t * 0.02, 0.015, x, y, z + t * 0.025, m)
+
+
+def arch(p0, p1, h, r, m, flange):
+    """A pipe from p0 up, over and down to p1, h above the higher end (vanilla's silo: its hoses loop over its machines)."""
+    top = max(p0[2], p1[2]) + h
+    pipe([p0, (p0[0], p0[1], top), (p1[0], p1[1], top), p1], r, m, flange)
+
+
+def perimeter(path, z, rng, k=1.0, step=0.42, faction="kh", closed=True):
+    """A wall of machinery along a closed path of (x, y) points, its faces turned inward: blocks of varied height (up
+    to about a tile), the kit's clusters between them, a pipe arch every few, a cable bundle along its foot. What made
+    vanilla's silo and cargo pad read dense beside ours: machines piled round the whole edge, not spotted on a deck."""
+    pts = []
+    # (Open where asked: Grubstake's depot's west and north run, closed, crossed its landing circle diagonally.)
+    for (x0, y0), (x1, y1) in zip(path, path[1:] + (path[:1] if closed else [])):
+        L = math.hypot(x1 - x0, y1 - y0); n = max(1, int(L / (step * k)))
+        for j in range(n): pts.append((x0 + (x1 - x0) * j / n, y0 + (y1 - y0) * j / n, math.atan2(y1 - y0, x1 - x0)))
+    mats = [P["hull"], P["trim"], P["trim"], P["accent"]] if faction == "gs" else [P["hull"], P["trim"], P["hull"]]
+    for i, (x, y, a) in enumerate(pts):
+        h = rng.choice((0.3, 0.45, 0.6, 0.8, 1.0)) * k
+        kind = i % 5
+        if kind in (0, 3):
+            B(step * k * 0.95, 0.38 * k, h, x, y, z, rng.choice(mats), rot=a, bevel=0.02)
+            if rng.random() < 0.5: B(step * k * 0.5, 0.25 * k, 0.15 * k, x, y, z + h, P["dark"], rot=a, bevel=0.01)
+            if rng.random() < 0.4: cyl(0.04 * k, 0.25 * k, x, y, z + h, P["steel"], verts=8)
+        elif kind == 1:
+            kit(x, y, z, a, rng.choice(("pump", "cab", "tank", "manifold")), 0.9 * k)
+        elif kind == 2:
+            cyl(0.16 * k, h, x, y, z, rng.choice(mats), verts=16); sph(0.16 * k, x, y, z + h, P["steel"])
+        else:
+            motor(x, y, z + 0.2 * k, 0.12 * k, step * k * 0.8, rng.choice(mats), P["steel"], axis="x" if abs(math.cos(a)) > 0.7 else "y")
+            B(step * k * 0.8, 0.3 * k, 0.1 * k, x, y, z, P["dark"], rot=a, bevel=0.01)
+        if i % 4 == 2 and i + 2 < len(pts):
+            x2, y2, _ = pts[i + 2]
+            arch((x, y, z + 0.5 * k), (x2, y2, z + 0.5 * k), rng.uniform(0.25, 0.6) * k, 0.045 * k,
+                 rng.choice((P["steel"], P["accent"], P["trim"])), P["dark"])
+    for (x0, y0, _), (x1, y1, _) in zip(pts, pts[1:]):
+        rod((x0, y0, z + 0.05), (x1, y1, z + 0.05), 0.03 * k, P["rubber"])
+
+
+def octagon(r):
+    return [(math.cos(math.pi / 8 + j * math.pi / 4) * r, math.sin(math.pi / 8 + j * math.pi / 4) * r) for j in range(8)]
+
+
 def depot_kh():
     objs, _ = depot_kh_a()
     def more():
@@ -1170,8 +1257,31 @@ def depot_kh():
         rod((-1.4, 1.2, 1.25), (-1.33, 1.05, 1.42), 0.01, P["dark"]); sph(0.03, -1.33, 1.05, 1.42, P["dark"])
         prop("power_box_01_box", "power_box_01", (1.55, -0.9, 0.3), 270, 0.35)
         prop("exterior_aircon_unit", "exterior_aircon_unit", (-1.55, -0.4, 0.3), 90, 0.3)
+        # (Denser, the coordinator's review of 0.2.318: plainer than vanilla's dense machines beside it.) Equipment
+        # modules on the plinth's sides, cable trays and conduits round the ring, vents, a cargo cart and crates.
+        import random as _r
+        rr = _r.Random(45)
+        for a in (0.0, math.pi / 2, math.pi, 3 * math.pi / 2):
+            x, y = math.cos(a) * 1.82, math.sin(a) * 1.82
+            B(0.7, 0.28, 0.42, x, y, 0.0, P["trim"], rot=a + math.pi / 2, bevel=0.02)
+            for j in range(3):
+                ox, oy = math.cos(a + math.pi / 2) * (j - 1) * 0.22, math.sin(a + math.pi / 2) * (j - 1) * 0.22
+                B(0.14, 0.04, 0.1, x + ox + math.cos(a) * 0.15, y + oy + math.sin(a) * 0.15, 0.28, P["dark"], rot=a + math.pi / 2, bevel=0.0)
+        for k in range(24):                                                   # a cable tray round the ring
+            a = k * 2 * math.pi / 24
+            B(0.2, 0.08, 0.04, math.cos(a) * 1.18, math.sin(a) * 1.18, 0.3, P["dark"], rot=a + math.pi / 2, bevel=0.0)
+        for a in (0.8, 2.4, 3.9, 5.5):
+            pipe([(math.cos(a) * 1.25, math.sin(a) * 1.25, 0.33), (math.cos(a) * 1.55, math.sin(a) * 1.55, 0.33),
+                  (math.cos(a) * 1.55, math.sin(a) * 1.55, 0.05)], 0.03, P["steel"], P["dark"])
+        B(0.45, 0.3, 0.16, -0.9, -1.1, 0.3, P["trim"], rot=0.3, bevel=0.02)       # a cargo cart, crates on it
+        crates(-1.0, -1.2, 0.46, 3, rr, [P["hull"], P["trim"]], 0.6)
+        for x in (-0.5, 0.0, 0.5): B(0.18, 0.12, 0.08, x, -1.55, 0.3, P["dark"], bevel=0.005)   # vents
+        cable((-1.4, 1.2, 0.9), (-1.82, 0.0, 0.42), 0.15, P["rubber"])
+        # (A wall of machines round the deck's edge, its south side open for the ramp: beside vanilla's cargo pad,
+        # spotted machines on a wide deck still read plain.)
+        perimeter([(1.55, -1.3), (1.62, 0.6), (1.1, 1.55), (-1.1, 1.55), (-1.62, 0.6), (-1.55, -1.3)], 0.3, rr, 0.62)
     objs += group(more)
-    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 41, density=12.0)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 41, density=14.0)
     return objs, lambda f, n: None
 
 
@@ -1189,8 +1299,36 @@ def depot_gs():
         for k in range(14):                                                   # scrap on the deck's edge
             B(rr.uniform(0.06, 0.18), rr.uniform(0.06, 0.18), rr.uniform(0.03, 0.08), rr.uniform(-1.7, 1.7),
               rr.choice((-1.75, 1.75)), 0.34, rr.choice((P["steel"], P["dark"], P["accent"], P["trim"])), rot=rr.uniform(0, 3), bevel=0.005)
+        # (Denser, the coordinator's review of 0.2.318: "an empty deck".) The landing circle kept clear for the pods;
+        # round it pallets of sacks and crates, coiled cable and hose, a fuel stand and its hose, a toolbox and a
+        # workbench, a plank walkway in along the south, a pipe railing on the east and north edges, cables from the
+        # hoist and the floodlight, oil stains, pipes run down the stilts.
+        Z = 0.34
+        for (x, y) in ((1.35, 1.35), (-1.35, 1.4)):                             # pallets of sacks
+            B(0.55, 0.45, 0.05, x, y, Z, P["trim"], bevel=0.005)
+            for j in range(5): sph(0.12, x - 0.15 + (j % 3) * 0.15, y - 0.08 + (j // 3) * 0.16, Z + 0.12, P["cloth"])
+        crates(1.2, -1.45, Z, 5, rr, [P["hull"], P["trim"], P["accent"]], 0.85)
+        crates(-0.5, 1.45, Z, 3, rr, [P["hull"], P["trim"]], 0.75)
+        drums(1.45, 0.95, Z, 3, rr, [P["accent"], P["steel"], P["hull"]], 0.9)
+        coil(-1.45, 0.55, Z, 0.17, P["rubber"]); coil(0.55, 1.5, Z, 0.13, P["steel"], 3)
+        B(0.22, 0.18, 0.55, 1.6, 0.0, Z, P["accent"], bevel=0.015)               # a fuel stand, its hose
+        gauge(1.6, -0.1, Z + 0.4, P["dark"], P["trim"])
+        cable((1.55, 0.0, Z + 0.45), (1.1, 0.4, Z + 0.02), 0.05, P["rubber"], 0.018, 6)
+        B(0.5, 0.25, 0.28, -1.5, -0.35, Z, P["trim"], bevel=0.01)               # a workbench, a vice, a toolbox
+        B(0.12, 0.08, 0.08, -1.62, -0.35, Z + 0.28, P["steel"], bevel=0.005); B(0.18, 0.1, 0.08, -1.4, -0.32, Z + 0.28, P["accent"], bevel=0.005)
+        for j in range(6):                                                    # planks in along the south
+            o = B(0.16, 0.6, 0.03, -0.45 + j * 0.17, -2.05, 0.02 + j * 0.0, P["hull"] if j % 2 else P["trim"], rot=rr.uniform(-0.05, 0.05), bevel=0.003)
+        railing([(1.85, -1.8, Z), (1.85, 1.85, Z), (-1.85, 1.85, Z)], 0.32, P["steel"], 0.6)
+        cable((1.7, -1.7, 1.95), (1.85, 1.0, Z + 0.32), 0.2, P["rubber"])
+        cable((0.9, 1.6, 2.3), (1.85, 1.85, Z + 0.32), 0.1, P["rubber"])
+        for (x, y, r) in ((0.6, -0.8, 0.22), (-0.7, 0.5, 0.16), (0.2, 0.3, 0.12)):  # oil stains on the deck
+            cyl(r, 0.004, x, y, Z + 0.06, P["dark"], verts=16)
+        for x in (-1.3, 1.3):
+            pipe([(x + 0.12, -1.3, Z), (x + 0.12, -1.3, 0.05)], 0.025, P["steel"], P["dark"])
+        # A wall of salvaged machinery and junk along its west and north edges (under the hoist), the circle clear.
+        perimeter([(-1.62, -1.55), (-1.62, 1.62), (1.0, 1.62)], Z, rr, 0.6, faction="gs", closed=False)
     objs += group(more)
-    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 42, density=10.0)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 42, density=12.0)
     return objs, lambda f, n: None
 
 
@@ -1209,8 +1347,32 @@ def launchpad_kh():
         prop("exterior_aircon_unit", "exterior_aircon_unit", (3.0, -2.6, 0.3), 0, 0.6)
         prop("power_box_01_box", "power_box_01", (-3.2, -2.4, 0.3), 90, 0.6)
         prop("utility_box_02", "utility_box_02", (-2.0, -3.4, 0.3), 0, 0.6)
+        # (Denser, the coordinator's review of 0.2.318.) Grating and cable trays radial between the banks, a coolant
+        # loop round the tube's foot, pipe racks on the deck's edges, a maintenance cart, valve stations, vents.
+        import random as _r
+        rr = _r.Random(47)
+        for k in range(8):
+            a = k * math.pi / 4
+            for j in range(5):
+                r = 1.25 + j * 0.42
+                B(0.32, 0.12, 0.03, math.cos(a) * r, math.sin(a) * r, 0.3, P["dark"], rot=a, bevel=0.0)
+        tor(1.2, 0.06, 0, 0, 0.45, P["steel"]); tor(1.3, 0.04, 0, 0, 0.38, P["accent"])
+        for k in range(8):
+            a = k * math.pi / 4 + math.pi / 8
+            r = 3.85
+            pipe([(math.cos(a - 0.3) * r, math.sin(a - 0.3) * r, 0.36), (math.cos(a + 0.3) * r, math.sin(a + 0.3) * r, 0.36)], 0.06, P["steel"], P["dark"])
+            pipe([(math.cos(a - 0.3) * (r - 0.15), math.sin(a - 0.3) * (r - 0.15), 0.5), (math.cos(a + 0.3) * (r - 0.15), math.sin(a + 0.3) * (r - 0.15), 0.5)], 0.04, P["trim"], P["dark"])
+        for (x, y) in ((2.2, -2.9), (-3.3, 0.6), (0.9, 3.4)):
+            kit(x, y, 0.3, rr.uniform(0, 6), "manifold", 1.1); kit(x + 0.5, y + 0.3, 0.3, rr.uniform(0, 6), "cab", 0.9)
+        B(0.8, 0.5, 0.3, 1.6, -3.4, 0.3, P["trim"], rot=0.2, bevel=0.03)
+        crates(1.4, -3.5, 0.6, 3, rr, [P["hull"], P["trim"]], 0.8)
+        for k in range(10):
+            a = k * 2 * math.pi / 10 + 0.2
+            B(0.25, 0.18, 0.1, math.cos(a) * 2.75, math.sin(a) * 2.75, 0.3, P["dark"], rot=a, bevel=0.005)
+        # A wall of machines round the octagon's edge (the silo's: machines piled round its whole rim).
+        perimeter(octagon(4.0), 0.3, rr, 1.15)
     objs += group(more)
-    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 43, density=8.0)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 43, density=11.0)
     return objs, lambda f, n: None
 
 
@@ -1235,8 +1397,32 @@ def launchpad_gs():
             B(rr.uniform(0.15, 0.45), rr.uniform(0.15, 0.45), rr.uniform(0.05, 0.2), rr.uniform(2.2, 3.8), rr.uniform(-3.8, -2.6),
               0.12 + rr.uniform(0, 0.25), rr.choice((P["steel"], P["dark"], P["accent"], P["trim"], P["hull"])), rot=rr.uniform(0, 3), bevel=0.01)
         cyl(0.12, 1.4, -3.6, -1.0, 0.12, P["steel"], verts=10); sph(0.12, -3.6, -1.0, 1.6, P["light"])
+        # (Denser, the coordinator's review of 0.2.318.) A fuel line from the tanks round the pit to its rim, cables
+        # from the winch and the beacon pole, crate stacks, drum groups, sandbags at the pit's south, a generator, a
+        # workbench, planks and pallets, pipe railing round the pit's open side.
+        Z = 0.12
+        pipe([(-3.0, -0.4, 0.5), (-2.6, -0.4, 0.3), (-2.4, -1.6, 0.3), (-1.4, -2.3, 0.3), (0.0, -2.4, 0.45)], 0.07, P["steel"], P["dark"])
+        pipe([(3.2, 1.2, 0.4), (2.6, 1.0, 0.3), (2.5, -0.5, 0.3), (2.2, -1.2, 0.45)], 0.06, P["accent"], P["dark"])
+        cable((3.0, -2.0, 0.9), (1.2, -1.6, 0.55), 0.15, P["rubber"]); cable((-3.6, -1.0, 1.5), (-2.3, 0.0, 0.55), 0.3, P["rubber"])
+        crates(-3.6, 3.2, Z, 6, rr, [P["hull"], P["trim"], P["accent"]], 1.1)
+        crates(2.0, 3.4, Z, 4, rr, [P["hull"], P["trim"]], 1.0)
+        drums(0.6, 3.5, Z, 4, rr, [P["accent"], P["steel"], P["hull"]], 1.1); drums(-1.2, 3.4, Z, 3, rr, [P["accent"], P["hull"]], 1.1)
+        for j in range(9):                                                    # sandbags at the pit's south
+            a = math.pi * 1.25 + j * 0.13
+            for zz in (0, 1):
+                o = B(0.34, 0.2, 0.12, math.cos(a) * 2.55, math.sin(a) * 2.55, 0.52 + zz * 0.12, P["cloth"], rot=a + math.pi / 2 + zz * 0.2, bevel=0.04)
+        B(0.7, 0.5, 0.45, -3.4, -2.4, Z, P["accent"], bevel=0.02); motor(-3.4, -2.4, Z + 0.6, 0.12, 0.45, P["trim"], P["steel"], "x")
+        B(0.9, 0.4, 0.4, 3.5, -0.9, Z, P["trim"], bevel=0.01); B(0.2, 0.1, 0.1, 3.4, -0.9, Z + 0.4, P["steel"], bevel=0.005)
+        for j in range(7):
+            B(0.2, 1.0, 0.04, -1.0 + j * 0.22, -3.7, Z, P["hull"] if j % 2 else P["trim"], rot=rr.uniform(-0.06, 0.06), bevel=0.003)
+        rail = [(math.cos(a) * 2.45, math.sin(a) * 2.45, 0.52) for a in [math.radians(d) for d in range(-30, 200, 23)]]
+        railing(rail, 0.3, P["steel"], 0.5)
+        for (x, y, r) in ((1.0, -0.6, 0.5), (-0.9, 0.8, 0.4), (2.9, 2.2, 0.35)):
+            cyl(r, 0.004, x, y, Z + 0.01, P["dark"], verts=20)
+        # A wall of salvaged machines and junk round the slab's edge.
+        perimeter([(-3.85, -3.85), (3.85, -3.85), (3.85, 3.85), (-3.85, 3.85)], Z, rr, 1.15, faction="gs")
     objs += group(more)
-    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 44, density=8.0)
+    objs += scatter(objs, {P["hull"], P["trim"]}, P["dark"], P["steel"], 44, density=11.0)
     return objs, lambda f, n: None
 
 
@@ -1383,7 +1569,7 @@ def flamer_gs():
         rod((-0.6, -0.95, 0.75), (0.6, -0.95, 0.75), 0.015, P["rubber"])
         for x in (-0.5, 0.5):
             lie(0.09, 0.25, x, -1.05, 0.22, P["steel"], "y", 12)
-        lie(0.12, 0.55, 0.45, 0.4, 0.35, P["steel"], "y", 16)                      # a pressure bottle
+        lie(0.12, 0.55, 0.45, 0.4, 0.35, P["accent"], "y", 16)                      # a pressure bottle
         rod((0.45, 0.1, 0.4), (0.15, 0.1, 0.5), 0.025, P["rubber"])
         cyl(0.4, 0.08, 0, 0.25, 0.2, P["steel"], verts=12)
         for k, (x, y) in enumerate(((-0.45, 0.6), (-0.4, 0.95))):
@@ -1392,7 +1578,10 @@ def flamer_gs():
         cyl(0.3, 0.12, 0, 0, 0.28, P["dark"], verts=12)
         B(0.45, 0.5, 0.3, 0, -0.05, 0.4, P["hull"], bevel=0.01)
         o = B(0.6, 0.05, 0.38, 0, 0.25, 0.38, P["trim"], bevel=0.005); o.rotation_euler.x = math.radians(-10)
-        lie(0.05, 0.85, 0, 0.6, 0.58, P["steel"], "y", 12)
+        # (Its barrel dark, a worn steel ring at the muzzle: bright, it drew the eye off the rest, "I would darken the
+        # bright metal of the cannon", the user's rating, 2026-11-10.)
+        lie(0.05, 0.85, 0, 0.6, 0.58, P["dark"], "y", 12)
+        lie(0.06, 0.06, 0, 0.9, 0.58, P["trim"], "y", 12)
         lie(0.08, 0.1, 0, 1.0, 0.58, P["dark"], "y", 12)
         sph(0.04, 0.0, 1.05, 0.5, P["light"])
         rod((0.15, -0.2, 0.55), (0.05, 0.3, 0.6), 0.025, P["rubber"])
