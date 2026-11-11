@@ -6801,6 +6801,17 @@ Bugs and surprises the headless runs caught, each kept as a check:
   the same measure reads 0.51 on the gun nest's base before 0.2.335 and 1.00 after (the method's control). The KH radar
   reads 0.8 shadowed or not (a uniform difference, not its shadow). Other buildings' stills did not register well
   enough to read.
+- **Full regression of 0.2.336: two regressions of this batch** (0.2.337; 318 runs on the Studio, 4 failed).
+  **clearing, made parts 0:** a settlement landing at evolution 1 among nests spent 95 of its parts on 19 uranium
+  refills (0.2.330: 5 parts a refill, paid down to its last part) in its first 3 minutes and never built a fabricator.
+  Uranium is now paid only from what a settlement holds over a reserve of 50 (piercing below it): clearing makes 32
+  parts again (68 before uranium), and scenario evolution still sees its 3 refills at 0.7. **rivals, fuelled
+  flamethrowers 0 of 4:** the check asked for oil in Kessler-Hayashi's gate flamers, oil-free since the arc flamer
+  (0.2.331); it now asks for the flamers (4). Neither scenario is in the quick set, which is why both went unseen for
+  six versions. herd ranks-mend and farm siege fail as before. **A tooling trap found on the way:** two runs of the
+  same scenario and seed from two trees at once share one sim profile and its mod link, so the second tree's run
+  re-links the mod under the first: a "pass" of clearing locally was 0.2.327's code (no uranium_refills in its
+  results). Compare versions one after the other, never side by side.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`

@@ -447,6 +447,7 @@ local function economy(b)
   -- evolved to 0.6, as a player's turrets would be by then, at 5 parts a refill of 20 (piercing when it cannot pay; the
   -- user, 2026-11-11: KH's strength scaled to the biters' evolution, by what it brings).
   local enemy = game.forces.enemy
+  local URANIUM_COST, URANIUM_RESERVE = 5, 50
   local late = enemy and enemy.get_evolution_factor(b.surface) >= 0.6
   for _, t in ipairs(b.turrets) do
     if t.valid and t.type == "ammo-turret" then
@@ -455,8 +456,11 @@ local function economy(b)
         local ammo = "piercing-rounds-magazine"
         if shared.kind_of(t.name) == "lp-scrap-cannon" then
           ammo = "lp-scrap-shell"
-        elseif late and b.parts >= 5 then
-          ammo, b.parts = "uranium-rounds-magazine", b.parts - 5
+        -- (Only from what it has over a reserve, URANIUM_RESERVE: paid down to its last part, a settlement landing at
+        -- evolution 1 among nests spent 95 parts on 19 refills in 3 minutes and never built a fabricator, scenario
+        -- clearing, 0.2.336.)
+        elseif late and b.parts >= URANIUM_RESERVE + URANIUM_COST then
+          ammo, b.parts = "uranium-rounds-magazine", b.parts - URANIUM_COST
           b.uranium_refills = (b.uranium_refills or 0) + 1
         end
         inv.insert{name = ammo, count = 20}
