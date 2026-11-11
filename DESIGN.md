@@ -6622,6 +6622,13 @@ Bugs and surprises the headless runs caught, each kept as a check:
   (every 3 minutes), and the clearance launched after one wave and had cleared every nest by the next, so "first seen
   at minute -" on a run that made its 8 railgunners and cleared at minute 13. Now read every 10 s; it passes (first
   seen at minute 12).
+- **Unit shadows at full strength** (0.2.323). 0.2.321 repacked the buildings' shadows at full alpha (vanilla's shadow
+  sprites are solid; the game applies its own opacity) but not the units'. Measured: the units' 15 shadow sheets (KH's
+  tank and its aegis, prism and tesla modules, both drones' fans; Grubstake's buggy with its mg, slug and flak, the
+  crawler's dozer and scorcher, the hauler's bed and howitzer, the harrier's and scavenger's rotors) peaked at alpha 140,
+  vanilla's tank and car at 255. Their raw renders are gone, so tools/blender/shadow_full.py inverts the old packing
+  (round(a / 0.55): 7..140 back to 13..255, within one level of a repack) and refuses a sheet already full (seen: a
+  second run skipped). Filmed beside vanilla's tank and car (docs/review/stills-unitshadows.lua): as dark as theirs.
 - **Locale audit applied** (2026-11-02; `docs/wip/locale-audit.md`, old flavour lines kept in `docs/wip/flavour.md`):
   game text in vanilla register (US spelling, digits, "spawner", no slogans or advice; "Grubstake Inc." is
   "Grubstake" everywhere). Found while applying it: research nodes `flak-buggy` and `skyguard` had no `lp.node-*`
